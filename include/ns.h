@@ -3844,7 +3844,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
 
 
 NS_EXTERN int
-Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp, unsigned int flags, void* app_data,
+Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp, unsigned int flags, void* app_data,
                      NS_TLS_SSL_CTX **ctxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 

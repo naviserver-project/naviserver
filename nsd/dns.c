@@ -88,16 +88,16 @@ static Ns_Cs     getDNScs = NULL;
 void
 NsConfigDNS(void)
 {
-    const char *path = NS_GLOBAL_CONFIG_PARAMETERS;
+    const char *section = NS_GLOBAL_CONFIG_PARAMETERS;
 
-    if (Ns_ConfigBool(path, "dnscache", NS_TRUE) == NS_TRUE) {
-        size_t maxSize = (size_t)Ns_ConfigMemUnitRange(path, "dnscachemaxsize", "500KB", 1024 * 500,
+    if (Ns_ConfigBool(section, "dnscache", NS_TRUE) == NS_TRUE) {
+        size_t maxSize = (size_t)Ns_ConfigMemUnitRange(section, "dnscachemaxsize", "500KB", 1024 * 500,
                                                        0, INT_MAX);
         if (maxSize > 0u) {
-            Ns_ConfigTimeUnitRange(path, "dnswaittimeout",
+            Ns_ConfigTimeUnitRange(section, "dnswaittimeout",
                                    "5s", 0, 0, INT_MAX, 0,
                                    &timeout);
-            Ns_ConfigTimeUnitRange(path, "dnscachetimeout",
+            Ns_ConfigTimeUnitRange(section, "dnscachetimeout",
                                    "60m", 0, 0, INT_MAX, 0,
                                    &ttl);
 

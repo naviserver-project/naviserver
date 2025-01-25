@@ -1433,14 +1433,14 @@ DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long
  *----------------------------------------------------------------------
  */
 NsSSLConfig *
-NsSSLConfigNew(const char *path)
+NsSSLConfigNew(const char *section)
 {
     NsSSLConfig *cfgPtr;
 
     cfgPtr = ns_calloc(1, sizeof(NsSSLConfig));
-    cfgPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
-    cfgPtr->nodelay = Ns_ConfigBool(path, "nodelay", NS_TRUE);
-    cfgPtr->verify = Ns_ConfigBool(path, "verify", 0);
+    cfgPtr->deferaccept = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
+    cfgPtr->nodelay = Ns_ConfigBool(section, "nodelay", NS_TRUE);
+    cfgPtr->verify = Ns_ConfigBool(section, "verify", 0);
     return cfgPtr;
 }
 
@@ -1462,7 +1462,7 @@ NsSSLConfigNew(const char *path)
  *----------------------------------------------------------------------
  */
 int
-Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
+Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                      unsigned int flags,
                      void *app_data,
                      NS_TLS_SSL_CTX **ctxPtr)
@@ -1470,11 +1470,11 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
     int         result;
     const char *cert;
 
-    cert = Ns_ConfigGetValue(path, "certificate");
-    Ns_Log(Notice, "load certificate '%s' specified in section %s", cert, path);
+    cert = Ns_ConfigGetValue(section, "certificate");
+    Ns_Log(Notice, "load certificate '%s' specified in section %s", cert, section);
 
     if (cert == NULL) {
-        Ns_Log(Error, "nsssl: certificate parameter must be specified in the configuration file under %s", path);
+        Ns_Log(Error, "nsssl: certificate parameter must be specified in the configuration file under %s", section);
         result = NS_ERROR;
     } else {
         const char *ciphers, *ciphersuites, *protocols;
@@ -1487,16 +1487,16 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
         Ns_DListInit(dlPtr);
 
         cert         = Ns_DListSaveString(dlPtr, cert);
-        ciphers      = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(path, "ciphers"));
-        ciphersuites = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(path, "ciphersuites"));
-        protocols    = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(path, "protocols"));
+        ciphers      = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphers"));
+        ciphersuites = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphersuites"));
+        protocols    = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "protocols"));
 
         Ns_Log(Debug, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app data %p",
                (void*) app_data);
 
         result = Ns_TLS_CtxServerCreate(interp, cert,
                                         NULL /*caFile*/, NULL /*caPath*/,
-                                        Ns_ConfigBool(path, "verify", 0),
+                                        Ns_ConfigBool(section, "verify", 0),
                                         ciphers, ciphersuites, protocols,
                                         ctxPtr);
         if (result == TCL_OK) {
@@ -1519,7 +1519,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                  * while the app_data of an SSL connection is the
                  * sockPtr (Ns_Sock*).
                  */
-                cfgPtr = NsSSLConfigNew(path);
+                cfgPtr = NsSSLConfigNew(section);
                 cfgPtr->ctx = *ctxPtr;
                 Ns_Log(Debug, "Ns_TLS_CtxServerInit created new app data %p for cert <%s> ctx %p",
                         (void*)cfgPtr, cert, (void*)(cfgPtr->ctx));
@@ -1615,14 +1615,14 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
             }
 #ifndef OPENSSL_NO_OCSP
             Ns_Log(Notice, "nsssl: activate OCSP stapling for %s -> %d",
-                   path, Ns_ConfigBool(path, "ocspstapling", NS_FALSE));
+                   section, Ns_ConfigBool(section, "ocspstapling", NS_FALSE));
 
-            if (Ns_ConfigBool(path, "ocspstapling", NS_FALSE)) {
+            if (Ns_ConfigBool(section, "ocspstapling", NS_FALSE)) {
 
                 memset(&sslCertStatusArg, 0, sizeof(sslCertStatusArg));
                 sslCertStatusArg.timeout = -1;
-                sslCertStatusArg.verbose = Ns_ConfigBool(path, "ocspstaplingverbose", NS_FALSE);
-                Ns_ConfigTimeUnitRange(path, "ocspcheckinterval",
+                sslCertStatusArg.verbose = Ns_ConfigBool(section, "ocspstaplingverbose", NS_FALSE);
+                Ns_ConfigTimeUnitRange(section, "ocspcheckinterval",
                                        "5m", 1, 0, LONG_MAX, 0,
                                        &sslCertStatusArg.OCSPcheckInterval);
 

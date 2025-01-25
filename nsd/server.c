@@ -196,7 +196,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     Tcl_HashEntry     *hPtr;
     NsServer          *servPtr;
     const ServerInit  *initPtr;
-    const char        *path, *p;
+    const char        *section, *p;
     const Ns_Set      *set = NULL;
     size_t             i;
     int                n;
@@ -265,16 +265,16 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         initPtr = initPtr->nextPtr;
     }
 
-    path = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
 
     /*
      * Set some server options.
      */
 
-    servPtr->opts.realm = ns_strcopy(Ns_ConfigString(path, "realm", server));
-    servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
-    servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
-    servPtr->opts.noticeADP = Ns_ConfigString(path, "noticeadp", "returnnotice.adp");
+    servPtr->opts.realm = ns_strcopy(Ns_ConfigString(section, "realm", server));
+    servPtr->opts.modsince = Ns_ConfigBool(section, "checkmodifiedsince", NS_TRUE);
+    servPtr->opts.noticedetail = Ns_ConfigBool(section, "noticedetail", NS_TRUE);
+    servPtr->opts.noticeADP = Ns_ConfigString(section, "noticeadp", "returnnotice.adp");
 
     if (Ns_PathIsAbsolute(servPtr->opts.noticeADP) == NS_FALSE
         && *servPtr->opts.noticeADP != '\0') {
@@ -288,11 +288,11 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         Tcl_DStringFree(&ds);
     }
 
-    servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(path, "errorminsize", NULL, 514, 0, INT_MAX);
-    servPtr->filter.rwlocks = Ns_ConfigBool(path, "filterrwlocks", NS_TRUE);
+    servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(section, "errorminsize", NULL, 514, 0, INT_MAX);
+    servPtr->filter.rwlocks = Ns_ConfigBool(section, "filterrwlocks", NS_TRUE);
 
     servPtr->opts.hdrcase = Preserve;
-    p = Ns_ConfigString(path, "headercase", "preserve");
+    p = Ns_ConfigString(section, "headercase", "preserve");
     if (STRIEQ(p, "tolower")) {
         servPtr->opts.hdrcase = ToLower;
     } else if (STRIEQ(p, "toupper")) {
@@ -302,21 +302,21 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     /*
      * Add server specific extra headers.
      */
-    servPtr->opts.extraHeaders = Ns_ConfigSet(path, "extraheaders", NULL);
+    servPtr->opts.extraHeaders = Ns_ConfigSet(section, "extraheaders", NULL);
 
     /*
      * Initialize on-the-fly compression support.
      */
-    servPtr->compress.enable = Ns_ConfigBool(path, "compressenable", NS_FALSE);
+    servPtr->compress.enable = Ns_ConfigBool(section, "compressenable", NS_FALSE);
 #ifndef HAVE_ZLIB_H
     Ns_Log(Warning, "init server %s: compress is enabled, but no zlib support built in",
            server);
 #else
     Ns_Log(Notice, "init server %s: using zlib version %s", server, ZLIB_VERSION);
 #endif
-    servPtr->compress.level = Ns_ConfigIntRange(path, "compresslevel", 4, 1, 9);
-    servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(path, "compressminsize", NULL, 512, 0, INT_MAX);
-    servPtr->compress.preinit = Ns_ConfigBool(path, "compresspreinit", NS_FALSE);
+    servPtr->compress.level = Ns_ConfigIntRange(section, "compresslevel", 4, 1, 9);
+    servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(section, "compressminsize", NULL, 512, 0, INT_MAX);
+    servPtr->compress.preinit = Ns_ConfigBool(section, "compresspreinit", NS_FALSE);
 
     /*
      * Call the static server init proc, if any, which may register

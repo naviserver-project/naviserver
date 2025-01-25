@@ -95,7 +95,7 @@ NsConfUpdate(void)
 {
     size_t      size;
     Ns_DString  ds;
-    const char *path = NS_GLOBAL_CONFIG_PARAMETERS;
+    const char *section = NS_GLOBAL_CONFIG_PARAMETERS;
 
     NsConfigTcl();
     NsConfigLog();
@@ -115,7 +115,7 @@ NsConfUpdate(void)
 
     size = (size_t)Ns_ConfigMemUnitRange(NS_CONFIG_THREADS, "stacksize", NULL, 0, 0, INT_MAX);
     if (size == 0u) {
-        size = (size_t)Ns_ConfigMemUnitRange(path, "stacksize", NULL, 0, 0, INT_MAX);
+        size = (size_t)Ns_ConfigMemUnitRange(section, "stacksize", NULL, 0, 0, INT_MAX);
     }
     if (size > 0u) {
         (void) Ns_ThreadStackSize((ssize_t)size);
@@ -124,31 +124,31 @@ NsConfUpdate(void)
     /*
      * nsmain.c
      */
-    Ns_ConfigTimeUnitRange(path, "shutdowntimeout",
+    Ns_ConfigTimeUnitRange(section, "shutdowntimeout",
                            "20s", 0, 0, LONG_MAX, 0,
                            &nsconf.shutdowntimeout);
     /*
      * sched.c
      */
-    nsconf.sched.jobsperthread = Ns_ConfigIntRange(path, "schedsperthread", 0, 0, INT_MAX);
-    Ns_ConfigTimeUnitRange(path, "schedlogminduration",
+    nsconf.sched.jobsperthread = Ns_ConfigIntRange(section, "schedsperthread", 0, 0, INT_MAX);
+    Ns_ConfigTimeUnitRange(section, "schedlogminduration",
                            "2s", 1, 0, LONG_MAX, 0,
                            &nsconf.sched.maxelapsed);
     /*
      * binder.c, win32.c
      */
 
-    nsconf.listenbacklog = Ns_ConfigIntRange(path, "listenbacklog", 32, 0, INT_MAX);
-    nsconf.sockacceptlog = Ns_ConfigIntRange(path, "sockacceptlog", 4,  2, 100);
+    nsconf.listenbacklog = Ns_ConfigIntRange(section, "listenbacklog", 32, 0, INT_MAX);
+    nsconf.sockacceptlog = Ns_ConfigIntRange(section, "sockacceptlog", 4,  2, 100);
 
     /*
      * tcljob.c
      */
-    nsconf.job.jobsperthread = Ns_ConfigIntRange(path, "jobsperthread", 0, 0, INT_MAX);
-    Ns_ConfigTimeUnitRange(path, "jobtimeout",
+    nsconf.job.jobsperthread = Ns_ConfigIntRange(section, "jobsperthread", 0, 0, INT_MAX);
+    Ns_ConfigTimeUnitRange(section, "jobtimeout",
                            "5m", 0, 0, LONG_MAX, 0,
                            &nsconf.job.timeout);
-    Ns_ConfigTimeUnitRange(path, "joblogminduration",
+    Ns_ConfigTimeUnitRange(section, "joblogminduration",
                            "1s", 0, 0, LONG_MAX, 0,
                            &nsconf.job.logminduration);
 
@@ -157,7 +157,7 @@ NsConfUpdate(void)
      */
 
     Ns_DStringInit(&ds);
-    nsconf.tcl.sharedlibrary = ns_strcopy(Ns_ConfigString(path, "tcllibrary", "tcl"));
+    nsconf.tcl.sharedlibrary = ns_strcopy(Ns_ConfigString(section, "tcllibrary", "tcl"));
     if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == NS_FALSE) {
         Ns_Set    *set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
         TCL_SIZE_T length;
@@ -169,7 +169,7 @@ NsConfUpdate(void)
 
         Ns_SetIUpdateSz(set, "tcllibrary", 10, nsconf.tcl.sharedlibrary, length);
     }
-    nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);
+    nsconf.tcl.lockoninit = Ns_ConfigBool(section, "tclinitlock", NS_FALSE);
     Ns_DStringFree(&ds);
 }
 

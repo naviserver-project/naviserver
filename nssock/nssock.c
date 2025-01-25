@@ -64,15 +64,15 @@ Ns_ModuleInit(const char *server, const char *module)
 {
     Ns_DriverInitData  init;
     Config            *drvCfgPtr;
-    const char        *path;
+    const char        *section;
 
     NS_NONNULL_ASSERT(module != NULL);
 
     memset(&init, 0, sizeof(init));
-    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
     drvCfgPtr = ns_malloc(sizeof(Config));
-    drvCfgPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
-    drvCfgPtr->nodelay = Ns_ConfigBool(path, "nodelay", NS_TRUE);
+    drvCfgPtr->deferaccept = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
+    drvCfgPtr->nodelay = Ns_ConfigBool(section, "nodelay", NS_TRUE);
 
     init.version = NS_DRIVER_VERSION_5;
     init.name         = "nssock";
@@ -87,7 +87,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.closeProc    = SockClose;
     init.opts         = NS_DRIVER_ASYNC;
     init.arg          = drvCfgPtr;
-    init.path         = (char*)path;
+    init.path         = (char*)section;
     init.protocol     = "http";
     init.defaultPort  = 80;
 

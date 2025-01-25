@@ -143,9 +143,9 @@ static Ns_ReturnCode
 ConfigServerAdp(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
-    const char *path;
+    const char *section;
 
-    path = Ns_ConfigSectionPath(NULL, server, NULL, "adp", (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, NULL, "adp", (char *)0L);
 
     /*
      * Initialize the page and tag tables and locks.
@@ -166,29 +166,29 @@ ConfigServerAdp(const char *server)
      * Initialise various ADP options.
      */
 
-    servPtr->adp.errorpage = ns_strcopy(Ns_ConfigString(path, "errorpage", NULL));
-    servPtr->adp.startpage = ns_strcopy(Ns_ConfigString(path, "startpage", NULL));
-    servPtr->adp.debuginit = ns_strcopy(Ns_ConfigString(path, "debuginit", "ns_adp_debuginit"));
-    servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
-    servPtr->adp.cachesize = (size_t)Ns_ConfigMemUnitRange(path, "cachesize", "5MB", 5000 * 1024,
+    servPtr->adp.errorpage = ns_strcopy(Ns_ConfigString(section, "errorpage", NULL));
+    servPtr->adp.startpage = ns_strcopy(Ns_ConfigString(section, "startpage", NULL));
+    servPtr->adp.debuginit = ns_strcopy(Ns_ConfigString(section, "debuginit", "ns_adp_debuginit"));
+    servPtr->adp.tracesize = Ns_ConfigInt(section, "tracesize", 40);
+    servPtr->adp.cachesize = (size_t)Ns_ConfigMemUnitRange(section, "cachesize", "5MB", 5000 * 1024,
                                                            1000 * 1024, INT_MAX);
-    servPtr->adp.bufsize   = (size_t)Ns_ConfigMemUnitRange(path, "bufsize",  "1MB",  1024 * 1000,
+    servPtr->adp.bufsize   = (size_t)Ns_ConfigMemUnitRange(section, "bufsize",  "1MB",  1024 * 1000,
                                                            100 * 1024, INT_MAX);
-    servPtr->adp.defaultExtension = ns_strcopy(Ns_ConfigString(path, "defaultextension", NULL));
+    servPtr->adp.defaultExtension = ns_strcopy(Ns_ConfigString(section, "defaultextension", NULL));
 
     servPtr->adp.flags = 0u;
-    (void) Ns_ConfigFlag(path, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "stream",       ADP_STREAM,    0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "enableexpire", ADP_EXPIRE,    0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "enabledebug",  ADP_DEBUG,     0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "safeeval",     ADP_SAFE,      0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "singlescript", ADP_SINGLE,    0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "trace",        ADP_TRACE,     0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "detailerror",  ADP_DETAIL,    1, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "stricterror",  ADP_STRICT,    0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "displayerror", ADP_DISPLAY,   0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "trimspace",    ADP_TRIM,      0, &servPtr->adp.flags);
-    (void) Ns_ConfigFlag(path, "autoabort",    ADP_AUTOABORT, 1, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "stream",       ADP_STREAM,    0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "enableexpire", ADP_EXPIRE,    0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "enabledebug",  ADP_DEBUG,     0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "safeeval",     ADP_SAFE,      0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "singlescript", ADP_SINGLE,    0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "trace",        ADP_TRACE,     0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "detailerror",  ADP_DETAIL,    1, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "stricterror",  ADP_STRICT,    0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "displayerror", ADP_DISPLAY,   0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "trimspace",    ADP_TRIM,      0, &servPtr->adp.flags);
+    (void) Ns_ConfigFlag(section, "autoabort",    ADP_AUTOABORT, 1, &servPtr->adp.flags);
 
     return NS_OK;
 }

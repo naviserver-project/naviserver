@@ -221,7 +221,7 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    const char    *addr, *path;
+    const char    *addr, *section;
     unsigned short port;
     Ns_ReturnCode  result;
     NS_SOCKET      lsock;
@@ -231,9 +231,9 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Create the listening socket and callback.
      */
-    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
-    addr = Ns_ConfigString(path, "address", NS_IP_LOOPBACK);
-    port = (unsigned short)Ns_ConfigInt(path, "port", 2080);
+    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    addr = Ns_ConfigString(section, "address", NS_IP_LOOPBACK);
+    port = (unsigned short)Ns_ConfigInt(section, "port", 2080);
 
     lsock = Ns_SockListen(addr, port);
     if (lsock == NS_INVALID_SOCKET) {
@@ -251,8 +251,8 @@ Ns_ModuleInit(const char *server, const char *module)
         modPtr->server = server;
         modPtr->addr = ns_strcopy(addr);
         modPtr->port = port;
-        modPtr->echo = Ns_ConfigBool(path, "echopasswd", NS_TRUE);
-        modPtr->commandLogging = Ns_ConfigBool(path, "cpcmdlogging", NS_FALSE);
+        modPtr->echo = Ns_ConfigBool(section, "echopasswd", NS_TRUE);
+        modPtr->commandLogging = Ns_ConfigBool(section, "cpcmdlogging", NS_FALSE);
 
         LoadUsers(modPtr, server, module);
 

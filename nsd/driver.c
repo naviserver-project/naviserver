@@ -249,7 +249,7 @@ static void    DriverClose(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, const char *threadName,
                                 const Ns_DriverInitData *init,
-                                NsServer *servPtr, const char *path,
+                                NsServer *servPtr, const char *section,
                                 const char *bindaddrs,
                                 const char *defserver)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6)
@@ -259,7 +259,7 @@ static bool DriverModuleInitialized(const char *module)
 static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
-static size_t PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
+static size_t PortsParse(Ns_DList *dlPtr, const char *listString, const char *section)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static char *PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -585,7 +585,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     }
 
     if (!alreadyInitialized && status == NS_OK) {
-        const char *path, *host, *address, *defserver;
+        const char *section, *host, *address, *defserver;
         bool        noHostNameGiven;
         int         nrDrivers, result;
         TCL_SIZE_T  nrBindaddrs = 0;
@@ -594,18 +594,18 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         bool        hostDuplicated = NS_FALSE;
 
         if (init->path != NULL) {
-            path =  init->path;
-            set = Ns_ConfigCreateSection(path);
+            section =  init->path;
+            set = Ns_ConfigCreateSection(section);
         } else {
-            path = Ns_ConfigSectionPath(&set, server, module, (char *)0L);
+            section = Ns_ConfigSectionPath(&set, server, module, (char *)0L);
         }
-        assert(path != NULL);
+        assert(section != NULL);
 
         /*
          * Determine the "defaultserver" the "hostname" / "address" for
          * binding to and/or the HTTP location string.
          */
-        defserver = Ns_ConfigGetValue(path, "defaultserver");
+        defserver = Ns_ConfigGetValue(section, "defaultserver");
         if (defserver == NULL) {
             TCL_SIZE_T    argc = 0;
             const char  **argv = NULL;
@@ -622,8 +622,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 
         }
 
-        address = Ns_ConfigString(path, "address", NULL);
-        host = Ns_ConfigString(path, "hostname", NULL);
+        address = Ns_ConfigString(section, "address", NULL);
+        host = Ns_ConfigString(section, "hostname", NULL);
         noHostNameGiven = (host == NULL);
 
         /*
@@ -678,7 +678,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         /*
          * Get configured number of driver threads.
          */
-        nrDrivers = Ns_ConfigIntRange(path, "driverthreads", 1, 1, 64);
+        nrDrivers = Ns_ConfigIntRange(section, "driverthreads", 1, 1, 64);
         if (nrDrivers > 1) {
 #if !defined(SO_REUSEPORT)
             Ns_Log(Warning,
@@ -701,7 +701,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             for (i = 0; i < nrDrivers; i++) {
                 snprintf(moduleName, maxModuleNameLength, "%s:%d", module, i);
                 status = DriverInit(server, module, moduleName, init,
-                                    servPtr, path,
+                                    servPtr, section,
                                     address,
                                     passedDefserver);
                 if (status != NS_OK) {
@@ -818,7 +818,7 @@ void NsDriverMapVirtualServers(void)
         const Ns_Set *serverMapSet;
         size_t        j;
         Tcl_DString   ds, *dsPtr = &ds;
-        const char   *path, *defserver, *moduleName;
+        const char   *section, *defserver, *moduleName;
 
         moduleName = drvPtr->moduleName;
         defserver  = drvPtr->defserver;
@@ -826,8 +826,8 @@ void NsDriverMapVirtualServers(void)
         /*
          * Check for a "/servers" section for this driver module.
          */
-        path = Ns_ConfigSectionPath(NULL, NULL, moduleName, "servers", (char *)0L);
-        serverMapSet = Ns_ConfigGetSection(path);
+        section = Ns_ConfigSectionPath(NULL, NULL, moduleName, "servers", (char *)0L);
+        serverMapSet = Ns_ConfigGetSection(section);
 
         if (serverMapSet == NULL || Ns_SetSize(serverMapSet) == 0u) {
             /*
@@ -853,11 +853,11 @@ void NsDriverMapVirtualServers(void)
                     if (defserver == NULL) {
                         Ns_Fatal("%s: virtual servers configured,"
                                  " but '%s' has no defaultserver defined",
-                                 moduleName, path);
+                                 moduleName, section);
                     } else {
                         Ns_Fatal("%s: virtual servers configured,"
                                  " but '%s' has invalid defaultserver defined: '%s'",
-                                 moduleName, path, defserver);
+                                 moduleName, section, defserver);
                     }
                 }
             } else {
@@ -922,7 +922,7 @@ void NsDriverMapVirtualServers(void)
                  * We have a global driver, but no defserver.
                  */
                 Ns_Fatal("%s: virtual servers configured,"
-                         " but '%s' has no defaultserver defined", moduleName, path);
+                         " but '%s' has no defaultserver defined", moduleName, section);
             }
         }
 
@@ -1102,7 +1102,7 @@ void NsDriverMapVirtualServers(void)
         if (drvPtr->defMapPtr == NULL) {
             fprintf(stderr, "--- Server Map: ---\n");
             Ns_SetPrint(NULL, serverMapSet);
-            Ns_Fatal("%s: default server '%s' not defined in '%s'", moduleName, defserver, path);
+            Ns_Fatal("%s: default server '%s' not defined in '%s'", moduleName, defserver, section);
         }
     }
     Tcl_DeleteHashTable(&serverTable);
@@ -1127,10 +1127,10 @@ void NsDriverMapVirtualServers(void)
  *----------------------------------------------------------------------
  */
 static size_t
-PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
+PortsParse(Ns_DList *dlPtr, const char *listString, const char *section)
 {
     NS_NONNULL_ASSERT(dlPtr != NULL);
-    NS_NONNULL_ASSERT(path != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
 
     if (listString != NULL) {
         int        result;
@@ -1140,7 +1140,7 @@ PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
         Tcl_IncrRefCount(portsObj);
         result = Tcl_ListObjGetElements(NULL, portsObj, &nrPorts, &objv);
         if (result != TCL_OK) {
-            Ns_Fatal("specified ports for %s invalid: %s", path, listString);
+            Ns_Fatal("specified ports for %s invalid: %s", section, listString);
         }
         for (i= 0; i < nrPorts; i++) {
             int portValue = 0;
@@ -1149,7 +1149,7 @@ PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
             if (result == TCL_OK) {
                 if (portValue > 65535 || portValue < 0) {
                     Ns_Fatal("specified ports for %s invalid: value %d out of range (0..65535)",
-                             path, portValue);
+                             section, portValue);
                 }
                 Ns_DListAppend(dlPtr, INT2PTR(portValue));
             }
@@ -1213,7 +1213,7 @@ PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
 static Ns_ReturnCode
 DriverInit(const char *server, const char *moduleName, const char *threadName,
            const Ns_DriverInitData *init,
-           NsServer *servPtr, const char *path,
+           NsServer *servPtr, const char *section,
            const char *bindaddrs, const char *defserver)
 {
     const char     *defproto;
@@ -1225,7 +1225,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 
     NS_NONNULL_ASSERT(threadName != NULL);
     NS_NONNULL_ASSERT(init != NULL);
-    NS_NONNULL_ASSERT(path != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(bindaddrs != NULL);
 
     /*
@@ -1286,36 +1286,36 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     }
     drvPtr->servPtr        = servPtr;
     drvPtr->defport        = defport;
-    drvPtr->path           = ns_strdup(path);
+    drvPtr->path           = ns_strdup(section);
 
-    drvPtr->bufsize        = (size_t)Ns_ConfigMemUnitRange(path, "bufsize", "16KB", 16384, 1024, INT_MAX);
-    drvPtr->maxinput       = Ns_ConfigMemUnitRange(path, "maxinput", "1MB", 1024*1024, 1024, LLONG_MAX);
-    drvPtr->maxupload      = Ns_ConfigMemUnitRange(path, "maxupload", "0MB", 0, 0, (Tcl_WideInt)drvPtr->maxinput);
-    drvPtr->readahead      = Ns_ConfigMemUnitRange(path, "readahead", NULL, (Tcl_WideInt)drvPtr->bufsize,
+    drvPtr->bufsize        = (size_t)Ns_ConfigMemUnitRange(section, "bufsize", "16KB", 16384, 1024, INT_MAX);
+    drvPtr->maxinput       = Ns_ConfigMemUnitRange(section, "maxinput", "1MB", 1024*1024, 1024, LLONG_MAX);
+    drvPtr->maxupload      = Ns_ConfigMemUnitRange(section, "maxupload", "0MB", 0, 0, (Tcl_WideInt)drvPtr->maxinput);
+    drvPtr->readahead      = Ns_ConfigMemUnitRange(section, "readahead", NULL, (Tcl_WideInt)drvPtr->bufsize,
                                                    (Tcl_WideInt)drvPtr->bufsize, drvPtr->maxinput);
 
-    drvPtr->maxline        = (int)Ns_ConfigMemUnitRange(path, "maxline", "8KB", 8192, 512, INT_MAX);
-    drvPtr->maxheaders     = Ns_ConfigIntRange(path, "maxheaders",    128,   8, INT_MAX);
-    drvPtr->maxqueuesize   = Ns_ConfigIntRange(path, "maxqueuesize", 1024,   1, INT_MAX);
+    drvPtr->maxline        = (int)Ns_ConfigMemUnitRange(section, "maxline", "8KB", 8192, 512, INT_MAX);
+    drvPtr->maxheaders     = Ns_ConfigIntRange(section, "maxheaders",    128,   8, INT_MAX);
+    drvPtr->maxqueuesize   = Ns_ConfigIntRange(section, "maxqueuesize", 1024,   1, INT_MAX);
 
-    Ns_ConfigTimeUnitRange(path, "sendwait",
+    Ns_ConfigTimeUnitRange(section, "sendwait",
                            "30s", 1, 0, INT_MAX, 0, &drvPtr->sendwait);
-    Ns_ConfigTimeUnitRange(path, "recvwait",
+    Ns_ConfigTimeUnitRange(section, "recvwait",
                            "30s", 1, 0, INT_MAX, 0, &drvPtr->recvwait);
-    Ns_ConfigTimeUnitRange(path, "closewait",
+    Ns_ConfigTimeUnitRange(section, "closewait",
                            "2s", 0, 0, INT_MAX, 0, &drvPtr->closewait);
-    Ns_ConfigTimeUnitRange(path, "keepwait",
+    Ns_ConfigTimeUnitRange(section, "keepwait",
                            "5s", 0, 0, INT_MAX, 0, &drvPtr->keepwait);
 
-    drvPtr->backlog        = Ns_ConfigIntRange(path, "backlog",         nsconf.listenbacklog, 1, INT_MAX);
-    drvPtr->driverthreads  = Ns_ConfigIntRange(path, "driverthreads",   1,   1, 32);
-    drvPtr->reuseport      = Ns_ConfigBool(path,     "reuseport",       NS_FALSE);
-    drvPtr->acceptsize     = Ns_ConfigIntRange(path, "acceptsize",      drvPtr->backlog, 1, INT_MAX);
-    drvPtr->sockacceptlog  = Ns_ConfigIntRange(path, "sockacceptlog",   nsconf.sockacceptlog, 2, drvPtr->backlog);
+    drvPtr->backlog        = Ns_ConfigIntRange(section, "backlog",         nsconf.listenbacklog, 1, INT_MAX);
+    drvPtr->driverthreads  = Ns_ConfigIntRange(section, "driverthreads",   1,   1, 32);
+    drvPtr->reuseport      = Ns_ConfigBool(section,     "reuseport",       NS_FALSE);
+    drvPtr->acceptsize     = Ns_ConfigIntRange(section, "acceptsize",      drvPtr->backlog, 1, INT_MAX);
+    drvPtr->sockacceptlog  = Ns_ConfigIntRange(section, "sockacceptlog",   nsconf.sockacceptlog, 2, drvPtr->backlog);
 
-    drvPtr->keepmaxuploadsize   = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxuploadsize",
+    drvPtr->keepmaxuploadsize   = (size_t)Ns_ConfigMemUnitRange(section, "keepalivemaxuploadsize",
                                                                 "0MB", 0, 0, INT_MAX);
-    drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxdownloadsize",
+    drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigMemUnitRange(section, "keepalivemaxdownloadsize",
                                                                 "0MB", 0, 0, INT_MAX);
     drvPtr->recvTimeout = drvPtr->recvwait;
 
@@ -1343,12 +1343,12 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 #if !defined(SO_REUSEPORT)
         Ns_Log(Warning,
                "parameter %s reuseport was specified, but is not supported by the operating system",
-               path);
+               section);
         drvPtr->reuseport = NS_FALSE;
 #endif
     }
 
-    drvPtr->uploadpath = ns_strcopy(Ns_ConfigString(path, "uploadpath", nsconf.tmpDir));
+    drvPtr->uploadpath = ns_strcopy(Ns_ConfigString(section, "uploadpath", nsconf.tmpDir));
 
     /*
      * If activated, "maxupload" has to be at least "readahead" bytes. Tell
@@ -1360,7 +1360,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                "parameter %s maxupload % " TCL_LL_MODIFIER
                "d invalid; can be either 0 or must be >= %" TCL_LL_MODIFIER
                "d (size of readahead)",
-               path, drvPtr->maxupload, drvPtr->readahead);
+               section, drvPtr->maxupload, drvPtr->readahead);
         drvPtr->maxupload = drvPtr->readahead;
     }
 
@@ -1376,7 +1376,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      * Get list of ports and keep the first port extra in drvPtr->port for the
      * time being.
      */
-    i = (int)PortsParse(&drvPtr->ports, Ns_ConfigGetValue(path, "port"), path);
+    i = (int)PortsParse(&drvPtr->ports, Ns_ConfigGetValue(section, "port"), section);
     if (i == 0) {
         Ns_DListAppend(&drvPtr->ports, INT2PTR(defport));
     }
@@ -1385,7 +1385,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     /*
      * Get the configured "location" value.
      */
-    drvPtr->location = Ns_ConfigGetValue(path, "location");
+    drvPtr->location = Ns_ConfigGetValue(section, "location");
     if (drvPtr->location != NULL && (strstr(drvPtr->location, "://") != NULL)) {
         drvPtr->location = ns_strdup(drvPtr->location);
     }
@@ -1393,13 +1393,13 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     /*
      * Add driver specific extra headers.
      */
-    drvPtr->extraHeaders = Ns_ConfigSet(path, "extraheaders", NULL);
+    drvPtr->extraHeaders = Ns_ConfigSet(section, "extraheaders", NULL);
 
     /*
      * Check if upload spooler threads are enabled.
      */
     spPtr = &drvPtr->spooler;
-    spPtr->threads = Ns_ConfigIntRange(path, "spoolerthreads", 0, 0, 32);
+    spPtr->threads = Ns_ConfigIntRange(section, "spoolerthreads", 0, 0, 32);
 
     if (spPtr->threads > 0) {
         Ns_Log(Notice, "%s: enable %d spooler thread(s) "
@@ -1426,15 +1426,15 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      */
 
     wrPtr = &drvPtr->writer;
-    wrPtr->threads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
+    wrPtr->threads = Ns_ConfigIntRange(section, "writerthreads", 0, 0, 32);
 
     if (wrPtr->threads > 0) {
-        wrPtr->writersize = (size_t)Ns_ConfigMemUnitRange(path, "writersize", "1MB",
+        wrPtr->writersize = (size_t)Ns_ConfigMemUnitRange(section, "writersize", "1MB",
                                                           1024*1024, 1024, INT_MAX);
-        wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(path, "writerbufsize", "8KB",
+        wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(section, "writerbufsize", "8KB",
                                                    8192, 512, INT_MAX);
-        wrPtr->rateLimit = Ns_ConfigIntRange(path, "writerratelimit", 0, 0, INT_MAX);
-        wrPtr->doStream = Ns_ConfigBool(path, "writerstreaming", NS_FALSE)
+        wrPtr->rateLimit = Ns_ConfigIntRange(section, "writerratelimit", 0, 0, INT_MAX);
+        wrPtr->doStream = Ns_ConfigBool(section, "writerstreaming", NS_FALSE)
             ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE;
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
                "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
@@ -5281,14 +5281,14 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
     mapPtr = DriverLookupHost(hostDs, NULL, driver);
 
     if (mapPtr == NULL && hostName != NULL) {
-        const char *vhostcertificates, *path = driver->path;
+        const char *vhostcertificates, *section = driver->path;
 
         /*
          * Try to get from the driver the value of the configuration variable
          * "vhostcertificates".
          */
-        vhostcertificates = Ns_ConfigGetValue(path, "vhostcertificates");
-        Ns_Log(Debug, "SSL_serverNameCB %s/vhostcertificates -> '%s'", path, vhostcertificates);
+        vhostcertificates = Ns_ConfigGetValue(section, "vhostcertificates");
+        Ns_Log(Debug, "SSL_serverNameCB %s/vhostcertificates -> '%s'", section, vhostcertificates);
 
         if (vhostcertificates != NULL) {
             Tcl_DString dsFileName, *dsPtr = &dsFileName;
@@ -5308,7 +5308,7 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
                 Ns_Log(Notice, "SSL_serverNameCB pem file does not exist: '%s'", dsPtr->string);
             } else if (servPtr == NULL) {
                 Ns_Log(Notice, "SSL_serverNameCB driver %s has no configured defaultserver,"
-                       " ignoring vhostcertificates", path);
+                       " ignoring vhostcertificates", section);
             } else {
                 NS_TLS_SSL_CTX *ctx = NULL;
                 int             result;
@@ -5317,10 +5317,10 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
 
                 result = Ns_TLS_CtxServerCreate(NULL, dsPtr->string,
                                                 NULL /*caFile*/, NULL /*caPath*/,
-                                                Ns_ConfigBool(path, "verify", 0),
-                                                Ns_ConfigGetValue(path, "ciphers"),
-                                                Ns_ConfigGetValue(path, "ciphersuites"),
-                                                Ns_ConfigGetValue(path, "protocols"),
+                                                Ns_ConfigBool(section, "verify", 0),
+                                                Ns_ConfigGetValue(section, "ciphers"),
+                                                Ns_ConfigGetValue(section, "ciphersuites"),
+                                                Ns_ConfigGetValue(section, "protocols"),
                                                 &ctx);
                 Ns_Log(Debug, "SSL_serverNameCB load cert -> ctx %p'", (void*)ctx);
 

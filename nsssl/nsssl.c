@@ -78,15 +78,15 @@ Ns_ModuleInit(const char *server, const char *module)
 {
     Tcl_DString        ds;
     int                num, result;
-    const char        *path, *vhostcertificates;
+    const char        *section, *vhostcertificates;
     NsSSLConfig       *drvCfgPtr;
     Ns_DriverInitData  init;
 
     memset(&init, 0, sizeof(init));
     Tcl_DStringInit(&ds);
 
-    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
-    drvCfgPtr = NsSSLConfigNew(path);
+    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    drvCfgPtr = NsSSLConfigNew(section);
 
     init.version = NS_DRIVER_VERSION_5;
     init.name = "nsssl";
@@ -102,7 +102,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.clientInitProc = ClientInit;
     init.opts = NS_DRIVER_SSL|NS_DRIVER_ASYNC;
     init.arg = drvCfgPtr;
-    init.path = path;
+    init.path = section;
     init.protocol = "https";
     init.defaultPort = 443;
 #ifdef OPENSSL_VERSION_TEXT
@@ -115,7 +115,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * In case "vhostcertificates" was specified in the configuration file,
      * and it is valid, activate NS_DRIVER_SNI.
      */
-    vhostcertificates = Ns_ConfigGetValue(path, "vhostcertificates");
+    vhostcertificates = Ns_ConfigGetValue(section, "vhostcertificates");
     if (vhostcertificates != NULL && *vhostcertificates != '\0') {
         struct stat st;
 
@@ -156,9 +156,9 @@ Ns_ModuleInit(const char *server, const char *module)
 #endif
     Ns_Log(Notice, "nsssl: OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
 
-    result = Ns_TLS_CtxServerInit(path, NULL, NS_DRIVER_SNI, drvCfgPtr, &drvCfgPtr->ctx);
+    result = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, drvCfgPtr, &drvCfgPtr->ctx);
     if (result != TCL_OK) {
-        Ns_Log(Error, "nsssl: could not initialize OpenSSL context (section %s): %s", path, strerror(errno));
+        Ns_Log(Error, "nsssl: could not initialize OpenSSL context (section %s): %s", section, strerror(errno));
         return NS_ERROR;
     }
 

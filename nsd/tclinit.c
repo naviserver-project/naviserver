@@ -270,18 +270,18 @@ ConfigServerTcl(const char *server)
 
     } else {
         Ns_DString  ds;
-        const char *path, *p, *initFileString;
+        const char *section, *p, *initFileString;
         TCL_SIZE_T  n;
         Ns_Set     *set = NULL;
         bool        initFileStringCopied = NS_FALSE;
 
         Ns_ThreadSetName("-main:%s-", server);
 
-        path = Ns_ConfigSectionPath(&set, server, NULL, "tcl", (char *)0L);
+        section = Ns_ConfigSectionPath(&set, server, NULL, "tcl", (char *)0L);
 
         Ns_DStringInit(&ds);
 
-        servPtr->tcl.library = ns_strcopy(Ns_ConfigString(path, "library", "modules/tcl"));
+        servPtr->tcl.library = ns_strcopy(Ns_ConfigString(section, "library", "modules/tcl"));
         if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
             Ns_HomePath(&ds, servPtr->tcl.library, (char *)0L);
             n = ds.length;
@@ -290,7 +290,7 @@ ConfigServerTcl(const char *server)
             Ns_SetIUpdateSz(set, "library", 7, servPtr->tcl.library, n);
         }
 
-        initFileString = ns_strcopy(Ns_ConfigString(path, "initfile", "bin/init.tcl"));
+        initFileString = ns_strcopy(Ns_ConfigString(section, "initfile", "bin/init.tcl"));
         if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
             Ns_HomePath(&ds, initFileString, (char *)0L);
             ns_free((void*)initFileString);
@@ -322,15 +322,15 @@ ConfigServerTcl(const char *server)
         Tcl_InitHashTable(&servPtr->tcl.synch.condTable, TCL_STRING_KEYS);
         Tcl_InitHashTable(&servPtr->tcl.synch.rwTable, TCL_STRING_KEYS);
 
-        servPtr->nsv.rwlocks = Ns_ConfigBool(path, "nsvrwlocks", NS_TRUE);
-        servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
+        servPtr->nsv.rwlocks = Ns_ConfigBool(section, "nsvrwlocks", NS_TRUE);
+        servPtr->nsv.nbuckets = Ns_ConfigIntRange(section, "nsvbuckets", 8, 1, INT_MAX);
         servPtr->nsv.buckets = NsTclCreateBuckets(servPtr, servPtr->nsv.nbuckets);
 
         /*
          * Initialize the list of connection headers to log for Tcl errors.
          */
 
-        p = Ns_ConfigGetValue(path, "errorlogheaders");
+        p = Ns_ConfigGetValue(section, "errorlogheaders");
         if (p != NULL
             && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
             Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);

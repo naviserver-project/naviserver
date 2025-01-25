@@ -108,7 +108,7 @@ static bool IsStale(const Handle *handlePtr, time_t now)
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode Connect(Handle *handlePtr)
     NS_GNUC_NONNULL(1);
-static Pool *CreatePool(const char *pool, const char *path, const char *driver)
+static Pool *CreatePool(const char *pool, const char *section, const char *driver)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int IncrCount(const char *context, const Pool *poolPtr, int incr)
     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
@@ -622,7 +622,6 @@ NsDbInitPools(void)
 {
     const Pool   *poolPtr;
     const Ns_Set *pools;
-    const char   *path, *driver;
     int           isNew;
     size_t        i;
 
@@ -645,7 +644,7 @@ NsDbInitPools(void)
     pools = Ns_ConfigGetSection("ns/db/pools");
 
     for (i = 0u; (pools != NULL) && (i < Ns_SetSize(pools)); ++i) {
-        const char    *pool = Ns_SetKey(pools, i);
+        const char    *section, *driver, *pool = Ns_SetKey(pools, i);
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
 
         Ns_Log(Ns_LogSqlDebug, "nsdb: Add DB pool: %s", pool);
@@ -653,9 +652,9 @@ NsDbInitPools(void)
             Ns_Log(Error, "dbinit: duplicate pool: %s", pool);
             continue;
         }
-        path = Ns_ConfigSectionPath(NULL, NULL, NULL, "db", "pool", pool, (char *)0L);
-        driver = Ns_ConfigGetValue(path, "driver");
-        poolPtr = CreatePool(pool, path, driver);
+        section = Ns_ConfigSectionPath(NULL, NULL, NULL, "db", "pool", pool, (char *)0L);
+        driver = Ns_ConfigGetValue(section, "driver");
+        poolPtr = CreatePool(pool, section, driver);
         if (poolPtr == NULL) {
             Tcl_DeleteHashEntry(hPtr);
         } else {
@@ -823,11 +822,11 @@ NsDbInitServer(const char *server)
     ServData       *sdataPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    const char     *path, *pool;
+    const char     *section, *pool;
     Ns_DString      ds;
     int             isNew;
 
-    path = Ns_ConfigSectionPath(NULL, server, NULL, "db", (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, NULL, "db", (char *)0L);
 
     /*
      * Verify the default pool exists, if any.
@@ -836,7 +835,7 @@ NsDbInitServer(const char *server)
     sdataPtr = ns_malloc(sizeof(ServData));
     hPtr = Tcl_CreateHashEntry(&serversTable, server, &isNew);
     Tcl_SetHashValue(hPtr, sdataPtr);
-    sdataPtr->defpool = Ns_ConfigGetValue(path, "defaultpool");
+    sdataPtr->defpool = Ns_ConfigGetValue(section, "defaultpool");
     if (sdataPtr->defpool != NULL &&
         (Tcl_FindHashEntry(&poolsTable, sdataPtr->defpool) == NULL)) {
         Ns_Log(Error, "dbinit: no such default pool '%s'", sdataPtr->defpool);
@@ -848,7 +847,7 @@ NsDbInitServer(const char *server)
      */
 
     sdataPtr->allowed = NS_EMPTY_STRING;
-    pool = ns_strdup(Ns_ConfigGetValue(path, "pools"));
+    pool = ns_strdup(Ns_ConfigGetValue(section, "pools"));
     if (pool != NULL && poolsTable.numEntries > 0) {
         const Pool *poolPtr;
         char       *allowed;
@@ -1341,15 +1340,15 @@ CheckPool(void *arg, int UNUSED(id))
  *----------------------------------------------------------------------
  */
 
-static Pool  *
-CreatePool(const char *pool, const char *path, const char *driver)
+static Pool *
+CreatePool(const char *pool, const char *section, const char *driver)
 {
     Pool            *poolPtr;
     struct DbDriver *driverPtr;
     Ns_Time          checkinterval;
 
     NS_NONNULL_ASSERT(pool != NULL);
-    NS_NONNULL_ASSERT(path != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
 
     if (driver == NULL) {
         Ns_Log(Error, "dbinit: no driver for pool '%s'", pool);
@@ -1368,7 +1367,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
         /*
          * Load the configured values.
          */
-        source = Ns_ConfigGetValue(path, "datasource");
+        source = Ns_ConfigGetValue(section, "datasource");
         if (source == NULL) {
             Ns_Log(Error, "dbinit: missing datasource for pool '%s'", pool);
             return NULL;
@@ -1385,16 +1384,16 @@ CreatePool(const char *pool, const char *path, const char *driver)
         Ns_CondInit(&poolPtr->getCond);
         poolPtr->source = ns_strcopy(source);
         poolPtr->name = ns_strcopy(pool);
-        poolPtr->user = ns_strcopy(Ns_ConfigGetValue(path, "user"));
-        poolPtr->pass = ns_strcopy(Ns_ConfigGetValue(path, "password"));
+        poolPtr->user = ns_strcopy(Ns_ConfigGetValue(section, "user"));
+        poolPtr->pass = ns_strcopy(Ns_ConfigGetValue(section, "password"));
         poolPtr->desc = ns_strcopy(Ns_ConfigGetValue("ns/db/pools", pool));
         poolPtr->stale_on_close = 0;
-        poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
-        poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
+        poolPtr->fVerboseError = Ns_ConfigBool(section, "logsqlerrors", NS_FALSE);
+        poolPtr->nhandles = Ns_ConfigIntRange(section, "connections", 2, 0, INT_MAX);
 
-        Ns_ConfigTimeUnitRange(path, "maxidle",
+        Ns_ConfigTimeUnitRange(section, "maxidle",
                                "5m", 0, 0, INT_MAX, 0, &poolPtr->maxidle);
-        Ns_ConfigTimeUnitRange(path, "maxopen",
+        Ns_ConfigTimeUnitRange(section, "maxopen",
                                "60m", 0, 0, INT_MAX, 0, &poolPtr->maxopen);
         if (poolPtr->maxidle.usec != 0) {
             Ns_Log(Warning, "maxidle is implemented based on seconds granularity. "
@@ -1405,7 +1404,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
                    "Fractions of seconds are ignored");
         }
 
-        Ns_ConfigTimeUnitRange(path, "logminduration",
+        Ns_ConfigTimeUnitRange(section, "logminduration",
                                "0ms", 0, 0, INT_MAX, 0, &poolPtr->minDuration);
         if (poolPtr->minDuration.sec != 0 || poolPtr->minDuration.usec != 0) {
             Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s to " NS_TIME_FMT,
@@ -1454,7 +1453,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
             ReturnHandle(handlePtr);
         }
 
-        Ns_ConfigTimeUnitRange(path, "checkinterval",
+        Ns_ConfigTimeUnitRange(section, "checkinterval",
                                "5m", 1, 0, INT_MAX, 0, &checkinterval);
 
         (void) Ns_ScheduleProcEx(CheckPool, poolPtr, 0, &checkinterval, NULL);

@@ -432,7 +432,6 @@ NsConfigLog(void)
 
     maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);
 
-    fprintf(stderr, "LOGDIR NsConfigLog ================== <%s>\n", nsconf.logDir);
     if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
         Ns_Fatal("system log: log directory '%s' could not be created", nsconf.logDir);
     }

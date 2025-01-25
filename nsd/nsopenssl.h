@@ -86,7 +86,7 @@ typedef struct NsSSLConfig {
     DH       *dhKey2048;    /* Fallback Diffie Hellman keys of length 2048 */
 } NsSSLConfig;
 
-NS_EXTERN NsSSLConfig *NsSSLConfigNew(const char *path)
+NS_EXTERN NsSSLConfig *NsSSLConfigNew(const char *section)
    NS_GNUC_NONNULL(1);
 
 #endif

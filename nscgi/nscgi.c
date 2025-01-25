@@ -201,7 +201,7 @@ AddCmds(Tcl_Interp *interp, const void *arg)
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    const char     *path, *section;
+    const char     *section, *subSection;
     size_t          i;
     const Ns_Set   *set;
     Ns_DString      ds;
@@ -234,16 +234,16 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Config basic options.
      */
-    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
     modPtr = ns_calloc(1u, sizeof(Mod));
     modPtr->module = module;
     modPtr->server = server;
     Ns_MutexInit(&modPtr->lock);
     Ns_MutexSetName2(&modPtr->lock, "nscgi", server);
-    modPtr->maxInput = (int)Ns_ConfigMemUnitRange(path, "maxinput", "1MB", 1024*1024, 0, LLONG_MAX);
-    modPtr->maxCgi = Ns_ConfigInt(path, "limit", 0);
-    modPtr->maxWait = Ns_ConfigInt(path, "maxwait", 30);
-    if (Ns_ConfigBool(path, "gethostbyaddr", NS_FALSE)) {
+    modPtr->maxInput = (int)Ns_ConfigMemUnitRange(section, "maxinput", "1MB", 1024*1024, 0, LLONG_MAX);
+    modPtr->maxCgi = Ns_ConfigInt(section, "limit", 0);
+    modPtr->maxWait = Ns_ConfigInt(section, "maxwait", 30);
+    if (Ns_ConfigBool(section, "gethostbyaddr", NS_FALSE)) {
         modPtr->flags |= CGI_GETHOST;
     }
 
@@ -251,9 +251,9 @@ Ns_ModuleInit(const char *server, const char *module)
      * Configure the various interp and env options.
      */
     Ns_DStringInit(&ds);
-    section = Ns_ConfigGetValue(path, "interps");
-    if (section != NULL) {
-        Ns_DStringVarAppend(&ds, "ns/interps/", section, (char *)0L);
+    subSection = Ns_ConfigGetValue(section, "interps");
+    if (subSection != NULL) {
+        Ns_DStringVarAppend(&ds, "ns/interps/", subSection, (char *)0L);
         modPtr->interps = Ns_ConfigGetSection(ds.string);
         if (modPtr->interps == NULL) {
             Ns_Log(Warning, "nscgi: no such interps section: %s",
@@ -261,9 +261,9 @@ Ns_ModuleInit(const char *server, const char *module)
         }
         Ns_DStringSetLength(&ds, 0);
     }
-    section = Ns_ConfigGetValue(path, "environment");
-    if (section != NULL) {
-        Ns_DStringVarAppend(&ds, "ns/environment/", section, (char *)0L);
+    subSection = Ns_ConfigGetValue(section, "environment");
+    if (subSection != NULL) {
+        Ns_DStringVarAppend(&ds, "ns/environment/", subSection, (char *)0L);
         modPtr->mergeEnv = Ns_ConfigGetSection(ds.string);
         if (modPtr->mergeEnv == NULL) {
             Ns_Log(Warning, "nscgi: no such environment section: %s",
@@ -271,17 +271,17 @@ Ns_ModuleInit(const char *server, const char *module)
         }
         Ns_DStringSetLength(&ds, 0);
     }
-    if (Ns_ConfigBool(path, "systemenvironment", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "systemenvironment", NS_FALSE)) {
         modPtr->flags |= CGI_SYSENV;
     }
-    if (Ns_ConfigBool(path, "allowstaticresources", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "allowstaticresources", NS_FALSE)) {
         modPtr->flags |= CGI_ALLOW_STATIC;
     }
 
     /*
      * Register all requested mappings.
      */
-    set = Ns_ConfigGetSection(path);
+    set = Ns_ConfigGetSection(section);
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         const char *key   = Ns_SetKey(set, i);
 

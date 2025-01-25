@@ -251,16 +251,16 @@ ConfigServerEncodings(const char *server)
         result = NS_ERROR;
 
     } else {
-        const char *path;
+        const char *section;
 
         /*
          * Configure the encoding used in the request URL.
          */
 
-        path = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
+        section = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
 
         servPtr->encoding.urlCharset =
-            ns_strcopy(Ns_ConfigString(path, "urlcharset", "utf-8"));
+            ns_strcopy(Ns_ConfigString(section, "urlcharset", "utf-8"));
 
         servPtr->encoding.urlEncoding =
             Ns_GetCharsetEncoding(servPtr->encoding.urlCharset);
@@ -270,7 +270,7 @@ ConfigServerEncodings(const char *server)
                    servPtr->encoding.urlCharset);
         }
         servPtr->encoding.formFallbackCharset =
-            ns_strcopy(Ns_ConfigString(path, "formfallbackcharset", NULL));
+            ns_strcopy(Ns_ConfigString(section, "formfallbackcharset", NULL));
         if (servPtr->encoding.formFallbackCharset != NULL
             && *servPtr->encoding.formFallbackCharset == '\0') {
             servPtr->encoding.formFallbackCharset  = NULL;
@@ -281,7 +281,7 @@ ConfigServerEncodings(const char *server)
          */
 
         servPtr->encoding.outputCharset =
-            ns_strcopy(Ns_ConfigString(path, "outputcharset", "utf-8"));
+            ns_strcopy(Ns_ConfigString(section, "outputcharset", "utf-8"));
 
         servPtr->encoding.outputEncoding =
             Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);

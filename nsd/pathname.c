@@ -103,28 +103,28 @@ ConfigServerVhost(const char *server)
 
     } else {
         Ns_DString  ds;
-        const char *path;
+        const char *section;
 
         assert(servPtr->fastpath.pagedir != NULL);
 
-        path = Ns_ConfigGetPath(server, NULL, "vhost", (char *)0L);
+        section = Ns_ConfigGetPath(server, NULL, "vhost", (char *)0L);
 
-        servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
+        servPtr->vhost.enabled = Ns_ConfigBool(section, "enabled", NS_FALSE);
         if (servPtr->vhost.enabled
             && Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
             Ns_Log(Error, "vhost[%s]: disabled, pagedir not relative: %s",
                    server, servPtr->fastpath.pagedir);
             servPtr->vhost.enabled = NS_FALSE;
         }
-        if (Ns_ConfigBool(path, "stripwww", NS_TRUE)) {
+        if (Ns_ConfigBool(section, "stripwww", NS_TRUE)) {
             servPtr->vhost.opts |= NSD_STRIP_WWW;
         }
-        if (Ns_ConfigBool(path, "stripport", NS_TRUE)) {
+        if (Ns_ConfigBool(section, "stripport", NS_TRUE)) {
             servPtr->vhost.opts |= NSD_STRIP_PORT;
         }
-        servPtr->vhost.hostprefix = ns_strcopy(Ns_ConfigString(path, "hostprefix", NULL));
+        servPtr->vhost.hostprefix = ns_strcopy(Ns_ConfigString(section, "hostprefix", NULL));
         servPtr->vhost.hosthashlevel =
-            Ns_ConfigIntRange(path, "hosthashlevel", 0, 0, 5);
+            Ns_ConfigIntRange(section, "hosthashlevel", 0, 0, 5);
 
         if (servPtr->vhost.enabled) {
             Ns_DStringInit(&ds);

@@ -110,20 +110,20 @@ static bool      useBrotliRefresh = NS_FALSE; /* Update outdated brotli files au
 void
 NsConfigFastpath(void)
 {
-    const char *path;
+    const char *section;
 
-    path    = Ns_ConfigSectionPath(NULL, NULL, NULL, "fastpath", (char *)0L);
-    useMmap = Ns_ConfigBool(path, "mmap", NS_FALSE);
-    useGzip = Ns_ConfigBool(path, "gzip_static", NS_FALSE);
-    useGzipRefresh = Ns_ConfigBool(path, "gzip_refresh", NS_FALSE);
-    useBrotli = Ns_ConfigBool(path, "brotli_static", NS_FALSE);
-    useBrotliRefresh = Ns_ConfigBool(path, "brotli_refresh", NS_FALSE);
+    section = Ns_ConfigSectionPath(NULL, NULL, NULL, "fastpath", (char *)0L);
+    useMmap = Ns_ConfigBool(section, "mmap", NS_FALSE);
+    useGzip = Ns_ConfigBool(section, "gzip_static", NS_FALSE);
+    useGzipRefresh = Ns_ConfigBool(section, "gzip_refresh", NS_FALSE);
+    useBrotli = Ns_ConfigBool(section, "brotli_static", NS_FALSE);
+    useBrotliRefresh = Ns_ConfigBool(section, "brotli_refresh", NS_FALSE);
 
-    if (Ns_ConfigBool(path, "cache", NS_FALSE)) {
-        size_t size = (size_t)Ns_ConfigMemUnitRange(path, "cachemaxsize", "10MB",
+    if (Ns_ConfigBool(section, "cache", NS_FALSE)) {
+        size_t size = (size_t)Ns_ConfigMemUnitRange(section, "cachemaxsize", "10MB",
                                                     1024*10000, 1024, INT_MAX);
         cache = Ns_CacheCreateSz("ns:fastpath", TCL_STRING_KEYS, size, FreeEntry);
-        maxentry = (int)Ns_ConfigMemUnitRange(path, "cachemaxentry", "8KB", 8192, 8, INT_MAX);
+        maxentry = (int)Ns_ConfigMemUnitRange(section, "cachemaxentry", "8KB", 8192, 8, INT_MAX);
     }
     /*
      * Register the fastpath initialization for every server.
@@ -211,12 +211,12 @@ ConfigServerFastpath(const char *server)
 
     } else {
         Ns_DString  ds;
-        const char *path, *p;
+        const char *section, *p;
 
-        path = Ns_ConfigSectionPath(NULL, server, NULL, "fastpath", (char *)0L);
+        section = Ns_ConfigSectionPath(NULL, server, NULL, "fastpath", (char *)0L);
         Ns_DStringInit(&ds);
 
-        p = Ns_ConfigString(path, "directoryfile", "index.adp index.tcl index.html index.htm");
+        p = Ns_ConfigString(section, "directoryfile", "index.adp index.tcl index.html index.htm");
         if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,
                                        &servPtr->fastpath.dirv) != TCL_OK) {
             Ns_Log(Error, "fastpath[%s]: directoryfile is not a list: %s", server, p);
@@ -227,7 +227,7 @@ ConfigServerFastpath(const char *server)
          */
 
         servPtr->fastpath.serverdir =
-            ns_strcopy(Ns_ConfigString(path, "serverdir", NS_EMPTY_STRING));
+            ns_strcopy(Ns_ConfigString(section, "serverdir", NS_EMPTY_STRING));
 
         if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
             (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0L);
@@ -241,7 +241,7 @@ ConfigServerFastpath(const char *server)
          * "pageroot" always points to the absolute path, while "pagedir"
          * might contain the relative path (or is the same as "pageroot").
          */
-        servPtr->fastpath.pagedir = ns_strcopy(Ns_ConfigString(path, "pagedir", "pages"));
+        servPtr->fastpath.pagedir = ns_strcopy(Ns_ConfigString(section, "pagedir", "pages"));
         if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
             servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
             NormalizePath(&servPtr->fastpath.pageroot);
@@ -251,8 +251,8 @@ ConfigServerFastpath(const char *server)
             servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
         }
 
-        servPtr->fastpath.dirproc = ns_strcopy(Ns_ConfigString(path, "directoryproc", "_ns_dirlist"));
-        servPtr->fastpath.diradp  = ns_strcopy(Ns_ConfigString(path, "directoryadp", NULL));
+        servPtr->fastpath.dirproc = ns_strcopy(Ns_ConfigString(section, "directoryproc", "_ns_dirlist"));
+        servPtr->fastpath.diradp  = ns_strcopy(Ns_ConfigString(section, "directoryadp", NULL));
 
         Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0u);
         Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0u);
