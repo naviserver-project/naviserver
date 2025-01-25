@@ -281,8 +281,10 @@ body data from memory or from a named file.
 specifies for HTTPS requests a PEM file containing certificates to
 validate the peer server (unless the option [option -insecure] is used). All
 certificates in this file are trusted.  Typically, the file
-is named [term ca-bundle.crt] and contains the top-level certificates.
-The default for this parameter can be specified in the [sectref {CONFIGURATION}] file.
+has the name [term ca-bundle.crt] and contains the top-level certificates.
+When the specified filename is not on an absolute location, the file is
+assumed to be in the home directory of NaviServer. The default value
+is [term ca-bundle.crt], but can be altered in the [sectref {CONFIGURATION}] file.
 For more details, see
 [uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/ "SSL_CTX_load_verify_locations"]
 from the OpenSSL documentation.
@@ -292,8 +294,9 @@ specifies for HTTPS requests a directory containing trusted certificates
 to validate the peer server (unless the option
 [option -insecure] is used).
 Each file in this directory must be in PEM format and must contain
-exactly one certificate.
-The default for this parameter can be specified in the [sectref {CONFIGURATION}] file.
+exactly one certificate. When the specified directory is not an
+absolute path, it is assumed to be in the home directory of NaviServer.
+The default value is [term cerificates], but can be altered in the [sectref {CONFIGURATION}] file.
 For more details, see
 [uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/ "SSL_CTX_load_verify_locations"]
 from the OpenSSL documentation.
@@ -658,15 +661,15 @@ client requests.
  
     #
     # Security configuration:
-    # - Default locations for certificate validation in ns_http or
-    #   ns_connchan requests.
+    # - Default locations for certificate validation in "ns_http" or
+    #   "ns_connchan" requests.
     # - Optionally deactivate peer server certificate validation.
     #   Setting "insecure" to true allows man-in-the-middle attacks.
     # These security configuration parameters can be overridden by per
     # request via parameters.
     #
-    ns_param CApath certificates   ;# default: $home/certificates/
-    ns_param CAfile ca-bundle.crt  ;# default: $home/ca-bundle.crt
+    ns_param CAfile ca-bundle.crt          ;# default: [lb]ns_info home[rb]/ca-bundle.crt
+    ns_param CApath certificates           ;# default: [lb]ns_info home[rb]/certificates/
  
     # ns_param insecure true               ;# default: false
  
@@ -674,7 +677,7 @@ client requests.
     # Configure log file for outgoing ns_http requests
     #
     ns_param     logging          on       ;# default: off
-    ns_param     logfile          ${logroot}/httpclient.log
+    ns_param     logfile          httpclient.log ;# default: [lb]ns_info home[rb]/logs/httpclient.log
     ns_param     logrollfmt       %Y-%m-%d ;# format appended to log filename
     #ns_param    logmaxbackup     100      ;# 10, max number of backup log files
     #ns_param    logroll          true     ;# true, should server log files automatically
@@ -686,6 +689,6 @@ client requests.
 
 [see_also ns_httptime ns_connchan ns_time ns_set ns_urlencode nslog]
 [keywords "global built-in" HTTP-client HTTP HTTPS nssock \
-        spooling SNI configuration nslog TLS certificate PEM]
+        logging spooling SNI configuration nslog TLS certificate PEM]
 
 [manpage_end]
