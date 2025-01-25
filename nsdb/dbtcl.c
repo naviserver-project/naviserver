@@ -592,7 +592,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->cExceptionCode, TCL_INDEX_NONE));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->dsExceptionMsg.string, TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->dsExceptionMsg.string, handlePtr->dsExceptionMsg.length));
             Tcl_SetObjResult(interp, listObj);
         }
         break;
