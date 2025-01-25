@@ -566,44 +566,11 @@ LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
  *
  *----------------------------------------------------------------------
  */
-static const char *
-EnsureAbsolutePath(const char *parameterPath, const char* parameterName, TCL_SIZE_T parameterNameLength, const char *dir, const char* filename)
-{
-    const char *result;
-
-    if (Ns_PathIsAbsolute(filename)) {
-        result = ns_strdup(filename);
-    } else {
-        Ns_Set     *set;
-        Tcl_DString ds, *dsPtr = &ds;
-        TCL_SIZE_T  pathLength;
-
-        Tcl_DStringInit(dsPtr);
-
-        if (dir != NULL) {
-            Ns_MakePath(dsPtr, Ns_InfoHomePath(), dir, filename, (char *)0L);
-        } else {
-            Ns_MakePath(dsPtr, Ns_InfoHomePath(), filename, (char *)0L);
-        }
-
-        pathLength = dsPtr->length;
-
-        result = Ns_DStringExport(dsPtr);
-        /*
-         * The path was completed. Make the result queryable.
-         */
-        set = Ns_ConfigCreateSection(parameterPath);
-        Ns_SetIUpdateSz(set, parameterName, parameterNameLength, result, pathLength);
-    }
-    //fprintf(stderr, "================== %s %s: <%s>\n", parameterPath, parameterName, result);
-    return result;
-}
-
 
 void
 NsInitHttp(NsServer *servPtr)
 {
-    const char  *path;
+    const char  *section;
     struct stat  statInfo;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
@@ -614,14 +581,12 @@ NsInitHttp(NsServer *servPtr)
 
     NS_INIT_ONCE(InitOnceHttp);
 
-    path = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", (char *)0L);
-    Ns_ConfigTimeUnitRange(path, "keepalive",
+    section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", (char *)0L);
+    Ns_ConfigTimeUnitRange(section, "keepalive",
                            "0s", 0, 0, INT_MAX, 0, &servPtr->httpclient.keepaliveTimeout);
 
-    servPtr->httpclient.caFile = EnsureAbsolutePath(path, "cafile", 6, NULL,
-                                                    Ns_ConfigString(path, "cafile", "ca-bundle.crt"));
-    servPtr->httpclient.caPath = EnsureAbsolutePath(path, "caPath", 6, NULL,
-                                                    Ns_ConfigString(path, "capath", "certificates"));
+    servPtr->httpclient.caFile = Ns_ConfigFilename(section, "cafile", 6, nsconf.home, "ca-bundle.crt");
+    servPtr->httpclient.caPath = Ns_ConfigFilename(section, "caPath", 6, nsconf.home, "certificates");
 
     if (!Ns_Stat(servPtr->httpclient.caFile, &statInfo)) {
         Ns_Log(Warning, "NsInitHttp: caFile '%s' does not exist", servPtr->httpclient.caFile);
@@ -634,33 +599,33 @@ NsInitHttp(NsServer *servPtr)
            servPtr->httpclient.caPath,
            servPtr->httpclient.caFile);
 
-    servPtr->httpclient.insecure = Ns_ConfigBool(path, "insecure", NS_FALSE);
+    servPtr->httpclient.insecure = Ns_ConfigBool(section, "insecure", NS_FALSE);
     if (servPtr->httpclient.insecure) {
         Ns_Log(Warning, "\n=============================================================================\n"
                " Configuration sets HTTPS client requests are set per default to insecure !!!\n"
                " Section: %s\n"
-               "=============================================================================\n", path);
+               "=============================================================================\n", section);
     }
 
-    servPtr->httpclient.logging = Ns_ConfigBool(path, "logging", NS_FALSE);
+    servPtr->httpclient.logging = Ns_ConfigBool(section, "logging", NS_FALSE);
     if (servPtr->httpclient.logging) {
-        const char  *filename;
-        Tcl_DString  defaultLogFileName;
+        Tcl_DString defaultLogFileName;
 
-        Tcl_DStringInit(&defaultLogFileName);
-        filename = Ns_ConfigString(path, "logfile", NULL);
-        if (filename == NULL) {
-            Tcl_DStringAppend(&defaultLogFileName, "httpclient-", 11);
-            Tcl_DStringAppend(&defaultLogFileName, servPtr->server, TCL_INDEX_NONE);
-            Tcl_DStringAppend(&defaultLogFileName, ".log", 4);
-            filename = defaultLogFileName.string;
+        fprintf(stderr, "LOGDIR InitHTTP ================== <%s>\n", nsconf.logDir);
+        if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
+            Ns_Fatal("httpclient log: log directory '%s' could not be created", nsconf.logDir);
         }
 
-        servPtr->httpclient.logFileName = EnsureAbsolutePath(path, "logfile", 7, "logs", filename);
-
+        Tcl_DStringInit(&defaultLogFileName);
+        Tcl_DStringAppend(&defaultLogFileName, "httpclient-", 11);
+        Tcl_DStringAppend(&defaultLogFileName, servPtr->server, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&defaultLogFileName, ".log", 4);
+        servPtr->httpclient.logFileName = Ns_ConfigFilename(section, "logfile", 7, nsconf.logDir,
+                                                            defaultLogFileName.string);
         Tcl_DStringFree(&defaultLogFileName);
-        servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(path, "logrollfmt"));
-        servPtr->httpclient.logMaxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(path, "logmaxbackup",
+
+        servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(section, "logrollfmt"));
+        servPtr->httpclient.logMaxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup",
                                                                          100, 1, INT_MAX);
 
         HttpClientLogOpen(servPtr);
@@ -669,13 +634,13 @@ NsInitHttp(NsServer *servPtr)
          *  Schedule various log roll and shutdown options.
          */
 
-        if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
-            int hour = Ns_ConfigIntRange(path, "logrollhour", 0, 0, 23);
+        if (Ns_ConfigBool(section, "logroll", NS_TRUE)) {
+            int hour = Ns_ConfigIntRange(section, "logrollhour", 0, 0, 23);
 
             Ns_ScheduleDaily(SchedLogRollCallback, servPtr, 0u,
                              hour, 0, NULL);
         }
-        if (Ns_ConfigBool(path, "logrollonsignal", NS_FALSE)) {
+        if (Ns_ConfigBool(section, "logrollonsignal", NS_FALSE)) {
             Ns_RegisterAtSignal((Ns_Callback *)(ns_funcptr_t)SchedLogRollCallback, servPtr);
         }
 
@@ -2620,11 +2585,11 @@ HttpQueue(
     }
 
     if (result == TCL_OK && bodyFileName != NULL) {
-        struct stat bodyStat;
+        struct stat bodyFileStat;
 
-        if (Ns_Stat(bodyFileName, &bodyStat) == NS_TRUE) {
+        if (Ns_Stat(bodyFileName, &bodyFileStat) == NS_TRUE) {
             if (bodySize == 0) {
-                bodySize = (Tcl_WideInt)bodyStat.st_size;
+                bodySize = (Tcl_WideInt)bodyFileStat.st_size;
             }
         } else {
             Ns_TclPrintfResult(interp, "cannot stat: %s ", bodyFileName);

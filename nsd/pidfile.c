@@ -105,29 +105,16 @@ static Tcl_Obj *
 GetFile(void)
 {
     const char *file;
-    Tcl_Obj *path;
+    Tcl_Obj    *pathObj;
 
-    file = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "pidfile");
-    if (file == NULL) {
-        Ns_DString ds;
-        Ns_Set *set;
-
-        Ns_DStringInit(&ds);
-        if (Ns_HomePathExists("logs", (char *)0L)) {
-            (void) Ns_HomePath(&ds, "logs/nsd.pid", (char *)0L);
-        } else {
-            (void) Ns_HomePath(&ds, "nsd.pid", (char *)0L);
-        }
-        path = Tcl_NewStringObj(ds.string, ds.length);
-
-        set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
-        Ns_SetUpdateSz(set, "pidfile", 7, ds.string, ds.length);
-
-        Ns_DStringFree(&ds);
-    } else {
-        path = Tcl_NewStringObj(file, TCL_INDEX_NONE);
+    if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
+        Ns_Fatal("pid file: log directory '%s' could not be created", nsconf.logDir);
     }
-    return path;
+    file = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS, "pidfile", 7, nsconf.logDir, "nsd.pid");
+    pathObj = Tcl_NewStringObj(file, TCL_INDEX_NONE);
+    ns_free((void*)file);
+
+    return pathObj;
 }
 
 /*

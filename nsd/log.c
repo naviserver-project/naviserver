@@ -384,43 +384,41 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
 void
 NsConfigLog(void)
 {
-    Ns_DString  ds;
-    const char *path = NS_GLOBAL_CONFIG_PARAMETERS;
-    Ns_Set     *set  = Ns_ConfigCreateSection(path);
+    const char *section = NS_GLOBAL_CONFIG_PARAMETERS;
 
-    severityConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);
-    severityConfig[Dev   ].enabled = Ns_ConfigBool(path, "logdev",    NS_FALSE);
-    severityConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
+    severityConfig[Debug ].enabled = Ns_ConfigBool(section, "logdebug",  NS_FALSE);
+    severityConfig[Dev   ].enabled = Ns_ConfigBool(section, "logdev",    NS_FALSE);
+    severityConfig[Notice].enabled = Ns_ConfigBool(section, "lognotice", NS_TRUE);
 
-    if (Ns_ConfigBool(path, "logroll", NS_TRUE) == NS_TRUE) {
+    if (Ns_ConfigBool(section, "logroll", NS_TRUE) == NS_TRUE) {
         flags |= LOG_ROLL;
     }
-    if (Ns_ConfigBool(path, "logsec", NS_TRUE) == NS_TRUE) {
+    if (Ns_ConfigBool(section, "logsec", NS_TRUE) == NS_TRUE) {
         flags |= LOG_SEC;
     }
-    if (Ns_ConfigBool(path, "logusec", NS_FALSE) == NS_TRUE) {
+    if (Ns_ConfigBool(section, "logusec", NS_FALSE) == NS_TRUE) {
         flags |= LOG_USEC;
     }
-    if (Ns_ConfigBool(path, "logusecdiff", NS_FALSE) == NS_TRUE) {
+    if (Ns_ConfigBool(section, "logusecdiff", NS_FALSE) == NS_TRUE) {
         flags |= LOG_USEC_DIFF;
     }
-    if (Ns_ConfigBool(path, "logexpanded", NS_FALSE) == NS_TRUE) {
+    if (Ns_ConfigBool(section, "logexpanded", NS_FALSE) == NS_TRUE) {
         flags |= LOG_EXPAND;
     }
-    if (Ns_ConfigBool(path, "logthread", NS_TRUE) == NS_TRUE) {
+    if (Ns_ConfigBool(section, "logthread", NS_TRUE) == NS_TRUE) {
         flags |= LOG_THREAD;
     }
-    if (Ns_ConfigBool(path, "logcolorize", NS_FALSE) == NS_TRUE) {
+    if (Ns_ConfigBool(section, "logcolorize", NS_FALSE) == NS_TRUE) {
         flags |= LOG_COLORIZE;
     }
     if ((flags & LOG_COLORIZE) != 0u) {
         int result, idx;
 
-        result = ObjvTableLookup(path, "logprefixcolor", colors, &idx);
+        result = ObjvTableLookup(section, "logprefixcolor", colors, &idx);
         if (likely(result == TCL_OK)) {
             prefixColor = (LogColor)idx;
         }
-        result = ObjvTableLookup(path, "logprefixintensity", intensities, &idx);
+        result = ObjvTableLookup(section, "logprefixintensity", intensities, &idx);
         if (likely(result == TCL_OK)) {
             prefixIntensity = (LogColorIntensity)idx;
         }
@@ -428,29 +426,19 @@ NsConfigLog(void)
         /*
          * Just refer to these values to mark these as used.
          */
-        (void) Ns_ConfigString(path, "logprefixcolor", NS_EMPTY_STRING);
-        (void) Ns_ConfigString(path, "logprefixintensity", NS_EMPTY_STRING);
+        (void) Ns_ConfigString(section, "logprefixcolor", NS_EMPTY_STRING);
+        (void) Ns_ConfigString(section, "logprefixintensity", NS_EMPTY_STRING);
     }
 
-    maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
+    maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);
 
-    logfileName = ns_strcopy(Ns_ConfigString(path, "serverlog", "nsd.log"));
-    if (Ns_PathIsAbsolute(logfileName) == NS_FALSE) {
-        TCL_SIZE_T length;
-
-        Ns_DStringInit(&ds);
-        if (Ns_HomePathExists("logs", (char *)0L)) {
-            (void)Ns_HomePath(&ds, "logs", logfileName, (char *)0L);
-        } else {
-            (void)Ns_HomePath(&ds, logfileName, (char *)0L);
-        }
-        length = ds.length;
-        ns_free((void*)logfileName);
-        logfileName = Ns_DStringExport(&ds);
-        Ns_SetIUpdateSz(set, "serverlog", 9, logfileName, length);
+    fprintf(stderr, "LOGDIR NsConfigLog ================== <%s>\n", nsconf.logDir);
+    if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
+        Ns_Fatal("system log: log directory '%s' could not be created", nsconf.logDir);
     }
+    logfileName = Ns_ConfigFilename(section, "serverlog", 9, nsconf.logDir, "nsd.log");
 
-    rollfmt = ns_strcopy(Ns_ConfigString(path, "logrollfmt", NS_EMPTY_STRING));
+    rollfmt = ns_strcopy(Ns_ConfigString(section, "logrollfmt", NS_EMPTY_STRING));
 
 }
 

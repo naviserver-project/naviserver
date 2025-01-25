@@ -109,7 +109,7 @@ AppendExtHeaders(Tcl_DString *dsPtr, const char **argv, const Ns_Set *set)
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    const char   *path, *file;
+    const char   *section;
     Log          *logPtr;
     Tcl_DString   ds;
     static bool   first = NS_TRUE;
@@ -148,84 +148,55 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Tcl_DStringInit(&logPtr->buffer);
 
-    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
 
     /*
      * Determine the name of the log file
      */
 
-    file = Ns_ConfigString(path, "file", "access.log");
-    if (Ns_PathIsAbsolute(file) == NS_TRUE) {
-        logPtr->filename = ns_strdup(file);
-    } else {
-        /*
-         * If log file is not given in absolute format, it is expected to
-         * exist in the global logs directory if such exists or module
-         * specific directory, which is created if necessary.
-         */
-
-        if (Ns_HomePathExists("logs", (char *)0L)) {
-            (void) Ns_HomePath(&ds, "logs", "/", file, (char *)0L);
-        } else {
-            Tcl_Obj *dirpath;
-            int      rc;
-
-            Tcl_DStringSetLength(&ds, 0);
-            (void) Ns_ModulePath(&ds, server, module, (char *)0L);
-            dirpath = Tcl_NewStringObj(ds.string, TCL_INDEX_NONE);
-            Tcl_IncrRefCount(dirpath);
-            rc = Tcl_FSCreateDirectory(dirpath);
-            Tcl_DecrRefCount(dirpath);
-            if (rc != TCL_OK && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
-                Ns_Log(Error, "nslog: create directory (%s) failed: '%s'",
-                       ds.string, strerror(Tcl_GetErrno()));
-                Tcl_DStringFree(&ds);
-                return NS_ERROR;
-            }
-            Tcl_DStringSetLength(&ds, 0);
-            (void) Ns_ModulePath(&ds, server, module, file, (char *)0L);
-        }
-        logPtr->filename = Ns_DStringExport(&ds);
+    logPtr->filename = Ns_ConfigFilename(section, "file", 4, Ns_InfoLogPath(), "access.log");
+    if (Ns_RequireDirectory(Ns_InfoLogPath()) != NS_OK) {
+        Ns_Fatal("nslog: log directory '%s' could not be created", Ns_InfoLogPath());
     }
 
     /*
      * Get other parameters from configuration file
      */
 
-    logPtr->rollfmt = ns_strcopy(Ns_ConfigGetValue(path, "rollfmt"));
-    logPtr->maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(path, "maxbackup", 100, 1, INT_MAX);
-    logPtr->maxlines = Ns_ConfigIntRange(path, "maxbuffer", 0, 0, INT_MAX);
-    if (Ns_ConfigBool(path, "formattedtime", NS_TRUE)) {
+    logPtr->rollfmt = ns_strcopy(Ns_ConfigGetValue(section, "rollfmt"));
+    logPtr->maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "maxbackup", 100, 1, INT_MAX);
+    logPtr->maxlines = Ns_ConfigIntRange(section, "maxbuffer", 0, 0, INT_MAX);
+    if (Ns_ConfigBool(section, "formattedtime", NS_TRUE)) {
         logPtr->flags |= LOG_FMTTIME;
     }
-    if (Ns_ConfigBool(path, "logcombined", NS_TRUE)) {
+    if (Ns_ConfigBool(section, "logcombined", NS_TRUE)) {
         logPtr->flags |= LOG_COMBINED;
     }
-    if (Ns_ConfigBool(path, "logreqtime", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "logreqtime", NS_FALSE)) {
         logPtr->flags |= LOG_REQTIME;
     }
-    if (Ns_ConfigBool(path, "logpartialtimes", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "logpartialtimes", NS_FALSE)) {
         logPtr->flags |= LOG_PARTIALTIMES;
     }
-    if (Ns_ConfigBool(path, "logthreadname", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "logthreadname", NS_FALSE)) {
         logPtr->flags |= LOG_THREADNAME;
     }
-    if (Ns_ConfigBool(path, "suppressquery", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "suppressquery", NS_FALSE)) {
         logPtr->flags |= LOG_SUPPRESSQUERY;
     }
-    if (Ns_ConfigBool(path, "checkforproxy", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "checkforproxy", NS_FALSE)) {
         Ns_Log(Warning, "parameter checkforproxy of module nslog is deprecated; "
                "use global parameter reversproxymode instead");
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
 
-    logPtr->driverPattern = ns_strcopy(Ns_ConfigString(path, "driver", NULL));
+    logPtr->driverPattern = ns_strcopy(Ns_ConfigString(section, "driver", NULL));
 
     logPtr->ipv4maskPtr = NULL;
 #ifdef HAVE_IPV6
     logPtr->ipv6maskPtr = NULL;
 #endif
-    if (Ns_ConfigBool(path, "masklogaddr", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "masklogaddr", NS_FALSE)) {
         const char* maskString;
         const char *default_ipv4MaskString = "255.255.255.0";
 #ifdef HAVE_IPV6
@@ -234,7 +205,7 @@ Ns_ModuleInit(const char *server, const char *module)
         logPtr->flags |= LOG_MASKIP;
 
 #ifdef HAVE_IPV6
-        maskString = Ns_ConfigGetValue(path, "maskipv6");
+        maskString = Ns_ConfigGetValue(section, "maskipv6");
         if (maskString == NULL) {
             maskString = default_ipv6MaskString;
         }
@@ -243,7 +214,7 @@ Ns_ModuleInit(const char *server, const char *module)
             logPtr->ipv6maskPtr = (struct sockaddr *)&logPtr->ipv6maskStruct;
         }
 #endif
-        maskString = Ns_ConfigGetValue(path, "maskipv4");
+        maskString = Ns_ConfigGetValue(section, "maskipv4");
         if (maskString == NULL) {
             maskString = default_ipv4MaskString;
         }
@@ -256,20 +227,20 @@ Ns_ModuleInit(const char *server, const char *module)
      *  Schedule various log roll and shutdown options.
      */
 
-    if (Ns_ConfigBool(path, "rolllog", NS_TRUE)) {
-        int hour = Ns_ConfigIntRange(path, "rollhour", 0, 0, 23);
+    if (Ns_ConfigBool(section, "rolllog", NS_TRUE)) {
+        int hour = Ns_ConfigIntRange(section, "rollhour", 0, 0, 23);
 
         Ns_ScheduleDaily(LogRollCallback, logPtr,
                          0, hour, 0, NULL);
     }
-    if (Ns_ConfigBool(path, "rollonsignal", NS_FALSE)) {
+    if (Ns_ConfigBool(section, "rollonsignal", NS_FALSE)) {
         Ns_RegisterAtSignal((Ns_Callback *)(ns_funcptr_t)LogRollCallback, logPtr);
     }
 
     /*
      * Parse extended headers; it is just a list of names
      */
-    (void)ParseExtendedHeaders(logPtr, Ns_ConfigGetValue(path, "extendedheaders"));
+    (void)ParseExtendedHeaders(logPtr, Ns_ConfigGetValue(section, "extendedheaders"));
 
     /*
      *  Open the log and register the trace
