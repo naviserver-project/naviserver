@@ -126,11 +126,17 @@ interpreted as follows:
 
 
 [call [cmd "ns_connchan connect"] \
-	[opt [option "-tls"]] \
-	[opt [option "-timeout [arg time]"]] \
-	[arg host] \
-	[arg port] \
+    [opt [option "-cafile [arg value]"]] \
+    [opt [option "-capath [arg value]"]] \
+    [opt [option "-cert [arg value]"]] \
+    [opt [option "-hostname [arg value ]"]] \
+    [opt [option "-insecure"]] \
+    [opt [option "-timeout [arg time]"]] \
+    [opt [option "-tls"]] \
+    [arg host] \
+    [arg port] \
 ]
+
 
 Opens a client connection channel to the specified [arg host]
 and [arg port].  The command is similar to [cmd "ns_connchan open"],
@@ -162,14 +168,18 @@ connections. On success, this command returns a dict containing
 
 
 [call [cmd "ns_connchan open"] \
-	[opt [option "-driver [arg value]"]] \
-	[opt [option "-headers [arg setId]"]] \
-	[opt [option "-hostname [arg value]"]] \
-	[opt [option "-method [arg value]"]] \
-	[opt [option "-timeout [arg time]"]] \
-	[opt [option "-unix_socket [arg value]"]] \
-	[opt [option "-version [arg value]"]] \
-        [arg url] \
+    [opt [option "-cafile [arg value]"]] \
+    [opt [option "-capath [arg value]"]] \
+    [opt [option "-cert [arg value]"]] \
+    [opt [option "-driver [arg value]"]] \
+    [opt [option "-headers [arg setId]"]] \
+    [opt [option "-hostname [arg value]"]] \
+    [opt [option "-insecure"]] \
+    [opt [option "-method [arg value]"]] \
+    [opt [option "-timeout [arg time]"]] \
+    [opt [option "-unix_socket [arg value]"]] \
+    [opt [option "-version [arg value]"]] \
+    [arg url] \
 ]
 
 [para]
@@ -294,6 +304,58 @@ this with potentially more data from other write operations.
 
 [list_end]
 
+[section {COMMON OPTIONS}]
+
+[list_begin options]
+
+[opt_def -cafile [arg value]]
+specifies for HTTPS requests a PEM file containing certificates to
+validate the peer server (unless the option [option -insecure] is used). All
+certificates in this file are trusted.  Typically, the file
+has the name [term ca-bundle.crt] and contains the top-level certificates.
+When the specified filename is not on an absolute location, the file is
+assumed to be in the home directory of NaviServer. The default value
+is [term ca-bundle.crt], but can be altered in the [sectref {CONFIGURATION}] file.
+For more details, see
+[uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/ "SSL_CTX_load_verify_locations"]
+from the OpenSSL documentation.
+
+[opt_def -capath [arg value]]
+specifies for HTTPS requests a directory containing trusted certificates
+to validate the peer server (unless the option
+[option -insecure] is used).
+Each file in this directory must be in PEM format and must contain
+exactly one certificate. When the specified directory is not an
+absolute path, it is assumed to be in the home directory of NaviServer.
+The default value is [term cerificates], but can be altered in the [sectref {CONFIGURATION}] file.
+For more details, see
+[uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/ "SSL_CTX_load_verify_locations"]
+from the OpenSSL documentation.
+
+[opt_def -cert [arg value]]
+used for HTTPS URIs to use the specified client certificate. The
+certificates must be in PEM format and must be sorted starting with
+the subject's certificate (actual client or server certificate),
+followed by intermediate CA certificates if applicable, and ending at
+the highest level (root) CA.
+
+[opt_def -hostname [arg value]]
+used for HTTPS URIs to specify the hostname for the server
+certificate. This option has to be used, when the host supports
+virtual hosting, is configured with multiple certificates and supports
+the SNI (Server Name Indication) extension of TLS.
+
+[opt_def -insecure]
+used for HTTPS URIs to specify that the server certificate should NOT be
+verified. By default, the identity of the peer server is checked
+for all HTTPS requests. If the verification process fails, the TLS/SSL handshake is
+terminated with an alert message containing the reason for
+the verification failure.
+The default for this parameter can be specified in the [sectref {CONFIGURATION}] file.
+
+[list_end]
+
+
 [section CONFIGURATION]
 
 The [cmd ns_connchan] command uses the network driver configuration of
@@ -303,7 +365,7 @@ HTTPS request should be made, but the site administrator does not want
 to listen on an HTTPS port, specify in the configuration of HTTPS the
 [term port] with value [const 0].
 
-[see_also ns_conn ns_chan ns_sockcallback ns_write ns_time nssock nsssl]
+[see_also ns_conn ns_http ns_chan ns_sockcallback ns_write ns_time nssock nsssl]
 [keywords "server built-in" channels socket driver "network driver" \
         "reverse proxy" websocket]
 
