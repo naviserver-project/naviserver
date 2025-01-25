@@ -530,12 +530,13 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 {
     int         result = TCL_OK, head = 0, detached = 0;
     bool        create = NS_FALSE;
-    char       *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
+    char       *script = NULL, *queueIdString = NULL;
+    Tcl_Obj    *jobIdObj = NULL;
     char        buf[100];
     Ns_ObjvSpec lopts[] = {
-        {"-detached",  Ns_ObjvBool,    &detached,    INT2PTR(NS_TRUE)},
-        {"-head",      Ns_ObjvBool,    &head,        INT2PTR(NS_TRUE)},
-        {"-jobid",     Ns_ObjvString,  &jobIdString, NULL},
+        {"-detached",  Ns_ObjvBool,  &detached,    INT2PTR(NS_TRUE)},
+        {"-head",      Ns_ObjvBool,  &head,        INT2PTR(NS_TRUE)},
+        {"-jobid",     Ns_ObjvObj,   &jobIdObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -553,6 +554,8 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         JobTypes        jobType = JOB_NON_DETACHED;
         Tcl_HashEntry  *hPtr;
         int             isNew;
+        const char     *jobIdString = NULL;
+        TCL_SIZE_T      jobIdLength = 0;
 
         if (detached != 0) {
             jobType = JOB_DETACHED;
@@ -583,6 +586,9 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             goto releaseQueue;
         }
 
+        if (jobIdObj != NULL) {
+            jobIdString = Tcl_GetStringFromObj(jobIdObj, &jobIdLength);
+        }
         /*
          * Job id is given, try to see if it is taken already,
          * if yes, return error, it should be unique.
@@ -606,6 +612,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             } while (isNew == 0);
 
             jobIdString = buf;
+            jobIdLength = (TCL_SIZE_T)strlen(buf);
         }
 
         /*
@@ -636,7 +643,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             create = NS_FALSE;
         }
 
-        Tcl_DStringAppend(&jobPtr->id, jobIdString, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&jobPtr->id, jobIdString, jobIdLength);
         Tcl_SetHashValue(hPtr, jobPtr);
         Ns_CondBroadcast(&tp.cond);
 
@@ -649,7 +656,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             Ns_ThreadCreate(JobThread, NULL, 0, NULL);
         }
         if (result == TCL_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(jobIdString, TCL_INDEX_NONE));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(jobIdString, jobIdLength));
         }
     }
     return result;
@@ -1524,7 +1531,7 @@ JobThread(void *UNUSED(arg))
         /*
          * ... and execute the job.
          */
-        code = Tcl_EvalEx(interp, jobPtr->script.string, TCL_INDEX_NONE, 0);
+        code = Tcl_EvalEx(interp, jobPtr->script.string, jobPtr->script.length, 0);
 
         Ns_MutexLock(&tp.queuelock);
         Ns_MutexLock(&queue->lock);
