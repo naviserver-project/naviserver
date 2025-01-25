@@ -42,10 +42,10 @@ static const char *mallocLibraryVersionString = "unknown";
  *
  * Ns_InfoHomePath --
  *
- *      Return the home dir.
+ *      Returns the home directory.
  *
  * Results:
- *      Home dir.
+ *      String with the full path.
  *
  * Side effects:
  *      None.
@@ -57,6 +57,28 @@ const char *
 Ns_InfoHomePath(void)
 {
     return nsconf.home;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_InfoLogPath --
+ *
+ *      Returns the absolte path of the log directory.
+ *
+ * Results:
+ *      String with the full path.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+const char *
+Ns_InfoLogPath(void)
+{
+    return nsconf.logDir;
 }
 
 

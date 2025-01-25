@@ -126,6 +126,7 @@ struct nsconf {
     const char *name;
     const char *version;
     const char *home;
+    const char *logDir;
     const char *tmpDir;
     const char *configFile;
     const char *build;

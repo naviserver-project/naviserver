@@ -489,7 +489,6 @@ Ns_HomePath(Ns_DString *dsPtr, ...)
  *
  *----------------------------------------------------------------------
  */
-
 bool
 Ns_HomePathExists(const char *path, ...)
 {
@@ -508,7 +507,7 @@ Ns_HomePathExists(const char *path, ...)
     MakePath(&ds, &ap);
     va_end(ap);
 
-    obj = Tcl_NewStringObj(ds.string, TCL_INDEX_NONE);
+    obj = Tcl_NewStringObj(ds.string, ds.length);
     Tcl_IncrRefCount(obj);
     stPtr = Tcl_AllocStatBuf();
     status = Tcl_FSStat(obj, stPtr);
@@ -517,6 +516,57 @@ Ns_HomePathExists(const char *path, ...)
     Ns_DStringFree(&ds);
 
     return (status == 0);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_RequireDirectory --
+ *
+ *      Ensures that the specified directory exists. If it does not
+ *      exist, the function attempts to create it. If creation fails,
+ *      an error is logged and NS_ERROR is returned; otherwise, NS_OK
+ *      is returned.
+ *
+ *      This function is primarily used for creating the log directory.
+ *      The rationale is to keep NaviServer’s initial requirements minimal,
+ *      as a log directory is only necessary when file-based logging is
+ *      enabled.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR
+ *
+ * Side effects:
+ *      May create the directory if it does not already exist.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+Ns_RequireDirectory(const char *path)
+{
+    Ns_ReturnCode result = TCL_OK;
+    struct stat   fileStat;
+
+    NS_NONNULL_ASSERT(path != NULL);
+
+    if (!Ns_Stat(path, &fileStat)) {
+        Tcl_Obj *pathObj;
+        int      rc;
+
+        pathObj = Tcl_NewStringObj(path, TCL_INDEX_NONE);
+        Tcl_IncrRefCount(pathObj);
+        rc = Tcl_FSCreateDirectory(pathObj);
+        Tcl_DecrRefCount(pathObj);
+
+        if (rc != TCL_OK && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
+            Ns_Log(Error, "nslog: create directory (%s) failed: '%s'",
+                   path, strerror(Tcl_GetErrno()));
+            result = NS_ERROR;
+        }
+    }
+    return result;
 }
 
 

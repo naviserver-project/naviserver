@@ -691,6 +691,54 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
     return found;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigFilename --
+ *
+ *      Retrieves a file name from the configuration file based on the
+ *      specified "section" and "key" parameters. The "directory" argument
+ *      is used to resolve the "defaultValue" if a relative path is provided.
+ *
+ * Results:
+ *      Returns a newly allocated string containing the absolute file path.
+ *      The caller is responsible for freeing this string.
+ *
+ * Side effects:
+ *      Allocates memory.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, const char *directory, const char* defaultValue)
+{
+    const char *value, *result;
+
+    value = Ns_ConfigString(section, key, defaultValue);
+
+    if (Ns_PathIsAbsolute(value)) {
+        result = ns_strdup(value);
+    } else {
+        Ns_Set     *set;
+        Tcl_DString ds, *dsPtr = &ds;
+        TCL_SIZE_T  pathLength;
+
+        Tcl_DStringInit(dsPtr);
+
+        Ns_MakePath(dsPtr, directory, value, (char *)0L);
+        pathLength = dsPtr->length;
+        result = Ns_DStringExport(dsPtr);
+
+        /*
+         * The path was completed. Make the result queryable.
+         */
+        set = Ns_ConfigCreateSection(section);
+        Ns_SetIUpdateSz(set, key, keyLength, result, pathLength);
+    }
+    /*fprintf(stderr, "Ns_ConfigFilename ================== %s %s: <%s>\n", section, key, result);*/
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------

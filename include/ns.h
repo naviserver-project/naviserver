@@ -1131,6 +1131,10 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN const char *
+Ns_ConfigFilename(const char *section, const char* key, TCL_SIZE_T keyLength, const char *directory, const char* defaultValue)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+NS_EXTERN const char *
 Ns_ConfigGetPath(const char *server, const char *module, ...)
      NS_GNUC_SENTINEL;
 
@@ -2106,6 +2110,9 @@ NS_EXTERN const char *
 Ns_InfoHomePath(void) NS_GNUC_PURE;
 
 NS_EXTERN const char *
+Ns_InfoLogPath(void) NS_GNUC_PURE;
+
+NS_EXTERN const char *
 Ns_InfoHostname(void) NS_GNUC_PURE;
 
 NS_EXTERN bool
@@ -2324,6 +2331,10 @@ Ns_PagePath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
 
 NS_EXTERN Ns_ReturnCode
 Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
+
+NS_EXTERN Ns_ReturnCode
+Ns_RequireDirectory(const char *path)
+    NS_GNUC_NONNULL(1);
 
 /*
  * proc.c:

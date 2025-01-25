@@ -763,6 +763,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         assert(nsconf.home != NULL);
     }
     nsconf.home = SetCwd(nsconf.home);
+
+    {
+        Tcl_DString ds;
+
+        Ns_DStringInit(&ds);
+        Ns_HomePath(&ds, "logs", (char *)0L);
+        nsconf.logDir = Ns_DStringExport(&ds);
+    }
+
     nsconf.reject_already_closed_or_detached_connection =
         Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "rejectalreadyclosedconn", NS_TRUE);
     nsconf.sanitize_logfiles =
@@ -807,7 +816,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     /*
      * Make the result queryable.
      */
-
     set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
     Ns_SetIUpdateSz(set, "home", 4, nsconf.home, TCL_INDEX_NONE);
 
