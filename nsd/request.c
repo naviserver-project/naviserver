@@ -439,7 +439,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                     goto error;
                 }
                 /*
-                 * We need an URL in SetUrl(), without SetUrl, NsUrlSpecificGet() will crash
+                 * We need a URL in SetUrl(), without SetUrl, NsUrlSpecificGet() will crash
                  */
                 url = (char*)"/";
 
