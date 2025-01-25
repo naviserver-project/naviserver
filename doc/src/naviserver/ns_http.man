@@ -651,7 +651,7 @@ client requests.
 
 [example_begin]
  #---------------------------------------------------------------------
- # HTTP client (ns_http) configuration
+ # HTTP client (ns_http, ns_connchan) configuration
  #---------------------------------------------------------------------
  ns_section ns/server/$server/httpclient {
     #

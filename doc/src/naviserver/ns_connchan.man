@@ -365,6 +365,23 @@ HTTPS request should be made, but the site administrator does not want
 to listen on an HTTPS port, specify in the configuration of HTTPS the
 [term port] with value [const 0].
 
+[para]
+The default values for the peer server validation parameters
+[option -cafile],
+[option -capath], and
+[option -insecure] can be configured in the configuration file as
+documented in [cmd ns_http].
+
+[example_begin]
+ #---------------------------------------------------------------------
+ # HTTP client (ns_http, ns_connchan) configuration
+ #---------------------------------------------------------------------
+ ns_section ns/server/$server/httpclient {
+    # ...
+ }
+[example_end]
+
+
 [see_also ns_conn ns_http ns_chan ns_sockcallback ns_write ns_time nssock nsssl]
 [keywords "server built-in" channels socket driver "network driver" \
         "reverse proxy" websocket]
