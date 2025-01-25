@@ -1049,7 +1049,7 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
          * Append the ready files to the passed in listObj
          */
         Tcl_ListObjAppendElement(interp, listObj,
-                                 Tcl_NewStringObj(dsPtr->string, TCL_INDEX_NONE));
+                                 Tcl_NewStringObj(dsPtr->string, dsPtr->length));
 
         Tcl_Free((char *) fargv);
     } else {
