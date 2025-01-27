@@ -387,7 +387,9 @@ You might query a certain mapping at runtime:
 
 Mapping with context constraints can also be
 provided in the configuration file. We extend the example above by
-adding a bot pool.
+adding a bot pool. An incoming request is mapped to the bot pool, when
+the [term user-agent] of the incoming request matches one of the
+specified names based on a wild-card match.
 
 [example_begin]
  ns_section "ns/server/$server/pools" {
@@ -412,6 +414,7 @@ adding a bot pool.
 
 [see_also ns_conn ns_register ns_urlspace]
 [keywords \
+        "context filter" \
 	"server built-in" configuration "connection thread pools" \
 	mapspec pools pagedir tuning "reverse proxy" "virtual host"]
 

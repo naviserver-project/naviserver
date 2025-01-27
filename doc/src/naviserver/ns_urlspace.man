@@ -68,10 +68,9 @@
  ns_urlspace set /*.adp             A
  ns_urlspace set /*.html            H
  ns_urlspace set /internal/space/*  I
-
+ 
  # Assign a value with a context filter
- set contextFilter [lb]ns_set create "user-agent" "*bot*"[rb]
- ns_urlspace set -contextfilter $contextFilter /*.adp C
+ ns_urlspace set -contextfilter {"user-agent" "*bot*"} /*.adp C
 [example_end]
 
 
@@ -104,7 +103,7 @@
  
  ns_urlspace get /internal/space/documents/info.html
  # Returns: I
-
+ 
  # Retrieve mapping with context
  set context [lb]ns_set create "user-agent" "googlebot"[rb]
  ns_urlspace get -context $context /test.adp
@@ -237,8 +236,8 @@ so-called context constraints or context filters. These constraints
 allow one to include additional information such as IP-addresses or header
 fields in the matching process. These constraints are applied after
 the classical URLspace processing and add more information to the
-matching process. The general rule the a more specific URL space rule
-dominates a less specific ones continues to hold.
+matching process. The general rule that more specific URL space rule
+dominates a less specific one continues to hold.
 
 [para] By using context filers one can specify that when one is
 applying a matching from a URL to some data, not only the URL
@@ -298,7 +297,7 @@ setting up a connection pool for bots in [cmd ns_server].
 
 [see_also nsv ns_server ns_set]
 [keywords "server built-in" trie urlspace shared variables \
-  "data structure" "context constraints"]
+  "data structure" "context constraints" "context filter"]
 
 [manpage_end]
 
