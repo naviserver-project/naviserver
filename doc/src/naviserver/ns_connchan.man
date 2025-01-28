@@ -327,7 +327,7 @@ to validate the peer server (unless the option
 Each file in this directory must be in PEM format and must contain
 exactly one certificate. When the specified directory is not an
 absolute path, it is assumed to be in the home directory of NaviServer.
-The default value is [term cerificates], but can be altered in the [sectref {CONFIGURATION}] file.
+The default value is [term certificates], but can be altered in the [sectref {CONFIGURATION}] file.
 For more details, see
 [uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/ "SSL_CTX_load_verify_locations"]
 from the OpenSSL documentation.
