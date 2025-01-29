@@ -2068,7 +2068,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     assert(len != 0u);
     if (nsconf.sanitize_logfiles > 0) {
         Ns_DStringAppendPrintable(dsPtr,
-                                  nsconf.sanitize_logfiles == 2,
+                                  nsconf.sanitize_logfiles >= 2,
                                   nsconf.sanitize_logfiles == 3,
                                   msg, len);
     } else {

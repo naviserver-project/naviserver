@@ -72,7 +72,7 @@ input. The default is taken from the global parameter
 [list_end]
 
 [see_also ns_log ns_write ns_accesslog]
-[keywords "server built-in" logging]
+[keywords "server built-in" logging sanitizelogfiles]
 
 [manpage_end]
 
