@@ -64,7 +64,7 @@ Ns_InfoHomePath(void)
  *
  * Ns_InfoLogPath --
  *
- *      Returns the absolte path of the log directory.
+ *      Returns the absolute path of the log directory.
  *
  * Results:
  *      String with the full path.
