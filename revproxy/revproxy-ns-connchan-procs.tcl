@@ -19,6 +19,7 @@ namespace eval ::revproxy::ns_connchan {
     nsf::proc upstream {
         -url:required
         -request:required
+        {-insecure:switch}
         {-timeout 10.0s}
         {-connecttimeout 1s}
         {-sendtimeout ""}
@@ -73,24 +74,25 @@ namespace eval ::revproxy::ns_connchan {
             }
         }
 
+        set extraArgs {}
         #
         # Support for Unix Domain Sockets
         # Syntax: unix:/home/www.socket|http://localhost/whatever/
         # modeled after: https://httpd.apache.org/docs/trunk/mod/mod_proxy.html#proxypass
 
         if {[regexp {^unix:(/[^|]+)[|](.+)$} $url . socketPath url]} {
-            set unixSocketArg [list -unix_socket $socketPath]
-        } else {
-            set unixSocketArg ""
+            lappend extraArgs -unix_socket $socketPath
         }
-
+        if {$insecure} {
+            lappend extraArgs -insecure
+        }
         set contentLength [ns_set iget $requestHeaders content-length ""]
         if {[catch {
             #
             # Open backend channel, get frontend channel and connect these.
             #
             set backendChan [ns_connchan open \
-                                 {*}$unixSocketArg \
+                                 {*}$extraArgs \
                                  -method $method \
                                  -headers $requestHeaders \
                                  -timeout $connecttimeout \

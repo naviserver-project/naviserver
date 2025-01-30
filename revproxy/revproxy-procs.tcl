@@ -35,7 +35,8 @@ namespace eval ::revproxy {
 
     nsf::proc upstream {
         when
-        -target
+        -target:required
+        {-insecure:switch}
         {-targethost ""}
         {-connecttimeout 1s}
         {-timeout 1m}
@@ -86,6 +87,9 @@ namespace eval ::revproxy {
             }
         }
         set extraArgs [list -spoolresponse $spoolResponse]
+        if {$insecure} {
+            lappend extraArgs -insecure
+        }
 
         if {[llength $target] > 0} {
             set md5 [ns_md5 $target]

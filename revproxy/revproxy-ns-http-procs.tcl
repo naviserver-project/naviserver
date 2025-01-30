@@ -6,7 +6,8 @@ namespace eval ::revproxy {}
 namespace eval ::revproxy::ns_http {
 
     nsf::proc upstream {
-        -url
+        -url:required
+        {-insecure:switch}
         {-timeout 105.0s}
         {-connecttimeout 1s}
         {-sendtimeout ""}
@@ -62,6 +63,9 @@ namespace eval ::revproxy::ns_http {
         set method         [dict get $request method]
         set binary         [dict get $request binary]
 
+        if {$insecure} {
+            lappend extraArgs -insecure
+        }
         if {[dict exists $request contentfile]} {
             lappend extraArgs -body_file [dict get $request contentfile]
         } else {
