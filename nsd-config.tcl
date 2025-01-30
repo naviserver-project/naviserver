@@ -458,7 +458,43 @@ ns_section ns/server/default/httpclient {
     #ns_param CApath certificates   ;# default: $home/certificates/
     #ns_param CAfile ca-bundle.crt  ;# default: $home/ca-bundle.crt
 
-    #ns_param insecure true             ;# default: false
+    #ns_param validateCertificates false        ;# default: true
+
+    if {[ns_config ns/server/$server/httpclient validateCertificates true]} {
+        #
+        # "validationDepth" sets the maximum allowed length of a certificate chain:
+        #   0: Accept only self-signed certificates.
+        #   1: Accept certificates issued by a single CA or self-signed.
+        #   2 or higher: Accept chains up to the specified length.
+        #
+        #ns_param validationDepth 0   ;# default: 9
+
+        #
+        # When defining exceptions below, invalid certificates are stored
+        # in the specified directory. Administrators can move these
+        # certificates to the accepted certificates folder and run "openssl rehash"
+        # to reduce future security warnings.
+        #
+        #ns_param invalidCertificates $home/invalid-certificates/   ;# default: [ns_info home]/invalid-certificates
+
+        #
+        # Define white-listed validation exceptions:
+        #
+        # Accept all certificates from ::1 (IPv6 loopback):
+        ns_param validationException {ip ::1}
+
+        # For IPv4 127.0.0.1, ignore two specific validation errors:
+        ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
+
+        # Allow expired certificates from any IP in the 192.168.1.0/24 range:
+        ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
+
+        # Accept self-signed certificates from any IP address:
+        ns_param validationException {accept self-signed-certificate}
+
+        # Accept all validation errors from any IP address (like disabled validation, but collects certificates)
+        ns_param validationException {accept *}
+    }
 
     #
     # Configure log file for outgoing ns_http requests

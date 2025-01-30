@@ -1025,9 +1025,15 @@ typedef struct NsServer {
         Ns_Time    keepaliveTimeout;
         const char *caFile;
         const char *caPath;
+        const char *invalidCaPath;
         int  fd;
         bool logging;
-        bool insecure;
+        bool validateCertificates;
+
+        int verbose_mode;
+        int verify_depth;
+        int always_continue;
+        Ns_DList validationExceptions;
     } httpclient;
 
     Tcl_HashTable hosts;
@@ -1228,6 +1234,21 @@ typedef struct _NsHttpChunk {
 #define NS_HTTP_HEADERS_PENDING    (1u<<10)
 #define NS_HTTP_PARTIAL_RESULTS    (1u<<11)
 #define NS_HTTP_OUTPUT_ERROR       (1u<<12)
+
+/*
+ * Definition of validity exceptions for accepting invalid peer certificates
+ * (ns_http, ns_connchan)
+ */
+#define NS_MAX_VALIDITY_ERRORS_PER_RULE 10
+#define NS_X509_V_ERR_MATCH_ALL 255
+#define NS_CERT_TRUST_ALL_IPS 0x01
+typedef struct {
+    struct NS_SOCKADDR_STORAGE ip;
+    struct NS_SOCKADDR_STORAGE mask;
+    long          flags;
+    unsigned int  accept[NS_MAX_VALIDITY_ERRORS_PER_RULE];
+} NsCertValidationException_t;
+
 
 #define NS_HTTP_FLAG_GUNZIP (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 

@@ -103,6 +103,12 @@ static SSLCertStatusArg sslCertStatusArg;
 # endif
 
 /*
+ * For HTTP client requests, use a data index to obtain server
+ * information from an SSL_CTX.
+ */
+static int ClientCtxDataIndex;
+
+/*
  * OpenSSL callback functions.
  */
 static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
@@ -110,6 +116,12 @@ static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
 # ifdef HAVE_OPENSSL_PRE_1_1
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
 # endif
+static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
+
+static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int sslErr, int currentDepth, NsServer *servPtr)
+    NS_GNUC_NONNULL(4);
+static bool ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *validationExceptionsPtr, struct sockaddr *saPtr)
+     NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 #ifndef OPENSSL_HAVE_DH_AUTO
 static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
@@ -1072,6 +1084,7 @@ NsInitOpenSSL(void)
 #  else
         OPENSSL_init_ssl(0, NULL);
 #  endif
+        ClientCtxDataIndex = SSL_CTX_get_ex_new_index(0, (char*)"NaviServer Client Info", NULL, NULL, NULL);
         initialized = 1;
         /*
          * We do not want to get this message when, e.g., the nsproxy
@@ -1105,6 +1118,7 @@ NsInitOpenSSL(void)
  *----------------------------------------------------------------------
  */
 
+
 int
 Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
                        const char *cert, const char *caFile, const char *caPath, bool verify,
@@ -1125,8 +1139,9 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
 
     SSL_CTX_set_default_verify_paths(ctx);
     if (verify && (caFile != NULL || caPath != NULL)) {
-        int rc = SSL_CTX_load_verify_locations(ctx, caFile, caPath);
+        int rc;
 
+        rc = SSL_CTX_load_verify_locations(ctx, caFile, caPath);
         if (rc == 0) {
             Ns_TclPrintfResult(interp, "cannot load cerfificates from CAfile %s and CApath %s: %s",
                                caFile != NULL ? caFile : "none",
@@ -1134,13 +1149,46 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
                                ERR_error_string(ERR_get_error(), errorBuffer));
             goto fail;
         }
-        Ns_Log(Notice, "SSL_CTX_load_verify_locations ctx %p caFile <%s> caPath <%s> ",
+        Ns_Log(Debug, "SSL_CTX_load_verify_locations ctx %p caFile <%s> caPath <%s> ",
                (void*)ctx,
                caFile != NULL ? caFile : "none",
                caPath != NULL ? caPath : "none");
     }
+    if (verify) {
+        int verify_depth = 9;
+        NsInterp *itPtr = NsGetInterpData(interp);
+        SSL_verify_cb verifyCB = NULL;
 
-    SSL_CTX_set_verify(ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
+        if (itPtr != NULL) {
+            NsServer *servPtr = itPtr->servPtr;
+
+            if (likely(servPtr != NULL)) {
+                /*
+                 * We can set the specified validation depth. In case
+                 * we have validation exception provided, we register
+                 * our own certificate validation callback.
+                 */
+                verify_depth = servPtr->httpclient.verify_depth;
+                SSL_CTX_set_ex_data(ctx, ClientCtxDataIndex, servPtr);
+
+                if (servPtr->httpclient.validationExceptions.size > 0) {
+                    Ns_Log(Debug, "Ns_TLS_CtxClientCreate %ld validation exceptions provided",
+                           servPtr->httpclient.validationExceptions.size);
+                    verifyCB = CertficateValidationCB;
+                }
+            } else {
+                Ns_Log(Warning, "Ns_TLS_CtxClientCreate cannot obtain server information;"
+                       " detailed validation settings are ignored");
+                SSL_CTX_set_ex_data(ctx, ClientCtxDataIndex, NULL);
+            }
+        }
+        SSL_CTX_set_verify_depth(ctx, verify_depth + 1);
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verifyCB);
+    } else {
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+    }
+
+    //SSL_CTX_set_verify(ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
@@ -1264,8 +1312,8 @@ PartialTimeout(const Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPart
  */
 Ns_ReturnCode
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                  const char *sni_hostname, const Ns_Time *timeoutPtr,
-                  NS_TLS_SSL **sslPtr)
+                  const char *sni_hostname, const char *caFile, const char *caPath,
+                  const Ns_Time *timeoutPtr, NS_TLS_SSL **sslPtr)
 {
     NS_TLS_SSL     *ssl;
     Ns_ReturnCode   result = NS_OK;
@@ -1307,8 +1355,9 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
             Ns_Time       timeout, *partialTimeoutPtr = NULL;
 
             Ns_Log(Debug, "ssl connect on sock %d", sock);
-            sslRc   = SSL_connect(ssl);
+            sslRc  = SSL_connect(ssl);
             sslErr = SSL_get_error(ssl, sslRc);
+
             //fprintf(stderr, "### ssl connect sock %d returned err %d\n", sock, sslErr);
 
             if (sslErr == SSL_ERROR_WANT_READ || sslErr == SSL_ERROR_WANT_WRITE) {
@@ -1332,21 +1381,32 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
             break;
         }
 
+        /*Ns_Log(Notice, "============================= CONNECT result %s finished %d ERROR %d (is SSL_ERROR_SSL %d)",
+               Ns_ReturnCodeString(result), SSL_is_init_finished(ssl),
+               sslErr, sslErr == SSL_ERROR_SSL);*/
+
         if (result == NS_OK && !SSL_is_init_finished(ssl)) {
-            long        verifyCode = X509_V_OK;
+            long  x509err = X509_V_OK;
+
+            Ns_Log(Debug, "CONNECT ERROR %d (is SSL_ERROR_SSL %d)",  sslErr, sslErr == SSL_ERROR_SSL);
 
             if (sslErr == SSL_ERROR_SSL) {
-                verifyCode = SSL_get_verify_result(ssl);
-                if (verifyCode != X509_V_OK) {
+                Ns_Log(Debug, "CONNECT SSL_ERROR_SSL: A failure in the SSL library occurred: %s", ERR_error_string(ERR_get_error(), NULL));
+                x509err = SSL_get_verify_result(ssl);
+                if (x509err != X509_V_OK) {
                     /*
-                     * We have a specific error code for the certificate failure.
+                     * We have a specific error code for the certificate validation failure.
                      */
                     Ns_TclPrintfResult(interp, "ssl connect failed: %s (reason %ld: %s)",
                                        ERR_error_string(ERR_get_error(), NULL),
-                                       verifyCode,  X509_verify_cert_error_string(verifyCode));
+                                       x509err,  X509_verify_cert_error_string(x509err));
+                    Ns_Log(Notice, "certificate validation error: %s\nCAfile: %s\nCApath: %s",
+                           X509_verify_cert_error_string(x509err),
+                           caFile, caPath);
+                    //X509_NAME_oneline(X509_get_issuer_name(err_cert), errorbuf, sizeof(errorbuf));
                 }
             }
-            if (verifyCode == X509_V_OK) {
+            if (x509err == X509_V_OK) {
                 Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
             }
             DrainErrorStack(Warning, "ssl connect", ERR_get_error());
@@ -1731,6 +1791,273 @@ static void CertTableReload(void *UNUSED(arg))
 /*
  *----------------------------------------------------------------------
  *
+ * ValidationExcpetionExists --
+ *
+ *      Check whether we can accept the error code in "x509err" based
+ *      on the security exception rules provided in
+ *      validationExceptionsPtr.
+ *
+ * Results:
+ *      NS_TRUE in case the errorCode is accepted.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static bool
+ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *validationExceptionsPtr, struct sockaddr *saPtr)
+{
+    bool      accept = NS_FALSE;
+    socklen_t socklen = (socklen_t)sizeof(struct NS_SOCKADDR_STORAGE);
+    size_t    specNr;
+
+    NS_NONNULL_ASSERT(validationExceptionsPtr != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
+
+    /*
+     * We have a peer address, we could check it against the addresses
+     * in the validation exception rules.
+     */
+    if (getpeername(sock, saPtr, &socklen) != 0) {
+        memset(saPtr, 0, sizeof(socklen));
+    }
+    Ns_Log(Debug, "??? ValidationExcpetionExists nr validation exceptions %ld", validationExceptionsPtr->size);
+
+    /*
+     * We can check the error code against the accepted ones in the validation exceptions.
+     */
+    for (specNr = 0u; specNr < validationExceptionsPtr->size; specNr ++) {
+        NsCertValidationException_t *validationExceptionPtr = validationExceptionsPtr->data[specNr];
+        bool                         ipMatch, ruleAccept = NS_FALSE;
+
+        /*
+         * Either accept all IP addresses, or check the IP address in
+         * the rule whether it matches.
+         */
+        ipMatch = (validationExceptionPtr->flags & NS_CERT_TRUST_ALL_IPS) != 0
+            ? NS_TRUE
+            : Ns_SockaddrMaskedMatch(saPtr, (struct sockaddr *)&validationExceptionPtr->mask, (struct sockaddr *)&validationExceptionPtr->ip);
+
+        if (validationExceptionPtr->accept[0] == 0) {
+            /*
+             * Accept all certificate validation errors from this site.
+             */
+            ruleAccept = ipMatch;
+        } else if (ipMatch) {
+            int i;
+
+            /*
+             * Check list of accepted exceptions.
+             */
+            for (i = 0u; i < NS_MAX_VALIDITY_ERRORS_PER_RULE-1; i++) {
+                int canAcceptCode = (int)validationExceptionPtr->accept[i];
+
+                if (canAcceptCode == 0) {
+                    /*
+                     * We reached end of list of accepted errors.
+                     */
+                    break;
+                } else if (canAcceptCode == NS_X509_V_ERR_MATCH_ALL) {
+                    ruleAccept = NS_TRUE;
+                } else {
+                    //ns_inet_ntop((struct sockaddr *)&validationExceptionPtr->ip, ipString, sizeof(ipString));
+
+                    //Ns_Log(Notice, "?????? %d: ip %s x509err %d acceptCode %d (equals %d)",
+                    //       i, ipString, x509err, canAcceptCode, canAcceptCode == x509err);
+                    if (canAcceptCode == x509err) {
+                        ruleAccept = NS_TRUE;
+                    }
+                }
+            }
+        }
+        Ns_Log(Debug, "??? [%ld] x509err %d flags %.4lx --> accept %d", specNr, x509err, validationExceptionPtr->flags, ruleAccept);
+
+        if (ruleAccept == NS_TRUE) {
+            /*
+             * No need to check, if other rules might hold as well.
+             */
+            accept = NS_TRUE;
+            break;
+        }
+    }
+    return accept;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StoreInvalidCertificate --
+ *
+ *      Store the (invalid) certificate in the filesystem in a folder
+ *      (typically named "invalid-certificates"). The filename
+ *      consists of a digest of the certificate, followed by the
+ *      validation depth and the x509error.
+ *
+ * Results:
+ *      NS_OK for success, NS_ERROR otherwise.
+ *
+ * Side effects:
+ *      Typically writing a file to the filesystem.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+StoreInvalidCertificate(X509 *cert, int x509err, int currentDepth, NsServer *servPtr) {
+    Ns_ReturnCode result = NS_OK;
+    unsigned char md[EVP_MAX_MD_SIZE];
+    unsigned int  mdLength = 0;
+    struct stat   statInfo;
+
+    if (unlikely(cert == NULL)) {
+        Ns_Log(Warning, "cannot obtain invalid certificate from OpenSSL");
+        result = NS_ERROR;
+
+    } else if (!Ns_Stat(servPtr->httpclient.invalidCaPath, &statInfo)) {
+        Ns_Log(Warning, "StoreInvalidCertificate: invalidCaPath '%s' does not exist", servPtr->httpclient.invalidCaPath);
+        result = NS_ERROR;
+
+    } else if (X509_digest(cert, /*EVP_sha1()*/ EVP_sha256(), md, &mdLength) != 1) {
+        /*
+         * Could not computed the SHA digest of the certificate.
+         */
+        Ns_Log(Warning, "StoreInvalidCertificate Failed to compute digest of certificate");
+        result = NS_ERROR;
+
+    } else {
+        Tcl_DString ds, *dsPtr = &ds;
+        TCL_SIZE_T  pathLength;
+
+        Ns_Log(Debug, "??? StoreInvalidCertificate digest length %d (max %d), path %s",
+               mdLength, EVP_MAX_MD_SIZE, servPtr->httpclient.invalidCaPath);
+
+        /*
+         * Build the path for storing the invalid certificate
+         */
+        Tcl_DStringInit(dsPtr);
+        Tcl_DStringAppend(dsPtr, servPtr->httpclient.invalidCaPath, TCL_INDEX_NONE);
+        if (dsPtr->string[dsPtr->length-1] != '/') {
+            Tcl_DStringAppend(dsPtr, "/", 1);
+        }
+        pathLength = dsPtr->length;
+        Tcl_DStringSetLength(dsPtr, pathLength + (TCL_SIZE_T)mdLength * 2 + 1);
+
+        /*
+         * The filename of the PEM file consists of the hex-value of
+         * the digest of the certificate, followed by the current
+         * validation depth and the SSL error code.
+         */
+        Ns_HexString(md, dsPtr->string + pathLength, (TCL_SIZE_T)mdLength, NS_FALSE);
+        Tcl_DStringSetLength(dsPtr, pathLength+(TCL_SIZE_T)mdLength * 2);
+        Ns_DStringPrintf(dsPtr, "-%d-%d.pem", currentDepth, x509err);
+
+        if (Ns_Stat(dsPtr->string, &statInfo)) {
+            Ns_Log(Notice, "invalid certificate stored already: %s", dsPtr->string);
+        } else {
+            /*
+             * Save the certificate. We do no care about concurrency
+             * here.
+             */
+            FILE *fp = fopen(dsPtr->string, "w");
+
+            if (fp) {
+                if (PEM_write_X509(fp, cert)) {
+                    Ns_Log(Notice, "saved invalid certificate: %s", dsPtr->string);
+                } else {
+                    Ns_Log(Warning, "failed to save invalid certificate in: %s", dsPtr->string);
+                }
+                fclose(fp);
+            } else {
+                Ns_Log(Warning, "could not open %s for writing", dsPtr->string);
+            }
+        }
+
+        Tcl_DStringFree(dsPtr);
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CertificateValidationCB --
+ *
+ *      OpenSSL callback invoked to validate a certificate. This function
+ *      is called for each certificate in the chain. The parameter
+ *      "preverify_ok" indicates whether the certificate has passed the
+ *      default validation checks (1 = passed, 0 = failed).
+ *
+ *      The "ctx" argument is an X509_STORE_CTX structure containing
+ *      verification details (e.g., current error, certificate depth, etc.).
+ *
+ * Results:
+ *      Return 1 to accept the certificate, or 0 to reject it.
+ *      If 0 is returned, the TLS handshake is aborted.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
+{
+    int  certificateAccepted = preverify_ok;
+    SSL *sslPtr = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+
+    /*
+     * In case we want to set an error, we could use something like
+     *    X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_CHAIN_TOO_LONG);
+     */
+
+    if (!certificateAccepted && sslPtr != NULL) {
+        int       currentDepth = X509_STORE_CTX_get_error_depth(ctx);
+        SSL_CTX  *sslCtx       = SSL_get_SSL_CTX(sslPtr);
+        NsServer *servPtr      = SSL_CTX_get_ex_data(sslCtx, ClientCtxDataIndex);
+        NS_SOCKET sock         = SSL_get_fd(sslPtr);
+
+        Ns_Log(Debug, "??? CertficateValidationCB got socket %d ctx %p currentDepth %d index %d servPtr %p",
+               sock, (void*)sslCtx, currentDepth, ClientCtxDataIndex, (void*)servPtr);
+
+        if (unlikely(servPtr == NULL)) {
+            Ns_Log(Warning, "CertficateValidationCB cannot determine server");
+
+        } else if (sock != NS_INVALID_SOCKET) {
+            struct NS_SOCKADDR_STORAGE sa;
+            struct sockaddr           *saPtr = (struct sockaddr *)&sa;
+            int x509err = X509_STORE_CTX_get_error(ctx);
+
+            Ns_Log(Debug, "??? CertficateValidationCB servPtr %p '%s' depth: configured %d verify depth %d",
+                   (void*)servPtr, servPtr->server, servPtr->httpclient.verify_depth, currentDepth);
+
+            certificateAccepted = ValidationExcpetionExists(x509err, sock, &servPtr->httpclient.validationExceptions, saPtr);
+            if (certificateAccepted) {
+                char ipString[NS_IPADDR_SIZE];
+
+                ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE);
+                Ns_Log(Warning, "invalid certificate accepted (%s %s)", ipString, X509_verify_cert_error_string(x509err));
+                (void)StoreInvalidCertificate(X509_STORE_CTX_get_current_cert(ctx), x509err, currentDepth, servPtr);
+            }
+
+        } else {
+            Ns_Log(Warning, "CertficateValidationCB cannot determine peer address, since socket is invalid");
+        }
+    } else if (sslPtr == NULL) {
+        Ns_Log(Warning, "CertficateValidationCB could not obtain SSL pointer");
+    }
+
+    Ns_Log(Debug, "??? CertficateValidationCB ===> returns %d (accepted by openssl %d)",
+           certificateAccepted, preverify_ok);
+
+    return certificateAccepted;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_TLS_CtxServerCreate --
  *
  *      Create and Initialize OpenSSL context
@@ -1834,6 +2161,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
 
     SSL_CTX_set_default_verify_paths(ctx);
     SSL_CTX_load_verify_locations(ctx, caFile, caPath);
+    // SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
     SSL_CTX_set_verify(ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
@@ -2401,8 +2729,8 @@ void NsInitOpenSSL(void)
 
 int
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNUSED(ctx),
-                  const char *UNUSED(sni_hostname), const Ns_Time *UNUSED(timeoutPtr),
-                  NS_TLS_SSL **UNUSED(sslPtr))
+                  const char *UNUSED(sni_hostname), const char **UNUSED(caFile), const char **UNUSED(caPath),
+                  const Ns_Time *UNUSED(timeoutPtr), NS_TLS_SSL **UNUSED(sslPtr))
 {
     Ns_TclPrintfResult(interp, "SSLCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
@@ -2501,7 +2829,7 @@ int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
         }
         *caFilePtr = caFile;
         *caPathPtr = caPath;
-    } else if (insecureInt != itPtr->servPtr->httpclient.insecure) {
+    } else if (insecureInt == itPtr->servPtr->httpclient.validateCertificates) {
         Ns_TclPrintfResult(interp, "parameter '-insecure' only allowed on HTTPS connections");
         result = TCL_ERROR;
     } else if (caFile != NULL) {

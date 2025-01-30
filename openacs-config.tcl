@@ -791,14 +791,51 @@ ns_section ns/server/$server/httpclient {
     #
     #ns_param CApath $homedir/certificates/
     #ns_param CAfile $homedir/ca-bundle.crt
-    #ns_param insecure true             ;# default: false
+
+    #ns_param validateCertificates false        ;# default: true
+
+    if {[ns_config ns/server/$server/httpclient validateCertificates true]} {
+        #
+        # "validationDepth" sets the maximum allowed length of a certificate chain:
+        #   0: Accept only self-signed certificates.
+        #   1: Accept certificates issued by a single CA or self-signed.
+        #   2 or higher: Accept chains up to the specified length.
+        #
+        #ns_param validationDepth 0   ;# default: 9
+
+        #
+        # When defining exceptions below, invalid certificates are stored
+        # in the specified directory. Administrators can move these
+        # certificates to the accepted certificates folder and run "openssl rehash"
+        # to reduce future security warnings.
+        #
+        #ns_param invalidCertificates $homedir/invalid-certificates/   ;# default: [ns_info home]/invalid-certificates
+
+        #
+        # Define white-listed validation exceptions:
+        #
+        # Accept all certificates from ::1 (IPv6 loopback):
+        ns_param validationException {ip ::1}
+
+        # For IPv4 127.0.0.1, ignore two specific validation errors:
+        ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
+
+        # Allow expired certificates from any IP in the 192.168.1.0/24 range:
+        ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
+
+        # Accept self-signed certificates from any IP address:
+        ns_param validationException {accept self-signed-certificate}
+
+        # Accept all validation errors from any IP address (like disabled validation, but collects certificates)
+        ns_param validationException {accept *}
+    }
 
     #
     # Configure log file for outgoing ns_http requests
     #
-    ns_param	logging		on       ;# default: off
-    ns_param	logfile		${logdir}/httpclient.log
-    ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
+    #ns_param	logging		on       ;# default: off
+    #ns_param	logfile		${logdir}/httpclient.log
+    #ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
     #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
     #ns_param	logroll		true     ;# true, should server log files automatically
     #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup

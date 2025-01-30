@@ -49,7 +49,7 @@ help:
 	@echo '  runtest      - start the server in interactive command mode'
 	@echo '  gdbruntest   - start the server in command mode, under the debugger'
 	@echo '  memcheck     - run all tests, under the valgrind memory checker'
-	@echo '  build-doc    - build the html and nroff documentation'
+	@echo '  build-doc    - build the HTML and nroff documentation'
 	@echo '  dist         - create a source tarball naviserver-'$(NS_PATCH_LEVEL)'.tar.gz'
 	@echo '  clean        - remove files created by other targets'
 	@echo
@@ -113,6 +113,7 @@ install-config: all
 
 install-certificates: $(PEM_FILE) ca-bundle.crt
 	@$(MKDIR) -p $(DESTDIR)$(NAVISERVER)/certificates
+	@$(MKDIR) -p $(DESTDIR)$(NAVISERVER)/invalid-certificates
 	@if [ -f "$(DESTDIR)$(NAVISERVER)/etc" ]; then \
 		for i in `ls $(DESTDIR)$(NAVISERVER)/etc/*pem` ; do \
 			$(LN) -sf $$i $(DESTDIR)$(NAVISERVER)/certificates ; \

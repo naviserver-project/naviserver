@@ -554,9 +554,10 @@ LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
 /*
  *----------------------------------------------------------------------
  *
- * NsInitLog --
+ * AddValidationException --
  *
- *      Initialize the log API and TLS slot.
+ *      Parse the string from the configuration file and fill out the
+ *      structure in the first argument based on the parsed result.
  *
  * Results:
  *      None.
@@ -566,7 +567,145 @@ LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
  *
  *----------------------------------------------------------------------
  */
+static Ns_ReturnCode
+AddValidationException(NsCertValidationException_t *validationExceptionPtr, const char *validationExceptionString)
+{
+    Ns_ReturnCode result = NS_OK;
+    TCL_SIZE_T    oc;
+    Tcl_Obj     **ov, *validationExceptionObj;
+    /*
+     * X509_V_ERR_CERT_HAS_EXPIRED
+     * X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT
+     * X509_V_ERR_CERT_CHAIN_TOO_LONG
+     * X509_V_ERR_CERT_UNTRUSTED
+     *
+     * X509_V_ERR_CERT_NOT_YET_VALID
+     * X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN
+     */
+    static Ns_ObjvTable acceptedErrorCodes[] = {
+        {"*",                       NS_X509_V_ERR_MATCH_ALL},
+        {"certificate-expired",     X509_V_ERR_CERT_HAS_EXPIRED},
+        {"certificate-untrusted",   X509_V_ERR_CERT_UNTRUSTED},
+        {"chain-too-long",          X509_V_ERR_CERT_CHAIN_TOO_LONG},
+        {"self-signed-certificate", X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT},
+        {NULL,                      0u}
+    };
 
+    Ns_Log(Debug, "======================== AddValidationException '%s'", validationExceptionString);
+    validationExceptionPtr->flags = NS_CERT_TRUST_ALL_IPS;
+
+    validationExceptionObj = Tcl_NewStringObj(validationExceptionString, TCL_INDEX_NONE);
+    Tcl_IncrRefCount(validationExceptionObj);
+
+    if (Tcl_ListObjGetElements(NULL, validationExceptionObj, &oc, &ov) == TCL_OK && oc % 2 == 0) {
+        TCL_SIZE_T idx;
+
+        for (idx = 0; idx + 2 <= oc; idx += 2) {
+            TCL_SIZE_T  keyLength;
+            const char *key = Tcl_GetStringFromObj(ov[idx], &keyLength);
+            const char *value = Tcl_GetString(ov[idx+1]);
+
+            Ns_Log(Debug, "..... validationException idx %d spec key '%s' value '%s'", idx, key, value);
+            if (keyLength == 2 && strcasecmp(key, "ip") == 0) {
+                struct sockaddr *ipPtr   = (struct sockaddr *)&validationExceptionPtr->ip,
+                                *maskPtr = (struct sockaddr *)&validationExceptionPtr->mask;
+                Ns_ReturnCode    status;
+
+                status = Ns_SockaddrParseIPMask(NULL, value, ipPtr, maskPtr, NULL);
+                if (status == NS_OK) {
+                    validationExceptionPtr->flags &= ~NS_CERT_TRUST_ALL_IPS;
+                } else {
+                    /*
+                     * Could not parse mask string
+                     */
+                    result = NS_ERROR;
+                    Ns_Log(Error, "validationException: invalid IP addr/CIDR <%s>, rule ignored", value);
+                    break;
+                }
+            } else if (keyLength == 6 && strcasecmp(key, "accept") == 0) {
+                Tcl_Obj     **ov2, *valueObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
+                TCL_SIZE_T    oc2;
+
+                Tcl_IncrRefCount(valueObj);
+                if (Tcl_ListObjGetElements(NULL, valueObj, &oc2, &ov2) == TCL_OK) {
+                    TCL_SIZE_T i;
+
+                    for (i = 0; i < oc2; i++) {
+                        int tableIdx, rc;
+
+                        //Ns_Log(Notice, "..... get accept code pos %d value <%s> oc %d", i, Tcl_GetString(ov2[i]), oc2);
+
+                        rc = Tcl_GetIndexFromObjStruct(NULL, ov2[i], acceptedErrorCodes,
+                                                       sizeof(Ns_ObjvTable), "option",
+                                                       TCL_EXACT, &tableIdx);
+                        if (rc == TCL_OK) {
+                            size_t        slot;
+                            unsigned char x509err = (unsigned char)acceptedErrorCodes[tableIdx].value;
+
+                            /*
+                             * Find a slot.
+                             */
+                            for (slot = 0u; slot < NS_MAX_VALIDITY_ERRORS_PER_RULE-1; slot++) {
+                                if (validationExceptionPtr->accept[slot] == 0) {
+                                    break;
+                                }
+                            }
+                            if (slot == NS_MAX_VALIDITY_ERRORS_PER_RULE-1) {
+                                Ns_Log(Error, "validationException: maximal number of accepted errors reached, value <%s> ignored", value);
+                            } else {
+                                /*
+                                 * Save value to slot.
+                                 */
+                                validationExceptionPtr->accept[slot] = x509err;
+                                Ns_Log(Notice, "validationException: added accepted error <%s> code %d on pos %ld", value, x509err, slot);
+                            }
+
+                        } else {
+                            Tcl_DString ds;
+
+                            Tcl_DStringInit(&ds);
+                            Ns_Log(Error, "validationException: error code <%s>, valid <%s>, rule ignored",
+                                   value, Ns_ObjvTablePrint(&ds, acceptedErrorCodes));
+                            Tcl_DStringFree(&ds);
+                            result = NS_ERROR;
+                            break;
+                        }
+                    }
+                }
+                Tcl_DecrRefCount(valueObj);
+
+                if (result == NS_ERROR) {
+                    break;
+                }
+            } else {
+                Ns_Log(Warning, "..... unknown key <%s> ignored", key);
+            }
+        }
+    } else {
+        result = NS_ERROR;
+    }
+    Tcl_DecrRefCount(validationExceptionObj);
+    Ns_Log(Debug, "======================== AddValidationException '%s' => flags %.4lx", validationExceptionString, validationExceptionPtr->flags);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitHttp --
+ *
+ *      Initialize the HTTP client subsystem, load configuration parameters and
+ *      open the log file if necessary.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Potentially file opened.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 NsInitHttp(NsServer *servPtr)
 {
@@ -586,7 +725,8 @@ NsInitHttp(NsServer *servPtr)
                            "0s", 0, 0, INT_MAX, 0, &servPtr->httpclient.keepaliveTimeout);
 
     servPtr->httpclient.caFile = Ns_ConfigFilename(section, "cafile", 6, nsconf.home, "ca-bundle.crt");
-    servPtr->httpclient.caPath = Ns_ConfigFilename(section, "caPath", 6, nsconf.home, "certificates");
+    servPtr->httpclient.caPath = Ns_ConfigFilename(section, "capath", 6, nsconf.home, "certificates");
+    servPtr->httpclient.invalidCaPath = Ns_ConfigFilename(section, "invalidcertificates", 6, nsconf.home, "invalid-certificates");
 
     if (!Ns_Stat(servPtr->httpclient.caFile, &statInfo)) {
         Ns_Log(Warning, "NsInitHttp: caFile '%s' does not exist", servPtr->httpclient.caFile);
@@ -599,19 +739,49 @@ NsInitHttp(NsServer *servPtr)
            servPtr->httpclient.caPath,
            servPtr->httpclient.caFile);
 
-    servPtr->httpclient.insecure = Ns_ConfigBool(section, "insecure", NS_FALSE);
-    if (servPtr->httpclient.insecure) {
-        Ns_Log(Warning, "\n=============================================================================\n"
-               " Configuration sets HTTPS client requests are set per default to insecure !!!\n"
+    servPtr->httpclient.validateCertificates = Ns_ConfigBool(section, "validatecertificates", NS_TRUE);
+    if (!servPtr->httpclient.validateCertificates) {
+        Ns_Log(Warning,
+               "\n======================================================================================================\n"
+               " Configuration deactivates validation of peer certificates on HTTPS client requests per default!!!\n"
                " Section: %s\n"
-               "=============================================================================\n", section);
+               "======================================================================================================",
+               section);
+    } else {
+        /*
+          ns_param validationException {ip ::1}
+          ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
+          ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
+        */
+        Ns_Set *set = Ns_ConfigGetSection2(section, NS_FALSE);
+        size_t  i;
+
+        Ns_DListInit(&servPtr->httpclient.validationExceptions);
+        for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
+            const char *key = Ns_SetKey(set, i);
+
+            if ( STREQ(key, "validationexception") ) {
+                NsCertValidationException_t *validationException = ns_calloc(1u, sizeof(NsCertValidationException_t));
+                Ns_ReturnCode rc;
+
+                rc = AddValidationException(validationException, Ns_SetValue(set, i));
+                if (rc == NS_OK) {
+                    Ns_Log(Notice, "======================== validationException added on pos %ld",
+                           servPtr->httpclient.validationExceptions.size);
+                    Ns_DListAppend(&servPtr->httpclient.validationExceptions, validationException);
+                } else {
+                    ns_free(validationException);
+                }
+            }
+        }
+
+        servPtr->httpclient.verify_depth = Ns_ConfigIntRange(section, "validationdepth", 9, 0, INT_MAX);
     }
 
     servPtr->httpclient.logging = Ns_ConfigBool(section, "logging", NS_FALSE);
     if (servPtr->httpclient.logging) {
         Tcl_DString defaultLogFileName;
 
-        fprintf(stderr, "LOGDIR InitHTTP ================== <%s>\n", nsconf.logDir);
         if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
             Ns_Fatal("httpclient log: log directory '%s' could not be created", nsconf.logDir);
         }
@@ -2551,7 +2721,7 @@ HttpQueue(
     /*
      * Set the default value of "insecureInt" from the configurations.
      */
-    insecureInt = itPtr->servPtr->httpclient.insecure;
+    insecureInt = !itPtr->servPtr->httpclient.validateCertificates;
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -4038,7 +4208,8 @@ HttpConnect(
                                 Ns_Log(Debug, "automatically use SNI <%s>", rhost);
                             }
                             rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
-                                                   sniHostname, &remainingTime, &ssl);
+                                                   sniHostname, caFile, caPath,
+                                                   &remainingTime, &ssl);
                             if (rc == NS_TIMEOUT) {
                                 /*
                                  * Ns_TLS_SSLConnect ran into a timeout.

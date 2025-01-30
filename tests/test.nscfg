@@ -273,7 +273,7 @@ ns_section "ns/server/test/tcl" {
     }
 }
 ns_section "ns/server/test/httpclient" {
-    #ns_param insecure true
+    #ns_param validateCertificates false
     ns_param CAfile [file normalize [ns_config "test" home]/../ca-bundle.crt]
     ns_param CApath [file normalize [ns_config "test" home]/testserver/certificates]
 }

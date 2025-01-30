@@ -676,6 +676,8 @@ typedef Tcl_Obj *
 typedef struct Ns_DriverClientInitArg {
     NS_TLS_SSL_CTX *ctx;
     const char *sniHostname;
+    const char *caFile;
+    const char *caPath;
 } Ns_DriverClientInitArg;
 
 /*
@@ -3854,9 +3856,9 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
 
 NS_EXTERN Ns_ReturnCode
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                  const char *sni_hostname, const Ns_Time *timeoutPtr,
-                  NS_TLS_SSL **sslPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
+                  const char *sni_hostname, const char *caFile, const char *caPath,
+                  const Ns_Time *timeoutPtr, NS_TLS_SSL **sslPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(8);
 
 NS_EXTERN int
 Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock,

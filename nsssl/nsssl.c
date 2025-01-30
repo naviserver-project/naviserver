@@ -662,6 +662,8 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, void *arg)
     if (Ns_TLS_SSLConnect(interp, sockPtr->sock,
                           params->ctx,
                           params->sniHostname,
+                          params->caFile,
+                          params->caPath,
                           NULL,
                           &ssl) == NS_OK) {
         SSLContext *sslCtx = ns_calloc(1, sizeof(SSLContext));

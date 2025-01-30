@@ -1154,7 +1154,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 
-    insecureInt = itPtr->servPtr->httpclient.insecure;
+    insecureInt = !itPtr->servPtr->httpclient.validateCertificates;
 
     if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -1186,7 +1186,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
                 }
 
                 if (likely(result == TCL_OK)) {
-                    Ns_DriverClientInitArg params = {ctx, sniHostname};
+                    Ns_DriverClientInitArg params = {ctx, sniHostname, caFile, caPath};
 
                     if (sniHostname == NULL && !NsHostnameIsNumericIP(parsedUrl.host)) {
                         params.sniHostname = parsedUrl.host;
@@ -1309,7 +1309,7 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 
-    insecureInt = itPtr->servPtr->httpclient.insecure;
+    insecureInt = !itPtr->servPtr->httpclient.validateCertificates;
 
     if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -1352,7 +1352,7 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
                                                 NULL /* caPath*/, NS_FALSE /*verify*/,
                                                 &ctx);
                 if (likely(result == TCL_OK)) {
-                    Ns_DriverClientInitArg params = {ctx, host};
+                    Ns_DriverClientInitArg params = {ctx, host, caFile, caPath};
 
                     if (sniHostname == NULL && !NsHostnameIsNumericIP(host)) {
                         params.sniHostname = host;
