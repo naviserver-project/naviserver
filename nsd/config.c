@@ -1442,7 +1442,7 @@ NsConfigSectionGetFiltered(const char *section, char filter)
  *      When "create" is not set, the function might return NULL.
  *
  * Side effects:
- *      Section set created (if necessary and "create" is given as true).
+ *      Section set created (if necessary and "create" is NS_TRUE).
  *
  *----------------------------------------------------------------------
  */
