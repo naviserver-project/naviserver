@@ -2283,33 +2283,13 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
  * pathname.c:
  */
 
-NS_EXTERN bool
-Ns_PathIsAbsolute(const char *path) NS_GNUC_PURE
-    NS_GNUC_NONNULL(1);
-
 NS_EXTERN const char *
-Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
-
-NS_EXTERN const char *
-Ns_NormalizeUrl(Ns_DString *dsPtr, const char *path)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
-
-NS_EXTERN const char *
-Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
+Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN const char *
 Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN const char *
-Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
-    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
-
-NS_EXTERN const char *
-Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
-    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN const char *
 Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
@@ -2320,23 +2300,44 @@ Ns_HomePathExists(const char *path, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
+Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+
+NS_EXTERN const char *
+Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+
+NS_EXTERN const char *
 Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN const char *
-Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
+
+NS_EXTERN const char *
+Ns_NormalizeUrl(Ns_DString *dsPtr, const char *path)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN const char *
 Ns_PagePath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN Ns_ReturnCode
-Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
+NS_EXTERN bool
+Ns_PathIsAbsolute(const char *path) NS_GNUC_PURE
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
 Ns_RequireDirectory(const char *path)
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN const char *
+Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN Ns_ReturnCode
+Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
+
 
 /*
  * proc.c:
