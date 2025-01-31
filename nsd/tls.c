@@ -2793,9 +2793,10 @@ Ns_TLS_CtxServerInit(const char *UNUSED(path), Tcl_Interp *UNUSED(interp),
  *
  * NsTlsGetParameters --
  *
- *      Check TLS specific parameters and return optionally the default values.
- *      Furthermore, leave an error message in the interp, when called without
- *      an TLS context.
+ *      Check TLS specific parameters and return optionally the
+ *      default values.  For insecure requests, set "caFile" and
+ *      "caPath" to NULL.  Furthermore, leave an error message in the
+ *      interp, when called without an TLS context.
  *
  * Results:
  *      Standard Tcl result.
@@ -2827,8 +2828,8 @@ int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
         if (caPath == NULL || *caPath == '\0') {
             caPath = servPtr->httpclient.caPath;
         }
-        *caFilePtr = caFile;
-        *caPathPtr = caPath;
+        *caFilePtr = (insecureInt == 0) ? caFile : NULL;
+        *caPathPtr = (insecureInt == 0) ? caPath : NULL;
     } else if (insecureInt == itPtr->servPtr->httpclient.validateCertificates) {
         Ns_TclPrintfResult(interp, "parameter '-insecure' only allowed on HTTPS connections");
         result = TCL_ERROR;

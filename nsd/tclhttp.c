@@ -749,9 +749,10 @@ NsInitHttp(NsServer *servPtr)
                section);
     } else {
         /*
-          ns_param validationException {ip ::1}
-          ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
-          ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
+         * Examples of validation exceptions:
+         *    ns_param validationException {ip ::1}
+         *    ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
+         *    ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
         */
         Ns_Set *set = Ns_ConfigGetSection2(section, NS_FALSE);
         size_t  i;
