@@ -832,7 +832,9 @@ will be served with the following extra response header fields.
  performs web service requests or manages infrastructure and
  administrative tasks over HTTPS. Historically, some systems and
  libraries have been configured to disable certificate validation
- entirely, leaving them vulnerable to man-in-the-middle attacks.
+ entirely
+ (see e.g., [uri https://www.cs.utexas.edu/~shmat/shmat_ccs12.pdf "The Most Dangerous Code"]),
+ leaving them vulnerable to man-in-the-middle attacks.
 
  [para]
 
@@ -1034,6 +1036,57 @@ certificate validation and exception rules:
  }
 [example_end]
 
+[subsection {Maintenance Tasks for Client Certificate Management}]
+
+[list_begin itemized]
+
+[item] Transitioning to certificate validation:
+
+ [para] Switching from a configuration with certificate validation disabled
+ to one with validation enabled can initially result in many failures,
+ especially if various services rely on self-signed or otherwise
+ untrusted certificates. One approach is to enable validation but
+ accept all validation failures. This allows the HTTPS connections to
+ remain functional while NaviServer logs warnings and stores the
+ rejected certificates, giving you the opportunity to address them
+ individually.
+
+[example_begin]
+ ns_section ns/server/$server/httpclient {
+   ...
+   ns_param validateCertificates true
+   ns_param validationException {accept *}
+   ...
+ }
+[example_end]
+
+ With these settings, any validation errors will be logged, and the
+ invalid certificates will be saved:
+
+[example_begin]
+ ... Warning: invalid certificate accepted (... self-signed certificate in certificate chain)
+ ... Notice: saved invalid certificate: .../invalid-certificates/...-2-19.pem
+[example_end]
+
+[item] Updating [const ca-bundle.crt]:
+
+ [para] Keeping your [const ca-bundle.crt] file up to date ensures that your
+ application trusts the newest certificate authorities (CAs) and
+ rejects compromised or revoked certificates. Most operating systems
+ and distributions offer automated updates via package managers (e.g.,
+ [const "apt-get install ca-certificates"] on Debian/Ubuntu or
+ ca-certificates RPM packages on Fedora/RHEL).
+
+ [para]
+ Alternatively, you can manually download and replace your CA bundle,
+ often derived from
+ [uri https://curl.se/docs/caextract.html "Mozilla’s trusted CA list"].
+ Whenever you update [const ca-bundle.crt], verify its integrity
+ (e.g., via checksums).
+ You might consider to schedule these updates (e.g., through [cmd ns_schedule]).
+
+[list_end]
+
 
 [subsection {Forward and Reverse Proxy Server Configuration}]
 
@@ -1138,6 +1191,7 @@ tailored error messages depending on the HTTP status codes.
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
 	driver prebind pagedir \
+        "scheduled procedures" \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate vhostcertificates invalid-certificates \
         TLS HTTPS OCSP SNI initcmds letsencrypt redirect \

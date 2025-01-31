@@ -238,6 +238,6 @@ script as returned by the ns_schedule* commands.
 
 
 [see_also nsd ns_job ns_log ns_time]
-[keywords "global built-in" background schedule]
+[keywords "global built-in" background "scheduled procedures"]
 
 [manpage_end]

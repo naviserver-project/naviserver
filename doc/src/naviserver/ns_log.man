@@ -395,7 +395,8 @@ Create a new severity.
 
 
 [see_also ns_accesslog ns_info ns_rollfile ns_purgefiles ns_asynclogfile ns_http ns_connchan]
-[keywords "global built-in" logging "system log" path error configuration nscgi nsdb nsproxy]
+[keywords "global built-in" logging "system log" path error \
+   configuration nscgi nsdb nsproxy severity]
 
 
 [manpage_end]
