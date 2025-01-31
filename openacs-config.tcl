@@ -780,21 +780,28 @@ ns_section ns/server/$server/fastpath {
 #---------------------------------------------------------------------
 ns_section ns/server/$server/httpclient {
     #
-    # Set default keep-alive timeout for outgoing ns_http requests
+    # Set default keep-alive timeout for outgoing ns_http requests.
+    # The specified value determines how long connections remain open for reuse.
     #
     #ns_param	keepalive       5s       ;# default: 0s
 
     #
-    # Default locations for certificate validation in ns_http or
-    # ns_connchan requests.  These locations can be overridden per
-    # request via parameters.
+    # If you wish to disable certificate validation for "ns_http" or
+    # "ns_connchan" requests, set validateCertificates to false.
+    # However, this is NOT recommended, as it significantly increases
+    # vulnerability to man-in-the-middle attacks.
     #
-    #ns_param CApath $homedir/certificates/
-    #ns_param CAfile $homedir/ca-bundle.crt
-
     #ns_param validateCertificates false        ;# default: true
 
-    if {[ns_config ns/server/$server/httpclient validateCertificates true]} {
+    if {[ns_config ns/server/default/httpclient validateCertificates true]} {
+        #
+        # Default locations for certificate validation in "ns_http" or
+        # "ns_connchan" requests.  These locations can be overridden per
+        # request via parameters.
+        #
+        #ns_param CApath certificates   ;# default: [ns_info home]/certificates/
+        #ns_param CAfile ca-bundle.crt  ;# default: [ns_info home]/ca-bundle.crt
+
         #
         # "validationDepth" sets the maximum allowed length of a certificate chain:
         #   0: Accept only self-signed certificates.
