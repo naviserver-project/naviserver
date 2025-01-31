@@ -795,9 +795,12 @@ ns_section ns/server/$server/httpclient {
 
     if {[ns_config ns/server/default/httpclient validateCertificates true]} {
         #
-        # Default locations for certificate validation in "ns_http" or
-        # "ns_connchan" requests.  These locations can be overridden per
-        # request via parameters.
+        # Specify trusted certificates using
+        #   - A single CA bundle file (CAfile) for top-level certificates, or
+        #   - A directory (CApath) containing multiple trusted certificates.
+        #
+        # These default locations can be overridden per request in
+        # "ns_http" and "ns_connchan" requests.
         #
         #ns_param CApath certificates   ;# default: [ns_info home]/certificates/
         #ns_param CAfile ca-bundle.crt  ;# default: [ns_info home]/ca-bundle.crt

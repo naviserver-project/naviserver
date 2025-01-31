@@ -80,7 +80,7 @@ In general, when modifying configuration files, it is always a good
 idea to check whether a configuration file is syntactically correct
 before starting the server. This can reduce the downtime of a
 production server in case of typos. A configuration file named
-"nsd-config.tcl" can be checked with the command line option [term -T]
+[const nsd-config.tcl] can be checked with the command line option [term -T]
 of NaviServer.
 
 [example_begin]
@@ -193,7 +193,8 @@ In this case, it is sufficient to load the driver once.
  }
 [example_end]
 
-When the configuration file above is named e.g. two-server-config.tcl,
+When the configuration file above is named e.g.,
+[const two-server-config.tcl],
 the two servers can be started with a command line like:
 
 [example_begin]
@@ -821,6 +822,219 @@ will be served with the following extra response header fields.
 
 [para]
 
+[subsection {HTTPS Client Certificate Management}]
+
+ The sections above explain how to configure server certificates when
+ NaviServer handles incoming HTTPS connections
+ (see parameters [const certificate] and
+ [const vhostcertificates]). In contrast, this section focuses on cases
+ where NaviServer acts as an HTTPS client - for example, when it
+ performs web service requests or manages infrastructure and
+ administrative tasks over HTTPS. Historically, some systems and
+ libraries have been configured to disable certificate validation
+ entirely, leaving them vulnerable to man-in-the-middle attacks.
+
+ [para]
+
+ In NaviServer, client-side certificate management (for outgoing HTTPS
+ connections) is configured in the per-server [term httpclient]
+ section of the server configuration. While above examples refers to
+ server names like [term s1] or [term s2], any valid server name can be used.
+
+
+[para]
+This [term httpclient] section also includes parameters for managing
+keep-alive behavior and logging for outgoing requests. In this subsection,
+we focus on certificate management and security-related settings.
+
+ [para]
+
+ The most important parameter is [term validateCertificates], which
+ defaults to [const true]. This is the recommended setting and
+ protects against man-in-the-middle attacks by rejecting forged or
+ otherwise invalid certificates. Nonetheless, internal or development
+ servers often use self-signed or expired certificates, leading to
+ request failures under strict validation. This likely explains why
+ NaviServer 4.x was historically permissive by default.
+
+[example_begin]
+ #---------------------------------------------------------------------
+ # HTTP client (ns_http, ns_connchan) configuration
+ #---------------------------------------------------------------------
+ ns_section ns/server/$server/httpclient {
+  
+   # Set default keep-alive timeout for outgoing ns_http requests.
+   ...
+   #
+   ns_param validateCertificates true        ;# default: true
+   ...
+   # ... additional validation settings ...
+   ...
+   # Configure log file for outgoing ns_http requests
+   ...
+ }
+[example_end]
+
+ [para]
+ 
+ In NaviServer 5, you can specify the default location of trusted
+ certificates:
+ [list_begin itemized]
+ [item] [term CAfile] references a single file with trusted root certificates (commonly [term ca-bundle.crt])]
+ [item] [term CApath] references a directory containing multiple trusted certificates]
+ [list_end]
+
+ Both parameters map directly to OpenSSL
+ settings. Whenever new certificates are added to [term CApath], you
+ must run [term "openssl rehash"] for OpenSSL to recognize them on
+ subsequent requests.
+
+ [para]
+ 
+ You can further control the depth of certificate validation using
+ [term validationDepth]:
+ [list_begin itemized]
+ [item] 0 means accepting only self-signed certificates]
+ [item] 1 means certificates are issued by at most one CA or are self-signed
+ [item] 2 or higher means certificate chains up to that length are allowed
+ [list_end]
+
+ [para]
+ 
+ Use [term validationException] to define exceptions for specific
+ validation errors (e.g., [term certificate-expired] or
+ [term self-signed-certificate]) from certain IP addresses or CIDR
+ ranges. Multiple rules can be defined, each possibly including:
+
+[list_begin itemized]
+[item] [term ip:] The IP address or CIDR range. If omitted, the rule applies
+   to all hosts.
+[item] [term accept:] A list of validation errors to allow, or [term "*"] to allow all.
+   If omitted, the default is [term "accept *"].
+[list_end]
+
+ For example:
+ 
+[example_begin]
+ns_param validationException {
+  ip 127.0.0.1
+  accept {certificate-expired self-signed-certificate}
+}
+[example_end]
+The sample [term httpclient] configuration below contains several examples.
+
+[para]
+
+ Acceptance rules do not replace [term CApath] or [term CAfile], but
+ help simplify certificate management. Administrators can manually
+ consolidate rejected certificates into the CA path, but doing so can
+ be laborious when they reside in multiple administrative domains.
+
+ [para]
+ 
+ Whenever an acceptance rule is applied, NaviServer stores the flagged
+ certificate in a directory for invalid certificates and logs an entry
+ to the system log. By default, this directory is named
+ [const invalid-certificates], though you can specify an alternative name or
+ path via [term invalidCertificates]. This mechanism allows
+ administrators to review such certificates later for potential manual
+ handling or auditing.
+
+ [para] A recejected certificate can be examined with:
+[example_begin]
+ openssl x509 -in CERT.PEM -noout -text
+[example_end]
+
+[para]
+
+Below is a sample [term httpclient] configuration illustrating
+certificate validation and exception rules:
+
+
+[example_begin]
+ #---------------------------------------------------------------------
+ # HTTP client (ns_http, ns_connchan) configuration
+ #---------------------------------------------------------------------
+ ns_section ns/server/$server/httpclient {
+    #
+    # Set default keep-alive timeout for outgoing ns_http requests.
+    # The specified value determines how long connections remain open for reuse.
+    #
+    ns_param    keepalive       5s       ;# default: 0s
+ 
+    #
+    # If you wish to disable certificate validation for "ns_http" or
+    # "ns_connchan" requests, set "validateCertificates" to "false".
+    # However, this is NOT recommended, as it significantly increases
+    # vulnerability to man-in-the-middle attacks.
+    #
+    #ns_param validateCertificates false        ;# default: true
+ 
+    if {[lb]ns_config ns/server/$server/httpclient validateCertificates true[rb]} {
+        #
+        # The following parameters are only relevant when peer certificate
+        # validation is enabled.
+        #
+ 
+        # Specify trusted certificates using
+        #   - A single CA bundle file (CAfile) for top-level certificates, or
+        #   - A directory (CApath) containing multiple trusted certificates.
+        #
+        # These default locations can be overridden per request in
+        # "ns_http" and "ns_connchan" requests.
+ 
+        ns_param CApath certificates           ;# default: [lb]ns_info home[rb]/certificates/
+        ns_param CAfile ca-bundle.crt          ;# default: [lb]ns_info home[rb]/ca-bundle.crt
+ 
+        #
+        # "validationDepth" sets the maximum allowed length of a certificate chain:
+        #   0: Accept only self-signed certificates.
+        #   1: Accept certificates issued by a single CA or self-signed.
+        #   2 or higher: Accept chains up to the specified length.
+ 
+        #ns_param validationDepth 0   ;# default: 9
+ 
+        #
+        # When defining exceptions below, invalid certificates are stored
+        # in the specified directory. Administrators can move these
+        # certificates to the accepted certificates folder and run "openssl rehash"
+        # to reduce future security warnings.
+ 
+        #ns_param invalidCertificates ;# default: [lb]ns_info home[rb]/invalid-certificates/
+ 
+        #
+        # Define white-listed validation exceptions:
+        #
+        # Accept all certificates from ::1 (IPv6 loopback):
+        ns_param validationException {ip ::1}
+ 
+        # For IPv4 127.0.0.1, ignore two specific validation errors:
+        ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
+ 
+        # Allow expired certificates from any IP in the 192.168.1.0/24 range:
+        ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
+ 
+        # Accept self-signed certificates from any IP address:
+        ns_param validationException {accept self-signed-certificate}
+ 
+        # Accept all validation errors from any IP address (like disabled validation, but collects certificates)
+        #ns_param validationException {accept *}
+    }
+ 
+    #
+    # Configure log file for outgoing ns_http requests
+    #
+    ns_param     logging          on       ;# default: off
+    ns_param     logfile          httpclient.log ;# default: [lb]ns_info home[rb]/logs/httpclient.log
+    ns_param     logrollfmt       %Y-%m-%d ;# format appended to log filename
+    #ns_param    logmaxbackup     100      ;# 10, max number of backup log files
+    #ns_param    logroll          true     ;# true, should server log files automatically
+    #ns_param    logrollonsignal  true     ;# false, perform roll on a sighup
+    #ns_param    logrollhour      0        ;# 0, specify at which hour to roll
+ }
+[example_end]
+
+
 [subsection {Forward and Reverse Proxy Server Configuration}]
 
 NaviServer can be configured additionally as a classical "forward"
@@ -925,7 +1139,8 @@ tailored error messages depending on the HTTP status codes.
 	"connection thread pools" \
 	driver prebind pagedir \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
-        certificate TLS HTTPS OCSP SNI initcmds letsencrypt redirect \
+        certificate vhostcertificates invalid-certificates \
+        TLS HTTPS OCSP SNI initcmds letsencrypt redirect \
         ADP templates reverseproxymode]
 [see_also tcl-libraries tcl-overview]
 [manpage_end]
