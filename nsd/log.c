@@ -214,13 +214,14 @@ static struct {
     LogColor          color;
     LogColorIntensity intensity;
 } severityConfig[640] = {
-    { "Notice",  NS_TRUE,  0, COLOR_DEFAULT, COLOR_NORMAL },
-    { "Warning", NS_TRUE,  0, COLOR_DEFAULT, COLOR_BRIGHT },
-    { "Error",   NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
-    { "Fatal",   NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
-    { "Bug",     NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
-    { "Debug",   NS_FALSE, 0, COLOR_BLUE,    COLOR_NORMAL },
-    { "Dev",     NS_FALSE, 0, COLOR_GREEN,   COLOR_NORMAL }
+    { "Notice",   NS_TRUE,  0, COLOR_DEFAULT, COLOR_NORMAL },
+    { "Warning",  NS_TRUE,  0, COLOR_DEFAULT, COLOR_BRIGHT },
+    { "Error",    NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Fatal",    NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Bug",      NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Debug",    NS_FALSE, 0, COLOR_BLUE,    COLOR_NORMAL },
+    { "Dev",      NS_FALSE, 0, COLOR_GREEN,   COLOR_NORMAL },
+    { "Security", NS_TRUE,  0, COLOR_MAGENTA, COLOR_BRIGHT }
 };
 
 static const Ns_LogSeverity severityMaxCount = (Ns_LogSeverity)(sizeof(severityConfig) / sizeof(severityConfig[0]));
@@ -503,7 +504,7 @@ Ns_CreateLogSeverity(const char *name)
         severity = severityIdx++;
         Tcl_SetHashValue(hPtr, INT2PTR(severity));
         severityConfig[severity].label = Tcl_GetHashKey(&severityTable, hPtr);
-        if (severity > Dev) {
+        if (severity >= PredefinedLogSeveritiesCount) {
             /*
              * For the lower severities, we have already defaults; initialize
              * just the higher ones.

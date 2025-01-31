@@ -66,6 +66,9 @@ This condition could never happen when the code is behaving correctly.
 [def Debug]
 General debugging.
 
+[def Security]
+Something security relevant has occurred.
+
 [def Debug(access)] Mirror access log entries in system log.
 [def Debug(cgi)] Debugging for the [cmd nscgi] module.
 [def Debug(connchan)] Debugging for [cmd ns_connchan] interactions.

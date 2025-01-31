@@ -288,6 +288,7 @@ enum {
     Bug,
     Debug,
     Dev,
+    Security,
     PredefinedLogSeveritiesCount
 };
 typedef int Ns_LogSeverity;
