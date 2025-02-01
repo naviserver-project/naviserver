@@ -2517,12 +2517,12 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
                ", len[1] %" PRIdz " sent %" PRIdz,
                connChanName, nBufs, bufs[0].iov_len, bufs[1].iov_len, nSent);
 
-        if (nSent == -1) {
+        /*if (nSent == -1) {
             Ns_Log(Warning, "%s after ConnchanDriverSend nbufs %d len[0] %" PRIdz
                    ", len[1] %" PRIdz " sent %" PRIdz " errno %ld",
                    connChanName, nBufs, bufs[0].iov_len, bufs[1].iov_len, nSent,
                    connChanPtr->sockPtr->sendErrno);
-        }
+                   }*/
         if (nSent > -1) {
             size_t remaining = (size_t)toSend - (size_t)nSent;
 
