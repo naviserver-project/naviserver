@@ -2624,7 +2624,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
         if (connPtr->drvPtr->connInfoProc != NULL) {
             Ns_Sock         *sockPtr = Ns_ConnSockPtr(conn);
             Tcl_Obj         *dictObj = connPtr->drvPtr->connInfoProc(sockPtr);
-            struct sockaddr *saPtr = Ns_SockGetClientSockAddr(sockPtr);
+            const struct sockaddr *saPtr = Ns_SockGetClientSockAddr(sockPtr);
 
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("proxied", 7),

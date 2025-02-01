@@ -176,7 +176,8 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
         time_t           now0, now1 = time(NULL);
         Ns_DString       ds;
         Tcl_Obj         *newPath;
-        struct tm        tm0, tm1, *ptm0, *ptm1;
+        struct tm        tm0, tm1;
+        const struct tm *ptm0, *ptm1;
 
         Ns_DStringInit(&ds);
 
