@@ -1102,8 +1102,6 @@ Ns_SockConnectUnix(const char *path, int socktype, Ns_ReturnCode *statusPtr)
         sock = NS_INVALID_SOCKET;
 
     } else {
-        int connect_rc;
-
         memset(&server_addr, 0, sizeof(server_addr));
         server_addr.sun_family = AF_UNIX;
         memcpy(server_addr.sun_path, path, pathLength + 1);
@@ -1111,7 +1109,7 @@ Ns_SockConnectUnix(const char *path, int socktype, Ns_ReturnCode *statusPtr)
         sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
 
         if (sock != NS_INVALID_SOCKET) {
-            connect_rc = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
+            int connect_rc = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
             if (connect_rc == -1) {
                 ns_close(sock);
                 status = NS_ERROR;

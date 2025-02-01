@@ -456,7 +456,6 @@ void
 Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 {
     const Conn    *connPtr = (const Conn *) conn;
-    size_t         i;
 
     /*
      * Construct the HTTP response status line.
@@ -534,6 +533,8 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
          * the resulting DString (dsPtr).
          */
         if (outputHeaders != NULL) {
+            size_t  i;
+
             for (i = 0u; i < Ns_SetSize(outputHeaders); i++) {
                 const char *key, *value;
 
