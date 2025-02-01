@@ -478,14 +478,6 @@ proc ::revproxy::ns_http::responseheaders {dict} {
             ns_log warning "::revproxy::ns_http::responseheaders:  other error during send to $outputchan: $errorMsg"
         } on ok {written} {
         }
-        if {$written == -1} {
-            #
-            # Forcing a "connchan close" here might cause crashes.
-            # This still needs more investigations.
-            #
-            ns_log warning "::revproxy::ns_http::responseheaders:  forcing close of channel $outputchan (NOT)"
-            #ns_connchan close $outputchan
-        }
         if {$toWrite != $written} {
             log notice ::revproxy::ns_http::responseheaders towrite $toWrite written $written
         }
