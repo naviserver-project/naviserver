@@ -52,7 +52,6 @@ test https-1.1 {short request 1.0} -constraints {serverListen} -setup {
         ns_return 200 text/plain "Hello World"
     }
 } -body {
-    puts stderr SERVER=[ns_info server]
     nstest::https -http 1.0 -getbody 1 GET /get
 } -cleanup {
     ns_unregister_op GET /get
