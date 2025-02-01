@@ -298,9 +298,14 @@ NsGetProcFunction(const char *description)
 
         infoPtr = Tcl_GetHashValue(hPtr);
         if (strcmp(infoPtr->desc, description) == 0) {
+
             Ns_Log(Debug, "... function desc: '%s' => %d",
                    infoPtr->desc, strcmp(infoPtr->desc, description));
-            result = (ns_funcptr_t)Tcl_GetHashKey(&infoHashTable, hPtr);
+
+            assert(sizeof(void*) >= sizeof(ns_funcptr_t));
+            memcpy(&result, &hPtr->key.oneWordValue, sizeof(ns_funcptr_t));
+
+            break;
         }
         hPtr = Tcl_NextHashEntry(&search);
     }

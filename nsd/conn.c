@@ -802,8 +802,8 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     servPtr = connPtr->poolPtr->servPtr;
     assert(servPtr != NULL);
 
-    Ns_Log(Debug, "Ns_ConnLocation: connLocationProc %p vhost.enabled %d behind revproxy %d",
-           (void*)servPtr->vhost.connLocationProc,
+    Ns_Log(Debug, "Ns_ConnLocation: connLocationProc %s vhost.enabled %d behind revproxy %d",
+           servPtr->vhost.connLocationProc == NULL ? "NOT PROVIDED" : "PROVIDED",
            servPtr->vhost.enabled,
            nsconf.reverseproxymode.enabled);
 
