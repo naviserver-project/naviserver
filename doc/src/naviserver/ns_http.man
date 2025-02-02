@@ -90,6 +90,7 @@ Optional ID of the HTTP request to list.
     [opt [option "-partialresults"]] \
     [opt [option "-proxy [arg value]"]] \
     [opt [option "-raw"]] \
+    [opt [option "-response_data_callback [arg value]"]] \
     [opt [option "-response_header_callback [arg value]"]] \
     [opt [option "-spoolsize [arg memory-size]"]] \
     [opt [option "-timeout [arg time]"]] \
@@ -130,6 +131,7 @@ in a dedicated per-queue thread.
     [opt [option "-partialresults"]] \
     [opt [option "-proxy [arg value]"]] \
     [opt [option "-raw"]] \
+    [opt [option "-response_data_callback [arg value]"]] \
     [opt [option "-response_header_callback [arg value]"]] \
     [opt [option "-spoolsize [arg memory-size]"]] \
     [opt [option "-timeout [arg time]"]] \
@@ -407,13 +409,47 @@ Currently, no proxy authentication is supported. This will be added later.
 delivers the content as-is (unmodified), regardless of the content
 encoding. This option is useful for tunneling modes.
 
-[opt_def -response_header_callback [arg value]] this callback will be
-executed when the response headers from the target of the
-[cmd ns_http] request are received. The [arg value] is a Tcl command,
+
+[opt_def -response_data_callback]
+
+Specifies a Tcl callback to be invoked whenever a block of response
+data is received during an HTTP client request. The callback adds a
+single argument to the provided command, which is a Tcl dictionary
+containing the following keys:
+
+[list_begin itemized]
+[item] [const headers]: ns_set containing the response header fields.
+[item] [const data]: received data block (part of the response).
+[item] [const outputchan]: (optional) — the name of the output channel, if provided.
+[list_end]
+
+The callback's return value is interpreted as follows:
+
+[list_begin itemized]
+    [item] Returning ``TCL_OK`` continues normal processing of the
+    received data, respecting the output options.
+    [item] Returning ``TCL_BREAK`` (e.g., via [const "return -code break"]) cancels further processing of the response data.
+[list_end]
+
+This callback facilitates streaming response processing, allowing
+applications to process incremental results - such as those produced by
+generative AI services - immediately as they become available.
+
+
+[opt_def -response_header_callback [arg value]]
+
+Specifies a Tcl callback to be invoked when the response headers from the target of the
+[cmd ns_http] request are received. The argument is a Tcl command,
 which is called with an additional argument containing response
-data. The argument has the form of a Tcl
-dictionary with the keys [term status], [term phrase],
-[term headers], and [term outputchan].
+data in form of a Tcl dictionary, containing the following keys:
+
+[list_begin itemized]
+[item] [const status]: The received HTTP response status code of the response.
+[item] [const phrase]: The HTTP response status phrase.
+[item] [const headers]: ns_set containing the response header fields.
+[item] [const outputchan]: (optional) The output channel name, if specified.
+[list_end]
+
 For example, in a reverse proxy configuration, an [cmd ns_connchan]
 channel can be specified at the start of the request to a backend
 server via [option -outputchan], and when the response header fields from
@@ -421,7 +457,7 @@ the backend server are received, these can be modified and sent via
 connchan back to the client.
 
 [example_begin]
- proc my_responseheaders_callback {d} {
+ proc my_response_header_callback {d} {
    dict with d {
      set response "HTTP/1.1 $status $phrase\r\n"
      foreach {key value} [lb]ns_set array $headers[rb] {
@@ -465,34 +501,25 @@ request header field.
 The commands [cmd "ns_http run"] and [cmd "ns_http wait"] return
 a dictionary containing the following elements:
 
-[list_begin definitions]
-[def] [term status]
-[def] [term time]
-[def] [term headers]
-[def] [term body]
-[def] [term body_chan]
-[def] [term error]
-[def] [term file]
-[def] [term https]
-[def] [term outputchan]
+[list_begin itemized]
+[item] [const status]: The received HTTP response status code of the response.
+[item] [const time]: The elapsed request time in [cmd ns_time] format.
+[item] [const headers]: ns_set containing the response header fields.
+
+[item] [const body]:      (optional) The received body of the response in form of a string.
+[item] [const body_chan]: (optional) The input channel name for the body, if specified.
+[item] [const error]:     (optional) Error message.
+[item] [const file]:      (optional) The received body of the response in form of a file.
+[item] [const https]:     (optional) TLS negitiation results for HTTPS requests
+[item] [const outputchan]: (optional) The output channel name, if specified.
 [list_end]
 
-The first three members are always returned, the other elements are conditional.
-The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
-The [term time] contains elapsed request time. The time value is in
-the [cmd ns_time] format.
-The [term headers] contains the name of the set with response headers.
-
-[para] When none of the output options are used, the result is
-received either in memory (member [term body]) or in a spool file
-(member [term file]). This decision depends on the value of
+The first three members are always returned, the other elements are
+conditional.  When none of the output options were used, the result is
+received either in memory (member [const body]) or in a spool file
+(member [const file]). This decision depends on the value of
 [option -spoolsize]. Both members are missing in the result dictionary, when
-[term outputchan] was used.
-
-[para] For requests with a [term bodychan] or [term outputchan], these
-values are added as well to result dictionary.  For HTTPS requests,
-the result contains the member [term https] with some low-level TLS
-parameters in a Tcl dictionary format.
+[const outputchan] was used.
 
 
 [section EXAMPLES]
