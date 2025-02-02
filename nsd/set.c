@@ -159,25 +159,25 @@ Ns_SetIUpdateSz(Ns_Set *set,
                 const char *keyString, TCL_SIZE_T keyLength,
                 const char *valueString, TCL_SIZE_T valueLength)
 {
-    ssize_t index;
+    ssize_t idx;
     size_t result;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(keyString != NULL);
 
-    index = Ns_SetIFind(set, keyString);
-    if (index != -1) {
-        Ns_SetPutValueSz(set, (size_t)index, valueString, valueLength);
+    idx = Ns_SetIFind(set, keyString);
+    if (idx != -1) {
+        Ns_SetPutValueSz(set, (size_t)idx, valueString, valueLength);
         /*
          * If the capitalization of the key is different, keep the new one.
          */
-        if (*(set->fields[index].name) != *keyString) {
+        if (*(set->fields[idx].name) != *keyString) {
             if (keyLength == TCL_INDEX_NONE) {
                 keyLength = (TCL_SIZE_T)strlen(keyString);
             }
-            memcpy(set->fields[index].name, keyString, (size_t)keyLength);
+            memcpy(set->fields[idx].name, keyString, (size_t)keyLength);
         }
-        result = (size_t)index;
+        result = (size_t)idx;
     } else {
         result = Ns_SetPutSz(set, keyString, keyLength, valueString, valueLength);
     }
@@ -210,21 +210,21 @@ Ns_SetUpdateSz(Ns_Set *set,
                const char *keyString, TCL_SIZE_T keyLength,
                const char *valueString, TCL_SIZE_T valueLength)
 {
-    ssize_t index;
+    ssize_t idx;
     size_t result;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(keyString != NULL);
 
-    index = Ns_SetFind(set, keyString);
-    if (index != -1) {
-        Ns_SetPutValueSz(set, (size_t)index, valueString, valueLength);
-        result = (size_t)index;
+    idx = Ns_SetFind(set, keyString);
+    if (idx != -1) {
+        Ns_SetPutValueSz(set, (size_t)idx, valueString, valueLength);
+        result = (size_t)idx;
     } else {
         result = Ns_SetPutSz(set, keyString, keyLength, valueString, valueLength);
     }
     Ns_Log(Ns_LogNsSetDebug, "Ns_SetUpdateSz %p '%s': index %ld key '%s' value '%s'",
-           (void*)set, set->name, index, keyString, valueString);
+           (void*)set, set->name, idx, keyString, valueString);
     return result;
 }
 

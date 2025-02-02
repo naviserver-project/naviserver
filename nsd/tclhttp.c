@@ -4533,7 +4533,6 @@ ResponseDataCallback(
 ) {
     int           result;
     Tcl_Interp   *interp;
-    Ns_Set      *responseHeaders;
 
     LogDebug("ResponseDataCallback", httpPtr, "");
     assert(httpPtr->responseDataCallback != NULL);
@@ -4545,11 +4544,11 @@ ResponseDataCallback(
      */
     if (httpPtr->interp == NULL) {
         interp = NsTclAllocateInterp(httpPtr->servPtr);
-        responseHeaders = Ns_SetCopy(httpPtr->responseHeaders);
-        result = Ns_TclEnterSet(interp, responseHeaders, NS_TCL_SET_DYNAMIC);
+        result = Ns_TclEnterSet(interp,
+                                Ns_SetCopy(httpPtr->responseHeaders),
+                                NS_TCL_SET_DYNAMIC);
     } else {
         interp = httpPtr->interp;
-        responseHeaders = httpPtr->responseHeaders;
         result = TCL_OK;
     }
 
@@ -4640,7 +4639,6 @@ ResponseHeaderCallback(
 
     if (httpPtr->responseHeaderCallback != NULL) {
         Tcl_Interp *interp;
-        Ns_Set     *responseHeaders;
 
         /*
          * Use provided interpreter if available, otherwise allocate one. When
@@ -4649,11 +4647,11 @@ ResponseHeaderCallback(
          */
         if (httpPtr->interp == NULL) {
             interp = NsTclAllocateInterp(httpPtr->servPtr);
-            responseHeaders = Ns_SetCopy(httpPtr->responseHeaders);
-            result = Ns_TclEnterSet(interp, responseHeaders, NS_TCL_SET_DYNAMIC);
+            result = Ns_TclEnterSet(interp,
+                                    Ns_SetCopy(httpPtr->responseHeaders),
+                                    NS_TCL_SET_DYNAMIC);
         } else {
             interp = httpPtr->interp;
-            responseHeaders = httpPtr->responseHeaders;
             result = TCL_OK;
         }
 
@@ -7047,10 +7045,10 @@ HttpGetTaskQueue(void)
     if (nsconf.tclhttptasks.numqueues == 1) {
         queuePtr = nsconf.tclhttptasks.queues[0];
     } else {
-        int idx, tql, ltql = INT_MAX;
+        int idx, ltql = INT_MAX;
 
         for (idx = 0; idx < nsconf.tclhttptasks.numqueues; idx++) {
-            tql = Ns_TaskQueueLength(nsconf.tclhttptasks.queues[idx]);
+            int tql = Ns_TaskQueueLength(nsconf.tclhttptasks.queues[idx]);
             if (tql < ltql) {
                 queuePtr = nsconf.tclhttptasks.queues[idx];
                 if (tql == 0) {
@@ -7164,7 +7162,6 @@ static bool
 PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
 {
     CloseWaitingData *cwDataPtr = NULL;
-    size_t            i;
     int               errorCode;
     const char       *operation;
 
@@ -7207,6 +7204,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
         /*Ns_Log(Notice,"PersistentConnectionAdd host %s:%hu reuse slot on input pos %ld",
           httpPtr->host, httpPtr->port, httpPtr->pos);*/
     } else {
+        size_t i;
         /*
          * Get a slot which can be reused.
          */

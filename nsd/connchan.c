@@ -2432,6 +2432,7 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
     connChanPtr = ConnChanGet(interp, servPtr, connChanName);
 
     if (unlikely(connChanPtr == NULL)) {
+        *errnoPtr = 0;
         result = TCL_ERROR;
     } else {
         /*
@@ -2710,10 +2711,10 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
         } else {
             result = TCL_ERROR;
         }
+        *errnoPtr = connChanPtr->sockPtr->sendErrno;
     }
     Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan write returns %s", connChanName, Ns_TclReturnCodeString(result));
 
-    *errnoPtr = connChanPtr->sockPtr->sendErrno;
     *nSentPtr = nSent;
     return result;
 }

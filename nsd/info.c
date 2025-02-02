@@ -720,7 +720,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         return TCL_ERROR;
     }
     if ((opt != IMeminfoIdx && objc != 2)
-        || (opt == IMeminfoIdx && (objc < 2 || objc > 3))) {
+        || (opt == IMeminfoIdx && objc > 3)) {
         if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         } else {

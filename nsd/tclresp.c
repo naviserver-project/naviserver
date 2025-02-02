@@ -205,14 +205,9 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 int
 NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
     Ns_Conn        *conn  = NULL;
-    int             n, result;
+    int             result;
     TCL_SIZE_T      length = 0;
-    TCL_SIZE_T      i;
-    Ns_ReturnCode   status;
-    bool            binary;
-    unsigned int    flags;
     struct iovec    iov[32];
     struct iovec   *sbufs = iov;
 
@@ -221,6 +216,13 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
         result = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
+        const NsInterp *itPtr = clientData;
+        int             n;
+        TCL_SIZE_T      i;
+        Ns_ReturnCode   status;
+        bool            binary;
+        unsigned int    flags;
+
         objv++;
         objc--;
 

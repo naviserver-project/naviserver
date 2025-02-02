@@ -162,14 +162,15 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
     int i;
 
     for (i = 0; (i < nbufs) && (sent > 0u); i++) {
-        const char *data = bufs[i].iov_base;
-        size_t      len  = bufs[i].iov_len;
+        size_t  len  = bufs[i].iov_len;
 
         if (len > 0u) {
             if (sent >= len) {
                 sent -= len;
                 (void) Ns_SetVec(bufs, i, NULL, 0u);
             } else {
+                const char *data = bufs[i].iov_base;
+
                 (void) Ns_SetVec(bufs, i, data + sent, len - sent);
                 break;
             }

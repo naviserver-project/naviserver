@@ -745,7 +745,7 @@ InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t n
  */
 bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPtr)
 {
-    size_t index = 0;
+    size_t idx = 0;
 
     for (;;) {
         unsigned char byte1, byte2;
@@ -756,22 +756,22 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
          * In most cases, the strings are longer. Reduce the number of
          * loops by processing eight characters at a time.
          */
-        if (likely(index + 8 < nrBytes)) {
-            const uint64_t *p = (const uint64_t*)&bytes[index];
+        if (likely(idx + 8 < nrBytes)) {
+            const uint64_t *p = (const uint64_t*)&bytes[idx];
 
             if ((*p & 0x8080808080808080u) == 0u) {
-                index += 8;
+                idx += 8;
                 continue;
             }
-        } else if (unlikely(index >= nrBytes)) {
+        } else if (unlikely(idx >= nrBytes)) {
             /*
              * Successful end of string.
              */
             return NS_TRUE;
         }
 
-        /*Ns_Log(Notice, "[%ld] work on %.2x %c", index, bytes[index], bytes[index]);*/
-        byte1 = bytes[index++];
+        /*Ns_Log(Notice, "[%ld] work on %.2x %c", idx, bytes[idx], bytes[idx]);*/
+        byte1 = bytes[idx++];
         if (byte1 < 0x80) {
             continue;
 
@@ -779,45 +779,45 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
             /*
              * Two-byte UTF-8.
              */
-            if (index == nrBytes) {
+            if (idx == nrBytes) {
                 /*
                  * Premature end of string.
                  */
                 Ns_Log(Debug, "UTF8 decode '%s': 2byte premature", bytes);
-                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, index, 2, NS_TRUE);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx, 2, NS_TRUE);
                 return NS_FALSE;
             }
-            byte2 = bytes[index++];
-            if (byte1 < 0xC2 || ((/*bytes[index++]*/ byte2 & 0xC0u) != 0x80u)) {
+            byte2 = bytes[idx++];
+            if (byte1 < 0xC2 || ((/*bytes[idx++]*/ byte2 & 0xC0u) != 0x80u)) {
                 Ns_Log(Debug, "UTF8 decode '%s': 2-byte invalid 2nd byte %.2x", bytes, byte2);
-                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, index-1, 2, NS_FALSE);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx-1, 2, NS_FALSE);
                 return NS_FALSE;
             }
         } else if (byte1 < 0xF0) {
             /*
              * Three-byte UTF-8.
              */
-            if (index + 1 >= nrBytes) {
+            if (idx + 1 >= nrBytes) {
                 /*
                  * Premature end of string.
                  */
-                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, index, 3, NS_TRUE);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx, 3, NS_TRUE);
                 Ns_Log(Debug, "UTF8 decode '%s': 3-byte premature", bytes);
                 return NS_FALSE;
             }
-            byte2 = bytes[index++];
+            byte2 = bytes[idx++];
             if (byte2 > 0xBF
                 /* Overlong? 5 most significant bits must not all be zero. */
                 || (byte1 == 0xE0 && byte2 < 0xA0)
                 /* Check for illegal surrogate codepoints. */
                 || (byte1 == 0xED && 0xA0 <= byte2)
                 /* Third byte trailing-byte test. */
-                || bytes[index++] > 0xBF) {
+                || bytes[idx++] > 0xBF) {
 
                 Ns_Log(Debug, "UTF8 decode '%s': 3-byte invalid sequence byte %.2x %.2x %.2x",
-                       bytes, byte1, byte2, bytes[index]);
+                       bytes, byte1, byte2, bytes[idx]);
 
-                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, bytes[index-1] > 0xBF ? index -1 : index, 3, NS_FALSE);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, bytes[idx-1] > 0xBF ? idx - 1 : idx, 3, NS_FALSE);
                 return NS_FALSE;
             }
         } else {
@@ -825,16 +825,16 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
             /*
              * Four-byte UTF-8.
              */
-            if (index + 2 >= nrBytes) {
+            if (idx + 2 >= nrBytes) {
                 /*
                  * Premature end of string.
                  */
                 Ns_Log(Debug, "UTF8 decode '%s': 4-byte premature", bytes);
-                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, index, 4, NS_TRUE);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx, 4, NS_TRUE);
                 return NS_FALSE;
             }
-            startIndex = index;
-            byte2 = bytes[index++];
+            startIndex = idx;
+            byte2 = bytes[idx++];
             if (byte2 > 0xBF
                 /* Check that 1 <= plane <= 16. Tricky optimized form of:
                  * if (byte1 > (byte) 0xF4
@@ -843,12 +843,12 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
                  */
                 || (((unsigned)(byte1 << 28) + (byte2 - 0x90u)) >> 30) != 0
                 /* Third byte trailing byte test */
-                || bytes[index++] > 0xBF
+                || bytes[idx++] > 0xBF
                 /*  Fourth byte trailing byte test */
-                || bytes[index++] > 0xBF) {
+                || bytes[idx++] > 0xBF) {
 
                 Ns_Log(Debug, "UTF8 decode '%s': 3-byte invalid sequence byte %.2x %.2x %.2x %.2x",
-                       bytes, byte1, byte2, bytes[index-2], bytes[index-1]);
+                       bytes, byte1, byte2, bytes[idx-2], bytes[idx-1]);
 
                 InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, startIndex, 4, NS_FALSE);
                 return NS_FALSE;

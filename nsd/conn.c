@@ -1930,7 +1930,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     Ns_Conn             *conn;
     const Ns_Request    *request = NULL;
     Tcl_Encoding         encoding;
-    const Tcl_HashEntry *hPtr;
     int                  opt = 0, result = TCL_OK;
 
     static const char *const opts[] = {
@@ -2124,6 +2123,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                 result = TCL_ERROR;
 
             } else {
+                const Tcl_HashEntry *hPtr;
+
                 hPtr = Tcl_FindHashEntry(&connPtr->files, fileString);
                 if (hPtr == NULL) {
                     Ns_TclPrintfResult(interp, "no such file: %s", fileString);

@@ -231,7 +231,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     NsInterp    *itPtr = clientData;
     Tcl_Channel  chan;
     int          opt, result = TCL_OK;
-    unsigned int flag, oldFlag;
+    unsigned int flag;
 
     enum {
         CBufSizeIdx = ADP_OPTIONMAX + 1u,
@@ -311,7 +311,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
                 result = TCL_ERROR;
 
             } else {
-                oldFlag = (itPtr->adp.flags & flag);
+                unsigned int oldFlag = (itPtr->adp.flags & flag);
                 if (objc == 3) {
                     int boolVal;
 
@@ -543,13 +543,13 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
 int
 NsTclAdpAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    NsInterp *itPtr = clientData;
-    int       result = TCL_OK;
+    int result = TCL_OK;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "/string .../");
         result = TCL_ERROR;
     } else {
+        NsInterp  *itPtr = clientData;
         TCL_SIZE_T i;
 
         for (i = 1; i < objc; ++i) {

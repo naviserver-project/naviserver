@@ -291,7 +291,7 @@ static SockState SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void SockPoll(Sock *sockPtr, short type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
-static int  SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
+static void SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
     NS_GNUC_NONNULL(2);
@@ -704,9 +704,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                                     servPtr, section,
                                     address,
                                     passedDefserver);
-                if (status != NS_OK) {
+                /*if (status != NS_OK) {
                     break;
-                }
+                    }*/
             }
             ns_free(moduleName);
         }
@@ -1202,7 +1202,7 @@ PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
  *      initialized the driver structure.
  *
  * Results:
- *      NS_OK if initialized, NS_ERROR if config or other error.
+ *      returns always NS_OK
  *
  * Side effects:
  *      Listen socket will be opened later in NsStartDrivers.
@@ -1569,10 +1569,10 @@ NsStopSpoolers(void)
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         if ((drvPtr->flags & DRIVER_STARTED)) {
             Ns_Time        timeout;
-            const Ns_Time *shutdown = &nsconf.shutdowntimeout;
+            const Ns_Time *shutdownTime = &nsconf.shutdowntimeout;
 
             Ns_GetTime(&timeout);
-            Ns_IncrTime(&timeout, shutdown->sec, shutdown->usec);
+            Ns_IncrTime(&timeout, shutdownTime->sec, shutdownTime->usec);
             SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout, "writer");
             SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout, "spooler");
         }
@@ -2628,9 +2628,7 @@ DriverThread(void *arg)
                     switch (s) {
                     case SOCK_SPOOL:
                         drvPtr->stats.spooled++;
-                        if (SockSpoolerQueue(drvPtr, sockPtr) == 0) {
-                            Push(sockPtr, readPtr);
-                        }
+                        SockSpoolerQueue(drvPtr, sockPtr);
                         break;
 
                     case SOCK_MORE:
@@ -2755,9 +2753,7 @@ DriverThread(void *arg)
                         switch (s) {
                         case SOCK_SPOOL:
                             drvPtr->stats.spooled++;
-                            if (SockSpoolerQueue(drvPtr, sockPtr) == 0) {
-                                Push(sockPtr, readPtr);
-                            }
+                            SockSpoolerQueue(drvPtr, sockPtr);
                             break;
 
                         case SOCK_MORE:
@@ -4410,13 +4406,13 @@ EndOfHeader(Sock *sockPtr)
     s = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_EXPECT];
     if (s != NULL) {
         if (*s == '1' && *(s+1) == '0' && *(s+2) == '0' && *(s+3) == '-') {
-            char *dup = ns_strdup(s+4);
+            char *scratch = ns_strdup(s+4);
 
-            Ns_StrToLower(dup);
-            if (STREQ(dup, "continue")) {
+            Ns_StrToLower(scratch);
+            if (STREQ(scratch, "continue")) {
                 sockPtr->flags |= NS_CONN_CONTINUE;
             }
-            ns_free(dup);
+            ns_free(scratch);
         }
     }
 
@@ -5904,7 +5900,33 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
     }
 }
 
-static int
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockSpoolerQueue --
+ *
+ *    Adds the specified socket to the spooler queue using a round-robin
+ *    scheduling strategy across available spooler threads. This function
+ *    locks the global spooler structure to select the next spooler thread,
+ *    appends the socket to that thread's queue, and logs the operation.
+ *    If the target spooler queue was previously empty, the function triggers
+ *    the spooler thread to wake up and process the queued socket.
+ *
+ * Parameters:
+ *    drvPtr  - Pointer to the Driver structure that holds the spooler thread list.
+ *    sockPtr - Pointer to the Sock structure representing the socket to be queued.
+ *
+ * Results:
+ *    None.
+ *
+ * Side Effects:
+ *    - Updates the current spooler pointer in the Driver structure.
+ *    - Modifies the spooler thread's queue by adding a new socket.
+ *    - May trigger a spooler thread via SockTrigger() if the queue was empty.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
 SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
 {
     bool          trigger = NS_FALSE;
@@ -5913,8 +5935,8 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_NONNULL_ASSERT(drvPtr != NULL);
     NS_NONNULL_ASSERT(sockPtr != NULL);
     /*
-     * Get the next spooler thread from the list, all spooler requests are
-     * rotated between all spooler threads
+     * Get the next spooler thread from the list; spooler requests are
+     * distributed round-robin among all available spooler threads.
      */
 
     Ns_MutexLock(&drvPtr->spooler.lock);
@@ -5936,14 +5958,12 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     Ns_MutexUnlock(&queuePtr->lock);
 
     /*
-     * Wake up spooler thread
+     * Wake up spooler thread if the queue was empty.
      */
 
     if (trigger) {
         SockTrigger(queuePtr->pipe[1]);
     }
-
-    return 1;
 }
 
 /*

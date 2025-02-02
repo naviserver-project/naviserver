@@ -887,8 +887,12 @@ Ns_HttpMessageParse(
 
     eol = strchr(messageString, INTCHAR('\n'));
     if (eol == NULL || ((size_t)(eol + 1 - messageString) > messageLength)) {
-        Ns_Log(Ns_LogTaskDebug, "==== Ns_HttpMessageParse <%s> eol <%s> %ld> %ld  => ERR",
-               messageString, eol, (eol + 1 - messageString), messageLength);
+        Ns_Log(Ns_LogTaskDebug,
+               "==== Ns_HttpMessageParse <%s> eol <%s> %ld> %ld  => ERR",
+               messageString,
+               eol,
+               eol ? (size_t)(eol - messageString + 1) : 0,
+               messageLength);
         result = NS_ERROR;
 
     } else {

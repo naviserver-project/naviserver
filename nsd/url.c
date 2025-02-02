@@ -506,7 +506,7 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
             *errorMsg = "invalid authority";
             return NS_ERROR;
         }
-
+#if 0
         if (urlPtr->port != NULL) {
 
             /*
@@ -521,6 +521,7 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
 
             url = urlPtr->port;
         }
+#endif
     } else {
         end = url;
     }

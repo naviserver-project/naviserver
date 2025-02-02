@@ -932,18 +932,18 @@ Ns_ConfigGetSections(void)
 static void ConfigMark(Section *sectionPtr, size_t i, ValueOperation op)
 {
     if (i < maxBitElements) {
-        int index = (int)(i / bitElements);
+        int idx   = (int)(i / bitElements);
         int shift = (int)(i % bitElements);
 
         switch (op) {
         case value_set:
-            sectionPtr->defaultArray[index] &= ~((uintmax_t)1u << shift);
+            sectionPtr->defaultArray[idx] &= ~((uintmax_t)1u << shift);
             break;
         case value_defaulted:
-            sectionPtr->defaultArray[index] |= ((uintmax_t)1u << shift);
+            sectionPtr->defaultArray[idx] |= ((uintmax_t)1u << shift);
             break;
         case value_read:
-            sectionPtr->readArray[index] |= ((uintmax_t)1u << shift);
+            sectionPtr->readArray[idx] |= ((uintmax_t)1u << shift);
             break;
         }
     } else {
@@ -1403,17 +1403,17 @@ NsConfigSectionGetFiltered(const char *section, char filter)
             for (i = 0u; i < set->size; i++) {
 
                 if (i < maxBitElements) {
-                    int index = (int)(i / bitElements);
+                    int idx   = (int)(i / bitElements);
                     int shift = (int)(i % bitElements);
                     uintmax_t mask = ((uintmax_t)1u << shift);
 
-                    if (filter == 'u' && (sectionPtr->readArray[index] & mask) == 0u) {
+                    if (filter == 'u' && (sectionPtr->readArray[idx] & mask) == 0u) {
                         /*fprintf(stderr, "unused parameter: %s/%s (%lu)\n",
                           section, set->fields[i].name, i);*/
                         Ns_SetPutSz(result,
                                     set->fields[i].name, (TCL_SIZE_T)strlen(set->fields[i].name),
                                     set->fields[i].value, TCL_INDEX_NONE);
-                    } else if  (filter == 'd' && (sectionPtr->defaultArray[index] & mask) != 0u) {
+                    } else if  (filter == 'd' && (sectionPtr->defaultArray[idx] & mask) != 0u) {
                         /*fprintf(stderr, "defaulted parameter: %s/%s (%lu) defaults %p mask %p\n",
                           section, set->fields[i].name, i,
                           (void*)sectionPtr->defaultArray[0], (void*)mask);*/

@@ -421,7 +421,7 @@ EvalThread(void *arg)
     (void)TCL_CREATEOBJCOMMAND(interp, "exit", ExitObjCmd, (ClientData) &stop, NULL);
 
     ncmd = 0;
-    while (stop == 0) {
+    while (1 /* wass "stop == 0", but stop is not modified in the loop */) {
         TCL_SIZE_T  len;
         const char *resultString;
         char        buf[64];

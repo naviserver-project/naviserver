@@ -803,7 +803,7 @@ void
 Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 {
     Task         *taskPtr;
-    unsigned int  index, flags = 0u;
+    unsigned int  idx, flags = 0u;
 
     NS_NONNULL_ASSERT(task != NULL);
 
@@ -831,9 +831,9 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
      * Map Ns_SockState bits to poll bits.
      */
     taskPtr->events = 0;
-    for (index = 0u; index < Ns_NrElements(map); index++) {
-        if (when == map[index].when) {
-            taskPtr->events |= map[index].event;
+    for (idx = 0u; idx < Ns_NrElements(map); idx++) {
+        if (when == map[idx].when) {
+            taskPtr->events |= map[idx].event;
         }
     }
 
@@ -1111,7 +1111,7 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
         Call(taskPtr, NS_SOCK_TIMEOUT);
 
     } else if (revents != 0) {
-        unsigned int index;
+        unsigned int idx;
 
         /*
          * NB: Treat POLLHUP as POLLIN on systems which return it.
@@ -1119,11 +1119,11 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
         if ((revents & POLLHUP) != 0) {
             revents |= (short)POLLIN;
         }
-        for (index = 0u; index < Ns_NrElements(map); index++) {
-            if ((revents & map[index].event) != 0) {
+        for (idx = 0u; idx < Ns_NrElements(map); idx++) {
+            if ((revents & map[idx].event) != 0) {
                 Ns_Log(Ns_LogTaskDebug, "RunTask: task:%p event:%.2x",
-                       (void*)taskPtr, map[index].when);
-                Call(taskPtr, map[index].when);
+                       (void*)taskPtr, map[idx].when);
+                Call(taskPtr, map[idx].when);
             }
         }
     } else if ((taskPtr->flags & TASK_TIMEOUT) != 0u

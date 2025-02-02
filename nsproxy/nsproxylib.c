@@ -615,7 +615,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
         len = ntohl(reqPtr->len);
         if (len == 0) {
             Export(NULL, TCL_OK, &out);
-        } else if (len > 0) {
+        } else {
             script = Tcl_DStringValue(&in) + sizeof(Req);
             if (active != NULL) {
                 int n = (int)len;
@@ -634,8 +634,6 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
                 assert(max > 0);
                 memset(active, ' ', (size_t)max);
             }
-        } else {
-            Ns_Fatal("nsproxy: invalid length");
         }
         if (SendBuf(&proc, NULL, &out) == NS_FALSE) {
             break;
@@ -1426,7 +1424,7 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
                 success = NS_FALSE;
                 break;
             }
-        } else if (n > 0) {
+        } else /* if (n > 0) */ {
             UpdateIov(iov, (size_t)n);
         }
     }
@@ -1470,7 +1468,7 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
                     success = NS_FALSE;
                     break;
                 }
-            } else if (n > 0) {
+            } else /*if (n > 0)*/ {
                 len -= n;
                 ptr += n;
             }
