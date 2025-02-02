@@ -251,14 +251,6 @@ static int HttpGetResult(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void HttpDoneCallback(
-    NsHttpTask *httpPtr
-) NS_GNUC_NONNULL(1);
-
-static void ResponseHeadersReceivedCallback(
-    NsHttpTask *httpPtr
-) NS_GNUC_NONNULL(1);
-
 
 static void HttpClientLogWrite(
     const NsHttpTask *httpPtr,
@@ -299,6 +291,19 @@ static const char *CkCheck(const void *ptr)
 # define CkCheck(arg1) ("")
 #endif
 
+/*
+ * Callbacks
+ */
+
+static int ResponseHeaderCallback(NsHttpTask *httpPtr)
+    NS_GNUC_NONNULL(1);
+
+static int ResponseDataCallback(NsHttpTask *httpPtr, const char *inputBuffer, size_t inputSize,
+                                char *errorBuffer, size_t errorBufferSize, const char **reason)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6);
+
+static void DoneCallback(NsHttpTask *httpPtr)
+    NS_GNUC_NONNULL(1);
 
 static Ns_LogCallbackProc HttpClientLogOpen;
 static Ns_LogCallbackProc HttpClientLogClose;
@@ -1726,7 +1731,7 @@ HttpWaitObjCmd(
         {"-decompress",     Ns_ObjvBool,    &decompress,      INT2PTR(NS_TRUE)},
         {"-elapsed",        Ns_ObjvObj,     &elapsedVarObj,   NULL},
         {"-file",           Ns_ObjvObj,     &fileVarObj,      NULL},
-        {"-headers",        Ns_ObjvSet,     &responseHeaders,    NULL},
+        {"-headers",        Ns_ObjvSet,     &responseHeaders, NULL},
         {"-outputfile",     Ns_ObjvString,  &outputFileName,  NULL},
         {"-result",         Ns_ObjvObj,     &resultVarObj,    NULL},
         {"-spoolsize",      Ns_ObjvMemUnit, &spoolLimit,      NULL},
@@ -2663,11 +2668,10 @@ HttpQueue(
                *doneCallbackDeprec = NULL,
 #endif
                *doneCallback = NULL,
-               *rhrCallback = NULL,
                *bodyChanName = NULL,
                *bodyFileName = NULL;
     Ns_Set     *requestHdrPtr = NULL;
-    Tcl_Obj    *bodyObj = NULL, *proxyObj = NULL;
+    Tcl_Obj    *bodyObj = NULL, *proxyObj = NULL, *responseDataObj = NULL, *responseHeaderObj = NULL;
     Ns_Time    *timeoutPtr = NULL,
                *expirePtr = NULL,
                *keepAliveTimeoutPtr = NULL,
@@ -2676,43 +2680,44 @@ HttpQueue(
     Ns_ObjvValueRange sizeRange = {0, LLONG_MAX};
 
     Ns_ObjvSpec opts[] = {
-        {"-binary",           Ns_ObjvBool,    &binary,               INT2PTR(NS_TRUE)},
-        {"-body",             Ns_ObjvObj,     &bodyObj,              NULL},
-        {"-body_chan",        Ns_ObjvString,  &bodyChanName,         NULL},
-        {"-body_file",        Ns_ObjvString,  &bodyFileName,         NULL},
-        {"-body_size",        Ns_ObjvWideInt, &bodySize,             &sizeRange},
-        {"-cafile",           Ns_ObjvString,  &caFile,               NULL},
-        {"-capath",           Ns_ObjvString,  &caPath,               NULL},
-        {"-cert",             Ns_ObjvString,  &cert      ,           NULL},
-        {"-connecttimeout",   Ns_ObjvTime,    &connectTimeoutPtr,    NULL},
-        {"-decompress",       Ns_ObjvBool,    &decompress,           INT2PTR(NS_TRUE)},
+        {"-binary",                   Ns_ObjvBool,    &binary,                 INT2PTR(NS_TRUE)},
+        {"-body",                     Ns_ObjvObj,     &bodyObj,                NULL},
+        {"-body_chan",                Ns_ObjvString,  &bodyChanName,           NULL},
+        {"-body_file",                Ns_ObjvString,  &bodyFileName,           NULL},
+        {"-body_size",                Ns_ObjvWideInt, &bodySize,               &sizeRange},
+        {"-cafile",                   Ns_ObjvString,  &caFile,                 NULL},
+        {"-capath",                   Ns_ObjvString,  &caPath,                 NULL},
+        {"-cert",                     Ns_ObjvString,  &cert,                   NULL},
+        {"-connecttimeout",           Ns_ObjvTime,    &connectTimeoutPtr,      NULL},
+        {"-decompress",               Ns_ObjvBool,    &decompress,             INT2PTR(NS_TRUE)},
 #ifdef NS_WITH_RECENT_DEPRECATED
-        {"-donecallback",     Ns_ObjvString,  &doneCallbackDeprec,   NULL},
+        {"-donecallback",             Ns_ObjvString,  &doneCallbackDeprec,     NULL},
 #endif
-        {"-done_callback",    Ns_ObjvString,  &doneCallback,         NULL},
-        {"-expire",           Ns_ObjvTime,    &expirePtr,            NULL},
-        {"-headers",          Ns_ObjvSet,     &requestHdrPtr,        NULL},
-        {"-hostname",         Ns_ObjvString,  &sniHostname,          NULL},
-        {"-insecure",         Ns_ObjvBool,    &insecureInt,          INT2PTR(NS_TRUE)},
-        {"-keep_host_header", Ns_ObjvBool,    &keepHostHdr,          INT2PTR(NS_TRUE)},
-        {"-keepalive",        Ns_ObjvTime,    &keepAliveTimeoutPtr,  NULL},
-        {"-method",           Ns_ObjvString,  &method,               NULL},
-        {"-outputchan",       Ns_ObjvString,  &outputChanName,       NULL},
-        {"-outputfile",       Ns_ObjvString,  &outputFileName,       NULL},
-        {"-partialresults",   Ns_ObjvBool,    &partialResults,       INT2PTR(NS_TRUE)},
-        {"-proxy",            Ns_ObjvObj,     &proxyObj,             NULL},
-        {"-raw",              Ns_ObjvBool,    &raw,                  INT2PTR(NS_TRUE)},
-        {"-response_header_callback",  Ns_ObjvString,  &rhrCallback, NULL},
-        {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,           NULL},
-        {"-timeout",          Ns_ObjvTime,    &timeoutPtr,           NULL},
-        {"-unix_socket",      Ns_ObjvString,  &udsPath,              NULL},
+        {"-done_callback",            Ns_ObjvString,  &doneCallback,           NULL},
+        {"-expire",                   Ns_ObjvTime,    &expirePtr,              NULL},
+        {"-headers",                  Ns_ObjvSet,     &requestHdrPtr,          NULL},
+        {"-hostname",                 Ns_ObjvString,  &sniHostname,            NULL},
+        {"-insecure",                 Ns_ObjvBool,    &insecureInt,            INT2PTR(NS_TRUE)},
+        {"-keep_host_header",         Ns_ObjvBool,    &keepHostHdr,            INT2PTR(NS_TRUE)},
+        {"-keepalive",                Ns_ObjvTime,    &keepAliveTimeoutPtr,    NULL},
+        {"-method",                   Ns_ObjvString,  &method,                 NULL},
+        {"-outputchan",               Ns_ObjvString,  &outputChanName,         NULL},
+        {"-outputfile",               Ns_ObjvString,  &outputFileName,         NULL},
+        {"-partialresults",           Ns_ObjvBool,    &partialResults,         INT2PTR(NS_TRUE)},
+        {"-proxy",                    Ns_ObjvObj,     &proxyObj,               NULL},
+        {"-raw",                      Ns_ObjvBool,    &raw,                    INT2PTR(NS_TRUE)},
+        {"-response_data_callback",   Ns_ObjvObj,     &responseDataObj,        NULL},
+        {"-response_header_callback", Ns_ObjvObj,     &responseHeaderObj,      NULL},
+        {"-spoolsize",                Ns_ObjvMemUnit, &spoolLimit,             NULL},
+        {"-timeout",                  Ns_ObjvTime,    &timeoutPtr,             NULL},
+        {"-unix_socket",              Ns_ObjvString,  &udsPath,                NULL},
 #ifdef NS_WITH_RECENT_DEPRECATED
-        {"-verify",           Ns_ObjvBool,    &verifyCertInt,        INT2PTR(NS_TRUE)},
+        {"-verify",                   Ns_ObjvBool,    &verifyCertInt,          INT2PTR(NS_TRUE)},
 #endif
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"url",       Ns_ObjvString, &url, NULL},
+        {"url", Ns_ObjvString, &url, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -2889,8 +2894,13 @@ HttpQueue(
         if (doneCallback != NULL) {
             httpPtr->doneCallback = ns_strdup(doneCallback);
         }
-        if (rhrCallback != NULL) {
-            httpPtr->rhrCallback = ns_strdup(rhrCallback);
+        if (responseHeaderObj != NULL) {
+            Tcl_IncrRefCount(responseHeaderObj);
+            httpPtr->responseHeaderCallback = responseHeaderObj;
+        }
+        if (responseDataObj != NULL) {
+            Tcl_IncrRefCount(responseDataObj);
+            httpPtr->responseDataCallback = responseDataObj;
         }
         if (likely(decompress != 0) && likely(raw == 0)) {
             httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
@@ -2914,6 +2924,7 @@ HttpQueue(
              * Run the task and collect the result in one go.
              * The task is executed in the current thread.
              */
+            httpPtr->interp = interp;
             Ns_Log(Ns_LogTaskDebug, "... HttpQueue calls run %p", (void*)httpPtr->task);
             Ns_TaskRun(httpPtr->task);
             Ns_Log(Ns_LogTaskDebug, "... HttpQueue calls run %p DONE", (void*)httpPtr->task);
@@ -2951,6 +2962,8 @@ HttpQueue(
                 uint32_t       ii;
                 TCL_SIZE_T     len;
                 char           buf[TCL_INTEGER_SPACE + 4];
+
+                httpPtr->interp = NULL;
 
                 /*
                  * Create taskID to be used for [ns_http_wait] et al.
@@ -3489,7 +3502,7 @@ HttpCheckSpool(
              * processing.
              */
 
-            ResponseHeadersReceivedCallback(httpPtr);
+            ResponseHeaderCallback(httpPtr);
             Ns_Log(Ns_LogTaskDebug, "ns_http: informational status code %d", httpPtr->status);
             return TCL_CONTINUE;
 
@@ -3549,10 +3562,10 @@ HttpCheckSpool(
             }
         }
         /*
-         * ResponseHeadersReceivedCallback, similar to what we have in
+         * ResponseHeaderCallback, similar to what we have in
          * revproxy-ns-connchan.tcl
          */
-        ResponseHeadersReceivedCallback(httpPtr);
+        ResponseHeaderCallback(httpPtr);
 
         /*
          * See if we are handling compressed content.
@@ -4479,7 +4492,355 @@ HttpConnect(
     return TCL_ERROR;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * ResponseDataCallback --
+ *
+ *        Invokes a user-defined callback to to process reveived raw
+ *        data. This function passes the data buffer to the callback and
+ *        returns the a Tcl result code indicating success, error and
+ *        continuation.
+ *
+ * Parameters:
+ *        inputBuffer - Pointer to the raw data to be appended.
+ *        inputSize   - Size (in bytes) of the data in the buffer.
+ *
+ * Results:
+ *        Returns standard Tcl result codes. The result is either from the
+ *        error processing or is the result from the executed script. When the
+ *        script returns TCL_BREAK, the caller will stop further processing of
+ *        the received buffer.
+ *
+ * Side effects:
+ *    - Constructs a Tcl dictionary with the following keys:
+ *         "data"       : The received data block from the HTTP response.
+ *         "headers"    : The response header set.
+ *         "outputchan" : (Optional) The output channel name, if specified.
+ *    - Evaluates the callback command, passing the dictionary as an argument.
+ *    - Logs errors if the callback execution fails.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ResponseDataCallback(
+    NsHttpTask  *httpPtr,
+    const char  *inputBuffer,
+    size_t       inputSize,
+    char        *errorBuffer,
+    size_t       errorBufferSize,
+    const char **reason
+) {
+    int           result;
+    Tcl_Interp   *interp;
+    Ns_Set      *responseHeaders;
+
+    LogDebug("ResponseDataCallback", httpPtr, "");
+    assert(httpPtr->responseDataCallback != NULL);
+
+    /*
+     * Use provided interpreter if available, otherwise allocate one. When
+     * allocating a new one, we have to copy the response headers and
+     * enter it to the new interpreter.
+     */
+    if (httpPtr->interp == NULL) {
+        interp = NsTclAllocateInterp(httpPtr->servPtr);
+        responseHeaders = Ns_SetCopy(httpPtr->responseHeaders);
+        result = Ns_TclEnterSet(interp, responseHeaders, NS_TCL_SET_DYNAMIC);
+    } else {
+        interp = httpPtr->interp;
+        responseHeaders = httpPtr->responseHeaders;
+        result = TCL_OK;
+    }
+
+    if (result == TCL_OK) {
+        Tcl_Obj *cmdObj, *dictObj = Tcl_NewDictObj();
+
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj("headers", 7),
+                       Tcl_GetObjResult(interp));
+
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj("data", 4),
+                       Tcl_NewStringObj(inputBuffer, (TCL_SIZE_T)inputSize));
+
+        if (httpPtr->outputChanName != NULL) {
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("outputchan", 10),
+                           Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
+        }
+
+        cmdObj = Tcl_DuplicateObj(httpPtr->responseDataCallback);
+        Tcl_IncrRefCount(cmdObj);
+        Tcl_ListObjAppendElement(NULL, cmdObj, dictObj);
+        result = Tcl_EvalObjEx(interp, cmdObj, 0);
+        Tcl_DecrRefCount(cmdObj);
+
+        if (result == TCL_ERROR) {
+            TCL_SIZE_T  resultLength;
+            Tcl_Obj    *resultObj = Tcl_GetObjResult(interp);
+            const char *resultString = Tcl_GetStringFromObj(resultObj, &resultLength);
+
+            if (resultLength < (TCL_SIZE_T)errorBufferSize) {
+                memcpy(errorBuffer, resultString, resultLength);
+                errorBuffer[resultLength] = '\0';
+            } else {
+                memcpy(errorBuffer, resultString, errorBufferSize-1);
+                errorBuffer[errorBufferSize] = '\0';
+            }
+            *reason = errorBuffer;
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: ns_http buffer received callback)");
+        }
+    }
+
+    if (httpPtr->interp == NULL) {
+        Ns_TclDeAllocateInterp(interp);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ResponseHeaderCallback --
+ *
+ *    Invokes the Tcl callback designated for processing HTTP response
+ *    headers.  This function is called when an HTTP response header is
+ *    received, and it prepares a Tcl dictionary containing header details
+ *    such as the status code, status phrase, header set, and optionally the
+ *    output channel. It then executes the user-defined Tcl callback.
+ *
+ * Parameters:
+ *    httpPtr - Pointer to the NsHttpTask structure that holds the HTTP request
+ *              and response data, including the response headers and the Tcl
+ *              callback command (stored in responseHeaderCallback).
+ *
+ * Results:
+ *    None. Errors during callback evaluation are logged via Ns_TclLogErrorInfo().
+ *
+ * Side Effects:
+ *    - Constructs a Tcl dictionary with the following keys:
+ *         "status"     : The HTTP response status code.
+ *         "phrase"     : The HTTP response status phrase.
+ *         "headers"    : The response header set.
+ *         "outputchan" : (Optional) The output channel name, if specified.
+ *    - Evaluates the callback command, passing the dictionary as an argument.
+ *    - Logs errors if the callback execution fails.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ResponseHeaderCallback(
+    NsHttpTask *httpPtr
+) {
+    int result = TCL_OK;
+
+    LogDebug("ResponseHeaderCallback", httpPtr, "");
+
+    if (httpPtr->responseHeaderCallback != NULL) {
+        Tcl_Interp *interp;
+        Ns_Set     *responseHeaders;
+
+        /*
+         * Use provided interpreter if available, otherwise allocate one. When
+         * allocating a new one, we have to copy the response headers and
+         * enter it to the new interpreter.
+         */
+        if (httpPtr->interp == NULL) {
+            interp = NsTclAllocateInterp(httpPtr->servPtr);
+            responseHeaders = Ns_SetCopy(httpPtr->responseHeaders);
+            result = Ns_TclEnterSet(interp, responseHeaders, NS_TCL_SET_DYNAMIC);
+        } else {
+            interp = httpPtr->interp;
+            responseHeaders = httpPtr->responseHeaders;
+            result = TCL_OK;
+        }
+
+        if (result == TCL_OK) {
+            Tcl_Obj *cmdObj, *dictObj = Tcl_NewDictObj();
+
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("status", 6),
+                           Tcl_NewIntObj(httpPtr->status));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("phrase", 6),
+                           Tcl_NewStringObj(NsHttpStatusPhrase(httpPtr->status), TCL_INDEX_NONE));
+
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("headers", 7),
+                           Tcl_GetObjResult(interp));
+
+            if (httpPtr->outputChanName != NULL) {
+                Tcl_DictObjPut(NULL, dictObj,
+                               Tcl_NewStringObj("outputchan", 10),
+                               Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
+            }
+
+            cmdObj = Tcl_DuplicateObj(httpPtr->responseHeaderCallback);
+            Tcl_IncrRefCount(cmdObj);
+            Tcl_ListObjAppendElement(NULL, cmdObj, dictObj);
+
+            result = Tcl_EvalObjEx(interp, cmdObj, 0);
+            Tcl_DecrRefCount(cmdObj);
+        }
+        if (result == TCL_ERROR) {
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: header received callback)");
+        }
+
+        if (httpPtr->interp == NULL) {
+            Ns_TclDeAllocateInterp(interp);
+        }
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoneCallback --
+ *
+ *        Evaluate the doneCallback. For the time being, this is
+ *        executed in the default server context (may not be right!).
+ *
+ * Results:
+ *        None
+ *
+ * Side effects:
+ *        Many, depending on the callback.
+ *        Http task is garbage collected.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DoneCallback(
+    NsHttpTask *httpPtr
+) {
+    int          result;
+    Tcl_Interp  *interp;
+    Tcl_DString  script;
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
+    LogDebug("DoneCallback", httpPtr, "");
+
+    interp = NsTclAllocateInterp( httpPtr->servPtr);
+
+    result = HttpGetResult(interp, httpPtr);
+
+    Tcl_DStringInit(&script);
+    Tcl_DStringAppend(&script, httpPtr->doneCallback, TCL_INDEX_NONE);
+    Ns_DStringPrintf(&script, " %d ", result);
+    Tcl_DStringAppendElement(&script, Tcl_GetStringResult(interp));
+
+    /*
+     * Splice body/spool channels into the callback interp.
+     * All supplied channels must be closed by the callback.
+     * Alternatively, the Tcl will close them at the point
+     * of interp de-allocation, which might not be safe.
+     */
+    HttpSpliceChannels(interp, httpPtr);
+
+    result = Tcl_EvalEx(interp, script.string, script.length, 0);
+
+    if (result != TCL_OK) {
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: ns_http done callback)");
+    }
+
+    Tcl_DStringFree(&script);
+    Ns_TclDeAllocateInterp(interp);
+
+    HttpClose(httpPtr); /* This frees the httpPtr! */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AppendRawBufferConnchan --
+ *
+ *        Append data to an open connchan. Connchans handle partial write
+ *        operations.
+ *
+ * Results:
+ *        Written size
+ *
+ * Side effects:
+ *        Writing to connchan.
+ *
+ *----------------------------------------------------------------------
+ */
+static ssize_t
+AppendRawBufferConnchan(
+    NsHttpTask     *httpPtr,
+    const char     *buffer,
+    size_t          size,
+    char           *errorBuffer,
+    int            *resultPtr,
+    const char    **reasonPtr,
+    bool           *silentPtr,
+    Ns_LogSeverity *severityPtr
+) {
+    Tcl_Interp   *interp    = NsTclAllocateInterp(httpPtr->servPtr);
+    unsigned long sendErrno = NsConnChanGetSendErrno(interp, httpPtr->servPtr, httpPtr->outputChanName);
+    ssize_t       written;
+
+    if (sendErrno == 0 || NsSockRetryCode((int)sendErrno) || (sendErrno == ENOTTY)) {
+
+        *resultPtr = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE,
+                                 &written, &sendErrno);
+
+        /*fprintf(stderr, ".... connchan %s write returns result %s written %ld sockPtr %p\n",
+          httpPtr->outputChanName, Ns_TclReturnCodeString(result), written, (void*)sockPtr);*/
+
+        /*if (written > 100000) {
+          fprintf(stderr, ".... connchan %s unreasonable written value: %ld\n",
+          httpPtr->outputChanName, written);
+          }*/
+    } else {
+        /*
+         * When the sockPtr to write to is already in an error state, it does
+         * not make sense to append to it. Actually, there should be some
+         * means to abort the fill request. Returning TCL_ERROR does not seem
+         * sufficient, since we are called multiple times.
+         */
+        *reasonPtr = NsSockErrorCodeString(sendErrno, errorBuffer, sizeof(errorBuffer));
+        Ns_Log(Notice, ".... connchan %s already in error state errNo %ld reason %s",  httpPtr->outputChanName, sendErrno, *reasonPtr);
+        *silentPtr = NS_TRUE;
+        *resultPtr = TCL_ERROR;
+        written = -1;
+    }
+    if ((ssize_t)size != written) {
+
+        /*
+         * We could not deliver the received content via connchan.  On the
+         * receiving side, everything is ok, but on the output delivery side,
+         * it is not.
+         */
+        if (sendErrno == ECONNRESET || sendErrno == EPIPE) {
+            /*
+             * ECONNRESET means "Connection reset by peer", EPIPE is
+             * "Broken pipe". This is not really an error, but happens
+             * frequently, when the peer aborts the connection.
+             */
+            *silentPtr = NS_TRUE;
+        } else {
+            Ns_Log(Ns_LogTaskDebug, "HttpAppendRawBuffer: connchan write %s %ld bytes written %ld",
+                   httpPtr->outputChanName, size, written);
+        }
+        if (written > 0) {
+            *reasonPtr = "partial write";
+            *severityPtr = Warning;
+        } else {
+            *reasonPtr = NsSockErrorCodeString(sendErrno, errorBuffer, sizeof(errorBuffer));
+        }
+        httpPtr->flags |= NS_HTTP_OUTPUT_ERROR;
+    }
+    Ns_TclDeAllocateInterp(interp);
+
+    return written;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4495,7 +4856,6 @@ HttpConnect(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 HttpAppendRawBuffer(
     NsHttpTask *httpPtr,
@@ -4512,71 +4872,37 @@ HttpAppendRawBuffer(
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    /* fprintf(stderr, "============== HttpAppendRawBuffer %ld recvSpoolMode %d\n", size, httpPtr->recvSpoolMode);*/
+    if (httpPtr->responseDataCallback != NULL) {
+        result = ResponseDataCallback(httpPtr, buffer, size, errorBuffer, sizeof(errorBuffer), &reason);
+        if (result == TCL_BREAK) {
+            Ns_Log(Debug, "ResponseDataCallback returned break; stop further delivery of data");
+            return TCL_OK;
+        }
+    }
 
     if (httpPtr->recvSpoolMode == NS_TRUE) {
         if (httpPtr->spoolFd != NS_INVALID_FD) {
+            /*
+             * Warning: the ns_write() operation might cause a partial write,
+             * which is not handled.
+             */
             written = ns_write(httpPtr->spoolFd, buffer, size);
+            if (written > -1 && (size_t)written != size) {
+                Ns_Log(Error, "ns_http: partial write to output file, some content lost, url %s",
+                       httpPtr->url);
+            }
+
         } else if ((httpPtr->flags & NS_HTTP_CONNCHAN) != 0u) {
-            Tcl_Interp   *interp    = NsTclAllocateInterp(httpPtr->servPtr);
-            unsigned long sendErrno = NsConnChanGetSendErrno(interp, httpPtr->servPtr, httpPtr->outputChanName);
-
-            if (sendErrno == 0 || NsSockRetryCode((int)sendErrno) || (sendErrno == ENOTTY)) {
-
-                result = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE,
-                                         &written, &sendErrno);
-
-                /*fprintf(stderr, ".... connchan %s write returns result %s written %ld sockPtr %p\n",
-                  httpPtr->outputChanName, Ns_TclReturnCodeString(result), written, (void*)sockPtr);*/
-
-                /*if (written > 100000) {
-                    fprintf(stderr, ".... connchan %s unreasonable written value: %ld\n",
-                           httpPtr->outputChanName, written);
-                           }*/
-            } else {
-                /*
-                 * When the sockPtr to write to is already in an error state,
-                 * it does not make sense to append to it. Actually, there
-                 * should be some means to abort the fill request. Returning
-                 * TCL_ERROR does not seem sufficient, since we are called
-                 * multiple times.
-                 */
-                reason = NsSockErrorCodeString(sendErrno, errorBuffer, sizeof(errorBuffer));
-                Ns_Log(Notice, ".... connchan %s already in error state errNo %ld reason %s",  httpPtr->outputChanName, sendErrno, reason);
-                silent = NS_TRUE;
-                result = TCL_ERROR;
-                written = -1;
-            }
-            if ((ssize_t)size != written) {
-
-                /*
-                 * We could not deliver the received content via connchan.  On
-                 * the receiving side, everything is ok, but on the output
-                 * delivery side, it is not.
-                 */
-                if (sendErrno == ECONNRESET || sendErrno == EPIPE) {
-                    /*
-                     * ECONNRESET means "Connection reset by peer", EPIPE is
-                     * "Broken pipe". This is not really an error, but happens
-                     * frequently, when the peer aborts the connection.
-                     */
-                    silent = NS_TRUE;
-                } else {
-                    Ns_Log(Ns_LogTaskDebug, "HttpAppendRawBuffer: connchan write %s %ld bytes written %ld",
-                           httpPtr->outputChanName, size, written);
-                }
-                if (written > 0) {
-                    reason = "partial write";
-                    severity = Warning;
-                } else {
-                    reason = NsSockErrorCodeString(sendErrno, errorBuffer, sizeof(errorBuffer));
-                }
-                httpPtr->flags |= NS_HTTP_OUTPUT_ERROR;
-            }
-            Ns_TclDeAllocateInterp(interp);
+            /*
+             * Append via connchan. The errorBuffer might contain the reason,
+             * therefore it is allocated by the caller.
+             */
+            written = AppendRawBufferConnchan(httpPtr, buffer, size, errorBuffer,
+                                              &result, &reason, &silent, &severity);
 
         } else if (httpPtr->spoolChan != NULL) {
             written = (ssize_t)Tcl_Write(httpPtr->spoolChan, buffer, (TCL_SIZE_T)size);
+
         } else {
             written = -1;
         }
@@ -4945,9 +5271,13 @@ HttpCleanupPerRequestData(
         ns_free((void *)httpPtr->doneCallback);
         httpPtr->doneCallback = NULL;
     }
-    if (httpPtr->rhrCallback != NULL) {
-        ns_free((void *)httpPtr->rhrCallback);
-        httpPtr->rhrCallback = NULL;
+    if (httpPtr->responseHeaderCallback != NULL) {
+        Tcl_DecrRefCount(httpPtr->responseHeaderCallback);
+        httpPtr->responseHeaderCallback = NULL;
+    }
+    if (httpPtr->responseDataCallback != NULL) {
+        Tcl_DecrRefCount(httpPtr->responseDataCallback);
+        httpPtr->responseDataCallback = NULL;
     }
     if (httpPtr->spoolFd != NS_INVALID_FD) {
         (void)ns_close(httpPtr->spoolFd);
@@ -5328,125 +5658,6 @@ HttpTaskRecv(
            " bytes (buffer size %" PRIuz ")", recv, length);
 
     return recv;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * HttpDoneCallback --
- *
- *        Evaluate the doneCallback. For the time being, this is
- *        executed in the default server context (may not be right!).
- *
- * Results:
- *        None
- *
- * Side effects:
- *        Many, depending on the callback.
- *        Http task is garbage collected.
- *
- *----------------------------------------------------------------------
- */
-static void
-HttpDoneCallback(
-    NsHttpTask *httpPtr
-) {
-    int          result;
-    Tcl_Interp  *interp;
-    Tcl_DString  script;
-
-    NS_NONNULL_ASSERT(httpPtr != NULL);
-
-    LogDebug("HttpDoneCallback", httpPtr, "");
-
-    interp = NsTclAllocateInterp( httpPtr->servPtr);
-
-    result = HttpGetResult(interp, httpPtr);
-
-    Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, httpPtr->doneCallback, TCL_INDEX_NONE);
-    Ns_DStringPrintf(&script, " %d ", result);
-    Tcl_DStringAppendElement(&script, Tcl_GetStringResult(interp));
-
-    /*
-     * Splice body/spool channels into the callback interp.
-     * All supplied channels must be closed by the callback.
-     * Alternatively, the Tcl will close them at the point
-     * of interp de-allocation, which might not be safe.
-     */
-    HttpSpliceChannels(interp, httpPtr);
-
-    result = Tcl_EvalEx(interp, script.string, script.length, 0);
-
-    if (result != TCL_OK) {
-        (void) Ns_TclLogErrorInfo(interp, "\n(context: http done callback)");
-    }
-
-    Tcl_DStringFree(&script);
-    Ns_TclDeAllocateInterp(interp);
-
-    HttpClose(httpPtr); /* This frees the httpPtr! */
-}
-
-static void
-ResponseHeadersReceivedCallback(
-    NsHttpTask *httpPtr
-) {
-    Tcl_Interp  *interp;
-    int          result;
-    Ns_Set      *responseHeaders;
-
-    LogDebug("ResponseHeadersReceivedCallback", httpPtr, "");
-
-    if (httpPtr->rhrCallback != NULL) {
-        interp = NsTclAllocateInterp(httpPtr->servPtr);
-        responseHeaders = Ns_SetCopy(httpPtr->responseHeaders);
-
-        result = Ns_TclEnterSet(interp, responseHeaders, NS_TCL_SET_DYNAMIC);
-
-        if (result == TCL_OK) {
-            Tcl_DString  script;
-            Tcl_Obj     *dictObj = Tcl_NewDictObj();
-            Tcl_Obj     *objv[2];
-
-            Tcl_DStringInit(&script);
-            Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("status", 6),
-                           Tcl_NewIntObj(httpPtr->status));
-            Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("phrase", 6),
-                           Tcl_NewStringObj(NsHttpStatusPhrase(httpPtr->status), TCL_INDEX_NONE));
-
-            Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("headers", 7),
-                           Tcl_GetObjResult(interp));
-
-            if (httpPtr->outputChanName != NULL) {
-                Tcl_DictObjPut(NULL, dictObj,
-                               Tcl_NewStringObj("outputchan", 10),
-                               Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
-            }
-
-            objv[0] = Tcl_NewStringObj(httpPtr->rhrCallback, TCL_INDEX_NONE);
-            objv[1] = dictObj;
-            Tcl_IncrRefCount(objv[0]);
-            Tcl_IncrRefCount(objv[1]);
-
-            //Tcl_DStringAppend(&script, httpPtr->headerReceivedCallback, TCL_INDEX_NONE);
-            //Ns_DStringPrintf(&script, "ns_log notice RECEIVED sets <[ns_set list]> status %d interp %p\n", httpPtr->status, (void*)interp);
-            //result = Tcl_EvalEx(interp, script.string, script.length, 0);
-            result = Tcl_EvalObjv(interp, 2, objv, 0);
-            Tcl_DecrRefCount(objv[0]);
-            Tcl_DecrRefCount(objv[1]);
-
-            Tcl_DStringFree(&script);
-        }
-        if (result != TCL_OK) {
-            (void) Ns_TclLogErrorInfo(interp, "\n(context: header received callback)");
-        }
-        Ns_TclDeAllocateInterp(interp);
-    }
 }
 
 
@@ -6061,7 +6272,7 @@ HttpProc(
         }
         if (httpPtr->doneCallback != NULL) {
             Ns_TaskSetCompleted(httpPtr->task);
-            HttpDoneCallback(httpPtr); /* Does free on the httpPtr */
+            DoneCallback(httpPtr); /* Does free on the httpPtr */
             httpPtr = NULL;
         }
 
