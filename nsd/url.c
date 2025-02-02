@@ -520,7 +520,6 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
              */
 
             url = urlPtr->port;
-            urlPtr->port = url;
         }
     } else {
         end = url;

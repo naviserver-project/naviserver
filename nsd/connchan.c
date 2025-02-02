@@ -570,7 +570,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
         success = NS_FALSE;
 
     } else {
-        char      whenBuffer[6];
+        char      whenBuffer[6] = {0};
         NsServer *servPtr;
 
         /*
@@ -1757,7 +1757,7 @@ ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 
 
             if (connChanPtr->cbPtr != NULL) {
-                char whenBuffer[6];
+                char whenBuffer[6] = {0};
 
                 Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("callback", 8),
                                Tcl_NewStringObj(connChanPtr->cbPtr->script, TCL_INDEX_NONE));

@@ -519,7 +519,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
     size_t        toWrite = 0u;
     ssize_t       nWrote = 0;
-    struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
+    struct iovec  sbufs[UIO_MAXIOV] = {0}, *sbufPtr;
 
     NS_NONNULL_ASSERT(sock != NULL);
     NS_NONNULL_ASSERT(bufs != NULL);

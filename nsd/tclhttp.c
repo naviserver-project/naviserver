@@ -4582,11 +4582,11 @@ ResponseDataCallback(
             const char *resultString = Tcl_GetStringFromObj(resultObj, &resultLength);
 
             if (resultLength < (TCL_SIZE_T)errorBufferSize) {
-                memcpy(errorBuffer, resultString, resultLength);
+                memcpy(errorBuffer, resultString, (size_t)resultLength);
                 errorBuffer[resultLength] = '\0';
             } else {
                 memcpy(errorBuffer, resultString, errorBufferSize-1);
-                errorBuffer[errorBufferSize] = '\0';
+                errorBuffer[errorBufferSize-1] = '\0';
             }
             *reason = errorBuffer;
             (void) Ns_TclLogErrorInfo(interp, "\n(context: ns_http buffer received callback)");
