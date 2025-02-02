@@ -2407,7 +2407,7 @@ Ns_HttpMessageParse(char *messageString, size_t messageLength, size_t *firstLine
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Ns_ReturnCode
-Ns_HttpResponseMessageParse(char *message, size_t size,
+Ns_HttpResponseMessageParse(char *messageString, size_t messageLength,
                             Ns_Set *hdrPtr, int *majorPtr, int *minorPtr, int *statusPtr, char **payloadPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
 
@@ -2807,8 +2807,8 @@ Ns_SetListFind(Ns_Set *const*sets, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN const char*
-Ns_SetFormat(Tcl_DString *outputDsPtr, const Ns_Set *set, bool withName,
-             const char *leadString, const char *separator)
+Ns_SetFormat(Tcl_DString *dsPtr, const Ns_Set *set, bool withName,
+             const char *leadString, const char *separatorString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 NS_EXTERN Ns_Set **

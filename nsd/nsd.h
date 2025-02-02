@@ -1597,7 +1597,7 @@ NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, TCL_SIZE_T len)
 NS_EXTERN int NsAdpFlush(NsInterp *itPtr, bool doStream)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)
+NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *debugHost, const char *debugPort, const char *debugProcs)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resvar)

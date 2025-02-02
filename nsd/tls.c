@@ -118,7 +118,7 @@ static void SSL_infoCB(const SSL *ssl, int where, int ret);
 # endif
 static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
 
-static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int sslErr, int currentDepth, NsServer *servPtr)
+static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int x509err, int currentDepth, NsServer *servPtr)
     NS_GNUC_NONNULL(4);
 static bool ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *validationExceptionsPtr, struct sockaddr *saPtr)
      NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
