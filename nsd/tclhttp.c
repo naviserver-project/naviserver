@@ -4497,7 +4497,7 @@ HttpConnect(
  *
  * ResponseDataCallback --
  *
- *        Invokes a user-defined callback to to process reveived raw
+ *        Invokes a user-defined callback to to process received raw
  *        data. This function passes the data buffer to the callback and
  *        returns the a Tcl result code indicating success, error and
  *        continuation.
