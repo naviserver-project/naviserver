@@ -435,6 +435,17 @@ This callback facilitates streaming response processing, allowing
 applications to process incremental results - such as those produced by
 generative AI services - immediately as they become available.
 
+[example_begin]
+ proc my_response_data_callback {x d} {
+   dict with d {
+     # Log messages containing the length of the received data chunks
+     ns_log notice received [lb]string length $data[rb] bytes
+   }
+ }
+ 
+ # Example invocation
+ ns_http run -response_data_callback ::my_response_data_callback https://orf.at
+[example_end]
 
 [opt_def -response_header_callback [arg value]]
 
@@ -510,7 +521,7 @@ a dictionary containing the following elements:
 [item] [const body_chan]: (optional) The input channel name for the body, if specified.
 [item] [const error]:     (optional) Error message.
 [item] [const file]:      (optional) The received body of the response in form of a file.
-[item] [const https]:     (optional) TLS negitiation results for HTTPS requests
+[item] [const https]:     (optional) TLS negotiation results for HTTPS requests
 [item] [const outputchan]: (optional) The output channel name, if specified.
 [list_end]
 
