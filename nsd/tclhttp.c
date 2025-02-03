@@ -291,6 +291,9 @@ static const char *CkCheck(const void *ptr)
 # define CkCheck(arg1) ("")
 #endif
 
+static NsCertValidationException_t *NewValidationException(const char *validationExceptionString)
+    NS_GNUC_NONNULL(1);
+
 /*
  * Callbacks
  */
@@ -559,25 +562,45 @@ LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
 /*
  *----------------------------------------------------------------------
  *
- * AddValidationException --
+ * NewValidationException --
  *
- *      Parse the string from the configuration file and fill out the
- *      structure in the first argument based on the parsed result.
+ *      Parses the provided validation exception string and allocates a new
+ *      certificate validation exception object. The configuration string
+ *      must be a Tcl list containing key/value pairs. Supported keys include:
+ *
+ *         "ip"      - Specifies an IP address or CIDR. If parsed successfully,
+ *                     the NS_CERT_TRUST_ALL_IPS flag is cleared.
+ *
+ *         "accept"  - Specifies a list of accepted error codes (e.g.,
+ *                     "certificate-expired", "chain-too-long", etc.). These
+ *                     string values are mapped via an internal lookup table to
+ *                     their corresponding X509 error codes.
+ *
+ *      On success, this function returns a pointer to the newly allocated
+ *      NsCertValidationException_t object, fully populated with the parsed
+ *      settings. On error, any allocated memory is freed and the function
+ *      returns NULL.
+ *
+ * Parameters:
+ *      validationExceptionString - The validation exception configuration string.
  *
  * Results:
- *      None.
+ *      Pointer to an NsCertValidationException_t structure on success, or NULL
+ *      if parsing fails.
  *
- * Side effects:
- *      None.
+ * Side Effects:
+ *      Allocates memory for the exception object. The caller is responsible for
+ *      freeing this memory.
  *
  *----------------------------------------------------------------------
  */
-static Ns_ReturnCode
-AddValidationException(NsCertValidationException_t *validationExceptionPtr, const char *validationExceptionString)
+static NsCertValidationException_t *
+NewValidationException(const char *validationExceptionString)
 {
     Ns_ReturnCode result = NS_OK;
     TCL_SIZE_T    oc;
     Tcl_Obj     **ov, *validationExceptionObj;
+    NsCertValidationException_t *validationExceptionPtr;
     /*
      * X509_V_ERR_CERT_HAS_EXPIRED
      * X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT
@@ -596,7 +619,10 @@ AddValidationException(NsCertValidationException_t *validationExceptionPtr, cons
         {NULL,                      0u}
     };
 
-    Ns_Log(Debug, "======================== AddValidationException '%s'", validationExceptionString);
+
+    Ns_Log(Debug, "ParseValidationException '%s'", validationExceptionString);
+
+    validationExceptionPtr = ns_calloc(1u, sizeof(NsCertValidationException_t));
     validationExceptionPtr->flags = NS_CERT_TRUST_ALL_IPS;
 
     validationExceptionObj = Tcl_NewStringObj(validationExceptionString, TCL_INDEX_NONE);
@@ -662,7 +688,7 @@ AddValidationException(NsCertValidationException_t *validationExceptionPtr, cons
                                  * Save value to slot.
                                  */
                                 validationExceptionPtr->accept[slot] = x509err;
-                                Ns_Log(Notice, "validationException: added accepted error <%s> code %d on pos %ld", value, x509err, slot);
+                                Ns_Log(Debug, "validationException: added accepted error <%s> code %d on pos %ld", value, x509err, slot);
                             }
 
                         } else {
@@ -690,9 +716,14 @@ AddValidationException(NsCertValidationException_t *validationExceptionPtr, cons
         result = NS_ERROR;
     }
     Tcl_DecrRefCount(validationExceptionObj);
-    Ns_Log(Debug, "======================== AddValidationException '%s' => flags %.4lx", validationExceptionString, validationExceptionPtr->flags);
+    if (result != NS_OK) {
+        ns_free(validationExceptionPtr);
+        validationExceptionPtr = NULL;
+    } else {
+        Ns_Log(Debug, "ParseValidationException '%s' => flags %.4lx", validationExceptionString, validationExceptionPtr->flags);
+    }
 
-    return result;
+    return validationExceptionPtr;
 }
 
 /*
@@ -745,6 +776,8 @@ NsInitHttp(NsServer *servPtr)
            servPtr->httpclient.caFile);
 
     servPtr->httpclient.validateCertificates = Ns_ConfigBool(section, "validatecertificates", NS_TRUE);
+    Ns_DListInit(&servPtr->httpclient.validationExceptions);
+
     if (!servPtr->httpclient.validateCertificates) {
         Ns_Log(Warning,
                "\n======================================================================================================\n"
@@ -753,33 +786,33 @@ NsInitHttp(NsServer *servPtr)
                "======================================================================================================",
                section);
     } else {
-        /*
-         * Examples of validation exceptions:
-         *    ns_param validationException {ip ::1}
-         *    ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
-         *    ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
-        */
-        Ns_Set *set = Ns_ConfigGetSection2(section, NS_FALSE);
-        size_t  i;
+        Ns_Set  *set = Ns_ConfigGetSection2(section, NS_FALSE);
 
-        Ns_DListInit(&servPtr->httpclient.validationExceptions);
-        for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
-            const char *key = Ns_SetKey(set, i);
+        if (set != NULL) {
+            /*
+             * Examples of validation exceptions:
+             *    ns_param validationException {ip ::1}
+             *    ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
+             *    ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
+             */
+            size_t   i, count;
+            Ns_DList dl, *dlPtr = &dl;
 
-            if ( STREQ(key, "validationexception") ) {
-                NsCertValidationException_t *validationException = ns_calloc(1u, sizeof(NsCertValidationException_t));
-                Ns_ReturnCode rc;
+            Ns_DListInit(dlPtr);
+            count = NsSetGetCmpDListAppend(set, "validationexception", NS_TRUE, strcasecmp, dlPtr);
 
-                rc = AddValidationException(validationException, Ns_SetValue(set, i));
-                if (rc == NS_OK) {
-                    Ns_Log(Notice, "======================== validationException added on pos %ld",
-                           servPtr->httpclient.validationExceptions.size);
-                    Ns_DListAppend(&servPtr->httpclient.validationExceptions, validationException);
-                } else {
-                    ns_free(validationException);
+            for (i = 0u; i < count; ++i) {
+                NsCertValidationException_t *validationExceptionPtr = NewValidationException(dlPtr->data[i]);
+
+                if (validationExceptionPtr != NULL) {
+                    Ns_DListAppend(&servPtr->httpclient.validationExceptions, validationExceptionPtr);
                 }
             }
+            Ns_DListFree(dlPtr);
         }
+
+        Ns_Log(Notice, "%s: configured %ld validationExceptions",
+               section, servPtr->httpclient.validationExceptions.size);
 
         servPtr->httpclient.verify_depth = Ns_ConfigIntRange(section, "validationdepth", 9, 0, INT_MAX);
     }
