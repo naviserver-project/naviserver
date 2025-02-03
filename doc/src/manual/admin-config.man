@@ -1218,7 +1218,7 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
         "scheduled procedures" \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate vhostcertificates invalid-certificates \
-        TLS HTTPS OCSP SNI initcmds letsencrypt redirect \
+        TLS HTTPS OCSP SNI initcmds letsencrypt redirect CApath CAfile \
         ADP templates reverseproxymode stealthMode noticeDetail]
 [see_also tcl-libraries tcl-overview ns_returnnotice]
 [manpage_end]

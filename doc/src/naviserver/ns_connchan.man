@@ -370,20 +370,14 @@ The default values for the peer server validation parameters
 [option -cafile],
 [option -capath], and
 [option -insecure] can be configured in the configuration file as
-documented in [cmd ns_http].
-
-[example_begin]
- #---------------------------------------------------------------------
- # HTTP client (ns_http, ns_connchan) configuration
- #---------------------------------------------------------------------
- ns_section ns/server/$server/httpclient {
-    # ...
- }
-[example_end]
-
+documented in [cmd ns_http]. The configuration of the client
+certificate management is as well shared with [cmd ns_http].
+For configuration details, see the section
+[uri ../../manual/files//admin-config.html#subsection13 "HTTP client security configuration"]
+in the manual.
 
 [see_also ns_conn ns_http ns_chan ns_sockcallback ns_write ns_time nssock nsssl]
 [keywords "server built-in" channels socket driver "network driver" \
-        "reverse proxy" websocket]
+        "reverse proxy" websocket CAfile CApath]
 
 [manpage_end]

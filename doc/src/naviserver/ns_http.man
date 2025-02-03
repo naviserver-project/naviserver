@@ -720,6 +720,7 @@ client requests.
 
 [see_also ns_httptime ns_connchan ns_time ns_set ns_urlencode nslog]
 [keywords "global built-in" HTTP-client HTTP HTTPS nssock \
-        logging spooling SNI configuration nslog TLS certificate PEM]
+        logging spooling SNI configuration nslog TLS certificate PEM \
+        CApath CAfile]
 
 [manpage_end]
