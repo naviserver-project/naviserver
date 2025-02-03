@@ -837,6 +837,7 @@ typedef struct NsServer {
         Ns_HeaderCaseDisposition hdrcase;
         bool flushcontent;
         bool modsince;
+        bool stealthmode;
         bool noticedetail;
     } opts;
 

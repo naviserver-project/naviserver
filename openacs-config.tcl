@@ -606,11 +606,12 @@ ns_section ns/server/$server {
     # ns_param	directorylisting	fancy	;# Can be simple or fancy
 
     #
-    # Configuration of replies
+    # Configuration of HTTP responses
     #
     # ns_param	realm		yourrealm	;# Default realm for Basic authentication
-    # ns_param	noticedetail	false		;# true, return detail information in server reply
-    # ns_param	noticeadp	returnnotice.adp ;# returnnotice.adp; ADP file for ns_returnnotice.
+    # ns_param	noticedetail	false		;# true, include server signature in ns_returnnotice commands (errors, redirects, ...)
+    # ns_param	noticeadp	returnnotice.adp ;# returnnotice.adp; ADP file for ns_returnnotice commands (errors, redirects, ...)
+    # ns_param  stealthmode     true            ;# default: false; omit server header field in responses
     # ns_param	errorminsize	0		;# 514, fill-up reply to at least specified bytes (for ?early? MSIE)
     # ns_param	headercase	preserve	;# preserve, might be "tolower" or "toupper"
     # ns_param	checkmodifiedsince	false	;# true, check modified-since before returning files from cache. Disable for speedup
@@ -620,6 +621,7 @@ ns_section ns/server/$server {
     # every response on this server
     #
     #ns_param    extraheaders    {...}
+
 }
 
 ########################################################################

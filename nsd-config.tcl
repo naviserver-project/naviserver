@@ -407,6 +407,11 @@ ns_section ns/server/default {
 
     # Extra server-specific response header fields
     #ns_param   extraheaders  {referrer-policy "strict-origin"}
+
+    # Server and version information in HTTP responses
+    #ns_param     noticeADP    returnnotice.adp ;# ADP file for ns_returnnotice commands (errors, redirects, ...)x
+    #ns_param     noticedetail false ;# default: true; include server signature in ns_returnnotice commands (errors, redirects, ...)
+    #ns_param     stealthmode  true  ;# default: false; omit server header field in all responses
 }
 
 ns_section ns/server/default/modules {

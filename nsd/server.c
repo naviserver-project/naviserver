@@ -273,7 +273,9 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 
     servPtr->opts.realm = ns_strcopy(Ns_ConfigString(section, "realm", server));
     servPtr->opts.modsince = Ns_ConfigBool(section, "checkmodifiedsince", NS_TRUE);
+
     servPtr->opts.noticedetail = Ns_ConfigBool(section, "noticedetail", NS_TRUE);
+    servPtr->opts.stealthmode = Ns_ConfigBool(section, "stealthmode", NS_FALSE);
     servPtr->opts.noticeADP = Ns_ConfigString(section, "noticeadp", "returnnotice.adp");
 
     if (Ns_PathIsAbsolute(servPtr->opts.noticeADP) == NS_FALSE

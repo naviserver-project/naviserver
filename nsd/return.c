@@ -455,7 +455,8 @@ const char * NsHttpStatusPhrase(int statusCode)
 void
 Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 {
-    const Conn    *connPtr = (const Conn *) conn;
+    const Conn     *connPtr = (const Conn *) conn;
+    const NsServer *servPtr = connPtr->poolPtr->servPtr;
 
     /*
      * Construct the HTTP response status line.
@@ -483,10 +484,11 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
      * via configuration parameter "extraheaders" (from network driver or
      * server config).
      */
-
-    Ns_DStringVarAppend(dsPtr,
-                        "Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
-                        "Date: ", (char *)0L);
+    if (!servPtr->opts.stealthmode) {
+        Ns_DStringVarAppend(dsPtr, "Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
+                            (char *)0L);
+    }
+    Ns_DStringNAppend(dsPtr, "Date: ", 6);
     (void)Ns_HttpTime(dsPtr, NULL);
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
 
@@ -507,8 +509,6 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 
         sockPtr = Ns_ConnSockPtr(conn);
         if (sockPtr != NULL) {
-            const NsServer *servPtr = ((Sock *)sockPtr)->servPtr;
-
             if (servPtr->opts.extraHeaders != NULL) {
                 /*
                  * We have server-specific extra headers. Merge these into the
