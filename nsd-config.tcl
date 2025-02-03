@@ -451,7 +451,7 @@ ns_section ns/server/default/adp {
 }
 
 #---------------------------------------------------------------------
-# HTTP client (ns_http) configuration
+# HTTP client (ns_http, ns_connchan) configuration
 #---------------------------------------------------------------------
 ns_section ns/server/default/httpclient {
     #
@@ -500,16 +500,16 @@ ns_section ns/server/default/httpclient {
         # Define white-listed validation exceptions:
         #
         # Accept all certificates from ::1 (IPv6 loopback):
-        ns_param validationException {ip ::1}
+        #ns_param validationException {ip ::1}
 
         # For IPv4 127.0.0.1, ignore two specific validation errors:
-        ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
+        #ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
 
         # Allow expired certificates from any IP in the 192.168.1.0/24 range:
-        ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
+        #ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
 
         # Accept self-signed certificates from any IP address:
-        ns_param validationException {accept self-signed-certificate}
+        #ns_param validationException {accept self-signed-certificate}
 
         # Accept all validation errors from any IP address (like disabled validation, but collects certificates)
         ns_param validationException {accept *}
