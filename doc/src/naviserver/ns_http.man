@@ -517,11 +517,11 @@ a dictionary containing the following elements:
 [item] [const time]: The elapsed request time in [cmd ns_time] format.
 [item] [const headers]: ns_set containing the response header fields.
 
-[item] [const body]:      (optional) The received body of the response in form of a string.
-[item] [const body_chan]: (optional) The input channel name for the body, if specified.
-[item] [const error]:     (optional) Error message.
-[item] [const file]:      (optional) The received body of the response in form of a file.
-[item] [const https]:     (optional) TLS negotiation results for HTTPS requests
+[item] [const body]:       (optional) The received body of the response in form of a string.
+[item] [const body_chan]:  (optional) The input channel name for the body, if specified.
+[item] [const error]:      (optional) Error message.
+[item] [const file]:       (optional) The received body of the response in form of a file.
+[item] [const https]:      (optional) TLS negotiation results for HTTPS requests
 [item] [const outputchan]: (optional) The output channel name, if specified.
 [list_end]
 
@@ -687,84 +687,33 @@ logging is activated, the log file will contain information similar to
 the access.log of NaviServer (see [cmd nslog] module), but for HTTP
 client requests.
 
+
+
 [example_begin]
  #---------------------------------------------------------------------
  # HTTP client (ns_http, ns_connchan) configuration
  #---------------------------------------------------------------------
  ns_section ns/server/$server/httpclient {
-    #
-    # Set default keep-alive timeout for outgoing ns_http requests
-    #
-    ns_param    keepalive       5s       ;# default: 0s
+   #
+   # Set default keep-alive timeout for outgoing ns_http requests
+   #
+   ns_param    keepalive       5s       ;# default: 0s
  
-    #
-    # Security configuration:
-    # - Default locations for certificate validation in "ns_http" or
-    #   "ns_connchan" requests.
-    # - Optionally deactivate peer server certificate validation.
-    #   Setting "validateCertificates" to false allows man-in-the-middle attacks.
-    # These security configuration parameters can be overridden by per
-    # request via parameters.
-    #
-    # Specify trusted certificates using
-    #   - A single CA bundle file (CAfile) for top-level certificates, or
-    #   - A directory (CApath) containing multiple trusted certificates.
-    #
-    ns_param CApath certificates           ;# default: [lb]ns_info home[rb]/certificates/
-    ns_param CAfile ca-bundle.crt          ;# default: [lb]ns_info home[rb]/ca-bundle.crt
+   #
+   # Security configuration:
+   # See: [uri ../../manual/files//admin-config.html#subsection13 "HTTP client security configuration"]
+   # ...
  
-    # ns_param validateCertificates false  ;# default: true
-    if {[lb]ns_config ns/server/$server/httpclient validateCertificates true[rb]} {
-        #
-        # The following parameters are only relevant when peer certificate
-        # validation is enabled.
-        #
- 
-        #
-        # "validationDepth" sets the maximum allowed length of a certificate chain:
-        #   0: Accept only self-signed certificates.
-        #   1: Accept certificates issued by a single CA or self-signed.
-        #   2 or higher: Accept chains up to the specified length.
-        #
-        #ns_param validationDepth 0   ;# default: 9
- 
-        #
-        # When defining exceptions below, invalid certificates are stored
-        # in the specified directory. Administrators can move these
-        # certificates to the accepted certificates folder and run "openssl rehash"
-        # to reduce future security warnings.
-        #
-        #ns_param invalidCertificates ;# default: [lb]ns_info home[rb]/invalid-certificates/
- 
-        #
-        # Define white-listed validation exceptions:
-        #
-        # Accept all certificates from ::1 (IPv6 loopback):
-        ns_param validationException {ip ::1}
- 
-        # For IPv4 127.0.0.1, ignore two specific validation errors:
-        ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
- 
-        # Allow expired certificates from any IP in the 192.168.1.0/24 range:
-        ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
- 
-        # Accept self-signed certificates from any IP address:
-        ns_param validationException {accept self-signed-certificate}
- 
-        # Accept all validation errors from any IP address (like disabled validation, but collects certificates)
-        #ns_param validationException {accept *}
-    }
- 
-    #
-    # Configure log file for outgoing ns_http requests
-    #
-    ns_param     logging          on       ;# default: off
-    ns_param     logfile          httpclient.log ;# default: [lb]ns_info home[rb]/logs/httpclient.log
-    ns_param     logrollfmt       %Y-%m-%d ;# format appended to log filename
-    #ns_param    logmaxbackup     100      ;# 10, max number of backup log files
-    #ns_param    logroll          true     ;# true, should server log files automatically
-    #ns_param    logrollonsignal  true     ;# false, perform roll on a sighup
-    #ns_param    logrollhour      0        ;# 0, specify at which hour to roll
+   #
+   # Configure logging options for outgoing ns_http requests
+   #
+   ns_param     logging          on       ;# default: off
+   ns_param     logfile          httpclient.log ;# default: [lb]ns_info home[rb]/logs/httpclient.log
+   ns_param     logrollfmt       %Y-%m-%d ;# format appended to log filename
+   #ns_param    logmaxbackup     100      ;# 10, max number of backup log files
+   #ns_param    logroll          true     ;# true, should server log files automatically
+   #ns_param    logrollonsignal  true     ;# false, perform roll on a sighup
+   #ns_param    logrollhour      0        ;# 0, specify at which hour to roll
  }
 [example_end]
 
