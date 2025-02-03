@@ -18,7 +18,7 @@ if {0} {
         #puts stderr "REQUEST ends in Timeout"
         ns_log notice "Trap NS_TIMEOUT $r"
     } on error {errorMsg} {
-        puts stderr "REQUEST ends in ERROR: $errorMsg"
+        #puts stderr "REQUEST ends in ERROR: $errorMsg"
         #
         # The behavior on Linux and macOS is different. While an
         # attempt to connect to a non-existent IP address under macOS
