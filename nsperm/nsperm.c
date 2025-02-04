@@ -756,7 +756,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, 
     Tcl_HashEntry      *hPtr;
     struct NS_SOCKADDR_STORAGE ip, mask;
     struct sockaddr    *ipPtr = (struct sockaddr *)&ip, *maskPtr = (struct sockaddr *)&mask;
-    char buf[NS_ENCRYPT_BUFSIZE];
+    char                buf[NS_ENCRYPT_BUFSIZE];
     char               *name, *pwd, *field = NULL, *salt = NULL;
     int                 isNew, allow = 0, deny = 0, clear = 0;
     TCL_SIZE_T          nargs = 0, i;
