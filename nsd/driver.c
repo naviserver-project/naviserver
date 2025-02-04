@@ -9336,12 +9336,10 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
             reqPtr->request.method = ns_strdup(httpMethod);
             reqPtr->request.protocol = ns_strdup(parsedUrlPtr->protocol);
             reqPtr->request.host = ns_strdup(parsedUrlPtr->host);
-            if (parsedUrlPtr->query != NULL) {
-                reqPtr->request.query = ns_strdup(parsedUrlPtr->query+1);
-            } else {
-                reqPtr->request.query = NULL;
-            }
-            /*Ns_Log(Notice, "REQUEST LINE <%s> query <%s>", reqPtr->request.line, reqPtr->request.query);*/
+            reqPtr->request.query = (parsedUrlPtr->query != NULL) ? ns_strdup(parsedUrlPtr->query+1) : NULL;
+            reqPtr->request.fragment = (parsedUrlPtr->fragment != NULL) ? ns_strdup(parsedUrlPtr->fragment) : NULL;
+
+            Ns_Log(Notice, "REQUEST LINE <%s> query <%s> fragment <%s>", reqPtr->request.line, reqPtr->request.query, reqPtr->request.fragment);
 
             *sockPtrPtr = sockPtr;
         }
@@ -9409,6 +9407,7 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
         reqPtr->request.protocol = ns_strdup(protocol);
         reqPtr->request.host = NULL;
         reqPtr->request.query = NULL;
+        reqPtr->request.fragment = NULL;
         /* Ns_Log(Notice, "REQUEST LINE <%s>", reqPtr->request.line);*/
 
         *sockPtrPtr = sockPtr;

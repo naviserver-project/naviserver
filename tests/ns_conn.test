@@ -17,7 +17,7 @@ test ns_conn-1.0 {basic syntax: plain call} -body {
 
 test ns_conn-1.1 {basic syntax: wrong argument} -body {
      ns_conn 123
-} -returnCodes error -result {bad subcommand "123": must be acceptedcompression, auth, authpassword, authuser, channel, clientdata, close, compress, content, contentfile, contentlength, contentsentlength, copy, currentaddr, currentport, details, driver, encoding, fileheaders, filelength, fileoffset, files, flags, form, headerlength, headers, host, id, isconnected, keepalive, location, method, outputheaders, partialtimes, peeraddr, peerport, pool, port, protocol, query, ratelimit, request, server, sock, start, status, target, timeout, url, urlc, urlencoding, urlv, version, or zipaccepted}
+} -returnCodes error -result {bad subcommand "123": must be acceptedcompression, auth, authpassword, authuser, channel, clientdata, close, compress, content, contentfile, contentlength, contentsentlength, copy, currentaddr, currentport, details, driver, encoding, fileheaders, filelength, fileoffset, files, flags, form, fragment, headerlength, headers, host, id, isconnected, keepalive, location, method, outputheaders, partialtimes, peeraddr, peerport, pool, port, protocol, query, ratelimit, request, server, sock, start, status, target, timeout, url, urlc, urlencoding, urlv, version, or zipaccepted}
 
 
 test ns_conn-1.1.1 {syntax: ns_conn acceptedcompression} -body {

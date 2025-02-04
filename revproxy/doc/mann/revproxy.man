@@ -219,14 +219,29 @@ Default implementation: [cmd ::revproxy::exception]
 
 [para] The option [option "-timeout"] specifies the time limit for read, or write operations (default: 10s)
 
-[para] The option [option "-url_rewrite_callback"] can be used to dynamically compute the final upstream URL. This can be used in cases, where the option [option "-regsubs"] is not sufficient.
-
+[para] The option [option "-url_rewrite_callback"] can be used to
+dynamically compute the final upstream URL. This can be used in cases,
+where the option [option "-regsubs"] is not sufficient.
+[para]
 Default implementation: [cmd ::revproxy::rewrite_url]
 
 [example_begin]
- nsf::proc ::revproxy::rewrite_url { -target -url {-query ""}} {
+ nsf::proc ::revproxy::rewrite_url { -target -url {-query ""} {-fragment ""}} {
+   #
+   # Transforms an incoming URL and query into an URL used for the
+   # backend system.
+   #
+   # Parameters:
+   #   target: backend system (prefix), value provided in the ::revproxy::upstream invocation
+   #   url: URL path of the incoming request, as provided via [lb]ns_conn url[rb]
+   #   query: query of the incoming request as provided via [lb]ns_conn query[rb]
+   #   fragment: fragment of the incoming request as provided via [lb]ns_conn fragment[rb]
+   #
+   # Join the URL by avoiding double slashes
+   #
    set newUrl [lb]string trimright $target /[rb]/[lb]string trimleft $url /.[rb]
    if {$query ne ""} {append newUrl ?$query}
+   if {$fragment ne ""} {append newUrl #$fragment}
    return $newUrl
  }
 [example_end]

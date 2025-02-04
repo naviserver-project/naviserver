@@ -206,7 +206,10 @@ fallback charset can be provided as well via the configuration parameter
 [para] Note: ns_conn form is not suitable for multipart formdata file
 upload. Use [cmd ns_getform] instead.
 
+[call [cmd  "ns_conn fragment"]]
 
+Returns the fragment identifier of the request URL
+(included in the URL after the hash mark [const "#"]).
 
 [call [cmd  "ns_conn headerlength"]]
 

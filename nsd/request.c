@@ -70,6 +70,7 @@ RequestCleanupMembers(Ns_Request *request)
     ns_free((char *)request->protocol);
     ns_free((char *)request->host);
     ns_free(request->query);
+    ns_free((char *)request->fragment);
     ns_free((char *)request->serverRoot);
     FreeUrl(request);
 }

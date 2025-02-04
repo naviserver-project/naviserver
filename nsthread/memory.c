@@ -73,6 +73,9 @@ void *ns_malloc(size_t size) {
     return result;
 }
 void ns_free(void *ptr) {
+    /*
+     * Standard POSIX free() allows NULL pointer.
+     */
     free(ptr);
 }
 void *ns_calloc(size_t num, size_t esize) {

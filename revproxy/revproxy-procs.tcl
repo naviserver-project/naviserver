@@ -169,7 +169,9 @@ namespace eval ::revproxy {
         set url [{*}$url_rewrite_callback \
                      -target $target \
                      -url $url \
-                     -query [ns_conn query]]
+                     -query [ns_conn query] \
+                     -fragment [ns_conn fragment] \
+                    ]
         #log notice "===== submit via ${backendconnection}, [ns_conn method] $url"
 
         #
@@ -344,9 +346,10 @@ namespace eval ::revproxy {
     # location), the incoming URL and the actual query parameter form
     # the incoming URL.
     #
-    nsf::proc rewrite_url { -target -url {-query ""}} {
+    nsf::proc rewrite_url { -target -url {-query ""} {-fragment ""}} {
         set url [string trimright $target /]/[string trimleft $url /.]
         if {$query ne ""} {append url ?$query}
+        if {$fragment ne ""} {append url #$fragment}
         return $url
     }
 

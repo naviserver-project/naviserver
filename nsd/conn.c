@@ -1905,7 +1905,7 @@ enum ISubCmdIdx {
     CCurrentAddrIdx, CCurrentPortIdx,
     CDetailsIdx, CDriverIdx,
     CEncodingIdx,
-    CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx,
+    CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx, CFragmentIdx,
     CHeaderLengthIdx, CHeadersIdx, CHostIdx,
     CIdIdx, CIsConnectedIdx,
     CKeepAliveIdx,
@@ -1939,7 +1939,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         "currentaddr", "currentport",
         "details", "driver",
         "encoding",
-        "fileheaders", "filelength", "fileoffset", "files", "flags", "form",
+        "fileheaders", "filelength", "fileoffset", "files", "flags", "form", "fragment",
         "headerlength", "headers", "host",
         "id", "isconnected",
         "keepalive",
@@ -1968,7 +1968,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         /* E */ NS_CONN_REQUIRE_CONFIGURED,
         /* F */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
-        /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
+        /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* H */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* I */ NS_CONN_REQUIRE_CONFIGURED, 0u,
         /* K */ NS_CONN_REQUIRE_CONNECTED,
@@ -2595,6 +2595,11 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
     case CQueryIdx:
         assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(request->query, TCL_INDEX_NONE));
+        break;
+
+    case CFragmentIdx:
+        assert(request != NULL);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->fragment, TCL_INDEX_NONE));
         break;
 
     case CUrlcIdx:
