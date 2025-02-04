@@ -13,7 +13,6 @@
 # modules/nsperm/init.tcl -
 #   Initialization for nsperm module
 #
-
 proc init_nsperm { } {
     set dir [file join [ns_info home] modules nsperm]
 
@@ -21,10 +20,11 @@ proc init_nsperm { } {
     # Parse hosts.allow
     #
     set filename [file join $dir hosts.allow]
-    if {[catch {set file [open $filename r]} ignore] == 0} {
+    if {[file readable $filename]} {
+        set file [open $filename r]
         while {![eof $file]} {
             set line [gets $file]
-            if {[string index $line 0] != "#"} {
+            if {[string index $line 0] ne "#"} {
                 if {$line ne ""} {
                     set pos [string first : $line]
                     if {$pos < 0} {
@@ -48,10 +48,11 @@ proc init_nsperm { } {
     # Parse hosts.deny
     #
     set filename [file join $dir hosts.deny]
-    if {[catch {set file [open $filename r]} ignore] == 0} {
+    if {[file readable $filename]} {
+        set file [open $filename r]
         while {![eof $file]} {
             set line [gets $file]
-            if {[string index $line 0] != "#"} {
+            if {[string index $line 0] ne "#"} {
                 if {$line ne ""} {
                     set pos [string first : $line]
                     if {$pos < 0} {
@@ -78,10 +79,11 @@ proc init_nsperm { } {
     # Parse passwd
     #
     set filename [file join $dir passwd]
-    if {[catch {set file [open $filename r]} ignore] == 0} {
+    if {[file readable $filename]} {
+        set file [open $filename r]
         while {![eof $file]} {
             set line [gets $file]
-            if {[string index $line 0] != "#"} {
+            if {[string index $line 0] ne "#"} {
                 if {$line ne ""} {
                     set list [split $line :]
                     if {[llength $list] != 7} {
@@ -105,7 +107,7 @@ proc init_nsperm { } {
                                 append params " [list $a]"
                             }
                         }
-                        ns_log notice "PASSWD call <ns_perm adduser $flag $params>"
+                        #ns_log notice "PASSWD call <ns_perm adduser $flag $params>"
                         if {[catch { ns_perm adduser {*}$flag {*}$params } errmsg]} {
                             ns_log Error init_nsperm: $errmsg
                         }
@@ -120,10 +122,11 @@ proc init_nsperm { } {
     # Parse group
     #
     set filename [file join $dir group]
-    if {[catch {set file [open $filename r]} ignore] == 0} {
+    if {[file readable $filename]} {
+        set file [open $filename r]
         while {![eof $file]} {
             set line [gets $file]
-            if {[string index $line 0] != "#"} {
+            if {[string index $line 0] ne "#"} {
                 if {$line ne ""} {
                     set list [split $line :]
                     if {[llength $list] != 4} {
@@ -151,19 +154,16 @@ proc init_nsperm { } {
     # Parse perms
     #
     set filename [file join $dir perms]
-    if {[catch {set file [open $filename r]} ignore] == 0} {
+    if {[file readable $filename]} {
+        set file [open $filename r]
         while {![eof $file]} {
             set line [gets $file]
-            if {[string index $line 0] != "#"} {
+            if {[string index $line 0] ne "#"} {
                 if {$line ne ""} {
                     if {[llength $line] != 5} {
                         ns_log error "nsperm_init: bad line in $filename: $line"
                     } else {
-                        set action [lindex $line 0]
-                        set inherit [lindex $line 1]
-                        set method [lindex $line 2]
-                        set url [lindex $line 3]
-                        set entity [lindex $line 4]
+                        lassign $line action inherit method url entity
                         set cmd "ns_perm [list $action]"
                         if {$inherit eq "noinherit"} {
                             append cmd " -noinherit"
@@ -183,7 +183,7 @@ proc init_nsperm { } {
 #
 # ns_permpasswd lets you set a password in the nsperm passwd file.
 # It is implemented in Tcl because the passwd file is no inherently a
-# part of the nsperm module--just a nice interface provided by the
+# part of the nsperm module -- just a nice interface provided by the
 # supporting Tcl code.
 #
 # oldpass must either be the user's old password or nsadmin's password
@@ -210,7 +210,7 @@ proc ns_permpasswd { user oldpasswd newpasswd } {
     while {![eof $file]} {
         set line [gets $file]
         set entryLine $line
-        if {[string index $line 0] != "#"} {
+        if {[string index $line 0] ne "#"} {
             if {$line ne ""} {
                 set list [split $line :]
                 if {[llength $list] != 7} {
@@ -254,8 +254,27 @@ proc ns_permreload {} {
 #
 # Initialize the module
 #
-
 init_nsperm
+
+#
+# Check, of the default administrator password from the source code
+# distribution is still in use. If so, provide a warning, that this
+# password must be changed. We could consider even more drastical
+# measures to abort the startup in the future.
+#
+try {
+    ns_perm checkpass nsadmin x
+
+} on ok {result} {
+    ns_log security Administration action required!\n \
+        "=============================================================================\n" \
+        "The Default password for system administrator 'nsadmin' has not been changed!\n" \
+        "Please, change the password using:  ns_permpasswd nsadmin x /NEWPASSWORD/\n" \
+        "or edit the password file [file join [ns_info home] modules nsperm passwd]\n" \
+        "and change the encrypted password manually!\n" \
+        "=============================================================================\n"
+} on error {errorMsg} {
+}
 
 # Local variables:
 #    mode: tcl
