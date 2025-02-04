@@ -67,7 +67,7 @@ control port.
  ns_section ns/server/${server}/module/nscp/users {
    #
    # The default password for nsadmin is "x". You should change it.
-   # type "ns_crypt newpassword salt" and put the encrypted string
+   # type "ns_crypt /newpassword/ /salt/" and put the encrypted string
    # below.
    
    ns_param user "nsadmin:t2GqvvaiIUbF2:" ;# sample user="nsadmin", pw="x".
