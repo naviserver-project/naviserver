@@ -43,20 +43,20 @@ NaviServer pages directory where they can store content.
 
 [para]
 To define NaviServer users, you need to create entries for them in the
-passwd file, which resides in the /modules/nsperm directory. The
-default passwd file contains:
+[const passwd] file, which resides in the [const /modules/nsperm] directory. The
+default [const passwd] file contains:
 
 [para]
 [example_begin]
  ""::::::
- nsadmin:CUdnvgBYocLSI:::::
+ nsadmin:ubphBI5lDzSYc:::::
  nobody::::::
 [example_end]
 
-[para]
-The format is the same as the format for the /etc/passwd file.
-NaviServer ignores all but the first two fields, which are the username and the encrypted password. The password itself is encrypted the
-same way as Unix passwords.
+[para] The format is the same as the format for the common Unix
+[const /etc/passwd] file.  NaviServer ignores all but the first two fields,
+which are the username and the encrypted password. The password itself
+is encrypted the same way as Unix passwords.
 
 [para]
 The "" user is the unauthenticated user and is treated the same as any
@@ -67,8 +67,8 @@ other user.
 
 [para]
 To define NaviServer groups, you need to create entries for them in the
-group file, which resides in the /modules/nsperm directory. The
-default group file contains:
+[const group] file, which resides in the /modules/nsperm directory. The
+default [const group] file contains:
 
 [example_begin]
  system:::nsadmin
@@ -78,13 +78,13 @@ default group file contains:
 [example_end]
 
 
-The format is the same as the format for the /etc/group file.
+The format is the same as the format for the common Unix [const /etc/group] file.
 NaviServer ignores all but the first and last fields, which are the
 name of the group and a comma-separated list of users in the group.
 
 
 [para]
-The default group file, shown above, creates groups called system,
+The default [const group] file, shown above, creates groups called system,
 users, all, and public, with the listed users in each.
 
 
@@ -178,7 +178,7 @@ The format for entries in the file is:
  username: host, host, host ...
 [example_end]
 
-where username is a user defined in the passwd file and host can be
+where username is a user defined in the [const passwd] file and host can be
 specified in either of these forms:
 
 
@@ -239,7 +239,7 @@ The format for entries in the file is:
 [example_end]
 
 [para]
-where username is a user defined in the passwd file and host can be
+where username is a user defined in the [const passwd] file and host can be
 specified in either of these forms:
 
 
@@ -278,7 +278,7 @@ To enable this
  }
 [example_end]
 
-passwdfile can point to any file, by default it set to default nsperm module password file.
+[const passwdfile] can point to any file, by default it set to default nsperm module password file.
 
 Now, in the directory where access is wanted, create .htaccess file and add lines like these:
 

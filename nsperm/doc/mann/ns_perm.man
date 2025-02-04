@@ -24,16 +24,24 @@ management for NaviServer.
 	[arg userfield] \
 	[opt [arg "host ..."]]]
 
-Adds the user with the specified name and the
-encrypted password [arg encpass] and the specified user text (userfield)
-into the users database.
+ Adds a new user to the in-memory users database. When a
+ [const passwd] file is given, this command is used to load the users
+ from this file.
+ The user is
+ identified by the specified [arg name], and the provided encrypted
+ password [arg encpass] and additional user information
+ ([arg userfield]) are stored in the database.
 
-[para]
-[option -allow] and hostnames are specified, the user will be allowed on the specified hostnames.
+[para] If the [option -allow] option is used along with one or more
+hostnames, the user is granted access only on the specified hosts.
 
-[para]
-[option -deny] and hostnames are specified, the user will be denied on the specified hostnames.
-The hostname must be specified as ipaddress/netmask or dnshostname.
+
+[para] If the [option -deny] option is used along with hostnames,
+access for the user is explicitly denied on those hosts. Hostnames can
+be specified as an IP address with netmask (e.g.,
+[const 128.2.142.0/255.255.255.0]),
+a fully qualified domain name (e.g., [const www.microsoft.com]),
+or as a domain pattern (e.g., [const .microsoft.com]).
 
 [example_begin]
  128.2.142.0/255.255.255.0 or www.microsoft.com or .microsoft.com.
@@ -41,41 +49,39 @@ The hostname must be specified as ipaddress/netmask or dnshostname.
 
 [para]
 [option -salt]
-By default password is assumed encrypted with the [cmd ns_crypt]
-command and salt "CU":
+
+By default, the password provided in [arg encpass] is assumed to be
+already encrypted with the [cmd ns_crypt] command using the salt
+[const CU]. When the [option -salt] is specified, the [arg encpass] argument
+is treated as clear text and will be encrypted using the specified
+salt via [cmd ns_crypt].
 
 [example_begin]
  ns_crypt mypasswd CU
 [example_end]
 
-This argument tells command that password is clear text and it should be encrypted
-by the [cmd ns_perm] command with specified salt.
-
 [para]
-[option -clear]
-Tells that we keep password in clear text
+The [option -clear] indicates that the password should be stored in
+clear text rather than encrypted.
 
 
 [call [cmd "ns_perm deluser"] \
 	[arg name]]
 
-Delete user from the memory.
-
+Removes the user with the given [arg name] from the users database.
 
 [call [cmd "ns_perm addgroup"] \
 	[arg group] \
 	[arg user] \
 	[opt [arg "user ..."]]]
 
-Create a new [arg group] with the specified name
-that includes the users listed after the group name.
-
+Creates a new group identified by [arg group] and adds the specified
+user(s) ([arg user] and any additional users) to that group.
 
 [call [cmd "ns_perm delgroup"] \
 	[arg name]]
 
-Deletes group from the memory.
-
+Deletes the group identified by [arg name] from the system.
 
 [call [cmd "ns_perm allowuser"] \
 	[opt [option -noinherit]] \
@@ -84,10 +90,11 @@ Deletes group from the memory.
 	[arg url] \
 	[arg "user ..."] ]
 
-Allow the specified user to access the
-specified method and URL combination.  If [option -noinherit] is specified,
-only access to the exact URL is allowed; otherwise, URLs under that
-URL are allowed as well.
+Allows the specified user(s) to access the combination of the HTTP
+[arg method] and [arg url]. If [option -noinherit] is specified, only
+the exact URL is matched; otherwise, all URLs under the given URL are
+permitted.
+
 
 [call [cmd "ns_perm denyuser"] \
 	[opt [option -noinherit]] \
@@ -97,10 +104,11 @@ URL are allowed as well.
 	[arg "user ..."] \
         ]
 
-Deny the specified user access to the
-specified method and URL combination.  If [option -noinherit] is specified,
-only access to the exact URL is denied; otherwise, URLs under that URL
-are denied as well.
+Denies access for the specified user(s) to the given HTTP [arg method]
+and [arg url]. With [option -noinherit], the restriction applies only
+to the exact URL; without it, all URLs beneath the given URL are
+denied.
+
 
 [call [cmd "ns_perm allowgroup"] \
 	[opt [option -noinherit]] \
@@ -109,10 +117,8 @@ are denied as well.
 	[arg url] \
 	[arg "group ..."]]
 
-Allow the specified group access to the
-specified method and URL combination.  If [option -noinherit] is specified,
-only access to the exact URL is allowed; otherwise, URLs under that
-URL are allowed as well.
+Grants access for the specified group(s) to the HTTP [arg method] and
+[arg url]. The [option -noinherit] behaves as described above.
 
 [call [cmd "ns_perm denygroup"] \
 	[opt [option -noinherit]] \
@@ -121,52 +127,57 @@ URL are allowed as well.
 	[arg url] \
 	[arg "group ..."]]
 
-Deny the specified [arg group] access to the
-specified method and URL combination.  If [option -noinherit] is specified,
-only access to the exact URL is denied; otherwise, URLs under that URL
-are denied as well.
+Denies access for the specified group(s) to the HTTP [arg method] and
+[arg url]. When [option -noinherit] is used, only the exact URL is
+affected; otherwise, the rule applies recursively to subordinate URLs.
 
 [call [cmd "ns_perm checkpass"] [arg user] [arg passwd]]
 
-Checks if the specified plain-text
-password is correct for the specified user.  A Tcl error is thrown if
-it does not match.
+Verifies that the given plain-text [arg passwd] is correct for the
+user specified by [arg user]. If the password does not match, a Tcl
+error is thrown.
 
 [call [cmd "ns_perm setpass"] [arg user] [arg encpass] [opt [arg salt]]]
 
-Updates the specified user's password to the
-encrypted password [arg encpass] and the optional provided [arg salt].
-The password should be encrypted using [cmd ns_encrypt].
+Updates the password for the user specified by [arg user] to the new
+encrypted password [arg encpass]. If a [arg salt] is provided, the
+password is expected to be in clear text and will be encrypted using
+[cmd ns_crypt] with the given salt.
+
 
 [call [cmd "ns_perm listusers"]]
 
-Returns a Tcl list of all current users in the format username password ....
+Returns a Tcl list of all users in the system. For each user, the list
+includes three elements: the username, the encrypted password, and the
+user's permissions.
 
 [call [cmd "ns_perm listgroups"]]
 
-Returns a Tcl list with all registered groups in the format: groupname {user ...} ...
+Returns a Tcl list of all registered groups. Each group is represented
+by its group name followed by a list of its members.
 
 [call [cmd "ns_perm listperms"]]
 
-Returns a Tcl list with all registered allow/deny statements for each URL.
-
+Returns a Tcl list of all allow/deny rules registered for each URL.
 
 [call [cmd ns_permreload]]
 
-Reloads all nsperm files, on very busy sites there could happen
-authentication denies because this command clears the memory first and
-then loads files from the disk
+Reloads all nsperm files. Note that on very busy sites this operation
+may cause temporary authentication failures, as the in-memory
+permissions are cleared before the files are reloaded from disk.
 
 [call [cmd ns_permpasswd] \
 	[arg user] \
 	[arg oldpasswd] \
 	[arg newpasswd]]
 
-Updates an existing user's password, both in the running
-server's memory as well as in the passwd file on disk. The user is the
-name of the user whose password is to be updated. The [arg oldpasswd]
-argument is the user's old password, or the nsadmin password, in plain
-text. The [arg newpasswd] argument is the new password in plain text.
+Updates the password for an existing user both in the running server’s
+memory and in the persistent [const passwd] file on disk. The [arg user]
+parameter specifies the username whose password is to be updated. The
+[arg oldpasswd] parameter must be provided in plain text and
+represents either the user's current password or the nsadmin
+password. The [arg newpasswd] parameter is the new password, also
+supplied in plain text.
 
 [list_end]
 
