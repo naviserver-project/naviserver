@@ -3,6 +3,10 @@
 # This is the Linux/Unix specific file, do NOT put Microsoft Windows
 # nmake stuff here.
 
+#
+# NOTE: PEM_FILE creation is now part of the server's main Makefile.
+#
+
 include Makefile.common
 CLEAN += clean-cert
 

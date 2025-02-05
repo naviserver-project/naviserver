@@ -102,7 +102,7 @@ install-dirs: all
 	done
 
 install-config: all
-	@$(MKDIR) -p $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
+	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
 	@for i in returnnotice.adp nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
 	done
@@ -112,8 +112,8 @@ install-config: all
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
 
 install-certificates: $(PEM_FILE) ca-bundle.crt
-	@$(MKDIR) -p $(DESTDIR)$(NAVISERVER)/certificates
-	@$(MKDIR) -p $(DESTDIR)$(NAVISERVER)/invalid-certificates
+	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/certificates
+	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/invalid-certificates
 	@if [ -f "$(DESTDIR)$(NAVISERVER)/etc" ]; then \
 		for i in `ls $(DESTDIR)$(NAVISERVER)/etc/*pem` ; do \
 			$(LN) -sf $$i $(DESTDIR)$(NAVISERVER)/certificates ; \
@@ -241,21 +241,21 @@ NS_LD_LIBRARY_PATH	= \
 EXTRA_TEST_DIRS =
 ifneq ($(OPENSSL_LIBS),)
   #EXTRA_TEST_DIRS += nsssl
-  TEST_CERTIFCATES = tests/testserver/certificates
-  PEM_FILE         = $(TEST_CERTIFCATES)/server.pem
-  PEM_PRIVATE      = $(TEST_CERTIFCATES)/myprivate.pem
-  PEM_PUBLIC       = $(TEST_CERTIFCATES)/mypublic.pem
-  SSLCONFIG        = $(TEST_CERTIFCATES)/openssl.cnf
-  EXTRA_TEST_REQ   = $(PEM_FILE)
+  TEST_CERTIFICATES = tests/testserver/certificates
+  PEM_FILE          = $(TEST_CERTIFICATES)/server.pem
+  PEM_PRIVATE       = $(TEST_CERTIFICATES)/myprivate.pem
+  PEM_PUBLIC        = $(TEST_CERTIFICATES)/mypublic.pem
+  SSLCONFIG         = $(TEST_CERTIFICATES)/openssl.cnf
+  EXTRA_TEST_REQ    = $(PEM_FILE)
 endif
 
 $(PEM_FILE): $(PEM_PRIVATE)
 	$(OPENSSL) genrsa 2048 > host.key
 	$(OPENSSL) req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -key host.key > host.cert
-	cat host.cert host.key > server.pem
+	$(CAT) host.cert host.key > server.pem
 	$(RM) -rf host.cert host.key
 	$(OPENSSL) dhparam 1024 >> server.pem
-	$(MKDIR) -p certificates
+	$(MKDIR) certificates
 	$(CP) server.pem certificates/
 	$(MV) server.pem $(PEM_FILE)
 	($(OPENSSL) rehash $(TEST_CERTIFCATES) 2>/dev/null || true)
@@ -263,7 +263,7 @@ $(PEM_FILE): $(PEM_PRIVATE)
 $(PEM_PRIVATE):
 	$(OPENSSL) genrsa -out $(PEM_PRIVATE) 512
 	$(OPENSSL) rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
-	chmod 644 $(PEM_PRIVATE)
+	$(CHMOD) 644 $(PEM_PRIVATE)
 
 check: test
 

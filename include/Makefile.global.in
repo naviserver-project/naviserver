@@ -25,11 +25,24 @@ CPPCHECK         = cppcheck
 NS_PATCH_LEVEL   = @NS_PATCH_LEVEL@
 
 @SET_MAKE@
+
+#
+# FIXME:
+# It is naive to believe those utilities are
+# all living in /bin directory. There should
+# be a autoconf directive to locate proper
+# executables. An alternative would be to
+# just omit the /bin and resolve to the system
+# default ones (i.e. RM = rm -Rf, etc.pp)
+#
+
 RM               = /bin/rm -Rf
 MKDIR            = /bin/mkdir -p
 CP               = /bin/cp -pR
 LN               = /bin/ln
 MV               = /bin/mv
+CAT              = /bin/cat
+CHMOD            = /bin/chmod
 
 ifdef NSBUILD
     INSTALL_SH	 = $(srcdir)/install-sh -c
@@ -74,7 +87,7 @@ CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE) -fwrapv -ftrapv
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_OPTIMIZE) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) $(PTHREAD_CFLAGS) @CPPFLAGS@ $(DEFS)
 LDFLAGS         += $(CFLAGS_OPTIMIZE) $(SANITIZE)
 LIBS		 = @LIBS@
-DL_LIBS		 = 
+DL_LIBS		 =
 MATH_LIBS	 = @MATH_LIBS@
 OPENSSL_LIBS     = @OPENSSL_LIBS@
 
