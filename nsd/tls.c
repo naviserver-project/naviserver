@@ -1768,7 +1768,7 @@ static void CertTableReload(void *UNUSED(arg))
     Ns_MasterLock();
     hPtr = Tcl_FirstHashEntry(&certTable, &search);
     while (hPtr != NULL) {
-        NS_TLS_SSL_CTX *ctx = Tcl_GetHashKey(&certTable, hPtr);
+        NS_TLS_SSL_CTX *ctx = (NS_TLS_SSL_CTX *)Tcl_GetHashKey(&certTable, hPtr);
         const char     *cert = Tcl_GetHashValue(hPtr);
 
         Ns_Log(Notice, "CertTableReload: sslCtx %p cert '%s'", (void *)ctx, cert);
@@ -2618,7 +2618,7 @@ NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
         hPtr = Tcl_FirstHashEntry(&certTable, &search);
         while (hPtr != NULL) {
             Tcl_Obj         *listObj = Tcl_NewListObj(0, NULL);
-            NS_TLS_SSL_CTX  *ctx = Tcl_GetHashKey(&certTable, hPtr);
+            NS_TLS_SSL_CTX  *ctx = (NS_TLS_SSL_CTX *)Tcl_GetHashKey(&certTable, hPtr);
             const char      *cert = Tcl_GetHashValue(hPtr);
             X509            *x509 = SSL_CTX_get0_certificate(ctx);
             const ASN1_TIME *notAfter = X509_get0_notAfter(x509);
