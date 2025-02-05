@@ -639,7 +639,8 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
               set->name, key);*/
             cmp = strcmp;
         } else {
-            Ns_Log(Warning, "Ns_SetFindCmp I strcmp set '%s' key '%s' (set marked NOCASE) -> potential bug",
+            /* check for ignored lowercase options, which are not needed */
+            Ns_Log(Debug, "Ns_SetFindCmp I strcmp set '%s' key '%s' (set marked NOCASE) -> potential bug",
                    set->name, key);
         }
 #ifdef NS_SET_OPTIMZE_APPLICATION
