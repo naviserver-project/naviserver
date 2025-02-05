@@ -750,9 +750,9 @@ NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, StringCmpPr
               set->name, key);*/
             cmp = strcmp;
         } else {
-            Ns_Log(Warning, "NsSetGetCmpDListAppend I strcmp set '%s' key '%s' (set marked NOCASE) -> potential bug",
+            /* Check for ignored lowercase options, which are not needed */
+            Ns_Log(Debug, "NsSetGetCmpDListAppend I strcmp set '%s' key '%s' (set marked NOCASE) -> potential bug",
                    set->name, key);
-            // {char *p = NULL; *p=0;}
         }
         /*} else {
           if (cmp == strcasecmp) {
