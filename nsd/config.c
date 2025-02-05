@@ -24,6 +24,7 @@ typedef struct Section {
     Ns_Set   *defaults;
     uintmax_t readArray[4];
     uintmax_t defaultArray[4];
+    bool      update;
 } Section;
 
 typedef enum {
@@ -1243,7 +1244,12 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj 
 
             nameString = Tcl_GetStringFromObj(nameObj, &nameLength);
             valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
-            i = Ns_SetPutSz(sectionPtr->set, nameString, nameLength, valueString, valueLength);
+
+            if (sectionPtr->update) {
+                i = Ns_SetUpdateSz(sectionPtr->set, nameString, nameLength, valueString, valueLength);
+            } else {
+                i = Ns_SetPutSz(sectionPtr->set, nameString, nameLength, valueString, valueLength);
+            }
             if (!nsconf.state.started) {
                 ConfigMark(sectionPtr, i, value_set);
             }
@@ -1279,16 +1285,22 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj 
 static int
 SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK;
+    int         result = TCL_OK, update = 0;
     char       *sectionName = NULL;
     Tcl_Obj    *blockObj = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-update", Ns_ObjvBool, &update, INT2PTR(NS_TRUE)},
+        {"--", Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
     Ns_ObjvSpec args[] = {
         {"sectionname", Ns_ObjvString, &sectionName, NULL},
         {"?block",      Ns_ObjvObj,    &blockObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (unlikely(Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK)) {
+    if (unlikely(Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
 
     } else {
@@ -1297,6 +1309,7 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Ob
 
         assert(sectionName != NULL);
         sectionPtr = GetSection(sectionName, NS_TRUE);
+        sectionPtr->update = update;
         *passedSectionPtr = sectionPtr;
 
         if (blockObj != NULL) {
@@ -1362,7 +1375,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              * not thread safe.
              */
             idx = (int)Ns_SetPutSz(sectionPtr->set, key, keyLength,
-                                 defaultString, defaultString == NULL ? 0 : TCL_INDEX_NONE);
+                                   defaultString, defaultString == NULL ? 0 : TCL_INDEX_NONE);
             ConfigMark(sectionPtr, (size_t)idx, value_defaulted);
             s = Ns_SetValue(sectionPtr->set, idx);
 
