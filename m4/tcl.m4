@@ -2862,6 +2862,9 @@ TEA version not specified.])
     AC_SUBST(PKG_INCLUDES)
     AC_SUBST(PKG_LIBS)
     AC_SUBST(PKG_CFLAGS)
+
+    # Configure the installer.
+    TEA_INSTALLER
 ])
 
 #------------------------------------------------------------------------
@@ -3152,15 +3155,6 @@ AC_DEFUN([TEA_SETUP_COMPILER_CC], [
 
     AC_PROG_CC
     AC_PROG_CPP
-
-    INSTALL="\$(SHELL) \$(srcdir)/tclconfig/install-sh -c"
-    AC_SUBST(INSTALL)
-    INSTALL_DATA="\${INSTALL} -m 644"
-    AC_SUBST(INSTALL_DATA)
-    INSTALL_PROGRAM="\${INSTALL}"
-    AC_SUBST(INSTALL_PROGRAM)
-    INSTALL_SCRIPT="\${INSTALL}"
-    AC_SUBST(INSTALL_SCRIPT)
 
     #--------------------------------------------------------------------
     # Checks to see if the make program sets the $MAKE variable.
@@ -4031,6 +4025,44 @@ AC_DEFUN([TEA_EXPORT_CONFIG], [
     AC_SUBST(PATCHLEVEL)
 ])
 
+#------------------------------------------------------------------------
+# TEA_INSTALLER --
+#
+#	Configure the installer.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Substitutes the following vars:
+#		INSTALL
+#		INSTALL_DATA_DIR
+#		INSTALL_DATA
+#		INSTALL_PROGRAM
+#		INSTALL_SCRIPT
+#		INSTALL_LIBRARY
+#------------------------------------------------------------------------
+
+AC_DEFUN([TEA_INSTALLER], [
+    INSTALL='$(SHELL) $(srcdir)/tclconfig/install-sh -c'
+    INSTALL_DATA_DIR='${INSTALL} -d -m 755'
+    INSTALL_DATA='${INSTALL} -m 644'
+    INSTALL_PROGRAM='${INSTALL} -m 755'
+    INSTALL_SCRIPT='${INSTALL} -m 755'
+
+    TEA_CONFIG_SYSTEM
+    case $system in
+	HP-UX-*) INSTALL_LIBRARY='${INSTALL} -m 755' ;;
+	      *) INSTALL_LIBRARY='${INSTALL} -m 644' ;;
+    esac
+
+    AC_SUBST(INSTALL)
+    AC_SUBST(INSTALL_DATA_DIR)
+    AC_SUBST(INSTALL_DATA)
+    AC_SUBST(INSTALL_PROGRAM)
+    AC_SUBST(INSTALL_SCRIPT)
+    AC_SUBST(INSTALL_LIBRARY)
+])
 
 #------------------------------------------------------------------------
 # TEA_PATH_CELIB --
