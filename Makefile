@@ -258,7 +258,7 @@ $(PEM_FILE): $(PEM_PRIVATE)
 	$(MKDIR) certificates
 	$(CP) server.pem certificates/
 	$(MV) server.pem $(PEM_FILE)
-	($(OPENSSL) rehash $(TEST_CERTIFCATES) 2>/dev/null || true)
+	($(OPENSSL) rehash $(TEST_CERTIFICATES) 2>/dev/null || true)
 
 $(PEM_PRIVATE):
 	$(OPENSSL) genrsa -out $(PEM_PRIVATE) 512
