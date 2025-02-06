@@ -563,7 +563,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             Ns_Log(Warning, "nsmain: command line argument '-u %s' is ignored"
                    " since not running as a privileged user", uarg);
         }
-        if (uarg != NULL) {
+        if (garg != NULL) {
             Ns_Log(Warning, "nsmain: command line argument '-g %s' is ignored"
                    " since not running as a privileged user", garg);
         }
