@@ -67,7 +67,7 @@ static int
 GetIntFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defObj, Tcl_WideInt minValue, Tcl_WideInt maxValue)
 {
     int result = TCL_OK;
-    Tcl_WideInt v;
+    Tcl_WideInt v = 0;
 
     if (value != NULL && (Ns_StrToWideInt(value, &v) != NS_OK)) {
         /*
@@ -78,7 +78,7 @@ GetIntFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defObj
         result = TCL_ERROR;
     } else if (defObj != NULL && Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
         result = TCL_ERROR;
-    } else if (v >= minValue && v <= maxValue) {
+    } else if ((value != NULL || defObj != NULL) && v >= minValue && v <= maxValue) {
         Tcl_SetObjResult(interp, Tcl_NewWideIntObj(v));
     } else {
         Ns_TclPrintfResult(interp, "value '%s' out of range", value != NULL ? value : Tcl_GetString(defObj));
