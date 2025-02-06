@@ -27,15 +27,23 @@ NS_PATCH_LEVEL   = @NS_PATCH_LEVEL@
 @SET_MAKE@
 
 #
-# FIXME:
-# It is naive to believe those utilities are
-# all living in /bin directory. There should
-# be a autoconf directive to locate proper
-# executables. An alternative would be to
-# just omit the /bin and resolve to the system
-# default ones (i.e. RM = rm -Rf, etc.pp)
+# The following binaries are assumed to live in the /bin/ directory,
+# as specified by FHS 3.0 (Filesystem Hierarchy Standard).
+# https://refspecs.linuxfoundation.org/FHS_3.0/fhs/ch03s04.html
 #
-
+# These locations have severed us well over the last 20+ years on a
+# large variety of unix like systems. The paths are used for security
+# reasons:
+# - prevent command spoofing
+# - reduce ambiguity
+# - improves reliabilty (not depend on PATH settings)
+# The reason for using variables is to provide a single place of
+# definition, and the ability to override this also from the command
+# line.
+#
+# Maybe, we should consider in the future some autoconf magic, when
+# necesssary.
+#
 RM               = /bin/rm -Rf
 MKDIR            = /bin/mkdir -p
 CP               = /bin/cp -pR
