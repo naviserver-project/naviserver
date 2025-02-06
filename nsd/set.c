@@ -715,15 +715,22 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
  *
  * NsSetGetCmpDListAppend --
  *
- *      Retrieve one or all values for a key from an Ns_Set. The function
- *      returns the number of elements retrieved depending on the Boolean
- *      argument "all". The resulting list contains pointers to the actual
- *      string values in the Ns_Set structure. The strings are volatile and
- *      should be copied immediately in case the Ns_Set is modified in the
- *      same call.
+ *      Retrieves one or all values associated with a given key from an
+ *      Ns_Set.  The function returns the number of elements found, which
+ *      depends on the Boolean flag "all". The matching values are appended to
+ *      a list. Depending on the value of the "getIdx" flag, this list will
+ *      contain either:
+ *
+ *          - The indices of the set members (if getIdx is true), or
+ *          - Pointers to the string values stored within the Ns_Set
+ *            (if getIdx is false).
+ *
+ *      Note: The returned string pointers are volatile. If the Ns_Set is
+ *      modified during the same call, you should immediately copy these
+ *      strings to prevent potential data corruption.
  *
  * Results:
- *      Number of matching keys in the set.
+ *      Returns the number of matching keys in the set.
  *
  * Side effects:
  *      None.
@@ -732,7 +739,7 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
  */
 
 size_t
-NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, StringCmpProc cmp, Ns_DList *dlPtr)
+NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, StringCmpProc cmp, Ns_DList *dlPtr, bool getIdx)
 {
     Tcl_DString ds;
     size_t      idx, count = 0u;
@@ -780,7 +787,7 @@ NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, StringCmpPr
 
         if (found) {
             count ++;
-            Ns_DListAppend(dlPtr, set->fields[idx].value);
+            Ns_DListAppend(dlPtr, getIdx ? (void*)(intptr_t)idx : set->fields[idx].value);
             if (!all) {
                 break;
             }

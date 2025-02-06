@@ -799,7 +799,7 @@ NsInitHttp(NsServer *servPtr)
             Ns_DList dl, *dlPtr = &dl;
 
             Ns_DListInit(dlPtr);
-            count = NsSetGetCmpDListAppend(set, "validationexception", NS_TRUE, strcasecmp, dlPtr);
+            count = NsSetGetCmpDListAppend(set, "validationexception", NS_TRUE, strcasecmp, dlPtr, NS_FALSE);
 
             for (i = 0u; i < count; ++i) {
                 NsCertValidationException_t *validationExceptionPtr = NewValidationException(dlPtr->data[i]);

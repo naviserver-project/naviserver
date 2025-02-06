@@ -182,7 +182,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         keyString = Tcl_GetStringFromObj(keyObj, &keyLength);
 
         count = likely(set != NULL)
-            ? NsSetGetCmpDListAppend(set, keyString, NS_TRUE, exact == 0 ? strcmp : strcasecmp, dlPtr)
+            ? NsSetGetCmpDListAppend(set, keyString, NS_TRUE, exact == 0 ? strcmp : strcasecmp, dlPtr, NS_FALSE)
             : 0u;
 
         if (count == 1) {

@@ -1966,7 +1966,7 @@ NS_EXTERN void NsSetDataPrealloc(Ns_Set *set, TCL_SIZE_T size)
 NS_EXTERN size_t NsSetGetCmpAppend(const Ns_Set *set, const char *key, bool all, int (*cmp)(const char *, const char *), Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
-NS_EXTERN size_t NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, int (*cmp)(const char *, const char *), Ns_DList *dlPtr)
+NS_EXTERN size_t NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, int (*cmp)(const char *, const char *), Ns_DList *dlPtr, bool getIdx)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)

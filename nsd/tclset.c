@@ -718,7 +718,7 @@ static int SetGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         size_t      count;
 
         Ns_DListInit(dlPtr);
-        count = NsSetGetCmpDListAppend(set, keyString, all, nocase == 0 ? strcmp : strcasecmp, dlPtr);
+        count = NsSetGetCmpDListAppend(set, keyString, all, nocase == 0 ? strcmp : strcasecmp, dlPtr, NS_FALSE);
         if (count == 0) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(defaultString, TCL_INDEX_NONE));
         } else if (all == NS_FALSE) {

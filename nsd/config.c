@@ -1350,21 +1350,22 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
 
     if (sectionPtr != NULL && sectionPtr->set != NULL) {
         TCL_SIZE_T keyLength = (TCL_SIZE_T)strlen(key);
-        int        idx;
+        Ns_DList   dl, *dlPtr = &dl;
+        int        idx = -1;
+        size_t     count;
 
-        if (exact) {
-            idx = Ns_SetFind(sectionPtr->set, key);
-        } else {
-            idx = Ns_SetIFind(sectionPtr->set, key);
-        }
+        Ns_DListInit(dlPtr);
+        count = likely(sectionPtr->set != NULL)
+            ? NsSetGetCmpDListAppend(sectionPtr->set, key, NS_TRUE, exact == 0 ? strcmp : strcasecmp, dlPtr, NS_TRUE)
+            : 0u;
 
-        if (idx >= 0) {
-            /*
-             * The configuration value was found in the ns_set for this
-             * section.
-             */
+        if (count > 0) {
+            idx =  (intptr_t)dlPtr->data[0]; // CAN GO AWAY
             s = Ns_SetValue(sectionPtr->set, idx);
-
+            if (count > 1) {
+                Ns_Log(Warning, "config values returns the first of %ld values (section '%s' key '%s')",
+                       count, section, key);
+            }
         } else if (!nsconf.state.started /*&& defaultString != NULL && *defaultString != '\0'*/) {
             /*
              * The configuration value was NOT found. Since we want to be able
@@ -1378,15 +1379,14 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
                                    defaultString, defaultString == NULL ? 0 : TCL_INDEX_NONE);
             ConfigMark(sectionPtr, (size_t)idx, value_defaulted);
             s = Ns_SetValue(sectionPtr->set, idx);
-
         } else {
             s = defaultString;
         }
+
         if (!nsconf.state.started && idx >= 0) {
             ConfigMark(sectionPtr, (size_t)idx, value_read);
             if (defaultString != NULL) {
-                (void)Ns_SetPutSz(sectionPtr->defaults,
-                                  key, keyLength,
+                (void)Ns_SetPutSz(sectionPtr->defaults, key, keyLength,
                                   defaultString, TCL_INDEX_NONE);
             }
         }
