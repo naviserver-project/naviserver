@@ -34,6 +34,7 @@ configuration file.
 [list_begin definitions]
 
 [call [cmd ns_config] \
+      [opt [option -all]] \
       [opt [option -bool]] \
       [opt [option -int]] \
       [opt [option "-min [arg integer]"] ] \
@@ -53,8 +54,12 @@ is returned, otherwise the empty string is returned.
 Parameter keys are matched case-insensitively. The first parameter is returned
 if duplicate keys are present.
 
-
 [list_begin options]
+
+[opt_def -all]
+Specifies that the command should return all values provided
+from the underlying multi-set. If not specified, just the first value
+is returnd. The command is similar to [cmd "ns_set get"].
 
 [opt_def -bool]
 Specifies that the parameter should be a valid boolean value, using any form
@@ -130,33 +135,86 @@ the set represents. The [cmd ns_set] name contains the [arg section].
 
 [section {CONFIGURATION FILE COMMANDS}]
 
-The following commands are only available within the Tcl configuration file,
-evaluated once at server start-up.
+ The following commands are available only within the Tcl
+ configuration file, which is evaluated once at server start-up.
 
 [list_begin definitions]
 
-
 [call [cmd ns_section] \
+      [opt [option -update]] \
+      [opt --] \
       [arg name]]
 
-Begins a new section with the specified [arg name]. Following calls to [cmd ns_param] place their
-parameters in this section, until another call to [cmd ns_section] with a
-different [arg section].
+ Begins a new configuration section identified by the specified
+ [arg name]. All subsequent calls to [cmd ns_param] will add parameters to
+ this section until another [cmd ns_section] command is invoked with a
+ different section name.
+
 
 [para]
-Multiple calls to [cmd ns_section] with the same [arg section] name may be used
-to build up a section in pieces.
 
+ Multiple invocations of [cmd ns_section] using the same [arg name]
+ allow you to build the section incrementally. The following two
+ snippets are equivalent:
+
+[para]
+
+Snippet 1:
+[example_begin]
+ [cmd ns_section] foo {
+   [cmd ns_param] x 1
+   [cmd ns_param] y 1
+ }
+[example_end]
+
+Snippet 2:
+[example_begin]
+ [cmd ns_section] foo {
+   [cmd ns_param] x 1
+ }
+ [cmd ns_section] foo {
+   [cmd ns_param] y 1
+ }
+[example_end]
+
+[para]
+
+ All configuration data is stored in an [cmd ns_set] structure. Since
+ ns_set functions as a multi-map, multiple values can be associated
+ with the same key. This powerful feature may lead to surprises: when
+ a scalar value is requested, only the first value is returned (as
+ with [cmd "ns_set get"]). To retrieve all values for a key, use the
+ [option -all] option with [cmd ns_config] or [cmd ns_set].
+
+[para]
+
+ The [option -update] flag can be used with [cmd ns_section] to update
+ an existing section by overwriting previous values instead of simply
+ appending new ones.
+
+[example_begin]
+ [cmd ns_section] foo {
+   [cmd ns_param] x 1
+ }
+ 
+ # Later in the configuration file:
+ [cmd ns_section] -update foo {
+   [cmd ns_param] x 2
+ }
+ 
+ # Query the value of parameter 'x'
+ [cmd ns_config] foo x
+ # Result: 2
+[example_end]
 
 
 [call [cmd ns_param] \
       [arg key] \
       [arg value]]
 
-Sets the given [arg key] and [arg value] in the currently active  section. Keys
-need not be unique. Key matching is case-insensitive by default.
-
-
+ Sets the specified [arg key] to [arg value] in the currently active
+ section. Keys are matched in a case-insensitive manner, and duplicate
+ keys are allowed.
 
 [list_end]
 
@@ -165,8 +223,9 @@ need not be unique. Key matching is case-insensitive by default.
 
 [section EXAMPLES]
 
-The following example shows how to set parameter values for the [emph foo]
-module.
+
+ The following example demonstrates how to set parameter values for
+ the [const foo] module:
 
 [example_begin]
  [cmd ns_section] "ns/server/server1/modules/foo" {
@@ -176,7 +235,9 @@ module.
  }
 [example_end]
 
-The section content can be also specified without braces (old style):
+ Alternatively, the section content can be specified without braces
+ (old style):
+
 [example_begin]
  [cmd ns_section] "ns/server/server1/modules/foo"
  [cmd ns_param]   enabled   true
@@ -184,31 +245,27 @@ The section content can be also specified without braces (old style):
  [cmd ns_param]   map       /some-other/url
 [example_end]
 
-
-
-The following example shows how to read configuration parameters for the
-[emph foo] module. The [cmd ns_config] command is used to check for a boolean
-[arg enabled] parameter -- it defaults to false. If enabled, the parameters in
-that section are iterated over and all the entries with the key [arg map] are
-used to register a handler for the [arg url], which is the parameter value.
+ The following example shows how to read configuration parameters for
+ the [const foo] module.  In this case, the [cmd ns_config] command
+ checks for a boolean [const enabled] parameter (defaulting to
+ false). If enabled, it retrieves all values associated with the
+ [const map] key and registers a handler for GET requests on each
+ corresponding URL:
 
 [example_begin]
  set path ns/server/[lb][cmd ns_info] server[rb]/modules/foo
  
  if {[lb][cmd ns_config] -bool $path enabled false[rb]} {
-    set section [lb][cmd ns_configsection] $path[rb]
-    foreach {key value} [lb][cmd ns_set] array $section[rb] {
-        if {$key eq "map"} {
-            [cmd ns_register_proc] GET $value foo_module_handler
-        }
+    foreach url [lb][cmd ns_config] -all $path map[rb] {
+      [cmd ns_register_proc] GET $url foo_module_handler
     }
  }
 [example_end]
 
-
-
-The following example prints out all configuration parameters in all sections of
-the configuration file.
+ The following example prints all configuration parameters from every
+ section of the configuration file. It retrieves each section's ns_set
+ via [cmd ns_configsections] and uses [cmd "ns_set array"] to list all
+ key/value pairs:
 
 [example_begin]
  [cmd ns_register_proc] GET /config-print {
@@ -216,7 +273,7 @@ the configuration file.
     foreach section [lb][cmd ns_configsections][rb] {
         append config "section: [lb][cmd ns_set] name $section[rb]\n"
         foreach {key value} [lb][cmd ns_set] array $section[rb] {
-            append config "$key: $value\n"
+            append config "  $key: $value\n"
         }
     }
     [cmd ns_return] 200 text/plain $config
@@ -226,6 +283,6 @@ the configuration file.
 
 
 
-[see_also ns_set ns_env ns_info]
+[see_also ns_set ns_env ns_info ns_register]
 [keywords "global built-in" configuration parameter interp startup]
 [manpage_end]

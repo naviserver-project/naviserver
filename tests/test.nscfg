@@ -82,6 +82,9 @@ ns_section "ns/testconfig" {
     ns_param   CamelCase  ok
     ns_param   wideint    12345678900
     ns_param   isTestServer true
+    ns_param   single     "hello world"
+    ns_param   multiple   on
+    ns_param   multiple   off
 }
 
 #
