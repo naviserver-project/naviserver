@@ -3219,15 +3219,7 @@ AC_DEFUN([TEA_SETUP_COMPILER], [
     # Common compiler flag setup
     #--------------------------------------------------------------------
 
-    AC_C_BIGENDIAN
-    if test "${TEA_PLATFORM}" = "unix" ; then
-	TEA_TCL_LINK_LIBS
-	TEA_MISSING_POSIX_HEADERS
-	# Let the user call this, because if it triggers, they will
-	# need a compat/strtod.c that is correct.  Users can also
-	# use Tcl_GetDouble(FromObj) instead.
-	#TEA_BUGGY_STRTOD
-    fi
+    AC_C_BIGENDIAN(,,,[#])
 ])
 
 #------------------------------------------------------------------------
