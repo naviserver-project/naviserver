@@ -232,7 +232,7 @@ build-doc:
 # Testing:
 #
 
-NS_TEST_CFG	= -u root -c -d -t $(srcdir)/tests/test.nscfg
+NS_TEST_CFG	= -c -d -t $(srcdir)/tests/test.nscfg
 NS_TEST_ALL	= $(srcdir)/tests/all.tcl $(TESTFLAGS)
 NS_LD_LIBRARY_PATH	= \
    LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
