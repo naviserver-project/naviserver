@@ -59,7 +59,7 @@ if duplicate keys are present.
 [opt_def -all]
 Specifies that the command should return all values provided
 from the underlying multi-set. If not specified, just the first value
-is returnd. The command is similar to [cmd "ns_set get"].
+is returned. The command is similar to [cmd "ns_set get"].
 
 [opt_def -bool]
 Specifies that the parameter should be a valid boolean value, using any form
@@ -179,12 +179,13 @@ Snippet 2:
 
 [para]
 
- All configuration data is stored in an [cmd ns_set] structure. Since
- ns_set functions as a multi-map, multiple values can be associated
- with the same key. This powerful feature may lead to surprises: when
- a scalar value is requested, only the first value is returned (as
- with [cmd "ns_set get"]). To retrieve all values for a key, use the
- [option -all] option with [cmd ns_config] or [cmd ns_set].
+ All configuration data is stored internally in [cmd ns_set]
+ structures. Since ns_set is defined as a multi-map storage, multiple
+ values can be associated with the same key. This powerful feature may
+ lead to surprises: when a scalar value is requested and multiple
+ values are stored for the same key, only the first value is returned
+ (as with [cmd "ns_set get"]). To retrieve all values for a key, use
+ the [option -all] option with [cmd ns_config] or [cmd ns_set].
 
 [para]
 
