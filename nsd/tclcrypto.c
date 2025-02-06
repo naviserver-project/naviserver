@@ -58,11 +58,11 @@ typedef enum {
 } Ns_BinaryEncoding;
 
 static Ns_ObjvTable binaryencodings[] = {
-    {"hex",      RESULT_ENCODING_HEX},
-    {"base64url",RESULT_ENCODING_BASE64URL},
-    {"base64",   RESULT_ENCODING_BASE64},
-    {"binary",   RESULT_ENCODING_BINARY},
-    {NULL,       0u}
+    {"hex",       RESULT_ENCODING_HEX},
+    {"base64url", RESULT_ENCODING_BASE64URL},
+    {"base64",    RESULT_ENCODING_BASE64},
+    {"binary",    RESULT_ENCODING_BINARY},
+    {NULL,        0u}
 };
 
 
@@ -1409,12 +1409,12 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     char              *digestName = (char *)"sha256", *pemFile = NULL,
                       *passPhrase = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec lopts[] = {
-        {"-binary",     Ns_ObjvBool,        &isBinary,   INT2PTR(NS_TRUE)},
-        {"-digest",     Ns_ObjvString,      &digestName, NULL},
-        {"-encoding",   Ns_ObjvIndex,       &encodingInt,binaryencodings},
-        {"-passphrase", Ns_ObjvString,      &passPhrase, NULL},
-        {"-pem",        Ns_ObjvString,      &pemFile,    NULL},
-        {"--",          Ns_ObjvBreak,       NULL,        NULL},
+        {"-binary",     Ns_ObjvBool,        &isBinary,    INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString,      &digestName,  NULL},
+        {"-encoding",   Ns_ObjvIndex,       &encodingInt, binaryencodings},
+        {"-passphrase", Ns_ObjvString,      &passPhrase,  NULL},
+        {"-pem",        Ns_ObjvString,      &pemFile,     NULL},
+        {"--",          Ns_ObjvBreak,       NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
