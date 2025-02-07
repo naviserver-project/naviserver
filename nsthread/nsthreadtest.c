@@ -265,7 +265,7 @@ MemTime(int ns)
     printf("starting %d %smalloc threads...", nthreads, (ns != 0) ? "ns_" : "");
     fflush(stdout);
     for (i = 0; i < nthreads; ++i) {
-        Ns_ThreadCreate(MemThread, (void *)(intptr_t) ns, 0, &tids[i]);
+        Ns_ThreadCreate(MemThread, INT2PTR(ns), 0, &tids[i]);
     }
     Ns_MutexLock(&lock);
     while (nrunning < nthreads) {

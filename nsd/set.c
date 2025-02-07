@@ -787,7 +787,7 @@ NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, StringCmpPr
 
         if (found) {
             count ++;
-            Ns_DListAppend(dlPtr, getIdx ? (void*)(intptr_t)idx : set->fields[idx].value);
+            Ns_DListAppend(dlPtr, getIdx ? UINT2PTR(idx) : set->fields[idx].value);
             if (!all) {
                 break;
             }

@@ -317,8 +317,10 @@ NsPoolTotalRate(ConnPool *poolPtr, size_t slot, int rate, int *writerThreadCount
     size_t    i;
     uintptr_t totalRate = 0u;
 
+    assert(rate >= 0);
+
     dlPtr = &(poolPtr->rate.writerRates);
-    dlPtr->data[slot] = (void*)(uintptr_t)rate;
+    dlPtr->data[slot] = UINT2PTR(rate);
 
     Ns_MutexLock(&poolPtr->rate.lock);
     for (i = 0u; i < dlPtr->size; i ++) {
