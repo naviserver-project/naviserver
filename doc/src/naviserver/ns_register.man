@@ -21,18 +21,20 @@ ADP-pages to URL patterns.
      [arg url] \
      [opt [arg file]] ]
 
-Requests to the server which match the [arg method] and [arg url]
-will trigger the [term ADP] page request handler. If [arg file] is
-given then it is the specific [term ADP] page which should respond to all
-matching requests. Otherwise, the [term ADP] page will be located at request
-time using [cmd ns_url2file].
+ Requests matching the specified HTTP [arg method] and [arg url] will
+ trigger the ADP page request handler. If [arg file] is provided, that
+ file is used as the specific ADP page for all matching requests;
+ otherwise, the ADP page is determined at request time using
+ [cmd ns_url2file].
 
 [para]
-This command works similar as [cmd ns_register_tcl], but registers an
-ADP file instead of a Tcl script.
+
+ This command functions similarly to [cmd ns_register_tcl] but
+ registers an ADP file instead of a Tcl script.
 
 [para]
-Use [cmd ns_unregister_op] to unregister an ADP request.
+
+ Use [cmd ns_unregister_op] to unregister an ADP request (described below).
 
 [call [cmd ns_register_fastpath] \
 	[opt [option -noinherit]] \
@@ -40,123 +42,152 @@ Use [cmd ns_unregister_op] to unregister an ADP request.
 	[arg method] \
 	[arg url]]
 
-Registers the given [arg url] to be processed by fast path subsystem, i.e.,
-all requests that match will be served by corresponding .adp files if resolved. This
-can be used when there is no global fast path handler installed.
+ Registers the specified [arg url] to be processed by the fast path
+ subsystem. All matching requests will be served by the
+ corresponding .adp file if it can be resolved. This option is useful
+ when no global fast path handler is installed.
 
 [para]
-The argument [arg method] is restricted to GET, POST or HEAD
+
+ Note: The [arg method] argument is limited for this command to GET, POST, or HEAD.
 
 [call [cmd ns_register_filter] \
 	[opt [option -first]] \
 	[opt --] \
-	[arg when] \
+	preauth|postauth|trace \
 	[arg method] \
 	[arg urlpattern] \
 	[arg script] \
 	[opt [arg "arg ..."]]]
 
-Registers a Tcl filter script for the specified method/URL combination
-on a virtual server. When [option -first] is used, it is added to the
-front of the filter list, otherwise to the end.
+ Registers a Tcl filter script for the specified HTTP method and URL
+ pattern. When a request matches the given method and URL (using
+ glob-style matching), the registered [arg script] is invoked. The
+ script is called with an extra argument indicating the filter
+ stage, followed by any additional arguments specified at
+ registration. If the [option -first] flag is used, the filter is
+ added at the beginning of the filter list; otherwise, it is appended
+ to the end.
 
-[para] The [term when] argument specifies, when the filter script is
-called. [term preauth] means pre-authorization, [term postauth] means
-post-authorization, and [term trace] means at the end of the request,
-after the page data has been returned to the user, and the connection
-has been processed and closed.
-
-[para] The filter will be called at the specified stage of a
-connection, if the method/URL combination for the filter matches the
-method/URL combination for the connection using glob style matching.
 
 [para]
-The URL can contain standard string-matching characters. For example, these are valid URLs:
+
+ The first positional argument specifies the stage at which the filter is called:
+ [list_begin itemized]
+    [item] [const preauth] - called before authorization.
+    [item] [const postauth] - called after successful authorization.
+    [item] [const trace] - called after the HTTP response has been sent and the connection closed.
+ [list_end]
+
+[para]
+
+ The filter is executed at the designated stage if the connection's
+ method and URL match the provided pattern. For example, the following
+ URL patterns are valid:
 
 [example_begin]
  /employees/*.tcl
  /accounts/*/out
 [example_end]
 
+[para]
+
 
 [para]
-Using pre-authorization, the procedure will be called (assuming that the method/URL
-combination matches) just before authorization. If the procedure returns with a code of:
+ A filter procedure returns a value along with a Tcl return code. The
+ return code is interpreted as follows:
 
 [list_begin itemized]
 
-[item] TCL_OK (script ends with: [const {return "filter_ok"}]):
-       The server will continue to the next pre-authorization
-       filter for this connection, or, if there are no more pre-authorization filters, it will
-       continue on with authorization.
+[item] TCL_ERROR: When the filter procs raises an error.
 
-[item] TCL_BREAK (script ends with: [const {return "filter_break"}]):
-       The server will not process any more pre-authorization
-       filters for this connection, and it will continue on with authorization.
+[item] TCL_OK: When the script is executed successfully
+       and ends with [const {return filter_ok}]
 
-[item] TCL_RETURN (script ends with: [const {return "filter_return"}]):
-       The server will close the connection and will
-       not run any more pre-authorization filters. It will not authorize the request, and it will
-       not run the function registered for this METHOD/URL. It WILL run any trace functions
-       registered for this METHOD/URL, usually including logging. It is assumed that the filter
-       has sent a proper response (e.g., using [cmd ns_return]) to the client before returning TCL_RETURN.
-[list_end]
+[item] TCL_BREAK: When the script is executed successfully
+       and ends with [const {return -code break}] or [const {return filter_break}].
 
-Using post-authorization, the procedure will be called (assuming that the method/URL combination matches)
-just after successful authorization. If the procedure returns:
-
-[list_begin itemized]
-
-[item] TCL_OK (script ends with: [const {return "filter_ok"}]):
-       The server will continue to the next post-authorization
-       filter for this connection, or, if there are no more post-authorization filters, it will run
-       the function registered to handle this request.
-
-[item] TCL_BREAK (script ends with: [const {return "filter_break"}]):
-       The server will not process any more post-authorization
-       filters for this connection, and it will run the function registered to handle this request.
-
-[item] TCL_RETURN (script ends with: [const {return "filter_return"}]):
-       The server will close the connection and will
-       not run any more post-authorization filters and it will not run the function registered for
-       this METHOD/URL. It WILL run any trace functions registered for this METHOD/URL, usually
-       including logging. It is assumed that the filter has returned a proper response (e.g.,
-        using [cmd ns_return]) to the client before returning TCL_RETURN.
+[item] TCL_RETURN: When the script is executed successfully
+       and ends with [const {return -code return}] or [const {return filter_return}].
 
 [list_end]
 
-Using trace, the procedure will be called (assuming that the method/URL combination match) after
-the connection has been totally processed and closed. If the procedure returns:
+ The behavior of filters depends on their type:
 
-[list_begin itemized]
+[list_begin definitions]
+[def preauth]
 
-[item] TCL_OK (script ends with: [const {return "filter_ok"}]):
-       The server will continue to the next trace filter.
+  With pre-authorization, the filter is invoked just before
+  authorization. If the filter returns:
 
-[item] TCL_BREAK, TCL_RETURN (script ends with:
-       [const {return "filter_break"}] or
-       [const {return "filter_return"}]): The rest
-       of the trace filters are ignored.
+  [list_begin itemized]
+    [item] TCL_OK: The server proceeds to the next pre-authorization
+           filter, or if none remain, continues to authorization.
+
+    [item] TCL_BREAK: No further pre-authorization filters are
+           processed; the server continues to authorization.
+
+    [item] TCL_RETURN: The server closes the connection without
+           further processing of pre-authorization filters or the main
+           request handler, but trace functions (e.g., logging) will still
+           run.
+  [list_end]
+
+[def postauth]
+
+ With post-authorization, the filter is invoked after successful
+ authorization. If the filter returns:
+
+  [list_begin itemized]
+    [item] TCL_OK: The server proceeds to the next
+    post-authorization filter, or if none remain, calls the registered
+    request handler.
+
+    [item] TCL_BREAK: No further post-authorization filters are
+    processed; the registered request handler is called.
+
+    [item] TCL_RETURN: The server closes the connection, skipping
+    further post-authorization filters and the request handler, while
+    still running any trace functions. It is assumed that the filter
+    has already sent an appropriate response to the client.
+  [list_end]
+
+
+[def trace]
+
+  Trace filters are invoked after the request has been processed, the
+  HTTP response sent, and the connection closed. If a trace filter
+  returns:
+
+  [list_begin itemized]
+    [item] TCL_OK: The server proceeds to the next trace filter.
+    [item] TCL_BREAK or TCL_RETURN: No further trace filters are executed.
+  [list_end]
 
 [list_end]
 
-[term ns_register_filter]/[term ns_register_trace] and
-[term ns_register_proc] are similar, but significantly different.  With
-[term ns_register_proc], the specified URL is used to match that URL
-and any URL below it in the hierarchy. Wildcards such as "*" are
-meaningful only for the final part of the URL, such as
-/scripts/*.tcl. With [term ns_register_filter], the URL is used to
-match URLs as a string with standard string-matching characters.
-[term ns_register_proc] results in a single match, whereas multiple
-[term ns_register_filters]/[term ns_register_trace] can be matched
-and will be called.
+ Note: While [cmd ns_register_filter] and [cmd ns_register_proc] both
+ register handlers for matching URLs, they differ significantly. With
+ [cmd ns_register_proc], the registered URL matches the specified URL
+ and all URLs beneath it in the hierarchy; wildcards such as "*" are
+ only effective on the final URL component (e.g.,
+ `/scripts/*.tcl`). In contrast, filters use standard string-matching
+ rules and multiple filters can match and be invoked for a single
+ request.
+
 
 [para]
-Be aware that executing the same [term ns_register_filter] statement more than once (as
-you might do when re-initializing Tcl) will add the filter more than once! You
-may want to have a shared variable set to avoid multiple
-registrations. Filters can be shortcutted via [cmd ns_shortcut_filter].
 
+  Warning: Repeated execution of the same filter registration command
+  (e.g., during Tcl reinitialization) will result in duplicate
+  registrations and therefore duplicate executions. It is recommended
+  to manage registrations using a shared variable to avoid
+  duplicates. (Note that repeated executions of [cmd ns_register_proc]
+  with the same method/URL pattern will not cause duplicate
+  registrations.)
+
+[para]
+  Filters can also be shortcut via [cmd ns_shortcut_filter].
 
 
 [call [cmd ns_register_proc] \
@@ -167,50 +198,58 @@ registrations. Filters can be shortcutted via [cmd ns_shortcut_filter].
 	[arg script] \
 	[opt [arg "arg ..."]]]
 
-Registers the proc or [arg script] to handle
-the specified method/URL combination.  When the server gets a matching
-request, it calls procname with the connection id and any arguments
-specified here. When [arg script] contains only a single Tcl word (no
-spaces), it is treated as a Tcl procedure (or short "proc").
+ Registers a Tcl procedure or script to handle requests matching the
+ specified HTTP [arg method] and [arg url]. When a request matches,
+ the registered procedure is invoked with the arguments provided at
+ registration. If [arg script] is a single Tcl word (without spaces),
+ it is interpreted as the name of a Tcl procedure.
 
 [para]
-If [option -noinherit] is specified, the requested URL must match the specified URL exactly.
-For example, if the URL specified with [term ns_register_proc] is /foo/bar, procname will
-not be called unless the requested URL is exactly /foo/bar.
+
+ If the [option -noinherit] flag is used, the request URL must exactly
+ match the specified URL. For example, if you register a handler with
+ [const /foo/bar] using [option -noinherit], it will only be invoked for a
+ request exactly matching [const /foo/bar].
 
 [para]
-If [option -noinherit] is not specified, the requested URL can match the specified URL or any
-URL below it.  For example, if the URL specified with [term ns_register_proc] is /foo/bar,
-procname will be called for /foo/bar, /foo/bar/hmm, and any other URL below /foo/bar,
-provided there is not already another procedure registered for that exact URL or for
-a URL with a closer match.
 
-Note that you must use a glob-style matching character if you want inheritance
-for filenames.  For example, if you want /foo/bar to match /foo/bar.html, you must use:
+ Without [option -noinherit], the request URL may match the specified
+ URL or any URL below it. For instance, registering [const /foo/bar] without
+ [option -noinherit] will match [const /foo/bar], [const foo/bar/hmm], and any
+ other URL beneath [const /foo/bar], provided no other procedure is
+ registered for a closer match.
+
+[para]
+
+ To enable filename inheritance, include a glob-style wildcard. For
+ example, to have [const /foo/bar] match [const /foo/bar.html],
+ register the URL as:
 
 [example_begin]
  ns_register_proc /foo/bar* ...
 [example_end]
 
- You can register two procedures for any given method/URL combination
- by calling [term ns_register_proc] once with the [option -noinherit]
- flag set and once without it.  Only one of the procedures will be
- called for any given request, depending on whether the URL was an
- exact match or not.  For example:
+ You can register two procedures for the same HTTP method and URL by
+ invoking [cmd ns_register_proc] twice - once with [option -noinherit]
+ and once without. Only one procedure will be invoked for a given
+ request, depending on whether the URL is an exact match or an
+ inherited match. For example:
 
 [example_begin]
- ns_register_proc -noinherit GET /foo/bar Aproc
- ns_register_proc GET /foo/bar Bproc
- ns_register_proc GET /foo/bar/hmm Cproc
+ ns_register_proc -noinherit GET /foo/bar A
+ ns_register_proc GET /foo/bar B
+ ns_register_proc GET /foo/bar/hmm C
 [example_end]
 
- Aproc will be called when the requested URL is exactly /foo/bar.  Bproc will be called when
- the requested URL is below /foo/bar, provided there is not already another procedure registered
- to be called for that exact URL or for a URL with a closer match.  Cproc (not Bproc) will be
- called when the requested URL is equal to or below /foo/bar/hmm.
+ In this scenario, [const A] is called only when the request URL
+ is exactly [const /foo/bar];
+ [const B] is invoked for URLs under [const /foo/bar] (if no closer match exists);
+ and [const C] is called when the request URL is [const /foo/bar/hmm] or beneath.
 
-[para] The following example shows how arguments can be passed at
-registration time to the registered Tcl command:
+[para]
+
+ The following example demonstrates how to pass arguments at
+ registration time to the registered Tcl command:
 
 [example_begin]
  ns_register_proc GET /noargs noargs
@@ -234,6 +273,9 @@ registration time to the registered Tcl command:
      ns_returnnotice 200 "testing" "threeargs gets $x $y $z"
  }
 [example_end]
+
+
+
 
 [call [cmd ns_register_proxy] [arg method] [arg protocol] [arg script] [opt [arg "arg ..."]]]
 
@@ -278,60 +320,38 @@ serve as a model for this forward proxy).
 	[arg url] \
 	[opt [arg file]]]
 
-Registers a Tcl file to be called when request matches method/URL
-combination. This is to enable extension-less URLs or for mapping
-actual files into virtual URLs. The command [cmd ns_register_tcl]
-works similar as [cmd ns_register_adp] except the file to evaluate
-should be a Tcl file which might use [cmd ns_return], [cmd ns_write]
-etc. to respond to the request.
+ Registers a Tcl file to be invoked when a request matches the
+ specified HTTP [arg method] and [arg url]. This command is typically
+ used for extension-less URLs or for mapping physical files to virtual
+ URLs. It works similarly to [cmd ns_register_adp], except that the
+ file to be evaluated should be a Tcl script capable of generating a
+ response using commands such as [cmd ns_return] or [cmd ns_write].
 
 [para]
-If this argument [arg file] is omitted, the command will register standard C-based
-callback which will resolve URLs into absolute Tcl file and execute it.
+
+ If the [arg file] argument is omitted, the url2file mapping
+ is used the determine a filename registered for the URL.
 
 [para]
-Use [cmd ns_unregister_op] to unregister a Tcl request handler.
+ Use [cmd ns_unregister_op] to unregister a Tcl request handler.
+
 
 
 [call [cmd ns_register_trace] \
-	[arg method] \
-	[arg urlpattern] \
-	[arg script] \
-	[opt [arg "arg ..."]]]
+       [arg method] \
+       [arg urlpattern] \
+       [arg script] \
+       [opt [arg "arg ..."]]]
 
-Registers a Tcl script as a special filter for the
-specified method/url combination. After the server handles the request
-for the specified method on a URL that matches the URL, it calls the
-trace script with the connection id and any arguments (args)
-specified.
-
-[term ns_register_trace] is very similar to
-[term "ns_register_filter trace"] (known internally as void_traces).
-The script registered by this command fires after the scripts
-registered by [term "ns_register_filter trace"] and differ by the fact
-that they only execute if a response was successfully sent to the
-client (i.e. not a Server Error). In addition, their return value is ignored.
-
-[para]
-
-The argument [arg urlpattern] can contain standard string-matching characters. For example, these are valid values:
-
-[example_begin]
- /employees/*.tcl
- /accounts/*/out
-[example_end]
-
-[para]
-[term ns_register_trace] is similar to [term ns_register_proc] except that the
-pattern-matching for the URL is performed differently. With [term ns_register_proc],
-the specified URL is used to match that URL and any URL below it in the hierarchy.
-Wildcards such as "*" are meaningful only for the final part of the URL, such as
-[term /scripts/*.tcl]. With [term ns_register_trace], the URL is used to match URLs as
-a string with standard string-matching characters.
-
-[para]
-[term ns_register_proc] results in a single match, whereas multiple [term ns_register_trace]'s
-can be matched and will be called.
+ Registers a Tcl script as a trace filter for the specified HTTP
+ [arg method] and [arg urlpattern]. Trace filters are executed after the
+ main filters and are only invoked for
+ successful requests (i.e., no server errors occur). Unlike other
+ filters, no reason code is added as the first argument when the trace
+ filter is called, and its result is not subject to the special result
+ and return code handling applied to other filter types. In all other
+ respects (such as handling of URL patterns and duplicate
+ registrations), trace filters behave like regular filters.
 
 
 [call [cmd ns_register_url2file] \
@@ -347,13 +367,13 @@ can be matched and will be called.
 	[arg url] \
 	[opt [arg basepath]]]
 
-These commands are used to perform run time resolving of the requested
-URLs into corresponding files that will be served to the client. They
-use [cmd ns_url2file] interface which resolves file for current
-URL. [cmd ns_register_fasturl2file] register the default fast url2file
-proc for the given [arg url]. The Tcl [arg script]
-provided to [cmd ns_register_url2file] 
-is used to return full path to the requested URL.
+ These commands are used for runtime resolution of requested URLs to
+ corresponding files that will be served to the client. They utilize
+ the [cmd ns_url2file] interface to resolve the file associated with
+ the current URL. The [cmd ns_register_fasturl2file] command registers
+ the default fast url2file procedure for the given [arg url]. The Tcl
+ [arg script] provided to [cmd ns_register_url2file] is expected to
+ return the full path corresponding to the requested URL.
 
 
 [call [cmd ns_unregister_op] \
@@ -364,20 +384,17 @@ is used to return full path to the requested URL.
    [arg method] \
    [arg url]]
 
-Unregisters a Tcl or ADP request handler for the specified method/URL combination.
+ Unregisters a Tcl or ADP request handler for the specified HTTP
+ [arg method] and [arg url] combination. This command removes any Tcl or C
+ functions previously registered for this method/URL pair that share
+ the same inheritance setting. If the [option -noinherit] flag is
+ provided, only the handler registered with [option -noinherit] is
+ removed; if omitted, the handler registered without
+ [option -noinherit] is unregistered.
 
-This command unregisters any Tcl or C functions previously registered 
-for this method/URL combination and with the same inheritance
-setting.  That is, if the [option -noinherit] flag is specified with 
-[term ns_unregister_op], the function previously registered with the
-[option -noinherit] flag using [term ns_register_proc] (or the NS_OP_NOINHERIT
-flag in ns_RegisterRequest) will be unregistered.  If [option -noinherit]
-is omitted, the function previously registered without the 
-[option -noinherit] flag (or the NS_OP_NOINHERIT flag) will be unregistered.
-
-[para] The option [option -noinherit] specifies the (virtual) server
-from where the handler should be unregistered. If this option is not
-specified, the current server is used.
+ The [option -server] parameter specifies the (virtual) server from
+ which the handler should be unregistered. If omitted, the current
+ server is assumed.
 
 [call [cmd ns_unregister_url2file] \
         [opt [option -noinherit]] \
@@ -386,10 +403,9 @@ specified, the current server is used.
         [opt --] \
         [arg url]]
 
-The command is the inverse command to [cmd ns_register_url2file].
-The option [option -noinherit] specifies the (virtual) server
-from where the resolver should be unregistered. If this option is not
-specified, the current server is used.
+ Unregisters a URL-to-file resolver previously registered with
+ [cmd ns_register_url2file]. The [option -noinherit] flag and
+ [option -server] parameter function as described before.
 
 [list_end]
 

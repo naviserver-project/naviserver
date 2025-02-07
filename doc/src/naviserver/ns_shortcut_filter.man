@@ -2,16 +2,25 @@
 [manpage_begin ns_shortcut_filter n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Stop processing url filters}]
+[titledesc {Stop Processing URL Filters}]
 
 [description]
-Other filters that also match [arg when]+[arg method]+[arg urlpattern] will not run after this filter.
+
+ The [cmd ns_shortcut_filter] command halts the execution of further
+ URL filters for a given request. Once this filter is registered, any
+ subsequent filters that match the specified stage ([arg when]), HTTP
+ method ([arg method]), and URL pattern ([arg urlpattern]) will be
+ bypassed. This mechanism is useful, for preventing further
+ (redundant) filter execution.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_shortcut_filter] [arg when] [arg method] [arg urlpattern]]
+[call [cmd ns_shortcut_filter] \
+        preauth|postauth|trace \
+        [arg method] \
+        [arg urlpattern]]
 
 [list_end]
 
