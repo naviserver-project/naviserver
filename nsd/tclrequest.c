@@ -501,7 +501,11 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
         Tcl_DStringAppendElement(&ds, "trace");
         break;
     case NS_FILTER_VOID_TRACE:
-        /* Registered with ns_register_trace; always type VOID TRACE, so don't append. */
+        /*
+         * The filter was registered with ns_register_trace; always type VOID
+         * TRACE, so add the filter reason as extra argument of the registered
+         * callback proc.
+         */
         break;
     }
 
@@ -522,7 +526,7 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
     result = Tcl_GetStringResult(interp);
     Ns_DStringSetLength(&ds, 0);
 
-    if (rc != TCL_OK) {
+    if (rc == TCL_ERROR) {
 
         /*
          * Handle Tcl errors and timeouts.
@@ -547,12 +551,16 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
 
         if (why == NS_FILTER_VOID_TRACE) {
             status = NS_OK;
-        } else if (STREQ(result, "filter_ok")) {
+
+        } else if (rc == TCL_CONTINUE || STREQ(result, "filter_ok")) {
             status = NS_OK;
-        } else if (STREQ(result, "filter_break")) {
+
+        } else if (rc == TCL_BREAK    || STREQ(result, "filter_break")) {
             status = NS_FILTER_BREAK;
-        } else if (STREQ(result, "filter_return")) {
+
+        } else if (rc == TCL_RETURN   || STREQ(result, "filter_return")) {
             status = NS_FILTER_RETURN;
+
         } else {
             Ns_Log(Error, "ns:tclfilter: %s return invalid result: %s",
                    cbPtr->script, result);
