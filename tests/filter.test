@@ -12,7 +12,7 @@ namespace import -force ::tcltest::*
 
 test ns_register_filter-1.0 {syntax: ns_register_filter} -body {
     ns_register_filter
-} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? /when/ /method/ /urlpattern/ /script/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? preauth|postauth|trace /method/ /urlpattern/ /script/ ?/arg .../?"}
 
 test ns_register_trace-1.0 {syntax: ns_register_trace} -body {
     ns_register_trace
@@ -20,14 +20,14 @@ test ns_register_trace-1.0 {syntax: ns_register_trace} -body {
 
 test ns_shortcut_filter-1.0 {syntax: ns_shortcut_filter} -body {
     ns_shortcut_filter
-} -returnCodes error -result {wrong # args: should be "ns_shortcut_filter /when/ /method/ /urlpattern/"}
+} -returnCodes error -result {wrong # args: should be "ns_shortcut_filter preauth|postauth|trace /method/ /urlpattern/"}
 
 #
 # Functional tests
 #
 test ns_register_filter-1.1 {ns_register_filter basic operation} -body {
     ns_register_filter when GET / aproc
-} -returnCodes error -result {bad flag "when": must be preauth, postauth, or trace}
+} -returnCodes error -result {bad option "when": must be preauth, postauth, or trace}
 
 test filter-2.1 {correct order} -setup {
     ns_register_filter preauth  GET /filter-2.1 {

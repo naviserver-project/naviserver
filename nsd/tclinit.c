@@ -1061,7 +1061,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj
 
     if (when == NS_TCL_TRACE_NONE) {
         Ns_ObjvSpec     addTraceArgs[] = {
-            {"when",       Ns_ObjvFlags,  &flags,     traceWhen},
+            {"when",       Ns_ObjvIndex,  &flags,     traceWhen},
             {"script",     Ns_ObjvObj,    &scriptObj, NULL},
             {"?arg",       Ns_ObjvArgs,   &remain,    NULL},
             {NULL, NULL, NULL, NULL}
@@ -1543,7 +1543,7 @@ ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     int             result = TCL_OK;
     unsigned int    flags = 0u;
     Ns_ObjvSpec     args[] = {
-        {"when", Ns_ObjvFlags,  &flags, traceWhen},
+        {"when", Ns_ObjvIndex,  &flags, traceWhen},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1592,7 +1592,7 @@ ICtlRunTracesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     int             result = TCL_OK;
     unsigned int    flags = 0u;
     Ns_ObjvSpec     args[] = {
-        {"when", Ns_ObjvFlags,  &flags, traceWhen},
+        {"when", Ns_ObjvIndex,  &flags, traceWhen},
         {NULL, NULL, NULL, NULL}
     };
 

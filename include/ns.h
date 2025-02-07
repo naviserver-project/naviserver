@@ -1880,7 +1880,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvBreak NS_GNUC_CONST;
 NS_EXTERN Ns_ObjvProc Ns_ObjvByteArray;
 NS_EXTERN Ns_ObjvProc Ns_ObjvDouble;
 NS_EXTERN Ns_ObjvProc Ns_ObjvEval;
-NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
+NS_EXTERN Ns_ObjvProc Ns_ObjvFlags NS_GNUC_DEPRECATED_FOR(Ns_ObjvIndex);
 NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvInt;
 NS_EXTERN Ns_ObjvProc Ns_ObjvLong;

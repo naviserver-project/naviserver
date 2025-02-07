@@ -49,7 +49,7 @@ test ns_ictl-1.6 {syntax: ns_ictl getmodules} -body {
 
 test ns_ictl-1.7 {syntax: ns_ictl gettraces} -body {
     ns_ictl gettraces
-} -returnCodes error -result {wrong # args: should be "ns_ictl gettraces /when/"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl gettraces allocate|create|deallocate|delete|freeconn|getconn|idle"}
 
 test ns_ictl-1.8 {syntax: ns_ictl markfordelete} -body {
     ns_ictl markfordelete x
@@ -77,7 +77,7 @@ test ns_ictl-1.13 {syntax: ns_ictl oninit} -constraints with_deprecated -body {
 
 test ns_ictl-1.14 {syntax: ns_ictl runtraces} -body {
     ns_ictl runtraces
-} -returnCodes error -result {wrong # args: should be "ns_ictl runtraces /when/"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl runtraces allocate|create|deallocate|delete|freeconn|getconn|idle"}
 
 test ns_ictl-1.15 {syntax: ns_ictl save} -body {
     ns_ictl save
@@ -85,7 +85,7 @@ test ns_ictl-1.15 {syntax: ns_ictl save} -body {
 
 test ns_ictl-1.16 {syntax: ns_ictl trace} -body {
     ns_ictl trace
-} -returnCodes error -result {wrong # args: should be "ns_ictl trace /when/ /script/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl trace allocate|create|deallocate|delete|freeconn|getconn|idle /script/ ?/arg .../?"}
 
 test ns_ictl-1.17 {syntax: ns_ictl update} -body {
     ns_ictl update x

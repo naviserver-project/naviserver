@@ -289,7 +289,7 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   args[] = {
-        {"when",       Ns_ObjvFlags,  &when,       filters},
+        {"when",       Ns_ObjvIndex,  &when,       filters},
         {"method",     Ns_ObjvString, &method,     NULL},
         {"urlpattern", Ns_ObjvString, &urlPattern, NULL},
         {"script",     Ns_ObjvObj,    &scriptObj,  NULL},
@@ -335,7 +335,7 @@ NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     unsigned int    when = 0u;
     int             result = TCL_OK;
     Ns_ObjvSpec args[] = {
-        {"when",       Ns_ObjvFlags,  &when,       filters},
+        {"when",       Ns_ObjvIndex,  &when,       filters},
         {"method",     Ns_ObjvString, &method,     NULL},
         {"urlpattern", Ns_ObjvString, &urlPattern, NULL},
         {NULL, NULL, NULL, NULL}

@@ -251,7 +251,7 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     Ns_ObjvSpec    opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
         {"-expires",   Ns_ObjvTime,  &expiresPtr, NULL},
-        {"-options",   Ns_ObjvFlags, &aflags,     adpOpts},
+        {"-options",   Ns_ObjvIndex, &aflags,     adpOpts},
         {"--",         Ns_ObjvBreak, NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
