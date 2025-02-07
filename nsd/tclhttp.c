@@ -821,10 +821,6 @@ NsInitHttp(NsServer *servPtr)
     if (servPtr->httpclient.logging) {
         Tcl_DString defaultLogFileName;
 
-        if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
-            Ns_Fatal("httpclient log: log directory '%s' could not be created", nsconf.logDir);
-        }
-
         Tcl_DStringInit(&defaultLogFileName);
         Tcl_DStringAppend(&defaultLogFileName, "httpclient-", 11);
         Tcl_DStringAppend(&defaultLogFileName, servPtr->server, TCL_INDEX_NONE);

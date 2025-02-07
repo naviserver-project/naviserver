@@ -58,6 +58,7 @@ extern void NsdInit();
 #endif
 
 static const char *configParametersReverseproxySection = "ns/parameters/reverseproxymode";
+static const char *configServersSection = "ns/servers";
 
 /*
  * Used by other files as well.
@@ -686,9 +687,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * so all default config values will be used for that server
      */
 
-    servers = Ns_ConfigGetSection("ns/servers");
+    servers = Ns_ConfigGetSection(configServersSection);
     if (servers == NULL) {
-        servers = Ns_ConfigCreateSection("ns/servers");
+        servers = Ns_ConfigCreateSection(configServersSection);
     }
     if (Ns_SetSize(servers) == 0u) {
         (void)Ns_SetPutSz(servers, "default", 7, "Default NaviServer", 18);
@@ -764,12 +765,20 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     }
     nsconf.home = SetCwd(nsconf.home);
 
-    {
+    /*
+     * Assure log directory is available since it is expected
+     * from some subsystems (tclhttp, log, ...).
+     */
+    nsconf.logDir = Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "logdir", "logs");
+    if (!Ns_PathIsAbsolute(nsconf.logDir)) {
         Tcl_DString ds;
 
         Ns_DStringInit(&ds);
-        Ns_HomePath(&ds, "logs", (char *)0L);
+        Ns_HomePath(&ds, nsconf.logDir, (char *)0L);
         nsconf.logDir = Ns_DStringExport(&ds);
+    }
+    if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
+        Ns_Fatal("nsmain: log directory '%s' could not be created", nsconf.logDir);
     }
 
     nsconf.reject_already_closed_or_detached_connection =

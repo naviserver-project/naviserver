@@ -432,10 +432,6 @@ NsConfigLog(void)
     }
 
     maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);
-
-    if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
-        Ns_Fatal("system log: log directory '%s' could not be created", nsconf.logDir);
-    }
     logfileName = Ns_ConfigFilename(section, "serverlog", 9, nsconf.logDir, "nsd.log");
 
     rollfmt = ns_strcopy(Ns_ConfigString(section, "logrollfmt", NS_EMPTY_STRING));

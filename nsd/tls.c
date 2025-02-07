@@ -693,10 +693,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
         Tcl_DStringSetLength(&outputBuffer, (TCL_SIZE_T)(pserial->length*2 + 1));
 
         Ns_HexString(pserial->data, outputBuffer.string, (TCL_SIZE_T)pserial->length, NS_TRUE);
-        /*
-         * Check for the "logs" directory below NaviServer home.
-         */
-        if (Ns_HomePathExists("logs", (char *)0L)) {
+        {
             struct stat fileInfo;
             const char *fileName;
 
@@ -705,7 +702,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
              * of the cache file in dsPtr;
              */
             Tcl_DStringAppend(&outputBuffer, ".der", 4);
-            fileName = Ns_HomePath(dsPtr, "logs", "/", outputBuffer.string, (char *)0L);
+            fileName = Ns_MakePath(dsPtr, nsconf.logDir, outputBuffer.string, (char *)0L);
             result = TCL_CONTINUE;
 
             if (Ns_Stat(dsPtr->string, &fileInfo)) {

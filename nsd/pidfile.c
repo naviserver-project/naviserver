@@ -107,9 +107,6 @@ GetFile(void)
     const char *file;
     Tcl_Obj    *pathObj;
 
-    if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
-        Ns_Fatal("pid file: log directory '%s' could not be created", nsconf.logDir);
-    }
     file = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS, "pidfile", 7, nsconf.logDir, "nsd.pid");
     pathObj = Tcl_NewStringObj(file, TCL_INDEX_NONE);
     ns_free((void*)file);

@@ -518,8 +518,7 @@ Ns_HomePathExists(const char *path, ...)
     return (status == 0);
 }
 
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -529,11 +528,6 @@ Ns_HomePathExists(const char *path, ...)
  *      exist, the function attempts to create it. If creation fails,
  *      an error is logged and NS_ERROR is returned; otherwise, NS_OK
  *      is returned.
- *
- *      This function is primarily used for creating the log directory.
- *      The rationale is to keep NaviServer’s initial requirements minimal,
- *      as a log directory is only necessary when file-based logging is
- *      enabled.
  *
  * Results:
  *      NS_OK or NS_ERROR
