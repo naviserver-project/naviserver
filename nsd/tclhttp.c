@@ -2679,7 +2679,7 @@ HttpQueue(
     Tcl_Interp *interp;
     int         result = TCL_OK, decompress = 0, raw = 0, binary = 0, partialResults = 0, keepHostHdr = 0, insecureInt;
     Tcl_WideInt spoolLimit = -1, bodySize = 0;
-#ifdef NS_WITH_RECENT_DEPRECATED
+#ifdef NS_WITH_DEPRECATED_5_0
     int         verifyCertInt = 0;
 #endif
     bool        verifyCert = NS_TRUE;
@@ -2693,7 +2693,7 @@ HttpQueue(
                *outputChanName = NULL,
                *method = (char *)"GET",
                *url = NULL,
-#ifdef NS_WITH_RECENT_DEPRECATED
+#ifdef NS_WITH_DEPRECATED_5_0
                *doneCallbackDeprec = NULL,
 #endif
                *doneCallback = NULL,
@@ -2719,7 +2719,7 @@ HttpQueue(
         {"-cert",                     Ns_ObjvString,  &cert,                   NULL},
         {"-connecttimeout",           Ns_ObjvTime,    &connectTimeoutPtr,      NULL},
         {"-decompress",               Ns_ObjvBool,    &decompress,             INT2PTR(NS_TRUE)},
-#ifdef NS_WITH_RECENT_DEPRECATED
+#ifdef NS_WITH_DEPRECATED_5_0
         {"-donecallback",             Ns_ObjvString,  &doneCallbackDeprec,     NULL},
 #endif
         {"-done_callback",            Ns_ObjvString,  &doneCallback,           NULL},
@@ -2740,7 +2740,7 @@ HttpQueue(
         {"-spoolsize",                Ns_ObjvMemUnit, &spoolLimit,             NULL},
         {"-timeout",                  Ns_ObjvTime,    &timeoutPtr,             NULL},
         {"-unix_socket",              Ns_ObjvString,  &udsPath,                NULL},
-#ifdef NS_WITH_RECENT_DEPRECATED
+#ifdef NS_WITH_DEPRECATED_5_0
         {"-verify",                   Ns_ObjvBool,    &verifyCertInt,          INT2PTR(NS_TRUE)},
 #endif
         {NULL, NULL,  NULL, NULL}
@@ -2778,7 +2778,7 @@ HttpQueue(
         decompress = 1;
     }
 
-#ifdef NS_WITH_RECENT_DEPRECATED
+#ifdef NS_WITH_DEPRECATED_5_0
     if (result == TCL_OK && verifyCertInt != 0) {
         Ns_Log(Warning, "ns_http %s: -verify option is deprecated;"
                " activated by default", Tcl_GetString(objv[1]));
@@ -2904,7 +2904,7 @@ HttpQueue(
             HttpClose(httpPtr);
         }
     } else {
-#ifdef NS_WITH_RECENT_DEPRECATED
+#ifdef NS_WITH_DEPRECATED_5_0
         if (doneCallbackDeprec != NULL) {
             doneCallback = doneCallbackDeprec;
             Ns_Log(Warning, "ns_http %s: -done_callback option is deprecated;"

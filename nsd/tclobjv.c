@@ -1095,7 +1095,7 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
     return result;
 }
 
-
+#ifdef NS_WITH_DEPRECATED_5_0
 /*
  *----------------------------------------------------------------------
  *
@@ -1162,6 +1162,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
 
     return result;
 }
+#endif
 
 
 /*
