@@ -251,7 +251,8 @@ endif
 
 $(PEM_FILE): $(PEM_PRIVATE)
 	$(OPENSSL) genrsa 2048 > host.key
-	$(OPENSSL) req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -key host.key > host.cert
+	# openssl rejects on some platforms building certificates with SHA1, which requires TLS>1.0, excluding Windows XP.
+	$(OPENSSL) req -new -config $(SSLCONFIG) -x509 -nodes -sha256 -days 365 -key host.key > host.cert
 	$(CAT) host.cert host.key > server.pem
 	$(RM) -rf host.cert host.key
 	$(OPENSSL) dhparam 1024 >> server.pem
@@ -331,8 +332,9 @@ clean-bak: clean
 
 distclean: clean
 	$(RM) config.status config.log config.cache autom4te.cache aclocal.m4 configure \
-	include/{Makefile.global,Makefile.module,config.h,config.h.in,stamp-h1} \
-	naviserver-$(NS_PATCH_LEVEL).tar.gz sample-config.tcl
+		include/{Makefile.global,Makefile.module,config.h,config.h.in,stamp-h1} \
+		naviserver-$(NS_PATCH_LEVEL).tar.gz sample-config.tcl \
+		$(PEM_FILE) $(PEM_PRIVATE) $(PEM_PUBLIC)
 
 config.guess:
 	wget -O config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
