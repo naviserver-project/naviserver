@@ -5,8 +5,22 @@
 [titledesc {Register Tcl/ADP handlers}]
 
 [description]
-This document describes various command to bind Tcl code and/or
-ADP-pages to URL patterns.
+
+This document describes various commands for binding Tcl code and/or
+ADP pages to URL patterns.
+
+[para] The request lifecycle consists of three primary phases: the
+receive phase, the processing phase, and the delivery phase. The
+commands detailed in this section focus on the processing phase, which
+is subdivided into several stages: pre-authorization, authorization,
+post-authorization, the request handler, and finally a trace stage.
+
+[para][image naviserver-request-processing "NaviServer Request Processing"]
+
+[para]
+
+The commands on this page demonstrate how to register scripted actions
+to be executed at each of these stages.
 
 [section COMMANDS]
 
