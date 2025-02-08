@@ -201,7 +201,7 @@ to be executed at each of these stages.
   registrations.)
 
 [para]
-  Filters can also be shortcut via [cmd ns_shortcut_filter].
+  The filter chain can be also terminated by a [cmd ns_shortcut_filter].
 
 
 [call [cmd ns_register_proc] \
@@ -390,6 +390,24 @@ serve as a model for this forward proxy).
  return the full path corresponding to the requested URL.
 
 
+[call [cmd ns_shortcut_filter] \
+        preauth|postauth|trace \
+        [arg method] \
+        [arg urlpattern]]
+
+ Registers a special "shortcut" filter that cancels further of a
+ filter chain. Once this shortcut filter was called, any subsequent
+ filters matching the specified stage, HTTP method, and URL pattern
+ are bypassed. This mechanism is particularly useful for efficiently
+ preventing unnecessary filter execution when a terminating condition
+ has been met.
+
+[para]
+
+ The shortcut filter functions identically to a standard filter that
+ returns TCL_BREAK, but it is implemented more efficiently.
+
+
 [call [cmd ns_unregister_op] \
    [opt [option -noinherit]] \
    [opt [option -recurse]] \
@@ -421,9 +439,8 @@ serve as a model for this forward proxy).
  [cmd ns_register_url2file]. The [option -noinherit] flag and
  [option -server] parameter function as described before.
 
+
 [list_end]
-
-
 
 [section OPTIONS]
 [list_begin options]
@@ -579,7 +596,7 @@ currently registered [term filters], [term traces] or [term procs].
 [example_end]
 
 
-[see_also ns_adp ns_adp_register ns_conn ns_http ns_server ns_shortcut_filter ns_time]
+[see_also ns_adp ns_adp_register ns_conn ns_http ns_server ns_time]
 [keywords "server built-in" ADP filter request callback fastpath \
         urlspace proxy handler "forwarding proxy"]
 [manpage_end]
