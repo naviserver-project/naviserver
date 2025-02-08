@@ -22,8 +22,8 @@ URLs into its components.
 [section EXAMPLES]
 
 [example_begin]
- % ns_absoluteurl foo.html http://openacs.org/projects/openacs/download/
- http://openacs.org/projects/openacs/download/foo.html
+ % ns_absoluteurl foo.html https://openacs.org/projects/openacs/download/
+ https://openacs.org/projects/openacs/download/foo.html
  
  % ns_absoluteurl foo.html {http://[lb]::1[rb]:80/t.html}
  http://[lb]::1[rb]:80/foo.html

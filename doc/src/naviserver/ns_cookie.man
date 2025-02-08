@@ -140,7 +140,7 @@ While the value [term strict] prevents
 sending the cookie to the target site in all cross-site browsing
 context, the value of [term lax] allows sending the cookie when the
 user clicks on regular links. For details, see
-https://www.owasp.org/index.php/SameSite
+[uri https://owasp.org/www-community/SameSite].
 
 [opt_def -scriptable [arg boolean]]
 If the scriptable option is false or not given the cookie is unavailable to

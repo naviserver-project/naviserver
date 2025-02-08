@@ -49,7 +49,7 @@ the oauth1 encoding (value [term oauth1]) as defined in RFC 5849 Section
 
 The following example encodes the Tcl dict as
 [term application/x-www-form-urlencoded] POST data
-(https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4)
+([uri https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4])
 
 [example_begin]
  set data {
@@ -66,7 +66,7 @@ The following example encodes the Tcl dict as
 [example_end]
 
 The second example shows encodings of path segments based on example 1
-and 2 of https://www.w3.org/Addressing/URL/4_URI_Recommentations.html
+and 2 of [uri https://www.w3.org/Addressing/URL/4_URI_Recommentations.html]
 
 [example_begin]
  % set e1 {albert bertram marie-claude}

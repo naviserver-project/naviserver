@@ -209,6 +209,6 @@ NaviServer supports two primary modes for debugging ADP pages:
  currently limited to Tcl procedures.
 
 [see_also nsd]
-[keywords "server built-in" NaviServer Debugger TclPro]
+[keywords "server built-in" NaviServer "TclPro Debugger"]
 [manpage_end]
 

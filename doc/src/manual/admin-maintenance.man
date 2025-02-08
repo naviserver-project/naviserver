@@ -135,8 +135,8 @@ To restart the server from the shell you can send the server the SIGINT.
 
 [subsection {Systemd}]
 
-Most Unix-like systems tends to use systemd (see
-e.g. https://www.freedesktop.org/wiki/Software/systemd). System admins might find
+Most Unix-like systems tends to use systemd (see,
+e.g., [uri https://systemd.io/]. System admins might find
 the following sample configuration file for NaviServer helpful, which
 might be saved under [term /etc/systemd/system/nsd.service] or
 [term /usr/lib/systemd/system/nsd.service].
@@ -306,20 +306,19 @@ You can see the result in the security info:
 
 It is simply a convenience for people that need it to not have to rewrite code to achieve this.
 
+
 [subsection {Running inside Chroot Environment}]
 
-Chrooting NaviServer effectively means to run it with a special root directory.
+Chrooting NaviServer effectively means to run it with a special root
+directory. This is a simple form of containerization.
 When using Tcl commands like file, glob or exec only files "below" the specified
 path are visible, limiting access to critical files and devices. This is an important
 means to limit the access attackers of a website might gain.
 
 [para]
-You don't have to use the command line chroot command (see man page), NaviServer comes with built-in chroot capability.
-
-[para]
-
-There are scripts available (http://sourceforge.net/projects/nsdinstallers) with the intention
-to simplify and speed up the task of creating a chroot environment.
+You don't have to use the command line chroot command (see Unix man page),
+NaviServer comes with built-in chroot capability, but you have to take
+care to install all necessary components under this root.
 
 [para]
 
@@ -346,10 +345,15 @@ to simplify and speed up the task of creating a chroot environment.
 [list_end]
 
 [para]
+[subsection {Dockefr}]
 
-[emph {Alternatives}]
+A quick way to test NaviServer is to user a docker container.
+Several docker containers are freely available with NaviServer in
+serveral versions for the common architectures:
 
-Use Novell AppArmor (http://www.novell.com/products/apparmor/) and create a Profile for NaviServer
+[uri https://hub.docker.com/search?q=naviserver]
+
+
 
 [subsection {Command (interactive) mode}]
 

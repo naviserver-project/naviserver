@@ -51,8 +51,8 @@ URL as implied by the dict members.
 [section EXAMPLES]
 
 [example_begin]
- % ns_parseurl http://openacs.org//projects/openacs/download/
- proto http host openacs.org path /projects/openacs/download tail {}
+ % ns_parseurl https://openacs.org//projects/openacs/download/
+ proto https host openacs.org path /projects/openacs/download tail {}
  
  % ns_parseurl {http://[lb]::1[rb]:80/index.html}
  proto http host ::1 port 80 path {} tail index.html
@@ -63,8 +63,8 @@ URL as implied by the dict members.
  % ns_parseurl /top/query?x=1&y=2#pos1
  path top tail query query x=1&y=2 fragment pos1
 
- % ns_joinurl [lb]ns_parseurl http://openacs.org/projects/openacs/download/[rb]
- http://openacs.org/projects/openacs/download/
+ % ns_joinurl [lb]ns_parseurl https://openacs.org/projects/openacs/download/[rb]
+ https://openacs.org/projects/openacs/download/
 
 [example_end]
 

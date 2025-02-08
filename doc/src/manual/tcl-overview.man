@@ -67,34 +67,23 @@ sources:
 
 [list_begin itemized]
 
-[item] Practical Programming in Tcl and Tk, by Brent B. Welch (Prentice Hall PTR, 1995)
+[item] Practical Programming in Tcl and Tk, by Brent B. Welch (Prentice Hall PTR, 2003)
 
+[item] Tcl and the Tk Toolkit, by John K. Ousterhout, Ken Jones (Addison-Wesley, 2009)
 
-[para]
+[item] The Tcl Programming Language: A Comprehensive Guide, Ashok
+P. Nadkarni (CreateSpace Independent Publishing Platform, 2017)
 
+[item] Philip Greenspun's web site,
+[uri https://philip.greenspun.com/wtr/aolserver/introduction-1.html]
 
-[item] Tcl and the Tk Toolkit, by John K. Ousterhout (Addison-Wesley, 1994)
+[item] For the complete manual pages for the Tcl commands, visit 
+     [uri https://www.tcl-lang.org/man/].
 
+[item] For the complete manual of NaviServer, visit
+     web site [uri https://naviserver.sourceforge.io/n/toc.html].
 
-[para]
-
-
-[item] For the complete manual pages for the Tcl v7.6 commands, visit the
-     web site http://www.scriptics.com/man.
-
-
-[para]
-
-
-[item] Philip Greenspun's web site, http://www-swiss.ai.mit.edu/wtr/dead-trees/, which includes
-     chapters from his book, Database Backed Web Sites, The Thinking Person's Guide to Web Publishing,
-     and numerous examples of NaviServer Tcl database applications.
-
-
-[para]
-
-
-[item] The web site: http://www.yahoo.com/Computers_and_Internet/Programming_Languages/Tcl_Tk
+[item] Tcl Developers exchange [uri https://www.tcl-lang.org/]
 
 
 [list_end]

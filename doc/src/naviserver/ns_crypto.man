@@ -38,8 +38,8 @@ Note: some common options are described in a separate section below.
 [para] encrypt data following the Authenticated Encryption with
 Associated Data (AEAD) scheme, which provides confidentiality,
 integrity, and authenticity. Currently, only GCM mode (Galois/Counter
-Mode) is supported. For details about AEAD in GCM mode, see
-e.g. https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
+Mode) is supported. For details about AEAD in GCM mode, see,
+e.g., [uri https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf].
 
 [para]
 AEAD has the following properties:
@@ -388,7 +388,7 @@ the following key types: CMAC, DSA, ECDSA, HMAC and RSA.
 
 Derive keys based on message digests.
 See: RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
-https://tools.ietf.org/html/rfc5869
+[uri https://datatracker.ietf.org/doc/html/rfc5869].
 
 [para]
 When the option [option -binary] is specified, it applies to
@@ -409,12 +409,12 @@ This function requires OpenSSL 1.1.0.
 
 Sign a message according to the Voluntary Application Server
 Identification (VAPID) for Web Push
-https://www.rfc-editor.org/rfc/rfc8292.html
+[uri https://www.rfc-editor.org/rfc/rfc8292.html]
 
 [para] Essentially, this is a special form of a signed message
 digest based on elliptic curve cryptography.
 See also: Generic Event Delivery Using HTTP Push
-https://tools.ietf.org/html/rfc8030
+[uri https://datatracker.ietf.org/doc/html/rfc8030]
 
 [para] The signing key is taken from the provided .pem file.
 It is possible to provide the filename of the PEM file or its
