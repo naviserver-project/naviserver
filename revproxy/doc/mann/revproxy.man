@@ -53,7 +53,7 @@ The [emph revproxy] module supports two backend connection methods:
 [item] Partial reads and writes and error conditions have to be handled on the Tcl level (complex)
 [list_end]
 
-[enum] [emph ns_http] (Experimental, C based)
+[enum] [emph ns_http] (C based)
 [list_begin itemized]
 [item] Partial read/write operations are handled in C for improved efficiency
 [item] Supports persistent connections (NaviServer 5.0+) for repeated requests to the same backend
@@ -63,7 +63,7 @@ The [emph revproxy] module supports two backend connection methods:
 [item] Does not work well for streaming requests, since request data is only available after the request has finished.
 [list_end]
 
-[enum] [emph ns_http+ns_connchan] (Experimental)
+[enum] [emph ns_http+ns_connchan] (New implementation)
 [list_begin itemized]
 [item] Uses [term ns_http] for request data sending and [term ns_connchan] for response spooling
 [item] Supports persistent connections and request streaming
@@ -72,7 +72,7 @@ The [emph revproxy] module supports two backend connection methods:
 [list_end]
 
 [para]
-By default, you can set [option backendconnection] globally via the
+You can set the default for [option backendconnection] globally via the
 configuration file. It is also possible to override the backend connection
 method per handler instance by specifying the option [option -backendconnection]
 to [cmd revproxy::upstream].  
@@ -143,7 +143,7 @@ individual handlers:
 
 [example_begin]
  ns_section ns/server/default/module/revproxy {
-   ns_param backendconnection ns_http ;# default is ns_connchan
+   ns_param backendconnection ns_http ;# default is ns_http+ns_connchan
  }
 [example_end]
 
@@ -309,7 +309,7 @@ with the appropriate shell/environment variables:
  dict set defaultConfig httpport                   48000
  dict set defaultConfig httpsport                  48443
  dict set defaultConfig revproxy_target            http://127.0.0.1:8080
- dict set defaultConfig revproxy_backendconnection ns_connchan
+ dict set defaultConfig revproxy_backendconnection ns_http+ns_connchan
  dict set defaultConfig address                    0.0.0.0
  
  ns_configure_variables "nsd_" $defaultConfig

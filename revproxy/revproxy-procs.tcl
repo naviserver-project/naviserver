@@ -72,7 +72,7 @@ namespace eval ::revproxy {
         }
         if {$backendconnection eq ""} {
             set backendconnection \
-                [ns_config ns/server/[ns_info server]/module/revproxy backendconnection ns_connchan]
+                [ns_config ns/server/[ns_info server]/module/revproxy backendconnection ns_http+ns_connchan]
         }
         set extraArgs {}
         set spoolResponse true
