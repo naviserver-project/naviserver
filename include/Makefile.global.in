@@ -141,7 +141,7 @@ endif
 # Add the OpenSSL libraries to the end to minimize interference of
 # load paths for other libraries
 #
-NSLIBS      += @TCL_LIB_SPEC@ @TCL_LIBS@ @LDFLAGS@ ${OPENSSL_LIBS} ${PTHREAD_LIBS}
+NSLIBS      += @TCL_LIB_SPEC@ @LDFLAGS@ ${OPENSSL_LIBS} ${PTHREAD_LIBS}
 CCLIBS       = $(NSLIBS)
 
 # Install directories
