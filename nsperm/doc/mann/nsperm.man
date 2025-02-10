@@ -288,6 +288,6 @@ Now, in the directory where access is wanted, create .htaccess file and add line
 [example_end]
 
 [see_also ns_perm ns_permreload ns_permpasswd]
-[keywords module nsperm]
+[keywords module nsperm password]
 
 [manpage_end]
