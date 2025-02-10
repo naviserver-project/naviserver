@@ -681,7 +681,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
     static const char *const opts[] = {
         "address", "argv", "argv0", "boottime", "builddate", "buildinfo", "callbacks",
-        "config", "home", "hostname", "ipv6", "locks", "log",
+        "config", "home", "hostname", "ipv6", "locks", "log", "logdir",
         "major", "meminfo", "minor", "mimetypes", "name", "nsd",
         "patchlevel", "pid", "pools",
         "scheduled", "server", "servers",
@@ -697,7 +697,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
     enum {
         IAddressIdx, IArgvIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, IBuildinfoIdx, ICallbacksIdx,
-        IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx,
+        IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx, ILogDirIdx,
         IMajorIdx, IMeminfoIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx,
         IPatchLevelIdx,
         IPidIdx, IPoolsIdx,
@@ -798,6 +798,10 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             const char *elog = Ns_InfoErrorLog();
             Tcl_SetObjResult(interp, Tcl_NewStringObj(elog == NULL ? "STDOUT" : elog, TCL_INDEX_NONE));
         }
+        break;
+
+    case ILogDirIdx:
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoLogPath(), TCL_INDEX_NONE));
         break;
 
     case IHostNameIdx:

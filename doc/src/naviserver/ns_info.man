@@ -90,6 +90,11 @@ Not all information is available for all types of locks.
 Returns the name of the system log file. The name is specified by the
 "serverlog" parameter in the "ns/parameters" section.
 
+[call [cmd  "ns_info logdir"]]
+
+Returns the name of the log directory. The name is specified by the
+"logdir" parameter in the "ns/parameters" section, and defaults to "logs".
+
 [call [cmd  "ns_info major"]]
 
 Returns the major version number.

@@ -1689,6 +1689,8 @@ Ns_LogRoll(void)
 {
     Ns_ReturnCode status;
 
+    Ns_Log(Notice, "Ns_LogRoll called, logfileName '%s' logOpenCalled %d", logfileName, logOpenCalled);
+
     if (logfileName != NULL && logOpenCalled) {
         status = Ns_RollFileCondFmt(LogOpen, LogClose, NULL,
                                     logfileName, rollfmt, maxbackup);
@@ -1723,7 +1725,7 @@ void
 NsLogOpen(void)
 {
     /*
-     * Open the log and schedule the signal roll.
+     * Open the log and register the signal roll.
      */
 
     if (LogOpen(NULL) != NS_OK) {
