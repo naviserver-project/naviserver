@@ -1360,7 +1360,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
             : 0u;
 
         if (count > 0) {
-            idx =  (intptr_t)dlPtr->data[0]; // CAN GO AWAY
+            idx =  (intptr_t)dlPtr->data[0];
             s = Ns_SetValue(sectionPtr->set, idx);
             if (count > 1) {
                 Ns_Log(Warning, "config values returns the first of %ld values (section '%s' key '%s')",
