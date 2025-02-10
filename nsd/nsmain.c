@@ -766,17 +766,18 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     nsconf.home = SetCwd(nsconf.home);
 
     /*
+     * The value of nsconf.home is set. We can use it now as the base
+     * directory for completion in case the "logdir" parameter is
+     * relative. The logdir is required early in the startup to be usable as a
+     * base directory for e.g. the pid file.
+     */
+    nsconf.logDir = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS,
+                                      "logdir", 6,
+                                      nsconf.home, "logs");
+    /*
      * Assure log directory is available since it is expected
      * from some subsystems (tclhttp, log, ...).
      */
-    nsconf.logDir = Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "logdir", "logs");
-    if (!Ns_PathIsAbsolute(nsconf.logDir)) {
-        Tcl_DString ds;
-
-        Ns_DStringInit(&ds);
-        Ns_HomePath(&ds, nsconf.logDir, (char *)0L);
-        nsconf.logDir = Ns_DStringExport(&ds);
-    }
     if (Ns_RequireDirectory(nsconf.logDir) != NS_OK) {
         Ns_Fatal("nsmain: log directory '%s' could not be created", nsconf.logDir);
     }
