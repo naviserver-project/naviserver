@@ -113,9 +113,9 @@ test ns_config-4.1 {int min} -body {
     ns_config -min 41 ns/testconfig intval
 } -result 42
 
-test ns_config-4.2 {int min} -body {
+test ns_config-4.2 {int min, no default, out of range} -body {
     ns_config -min 43 ns/testconfig intval
-} -returnCodes error -result {value '42' out of range}
+} -returnCodes {error ok} -result {value '42' out of range}
 
 test ns_config-4.3 {int max} -body {
     ns_config -max 43 ns/testconfig intval
