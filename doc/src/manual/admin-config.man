@@ -1210,6 +1210,32 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 
 
 
+[section {Stack Size}]
+
+When running complex pages with a deep call stack, increasing the
+default callstack might be necessary. In earlier versions of Tcl,
+exceeding the callstack lead to seemingly unexplainable crashes. But
+in general, this is not necessarily the failt of Tcl, since the
+Operating System often reacts very harsh, when the callstack size is
+exceeded (for security reasons). The callstack is a per-thread
+figure. So when many threads are configured, then more callstack
+memory will be used on the system.
+
+[para] The callstack can be configured with the [term stacksize]
+parameter of your configuration file. The default stacksize is almost
+always not enough. However, for OpenACS 1MB is recommended.
+
+[example_begin]
+ #
+ # Thread library (nsthread) parameters
+ #
+ ns_section ns/threads {
+   ns_param   stacksize 1MB  ;# default: 64kB; Per-thread stack size.
+ }
+[example_end]
+
+
+
 [keywords module nssock nsssl "network driver" \
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \

@@ -1,0 +1,379 @@
+[include version_include.man]
+[manpage_begin admin-running n [vset version]]
+[moddesc {NaviServer Manual}]
+
+[titledesc {Running NaviServer}]
+
+[description]
+
+This manual page provides comprehensive guidance on running
+NaviServer, a high-performance web server. It covers command-line
+options, configuration management, service integration, security
+practices, and operational best practices.
+
+[section {Commands}]
+
+[list_begin definitions]
+
+[call [cmd "nsd"] \
+    [opt [option "-h|V|c|f|i|w"]] \
+    [opt [option "-d"]] \
+    [opt [option "-u [arg user]"]] \
+    [opt [option "-g [arg group]"]] \
+    [opt [option "-r [arg path]"]] \
+    [opt [option "-b [arg prebindinfo]"]] \
+    [opt [option "-B [arg file]"]] \
+    [opt [option "-s [arg server]"]] \
+    [opt [option "-t [arg file]"]] \
+    [opt [option "-T"]] \
+    ]
+
+Only one of the options [option -h], [option -V], [option -c], [option -f], [option -i], or [option -w] may be used at a time.
+
+
+[list_begin itemized]
+
+[item] [option {-h}]:
+Displays a short help message.
+
+[item] [option {-V}]:
+Displays the version number and build information.
+
+[item] [option {-c}]:
+Runs NaviServer in interactive command mode (similar to tclsh).
+
+[item] [option {-f}]:
+Runs NaviServer in the foreground; the server is not forked and logs are output to the console (stderr).
+
+[item] [option {-i}]:
+Similar to -f but with stdout directed to the server.log file, suitable for use with systemd.
+
+[item] [option {-w}]:
+Runs NaviServer in watchdog mode that automatically restarts
+the server if it fails.
+
+[item] [option {-d}]:
+Runs NaviServer in debugger-friendly mode (ignores SIGINT).
+
+[item] [option {-u}]:
+Runs NaviServer under the specified user ID (requires root privileges).
+
+[item] [option {-g}]:
+Runs NaviServer under the specified group ID (requires root privileges).
+
+[item] [option "-r [arg directory]"]:
+Changes the restricted root directory (chroot) to the specified
+path.
+
+[item] [option "-b [arg prebindinfo]"]:
+
+Prebinds to the specified address during startup (e.g.,
+ipaddr:port). Multiple sockets may be bound using the syntax
+“ipaddr:port#N” (requires SO_REUSEPORT). Multiple prebind addresses
+might be specified separated by a comma.
+
+[item] [option "-B [arg file]"]:
+Reads prebind address:port lists from the specified file.
+
+[item] [option "-s [arg servername]"]:
+Specifies which server to run if multiple servers are defined;
+by default, the first server is used.
+
+[item] [option "-t [arg configuration-file]"]:
+Specifies the path to the configuration file.
+
+[item] [option {-T}]:
+Tests the configuration file (provided via [option -t]) without starting NaviServer.
+
+[list_end]
+[list_end]
+
+
+
+[emph {Restarting the Server}]
+One can restart the server by sendig it a SIGINT signal, or by using
+the [cmd {ns_shutdown -restart}] command. The command has the
+advantage that one can restart the server from the application. During
+shutdown, NaviServer tries to terminate all requests and background
+activity gracefully within a configurable time limit.
+
+
+[section {Running NaviServer}]
+
+[subsection {Starting NaviServer from the command line}]
+
+Run NaviServer in the background (using fork()) using 
+the configuration file [const nsd.tcl].
+
+[example_begin]
+ nsd -t nsd.tcl
+[example_end]
+
+[para]
+
+Run in the foreground, using the configuration file [const nsd.tcl].
+This vairant is often used for testing, since the system log is shown
+in the console such one sees quickly debugging output. The server can
+be quickly stopped by Ctr-C.
+
+[para]
+
+[example_begin]
+ nsd -f -t nsd.tcl
+[example_end]
+
+[para]
+Run NaviServer in the foreground, using the configuration file
+[const nsd.tcl] and sets the chroot directory to [const /newroot].
+
+[example_begin]
+ nsd -f -t nsd.tcl -r /newroot
+[example_end]
+
+[subsection {Running NaviServer with the provided configuration files}]
+
+NaviServer is packaged with a few sample configuration files, which are in
+part for documentation purposes, but can be used as well for common
+setups. The sample configuration file [const sample-config.tcl] is a
+file containing all of the configuration variables, which are described
+in this file with their default values
+
+[para] The configuration file [const nsd-config.tcl] can be used for
+small applications and quick testing. It can be used as well a a
+blueprint for custom configuration files.
+
+This configuration file offers to alter default parameters also from
+the command line. One can set in the command line before the name of
+the NaviServer binary variables, which are passed as environment
+variables to the nsd process. In the following example, we are passing
+the listening port and IP address by using the [const nsd_] prefix followed
+by the name of the configuration variable and the value. The output
+from server startup shows the configuration variables and which values
+are taken from the command line or from the default configuration.
+
+[example_begin]
+ % [cmd {nsd_httpport=8888 nsd_ipaddress=::1}] /usr/local/ns/bin/nsd  -f -t /usr/local/ns/conf/nsd-config.tcl 2>&1
+ [lb]-main:conf-[rb] Notice: OpenSSL 3.5.0-dev  initialized (pid 39427)
+ [lb]-main:conf-[rb] Notice: random: generating 1 seed
+ [lb]-main:conf-[rb] Notice: using configuration file '/usr/local/ns/conf/nsd-config.tcl'
+ [lb]-main:conf-[rb] Notice: Running nsd with user 'neumann' and group 'staff'
+ [lb]-main:conf-[rb] Notice: setting ipaddress to '::1' from environment variable
+ [lb]-main:conf-[rb] Notice: setting httpport to '8888' from environment variable
+ [lb]-main:conf-[rb] Notice: setting httpsport to '' from default configuration
+ [lb]-main:conf-[rb] Notice: setting nscpport to '' from default configuration
+ [lb]-main:conf-[rb] Notice: setting home to '/usr/local/ns' from default configuration
+ [lb]-main:conf-[rb] Notice: setting hostname to 'localhost' from default configuration
+ [lb]-main:conf-[rb] Notice: setting pagedir to '/usr/local/ns/pages' from default configuration
+ [lb]-main:conf-[rb] Notice: setting logdir to '/usr/local/ns/logs' from default configuration
+ [lb]-main:conf-[rb] Notice: setting certificate to '/usr/local/ns/etc/server.pem' from default configuration
+ [lb]-main:conf-[rb] Notice: setting vhostcertificates to '/usr/local/ns/etc/certificates' from default configuration
+ [lb]-main:conf-[rb] Notice: setting serverprettyname to 'My NaviServer Instance' from default configuration
+ [lb]-main:conf-[rb] Notice: setting reverseproxymode to 'false' from default configuration
+ [lb]-main:conf-[rb] Notice: setting trustedservers to '' from default configuration
+ [lb]-main:conf-[rb] Notice: setting enablehttpproxy to 'false' from default configuration
+ [lb]-main:conf-[rb] Notice: initialized locale en_US.UTF-8 from environment variable LANG
+ ...
+ [lb]...[rb] Notice: listening on [lb]::1[rb]:8888 (sock 18)
+[example_end]
+
+It is also possible to add the further configuration variables by
+extended the Tcl dictionary, which is provided at the begin of the
+confiration file.
+
+[example_begin]
+ dict set defaultConfig ipaddress   0.0.0.0
+ dict set defaultConfig httpport    8080
+ dict set defaultConfig httpsport   ""
+ dict set defaultConfig nscpport    ""
+ dict set defaultConfig home        [lb]file dirname [lb]file dirname [lb]info nameofexecutable[rb][rb][rb]
+ dict set defaultConfig hostname    localhost
+ dict set defaultConfig pagedir     {$home/pages}
+ ...
+[example_end]
+
+ When larger modification are required, one can adapt the configration
+ file to load e.g. further modules, fine tune the settings for
+ configuration values which are not offered via command line
+ configuration values.
+
+
+[subsection {Running NaviServer in Interactive Command Mode}]
+
+ NaviServer supports an interactive command mode (invoked with the
+ option [option -c] that launches a Tcl shell for comprehensive
+ testing and debugging.
+
+[para]
+
+ This mode is intended for development use only; for live
+ administration with shell commands, use the secure control port
+ provided by the [term nscp] module.
+
+ [para] Example:
+[example_begin]
+ ./nsd -c ...
+[example_end]
+
+ In interactive mode, you can execute commands such as
+ [cmd "ns_info threads"] or [cmd "ns_server requestprocs"] to inspect server status.
+
+[example_begin]
+ buckel@tulpe:/usr/local/ns/bin> ./nsd -c -u nsadmin -g www -t ../sample-config.tcl
+ [lb]-main-[rb] Notice: nsmain: NaviServer/4.99.28 (naviserver-4.99.28) starting
+ [lb]-main:conf-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
+ [lb]-main:conf-[rb] Notice: nsmain: max files: soft limit 10240, hard limit 10240
+ [lb]-main:default-[rb] Notice: nsd/init.tcl [lb]default[rb]: booting virtual server:  Tcl system encoding: "utf-8"
+ [lb]-main:default-[rb] Notice: modload: loading '/usr/local/ns/bin/nssock.so'
+ [lb]-main:default-[rb] Notice: modload: loading '/usr/local/ns/bin/nslog.so'
+ [lb]-main:default-[rb] Notice: nslog: opened '/usr/local/ns/servers/server1/modules/nslog/access.log'
+ [lb]-main:default-[rb] Notice: conf: [lb]ns/server/server1[rb]enabletclpages = 0
+ [lb]-main:default-[rb] Notice: nsmain: NaviServer/4.99.28 (naviserver-4.99.28) running
+ [lb]-main:default-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
+ [lb]-sched-[rb] Notice: sched: starting
+ [lb]-driver:nssock:0-[rb] Notice: starting
+ [lb]-driver:nssock:0-[rb] Notice: nssock:0: listening on [lb]0.0.0.0[rb]:8080
+ [lb]-driver:nssock:0-[rb] Notice: driver: accepting connections
+ 
+ % ns_info threads
+ {-driver- -main- 1084140464 0 1119862183 p:0x40037cfb a:0x0}
+ {-sched- -main- 1082039216 0 1119862183 p:0x4004a09a a:0x0}
+ {-main- {} 1076887680 1 1119862183 p:0x0 a:0x0}
+ 
+ % ns_server requestprocs
+ {GET / * inherit ns:fastget a:0x0} {HEAD / * inherit ns:fastget a:0x0} {POST / * inherit ns:fastget a:0x0}
+ %
+[example_end]
+
+ This mode is intended for development use. In order to communicate at
+ runtime of the server via a shell, use the [term nscp] module, or the
+ optional [term nsshell] NaviServer module (available separtely from GitHub).
+ 
+
+
+[section {Running NaviServer as a Service}]
+
+ NaviServer can be managed as a service using various service
+ management tools. The following approaches are supported:
+
+[subsection {Using Systemd}]
+
+ Most modern Unix-like systems use systemd. A sample systemd unit file
+ for NaviServer might be placed at [const /etc/systemd/system/nsd.service]
+ or [const /usr/lib/systemd/system/nsd.service]:
+
+[example_begin]
+ [lb]Unit[rb]
+ Description=NaviServer
+ After=network.target
+ # After=network.target postgresql.service
+ # Wants=postgresql.service
+ 
+ [lb]Service[rb]
+ Type=forking
+ PIDFile=/usr/local/ns/logs/nsd.pid
+ Environment="LANG=en_US.UTF-8"
+ # In case, a site is using Google Perfortools malloc with the system-malloc patch for Tcl:
+ # Environment="LD_PRELOAD=/usr/lib/libtcmalloc.so"
+ ExecStartPre=/bin/rm -f /usr/local/ns/logs/nsd.pid
+ 
+ # Standard startup with a non-privileged port (like 8000)
+ ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl
+ 
+ # Startup for privileged port, like 80; the IPv6 address is bound to 2 sockets.
+ # ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl -b YOUR-IPv4-ADDRESS:80,YOUR-IPv6-ADDRESS:80#2
+ 
+ Restart=on-abnormal
+ KillMode=process
+ 
+ [lb]Install[rb]
+ #WantedBy=multi-user.target
+[example_end]
+
+
+[subsection {Using inittab}]
+
+
+ For systems using traditional Unix [const init], add an entry to [const /etc/inittab] to
+ respawn NaviServer:
+ 
+[example_begin]
+ ns1:345:respawn:/usr/local/ns/bin/nsd -i -u nsadmin -g www -t /usr/local/ns/config.tcl
+[example_end]
+
+[subsection {Using Daemontools}]
+
+ Daemontools provides an alternative for process supervision, allowing
+ multiple users to manage the server. Note that this requires
+ additional installation and root privileges.
+
+[subsection {Using Docker}]
+
+ Docker offers a convenient method to deploy or test
+ NaviServer. It provides start modes to provide stable NaviServer servers.
+ Several Docker images for NaviServer are available for
+ common architectures.  For more details, visit
+
+ [uri https://hub.docker.com/search?q=naviserver "Docker Hub: NaviServer"].
+
+[subsection {Using Watchdog Mode}]
+
+When NaviServer is started with [option -w], it is running in watchdog
+mode where it automatically restarts the server if it fails.
+[para]
+Technically speaking the nsd process is forked twice and the first
+forked instance (the watchdog) controls the second (the worker). The
+first instance reacts on exit codes and signals caught during the
+watch and correspondingly restarts the second instance.
+
+
+[section {Running as Root}]
+
+[emph {WARNING: Running NaviServer as root is not recommended for web server usage.}]
+
+[para]
+ Running NaviServer as root should be avoided except in exceptional
+ cases where NaviServer is used as an application rather than a
+ traditional web server. If necessary, run NaviServer as root using the
+ [option -u] switch:
+
+[example_begin]
+ ./nsd -f -u root -g www -t ../sample-config.tcl
+[example_end]
+
+ Startup logs will indicate that NaviServer is running with uid=0.
+
+
+[section {Running Inside a Chroot Environment}]
+
+  Running NaviServer inside a chroot environment confines the server
+  to a specified directory, limiting its access to the underlying
+  filesystem. Although chroot does not secure file content, it
+  effectively restricts access to sensitive files (e.g., passwords,
+  configuration files).
+
+[para]
+
+ NaviServer supports built-in chroot functionality via the [option -r]
+ option. Before running in a chroot, ensure that all necessary files
+ and directories are copied into the new root. Example:
+
+[example_begin]
+ mkdir $root/dev $root/tmp $root/etc
+ chmod 1777 $root/tmp
+ cd $root/dev; /dev/MAKEDEV generic usema
+ cp /etc/passwd /etc/resolve.conf $root/etc
+[example_end]
+
+Then start NaviServer with:
+
+[example_begin]
+ nsd -t nsd.tcl -r $root
+[example_end]
+
+
+[see_also admin-install admin-maintenance]
+
+[keywords nsd command-line-options nscp nsdb nsperm prebind docker password]
+
+[manpage_end]
+
