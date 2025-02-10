@@ -11,7 +11,7 @@ ns_log notice "nsd.tcl: starting to read configuration file..."
 if {[info commands ::ns_configure_variables] eq ""} {
     ns_log notice "backward compatibility hook (pre NaviServer 5): have to source init.tcl"
     source [file normalize [file dirname [file dirname [ns_info nsd]]]/tcl/init.tcl]
-}}
+}
 #---------------------------------------------------------------------
 # Port settings:
 #
@@ -205,9 +205,10 @@ set directoryfile             "index.tcl index.adp index.html index.htm"
 # Global NaviServer parameters
 #---------------------------------------------------------------------
 ns_section ns/parameters {
-    ns_param	serverlog	${logdir}/error.log
-    ns_param	pidfile		${logdir}/nsd.pid
     ns_param	home		$homedir
+    ns_param    logdir          $logdir
+    ns_param	serverlog	error.log
+    ns_param	pidfile		nsd.pid
     ns_param	debug		$debug
 
     # Define optionally the tmpdir. If not specified, the
