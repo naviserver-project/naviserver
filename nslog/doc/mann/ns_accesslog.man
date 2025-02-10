@@ -182,15 +182,22 @@ Default: ff:ff:ff:ff::
 [def maxbuffer]
 The number of log entries to buffer before flushing to the log file. Default: 0.
 
+[def maxbackup]
+Number of old log files to keep when log rolling is enabled. Default: 100.
+
 [def rolllog]
 If true then the log file will be rolled. Default: true.
+
+[def rollfmt]
+Specifies the a suffix for the file when it is rolled (timestamp
+based file naming). The format is
+provided via the Tcl format codes for timestamp, such, as e.g.,
+[const %Y-%m-%d]. Default: ""
+
 
 [def rollhour]
 The hour of the day (0-23) to roll the log file if log rolling is enabled.
 Default: 0 (midnight).
-
-[def maxbackup]
-Number of old log files to keep when log rolling is enabled. Default: 100.
 
 [def rollonsignal]
 If true then the log file will be rolled when the serve receives a SIGHUP
