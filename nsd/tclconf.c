@@ -66,7 +66,6 @@ GetBoolFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defOb
 static int
 GetIntFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defObj, Tcl_WideInt minValue, Tcl_WideInt maxValue)
 {
-    int result = TCL_OK;
     Tcl_WideInt v = 0;
 
     if (value != NULL) {
@@ -76,38 +75,41 @@ GetIntFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defObj
              * Tcl_GetInt.
              */
             Ns_TclPrintfResult(interp, "expected integer but got \"%s\"", value);
-            result = TCL_ERROR;
+            return TCL_ERROR;
+
         } else if (v > minValue && v <= maxValue) {
             /*
              * The value is within range.
              */
             Tcl_SetObjResult(interp, Tcl_NewWideIntObj(v));
-            return result;
+            return TCL_OK;
         }
     }
 
-    if (defObj != NULL && Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
-        /*
-         * We have to use the default value, but it was syntactically invalid.
-         */
-        result = TCL_ERROR;
-    } else if (v >= minValue && v <= maxValue) {
-        /*
-         * The default value was in range.
-         */
-        if (value != NULL) {
-            Ns_Log(Warning, "ns_config: provided value '%s' is out of range, fall back to default value '%s'",
-                   value, Tcl_GetString(defObj));
+    if (defObj != NULL) {
+        if (Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
+            /*
+             * We have to use the default value, but it was syntactically invalid.
+             */
+            return TCL_ERROR;
+
+        } else if (v >= minValue && v <= maxValue) {
+            /*
+             * The default value was in range.
+             */
+            if (value != NULL) {
+                Ns_Log(Warning, "ns_config: provided value '%s' is out of range, fall back to default value '%s'",
+                       value, Tcl_GetString(defObj));
+            }
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(v));
+            return TCL_OK;
         }
-        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(v));
-    } else {
-        /*
-         * The default value was out of range.
-         */
-        Ns_TclPrintfResult(interp, "value '%s' out of range", value != NULL ? value : Tcl_GetString(defObj));
-        result = TCL_ERROR;
     }
-    return result;
+    /*
+     * The default value was out of range.
+     */
+    Ns_TclPrintfResult(interp, "value '%s' out of range", value != NULL ? value : Tcl_GetString(defObj));
+    return TCL_ERROR;
 }
 
 /*
