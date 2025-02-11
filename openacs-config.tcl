@@ -847,7 +847,7 @@ ns_section ns/server/$server/httpclient {
     # Configure log file for outgoing ns_http requests
     #
     #ns_param	logging		on       ;# default: off
-    #ns_param	logfile		${logdir}/httpclient.log
+    #ns_param	logfile		httpclient.log
     #ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
     #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
     #ns_param	logroll		true     ;# true, should server log files automatically
@@ -991,7 +991,7 @@ ns_section ns/server/$server/module/nslog {
     #
     # General parameters for access.log
     #
-    ns_param	file			${logdir}/access.log
+    ns_param	file			access.log
     # ns_param	maxbuffer		100	;# 0, number of logfile entries to keep in memory before flushing to disk
     #
     # Control what to log
@@ -1319,7 +1319,7 @@ ns_section "ns/server/${server}/module/nssmtpd" {
     #ns_param ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
 
     ns_param logging on ;# default: off
-    ns_param logfile ${logdir}/smtpsend.log
+    ns_param logfile smtpsend.log
     ns_param logrollfmt %Y-%m-%d ;# format appended to log filename
     #ns_param logmaxbackup 100 ;# 10, max number of backup log files
     #ns_param logroll true ;# true, should server log files automatically

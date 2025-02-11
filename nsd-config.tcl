@@ -111,7 +111,7 @@ ns_section ns/parameters {
     #
     # Log settings (systemlog aka error.log)
     #
-    ns_param    serverlog           $logdir/error.log
+    ns_param    serverlog           error.log
     #ns_param   logdebug            true     ;# default: false
     #ns_param   logroll             false    ;# default: true
     #ns_param	logrollfmt          %Y-%m-%d ;# format appended to log filename
@@ -520,7 +520,7 @@ ns_section ns/server/default/httpclient {
     # Configure log file for outgoing ns_http requests
     #
     #ns_param	logging		on       ;# default: off
-    #ns_param	logfile		${logdir}/httpclient.log
+    #ns_param	logfile		httpclient.log
     #ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
     #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
     #ns_param	logroll		true     ;# true, should server log files automatically
@@ -554,7 +554,7 @@ ns_section ns/interps/CGIinterps {
 }
 
 ns_section ns/server/default/module/nslog {
-    ns_param   file                 $logdir/access.log
+    ns_param   file                 access.log
     #ns_param   rolllog             true     ;# default: true; should server log files automatically
     #ns_param   rollonsignal        false    ;# default: false; perform roll on a sighup
     #ns_param   rollhour            0        ;# default: 0; specify at which hour to roll
