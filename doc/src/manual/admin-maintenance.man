@@ -357,6 +357,26 @@ To further enhance security, consider the following recommendations:
        using the [term nsstats] module or external tools (e.g., Munin)
        to detect bottlenecks and ensure availability.
 
+[item] For high security web sites, do no reveal the server
+       implementation and the version information. You might
+       deactivate this information per server in the
+       configuration file:
+
+[example_begin]
+ ns_section ns/server/$server {
+   ...
+   #
+   # Configuration of HTTP responses
+   #
+   ns_param noticedetail false		  ;# include server signature in ns_returnnotice commands (errors, redirects, ...)
+   ns_param noticeadp    returnnotice.adp ;# ADP file for ns_returnnotice commands (errors, redirects, ...)
+   ns_param stealthmode  true             ;# omit "Server:" header field in responses
+ }
+[example_end]
+
+[item] Scan you site regularly with
+       [uri https://owasp.org/www-community/Vulnerability_Scanning_Tools "Vulnerability Scanning Tools"].
+
 [list_end]
 
 
