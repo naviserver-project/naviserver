@@ -2476,7 +2476,7 @@ test http-8.5.1 {ns_http queue + done_callback + timeout} -constraints {serverLi
 } -cleanup {
     ns_unregister_op GET /slow
     nsv_unset result
-} -result -match glob {1 {http request timeout after *}}
+} --match glob result {1 {http request timeout after *}}
 
 test http-9.0 {GET for static compressed file via fastpath} -constraints {serverListen} -body {
     nstest::http \
