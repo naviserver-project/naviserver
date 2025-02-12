@@ -228,7 +228,7 @@ Default implementation: [cmd ::revproxy::rewrite_url]
 [example_begin]
  nsf::proc ::revproxy::rewrite_url { -target -url {-query ""} {-fragment ""}} {
    #
-   # Transforms an incoming URL and query into an URL used for the
+   # Transforms an incoming URL and query into a URL used for the
    # backend system.
    #
    # Parameters:
