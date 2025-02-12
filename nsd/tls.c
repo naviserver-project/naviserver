@@ -688,49 +688,47 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
 
     if (OCSP_id_get0_info(NULL, NULL, NULL, &pserial, id) != 0) {
         Tcl_DString outputBuffer;
+        struct stat fileInfo;
+        const char *fileName;
 
         Tcl_DStringInit(&outputBuffer);
         Tcl_DStringSetLength(&outputBuffer, (TCL_SIZE_T)(pserial->length*2 + 1));
 
         Ns_HexString(pserial->data, outputBuffer.string, (TCL_SIZE_T)pserial->length, NS_TRUE);
-        {
-            struct stat fileInfo;
-            const char *fileName;
 
-            /*
-             * A result of TCL_CONTINUE or TCL_OK implies a computed filename
-             * of the cache file in dsPtr;
-             */
-            Tcl_DStringAppend(&outputBuffer, ".der", 4);
-            fileName = Ns_MakePath(dsPtr, nsconf.logDir, outputBuffer.string, (char *)0L);
-            result = TCL_CONTINUE;
+        /*
+         * A result of TCL_CONTINUE or TCL_OK implies a computed filename
+         * of the cache file in dsPtr;
+         */
+        Tcl_DStringAppend(&outputBuffer, ".der", 4);
+        fileName = Ns_MakePath(dsPtr, nsconf.logDir, outputBuffer.string, (char *)0L);
+        result = TCL_CONTINUE;
 
-            if (Ns_Stat(dsPtr->string, &fileInfo)) {
-                BIO *derbio;
+        if (Ns_Stat(dsPtr->string, &fileInfo)) {
+            BIO *derbio;
 
-                /*fprintf(stderr, "... file %s exists (%ld bytes)\n",
-                  fileName, (long)fileInfo.st_size);*/
-                Ns_Log(Notice, "OCSP cache file exists: %s", fileName);
+            /*fprintf(stderr, "... file %s exists (%ld bytes)\n",
+              fileName, (long)fileInfo.st_size);*/
+            Ns_Log(Notice, "OCSP cache file exists: %s", fileName);
 
-                derbio = BIO_new_file(fileName, "rb");
-                if (derbio == NULL) {
-                    Ns_Log(Warning, "cert_status: Cannot open OCSP response file: %s", fileName);
+            derbio = BIO_new_file(fileName, "rb");
+            if (derbio == NULL) {
+                Ns_Log(Warning, "cert_status: Cannot open OCSP response file: %s", fileName);
 
-                } else {
-
-                    *resp = d2i_OCSP_RESPONSE_bio(derbio, NULL);
-                    BIO_free(derbio);
-
-                    if (*resp == NULL) {
-                        Ns_Log(Warning, "cert_status: Error reading OCSP response file: %s", fileName);
-                    } else if (OCSP_ResponseIsValid(*resp, id)) {
-                        result = TCL_OK;
-                    }
-                }
             } else {
-                Ns_Log(Warning, "OCSP cache file does not exist: %s", fileName);
-                result = TCL_CONTINUE;
+
+                *resp = d2i_OCSP_RESPONSE_bio(derbio, NULL);
+                BIO_free(derbio);
+
+                if (*resp == NULL) {
+                    Ns_Log(Warning, "cert_status: Error reading OCSP response file: %s", fileName);
+                } else if (OCSP_ResponseIsValid(*resp, id)) {
+                    result = TCL_OK;
+                }
             }
+        } else {
+            Ns_Log(Warning, "OCSP cache file does not exist: %s", fileName);
+            result = TCL_CONTINUE;
         }
         Tcl_DStringFree(&outputBuffer);
 
