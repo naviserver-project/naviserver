@@ -900,8 +900,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     if (mode != 'c' && mode != 'f') {
-        const char *logfileName = Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "serverlog", "nsd.log");
-        Ns_Log(Notice, "Continue system log via file: %s", logfileName);
         NsLogOpen();
     }
 

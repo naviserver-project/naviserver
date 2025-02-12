@@ -444,7 +444,8 @@ NsConfigLog(void)
  *
  * Ns_InfoErrorLog --
  *
- *      Returns the filename of the log file.
+ *      Returns the filename of the system log file.
+ *      FIXME: It should be: Ns_InfoSystemLog or Ns_InfoServerLog
  *
  * Results:
  *      Log filename or NULL if none.
@@ -1670,9 +1671,9 @@ NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  * Ns_LogRoll --
  *
  *      Function and signal handler for SIGHUP which will roll the
- *      system log (e.g. "error.log" or stderr). When NaviServer is
- *      logging to stderr (when e.g. started with -f) no rolling will
- *      be performed. The function returns potentially errors from
+ *      system log (e.g. "nsd.log". When NaviServer is logging to
+ *      stderr (when e.g. started with -f) no rolling will be
+ *      performed. The function returns potential errors from
  *      opening the file named by logfileName as result.
  *
  * Results:
@@ -1689,7 +1690,8 @@ Ns_LogRoll(void)
 {
     Ns_ReturnCode status;
 
-    Ns_Log(Notice, "Ns_LogRoll called, logfileName '%s' logOpenCalled %d", logfileName, logOpenCalled);
+    Ns_Log(Notice, "Ns_LogRoll called, logfileName '%s' logOpenCalled %d",
+           (logfileName != NULL) ? logfileName : "NULL", logOpenCalled);
 
     if (logfileName != NULL && logOpenCalled) {
         status = Ns_RollFileCondFmt(LogOpen, LogClose, NULL,
@@ -1729,8 +1731,10 @@ NsLogOpen(void)
      */
 
     if (LogOpen(NULL) != NS_OK) {
-        Ns_Fatal("log: failed to open server log '%s': '%s'",
-                 logfileName, strerror(errno));
+        int ecode = logfileName != NULL ? errno : ENOENT;
+
+        Ns_Fatal("log: failed to open system log file '%s': '%s'",
+                 logfileName != NULL ? logfileName : "NULL", strerror(ecode));
     }
     if ((flags & LOG_ROLL) != 0u) {
         Ns_Callback *proc = (Ns_Callback *)(ns_funcptr_t)Ns_LogRoll;
@@ -1771,36 +1775,45 @@ LogOpen(void *UNUSED(arg))
     oflags |= O_LARGEFILE;
 #endif
 
-    fd = ns_open(logfileName, (int)oflags, 0644);
-    if (fd == NS_INVALID_FD) {
-        Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
-               logfileName, strerror(errno));
+    if (logfileName == NULL) {
+        Ns_Log(Error, "log: undefined system log file");
         status = NS_ERROR;
     } else {
-
-        /*
-         * Route stderr to the file
-         */
-        if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
+        fd = ns_open(logfileName, (int)oflags, 0644);
+        if (fd == NS_INVALID_FD) {
+            Ns_Log(Error, "log: failed to open system log file '%s': '%s'",
+                   logfileName, strerror(errno));
             status = NS_ERROR;
-        }
 
-        /*
-         * Route stdout to the file
-         */
-        if (ns_dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
-            Ns_Log(Error, "log: failed to route stdout to file: '%s'",
-                   strerror(errno));
-            status = NS_ERROR;
-        }
+        } else {
 
-        /*
-         * Clean up dangling 'open' reference to the fd
-         */
-        if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-            (void) ns_close(fd);
+            /*
+             * Route stderr to the file
+             */
+            if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
+                status = NS_ERROR;
+            }
+
+            /*
+             * Route stdout to the file
+             */
+            if (ns_dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
+                Ns_Log(Error, "log: failed to route stdout to file: '%s'",
+                       strerror(errno));
+                status = NS_ERROR;
+            }
+
+            /*
+             * Clean up dangling 'open' reference to the fd
+             */
+            if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
+                (void) ns_close(fd);
+            }
+
+            Ns_Log(Notice, "log: continue system log via file: %s", logfileName);
         }
     }
+
     return status;
 }
 
