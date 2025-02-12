@@ -1328,7 +1328,7 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr, &status);
 
         if (sock == NS_INVALID_SOCKET) {
-            Ns_SockConnectError(interp, host, portNr, status);
+            Ns_SockConnectError(interp, host, portNr, status, timeoutPtr);
             result = TCL_ERROR;
 
         } else {

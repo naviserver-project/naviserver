@@ -3088,7 +3088,8 @@ Ns_SockTimedConnect2(const char *host, unsigned short port,
 NS_EXTERN void
 Ns_SockConnectError(Tcl_Interp *interp,
                     const char *host, unsigned short portNr,
-                    Ns_ReturnCode status)
+                    Ns_ReturnCode status,
+                    const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode

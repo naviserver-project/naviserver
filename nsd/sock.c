@@ -1293,21 +1293,28 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
 
 void
 Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
-                    Ns_ReturnCode status)
+                    Ns_ReturnCode status, const Ns_Time *timeoutPtr)
 {
     bool haveResult = (*(Tcl_GetStringResult(interp)) != '\0');
 
     NS_NONNULL_ASSERT(host != NULL);
 
     if (status == NS_TIMEOUT) {
-
+        /*
+         * When we have an NS_TIMEOUT, there must have been a timeout value,
+         * and "timeoutPtr" must not be NULL.
+         */
+        assert(timeoutPtr);
         /*
          * Watch: Ns_TclPrintfResult() destroys errorCode variable
          */
-        Ns_TclPrintfResult(interp, "timeout while connecting to %s port %hu",
-                           host, portNr);
+        Ns_TclPrintfResult(interp, "timeout while connecting to %s port %hu"
+                           " after " NS_TIME_FMT "s",
+                           host, portNr,
+                           (int64_t)timeoutPtr->sec, timeoutPtr->usec);
         Ns_Log(Ns_LogTimeoutDebug, "connect to %s port %hu runs into timeout",
                host, portNr);
+
         Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
 
     } else if (haveResult && portNr == 0) {

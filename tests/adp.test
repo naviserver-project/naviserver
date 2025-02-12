@@ -257,7 +257,7 @@ test adp-2.4 {ADP page with timed out ns_http request} -body {
     #
     #ns_logctl severity Debug(task) on
     nstest::http -timeout 2s -getbody 1 GET /http_nonexistent.adp
-} -returnCodes {ok return error} -match glob -result {000 {testcase NS_TIMEOUT: http request timeout}}
+} -returnCodes {ok return error} -match glob -result {000 {testcase NS_TIMEOUT: http request timeout after*}}
 
 test adp-2.5 {ADP page with timed out ns_http request followed by simple ADP page} -body {
     try {ns_http run -timeout .5s http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}

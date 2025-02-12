@@ -9285,7 +9285,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
         }
 
         if (sock == NS_INVALID_SOCKET) {
-            Ns_SockConnectError(interp, address, portNr, status);
+            Ns_SockConnectError(interp, address, portNr, status, timeoutPtr);
             result = TCL_ERROR;
 
         } else {

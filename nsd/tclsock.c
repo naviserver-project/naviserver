@@ -538,7 +538,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         }
 
         if (sock == NS_INVALID_SOCKET) {
-            Ns_SockConnectError(interp, host, port, status);
+            Ns_SockConnectError(interp, host, port, status, timeoutPtr);
             result = TCL_ERROR;
 
         } else {
