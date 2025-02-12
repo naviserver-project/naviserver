@@ -191,7 +191,7 @@ confiration file.
  ...
 [example_end]
 
- When larger modification are required, one can adapt the configration
+ When larger modification are required, one can adapt the configuration
  file to load e.g. further modules, fine tune the settings for
  configuration values which are not offered via command line
  configuration values.

@@ -63,14 +63,14 @@ It is recommended to use timestamp based filenames for logfile rolling (using. e
 day in the filename; see
 [uri ../../nslog/files/ns_accesslog.html "ns_accesslog"]). This
 has the advantage, that the filenames are stable, such that on a
-system-wide backup, the old logfile names are stable and do not required
-backups, whenever a the log files is rolled.
+system-wide backup, the old logfilenames are stable and do not required
+backups, whenever the log files is rolled.
 
 
 [subsection {Back Up the Server Log}]
 
 Regular backups are recommended to preserve this critical information,
-since the file often reveals intrusion attempts, or provdes
+since the file often reveals intrusion attempts, or provides
 information, when a certain behavior started, etc.
 
 Although the server log generally grows slowly on small sites, verbose
