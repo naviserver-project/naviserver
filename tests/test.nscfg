@@ -221,6 +221,7 @@ ns_section "ns/servers" {
     ns_param   test            "Main Test Server"
     ns_param   testvhost       "Virtual Host Test Server"
     ns_param   testvhost2      "Virtual Host Test Server with custom procs"
+    ns_param   testvhost3      "Virtual Host Test Server with special configuration options"
 }
 
 #
@@ -380,6 +381,7 @@ ns_section "ns/server/testvhost" {
     ns_param   enabletclpages  true
     ns_param   minthreads 1
     ns_param   maxthreads 3
+    ns_param   logdir logs-testvhost
 }
 ns_section "ns/server/testvhost/redirects" {
     #
@@ -433,6 +435,15 @@ ns_section "ns/server/testvhost2/tcl" {
     ns_param   initfile        ../nsd/init.tcl
     ns_param   library         [ns_config "test" home]/testserver/modules
 }
+
+#
+# Virtual Host Test Server with special configuration options
+#
+
+ns_section "ns/server/testvhost3" {
+    ns_param logdir /var/logs
+}
+
 
 
 #

@@ -2616,6 +2616,11 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 /*
+ * server.c
+ */
+NS_EXTERN const char * Ns_ServerLogDir(const char *server) NS_GNUC_PURE;
+
+/*
  * tclvar.c
  */
 

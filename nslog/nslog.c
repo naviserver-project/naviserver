@@ -154,7 +154,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Determine the name of the log file
      */
 
-    logPtr->filename = Ns_ConfigFilename(section, "file", 4, Ns_InfoLogPath(), "access.log");
+    logPtr->filename = Ns_ConfigFilename(section, "file", 4, Ns_ServerLogDir(server), "access.log");
     if (Ns_RequireDirectory(Ns_InfoLogPath()) != NS_OK) {
         Ns_Fatal("nslog: log directory '%s' could not be created", Ns_InfoLogPath());
     }

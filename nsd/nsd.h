@@ -839,6 +839,7 @@ typedef struct NsServer {
         bool modsince;
         bool stealthmode;
         bool noticedetail;
+        const char *logDir;
     } opts;
 
     /*

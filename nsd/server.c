@@ -277,6 +277,10 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->opts.noticedetail = Ns_ConfigBool(section, "noticedetail", NS_TRUE);
     servPtr->opts.stealthmode = Ns_ConfigBool(section, "stealthmode", NS_FALSE);
     servPtr->opts.noticeADP = Ns_ConfigString(section, "noticeadp", "returnnotice.adp");
+    servPtr->opts.logDir = Ns_ConfigGetValue(section, "logdir");
+    if (servPtr->opts.logDir != NULL) {
+        servPtr->opts.logDir = Ns_ConfigFilename(section, "logdir", 4, Ns_InfoLogPath(), servPtr->opts.logDir);
+    }
 
     if (Ns_PathIsAbsolute(servPtr->opts.noticeADP) == NS_FALSE
         && *servPtr->opts.noticeADP != '\0') {
@@ -589,6 +593,43 @@ CreatePool(NsServer *servPtr, const char *pool)
         Tcl_DStringFree(&ds);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ServerLogDir --
+ *
+ *      Returns the directory path where the server’s log files are stored.
+ *
+ *      If the provided NsServer pointer is NULL or its logDir field is not set,
+ *      this function returns the default log path obtained from Ns_InfoLogPath().
+ *      Otherwise, it returns the logDir value from the server structure.
+ *
+ * Parameters:
+ *      servPtr - Pointer to the NsServer structure representing the server.
+ *
+ * Results:
+ *      A pointer to a null-terminated string containing the log directory path.
+ *
+ * Side Effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_ServerLogDir(const char *server)
+{
+    const char *result;
+    NsServer *servPtr = NsGetServer(server);
+
+    if (servPtr == NULL || servPtr->opts.logDir == NULL) {
+        result = Ns_InfoLogPath();
+    } else {
+        result = servPtr->opts.logDir;
+    }
+    return result;
+}
+
 
 /*
  * Local Variables:

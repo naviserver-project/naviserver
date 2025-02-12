@@ -1473,6 +1473,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 #ifdef NS_WITH_DEPRECATED
         SKeepaliveIdx,
 #endif
+        SLogdirIdx,
         SMapIdx, SMappedIdx,
         SMaxthreadsIdx, SMinthreadsIdx,
         SPagedirIdx, SPoolRateLimitIdx, SPoolsIdx,
@@ -1494,6 +1495,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 #ifdef NS_WITH_DEPRECATED
         {"keepalive",           (unsigned int)SKeepaliveIdx},
 #endif
+        {"logdir",              (unsigned int)SLogdirIdx},
         {"map",                 (unsigned int)SMapIdx},
         {"mapped",              (unsigned int)SMappedIdx},
         {"maxthreads",          (unsigned int)SMaxthreadsIdx},
@@ -1533,6 +1535,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     if ((subcmd == SPoolsIdx
          || subcmd == SFiltersIdx
          || subcmd == SHostsIdx
+         || subcmd == SLogdirIdx
          || subcmd == SPagedirIdx
          || subcmd == SRequestprocsIdx
          || subcmd == SUrl2fileIdx
@@ -1671,6 +1674,14 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             Tcl_DStringInit(dsPtr);
             NsPageRoot(dsPtr, servPtr, NULL);
             Tcl_DStringResult(interp, dsPtr);
+        }
+        break;
+
+    case SLogdirIdx:
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ServerLogDir(servPtr->server), TCL_INDEX_NONE));
         }
         break;
 
