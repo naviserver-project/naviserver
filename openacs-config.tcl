@@ -789,6 +789,12 @@ ns_section ns/server/$server/httpclient {
     #ns_param	keepalive       5s       ;# default: 0s
 
     #
+    # Default timeout to be used, when ns_http is called without an
+    # explicit "-timeout" or "-expire" parameter.
+    #
+    #ns_param	defaultTimeout  5s       ;# default: 5s
+
+    #
     # If you wish to disable certificate validation for "ns_http" or
     # "ns_connchan" requests, set validateCertificates to false.
     # However, this is NOT recommended, as it significantly increases

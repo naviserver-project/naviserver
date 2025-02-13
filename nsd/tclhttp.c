@@ -759,6 +759,8 @@ NsInitHttp(NsServer *servPtr)
     section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", (char *)0L);
     Ns_ConfigTimeUnitRange(section, "keepalive",
                            "0s", 0, 0, INT_MAX, 0, &servPtr->httpclient.keepaliveTimeout);
+    Ns_ConfigTimeUnitRange(section, "defaulttimeout",
+                           "5s", 0, 0, INT_MAX, 0, &servPtr->httpclient.defaultTimeout);
 
     servPtr->httpclient.caFile = Ns_ConfigFilename(section, "cafile", 6, nsconf.home, "ca-bundle.crt");
     servPtr->httpclient.caPath = Ns_ConfigFilename(section, "capath", 6, nsconf.home, "certificates");
@@ -4131,7 +4133,7 @@ HttpConnect(
          * If no timeout given, assume 5 seconds.
          */
         Ns_ReturnCode rc;
-        Ns_Time       defaultTimout = {5, 0}, *toPtr = NULL, startTime;
+        Ns_Time      *toPtr = NULL, startTime;
 
         Ns_GetTime(&startTime);
         Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", u.host, portNr);
@@ -4150,7 +4152,7 @@ HttpConnect(
         } else if (expirePtr != NULL) {
             toPtr = expirePtr;
         } else {
-            toPtr = &defaultTimout;
+            toPtr = &httpPtr->servPtr->httpclient.defaultTimeout;
         }
         if (httpTunnel == NS_TRUE) {
             httpPtr->sock = HttpTunnel(itPtr, pHost, pPortNr, u.host, portNr, toPtr);

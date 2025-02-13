@@ -413,6 +413,7 @@ ns_section ns/server/default {
     #ns_param     noticeADP    returnnotice.adp ;# ADP file for ns_returnnotice commands (errors, redirects, ...)x
     #ns_param     noticedetail false ;# default: true; include server signature in ns_returnnotice commands (errors, redirects, ...)
     #ns_param     stealthmode  true  ;# default: false; omit server header field in all responses
+    #ns_param      logdir      /var/logs/default
 }
 
 ns_section ns/server/default/modules {
@@ -460,6 +461,12 @@ ns_section ns/server/default/httpclient {
     # The specified value determines how long connections remain open for reuse.
     #
     #ns_param	keepalive       5s       ;# default: 0s
+
+    #
+    # Default timeout to be used, when ns_http is called without an
+    # explicit "-timeout" or "-expire" parameter.
+    #
+    #ns_param	defaultTimeout  5s       ;# default: 5s
 
     #
     # If you wish to disable certificate validation for "ns_http" or

@@ -1025,13 +1025,13 @@ typedef struct NsServer {
         const char *logRollfmt;
         TCL_SIZE_T logMaxbackup;
         Ns_Time    keepaliveTimeout;
+        Ns_Time    defaultTimeout;
         const char *caFile;
         const char *caPath;
         const char *invalidCaPath;
         int  fd;
         bool logging;
         bool validateCertificates;
-
         int verbose_mode;
         int verify_depth;
         int always_continue;
