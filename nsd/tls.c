@@ -1669,10 +1669,8 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                 Ns_Log(Debug, "nsssl:X509_STORE_load_locations %d", rc);
             }
 #ifndef OPENSSL_NO_OCSP
-            Ns_Log(Notice, "nsssl: activate OCSP stapling for %s -> %d",
-                   section, Ns_ConfigBool(section, "ocspstapling", NS_FALSE));
-
             if (Ns_ConfigBool(section, "ocspstapling", NS_FALSE)) {
+                Ns_Log(Notice, "nsssl: activate OCSP stapling for %s", section);
 
                 memset(&sslCertStatusArg, 0, sizeof(sslCertStatusArg));
                 sslCertStatusArg.timeout = -1;
@@ -1683,6 +1681,8 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 
                 SSL_CTX_set_tlsext_status_cb(*ctxPtr, SSL_cert_statusCB);
                 SSL_CTX_set_tlsext_status_arg(*ctxPtr, &sslCertStatusArg);
+            } else {
+                Ns_Log(Notice, "nsssl: OCSP stapling for %s not activated", section);
             }
 #endif
 
