@@ -1215,7 +1215,7 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 When running complex pages with a deep call stack, increasing the
 default callstack might be necessary. In earlier versions of Tcl,
 exceeding the callstack lead to seemingly unexplainable crashes. But
-in general, this is not necessarily the failt of Tcl, since the
+in general, this is not necessarily the fault of Tcl, since the
 Operating System often reacts very harsh, when the callstack size is
 exceeded (for security reasons). The callstack is a per-thread
 figure. So when many threads are configured, then more callstack

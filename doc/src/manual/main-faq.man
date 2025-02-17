@@ -72,7 +72,7 @@ pull requests can be provided on this channel as well.
 
 
 We accept any form of patches via the source forge mailing list or via
-the GitHub respositories 
+the GitHub repositories
  [uri https://github.com/orgs/naviserver-project/repositories].
  
 [manpage_end]

@@ -75,7 +75,7 @@ information, when a certain behavior started, etc.
 
 Although the server log generally grows slowly on small sites, verbose
 logging (e.g., during debugging) can cause rapid expansion, especially
-when the tracffic is hight.  For keeping storage requirement low, use
+when the tracffic is high.  For keeping storage requirement low, use
 a timestamp based filenames for logfile rolling (see 
 [uri ../../naviserver/files/ns_log.html ns_log]).
 

@@ -112,7 +112,7 @@ the configuration file [const nsd.tcl].
 [para]
 
 Run in the foreground, using the configuration file [const nsd.tcl].
-This vairant is often used for testing, since the system log is shown
+This variant is often used for testing, since the system log is shown
 in the console such one sees quickly debugging output. The server can
 be quickly stopped by Ctr-C.
 
@@ -246,7 +246,7 @@ confiration file.
 
  This mode is intended for development use. In order to communicate at
  runtime of the server via a shell, use the [term nscp] module, or the
- optional [term nsshell] NaviServer module (available separtely from GitHub).
+ optional [term nsshell] NaviServer module (available separately from GitHub).
  
 
 
