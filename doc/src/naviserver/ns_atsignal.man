@@ -94,7 +94,7 @@ basically the last code to run.
 [list_end]
 
 
-[see_also ns_info ns_atclose ns_ictl ns_runonce ns_kill]
+[see_also ns_info ns_atclose ns_ictl ns_runonce ns_shutdown ns_kill]
 [keywords "global built-in" signals startup shutdown exit callback]
 
 [manpage_end]
