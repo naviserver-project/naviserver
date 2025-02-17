@@ -331,7 +331,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
         }
         Ns_Log(Notice, "rollfile: re-opening logfile '%s'", filename);
     } else {
-        Ns_Log(Warning, "rollfile: opening logfile failed: '%s'", filename);
+        Ns_Log(Warning, "rollfile: opening logfile '%s' failed: '%s'", filename, strerror(errno));
     }
 
     Tcl_DStringFree(&errorMsg);
