@@ -165,8 +165,11 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
         for (ii = 0; ii < cbPtr->argc; ii++) {
             Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
         }
+
         status = Tcl_EvalEx(interp, ds.string, ds.length, 0);
-        if (status != TCL_OK) {
+        /* Ns_Log(Notice, "??? Ns_TclEvalCallback -> %s", Ns_TclReturnCodeString(status));*/
+
+        if (status == TCL_ERROR) {
             Ns_DStringSetLength(&ds, 0);
             Ns_DStringAppend(&ds, "\n    while executing callback\n");
             Ns_GetProcInfo(&ds, (ns_funcptr_t)cbPtr->cbProc, cbPtr);
@@ -175,6 +178,9 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
                 (void) Ns_TclLogErrorInfo(interp, NULL);
             }
         } else if (resultDString != NULL) {
+            /*
+             * We can return the string result in the provided Tcl_DString.
+             */
             Ns_DStringAppend(resultDString, Tcl_GetStringResult(interp));
         }
         Ns_DStringFree(&ds);
