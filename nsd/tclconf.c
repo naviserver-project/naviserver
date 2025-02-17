@@ -117,8 +117,8 @@ GetIntFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defObj
  *
  * ReturnAllValues --
  *
- *      Helper functions for NsTclConfigObjCmd() to set the interpreter result
- *      to the first all all values of a Ns_DList structure, depending on the
+ *      Helper function for NsTclConfigObjCmd() to set the interpreter result
+ *      to the first or all values of an Ns_DList structure, depending on the
  *      "all" flag.
  *
  * Results:
