@@ -257,10 +257,10 @@ proc ns_permreload {} {
 init_nsperm
 
 #
-# Check, of the default administrator password from the source code
-# distribution is still in use. If so, provide a warning, that this
-# password must be changed. We could consider even more drastical
-# measures to abort the startup in the future.
+# Check if the default administrator password from the source code
+# distribution is still in use. If so, issue a warning that the password
+# must be changed. In the future, more drastic measures (such as aborting
+# startup) could be considered.
 #
 try {
     ns_perm checkpass nsadmin x
