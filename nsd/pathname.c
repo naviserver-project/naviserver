@@ -716,6 +716,9 @@ Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg)
         status = NS_ERROR;
     } else {
         servPtr->vhost.serverRootProc = proc;
+        if (servPtr->vhost.serverRootArg != NULL) {
+            Ns_TclFreeCallback(servPtr->vhost.serverRootArg);
+        }
         servPtr->vhost.serverRootArg = arg;
     }
 
