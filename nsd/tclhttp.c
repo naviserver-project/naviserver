@@ -762,9 +762,10 @@ NsInitHttp(NsServer *servPtr)
     Ns_ConfigTimeUnitRange(section, "defaulttimeout",
                            "5s", 0, 0, INT_MAX, 0, &servPtr->httpclient.defaultTimeout);
 
-    servPtr->httpclient.caFile = Ns_ConfigFilename(section, "cafile", 6, nsconf.home, "ca-bundle.crt", NS_TRUE);
-    servPtr->httpclient.caPath = Ns_ConfigFilename(section, "capath", 6, nsconf.home, "certificates", NS_TRUE);
-    servPtr->httpclient.invalidCaPath = Ns_ConfigFilename(section, "invalidcertificates", 6, nsconf.home, "invalid-certificates", NS_TRUE);
+    servPtr->httpclient.caFile = Ns_ConfigFilename(section, "cafile", 6, nsconf.home, "ca-bundle.crt", NS_FALSE, NS_TRUE);
+    servPtr->httpclient.caPath = Ns_ConfigFilename(section, "capath", 6, nsconf.home, "certificates", NS_FALSE, NS_TRUE);
+    servPtr->httpclient.invalidCaPath = Ns_ConfigFilename(section, "invalidcertificates", 6, nsconf.home, "invalid-certificates",
+                                                          NS_FALSE, NS_TRUE);
 
     if (!Ns_Stat(servPtr->httpclient.caFile, &statInfo)) {
         Ns_Log(Warning, "NsInitHttp: caFile '%s' does not exist", servPtr->httpclient.caFile);
@@ -828,7 +829,7 @@ NsInitHttp(NsServer *servPtr)
         Tcl_DStringAppend(&defaultLogFileName, servPtr->server, TCL_INDEX_NONE);
         Tcl_DStringAppend(&defaultLogFileName, ".log", 4);
         servPtr->httpclient.logFileName = Ns_ConfigFilename(section, "logfile", 7, nsconf.logDir,
-                                                            defaultLogFileName.string, NS_TRUE);
+                                                            defaultLogFileName.string, NS_FALSE, NS_TRUE);
         Tcl_DStringFree(&defaultLogFileName);
 
         servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(section, "logrollfmt"));

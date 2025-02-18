@@ -107,7 +107,7 @@ GetFile(void)
     const char *file;
     Tcl_Obj    *pathObj;
 
-    file = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS, "pidfile", 7, nsconf.logDir, "nsd.pid", NS_TRUE);
+    file = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS, "pidfile", 7, nsconf.logDir, "nsd.pid", NS_FALSE, NS_TRUE);
     pathObj = Tcl_NewStringObj(file, TCL_INDEX_NONE);
     ns_free((void*)file);
 

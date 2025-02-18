@@ -773,7 +773,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
     nsconf.logDir = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS,
                                       "logdir", 6,
-                                      nsconf.home, "logs", NS_FALSE);
+                                      nsconf.home, "logs", NS_FALSE, NS_FALSE);
     /*
      * Assure log directory is available since it is expected
      * from some subsystems (tclhttp, log, ...).

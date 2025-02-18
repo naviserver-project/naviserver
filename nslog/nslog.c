@@ -170,7 +170,8 @@ Ns_ModuleInit(const char *server, const char *module)
         const char *serverLogDir;
 
         serverLogDir = Ns_ServerLogDir(server);
-        logPtr->filename = Ns_ConfigFilename(section, "file", 4, serverLogDir, "access.log", NS_FALSE);
+        logPtr->filename = Ns_ConfigFilename(section, "file", 4, serverLogDir, "access.log",
+                                             NS_FALSE, NS_FALSE);
 
         Ns_Log(Notice, "?????? logfilename <%s> serverrootproc enabled %d", logPtr->filename,
                Ns_ServerRootProcEnabled(server));

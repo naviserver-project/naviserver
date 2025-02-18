@@ -712,7 +712,7 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
  */
 const char *
 Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, const char *directory, const char* defaultValue,
-                  bool update)
+                  bool normalizePath, bool update)
 {
     const char *value, *result;
 
@@ -729,6 +729,38 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, co
         Ns_MakePath(dsPtr, directory, value, NS_SENTINEL);
         pathLength = dsPtr->length;
         result = Ns_DStringExport(dsPtr);
+
+        if (normalizePath && strchr(result, INTCHAR('/')) != NULL) {
+            Tcl_Obj *pathObj, *normalizedPathObj;
+            /*
+             * The path contains a slash, it might be not normalized;
+             */
+            /*fprintf(stderr, "=== %s %s RAW    '%s'\n", section, key, value);*/
+
+            pathObj = Tcl_NewStringObj(result, pathLength);
+            Tcl_IncrRefCount(pathObj);
+
+            normalizedPathObj = Tcl_FSGetNormalizedPath(NULL, pathObj);
+            if (normalizedPathObj != NULL) {
+                /*
+                 * Normalization was successful, replace the string in
+                 * *pathPtr with the normalized string.
+                 *
+                 * The values returned by Ns_ConfigString() are the string
+                 * values from the ns_set. We do not want to free *pathPtr
+                 * here, but we overwrite it with a freshly allocated
+                 * string. When this function is used from other contexts,
+                 * not freeing the old value could be a potential memory
+                 * leak.
+                 *
+                 */
+                /*fprintf(stderr, "=== %s %s BEFORE '%s'\n", section, key, result);*/
+                ns_free((void*)result);
+                result = ns_strdup(Tcl_GetStringFromObj(normalizedPathObj, &pathLength));
+                /*fprintf(stderr, "=== %s %s NORMAL '%s'\n", section, key, result);*/
+            }
+            Tcl_DecrRefCount(pathObj);
+        }
 
         if (update) {
             Ns_Set     *set;

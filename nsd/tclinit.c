@@ -277,9 +277,11 @@ ConfigServerTcl(const char *server)
 
         section = Ns_ConfigSectionPath(&set, server, NULL, "tcl", NS_SENTINEL);
 
-        servPtr->tcl.library = Ns_ConfigFilename(section, "library", 7, nsconf.home, "modules/tcl", NS_TRUE);
-        initFileString = Ns_ConfigFilename(section, "initfile", 8, nsconf.home, "bin/init.tcl", NS_FALSE);
+        servPtr->tcl.library = Ns_ConfigFilename(section, "library", 7, nsconf.home, "modules/tcl",
+                                                 NS_TRUE, NS_TRUE);
 
+        initFileString = Ns_ConfigFilename(section, "initfile", 8, nsconf.home, "bin/init.tcl",
+                                           NS_TRUE, NS_FALSE);
         servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, TCL_INDEX_NONE);
         Tcl_IncrRefCount(servPtr->tcl.initfile);
         ns_free((char *)initFileString);

@@ -1136,7 +1136,8 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
 
 NS_EXTERN const char *
 Ns_ConfigFilename(const char *section, const char* key, TCL_SIZE_T keyLength,
-                  const char *directory, const char* defaultValue, bool update)
+                  const char *directory, const char* defaultValue,
+                  bool normalizePath, bool update)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 NS_EXTERN const char *
@@ -1551,8 +1552,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int statusCode, const char *mimeType, const cha
 
 #ifdef NS_WITH_DEPRECATED
 NS_EXTERN const char *
-Ns_PageRoot(const char *server)
-    NS_GNUC_DEPRECATED_FOR(Ns_PagePath);
+Ns_PageRoot(const char *server) NS_GNUC_DEPRECATED_FOR(Ns_PagePath);
 #endif
 
 NS_EXTERN bool

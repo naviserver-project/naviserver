@@ -861,7 +861,9 @@ typedef struct NsServer {
     struct {
         const char *serverdir;  /* Virtual server files path */
         const char *pagedir;    /* Path to public pages */
+#ifdef NS_WITH_DEPRECATED
         const char *pageroot;   /* Absolute path to public pages */
+#endif
         const char **dirv;
         const char *dirproc;
         const char *diradp;

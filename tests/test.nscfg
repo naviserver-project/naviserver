@@ -442,6 +442,8 @@ ns_section "ns/server/testvhost2/tcl" {
 
 ns_section "ns/server/testvhost3" {
     ns_param logdir /var/logs
+}
+ns_section "ns/server/testvhost3/tcl" {
     ns_param   initfile        ../nsd/init.tcl
 }
 
