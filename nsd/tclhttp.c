@@ -636,7 +636,7 @@ NewValidationException(const char *validationExceptionString)
             const char *key = Tcl_GetStringFromObj(ov[idx], &keyLength);
             const char *value = Tcl_GetString(ov[idx+1]);
 
-            Ns_Log(Debug, "..... validationException idx %d spec key '%s' value '%s'", idx, key, value);
+            Ns_Log(Debug, "..... validationException idx %ld spec key '%s' value '%s'", (long)idx, key, value);
             if (keyLength == 2 && strcasecmp(key, "ip") == 0) {
                 struct sockaddr *ipPtr   = (struct sockaddr *)&validationExceptionPtr->ip,
                                 *maskPtr = (struct sockaddr *)&validationExceptionPtr->mask;
