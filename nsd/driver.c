@@ -597,7 +597,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             section =  init->path;
             set = Ns_ConfigCreateSection(section);
         } else {
-            section = Ns_ConfigSectionPath(&set, server, module, (char *)0L);
+            section = Ns_ConfigSectionPath(&set, server, module, NS_SENTINEL);
         }
         assert(section != NULL);
 
@@ -758,7 +758,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
     if (isNew != 0) {
         Tcl_CreateHashEntry(&servPtr->hosts, host, &isNew);
 
-        (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
+        (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, NS_SENTINEL);
         mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
         if (likely(mapPtr != NULL)) {
             mapPtr->servPtr = servPtr;
@@ -826,7 +826,7 @@ void NsDriverMapVirtualServers(void)
         /*
          * Check for a "/servers" section for this driver module.
          */
-        section = Ns_ConfigSectionPath(NULL, NULL, moduleName, "servers", (char *)0L);
+        section = Ns_ConfigSectionPath(NULL, NULL, moduleName, "servers", NS_SENTINEL);
         serverMapSet = Ns_ConfigGetSection(section);
 
         if (serverMapSet == NULL || Ns_SetSize(serverMapSet) == 0u) {

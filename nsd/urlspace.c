@@ -1005,7 +1005,7 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
 
             Tcl_DStringInit(&elementDs);
             while (stack[depth] != NULL) {
-                Ns_DStringVarAppend(&elementDs, "/", stack[depth], (char *)0L);
+                Ns_DStringVarAppend(&elementDs, "/", stack[depth], NS_SENTINEL);
                 depth++;
             }
             Tcl_DStringAppendElement(&subDs, elementDs.string);

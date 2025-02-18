@@ -2240,34 +2240,34 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
          * Produce a fancy error message.
          */
         resultPtr = Tcl_NewObj();
-        Tcl_AppendStringsToObj(resultPtr, "bad ", msg, " \"", key, (char *)0L);
+        Tcl_AppendStringsToObj(resultPtr, "bad ", msg, " \"", key, NS_SENTINEL);
 
         entryPtr = tablePtr;
         if (entryPtr->key == NULL) {
             /*
              * The table is empty
              */
-            Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (char *)0L);
+            Tcl_AppendStringsToObj(resultPtr, "\": no valid options", NS_SENTINEL);
         } else {
             int count = 0;
             /*
              * The table has keys
              */
-            Tcl_AppendStringsToObj(resultPtr, "\": must be ", entryPtr->key, (char *)0L);
+            Tcl_AppendStringsToObj(resultPtr, "\": must be ", entryPtr->key, NS_SENTINEL);
             entryPtr++;
             while (entryPtr->key != NULL) {
                 if ((entryPtr+1)->key == NULL) {
                     Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : NS_EMPTY_STRING),
-                                           " or ", entryPtr->key, (char *)0L);
+                                           " or ", entryPtr->key, NS_SENTINEL);
                 } else {
-                    Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, (char *)0L);
+                    Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, NS_SENTINEL);
                     count++;
                 }
                 entryPtr++;
             }
         }
         Tcl_SetObjResult(interp, resultPtr);
-        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (char *)0L);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NS_SENTINEL);
     }
 
    return result;

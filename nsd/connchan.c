@@ -961,7 +961,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                                            "operation (" NS_TIME_FMT ")",
                                            connChanPtr->channelName,
                                            (int64_t)timeoutPtr->sec, timeoutPtr->usec);
-                        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                        Tcl_SetErrorCode(interp, "NS_TIMEOUT", NS_SENTINEL);
                         Ns_Log(Ns_LogTimeoutDebug, "connchan send on %s runs into timeout",
                                connChanPtr->channelName);
                         partialResult = -1;
@@ -1015,7 +1015,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                  */
                 Ns_TclPrintfResult(interp, "channel %s send operation failed: %s",
                                    connChanPtr->channelName, errorMsg);
-                Tcl_SetErrorCode(interp, "POSIX", Tcl_ErrnoId(), errorMsg, (char *)0L);
+                Tcl_SetErrorCode(interp, "POSIX", Tcl_ErrnoId(), errorMsg, NS_SENTINEL);
             }
 
             Ns_Log(Ns_LogConnchanDebug, "%s ### check result %ld == -1 || %ld == %ld "

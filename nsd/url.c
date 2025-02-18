@@ -719,17 +719,17 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
          * We have to use IP literal notation to avoid ambiguity of colon
          * (part of address or separator for port).
          */
-        Ns_DStringVarAppend(dsPtr, url.protocol, "://", url.host, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, url.protocol, "://", url.host, NS_SENTINEL);
     } else {
-        Ns_DStringVarAppend(dsPtr, url.protocol, "://[", url.host, "]", (char *)0L);
+        Ns_DStringVarAppend(dsPtr, url.protocol, "://[", url.host, "]", NS_SENTINEL);
     }
     if (url.port != NULL) {
-        Ns_DStringVarAppend(dsPtr, ":", url.port, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, ":", url.port, NS_SENTINEL);
     }
     if (*url.path == '\0') {
-        Ns_DStringVarAppend(dsPtr, "/", url.tail, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, "/", url.tail, NS_SENTINEL);
     } else {
-        Ns_DStringVarAppend(dsPtr, "/", url.path, "/", url.tail, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, "/", url.path, "/", url.tail, NS_SENTINEL);
     }
 done:
     Ns_DStringFree(&urlDs);

@@ -202,7 +202,7 @@ Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
     if (NsPageRoot(dsPtr, servPtr, NULL) == NULL) {
         status = NS_ERROR;
     } else {
-        (void) Ns_MakePath(dsPtr, url, (char *)0L);
+        (void) Ns_MakePath(dsPtr, url, NS_SENTINEL);
     }
 
     return status;
@@ -603,7 +603,7 @@ NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
     Ns_ReturnCode         status = NS_OK;
     const Ns_TclCallback *cbPtr = arg;
 
-    if (unlikely(Ns_TclEvalCallback(NULL, cbPtr, dsPtr, url, (char *)0L) != TCL_OK)) {
+    if (unlikely(Ns_TclEvalCallback(NULL, cbPtr, dsPtr, url, NS_SENTINEL) != TCL_OK)) {
         status = NS_ERROR;
     }
     return status;
@@ -639,8 +639,8 @@ NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
         ++url;
     }
     if (Ns_PathIsAbsolute(mPtr->basepath)) {
-        Ns_MakePath(dsPtr, mPtr->basepath, url, (char *)0L);
-    } else if (Ns_PagePath(dsPtr, mPtr->server, mPtr->basepath, url, (char *)0L) == NULL) {
+        Ns_MakePath(dsPtr, mPtr->basepath, url, NS_SENTINEL);
+    } else if (Ns_PagePath(dsPtr, mPtr->server, mPtr->basepath, url, NS_SENTINEL) == NULL) {
         status = NS_ERROR;
     }
 

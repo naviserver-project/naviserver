@@ -214,7 +214,7 @@ Ns_TclCallbackProc(void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
 
-    (void) Ns_TclEvalCallback(NULL, cbPtr, (Ns_DString *)NULL, (char *)0L);
+    (void) Ns_TclEvalCallback(NULL, cbPtr, (Ns_DString *)NULL, NS_SENTINEL);
 }
 
 

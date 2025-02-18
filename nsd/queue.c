@@ -1690,7 +1690,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             Tcl_DStringInit(dsPtr);
             Tcl_DStringInit(&scratch);
 
-            Ns_LogPath(dsPtr, servPtr->server, Ns_ServerPath(&scratch, servPtr->server, (char *)0L), "");
+            Ns_LogPath(dsPtr, servPtr->server, Ns_ServerPath(&scratch, servPtr->server, NS_SENTINEL), "");
             Tcl_DStringResult(interp, dsPtr);
             Tcl_DStringFree(&scratch);
         }
@@ -1702,7 +1702,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         } else {
             Tcl_DStringInit(dsPtr);
             if (effective) {
-                Ns_ServerPath(dsPtr, servPtr->server, (char *)0L);
+                Ns_ServerPath(dsPtr, servPtr->server, NS_SENTINEL);
             } else {
                 Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, TCL_INDEX_NONE);
             }

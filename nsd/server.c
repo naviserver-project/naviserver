@@ -265,7 +265,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         initPtr = initPtr->nextPtr;
     }
 
-    section = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, NULL, NS_SENTINEL);
 
     /*
      * Set some server options.
@@ -284,7 +284,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 
         Tcl_DStringInit(&ds);
         fileName = Ns_HomePath(&ds, "conf", "/",
-                               servPtr->opts.noticeADP, (char *)0L);
+                               servPtr->opts.noticeADP, NS_SENTINEL);
         servPtr->opts.noticeADP = ns_strcopy(fileName);
         Tcl_DStringFree(&ds);
     }
@@ -310,7 +310,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 
         Tcl_DStringInit(&ds);
         servPtr->opts.logDir = Ns_ConfigFilename(fromSection, "logdir", 6,
-                                                 Ns_ServerPath(&ds, server, (char *)0L),
+                                                 Ns_ServerPath(&ds, server, NS_SENTINEL),
                                                  servPtr->opts.logDir, NS_FALSE);
         Tcl_DStringFree(&ds);
         //Ns_Log(Notice, "??? serverlogdir NULL, path <%s>", servPtr->opts.logDir);
@@ -414,7 +414,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      */
 
     CreatePool(servPtr, NS_EMPTY_STRING);
-    set = Ns_ConfigGetSection(Ns_ConfigGetPath(server, NULL, "pools",  (char *)0L));
+    set = Ns_ConfigGetSection(Ns_ConfigGetPath(server, NULL, "pools",  NS_SENTINEL));
 
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         CreatePool(servPtr, Ns_SetKey(set, i));
@@ -502,7 +502,7 @@ CreatePool(NsServer *servPtr, const char *pool)
 
     if (*pool == '\0') {
         /* NB: Default options from pre-4.0 ns/server/server1 section. */
-        section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, (char *)0L);
+        section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, NS_SENTINEL);
         servPtr->pools.defaultPtr = poolPtr;
     } else {
         Ns_Set *set;
@@ -510,7 +510,7 @@ CreatePool(NsServer *servPtr, const char *pool)
         /*
          * Map requested method/URL's to this pool.
          */
-        section = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool,  (char *)0L);
+        section = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool,  NS_SENTINEL);
         set = Ns_ConfigGetSection2(section, NS_FALSE);
         for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
             const char *key = Ns_SetKey(set, i);

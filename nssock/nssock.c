@@ -69,7 +69,7 @@ Ns_ModuleInit(const char *server, const char *module)
     NS_NONNULL_ASSERT(module != NULL);
 
     memset(&init, 0, sizeof(init));
-    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
     drvCfgPtr = ns_malloc(sizeof(Config));
     drvCfgPtr->deferaccept = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
     drvCfgPtr->nodelay = Ns_ConfigBool(section, "nodelay", NS_TRUE);

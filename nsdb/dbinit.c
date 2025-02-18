@@ -652,7 +652,7 @@ NsDbInitPools(void)
             Ns_Log(Error, "dbinit: duplicate pool: %s", pool);
             continue;
         }
-        section = Ns_ConfigSectionPath(NULL, NULL, NULL, "db", "pool", pool, (char *)0L);
+        section = Ns_ConfigSectionPath(NULL, NULL, NULL, "db", "pool", pool, NS_SENTINEL);
         driver = Ns_ConfigGetValue(section, "driver");
         poolPtr = CreatePool(pool, section, driver);
         if (poolPtr == NULL) {
@@ -826,7 +826,7 @@ NsDbInitServer(const char *server)
     Ns_DString      ds;
     int             isNew;
 
-    section = Ns_ConfigSectionPath(NULL, server, NULL, "db", (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, NULL, "db", NS_SENTINEL);
 
     /*
      * Verify the default pool exists, if any.

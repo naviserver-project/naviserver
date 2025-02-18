@@ -1315,7 +1315,7 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
         Ns_Log(Ns_LogTimeoutDebug, "connect to %s port %hu runs into timeout",
                host, portNr);
 
-        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+        Tcl_SetErrorCode(interp, "NS_TIMEOUT", NS_SENTINEL);
 
     } else if (haveResult && portNr == 0) {
         /*
@@ -1338,7 +1338,7 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
         Tcl_AppendResult(interp,
                          (haveResult ? " - " : ""),
                          "can't connect to ", host, " port ", buf,
-                         ": ", err, (char *)0L);
+                         ": ", err, NS_SENTINEL);
     }
 }
 
@@ -2338,7 +2338,7 @@ Ns_PosixSetErrorCode(Tcl_Interp *interp, int errorNum) {
     Tcl_SetErrorCode(interp, "POSIX",
                      NsErrorCodeString(errorNum),
                      Tcl_ErrnoMsg(errorNum),
-                     (char *)0L);
+                     NS_SENTINEL);
     return errorMsg;
 }
 

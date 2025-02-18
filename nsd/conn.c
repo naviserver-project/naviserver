@@ -2817,7 +2817,7 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
         const char *errorMsg = Tcl_ErrnoMsg(Tcl_GetErrno());
 
         Ns_TclPrintfResult(interp, "flush returned error: %s", errorMsg);
-        Tcl_SetErrorCode(interp, "POSIX", Tcl_ErrnoId(), errorMsg, (char *)0L);
+        Tcl_SetErrorCode(interp, "POSIX", Tcl_ErrnoId(), errorMsg, NS_SENTINEL);
         result = TCL_ERROR;
 
     } else {
@@ -2861,7 +2861,7 @@ NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, const Ns_TclCallback *cbPtr)
     Tcl_Interp           *interp = Ns_GetConnInterp(conn);
     char                 *result;
 
-    if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0L) != TCL_OK) {
+    if (Ns_TclEvalCallback(interp, cbPtr, dest, NS_SENTINEL) != TCL_OK) {
         (void) Ns_TclLogErrorInfo(interp, "\n(context: location callback)");
         result =  NULL;
     } else {

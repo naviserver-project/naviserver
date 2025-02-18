@@ -162,7 +162,7 @@ NsConfUpdate(void)
         Ns_Set    *set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
         TCL_SIZE_T length;
 
-        (void)Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, (char *)0L);
+        (void)Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, NS_SENTINEL);
         length = ds.length;
         ns_free((void*)nsconf.tcl.sharedlibrary);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);

@@ -318,7 +318,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     } else {
         encoding = Ns_ConnGetEncoding(conn);
         charset = Ns_GetEncodingCharset(encoding);
-        Ns_DStringVarAppend(&ds, mimeType, "; charset=", charset, (char *)0L);
+        Ns_DStringVarAppend(&ds, mimeType, "; charset=", charset, NS_SENTINEL);
         mimeType = ds.string;
     }
 
@@ -486,7 +486,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
      */
     if (!servPtr->opts.stealthmode) {
         Ns_DStringVarAppend(dsPtr, "Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
-                            (char *)0L);
+                            NS_SENTINEL);
     }
     Ns_DStringNAppend(dsPtr, "Date: ", 6);
     (void)Ns_HttpTime(dsPtr, NULL);
@@ -544,7 +544,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
                     const char *lineBreak = strchr(value, INTCHAR('\n'));
 
                     if (lineBreak == NULL) {
-                        Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", (char *)0L);
+                        Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NS_SENTINEL);
                     } else {
                         Ns_DString sanitize, *sanitizePtr = &sanitize;
                         /*
@@ -572,7 +572,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 
                         Tcl_DStringAppend(sanitizePtr, value, TCL_INDEX_NONE);
 
-                        Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", (char *)0L);
+                        Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", NS_SENTINEL);
                         Ns_DStringFree(sanitizePtr);
                     }
                 }
@@ -788,7 +788,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                      "</head>\n<body>\n"
                      "<h2>");
     Ns_QuoteHtml(&ds, title);
-    Ns_DStringVarAppend(&ds, "</h2>\n", notice, "\n", (char *)0L);
+    Ns_DStringVarAppend(&ds, "</h2>\n", notice, "\n", NS_SENTINEL);
 
     /*
      * Detailed server information at the bottom of the page.
@@ -798,7 +798,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
         Ns_DStringVarAppend(&ds, "<p style='text-align: right; font-size: small; font-style: italic;'>",
                             Ns_InfoServerName(), "/",
                             Ns_InfoServerVersion(), " on ",
-                            (char *)0L);
+                            NS_SENTINEL);
         (void) Ns_ConnLocationAppend(conn, &ds);
         Ns_DStringAppend(&ds, "</p>\n");
     }
@@ -814,7 +814,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
         }
     }
 
-    Ns_DStringVarAppend(&ds, "\n</body></html>\n", (char *)0L);
+    Ns_DStringVarAppend(&ds, "\n</body></html>\n", NS_SENTINEL);
 
     result = Ns_ConnReturnCharData(conn, status, ds.string, (ssize_t)ds.length, "text/html");
     Ns_DStringFree(&ds);

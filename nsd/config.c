@@ -726,7 +726,7 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, co
 
         Tcl_DStringInit(dsPtr);
 
-        Ns_MakePath(dsPtr, directory, value, (char *)0L);
+        Ns_MakePath(dsPtr, directory, value, NS_SENTINEL);
         pathLength = dsPtr->length;
         result = Ns_DStringExport(dsPtr);
 

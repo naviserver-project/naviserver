@@ -280,7 +280,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         } else if (ns_sockioctl(sock, FIONREAD, &nread) != 0) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                    "ns_sockioctl failed: ",
-                                   Tcl_PosixError(interp), (char *)0L);
+                                   Tcl_PosixError(interp), NS_SENTINEL);
             result = TCL_ERROR;
 
         }
@@ -691,7 +691,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
 
         if (rc == -1) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "select failed: ",
-                                   Tcl_PosixError(interp), (char *)0L);
+                                   Tcl_PosixError(interp), NS_SENTINEL);
         } else {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
@@ -760,7 +760,7 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         if (ns_sockpair(socks) != 0) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                    "ns_sockpair failed:  ",
-                                   Tcl_PosixError(interp), (char *)0L);
+                                   Tcl_PosixError(interp), NS_SENTINEL);
             result = TCL_ERROR;
         } else if (EnterSock(interp, socks[0], listObj) != TCL_OK) {
             ns_sockclose(socks[1]);

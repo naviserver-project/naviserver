@@ -346,7 +346,7 @@ Ns_GetTemp(void)
 
             Ns_GetTime(&now);
             snprintf(buf, sizeof(buf), "nstmp." NS_TIME_FMT, (int64_t)now.sec, now.usec);
-            path = Ns_MakePath(&ds, P_tmpdir, buf, (char *)0L);
+            path = Ns_MakePath(&ds, P_tmpdir, buf, NS_SENTINEL);
 #ifdef _WIN32
             fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);
 #else

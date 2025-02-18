@@ -756,7 +756,7 @@ NsInitHttp(NsServer *servPtr)
 
     NS_INIT_ONCE(InitOnceHttp);
 
-    section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", NS_SENTINEL);
     Ns_ConfigTimeUnitRange(section, "keepalive",
                            "0s", 0, 0, INT_MAX, 0, &servPtr->httpclient.keepaliveTimeout);
     Ns_ConfigTimeUnitRange(section, "defaulttimeout",
@@ -1393,7 +1393,7 @@ Ns_HttpLocationString(
     NS_NONNULL_ASSERT(hostString != NULL);
 
     if (protoString != NULL) {
-        Ns_DStringVarAppend(dsPtr, protoString, "://", (char *)0L);
+        Ns_DStringVarAppend(dsPtr, protoString, "://", NS_SENTINEL);
     }
     if (port == 0 && defPort == 0) {
         /*
@@ -1401,12 +1401,12 @@ Ns_HttpLocationString(
          * the host header field), and all we have to do is to prepend the
          * protocol prefix.
          */
-        Ns_DStringVarAppend(dsPtr, hostString, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, hostString, NS_SENTINEL);
     } else {
         if (strchr(hostString, INTCHAR(':')) != NULL) {
-            Ns_DStringVarAppend(dsPtr, "[", hostString, "]", (char *)0L);
+            Ns_DStringVarAppend(dsPtr, "[", hostString, "]", NS_SENTINEL);
         } else {
-            Ns_DStringVarAppend(dsPtr, hostString, (char *)0L);
+            Ns_DStringVarAppend(dsPtr, hostString, NS_SENTINEL);
         }
         if (port != defPort) {
             (void) Ns_DStringPrintf(dsPtr, ":%d", port);
@@ -1858,7 +1858,7 @@ HttpWaitObjCmd(
             HttpCancel(httpPtr);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, TCL_INDEX_NONE));
             if (rc == NS_TIMEOUT) {
-                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
                 Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout",
                        httpPtr->url);
                 HttpClientLogWrite(httpPtr, "tasktimeout");
@@ -3378,7 +3378,7 @@ HttpGetResult(
          */
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
             Ns_Log(Debug, "... setting errorCode to NS_SOCK_TIMEOUT");
-            Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+            Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
         }
         /*
          * "-partialresults" returns whatever we have (including the dict
@@ -4224,7 +4224,7 @@ HttpConnect(
                     if (rc == NS_TIMEOUT) {
                         Ns_TclPrintfResult(interp, "timeout waiting for writable socket");
                         HttpClientLogWrite(httpPtr, "writetimeout");
-                        Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                        Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
                     } else {
                         Ns_TclPrintfResult(interp, "waiting for writable socket: %s",
                                            ns_sockstrerror(ns_sockerrno));
@@ -4260,7 +4260,7 @@ HttpConnect(
 
                             Ns_GetTime(&httpPtr->etime);
                             HttpClientLogWrite(httpPtr, "tlssetuptimeout");
-                            Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                            Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
                             goto fail;
                         } else {
                             Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect remaining timeout " NS_TIME_FMT,
@@ -4285,7 +4285,7 @@ HttpConnect(
                                                    (int64_t)toPtr->sec, toPtr->usec);
                                 Ns_GetTime(&httpPtr->etime);
                                 HttpClientLogWrite(httpPtr, "tlsconnecttimeout");
-                                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                                Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
                                 goto fail;
 
                             } else if (rc == NS_ERROR) {
@@ -4392,7 +4392,7 @@ HttpConnect(
      * Optionally, add our own Host header
      */
     if (keepHostHdr == NS_FALSE) {
-        (void)Ns_DStringVarAppend(dsPtr, hostHeader, ": ", (char *)0L);
+        (void)Ns_DStringVarAppend(dsPtr, hostHeader, ": ", NS_SENTINEL);
         (void)Ns_HttpLocationString(dsPtr, NULL, u.host, portNr, defPortNr);
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
     }
@@ -6582,7 +6582,7 @@ HttpTunnel(
             if (rc == NS_TIMEOUT) {
                 Ns_GetTime(&httpPtr->etime);
                 HttpClientLogWrite(httpPtr, "connecttimeout");
-                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
             }
             goto fail;
         }
@@ -6596,7 +6596,7 @@ HttpTunnel(
                 Ns_TclPrintfResult(interp, "timeout waiting for writable socket");
                 Ns_GetTime(&httpPtr->etime);
                 HttpClientLogWrite(httpPtr, "writetimeout");
-                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
             } else {
                 Ns_TclPrintfResult(interp, "waiting for writable socket: %s",
                                    ns_sockstrerror(ns_sockerrno));

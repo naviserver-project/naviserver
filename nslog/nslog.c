@@ -150,7 +150,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Tcl_DStringInit(&logPtr->buffer);
 
-    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
 
     {
         Tcl_DStringInit(&ds);
@@ -158,7 +158,7 @@ Ns_ModuleInit(const char *server, const char *module)
                Ns_ServerRootProcEnabled(server),
                logPtr->fd,
                server,
-               Ns_ServerPath(&ds, server, (char *)0L),
+               Ns_ServerPath(&ds, server, NS_SENTINEL),
                Ns_ServerLogDir(server));
         Tcl_DStringSetLength(&ds, 0);
     }
@@ -630,7 +630,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             if (filepath != NULL) {
                 Tcl_DStringInit(&ds);
                 if (Ns_PathIsAbsolute(filepath) == NS_FALSE) {
-                    Ns_HomePath(&ds, filepath, (char *)0L);
+                    Ns_HomePath(&ds, filepath, NS_SENTINEL);
                     strarg = ds.string;
                 } else {
                     strarg = filepath;
@@ -855,11 +855,11 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     if (Ns_ServerRootProcEnabled(server)) {
         Tcl_DString scratch;
-        const char *section = Ns_ConfigSectionPath(NULL, server, logPtr->module, (char *)0L);
+        const char *section = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
         const char *filename = Ns_ConfigGetValue(section, "file"), *fullFilename;
 
         Tcl_DStringInit(&scratch);
-        fullFilename = Ns_LogPath(&scratch, server, Ns_ServerPath(dsPtr, server, (char *)0L), filename);
+        fullFilename = Ns_LogPath(&scratch, server, Ns_ServerPath(dsPtr, server, NS_SENTINEL), filename);
         fd = Ns_ServerLogGetFd(server, fullFilename);
         Tcl_DStringFree(&scratch);
         Tcl_DStringSetLength(dsPtr, 0);

@@ -257,7 +257,7 @@ ConfigServerEncodings(const char *server)
          * Configure the encoding used in the request URL.
          */
 
-        section = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
+        section = Ns_ConfigSectionPath(NULL, server, NULL, NS_SENTINEL);
 
         servPtr->encoding.urlCharset =
             ns_strcopy(Ns_ConfigString(section, "urlcharset", "utf-8"));

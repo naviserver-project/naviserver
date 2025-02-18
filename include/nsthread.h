@@ -704,6 +704,7 @@ typedef int ns_sockerrno_t;
 # endif
 #endif
 
+#define NS_SENTINEL (char *)0L
 
 #ifdef HAVE_IPV6
 # define NS_IP_LOOPBACK      "::1"

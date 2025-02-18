@@ -1138,9 +1138,9 @@ NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 
         Ns_DStringInit(&ds);
         if (moduleString != NULL) {
-            (void)Ns_MakePath(&ds, lib, moduleString, (char *)0L);
+            (void)Ns_MakePath(&ds, lib, moduleString, NS_SENTINEL);
         } else {
-            (void)Ns_MakePath(&ds, lib, (char *)0L);
+            (void)Ns_MakePath(&ds, lib, NS_SENTINEL);
         }
         Tcl_DStringResult(interp, &ds);
     }

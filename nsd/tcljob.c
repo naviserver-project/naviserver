@@ -741,7 +741,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
                                                           &queue->lock, &timeout);
                 if (timedOut == NS_TIMEOUT) {
                     Ns_TclPrintfResult(interp, "Wait timed out.");
-                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", NS_SENTINEL);
                     Ns_Log(Ns_LogTimeoutDebug, "ns_job %s runs into timeout: %s",
                            jobIdString, Tcl_DStringValue(&jobPtr->script));
 
@@ -782,7 +782,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
             result = jobPtr->code;
             if (result == TCL_ERROR) {
                 if (jobPtr->errorCode != NULL) {
-                    Tcl_SetErrorCode(interp, jobPtr->errorCode, (char *)0L);
+                    Tcl_SetErrorCode(interp, jobPtr->errorCode, NS_SENTINEL);
                 }
                 if (jobPtr->errorInfo != NULL) {
                     Tcl_AddObjErrorInfo(interp, "\n", 1);
@@ -972,7 +972,7 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                 if (timedOut == NS_TIMEOUT) {
                     Job *jobPtr = Tcl_GetHashValue(hPtr);
 
-                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", NS_SENTINEL);
                     Ns_Log(Ns_LogTimeoutDebug, "ns_job %s runs into timeout: %s",
                            Tcl_DStringValue(&jobPtr->id), Tcl_DStringValue(&jobPtr->script));
 
@@ -1640,7 +1640,7 @@ static int
 JobAbort(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(code))
 {
     if (interp != NULL) {
-        Tcl_SetErrorCode(interp, "ECANCEL", (char *)0L);
+        Tcl_SetErrorCode(interp, "ECANCEL", NS_SENTINEL);
         Ns_TclPrintfResult(interp, "Job cancelled.");
     } else {
         Ns_Log(Warning, "ns_job: job cancelled");

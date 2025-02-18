@@ -1436,7 +1436,7 @@ MakePath(const char *file)
              * Make sure we have valid path on all platforms
              */
             obj = Tcl_NewStringObj(nsconf.nsd, (TCL_SIZE_T)(str - nsconf.nsd));
-            Tcl_AppendStringsToObj(obj, "/", file, (char *)0L);
+            Tcl_AppendStringsToObj(obj, "/", file, NS_SENTINEL);
 
             Tcl_IncrRefCount(obj);
             if (Tcl_FSGetNormalizedPath(NULL, obj) != NULL) {

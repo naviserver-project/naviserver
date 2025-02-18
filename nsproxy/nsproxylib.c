@@ -410,7 +410,7 @@ Nsproxy_LibInit(void)
         Nsd_LibInit();
 
         Tcl_DStringInit(&defexec);
-        Ns_BinPath(&defexec, NSPROXY_HELPER, (char *)0L);
+        Ns_BinPath(&defexec, NSPROXY_HELPER, NS_SENTINEL);
 
         Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
         Ns_RegisterAtShutdown(Shutdown, NULL);
@@ -2906,7 +2906,7 @@ GetPool(const char *poolName, const InterpData *idataPtr)
         } else {
             const char *exec, *section;
 
-            section = Ns_ConfigSectionPath(NULL, idataPtr->server, idataPtr->module, (char *)0L);
+            section = Ns_ConfigSectionPath(NULL, idataPtr->server, idataPtr->module, NS_SENTINEL);
             exec = Ns_ConfigGetValue(section, "exec");
             if (exec != NULL) {
                 SetOpt(exec, &poolPtr->exec);
@@ -4040,7 +4040,7 @@ ProxyError(Tcl_Interp *interp, Err err)
 
     NS_NONNULL_ASSERT(interp != NULL);
 
-    Tcl_SetErrorCode(interp, "NSPROXY", errCode[err], errMsg[err], sysmsg, (char *)0L);
+    Tcl_SetErrorCode(interp, "NSPROXY", errCode[err], errMsg[err], sysmsg, NS_SENTINEL);
 }
 
 /*

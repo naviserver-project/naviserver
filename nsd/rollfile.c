@@ -212,10 +212,10 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
             (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt,
                             (ptm0->tm_mday < ptm1->tm_mday) ? ptm0 : ptm1);
 
-            Ns_DStringVarAppend(&ds, file, ".", timeBuf, (char *)0L);
+            Ns_DStringVarAppend(&ds, file, ".", timeBuf, NS_SENTINEL);
         } else {
             Ns_Log(Warning, "RollFileFmt: localtime returned NULL");
-            Ns_DStringVarAppend(&ds, file, (char *)0L);
+            Ns_DStringVarAppend(&ds, file, NS_SENTINEL);
         }
 
         newPath = Tcl_NewStringObj(ds.string, ds.length);

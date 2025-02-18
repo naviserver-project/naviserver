@@ -170,12 +170,12 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 
         Ns_DStringInit(&ds);
         if (conn->request.method != NULL) {
-            Ns_DStringVarAppend(&ds, conn->request.method, " ", (char *)0L);
+            Ns_DStringVarAppend(&ds, conn->request.method, " ", NS_SENTINEL);
         }
         if (conn->request.url != NULL) {
-            Ns_DStringVarAppend(&ds, conn->request.url, ", ", (char *)0L);
+            Ns_DStringVarAppend(&ds, conn->request.url, ", ", NS_SENTINEL);
         }
-        Ns_DStringVarAppend(&ds, "PeerAddress: ", Ns_ConnPeerAddr(conn), (char *)0L);
+        Ns_DStringVarAppend(&ds, "PeerAddress: ", Ns_ConnPeerAddr(conn), NS_SENTINEL);
 
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {
@@ -185,7 +185,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
                 const char *value = Ns_SetIGet(conn->headers, *hdr);
 
                 if (value != NULL) {
-                    Ns_DStringVarAppend(&ds, ", ", *hdr, ": ", value, (char *)0L);
+                    Ns_DStringVarAppend(&ds, ", ", *hdr, ": ", value, NS_SENTINEL);
                 }
             }
         }

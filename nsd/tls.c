@@ -701,7 +701,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
          * of the cache file in dsPtr;
          */
         Tcl_DStringAppend(&outputBuffer, ".der", 4);
-        fileName = Ns_MakePath(dsPtr, nsconf.logDir, outputBuffer.string, (char *)0L);
+        fileName = Ns_MakePath(dsPtr, nsconf.logDir, outputBuffer.string, NS_SENTINEL);
         result = TCL_CONTINUE;
 
         if (Ns_Stat(dsPtr->string, &fileInfo)) {
@@ -2569,7 +2569,7 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
          */
         ERR_error_string_n(sslERRcode, errorBuf, sizeof(errorBuf));
 
-        Tcl_SetErrorCode(interp, "OPENSSL", errorBuf, (char *)0L);
+        Tcl_SetErrorCode(interp, "OPENSSL", errorBuf, NS_SENTINEL);
         errorMsg = ERR_reason_error_string(sslERRcode);
     }
 

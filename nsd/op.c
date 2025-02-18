@@ -505,7 +505,7 @@ Ns_RegisterProxyRequest(const char *server, const char *method, const char *prot
         Tcl_HashEntry  *hPtr;
 
         Ns_DStringInit(&ds);
-        Ns_DStringVarAppend(&ds, method, protocol, (char *)0L);
+        Ns_DStringVarAppend(&ds, method, protocol, NS_SENTINEL);
         regPtr = ns_malloc(sizeof(RegisteredProc));
         regPtr->refcnt = 1;
         regPtr->proc = proc;
@@ -557,7 +557,7 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
         Ns_DString     ds;
 
         Ns_DStringInit(&ds);
-        Ns_DStringVarAppend(&ds, method, protocol, (char *)0L);
+        Ns_DStringVarAppend(&ds, method, protocol, NS_SENTINEL);
         Ns_MutexLock(&servPtr->request.plock);
         hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
         if (hPtr != NULL) {
@@ -601,7 +601,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     servPtr = ((Conn *) conn)->poolPtr->servPtr;
 
     Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, conn->request.method, conn->request.protocol, (char *)0L);
+    Ns_DStringVarAppend(&ds, conn->request.method, conn->request.protocol, NS_SENTINEL);
     Ns_MutexLock(&servPtr->request.plock);
     hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
     if (hPtr != NULL) {

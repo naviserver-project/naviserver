@@ -314,7 +314,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
     Ns_DStringInit(&eds);
     if (args == NULL) {
         /* NB: exec specifies a complete cmd.exe command string. */
-        Ns_DStringVarAppend(&cds, cmd, " /c ", exec, (char *)0L);
+        Ns_DStringVarAppend(&cds, cmd, " /c ", exec, NS_SENTINEL);
         exec = NULL;
     } else {
         char *s;
@@ -429,7 +429,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
 
         for (i = 0u; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
-                                Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0L);
+                                Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NS_SENTINEL);
             Ns_DStringNAppend(&eds, NS_EMPTY_STRING, 1);
         }
         Ns_DStringNAppend(&eds, NS_EMPTY_STRING, 1);
@@ -611,7 +611,7 @@ Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 
     for (i = 0u; i < Ns_SetSize(env); ++i) {
         Ns_DStringVarAppend(dsPtr,
-                            Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0L);
+                            Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NS_SENTINEL);
         Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);
     }
     Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);

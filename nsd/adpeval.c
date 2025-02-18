@@ -145,7 +145,7 @@ ConfigServerAdp(const char *server)
     NsServer   *servPtr = NsGetServer(server);
     const char *section;
 
-    section = Ns_ConfigSectionPath(NULL, server, NULL, "adp", (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, NULL, "adp", NS_SENTINEL);
 
     /*
      * Initialize the page and tag tables and locks.
@@ -446,9 +446,9 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
 
     if (Ns_PathIsAbsolute(file) == NS_FALSE) {
         if (itPtr->adp.cwd == NULL) {
-            file = Ns_PagePath(&tmp, servPtr->server, file, (char *)0L);
+            file = Ns_PagePath(&tmp, servPtr->server, file, NS_SENTINEL);
         } else {
-            file = Ns_MakePath(&tmp, itPtr->adp.cwd, file, (char *)0L);
+            file = Ns_MakePath(&tmp, itPtr->adp.cwd, file, NS_SENTINEL);
         }
     }
     file = Ns_NormalizePath(&path, file);
@@ -1296,7 +1296,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len, int nscript)
             result = TCL_ERROR;
         } else {
             Ns_DStringSetLength(&ds, 0);
-            Ns_DStringVarAppend(&ds, "source ", debugfile, (char *)0L);
+            Ns_DStringVarAppend(&ds, "source ", debugfile, NS_SENTINEL);
             result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         }
         (void) ns_close(fd);

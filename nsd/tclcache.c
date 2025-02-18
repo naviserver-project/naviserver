@@ -1237,7 +1237,7 @@ CreateEntry(const NsInterp *itPtr, TclCache *cPtr, const char *key, int *newPtr,
     entry = Ns_CacheWaitCreateEntryT(cache, key, newPtr, timeoutPtr, transactionStackPtr);
     if (unlikely(entry == NULL)) {
         Ns_CacheUnlock(cache);
-        Tcl_SetErrorCode(itPtr->interp, "NS_TIMEOUT", (char *)0L);
+        Tcl_SetErrorCode(itPtr->interp, "NS_TIMEOUT", NS_SENTINEL);
         Ns_Log(Ns_LogTimeoutDebug, "cache entry creation for key '%s' runs into timeout", key);
 
         Ns_TclPrintfResult(itPtr->interp, "timeout waiting for concurrent update: %s", key);
@@ -1375,7 +1375,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *c
                 hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, (const void *)cacheName);
                 if (hPtr == NULL) {
                     Ns_TclPrintfResult(interp, "no such cache: %s", cacheName);
-                    Tcl_SetErrorCode(interp, "NS_CACHE", "LOOKUP", cacheName, (char *)0L);
+                    Tcl_SetErrorCode(interp, "NS_CACHE", "LOOKUP", cacheName, NS_SENTINEL);
                     result = TCL_ERROR;
                 } else {
                     *cPtrPtr = Tcl_GetHashValue(hPtr);
@@ -1388,7 +1388,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *c
                  * the cache.
                  */
                 Ns_TclPrintfResult(interp, "no server for cache %s", cacheName);
-                Tcl_SetErrorCode(interp, "NS_CACHE", "LOOKUP", cacheName, (char *)0L);
+                Tcl_SetErrorCode(interp, "NS_CACHE", "LOOKUP", cacheName, NS_SENTINEL);
                 result = TCL_ERROR;
             }
         } else {
@@ -1663,7 +1663,7 @@ CacheTransactionFinishPop(NsInterp *itPtr, Tcl_Obj *listObj, bool commit, unsign
             if (result != TCL_OK) {
 
                 Ns_TclPrintfResult(itPtr->interp, "no such cache: %s", cacheName);
-                Tcl_SetErrorCode(itPtr->interp, "NS_CACHE", "LOOKUP", cacheName, (char *)0L);
+                Tcl_SetErrorCode(itPtr->interp, "NS_CACHE", "LOOKUP", cacheName, NS_SENTINEL);
                 break;
             }
         }

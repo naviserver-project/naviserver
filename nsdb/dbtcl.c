@@ -1083,7 +1083,7 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
         result = TCL_ERROR;
     } else {
         const InterpData *idataPtr = clientData;
-        const char *section = Ns_ConfigSectionPath(NULL, idataPtr->server, NULL, "db", (char *)0L);
+        const char *section = Ns_ConfigSectionPath(NULL, idataPtr->server, NULL, "db", NS_SENTINEL);
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(section, TCL_INDEX_NONE));
     }

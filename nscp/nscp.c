@@ -124,7 +124,7 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
     NS_NONNULL_ASSERT(module != NULL);
 
     Tcl_InitHashTable(&localModPtr->users, TCL_STRING_KEYS);
-    (void) Ns_ConfigSectionPath(&set, server, module, "users", (char *)0L);
+    (void) Ns_ConfigSectionPath(&set, server, module, "users", NS_SENTINEL);
 
     /*
      * In case, no users are configured, and nscp is listening on the loopback
@@ -231,7 +231,7 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Create the listening socket and callback.
      */
-    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
     addr = Ns_ConfigString(section, "address", NS_IP_LOOPBACK);
     port = (unsigned short)Ns_ConfigInt(section, "port", 2080);
 
@@ -453,7 +453,7 @@ retry:
         if (Tcl_RecordAndEval(interp, ds.string, 0) != TCL_OK) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: nscp)");
         }
-        Tcl_AppendResult(interp, "\r\n", (char *)0L);
+        Tcl_AppendResult(interp, "\r\n", NS_SENTINEL);
         resultString = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &len);
         while (len > 0) {
             ssize_t sent = ns_send(sessPtr->sock, resultString, (size_t)len, 0);

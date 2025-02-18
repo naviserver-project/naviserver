@@ -783,7 +783,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseD
                 char      *value = Ns_SetValue(set, idx);
 
                 Ns_DStringInit(&ds);
-                Ns_DStringVarAppend(&ds, value, " ", line, (char *)0L);
+                Ns_DStringVarAppend(&ds, value, " ", line, NS_SENTINEL);
                 Ns_SetPutValueSz(set, idx, ds.string, ds.length);
                 Ns_DStringFree(&ds);
             }

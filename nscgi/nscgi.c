@@ -234,7 +234,7 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Config basic options.
      */
-    section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
+    section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
     modPtr = ns_calloc(1u, sizeof(Mod));
     modPtr->module = module;
     modPtr->server = server;
@@ -253,7 +253,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_DStringInit(&ds);
     subSection = Ns_ConfigGetValue(section, "interps");
     if (subSection != NULL) {
-        Ns_DStringVarAppend(&ds, "ns/interps/", subSection, (char *)0L);
+        Ns_DStringVarAppend(&ds, "ns/interps/", subSection, NS_SENTINEL);
         modPtr->interps = Ns_ConfigGetSection(ds.string);
         if (modPtr->interps == NULL) {
             Ns_Log(Warning, "nscgi: no such interps section: %s",
@@ -263,7 +263,7 @@ Ns_ModuleInit(const char *server, const char *module)
     }
     subSection = Ns_ConfigGetValue(section, "environment");
     if (subSection != NULL) {
-        Ns_DStringVarAppend(&ds, "ns/environment/", subSection, (char *)0L);
+        Ns_DStringVarAppend(&ds, "ns/environment/", subSection, NS_SENTINEL);
         modPtr->mergeEnv = Ns_ConfigGetSection(ds.string);
         if (modPtr->mergeEnv == NULL) {
             Ns_Log(Warning, "nscgi: no such environment section: %s",
@@ -924,7 +924,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     }
     Ns_DStringSetLength(dsPtr, 0);
     Ns_SetUpdateSz(cgiPtr->env, "GATEWAY_INTERFACE", 17, "CGI/1.1", 7);
-    Ns_DStringVarAppend(dsPtr, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), (char *)0L);
+    Ns_DStringVarAppend(dsPtr, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NS_SENTINEL);
     Ns_SetUpdateSz(cgiPtr->env, "SERVER_SOFTWARE", 15, dsPtr->string, dsPtr->length);
     Ns_DStringSetLength(dsPtr, 0);
     Ns_DStringPrintf(dsPtr, "HTTP/%2.1f", conn->request.version);
@@ -1565,7 +1565,7 @@ SetAppend(Ns_Set *set, int index, const char *sep, char *value)
 
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, Ns_SetValue(set, index),
-                        sep, value, (char *)0L);
+                        sep, value, NS_SENTINEL);
     Ns_SetPutValueSz(set, (size_t)index, ds.string, ds.length);
     Ns_DStringFree(&ds);
 }
