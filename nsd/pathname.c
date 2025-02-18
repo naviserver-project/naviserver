@@ -647,6 +647,91 @@ Ns_PagePath(Ns_DString *dsPtr, const char *server, ...)
     return path;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_LogPath --
+ *
+ *      If the provided filename is absolute the function simply returns
+ *      the provided configValue unchanged.
+ *
+ *      If the dynamic serverroot processing is not enabled, the function returns
+ *      the absolute file path based on the server logdir.
+ *
+ *      Otherwise the function resolves the absolute log filename for a given
+ *      server dynamically based on its configuration values. If server root
+ *      processing is enabled for the specified server, the function examines
+ *      the provided filename.  If this value is not an absolute path, it
+ *      retrieves the server-specific log directory from the server's
+ *      configuration. If no server-specific log directory is defined, it
+ *      falls back to the global log directory from the "ns/parameters"
+ *      section. Depending on whether the retrieved log directory is absolute
+ *      or relative, the function constructs the final path using Ns_MakePath,
+ *      combining it with either the server root or the log directory itself.
+ *
+ *
+ * Parameters:
+ *      dsPtr       - Pointer to a Tcl_DString used as a buffer for
+ *                    constructing the path.
+ *      server      - Name of the server.
+ *      serverRoot  - Absolute path to the server's root directory.
+ *      configValue - Configured log directory value (may be relative or absolute).
+ *
+ * Results:
+ *      Returns a pointer to a null-terminated string containing the resolved
+ *      absolute log directory.
+ *
+ * Side Effects:
+ *      Constructs the absolute path in the provided Tcl_DString and logs notices indicating which
+ *      log directory (global, relative, or absolute) was used.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *serverRoot, const char *filename)
+{
+    const char *result;
+
+    if (Ns_PathIsAbsolute(filename)) {
+        result = filename;
+
+    } else if (Ns_ServerRootProcEnabled(server)) {
+        const char *value;
+        const char *section = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
+        const char *serverLogDir = Ns_ConfigGetValue(section, "logdir");
+        Tcl_DString message;
+
+        Tcl_DStringInit(&message);
+
+        if (serverLogDir == NULL) {
+            serverLogDir = Ns_ConfigGetValue("ns/parameters", "logdir");
+            Ns_DStringPrintf(&message, "use global logdir <%s> ", serverLogDir);
+        }
+        if (!Ns_PathIsAbsolute(serverLogDir)) {
+            /*
+             * Serverroot + relative server log + filename
+             */
+            value = Ns_MakePath(dsPtr, serverRoot, serverLogDir, filename, (char *)0L);
+            Ns_DStringPrintf(&message, "relative server logdir '%s' ", serverLogDir);
+        } else {
+            /*
+             * Absolute server log + filename
+             */
+            value = Ns_MakePath(dsPtr, serverLogDir, filename, (char *)0L);
+            Ns_DStringPrintf(&message, "absolute server logdir '%s'", serverLogDir);
+        }
+        Ns_Log(Notice, "Ns_LogPath %s --> %s", message.string, value);
+        Tcl_DStringFree(&message);
+
+        result = value;
+
+    } else {
+        result = Ns_MakePath(dsPtr, Ns_ServerLogDir(server), filename, (char *)0L);
+    }
+
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -762,6 +847,7 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
         path = Ns_MakePath(dsPtr, servPtr->fastpath.pagedir, (char *)0L);
     }
 
+    //Ns_Log(Notice, "--- NsPagerRoot returns path <%s>", path);
     return path;
 }
 
@@ -1004,10 +1090,13 @@ NsTclServerRoot(Ns_DString *dest, const char *host, const void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
     const char           *result = NULL;
+    Ns_ReturnCode         rc = Ns_TclEvalCallback(NULL, cbPtr, dest, host, (char *)0L);
 
-    if (Ns_TclEvalCallback(NULL, cbPtr, dest, host, (char *)0L) == TCL_OK) {
+    if (rc == TCL_OK || rc == TCL_RETURN) {
         result = Ns_DStringValue(dest);
     }
+
+    /*Ns_Log(Notice, "??? NsTclServerRoot rc %s -> '%s'", Ns_TclReturnCodeString(rc), result);*/
     return result;
 }
 
@@ -1116,6 +1205,20 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 
             path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
             if (path != NULL) {
+                if (!Ns_PathIsAbsolute(path)) {
+                    /*
+                     * The computed path is not absolute. Prepend it with the
+                     * static serverdir.
+                     */
+                    Ns_DStringInit(&ds);
+                    Ns_MakePath(&ds, servPtr->fastpath.serverdir, path, (char *)0L);
+                    Tcl_DStringSetLength(dest, 0);
+                    Tcl_DStringAppend(dest, ds.string, ds.length);
+                    Ns_DStringFree(&ds);
+                }
+            }
+
+            if (path != NULL) {
                 Ns_Log(Debug, "cache value <%s>", path);
                 conn->request.serverRoot = ns_strdup(path);
             }
@@ -1171,7 +1274,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         path = Ns_MakePath(dest, servPtr->fastpath.serverdir, (char *)0L);
     }
 
-    Ns_Log(Debug, "ServerRoot returns path <%s> // <%s>", path, dest->string);
+    Ns_Log(Notice, "--- ServerRoot %s returns path <%s>", servPtr->server, path);
     return path;
 }
 

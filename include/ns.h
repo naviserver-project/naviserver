@@ -1135,7 +1135,8 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN const char *
-Ns_ConfigFilename(const char *section, const char* key, TCL_SIZE_T keyLength, const char *directory, const char* defaultValue)
+Ns_ConfigFilename(const char *section, const char* key, TCL_SIZE_T keyLength,
+                  const char *directory, const char* defaultValue, bool update)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 NS_EXTERN const char *
@@ -2342,6 +2343,9 @@ Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
 NS_EXTERN Ns_ReturnCode
 Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
 
+NS_EXTERN const char *
+Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *serverRoot, const char *filename)
+    NS_GNUC_NONNULL(1);
 
 /*
  * proc.c:
@@ -2618,7 +2622,11 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
 /*
  * server.c
  */
-NS_EXTERN const char * Ns_ServerLogDir(const char *server) NS_GNUC_PURE;
+NS_EXTERN const char *  Ns_ServerLogDir(const char *server) NS_GNUC_PURE;
+NS_EXTERN bool          Ns_ServerRootProcEnabled(const char *server) NS_GNUC_PURE;
+NS_EXTERN int           Ns_ServerLogGetFd(const char *server, const char *filename) NS_GNUC_NONNULL(2);
+NS_EXTERN Ns_ReturnCode Ns_ServerLogCloseAll(const char *server);
+NS_EXTERN Ns_ReturnCode Ns_ServerLogRollAll(const char *server, const char *rollfmt, TCL_SIZE_T maxbackup);
 
 /*
  * tclvar.c

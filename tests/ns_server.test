@@ -108,8 +108,8 @@ test ns_server-1.2.16 {syntax: ns_server requestprocs} -body {
 
 test ns_server-1.2.17 {syntax: ns_server serverdir} -body {
     ns_server serverdir -
-} -returnCodes error -result {wrong # args: should be "ns_server serverdir"}
-# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? serverdir"}
+} -returnCodes error -result {wrong # args: should be "ns_server serverdir ?-effective?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? serverdir ?-effective?"}
 
 test ns_server-1.2.18 {syntax: ns_server stats} -body {
     ns_server stats -
@@ -497,12 +497,16 @@ test ns_server-2.14.5c {providing invalid URL path} -setup {
 # Testing server specific log files
 #
 test ns_server-2.20.1 {no server-specific logdir configured} -body {
+    # The configuration file sets for the server "test" a "serverdir",
+    # so results are different.
     string equal [ns_server logdir] [ns_info logdir]
-} -result {1}
+} -result {0}
 
 test ns_server-2.20.2 {no server-specific logdir configured, provide server argument} -body {
+    # The configuration file sets for the server "test" a "serverdir",
+    # so results are different.
     string equal [ns_server -server test logdir] [ns_info logdir]
-} -result {1}
+} -result {0}
 
 test ns_server-2.20.3 {server-specific logdir configured with relative path} -body {
     ns_log notice [ns_server -server testvhost logdir]

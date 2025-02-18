@@ -1455,7 +1455,7 @@ int
 NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
-    int             subcmd = 0, result = TCL_OK;
+    int             subcmd = 0, effective = 0, result = TCL_OK;
     TCL_SIZE_T      nargs = 0;
     NsServer       *servPtr = NULL;
     ConnPool       *poolPtr;
@@ -1520,6 +1520,10 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         {"-server", Ns_ObjvServer,  &servPtr, NULL},
         {"-pool",   Ns_ObjvString,  &pool,    NULL},
         {"--",      Ns_ObjvBreak,   NULL,     NULL},
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec diropts[] = {
+        {"-effective", Ns_ObjvBool,   &effective, INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1681,19 +1685,32 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
             return TCL_ERROR;
         } else {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ServerLogDir(servPtr->server), TCL_INDEX_NONE));
+            Tcl_DString scratch;
+
+            Tcl_DStringInit(dsPtr);
+            Tcl_DStringInit(&scratch);
+
+            Ns_LogPath(dsPtr, servPtr->server, Ns_ServerPath(&scratch, servPtr->server, (char *)0L), "");
+            Tcl_DStringResult(interp, dsPtr);
+            Tcl_DStringFree(&scratch);
         }
         break;
 
-    case SServerdirIdx:
-        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+    case SServerdirIdx: {
+        if (Ns_ParseObjv(diropts, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
             return TCL_ERROR;
         } else {
             Tcl_DStringInit(dsPtr);
-            Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, TCL_INDEX_NONE);
+            if (effective) {
+                Ns_ServerPath(dsPtr, servPtr->server, (char *)0L);
+            } else {
+                Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, TCL_INDEX_NONE);
+            }
+            Ns_Log(Notice, "???? effective %d server <%s> path <%s>", effective, servPtr->server, dsPtr->string);
             Tcl_DStringResult(interp, dsPtr);
         }
         break;
+    }
 
     case SRequestprocsIdx:
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {

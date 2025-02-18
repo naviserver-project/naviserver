@@ -277,9 +277,20 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->opts.noticedetail = Ns_ConfigBool(section, "noticedetail", NS_TRUE);
     servPtr->opts.stealthmode = Ns_ConfigBool(section, "stealthmode", NS_FALSE);
     servPtr->opts.noticeADP = Ns_ConfigString(section, "noticeadp", "returnnotice.adp");
+
     servPtr->opts.logDir = Ns_ConfigGetValue(section, "logdir");
-    if (servPtr->opts.logDir != NULL) {
-        servPtr->opts.logDir = Ns_ConfigFilename(section, "logdir", 4, Ns_InfoLogPath(), servPtr->opts.logDir);
+    //Ns_Log(Notice, "??? raw serverlogdir section '%s' <%s>", section, servPtr->opts.logDir);
+
+    {
+        const char *fromSection = servPtr->opts.logDir == NULL ? "ns/parameters" : section;
+        Tcl_DString ds;
+
+        Tcl_DStringInit(&ds);
+        servPtr->opts.logDir = Ns_ConfigFilename(fromSection, "logdir", 6,
+                                                 Ns_ServerPath(&ds, server, (char *)0L),
+                                                 servPtr->opts.logDir, NS_FALSE);
+        Tcl_DStringFree(&ds);
+        //Ns_Log(Notice, "??? serverlogdir NULL, path <%s>", servPtr->opts.logDir);
     }
 
     if (Ns_PathIsAbsolute(servPtr->opts.noticeADP) == NS_FALSE
@@ -630,6 +641,306 @@ Ns_ServerLogDir(const char *server)
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ServerRootProcEnabled --
+ *
+ *      Determines whether server root processing is enabled for the specified
+ *      server.  This function checks if the server can be resolved and if its
+ *      virtual host structure has a non-null serverRootProc callback. When
+ *      enabled, this callback is used to process relative paths (e.g., for
+ *      log directories) relative to the server's root.
+ *
+ * Parameters:
+ *      server - A pointer to a null-terminated string representing the server's name.
+ *
+ * Results:
+ *      Returns true if the server exists and its serverRootProc callback is set; otherwise,
+ *      returns false.
+ *
+ * Side Effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_ServerRootProcEnabled(const char *server)
+{
+    bool      result;
+    NsServer *servPtr = NsGetServer(server);
+
+    if (servPtr == NULL) {
+        result = NS_FALSE;
+    } else {
+        result = (servPtr->vhost.serverRootProc != NULL);
+    }
+    return result;
+}
+
+
+typedef struct LogfileCtx {
+    NsServer *servPtr;
+    const char *filename;
+    int fd;
+} LogfileCtx;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogFileOpen --
+ *
+ *      Opens the log file specified in the LogfileCtx structure. The file is
+ *      opened in append mode. If the file does not exist, it is created with
+ *      permission mode 0644.
+ *
+ * Parameters:
+ *      arg - Pointer to a LogfileCtx structure containing the log filename.
+ *
+ * Results:
+ *      Returns the file descriptor of the opened log file, or NS_INVALID_FD
+ *      on failure.
+ *
+ * Side Effects:
+ *      Logs an error if the file cannot be opened.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+LogFileOpen(void *arg)
+{
+    LogfileCtx   *ctx = arg;
+    Ns_ReturnCode result = NS_OK;
+
+    ctx->fd = ns_open(ctx->filename, O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+    if (ctx->fd == NS_INVALID_FD) {
+        Ns_Log(Error, "logfile open: error '%s' opening '%s'",
+               strerror(errno), ctx->filename);
+        result = NS_ERROR;
+
+    } else {
+        Ns_Log(Notice, "logfile open: opened '%s' fd %d", ctx->filename, ctx->fd);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogFileClose --
+ *
+ *      Closes the log file associated with the file descriptor in the given
+ *      LogfileCtx structure.
+ *
+ * Parameters:
+ *      arg - Pointer to a LogfileCtx structure containing the file descriptor
+ *            to close.
+ *
+ * Results:
+ *      Returns the result of ns_close() for the file descriptor.
+ *
+ * Side Effects:
+ *      Closes the file.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+LogFileClose(void *arg)
+{
+    LogfileCtx *ctx = arg;
+
+    Ns_Log(Notice, "logfile close: fd %d", ctx->fd);
+
+    return ns_close(ctx->fd);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ServerLogGetFd --
+ *
+ *      Retrieves the file descriptor for a log file associated with a given
+ *      server.  The function first obtains the server structure via
+ *      NsGetServer(). It then checks a hash table (logfileTable) in the
+ *      server's virtual host structure to determine if a file descriptor for
+ *      the specified filename is already cached.  If so, the cached file
+ *      descriptor is returned; otherwise, the log file is opened, cached (if
+ *      successful), and its file descriptor returned.
+ *
+ * Parameters:
+ *      server   - The server name (as a null-terminated string).
+ *      filename - The log filename.
+ *
+ * Results:
+ *      The file descriptor for the log file, or NS_INVALID_FD if the server
+ *      is not available or the file cannot be opened.
+ *
+ * Side Effects:
+ *      Caches a newly opened file descriptor in the server's logfileTable.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_ServerLogGetFd(const char *server, const char *filename)
+{
+    int       fd;
+    NsServer *servPtr = NsGetServer(server);
+
+    NS_NONNULL_ASSERT(filename != NULL);
+
+    if (servPtr == NULL) {
+        fd = NS_INVALID_FD;
+    } else {
+        int            isNew;
+        Tcl_HashEntry *hPtr;
+
+        Ns_MutexLock(&servPtr->vhost.logMutex);
+        hPtr = Tcl_CreateHashEntry(&servPtr->vhost.logfileTable, filename, &isNew);
+        if (isNew == 0) {
+            fd = PTR2INT(Tcl_GetHashValue(hPtr));
+            Ns_Log(Notice, "logfile getfd: return cached fd %d for '%s'", fd, filename);
+        } else {
+            LogfileCtx ctx = {NULL,filename, NS_INVALID_FD};
+
+            LogFileOpen(&ctx);
+            fd = ctx.fd;
+            /*
+             * Remember just valid fds. Don't keep hash entries, when open
+             * fails.
+             */
+            if (fd != NS_INVALID_FD) {
+                Tcl_SetHashValue(hPtr, INT2PTR(fd));
+            } else {
+                Tcl_DeleteHashEntry(hPtr);
+            }
+        }
+        Ns_MutexUnlock(&servPtr->vhost.logMutex);
+    }
+
+    return fd;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ServerLogCloseAll --
+ *
+ *      Closes all open log file descriptors for a given server by iterating
+ *      over the server's logfileTable. For each entry, the associated log
+ *      file is closed and its hash table entry removed.
+ *
+ * Parameters:
+ *      server - The server name (as a null-terminated string).
+ *
+ * Results:
+ *      NS_OK if all log files were closed successfully; NS_ERROR if the server
+ *      could not be found.
+ *
+ * Side Effects:
+ *      Closes multiple file descriptors and deletes corresponding hash entries.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+Ns_ServerLogCloseAll(const char *server)
+{
+    Ns_ReturnCode result = NS_OK;
+    NsServer     *servPtr = NsGetServer(server);
+
+    Ns_Log(Notice, "logfile closeall server '%s' servPtr %p", server, (void*)servPtr);
+
+    if (servPtr != NULL) {
+        Tcl_HashSearch   search;
+        Tcl_HashEntry   *hPtr;
+
+        Ns_MutexLock(&servPtr->vhost.logMutex);
+        hPtr = Tcl_FirstHashEntry(&servPtr->vhost.logfileTable, &search);
+
+        while (hPtr != NULL) {
+            LogfileCtx ctx = {servPtr, NULL, PTR2INT(Tcl_GetHashValue(hPtr))};
+
+            LogFileClose(&ctx);
+            Tcl_DeleteHashEntry(hPtr);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Ns_MutexUnlock(&servPtr->vhost.logMutex);
+    } else {
+        result = NS_ERROR;
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ServerLogRollAll --
+ *
+ *      Initiates log file rollover (roll) for all log files associated with a
+ *      given server.  The function iterates through the server's logfileTable
+ *      and, for each log file, invokes Ns_RollFileCondFmt() with the provided
+ *      roll format and maximum backup count.
+ *
+ * Parameters:
+ *      server    - The server name (as a null-terminated string).
+ *      rollfmt   - A format string used to generate rolled log filenames.
+ *      maxbackup - The maximum number of backup log files to keep.
+ *
+ * Results:
+ *      Returns NS_OK if all log files were rolled successfully; NS_ERROR otherwise.
+ *
+ * Side Effects:
+ *      May trigger rollover (renaming/moving) of log files.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+Ns_ServerLogRollAll(const char *server, const char *rollfmt, TCL_SIZE_T maxbackup)
+{
+    Ns_ReturnCode result = NS_OK;
+    NsServer     *servPtr = NsGetServer(server);
+
+    Ns_Log(Notice, "logfile rollall server '%s' servPtr %p", server, (void*)servPtr);
+
+    if (servPtr != NULL) {
+        Tcl_HashSearch       search;
+        const Tcl_HashEntry *hPtr;
+
+        Ns_MutexLock(&servPtr->vhost.logMutex);
+
+#ifdef PRINT_FULL_TABLE
+        hPtr = Tcl_FirstHashEntry(&servPtr->vhost.logfileTable, &search);
+        while (hPtr != NULL) {
+            LogfileCtx ctx = {servPtr,
+                              Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
+                              PTR2INT(Tcl_GetHashValue(hPtr))
+            };
+            Ns_Log(Notice, "... fd %d '%s'", ctx.fd, ctx.filename);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+#endif
+
+        hPtr = Tcl_FirstHashEntry(&servPtr->vhost.logfileTable, &search);
+        while (hPtr != NULL) {
+            LogfileCtx ctx = {servPtr,
+                              Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
+                              PTR2INT(Tcl_GetHashValue(hPtr))
+            };
+
+            result = Ns_RollFileCondFmt(LogFileOpen, LogFileClose, &ctx,
+                                        ctx.filename, rollfmt, maxbackup);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Ns_MutexUnlock(&servPtr->vhost.logMutex);
+
+    } else {
+        result = NS_ERROR;
+    }
+
+    return result;
+}
 
 /*
  * Local Variables:

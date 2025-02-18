@@ -711,7 +711,8 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
  *----------------------------------------------------------------------
  */
 const char *
-Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, const char *directory, const char* defaultValue)
+Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, const char *directory, const char* defaultValue,
+                  bool update)
 {
     const char *value, *result;
 
@@ -720,7 +721,6 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, co
     if (Ns_PathIsAbsolute(value)) {
         result = ns_strdup(value);
     } else {
-        Ns_Set     *set;
         Tcl_DString ds, *dsPtr = &ds;
         TCL_SIZE_T  pathLength;
 
@@ -730,11 +730,14 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, co
         pathLength = dsPtr->length;
         result = Ns_DStringExport(dsPtr);
 
-        /*
-         * The path was completed. Make the result queryable.
-         */
-        set = Ns_ConfigCreateSection(section);
-        Ns_SetIUpdateSz(set, key, keyLength, result, pathLength);
+        if (update) {
+            Ns_Set     *set;
+            /*
+             * The path was completed. Make the result queryable.
+             */
+            set = Ns_ConfigCreateSection(section);
+            Ns_SetIUpdateSz(set, key, keyLength, result, pathLength);
+        }
     }
     /*fprintf(stderr, "Ns_ConfigFilename ================== %s %s: <%s>\n", section, key, result);*/
     return result;

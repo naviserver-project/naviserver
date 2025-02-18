@@ -56,19 +56,19 @@ test ns_pagepath-3.2 {virtual host path} -body {
 
 test ns_pagepath-4.1 {custom serverroot} -body {
     nstest::http -getbody 1 -setheaders [list host testvhost2:$port] -- GET /pagepath
-} -result [list 200 testserverroot/arg/${pagedir}]
+} -result [list 200 /testserverroot/arg/${pagedir}]
 
 test ns_pagepath-4.2 {custom serverroot} -body {
     nstest::http -getbody 1 -setheaders [list host testvhost2:$port] -- GET /pagepath?host=example.com
-} -result [list 200 testserverroot/example.com/arg/${pagedir}]
+} -result [list 200 /testserverroot/example.com/arg/${pagedir}]
 
 test ns_pagepath-4.3 {custom serverroot} -body {
     nstest::http -getbody 1 -setheaders [list host testvhost2:$port] -- GET /pagepath?path=x
-} -result [list 200 testserverroot/arg/${pagedir}/x]
+} -result [list 200 /testserverroot/arg/${pagedir}/x]
 
 test ns_pagepath-4.4 {custom serverroot} -body {
     nstest::http -getbody 1 -setheaders [list host testvhost2:$port] -- GET /pagepath?host=example.com&path=x
-} -result [list 200 testserverroot/example.com/arg/${pagedir}/x]
+} -result [list 200 /testserverroot/example.com/arg/${pagedir}/x]
 
 
 

@@ -882,6 +882,8 @@ typedef struct NsServer {
         Ns_ConnLocationProc *connLocationProc;
         Ns_TclCallback      *connLocationArg;
         Ns_LocationProc     *locationProc; /* Deprecated */
+        Tcl_HashTable        logfileTable;
+        Ns_Mutex             logMutex;
         bool                 enabled;
     } vhost;
 

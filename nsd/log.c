@@ -432,7 +432,7 @@ NsConfigLog(void)
     }
 
     maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);
-    logfileName = Ns_ConfigFilename(section, "serverlog", 9, nsconf.logDir, "nsd.log");
+    logfileName = Ns_ConfigFilename(section, "serverlog", 9, nsconf.logDir, "nsd.log", NS_TRUE);
 
     rollfmt = ns_strcopy(Ns_ConfigString(section, "logrollfmt", NS_EMPTY_STRING));
 

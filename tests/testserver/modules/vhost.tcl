@@ -56,7 +56,7 @@ proc nstest::serverroot {{host ""} args} {
     } else {
         set path [eval file join testserverroot $args]
     }
-    return $path
+    return /$path
 }
 
 proc nstest::location {args} {

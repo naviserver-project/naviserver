@@ -38,6 +38,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 typedef struct {
     Ns_Mutex     lock;
     const char  *module;
+    const char  *server;
     const char  *filename;
     const char  *rollfmt;
     const char  *extendedHeaders;
@@ -143,6 +144,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
     logPtr = ns_calloc(1u, sizeof(Log));
     logPtr->module = module;
+    logPtr->server = server;
     logPtr->fd = NS_INVALID_FD;
     Ns_MutexInit(&logPtr->lock);
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
@@ -151,17 +153,34 @@ Ns_ModuleInit(const char *server, const char *module)
     section = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
 
     {
+        Tcl_DStringInit(&ds);
+        Ns_Log(Notice, "nslog: ModuleInit rootproc enabled %d fd %d server '%s' serverpath <%s> server logdir <%s>",
+               Ns_ServerRootProcEnabled(server),
+               logPtr->fd,
+               server,
+               Ns_ServerPath(&ds, server, (char *)0L),
+               Ns_ServerLogDir(server));
+        Tcl_DStringSetLength(&ds, 0);
+    }
+
+    {
         /*
-         * Determine the name of the log directory and the absolute file name.
+         * Determine the name of the log directory and the absolute filename.
          */
         const char *logDir;
 
         logDir = Ns_ServerLogDir(server);
-        logPtr->filename = Ns_ConfigFilename(section, "file", 4, logDir, "access.log");
+        Ns_Log(Notice, "?????? LOGDIR <%s>", logDir);
+        logPtr->filename = Ns_ConfigFilename(section, "file", 4, logDir, "access.log", NS_FALSE);
+
+        Ns_Log(Notice, "?????? logfilename <%s> serverrootproc enabled %d", logPtr->filename,
+               Ns_ServerRootProcEnabled(server));
+
         if (Ns_RequireDirectory(logDir) != NS_OK) {
             Ns_Fatal("nslog: log directory '%s' could not be created",logDir);
         }
     }
+
 
     /*
      * Get other parameters from configuration file
@@ -786,7 +805,7 @@ AppendExtHeaders(Tcl_DString *dsPtr, const char **argv, const Ns_Set *set)
  *
  * LogTrace --
  *
- *      Trace routine for appending the log with the current
+ *      Trace routine for appending the access.log with the current
  *      connection results.
  *
  * Results:
@@ -804,11 +823,12 @@ LogTrace(void *arg, Ns_Conn *conn)
     Log          *logPtr = arg;
     const char   *user, *p, *driverName;
     char          buffer[PIPE_BUF], *bufferPtr = NULL;
-    int           n;
+    int           n, fd;
     Ns_ReturnCode status;
     size_t        bufferSize = 0u;
     Tcl_DString   ds, *dsPtr = &ds;
     char          ipString[NS_IPADDR_SIZE];
+    const char   *server;
     struct NS_SOCKADDR_STORAGE  ipStruct, maskedStruct;
     struct sockaddr            *maskPtr = NULL,
         *ipPtr     = (struct sockaddr *)&ipStruct,
@@ -825,6 +845,23 @@ LogTrace(void *arg, Ns_Conn *conn)
          * This is not for us.
          */
         return;
+    }
+    server = Ns_ConnServer(conn);
+
+    Tcl_DStringInit(dsPtr);
+
+    if (Ns_ServerRootProcEnabled(server)) {
+        Tcl_DString scratch;
+        const char *section = Ns_ConfigSectionPath(NULL, server, logPtr->module, (char *)0L);
+        const char *filename = Ns_ConfigGetValue(section, "file"), *fullFilename;
+
+        Tcl_DStringInit(&scratch);
+        fullFilename = Ns_LogPath(&scratch, server, Ns_ServerPath(dsPtr, server, (char *)0L), filename);
+        fd = Ns_ServerLogGetFd(server, fullFilename);
+        Tcl_DStringFree(&scratch);
+        Tcl_DStringSetLength(dsPtr, 0);
+    } else {
+        fd = logPtr->fd;
     }
 
     Tcl_DStringInit(dsPtr);
@@ -1067,8 +1104,8 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_MutexUnlock(&logPtr->lock);
     (void)(status); /* ignore status */
 
-    if (likely(bufferPtr != NULL) && likely(logPtr->fd >= 0) && likely(bufferSize > 0)) {
-        (void)NsAsyncWrite(logPtr->fd, bufferPtr, bufferSize);
+    if (likely(bufferPtr != NULL) && likely(fd >= 0) && likely(bufferSize > 0)) {
+        (void)NsAsyncWrite(fd, bufferPtr, bufferSize);
     }
 
     Tcl_DStringFree(dsPtr);
@@ -1139,7 +1176,11 @@ static Ns_ReturnCode
 LogClose(void *arg)
 {
     Ns_ReturnCode status = NS_OK;
-    Log *logPtr = (Log *)arg;
+    Log          *logPtr = arg;
+
+    if (Ns_ServerRootProcEnabled(logPtr->server)) {
+        status = Ns_ServerLogCloseAll(logPtr->server);
+    }
 
     if (logPtr->fd >= 0) {
         status = LogFlush(logPtr, &logPtr->buffer);
@@ -1215,14 +1256,19 @@ LogRoll(void *arg)
     Ns_ReturnCode status;
     Log          *logPtr = (Log *)arg;
 
-    status = Ns_RollFileCondFmt(LogOpen, LogClose, logPtr,
-                                logPtr->filename,
-                                logPtr->rollfmt,
-                                logPtr->maxbackup);
+    Ns_Log(Notice, "IN LogRoll logPtr %p", (void*)logPtr);
 
-    //if (status == NS_OK) {
-    //    status = LogOpen(logPtr);
-    //}
+    Ns_Log(Notice, "nslog: roll server '%s', enabled %d", logPtr->server, Ns_ServerRootProcEnabled(logPtr->server));
+
+    if (Ns_ServerRootProcEnabled(logPtr->server)) {
+        status = Ns_ServerLogRollAll(logPtr->server, logPtr->rollfmt, logPtr->maxbackup);
+
+    } else {
+        status = Ns_RollFileCondFmt(LogOpen, LogClose, logPtr,
+                                    logPtr->filename,
+                                    logPtr->rollfmt,
+                                    logPtr->maxbackup);
+    }
 
     return status;
 }
@@ -1271,7 +1317,9 @@ LogCloseCallback(const Ns_Time *toPtr, void *arg)
 static void
 LogRollCallback(void *arg, int UNUSED(id))
 {
+    Ns_Log(Notice, "CALL LogRollCallback");
     LogCallbackProc(LogRoll, arg, "roll");
+    Ns_Log(Notice, "DONE LogRollCallback");
 }
 
 

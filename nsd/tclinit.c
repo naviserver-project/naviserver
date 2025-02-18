@@ -322,6 +322,10 @@ ConfigServerTcl(const char *server)
         Tcl_InitHashTable(&servPtr->tcl.synch.condTable, TCL_STRING_KEYS);
         Tcl_InitHashTable(&servPtr->tcl.synch.rwTable, TCL_STRING_KEYS);
 
+        Tcl_InitHashTable(&servPtr->vhost.logfileTable, TCL_STRING_KEYS);
+        Ns_MutexInit(&servPtr->vhost.logMutex);
+        Ns_MutexSetName2(&servPtr->vhost.logMutex, "log", servPtr->server);
+
         servPtr->nsv.rwlocks = Ns_ConfigBool(section, "nsvrwlocks", NS_TRUE);
         servPtr->nsv.nbuckets = Ns_ConfigIntRange(section, "nsvbuckets", 8, 1, INT_MAX);
         servPtr->nsv.buckets = NsTclCreateBuckets(servPtr, servPtr->nsv.nbuckets);
