@@ -276,16 +276,20 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 
     servPtr->opts.noticedetail = Ns_ConfigBool(section, "noticedetail", NS_TRUE);
     servPtr->opts.stealthmode = Ns_ConfigBool(section, "stealthmode", NS_FALSE);
-    servPtr->opts.noticeADP = Ns_ConfigString(section, "noticeadp", "returnnotice.adp");
-    if (Ns_PathIsAbsolute(servPtr->opts.noticeADP) == NS_FALSE
-        && *servPtr->opts.noticeADP != '\0') {
+
+    /*
+     * Resolve "noticeadp" against HOME/conf (the default directory is
+     * currently hard-wired, user can provide an absolute directory).
+     */
+    {
         Tcl_DString  ds;
-        const char  *fileName;
 
         Tcl_DStringInit(&ds);
-        fileName = Ns_HomePath(&ds, "conf", "/",
-                               servPtr->opts.noticeADP, NS_SENTINEL);
-        servPtr->opts.noticeADP = ns_strcopy(fileName);
+        Tcl_DStringAppend(&ds, nsconf.home, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&ds, "/conf", 5);
+        servPtr->opts.noticeADP = Ns_ConfigFilename(section, "noticeadp", 9,
+                                                    ds.string,
+                                                    "returnnotice.adp", NS_FALSE, NS_FALSE);
         Tcl_DStringFree(&ds);
     }
 
