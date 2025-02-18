@@ -273,7 +273,6 @@ ConfigServerTcl(const char *server)
         const char *section, *p, *initFileString;
         TCL_SIZE_T  n;
         Ns_Set     *set = NULL;
-        bool        initFileStringCopied = NS_FALSE;
 
         Ns_ThreadSetName("-main:%s-", server);
 
@@ -290,20 +289,12 @@ ConfigServerTcl(const char *server)
             Ns_SetIUpdateSz(set, "library", 7, servPtr->tcl.library, n);
         }
 
-        initFileString = ns_strcopy(Ns_ConfigString(section, "initfile", "bin/init.tcl"));
-        if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
-            Ns_HomePath(&ds, initFileString, NS_SENTINEL);
-            ns_free((void*)initFileString);
-            initFileString = Ns_DStringExport(&ds);
-            n = ds.length;
-            Ns_SetIUpdateSz(set, "initfile", 8, initFileString, n);
-            initFileStringCopied = NS_TRUE;
-        }
+        initFileString = Ns_ConfigFilename(section, "initfile", 8, nsconf.home, "bin/init.tcl", NS_FALSE);
+        //fprintf(stderr, "==== used     initfile <%s> for server '%s'\n", initFileString, server);
+
         servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, TCL_INDEX_NONE);
-        if (initFileStringCopied) {
-            ns_free((char *)initFileString);
-        }
         Tcl_IncrRefCount(servPtr->tcl.initfile);
+        ns_free((char *)initFileString);
 
         servPtr->tcl.modules = Tcl_NewObj();
         Tcl_IncrRefCount(servPtr->tcl.modules);
@@ -1779,7 +1770,12 @@ NsTclInitServer(const char *server)
         Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
 
         if ( Tcl_FSEvalFile(interp, servPtr->tcl.initfile) != TCL_OK) {
-            (void) Ns_TclLogErrorInfo(interp, "\n(context: init server)");
+            Tcl_DString ds;
+
+            Tcl_DStringInit(&ds);
+            (void) Ns_TclLogErrorInfo(interp,
+                                      Ns_DStringPrintf(&ds, "\n(context: init server %s)", server));
+            Tcl_DStringFree(&ds);
         }
         Ns_TclDeAllocateInterp(interp);
     }
