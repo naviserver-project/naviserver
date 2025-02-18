@@ -1706,7 +1706,6 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             } else {
                 Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, TCL_INDEX_NONE);
             }
-            Ns_Log(Notice, "???? effective %d server <%s> path <%s>", effective, servPtr->server, dsPtr->string);
             Tcl_DStringResult(interp, dsPtr);
         }
         break;

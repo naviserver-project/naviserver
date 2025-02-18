@@ -720,7 +720,7 @@ Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *serverRoot, const
             value = Ns_MakePath(dsPtr, serverLogDir, filename, (char *)0L);
             Ns_DStringPrintf(&message, "absolute server logdir '%s'", serverLogDir);
         }
-        Ns_Log(Notice, "Ns_LogPath %s --> %s", message.string, value);
+        Ns_Log(Debug, "Ns_LogPath %s --> %s", message.string, value);
         Tcl_DStringFree(&message);
 
         result = value;
@@ -1274,7 +1274,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         path = Ns_MakePath(dest, servPtr->fastpath.serverdir, (char *)0L);
     }
 
-    Ns_Log(Notice, "--- ServerRoot %s returns path <%s>", servPtr->server, path);
+    Ns_Log(Debug, "--- ServerRoot %s returns path <%s>", servPtr->server, path);
     return path;
 }
 

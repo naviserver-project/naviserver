@@ -277,7 +277,30 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->opts.noticedetail = Ns_ConfigBool(section, "noticedetail", NS_TRUE);
     servPtr->opts.stealthmode = Ns_ConfigBool(section, "stealthmode", NS_FALSE);
     servPtr->opts.noticeADP = Ns_ConfigString(section, "noticeadp", "returnnotice.adp");
+    if (Ns_PathIsAbsolute(servPtr->opts.noticeADP) == NS_FALSE
+        && *servPtr->opts.noticeADP != '\0') {
+        Tcl_DString  ds;
+        const char  *fileName;
 
+        Tcl_DStringInit(&ds);
+        fileName = Ns_HomePath(&ds, "conf", "/",
+                               servPtr->opts.noticeADP, (char *)0L);
+        servPtr->opts.noticeADP = ns_strcopy(fileName);
+        Tcl_DStringFree(&ds);
+    }
+
+    /*
+     * Resolve and update the server log directory configuration.
+     *
+     *      This block determines the appropriate log directory for the
+     *      server.  If the server-specific log directory is not set, it uses
+     *      the global "ns/parameters" section; otherwise, it uses the current
+     *      configuration section. The code then completes a relative log
+     *      directory path by combining the server's root path with the
+     *      configured log directory value.  The "update" flag is set to
+     *      NS_FALSE to prevent storing the computed absolute path back into
+     *      the configuration database.
+     */
     servPtr->opts.logDir = Ns_ConfigGetValue(section, "logdir");
     //Ns_Log(Notice, "??? raw serverlogdir section '%s' <%s>", section, servPtr->opts.logDir);
 
@@ -293,16 +316,37 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         //Ns_Log(Notice, "??? serverlogdir NULL, path <%s>", servPtr->opts.logDir);
     }
 
-    if (Ns_PathIsAbsolute(servPtr->opts.noticeADP) == NS_FALSE
-        && *servPtr->opts.noticeADP != '\0') {
-        Tcl_DString  ds;
-        const char  *fileName;
+    /*
+     * Optional Server Root Processing Callback
+     *
+     *      This code block checks if a "serverrootproc" value is defined in
+     *      the server configuration section. If present, it creates a Tcl
+     *      callback object from the string and allocates a temporary
+     *      interpreter for processing. The callback is then registered using
+     *      Ns_SetServerRootProc, which sets up the server root processing
+     *      routine (NsTclServerRoot) to dynamically complete server root
+     *      paths. If registration fails, a warning is logged. Finally, the
+     *      temporary interpreter is deallocated.
+     */
+    {
+        const char *rootProcString = Ns_ConfigGetValue(section, "serverrootproc");
+        if (rootProcString != NULL) {
+            Ns_TclCallback *cbPtr;
+            Tcl_Obj        *callbackObj = Tcl_NewStringObj(rootProcString, TCL_INDEX_NONE);
+            Tcl_Interp     *interp;
 
-        Tcl_DStringInit(&ds);
-        fileName = Ns_HomePath(&ds, "conf", "/",
-                               servPtr->opts.noticeADP, (char *)0L);
-        servPtr->opts.noticeADP = ns_strcopy(fileName);
-        Tcl_DStringFree(&ds);
+            interp = NsTclAllocateInterp( servPtr);
+            Tcl_IncrRefCount(callbackObj);
+            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclServerRoot, callbackObj,
+                                      0, NULL);
+            Tcl_IncrRefCount(callbackObj);
+
+            if (unlikely(Ns_SetServerRootProc(NsTclServerRoot, cbPtr) != NS_OK)) {
+                Ns_Log(Warning, "server init: cannot register serverrootproc");
+            }
+            Ns_TclDeAllocateInterp(interp);
+            //Ns_Log(Notice, "??? serverlogdir NULL, path <%s>", servPtr->opts.logDir);
+        }
     }
 
     servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(section, "errorminsize", NULL, 514, 0, INT_MAX);

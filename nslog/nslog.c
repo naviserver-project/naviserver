@@ -167,17 +167,20 @@ Ns_ModuleInit(const char *server, const char *module)
         /*
          * Determine the name of the log directory and the absolute filename.
          */
-        const char *logDir;
+        const char *serverLogDir;
 
-        logDir = Ns_ServerLogDir(server);
-        Ns_Log(Notice, "?????? LOGDIR <%s>", logDir);
-        logPtr->filename = Ns_ConfigFilename(section, "file", 4, logDir, "access.log", NS_FALSE);
+        serverLogDir = Ns_ServerLogDir(server);
+        logPtr->filename = Ns_ConfigFilename(section, "file", 4, serverLogDir, "access.log", NS_FALSE);
 
         Ns_Log(Notice, "?????? logfilename <%s> serverrootproc enabled %d", logPtr->filename,
                Ns_ServerRootProcEnabled(server));
-
-        if (Ns_RequireDirectory(logDir) != NS_OK) {
-            Ns_Fatal("nslog: log directory '%s' could not be created",logDir);
+        /*
+         * Create the serverLogDir only when we have no ServerRootProcEnabled.
+         */
+        if (!Ns_ServerRootProcEnabled(server)) {
+            if (Ns_RequireDirectory(serverLogDir) != NS_OK) {
+                Ns_Fatal("nslog: log directory '%s' could not be created", serverLogDir);
+            }
         }
     }
 
@@ -269,7 +272,7 @@ Ns_ModuleInit(const char *server, const char *module)
      *  Open the log and register the trace
      */
 
-    if (LogOpen(logPtr) != NS_OK) {
+    if (!Ns_ServerRootProcEnabled(server) && LogOpen(logPtr) != NS_OK) {
         return NS_ERROR;
     }
 

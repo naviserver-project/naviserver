@@ -219,7 +219,7 @@ test ns_config-7.4.1 {section} -body {
 
 test ns_config-7.4.2 {section} -body {
     ns_set size [ns_configsection -filter "defaulted" ns/server/testvhost]
-} -returnCodes {error ok} -result {25}
+} -returnCodes {error ok} -result {26}
 
 test ns_config-7.4.3 {section} -body {
     ns_set size [ns_configsection -filter "defaults" ns/server/testvhost]
