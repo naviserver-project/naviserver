@@ -74,6 +74,9 @@ ConfigWideIntRange(const char *section, const char *key,
                    const char *kind)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
 
+static const char *NormalizePath(const char *input, TCL_SIZE_T *lengthPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  *----------------------------------------------------------------------
@@ -695,6 +698,52 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
 /*
  *----------------------------------------------------------------------
  *
+ * NormalizePath --
+ *
+ *      Converts the provided input path to a normalized form.  This function
+ *      creates a Tcl object from the input string and uses
+ *      Tcl_FSGetNormalizedPath() to obtain a normalized version of the path.
+ *      If successful, it returns a newly allocated duplicate of the
+ *      normalized path and updates the provided length pointer with the new
+ *      string length.  If normalization fails, the original input path is
+ *      returned.
+ *
+ * Parameters:
+ *      input      - A pointer to the input path string.
+ *      lengthPtr  - Pointer to the length of the input string. On return, it contains
+ *                   the length of the normalized path.
+ *
+ * Results:
+ *      A pointer to a null-terminated string containing the normalized path.
+ *      Memory for the normalized path is allocated and should be freed by the caller.
+ *
+ * Side Effects:
+ *      May allocate memory for the normalized path.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+NormalizePath(const char *input, TCL_SIZE_T *lengthPtr)
+{
+    const char *result;
+    Tcl_Obj    *pathObj = Tcl_NewStringObj(input, *lengthPtr), *normalizedPathObj;
+
+    Tcl_IncrRefCount(pathObj);
+    normalizedPathObj = Tcl_FSGetNormalizedPath(NULL, pathObj);
+    if (normalizedPathObj != NULL) {
+        result = ns_strdup(Tcl_GetStringFromObj(normalizedPathObj, lengthPtr));
+    } else {
+        result = input;
+    }
+    Tcl_DecrRefCount(pathObj);
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ConfigFilename --
  *
  *      Retrieves a filename from the configuration file based on the
@@ -710,67 +759,58 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
  *
  *----------------------------------------------------------------------
  */
+
 const char *
 Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, const char *directory, const char* defaultValue,
                   bool normalizePath, bool update)
 {
     const char *value, *result;
+    TCL_SIZE_T  pathLength = 0;
 
     value = Ns_ConfigString(section, key, defaultValue);
 
     if (Ns_PathIsAbsolute(value)) {
-        result = ns_strdup(value);
+        /*fprintf(stderr, "=== %s %s RAWABS '%s'\n", section, key, value);*/
+        if (strstr(value, "..") != NULL) {
+            pathLength = (TCL_SIZE_T)strlen(value);
+            result = NormalizePath(value, &pathLength);
+            fprintf(stderr, "=== %s %s NormalizePath '%s'\n", section, key, result);
+        } else {
+            result = ns_strdup(value);
+        }
     } else {
         Tcl_DString ds, *dsPtr = &ds;
-        TCL_SIZE_T  pathLength;
 
         Tcl_DStringInit(dsPtr);
-
         Ns_MakePath(dsPtr, directory, value, NS_SENTINEL);
         pathLength = dsPtr->length;
         result = Ns_DStringExport(dsPtr);
 
         if (normalizePath && strchr(result, INTCHAR('/')) != NULL) {
-            Tcl_Obj *pathObj, *normalizedPathObj;
+            const char *input;
             /*
              * The path contains a slash, it might be not normalized;
              */
-            /*fprintf(stderr, "=== %s %s RAW    '%s'\n", section, key, value);*/
-
-            pathObj = Tcl_NewStringObj(result, pathLength);
-            Tcl_IncrRefCount(pathObj);
-
-            normalizedPathObj = Tcl_FSGetNormalizedPath(NULL, pathObj);
-            if (normalizedPathObj != NULL) {
-                /*
-                 * Normalization was successful, replace the string in
-                 * *pathPtr with the normalized string.
-                 *
-                 * The values returned by Ns_ConfigString() are the string
-                 * values from the ns_set. We do not want to free *pathPtr
-                 * here, but we overwrite it with a freshly allocated
-                 * string. When this function is used from other contexts,
-                 * not freeing the old value could be a potential memory
-                 * leak.
-                 *
-                 */
-                /*fprintf(stderr, "=== %s %s BEFORE '%s'\n", section, key, result);*/
-                ns_free((void*)result);
-                result = ns_strdup(Tcl_GetStringFromObj(normalizedPathObj, &pathLength));
-                /*fprintf(stderr, "=== %s %s NORMAL '%s'\n", section, key, result);*/
+            /*fprintf(stderr, "=== %s %s RAW    '%s'\n", section, key, value);
+              fprintf(stderr, "=== %s %s BEFORE '%s'\n", section, key, result);*/
+            input = result;
+            result = NormalizePath(input, &pathLength);
+            if (result != input) {
+                ns_free((void*)input);
             }
-            Tcl_DecrRefCount(pathObj);
-        }
-
-        if (update) {
-            Ns_Set     *set;
-            /*
-             * The path was completed. Make the result queryable.
-             */
-            set = Ns_ConfigCreateSection(section);
-            Ns_SetIUpdateSz(set, key, keyLength, result, pathLength);
+            /*fprintf(stderr, "=== %s %s NORMAL '%s'\n", section, key, result);*/
         }
     }
+
+    if (update && pathLength > 0) {
+        Ns_Set *set;
+        /*
+         * The path was changed. Make the result queryable.
+         */
+        set = Ns_ConfigCreateSection(section);
+        Ns_SetIUpdateSz(set, key, keyLength, result, pathLength);
+    }
+
     /*fprintf(stderr, "Ns_ConfigFilename ================== %s %s: <%s>\n", section, key, result);*/
     return result;
 }

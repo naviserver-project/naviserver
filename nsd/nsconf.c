@@ -157,20 +157,14 @@ NsConfUpdate(void)
      */
 
     Ns_DStringInit(&ds);
-    nsconf.tcl.sharedlibrary = ns_strcopy(Ns_ConfigString(section, "tcllibrary", "tcl"));
-    if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == NS_FALSE) {
-        Ns_Set    *set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
-        TCL_SIZE_T length;
 
-        (void)Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, NS_SENTINEL);
-        length = ds.length;
-        ns_free((void*)nsconf.tcl.sharedlibrary);
-        nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
-
-        Ns_SetIUpdateSz(set, "tcllibrary", 10, nsconf.tcl.sharedlibrary, length);
-    }
-    nsconf.tcl.lockoninit = Ns_ConfigBool(section, "tclinitlock", NS_FALSE);
+    nsconf.tcl.sharedlibrary = Ns_ConfigFilename(section, "tcllibrary", 10,
+                                                 nsconf.home, "tcl",
+                                                 NS_TRUE, NS_TRUE);
+    //fprintf(stderr, "=== %s %s AFTER '%s'\n", section, "tcllibrary", nsconf.tcl.sharedlibrary);
     Ns_DStringFree(&ds);
+
+    nsconf.tcl.lockoninit = Ns_ConfigBool(section, "tclinitlock", NS_FALSE);
 }
 
 /*
