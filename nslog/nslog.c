@@ -22,7 +22,9 @@
 #define LOG_FMTTIME       0x02u
 #define LOG_REQTIME       0x04u
 #define LOG_PARTIALTIMES  0x08u
-#define LOG_CHECKFORPROXY 0x10u
+#ifdef NS_WITH_DEPRECATED
+# define LOG_CHECKFORPROXY 0x10u
+#endif
 #define LOG_SUPPRESSQUERY 0x20u
 #define LOG_THREADNAME    0x40u
 #define LOG_MASKIP        0x80u
@@ -211,12 +213,20 @@ Ns_ModuleInit(const char *server, const char *module)
     if (Ns_ConfigBool(section, "suppressquery", NS_FALSE)) {
         logPtr->flags |= LOG_SUPPRESSQUERY;
     }
+#ifdef NS_WITH_DEPRECATED
     if (Ns_ConfigBool(section, "checkforproxy", NS_FALSE)) {
-        Ns_Log(Warning, "parameter checkforproxy of module nslog is deprecated; "
-               "use global parameter reversproxymode instead");
+        Tcl_Obj *objv[2];
+
+        objv[0] = Tcl_NewStringObj(section, TCL_INDEX_NONE);
+        objv[1] = Tcl_NewStringObj("checkforproxy", TCL_INDEX_NONE);
+        Tcl_IncrRefCount(objv[0]);
+        Tcl_IncrRefCount(objv[1]);
+        Ns_LogDeprecated(objv, 2, "global parameter reversproxymode", NULL);
+        Tcl_DecrRefCount(objv[0]);
+        Tcl_DecrRefCount(objv[1]);
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
-
+#endif
     logPtr->driverPattern = ns_strcopy(Ns_ConfigString(section, "driver", NULL));
 
     logPtr->ipv4maskPtr = NULL;
@@ -575,9 +585,11 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
                 if (strstr(ds.string, "logpartialtimes")) {
                     flags |= LOG_PARTIALTIMES;
                 }
+#ifdef NS_WITH_DEPRECATED
                 if (strstr(ds.string, "checkforproxy")) {
                     flags |= LOG_CHECKFORPROXY;
                 }
+#endif
                 if (strstr(ds.string, "suppressquery")) {
                     flags |= LOG_SUPPRESSQUERY;
                 }
@@ -604,9 +616,11 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             if ((flags & LOG_PARTIALTIMES)) {
                 Tcl_DStringAppend(&ds, "logpartialtimes ", TCL_INDEX_NONE);
             }
+#ifdef NS_WITH_DEPRECATED
             if ((flags & LOG_CHECKFORPROXY)) {
                 Tcl_DStringAppend(&ds, "checkforproxy ", TCL_INDEX_NONE);
             }
+#endif
             if ((flags & LOG_SUPPRESSQUERY)) {
                 Tcl_DStringAppend(&ds, "suppressquery ", TCL_INDEX_NONE);
             }
@@ -868,12 +882,12 @@ LogTrace(void *arg, Ns_Conn *conn)
         fd = logPtr->fd;
     }
 
-    Tcl_DStringInit(dsPtr);
     Ns_MutexLock(&logPtr->lock);
 
     /*
      * Append the peer address.
      */
+#ifdef NS_WITH_DEPRECATED
     if ((logPtr->flags & LOG_CHECKFORPROXY) != 0u) {
         /*
          * This branch is deprecated and kept only for backward
@@ -883,7 +897,9 @@ LogTrace(void *arg, Ns_Conn *conn)
         if (*p == '\0') {
             p = Ns_ConnPeerAddr(conn);
         }
-    } else {
+    } else
+#endif
+    {
         p = Ns_ConnConfiguredPeerAddr(conn);
     }
 
