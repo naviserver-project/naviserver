@@ -252,11 +252,6 @@ static int HttpGetResult(
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
-static void HttpClientLogWrite(
-    const NsHttpTask *httpPtr,
-    const char       *causeString
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 static NS_SOCKET HttpTunnel(
     NsInterp *itPtr,
     const char *proxyhost,
@@ -308,16 +303,21 @@ static int ResponseDataCallback(NsHttpTask *httpPtr, const char *inputBuffer, si
 static void DoneCallback(NsHttpTask *httpPtr)
     NS_GNUC_NONNULL(1);
 
-static Ns_LogCallbackProc HttpClientLogOpen;
-static Ns_LogCallbackProc HttpClientLogClose;
-static Ns_LogCallbackProc HttpClientLogRoll;
 static Ns_SchedProc       SchedLogRollCallback;
 static Ns_ArgProc         SchedLogArg;
 
 static Ns_TaskProc HttpProc;
 
 /*
- * Function implementing the Tcl interface.
+ * Functions implementing the HTTP client log file handling.
+ */
+static Ns_LogCallbackProc HttpClientLogOpen;
+static Ns_LogCallbackProc HttpClientLogClose;
+static Ns_LogCallbackProc HttpClientLogRoll;
+static void HttpClientLogWrite(const NsHttpTask *httpPtr, const char *causeString) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+/*
+ * Functions implementing the Tcl interface.
  */
 static TCL_OBJCMDPROC_T HttpCancelObjCmd;
 static TCL_OBJCMDPROC_T HttpCleanupObjCmd;
