@@ -1,0 +1,152 @@
+# -*- Tcl -*-
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure -verbose start {*}$argv
+
+#
+# Run all tests
+#
+#   (cd tests/developer && tclsh path-config.test)
+#
+
+# Run part of the tests, e.g.
+#
+#   (cd tests/developer && tclsh path-config.test -match logdir-1\*)
+#
+
+# Run a single test with a special combination of parameters:
+#
+#    (cd tests/developer && params="serverdir /opt/local/var/www3 serverrootproc {{return HOST}}" /usr/local/ns/bin/nsd -f -t test-config-paths.tcl 2>&1)
+#
+#
+# To run theses tests, we need the following directories with write permissions
+#
+#    /opt/local/var
+#    /opt/local/var/log
+#    /opt/local/var/www3
+#    /opt/local/var/www3/HOST/logs/
+#    /opt/local/var/www3/HOST/log/
+#    /usr/local/ns
+#    /usr/local/ns/s0
+
+proc runtest {params} {
+    catch {exec bash -c "params=\"$params\" /usr/local/ns/bin/nsd -f -t test-config-paths.tcl" 2>@1} testresult
+    set extract {}
+    foreach l [split $testresult \n] {
+        if {[regexp {(Fatal|Error): (.*)$} $l . severity msg]} {
+            append extract "$severity " [list $msg] \n
+        }
+        if {[string match ":                  *" $l]} {
+            append extract [string trimleft [string range $l 1 end]] \n
+        }
+    }
+    puts stderr $extract
+    return $extract
+}
+
+#
+# logdir test, when no serverdir is provided:
+#
+test logdir-1.1  {default values} -body {
+    set result  [runtest {case 1.1}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns} {serverlogdir /usr/local/ns/logs}}
+
+test logdir-1.3  {relative serverlogdir} -body {
+    set result  [runtest {case 1.3 serverlogdir log}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns} {serverlogdir /usr/local/ns/log}}
+
+test logdir-1.4  {absolute serverlogdir} -body {
+    set result  [runtest {case 1.4 serverlogdir /opt/local/var/log}]
+    lmap {k v} $result {if {$k ni {serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverlogdir /opt/local/var/log}}
+
+test logdir-1.5  {absolute global logdir} -body {
+    set result  [runtest {case 1.5 logdir /opt/local/var/log}]
+    lmap {k v} $result {if {$k ni {serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverlogdir /opt/local/var/log}}
+
+test logdir-1.6  {absolute global logdir and absolute server logdir} -body {
+    set result  [runtest {case 1.6 logdir /opt/local/var/log serverlogdir /opt/local/var/log/s0}]
+    lmap {k v} $result {if {$k ni {serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverlogdir /opt/local/var/log/s0}}
+
+
+
+#
+# logdir tests with a relative serverdir
+#
+test logdir-2.1  {relative serverdir with default values} -body {
+    set result  [runtest {case 2.1 serverdir s0}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns/s0} {serverlogdir /usr/local/ns/s0/logs}}
+
+test logdir-2.2  {relative serverdir with relative server logdir} -body {
+    set result  [runtest {case 2.2 serverdir s0 serverlogdir log}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns/s0} {serverlogdir /usr/local/ns/s0/log}}
+
+test logdir-2.3  {relative serverdir with absolute server logdir} -body {
+    set result  [runtest {case 2.3 serverdir s0 serverlogdir /opt/local/var/log/s0}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns/s0} {serverlogdir /opt/local/var/log/s0}}
+
+#
+# logdir tests with an absolute serverdir
+#
+test logdir-3.1  {absolute serverdir with default values} -body {
+    set result  [runtest {case 3.1 serverdir /opt/local/var/www3}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/www3/logs}}
+
+test logdir-3.2  {absolute serverdir with relative server logdir} -body {
+    set result  [runtest {case 3.2 serverdir /opt/local/var/www3 serverlogdir log}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/www3/log}}
+
+test logdir-3.3  {absolute serverdir with an absolute server logdir} -body {
+    set result  [runtest {case 3.3 serverdir /opt/local/var/www3 serverlogdir /opt/local/var/log/s0}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/log/s0}}
+
+
+#
+# logdir tests with a computed absolute serverdir
+#
+test logdir-4.1  {computed absolute serverdir with default values} -body {
+    set result  [runtest {case 4.1 serverdir /opt/local/var/www3 serverrootproc {{return /opt/local/var/www3/HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/www3/HOST/logs}}
+
+test logdir-4.2  {computed absolute serverdir with relative server logdir} -body {
+    set result  [runtest {case 4.2 serverdir /opt/local/var/www3 serverlogdir log serverrootproc {{return /opt/local/var/www3/HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/www3/HOST/log}}
+
+test logdir-4.3  {computed absolute serverdir with an absolute server logdir} -body {
+    set result  [runtest {case 4.3 serverdir /opt/local/var/www3 serverlogdir /opt/local/var/log/s0 serverrootproc {{return /opt/local/var/www3/HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/log/s0}}
+
+
+#
+# logdir tests with a computed relative serverdir
+#
+test logdir-5.1  {computed relative serverdir with default values} -body {
+    set result  [runtest {case 5.1 serverdir /opt/local/var/www3 serverrootproc {{return HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/www3/HOST/logs}}
+
+test logdir-5.2  {computed relative serverdir with relative server logdir} -body {
+    set result  [runtest {case 5.2 serverdir /opt/local/var/www3 serverlogdir log serverrootproc {{return HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/www3/HOST/log}}
+
+test logdir-5.3  {computed relative serverdir with an absolute server logdir} -body {
+    set result  [runtest {case 5.2 serverdir /opt/local/var/www3 serverlogdir /opt/local/var/log/s0 serverrootproc {{return HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/log/s0}}
+
+
+cleanupTests
