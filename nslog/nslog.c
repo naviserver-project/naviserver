@@ -35,7 +35,7 @@
 
 NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
-
+static const char *logType = "ACCESSLOG";
 
 typedef struct {
     Ns_Mutex     lock;
@@ -871,7 +871,8 @@ LogTrace(void *arg, Ns_Conn *conn)
         const char *filename = Ns_ConfigGetValue(section, "file"), *fullFilename;
 
         fullFilename = Ns_LogPath(dsPtr, server, filename);
-        fd = Ns_ServerLogGetFd(server, fullFilename);
+        fprintf(stderr, "LogTrace: server %s filename '%s' -> fullFilename '%s'\n", server, filename, fullFilename);
+        fd = Ns_ServerLogGetFd(server, logType, fullFilename);
         Tcl_DStringSetLength(dsPtr, 0);
     } else {
         fd = logPtr->fd;
@@ -1194,7 +1195,7 @@ LogClose(void *arg)
     Log          *logPtr = arg;
 
     if (Ns_ServerRootProcEnabled(logPtr->server)) {
-        status = Ns_ServerLogCloseAll(logPtr->server);
+        status = Ns_ServerLogCloseAll(logPtr->server, logType);
     }
 
     if (logPtr->fd >= 0) {
@@ -1271,12 +1272,11 @@ LogRoll(void *arg)
     Ns_ReturnCode status;
     Log          *logPtr = (Log *)arg;
 
-    Ns_Log(Notice, "IN LogRoll logPtr %p", (void*)logPtr);
-
-    Ns_Log(Notice, "nslog: roll server '%s', enabled %d", logPtr->server, Ns_ServerRootProcEnabled(logPtr->server));
+    Ns_Log(Notice, "nslog: roll server '%s', rootproc enabled %d",
+           logPtr->server, Ns_ServerRootProcEnabled(logPtr->server));
 
     if (Ns_ServerRootProcEnabled(logPtr->server)) {
-        status = Ns_ServerLogRollAll(logPtr->server, logPtr->rollfmt, logPtr->maxbackup);
+        status = Ns_ServerLogRollAll(logPtr->server, logType, logPtr->rollfmt, logPtr->maxbackup);
 
     } else {
         status = Ns_RollFileCondFmt(LogOpen, LogClose, logPtr,
@@ -1332,9 +1332,7 @@ LogCloseCallback(const Ns_Time *toPtr, void *arg)
 static void
 LogRollCallback(void *arg, int UNUSED(id))
 {
-    Ns_Log(Notice, "CALL LogRollCallback");
     LogCallbackProc(LogRoll, arg, "roll");
-    Ns_Log(Notice, "DONE LogRollCallback");
 }
 
 

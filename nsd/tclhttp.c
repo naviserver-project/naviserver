@@ -81,6 +81,8 @@ static const char *connectMethod          = "CONNECT";
 
 static const int acceptEncodingHeaderLength = 15;
 
+static const char *logType = "HTTPCLIENTLOG";
+
 /*
  * Attempt to maintain Tcl errorCode variable.
  * This is still not done thoroughly through the code.
@@ -822,15 +824,22 @@ NsInitHttp(NsServer *servPtr)
 
     servPtr->httpclient.logging = Ns_ConfigBool(section, "logging", NS_FALSE);
     if (servPtr->httpclient.logging) {
-        Tcl_DString defaultLogFileName;
+        const char *serverLogDir = Ns_ServerLogDir(servPtr->server);
+        const char *defaultFilename = "httpclient.log";
+        //Tcl_DString defaultLogFileName;
+        //Tcl_DStringInit(&defaultLogFileName);
+        //Tcl_DStringAppend(&defaultLogFileName, "httpclient-", 11);
+        //Tcl_DStringAppend(&defaultLogFileName, servPtr->server, TCL_INDEX_NONE);
+        //Tcl_DStringAppend(&defaultLogFileName, ".log", 4);
+        // defaultFilename = defaultLogFileName.string
 
-        Tcl_DStringInit(&defaultLogFileName);
-        Tcl_DStringAppend(&defaultLogFileName, "httpclient-", 11);
-        Tcl_DStringAppend(&defaultLogFileName, servPtr->server, TCL_INDEX_NONE);
-        Tcl_DStringAppend(&defaultLogFileName, ".log", 4);
-        servPtr->httpclient.logFileName = Ns_ConfigFilename(section, "logfile", 7, nsconf.logDir,
-                                                            defaultLogFileName.string, NS_FALSE, NS_TRUE);
-        Tcl_DStringFree(&defaultLogFileName);
+        /*
+         * Do not update the logfile name with the absolute path, since we
+         * need the relative path for mass virtual hosting.
+         */
+        servPtr->httpclient.logFileName = Ns_ConfigFilename(section, "logfile", 7, serverLogDir,
+                                                            defaultFilename, NS_FALSE, NS_FALSE);
+        // Tcl_DStringFree(&defaultLogFileName);
 
         servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(section, "logrollfmt"));
         servPtr->httpclient.logMaxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup",
@@ -880,8 +889,8 @@ SchedLogRollCallback(void *arg, int UNUSED(id))
 {
     NsServer *servPtr = (NsServer *)arg;
 
-    Ns_Log(Notice, "httpclient: scheduled callback '%s'",
-           servPtr->httpclient.logFileName);
+    /*Ns_Log(Notice, "httpclient: scheduled callback '%s'",
+      servPtr->httpclient.logFileName);*/
 
     HttpClientLogRoll(servPtr);
 }
@@ -931,14 +940,20 @@ HttpClientLogRoll(void *arg)
     Ns_ReturnCode status = NS_OK;
     NsServer     *servPtr = (NsServer *)arg;
 
-    Ns_Log(Notice, "httpclient: client roll '%s' (logging %d)",
+    Ns_Log(Notice, "httpclient: log roll '%s' (logging %d)",
            servPtr->httpclient.logFileName, servPtr->httpclient.logging);
 
     if (servPtr->httpclient.logging) {
-        status = Ns_RollFileCondFmt(HttpClientLogOpen, HttpClientLogClose, servPtr,
-                                    servPtr->httpclient.logFileName,
-                                    servPtr->httpclient.logRollfmt,
-                                    servPtr->httpclient.logMaxbackup);
+        if (Ns_ServerRootProcEnabled(servPtr->server)) {
+            status = Ns_ServerLogRollAll(servPtr->server, logType,
+                                         servPtr->httpclient.logRollfmt,
+                                         servPtr->httpclient.logMaxbackup);
+        } else {
+            status = Ns_RollFileCondFmt(HttpClientLogOpen, HttpClientLogClose, servPtr,
+                                        servPtr->httpclient.logFileName,
+                                        servPtr->httpclient.logRollfmt,
+                                        servPtr->httpclient.logMaxbackup);
+        }
     }
     return status;
 }
@@ -1001,6 +1016,10 @@ HttpClientLogClose(void *arg)
     Ns_ReturnCode status = NS_OK;
     NsServer     *servPtr = (NsServer *)arg;
 
+    if (Ns_ServerRootProcEnabled(servPtr->server)) {
+        status = Ns_ServerLogCloseAll(servPtr->server, logType);
+    }
+
     if (servPtr->httpclient.fd != NS_INVALID_FD) {
         Ns_Log(Notice, "httpclient: logfile '%s' try to close (fd %d)",
                servPtr->httpclient.logFileName, servPtr->httpclient.fd);
@@ -1012,6 +1031,120 @@ HttpClientLogClose(void *arg)
     }
 
     return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpClientLogWrite --
+ *
+ *      Writes an HTTP client log entry for the given HTTP task.
+ *
+ *      This function generates a log message describing the current state of the
+ *      HTTP task, including timing, thread information, request details, and a cause
+ *      string. It determines the appropriate log file descriptor based on the server’s
+ *      configuration. If server root processing is enabled, the log file is dynamically
+ *      resolved using the Ns_LogPath() and Ns_ServerLogGetFd() functions; otherwise,
+ *      the pre-configured file descriptor in the server's httpclient structure is used.
+ *
+ * Parameters:
+ *      httpPtr     - Pointer to the NsHttpTask structure representing the HTTP task.
+ *      causeString - A string describing the reason for logging (e.g., error cause, timeout, etc.).
+ *
+ * Results:
+ *      This function does not return a value. Errors (such as inability to determine a valid server)
+ *      are logged via Ns_Log() and the logging attempt is aborted.
+ *
+ * Side Effects:
+ *      - May allocate and free Tcl_DString buffers for constructing log messages.
+ *      - Writes log output asynchronously via NsAsyncWrite().
+ *      - Uses mutex locks to ensure thread-safe access to the log file.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+HttpClientLogWrite(
+    const NsHttpTask *httpPtr,
+    const char       *causeString
+) {
+    NsServer *servPtr;
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(causeString != NULL);
+
+    /*fprintf(stderr, "================ HttpClientLog %d fd %d %s etime %ld cause %s\n",
+            httpPtr->servPtr->httpclient.logging,
+            httpPtr->servPtr->httpclient.fd,
+            httpPtr->servPtr->httpclient.logFileName,
+            (long)(httpPtr->etime.sec),
+            causeString
+            );*/
+
+
+    if (likely(httpPtr->servPtr != NULL)) {
+        servPtr = httpPtr->servPtr;
+    } else {
+        /*
+         * In case, there is no server provided in httpPtr (e.g. the itPtr had
+         * no servPtr set), use the configuration of the default server.
+         */
+        servPtr = NsGetServer(nsconf.defaultServer);
+        if (servPtr == NULL) {
+            Ns_Log(Error, "http client log: server could not be determined, logging attempt rejected");
+            return;
+        }
+    }
+
+    if (servPtr->httpclient.logging) {
+        int fd;
+
+        fprintf(stderr, "HTTPCLIENT httpPtr logFileName: <%s>\n", servPtr->httpclient.logFileName);
+
+        if (Ns_ServerRootProcEnabled(servPtr->server)) {
+            Tcl_DString ds, *dsPtr = &ds;
+            const char *fullFilename;
+            const char *section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", NS_SENTINEL);
+            const char *fn = Ns_ConfigGetValue(section, "logfile");
+
+            //fprintf(stderr, "HTTPCLIENT config section %s logfile: <%s>\n", section, fn);
+
+            Tcl_DStringInit(dsPtr);
+            fullFilename = Ns_LogPath(dsPtr, servPtr->server, fn);
+            fd = Ns_ServerLogGetFd(servPtr->server, logType, fullFilename);
+            Tcl_DStringFree(dsPtr);
+        } else {
+            fd = servPtr->httpclient.fd;
+        }
+
+        if (fd != NS_INVALID_FD) {
+            Tcl_DString logString;
+            Ns_Time     diff;
+            char        buf[41]; /* Big enough for Ns_LogTime(). */
+
+            Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
+
+            Tcl_DStringInit(&logString);
+            Ns_DStringPrintf(&logString, "%s %s %d %s %s " NS_TIME_FMT
+                             " %" PRIdz " %" PRIdz " %d %s\n",
+                             Ns_LogTime(buf),
+                             Ns_ThreadGetName(),
+                             httpPtr->status == 0 ? 408 : httpPtr->status,
+                             httpPtr->method,
+                             httpPtr->url,
+                             (int64_t)diff.sec, diff.usec,
+                             httpPtr->sent,
+                             httpPtr->received,
+                             (httpPtr->pos > 0),
+                             causeString
+                            );
+
+            Ns_MutexLock(&servPtr->httpclient.lock);
+            (void)NsAsyncWrite(fd, logString.string, (size_t)logString.length);
+            Ns_MutexUnlock(&servPtr->httpclient.lock);
+
+            Tcl_DStringFree(&logString);
+        }
+    }
 }
 
 /*
@@ -3032,71 +3165,6 @@ HttpQueue(
     }
 
     return result;
-}
-
-static void
-HttpClientLogWrite(
-    const NsHttpTask *httpPtr,
-    const char       *causeString
-) {
-    Ns_Time   diff;
-    NsServer *servPtr;
-
-    NS_NONNULL_ASSERT(httpPtr != NULL);
-    NS_NONNULL_ASSERT(causeString != NULL);
-
-    /*fprintf(stderr, "================ HttpClientLog %d fd %d %s etime %ld cause %s\n",
-            httpPtr->servPtr->httpclient.logging,
-            httpPtr->servPtr->httpclient.fd,
-            httpPtr->servPtr->httpclient.logFileName,
-            (long)(httpPtr->etime.sec),
-            causeString
-            );*/
-
-    Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
-
-    if (likely(httpPtr->servPtr != NULL)) {
-        servPtr = httpPtr->servPtr;
-    } else {
-        /*
-         * In case, there is no server provided in httpPtr (e.g. the itPtr had
-         * no servPtr set), use the configuration of the default server.
-         */
-        servPtr = NsGetServer(nsconf.defaultServer);
-        if (servPtr == NULL) {
-            Ns_Log(Error, "http client log: server could not be determined, logging attempt rejected");
-            return;
-        }
-    }
-
-    if (servPtr->httpclient.logging
-        && servPtr->httpclient.fd != NS_INVALID_FD
-       ) {
-        Tcl_DString logString;
-        char buf[41]; /* Big enough for Ns_LogTime(). */
-
-        Tcl_DStringInit(&logString);
-        Ns_DStringPrintf(&logString, "%s %s %d %s %s " NS_TIME_FMT
-                         " %" PRIdz " %" PRIdz " %d %s\n",
-                         Ns_LogTime(buf),
-                         Ns_ThreadGetName(),
-                         httpPtr->status == 0 ? 408 : httpPtr->status,
-                         httpPtr->method,
-                         httpPtr->url,
-                         (int64_t)diff.sec, diff.usec,
-                         httpPtr->sent,
-                         httpPtr->received,
-                         (httpPtr->pos > 0),
-                         causeString
-                        );
-
-        Ns_MutexLock(&servPtr->httpclient.lock);
-        (void)NsAsyncWrite(servPtr->httpclient.fd,
-                           logString.string, (size_t)logString.length);
-        Ns_MutexUnlock(&servPtr->httpclient.lock);
-
-        Tcl_DStringFree(&logString);
-    }
 }
 
 
