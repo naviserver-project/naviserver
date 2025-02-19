@@ -174,19 +174,18 @@ Ns_ModuleInit(const char *server, const char *module)
         serverLogDir = Ns_ServerLogDir(server);
         logPtr->filename = Ns_ConfigFilename(section, "file", 4, serverLogDir, "access.log",
                                              NS_FALSE, NS_FALSE);
-
-        Ns_Log(Notice, "?????? logfilename <%s> serverrootproc enabled %d", logPtr->filename,
-               Ns_ServerRootProcEnabled(server));
         /*
          * Create the serverLogDir only when we have no ServerRootProcEnabled.
          */
+        Ns_Log(Debug, "logfilename <%s> serverrootproc enabled %d", logPtr->filename,
+               Ns_ServerRootProcEnabled(server));
+
         if (!Ns_ServerRootProcEnabled(server)) {
             if (Ns_RequireDirectory(serverLogDir) != NS_OK) {
                 Ns_Fatal("nslog: log directory '%s' could not be created", serverLogDir);
             }
         }
     }
-
 
     /*
      * Get other parameters from configuration file
