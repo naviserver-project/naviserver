@@ -709,7 +709,7 @@ Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *filename)
              * Serverroot + relative server log + filename
              */
             Tcl_DStringInit(&scratch);
-            value = Ns_MakePath(&scratch, Ns_ServerPath(dsPtr, server, NS_SENTINEL),
+            value = Ns_MakePath(dsPtr, Ns_ServerPath(&scratch, server, NS_SENTINEL),
                                 serverLogDir, filename, NS_SENTINEL);
             Tcl_DStringFree(&scratch);
             Ns_DStringPrintf(&message, "relative server logdir '%s' ", serverLogDir);
