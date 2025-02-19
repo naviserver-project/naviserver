@@ -1681,14 +1681,10 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     case SLogdirIdx:
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) == NS_OK) {
-            Tcl_DString scratch;
 
             Tcl_DStringInit(dsPtr);
-            Tcl_DStringInit(&scratch);
-
-            Ns_LogPath(dsPtr, servPtr->server, Ns_ServerPath(&scratch, servPtr->server, NS_SENTINEL), "");
+            Ns_LogPath(dsPtr, servPtr->server, "");
             Tcl_DStringResult(interp, dsPtr);
-            Tcl_DStringFree(&scratch);
             result = TCL_OK;
         }
         break;

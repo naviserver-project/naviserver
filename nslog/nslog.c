@@ -169,9 +169,8 @@ Ns_ModuleInit(const char *server, const char *module)
         /*
          * Determine the name of the log directory and the absolute filename.
          */
-        const char *serverLogDir;
+        const char *serverLogDir = Ns_ServerLogDir(server);
 
-        serverLogDir = Ns_ServerLogDir(server);
         logPtr->filename = Ns_ConfigFilename(section, "file", 4, serverLogDir, "access.log",
                                              NS_FALSE, NS_FALSE);
         /*
@@ -868,14 +867,11 @@ LogTrace(void *arg, Ns_Conn *conn)
     Tcl_DStringInit(dsPtr);
 
     if (Ns_ServerRootProcEnabled(server)) {
-        Tcl_DString scratch;
         const char *section = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
         const char *filename = Ns_ConfigGetValue(section, "file"), *fullFilename;
 
-        Tcl_DStringInit(&scratch);
-        fullFilename = Ns_LogPath(&scratch, server, Ns_ServerPath(dsPtr, server, NS_SENTINEL), filename);
+        fullFilename = Ns_LogPath(dsPtr, server, filename);
         fd = Ns_ServerLogGetFd(server, fullFilename);
-        Tcl_DStringFree(&scratch);
         Tcl_DStringSetLength(dsPtr, 0);
     } else {
         fd = logPtr->fd;

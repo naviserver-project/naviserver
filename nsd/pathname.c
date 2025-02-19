@@ -652,29 +652,25 @@ Ns_PagePath(Ns_DString *dsPtr, const char *server, ...)
  *
  * Ns_LogPath --
  *
- *      If the provided filename is absolute the function simply returns
- *      the provided configValue unchanged.
+ *      Constructs and returns the absolute path for a log file for a given server.
+ *      If the provided filename is absolute, it is returned unchanged.
  *
- *      If the dynamic serverroot processing is not enabled, the function returns
- *      the absolute file path based on the server logdir.
+ *      If the filename is relative and server root processing is enabled for
+ *      the specified server, the function retrieves the server-specific log
+ *      directory from the configuration (falling back to the global
+ *      "ns/parameters" logdir if necessary).  It then constructs the full
+ *      path by appending the filename to the resolved log directory. The
+ *      function logs details about whether a relative or absolute server log
+ *      directory was used.
  *
- *      Otherwise the function resolves the absolute log filename for a given
- *      server dynamically based on its configuration values. If server root
- *      processing is enabled for the specified server, the function examines
- *      the provided filename.  If this value is not an absolute path, it
- *      retrieves the server-specific log directory from the server's
- *      configuration. If no server-specific log directory is defined, it
- *      falls back to the global log directory from the "ns/parameters"
- *      section. Depending on whether the retrieved log directory is absolute
- *      or relative, the function constructs the final path using Ns_MakePath,
- *      combining it with either the server root or the log directory itself.
- *
+ *      If server root processing is not enabled, the function builds the log path using
+ *      the default log directory obtained via Ns_ServerLogDir().
+
  *
  * Parameters:
  *      dsPtr       - Pointer to a Tcl_DString used as a buffer for
  *                    constructing the path.
  *      server      - Name of the server.
- *      serverRoot  - Absolute path to the server's root directory.
  *      configValue - Configured log directory value (may be relative or absolute).
  *
  * Results:
@@ -682,13 +678,13 @@ Ns_PagePath(Ns_DString *dsPtr, const char *server, ...)
  *      absolute log directory.
  *
  * Side Effects:
- *      Constructs the absolute path in the provided Tcl_DString and logs notices indicating which
- *      log directory (global, relative, or absolute) was used.
+ *      The Tcl_DString referenced by dsPtr may be modified during the
+ *      construction of the path.
  *
  *----------------------------------------------------------------------
  */
 const char *
-Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *serverRoot, const char *filename)
+Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *filename)
 {
     const char *result;
 
@@ -708,10 +704,14 @@ Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *serverRoot, const
             Ns_DStringPrintf(&message, "use global logdir <%s> ", serverLogDir);
         }
         if (!Ns_PathIsAbsolute(serverLogDir)) {
+            Tcl_DString scratch;
             /*
              * Serverroot + relative server log + filename
              */
-            value = Ns_MakePath(dsPtr, serverRoot, serverLogDir, filename, NS_SENTINEL);
+            Tcl_DStringInit(&scratch);
+            value = Ns_MakePath(&scratch, Ns_ServerPath(dsPtr, server, NS_SENTINEL),
+                                serverLogDir, filename, NS_SENTINEL);
+            Tcl_DStringFree(&scratch);
             Ns_DStringPrintf(&message, "relative server logdir '%s' ", serverLogDir);
         } else {
             /*

@@ -2344,7 +2344,7 @@ NS_EXTERN Ns_ReturnCode
 Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
 
 NS_EXTERN const char *
-Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *serverRoot, const char *filename)
+Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *filename)
     NS_GNUC_NONNULL(1);
 
 /*
