@@ -89,7 +89,7 @@
 #define UCHAR(c)                   ((unsigned char)(c))
 #define INTCHAR(c)                 ((int)UCHAR((c)))
 
-#ifdef NS_WITH_DEPRECATED
+#ifndef NS_NO_DEPRECATED
 # define NS_WITH_DEPRECATED
 #endif
 #define NS_WITH_DEPRECATED_5_0
