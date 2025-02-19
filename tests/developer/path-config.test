@@ -144,7 +144,7 @@ test logdir-5.2  {computed relative serverdir with relative server logdir} -body
 } -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/www3/HOST/log}}
 
 test logdir-5.3  {computed relative serverdir with an absolute server logdir} -body {
-    set result  [runtest {case 5.2 serverdir /opt/local/var/www3 serverlogdir /opt/local/var/log/s0 serverrootproc {{return HOST}}}]
+    set result  [runtest {case 5.3 serverdir /opt/local/var/www3 serverlogdir /opt/local/var/log/s0 serverrootproc {{return HOST}}}]
     lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
 } -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/log/s0}}
 
