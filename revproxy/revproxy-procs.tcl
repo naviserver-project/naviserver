@@ -11,7 +11,16 @@
 # Tcl module for NaviServer to use it as a reverse proxy server.
 #
 
-package require nsf
+#
+# Revproxy (as implemented) requires NSF. Revproxy is recommended, but
+# not strictly necessary for running NaviServer.
+#
+if {[info commands ::nsf::proc] eq ""} {
+    ns_log warning "NSF is not installed. The revproxy is not available"
+    return
+}
+
+ns_log notice "Using NSF version [package require nsf]"
 
 if {$::tcl_version eq "8.5"} {
     #
