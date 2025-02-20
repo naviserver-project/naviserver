@@ -7,7 +7,7 @@
 #catch {package require nx}
 
 if {[info commands ::nx::Class] eq ""} {
-    ns_log warning "ns_md, ns_hmac, ns_hotp and ns_totp are not available"
+    ns_log warning "NSF is not installed. The commands ns_md, ns_hmac, ns_hotp and ns_totp are not available"
     return
 }
 
