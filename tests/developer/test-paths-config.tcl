@@ -11,12 +11,17 @@
 # Parameters:
 #
 #   - homedir
+#   - libdir
 #   - logdir
+#   - modulebinpath
 #   - serverdir
+#   - serverinitfile
+#   - serverlibdir
 #   - serverlogdir
 #   - serverpagedir
 #   - serverrootproc
 #
+set modulebinpath ""
 
 if {[info exists ::env(params)]} {
     set params [join $::env(params) " "]
@@ -47,13 +52,14 @@ ns_section ns/parameters {
     ns_param params $params
     if {[info exists homedir]} {ns_param home $homedir}
     if {[info exists logdir]}  {ns_param logdir $logdir}
+    if {[info exists libdir]}  {ns_param tcllibrary $libdir}
 }
 ns_section ns/servers {
     ns_param SERVER1 WebServer
 }
 
 ns_section ns/modules {
-    ns_param http nssock.so
+    ns_param http ${modulebinpath}nssock.so
 }
 ns_section ns/module/http {
     ns_param address            $address
@@ -70,7 +76,7 @@ ns_section ns/server/SERVER1 {
 }
 
 ns_section ns/server/SERVER1/modules {
-    ns_param nslog nslog.so
+    ns_param nslog ${modulebinpath}nslog.so
 }
 ns_section ns/server/SERVER1/module/nslog {
     ns_param rollonsignal true
@@ -81,6 +87,8 @@ ns_section ns/server/SERVER1/fastpath {
 }
 
 ns_section ns/server/SERVER1/tcl {
+    if {[info exists serverinitfile]} {ns_param initfile $serverinitfile}
+    if {[info exists serverlibdir]} {ns_param library $serverlibdir}
     ns_param enabletclpages true
     # if {1 && [info exists serverrootproc]} {
     #     set initcmds [subst {
