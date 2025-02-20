@@ -1766,6 +1766,7 @@ NsTclInitServer(const char *server)
             (void) Ns_TclLogErrorInfo(interp,
                                       Ns_DStringPrintf(&ds, "\n(context: init server %s)", server));
             Tcl_DStringFree(&ds);
+            Ns_Fatal("tclinit: invalid init file: %s", Tcl_GetString(servPtr->tcl.initfile));
         }
         Ns_TclDeAllocateInterp(interp);
     }

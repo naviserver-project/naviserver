@@ -10,6 +10,7 @@
 #
 # Parameters:
 #
+#   - homedir
 #   - logdir
 #   - serverdir
 #   - serverlogdir
@@ -27,7 +28,7 @@ if {[info exists ::env(params)]} {
     #set serverrootproc {ns_log notice SERVERROOTPROC; return /SERVERDIR}
     set serverdir s0
     set serverlogdir log
-    
+
     set params {}
     foreach p {logdir serverdir serverpagedir serverlogdir serverrootproc} {
         if {[info exists $p]} {dict set params $p [set $p]}
@@ -44,7 +45,8 @@ ns_section ns/parameters {
     #ns_param serverlog		/dev/stdout
     ns_param listenurl http://localhost:$httpport
     ns_param params $params
-    if {[info exists logdir]} {ns_param logdir $logdir}
+    if {[info exists homedir]} {ns_param home $homedir}
+    if {[info exists logdir]}  {ns_param logdir $logdir}
 }
 ns_section ns/servers {
     ns_param SERVER1 WebServer
@@ -90,6 +92,7 @@ ns_section ns/server/SERVER1/tcl {
             set f %-25s
             ns_return 200 text/plain [subst {
                 [format $f params] [list [ns_config ns/parameters params]]
+                [format $f homedir] [ns_info home]
                 [format $f serverdir] [ns_server serverdir]
                 [format $f "serverdir-effective"] [ns_server serverdir -effective]
                 [format $f serverlogdir] [ns_server logdir]

@@ -247,5 +247,45 @@ test pagedir-5.3  {computed relative serverdir with an absolute server pagedir} 
 } -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www/s0}}
 
 
+############################################################################################################
+# homedir tests
+############################################################################################################
+proc flatlist {l} { lmap e $l {set e} }
+#
+# homedir test, when no serverdir is provided:
+#
+test homedir-1.0 {default values} -body {
+    set result  [runtest {case 1.1}]
+    lmap {k v} $result {if {$k ni {Fatal Error homedir serverdir serverlogdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result [flatlist {
+    {homedir /usr/local/ns}
+    {serverdir /usr/local/ns}
+    {serverlogdir /usr/local/ns/logs}
+    {serverpagedir /usr/local/ns/pages}
+}]
+                              
+
+test homedir-1.1.1 {invalid (non-existing) absolute homedir} -body {
+    set result  [runtest {case 1.3 homedir /ns}]
+    lmap {k v} $result {if {$k ni {Fatal Error homedir serverdir serverlogdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{Fatal {nsmain: chdir(/ns) failed: 'No such file or directory'}}}
+
+test homedir-1.1.2 {invalid (non-existing) absolute homedir} -body {
+    set result  [runtest {case 1.3 homedir /opt/local/ns}]
+    lmap {k v} $result {if {$k ni {Fatal homedir serverdir serverlogdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{Fatal {tclinit: invalid init file: /opt/local/ns/bin/init.tcl}}}
+
+
+# test homedir-1.3  {relative serverpagedir} -body {
+#     set result  [runtest {case 1.3 serverpagedir www}]
+#     lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+# } -returnCodes {error ok} -result {{serverdir /usr/local/ns} {serverpagedir /usr/local/ns/www}}
+
+# test homedir-1.4  {absolute serverpagedir} -body {
+#     set result  [runtest {case 1.4 serverpagedir /opt/local/var/www}]
+#     lmap {k v} $result {if {$k ni {serverpagedir}} continue; list $k $v}
+# } -returnCodes {error ok} -result {{serverpagedir /opt/local/var/www}}
+
+
 
 cleanupTests
