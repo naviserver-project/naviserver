@@ -44,6 +44,9 @@ proc runtest {params} {
     return $extract
 }
 
+############################################################################################################
+# logdir tests
+############################################################################################################
 #
 # logdir test, when no serverdir is provided:
 #
@@ -147,6 +150,102 @@ test logdir-5.3  {computed relative serverdir with an absolute server logdir} -b
     set result  [runtest {case 5.3 serverdir /opt/local/var/www3 serverlogdir /opt/local/var/log/s0 serverrootproc {{return HOST}}}]
     lmap {k v} $result {if {$k ni {serverdir serverlogdir}} continue; list $k $v}
 } -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverlogdir /opt/local/var/log/s0}}
+
+############################################################################################################
+# pagedir tests
+############################################################################################################
+#
+# pagedir test, when no serverdir is provided:
+#
+test pagedir-1.1  {default values} -body {
+    set result  [runtest {case 1.1}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns} {serverpagedir /usr/local/ns/pages}}
+
+test pagedir-1.3  {relative serverpagedir} -body {
+    set result  [runtest {case 1.3 serverpagedir www}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns} {serverpagedir /usr/local/ns/www}}
+
+test pagedir-1.4  {absolute serverpagedir} -body {
+    set result  [runtest {case 1.4 serverpagedir /opt/local/var/www}]
+    lmap {k v} $result {if {$k ni {serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverpagedir /opt/local/var/www}}
+
+#
+# pagedir tests with a relative serverdir
+#
+test pagedir-2.1  {relative serverdir with default values} -body {
+    set result  [runtest {case 2.1 serverdir s0}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns/s0} {serverpagedir /usr/local/ns/s0/pages}}
+
+test pagedir-2.2  {relative serverdir with relative server pagedir} -body {
+    set result  [runtest {case 2.2 serverdir s0 serverpagedir www}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns/s0} {serverpagedir /usr/local/ns/s0/www}}
+
+test pagedir-2.3  {relative serverdir with absolute server pagedir} -body {
+    set result  [runtest {case 2.3 serverdir s0 serverpagedir /opt/local/var/www/s0}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /usr/local/ns/s0} {serverpagedir /opt/local/var/www/s0}}
+
+#
+# pagedir tests with an absolute serverdir
+#
+test pagedir-3.1  {absolute serverdir with default values} -body {
+    set result  [runtest {case 3.1 serverdir /opt/local/var/www3}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www3/pages}}
+
+test pagedir-3.2  {absolute serverdir with relative server pagedir} -body {
+    set result  [runtest {case 3.2 serverdir /opt/local/var/www3 serverpagedir www}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www3/www}}
+
+test pagedir-3.3  {absolute serverdir with an absolute server pagedir} -body {
+    set result  [runtest {case 3.3 serverdir /opt/local/var/www3 serverpagedir /opt/local/var/www/s0}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www/s0}}
+
+
+#
+# pagedir tests with a computed absolute serverdir
+#
+test pagedir-4.1  {computed absolute serverdir with default values} -body {
+    set result  [runtest {case 4.1 serverdir /opt/local/var/www3 serverrootproc {{return /opt/local/var/www3/HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www3/HOST/pages}}
+
+test pagedir-4.2  {computed absolute serverdir with relative server pagedir} -body {
+    set result  [runtest {case 4.2 serverdir /opt/local/var/www3 serverpagedir www serverrootproc {{return /opt/local/var/www3/HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www3/HOST/www}}
+
+test pagedir-4.3  {computed absolute serverdir with an absolute server pagedir} -body {
+    set result  [runtest {case 4.3 serverdir /opt/local/var/www3 serverpagedir /opt/local/var/www/s0 serverrootproc {{return /opt/local/var/www3/HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www/s0}}
+
+
+#
+# pagedir tests with a computed relative serverdir
+#
+test pagedir-5.1  {computed relative serverdir with default values} -body {
+    set result  [runtest {case 5.1 serverdir /opt/local/var/www3 serverrootproc {{return HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www3/HOST/pages}}
+
+test pagedir-5.2  {computed relative serverdir with relative server pagedir} -body {
+    set result  [runtest {case 5.2 serverdir /opt/local/var/www3 serverpagedir www serverrootproc {{return HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www3/HOST/www}}
+
+test pagedir-5.3  {computed relative serverdir with an absolute server pagedir} -body {
+    set result  [runtest {case 5.3 serverdir /opt/local/var/www3 serverpagedir /opt/local/var/www/s0 serverrootproc {{return HOST}}}]
+    lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
+} -returnCodes {error ok} -result {{serverdir /opt/local/var/www3} {serverpagedir /opt/local/var/www/s0}}
+
 
 
 cleanupTests
