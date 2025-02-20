@@ -410,9 +410,36 @@ hostname, for example [lb]ns_conn url[rb] on  returns /index.adp.
 Returns the number of elements (delimited by `/') in the URL of the HTTP request.
 
 
-[call [cmd  "ns_conn urlencoding"] [opt [arg encoding]]]
+[call [cmd "ns_conn urldict"]]
 
-Queries or sets the url encoding for the current connection.
+ Returns the current request URL as a Tcl dictionary, with its
+ components (such as protocol, host, port, path, query, fragment,
+ etc.) separated into individual key/value pairs.
+
+[para] This structured representation allows you to easily modify
+ specific parts of the URL programmatically. For instance, you can
+ remove or change the query, add a fragment, or adjust any other
+ component, and then rebuild the complete URL using
+ [cmd ns_joinurl]. This capability is especially valuable in dynamic web
+ applications where URL manipulation is required based on the request
+ context or custom routing logic.
+
+[example_begin]
+ # Original URL: /foo/bar?x=1
+ set urldict [lb]ns_conn urldict[rb]
+ # Example result: {path foo tail bar query x=1}
+ 
+ dict unset urldict query
+ dict set urldict fragment sect2
+ set url [lb]ns_joinurl $urldict[rb]
+ # Resulting URL: /foo/bar#sect2
+[example_end]
+
+[call [cmd "ns_conn urlencoding"] [opt [arg encoding]]]
+
+ Queries or sets the URL encoding for the current connection. If an
+ [arg encoding] value is provided, it sets the URL encoding;
+ otherwise, it returns the current encoding.
 
 
 [call [cmd  "ns_conn urlv"] [opt [arg idx]]]

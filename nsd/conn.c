@@ -1917,7 +1917,7 @@ enum ISubCmdIdx {
     CRatelimitIdx, CRequestIdx,
     CServerIdx, CSockIdx, CStartIdx, CStatusIdx,
     CTargetIdx,CTimeoutIdx,
-    CUrlIdx, CUrlcIdx, CUrlEncodingIdx, CUrlvIdx,
+    CUrlIdx, CUrlcIdx, CUrlDictIdx, CUrlEncodingIdx, CUrlvIdx,
     CVersionIdx,
     CZipacceptedIdx
 };
@@ -1951,7 +1951,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         "ratelimit", "request",
         "server", "sock", "start", "status",
         "target", "timeout",
-        "url", "urlc", "urlencoding", "urlv",
+        "url", "urlc", "urldict", "urlencoding", "urlv",
         "version",
         "zipaccepted",
         NULL
@@ -1984,7 +1984,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
         /* T */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* U */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
-        /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
+        /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* V */ NS_CONN_REQUIRE_CONFIGURED,
         /* Z */ NS_CONN_REQUIRE_CONFIGURED,
         0u
@@ -2688,6 +2688,32 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
             Tcl_RegisterChannel(interp, chan);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),TCL_INDEX_NONE));
         }
+        break;
+    }
+
+    case CUrlDictIdx: {
+        Ns_URL      u;
+        char       *requestLine = ns_strdup(request->line), *urlString;
+        const char *errMsg = NULL;
+
+        assert(request != NULL);
+        urlString = strchr(requestLine, INTCHAR(' '));
+        if (urlString == NULL) {
+            errMsg = "no space";
+        } else {
+            char *version = strrchr(urlString, INTCHAR(' '));
+
+            if (version != NULL) {
+                *version = '\0';
+            }
+            Ns_ParseUrl(urlString +1, NS_FALSE, &u, &errMsg);
+        }
+        if (errMsg != NULL) {
+            Ns_TclPrintfResult(interp, "Could not parse URL \"%s\": %s", urlString, errMsg);
+        } else {
+            Tcl_SetObjResult(interp, NsUrlToDictObj(interp, &u));
+        }
+        ns_free(requestLine);
         break;
     }
 
