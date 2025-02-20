@@ -774,7 +774,7 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, co
         if (strstr(value, "..") != NULL) {
             pathLength = (TCL_SIZE_T)strlen(value);
             result = NormalizePath(value, &pathLength);
-            fprintf(stderr, "=== %s %s NormalizePath '%s'\n", section, key, result);
+            //fprintf(stderr, "=== %s %s NormalizePath '%s'\n", section, key, result);
         } else {
             result = ns_strdup(value);
         }
