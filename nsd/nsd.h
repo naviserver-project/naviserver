@@ -2124,6 +2124,12 @@ NS_EXTERN void NsRestoreSignals(void);
 NS_EXTERN void NsSendSignal(int sig);
 NS_EXTERN void NsUnblockSignal(int signal);
 
+
+/*
+ * url.c
+ */
+NS_EXTERN Tcl_Obj *NsUrlToDictObj(Tcl_Interp *interp, Ns_URL *urlPtr)  NS_GNUC_NONNULL(2);
+
 /*
  * url2file.c
  */

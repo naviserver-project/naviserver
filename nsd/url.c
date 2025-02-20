@@ -739,7 +739,80 @@ done:
 }
 
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsUrlToDictObj --
+ *
+ *      Converts a Ns_URL structure into a Tcl dictionary object.
+ *      Each non-null component of the URL (protocol, userinfo, host, port,
+ *      path, tail, query, fragment) is added as a key/value pair to the
+ *      resulting dictionary. The keys are short string identifiers (e.g.,
+ *      "proto", "host") and the corresponding values are the respective
+ *      parts of the URL.
+ *
+ * Parameters:
+ *      interp  - The Tcl interpreter to be used for creating Tcl objects.
+ *      urlPtr  - Pointer to a Ns_URL structure containing the parsed URL.
+ *
+ * Results:
+ *      Returns a Tcl_Obj* that is a dictionary representation of the URL.
+ *
+ * Side Effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+NsUrlToDictObj(Tcl_Interp *interp, Ns_URL *urlPtr)
+{
+    Tcl_Obj *resultObj = Tcl_NewDictObj();
+
+    if (urlPtr->protocol != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("proto", 5),
+                       Tcl_NewStringObj(urlPtr->protocol, TCL_INDEX_NONE));
+    }
+    if (urlPtr->userinfo != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("userinfo", 8),
+                       Tcl_NewStringObj(urlPtr->userinfo, TCL_INDEX_NONE));
+    }
+    if (urlPtr->host != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("host", 4),
+                       Tcl_NewStringObj(urlPtr->host, TCL_INDEX_NONE));
+    }
+    if (urlPtr->port != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("port", 4),
+                       Tcl_NewStringObj(urlPtr->port, TCL_INDEX_NONE));
+    }
+    if (urlPtr->path != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("path", 4),
+                       Tcl_NewStringObj(urlPtr->path, TCL_INDEX_NONE));
+
+    }
+    if (urlPtr->tail != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("tail", 4),
+                       Tcl_NewStringObj(urlPtr->tail, TCL_INDEX_NONE));
+    }
+    if (urlPtr->query != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("query", 5),
+                       Tcl_NewStringObj(urlPtr->query, TCL_INDEX_NONE));
+    }
+    if (urlPtr->fragment != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("fragment", 8),
+                       Tcl_NewStringObj(urlPtr->fragment, TCL_INDEX_NONE));
+    }
+
+    return resultObj;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -756,7 +829,6 @@ done:
  *
  *----------------------------------------------------------------------
  */
-
 int
 NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -781,45 +853,11 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         url = ns_strdup(urlString);
 
         if (Ns_ParseUrl(url, (bool)strict, &u, &errorMsg) == NS_OK) {
-            Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
-
-            if (u.protocol != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("proto", 5));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.protocol, TCL_INDEX_NONE));
-            }
-            if (u.userinfo != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("userinfo", 8));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.userinfo, TCL_INDEX_NONE));
-            }
-            if (u.host != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("host", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.host, TCL_INDEX_NONE));
-            }
-            if (u.port != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("port", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.port, TCL_INDEX_NONE));
-            }
-            if (u.path != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("path", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.path, TCL_INDEX_NONE));
-            }
-            if (u.tail != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("tail", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.tail, TCL_INDEX_NONE));
-            }
-            if (u.query != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("query", 5));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.query, TCL_INDEX_NONE));
-            }
-            if (u.fragment != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("fragment", 8));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.fragment, TCL_INDEX_NONE));
-            }
             if (errorMsg != NULL) {
                 Ns_TclPrintfResult(interp, "Could not parse URL \"%s\": %s", urlString, errorMsg);
                 result = TCL_ERROR;
             } else {
-                Tcl_SetObjResult(interp, resultObj);
+                Tcl_SetObjResult(interp, NsUrlToDictObj(interp, &u));
             }
 
         } else {
