@@ -43,9 +43,9 @@ include ../include/Makefile.build
 tls.o: dhparams.h nsopenssl.h
 
 dhparams.h:
-	openssl dhparam -C -2 -noout 512 >> dhparams.h
-	openssl dhparam -C -2 -noout 1024 >> dhparams.h
-	openssl dhparam -C -2 -noout 2048 >> dhparams.h
+	$(OPENSSL) dhparam -C -2 -noout 512 >> dhparams.h
+	$(OPENSSL) dhparam -C -2 -noout 1024 >> dhparams.h
+	$(OPENSSL) dhparam -C -2 -noout 2048 >> dhparams.h
 
 install-init:
 	$(INSTALL_DATA) init.tcl $(DESTDIR)$(INSTBIN)

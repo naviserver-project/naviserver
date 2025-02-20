@@ -51,6 +51,7 @@ LN               = /bin/ln
 MV               = /bin/mv
 CAT              = /bin/cat
 CHMOD            = /bin/chmod
+OPENSSL          = openssl
 
 ifdef NSBUILD
     INSTALL_SH	 = $(srcdir)/install-sh -c

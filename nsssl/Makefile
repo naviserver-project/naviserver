@@ -20,12 +20,12 @@ PEM_FILE	= tests/etc/server.pem
 certificate: $(PEM_FILE)
 
 $(PEM_FILE):
-	openssl genrsa 2048 > host.key
-	openssl req -new -config tests/etc/openssl.cnf -x509 -nodes -sha1 -days 365 -key host.key > host.cert
-	cat host.cert host.key > server.pem
-	rm -rf host.cert host.key
-	openssl dhparam 1024 >> server.pem
-	mv server.pem $(PEM_FILE)
+	$(OPENSSL) genrsa 2048 > host.key
+	$(OPENSSL) req -new -config tests/etc/openssl.cnf -x509 -nodes -sha1 -days 365 -key host.key > host.cert
+	$(CAT) host.cert host.key > server.pem
+	$(RM) host.cert host.key
+	$(OPENSSL) dhparam 1024 >> server.pem
+	$(MV) server.pem $(PEM_FILE)
 
 clean-cert:
 	rm -f $(PEM_FILE)

@@ -18,8 +18,6 @@ include include/Makefile.global
 
 dirs    = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl revproxy
 
-OPENSSL = openssl
-
 # Unix only modules
 ifeq (,$(findstring MINGW,$(uname)))
    dirs += nsproxy
@@ -123,7 +121,7 @@ install-certificates: $(PEM_FILE) ca-bundle.crt
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/certificates/; \
 	done
 	@if [ -n "$(OPENSSL_LIBS)" ]; then \
-		openssl rehash $(DESTDIR)$(NAVISERVER)/certificates ; \
+		$(OPENSSL) rehash $(DESTDIR)$(NAVISERVER)/certificates ; \
 	fi
 	$(INSTALL_DATA) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/
 
