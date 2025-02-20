@@ -16,7 +16,7 @@ namespace import -force ::tcltest::*
 
 # Run a single test with a special combination of parameters:
 #
-#    (cd tests/developer && params="serverdir /opt/local/var/www3 serverrootproc {{return HOST}}" /usr/local/ns/bin/nsd -f -t test-config-paths.tcl 2>&1)
+#    (cd tests/developer && params="serverdir /opt/local/var/www3 serverrootproc {{return HOST}}" /usr/local/ns/bin/nsd -f -t test-paths-config.tcl 2>&1)
 #
 #
 # To run theses tests, we need the following directories with write permissions
@@ -30,7 +30,7 @@ namespace import -force ::tcltest::*
 #    /usr/local/ns/s0
 
 proc runtest {params} {
-    catch {exec bash -c "params=\"$params\" /usr/local/ns/bin/nsd -f -t test-config-paths.tcl" 2>@1} testresult
+    catch {exec bash -c "params=\"$params\" /usr/local/ns/bin/nsd -f -t test-paths-config.tcl" 2>@1} testresult
     set extract {}
     foreach l [split $testresult \n] {
         if {[regexp {(Fatal|Error): (.*)$} $l . severity msg]} {

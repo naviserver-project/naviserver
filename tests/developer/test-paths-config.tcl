@@ -4,7 +4,7 @@
 # This configuration file can be called with "params" setting to
 # influence the configurable parameters like the following
 #
-#    params="serverdir /opt/local/var/www logdir log" /usr/local/ns/bin/nsd -f -t test-config-paths.tcl
+#    params="serverdir /opt/local/var/www logdir log" /usr/local/ns/bin/nsd -f -t test-paths-config.tcl
 #
 # or the configurable parameters can be set here in this file.
 #
