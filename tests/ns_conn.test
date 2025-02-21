@@ -342,8 +342,6 @@ test ns_conn-urldict-1.2 {url dict /foo/bar} -setup {
 
 test ns_conn-urldict-1.3 {url dict /foo/bar} -setup {
     ns_register_proc GET /foo/bar {
-            puts stderr "============= [ns_conn urldict]"
-
         ns_return 200 text/plain [ns_joinurl [ns_conn urldict]]
     }
 } -body {
