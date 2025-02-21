@@ -30,6 +30,14 @@ request.
 
 Returns file path to executable binary
 
+[call [cmd  "ns_info bindir"]]
+
+Returns the name of the [term bin] directory. The name is specified by the
+"bindir" parameter in the "ns/parameters" section, and defaults to
+"bin". The value is used for loading binary libraries for for
+executables like the [term nsproxy] worker.
+
+
 [call [cmd "ns_info boottime"]]
 
 Returns the time in epoch seconds since the current server was started
@@ -53,7 +61,6 @@ version in form of a dict, containing the keys
 [call [cmd  "ns_info builddate"]]
 
 Returns the date and time at which the current server was compiled, e.g.: "Jul 20 2004 at 14:57:20"
-
 
 [call [cmd  "ns_info callbacks"]]
 
@@ -270,7 +277,7 @@ number combined with a dot).
 
 
 [list_end]
-[keywords "global built-in" introspection]
+[keywords "global built-in" introspection nsproxy]
 
 [manpage_end]
 

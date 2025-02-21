@@ -680,8 +680,8 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     Tcl_DString     ds;
 
     static const char *const opts[] = {
-        "address", "argv", "argv0", "boottime", "builddate", "buildinfo", "callbacks",
-        "config", "home", "hostname", "ipv6", "locks", "log", "logdir",
+        "address", "argv", "argv0", "bindir", "boottime", "builddate", "buildinfo",
+        "callbacks", "config", "home", "hostname", "ipv6", "locks", "log", "logdir",
         "major", "meminfo", "minor", "mimetypes", "name", "nsd",
         "patchlevel", "pid", "pools",
         "scheduled", "server", "servers",
@@ -696,8 +696,8 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     };
 
     enum {
-        IAddressIdx, IArgvIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, IBuildinfoIdx, ICallbacksIdx,
-        IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx, ILogDirIdx,
+        IAddressIdx, IArgvIdx, IArgv0Idx, IBindirIdx, IBoottimeIdx, IBuilddateIdx, IBuildinfoIdx,
+        ICallbacksIdx, IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx, ILogdirIdx,
         IMajorIdx, IMeminfoIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx,
         IPatchLevelIdx,
         IPidIdx, IPoolsIdx,
@@ -738,6 +738,10 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
     case IArgv0Idx:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.argv0, TCL_INDEX_NONE));
+        break;
+
+    case IBindirIdx:
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.binDir, TCL_INDEX_NONE));
         break;
 
     case IStartedIdx:
@@ -800,7 +804,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         }
         break;
 
-    case ILogDirIdx:
+    case ILogdirIdx:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoLogPath(), TCL_INDEX_NONE));
         break;
 

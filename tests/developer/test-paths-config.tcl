@@ -10,10 +10,10 @@
 #
 # Parameters:
 #
+#   - bindir
 #   - homedir
 #   - libdir
 #   - logdir
-#   - modulebinpath
 #   - serverdir
 #   - serverinitfile
 #   - serverlibdir
@@ -21,7 +21,6 @@
 #   - serverpagedir
 #   - serverrootproc
 #
-set modulebinpath ""
 
 if {[info exists ::env(params)]} {
     set params [join $::env(params) " "]
@@ -53,13 +52,17 @@ ns_section ns/parameters {
     if {[info exists homedir]} {ns_param home $homedir}
     if {[info exists logdir]}  {ns_param logdir $logdir}
     if {[info exists libdir]}  {ns_param tcllibrary $libdir}
+    if {[info exists bindir]}  {
+        puts stderr "SETTING BINDIR TO <$bindir>"
+        ns_param bindir $bindir
+    }
 }
 ns_section ns/servers {
     ns_param SERVER1 WebServer
 }
 
 ns_section ns/modules {
-    ns_param http ${modulebinpath}nssock.so
+    ns_param http nssock.so
 }
 ns_section ns/module/http {
     ns_param address            $address
@@ -76,7 +79,7 @@ ns_section ns/server/SERVER1 {
 }
 
 ns_section ns/server/SERVER1/modules {
-    ns_param nslog ${modulebinpath}nslog.so
+    ns_param nslog nslog.so
 }
 ns_section ns/server/SERVER1/module/nslog {
     ns_param rollonsignal true

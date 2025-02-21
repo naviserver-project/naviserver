@@ -104,7 +104,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
 
     Ns_DStringInit(&ds);
     if (Ns_PathIsAbsolute(file) == NS_FALSE) {
-        file = Ns_HomePath(&ds, "bin", file, NS_SENTINEL);
+        file = Ns_BinPath(&ds, file, NS_SENTINEL);
     }
     /*
      * In the case of the nsproxy module, we have an "nsproxy" binary and an

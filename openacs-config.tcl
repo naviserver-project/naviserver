@@ -61,8 +61,7 @@ set defaultConfig {
     server           "openacs"
     serverroot        /var/www/$server
     logdir            $serverroot/log
-    bindir            "[file dirname [ns_info nsd]]"
-    homedir           "[file dirname $bindir]"
+    homedir           "[file dirname [file dirname [ns_info nsd]]]"
     certificate       $serverroot/etc/certfile.pem
     vhostcertificates $serverroot/etc/certificates
 
@@ -1067,7 +1066,7 @@ ns_section ns/server/$server/module/nslog {
 #
 # Dbms drivers:
 #
-# Make sure the drivers are compiled and put it in $bindir.
+# Make sure the drivers are compiled and put it in $homedir/bin.
 #
 #---------------------------------------------------------------------
 ns_section ns/db/drivers {

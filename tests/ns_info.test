@@ -19,8 +19,8 @@ test ns_info-1.1 {basic syntax: wrong argument} -body {
     ns_info ?
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]
-                   ? {bad subcommand "?": must be address, argv, argv0, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, logdir, major, meminfo, minor, mimetypes, name, nsd, patchlevel, pid, pools, scheduled, server, servers, sockcallbacks, ssl, tag, threads, uptime, version, shutdownpending, started, filters, pagedir, pageroot, platform, traces, requestprocs, tcllib, url2file, or winnt}
-                   : {bad subcommand "?": must be address, argv, argv0, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, logdir, major, meminfo, minor, mimetypes, name, nsd, patchlevel, pid, pools, scheduled, server, servers, sockcallbacks, ssl, tag, threads, uptime, version, shutdownpending, or started}
+                   ? {bad subcommand "?": must be address, argv, argv0, bindir, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, logdir, major, meminfo, minor, mimetypes, name, nsd, patchlevel, pid, pools, scheduled, server, servers, sockcallbacks, ssl, tag, threads, uptime, version, shutdownpending, started, filters, pagedir, pageroot, platform, traces, requestprocs, tcllib, url2file, or winnt}
+                   : {bad subcommand "?": must be address, argv, argv0,  bindir, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, logdir, major, meminfo, minor, mimetypes, name, nsd, patchlevel, pid, pools, scheduled, server, servers, sockcallbacks, ssl, tag, threads, uptime, version, shutdownpending, or started}
                }]
 
 

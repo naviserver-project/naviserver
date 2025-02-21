@@ -85,6 +85,7 @@ ns_section ns/parameters {
     #
     ns_param    home                $home
     ns_param    logdir              $logdir
+    #ns_param    bindir             bin
     ns_param    tcllibrary          tcl
     #ns_param   pidfile             ${home}/logs/nsd.pid
 

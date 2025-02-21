@@ -291,7 +291,7 @@ test homedir-1.1.3 {cannot load module} -body {
 test homedir-1.1.4 {can load module with provided bin path, server comes up} -body {
     set result  [runtest {case 1.1.4
         homedir /opt/local/ns/foo
-        modulebinpath /usr/local/ns/bin/
+        bindir /usr/local/ns/bin/
         libdir /usr/local/ns/tcl
         serverinitfile /usr/local/ns/bin/init.tcl
     }]
@@ -302,17 +302,6 @@ test homedir-1.1.4 {can load module with provided bin path, server comes up} -bo
     {serverlogdir /opt/local/ns/foo/logs}
     {serverpagedir /opt/local/ns/foo/pages}
 }]
-
-
-# test homedir-1.3  {relative serverpagedir} -body {
-#     set result  [runtest {case 1.3 serverpagedir www}]
-#     lmap {k v} $result {if {$k ni {serverdir serverpagedir}} continue; list $k $v}
-# } -returnCodes {error ok} -result {{serverdir /usr/local/ns} {serverpagedir /usr/local/ns/www}}
-
-# test homedir-1.4  {absolute serverpagedir} -body {
-#     set result  [runtest {case 1.4 serverpagedir /opt/local/var/www}]
-#     lmap {k v} $result {if {$k ni {serverpagedir}} continue; list $k $v}
-# } -returnCodes {error ok} -result {{serverpagedir /opt/local/var/www}}
 
 
 

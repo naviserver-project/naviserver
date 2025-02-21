@@ -433,7 +433,7 @@ Ns_BinPath(Ns_DString *dsPtr, ...)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "bin", NS_SENTINEL);
+    Ns_MakePath(dsPtr, nsconf.binDir, NS_SENTINEL);
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
     va_end(ap);

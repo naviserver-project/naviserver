@@ -92,6 +92,9 @@ ns_section ns/parameters {
     # Directory holding various log files, it will be created if missing
     ns_param	logdir			$logdir
 
+    # Directory holding binaries (.so file for modules, nsproxy worker)
+    #ns_param	bindir			bin
+
     # Output debug log messages in the log
     ns_param	logdebug		false
 

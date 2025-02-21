@@ -767,13 +767,17 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     /*
      * The value of nsconf.home is set. We can use it now as the base
-     * directory for completion in case the "logdir" parameter is
+     * directory for completion for "logdir" and "bindir" in case they are
      * relative. The logdir is required early in the startup to be usable as a
      * base directory for e.g. the pid file.
      */
     nsconf.logDir = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS,
                                       "logdir", 6,
                                       nsconf.home, "logs", NS_FALSE, NS_FALSE);
+
+    nsconf.binDir = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS,
+                                      "bindir", 6,
+                                      nsconf.home, "bin", NS_TRUE, NS_TRUE);
     /*
      * Assure log directory is available since it is expected
      * from some subsystems (tclhttp, log, ...).
