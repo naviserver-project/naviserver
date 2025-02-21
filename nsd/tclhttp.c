@@ -1098,8 +1098,6 @@ HttpClientLogWrite(
     if (servPtr->httpclient.logging) {
         int fd;
 
-        fprintf(stderr, "HTTPCLIENT httpPtr logFileName: <%s>\n", servPtr->httpclient.logFileName);
-
         if (Ns_ServerRootProcEnabled(servPtr->server)) {
             Tcl_DString ds, *dsPtr = &ds;
             const char *fullFilename;
