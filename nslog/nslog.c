@@ -213,15 +213,9 @@ Ns_ModuleInit(const char *server, const char *module)
     }
 #ifdef NS_WITH_DEPRECATED
     if (Ns_ConfigBool(section, "checkforproxy", NS_FALSE)) {
-        Tcl_Obj *objv[2];
-
-        objv[0] = Tcl_NewStringObj(section, TCL_INDEX_NONE);
-        objv[1] = Tcl_NewStringObj("checkforproxy", TCL_INDEX_NONE);
-        Tcl_IncrRefCount(objv[0]);
-        Tcl_IncrRefCount(objv[1]);
-        Ns_LogDeprecated(objv, 2, "global parameter reversproxymode", NULL);
-        Tcl_DecrRefCount(objv[0]);
-        Tcl_DecrRefCount(objv[1]);
+        Ns_LogDeprecatedParameter(section, "checkforproxy",
+                                  "ns/parameter", "reversproxymode",
+                                  NULL);
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
 #endif

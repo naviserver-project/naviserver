@@ -3510,6 +3510,11 @@ Ns_LogDeprecated(Tcl_Obj *const* objv, TCL_SIZE_T objc, const char *alternative,
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
+Ns_LogDeprecatedParameter(const char *oldSection, const char *oldParameter,
+                          const char *newSection, const char *newParameter, const char *explanation)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+NS_EXTERN void
 Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
     NS_GNUC_NONNULL(1);
 

@@ -293,6 +293,43 @@ Ns_LogDeprecated(Tcl_Obj *const* objv, TCL_SIZE_T objc, const char *alternative,
     Tcl_DStringFree(&ds);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_LogDeprecatedParameter --
+ *
+ *      Logs a deprecation warning for a configuration parameter.
+ *      This function constructs a warning message that indicates
+ *      that a parameter (identified by oldSection and oldParameter)
+ *      is deprecated and advises using a new parameter (newSection
+ *      and newParameter) instead. An optional explanation string
+ *      can be appended to provide additional context.
+ *
+ * Results:
+ *      None.
+ *
+ * Side Effects:
+ *      Logs a notice-level message to the server log.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_LogDeprecatedParameter(const char *oldSection, const char *oldParameter,
+                          const char *newSection, const char *newParameter, const char *explanation)
+{
+    Tcl_DString ds;
+
+    Tcl_DStringInit(&ds);
+    Ns_DStringPrintf(&ds, "paramter '%s: %s' is deprecated, use '%s: %s' instead. ",
+                     oldSection, oldParameter,
+                     newSection, newParameter);
+    if (explanation != NULL) {
+        Tcl_DStringAppend(&ds, explanation, TCL_INDEX_NONE);
+    }
+    Ns_Log(Notice, "%s", Tcl_DStringValue(&ds));
+    Tcl_DStringFree(&ds);
+}
+
 
 /*
  *----------------------------------------------------------------------
