@@ -155,12 +155,13 @@ server "s1" under the name "http". We show, in
 later examples, how to load a network driver globally, such that one
 network driver can be used for multiple servers.
 
-[subsection {Multiple alternative servers in one configuration file}]
+[subsection {Multiple alternative server configurations in one configuration file}]
 
-It is as well possible to define multiple servers in the same
-configuration file (here [emph s1] and [emph s2]). These servers
-use the same driver [emph nsock] but with different ports.
-In this case, it is sufficient to load the driver once.
+It is as well possible to define multiple server configurations in the
+same configuration file (here [emph s1] and [emph s2]). IN the
+following example these servers use the same driver [emph nsock] but
+with different ports.  In this case, it is sufficient to load the
+driver once.
 
 [example_begin]
  ns_section ns/servers {
@@ -1210,6 +1211,107 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 
 
 
+[section {Customizing File Locations}]
+
+The basic directory structure of a typical NaviServer installation is
+as follows:
+
+[example_begin]
+ HOME      /usr/local/ns/
+ BINDIR    /usr/local/ns/bin/
+ LOGDIR    /usr/local/ns/logs/
+ TCLLIBDIR /usr/local/ns/tcl/
+[example_end]
+
+
+ The root directory (HOME) is determined at compile time, but all of
+ these paths can be modified via the configuration file. The following
+ setting represent the actual default values:
+
+[example_begin]
+ ns_section ns/parameters {
+   ns_param home        /usr/local/ns/
+   ns_param logdir      logs
+   ns_param tcllibrary  tcl
+   ns_param bindir      bin
+ }
+[example_end]
+
+
+ For all paths except [const home], you may specify either absolute or
+ relative names. Absolute paths are used as provided, whereas relative
+ paths are resolved against the value of [const home].
+
+[para]
+
+ Building on the basic configuration, you can also define
+ server-specific settings. Each server can have its own file location
+ configuration by specifying a [const serverdir] that serves as the
+ root for that server’s log and page directories.
+
+[para]
+
+ The key parameters for per-server file locations are:
+
+[para]
+
+[list_begin itemized]
+
+[item] [const serverdir]: Defines the directory used to resolve
+       per-server log and page directories. By default,
+       [const serverdir] is empty, meaning that global [const home]
+       parameters is used.
+
+       As described previously, you can supply a [const serverrootproc]
+       to compute the server directory dynamically (e.g., based on the
+       [const "Host:"] header of a current request).
+
+[item] [const logdir]: Specifies the directory for log files (e.g.,
+       access.log or httpsclient.log). The value can be given as an
+       absolute path or a relative path, in which case it is resolved
+       against [const serverdir].
+
+[item] [const pagedir]: Specifies the directory from which page
+       requests are served. Like [const logdir], this may be absolute or
+       relative (resolved against [const serverdir]).
+
+[list_end]
+
+[example_begin]
+ ns_section ns/server/SERVER1 {
+   ns_param logdir     logs
+   #ns_param serverrootproc ...
+ }
+ 
+ ns_section ns/server/SERVER1/fastpath {
+    ns_param serverdir ""
+    ns_param pagedir   pages
+ }
+[example_end]
+
+
+ Note that a log directory specified for a particular server takes
+ precedence over the global configuration.
+
+[para]
+
+ Additionally, the source files for Tcl code can can be specified in
+ the per-server [const tcl] section. The parameter [const initfile] is
+ the file used for the initialization of the server. The parameter
+ [const library] is used for loading additional Tcl source files for
+ this server. Both the initialization file and the library path may be
+ defined as absolute paths or as relative paths (which are then
+ resolved against [const home]).
+ 
+[example_begin]
+ ns_section ns/server/SERVER1/tcl {
+    ns_param initfile  bin/init.tcl
+    ns_param library   modules/tcl/
+ }
+[example_end]
+
+
+
 [section {Stack Size}]
 
 When running complex pages with a deep call stack, increasing the
@@ -1221,7 +1323,7 @@ exceeded (for security reasons). The callstack is a per-thread
 figure. So when many threads are configured, then more callstack
 memory will be used on the system.
 
-[para] The callstack can be configured with the [term stacksize]
+[para] The callstack can be configured with the [const stacksize]
 parameter of your configuration file. The default stacksize is almost
 always not enough. However, for OpenACS 1MB is recommended.
 
