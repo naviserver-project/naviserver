@@ -553,6 +553,9 @@ under [const /var/www], it is used as the pageroot for this request.
  ns_section ns/servers {
    ns_param s1        "Sample Server"
  }
+ ns_section ns/server/s1 {
+   ns_param serverdir /var/www
+ }
  ns_section ns/server/s1/modules {
    ns_param http      nssock.so
  }
@@ -562,7 +565,6 @@ under [const /var/www], it is used as the pageroot for this request.
  }
  ns_section ns/server/s1/fastpath {
    ns_param pagedir   ""
-   ns_param serverdir /var/www
  }
  
  ns_section ns/server/s1/tcl {
@@ -1279,12 +1281,12 @@ as follows:
 
 [example_begin]
  ns_section ns/server/SERVER1 {
+   ns_param serverdir  ""
    ns_param logdir     logs
    #ns_param serverrootproc ...
  }
  
  ns_section ns/server/SERVER1/fastpath {
-    ns_param serverdir ""
     ns_param pagedir   pages
  }
 [example_end]

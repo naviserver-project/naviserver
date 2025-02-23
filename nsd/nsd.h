@@ -840,6 +840,7 @@ typedef struct NsServer {
         bool modsince;
         bool stealthmode;
         bool noticedetail;
+        const char *serverdir;  /* Root for "logdir" and "pagedir" */
         const char *logDir;
     } opts;
 
@@ -860,7 +861,6 @@ typedef struct NsServer {
     } encoding;
 
     struct {
-        const char *serverdir;  /* Virtual server files path */
         const char *pagedir;    /* Path to public pages */
 #ifdef NS_WITH_DEPRECATED
         const char *pageroot;   /* Absolute path to public pages */

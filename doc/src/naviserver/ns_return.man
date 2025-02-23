@@ -322,24 +322,19 @@ Example setting: "/usr/bin/yui-compressor --type js".  (string, defaults to "")
 
 [subsection "File Locations"]
 
-The parameters [const serverdir] and [const pagedir]
-specify, from which locations in the filesystem
+The parameter [const pagedir]
+specifies, from which locations in the filesystem
 pages should be served.
 
 [list_begin definitions]
-[def serverdir]
-Defines absolute or relative path to server's home directory. Relative
-names are relative to the [const home] in [const ns/parameters].
-(string, defaults to "")
-[para]
-Note: This parameter can be overloaded by defining a callback with
-[cmd ns_serverrootproc], e.g., for mass virtual hosting.
-
 [def pagedir]
 Defines absolute or relative path for serving content files. Relative
 names are relative to the [const serverdir]
 (string, defaults to [const pages])
 [list_end]
+
+Note: The parameter  [const serverdir] can be specified per server in
+the server-specific root section of the server. For details, see
 
 
 [subsection "Directory Handling"]

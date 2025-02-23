@@ -293,6 +293,30 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         Tcl_DStringFree(&ds);
     }
 
+#ifdef NS_WITH_DEPRECATED_5_0
+    if (Ns_ConfigGetValue(section, "serverdir") == NULL && servPtr->opts.serverdir != NULL) {
+        /*
+         * We have a "serverdir" from the deprecated location but none in the
+         * server section. Be friendly and use the value from the deprecated
+         * location, but provide a warning.
+         */
+        Ns_Log(Warning, "using the 'serverdir' from the deprecated fastpath section");
+    } else {
+        if (servPtr->opts.serverdir != NULL) {
+            Ns_Log(Notice, "overriding 'serverdir' setting from fastpath section with value from %s", section);
+            ns_free((void*)servPtr->opts.serverdir);
+        }
+        servPtr->opts.serverdir = Ns_ConfigFilename(section, "serverdir", 9,
+                                                        nsconf.home, NS_EMPTY_STRING,
+                                                        NS_TRUE, NS_FALSE);
+    }
+#else
+    servPtr->opts.serverdir = Ns_ConfigFilename(section, "serverdir", 9,
+                                                    nsconf.home, NS_EMPTY_STRING,
+                                                    NS_TRUE, NS_FALSE);
+#endif
+
+
     /*
      * Resolve and update the server log directory configuration.
      *
@@ -317,7 +341,6 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
                                                  Ns_ServerPath(&ds, server, NS_SENTINEL),
                                                  servPtr->opts.logDir, NS_FALSE, NS_FALSE);
         Tcl_DStringFree(&ds);
-        //Ns_Log(Notice, "??? serverlogdir NULL, path <%s>", servPtr->opts.logDir);
     }
 
     /*

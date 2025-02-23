@@ -52,10 +52,7 @@ ns_section ns/parameters {
     if {[info exists homedir]} {ns_param home $homedir}
     if {[info exists logdir]}  {ns_param logdir $logdir}
     if {[info exists libdir]}  {ns_param tcllibrary $libdir}
-    if {[info exists bindir]}  {
-        puts stderr "SETTING BINDIR TO <$bindir>"
-        ns_param bindir $bindir
-    }
+    if {[info exists bindir]}  {ns_param bindir $bindir}
 }
 ns_section ns/servers {
     ns_param SERVER1 WebServer
@@ -73,8 +70,9 @@ ns_section ns/module/http {
 # Server specific setup
 # -------------------------------------------------------------------------
 ns_section ns/server/SERVER1 {
-    ns_param enabletclpages      true
-    if {[info exists serverlogdir]} {ns_param logdir $serverlogdir}
+    ns_param enabletclpages true
+    if {[info exists serverdir]}      {ns_param serverdir $serverdir}
+    if {[info exists serverlogdir]}   {ns_param logdir $serverlogdir}
     if {[info exists serverrootproc]} {ns_param serverrootproc $serverrootproc}
 }
 
@@ -85,7 +83,6 @@ ns_section ns/server/SERVER1/module/nslog {
     ns_param rollonsignal true
 }
 ns_section ns/server/SERVER1/fastpath {
-    if {[info exists serverdir]}     {ns_param serverdir $serverdir}
     if {[info exists serverpagedir]} {ns_param pagedir $serverpagedir}
 }
 

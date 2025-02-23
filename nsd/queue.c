@@ -1695,7 +1695,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             if (effective) {
                 Ns_ServerPath(dsPtr, servPtr->server, NS_SENTINEL);
             } else {
-                Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, TCL_INDEX_NONE);
+                Tcl_DStringAppend(dsPtr, servPtr->opts.serverdir, TCL_INDEX_NONE);
             }
             Tcl_DStringResult(interp, dsPtr);
             result = TCL_OK;

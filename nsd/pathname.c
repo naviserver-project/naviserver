@@ -1211,7 +1211,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
                      * static serverdir.
                      */
                     Ns_DStringInit(&ds);
-                    Ns_MakePath(&ds, servPtr->fastpath.serverdir, path, NS_SENTINEL);
+                    Ns_MakePath(&ds, servPtr->opts.serverdir, path, NS_SENTINEL);
                     Tcl_DStringSetLength(dest, 0);
                     Tcl_DStringAppend(dest, ds.string, ds.length);
                     Ns_DStringFree(&ds);
@@ -1257,7 +1257,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
             /*
              * Build the final path.
              */
-            path = Ns_MakePath(dest, servPtr->fastpath.serverdir,
+            path = Ns_MakePath(dest, servPtr->opts.serverdir,
                                servPtr->vhost.hostprefix, NS_SENTINEL);
             if (servPtr->vhost.hosthashlevel > 0) {
                 Ns_HashPath(dest, safehost, servPtr->vhost.hosthashlevel);
@@ -1271,7 +1271,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         /*
          * Default to static server root.
          */
-        path = Ns_MakePath(dest, servPtr->fastpath.serverdir, NS_SENTINEL);
+        path = Ns_MakePath(dest, servPtr->opts.serverdir, NS_SENTINEL);
     }
 
     Ns_Log(Debug, "--- ServerRoot %s returns path <%s>", servPtr->server, path);

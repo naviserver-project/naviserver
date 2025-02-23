@@ -168,22 +168,25 @@ ConfigServerFastpath(const char *server)
                                        &servPtr->fastpath.dirv) != TCL_OK) {
             Ns_Log(Error, "fastpath[%s]: directoryfile is not a list: %s", server, p);
         }
-        /*
-         * The string in servPtr->fastpath.dirv should be freed with
-         * Tcl_Free() in case the server is reconfigured or deleted.
-         */
-        servPtr->fastpath.serverdir = Ns_ConfigFilename(section, "serverdir", 9,
-                                                        nsconf.home, NS_EMPTY_STRING,
-                                                        NS_TRUE, NS_FALSE);
 
-        //fprintf(stderr, "=== final <%s>\n", servPtr->fastpath.serverdir);
+#ifdef NS_WITH_DEPRECATED_5_0
+        if (Ns_ConfigGetValue(section, "serverdir") != NULL) {
+            Ns_LogDeprecatedParameter(section, "serverdir",
+                                      Ns_ConfigSectionPath(NULL, server, NULL, NS_SENTINEL), "serverdir",
+                                      NULL);
+            servPtr->opts.serverdir = Ns_ConfigFilename(section, "serverdir", 9,
+                                                            nsconf.home, NS_EMPTY_STRING,
+                                                            NS_TRUE, NS_FALSE);
+        }
+#endif
+        //fprintf(stderr, "=== final <%s>\n", servPtr->opts.serverdir);
 
 #ifdef NS_WITH_DEPRECATED
         /*
          * "pageroot" is always and absolute path.
          */
         servPtr->fastpath.pageroot = Ns_ConfigFilename(section, "pagedir", 7,
-                                                       servPtr->fastpath.serverdir, "pages",
+                                                       servPtr->opts.serverdir, "pages",
                                                        NS_TRUE, NS_FALSE);
 #endif
         /*

@@ -229,6 +229,7 @@ ns_section "ns/servers" {
 #
 
 ns_section "ns/server/test" {
+    ns_param   serverdir       testserver
     ns_param   enablehttpproxy yes
     ns_param   URLCharset      utf-8
     ns_param   OutputCharset   utf-8
@@ -250,7 +251,6 @@ ns_section "ns/server/test/pool/emergency" {
 }
 
 ns_section "ns/server/test/fastpath" {
-    ns_param   serverdir       testserver
     ns_param   pagedir         pages
 }
 
@@ -377,12 +377,18 @@ ns_section "ns/server/test/modules" {
 #
 
 ns_section "ns/server/testvhost" {
+    ns_param   serverdir       testserver
     ns_param   enablehttpproxy yes
     ns_param   enabletclpages  true
     ns_param   minthreads 1
     ns_param   maxthreads 3
     ns_param   logdir logs-testvhost
 }
+ns_section "ns/server/testvhost/fastpath" {
+    #ns_param   serverdir       testserver
+    ns_param   pagedir         pages
+}
+
 ns_section "ns/server/testvhost/redirects" {
     #
     # Provide custom error pages:
@@ -396,10 +402,6 @@ ns_section "ns/server/testvhost/modules" {
 }
 ns_section "ns/server/testvhost/module/nslog" {
     ns_param   file            [ns_config "test" home]/testserver/access.log
-}
-ns_section "ns/server/testvhost/fastpath" {
-    ns_param   serverdir       testserver
-    ns_param   pagedir         pages
 }
 
 ns_section "ns/server/testvhost/vhost" {
@@ -421,13 +423,14 @@ ns_section "ns/server/testvhost/tcl" {
 #
 
 ns_section "ns/server/testvhost2" {
+    ns_param   serverdir       testserver
     ns_param   enabletclpages  true
     ns_param   minthreads 1
     ns_param   maxthreads 4
 }
 
 ns_section "ns/server/testvhost2/fastpath" {
-    ns_param   serverdir       testserver
+    #ns_param   serverdir       testserver
     ns_param   pagedir         pages
 }
 

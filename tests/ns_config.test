@@ -223,7 +223,7 @@ test ns_config-7.4.2 {section} -body {
 
 test ns_config-7.4.3 {section} -body {
     ns_set size [ns_configsection -filter "defaults" ns/server/testvhost]
-} -returnCodes {error ok} -result {26}
+} -returnCodes {error ok} -result {27}
 
 
 test ns_config-8.1 {missing -set} -body {

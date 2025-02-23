@@ -18,7 +18,7 @@ namespace import -force ::tcltest::*
 
 
 set serverroot [file join [ns_config "test" home] \
-                    [ns_config "ns/server/testvhost/fastpath" serverdir]]
+                    [ns_config "ns/server/testvhost" serverdir]]
 set pageroot [ns_server -server testvhost pagedir]
 set vhosts [ns_config "ns/server/testvhost/vhost" hostprefix]
 set port   [ns_config "test" listenport]

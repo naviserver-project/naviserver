@@ -10,12 +10,10 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 set serverroot [file join [ns_config "test" home] \
-                    [ns_config "ns/server/testvhost/fastpath" serverdir] ]
+                    [ns_config "ns/server/testvhost" serverdir] ]
 set pagedir [ns_config "ns/server/testvhost/fastpath" pagedir]
 set vhosts  [ns_config "ns/server/testvhost/vhost" hostprefix]
 set port    [ns_config "test" listenport]
-
-
 
 test ns_pagepath-1.0 {basic path} -body {
     ns_pagepath

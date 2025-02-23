@@ -569,6 +569,9 @@ ns_section ns/fastpath {
 # Server parameters
 #
 ns_section ns/server/$server {
+    # Default root for pages and logdirs
+    #ns_param	serverdir	${homedir}
+
     #
     # Scaling and Tuning Options
     #
@@ -763,7 +766,6 @@ ns_section ns/server/$server/tcl {
 }
 
 ns_section ns/server/$server/fastpath {
-    ns_param	serverdir	${homedir}
     ns_param	pagedir		${pageroot}
     #
     # Directory listing options

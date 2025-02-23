@@ -416,6 +416,6 @@ specified names based on a wild-card match.
 [keywords \
         "context filter" \
 	"server built-in" configuration "connection thread pools" \
-	mapspec pools pagedir tuning "reverse proxy" "virtual host"]
+	mapspec pools pagedir serverdir tuning "reverse proxy" "virtual host"]
 
 [manpage_end]
