@@ -527,7 +527,7 @@ domains, serving e.g. from different page directories.
 [para] The following example defines server "s1" serving only for
 HTTP connections over port 8000. The new part is the registration of a
 callback via [cmd ns_serverrootproc], which determines the root
-directory for serving pages based on the "host" header field. The
+directory for serving pages based on the "host:" header field. The
 definition assumes a directory structure like the following, where
 "foo.com" has, e.g., a different [const index.html] file.
 
@@ -555,6 +555,24 @@ under [const /var/www], it is used as the pageroot for this request.
  }
  ns_section ns/server/s1 {
    ns_param serverdir /var/www
+   ns_param serverrootproc {
+     #
+     # Register callback for computing the per-request "serverdir":
+     #
+     set rootDir [lb]ns_server serverdir[rb]
+     set host [lb]ns_conn host ""[rb]
+     if {$host ne "" && [lb]file isdirectory $rootDir/$host [rb]} {
+       #
+       # A "host" header field was provided in the request, and a matching
+       # folder exists in the file system -> use it as "serverdir"
+       #
+       set serverDir $rootDir/$host
+     } else {
+       set serverDir $rootDir/[lb]ns_info server[rb]
+       ns_log notice "... $rootDir/$host does not exist, use default '$serverDir'"
+     }
+     return $serverDir
+   }
  }
  ns_section ns/server/s1/modules {
    ns_param http      nssock.so
@@ -567,37 +585,6 @@ under [const /var/www], it is used as the pageroot for this request.
    ns_param pagedir   ""
  }
  
- ns_section ns/server/s1/tcl {
-   ns_param initcmds {
-     #
-     # Register callback for accessing the root directory:
-     #
-     ns_serverrootproc {
-       set rootDir [lb]ns_server serverdir[rb]
-       set dir default
-       if {[lb]ns_conn isconnected[rb]} {
-         set host [lb]ns_conn host ""[rb]
-         if {$host ne ""} {
-           #
-           # A "host" header field was provided in the request,
-           # build the name of the root folder.
-           #
-           if {[lb]::file isdirectory $rootDir/$host[rb]} {
-             #
-             # The folder exists in the filesystem, accept it.
-             #
-             set dir $host
-           } else {
-             ns_log debug "... $rootDir/$host does not exist, fallback to $dir"
-           }
-         }
-       }
-       set rootDir $rootDir/$dir
-       ns_log debug "... setting rootdir '$rootDir'"
-       return $rootDir
-     }
-   }
- }
 [example_end]
 
 [para] With this approach additional domains can be added at runtime
@@ -634,7 +621,7 @@ the name based on the SNI hostname, where ".pem" was added
 
 Note that in this setup only a single server configuration is needed
 (in the example above, the server "s1"). Together with the definition
-of the [cmd ns_serverrootproc], it will provide mass virtual hosting over
+of the [term serverrootproc] callback, it will provide mass virtual hosting over
 HTTPS. Below is a minimal setup showing the directory structure for
 serving [const dotlrn.net] via this mechanism. Note the certificates
 [const dotlrn.net.pem], [const example.com.pem], and [const default.pem]
@@ -1282,8 +1269,8 @@ as follows:
 [example_begin]
  ns_section ns/server/SERVER1 {
    ns_param serverdir  ""
-   ns_param logdir     logs
    #ns_param serverrootproc ...
+   ns_param logdir     logs
  }
  
  ns_section ns/server/SERVER1/fastpath {
@@ -1344,7 +1331,7 @@ always not enough. However, for OpenACS 1MB is recommended.
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	driver prebind pagedir \
+	driver prebind pagedir logdir serverdir \
         "scheduled procedures" \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate vhostcertificates invalid-certificates \

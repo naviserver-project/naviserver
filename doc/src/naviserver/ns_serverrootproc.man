@@ -2,13 +2,14 @@
 [manpage_begin ns_serverrootproc n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Callback for determining server root}]
+[titledesc {Callback for Determining Server Root}]
 
 [description]
 
-This command can be used to set a callback for determining the root
-directory of the server based on, e.g., the host header field of the
-current connection.
+ This command registers a Tcl callback that dynamically computes the
+ server root directory. It is commonly used to determine the
+ per-request "serverdir" based on attributes of the current connection
+ (for example, using the [const Host:] header field).
 
 [section {COMMANDS}]
 
@@ -16,27 +17,58 @@ current connection.
 
 [call [cmd ns_serverrootproc] [arg script] [opt [arg "arg ..."]]]
 
+ Registers a [arg script] that returns the server root directory as an
+ absolute or relative path.  The result of this callback overrides the
+ default value of the [const serverdir] parameter. For more details,
+ see [uri ../../manual/files/admin-config.html#section4 \
+ "Customizing File Locations"].
+
 [para]
-Register a [arg script] which returns the location of the server root
-directory (directory path). The result of this function overloads the
-setting of the parameter [const serverdir]. For details, see
-[uri ../../manual/files/admin-config.html#section4 "Customizing File Locations"]).
 
-
-[para] When the optional arguments are provided, these are added to
-the command [arg script] to be executed. Therefore, two invocation
-styles are supported: either providing a [arg script], or a command
-with additional arguments.
+ If additional arguments are provided, they will be passed to the
+ callback. Thus, the callback can be specified as either a
+ (multi-line) script or as a command with arguments. (Note: When
+ the callback is registered via a configuration parameter, the
+ multi-argument invocation style is not available.)
 
 [list_end]
 
 [section EXAMPLES]
 
-Since the command [cmd ns_serverrootproc] requires a defined server,
-it cannot be written plainly to the configuration file (defining
-potentially multiple servers). However, it is possible to use the
-parameter [term initcmd] in the section [term tcl] of the server (here
-[term default]) as shown below.
+ The [const serverrootproc] callback can be defined directly in the
+ configuration file or registered via the [cmd ns_serverrootproc]
+ command. Defining it in the configuration file has the advantage that
+ it can be used (for example, for setting log file paths) before the
+ server (here named "default") fully starts.
+
+[example_begin]
+ ns_section ns/server/default {
+   ns_param serverdir /var/www
+   ns_param serverrootproc {
+     #
+     # Compute the per-request "serverdir":
+     #
+     set rootDir [lb]ns_server serverdir[rb]
+     set host [lb]ns_conn host ""[rb]
+     if {$host ne "" && [lb]file isdirectory $rootDir/$host [rb]} {
+       # Use the directory corresponding to the Host header.
+       set serverDir $rootDir/$host
+     } else {
+       # Fall back to the default server directory.
+       set serverDir $rootDir/[lb]ns_info server[rb]
+       ns_log notice "... $rootDir/$host does not exist, use default '$serverDir'"
+     }
+     return $serverDir
+   }
+ }
+[example_end]
+
+ Alternatively, you can register the callback via
+ [cmd ns_serverrootproc] within the Tcl initialization script of a
+ server. This approach was standard in NaviServer 4.99 but is more
+ complex since the callback must be registered after the server is
+ initialized. One way to do this is by using the [term initcmd]
+ parameter in the [term tcl] section of a server configuration:
 
 [example_begin]
  ns_section ns/server/default/tcl {
@@ -45,34 +77,26 @@ parameter [term initcmd] in the section [term tcl] of the server (here
      # Use the Tcl namespace "::default" for the "default" server.
      #
      namespace eval ::default {
+       #
+       # Define the callback procedure.
+       #
        proc serverroot {args} {
          #
-         # Don't call [lb]ns_server pagedir[rb] here, since this
-         # would lead to an infinite loop causing an exception.
+         # Compute the per-request "serverdir":
          #
          set rootDir [lb]ns_server serverdir[rb]
-         #
-         # Accessing the host header field requires an
-         # active connection.
-         #
-         if {[lb]ns_conn isconnected[rb]} {
-           set rawHost [lb]ns_set get -nocase [lb]ns_conn headers[rb] host[rb]
-           ns_log notice "serverroot <$args>" \
-              server  '[lb]ns_info server[rb]' \
-              host    '$rawHost' \
-              rootdir '$rootDir'
-           #
-           # Check, if there is a directory containing the
-           # host in the name. One might want to normalize
-           # the raw host header field.
-           #
-           if {$rawHost ne "" && [lb]::file isdirectory $rootDir/$rawHost[rb]} {
-             set rootDir $rootDir/$rawHost
-           }
-           ns_log notice "... final rootdir '$rootDir'"
+         set host [lb]ns_conn host ""[rb]
+         if {$host ne "" && [lb]file isdirectory $rootDir/$host [rb]} {
+           set serverDir $rootDir/$host
+         } else {
+           set serverDir $rootDir/[lb]ns_info server[rb]
+           ns_log notice "... $rootDir/$host does not exist, use default '$serverDir'"
          }
-         return $rootDir
+         return $serverDir
        }
+       #
+       # Register the calback:
+       #
        ns_serverrootproc [lb]namespace current[rb]::serverroot
      }
    }
