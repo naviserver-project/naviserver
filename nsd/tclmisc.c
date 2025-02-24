@@ -320,7 +320,7 @@ Ns_LogDeprecatedParameter(const char *oldSection, const char *oldParameter,
     Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
-    Ns_DStringPrintf(&ds, "paramter '%s: %s' is deprecated, use '%s: %s' instead. ",
+    Ns_DStringPrintf(&ds, "parameter '%s: %s' is deprecated, use '%s: %s' instead. ",
                      oldSection, oldParameter,
                      newSection, newParameter);
     if (explanation != NULL) {

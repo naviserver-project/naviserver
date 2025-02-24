@@ -95,7 +95,7 @@
          return $serverDir
        }
        #
-       # Register the calback:
+       # Register the callback:
        #
        ns_serverrootproc [lb]namespace current[rb]::serverroot
      }
