@@ -1199,11 +1199,10 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 [example_end]
 
 
+[section {Customizing the Directory Structure}]
 
-[section {Customizing File Locations}]
-
-The basic directory structure of a typical NaviServer installation is
-as follows:
+[para] A typical NaviServer installation is organized with a basic
+ directory structure similar to the following:
 
 [example_begin]
  HOME      /usr/local/ns/
@@ -1212,10 +1211,9 @@ as follows:
  TCLLIBDIR /usr/local/ns/tcl/
 [example_end]
 
-
- The root directory (HOME) is determined at compile time, but all of
- these paths can be modified via the configuration file. The following
- setting represent the actual default values:
+ The root directory ([const home]) is Structure determined at compile time, but
+ each of these paths can be modified via the configuration file. For
+ example, the default settings are defined as:
 
 [example_begin]
  ns_section ns/parameters {
@@ -1226,16 +1224,15 @@ as follows:
  }
 [example_end]
 
-
  For all paths except [const home], you may specify either absolute or
- relative names. Absolute paths are used as provided, whereas relative
- paths are resolved against the value of [const home].
+ relative names. Absolute paths are used directly, while relative
+ paths in the [const ns/parameters] section are resolved against the
+ value of [const home].
 
-[para]
+[subsection {Per-Server Directory Structure}]
 
- Building on the basic configuration, you can also define
- server-specific settings. Each server can have its own file location
- configuration by specifying a [const serverdir] that serves as the
+ Beyond the global configuration, you can define server-specific file
+ location settings by specifying a [const serverdir] that acts as the
  root for that server’s log and page directories.
 
 [para]
@@ -1246,19 +1243,24 @@ as follows:
 
 [list_begin itemized]
 
-[item] [const serverdir]: Defines the directory used to resolve
-       per-server log and page directories. By default,
-       [const serverdir] is empty, meaning that global [const home]
-       parameters is used.
+[item] [const serverdir]:
 
-       As described previously, you can supply a [const serverrootproc]
-       to compute the server directory dynamically (e.g., based on the
-       [const "Host:"] header of a current request).
+       Defines the root directory for a server’s log and page
+       directories. A relative [const serverdir] is resolved against
+       [const home]. By default, [const serverdir] is empty, meaning
+       the global [const home] is used.
+
+       [para] Alternatively, a [const serverrootproc] callback can
+       dynamically compute the server directory per request (e.g.,
+       based on the "Host:" header).
+
 
 [item] [const logdir]: Specifies the directory for log files (e.g.,
        access.log or httpsclient.log). The value can be given as an
        absolute path or a relative path, in which case it is resolved
-       against [const serverdir].
+       against [const serverdir].  Note that a log directory specified
+       for a particular server takes precedence over the global
+       configuration.
 
 [item] [const pagedir]: Specifies the directory from which page
        requests are served. Like [const logdir], this may be absolute or
@@ -1279,18 +1281,15 @@ as follows:
 [example_end]
 
 
- Note that a log directory specified for a particular server takes
- precedence over the global configuration.
+[subsection {Per-Server Tcl-Source Locations}]
 
-[para]
-
- Additionally, the source files for Tcl code can can be specified in
- the per-server [const tcl] section. The parameter [const initfile] is
- the file used for the initialization of the server. The parameter
- [const library] is used for loading additional Tcl source files for
- this server. Both the initialization file and the library path may be
- defined as absolute paths or as relative paths (which are then
- resolved against [const home]).
+ You can also configure the locations of Tcl source files on a
+ per-server basis. In the per-server [const tcl] section, the
+ [const initfile] parameter specifies the Tcl initialization file, and the
+ [const library] parameter defines the directory for additional Tcl
+ source files loaded on server startup. Both parameters may be given
+ as absolute paths or as relative paths
+ (resolved against [const home]).
  
 [example_begin]
  ns_section ns/server/SERVER1/tcl {
@@ -1300,21 +1299,33 @@ as follows:
 [example_end]
 
 
+[subsection {Multiple Logfiles and Page Sources for a Single Server}]
+
+ Using a dynamic [const serverrootproc] callback to compute
+ [const serverdir] allows a single server (e.g., [const SERVER1]) to have
+ multiple log files (such as access.log and httpsclient.log) and page
+ directories. Automated log file rolling will then apply to all log
+ files defined for that server.
+
+ [para] Note that while a NaviServer instance can have multiple
+ servers and virtual servers - each with its own access.log and
+ httpclient.log files - the instance as a whole has a single
+ [const serverlog] (typically named "error.log") that aggregates system and
+ application messages logged via [cmd ns_log].
+
 
 [section {Stack Size}]
 
-When running complex pages with a deep call stack, increasing the
-default callstack might be necessary. In earlier versions of Tcl,
-exceeding the callstack lead to seemingly unexplainable crashes. But
-in general, this is not necessarily the fault of Tcl, since the
-Operating System often reacts very harsh, when the callstack size is
-exceeded (for security reasons). The callstack is a per-thread
-figure. So when many threads are configured, then more callstack
-memory will be used on the system.
+ Complex pages with deep call stacks may require an increased
+ per-thread stack size to avoid unexplained crashes. Although Tcl
+ crashes from stack overflows are often due to operating system limits
+ rather than Tcl itself, increasing the stack size can provide
+ additional safety.
 
-[para] The callstack can be configured with the [const stacksize]
-parameter of your configuration file. The default stacksize is almost
-always not enough. However, for OpenACS 1MB is recommended.
+ [para] The per-thread stack size is configured via the
+ [const stacksize] parameter in your configuration file. The default value
+ (e.g., 64kB) is typically insufficient for demanding applications;
+ for example, OpenACS deployments use typically a stack size of 1MB.
 
 [example_begin]
  #
@@ -1331,12 +1342,12 @@ always not enough. However, for OpenACS 1MB is recommended.
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	driver prebind pagedir logdir serverdir \
+	driver prebind pagedir logging logdir serverdir serverlog \
         "scheduled procedures" \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate vhostcertificates invalid-certificates \
         TLS HTTPS OCSP SNI initcmds letsencrypt redirect CApath CAfile \
         ADP templates reverseproxymode stealthMode noticeDetail]
-[see_also tcl-libraries tcl-overview ns_returnnotice]
+[see_also tcl-libraries tcl-overview]
 [manpage_end]
 
