@@ -1471,7 +1471,7 @@ AdpTrace(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len)
     if (len > itPtr->servPtr->adp.tracesize) {
         len = itPtr->servPtr->adp.tracesize;
     }
-    Ns_Log(Notice, "adp[%d%c]: %.*s", itPtr->adp.depth, type, len, ptr);
+    Ns_Log(Notice, "adp[%d%c]: %.*s", itPtr->adp.depth, type, (int)len, ptr);
 }
 
 /*
