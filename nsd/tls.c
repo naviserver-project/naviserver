@@ -1958,7 +1958,7 @@ StoreInvalidCertificate(X509 *cert, int x509err, int currentDepth, NsServer *ser
 
             if (fp) {
                 if (PEM_write_X509(fp, cert)) {
-                    Ns_Log(Notice, "saved invalid certificate: %s", dsPtr->string);
+                    Ns_Log(Security, "saved invalid certificate: %s", dsPtr->string);
                 } else {
                     Ns_Log(Warning, "failed to save invalid certificate in: %s", dsPtr->string);
                 }

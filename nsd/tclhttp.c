@@ -784,7 +784,7 @@ NsInitHttp(NsServer *servPtr)
     Ns_DListInit(&servPtr->httpclient.validationExceptions);
 
     if (!servPtr->httpclient.validateCertificates) {
-        Ns_Log(Warning,
+        Ns_Log(Security,
                "\n======================================================================================================\n"
                " Configuration deactivates validation of peer certificates on HTTPS client requests per default!!!\n"
                " Section: %s\n"
