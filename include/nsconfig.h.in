@@ -310,9 +310,6 @@
 /* Is memory debugging enabled? */
 #undef TCL_MEM_DEBUG
 
-/* Are we building with threads enabled? */
-#undef TCL_THREADS
-
 /* Do 'long' and 'long long' have the same size (64-bit)? */
 #undef TCL_WIDE_INT_IS_LONG
 

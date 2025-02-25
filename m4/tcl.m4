@@ -800,33 +800,6 @@ AC_DEFUN([TEA_ENABLE_THREADS], [
     else
 	TCL_THREADS=0
     fi
-    # Do checking message here to not mess up interleaved configure output
-    AC_MSG_CHECKING([for building with threads])
-    if test "${TCL_THREADS}" = 1; then
-	AC_DEFINE(TCL_THREADS, 1, [Are we building with threads enabled?])
-	AC_MSG_RESULT([yes (default)])
-    else
-	AC_MSG_RESULT([no])
-    fi
-    # TCL_THREADS sanity checking.  See if our request for building with
-    # threads is the same as the way Tcl was built.  If not, warn the user.
-    case ${TCL_DEFS} in
-	*THREADS=1*)
-	    if test "${TCL_THREADS}" = "0"; then
-		AC_MSG_WARN([
-    Building ${PACKAGE_NAME} without threads enabled, but building against Tcl
-    that IS thread-enabled.  It is recommended to use --enable-threads.])
-	    fi
-	    ;;
-	*)
-	    if test "${TCL_THREADS}" = "1"; then
-		AC_MSG_WARN([
-    --enable-threads requested, but building against a Tcl that is NOT
-    thread-enabled.  This is an OK configuration that will also run in
-    a thread-enabled core.])
-	    fi
-	    ;;
-    esac
     AC_SUBST(TCL_THREADS)
 ])
 
