@@ -85,7 +85,7 @@ NsAdpAppend(NsInterp *itPtr, const char *buf, TCL_SIZE_T len)
     if (GetOutput(itPtr, &bufPtr) != TCL_OK) {
         status = TCL_ERROR;
     } else {
-        Ns_DStringNAppend(bufPtr, buf, len);
+        Tcl_DStringAppend(bufPtr, buf, len);
         if (
             ((itPtr->adp.flags & ADP_STREAM) != 0u
              || (size_t)bufPtr->length > itPtr->adp.bufsize
@@ -765,7 +765,7 @@ NsTclAdpTruncObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         if (GetOutput(clientData, &dsPtr) != TCL_OK) {
             result = TCL_ERROR;
         } else {
-            Ns_DStringSetLength(dsPtr, (TCL_SIZE_T)length);
+            Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)length);
         }
     }
     return result;

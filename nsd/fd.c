@@ -331,9 +331,9 @@ Ns_GetTemp(void)
         int         flags, tries;
         char        buf[64];
         const char *path;
-        Ns_DString  ds;
+        Tcl_DString ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
 
         flags = O_RDWR|O_CREAT|O_TRUNC|O_EXCL;
 #ifdef _WIN32
@@ -366,7 +366,7 @@ Ns_GetTemp(void)
             }
 #endif
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
     Ns_Log(Debug, "Ns_GetTemp returns %d", fd);
 

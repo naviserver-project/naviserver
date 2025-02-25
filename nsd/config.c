@@ -1165,7 +1165,7 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
  *
  * Results:
  *      Configuration file content in an ns_malloc'ed string.
- *      Caller is responsible to free the content.
+ *      Caller is responsible to free the returned file content.
  *
  * Side Effects:
  *      Server aborts if the file cannot be read for any reason.

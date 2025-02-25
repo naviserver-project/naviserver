@@ -19,6 +19,10 @@
 
 #include "thread.h"
 
+#ifdef _GNU_SOURCE
+//#yes
+#endif
+
 /*
  * The following structure maintains state for the
  * reentrant wrappers.

@@ -26,7 +26,7 @@
  */
 
 static void AddType(const char *ext, const char *type);
-static char *LowerDString(Ns_DString *dsPtr, const char *ext);
+static char *LowerDString(Tcl_DString *dsPtr, const char *ext);
 
 /*
  * Static variables defined in this file.
@@ -1385,13 +1385,13 @@ Ns_GetMimeType(const char *file)
         result = noextType;
 
     } else {
-        Ns_DString           ds;
+        Tcl_DString          ds;
         const Tcl_HashEntry *hPtr;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         ext = LowerDString(&ds, ext);
         hPtr = Tcl_FindHashEntry(&types, ext);
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
         if (hPtr != NULL) {
             result = Tcl_GetHashValue(hPtr);
         }
@@ -1490,7 +1490,7 @@ Ns_IsBinaryMimeType(const char *contentType) {
  */
 
 void
-NsGetMimeTypes(Ns_DString *dsPtr)
+NsGetMimeTypes(Tcl_DString *dsPtr)
 {
     Tcl_HashSearch       search;
     const Tcl_HashEntry *hPtr;
@@ -1525,11 +1525,11 @@ NsGetMimeTypes(Ns_DString *dsPtr)
 static void
 AddType(const char *ext, const char *type)
 {
-    Ns_DString      ds;
+    Tcl_DString     ds;
     Tcl_HashEntry  *he;
     int             isNew;
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     ext = LowerDString(&ds, ext);
     he = Tcl_CreateHashEntry(&types, ext, &isNew);
     if (isNew == 0) {
@@ -1548,7 +1548,7 @@ AddType(const char *ext, const char *type)
         ns_free(oldType);
     }
     Tcl_SetHashValue(he, ns_strdup(type));
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 }
 
 
@@ -1570,11 +1570,11 @@ AddType(const char *ext, const char *type)
  */
 
 static char *
-LowerDString(Ns_DString *dsPtr, const char *ext)
+LowerDString(Tcl_DString *dsPtr, const char *ext)
 {
     char *p;
 
-    Ns_DStringAppend(dsPtr, ext);
+    Tcl_DStringAppend(dsPtr, ext, TCL_INDEX_NONE);
     p = dsPtr->string;
     while (*p != '\0') {
         if (CHARTYPE(upper, *p) != 0) {

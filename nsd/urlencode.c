@@ -36,10 +36,10 @@ typedef struct ByteKey {
  * Local functions defined in this file.
  */
 
-static char *UrlEncode(Ns_DString *dsPtr, const char *urlSegment,
+static char *UrlEncode(Tcl_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char part, bool upperCase)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static char *UrlDecode(Ns_DString *dsPtr, const char *urlSegment,
+static char *UrlDecode(Tcl_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char part, Ns_ReturnCode *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -804,7 +804,7 @@ Ns_GetUrlEncoding(const char *charset)
  */
 
 char *
-Ns_UrlPathEncode(Ns_DString *dsPtr, const char *urlSegment,
+Ns_UrlPathEncode(Tcl_DString *dsPtr, const char *urlSegment,
                  Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -814,7 +814,7 @@ Ns_UrlPathEncode(Ns_DString *dsPtr, const char *urlSegment,
 }
 
 char *
-Ns_UrlPathDecode(Ns_DString *dsPtr, const char *urlSegment,
+Ns_UrlPathDecode(Tcl_DString *dsPtr, const char *urlSegment,
                  Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -844,7 +844,7 @@ Ns_UrlPathDecode(Ns_DString *dsPtr, const char *urlSegment,
  */
 
 char *
-Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment,
+Ns_UrlQueryEncode(Tcl_DString *dsPtr, const char *urlSegment,
                   Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -854,7 +854,7 @@ Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment,
 }
 
 char *
-Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment,
+Ns_UrlQueryDecode(Tcl_DString *dsPtr, const char *urlSegment,
                   Tcl_Encoding encoding, Ns_ReturnCode *resultPtr)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -883,7 +883,7 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment,
  */
 
 char *
-Ns_CookieEncode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
+Ns_CookieEncode(Tcl_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(cookie != NULL);
@@ -896,7 +896,7 @@ Ns_CookieEncode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
 }
 
 char *
-Ns_CookieDecode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
+Ns_CookieDecode(Tcl_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(cookie != NULL);
@@ -909,7 +909,7 @@ Ns_CookieDecode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
 }
 
 char *
-Ns_Oauth1Encode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
+Ns_Oauth1Encode(Tcl_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(cookie != NULL);
@@ -918,7 +918,7 @@ Ns_Oauth1Encode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
 }
 
 char *
-Ns_Oauth1Decode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
+Ns_Oauth1Decode(Tcl_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(cookie != NULL);
@@ -948,7 +948,7 @@ Ns_Oauth1Decode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
  */
 
 char *
-Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment,
+Ns_EncodeUrlWithEncoding(Tcl_DString *dsPtr, const char *urlSegment,
                          Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -958,7 +958,7 @@ Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment,
 }
 
 char *
-Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
+Ns_EncodeUrlCharset(Tcl_DString *dsPtr, const char *urlSegment,
                     const char *charset)
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
@@ -970,7 +970,7 @@ Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
 }
 
 char *
-Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment,
+Ns_DecodeUrlWithEncoding(Tcl_DString *dsPtr, const char *urlSegment,
                          Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -980,7 +980,7 @@ Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment,
 }
 
 char *
-Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
+Ns_DecodeUrlCharset(Tcl_DString *dsPtr, const char *urlSegment,
                     const char *charset)
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
@@ -1047,7 +1047,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Ns_DString   ds;
+        Tcl_DString  ds;
         Tcl_Encoding encoding = NULL;
         TCL_SIZE_T   i;
 
@@ -1055,15 +1055,15 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             encoding = Ns_GetCharsetEncoding(charset);
         }
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)objc; ++i) {
             (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, (char)part, (upperCase == 1));
 
             if (i + 1 < (TCL_SIZE_T)objc) {
                 if (part == 'q') {
-                    Ns_DStringNAppend(&ds, "&", 1);
+                    Tcl_DStringAppend(&ds, "&", 1);
                 } else {
-                    Ns_DStringNAppend(&ds, "/", 1);
+                    Tcl_DStringAppend(&ds, "/", 1);
                 }
             }
         }
@@ -1116,11 +1116,11 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Ns_DString    ds;
+        Tcl_DString   ds;
         Tcl_Encoding  encoding;
         Ns_ReturnCode status;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
         } else {
@@ -1151,8 +1151,8 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
                 && fallbackEncoding != NULL
                 && fallbackEncoding != encoding
                 ) {
-                Ns_DStringFree(&ds);
-                Ns_DStringInit(&ds);
+                Tcl_DStringFree(&ds);
+                Tcl_DStringInit(&ds);
 
                 Ns_Log(Debug, "ns_urldecode: retry decoding with encoding %s",
                        Ns_GetEncodingCharset(fallbackEncoding));
@@ -1169,7 +1169,7 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
             Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
             result = TCL_ERROR;
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
     return result;
 }
@@ -1193,7 +1193,7 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
  */
 
 static char *
-UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
+UrlEncode(Tcl_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
           char part, bool upperCase)
 {
     TCL_SIZE_T     i, n;
@@ -1230,7 +1230,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
     for (p = urlSegment; *p != '\0'; p++) {
         n += enc[UCHAR(*p)].len;
     }
-    Ns_DStringSetLength(dsPtr, dsPtr->length + n);
+    Tcl_DStringSetLength(dsPtr, dsPtr->length + n);
 
     /*
      * Copy the result directly to the pre-sized dstring.
@@ -1371,7 +1371,7 @@ PercentDecode(char *dest, const char *source, char part)
  */
 
 static char *
-UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
+UrlDecode(Tcl_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
           char part, Ns_ReturnCode *resultPtr)
 {
     const char      *firstCode;
@@ -1403,7 +1403,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
          * encoding). This optimization improves this function roughly
          * 2x.
          */
-        Ns_DStringNAppend(dsPtr, urlSegment, (TCL_SIZE_T)inputLength);
+        Tcl_DStringAppend(dsPtr, urlSegment, (TCL_SIZE_T)inputLength);
         //Ns_Log(Notice, "### UrlDecode plain append <%s> len %ld", dsPtr->string, inputLength);
     } else {
         TCL_SIZE_T oldLength, decodedLength;
@@ -1415,7 +1415,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
          * Expand the Tcl_DString by the length of the input
          * string which will be the largest size required.
          */
-        Ns_DStringSetLength(dsPtr, oldLength + (TCL_SIZE_T)inputLength);
+        Tcl_DStringSetLength(dsPtr, oldLength + (TCL_SIZE_T)inputLength);
         decoded = dsPtr->string + oldLength;
 
         if (firstCode != NULL) {
@@ -1444,8 +1444,8 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
                 Tcl_DString encodedDs;
 
                 (void)Tcl_ExternalToUtfDString(encoding, decoded, decodedLength, &encodedDs);
-                Ns_DStringSetLength(dsPtr, oldLength);
-                Ns_DStringAppend(dsPtr, Tcl_DStringValue(&encodedDs));
+                Tcl_DStringSetLength(dsPtr, oldLength);
+                Tcl_DStringAppend(dsPtr, encodedDs.string, encodedDs.length);
                 Tcl_DStringFree(&encodedDs);
             } else {
                 /*
@@ -1459,7 +1459,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
 
                 Ns_Log(Warning, "decoded string contains invalid UTF-8: '%s'", messageDs.string);
                 Tcl_DStringFree(&messageDs);
-                Ns_DStringSetLength(dsPtr, oldLength);
+                Tcl_DStringSetLength(dsPtr, oldLength);
 
                 result = NS_ERROR;
             }
@@ -1471,7 +1471,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
              * adjust the length to (oldLength + decodedLength), which
              * might be less.
              */
-            Ns_DStringSetLength(dsPtr, (oldLength + decodedLength));
+            Tcl_DStringSetLength(dsPtr, (oldLength + decodedLength));
         }
     }
     if (resultPtr != NULL) {

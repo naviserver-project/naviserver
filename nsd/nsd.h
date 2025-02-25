@@ -269,7 +269,7 @@ typedef struct AdpFrame {
     Tcl_Obj          **objv;
     char              *savecwd;
     const char        *file;
-    Ns_DString         cwdbuf;
+    Tcl_DString        cwdbuf;
     Tcl_DString       *outputPtr;
     unsigned int       flags;
     unsigned short     line;
@@ -1677,7 +1677,7 @@ NS_EXTERN void NsConfigEval(const char *config, const char *configFileName,
                             int argc, char *const *argv, int optionIndex)
     NS_GNUC_NONNULL(1);
 NS_EXTERN void NsConfigMarkAsRead(const char *section, size_t i) NS_GNUC_NONNULL(1);
-NS_EXTERN const char *NsConfigRead(const char *file) NS_GNUC_NONNULL(1);
+NS_EXTERN const char *NsConfigRead(const char *file) NS_GNUC_MALLOC NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_Set *NsConfigSectionGetFiltered(const char *section, char filter) NS_GNUC_NONNULL(1);
 
 /*
@@ -1730,7 +1730,7 @@ NS_EXTERN void Ns_DListFreeElements(Ns_DList *dlPtr)
 /*
  * dns.c
  */
-NS_EXTERN bool NsHostnameIsNumericIP(const char *hostname)
+NS_EXTERN bool NsHostnameIsNumericIP(const char *hostname) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
 /*
@@ -1868,7 +1868,7 @@ NS_EXTERN Ns_ReturnCode NsConnRunProxyRequest(Ns_Conn *conn)
 /*
  * pathname.c
  */
-NS_EXTERN const char *NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
+NS_EXTERN const char *NsPageRoot(Tcl_DString *dsPtr, const NsServer *servPtr, const char *host)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -1922,7 +1922,7 @@ NS_EXTERN void NsPoolAddBytesSent(ConnPool *poolPtr, Tcl_WideInt bytesSent)
  */
 NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
                                int fd, const void *data, size_t objLength,
-                               Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
+                               Ns_FileVec *bufs, int *nbufsPtr, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
     NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
 
@@ -2059,7 +2059,7 @@ NS_EXTERN void NsTclInitQueueType(void);
 /*
  * tclmisc.c
  */
-NS_EXTERN size_t NsTclHash(const char *inputString)
+NS_EXTERN size_t NsTclHash(const char *inputString) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
 /*
@@ -2134,10 +2134,10 @@ NS_EXTERN Tcl_Obj *NsUrlToDictObj(Tcl_Interp *interp, Ns_URL *urlPtr)  NS_GNUC_N
 /*
  * url2file.c
  */
-NS_EXTERN void NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server)
+NS_EXTERN void NsGetUrl2FileProcs(Tcl_DString *dsPtr, const char *server)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN Ns_ReturnCode NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
+NS_EXTERN Ns_ReturnCode NsUrlToFile(Tcl_DString *dsPtr, NsServer *servPtr, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 

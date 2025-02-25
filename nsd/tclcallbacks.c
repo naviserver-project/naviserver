@@ -138,7 +138,7 @@ int
 Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
                    Tcl_DString *resultDString, ...)
 {
-    Ns_DString   ds;
+    Tcl_DString  ds;
     bool         deallocInterp = NS_FALSE;
     int          status = TCL_ERROR;
 
@@ -153,25 +153,25 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
         TCL_SIZE_T  ii;
         va_list     ap;
 
-        Ns_DStringInit(&ds);
-        Ns_DStringAppend(&ds, cbPtr->script);
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, cbPtr->script, TCL_INDEX_NONE);
         va_start(ap, resultDString);
 
         for (arg = va_arg(ap, char *); arg != NULL; arg = va_arg(ap, char *)) {
-            Ns_DStringAppendElement(&ds, arg);
+            Tcl_DStringAppendElement(&ds, arg);
         }
         va_end(ap);
 
         for (ii = 0; ii < cbPtr->argc; ii++) {
-            Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
+            Tcl_DStringAppendElement(&ds, cbPtr->argv[ii]);
         }
 
         status = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         /* Ns_Log(Notice, "??? Ns_TclEvalCallback -> %s", Ns_TclReturnCodeString(status));*/
 
         if (status == TCL_ERROR) {
-            Ns_DStringSetLength(&ds, 0);
-            Ns_DStringAppend(&ds, "\n    while executing callback\n");
+            Tcl_DStringSetLength(&ds, 0);
+            Tcl_DStringAppend(&ds, "\n    while executing callback\n", 30);
             Ns_GetProcInfo(&ds, (ns_funcptr_t)cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);
             if (deallocInterp) {
@@ -181,9 +181,13 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
             /*
              * We can return the string result in the provided Tcl_DString.
              */
-            Ns_DStringAppend(resultDString, Tcl_GetStringResult(interp));
+            Tcl_Obj    *resultObj = Tcl_GetObjResult(interp);
+            TCL_SIZE_T  length;
+            const char *resultString = Tcl_GetStringFromObj(resultObj, &length);
+
+            Tcl_DStringAppend(resultDString, resultString, length);
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
         if (deallocInterp) {
             Ns_TclDeAllocateInterp(interp);
         }
@@ -214,7 +218,7 @@ Ns_TclCallbackProc(void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
 
-    (void) Ns_TclEvalCallback(NULL, cbPtr, (Ns_DString *)NULL, NS_SENTINEL);
+    (void) Ns_TclEvalCallback(NULL, cbPtr, (Tcl_DString *)NULL, NS_SENTINEL);
 }
 
 

@@ -43,16 +43,16 @@
  */
 
 void
-Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars)
+Ns_DbQuoteValue(Tcl_DString *dsPtr, const char *chars)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(chars != NULL);
 
     while (*chars != '\0') {
         if (*chars == '\'') {
-            Ns_DStringNAppend(dsPtr, "'", 1);
+            Tcl_DStringAppend(dsPtr, "'", 1);
         }
-        Ns_DStringNAppend(dsPtr, chars, 1);
+        Tcl_DStringAppend(dsPtr, chars, 1);
         ++chars;
     }
 }
@@ -185,7 +185,7 @@ Ns_ReturnCode
 Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
 {
     FILE           *fp;
-    Ns_DString      dsSql;
+    Tcl_DString     dsSql;
     int             i, inquote;
     Ns_ReturnCode   status;
     char            c, lastc;
@@ -205,7 +205,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
         return NS_ERROR;
     }
 
-    Ns_DStringInit(&dsSql);
+    Tcl_DStringInit(&dsSql);
     status = NS_OK;
     inquote = 0;
     c = '\n';
@@ -218,7 +218,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
  loopstart:
         if (inquote != 0) {
             if (c != '\'') {
-                Ns_DStringNAppend(&dsSql, &c, 1);
+                Tcl_DStringAppend(&dsSql, &c, 1);
             } else {
                 i = getc(fp);
                 if (i == EOF) {
@@ -227,10 +227,10 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
                 lastc = c;
                 c = (char) i;
                 if (c == '\'') {
-                    Ns_DStringNAppend(&dsSql, "''", 2);
+                    Tcl_DStringAppend(&dsSql, "''", 2);
                     continue;
                 } else {
-                    Ns_DStringNAppend(&dsSql, "'", 1);
+                    Tcl_DStringAppend(&dsSql, "'", 1);
                     inquote = 0;
                     goto loopstart;
                 }
@@ -245,7 +245,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
                 lastc = c;
                 c = (char) i;
                 if (c != '-') {
-                    Ns_DStringNAppend(&dsSql, "-", 1);
+                    Tcl_DStringAppend(&dsSql, "-", 1);
                     goto loopstart;
                 }
                 while ((i = getc(fp)) != EOF) {
@@ -260,9 +260,9 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
                     status = NS_ERROR;
                     break;
                 }
-                Ns_DStringSetLength(&dsSql, 0);
+                Tcl_DStringSetLength(&dsSql, 0);
             } else {
-                Ns_DStringNAppend(&dsSql, &c, 1);
+                Tcl_DStringAppend(&dsSql, &c, 1);
                 if (c == '\'') {
                     inquote = 1;
                 }
@@ -285,7 +285,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
             }
         }
     }
-    Ns_DStringFree(&dsSql);
+    Tcl_DStringFree(&dsSql);
 
     return status;
 }
@@ -316,8 +316,8 @@ Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
 
     handle->cExceptionCode[0] = '\0';
     strncat(handle->cExceptionCode, code, sizeof(handle->cExceptionCode) - 1);
-    Ns_DStringFree(&(handle->dsExceptionMsg));
-    Ns_DStringAppend(&(handle->dsExceptionMsg), msg);
+    Tcl_DStringFree(&(handle->dsExceptionMsg));
+    Tcl_DStringAppend(&(handle->dsExceptionMsg), msg, TCL_INDEX_NONE);
 }
 
 /*

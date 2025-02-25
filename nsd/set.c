@@ -1441,13 +1441,13 @@ Ns_Set **
 Ns_SetSplit(const Ns_Set *set, char sep)
 {
     size_t        i;
-    Ns_DString    ds;
+    Tcl_DString   ds;
     const Ns_Set *end = NULL;
 
     NS_NONNULL_ASSERT(set != NULL);
 
-    Ns_DStringInit(&ds);
-    Ns_DStringNAppend(&ds, (char *) &end, (TCL_SIZE_T)sizeof(Ns_Set *));
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, (char *) &end, (TCL_SIZE_T)sizeof(Ns_Set *));
 
     for (i = 0u; i < set->size; ++i) {
         Ns_Set     *targetSet;
@@ -1478,7 +1478,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
             targetSet->flags = set->flags;
             sp = (Ns_Set **) (ds.string + ds.length - sizeof(Ns_Set *));
             *sp = targetSet;
-            Ns_DStringNAppend(&ds, (char *) &end, (TCL_SIZE_T)sizeof(Ns_Set *));
+            Tcl_DStringAppend(&ds, (char *) &end, (TCL_SIZE_T)sizeof(Ns_Set *));
         }
         (void)Ns_SetPut(targetSet, key, set->fields[i].value);
         if (name != NULL) {
@@ -1507,7 +1507,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
  */
 
 void
-Ns_DStringAppendSet(Ns_DString *dsPtr, const Ns_Set *set)
+Ns_DStringAppendSet(Tcl_DString *dsPtr, const Ns_Set *set)
 {
     size_t i;
 

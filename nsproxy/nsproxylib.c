@@ -1790,8 +1790,8 @@ PidsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *
                     Tcl_DStringAppendElement(dsPtr, Tcl_GetString(elementObj));
                     Tcl_DecrRefCount(elementObj);
                 } else {
-                    Ns_DStringNAppend(dsPtr, buffer, bytes);
-                    Ns_DStringNAppend(dsPtr, " ", 1);
+                    Tcl_DStringAppend(dsPtr, buffer, bytes);
+                    Tcl_DStringAppend(dsPtr, " ", 1);
                 }
             }
         }

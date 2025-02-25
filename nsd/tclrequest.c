@@ -423,7 +423,7 @@ NsTclRequestProc(const void *arg, Ns_Conn *conn)
 {
     const Ns_TclCallback *cbPtr = arg;
     Tcl_Interp           *interp;
-    Ns_DString            ds;
+    Tcl_DString           ds;
     Ns_ReturnCode         status = NS_OK;
 
     NS_NONNULL_ASSERT(conn != NULL);
@@ -431,11 +431,11 @@ NsTclRequestProc(const void *arg, Ns_Conn *conn)
     interp = Ns_GetConnInterp(conn);
     if (Ns_TclEvalCallback(interp, cbPtr, NULL, NS_SENTINEL) != TCL_OK) {
         if (NsTclTimeoutException(interp) == NS_TRUE) {
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             Ns_GetProcInfo(&ds, (ns_funcptr_t)NsTclRequestProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, Tcl_GetStringResult(interp));
             Ns_Log(Ns_LogTimeoutDebug, "Tcl request %s lead to a timeout: %s", conn->request.line, ds.string);
-            Ns_DStringFree(&ds);
+            Tcl_DStringFree(&ds);
             Tcl_ResetResult(interp);
             status = Ns_ConnReturnUnavailable(conn);
         } else {
@@ -524,7 +524,7 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
     Tcl_AllowExceptions(interp);
     rc = Tcl_EvalEx(interp, ds.string, ds.length, 0);
     result = Tcl_GetStringResult(interp);
-    Ns_DStringSetLength(&ds, 0);
+    Tcl_DStringSetLength(&ds, 0);
 
     if (rc == TCL_ERROR) {
 
@@ -567,7 +567,7 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
             status = NS_ERROR;
         }
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return status;
 }

@@ -168,7 +168,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
     if (itPtr != NULL && itPtr->conn != NULL) {
         const Ns_Conn *conn = itPtr->conn;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         if (conn->request.method != NULL) {
             Ns_DStringVarAppend(&ds, conn->request.method, " ", NS_SENTINEL);
         }
@@ -189,8 +189,8 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
                 }
             }
         }
-        Ns_Log(Error, "%s\n%s", Ns_DStringValue(&ds), errorInfo);
-        Ns_DStringFree(&ds);
+        Ns_Log(Error, "%s\n%s", ds.string, errorInfo);
+        Tcl_DStringFree(&ds);
     } else {
         Ns_Log(Error, "%s\n%s line %d", Tcl_GetStringResult(interp), errorInfo,
                Tcl_GetErrorLine(interp));

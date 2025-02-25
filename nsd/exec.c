@@ -21,7 +21,7 @@
 
 # include <process.h>
 # include <versionhelpers.h>
-static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
+static void Set2Argv(Tcl_DString *dsPtr, const Ns_Set *env);
 
 #else
 
@@ -261,7 +261,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
     PROCESS_INFORMATION pi;
     HANDLE          hCurrentProcess;
     pid_t           pid;
-    Ns_DString      cds, xds, eds;
+    Tcl_DString     cds, xds, eds;
     char           *envp;
     OSVERSIONINFO   oinfo;
     const char     *cmd;
@@ -309,9 +309,9 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
      * subprocess.
      */
 
-    Ns_DStringInit(&cds);
-    Ns_DStringInit(&xds);
-    Ns_DStringInit(&eds);
+    Tcl_DStringInit(&cds);
+    Tcl_DStringInit(&xds);
+    Tcl_DStringInit(&eds);
     if (args == NULL) {
         /* NB: exec specifies a complete cmd.exe command string. */
         Ns_DStringVarAppend(&cds, cmd, " /c ", exec, NS_SENTINEL);
@@ -324,10 +324,10 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
             size_t len;
 
             len = strlen(s);
-            Ns_DStringNAppend(&cds, s, (int)len);
+            Tcl_DStringAppend(&cds, s, (int)len);
             s += len + 1u;
             if (*s != '\0') {
-                Ns_DStringNAppend(&cds, " ", 1);
+                Tcl_DStringAppend(&cds, " ", 1);
             }
         }
         s = Ns_NormalizePath(&xds, exec);
@@ -353,9 +353,9 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         (void)CloseHandle(pi.hThread);
         pid = (pid_t)pi.hProcess;
     }
-    Ns_DStringFree(&cds);
-    Ns_DStringFree(&xds);
-    Ns_DStringFree(&eds);
+    Tcl_DStringFree(&cds);
+    Tcl_DStringFree(&xds);
+    Tcl_DStringFree(&eds);
     (void)CloseHandle(si.hStdInput);
     (void)CloseHandle(si.hStdOutput);
     return pid;
@@ -388,26 +388,26 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
      * Win32 ExecArgv simply calls ExecArgblk.
      */
     pid_t           pid;
-    Ns_DString      ads;
+    Tcl_DString     ads;
     char           *args;
 
-    Ns_DStringInit(&ads);
+    Tcl_DStringInit(&ads);
     if (argv == NULL) {
         args = NULL;
     } else {
         TCL_SIZE_T i;
 
         for (i = 0; argv[i] != NULL; ++i) {
-          Ns_DStringNAppend(&ads, argv[i], (int)strlen(argv[i]) + 1);
+          Tcl_DStringAppend(&ads, argv[i], (int)strlen(argv[i]) + 1);
         }
         args = ads.string;
     }
     pid = Ns_ExecArgblk(exec, dir, fdin, fdout, args, env);
-    Ns_DStringFree(&ads);
+    Tcl_DStringFree(&ads);
 
     return pid;
 #else
-    Ns_DString eds;
+    Tcl_DString eds;
     char *argvSh[4], **envp;
     pid_t pid;
 
@@ -421,7 +421,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
         argv[3] = NULL;
         exec = argv[0];
     }
-    Ns_DStringInit(&eds);
+    Tcl_DStringInit(&eds);
     if (env == NULL) {
         envp = Ns_CopyEnviron(&eds);
     } else {
@@ -430,9 +430,9 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
         for (i = 0u; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
                                 Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NS_SENTINEL);
-            Ns_DStringNAppend(&eds, NS_EMPTY_STRING, 1);
+            Tcl_DStringAppend(&eds, NS_EMPTY_STRING, 1);
         }
-        Ns_DStringNAppend(&eds, NS_EMPTY_STRING, 1);
+        Tcl_DStringAppend(&eds, NS_EMPTY_STRING, 1);
         envp = Ns_DStringAppendArgv(&eds);
     }
     if (fdin < 0) {
@@ -442,7 +442,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
         fdout = 1;
     }
     pid = ExecProc(exec, dir, fdin, fdout, argv, envp);
-    Ns_DStringFree(&eds);
+    Tcl_DStringFree(&eds);
 
     return pid;
 #endif
@@ -605,16 +605,16 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
  */
 
 static void
-Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
+Set2Argv(Tcl_DString *dsPtr, const Ns_Set *env)
 {
     size_t i;
 
     for (i = 0u; i < Ns_SetSize(env); ++i) {
         Ns_DStringVarAppend(dsPtr,
                             Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NS_SENTINEL);
-        Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);
+        Tcl_DStringAppend(dsPtr, NS_EMPTY_STRING, 1);
     }
-    Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);
+    Tcl_DStringAppend(dsPtr, NS_EMPTY_STRING, 1);
     (void )Ns_DStringAppendArgv(dsPtr);
 }
 

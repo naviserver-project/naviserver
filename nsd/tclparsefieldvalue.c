@@ -260,14 +260,14 @@ NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        Ns_DString           token, value;
+        Tcl_DString          token, value;
         const unsigned char *p1;
         const char           listDelimiter = (singleInt == (int)NS_TRUE ? '\0' : ',');
         const char           sublistDelimiter = ';';
         Tcl_Obj             *listObj = NULL, *sublistObj = NULL;
 
-        Ns_DStringInit(&token);
-        Ns_DStringInit(&value);
+        Tcl_DStringInit(&token);
+        Tcl_DStringInit(&value);
         p1 = SkipWhitespace((unsigned char *)sourceString);
 
         for (;;) {
@@ -302,8 +302,8 @@ NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }
             Tcl_ListObjAppendElement(interp, sublistObj, Tcl_NewStringObj(token.string, token.length));
             Tcl_ListObjAppendElement(interp, sublistObj, Tcl_NewStringObj(value.string, value.length));
-            Ns_DStringSetLength(&token, 0);
-            Ns_DStringSetLength(&value, 0);
+            Tcl_DStringSetLength(&token, 0);
+            Tcl_DStringSetLength(&value, 0);
 
             if (*p1 == sublistDelimiter) {
                 p1 ++;
@@ -354,8 +354,8 @@ NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
         } else if (listObj != NULL) {
             Tcl_SetObjResult(interp, listObj);
         }
-        Ns_DStringFree(&token);
-        Ns_DStringFree(&value);
+        Tcl_DStringFree(&token);
+        Tcl_DStringFree(&value);
     }
 
     return result;

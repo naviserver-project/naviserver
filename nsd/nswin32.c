@@ -27,7 +27,7 @@ static VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv);
 static VOID WINAPI ServiceHandler(DWORD code);
 static BOOL WINAPI ConsoleHandler(DWORD code);
 static void ReportStatus(DWORD state, DWORD code, DWORD hint);
-static char *GetServiceName(Ns_DString *dsPtr, char *service);
+static char *GetServiceName(Tcl_DString *dsPtr, char *service);
 static bool SockAddrEqual(const struct sockaddr *saPtr1, const struct sockaddr *saPtr2);
 
 
@@ -288,10 +288,10 @@ NsRemoveService(char *service)
 {
     SC_HANDLE      hmgr;
     SERVICE_STATUS status;
-    Ns_DString     name;
+    Tcl_DString    name;
     BOOL           ok;
 
-    Ns_DStringInit(&name);
+    Tcl_DStringInit(&name);
     (void) GetServiceName(&name, service);
     ok = FALSE;
     hmgr = OpenSCManager(NULL, NULL, (DWORD)SC_MANAGER_ALL_ACCESS);
@@ -310,7 +310,7 @@ NsRemoveService(char *service)
         Ns_Log(Error, "nswin32: failed to remove %s service: %s",
                name.string, SysErrMsg());
     }
-    Ns_DStringFree(&name);
+    Tcl_DStringFree(&name);
 
     return (ok ? NS_OK : NS_ERROR);
 }
@@ -338,15 +338,15 @@ NsInstallService(char *service)
     SC_HANDLE  hmgr, hsrv;
     bool       ok = FALSE;
     char       nsd[PATH_MAX], config[PATH_MAX];
-    Ns_DString name, cmd;
+    Tcl_DString name, cmd;
 
     if (_fullpath(config, nsconf.configFile, sizeof(config)) == NULL) {
         Ns_Log(Error, "nswin32: invalid config path '%s'", nsconf.configFile);
     } else if (GetModuleFileName(NULL, nsd, sizeof(nsd)) == 0u) {
         Ns_Log(Error, "nswin32: failed to find nsd.exe: '%s'", SysErrMsg());
     } else {
-        Ns_DStringInit(&name);
-        Ns_DStringInit(&cmd);
+        Tcl_DStringInit(&name);
+        Tcl_DStringInit(&cmd);
         Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
                             " -S -s ", service, " -t \"", config, "\"", NS_SENTINEL);
         (void) GetServiceName(&name, service);
@@ -369,8 +369,8 @@ NsInstallService(char *service)
         } else {
             Ns_Log(Error, "nswin32: failed to connect to service manager: %s", SysErrMsg());
         }
-        Ns_DStringFree(&name);
-        Ns_DStringFree(&cmd);
+        Tcl_DStringFree(&name);
+        Tcl_DStringFree(&cmd);
     }
 
     return (ok ? NS_OK : NS_ERROR);
@@ -988,7 +988,7 @@ ConsoleHandler(DWORD UNUSED(code))
  */
 
 static char *
-GetServiceName(Ns_DString *dsPtr, char *service)
+GetServiceName(Tcl_DString *dsPtr, char *service)
 {
     Ns_DStringVarAppend(dsPtr, PACKAGE_NAME, "-", service, NS_SENTINEL);
     return dsPtr->string;

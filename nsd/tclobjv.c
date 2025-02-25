@@ -50,7 +50,7 @@ static void UpdateStringOfMemUnit(Tcl_Obj *objPtr)
 static int SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
+static void AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void AppendLiteral(Tcl_DString *dsPtr, const Ns_ObjvSpec *specPtr)
@@ -1800,7 +1800,7 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
  */
 
 static void
-AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
+AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
 {
     if (r->minValue == LLONG_MIN) {
         Tcl_DStringAppend(dsPtr, "[MIN,", 5);
@@ -1845,7 +1845,7 @@ char *Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
         Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
         Tcl_DStringAppend(dsPtr, "|", 1);
     }
-    Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+    Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
     return dsPtr->string;
 }
 
@@ -2040,14 +2040,14 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
                TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_ObjvSpec *specPtr;
-    Ns_DString         ds;
+    Tcl_DString        ds;
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     if (optSpec != NULL) {
         for (specPtr = optSpec; specPtr->key != NULL; ++specPtr) {
             if (STREQ(specPtr->key, "--")) {
-                Ns_DStringAppend(&ds, "?--? ");
+                Tcl_DStringAppend(&ds, "?--? ", 5);
             } else {
                 AppendParameter(&ds, "?", 1,
                                 ((specPtr->proc == Ns_ObjvInt
@@ -2075,14 +2075,14 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
         /*
          * Strip last blank character.
          */
-        Ns_DStringSetLength(&ds, ds.length - 1);
+        Tcl_DStringSetLength(&ds, ds.length - 1);
         /*Ns_Log(Notice, ".... call tclwrongnumargs %d size %lu <%s>", objc+preObjc, sizeof(objc), ds.string);*/
         Tcl_WrongNumArgs(interp, (TCL_SIZE_T)objc+preObjc, objv, ds.string);
     } else {
         Tcl_WrongNumArgs(interp, (TCL_SIZE_T)objc, objv, NULL);
     }
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 }
 
 /*
@@ -2109,7 +2109,7 @@ GetOptEnumeration(Tcl_DString *dsPtr, const Ns_SubCmdSpec *tablePtr) {
         Tcl_DStringAppend(dsPtr, entryPtr->key, TCL_INDEX_NONE);
         Tcl_DStringAppend(dsPtr, "|", 1);
     }
-    Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+    Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
     return dsPtr->string;
 }
 

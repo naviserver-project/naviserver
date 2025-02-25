@@ -113,7 +113,7 @@ Ns_GetEnviron(void)
  */
 
 char **
-Ns_CopyEnviron(Ns_DString *dsPtr)
+Ns_CopyEnviron(Tcl_DString *dsPtr)
 {
     char *const *envp;
     int          i;

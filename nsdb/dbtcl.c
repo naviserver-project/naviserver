@@ -632,7 +632,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, &hPtr) != TCL_OK) {
             return TCL_ERROR;
         }
-        Ns_DStringFree(&handlePtr->dsExceptionMsg);
+        Tcl_DStringFree(&handlePtr->dsExceptionMsg);
         handlePtr->cExceptionCode[0] = '\0';
 
         /*
@@ -795,7 +795,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
             if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, &hPtr) != TCL_OK) {
                 return TCL_ERROR;
             }
-            Ns_DStringFree(&handlePtr->dsExceptionMsg);
+            Tcl_DStringFree(&handlePtr->dsExceptionMsg);
             handlePtr->cExceptionCode[0] = '\0';
             value = Tcl_GetStringFromObj(objv[3], &valueLength);
 
@@ -1160,10 +1160,10 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     } else {
         const char *quotelist;
         bool        inquotes;
-        Ns_DString  ds;
+        Tcl_DString ds;
         Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         quotelist = Tcl_GetString(objv[1]);
         inquotes = NS_FALSE;
 
@@ -1171,19 +1171,19 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
             if (CHARTYPE(space, *quotelist) != 0 && !inquotes) {
                 if (ds.length != 0) {
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
-                    Ns_DStringSetLength(&ds, 0);
+                    Tcl_DStringSetLength(&ds, 0);
                 }
                 while (CHARTYPE(space, *quotelist) != 0) {
                     quotelist++;
                 }
             } else if (*quotelist == '\\' && (*(quotelist + 1) != '\0')) {
-                Ns_DStringNAppend(&ds, quotelist + 1, 1);
+                Tcl_DStringAppend(&ds, quotelist + 1, 1);
                 quotelist += 2;
             } else if (*quotelist == '\'') {
                 if (inquotes) {
                     /* Finish element */
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
-                    Ns_DStringSetLength(&ds, 0);
+                    Tcl_DStringSetLength(&ds, 0);
                     inquotes = NS_FALSE;
                 } else {
                     /* Start element */
@@ -1191,14 +1191,14 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
                 }
                 quotelist++;
             } else {
-                Ns_DStringNAppend(&ds, quotelist, 1);
+                Tcl_DStringAppend(&ds, quotelist, 1);
                 quotelist++;
             }
         }
         if (ds.length != 0) {
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
         Tcl_SetObjResult(interp, listObj);
     }
     return result;

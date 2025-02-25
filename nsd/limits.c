@@ -420,12 +420,12 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *
 static void
 LimitsResult(Tcl_Interp *interp, const NsLimits *limitsPtr)
 {
-    Ns_DString ds;
+    Tcl_DString ds;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(limitsPtr != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     Ns_DStringPrintf(&ds, "nrunning %u nwaiting %u"
                      " ntimeout %u ndropped %u noverflow %u"
                      " maxrun %u maxwait %u"

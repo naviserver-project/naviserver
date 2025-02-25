@@ -500,11 +500,11 @@ Ns_RegisterProxyRequest(const char *server, const char *method, const char *prot
         Ns_Log(Error, "Ns_RegisterProxyRequest: no such server: %s", server);
     } else {
         RegisteredProc *regPtr;
-        Ns_DString      ds;
+        Tcl_DString     ds;
         int             isNew;
         Tcl_HashEntry  *hPtr;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, method, protocol, NS_SENTINEL);
         regPtr = ns_malloc(sizeof(RegisteredProc));
         regPtr->refcnt = 1;
@@ -519,7 +519,7 @@ Ns_RegisterProxyRequest(const char *server, const char *method, const char *prot
         }
         Tcl_SetHashValue(hPtr, regPtr);
         Ns_MutexUnlock(&servPtr->request.plock);
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 }
 
@@ -554,9 +554,9 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
         Tcl_HashEntry *hPtr;
-        Ns_DString     ds;
+        Tcl_DString    ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, method, protocol, NS_SENTINEL);
         Ns_MutexLock(&servPtr->request.plock);
         hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
@@ -565,7 +565,7 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
             Tcl_DeleteHashEntry(hPtr);
         }
         Ns_MutexUnlock(&servPtr->request.plock);
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 }
 
@@ -593,14 +593,14 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     NsServer            *servPtr;
     RegisteredProc      *regPtr = NULL;
     Ns_ReturnCode        status;
-    Ns_DString           ds;
+    Tcl_DString          ds;
     const Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
     servPtr = ((Conn *) conn)->poolPtr->servPtr;
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, conn->request.method, conn->request.protocol, NS_SENTINEL);
     Ns_MutexLock(&servPtr->request.plock);
     hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
@@ -617,7 +617,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
         RegisteredProcDecrRef(regPtr);
         Ns_MutexUnlock(&servPtr->request.plock);
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return status;
 }

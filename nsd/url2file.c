@@ -194,7 +194,7 @@ Ns_UnRegisterUrl2FileProc(const char *server, const char *url, unsigned int flag
  */
 
 Ns_ReturnCode
-Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
+Ns_FastUrl2FileProc(Tcl_DString *dsPtr, const char *url, const void *arg)
 {
     Ns_ReturnCode   status = NS_OK;
     const NsServer *servPtr = arg;
@@ -226,7 +226,7 @@ Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
  */
 
 Ns_ReturnCode
-Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
+Ns_UrlToFile(Tcl_DString *dsPtr, const char *server, const char *url)
 {
     NsServer      *servPtr;
     Ns_ReturnCode  status;
@@ -246,7 +246,7 @@ Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
 }
 
 Ns_ReturnCode
-NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
+NsUrlToFile(Tcl_DString *dsPtr, NsServer *servPtr, const char *url)
 {
     Ns_ReturnCode status;
 
@@ -278,7 +278,7 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
     }
     if (status == NS_OK) {
         while (dsPtr->length > 0 && dsPtr->string[dsPtr->length -1] == '/') {
-            Ns_DStringSetLength(dsPtr, dsPtr->length -1);
+            Tcl_DStringSetLength(dsPtr, dsPtr->length -1);
         }
     }
 
@@ -332,7 +332,7 @@ Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
  */
 
 Ns_ReturnCode
-NsUrlToFileProc(Ns_DString *dsPtr, const char *server, const char *url)
+NsUrlToFileProc(Tcl_DString *dsPtr, const char *server, const char *url)
 {
     const NsServer *servPtr = NsGetServer(server);
     Ns_ReturnCode   result;
@@ -372,13 +372,13 @@ NsTclUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         Tcl_WrongNumArgs(interp, 1, objv, "/url/");
         result = TCL_ERROR;
     } else {
-        Ns_DString      ds;
+        Tcl_DString     ds;
         const NsInterp *itPtr = clientData;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         if (NsUrlToFile(&ds, itPtr->servPtr, Tcl_GetString(objv[1])) != NS_OK) {
             Ns_TclPrintfResult(interp, "url2file lookup failed for %s", Tcl_GetString(objv[1]));
-            Ns_DStringFree(&ds);
+            Tcl_DStringFree(&ds);
             result = TCL_ERROR;
         } else {
             Tcl_DStringResult(interp, &ds);
@@ -598,7 +598,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_S
  */
 
 Ns_ReturnCode
-NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
+NsTclUrl2FileProc(Tcl_DString *dsPtr, const char *url, const void *arg)
 {
     Ns_ReturnCode         status = NS_OK;
     const Ns_TclCallback *cbPtr = arg;
@@ -627,7 +627,7 @@ NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
  */
 
 Ns_ReturnCode
-NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
+NsMountUrl2FileProc(Tcl_DString *dsPtr, const char *url, const void *arg)
 {
     Ns_ReturnCode status = NS_OK;
     const Mount  *mPtr = arg;
@@ -691,7 +691,7 @@ NsMountUrl2FileArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 void
-NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server)
+NsGetUrl2FileProcs(Tcl_DString *dsPtr, const char *server)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
@@ -702,7 +702,7 @@ NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server)
 }
 
 static void
-WalkCallback(Ns_DString *dsPtr, const void *arg)
+WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
     const Url2File *u2fPtr = arg;
 

@@ -89,12 +89,12 @@ Ns_ReturnCode
 Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int flags)
 {
     Conn              *connPtr   = (Conn *) conn;
-    Ns_DString         encDs, gzDs;
+    Tcl_DString        encDs, gzDs;
     struct iovec       iov;
     Ns_ReturnCode      status;
 
-    Ns_DStringInit(&encDs);
-    Ns_DStringInit(&gzDs);
+    Tcl_DStringInit(&encDs);
+    Tcl_DStringInit(&gzDs);
 
     /*
      * Transcode to charset if necessary. In earlier versions, the
@@ -149,8 +149,8 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
 
     status = Ns_ConnWriteVData(conn, bufs, nbufs, flags);
 
-    Ns_DStringFree(&encDs);
-    Ns_DStringFree(&gzDs);
+    Tcl_DStringFree(&encDs);
+    Tcl_DStringFree(&gzDs);
 
     return status;
 }
@@ -250,7 +250,7 @@ Ns_ConnWriteData(Ns_Conn *conn, const void *buf, size_t toWrite, unsigned int fl
 Ns_ReturnCode
 Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int flags)
 {
-    Ns_DString    ds;
+    Tcl_DString   ds;
     int           nsbufs, sbufIdx;
     size_t        bodyLength, toWrite, neededBufs;
     ssize_t       nwrote;
@@ -265,7 +265,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     NS_NONNULL_ASSERT(conn != NULL);
     //NS_NONNULL_ASSERT(bufs != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     /*
      * Make sure there's enough send buffers to contain the given
@@ -300,9 +300,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     if (((conn->flags & NS_CONN_SENTHDRS) == 0u)) {
         conn->flags |= NS_CONN_SENTHDRS;
         if (Ns_CompleteHeaders(conn, bodyLength, flags, &ds) == NS_TRUE) {
-            toWrite += Ns_SetVec(sbufPtr, sbufIdx++,
-                                 Ns_DStringValue(&ds),
-                                 (size_t)Ns_DStringLength(&ds));
+            toWrite += Ns_SetVec(sbufPtr, sbufIdx++, ds.string, (size_t)ds.length);
             nsbufs++;
         }
     }
@@ -377,7 +375,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 
     nwrote = Ns_ConnSend(conn, sbufPtr, nsbufs);
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
     if (sbufPtr != sbufs && sbufPtr != bufs) {
         ns_free(sbufPtr);
     }
@@ -643,7 +641,7 @@ Ns_ConnPuts(Ns_Conn *conn, const char *s)
  */
 
 Ns_ReturnCode
-Ns_ConnSendDString(Ns_Conn *conn, const Ns_DString *dsPtr)
+Ns_ConnSendDString(Ns_Conn *conn, const Tcl_DString *dsPtr)
 {
     struct iovec vbuf;
 
@@ -987,7 +985,7 @@ Ns_ConnRead(const Ns_Conn *conn, void *vbuf, size_t toRead)
  */
 
 Ns_ReturnCode
-Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
+Ns_ConnReadLine(const Ns_Conn *conn, Tcl_DString *dsPtr, size_t *nreadPtr)
 {
     const Conn   *connPtr;
     Request      *reqPtr;
@@ -1028,7 +1026,7 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
             if (ncopy > 0u && *(eol-1) == '\r') {
                 --ncopy;
             }
-            Ns_DStringNAppend(dsPtr, reqPtr->next, (TCL_SIZE_T)ncopy);
+            Tcl_DStringAppend(dsPtr, reqPtr->next, (TCL_SIZE_T)ncopy);
             reqPtr->next  += nread;
             reqPtr->avail -= (size_t)nread;
 
@@ -1058,18 +1056,18 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
 Ns_ReturnCode
 Ns_ConnReadHeaders(const Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
 {
-    Ns_DString      ds;
+    Tcl_DString     ds;
     const Conn     *connPtr = (const Conn *) conn;
     size_t          nread, maxhdr;
     Ns_ReturnCode   status = NS_OK;
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     nread = 0u;
     maxhdr = (size_t)connPtr->drvPtr->maxheaders;
     while (nread < maxhdr && status == NS_OK) {
         size_t nline;
 
-        Ns_DStringSetLength(&ds, 0);
+        Tcl_DStringSetLength(&ds, 0);
         status = Ns_ConnReadLine(conn, &ds, &nline);
         if (status == NS_OK) {
             nread += nline;
@@ -1088,7 +1086,7 @@ Ns_ConnReadHeaders(const Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
     if (nreadPtr != NULL) {
         *nreadPtr = nread;
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return status;
 }
@@ -1111,7 +1109,7 @@ Ns_ConnReadHeaders(const Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
  */
 
 Ns_ReturnCode
-Ns_ConnCopyToDString(const Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
+Ns_ConnCopyToDString(const Ns_Conn *conn, size_t toCopy, Tcl_DString *dsPtr)
 {
     const Conn    *connPtr;
     Request       *reqPtr;
@@ -1126,7 +1124,7 @@ Ns_ConnCopyToDString(const Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
         status = NS_ERROR;
     } else {
-        Ns_DStringNAppend(dsPtr, reqPtr->next, (TCL_SIZE_T)toCopy);
+        Tcl_DStringAppend(dsPtr, reqPtr->next, (TCL_SIZE_T)toCopy);
         reqPtr->next  += toCopy;
         reqPtr->avail -= toCopy;
     }
@@ -1240,7 +1238,7 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
 
 bool
 Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
-                   unsigned int flags, Ns_DString *dsPtr)
+                   unsigned int flags, Tcl_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
     bool        success;

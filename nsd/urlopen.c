@@ -35,7 +35,7 @@ typedef struct Stream {
  * Local functions defined in this file
  */
 
-static bool GetLine(Stream *sPtr, Ns_DString *dsPtr)
+static bool GetLine(Stream *sPtr, Tcl_DString *dsPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static bool FillBuf(Stream *sPtr)
@@ -62,9 +62,9 @@ static bool FillBuf(Stream *sPtr)
  */
 
 Ns_ReturnCode
-Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
+Ns_FetchPage(Tcl_DString *dsPtr, const char *url, const char *server)
 {
-    Ns_DString    ds;
+    Tcl_DString   ds;
     Tcl_Channel   chan;
     Ns_ReturnCode result;
 
@@ -72,16 +72,16 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
     NS_NONNULL_ASSERT(url != NULL);
     NS_NONNULL_ASSERT(server != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     (void) Ns_UrlToFile(&ds, server, url);
     chan = Tcl_OpenFileChannel(NULL, ds.string, "r", 0);
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
     if (chan != NULL) {
         char buf[1024];
         TCL_SIZE_T nread;
 
         while ((nread = Tcl_Read(chan, buf, (int)sizeof(buf))) > 0) {
-            Ns_DStringNAppend(dsPtr, buf, nread);
+            Tcl_DStringAppend(dsPtr, buf, nread);
         }
         result = (Tcl_Close(NULL, chan) == TCL_OK ? NS_OK : NS_ERROR);
     } else {
@@ -114,11 +114,11 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
  */
 
 Ns_ReturnCode
-Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
+Ns_FetchURL(Tcl_DString *dsPtr, const char *url, Ns_Set *headers)
 {
     NS_SOCKET       sock;
     const char     *p;
-    Ns_DString      ds;
+    Tcl_DString     ds;
     Stream          s;
     Ns_Request      request;
     Ns_ReturnCode   status;
@@ -128,7 +128,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     NS_NONNULL_ASSERT(url != NULL);
 
     sock = NS_INVALID_SOCKET;
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     /*
      * Parse the URL and open a connection.
@@ -157,12 +157,12 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
      * Send a simple HTTP GET request.
      */
 
-    Ns_DStringSetLength(&ds, 0);
+    Tcl_DStringSetLength(&ds, 0);
     Ns_DStringVarAppend(&ds, "GET ", request.url, NS_SENTINEL);
     if (request.query != NULL) {
         Ns_DStringVarAppend(&ds, "?", request.query, NS_SENTINEL);
     }
-    Ns_DStringAppend(&ds, " HTTP/1.0\r\nAccept: */*\r\n\r\n");
+    Tcl_DStringAppend(&ds, " HTTP/1.0\r\nAccept: */*\r\n\r\n", 26);
     p = ds.string;
     toSend = (size_t)ds.length;
     while (toSend > 0u) {
@@ -217,7 +217,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
      */
 
     do {
-        Ns_DStringNAppend(dsPtr, s.ptr, (TCL_SIZE_T)s.cnt);
+        Tcl_DStringAppend(dsPtr, s.ptr, (TCL_SIZE_T)s.cnt);
     } while (FillBuf(&s));
 
     if (s.error == 0) {
@@ -230,7 +230,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     if (sock != NS_INVALID_SOCKET) {
         ns_sockclose(sock);
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return status;
 }
@@ -266,7 +266,7 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         Ns_Set         *headers;
         Ns_ReturnCode   status;
         const char     *url;
-        Ns_DString      ds;
+        Tcl_DString     ds;
 
         Ns_LogDeprecated(objv, 2, "ns_http run ...", NULL);
 
@@ -276,7 +276,7 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         } else {
             headers = Ns_SetCreate(NULL);
         }
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         url = Tcl_GetString(objv[1]);
         if (url[1] == '/') {
             status = Ns_FetchPage(&ds, url, itPtr->servPtr->server);
@@ -301,7 +301,7 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             Tcl_DStringResult(interp, &ds);
         }
 
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 
     return code;
@@ -375,7 +375,7 @@ FillBuf(Stream *sPtr)
  */
 
 static bool
-GetLine(Stream *sPtr, Ns_DString *dsPtr)
+GetLine(Stream *sPtr, Tcl_DString *dsPtr)
 {
     char   *eol;
     size_t  n;
@@ -384,7 +384,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
     NS_NONNULL_ASSERT(sPtr != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    Ns_DStringSetLength(dsPtr, 0);
+    Tcl_DStringSetLength(dsPtr, 0);
     do {
         if (sPtr->cnt > 0u) {
             eol = strchr(sPtr->ptr, INTCHAR('\n'));
@@ -394,13 +394,13 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
                 *eol++ = '\0';
                 n = (size_t)(eol - sPtr->ptr);
             }
-            Ns_DStringNAppend(dsPtr, sPtr->ptr, (TCL_SIZE_T)n - 1);
+            Tcl_DStringAppend(dsPtr, sPtr->ptr, (TCL_SIZE_T)n - 1);
             sPtr->ptr += n;
             sPtr->cnt -= n;
             if (eol != NULL) {
                 n = (size_t)dsPtr->length;
                 if (n > 0u && dsPtr->string[n - 1u] == '\r') {
-                    Ns_DStringSetLength(dsPtr, (TCL_SIZE_T)n - 1);
+                    Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)n - 1);
                 }
                 success = NS_TRUE;
                 break;

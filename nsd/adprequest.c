@@ -374,14 +374,14 @@ NsAdpPageProc(const void *arg, Ns_Conn *conn)
 {
     const AdpRequest *adp = arg;
     const Ns_Time    *expiresPtr;
-    Ns_DString        ds;
+    Tcl_DString       ds;
     const char       *fileName, *server;
     Ns_ReturnCode     status;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
     server = Ns_ConnServer(conn);
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     if (adp->file[0] == '\0') {
         if (Ns_UrlToFile(&ds, server, conn->request.url) != NS_OK) {
@@ -403,7 +403,7 @@ NsAdpPageProc(const void *arg, Ns_Conn *conn)
 
     status = PageRequest(conn, fileName, expiresPtr, adp->flags);
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return status;
 }

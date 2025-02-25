@@ -22,11 +22,11 @@
  * Local functions defined in this file.
  */
 
-static int GetFirstNamedCookie(Ns_DString *dest, const Ns_Set *hdrs,
+static int GetFirstNamedCookie(Tcl_DString *dest, const Ns_Set *hdrs,
                                const char *setName, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-static int GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs,
+static int GetAllNamedCookies(Tcl_DString *dest, const Ns_Set *hdrs,
                               const char *setName, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
@@ -35,7 +35,7 @@ static bool DeleteNamedCookies(Ns_Set *hdrs, const char *setName,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
-typedef char* (CookieParser)(Ns_DString *dest, char *chars, const char *name,
+typedef char* (CookieParser)(Tcl_DString *dest, char *chars, const char *name,
                              size_t nameLen, char **nextPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -130,7 +130,7 @@ CopyCookieValue(Tcl_DString *dest, char *valueStart)
  */
 
 static char *
-GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name,
+GetFromCookieHeader(Tcl_DString *dest, char *chars, const char *name,
                     size_t nameLen, char **nextPtr)
 {
     char *cookieStart = NULL, *toParse = chars;
@@ -214,7 +214,7 @@ GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name,
  */
 
 static char *
-GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name,
+GetFromSetCookieHeader(Tcl_DString *dest, char *chars, const char *name,
                        size_t nameLen, char **nextPtr) {
     char *cookieStart = NULL, *toParse = chars;
 
@@ -273,7 +273,7 @@ GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name,
  */
 
 static int
-GetFirstNamedCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
+GetFirstNamedCookie(Tcl_DString *dest, const Ns_Set *hdrs, const char *setName,
                     const char *name)
 {
     int      idx = -1;
@@ -326,7 +326,7 @@ GetFirstNamedCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
  *----------------------------------------------------------------------
  */
 static int
-GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
+GetAllNamedCookies(Tcl_DString *dest, const Ns_Set *hdrs, const char *setName,
                    const char *name)
 {
     int           count = 0;
@@ -351,9 +351,9 @@ GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
              * We have the right header, parse the string;
              */
             for (toParse = hdrs->fields[i].value; *toParse != '\0'; ) {
-                Ns_DString cookie;
+                Tcl_DString cookie;
 
-                Ns_DStringInit(&cookie);
+                Tcl_DStringInit(&cookie);
                 if ((*cookieParser)(&cookie, toParse, name, nameLen,
                                     &toParse) != NULL) {
                     /*
@@ -362,7 +362,7 @@ GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
                     count ++;
                     Tcl_DStringAppendElement(dest, cookie.string);
                 }
-                Ns_DStringFree(&cookie);
+                Tcl_DStringFree(&cookie);
             }
             break;
         }
@@ -432,7 +432,7 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value,
                    time_t maxage, const char *domain, const char *path,
                    unsigned int flags)
 {
-    Ns_DString  cookie;
+    Tcl_DString cookie;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(name != NULL);
@@ -442,16 +442,16 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value,
                                  name);
     }
 
-    Ns_DStringInit(&cookie);
+    Tcl_DStringInit(&cookie);
     Ns_DStringVarAppend(&cookie, name, "=\"", NS_SENTINEL);
     if (value != NULL) {
         Ns_CookieEncode(&cookie, value, NULL);
     }
-    Ns_DStringAppend(&cookie, "\"");
+    Tcl_DStringAppend(&cookie, "\"", 1);
     if ((flags & NS_COOKIE_EXPIRENOW) != 0u) {
-        Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-1980 01:00:00 GMT");
+        Tcl_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-1980 01:00:00 GMT", 39);
     } else if (maxage == TIME_T_MAX) {
-        Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-2035 01:00:00 GMT");
+        Tcl_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-2035 01:00:00 GMT", 39);
     } else if (maxage > 0) {
         Ns_DStringPrintf(&cookie, "; Max-Age=%" PRId64, (int64_t)maxage);
     } else {
@@ -467,26 +467,26 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value,
         Ns_DStringVarAppend(&cookie, "; Path=", path, NS_SENTINEL);
     }
     if ((flags & NS_COOKIE_SECURE) != 0u) {
-        Ns_DStringAppend(&cookie, "; Secure");
+        Tcl_DStringAppend(&cookie, "; Secure", 8);
     }
     if ((flags & NS_COOKIE_DISCARD) != 0u) {
-        Ns_DStringAppend(&cookie, "; Discard");
+        Tcl_DStringAppend(&cookie, "; Discard", 9);
     }
     if ((flags & NS_COOKIE_SCRIPTABLE) == 0u) {
-        Ns_DStringAppend(&cookie, "; HttpOnly");
+        Tcl_DStringAppend(&cookie, "; HttpOnly", 10);
     }
 
     if ((flags & NS_COOKIE_SAMESITE_STRICT) != 0u) {
-        Ns_DStringAppend(&cookie, "; SameSite=Strict");
+        Tcl_DStringAppend(&cookie, "; SameSite=Strict", 17);
     } else if ((flags & NS_COOKIE_SAMESITE_LAX) != 0u) {
-        Ns_DStringAppend(&cookie, "; SameSite=Lax");
+        Tcl_DStringAppend(&cookie, "; SameSite=Lax", 14);
     } else if ((flags & NS_COOKIE_SAMESITE_NONE) != 0u) {
-        Ns_DStringAppend(&cookie, "; SameSite=None");
+        Tcl_DStringAppend(&cookie, "; SameSite=None", 15);
     }
 
 
     Ns_ConnSetHeadersSz(conn, "set-cookie", 10, cookie.string, cookie.length);
-    Ns_DStringFree(&cookie);
+    Tcl_DStringFree(&cookie);
 }
 
 void
@@ -566,7 +566,7 @@ Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, const char *name,
  */
 
 const char *
-Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
+Ns_ConnGetCookie(Tcl_DString *dest, const Ns_Conn *conn, const char *name)
 {
     int idx;
 
@@ -576,7 +576,7 @@ Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
 
     idx = GetFirstNamedCookie(dest, Ns_ConnHeaders(conn), "cookie", name);
 
-    return idx != -1 ? Ns_DStringValue(dest) : NULL;
+    return idx != -1 ? dest->string : NULL;
 }
 
 
@@ -736,10 +736,10 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         status = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_CONFIGURED, &conn, &status) == NS_OK) {
-        Ns_DString     ds;
+        Tcl_DString    ds;
         int            idx = -1;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
 
         if (withAll == (int)NS_TRUE) {
             idx = GetAllNamedCookies(&ds, Ns_ConnHeaders(conn),
@@ -764,7 +764,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             Tcl_SetObjResult(interp, Tcl_NewStringObj("no such cookie", TCL_INDEX_NONE));
             status = TCL_ERROR;
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 
     return status;

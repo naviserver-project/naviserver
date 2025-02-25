@@ -166,7 +166,7 @@ NsUpdateProgress(Ns_Sock *sock)
     const Request    *reqPtr;
     const Ns_Request *request;
     Tcl_HashEntry    *hPtr;
-    Ns_DString        ds;
+    Tcl_DString       ds;
     int               isNew;
 
     NS_NONNULL_ASSERT(sock != NULL);
@@ -190,7 +190,7 @@ NsUpdateProgress(Ns_Sock *sock)
         if (pPtr->hPtr == NULL) {
             const char *key = NULL;
             Ns_Set *set = NULL;
-            Ns_DString *dsPtr = NULL;
+            Tcl_DString *dsPtr = NULL;
 
             pPtr->size = reqPtr->length;
             pPtr->current = reqPtr->avail;
@@ -207,13 +207,13 @@ NsUpdateProgress(Ns_Sock *sock)
 
             if (key == NULL) {
               dsPtr = &ds;
-              Ns_DStringInit(dsPtr);
-              Ns_DStringAppend(dsPtr, request->url);
+              Tcl_DStringInit(dsPtr);
+              Tcl_DStringAppend(dsPtr, request->url, TCL_INDEX_NONE);
               if (request->query != NULL) {
-                Ns_DStringAppend(dsPtr, "?");
-                Ns_DStringAppend(dsPtr, request->query);
+                  Tcl_DStringAppend(dsPtr, "?", 1);
+                  Tcl_DStringAppend(dsPtr, request->query, TCL_INDEX_NONE);
               }
-              key = Ns_DStringValue(dsPtr);
+              key = dsPtr->string;
               Ns_Log(Notice, "progress start URL '%s'", key);
             }
 
@@ -239,7 +239,7 @@ NsUpdateProgress(Ns_Sock *sock)
                 Ns_SetFree(set);
             }
             if (dsPtr != NULL) {
-                Ns_DStringFree(dsPtr);
+                Tcl_DStringFree(dsPtr);
             }
 
         } else {

@@ -94,7 +94,7 @@ void
 NsConfUpdate(void)
 {
     size_t      size;
-    Ns_DString  ds;
+    Tcl_DString ds;
     const char *section = NS_GLOBAL_CONFIG_PARAMETERS;
 
     NsConfigTcl();
@@ -156,13 +156,13 @@ NsConfUpdate(void)
      * tclinit.c
      */
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     nsconf.tcl.sharedlibrary = Ns_ConfigFilename(section, "tcllibrary", 10,
                                                  nsconf.home, "tcl",
                                                  NS_TRUE, NS_TRUE);
     //fprintf(stderr, "=== %s %s AFTER '%s'\n", section, "tcllibrary", nsconf.tcl.sharedlibrary);
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     nsconf.tcl.lockoninit = Ns_ConfigBool(section, "tclinitlock", NS_FALSE);
 }

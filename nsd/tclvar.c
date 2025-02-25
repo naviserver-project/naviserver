@@ -1422,7 +1422,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  */
 
 Ns_ReturnCode
-Ns_VarGet(const char *server, const char *array, const char *keyString, Ns_DString *dsPtr)
+Ns_VarGet(const char *server, const char *array, const char *keyString, Tcl_DString *dsPtr)
 {
     const NsServer *servPtr;
     Ns_ReturnCode   status = NS_ERROR;
@@ -1437,7 +1437,7 @@ Ns_VarGet(const char *server, const char *array, const char *keyString, Ns_DStri
         if (likely(arrayPtr != NULL)) {
             const Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
             if (likely(hPtr != NULL)) {
-                Ns_DStringAppend(dsPtr, Tcl_GetHashValue(hPtr));
+                Tcl_DStringAppend(dsPtr, Tcl_GetHashValue(hPtr), TCL_INDEX_NONE);
                 status = NS_OK;
             }
             UnlockArray(arrayPtr);

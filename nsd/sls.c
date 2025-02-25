@@ -242,7 +242,7 @@ Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
  */
 
 char *
-Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
+Ns_SlsAppendKeyed(Tcl_DString *dest, Ns_Sock *sock)
 {
     Tcl_HashTable *tblPtr;
     char          *value = NULL;
@@ -253,11 +253,11 @@ Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
         const Tcl_HashEntry  *hPtr = Tcl_FirstHashEntry(tblPtr, &search);
 
         while (hPtr != NULL) {
-            Ns_DStringAppendElement(dest, Tcl_GetHashKey(tblPtr, hPtr));
-            Ns_DStringAppendElement(dest, Tcl_GetHashValue(hPtr));
+            Tcl_DStringAppendElement(dest, Tcl_GetHashKey(tblPtr, hPtr));
+            Tcl_DStringAppendElement(dest, Tcl_GetHashValue(hPtr));
             hPtr = Tcl_NextHashEntry(&search);
         }
-        value = Ns_DStringValue(dest);
+        value = dest->string;
     }
     return value;
 }
@@ -327,7 +327,7 @@ SlsArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     } else {
         Tcl_DString ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         (void) Ns_SlsAppendKeyed(&ds, Ns_ConnSockPtr(conn));
         Tcl_DStringResult(interp, &ds);
     }

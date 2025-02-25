@@ -343,7 +343,7 @@ static NsHttpParseProc ParseLengthProc;
 static NsHttpParseProc ParseTrailerProc;
 static NsHttpParseProc TrailerInitProc;
 
-static char* SkipDigits(char *chars) NS_GNUC_NONNULL(1);
+static char* SkipDigits(char *chars) NS_GNUC_PURE NS_GNUC_NONNULL(1);
 static char *DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags) NS_GNUC_NONNULL(1);
 
 /*
@@ -412,14 +412,14 @@ void
 NsConfigTclHttp(void)
 {
     size_t     nq, idx;
-    Ns_DString ds;
+    Tcl_DString ds;
 
     nq = (size_t)Ns_ConfigWideIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "nshttptaskthreads",
                                        1, 1, NS_TCLHTTP_MAXTHREADS);
     nsconf.tclhttptasks.numqueues = (int)nq;
     nsconf.tclhttptasks.queues = ns_calloc(nq, sizeof(Ns_TaskQueue*));
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     for (idx = 0; idx < nq; idx++) {
         char *qName;
@@ -3779,7 +3779,7 @@ HttpCheckSpool(
                 cSize = httpPtr->responseLength;
             }
             memcpy(buf, cData, cSize);
-            Ns_DStringSetLength(&httpPtr->ds, httpPtr->responseHeaderSize);
+            Tcl_DStringSetLength(&httpPtr->ds, httpPtr->responseHeaderSize);
             if (HttpAppendContent(httpPtr, buf, cSize) != TCL_OK) {
                 result = TCL_ERROR;
             }
@@ -3936,7 +3936,7 @@ HttpConnect(
 ) {
     Tcl_Interp     *interp;
     NsHttpTask     *httpPtr;
-    Ns_DString     *dsPtr;
+    Tcl_DString    *dsPtr;
     bool            haveUserAgent = NS_FALSE, ownHeaders = NS_FALSE;
     bool            httpTunnel = NS_FALSE, httpProxy = NS_FALSE;
     unsigned short  portNr, defPortNr, pPortNr = 0;
@@ -4383,29 +4383,29 @@ HttpConnect(
      * At this point we are connected.
      * Construct HTTP request line.
      */
-    Ns_DStringSetLength(dsPtr, 0);
-    Ns_DStringAppend(dsPtr, method);
-    Ns_StrToUpper(Ns_DStringValue(dsPtr));
+    Tcl_DStringSetLength(dsPtr, 0);
+    Tcl_DStringAppend(dsPtr, method, TCL_INDEX_NONE);
+    Ns_StrToUpper(dsPtr->string);
     if (httpProxy == NS_TRUE) {
-        Ns_DStringNAppend(dsPtr, " ", 1);
-        Ns_DStringNAppend(dsPtr, url, TCL_INDEX_NONE);
+        Tcl_DStringAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, url, TCL_INDEX_NONE);
     } else {
-        Ns_DStringNAppend(dsPtr, " /", 2);
+        Tcl_DStringAppend(dsPtr, " /", 2);
         if (*u.path != '\0') {
-            Ns_DStringNAppend(dsPtr, u.path, TCL_INDEX_NONE);
-            Ns_DStringNAppend(dsPtr, "/", 1);
+            Tcl_DStringAppend(dsPtr, u.path, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsPtr, "/", 1);
         }
-        Ns_DStringNAppend(dsPtr, u.tail, TCL_INDEX_NONE);
+        Tcl_DStringAppend(dsPtr, u.tail, TCL_INDEX_NONE);
         if (u.query != NULL) {
-            Ns_DStringNAppend(dsPtr, "?", 1);
-            Ns_DStringNAppend(dsPtr, u.query, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsPtr, "?", 1);
+            Tcl_DStringAppend(dsPtr, u.query, TCL_INDEX_NONE);
         }
         if (u.fragment != NULL) {
-            Ns_DStringNAppend(dsPtr, "#", 1);
-            Ns_DStringNAppend(dsPtr, u.fragment, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsPtr, "#", 1);
+            Tcl_DStringAppend(dsPtr, u.fragment, TCL_INDEX_NONE);
         }
     }
-    Ns_DStringNAppend(dsPtr, " HTTP/1.1\r\n", 11);
+    Tcl_DStringAppend(dsPtr, " HTTP/1.1\r\n", 11);
 
     Ns_Log(Ns_LogTaskDebug, "HttpConnect: %s request: %s", u.protocol, dsPtr->string);
 
@@ -4461,7 +4461,7 @@ HttpConnect(
     if (keepHostHdr == NS_FALSE) {
         (void)Ns_DStringVarAppend(dsPtr, hostHeader, ": ", NS_SENTINEL);
         (void)Ns_HttpLocationString(dsPtr, NULL, u.host, portNr, defPortNr);
-        Ns_DStringNAppend(dsPtr, "\r\n", 2);
+        Tcl_DStringAppend(dsPtr, "\r\n", 2);
     }
 
     Ns_Log(Ns_LogTaskDebug, "HttpConnect: %s request: %s",
@@ -4476,7 +4476,7 @@ HttpConnect(
          * No body provided, close request/headers part
          */
         httpPtr->bodySize = 0u;
-        Ns_DStringNAppend(dsPtr, "\r\n", 2);
+        Tcl_DStringAppend(dsPtr, "\r\n", 2);
         httpPtr->requestHeaderSize = (size_t)dsPtr->length;
 
     } else {
@@ -4563,7 +4563,7 @@ HttpConnect(
                              bodyLen);
 
             httpPtr->requestHeaderSize = (size_t)dsPtr->length;
-            Ns_DStringNAppend(dsPtr, bodyStr, bodyLen);
+            Tcl_DStringAppend(dsPtr, bodyStr, bodyLen);
 
         } else if (bodySize > 0) {
 
@@ -6584,7 +6584,7 @@ HttpTunnel(
     const Ns_Time *timeout
 ) {
     NsHttpTask *httpPtr;
-    Ns_DString *dsPtr;
+    Tcl_DString *dsPtr;
     Tcl_Interp *interp;
     NS_SOCKET   result = NS_INVALID_SOCKET;
     const char *url = "proxy-tunnel"; /* Not relevant; for logging purposes only */
@@ -6619,8 +6619,8 @@ HttpTunnel(
 
     interp = itPtr->interp;
     dsPtr = &httpPtr->ds;
-    Ns_DStringInit(&httpPtr->ds);
-    Ns_DStringInit(&httpPtr->chunk->ds);
+    Tcl_DStringInit(&httpPtr->ds);
+    Tcl_DStringInit(&httpPtr->chunk->ds);
 
     Ns_MasterLock();
     requestCount = ++httpClientRequestCount;
@@ -6677,10 +6677,10 @@ HttpTunnel(
      * At this point we are connected.
      * Construct CONNECT request line.
      */
-    Ns_DStringSetLength(dsPtr, 0);
+    Tcl_DStringSetLength(dsPtr, 0);
     Ns_DStringPrintf(dsPtr, "%s %s:%d HTTP/1.1\r\n", httpPtr->method, host, port);
     Ns_DStringPrintf(dsPtr, "%s: %s:%d\r\n", hostHeader, host, port);
-    Ns_DStringNAppend(dsPtr, "\r\n", 2);
+    Tcl_DStringAppend(dsPtr, "\r\n", 2);
 
     httpPtr->requestLength = (size_t)dsPtr->length;
     httpPtr->next = dsPtr->string;

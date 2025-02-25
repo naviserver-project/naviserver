@@ -417,7 +417,7 @@ Ns_TclInit(Tcl_Interp *interp)
  */
 
 Ns_ReturnCode
-Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
+Ns_TclEval(Tcl_DString *dsPtr, const char *server, const char *script)
 {
     Tcl_Interp   *interp;
     Ns_ReturnCode status = NS_ERROR;
@@ -435,7 +435,7 @@ Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
             status = NS_OK;
         }
         if (dsPtr != NULL) {
-            Ns_DStringAppend(dsPtr, result);
+            Tcl_DStringAppend(dsPtr, result, TCL_INDEX_NONE);
         }
         Ns_TclDeAllocateInterp(interp);
     }
@@ -1538,11 +1538,11 @@ ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     } else {
         const NsInterp  *itPtr = (const NsInterp *)clientData;
         const NsServer  *servPtr = itPtr->servPtr;
-        Ns_DString       ds;
+        Tcl_DString      ds;
         const TclTrace  *tracePtr;
         Ns_TclTraceType  when = (Ns_TclTraceType)flags;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         for (tracePtr = servPtr->tcl.firstTracePtr;
              (tracePtr != NULL);
              tracePtr = tracePtr->nextPtr) {
@@ -2426,15 +2426,14 @@ LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
     NS_NONNULL_ASSERT(tracePtr != NULL);
 
     if (Ns_LogSeverityEnabled(Debug)) {
-        Ns_DString  ds;
+        Tcl_DString ds;
 
-        Ns_DStringInit(&ds);
-        Ns_DStringNAppend(&ds, GetTraceLabel(why), TCL_INDEX_NONE);
-        Ns_DStringNAppend(&ds, " ", 1);
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, GetTraceLabel(why), TCL_INDEX_NONE);
+        Tcl_DStringAppend(&ds, " ", 1);
         Ns_GetProcInfo(&ds, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
-        Ns_Log(Debug, "ns:interptrace[%s]: %s",
-               itPtr->servPtr->server, Ns_DStringValue(&ds));
-        Ns_DStringFree(&ds);
+        Ns_Log(Debug, "ns:interptrace[%s]: %s", itPtr->servPtr->server, ds.string);
+        Tcl_DStringFree(&ds);
     }
 }
 

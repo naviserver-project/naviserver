@@ -609,13 +609,13 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
 
         r = ns_inet_pton((struct sockaddr *)saPtr, host);
         if (r <= 0) {
-            Ns_DString ds;
+            Tcl_DString ds;
 
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             if (Ns_GetAddrByHost(&ds, host) == NS_TRUE) {
                 r = ns_inet_pton((struct sockaddr *)saPtr, ds.string);
             }
-            Ns_DStringFree(&ds);
+            Tcl_DStringFree(&ds);
             if (r <= 0) {
                 status = NS_ERROR;
             }
@@ -630,13 +630,13 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
     } else {
         ((struct sockaddr_in *)saPtr)->sin_addr.s_addr = inet_addr(host);
         if (((struct sockaddr_in *)saPtr)->sin_addr.s_addr == INADDR_NONE) {
-            Ns_DString ds;
+            Tcl_DString ds;
 
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             if (Ns_GetAddrByHost(&ds, host) == NS_TRUE) {
                 ((struct sockaddr_in *)saPtr)->sin_addr.s_addr = inet_addr(ds.string);
             }
-            Ns_DStringFree(&ds);
+            Tcl_DStringFree(&ds);
             if (((struct sockaddr_in *)saPtr)->sin_addr.s_addr == INADDR_NONE) {
                 status = NS_ERROR;
             }

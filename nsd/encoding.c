@@ -408,7 +408,7 @@ Ns_GetCharsetEncodingEx(const char *charset, TCL_SIZE_T len)
 {
     const Tcl_HashEntry *hPtr;
     Tcl_Encoding         encoding;
-    Ns_DString           ds;
+    Tcl_DString          ds;
 
     NS_NONNULL_ASSERT(charset != NULL);
 
@@ -419,15 +419,15 @@ Ns_GetCharsetEncodingEx(const char *charset, TCL_SIZE_T len)
      * match (e.g., big5).
      */
 
-    Ns_DStringInit(&ds);
-    Ns_DStringNAppend(&ds, charset, len);
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, charset, len);
     charset = Ns_StrTrim(Ns_StrToLower(ds.string));
     hPtr = Tcl_FindHashEntry(&charsets, charset);
     if (hPtr != NULL) {
         charset = Tcl_GetHashValue(hPtr);
     }
     encoding = LoadEncoding(charset);
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return encoding;
 }
@@ -711,14 +711,14 @@ static void
 AddCharset(const char *charset, const char *name)
 {
     Tcl_HashEntry  *hPtr;
-    Ns_DString      ds;
+    Tcl_DString     ds;
     int             isNew;
 
     NS_NONNULL_ASSERT(charset != NULL);
     NS_NONNULL_ASSERT(name != NULL);
 
-    Ns_DStringInit(&ds);
-    charset = Ns_StrToLower(Ns_DStringAppend(&ds, charset));
+    Tcl_DStringInit(&ds);
+    charset = Ns_StrToLower(Tcl_DStringAppend(&ds, charset, TCL_INDEX_NONE));
 
     /*
      * Map in the forward direction: charsets to encodings.
@@ -737,7 +737,7 @@ AddCharset(const char *charset, const char *name)
         Tcl_SetHashValue(hPtr, ns_strdup(charset));
     }
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 }
 
 /*

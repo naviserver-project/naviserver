@@ -37,11 +37,11 @@ static void SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t o
 static void SetMultipartRangeHeader(const Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
-static TCL_SIZE_T AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
+static TCL_SIZE_T AppendMultipartRangeHeader(Tcl_DString *dsPtr, const char *type,
                                       off_t start, off_t end, size_t objLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(1);
 
-static TCL_SIZE_T AppendMultipartRangeTrailer(Ns_DString *dsPtr)
+static TCL_SIZE_T AppendMultipartRangeTrailer(Tcl_DString *dsPtr)
         NS_GNUC_NONNULL(1);
 
 static bool MatchRange(const Ns_Conn *conn, time_t mtime)
@@ -117,7 +117,7 @@ MatchRange(const Ns_Conn *conn, time_t mtime)
 int
 NsConnParseRange(Ns_Conn *conn, const char *type,
                  int fd, const void *data, size_t objLength,
-                 Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
+                 Ns_FileVec *bufs, int *nbufsPtr, Tcl_DString *dsPtr)
 {
     int         rangeCount = 0;
     off_t       start, end;
@@ -186,7 +186,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
             /*
              * Combine the footer with the next header.
              */
-            Ns_DStringAppend(dsPtr, "\r\n");
+            Tcl_DStringAppend(dsPtr, "\r\n", 2);
             len = 2u;
         }
         len += (size_t)AppendMultipartRangeTrailer(dsPtr);
@@ -526,7 +526,7 @@ SetMultipartRangeHeader(const Ns_Conn *conn)
  */
 
 static TCL_SIZE_T
-AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
+AppendMultipartRangeHeader(Tcl_DString *dsPtr, const char *type,
                            off_t start, off_t end, size_t objLength)
 {
     TCL_SIZE_T origlen;
@@ -546,14 +546,14 @@ AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
 }
 
 static TCL_SIZE_T
-AppendMultipartRangeTrailer(Ns_DString *dsPtr)
+AppendMultipartRangeTrailer(Tcl_DString *dsPtr)
 {
     TCL_SIZE_T origlen;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     origlen = dsPtr->length;
-    Ns_DStringAppend(dsPtr, "--NaviServerNaviServerNaviServer--\r\n");
+    Tcl_DStringAppend(dsPtr, "--NaviServerNaviServerNaviServer--\r\n", 36);
 
     return dsPtr->length - origlen;
 }

@@ -120,10 +120,10 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         result = TCL_ERROR;
 
     } else {
-        Ns_DString  ds;
+        Tcl_DString ds;
         bool        success;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         success = Ns_GetHostByAddr(&ds, addr);
 
         if (success) {
@@ -132,7 +132,7 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             Ns_TclPrintfResult(interp, "could not lookup %s", addr);
             result = TCL_ERROR;
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 
     return result;
@@ -174,9 +174,9 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
     } else {
         bool        success;
-        Ns_DString  ds;
+        Tcl_DString ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         if (all != 0) {
             success = Ns_GetAllAddrByHost(&ds, host);
         } else {
@@ -188,7 +188,7 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             Ns_TclPrintfResult(interp, "could not lookup %s", host);
             result = TCL_ERROR;
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 
     return result;

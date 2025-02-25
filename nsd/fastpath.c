@@ -157,11 +157,11 @@ ConfigServerFastpath(const char *server)
         result = NS_ERROR;
 
     } else {
-        Ns_DString  ds;
+        Tcl_DString ds;
         const char *section, *p;
 
         section = Ns_ConfigSectionPath(NULL, server, NULL, "fastpath", NS_SENTINEL);
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
 
         p = Ns_ConfigString(section, "directoryfile", "index.adp index.tcl index.html index.htm");
         if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,
@@ -266,7 +266,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
     Conn         *connPtr;
     NsServer     *servPtr;
     const char   *url;
-    Ns_DString    ds;
+    Tcl_DString   ds;
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
@@ -275,7 +275,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
     servPtr = connPtr->poolPtr->servPtr;
     url = conn->request.url;
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     if ((NsUrlToFile(&ds, servPtr, url) != NS_OK)
         || (Ns_Stat(ds.string, &connPtr->fileInfo) == NS_FALSE)) {
@@ -300,7 +300,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
          */
 
         for (i = 0; i < servPtr->fastpath.dirc; ++i) {
-            Ns_DStringSetLength(&ds, 0);
+            Tcl_DStringSetLength(&ds, 0);
             if (NsUrlToFile(&ds, servPtr, url) != NS_OK) {
                 goto notfound;
             }
@@ -314,7 +314,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
                 if (url[strlen(url) - 1u] != '/') {
                     const char* query = conn->request.query;
 
-                    Ns_DStringSetLength(&ds, 0);
+                    Tcl_DStringSetLength(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NS_SENTINEL);
                     if (query != NULL) {
                         Ns_DStringVarAppend(&ds, "?", query, NS_SENTINEL);
@@ -354,7 +354,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
     }
 
  done:
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return result;
 }
@@ -414,21 +414,21 @@ Ns_UrlIsDir(const char *server, const char *url)
 static bool
 UrlIs(const char *server, const char *url, bool isDir)
 {
-    Ns_DString   ds;
+    Tcl_DString  ds;
     struct stat  st;
     bool         is = NS_FALSE;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     if (Ns_UrlToFile(&ds, server, url) == NS_OK
         && stat(ds.string, &st) == 0
         && ((isDir && S_ISDIR(st.st_mode))
             || (!isDir && S_ISREG(st.st_mode)))) {
         is = NS_TRUE;
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return is;
 }
@@ -695,7 +695,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
      */
 
     if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
-        Ns_DStringFree(dsPtr);
+        Tcl_DStringFree(dsPtr);
         return Ns_ConnReturnData(conn, statusCode, NS_EMPTY_STRING,
                                  (ssize_t)connPtr->fileInfo.st_size, mimeType);
     }
@@ -824,14 +824,14 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
         }
     }
 
-    Ns_DStringFree(dsPtr);
+    Tcl_DStringFree(dsPtr);
     return status;
 
  notfound:
 
     Ns_Log(Debug, "FastReturn for '%s' returns 404", fileName);
 
-    Ns_DStringFree(dsPtr);
+    Tcl_DStringFree(dsPtr);
     return Ns_ConnReturnNotFound(conn);
 }
 
@@ -891,14 +891,14 @@ static Ns_ReturnCode
 FastGetRestart(Ns_Conn *conn, const char *page)
 {
     Ns_ReturnCode status;
-    Ns_DString    ds;
+    Tcl_DString   ds;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(page != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     status = Ns_ConnRedirect(conn, Ns_MakePath(&ds, conn->request.url, page, NS_SENTINEL));
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return status;
 }
@@ -988,10 +988,10 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else if (cache != NULL) {
-        Ns_DString      ds;
+        Tcl_DString     ds;
         Ns_CacheSearch  search;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         Ns_CacheLock(cache);
 
         if (contents != 0) {

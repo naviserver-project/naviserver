@@ -931,7 +931,7 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
 {
     const DbDriver *driverPtr;
     Ns_ReturnCode    status = NS_ERROR;
-    Ns_DString       args;
+    Tcl_DString      args;
 
     NS_NONNULL_ASSERT(handle != NULL);
 
@@ -940,11 +940,11 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
         && driverPtr != NULL
         && driverPtr->spsetparamProc != NULL) {
 
-        Ns_DStringInit(&args);
+        Tcl_DStringInit(&args);
         Ns_DStringVarAppend(&args, paramname, " ", paramtype, " ", direction, " ",
                             value, NS_SENTINEL);
         status = (*driverPtr->spsetparamProc)(handle, args.string);
-        Ns_DStringFree(&args);
+        Tcl_DStringFree(&args);
     }
 
     return status;

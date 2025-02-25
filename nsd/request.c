@@ -160,7 +160,7 @@ Ns_ReturnCode
 Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 {
     char       *url, *l, *p;
-    Ns_DString  ds;
+    Tcl_DString ds;
     const char *errorMsg;
 
     NS_NONNULL_ASSERT(line != NULL);
@@ -207,13 +207,13 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 #endif
 
     memset(request, 0, sizeof(Ns_Request));
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     /*
      * Make a copy of the line to chop up. Make sure it isn't blank.
      */
 
-    Ns_DStringNAppend(&ds, line, (TCL_SIZE_T)len);
+    Tcl_DStringAppend(&ds, line, (TCL_SIZE_T)len);
     l = Ns_StrTrim(ds.string);
     if (*l == '\0') {
         errorMsg = "empty request line";
@@ -469,7 +469,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
         errorMsg = "invalid UTF-8 in request URL";
         goto error;
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return NS_OK;
 
@@ -485,7 +485,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
         request->host = NULL;
     }
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
     return NS_ERROR;
 }
 
@@ -549,17 +549,17 @@ Ns_SkipUrl(const Ns_Request *request, int n)
 Ns_ReturnCode
 Ns_SetRequestUrl(Ns_Request *request, const char *url)
 {
-    Ns_DString    ds;
+    Tcl_DString   ds;
     Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(request != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
     FreeUrl(request);
-    Ns_DStringInit(&ds);
-    Ns_DStringAppend(&ds, url);
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, url, TCL_INDEX_NONE);
     status = SetUrl(request, ds.string);
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return status;
 }
@@ -779,13 +779,13 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseD
                 ++line;
             }
             if (*line != '\0') {
-                Ns_DString ds;
+                Tcl_DString ds;
                 char      *value = Ns_SetValue(set, idx);
 
-                Ns_DStringInit(&ds);
+                Tcl_DStringInit(&ds);
                 Ns_DStringVarAppend(&ds, value, " ", line, NS_SENTINEL);
                 Ns_SetPutValueSz(set, idx, ds.string, ds.length);
-                Ns_DStringFree(&ds);
+                Tcl_DStringFree(&ds);
             }
         }
     } else {

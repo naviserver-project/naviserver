@@ -185,15 +185,15 @@ Ns_ConnUpdateHeadersSz(const Ns_Conn *conn,
 void
 Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt,...)
 {
-    Ns_DString ds;
+    Tcl_DString ds;
     va_list ap;
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     va_start(ap, fmt);
     Ns_DStringVPrintf(&ds, fmt, ap);
     va_end(ap);
     (void) Ns_SetPutSz(conn->outputheaders, field, (TCL_SIZE_T)strlen(field), ds.string, ds.length);
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 }
 
 
@@ -306,10 +306,10 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
 {
     Tcl_Encoding  encoding;
     const char   *charset;
-    Ns_DString    ds;
+    Tcl_DString   ds;
     size_t        len;
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     charset = NsFindCharset(mimeType, &len);
 
     if (charset != NULL) {
@@ -325,7 +325,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     Ns_ConnSetTypeHeader(conn, mimeType);
     conn->flags |= NS_CONN_WRITE_ENCODED;
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 }
 
 
@@ -385,15 +385,15 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, bool doStream)
 void
 Ns_ConnSetLastModifiedHeader(const Ns_Conn *conn, const time_t *mtime)
 {
-    Ns_DString ds;
+    Tcl_DString ds;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mtime != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     Ns_HttpTime(&ds, mtime);
     Ns_ConnCondSetHeadersSz(conn, "last-modified", 14, ds.string, ds.length);
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 }
 
 
@@ -453,7 +453,7 @@ const char * NsHttpStatusPhrase(int statusCode)
 }
 
 void
-Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
+Ns_ConnConstructHeaders(const Ns_Conn *conn, Tcl_DString *dsPtr)
 {
     const Conn     *connPtr = (const Conn *) conn;
     const NsServer *servPtr = connPtr->poolPtr->servPtr;
@@ -488,9 +488,9 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
         Ns_DStringVarAppend(dsPtr, "Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
                             NS_SENTINEL);
     }
-    Ns_DStringNAppend(dsPtr, "Date: ", 6);
+    Tcl_DStringAppend(dsPtr, "Date: ", 6);
     (void)Ns_HttpTime(dsPtr, NULL);
-    Ns_DStringNAppend(dsPtr, "\r\n", 2);
+    Tcl_DStringAppend(dsPtr, "\r\n", 2);
 
     /*
      * Header processing. Merge possibly the output headers as provided by the
@@ -546,7 +546,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
                     if (lineBreak == NULL) {
                         Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NS_SENTINEL);
                     } else {
-                        Ns_DString sanitize, *sanitizePtr = &sanitize;
+                        Tcl_DString sanitize, *sanitizePtr = &sanitize;
                         /*
                          * We have to sanititize the header field to avoid
                          * an HTTP response splitting attack. After each
@@ -554,7 +554,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
                          * (see Section 4.2 in RFC 2616)
                          */
 
-                        Ns_DStringInit(&sanitize);
+                        Tcl_DStringInit(&sanitize);
 
                         do {
                             size_t offset = (size_t)(lineBreak - value);
@@ -573,7 +573,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
                         Tcl_DStringAppend(sanitizePtr, value, TCL_INDEX_NONE);
 
                         Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", NS_SENTINEL);
-                        Ns_DStringFree(sanitizePtr);
+                        Tcl_DStringFree(sanitizePtr);
                     }
                 }
             }
@@ -585,7 +585,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
      */
     Ns_Log(Ns_LogRequestDebug, "response headers:\n%s", dsPtr->string);
 
-    Ns_DStringNAppend(dsPtr, "\r\n", 2);
+    Tcl_DStringAppend(dsPtr, "\r\n", 2);
 }
 
 #ifdef NS_WITH_DEPRECATED
@@ -711,7 +711,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                     const char *title, const char *notice)
 {
     const NsServer  *servPtr;
-    Ns_DString       ds;
+    Tcl_DString      ds;
     Ns_ReturnCode    result;
     struct stat      fileInfo;
     const char      *fileName;
@@ -720,7 +720,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
     NS_NONNULL_ASSERT(title != NULL);
     NS_NONNULL_ASSERT(notice != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     servPtr = ((Conn *) conn)->poolPtr->servPtr;
     fileName = servPtr->opts.noticeADP;
 
@@ -757,7 +757,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
             result = Ns_ConnReturnCharData(conn, status,
                                            resultString, (ssize_t)resultLen,
                                            "text/html");
-            Ns_DStringFree(&ds);
+            Tcl_DStringFree(&ds);
             return result;
 
         } else {
@@ -775,18 +775,18 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
      */
     Tcl_DStringSetLength(&ds, 0);
 
-    Ns_DStringAppend(&ds,
+    Tcl_DStringAppend(&ds,
                      "<!DOCTYPE html>\n"
                      "<html lang='en'>\n"
                      "<head>\n"
                      "<meta charset='UTF-8'>\n"
                      "<meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
-                     "<title>");
+                      "<title>", TCL_INDEX_NONE);
     Ns_QuoteHtml(&ds, title);
-    Ns_DStringAppend(&ds,
+    Tcl_DStringAppend(&ds,
                      "</title>\n"
                      "</head>\n<body>\n"
-                     "<h2>");
+                      "<h2>", TCL_INDEX_NONE);
     Ns_QuoteHtml(&ds, title);
     Ns_DStringVarAppend(&ds, "</h2>\n", notice, "\n", NS_SENTINEL);
 
@@ -800,7 +800,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                             Ns_InfoServerVersion(), " on ",
                             NS_SENTINEL);
         (void) Ns_ConnLocationAppend(conn, &ds);
-        Ns_DStringAppend(&ds, "</p>\n");
+        Tcl_DStringAppend(&ds, "</p>\n", 5);
     }
 
     /*
@@ -810,14 +810,14 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
 
     if (status >= 400) {
         while (ds.length < (TCL_SIZE_T)servPtr->opts.errorminsize) {
-            Ns_DStringAppend(&ds, "                    ");
+            Tcl_DStringAppend(&ds, "                    ", 20);
         }
     }
 
     Ns_DStringVarAppend(&ds, "\n</body></html>\n", NS_SENTINEL);
 
     result = Ns_ConnReturnCharData(conn, status, ds.string, (ssize_t)ds.length, "text/html");
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return result;
 }
@@ -1035,7 +1035,7 @@ static Ns_ReturnCode
 ReturnRange(Ns_Conn *conn, const char *mimeType,
             int fd, const void *data, size_t dataLength)
 {
-    Ns_DString    ds;
+    Tcl_DString   ds;
     Ns_FileVec    bufs[NS_MAX_RANGES * 2 + 1];
     int           nbufs = NS_MAX_RANGES * 2, rangeCount;
     Ns_ReturnCode result;
@@ -1043,7 +1043,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     /*
      * NsConnParseRange() returns in the provided bufs the content plus the
@@ -1054,7 +1054,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
                                   bufs, &nbufs, &ds);
 
     if (rangeCount == -1) {
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
         return NS_ERROR;
     }
 
@@ -1094,7 +1094,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
             }
             if (NsWriterQueue(conn, dataLength, NULL, NULL, NS_INVALID_FD,
                               vbuf, nbufs,  NULL, 0, NS_FALSE) == NS_OK) {
-                Ns_DStringFree(&ds);
+                Tcl_DStringFree(&ds);
                 return NS_OK;
 
             }
@@ -1109,14 +1109,14 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
 
                     Ns_Log(Warning, "seek operation with offset %" PROTd
                            " failed: %s", bufs[0].offset, strerror(errno));
-                    Ns_DStringFree(&ds);
+                    Tcl_DStringFree(&ds);
                     return NS_ERROR;
                 }
                 dataLength = bufs[0].length;
             }
             if (NsWriterQueue(conn, dataLength, NULL, NULL, fd, NULL, 0, NULL, 0,
                               NS_FALSE) == NS_OK) {
-                Ns_DStringFree(&ds);
+                Tcl_DStringFree(&ds);
                 return NS_OK;
             }
         }
@@ -1143,7 +1143,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
 
     NsPoolAddBytesSent(((Conn *)conn)->poolPtr,  (Tcl_WideInt)Ns_ConnContentSent(conn));
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return result;
 }

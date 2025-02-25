@@ -547,19 +547,19 @@ Ns_InfoSSL(void)
 void
 NsInitInfo(void)
 {
-    Ns_DString addr;
+    Tcl_DString addr;
 
     if (gethostname((char *)nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
         memcpy(nsconf.hostname, "localhost", 10u);
     }
-    Ns_DStringInit(&addr);
+    Tcl_DStringInit(&addr);
     if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
         assert(addr.length < (int)sizeof(nsconf.address));
         memcpy(nsconf.address, addr.string, (size_t)addr.length + 1u);
     } else {
         memcpy(nsconf.address, NS_IP_UNSPECIFIED, strlen(NS_IP_UNSPECIFIED));
     }
-    Ns_DStringFree(&addr);
+    Tcl_DStringFree(&addr);
 
 
 #ifndef _MSC_VER
@@ -1138,9 +1138,9 @@ NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     }
 
     if (result == TCL_OK) {
-        Ns_DString ds;
+        Tcl_DString ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         if (moduleString != NULL) {
             (void)Ns_MakePath(&ds, lib, moduleString, NS_SENTINEL);
         } else {

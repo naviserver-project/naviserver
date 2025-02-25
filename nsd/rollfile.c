@@ -174,12 +174,12 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
 
     } else {
         time_t           now0, now1 = time(NULL);
-        Ns_DString       ds;
+        Tcl_DString      ds;
         Tcl_Obj         *newPath;
         struct tm        tm0, tm1;
         const struct tm *ptm0, *ptm1;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
 
         /*
          * Rolling happens often at midnight, using often a day
@@ -237,7 +237,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
         }
 
         Tcl_DecrRefCount(newPath);
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
 
         if (status == NS_OK) {
             status = Ns_PurgeFiles(file, maxbackup);

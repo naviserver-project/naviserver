@@ -331,7 +331,7 @@ static void AsyncWriterRelease(AsyncWriteData *wdPtr)
 
 static void WriteWarningRaw(const char *msg, int fd, size_t wantWrite, ssize_t written)
     NS_GNUC_NONNULL(1);
-static const char *GetSockStateName(SockState sockState);
+static const char *GetSockStateName(SockState sockState) NS_GNUC_PURE;
 
 static size_t EndOfHeader(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -781,7 +781,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
         /*
          * Always reset the Tcl_DString
          */
-        Ns_DStringSetLength(dsPtr, 0);
+        Tcl_DStringSetLength(dsPtr, 0);
     } else {
         Ns_Log(Notice, "%s: ignore duplicate virtual host entry: %s",
                drvPtr->threadName, host);
@@ -935,7 +935,7 @@ void NsDriverMapVirtualServers(void)
         /*
          * Iterating over set of server names.
          */
-        Ns_DStringInit(dsPtr);
+        Tcl_DStringInit(dsPtr);
         for (j = 0u; j < Ns_SetSize(serverMapSet); ++j) {
             const char     *server  = Ns_SetKey(serverMapSet, j);
             const char     *host    = Ns_SetValue(serverMapSet, j);
@@ -1097,7 +1097,7 @@ void NsDriverMapVirtualServers(void)
                 ns_free(writableHost);
             }
         }
-        Ns_DStringFree(dsPtr);
+        Tcl_DStringFree(dsPtr);
 
         if (drvPtr->defMapPtr == NULL) {
             fprintf(stderr, "--- Server Map: ---\n");
@@ -7408,16 +7408,16 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     if ((conn->flags & NS_CONN_SENTHDRS) == 0u) {
         Tcl_DString    ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         Ns_Log(DriverDebug, "### Writer(%d): add header", fd);
         conn->flags |= NS_CONN_SENTHDRS;
         (void)Ns_CompleteHeaders(conn, nsend, 0u, &ds);
 
-        headerSize = (size_t)Ns_DStringLength(&ds);
+        headerSize = (size_t)ds.length;
         if (headerSize > 0u) {
             wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     } else {
         headerSize = 0u;
     }
@@ -8171,27 +8171,27 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                         ns_inet_ntop((struct sockaddr *)&sockPtr->sa, ipString, sizeof(ipString));
                     }
 
-                    (void) Ns_DStringNAppend(dsPtr, "{", 1);
+                    (void) Tcl_DStringAppend(dsPtr, "{", 1);
                     (void) Ns_DStringAppendTime(dsPtr, &wrSockPtr->startTime);
-                    (void) Ns_DStringNAppend(dsPtr, " ", 1);
-                    (void) Ns_DStringAppend(dsPtr, queuePtr->threadName);
-                    (void) Ns_DStringNAppend(dsPtr, " ", 1);
-                    (void) Ns_DStringAppend(dsPtr, drvPtr->threadName);
-                    (void) Ns_DStringNAppend(dsPtr, " ", 1);
-                    (void) Ns_DStringAppend(dsPtr, NsPoolName(wrSockPtr->poolPtr->pool));
-                    (void) Ns_DStringNAppend(dsPtr, " ", 1);
-                    (void) Ns_DStringAppend(dsPtr, ipString);
+                    (void) Tcl_DStringAppend(dsPtr, " ", 1);
+                    (void) Tcl_DStringAppend(dsPtr, queuePtr->threadName, TCL_INDEX_NONE);
+                    (void) Tcl_DStringAppend(dsPtr, " ", 1);
+                    (void) Tcl_DStringAppend(dsPtr, drvPtr->threadName, TCL_INDEX_NONE);
+                    (void) Tcl_DStringAppend(dsPtr, " ", 1);
+                    (void) Tcl_DStringAppend(dsPtr, NsPoolName(wrSockPtr->poolPtr->pool), TCL_INDEX_NONE);
+                    (void) Tcl_DStringAppend(dsPtr, " ", 1);
+                    (void) Tcl_DStringAppend(dsPtr, ipString, TCL_INDEX_NONE);
                     (void) Ns_DStringPrintf(dsPtr, " %d %" PRIdz " %" TCL_LL_MODIFIER "d %d %d ",
                                             wrSockPtr->fd,
                                             wrSockPtr->size,
                                             wrSockPtr->nsent,
                                             wrSockPtr->currentRate,
                                             wrSockPtr->rateLimit);
-                    (void) Ns_DStringAppendElement(dsPtr,
+                    (void) Tcl_DStringAppendElement(dsPtr,
                                                    (wrSockPtr->clientData != NULL)
                                                    ? wrSockPtr->clientData
                                                    : NS_EMPTY_STRING);
-                    (void) Ns_DStringNAppend(dsPtr, "} ", 2);
+                    (void) Tcl_DStringAppend(dsPtr, "} ", 2);
                     wrSockPtr = wrSockPtr->nextPtr;
                 }
                 Ns_MutexUnlock(&queuePtr->lock);
@@ -9308,8 +9308,8 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
             reqPtr = sockPtr->reqPtr;
 
             Tcl_DStringInit(urldsPtr);
-            Ns_DStringAppend(urldsPtr, httpMethod);
-            Ns_StrToUpper(Ns_DStringValue(urldsPtr));
+            Tcl_DStringAppend(urldsPtr, httpMethod, TCL_INDEX_NONE);
+            Ns_StrToUpper(urldsPtr->string);
             Tcl_DStringAppend(urldsPtr, " /", 2);
             path = parsedUrlPtr->path;
             if (*path != '\0') {
@@ -9321,12 +9321,12 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
             }
             Tcl_DStringAppend(urldsPtr, parsedUrlPtr->tail, TCL_INDEX_NONE);
             if (parsedUrlPtr->query != NULL) {
-                Ns_DStringNAppend(urldsPtr, "?", 1);
-                Ns_DStringNAppend(urldsPtr, parsedUrlPtr->query, TCL_INDEX_NONE);
+                Tcl_DStringAppend(urldsPtr, "?", 1);
+                Tcl_DStringAppend(urldsPtr, parsedUrlPtr->query, TCL_INDEX_NONE);
             }
             if (parsedUrlPtr->fragment != NULL) {
-                Ns_DStringNAppend(urldsPtr, "#", 1);
-                Ns_DStringNAppend(urldsPtr, parsedUrlPtr->fragment, TCL_INDEX_NONE);
+                Tcl_DStringAppend(urldsPtr, "#", 1);
+                Tcl_DStringAppend(urldsPtr, parsedUrlPtr->fragment, TCL_INDEX_NONE);
             }
 
             Tcl_DStringAppend(urldsPtr, " HTTP/", 6);
@@ -9399,8 +9399,8 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
         reqPtr = sockPtr->reqPtr;
 
         Tcl_DStringInit(dsPtr);
-        Ns_DStringAppend(dsPtr, methodName);
-        Ns_StrToUpper(Ns_DStringValue(dsPtr));
+        Tcl_DStringAppend(dsPtr, methodName, TCL_INDEX_NONE);
+        Ns_StrToUpper(dsPtr->string);
 
         reqPtr->request.line = Ns_DStringExport(dsPtr);
         reqPtr->request.method = ns_strdup(methodName);

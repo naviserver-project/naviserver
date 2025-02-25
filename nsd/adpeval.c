@@ -110,7 +110,7 @@ static Objs *AllocObjs(int nobjs);
 static void FreeObjs(Objs *objsPtr)
     NS_GNUC_NONNULL(1);
 
-static void AdpTrace(const NsInterp *itPtr, const char *ptr, int len)
+static void AdpTrace(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_Callback FreeInterpPage;
@@ -300,7 +300,7 @@ AdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resv
 int
 NsAdpInclude(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file, const Ns_Time *expiresPtr)
 {
-    Ns_DString *outputPtr;
+    Tcl_DString *outputPtr;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(file != NULL);
@@ -422,7 +422,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
     Tcl_Interp     *interp;
     Tcl_HashEntry  *hPtr;
     struct stat     st;
-    Ns_DString      tmp, path;
+    Tcl_DString     tmp, path;
     InterpPage     *ipagePtr = NULL;
     Page           *pagePtr = NULL;
     Ns_Time         now;
@@ -437,8 +437,8 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
     servPtr = itPtr->servPtr;
     interp = itPtr->interp;
 
-    Ns_DStringInit(&tmp);
-    Ns_DStringInit(&path);
+    Tcl_DStringInit(&tmp);
+    Tcl_DStringInit(&path);
 
     /*
      * Construct the full, normalized path to the ADP file.
@@ -452,7 +452,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
         }
     }
     file = Ns_NormalizePath(&path, file);
-    Ns_DStringSetLength(&tmp, 0);
+    Tcl_DStringSetLength(&tmp, 0);
 
     /*
      * Check for TclPro debugging.
@@ -495,7 +495,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
         Ns_DStringPrintf(&tmp, "nsadp:%p", (void *)itPtr);
         itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, TCL_STRING_KEYS,
                                itPtr->servPtr->adp.cachesize, FreeInterpPage);
-        Ns_DStringSetLength(&tmp, 0);
+        Tcl_DStringSetLength(&tmp, 0);
     }
 
     /*
@@ -656,7 +656,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
                     Ns_IncrTime(&cachePtr->expires, expiresPtr->sec, expiresPtr->usec);
                     cachePtr->refcnt = 1;
                 }
-                Ns_DStringSetLength(&tmp, 0);
+                Tcl_DStringSetLength(&tmp, 0);
                 Ns_MutexLock(&servPtr->adp.pagelock);
                 if (cachePtr != NULL) {
                     if (pagePtr->cachePtr != NULL) {
@@ -702,8 +702,8 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
     }
 
 done:
-    Ns_DStringFree(&path);
-    Ns_DStringFree(&tmp);
+    Tcl_DStringFree(&path);
+    Tcl_DStringFree(&tmp);
 
     return result;
 }
@@ -825,11 +825,11 @@ NsTclAdpStatsObjCmd(ClientData clientData, Tcl_Interp *interp,
     } else {
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
-        Ns_DString      ds;
+        Tcl_DString     ds;
         Tcl_HashSearch  search;
         Tcl_HashEntry  *hPtr;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         Ns_MutexLock(&servPtr->adp.pagelock);
         hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
         while (hPtr != NULL) {
@@ -992,7 +992,7 @@ NsAdpLogError(NsInterp *itPtr)
 {
     Tcl_Interp     *interp;
     const Ns_Conn  *conn;
-    Ns_DString      ds;
+    Tcl_DString     ds;
     const AdpFrame *framePtr;
     TCL_SIZE_T      len;
     const char     *err, *adp, *inc, *dot;
@@ -1003,7 +1003,7 @@ NsAdpLogError(NsInterp *itPtr)
     conn = itPtr->conn;
 
     framePtr = itPtr->adp.framePtr;
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     if (framePtr != NULL) {
         Ns_DStringPrintf(&ds, "\n    at line %d of ",
@@ -1050,13 +1050,13 @@ NsAdpLogError(NsInterp *itPtr)
     }
     err = Ns_TclLogErrorInfo(interp, ds.string);
     if ((itPtr->adp.flags & ADP_DISPLAY) != 0u) {
-        Ns_DStringSetLength(&ds, 0);
-        Ns_DStringAppend(&ds, "<br><pre>\n");
+        Tcl_DStringSetLength(&ds, 0);
+        Tcl_DStringAppend(&ds, "<br><pre>\n", 10);
         Ns_QuoteHtml(&ds, err);
-        Ns_DStringAppend(&ds, "\n<br></pre>\n");
+        Tcl_DStringAppend(&ds, "\n<br></pre>\n", 12);
         (void)NsAdpAppend(itPtr, ds.string, ds.length);
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
     adp = itPtr->servPtr->adp.errorpage;
     if (adp != NULL && itPtr->adp.errorLevel == 0) {
         Tcl_Obj *objv[2];
@@ -1099,7 +1099,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
 {
     Tcl_Interp *interp;
     AdpFrame    frame;
-    Ns_DString  cwd;
+    Tcl_DString cwd;
     Tcl_Obj    *objPtr;
     int         nscript, nblocks, result, i;
     const char *ptr, *savecwd;
@@ -1114,7 +1114,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
      * Setup the new call frame.
      */
 
-    Ns_DStringInit(&cwd);
+    Tcl_DStringInit(&cwd);
     frame.file = file;
     frame.objc = (unsigned short)objc;
     frame.objv = (Tcl_Obj **)objv;
@@ -1131,7 +1131,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
     if (file != NULL) {
         const char *slash = strrchr(file, INTCHAR('/'));
         if (slash != NULL) {
-            Ns_DStringNAppend(&cwd, file, (TCL_SIZE_T)(slash - file));
+            Tcl_DStringAppend(&cwd, file, (TCL_SIZE_T)(slash - file));
             itPtr->adp.cwd = cwd.string;
         }
     }
@@ -1233,7 +1233,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
     if (frame.ident != NULL) {
         Tcl_DecrRefCount(frame.ident);
     }
-    Ns_DStringFree(&cwd);
+    Tcl_DStringFree(&cwd);
 
     return result;
 }
@@ -1264,7 +1264,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len, int nscript)
     int         level;
     const char  *file;
     char        debugfile[255];
-    Ns_DString  ds;
+    Tcl_DString ds;
     int         result, fd;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
@@ -1274,13 +1274,13 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len, int nscript)
     level  = itPtr->adp.debugLevel;
     file   = Tcl_GetString(itPtr->adp.framePtr->objv[0]);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     Ns_DStringPrintf(&ds, "#\n"
                      "# level: %d\n"
                      "# chunk: %d\n"
                      "# file: %s\n"
                      "#\n\n", level, nscript, file);
-    Ns_DStringNAppend(&ds, ptr, len);
+    Tcl_DStringAppend(&ds, ptr, len);
 
     snprintf(debugfile, sizeof(debugfile),
              P_tmpdir "/adp%d.%d.XXXXXX",
@@ -1295,14 +1295,14 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len, int nscript)
                                debugfile, Tcl_PosixError(interp));
             result = TCL_ERROR;
         } else {
-            Ns_DStringSetLength(&ds, 0);
+            Tcl_DStringSetLength(&ds, 0);
             Ns_DStringVarAppend(&ds, "source ", debugfile, NS_SENTINEL);
             result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         }
         (void) ns_close(fd);
         unlink(debugfile);
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return result;
 }
@@ -1455,7 +1455,7 @@ DecrCache(AdpCache *cachePtr)
  */
 
 static void
-AdpTrace(const NsInterp *itPtr, const char *ptr, int len)
+AdpTrace(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len)
 {
     char type;
 

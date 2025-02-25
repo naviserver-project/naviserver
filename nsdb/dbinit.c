@@ -67,7 +67,7 @@ typedef struct Handle {
     bool            verbose;
     Ns_Set         *row;
     char            cExceptionCode[6];
-    Ns_DString      dsExceptionMsg;
+    Tcl_DString     dsExceptionMsg;
     void           *context;
     void           *statement;
     bool            fetchingRows;
@@ -295,7 +295,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
     (void) Ns_DbFlush(handle);
     (void) Ns_DbResetHandle(handle);
 
-    Ns_DStringFree(&handle->dsExceptionMsg);
+    Tcl_DStringFree(&handle->dsExceptionMsg);
     handle->cExceptionCode[0] = '\0';
     handlePtr->active = NS_FALSE;
 
@@ -823,7 +823,7 @@ NsDbInitServer(const char *server)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
     const char     *section, *pool;
-    Ns_DString      ds;
+    Tcl_DString     ds;
     int             isNew;
 
     section = Ns_ConfigSectionPath(NULL, server, NULL, "db", NS_SENTINEL);
@@ -852,7 +852,7 @@ NsDbInitServer(const char *server)
         const Pool *poolPtr;
         char       *allowed;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         if (STREQ(pool, "*")) {
             hPtr = Tcl_FirstHashEntry(&poolsTable, &search);
             while (hPtr != NULL) {
@@ -886,7 +886,7 @@ NsDbInitServer(const char *server)
         allowed = ns_malloc((size_t)ds.length + 1u);
         memcpy(allowed, ds.string, (size_t)ds.length + 1u);
         sdataPtr->allowed = allowed;
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 }
 
@@ -1419,7 +1419,7 @@ CreatePool(const char *pool, const char *section, const char *driver)
         for (i = 0; i < poolPtr->nhandles; ++i) {
             Handle *handlePtr = ns_malloc(sizeof(Handle));
 
-            Ns_DStringInit(&handlePtr->dsExceptionMsg);
+            Tcl_DStringInit(&handlePtr->dsExceptionMsg);
             handlePtr->poolPtr = poolPtr;
             handlePtr->connection = NULL;
             handlePtr->connected = NS_FALSE;

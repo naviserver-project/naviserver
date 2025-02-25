@@ -81,7 +81,7 @@ typedef struct LogCache {
     size_t      lbufSize;
     LogEntry   *firstEntry;   /* First in the list of log entries */
     LogEntry   *currentEntry; /* Current in the list of log entries */
-    Ns_DString  buffer;       /* The log entries cache text-cache */
+    Tcl_DString buffer;       /* The log entries cache text-cache */
 } LogCache;
 
 static LogEntry *LogEntryGet(LogCache *cachePtr) NS_GNUC_NONNULL(1);
@@ -342,19 +342,19 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
         result = Ns_ObjvIndex(&spec, NULL, &pos, &objPtr);
 
         if (unlikely(result != TCL_OK)) {
-            Ns_DString ds, *dsPtr = &ds;
+            Tcl_DString ds, *dsPtr = &ds;
 
-            Ns_DStringInit(dsPtr);
+            Tcl_DStringInit(dsPtr);
             while (tablePtr->key != NULL) {
-                Ns_DStringNAppend(dsPtr, tablePtr->key, TCL_INDEX_NONE);
-                Ns_DStringNAppend(dsPtr, " ", 1);
+                Tcl_DStringAppend(dsPtr, tablePtr->key, TCL_INDEX_NONE);
+                Tcl_DStringAppend(dsPtr, " ", 1);
                 tablePtr++;
             }
-            Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
+            Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
             Ns_Log(Warning, "ignoring invalid value '%s' for parameter '%s'; "
                    "possible values are: %s",
-                   valueString, param, Ns_DStringValue(dsPtr));
-            Ns_DStringFree(dsPtr);
+                   valueString, param, dsPtr->string);
+            Tcl_DStringFree(dsPtr);
         }
         Tcl_DecrRefCount(objPtr);
 
@@ -774,9 +774,9 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
         cachePtr->currentEntry = entryPtr;
         cachePtr->count++;
 
-        offset = (size_t)Ns_DStringLength(&cachePtr->buffer);
+        offset = (size_t)cachePtr->buffer.length;
         Ns_DStringVPrintf(&cachePtr->buffer, fmt, apSrc);
-        length = (size_t)Ns_DStringLength(&cachePtr->buffer) - offset;
+        length = (size_t)cachePtr->buffer.length - offset;
 
         entryPtr->severity = severity;
         entryPtr->offset   = offset;
@@ -1119,20 +1119,20 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
         result = TCL_ERROR;
     } else {
         Ns_LogSeverity severity = PTR2INT(addrPtr);
-        Ns_DString     ds;
+        Tcl_DString    ds;
 
         if (likely(objc == 3)) {
             Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
         } else {
             TCL_SIZE_T i;
 
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             for (i = 2; i < objc; ++i) {
                 Ns_DStringVarAppend(&ds, Tcl_GetString(objv[i]),
                                     i < (objc-1) ? " " : NS_SENTINEL, NS_SENTINEL);
             }
-            Ns_Log(severity, "%s", Ns_DStringValue(&ds));
-            Ns_DStringFree(&ds);
+            Ns_Log(severity, "%s", ds.string);
+            Tcl_DStringFree(&ds);
         }
     }
     return result;
@@ -1384,7 +1384,7 @@ LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                         if (*string != '\0' && strstr(fullLineDs.string, string) != NULL) {
                             strippedLine = StripColorCodes(fullLineDs.string, fullLineDs.length,
                                                            &strippedLen);
-                            Ns_DStringNAppend(&resultDs, strippedLine, strippedLen);
+                            Tcl_DStringAppend(&resultDs, strippedLine, strippedLen);
                         }
                         Tcl_DStringSetLength(&fullLineDs, 0);
                     }
@@ -1392,13 +1392,13 @@ LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                 /*
                  * Always append the read line to full line.
                  */
-                Ns_DStringNAppend(&fullLineDs, line, (TCL_SIZE_T)read);
+                Tcl_DStringAppend(&fullLineDs, line, (TCL_SIZE_T)read);
             }
             if (fullLineDs.length != 0) {
                 if (*string != '\0' && strstr(fullLineDs.string, string) != NULL) {
                     strippedLine = StripColorCodes(fullLineDs.string, fullLineDs.length,
                                                    &strippedLen);
-                    Ns_DStringNAppend(&resultDs, strippedLine, strippedLen);
+                    Tcl_DStringAppend(&resultDs, strippedLine, strippedLen);
                 }
             }
 
@@ -1439,7 +1439,7 @@ int
 NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int             result = TCL_OK, opt, i;
-    Ns_DString      ds;
+    Tcl_DString     ds;
     Tcl_Obj        *objPtr;
     LogCache       *cachePtr = GetCache();
     LogFilter       filter, *filterPtr = &filter;
@@ -1538,7 +1538,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
                 memset(filterPtr, 0, sizeof(*filterPtr));
                 filterPtr->proc = LogToDString;
                 filterPtr->arg  = &ds;
-                Ns_DStringInit(&ds);
+                Tcl_DStringInit(&ds);
                 LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx), NS_FALSE);
                 Tcl_DStringResult(interp, &ds);
             }
@@ -1854,7 +1854,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
 
     ePtr = cachePtr->firstEntry;
     while (ePtr != NULL && cachePtr->currentEntry != NULL) {
-        const char *logString = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
+        const char *logString = cachePtr->buffer.string + ePtr->offset;
 
         /*
          * Since listPtr is never NULL, a repeat-unil loop is
@@ -1905,7 +1905,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
             size_t length = (ePtr != NULL) ? (ePtr->offset + ePtr->length) : 0u;
             cachePtr->count = (length != 0u) ? nentry : 0;
             cachePtr->currentEntry = ePtr;
-            Ns_DStringSetLength(&cachePtr->buffer, (TCL_SIZE_T)length);
+            Tcl_DStringSetLength(&cachePtr->buffer, (TCL_SIZE_T)length);
         } else {
             LogEntry *entryPtr, *tmpPtr;
 
@@ -1920,7 +1920,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
             cachePtr->count = 0;
             cachePtr->currentEntry = NULL;
             cachePtr->firstEntry = NULL;
-            Ns_DStringSetLength(&cachePtr->buffer, 0);
+            Tcl_DStringSetLength(&cachePtr->buffer, 0);
 
             for (; entryPtr != NULL; entryPtr = tmpPtr) {
                 tmpPtr = entryPtr->nextPtr;
@@ -1988,7 +1988,7 @@ static Ns_ReturnCode
 LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             const char *msg, size_t len)
 {
-    Ns_DString *dsPtr  = (Ns_DString *)arg;
+    Tcl_DString *dsPtr  = (Tcl_DString *)arg;
     LogCache   *cachePtr = GetCache();
     char        buffer[COLOR_BUFFER_SIZE];
 
@@ -2020,11 +2020,11 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
          */
         timeString = LogTime(cachePtr, stamp, NS_FALSE);
         timeStringLength = cachePtr->lbufSize;
-        Ns_DStringNAppend(dsPtr, timeString, (TCL_SIZE_T)timeStringLength);
+        Tcl_DStringAppend(dsPtr, timeString, (TCL_SIZE_T)timeStringLength);
     }
 
     if ((flags & LOG_USEC) != 0u) {
-        Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
+        Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
     }
 
@@ -2043,7 +2043,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         /*
          * Skip last char.
          */
-        Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
+        Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
         /*
          * Handle change in seconds.
          */
@@ -2071,7 +2071,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     }
 
     if ((flags & LOG_EXPAND) != 0u) {
-        Ns_DStringNAppend(dsPtr, "\n    ", 5);
+        Tcl_DStringAppend(dsPtr, "\n    ", 5);
     }
 
     /*
@@ -2084,14 +2084,14 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
                                   nsconf.sanitize_logfiles == 3,
                                   msg, len);
     } else {
-        Ns_DStringNAppend(dsPtr, msg, (TCL_SIZE_T)len);
+        Tcl_DStringAppend(dsPtr, msg, (TCL_SIZE_T)len);
     }
     if ((flags & LOG_COLORIZE) != 0u) {
-        Ns_DStringNAppend(dsPtr, (const char *)LOG_COLOREND, 4);
+        Tcl_DStringAppend(dsPtr, (const char *)LOG_COLOREND, 4);
     }
-    Ns_DStringNAppend(dsPtr, "\n", 1);
+    Tcl_DStringAppend(dsPtr, "\n", 1);
     if ((flags & LOG_EXPAND) != 0u) {
-        Ns_DStringNAppend(dsPtr, "\n", 1);
+        Tcl_DStringAppend(dsPtr, "\n", 1);
     }
 
     return NS_OK;
@@ -2144,28 +2144,28 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
          * 0, add a message telling telling how often the last message
          * was repeated, before reporting the actual message.
          */
-        Ns_DString ds;
+        Tcl_DString ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
 
         //fprintf(stderr, "LOG len %lu MSG <%s> hash %lu same line count %lu\n", len, msg, hash, sameLineCount);
 
         if (sameLineCount > 1) {
-            Ns_DString dsRepeat;
+            Tcl_DString dsRepeat;
 
-            Ns_DStringInit(&dsRepeat);
+            Tcl_DStringInit(&dsRepeat);
             Ns_DStringPrintf(&dsRepeat, "last log entry for this thread was repeated %lu times", sameLineCount);
             (void) LogToDString(&ds, lastSeverity, stamp, dsRepeat.string, (size_t)dsRepeat.length);
-            (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
-            Ns_DStringFree(&dsRepeat);
+            (void) NsAsyncWrite(fd, ds.string, (size_t)ds.length);
+            Tcl_DStringFree(&dsRepeat);
 
             Tcl_DStringSetLength(&ds, 0);
             sameLineCount = 1u;
         }
 
         (void) LogToDString(&ds, severity, stamp, msg, len);
-        (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
-        Ns_DStringFree(&ds);
+        (void) NsAsyncWrite(fd, ds.string, (size_t)ds.length);
+        Tcl_DStringFree(&ds);
 
         lastLen = len;
         lastHash = hash;
@@ -2173,18 +2173,18 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     }
 #else
     int        fd = PTR2INT(arg);
-    Ns_DString ds;
+    Tcl_DString ds;
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(stamp != NULL);
     NS_NONNULL_ASSERT(msg != NULL);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     (void) LogToDString(&ds, severity, stamp, msg, len);
     (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 #endif
 
     return NS_OK;
@@ -2238,7 +2238,7 @@ LogToTcl(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         TCL_SIZE_T            ii;
         void                 *logfile = INT2PTR(STDERR_FILENO);
         Tcl_Obj              *stampObj;
-        Ns_DString            ds, ds2;
+        Tcl_DString           ds, ds2;
         Tcl_Interp           *interp;
         const Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
 
@@ -2252,7 +2252,7 @@ LogToTcl(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             status = NS_ERROR;
         } else {
 
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             stampObj = Tcl_NewObj();
             Ns_TclSetTimeObj(stampObj, stamp);
 
@@ -2266,7 +2266,7 @@ LogToTcl(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
              * appended to it as elements.
              */
             Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NS_SENTINEL);
-            Ns_DStringAppendElement(&ds, Tcl_GetString(stampObj));
+            Tcl_DStringAppendElement(&ds, Tcl_GetString(stampObj));
             Tcl_DecrRefCount(stampObj);
 
             /*
@@ -2274,27 +2274,26 @@ LogToTcl(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
              * Tcl_DStringAppendElement has no length parameter, we have
              * to use a temporary DString here.
              */
-            Ns_DStringInit(&ds2);
-            Ns_DStringNAppend(&ds2, msg, (TCL_SIZE_T)len);
-            Ns_DStringAppendElement(&ds, ds2.string);
-            Ns_DStringFree(&ds2);
+            Tcl_DStringInit(&ds2);
+            Tcl_DStringAppend(&ds2, msg, (TCL_SIZE_T)len);
+            Tcl_DStringAppendElement(&ds, ds2.string);
+            Tcl_DStringFree(&ds2);
 
             for (ii = 0; ii < cbPtr->argc; ii++) {
-                Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
+                Tcl_DStringAppendElement(&ds, cbPtr->argv[ii]);
             }
-            ret = Tcl_EvalEx(interp, Ns_DStringValue(&ds), Ns_DStringLength(&ds), 0);
+            ret = Tcl_EvalEx(interp, ds.string, ds.length, 0);
             if (ret == TCL_ERROR) {
 
                 /*
                  * Error in Tcl callback is always logged to file.
                  */
-                Ns_DStringSetLength(&ds, 0);
-                Ns_DStringAppend(&ds, "LogToTcl: ");
-                Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
-                (void)LogToFile(logfile, Error, stamp, Ns_DStringValue(&ds),
-                                (size_t)Ns_DStringLength(&ds));
+                Tcl_DStringSetLength(&ds, 0);
+                Tcl_DStringAppend(&ds, "LogToTcl: ", 10);
+                Tcl_DStringAppend(&ds, Tcl_GetStringResult(interp), TCL_INDEX_NONE);
+                (void)LogToFile(logfile, Error, stamp, ds.string, (size_t)ds.length);
             }
-            Ns_DStringFree(&ds);
+            Tcl_DStringFree(&ds);
             Ns_TclDeAllocateInterp(interp);
 
             status = (ret == TCL_ERROR) ? NS_ERROR: NS_OK;
@@ -2328,7 +2327,7 @@ GetCache(void)
 
     if (cachePtr == NULL) {
         cachePtr = ns_calloc(1u, sizeof(LogCache));
-        Ns_DStringInit(&cachePtr->buffer);
+        Tcl_DStringInit(&cachePtr->buffer);
         Ns_TlsSet(&tls, cachePtr);
     }
 #else
@@ -2337,7 +2336,7 @@ GetCache(void)
     cachePtr = Ns_TlsGet(&tls);
     if (cachePtr == NULL) {
         cachePtr = ns_calloc(1u, sizeof(LogCache));
-        Ns_DStringInit(&cachePtr->buffer);
+        Tcl_DStringInit(&cachePtr->buffer);
         Ns_TlsSet(&tls, cachePtr);
     }
 #endif
@@ -2429,7 +2428,7 @@ FreeCache(void *arg)
 
         LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
 
-        Ns_DStringFree(&cachePtr->buffer);
+        Tcl_DStringFree(&cachePtr->buffer);
         ns_free(cachePtr);
     }
 }
@@ -2485,8 +2484,8 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
                 Ns_DStringPrintf(&ds, "unknown severity: \"%s\":"
                                  " should be one of: ", Tcl_GetString(objPtr));
                 for (i = 0; i < severityIdx; i++) {
-                    Ns_DStringAppend(&ds, severityConfig[i].label);
-                    Ns_DStringNAppend(&ds, " ", 1);
+                    Tcl_DStringAppend(&ds, severityConfig[i].label, TCL_INDEX_NONE);
+                    Tcl_DStringAppend(&ds, " ", 1);
                 }
                 Tcl_DStringResult(interp, &ds);
                 result = TCL_ERROR;

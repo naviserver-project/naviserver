@@ -218,7 +218,7 @@ Ns_InflateEnd(Ns_CompressStream *cStream)
 
 Ns_ReturnCode
 Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
-                    Ns_DString *dsPtr, int level, bool flush)
+                    Tcl_DString *dsPtr, int level, bool flush)
 {
     z_stream   *z = &cStream->z;
     size_t      toCompress, nCompressed, compressLen;
@@ -232,7 +232,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
         (void) Ns_CompressInit(cStream);
     }
 
-    offset = (ptrdiff_t) Ns_DStringLength(dsPtr);
+    offset = (ptrdiff_t) dsPtr->length;
     toCompress = (nbufs > 0) ? Ns_SumVec(bufs, nbufs) : 0u;
     compressLen = compressBound(toCompress) + 12u;
 
@@ -246,7 +246,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     if (flush) {
         compressLen += 4u; /* Gzip footer. */
     }
-    Ns_DStringSetLength(dsPtr, (TCL_SIZE_T)compressLen);
+    Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)compressLen);
 
     z->next_out  = (Bytef *)(dsPtr->string + offset);
     z->avail_out = (uInt)compressLen;
@@ -281,7 +281,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
             DeflateOrAbort(z, flushFlags);
         }
     }
-    Ns_DStringSetLength(dsPtr, (dsPtr->length - (TCL_SIZE_T)z->avail_out));
+    Tcl_DStringSetLength(dsPtr, (dsPtr->length - (TCL_SIZE_T)z->avail_out));
 
     if (flush) {
         (void) deflateReset(z);
@@ -309,7 +309,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
  */
 
 Ns_ReturnCode
-Ns_CompressGzip(const char *buf, int len, Ns_DString *dsPtr, int level)
+Ns_CompressGzip(const char *buf, int len, Tcl_DString *dsPtr, int level)
 {
     Ns_CompressStream  cStream;
     struct iovec       iov;
@@ -409,7 +409,7 @@ Ns_CompressFree(Ns_CompressStream *UNUSED(cStream))
 
 Ns_ReturnCode
 Ns_CompressBufsGzip(Ns_CompressStream *UNUSED(cStream), struct iovec *UNUSED(bufs), int UNUSED(nbufs),
-                    Ns_DString *UNUSED(dsPtr), int UNUSED(level), bool UNUSED(flush))
+                    Tcl_DString *UNUSED(dsPtr), int UNUSED(level), bool UNUSED(flush))
 {
     return NS_ERROR;
 }

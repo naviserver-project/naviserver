@@ -1569,7 +1569,7 @@ void
 NsTclThread(void *arg)
 {
     TclThreadArg    *argPtr = arg;
-    Ns_DString       ds, *dsPtr;
+    Tcl_DString      ds, *dsPtr;
     bool             detached;
 
     NS_NONNULL_ASSERT(arg != NULL);
@@ -1601,7 +1601,7 @@ NsTclThread(void *arg)
     if (detached) {
         dsPtr = NULL;
     } else {
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         dsPtr = &ds;
     }
 
@@ -1752,18 +1752,18 @@ CreateSynchObject(const NsInterp *itPtr,
         Ns_MutexLock(&servPtr->tcl.synch.lock);
 
         if (objPtr == NULL) {
-            Ns_DString     ds;
+            Tcl_DString    ds;
 
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             do {
-                Ns_DStringSetLength(&ds, 0);
+                Tcl_DStringSetLength(&ds, 0);
                 Ns_DStringPrintf(&ds, "%s:tcl:%u", type, (*idPtr)++);
                 hPtr = Tcl_CreateHashEntry(typeTable, ds.string, &isNew);
             } while (isNew == 0);
 
             objPtr = Tcl_NewStringObj(ds.string, ds.length);
             Tcl_SetObjResult(interp, objPtr);
-            Ns_DStringFree(&ds);
+            Tcl_DStringFree(&ds);
 
         } else if (likely(initProc != NULL)) {
             /*

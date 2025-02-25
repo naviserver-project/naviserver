@@ -38,7 +38,7 @@ extern int h_errno;
 #endif
 
 
-typedef bool (GetProc)(Ns_DString *dsPtr, const char *key);
+typedef bool (GetProc)(Tcl_DString *dsPtr, const char *key);
 
 
 /*
@@ -47,7 +47,7 @@ typedef bool (GetProc)(Ns_DString *dsPtr, const char *key);
 
 static GetProc GetAddr;
 static GetProc GetHost;
-static bool DnsGet(GetProc *getProc, Ns_DString *dsPtr,
+static bool DnsGet(GetProc *getProc, Tcl_DString *dsPtr,
                    Ns_Cache *cache, const char *key, bool all)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
@@ -129,7 +129,7 @@ NsConfigDNS(void)
  */
 
 bool
-Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
+Ns_GetHostByAddr(Tcl_DString *dsPtr, const char *addr)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(addr != NULL);
@@ -138,7 +138,7 @@ Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
 }
 
 bool
-Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
+Ns_GetAddrByHost(Tcl_DString *dsPtr, const char *host)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(host != NULL);
@@ -148,7 +148,7 @@ Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
 
 
 bool
-Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
+Ns_GetAllAddrByHost(Tcl_DString *dsPtr, const char *host)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(host != NULL);
@@ -157,9 +157,9 @@ Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
 }
 
 static bool
-DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bool all)
+DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, bool all)
 {
-    Ns_DString  ds;
+    Tcl_DString ds;
     Ns_Time     t;
     int         isNew;
     bool        success;
@@ -172,7 +172,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
      * Call getProc directly or through cache.
      */
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     if (cache == NULL) {
         success = (*getProc)(&ds, key);
     } else {
@@ -208,7 +208,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
                 }
                 Ns_CacheBroadcast(cache);
             } else {
-                Ns_DStringNAppend(&ds, Ns_CacheGetValue(entry),
+                Tcl_DStringAppend(&ds, Ns_CacheGetValue(entry),
                                   (TCL_SIZE_T)Ns_CacheGetSize(entry));
                 success = NS_TRUE;
             }
@@ -228,11 +228,11 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
             while (*p != '\0' && CHARTYPE(space, *p) == 0) {
                 ++p;
             }
-            Ns_DStringSetLength(&ds, (TCL_SIZE_T)(p - ds.string));
+            Tcl_DStringSetLength(&ds, (TCL_SIZE_T)(p - ds.string));
         }
-        Ns_DStringNAppend(dsPtr, ds.string, ds.length);
+        Tcl_DStringAppend(dsPtr, ds.string, ds.length);
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return success;
 }
@@ -260,7 +260,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
  */
 
 static bool
-GetHost(Ns_DString *dsPtr, const char *addr)
+GetHost(Tcl_DString *dsPtr, const char *addr)
 {
     int    r;
     struct sockaddr_storage sa;
@@ -299,7 +299,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
                        gai_strerror(err));
             }
         } else {
-            Ns_DStringAppend(dsPtr, buf);
+            Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
             success = NS_TRUE;
         }
     }
@@ -308,7 +308,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
 }
 
 static bool
-GetAddr(Ns_DString *dsPtr, const char *host)
+GetAddr(Tcl_DString *dsPtr, const char *host)
 {
     struct addrinfo hints;
     const struct addrinfo *ptr;
@@ -402,7 +402,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
 #if defined(HAVE_GETNAMEINFO)
 
 static bool
-GetHost(Ns_DString *dsPtr, const char *addr)
+GetHost(Tcl_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
     char buf[NI_MAXHOST];
@@ -447,7 +447,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
 #elif defined(HAVE_GETHOSTBYADDR_R)
 
 static bool
-GetHost(Ns_DString *dsPtr, const char *addr)
+GetHost(Tcl_DString *dsPtr, const char *addr)
 {
     struct hostent he, *hePtr;
     struct sockaddr_in sa;
@@ -482,7 +482,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
 #endif
 
 static bool
-GetHost(Ns_DString *dsPtr, const char *addr)
+GetHost(Tcl_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
     bool status = NS_FALSE;
@@ -509,7 +509,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
 
 #if defined(HAVE_GETADDRINFO)
 static bool
-GetAddr(Ns_DString *dsPtr, const char *host)
+GetAddr(Tcl_DString *dsPtr, const char *host)
 {
     struct addrinfo  hints;
     struct addrinfo *res, *ptr;
@@ -556,7 +556,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
 #elif defined(HAVE_GETHOSTBYNAME_R)
 
 static bool
-GetAddr(Ns_DString *dsPtr, const char *host)
+GetAddr(Tcl_DString *dsPtr, const char *host)
 {
     struct in_addr ia, *ptr;
     char buf[2048];
@@ -617,7 +617,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
  */
 
 static bool
-GetAddr(Ns_DString *dsPtr, const char *host)
+GetAddr(Tcl_DString *dsPtr, const char *host)
 {
     struct hostent *he;
     struct in_addr ia, *ptr;

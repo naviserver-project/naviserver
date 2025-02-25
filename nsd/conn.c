@@ -785,7 +785,7 @@ Ns_ConnLocation(Ns_Conn *conn)
  */
 
 char *
-Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
+Ns_ConnLocationAppend(Ns_Conn *conn, Tcl_DString *dest)
 {
     const Conn     *connPtr;
     const NsServer *servPtr;
@@ -828,7 +828,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 
         location = (*servPtr->vhost.locationProc)(conn);
         if (location != NULL) {
-            location = Ns_DStringAppend(dest, location);
+            location = Tcl_DStringAppend(dest, location, TCL_INDEX_NONE);
             Ns_Log(Debug, "Ns_ConnLocation: old style locationproc returned <%s>", location);
         }
 
@@ -877,7 +877,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
      * mapPtr->location, which comes from the virtual hosts mapping table.
      */
     if ((location == NULL) && (connPtr->location != NULL)) {
-        location = Ns_DStringAppend(dest, connPtr->location);
+        location = Tcl_DStringAppend(dest, connPtr->location, TCL_INDEX_NONE);
         Ns_Log(Debug, "Ns_ConnLocation: location from mapping table <%s>", location);
     }
 
@@ -1058,11 +1058,11 @@ Ns_ConnSockPtr(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-Ns_DString *
+Tcl_DString *
 Ns_ConnSockContent(const Ns_Conn *conn)
 {
     Request    *reqPtr;
-    Ns_DString *result;
+    Tcl_DString *result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -2557,16 +2557,16 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
             (void)Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, &filterTime);
             (void)Ns_DiffTime(&now,                         &connPtr->filterDoneTime,     &runTime);
 
-            Ns_DStringNAppend(dsPtr, "accepttime ", 11);
+            Tcl_DStringAppend(dsPtr, "accepttime ", 11);
             Ns_DStringAppendTime(dsPtr, &acceptTime);
 
-            Ns_DStringNAppend(dsPtr, " queuetime ", 11);
+            Tcl_DStringAppend(dsPtr, " queuetime ", 11);
             Ns_DStringAppendTime(dsPtr, &queueTime);
 
-            Ns_DStringNAppend(dsPtr, " filtertime ", 12);
+            Tcl_DStringAppend(dsPtr, " filtertime ", 12);
             Ns_DStringAppendTime(dsPtr, &filterTime);
 
-            Ns_DStringNAppend(dsPtr, " runtime ", 9);
+            Tcl_DStringAppend(dsPtr, " runtime ", 9);
             Ns_DStringAppendTime(dsPtr, &runTime);
 
             Tcl_DStringResult(interp, dsPtr);
@@ -2616,7 +2616,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
         {
             Tcl_DString ds;
 
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             (void) Ns_ConnLocationAppend(conn, &ds);
             Tcl_DStringResult(interp, &ds);
             break;
@@ -2882,16 +2882,16 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
  */
 
 char *
-NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, const Ns_TclCallback *cbPtr)
+NsTclConnLocation(Ns_Conn *conn, Tcl_DString *dest, const Ns_TclCallback *cbPtr)
 {
-    Tcl_Interp           *interp = Ns_GetConnInterp(conn);
-    char                 *result;
+    Tcl_Interp *interp = Ns_GetConnInterp(conn);
+    char       *result;
 
     if (Ns_TclEvalCallback(interp, cbPtr, dest, NS_SENTINEL) != TCL_OK) {
         (void) Ns_TclLogErrorInfo(interp, "\n(context: location callback)");
         result =  NULL;
     } else {
-        result = Ns_DStringValue(dest);
+        result = dest->string;
     }
     return result;
 }

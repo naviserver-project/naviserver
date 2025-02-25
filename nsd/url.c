@@ -667,9 +667,9 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
  */
 
 Ns_ReturnCode
-Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
+Ns_AbsoluteUrl(Tcl_DString *dsPtr, const char *urlString, const char *baseString)
 {
-    Ns_DString    urlDs, baseDs;
+    Tcl_DString   urlDs, baseDs;
     Ns_URL        url, base;
     const char   *errorMsg = NULL;
     Ns_ReturnCode status;
@@ -678,20 +678,20 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
      * Copy the URL's to allow Ns_ParseUrl to destroy them.
      */
 
-    Ns_DStringInit(&urlDs);
-    Ns_DStringInit(&baseDs);
+    Tcl_DStringInit(&urlDs);
+    Tcl_DStringInit(&baseDs);
 
     /*
      * The first part does not have to be a valid URL. If it is just empty,
      * interpret it as "/".
      */
-    Ns_DStringAppend(&urlDs, urlString);
+    Tcl_DStringAppend(&urlDs, urlString, TCL_INDEX_NONE);
     if (unlikely(urlDs.length == 0)) {
         Tcl_DStringAppend(&urlDs, "/", 1);
     }
     (void) Ns_ParseUrl(urlDs.string, NS_FALSE, &url, &errorMsg);
 
-    Ns_DStringAppend(&baseDs, baseString);
+    Tcl_DStringAppend(&baseDs, baseString, TCL_INDEX_NONE);
     status = Ns_ParseUrl(baseDs.string, NS_FALSE, &base, &errorMsg);
 
     if (base.protocol == NULL || base.host == NULL || base.path == NULL) {
@@ -732,8 +732,8 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
         Ns_DStringVarAppend(dsPtr, "/", url.path, "/", url.tail, NS_SENTINEL);
     }
 done:
-    Ns_DStringFree(&urlDs);
-    Ns_DStringFree(&baseDs);
+    Tcl_DStringFree(&urlDs);
+    Tcl_DStringFree(&baseDs);
 
     return status;
 }

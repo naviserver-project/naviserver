@@ -649,7 +649,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
 
                 if (logEnabled) {
                     Tcl_DStringInit(&ds);
-                    Ns_DStringNAppend(&ds, script.string, (TCL_SIZE_T)scriptCmdNameLength);
+                    Tcl_DStringAppend(&ds, script.string, (TCL_SIZE_T)scriptCmdNameLength);
                     Ns_Log(Ns_LogConnchanDebug,
                            "%s NsTclConnChanProc Tcl eval <%s> returned <%s>",
                            channelName, ds.string, Tcl_GetString(objPtr));
@@ -694,7 +694,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                     }
                 } else {
                     Tcl_DStringInit(&ds);
-                    Ns_DStringNAppend(&ds, script.string, (TCL_SIZE_T)scriptCmdNameLength);
+                    Tcl_DStringAppend(&ds, script.string, (TCL_SIZE_T)scriptCmdNameLength);
 
                     Ns_Log(Warning, "%s callback <%s> returned unhandled result '%s' (must be 0, 1, or 2)",
                            channelName,
@@ -756,9 +756,9 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
          * It might be the case that the connChanPtr was canceled, but
          * the updatecmd not yet executed.
          */
-        Ns_DStringNAppend(dsPtr, cbPtr->connChanPtr->channelName, TCL_INDEX_NONE);
-        Ns_DStringNAppend(dsPtr, " ", 1);
-        Ns_DStringNAppend(dsPtr, cbPtr->script, (TCL_SIZE_T)cbPtr->scriptCmdNameLength);
+        Tcl_DStringAppend(dsPtr, cbPtr->connChanPtr->channelName, TCL_INDEX_NONE);
+        Tcl_DStringAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, cbPtr->script, (TCL_SIZE_T)cbPtr->scriptCmdNameLength);
     } else {
         Ns_Log(Notice, "connchan ArgProc cbPtr %p has no connChanPtr", (void*)cbPtr);
     }
@@ -1647,8 +1647,8 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
                              (*connChanPtr->peer == '\0' ? "{}" : connChanPtr->peer),
                              connChanPtr->wBytes,
                              connChanPtr->rBytes);
-            Ns_DStringAppendElement(dsPtr,
-                                    (connChanPtr->clientData != NULL) ? connChanPtr->clientData : NS_EMPTY_STRING);
+            Tcl_DStringAppendElement(dsPtr,
+                                     (connChanPtr->clientData != NULL) ? connChanPtr->clientData : NS_EMPTY_STRING);
             /*
              * If we have a callback, write the cmd name. Rationale:
              * next arguments might contain already binary
@@ -1658,17 +1658,17 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
             if (connChanPtr->cbPtr != NULL) {
                 char whenBuffer[6];
 
-                Ns_DStringNAppend(dsPtr, " ", 1);
-                Ns_DStringNAppend(dsPtr, connChanPtr->cbPtr->script, (TCL_SIZE_T)connChanPtr->cbPtr->scriptCmdNameLength);
-                Ns_DStringAppendElement(dsPtr, WhenToString(whenBuffer, connChanPtr->cbPtr->when));
+                Tcl_DStringAppend(dsPtr, " ", 1);
+                Tcl_DStringAppend(dsPtr, connChanPtr->cbPtr->script, (TCL_SIZE_T)connChanPtr->cbPtr->scriptCmdNameLength);
+                Tcl_DStringAppendElement(dsPtr, WhenToString(whenBuffer, connChanPtr->cbPtr->when));
             } else {
-                Ns_DStringNAppend(dsPtr, " {} {}", 6);
+                Tcl_DStringAppend(dsPtr, " {} {}", 6);
             }
 
             /*
              * Terminate the list.
              */
-            Ns_DStringNAppend(dsPtr, "} ", 2);
+            Tcl_DStringAppend(dsPtr, "} ", 2);
             hPtr = Tcl_NextHashEntry(&search);
         }
         Ns_RWLockUnlock(&servPtr->connchans.lock);

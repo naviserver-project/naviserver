@@ -88,7 +88,7 @@ typedef struct Ns_DbHandle {
     bool        verbose; /* Was previously used for general verbosity, then unused, now verboseError */
     Ns_Set     *row;
     char        cExceptionCode[6];
-    Ns_DString  dsExceptionMsg;
+    Tcl_DString dsExceptionMsg;
     void       *context;
     void       *statement;
     bool        fetchingRows;
@@ -208,7 +208,7 @@ NS_EXTERN int Ns_TclDbGetHandle(Tcl_Interp *interp, const char *handleId,
  * dbutil.c:
  */
 
-NS_EXTERN void Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars)
+NS_EXTERN void Ns_DbQuoteValue(Tcl_DString *dsPtr, const char *chars)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)

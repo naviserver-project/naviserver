@@ -755,7 +755,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
  *----------------------------------------------------------------------
  */
 static void
-WalkCallback(Ns_DString *dsPtr, const void *arg)
+WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
     const ConnPool *poolPtr = (ConnPool *)arg;
     Tcl_DStringAppendElement(dsPtr, poolPtr->pool);
@@ -1062,7 +1062,7 @@ ServerMapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
          * Return the current mappings just in the case, when the map
          * operation was called without the optional argument.
          */
-        Ns_DStringInit(dsPtr);
+        Tcl_DStringInit(dsPtr);
 
         Ns_MutexLock(&servPtr->urlspace.lock);
         Ns_UrlSpecificWalk(poolid, servPtr->server, WalkCallback, dsPtr);
@@ -1811,19 +1811,19 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             Ns_DStringPrintf(dsPtr, "sent %" TCL_LL_MODIFIER "d ", poolPtr->rate.bytesSent);
             Ns_DStringPrintf(dsPtr, "connthreads %lu", poolPtr->stats.connthreads);
 
-            Ns_DStringAppend(dsPtr, " accepttime ");
+            Tcl_DStringAppend(dsPtr, " accepttime ", 12);
             Ns_DStringAppendTime(dsPtr, &poolPtr->stats.acceptTime);
 
-            Ns_DStringAppend(dsPtr, " queuetime ");
+            Tcl_DStringAppend(dsPtr, " queuetime ", 11);
             Ns_DStringAppendTime(dsPtr, &poolPtr->stats.queueTime);
 
-            Ns_DStringAppend(dsPtr, " filtertime ");
+            Tcl_DStringAppend(dsPtr, " filtertime ", 12);
             Ns_DStringAppendTime(dsPtr, &poolPtr->stats.filterTime);
 
-            Ns_DStringAppend(dsPtr, " runtime ");
+            Tcl_DStringAppend(dsPtr, " runtime ", 9);
             Ns_DStringAppendTime(dsPtr, &poolPtr->stats.runTime);
 
-            Ns_DStringAppend(dsPtr, " tracetime ");
+            Tcl_DStringAppend(dsPtr, " tracetime ", 11);
             Ns_DStringAppendTime(dsPtr, &poolPtr->stats.traceTime);
 
             Tcl_DStringResult(interp, dsPtr);
@@ -3046,7 +3046,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
         }
         Ns_GetTime(&now);
         Ns_DiffTime(&now, &connPtr->requestQueueTime, &diff);
-        Ns_DStringNAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, " ", 1);
         Ns_DStringAppendTime(dsPtr, &diff);
         Ns_DStringPrintf(dsPtr, " %" PRIuz, connPtr->nContentSent);
 

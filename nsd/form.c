@@ -498,10 +498,10 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
         if (v != NULL) {
             *v = '\0';
         }
-        Ns_DStringSetLength(&kds, 0);
+        Tcl_DStringSetLength(&kds, 0);
         k = Ns_UrlQueryDecode(&kds, k, encoding, &result);
         if (v != NULL) {
-            Ns_DStringSetLength(&vds, 0);
+            Tcl_DStringSetLength(&vds, 0);
 
             (void) Ns_UrlQueryDecode(&vds, v+1, encoding, &result);
             *v = '=';
@@ -514,7 +514,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
                      * We have one or more CR in the field content.
                      * Remove these.
                      */
-                    Ns_DStringSetLength(&vds2, 0);
+                    Tcl_DStringSetLength(&vds2, 0);
                     do {
                         Tcl_DStringAppend(&vds2, v, (TCL_SIZE_T)(q - v));
                         v = q +1;

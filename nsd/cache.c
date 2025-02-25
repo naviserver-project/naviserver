@@ -1229,7 +1229,7 @@ Ns_CacheBroadcast(Ns_Cache *cache)
  */
 
 char *
-Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
+Ns_CacheStats(Ns_Cache *cache, Tcl_DString *dest)
 {
     const Cache    *cachePtr;
     unsigned long   count;

@@ -310,11 +310,11 @@ static TCL_OBJCMDPROC_T UrlSpaceUnsetObjCmd;
  * Utility functions
  */
 
-static void MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
+static void MkSeq(Tcl_DString *dsPtr, const char *method, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void WalkTrie(const Trie *triePtr, Ns_ArgProc func,
-                     Ns_DString *dsPtr, char **stack, const char *filter)
+                     Tcl_DString *dsPtr, char **stack, const char *filter)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 static size_t CountNonWildcharChars(const char *chars)
@@ -681,9 +681,9 @@ Ns_UrlSpecificSet2(const char *server, const char *method, const char *url, int 
     servPtr = NsGetServer(server);
 
     if (likely(servPtr != NULL)) {
-        Ns_DString  ds;
+        Tcl_DString ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         MkSeq(&ds, method, url);
 
 #ifdef DEBUG
@@ -691,7 +691,7 @@ Ns_UrlSpecificSet2(const char *server, const char *method, const char *url, int 
 #endif
 
         JunctionAdd(JunctionGet(servPtr, id), ds.string, data, flags, freeProc, contextSpec);
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 }
 
@@ -793,7 +793,7 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
                  Ns_UrlSpaceMatchInfo *matchInfoPtr,
                  NsUrlSpaceContextFilterProc proc, void *context)
 {
-    Ns_DString      ds, *dsPtr = &ds;
+    Tcl_DString     ds, *dsPtr = &ds;
     void           *data = NULL; /* Just to make compiler silent, we have a complete enumeration of switch values */
     const Junction *junction;
 
@@ -803,7 +803,7 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
 
     junction = JunctionGet(servPtr, id);
 
-    Ns_DStringInit(dsPtr);
+    Tcl_DStringInit(dsPtr);
     MkSeq(dsPtr, method, url);
 
 #ifdef DEBUG
@@ -830,7 +830,7 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
 
     }
 
-    Ns_DStringFree(dsPtr);
+    Tcl_DStringFree(dsPtr);
 
     return data;
 }
@@ -868,9 +868,9 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
     servPtr = NsGetServer(server);
 
     if (likely(servPtr != NULL)) {
-        Ns_DString ds;
+        Tcl_DString ds;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         MkSeq(&ds, method, url);
         if ((flags & NS_OP_RECURSE) != 0u) {
             //Ns_Log(Ns_LogUrlspaceDebug, "JunctionTruncBranch %s 0x%.6x", url, flags);
@@ -879,7 +879,7 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
             //Ns_Log(Ns_LogUrlspaceDebug, "JunctionDeleteNode %s 0x%.6x", url, flags);
             data = JunctionDeleteNode(JunctionGet(servPtr, id), ds.string, flags);
         }
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 
     return data;
@@ -936,7 +936,7 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsP
 
 static void
 WalkTrie(const Trie *triePtr, Ns_ArgProc func,
-         Ns_DString *dsPtr, char **stack, const char *filter)
+         Tcl_DString *dsPtr, char **stack, const char *filter)
 {
     const Branch *branchPtr;
     const Node   *nodePtr;
@@ -2168,7 +2168,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
             void *contextSpec)
 {
     Channel    *channelPtr;
-    Ns_DString  dsFilter;
+    Tcl_DString dsFilter;
     char       *p;
     int         depth;
     size_t      l;
@@ -2179,7 +2179,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
     //fprintf(stderr, "...   JunctionAdd '%s' contextSpec %p\n", seq, contextSpec);
 
     depth = 0;
-    Ns_DStringInit(&dsFilter);
+    Tcl_DStringInit(&dsFilter);
 
     /*
      * Find out how deep the sequence is, and position p at the
@@ -2203,10 +2203,10 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
      * filter.
      */
     if ((depth > 0) && (strchr(p, INTCHAR('*')) != NULL || strchr(p, INTCHAR('?')) != NULL )) {
-                Ns_DStringAppend(&dsFilter, p);
+        Tcl_DStringAppend(&dsFilter, p, TCL_INDEX_NONE);
         *p = '\0';
     } else {
-        Ns_DStringAppend(&dsFilter, "*");
+        Tcl_DStringAppend(&dsFilter, "*", 1);
     }
 
     /*
@@ -2241,7 +2241,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
         //        channelPtr->filter, juncPtr->byname.n);
 
     }
-    Ns_DStringFree(&dsFilter);
+    Tcl_DStringFree(&dsFilter);
 
     /*
      * Now we need to create a sequence of branches in the trie (if no
@@ -2649,7 +2649,7 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
  */
 
 static void
-MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
+MkSeq(Tcl_DString *dsPtr, const char *method, const char *url)
 {
     const char *p;
     bool        done;
@@ -2659,7 +2659,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    Ns_DStringNAppend(dsPtr, method, (TCL_SIZE_T)NS_strlen(method) + 1);
+    Tcl_DStringAppend(dsPtr, method, (TCL_SIZE_T)NS_strlen(method) + 1);
 
     /*
      * Loop over each directory in the URL and turn the slashes
@@ -2677,8 +2677,8 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
                 done = NS_TRUE;
             }
 
-            Ns_DStringNAppend(dsPtr, url, (TCL_SIZE_T)l++);
-            Ns_DStringNAppend(dsPtr, "\0", 1);
+            Tcl_DStringAppend(dsPtr, url, (TCL_SIZE_T)l++);
+            Tcl_DStringAppend(dsPtr, "\0", 1);
             url += l;
         } else {
             url++;
@@ -2690,7 +2690,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
      * string.
      */
 
-    Ns_DStringNAppend(dsPtr, "\0", 1);
+    Tcl_DStringAppend(dsPtr, "\0", 1);
 }
 
 #ifdef DEBUG
@@ -2846,7 +2846,7 @@ CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
  */
 
 static void
-WalkCallback(Ns_DString *dsPtr, const void *arg)
+WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
     const char *data = arg;
 
@@ -2998,7 +2998,7 @@ UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     } else {
         Tcl_DString ds, *dsPtr = &ds;
 
-        Ns_DStringInit(dsPtr);
+        Tcl_DStringInit(dsPtr);
 
         Ns_RWLockRdLock(&servPtr->urlspace.idlocks[id]);
         Ns_UrlSpecificWalk(id, servPtr->server, WalkCallback, dsPtr);

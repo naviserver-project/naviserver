@@ -1142,13 +1142,13 @@ NsTclCacheStatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         result = TCL_ERROR;
 
     } else {
-        Ns_DString      ds;
+        Tcl_DString     ds;
         Ns_Cache       *cache;
 
         assert(cPtr != NULL);
 
         cache = cPtr->cache;
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
 
         Ns_CacheLock(cache);
         if (contents != 0) {
@@ -1163,7 +1163,7 @@ NsTclCacheStatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
                 size_t         reuse   = Ns_CacheGetReuse(entry);
                 const Ns_Time *timePtr = Ns_CacheGetExpirey(entry);
 
-                Ns_DStringInit(&entryDs);
+                Tcl_DStringInit(&entryDs);
 
                 Tcl_DStringAppendElement(&entryDs, key);
                 if (timePtr->usec == 0) {
@@ -1174,7 +1174,7 @@ NsTclCacheStatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
                                      size, reuse, (int64_t) timePtr->sec, timePtr->usec);
                 }
                 Tcl_DStringAppendElement(&ds, entryDs.string);
-                Ns_DStringFree(&entryDs);
+                Tcl_DStringFree(&entryDs);
 
                 entry = Ns_CacheNextEntry(&search);
             }

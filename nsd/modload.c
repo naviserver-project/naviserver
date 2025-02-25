@@ -91,7 +91,7 @@ Ns_ReturnCode
 Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
               const char *init)
 {
-    Ns_DString            ds;
+    Tcl_DString           ds;
     Ns_ReturnCode         status = NS_OK;
     Tcl_Obj              *pathObj;
     bool                  hasExtension;
@@ -102,7 +102,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
 
     Ns_Log(Notice, "modload: loading module %s from file %s", module, file);
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     if (Ns_PathIsAbsolute(file) == NS_FALSE) {
         file = Ns_BinPath(&ds, file, NS_SENTINEL);
     }
@@ -227,7 +227,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
             }
         }
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return status;
 }

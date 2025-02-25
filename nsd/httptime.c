@@ -67,7 +67,7 @@ static Ns_Mutex lock = NULL;
  */
 
 char *
-Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
+Ns_HttpTime(Tcl_DString *dsPtr, const time_t *when)
 {
     time_t           now;
     const struct tm *tmPtr;
@@ -345,10 +345,10 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         result = TCL_ERROR;
 
     } else {
-        Ns_DString ds;
+        Tcl_DString ds;
         time_t     t = (time_t) itime;
 
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         (void) Ns_HttpTime(&ds, &t);
         Tcl_DStringResult(interp, &ds);
     }

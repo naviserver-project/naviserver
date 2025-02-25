@@ -709,7 +709,7 @@ NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 int
 NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Ns_DString ds;
+    Tcl_DString ds;
     int        result = TCL_OK;
 
     if (objc != 2) {
@@ -717,7 +717,7 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
         result = TCL_ERROR;
 
     } else {
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         Ns_NormalizePath(&ds, Tcl_GetString(objv[1]));
         Tcl_DStringResult(interp, &ds);
     }

@@ -334,16 +334,16 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
     NS_NONNULL_ASSERT(conn != NULL);
 
     if (!ReturnRedirectInternal(conn, 400, &result)) {
-        Ns_DString    ds;
+        Tcl_DString   ds;
 
-        Ns_DStringInit(&ds);
-        Ns_DStringAppend(&ds,
-                         "<p>The HTTP request presented by your browser is invalid.");
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds,
+                          "<p>The HTTP request presented by your browser is invalid.", 57);
         if (reason != NULL) {
             Ns_DStringVarAppend(&ds, "<p>\n", reason, NS_SENTINEL);
         }
         result = Ns_ConnReturnNotice(conn, 400, "Invalid Request", ds.string);
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
 
     return result;
@@ -371,17 +371,17 @@ Ns_ReturnCode
 Ns_ConnReturnUnauthorized(Ns_Conn *conn)
 {
     const Conn   *connPtr = (const Conn *) conn;
-    Ns_DString    ds;
+    Tcl_DString   ds;
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
     if (Ns_SetIGet(conn->outputheaders, "www-authenticate") == NULL) {
-        Ns_DStringInit(&ds);
+        Tcl_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, "Basic realm=\"",
                             connPtr->poolPtr->servPtr->opts.realm, "\"", NS_SENTINEL);
         Ns_ConnSetHeadersSz(conn, "www-authenticate", 16, ds.string, ds.length);
-        Ns_DStringFree(&ds);
+        Tcl_DStringFree(&ds);
     }
     if (!ReturnRedirectInternal(conn, 401, &result)) {
         result = Ns_ConnReturnNotice(conn, 401, "Access Denied",

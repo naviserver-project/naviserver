@@ -1199,10 +1199,10 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 [example_end]
 
 
-[section {Customizing the Directory Structure}]
+[section {Customizing Directory Structure}]
 
-[para] A typical NaviServer installation is organized with a basic
- directory structure similar to the following:
+ A typical NaviServer installation follows a basic directory structure
+ similar to the example below:
 
 [example_begin]
  HOME      /usr/local/ns/
@@ -1211,9 +1211,9 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
  TCLLIBDIR /usr/local/ns/tcl/
 [example_end]
 
- The root directory ([const home]) is Structure determined at compile time, but
- each of these paths can be modified via the configuration file. For
- example, the default settings are defined as:
+ The root directory ([const home]) is determined at compile time, but
+ all of these paths can be modified via the configuration file. For
+ instance, the default settings are defined as:
 
 [example_begin]
  ns_section ns/parameters {
@@ -1225,9 +1225,10 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 [example_end]
 
  For all paths except [const home], you may specify either absolute or
- relative names. Absolute paths are used directly, while relative
- paths in the [const ns/parameters] section are resolved against the
- value of [const home].
+ relative names. Absolute paths are used as given, whereas relative
+ paths in the [const ns/parameters] section are resolved relative to
+ the value of [const home].
+
 
 [subsection {Per-Server Directory Structure}]
 
@@ -1283,14 +1284,13 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 
 [subsection {Per-Server Tcl-Source Locations}]
 
- You can also configure the locations of Tcl source files on a
+ You can also specify the locations of Tcl source files on a
  per-server basis. In the per-server [const tcl] section, the
- [const initfile] parameter specifies the Tcl initialization file, and the
+ [const initfile] parameter defines the Tcl initialization file, and the
  [const library] parameter defines the directory for additional Tcl
- source files loaded on server startup. Both parameters may be given
- as absolute paths or as relative paths
- (resolved against [const home]).
- 
+ scripts loaded at server startup. Both may be given as absolute paths
+ or as relative paths (resolved against [const home]).
+
 [example_begin]
  ns_section ns/server/SERVER1/tcl {
     ns_param initfile  bin/init.tcl
@@ -1301,17 +1301,20 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 
 [subsection {Multiple Logfiles and Page Sources for a Single Server}]
 
- Using a dynamic [const serverrootproc] callback to compute
- [const serverdir] allows a single server (e.g., [const SERVER1]) to have
- multiple log files (such as access.log and httpsclient.log) and page
+ By using a dynamic [const serverrootproc] callback to compute
+ [const serverdir], a single server (e.g., [const SERVER1]) can have multiple
+ log files (such as access.log and httpsclient.log) and page
  directories. Automated log file rolling will then apply to all log
- files defined for that server.
+ files configured for that server.
+ 
+[para]
 
- [para] Note that while a NaviServer instance can have multiple
- servers and virtual servers - each with its own access.log and
- httpclient.log files - the instance as a whole has a single
- [const serverlog] (typically named "error.log") that aggregates system and
- application messages logged via [cmd ns_log].
+ Note that while a NaviServer instance may consist of multiple servers
+ and virtual servers — each with its own access.log and httpclient.log
+ — the instance as a whole has a single [const serverlog] (typically
+ "error.log") that aggregates system and application messages logged
+ via [cmd ns_log].
+
 
 
 [section {Stack Size}]

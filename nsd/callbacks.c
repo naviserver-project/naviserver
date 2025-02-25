@@ -306,12 +306,12 @@ ShutdownThread(void *arg)
         Ns_ShutdownProc  *proc = (Ns_ShutdownProc *)cbPtr->proc;
 
         if (Ns_LogSeverityEnabled(Debug)) {
-            Ns_DString ds;
+            Tcl_DString ds;
 
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             Ns_GetProcInfo(&ds, cbPtr->proc, cbPtr->arg);
-            Ns_Log(Debug, "ns:callback:shutdown: %s", Ns_DStringValue(&ds));
-            Ns_DStringFree(&ds);
+            Ns_Log(Debug, "ns:callback:shutdown: %s", ds.string);
+            Tcl_DStringFree(&ds);
         }
 
         (*proc)(NULL, cbPtr->arg);
@@ -503,13 +503,13 @@ RunCallbacks(const char *list, const Callback *cbPtr)
 
     while (cbPtr != NULL) {
         Ns_Callback *proc;
-        Ns_DString   ds;
+        Tcl_DString  ds;
 
         if (Ns_LogSeverityEnabled(Debug)) {
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             Ns_GetProcInfo(&ds, cbPtr->proc, cbPtr->arg);
-            Ns_Log(Debug, "ns:callback: %s: %s", list, Ns_DStringValue(&ds));
-            Ns_DStringFree(&ds);
+            Ns_Log(Debug, "ns:callback: %s: %s", list, ds.string);
+            Tcl_DStringFree(&ds);
         }
         proc = (Ns_Callback *)cbPtr->proc;
        (*proc)(cbPtr->arg);

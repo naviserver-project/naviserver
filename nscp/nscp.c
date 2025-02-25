@@ -636,7 +636,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
      * Report the result of the login to the user.
      */
 
-    Ns_DStringInit(&msgDs);
+    Tcl_DStringInit(&msgDs);
     if (ok) {
         Ns_Log(Notice, "nscp: %s logged in", user);
         Tcl_DStringAppend(unameDSPtr, user, TCL_INDEX_NONE);
@@ -649,7 +649,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
             Ns_InfoPlatform(), Ns_InfoBuildDate(), Ns_InfoTag());
     } else {
         Ns_Log(Warning, "nscp: login failed: '%s'", (user != NULL) ? user : "?");
-        Ns_DStringAppend(&msgDs, "Access denied!\n");
+        Tcl_DStringAppend(&msgDs, "Access denied!\n", 15);
     }
     (void) ns_send(sessPtr->sock, msgDs.string, (size_t)msgDs.length, 0);
 
