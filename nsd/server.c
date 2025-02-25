@@ -339,7 +339,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         Tcl_DStringInit(&ds);
         servPtr->opts.logDir = Ns_ConfigFilename(fromSection, "logdir", 6,
                                                  Ns_ServerPath(&ds, server, NS_SENTINEL),
-                                                 servPtr->opts.logDir, NS_FALSE, NS_FALSE);
+                                                 nsconf.logDir, NS_FALSE, NS_FALSE);
         Tcl_DStringFree(&ds);
     }
 
