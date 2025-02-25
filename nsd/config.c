@@ -767,6 +767,11 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, co
     const char *value, *result;
     TCL_SIZE_T  pathLength = 0;
 
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(directory != NULL);
+    NS_NONNULL_ASSERT(defaultValue != NULL);
+
     value = Ns_ConfigString(section, key, defaultValue);
 
     if (Ns_PathIsAbsolute(value)) {
