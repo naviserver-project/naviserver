@@ -100,7 +100,7 @@ static
 #ifndef NS_TCL_PRE9
  TCL_NORETURN1
 #endif
-Tcl_PanicProc Panic;
+Tcl_PanicProc Panic NS_GNUC_PRINTF(1, 0);
 
 static Ns_LogFilter LogToFile;
 static Ns_LogFilter LogToTcl;
@@ -2077,14 +2077,15 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     /*
      * Add the log message
      */
-    assert(len != 0u);
-    if (nsconf.sanitize_logfiles > 0) {
-        Ns_DStringAppendPrintable(dsPtr,
-                                  nsconf.sanitize_logfiles >= 2,
-                                  nsconf.sanitize_logfiles == 3,
-                                  msg, len);
-    } else {
-        Tcl_DStringAppend(dsPtr, msg, (TCL_SIZE_T)len);
+    if (len > 0) {
+        if (nsconf.sanitize_logfiles > 0) {
+            Ns_DStringAppendPrintable(dsPtr,
+                                      nsconf.sanitize_logfiles >= 2,
+                                      nsconf.sanitize_logfiles == 3,
+                                      msg, len);
+        } else {
+            Tcl_DStringAppend(dsPtr, msg, (TCL_SIZE_T)len);
+        }
     }
     if ((flags & LOG_COLORIZE) != 0u) {
         Tcl_DStringAppend(dsPtr, (const char *)LOG_COLOREND, 4);
