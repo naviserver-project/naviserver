@@ -8,7 +8,7 @@
 /*
  * connchan.c --
  *
- *      Support functions for connection channels
+ *      Support functions for connection channels.
  */
 
 #include "nsd.h"
@@ -78,7 +78,7 @@ typedef struct ListenCallback {
 
 
 /*
- * Local functions defined in this file
+ * Local functions defined in this file.
  */
 static Ns_ArgProc ArgProc;
 
@@ -139,12 +139,11 @@ static Ns_SockProc CallbackFree;
  *
  * GetServer --
  *
- *      Return the server containing the hash-table for connchans.  We
- *      used for a while the default server for the hash tables. This
- *      procs eases the switch different policies.
+ *      Returns the provided server pointer. (This function is intended as a
+ *      helper to ease policy changes regarding the use of a default server.)
  *
  * Results:
- *      NsServer * or NULL
+ *      A pointer to the NsServer structure.
  *
  * Side effects:
  *      None.
@@ -167,11 +166,11 @@ GetServer(NsServer *servPtr) {
  *
  * WhenToString --
  *
- *      Convert socket condition to character string.  The provided
- *      input buffer has to be at least 5 bytes long.
+ *      Converts socket condition flags to a human-readable string.
+ *      The provided input buffer must be at least 5 bytes long.
  *
  * Results:
- *      Pretty string.
+ *      A pointer to the resulting null-terminated string.
  *
  * Side effects:
  *      None.
@@ -207,13 +206,13 @@ WhenToString(char *buffer, unsigned int when) {
  *
  * CallbackFree --
  *
- *      Free Callback structure and unregister socket callback.
+ *      Frees a Callback structure and unregisters the associated socket callback.
  *
  * Results:
- *      None.
+ *      Returns NS_TRUE if the callback was freed successfully, otherwise NS_FALSE.
  *
  * Side effects:
- *      Freeing memory.
+ *      Frees memory and logs a warning if called with an unexpected reason.
  *
  *----------------------------------------------------------------------
  */
@@ -223,14 +222,14 @@ CallbackFree(NS_SOCKET UNUSED(sock), void *arg, unsigned int why) {
     bool result;
 
     if (why != (unsigned int)NS_SOCK_CANCEL) {
-        Ns_Log(Warning, "connchan CallbackFree called with unexpected reason code %u",
+        Ns_Log(Warning, "connchan: CallbackFree called with unexpected reason code %u",
                why);
         result = NS_FALSE;
 
     } else {
         Callback *cbPtr = arg;
 
-        Ns_Log(Ns_LogConnchanDebug, "connchan: callbackCallbackFree cbPtr %p why %u",
+        Ns_Log(Ns_LogConnchanDebug, "connchan: CallbackFree cbPtr %p why %u",
                (void*)cbPtr, why);
         ns_free(cbPtr);
         result = NS_TRUE;
@@ -245,18 +244,15 @@ CallbackFree(NS_SOCKET UNUSED(sock), void *arg, unsigned int why) {
  *
  * CancelCallback --
  *
- *      Register socket callback cancel operation for unregistering
- *      the socket callback.  Freeing is itself implemented as a
- *      callback (Ns_SockProc), which is called, whenever a callback
- *      is freed from the socket thread. Not that it is necessary to
- *      implement it as a callback, since all sock callbacks are
- *      implemented via a queue operation (in sockcallback.c).
+ *      Cancels a socket callback and unregisters it from the socket.
+ *      This function frees the associated callback structure by
+ *      calling the underlying cancellation routine.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Freeing memory.
+ *      Unregisters and frees the callback structure.
  *
  *----------------------------------------------------------------------
  */
@@ -280,15 +276,15 @@ CancelCallback(const NsConnChan *connChanPtr)
  *
  * ConnChanCreate --
  *
- *      Allocate a connection channel structure and initialize its
- *      fields.  When the passed-in peer is NULL, determine peerAddr
- *      from the sockPtr.
+ *      Allocates and initializes a new connection channel structure.
+ *      If the provided peer is NULL, the function derives the peer
+ *      address from the given socket.
  *
  * Results:
- *      Initialized connection channel structure.
+ *      A pointer to a fully initialized NsConnChan structure.
  *
  * Side effects:
- *      Allocating memory.
+ *      Allocates memory.
  *
  *----------------------------------------------------------------------
  */
@@ -365,14 +361,14 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
  *
  * ConnChanFree --
  *
- *      Free NsConnChan structure and remove the entry from the hash
- *      table of open connection channel structures.
+ *      Frees a connection channel structure and removes its entry
+ *      from the server's connection channel table.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Freeing memory.
+ *      Frees memory and unregisters the connection channel.
  *
  *----------------------------------------------------------------------
  */
@@ -456,10 +452,13 @@ ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr) {
  *
  * ConnChanGet, NsConnChanGet --
  *
- *      Access an NsConnChan from the per-server table via its name.
+ *      Retrieves a connection channel from the server's channel table
+ *      by name.
  *
  * Results:
- *      ConnChan* or NULL if not found.
+ *      Pointer to NsConnChan if found, otherwise NULL. If the channel is not
+ *      found and an interpreter is provided, an error message is set in the
+ *      interpreter.
  *
  * Side effects:
  *      None.
@@ -498,10 +497,10 @@ NsConnChan *NsConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *nam
  *
  * NsConnChanGetSendErrno --
  *
- *      Return sendErrno from the sockPtr of a connchan
+ *      Retrieves the send error code from the socket of a connection channel.
  *
  * Results:
- *      generalized error code (can hold POSIX and OpenSSL errors)
+ *      A generalized error code (which may include POSIX and OpenSSL errors).
  *
  * Side effects:
  *      None.
@@ -537,16 +536,18 @@ NsConnChanGetSendErrno(Tcl_Interp *UNUSED(interp), NsServer *servPtr, const char
  *
  * NsTclConnChanProc --
  *
- *      A wrapper function callback that is called, when the callback
- *      is fired. The function allocates an interpreter if necessary,
- *      builds the argument list for invocation and calls the
- *      registered Tcl script.
+ *      A callback wrapper function for socket events. When the
+ *      registered socket callback is fired, this function allocates
+ *      an interpreter (if needed), builds the argument list, and
+ *      calls the registered Tcl script.
  *
  * Results:
- *      NS_TRUE or NS_FALSE on error.
+ *      Returns NS_TRUE if the callback was processed successfully; otherwise,
+ *      NS_FALSE.
  *
  * Side effects:
- *      Will run Tcl script.
+ *      May invoke a Tcl script and free the connection channel if the
+ *      callback signals to close the channel.
  *
  *----------------------------------------------------------------------
  */
@@ -734,13 +735,13 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
  *
  * ArgProc --
  *
- *      Append info for socket callback.
+ *      Appends callback information for logging purposes.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      None.
+ *      Modifies the provided Tcl_DString to include callback details.
  *
  *----------------------------------------------------------------------
  */
@@ -770,15 +771,16 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  * SockCallbackRegister --
  *
- *      Register a callback for the connection channel. Due to the
- *      underlying infrastructure, one socket has at most one callback
- *      registered at one time.
+ *      Registers a Tcl script callback for a connection channel.  If
+ *      an existing callback is present, it is replaced with the new
+ *      one.
  *
  * Results:
- *      Standard NaviServer return code.
+ *      Returns a standard NaviServer return code (NS_OK on success).
  *
  * Side effects:
- *      Memory management for the callback structure.
+ *      Allocates memory for the new callback structure and registers it
+ *      with the underlying socket system.
  *
  *----------------------------------------------------------------------
  */
@@ -853,13 +855,17 @@ SockCallbackRegister(NsConnChan *connChanPtr, Tcl_Obj *scriptObj,
  *
  * ConnchanDriverSend --
  *
- *      Write a vector of buffers to the socket via the driver callback.
+ *      Sends a vector of data buffers over the socket associated with
+ *      a connection channel.  Handles partial writes and timeouts. If
+ *      a send operation is incomplete, the remaining data is either
+ *      retried or buffered as needed.
  *
  * Results:
- *      Number of bytes written, or -1 on error.
+ *      Returns the total number of bytes successfully written, or -1 on error.
  *
  * Side effects:
- *      Depends on driver.
+ *      May adjust the state of the connection channel’s buffers and
+ *      update send counters.
  *
  *----------------------------------------------------------------------
  */
@@ -1046,13 +1052,30 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
  *
  * ConnChanDetachObjCmd --
  *
- *      Implements "ns_connchan detach".
+ *      Implements the Tcl command "ns_connchan detach" to detach a
+ *      connection channel from the current connection. This operation
+ *      transfers control of the underlying socket from the main
+ *      connection to the detached channel, allowing the detached
+ *      channel to manage its own socket operations independently.
+ *      After detachment, the original connection will no longer use
+ *      the socket, and its status will be marked as closed. The
+ *      command returns the name of the detached channel for further
+ *      reference.
  *
  * Results:
- *      A standard Tcl result.
+
+ *      Returns TCL_OK on success (with the detached channel name set
+ *      as the interpreter’s result), or TCL_ERROR if the specified
+ *      connection channel does not exist or if an error occurs during
+ *      detachment.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      - Removes the socket pointer from the current connection, effectively
+ *        isolating the connection channel.
+ *      - Marks the connection as closed, so that subsequent operations
+ *        (such as sending a response) will not be attempted.
+ *      - Frees associated resources by invoking ConnChanFree() on the
+ *        detached channel.
  *
  *----------------------------------------------------------------------
  */
@@ -1112,13 +1135,35 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
  *
  * ConnChanOpenObjCmd --
  *
- *      Implements "ns_connchan open".
+ *      Implements the "ns_connchan open" Tcl command, which
+ *      establishes a new connection channel based on the provided
+ *      host, port, and other optional parameters. This command
+ *      initiates a socket connection (optionally over TLS), creates a
+ *      connection channel, and returns the name of the channel for
+ *      further operations.
+ *
+ *      The function parses optional arguments such as -cafile,
+ *      -capath, -cert, -insecure, -hostname, -timeout, -tls, and
+ *      -unix_socket to configure the TLS settings and connection
+ *      behavior. If a TLS connection is requested and properly
+ *      configured, the function creates an SSL context and
+ *      initializes the connection via the driver's client
+ *      initialization procedure.
+ *
+ *      Upon a successful connection, a new connection channel is
+ *      allocated and added to the server's connection channel table,
+ *      and the channel name is returned to the Tcl interpreter.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns TCL_OK if the connection channel is successfully
+ *      created and initialized, setting the channel name as the Tcl
+ *      result. Otherwise, returns TCL_ERROR along with an appropriate
+ *      error message.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      - Initiates a network connection (and TLS handshake, if applicable).
+ *      - Allocates and registers a new connection channel.
+ *      - May modify global server state if TLS contexts are created.
  *
  *----------------------------------------------------------------------
  */
@@ -1273,13 +1318,29 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
  *
  * ConnChanConnectObjCmd --
  *
- *      Implements "ns_connchan connect".
+ *      Implements the "ns_connchan connect" Tcl command, which
+ *      establishes a connection to a specified host and port,
+ *      optionally initializing a TLS session if requested. The
+ *      function parses the necessary connection parameters, such as
+ *      host, port, and TLS-related options, and attempts to open a
+ *      socket using a timed connection mechanism.
+ *
+ *      On a successful connection, the function creates a new
+ *      connection channel, registers it in the server's connection
+ *      channel table, and returns the channel name to the Tcl
+ *      interpreter. In case of failure, it closes the socket and
+ *      returns an error.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns TCL_OK on success, with the new connection channel
+ *      name set as the Tcl interpreter's result. If the connection
+ *      fails or parameters are invalid, returns TCL_ERROR and sets an
+ *      appropriate error message.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      - Initiates a socket connection (and TLS handshake if required).
+ *      - May allocate memory for the new connection channel.
+ *      - Updates the server's internal connection channel table.
  *
  *----------------------------------------------------------------------
  */
@@ -1402,13 +1463,34 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
  *
  * ConnChanListenObjCmd --
  *
- *      Implements "ns_connchan listen".
+ *      Implements the Tcl command "ns_connchan listen", which
+ *      configures the server to listen for incoming connections on a
+ *      specified address and port.  This function registers a socket
+ *      callback for new incoming connection requests, thereby
+ *      allowing the server to accept new client connections
+ *      asynchronously.
+ *
+ *      It parses command-line options for driver selection, server
+ *      specification, binding options, and the callback script to be
+ *      executed when a new connection is received.  Upon successful
+ *      registration, it creates a listening socket and returns
+ *      connection details (such as the listening socket's address,
+ *      port, and channel name) as a Tcl list.
  *
  * Results:
- *      A standard Tcl result.
+*      A standard Tcl result code:
+ *          TCL_OK    - if the listening socket is successfully created
+ *                      and the callback is registered.
+ *          TCL_ERROR - if argument parsing fails or the socket callback
+ *                      registration fails.
+ *      On success, the Tcl interpreter's result is set to a list containing
+ *      the connection details.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      - Allocates memory for a ListenCallback structure.
+ *      - Registers a new socket callback via Ns_SockListenCallback.
+ *      - May update the server's connection channel table.
+ *      - In case of failure, cleans up allocated resources.
  *
  *----------------------------------------------------------------------
  */
@@ -1595,13 +1677,21 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
  *
  * ConnChanListObjCmd --
  *
- *      Implements "ns_connchan list".
+ *      Implements the Tcl command "ns_connchan list", which returns a
+ *      list of all active connection channels for the server. The
+ *      function locks the connection channel table, iterates over
+ *      each connection channel, and constructs a Tcl list containing
+ *      key details for each channel, such as the channel name,
+ *      associated thread name, start time, driver module, peer
+ *      address, and bytes sent/received.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns TCL_OK if the command executes successfully (with the
+ *      list of connection channels set as the Tcl interpreter
+ *      result). Returns TCL_ERROR if argument parsing fails.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      Acquires a read-lock on the connection channel table during iteration.
  *
  *----------------------------------------------------------------------
  */
@@ -1779,13 +1869,20 @@ ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
  *
  * ConnChanCloseObjCmd --
  *
- *      Implements "ns_connchan close".
+ *      Implements the Tcl command "ns_connchan close" to close a
+ *      specified connection channel. This function looks up the
+ *      connection channel by name, frees the associated resources,
+ *      unregisters callbacks, and removes the channel from the
+ *      server's connection channel table.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns TCL_OK if the connection channel is successfully closed;
+ *      otherwise, returns TCL_ERROR.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      Frees memory allocated for the connection channel structure,
+ *      closes any associated sockets, and removes the channel's entry
+ *      from the internal hash table.
  *
  *----------------------------------------------------------------------
  */
@@ -1829,13 +1926,29 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
  *
  * ConnChanCallbackObjCmd --
  *
- *      Implements "ns_connchan callback".
+ *      Implements the Tcl command "ns_connchan callback". This
+ *      command is used to register a new callback for a specified
+ *      connection channel. The command accepts options to set
+ *      timeouts for the callback, and it requires a channel name, a
+ *      Tcl script (the callback), and a condition string ("when")
+ *      indicating under which socket events the callback should be
+ *      triggered.
+ *
+ *      The function parses the command-line arguments, retrieves the
+ *      connection channel based on the provided channel name, and
+ *      then registers the callback by invoking
+ *      SockCallbackRegister(). If the callback registration fails,
+ *      the connection channel is freed and an error is returned.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns a standard Tcl result: TCL_OK if the callback is
+ *      registered successfully, or TCL_ERROR if there is an error in
+ *      argument parsing or callback registration.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      May modify the connection channel's state by updating its
+ *      callback pointer, and if registration fails, frees the
+ *      connection channel.
  *
  *----------------------------------------------------------------------
  */
@@ -1945,13 +2058,16 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
  *
  * ConnChanExistsObjCmd --
  *
- *      Implements "ns_connchan exists".
+ *      Implements the Tcl command "ns_connchan exists". This command
+ *      checks whether a connection channel with the specified name
+ *      exists in the server's connection channel table.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns a standard Tcl result (TCL_OK) with a boolean Tcl object as the
+ *      result: "1" if the connection channel exists, "0" otherwise.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -2047,13 +2163,17 @@ ConnChanReadBuffer(NsConnChan *connChanPtr, char *buffer, size_t bufferSize)
  *
  * RequireDsBuffer --
  *
- *      Make sure, the DS buffer is allocated.
+ *      Ensures that the provided Tcl_DString pointer is initialized.
+ *
+ *      If the pointer is NULL, this function allocates memory for a new
+ *      Tcl_DString and initializes it. This is used to guarantee that
+ *      subsequent operations on the Tcl_DString can be performed safely.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Potentially updates dsPtr which is passed as an argument
+ *      May allocate memory for a new Tcl_DString if one is not already present.
  *
  *----------------------------------------------------------------------
  */
@@ -2072,14 +2192,22 @@ RequireDsBuffer(Tcl_DString **dsPtr) {
  *
  * WebsocketFrameSetCommonMembers --
  *
- *      Set common members of the dict, which are part of the result of
- *      every GetWebsocketFrame() operation.
+ *      Appends common WebSocket frame metadata to the provided Tcl dictionary
+ *      object. This metadata includes:
+ *         - "bytes": the total number of bytes read in the current operation.
+ *         - "unprocessed": the length of the data in the frame buffer
+ *           that has not yet been processed.
+ *         - "fragments": the number of bytes stored in the fragments
+ *           buffer, which holds parts of a multi-fragment message.
+ *         - "havedata": a flag (0 or 1) indicating whether additional
+ *           data is expected (i.e., whether the frame is complete or
+ *           not).
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      None.
+ *      The contents of the Tcl dictionary referenced by resultObj are updated.
  *
  *----------------------------------------------------------------------
  */
@@ -2104,24 +2232,35 @@ WebsocketFrameSetCommonMembers(Tcl_Obj *resultObj, ssize_t nRead, const NsConnCh
  *
  * GetWebsocketFrame --
  *
- *      Frame handling for incoming WebSockets. This function checks,
- *      if the data read so far is a complete WebSocket frame
- *      (potentially consisting of multiple fragments) and returns the
- *      results in form of a Tcl dict. To handle partial frames or
- *      surplus data, the command performs socket level buffering based
- *      on Tcl_DStrings.
+ *      Processes received data to extract a complete WebSocket frame.
+ *
+ *      This function appends newly received data to the connection channel's
+ *      frame buffer and checks if it contains a complete WebSocket frame. It
+ *      parses the frame header to determine the payload length and whether the
+ *      frame is final (fin bit set) and masked. If the frame is incomplete,
+ *      the function returns a Tcl dictionary indicating an "incomplete" frame.
+ *      If the frame is complete, it handles unmasking (if necessary), assembles
+ *      any fragmented payloads, and returns a Tcl dictionary that includes:
+ *
+ *          - "fin": a flag indicating if this is the final frame.
+ *          - "frame": the frame status ("complete" if the full frame has been
+ *             received; "incomplete" otherwise).
+ *          - "opcode": the WebSocket opcode (present only for complete frames).
+ *          - "payload": the full payload data of the frame.
+ *
+ *      The function also compacts the frame buffer to remove processed data,
+ *      ensuring that any remaining unprocessed bytes are preserved for the next
+ *      read.
  *
  * Results:
- *      Tcl dict containing "fin" status bit, "frame" state (incomplete
- *      or complete), "unprocessed" (received data in buffer not
- *      handled so far), "haveData" (boolean value to express that
- *      unprocessed data might be sufficient for next frame.
- *
- *      In case the frame is finished, the dict contains as well the
- *      WebSocket "opcode" and "payload" of the frame.
+ *      A Tcl dictionary object representing the WebSocket frame. In
+ *      the case of an incomplete frame, the dictionary will indicate
+ *      that status; in case of a complete frame, it contains the
+ *      opcode and payload.
+
  *
  * Side effects:
- *      None.
+ *      May modify the connection channel's frame and fragments buffers.
  *
  *----------------------------------------------------------------------
  */
@@ -2323,13 +2462,30 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
  *
  * ConnChanReadObjCmd --
  *
- *      Implements "ns_connchan read".
+ *      Implements the "ns_connchan read" Tcl command, which reads
+ *      data from a specified connection channel. The function
+ *      supports both plain binary data and WebSocket frame
+ *      processing. When the "-websocket" flag is provided and the
+ *      channel is configured for WebSocket handling, it parses the
+ *      received data into a complete WebSocket frame (if available)
+ *      using GetWebsocketFrame().
+ *
+ *      In the non-WebSocket case, it simply reads data from the
+ *      connection channel's socket into a byte array and returns it
+ *      as a Tcl byte array object. If an error occurs during the read
+ *      (for example, due to a receive timeout), an appropriate error
+ *      message is set in the Tcl interpreter.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns TCL_OK on a successful read (with the read data set as
+ *      the interpreter's result), or TCL_ERROR if an error occurs
+ *      during the read operation.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      - Updates internal counters for the number of bytes read.
+ *      - May modify internal buffers of the connection channel to
+ *        accumulate data.
+ *      - Sets an error message and Tcl error code in case of read failures.
  *
  *----------------------------------------------------------------------
  */
@@ -2402,22 +2558,49 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 
     return result;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
- * ConnChanWriteObjCmd --
+ * NsConnChanWrite --
  *
- *      Implements "ns_connchan write".
+ *      Sends data over a connection channel. This function writes the given
+ *      message (or portion thereof) to the socket associated with the specified
+ *      connection channel. It supports both buffered and unbuffered modes:
+ *
+ *         - In buffered mode, if the connection channel already has data in its
+ *           send buffer, the new message is appended to it and both buffers are
+ *           sent together.
+ *
+ *         - In unbuffered mode, the message is sent directly.
+ *
+ *      The function handles partial write operations and, if applicable, updates
+ *      the connection channel's internal statistics for bytes sent.
+ *
+ * Parameters:
+ *      interp      - The Tcl interpreter, used for error reporting.
+ *      connChanName- The name of the connection channel as a null-terminated string.
+ *      msgString   - Pointer to the message data to send.
+ *      msgLength   - The length of the message data.
+ *      buffered    - Boolean flag indicating whether buffered mode should be used.
+ *      nSentPtr    - Pointer to a variable where the total number of bytes sent
+ *                    (across possibly multiple write attempts) will be stored.
+ *      errnoPtr    - Pointer to a variable where the last error number from the
+ *                    socket operation will be stored in case of an error.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns TCL_OK if the message is sent successfully (or partially sent with
+ *      no fatal errors), or TCL_ERROR if an error occurs during the send operation.
  *
- * Side effects:
- *      Depends on subcommand.
+ * Side Effects:
+ *      - May update the connection channel's send buffer by appending unsent data.
+ *      - Increments the sent-bytes counter stored in the connection channel.
+ *      - Sets the Tcl interpreter's result and error code on error.
  *
  *----------------------------------------------------------------------
  */
+
 int
 NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString, TCL_SIZE_T msgLength, bool buffered,
                 ssize_t *nSentPtr, unsigned long *errnoPtr)
@@ -2719,6 +2902,23 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanWriteObjCmd --
+ *
+ *      Implements "ns_connchan write", sending data over a connection
+ *      channel. It determines whether to use buffered or unbuffered mode
+ *      and writes the provided message accordingly.
+ *
+ * Results:
+ *      Returns a standard Tcl result code (TCL_OK on success, TCL_ERROR on error).
+ *
+ * Side Effects:
+ *      Writes data to the socket and updates connection channel statistics.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -2913,13 +3113,17 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
  *
  * NsTclConnChanObjCmd --
  *
- *      Implements "ns_connchan".
+ *      Implements the "ns_connchan" command, providing access to various
+ *      operations on connection channels. This command accepts several
+ *      subcommands (such as "connect", "close", "read", "write", etc.) and
+ *      dispatches the call to the appropriate handler function.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns a standard Tcl result (TCL_OK on success or TCL_ERROR on failure).
  *
  * Side effects:
- *      Depends on subcommand.
+ *      May create, modify, or delete connection channel objects depending on the
+ *      subcommand invoked.
  *
  *----------------------------------------------------------------------
  */
