@@ -71,10 +71,10 @@ avoid version mismatches) or in a separate location.
 On a Unix-like system, run:
 
 ```bash
-$ gunzip < tcl8.6.13-src.tar.gz | tar xvf -
-$ cd tcl8.6.13/unix
-$ ./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
-$ make install
+gunzip < tcl8.6.13-src.tar.gz | tar xvf -
+cd tcl8.6.13/unix
+./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
+make install
 ```
 
 ### 3b. Install GNU Make
@@ -83,7 +83,7 @@ The NaviServer makefiles require GNU Make. Verify your installation
 with:
 
 ```bash
-$ make -v
+make -v
 ```
 
 If necessary, install GNU Make from [gnu.org](https://www.gnu.org/) or
@@ -105,11 +105,11 @@ get if via the package manager of your operating system.
 To complile official releases, execute:
 
 ```bash
-$ gunzip < naviserver-4.99.25.tar.gz | tar xvf -
-$ cd naviserver-4.99.25
-$ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
-$ make
-$ su -c 'make install'
+gunzip < naviserver-4.99.25.tar.gz | tar xvf -
+cd naviserver-4.99.25
+./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
+make
+su -c 'make install'
 ```
 
 **Configure Script Options:**
@@ -147,9 +147,9 @@ See `make help` for additional assistance.
 By convention, NaviServer uses a configuration file named `nsd.tcl`.
 
 ```bash
-$ cd /usr/local/ns
-$ cp sample-config.tcl nsd.tcl
-$ vi nsd.tcl
+cd /usr/local/ns
+cp sample-config.tcl nsd.tcl
+vi nsd.tcl
 ```
 
 Sample files are provided:
@@ -167,8 +167,8 @@ Find the documentation for configuring NaviServer in
 Test NaviServer by running:
 
 ```bash
-$ cd /usr/local/ns
-$ ./bin/nsd -f -t conf/nsd.tcl
+cd /usr/local/ns
+./bin/nsd -f -t conf/nsd.tcl
 ```
 
 The `-f` option runs the server in the foreground with important log messages directed to your terminal.
@@ -180,17 +180,17 @@ SourceForge. For example, to install a module named `nsfoo`:
 
 
 ```bash
-$ gunzip < naviserver-4.99.25-modules.tar.gz | tar xvf -
-$ cd modules/nsfoo
-$ make install NAVISERVER=/usr/local/ns
+gunzip < naviserver-4.99.25-modules.tar.gz | tar xvf -
+cd modules/nsfoo
+make install NAVISERVER=/usr/local/ns
 ```
 
 Alternatively, clone modules from GitHub:
 
 ```bash
-$ git clone https://github.com/naviserver-project/nsfoo.git
-$ cd nsfoo
-$ make install NAVISERVER=/usr/local/ns
+git clone https://github.com/naviserver-project/nsfoo.git
+cd nsfoo
+make install NAVISERVER=/usr/local/ns
 ```
 
 For a complete list of modules, visit [GitHub repositories](https://github.com/orgs/naviserver-project/repositories).
@@ -204,9 +204,9 @@ Download the minimal environment from [https://sourceforge.net/projects/mingw/fi
 3. In the msys shell, run:
 
     ```bash
-    $ cd /c/naviserver-4.99.25
-    $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
-    $ make install
+    cd /c/naviserver-4.99.25
+    ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
+    make install
     ```
 
 *Note:* This example assumes Tcl is built with Mingw using the prefix `c:/naviserver`.
@@ -267,11 +267,11 @@ Download NSF/XOTcl from either
 NaviServer source tree using the same `--prefix` as NaviServer:
 
 ```bash
-$ git clone https://github.com/nm-wu/nsf
-$ cd nsf
-$ ./configure --prefix=/usr/local/ns
-$ make
-$ sudo make install
+git clone https://github.com/nm-wu/nsf
+cd nsf
+./configure --prefix=/usr/local/ns
+make
+sudo make install
 ```
 
 ---
