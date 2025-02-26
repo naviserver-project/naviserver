@@ -96,7 +96,7 @@ a proxy server or not.
  ns_section ns/parameters {
    ns_param home             /var/www/myserver/
    ns_param tcllibrary       tcl
-   ns_param serverlog        error.log
+   ns_param systemlog        nsd.log
    # ...
    ns_param reverseproxymode true
  }
@@ -1298,23 +1298,38 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
  }
 [example_end]
 
+[subsection {Global and Per-Server Logfiles}]
 
-[subsection {Multiple Logfiles and Page Sources for a Single Server}]
+ NaviServer maintains a single system log (üer default [const nsd.log])
+ that aggregates system and application messages via [cmd ns_log]. In
+ addition, each server can have its own log files - such as
+ [const access.log] (managed by the [term nslog] module) or
+ [const httpclient.log] (configured in the [term httpclient] section).
+ These per-server log files can be automatically rotated by enabling the
+ boolean [term rolllog] parameter.
 
- By using a dynamic [const serverrootproc] callback to compute
- [const serverdir], a single server (e.g., [const SERVER1]) can have multiple
- log files (such as access.log and httpsclient.log) and page
- directories. Automated log file rolling will then apply to all log
- files configured for that server.
- 
-[para]
+ [para] Although there is no dedicated configuration parameter to
+ control automatic rotation of the system log, you can schedule daily
+ log rotation for the system log with the following command:
 
- Note that while a NaviServer instance may consist of multiple servers
- and virtual servers — each with its own access.log and httpclient.log
- — the instance as a whole has a single [const serverlog] (typically
- "error.log") that aggregates system and application messages logged
- via [cmd ns_log].
+[example_begin]
+ ns_schedule_daily 0 0 ns_logroll
+[example_end]
 
+ In configurations employing mass virtual hosting, a single server may
+ generate multiple access.log files (one for every virtual server). In
+ such cases, the [const serverrootproc] callback dynamically computes
+ the appropriate [const serverdir] to resolve relative log file paths.
+ In this case, log rotation is applied to all log files
+ configured for that server.
+
+ [para] By default, log files are rolled by appending a numerical
+ suffix indicating their age. Alternatively, you can specify a custom
+ roll format for all log files. For example, setting [term logrollfmt]
+ to [const %Y-%m-%d] causes the log rotation process to append the
+ actual date instead of a number. This method offers the advantage of
+ stable log file names after rolling, which may simplify long-term log
+ management and reduces backup requirements.
 
 
 [section {Stack Size}]
@@ -1345,7 +1360,7 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	driver prebind pagedir logging logdir serverdir serverlog \
+	driver prebind pagedir logging logdir serverdir systemlog \
         "scheduled procedures" \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate vhostcertificates invalid-certificates \

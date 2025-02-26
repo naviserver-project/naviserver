@@ -3510,7 +3510,7 @@ ReaperThread(void *UNUSED(arg))
                     /*
                      * Pass waitStatus ptr to Ns_WaitForProcessStatus() to
                      * indicate that we want to handle the signal here and to
-                     * suppress warning entries in the error.log.
+                     * suppress warning entries in the system log file.
                      *
                      * The following wait operation should not really wait
                      * but it is better to play safe.

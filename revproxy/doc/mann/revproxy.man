@@ -317,7 +317,7 @@ with the appropriate shell/environment variables:
  ns_section ns/parameters {
    ns_param home       $home
    ns_param tcllibrary tcl
-   ns_param serverlog  error.log
+   #ns_param systemlog  nsd.log
  }
  
  ns_section ns/servers {

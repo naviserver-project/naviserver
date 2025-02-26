@@ -816,7 +816,7 @@ output.
 [item]  How can I debug my nscgi configuration?
 [para]
   For debugging the nsgci configuration, you one can turn on
-  logging for the error.log via the command:
+  logging for the system log via the command:
 
 [example_begin]
  ns_logctl severity Debug(cgi) on

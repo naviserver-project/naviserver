@@ -291,7 +291,7 @@ NaviServer is started via launchd (controlled via launchctl).
 Linux, SGI), you'll notice multiple nsd processes.  This is normal and
 represents the individual threads.  The main process id can be
 determined by checking the log/nsd.pid file or looking at the last few
-entries of the server log (per default "logs/error.log", each of which
+entries of the system log (per default "logs/nsd.log", each of which
 will include the process id and thread id in the form [lb]pid.tid[rb].
 You can also telnet to the control port and type "ns_info pid".
 

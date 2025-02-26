@@ -482,8 +482,8 @@ Ns_PageRoot(const char *server)
  *      Tcl Result Code
  *
  * Side effects:
- *      Compressed file in the same directory.
- *      When compression fails, the command writes a warning to the error.log.
+ *      Compressed file in the same directory.  When compression
+ *      fails, the command writes a warning to the system log file.
  *
  *----------------------------------------------------------------------
  */

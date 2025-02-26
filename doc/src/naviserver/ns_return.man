@@ -257,7 +257,7 @@ cleanup, etc.).  For refreshing gzip files, the Tcl command
 "::ns_gzipfile source target" is used.  This command can be
 potentially redefined by an application.  When this parameter is not
 defined (or the refresh command fails), outdated gzip-ed files are
-ignored, and a warning is written to the error.log. (boolean, defaults
+ignored, and a warning is written to the system log file (boolean, defaults
 to false)
 
 [def gzip_cmd]
@@ -265,7 +265,7 @@ Command for gzip-ing files, used by [cmd ::ns_gzipfile].
 The value of [term gzip_cmd] is used in [cmd ::ns_gzipfile]
 to locate the gzip command in the OS.  If [term gzip_cmd]
 is not defined, and [cmd ::ns_gzipfile] is called, an error
-is written to the error.log.
+is written to the system log file.
 Example setting: "/usr/bin/gzip -9".  (string, defaults to "")
 
 [def brotli_static]
@@ -286,7 +286,7 @@ cleanup, etc.).  For refreshing gzip files, the Tcl command
 "::ns_brotlifile source target" is used.  This command can be
 potentially redefined by an application.  When this parameter is not
 defined (or the refresh command fails), outdated brotli compressed files are
-ignored, and a warning is written to the error.log. (boolean, defaults
+ignored, and a warning is written to the system log file. (boolean, defaults
 to false)
 
 [def brotli_cmd]
@@ -294,7 +294,7 @@ Command for producing brotli compressed files, used by [cmd ::ns_brotlifile].
 The value of [term brotli_cmd] is used in [cmd ::ns_brotlifile]
 to locate the brotlicommand in the OS.  If [term brotli_cmd]
 is not defined, and [cmd ::ns_brotlifile] is called, an error
-is written to the error.log.
+is written to the system log file.
 Example setting: "/usr/bin/brotli -f -q 11".  (string, defaults to "")
 
 
@@ -335,7 +335,7 @@ names are relative to the [const serverdir]
 
 Note: The parameter  [const serverdir] can be specified per server in
 the server-specific root section of the server. For details, see
-
+[uri ../../manual/files/admin-config.html#section4 "Customizing File Locations"]).
 
 [subsection "Directory Handling"]
 

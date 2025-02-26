@@ -157,7 +157,7 @@ receiving "0" on the previous call, an error is returned.
 [call [cmd "ns_db logminduration"] [opt [arg poolname]] [opt [arg minduration]]]
 
 Queries or sets a threshold for logging of SQL statements. Log only
-statements in the error.log, when SQL logging is turned on in general
+statements in the system log, when SQL logging is turned on in general
 (via "ns_logctl severity Debug(sql) ...") and the statement took at
 least the specified duration.
 

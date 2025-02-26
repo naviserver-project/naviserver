@@ -4342,7 +4342,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
  *      None.
  *
  * Side effects:
- *      Writes to error.log
+ *      Writes to the system log file.
  *
  *----------------------------------------------------------------------
  */

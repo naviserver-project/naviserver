@@ -110,9 +110,9 @@ ns_section ns/parameters {
     #ns_param   mutexlocktrace      true     ;# default false; print durations of long mutex calls to stderr
 
     #
-    # Log settings (systemlog aka error.log)
+    # Log settings (systemlog aka nsd.log, former error.log)
     #
-    ns_param    serverlog           error.log
+    ns_param    systemlog           nsd.log
     #ns_param   logdebug            true     ;# default: false
     #ns_param   logroll             false    ;# default: true
     #ns_param	logrollfmt          %Y-%m-%d ;# format appended to log filename
@@ -570,7 +570,7 @@ ns_section ns/server/default/module/nslog {
     #ns_param   rollfmt             %Y-%m-%d-%H:%M	;# format appended to log filename
     #ns_param   logpartialtimes     true     ;# default: false
     #ns_param   logreqtime          true     ;# default: false; include time to service the request
-    ns_param    logthreadname       true     ;# default: false; include thread name for linking with error.log
+    ns_param    logthreadname       true     ;# default: false; include thread name for linking with nsd.log
 
     ns_param	masklogaddr         true    ;# false, mask IP address in log file for GDPR (like anonip IP anonymizer)
     ns_param	maskipv4            255.255.255.0  ;# mask for IPv4 addresses

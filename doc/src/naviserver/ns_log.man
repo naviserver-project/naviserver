@@ -256,7 +256,7 @@ specified time format (e.g. %Y-%m-%d). The timestamp is appended
 to the name. When within the granularity two log files are generated
 these are numbered.
 
-[def serverlog]
+[def systemlog]
 Path to system log file. If the path is not fully qualified it is assumed to be
 relative to the server home directory ([lb][cmd ns_info] home[rb]). All the components of
 the path must exist. The server will fail to start if the log file cannot be
@@ -293,16 +293,16 @@ included in the NaviServer distribution.
    # ...
  
    # Provide name for main server log file:
-   ns_param	serverlog       ${homedir}/logs/error.log
+   ns_param	systemlog       nsd.log
  
    #
-   # Configuration of serverlog
+   # Configuration of systemlog
    #
    # Rolling of logfile:
  
    ns_param	logroll		on
    ns_param	logmaxbackup	100      ;# (default: 10)
-   ns_param	logrollfmt	%Y-%m-%d ;# timestamp format appended to serverlog filename when rolled
+   ns_param	logrollfmt	%Y-%m-%d ;# timestamp format appended to systemlog filename when rolled
  
    #
    # Format of log entries:

@@ -206,7 +206,7 @@ set directoryfile             "index.tcl index.adp index.html index.htm"
 ns_section ns/parameters {
     ns_param	home		$homedir
     ns_param    logdir          $logdir
-    ns_param	serverlog	error.log
+    ns_param	systemlog	nds.log
     ns_param	pidfile		nsd.pid
     ns_param	debug		$debug
 
@@ -246,14 +246,14 @@ ns_section ns/parameters {
     # ns_param    autosni            false ;# default: true
 
     #
-    # Configuration of error.log
+    # Configuration of system log (nsd.log)
     #
     # Rolling of logfile:
     ns_param	logroll		on
     ns_param	logmaxbackup	100      ;# 10 is default
-    ns_param	logrollfmt	%Y-%m-%d ;# format appended to serverlog filename when rolled
+    ns_param	logrollfmt	%Y-%m-%d ;# format appended to system log filename when rolled
     #
-    # Format of log entries in serverlog:
+    # Format of log entries in system log:
     # ns_param  logsec          false    ;# add timestamps in second resolution (default: true)
     # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
     # ns_param  logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
@@ -1006,7 +1006,7 @@ ns_section ns/server/$server/module/nslog {
     # ns_param	suppressquery	true	;# false, suppress query portion in log entry
     # ns_param	logreqtime	true	;# false, include time to service the request
     ns_param	logpartialtimes	true	;# false, include high-res start time and partial request durations (accept, queue, filter, run)
-    ns_param    logthreadname   true    ;# default: false; include thread name for linking with error.log
+    ns_param    logthreadname   true    ;# default: false; include thread name for linking with nsd.log
     # ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
     # ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
     ns_param	checkforproxy	$reverseproxymode ;# false, check for proxy header (x-forwarded-for)

@@ -432,7 +432,22 @@ NsConfigLog(void)
     }
 
     maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);
-    logfileName = Ns_ConfigFilename(section, "serverlog", 9, nsconf.logDir, "nsd.log", NS_FALSE, NS_TRUE);
+
+#ifdef NS_WITH_DEPRECATED_5_0
+    if (Ns_ConfigGetValue(section, "serverlog") != NULL) {
+        Ns_LogDeprecatedParameter(section, "serverlog", section, "systemlog", NULL);
+        if (Ns_ConfigGetValue(section, "systemlog") == NULL) {
+            /*
+             * We have the deprecated parameter, but not the new one.
+             * Use the value from the deprecated parameter
+             */
+            logfileName = Ns_ConfigFilename(section, "serverlog", 9, nsconf.logDir, "nsd.log", NS_FALSE, NS_TRUE);
+        }
+    }
+#endif
+    if (logfileName == NULL) {
+        logfileName = Ns_ConfigFilename(section, "systemlog", 9, nsconf.logDir, "nsd.log", NS_FALSE, NS_TRUE);
+    }
 
     rollfmt = ns_strcopy(Ns_ConfigString(section, "logrollfmt", NS_EMPTY_STRING));
 

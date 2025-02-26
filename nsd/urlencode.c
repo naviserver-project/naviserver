@@ -633,7 +633,7 @@ static const ByteKey oauth1_enc[] = {
  *      None.
  *
  * Side effects:
- *      Produces potentially warnings in the error.log
+ *      Produces potentially warnings in the system log file.
  *
  *----------------------------------------------------------------------
  */

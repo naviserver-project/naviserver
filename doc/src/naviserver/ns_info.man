@@ -95,7 +95,7 @@ Not all information is available for all types of locks.
 [call [cmd  "ns_info log"]]
 
 Returns the name of the system log file. The name is specified by the
-"serverlog" parameter in the "ns/parameters" section.
+[term "systemlog"] parameter in the [const "ns/parameters"] section.
 
 [call [cmd  "ns_info logdir"]]
 
