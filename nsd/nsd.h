@@ -1570,7 +1570,7 @@ NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
 NS_EXTERN Ns_ArgProc NsTclSockArgProc;
 NS_EXTERN Ns_ArgProc NsTclThreadArgProc;
 NS_EXTERN Ns_ConnLocationProc NsTclConnLocation;
-NS_EXTERN Ns_FilterProc NsShortcutFilterProc NS_GNUC_PURE;
+NS_EXTERN Ns_FilterProc NsShortcutFilterProc NS_GNUC_CONST;
 NS_EXTERN Ns_FilterProc NsTclFilterProc;
 NS_EXTERN Ns_OpProc NsAdpPageProc;
 NS_EXTERN Ns_OpProc NsTclRequestProc;
@@ -1684,7 +1684,7 @@ NS_EXTERN Ns_Set *NsConfigSectionGetFiltered(const char *section, char filter) N
  * conn.c
  */
 NS_EXTERN const char * NsConnIdStr(const Ns_Conn *conn)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1) NS_GNUC_CONST;
 
 NS_EXTERN void NsConnTimeStatsFinalize(const Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
@@ -1989,7 +1989,7 @@ NS_EXTERN void NsSlsCleanup(Sock *sockPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *NsErrorCodeString(int errorCode) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN const char *NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN bool NsSockRetryCode(int errorCode);
+NS_EXTERN bool NsSockRetryCode(int errorCode) NS_GNUC_CONST;
 
 NS_EXTERN int NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr);
 

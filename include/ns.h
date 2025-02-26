@@ -864,7 +864,7 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
 
 NS_EXTERN const char *
 Ns_CacheName(const Ns_Cache *cache) NS_GNUC_RETURNS_NONNULL
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1) NS_GNUC_CONST;
 
 NS_EXTERN const char *
 Ns_CacheKey(const Ns_Entry *entry)
@@ -884,7 +884,7 @@ Ns_CacheGetSize(const Ns_Entry *entry)
 
 NS_EXTERN const Ns_Time *
 Ns_CacheGetExpirey(const Ns_Entry *entry)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1) NS_GNUC_CONST;
 
 NS_EXTERN uintptr_t
 Ns_CacheGetTransactionEpoch(const Ns_Entry *entry)
@@ -1192,7 +1192,7 @@ NS_EXTERN Tcl_Encoding   Ns_ConnGetEncoding(const Ns_Conn *conn) NS_GNUC_NONNULL
 NS_EXTERN Tcl_Encoding   Ns_ConnGetUrlEncoding(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN Ns_Set *       Ns_ConnHeaders(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN const char *   Ns_ConnHost(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
-NS_EXTERN uintptr_t      Ns_ConnId(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN uintptr_t      Ns_ConnId(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_CONST;
 #ifdef NS_WITH_DEPRECATED
 NS_EXTERN const char *   Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED_FOR(Ns_ConnLocationAppend);
 #endif
@@ -3164,8 +3164,8 @@ Ns_PosixSetErrorCode(Tcl_Interp *interp, int errorNum)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN struct sockaddr *
-Ns_SockGetClientSockAddr(Ns_Sock *sock)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+Ns_SockGetClientSockAddr(Ns_Sock *sock) NS_GNUC_CONST
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN struct sockaddr *
 Ns_SockGetConfiguredSockAddr(Ns_Sock *sock)

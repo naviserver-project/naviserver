@@ -77,6 +77,7 @@ CCLD             = @CCLD@
 #SANITIZE          = -fsanitize=address -fsanitize-recover=address
 #SANITIZE          =
 #CFLAGS_TIDY_GCC   =  -fipa-pure-const -Wsuggest-attribute=const -Wsuggest-attribute=pure -Wstringop-truncation 
+#CFLAGS_TIDY_GCC   =  -fipa-pure-const -Wsuggest-attribute=pure -Wstringop-truncation -Wflex-array-member-not-at-end -Warray-compare
 
 CFLAGS_CONVERSION = -Wconversion -Wsign-conversion -Wsign-compare
 CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wendif-labels -Wshadow -Wmissing-prototypes -Wstrict-prototypes

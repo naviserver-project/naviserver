@@ -1251,7 +1251,7 @@ NS_EXTERN int ns_signal(int sig, void (*proc)(int));
 NS_EXTERN void Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stackSize,
                                Ns_Thread *resultPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadExit(void *arg)              NS_GNUC_NORETURN;
-NS_EXTERN void* Ns_ThreadResult(void *arg);
+NS_EXTERN void* Ns_ThreadResult(void *arg) NS_GNUC_CONST;
 NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadYield(void);
 NS_EXTERN void Ns_ThreadSetName(const char *fmt, ...) NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(1, 2);
@@ -1263,7 +1263,7 @@ NS_EXTERN ssize_t Ns_ThreadStackSize(ssize_t size);
 NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-extern void  *NsThreadResult(void *arg);
+extern void  *NsThreadResult(void *arg) NS_GNUC_CONST;
 
 /*
  * time.c:

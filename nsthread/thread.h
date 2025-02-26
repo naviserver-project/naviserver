@@ -38,7 +38,7 @@ extern void **NsGetTls(void)               NS_GNUC_RETURNS_NONNULL;
 extern void   NsThreadMain(void *arg)      NS_GNUC_NORETURN;
 extern void   NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *threadPtr);
 extern void   NsThreadExit(void *arg)      NS_GNUC_NORETURN;
-extern void  *NsThreadResult(void *arg);
+extern void  *NsThreadResult(void *arg)    NS_GNUC_CONST;
 extern void   NsThreadFatal(const char *func, const char *osfunc, int err)
 #ifndef NS_TCL_PRE86
   NS_GNUC_NORETURN
