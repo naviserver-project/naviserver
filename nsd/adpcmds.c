@@ -145,13 +145,21 @@ Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
  *
  * NsTclAdpIdentObjCmd --
  *
- *      Set ident string for current file.
+ *      Sets or retrieves the "ident" string for the current ADP frame.
+ *
+ *      If called with a single argument, the command returns the current
+ *      ident string associated with the active ADP frame. If called with
+ *      a second argument, the command updates the ident string with the
+ *      provided value and then returns it.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns TCL_OK on success and TCL_ERROR on failure. On success, the
+ *      result is the ident string (either the current or the newly set
+ *      value).
  *
  * Side effects:
- *      Depends on subcommand.
+ *      If a new ident string is provided, any existing ident is released, and
+ *      the new ident is stored (its reference count is incremented).
  *
  *----------------------------------------------------------------------
  */
@@ -184,20 +192,22 @@ NsTclAdpIdentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * NsTclAdpCtlObjCmd --
+ * AdpCtlBufSizeObjCmd --
  *
- *      ADP processing control.
- *      Implements "ns_adp_ctl".
+ *      Implements the "bufsize" subcommand for the ADP control command.  This
+ *      command either queries or updates the current ADP output buffer
+ *      size. If an integer argument is provided, the buffer size is updated;
+ *      if not, the current buffer size is returned.
  *
  * Results:
- *      A standard Tcl result.
+ *      A standard Tcl result (TCL_OK or TCL_ERROR). On success, the buffer size
+ *      is set as the Tcl command result.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      May modify the adp.bufsize field in the current NsInterp structure.
  *
  *----------------------------------------------------------------------
  */
@@ -225,6 +235,26 @@ AdpCtlBufSizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclAdpCtlObjCmd --
+ *
+ *      Implements the "ns_adp_ctl" command, which provides a unified interface
+ *      to control various ADP processing options. This command allows querying
+ *      and updating ADP configuration parameters, such as buffer size, output
+ *      channel, and flags like autoabort, cache, safe, trace, and trimspace.
+ *
+ * Results:
+ *      A standard Tcl result (TCL_OK or TCL_ERROR). The outcome of the control
+ *      operation (e.g., a Boolean value or updated configuration) is returned
+ *      via the Tcl interpreter.
+ *
+ * Side effects:
+ *      Updates internal ADP configuration settings in the NsInterp structure.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {

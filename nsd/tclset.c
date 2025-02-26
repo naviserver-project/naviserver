@@ -300,36 +300,20 @@ static int StartsWithI(const char *nameString) {
     return (*nameString == 'i');
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * ThreadCreateObjCmd, ThreadHandlObjCmd, ThreadIdObjCmd, ThreadNameObjCmd,
- * ThreadStackinfoObjCmd, ThreadWaitObjCmd, ThreadYieldObjCmd --
- *
- *      Implements subcommands of "ns_set", i.e.,
- *         "ns_thread create"
- *         "ns_thread handle"
- *         "ns_thread id"
- *         "ns_thread name"
- *         "ns_thread stackinfo"
- *         "ns_muthreadtex wait"
- *         "ns_muthreadtex yield"
- *
- * Results:
- *      A standard Tcl result.
- *
- * Side effects:
- *      Depends on subcommand.
- *
- *----------------------------------------------------------------------
- */
 
 /*
  *----------------------------------------------------------------------
  * SetArrayObjCmd --
  *
- *      Implements subcommands of "ns_set array"
+ *      This command implements "ns_set array". It converts the given Ns_Set
+ *      object into a Tcl key-value list by extracting its content and
+ *      returns this list as the command result.
+ *
+ * Results:
+ *      The Tcl list representing the set's contents.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -358,11 +342,20 @@ static int SetArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
  *----------------------------------------------------------------------
  * SetCleanupObjCmd --
  *
- *      Implements subcommands of "ns_set cleanup"
+ *      This command implements "ns_set cleanup". It scans through all the
+ *      dynamically allocated ns_set objects managed by the interpreter,
+ *      frees those marked as dynamic, and reinitializes the interpreter's
+ *      set hash table.
+ *
+ * Results:
+ *      TCL_OK if the cleanup succeeds, TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *      Frees memory for dynamic sets and resets the set hash table.
  *
  *----------------------------------------------------------------------
  */
-static int SetCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+int SetCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int       result = TCL_OK;
     NsInterp *itPtr = clientData;
@@ -398,7 +391,15 @@ static int SetCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
  *----------------------------------------------------------------------
  * SetCopyObjCmd --
  *
- *      Implements subcommands of "ns_set copy"
+ *      This command implements "ns_set copy". It creates an independent copy
+ *      of the specified ns_set, including all its key-value pairs, and
+ *      registers the new set as dynamic with the Tcl interpreter.
+ *
+ * Results:
+ *      The handle of the newly created dynamic set.
+ *
+ * Side effects:
+ *      Allocates memory for the new set and registers it with the interpreter.
  *
  *----------------------------------------------------------------------
  */
@@ -424,7 +425,16 @@ static int SetCopyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
  *----------------------------------------------------------------------
  * SetCreateObjCmd --
  *
- *      Implements subcommands of "ns_set create"
+ *      This command implements "ns_set create". It creates a new ns_set from
+ *      the provided key-value pairs. An optional set name may be specified;
+ *      if omitted, a unique name is generated. The new set is registered as
+ *      dynamic with the interpreter.
+ *
+ * Results:
+ *      The handle of the newly created set.
+ *
+ * Side effects:
+ *      Allocates and initializes a new Ns_Set structure.
  *
  *----------------------------------------------------------------------
  */
@@ -487,7 +497,15 @@ static int SetCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T
  *----------------------------------------------------------------------
  * SetDeleteObjCmd --
  *
- *      Implements subcommands of "ns_set delete"
+ *      This command implements "ns_set delete". It deletes the element at the
+ *      specified index in the given ns_set, freeing associated data if
+ *      necessary.
+ *
+ * Results:
+ *      TCL_OK on success or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      The specified element is removed from the set.
  *
  *----------------------------------------------------------------------
  */
@@ -520,7 +538,16 @@ static int SetDeleteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
  *----------------------------------------------------------------------
  * SetDelkeyObjCmd --
  *
- *      Implements subcommands of "ns_set delkey"
+ *      This command implements "ns_set delkey". It removes a key from the
+ *      specified ns_set. The function determines whether to perform a case‐
+ *      sensitive or case‐insensitive deletion based on the key prefix.
+ *
+ * Results:
+ *      Returns a standard Tcl result indicating success (TCL_OK) or failure
+ *      (TCL_ERROR).
+ *
+ * Side effects:
+ *      The key (and its associated value) is removed from the ns_set.
  *
  *----------------------------------------------------------------------
  */
@@ -556,7 +583,15 @@ static int SetDelkeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
  *----------------------------------------------------------------------
  * SetFormatObjCmd --
  *
- *      Implements subcommands of "ns_set format"
+ *      This command implements "ns_set format". It generates a formatted
+ *      string representation of the given ns_set, using optional lead and
+ *      separator strings to format each key-value pair.
+ *
+ * Results:
+ *      Returns the formatted string as the Tcl command result.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -593,7 +628,16 @@ static int SetFormatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
  *----------------------------------------------------------------------
  * SetFreeObjCmd --
  *
- *      Implements subcommands of "ns_set free"
+ *      This command implements "ns_set free". It frees the ns_set identified
+ *      by the provided set handle. If the ns_set is dynamic, it is deleted
+ *      and its resources are reclaimed.
+ *
+ * Results:
+ *      Returns a standard Tcl result indicating success (TCL_OK) or failure
+ *      (TCL_ERROR).
+ *
+ * Side effects:
+ *      The ns_set and all its associated data are freed if they are dynamic.
  *
  *----------------------------------------------------------------------
  */
@@ -618,7 +662,15 @@ static int SetFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
  *----------------------------------------------------------------------
  * SetFindObjCmd --
  *
- *      Implements subcommands of "ns_set find"
+ *      This command implements "ns_set find". It searches for a key within
+ *      the specified ns_set and returns the index of the key if found.
+ *
+ * Results:
+ *      Returns the index of the found key, or TCL_ERROR if the key is not
+ *      present.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -653,7 +705,15 @@ static int SetFindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
  *----------------------------------------------------------------------
  * SetIsnullObjCmd --
  *
- *      Implements subcommands of "ns_set isnull"
+ *      This command implements "ns_set isnull". It checks whether the value
+ *      at a given index in the specified ns_set is NULL.
+ *
+ * Results:
+ *      Returns a boolean value (1 for true, 0 for false) as the Tcl command
+ *      result.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -687,7 +747,15 @@ static int SetIsnullObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
  *----------------------------------------------------------------------
  * SetGetObjCmd --
  *
- *      Implements subcommands of "ns_set get"
+ *      This command implements "ns_set get". It retrieves the value associated
+ *      with a given key index from the specified ns_set. If the key is not found,
+ *      an optional default value may be returned.
+ *
+ * Results:
+ *      Returns the value of the key or the default value as the Tcl command result.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -743,7 +811,14 @@ static int SetGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
  *----------------------------------------------------------------------
  * SetKeyObjCmd --
  *
- *      Implements subcommands of "ns_set key"
+ *      This command implements "ns_set key". It returns the key (field name)
+ *      at the specified index in the given ns_set.
+ *
+ * Results:
+ *      Returns the key as a string in the Tcl command result.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -775,7 +850,15 @@ static int SetKeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
  *----------------------------------------------------------------------
  * SetKeysObjCmd --
  *
- *      Implements subcommands of "ns_set keys"
+ *      This command implements "ns_set keys". It returns a Tcl list of all
+ *      keys (field names) present in the specified ns_set. An optional pattern
+ *      can be provided to filter the keys.
+ *
+ * Results:
+ *      Returns a Tcl list of matching keys.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -813,7 +896,15 @@ static int SetKeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
  *----------------------------------------------------------------------
  * SetListObjCmd --
  *
- *      Implements subcommands of "ns_set list"
+ *      This command implements "ns_set list". It returns a Tcl list
+ *      of all keys (i.e. field names) present in the specified ns_set.
+ *
+ * Results:
+ *      Returns TCL_OK on success with the list of keys set in the
+ *      interpreter's result, or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -846,10 +937,20 @@ static int SetListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
  *----------------------------------------------------------------------
  * SetMergeObjCmd --
  *
- *      Implements subcommands "ns_set merge".
+ *      This command implements "ns_set merge". It merges two ns_set objects.
+ *      The function takes two ns_set handles and combines the key-value pairs
+ *      from the second set into the first.
+ *
+ * Results:
+ *      Returns TCL_OK on success (with the merged set handle as result) or
+ *      TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      The first ns_set is modified to include entries from the second ns_set.
  *
  *----------------------------------------------------------------------
  */
+
 static int SetMergeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, nocase = 0;
@@ -878,14 +979,24 @@ static int SetMergeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     return result;
 }
 
+
 /*
  *----------------------------------------------------------------------
  * SetMoveObjCmd --
  *
- *      Implements subcommands "ns_set move".
+ *      This command implements "ns_set move". It moves all key-value pairs
+ *      from the first ns_set to the second ns_set.
+ *
+ * Results:
+ *      Returns TCL_OK on success (with the destination set handle as result)
+ *      or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      The source ns_set is emptied and its data transferred to the destination ns_set.
  *
  *----------------------------------------------------------------------
  */
+
 static int SetMoveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
@@ -910,7 +1021,15 @@ static int SetMoveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
  *----------------------------------------------------------------------
  * SetNameObjCmd --
  *
- *      Implements subcommands of "ns_set name"
+ *      This command implements "ns_set name". It retrieves and returns the name
+ *      of the specified ns_set.
+ *
+ * Results:
+ *      Returns TCL_OK on success with the ns_set's name as the interpreter result,
+ *      or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -932,11 +1051,19 @@ static int SetNameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
 }
 
 #ifdef NS_WITH_DEPRECATED
+
 /*
  *----------------------------------------------------------------------
  * SetPrintObjCmd --
  *
- *      Implements subcommands of "ns_set print"
+ *      This command implements "ns_set print" (deprecated). It prints the
+ *      content of the specified ns_set to the log for debugging purposes.
+ *
+ * Results:
+ *      Returns TCL_OK on success or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      Outputs information to the system log.
  *
  *----------------------------------------------------------------------
  */
@@ -963,7 +1090,16 @@ static int SetPrintObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
  *----------------------------------------------------------------------
  * SetPutObjCmd --
  *
- *      Implements subcommands "ns_set put".
+ *      This command implements "ns_set put". It inserts or updates a
+ *      key-value pair in the specified ns_set. If the key already exists, its
+ *      value is updated; otherwise, a new key-value pair is added.
+ *
+ * Results:
+ *      Returns TCL_OK on success with the index of the inserted/updated element,
+ *      or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      The ns_set is modified with the new key-value pair.
  *
  *----------------------------------------------------------------------
  */
@@ -1001,7 +1137,16 @@ static int SetPutObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
  *----------------------------------------------------------------------
  * SetSizeObjCmd --
  *
- *      Implements subcommands of "ns_set size"
+ *      This command implements "ns_set size". It returns the number of
+ *      elements in the specified ns_set. Optionally, it can also resize the
+ *      set based on provided parameters.
+ *
+ * Results:
+ *      Returns TCL_OK on success with the size as the interpreter's result,
+ *      or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      May modify the ns_set's allocation if resizing is requested.
  *
  *----------------------------------------------------------------------
  */
@@ -1037,7 +1182,15 @@ static int SetSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
  *----------------------------------------------------------------------
  * SetSplitObjCmd --
  *
- *      Implements subcommands of "ns_set split"
+ *      This command implements "ns_set split". It splits the specified ns_set
+ *      into multiple ns_set objects based on a provided split character.
+ *
+ * Results:
+ *      Returns TCL_OK on success with a Tcl list of new ns_set handles,
+ *      or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      The original ns_set is split into several new ns_set objects.
  *
  *----------------------------------------------------------------------
  */
@@ -1077,11 +1230,21 @@ static int SetSplitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     return result;
 }
 
+
 /*
  *----------------------------------------------------------------------
  * SetStatsObjCmd --
  *
- *      Implements subcommands of "ns_set stats"
+ *      This command implements "ns_set stats". It returns statistics about
+ *      the specified ns_set, such as the number and size of dynamic and
+ *      static entries.
+ *
+ * Results:
+ *      Returns TCL_OK on success with a Tcl dictionary of statistics,
+ *      or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1152,7 +1315,14 @@ static int SetStatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
  *----------------------------------------------------------------------
  * SetTruncateObjCmd --
  *
- *      Implements subcommands of "ns_set truncate"
+ *      This command implements "ns_set truncate". It truncates the specified
+ *      ns_set to a given number of elements.
+ *
+ * Results:
+ *      Returns TCL_OK on success or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      The ns_set is modified (reduced in size).
  *
  *----------------------------------------------------------------------
  */
@@ -1184,7 +1354,16 @@ static int SetTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
  *----------------------------------------------------------------------
  * SetUniqueObjCmd --
  *
- *      Implements subcommands of "ns_set unique"
+ *      This command implements "ns_set unique". It ensures that a given key
+ *      appears uniquely within the specified ns_set. Depending on the
+ *      case-sensitivity option, it may use case-insensitive matching.
+ *
+ * Results:
+ *      Returns TCL_OK on success with a boolean result indicating whether the
+ *      key was unique, or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1221,10 +1400,19 @@ static int SetUniqueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
  *----------------------------------------------------------------------
  * SetValueObjCmd --
  *
- *      Implements subcommands of "ns_set value"
+ *      This command implements "ns_set value". It retrieves the value associated
+ *      with a specified key index from the ns_set.
+ *
+ * Results:
+ *      Returns TCL_OK on success with the value as a string result, or
+ *      TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
+
 static int SetValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
@@ -1254,7 +1442,15 @@ static int SetValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
  *----------------------------------------------------------------------
  * SetValuesObjCmd --
  *
- *      Implements subcommands of "ns_set values"
+ *      This command implements "ns_set values". It returns a Tcl list of all
+ *      values in the specified ns_set that match an optional pattern.
+ *
+ * Results:
+ *      Returns TCL_OK on success with the list of values as the interpreter's result,
+ *      or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1266,7 +1462,6 @@ static int SetValuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
     Ns_ObjvSpec args[] = {
         {"setId",    Ns_ObjvSet,    &set, NULL},
         {"?pattern", Ns_ObjvString, &patternString, NULL},
-
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1291,11 +1486,23 @@ static int SetValuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
     return result;
 }
 
+
 /*
  *----------------------------------------------------------------------
  * Set_TYPE_SetidKeyValueObjCmd --
  *
- *      Implements subcommands "ns_set update" and "ns_set cput".
+ *      This command implements "ns_set update" and "ns_set cput". It updates
+ *      an existing key-value pair in the specified ns_set, or inserts it if
+ *      the key does not exist.  The behavior is determined by the command
+ *      prefix (e.g., "update" vs. "cput") and the case-sensitivity inferred
+ *      from the key.
+ *
+ * Results:
+ *      Returns TCL_OK on success with the index of the updated/inserted element,
+ *      or TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      The ns_set is modified with the new or updated key-value pair.
  *
  *----------------------------------------------------------------------
  */
@@ -1359,13 +1566,16 @@ static int Set_TYPE_SetidKeyValueObjCmd(ClientData UNUSED(clientData), Tcl_Inter
  *
  * NsTclSetObjCmd --
  *
- *      Implements "ns_set".
+ *      This command implements "ns_set". It provides a Tcl interface for
+ *      performing various operations on ns_set objects, such as creation,
+ *      deletion, update, merge, and lookup of key/value pairs.
  *
  * Results:
- *      Tcl result.
+ *      Returns a standard Tcl result (TCL_OK on success, TCL_ERROR on failure).
  *
  * Side effects:
- *      See docs.
+ *      Depends on the subcommand invoked; may modify ns_set objects, allocate
+ *      memory, and update the interpreter's result.
  *
  *----------------------------------------------------------------------
  */

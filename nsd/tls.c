@@ -2225,8 +2225,12 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
  *
  * Ns_TLS_SSLAccept --
  *
- *      Initialize a socket as ssl socket and wait until the socket
- *      is usable (is accepted, handshake performed)
+ *      Accept a new SSL/TLS connection by performing the TLS
+ *      handshake on an incoming connection. This function wraps the
+ *      OpenSSL SSL_accept() call, establishing a secure channel on
+ *      the provided socket. If the handshake is successful, the SSL
+ *      structure is fully initialized and the connection can be used
+ *      for secure communication.
  *
  * Results:
  *      A standard Tcl result.
@@ -2582,8 +2586,10 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
  *
  * NsCertCtlListCmd - subcommand of NsTclCertCtlObjCmd --
  *
- *      Implements "ns_certctl list" command.
- *      List loaded certificates.
+ *      Implements "ns_certctl reload" command for listing
+ *      certificates. This function retrieves and formats a list of
+ *      certificates currently loaded or managed by the server,
+ *      returning the information as a Tcl list.
  *
  * Results:
  *      Standard Tcl result.
@@ -2649,14 +2655,21 @@ NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
  *
  * NsCertCtlListCmd - subcommand of NsTclCertCtlObjCmd --
  *
- *      Implements "ns_certctl reload" command.
- *      Reload certificates.
+ *      Implements the "ns_certctl reload" command for certificate
+ *      control.  This function triggers a reload of
+ *      certificates—typically in response to a configuration change
+ *      or an administrative signal (e.g., SIGHUP).  It scans for
+ *      updated certificate files and reloads them into the server's
+ *      SSL contexts, ensuring that any changes to certificates are
+ *      applied without requiring a server restart.
  *
  * Results:
- *      Standard Tcl result.
+ *      Returns a standard Tcl result (TCL_OK on success, TCL_ERROR on
+ *      failure).
  *
  * Side effects:
- *      None.
+ *      May update the certificate store and SSL contexts. Logs error
+ *      messages if any certificate reload operations fail.
  *
  *----------------------------------------------------------------------
  */
@@ -2683,15 +2696,20 @@ NsCertCtlReloadCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  *
  * NsTclICtlObjCmd --
  *
- *      Implements "ns_certctl". This command is used to manage
- *      information about tls interactions, include certificate
- *      management.
+ *      Implements the "ns_cert_ctl" command for certificate control
+ *      and management. This command allows administrators to query,
+ *      update, or reload certificate-related settings. It parses
+ *      subcommands and their arguments, performs the requested
+ *      certificate control operations, and returns a standard Tcl
+ *      result.
  *
  * Results:
- *      Standard Tcl result.
+ *      A standard Tcl result indicating success or failure.
  *
  * Side effects:
- *      Depends on the subcommand.
+ *      May update certificate configuration, reload certificates, or
+ *      perform other certificate management tasks depending on the
+ *      specific subcommand.
  *
  *----------------------------------------------------------------------
  */

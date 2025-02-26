@@ -2480,13 +2480,12 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  *
  * IpMatchObjCmd --
  *
- *      Checks whether an IP address (IPv4 or IPV6) is in a given CIDR
- *      (Classless Inter-Domain Routing) range. CIDR supports variable-length
+ *      This command implements "ns_ip_match". It compares a given IP address
+ *      against a CIDR and determines whether the IP address matches.  The IP
+ *      address can be IPv4 or IPV6. The CIDR value supports variable-length
  *      subnet masking and specifies an IPv6 or IPv6 address, a slash ('/')
  *      character, and a decimal number representing the significant bits of
  *      the IP address.
- *
- *      Implements "ns_ip match /cidr/ /ipaddr/".
  *
  *      Example:
  *          ns_ip match 137.208.0.0/16 137.208.116.31
@@ -2538,16 +2537,17 @@ IpMatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
 
 /*
  *----------------------------------------------------------------------
- *
  * IpPropertiesObjCmd --
  *
- *      Implements "ns_ip properties". In case a valid IP address is provided
- *      it returns a dict containing members "trusted", "public" and "type".
+ *      This command implements "ns_ip_properties". It retrieves various
+ *      properties of a specified IP address, such as network class and subnet
+ *      information, and returns these properties as a Tcl dictionary,
+ *      containing members "trusted", "public" and "type".
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns a Tcl dictionary containing the IP address properties.
  *
- * Side effects:
+ * Side Effects:
  *      None.
  *
  *----------------------------------------------------------------------
@@ -2586,7 +2586,7 @@ IpPropertiesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  * IpPublicObjCmd --
  *
  *      Implements "ns_ip public", returning a boolean value in case the
- *      provided IP address is valid.
+ *      provided IP address is public.
  *
  * Results:
  *      A standard Tcl result.
@@ -2629,7 +2629,8 @@ IpPublicObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
  * IpTrustedObjCmd --
  *
  *      Implements "ns_ip trusted", returning a boolean value in case the
- *      provided IP address is valid.
+ *      provided IP address is trusted based on the server's configuration or
+ *      predefined criteria.
  *
  * Results:
  *      A standard Tcl result.
@@ -2671,9 +2672,10 @@ IpTrustedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
  *
  * IpValidObjCmd --
  *
- *      Implements "ns_ip valid", returning a boolean value indicating if the
- *      provided IP address is valid. One can provide "-type ipv4" or "-type
- *      ipv6" to constrain the result to these address families.
+ *      This command implements "ns_ip_valid". It validates the format and
+ *      overall correctness of a specified IP address. One can provide "-type
+ *      ipv4" or "-type ipv6" to constrain the result to these address
+ *      families.
  *
  * Results:
  *      A standard Tcl result.
@@ -2727,16 +2729,18 @@ IpValidObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
 
 /*
  *----------------------------------------------------------------------
- *
  * NsTclIpObjCmd --
  *
- *      Implements "ns_ip".
+ *      This command implements "ns_ip". It acts as the main dispatcher for
+ *      IP-related subcommands (e.g., "ns_ip_match", "ns_ip_properties",
+ *      "ns_ip_public", "ns_ip_trusted", and "ns_ip_valid") and returns the
+ *      corresponding result based on the specified subcommand.
  *
  * Results:
- *      A standard Tcl result.
+ *      Returns the result of the invoked IP subcommand as a Tcl object.
  *
- * Side effects:
- *      Depends on subcommand.
+ * Side Effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */

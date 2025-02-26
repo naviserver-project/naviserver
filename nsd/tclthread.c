@@ -454,47 +454,32 @@ Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
     return Ns_TclThread(interp, script, NULL);
 }
 
-
+
+
+
 /*
  *----------------------------------------------------------------------
  *
- * NsTclThreadObjCmd --
+ * ThreadCreateObjCmd --
  *
- *      Implements "ns_thread". This command provides a script
- *      interface to get data on the current thread and create and
- *      wait on new Tcl-script based threads.  New threads will be
- *      created in the virtual-server context of the current interp,
- *      if any.
+ *      Implements "ns_thread create. Creates a new Tcl thread to
+ *      execute a specified script in this thread.
  *
- * Results:
- *      Standard Tcl result.
+ *      This command parses command-line options to determine thread attributes.
+ *      It accepts the following options:
+ *          -detached  : When set, the thread is created in detached mode,
+ *                       meaning its result is not captured.
+ *          -name      : Specifies a name for the thread (default is "nsthread").
  *
- * Side effects:
- *      May create a new thread or wait for an existing thread to
- *      exit.
- *
- *----------------------------------------------------------------------
- */
-/*
- *----------------------------------------------------------------------
- *
- * ThreadCreateObjCmd, ThreadHandlObjCmd, ThreadIdObjCmd, ThreadNameObjCmd,
- * ThreadStackinfoObjCmd, ThreadWaitObjCmd, ThreadYieldObjCmd --
- *
- *      Implements subcommands of "ns_thread", i.e.,
- *         "ns_thread create"
- *         "ns_thread handle"
- *         "ns_thread id"
- *         "ns_thread name"
- *         "ns_thread stackinfo"
- *         "ns_muthreadtex wait"
- *         "ns_muthreadtex yield"
+ *      The "script" argument is the Tcl script to be executed in the
+ *      new thread.  For non-detached threads, the thread's identifier
+ *      is returned as the result.
  *
  * Results:
- *      A standard Tcl result.
+ *      A standard Tcl result (TCL_OK on success, TCL_ERROR on failure).
  *
  * Side effects:
- *      Depends on subcommand.
+ *      A new thread is spawned to execute the provided Tcl script.
  *
  *----------------------------------------------------------------------
  */
@@ -550,6 +535,25 @@ ThreadCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadCreateObjCmd --
+ *
+ *      This function implements "ns_thread handle". It retrieves the
+ *      handle (i.e. a pointer or reference) of the current
+ *      thread. The function obtains the current thread using
+ *      Ns_ThreadSelf() and returns the handle as a Tcl opaque object.
+ *
+ * Results:
+ *      A standard Tcl result. On success, the current thread handle is set as
+ *      the command result.
+ *
+ * Side effects:
+ *      May set an error message in interp if argument parsing fails.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ThreadHandleObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -576,6 +580,25 @@ ThreadHandleObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadIdObjCmd --
+ *
+ *      This command implements "ns_thread id". It retrieves the
+ *      unique identifier of the current thread by calling
+ *      Ns_ThreadId(), formats the result as a hexadecimal string, and
+ *      returns it as the Tcl command result.
+ *
+ * Results:
+ *      A standard Tcl result leaving the thread's unique identifier
+ *      in the interpreter result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ThreadIdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -598,6 +621,27 @@ ThreadIdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadNameObjCmd --
+ *
+ *      This command implements "ns_thread name". It sets or retrieves
+ *      the name of the current thread. If a name argument is
+ *      provided, it updates the thread's name using
+ *      Ns_ThreadSetName(); otherwise, it retrieves the current thread
+ *      name via Ns_ThreadGetName() and returns it as the Tcl command
+ *      result.
+ *
+ * Results:
+ *      A standard Tcl result, leaving the thread's name in the
+ *      interpreter result.
+ *
+ * Side effects:
+ *      May change the current thread's name if an argument is provided.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ThreadNameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -619,6 +663,27 @@ ThreadNameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadStackinfoObjCmd --
+ *
+ *      This command implements "ns_thread stackinfo". It retrieves
+ *      information about the current thread's stack usage, including
+ *      the maximum stack size and the estimated free stack space.
+ *      The information is formatted as a string and returned as the
+ *      command result.
+ *
+ * Results:
+ *      A standard Tcl result containing a formatted string with the stack
+ *      information (max stack size and free space).
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
 ThreadStackinfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -637,6 +702,25 @@ ThreadStackinfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadYieldObjCmd --
+ *
+ *      This command implements "ns_thread yield". It yields the
+ *      processor, allowing other threads to run. This command does
+ *      not return any value, but ensures that the calling thread
+ *      gives up its current time slice.
+ *
+ * Results:
+ *      A standard Tcl result. On success, the command returns TCL_OK.
+ *
+ * Side effects:
+ *      Causes the calling thread to yield its execution, potentially allowing
+ *      other threads to run.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ThreadYieldObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -650,6 +734,24 @@ ThreadYieldObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadWaitObjCmd --
+ *
+ *      This command implements "ns_thread wait". It waits for the specified
+ *      thread (provided as a thread identifier) to terminate. Once the thread
+ *      terminates, the command returns any result produced by that thread.
+ *
+ * Results:
+ *      A standard Tcl result. On success, if the joined thread produced a
+ *      result string, that string is returned as the command result.
+ *
+ * Side effects:
+ *      The calling thread will block until the specified thread terminates.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ThreadWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -690,6 +792,30 @@ ThreadWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclThreadObjCmd --
+ *
+ *      This command implements "ns_thread" and its subcommands. It
+ *      provides a Tcl interface for managing threads by dispatching
+ *      operations such as creating new threads, retrieving thread
+ *      handles, obtaining thread IDs, setting or getting thread
+ *      names, retrieving stack information, waiting for a thread to
+ *      finish, and yielding the processor. The command routes the
+ *      specified subcommand to the corresponding helper function.
+ *
+ * Results:
+ *      A standard Tcl result, which varies depending on the executed subcommand.
+ *
+ * Side effects:
+ *      May create new threads, block while waiting for threads to finish, or yield
+ *      the current thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -717,26 +843,20 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * MutexCreateObjCmd, MutexDestroyObjCmd, MutexEvalObjCmd, MutexLockObjCmd,
- * MutexTrylockObjCmd, MutexUnlockObjCmd --
+ * MutexCreateObjCmd --
  *
- *      Implements subcommands of "ns_mutex", i.e.,
- *         "ns_mutex create"
- *         "ns_mutex destroy"
- *         "ns_mutex eval"
- *         "ns_mutex lock"
- *         "ns_mutex trylock"
- *         "ns_mutex unlock"
+ *      This command implements "ns_mutex create". It creates a new mutex
+ *      synchronization object. An optional name can be provided to label
+ *      the mutex; if no name is specified, the mutex is created as unnamed.
  *
  * Results:
  *      A standard Tcl result.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      Allocates and initializes a new mutex object.
  *
  *----------------------------------------------------------------------
  */
@@ -777,6 +897,22 @@ MutexCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * MutexDestroyObjCmd --
+ *
+ *      This command implements "ns_mutex destroy". It destroys an existing
+ *      mutex synchronization object, freeing its associated resources.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      The specified mutex object is deallocated.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 MutexDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -788,7 +924,23 @@ MutexDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     return DestroyHelper(args, interp, objc, objv);
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * MutexEvalObjCmd --
+ *
+ *      This command implements "ns_mutex eval". It evaluates a Tcl script
+ *      while holding the mutex lock, ensuring that the execution of the
+ *      script is performed in a thread-safe context.
+ *
+ * Results:
+ *      A standard Tcl result reflecting the outcome of the script evaluation.
+ *
+ * Side effects:
+ *      The mutex is locked before the script is executed and unlocked afterward.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 MutexEvalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -811,6 +963,22 @@ MutexEvalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * MutexLockObjCmd --
+ *
+ *      This command implements "ns_mutex lock". It locks the specified mutex,
+ *      blocking the calling thread until the lock can be acquired.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      The specified mutex is locked.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 MutexLockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -829,6 +997,25 @@ MutexLockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * MutexTrylockObjCmd --
+ *
+ *      This command implements "ns_mutex trylock". It attempts to
+ *      lock the specified mutex without blocking. If the mutex is
+ *      already locked, it returns a value indicating that the lock
+ *      could not be acquired.
+ *
+ * Results:
+ *      A standard Tcl result with an integer value (non-zero if the
+ *      lock was acquired, zero otherwise).
+ *
+ * Side effects:
+ *      The specified mutex may be locked if it was available.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 MutexTrylockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -847,6 +1034,23 @@ MutexTrylockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MutexUnlockObjCmd --
+ *
+ *      This command implements "ns_mutex unlock". It releases the
+ *      lock on the specified mutex.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      The specified mutex is unlocked.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 MutexUnlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -865,6 +1069,24 @@ MutexUnlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclMutexObjCmd --
+ *
+ *      This command implements the "ns_mutex" command, which provides a unified
+ *      interface for various mutex-related subcommands, including create, destroy,
+ *      eval, lock, trylock, and unlock.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on the subcommand invoked.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -883,26 +1105,20 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
 /*
  *----------------------------------------------------------------------
  *
- * CondAbswaitObjCmd. CondBroadcastObjCmd. CondCreateObjCmd,
- * CondDestroyObjCmd, CondSignalObjCmd, CondWaitObjCmd --
+ * CondBroadcastObjCmd --
  *
- *      Implements subcommands of "ns_cond", i.e.,
- *         "ns_cond abswait"
- *         "ns_cond broadcast"
- *         "ns_cond create"
- *         "ns_cond destroy"
- *         "ns_cond set"
- *         "ns_cond signal"
- *         "ns_cond wait"
+ *      This command implements "ns_cond broadcast". It broadcasts a signal
+ *      to all threads waiting on the specified condition variable.
  *
  * Results:
  *      A standard Tcl result.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      All threads waiting on the condition variable are awakened.
  *
  *----------------------------------------------------------------------
  */
+
 static int
 CondBroadcastObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -921,6 +1137,22 @@ CondBroadcastObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CondCreateObjCmd --
+ *
+ *      This command implements "ns_cond create". It creates a new
+ *      condition variable for thread synchronization.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      A new condition variable is allocated and initialized.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CondCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -943,6 +1175,22 @@ CondCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CondDestroyObjCmd --
+ *
+ *      This command implements "ns_cond destroy". It destroys the specified
+ *      condition variable and frees associated resources.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      The condition variable is removed and its memory is deallocated.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CondDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -954,7 +1202,23 @@ CondDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     return DestroyHelper(args, interp, objc, objv);
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * CondSignalObjCmd --
+ *
+ *      This command implements "ns_cond signal" (also aliased as
+ *      "ns_cond set").  It signals the specified condition variable,
+ *      waking one waiting thread.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      One thread waiting on the condition variable is notified.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CondSignalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -973,6 +1237,23 @@ CondSignalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CondAbswaitObjCmd --
+ *
+ *      This command implements "ns_cond abswait". It waits on the specified
+ *      condition variable until a given absolute time is reached.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      The calling thread is blocked until the condition is signaled or the
+ *      specified absolute timeout expires.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CondAbswaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1011,6 +1292,24 @@ CondAbswaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CondWaitObjCmd --
+ *
+ *      This command implements "ns_cond wait". It waits on the specified
+ *      condition variable for a relative timeout period (if provided).
+ *
+ * Results:
+ *      A standard Tcl result indicating whether the wait succeeded or
+ *      timed out.
+ *
+ * Side effects:
+ *      The calling thread is blocked until the condition is signaled or the
+ *      timeout expires.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CondWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1053,6 +1352,24 @@ CondWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCondObjCmd --
+ *
+ *      This command implements the "ns_cond" command, providing a
+ *      unified interface to condition variable operations. Its
+ *      subcommands include: abswait, broadcast, create, destroy, set
+ *      (signal), and wait.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on the specific subcommand invoked.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1079,30 +1396,21 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
- * RWLockCreateObjCmd, RWLockDestroyObjCmd,RWLockReadevalObjCmd,
- * RWLockReadlockObjCmd, RWLockUnlockObjCmd, RWLockWriteevalkObjCmd,
- * RWLockWriteunlockObjCmd --
+ * RWLockCreateObjCmd --
  *
- *      Implements subcommands of "ns_rwlock", i.e.,
- *         "ns_rwlock create"
- *         "ns_rwlock destroy"
- *         "ns_rwlock readeval"
- *         "ns_rwlock readlock"
- *         "ns_rwlock readunlock"
- *         "ns_rwlock unlock"
- *         "ns_rwlock writeeval"
- *         "ns_rwlock writelock"
- *         "ns_rwlock writeunlock"
+ *      This command implements "ns_rwlock create". It creates a new
+ *      read-write lock, allocating and initializing the necessary
+ *      data structures.
  *
  * Results:
  *      A standard Tcl result.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      Allocates and initializes a new read-write lock object.
  *
  *----------------------------------------------------------------------
  */
@@ -1128,6 +1436,23 @@ RWLockCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RWLockDestroyObjCmd --
+ *
+ *      This command implements "ns_rwlock destroy". It destroys the
+ *      specified read-write lock and frees all associated resources.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Deallocates the read-write lock object and removes it from
+ *      internal tables.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 RWLockDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1139,6 +1464,23 @@ RWLockDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     return DestroyHelper(args, interp, objc, objv);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RWLockReadlockObjCmd --
+ *
+ *      This command implements "ns_rwlock readlock". It acquires a
+ *      read lock on the specified read-write lock, blocking if
+ *      necessary until the lock is available.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Blocks the calling thread until a read lock is acquired.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 RWLockReadlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1157,6 +1499,23 @@ RWLockReadlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RWLockReadevalObjCmd --
+ *
+ *      This command implements "ns_rwlock readeval". It acquires a
+ *      read lock, evaluates the provided Tcl script while holding the
+ *      lock, and then releases the lock.
+ *
+ * Results:
+ *      A standard Tcl result containing the output of the evaluated script.
+ *
+ * Side effects:
+ *      The specified Tcl script is executed while the read lock is held.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 RWLockReadevalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1179,6 +1538,23 @@ RWLockReadevalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RWLockWritelockObjCmd --
+ *
+ *      This command implements "ns_rwlock writelock". It acquires a
+ *      write lock on the specified read-write lock, blocking until
+ *      the lock is available.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Blocks the calling thread until a write lock is acquired.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 RWLockWritelockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1197,6 +1573,23 @@ RWLockWritelockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RWLockWriteevalObjCmd --
+ *
+ *      This command implements "ns_rwlock writeeval". It acquires a write lock,
+ *      evaluates the given Tcl script while holding the lock, and then releases
+ *      the lock.
+ *
+ * Results:
+ *      A standard Tcl result with the output of the evaluated script.
+ *
+ * Side effects:
+ *      The provided Tcl script is executed while the write lock is held.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 RWLockWriteevalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1219,6 +1612,23 @@ RWLockWriteevalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RWLockUnlockObjCmd --
+ *
+ *      This command implements "ns_rwlock unlock". It releases the
+ *      currently held read or write lock on the specified read-write
+ *      lock.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Releases the lock, allowing other threads to acquire it.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 RWLockUnlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1237,6 +1647,24 @@ RWLockUnlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclRWLockObjCmd --
+ *
+ *      This command implements "ns_rwlock", providing a unified interface
+ *      for read-write lock operations. Its subcommands include: create,
+ *      destroy, readeval, readlock, readunlock, writeeval, writelock, and
+ *      writeunlock.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on the specific subcommand invoked.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1255,25 +1683,19 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * CsCreateObjCmd, CsDestroyObjCmd, CsEnterObjCmd, CsEvalObjCmd,
- * CsLeaveObjCmd --
+ * CsCreateObjCmd --
  *
- *      Implements subcommands of "ns_critsec", i.e.,
- *         "ns_critsec create"
- *         "ns_critsec destroy"
- *         "ns_critsec enter"
- *         "ns_critsec eval"
- *         "ns_critsec leave"
+ *      This command implements "ns_critsec create". It creates a new
+ *      critical section object and registers it for later use.
  *
  * Results:
  *      A standard Tcl result.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      Allocates and initializes a new critical section object.
  *
  *----------------------------------------------------------------------
  */
@@ -1299,6 +1721,24 @@ CsCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CsDestroyObjCmd --
+ *
+ *      This command implements "ns_critsec destroy". It destroys the
+ *      specified critical section object, freeing any resources
+ *      associated with it.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Deallocates the critical section object and removes it from internal
+ *      management.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CsDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1310,6 +1750,23 @@ CsDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     return DestroyHelper(args, interp, objc, objv);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CsEnterObjCmd --
+ *
+ *      This command implements "ns_critsec enter". It acquires the
+ *      lock on the specified critical section, blocking until the
+ *      lock is available.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Blocks the calling thread until the critical section lock is acquired.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CsEnterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1328,6 +1785,23 @@ CsEnterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CsEvalObjCmd --
+ *
+ *      This command implements "ns_critsec eval". It acquires the
+ *      critical section lock, evaluates a provided Tcl script while
+ *      holding the lock, and then releases the lock.
+ *
+ * Results:
+ *      A standard Tcl result containing the output of the evaluated script.
+ *
+ * Side effects:
+ *      Executes the Tcl script while the critical section lock is held.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CsEvalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1350,6 +1824,23 @@ CsEvalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc,
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CsLeaveObjCmd --
+ *
+ *      This command implements "ns_critsec leave". It releases the
+ *      lock on the specified critical section, allowing other threads
+ *      to acquire it.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Releases the critical section lock.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CsLeaveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1368,6 +1859,23 @@ CsLeaveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCritSecObjCmd --
+ *
+ *      This command implements "ns_critsec", providing a unified interface for
+ *      critical section operations. Its subcommands include "create", "destroy",
+ *      "enter", "eval", and "leave".
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on the subcommand invoked.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1385,19 +1893,17 @@ NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 /*
  *----------------------------------------------------------------------
  *
- * SemaCreateObjCmd, SemaDestroyObjCmd, SemaReleaseObjCmd, SemaWaitObjCmd --
+ * SemaCreateObjCmd --
  *
- *      Implements subcommands of "ns_sema", i.e.,
- *         "ns_sema create"
- *         "ns_sema destroy"
- *         "ns_sema release"
- *         "ns_sema wait"
+ *      This command implements "ns_sema create". It creates a new
+ *      semaphore object with an optional initial count and registers
+ *      it for later use.
  *
  * Results:
  *      A standard Tcl result.
  *
  * Side effects:
- *      Depends on subcommand.
+ *      Allocates and initializes a new semaphore object.
  *
  *----------------------------------------------------------------------
  */
@@ -1428,6 +1934,22 @@ SemaCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SemaDestroyObjCmd --
+ *
+ *      This command implements "ns_sema destroy". It destroys the specified
+ *      semaphore object, freeing all associated resources.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Deallocates the semaphore object and removes it from internal management.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 SemaDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1439,6 +1961,24 @@ SemaDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     return DestroyHelper(args, interp, objc, objv);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SemaReleaseObjCmd --
+ *
+ *      This command implements "ns_sema release". It increments
+ *      (posts) the semaphore by the specified count (defaulting to
+ *      one if not provided).
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Increases the semaphore's count, potentially unblocking
+ *      waiting threads.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 SemaReleaseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1459,6 +1999,24 @@ SemaReleaseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SemaWaitObjCmd --
+ *
+ *      This command implements "ns_sema wait". It decrements (waits
+ *      on) the semaphore, blocking the calling thread until the
+ *      semaphore count is greater than zero.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      May block the calling thread until the semaphore is available.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
 SemaWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1477,6 +2035,23 @@ SemaWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclSemaObjCmd --
+ *
+ *      This command implements "ns_sema", providing a unified
+ *      interface for semaphore operations. Its subcommands include
+ *      "create", "destroy", "release", and "wait".
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on the subcommand invoked.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1522,7 +2097,8 @@ static void ThreadArgFree(void *arg)
  *
  * InitializeTls --
  *
- *      Initialize once the data structures needed for thread local storage.
+ *      Initialize once the data structures needed for thread local
+ *      storage.
  *
  * Results:
  *      Boolean value, has to return NS_TRUE for Windows compatibility.
@@ -1703,26 +2279,35 @@ CreateTclThread(const NsInterp *itPtr, const char *script, bool detached,
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
  * CreateSynchObject --
  *
- *      Create and initialize a new synchronization object of the
- *      requested type (mutex, critsec, condition, ...), or return an
- *      existing one with the same name.
+ *      This function creates and initializes a new synchronization
+ *      object of the specified type (such as a mutex, semaphore,
+ *      condition, etc.), or returns an existing one if an object with
+ *      the same name is already present in the provided hash
+ *      table. If a Tcl object is provided and already holds an opaque
+ *      pointer for the given type, that object is returned directly.
+ *
+ *      When creating a new object, the function optionally calls an
+ *      initialization callback (if provided) and, for certain types
+ *      (e.g., mutexes), sets a name for the object. The new object is
+ *      stored in the specified hash table and associated with a Tcl
+ *      opaque object for later retrieval.
  *
  * Results:
- *      Pointer to the lock or cond etc. Tcl_Obj representing the
- *      lock is left in interp.
+ *      Returns a pointer to the synchronization object (either newly
+ *      created or previously existing).
  *
  * Side effects:
- *      None.
+ *      May allocate memory and update the synchronization object's
+ *      hash table. It also sets the Tcl object result to the opaque
+ *      object representing the synchronization object.
  *
  *----------------------------------------------------------------------
  */
-
 static void *
 CreateSynchObject(const NsInterp *itPtr,
                   Tcl_HashTable *typeTable, unsigned int *idPtr,

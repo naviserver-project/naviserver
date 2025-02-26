@@ -2861,13 +2861,19 @@ WalkCallback(Tcl_DString *dsPtr, const void *arg)
  *
  * UrlSpaceGetObjCmd, subcommand of NsTclUrlSpaceObjCmd --
  *
- *    Implements "ns_urlspace get".
+ *      Implements the "ns_urlspace get" Tcl command.
+ *
+ *      This function retrieves URL-specific data from the URL space trie.
+ *      It processes the command arguments, determines the appropriate
+ *      URL key, and returns the associated data (if any) as a Tcl object.
  *
  * Results:
- *    Tcl result.
+ *      Returns TCL_OK on success with the retrieved data set in the
+ *      interpreter's result; otherwise, returns TCL_ERROR and an
+ *      error message is set in the interpreter.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -2968,13 +2974,20 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
  *
  * UrlSpaceListObjCmd, subcommand of NsTclUrlSpaceObjCmd --
  *
- *    Implements "ns_urlspace list".
+ *      Implements the "ns_urlspace list" Tcl command.
+ *
+ *      This function walks through the URL space trie and collects
+ *      information about the stored URL-specific data. The resulting
+ *      information is returned as a Tcl list (or another suitable
+ *      structure) containing all matching entries.
  *
  * Results:
- *    Tcl result.
+ *      Returns TCL_OK on success with the list of URL entries set in
+ *      the interpreter's result; otherwise, returns TCL_ERROR with an
+ *      appropriate error message.
  *
  * Side effects:
- *    Depends on subcommand.
+ *    None.
  *
  *----------------------------------------------------------------------
  */
@@ -3015,13 +3028,20 @@ UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
  *
  * UrlSpaceNewObjCmd, subcommand of NsTclUrlSpaceObjCmd --
  *
- *    Implements "ns_urlspace new".
+ *      Implements the "ns_urlspace new" Tcl command.
+ *
+ *      This function creates a new URL space or a new URL-specific
+ *      entry within an existing URL space. It processes the provided
+ *      arguments to set up the key (or URL pattern) and associates
+ *      the given data with that key in the trie.
  *
  * Results:
- *    Tcl result.
+ *      Returns TCL_OK on successful creation of the new entry, or
+ *      TCL_ERROR if an error occurs.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Allocates and initializes new trie nodes and possibly new
+ *      channels; modifies the URL space data structure.
  *
  *----------------------------------------------------------------------
  */
@@ -3055,13 +3075,25 @@ UrlSpaceNewObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
  *
  * UrlSpaceSetObjCmd, subcommand of NsTclUrlSpaceObjCmd --
  *
- *    Implements "ns_urlspace set".
+ *      Implements the "ns_urlspace set" command in Tcl.
+ *
+ *      This command associates a URL pattern (which may include wildcards)
+ *      with user-specified data in the URL space trie. The command processes
+ *      various options and flags that determine how the data is stored, such as
+ *      whether the data should be inherited by sub-URLs or if existing data should
+ *      be replaced.
  *
  * Results:
- *    Tcl result.
+ *      Returns a standard Tcl result code:
+ *          - TCL_OK on success.
+ *          - TCL_ERROR on failure, with an appropriate error message set in the
+ *            interpreter.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      - May allocate memory for new trie nodes and channels.
+ *      - Modifies the internal URL space data structure by adding or updating entries.
+ *      - The precise behavior (e.g., whether data is overwritten or retained) depends
+ *        on the specific subcommand options provided by the user.
  *
  *----------------------------------------------------------------------
  */
@@ -3137,13 +3169,20 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
  *
  * UrlSpaceUnsetObjCmd, subcommand of NsTclUrlSpaceObjCmd --
  *
- *    Implements "ns_urlspace unset".
+ *      Implements the "ns_urlspace unset" Tcl command.
+ *
+ *      This function removes URL-specific data from the URL
+ *      space. Based on the arguments, it deletes a particular entry
+ *      (or entries) from the trie. If recursive deletion is
+ *      specified, it will remove all data under the given URL prefix.
  *
  * Results:
- *    Tcl result.
+ *      Returns TCL_OK on successful removal of the entry; otherwise,
+ *      returns TCL_ERROR with an appropriate error message.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Frees memory associated with the deleted data and updates the
+ *      URL space data structure.
  *
  *----------------------------------------------------------------------
  */
@@ -3212,13 +3251,22 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
  *
  * NsTclUrlSpaceObjCmd --
  *
- *    Implements "ns_urlspace".
+ *      Implements the top-level "ns_urlspace" Tcl command.
+ *
+ *      This function acts as a dispatcher that examines the first
+ *      argument of the "ns_urlspace" command and calls the
+ *      appropriate subcommand handler (such as "get", "list", "new",
+ *      or "unset"). It centralizes the URL space management commands
+ *      in one interface.
  *
  * Results:
- *    Tcl result.
+ *      Returns the standard Tcl result code (TCL_OK on success,
+ *      TCL_ERROR on failure).
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Dispatches to various URL space subcommand functions,
+ *      potentially modifying internal data structures based on the
+ *      subcommand.
  *
  *----------------------------------------------------------------------
  */
