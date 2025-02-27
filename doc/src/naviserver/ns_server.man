@@ -73,9 +73,12 @@ procs for certain request patterns).
 
 [call [cmd ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[cmd serverdir]]
+	[cmd serverdir] \
+        [opt [option "-effective"]]]
 
-Returns the path of the virtual server's base directory.
+Returns the path of the virtual server's base directory. When the
+option [option "-effective"] is used, the path based on the results of
+the [term serverrootproc] callback is returned.
 
 
 [call [cmd ns_server] \
@@ -416,6 +419,7 @@ specified names based on a wild-card match.
 [keywords \
         "context filter" \
 	"server built-in" configuration "connection thread pools" \
-	mapspec pools pagedir serverdir tuning "reverse proxy" "virtual host"]
+	mapspec pools pagedir serverdir serverrootproc \
+        tuning "reverse proxy" "virtual host"]
 
 [manpage_end]
