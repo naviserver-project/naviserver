@@ -54,19 +54,19 @@ namespace eval ::revproxy {
     nsf::proc upstream {
         when
         -target:required
-        {-insecure:switch}
-        {-targethost ""}
-        {-connecttimeout 1s}
-        {-timeout 1m}
-        {-sendtimeout ""}
-        {-receivetimeout ""}
-        {-validation_callback ""}
-        {-regsubs:0..n ""}
-        {-exception_callback "::revproxy::exception"}
-        {-url_rewrite_callback "::revproxy::rewrite_url"}
-        {-backend_response_callback ""}
         {-backend_reply_callback ""}
+        {-backend_response_callback ""}
         {-backendconnection ""}
+        {-connecttimeout 1s}
+        {-exception_callback "::revproxy::exception"}
+        {-insecure:switch}
+        {-receivetimeout ""}
+        {-regsubs:0..n ""}
+        {-sendtimeout ""}
+        {-targethost ""}
+        {-timeout 1m}
+        {-url_rewrite_callback "::revproxy::rewrite_url"}
+        {-validation_callback ""}
     } {
         #
         # @param when indicates, how the callback was invoked. When

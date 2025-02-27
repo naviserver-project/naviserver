@@ -154,19 +154,27 @@ The core command for proxying is [cmd revproxy::upstream], which accepts seveal 
 [list_begin definitions]
 
 [call [cmd revproxy::upstream] \
+	[arg when] \
 	[option "-target [arg value]"] \
 	[opt [option "-backend_response_callback [arg value]"]] \
 	[opt [option "-backendconnection [arg value]"]] \
 	[opt [option "-connecttimeout [arg value]"]] \
 	[opt [option "-exception_callback [arg value]"]] \
-	[opt [option "-regsubs [arg value]"]] \
-        [opt [option "-targethost [arg value]"]] \
+	[opt [option "-insecure"]] \
+	[opt [option "-receivetimeout [arg value]"]] \
+	[opt [option "-regsubs [arg {value ...}]"]] \
+	[opt [option "-sendtimeout [arg value]"]] \
+	[opt [option "-targethost [arg value]"]] \
 	[opt [option "-timeout [arg value]"]] \
 	[opt [option "-url_rewrite_callback [arg value]"]] \
 	[opt [option "-validation_callback [arg value]"]] \
         ]
-        
-Defines a proxying rule for [option -target]. The value of this required parameter is a list of one or more backend URLs. Without further definitions, the incoming URL path is appended to the specified target, but it can be altered via option [option -regsubs], Furthermore, the URL can also be rewritten more generally by the [option -url_rewrite_callback].
+
+Defines a proxying rule for [option -target]. When [cmd revproxy::upstream]
+is registered as a filter, the paramter [arg when] is automatically
+added upon invocation. When called via a registered proc, provide a constant.
+
+[para] The most important parameter is [option -target]. The value of this required parameter is a list of one or more backend URLs. Without further definitions, the incoming URL path is appended to the specified target, but it can be altered via option [option -regsubs], Furthermore, the URL can also be rewritten more generally by the [option -url_rewrite_callback].
 
 [para] The option [option "-backend_response_callback"] can be used to modify backend response headers. This callback has no default value.  Example signature:
 
@@ -317,7 +325,7 @@ with the appropriate shell/environment variables:
  ns_section ns/parameters {
    ns_param home       $home
    ns_param tcllibrary tcl
-   #ns_param systemlog  nsd.log
+   #ns_param systemlog nsd.log
  }
  
  ns_section ns/servers {

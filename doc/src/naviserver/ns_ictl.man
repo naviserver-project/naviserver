@@ -170,36 +170,36 @@ traces are called in LIFO (last in, first out) order.
 
 [para]
 All traces must be registered before server start up completes.  Valid
-[option tracewhen] options are:
+[option when] options are:
 
 [list_begin options]
 
-[opt_def allocate]
+[opt_def [option allocate]]
 Allocate interpreter traces fire when an interpreter is first allocated for a
 particular thread, for example at the beginning of connection processing, job
 queue processing, or for a scheduled procedure.
 
-[opt_def create]
+[opt_def [option create]]
 Create traces fires when a new interpreter is first created. They are the first
 to be called, and are always called for every interpreter.
 
-[opt_def deallocate]
+[opt_def [option deallocate]]
 Deallocate interpreter traces fire at the end of a transaction, after any
 [term getconn] traces if running in a connection thread.
 A deallocate trace is a good place for general resource cleanup.
 
-[opt_def delete]
+[opt_def [option delete]]
 Delete interpreter traces fire when an interpreter is deleted. Interpreters are
 often cached per-thread and reused multiple times, so a [opt delete] trace
 may only fire when a thread exits or when [cmd "ns_ictl markfordelete"] is
 called explicitly. They are the last trace to be called for an interp, and are
 always called, eventually.
 
-[opt_def freeconn]
+[opt_def [option freeconn]]
 Freeconn interpreter traces fire after connection processing is complete, before
 any deallocate interpreter traces.
 
-[opt_def getconn]
+[opt_def [option getconn]]
 Getconn interpreter traces fire after all allocate traces have run, before
 connection processing for a URL begins.
 
@@ -209,7 +209,7 @@ Tcl proc is registered as a connection filter, that will trigger the
 [option getconn] interpreter trace, otherwise it will fire later in the process
 when the registered proc, [term ADP], or Tcl page runs.
 
-[opt_def idle]
+[opt_def [option idle]]
 Idle traces fire, when a connection thread is idle (received no
 requests within the thread's timeout and when [term minthreads]
 is already reached, such that the timeouted thread is kept

@@ -268,7 +268,7 @@ specified, the default pool of the server is used as a source.
 mappings. When used, the specified path will be used literally, i.e.,
 only exactly this path, but no sub-paths are mapped.
 
-[opt_def mapspec ""]
+[opt_def [option mapspec] ""]
 A list of two or three arguments, containing an HTTP method, a path
 and optionally a context filter. The following example contains an HTTP
 method and a URL path.
