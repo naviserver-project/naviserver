@@ -102,7 +102,7 @@ get if via the package manager of your operating system.
 > - `main` (latest development code)  
 > - `release/4.99` (bug fixes for NaviServer 4.99.*)
 
-To complile official releases, execute:
+To compile official releases, execute:
 
 ```bash
 gunzip < naviserver-4.99.25.tar.gz | tar xvf -

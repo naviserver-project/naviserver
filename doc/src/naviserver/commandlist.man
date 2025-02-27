@@ -5,9 +5,9 @@
 [titledesc {NaviServer Commands}]
 
 [description]
-List of all available documented NaviServer commands.
+List of all documented and deprecated NaviServer commands.
 
-[section {Available commands}]
+[section {Alphabetical list of documented NaviServer commands}]
 
 [example_begin]
 [include commandlist_include.man]
