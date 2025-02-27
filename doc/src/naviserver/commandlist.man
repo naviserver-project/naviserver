@@ -95,5 +95,5 @@ List of all documented and deprecated NaviServer commands.
 [list_end]
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer "command list" deprecated]
 [manpage_end]
