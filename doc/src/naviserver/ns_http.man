@@ -77,6 +77,7 @@ Optional ID of the HTTP request to list.
     [opt [option "-cafile [arg value]"]] \
     [opt [option "-capath [arg value]"]] \
     [opt [option "-cert [arg value]"]] \
+    [opt [option "-connecttimeout [arg time]"]] \
     [opt [option "-done_callback [arg value]"]] \
     [opt [option "-expire [arg time]"]] \
     [opt [option "-headers [arg setId]"]] \
@@ -118,6 +119,7 @@ in a dedicated per-queue thread.
     [opt [option "-cafile [arg value]"]] \
     [opt [option "-capath [arg value]"]] \
     [opt [option "-cert [arg value]"]] \
+    [opt [option "-connecttimeout [arg time]"]] \
     [opt [option "-done_callback [arg value]"]] \
     [opt [option "-expire [arg time]"]] \
     [opt [option "-headers [arg setId]"]] \
@@ -188,8 +190,6 @@ Optional ID of the HTTP request to get statistics for.
 [list_end]
 
 [call [cmd "ns_http taskthreads"] \
-    [opt [option "-timeout [arg time]"]] \
-    [arg id] \
   ]
 
 Returns a list of Tcl dictionaries containing information about the state of the
