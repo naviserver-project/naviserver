@@ -82,21 +82,25 @@ test ns_http-1.5 {syntax: ns_http list} -body {
 test ns_http-1.6 {syntax: ns_http queue} -body {
     ns_http queue
 } -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-connecttimeout /time/? ?-decompress? ?-donecallback /value/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
-# should be  -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-connecttimeout /time/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
+# should be  -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-connecttimeout /time/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? /url/"}
 
 
 test ns_http-1.7 {syntax: ns_http run} -body {
     ns_http run
 } -returnCodes error -result {wrong # args: should be "ns_http run ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-connecttimeout /time/? ?-decompress? ?-donecallback /value/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
 
-# should be {wrong # args: should be "ns_http run ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-connecttimeout /time/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
+# should be {wrong # args: should be "ns_http run ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-connecttimeout /time/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? /url/"}
 
 
 test ns_http-1.8 {syntax: ns_http stats} -body {
     ns_http stats "" ?
 } -returnCodes error -result {wrong # args: should be "ns_http stats ?/id/?"}
 
-test ns_http-1.9 {syntax: ns_http wait} -body {
+test ns_http-1.9 {syntax: ns_http taskthreads} -body {
+    ns_http taskthreads ?
+} -returnCodes error -result {wrong # args: should be "ns_http taskthreads"}
+
+test ns_http-1.10 {syntax: ns_http wait} -body {
     ns_http wait
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]

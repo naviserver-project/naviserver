@@ -835,7 +835,8 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     int         result = TCL_OK, strict = 0;
     char       *urlString;
     Ns_ObjvSpec opts[] = {
-        {"-strict",     Ns_ObjvBool,    &strict,          INT2PTR(NS_TRUE)},
+        {"-strict",   Ns_ObjvBool,   &strict,  INT2PTR(NS_TRUE)},
+        {"--",        Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -894,7 +895,8 @@ NsTclParseHostportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     int         result = TCL_OK, strict = 0;
     char       *hostportString;
     Ns_ObjvSpec opts[] = {
-        {"-strict",     Ns_ObjvBool,    &strict,          INT2PTR(NS_TRUE)},
+        {"-strict",   Ns_ObjvBool,   &strict,  INT2PTR(NS_TRUE)},
+        {"--",        Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {

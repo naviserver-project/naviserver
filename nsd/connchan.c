@@ -1190,6 +1190,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
         {"-timeout",     Ns_ObjvTime,   &timeoutPtr,  NULL},
         {"-unix_socket", Ns_ObjvString, &udsPath,     NULL},
         {"-version",     Ns_ObjvString, &version,     NULL},
+        {"--",           Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   largs[] = {
@@ -1356,10 +1357,11 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         {"-cafile",   Ns_ObjvString, &caFile,      NULL},
         {"-capath",   Ns_ObjvString, &caPath,      NULL},
         {"-cert",     Ns_ObjvString, &cert,        NULL},
-        {"-insecure", Ns_ObjvBool,   &insecureInt, INT2PTR(NS_TRUE)},
         {"-hostname", Ns_ObjvString, &sniHostname, NULL},
+        {"-insecure", Ns_ObjvBool,   &insecureInt, INT2PTR(NS_TRUE)},
         {"-timeout",  Ns_ObjvTime,   &timeoutPtr,  NULL},
         {"-tls",      Ns_ObjvBool,   &doTLS,       INT2PTR(NS_TRUE)},
+        {"--",        Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   largs[] = {
@@ -1507,6 +1509,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
         {"-driver",  Ns_ObjvString, &driverName, NULL},
         {"-server",  Ns_ObjvServer, &servPtr, NULL},
         {"-bind",    Ns_ObjvBool,   &doBind, INT2PTR(NS_TRUE)},
+        {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec     largs[] = {
@@ -2990,6 +2993,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         {"-fin",        Ns_ObjvIndex, &fin,      &finValues},
         {"-mask",       Ns_ObjvBool,  &masked,   INT2PTR(NS_TRUE)},
         {"-opcode",     Ns_ObjvIndex, &opcode,   &opcodes},
+        {"--",          Ns_ObjvBreak, NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {

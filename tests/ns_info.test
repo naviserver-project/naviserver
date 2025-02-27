@@ -192,6 +192,14 @@ test ns_info-1.42 {syntax: ns_info winnt} -constraints with_deprecated -body {
     ns_info winnt x
 } -returnCodes error -result {wrong # args: should be "ns_info winnt"}
 
+test ns_info-1.43 {syntax: ns_info bindir} -body {
+    ns_info bindir x
+} -returnCodes error -result {wrong # args: should be "ns_info bindir"}
+
+test ns_info-1.44 {syntax: ns_info logdir} -body {
+    ns_info logdir x
+} -returnCodes error -result {wrong # args: should be "ns_info logdir"}
+
 
 #######################################################################################
 #  Functional tests

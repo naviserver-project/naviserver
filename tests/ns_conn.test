@@ -116,6 +116,10 @@ test ns_conn-1.1.24 {syntax: ns_conn form} -body {
     ns_conn form x
 } -returnCodes error -result {wrong # args: should be "ns_conn form ?-fallbackcharset /value/?"}
 
+test ns_conn-1.1.24.1 {syntax: ns_conn fragment} -body {
+    ns_conn fragment x
+} -returnCodes error -result {wrong # args: should be "ns_conn fragment"}
+
 test ns_conn-1.1.25 {syntax: ns_conn headerlength} -body {
     ns_conn headerlength x
 } -returnCodes error -result {wrong # args: should be "ns_conn headerlength"}

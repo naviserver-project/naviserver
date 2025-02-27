@@ -30,7 +30,7 @@ test ns_connchan-1.1.1 {syntax: ns_connchan callback} -body {
 
 test ns_connchan-1.1.3 {syntax: ns_connchan connect} -body {
     ns_connchan connect
-} -returnCodes error -result {wrong # args: should be "ns_connchan connect ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-insecure? ?-hostname /value/? ?-timeout /time/? ?-tls? /host/ /port/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan connect ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-hostname /value/? ?-insecure? ?-timeout /time/? ?-tls? ?--? /host/ /port/"}
 
 test ns_connchan-1.1.3 {syntax: ns_connchan close} -body {
     ns_connchan close
@@ -50,11 +50,11 @@ test ns_connchan-1.1.6 {syntax: ns_connchan list} -body {
 
 test ns_connchan-1.1.7 {syntax: ns_connchan listen} -body {
     ns_connchan listen
-} -returnCodes error -result {wrong # args: should be "ns_connchan listen ?-driver /value/? ?-server /server/? ?-bind? /address/ /port/ /script/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan listen ?-driver /value/? ?-server /server/? ?-bind? ?--? /address/ /port/ /script/"}
 
 test ns_connchan-1.1.8 {syntax: ns_connchan open} -body {
     ns_connchan open
-} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-driver /value/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-method /value/? ?-timeout /time/? ?-unix_socket /value/? ?-version /value/? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-driver /value/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-method /value/? ?-timeout /time/? ?-unix_socket /value/? ?-version /value/? ?--? /url/"}
 
 test ns_connchan-1.1.9 {syntax: ns_connchan read} -body {
     ns_connchan read
@@ -70,7 +70,7 @@ test ns_connchan-1.1.11 {syntax: ns_connchan write} -body {
 
 test ns_connchan-1.1.12 {syntax: ns_connchan wsencode} -body {
     ns_connchan wsencode
-} -returnCodes error -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin 0|1? ?-mask? ?-opcode continue|text|binary|close|ping|pong? /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin 0|1? ?-mask? ?-opcode continue|text|binary|close|ping|pong? ?--? /message/"}
 
 
 #
@@ -284,7 +284,7 @@ test ns_connchan-2.0 {ns_connchan wsencode, basic command flags} -body {
 } -cleanup {
     ns_unregister_op GET /conn
 } -returnCodes {error ok
-} -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin 0|1? ?-mask? ?-opcode continue|text|binary|close|ping|pong? /message/"}
+} -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin 0|1? ?-mask? ?-opcode continue|text|binary|close|ping|pong? ?--? /message/"}
 
 test ns_connchan-2.1.1 {ns_connchan wsencode with text} -constraints tcl86 -body {
     binary encode hex [ns_connchan wsencode -opcode text "Hello Wörld"]

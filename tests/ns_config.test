@@ -37,7 +37,7 @@ test ns_modulepath-1.0 {syntax: ns_modulepath} -body {
 test ns_section-1.0 {syntax: ns_section} -body {
     ns_section
 } -returnCodes error -result {invalid command name "ns_section"}
-# "ns_section" message should be {wrong # args: should be "ns_section /name/"}
+# "ns_section" message should be {wrong # args: should be "ns_section ?-update? ?--? /name/"}
 
 test ns_section-1.0 {syntax: ns_param} -body {
     ns_param

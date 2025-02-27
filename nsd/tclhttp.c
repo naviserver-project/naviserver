@@ -2321,15 +2321,22 @@ HttpMeminfoObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * HttpStatsObjCmd
+ * HttpStatsObjCmd --
  *
- *      Implements "ns_http stats".
+ *      This command implements "ns_http stats". It collects and returns
+ *      various statistics regarding the HTTP tasks managed by the server.
+ *      These statistics may include counts of processed tasks, queue lengths,
+ *      error occurrences, and timing information related to HTTP request
+ *      processing.
  *
  * Results:
- *      Standard Tcl result.
+ *      A standard Tcl result. On success, the interpreter result is set to a
+ *      Tcl list of dictionaries, with each dictionary containing statistics
+ *      for an HTTP task or thread.
  *
- * Side effects:
- *      None.
+ * Side Effects:
+ *      This command queries internal HTTP task management structures without
+ *      modifying any state.
  *
  *----------------------------------------------------------------------
  */
@@ -2472,15 +2479,20 @@ HttpStatsObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * HttpTaskthreadsObjCmd
+ * HttpTaskthreadsObjCmd --
  *
- *      Implements "ns_http taskthreads".
+ *      This command implements "ns_http taskthreads". It retrieves the list
+ *      of HTTP task processing thread information as a Tcl list of dictionaries,
+ *      where each dictionary contains details about an individual thread.
  *
  * Results:
- *      Standard Tcl result.
+ *      A standard Tcl result. On success, the result is a Tcl list with each
+ *      element being a dict that describes a thread (e.g., its identifier, state,
+ *      and other relevant metadata).
  *
- * Side effects:
- *      None.
+ * Side Effects:
+ *      Queries the underlying HTTP task queue and thread management structures
+ *      without modifying any state.
  *
  *----------------------------------------------------------------------
  */
@@ -2528,13 +2540,21 @@ HttpTaskthreadsObjCmd(
  *
  * HttpKeepalivesObjCmd
  *
- *      Implements "ns_http keepalives".
+ *      This command implements "ns_http keepalives". It retrieves information
+ *      about the current state of persistent (keepalive) HTTP connections
+ *      managed by the server. The command collects details such as the number
+ *      of active keepalive connections and other relevant statistics
+ *      associated with HTTP keepalive processing.
  *
  * Results:
- *      Standard Tcl result.
+ *      A standard Tcl result. On success, the interpreter result is set to a
+ *      Tcl list of dictionaries, with each dictionary containing details about
+ *      one or more keepalive connections.
  *
- * Side effects:
- *      None.
+ * Side Effects:
+ *      This command performs a read-only query on the internal connection data
+ *      structures and does not modify any server state.
+ *
  *
  *----------------------------------------------------------------------
  */
