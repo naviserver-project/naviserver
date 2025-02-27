@@ -1150,7 +1150,7 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
  ns_section ns/server/s1 {
    # ...
    #ns_param noticeDetail false   ;# Exclude server name and version from system responses
-   #ns_param stealthMode false      ;# Omit the Server header in HTTP responses
+   #ns_param stealthMode false    ;# Omit the Server header in HTTP responses
    # ...
  }
 [example_end]
