@@ -106,8 +106,8 @@ server.
 Return the list of modules to be loaded for the current virtual server.
 
 
-[call [cmd "ns_ictl gettraces"] [arg when]]
-Return the script of the specified trace.
+[call [cmd "ns_ictl gettraces"] allocate|create|deallocate|delete|freeconn|getconn|idle]
+Returns the script of the specified type of trace (callback).
 
 
 [call [cmd "ns_ictl markfordelete"] ]
@@ -141,11 +141,11 @@ second), queueing will be inevitable (unless the number of concurrent
 updates is adjusted).
 
 
-[call [cmd "ns_ictl runtraces"] [arg when] ]
-Run the scripts of the specified trace.
+[call [cmd "ns_ictl runtraces"] allocate|create|deallocate|delete|freeconn|getconn|idle ]
+Runs the scripts of the specified trace (callback).
 
 [call [cmd "ns_ictl save"] [arg script] ]
-Replace the interpreter initialization script for the current virtual
+Replaces the interpreter initialization script for the current virtual
 server.
 
 The newly saved script will be used to initialize newly created
@@ -153,9 +153,13 @@ interpreters. Existing interpreters will be reinitialized when
 [cmd "ns_ictl update"] is called.
 
 
-[call [cmd "ns_ictl trace"] [arg when] [arg script] [opt [arg "arg ..."]] ]
+[call [cmd "ns_ictl trace"] \
+        allocate|create|deallocate|delete|freeconn|getconn|idle \
+        [arg script] \
+        [opt [arg "arg ..."]] \
+        ]
 
-Register an interpreter [term trace] [arg script].
+Registers an interpreter [term trace] [arg script].
 
 [para]
 

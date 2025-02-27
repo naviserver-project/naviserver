@@ -29,7 +29,7 @@ to be executed at each of these stages.
 [call [cmd ns_register_adp] \
      [opt [option -noinherit]] \
      [opt [option "-expires [arg time]"]] \
-     [opt [option "-options [arg options]"]] \
+     [opt [option "-options autoabort|detailerror|displayerror|expire|cache|safe|singlescript|stricterror|trace|trimspace|stream"]] \
      [opt --] \
      [arg method] \
      [arg url] \
