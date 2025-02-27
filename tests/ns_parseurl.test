@@ -7,7 +7,7 @@ namespace import -force ::tcltest::*
 
 test ns_parseurl-1.0 {basic syntax: plain call} -body {
      ns_parseurl
-} -returnCodes error -result {wrong # args: should be "ns_parseurl ?-strict? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_parseurl ?-strict? ?--? /url/"}
 
 test ns_parseurl-1.1 {full URL, no port} -body {
     ns_parseurl http://openacs.org/www/t.html
@@ -469,7 +469,7 @@ test ns_absoluteurl-3.2c {base URL containing just protocol and host, no slash} 
 
 test ns_parsehostport-1.0 {basic syntax: plain call} -body {
      ns_parsehostport
-} -returnCodes error -result {wrong # args: should be "ns_parsehostport ?-strict? /hostport/"}
+} -returnCodes error -result {wrong # args: should be "ns_parsehostport ?-strict? ?--? /hostport/"}
 
 test ns_parsehostport-1.1 {Domain name, no port} -body {
     ns_parsehostport openacs.org
