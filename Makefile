@@ -26,7 +26,7 @@ endif
 distfiles = $(dirs) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
 	config.guess config.sub \
-	README NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
+	README.md NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in bitbucket-install.tcl
 
