@@ -206,6 +206,7 @@ build-doc:
 	$(CP) doc/images/manual/*.png doc/tmp/manual/
 	$(CP) doc/images/naviserver/*.png doc/tmp/naviserver/
 	$(CP) revproxy/doc/mann/*.png doc/tmp/revproxy/
+	$(CP) doc/commandlist_include.man doc/tmp/
 	@cd doc/tmp; \
 	for srcdir in `ls`; do \
 	    echo $$srcdir; \
