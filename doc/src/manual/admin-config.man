@@ -1284,12 +1284,13 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 
 [subsection {Per-Server Tcl-Source Locations}]
 
- You can also specify the locations of Tcl source files on a
- per-server basis. In the per-server [const tcl] section, the
- [const initfile] parameter defines the Tcl initialization file, and the
- [const library] parameter defines the directory for additional Tcl
- scripts loaded at server startup. Both may be given as absolute paths
- or as relative paths (resolved against [const home]).
+ You can specify the locations of Tcl source files on a per-server
+ basis. In the per-server [const tcl] section, the [const initfile]
+ parameter defines the Tcl initialization file to be executed during
+ server startup, and the [const library] parameter specifies the
+ directory containing additional Tcl scripts to be loaded. Both
+ parameters may be given as absolute paths or as relative paths
+ (resolved against [const home]).
 
 [example_begin]
  ns_section ns/server/SERVER1/tcl {
@@ -1298,19 +1299,81 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
  }
 [example_end]
 
-[subsection {Global and Per-Server Logfiles}]
+[section {Global and Per-Server Logfiles}]
 
- NaviServer maintains a single system log (üer default [const nsd.log])
+ NaviServer maintains a single system log (by default [const nsd.log])
  that aggregates system and application messages via [cmd ns_log]. In
- addition, each server can have its own log files - such as
+ addition, each server can have its own log files, such as
  [const access.log] (managed by the [term nslog] module) or
- [const httpclient.log] (configured in the [term httpclient] section).
- These per-server log files can be automatically rotated by enabling the
- boolean [term rolllog] parameter.
+ [const httpclient.log] (configured in the [term httpclient] section). All
+ per-server log files can be automatically rotated by enabling the
+ boolean [term rolllog] parameter in the section where the logfile is
+ defined.
 
- [para] Although there is no dedicated configuration parameter to
- control automatic rotation of the system log, you can schedule daily
- log rotation for the system log with the following command:
+ [para] For instance, the snippet below defines automated rolling for
+ the access log along with the other relevant parameters controlling
+ this log file:
+
+[example_begin]
+ ns_section ns/server/SERVER1/modules {
+    ns_param nslog   nslog
+ }
+ 
+ ns_section ns/server/SERVER1/module/nslog {
+    # ns_param	file		access.log
+    ns_param	rolllog		true
+    #
+    # ns_param	suppressquery	true	;# false, suppress query portion in log entry
+    # ns_param	logreqtime	true	;# false, include time to service the request
+    ns_param	logpartialtimes	true	;# false, include high-res start time and partial request durations
+    ns_param    logthreadname   true    ;# default: false; include thread name for linking with nsd.log
+    # ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
+    # ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
+    ns_param	masklogaddr     true    ;# false, mask IP address in log file for GDPR (like anonip IP anonymizer)
+    ns_param	maskipv4        255.255.255.0  ;# mask for IPv4 addresses
+    ns_param	maskipv6        ff:ff:ff:ff::  ;# mask for IPv6 addresses
+    # ...
+    # ns_param	maxbackup	100	 ;# 10, max number of backup log files
+    # ns_param	rollhour	0	 ;# 0, specify at which hour to roll
+    # ns_param	rollonsignal	true	 ;# false, perform roll on a sighup
+    # ns_param	rollfmt		%Y-%m-%d ;# format appended to log filename
+}
+[example_end]
+
+While the accesslog is activated, when the [term nslog] module is
+loaded and the full section is just for configuring this particular
+access log. 
+
+[para] the situation for the httpclient log is slightly
+different. Here, no extra module has to be loaded, but the logging is
+turned on via the [term logging] parameter. Since the [term httpclient]
+section is used for multiple purposes concerning HTTP client requests,
+the parameters are prefixed with [const log] to avoid potential
+confusions.
+
+[para] The snippet below defines automated rolling for
+the httpclient log along with the other relevant parameters controlling
+this log file:
+
+[example_begin]
+ ns_section ns/server/SERVER1/httpclient {
+    # ...
+    # ns_param	logfile		httpclient.log
+    ns_param	logging		on       ;# default: off
+    ns_param	logroll		true     ;# true, roll log files automatically
+    #
+    # ns_param	logmaxbackup	100      ;# 10, max number of backup log files
+    # ns_param	logrollhour	0        ;# 0, specify at which hour to roll
+    # ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
+    # ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
+    # ...
+}
+[example_end]
+
+ [para] For the system log, there is no no dedicated configuration
+ parameter to control automatic rotation of the system log. Automated
+ log rotation can be achieved via a scheduled procedure, as thow in
+ the following snippet.
 
 [example_begin]
  ns_schedule_daily 0 0 ns_logroll
@@ -1325,11 +1388,35 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 
  [para] By default, log files are rolled by appending a numerical
  suffix indicating their age. Alternatively, you can specify a custom
- roll format for all log files. For example, setting [term logrollfmt]
+ roll format for all log files. For example, setting [term rollfmt]
  to [const %Y-%m-%d] causes the log rotation process to append the
  actual date instead of a number. This method offers the advantage of
  stable log file names after rolling, which may simplify long-term log
  management and reduces backup requirements.
+
+[para]
+ The following nipped shows the parameters for cusomizing the system log.
+
+[example_begin]
+ ns_section ns/parameters {
+    # ...
+    # ns_param	logdir      	log
+    # ns_param	systemlog	nds.log
+    ns_param	logroll		on       ;# just enables rolling on signal
+    ns_param	logmaxbackup	100      ;# 10 is default
+    ns_param	logrollfmt	%Y-%m-%d ;# format appended to system log filename when rolled
+    # ns_param  logsec          false    ;# add timestamps in second resolution (default: true)
+    # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
+    # ns_param  logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
+    # ns_param  logthread       false    ;# add thread-info the log file lines (default: true)
+    # ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
+    # ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
+    # ns_param  logprefixintensity normal;# bright or normal
+    # ns_param  sanitizelogfiles 2       ;# default: 2; 0: none, 1: full, 2: human-friendly, 3: 2 with tab expansion
+    # ...
+}
+[example_end]
+
 
 
 [section {Stack Size}]
