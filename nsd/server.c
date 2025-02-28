@@ -755,7 +755,6 @@ typedef struct LogfileCtxData {
 } LogfileCtxData;
 
 typedef struct LogfileCtx {
-    NsServer *servPtr;
     const char *filename;
     LogfileCtxData *dataPtr;
 } LogfileCtx;
@@ -876,11 +875,11 @@ Ns_ServerLogGetFd(const char *server, const void *handle, const char *filename)
         Ns_MutexLock(&servPtr->vhost.logMutex);
         hPtr = Tcl_CreateHashEntry(&servPtr->vhost.logfileTable, filename, &isNew);
         if (isNew == 0) {
-            LogfileCtxData *dataPtr = Tcl_GetHashValue(hPtr);
+            const LogfileCtxData *dataPtr = Tcl_GetHashValue(hPtr);
             fd = dataPtr->fd;
             Ns_Log(Notice, "logfile getfd: return cached fd %d for '%s'", fd, filename);
         } else {
-            LogfileCtx ctx = {NULL, filename, NULL};
+            LogfileCtx ctx = {filename, NULL};
 
             ctx.dataPtr = ns_calloc(1u, sizeof(LogfileCtxData));
             ctx.dataPtr->handle = handle;
@@ -943,8 +942,7 @@ Ns_ServerLogCloseAll(const char *server, const void *handle)
         hPtr = Tcl_FirstHashEntry(&servPtr->vhost.logfileTable, &search);
 
         while (hPtr != NULL) {
-            LogfileCtx ctx = {servPtr,
-                              Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
+            LogfileCtx ctx = {Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
                               Tcl_GetHashValue(hPtr)
             };
             if (handle == ctx.dataPtr->handle) {
@@ -1010,8 +1008,7 @@ Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt,
 #ifdef PRINT_FULL_TABLE
         hPtr = Tcl_FirstHashEntry(&servPtr->vhost.logfileTable, &search);
         while (hPtr != NULL) {
-            LogfileCtx ctx = {servPtr,
-                              Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
+            LogfileCtx ctx = {Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
                               Tcl_GetHashValue(hPtr)
             };
             Ns_Log(Notice, "... fd %d '%s'", ctx.fd, ctx.filename);
@@ -1021,8 +1018,7 @@ Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt,
 
         hPtr = Tcl_FirstHashEntry(&servPtr->vhost.logfileTable, &search);
         while (hPtr != NULL) {
-            LogfileCtx ctx = {servPtr,
-                              Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
+            LogfileCtx ctx = {Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
                               Tcl_GetHashValue(hPtr)
             };
 
