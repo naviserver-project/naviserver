@@ -884,7 +884,9 @@ typedef struct NsServer {
         void                *serverRootArg;
         Ns_ConnLocationProc *connLocationProc;
         Ns_TclCallback      *connLocationArg;
+#ifdef NS_WITH_DEPRECATED
         Ns_LocationProc     *locationProc; /* Deprecated */
+#endif
         Tcl_HashTable        logfileTable;
         Ns_Mutex             logMutex;
         bool                 enabled;

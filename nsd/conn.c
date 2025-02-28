@@ -820,6 +820,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Tcl_DString *dest)
         location = (*servPtr->vhost.connLocationProc)(conn, dest, servPtr->vhost.connLocationArg);
         Ns_Log(Debug, "Ns_ConnLocation: locationproc returned <%s>", location);
 
+#ifdef NS_WITH_DEPRECATED
     } else if (servPtr->vhost.locationProc != NULL) {
         /*
          * Fall back to old style Ns_LocationProc.
@@ -831,7 +832,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Tcl_DString *dest)
             location = Tcl_DStringAppend(dest, location, TCL_INDEX_NONE);
             Ns_Log(Debug, "Ns_ConnLocation: old style locationproc returned <%s>", location);
         }
-
+#endif
     } else if (servPtr->vhost.enabled
                && ((headers = Ns_ConnHeaders(conn)) != NULL)
                && ((host = Ns_SetIGet(headers, "host")) != NULL)

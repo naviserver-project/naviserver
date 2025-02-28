@@ -760,6 +760,7 @@ typedef const char* (Ns_ServerRootProc)
 typedef char* (Ns_ConnLocationProc)
     (Ns_Conn *conn, Tcl_DString *dest, const Ns_TclCallback *cbPtr);
 
+#ifdef NS_WITH_DEPRECATED
 typedef int (Ns_LogProc)               /* Deprecated */
     (Tcl_DString *dsPtr, Ns_LogSeverity severity, const char *fmt, va_list ap);
 
@@ -768,6 +769,7 @@ typedef int (Ns_LogFlushProc)          /* Deprecated */
 
 typedef char *(Ns_LocationProc)        /* Deprecated */
     (Ns_Conn *conn);
+#endif
 
 /*
  * adpcmds.c:
@@ -1467,6 +1469,8 @@ Ns_DStringPush(Tcl_DString *dsPtr)
      NS_GNUC_DEPRECATED;
 #endif
 
+
+#ifdef NS_WITH_DEPRECATED_5_0
 NS_EXTERN char *Ns_DStringValue(const Tcl_DString *dsPtr) NS_GNUC_PURE
     NS_GNUC_DEPRECATED_FOR(Tcl_DStringValue);
 NS_EXTERN TCL_SIZE_T Ns_DStringLength(const Tcl_DString *dsPtr) NS_GNUC_PURE
@@ -1485,6 +1489,7 @@ NS_EXTERN void Ns_DStringSetLength(Tcl_DString *dsPtr, TCL_SIZE_T length)
     NS_GNUC_DEPRECATED_FOR(Tcl_DStringSetLength);
 NS_EXTERN void Ns_DStringTrunc(Tcl_DString *dsPtr, TCL_SIZE_T length)
     NS_GNUC_DEPRECATED_FOR(Tcl_DStringSetLength);
+#endif
 
 /*
  * event.c
@@ -2543,11 +2548,12 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
 NS_EXTERN size_t
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
-#endif
 
 NS_EXTERN Ns_ReturnCode
 Ns_ConnResetReturn(Ns_Conn *conn) NS_GNUC_CONST
     NS_GNUC_DEPRECATED;
+#endif
+
 
 /*
  * returnresp.c:
@@ -3047,12 +3053,12 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
-//#ifdef NS_WITH_DEPRECATED
+#ifdef NS_WITH_DEPRECATED_5_0
 NS_EXTERN ssize_t
 Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                  unsigned int flags)
     NS_GNUC_DEPRECATED_FOR(Ns_SockSendBufsEx);
-//#endif
+#endif
 
 NS_EXTERN ssize_t
 Ns_SockSendBufsEx(NS_SOCKET sock, const struct iovec *bufs, int nbufs,

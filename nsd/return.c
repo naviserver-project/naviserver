@@ -636,9 +636,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *mimeType, size_t length)
     Ns_ConnSetTypeHeader(conn, mimeType);
     Ns_ConnSetLengthHeader(conn, length, NS_FALSE);
 }
-#endif
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -660,6 +658,7 @@ Ns_ConnResetReturn(Ns_Conn *UNUSED(conn))
 {
     return NS_OK;
 }
+#endif
 
 
 /*
