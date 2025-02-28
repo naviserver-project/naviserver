@@ -816,7 +816,8 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
                 double dblValue;
 
                 if (Tcl_GetDouble(NULL, sep, &dblValue) != TCL_OK) {
-                    char *ptr = NULL, *p = sep;
+                    char *ptr = NULL;
+                    const char *p = sep;
                     long  fraction;
 
                     /*
