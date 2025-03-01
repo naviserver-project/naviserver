@@ -112,9 +112,9 @@ ns_section ns/parameters {
     #
     # Log settings (systemlog aka nsd.log, former error.log)
     #
-    ns_param    systemlog           nsd.log
+    #ns_param   systemlog           nsd.log  ;# default: nsd.log
     #ns_param   logdebug            true     ;# default: false
-    #ns_param   logroll             false    ;# default: true
+    #ns_param   logrollonsignal     false    ;# default: true
     #ns_param	logrollfmt          %Y-%m-%d ;# format appended to log filename
     #ns_param   logsec              false    ;# add timestamps in second resolution (default: true)
     #ns_param   logusec             true     ;# add timestamps in microsecond (usec) resolution (default: false)
@@ -531,8 +531,8 @@ ns_section ns/server/default/httpclient {
     #ns_param	logfile		httpclient.log
     #ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
     #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
-    #ns_param	logroll		true     ;# true, should server log files automatically
-    #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
+    #ns_param	logroll		true     ;# true, should server rotate log files automatically
+    #ns_param	logrollonsignal	true     ;# false, perform log rotation on SIGHUP
     #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
 }
 
@@ -564,7 +564,7 @@ ns_section ns/interps/CGIinterps {
 ns_section ns/server/default/module/nslog {
     ns_param   file                 access.log
     #ns_param   rolllog             true     ;# default: true; should server log files automatically
-    #ns_param   rollonsignal        false    ;# default: false; perform roll on a sighup
+    #ns_param   rollonsignal        false    ;# default: false; perform log rotation on SIGHUP
     #ns_param   rollhour            0        ;# default: 0; specify at which hour to roll
     ns_param    maxbackup           7        ;# default: 10; max number of backup log files
     #ns_param   rollfmt             %Y-%m-%d-%H:%M	;# format appended to log filename

@@ -391,8 +391,19 @@ NsConfigLog(void)
     severityConfig[Dev   ].enabled = Ns_ConfigBool(section, "logdev",    NS_FALSE);
     severityConfig[Notice].enabled = Ns_ConfigBool(section, "lognotice", NS_TRUE);
 
-    if (Ns_ConfigBool(section, "logroll", NS_TRUE) == NS_TRUE) {
-        flags |= LOG_ROLL;
+
+    {
+        bool rollonsignal = NS_TRUE;
+#ifdef NS_WITH_DEPRECATED_5_0
+        if (Ns_ConfigGetValue(section, "logroll") != NULL) {
+            Ns_LogDeprecatedParameter(section, "logroll", section, "logrollonsignal", NULL);
+            rollonsignal = Ns_ConfigBool(section, "logroll", rollonsignal);
+        }
+#endif
+        rollonsignal = Ns_ConfigBool(section, "logrollonsignal", rollonsignal);
+        if (rollonsignal) {
+            flags |= LOG_ROLL;
+        }
     }
     if (Ns_ConfigBool(section, "logsec", NS_TRUE) == NS_TRUE) {
         flags |= LOG_SEC;

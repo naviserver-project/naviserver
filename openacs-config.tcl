@@ -206,7 +206,6 @@ set directoryfile             "index.tcl index.adp index.html index.htm"
 ns_section ns/parameters {
     ns_param	home		$homedir
     ns_param    logdir          $logdir
-    ns_param	systemlog	nds.log
     ns_param	pidfile		nsd.pid
     ns_param	debug		$debug
 
@@ -243,13 +242,15 @@ ns_section ns/parameters {
     # Configuration of outgoing requests via ns_http
     #
     # ns_param    nshttptaskthreads  2     ;# default: 1; number of task threads for ns_http when running detached
-    # ns_param    autosni            false ;# default: true
+    # ns_param    autoSNI            false ;# default: true; activate SNI (Server Name Indication in TLS)
 
     #
     # Configuration of system log (nsd.log)
     #
+    # ns_param	systemlog	nsd.log  ;# default: nsd.log
+
     # Rolling of logfile:
-    ns_param	logroll		on
+    ns_param	logrollonsignal	on       ;# perform log rotation on SIGHUP
     ns_param	logmaxbackup	100      ;# 10 is default
     ns_param	logrollfmt	%Y-%m-%d ;# format appended to system log filename when rolled
     #
@@ -277,7 +278,7 @@ ns_section ns/parameters {
     # ns_param	schedsperthread     0     ;# number of scheduled jobs before thread exits
     # ns_param	schedlogminduration 2s    ;# print warnings when scheduled job takes longer than that
 
-    # Write asynchronously to log files (access log and error log)
+    # Write asynchronously to log files (access log, httpclient log, and system log)
     # ns_param	asynclogwriter	true		;# false
 
     #ns_param       mutexlocktrace       true   ;# default false; print durations of long mutex calls to stderr
@@ -857,8 +858,8 @@ ns_section ns/server/$server/httpclient {
     #ns_param	logfile		httpclient.log
     #ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
     #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
-    #ns_param	logroll		true     ;# true, should server log files automatically
-    #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
+    #ns_param	logroll		true     ;# true, should server rotate log files automatically
+    #ns_param	logrollonsignal	true     ;# false, perform log rotation on SIGHUP
     #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
 }
 
@@ -1029,7 +1030,7 @@ ns_section ns/server/$server/module/nslog {
     # ns_param	maxbackup	100	;# 10, max number of backup log files
     # ns_param	rolllog		true	;# true, should server log files automatically
     # ns_param	rollhour	0	;# 0, specify at which hour to roll
-    # ns_param	rollonsignal	true	;# false, perform roll on a sighup
+    # ns_param	rollonsignal	true	;# false, perform log rotation  on SIGHUP
     ns_param	rollfmt		%Y-%m-%d ;# format appended to log filename
 }
 
@@ -1327,11 +1328,11 @@ ns_section "ns/server/${server}/module/nssmtpd" {
 
     ns_param logging on ;# default: off
     ns_param logfile smtpsend.log
-    ns_param logrollfmt %Y-%m-%d ;# format appended to log filename
-    #ns_param logmaxbackup 100 ;# 10, max number of backup log files
-    #ns_param logroll true ;# true, should server log files automatically
-    #ns_param logrollonsignal true ;# false, perform roll on a sighup
-    #ns_param logrollhour 0 ;# 0, specify at which hour to roll
+    ns_param logrollfmt %Y-%m-%d   ;# format appended to log filename
+    #ns_param logmaxbackup 100     ;# 10, max number of backup log files
+    #ns_param logroll true         ;# true, should server rotate log files automatically
+    #ns_param logrollonsignal true ;# false, perform log rotation on SIGHUP
+    #ns_param logrollhour 0        ;# 0, specify at which hour to roll
 }
 ns_section ns/server/${server}/modules {
     if {$smtpdport ne ""} {ns_param nssmtpd nssmtpd}

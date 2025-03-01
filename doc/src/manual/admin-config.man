@@ -1021,7 +1021,7 @@ certificate validation and exception rules:
     ns_param     logrollfmt       %Y-%m-%d ;# format appended to log filename
     #ns_param    logmaxbackup     100      ;# 10, max number of backup log files
     #ns_param    logroll          true     ;# true, should server log files automatically
-    #ns_param    logrollonsignal  true     ;# false, perform roll on a sighup
+    #ns_param    logrollonsignal  true     ;# false, perform log rotation on SIGHUP
     #ns_param    logrollhour      0        ;# 0, specify at which hour to roll
  }
 [example_end]
@@ -1335,7 +1335,7 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
     # ...
     # ns_param	maxbackup	100	 ;# 10, max number of backup log files
     # ns_param	rollhour	0	 ;# 0, specify at which hour to roll
-    # ns_param	rollonsignal	true	 ;# false, perform roll on a sighup
+    # ns_param	rollonsignal	true	 ;# false, perform log rotation on SIGHUP
     # ns_param	rollfmt		%Y-%m-%d ;# format appended to log filename
 }
 [example_end]
@@ -1364,7 +1364,7 @@ this log file:
     #
     # ns_param	logmaxbackup	100      ;# 10, max number of backup log files
     # ns_param	logrollhour	0        ;# 0, specify at which hour to roll
-    # ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
+    # ns_param	logrollonsignal	true     ;# false, perform roll on SIGHUP
     # ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
     # ...
 }
@@ -1372,7 +1372,7 @@ this log file:
 
  [para] For the system log, there is no no dedicated configuration
  parameter to control automatic rotation of the system log. Automated
- log rotation can be achieved via a scheduled procedure, as thow in
+ log rotation can be achieved via a scheduled procedure, as shown in
  the following snippet.
 
 [example_begin]
@@ -1380,7 +1380,7 @@ this log file:
 [example_end]
 
  In configurations employing mass virtual hosting, a single server may
- generate multiple access.log files (one for every virtual server). In
+ generate multiple access log files (one for every virtual server). In
  such cases, the [const serverrootproc] callback dynamically computes
  the appropriate [const serverdir] to resolve relative log file paths.
  In this case, log rotation is applied to all log files
@@ -1401,8 +1401,8 @@ this log file:
  ns_section ns/parameters {
     # ...
     # ns_param	logdir      	log
-    # ns_param	systemlog	nds.log
-    ns_param	logroll		on       ;# just enables rolling on signal
+    # ns_param	systemlog	nsd.log
+    # ns_param	logrollonsignal	on       ;# enable log rotation on SIGHUP
     ns_param	logmaxbackup	100      ;# 10 is default
     ns_param	logrollfmt	%Y-%m-%d ;# format appended to system log filename when rolled
     # ns_param  logsec          false    ;# add timestamps in second resolution (default: true)

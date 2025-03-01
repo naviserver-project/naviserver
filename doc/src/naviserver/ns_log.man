@@ -190,9 +190,9 @@ Unregisters the previously registered log filter script identified by
 
 [call [cmd ns_logroll] ]
 
-Rolls the server system log. The behavior is independent of the
-configuration parameter [emph logroll]. See [cmd ns_rollfile] for
-details of log rolling.
+Rolls the system log. The behavior depends on the configuration
+parameter [emph logmaxbackup] and [emph logrollfmt].
+See [cmd ns_rollfile] for details of log rotation.
 
 [list_end]
 
@@ -300,7 +300,7 @@ included in the NaviServer distribution.
    #
    # Rolling of logfile:
  
-   ns_param	logroll		on
+   ns_param	logrollonsignal	on       ;# log rotation on SIGHUP (default: on)
    ns_param	logmaxbackup	100      ;# (default: 10)
    ns_param	logrollfmt	%Y-%m-%d ;# timestamp format appended to systemlog filename when rolled
  
