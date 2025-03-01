@@ -35,7 +35,7 @@ GetQuotedString(Tcl_DString *dsPtr, const unsigned char *source)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static const unsigned char *
-SkipWhitespace(const unsigned char *source)
+SkipWhitespace(const unsigned char *source) NS_GNUC_CONST
     NS_GNUC_NONNULL(1);
 
 /*

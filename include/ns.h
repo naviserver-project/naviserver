@@ -3271,7 +3271,7 @@ Ns_StrTrim(char *chars)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_StrTrimLeft(char *chars)
+Ns_StrTrimLeft(char *chars) NS_GNUC_CONST
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
@@ -3299,10 +3299,10 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
-Ns_Match(const char *a, const char *b);
+Ns_Match(const char *a, const char *b) NS_GNUC_CONST;
 
 NS_EXTERN const char *
-Ns_NextWord(const char *line)
+Ns_NextWord(const char *line) NS_GNUC_CONST
     NS_GNUC_NONNULL(1);
 
 #ifdef NS_WITH_DEPRECATED
@@ -3313,7 +3313,7 @@ Ns_StrNStr(const char *chars, const char *subString)
 #endif
 
 NS_EXTERN const char *
-Ns_StrCaseFind(const char *chars, const char *subString)
+Ns_StrCaseFind(const char *chars, const char *subString) NS_GNUC_CONST
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
@@ -3601,7 +3601,7 @@ Ns_ParseHttpTime(const char *chars)
  */
 
 NS_EXTERN const char *
-Ns_RelativeUrl(const char *url, const char *location);
+Ns_RelativeUrl(const char *url, const char *location) NS_GNUC_CONST;
 
 NS_EXTERN Ns_ReturnCode
 Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
