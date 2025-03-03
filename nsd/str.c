@@ -904,6 +904,27 @@ bool Ns_Is7bit(const char *bytes, size_t nrBytes)
     return ((mask1 | mask2 | mask3 | mask4 | last_mask) & 0x8080808080808080u) == 0u;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_UpperCharPos --
+ *
+ *      This function searches the given byte array for the first uppercase
+ *      character. It iterates over the first 'nrBytes' characters of the array,
+ *      and returns the index of the first character that is recognized as uppercase
+ *      by the CHARTYPE macro.
+ *
+ * Results:
+ *      Returns the zero-based index of the first uppercase character found in the
+ *      array. If no uppercase character is encountered within the specified range,
+ *      the function returns -1.
+ *
+ * Side Effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 ssize_t Ns_UpperCharPos(const char *bytes, size_t nrBytes)
 {
     size_t  i;
