@@ -66,6 +66,9 @@ This condition could never happen when the code is behaving correctly.
 [def Debug]
 General debugging.
 
+[def Deprecated]
+A deprecated function was used.
+
 [def Security]
 Something security relevant has occurred.
 

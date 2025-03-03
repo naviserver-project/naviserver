@@ -289,7 +289,7 @@ Ns_LogDeprecated(Tcl_Obj *const* objv, TCL_SIZE_T objc, const char *alternative,
     if (explanation != NULL) {
         Tcl_DStringAppend(&ds, explanation, TCL_INDEX_NONE);
     }
-    Ns_Log(Notice, "%s", Tcl_DStringValue(&ds));
+    Ns_Log(Deprecated, "%s", Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
 }
 
@@ -326,7 +326,7 @@ Ns_LogDeprecatedParameter(const char *oldSection, const char *oldParameter,
     if (explanation != NULL) {
         Tcl_DStringAppend(&ds, explanation, TCL_INDEX_NONE);
     }
-    Ns_Log(Notice, "%s", Tcl_DStringValue(&ds));
+    Ns_Log(Deprecated, "%s", Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
 }
 

@@ -214,14 +214,15 @@ static struct {
     LogColor          color;
     LogColorIntensity intensity;
 } severityConfig[640] = {
-    { "Notice",   NS_TRUE,  0, COLOR_DEFAULT, COLOR_NORMAL },
-    { "Warning",  NS_TRUE,  0, COLOR_DEFAULT, COLOR_BRIGHT },
-    { "Error",    NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
-    { "Fatal",    NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
-    { "Bug",      NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
-    { "Debug",    NS_FALSE, 0, COLOR_BLUE,    COLOR_NORMAL },
-    { "Dev",      NS_FALSE, 0, COLOR_GREEN,   COLOR_NORMAL },
-    { "Security", NS_TRUE,  0, COLOR_MAGENTA, COLOR_BRIGHT }
+    { "Notice",     NS_TRUE,  0, COLOR_DEFAULT, COLOR_NORMAL },
+    { "Warning",    NS_TRUE,  0, COLOR_DEFAULT, COLOR_BRIGHT },
+    { "Error",      NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Fatal",      NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Bug",        NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Debug",      NS_FALSE, 0, COLOR_BLUE,    COLOR_NORMAL },
+    { "Deprecated", NS_FALSE, 0, COLOR_MAGENTA, COLOR_NORMAL },
+    { "Dev",        NS_FALSE, 0, COLOR_GREEN,   COLOR_NORMAL },
+    { "Security",   NS_TRUE,  0, COLOR_MAGENTA, COLOR_BRIGHT }
 };
 
 static const Ns_LogSeverity severityMaxCount = (Ns_LogSeverity)(sizeof(severityConfig) / sizeof(severityConfig[0]));

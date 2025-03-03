@@ -127,7 +127,7 @@ set logwarning [ns_logctl severity warning on]
 
 test ns_log-2.0 {ns_log, unknown severity} -body {
     ns_log ? ?
-} -returnCodes error -match glob -result {unknown severity: "?": should be one of: Notice Warning Error Fatal Bug Debug Dev*}
+} -returnCodes error -match glob -result {unknown severity: "?": should be one of: Notice Warning Error Fatal Bug Debug Deprecated Dev*}
 
 test ns_log-3.1 {severity} -body {
     ns_log notice test
@@ -250,7 +250,7 @@ test ns_log-6.1 {configuration} -body {
 
 test ns_log-6.2 {configuration} -body {
     ns_logctl severity ?
-} -returnCodes error -match glob -result {unknown severity: "?": should be one of: Notice Warning Error Fatal Bug Debug Dev*}
+} -returnCodes error -match glob -result {unknown severity: "?": should be one of: Notice Warning Error Fatal Bug Debug Deprecated Dev*}
 
 test ns_log-6.3 {enable/disable} -body {
     set orig [ns_logctl severity debug]
@@ -263,7 +263,7 @@ test ns_log-6.3 {enable/disable} -body {
 
 test ns_log-6.4 {list severities} -body {
     ns_logctl severities
-} -match glob -result {Notice Warning Error Fatal Bug Debug Dev*}
+} -match glob -result {Notice Warning Error Fatal Bug Debug Deprecated Dev*}
 
 test ns_log-6.5 {bounds check} -body {
     ns_logctl flush
@@ -275,7 +275,7 @@ test ns_log-6.5 {bounds check} -body {
 
 test ns_log-6.6 {bounds check} -body {
     ns_log 640 test
-} -returnCodes error -match glob -result {unknown severity: "640": should be one of: Notice Warning Error Fatal Bug Debug Dev*}
+} -returnCodes error -match glob -result {unknown severity: "640": should be one of: Notice Warning Error Fatal Bug Debug Deprecated Dev*}
 
 
 
