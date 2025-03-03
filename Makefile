@@ -68,7 +68,7 @@ install-notice:
 	@echo ""
 	@echo "Congratulations, you have installed NaviServer."
 	@echo ""
-	@if [ "`whoami`" = "root" ]; then \
+	@if [ $(shell id -u) = 0 ]; then \
 	    if [ "x${HAVE_NSADMIN}" = "x" ] ; then \
 		echo "  When running as root, the server needs an unprivileged user to be"; \
 		echo "  specified (e.g. nsadmin). This user can be created on a Linux-like system with"; \
@@ -231,7 +231,13 @@ build-doc:
 # Testing:
 #
 
+ifeq ($(shell id -u),0)
+NS_TEST_CFG	= -u nsadmin -c -d -t $(srcdir)/tests/test.nscfg
+else
 NS_TEST_CFG	= -c -d -t $(srcdir)/tests/test.nscfg
+endif
+
+
 NS_TEST_ALL	= $(srcdir)/tests/all.tcl $(TESTFLAGS)
 NS_LD_LIBRARY_PATH	= \
    LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
@@ -268,6 +274,9 @@ $(PEM_PRIVATE):
 check: test
 
 test: all $(EXTRA_TEST_REQ)
+	@if [ $(shell id -u) = 0 ]; then \
+	    $(CHOWN) -R nsadmin $(srcdir)/tests ; \
+	fi;
 	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 	@for i in $(EXTRA_TEST_DIRS); do \
 		( cd $$i && $(MAKE) test ) || exit 1; \

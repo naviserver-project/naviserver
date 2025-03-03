@@ -51,6 +51,7 @@ LN               = /bin/ln
 MV               = /bin/mv
 CAT              = /bin/cat
 CHMOD            = /bin/chmod
+CHOWN            = /bin/chown
 OPENSSL          = openssl
 
 ifdef NSBUILD
