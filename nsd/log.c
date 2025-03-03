@@ -13,7 +13,7 @@
 /*
  * log.c --
  *
- *      Manage the global error log file.
+ *      Manage the global system log file.
  */
 
 #include "nsd.h"

@@ -3024,7 +3024,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
             /*
              * connPtr->reqPtr == NULL. Having no connPtr->reqPtr is normal
              * for "queued" requests but not for "running" requests. Report
-             * this in the error log.
+             * this in the sytem log.
              */
             Tcl_DStringAppendElement(dsPtr, "unknown");
             if (*state == 'r') {

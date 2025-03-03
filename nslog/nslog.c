@@ -926,7 +926,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     /*
      * Append the thread name, if requested.
-     * This eases to link access-log with error-log entries
+     * This eases to link access log with system log entries.
      */
     Tcl_DStringAppend(dsPtr, " ", 1);
     if ((logPtr->flags & LOG_THREADNAME) != 0) {

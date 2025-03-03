@@ -364,7 +364,7 @@ namespace eval ::revproxy {
 
 
     #
-    # Simple logger for error log, evaluating the ::revproxy::verbose
+    # Simple logger for system log, evaluating the ::revproxy::verbose
     # variable.
     #
     nsf::proc log {severity args} {

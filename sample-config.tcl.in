@@ -30,7 +30,7 @@
 # Absolute path to the installation directory
 set	homedir			@NAVISERVER@
 
-# Log directories (access log, error log, pidfile)
+# Log directories (access log, system log, pidfile)
 set	logdir			${homedir}/logs
 
 # You might prefer to keep the log-files in /var/log, so you could use
@@ -131,7 +131,7 @@ ns_section ns/parameters {
     # Log warnings when scheduled job takes longer than this time period
     ns_param	schedlogminduration     2s
 
-    # Write asynchronously to log files (access log and error log)
+    # Write asynchronously to log files (system log and server specific log files)
     ns_param	asynlogcwriter		true  ;# default: false
 
     # Print duractions of long mutex calls to stderr.
