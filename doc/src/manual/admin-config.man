@@ -1373,18 +1373,22 @@ this log file:
  [para] For the system log, there is no no dedicated configuration
  parameter to control automatic rotation of the system log. Automated
  log rotation can be achieved via a scheduled procedure, as shown in
- the following snippet.
+ the following snippet, which uses
+ [uri ../../naviserver/files/ns_schedule.html "ns_schedule_daily"]
+ to call [uri ../../naviserver/files/ns_log.html "ns_log"]
+ every day at midnight.
 
 [example_begin]
  ns_schedule_daily 0 0 ns_logroll
 [example_end]
 
  In configurations employing mass virtual hosting, a single server may
- generate multiple access log files (one for every virtual server). In
- such cases, the [const serverrootproc] callback dynamically computes
- the appropriate [const serverdir] to resolve relative log file paths.
- In this case, log rotation is applied to all log files
- configured for that server.
+ generate multiple access log files and httpclient log file (one for
+ every virtual server). In such cases, the [const serverrootproc]
+ callback dynamically computes the appropriate [const serverdir] to
+ resolve relative log file paths.  In this case, log rotation is
+ applied to all log files configured for that server. Note, that only
+ actively used (open) log files are subject to rotation.
 
  [para] By default, log files are rolled by appending a numerical
  suffix indicating their age. Alternatively, you can specify a custom
