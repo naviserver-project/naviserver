@@ -3318,7 +3318,7 @@ Ns_StrCaseFind(const char *chars, const char *subString) NS_GNUC_CONST
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
-Ns_StrIsValidHostHeaderContent(const char *chars)
+Ns_StrIsValidHostHeaderContent(const char *chars) NS_GNUC_CONST
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const unsigned char *
@@ -3334,7 +3334,7 @@ Ns_Is7bit(const char *bytes, size_t nrBytes) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t
-Ns_UpperCharPos(const char *bytes, size_t nrBytes)
+Ns_UpperCharPos(const char *bytes, size_t nrBytes) NS_GNUC_CONST
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
