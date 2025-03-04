@@ -365,7 +365,7 @@ Ns_DStringPush(Tcl_DString *dsPtr)
     ns_free(dsPtr);
 }
 #endif
- 
+
 /*----------------------------------------------------------------------
  *
  * Ns_DStringAppendPrintable --

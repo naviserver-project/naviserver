@@ -2873,7 +2873,7 @@ WalkCallback(Tcl_DString *dsPtr, const void *arg)
  *      error message is set in the interpreter.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
