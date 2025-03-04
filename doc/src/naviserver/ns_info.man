@@ -34,7 +34,7 @@ Returns file path to executable binary
 
 Returns the name of the [term bin] directory. The name is specified by the
 "bindir" parameter in the "ns/parameters" section, and defaults to
-"bin". The value is used for loading binary libraries for for
+"bin". The value is used for loading binary libraries for
 executables like the [term nsproxy] worker.
 
 

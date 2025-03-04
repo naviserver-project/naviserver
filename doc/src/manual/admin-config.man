@@ -564,7 +564,7 @@ under [const /var/www], it is used as the pageroot for this request.
      if {$host ne "" && [lb]file isdirectory $rootDir/$host [rb]} {
        #
        # A "host" header field was provided in the request, and a matching
-       # folder exists in the file system -> use it as "serverdir"
+       # folder exists in the filesystem -> use it as "serverdir"
        #
        set serverDir $rootDir/$host
      } else {
@@ -1387,7 +1387,7 @@ this log file:
  every virtual server). In such cases, the [const serverrootproc]
  callback dynamically computes the appropriate [const serverdir] to
  resolve relative log file paths.  In this case, log rotation is
- applied to all log files configured for that server. Note, that only
+ applied to all log files configured for that server. Note that only
  actively used (open) log files are subject to rotation.
 
  [para] By default, log files are rolled by appending a numerical
@@ -1395,11 +1395,11 @@ this log file:
  roll format for all log files. For example, setting [term rollfmt]
  to [const %Y-%m-%d] causes the log rotation process to append the
  actual date instead of a number. This method offers the advantage of
- stable log file names after rolling, which may simplify long-term log
+ stable log filenames after rolling, which may simplify long-term log
  management and reduces backup requirements.
 
 [para]
- The following nipped shows the parameters for cusomizing the system log.
+ The following nipped shows the parameters for customizing the system log.
 
 [example_begin]
  ns_section ns/parameters {
