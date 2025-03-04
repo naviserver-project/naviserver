@@ -203,8 +203,9 @@ ns_strncopy(const char *old, ssize_t size)
  *
  * ns_strdup --
  *
- *      Duplicates the provided null-terminated string by allocating new memory
- *      and copying its contents.
+ *      Duplicates the provided null-terminated string by allocating new
+ *      memory and copying its contents. The input string must not be NULL,
+ *      otherwise use ns_strcopy().
  *
  * Results:
  *      Returns a pointer to a newly allocated copy of the input string, including
