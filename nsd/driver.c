@@ -5556,16 +5556,11 @@ SockSetServer(Sock *sockPtr)
                    "fall back to configured location '%s'",
                    host, drvPtr->location);
         } else {
-            static NS_THREAD_LOCAL Tcl_DString locationDs;
-            static NS_THREAD_LOCAL bool initialized;
-            const char *hostName = NULL;
+            Tcl_DString    locationDs;
+            const char    *hostName = NULL;
             unsigned short hostPort = 0;
 
-            if (!initialized) {
-                Tcl_DStringInit(&locationDs);
-                initialized = NS_TRUE;
-            }
-            Tcl_DStringSetLength(&locationDs, 0);
+            Tcl_DStringInit(&locationDs);
 
             if (reqPtr != NULL) {
                 hostName = reqPtr->request.host;
