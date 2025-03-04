@@ -22,7 +22,7 @@
 /*
  *----------------------------------------------------------------------
  *
- * ns_realloc, ns_malloc, ns_calloc, ns_free, ns_strdup, ns_strcopy --
+ * ns_realloc, ns_malloc, ns_calloc, ns_free, ns_strdup --
  *
  *      Memory allocation wrappers which either call the platform
  *      versions or the fast pool allocator for a per-thread pool.
@@ -130,6 +130,24 @@ ns_calloc(size_t num, size_t esize)
 }
 #endif /* defined(SYSTEM_MALLOC) */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_strcopy --
+ *
+ *      Creates and returns a duplicate of the provided string. If the input
+ *      pointer is NULL, the function returns NULL. Otherwise, it delegates to
+ *      ns_strdup() to perform the duplication.
+ *
+ * Results:
+ *      A pointer to the newly allocated copy of the input string, including
+ *      the terminating null byte, or NULL if the input is NULL.
+ *
+ * Side Effects:
+ *      Allocates memory using ns_malloc via ns_strdup().
+ *
+ *----------------------------------------------------------------------
+ */
 char *
 ns_strcopy(const char *old)
 {
