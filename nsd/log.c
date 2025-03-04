@@ -220,7 +220,7 @@ static struct {
     { "Fatal",      NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
     { "Bug",        NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
     { "Debug",      NS_FALSE, 0, COLOR_BLUE,    COLOR_NORMAL },
-    { "Deprecated", NS_FALSE, 0, COLOR_MAGENTA, COLOR_NORMAL },
+    { "Deprecated", NS_TRUE,  0, COLOR_MAGENTA, COLOR_NORMAL },
     { "Dev",        NS_FALSE, 0, COLOR_GREEN,   COLOR_NORMAL },
     { "Security",   NS_TRUE,  0, COLOR_MAGENTA, COLOR_BRIGHT }
 };

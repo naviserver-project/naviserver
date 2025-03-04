@@ -277,8 +277,8 @@ enum {
     Fatal,
     Bug,
     Debug,
-    Dev,
     Deprecated,
+    Dev,
     Security,
     PredefinedLogSeveritiesCount
 };
