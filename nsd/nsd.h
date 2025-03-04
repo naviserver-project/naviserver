@@ -443,6 +443,7 @@ typedef struct Driver {
     Ns_DriverCloseProc      *closeProc;
     Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
 
+    ssize_t                              locationLength;
     const char *path;                   /* Path in the configuration namespace */
     const char *defserver;              /* default server, might be NULL */
     Tcl_HashTable hosts;                /* Virtual hosts mapping to server */

@@ -95,6 +95,7 @@ const struct {
 typedef struct ServerMap {
     NsServer        *servPtr;
     NS_TLS_SSL_CTX  *ctx;
+    TCL_SIZE_T       locationLength;
     char             location[1];
 } ServerMap;
 
@@ -764,6 +765,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
             mapPtr->servPtr = servPtr;
             mapPtr->ctx = ctx;
             memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
+            mapPtr->locationLength = dsPtr->length;
 
             Tcl_SetHashValue(hPtr, mapPtr);
             /*
@@ -1387,7 +1389,9 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      */
     drvPtr->location = Ns_ConfigGetValue(section, "location");
     if (drvPtr->location != NULL && (strstr(drvPtr->location, "://") != NULL)) {
-        drvPtr->location = ns_strdup(drvPtr->location);
+        ssize_t locationLength = (ssize_t)strlen(drvPtr->location);
+        drvPtr->location = ns_strncopy(drvPtr->location, locationLength);
+        drvPtr->locationLength = locationLength;
     }
 
     /*
@@ -5529,7 +5533,7 @@ SockSetServer(Sock *sockPtr)
         if (sockPtr->servPtr == NULL) {
             sockPtr->servPtr  = mapPtr->servPtr;
         }
-        sockPtr->location = mapPtr->location;
+        sockPtr->location = ns_strncopy(mapPtr->location, mapPtr->locationLength);
         Ns_Log(Debug, "SockSetServer: get location from mapping '%s'", sockPtr->location);
     } else {
         /*
@@ -5547,7 +5551,7 @@ SockSetServer(Sock *sockPtr)
         Ns_Log(Debug, "SockSetServer: there is no predefined mapping for server '%s'", host);
 
         if (drvPtr->location != NULL) {
-            sockPtr->location = drvPtr->location;
+            sockPtr->location = ns_strncopy(drvPtr->location, drvPtr->locationLength);
             Ns_Log(Debug, "SockSetServer: there is no virtual host mapping for host '%s',"
                    "fall back to configured location '%s'",
                    host, drvPtr->location);
@@ -5572,7 +5576,7 @@ SockSetServer(Sock *sockPtr)
                                   hostName != NULL ? hostName : Ns_SockGetAddr((Ns_Sock *)sockPtr),
                                   hostPort != 0 ? hostPort : Ns_SockGetPort((Ns_Sock *)sockPtr),
                                   drvPtr->defport);
-            sockPtr->location = locationDs.string;
+            sockPtr->location = ns_strncopy(locationDs.string, locationDs.length);
             if (hostName != NULL && sockPtr->servPtr != NULL) {
                 Ns_Log(Notice, "SockSetServer: serving request to server '%s'"
                        " with untrusted location '%s'",

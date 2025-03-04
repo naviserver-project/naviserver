@@ -588,7 +588,11 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         connPtr->drvPtr               = sockPtr->drvPtr;
         connPtr->poolPtr              = poolPtr;
         connPtr->server               = servPtr->server;
-        connPtr->location             = ns_strncopy(sockPtr->location, -1);
+        /*
+         * sockPtr->location is always a mallocated string provided by the
+         * driver, no need to strncopy it here.
+         */
+        connPtr->location             = sockPtr->location;
         connPtr->flags                = sockPtr->flags;
         if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0u) {
             connPtr->acceptTime       = *nowPtr;
