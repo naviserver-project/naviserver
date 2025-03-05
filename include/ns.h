@@ -3026,7 +3026,7 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState, unsigned long recv
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SockSetSendErrno(Ns_Sock *sock, unsigned long sendErrno) NS_GNUC_PURE
+Ns_SockSetSendErrno(Ns_Sock *sock, unsigned long sendErrno)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN unsigned long
