@@ -243,7 +243,8 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState, unsigned long recv
  *
  * Ns_SockSetSendErrno --
  *
- *      Set the errono send operation in the Sock structure.
+ *      Set the error code (POSIX or the masked OpenSSL error code) for the
+ *      send operation in the Sock structure.
  *
  * Results:
  *      None.
@@ -257,6 +258,30 @@ void
 Ns_SockSetSendErrno(Ns_Sock *sock, unsigned long sendErrno)
 {
     ((Sock *)sock)->sendErrno = sendErrno;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockSetSendErrno --
+ *
+ *      Sets the error code for the send operation in the Sock structure.
+ *      This error code may represent a standard POSIX error or a masked
+ *      OpenSSL error (as returned by ERR_get_error()), and is stored in
+ *      the 'sendErrno' member of the Sock structure.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updates the 'sendErrno' field in the given Sock structure.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned long
+Ns_SockGetSendErrno(Ns_Sock *sock)
+{
+    return ((Sock *)sock)->sendErrno;
 }
 
 
