@@ -17,7 +17,7 @@ cleanup, lifetime, synchronization etc.
 
 [call [cmd ns_cleanup] ]
 
-Cleanup the interpreter. This function is used to close all currently
+Performs an interpreter cleanup. This function is used to close all currently
 open files, to destroy the global variables, destroy the (volatile)
 ns_sets, to abort all running requests and to call other cleanup callbacks.
 The function is called typically internally, e.g. at the end of a
@@ -26,8 +26,9 @@ connection thread.
 
 [call [cmd ns_reinit] ]
 
-Cleanup and initialize the interpreter. This is used for long running detached
-threads to avoid resource leaks and/or missed state changes.
+Performs an interpreter cleanup and re-initializes the
+interpreter. This is used for long running detached threads to avoid
+resource leaks and/or missed state changes.
 
 [example_begin]
  ns_thread create {
@@ -89,21 +90,34 @@ this threshould. In such cases it is possible that some request will
 be still use the previous blueprint (similar to "eventually
 consistent" in distributed database systems).
 
+
 [call [cmd "ns_ictl epoch"] ]
-Return the epoch (version) of the interpreter initialization script for the
+Returns the epoch (version) of the interpreter initialization script for the
 current virtual server.
 
 The epoch increases by 1 whenever [cmd "ns_ictl save"] is called, such as by
 [cmd ns_eval].
 
+[example_begin]
+ % ns_ictl epoch
+ 1
+[example_end]
+
 
 [call [cmd "ns_ictl get"] ]
-Return the interpreter initialization script for the current virtual
+Returns the interpreter initialization script for the current virtual
 server.
 
 
-[call [cmd "ns_ictl getmodules"] ]
-Return the list of modules to be loaded for the current virtual server.
+[call [cmd "ns_ictl getmodules"] \
+	[opt [option "-server [arg server]"]] \
+]
+Returns the list of modules to be loaded for the current or specified server.
+
+[example_begin]
+ % ns_ictl getmodules
+ nsdb nslog nscp
+[example_end]
 
 
 [call [cmd "ns_ictl gettraces"] allocate|create|deallocate|delete|freeconn|getconn|idle]
@@ -111,14 +125,14 @@ Returns the script of the specified type of trace (callback).
 
 
 [call [cmd "ns_ictl markfordelete"] ]
-Mark the interpreter for deletion after the [term deallocate] interpreter traces
+Marks the interpreter for deletion after the [term deallocate] interpreter traces
 and have run. This is useful when it is necessary to delete an interp after it
 has been modified in a way that cannot be safely cleaned up, such as by the
 TclPro debugger.
 
 
 [call [cmd "ns_ictl maxconcurrentupdates"] [opt [arg max] ]]
-Query or set the maximum number of automatic concurrent updates when
+Queries or sets the maximum number of automatic concurrent updates when
 the epoch changes. By default, this value is set to 1000 (practically
 unlimited).
 
@@ -222,25 +236,14 @@ connection threads.
 
 
 [call [cmd "ns_ictl update"] ]
-Re-run the interpreter initialization script if it has changed since this
+Re-runs the interpreter initialization script if it has changed since this
 interpreter was last initialized.
 
 [list_end]
 
 
 
-[section EXAMPLES]
 
-[example_begin]
- % ns_ictl epoch
- 1
-[example_end]
-
-
-[example_begin]
- % ns_ictl getmodules
- nsdb nslog nscp
-[example_end]
 
 [section {Configuration}]
 

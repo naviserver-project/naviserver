@@ -1196,8 +1196,12 @@ ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     const NsInterp *itPtr = (const NsInterp *)clientData;
     const NsServer *servPtr = itPtr->servPtr;
     int             result = TCL_OK;
+    Ns_ObjvSpec opts[] = {
+        {"-server", Ns_ObjvServer,  &servPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
