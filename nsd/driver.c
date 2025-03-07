@@ -2220,8 +2220,8 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
                     sockPtr->sendErrno = (unsigned long)sockErr;
                 }
             } else {
-                Ns_Log(Notice, "... NsDriverSend: got error code via sendErrno %ld for driver %s",
-                       sockPtr->sendErrno, drvPtr->threadName);
+                Ns_Log(Notice, "... NsDriverSend: sock %d got error code via sendErrno %.8lx for driver %s",
+                       sockPtr->sock, sockPtr->sendErrno, drvPtr->threadName);
             }
         }
     } else {
