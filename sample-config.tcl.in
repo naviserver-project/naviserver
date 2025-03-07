@@ -753,10 +753,10 @@ ns_section ns/interps/CGIinterps {
 ########################################################################
 
 ns_section ns/server/${server}/module/nscp {
-    ns_param	address			127.0.0.1
     ns_param	port			9999
-    ns_param	echopassword		true
-    ns_param	cpcmdlogging		false
+    ns_param	address			127.0.0.1 ;# default: 127.0.0.1 or ::1 for IPv6
+    #ns_param	echopasswd		on	  ;# default: off
+    #ns_param	cpcmdlogging		on	  ;# default: off
 }
 ns_section ns/server/${server}/module/nscp/users {
     ns_param	user			"nsadmin:t2GqvvaiIUbF2:"

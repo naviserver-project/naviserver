@@ -578,8 +578,10 @@ ns_section ns/server/default/module/nslog {
 }
 
 ns_section ns/server/default/module/nscp {
-    ns_param   port     $nscpport
-    #ns_param   address  0.0.0.0
+    ns_param  port     $nscpport
+    ns_param address  127.0.0.1    ;# default: 127.0.0.1 or ::1 for IPv6
+    #ns_param echopasswd on        ;# default: off
+    #ns_param cpcmdlogging on      ;# default: off
 }
 
 ns_section ns/server/default/module/nscp/users {

@@ -251,7 +251,7 @@ Ns_ModuleInit(const char *server, const char *module)
         modPtr->server = server;
         modPtr->addr = ns_strcopy(addr);
         modPtr->port = port;
-        modPtr->echo = Ns_ConfigBool(section, "echopasswd", NS_TRUE);
+        modPtr->echo = Ns_ConfigBool(section, "echopasswd", NS_FALSE);
         modPtr->commandLogging = Ns_ConfigBool(section, "cpcmdlogging", NS_FALSE);
 
         LoadUsers(modPtr, server, module);
