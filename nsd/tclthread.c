@@ -1008,7 +1008,7 @@ MutexLockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
  *      could not be acquired.
  *
  * Results:
- *      A standard Tcl result with an integer value (non-zero if the
+ *      A standard Tcl result with an integer value (nonzero if the
  *      lock was acquired, zero otherwise).
  *
  * Side effects:

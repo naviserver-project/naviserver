@@ -744,7 +744,7 @@ done:
  *
  * NsUrlToDictObj --
  *
- *      Converts a Ns_URL structure into a Tcl dictionary object.
+ *      Converts an Ns_URL structure into a Tcl dictionary object.
  *      Each non-null component of the URL (protocol, userinfo, host, port,
  *      path, tail, query, fragment) is added as a key/value pair to the
  *      resulting dictionary. The keys are short string identifiers (e.g.,
@@ -753,7 +753,7 @@ done:
  *
  * Parameters:
  *      interp  - The Tcl interpreter to be used for creating Tcl objects.
- *      urlPtr  - Pointer to a Ns_URL structure containing the parsed URL.
+ *      urlPtr  - Pointer to an Ns_URL structure containing the parsed URL.
  *
  * Results:
  *      Returns a Tcl_Obj* that is a dictionary representation of the URL.
