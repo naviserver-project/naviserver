@@ -272,6 +272,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     nsconf.state.started = NS_FALSE;
     Ns_MutexUnlock(&nsconf.state.lock);
 
+    /*
+     * We need the name of the executable already in the test mode.
+     */
+    nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
+
     if (testMode) {
         const char *fileContent;
 
@@ -484,8 +489,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     NsBlockSignals(debug);
 
 #endif /* ! _WIN32 */
-
-    nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     /*
      * Find and read configuration file, if given at the command line, just use it,
