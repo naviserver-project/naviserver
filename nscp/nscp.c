@@ -31,6 +31,7 @@ typedef struct Mod {
     unsigned short port;
     bool echo;
     bool commandLogging;
+    bool allowLoopbackEmptyUser;
 } Mod;
 
 static Ns_ThreadProc EvalThread;
@@ -44,6 +45,7 @@ typedef struct Sess {
     Mod *modPtr;
     const char *user;
     int id;
+    bool viaLoopback;
     NS_SOCKET sock;
     struct NS_SOCKADDR_STORAGE sa;
 } Sess;
@@ -82,8 +84,6 @@ static const unsigned char do_echo[]    = {TN_IAC, TN_DO,   TN_ECHO};
 static const unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
 static const unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
 static const unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
-
-static const char *NS_EMPTY_STRING = "";
 
 /*
  * Define the version of the module (usually 1).
@@ -125,15 +125,6 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
 
     Tcl_InitHashTable(&localModPtr->users, TCL_STRING_KEYS);
     (void) Ns_ConfigSectionPath(&set, server, module, "users", NS_SENTINEL);
-
-    /*
-     * In case, no users are configured, and nscp is listening on the loopback
-     * address, create automatically a user with an empty name and no
-     * password.
-     */
-    if (Ns_SetSize(set) == 0u && STREQ(localModPtr->addr, NS_IP_LOOPBACK)) {
-        Ns_SetUpdateSz(set, "user", 4, "::", 2);
-    }
 
     /*
      * Process the setup ns_set
@@ -253,6 +244,7 @@ Ns_ModuleInit(const char *server, const char *module)
         modPtr->port = port;
         modPtr->echo = Ns_ConfigBool(section, "echopasswd", NS_FALSE);
         modPtr->commandLogging = Ns_ConfigBool(section, "cpcmdlogging", NS_FALSE);
+        modPtr->allowLoopbackEmptyUser = Ns_ConfigBool(section, "allowLoopbackEmptyUser", NS_FALSE);
 
         LoadUsers(modPtr, server, module);
 
@@ -391,15 +383,16 @@ EvalThread(void *arg)
     /*
      * Initialize the thread and login the user.
      */
+    ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString));
 
     Tcl_DStringInit(&ds);
     Tcl_DStringInit(&unameDS);
     Ns_DStringPrintf(&ds, "-nscp:%d-", sessPtr->id);
     Ns_ThreadSetName("%s", ds.string);
     Tcl_DStringSetLength(&ds, 0);
-    Ns_Log(Notice, "nscp: %s connected",
-           ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
+    sessPtr->viaLoopback = STREQ(ipString, "::1") || (strncmp(ipString, "127.", 4u) == 0);
 
+    Ns_Log(Notice, "nscp: %s connected (loopback %d)", ipString, sessPtr->viaLoopback);
     if (!Login(sessPtr, &unameDS)) {
         goto done;
     }
@@ -442,7 +435,7 @@ retry:
         while (ds.length > 0 && ds.string[ds.length-1] == '\n') {
             Tcl_DStringSetLength(&ds, ds.length-1);
         }
-        if (STREQ(ds.string, NS_EMPTY_STRING)) {
+        if (ds.length == 0) {
             goto retry; /* Empty command - try again. */
         }
 
@@ -613,21 +606,79 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 
     Tcl_DStringInit(&uds);
     Tcl_DStringInit(&pds);
-    if (GetLine(sessPtr->sock, "login: ", &uds, NS_TRUE) &&
-        GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)) {
-        const Tcl_HashEntry *hPtr;
-        const char          *pass;
+    if (GetLine(sessPtr->sock, "login: ", &uds, NS_TRUE)
+        && GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)
+        ) {
+        const char *pass;
+        bool        nscpUserLookup = NS_TRUE;
 
         user = Ns_StrTrim(uds.string);
         pass = Ns_StrTrim(pds.string);
-        hPtr = Tcl_FindHashEntry(&sessPtr->modPtr->users, user);
-        if (hPtr != NULL) {
-            const char *encpass = Tcl_GetHashValue(hPtr);
-            char  buf[NS_ENCRYPT_BUFSIZE];
 
-            (void) Ns_Encrypt(pass, encpass, buf);
-            if (STREQ(buf, encpass)) {
+        /*
+         * Authentication logic:
+         *   - If the username is empty, the connection originates from a
+         *     loopback address, and the configuration variable permitting
+         *     unauthenticated access is enabled, accept the login without
+         *     further authentication.
+         *   - Otherwise, if a username is provided, attempt to authenticate
+         *     using the nsperm module (if loaded). If nsperm is not
+         *     available, fall back to using the control port users.
+         */
+
+        if (*user == '\0' && sessPtr->viaLoopback) {
+            ok = NS_TRUE;
+        } else {
+            int         rc;
+            Tcl_DString scriptDs;
+            const char *resultString;
+            Tcl_Interp *interp = Ns_TclAllocateInterp(sessPtr->modPtr->server);
+
+            Tcl_DStringInit(&scriptDs);
+            Ns_DStringPrintf(&scriptDs,
+                             "expr {{nsperm} in [ns_ictl getmodules] && [ns_perm checkpass {%s} {%s}] eq {}}",
+                             user, pass);
+            rc = Tcl_EvalEx(interp, scriptDs.string, scriptDs.length, 0);
+            resultString = Tcl_GetString(Tcl_GetObjResult(interp));
+            //Ns_Log(Notice, "rc %d result '%s'", rc, resultString);
+
+            if (rc == 0 && *resultString == '1') {
+                /*
+                 * The "nsperm" module is installed, login is ok.
+                 */
                 ok = NS_TRUE;
+            } else if (rc == 0 && *resultString == '0') {
+                /*
+                 * The "nsperm" module is not installed, use nscpUserLookup.
+                 */
+            } else if (rc == 1 && STREQ(resultString, "user not found")) {
+                /*
+                 * The "nsperm" module is installed, but user is unknown.
+                 * Reject the login attempt.
+                 */
+                nscpUserLookup = NS_FALSE;
+            } else if (rc == 1 && STREQ(resultString, "incorrect password")) {
+                /*
+                 * The "nsperm" module is installed, but the password is
+                 * incorrect.  Reject the login attempt.
+                 */
+                nscpUserLookup = NS_FALSE;
+            }
+            Ns_TclDeAllocateInterp(interp);
+            Tcl_DStringFree(&scriptDs);
+        }
+
+        if (ok == NS_FALSE && nscpUserLookup) {
+            const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&sessPtr->modPtr->users, user);
+
+            if (hPtr != NULL) {
+                const char *encpass = Tcl_GetHashValue(hPtr);
+                char  buf[NS_ENCRYPT_BUFSIZE];
+
+                (void) Ns_Encrypt(pass, encpass, buf);
+                if (STREQ(buf, encpass)) {
+                    ok = NS_TRUE;
+                }
             }
         }
     }

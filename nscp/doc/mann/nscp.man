@@ -15,44 +15,53 @@
 
 [section {Introduction}]
 
- NaviServer includes a control port interface that can be enabled by
- loading the nscp module. With this interface, you can use a telnet
- client to connect to a specific host and port and then administer the
- server and execute database commands in the running server.
+ NaviServer provides a control port interface that can be enabled by
+ loading the nscp module. This interface lets you connect to a
+ specified host and port using a telnet client to administer the
+ server and execute database commands on the running system.
 
 [para]
 
- The control port interface is implemented in Tcl. Within the control
- port, you can execute virtually any Tcl command available in the Tcl
- libraries and ADP pages—with the exception of the commands requiring
- a connection thread (e.g. all subcommands of [cmd ns_conn] except
- [cmd "ns_conn isconnected"]).
+ The control port offers direct access to the Tcl API of the running
+ server. Once logged in, you can execute nearly any Tcl command
+ available in the Tcl libraries with the exception of
+ commands that require a dedicated connection thread (for example, all
+ subcommands of [cmd ns_conn] except [cmd "ns_conn isconnected"]).
 
 [para]
 
- To effectively administer a server through the control port, ensure
+ To effectively manage the server through the control port, ensure
  that:
 
  [list_begin itemized]
- [item] The nscp module is loaded.
- [item] The nsperm module is loaded to enforce proper permissions.
- [item]	Database services (including drivers and pools) are properly
- configured if you plan to execute database commands while the server is running.
+ [item] The nscp module is loaded and configured (see details below).
+ [item] Optionally, the
+    [uri ../../nsperm/files/nsperm.html nsperm] module may be used to provide
+    authentication. In this case, make sure it is loaded and
+    configured for your needs.
  [list_end]
 
+[section {Authentication}]
 
-[section {COMMANDS}]
+ To use the control port, a user must connect via telnet to the
+ configured port and log in with a username and
+ password. Authentication is handled as follows:
 
-The [term nscp] module defines a single command:
+ [list_begin itemized]
 
-[list_begin definitions]
+ [item] If the username entered at the login prompt is empty, and the
+ connection originates from a loopback address, and the configuration
+ variable permitting unauthenticated access is enabled, the login is
+ accepted without further authentication.
 
-[call [cmd "nscp users"]]
+ [item] If a username is provided, the system first attempts to
+ authenticate using the [uri ../../nsperm/files/nsperm.html nsperm]
+ module (if it is loaded).
 
- Returns the list of usernames permitted to connect via the control port.
+ [item] If the nsperm module is not available, authentication falls
+ back to using the configured control port users.
 
-[list_end]
-
+ [list_end]
 
 [section {Configuring the Control Port Interface}]
 
@@ -63,7 +72,7 @@ The [term nscp] module defines a single command:
  [list_begin enum]
  [enum] The [term nscp] module is loaded in the [const /modules] section for [const {$server}].
  [enum]	The [const /module/nscp] section defines the control port parameters.
- [enum]	The [const /module/nscp/users] section defines the allowed users.
+ [enum]	The [const /module/nscp/users] section defines optionally the configured control port users.
  [list_end]
 
 
@@ -72,13 +81,14 @@ The [term nscp] module defines a single command:
  # Control port -- nscp
  #
  ns_section ns/server/${server}/module/nscp {
-   ns_param   port            9999        ;# Control port listens on port 9999
-   ns_param   address          127.0.0.1  ;# For security, use 127.0.0.1 only
-   ns_param   echopasswd       off
-   ns_param   cpcmdlogging     off
+   ns_param   port                   9999       ;# Control port listens on port 9999
+   ns_param   address                127.0.0.1  ;# For security, use 127.0.0.1 only
+   #ns_param  allowLoopbackEmptyUser on         ;# default: off
+   ns_param   echopasswd             off
+   ns_param   cpcmdlogging           off
 }
  
- # Control port users
+ # Optional configuration of control port users
  ns_section ns/server/${server}/module/nscp/users {
    #
    # The default password for nsadmin is "x". You should change it.
@@ -102,10 +112,13 @@ Important points regarding this configuration:
 [item]  The [option port] parameter defines the port that the interface will listen
      on. The default is 9999.
 
-
 [item] The [option address] parameter defines the IP address to bind
        to. By default, this is set to [const 127.0.0.1] (or
        [const ::1] for IPv6), ensuring that only local connections are allowed.
+
+[item] The [option allowLoopbackEmptyUser] allows to specify if a
+       login with an empty user name should be allowed from a loopback
+       address (i.e., a user logged in on the same host).
 
 [item] The [option echopasswd] parameter controls whether the password
        is echoed as it is typed; its default setting is off.
@@ -127,6 +140,19 @@ Important points regarding this configuration:
 [para]
 See the Configuration Reference for complete information on
 configuration.
+
+
+[section {COMMANDS}]
+
+The [term nscp] module defines a single command:
+
+[list_begin definitions]
+
+[call [cmd "nscp users"]]
+
+ Returns the list of usernames permitted to connect via the control port.
+
+[list_end]
 
 
 [section {Using the Control Port Interface}]
@@ -168,7 +194,8 @@ The session will then prompt for a password:
 [example_end]
 
 [enum] Enter Password: Type the password associated with the username
-  (the default is "x"). If the credentials are correct, the session will
+  (the default is "x"). We assume here, that the nsperm module is not
+  loaded. If the credentials are correct, the session will
   display a welcome message similar to:
 
 [example_begin]
@@ -189,13 +216,14 @@ The session will then prompt for a password:
 
 [section {Useful Commands}]
 
-Within the control port, type:
+When connected via the the control port, you might the find the
+following plain Tcl commands to be useful:
 
 [example_begin]
  lsort [lb]info commands[rb]
 [example_end]
 
-to obtain a complete list of available commands. You can also execute
+This command returns a complete list of available commands. You can also execute
 nearly any Tcl command, including core Tcl commands and any ns_*
 commands. To see a sorted list of NaviServer Tcl commands, type:
 

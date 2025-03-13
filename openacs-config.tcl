@@ -1214,7 +1214,7 @@ ns_section ns/server/$server/modules {
     # ns_param	nsldap             nsldap
 
     # These modules aren't used in standard OpenACS installs
-    ns_param	nsperm             nsperm
+    #ns_param	nsperm             nsperm
 }
 
 #---------------------------------------------------------------------
@@ -1255,9 +1255,10 @@ ns_section ns/server/$server/modules {
 #
 ns_section "ns/server/${server}/module/nscp" {
     ns_param port $nscpport
-    ns_param address  127.0.0.1    ;# default: 127.0.0.1 or ::1 for IPv6
-    #ns_param echopasswd on        ;# default: off
-    ns_param cpcmdlogging on       ;# default: off
+    ns_param address  127.0.0.1        ;# default: 127.0.0.1 or ::1 for IPv6
+    #ns_param echopasswd on            ;# default: off
+    ns_param cpcmdlogging on           ;# default: off
+    ns_param allowLoopbackEmptyUser on ;# default: off
 }
 
 ns_section "ns/server/${server}/module/nscp/users" {
