@@ -157,7 +157,8 @@ At this moment the following modules are available:
 [emph {nsaccess nsclamav nsdbi nsdbmysql nsdhcpd nsicmp nsmemcache nssip nsstats nsvfs nsaspell nsconf nsdbilite nsdbpg nsdns nsimap nsphp nssmtpd nssyslogd nszlib nsauthpam nsconfigrw nsdbimy nsdbsqlite nsexpat nsldapd nsradiusd nssnmp nstftpd nschartdir nsdbbdb nsdbipg nsdbtds nsgdchart nsloopctl nsrtsp nsssl nsoracle nsudp}]
 
 [para]
-To check what modules are available go to: https://github.com/orgs/naviserver-project/repositories
+To check what modules are available go to:
+[uri https://github.com/orgs/naviserver-project/repositories]
 
 [para]
 
@@ -177,9 +178,9 @@ int he examples below. For more details, see
 
 
 Note: Modules can be disabled in the sample nsd.tcl for various
-reasons. Some modules like [emph nscp] or [emph nsperm] are optional
+reasons. Some modules like [term nscp] or [term nsperm] are optional
 and can be disabled by e.g., commenting out the
-respective lines in the "ns/server/default/modules" section of the
+respective lines in the [const ns/server/default/modules] section of the
 configuration file.  Before using them in a production
 environment, change the passwords and default permissions by following
 the instructions in the NaviServer documentation.
