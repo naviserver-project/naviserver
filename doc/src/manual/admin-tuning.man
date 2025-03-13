@@ -345,7 +345,7 @@ Check the sample configuration files for more hints:
 	SO_REUSEPORT TCP TCP_FASTOPEN \
         "spooling threads" \
 	"connection thread pools" \
-	nsssl driver prebind pagedir \
+	nsssl driver pagedir \
         blueprint]
 [manpage_end]
 

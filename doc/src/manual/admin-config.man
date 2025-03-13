@@ -1451,7 +1451,7 @@ this log file:
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	driver prebind pagedir logging logdir serverdir systemlog \
+	driver pagedir logging logdir serverdir systemlog \
         "scheduled procedures" \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate vhostcertificates invalid-certificates \

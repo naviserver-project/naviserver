@@ -30,8 +30,10 @@ if {[info commands ::ns_configure_variables] eq ""} {
 # driver, "ns_http" cannot handle the protocol.
 #
 # IMPORTANT: If a configured port is privileged (below 1024), OpenACS
-# must be started as root. The startup script should include the flag
-# '-b address:port' matching the configured address and port.
+# must be started as root to be able to bind to this port (OS
+# requirement). In this case, the startup script must include the
+# prebind flag '-b address:port' matching the configured address and
+# port (see https://naviserver.sourceforge.io/5.0/manual/files/admin-running.html).
 #
 # Network Configuration:
 #
