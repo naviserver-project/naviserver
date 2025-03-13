@@ -1,54 +1,69 @@
 ######################################################################
 #
-# Config parameter for an OpenACS site using NaviServer.
+# OpenACS Site Configuration for NaviServer
 #
-# These default settings will only work in limited circumstances.
-# Two servers with default settings cannot run on the same host
+# These default settings are intended for limited use cases.
+#
+# Note: Two servers using these defaults cannot run on the same host.
+#
+# Either provide configuration values from the command line (see
+# below) or provide different values directly in the the configuration
+# file.
 #
 ######################################################################
 ns_log notice "nsd.tcl: starting to read configuration file..."
 
+# Check for the existence of ns_configure_variables.
+# For backward compatibility with pre–NaviServer 5, source init.tcl if not found.
 if {[info commands ::ns_configure_variables] eq ""} {
     ns_log notice "backward compatibility hook (pre NaviServer 5): have to source init.tcl"
     source [file normalize [file dirname [file dirname [ns_info nsd]]]/tcl/init.tcl]
 }
+
 #---------------------------------------------------------------------
-# Port settings:
+# Port Settings:
 #
-#    Change the HTTP and HTTPS port to e.g. 80 and 443 for production
-#    use.  Setting the configuration parameter "httpport" or
-#    "httpsport" to the special value 0 means to active the HTTP/HTTPS
-#    driver for ns_http, but do not listen on this port. Without
-#    loading the driver, ns_http won't be able to the protocol.
+# For production environments, change the HTTP and HTTPS ports to
+# standard values (e.g., 80 for HTTP and 443 for HTTPS). Setting the
+# "httpport" or "httpsport" parameter to 0 will load the HTTP/HTTPS
+# driver for "ns_http" without binding to a port. Without loading this
+# driver, "ns_http" cannot handle the protocol.
 #
-# Note: If the specufued port is privileged (usually < 1024), OpenACS
-# must be started by root, and the run script must contain the flag
-# '-b address:port' which matches the configured address and port.
+# IMPORTANT: If a configured port is privileged (below 1024), OpenACS
+# must be started as root. The startup script should include the flag
+# '-b address:port' matching the configured address and port.
 #
-# The "hostname" (e.h. domain names) and "ipaddress" should be set to
-# actual values such that the server is reachable over the
-# Internet. The default values are fine for testing purposes. One can
-# specify for "hostname" and "ipaddress" also multiple values
-# (e.g. IPv4 and IPv6). Multiple hostnames are used as alternative
-# domain names names for the "http" and "https" server sections.
+# Network Configuration:
 #
+# Set the "hostname" (i.e., domain name) and "ipaddress" to values
+# that ensure the server is reachable over the Internet. The default
+# settings are sufficient for testing.  You can specify multiple
+# values (e.g., IPv4 and IPv6) for both "hostname" and "ipaddress".
+# When multiple hostnames are provided, they serve as alternative
+# domain names for the HTTP and HTTPS server sections.
+#
+# Example:
 #    hostname	localhost
-#    ipaddress	127.0.0.1  ;# listen on loopback via IPv4
-#    ipaddress	0.0.0.0    ;# listen on all IPv4 addresses
-#    ipaddress  ::1        ;# listen on loopback via IPv6
-#    ipaddress	::0        ;# listen on all IPv6 addresses
+#    ipaddress	127.0.0.1  ;# Listen on IPv4 loopback
+#    ipaddress	0.0.0.0    ;# Listen on all IPv4 addresses
+#    ipaddress  ::1        ;# Listen on IPv6 loopback
+#    ipaddress	::0        ;# Listen on all IPv6 addresses
 #
-# All default variables in "defaultConfig" can be overloaded by:
+# Default Variable Overriding:
 #
-# 1) Setting these variables explicitly in this file after
-#    "ns_configure_variables" (highest precedence)
+# The default configuration in "defaultConfig" can be overridden using
+# one of these methods:
 #
-# 2) Setting these variables as environment variables with the "oacs_"
-#    prefix (suitable for e.g. docker setups).  The lookup for
-#    environment variables happens in "ns_configure_variables".
+# 1) Explicitly setting the variables in this file after calling
+#    "ns_configure_variables" (highest precedence).
 #
-# 3) Alter/override the variables in the "defaultConfig"
-#    (lowest precedence)
+# 2) Defining these variables as environment variables with the
+#    "oacs_" prefix (ideal for containerized environments like
+#    Docker). The lookup for these variables is handled by
+#    "ns_configure_variables".
+#
+# 3) Modifying the variables directly within "defaultConfig" (lowest
+#    precedence).
 #
 set defaultConfig {
     hostname	localhost
@@ -84,14 +99,15 @@ set defaultConfig {
 }
 
 #
-# Override default variables as defined by "defaultConfig" (this
-# allows commenting lines)
+# Optionally override the default configuration variables defined in
+# "defaultConfig" dictionary via "dict set" commands (this allows you
+# to comment out lines as needed).
 #
-# If the same domain name serves multiple OpenACS instances,
-# same-named cookies will mix up.  You might consider a different
-# namespace for the cookies.
+# Example: When the same domain name is used for multiple OpenACS
+# instances, using the same cookie namespace for these instances can
+# cause conflicts. Consider setting a unique namespace for cookies.
 #
-#dict set defaultConfig CookieNamespace ad_8000_
+#    dict set defaultConfig CookieNamespace ad_8000_
 
 #---------------------------------------------------------------------
 # Which DBMS do you want to use? PostgreSQL or Oracle?
@@ -589,7 +605,7 @@ ns_section ns/server/$server {
     ;# graciously exit, after processing that many requests, thus
     ;# initiating kind-of Tcl-level garbage collection.
 
-    # ns_param	threadtimeout	2m       ;# 2m; timeout for idle threads.
+    ns_param	threadtimeout	20s       ;# 2m; timeout for idle threads.
     ;# In case, minthreads < maxthreads, threads are shutdown after
     ;# this idle time until minthreads are reached.
 
