@@ -268,7 +268,7 @@ try {
 } on ok {result} {
     ns_log security Administration action required!\n \
         "=============================================================================\n" \
-        "The Default password for system administrator 'nsadmin' has not been changed!\n" \
+        "The default password for system administrator 'nsadmin' has not been changed!\n" \
         "Please, change the password using:  ns_permpasswd nsadmin x /NEWPASSWORD/\n" \
         "or edit the password file [file join [ns_info home] modules nsperm passwd]\n" \
         "and change the encrypted password manually!\n" \
