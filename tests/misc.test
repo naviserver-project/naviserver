@@ -223,11 +223,11 @@ test ns_valid_utf8-1.5 {invalid utf8, containing x85 in the middle} -body {
 
 test ns_ip-1.0.1 {syntax: ns_ip} -body {
     ns_ip
-} -returnCodes error -result {wrong # args: should be "ns_ip match|properties|public|trusted|valid ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_ip inany|match|properties|public|trusted|valid ?/arg .../"}
 
 test ns_ip-1.0.2 {syntax: ns_ip subcommand} -body {
     ns_ip x
-} -returnCodes error -result {ns_ip: bad subcommand "x": must be match, properties, public, trusted, or valid}
+} -returnCodes error -result {ns_ip: bad subcommand "x": must be inany, match, properties, public, trusted, or valid}
 
 test ns_ip-1.1.0 {syntax: ns_ip match} -body {
     ns_ip match
@@ -249,19 +249,24 @@ test ns_ip-1.2.1 {ns_ip properties particular address} -body {
    ns_ip properties 127.0.0.1
 } -match glob -result {public 0 trusted [01] inany [01] type IPv4}
 
-test ns_ip-1.3.1 {ns_ip public} -body {
+test ns_ip-1.3.1 {ns_ip inany} -body {
+    lmap ip {192.168.64.1 127.0.0.1 ::1 :: 0.0.0.0 137.208.116.31 2001:628:404:74::31} {ns_ip inany $ip}
+} -returnCodes {error ok} -result {0 0 0 1 1 0 0}
+
+test ns_ip-1.3.2 {ns_ip public} -body {
     lmap ip {192.168.64.1 127.0.0.1 ::1 0.0.0.0 ::
         137.208.116.31 2001:628:404:74::31} {ns_ip public $ip}
 } -result {0 0 0 0 0 1 1}
 
-test ns_ip-1.4.1 {ns_ip trusted} -body {
+test ns_ip-1.3.3 {ns_ip trusted} -body {
     lmap ip {137.208.116.31 2001:628:404:74::31} {ns_ip trusted $ip}
 } -result {0 0}
 
-test ns_ip-1.5.1 {ns_ip valid} -body {
+test ns_ip-1.3.4 {ns_ip valid} -body {
     lmap ip {192.168.64.1 127.0.0.1 ::1 0.0.0.0 :: 137.208.116.31 2001:628:404:74::31
         1.1.1.1.1 openacs.org } {ns_ip valid $ip}
 } -result {1 1 1 1 1 1 1 0 0}
+
 
 #
 #  test ns_ip match
