@@ -633,15 +633,45 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
             }
         } else {
             /*
-             * No "-prefix"
+             * No "-prefix" was provided.
+             *
+             * First, trim any leading and trailing whitespace from the input
+             * string.  We do this by advancing the start pointer (p) past any
+             * whitespace and then decrementing the pointer to the
+             * end-of-string pointer until non-whitespace characters are
+             * encountered. Note that the original string is not mpdified.
              */
+            endOfString--;
+            //NsHexPrint("start string", (const unsigned char *)p, (size_t)(endOfString-p), 32, NS_TRUE);
+            while (CHARTYPE(space, *p) != 0 && p < endOfString) {
+                p++;
+            }
+            while (CHARTYPE(space, *endOfString) != 0 && endOfString > p) {
+                //Ns_Log(Notice, "... trim right %d [%ld]", *endOfString, (long) (endOfString-p));
+                endOfString--;
+            }
+            endOfString++;
+            //NsHexPrint("trimmed start string", (const unsigned char *)p, (size_t)(endOfString-p), 32, NS_TRUE);
+
+            /*
+             * Process the trimmed string in segments until the entire string has been appended
+             * to the output Tcl_DString (dsPtr).
+             */
+
             while(likely(p < endOfString)) {
                 const char *eolString;
                 char       *j;
                 ptrdiff_t   length;
 
+                /*
+                 *  Start at the current pointer (p) and advance a temporary
+                 *  pointer (j) until either a non-space character that is not
+                 *  the delimiter is found, or the delimiter is
+                 *  encountered. If a delimiter is found, increment the
+                 *  pointer j and break out of the loop.
+                 */
                 for (j = p; likely(j < endOfString); j++) {
-                    if (CHARTYPE(space, *j) != 0) {
+                    if (*j == ' ') {
                         continue;
                     }
                     if (delimiterString != NULL && *j == *delimiterString) {
@@ -650,12 +680,33 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
                     }
                     break;
                 }
+                /*
+                 *  Search for the next newline character in the segment
+                 *  starting at j.  If a newline is found before the end of
+                 *  the string, set the segment length to include the newline
+                 *  (length = (newline position - j) + 1); otherwise, set the
+                 *  segment length to the remainder of the string.
+                 */
                 eolString = strchr(j, INTCHAR('\n'));
-                if (likely(eolString != NULL)) {
-                    length = (eolString - j) + 1;
-                } else {
-                    length = (endOfString - j);
+                if (eolString != NULL) {
+                    //Ns_Log(Notice, "... trim eol %ld eof %ld", eolString-j, endOfString-j);
                 }
+                if (likely(eolString != NULL && eolString < endOfString)) {
+                    /*
+                     * A newline was found before the end of the string.
+                     * Include the newline in the output by setting the
+                     * segment length to (newline position - j) + 1.
+                     */
+                    length = (eolString - j) + 1;
+                    //Ns_Log(Notice, "... found newline, length = eol + 1 => %ld", length);
+                } else {
+                    /*
+                     * No newline found: include all characters from j to the end.
+                     */
+                    length = (endOfString - j);
+                    //Ns_Log(Notice, "... no newline = include everything until end of string => %ld", length);
+                }
+                //NsHexPrint("appending", (const unsigned char *)j, (size_t)length, 32, NS_TRUE);
                 Tcl_DStringAppend(dsPtr, j, (TCL_SIZE_T)length);
 
                 p = j + length;
