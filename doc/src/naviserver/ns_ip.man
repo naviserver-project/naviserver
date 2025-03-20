@@ -19,6 +19,26 @@
 
 [list_begin definitions]
 
+[call [cmd "ns_ip inany"] [arg ipaddr]]
+
+ ***to be completed***
+ 
+ Determines whether the provided IP address is an "any" (unspecified)
+ address. For IPv4, this is equivalent to INADDR_ANY (typically
+ [const 0.0.0.0]; for IPv6, it corresponds to in6addr_any (an all-zero
+ address, [const ::]). The command returns a boolean value.
+
+[example_begin]
+ ns_ip inany 0.0.0.0
+ # Expected result: 1 (true)
+ 
+ ns_ip inany 192.168.1.100
+ # Expected result: 0 (false)
+ 
+ ns_ip inany ::
+ # Expected result: 1 (true) for an unspecified IPv6 address
+[example_end]
+
 [call [cmd "ns_ip match"] [arg cidr] [arg ipaddr]]
 
  Validates the provided [arg cidr] (subnet) specification (IPv4

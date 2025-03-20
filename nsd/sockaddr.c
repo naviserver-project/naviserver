@@ -943,6 +943,57 @@ Ns_SockaddrPublicIpAddress(const struct sockaddr *saPtr) {
     return success;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockaddrInAny --
+ *
+ *      Determines whether the given socket address represents the
+ *      “any” (unspecified) address. For an IPv4 address, this is equivalent to
+ *      INADDR_ANY (usually 0.0.0.0), and for an IPv6 address, it is equivalent
+ *      to the in6addr_any (an all-zero address). The function returns NS_TRUE
+ *      if the address is unspecified, and NS_FALSE otherwise.
+ *
+ * Returns:
+ *      NS_TRUE  if the address is the “any” address (i.e., unspecified).
+ *      NS_FALSE otherwise, including when the address family is neither AF_INET
+ *               nor AF_INET6.
+ *
+ * Side Effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_SockaddrInAny(const struct sockaddr *saPtr) {
+    bool success = NS_TRUE;
+
+    NS_NONNULL_ASSERT(saPtr != NULL);
+
+    switch (saPtr->sa_family) {
+        case AF_INET: {
+            const struct sockaddr_in *ipv4_addr = (const struct sockaddr_in*)saPtr;
+            success = (ipv4_addr->sin_addr.s_addr == htonl(INADDR_ANY));
+            break;
+        }
+        case AF_INET6: {
+            const struct sockaddr_in6 *ipv6_addr = (const struct sockaddr_in6*)saPtr;
+            success = (memcmp(&ipv6_addr->sin6_addr, &in6addr_any, sizeof(in6addr_any)) == 0);
+            break;
+        }
+        default: {
+            /*
+             * Not IPv4 or IPv6
+             */
+            success = NS_FALSE;
+            break;
+        }
+    }
+
+    return success;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -962,6 +1013,7 @@ int
 Ns_SockaddrAddToDictIpProperties(const struct sockaddr *ipPtr, Tcl_Obj *dictObj) {
     bool     isPublic = Ns_SockaddrPublicIpAddress(ipPtr);
     bool     isTrusted = Ns_SockaddrTrustedReverseProxy(ipPtr);
+    bool     isInAny = Ns_SockaddrInAny(ipPtr);
     Tcl_Obj *typeValueObj;
 
     Tcl_DictObjPut(NULL, dictObj,
@@ -970,6 +1022,9 @@ Ns_SockaddrAddToDictIpProperties(const struct sockaddr *ipPtr, Tcl_Obj *dictObj)
     Tcl_DictObjPut(NULL, dictObj,
                    Tcl_NewStringObj("trusted", 7),
                    Tcl_NewBooleanObj(isTrusted));
+    Tcl_DictObjPut(NULL, dictObj,
+                   Tcl_NewStringObj("inany", 5),
+                   Tcl_NewBooleanObj(isInAny));
     if (ipPtr->sa_family == AF_INET) {
         typeValueObj = Tcl_NewStringObj("IPv4", 4);
     } else if (ipPtr->sa_family == AF_INET6) {

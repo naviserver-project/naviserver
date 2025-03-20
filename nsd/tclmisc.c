@@ -2721,6 +2721,52 @@ IpTrustedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
 /*
  *----------------------------------------------------------------------
  *
+ * IpInAnyObjCmd --
+ *
+ *      Implements the "ns_ip inany" command. This command checks whether the
+ *      provided IP address is an “any” (unspecified) address. In other words,
+ *      it determines if the socket address corresponds to the generic IP
+ *      address used to bind a server socket to all available network interfaces
+ *      (e.g., INADDR_ANY for IPv4 or in6addr_any for IPv6).
+ *
+ * Returns:
+ *      A standard Tcl result. On success, the command returns a boolean value
+ *      indicating whether the IP address is an “any” address.
+ *
+ * Side Effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+IpInAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    struct NS_SOCKADDR_STORAGE ip;
+    struct sockaddr *ipPtr = (struct sockaddr *)&ip;
+    char       *ipString;
+    Ns_ObjvSpec args[] = {
+        {"ipaddr", Ns_ObjvString, &ipString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (ns_inet_pton(ipPtr, ipString) != 1) {
+        Ns_TclPrintfResult(interp, "'%s' is not a valid IPv4 or IPv6 address", ipString);
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Ns_SockaddrInAny(ipPtr)));
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * IpValidObjCmd --
  *
  *      This command implements "ns_ip_valid". It validates the format and
@@ -2783,9 +2829,10 @@ IpValidObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
  * NsTclIpObjCmd --
  *
  *      This command implements "ns_ip". It acts as the main dispatcher for
- *      IP-related subcommands (e.g., "ns_ip_match", "ns_ip_properties",
- *      "ns_ip_public", "ns_ip_trusted", and "ns_ip_valid") and returns the
- *      corresponding result based on the specified subcommand.
+ *      IP-related subcommands (e.g., "ns_ip inany", "ns_ip match",
+ *      "ns_ip properties", "ns_ip public", "ns_ip trusted", and
+ *      "ns_ip valid") and returns the corresponding result based on the
+ *      specified subcommand.
  *
  * Results:
  *      Returns the result of the invoked IP subcommand as a Tcl object.
@@ -2799,6 +2846,7 @@ int
 NsTclIpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
+        {"inany",      IpInAnyObjCmd},
         {"match",      IpMatchObjCmd},
         {"properties", IpPropertiesObjCmd},
         {"public",     IpPublicObjCmd},
