@@ -10,13 +10,13 @@ body { padding: 0 2em 0 2em; margin: 0; }
 
 
 
-h1 {
+.doctools h1 {
    margin:    1.5em 0 2em 0;
    font-size: 1.3em;
    color:     #333;
 }
 
-h2 {
+.doctools h2 {
    margin-top: 2em;
    color: #655;
    text-transform: capitalize;
@@ -26,7 +26,7 @@ h2 {
    width: 50em;
 }
 
-h3 {
+.doctools h3 {
     margin-top: 1.5em;
     margin-bottom: 0.7em;
     color: #655;
