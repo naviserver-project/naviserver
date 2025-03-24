@@ -729,9 +729,10 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
      * old-style hardcoded fallback.
      */
     if (Ns_Stat(fileName, &fileInfo)) {
-        Tcl_Interp *interp = Ns_GetConnInterp(conn);
-        NsInterp   *itPtr = NsGetInterpData(interp);
-        Tcl_Obj    *fileObj;
+        Tcl_Interp  *interp = Ns_GetConnInterp(conn);
+        NsInterp    *itPtr = NsGetInterpData(interp);
+        Tcl_Obj     *fileObj;
+        unsigned int oldAdpFlags;
 
         /*
          * Set Tcl variables "title", "notice", and "noticedetail".
@@ -743,7 +744,23 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
         Tcl_SetVar2Ex(interp, "noticedetail",  NULL,
                       Tcl_NewBooleanObj(servPtr->opts.noticedetail), 0);
         fileObj = Tcl_NewStringObj(fileName, TCL_INDEX_NONE);
+
+        Ns_Log(Debug, "Ns_ConnReturnNotice, call template '%s' with"
+               " title '%s' notice '%s' noticedetail %d",
+               fileName, title, notice, servPtr->opts.noticedetail );
+        /*
+         * If the original file that led to the ReturnNotice was a Tcl file,
+         * we need to ensure that NsAdpSource() treats the template as an ADP
+         * file instead. To do this, we temporarily clear the ADP_TCLFILE
+         * flag. We first save the original ADP flags, then clear the
+         * ADP_TCLFILE flag, invoke NsAdpSource(), and finally restore the
+         * original flags.
+         */
+        oldAdpFlags = itPtr->adp.flags;
+        itPtr->adp.flags &= ~ADP_TCLFILE;
         result = NsAdpSource(itPtr, 1, &fileObj, NULL);
+        itPtr->adp.flags = oldAdpFlags;
+
         Tcl_DecrRefCount(fileObj);
 
         if (result == TCL_OK) {

@@ -551,6 +551,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
             }
             if (isNew != 0) {
                 Ns_MutexUnlock(&servPtr->adp.pagelock);
+                Ns_Log(Notice, "AdpSource calls ParseFile with flags %.8x", itPtr->adp.flags);
                 pagePtr = ParseFile(itPtr, file, &st, itPtr->adp.flags);
                 Ns_MutexLock(&servPtr->adp.pagelock);
                 if (pagePtr == NULL) {
@@ -689,6 +690,10 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
             }
             objsPtr = ipagePtr->cacheObjs;
         }
+
+        Ns_Log(Debug, "AdpSource calls AdpExec nblocks %d with objc %d codePtr->text <%s>",
+               codePtr->nblocks, objc, codePtr->text.string);
+
         result = AdpExec(itPtr, objc, objv, file, codePtr, objsPtr, outputPtr, &st);
         Ns_MutexLock(&servPtr->adp.pagelock);
         ++ipagePtr->pagePtr->evals;
@@ -958,6 +963,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
         pagePtr->size = stPtr->st_size;
         pagePtr->dev = stPtr->st_dev;
         pagePtr->ino = stPtr->st_ino;
+        Ns_Log(Notice, "ParseFile calls NsAdpParse with flags %.8x", flags);
         NsAdpParse(&pagePtr->code, itPtr->servPtr, page, flags, file);
         Tcl_DStringFree(&utf);
     }
@@ -1148,6 +1154,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
     nblocks = AdpCodeBlocks(codePtr);
     nscript = 0;
     result = TCL_OK;
+
     for (i = 0; itPtr->adp.exception == ADP_OK && i < nblocks; ++i) {
         TCL_SIZE_T len;
 
@@ -1162,6 +1169,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
             len = -len;
             if (itPtr->adp.debugLevel > 0) {
                 result = AdpDebug(itPtr, ptr, (TCL_SIZE_T)len, nscript);
+
             } else if (objsPtr == NULL) {
                 result = Tcl_EvalEx(interp, ptr, (TCL_SIZE_T)len, 0);
             } else {
@@ -1172,6 +1180,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
                     Tcl_IncrRefCount(objPtr);
                     objsPtr->objs[nscript] = objPtr;
                 }
+                Ns_Log(Debug, "AdpExec calls Tcl_EvalObjEx with cmd <%s>", Tcl_GetString(objPtr));
                 result = Tcl_EvalObjEx(interp, objPtr, 0);
             }
             ++nscript;
