@@ -32,23 +32,23 @@ NS_EXTERN const char *NS_EMPTY_STRING;
  * Various ADP option bits.
  */
 
-#define ADP_SAFE                       0x01u    /* Use Tcl_SafeEval for ADP */
-#define ADP_SINGLE                     0x02u    /* Combine blocks into a single script */
-#define ADP_DEBUG                      0x04u    /* Enable debugging */
-#define ADP_EXPIRE                     0x08u    /* Send Expires: now header on output */
-#define ADP_CACHE                      0x10u    /* Enable output caching */
-#define ADP_TRACE                      0x20u    /* Trace execution */
-#define ADP_DETAIL                     0x80u    /* Log connection details on error */
-#define ADP_STRICT                     0x100u   /* Strict error handling */
-#define ADP_DISPLAY                    0x200u   /* Display error messages in output stream */
-#define ADP_TRIM                       0x400u   /* Display error messages in output stream */
-#define ADP_FLUSHED                    0x800u   /* Some output has been sent */
-#define ADP_ERRLOGGED                  0x1000u  /* Error message has already been logged */
-#define ADP_AUTOABORT                  0x2000u  /* Raise abort on flush error */
-#define ADP_ADPFILE                    0x4000u  /* Object to evaluate is a file */
-#define ADP_STREAM                     0x8000u  /* Enable ADP streaming */
-#define ADP_TCLFILE                    0x10000u /* Object to evaluate is a Tcl file */
-#define ADP_OPTIONMAX                  0x1000000u /* watermark for flag values */
+#define ADP_SAFE          0x0000001u  /* Use Tcl_SafeEval for ADP */
+#define ADP_SINGLE        0x0000002u  /* Combine blocks into a single script */
+#define ADP_DEBUG         0x0000004u  /* Enable debugging */
+#define ADP_EXPIRE        0x0000008u  /* Send Expires: now header on output */
+#define ADP_CACHE         0x0000010u  /* Enable output caching */
+#define ADP_TRACE         0x0000020u  /* Trace execution */
+#define ADP_DETAIL        0x0000080u  /* Log connection details on error */
+#define ADP_STRICT        0x0000100u  /* Strict error handling */
+#define ADP_DISPLAY       0x0000200u  /* Display error messages in output stream */
+#define ADP_TRIM          0x0000400u  /* Display error messages in output stream */
+#define ADP_FLUSHED       0x0000800u  /* Some output has been sent */
+#define ADP_ERRLOGGED     0x0001000u  /* Error message has already been logged */
+#define ADP_AUTOABORT     0x0002000u  /* Raise abort on flush error */
+#define ADP_ADPFILE       0x0004000u  /* Object to evaluate is a file */
+#define ADP_STREAM        0x0008000u  /* Enable ADP streaming */
+#define ADP_TCLFILE       0x0010000u  /* Object to evaluate is a Tcl file */
+#define ADP_OPTIONMAX     0x1000000u  /* watermark for flag values */
 
 typedef enum {
     ADP_OK =                     0,
