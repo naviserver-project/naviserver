@@ -859,6 +859,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Tcl_DString *dest)
         const Tcl_HashEntry  *hPtr = Tcl_FindHashEntry((Tcl_HashTable *)&servPtr->hosts, host);
         if (hPtr != NULL) {
             location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0u, 0u);
+            Ns_Log(Debug, "Ns_ConnLocation: reverseproxymode location <%s>", location);
         }
     } else if (servPtr->vhost.enabled || nsconf.reverseproxymode.enabled) {
         /*
@@ -879,7 +880,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Tcl_DString *dest)
      */
     if ((location == NULL) && (connPtr->location != NULL)) {
         location = Tcl_DStringAppend(dest, connPtr->location, TCL_INDEX_NONE);
-        Ns_Log(Debug, "Ns_ConnLocation: location from mapping table <%s>", location);
+        Ns_Log(Debug, "Ns_ConnLocation: location from mapping table <%s>", connPtr->location);
     }
 
     /*
