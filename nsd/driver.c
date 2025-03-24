@@ -2402,8 +2402,10 @@ DriverThread(void *arg)
                     drvPtr->listenfd[j] = DriverListen(drvPtr,
                                                        Tcl_GetString(objv[i]),
                                                        DriverGetPort(drvPtr, pNum));
-                    if (drvPtr->listenfd[j] != NS_INVALID_SOCKET) {
+                    if (likely(drvPtr->listenfd[j] != NS_INVALID_SOCKET)) {
                         j ++;
+                    } else {
+                        drvPtr->ports.data[pNum] = 0u;
                     }
                 }
             }
