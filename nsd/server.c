@@ -203,6 +203,8 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 
     NS_NONNULL_ASSERT(server != NULL);
 
+    Ns_Log(Debug, "NsInitServer called for <%s>", server);
+
 #if 0
     {
         bool         found = NS_FALSE;
@@ -255,16 +257,6 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     Tcl_DStringAppendElement(&nsconf.servers, server);
     initServPtr = servPtr;
 
-    /*
-     * Run the library init procs in the order they were registered.
-     */
-
-    initPtr = firstInitPtr;
-    while (initPtr != NULL) {
-        (void) (*initPtr->proc)(server);
-        initPtr = initPtr->nextPtr;
-    }
-
     section = Ns_ConfigSectionPath(NULL, server, NULL, NS_SENTINEL);
 
     /*
@@ -315,6 +307,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
                                                     nsconf.home, NS_EMPTY_STRING,
                                                     NS_TRUE, NS_FALSE);
 #endif
+    Ns_Log(Notice,  "NsInitServer servPtr->opts.serverdir set to <%s>", servPtr->opts.serverdir);
 
 
     /*
@@ -405,6 +398,15 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->compress.level = Ns_ConfigIntRange(section, "compresslevel", 4, 1, 9);
     servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(section, "compressminsize", NULL, 512, 0, INT_MAX);
     servPtr->compress.preinit = Ns_ConfigBool(section, "compresspreinit", NS_FALSE);
+
+    /*
+     * Run the library init procs in the order they were registered.
+     */
+    initPtr = firstInitPtr;
+    while (initPtr != NULL) {
+        (void) (*initPtr->proc)(server);
+        initPtr = initPtr->nextPtr;
+    }
 
     /*
      * Call the static server init proc, if any, which may register
