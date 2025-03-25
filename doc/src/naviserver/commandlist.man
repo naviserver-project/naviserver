@@ -17,77 +17,77 @@ List of all documented and deprecated NaviServer commands.
 
 [list_begin definitions]
 [def [cmd "env"]]                      Use [cmd "ns_env"] instead.
-[def [cmd "ns_adp_compress"]]          Use [cmd "ns_conn compress"] instead.
+[def [cmd "ns_adp_compress"]]          Use [cmd "[cmd ns_conn] compress"] instead.
 [def [cmd "ns_adp_eval"]]              Use [cmd "ns_adp_parse"] instead.
 [def [cmd "ns_adp_mime"]]              Use [cmd "ns_adp_mimetype"] instead.
-[def [cmd "ns_adp_registertag"]]       Use [cmd "ns_adp_registeradp"] instead.
-[def [cmd "ns_adp_safeeval"]]          Use [cmd "ns_adp_parse -safe"] instead.
-[def [cmd "ns_adp_stream"]]            Use [cmd "ns_adp_ctl stream"] instead.
+[def [cmd "ns_adp_registertag"]]       Use [cmd "[uri ./ns_register.html ns_adp_registeradp]"] instead.
+[def [cmd "ns_adp_safeeval"]]          Use [cmd "[cmd ns_adp_parse] -safe"] instead.
+[def [cmd "ns_adp_stream"]]            Use [cmd "[cmd ns_adp_ctl] stream"] instead.
 [def [cmd "ns_browsermatch"]]          Use standard API instead.
-[def [cmd "ns_cancel"]]                Use [cmd "ns_unschedule_proc"] instead.
+[def [cmd "ns_cancel"]]                Use [cmd "[uri ./ns_schedule.html ns_unschedule_proc]"] instead.
 [def [cmd "ns_checkurl"]]              Use [cmd "ns_requestauthorize"] instead.
 [def [cmd "ns_chmod"]]                 Use [cmd "file attributes"] instead.
 [def [cmd "ns_choosecharset"]]         Use standard internationalization commands instead.
-[def [cmd "ns_conncptofp"]]            Use [cmd "ns_conn copy"] instead.
-[def [cmd "ns_connsendfp"]]            Use [cmd "ns_writefp"] instead.
+[def [cmd "ns_conncptofp"]]            Use [cmd "[cmd ns_conn] copy"] instead.
+[def [cmd "ns_connsendfp"]]            Use [cmd "[uri ./ns_write.html ns_writefp]"] instead.
 [def [cmd "ns_cookiecharset"]]         Use standard internationalization commands instead.
 [def [cmd "ns_cp"]]                    Use [cmd "file copy"] instead.
 [def [cmd "ns_cpfp"]]                  Use [cmd "fcopy"] instead.
-[def [cmd "ns_db verbose"]]            Use [cmd "ns_logctl debug(sql) ..."] instead.
+[def [cmd "ns_db verbose"]]            Use [cmd "[uri ./ns_log.html ns_logctl] debug(sql) ..."] instead.
 [def [cmd "ns_event"]]                 Use [cmd "ns_cond"] instead.
 [def [cmd "ns_formfieldcharset"]]      Use standard internationalization commands instead.
 [def [cmd "ns_formvalueput"]]          Not sufficient for today's needs; use standard API instead.
 [def [cmd "ns_getchannels"]]           Use [cmd "file channels"] instead.
 [def [cmd "ns_geturl"]]                Use [cmd "ns_http"] instead.
-[def [cmd "ns_hmac_sha2"]]             Use [cmd "ns_crypto::hmac string"] instead.
+[def [cmd "ns_hmac_sha2"]]             Use [cmd "[cmd ns_hmac] string"] instead.
 [def [cmd "ns_httpget"]]               Use [cmd "ns_http"] instead.
 [def [cmd "ns_httpopen"]]              Use [cmd "ns_http"] instead.
 [def [cmd "ns_httppost"]]              Use [cmd "ns_http"] instead.
-[def [cmd "ns_ictl oncleanup"]]        Use [cmd "ns_ictl trace deallocate ..."] instead.
-[def [cmd "ns_ictl oncreate"]]         Use [cmd "ns_ictl trace create ..."] instead.
-[def [cmd "ns_ictl ondelete"]]         Use [cmd "ns_ictl trace delete ..."] instead.
-[def [cmd "ns_ictl oninit"]]           Use [cmd "ns_ictl trace create ..."] instead.
-[def [cmd "ns_info filters"]]          Use [cmd "ns_server filters"] instead.
-[def [cmd "ns_info pagedir"]]          Use [cmd "ns_server pagedir"] instead.
-[def [cmd "ns_info pageroot"]]         Use [cmd "ns_server pagedir"] instead.
-[def [cmd "ns_info platform"]]         Use [cmd "$::tcl_platform(platform)"] instead.
-[def [cmd "ns_info requestprocs"]]     Use [cmd "ns_server requestprocs"] instead.
-[def [cmd "ns_info tcllib"]]           Use [cmd "ns_server tcllib"] instead.
-[def [cmd "ns_info traces"]]           Use [cmd "ns_server traces"] instead.
-[def [cmd "ns_info url2file"]]         Use [cmd "ns_server url2file"] instead.
-[def [cmd "ns_info winnt"]]            Use [cmd "$::tcl_platform(platform)"] instead.
+[def [cmd "ns_ictl oncleanup"]]        Use [cmd "[cmd ns_ictl] trace deallocate ..."] instead.
+[def [cmd "ns_ictl oncreate"]]         Use [cmd "[cmd ns_ictl] trace create ..."] instead.
+[def [cmd "ns_ictl ondelete"]]         Use [cmd "[cmd ns_ictl] trace delete ..."] instead.
+[def [cmd "ns_ictl oninit"]]           Use [cmd "[cmd ns_ictl] trace create ..."] instead.
+[def [cmd "ns_info filters"]]          Use [cmd "[cmd ns_server] filters"] instead.
+[def [cmd "ns_info pagedir"]]          Use [cmd "[cmd ns_server] pagedir"] instead.
+[def [cmd "ns_info pageroot"]]         Use [cmd "[cmd ns_server] pagedir"] instead.
+[def [cmd "ns_info platform"]]         Use [cmd "\$::tcl_platform(platform)"] instead.
+[def [cmd "ns_info requestprocs"]]     Use [cmd "[cmd ns_server] requestprocs"] instead.
+[def [cmd "ns_info tcllib"]]           Use [cmd "[cmd ns_server] tcllib"] instead.
+[def [cmd "ns_info traces"]]           Use [cmd "[cmd ns_server] traces"] instead.
+[def [cmd "ns_info url2file"]]         Use [cmd "[cmd ns_server] url2file"] instead.
+[def [cmd "ns_info winnt"]]            Use [cmd "\$::tcl_platform(platform)"] instead.
 [def [cmd "ns_isformcached"]]          Obsolete.
 [def [cmd "ns_link"]]                  Use [cmd "file link -hard ..."] instead.
 [def [cmd "ns_mkdir"]]                 Use [cmd "file mkdir"] instead.
 [def [cmd "ns_paren"]]                 One-liner. Use standard API instead.
 [def [cmd "ns_parsetime"]]             Use [cmd "clock format ..."] instead.
-[def [cmd "ns_passwordcheck"]]         Use [cmd "ns_perm checkpass"] instead.
-[def [cmd "ns_pooldescription"]]       Use [cmd "ns_dbpooldescription"] instead.
+[def [cmd "ns_passwordcheck"]]         Use [cmd "[uri ../../nsperm/files/ns_perm.html ns_perm] checkpass"] instead.
+[def [cmd "ns_pooldescription"]]       Use [cmd "[uri ../../nsdb/files/ns_db.html ns_dbpooldescription]"] instead.
 [def [cmd "ns_puts"]]                  Use [cmd "ns_adp_puts"] instead.
-[def [cmd "ns_register_adptag"]]       Use [cmd "ns_adp_registerscript"] instead.
+[def [cmd "ns_register_adptag"]]       Use [cmd "[uri ./ns_adp_register.html ns_adp_registerscript]"] instead.
 [def [cmd "ns_rename"]]                Use [cmd "file rename"] instead.
 [def [cmd "ns_resetcachedform"]]       Obsolete.
-[def [cmd "ns_returnadminnotice"]]     Use [cmd "ns_returnnotice"] instead.
+[def [cmd "ns_returnadminnotice"]]     Use [cmd "[uri ./returnstatus-cmds.html ns_returnnotice]"] instead.
 [def [cmd "ns_rmdir"]]                 Use [cmd "file delete"] instead.
-[def [cmd "ns_server keepalive"]]      Use [cmd "ns_conn keepalive"] instead.
-[def [cmd "ns_set new"]]               Use [cmd "ns_set create"] instead.
-[def [cmd "ns_set print"]]             Use [cmd "ns_conn format"] instead.
+[def [cmd "ns_server keepalive"]]      Use [cmd "[cmd ns_conn] keepalive"] instead.
+[def [cmd "ns_set new"]]               Use [cmd "[cmd ns_set] create"] instead.
+[def [cmd "ns_set print"]]             Use [cmd "[cmd ns_conn] format"] instead.
 [def [cmd "ns_set_precision"]]         Use [cmd "set ::tcl_precision ..."] instead.
-[def [cmd "ns_sha2"]]                  Use [cmd "ns_crypto::md string"] instead.
-[def [cmd "ns_startcontent"]]          Use [cmd "ns_headers"] instead.
+[def [cmd "ns_sha2"]]                  Use [cmd "[uri ./ns_md.html ns_crypto::md] string"] instead.
+[def [cmd "ns_startcontent"]]          Use [cmd "[uri ./ns_write.html ns_headers]"] instead.
 [def [cmd "ns_tagelement"]]            Use tDOM or similar for accessing HTML content.
 [def [cmd "ns_tagelementset"]]         Use tDOM or similar for updating HTML snippets.
-[def [cmd "ns_thread begin"]]          Use [cmd "ns_thread create ..."] instead.
-[def [cmd "ns_thread begindetached"]]  Use [cmd "ns_thread create -detached ..."] instead.
-[def [cmd "ns_thread get"]]            Use [cmd "ns_thread handle"]] instead.
-[def [cmd "ns_thread getid"]]          Use [cmd "ns_thread id"]] instead.
-[def [cmd "ns_thread join"]]           Use [cmd "ns_thread wait"]] instead.
+[def [cmd "ns_thread begin"]]          Use [cmd "[cmd ns_thread] create ..."] instead.
+[def [cmd "ns_thread begindetached"]]  Use [cmd "[cmd ns_thread] create -detached ..."] instead.
+[def [cmd "ns_thread get"]]            Use [cmd "[cmd ns_thread] handle"] instead.
+[def [cmd "ns_thread getid"]]          Use [cmd "[cmd ns_thread] id"] instead.
+[def [cmd "ns_thread join"]]           Use [cmd "[cmd ns_thread] wait"] instead.
 [def [cmd "ns_tmpnam"]]                Use [cmd "ns_mktemp"] instead.
 [def [cmd "ns_unlink"]]                Use [cmd "file delete"] instead.
-[def [cmd "ns_unregister_proc"]]       Use [cmd "ns_unregister_op"] instead.
-[def [cmd "ns_updateheader"]]          Use [cmd "ns_set update"] [lb]ns_conn outputheaders[rb] instead.
+[def [cmd "ns_unregister_proc"]]       Use [cmd "[uri ./ns_register.html ns_unregister_op]"] instead.
+[def [cmd "ns_updateheader"]]          Use [cmd "[cmd ns_set] update"] [lb][cmd "[cmd ns_conn] outputheaders"][rb] instead.
 [def [cmd "ns_var"]]                   Use [cmd "nsv_*"] instead.
-[def [cmd "ns_writecontent"]]          Use [cmd "ns_conn copy"] instead.
+[def [cmd "ns_writecontent"]]          Use [cmd "[cmd ns_conn] copy"] instead.
 [def [cmd "keyldel"]]                  Use Tcl [cmd "dict"] instead.
 [def [cmd "keylget"]]                  Use Tcl [cmd "dict"] instead.
 [def [cmd "keylkeys"]]                 Use Tcl [cmd "dict"] instead.
