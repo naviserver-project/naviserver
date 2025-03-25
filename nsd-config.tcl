@@ -55,7 +55,7 @@ dict set defaultConfig enablehttpproxy false
 #
 ns_configure_variables "nsd_" $defaultConfig
 
-set max_file_upload_size       20mb
+set max_file_upload_size       20MB
 set max_file_upload_duration   5m
 
 #---------------------------------------------------------------------
@@ -231,7 +231,7 @@ if {[info exists httpport] && $httpport ne ""} {
     ns_section ns/module/http {
         ns_param defaultserver  default
         ns_param port           $httpport
-        ns_param address        $ipaddress   ;# Space separated list of IP addresses
+        ns_param address        $ipaddress  ;# Space separated list of IP addresses
         #ns_param hostname      [ns_info hostname]
 
         #ns_param backlog       1024         ;# default: 256; backlog for listen operations
@@ -290,14 +290,9 @@ if {[info exists httpport] && $httpport ne ""} {
 
 if {[info exists httpsport] && $httpsport ne ""} {
     #
-    # We have an "httpsport" configured, so configure this module.
-    #
-    #
     # We have an "httpsport" configured, so load and configure the
     # module "nsssl" as a global server module with the name "https".
     #
-    ns_log notice "HTTPSPORT=[info exists httpsport] => <$httpsport>"
-
     ns_section ns/modules {
         ns_param https nsssl
     }
@@ -421,6 +416,7 @@ ns_section ns/server/default/modules {
     if {$nscpport ne ""} {ns_param nscp nscp}
     ns_param    nslog               nslog
     ns_param    nscgi               nscgi
+    ns_param    nsperm              nsperm
     ns_param    revproxy            tcl
 }
 
