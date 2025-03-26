@@ -2254,6 +2254,7 @@ NsConnThread(void *arg)
                 status = Ns_CondTimedWait(&argPtr->cond, &argPtr->lock, timePtr);
 
                 if (unlikely(status == NS_TIMEOUT)) {
+                    Ns_Log(Debug, "TIMEOUT");
                     if (unlikely(argPtr->connPtr != NULL)) {
                         /*
                          * This should not happen: we had a timeout, but there
@@ -2261,7 +2262,7 @@ NsConnThread(void *arg)
                          * comes in, we get signaled and should see therefore
                          * no timeout.  Maybe the signal was lost?
                          */
-                        Ns_Log(Warning, "signal lost, resuming after timeout");
+                        Ns_Log(Warning, "broadcast signal lost, resuming after timeout");
                         status = NS_OK;
 
                     } else if (poolPtr->threads.current <= poolPtr->threads.min) {
@@ -2276,6 +2277,7 @@ NsConnThread(void *arg)
                         /*
                          * We have a timeout, and the thread can exit.
                          */
+                        Ns_Log(Debug, "We have a timeout, and the thread can exit");
                         break;
                     }
                 }
@@ -3028,7 +3030,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
             /*
              * connPtr->reqPtr == NULL. Having no connPtr->reqPtr is normal
              * for "queued" requests but not for "running" requests. Report
-             * this in the sytem log.
+             * this in the system log.
              */
             Tcl_DStringAppendElement(dsPtr, "unknown");
             if (*state == 'r') {
