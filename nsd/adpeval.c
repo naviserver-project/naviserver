@@ -551,7 +551,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
             }
             if (isNew != 0) {
                 Ns_MutexUnlock(&servPtr->adp.pagelock);
-                Ns_Log(Notice, "AdpSource calls ParseFile with flags %.8x", itPtr->adp.flags);
+                Ns_Log(Debug, "AdpSource calls ParseFile with flags %.8x", itPtr->adp.flags);
                 pagePtr = ParseFile(itPtr, file, &st, itPtr->adp.flags);
                 Ns_MutexLock(&servPtr->adp.pagelock);
                 if (pagePtr == NULL) {
@@ -963,7 +963,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
         pagePtr->size = stPtr->st_size;
         pagePtr->dev = stPtr->st_dev;
         pagePtr->ino = stPtr->st_ino;
-        Ns_Log(Notice, "ParseFile calls NsAdpParse with flags %.8x", flags);
+        Ns_Log(Debug, "ParseFile calls NsAdpParse with flags %.8x", flags);
         NsAdpParse(&pagePtr->code, itPtr->servPtr, page, flags, file);
         Tcl_DStringFree(&utf);
     }
