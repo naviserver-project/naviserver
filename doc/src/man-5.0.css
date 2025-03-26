@@ -3,18 +3,259 @@
  * man pages that appear at: https://naviserver.sourceforge.io/n/toc.html*
  *
  */
-@import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css");
+//@import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css");
 
+/* man.css */
+
+/* Global Styles */
+html {
+    font-family: Arial, sans-serif;
+}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  color: #333;
+  line-height: 1.5;
+  padding: 0 2em 0 2em;
+  margin: 0;
+}
+hr {
+    margin: 0;
+}
+/*
 html { padding: 0; }
-body { padding: 0 2em 0 2em; margin: 0; }
+hr {
+    border: 0;
+    height: 0;
+    color: white;
+    margin: 0;
+}
+span.logo {
+    background-image: url('//naviserver.sourceforge.io/ns-icon-16.png');
+    background-repeat: no-repeat;
+    padding-left: 17px;  /* width of the image plus a little extra padding */
+}
+*/
 
+p, dl dd {
+   min-width: 15em;
+   max-width: 50em;
+}
+
+dt strong, dt i.arg, table tr td strong {
+   font-weight: normal;
+}
+
+
+/* Header Container */
+.man-header {
+  background-color: #004080;
+  color: #fff;
+  margin: 0 -2em;
+}
+.man-header a {
+  /* background-color: #004080;*/
+  color: #fff;
+  font-size: 1.5em;
+  text-decoration: none;
+}
+
+/* Main header with branding and version switcher */
+.header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 20px;
+}
+
+.header-left {
+  display: flex;
+  align-items: baseline;
+}
+
+.logo {
+  display: inline-block;
+  width: 40px;  /* adjust as needed */
+  height: 40px;
+  background: url('logo.svg') no-repeat center;
+  background-size: contain;
+  margin-right: 10px;
+}
+
+header span.tagline {
+    font-size: 1em;
+    margin-left: 10px;
+}
+
+/* Version Switcher */
+.version-switcher {
+  display: flex;
+  gap: 10px;
+}
+
+.version-switcher a {
+  text-decoration: none;
+  color: #ffc107;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
+.version-switcher a:hover {
+  background-color: rgba(255, 193, 7, 0.2);
+}
+
+.version-switcher a.active {
+  background-color: #ffc107;
+  color: #004080;
+  border-color: #ffc107;
+}
+
+/* Info Bar */
+.man-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  background-color: #f1f1f1;
+  color: #004080;
+  padding: 8px 20px;
+  border-top: 1px solid #ccc;
+}
+
+.man-info .man-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: bold;
+}
+
+.man-info .man-details {
+  margin: 0;
+  font-size: 1rem;
+  font-style: italic;
+  color: #666;
+}
+
+/* Horizontal rules */
+hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  /*margin: 10px 20px;*/
+  margin: 10px 0px;
+}
+
+/* Page Title */
+.doctools_title {
+  font-size: 1.8rem;
+  color: #004080;
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Section Headings */
+.doctools_section h2 {
+  font-size: 1.4rem;
+  color: #004080;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 5px;
+  margin: 20px 20px 10px;
+}
+
+/* Content Spacing for paragraphs, lists, definitions */
+.doctools_section p,
+.doctools_section ul,
+.doctools_section dl {
+  margin: 10px 20px;
+}
+
+/* Table Styling */
+table {
+  width: 90%;
+  margin: 20px auto;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+table th,
+table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+table th {
+  background-color: #999;
+  color: #fff;
+}
+table td:first-child {
+  width: 150px;
+  background-color: #eaeaea;
+  font-weight: bold;
+  overflow-wrap: break-word;
+}
+
+/* Links */
+a {
+  color: #004080;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Tooltip Styling */
+.tooltip {
+  position: relative;
+  cursor: help;
+}
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: #999;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 5px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #999 transparent transparent transparent;
+}
+
+/* Tip Marker for elements with class "tip" */
+.tip::after {
+  content: " ⓘ";
+  font-size: 0.9em;
+  color: #777;
+  margin-left: 4px;
+}
 
 
 .doctools h1 {
-   margin:    1.5em 0 2em 0;
+   /*margin:    1.5em 0 2em 0;*/
    font-size: 1.3em;
-   color:     #333;
+   /*color:     #333;*/
 }
+/*
 
 .doctools h2 {
    margin-top: 2em;
@@ -35,21 +276,7 @@ body { padding: 0 2em 0 2em; margin: 0; }
     font-weight: normal;
     width: 50em;
 }
-
-hr {
-   border: 0; height: 0; color: white; margin: 0;
-}
-
-
-p, dl dd {
-   min-width: 15em;
-   max-width: 50em;
-}
-
-dt strong, dt i.arg, table tr td strong {
-   font-weight: normal;
-}
-
+*/
 
 table {
    width: 100% !important;
@@ -111,40 +338,6 @@ dd>dl.doctools_options, dd>dl.doctools_arguments {
 }
 
 
-#man-header {
-   background-color: black;
-   color:            #eee;
-
-   border-top:       1px solid #666;
-   border-bottom:    1px solid #666;
-
-   margin:   0 -2em 1em -2em;
-   padding: .1em 1em .1em 1em;
-   display: flex;
-   font-size: smaller;
-}
-#man-header .right {
-    margin-left: auto;
-    order: 2;
-}
-#man-header .right .active {
-    color: #B49C33;
-}
-#man-header .right .inactive {
-    color: grey;
-}
-
-#man-header a {
-   color: #eee;
-   text-decoration: none;
-}
-
-#man-header img {
-   border: 0;
-}
-
-
-
 #man-footer {
    background-color: #eee;
    color:            black;
@@ -184,21 +377,16 @@ ul.doctools_syntax li a span.opt b {
     font-weight: normal;
 }
 
+/*
 #see-also a,
 #keywords a,
 ul.doctools_syntax li a {
     text-decoration: none;
     color: darkslateblue;
-}
+}*/
 
 ul.doctools_syntax li {
     margin: 0px 0px 6px 0px;
-}
-
-span.logo {
-    background-image: url('//naviserver.sourceforge.io/ns-icon-16.png');
-    background-repeat: no-repeat;
-    padding-left: 17px;  /* width of the image plus a little extra padding */
 }
 
 pre.doctools_example {
@@ -206,6 +394,7 @@ pre.doctools_example {
     padding: 10px;
     margin-left: 2em;
     margin-right: 2em;
+    overflow: auto;
 }
 
 div.doctools_section p {

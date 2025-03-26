@@ -10,8 +10,8 @@
 #
 #
 #
-MAN_CSS=man.css
-HEADER_INC=header.inc
+MAN_CSS=man-5.0.css
+HEADER_INC=header-5.0.inc
 
 NSBUILD=1
 include include/Makefile.global
