@@ -66,12 +66,11 @@ static const char* ConfigGet(const char *section, const char *key, bool exact, c
 static bool ToBool(const char *value, bool *valuePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Tcl_WideInt
-ConfigWideIntRange(const char *section, const char *key,
-                   const char *defaultString, Tcl_WideInt defaultValue,
-                   Tcl_WideInt minValue, Tcl_WideInt maxValue,
-                   Ns_ReturnCode (converter)(const char *chars, Tcl_WideInt *intPtr),
-                   const char *kind)
+static Tcl_WideInt ConfigWideIntRange(const char *section, const char *key,
+                                      const char *defaultString, Tcl_WideInt defaultValue,
+                                      Tcl_WideInt minValue, Tcl_WideInt maxValue,
+                                      Ns_ReturnCode (converter)(const char *chars, Tcl_WideInt *intPtr),
+                                      const char *kind)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
 
 static const char *NormalizePath(const char *input, TCL_SIZE_T *lengthPtr)
