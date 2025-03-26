@@ -336,7 +336,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
              * Query or update an ADP option.
              */
 
-            if (objc != 2 && objc !=3 ) {
+            if (objc != 2 && objc != 3 ) {
                 Tcl_WrongNumArgs(interp, 2, objv, "?true|false?");
                 result = TCL_ERROR;
 

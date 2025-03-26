@@ -1651,7 +1651,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                     Tcl_DStringFree(&ds);
                 }
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("defaultport",11));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("defaultport", 11));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj(drvPtr->defport));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("protocol", 8));
@@ -4850,7 +4850,7 @@ SockParse(Sock *sockPtr)
                      */
                     Ns_Log(Ns_LogRequestDebug, "100-continue: reply CONTINUE");
                     NsAddNslogEntry(sockPtr, 100, NULL, NULL);
-                    Ns_Log(Notice, "**** 100-continue line <%s>",sockPtr->reqPtr->request.line);
+                    Ns_Log(Notice, "**** 100-continue line <%s>", sockPtr->reqPtr->request.line);
 
                     iov[0].iov_base = (char *)"HTTP/1.1 100 Continue\r\n\r\n";
                     iov[0].iov_len = strlen(iov[0].iov_base);
@@ -7486,7 +7486,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
             /*
              * Deliver an mmapped file, no need to copy content
              */
-            for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
+            for (i = 0, j = headerbufs; i < nbufs; i++, j++) {
                 wrSockPtr->c.mem.bufs[j].iov_base = bufs[i].iov_base;
                 wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
             }
@@ -7503,7 +7503,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
              * Deliver a content from iovec. The lifetime of the
              * source is unknown, we have to copy the c.
              */
-            for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
+            for (i = 0, j = headerbufs; i < nbufs; i++, j++) {
                 wrSockPtr->c.mem.bufs[j].iov_base = ns_malloc(bufs[i].iov_len);
                 wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
                 memcpy(wrSockPtr->c.mem.bufs[j].iov_base, bufs[i].iov_base, bufs[i].iov_len);

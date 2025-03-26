@@ -263,7 +263,7 @@ RedirectResponse(Ns_Conn *conn, const char *url, int statusCode, const char *sta
         finalUrlLength = urlDs.length;
 #endif
 
-        Ns_UrlEncodingWarnUnencoded("header field location",finalURL);
+        Ns_UrlEncodingWarnUnencoded("header field location", finalURL);
         Ns_ConnSetHeadersSz(conn, "location", 8, finalURL, finalUrlLength);
 
         Tcl_DStringInit(&msgDs);

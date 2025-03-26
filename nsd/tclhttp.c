@@ -472,7 +472,7 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    for (i=0; i<sizeof(options)/sizeof(options[0]); i++) {
+    for (i = 0; i<sizeof(options) / sizeof(options[0]); i++) {
         if ((options[i].state & flags) != 0u) {
             if (count > 0) {
                 Tcl_DStringAppend(dsPtr, "|", 1);
@@ -508,7 +508,7 @@ DStringAppendHttpSockState(Tcl_DString *dsPtr, unsigned int flags)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    for (i=0; i<sizeof(options)/sizeof(options[0]); i++) {
+    for (i = 0; i < sizeof(options) / sizeof(options[0]); i++) {
         if ((options[i].state & flags) != 0u) {
             if (count > 0) {
                 Tcl_DStringAppend(dsPtr, "|", 1);
@@ -2305,7 +2305,7 @@ HttpMeminfoObjCmd(
         Ns_DStringPrintf(&ds, "%p %s", ptr, label);
 
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(ds.string, ds.length));
-        Tcl_DStringSetLength(&ds,0);
+        Tcl_DStringSetLength(&ds, 0);
     }
 
     Ns_MutexUnlock(&ckMutex);
@@ -5115,7 +5115,7 @@ SkipMessage(
              * content upfront in the buffer.
              */
             newSize =  httpPtr->ds.length - httpPtr->responseHeaderSize;
-            assert(newSize>=0);
+            assert(newSize >= 0);
             memmove(httpPtr->ds.string, httpPtr->ds.string + httpPtr->responseHeaderSize, (size_t)newSize);
             Tcl_DStringSetLength(&httpPtr->ds, newSize);
 

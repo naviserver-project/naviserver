@@ -157,7 +157,7 @@ DStringAppendTaskFlags(Tcl_DString *dsPtr, unsigned int flags)
         { TASK_EXPIRED,  "EXPIRED"},
     };
 
-    for (i=0; i<sizeof(options)/sizeof(options[0]); i++) {
+    for (i = 0; i < sizeof(options) / sizeof(options[0]); i++) {
         if ((options[i].state & flags) != 0u) {
             if (count > 0) {
                 Tcl_DStringAppend(dsPtr, "|", 1);

@@ -1918,7 +1918,7 @@ enum ISubCmdIdx {
     CQueryIdx,
     CRatelimitIdx, CRequestIdx,
     CServerIdx, CSockIdx, CStartIdx, CStatusIdx,
-    CTargetIdx,CTimeoutIdx,
+    CTargetIdx, CTimeoutIdx,
     CUrlIdx, CUrlcIdx, CUrlDictIdx, CUrlEncodingIdx, CUrlvIdx,
     CVersionIdx,
     CZipacceptedIdx
@@ -2688,7 +2688,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
             result = TCL_ERROR;
         } else {
             Tcl_RegisterChannel(interp, chan);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),TCL_INDEX_NONE));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), TCL_INDEX_NONE));
         }
         break;
     }

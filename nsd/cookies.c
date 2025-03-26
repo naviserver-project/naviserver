@@ -796,12 +796,12 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int             secure = 0, replace = 0, result;
     int             samesite = INTCHAR('l');
     Ns_ObjvSpec     opts[] = {
-        {"-domain",  Ns_ObjvString, &domain,   NULL},
-        {"-path",    Ns_ObjvString, &path,     NULL},
-        {"-replace", Ns_ObjvBool,   &replace,  NULL},
-        {"-samesite",Ns_ObjvIndex,  &samesite, samesiteValues},
-        {"-secure",  Ns_ObjvBool,   &secure,   NULL},
-        {"--",       Ns_ObjvBreak,  NULL,      NULL},
+        {"-domain",   Ns_ObjvString, &domain,   NULL},
+        {"-path",     Ns_ObjvString, &path,     NULL},
+        {"-replace",  Ns_ObjvBool,   &replace,  NULL},
+        {"-samesite", Ns_ObjvIndex,  &samesite, samesiteValues},
+        {"-secure",   Ns_ObjvBool,   &secure,   NULL},
+        {"--",        Ns_ObjvBreak,  NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {

@@ -937,7 +937,7 @@ Ns_SockaddrPublicIpAddress(const struct sockaddr *saPtr) {
         size_t j;
         for (j = 0u; nonPublicCIDR[j] != NULL; j++) {}
         (void)ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE);
-        Ns_Log(Notice, "...... checked %ld/%ld public %s -> %d", i,j, ipString, success);
+        Ns_Log(Notice, "...... checked %ld/%ld public %s -> %d", i, j, ipString, success);
     }
 #endif
     return success;

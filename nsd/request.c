@@ -461,7 +461,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                    : request->requestType == NS_REQUEST_TYPE_CONNECT ? "CONNECT"
                    : "asterisk",
                    request->host, request->port, request->protocol, request->requestType,
-                   url,line);
+                   url, line);
         }
     }
 
