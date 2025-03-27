@@ -1111,17 +1111,21 @@ Ns_ConnDriverName(const Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnStartTime --
+ * Ns_ConnStartTime, Ns_ConnAcceptTime, Ns_ConnQueueTime, Ns_ConnDequeueTime,
+ * Ns_ConnFilterTime --
  *
- *      Return the connection start time, which is the time the
- *      connection was queued from the driver thread, not the time the
- *      underlying socket was opened to the server. Similarly
- *      Ns_ConnAcceptTime() returns the time the connection was
- *      accepted (this is maybe a kept open connection),
- *      Ns_ConnQueueTime() returns the time a request was queued,
- *      Ns_ConnDequeueTime() returns the time a request was taken out
- *      of the queue, and Ns_ConnFilterTime() is the timestamp after
- *      the filters are executed.
+ *      Ns_ConnStartTime() returns the connection start time, which is the
+ *      time the connection was queued from the driver thread (not to be
+ *      mistaken as the time the underlying socket was opened to the server).
+ *
+ *      The following functions have the identical interface:
+ *
+ *        - Ns_ConnAcceptTime() returns the time the connection was accepted
+ *          (this is maybe a kept open connection),
+ *        - Ns_ConnQueueTime() returns the time a request was queued,
+ *        - Ns_ConnDequeueTime() returns the time a request was taken out of
+ *          the queue, and
+ *        - Ns_ConnFilterTime() is the timestamp after the filters are executed.
  *
  * Results:
  *      Ns_Time pointer.
