@@ -28,7 +28,7 @@ distfiles = $(dirs) doc tcl contrib include tests win win32 configure m4 \
 	config.guess config.sub \
 	README.md NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
-	version_include.man.in bitbucket-install.tcl
+	version_include.man.in install-from-repository.tcl
 
 all:
 	@for i in $(dirs); do \

@@ -4,17 +4,35 @@
   <meta charset='UTF-8'>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NaviServer <%=[ns_info patchlevel]%> – Welcome</title>
-  <link rel="stylesheet" href="doc/naviserver/man.css" type="text/css">
+  <link rel="stylesheet" href="doc/naviserver/man-5.0.css" type="text/css">
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" type="text/css">-->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <style>
     body { font-family: Arial, sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
     header { background: #004080; padding: 20px; color: #fff; }
     header a { color: #fff; text-decoration: none; font-size: 1.5em; }
     header span.tagline { font-size: 1em; margin-left: 10px; }
-    .container { padding: 20px; }
-    ul { list-style-type: disc; margin-left: 20px; }
+    .container {
+        padding: 20px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    @media (min-width: 576px) { .container {max-width: 540px; }}
+    @media (min-width: 768px) { .container {max-width: 720px; }}
+    @media (min-width: 992px) { .container {max-width: 960px; }}
+    @media (min-width: 1200px) {.container {max-width: 1100px;}}
+    .external::after {
+      content: "↗";
+      font-size: 0.7em;
+      vertical-align: super;
+      margin-left: 0px;
+      color: #666;
+    }
+    ul { list-style-type: disc; margin-top: 0px; margin-left: 20px; padding-left: 2rem;}
+    p {margin-top: 0px; margin-bootom: 1rem;}
     .config-details li { margin-bottom: 8px; }
     .security { background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; margin-top: 20px; }
+
     a { color: #0066cc; }
     .btn-action {
       display: inline-block;
@@ -47,6 +65,10 @@
       margin-bottom: 0.5rem;      /* Consistent spacing below */
       padding-bottom: 0.25rem;    /* Space for the underline */
       border-bottom: 2px solid #ccc;  /* Subtle underline to separate sections */
+      line-height: 1.2;
+    }
+    @media (max-width: 768px) {
+        div.container h1 {font-size: 2.0rem;}
     }
     /* Modal overlay */
     .modal {
@@ -270,16 +292,7 @@ try {
   <header>
     <a href="/"><!-- <span class="logo">&nbsp;</span>--><strong>NaviServer</strong></a>
     <span class="tagline">Programmable Web Server</span>
-    <style>
-    .external::after {
-      content: "↗";
-      font-size: 0.7em;
-      vertical-align: super;
-      margin-left: 0px;
-      color: #666;
-    }
-    </style>
-</header>
+  </header>
 
   <div class="container">
     <h1>Welcome to NaviServer <%=[ns_info patchlevel]%></h1>
@@ -317,6 +330,3 @@ try {
   <%= $password_dialog %>
 </body>
 </html>
-
-
-

@@ -10,7 +10,7 @@
     </div>-->
   </div>
 <!--  <div class="man-info">
-    <h1 class="man-title">ns_driver(n)</h1>
-    <p class="man-details">NaviServer [vset version] &ndash; NaviServer Built-in Commands</p>
+    <h1 class="man-title">@MAN_TITLE@</h1>
+    <p class="man-details">@MAN_SECTION@ &ndash; @NS_VERSION@</p>
   </div>-->
 </header>

@@ -20,6 +20,10 @@ body {
   padding: 0 2em 0 2em;
   margin: 0;
 }
+/* top-level navigiation as prodiced by doctools */
+body > a {
+    font-size: smaller;
+}
 hr {
     margin: 0;
 }
@@ -47,6 +51,14 @@ dt strong, dt i.arg, table tr td strong {
    font-weight: normal;
 }
 
+/* toplevel /toc.html page has different formatting, .toc classes added by post-processing script */
+strong.toc {
+    font-weight: bold;
+    font-size: larger;
+}
+dl.toc dd {
+    margin-left: 1em;
+}
 
 /* Header Container */
 .man-header {
@@ -138,6 +150,40 @@ header span.tagline {
   color: #666;
 }
 
+@media (max-width: 905px) {
+    .man-info .man-details {
+        font-size: smaller;
+    }
+    .man-info .man-title {
+        margin: 0 10px 0 0;
+        font-size: 1.0rem;
+    }
+    header span.tagline {
+        font-size: 0.7em;
+    }
+    .man-header {
+        margin: 0 -1em;
+    }
+    .man-header a {
+        font-size: 1.2em;
+    }
+    .version-switcher a {
+        text-decoration: none;
+        padding: 2px 4px;
+        font-size: 0.8rem;
+    }
+    body {
+        padding: 0 1em 0 1em;
+    }
+    body > a {
+        font-size: 0.8rem;
+    }
+    div.doctools {
+        margin: 0 -1em;
+    }
+}
+
+
 /* Horizontal rules */
 hr {
   border: none;
@@ -189,11 +235,39 @@ table th {
   color: #fff;
 }
 table td:first-child {
-  width: 150px;
+  width: 153px;
   background-color: #eaeaea;
   font-weight: bold;
   overflow-wrap: break-word;
 }
+col.doctools_idxleft {
+  width: 200px;
+}
+col.doctools_idxright {
+  width: auto;
+}
+tr.doctools_idxheader th[colspan="2"] {
+    text-align:left;
+    /*padding: 20px 0px 10px 0px;*/
+    /*background-color: #eee;*/
+}
+tr.doctools_idxheader a {
+    color: #fff;
+}
+
+@media (max-width: 905px) {
+    col.doctools_idxleft {
+        width: 120px;
+    }
+    table td.doctools_idxleft {
+        font-size: 13px
+    }
+    table td:first-child {
+        width: 123px;
+        font-size: 13px
+    }
+}
+
 
 /* Links */
 a {
@@ -293,13 +367,6 @@ table tr.#doctools_idxheader th {
     text-align:left;
 }
 */
-table tr th[colspan="2"] {
-    text-align:left;
-    padding: 20px 0px 10px 0px;
-    background-color: #eee;
-}
-
-
 table tr td {
    background-color: white;
    padding-bottom: .3em;
@@ -337,6 +404,14 @@ dd>dl.doctools_options, dd>dl.doctools_arguments {
    padding: 1em 1em 1em 2em;
 }
 
+@media (max-width: 905px) {
+    dl dt {
+        margin-left:  3em;
+        text-indent: -3em;
+    }
+    dl dd {
+        margin-left:  0em;
+    }}
 
 #man-footer {
    background-color: #eee;
