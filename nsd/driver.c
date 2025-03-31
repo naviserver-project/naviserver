@@ -1240,7 +1240,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
         defproto = "unknown";
         defport = 0u;
     }
-    Ns_Log(DriverDebug, "DriverInit server <%s> threadName %s proto %s port %hu",
+    Ns_Log(DriverDebug, "DriverInit server <%s> threadName %s default proto %s default port %hu",
            server, threadName, defproto, defport);
 
     /*
