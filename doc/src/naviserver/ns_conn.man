@@ -80,7 +80,7 @@ by the Accept-Encoding header.
  converted to the connection’s encoding.  Note that the response
  content may be delivered either as a string (via ns_conn content) or
  as a file (see [cmd "ns_conn contentfile"]), depending on
- configration options.
+ configuration options.
 
 [call [cmd  "ns_conn contentfile"]]
 
