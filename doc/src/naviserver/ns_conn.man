@@ -230,7 +230,7 @@ by the Accept-Encoding header.
 [call [cmd  "ns_conn location"]]
 
  Returns the location string for the virtual server handling the
-   request in the format (":port" ist optional):
+   request in the format (":port" is optional):
    protocol://hostname:port
 
 [para]
