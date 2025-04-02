@@ -8,14 +8,37 @@
   <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" type="text/css">-->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <style>
-    body { font-family: Arial, sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
-    header { background: #004080; padding: 20px; color: #fff; }
-    header a { color: #fff; text-decoration: none; font-size: 1.5em; }
+
+    /* Additional Colors */
+    :root {
+        --color-security-bg: #fff3cd;
+        --color-security-strong: #856404;
+        --color-security-border: #ffeeba;
+        --color-action-btn-bg: #007BFF;   /* a brighter blue variant */
+        --color-action-btn-text: #fff;
+        --color-header-naviserver: var(--color-white);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --color-security-bg: #6a4e00a6; /*#6A4E00;*/
+            --color-security-strong: #ffd966bf; /*#ffd966;*/
+            --color-security-border: #8C6400;
+            --color-action-btn-bg: #66B3FF;
+            --color-action-btn-text: #002347;
+            --color-header-naviserver: var(--color-anchor);
+        }
+    }
+    body { font-family: Arial, sans-serif; /*background: #f9f9f9; */ margin: 0; padding: 0; }
+    header { background: var(--color-primary-blue); padding: 20px; color: var(--color-white); }
+    header a { color: var(--color-header-naviserver); text-decoration: none; font-size: 1.5em; }
+    header a:hover {color: var(--color-header-naviserver);}
     header span.tagline { font-size: 1em; margin-left: 10px; }
     .container {
         padding: 20px;
         margin-left: auto;
         margin-right: auto;
+        color: var(--color-body-text);
     }
     @media (min-width: 576px) { .container {max-width: 540px; }}
     @media (min-width: 768px) { .container {max-width: 720px; }}
@@ -26,32 +49,47 @@
       font-size: 0.7em;
       vertical-align: super;
       margin-left: 0px;
-      color: #666;
+      /*color: #666;*/
     }
     ul { list-style-type: disc; margin-top: 0px; margin-left: 20px; padding-left: 2rem;}
     p {margin-top: 0px; margin-bootom: 1rem;}
     .config-details li { margin-bottom: 8px; }
-    .security { background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; margin-top: 20px; }
-
-    a { color: #0066cc; }
+    .security {
+        background: var(--color-security-bg);
+        border: 1px solid var(--color-security-border);
+        padding: 10px;
+        margin-top: 20px;
+    }
+    .security strong {
+        color: var(--color-security-strong);
+    }
+    .security-icon {
+        vertical-align: -0.25em;
+    }
+    .security-icon .exclamation {
+        stroke: var(--color-security-bg);
+        fill: var(--color-security-bg);
+    }
+    a { /*color: #0066cc;*/ }
     .btn-action {
       display: inline-block;
       padding: 2px 10px;
       margin-left: 15x;
-      background-color: #007BFF; /* bright blue */
-      color: #ffffff;
+      background-color: var(--color-action-btn-bg);
+      color:var(--color-action-btn-text);
       text-decoration: none;
       border-radius: 4px;
       font-weight: bold; font-size: small;
       transition: background-color 0.3s ease, transform 0.2s ease;
     }
     .btn-action:hover, .btn-action:focus {
-      background-color: #0056b3; /* A slightly darker blue for hover state */
+      /*background-color: #0056b3; *//* A slightly darker blue for hover state */
       transform: translateY(-2px); /* lift effect */
     }
+
     div.container h1 {
       font-size: 2.5rem;          /* Large, prominent size */
-      color: #333;                /* Dark grey for excellent readability */
+      /*color: #333; */               /* Dark grey for excellent readability */
       font-weight: 700;           /* Bold to draw attention */
       margin-top: 2.5rem;         /* Generous spacing above */
       margin-bottom: 1.5rem;      /* A little spacing below */
@@ -59,13 +97,29 @@
     }
     div.container h2 {
       font-size: 1.8rem;          /* Slightly smaller than h1 */
-      color: #004080;             /* Using the same blue as the header for brand consistency */
+      /*color: #004080;*/             /* Using the same blue as the header for brand consistency */
       font-weight: 600;           /* Semi-bold for prominence */
       margin-top: 1.5rem;           /* Adequate spacing above */
       margin-bottom: 0.5rem;      /* Consistent spacing below */
       padding-bottom: 0.25rem;    /* Space for the underline */
-      border-bottom: 2px solid #ccc;  /* Subtle underline to separate sections */
+      border-bottom: 2px solid var(--color-border);  /* Subtle underline to separate sections */
       line-height: 1.2;
+    }
+    @media (prefers-color-scheme: light) {
+        div.container h1 {
+            color: #333;
+        }
+        div.container h2 {
+            color: #004080;
+        }
+    }
+    @media (prefers-color-scheme: dark) {
+        div.container h1 {
+            color: var(--color-header-strong-text);
+        }
+        div.container h2 {
+            color: var(--color-header-strong-text);
+        }
     }
     @media (max-width: 768px) {
         div.container h1 {font-size: 2.0rem;}
@@ -84,7 +138,7 @@
     }
     /* Modal content box */
     .modal-content {
-      background-color: #fefefe;
+      background-color: var(--color-body-bg);
       margin: 10% auto;
       padding: 20px;
       border: 1px solid #888;
@@ -96,7 +150,7 @@
     }
     /* Close button */
     .close {
-      color: #aaa;
+      /*color: #aaa;*/
       float: right;
       font-size: 28px;
       font-weight: bold;
@@ -104,7 +158,7 @@
     }
     .close:hover,
     .close:focus {
-      color: black;
+      /*color: black;*/
     }
     /* Form element styles */
     label {
@@ -120,6 +174,10 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+    .modal-content .btn-action {
+        font-size: larger;
+        margin: 10px 0px 0px 0px;
+    }
   </style>
 </head>
 <%
@@ -131,7 +189,13 @@ try {
         try {ns_perm checkpass nsadmin x} on error {errorMsg} {} on ok {result} {
             set nsperm_warning [ns_trim -delimiter | [subst {
                 |<div class="security">
-                |  <strong>Security Alert:</strong>
+                |  <strong>
+                |  <svg class="security-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                |    <path d="M12 2L2 22h20L12 2z" fill="currentColor"></path>
+                |    <path class="exclamation" d="M12 10v4" stroke-width="2" stroke-linecap="round"></path>
+                |    <circle class="exclamation" cx="12" cy="18" r="1"></circle>
+                |  </svg>
+                |  Security Alert:</strong>
                 |  The 'nsperm' module is installed, but the default
                 |  system administrator password for 'nsadmin' remains
                 |  unchanged. Please update the password immediately.
@@ -147,10 +211,10 @@ try {
                 |        <input type="password" id="currentPwd" name="currentPwd" required> -->
                 |
                 |        <label for="newPwd">New Password:</label>
-                |        <input type="password" id="newPwd" name="newPwd" required>
+                |        <input type="password" id="newPwd" name="newPwd" autocomplete="new-password" required>
                 |
                 |        <label for="confirmPwd">Confirm New Password:</label>
-                |        <input type="password" id="confirmPwd" name="confirmPwd" required>
+                |        <input type="password" id="confirmPwd" name="confirmPwd" autocomplete="new-password" required>
                 |
                 |        <button type="submit" class="btn-action">Submit</button>
                 |      </form>
@@ -321,9 +385,14 @@ try {
     </ul>
 
   <!-- <li>The NaviServer <a href="examples/">Examples</a> include a few useful scripts and tricks.<p> -->
-
     <div class="security">
-      <strong>Security Notice:</strong> For production environments, please replace or secure this default page to protect your server's details.
+<strong>
+<svg class="security-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="M12 2L2 22h20L12 2z" fill="currentColor"></path>
+  <path class="exclamation" d="M12 10v4" stroke-width="2" stroke-linecap="round"></path>
+  <circle class="exclamation" cx="12" cy="18" r="1"></circle>
+</svg>
+      Security Notice:</strong> For production environments, please replace or secure this default page to protect your server's details.
     </div>
     <%= $nsperm_warning %>
   </div>

@@ -1,11 +1,75 @@
-/*
- * This is the style sheet for the HTML version of the naviserver and module
- * man pages that appear at: https://naviserver.sourceforge.io/n/toc.html*
- *
- */
-//@import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css");
+/* CSS Variables */
+:root {
+  /* Base Colors */
+  --color-body-bg: #f9f9f9;
+  --color-body-text: #333;
+  --color-anchor: #004080;
+  --color-primary-blue: #004080;
+  --color-white: #fff;
+  --color-accent-yellow: #ffc107;
 
-/* man.css */
+  /* Additional Colors */
+  --color-anchor-hover-text: #0059b3;
+  --color-border: #ccc;
+  --color-footer-bg: #eee;
+  --color-footer-link: #333;
+  --color-footer-text: black;
+  --color-h2-text: var(--color-primary-blue);
+  --color-header-bg: var(--color-primary-blue);
+  --color-header-text: var(--color-white);
+  --color-header-strong-text: var(--color-white);
+  --color-info-bg: #f1f1f1;
+  --color-pre-bg: #eeeeee;
+  --color-sample-bg: #f9f6f6;
+  --color-secondary-text: #666;
+  --color-table-cell-bg: #eaeaea;
+  --color-table-header-bg: #999;
+  --color-table-header-text: #fff;
+  --color-tip: #777;
+  --color-tooltip-bg: #999;
+  --color-tooltip-text: var(--color-white);
+}
+
+/* Dark Mode Variables: Blueish Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-body-bg: #0d1b2a; /* dark blueish background */
+    --color-body-text: #e0e0e0;
+    --color-anchor: #8ea8c3; /* was #8CA6C0, #6B8CAD and #527394; */
+    --color-primary-blue: #1e3a5f;
+    --color-white: #fff;
+    --color-accent-yellow: #ffc107;
+
+    --color-anchor-hover-text: #98B3CD;
+    --color-border: #444;
+    --color-footer-bg: #102a43;
+    --color-footer-link: #a0c4ff;
+    --color-footer-text: #e0e0e0;
+    --color-h2-text: var(--color-body-text);
+    --color-header-bg: #00264D;
+    --color-header-strong-text: #9CB3C9; /* var(--color-anchor), #B0CFE0; */
+    --color-header-text: var(--color-white);
+    --color-info-bg: #1e293b;
+    --color-pre-bg: #102a43;
+    --color-sample-bg: #102a43;
+    --color-secondary-text: #bbb;
+    --color-table-cell-bg: #1c2833;
+    --color-table-header-bg: #334;
+    --color-table-header-text: #fff;
+    --color-tip: #aaa;
+    --color-tooltip-bg: #334;
+    --color-tooltip-text: var(--color-white);
+  }
+}
+
+/* Section Headings */
+.doctools_section h2 {
+  font-size: 1.4rem;
+  color: var(--color-h2-text);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 5px;
+  margin: 20px 20px 10px;
+}
 
 /* Global Styles */
 html {
@@ -14,36 +78,32 @@ html {
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  color: #333;
+  background-color: var(--color-body-bg);
+  color: var(--color-body-text);
   line-height: 1.5;
-  padding: 0 2em 0 2em;
-  margin: 0;
+  padding: 0 2em;
 }
-/* top-level navigiation as prodiced by doctools */
 body > a {
     font-size: smaller;
 }
+body {
+    color: #777;
+}
+body .doctools {
+    color: var(--color-body-text);
+}
+ul li::marker {
+    color: #999;
+}
 hr {
-    margin: 0;
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
 }
-/*
-html { padding: 0; }
-hr {
-    border: 0;
-    height: 0;
-    color: white;
-    margin: 0;
-}
-span.logo {
-    background-image: url('//naviserver.sourceforge.io/ns-icon-16.png');
-    background-repeat: no-repeat;
-    padding-left: 17px;  /* width of the image plus a little extra padding */
-}
-*/
 
+/* Other Elements */
 p, dl dd {
-   min-width: 15em;
+   /*min-width: 15em;*/
    max-width: 50em;
 }
 
@@ -51,7 +111,16 @@ dt strong, dt i.arg, table tr td strong {
    font-weight: normal;
 }
 
-/* toplevel /toc.html page has different formatting, .toc classes added by post-processing script */
+/* Toc Page Styles */
+table.doctools_toc td {
+    color: var(--color-body-text);
+}
+@media (prefers-color-scheme: dark) {
+    table.doctools_toc td {
+        background-color: var(--color-body-bg);
+    }
+}
+
 strong.toc {
     font-weight: bold;
     font-size: larger;
@@ -62,39 +131,38 @@ dl.toc dd {
 
 /* Header Container */
 .man-header {
-  background-color: #004080;
-  color: #fff;
+  background-color: var(--color-header-bg);
+  color: var(--color-header-text);
   margin: 0 -2em;
 }
 .man-header a {
-  /* background-color: #004080;*/
-  color: #fff;
+  color: var(--color-header-strong-text);
   font-size: 1.5em;
   text-decoration: none;
 }
+.man-header a:hover {
+    color: var(--color-header-strong-text);
+}
 
-/* Main header with branding and version switcher */
+/* Main Header */
 .header-main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 20px;
+  padding: 20px;
 }
-
 .header-left {
   display: flex;
   align-items: baseline;
 }
-
 .logo {
   display: inline-block;
-  width: 40px;  /* adjust as needed */
+  width: 40px;
   height: 40px;
   background: url('logo.svg') no-repeat center;
   background-size: contain;
   margin-right: 10px;
 }
-
 header span.tagline {
     font-size: 1em;
     margin-left: 10px;
@@ -105,25 +173,22 @@ header span.tagline {
   display: flex;
   gap: 10px;
 }
-
 .version-switcher a {
   text-decoration: none;
-  color: #ffc107;
+  color: var(--color-accent-yellow);
   padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: 4px;
   font-size: 0.9rem;
   transition: background-color 0.3s;
 }
-
 .version-switcher a:hover {
   background-color: rgba(255, 193, 7, 0.2);
 }
-
 .version-switcher a.active {
-  background-color: #ffc107;
-  color: #004080;
-  border-color: #ffc107;
+  background-color: var(--color-accent-yellow);
+  color: var(--color-primary-blue);
+  border-color: var(--color-accent-yellow);
 }
 
 /* Info Bar */
@@ -131,23 +196,21 @@ header span.tagline {
   display: flex;
   justify-content: space-between;
   align-items: start;
-  background-color: #f1f1f1;
-  color: #004080;
+  background-color: var(--color-info-bg);
+  color: var(--color-secondary-text); /* var(--color-anchor);*/ /*var(--color-primary-blue);*/
   padding: 8px 20px;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid var(--color-border);
 }
-
 .man-info .man-title {
   margin: 0;
   font-size: 1.6rem;
   font-weight: bold;
 }
-
 .man-info .man-details {
   margin: 0;
   font-size: 1rem;
   font-style: italic;
-  color: #666;
+  color: var(--color-secondary-text);
 }
 
 @media (max-width: 905px) {
@@ -168,12 +231,11 @@ header span.tagline {
         font-size: 1.2em;
     }
     .version-switcher a {
-        text-decoration: none;
         padding: 2px 4px;
         font-size: 0.8rem;
     }
     body {
-        padding: 0 1em 0 1em;
+        padding: 0 1em;
     }
     body > a {
         font-size: 0.8rem;
@@ -183,19 +245,15 @@ header span.tagline {
     }
 }
 
-
-/* Horizontal rules */
+/* Horizontal Rules */
 hr {
-  border: none;
-  border-top: 1px solid #ccc;
-  /*margin: 10px 20px;*/
-  margin: 10px 0px;
+  margin: 10px 0;
 }
 
 /* Page Title */
 .doctools_title {
   font-size: 1.8rem;
-  color: #004080;
+  color: var(--color-primary-blue);
   text-align: center;
   margin: 20px 0;
 }
@@ -203,13 +261,13 @@ hr {
 /* Section Headings */
 .doctools_section h2 {
   font-size: 1.4rem;
-  color: #004080;
-  border-bottom: 2px solid #ccc;
+  color: var(--color-h2-text);
+  border-bottom: 2px solid var(--color-border);
   padding-bottom: 5px;
   margin: 20px 20px 10px;
 }
 
-/* Content Spacing for paragraphs, lists, definitions */
+/* Content Spacing */
 .doctools_section p,
 .doctools_section ul,
 .doctools_section dl {
@@ -225,18 +283,18 @@ table {
 }
 table th,
 table td {
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   padding: 8px;
   text-align: left;
   font-size: 0.9rem;
 }
 table th {
-  background-color: #999;
-  color: #fff;
+  background-color: var(--color-table-header-bg);
+  color: var(--color-table-header-text);
 }
 table td:first-child {
   width: 153px;
-  background-color: #eaeaea;
+  background-color: var(--color-table-cell-bg);
   font-weight: bold;
   overflow-wrap: break-word;
 }
@@ -247,12 +305,10 @@ col.doctools_idxright {
   width: auto;
 }
 tr.doctools_idxheader th[colspan="2"] {
-    text-align:left;
-    /*padding: 20px 0px 10px 0px;*/
-    /*background-color: #eee;*/
+    text-align: left;
 }
 tr.doctools_idxheader a {
-    color: #fff;
+    color: var(--color-white);
 }
 
 @media (max-width: 905px) {
@@ -260,22 +316,22 @@ tr.doctools_idxheader a {
         width: 120px;
     }
     table td.doctools_idxleft {
-        font-size: 13px
+        font-size: 13px;
     }
     table td:first-child {
         width: 123px;
-        font-size: 13px
+        font-size: 13px;
     }
 }
 
-
 /* Links */
 a {
-  color: #004080;
+    color: var(--color-anchor);
   text-decoration: none;
 }
 a:hover {
   text-decoration: underline;
+  color: var(--color-anchor-hover-text);
 }
 
 /* Tooltip Styling */
@@ -286,8 +342,8 @@ a:hover {
 .tooltip .tooltiptext {
   visibility: hidden;
   width: 200px;
-  background-color: #999;
-  color: #fff;
+  background-color: var(--color-tooltip-bg);
+  color: var(--color-tooltip-text);
   text-align: center;
   padding: 5px 0;
   border-radius: 6px;
@@ -312,138 +368,104 @@ a:hover {
   transform: translateX(-50%);
   border-width: 5px;
   border-style: solid;
-  border-color: #999 transparent transparent transparent;
+  border-color: var(--color-tooltip-bg) transparent transparent transparent;
 }
 
-/* Tip Marker for elements with class "tip" */
+/* Tip Marker */
 .tip::after {
   content: " ⓘ";
   font-size: 0.9em;
-  color: #777;
+  color: var(--color-tip);
   margin-left: 4px;
 }
 
-
+/* Doctools Headings */
 .doctools h1 {
-   /*margin:    1.5em 0 2em 0;*/
    font-size: 1.3em;
-   /*color:     #333;*/
-}
-/*
-
-.doctools h2 {
-   margin-top: 2em;
-   color: #655;
-   text-transform: capitalize;
-   font-size: 1.6em;
-   font-weight: normal;
-   border-top: 1px solid #e9e6e6;
-   width: 50em;
 }
 
-.doctools h3 {
-    margin-top: 1.5em;
-    margin-bottom: 0.7em;
-    color: #655;
-    text-transform: capitalize;
-    font-size: 1.2em;
-    font-weight: normal;
-    width: 50em;
-}
-*/
-
+/* Table Adjustments */
 table {
    width: 100% !important;
-   background-color: white;
+   background-color: var(--color-white);
    border: 0;
    border-collapse: collapse;
 }
-
-/*
-table tr.doctools_idxheader th {
-    text-align:left;
-}
-table tr.#doctools_idxheader th {
-    text-align:left;
-}
-*/
 table tr td {
-   background-color: white;
-   padding-bottom: .3em;
+   background-color: var(--color-white);
+   padding-bottom: 0.3em;
 }
+@media (prefers-color-scheme: dark) {
+    table tr td {
+        background-color: var(--color-body-bg);
+    }
+}
+
 
 table tr td a {
    text-decoration: none;
 }
-
 table table tr td a {
    color: black;
 }
-
 table tr td a:hover {
-   color: blue;
+    color: var(--color-anchor-hover-text);
 }
 
-
-
+/* Definition Lists */
 dl dt {
-   margin-top:    .5em;
-   margin-bottom: .5em;
-
-   margin-left:  5em;
+   margin: 0.5em 0;
+   margin-left: 5em;
    text-indent: -5em;
-   max-width:    50em;
+   max-width: 50em;
 }
-
-dd>dl.doctools_options, dd>dl.doctools_arguments {
+dd > dl.doctools_options,
+dd > dl.doctools_arguments {
     margin-left: 2em;
 }
 .sample {
-   background-color: #f9f6f6;
+   background-color: var(--color-sample-bg);
    margin-left: 0;
    padding: 1em 1em 1em 2em;
 }
 
 @media (max-width: 905px) {
     dl dt {
-        margin-left:  3em;
+        margin-left: 3em;
         text-indent: -3em;
     }
     dl dd {
-        margin-left:  0em;
-    }}
+        margin-left: 0;
+    }
+}
 
+/* Footer */
 #man-footer {
-   background-color: #eee;
-   color:            black;
-
-   border-top:       2px solid #999;
-
-   margin:   3em -2em -1em -2em;
+   background-color: var(--color-footer-bg);
+   color: var(--color-footer-text);
+   border-top: 2px solid var(--color-border);
+   margin: 3em -2em -1em -2em;
    padding-bottom: 1em;
 }
-
 #man-footer ul {
-   color: #333;
+   color: var(--color-body-text);
    list-style-type: circle;
 }
-
 #man-footer a {
-   color: #333;
+   color: var(--color-footer-link);
    text-decoration: none;
-   font-size: .8em;
+   font-size: 0.8em;
 }
-
 #man-footer a:hover {
-   color: blue;
-   text-decoration: underline;
+    color: var(--color-anchor-hover-text);
+    text-decoration: underline;
 }
-
 #f-poweredbyico {
    float: right;
    margin: 1em;
 }
 
+/* Inline Code */
 b.const {
     font-family: "Courier New", Courier, monospace;
     font-weight: normal;
@@ -452,54 +474,43 @@ ul.doctools_syntax li a span.opt b {
     font-weight: normal;
 }
 
-/*
-#see-also a,
-#keywords a,
-ul.doctools_syntax li a {
-    text-decoration: none;
-    color: darkslateblue;
-}*/
-
+/* Syntax Lists */
 ul.doctools_syntax li {
-    margin: 0px 0px 6px 0px;
+    margin-bottom: 6px;
 }
 
+/* Code Examples */
 pre.doctools_example {
-    background-color: #eeeeee;
+    background-color: var(--color-pre-bg);
     padding: 10px;
-    margin-left: 2em;
-    margin-right: 2em;
+    margin: 0 2em;
     overflow: auto;
 }
 
-div.doctools_section p {
-    margin-left: 2em;
-}
-div.doctools_section p {
-    margin-left: 2em;
-}
+/* Section Spacing Adjustments */
+div.doctools_section p,
 div.doctools_section dl.doctools_definitions p {
-    margin-left: 0em;
+    margin-left: 2em;
 }
 div.doctools_section dl.doctools_definitions dd {
     margin-left: 2em;
 }
 div.doctools_section ul.doctools_itemized,
-div.doctools_section ol.doctools_enumerated
-{ padding-left: 3em; }
-div.doctools_section dl.doctools_definitions
-{ padding-left: 2em; }
-
+div.doctools_section ol.doctools_enumerated {
+    padding-left: 3em;
+}
 div.doctools_section ul.doctools_itemized ul,
 div.doctools_section ol.doctools_enumerated ul,
 div.doctools_section ul.doctools_itemized ol,
-div.doctools_section ol.doctools_enumerated ol
-{ padding-left: 1.5em; }
-
+div.doctools_section ol.doctools_enumerated ol {
+    padding-left: 1.5em;
+}
 div.doctools_section ul.doctools_itemized li p,
 div.doctools_section ol.doctools_enumerated li p,
 div.doctools_section ol.doctools_enumerated li pre,
-div.doctools_section dl.doctools_definitions dd
-{ margin-left: 6px; }
-div.doctools_section dl.doctools_definitions p
-{ margin-left: 2em; }
+div.doctools_section dl.doctools_definitions dd {
+    margin-left: 6px;
+}
+div.doctools_section dl.doctools_definitions p {
+    margin-left: 2em;
+}
