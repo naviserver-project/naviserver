@@ -2208,6 +2208,7 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
     if (likely(drvPtr->sendProc != NULL)) {
+        sockPtr->sendCount ++;
         sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, flags);
         if (unlikely(sent == -1)) {
             if (sockPtr->sendErrno == 0) {
