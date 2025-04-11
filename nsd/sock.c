@@ -244,7 +244,10 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState, unsigned long recv
  * Ns_SockSetSendErrno --
  *
  *      Set the error code (POSIX or the masked OpenSSL error code) for the
- *      send operation in the Sock structure.
+ *      send operation in the Sock structure.  This error code may represent a
+ *      standard POSIX error or a masked OpenSSL error (as returned by
+ *      ERR_get_error()), and is stored in the 'sendErrno' member of the Sock
+ *      structure.
  *
  * Results:
  *      None.
@@ -263,18 +266,15 @@ Ns_SockSetSendErrno(Ns_Sock *sock, unsigned long sendErrno)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockSetSendErrno --
+ * Ns_SockGetSendErrno, Ns_SockGetSendRejected, Ns_SockGetSendCount --
  *
- *      Sets the error code for the send operation in the Sock structure.
- *      This error code may represent a standard POSIX error or a masked
- *      OpenSSL error (as returned by ERR_get_error()), and is stored in
- *      the 'sendErrno' member of the Sock structure.
+ *      Accessor functions for sendErrno, sendRejected and sendCount
  *
  * Results:
- *      None.
+ *      Values of these fields.
  *
  * Side effects:
- *      Updates the 'sendErrno' field in the given Sock structure.
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -284,6 +284,63 @@ Ns_SockGetSendErrno(Ns_Sock *sock)
     return ((Sock *)sock)->sendErrno;
 }
 
+
+ssize_t
+Ns_SockGetSendRejected(Ns_Sock *sock)
+{
+    return ((Sock *)sock)->sendRejected;
+}
+
+size_t
+Ns_SockGetSendCount(Ns_Sock *sock)
+{
+    return ((Sock *)sock)->sendCount;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockFlagAdd --
+ *
+ *      Adds one or more bit flags to the flags field of the specified socket.
+ *      This function performs a bitwise OR operation to set the provided
+ *      flag(s) on the socket's internal flags value.
+ *
+ * Results:
+ *      Returns the updated flags field containing the new flag(s) along with any
+ *      previously set flags.
+ *
+ * Side effects:
+ *      Modifies the flags field of the given socket.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned int
+Ns_SockFlagAdd(Ns_Sock *sock, unsigned int flag) {
+    return ((Sock *)sock)->flags |= flag;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockFlagClear --
+ *
+ *      Clears one or more bit flags from the flags field of the specified
+ *      socket.  This function performs a bitwise AND with the negated flag(s)
+ *      to clear the indicated flag(s) from the socket's internal flags value.
+ *
+ * Results:
+ *      Returns the updated flags field with the specified flag(s) cleared.
+ *
+ * Side effects:
+ *      Modifies the flags field of the given socket.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned int
+Ns_SockFlagClear(Ns_Sock *sock, unsigned int flag) {
+    return ((Sock *)sock)->flags &= ~flag;
+}
 
 /*
  *----------------------------------------------------------------------

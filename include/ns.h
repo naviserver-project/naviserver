@@ -83,6 +83,7 @@
 #define NS_CONN_REQUESTURITOOLONG 0x0200000u /* Request-URI too long */
 #define NS_CONN_LINETOOLONG       0x0400000u /* Request header line too long */
 #define NS_CONN_CONFIGURED        0x1000000u /* The connection is fully configured */
+#define NS_CONN_SSL_WANT_WRITE    0x2000000u /* Flag SSL_ERROR_WANT_WRITE */
 
 
 /*
@@ -3031,6 +3032,22 @@ Ns_SockSetSendErrno(Ns_Sock *sock, unsigned long sendErrno)
 
 NS_EXTERN unsigned long
 Ns_SockGetSendErrno(Ns_Sock *sock) NS_GNUC_PURE
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN ssize_t
+Ns_SockGetSendRejected(Ns_Sock *sock) NS_GNUC_PURE
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN size_t
+Ns_SockGetSendCount(Ns_Sock *sock) NS_GNUC_PURE
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN unsigned int
+Ns_SockFlagAdd(Ns_Sock *sock, unsigned int flag) NS_GNUC_PURE
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN unsigned int
+Ns_SockFlagClear(Ns_Sock *sock, unsigned int flag) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN bool
