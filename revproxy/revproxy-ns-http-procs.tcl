@@ -95,8 +95,18 @@ namespace eval ::revproxy::ns_http {
         }
 
         if {$spoolresponse} {
+            #
+            # This switch tells us to spool the data from backend as
+            # it arrives to the client via connchan. Per default, the
+            # ns_http request runs in this case in the background.
+            #
             set connchan [ns_connchan detach]
+            if {[string match "*atl.general*batch.js*" $url]} {
+                ns_connchan verbose $connchan 1
+                ns_log notice "ACTIVATE verbosity: send data to the client via $connchan (URL $url) "
+            }
             lappend extraArgs -outputchan $connchan -spoolsize 0 -raw -response_header_callback ::revproxy::ns_http::responseheaders
+            #ns_log notice "send data to the client via $connchan (URL $url)"
         }
 
         #
@@ -149,7 +159,7 @@ namespace eval ::revproxy::ns_http {
                 -timeout $timeout \
                 -expire $expiretimeout \
                 {*}$extraArgs \
-                -done_callback  $done_callbback \
+                -done_callback $done_callbback \
                 $url
 
             ns_http queue \
@@ -163,7 +173,7 @@ namespace eval ::revproxy::ns_http {
                 -timeout $timeout \
                 -expire $expiretimeout \
                 {*}$extraArgs \
-                -done_callback  $done_callbback \
+                -done_callback $done_callbback \
                 $url
 
         } else {
@@ -226,7 +236,7 @@ nsf::proc ::revproxy::ns_http::done {
         # The behaviour when called via "done_callback" is slightly
         # different to a direct call without the callback: In the
         # callback case we see just "0" or "1" as result, we have to
-        # get the timeout from the result dict.
+        # get the NS_TIMEOUT result code from the result dict.
         #
         if {[dict exists $d state] && [dict get $d state] eq "NS_TIMEOUT"} {
             set result NS_TIMEOUT

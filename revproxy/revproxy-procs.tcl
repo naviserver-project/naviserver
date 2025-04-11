@@ -213,6 +213,12 @@ namespace eval ::revproxy {
 
     nsf::proc ::revproxy::request {{-targethost ""}} {
         set requestHeaders [ns_conn headers]
+
+        #
+        # For debugging, it might be easier to avoid compressed data.
+        #
+        #ns_set delkey -nocase $requestHeaders Accept-Encoding
+
         #
         # Add extra "forwarded" header fields, i.e. "x-forwarded-for", "via",
         # "x-forwarded-proto", and "x-ssl-request" (if appropriate).
