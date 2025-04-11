@@ -401,6 +401,19 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(fla
                 int rc;
 
                 ERR_clear_error();
+                (void)Ns_SockFlagClear(sock, NS_CONN_SSL_WANT_WRITE);
+
+                if (Ns_SockGetSendRejected(sock)) {
+                    ssize_t lastSend = Ns_SockGetSendRejected(sock);
+                    Ns_Log(Notice, "nsssl send: sock (%d,%ld) last send %ld rejected,"
+                           " try again base %p len %ld errorCode last %.8lx",
+                           sock->sock, Ns_SockGetSendCount(sock), lastSend,
+                           bufs->iov_base, bufs->iov_len, Ns_SockGetSendErrno(sock));
+                    if ((size_t)lastSend != bufs->iov_len) {
+                        Ns_Log(Notice, "nsssl send: sock (%d,%ld) last send %ld now %ld: expect error!", sock->sock, Ns_SockGetSendCount(sock), lastSend, bufs->iov_len);
+                    }
+                }
+
                 rc = SSL_write(sslCtx->ssl, bufs->iov_base, (int)bufs->iov_len);
                 if (rc <= 0) {
                     int           sslerr    = SSL_get_error(sslCtx->ssl, rc);
@@ -419,7 +432,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(fla
                          * means we are against EWOULDBLOCK, so exit early,
                          * reporting so much bytes sent as we did so far.
                          */
-
+                        (void)Ns_SockFlagAdd(sock, NS_CONN_SSL_WANT_WRITE);
                         break;
                     }
 

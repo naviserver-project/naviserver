@@ -322,11 +322,15 @@ typedef struct {
     Ns_Time          sendTimeout;
     const char      *clientData;
     struct Callback *cbPtr;
-    Tcl_DString     *sendBuffer;       /* For unsent bytes in "ns_connchan write -buffered" */
-    Tcl_DString     *frameBuffer;      /* Buffer of for a single WebSocket frame */
-    Tcl_DString     *fragmentsBuffer;  /* Buffer for multiple WebSocket segments */
-    int              fragmentsOpcode;  /* Opcode of the first WebSocket segment */
-    bool             frameNeedsData;   /* Indicator, if additional reads are required */
+    Tcl_DString     *sendBuffer;              /* For unsent bytes in "ns_connchan write -buffered" */
+    Tcl_DString     *secondarySendBuffer;     /* For unsent bytes while we have rejected data */
+    Tcl_DString     *frameBuffer;             /* Buffer of for a single WebSocket frame */
+    Tcl_DString     *fragmentsBuffer;         /* Buffer for multiple WebSocket segments */
+    int              fragmentsOpcode;         /* Opcode of the first WebSocket segment */
+    int              debugLevel;              /* Debug level (1 log statements, > 1 extra log files) */
+    bool             frameNeedsData;          /* Indicator, if additional reads are required */
+    bool             requireStableSendBuffer; /* Retransmits for OpenSSL are required to have the same base address and length */
+    NS_SOCKET        debugFD;
 } NsConnChan;
 
 
@@ -538,23 +542,26 @@ typedef struct Sock {
     struct ConnPool    *poolPtr;
 
     const char         *location;
-    NS_POLL_NFDS_TYPE   pidx;            /* poll() index */
-    unsigned int        flags;           /* State flags used by driver */
+    NS_POLL_NFDS_TYPE   pidx;             /* poll() index */
+    unsigned int        flags;            /* State flags used by driver */
     Ns_Time             timeout;
     Request            *reqPtr;
 
     Ns_Time             acceptTime;
 
-    char               *taddr;           /* mmap-ed temporary file */
-    size_t              tsize;           /* Size of mmap region */
-    char               *tfile;           /* Name of regular temporary file */
-    unsigned long       sendErrno;       /* Last error number in send operation (can fit OpenSSL errors) */
-    unsigned long       recvErrno;       /* Last error number in read operation (can fit OpenSSL errors) */
+    char               *taddr;            /* mmap-ed temporary file */
+    size_t              tsize;            /* Size of mmap region */
+    char               *tfile;            /* Name of regular temporary file */
+    unsigned long       sendErrno;        /* Last error number in send operation (can fit OpenSSL errors) */
+    unsigned long       recvErrno;        /* Last error number in read operation (can fit OpenSSL errors) */
     const char         *extractedHeaderFields[NS_EXTRACTED_NONE];
-    Ns_SockState        recvSockState;   /* Results from the last recv operation */
-    int                 tfd;             /* File descriptor with request contents */
-    bool                keep;            /* Keep alive handling */
-    void               *sls[1];          /* Slots for sls storage */
+    Ns_SockState        recvSockState;    /* Results from the last recv operation */
+    int                 tfd;              /* File descriptor with request contents */
+    bool                keep;             /* Keep alive handling */
+    ssize_t             sendRejected;     /* handling of SSL_ERROR_WANT_WRITE */
+    void               *sendRejectedBase; /* for retransmitting in case of SSL_ERROR_WANT_WRITE */
+    size_t              sendCount;        // debugging
+    void               *sls[1];           /* Slots for sls storage */
 
 } Sock;
 
@@ -1024,6 +1031,7 @@ typedef struct NsServer {
 
     struct {
         Ns_RWLock lock;
+        //Ns_Mutex wlock;
         Tcl_HashTable table;
     } connchans;
 
@@ -1709,7 +1717,7 @@ NS_EXTERN unsigned long NsConnChanGetSendErrno(Tcl_Interp *interp, NsServer *ser
 
 NS_EXTERN int NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString,
                               TCL_SIZE_T msgLength, bool buffered,
-                              ssize_t *nSentPtr, unsigned long *errnoPtr)
+                              ssize_t *bytesSentPtr, unsigned long *errnoPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
 
 /*

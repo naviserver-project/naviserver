@@ -28,6 +28,15 @@
 [section {COMMANDS}]
 
 [list_begin definitions]
+
+[call [cmd "ns_connchan debug"] [opt [arg level]]]
+
+ Sets or queries the debugging level of the current connection. When
+ set to "1", debug messages are written to the system log file;
+ setting it to "2" causes a separate debug file to be
+ created. Currently, this command primarily affects send operations,
+ although its functionality may be expanded in future releases.
+
 [call [cmd "ns_connchan detach"]]
 
  The command [cmd "ns_connchan detach"] unplugs the connection channel from
