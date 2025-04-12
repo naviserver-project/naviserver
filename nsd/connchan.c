@@ -118,6 +118,10 @@ static size_t PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString,
                                  bool buffered, struct iovec *iovecs, int *nBuffers, int *caseInt)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(5);
 
+static void DebugLogBufferState(NsConnChan *connChanPtr, const char *data, size_t dataLength, const char *fmt, ...)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4)
+    NS_GNUC_PRINTF(4, 5);
+
 static char *WhenToString(char *buffer, unsigned int when)
     NS_GNUC_NONNULL(1);
 
