@@ -81,9 +81,6 @@ static Ns_LogCallbackProc LogOpen;
 static Ns_LogCallbackProc LogClose;
 static Ns_LogCallbackProc LogRoll;
 
-static void AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 static Ns_ReturnCode ParseExtendedHeaders(Log *logPtr, const char *str)
     NS_GNUC_NONNULL(1);
 static void
@@ -702,75 +699,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     }
     return result;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * AppendEscaped --
- *
- *      Append a string with escaped characters
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      updated dstring
- *
- *----------------------------------------------------------------------
- */
 
-static void
-AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
-{
-    const char *breakChar;
-
-    NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(toProcess != NULL);
-
-    do {
-        breakChar = strpbrk(toProcess, "\r\n\t\\\"");
-        if (breakChar == NULL) {
-            /*
-             * No break-char found, append all and stop
-             */
-            Tcl_DStringAppend(dsPtr, toProcess, TCL_INDEX_NONE);
-        } else {
-            /*
-             * Append the break-char free prefix
-             */
-            Tcl_DStringAppend(dsPtr, toProcess, (TCL_SIZE_T)(breakChar - toProcess));
-
-            /*
-             * Escape the break-char
-             */
-            switch (*breakChar) {
-            case '\n':
-                Tcl_DStringAppend(dsPtr, "\\n", 2);
-                break;
-            case '\r':
-                Tcl_DStringAppend(dsPtr, "\\r", 2);
-                break;
-            case '\t':
-                Tcl_DStringAppend(dsPtr, "\\t", 2);
-                break;
-            case '"':
-                Tcl_DStringAppend(dsPtr, "\\\"", 2);
-                break;
-            case '\\':
-                Tcl_DStringAppend(dsPtr, "\\\\", 2);
-                break;
-            default:
-                /*should not happen */ assert(0);
-                break;
-            }
-
-            /*
-             * Check for further protected characters after the break char.
-             */
-            toProcess = breakChar + 1;
-        }
-    } while (breakChar != NULL);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -802,7 +731,7 @@ AppendExtHeaders(Tcl_DString *dsPtr, const char **argv, const Ns_Set *set)
             Tcl_DStringAppend(dsPtr, " \"", 2);
             p = Ns_SetIGet(set, *h);
             if (p != NULL) {
-                AppendEscaped(dsPtr, p);
+                Ns_DStringAppendEscaped(dsPtr, p);
             }
             Tcl_DStringAppend(dsPtr, "\"", 1);
         }
@@ -984,7 +913,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 
         Tcl_DStringAppend(dsPtr, " \"", 2);
         if (likely(string != NULL)) {
-            AppendEscaped(dsPtr, string);
+            Ns_DStringAppendEscaped(dsPtr, string);
         }
         Tcl_DStringAppend(dsPtr, "\" ", 2);
 
@@ -1009,12 +938,12 @@ LogTrace(void *arg, Ns_Conn *conn)
         Tcl_DStringAppend(dsPtr, " \"", 2);
         p = Ns_SetIGet(conn->headers, "referer");
         if (p != NULL) {
-            AppendEscaped(dsPtr, p);
+            Ns_DStringAppendEscaped(dsPtr, p);
         }
         Tcl_DStringAppend(dsPtr, "\" \"", 3);
         p = Ns_SetIGet(conn->headers, "user-agent");
         if (p != NULL) {
-            AppendEscaped(dsPtr, p);
+            Ns_DStringAppendEscaped(dsPtr, p);
         }
         Tcl_DStringAppend(dsPtr, "\"", 1);
     }

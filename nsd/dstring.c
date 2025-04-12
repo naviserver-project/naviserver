@@ -408,6 +408,90 @@ Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, bool tabExpandMod
     return dsPtr->string;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DStringAppendEscaped --
+ *
+ *      Scans the input string for special characters (newline, carriage return,
+ *      tab, backslash, and double-quote) and appends an escaped version of the
+ *      string to the given Tcl_DString. Each occurrence of a special character is
+ *      replaced by its corresponding escape sequence:
+ *
+ *          "\n"   for newline
+ *          "\r"   for carriage return
+ *          "\t"   for tab
+ *          "\\"   for backslash
+ *          "\""   for double-quote
+ *
+ *      If no special character is found in the remainder of the input string,
+ *      the rest of the string is appended as is.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The content of the Tcl_DString pointed to by dsPtr is modified by appending
+ *      the escaped version of inputString.
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Ns_DStringAppendEscaped(Tcl_DString *dsPtr, const char *inputString)
+{
+    const char *nextSpecialChar;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(inputString != NULL);
+
+    do {
+        nextSpecialChar = strpbrk(inputString, "\r\n\t\\\"");
+        if (nextSpecialChar == NULL) {
+            /*
+             * No break-char found, append all and stop
+             */
+            Tcl_DStringAppend(dsPtr, inputString, TCL_INDEX_NONE);
+        } else {
+            /*
+             * Append the break-char free prefix
+             */
+            Tcl_DStringAppend(dsPtr, inputString, (TCL_SIZE_T)(nextSpecialChar - inputString));
+
+            /*
+             * Escape the break-char
+             */
+            switch (*nextSpecialChar) {
+            case '\n':
+                Tcl_DStringAppend(dsPtr, "\\n", 2);
+                break;
+            case '\r':
+                Tcl_DStringAppend(dsPtr, "\\r", 2);
+                break;
+            case '\t':
+                Tcl_DStringAppend(dsPtr, "\\t", 2);
+                break;
+            case '"':
+                Tcl_DStringAppend(dsPtr, "\\\"", 2);
+                break;
+            case '\\':
+                Tcl_DStringAppend(dsPtr, "\\\\", 2);
+                break;
+            default:
+                /*should not happen */ assert(0);
+                break;
+            }
+
+            /*
+             * Check for further protected characters after the break char.
+             */
+            inputString = nextSpecialChar + 1;
+        }
+    } while (nextSpecialChar != NULL);
+
+    return dsPtr->string;
+}
+
 /*----------------------------------------------------------------------
  *
  * Ns_DStringAppendTime --

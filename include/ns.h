@@ -1454,6 +1454,10 @@ Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, bool tabExpandMod
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN char *
+Ns_DStringAppendEscaped(Tcl_DString *dsPtr, const char *inputString)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN char *
 Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
