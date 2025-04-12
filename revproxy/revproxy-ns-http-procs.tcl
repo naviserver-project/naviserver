@@ -101,10 +101,11 @@ namespace eval ::revproxy::ns_http {
             # ns_http request runs in this case in the background.
             #
             set connchan [ns_connchan detach]
-            if {[string match "*atl.general*batch.js*" $url]} {
-                ns_connchan verbose $connchan 1
-                ns_log notice "ACTIVATE verbosity: send data to the client via $connchan (URL $url) "
-            }
+
+            #if {[string match "*atl.general*batch.js*" $url]} {
+            #    ns_connchan debug $connchan 1
+            #    ns_log notice "ACTIVATE verbosity: send data to the client via $connchan (URL $url) "
+            #}
             lappend extraArgs -outputchan $connchan -spoolsize 0 -raw -response_header_callback ::revproxy::ns_http::responseheaders
             #ns_log notice "send data to the client via $connchan (URL $url)"
         }
