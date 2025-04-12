@@ -1115,20 +1115,21 @@ HttpClientLogWrite(
         }
 
         if (fd != NS_INVALID_FD) {
-            Tcl_DString logString;
+            Tcl_DString logString, urlString;
             Ns_Time     diff;
             char        buf[41]; /* Big enough for Ns_LogTime(). */
 
             Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
 
             Tcl_DStringInit(&logString);
-            Ns_DStringPrintf(&logString, "%s %s %d %s %s " NS_TIME_FMT
+            Tcl_DStringInit(&urlString);
+            Ns_DStringPrintf(&logString, "%s %s %d %s \"%s\" " NS_TIME_FMT
                              " %" PRIdz " %" PRIdz " %d %s\n",
                              Ns_LogTime(buf),
                              Ns_ThreadGetName(),
                              httpPtr->status == 0 ? 408 : httpPtr->status,
                              httpPtr->method,
-                             httpPtr->url,
+                             Ns_DStringAppendEscaped(&urlString, httpPtr->url),
                              (int64_t)diff.sec, diff.usec,
                              httpPtr->sent,
                              httpPtr->received,
@@ -1140,6 +1141,7 @@ HttpClientLogWrite(
             (void)NsAsyncWrite(fd, logString.string, (size_t)logString.length);
             Ns_MutexUnlock(&servPtr->httpclient.lock);
 
+            Tcl_DStringFree(&urlString);
             Tcl_DStringFree(&logString);
         }
     }
