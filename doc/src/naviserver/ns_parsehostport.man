@@ -12,6 +12,7 @@
 
 [call [cmd ns_parsehostport] \
         [opt [option "-strict"]] \
+        [opt --] \
         [arg hostport]]
 
 [para] This function interprets the provided string as host

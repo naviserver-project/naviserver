@@ -12,6 +12,7 @@
 
 [call [cmd ns_parseurl] \
         [opt [option "-strict"]] \
+        [opt --] \
         [arg url]]
 
 [para] This function parses the provided URL into its parts and

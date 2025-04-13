@@ -250,6 +250,10 @@ test ns_ip-1.1.3 {syntax: ns_ip trusted} -body {
 test ns_ip-1.1.4 {syntax: ns_ip valid} -body {
     ns_ip valid
 } -returnCodes error -result {wrong # args: should be "ns_ip valid ?-type ipv4|ipv6? ?--? /ipaddr/"}
+test ns_ip-1.1.5 {syntax: ns_ip inany} -body {
+    ns_ip inany
+} -returnCodes error -result {wrong # args: should be "ns_ip inany /ipaddr/"}
+
 
 test ns_ip-1.2.1 {ns_ip properties particular address} -body {
    ns_ip properties 127.0.0.1
