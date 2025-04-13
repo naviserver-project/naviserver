@@ -29,7 +29,7 @@
 
 [list_begin definitions]
 
-[call [cmd "ns_connchan debug"] [opt [arg level]]]
+[call [cmd "ns_connchan debug"] [arg channel] [opt [arg level]]]
 
  Sets or queries the debugging level of the current connection. When
  set to "1", debug messages are written to the system log file;
@@ -270,7 +270,7 @@ The command returns a dict containing the following elements:
 [term framebuffer] (for WebSocket read operations: number of bytes in the WebSocket frame buffer),
 [term peer] (communication peer, the IP address of the other side of the channel),
 [term received] (number of bytes received),
-[term sendbuffer] (for buffered write operations: number of bytes in the send buffer),
+[term sendbuffer] number of bytes in the send buffer,
 [term sent] (number of bytes sent), and
 [term start] (time when the connection started).
 
@@ -298,22 +298,24 @@ multi-segment messages, where later segments have the opcode
 
 
 [call [cmd "ns_connchan write"] \
-	[opt [option "-buffered"]] \
-	[arg channel] \
-	[arg message] \	
+    [arg channel] \
+    [arg message] \
 ]
 
-Writes to the specified connection channel. The function returns
-the number of bytes sent, which might be less than the input length.
+ Writes the specified message to the given connection channel. The
+ command returns the number of bytes actually sent, which may be less
+ than the length of the provided message.
 
-[para] When the option [option "-buffered"] is used, then for partial
-write operations the data which could not be sent is handled
-internally. The command returns like in non-buffered mode the number of
-bytes sent, but keeps the reminder and will process this data together
-with the next write operation (e.g. called with an empty string as
-last argument). By using the buffered mode, the Tcl programmer does not
-have to care about sending the non-sent chunk again and to concatenate
-this with potentially more data from other write operations.
+[para]
+
+ In cases of partial write operations, any unsent data is
+ automatically queued in the connection's send buffer. This queued
+ data is merged with any new data during the subsequent write
+ operations. To check the current status of the send buffer, use the
+ [cmd "ns_conn status"] command. If you need to drain the buffer
+ completely, repeatedly call [cmd "ns_conn write"] with an empty
+ message until the buffer is empty.
+
 
 [list_end]
 

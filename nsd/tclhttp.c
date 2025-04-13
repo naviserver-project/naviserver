@@ -4928,8 +4928,8 @@ AppendRawBufferConnchan(
 
     if (sendErrno == 0 || NsSockRetryCode((int)sendErrno) || (sendErrno == ENOTTY)) {
 
-        *resultPtr = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE,
-                                 &written, &sendErrno);
+        *resultPtr = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size,
+                                     &written, &sendErrno);
 
         /*fprintf(stderr, ".... connchan %s write returns result %s written %ld sockPtr %p\n",
           httpPtr->outputChanName, Ns_TclReturnCodeString(result), written, (void*)sockPtr);*/

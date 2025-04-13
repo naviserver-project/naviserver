@@ -1716,9 +1716,8 @@ NS_EXTERN unsigned long NsConnChanGetSendErrno(Tcl_Interp *interp, NsServer *ser
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString,
-                              TCL_SIZE_T msgLength, bool buffered,
-                              ssize_t *bytesSentPtr, unsigned long *errnoPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
+                              TCL_SIZE_T msgLength, ssize_t *bytesSentPtr, unsigned long *errnoPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
 /*
  * dlist.c

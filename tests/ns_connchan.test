@@ -68,9 +68,15 @@ test ns_connchan-1.1.11 {syntax: ns_connchan write} -body {
     ns_connchan write
 } -returnCodes error -result {wrong # args: should be "ns_connchan write ?-buffered? /channel/ /message/"}
 
+# deprecated option is not documented, wrong # args: should be "ns_connchan write /channel/ /message/"
+
 test ns_connchan-1.1.12 {syntax: ns_connchan wsencode} -body {
     ns_connchan wsencode
 } -returnCodes error -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin 0|1? ?-mask? ?-opcode continue|text|binary|close|ping|pong? ?--? /message/"}
+
+test ns_connchan-1.1.13 {syntax: ns_connchan debug} -body {
+    ns_connchan debug
+} -returnCodes error -result {wrong # args: should be "ns_connchan debug /channel/ ?/level/?"}
 
 
 #
