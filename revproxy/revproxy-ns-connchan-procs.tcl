@@ -129,7 +129,7 @@ namespace eval ::revproxy::ns_connchan {
                 while {1} {
                     log notice "upstream: send max $chunk bytes from file to $backendChan " \
                         "(length $contentLength)"
-                    ns_connchan write -buffered $backendChan [read $F $chunk]
+                    ns_connchan write $backendChan [read $F $chunk]
                     if {[eof $F]} break
                 }
                 close $F
@@ -144,7 +144,7 @@ namespace eval ::revproxy::ns_connchan {
                 while {$i < $length} {
                     log notice "upstream: send max $chunk bytes from string to $backendChan " \
                         "(length $contentLength)"
-                    ns_connchan write -buffered $backendChan [string range $data $i $j]
+                    ns_connchan write $backendChan [string range $data $i $j]
                     incr i $chunk
                     incr j $chunk
                 }
@@ -203,7 +203,7 @@ namespace eval ::revproxy::ns_connchan {
         #
         log notice "upstream_send_writable on $channel (condition $condition)"
 
-        set result [ns_connchan write -buffered $channel ""]
+        set result [ns_connchan write $channel ""]
         set status [ns_connchan status $channel]
         #ns_log notice "upstream_send writable <$result> status $status"
         if {$result == 0 || [dict get $status sendbuffer] > 0} {
@@ -444,7 +444,7 @@ namespace eval ::revproxy::ns_connchan {
         # *  0: write was partial, write callback was submitted
         # * -1: write resulted in an error
         try {
-            ns_connchan write -buffered $to $data
+            ns_connchan write $to $data
 
         } trap {NS_TIMEOUT} {errorMsg} {
             log notice "spool: TIMEOUT during send to $to ($url) "
@@ -554,7 +554,7 @@ namespace eval ::revproxy::ns_connchan {
             set continue 1
 
             try {
-                ns_connchan write -buffered $to ""
+                ns_connchan write $to ""
 
             } trap {POSIX EPIPE} {} {
                 #
