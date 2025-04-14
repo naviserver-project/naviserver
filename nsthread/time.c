@@ -103,25 +103,29 @@ Ns_GetTime(Ns_Time *timePtr)
 }
 #endif
 
-
 /*
  *----------------------------------------------------------------------
  *
  * Ns_AdjTime --
  *
- *      Adjust an Ns_Time so the values are in range. "usec" is only allowed
- *      to be negative, when "sec" == 0 (to express e.g. -0.1sec).
+ *      Normalizes a Ns_Time structure so that its microseconds field is in
+ *      the range [0, 1000000). If the microseconds value (usec) is negative,
+ *      the function subtracts the appropriate number of seconds from the
+ *      seconds field (sec) and adjusts usec to a positive value. Conversely,
+ *      if usec is greater than or equal to 1000000, the overflow is added
+ *      to sec and usec is reduced modulo 1000000.  Note that "usec" is only
+ *      allowed to be negative, when "sec" == 0 (to express e.g. -0.1sec).
  *      "usec" is kept in the range <1mio.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      None.
+ *      Modifies the Ns_Time structure pointed to by timePtr in place so that the usec
+ *      field falls within the range [0, 1000000).
  *
  *----------------------------------------------------------------------
  */
-
 void
 Ns_AdjTime(Ns_Time *timePtr)
 {
@@ -130,7 +134,7 @@ Ns_AdjTime(Ns_Time *timePtr)
     if (unlikely(timePtr->usec < 0) && unlikely(timePtr->sec > 0)) {
         timePtr->sec += (timePtr->usec / 1000000L) - 1;
         timePtr->usec = (timePtr->usec % 1000000L) + 1000000L;
-    } else if (unlikely(timePtr->usec > 1000000L)) {
+    } else if (unlikely(timePtr->usec >= 1000000L)) {
         timePtr->sec += timePtr->usec / 1000000L;
         timePtr->usec = timePtr->usec % 1000000L;
     }
