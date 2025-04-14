@@ -278,7 +278,7 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
                     Tcl_DStringAppend(&ds, " ", 1);
                     Tcl_DStringAppend(&ds, templateString, TCL_INDEX_NONE);
                 }
-                Ns_Log(Notice, "'ns_mktemp%s' is deprecated since it poses a potential race condition and security risk;"
+                Ns_Log(Deprecated, "'ns_mktemp%s' is deprecated since it poses a potential race condition and security risk;"
                        " consider using 'ns_uuid' or 'file tempfile' instead", ds.string);
                 Tcl_DStringFree(&ds);
             }

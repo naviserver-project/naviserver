@@ -3384,7 +3384,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
 
 #ifdef NS_WITH_DEPRECATED_5_0
         if (buffered != 0) {
-            Ns_Log(Warning, "ns_connchan write: '-buffered' option is deprecated;"
+            Ns_Log(Deprecated, "ns_connchan write: '-buffered' option is deprecated;"
                    " activated by default");
         }
 #endif        

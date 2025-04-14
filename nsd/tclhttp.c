@@ -1933,22 +1933,22 @@ HttpWaitObjCmd(
          * backward compatibility...
          */
         if (responseHeaders != NULL) {
-            Ns_Log(Warning, "ns_http_wait: -headers option is deprecated");
+            Ns_Log(Deprecated, "ns_http_wait: -headers option is deprecated");
         }
         if (decompress != 0) {
-            Ns_Log(Warning, "ns_http_wait: ignore obsolete flag -decompress");
+            Ns_Log(Deprecated, "ns_http_wait: ignore obsolete flag -decompress");
         }
 
         if (binary != 0) {
-            Ns_Log(Warning, "ns_http_wait: -binary option is deprecated");
+            Ns_Log(Deprecated, "ns_http_wait: -binary option is deprecated");
             httpPtr->flags |= NS_HTTP_FLAG_BINARY;
         }
         if (spoolLimit > -1) {
-            Ns_Log(Warning, "ns_http_wait: -spoolsize option is deprecated");
+            Ns_Log(Deprecated, "ns_http_wait: -spoolsize option is deprecated");
             httpPtr->spoolLimit = spoolLimit;
         }
         if (outputFileName != NULL) {
-            Ns_Log(Warning, "ns_http_wait: -outputfile option is deprecated");
+            Ns_Log(Deprecated, "ns_http_wait: -outputfile option is deprecated");
             Ns_MutexLock(&httpPtr->lock);
             if (httpPtr->spoolFileName != NULL) {
                 Ns_Log(Warning, "ns_http_wait: the -outputfile was already"
@@ -1960,16 +1960,16 @@ HttpWaitObjCmd(
         }
 
         if (elapsedVarObj != NULL) {
-            Ns_Log(Warning, "ns_http_wait: -elapsed option is deprecated");
+            Ns_Log(Deprecated, "ns_http_wait: -elapsed option is deprecated");
         }
         if (resultVarObj != NULL) {
-            Ns_Log(Warning, "ns_http_wait: -result option is deprecated");
+            Ns_Log(Deprecated, "ns_http_wait: -result option is deprecated");
         }
         if (statusVarObj != NULL) {
-            Ns_Log(Warning, "ns_http_wait: -status option is deprecated");
+            Ns_Log(Deprecated, "ns_http_wait: -status option is deprecated");
         }
         if (fileVarObj != NULL) {
-            Ns_Log(Warning, "ns_http_wait: -file option is deprecated");
+            Ns_Log(Deprecated, "ns_http_wait: -file option is deprecated");
         }
 #endif
 
@@ -2936,7 +2936,7 @@ HttpQueue(
 
 #ifdef NS_WITH_DEPRECATED_5_0
     if (result == TCL_OK && verifyCertInt != 0) {
-        Ns_Log(Warning, "ns_http %s: -verify option is deprecated;"
+        Ns_Log(Deprecated, "ns_http %s: -verify option is deprecated;"
                " activated by default", Tcl_GetString(objv[1]));
     }
 #endif
@@ -3064,7 +3064,7 @@ HttpQueue(
 #ifdef NS_WITH_DEPRECATED_5_0
         if (doneCallbackDeprec != NULL) {
             doneCallback = doneCallbackDeprec;
-            Ns_Log(Warning, "ns_http %s: -done_callback option is deprecated;"
+            Ns_Log(Deprecated, "ns_http %s: -done_callback option is deprecated;"
                    " use -done_callback instead", Tcl_GetString(objv[1]));
         }
 #endif
