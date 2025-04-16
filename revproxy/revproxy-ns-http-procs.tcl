@@ -204,7 +204,7 @@ namespace eval ::revproxy::ns_http {
                     -timeout $timeout \
                     -expire $expiretimeout \
                     {*}$extraArgs \
-                    $url
+                        $url
 
             } trap {NS_TIMEOUT} {r} {
                 ::revproxy::ns_http::done {*}$doneArgs NS_TIMEOUT $r
@@ -243,6 +243,8 @@ nsf::proc ::revproxy::ns_http::done {
             set result NS_TIMEOUT
         }
     }
+    #ns_log notice !!!!! DONE ::revproxy::ns_http::done result <$result> d <$d>
+
     switch $result {
         NS_TIMEOUT {
             ns_log notice ::revproxy::ns_http::done =========================================== TIMEOUT (connchan [info exists connchan])
@@ -254,7 +256,7 @@ nsf::proc ::revproxy::ns_http::done {
                 #
                 set errorMsg [dict get $d error]
                 set responseHeaders [dict get $d headers]
-                ns_log notice ".... timeout happened after [dict get $d time] seconds"
+                #ns_log notice ".... timeout happened after [dict get $d time] seconds"
                 #log notice "RESULT contains error: '$errorMsg' /$::errorCode/\n$d"
 
                 if {![info exists connchan]
@@ -292,7 +294,7 @@ nsf::proc ::revproxy::ns_http::done {
             #
             #log notice ::revproxy::ns_http::done =========================================== SUCCESS (connchan [info exists connchan])
 
-            if {[info exists connchan]} {
+            if {[info exists connchan] && [ns_connchan exists $connchan]} {
                 #
                 # In the connchan case (using outputchan), the data
                 # has already been transferred.
@@ -459,6 +461,7 @@ proc ::revproxy::ns_http::responseheaders {dict} {
     # Send response headers from backend server to revproy client.
     # This function is called by "response_header_callback".
     #
+    #ns_log warning !!!! ::revproxy::ns_http::responseheaders
 
     #ns_logctl severity Debug(task) on
     #ns_logctl severity Debug(connchan) on
