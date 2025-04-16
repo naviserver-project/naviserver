@@ -2795,9 +2795,9 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
         *nBuffers = 2;
         toSend = (size_t)msgLength + (size_t)connChanPtr->sendBuffer->length;
 
-        Ns_Log(Ns_LogConnchanDebug,
+        /*Ns_Log(Ns_LogConnchanDebug,
                "WS: send buffered only msgLength > 0, buf length %zu toSend %" PRIdz,
-               iovecs[0].iov_len, toSend);
+               iovecs[0].iov_len, toSend);*/
 
         if (connChanPtr->sockPtr->sendRejected > 0) {
             Ns_Log(Notice, "NsConnChanWrite sock %d has rejected data (%ld). New message exists and there is old buffered data",
@@ -2813,9 +2813,9 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
         iovecs[1].iov_len = 0u;
         *nBuffers = 1;
         toSend = (size_t)connChanPtr->sendBuffer->length;
-        Ns_Log(Ns_LogConnchanDebug,
+        /*Ns_Log(Ns_LogConnchanDebug,
                "WS: send buffered only msgLength == 0, buf length %zu toSend %" PRIdz,
-               iovecs[0].iov_len, toSend);
+               iovecs[0].iov_len, toSend);*/
 
         if (connChanPtr->sockPtr->sendRejected > 0) {
             Ns_Log(Notice, "NsConnChanWrite sock %d has rejected data (%ld). No new data; only buffered data exists",
@@ -2830,7 +2830,7 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
         iovecs[0].iov_len = (size_t)msgLength;
         iovecs[1].iov_len = 0u;
         *nBuffers = 1;
-        Ns_Log(Ns_LogConnchanDebug, "WS: send msgLength toSend %ld", iovecs[0].iov_len);
+        /*Ns_Log(Ns_LogConnchanDebug, "WS: send msgLength toSend %ld", iovecs[0].iov_len);*/
         toSend = (size_t)msgLength;
 
         if (connChanPtr->sockPtr->sendRejected > 0) {
