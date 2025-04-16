@@ -770,7 +770,7 @@ ReturnRedirectInternal(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
 
     connPtr = (Conn *) conn;
     if ((connPtr->flags & NS_CONN_CLOSED) != 0u) {
-        Ns_Log(Warning, "redirect status %d: connection already closed", httpStatus);
+        Ns_Log(Warning, "internal redirect status %d: connection already closed", httpStatus);
         *resultPtr = NS_ERROR;
 
     } else {
