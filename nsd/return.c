@@ -719,6 +719,12 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
     NS_NONNULL_ASSERT(title != NULL);
     NS_NONNULL_ASSERT(notice != NULL);
 
+    if (Ns_ConnSockPtr(conn) == NULL) {
+        Ns_Log(Warning, "Ns_ConnReturnNotice: connection is already closed. Title '%s', notice '%s'",
+               title, notice);
+        return NS_ERROR;
+    }
+
     Tcl_DStringInit(&ds);
     servPtr = ((Conn *) conn)->poolPtr->servPtr;
     fileName = servPtr->opts.noticeADP;
