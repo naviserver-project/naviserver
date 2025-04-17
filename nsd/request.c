@@ -995,7 +995,7 @@ Ns_HttpResponseMessageParse(
     if (minorPtr == NULL) {
         minorPtr = &minor;
     }
-    Ns_Log(Ns_LogTaskDebug, "HttpResponseMessageParse Parse <%s>", messageString);
+    /*Ns_Log(Ns_LogTaskDebug, "HttpResponseMessageParse Parse <%s>", messageString);*/
 
     result = Ns_HttpMessageParse(messageString, messageLength, &firstLineLength, hdrPtr, payloadPtr);
     if (result == NS_OK && firstLineLength > 12) {
