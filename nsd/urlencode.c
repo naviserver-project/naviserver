@@ -234,7 +234,6 @@ static const ByteKey path_enc[] = {
  *    pchar       = unreserved / pct-encoded / sub-delims / ":" / "@"
  *    unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
  *    sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
- *                   / "*" / "+" / "," / ";" / "="
  *
  * The RFC just defines the "outer" syntax of the query, the content is
  * usually form-urlencoded, where "&", "=" and "+" have special
@@ -335,7 +334,7 @@ static const ByteKey query_enc[] = {
  * a URI path component based on RFC 3986 (Uniform Resource Identifier
  * (URI): Generic Syntax, 2005)
  *
- * The query part of a URL is defined as:
+ * The segment part of a URL is defined as:
  *
  *    segment     = *pchar
  *    pchar       = unreserved / pct-encoded / sub-delims / ":" / "@"
@@ -453,7 +452,7 @@ static const ByteKey path_enc[] = {
  * decoded as " " (space).
  *
  * This definition implies that a total of 89 characters are allowed
- * unencoded in a cookie:
+ * unencoded using this scheme:
  *
  *     ! # $ & ' ( ) * + - . / 0 1 2 3 4 5 6 7 8 9 : < = > ? @
  *     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ `
@@ -544,7 +543,7 @@ static const ByteKey cookie_enc[] = {
  * All other characters MUST be encoded.
  *
  * This definition implies that a total of 66 characters are allowed
- * unencoded in a cookie:
+ * unencoded using this scheme:
  *
  *     - . 0 1 2 3 4 5 6 7 8 9
  *     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z _
@@ -616,8 +615,6 @@ static const ByteKey oauth1_enc[] = {
     /* 0XF8 */  {3, "F8"}, {3, "F9"}, {3, "FA"}, {3, "FB"},
     /* 0XFC */  {3, "FC"}, {3, "FD"}, {3, "FE"}, {3, "FF"}
 };
-
-
 
 
 /*
