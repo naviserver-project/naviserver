@@ -42,7 +42,7 @@ NS_PATCH_LEVEL   = @NS_PATCH_LEVEL@
 # line.
 #
 # Maybe, we should consider in the future some autoconf magic, when
-# necesssary.
+# necessary.
 #
 RM               = /bin/rm -Rf
 MKDIR            = /bin/mkdir -p
