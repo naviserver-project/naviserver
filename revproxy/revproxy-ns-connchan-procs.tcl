@@ -37,17 +37,18 @@ namespace eval ::revproxy::ns_connchan {
     nsf::proc upstream {
         -url:required
         -request:required
-        {-insecure:switch}
-        {-timeout 10.0s}
-        {-connecttimeout 1s}
-        {-sendtimeout ""}
-        {-receivetimeout ""}
-        {-validation_callback ""}
-        {-regsubs:0..n ""}
-        {-exception_callback "::revproxy::exception"}
-        {-url_rewrite_callback "::revproxy::rewrite_url"}
         {-backend_response_callback ""}
+        {-connecttimeout 1s}
+        {-exception_callback "::revproxy::exception"}
+        {-insecure:switch}
+        {-receivetimeout ""}
+        {-regsubs:0..n ""}
+        {-sendtimeout ""}
         {-spoolresponse true}
+        {-timeout 10.0s}
+        {-url_rewrite_callback "::revproxy::rewrite_url"}
+        {-use_target_host_header:boolean false}
+        {-validation_callback ""}
     } {
         #
         # @param spoolresponse dummy parameter just for interface compatibility
@@ -69,7 +70,14 @@ namespace eval ::revproxy::ns_connchan {
         # We might have to take more precautions for WebSockets here.
         #
         ns_set iupdate $requestHeaders connection close
-        log notice requestHeaders=[ns_set format $requestHeaders]
+
+        if {$use_target_host_header} {
+            set d [ns_parseurl $url]
+            set hostHeader [dict get d host]
+            if {[dict exists $d port]} {append hostHeader :[dict get $d port]}
+            ns_set iupdate $requestHeaders host $hostHeader
+        }
+        log notice outgoing requestHeaders=[ns_set format $requestHeaders]
 
         if {$validation_callback ne ""} {
             try {

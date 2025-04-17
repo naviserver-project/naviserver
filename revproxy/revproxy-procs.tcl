@@ -66,6 +66,7 @@ namespace eval ::revproxy {
         {-targethost ""}
         {-timeout 1m}
         {-url_rewrite_callback "::revproxy::rewrite_url"}
+        {-use_target_host_header:boolean false}
         {-validation_callback ""}
     } {
         #
@@ -89,14 +90,7 @@ namespace eval ::revproxy {
             ns_connchan { }
             ns_http     { set spoolResponse false }
             ns_http+ns_connchan {
-                catch {ns_http run} errorMsg
-                if {[string match *response_header_callback* $errorMsg]} {
-                    set backendconnection ns_http
-                } else {
-                    set backendconnection ns_connchan
-                    ns_log warning "revproxy: used NaviServer binary does not support 'ns_http+ns_connchan';" \
-                        "fall back to $backendconnection"
-                }
+                set backendconnection ns_http
             }
             default {
                 set backendconnection ns_connchan
@@ -207,6 +201,7 @@ namespace eval ::revproxy {
                     -exception_callback $exception_callback \
                     -backend_response_callback $backend_response_callback \
                     -request [::revproxy::request -targethost $targethost] \
+                    -use_target_host_header $use_target_host_header\
                     {*}$extraArgs
                    ]
     }

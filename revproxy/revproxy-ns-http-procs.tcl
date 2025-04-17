@@ -35,6 +35,7 @@ namespace eval ::revproxy::ns_http {
         {-backend_response_callback ""}
         -request:required
         {-spoolresponse true}
+        {-use_target_host_header:boolean false}
     } {
         #
         # @param receivetimeout ignored
@@ -121,8 +122,9 @@ namespace eval ::revproxy::ns_http {
             set unixSocketArg ""
         }
 
-        #
-        #log notice "final request headers passed to ns_http"
+        # We see the final headers best, when "Debug(request)" is on in the line
+        # ... Debug(request): full request ....
+        #log notice "outgoing request headers sent via ns_http [ns_set format $requestHeaders]"
         #ns_set print $requestHeaders
 
         set partialresultsFlag [expr {[ns_info version]>=5 ?  "-partialresults" : ""}]
@@ -146,13 +148,14 @@ namespace eval ::revproxy::ns_http {
             set queue 0
         }
 
+        set keepHostHeaderArg [expr {$use_target_host_header ? "" : "-keep_host_header"}]
         if {$queue} {
             set done_callbback [list ::revproxy::ns_http::done {*}$doneArgs]
 
-            #log notice             ns_http queue \
+            log notice             ns_http queue \
                 {*}$partialresultsFlag \
                 {*}$unixSocketArg \
-                -keep_host_header \
+                {*}$keepHostHeaderArg \
                 -spoolsize 100kB \
                 -method $method \
                 -headers $requestHeaders \
@@ -166,7 +169,7 @@ namespace eval ::revproxy::ns_http {
             ns_http queue \
                 {*}$partialresultsFlag \
                 {*}$unixSocketArg \
-                -keep_host_header \
+                {*}$keepHostHeaderArg \
                 -spoolsize 100kB \
                 -method $method \
                 -headers $requestHeaders \
@@ -183,7 +186,7 @@ namespace eval ::revproxy::ns_http {
                 #log notice             ns_http run \
                     {*}$partialresultsFlag \
                     {*}$unixSocketArg \
-                    -keep_host_header \
+                    {*}$keepHostHeaderArg \
                     -spoolsize 100kB \
                     -method $method \
                     -headers $requestHeaders \
@@ -196,7 +199,7 @@ namespace eval ::revproxy::ns_http {
                 ns_http run \
                     {*}$partialresultsFlag \
                     {*}$unixSocketArg \
-                    -keep_host_header \
+                    {*}$keepHostHeaderArg \
                     -spoolsize 100kB \
                     -method $method \
                     -headers $requestHeaders \
