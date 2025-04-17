@@ -13,8 +13,8 @@
  when NaviServer was configured to use this older standard).
 
  ns_urlencode codes essentially all non-alphanumeric characters in the
- specified components.  The epcial octets are encoded by a "%"
- followed by the two-character hexa- decimal representation for the
+ specified components.  The octets to be protected are encoded by a "%"
+ followed by the two-character hexadecimal representation for the
  octet.
 
 [section {COMMANDS}]
@@ -37,13 +37,16 @@ indicating that query components or path components are to be encoded.
 Multiple query components are concatenated via [term &], in the path
 components with [term /].
 
-[para] The part argument can be as well used for additional percent
+[para] The [option "-part"] option can be as well used for additional percent
 encodings such as the cookie encoding (value [term cookie], RFC 6265) or
 the oauth1 encoding (value [term oauth1]) as defined in RFC 5849 Section
 3.6 for the construction of the signature base string and the
 [term Authorization] header field.
+The default value for option [option -part] is [term query].
 
-[para] The default for option [option -charset] is [term query].
+[para] The option [option -uppercase] can be used return the hex digits of
+the percent encoding in upper case.
+
 
 [section {EXAMPLES}]
 
