@@ -4811,7 +4811,7 @@ SockParse(Sock *sockPtr)
 
                 Tcl_DStringInit(&ds);
                 Ns_SetFormat(&ds, reqPtr->headers, NS_TRUE, "  ", ": ");
-                Ns_Log(Ns_LogRequestDebug, "request headers %s", ds.string);
+                Ns_Log(Ns_LogRequestDebug, "received %s", ds.string);
                 Tcl_DStringFree(&ds);
             }
 
