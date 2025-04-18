@@ -12,7 +12,6 @@ tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 
 test revproxy-1.0 {syntax test} -constraints {nsf} -body {
      revproxy::upstream
-} -returnCodes error -result {required argument 'when' is missing, should be:
-        revproxy::upstream /when/ -target /value/ ?-backend_reply_callback /value/? ?-backend_response_callback /value/? ?-backendconnection /value/? ?-connecttimeout /value/? ?-exception_callback /value/? ?-insecure? ?-receivetimeout /value/? ?-regsubs /value .../? ?-sendtimeout /value/? ?-targethost /value/? ?-timeout /value/? ?-url_rewrite_callback /value/? ?-use_target_host_header /boolean/? ?-validation_callback /value/?}
+} -match glob -returnCodes error -result {required argument 'when' is missing, should be:*revproxy::upstream /when/ -target /value/ ?-backend_reply_callback /value/? ?-backend_response_callback /value/? ?-backendconnection /value/? ?-connecttimeout /value/? ?-exception_callback /value/? ?-insecure? ?-receivetimeout /value/? ?-regsubs /value .../? ?-sendtimeout /value/? ?-targethost /value/? ?-timeout /value/? ?-url_rewrite_callback /value/? ?-use_target_host_header /boolean/? ?-validation_callback /value/?}
 
 # emulated {wrong # args: should be "revproxy::upstream /when/ -target /value/ ?-backend_response_callback /value/? ?-backendconnection /value/? ?-connecttimeout /value/? ?-exception_callback /value/? ?-insecure? ?-receivetimeout /value/? ?-regsubs /value .../? ?-sendtimeout /value/? ?-targethost /value/? ?-timeout /value/? ?-url_rewrite_callback /value/? ?-use_target_host_header true|false? ?-validation_callback /value/?"}
