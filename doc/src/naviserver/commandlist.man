@@ -2,7 +2,7 @@
 [manpage_begin {commandlist} n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {NaviServer Commands}]
+[titledesc {Full List of NaviServer Commands}]
 
 [description]
 List of all documented and deprecated NaviServer commands.
