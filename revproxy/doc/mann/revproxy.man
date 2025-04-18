@@ -167,6 +167,7 @@ The core command for proxying is [cmd revproxy::upstream], which accepts seveal 
 	[opt [option "-targethost [arg value]"]] \
 	[opt [option "-timeout [arg value]"]] \
 	[opt [option "-url_rewrite_callback [arg value]"]] \
+	[opt [option "-use_target_host_header true|false"]] \
 	[opt [option "-validation_callback [arg value]"]] \
         ]
 
@@ -253,6 +254,12 @@ Default implementation: [cmd ::revproxy::rewrite_url]
    return $newUrl
  }
 [example_end]
+
+[para] By default, the client’s original Host header is preserved;
+ specifying [option -use_target_host_header] with the value [arg true]
+ causes the proxy to set [const Host:] to the target’s host instead, which can
+ be necessary for backends that route or serve content based on the
+ Host header.
 
 [para] The option [option "-validation_callback"] can be used to perform a test on the final rewriting of the URL and request headers. This callback receives the [option -url] and [option -request], and has the complete control over the proxying request. It can still modify the headers, the HTTP method and the request data. The [arg request] dict contains keys like [const headers], [const binary],
 and either [const content] or [const contentfile] for uploaded request data.
