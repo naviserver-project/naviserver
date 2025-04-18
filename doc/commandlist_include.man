@@ -153,6 +153,7 @@
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan callback}] ?-timeout /time/? ?-receivetimeout /time/? ?-sendtimeout /time/? /channel/ /command/ /when/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan close}] ?-server /server/? /channel/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan connect}] ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-hostname /value/? ?-insecure? ?-timeout /time/? ?-tls? ?--? /host/ /port/
+[uri ../../naviserver/files/ns_connchan.html {ns_connchan debug}] /channel/ ?/level/?
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan detach}]
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan exists}] /channel/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan list}] ?-server /server/?
@@ -160,7 +161,7 @@
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan open}] ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-driver /value/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-method /value/? ?-timeout /time/? ?-unix_socket /value/? ?-version /value/? ?--? /url/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan read}] ?-websocket? /channel/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan status}] ?-server /server/? /channel/
-[uri ../../naviserver/files/ns_connchan.html {ns_connchan write}] ?-buffered? /channel/ /message/
+[uri ../../naviserver/files/ns_connchan.html {ns_connchan write}] /channel/ /message/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan wsencode}] ?-binary? ?-fin 0|1? ?-mask? ?-opcode continue|text|binary|close|ping|pong? ?--? /message/
 [uri ../../naviserver/files/ns_crash.html {ns_crash}]
 [uri ../../naviserver/files/ns_critsec.html {ns_critsec create}]
@@ -281,7 +282,7 @@
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl cleanup}]
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl epoch}]
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl get}]
-[uri ../../naviserver/files/ns_ictl.html {ns_ictl getmodules}]
+[uri ../../naviserver/files/ns_ictl.html {ns_ictl getmodules}] ?-server /server/?
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl markfordelete}]
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl maxconcurrentupdates}] ?/max/?
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl save}] /script/
@@ -326,6 +327,7 @@
 [uri ../../naviserver/files/ns_info.html {ns_info uptime}]
 [uri ../../naviserver/files/ns_info.html {ns_info version}]
 [uri ../../naviserver/files/ns_internalredirect.html {ns_internalredirect}] /location/
+[uri ../../naviserver/files/ns_ip.html {ns_ip inany}] /ipaddr/
 [uri ../../naviserver/files/ns_ip.html {ns_ip match}] /cidr/ /ipaddr/
 [uri ../../naviserver/files/ns_ip.html {ns_ip properties}] /ipaddr/
 [uri ../../naviserver/files/ns_ip.html {ns_ip public}] /ipaddr/
@@ -391,13 +393,15 @@
 [uri ../../naviserver/files/ns_parseargs.html {ns_parseargs}] /argspec/ /arg .../
 [uri ../../naviserver/files/ns_parsefieldvalue.html {ns_parsefieldvalue}] ?-lower? ?-single? ?-strict? ?--? /fieldvalue/
 [uri ../../naviserver/files/ns_parseheader.html {ns_parseheader}] ?-prefix /value/? /set/ /headerline/ ?/disposition/?
-[uri ../../naviserver/files/ns_parsehostport.html {ns_parsehostport}] ?-strict? /hostport/
+[uri ../../naviserver/files/ns_parsehostport.html {ns_parsehostport}] ?-strict? ?--? /hostport/
 [uri ../../naviserver/files/textutil-cmds.html {ns_parsehtml}] ?-noangle? ?-onlytags? ?--? /html/
 [uri ../../naviserver/files/ns_parsehttptime.html {ns_parsehttptime}] /httptime/
 [uri ../../naviserver/files/ns_parsemessage.html {ns_parsemessage}] /message/
 [uri ../../naviserver/files/ns_parsequery.html {ns_parsequery}] ?-charset /value/? ?-fallbackcharset /value/? ?--? /querystring/
-[uri ../../naviserver/files/ns_parseurl.html {ns_parseurl}] ?-strict? /url/
+[uri ../../naviserver/files/ns_parseurl.html {ns_parseurl}] ?-strict? ?--? /url/
 [uri ../../naviserver/files/ns_schedule.html {ns_pause}] /id/
+[uri ../../naviserver/files/ns_percentencode.html {ns_percentdecode}] ?-charset /value/? ?-fallbackcharset /value/? ?-scheme query|path|cookie|oauth1? ?--? /string/
+[uri ../../naviserver/files/ns_percentencode.html {ns_percentencode}] ?-charset /value/? ?-scheme query|path|cookie|oauth1? ?-uppercase? ?--? /string/
 [uri ../../nsperm/files/ns_perm.html {ns_perm addgroup}] /group/ /user/ ?/user .../?
 [uri ../../nsperm/files/ns_perm.html {ns_perm adduser}] ?-allow? ?-deny? ?-clear? ?-salt /value/? ?--? /name/ /encpass/ /userfield/ ?/host .../?
 [uri ../../nsperm/files/ns_perm.html {ns_perm allowgroup}] ?-noinherit? ?--? /method/ /url/ /group .../
@@ -597,8 +601,8 @@
 [uri ../../naviserver/files/ns_upload_stats.html {ns_upload_stats}] /key/
 [uri ../../naviserver/files/ns_url2file.html {ns_url2file}] /url/
 [uri ../../naviserver/files/ns_urlcharset.html {ns_urlcharset}] /charset/
-[uri ../../naviserver/files/ns_urldecode.html {ns_urldecode}] ?-charset /value/? ?-fallbackcharset /value/? ?-part query|path|cookie|oauth1? ?--? /string/
-[uri ../../naviserver/files/ns_urlencode.html {ns_urlencode}] ?-charset /value/? ?-part query|path|cookie|oauth1? ?-uppercase? ?--? /component .../
+[uri ../../naviserver/files/ns_percentencode.html {ns_urldecode}] ?-charset /value/? ?-fallbackcharset /value/? ?-part query|path|cookie|oauth1? ?--? /string/
+[uri ../../naviserver/files/ns_percentencode.html {ns_urlencode}] ?-charset /value/? ?-part query|path|cookie|oauth1? ?-uppercase? ?--? /component .../
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace get}] ?-context /setId/? ?-exact? ?-id /integer/? ?-key /value/? ?-noinherit? /URL/
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace list}] ?-id /integer/?
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace new}]
@@ -641,4 +645,4 @@
 [uri ../../naviserver/files/nsv.html {nsv_names}] ?/pattern/?
 [uri ../../naviserver/files/nsv.html {nsv_set}] ?-default? ?-reset? ?--? /array/ /key/ ?/value/?
 [uri ../../naviserver/files/nsv.html {nsv_unset}] ?-nocomplain? ?--? /array/ ?/key/?
-[uri ../../revproxy/files/revproxy.html {revproxy::upstream}] /when/ -target /value/ ?-backend_response_callback /value/? ?-backendconnection /value/? ?-connecttimeout /value/? ?-exception_callback /value/? ?-insecure? ?-receivetimeout /value/? ?-regsubs /value .../? ?-sendtimeout /value/? ?-targethost /value/? ?-timeout /value/? ?-url_rewrite_callback /value/? ?-validation_callback /value/?
+[uri ../../revproxy/files/revproxy.html {revproxy::upstream}] /when/ -target /value/ ?-backend_response_callback /value/? ?-backendconnection /value/? ?-connecttimeout /value/? ?-exception_callback /value/? ?-insecure? ?-receivetimeout /value/? ?-regsubs /value .../? ?-sendtimeout /value/? ?-targethost /value/? ?-timeout /value/? ?-url_rewrite_callback /value/? ?-use_target_host_header true|false? ?-validation_callback /value/?

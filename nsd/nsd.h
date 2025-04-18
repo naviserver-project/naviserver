@@ -1429,6 +1429,8 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclParseQueryObjCmd,
     NsTclParseUrlObjCmd,
     NsTclPauseObjCmd,
+    NsTclPercentDecodeObjCmd,
+    NsTclPercentEncodeObjCmd,
     NsTclPngSizeObjCmd,
     NsTclProgressObjCmd,
     NsTclPurgeFilesObjCmd,

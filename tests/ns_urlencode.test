@@ -196,6 +196,7 @@ test ns_urlencode-2.5.18.3 {invalid 2byte utf-8 - text with cp850 chars} -body {
 } -result 0
 
 test ns_urlencode-2.5.19.1 {invalid 2byte utf-8 - premature end} -body {
+    #ns_logctl severity Debug on
     catch {ns_urldecode -part path "/mot%C3"}
 } -result 1
 test ns_urlencode-2.5.19.2 {invalid 2byte utf-8 - premature end} -body {
@@ -287,6 +288,7 @@ test ns_urlencode-2.10.2 {charset encode} -body {
 if {[ns_config test listenport] ne ""} {
     testConstraint serverListen true
 }
+ns_log warning DONE
 
 test ns_urlencode-3.0 {test request with unencoded path segments} -constraints {serverListen} -setup {
     ns_register_proc GET /foo/* {
@@ -592,6 +594,15 @@ test parsequery-1.5 {parsequery using bad urlencoding} -setup {
 
 unset unreservedChars
 
+
+
+test ns_percentencode-1.0.0 {basic syntax} -body {
+    ns_percentencode
+} -returnCodes error -result {wrong # args: should be "ns_percentencode ?-charset /value/? ?-scheme query|path|cookie|oauth1? ?-uppercase? ?--? /string/"}
+
+test ns_percentdecode-1.0.0 {basic syntax} -body {
+    ns_percentdecode
+} -returnCodes error -result {wrong # args: should be "ns_percentdecode ?-charset /value/? ?-fallbackcharset /value/? ?-scheme query|path|cookie|oauth1? ?--? /string/"}
 
 
 cleanupTests
