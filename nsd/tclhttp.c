@@ -5687,7 +5687,7 @@ HttpClose(
 
     assert(CkCheck(httpPtr) != NULL);
 
-    Ns_Log(Warning, "HttpClose (context %s): http:%p", context, (void*)httpPtr);
+    Ns_Log(Debug, "HttpClose (context %s): http:%p", context, (void*)httpPtr);
 
     if (Ns_LogSeverityEnabled(Ns_LogTaskDebug)) {
         Tcl_DString ds;
