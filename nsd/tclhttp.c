@@ -4208,8 +4208,9 @@ EstablishTCPConnection(
      * First, try to look up a persistent (cached) connection
      */
     reuseConnection = PersistentConnectionLookup(rhost, rport, &cwData);
-    Ns_Log(Ns_LogTaskDebug, "======= reuseConnection %d host %s rport %d path %s tail %s",
-           reuseConnection, rhost, rport, urlPtr->path, urlPtr->tail);
+    Ns_Log(Ns_LogTaskDebug, "======= reuseConnection %d host %s rport %d path %s tail %s sock %d ctx %p ssl %p",
+           reuseConnection, rhost, rport, urlPtr->path, urlPtr->tail,
+           cwData.sock, (void*)cwData.ctx, (void*)cwData.ssl);
     if (reuseConnection) {
         httpPtr->sock = cwData.sock;
         httpPtr->ctx  = cwData.ctx;
@@ -4295,10 +4296,7 @@ EstablishTLSConnection(
     const char *caPath,
     bool verifyCert)
 {
-    Tcl_Interp     *interp = itPtr->interp;
-    NS_TLS_SSL_CTX *ctx = NULL;
-    NS_TLS_SSL     *ssl = NULL;
-    int             result;
+    int result;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -4311,52 +4309,63 @@ EstablishTLSConnection(
     result = EstablishTCPConnection(itPtr, httpPtr, urlPtr, portNr,
                                     proxyHost, proxyPortNr, httpProxy, toPtr);
     if (result != TCL_OK) {
-        return TCL_ERROR;
-    }
+        /*
+         * Something went wrong in TCP connection setup.
+         */
+    } else if (httpPtr->ctx != NULL) {
+        /*
+         * Must have been a successful persistent connection lookup of a TLS
+         * connection.
+         */
+        result = TCL_OK;
+    } else {
+        Tcl_Interp     *interp = itPtr->interp;
+        NS_TLS_SSL_CTX *ctx = NULL;
+        NS_TLS_SSL     *ssl = NULL;
+        Ns_ReturnCode   rc;
 
-    /*
-     * Now perform the TLS handshake.  Create a TLS context for this client
-     * connection.
-     */
-    result = Ns_TLS_CtxClientCreate(interp, cert, caFile, caPath, verifyCert, &ctx);
-    Ns_Log(Ns_LogTaskDebug, "EstablishHttpsConnection: TLS ctx creation result %s",
-           Ns_TclReturnCodeString(result));
-    if (result != TCL_OK) {
-        return TCL_ERROR;
-    }
-    httpPtr->ctx = ctx;
+        /*
+         * Perform the TLS handshake.  Create a TLS context for this client
+         * connection.
+         */
+        result = Ns_TLS_CtxClientCreate(interp, cert, caFile, caPath, verifyCert, &ctx);
+        Ns_Log(Ns_LogTaskDebug, "EstablishHttpsConnection: TLS ctx creation result %s",
+               Ns_TclReturnCodeString(result));
+        if (result == TCL_OK) {
+            httpPtr->ctx = ctx;
 
-    /*
-     * Measure remaining timeout and determine the SNI hostname.  (For
-     * simplicity, the start time and remaining timeout calculations are
-     * abstracted.)
-     */
-    if (sniHostname == NULL && !NsHostnameIsNumericIP(urlPtr->host)) {
-        sniHostname = urlPtr->host;
-        Ns_Log(Debug, "Automatically use SNI <%s>", urlPtr->host);
-    }
+            /*
+             * Measure remaining timeout and determine the SNI hostname.  (For
+             * simplicity, the start time and remaining timeout calculations
+             * are abstracted.)
+             */
+            if (sniHostname == NULL && !NsHostnameIsNumericIP(urlPtr->host)) {
+                sniHostname = urlPtr->host;
+                Ns_Log(Debug, "Automatically use SNI <%s>", urlPtr->host);
+            }
 
-    result = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
-                               sniHostname, caFile, caPath,
-                               toPtr, &ssl);
-    if (result == NS_TIMEOUT) {
-        Ns_TclPrintfResult(interp, "timeout waiting for TLS handshake");
-        HttpClientLogWrite(httpPtr, "tlsconnecttimeout");
-        Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
-        return TCL_ERROR;
+            rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
+                                   sniHostname, caFile, caPath,
+                                   toPtr, &ssl);
+            if (rc == NS_TIMEOUT) {
+                Ns_TclPrintfResult(interp, "timeout waiting for TLS handshake");
+                HttpClientLogWrite(httpPtr, "tlsconnecttimeout");
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, NS_SENTINEL);
+                result = TCL_ERROR;
 
-    } else if (result == NS_ERROR) {
-        return TCL_ERROR;
-    }
-    httpPtr->ssl = ssl;
+            } else if (rc == NS_ERROR) {
+                result = TCL_ERROR;
+            }
+            httpPtr->ssl = ssl;
 
 #ifdef HAVE_OPENSSL_EVP_H
-    HttpAddInfo(httpPtr, "sslversion", SSL_get_version(ssl));
-    HttpAddInfo(httpPtr, "cipher", SSL_get_cipher(ssl));
-    SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
+            HttpAddInfo(httpPtr, "sslversion", SSL_get_version(ssl));
+            HttpAddInfo(httpPtr, "cipher", SSL_get_cipher(ssl));
+            SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
 #endif
-
-    return TCL_OK;
+        }
+    }
+    return result;
 }
 
 /*
@@ -7513,7 +7522,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(reasonPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug,"PersistentConnectionAdd called host %s:%hu input pos %ld input sock %d",
+    Ns_Log(Ns_LogTaskDebug, "PersistentConnectionAdd called host %s:%hu input pos %ld input sock %d",
       httpPtr->host, httpPtr->port, httpPtr->pos, httpPtr->sock);
 
     if (httpPtr->sock == NS_INVALID_SOCKET
@@ -7576,7 +7585,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
         cwDataPtr = ns_calloc(1u, sizeof(CloseWaitingData));
         cwDataPtr->pos = closeWaitingList.size;
         Ns_Log(Notice, "PersistentConnectionAdd: allocate new slot for '%s:%hu' on pos %ld sock %d",
-               httpPtr->host, httpPtr->port, cwDataPtr->pos, httpPtr->sock);
+          httpPtr->host, httpPtr->port, cwDataPtr->pos, httpPtr->sock);
         Ns_DListAppend(&closeWaitingList, cwDataPtr);
         operation = "added";
     }
@@ -7601,7 +7610,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     httpPtr->ctx = NULL;
     httpPtr->ssl = NULL;
 
-    Ns_Log(Ns_LogTaskDebug,"PersistentConnectionAdd %s persistent connection for host %s:%hu on pos %ld"
+    Ns_Log(Ns_LogTaskDebug, "PersistentConnectionAdd %s persistent connection for host %s:%hu on pos %ld"
            " sock %d state %s with keepalive " NS_TIME_FMT " expire %ld",
            operation, httpPtr->host, httpPtr->port, cwDataPtr->pos,
            cwDataPtr->sock, CloseWaitingDataPrettyState(cwDataPtr),
