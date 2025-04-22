@@ -209,7 +209,6 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         count = likely(set != NULL)
             ? NsSetGetCmpDListAppend(set, keyString, NS_TRUE, exact != 0 ? strcmp : strcasecmp, dlPtr, NS_FALSE)
             : 0u;
-        Ns_Log(Warning, "GOT exact %d using <%s> -> %ld", exact, exact != 0 ? "strcmp" : "strcasecmp", count);
         if (count == 1) {
             /*
              * We got a single value
