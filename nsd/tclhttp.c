@@ -4208,9 +4208,9 @@ EstablishTCPConnection(
      * First, try to look up a persistent (cached) connection
      */
     reuseConnection = PersistentConnectionLookup(rhost, rport, &cwData);
-    Ns_Log(Ns_LogTaskDebug, "======= reuseConnection %d host %s rport %d path %s tail %s sock %d ctx %p ssl %p",
+    Ns_Log(Ns_LogTaskDebug, "======= reuseConnection %d host %s rport %d path %s tail %s sock %d",
            reuseConnection, rhost, rport, urlPtr->path, urlPtr->tail,
-           cwData.sock, (void*)cwData.ctx, (void*)cwData.ssl);
+           cwData.sock);
     if (reuseConnection) {
         httpPtr->sock = cwData.sock;
         httpPtr->ctx  = cwData.ctx;
