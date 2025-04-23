@@ -57,14 +57,13 @@ typedef enum {
     DbFn_SpReturnCode,
     DbFn_SpGetParams,
     DbFn_GetRowCount,
-    DbFn_Version
+    DbFn_Version,
 #ifdef NS_WITH_DEPRECATED
-    ,
-    DbFn_End,
     DbFn_GetTableInfo,
     DbFn_TableList,
-    DbFn_BestRowId
+    DbFn_BestRowId,
 #endif
+    DbFn_End,
 } Ns_DbProcId;
 
 /*

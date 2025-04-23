@@ -215,10 +215,6 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
              * The following functions are no longer supported.
              */
 
-        case DbFn_End:
-            UnsupProcId("End");
-            break;
-
         case DbFn_GetTableInfo:
             UnsupProcId("GetTableInfo");
             break;
@@ -231,6 +227,9 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
             UnsupProcId("BestRowId");
             break;
 #endif
+        case DbFn_End:
+            UnsupProcId("End");
+            break;
 
         }
         ++procs;
