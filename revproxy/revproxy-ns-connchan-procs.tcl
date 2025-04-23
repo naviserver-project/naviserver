@@ -73,7 +73,7 @@ namespace eval ::revproxy::ns_connchan {
 
         if {$use_target_host_header} {
             set d [ns_parseurl $url]
-            set hostHeader [dict get d host]
+            set hostHeader [dict get $d host]
             if {[dict exists $d port]} {append hostHeader :[dict get $d port]}
             ns_set iupdate $requestHeaders host $hostHeader
         }
