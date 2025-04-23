@@ -48,9 +48,6 @@ typedef enum {
     DbFn_GetRow,
     DbFn_Flush,
     DbFn_Cancel,
-    DbFn_GetTableInfo,
-    DbFn_TableList,
-    DbFn_BestRowId,
     DbFn_Exec,
     DbFn_BindRow,
     DbFn_ResetHandle,
@@ -60,7 +57,14 @@ typedef enum {
     DbFn_SpReturnCode,
     DbFn_SpGetParams,
     DbFn_GetRowCount,
-    DbFn_End
+    DbFn_Version
+#ifdef NS_WITH_DEPRECATED
+    ,
+    DbFn_End,
+    DbFn_GetTableInfo,
+    DbFn_TableList,
+    DbFn_BestRowId
+#endif
 } Ns_DbProcId;
 
 /*
@@ -122,6 +126,7 @@ NS_EXTERN const char *NS_EMPTY_STRING;
 NS_EXTERN Ns_ReturnCode Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs);
 NS_EXTERN char         *Ns_DbDriverName(Ns_DbHandle *handle);
 NS_EXTERN char         *Ns_DbDriverDbType(Ns_DbHandle *handle);
+NS_EXTERN Tcl_Obj      *Ns_DbDriverVersionInfo(Ns_DbHandle *handle)       NS_GNUC_NONNULL(1);
 NS_EXTERN int           Ns_DbDML(Ns_DbHandle *handle, const char *sql)    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN Ns_Set       *Ns_DbSelect(Ns_DbHandle *handle, const char *sql) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int           Ns_DbExec(Ns_DbHandle *handle, const char *sql)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -135,10 +140,10 @@ NS_EXTERN Ns_ReturnCode Ns_DbSpStart(Ns_DbHandle *handle, const char *procname) 
 NS_EXTERN Ns_ReturnCode Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname,
                                         const char *paramtype, const char *direction, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
-NS_EXTERN int           Ns_DbSpExec(Ns_DbHandle *handle)                 NS_GNUC_NONNULL(1);
+NS_EXTERN int           Ns_DbSpExec(Ns_DbHandle *handle)                  NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_ReturnCode Ns_DbSpReturnCode(Ns_DbHandle *handle, const char *returnCode, int bufsize)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN Ns_Set       *Ns_DbSpGetParams(Ns_DbHandle *handle)            NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_Set       *Ns_DbSpGetParams(Ns_DbHandle *handle)             NS_GNUC_NONNULL(1);
 
 /*
  * dbinit.c:

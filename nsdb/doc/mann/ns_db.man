@@ -147,19 +147,34 @@ or as a number with the time units ms, s, m, d.
 
 [call [cmd "ns_db getrow"] [arg handle] [arg setId]]
 
-Fetches the next row waiting to be retrieved after an ns_db select.
-The data is dumped right into the set associated with SETID, which should be the
-set returned by the ns_db select. It returns "1" if there are more rows waiting
-and returns "0" otherwise. If you call ns_db getrow again after already
-receiving "0" on the previous call, an error is returned.
+Fetches the next row from the result of a prior
+[cmd "ns_db select"] call, inserting its values into the [cmd ns_set]
+identified by [arg setId] (the same set returned by the [cmd "ns_db
+select"]). 
+The command returns "1" if there are more rows waiting
+and returns "0" otherwise.
+Calling [cmd "ns_db getrow"] again after receiving `0` will raise an error.
+
+
+[call [cmd "ns_db info"] [arg handle]]
+
+Returns a Tcl dictionary with metadata about the database connection
+associated with [arg handle].  The dictionary may include:
+
+[const clientversion] (version of the client library),
+[const serverversion] (version of the connected database server)
+[const type] (the database type (e.g., [const PostgreSQL], [const Oracle])
+[const pool] (the connection pool name from which this handle was allocated).
+
+Note: not all drivers supply every field; for instance, some may omit version numbers.
 
 
 [call [cmd "ns_db logminduration"] [opt [arg poolname]] [opt [arg minduration]]]
 
-Queries or sets a threshold for logging of SQL statements. Log only
-statements in the system log, when SQL logging is turned on in general
-(via "ns_logctl severity Debug(sql) ...") and the statement took at
-least the specified duration.
+ Queries or sets the minimum execution time threshold for SQL
+ statement logging. When SQL debug logging is enabled (for example via
+ "ns_logctl severity Debug(sql) ..."), only statements that take at
+ least the specified duration will be emitted to the system log.
 
 If [arg poolname] is omitted, the operation is applied on all database
 pools. The [arg minduration] can be specified in
@@ -467,7 +482,7 @@ variables have to be set earlier to appropriate values.
 [example_begin]
  ns_section ns/db/pool/pool1 {
    ns_param	Connections        15
-   ns_param      LogMinDuration     10ms
+   ns_param     LogMinDuration     10ms
    ns_param	LogSQLerrors       $debug
    ns_param	driver             postgres
    ns_param	DataSource         ${db_host}:${db_port}:${db_name}
@@ -476,7 +491,7 @@ variables have to be set earlier to appropriate values.
  }
  ns_section ns/db/pool/pool2 {
    ns_param	Connections        5
-   ns_param      LogMinDuration     10ms
+   ns_param     LogMinDuration     10ms
    ns_param	LogSQLerrors       $debug
    ns_param	driver             postgres
    ns_param	DataSource         ${db_host}:${db_port}:${db_name}

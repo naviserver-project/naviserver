@@ -42,6 +42,7 @@ typedef Ns_ReturnCode  (SpSetParamProc) (Ns_DbHandle *handle, char *args);
 typedef int            (SpExecProc) (Ns_DbHandle *handle);
 typedef Ns_ReturnCode  (SpReturnCodeProc) (Ns_DbHandle *dbhandle, const char *returnCode, int bufsize);
 typedef Ns_Set *       (SpGetParamsProc) (Ns_DbHandle *handle);
+typedef Tcl_Obj*       (VersionProc) (Ns_DbHandle *handle);
 
 
 /*
@@ -71,6 +72,7 @@ typedef struct DbDriver {
     SpExecProc       *spexecProc;
     SpReturnCodeProc *spreturncodeProc;
     SpGetParamsProc  *spgetparamsProc;
+    VersionProc      *versionProc;
 } DbDriver;
 
 /*
@@ -204,6 +206,11 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
             driverPtr->spgetparamsProc = (SpGetParamsProc *) procs->func;
             break;
 
+        case DbFn_Version:
+            driverPtr->versionProc = (VersionProc *) procs->func;
+            break;
+
+#ifdef NS_WITH_DEPRECATED
             /*
              * The following functions are no longer supported.
              */
@@ -223,6 +230,7 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
         case DbFn_BestRowId:
             UnsupProcId("BestRowId");
             break;
+#endif
 
         }
         ++procs;
@@ -296,7 +304,47 @@ Ns_DbDriverDbType(Ns_DbHandle *handle)
     return result;
 }
 
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbDriverVersionInfo --
+ *
+ *      Retrieve driver-specific version information for the given
+ *      database handle.  If the handle is connected and its associated
+ *      driver provides a versionProc callback, that callback is invoked
+ *      to obtain a Tcl_Obj* describing the driver and server versions.
+ *      Otherwise, NULL is returned.
+ *
+ * Results:
+ *      Returns a Tcl_Obj* as produced by the driver's versionProc, or
+ *      NULL if no driver is set, no versionProc is available, or the
+ *      handle is not connected.
+ *
+ * Side effects:
+ *      Depends on the driver's versionProc implementation; may allocate
+ *      and return a new Tcl object.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Ns_DbDriverVersionInfo(Ns_DbHandle *handle)
+{
+    Tcl_Obj *result;
+    const DbDriver *driverPtr = NsDbGetDriver(handle);
+
+    if (driverPtr == NULL
+        || driverPtr->versionProc == NULL
+        || !handle->connected) {
+
+        result = NULL;
+    } else {
+        result = (*driverPtr->versionProc)(handle);
+    }
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  *

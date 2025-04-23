@@ -323,6 +323,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         FLUSH,
         GETHANDLE,
         GETROW,
+        INFO,
         INTERPRETSQLFILE,
         LOGMINDURATION,
         PASSWORD,
@@ -366,6 +367,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         "flush",
         "gethandle",
         "getrow",
+        "info",
         "interpretsqlfile",
         "logminduration",
         "password",
@@ -614,6 +616,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     case DISCONNECT:     NS_FALL_THROUGH; /* fall through */
     case DRIVER:         NS_FALL_THROUGH; /* fall through */
     case FLUSH:          NS_FALL_THROUGH; /* fall through */
+    case INFO:           NS_FALL_THROUGH; /* fall through */
     case PASSWORD:       NS_FALL_THROUGH; /* fall through */
     case POOLNAME:       NS_FALL_THROUGH; /* fall through */
     case RELEASEHANDLE:  NS_FALL_THROUGH; /* fall through */
@@ -711,6 +714,25 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(handlePtr->connected));
             break;
 
+        case INFO:
+            {
+                Tcl_Obj *dictObj = Ns_DbDriverVersionInfo(handlePtr);
+
+                if (dictObj == NULL) {
+                    dictObj = Tcl_NewDictObj();
+                }
+
+                Tcl_DictObjPut(NULL, dictObj,
+                               Tcl_NewStringObj("type", 4),
+                               Tcl_NewStringObj(Ns_DbDriverDbType(handlePtr), TCL_INDEX_NONE));
+                Tcl_DictObjPut(NULL, dictObj,
+                               Tcl_NewStringObj("pool", 4),
+                               Tcl_NewStringObj(handlePtr->poolname, TCL_INDEX_NONE));
+
+                Tcl_SetObjResult(interp, dictObj);
+            }
+            break;
+
         case SESSIONID:
             {
                 char idstr[TCL_INTEGER_SPACE + 4];
@@ -760,13 +782,13 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         break;
 
     case DML:               NS_FALL_THROUGH; /* fall through */
-    case GETROW:            NS_FALL_THROUGH; /* fall through */
-    case ONE_ROW:           NS_FALL_THROUGH; /* fall through */
-    case ZERO_OR_ONE_ROW:   NS_FALL_THROUGH; /* fall through */
     case EXEC:              NS_FALL_THROUGH; /* fall through */
+    case GETROW:            NS_FALL_THROUGH; /* fall through */
+    case INTERPRETSQLFILE:  NS_FALL_THROUGH; /* fall through */
+    case ONE_ROW:           NS_FALL_THROUGH; /* fall through */
     case SELECT:            NS_FALL_THROUGH; /* fall through */
     case SP_START:          NS_FALL_THROUGH; /* fall through */
-    case INTERPRETSQLFILE:
+    case ZERO_OR_ONE_ROW:
         {
             const char *value;
             TCL_SIZE_T  valueLength = 0;

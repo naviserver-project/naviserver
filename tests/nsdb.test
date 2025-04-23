@@ -15,6 +15,10 @@ test nsdb-1.0 {syntax: ns_db} -body {
     ns_db
 } -returnCodes error -result {wrong # args: should be "ns_db /subcommand/ ?/arg .../?"}
 
+test nsdb-1.0.0 {syntax: ns_db ?} -body {
+    ns_db ?
+} -returnCodes error -result {bad subcommand "?": must be 0or1row, 1row, bindrow, bouncepool, cancel, connected, currenthandles, datasource, dbtype, disconnect, dml, driver, exception, exec, flush, gethandle, getrow, info, interpretsqlfile, logminduration, password, poolname, pools, releasehandle, resethandle, rowcount, select, session_id, setexception, sp_exec, sp_getparams, sp_returncode, sp_setparam, sp_start, stats, user, or verbose}
+
 test nsdb-1.0.1 {syntax: ns_db bouncepool} -body {
     ns_db bouncepool
 } -returnCodes error -result {wrong # args: should be "ns_db bouncepool /poolname/"}
@@ -143,6 +147,10 @@ test nsdb-1.0.34 {syntax: ns_db 0or1row} -body {
     ns_db 0or1row
 } -returnCodes error -result {wrong # args: should be "ns_db 0or1row /handle/ /sql/"}
 
+test nsdb-1.0.35 {syntax: ns_db info} -body {
+    ns_db info
+} -returnCodes error -result {wrong # args: should be "ns_db info /handle/"}
+
 
 test nsdb-1.1 {syntax: ns_dbquotevalue} -body {
     ns_dbquotevalue
@@ -183,7 +191,7 @@ test nsdb-1.9 {syntax: ns_buildsqldate} -body {
 # Tcl proc ns_buildsqldate message should be {wrong # args: should be "ns_buildsqldate /month/ /day/ /year/"}
 
 test nsdb-1.10 {syntax: ns_dbpooldescription} -body {
-    ns_dbpooldescription 
+    ns_dbpooldescription
 } -returnCodes error -result {wrong # args: should be "ns_dbpooldescription /poolname/"}
 
 #######################################################################################
@@ -245,21 +253,37 @@ test ns_dbquotename-2 {dbquotelist empty} -body {
 
 test ns_db-2.0 {nsdb gethandle} -body {
     set h [ns_db gethandle -timeout 2.5s]
-} -returnCodes {ok error} -match glob -result {nsdb*}
+} -returnCodes {ok error} -match glob -cleanup {
+    ns_db releasehandle $h
+} -result {nsdb*}
 
-test ns_db-2.1 {"db_1row"} -body {
+test ns_db-2.1 {nsdb db_1row} -body {
+    set h [ns_db gethandle -timeout 2.5s]
     set s [ns_db 1row $h "rows"]
     ns_set array $s
-} -returnCodes {ok error} -result {column1 ok}
+} -returnCodes {ok error} -cleanup {
+    ns_db releasehandle $h
+} -result {column1 ok}
 
-test ns_db-2.2 {"dml"} -body {
+test ns_db-2.2 {nsdb dml} -body {
+    set h [ns_db gethandle -timeout 2.5s]
     set r [ns_db dml $h "dml"]
-} -returnCodes {ok error} -result {}
+} -returnCodes {ok error} -cleanup {
+    ns_db releasehandle $h
+} -result {}
 
 
 test ns_db-2.9 {nsdb releasehandle} -body {
+    set h [ns_db gethandle -timeout 2.5s]
     set h [ns_db releasehandle $h]
 } -returnCodes {ok error} -result {}
+
+test ns_db-3.0 {ns_db info} -body {
+    set h [ns_db gethandle -timeout 2.5s]
+    set r [ns_db info $h]
+} -returnCodes {ok error} -cleanup {
+    ns_db releasehandle $h
+} -result {type nsdbtest pool a}
 
 
 cleanupTests
