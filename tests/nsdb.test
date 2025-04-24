@@ -19,7 +19,8 @@ test nsdb-1.0.0 {syntax: ns_db ?} -body {
     ns_db ?
 } -returnCodes error -result [expr {[testConstraint with_deprecated]
                                     ? {bad subcommand "?": must be 0or1row, 1row, bindrow, bouncepool, cancel, connected, currenthandles, datasource, dbtype, disconnect, dml, driver, exception, exec, flush, gethandle, getrow, info, interpretsqlfile, logminduration, password, poolname, pools, releasehandle, resethandle, rowcount, select, session_id, setexception, sp_exec, sp_getparams, sp_returncode, sp_setparam, sp_start, stats, user, or verbose}
-                                    : {bad subcommand "?": must be 0or1row, 1row, bindrow, bouncepool, cancel, connected, currenthandles, datasource, dbtype, disconnect, dml, driver, exception, exec, flush, gethandle, getrow, info, interpretsqlfile, logminduration, password, poolname, pools, releasehandle, resethandle, rowcount, select, session_id, setexception, sp_exec, sp_getparams, sp_returncode, sp_setparam, sp_start, stats, or user}]
+                                    : {bad subcommand "?": must be 0or1row, 1row, bindrow, bouncepool, cancel, connected, currenthandles, datasource, dbtype, disconnect, dml, driver, exception, exec, flush, gethandle, getrow, info, interpretsqlfile, logminduration, password, poolname, pools, releasehandle, resethandle, rowcount, select, session_id, setexception, sp_exec, sp_getparams, sp_returncode, sp_setparam, sp_start, stats, or user}
+                                }]
 
 test nsdb-1.0.1 {syntax: ns_db bouncepool} -body {
     ns_db bouncepool
