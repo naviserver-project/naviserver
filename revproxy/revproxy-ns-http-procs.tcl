@@ -197,26 +197,26 @@ namespace eval ::revproxy::ns_http {
                     $url
 
                 ns_http run \
-                    {*}$partialresultsFlag \
-                    {*}$unixSocketArg \
-                    {*}$keepHostHeaderArg \
-                    -spoolsize 100kB \
-                    -method $method \
-                    -headers $requestHeaders \
-                    -connecttimeout $connecttimeout \
-                    -timeout $timeout \
-                    -expire $expiretimeout \
-                    {*}$extraArgs \
+                        {*}$partialresultsFlag \
+                        {*}$unixSocketArg \
+                        {*}$keepHostHeaderArg \
+                        -spoolsize 100kB \
+                        -method $method \
+                        -headers $requestHeaders \
+                        -connecttimeout $connecttimeout \
+                        -timeout $timeout \
+                        -expire $expiretimeout \
+                        {*}$extraArgs \
                         $url
 
             } trap {NS_TIMEOUT} {r} {
                 ::revproxy::ns_http::done {*}$doneArgs NS_TIMEOUT $r
 
             } on ok {r} {
-                ::revproxy::ns_http::done {*}$doneArgs 1 $r
+                ::revproxy::ns_http::done {*}$doneArgs 0 $r
 
             } on error {errorMsg} {
-                ::revproxy::ns_http::done {*}$doneArgs 0 $errorMsg
+                ::revproxy::ns_http::done {*}$doneArgs 1 $errorMsg
 
             }
         }
