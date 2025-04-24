@@ -174,6 +174,7 @@ ns_section "ns/parameters" {
     ns_param   logdebug        false
     ns_param   logdev          false
     ns_param   lognotice       false
+    ns_param   reversproxymode  true
     ns_param   progressminsize 1
     ns_param   concurrentinterpcreate true   ;# default: false
     #ns_param  formfallbackcharset iso8859-1
@@ -306,7 +307,6 @@ ns_section "ns/server/test/module/nslog" {
     ns_param   rolllog         false
     ns_param   rollonsignal    false
     ns_param   suppressquery   false
-    ns_param   checkforproxy   true
     ns_param   extendedheaders "X-Test"
 }
 ns_section "ns/server/test/module/nsssl" {
