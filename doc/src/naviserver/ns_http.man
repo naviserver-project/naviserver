@@ -85,6 +85,7 @@ Optional ID of the HTTP request to list.
     [opt [option "-insecure"]] \
     [opt [option "-keep_host_header"]] \
     [opt [option "-keepalive [arg time]"]] \
+    [opt [option "-maxresponse [arg memory-size]"]] \
     [opt [option "-method [arg value]"]] \
     [opt [option "-outputchan [arg value]"]] \
     [opt [option "-outputfile [arg value]"]] \
@@ -127,6 +128,7 @@ in a dedicated per-queue thread.
     [opt [option "-insecure"]] \
     [opt [option "-keep_host_header"]] \
     [opt [option "-keepalive [arg time]"]] \
+    [opt [option "-maxresponse [arg memory-size]"]] \
     [opt [option "-method [arg value]"]] \
     [opt [option "-outputchan [arg value]"]] \
     [opt [option "-outputfile [arg value]"]] \
@@ -364,6 +366,12 @@ specified in any supported [cmd ns_time] format.
 
 [opt_def -method [arg value]]
 Standard HTTP/HTTPS request method such as GET, POST, HEAD, PUT etc.
+
+[opt_def -maxresponse [arg memory-size]]
+Specifies the maximum number of bytes allowed in a response. If the
+response exceeds this limit, an exception will be triggered.  The
+value can be specified using memory units, such as kB, MB, GB, KiB,
+MiB, or GiB.
 
 [opt_def -outputchan [arg value]]
 receive the response content into the specified Tcl or [cmd ns_connchan]

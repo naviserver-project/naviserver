@@ -1193,6 +1193,7 @@ typedef struct {
     size_t             responseSize;     /* amount of response body received */
     Ns_Set            *responseHeaders;  /* ns_set for response headers */
     Tcl_WideInt        spoolLimit;       /* spool content above this limit */
+    Tcl_WideInt        maxresponse;      /* maximum size to be allowed in a response */
     int                spoolFd;          /* fd of spool file */
     unsigned short     port;
     char              *spoolFileName;    /* filename of the spool file */

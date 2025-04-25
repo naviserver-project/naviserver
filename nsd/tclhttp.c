@@ -2862,6 +2862,7 @@ NewHttpTask(NsServer *servPtr, const char *method, const char *url,
     httpPtr->spoolFd = NS_INVALID_FD;
     httpPtr->sock = NS_INVALID_SOCKET;
     httpPtr->spoolLimit = -1;
+    httpPtr->maxresponse = -1;
     httpPtr->url = ns_strdup(url);
     httpPtr->method = ns_strdup(method);
     httpPtr->servPtr = servPtr;
@@ -2884,7 +2885,7 @@ HttpQueue(
 ) {
     Tcl_Interp *interp;
     int         result = TCL_OK, decompress = 0, raw = 0, binary = 0, partialResults = 0, keepHostHdr = 0, insecureInt;
-    Tcl_WideInt spoolLimit = -1, bodySize = 0;
+    Tcl_WideInt spoolLimit = -1, maxresponse = -1, bodySize = 0;
 #ifdef NS_WITH_DEPRECATED_5_0
     int         verifyCertInt = 0;
 #endif
@@ -2938,6 +2939,7 @@ HttpQueue(
         {"-insecure",                 Ns_ObjvBool,    &insecureInt,            INT2PTR(NS_TRUE)},
         {"-keep_host_header",         Ns_ObjvBool,    &keepHostHdr,            INT2PTR(NS_TRUE)},
         {"-keepalive",                Ns_ObjvTime,    &keepAliveTimeoutPtr,    NULL},
+        {"-maxresponse",              Ns_ObjvMemUnit, &maxresponse,            NULL},
         {"-method",                   Ns_ObjvString,  &method,                 NULL},
         {"-outputchan",               Ns_ObjvString,  &outputChanName,         NULL},
         {"-outputfile",               Ns_ObjvString,  &outputFileName,         NULL},
@@ -3185,6 +3187,9 @@ HttpQueue(
          */
         if (spoolLimit > -1) {
             httpPtr->spoolLimit = spoolLimit;
+        }
+        if (maxresponse > -1) {
+            httpPtr->maxresponse = maxresponse;
         }
         if (outputFileName != NULL) {
             httpPtr->spoolFileName =  ns_strdup(outputFileName);
@@ -3760,7 +3765,7 @@ HttpCheckSpool(
         }
 
         /*
-         * Check the returned content-length
+         * Check the returned content-length.
          */
         header = Ns_SetIGet(httpPtr->responseHeaders, contentLengthHeader);
         if (header != NULL) {
@@ -3775,6 +3780,10 @@ HttpCheckSpool(
 
             Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %" TCL_LL_MODIFIER "d",
                    contentLengthHeader, responseLength);
+            if (httpPtr->maxresponse > 0 && responseLength > httpPtr->maxresponse) {
+                httpPtr->error = "response limit exceeded";
+                result = TCL_ERROR;
+            }
         } else {
             Ns_Log(Ns_LogTaskDebug, "ns_http: no content-length, HTTP status %d", httpPtr->status);
 
@@ -3812,6 +3821,9 @@ HttpCheckSpool(
          */
         ResponseHeaderCallback(httpPtr);
 
+        if (result == TCL_ERROR) {
+            return result;
+        }
         /*
          * See if we are handling compressed content.  Turn-on auto-decompress
          * if requested.
@@ -6476,7 +6488,9 @@ HttpProc(
                         rc = (result == TCL_OK ? NS_OK : NS_ERROR);
                     }
                     if (unlikely(rc != NS_OK)) {
-                        httpPtr->error = "http read failed (check spool)";
+                        if (httpPtr->error == NULL) {
+                            httpPtr->error = "http read failed (check spool)";
+                        }
                         httpPtr->errorSockState = why;
                         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ spool failed");
                     } else {
@@ -6838,6 +6852,7 @@ HttpTunnel(
     httpPtr->spoolFd = NS_INVALID_FD;
     httpPtr->sock = NS_INVALID_SOCKET;
     httpPtr->spoolLimit = -1;
+    httpPtr->maxresponse = 0;
     httpPtr->url = ns_strdup(url);
     httpPtr->flags |= NS_HTTP_FLAG_EMPTY; /* Do not expect response content */
     httpPtr->method = ns_strdup(connectMethod);
