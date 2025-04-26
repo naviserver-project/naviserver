@@ -233,6 +233,11 @@ static void HttpCheckHeader(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
+static int CheckMaxResponse(
+    NsHttpTask *httpPtr,
+    Tcl_WideInt responseLength
+) NS_GNUC_NONNULL(1);
+
 static int HttpCheckSpool(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
@@ -3671,6 +3676,40 @@ HttpCheckHeader(
     }
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckMaxResponse --
+ *
+ *      Enforces the maximum allowed response size for an HTTP task.
+ *
+ *      If the total number of bytes received so far (responseLength) exceeds
+ *      the task’s configured maxresponse limit, this function sets an error
+ *      message on the task and returns TCL_ERROR to signal that the response
+ *      should be aborted. Otherwise, it returns TCL_OK.
+ *
+ * Results:
+ *      TCL_OK    - responseLength is within the permitted limit (or no limit set).
+ *      TCL_ERROR - responseLength exceeds httpPtr->maxresponse; httpPtr->error
+ *                  is set to "response limit exceeded".
+ *
+ * Side effects:
+ *      May modify httpPtr->error to indicate a response-size violation.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CheckMaxResponse(NsHttpTask *httpPtr, Tcl_WideInt responseLength)
+{
+    if (httpPtr->maxresponse > 0 && responseLength > httpPtr->maxresponse) {
+        httpPtr->error = "response limit exceeded";
+        return TCL_ERROR;
+    } else {
+        return TCL_OK;
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -3780,10 +3819,8 @@ HttpCheckSpool(
 
             Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %" TCL_LL_MODIFIER "d",
                    contentLengthHeader, responseLength);
-            if (httpPtr->maxresponse > 0 && responseLength > httpPtr->maxresponse) {
-                httpPtr->error = "response limit exceeded";
-                result = TCL_ERROR;
-            }
+            result = CheckMaxResponse(httpPtr, responseLength);
+
         } else {
             Ns_Log(Ns_LogTaskDebug, "ns_http: no content-length, HTTP status %d", httpPtr->status);
 
@@ -5467,10 +5504,11 @@ HttpAppendContent(
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    if ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u) {
-        result = HttpAppendBuffer(httpPtr, buffer, size);
-    } else {
-        result = HttpAppendChunked(httpPtr, buffer, size);
+    result = CheckMaxResponse(httpPtr, (Tcl_WideInt)httpPtr->received);
+    if (result == TCL_OK) {
+        result = (httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
+            ? HttpAppendBuffer(httpPtr, buffer, size)
+            : HttpAppendChunked(httpPtr, buffer, size);
     }
 
     return result;
