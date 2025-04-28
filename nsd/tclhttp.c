@@ -3791,9 +3791,12 @@ HttpCheckSpool(
              * processing.
              */
 
-            ResponseHeaderCallback(httpPtr);
-            Ns_Log(Ns_LogTaskDebug, "ns_http: informational status code %d", httpPtr->status);
-            return TCL_CONTINUE;
+            result = ResponseHeaderCallback(httpPtr);
+            if (result == TCL_OK) {
+                Ns_Log(Ns_LogTaskDebug, "ns_http: informational status code %d", httpPtr->status);
+                result = TCL_CONTINUE;
+            }
+            return result;
 
         } else if (httpPtr->status == 204) {
             /*
@@ -3856,7 +3859,7 @@ HttpCheckSpool(
          * ResponseHeaderCallback, similar to what we have in
          * revproxy-ns-connchan.tcl
          */
-        ResponseHeaderCallback(httpPtr);
+        result = ResponseHeaderCallback(httpPtr);
 
         if (result == TCL_ERROR) {
             return result;
@@ -5005,7 +5008,8 @@ ResponseDataCallback(
  *              callback command (stored in responseHeaderCallback).
  *
  * Results:
- *    None. Errors during callback evaluation are logged via Ns_TclLogErrorInfo().
+ *    Standard Tcl result. Errors during callback evaluation are logged via
+ *    Ns_TclLogErrorInfo().
  *
  * Side Effects:
  *    - Constructs a Tcl dictionary with the following keys:

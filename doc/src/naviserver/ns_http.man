@@ -466,10 +466,9 @@ generative AI services - immediately as they become available.
 
 [opt_def -response_header_callback [arg value]]
 
-Specifies a Tcl callback to be invoked when the response headers from the target of the
-[cmd ns_http] request are received. The argument is a Tcl command,
-which is called with an additional argument containing response
-data in form of a Tcl dictionary, containing the following keys:
+Specifies a Tcl callback to be invoked as soon as the response headers
+from the target of an [cmd ns_http] request arrive.  The callback is
+passed one argument in form of a Tcl dictionary with these keys:
 
 [list_begin itemized]
 [item] [const status]: The received HTTP response status code of the response.
@@ -478,23 +477,39 @@ data in form of a Tcl dictionary, containing the following keys:
 [item] [const outputchan]: (optional) The output channel name, if specified.
 [list_end]
 
-For example, in a reverse proxy configuration, an [cmd ns_connchan]
-channel can be specified at the start of the request to a backend
-server via [option -outputchan], and when the response header fields from
-the backend server are received, these can be modified and sent via
-connchan back to the client.
+If the callback raises an exception, the HTTP request is immediately
+aborted.
+
+[para]
+
+Here is a reverse-proxy pattern, where we capture, tweak, and
+forward headers from a detached connection (in the background)
+via [cmd ns_connchan]:
 
 [example_begin]
  proc my_response_header_callback {d} {
+   # Unpack the response dictionary
    dict with d {
+     # Start with the status line
      set response "HTTP/1.1 $status $phrase\r\n"
+     # Append each header field
      foreach {key value} [lb]ns_set array $headers[rb] {
         append response "$key: $value\r\n"
      }
+     # End of headers
      append response \r\n
+     # Send headers back to the client
      ns_connchan write $outputchan $response
    }
  }
+ 
+ # Example ns_http call using the callback:
+ set chan [ns_connchan detach]
+ # ...
+ ns_http run \
+    -outputchan $chan \
+    -response_header_callback my_response_header_callback \
+    $url
 [example_end]
 
 [opt_def -spoolsize [arg memory-size]]
