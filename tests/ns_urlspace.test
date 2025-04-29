@@ -317,24 +317,24 @@ test ns_urlspace-2.11 {tree+wild-card-filter exact set/list/unset/list} -setup {
 
 test ns_urlspace-3.1 {tree+wild-card-filter key set/list/unset/list} -setup {
     ns_urlspace set -key . /x/*.html foo
-    ns_urlspace set -key a /x/*.html bar
+    ns_urlspace set -key A /x/*.html bar
 } -body {
     list \
         [ns_urlspace get /x/a.tcl] \
         [ns_urlspace get /x/a.html] \
         [ns_urlspace get /x/*.html] \
         [ns_urlspace get /x/y/a.html] \
-        [ns_urlspace get -key a /x/a.html] \
-        [ns_urlspace get -key a /x/y/a.html] \
-        [ns_urlspace get -key b /x/a.html] \
-        [ns_urlspace get -key b /x/y/a.html] \
+        [ns_urlspace get -key A /x/a.html] \
+        [ns_urlspace get -key A /x/y/a.html] \
+        [ns_urlspace get -key B /x/a.html] \
+        [ns_urlspace get -key B /x/y/a.html] \
         [ns_urlspace unset /x/*.html] \
-        [ns_urlspace unset -key a /x/*.html] \
+        [ns_urlspace unset -key A /x/*.html] \
         [ns_urlspace list] \
     } -result {{} foo foo foo bar bar {} {} 1 1 {}}
 
 test ns_urlspace-3.2 {tree+wild-card-filter key-with-spaces set/list/unset/list} -setup {
-    ns_urlspace set -key "a b c" /x/*.html "d e f"
+    ns_urlspace set -key "A b c" /x/*.html "d e f"
 } -body {
     list \
         [ns_urlspace list] \
