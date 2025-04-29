@@ -3767,37 +3767,37 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsP
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
-Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int id,
+Ns_UrlSpecificSet(const char *server, const char *key, const char *url, int id,
                   void *data, unsigned int flags, Ns_Callback freeProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void
-Ns_UrlSpecificSet2(const char *server, const char *method, const char *url, int id,
+Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
                    void *data, unsigned int flags, Ns_Callback freeProc,
                    void *contextSpec)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
-Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int id)
+Ns_UrlSpecificGet(const char *server, const char *key, const char *url, int id)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
-Ns_UrlSpecificGet2(const char *server, const char *method, const char *url, int id, void *context)
+Ns_UrlSpecificGet2(const char *server, const char *key, const char *url, int id, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 #ifdef NS_WITH_DEPRECATED
 NS_EXTERN void *
-Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
+Ns_UrlSpecificGetFast(const char *server, const char *key, const char *url, int id)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_DEPRECATED_FOR(Ns_UrlSpecificGet);
 #endif
 
 NS_EXTERN void *
-Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
+Ns_UrlSpecificGetExact(const char *server, const char *key, const char *url,
                        int id, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
-Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
+Ns_UrlSpecificDestroy(const char *server, const char *key, const char *url,
                       int id, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 

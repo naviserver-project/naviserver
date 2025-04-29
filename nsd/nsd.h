@@ -2157,7 +2157,7 @@ NS_EXTERN Ns_ReturnCode NsUrlToFile(Tcl_DString *dsPtr, NsServer *servPtr, const
 /*
  * urlspace.c
  */
-NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *method,
+NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *key,
                                  const char *url, int id, unsigned int flags, NsUrlSpaceOp op,
                                  Ns_UrlSpaceMatchInfo *matchInfoPtr,
                                  NsUrlSpaceContextFilterProc proc, void *context)

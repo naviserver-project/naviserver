@@ -199,7 +199,7 @@ typedef struct {
  * This structure defines a trie. A trie is a tree whose nodes are
  * branches and channels. It is an inherently recursive data
  * structure, and each node is itself a trie. Each node represents one
- * "part" of a URL; in this case, a "part" is server name, method,
+ * "part" of a URL; in this case, a "part" is server name, key,
  * directory, or wildcard.
  */
 
@@ -310,7 +310,7 @@ static TCL_OBJCMDPROC_T UrlSpaceUnsetObjCmd;
  * Utility functions
  */
 
-static void MkSeq(Tcl_DString *dsPtr, const char *method, const char *url)
+static void MkSeq(Tcl_DString *dsPtr, const char *key, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void WalkTrie(const Trie *triePtr, Ns_ArgProc func,
@@ -660,21 +660,21 @@ Ns_UrlSpecificAlloc(void)
  *----------------------------------------------------------------------
  */
 void
-Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int id,
+Ns_UrlSpecificSet(const char *server, const char *key, const char *url, int id,
                   void *data, unsigned int flags, Ns_FreeProc freeProc)
 {
-    Ns_UrlSpecificSet2(server, method, url, id, data, flags, freeProc, NULL);
+    Ns_UrlSpecificSet2(server, key, url, id, data, flags, freeProc, NULL);
 }
 
 void
-Ns_UrlSpecificSet2(const char *server, const char *method, const char *url, int id,
+Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
                   void *data, unsigned int flags, Ns_FreeProc freeProc,
                   void *contextSpec)
 {
     NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(url != NULL);
     NS_NONNULL_ASSERT(data != NULL);
 
@@ -684,7 +684,7 @@ Ns_UrlSpecificSet2(const char *server, const char *method, const char *url, int 
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        MkSeq(&ds, method, url);
+        MkSeq(&ds, key, url);
 
 #ifdef DEBUG
         PrintSeq(ds.string);
@@ -716,23 +716,23 @@ Ns_UrlSpecificSet2(const char *server, const char *method, const char *url, int 
  *----------------------------------------------------------------------
  */
 void *
-Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int id)
+Ns_UrlSpecificGet(const char *server, const char *key, const char *url, int id)
 {
     NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
     servPtr = NsGetServer(server);
     return (likely(servPtr != NULL)) ?
-        NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL)
+        NsUrlSpecificGet(servPtr, key, url, id, 0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL)
         : NULL;
 }
 
 #ifdef NS_WITH_DEPRECATED
 void *
-Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
+Ns_UrlSpecificGetFast(const char *server, const char *key, const char *url, int id)
 {
     NsServer *servPtr;
 
@@ -740,29 +740,29 @@ Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, i
     * Deprecated Function. Use Ns_UrlSpecificGet()
     */
     NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
     servPtr = NsGetServer(server);
     return likely(servPtr != NULL) ?
-        NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL, NULL)
+        NsUrlSpecificGet(servPtr, key, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL, NULL)
         : NULL;
 }
 #endif
 
 void *
-Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
+Ns_UrlSpecificGetExact(const char *server, const char *key, const char *url,
                        int id, unsigned int flags)
 {
     NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
     servPtr = NsGetServer(server);
     return likely(servPtr != NULL) ?
-        NsUrlSpecificGet(servPtr, method, url, id, flags, NS_URLSPACE_EXACT, NULL, NULL, NULL)
+        NsUrlSpecificGet(servPtr, key, url, id, flags, NS_URLSPACE_EXACT, NULL, NULL, NULL)
         : NULL;
 }
 
@@ -788,7 +788,7 @@ Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
  */
 
 void *
-NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
+NsUrlSpecificGet(NsServer *servPtr, const char *key, const char *url, int id,
                  unsigned int flags, NsUrlSpaceOp op,
                  Ns_UrlSpaceMatchInfo *matchInfoPtr,
                  NsUrlSpaceContextFilterProc proc, void *context)
@@ -798,16 +798,16 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
     const Junction *junction;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
     junction = JunctionGet(servPtr, id);
 
     Tcl_DStringInit(dsPtr);
-    MkSeq(dsPtr, method, url);
+    MkSeq(dsPtr, key, url);
 
 #ifdef DEBUG
-    fprintf(stderr, "NsUrlSpecificGet %s %s op %d\n", method, url, op);
+    fprintf(stderr, "NsUrlSpecificGet %s %s op %d\n", key, url, op);
     PrintSeq(dsPtr->string);
 #endif
 
@@ -855,14 +855,14 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
  */
 
 void *
-Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
+Ns_UrlSpecificDestroy(const char *server, const char *key, const char *url,
                       int id, unsigned int flags)
 {
     NsServer   *servPtr;
     void       *data = NULL;
 
     NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
     servPtr = NsGetServer(server);
@@ -871,7 +871,7 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        MkSeq(&ds, method, url);
+        MkSeq(&ds, key, url);
         if ((flags & NS_OP_RECURSE) != 0u) {
             //Ns_Log(Ns_LogUrlspaceDebug, "JunctionTruncBranch %s 0x%.6x", url, flags);
             JunctionTruncBranch(JunctionGet(servPtr, id), ds.string);
@@ -988,7 +988,7 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
 
         /*
          * Put stack contents into the sublist.
-         * Element 0 is method, the rest is url
+         * Element 0 is key, the rest is url
          */
 
         depth = 0;
@@ -2157,7 +2157,7 @@ JunctionTruncBranch(const Junction *juncPtr, char *seq)
  *
  * Side effects:
  *      Modifies seq, assuming
- *      seq = "handle\0method\0urltoken\0urltoken\0..\0\0\"
+ *      seq = "handle\key\0urltoken\0urltoken\0..\0\0\"
  *
  *----------------------------------------------------------------------
  */
@@ -2259,7 +2259,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
  * JunctionFind --
  *
  *      Locate a node for a given sequence in a junction.
- *      As usual sequence is "method\0urltoken\0...\0\0".
+ *      As usual sequence is "key\0urltoken\0...\0\0".
  *
  *      The "fast" boolean switch makes it do NS_strcmp instead of
  *      Tcl string matches on the filters. Not useful for wildcard
@@ -2636,8 +2636,8 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
  *
  * MkSeq --
  *
- *      Build a "sequence" out of a method/url; turns it into
- *      "method\0urltoken\0...\0\0".
+ *      Build a "sequence" out of a key/url; turns it into
+ *      "key\0urltoken\0...\0\0".
  *
  * Results:
  *      None.
@@ -2649,17 +2649,17 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
  */
 
 static void
-MkSeq(Tcl_DString *dsPtr, const char *method, const char *url)
+MkSeq(Tcl_DString *dsPtr, const char *key, const char *url)
 {
     const char *p;
     bool        done;
     size_t      l;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    Tcl_DStringAppend(dsPtr, method, (TCL_SIZE_T)NS_strlen(method) + 1);
+    Tcl_DStringAppend(dsPtr, key, (TCL_SIZE_T)NS_strlen(key) + 1);
 
     /*
      * Loop over each directory in the URL and turn the slashes
