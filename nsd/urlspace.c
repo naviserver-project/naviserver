@@ -117,7 +117,6 @@
 #define DEBUG 1
 */
 #define CONTEXT_FILTER 1
-//#define DEBUG 1
 
 /*
  * This optimization, when turned on, prevents the server from doing a
@@ -1241,9 +1240,10 @@ CmpKeyWithBranch(const void *key, const void *elemPtr)
     word = (*(const Branch **)elemPtr)->word;
 
 #ifdef DEBUG
-    fprintf(stderr, "CmpKeyWithBranch '%s' with '%s' -> %d\n",
-            keyString, word, NS_strcmp(keyString, word));
+    fprintf(stderr, "CmpKeyWithBranch '%s' with '%s' -> %d %d\n",
+            keyString, word, NS_strcmp(keyString, word), (NS_Tcl_StringMatch(keyString, word) != 1));
 #endif
+    //return (NS_Tcl_StringMatch(keyString, word) != 1);
     return NS_strcmp(keyString, word);
 }
 
@@ -1970,7 +1970,7 @@ CmpKeyWithChannel(const void *key, const void *elemPtr)
     }
 
 #ifdef DEBUG
-    fprintf(stderr, "======= CmpKeyWithChannel %s with %s -> %d\n", filter, key, result);
+    fprintf(stderr, "======= CmpKeyWithChannel %s with %s -> %d\n", filter, (char*)key, result);
 #endif
     return result;
 }
@@ -2041,7 +2041,7 @@ CmpKeyWithChannelAsStrings(const void *key, const void *elemPtr)
 
 #ifdef DEBUG
     fprintf(stderr, "CmpKeyWithChannelAsStrings key '%s' with '%s' -> %d\n",
-            key, filter, NS_strcmp(key, filter));
+            (char*)key, filter, NS_strcmp(key, filter));
 #endif
 
     return NS_strcmp(key, filter);
@@ -2350,8 +2350,8 @@ JunctionFind(const Junction *juncPtr, char *seq,
 
         //Ns_Log(Notice, "Junction Filter tail <%s> match with <%s>", p, channelPtr->filter);
 #ifdef DEBUG
-        fprintf(stderr, "JunctionFind: compare filter '%s' with channel filter '%s' => %d\n",
-                p, channelPtr->filter, doit);
+        fprintf(stderr, "JunctionFind: compare filter '%s' with channel filter '%s' => match %d\n",
+                p, channelPtr->filter, match);
 #endif
         if (match) {
             /*
