@@ -504,7 +504,7 @@ via [cmd ns_connchan]:
  }
  
  # Example ns_http call using the callback:
- set chan [ns_connchan detach]
+ set chan [lb]ns_connchan detach[rb]
  # ...
  ns_http run \
     -outputchan $chan \
