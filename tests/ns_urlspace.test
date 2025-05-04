@@ -312,7 +312,7 @@ test ns_urlspace-2.11 {tree+wild-card-filter exact set/list/unset/list} -setup {
     } -result {{} {} {} {} {} foo 0 0 1 {}}
 
 #
-# key
+# Testing keys
 #
 
 test ns_urlspace-3.1 {tree+wild-card-filter key set/list/unset/list} -setup {
@@ -334,7 +334,7 @@ test ns_urlspace-3.1 {tree+wild-card-filter key set/list/unset/list} -setup {
     } -result {{} foo foo foo bar bar {} {} 1 1 {}}
 
 test ns_urlspace-3.2 {tree+wild-card-filter key-with-spaces set/list/unset/list} -setup {
-    ns_urlspace set -key "A b c" /x/*.html "d e f"
+    ns_urlspace set -key "a b c" /x/*.html "d e f"
 } -body {
     list \
         [ns_urlspace list] \
