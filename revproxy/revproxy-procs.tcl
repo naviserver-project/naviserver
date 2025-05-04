@@ -404,6 +404,58 @@ namespace eval ::revproxy {
         eval $register_callbacks
     }
 
+    foreach s [ns_configsections] {
+        if {[string match ns/server/[ns_info server]/module/revproxy/* [ns_set name $s]]} {
+
+            set defaults {}
+            foreach parameter {
+                type
+                target
+                backend_response_callback
+                backendconnection
+                connecttimeout
+                exception_callback
+                insecure
+                receivetimeout
+                regsubs
+                sendtimeout
+                targethost
+                timeout
+                url_rewrite_callback
+                use_target_host_header
+                validation_callback
+            } {
+                if {[ns_set find $s $parameter] != -1} {
+                    #ns_log notice REVPROXY [ns_set name $s] $parameter [ns_set get -all $s $parameter]
+                    lappend defaults -$parameter [ns_set get $s $parameter]
+                }
+            }
+            foreach map [ns_set get -all $s map] {
+                lassign $map method path params
+                set arguments [dict merge $defaults $params]
+                set type proc
+                if {[dict exists $arguments -type]} {
+                    set type [dict get $arguments -type]
+                    if {$type ni {proc preauth postauth}} {
+                        ns_log error "revproxy: invalid revproxy type: '$type'; mapping ignored: $map"
+                        continue
+                    }
+                    dict unset arguments -type
+                } elseif {[dict exists $arguments -insecure]} {
+                    dict unset arguments -insecure
+                    lappend arguments -insecure
+                }
+                if {$type eq "proc"} {
+                    set cmd [list ns_register_proc $method $path ::revproxy::upstream $type {*}$arguments]
+                } else {
+                    set cmd [list ns_register_filter $type $method $path ::revproxy::upstream {*}$arguments]
+                }
+                ns_log notice REVPROY [ns_set name $s]: \n$cmd\n
+                eval $cmd
+            }
+        }
+    }
+
     ns_log notice "revproxy module version $version loaded for server '[ns_info server]'" \
         "using [ns_config ns/server/[ns_info server]/module/revproxy backendconnection ns_connchan]"
 }
