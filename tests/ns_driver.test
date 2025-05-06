@@ -16,16 +16,16 @@ test ns_driver-1.2 {basic syntax: wrong key} -body {
 
 test ns_driver-1.3a {basic syntax: key but too many arguments} -body {
      ns_driver info x
-} -returnCodes error -result {wrong # args: should be "ns_driver info"}
+} -returnCodes error -result {wrong # args: should be "ns_driver info ?-server /server/?"}
 test ns_driver-1.3b {basic syntax: key but too many arguments} -body {
      ns_driver names x
-} -returnCodes error -result {wrong # args: should be "ns_driver names"}
+} -returnCodes error -result {wrong # args: should be "ns_driver names ?-server /server/?"}
 test ns_driver-1.3c {basic syntax: key but too many arguments} -body {
      ns_driver threads x
-} -returnCodes error -result {wrong # args: should be "ns_driver threads"}
+} -returnCodes error -result {wrong # args: should be "ns_driver threads ?-server /server/?"}
 test ns_driver-1.3d {basic syntax: key but too many arguments} -body {
      ns_driver stats x
-} -returnCodes error -result {wrong # args: should be "ns_driver stats"}
+} -returnCodes error -result {wrong # args: should be "ns_driver stats ?-server /server/?"}
 
 
 

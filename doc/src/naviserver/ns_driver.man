@@ -5,9 +5,9 @@
 [titledesc {Obtain Network Driver Information.}]
 
 [description] The command [cmd ns_driver] allows one to obtain information
- about the loaded drivers, their configuration and their usage.
+ about the loaded network drivers, their configuration and their usage.
 
-[para] In general, one NaviServer process might have multiple driver
+[para] In general, one NaviServer process might have multiple network driver
 modules loaded. Every driver module has a type (such as e.g. "nssock"
 for HTTP connections or "nsssl" for HTTPS) and a name, where the type
 of the driver module is often used for its name as well. However, when
@@ -25,10 +25,12 @@ for detailed configuration options of the network drivers.
 [section {COMMANDS}]
 
 [list_begin definitions]
-[call [cmd "ns_driver info"]]
+[call [cmd "ns_driver info"] [opt [option "-server [arg server]"]]]
 
- The command [cmd "ns_driver info"] returns a list of lists containing
- driver information. Every outer list element describes a different
+ Returns a list containing information of all loaded network drivers.
+ The option [option "-server"] can be used to return only drivers registered for this server.
+
+ [para] Every outer list element describes a different network
  driver module instance. For every driver module instance the
  following information elements are returned:
 
@@ -55,17 +57,27 @@ major parts of the communication.
 [list_end]
 
 
-[call [cmd "ns_driver names"] ]
+[call [cmd "ns_driver names"] [opt [option "-server [arg server]"]] ]
 
- Return a list of the names of the loaded driver modules.
+ Returns a list of the names of all currently loaded driver modules.
+ By default, every driver that has been loaded into the server process
+ is included in the result. The [option -server] option
+ restricts the output to drivers that are registered for the given
+ [arg server].
 
-[call [cmd "ns_driver threads"] ]
+[call [cmd "ns_driver threads"] [opt [option "-server [arg server]"]] ]
 
-Return a list of the names of the driver threads
+ Returns a list of the names of the driver threads. The [option -server] option
+ restricts the output to drivers that are registered for the given
+ [arg server].
 
-[call [cmd "ns_driver stats"] ]
+[call [cmd "ns_driver stats"] [opt [option "-server [arg server]"]] ]
 
-Return for every driver thread the name of the driver module, the
+Returns driver statistics for every loaded driver.  The [option -server] option
+ restricts the output to drivers that are registered for the given
+ [arg server].
+
+The result includes the names of the thread and the driver module, the
 number of received requests, the number of spooled requests, the
 partial requests (received via multiple receive operations), and the
 number of errors.

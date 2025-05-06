@@ -358,6 +358,9 @@ static void WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
 static ConnPoolInfo *WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static bool DriverIsRegisterdForServer(const Driver *drvPtr, NsServer *servPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * Global variables defined in this file.
  */
@@ -935,7 +938,7 @@ void NsDriverMapVirtualServers(void)
                moduleName, defserver, (void*)serverMapSet, Ns_SetSize(serverMapSet));
 
         /*
-         * Iterating over set of server names.
+         * Iterating over set of server names (keys)
          */
         Tcl_DStringInit(dsPtr);
         for (j = 0u; j < Ns_SetSize(serverMapSet); ++j) {
@@ -1583,6 +1586,57 @@ NsStopSpoolers(void)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * DriverIsRegisterdForServer --
+ *
+ *      Determine if a given network driver is registered for a specific
+ *      server instance. A driver is considered registered if:
+ *        1. It is bound directly to that server
+ *        2. It specifies this server as its default
+ *        3. It is a global driver and the server appears in the
+ *           module’s “servers” configuration subsection.
+ *
+ * Results:
+ *      Returns NS_TRUE if the driver applies to the given server,
+ *      NS_FALSE otherwise.
+ *
+ * Side Effects:
+ *      None (aside potential debug output)
+ *
+ *----------------------------------------------------------------------
+ */
+
+static bool
+DriverIsRegisterdForServer(const Driver *drvPtr, NsServer *servPtr)
+{
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+
+    if (drvPtr->servPtr == servPtr || (drvPtr->defserver != NULL && STREQ(drvPtr->defserver, servPtr->server))) {
+        Ns_Log(Debug, "drv %s is per server or the default for %s", drvPtr->moduleName, servPtr->server);
+        return NS_TRUE;
+    }
+
+    if (drvPtr->servPtr == NULL) {
+        /*
+         * This is a global driver, check for a "/servers" section
+         * for this module.
+         */
+        const char *section = Ns_ConfigSectionPath(NULL, NULL, drvPtr->moduleName, "servers", NS_SENTINEL);
+        Ns_Set *serverMapSet = Ns_ConfigGetSection(section);
+
+        if (serverMapSet != NULL && Ns_SetSize(serverMapSet) > 0u) {
+            if (Ns_SetFind(serverMapSet, servPtr->server) != -1) {
+                Ns_Log(Debug, "drv %s is global, %s is registered", drvPtr->moduleName, servPtr->server);
+                return NS_TRUE;
+            }
+        }
+    }
+    return NS_FALSE;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1603,9 +1657,14 @@ NsStopSpoolers(void)
 static int
 DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int result = TCL_OK;
+    int         result = TCL_OK;
+    NsServer   *servPtr = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-server", Ns_ObjvServer, &servPtr,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -1621,6 +1680,10 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
          */
         for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
             int isNew = 0;
+
+            if (servPtr != NULL && !DriverIsRegisterdForServer(drvPtr, servPtr)) {
+                continue;
+            }
 
             (void)Tcl_CreateHashEntry(&driverNames, drvPtr->moduleName, &isNew);
             if (isNew == 1) {
@@ -1713,13 +1776,17 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
 static int
 DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int result = TCL_OK;
+    int         result = TCL_OK;
+    NsServer   *servPtr = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-server", Ns_ObjvServer, &servPtr,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-
         const Driver *drvPtr;
         Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
 
@@ -1727,8 +1794,12 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
          * Iterate over all drivers and collect results.
          */
         for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+            Tcl_Obj *listObj;
 
+            if (servPtr != NULL && !DriverIsRegisterdForServer(drvPtr, servPtr)) {
+                continue;
+            }
+            listObj = Tcl_NewListObj(0, NULL);
 
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("thread", 6));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->threadName, TCL_INDEX_NONE));
@@ -1775,9 +1846,14 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
 static int
 DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int result = TCL_OK;
+    int         result = TCL_OK;
+    NsServer   *servPtr = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-server", Ns_ObjvServer, &servPtr,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -1788,6 +1864,9 @@ DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
          * Iterate over all drivers and collect results.
          */
         for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+            if (servPtr != NULL && !DriverIsRegisterdForServer(drvPtr, servPtr)) {
+                continue;
+            }
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->threadName, TCL_INDEX_NONE));
         }
         Tcl_SetObjResult(interp, resultObj);
@@ -1814,9 +1893,14 @@ DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
 static int
 DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int result = TCL_OK;
+    int         result = TCL_OK;
+    NsServer   *servPtr = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-server", Ns_ObjvServer, &servPtr,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -1830,8 +1914,11 @@ DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
          * Iterate over all drivers and collect results.
          */
         for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-            int            isNew;
+            int isNew = 0;
 
+            if (servPtr != NULL && !DriverIsRegisterdForServer(drvPtr, servPtr)) {
+                continue;
+            }
             (void)Tcl_CreateHashEntry(&driverNames, drvPtr->moduleName, &isNew);
             if (isNew == 1) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
