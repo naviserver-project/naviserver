@@ -3856,8 +3856,8 @@ HttpCheckSpool(
             }
         }
         /*
-         * ResponseHeaderCallback, similar to what we have in
-         * revproxy-ns-connchan.tcl
+         * Call the ResponseHeaderCallback() for all cases except for status
+         * code 1xx, which is handled above.
          */
         result = ResponseHeaderCallback(httpPtr);
 
@@ -5039,13 +5039,22 @@ ResponseHeaderCallback(
          * enter it to the new interpreter.
          */
         if (httpPtr->interp == NULL) {
+            /*
+             * Running in a task thread. We need a fresh interpreter, and we
+             * have to enter the response headers to the interpreter.
+             */
             interp = NsTclAllocateInterp(httpPtr->servPtr);
             result = Ns_TclEnterSet(interp,
                                     Ns_SetCopy(httpPtr->responseHeaders),
                                     NS_TCL_SET_DYNAMIC);
         } else {
+            /*
+             * Running in the connection thread.
+             */
             interp = httpPtr->interp;
-            result = TCL_OK;
+            result = Ns_TclEnterSet(interp,
+                                    httpPtr->responseHeaders,
+                                    NS_TCL_SET_STATIC);
         }
 
         if (result == TCL_OK) {
