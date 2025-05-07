@@ -30,7 +30,7 @@ the following elements.
 [section EXAMPLES]
 
 [example_begin]
- % ns_parsemessage [join {{HTTP/1.1 200 OK} {content-length: 2} {} {OK}} \r\n]
+ % ns_parsemessage [lb]join {{HTTP/1.1 200 OK} {content-length: 2} {} {OK}} \r\n[rb]]
  firstline {HTTP/1.1 200 OK} headers d0 body OK
  
  % ns_set format d0
