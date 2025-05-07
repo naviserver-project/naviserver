@@ -9428,7 +9428,8 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
             reqPtr->request.query = (parsedUrlPtr->query != NULL) ? ns_strdup(parsedUrlPtr->query+1) : NULL;
             reqPtr->request.fragment = (parsedUrlPtr->fragment != NULL) ? ns_strdup(parsedUrlPtr->fragment) : NULL;
 
-            Ns_Log(Notice, "REQUEST LINE <%s> query <%s> fragment <%s>", reqPtr->request.line, reqPtr->request.query, reqPtr->request.fragment);
+            Ns_Log(Debug, "REQUEST LINE <%s> query <%s> fragment <%s>",
+                   reqPtr->request.line, reqPtr->request.query, reqPtr->request.fragment);
 
             *sockPtrPtr = sockPtr;
         }
