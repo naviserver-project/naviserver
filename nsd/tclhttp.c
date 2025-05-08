@@ -5288,8 +5288,8 @@ HttpAppendRawBuffer(
     if (httpPtr->recvSpoolMode == NS_TRUE) {
         if (httpPtr->spoolFd != NS_INVALID_FD) {
             /*
-             * Warning: the ns_write() operation might cause a partial write,
-             * which is not handled.
+             * Warning: also the ns_write() operation might cause a partial write,
+             * which is not handled - but this have not beeb observed on any OS.
              */
             written = ns_write(httpPtr->spoolFd, buffer, size);
             if (written > -1 && (size_t)written != size) {
