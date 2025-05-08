@@ -75,7 +75,7 @@ them with commas.
 
 [para]
 
-In the example below, NaviServer is bound to the privideged port
+In the example below, NaviServer is bound to the privileged port
 [const 80] and port [const 443] for both the IPv4 address
 [const 137.208.116.31] and the IPv6 address [const 2001:628:404:74::31].
 The configuration for port 80 allows two sockets, thereby supporting two
