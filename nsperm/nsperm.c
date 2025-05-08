@@ -327,7 +327,7 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl
  *
  *      Authorize a URL--this callback is called when a new
  *      connection is received.
-
+ *
  *      Digest authentication per RFC 2617 but currently
  *      supports qop="auth" and MD5 hashing only.
  *
@@ -338,7 +338,7 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl
  *         WWW-Authenticate header.
  *       - Parse the Authorization header and perform digest authentication
  *         against it.
-
+ *
  * Results:
  *      NS_OK: accept;
  *      NS_FORBIDDEN or NS_UNAUTHORIZED: go away;
