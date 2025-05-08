@@ -62,6 +62,7 @@ namespace eval ::revproxy {
         {-insecure:switch}
         {-receivetimeout ""}
         {-regsubs:0..n ""}
+        {-response_header_callback ""}
         {-sendtimeout ""}
         {-targethost ""}
         {-timeout 1m}
@@ -200,6 +201,7 @@ namespace eval ::revproxy {
                     -validation_callback $validation_callback \
                     -exception_callback $exception_callback \
                     -backend_response_callback $backend_response_callback \
+                    -response_header_callback $response_header_callback \
                     -request [::revproxy::request -targethost $targethost] \
                     -use_target_host_header $use_target_host_header\
                     {*}$extraArgs
@@ -249,6 +251,7 @@ namespace eval ::revproxy {
         dict set request headers $requestHeaders
         dict set request method [ns_conn method]
         dict set request version [ns_conn version]
+        dict set request requester [ns_conn location]
 
         set contentType   [ns_set iget $requestHeaders content-type]
         set contentLength [ns_set iget $requestHeaders content-length ""]
@@ -412,6 +415,7 @@ namespace eval ::revproxy {
                 type
                 target
                 backend_response_callback
+                response_header_callback
                 backendconnection
                 connecttimeout
                 exception_callback

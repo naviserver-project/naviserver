@@ -49,10 +49,12 @@ namespace eval ::revproxy::ns_connchan {
         {-url_rewrite_callback "::revproxy::rewrite_url"}
         {-use_target_host_header:boolean false}
         {-validation_callback ""}
+        {-response_header_callback ""}
     } {
         #
         # @param spoolresponse dummy parameter just for interface compatibility
         #        with ns_http variant
+        # @param response_header_callback NOT HANDLED YET (TODO)
         #
         if {$sendtimeout eq ""}    { set sendtimeout 0.5s }
         if {$receivetimeout eq ""} { set receivetimeout 0.5s }
@@ -179,7 +181,9 @@ namespace eval ::revproxy::ns_connchan {
                               -sendtimeout $sendtimeout \
                               -receivetimeout $receivetimeout \
                               -backend_response_callback $backend_response_callback \
-                              -exception_callback $exception_callback]
+                              -exception_callback $exception_callback \
+                              -requester [dict get $request requester] \
+                              -response_header_callback $response_header_callback]
 
             set status [ns_connchan status $backendChan]
             if {[dict get $status sendbuffer] == 0} {
@@ -240,12 +244,15 @@ namespace eval ::revproxy::ns_connchan {
         -receivetimeout
         -backend_response_callback
         -exception_callback
+        -requester
+        {-response_header_callback ""}
     } {
         #
         # Full request was received and transmitted upstream, now
         # setup for replies.
         #
         #ns_log notice "=== upstream_request_submitted ==="
+
         try {
             set timeouts [list -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout]
             #log notice "===== Set callbacks [ns_info server] frontendChan $frontendChan backendChan $backendChan"
@@ -260,7 +267,10 @@ namespace eval ::revproxy::ns_connchan {
                 $frontendChan [list ::revproxy::ns_connchan::spool $frontendChan $backendChan $url $timeouts ""] rex
             ns_connchan callback \
                 -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
-                $backendChan [list ::revproxy::ns_connchan::backendResponse -callback $backend_response_callback \
+                $backendChan [list ::revproxy::ns_connchan::backendResponse \
+                                  -response_header_callback $response_header_callback \
+                                  -requester $requester \
+                                  -callback $backend_response_callback \
                                   $backendChan $frontendChan $url $timeouts ""] rex
 
         } on error {errorMsg} {
@@ -670,7 +680,7 @@ namespace eval ::revproxy::ns_connchan {
             # upstream headers etc.
             #
             if {$callback ne ""} {
-                {*}$callback -url $url -responseHeaders $responseHeaders -status $status
+                {*}$callback -url $url -responseHeaders $responseHeaders -status $status -response ""
             }
 
             #
@@ -719,6 +729,8 @@ namespace eval ::revproxy::ns_connchan {
     #
     nsf::proc backendResponse {
         {-callback ""}
+        {-response_header_callback ""}
+        -requester
         -sendtimeout
         -receivetimeout
         from
@@ -728,7 +740,8 @@ namespace eval ::revproxy::ns_connchan {
         arg
         condition
     } {
-        log notice "::revproxy::ns_connchan::backendResponse from $from condition '$condition' server '[ns_info server]'"
+        log notice "::revproxy::ns_connchan::backendResponse:" \
+            "from $from condition '$condition' server '[ns_info server]'"
         if { $condition eq "r" } {
             #
             # Read from backend
@@ -741,12 +754,14 @@ namespace eval ::revproxy::ns_connchan {
             #
             # Connection Timeout
             #
-            ::revproxy::ns_connchan::gateway_timeout $to $url "connection timeout occurred while waiting for backend response $from to $to"
+            ::revproxy::ns_connchan::gateway_timeout $to $url \
+                "connection timeout occurred while waiting for backend response $from to $to"
             channelCleanup -close $to
             set msg ""
 
         } else {
-            log notice "::revproxy::ns_connchan::backendResponse unexpected condition '$condition' while processing backend response"
+            log notice "::revproxy::ns_connchan::backendResponse:" \
+                "unexpected condition '$condition' while processing backend response"
             set msg ""
         }
 
@@ -766,7 +781,8 @@ namespace eval ::revproxy::ns_connchan {
             # receive the header of the response in one sweep, ... which
             # seems to be the case on our tested systems.
             #
-            log notice "::revproxy::ns_connchan::backendResponse: received response [string length $msg] bytes from $from to $to ($url)"
+            log notice "::revproxy::ns_connchan::backendResponse:" \
+                "received response [string length $msg] bytes from $from to $to ($url)"
             #record $to $msg
 
             try {
@@ -784,6 +800,14 @@ namespace eval ::revproxy::ns_connchan {
                     # list via "header_info".
                     #
                     #log notice "::revproxy::ns_connchan::backendResponse: received headers [ns_set format $headers]"
+                    if {$response_header_callback ne ""} {
+                        {*}$response_header_callback \
+                            -requester $requester \
+                            -url $url \
+                            -responseHeaders $headers \
+                            -status [lindex $firstline 1]
+                    }
+
                     set cmd [list sendResponseHeader \
                                  -from $from -to $to -url $url \
                                  -callback $callback \

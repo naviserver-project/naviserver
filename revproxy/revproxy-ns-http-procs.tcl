@@ -33,7 +33,8 @@ namespace eval ::revproxy::ns_http {
         {-validation_callback ""}
         {-exception_callback "::revproxy::exception"}
         {-backend_response_callback ""}
-        -request:required
+        {-request:required}
+        {-response_header_callback ""}
         {-spoolresponse true}
         {-use_target_host_header:boolean false}
     } {
@@ -107,8 +108,26 @@ namespace eval ::revproxy::ns_http {
             #    ns_connchan debug $connchan 1
             #    ns_log notice "ACTIVATE verbosity: send data to the client via $connchan (URL $url) "
             #}
-            lappend extraArgs -outputchan $connchan -spoolsize 0 -raw -response_header_callback ::revproxy::ns_http::responseheaders
+            lappend extraArgs \
+                -outputchan $connchan \
+                -spoolsize 0 \
+                -raw \
+                -response_header_callback [list ::revproxy::ns_http::send_response_headers \
+                                               -requester [dict get $request requester] \
+                                               -url $url \
+                                               -response_header_callback $response_header_callback]
+
             #ns_log notice "send data to the client via $connchan (URL $url)"
+        } elseif {$response_header_callback ne ""} {
+            #
+            # Only when a $response_header_callback is specified, we
+            # have to register a callback for ns_http
+            #
+            lappend extraArgs \
+                -response_header_callback [list ::revproxy::ns_http::response_headers_wrapper \
+                                               -requester [dict get $request requester] \
+                                               -url $url \
+                                               -response_header_callback $response_header_callback]
         }
 
         #
@@ -152,7 +171,7 @@ namespace eval ::revproxy::ns_http {
         if {$queue} {
             set done_callbback [list ::revproxy::ns_http::done {*}$doneArgs]
 
-            log notice             ns_http queue \
+            #log notice             ns_http queue \
                 {*}$partialresultsFlag \
                 {*}$unixSocketArg \
                 {*}$keepHostHeaderArg \
@@ -311,7 +330,11 @@ nsf::proc ::revproxy::ns_http::done {
             #ns_log notice "... response headers  <$responseHeaders> <[ns_set array $responseHeaders]>"
 
             if {$backend_response_callback ne ""} {
-                {*}$backend_response_callback -url $url -responseHeaders $responseHeaders -status $status
+                {*}$backend_response_callback \
+                    -url $url \
+                    -responseHeaders $responseHeaders \
+                    -status $status \
+                    -response $d
             }
             #log notice ::revproxy::ns_http::done =========================================== SUCCESS (connected [ns_conn isconnected])
             if {[ns_conn isconnected]} {
@@ -459,12 +482,44 @@ nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} 
 }
 
 
-proc ::revproxy::ns_http::responseheaders {dict} {
+nsf::proc ::revproxy::ns_http::response_headers_wrapper {
+    {-requester ""}
+    {-url ""}
+    {-response_header_callback ""}
+    dict
+} {
     #
-    # Send response headers from backend server to revproy client.
-    # This function is called by "response_header_callback".
+    # This is a wrapper to make sure, the client callback has always
+    # the same interface.
     #
-    #ns_log warning !!!! ::revproxy::ns_http::responseheaders
+    if {$response_header_callback ne ""} {
+        dict with dict {
+            {*}$response_header_callback \
+                -requester $requester \
+                -url $url \
+                -responseHeaders $headers \
+                -status $status
+        }
+    }
+}
+
+nsf::proc ::revproxy::ns_http::send_response_headers {
+    {-requester ""}
+    {-url ""}
+    {-response_header_callback ""}
+    dict
+} {
+    #
+    # Send response headers from backend server to revproxy client via
+    # the ns_connchan $outputchan.  This function is called by the
+    # "response_header_callback" of ns_http, when the delivery method
+    # is "ns_http+ns_connchan".
+    #
+    #ns_log warning !!!! ::revproxy::ns_http::send_response_headers \
+        -requester $requester \
+        -url $url \
+        -response_header_callback $response_header_callback \
+        $dict
 
     #ns_logctl severity Debug(task) on
     #ns_logctl severity Debug(connchan) on
@@ -472,25 +527,22 @@ proc ::revproxy::ns_http::responseheaders {dict} {
     dict with dict {
         foreach key {status phrase headers outputchan} {
             if {![info exists $key] } {
-                error "::revproxy::ns_http::responseheaders: missing key '$key' in provided dict: '$dict'"
+                error "::revproxy::ns_http::send_response_headers: missing key '$key' in provided dict: '$dict'"
             }
         }
         if {![ns_connchan exists $outputchan]} {
-            error "::revproxy::ns_http::responseheaders: provided channel is not a a connection channel: '$outputchan'"
+            error "::revproxy::ns_http::send_response_headers: provided channel is not a a connection channel: '$outputchan'"
         }
 
-        #log notice ::revproxy::ns_http::responseheaders <$dict> set $headers <[ns_set array $headers]>
-        if {0} {
-            foreach {key value} [ns_set array $headers] {
-                if {[string tolower $key] ni {
-                    xconnection date server
-                    xcontent-length xcontent-encoding
-                }} {
-                    ns_set put $headers $key $value
-                    log notice adding to output headers: $key: '$value'
-                }
-            }
+        if {$response_header_callback ne ""} {
+            {*}$response_header_callback \
+                -requester $requester \
+                -url $url \
+                -responseHeaders $headers \
+                -status $status
         }
+
+        #log notice ..... ::revproxy::ns_http::send_response_headers <$dict> set $headers <[ns_set format $headers]>
 
         set response "HTTP/1.1 $status $phrase\r\n"
         foreach {key value} [ns_set array $headers] {
@@ -498,23 +550,23 @@ proc ::revproxy::ns_http::responseheaders {dict} {
         }
         append response \r\n
 
-        log notice ::revproxy::ns_http::responseheaders \n$response
+        log notice ::revproxy::ns_http::send_response_headers \n$response
         set toWrite [string length $response]
         set written -1
         try {
             ns_connchan write $outputchan $response
         } trap {NS_TIMEOUT} {} {
-            ns_log notice "::revproxy::ns_http::responseheaders: TIMEOUT during send to $outputchan"
+            ns_log notice "::revproxy::ns_http::send_response_headers: TIMEOUT during send to $outputchan"
         } trap {POSIX EPIPE} {} {
-            ns_log notice "::revproxy::ns_http::responseheaders:  EPIPE during send to $outputchan"
+            ns_log notice "::revproxy::ns_http::send_response_headers:  EPIPE during send to $outputchan"
         } trap {POSIX ECONNRESET} {} {
-            ns_log notice "::revproxy::ns_http::responseheaders:  ECONNRESET during send to $outputchan"
+            ns_log notice "::revproxy::ns_http::send_response_headers:  ECONNRESET during send to $outputchan"
         } on error {errorMsg} {
-            ns_log warning "::revproxy::ns_http::responseheaders:  other error during send to $outputchan: $errorMsg"
+            ns_log warning "::revproxy::ns_http::send_response_headers:  other error during send to $outputchan: $errorMsg"
         } on ok {written} {
         }
         if {$toWrite != $written} {
-            log notice ::revproxy::ns_http::responseheaders towrite $toWrite written $written
+            log notice ::revproxy::ns_http::send_response_headers towrite $toWrite written $written
         }
     }
 }

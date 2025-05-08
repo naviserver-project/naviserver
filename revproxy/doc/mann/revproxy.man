@@ -9,94 +9,56 @@
 
  The [emph revproxy] module implements a reverse proxy for NaviServer.
  It accepts external HTTP(S) requests and forwards them to one or more
- internal backend servers, shielding those servers from direct client access.
+ internal backend servers, shielding those servers from direct external access.
  The module also supports proxying of (secure) WebSocket connections.
 
 [para]
 
- Use [emph revproxy] to route requests based on HTTP methods and URL
- patterns. This enables hybrid setups where part of your site is
- served by NaviServer and other parts by external services. For
- fine-grained control - such as restricting access to authenticated
- users - you can invoke [cmd revproxy::upstream] directly in
- server-side code (e.g., .vuh pages in OpenACS), e.g. to restrict
- backend access to authenticated or authorized users (e.g., admins).
-
+ Use the [emph revproxy] module to route requests by HTTP method and
+ URL pattern to create hybrid deployments: serve some paths directly
+ from NaviServer and delegate others to external services.  For
+ fine-grained control—such as allowing only authenticated users to
+ reach certain backends—you can invoke [cmd revproxy::upstream]
+ directly in server-side code (for example, in OpenACS .vuh pages).
 
 [para]
-You can integrate [emph revproxy] into NaviServer’s request pipeline in three ways:
+ NaviServer lets you specify [emph when] in the request lifecycle the proxy runs,
+ and [emph how] it connects to each backend.
+
 [list_begin itemized]
-[item] As a filter ([cmd ns_register_filter]) - executes early in the request lifecycle
-[item] As a request handler ([cmd ns_register_proc]) - executes after filters (e.g., postauth)
-[item] Directly in code—for conditional or programmatic proxying
-[list_end]
-Choose the method that best matches your security and performance needs.
+[item] [emph When:]
 
-[section {Backend Connection Methods}]
+ Determine at which point in the pipeline requests are proxied:
 
-The [emph revproxy] module supports three backend connection methods:
+ [list_begin itemized]
+ 
+ [item] Filter ([uri ../../naviserver/files/ns_register.html#3 "ns_register_filter"]):
+ 
+ Executes early, before most other processing. Ideal if you need to
+ forward unauthenticated or pre-authentication traffic to a backend
+ that performs its own access control.
 
-[list_begin enumerated]
-[enum] [emph ns_connchan] (Tcl-based)
-[list_begin itemized]
-[item] Fully event-driven, suitable for streaming HTML and WebSockets
-[item] Supports background operation (does not block connection threads)
-[item] Proven stability and robustness
-[item] May be required for requests that cannot currently be handled by
-  ns_http (e.g., certain WebSocket upgrade requests)
-[item] No persistent connections supported
-[item] Partial reads/writes and error handling in Tcl (more complex)
-[list_end]
+ [item] Request handler ([uri ../../naviserver/files/ns_register.html#4 "ns_register_proc"]):
+ 
+ Runs after filters (e.g., post-authentication). Behaves like any other
+ static or dynamic handler, matching method, path, and resource name.
+ For example, you might forward all “.php” requests to a dedicated PHP backend.
 
-[enum] [emph ns_http] (C-based)
-[list_begin itemized]
-[item] Efficient partial reads/writes in C
-[item] Supports persistent connections (NaviServer 5.0+) for repeated requests
-[item] Integrates with (multiple) task threads, scaling well under heavy load
-[item] Provides separate logging and statistics for backend connections
-[item] For certain types of requests (e.g., the websocket upgrade request), automatic fall back to [term ns_connchan] possible.
-[item] Not optimal for streaming, since data arrives after full
-request has finished.
-[list_end]
+ [item] Direct invocation:
+ 
+ Call [cmd revproxy::upstream] programmatically in your Tcl code for
+ conditional or on-demand proxying.
+ [list_end]
 
-[enum] [emph ns_http+ns_connchan] (Combined Implementation, recommended)
-[list_begin itemized]
-[item] Uses [term ns_http] to send request data and [term ns_connchan] to spool responses
-[item] Supports persistent connections and streaming
-[item] Supports background operation (non‐blocking)
-[list_end]
+[item] [emph How:]
+
+ Choose one of three backend connection methods to balance streaming
+ capability, performance, and observability. The default is
+ recommended for most use cases.  See
+ [sectref {Backend Connection Methods}] for details.
+
 [list_end]
 
-[para]
-You can set the default connection method globally via the configuration file,
-and override it per backend via the [option backendconnection] parameter
-
-[para]
-Figure 1 shows the interaction between a client, the reverse proxy
-server and the backend server, when the
-[option backendconnection] is set to [term ns_http+ns_connchan]. The incoming
-request is always processed by the network driver of NaviServer
-([term nssock] or [term nsssl]). After the request is processed, we have the
-request header in the form of an ns_set and the request body either as
-spool file or as string. At this time, the URL rewrite callbacj and
-later the validation callback is fired
-(see [sectref {ADVANCED CUSTOMIZATION via API}]) for more details).
-
-The chosen [term backendconnection] defines then, how the request is
-sent to the backend, and how the results are received and delivered to
-the client. In the case of [emph ns_http+ns_connchan], the response
-headers from the backend server are sent the client before the
-response body is received.  Also, the response body is forwarded to
-the client incrementally.
-
-[para][image revproxy1 "Reverse Proxy Server with backendconnection ns_http+ns_connchan"]
-[para]Figure 1: Reverse Proxy Server with configuration ns_http+ns_connchan
-
-[para] When the [option backendconnection] is
- [emph ns_http], forwarding to the client happens after the full request has
- been received by the reverse proxy. When [emph ns_connchan] is used,
- the transfer is also incrementally, but with the drawbacks mentioned
- above.
 
 [section CONFIGURATION]
 
@@ -128,16 +90,15 @@ by calling directly in the "ns_param register" section the API
 
  Next, set any global defaults for all backends. Here we define the
  verbosity and the "backendconnection" type. The latter can be defined
- for inidividual backends.
+ for individual backends.
 
 [example_begin]
  ns_section ns/server/$server/module/revproxy {
-   #ns_param backendconnection ns_connchan    ;# default: ns_http+ns_connchan
    #ns_param verbose 1
    #
    # Register extra handlers or filters. The following command
    # registgered a handler for /nsstats.tcl to obtain stats from the
-   # reverse proxy itself, when this this URL is used.  This assumes,
+   # reverse proxy itself, when this URL is used.  This assumes,
    # that nsstats.{tcl,adp} has been installed into the pages
    # directory of the proxy.
  
@@ -150,7 +111,12 @@ by calling directly in the "ns_param register" section the API
 [subsection {Defining Backends}]
 
 Each backend requires its own [term ns_section] under the server’s
-revproxy module. In this example, "backend1" forwards "/api/*" over HTTPS
+revproxy module. The parameters, which can be set per backend are the
+same as those, which can be set via the
+[sectref {General Options} "API Options"].
+
+
+[para] In the first example, "backend1" forwards "/api/*" over HTTPS
 with custom timeouts, and uses the target’s Host header on POST:
 
 [example_begin]
@@ -159,13 +125,11 @@ with custom timeouts, and uses the target’s Host header on POST:
    ns_param target               https://server1.local:8080/
  
    # Optional: pick connection methods, timeouts, callbacks, headers
-   #ns_param backendconnection     ns_http+ns_connchan    ;# default: ns_http+ns_connchan
    ns_param connecttimeout         2s                     ;# default: 1s
    ns_param receivetimeout         15s                    ;# default: 10s
    ns_param sendtimeout            15s                    ;# default: 10s
-   #ns_param insecure              true                   ;# default: false
-   #ns_param url_rewrite_callback  my_rewrite_callback   ;# default: ::revproxy::rewrite_url
-   #ns_param exception_callback    my_exception_callback ;# default: ::revproxy::exception
+ 
+   # Define which paths map to this backend
    ns_param map "GET  /api/*"
    ns_param map "POST /api/* {-use_target_host_header true}"
  }
@@ -176,13 +140,13 @@ with custom timeouts, and uses the target’s Host header on POST:
 
 [example_begin]
  ns_section ns/server/$server/module/revproxy/backend2 {
-    ns_param target               http://server2.local/
-    #ns_param backendconnection   ns_http
-    ns_param connecttimeout       1s
-    ns_param receivetimeout       1s
-    # Define which paths map to this backend
-    ns_param map "GET  /static/*"
-    ns_param map "HEAD /static/*"
+   ns_param target               http://server2.local/
+   ns_param connecttimeout       1s
+   ns_param receivetimeout       1s
+ 
+   # Define which paths map to this backend
+   ns_param map "GET  /static/*"
+   ns_param map "HEAD /static/*"
  }
 [example_end]
 
@@ -191,17 +155,18 @@ after removing the prefix "/shiny" from the URL.
 
 [example_begin]
  ns_section ns/server/$server/module/revproxy/backend3 {
-    ns_param target               https://server3.local/
-    ns_param backendconnection    preauth
-    ns_param regsubs              {{/shiny ""}}
-    ns_param map "GET  /shiny/*"
-    ns_param map "POST /shiny/*"
+   ns_param target               https://server3.local/
+   ns_param backendconnection    preauth
+   ns_param regsubs              {{/shiny ""}}
+   ns_param map "GET  /shiny/*"
+   ns_param map "POST /shiny/*"
  }
 [example_end]
 
 
 
-[subsection {Example: Using the API directly to a Register a Request Handler}]
+[subsection {Example: Using the API directly to a Register the Reverse
+Proxy via a Request Handler}]
 
 Forward [term "GET /doc/*"] requests to two backend servers with a
 20-second connect timeout:
@@ -222,8 +187,74 @@ This configuration uses simple load distribution across multiple
 backends (round-robin). Failover checks (health checks) for the
 backends are currently not performed.
 
+[section {Backend Connection Methods}]
 
-[section {ADVANCED CUSTOMIZATION via API}]
+The [emph revproxy] module supports three backend connection methods:
+
+[list_begin enumerated]
+[enum] [emph ns_connchan] (Tcl-based)
+[list_begin itemized]
+[item] Fully event-driven, suitable for streaming HTML and WebSockets
+[item] Supports background operation (does not block connection threads)
+[item] Proven stability and robustness
+[item] May be required for requests that cannot currently be handled by
+  ns_http (e.g., certain WebSocket upgrade requests)
+[item] No persistent connections supported
+[item] Partial reads/writes and error handling in Tcl (more complex)
+[list_end]
+
+[enum] [emph ns_http] (C-based)
+[list_begin itemized]
+[item] Efficient partial reads/writes in C
+[item] Supports persistent connections (NaviServer 5.0+) for repeated requests
+[item] Integrates with (multiple) task threads, scaling well under heavy load
+[item] Provides separate logging and statistics for backend connections
+[item] For certain types of requests (e.g., the websocket upgrade request), automatic fall back to [term ns_connchan] possible.
+[item] Not optimal for streaming, since data arrives after full
+request has finished.
+[list_end]
+
+[enum] [emph ns_http+ns_connchan] (Combined Implementation, default)
+[list_begin itemized]
+[item] Uses [term ns_http] to send request data and [term ns_connchan] to spool responses
+[item] Supports persistent connections and streaming
+[item] Supports background operation (non‐blocking)
+[list_end]
+[list_end]
+
+[para]
+You can set the default connection method globally via the configuration file,
+and override it per backend via the [option backendconnection] parameter
+
+[para]
+Figure 1 shows the interaction between a client, the reverse proxy
+server and the backend server, when the
+[option backendconnection] is set to [term ns_http+ns_connchan]. The incoming
+request is always processed by the network driver of NaviServer
+([term nssock] or [term nsssl]). After the request is processed, we have the
+request header in the form of an ns_set and the request body either as
+spool file or as string. At this time, the URL rewrite callbacj and
+later the validation callback is fired
+(see [sectref {Advanced Customization via API}]) for more details).
+
+The chosen [term backendconnection] defines then, how the request is
+sent to the backend, and how the results are received and delivered to
+the client. In the case of [emph ns_http+ns_connchan], the response
+headers from the backend server are sent the client before the
+response body is received.  Also, the response body is forwarded to
+the client incrementally.
+
+[para][image revproxy1 "Reverse Proxy Server with backendconnection ns_http+ns_connchan"]
+[para]Figure 1: Reverse Proxy Server with configuration ns_http+ns_connchan
+
+[para] When the [option backendconnection] is
+ [emph ns_http], forwarding to the client happens after the full request has
+ been received by the reverse proxy. When [emph ns_connchan] is used,
+ the transfer is also incrementally, but with the drawbacks mentioned
+ above.
+
+
+[section {Advanced Customization via API}]
 
 The core command for proxying is [cmd revproxy::upstream], which
 accepts:
@@ -242,6 +273,7 @@ accepts:
     [opt [option "-targethost [arg value]"]] \
     [opt [option "-regsubs [arg {value ...}]"]] \
     [opt [option "-url_rewrite_callback [arg value]"]] \
+    [opt [option "-response_header_callback [arg value]"]] \
     [opt [option "-backend_response_callback [arg value]"]] \
     [opt [option "-exception_callback [arg value]"]] \
     [opt [option "-validation_callback [arg value]"]] \
@@ -349,20 +381,42 @@ handler proc, provide constant "proc" as first argument.
 [example_end]
 
 
+[opt_def -response_header_callback [arg value]]
+
+ This callback is called, when the header fields of the backend have
+ been received. The callback can be used to modify backend response
+ headers, such as e.g. the "location" header field handling redirects.
+ This callback has no default value.  Template for defining the
+ callback:
+
+[example_begin]
+ nsf::proc ::my_backend_response_callback {-responseHeaders -status -requester -url} {
+   #
+   # Modify or remove header fields in "responseHeaders" as needed.
+   #
+   # Parameters:
+   #   responseHeaders: ns_set containing the responseHeaders (which
+   #              might be altered
+   #   status: HTTP status code of the response
+   #   requester: contains the location (scheme + authority of RFC 3986),
+   #              might be required for redirects to the proxy server.
+   #   url: requesting URL
+ }
+[example_end]
 
 [opt_def -backend_response_callback [arg value]]
 
- A callback to modify backend response headers.
- This callback has no default value.
- Template for defining the callback:
+ This callback is called, when the full response of the request was
+ received.  In streaming mode, the response might have been also
+ already been transmitted to the client. This callback has no default
+ value.  Template for defining the callback:
 
 [example_begin]
- nsf::proc ::my_backend_response_callback {
-   -url
-   -responseHeaders
-   -status
- } {
-   # Modify or remove header fields in "responseHeaders" as needed
+ nsf::proc ::my_backend_response_callback {-responseHeaders -status -url {response ""}} {
+   #
+   # Perform actions, when the request was received.
+   #
+   # response: response dict, will be empty when streaming via ns_connchan.
  }
 [example_end]
 
@@ -429,7 +483,7 @@ A callback to validate or modify the complete request before proxying.
 
 
 
-[section {ENSURING NETWORK DRIVERS ARE LOADED}]
+[section {Ensuring Network Drivers are Loaded}]
 
 To use HTTP or HTTPS in backend connections, ensure the appropriate
 drivers ([term nssock] for HTTP, [term nsssl] for HTTPS) are
@@ -450,7 +504,7 @@ to listen on port 0:
 [example_end]
 
 
-[section {FULL CONFIGURATION EXAMPLE}]
+[section {Full Configuration Example}]
 
 Below is a sample configuration file illustrating a possible reverse
 proxy setup. Save this file (e.g.,
