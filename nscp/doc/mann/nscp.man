@@ -116,8 +116,8 @@ Important points regarding this configuration:
        to. By default, this is set to [const 127.0.0.1] (or
        [const ::1] for IPv6), ensuring that only local connections are allowed.
 
-[item] The [option allowLoopbackEmptyUser] allows to specify if a
-       login with an empty user name should be allowed from a loopback
+[item] The [option allowLoopbackEmptyUser] allows one to specify if a
+       login with an empty username should be allowed from a loopback
        address (i.e., a user logged in on the same host).
 
 [item] The [option echopasswd] parameter controls whether the password
@@ -216,7 +216,7 @@ The session will then prompt for a password:
 
 [section {Useful Commands}]
 
-When connected via the the control port, you might the find the
+When connected via the control port, you might the find the
 following plain Tcl commands to be useful:
 
 [example_begin]
