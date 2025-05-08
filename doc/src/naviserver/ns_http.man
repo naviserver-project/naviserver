@@ -443,9 +443,13 @@ containing the following keys:
 The callback's return value is interpreted as follows:
 
 [list_begin itemized]
-    [item] Returning ``TCL_OK`` continues normal processing of the
+  [item] Returning ``TCL_OK`` continues normal processing of the
     received data, respecting the output options.
-    [item] Returning ``TCL_BREAK`` (e.g., via [const "return -code break"]) cancels further processing of the response data.
+  [item] Returning ``TCL_BREAK`` (e.g., via
+    [const "return -code break"]) flushes the response buffer.
+    The received data block is not appended to the spool file
+    nor to the in-memory receive body string (important to avoid bloat
+    for streaming requests).
 [list_end]
 
 This callback facilitates streaming response processing, allowing
@@ -753,6 +757,6 @@ client requests.
 [see_also ns_httptime ns_connchan ns_time ns_set ns_urlencode nslog]
 [keywords "global built-in" HTTP-client HTTP HTTPS nssock \
         logging spooling SNI configuration nslog TLS certificate PEM \
-        CApath CAfile]
+        streaming CApath CAfile]
 
 [manpage_end]
