@@ -1,5 +1,6 @@
 [include version_include.man]
 [manpage_begin {nsperm} n [vset version]]
+[moddesc {NaviServer Module}]
 
 [titledesc {NaviServer Permissions and Access Control Guide}]
 
