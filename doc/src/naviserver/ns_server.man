@@ -368,16 +368,16 @@ to the [option "-noinherit"] as described above.
     ns_param maxconnections 200
     ns_param rejectoverrun true
  }
-
-ns_section "ns/server/$server/pool/bots" {
-    ns_param   map "GET  /* {user-agent *bot*}"
-    ns_param   map "GET  /* {user-agent *rawl*}"
-    ns_param   map "GET  /* {user-agent *pider*}"
-    ns_param   map "GET  /* {user-agent *baidu*}"
-    ns_param   minthreads 2
-    ns_param   maxthreads 2
-    ns_param   rejectoverrun true
-    ns_param   poolratelimit 1000    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
+ 
+ ns_section "ns/server/$server/pool/bots" {
+    ns_param map "GET /* {user-agent *bot*}"
+    ns_param map "GET /* {user-agent *rawl*}"
+    ns_param map "GET /* {user-agent *pider*}"
+    ns_param map "GET /* {user-agent *baidu*}"
+    ns_param minthreads 2
+    ns_param maxthreads 2
+    ns_param rejectoverrun true
+    ns_param poolratelimit 1000    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
 }
 [example_end]
 
@@ -404,10 +404,10 @@ specified names based on a wild-card match.
  # ...
  #
  ns_section "ns/server/$server/pool/bots" {
-    ns_param map "GET  /* {user-agent *bot*}"
-    ns_param map "GET  /* {user-agent *rawl*}"
-    ns_param map "GET  /* {user-agent *pider*}"
-    ns_param map "GET  /* {user-agent *baidu*}"
+    ns_param map "GET /* {user-agent *bot*}"
+    ns_param map "GET /* {user-agent *rawl*}"
+    ns_param map "GET /* {user-agent *pider*}"
+    ns_param map "GET /* {user-agent *baidu*}"
     ns_param minthreads 2
     ns_param maxthreads 2
     ns_param rejectoverrun true
