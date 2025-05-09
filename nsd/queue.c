@@ -529,18 +529,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         && (sockPtr->reqPtr->request.method != NULL)) {
         NsUrlSpaceContext ctx;
 
-        ctx.headers = sockPtr->reqPtr->headers;
-        if (nsconf.reverseproxymode.enabled
-            && ((struct sockaddr *)&sockPtr->clientsa)->sa_family != 0
-            ) {
-            ctx.saPtr = (struct sockaddr *)&(sockPtr->clientsa);
-        } else {
-            ctx.saPtr = (struct sockaddr *)&(sockPtr->sa);
-        }
-
-        /*
-         * Here we could fit-in the peer addr, when behindproxy is true.
-         */
+        NsUrlSpaceContextInit(&ctx, sockPtr, NULL);
         poolPtr = NsUrlSpecificGet(servPtr,
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,
@@ -548,6 +537,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
                                    NULL,
                                    NsUrlSpaceContextFilter, &ctx);
         sockPtr->poolPtr = poolPtr;
+
     } else if (sockPtr->poolPtr != NULL) {
         poolPtr = sockPtr->poolPtr;
         Ns_Log(Notice , "=== NsQueueConn URL <%s> was already assigned to pool <%s>",
@@ -2633,6 +2623,7 @@ ConnRun(Conn *connPtr)
                    preallocedHeaders->data.length, preallocedHeaders->data.spaceAvl);
 #endif
         }
+
         connPtr->headers = connPtr->reqPtr->headers;
         connPtr->reqPtr->headers = preallocedHeaders;
     }

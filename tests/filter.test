@@ -12,7 +12,7 @@ namespace import -force ::tcltest::*
 
 test ns_register_filter-1.0 {syntax: ns_register_filter} -body {
     ns_register_filter
-} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? preauth|postauth|trace /method/ /urlpattern/ /script/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-contextfilter /contextfilter/? ?-first? ?--? preauth|postauth|trace /method/ /urlpattern/ /script/ ?/arg .../?"}
 
 test ns_register_trace-1.0 {syntax: ns_register_trace} -body {
     ns_register_trace
@@ -20,7 +20,7 @@ test ns_register_trace-1.0 {syntax: ns_register_trace} -body {
 
 test ns_shortcut_filter-1.0 {syntax: ns_shortcut_filter} -body {
     ns_shortcut_filter
-} -returnCodes error -result {wrong # args: should be "ns_shortcut_filter preauth|postauth|trace /method/ /urlpattern/"}
+} -returnCodes error -result {wrong # args: should be "ns_shortcut_filter ?-contextfilter /contextfilter/? preauth|postauth|trace /method/ /urlpattern/"}
 
 #
 # Functional tests
@@ -31,6 +31,7 @@ test ns_register_filter-1.1 {ns_register_filter basic operation} -body {
 
 test filter-2.1 {correct order} -setup {
     ns_register_filter preauth  GET /filter-2.1 {
+        #ns_log notice /filter-2.1 [ns_set format [ns_conn headers]]
         nsv_lappend . . preauth-2.1
         return filter_ok
     }
@@ -56,7 +57,7 @@ test filter-2.1 {correct order} -setup {
     nsv_unset -nocomplain . .
 } -result {{200 ok} {preauth-2.1 postauth-2.1 trace-2.1 voidtrace-2.1}}
 
-
+    
 test filter-2.1a {filter -first} -setup {
     ns_register_proc GET /filter-2.1a {
         set fields 0
@@ -110,6 +111,37 @@ test filter-2.3 {void trace always runs} -setup {
     nsv_unset -nocomplain . .
     ns_unregister_op GET /filter-2.3
 } -result {500 voidtrace-2.3}
+
+
+test filter-2.4 {correct order with context filtering} -setup {
+    ns_register_filter -contextfilter {user-agent *NaviServer*} preauth  GET /filter-2.4 {
+        nsv_lappend . . preauth-2.4
+        return filter_ok
+    }
+    ns_register_filter -contextfilter {X-NS-ip 42.250.184.195} postauth GET /filter-2.4 {
+        nsv_lappend . . postauth-2.4
+        return filter_ok
+    }
+    ns_register_filter  trace GET /filter-2.4 {
+        #ns_log notice /filter-2.1 [ns_set format [ns_conn headers]]
+        nsv_lappend . . trace-2.4
+        return filter_ok
+    }
+    ns_register_trace GET /filter-2.4 {
+        nsv_lappend . . voidtrace-2.4
+        return filter_ok
+    }
+    ns_register_proc GET /filter-2.4 {ns_return 200 text/plain ok}
+} -body {
+    #ns_logctl severity Debug(urlspace) on
+    set result [nstest::http -getbody 1 GET /filter-2.4]
+    #ns_logctl severity Debug(urlspace) off
+    ns_sleep 0.1s
+    list $result [nsv_get . .]
+} -cleanup {
+    ns_unregister_op GET /filter-2.4
+    nsv_unset -nocomplain . .
+} -result {{200 ok} {preauth-2.4 trace-2.4 voidtrace-2.4}}
 
 
 
@@ -203,7 +235,7 @@ test filter-5.2 {filter -first} -setup {
     nstest::http -getbody 1 GET /filter-5.2
 } -cleanup {
     ns_unregister_op GET /filter-5.2
-} -result {200 {15 75}}
+} -result {200 {19 95}}
 
 
 

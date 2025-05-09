@@ -984,7 +984,7 @@ void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ReturnCodeString, Ns_TclReturnCodeString --
+ * Ns_ReturnCodeString, Ns_TclReturnCodeString, Ns_FilterTypeString --
  *
  *      Debugging functions, map internal codes to human readable strings.
  *
@@ -1028,6 +1028,22 @@ const char *Ns_TclReturnCodeString(int code)
     }
     return result;
 }
+
+const char *Ns_FilterTypeString(Ns_FilterType when)
+{
+    const char *result;
+
+    switch (when) {
+    case NS_FILTER_PRE_AUTH:   result = "preauth"; break;
+    case NS_FILTER_POST_AUTH:  result = "postauth"; break;
+    case NS_FILTER_TRACE:      result = "trace"; break;
+    case NS_FILTER_VOID_TRACE: result = "void"; break;
+    default: result = "Unknown Filter Type";
+    }
+    return result;
+}
+
+
 
 /*
  *----------------------------------------------------------------------

@@ -84,9 +84,9 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
     char         *method, *url;
     TCL_SIZE_T    remain = 0;
     int           noinherit = 0, result = TCL_OK;
-    NsUrlSpaceContextSpec *ctxFilterPtr = NULL;
+    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;
     Ns_ObjvSpec   opts[] = {
-        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterPtr, NULL},
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},
         {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_TRUE)},
         {"--",             Ns_ObjvBreak,       NULL,          NULL},
         {NULL, NULL, NULL, NULL}
@@ -113,7 +113,7 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclRequestProc, scriptObj,
                                   remain, objv + ((TCL_SIZE_T)objc - remain));
         result = Ns_RegisterRequest2(interp, itPtr->servPtr->server, method, url,
-                                     NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags, ctxFilterPtr);
+                                     NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags, ctxFilterSpecPtr);
     }
     return result;
 }
@@ -186,9 +186,9 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
 {
     char       *method, *url;
     int         noinherit = 0, result = TCL_OK;
-    NsUrlSpaceContextSpec *ctxFilterPtr = NULL;
+    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterPtr, NULL},
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},
         {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_OP_NOINHERIT)},
         {"--",             Ns_ObjvBreak,       NULL,          NULL},
         {NULL, NULL, NULL, NULL}
@@ -210,7 +210,7 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
         }
 
         result = Ns_RegisterRequest2(interp, itPtr->servPtr->server, method, url,
-                                     Ns_FastPathProc, NULL, NULL, flags, ctxFilterPtr);
+                                     Ns_FastPathProc, NULL, NULL, flags, ctxFilterSpecPtr);
     }
 
     return result;
@@ -287,7 +287,9 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     TCL_SIZE_T    remain = 0;
     int           first = (int)NS_FALSE, result = TCL_OK;
     unsigned int  when = 0u;
-    Ns_ObjvSpec   opts[] = {
+    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;    
+    Ns_ObjvSpec opts[] = {
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},        
         {"-first", Ns_ObjvBool,  &first, INT2PTR(NS_TRUE)},
         {"--",     Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
@@ -309,8 +311,9 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
 
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclFilterProc,
                                   scriptObj, remain, objv + ((TCL_SIZE_T)objc - remain));
-        (void)Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
-                                NsTclFilterProc, (Ns_FilterType)when, cbPtr, (bool)first);
+        (void)Ns_RegisterFilter2(itPtr->servPtr->server, method, urlPattern,
+                                 NsTclFilterProc, (Ns_FilterType)when, cbPtr, (bool)first,
+                                 ctxFilterSpecPtr);
     }
     return result;
 }
@@ -338,6 +341,11 @@ NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     char           *method, *urlPattern;
     unsigned int    when = 0u;
     int             result = TCL_OK;
+    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec args[] = {
         {"when",       Ns_ObjvIndex,  &when,       filters},
         {"method",     Ns_ObjvString, &method,     NULL},
@@ -345,14 +353,15 @@ NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
         const NsInterp *itPtr = clientData;
         const char     *server = itPtr->servPtr->server;
 
-        (void)Ns_RegisterFilter(server, method, urlPattern,
-                                NsShortcutFilterProc, (Ns_FilterType)when, NULL, NS_FALSE);
+        (void)Ns_RegisterFilter2(server, method, urlPattern,
+                                 NsShortcutFilterProc, (Ns_FilterType)when, NULL, NS_FALSE,
+                                 ctxFilterSpecPtr);
     }
 
     return result;
@@ -398,8 +407,9 @@ NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
 
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclFilterProc,
                                   scriptObj, remain, objv + ((TCL_SIZE_T)objc - remain));
-        (void)Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
-                                NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr, NS_FALSE);
+        (void)Ns_RegisterFilter2(itPtr->servPtr->server, method, urlPattern,
+                                 NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr, NS_FALSE,
+                                 NULL);
     }
     return result;
 }

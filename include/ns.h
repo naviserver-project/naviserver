@@ -1595,6 +1595,13 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
     NS_GNUC_RETURNS_NONNULL;
 
+void *
+Ns_RegisterFilter2(const char *server, const char *method, const char *url,
+                   Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first,
+                   void *ctxFilterSpec)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
+    NS_GNUC_RETURNS_NONNULL;
+
 NS_EXTERN void *
 Ns_RegisterServerTrace(const char *server, Ns_TraceProc *proc, void *arg)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
@@ -3376,6 +3383,8 @@ Ns_ReturnCodeString(Ns_ReturnCode code) NS_GNUC_PURE;
 NS_EXTERN const char *
 NsSockErrorCodeString(unsigned long errorCode, char *buffer, size_t bufferSize)
     NS_GNUC_NONNULL(2);
+
+NS_EXTERN const char *Ns_FilterTypeString(Ns_FilterType when);
 
 /*
  * tclcallbacks.c:

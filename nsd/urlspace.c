@@ -394,6 +394,10 @@ static int CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
 static int AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int UrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr,
+                                  struct sockaddr *ipPtr, Ns_Set *set)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 static Ns_ArgProc WalkCallback;
 static Ns_FreeProc UrlSpaceContextSpecFree;
 
@@ -661,6 +665,112 @@ NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
 /*
  *----------------------------------------------------------------------
  *
+ * NsUrlSpaceContextInit --
+ *
+ *      Initialize an NsUrlSpaceContext structure from a Sock and an
+ *      optional header set.  Chooses the correct client address based
+ *      on reverse proxy settings (uses forwarded address if enabled
+ *      and present, otherwise uses the direct socket address).
+ *
+ * Parameters:
+ *      ctxPtr   - Pointer to the NsUrlSpaceContext to populate.
+ *      sockPtr  - Pointer to the Sock containing request and address
+ *                 information (must not be NULL).
+ *      headers  - Optional Ns_Set of HTTP headers to include; may be NULL.
+ *
+ * Results:
+ *      None.
+ *
+ * Side Effects:
+ *      Updates *ctxPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, Ns_Set *headers)
+{
+    assert(sockPtr != NULL);
+    assert(sockPtr->reqPtr != NULL);
+
+    ctxPtr->headers = headers;
+    /*
+    {
+            Tcl_DString ds;
+            Tcl_DStringInit(&ds);
+            Ns_SetFormat(&ds, ctxPtr->headers, NS_TRUE, "", ": ");
+            Ns_Log(Ns_LogUrlspaceDebug, "NsUrlSpaceContextFromSock: %s", ds.string);
+            Tcl_DStringFree(&ds);
+    }
+    */
+    if (nsconf.reverseproxymode.enabled
+        && ((struct sockaddr *)&sockPtr->clientsa)->sa_family != 0
+        ) {
+        ctxPtr->saPtr = (struct sockaddr *)&(sockPtr->clientsa);
+    } else {
+        ctxPtr->saPtr = (struct sockaddr *)&(sockPtr->sa);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlSpaceContextFromSet --
+ *
+ *      Initialize an NsUrlSpaceContext from an Ns_Set of context values.
+ *      If the set contains a single "x-ns-ip" entry, parses that value
+ *      as an IP address and uses it for ctxPtr->saPtr (the client address).
+ *      Otherwise, treats the entire set as HTTP headers and stores it
+ *      in ctxPtr->headers (currently either/or)-
+ *
+ * Parameters:
+ *      interp   - Tcl interpreter used for error reporting.
+ *      ctxPtr   - Pointer to the NsUrlSpaceContext to populate.
+ *      ipPtr    - Pointer to a sockaddr storage area for parsed IP.
+ *      set      - Ns_Set containing either HTTP header key/value pairs
+ *                 or a single IP under the key "x-ns-ip".
+ *
+ * Results:
+ *      Returns TCL_OK on success.
+ *      Returns TCL_ERROR and sets an error message in interp if:
+ *        - "x-ns-ip" is present but not a valid IPv4/IPv6 address.
+ *        - The set contains "x-ns-ip" plus additional items (must be lone entry).
+ *
+ * Side Effects:
+ *      - On IP mode: sets ctxPtr->saPtr to ipPtr and ctxPtr->headers to NULL.
+ *      - On header mode: sets ctxPtr->headers to set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+UrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct sockaddr *ipPtr, Ns_Set *set)
+{
+    int         result = TCL_OK;
+    const char *ipString = Ns_SetIGet(set, "x-ns-ip");
+
+    if (ipString != NULL) {
+        int validIP = ns_inet_pton(ipPtr, ipString);
+
+        if (validIP > 0) {
+            ctxPtr->saPtr = ipPtr;
+            if (Ns_SetSize(set) > 1) {
+                Ns_TclPrintfResult(interp, "IP has to be in set with a single item");
+                result = TCL_ERROR;
+            }
+        } else {
+            Ns_TclPrintfResult(interp, "invalid IP address '%s' specified", ipString);
+            result = TCL_ERROR;
+        }
+        ctxPtr->headers = NULL;
+    } else {
+        ctxPtr->headers = set;
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsUrlSpaceContextFilter --
  *
  *      Determine whether a given request context satisfies a context
@@ -721,6 +831,11 @@ NsUrlSpaceContextFilter(void *contextSpec, void *context)
             Ns_Log(Ns_LogUrlspaceDebug, "UrlSpaceContextFilter match %s: '%s' + '%s' -> %d",
                    spec->field, s, spec->patternString, success);
         } else {
+            Tcl_DString ds;
+            Tcl_DStringInit(&ds);
+            Ns_SetFormat(&ds, headers, NS_TRUE, "", ": ");
+            Ns_Log(Ns_LogUrlspaceDebug, "%s", ds.string);
+            Tcl_DStringFree(&ds);
             Ns_Log(Ns_LogUrlspaceDebug, "UrlSpaceContextFilter no such header field '%s'",
                    spec->field);
         }
@@ -3051,7 +3166,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     } else {
         NsUrlSpaceOp    op;
         unsigned int    flags = 0u;
-        NsUrlSpaceContext ctx, *ctxPtr;
+        NsUrlSpaceContext ctx, *ctxPtr = NULL;
         struct NS_SOCKADDR_STORAGE ip;
 
         if (noinherit == (int)NS_TRUE) {
@@ -3067,28 +3182,10 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             op = NS_URLSPACE_DEFAULT;
         }
         if (context != NULL) {
-            const char *ipString = Ns_SetIGet(context, "x-ns-ip");
-            if (ipString != NULL) {
-                struct sockaddr *ipPtr = (struct sockaddr *)&ip;
-                int validIP = ns_inet_pton(ipPtr, ipString);
-
-                if (validIP > 0) {
-                    ctx.saPtr = ipPtr;
-                    if (Ns_SetSize(context) > 1) {
-                        Ns_TclPrintfResult(interp, "IP has to be in set with a single item");
-                        result = TCL_ERROR;
-                    }
-                } else {
-                    Ns_TclPrintfResult(interp, "invalid IP address '%s' specified", ipString);
-                    result = TCL_ERROR;
-                }
-                ctx.headers = NULL;
-            } else {
-                ctx.headers = context;
+            result = UrlSpaceContextFromSet(interp, &ctx, (struct sockaddr *)&ip, context);
+            if (result == TCL_OK) {
+                ctxPtr = &ctx;
             }
-            ctxPtr = &ctx;
-        } else {
-            ctxPtr = NULL;
         }
 
         if (likely(result == TCL_OK)) {
@@ -3243,12 +3340,12 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1, noinherit = 0;
     char           *key = (char *)".", *url = (char*)NS_EMPTY_STRING, *data = (char*)NS_EMPTY_STRING;
-    NsUrlSpaceContextSpec *ctxFilterPtr = NULL;
+    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;
     Ns_ObjvSpec     lopts[] = {
-        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterPtr, NULL},
-        {"-id",            Ns_ObjvInt,         &id,           &idRange},
-        {"-key",           Ns_ObjvString,      &key,          NULL},
-        {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_TRUE)},
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},
+        {"-id",            Ns_ObjvInt,         &id,               &idRange},
+        {"-key",           Ns_ObjvString,      &key,              NULL},
+        {"-noinherit",     Ns_ObjvBool,        &noinherit,        INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -3279,9 +3376,9 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         Ns_RWLockWrLock(&servPtr->urlspace.idlocks[id]);
 
         /* maybe add a non-string interface for first arg (pass servPtrt) */
-        //Ns_Log(Ns_LogUrlspaceDebug, "UrlSpaceSetObjCmd contextFilter %p", (void*)ctxFilterPtr);
+        //Ns_Log(Ns_LogUrlspaceDebug, "UrlSpaceSetObjCmd contextFilter %p", (void*)ctxFilterSpecPtr);
         Ns_UrlSpecificSet2(servPtr->server, key, url, id, ns_strdup(data),
-                           flags, ns_free, ctxFilterPtr);
+                           flags, ns_free, ctxFilterSpecPtr);
         Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
     }
     return result;

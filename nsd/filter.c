@@ -27,6 +27,7 @@ typedef struct Filter {
     Ns_FilterProc *proc;
     const char    *method;
     const char    *url;
+    NsUrlSpaceContextSpec *ctxFilterSpec;
     Ns_FilterType  when;
     void          *arg;
 } Filter;
@@ -55,6 +56,8 @@ static void FilterLock(NsServer *servPtr, NS_RW rw)
 static void FilterUnlock(NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
+static bool EvaluateContextFilterSpec(const Conn *connPtr, NsUrlSpaceContextSpec *ctxFilterSpec, Ns_FilterType why)
+    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
 /*
  *----------------------------------------------------------------------
  * FilterLock --
@@ -124,8 +127,9 @@ FilterUnlock(NsServer *servPtr) {
  *----------------------------------------------------------------------
  */
 void *
-Ns_RegisterFilter(const char *server, const char *method, const char *url,
-                  Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first)
+Ns_RegisterFilter2(const char *server, const char *method, const char *url,
+                   Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first,
+                   void *ctxFilterSpec)
 {
     NsServer *servPtr;
     Filter   *fPtr;
@@ -141,6 +145,8 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     fPtr = ns_malloc(sizeof(Filter));
     fPtr->proc = proc;
     fPtr->method = ns_strdup(method);
+    /* filters are never deleted; ctxFilterSpec as its own freeProc member */
+    fPtr->ctxFilterSpec = ctxFilterSpec;
     fPtr->url = ns_strdup(url);
     fPtr->when = when;
     fPtr->arg = arg;
@@ -170,7 +176,61 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     return (void *) fPtr;
 }
 
-
+void *
+Ns_RegisterFilter(const char *server, const char *method, const char *url,
+                  Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first)
+{
+    return Ns_RegisterFilter2(server, method, url,
+                              proc, when, arg, first, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EvaluateContextFilterSpec --
+ *
+ *      Apply a UrlSpaceContextSpec filter to a given connection
+ *      context.  If the connection or its request is not available,
+ *      the filter is considered passed (returns NS_TRUE) and a notice
+ *      is logged.  Otherwise, the filter spec is evaluated against
+ *      the request’s headers and client address.
+ *
+ * Parameters:
+ *      connPtr         - Pointer to the Conn whose context is tested.
+ *      ctxFilterSpec   - The UrlSpaceContextSpec describing header or IP
+ *                        constraints.
+ *      why             - The filter type (preauth, postauth, trace, etc.),
+ *                        used for logging.
+ *
+ * Results:
+ *      NS_TRUE if the connection satisfies the context filter or if no
+ *      context is available; NS_FALSE if the filter does not match.
+ *
+ * Side Effects:
+ *      Logs a warning if no context is available, and an optional debug
+ *      message with the filter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+EvaluateContextFilterSpec(const Conn *connPtr, NsUrlSpaceContextSpec *ctxFilterSpec, Ns_FilterType why)
+{
+    bool result;
+
+    if (connPtr->sockPtr == NULL || connPtr->sockPtr->reqPtr == NULL) {
+        Ns_Log(Warning, "No context for filter of type %s", Ns_FilterTypeString(why));
+        result = NS_TRUE;
+    } else {
+        NsUrlSpaceContext ctx;
+
+        NsUrlSpaceContextInit(&ctx, connPtr->sockPtr, connPtr->headers);
+        result = NsUrlSpaceContextFilter(ctxFilterSpec, &ctx);
+        Ns_Log(Ns_LogUrlspaceDebug, "result of NsUrlSpaceContextFilter %s -> %d", Ns_FilterTypeString(why), result);
+    }
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  * NsRunFilters --
@@ -191,10 +251,12 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
 {
     NsServer      *servPtr;
     const Filter  *fPtr;
+    const Conn    *connPtr;
     Ns_ReturnCode  status;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    servPtr = ((const Conn *)conn)->poolPtr->servPtr;
+    connPtr = (const Conn *)conn;
+    servPtr = connPtr->poolPtr->servPtr;
 
     status = NS_OK;
     if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
@@ -203,9 +265,14 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
         FilterLock(servPtr, NS_READ);
         fPtr = servPtr->filter.firstFilterPtr;
         while (fPtr != NULL && filter_status == NS_OK) {
+
             if (unlikely(fPtr->when == why)
                 && (Tcl_StringMatch(conn->request.method, fPtr->method) != 0)
-                && (Tcl_StringMatch(conn->request.url, fPtr->url) != 0)) {
+                && (Tcl_StringMatch(conn->request.url, fPtr->url) != 0)
+                && (fPtr->ctxFilterSpec == NULL
+                    || EvaluateContextFilterSpec(connPtr, fPtr->ctxFilterSpec, why)
+                    )
+                ) {
                 filter_status = (*fPtr->proc)(fPtr->arg, conn, why);
             }
             fPtr = fPtr->nextPtr;
