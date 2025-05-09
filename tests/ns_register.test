@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test ns_register_proc-1.0 {syntax: ns_register_proc} -body {
     ns_register_proc
-} -returnCodes error -result {wrong # args: should be "ns_register_proc ?-noinherit? ?--? /method/ /url/ /script/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_proc ?-contextfilter /contextfilter/? ?-noinherit? ?--? /method/ /url/ /script/ ?/arg .../?"}
 
 test ns_unregister_op-1.0 {syntax: ns_unregister_op} -body {
     ns_unregister_op
@@ -17,7 +17,7 @@ test ns_unregister_op-1.0 {syntax: ns_unregister_op} -body {
 
 test ns_register_fastpath-1.0 {syntax: ns_register_fastpath} -body {
     ns_register_fastpath
-} -returnCodes error -result {wrong # args: should be "ns_register_fastpath ?-noinherit? ?--? /method/ /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_register_fastpath ?-contextfilter /contextfilter/? ?-noinherit? ?--? /method/ /url/"}
 
 test ns_register_proxy-1.0 {syntax: ns_register_proxy} -body {
     ns_register_proxy
@@ -25,7 +25,7 @@ test ns_register_proxy-1.0 {syntax: ns_register_proxy} -body {
 
 test ns_register_tcl-1.0 {syntax: ns_register_tcl} -body {
     ns_register_tcl
-} -returnCodes error -result {wrong # args: should be "ns_register_tcl ?-noinherit? ?--? /method/ /url/ ?/file/?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_tcl ?-contextfilter /contextfilter/? ?-noinherit? ?--? /method/ /url/ ?/file/?"}
 
 
 test proc-2.1 {register/unregister} -body {

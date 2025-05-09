@@ -4,6 +4,7 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
+testConstraint conjunctive_filter 0
 
 #
 # ns_urlspace
@@ -21,7 +22,7 @@ test ns_urlspace-1.2 {syntax ns_urlspace get} -body {
 } -returnCodes error -result {wrong # args: should be "ns_urlspace get ?-context /setId/? ?-exact? ?-id /integer[-1,16]/? ?-key /value/? ?-noinherit? /URL/"}
 test ns_urlspace-1.3 {syntax ns_urlspace set} -body {
     ns_urlspace set
-} -returnCodes error -result {wrong # args: should be "ns_urlspace set ?-contextfilter /value/? ?-id /integer[-1,16]/? ?-key /value/? ?-noinherit? /URL/ /data/"}
+} -returnCodes error -result {wrong # args: should be "ns_urlspace set ?-contextfilter /contextfilter/? ?-id /integer[-1,16]/? ?-key /value/? ?-noinherit? /URL/ /data/"}
 test ns_urlspace-1.4 {syntax ns_urlspace xunset} -body {
     ns_urlspace unset
 } -returnCodes error -result {wrong # args: should be "ns_urlspace unset ?-allfilters? ?-id /integer[-1,16]/? ?-key /value/? ?-noinherit? ?-recurse? /URL/"}
@@ -483,7 +484,7 @@ test ns_urlspace-6.1.0 {
 } -result {A {} {} B B B}
 
 
-test ns_urlspace-6.1.1 {
+test ns_urlspace-6.1.1.1 {
 
     Context filters: constraint definition (for bots) on generic
     filter (/*), matching context provided.
@@ -495,7 +496,7 @@ test ns_urlspace-6.1.1 {
     ns_urlspace set -key 6.1 /static/* B
     #ns_log notice "\n[ns_urlspace list]"
 } -body {
-    set c1 [ns_set create filter1 "user-agent" "googlebot"]
+    set c1 [ns_set create filter1 "user-agent" "googlebot" "x-test" 1]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
@@ -504,9 +505,61 @@ test ns_urlspace-6.1.1 {
     }
 } -cleanup {
     ns_urlspace unset -key 6.1 /*.adp
-    ns_urlspace unset -key 6.1 /*
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+    #ns_log notice "AFTER UNSET \n[ns_urlspace list]"
+} -result {A C C B B B}
+
+test ns_urlspace-6.1.1.2 {
+
+    Context filters: constraint definition with matching conjunction on generic
+    filter (/*), matching context provided.
+
+} -constraints conjunctive_filter -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot* x-test 1} /* C
+    #ns_urlspace set -key 6.1 /*        A
+    ns_urlspace set -key 6.1 /static/* B
+    #ns_log notice "\n[ns_urlspace list]"
+} -body {
+    set c1 [ns_set create filter1 "user-agent" "googlebot" "x-test" 1]
+    lmap url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        ns_urlspace get -key 6.1 -context $c1 $url
+    }
+} -cleanup {
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
     ns_urlspace unset -key 6.1 /static/*
 } -result {A C C B B B}
+
+test ns_urlspace-6.1.1.3 {
+
+    Context filters: constraint definition with non-matching conjunction on generic
+    filter (/*), matching context provided.
+
+} -constraints conjunctive_filter -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot* x-test 2} /* C
+    #ns_urlspace set -key 6.1 /*        A
+    ns_urlspace set -key 6.1 /static/* B
+    #ns_log notice "\n[ns_urlspace list]"
+} -body {
+    set c1 [ns_set create filter1 "user-agent" "googlebot" "x-test" 1]
+    lmap url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        ns_urlspace get -key 6.1 -context $c1 $url
+    }
+} -cleanup {
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+    #ns_log notice "AFTER UNSET \n[ns_urlspace list]"
+} -result {A {} {} B B B}
 
 
 test ns_urlspace-6.1.2 {
