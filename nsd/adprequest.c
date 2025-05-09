@@ -35,7 +35,8 @@ typedef struct AdpRequest {
 
 static int RegisterPage(const ClientData clientData, const char *method,
                         const char *url, Tcl_Obj *fileObj, const Ns_Time *expiresPtr,
-                        unsigned int rflags, unsigned int aflags)
+                        unsigned int rflags, unsigned int aflags,
+                        void *contextSpec)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static Ns_ReturnCode PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr,
@@ -248,11 +249,13 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     unsigned int   aflags = 0u;
     Ns_Time       *expiresPtr = NULL;
     Tcl_Obj       *fileObj = NULL;
+    NsUrlSpaceContextSpec *ctxFilterPtr = NULL;
     Ns_ObjvSpec    opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
-        {"-expires",   Ns_ObjvTime,  &expiresPtr, NULL},
-        {"-options",   Ns_ObjvIndex, &aflags,     adpOpts},
-        {"--",         Ns_ObjvBreak, NULL,        NULL},
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterPtr, NULL},
+        {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_TRUE)},
+        {"-expires",       Ns_ObjvTime,        &expiresPtr,   NULL},
+        {"-options",       Ns_ObjvIndex,       &aflags,       adpOpts},
+        {"--",             Ns_ObjvBreak,        NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -271,7 +274,7 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
         if (noinherit != 0) {
             rflags |= NS_OP_NOINHERIT;
         }
-        result = RegisterPage(clientData, method, url, fileObj, expiresPtr, rflags, aflags);
+        result = RegisterPage(clientData, method, url, fileObj, expiresPtr, rflags, aflags, ctxFilterPtr);
     }
     return result;
 }
@@ -282,9 +285,11 @@ NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     int         noinherit = 0, result;
     char       *method, *url;
     Tcl_Obj    *fileObj = NULL;
+    NsUrlSpaceContextSpec *ctxFilterPtr = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
-        {"--",         Ns_ObjvBreak, NULL,    NULL},
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterPtr, NULL},
+        {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_TRUE)},
+        {"--",             Ns_ObjvBreak,       NULL,          NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -302,7 +307,7 @@ NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
         if (noinherit != 0) {
             rflags |= NS_OP_NOINHERIT;
         }
-        result = RegisterPage(clientData, method, url, fileObj, NULL, rflags, ADP_TCLFILE);
+        result = RegisterPage(clientData, method, url, fileObj, NULL, rflags, ADP_TCLFILE, ctxFilterPtr);
     }
     return result;
 }
@@ -327,7 +332,8 @@ NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
 static int
 RegisterPage(const ClientData clientData,
              const char *method, const char *url, Tcl_Obj *fileObj,
-             const Ns_Time *expiresPtr, unsigned int rflags, unsigned int aflags)
+             const Ns_Time *expiresPtr, unsigned int rflags, unsigned int aflags,
+             void *contextSpec)
 {
     const NsInterp *itPtr = clientData;
     AdpRequest     *adp;
@@ -348,7 +354,7 @@ RegisterPage(const ClientData clientData,
     adp->flags = aflags;
 
     return Ns_RegisterRequest2(itPtr->interp, itPtr->servPtr->server, method, url,
-                               NsAdpPageProc, ns_free, adp, rflags);
+                               NsAdpPageProc, ns_free, adp, rflags, contextSpec);
 }
 
 

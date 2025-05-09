@@ -1914,6 +1914,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 NS_EXTERN Ns_ObjvProc Ns_ObjvString;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
 NS_EXTERN Ns_ObjvProc Ns_ObjvUShort;
+NS_EXTERN Ns_ObjvProc Ns_ObjvUrlspaceCtx;
 NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
 
 NS_EXTERN int Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUnitPtr)
@@ -2263,7 +2264,7 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
 NS_EXTERN int Ns_RegisterRequest2(Tcl_Interp *interp,
                                   const char *server, const char *method, const char *url,
                                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
-                                  unsigned int flags)
+                                  unsigned int flags, void *contextSpec)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
     NS_GNUC_NONNULL(5);
 

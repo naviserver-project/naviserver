@@ -967,14 +967,8 @@ MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
                 *method = Tcl_GetString(ov[0]);
                 *url = Tcl_GetString(ov[1]);
                 if (oc == 3) {
-                    TCL_SIZE_T oc2;
-                    Tcl_Obj  **ov2;
-
-                    if (Tcl_ListObjGetElements(NULL, ov[2], &oc2, &ov2) == TCL_OK && oc2 == 2) {
-                        *specPtr = NsUrlSpaceContextSpecNew(Tcl_GetString(ov2[0]),
-                                                            Tcl_GetString(ov2[1]));
-
-                    } else {
+                    *specPtr = NsUrlSpaceObjToContextSpec(interp, ov[2]);
+                    if (*specPtr == NULL) {
                         status = NS_ERROR;
                     }
                 } else {

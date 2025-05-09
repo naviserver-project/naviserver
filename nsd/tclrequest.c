@@ -84,9 +84,11 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
     char         *method, *url;
     TCL_SIZE_T    remain = 0;
     int           noinherit = 0, result = TCL_OK;
+    NsUrlSpaceContextSpec *ctxFilterPtr = NULL;
     Ns_ObjvSpec   opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
-        {"--",         Ns_ObjvBreak, NULL,       NULL},
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterPtr, NULL},
+        {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_TRUE)},
+        {"--",             Ns_ObjvBreak,       NULL,          NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   args[] = {
@@ -111,7 +113,7 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclRequestProc, scriptObj,
                                   remain, objv + ((TCL_SIZE_T)objc - remain));
         result = Ns_RegisterRequest2(interp, itPtr->servPtr->server, method, url,
-                                     NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags);
+                                     NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags, ctxFilterPtr);
     }
     return result;
 }
@@ -184,9 +186,11 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
 {
     char       *method, *url;
     int         noinherit = 0, result = TCL_OK;
+    NsUrlSpaceContextSpec *ctxFilterPtr = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_OP_NOINHERIT)},
-        {"--",         Ns_ObjvBreak, NULL,       NULL},
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterPtr, NULL},
+        {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_OP_NOINHERIT)},
+        {"--",             Ns_ObjvBreak,       NULL,          NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -206,7 +210,7 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
         }
 
         result = Ns_RegisterRequest2(interp, itPtr->servPtr->server, method, url,
-                                     Ns_FastPathProc, NULL, NULL, flags);
+                                     Ns_FastPathProc, NULL, NULL, flags, ctxFilterPtr);
     }
 
     return result;

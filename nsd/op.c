@@ -38,6 +38,11 @@ typedef struct {
 static Ns_ServerInitProc ConfigServerProxy;
 static void WalkCallback(Tcl_DString *dsPtr, const void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void RegisteredProcDecrRef(void *arg) NS_GNUC_NONNULL(1);
+static void RegisterRequest(const char *server, const char *method, const char *url,
+                            Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
+                            unsigned int flags, void *contextSpec)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
+    NS_GNUC_NONNULL(4);
 
 /*
  * Static variables defined in this file.
@@ -91,25 +96,27 @@ ConfigServerProxy(const char *server)
  *
  * Ns_RegisterRequest2 --
  *
- *      Register a new procedure to be called to service matching given method
- *      and URL path pattern. Before calling function Ns_RegisterRequest(),
- *      this functions verifies, if the URL path is correct. In particular, in
- *      the OP urlspace, query parameters or fragments are not allowed. For
- *      smooth upgrades, such URLs are fixed, and error message is included in
- *      the log. Future version might raise an exception in this case.
+ *      Register a new request handler callback for a given server,
+ *      HTTP method, and URL path, after validating that the URL is a
+ *      plain path (no illegal characters).  If URL validation fails,
+ *      logs an error (or optionally returns a Tcl error) and does not
+ *      register the handler.
  *
  * Results:
- *      TCL return code.
+ *      TCL_OK if the handler was successfully registered or if URL
+ *      validation failed but errors are only logged.  TCL_ERROR if URL
+ *      validation fails and error raising is enabled on the interpreter.
  *
- * Side effects:
- *      When raiseError is set, in case of an error, the error message is left
- *      in the result of the interp.
+ * Side Effects:
+ *      On success, invokes RegisterRequest() to allocate and insert
+ *      the handler into the URL dispatch table.  May emit a log entry
+ *      for invalid URL paths.
  *
  *----------------------------------------------------------------------
  */
 int Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *method, const char *url,
                         Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
-                        unsigned int flags)
+                        unsigned int flags, void *contextSpec)
 {
     int          result = TCL_OK;
     const char  *errorMsg = NULL;
@@ -135,33 +142,33 @@ int Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *meth
         }
 
     } else {
-        Ns_RegisterRequest(server, method, url, proc, deleteCallback, arg, flags);
+        RegisterRequest(server, method, url, proc, deleteCallback, arg, flags, contextSpec);
     }
 
     return result;
 }
-
 /*
  *----------------------------------------------------------------------
  *
- * Ns_RegisterRequest --
+ * RegisterRequest --
  *
- *      Register a new procedure to be called to service matching
- *      given method and URL path pattern.
+ *      Internal helper to allocate and register a request handler
+ *      in the URL dispatch trie for a given server, method, and URL.
  *
  * Results:
  *      None.
  *
- * Side effects:
- *      Delete procedure of previously registered request, if any,
- *      will be called unless NS_OP_NODELETE flag is set.
+ * Side Effects:
+ *      Allocates a RegisteredProc structure, initializes its fields,
+ *      then locks the URL space mutex and calls Ns_UrlSpecificSet2()
+ *      to insert the handler into the server’s dispatch table.
  *
  *----------------------------------------------------------------------
  */
-void
-Ns_RegisterRequest(const char *server, const char *method, const char *url,
+static void
+RegisterRequest(const char *server, const char *method, const char *url,
                    Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
-                   unsigned int flags)
+                   unsigned int flags, void *contextSpec)
 {
     RegisteredProc *regPtr;
 
@@ -177,8 +184,36 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
     regPtr->flags = flags;
     regPtr->refcnt = 1;
     Ns_MutexLock(&ulock);
-    Ns_UrlSpecificSet(server, method, url, uid, regPtr, flags, RegisteredProcDecrRef);
+    Ns_UrlSpecificSet2(server, method, url, uid, regPtr, flags,
+                       RegisteredProcDecrRef, contextSpec);
     Ns_MutexUnlock(&ulock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_RegisterRequest --
+ *
+ *      Public API to register a request handler callback for the
+ *      specified server, method, and URL.  This is a thin wrapper
+ *      around RegisterRequest() that omits a context specification.
+ *
+ * Results:
+ *      None.
+ *
+ * Side Effects:
+ *      Allocates and registers a handler identically to
+ *      RegisterRequest(), with contextSpec == NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_RegisterRequest(const char *server, const char *method, const char *url,
+                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
+                   unsigned int flags)
+{
+    RegisterRequest(server, method, url, proc, deleteCallback, arg, flags, NULL);
 }
 
 

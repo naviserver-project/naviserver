@@ -198,9 +198,9 @@ ConfigServerFastpath(const char *server)
         servPtr->fastpath.dirproc = ns_strcopy(Ns_ConfigString(section, "directoryproc", "_ns_dirlist"));
         servPtr->fastpath.diradp  = ns_strcopy(Ns_ConfigString(section, "directoryadp", NULL));
 
-        Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0u);
-        Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0u);
-        Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0u);
+        Ns_RegisterRequest2(NULL, server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0u, NULL);
+        Ns_RegisterRequest2(NULL, server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0u, NULL);
+        Ns_RegisterRequest2(NULL, server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0u, NULL);
 
         result = NS_OK;
     }

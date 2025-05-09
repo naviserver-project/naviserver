@@ -2169,6 +2169,9 @@ NS_EXTERN NsUrlSpaceContextSpec *NsUrlSpaceContextSpecNew(const char *field, con
 NS_EXTERN const char *NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN NsUrlSpaceContextSpec *NsUrlSpaceObjToContextSpec(Tcl_Interp *interp, Tcl_Obj *ctxFilterObj)
+    NS_GNUC_NONNULL(2);
+
 /*
  * watchdog.c
  */

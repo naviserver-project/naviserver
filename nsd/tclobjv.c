@@ -1264,6 +1264,50 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Ob
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ObjvUrlspaceCtx --
+ *
+ *      Get Urlspace context from argument, consume it, put result into "dest".
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ObjvUrlspaceCtx(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+{
+    NsUrlSpaceContextSpec **dest;
+    int                     result = TCL_OK;
+
+    NS_NONNULL_ASSERT(spec != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+
+    dest = spec->dest;
+
+    if (likely(*objcPtr > 0) && likely(dest != NULL)) {
+        NsUrlSpaceContextSpec *urlspaceCtx = NsUrlSpaceObjToContextSpec(interp, objv[0]);
+
+        if (likely(urlspaceCtx != NULL)) {
+            *dest = urlspaceCtx;
+            *objcPtr -= 1;
+        } else {
+            result = TCL_ERROR;
+        }
+    } else {
+        result = TCL_ERROR;
+    }
+
+    return result;
+}
+
+
 
 /*
  *----------------------------------------------------------------------
