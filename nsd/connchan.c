@@ -2726,7 +2726,7 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
      */
     if (ConnChanBufferSize(connChanPtr, secondarySendBuffer) > 0) {
         /*
-         * If we have a non-empty secondary buffer, append the fresh
+         * If we have a nonempty secondary buffer, append the fresh
          * data to it and treat the content of the secondary buffer as
          * the new message.
          */
@@ -2745,7 +2745,7 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
     if (msgLength > 0 && connChanPtr->requireStableSendBuffer) {
         /*
          * OpenSSL case - we need stable buffers. Use always the
-         * sendbufer as a single, stable buffer. Make sure, that in
+         * sendbufer as a single, stable buffer. Make sure that in
          * the case, the send operation is rejected, no data is
          * shifted.
          */

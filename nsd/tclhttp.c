@@ -4201,7 +4201,7 @@ static int ConfigureProxy(
  *        If httpProxy is true, connect to the specified proxyHost and
  *        proxyPortNr; otherwise use urlPtr->host and the provided
  *        portNr. First attempt to lookup a persistent cached connection;
- *        if none is found, open a new non-blocking socket, wait for it
+ *        if none is found, open a new nonblocking socket, wait for it
  *        to become writable within the timeout, and report errors.
  *
  * Results:
@@ -4214,7 +4214,7 @@ static int ConfigureProxy(
  *        Allocates or duplicates httpPtr->host, sets httpPtr->port,
  *        httpPtr->sock, httpPtr->ctx, httpPtr->ssl, and httpPtr->pos.
  *        May reuse a cached connection or create a new socket,
- *        configure non-blocking mode, wait on socket events, and
+ *        configure nonblocking mode, wait on socket events, and
  *        log or report errors/timeouts.
  *
  *----------------------------------------------------------------------
