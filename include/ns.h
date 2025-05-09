@@ -3782,10 +3782,6 @@ NS_EXTERN void *
 Ns_UrlSpecificGet(const char *server, const char *key, const char *url, int id)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN void *
-Ns_UrlSpecificGet2(const char *server, const char *key, const char *url, int id, void *context)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-
 #ifdef NS_WITH_DEPRECATED
 NS_EXTERN void *
 Ns_UrlSpecificGetFast(const char *server, const char *key, const char *url, int id)
