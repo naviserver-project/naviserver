@@ -108,7 +108,7 @@ Ns_GetTime(Ns_Time *timePtr)
  *
  * Ns_AdjTime --
  *
- *      Normalizes a Ns_Time structure so that its microseconds field is in
+ *      Normalizes an Ns_Time structure so that its microseconds field is in
  *      the range [0, 1000000). If the microseconds value (usec) is negative,
  *      the function subtracts the appropriate number of seconds from the
  *      seconds field (sec) and adjusts usec to a positive value. Conversely,
