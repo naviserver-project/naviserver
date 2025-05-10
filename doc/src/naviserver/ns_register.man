@@ -116,7 +116,8 @@ to be executed at each of these stages.
 [item] TCL_ERROR: When the filter procs raises an error.
 
 [item] TCL_OK: When the script is executed successfully
-       and ends with [const {return filter_ok}]
+       and ends with [const {return -code continue}], or
+       [const {return filter_ok}]
 
 [item] TCL_BREAK: When the script is executed successfully
        and ends with [const {return -code break}] or [const {return filter_break}].
@@ -359,14 +360,15 @@ serve as a model for this forward proxy).
 
  Registers a Tcl script as a trace filter for the specified HTTP
  [arg method] and [arg urlpattern]. Trace filters are executed after the
- main filters and are only invoked for
- successful requests (i.e., no server errors occur). Unlike other
- filters, no reason code is added as the first argument when the trace
- filter is called, and its result is not subject to the special result
- and return code handling applied to other filter types. In all other
- respects (such as handling of URL patterns and duplicate
- registrations), trace filters behave like regular filters.
+ main request and are only invoked for successful requests (i.e., no
+ server errors occur).
 
+[para]
+ A filter registered this way behaves exactly like a filter registered
+ via [cmd "ns_register_filter trace"], except that on the for the
+ registered command, no reason code is added as the first argument
+ when the trace filter is called, and its result is not subject to the
+ special result handling.
 
 [call [cmd ns_register_url2file] \
 	[opt [option -noinherit]] \
@@ -567,21 +569,24 @@ for a .php file in the given path an info message.
 
 [example_begin]
  ns_register_proc GET /foo/bar/*.php {
- 	ns_return 200 text/plain "Server refuses to execute PHP scripts here"
-  }
+   ns_return 200 text/plain "Server refuses to execute PHP scripts here"
+ }
 [example_end]
 
 [para]
 This example shows how to expire all HTML files after an hour:
 
 [example_begin]
+ # Use nsv to avoid double registration of a filter, when the
+ # file containing the registration is called twice
  if {![lb]nsv_exists filters installed[rb]} {
    nsv_set filters installed 1
    ns_register_filter postauth GET /*.html ExpireSoon 3600
  }
 
- proc ExpireSoon {seconds why} {
+ proc ExpireSoon {why seconds} {
    ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
+   return -code continue
  }
 [example_end]
 
