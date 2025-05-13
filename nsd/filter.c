@@ -225,8 +225,8 @@ EvaluateContextFilterSpec(const Conn *connPtr, NsUrlSpaceContextSpec *ctxFilterS
         NsUrlSpaceContext ctx;
 
         NsUrlSpaceContextInit(&ctx, connPtr->sockPtr, connPtr->headers);
-        result = NsUrlSpaceContextFilter(ctxFilterSpec, &ctx);
-        Ns_Log(Ns_LogUrlspaceDebug, "result of NsUrlSpaceContextFilter %s -> %d", Ns_FilterTypeString(why), result);
+        result = NsUrlSpaceContextFilterEval(ctxFilterSpec, &ctx);
+        Ns_Log(Ns_LogUrlspaceDebug, "result of NsUrlSpaceContextFilterEval %s -> %d", Ns_FilterTypeString(why), result);
     }
     return result;
 }

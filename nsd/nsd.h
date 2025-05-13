@@ -65,7 +65,7 @@ typedef enum {
 } NsUrlSpaceOp;
 
 
-typedef bool (NsUrlSpaceContextFilterProc) (void *contextSpec, void *context);
+typedef bool (NsUrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
 
 typedef struct NsUrlSpaceContext {
     const Ns_Set *headers;
@@ -1577,7 +1577,7 @@ NS_EXTERN void NsConfigTclHttp(void);
  * Type based function prototypes
  */
 
-NS_EXTERN NsUrlSpaceContextFilterProc NsUrlSpaceContextFilter;
+NS_EXTERN NsUrlSpaceContextFilterEvalProc NsUrlSpaceContextFilterEval;
 NS_EXTERN Ns_ArgProc NsAdpPageArgProc;
 NS_EXTERN Ns_ArgProc NsConnArgProc;
 NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
@@ -1865,7 +1865,7 @@ NS_EXTERN Ns_ReturnCode NsRemoveService(char *service) NS_GNUC_NONNULL(1);
  */
 NS_EXTERN void NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
                              unsigned int flags, NsUrlSpaceOp op,
-                             NsUrlSpaceContextFilterProc proc, void *context,
+                             NsUrlSpaceContextFilterEvalProc proc, void *context,
                              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
                              unsigned int *flagsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(2)
@@ -2160,7 +2160,7 @@ NS_EXTERN Ns_ReturnCode NsUrlToFile(Tcl_DString *dsPtr, NsServer *servPtr, const
 NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *key,
                                  const char *url, int id, unsigned int flags, NsUrlSpaceOp op,
                                  Ns_UrlSpaceMatchInfo *matchInfoPtr,
-                                 NsUrlSpaceContextFilterProc proc, void *context)
+                                 NsUrlSpaceContextFilterEvalProc proc, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN NsUrlSpaceContextSpec *NsUrlSpaceContextSpecNew(const char *field, const char *patternString)
@@ -2169,7 +2169,7 @@ NS_EXTERN NsUrlSpaceContextSpec *NsUrlSpaceContextSpecNew(const char *field, con
 NS_EXTERN const char *NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN NsUrlSpaceContextSpec *NsUrlSpaceObjToContextSpec(Tcl_Interp *interp, Tcl_Obj *ctxFilterObj)
+NS_EXTERN NsUrlSpaceContextSpec *NsObjToUrlSpaceContextSpec(Tcl_Interp *interp, Tcl_Obj *ctxFilterObj)
     NS_GNUC_NONNULL(2);
 
 NS_EXTERN void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, Ns_Set *headers)

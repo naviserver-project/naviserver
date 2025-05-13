@@ -13,7 +13,7 @@ test ns_register_proc-1.0 {syntax: ns_register_proc} -body {
 
 test ns_unregister_op-1.0 {syntax: ns_unregister_op} -body {
     ns_unregister_op
-} -returnCodes error -result {wrong # args: should be "ns_unregister_op ?-noinherit? ?-recurse? ?-server /server/? ?--? /method/ /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_unregister_op ?-allcontextfilters? ?-noinherit? ?-recurse? ?-server /server/? ?--? /method/ /url/"}
 
 test ns_register_fastpath-1.0 {syntax: ns_register_fastpath} -body {
     ns_register_fastpath
@@ -150,6 +150,26 @@ test proc-4.5 {register with wild card, call with longer path} -setup {
 } -cleanup {
     ns_unregister_op GET /foo/*.pl*
 } -result {404}
+
+
+test proc-4.4.1 {register with context constraint} -setup {
+    ns_register_proc GET /proc-4.4.1 {
+        #ns_log notice in request: [ns_set format [ns_conn headers]]
+        ns_return 200 text/plain no-cf
+    }
+    ns_register_proc -contextfilter {user-agent *NaviServer*} GET /proc-4.4.1 {ns_return 200 text/plain with-cf}
+    ns_register_proc -contextfilter {x-test 1} GET /proc-4.4.1 {ns_return 200 text/plain with-x-test}
+    #foreach {severity level} $oldSeverity { ns_logctl severity $severity $level }
+} -body {
+    list \
+        [nstest::http -getbody 1 GET /proc-4.4.1] \
+        [nstest::http -getbody 1 -setheaders {x-test 1} GET /proc-4.4.1]
+} -cleanup {
+    #ns_log notice cleanup 4.4.1 [join [ns_server requestprocs] \n]
+    ns_log notice cleanup 4.4.1 before [lsearch -all -inline -glob [ns_server requestprocs] *4.4.1* ]
+    ns_unregister_op -allcontextfilters GET /proc-4.4.1
+    ns_log notice cleanup 4.4.1 after \n[join [lsearch -all -inline -glob [ns_server requestprocs] *4.4.1* ] \n]
+} -result {{200 with-cf} {200 with-x-test}}
 
 
 test proc-5.1 {fastpath} -setup {

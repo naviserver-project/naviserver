@@ -43,7 +43,7 @@
 [list_begin definitions]
 
 [call [cmd "ns_urlspace set"] \
-        [opt [option "-contextfilter [arg value]"]] \
+        [opt [option "-contextfilter [arg contextfilter]"]] \
 	[opt [option "-id [arg integer]"]] \
 	[opt [option "-key [arg value]"]] \
 	[opt [option "-noinherit"]] \
@@ -120,13 +120,13 @@
  list of lists, where each item contains the following elements:
 
  [list_begin itemized]
-    [item] [const key] — The key associated with the assignment.
-    [item] [const path] — The URL pattern (e.g., "/internal/space").
-    [item] [const "filter pattern"] — Any context filters applied
+    [item] [const key] - The key associated with the assignment.
+    [item] [const path] - The URL pattern (e.g., "/internal/space").
+    [item] [const "filter pattern"] - Any context filters applied
     (e.g., "*.adp").
-    [item] [const inherit] or [const noinherit] — Whether inheritance is enabled.
-    [item] [opt contextfilter] — The optional contextfilter
-    [item] [const data] — The assigned value.
+    [item] [const inherit] or [const noinherit] - Whether inheritance is enabled.
+    [item] [opt contextfilter] - The optional contextfilter
+    [item] [const data] - The assigned value.
  [list_end]
 
 [example_begin]
@@ -136,7 +136,7 @@
 
 
 [call [cmd "ns_urlspace unset"] \
-	[opt [option "-allfilters"]] \
+	[opt [option "-allcontextfilters"]] \
 	[opt [option "-id [arg integer]"]] \
 	[opt [option "-key [arg value]"]] \
 	[opt [option "-noinherit"]] \
@@ -147,7 +147,7 @@
  Unset a value for a [arg URL] for the given or default key. This
  command undoes the effects of [cmd "ns_urlspace set"].
 
-[para] The option [option "-allfilters"] implies that all context
+[para] The option [option "-allcontextfilters"] implies that all context
  filters are deleted. When the option [option "-noinherit"] is used,
  only the values set with [option "-noinherit"] are deleted, and vice
  versa.
@@ -231,53 +231,71 @@
 
 [section "Context Constraints"]
 
-In addition to the glob based URL space matching, NaviServer supports
-so-called context constraints or context filters. These constraints
-allow one to include additional information such as IP-addresses or header
-fields in the matching process. These constraints are applied after
-the classical URLspace processing and add more information to the
-matching process. The general rule that more specific URL space rule
-dominates a less specific one continues to hold.
+ In addition to the glob-based URL space matching, NaviServer supports
+ so-called [emph "context constraints"] or
+ [emph "context filters"]. These constraints allow you to include additional
+ (context) information such as the current IP addresses or current
+ header fields in the URL space lookup. They’re applied after the
+ constraint-less URL match and
+ participate in the usual "most specific wins" resolution.
 
-[para] By using context filers one can specify that when one is
-applying a matching from a URL to some data, not only the URL
-matters, but as well an additional context. One can use this for
-defining different access rules, when e.g. bots access your web
-server, or when internal requests are issued.
+[para] With context filters, you can say "I want /foo.adp to map to
+ X *only* when this request comes from a Googlebot, and to Y
+ otherwise."  Or "serve internal pages only to clients in our
+ corporate subnet."
 
-[para] API-wise the context can be specified by an ns_set with keys
-being header fields of a request or some IP ranges. When the context
-filters are used in the connection pool definition, the connection
-information is taken directly from the incoming socket connections.
 
-[para] In the following example, we provide an explicit ns_set for the
-context and use a single URL pattern [term "/*.adp"] which is set
-once with a context constraint.
- 
+[para] When you attach a context filter in a connection-pool mapping,
+ or via [cmd ns_register_proc], [cmd ns_register_filter] etc., the
+ live socket’s headers and peer address are used automatically when
+ deciding, which proc/filter/etc. is to be used. When you specify the
+ context filter in a [cmd "ns_urlspace set"] command, you can pass
+ directly a context to a [cmd "ns_urlspace set"] command, by providing
+ an "ns_set" whose keys are header names (e.g. "user-agent") or the
+ special key "x-ns-ip" (pseudo header field) for IP/mask filters.
+
+[para] Context filters may be [emph conjunctive]: if you supply
+ multiple key/value pairs, all must match.  Conjunctions are
+ specified as a flat list.
+
+[para] example:
+
 [example_begin]
- #
- # Create a plain URL space mapping with the value of "A" and a rule
- # with a context filter with the value "C"
- #
- % ns_urlspace set /*.adp A
- % ns_urlspace set -contextfilter {user-agent *bot*} /*.adp C
+ # Base mapping when no context matches:
+ % ns_urlspace set   /*.adp               DefaultHandler
  
- # Get the mapping for a concrete URL without context
+ # When *either* user-agent contains "bot":
+ % ns_urlspace set -contextfilter {user-agent *bot*} /*.adp BotHandler
+ 
+ # When *both* UA="bot" *and* IP in 10.0.0.0/8:
+ % ns_urlspace set -contextfilter {user-agent *bot* x-ns-ip 10.0.0.0/8} \
+                   /*.adp  BotInternalHandler
+ 
+ # Try without context:
  % ns_urlspace get /test.adp
- A
-
- # Create a context filter for user-agents containing "bot"
- % set botContext [lb]ns_set create filter1 "user-agent" "googlebot"[rb]
+ DefaultHandler
  
- # Get the mapping for a concrete URL based on the context
- % ns_urlspace get -context $botContext /test.adp
- C
+ # Try with only user-agent googlebot:
+ % set ctx1 [lb]ns_set create user-agent googlebot[rb]
+ % ns_urlspace get -context $ctx1 /test.adp
+ BotHandler
+ 
+ # Try with UA=googlebot *and* internal IP:
+ % set ctx2 [lb]ns_set create user-agent googlebot x-ns-ip 10.0.12.5[rb]
+ % ns_urlspace get -context $ctx2 /test.adp
+ BotInternalHandler
 [example_end]
 
-See for a configuration example of context constraints for
-setting up a connection pool for bots in [cmd ns_server].
+See also the [cmd ns_server] configuration examples for defining
+connection pools that use context filters to route "*bot*" traffic
+into a dedicated pool.
 
-
+[para] Context filters can be as well set for the following commands
+[cmd ns_register_adp],
+[cmd ns_register_cgi],
+[cmd ns_register_fastpath],
+[cmd ns_register_filter], and
+[cmd ns_register_proc].
 
 
 [section {NOTES}]

@@ -301,6 +301,8 @@ a value for matching.  The pseudo request header-field "X-NS-ip" is
 used for mapping requests from a certain IP address of from an IP
 range (in CIDR notation). In reverse proxy mode, the client IP address
 is taken form the value as provided by the reverse proxy server.
+(For details about context constraints, see
+[uri ./ns_urlspace.html#section5 "Context Constraints"]).
 
 [para]
 Examples:

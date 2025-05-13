@@ -529,13 +529,13 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         && (sockPtr->reqPtr->request.method != NULL)) {
         NsUrlSpaceContext ctx;
 
-        NsUrlSpaceContextInit(&ctx, sockPtr, NULL);
+        NsUrlSpaceContextInit(&ctx, sockPtr, sockPtr->reqPtr->headers);
         poolPtr = NsUrlSpecificGet(servPtr,
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,
                                    poolid, 0u, NS_URLSPACE_DEFAULT,
                                    NULL,
-                                   NsUrlSpaceContextFilter, &ctx);
+                                   NsUrlSpaceContextFilterEval, &ctx);
         sockPtr->poolPtr = poolPtr;
 
     } else if (sockPtr->poolPtr != NULL) {
@@ -957,7 +957,7 @@ MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
                 *method = Tcl_GetString(ov[0]);
                 *url = Tcl_GetString(ov[1]);
                 if (oc == 3) {
-                    *specPtr = NsUrlSpaceObjToContextSpec(interp, ov[2]);
+                    *specPtr = NsObjToUrlSpaceContextSpec(interp, ov[2]);
                     if (*specPtr == NULL) {
                         status = NS_ERROR;
                     }

@@ -237,14 +237,15 @@ int
 NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char           *method = NULL, *url = NULL;
-    int             noinherit = 0, recurse = 0, result = TCL_OK;
+    int             noinherit = 0, recurse = 0, allfilters = 0, result = TCL_OK;
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_OP_NOINHERIT)},
-        {"-recurse",   Ns_ObjvBool,   &recurse,   INT2PTR(NS_OP_RECURSE)},
-        {"-server",    Ns_ObjvServer, &servPtr,   NULL},
-        {"--",         Ns_ObjvBreak,  NULL,       NULL},
+        {"-allcontextfilters", Ns_ObjvBool,   &allfilters, INT2PTR(NS_OP_ALLFILTERS)},
+        {"-noinherit",         Ns_ObjvBool,   &noinherit,  INT2PTR(NS_OP_NOINHERIT)},
+        {"-recurse",           Ns_ObjvBool,   &recurse,    INT2PTR(NS_OP_RECURSE)},
+        {"-server",            Ns_ObjvServer, &servPtr,    NULL},
+        {"--",                 Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -257,7 +258,7 @@ NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
         result = TCL_ERROR;
     } else {
         Ns_UnRegisterRequestEx(servPtr->server, method, url,
-                               ((unsigned int)noinherit | (unsigned int)recurse));
+                               ((unsigned int)noinherit | (unsigned int)recurse | (unsigned int)allfilters));
     }
     return result;
 }
@@ -287,9 +288,9 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     TCL_SIZE_T    remain = 0;
     int           first = (int)NS_FALSE, result = TCL_OK;
     unsigned int  when = 0u;
-    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;    
+    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},        
+        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},
         {"-first", Ns_ObjvBool,  &first, INT2PTR(NS_TRUE)},
         {"--",     Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
@@ -305,6 +306,13 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
+    } else if (ctxFilterSpecPtr != NULL
+               && (when == NS_FILTER_TRACE || when == NS_FILTER_VOID_TRACE)
+               ) {
+        Ns_TclPrintfResult(interp, "option -contextfilter not allowed for traces");
+        result = TCL_ERROR;
+
     } else {
         const NsInterp  *itPtr = clientData;
         Ns_TclCallback  *cbPtr;
@@ -576,7 +584,7 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
             status = NS_FILTER_RETURN;
 
         } else {
-            Ns_Log(Error, "ns:tclfilter: %s return invalid result: %s",
+            Ns_Log(Error, "ns:tclfilter: %s returnsb invalid result: %s",
                    cbPtr->script, result);
             status = NS_ERROR;
         }

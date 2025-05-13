@@ -1292,7 +1292,7 @@ Ns_ObjvUrlspaceCtx(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, T
     dest = spec->dest;
 
     if (likely(*objcPtr > 0) && likely(dest != NULL)) {
-        NsUrlSpaceContextSpec *urlspaceCtx = NsUrlSpaceObjToContextSpec(interp, objv[0]);
+        NsUrlSpaceContextSpec *urlspaceCtx = NsObjToUrlSpaceContextSpec(interp, objv[0]);
 
         if (likely(urlspaceCtx != NULL)) {
             *dest = urlspaceCtx;

@@ -238,7 +238,7 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
 void
 NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
               unsigned int flags, NsUrlSpaceOp op,
-              NsUrlSpaceContextFilterProc proc, void *context,
+              NsUrlSpaceContextFilterEvalProc proc, void *context,
               Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
               unsigned int *flagsPtr)
 {
@@ -403,11 +403,15 @@ Ns_ConnRunRequest(Ns_Conn *conn)
         if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
             RegisteredProc       *regPtr;
             Ns_UrlSpaceMatchInfo  matchInfo;
+            NsUrlSpaceContext     ctx;
+
+            NsUrlSpaceContextInit(&ctx, connPtr->sockPtr, connPtr->headers);
 
             Ns_MutexLock(&ulock);
             regPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
                                       conn->request.method, conn->request.url, uid,
-                                      0u, NS_URLSPACE_DEFAULT, &matchInfo, NULL, NULL);
+                                      0u, NS_URLSPACE_DEFAULT, &matchInfo,
+                                      NsUrlSpaceContextFilterEval, &ctx);
             /*Ns_Log(Notice, "Ns_ConnRunRequest %s %s -> %p (isSegmentMatch %d, offset %ld)",
                    conn->request.method, conn->request.url, (void*)regPtr,
                    matchInfo.isSegmentMatch, matchInfo.offset);*/

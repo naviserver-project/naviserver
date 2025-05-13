@@ -27,6 +27,7 @@ to be executed at each of these stages.
 [list_begin definitions]
 
 [call [cmd ns_register_adp] \
+     [opt [option "-contextfilter [arg contextfilter]"]] \
      [opt [option -noinherit]] \
      [opt [option "-expires [arg time]"]] \
      [opt [option "-options autoabort|detailerror|displayerror|expire|cache|safe|singlescript|stricterror|trace|trimspace|stream"]] \
@@ -51,6 +52,7 @@ to be executed at each of these stages.
  Use [cmd ns_unregister_op] to unregister an ADP request (described below).
 
 [call [cmd ns_register_fastpath] \
+        [opt [option "-contextfilter [arg contextfilter]"]] \
 	[opt [option -noinherit]] \
 	[opt --] \
 	[arg method] \
@@ -66,6 +68,7 @@ to be executed at each of these stages.
  Note: The [arg method] argument is limited for this command to GET, POST, or HEAD.
 
 [call [cmd ns_register_filter] \
+        [opt [option "-contextfilter [arg contextfilter]"]] \
 	[opt [option -first]] \
 	[opt --] \
 	preauth|postauth|trace \
@@ -82,7 +85,6 @@ to be executed at each of these stages.
  registration. If the [option -first] flag is used, the filter is
  added at the beginning of the filter list; otherwise, it is appended
  to the end.
-
 
 [para]
 
@@ -117,7 +119,7 @@ to be executed at each of these stages.
 
 [item] TCL_OK: When the script is executed successfully
        and ends with [const {return -code continue}], or
-       [const {return filter_ok}]
+       the constant [const {return filter_ok}]
 
 [item] TCL_BREAK: When the script is executed successfully
        and ends with [const {return -code break}] or [const {return filter_break}].
@@ -179,6 +181,11 @@ to be executed at each of these stages.
     [item] TCL_BREAK or TCL_RETURN: No further trace filters are executed.
   [list_end]
 
+  Since the tracefilter is called after the the connection was closed,
+  this type of filter is not allowed to receive a [option -contextfilter]
+  filter, since this depends in its execution on connection
+  information.
+
 [list_end]
 
  Note: While [cmd ns_register_filter] and [cmd ns_register_proc] both
@@ -187,7 +194,7 @@ to be executed at each of these stages.
  and all URLs beneath it in the hierarchy; wildcards such as "*" are
  only effective on the final URL component (e.g.,
  `/scripts/*.tcl`). In contrast, filters use standard string-matching
- rules and multiple filters can match and be invoked for a single
+ rules and multiple filters canmatch and be invoked for a single
  request.
 
 
@@ -206,6 +213,7 @@ to be executed at each of these stages.
 
 
 [call [cmd ns_register_proc] \
+        [opt [option "-contextfilter [arg contextfilter]"]] \
 	[opt [option -noinherit]] \
 	[opt --] \
 	[arg method] \
@@ -292,7 +300,12 @@ to be executed at each of these stages.
 
 
 
-[call [cmd ns_register_proxy] [arg method] [arg protocol] [arg script] [opt [arg "arg ..."]]]
+[call [cmd ns_register_proxy] \
+        [arg method] \
+        [arg protocol] \
+        [arg script] \
+        [opt [arg "arg ..."]] \
+        ]
 
 Registers a Tcl script as a handler for the specified method/protocol
 combination. By registering this command, NaviServer acts as a plain
@@ -329,6 +342,7 @@ serve as a model for this forward proxy).
 [example_end]
 
 [call [cmd ns_register_tcl] \
+        [opt [option "-contextfilter [arg contextfilter]"]] \
 	[opt [option -noinherit]] \
 	[opt --] \
 	[arg method] \
@@ -393,6 +407,7 @@ serve as a model for this forward proxy).
 
 
 [call [cmd ns_shortcut_filter] \
+        [opt [option "-contextfilter [arg contextfilter]"]] \
         preauth|postauth|trace \
         [arg method] \
         [arg urlpattern]]
@@ -411,6 +426,7 @@ serve as a model for this forward proxy).
 
 
 [call [cmd ns_unregister_op] \
+   [opt [option "-allcontextfilters"]] \
    [opt [option -noinherit]] \
    [opt [option -recurse]] \
    [opt [option "-server [arg server]"]] \
@@ -418,15 +434,23 @@ serve as a model for this forward proxy).
    [arg method] \
    [arg url]]
 
- Unregisters a Tcl or ADP request handler for the specified HTTP
+ Unregisters a request handler for the specified HTTP
  [arg method] and [arg url] combination. This command removes any Tcl or C
  functions previously registered for this method/URL pair that share
- the same inheritance setting. If the [option -noinherit] flag is
- provided, only the handler registered with [option -noinherit] is
- removed; if omitted, the handler registered without
- [option -noinherit] is unregistered.
+ the same inheritance setting. The command unregisters commands
+ request handlers registered e.g. with the following commands:
+ [cmd ns_register_adp],
+ [cmd ns_register_cgi],
+ [cmd ns_register_fastpath], and
+ [cmd ns_register_proc].
 
- The [option -server] parameter specifies the (virtual) server from
+
+ [para] The option [option "-allcontextfilters"] implies that all context
+ filters are deleted. When the option [option "-noinherit"] is used,
+ only the values set with [option "-noinherit"] are deleted, and vice
+ versa.
+
+ [para] The [option -server] parameter specifies the (virtual) server from
  which the handler should be unregistered. If omitted, the current
  server is assumed.
 
@@ -445,7 +469,13 @@ serve as a model for this forward proxy).
 [list_end]
 
 [section OPTIONS]
+
 [list_begin options]
+
+[opt_def -contextfilter [arg contextfilter]] allows you to specify
+ additional context constraints ro specify, when this handler should
+ be invoked (for details see
+ [uri ./ns_urlspace.html#section5 "Context Constraints"]).
 
 [opt_def -cache [arg t]]
 Specifies for how long to keep result in the cache, in seconds or absolute time.
@@ -603,5 +633,5 @@ currently registered [term filters], [term traces] or [term procs].
 
 [see_also ns_adp ns_adp_register ns_conn ns_http ns_server ns_time]
 [keywords "server built-in" ADP filter request callback fastpath \
-        urlspace proxy handler "forwarding proxy"]
+        "context filter" urlspace proxy handler "forwarding proxy"]
 [manpage_end]
