@@ -497,7 +497,7 @@ test ns_urlspace-6.1.1.1 {
     ns_urlspace set -key 6.1 /static/* B
     #ns_log notice "\n[ns_urlspace list]"
 } -body {
-    set c1 [ns_set create filter1 "user-agent" "googlebot" "x-test" 1]
+    set c1 [ns_set create "user-agent" "googlebot" "x-test" 1]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
@@ -523,7 +523,7 @@ test ns_urlspace-6.1.1.2 {
     ns_urlspace set -key 6.1 /static/* B
     #ns_log notice "\n[join [ns_urlspace list] \n]"
 } -body {
-    set c1 [ns_set create filter1 "user-agent" "googlebot" "x-test" 1]
+    set c1 [ns_set create "user-agent" "googlebot" "x-test" 1]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
@@ -548,7 +548,7 @@ test ns_urlspace-6.1.1.3 {
     ns_urlspace set -key 6.1 /static/* B
     #ns_log notice "\n[join [ns_urlspace list] \n]"
 } -body {
-    set c1 [ns_set create filter1 "user-agent" "googlebot" "x-test" 1]
+    set c1 [ns_set create "user-agent" "googlebot" "x-test" 1]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
@@ -623,8 +623,7 @@ test ns_urlspace-6.1.3.2 {
     ns_urlspace set -key 6.1 /*        D
     ns_urlspace set -key 6.1 /static/* B
 } -body {
-    set c1 [ns_set create filter1]
-    ns_set put $c1 "user-agent" "googlebot"
+    set c1 [ns_set create user-agent googlebot]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
@@ -650,8 +649,7 @@ test ns_urlspace-6.1.4 {
     ns_urlspace set -key 6.1 /*        D
     ns_urlspace set -key 6.1 /static/* B
 } -body {
-    set c1 [ns_set create filter1]
-    ns_set put $c1 "user-agent" "chrome"
+    set c1 [ns_set create user-agent chrome]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
@@ -680,8 +678,7 @@ test ns_urlspace-6.1.5.1 {
     ns_urlspace set -key 6.1 /*        D
     ns_urlspace set -key 6.1 /static/* B
 } -body {
-    set c1 [ns_set create filter1]
-    ns_set put $c1 "user-agent" "googlebot"
+    set c1 [ns_set create user-agent googlebot]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
@@ -709,8 +706,7 @@ test ns_urlspace-6.1.5.2 {
     ns_urlspace set -key 6.1 /*        D
     ns_urlspace set -key 6.1 /static/* B
 } -body {
-    set c1 [ns_set create filter1]
-    ns_set put $c1 "host" "foo.org"
+    set c1 [ns_set create host foo.org]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
@@ -739,10 +735,8 @@ test ns_urlspace-6.1.5.3 {
     ns_urlspace set -key 6.1 /*        D
     ns_urlspace set -key 6.1 /static/* B
 } -body {
-    set c1 [ns_set create filter1]
-    ns_set put $c1 "user-agent" "googlebot"
-    set c2 [ns_set create filter1]
-    ns_set put $c2 "user-agent" "megaindex.com/crawler"
+    set c1 [ns_set create user-agent googlebot]
+    set c2 [ns_set create user-agent megaindex.com/crawler]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test
@@ -773,12 +767,9 @@ test ns_urlspace-6.1.5.4 {
     ns_urlspace set -key 6.1 /*        D
     ns_urlspace set -key 6.1 /static/* B
 } -body {
-    set c1 [ns_set create filter1]
-    ns_set put $c1 "user-agent" "googlebot"
-    set c2 [ns_set create filter1]
-    ns_set put $c2 "user-agent" "megaindex.com/crawler"
-    set c3 [ns_set create filter1]
-    ns_set put $c3 "user-agent" "googlebot v1"
+    set c1 [ns_set create user-agent googlebot]
+    set c2 [ns_set create user-agent megaindex.com/crawler]
+    set c3 [ns_set create user-agent "googlebot v1"]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test
@@ -809,12 +800,9 @@ test ns_urlspace-6.1.5.5 {
     ns_urlspace set -key 6.1 /*        D
     ns_urlspace set -key 6.1 /static/* B
 } -body {
-    set c1 [ns_set create filter1]
-    ns_set put $c1 "user-agent" "googlebot"
-    set c2 [ns_set create filter1]
-    ns_set put $c2 "user-agent" "megaindex.com/crawler"
-    set c3 [ns_set create filter1]
-    ns_set put $c3 "user-agent" "googlebot v1"
+    set c1 [ns_set create user-agent googlebot]
+    set c2 [ns_set create user-agent megaindex.com/crawler]
+    set c3 [ns_set create user-agent "googlebot v1"]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test
@@ -932,10 +920,10 @@ test ns_urlspace-6.2.1 {
 
 } -body {
     set url /robots.txt
-    set c1 [ns_set create filter1 X-NS-ip 137.208.116.31]
-    set c2 [ns_set create filter1 X-NS-ip 137.208.116.32]
-    set c3 [ns_set create filter1 X-NS-ip 2a03:2880:f007:1:face:b00c:0:1]
-    set c4 [ns_set create filter1 X-NS-ip 137.208.116.31 user-agent "googlebot v1"]
+    set c1 [ns_set create X-NS-ip 137.208.116.31]
+    set c2 [ns_set create X-NS-ip 137.208.116.32]
+    set c3 [ns_set create X-NS-ip 2a03:2880:f007:1:face:b00c:0:1]
+    set c4 [ns_set create X-NS-ip 137.208.116.31 user-agent "googlebot v1"]
 
     list \
         [ns_urlspace get -key 6.2 $url] \
@@ -1046,15 +1034,15 @@ test ns_urlspace-6.3.1 {
     #ns_logctl severity Debug(urlspace) on
 } -body {
     set url /robots.txt
-    set c1 [ns_set create filter1 X-NS-ip 137.208.116.31]
-    set c2 [ns_set create filter1 X-NS-ip 137.208.116.32]
-    set c3 [ns_set create filter1 X-NS-ip 2a03:2880:f007:1:face:b00c:0:1]
-    set c4 [ns_set create filter1 X-NS-ip 137.208.116.31 user-agent "googlebot v1"]
-    set c5 [ns_set create filter1 x-user admin]
-    set c6 [ns_set create filter1 user-agent foo]
-    set c7 [ns_set create filter1 x-user admin user-agent foo]
-    set c8 [ns_set create filter1 user-agent foo x-user admin]
-    set c9 [ns_set create filter1 X-NS-ip 137.208.116.31 user-agent foo]
+    set c1 [ns_set create X-NS-ip 137.208.116.31]
+    set c2 [ns_set create X-NS-ip 137.208.116.32]
+    set c3 [ns_set create X-NS-ip 2a03:2880:f007:1:face:b00c:0:1]
+    set c4 [ns_set create X-NS-ip 137.208.116.31 user-agent "googlebot v1"]
+    set c5 [ns_set create x-user admin]
+    set c6 [ns_set create user-agent foo]
+    set c7 [ns_set create x-user admin user-agent foo]
+    set c8 [ns_set create user-agent foo x-user admin]
+    set c9 [ns_set create X-NS-ip 137.208.116.31 user-agent foo]
 
     list \
         [ns_urlspace get -key 6.3 $url] \
@@ -1096,8 +1084,8 @@ test ns_urlspace-6.4.0 {
     ns_urlspace set -key 6.4 /static/* B
     #ns_log notice "===== setup of 6.4.0 DONE"
 } -body {
-    set c1 [ns_set create filter1 "user-agent" "googlebot"]
-    set c2 [ns_set create filter2 "user-agent" "Chrome"]
+    set c1 [ns_set create user-agent googlebot]
+    set c2 [ns_set create user-agent Chrome]
     lmap url {
         /test.adp /test.txt /test
         /static/test.adp /static/test.tcl /static/test
