@@ -262,14 +262,14 @@
 
 [example_begin]
  # Base mapping when no context matches:
- % ns_urlspace set   /*.adp               DefaultHandler
+ % ns_urlspace set /*.adp DefaultHandler
  
  # When *either* user-agent contains "bot":
  % ns_urlspace set -contextfilter {user-agent *bot*} /*.adp BotHandler
  
  # When *both* UA="bot" *and* IP in 10.0.0.0/8:
  % ns_urlspace set -contextfilter {user-agent *bot* x-ns-ip 10.0.0.0/8} \
-                   /*.adp  BotInternalHandler
+                   /*.adp BotInternalHandler
  
  # Try without context:
  % ns_urlspace get /test.adp
