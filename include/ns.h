@@ -120,7 +120,7 @@
 #define NS_OP_NOINHERIT            0x02u /* Match URL exactly */
 #define NS_OP_NODELETE             0x04u /* Do call previous procs Ns_OpDeleteProc */
 #define NS_OP_RECURSE              0x08u /* Also destroy registered procs below given URL */
-#define NS_OP_ALLFILTERS           0x10u /* Also destroy all filters for this node */
+#define NS_OP_ALLCONSTRAINTS       0x10u /* Also destroy all filters for this node */
 #define NS_OP_SEGMENT_MATCH        0x20u /* Also destroy all filters for this node */
 
 
@@ -1921,7 +1921,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 NS_EXTERN Ns_ObjvProc Ns_ObjvString;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
 NS_EXTERN Ns_ObjvProc Ns_ObjvUShort;
-NS_EXTERN Ns_ObjvProc Ns_ObjvUrlspaceCtx;
+NS_EXTERN Ns_ObjvProc Ns_ObjvUrlspaceSpec;
 NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
 
 NS_EXTERN int Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUnitPtr)
