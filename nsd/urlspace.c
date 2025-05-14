@@ -199,7 +199,7 @@ typedef struct {
     void  *dataNoInherit;              /* User's data */
     Ns_FreeProc *deletefuncInherit;    /* Cleanup function */
     Ns_FreeProc *deletefuncNoInherit;  /* Cleanup function */
-    Ns_Index data;                     /* Context filters*/
+    Ns_Index data;                     /* Context constraints*/
 } Node;
 
 /*
@@ -427,7 +427,7 @@ static Ns_ObjvValueRange idRange = {-1, MAX_URLSPACES};
  *
  *      Convert a UrlSpaceContextSpecType enum value into a human-readable
  *      string. This is useful for debugging or logging the type of a
- *      context filter specification.
+ *      context constraints specification.
  *
  * Returns:
  *      A constant C-string describing the filter type
@@ -560,7 +560,7 @@ NsObjToUrlSpaceContextSpec(Tcl_Interp *interp, Tcl_Obj *ctxFilterObj)
 
     if (Tcl_ListObjGetElements(interp, ctxFilterObj, &oc, &ov) != TCL_OK || (oc % 2) != 0) {
         Ns_TclPrintfResult(interp,
-                           "invalid context filter '%s': must be a key/value list",
+                           "invalid context constraints '%s': must be a key/value list",
                            Tcl_GetString(ctxFilterObj));
     } else if (oc == 2) {
         spec = (UrlSpaceContextSpec*)NsUrlSpaceContextSpecNew(Tcl_GetString(ov[0]), Tcl_GetString(ov[1]));
@@ -593,7 +593,7 @@ NsObjToUrlSpaceContextSpec(Tcl_Interp *interp, Tcl_Obj *ctxFilterObj)
  * NsUrlSpaceContextSpecNew --
  *
  *      Allocate and initialize a UrlSpaceContextSpec for a single
- *      (non-conjunctive) context filter.  If the field is "X-NS-ip",
+ *      (non-conjunctive) context constraints.  If the field is "X-NS-ip",
  *      the patternString is parsed as an IP/mask specification and
  *      the type is set to SpecTypeIPv4 or SpecTypeIPv6.  Otherwise, the spec is treated
  *      as a header filter (SpecTypeHeader), with wildcard support.
@@ -1211,7 +1211,7 @@ NsUrlSpecificGet(NsServer *servPtr, const char *key, const char *url, int id,
  * Ns_UrlSpecificDestroy --
  *
  *      Delete some urlspecific data.  Flags can be NS_OP_NODELETE,
- *      NS_OP_NOINHERIT, NS_OP_RECURSE, or NS_OP_ALLFILTERS.
+ *      NS_OP_NOINHERIT, NS_OP_RECURSE, or NS_OP_ALLCONSTRAINTS.
  *
  * Results:
  *      A pointer to user data if not destroying recursively.
@@ -1517,7 +1517,7 @@ CmpBranches(const void *leftPtrPtr, const void *rightPtrPtr)
  * CmpUrlSpaceContextSpecs --
  *
  *      Compare two UrlSpaceContextSpec pointers for sorting in URL
- *      space context filtering.  The ordering is determined by:
+ *      space context constraintsing.  The ordering is determined by:
  *
  *        1. Filter type precedence, in the order: IPv6, IPv4,
  *           header, conjunction.
@@ -2126,7 +2126,7 @@ TrieFind(const Trie *triePtr, char *seq, NsUrlSpaceContextFilterEvalProc proc, v
 #ifdef CONTEXT_FILTER
             if (nodePtr->data.n != 0) {
                 /*
-                 * We have context filters
+                 * We have context constraintss
                  */
                 if (context != NULL) {
                     size_t i;
@@ -2320,13 +2320,13 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
         }
 #ifdef CONTEXT_FILTER
         /*
-         * When NS_OP_ALLFILTERS is set, then delete all filters.
-         * TODO: selective filter deletion not implemented.
+         * When NS_OP_ALLCONSTRAINTS is set, then delete all context contraints.
+         * TODO: selective context constraint deletion is not implemented.
          */
-        if ((flags & NS_OP_ALLFILTERS) != 0u) {
+        if ((flags & NS_OP_ALLCONSTRAINTS) != 0u) {
             Ns_Index* indexPtr = &nodePtr->data;
 
-            //fprintf(stderr, "...   TrieTele NS_OP_ALLFILTERS data %p for node %p fn %p n %" PRIuz "\n",
+            //fprintf(stderr, "...   TrieTele NS_OP_ALLCONSTRAINTS data %p for node %p fn %p n %" PRIuz "\n",
             //        (void*)&indexPtr, (void*)nodePtr, (void*)indexPtr->CmpEls, indexPtr->n);
 
             ContextFilterDestroy(indexPtr);
@@ -3560,9 +3560,9 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1, noinherit = 0;
     char           *key = (char *)".", *url = (char*)NS_EMPTY_STRING, *data = (char*)NS_EMPTY_STRING;
-    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;
+    NsUrlSpaceContextSpec *specPtr = NULL;
     Ns_ObjvSpec     lopts[] = {
-        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},
+        {"-constraints", Ns_ObjvUrlspaceSpec, &specPtr, NULL},
         {"-id",            Ns_ObjvInt,         &id,               &idRange},
         {"-key",           Ns_ObjvString,      &key,              NULL},
         {"-noinherit",     Ns_ObjvBool,        &noinherit,        INT2PTR(NS_TRUE)},
@@ -3596,9 +3596,9 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         Ns_RWLockWrLock(&servPtr->urlspace.idlocks[id]);
 
         /* maybe add a non-string interface for first arg (pass servPtrt) */
-        //Ns_Log(Ns_LogUrlspaceDebug, "UrlSpaceSetObjCmd contextFilter %p", (void*)ctxFilterSpecPtr);
+        //Ns_Log(Ns_LogUrlspaceDebug, "UrlSpaceSetObjCmd contextFilter %p", (void*)specPtr);
         Ns_UrlSpecificSet2(servPtr->server, key, url, id, ns_strdup(data),
-                           flags, ns_free, ctxFilterSpecPtr);
+                           flags, ns_free, specPtr);
         Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
     }
     return result;
@@ -3635,12 +3635,12 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1;
     char           *key = (char *)".", *url;
-    int             recurse = 0, noinherit = 0, allctxfilters = 0;
+    int             recurse = 0, noinherit = 0, allconstraints = 0;
 #ifdef NS_WITH_DEPRECATED_5_0
     int             allfilters = (int)NS_FALSE;
 #endif
     Ns_ObjvSpec     lopts[] = {
-        {"-allcontextfilters", Ns_ObjvBool,   &allctxfilters,  INT2PTR(NS_OP_ALLFILTERS)},
+        {"-allconstraints",    Ns_ObjvBool,   &allconstraints, INT2PTR(NS_OP_ALLCONSTRAINTS)},
 #ifdef NS_WITH_DEPRECATED_5_0
         {"-allfilters",        Ns_ObjvBool,   &allfilters,     INT2PTR(NS_TRUE)},
 #endif
@@ -3667,12 +3667,12 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
 
     } else {
         const char   *data;
-        unsigned int  flags = ((unsigned int)noinherit | (unsigned int)recurse | (unsigned int)allctxfilters);
+        unsigned int  flags = ((unsigned int)noinherit | (unsigned int)recurse | (unsigned int)allconstraints);
 
 #ifdef NS_WITH_DEPRECATED_5_0
         if (allfilters == (int)NS_TRUE) {
-            Ns_Log(Deprecated, "option -allfilters is deprecated, use -allcontextfilters instead");
-            flags |= NS_OP_ALLFILTERS;
+            Ns_Log(Deprecated, "option -allfilters is deprecated, use -allconstraints instead");
+            flags |= NS_OP_ALLCONSTRAINTS;
         }
 #endif
         if (recurse != 0) {

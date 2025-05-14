@@ -12,7 +12,7 @@ This document describes how to register a CGI handler programmatically.
 [list_begin definitions]
 
 [call [cmd ns_register_cgi] \
-     [opt [option "-contextfilter [arg contextfilter]"]] \
+     [opt [option "-constraints [arg constraints]"]] \
      [opt [option -noinherit]] \
      [opt [option -matchsegments]] \
      [opt [option "-path [arg value]"]] \
@@ -27,7 +27,7 @@ contain a match pattern, which is handled by the NaviServer urlspace
 (like in [cmd ns_register_proc]). The match will always be a match on
 the last URL segment, unless [option -matchsegments] is specified.
 
-[para] The option [option -contextfilter] allows you to specify
+[para] The option [option -constraints] allows you to specify
  additional context constraints to specify, when this handler should
  be invoked (for details see
  [uri ../../manual/files/ns_urlspace.html#section5 "Context Constraints"]).
@@ -54,5 +54,5 @@ was specified, it can be unregistered with
 
 
 [see_also ns_unregister_op ns_register_fasturl2file ns_register]
-[keywords "context filter" nscgi CGI request callback fastpath urlspace handler]
+[keywords "context constraints" nscgi CGI request callback fastpath urlspace handler]
 [manpage_end]

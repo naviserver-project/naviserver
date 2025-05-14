@@ -171,7 +171,7 @@ Key parameters include:
  servers, this behavior may still be desirable.
 
  [para] On busy machines, define multiple connection thread pools and
- map certain HTTP methods, URLs, or context filters to them. See the
+ map certain HTTP methods, URLs, or context constraints to them. See the
  documentation of "connection thread pools" and the [cmd ns_server]
  command for details.  You can create additional pools via in the
  [term pools] section in the configuration file and configure them

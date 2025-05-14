@@ -1267,9 +1267,9 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Ob
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ObjvUrlspaceCtx --
+ * Ns_ObjvUrlspaceSpec --
  *
- *      Get Urlspace context from argument, consume it, put result into "dest".
+ *      Get Urlspace spec from argument, consume it, put result into "dest".
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -1281,7 +1281,7 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Ob
  */
 
 int
-Ns_ObjvUrlspaceCtx(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+Ns_ObjvUrlspaceSpec(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
 {
     NsUrlSpaceContextSpec **dest;
     int                     result = TCL_OK;
@@ -1292,10 +1292,10 @@ Ns_ObjvUrlspaceCtx(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, T
     dest = spec->dest;
 
     if (likely(*objcPtr > 0) && likely(dest != NULL)) {
-        NsUrlSpaceContextSpec *urlspaceCtx = NsObjToUrlSpaceContextSpec(interp, objv[0]);
+        NsUrlSpaceContextSpec *specPtr = NsObjToUrlSpaceContextSpec(interp, objv[0]);
 
-        if (likely(urlspaceCtx != NULL)) {
-            *dest = urlspaceCtx;
+        if (likely(specPtr != NULL)) {
+            *dest = specPtr;
             *objcPtr -= 1;
         } else {
             result = TCL_ERROR;

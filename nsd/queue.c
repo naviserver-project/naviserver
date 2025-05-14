@@ -1270,7 +1270,7 @@ ServerUnmapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
             flags |= NS_OP_NOINHERIT;
         }
         // TODO: for the time being
-        flags |= NS_OP_ALLFILTERS;
+        flags |= NS_OP_ALLCONSTRAINTS;
 
         Ns_MutexLock(&servPtr->urlspace.lock);
         data = Ns_UrlSpecificDestroy(servPtr->server,  method, url, poolid, flags);

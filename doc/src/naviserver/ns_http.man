@@ -371,10 +371,10 @@ Standard HTTP/HTTPS request method such as GET, POST, HEAD, PUT etc.
  of bytes allowed in a response. If the response exceeds this
  limit, an exception is triggered.
  [list_begin itemized]
- [item] If the response includes a [const Content-Length] header, the
+ [item] If the response includes a [const content-length] header, the
  value is used for comparison, and the request is stopped after
  processing the header.
- [item] If no [const Content-Length] header is present, the request is
+ [item] If no [const content-length] header is present, the request is
  canceled once the number of received bytes exceeds the specified
  value.
 [list_end]

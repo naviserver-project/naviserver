@@ -249,9 +249,9 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     unsigned int   aflags = 0u;
     Ns_Time       *expiresPtr = NULL;
     Tcl_Obj       *fileObj = NULL;
-    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;
+    NsUrlSpaceContextSpec *specPtr = NULL;
     Ns_ObjvSpec    opts[] = {
-        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},
+        {"-constraints", Ns_ObjvUrlspaceSpec, &specPtr, NULL},
         {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_TRUE)},
         {"-expires",       Ns_ObjvTime,        &expiresPtr,   NULL},
         {"-options",       Ns_ObjvIndex,       &aflags,       adpOpts},
@@ -274,7 +274,7 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
         if (noinherit != 0) {
             rflags |= NS_OP_NOINHERIT;
         }
-        result = RegisterPage(clientData, method, url, fileObj, expiresPtr, rflags, aflags, ctxFilterSpecPtr);
+        result = RegisterPage(clientData, method, url, fileObj, expiresPtr, rflags, aflags, specPtr);
     }
     return result;
 }
@@ -285,9 +285,9 @@ NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     int         noinherit = 0, result;
     char       *method, *url;
     Tcl_Obj    *fileObj = NULL;
-    NsUrlSpaceContextSpec *ctxFilterSpecPtr = NULL;
+    NsUrlSpaceContextSpec *specPtr = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr, NULL},
+        {"-constraints", Ns_ObjvUrlspaceSpec, &specPtr, NULL},
         {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_TRUE)},
         {"--",             Ns_ObjvBreak,       NULL,          NULL},
         {NULL, NULL, NULL, NULL}
@@ -307,7 +307,7 @@ NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
         if (noinherit != 0) {
             rflags |= NS_OP_NOINHERIT;
         }
-        result = RegisterPage(clientData, method, url, fileObj, NULL, rflags, ADP_TCLFILE, ctxFilterSpecPtr);
+        result = RegisterPage(clientData, method, url, fileObj, NULL, rflags, ADP_TCLFILE, specPtr);
     }
     return result;
 }

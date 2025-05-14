@@ -193,7 +193,7 @@ test ns_adp_trunc-1.0 {syntax: ns_adp_trunc} -body {
 
 test ns_register_adp-1.0 {syntax: ns_register_adp} -body {
     ns_register_adp
-} -returnCodes error -result {wrong # args: should be "ns_register_adp ?-contextfilter /contextfilter/? ?-noinherit? ?-expires /time/? ?-options autoabort|detailerror|displayerror|expire|cache|safe|singlescript|stricterror|trace|trimspace|stream? ?--? /method/ /url/ ?/file/?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_adp ?-constraints /constraints/? ?-noinherit? ?-expires /time/? ?-options autoabort|detailerror|displayerror|expire|cache|safe|singlescript|stricterror|trace|trimspace|stream? ?--? /method/ /url/ ?/file/?"}
 
 
 

@@ -1590,9 +1590,9 @@ NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
 {
     char       *method, *url, *path = NULL;
     int         noinherit = 0, matchsegments = 0, result = TCL_OK;
-    void       *ctxFilterSpecPtr = NULL;   /* use void, since no NsUrlSpaceContextSpec declared */
+    void       *specPtr = NULL;   /* use void, since no NsUrlSpaceContextSpec declared */
     Ns_ObjvSpec opts[] = {
-        {"-contextfilter", Ns_ObjvUrlspaceCtx, &ctxFilterSpecPtr,  NULL},
+        {"-constraints", Ns_ObjvUrlspaceSpec, &specPtr,  NULL},
         {"-noinherit",     Ns_ObjvBool,        &noinherit,     INT2PTR(NS_OP_NOINHERIT)},
         {"-matchsegments", Ns_ObjvBool,        &matchsegments, INT2PTR(NS_OP_SEGMENT_MATCH)},
         {"-path",          Ns_ObjvString,      &path,          NULL},
@@ -1628,7 +1628,7 @@ NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
                (path != NULL) ? path : NS_EMPTY_STRING);
 
         result = Ns_RegisterRequest2(interp, modPtr->server, method, url,
-                                     CgiRequest, CgiFreeMap, mapPtr, flags, ctxFilterSpecPtr);
+                                     CgiRequest, CgiFreeMap, mapPtr, flags, specPtr);
         if (path != NULL) {
             /*
              * When a path is provided, register it to the Url2File

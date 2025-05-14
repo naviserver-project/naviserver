@@ -606,7 +606,7 @@
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace get}] ?-context /setId/? ?-exact? ?-id /integer/? ?-key /value/? ?-noinherit? /URL/
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace list}] ?-id /integer/?
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace new}]
-[uri ../../naviserver/files/ns_urlspace.html {ns_urlspace set}] ?-contextfilter /value/? ?-id /integer/? ?-key /value/? ?-noinherit? /URL/ /data/
+[uri ../../naviserver/files/ns_urlspace.html {ns_urlspace set}] ?-constraints /value/? ?-id /integer/? ?-key /value/? ?-noinherit? /URL/ /data/
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace unset}] ?-allfilters? ?-id /integer/? ?-key /value/? ?-noinherit? ?-recurse? /URL/
 [uri ../../naviserver/files/ns_uudecode.html {ns_uudecode}] ?-binary? ?-strict? ?--? /string/
 [uri ../../naviserver/files/ns_uuencode.html {ns_uuencode}] ?-binary? ?--? /string/

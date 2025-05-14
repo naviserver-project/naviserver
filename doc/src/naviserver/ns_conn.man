@@ -19,7 +19,7 @@ include:
 [call [cmd  "ns_conn acceptedcompression"]]
 
 Returns the compression formats accepted by the client, as indicated
-by the Accept-Encoding header.
+by the accept-encoding header.
 
 [call [cmd  "ns_conn auth"]]
 

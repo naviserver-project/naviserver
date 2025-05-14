@@ -204,7 +204,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
  *                        used for logging.
  *
  * Results:
- *      NS_TRUE if the connection satisfies the context filter or if no
+ *      NS_TRUE if the connection satisfies the context constraints or if no
  *      context is available; NS_FALSE if the filter does not match.
  *
  * Side Effects:

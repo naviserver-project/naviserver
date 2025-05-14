@@ -12,7 +12,7 @@ namespace import -force ::tcltest::*
 
 test ns_register_filter-1.0 {syntax: ns_register_filter} -body {
     ns_register_filter
-} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-contextfilter /contextfilter/? ?-first? ?--? preauth|postauth|trace /method/ /urlpattern/ /script/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-constraints /constraints/? ?-first? ?--? preauth|postauth|trace /method/ /urlpattern/ /script/ ?/arg .../?"}
 
 test ns_register_trace-1.0 {syntax: ns_register_trace} -body {
     ns_register_trace
@@ -20,7 +20,7 @@ test ns_register_trace-1.0 {syntax: ns_register_trace} -body {
 
 test ns_shortcut_filter-1.0 {syntax: ns_shortcut_filter} -body {
     ns_shortcut_filter
-} -returnCodes error -result {wrong # args: should be "ns_shortcut_filter ?-contextfilter /contextfilter/? preauth|postauth|trace /method/ /urlpattern/"}
+} -returnCodes error -result {wrong # args: should be "ns_shortcut_filter ?-constraints /constraints/? preauth|postauth|trace /method/ /urlpattern/"}
 
 #
 # Functional tests
@@ -114,11 +114,11 @@ test filter-2.3 {void trace always runs} -setup {
 
 
 test filter-2.4 {correct order with context filtering} -setup {
-    ns_register_filter -contextfilter {user-agent *NaviServer*} preauth  GET /filter-2.4 {
+    ns_register_filter -constraints {user-agent *NaviServer*} preauth  GET /filter-2.4 {
         nsv_lappend . . preauth-2.4
         return filter_ok
     }
-    ns_register_filter -contextfilter {X-NS-ip 42.250.184.195} postauth GET /filter-2.4 {
+    ns_register_filter -constraints {X-NS-ip 42.250.184.195} postauth GET /filter-2.4 {
         nsv_lappend . . postauth-2.4
         return filter_ok
     }

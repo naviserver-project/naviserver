@@ -240,7 +240,7 @@ Undoes the effect of a [cmd "ns_server map"] operation.  As a
 consequence formerly mapped requests will be served by the default
 connection pool.
 
-[para] Limitation: when the mapspec contains a context filter (see
+[para] Limitation: when the mapspec contains a context constraints (see
 below) this is ignored, all entries with the specified HTTP method and
 path are unmapped.
 
@@ -270,7 +270,7 @@ only exactly this path, but no sub-paths are mapped.
 
 [opt_def [option mapspec] ""]
 A list of two or three arguments, containing an HTTP method, a path
-and optionally a context filter. The following example contains an HTTP
+and optionally a context constraints. The following example contains an HTTP
 method and a URL path.
 
 Example:
@@ -296,7 +296,7 @@ equivalent, the path is always [const /foo/bar] and the match filter is [const *
 
 [para]
 When the [term mapspec] is used as three element list, the last
-argument is the context filter, containing a request header-field and
+argument is the context constraints, containing a request header-field and
 a value for matching.  The pseudo request header-field "X-NS-ip" is
 used for mapping requests from a certain IP address of from an IP
 range (in CIDR notation). In reverse proxy mode, the client IP address
@@ -419,7 +419,7 @@ specified names based on a wild-card match.
 
 [see_also ns_conn ns_register ns_urlspace]
 [keywords \
-        "context filter" \
+        "context constraints" \
 	"server built-in" configuration "connection thread pools" \
 	mapspec pools pagedir serverdir serverrootproc \
         tuning "reverse proxy" "virtual host"]

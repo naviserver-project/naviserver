@@ -9,15 +9,15 @@ namespace import -force ::tcltest::*
 
 test ns_register_proc-1.0 {syntax: ns_register_proc} -body {
     ns_register_proc
-} -returnCodes error -result {wrong # args: should be "ns_register_proc ?-contextfilter /contextfilter/? ?-noinherit? ?--? /method/ /url/ /script/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_proc ?-constraints /constraints/? ?-noinherit? ?--? /method/ /url/ /script/ ?/arg .../?"}
 
 test ns_unregister_op-1.0 {syntax: ns_unregister_op} -body {
     ns_unregister_op
-} -returnCodes error -result {wrong # args: should be "ns_unregister_op ?-allcontextfilters? ?-noinherit? ?-recurse? ?-server /server/? ?--? /method/ /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_unregister_op ?-allconstraints? ?-noinherit? ?-recurse? ?-server /server/? ?--? /method/ /url/"}
 
 test ns_register_fastpath-1.0 {syntax: ns_register_fastpath} -body {
     ns_register_fastpath
-} -returnCodes error -result {wrong # args: should be "ns_register_fastpath ?-contextfilter /contextfilter/? ?-noinherit? ?--? /method/ /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_register_fastpath ?-constraints /constraints/? ?-noinherit? ?--? /method/ /url/"}
 
 test ns_register_proxy-1.0 {syntax: ns_register_proxy} -body {
     ns_register_proxy
@@ -25,7 +25,7 @@ test ns_register_proxy-1.0 {syntax: ns_register_proxy} -body {
 
 test ns_register_tcl-1.0 {syntax: ns_register_tcl} -body {
     ns_register_tcl
-} -returnCodes error -result {wrong # args: should be "ns_register_tcl ?-contextfilter /contextfilter/? ?-noinherit? ?--? /method/ /url/ ?/file/?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_tcl ?-constraints /constraints/? ?-noinherit? ?--? /method/ /url/ ?/file/?"}
 
 
 test proc-2.1 {register/unregister} -body {
@@ -157,8 +157,8 @@ test proc-4.4.1 {register with context constraint} -setup {
         #ns_log notice in request: [ns_set format [ns_conn headers]]
         ns_return 200 text/plain no-cf
     }
-    ns_register_proc -contextfilter {user-agent *NaviServer*} GET /proc-4.4.1 {ns_return 200 text/plain with-cf}
-    ns_register_proc -contextfilter {x-test 1} GET /proc-4.4.1 {ns_return 200 text/plain with-x-test}
+    ns_register_proc -constraints {user-agent *NaviServer*} GET /proc-4.4.1 {ns_return 200 text/plain with-cf}
+    ns_register_proc -constraints {x-test 1} GET /proc-4.4.1 {ns_return 200 text/plain with-x-test}
     #foreach {severity level} $oldSeverity { ns_logctl severity $severity $level }
 } -body {
     list \
@@ -167,7 +167,7 @@ test proc-4.4.1 {register with context constraint} -setup {
 } -cleanup {
     #ns_log notice cleanup 4.4.1 [join [ns_server requestprocs] \n]
     ns_log notice cleanup 4.4.1 before [lsearch -all -inline -glob [ns_server requestprocs] *4.4.1* ]
-    ns_unregister_op -allcontextfilters GET /proc-4.4.1
+    ns_unregister_op -allconstraints GET /proc-4.4.1
     ns_log notice cleanup 4.4.1 after \n[join [lsearch -all -inline -glob [ns_server requestprocs] *4.4.1* ] \n]
 } -result {{200 with-cf} {200 with-x-test}}
 
