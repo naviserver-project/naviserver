@@ -181,11 +181,6 @@ to be executed at each of these stages.
     [item] TCL_BREAK or TCL_RETURN: No further trace filters are executed.
   [list_end]
 
-  Since the tracefilter is called after the the connection was closed,
-  this type of filter is not allowed to receive a [option -constraints]
-  filter, since this depends in its execution on connection
-  information.
-
 [list_end]
 
  Note: While [cmd ns_register_filter] and [cmd ns_register_proc] both
@@ -367,10 +362,11 @@ serve as a model for this forward proxy).
 
 
 [call [cmd ns_register_trace] \
-       [arg method] \
-       [arg urlpattern] \
-       [arg script] \
-       [opt [arg "arg ..."]]]
+     [opt [option "-constraints [arg constraints]"]] \
+     [arg method] \
+     [arg urlpattern] \
+     [arg script] \
+     [opt [arg "arg ..."]]]
 
  Registers a Tcl script as a trace filter for the specified HTTP
  [arg method] and [arg urlpattern]. Trace filters are executed after the

@@ -190,44 +190,72 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
  *
  * EvaluateContextFilterSpec --
  *
- *      Apply a UrlSpaceContextSpec filter to a given connection
- *      context.  If the connection or its request is not available,
- *      the filter is considered passed (returns NS_TRUE) and a notice
- *      is logged.  Otherwise, the filter spec is evaluated against
- *      the request’s headers and client address.
+ *      Apply a UrlSpaceContextSpec against a connection’s context.
+ *      If connPtr->sockPtr is NULL (e.g. in a trace filter), the peer
+ *      address is fetched via Ns_ConnConfiguredPeerAddr and injected as
+ *      an "x-ns-ip" header into connPtr->headers; UrlSpaceContextFromSet
+ *      is then used to build the context.  Otherwise, the context is
+ *      initialized directly from the Sock and headers via
+ *      NsUrlSpaceContextInit.  Finally, the spec is evaluated with
+ *      NsUrlSpaceContextFilterEval.
  *
  * Parameters:
- *      connPtr         - Pointer to the Conn whose context is tested.
- *      ctxFilterSpec   - The UrlSpaceContextSpec describing header or IP
- *                        constraints.
- *      why             - The filter type (preauth, postauth, trace, etc.),
- *                        used for logging.
+ *      connPtr         - The Conn whose context is to be tested; may
+ *                        lack sockPtr for certain filter stages.
+ *      ctxFilterSpec   - The UrlSpaceContextSpec describing header or
+ *                        IP constraints.
+ *      why             - The filter type (preauth, postauth, trace, etc.)
+ *                        used in logging.
  *
  * Results:
- *      NS_TRUE if the connection satisfies the context constraints or if no
- *      context is available; NS_FALSE if the filter does not match.
+ *      NS_TRUE if the connection satisfies the context constraints (or
+ *      if no usable context is available); NS_FALSE if the spec does
+ *      not match.
  *
  * Side Effects:
- *      Logs a warning if no context is available, and an optional debug
- *      message with the filter result.
+ *      In the NULL-sockPtr fallback, connPtr->headers is modified to add
+ *      an "x-ns-ip" entry.  Logs a debug message with the evaluation result.
  *
  *----------------------------------------------------------------------
  */
+
 static bool
 EvaluateContextFilterSpec(const Conn *connPtr, NsUrlSpaceContextSpec *ctxFilterSpec, Ns_FilterType why)
 {
-    bool result;
+    NsUrlSpaceContext ctx;
+    bool              result;
+    struct NS_SOCKADDR_STORAGE ip;
 
-    if (connPtr->sockPtr == NULL || connPtr->sockPtr->reqPtr == NULL) {
-        Ns_Log(Warning, "No context for filter of type %s", Ns_FilterTypeString(why));
-        result = NS_TRUE;
+    NS_NONNULL_ASSERT(ctxFilterSpec != NULL);
+
+    if (connPtr->sockPtr == NULL) {
+        /*
+         * No direct Sock available (e.g., in a trace filter).  Fetch the
+         * saved peer address, inject it as x-ns-ip into the request headers,
+         * and build the context via UrlSpaceContextFromSet. This is less
+         * efficient than taking directly the socket address from the sockPtr.
+         */
+        (void)Ns_SetIUpdate(connPtr->headers,
+                            "x-ns-ip",
+                            Ns_ConnConfiguredPeerAddr((Ns_Conn*)connPtr));
+        NsUrlSpaceContextFromSet(NULL, &ctx, (struct sockaddr *)&ip, connPtr->headers);
+#if 0
+        Tcl_DString  ds;
+        Tcl_DStringInit(&ds);
+        (void) NsUrlSpaceContextSpecAppend(&ds, ctxFilterSpec);
+        Ns_Log(Warning, "context spec for filter provided, but no context for this type %s IP %s\n%s",
+               Ns_FilterTypeString(why), p,
+               ds.string);
+        Tcl_DStringFree(&ds);
+        result = NS_FALSE;
+#endif
     } else {
-        NsUrlSpaceContext ctx;
-
         NsUrlSpaceContextInit(&ctx, connPtr->sockPtr, connPtr->headers);
-        result = NsUrlSpaceContextFilterEval(ctxFilterSpec, &ctx);
-        Ns_Log(Ns_LogUrlspaceDebug, "result of NsUrlSpaceContextFilterEval %s -> %d", Ns_FilterTypeString(why), result);
     }
+
+    result = NsUrlSpaceContextFilterEval(ctxFilterSpec, &ctx);
+    Ns_Log(Ns_LogUrlspaceDebug, "NsUrlSpaceContextFilterEval %s -> %d",
+           Ns_FilterTypeString(why), result);
     return result;
 }
 

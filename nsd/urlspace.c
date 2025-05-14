@@ -404,10 +404,6 @@ static int CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
 static int AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int UrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr,
-                                  struct sockaddr *ipPtr, Ns_Set *set)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
-
 static Ns_ArgProc WalkCallback;
 static Ns_FreeProc UrlSpaceContextSpecFree;
 
@@ -804,7 +800,7 @@ void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, Ns_Set *hea
 /*
  *----------------------------------------------------------------------
  *
- * UrlSpaceContextFromSet --
+ * NsUrlSpaceContextFromSet --
  *
  *      Initialize an NsUrlSpaceContext from an Ns_Set of values, treating
  *      a single "x-ns-ip" entry as a forced client IP override.  If the
@@ -835,8 +831,8 @@ void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, Ns_Set *hea
  *----------------------------------------------------------------------
  */
 
-static int
-UrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct sockaddr *ipPtr, Ns_Set *set)
+int
+NsUrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct sockaddr *ipPtr, Ns_Set *set)
 {
     int         result = TCL_OK;
     const char *ipString = Ns_SetIGet(set, "x-ns-ip");
@@ -846,8 +842,11 @@ UrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct soc
 
         if (validIP > 0) {
             ctxPtr->saPtr = ipPtr;
-        } else {
+        } else if (interp != NULL) {
             Ns_TclPrintfResult(interp, "invalid IP address '%s' specified", ipString);
+            result = TCL_ERROR;
+        } else {
+            Ns_Log(Warning, "invalid IP address '%s' specified", ipString);
             result = TCL_ERROR;
         }
         Ns_SetDeleteKey(set, "x-ns-ip");
@@ -859,7 +858,7 @@ UrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct soc
     ctxPtr->headers = set;
 
     if (Ns_LogSeverityEnabled(Ns_LogUrlspaceDebug)) {
-        UrlSpaceContextPrint("UrlSpaceContextFromSet", ctxPtr);
+        UrlSpaceContextPrint("NsUrlSpaceContextFromSet", ctxPtr);
     }
 
     return result;
@@ -3402,7 +3401,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
                 Ns_Log(Debug, "UrlSpaceGetObjCmd: can't get context from connection, connection not available");
             }
         } else {
-            result = UrlSpaceContextFromSet(interp, &ctx, (struct sockaddr *)&ip, context);
+            result = NsUrlSpaceContextFromSet(interp, &ctx, (struct sockaddr *)&ip, context);
             if (result == TCL_OK) {
                 ctxPtr = &ctx;
             }

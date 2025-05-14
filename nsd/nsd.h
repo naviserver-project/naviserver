@@ -2175,6 +2175,10 @@ NS_EXTERN NsUrlSpaceContextSpec *NsObjToUrlSpaceContextSpec(Tcl_Interp *interp, 
 NS_EXTERN void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, Ns_Set *headers)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN int NsUrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr,
+                                       struct sockaddr *ipPtr, Ns_Set *set)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 /*
  * watchdog.c
  */

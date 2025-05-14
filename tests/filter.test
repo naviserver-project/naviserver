@@ -16,7 +16,7 @@ test ns_register_filter-1.0 {syntax: ns_register_filter} -body {
 
 test ns_register_trace-1.0 {syntax: ns_register_trace} -body {
     ns_register_trace
-} -returnCodes error -result {wrong # args: should be "ns_register_trace /method/ /urlpattern/ /script/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_trace ?-constraints /constraints/? /method/ /urlpattern/ /script/ ?/arg .../?"}
 
 test ns_shortcut_filter-1.0 {syntax: ns_shortcut_filter} -body {
     ns_shortcut_filter
@@ -122,12 +122,17 @@ test filter-2.4 {correct order with context filtering} -setup {
         nsv_lappend . . postauth-2.4
         return filter_ok
     }
-    ns_register_filter  trace GET /filter-2.4 {
+    ns_register_filter -constraints {user-agent *NaviServer*} trace GET /filter-2.4 {
         #ns_log notice /filter-2.1 [ns_set format [ns_conn headers]]
         nsv_lappend . . trace-2.4
         return filter_ok
     }
-    ns_register_trace GET /filter-2.4 {
+    ns_register_filter -constraints {X-NS-ip 42.250.184.195} trace GET /filter-2.4 {
+        #ns_log notice /filter-2.1 [ns_set format [ns_conn headers]]
+        nsv_lappend . . no-trace-2.4
+        return filter_ok
+    }
+    ns_register_trace -constraints {X-NS-ip 42.250.184.195} GET /filter-2.4 {
         nsv_lappend . . voidtrace-2.4
         return filter_ok
     }
@@ -141,7 +146,7 @@ test filter-2.4 {correct order with context filtering} -setup {
 } -cleanup {
     ns_unregister_op GET /filter-2.4
     nsv_unset -nocomplain . .
-} -result {{200 ok} {preauth-2.4 trace-2.4 voidtrace-2.4}}
+} -result {{200 ok} {preauth-2.4 trace-2.4}}
 
 
 
@@ -235,7 +240,7 @@ test filter-5.2 {filter -first} -setup {
     nstest::http -getbody 1 GET /filter-5.2
 } -cleanup {
     ns_unregister_op GET /filter-5.2
-} -result {200 {19 95}}
+} -result {200 {20 100}}
 
 
 

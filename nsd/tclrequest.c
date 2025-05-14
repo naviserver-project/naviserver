@@ -307,12 +307,6 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (specPtr != NULL
-               && (when == NS_FILTER_TRACE || when == NS_FILTER_VOID_TRACE)
-               ) {
-        Ns_TclPrintfResult(interp, "option -constraints not allowed for traces");
-        result = TCL_ERROR;
-
     } else {
         const NsInterp  *itPtr = clientData;
         Ns_TclCallback  *cbPtr;
@@ -399,6 +393,11 @@ NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
     Tcl_Obj    *scriptObj;
     TCL_SIZE_T  remain = 0;
     int         result = TCL_OK;
+    NsUrlSpaceContextSpec *specPtr = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-constraints", Ns_ObjvUrlspaceSpec, &specPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec args[] = {
         {"method",     Ns_ObjvString, &method,     NULL},
         {"urlpattern", Ns_ObjvString, &urlPattern, NULL},
@@ -407,7 +406,7 @@ NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
         const NsInterp *itPtr = clientData;
@@ -417,7 +416,7 @@ NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
                                   scriptObj, remain, objv + ((TCL_SIZE_T)objc - remain));
         (void)Ns_RegisterFilter2(itPtr->servPtr->server, method, urlPattern,
                                  NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr, NS_FALSE,
-                                 NULL);
+                                 specPtr);
     }
     return result;
 }
