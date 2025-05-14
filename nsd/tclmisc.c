@@ -2724,14 +2724,14 @@ IpTrustedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
  * IpInAnyObjCmd --
  *
  *      Implements the "ns_ip inany" command. This command checks whether the
- *      provided IP address is an “any” (unspecified) address. In other words,
+ *      provided IP address is an "any" (unspecified) address. In other words,
  *      it determines if the socket address corresponds to the generic IP
  *      address used to bind a server socket to all available network interfaces
  *      (e.g., INADDR_ANY for IPv4 or in6addr_any for IPv6).
  *
  * Returns:
  *      A standard Tcl result. On success, the command returns a boolean value
- *      indicating whether the IP address is an “any” address.
+ *      indicating whether the IP address is an "any" address.
  *
  * Side Effects:
  *      None.

@@ -4079,10 +4079,10 @@ HttpWaitForSocketEvent(
  * ConfigureProxy --
  *
  *        Parse proxy settings from the given Tcl dictionary (proxyObj).
- *        If proxyObj is NULL or “host” is not set, no proxy is used.
- *        Otherwise extract “host” and “port”, determine whether to tunnel
- *        (always for “https”, or via the “tunnel” key), and set httpProxy
- *        for non‑tunneled “http” requests.
+ *        If proxyObj is NULL or "host" is not set, no proxy is used.
+ *        Otherwise extract "host" and "port", determine whether to tunnel
+ *        (always for "https", or via the "tunnel" key), and set httpProxy
+ *        for non‑tunneled "http" requests.
  *
  * Results:
  *        TCL_OK on success (including no proxy configured),

@@ -1596,7 +1596,7 @@ NsStopSpoolers(void)
  *        1. It is bound directly to that server
  *        2. It specifies this server as its default
  *        3. It is a global driver and the server appears in the
- *           module’s “servers” configuration subsection.
+ *           module’s "servers" configuration subsection.
  *
  * Results:
  *      Returns NS_TRUE if the driver applies to the given server,

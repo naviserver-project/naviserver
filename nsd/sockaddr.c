@@ -950,13 +950,13 @@ Ns_SockaddrPublicIpAddress(const struct sockaddr *saPtr) {
  * Ns_SockaddrInAny --
  *
  *      Determines whether the given socket address represents the
- *      “any” (unspecified) address. For an IPv4 address, this is equivalent to
+ *      "any" (unspecified) address. For an IPv4 address, this is equivalent to
  *      INADDR_ANY (usually 0.0.0.0), and for an IPv6 address, it is equivalent
  *      to the in6addr_any (an all-zero address). The function returns NS_TRUE
  *      if the address is unspecified, and NS_FALSE otherwise.
  *
  * Returns:
- *      NS_TRUE  if the address is the “any” address (i.e., unspecified).
+ *      NS_TRUE  if the address is the "any" address (i.e., unspecified).
  *      NS_FALSE otherwise, including when the address family is neither AF_INET
  *               nor AF_INET6.
  *
