@@ -407,6 +407,7 @@ namespace eval ::revproxy {
         eval $register_callbacks
     }
 
+    set targets {}
     foreach s [ns_configsections] {
         if {[string match ns/server/[ns_info server]/module/revproxy/* [ns_set name $s]]} {
 
@@ -440,6 +441,14 @@ namespace eval ::revproxy {
                     ns_log warning "ignore invalid constraints (most be key/value list): '$c'"
                 } else {
                     lappend constraints $c
+                }
+            }
+            foreach c [ns_set iget -all $s target] {
+                foreach target $c {
+                    if {$target in $targets} {
+                        ns_log warning "revproxy: duplicate target detected: '$target'"
+                    }
+                    append targets $target
                 }
             }
 
