@@ -437,7 +437,7 @@ containing the following keys:
 [list_begin itemized]
 [item] [const headers]: ns_set containing the response header fields.
 [item] [const data]: received data block (part of the response).
-[item] [const outputchan]: (optional) — the name of the output channel, if provided.
+[item] [const outputchan]: (optional) - the name of the output channel, if provided.
 [list_end]
 
 The callback's return value is interpreted as follows:

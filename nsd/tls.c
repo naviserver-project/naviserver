@@ -2656,11 +2656,11 @@ NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
  * NsCertCtlListCmd - subcommand of NsTclCertCtlObjCmd --
  *
  *      Implements the "ns_certctl reload" command for certificate
- *      control.  This function triggers a reload of
- *      certificates—typically in response to a configuration change
- *      or an administrative signal (e.g., SIGHUP).  It scans for
- *      updated certificate files and reloads them into the server's
- *      SSL contexts, ensuring that any changes to certificates are
+ *      control.  This function triggers a reload of certificates -
+ *      typically in response to a configuration change or an
+ *      administrative signal (e.g., SIGHUP).  It scans for updated
+ *      certificate files and reloads them into the server's SSL
+ *      contexts, ensuring that any changes to certificates are
  *      applied without requiring a server restart.
  *
  * Results:

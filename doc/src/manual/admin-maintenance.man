@@ -323,7 +323,7 @@ For more details, see [uri ../../nsperm/files/nsperm.html#section4 "Defining Use
 To further enhance security, consider the following recommendations:
 
 [list_begin itemized]
-[item] Keep NaviServer up to date—use the latest released version.
+[item] Keep NaviServer up to date - use the latest released version.
 
 [item] Consider running NaviServer containerized or within a chroot
        environment.

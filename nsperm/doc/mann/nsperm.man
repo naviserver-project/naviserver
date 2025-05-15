@@ -71,7 +71,7 @@ NaviServer pages directory where they can store content.
 [para]
 
  The format follows that of the standard Unix [const /etc/passwd]
- file; however, NaviServer only utilizes the first two fields—the
+ file; however, NaviServer only utilizes the first two fields - the
  username and the encrypted password. The password is encrypted in the
  same manner as Unix passwords.
 
