@@ -56,8 +56,9 @@ static void FilterLock(NsServer *servPtr, NS_RW rw)
 static void FilterUnlock(NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
-static bool EvaluateContextFilterSpec(const Conn *connPtr, NsUrlSpaceContextSpec *ctxFilterSpec, Ns_FilterType why)
-    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
+static void FilterContextInit(NsUrlSpaceContext *ctxPtr, const Conn *connPtr, struct sockaddr *ipPtr)
+    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 /*
  *----------------------------------------------------------------------
  * FilterLock --
@@ -184,80 +185,51 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
                               proc, when, arg, first, NULL);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * EvaluateContextFilterSpec --
+ * FilterContextInit --
  *
- *      Apply a UrlSpaceContextSpec against a connection’s context.
- *      If connPtr->sockPtr is NULL (e.g. in a trace filter), the peer
- *      address is fetched via Ns_ConnConfiguredPeerAddr and injected as
- *      an "x-ns-ip" header into connPtr->headers; UrlSpaceContextFromSet
- *      is then used to build the context.  Otherwise, the context is
- *      initialized directly from the Sock and headers via
- *      NsUrlSpaceContextInit.  Finally, the spec is evaluated with
- *      NsUrlSpaceContextFilterEval.
+ *      Prepare an NsUrlSpaceContext for use in filter evaluations,
+ *      handling both ordinary socket-based contexts and the special
+ *      case where no Sock is available (e.g. tace filters).  If
+ *      connPtr->sockPtr is NULL, the function will fetch the saved peer
+ *      address via Ns_ConnConfiguredPeerAddr, inject it into connPtr->headers
+ *      under "x-ns-ip", and then use NsUrlSpaceContextFromSet to build ctxPtr.
+ *      Otherwise, it calls NsUrlSpaceContextInit with the live Sock and headers.
  *
  * Parameters:
- *      connPtr         - The Conn whose context is to be tested; may
- *                        lack sockPtr for certain filter stages.
- *      ctxFilterSpec   - The UrlSpaceContextSpec describing header or
- *                        IP constraints.
- *      why             - The filter type (preauth, postauth, trace, etc.)
- *                        used in logging.
+ *      ctxPtr   - Pointer to the NsUrlSpaceContext structure to initialize.
+ *      connPtr  - The Conn from which to derive socket and header information.
+ *      ipPtr    - Storage for a sockaddr to hold the parsed peer IP address
+ *                 in the fallback (NULL-sockPtr) path.
  *
  * Results:
- *      NS_TRUE if the connection satisfies the context constraints (or
- *      if no usable context is available); NS_FALSE if the spec does
- *      not match.
+ *      None.
  *
  * Side Effects:
- *      In the NULL-sockPtr fallback, connPtr->headers is modified to add
- *      an "x-ns-ip" entry.  Logs a debug message with the evaluation result.
+ *      May update connPtr->headers by setting or overwriting the "x-ns-ip" key;
+ *      builds ctxPtr accordingly (including logging at debug level if enabled).
  *
  *----------------------------------------------------------------------
  */
-
-static bool
-EvaluateContextFilterSpec(const Conn *connPtr, NsUrlSpaceContextSpec *ctxFilterSpec, Ns_FilterType why)
+static void
+FilterContextInit(NsUrlSpaceContext *ctxPtr, const Conn *connPtr, struct sockaddr *ipPtr)
 {
-    NsUrlSpaceContext ctx;
-    bool              result;
-    struct NS_SOCKADDR_STORAGE ip;
-
-    NS_NONNULL_ASSERT(ctxFilterSpec != NULL);
+    NS_NONNULL_ASSERT(ctxPtr != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
+    NS_NONNULL_ASSERT(ipPtr != NULL);
 
     if (connPtr->sockPtr == NULL) {
-        /*
-         * No direct Sock available (e.g., in a trace filter).  Fetch the
-         * saved peer address, inject it as x-ns-ip into the request headers,
-         * and build the context via UrlSpaceContextFromSet. This is less
-         * efficient than taking directly the socket address from the sockPtr.
-         */
         (void)Ns_SetIUpdate(connPtr->headers,
                             "x-ns-ip",
                             Ns_ConnConfiguredPeerAddr((Ns_Conn*)connPtr));
-        NsUrlSpaceContextFromSet(NULL, &ctx, (struct sockaddr *)&ip, connPtr->headers);
-#if 0
-        Tcl_DString  ds;
-        Tcl_DStringInit(&ds);
-        (void) NsUrlSpaceContextSpecAppend(&ds, ctxFilterSpec);
-        Ns_Log(Warning, "context spec for filter provided, but no context for this type %s IP %s\n%s",
-               Ns_FilterTypeString(why), p,
-               ds.string);
-        Tcl_DStringFree(&ds);
-        result = NS_FALSE;
-#endif
+        NsUrlSpaceContextFromSet(NULL, ctxPtr, ipPtr, connPtr->headers);
     } else {
-        NsUrlSpaceContextInit(&ctx, connPtr->sockPtr, connPtr->headers);
+        NsUrlSpaceContextInit(ctxPtr, connPtr->sockPtr, connPtr->headers);
     }
-
-    result = NsUrlSpaceContextFilterEval(ctxFilterSpec, &ctx);
-    Ns_Log(Ns_LogUrlspaceDebug, "NsUrlSpaceContextFilterEval %s -> %d",
-           Ns_FilterTypeString(why), result);
-    return result;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -281,12 +253,16 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
     const Filter  *fPtr;
     const Conn    *connPtr;
     Ns_ReturnCode  status;
+    NsUrlSpaceContext ctx;
+    struct NS_SOCKADDR_STORAGE ip;
 
     NS_NONNULL_ASSERT(conn != NULL);
     connPtr = (const Conn *)conn;
     servPtr = connPtr->poolPtr->servPtr;
 
+    FilterContextInit(&ctx, connPtr, (struct sockaddr *)&ip);
     status = NS_OK;
+
     if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
         Ns_ReturnCode filter_status = NS_OK;
 
@@ -298,7 +274,7 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
                 && (Tcl_StringMatch(conn->request.method, fPtr->method) != 0)
                 && (Tcl_StringMatch(conn->request.url, fPtr->url) != 0)
                 && (fPtr->ctxFilterSpec == NULL
-                    || EvaluateContextFilterSpec(connPtr, fPtr->ctxFilterSpec, why)
+                    || NsUrlSpaceContextFilterEval(fPtr->ctxFilterSpec, &ctx)
                     )
                 ) {
                 filter_status = (*fPtr->proc)(fPtr->arg, conn, why);
