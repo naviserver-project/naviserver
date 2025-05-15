@@ -2319,7 +2319,7 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
         }
 #ifdef CONTEXT_FILTER
         /*
-         * When NS_OP_ALLCONSTRAINTS is set, then delete all context contraints.
+         * When NS_OP_ALLCONSTRAINTS is set, then delete all context constraints.
          * TODO: selective context constraint deletion is not implemented.
          */
         if ((flags & NS_OP_ALLCONSTRAINTS) != 0u) {

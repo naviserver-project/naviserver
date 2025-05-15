@@ -184,7 +184,7 @@ specifying multiple key/value pairs as a parameter value.
 When multiple separate [arg constraints]
 parameters are set in a section, these are taken as a disjunction
 (combined with OR). Technically this means, that the pattern is
-registed multiple times, each time with a different constraints value.
+registered multiple times, each time with a different constraints value.
 
 [para] Example with conjunctive context constraints:
 [example_begin]
