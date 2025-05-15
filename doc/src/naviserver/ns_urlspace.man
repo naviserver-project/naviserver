@@ -235,10 +235,12 @@
  (context) information such as the current IP addresses or current
  header fields in the URL space lookup. They’re applied after the
  constraint-less URL match and
- participate in the usual "most specific wins" resolution.
+ participate in the usual "most specific wins" resolution (i.e., if
+ there are multiple definitions for the same method and URL pattern
+ pair, having different context constraints, the most definition is taken).
 
 [para] With context constraints, you can say "I want /foo.adp to map to
- X *only* when this request comes from a Googlebot, and to Y
+ X only when this request comes from a Googlebot, and to Y
  otherwise."  Or "serve internal pages only to clients in our
  corporate subnet."
 

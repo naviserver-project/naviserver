@@ -17,8 +17,8 @@
  Use the [emph revproxy] module to route requests by HTTP method and
  URL pattern to create hybrid deployments: serve some paths directly
  from NaviServer and delegate others to external services.  For
- fine-grained control—such as allowing only authenticated users to
- reach certain backends—you can invoke [cmd revproxy::upstream]
+ fine-grained control - such as allowing only authenticated users to
+ reach certain backends you can invoke [cmd revproxy::upstream]
  directly in server-side code (for example, in OpenACS .vuh pages).
 
 [para]
@@ -121,10 +121,10 @@ with custom timeouts, and uses the target’s Host header on POST:
 
 [example_begin]
  ns_section ns/server/$server/module/revproxy/backend1 {
-   # Required: target URL for this backend
+   # Required: the upstream URL (or list of URLs)
    ns_param target               https://server1.local:8080/
  
-   # Optional: pick connection methods, timeouts, callbacks, headers
+   # Optional: override defaults for various timeouts
    ns_param connecttimeout         2s                     ;# default: 1s
    ns_param receivetimeout         15s                    ;# default: 10s
    ns_param sendtimeout            15s                    ;# default: 10s
@@ -135,8 +135,8 @@ with custom timeouts, and uses the target’s Host header on POST:
  }
 [example_end]
 
- Here, "backend2" handles static files over HTTP with shorter
- timeouts, and is enabled for GET and HEAD requests:
+ In this next snippet, "backend2" serves static files over plain HTTP
+ and uses shorter timeouts; it only accepts GET or HEAD:
 
 [example_begin]
  ns_section ns/server/$server/module/revproxy/backend2 {
@@ -163,13 +163,70 @@ after removing the prefix "/shiny" from the URL.
  }
 [example_end]
 
+[subsection {Conditional Requests}]
+
+You can make forwarding conditional on headers or client IP using
+[uri ../../naviserver/files/ns_urlspace.html#section5 "Context Constraints"].
+The example below only forwards "*.php" URLs when the incoming
+request has an "X-User" header matching "*admin*":
+
+[example_begin]
+ ns_section ns/server/$server/module/revproxy/backend4 {
+   ns_param target               https://server4.local/
+   ns_param constraints          {X-User *admin*}
+   ns_param map "GET  /*.php"
+   ns_param map "POST /*.php"
+ }
+[example_end]
+
+Conjunctive (AND combined) context constraints can be defined by
+specifying multiple key/value pairs as a parameter value.
+When multiple separate [arg constraints]
+parameters are set in a section, these are taken as a disjunction
+(combined with OR). Technically this means, that the pattern is
+registed multiple times, each time with a different constraints value.
+
+[para] Example with conjunctive context constraints:
+[example_begin]
+ ...
+ # AND: both constraints must match for all mapped patterns
+ ns_param constraints {X-Foo A X-Bar B}
+ ns_param map "GET /foo/*"
+ ns_param map "POST /foo/*"
+ ...
+[example_end]
+
+[para] Example with disjunctive context constraints:
+[example_begin]
+  ...
+ # OR: either header matches
+ ns_param constraints {X-Foo A}
+ ns_param constraints {X-Bar B}
+ ns_param map "GET /foo/*"
+ ns_param map "POST /foo/*"
+ ...
+[example_end]
+
+You can also attach constraints directly to individual map entries,
+keeping other maps unconstrained:
+
+[example_begin]
+ ...
+ # GET is not constraint
+ ns_param map "GET /qux/*"
+ 
+ # DELETE is (has to come form the given IP range)
+ ns_param map "DELETE /qux/* {-constraints {x-ns-ip 10.0.0.0/8}}"
+ ...
+[example_end]
 
 
 [subsection {Example: Using the API directly to a Register the Reverse
 Proxy via a Request Handler}]
 
-Forward [term "GET /doc/*"] requests to two backend servers with a
-20-second connect timeout:
+You can also register revproxy backends directly from Tcl rather than
+in separate sections. For example, this snippet distributes GET "/doc/*"
+requests round-robin between two backends, with a 20 s connect timeout:
 
 [example_begin]
  ns_section ns/server/default/module/revproxy {
@@ -183,7 +240,7 @@ Forward [term "GET /doc/*"] requests to two backend servers with a
 [example_end]
 
 [para]
-This configuration uses simple load distribution across multiple
+This setup uses simple load distribution across multiple
 backends (round-robin). Failover checks (health checks) for the
 backends are currently not performed.
 
@@ -702,6 +759,6 @@ by defining appropriate mapping rules.
 
 [see_also ns_register ns_http ns_connchan]
 [keywords "reverse proxy" proxy filter handler request HTTP-client \
-        HTTP HTTPS logging module nsf configuration ]
+        HTTP HTTPS logging module nsf configuration "context constraints"]
 
 [manpage_end]

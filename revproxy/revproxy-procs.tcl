@@ -434,6 +434,15 @@ namespace eval ::revproxy {
                     lappend defaults -$parameter [ns_set get $s $parameter]
                 }
             }
+            set constraints ""
+            foreach c [ns_set iget -all $s constraints] {
+                if {[llength $c] % 2 != 0} {
+                    ns_log warning "ignore invalid constraints (most be key/value list): '$c'"
+                } else {
+                    lappend constraints $c
+                }
+            }
+
             foreach map [ns_set get -all $s map] {
                 lassign $map method path params
                 set arguments [dict merge $defaults $params]
@@ -450,12 +459,19 @@ namespace eval ::revproxy {
                     lappend arguments -insecure
                 }
                 if {$type eq "proc"} {
-                    set cmd [list ns_register_proc $method $path ::revproxy::upstream $type {*}$arguments]
+                    set baseCmd [list ns_register_proc $method $path ::revproxy::upstream $type {*}$arguments]
                 } else {
-                    set cmd [list ns_register_filter $type $method $path ::revproxy::upstream {*}$arguments]
+                    set baseCmd [list ns_register_filter $type $method $path ::revproxy::upstream {*}$arguments]
                 }
-                ns_log notice REVPROY [ns_set name $s]: \n$cmd\n
-                eval $cmd
+
+                if {[llength $constraints] == 0} {
+                    set constraints [list ""]
+                }
+                foreach c $constraints {
+                    set cmd [expr {$c ne "" ? [linsert $baseCmd 1 -constraints $c] : $baseCmd}]
+                    ns_log notice "REVPROXY [ns_set name $s]:\n$cmd\n"
+                    eval $cmd
+                }
             }
         }
     }
