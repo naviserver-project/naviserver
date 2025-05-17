@@ -1057,6 +1057,15 @@ typedef struct NsServer {
     Tcl_HashTable hosts;
 } NsServer;
 
+typedef Ns_ReturnCode (*NsHashValueProc)(void *hashValue, void *ctx);
+typedef Ns_ReturnCode (*NsHashKeyValueProc)(void *hashKey, void *hashValue, void *ctx);
+
+NS_EXTERN Ns_ReturnCode NsForeachHashValue(Tcl_HashTable *tablePtr, NsHashValueProc fn, void *ctx)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN Ns_ReturnCode NsForeachHashKeyValue(Tcl_HashTable *tablePtr, NsHashKeyValueProc fn, void *ctx)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * The following structure is allocated for each interp.
  */

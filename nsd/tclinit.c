@@ -387,14 +387,12 @@ Ns_TclCreateInterp(void)
 int
 Ns_TclInit(Tcl_Interp *interp)
 {
-    NsServer *servPtr = NsGetServer(NULL);
-
     NS_NONNULL_ASSERT(interp != NULL);
 
     /*
      * Associate the interp data with the current interpreter.
      */
-    (void)NewInterpData(interp, servPtr);
+    (void)NewInterpData(interp, NULL);
 
     return TCL_OK;
 }
@@ -978,6 +976,21 @@ Ns_TclInterpServer(Tcl_Interp *interp)
     itPtr = NsGetInterpData(interp);
     if (itPtr != NULL && itPtr->servPtr != NULL) {
         result = itPtr->servPtr->server;
+    }
+    return result;
+}
+
+const Ns_Server *
+Ns_TclInterpServPtr(Tcl_Interp *interp)
+{
+    const NsInterp  *itPtr;
+    const Ns_Server *result = NULL;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+
+    itPtr = NsGetInterpData(interp);
+    if (itPtr != NULL) {
+        result = (const Ns_Server *)itPtr->servPtr;
     }
     return result;
 }
@@ -2523,6 +2536,88 @@ DeleteInterps(void *arg)
     }
     Tcl_DeleteHashTable(tablePtr);
     ns_free(tablePtr);
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsForeachHashValue --
+ *
+ *      Iterate over every entry in a Tcl_HashTable and invoke a user-supplied
+ *      function on each entry’s value.
+ *
+ * Parameters:
+ *      tablePtr   – pointer to the Tcl_HashTable to traverse.
+ *      fn         – callback of type NsHashValueProc, called as fn(value, ctx).
+ *      ctx        – user-provided context passed through to fn.
+ *
+ * Results:
+ *      Returns NS_OK if all invocations of fn returned NS_OK. If fn returns
+ *      any other Ns_ReturnCode, iteration stops immediately and that code
+ *      is returned.
+ *
+ * Side Effects:
+ *      Arbitrary, depending on what fn does.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode NsForeachHashValue(Tcl_HashTable *tablePtr, NsHashValueProc fn, void *ctx)
+{
+    Ns_ReturnCode result = NS_OK;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
+
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    while (hPtr != NULL) {
+        result = fn(Tcl_GetHashValue(hPtr), ctx);
+        if (result != NS_OK) {
+            break;
+        }
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsForeachHashKeyValue --
+ *
+ *      Iterate over every entry in a Tcl_HashTable and invoke a user-supplied
+ *      function on each entry’s key and value.
+ *
+ * Parameters:
+ *      tablePtr   – pointer to the Tcl_HashTable to traverse.
+ *      fn         – callback of type NsHashKeyValueProc, called as
+ *                   fn(key, value, ctx).
+ *      ctx        – user-provided context passed through to fn.
+ *
+ * Results:
+ *      Returns NS_OK if all invocations of fn returned NS_OK. If fn returns
+ *      any other Ns_ReturnCode, iteration stops immediately and that code
+ *      is returned.
+ *
+ * Side Effects:
+ *      Arbitrary, depending on what fn does.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode NsForeachHashKeyValue(Tcl_HashTable *tablePtr, NsHashKeyValueProc fn, void *ctx)
+{
+    Ns_ReturnCode result = NS_OK;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
+
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    while (hPtr != NULL) {
+        result = fn(Tcl_GetHashKey(tablePtr, hPtr), Tcl_GetHashValue(hPtr), ctx);
+        if (result != NS_OK) {
+            break;
+        }
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+
+    return result;
 }
 
 /*

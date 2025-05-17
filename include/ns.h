@@ -257,6 +257,7 @@ typedef struct Ns_TaskQueue     Ns_TaskQueue;
 typedef struct Ns_Task          Ns_Task;
 typedef struct Ns_EventQueue    Ns_EventQueue;
 typedef struct Ns_Event         Ns_Event;
+typedef struct Ns_Server        Ns_Server;
 
 #define NS_CACHE_MAX_TRANSACTION_DEPTH 16
 
@@ -3483,6 +3484,10 @@ Ns_TclLibrary(const char *server);
 NS_EXTERN const char *
 Ns_TclInterpServer(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
+
+NS_EXTERN const Ns_Server *
+Ns_TclInterpServPtr(Tcl_Interp *interp)
+    NS_GNUC_NONNULL(1)
 
 NS_EXTERN Ns_ReturnCode
 Ns_TclInitModule(const char *server, const char *module)
