@@ -1111,7 +1111,6 @@ void NsDriverMapVirtualServers(void)
         }
     }
     Tcl_DeleteHashTable(&serverTable);
-
 }
 
 /*
@@ -2420,7 +2419,13 @@ DriverClose(Sock *sockPtr)
     (*sockPtr->drvPtr->closeProc)((Ns_Sock *) sockPtr);
 }
 
-
+static Ns_ReturnCode
+EnsureRunningCB(void *hashValue, void *UNUSED(ctx))
+{
+    NsEnsureRunningConnectionThreads(hashValue, NULL);
+    return NS_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2607,7 +2612,7 @@ DriverThread(void *arg)
          * just for safety reasons) or on explicit wakeup calls.
          */
         if ((nrWaiting == 0) || reanimation) {
-            NsServer *servPtr = drvPtr->servPtr;
+            const NsServer *servPtr = drvPtr->servPtr;
 
             if (servPtr != NULL) {
                 /*
@@ -2616,20 +2621,10 @@ DriverThread(void *arg)
                 NsEnsureRunningConnectionThreads(servPtr, NULL);
 
             } else {
-                Ns_Set *servers = Ns_ConfigGetSection("ns/servers");
-                size_t  j;
-
                 /*
                  * Reanimation check on all servers.
                  */
-                for (j = 0u; j < Ns_SetSize(servers); ++j) {
-                    const char *server = Ns_SetKey(servers, j);
-
-                    servPtr = NsGetServer(server);
-                    if (servPtr != NULL) {
-                        NsEnsureRunningConnectionThreads(servPtr, NULL);
-                    }
-                }
+                NsForeachHashValue(&nsconf.servertable, EnsureRunningCB, NULL);
             }
         }
 
@@ -6602,6 +6597,22 @@ WriterSend(WriterSock *curPtr, int *err) {
  *
  *----------------------------------------------------------------------
  */
+static ConnPoolInfo *ConnPoolInfoNew(ConnPool *poolPtr)
+{
+    ConnPoolInfo *result = ns_malloc(sizeof(ConnPoolInfo));
+
+    result->currentPoolRate = 0;
+    result->threadSlot = NsPoolAllocateThreadSlot(poolPtr, Ns_ThreadId());
+
+    return result;
+}
+
+static Ns_ReturnCode ConnPoolInfoFreeCB(void *hashValue, void *UNUSED(ctx))
+{
+    ns_free(hashValue);
+    return NS_OK;
+}
+
 static ConnPoolInfo *
 WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
 {
@@ -6617,10 +6628,7 @@ WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
             /*
              * This is a pool that we have not seen yet.
              */
-            curPtr->infoPtr = ns_malloc(sizeof(ConnPoolInfo));
-            curPtr->infoPtr->currentPoolRate = 0;
-            curPtr->infoPtr->threadSlot =
-                NsPoolAllocateThreadSlot(curPtr->poolPtr, Ns_ThreadId());
+            curPtr->infoPtr = ConnPoolInfoNew(curPtr->poolPtr);
             Tcl_SetHashValue(hPtr, curPtr->infoPtr);
             Ns_Log(DriverDebug, "poollimit: pool '%s' allocate infoPtr with slot %lu poolLimit %d",
                    curPtr->poolPtr->pool,
@@ -6634,6 +6642,110 @@ WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
     return curPtr->infoPtr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnPoolInfoResetRateCB --
+ *
+ *      Reset the currentPoolRate to zero for a new accumulation pass.
+ *
+ * Results:
+ *      Always returns NS_OK.
+ *
+ * Side Effects:
+ *      Sets infoPtr->currentPoolRate = 0.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ConnPoolInfoResetRateCB(void *hashValue, void *UNUSED(ctx))
+{
+    ((ConnPoolInfo *)hashValue)->currentPoolRate = 0;
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnPoolInfoUpdateCB --
+ *
+ *      Called for each (ConnPool → ConnPoolInfo) mapping to recalculate
+ *      how much bandwidth the current writer thread should be allowed
+ *      to use in this pool.
+ *
+ * Parameters:
+ *      hashKey    – pointer to the ConnPool being updated.
+ *      hashValue  – pointer to the ConnPoolInfo holding per-thread state.
+ *      ctx        – unused.
+ *
+ * Results:
+ *      Always returns NS_OK.
+ *
+ * Side Effects:
+ *      - Computes totalPoolRate across all writer threads for this pool.
+ *      - Determines threadDeltaRate (evenly splitting remaining capacity).
+ *      - Sets infoPtr->deltaPercentage to one-tenth of that delta,
+ *        clamped to not go below –50%.
+ *      - Logs a Notice message if the pool is active.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ConnPoolInfoUpdateCB(void *hashKey, void *hashValue, void *UNUSED(ctx))
+{
+    ConnPool     *poolPtr = hashKey;
+    ConnPoolInfo *infoPtr = hashValue;
+    int           totalPoolRate, writerThreadCount, threadDeltaRate;
+
+    /*
+     * Compute the following indicators:
+     *   - totalPoolRate: accumulated pool rates from all writer threads.
+     *
+     *   - threadDeltaRate: how much of the available bandwidth can i used
+     *     the current thread. We assume that the distribution of writers
+     *     between all writer threads is even, so we can split the
+     *     available rate by the number of writer threads working on this
+     *     pool.
+     *
+     *  - deltaPercentage: adjust in a single iteration just a fraction
+     *    (e.g. 10 percent) of the potential change. This function is
+     *    called often enough to justify delayed adjustments.
+     */
+    totalPoolRate = NsPoolTotalRate(poolPtr,
+                                    infoPtr->threadSlot,
+                                    infoPtr->currentPoolRate,
+                                    &writerThreadCount);
+
+    /*
+     * If nothing is going on, allow a thread the full rate.
+     */
+    if (infoPtr->currentPoolRate == 0) {
+        threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate);
+    } else {
+        threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate) / writerThreadCount;
+    }
+    infoPtr->deltaPercentage = threadDeltaRate / 10;
+    if (infoPtr->deltaPercentage < -50) {
+        infoPtr->deltaPercentage = -50;
+    }
+
+    if (totalPoolRate > 0) {
+        Ns_Log(Notice, "... pool '%s' thread's pool rate %d total pool rate %d limit %d "
+               "(#%d writer threads) -> computed rate %d (%d%%) ",
+               NsPoolName(poolPtr->pool),
+               infoPtr->currentPoolRate,
+               totalPoolRate,
+               poolPtr->rate.poolLimit,
+               writerThreadCount,
+               threadDeltaRate,
+               infoPtr->deltaPercentage
+               );
+    }
+    return NS_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6641,17 +6753,24 @@ WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
  *
  *      Compute current bandwidths per pool and writer.
  *
- *      Since we have potentially multiple writer threads running, all these
- *      might have writer threads of the same pool. In order to minimize
- *      locking, we compute first writer thread specific subresults and combine
- *      these later with with the results of the other threads.
+ *      For a linked list of writer sockets in this thread, compute and update
+ *      per-pool rate information:
+ *        1. Reset each pool’s accumulated rate.
+ *        2. Walk the writer list, adding each writer’s currentRate to its
+ *           ConnPoolInfo.
+ *        3. Invoke ConnPoolInfoUpdateCB on every pool so that deltaPercentage
+ *           is recomputed based on global pool limits and thread counts.
+ *
+ * Parameters:
+ *      writePtr   – first WriterSock in the thread’s list of active writers.
+ *      pools      – Tcl_HashTable mapping ConnPool* → ConnPoolInfo*.
  *
  * Results:
  *      None.
  *
- * Side effects:
- *      Connections are accepted and their SockPtr is set to NULL
- *      such that closing actual connection does not close the socket.
+ * Side Effects:
+ *      Updates the ConnPoolInfo entries in ‘pools’ and emits log messages
+ *      at DriverDebug and Notice levels.
  *
  *----------------------------------------------------------------------
  */
@@ -6660,26 +6779,17 @@ static void
 WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
 {
     WriterSock     *curPtr;
-    Tcl_HashSearch  search;
-    Tcl_HashEntry  *hPtr;
 
     NS_NONNULL_ASSERT(writePtr != NULL);
     NS_NONNULL_ASSERT(pools != NULL);
 
     /*
-     * First reset pool total rate.  We keep the bandwidth managed pools in a
-     * thread-local memory. Before, we accumulate the data, we reset it.
+     * Reset all pool rates.
      */
-    hPtr = Tcl_FirstHashEntry(pools, &search);
-    while (hPtr != NULL) {
-        ConnPoolInfo *infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
-        infoPtr->currentPoolRate = 0;
-        hPtr = Tcl_NextHashEntry(&search);
-    }
+    NsForeachHashValue(pools, ConnPoolInfoResetRateCB, NULL);
 
     /*
-     * Sum the actual rates per bandwidth limited pool for all active writer
-     * jobs.
+     * Accumulate per-writer currentRate
      */
     for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
         /*
@@ -6700,63 +6810,9 @@ WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
     }
 
     /*
-     * Now iterate over the pools used by this thread and sum the specific
-     * pool rates from all writer threads.
+     * Recompute delta percentages using global writer counts.
      */
-    hPtr = Tcl_FirstHashEntry(pools, &search);
-    while (hPtr != NULL) {
-        ConnPool     *poolPtr = (ConnPool *)Tcl_GetHashKey(pools, hPtr);
-        int           totalPoolRate, writerThreadCount, threadDeltaRate;
-        ConnPoolInfo *infoPtr;
-
-        /*
-         * Compute the following indicators:
-         *   - totalPoolRate: accumulated pool rates from all writer threads.
-         *
-         *   - threadDeltaRate: how much of the available bandwidth can i used
-         *     the current thread. We assume that the distribution of writers
-         *     between all writer threads is even, so we can split the
-         *     available rate by the number of writer threads working on this
-         *     pool.
-         *
-         *  - deltaPercentage: adjust in a single iteration just a fraction
-         *    (e.g. 10 percent) of the potential change. This function is
-         *    called often enough to justify delayed adjustments.
-         */
-        infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
-        totalPoolRate = NsPoolTotalRate(poolPtr,
-                                        infoPtr->threadSlot,
-                                        infoPtr->currentPoolRate,
-                                        &writerThreadCount);
-
-        /*
-         * If nothing is going on, allow a thread the full rate.
-         */
-        if (infoPtr->currentPoolRate == 0) {
-            threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate);
-        } else {
-            threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate) / writerThreadCount;
-        }
-        infoPtr->deltaPercentage = threadDeltaRate / 10;
-        if (infoPtr->deltaPercentage < -50) {
-            infoPtr->deltaPercentage = -50;
-        }
-
-        if (totalPoolRate > 0) {
-            Ns_Log(Notice, "... pool '%s' thread's pool rate %d total pool rate %d limit %d "
-                   "(#%d writer threads) -> computed rate %d (%d%%) ",
-                   NsPoolName(poolPtr->pool),
-                   infoPtr->currentPoolRate,
-                   totalPoolRate,
-                   poolPtr->rate.poolLimit,
-                   writerThreadCount,
-                   threadDeltaRate,
-                   infoPtr->deltaPercentage
-                   );
-        }
-
-        hPtr = Tcl_NextHashEntry(&search);
-    }
+    NsForeachHashKeyValue(pools, ConnPoolInfoUpdateCB, NULL);
 }
 
 /*
@@ -7103,22 +7159,15 @@ WriterThread(void *arg)
     }
     PollFree(&pdata);
 
-    {
-        /*
-         * Free ConnPoolInfo
-         */
-        Tcl_HashSearch  search;
-        Tcl_HashEntry  *hPtr = Tcl_FirstHashEntry(&pools, &search);
-        while (hPtr != NULL) {
-            ConnPoolInfo *infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
-            ns_free(infoPtr);
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        /*
-         * Delete the hash table for pools.
-         */
-        Tcl_DeleteHashTable(&pools);
-    }
+    /*
+     * Free ConnPoolInfo
+     */
+    NsForeachHashValue(&pools, ConnPoolInfoFreeCB, NULL);
+        
+    /*
+     * Delete the hash table for pools.
+     */
+    Tcl_DeleteHashTable(&pools);
 
     /*fprintf(stderr, "==== writerthread exits queuePtr %p writePtr %p\n",
             (void*)queuePtr->sockPtr,
