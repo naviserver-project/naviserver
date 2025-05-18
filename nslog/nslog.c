@@ -61,6 +61,7 @@ typedef struct {
     struct sockaddr            *ipv6maskPtr;
 #endif
     Tcl_DString   buffer;
+    bool serverRootProcEnabled;
 } Log;
 
 /*
@@ -145,6 +146,7 @@ Ns_ModuleInit(const char *server, const char *module)
     logPtr->module = module;
     logPtr->server = server;
     logPtr->fd = NS_INVALID_FD;
+    logPtr->serverRootProcEnabled = Ns_ServerRootProcEnabled(server);
     Ns_MutexInit(&logPtr->lock);
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Tcl_DStringInit(&logPtr->buffer);
@@ -154,7 +156,7 @@ Ns_ModuleInit(const char *server, const char *module)
     {
         Tcl_DStringInit(&ds);
         Ns_Log(Notice, "nslog: ModuleInit rootproc enabled %d fd %d server '%s' serverpath <%s> server logdir <%s>",
-               Ns_ServerRootProcEnabled(server),
+               logPtr->serverRootProcEnabled,
                logPtr->fd,
                server,
                Ns_ServerPath(&ds, server, NS_SENTINEL),
@@ -174,9 +176,9 @@ Ns_ModuleInit(const char *server, const char *module)
          * Create the serverLogDir only when we have no ServerRootProcEnabled.
          */
         Ns_Log(Debug, "logfilename <%s> serverrootproc enabled %d", logPtr->filename,
-               Ns_ServerRootProcEnabled(server));
+               logPtr->serverRootProcEnabled);
 
-        if (!Ns_ServerRootProcEnabled(server)) {
+        if (!logPtr->serverRootProcEnabled) {
             if (Ns_RequireDirectory(serverLogDir) != NS_OK) {
                 Ns_Fatal("nslog: log directory '%s' could not be created", serverLogDir);
             }
@@ -272,7 +274,7 @@ Ns_ModuleInit(const char *server, const char *module)
      *  Open the log and register the trace
      */
 
-    if (!Ns_ServerRootProcEnabled(server) && LogOpen(logPtr) != NS_OK) {
+    if (!logPtr->serverRootProcEnabled && LogOpen(logPtr) != NS_OK) {
         return NS_ERROR;
     }
 
@@ -789,7 +791,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     Tcl_DStringInit(dsPtr);
 
-    if (Ns_ServerRootProcEnabled(server)) {
+    if (logPtr->serverRootProcEnabled) {
         const char *section = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
         const char *filename = Ns_ConfigGetValue(section, "file"), *fullFilename;
 
@@ -1117,7 +1119,7 @@ LogClose(void *arg)
     Ns_ReturnCode status = NS_OK;
     Log          *logPtr = arg;
 
-    if (Ns_ServerRootProcEnabled(logPtr->server)) {
+    if (logPtr->serverRootProcEnabled) {
         status = Ns_ServerLogCloseAll(logPtr->server, logType);
     }
 
@@ -1196,9 +1198,9 @@ LogRoll(void *arg)
     Log          *logPtr = (Log *)arg;
 
     Ns_Log(Notice, "nslog: roll server '%s', rootproc enabled %d",
-           logPtr->server, Ns_ServerRootProcEnabled(logPtr->server));
+           logPtr->server, logPtr->serverRootProcEnabled);
 
-    if (Ns_ServerRootProcEnabled(logPtr->server)) {
+    if (logPtr->serverRootProcEnabled) {
         status = Ns_ServerLogRollAll(logPtr->server, logType, logPtr->rollfmt, logPtr->maxbackup);
 
     } else {
