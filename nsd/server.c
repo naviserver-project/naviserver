@@ -972,8 +972,7 @@ Ns_ServerLogCloseAll(const char *server, const void *handle)
     Ns_ReturnCode result = NS_OK;
     NsServer     *servPtr = NsGetServer(server);
 
-    Ns_Log(Notice, "logfile closeall server '%s' %s",
-           likely(server != NULL) ? server : "NONE", (char*)handle);
+    Ns_Log(Notice, "logfile closeall server '%s' %s", server, (char*)handle);
 
     if (servPtr != NULL) {
         Tcl_HashSearch   search;
@@ -1038,8 +1037,7 @@ Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt,
     Ns_ReturnCode result = NS_OK;
     NsServer     *servPtr = NsGetServer(server);
 
-    Ns_Log(Notice, "logfile rollall server '%s' %s",
-           likely(server != NULL) ? server : "NONE", (char *)handle);
+    Ns_Log(Notice, "logfile rollall server '%s' %s", server, (char *)handle);
 
     if (servPtr != NULL) {
         Tcl_HashSearch       search;

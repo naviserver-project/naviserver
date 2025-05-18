@@ -691,8 +691,8 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
             objsPtr = ipagePtr->cacheObjs;
         }
 
-        Ns_Log(Debug, "AdpSource calls AdpExec nblocks %d with objc %d codePtr->text <%s>",
-               codePtr->nblocks, objc, codePtr->text.string);
+        Ns_Log(Debug, "AdpSource calls AdpExec nblocks %d with objc %ld codePtr->text <%s>",
+               codePtr->nblocks, (long)objc, codePtr->text.string);
 
         result = AdpExec(itPtr, objc, objv, file, codePtr, objsPtr, outputPtr, &st);
         Ns_MutexLock(&servPtr->adp.pagelock);

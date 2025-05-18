@@ -3050,8 +3050,8 @@ CryptoAeadStringGetArguments(
 
             *tagStringPtr = (char *)Ns_GetBinaryString(tagObj, 1 /*isBinary == 1*/, tagLengthPtr, tagDsPtr);
             if (*tagLengthPtr != 16) {
-                Ns_Log(Error, "aead: invalid tag length %d (isBinary %d, objType %s, objLength %d)\n",
-                       *tagLengthPtr, isBinary, objType, objLength);
+                Ns_Log(Error, "aead: invalid tag length %ld (isBinary %d, objType %s, objLength %ld)\n",
+                       (long)*tagLengthPtr, isBinary, objType, (long)objLength);
             }
         } else {
             *tagStringPtr = NULL;

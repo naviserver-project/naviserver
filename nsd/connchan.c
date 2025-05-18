@@ -1941,9 +1941,11 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
             char    fnbuffer[256];
             ssize_t bytes_written;
 
-            snprintf(fnbuffer, sizeof(fnbuffer), "\n%" PRIxPTR " WRITE close, total written %ld rejected %ld wbuffer %d waddr %p\n",
+            snprintf(fnbuffer, sizeof(fnbuffer), "\n%" PRIxPTR " WRITE close,"
+                     " total written %ld rejected %ld wbuffer %ld waddr %p\n",
                      Ns_ThreadId(), connChanPtr->wBytes, connChanPtr->sockPtr->sendRejected,
-                     ConnChanBufferSize(connChanPtr,sendBuffer), ConnChanBufferAddress(connChanPtr,sendBuffer));
+                     (long)ConnChanBufferSize(connChanPtr,sendBuffer),
+                     ConnChanBufferAddress(connChanPtr,sendBuffer));
             bytes_written = write(connChanPtr->debugFD, fnbuffer, strlen(fnbuffer));
             (void)bytes_written;
 
@@ -2675,9 +2677,9 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
         if (msgLength > 0) {
             RequireDsBuffer(&connChanPtr->secondarySendBuffer);
             Tcl_DStringAppend(connChanPtr->secondarySendBuffer, msgString, msgLength);
-            Ns_Log(Notice, "REJECT HANDLING %s (%d,%ld): init secondary send buffer len %d with msgLength %d",
+            Ns_Log(Notice, "REJECT HANDLING %s (%d,%ld): init secondary send buffer len %ld with msgLength %ld",
                    connChanPtr->channelName, connChanPtr->sockPtr->sock, connChanPtr->sockPtr->sendCount,
-                   connChanPtr->secondarySendBuffer->length, msgLength);
+                   (long)connChanPtr->secondarySendBuffer->length, (long)msgLength);
         }
 
         iovecs[0].iov_base = (void *)connChanPtr->sockPtr->sendRejectedBase;
@@ -2697,9 +2699,9 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
          * data to it and treat the content of the secondary buffer as
          * the new message.
          */
-        Ns_Log(Notice, "REJECT HANDLING %s (%d,%ld): concatenate secondary buffer len %d with msgLength %d",
+        Ns_Log(Notice, "REJECT HANDLING %s (%d,%ld): concatenate secondary buffer len %ld with msgLength %ld",
                connChanPtr->channelName, connChanPtr->sockPtr->sock, connChanPtr->sockPtr->sendCount,
-               connChanPtr->secondarySendBuffer->length, msgLength);
+               (long)connChanPtr->secondarySendBuffer->length, (long)msgLength);
         Tcl_DStringAppend(connChanPtr->secondarySendBuffer, msgString, msgLength);
 
         msgString = connChanPtr->secondarySendBuffer->string;
@@ -2869,10 +2871,10 @@ DebugLogBufferState(NsConnChan *connChanPtr, size_t bytesToSend, ssize_t bytesSe
         va_end(args);
         bytes_written = write(connChanPtr->debugFD, logMsg, strlen(logMsg));
 
-        snprintf(logMsg, sizeof(logMsg), " total written %ld rejected %ld wbuffer %d waddr %p\n",
+        snprintf(logMsg, sizeof(logMsg), " total written %ld rejected %ld wbuffer %ld waddr %p\n",
                  connChanPtr->wBytes,
                  connChanPtr->sockPtr->sendRejected,
-                 ConnChanBufferSize(connChanPtr,sendBuffer),
+                 (long)ConnChanBufferSize(connChanPtr,sendBuffer),
                  ConnChanBufferAddress(connChanPtr,sendBuffer));
         bytes_written = write(connChanPtr->debugFD, logMsg, strlen(logMsg));
 
@@ -2992,11 +2994,11 @@ CompactBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T msgLen
 
             if (connChanPtr->sockPtr->sendRejected > 0) {
                 Ns_Log(Notice, "NsConnChanWrite sock %d rejected data (%ld): "
-                       "toSend %ld, case %d, send buffer length %d bytesSent %ld (length > bytesSent -> %d): "
+                       "toSend %ld, case %d, send buffer length %ld bytesSent %ld (length > bytesSent -> %d): "
                        "reset the send buffer",
                        connChanPtr->sockPtr->sock, connChanPtr->sockPtr->sendRejected,
                        toSend, caseInt,
-                       bufferedDataLen, bytesSent,
+                       (long)bufferedDataLen, bytesSent,
                        bufferedDataLen > (TCL_SIZE_T)bytesSent);
             }
 
