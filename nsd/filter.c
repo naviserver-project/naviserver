@@ -114,9 +114,11 @@ FilterUnlock(NsServer *servPtr) {
 
 /*
  *----------------------------------------------------------------------
- * Ns_RegisterFilter --
+ * Ns_RegisterFilter, Ns_RegisterFilter2 --
  *
  *      Register a filter function to handle a method/URL combination.
+ *      Ns_RegisterFilter2() does the hard work, Ns_RegisterFilter() is
+ *      legacy, mostly to provide compatibility for modules.
  *
  * Results:
  *      Returns a pointer to an opaque object that contains the filter
@@ -269,7 +271,6 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
         FilterLock(servPtr, NS_READ);
         fPtr = servPtr->filter.firstFilterPtr;
         while (fPtr != NULL && filter_status == NS_OK) {
-
             if (unlikely(fPtr->when == why)
                 && (Tcl_StringMatch(conn->request.method, fPtr->method) != 0)
                 && (Tcl_StringMatch(conn->request.url, fPtr->url) != 0)
@@ -541,70 +542,59 @@ NewTrace(Ns_TraceProc *proc, void *arg)
  */
 
 void
-NsGetFilters(Tcl_DString *dsPtr, const char *server)
+NsGetFilters(Tcl_DString *dsPtr, const NsServer *servPtr)
 {
-    const NsServer *servPtr;
+    const Filter *fPtr;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
-    servPtr = NsGetServer(server);
+    for (fPtr = servPtr->filter.firstFilterPtr; fPtr != NULL; fPtr = fPtr->nextPtr) {
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, fPtr->method);
+        Tcl_DStringAppendElement(dsPtr, fPtr->url);
 
-    if (servPtr != NULL) {
-        const Filter *fPtr;
-
-        for (fPtr = servPtr->filter.firstFilterPtr; fPtr != NULL; fPtr = fPtr->nextPtr) {
-            Tcl_DStringStartSublist(dsPtr);
-            Tcl_DStringAppendElement(dsPtr, fPtr->method);
-            Tcl_DStringAppendElement(dsPtr, fPtr->url);
-
-            switch (fPtr->when) {
-            case NS_FILTER_PRE_AUTH:
-                Tcl_DStringAppendElement(dsPtr, "preauth");
-                break;
-            case NS_FILTER_POST_AUTH:
-                Tcl_DStringAppendElement(dsPtr, "postauth");
-                break;
-            case NS_FILTER_VOID_TRACE:
-            case NS_FILTER_TRACE:
-                Tcl_DStringAppendElement(dsPtr, "trace");
-                break;
-            }
-            Ns_GetProcInfo(dsPtr, (ns_funcptr_t)fPtr->proc, fPtr->arg);
-            Tcl_DStringEndSublist(dsPtr);
+        switch (fPtr->when) {
+        case NS_FILTER_PRE_AUTH:
+            Tcl_DStringAppendElement(dsPtr, "preauth");
+            break;
+        case NS_FILTER_POST_AUTH:
+            Tcl_DStringAppendElement(dsPtr, "postauth");
+            break;
+        case NS_FILTER_VOID_TRACE:
+        case NS_FILTER_TRACE:
+            Tcl_DStringAppendElement(dsPtr, "trace");
+            break;
         }
+        Ns_GetProcInfo(dsPtr, (ns_funcptr_t)fPtr->proc, fPtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
     }
 }
 
 void
-NsGetTraces(Tcl_DString *dsPtr, const char *server)
+NsGetTraces(Tcl_DString *dsPtr, const NsServer *servPtr)
 {
-    const NsServer *servPtr;
+    const Trace *tracePtr;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
-    servPtr = NsGetServer(server);
-    if (likely(servPtr != NULL)) {
-        const Trace *tracePtr;
+    tracePtr = servPtr->filter.firstTracePtr;
+    while (tracePtr != NULL) {
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, "trace");
+        Ns_GetProcInfo(dsPtr, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
+        tracePtr = tracePtr->nextPtr;
+    }
 
-        tracePtr = servPtr->filter.firstTracePtr;
-        while (tracePtr != NULL) {
-            Tcl_DStringStartSublist(dsPtr);
-            Tcl_DStringAppendElement(dsPtr, "trace");
-            Ns_GetProcInfo(dsPtr, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
-            Tcl_DStringEndSublist(dsPtr);
-            tracePtr = tracePtr->nextPtr;
-        }
-
-        tracePtr = servPtr->filter.firstCleanupPtr;
-        while (tracePtr != NULL) {
-            Tcl_DStringStartSublist(dsPtr);
-            Tcl_DStringAppendElement(dsPtr, "cleanup");
-            Ns_GetProcInfo(dsPtr, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
-            Tcl_DStringEndSublist(dsPtr);
-            tracePtr = tracePtr->nextPtr;
-        }
+    tracePtr = servPtr->filter.firstCleanupPtr;
+    while (tracePtr != NULL) {
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, "cleanup");
+        Ns_GetProcInfo(dsPtr, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
+        tracePtr = tracePtr->nextPtr;
     }
 }
 

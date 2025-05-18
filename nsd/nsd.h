@@ -1818,8 +1818,8 @@ NS_EXTERN Ns_ReturnCode NsGetFallbackEncoding(Tcl_Interp *interp, NsServer *serv
 /*
  * filter.c
  */
-NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, const char *server) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, const char *server) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, const NsServer *servPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, const NsServer *servPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode NsRunFilters(Ns_Conn *conn, Ns_FilterType why) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRunCleanups(Ns_Conn *conn) NS_GNUC_NONNULL(1);

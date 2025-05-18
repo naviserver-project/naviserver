@@ -1033,9 +1033,8 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             result = TCL_ERROR;
 
         } else {
-            const char *server;
-
-            server = itPtr->servPtr->server;
+            const NsServer *servPtr = itPtr->servPtr;
+            const char *server = servPtr->server;
 
             switch (opt) {
             case IServerIdx:
@@ -1060,13 +1059,13 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
             case IFiltersIdx:
                 Ns_LogDeprecated(objv, 2, "ns_server ?-server s? filters", NULL);
-                NsGetFilters(&ds, server);
+                NsGetFilters(&ds, servPtr);
                 Tcl_DStringResult(interp, &ds);
                 break;
 
             case ITracesIdx:
                 Ns_LogDeprecated(objv, 2, "ns_server ?-server s? traces", NULL);
-                NsGetTraces(&ds, server);
+                NsGetTraces(&ds, servPtr);
                 Tcl_DStringResult(interp, &ds);
                 break;
 
