@@ -69,6 +69,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr
 
         cbPtr->cbProc = cbProc;
         cbPtr->server = Ns_TclInterpServer(interp);
+        cbPtr->servPtr = Ns_TclInterpServPtr(interp);
         cbPtr->script = ns_strdup(Tcl_GetString(scriptObjPtr));
         cbPtr->argc   = objc;
         cbPtr->argv   = (char **)&cbPtr->args;
@@ -145,7 +146,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
     NS_NONNULL_ASSERT(cbPtr != NULL);
 
     if (interp == NULL) {
-        interp = Ns_TclAllocateInterp(cbPtr->server);
+        interp = NsTclAllocateInterp((NsServer*)(cbPtr->servPtr));
         deallocInterp = NS_TRUE;
     }
     if (interp != NULL) {

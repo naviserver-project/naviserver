@@ -1427,6 +1427,7 @@ Ns_VarGet(const char *server, const char *array, const char *keyString, Tcl_DStr
     const NsServer *servPtr;
     Ns_ReturnCode   status = NS_ERROR;
 
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(array != NULL);
     NS_NONNULL_ASSERT(keyString != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -1469,6 +1470,7 @@ Ns_VarExists(const char *server, const char *array, const char *keyString)
     const NsServer *servPtr;
     bool            exists = NS_FALSE;
 
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(array != NULL);
     NS_NONNULL_ASSERT(keyString != NULL);
 
@@ -1510,6 +1512,7 @@ Ns_VarSet(const char *server, const char *array, const char *keyString,
     const NsServer *servPtr;
     Ns_ReturnCode   status = NS_ERROR;
 
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(array != NULL);
     NS_NONNULL_ASSERT(keyString != NULL);
     NS_NONNULL_ASSERT(value != NULL);
@@ -1550,6 +1553,7 @@ Ns_VarIncr(const char *server, const char *array, const char *keyString, int inc
     const NsServer *servPtr;
     Tcl_WideInt     counter = -1;
 
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(array != NULL);
     NS_NONNULL_ASSERT(keyString != NULL);
 
@@ -1590,6 +1594,7 @@ Ns_VarAppend(const char *server, const char *array, const char *keyString,
     int             isNew;
     Ns_ReturnCode   status = NS_ERROR;
 
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(array != NULL);
     NS_NONNULL_ASSERT(keyString != NULL);
     NS_NONNULL_ASSERT(value != NULL);
@@ -1644,6 +1649,7 @@ Ns_VarUnset(const char *server, const char *array, const char *keyString)
     const NsServer *servPtr;
     Ns_ReturnCode   status = NS_ERROR;
 
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(array != NULL);
     NS_NONNULL_ASSERT(array != NULL);
 

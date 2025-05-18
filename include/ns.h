@@ -566,12 +566,13 @@ typedef struct Ns_SubCmdSpec {
  */
 
 typedef struct Ns_TclCallback {
-    ns_funcptr_t    cbProc;
-    const char     *server;
-    const char     *script;
-    char          **argv;
-    TCL_SIZE_T      argc;
-    char           *args[1];
+    ns_funcptr_t     cbProc;
+    const char      *server;
+    const Ns_Server *servPtr;
+    const char      *script;
+    char           **argv;
+    TCL_SIZE_T       argc;
+    char            *args[1];
 } Ns_TclCallback;
 
 /*
@@ -2384,7 +2385,7 @@ Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
 
 NS_EXTERN const char *
 Ns_LogPath(Tcl_DString *dsPtr, const char *server, const char *filename)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * proc.c:
@@ -2662,12 +2663,13 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
 /*
  * server.c
  */
-NS_EXTERN const char *  Ns_ServerLogDir(const char *server) NS_GNUC_PURE;
-NS_EXTERN bool          Ns_ServerRootProcEnabled(const char *server) NS_GNUC_PURE;
+NS_EXTERN const char *  Ns_ServerLogDir(const char *server) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN bool          Ns_ServerRootProcEnabled(const char *server) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN int           Ns_ServerLogGetFd(const char *server, const void *handle, const char *filename)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-NS_EXTERN Ns_ReturnCode Ns_ServerLogCloseAll(const char *server, const void *handle);
-NS_EXTERN Ns_ReturnCode Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt, TCL_SIZE_T maxbackup);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+NS_EXTERN Ns_ReturnCode Ns_ServerLogCloseAll(const char *server, const void *handle) NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt, TCL_SIZE_T maxbackup)
+    NS_GNUC_NONNULL(1);
 
 /*
  * tclvar.c
@@ -2675,29 +2677,29 @@ NS_EXTERN Ns_ReturnCode Ns_ServerLogRollAll(const char *server, const void *hand
 
 NS_EXTERN Ns_ReturnCode
 Ns_VarGet(const char *server, const char *array, const char *keyString, Tcl_DString *dsPtr)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN bool
 Ns_VarExists(const char *server, const char *array, const char *keyString)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
 Ns_VarSet(const char *server, const char *array, const char *keyString,
           const char *value, ssize_t len)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Ns_ReturnCode
 Ns_VarUnset(const char *server, const char *array, const char *keyString)
-    NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
 Ns_VarIncr(const char *server, const char *array, const char *keyString, int incr)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
 Ns_VarAppend(const char *server, const char *array, const char *keyString,
              const char *value, ssize_t len)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 /*
  * sched.c:
@@ -3489,7 +3491,8 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc, const void *arg, 
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
-Ns_TclLibrary(const char *server);
+Ns_TclLibrary(const char *server)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
 Ns_TclInterpServer(Tcl_Interp *interp)
@@ -3497,7 +3500,7 @@ Ns_TclInterpServer(Tcl_Interp *interp)
 
 NS_EXTERN const Ns_Server *
 Ns_TclInterpServPtr(Tcl_Interp *interp)
-    NS_GNUC_NONNULL(1);
+     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
 Ns_TclInitModule(const char *server, const char *module)
