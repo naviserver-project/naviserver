@@ -58,15 +58,6 @@ typedef enum {
     ADP_TIMEOUT =                4
 } AdpResult;
 
-typedef enum {
-    NS_URLSPACE_DEFAULT =        0,
-    NS_URLSPACE_FAST =           1,
-    NS_URLSPACE_EXACT =          2
-} NsUrlSpaceOp;
-
-
-typedef bool (NsUrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
-
 typedef struct NsUrlSpaceContext {
     const Ns_Set *headers;
     struct sockaddr *saPtr;
@@ -1586,7 +1577,7 @@ NS_EXTERN void NsConfigTclHttp(void);
  * Type based function prototypes
  */
 
-NS_EXTERN NsUrlSpaceContextFilterEvalProc NsUrlSpaceContextFilterEval;
+NS_EXTERN Ns_UrlSpaceContextFilterEvalProc NsUrlSpaceContextFilterEval;
 NS_EXTERN Ns_ArgProc NsAdpPageArgProc;
 NS_EXTERN Ns_ArgProc NsConnArgProc;
 NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
@@ -1873,8 +1864,8 @@ NS_EXTERN Ns_ReturnCode NsRemoveService(char *service) NS_GNUC_NONNULL(1);
  * op.c
  */
 NS_EXTERN void NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
-                             unsigned int flags, NsUrlSpaceOp op,
-                             NsUrlSpaceContextFilterEvalProc proc, void *context,
+                             unsigned int flags, Ns_UrlSpaceOp op,
+                             Ns_UrlSpaceContextFilterEvalProc proc, void *context,
                              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
                              unsigned int *flagsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(2)
@@ -2166,12 +2157,6 @@ NS_EXTERN Ns_ReturnCode NsUrlToFile(Tcl_DString *dsPtr, NsServer *servPtr, const
 /*
  * urlspace.c
  */
-NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *key,
-                                 const char *url, int id, unsigned int flags, NsUrlSpaceOp op,
-                                 Ns_UrlSpaceMatchInfo *matchInfoPtr,
-                                 NsUrlSpaceContextFilterEvalProc proc, void *context)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-
 NS_EXTERN NsUrlSpaceContextSpec *NsUrlSpaceContextSpecNew(const char *field, const char *patternString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

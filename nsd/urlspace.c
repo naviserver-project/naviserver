@@ -345,7 +345,7 @@ static void  TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void *TrieFind(const Trie *triePtr, char *seq,
-                      NsUrlSpaceContextFilterEvalProc proc, void *context,
+                      Ns_UrlSpaceContextFilterEvalProc proc, void *context,
                       int *depthPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
@@ -383,7 +383,7 @@ static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
 
 static void *JunctionFind(const Junction *juncPtr, char *seq,
                           Ns_UrlSpaceMatchInfo *matchInfoPtr,
-                          NsUrlSpaceContextFilterEvalProc proc, void *context)
+                          Ns_UrlSpaceContextFilterEvalProc proc, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void *JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
@@ -872,7 +872,7 @@ NsUrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct s
  *
  *      Determine whether a given request context satisfies a context
  *      filter specification.  This function implements the
- *      NsUrlSpaceContextFilterEvalProc interface, handling three cases:
+ *      Ns_UrlSpaceContextFilterEvalProc interface, handling three cases:
  *
  *        1. Conjunction: spec->field holds a list of sub-specs;
  *           all must match for success.
@@ -1093,7 +1093,7 @@ Ns_UrlSpecificGet(const char *server, const char *key, const char *url, int id)
 
     servPtr = NsGetServer(server);
     return (likely(servPtr != NULL)) ?
-        NsUrlSpecificGet(servPtr, key, url, id, 0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL)
+        NsUrlSpecificGet((Ns_Server *)servPtr, key, url, id, 0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL)
         : NULL;
 }
 
@@ -1112,7 +1112,7 @@ Ns_UrlSpecificGetFast(const char *server, const char *key, const char *url, int 
 
     servPtr = NsGetServer(server);
     return likely(servPtr != NULL) ?
-        NsUrlSpecificGet(servPtr, key, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL, NULL)
+        NsUrlSpecificGet((Ns_Server *)servPtr, key, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL, NULL)
         : NULL;
 }
 #endif
@@ -1129,7 +1129,7 @@ Ns_UrlSpecificGetExact(const char *server, const char *key, const char *url,
 
     servPtr = NsGetServer(server);
     return likely(servPtr != NULL) ?
-        NsUrlSpecificGet(servPtr, key, url, id, flags, NS_URLSPACE_EXACT, NULL, NULL, NULL)
+        NsUrlSpecificGet((Ns_Server *)servPtr, key, url, id, flags, NS_URLSPACE_EXACT, NULL, NULL, NULL)
         : NULL;
 }
 
@@ -1155,19 +1155,21 @@ Ns_UrlSpecificGetExact(const char *server, const char *key, const char *url,
  */
 
 void *
-NsUrlSpecificGet(NsServer *servPtr, const char *key, const char *url, int id,
-                 unsigned int flags, NsUrlSpaceOp op,
+NsUrlSpecificGet(const Ns_Server *server, const char *key, const char *url, int id,
+                 unsigned int flags, Ns_UrlSpaceOp op,
                  Ns_UrlSpaceMatchInfo *matchInfoPtr,
-                 NsUrlSpaceContextFilterEvalProc proc, void *context)
+                 Ns_UrlSpaceContextFilterEvalProc proc, void *context)
 {
+    NsServer       *servPtr;
     Tcl_DString     ds, *dsPtr = &ds;
     void           *data = NULL; /* Just to make compiler silent, we have a complete enumeration of switch values */
     const Junction *junction;
 
-    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
+    servPtr = (NsServer *)server;
     junction = JunctionGet(servPtr, id);
 
     Tcl_DStringInit(dsPtr);
@@ -2096,7 +2098,7 @@ TrieDestroy(Trie *triePtr)
  */
 
 static void *
-TrieFind(const Trie *triePtr, char *seq, NsUrlSpaceContextFilterEvalProc proc, void *context, int *depthPtr)
+TrieFind(const Trie *triePtr, char *seq, Ns_UrlSpaceContextFilterEvalProc proc, void *context, int *depthPtr)
 {
     const Node   *nodePtr;
     const Branch *branchPtr;
@@ -2740,7 +2742,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
 static void *
 JunctionFind(const Junction *juncPtr, char *seq,
              Ns_UrlSpaceMatchInfo *matchInfoPtr,
-             NsUrlSpaceContextFilterEvalProc proc, void *context)
+             Ns_UrlSpaceContextFilterEvalProc proc, void *context)
 {
     const Channel *channelPtr;
     const char    *p;
@@ -3374,7 +3376,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         result = TCL_ERROR;
 
     } else {
-        NsUrlSpaceOp    op;
+        Ns_UrlSpaceOp    op;
         unsigned int    flags = 0u;
         NsUrlSpaceContext ctx, *ctxPtr = NULL;
         struct NS_SOCKADDR_STORAGE ip;
@@ -3415,7 +3417,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 #endif
             //Ns_Log(Notice, "UrlSpaceGetObjCmd context %p context %p", (void*)context, (void*)ctxPtr);
             Ns_RWLockRdLock(&servPtr->urlspace.idlocks[id]);
-            data = NsUrlSpecificGet(servPtr, key, url, id, flags, op, NULL, NsUrlSpaceContextFilterEval, ctxPtr);
+            data = NsUrlSpecificGet((Ns_Server*)servPtr, key, url, id, flags, op, NULL, NsUrlSpaceContextFilterEval, ctxPtr);
             Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
 
             Tcl_SetObjResult(interp, Tcl_NewStringObj(data, TCL_INDEX_NONE));

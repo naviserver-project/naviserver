@@ -352,6 +352,7 @@ typedef int           (Ns_IndexCmpProc) (const void *left, const void *right)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 typedef int           (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+typedef bool (Ns_UrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
 
 /*
  * Generic function pointer type, can be used for recasting between different
@@ -468,6 +469,12 @@ typedef struct Ns_UrlSpaceMatchInfo {
     size_t  segmentLength;
     bool    isSegmentMatch;
 } Ns_UrlSpaceMatchInfo;
+
+typedef enum {
+    NS_URLSPACE_DEFAULT =        0,
+    NS_URLSPACE_FAST =           1,
+    NS_URLSPACE_EXACT =          2
+} Ns_UrlSpaceOp;
 
 /*
  * The connection structure.
@@ -3487,7 +3494,7 @@ Ns_TclInterpServer(Tcl_Interp *interp)
 
 NS_EXTERN const Ns_Server *
 Ns_TclInterpServPtr(Tcl_Interp *interp)
-    NS_GNUC_NONNULL(1)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
 Ns_TclInitModule(const char *server, const char *module)
@@ -3794,6 +3801,13 @@ Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
 
 NS_EXTERN void *
 Ns_UrlSpecificGet(const char *server, const char *key, const char *url, int id)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void *
+NsUrlSpecificGet(const Ns_Server *servPtr, const char *key,
+                 const char *url, int id, unsigned int flags, Ns_UrlSpaceOp op,
+                 Ns_UrlSpaceMatchInfo *matchInfoPtr,
+                 Ns_UrlSpaceContextFilterEvalProc proc, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 #ifdef NS_WITH_DEPRECATED
