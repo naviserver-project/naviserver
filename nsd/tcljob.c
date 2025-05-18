@@ -109,7 +109,7 @@ typedef enum ThreadPoolRequests {
 
 typedef struct Job {
     struct Job       *nextPtr;
-    const char       *server;
+    const NsServer   *servPtr;
     JobStates         state;
     int               code;
     bool              cancel;
@@ -195,7 +195,7 @@ static Queue* NewQueue(const char* queueName, const char* queueDesc, int maxThre
 static void   FreeQueue(Queue *queue)
     NS_GNUC_NONNULL(1);
 
-static Job*   NewJob(const char* server, const char *queueName,
+static Job*   NewJob(const NsServer *servPtr, const char *queueName,
                      JobTypes type, const char *script)
     NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4)
     NS_GNUC_RETURNS_NONNULL;
@@ -573,7 +573,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
          * Create a new job and add it to the Thread Pool's list of jobs.
          */
 
-        jobPtr = NewJob((itPtr->servPtr != NULL) ? itPtr->servPtr->server : NULL,
+        jobPtr = NewJob((itPtr->servPtr != NULL) ? itPtr->servPtr : NULL,
                         queue->name, jobType, script);
         Ns_GetTime(&jobPtr->startTime);
         if (tp.req == THREADPOOL_REQ_STOP
@@ -1499,7 +1499,7 @@ JobThread(void *UNUSED(arg))
         /*
          * Get an interpreter....
          */
-        interp = Ns_TclAllocateInterp(jobPtr->server);
+        interp = NsTclAllocateInterp((NsServer*)jobPtr->servPtr);
 
         /*
          * Initialize times ...
@@ -1799,8 +1799,8 @@ FreeQueue(Queue *queue)
  *----------------------------------------------------------------------
  */
 
-static Job*
-NewJob(const char* server, const char* queueName, JobTypes type, const char *script)
+static Job *
+NewJob(const NsServer *servPtr, const char* queueName, JobTypes type, const char *script)
 {
     Job *jobPtr;
 
@@ -1809,11 +1809,11 @@ NewJob(const char* server, const char* queueName, JobTypes type, const char *scr
 
     jobPtr = ns_calloc(1u, sizeof(Job));
 
-    jobPtr->server = server;
-    jobPtr->type   = type;
-    jobPtr->state  = JOB_SCHEDULED;
-    jobPtr->code   = TCL_OK;
-    jobPtr->req    = JOB_NONE;
+    jobPtr->servPtr = servPtr;
+    jobPtr->type    = type;
+    jobPtr->state   = JOB_SCHEDULED;
+    jobPtr->code    = TCL_OK;
+    jobPtr->req     = JOB_NONE;
     jobPtr->queueId = ns_strdup(queueName);
 
     Tcl_DStringInit(&jobPtr->id);
