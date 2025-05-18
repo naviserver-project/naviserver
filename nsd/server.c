@@ -202,7 +202,7 @@ NsStopServers(const Ns_Time *toPtr)
     NS_NONNULL_ASSERT(toPtr != NULL);
 
     NsForeachHashValue(&nsconf.servertable, StopServerCB, NULL);
-    NsForeachHashValue(&nsconf.servertable, WaitServerCB, NULL);
+    NsForeachHashValue(&nsconf.servertable, WaitServerCB, (void*)toPtr);
 }
 
 
