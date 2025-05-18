@@ -120,6 +120,47 @@ NsGetInitServer(void)
 /*
  *----------------------------------------------------------------------
  *
+ * StartServerCB, StopServerCB, WaitServerCB --
+ *
+ *      Callback functions for NsForeachHashValue().
+ *
+ * Results:
+ *      NS_OK.
+ *
+ * Side effects:
+ *      See NsStartServer(), NsStopHttp(), NsStopServer(),
+ *      and NsWaitServer().
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_ReturnCode
+StartServerCB(void *hashValue, void *UNUSED(ctx))
+{
+    NsStartServer(hashValue);
+    return NS_OK;
+}
+
+static Ns_ReturnCode
+StopServerCB(void *hashValue, void *UNUSED(ctx))
+{
+    NsStopHttp(hashValue);
+    NsStopServer(hashValue);
+    return NS_OK;
+}
+
+static Ns_ReturnCode
+WaitServerCB(void *hashValue, void *ctx)
+{
+    const Ns_Time *toPtr = ctx;
+
+    NsWaitServer(hashValue, toPtr);
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsStartServers --
  *
  *      Start all configured servers.
@@ -132,20 +173,10 @@ NsGetInitServer(void)
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsStartServers(void)
 {
-    const Tcl_HashEntry *hPtr;
-    Tcl_HashSearch       search;
-
-    hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
-    while (hPtr != NULL) {
-        const NsServer *servPtr = Tcl_GetHashValue(hPtr);
-
-        NsStartServer(servPtr);
-        hPtr = Tcl_NextHashEntry(&search);
-    }
+    NsForeachHashValue(&nsconf.servertable, StartServerCB, NULL);
 }
 
 
@@ -168,25 +199,10 @@ NsStartServers(void)
 void
 NsStopServers(const Ns_Time *toPtr)
 {
-    NsServer            *servPtr;
-    const Tcl_HashEntry *hPtr;
-    Tcl_HashSearch       search;
-
     NS_NONNULL_ASSERT(toPtr != NULL);
 
-    hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
-    while (hPtr != NULL) {
-        servPtr = Tcl_GetHashValue(hPtr);
-        NsStopHttp(servPtr);
-        NsStopServer(servPtr);
-        hPtr = Tcl_NextHashEntry(&search);
-    }
-    hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
-    while (hPtr != NULL) {
-        servPtr = Tcl_GetHashValue(hPtr);
-        NsWaitServer(servPtr, toPtr);
-        hPtr = Tcl_NextHashEntry(&search);
-    }
+    NsForeachHashValue(&nsconf.servertable, StopServerCB, NULL);
+    NsForeachHashValue(&nsconf.servertable, WaitServerCB, NULL);
 }
 
 
@@ -253,7 +269,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 #endif
 
     /*
-     * Servers must not be defined twice.
+     * Servers must not be defined twice. Use hash table to avoid duplicates.
      */
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (n == 0) {
