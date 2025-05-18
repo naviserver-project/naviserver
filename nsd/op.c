@@ -237,8 +237,8 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
  */
 void
 NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
-              unsigned int flags, NsUrlSpaceOp op,
-              NsUrlSpaceContextFilterEvalProc proc, void *context,
+              unsigned int flags, Ns_UrlSpaceOp op,
+              Ns_UrlSpaceContextFilterEvalProc proc, void *context,
               Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
               unsigned int *flagsPtr)
 {
@@ -253,7 +253,7 @@ NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
     NS_NONNULL_ASSERT(flagsPtr != NULL);
 
     Ns_MutexLock(&ulock);
-    regPtr = NsUrlSpecificGet(servPtr, method, url,
+    regPtr = NsUrlSpecificGet((Ns_Server*)servPtr, method, url,
                               uid, flags, op, &matchInfo, proc, context);
     Ns_Log(Debug, "NsGetRequest2 %s %s -> %p",  method, url, (void*)regPtr);
 
@@ -408,7 +408,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
             NsUrlSpaceContextInit(&ctx, connPtr->sockPtr, connPtr->headers);
 
             Ns_MutexLock(&ulock);
-            regPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
+            regPtr = NsUrlSpecificGet((Ns_Server *)(connPtr->poolPtr->servPtr),
                                       conn->request.method, conn->request.url, uid,
                                       0u, NS_URLSPACE_DEFAULT, &matchInfo,
                                       NsUrlSpaceContextFilterEval, &ctx);
@@ -476,12 +476,12 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
         /*
          * Re-authorize and run the request.
          */
-        status = Ns_AuthorizeRequest(Ns_ConnServer(conn),
-                                     conn->request.method,
-                                     conn->request.url,
-                                     Ns_ConnAuthUser(conn),
-                                     Ns_ConnAuthPasswd(conn),
-                                     Ns_ConnPeerAddr(conn));
+        status = NsAuthorizeRequest((NsServer*)NsConnServPtr(conn),
+                                    conn->request.method,
+                                    conn->request.url,
+                                    Ns_ConnAuthUser(conn),
+                                    Ns_ConnAuthPasswd(conn),
+                                    Ns_ConnPeerAddr(conn));
     }
 
     switch (status) {
