@@ -231,6 +231,7 @@ Ns_UrlToFile(Tcl_DString *dsPtr, const char *server, const char *url)
     NsServer      *servPtr;
     Ns_ReturnCode  status;
 
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -263,7 +264,8 @@ NsUrlToFile(Tcl_DString *dsPtr, NsServer *servPtr, const char *url)
         Ns_Log(Debug, "url2file: url '%s' use NsUrlSpecificGet to determine filename", url);
 
         Ns_MutexLock(&ulock);
-        u2fPtr = NsUrlSpecificGet(servPtr, "x", url, uid, 0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL);
+        u2fPtr = NsUrlSpecificGet((Ns_Server*)servPtr, "x", url, uid, 0u,
+                                  NS_URLSPACE_DEFAULT, NULL, NULL, NULL);
         if (u2fPtr == NULL) {
             Ns_Log(Error, "url2file: no proc found for url: %s", url);
             status = NS_ERROR;
