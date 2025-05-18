@@ -972,7 +972,7 @@ HttpClientLogRoll(void *arg)
            servPtr->httpclient.logFileName, servPtr->httpclient.logging);
 
     if (servPtr->httpclient.logging) {
-        if (Ns_ServerRootProcEnabled(servPtr->server)) {
+        if (NsServerRootProcEnabled(servPtr)) {
             status = Ns_ServerLogRollAll(servPtr->server, logType,
                                          servPtr->httpclient.logRollfmt,
                                          servPtr->httpclient.logMaxbackup);
@@ -1044,7 +1044,7 @@ HttpClientLogClose(void *arg)
     Ns_ReturnCode status = NS_OK;
     NsServer     *servPtr = (NsServer *)arg;
 
-    if (Ns_ServerRootProcEnabled(servPtr->server)) {
+    if (NsServerRootProcEnabled(servPtr)) {
         status = Ns_ServerLogCloseAll(servPtr->server, logType);
     }
 
@@ -1126,7 +1126,7 @@ HttpClientLogWrite(
     if (servPtr->httpclient.logging) {
         int fd;
 
-        if (Ns_ServerRootProcEnabled(servPtr->server)) {
+        if (NsServerRootProcEnabled(servPtr)) {
             Tcl_DString ds, *dsPtr = &ds;
             const char *fullFilename;
             const char *section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", NS_SENTINEL);

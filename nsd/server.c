@@ -738,10 +738,9 @@ Ns_ServerLogDir(const char *server)
  *----------------------------------------------------------------------
  */
 bool
-Ns_ServerRootProcEnabled(const char *server)
+NsServerRootProcEnabled(const NsServer *servPtr)
 {
     bool      result;
-    NsServer *servPtr = NsGetServer(server);
 
     if (servPtr == NULL) {
         result = NS_FALSE;
@@ -750,6 +749,13 @@ Ns_ServerRootProcEnabled(const char *server)
     }
     return result;
 }
+
+bool
+Ns_ServerRootProcEnabled(const char *server)
+{
+    return NsServerRootProcEnabled(NsGetServer(server));
+}
+
 
 typedef struct LogfileCtxData {
     const void *handle;
