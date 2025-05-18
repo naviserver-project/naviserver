@@ -62,16 +62,32 @@ static ServerInit       *lastInitPtr;  /* Last in list of server config callback
  */
 
 NsServer *
-NsGetServer(const char *server)
+NsGetServerDebug(const char *server, const char *caller)
 {
     NsServer *result = NULL;
 
     if (server != NULL) {
         const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&nsconf.servertable, server);
+        fprintf(stderr, "NsGetServer LOOKUP <%s> %s -> %p\n", server, caller, (void*) hPtr);
 
         if (hPtr != NULL) {
             result = Tcl_GetHashValue(hPtr);
         }
+    } else {
+        fprintf(stderr, "NsGetServer called with NULL server from %s =============================\n", caller);
+    }
+
+    return result;
+}
+
+NsServer *
+NsGetServer(const char *server)
+{
+    NsServer *result = NULL;
+    const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&nsconf.servertable, server);
+
+    if (hPtr != NULL) {
+        result = Tcl_GetHashValue(hPtr);
     }
 
     return result;
