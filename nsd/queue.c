@@ -530,7 +530,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         NsUrlSpaceContext ctx;
 
         NsUrlSpaceContextInit(&ctx, sockPtr, sockPtr->reqPtr->headers);
-        poolPtr = NsUrlSpecificGet(servPtr,
+        poolPtr = NsUrlSpecificGet((Ns_Server*)servPtr,
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,
                                    poolid, 0u, NS_URLSPACE_DEFAULT,
@@ -1171,7 +1171,7 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     } else {
         unsigned int    flags = 0u;
         const ConnPool *mappedPoolPtr;
-        NsUrlSpaceOp    op;
+        Ns_UrlSpaceOp   op;
 
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;
@@ -1184,7 +1184,8 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         }
 
         Ns_MutexLock(&servPtr->urlspace.lock);
-        mappedPoolPtr = (ConnPool *)NsUrlSpecificGet(servPtr,  method, url, poolid, flags, op,
+        mappedPoolPtr = (ConnPool *)NsUrlSpecificGet((Ns_Server*)servPtr,
+                                                     method, url, poolid, flags, op,
                                                      NULL, NULL, NULL);
         Ns_MutexUnlock(&servPtr->urlspace.lock);
         if (mappedPoolPtr == NULL) {
@@ -1635,7 +1636,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     case SFiltersIdx:
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) == NS_OK) {
             Tcl_DStringInit(dsPtr);
-            NsGetFilters(dsPtr, servPtr->server);
+            NsGetFilters(dsPtr, servPtr);
             Tcl_DStringResult(interp, dsPtr);
             result = TCL_OK;
         }
@@ -1703,7 +1704,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     case STracesIdx:
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) == NS_OK) {
             Tcl_DStringInit(dsPtr);
-            NsGetTraces(dsPtr, servPtr->server);
+            NsGetTraces(dsPtr, servPtr);
             Tcl_DStringResult(interp, dsPtr);
             result = TCL_OK;
         }
@@ -2722,12 +2723,12 @@ ConnRun(Conn *connPtr)
         }
 
         if (status == NS_OK) {
-            status = Ns_AuthorizeRequest(servPtr->server,
-                                         connPtr->request.method,
-                                         connPtr->request.url,
-                                         Ns_ConnAuthUser(conn),
-                                         Ns_ConnAuthPasswd(conn),
-                                         Ns_ConnPeerAddr(conn));
+            status = NsAuthorizeRequest(servPtr,
+                                        connPtr->request.method,
+                                        connPtr->request.url,
+                                        Ns_ConnAuthUser(conn),
+                                        Ns_ConnAuthPasswd(conn),
+                                        Ns_ConnPeerAddr(conn));
             switch (status) {
             case NS_OK:
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);

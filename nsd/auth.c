@@ -49,18 +49,35 @@ Ns_ReturnCode
 Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
                     const char *user, const char *passwd, const char *peer)
 {
-    Ns_ReturnCode   status;
-    const NsServer *servPtr;
+    NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
+    //servPtr = NsGetServerDebug(server, "./nsd/auth.c Ns_AuthorizeRequest");
     servPtr = NsGetServer(server);
-    if (unlikely(servPtr == NULL) || servPtr->request.authProc == NULL) {
+    assert(servPtr != NULL);
+
+    return unlikely(servPtr == NULL)
+        ? NS_OK
+        : NsAuthorizeRequest(servPtr, method, url, user, passwd, peer);
+}
+
+Ns_ReturnCode
+NsAuthorizeRequest(const NsServer *servPtr, const char *method, const char *url,
+                   const char *user, const char *passwd, const char *peer)
+{
+    Ns_ReturnCode   status;
+
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+
+    if (servPtr->request.authProc == NULL) {
         status = NS_OK;
     } else {
-        status = (*servPtr->request.authProc)(server, method, url, user, passwd, peer);
+        status = (*servPtr->request.authProc)(servPtr->server, method, url, user, passwd, peer);
     }
     return status;
 }
@@ -90,11 +107,13 @@ Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(procPtr != NULL);
 
+    //servPtr = NsGetServerDebug(server, "./nsd/auth.c Ns_SetRequestAuthorizeProc");
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
         servPtr->request.authProc = procPtr;
     }
 }
+
 
 
 /*
@@ -140,7 +159,7 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
     } else {
         Ns_ReturnCode status;
 
-        status = Ns_AuthorizeRequest(itPtr->servPtr->server, method, url,
+        status = NsAuthorizeRequest(itPtr->servPtr, method, url,
                                      authuser, authpasswd, ipaddr);
         switch (status) {
         case NS_OK:

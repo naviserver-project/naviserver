@@ -1659,6 +1659,11 @@ NS_EXTERN char *NsParseTagEnd(char *str) NS_GNUC_CONST
 NS_EXTERN void NsParseAuth(Conn *connPtr, const char *auth)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN Ns_ReturnCode NsAuthorizeRequest(const NsServer *servPtr,
+                                           const char *method, const char *url,
+                                           const char *user, const char *passwd, const char *peer)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 /*
  * binder.c
  */
