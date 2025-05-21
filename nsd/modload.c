@@ -222,7 +222,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
                 }
 #endif
                 if (status != NS_OK) {
-                    Ns_Log(Error, "modload: %s: %s returned: %d", file, init, status);
+                    Ns_Log(Error, "modload: %s: %s returned: %s", file, init, Ns_ReturnCodeString(status));
                 }
             }
         }
