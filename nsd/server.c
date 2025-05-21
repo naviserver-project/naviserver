@@ -93,6 +93,18 @@ NsGetServer(const char *server)
     return result;
 }
 
+Ns_Server *
+Ns_GetServer(const char *server)
+{
+    return (Ns_Server *)NsGetServer(server);
+}
+
+const char *
+Ns_ServerName(const Ns_Server *servPtr)
+{
+    return ((NsServer *)servPtr)->server;
+}
+
 
 /*
  *----------------------------------------------------------------------

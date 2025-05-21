@@ -2670,7 +2670,10 @@ NS_EXTERN int           Ns_ServerLogGetFd(const char *server, const void *handle
 NS_EXTERN Ns_ReturnCode Ns_ServerLogCloseAll(const char *server, const void *handle) NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_ReturnCode Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt, TCL_SIZE_T maxbackup)
     NS_GNUC_NONNULL(1);
-
+NS_EXTERN Ns_Server *   Ns_GetServer(const char *server)
+    NS_GNUC_NONNULL(1);
+NS_EXTERN const char *  Ns_ServerName(const Ns_Server *servPtr)
+    NS_GNUC_NONNULL(1);
 /*
  * tclvar.c
  */
