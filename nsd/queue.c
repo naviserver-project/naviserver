@@ -2574,7 +2574,7 @@ ConnRun(Conn *connPtr)
 {
     Sock           *sockPtr;
     Ns_Conn        *conn;
-    const NsServer *servPtr;
+    NsServer       *servPtr;
     Ns_ReturnCode   status;
     const char     *auth;
 
@@ -2749,6 +2749,7 @@ ConnRun(Conn *connPtr)
                 (void) Ns_ConnReturnUnauthorized(conn);
                 break;
 
+            case NS_CONTINUE:       NS_FALL_THROUGH; /* fall through */
             case NS_ERROR:          NS_FALL_THROUGH; /* fall through */
             case NS_FILTER_BREAK:   NS_FALL_THROUGH; /* fall through */
             case NS_FILTER_RETURN:  NS_FALL_THROUGH; /* fall through */

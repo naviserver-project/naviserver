@@ -1072,11 +1072,12 @@ typedef int bool;
  * since negative numbers denote different kinds of non-success.
  */
 typedef enum {
+    NS_CONTINUE =         (TCL_CONTINUE),
     NS_OK =               ( 0), /* success */
     NS_ERROR =            (-1), /* error */
     NS_TIMEOUT =          (-2), /* timeout occurred */
-    NS_UNAUTHORIZED =     (-3), /* authorize result, returned by e.g. Ns_UserAuthorizeProc */
-    NS_FORBIDDEN =        (-4), /* authorize result, returned by e.g. Ns_UserAuthorizeProc */
+    NS_UNAUTHORIZED =     (-3), /* authorize result, not authorized, let user retry */
+    NS_FORBIDDEN =        (-4), /* authorize result, not authorized, don't allow retry */
     NS_FILTER_BREAK =     (-5), /* filter result, returned by e.g. Ns_FilterProc */
     NS_FILTER_RETURN =    (-6)  /* filter result, returned by e.g. Ns_FilterProc */
 } Ns_ReturnCode;
