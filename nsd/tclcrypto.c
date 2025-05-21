@@ -3035,7 +3035,7 @@ CryptoAeadStringGetArguments(
         }
 
         /*
-         * Get sometimes optional initialization vector (IV)
+         * Get optional initialization vector (IV)
          */
         if (ivObj != NULL) {
             *ivStringPtr = Ns_GetBinaryString(ivObj, isBinary == 1, ivLengthPtr, ivDsPtr);
