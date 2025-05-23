@@ -503,8 +503,11 @@ HandleAuthorizationResult(Tcl_Interp *interp, Ns_ReturnCode status, const char *
         resultObj = Tcl_NewStringObj("UNAUTHORIZED", 12);
         break;
 
+    case NS_FILTER_RETURN:
+        resultObj = Tcl_NewStringObj("FILTER_RETURN", 13);
+        break;
+
     case NS_FILTER_BREAK:  NS_FALL_THROUGH; /* fall through */
-    case NS_FILTER_RETURN: NS_FALL_THROUGH; /* fall through */
     case NS_TIMEOUT:
         Ns_TclPrintfResult(interp, "%s '%s' '%s' returned unexpected result %s from authority %s",
                            cmdName, arg1, arg2, Ns_ReturnCodeString(status), authority);
@@ -570,11 +573,11 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec     args[] = {
-        {"method",     Ns_ObjvString, &method,     NULL},
-        {"url",        Ns_ObjvString, &url,        NULL},
-        {"authuser",   Ns_ObjvString, &authuser,   NULL},
-        {"authpasswd", Ns_ObjvString, &authpasswd, NULL},
-        {"?ipaddr",    Ns_ObjvString, &ipaddr,     NULL},
+        {"method",    Ns_ObjvString, &method,     NULL},
+        {"url",       Ns_ObjvString, &url,        NULL},
+        {"username",  Ns_ObjvString, &authuser,   NULL},
+        {"password",  Ns_ObjvString, &authpasswd, NULL},
+        {"?ipaddr",   Ns_ObjvString, &ipaddr,     NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -647,8 +650,8 @@ UserAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec     args[] = {
-        {"authuser",   Ns_ObjvString, &authuser,   NULL},
-        {"authpasswd", Ns_ObjvString, &authpasswd, NULL},
+        {"username",   Ns_ObjvString, &authuser,   NULL},
+        {"password", Ns_ObjvString, &authpasswd, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
