@@ -582,7 +582,7 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
     if (strcmp(Tcl_GetString(objv[0]), "ns_checkurl") == 0
         || strcmp(Tcl_GetString(objv[0]), "ns_requestauthorize") == 0
         ) {
-        Ns_LogDeprecated(objv, 2, "ns_auth request ...", NULL);
+        Ns_LogDeprecated(objv, 1, "ns_auth request ...", NULL);
     }
 #endif
     if (!STREQ(Tcl_GetString(objv[0]), "ns_auth")) {

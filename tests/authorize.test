@@ -19,7 +19,7 @@ test ns_requestauthorize-1.0 {syntax: ns_requestauthorize} -body {
 #######################################################################################
 test ns_checkurl-1.0 {syntax: ns_checkurl} -constraints with_deprecated -body {
     ns_checkurl
-} -returnCodes error -result {wrong # args: should be "ns_checkurl /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
+} -returnCodes error -result {wrong # args: should be "ns_checkurl ?-dict? ?--? /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
 
 
 
