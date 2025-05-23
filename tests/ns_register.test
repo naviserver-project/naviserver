@@ -166,9 +166,9 @@ test proc-4.4.1 {register with context constraint} -setup {
         [nstest::http -getbody 1 -setheaders {x-test 1} GET /proc-4.4.1]
 } -cleanup {
     #ns_log notice cleanup 4.4.1 [join [ns_server requestprocs] \n]
-    ns_log notice cleanup 4.4.1 before [lsearch -all -inline -glob [ns_server requestprocs] *4.4.1* ]
+    #ns_log notice cleanup 4.4.1 before [lsearch -all -inline -glob [ns_server requestprocs] *4.4.1* ]
     ns_unregister_op -allconstraints GET /proc-4.4.1
-    ns_log notice cleanup 4.4.1 after \n[join [lsearch -all -inline -glob [ns_server requestprocs] *4.4.1* ] \n]
+    #ns_log notice cleanup 4.4.1 after \n[join [lsearch -all -inline -glob [ns_server requestprocs] *4.4.1* ] \n]
 } -result {{200 with-cf} {200 with-x-test}}
 
 
@@ -181,7 +181,13 @@ test proc-5.1 {fastpath} -setup {
     ns_unregister_op GET /10bytes
 } -result {200 0123456789}
 
+##################################################################################
+# ns_register_auth
+##################################################################################
 
+test ns_register_auth-1.0 {syntax: ns_register_auth} -body {
+    ns_register_auth
+} -returnCodes error -result {wrong # args: should be "ns_register_auth ?-authority /value/? ?-first? ?--? request|user /script/ ?/arg .../?"}
 
 cleanupTests
 

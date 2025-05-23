@@ -78,7 +78,7 @@ test ns_schedule-2.2 {schedule proc once} -body {
     nsv_unset . .
 } -result ns_schedule-2.2
 
-test ns_schedule-2.3 {non thread procs run serially} -body {
+test ns_schedule-2.3 {non thread procs run serially (racy)} -body {
     ns_schedule_proc -once -- 1 {
         ns_sleep 2s
         nsv_set . 1 [clock seconds]

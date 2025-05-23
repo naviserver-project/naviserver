@@ -12,17 +12,31 @@ testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 #######################################################################################
 test ns_requestauthorize-1.0 {syntax: ns_requestauthorize} -body {
     ns_requestauthorize
-} -returnCodes error -result {wrong # args: should be "ns_requestauthorize ?-dict? ?--? /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
+} -returnCodes error -result {wrong # args: should be "ns_requestauthorize ?-dict? ?--? /method/ /url/ /username/ /password/ ?/ipaddr/?"}
 
 #######################################################################################
 #  test ns_checkurl
 #######################################################################################
 test ns_checkurl-1.0 {syntax: ns_checkurl} -constraints with_deprecated -body {
     ns_checkurl
-} -returnCodes error -result {wrong # args: should be "ns_checkurl ?-dict? ?--? /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
+} -returnCodes error -result {wrong # args: should be "ns_checkurl ?-dict? ?--? /method/ /url/ /username/ /password/ ?/ipaddr/?"}
 
 
+#######################################################################################
+#  test ns_auth
+#######################################################################################
 
+test ns_auth-1.0 {syntax: ns_auth} -body {
+    ns_auth
+} -returnCodes error -result {wrong # args: should be "ns_auth request|user ?/arg .../"}
+
+test ns_auth-request-1.0 {syntax: ns_auth request} -body {
+    ns_auth request
+} -returnCodes error -result {wrong # args: should be "ns_auth request ?-dict? ?--? /method/ /url/ /username/ /password/ ?/ipaddr/?"}
+
+test ns_auth-user-1.0 {syntax: ns_auth user} -body {
+    ns_auth user
+} -returnCodes error -result {wrong # args: should be "ns_auth user ?-dict? ?--? /username/ /password/"}
 
 cleanupTests
 
