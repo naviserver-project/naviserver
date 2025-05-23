@@ -128,8 +128,8 @@
  * The following types of filters may be registered.
  */
 typedef enum {
-    NS_FILTER_PRE_AUTH =        0x01u, /* Runs before any Ns_UserAuthProc */
-    NS_FILTER_POST_AUTH =       0x02u, /* Runs after any Ns_UserAuthProc */
+    NS_FILTER_PRE_AUTH =        0x01u, /* Runs before any Ns_AuthRequestProc */
+    NS_FILTER_POST_AUTH =       0x02u, /* Runs after any Ns_AuthRequestProc */
     NS_FILTER_TRACE =           0x04u, /* Runs after Ns_OpProc completes successfully */
     NS_FILTER_VOID_TRACE =      0x08u  /* Run ns_register_trace procs after previous traces */
 } Ns_FilterType;
@@ -339,12 +339,16 @@ typedef void          (Ns_SchedProc)(void *arg, int id);
 typedef Ns_ReturnCode (Ns_ServerInitProc)(const char *server);
 typedef Ns_ReturnCode (Ns_ModuleInitProc)(const char *server, const char *module)
     NS_GNUC_NONNULL(2);
-typedef Ns_ReturnCode (Ns_RequestAuthorizeProc)(const char *server, const char *method,
-                                                const char *url, const char *user,
-                                                const char *pass, const char *peer);
 typedef void          (Ns_AdpParserProc)(Tcl_DString *outPtr, char *page);
-typedef Ns_ReturnCode (Ns_UserAuthorizeProc) (const char *user, const char *passwd)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+typedef Ns_ReturnCode (Ns_AuthorizeRequestProc)(void *arg, const Ns_Server *servPtr,
+                                                const char *method, const char *url, const char *user,
+                                                const char *pass, const char *peer,
+                                                int *continuationPtr)
+    NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(8);
+typedef Ns_ReturnCode (Ns_AuthorizeUserProc)(void *arg, const Ns_Server *servPtr,
+                                             const char *user, const char *passwd,
+                                             int *continuationPtr)
+    NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 typedef int           (Ns_ObjvProc)(struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                                     TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1);
@@ -816,21 +820,40 @@ Ns_AdpFlush(Tcl_Interp *interp, bool doStream)
  */
 
 NS_EXTERN Ns_ReturnCode
-Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
-                    const char *user, const char *passwd, const char *peer)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-
-NS_EXTERN void
-Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN void
-Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
-    NS_GNUC_NONNULL(1);
+Ns_AuthorizeRequest(Ns_Server *servPtr, const char *method, const char *url,
+                    const char *user, const char *passwd, const char *peer,
+                    const char **authorityPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(7);
 
 NS_EXTERN Ns_ReturnCode
-Ns_AuthorizeUser(const char *user, const char *passwd)
+Ns_AuthorizeUser(Ns_Server *servPtr, const char *user, const char *passwd,
+                 const char ** authorityPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4);
+
+NS_EXTERN void *
+Ns_RegisterAuthorizeRequest(const char *server, Ns_AuthorizeRequestProc *proc,
+                            void *arg, const char *authority, bool first)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void *
+Ns_RegisterAuthorizeUser(const char *server, Ns_AuthorizeUserProc *proc,
+                         void *arg, const char *authority, bool first)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+
+#if 0
+NS_EXTERN void
+Ns_SetRequestAuthorizeProc(const char *server, Ns_AuthorizeRequestProc *procPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_SetUserAuthorizeProc(const char *server, Ns_AuthorizeUserProc *procPtr)
+    NS_GNUC_NONNULL(1);
+#endif
+
+NS_EXTERN Ns_ReturnCode
+Ns_AuthDigestValidate(const Ns_Set *UNUSED(auth), const char *UNUSED(storedPwd))
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * cache.c:
@@ -1251,7 +1274,7 @@ NS_EXTERN const char *   Ns_ConnTarget(Ns_Conn *conn, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN const Ns_UrlSpaceMatchInfo *Ns_ConnGetUrlSpaceMatchInfo(const Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
-NS_EXTERN const Ns_Server *NsConnServPtr(const Ns_Conn *conn)
+NS_EXTERN Ns_Server *    Ns_ConnServPtr(const Ns_Conn *conn)
         NS_GNUC_NONNULL(1);
 
 /*
@@ -3809,14 +3832,10 @@ Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
-Ns_UrlSpecificGet(const char *server, const char *key, const char *url, int id)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-
-NS_EXTERN void *
-NsUrlSpecificGet(const Ns_Server *servPtr, const char *key,
-                 const char *url, int id, unsigned int flags, Ns_UrlSpaceOp op,
-                 Ns_UrlSpaceMatchInfo *matchInfoPtr,
-                 Ns_UrlSpaceContextFilterEvalProc proc, void *context)
+Ns_UrlSpecificGet(const Ns_Server *servPtr, const char *key,
+                  const char *url, int id, unsigned int flags, Ns_UrlSpaceOp op,
+                  Ns_UrlSpaceMatchInfo *matchInfoPtr,
+                  Ns_UrlSpaceContextFilterEvalProc proc, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 #ifdef NS_WITH_DEPRECATED

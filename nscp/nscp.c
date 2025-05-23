@@ -27,6 +27,7 @@
 typedef struct Mod {
     Tcl_HashTable users;
     const char *server;
+    const Ns_Server *servPtr;
     const char *addr;
     unsigned short port;
     bool echo;
@@ -60,7 +61,7 @@ static bool Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
 static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static void LoadUsers(Mod *localModPtr, const char *server, const char *module)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static Ns_ArgProc ArgProc;
 static Ns_TclTraceProc NscpAddCmds;
 static TCL_OBJCMDPROC_T NsTclNscpObjCmd;
@@ -96,19 +97,18 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ModuleInit --
+ * LoadUsers --
  *
- *     Initialize the hash table of authorized users.  Entry values are either
- *     NULL indicating authorization should be checked via the
- *     Ns_AuthorizeUser() API or contain a Unix crypt(3) style encrypted
- *     password.  For the later, the entry is compatible with /etc/passwd
- *     (i.e., username followed by password separated by colons).
+ *     Initialize the hash table of authorized users.  Fallback auth user
+ *     authentication.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Initialize and populate user hash table.
+ *      Initialize and populate user hash table. The entries are compatible
+ *      with /etc/passwd (i.e., username followed by password separated by
+ *      colons).
  *
  *----------------------------------------------------------------------
  */
@@ -120,7 +120,7 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
     size_t      i;
 
     NS_NONNULL_ASSERT(localModPtr != NULL);
-    NS_NONNULL_ASSERT(server != NULL);
+    //NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(module != NULL);
 
     Tcl_InitHashTable(&localModPtr->users, TCL_STRING_KEYS);
@@ -240,6 +240,7 @@ Ns_ModuleInit(const char *server, const char *module)
          */
         modPtr = ns_malloc(sizeof(Mod));
         modPtr->server = server;
+        modPtr->servPtr = Ns_GetServer(server);
         modPtr->addr = ns_strcopy(addr);
         modPtr->port = port;
         modPtr->echo = Ns_ConfigBool(section, "echopasswd", NS_FALSE);
@@ -610,7 +611,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
         && GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)
         ) {
         const char *pass;
-        bool        nscpUserLookup = NS_TRUE;
+        bool        nscpUserLookup = NS_FALSE;
 
         user = Ns_StrTrim(uds.string);
         pass = Ns_StrTrim(pds.string);
@@ -628,47 +629,43 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 
         if (*user == '\0' && sessPtr->viaLoopback) {
             ok = NS_TRUE;
+        } else if (sessPtr->modPtr->server == NULL) {
+            Ns_Log(Warning, "nscp: to use AuthorizeUser, register the nscp module for a server, not globally");
+            nscpUserLookup = NS_TRUE;
+
         } else {
-            int         rc;
-            Tcl_DString scriptDs;
-            const char *resultString;
-            Tcl_Interp *interp = Ns_TclAllocateInterp(sessPtr->modPtr->server);
+            Ns_ReturnCode status;
+            const char *authority = NULL;
 
-            Tcl_DStringInit(&scriptDs);
-            Ns_DStringPrintf(&scriptDs,
-                             "expr {{nsperm} in [ns_ictl getmodules] && [ns_perm checkpass {%s} {%s}] eq {}}",
-                             user, pass);
-            rc = Tcl_EvalEx(interp, scriptDs.string, scriptDs.length, 0);
-            resultString = Tcl_GetString(Tcl_GetObjResult(interp));
-            //Ns_Log(Notice, "rc %d result '%s'", rc, resultString);
+            /*fprintf(stderr, "NSCP LOGIN server '%s'\n", sessPtr->modPtr->server);*/
 
-            if (rc == 0 && *resultString == '1') {
-                /*
-                 * The "nsperm" module is installed, login is ok.
-                 */
+            /*
+             * We have the following logic:
+             *   when ok        -> authorization was successful
+             *   nscpUserLookup -> try user lookup of nscp module
+             *
+             * Ns_AuthorizeUser() return codes:
+             *   NS_OK -> ok = NS_TRUE, nscpUserLookup = NS_FALSE
+             *   NS_FORBIDDEN -> ok = NS_FALSE, nscpUserLookup = NS_FALSE
+             *   NS_UNAUTHORIZED -> ok = NS_FALSE, nscpUserLookup = NS_TRUE
+             *
+             */
+            status = Ns_AuthorizeUser((Ns_Server*)(sessPtr->modPtr->servPtr), user, pass, &authority);
+            /*fprintf(stderr, "NSCP LOGIN server '%s' -> %s %d (%s)\n", sessPtr->modPtr->server,
+              authority, status, Ns_ReturnCodeString(status));*/
+            Ns_Log(Notice, "nscp login user '%s' -> %s", user,  Ns_ReturnCodeString(status));
+            if (status == NS_OK) {
                 ok = NS_TRUE;
-            } else if (rc == 0 && *resultString == '0') {
-                /*
-                 * The "nsperm" module is not installed, use nscpUserLookup.
-                 */
-            } else if (rc == 1 && STREQ(resultString, "user not found")) {
-                /*
-                 * The "nsperm" module is installed, but user is unknown.
-                 * Reject the login attempt.
-                 */
                 nscpUserLookup = NS_FALSE;
-            } else if (rc == 1 && STREQ(resultString, "incorrect password")) {
-                /*
-                 * The "nsperm" module is installed, but the password is
-                 * incorrect.  Reject the login attempt.
-                 */
+            } else if (status == NS_FORBIDDEN) {
+                ok = NS_FALSE;
                 nscpUserLookup = NS_FALSE;
+            } else {
+                ok = NS_FALSE;
+                nscpUserLookup = NS_TRUE;
             }
-            Ns_TclDeAllocateInterp(interp);
-            Tcl_DStringFree(&scriptDs);
         }
-
-        if (ok == NS_FALSE && nscpUserLookup) {
+        if (nscpUserLookup) {
             const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&sessPtr->modPtr->users, user);
 
             if (hPtr != NULL) {
@@ -676,9 +673,12 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
                 char  buf[NS_ENCRYPT_BUFSIZE];
 
                 (void) Ns_Encrypt(pass, encpass, buf);
+
                 if (STREQ(buf, encpass)) {
                     ok = NS_TRUE;
                 }
+            } else {
+                Ns_Log(Warning, "nscp: no such global user: %s", user);
             }
         }
     }

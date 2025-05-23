@@ -1066,7 +1066,7 @@ Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_UrlSpecificGet, Ns_UrlSpecificGetFast, Ns_UrlSpecificGetExact --
+ * Ns_UrlSpecificGetFast, Ns_UrlSpecificGetExact --
  *
  *      Find URL-specific data in the subspace identified by id that
  *      the passed-in URL matches.
@@ -1082,20 +1082,6 @@ Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
  *
  *----------------------------------------------------------------------
  */
-void *
-Ns_UrlSpecificGet(const char *server, const char *key, const char *url, int id)
-{
-    NsServer *servPtr;
-
-    NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
-    NS_NONNULL_ASSERT(url != NULL);
-
-    servPtr = NsGetServer(server);
-    return (likely(servPtr != NULL)) ?
-        NsUrlSpecificGet((Ns_Server *)servPtr, key, url, id, 0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL)
-        : NULL;
-}
 
 #ifdef NS_WITH_DEPRECATED
 void *
@@ -1112,7 +1098,7 @@ Ns_UrlSpecificGetFast(const char *server, const char *key, const char *url, int 
 
     servPtr = NsGetServer(server);
     return likely(servPtr != NULL) ?
-        NsUrlSpecificGet((Ns_Server *)servPtr, key, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL, NULL)
+        Ns_UrlSpecificGet((Ns_Server *)servPtr, key, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL, NULL)
         : NULL;
 }
 #endif
@@ -1129,7 +1115,7 @@ Ns_UrlSpecificGetExact(const char *server, const char *key, const char *url,
 
     servPtr = NsGetServer(server);
     return likely(servPtr != NULL) ?
-        NsUrlSpecificGet((Ns_Server *)servPtr, key, url, id, flags, NS_URLSPACE_EXACT, NULL, NULL, NULL)
+        Ns_UrlSpecificGet((Ns_Server *)servPtr, key, url, id, flags, NS_URLSPACE_EXACT, NULL, NULL, NULL)
         : NULL;
 }
 
@@ -1137,7 +1123,7 @@ Ns_UrlSpecificGetExact(const char *server, const char *key, const char *url,
 /*
  *----------------------------------------------------------------------
  *
- * NsUrlSpecificGet --
+ * Ns_UrlSpecificGet --
  *
  *      Lower level function, receives NsServer instead of string base
  *      server name.  "flags" are just used, when NS_URLSPACE_EXACT is
@@ -1155,7 +1141,7 @@ Ns_UrlSpecificGetExact(const char *server, const char *key, const char *url,
  */
 
 void *
-NsUrlSpecificGet(const Ns_Server *server, const char *key, const char *url, int id,
+Ns_UrlSpecificGet(const Ns_Server *server, const char *key, const char *url, int id,
                  unsigned int flags, Ns_UrlSpaceOp op,
                  Ns_UrlSpaceMatchInfo *matchInfoPtr,
                  Ns_UrlSpaceContextFilterEvalProc proc, void *context)
@@ -1176,7 +1162,7 @@ NsUrlSpecificGet(const Ns_Server *server, const char *key, const char *url, int 
     MkSeq(dsPtr, key, url);
 
 #ifdef DEBUG
-    fprintf(stderr, "NsUrlSpecificGet %s %s op %d\n", key, url, op);
+    fprintf(stderr, "Ns_UrlSpecificGet %s %s op %d\n", key, url, op);
     PrintSeq(dsPtr->string);
 #endif
 
@@ -3417,7 +3403,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 #endif
             //Ns_Log(Notice, "UrlSpaceGetObjCmd context %p context %p", (void*)context, (void*)ctxPtr);
             Ns_RWLockRdLock(&servPtr->urlspace.idlocks[id]);
-            data = NsUrlSpecificGet((Ns_Server*)servPtr, key, url, id, flags, op, NULL, NsUrlSpaceContextFilterEval, ctxPtr);
+            data = Ns_UrlSpecificGet((Ns_Server*)servPtr, key, url, id, flags, op, NULL, NsUrlSpaceContextFilterEval, ctxPtr);
             Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
 
             Tcl_SetObjResult(interp, Tcl_NewStringObj(data, TCL_INDEX_NONE));

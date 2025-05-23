@@ -12,7 +12,7 @@ testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 #######################################################################################
 test ns_requestauthorize-1.0 {syntax: ns_requestauthorize} -body {
     ns_requestauthorize
-} -returnCodes error -result {wrong # args: should be "ns_requestauthorize /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
+} -returnCodes error -result {wrong # args: should be "ns_requestauthorize ?-dict? ?--? /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
 
 #######################################################################################
 #  test ns_checkurl

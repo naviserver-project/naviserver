@@ -896,10 +896,13 @@ typedef struct NsServer {
      */
 
     struct {
-        Ns_RequestAuthorizeProc *authProc;
+        Ns_AuthorizeRequestProc *authProc;
+        struct RequestAuth *firstRequestAuthPtr;
+        struct UserAuth *firstUserAuthPtr;
         Tcl_HashTable redirect;
         Tcl_HashTable proxy;
         Ns_Mutex plock;
+        Ns_RWLock rwlock;
     } request;
 
     /*
@@ -1319,6 +1322,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclAtShutdownObjCmd,
     NsTclAtSignalObjCmd,
     NsTclAtStartupObjCmd,
+    NsTclAuthObjCmd,
     NsTclBase64DecodeObjCmd,
     NsTclBase64EncodeObjCmd,
     NsTclBase64UrlDecodeObjCmd,
@@ -1440,6 +1444,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclRandObjCmd,
     NsTclReflowTextObjCmd,
     NsTclRegisterAdpObjCmd,
+    NsTclRegisterAuthObjCmd,
     NsTclRegisterFastPathObjCmd,
     NsTclRegisterFastUrl2FileObjCmd,
     NsTclRegisterFilterObjCmd,
@@ -1659,7 +1664,7 @@ NS_EXTERN char *NsParseTagEnd(char *str) NS_GNUC_CONST
 NS_EXTERN void NsParseAuth(Conn *connPtr, const char *auth)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN Ns_ReturnCode NsAuthorizeRequest(const NsServer *servPtr,
+NS_EXTERN Ns_ReturnCode NsAuthorizeRequest(NsServer *servPtr,
                                            const char *method, const char *url,
                                            const char *user, const char *passwd, const char *peer)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);

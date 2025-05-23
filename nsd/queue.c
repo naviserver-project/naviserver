@@ -530,12 +530,12 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         NsUrlSpaceContext ctx;
 
         NsUrlSpaceContextInit(&ctx, sockPtr, sockPtr->reqPtr->headers);
-        poolPtr = NsUrlSpecificGet((Ns_Server*)servPtr,
-                                   sockPtr->reqPtr->request.method,
-                                   sockPtr->reqPtr->request.url,
-                                   poolid, 0u, NS_URLSPACE_DEFAULT,
-                                   NULL,
-                                   NsUrlSpaceContextFilterEval, &ctx);
+        poolPtr = Ns_UrlSpecificGet((Ns_Server*)servPtr,
+                                    sockPtr->reqPtr->request.method,
+                                    sockPtr->reqPtr->request.url,
+                                    poolid, 0u, NS_URLSPACE_DEFAULT,
+                                    NULL,
+                                    NsUrlSpaceContextFilterEval, &ctx);
         sockPtr->poolPtr = poolPtr;
 
     } else if (sockPtr->poolPtr != NULL) {
@@ -1184,9 +1184,9 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         }
 
         Ns_MutexLock(&servPtr->urlspace.lock);
-        mappedPoolPtr = (ConnPool *)NsUrlSpecificGet((Ns_Server*)servPtr,
-                                                     method, url, poolid, flags, op,
-                                                     NULL, NULL, NULL);
+        mappedPoolPtr = (ConnPool *)Ns_UrlSpecificGet((Ns_Server*)servPtr,
+                                                      method, url, poolid, flags, op,
+                                                      NULL, NULL, NULL);
         Ns_MutexUnlock(&servPtr->urlspace.lock);
         if (mappedPoolPtr == NULL) {
             mappedPoolPtr = servPtr->pools.defaultPtr;
@@ -2723,14 +2723,18 @@ ConnRun(Conn *connPtr)
         }
 
         if (status == NS_OK) {
-            status = NsAuthorizeRequest(servPtr,
-                                        connPtr->request.method,
-                                        connPtr->request.url,
-                                        Ns_ConnAuthUser(conn),
-                                        Ns_ConnAuthPasswd(conn),
-                                        Ns_ConnPeerAddr(conn));
+            const char *authority = NULL;
+
+            status = Ns_AuthorizeRequest((Ns_Server*)servPtr,
+                                         connPtr->request.method,
+                                         connPtr->request.url,
+                                         Ns_ConnAuthUser(conn),
+                                         Ns_ConnAuthPasswd(conn),
+                                         Ns_ConnPeerAddr(conn),
+                                         &authority);
             switch (status) {
-            case NS_OK:
+            case NS_OK:            NS_FALL_THROUGH; /* fall through */
+            case NS_FILTER_BREAK:
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
                 Ns_GetTime(&connPtr->filterDoneTime);
                 if (status == NS_OK && (connPtr->sockPtr != NULL)) {
@@ -2749,10 +2753,14 @@ ConnRun(Conn *connPtr)
                 (void) Ns_ConnReturnUnauthorized(conn);
                 break;
 
-            case NS_CONTINUE:       NS_FALL_THROUGH; /* fall through */
+            case NS_FILTER_RETURN:
+                /*
+                 * The auth filter does not want us to run the request, it
+                 * should have already provided a response for the request.
+                 */
+                break;
+
             case NS_ERROR:          NS_FALL_THROUGH; /* fall through */
-            case NS_FILTER_BREAK:   NS_FALL_THROUGH; /* fall through */
-            case NS_FILTER_RETURN:  NS_FALL_THROUGH; /* fall through */
             case NS_TIMEOUT:
                 (void)Ns_ConnTryReturnInternalError(conn, status, "after authorize request");
                 break;

@@ -1072,7 +1072,6 @@ typedef int bool;
  * since negative numbers denote different kinds of non-success.
  */
 typedef enum {
-    NS_CONTINUE =         (TCL_CONTINUE),
     NS_OK =               ( 0), /* success */
     NS_ERROR =            (-1), /* error */
     NS_TIMEOUT =          (-2), /* timeout occurred */

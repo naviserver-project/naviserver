@@ -200,6 +200,7 @@ static const Cmd servCmds[] = {
     {"ns_adp_tell",              NsTclAdpTellObjCmd},
     {"ns_adp_trunc",             NsTclAdpTruncObjCmd},
     {"ns_atclose",               NsTclAtCloseObjCmd},
+    {"ns_auth",                  NsTclAuthObjCmd},
     {"ns_cache_append",          NsTclCacheAppendObjCmd},
     {"ns_cache_configure",       NsTclCacheConfigureObjCmd},
     {"ns_cache_create",          NsTclCacheCreateObjCmd},
@@ -253,6 +254,7 @@ static const Cmd servCmds[] = {
 #ifdef NS_WITH_DEPRECATED
     {"ns_register_adptag",       NsTclAdpRegisterAdptagObjCmd},
 #endif
+    {"ns_register_auth",         NsTclRegisterAuthObjCmd},
     {"ns_register_fastpath",     NsTclRegisterFastPathObjCmd},
     {"ns_register_fasturl2file", NsTclRegisterFastUrl2FileObjCmd},
     {"ns_register_filter",       NsTclRegisterFilterObjCmd},

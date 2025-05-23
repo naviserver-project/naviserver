@@ -118,8 +118,7 @@ to be executed at each of these stages.
 [item] TCL_ERROR: When the filter procs raises an error.
 
 [item] TCL_OK: When the script is executed successfully
-       and ends with [const {return -code continue}], or
-       the constant [const {return filter_ok}]
+       and ends with [const {return -code continue}] or [const {return filter_ok}].
 
 [item] TCL_BREAK: When the script is executed successfully
        and ends with [const {return -code break}] or [const {return filter_break}].

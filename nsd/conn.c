@@ -312,14 +312,14 @@ Ns_ConnServer(const Ns_Conn *conn)
     return ((const Conn *)conn)->server;
 }
 
-const Ns_Server *
-NsConnServPtr(const Ns_Conn *conn)
+Ns_Server *
+Ns_ConnServPtr(const Ns_Conn *conn)
 {
     const Conn *connPtr = (Conn *)conn;
 
-    return (const Ns_Server *)(connPtr->sockPtr
-                               ? connPtr->sockPtr->servPtr
-                               :  NsGetServer(connPtr->server));
+    return (Ns_Server *)(connPtr->sockPtr
+                         ? connPtr->sockPtr->servPtr
+                         :  NsGetServer(connPtr->server));
 }
 
 

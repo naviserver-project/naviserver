@@ -1001,7 +1001,6 @@ const char *Ns_ReturnCodeString(Ns_ReturnCode code)
     const char  *result;
 
     switch (code) {
-    case NS_CONTINUE:      result = "NS_CONTINUE"; break;
     case NS_OK:            result = "NS_OK"; break;
     case NS_ERROR:         result = "NS_ERROR"; break;
     case NS_TIMEOUT:       result = "NS_TIMEOUT"; break;

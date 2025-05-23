@@ -39,12 +39,13 @@ static const char *NS_EMPTY_STRING = "";
  * The following structure is allocated for each instance of the module.
  */
 
-typedef struct Server {
+typedef struct PServer {
     const char *server;
+    Ns_Server *servPtr;
     Tcl_HashTable users;
     Tcl_HashTable groups;
     Ns_RWLock lock;
-} Server;
+} PServer;
 
 /*
  * The "users" hash table points to this kind of data:
@@ -108,16 +109,17 @@ static int AllowDenyObjCmd(
     bool user
 );
 
-static bool ValidateUserAddr(User * userPtr, const char *peer);
-static Ns_RequestAuthorizeProc AuthProc;
-static void WalkCallback(Tcl_DString * dsPtr, const void *arg);
+static Ns_AuthorizeRequestProc AuthorizeRequestProc;
+static Ns_AuthorizeUserProc AuthorizeUserProc;
+
+static bool ValidateUserAddr(User *userPtr, const char *peer);
+static void WalkCallback(Tcl_DString *dsPtr, const void *arg);
 static Ns_ReturnCode CreateNonce(const char *privatekey, char **nonce, const char *uri);
-static Ns_ReturnCode CreateHeader(const Server * servPtr, const Ns_Conn *conn, bool stale);
+static Ns_ReturnCode CreateHeader(const PServer *psevPtr, const Ns_Conn *conn, bool stale);
 /*static Ns_ReturnCode CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
 
 static void FreeUserInfo(User *userPtr, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 
 /*
  * Static variables defined in this file.
@@ -147,44 +149,56 @@ static Tcl_HashTable serversTable;
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *UNUSED(module))
 {
-    Server        *servPtr;
+    PServer       *psrvPtr;
     Tcl_HashEntry *hPtr;
     int            isNew;
     Ns_ReturnCode  result;
 
     if (uskey < 0) {
-        double        d;
-        char          buf[TCL_INTEGER_SPACE];
-        Ns_CtxMD5     md5;
-        unsigned long bigRamdomNumber;
-        unsigned char sig[16];
-
         uskey = Ns_UrlSpecificAlloc();
-        Tcl_InitHashTable(&serversTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&serversTable, TCL_ONE_WORD_KEYS);
 
-        /* Make a really big random number */
-        d = Ns_DRand();
-        bigRamdomNumber = (unsigned long) (d * 1024 * 1024 * 1024);
+        /*
+         * Initialize global variable "usdigest" used in CreateNonce()
+         */
+        {
+            double        d;
+            char          buf[TCL_INTEGER_SPACE];
+            Ns_CtxMD5     md5;
+            unsigned long bigRamdomNumber;
+            unsigned char sig[16];
 
-        /* There is no requirement to hash it but it won't hurt */
-        Ns_CtxMD5Init(&md5);
-        snprintf(buf, sizeof(buf), "%lu", bigRamdomNumber);
-        Ns_CtxMD5Update(&md5, (unsigned char *) buf, strlen(buf));
-        Ns_CtxMD5Final(&md5, sig);
-        Ns_HexString(sig, usdigest, 16, NS_TRUE);
+            /* Make a really big random number */
+            d = Ns_DRand();
+            bigRamdomNumber = (unsigned long) (d * 1024 * 1024 * 1024);
+
+            /* There is no requirement to hash it but it won't hurt */
+            Ns_CtxMD5Init(&md5);
+            snprintf(buf, sizeof(buf), "%lu", bigRamdomNumber);
+            Ns_CtxMD5Update(&md5, (unsigned char *) buf, strlen(buf));
+            Ns_CtxMD5Final(&md5, sig);
+            Ns_HexString(sig, usdigest, 16, NS_TRUE);
+        }
     }
-    servPtr = ns_malloc(sizeof(Server));
-    servPtr->server = server;
-    Tcl_InitHashTable(&servPtr->users, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->groups, TCL_STRING_KEYS);
-    Ns_RWLockInit(&servPtr->lock);
-    Ns_RWLockSetName2(&servPtr->lock, "rw:nsperm", server);
-    Ns_SetRequestAuthorizeProc(server, AuthProc);
+    if (server == NULL) {
+        Ns_Log(Warning, "nsperm: global module registration not supported,"
+               " module must be registered on a server");
+        result = NS_ERROR;
+    } else {
+        psrvPtr = ns_malloc(sizeof(PServer));
+        psrvPtr->server = server;
+        psrvPtr->servPtr = server != NULL ? Ns_GetServer(server) : NULL;
+        Tcl_InitHashTable(&psrvPtr->users, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&psrvPtr->groups, TCL_STRING_KEYS);
+        Ns_RWLockInit(&psrvPtr->lock);
+        Ns_RWLockSetName2(&psrvPtr->lock, "rw:nsperm", server);
+        Ns_RegisterAuthorizeRequest(server, AuthorizeRequestProc, NULL, "nsperm", NS_TRUE);
+        Ns_RegisterAuthorizeUser(server, AuthorizeUserProc, NULL, "nsperm", NS_TRUE);
 
-    result = Ns_TclRegisterTrace(server, AddCmds, servPtr, NS_TCL_TRACE_CREATE);
-    hPtr = Tcl_CreateHashEntry(&serversTable, server, &isNew);
-    Tcl_SetHashValue(hPtr, servPtr);
-
+        result = Ns_TclRegisterTrace(server, AddCmds, psrvPtr, NS_TCL_TRACE_CREATE);
+        hPtr = Tcl_CreateHashEntry(&serversTable, psrvPtr->servPtr, &isNew);
+        Tcl_SetHashValue(hPtr, psrvPtr);
+    }
     return result;
 }
 
@@ -230,7 +244,7 @@ static int AddCmds(Tcl_Interp *interp, const void *arg)
 
 static int PermObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server *servPtr = data;
+    PServer *psrvPtr = data;
     int opt, status = TCL_OK;
 
     static const char *opts[] = {
@@ -261,111 +275,304 @@ static int PermObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
     switch (opt) {
     case cmdAddUser:
-        status = AddUserObjCmd(servPtr, interp, objc, objv);
+        status = AddUserObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdDelUser:
-        status = DelUserObjCmd(servPtr, interp, objc, objv);
+        status = DelUserObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdAddGroup:
-        status = AddGroupObjCmd(servPtr, interp, objc, objv);
+        status = AddGroupObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdDelGroup:
-        status = DelGroupObjCmd(servPtr, interp, objc, objv);
+        status = DelGroupObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdListUsers:
-        status = ListUsersObjCmd(servPtr, interp, objc, objv);
+        status = ListUsersObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdListGroups:
-        status = ListGroupsObjCmd(servPtr, interp, objc, objv);
+        status = ListGroupsObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdListPerms:
-        status = ListPermsObjCmd(servPtr, interp, objc, objv);
+        status = ListPermsObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdDelPerm:
-        status = DelPermObjCmd(servPtr, interp, objc, objv);
+        status = DelPermObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdAllowUser:
-        status = AllowDenyObjCmd(servPtr, interp, objc, objv, NS_TRUE, NS_TRUE);
+        status = AllowDenyObjCmd(psrvPtr, interp, objc, objv, NS_TRUE, NS_TRUE);
         break;
 
     case cmdDenyUser:
-        status = AllowDenyObjCmd(servPtr, interp, objc, objv, NS_FALSE, NS_TRUE);
+        status = AllowDenyObjCmd(psrvPtr, interp, objc, objv, NS_FALSE, NS_TRUE);
         break;
 
     case cmdAllowGroup:
-        status = AllowDenyObjCmd(servPtr, interp, objc, objv, NS_TRUE, NS_FALSE);
+        status = AllowDenyObjCmd(psrvPtr, interp, objc, objv, NS_TRUE, NS_FALSE);
         break;
 
     case cmdDenyGroup:
-        status = AllowDenyObjCmd(servPtr, interp, objc, objv, NS_FALSE, NS_FALSE);
+        status = AllowDenyObjCmd(psrvPtr, interp, objc, objv, NS_FALSE, NS_FALSE);
         break;
 
     case cmdCheckPass:
-        status = CheckPassObjCmd(servPtr, interp, objc, objv);
+        status = CheckPassObjCmd(psrvPtr, interp, objc, objv);
         break;
 
     case cmdSetPass:
-        status = SetPassObjCmd(servPtr, interp, objc, objv);
+        status = SetPassObjCmd(psrvPtr, interp, objc, objv);
         break;
     }
     return status;
 }
-
+
 
 /*
  *----------------------------------------------------------------------
  *
- * AuthProc --
+ * CheckPassword --
  *
- *      Authorize a URL--this callback is called when a new
- *      connection is received.
+ *      Validate a supplied password against a stored password, handling
+ *      either clear-text or encrypted storage formats.
  *
- *      Digest authentication per RFC 2617 but currently
- *      supports qop="auth" and MD5 hashing only.
+ * Parameters:
+ *      inputPwd   - NUL-terminated string of the password provided by the user
+ *      storedPwd  - NUL-terminated string of the password stored on the server
+ *                   (either clear text or encrypted)
+ *      flags      - bitmask indicating storage format; if USER_CLEAR_TEXT is
+ *                   set, storedPwd is plain text, otherwise it is an encrypted hash
  *
- *      The logic goes like this:
- *       - fetch the Authorization header
- *         if it exists, continue
- *         if it doesn't exist, return an Unauthorized header and
- *         WWW-Authenticate header.
- *       - Parse the Authorization header and perform digest authentication
- *         against it.
+ * Returns:
+ *      NS_OK          if the provided password matches the stored password
+ *      NS_UNAUTHORIZED if the passwords do not match
  *
- * Results:
- *      NS_OK: accept;
- *      NS_FORBIDDEN or NS_UNAUTHORIZED: go away;
- *      NS_ERROR: oops
+ * Side Effects:
+ *      None.
  *
- * Side effects:
- *      None
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+CheckPassword(const char *inputPwd, const char *storedPwd, int flags)
+{
+    Ns_ReturnCode result = NS_OK;
+    /*
+     * Handle the case where the password is stored as clear text.
+     */
+    if ((flags & USER_CLEAR_TEXT) != 0u) {
+        if (!STREQ(inputPwd, storedPwd)) {
+            result = NS_UNAUTHORIZED;
+        }
+    } else {
+        char buf[NS_ENCRYPT_BUFSIZE];
+        /*
+         * Handle the case where the password is (en)crypted
+         */
+        Ns_Encrypt(inputPwd, storedPwd, buf);
+        if (!STREQ(storedPwd, buf)) {
+            result = NS_UNAUTHORIZED;
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetServer --
+ *
+ *      Lookup the PServer instance corresponding to a given Ns_Server
+ *      pointer in the serversTable.  This bridges from the opaque
+ *      Ns_Server to the module’s private PServer struct.
+ *
+ * Parameters:
+ *      servPtr    - pointer to an Ns_Server object (as passed by the core)
+ *
+ * Returns:
+ *      pointer to the matching PServer, or NULL if not found
+ *
+ * Side Effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static PServer *
+GetServer(const Ns_Server *servPtr) {
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&serversTable, servPtr);
+    if (hPtr == NULL) {
+        return NULL;
+    }
+    return Tcl_GetHashValue(hPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AuthorizeUserProc --
+ *
+ *      Authorize a user based on the nsperm records. This callback is called
+ *      when just a user is to be authenticated (e.g. nscp module).
+ *
+ *      The function looks up the given username in the the nsperm records and
+ *      verifies the password via CheckPassword().  Whan a record for this
+ *      user exists, it sets *continuationPtr to TCL_BREAK to halt any further
+ *      user callbacks.
+ *
+ * Parameters:
+ *      arg             - unused (used e.g. for script level callbacks)
+ *      servPtr         - pointer to the Ns_Server instance
+ *      user            - username string to authenticate
+ *      passwd          - password string provided by the client
+ *      continuationPtr - out‐parameter; will be set to TCL_BREAK to stop
+ *                        the callback chain after this proc
+ *
+ * Returns:
+ *      NS_OK           - the user was found and the password matches
+ *      NS_FORBIDDEN    - the user was found but the password is incorrect
+ *      NS_UNAUTHORIZED - the server context is missing or the user is not found
+ *
+ * Side Effects:
+ *      Acquires the server’s request‐auth rwlock in read mode.
  *
  *----------------------------------------------------------------------
  */
 
-static Ns_ReturnCode AuthProc(const char *server, const char *method, const char *url,
-                              const char *user, const char *pwd, const char *peer)
+static Ns_ReturnCode
+AuthorizeUserProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *user, const char *passwd,
+                  int *continuationPtr)
+{
+    Ns_ReturnCode  result = NS_OK;
+    Tcl_HashEntry *hPtr;
+    PServer       *psrvPtr;
+
+    psrvPtr = GetServer(servPtr);
+    /*fprintf(stderr, "NSPERM AuthorizeUserProc servPtr %p psrvPtr %p (user %s pass %s)\n",
+      (void*)servPtr, (void*)psrvPtr, user, passwd);*/
+    Ns_RWLockRdLock(&psrvPtr->lock);
+    if (psrvPtr == NULL) {
+        result = NS_UNAUTHORIZED;
+    } else {
+        hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
+        if (hPtr != NULL) {
+            User *userPtr;
+
+            /*fprintf(stderr, "NSPERM ... user %s found\n", user);*/
+            userPtr = Tcl_GetHashValue(hPtr);
+
+            if (CheckPassword(passwd, userPtr->pwd, userPtr->flags) != NS_OK) {
+                /*
+                 * Incorrect password
+                 */
+                result = NS_FORBIDDEN;
+            }
+            *continuationPtr = TCL_BREAK;
+        } else {
+            result = NS_UNAUTHORIZED;
+        }
+    }
+    Ns_RWLockUnlock(&psrvPtr->lock);
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AuthorizeRequestProc --
+ *
+ *      Authorize a URL based on the nsperm records. This callback is called
+ *      for incoming HTTP requests before serving a page.
+ *
+ *      Implemented logic:
+ *
+ *        1. Look up the Perm record for (method, URL). If none exists,
+ *           return NS_UNAUTHORIZED (to trigger a WWW-Authenticate).
+ *
+ *        2. Extract "authmethod" from conn->auth (defaulting to "Basic").
+ *
+ *        3. Verify credentials:
+ *             - Basic:     compare with userPtr->pwd via CheckPassword()
+ *             - Digest:    call Ns_AuthDigestValidate()
+ *           If the user record is missing or the check fails, return
+ *           NS_UNAUTHORIZED (to allow the client to retry).
+ *
+ *        4. Enforce host/IP filters via ValidateUserAddr():
+ *           on failure return NS_FORBIDDEN (and set *continuationPtr=TCL_BREAK).
+ *
+ *        5. Check deny lists:
+ *             - if user ∈ denyuser      ⇒ NS_FORBIDDEN
+ *             - if user ∈ any denygroup ⇒ NS_FORBIDDEN
+ *
+ *        6. Check allow lists:
+ *             - if user ∈ allowuser   ⇒ NS_OK
+ *             - if user ∈ any allowgroup ⇒ NS_OK
+ *
+ *        7. If no explicit allow and PERM_IMPLICIT_ALLOW flag is *not* set,
+ *           return NS_UNAUTHORIZED; otherwise NS_OK.
+ *
+ *      On NS_UNAUTHORIZED with Digest, a WWW-Authenticate header is added.
+ *
+ * Results:
+ *      NS_OK           - access granted
+ *      NS_FORBIDDEN    - access denied, no retry (e.g. IP or deny rule)
+ *      NS_UNAUTHORIZED - authentication required or failed, retry possible
+ *      NS_ERROR        - internal error (e.g. no server or module)
+ *
+ *      NS_OK:
+ *       - we have a permission record for this URL
+ *         && user exists
+ *         && credentials validated
+ *         && address check OK
+ *         && no explicit denial
+ *         && explicit allow or implicit-allow
+ *
+ *      NS_FORBIDDEN is returned, when
+ *       - Client IP fails address‐ACL check
+ *       - User is explicitly denied
+ *
+ *      NS_UNAUTHORIZED is returned, when
+ *       - User lookup failure
+ *       - Unknown auth scheme
+ *       - Basic auth, missing or wrong password
+ *       - Digest auth, missing response or validation failure
+ *       - Invalid client IP for anonymous (EMPTY) user
+ *       - Not in any "allow" list and no implicit‐allow flag
+ *
+ *      NS_ERROR:
+ *       - the function is called without a connection
+ *       - the function is called without a registered server, no permission
+ *         table available (missing registration?)  (IMPLICIT FORBIDDEN, retry
+ *         won't change this)
+ *
+ * Side effects:
+ *      Acquires the server’s request‐auth rwlock in read mode.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *method, const char *url,
+                     const char *user, const char *pwd, const char *peer,
+                     int *continuationPtr)
 {
     Ns_ReturnCode  status;
     const Ns_Set  *set;
-    Server        *servPtr;
+    PServer       *psrvPtr;
     Perm          *permPtr;
     User          *userPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    char           buf[NS_ENCRYPT_BUFSIZE], *group;
-    const char    *auth = NULL;
+    const char    *group, *auth = NULL;
     const Ns_Conn *conn = Ns_GetConn();
 
     if (conn == NULL) {
-        Ns_Log(Error, "nsperm: authProc called without connection");
+        Ns_Log(Error, "nsperm: AuthorizeRequestProc called without connection");
         return NS_ERROR;
     }
     if (user == NULL) {
@@ -375,23 +582,27 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
         pwd = NS_EMPTY_STRING;
     }
 
-    hPtr = Tcl_FindHashEntry(&serversTable, server);
-    if (hPtr == NULL) {
-        return NS_FORBIDDEN;
+    psrvPtr = GetServer(servPtr);
+    if (psrvPtr == NULL) {
+        *continuationPtr = TCL_ERROR;
+        return NS_ERROR;
     }
-    servPtr = Tcl_GetHashValue(hPtr);
 
-    Ns_RWLockRdLock(&servPtr->lock);
-    permPtr = NsUrlSpecificGet(NsConnServPtr(conn), method, url, uskey,
-                               0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL);
+    Ns_RWLockRdLock(&psrvPtr->lock);
+    permPtr = Ns_UrlSpecificGet(Ns_ConnServPtr(conn), method, url, uskey,
+                                0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL);
+
+    /*fprintf(stderr, "NSPERM Ns_UrlSpecificGet for %s %s -> %p\n",
+      method, url, (void*)permPtr);*/
+
     if (permPtr == NULL) {
         status = NS_OK;
         goto done;
     }
 
     /*
-     * Make sure we have parsed Authentication header properly,
-     * otherwise fallback to Basic method
+     * Make sure we have parsed the Authentication header properly, otherwise
+     * fallback to Basic method.
      */
 
     set = Ns_ConnAuth(conn);
@@ -412,44 +623,61 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
      * Find user record, this is true for all methods
      */
 
-    hPtr = Tcl_FindHashEntry(&servPtr->users, user);
+    hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
     if (hPtr == NULL) {
         goto done;
     }
+    /*fprintf(stderr, "... user %s found\n", user);*/
+
     userPtr = Tcl_GetHashValue(hPtr);
 
     /*
      * Check which auth method to use, permission record will
-     * define how to verify user
+     * define how to verify the user.
      */
 
+    /*
+     * Note: the code handling "Basic" or "Digest" authentication should not
+     * be here! The code for parsing the authorization string into the Ns_set
+     * "connPtr->auth" is in auth.c (NsParseAuth); the block of user
+     * authentication with Basic and Digest authentication shouldn be moved to
+     * auth.c.
+     */
     if (STREQ(auth, "Basic")) {
 
         /*
          * Basic Authentication: Verify user password (if any).
          */
-
         if (userPtr->pwd[0] != 0) {
             if (pwd[0] == 0) {
                 goto done;
+
+            } else if (CheckPassword(pwd, userPtr->pwd, userPtr->flags) != NS_OK) {
+                /*
+                 * Incorrect password
+                 */
+                goto done;
             }
-            if (!(userPtr->flags & USER_CLEAR_TEXT)) {
-                Ns_Encrypt(pwd, userPtr->pwd, buf);
-                pwd = buf;
-            }
-            if (!STREQ(userPtr->pwd, pwd)) {
+        }
+    } else if (STREQ(auth, "Digest")) {
+        /*
+         * Digest Authentication
+         */
+        if (userPtr->pwd[0] != 0) {
+            if (pwd[0] != 0 && (userPtr->flags & USER_CLEAR_TEXT) == 0u) {
+                /*
+                 * Use the Digest Calculation to compute the hash based on a
+                 * stored plain text password.
+                 */
+                if (Ns_AuthDigestValidate(set, userPtr->pwd) != NS_OK) {
+                    goto done;
+                }
+            } else {
                 goto done;
             }
         }
     } else {
-
-        /*
-         * Digest Authentication
-         */
-
-        if (STREQ(auth, "Digest")) {
-
-        }
+        goto done;
     }
 
     /*
@@ -460,12 +688,14 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
         /*
          * Null user never gets forbidden--give a chance to enter password.
          */
-      deny:
+    deny:
         if (*user != '\0') {
             status = NS_FORBIDDEN;
+            *continuationPtr = TCL_BREAK;
         }
         goto done;
     }
+    /*fprintf(stderr, "... address %s OK\n", peer);*/
 
     /*
      * Check user deny list.
@@ -474,6 +704,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     if (Tcl_FindHashEntry(&permPtr->denyuser, user) != NULL) {
         goto deny;
     }
+    /*fprintf(stderr, "... user not denied\n");*/
 
     /*
      * Loop over all groups in this perm record, and then
@@ -488,6 +719,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
         }
         hPtr = Tcl_NextHashEntry(&search);
     }
+    /*fprintf(stderr, "... user not in denygroup\n");*/
 
     /*
      * Valid checks below allow access.
@@ -502,6 +734,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     if (Tcl_FindHashEntry(&permPtr->allowuser, user) != NULL) {
         goto done;
     }
+    /*fprintf(stderr, "... user not in allowuser\n");*/
 
     /*
      * Loop over all groups in this perm record, and then
@@ -516,6 +749,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
         }
         hPtr = Tcl_NextHashEntry(&search);
     }
+    /*fprintf(stderr, "... user not in allowgroup\n");*/
 
     /*
      * Checks above failed.  If implicit allow is not set,
@@ -534,11 +768,12 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
      * For Digest authentication we create WWW-Authenticate header manually
      */
 
-    if (status == NS_UNAUTHORIZED && !strcmp(auth, "Digest")) {
-        CreateHeader(servPtr, conn, NS_FALSE);
+    if (status == NS_UNAUTHORIZED && auth != NULL && !strcmp(auth, "Digest")) {
+        CreateHeader(psrvPtr, conn, NS_FALSE);
     }
 
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
+    /*fprintf(stderr, "NSPERM AuthorizeRequestProc returns %d (%s)\n", status, Ns_ReturnCodeString(status));*/
     return status;
 }
 
@@ -548,13 +783,36 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
  *
  * ValidateUserAddr --
  *
- *      Validate that the peer address is valid for this user
+ *      Determine whether a client's peer address is permitted for a given user,
+ *      based on the user's configured IP/netmask and hostname filters.
  *
- * Results:
- *      NS_TRUE if allowed, NS_FALSE if not
+ *      1. If no peer string is provided, allow by default.
+ *      2. Parse the peer string into a sockaddr.  If parsing fails, deny.
+ *      3. For each network mask in userPtr->masks:
+ *         - Mask the peer address with this mask.
+ *         - Look up the masked address in userPtr->nets.
+ *         - If found, compare the stored mask string; if they match:
+ *             -> Return true if USER_FILTER_ALLOW is set, false otherwise.
+ *      4. If no mask matched:
+ *         - Start with the inverted USER_FILTER_ALLOW flag as the default result.
+ *      5. If the user has host-based filters (userPtr->hosts):
+ *         - Perform a reverse DNS lookup of the peer address.
+ *         - Slide through each hostname suffix (e.g. "foo.example.com", ".example.com", ".com"):
+ *             -> If any suffix is in userPtr->hosts, return allow or deny per USER_FILTER_ALLOW.
  *
- * Side effects:
- *      None
+ *      USER_FILTER_ALLOW is set, when the user was added with the -allow flag,
+ *      meaning the the user is granted access only on the specified hosts.
+ *
+ * Parameters:
+ *      userPtr  - pointer to the User structure containing masks, nets, hosts, and flags.
+ *      peer     - NUL-terminated string of the client’s IP address.
+ *
+ * Returns:
+ *      true  if the peer passes the user’s address/host filters (allowed),
+ *      false if it fails any check (denied).
+ *
+ * Side Effects:
+ *      May perform reverse DNS lookups via Ns_GetHostByAddr().
  *
  *----------------------------------------------------------------------
  */
@@ -752,7 +1010,7 @@ FreeUserInfo(User *userPtr, const char *name)
 
 static int AddUserObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server             *servPtr = data;
+    PServer            *psrvPtr = data;
     User               *userPtr;
     Tcl_HashEntry      *hPtr;
     struct NS_SOCKADDR_STORAGE ip, mask;
@@ -851,18 +1109,18 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, T
      * Add the user.
      */
 
-    Ns_RWLockWrLock(&servPtr->lock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->users, name, &isNew);
+    Ns_RWLockWrLock(&psrvPtr->lock);
+    hPtr = Tcl_CreateHashEntry(&psrvPtr->users, name, &isNew);
     if (isNew == 0) {
         Ns_TclPrintfResult(interp, "duplicate user: %s", name);
         goto fail0;
     }
     Tcl_SetHashValue(hPtr, userPtr);
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
     return TCL_OK;
 
   fail0:
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
 
   fail:
     FreeUserInfo(userPtr, name);
@@ -889,7 +1147,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, T
 
 static int DelUserObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server        *servPtr = data;
+    PServer       *psrvPtr = data;
     char          *name = NULL;
     User          *userPtr = NULL;
     Tcl_HashEntry *hPtr;
@@ -901,13 +1159,13 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, T
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    Ns_RWLockWrLock(&servPtr->lock);
-    hPtr = Tcl_FindHashEntry(&servPtr->users, name);
+    Ns_RWLockWrLock(&psrvPtr->lock);
+    hPtr = Tcl_FindHashEntry(&psrvPtr->users, name);
     if (hPtr != NULL) {
         userPtr = Tcl_GetHashValue(hPtr);
         Tcl_DeleteHashEntry(hPtr);
     }
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
 
     if (userPtr != NULL) {
         FreeUserInfo(userPtr, name);
@@ -939,14 +1197,14 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc,
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
         result = TCL_ERROR;
     } else {
-        Server         *servPtr = data;
+        PServer        *psrvPtr = data;
         Tcl_HashSearch  search, msearch;
         Tcl_HashEntry  *hPtr;
         Tcl_DString     ds;
 
         Tcl_DStringInit(&ds);
-        Ns_RWLockRdLock(&servPtr->lock);
-        hPtr = Tcl_FirstHashEntry(&servPtr->users, &search);
+        Ns_RWLockRdLock(&psrvPtr->lock);
+        hPtr = Tcl_FirstHashEntry(&psrvPtr->users, &search);
 
         while (hPtr != NULL) {
             char              ipString[NS_IPADDR_SIZE];
@@ -955,7 +1213,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc,
             struct sockaddr  *netPtr;
 
             Ns_DStringPrintf(&ds, "{%s} {%s} {",
-                             (const char*)Tcl_GetHashKey(&servPtr->users, hPtr),
+                             (const char*)Tcl_GetHashKey(&psrvPtr->users, hPtr),
                              userPtr->pwd);
 
             if (userPtr->hosts.numEntries > 0 || userPtr->masks.numEntries > 0 || userPtr->nets.numEntries > 0) {
@@ -993,7 +1251,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc,
 
             hPtr = Tcl_NextHashEntry(&search);
         }
-        Ns_RWLockUnlock(&servPtr->lock);
+        Ns_RWLockUnlock(&psrvPtr->lock);
         Tcl_DStringResult(interp, &ds);
     }
     return result;
@@ -1018,7 +1276,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc,
 
 static int AddGroupObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server        *servPtr = data;
+    PServer       *psrvPtr = data;
     char          *name, *user;
     User          *userPtr;
     Group         *groupPtr;
@@ -1048,7 +1306,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, 
 
     for (param = 3; param < objc; param++) {
         user = Tcl_GetString(objv[param]);
-        hPtr = Tcl_FindHashEntry(&servPtr->users, user);
+        hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
         if (hPtr == NULL) {
             Ns_TclPrintfResult(interp, "no such user: %s", user);
             goto fail;
@@ -1082,18 +1340,18 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, 
      * Add the group to the global list of groups
      */
 
-    Ns_RWLockWrLock(&servPtr->lock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->groups, name, &isNew);
+    Ns_RWLockWrLock(&psrvPtr->lock);
+    hPtr = Tcl_CreateHashEntry(&psrvPtr->groups, name, &isNew);
     if (isNew == 0) {
         Ns_TclPrintfResult(interp, "duplicate group: %s", name);
         goto fail0;
     }
     Tcl_SetHashValue(hPtr, groupPtr);
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
     return TCL_OK;
 
   fail0:
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
 
   fail:
     hPtr = Tcl_FirstHashEntry(&groupPtr->users, &search);
@@ -1128,7 +1386,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, 
 
 static int DelGroupObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server *servPtr = data;
+    PServer *psrvPtr = data;
     char *name = NULL;
     User *userPtr;
     Group *groupPtr = NULL;
@@ -1143,13 +1401,13 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, 
         return TCL_ERROR;
     }
 
-    Ns_RWLockWrLock(&servPtr->lock);
-    hPtr = Tcl_FindHashEntry(&servPtr->groups, name);
+    Ns_RWLockWrLock(&psrvPtr->lock);
+    hPtr = Tcl_FindHashEntry(&psrvPtr->groups, name);
     if (hPtr != NULL) {
         groupPtr = Tcl_GetHashValue(hPtr);
         Tcl_DeleteHashEntry(hPtr);
     }
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
 
     if (groupPtr != NULL) {
         hPtr = Tcl_FirstHashEntry(&groupPtr->users, &search);
@@ -1192,21 +1450,21 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc
         result = TCL_ERROR;
 
     } else {
-        Server         *servPtr = data;
+        PServer        *psrvPtr = data;
         Tcl_HashSearch  search;
         Tcl_HashEntry  *hPtr;
         Tcl_DString     ds;
 
         Tcl_DStringInit(&ds);
-        Ns_RWLockRdLock(&servPtr->lock);
-        hPtr = Tcl_FirstHashEntry(&servPtr->groups, &search);
+        Ns_RWLockRdLock(&psrvPtr->lock);
+        hPtr = Tcl_FirstHashEntry(&psrvPtr->groups, &search);
         while (hPtr != NULL) {
             Tcl_HashSearch usearch;
             Tcl_HashEntry *uhPtr;
             Group         *groupPtr = Tcl_GetHashValue(hPtr);
 
             Ns_DStringPrintf(&ds, "%s { ",
-                             (const char *)Tcl_GetHashKey(&servPtr->groups, hPtr));
+                             (const char *)Tcl_GetHashKey(&psrvPtr->groups, hPtr));
 
             /*
              * All users for this group
@@ -1222,7 +1480,7 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc
 
             hPtr = Tcl_NextHashEntry(&search);
         }
-        Ns_RWLockUnlock(&servPtr->lock);
+        Ns_RWLockUnlock(&psrvPtr->lock);
         Tcl_DStringResult(interp, &ds);
     }
     return result;
@@ -1287,7 +1545,7 @@ static int AllowDenyObjCmd(
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Server      *servPtr = data;
+        PServer     *psrvPtr = data;
         Perm        *permPtr;
         Tcl_DString  base;
         int          isNew;
@@ -1309,8 +1567,9 @@ static int AllowDenyObjCmd(
          * Locate and verify the exact record.
          */
 
-        Ns_RWLockWrLock(&servPtr->lock);
-        permPtr = Ns_UrlSpecificGet(servPtr->server, method, url, uskey);
+        Ns_RWLockWrLock(&psrvPtr->lock);
+        permPtr = Ns_UrlSpecificGet(psrvPtr->servPtr, method, url, uskey,
+                                    0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL);
 
         if (permPtr != NULL && !STREQ(base.string, permPtr->baseurl)) {
             permPtr = NULL;
@@ -1322,7 +1581,7 @@ static int AllowDenyObjCmd(
             Tcl_InitHashTable(&permPtr->denyuser, TCL_STRING_KEYS);
             Tcl_InitHashTable(&permPtr->allowgroup, TCL_STRING_KEYS);
             Tcl_InitHashTable(&permPtr->denygroup, TCL_STRING_KEYS);
-            Ns_UrlSpecificSet(servPtr->server, method, url, uskey, permPtr, flags, NULL);
+            Ns_UrlSpecificSet(psrvPtr->server, method, url, uskey, permPtr, flags, NULL);
         }
         if (!allow) {
             permPtr->flags |= PERM_IMPLICIT_ALLOW;
@@ -1345,7 +1604,7 @@ static int AllowDenyObjCmd(
                 }
             }
         }
-        Ns_RWLockUnlock(&servPtr->lock);
+        Ns_RWLockUnlock(&psrvPtr->lock);
         Tcl_DStringFree(&base);
     }
 
@@ -1370,7 +1629,7 @@ static int AllowDenyObjCmd(
 
 static int DelPermObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server      *servPtr = data;
+    PServer     *psrvPtr = data;
     Perm        *permPtr;
     Tcl_DString  base;
     char        *method, *url;
@@ -1406,10 +1665,11 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, T
      * Locate and verify the exact record.
      */
 
-    Ns_RWLockWrLock(&servPtr->lock);
-    permPtr = Ns_UrlSpecificGet(servPtr->server, method, url, uskey);
+    Ns_RWLockWrLock(&psrvPtr->lock);
+    permPtr = Ns_UrlSpecificGet(psrvPtr->servPtr, method, url, uskey,
+                                0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL);
     if (permPtr != NULL) {
-        Ns_UrlSpecificDestroy(servPtr->server, method, url, uskey, flags);
+        Ns_UrlSpecificDestroy(psrvPtr->server, method, url, uskey, flags);
         ns_free(permPtr->baseurl);
         Tcl_DeleteHashTable(&permPtr->allowuser);
         Tcl_DeleteHashTable(&permPtr->denyuser);
@@ -1417,7 +1677,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, T
         Tcl_DeleteHashTable(&permPtr->denygroup);
         ns_free(permPtr);
     }
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
     Tcl_DStringFree(&base);
     return TCL_OK;
 }
@@ -1446,13 +1706,13 @@ static int ListPermsObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc,
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
         result = TCL_ERROR;
     } else {
-        Server *servPtr = data;
+        PServer *psrvPtr = data;
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        Ns_RWLockRdLock(&servPtr->lock);
-        Ns_UrlSpecificWalk(uskey, servPtr->server, WalkCallback, &ds);
-        Ns_RWLockUnlock(&servPtr->lock);
+        Ns_RWLockRdLock(&psrvPtr->lock);
+        Ns_UrlSpecificWalk(uskey, psrvPtr->server, WalkCallback, &ds);
+        Ns_RWLockUnlock(&psrvPtr->lock);
 
         Tcl_DStringResult(interp, &ds);
     }
@@ -1514,7 +1774,7 @@ static void WalkCallback(Tcl_DString *dsPtr, const void *arg)
 static int
 CheckPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server *servPtr = data;
+    PServer *psrvPtr = data;
     int rc = TCL_ERROR;
     User *userPtr;
     char *user, *pwd;
@@ -1527,22 +1787,21 @@ CheckPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     user = Tcl_GetString(objv[2]);
     pwd = Tcl_GetString(objv[3]);
 
-    Ns_RWLockRdLock(&servPtr->lock);
-    hPtr = Tcl_FindHashEntry(&servPtr->users, user);
+    Ns_RWLockRdLock(&psrvPtr->lock);
+    hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
     if (hPtr == NULL) {
         Ns_TclPrintfResult(interp, "user not found");
         goto done;
     }
     userPtr = Tcl_GetHashValue(hPtr);
     if (userPtr->pwd[0] != 0) {
-        char buf[NS_ENCRYPT_BUFSIZE];
-
         if (pwd[0] == 0) {
             Ns_TclPrintfResult(interp, "empty password given");
             goto done;
         }
-        Ns_Encrypt(pwd, userPtr->pwd, buf);
-        if (!STREQ(userPtr->pwd, buf)) {
+
+        // Use the CheckPassword function for validation
+        if (CheckPassword(pwd, userPtr->pwd, userPtr->flags) != NS_OK) {
             Ns_TclPrintfResult(interp, "incorrect password");
             goto done;
         }
@@ -1550,7 +1809,7 @@ CheckPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     rc = TCL_OK;
 
   done:
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
     return rc;
 }
 
@@ -1573,7 +1832,7 @@ CheckPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
 static int
 SetPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server        *servPtr = data;
+    PServer       *psrvPtr = data;
     int            rc = 0;
     User          *userPtr;
     Tcl_HashEntry *hPtr;
@@ -1588,8 +1847,8 @@ SetPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *con
     pwd = Tcl_GetString(objv[3]);
     salt = objc > 4 ? Tcl_GetString(objv[4]) : NULL;
 
-    Ns_RWLockRdLock(&servPtr->lock);
-    hPtr = Tcl_FindHashEntry(&servPtr->users, user);
+    Ns_RWLockRdLock(&psrvPtr->lock);
+    hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
     if (hPtr == NULL) {
         goto done;
     }
@@ -1602,7 +1861,7 @@ SetPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *con
     rc = 1;
 
   done:
-    Ns_RWLockUnlock(&servPtr->lock);
+    Ns_RWLockUnlock(&psrvPtr->lock);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
     return TCL_OK;
 }
@@ -1763,7 +2022,7 @@ CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout)
 */
 
 static Ns_ReturnCode
-CreateHeader(const Server *servPtr, const Ns_Conn *conn, bool stale)
+CreateHeader(const PServer *psrvPtr, const Ns_Conn *conn, bool stale)
 {
     Ns_ReturnCode  status = NS_OK;
     char          *nonce = 0;
@@ -1774,7 +2033,7 @@ CreateHeader(const Server *servPtr, const Ns_Conn *conn, bool stale)
         Tcl_DString    ds;
 
         Tcl_DStringInit(&ds);
-        Ns_DStringPrintf(&ds, "Digest realm=\"%s\", nonce=\"%s\", algorithm=\"MD5\", qop=\"auth\"", servPtr->server, nonce);
+        Ns_DStringPrintf(&ds, "Digest realm=\"%s\", nonce=\"%s\", algorithm=\"MD5\", qop=\"auth\"", psrvPtr->server, nonce);
 
         if (stale) {
             Ns_DStringVarAppend(&ds, ", stale=\"true\"", NS_SENTINEL);

@@ -253,8 +253,8 @@ NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
     NS_NONNULL_ASSERT(flagsPtr != NULL);
 
     Ns_MutexLock(&ulock);
-    regPtr = NsUrlSpecificGet((Ns_Server*)servPtr, method, url,
-                              uid, flags, op, &matchInfo, proc, context);
+    regPtr = Ns_UrlSpecificGet((Ns_Server*)servPtr, method, url,
+                               uid, flags, op, &matchInfo, proc, context);
     Ns_Log(Debug, "NsGetRequest2 %s %s -> %p",  method, url, (void*)regPtr);
 
     if (regPtr != NULL) {
@@ -408,10 +408,10 @@ Ns_ConnRunRequest(Ns_Conn *conn)
             NsUrlSpaceContextInit(&ctx, connPtr->sockPtr, connPtr->headers);
 
             Ns_MutexLock(&ulock);
-            regPtr = NsUrlSpecificGet((Ns_Server *)(connPtr->poolPtr->servPtr),
-                                      conn->request.method, conn->request.url, uid,
-                                      0u, NS_URLSPACE_DEFAULT, &matchInfo,
-                                      NsUrlSpaceContextFilterEval, &ctx);
+            regPtr = Ns_UrlSpecificGet((Ns_Server *)(connPtr->poolPtr->servPtr),
+                                       conn->request.method, conn->request.url, uid,
+                                       0u, NS_URLSPACE_DEFAULT, &matchInfo,
+                                       NsUrlSpaceContextFilterEval, &ctx);
             /*Ns_Log(Notice, "Ns_ConnRunRequest %s %s -> %p (isSegmentMatch %d, offset %ld)",
                    conn->request.method, conn->request.url, (void*)regPtr,
                    matchInfo.isSegmentMatch, matchInfo.offset);*/
@@ -473,15 +473,17 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
     status = Ns_SetRequestUrl(&conn->request, url);
 
     if (status == NS_OK) {
+        const char *authority = NULL;
         /*
          * Re-authorize and run the request.
          */
-        status = NsAuthorizeRequest((NsServer*)NsConnServPtr(conn),
-                                    conn->request.method,
-                                    conn->request.url,
-                                    Ns_ConnAuthUser(conn),
-                                    Ns_ConnAuthPasswd(conn),
-                                    Ns_ConnPeerAddr(conn));
+        status = Ns_AuthorizeRequest(Ns_ConnServPtr(conn),
+                                     conn->request.method,
+                                     conn->request.url,
+                                     Ns_ConnAuthUser(conn),
+                                     Ns_ConnAuthPasswd(conn),
+                                     Ns_ConnPeerAddr(conn),
+                                     &authority);
     }
 
     switch (status) {
@@ -494,7 +496,6 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
     case NS_UNAUTHORIZED:
         status = Ns_ConnReturnUnauthorized(conn);
         break;
-    case NS_CONTINUE:       NS_FALL_THROUGH; /* fall through */
     case NS_ERROR:          NS_FALL_THROUGH; /* fall through */
     case NS_FILTER_BREAK:   NS_FALL_THROUGH; /* fall through */
     case NS_FILTER_RETURN:  NS_FALL_THROUGH; /* fall through */

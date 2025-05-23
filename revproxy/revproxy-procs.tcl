@@ -214,7 +214,7 @@ namespace eval ::revproxy {
         #
         # For debugging, it might be easier to avoid compressed data.
         #
-        #ns_set delkey -nocase $requestHeaders Accept-Encoding
+        #ns_set delkey -nocase $requestHeaders accept-encoding
 
         #
         # Add extra "forwarded" header fields, i.e. "x-forwarded-for", "via",

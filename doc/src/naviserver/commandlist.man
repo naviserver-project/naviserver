@@ -25,7 +25,7 @@ List of all documented and deprecated NaviServer commands.
 [def [cmd "ns_adp_stream"]]            Use [cmd "[cmd ns_adp_ctl] stream"] instead.
 [def [cmd "ns_browsermatch"]]          Use standard API instead.
 [def [cmd "ns_cancel"]]                Use [cmd "[uri ./ns_schedule.html ns_unschedule_proc]"] instead.
-[def [cmd "ns_checkurl"]]              Use [cmd "ns_requestauthorize"] instead.
+[def [cmd "ns_checkurl"]]              Use [cmd "ns_auth request"] instead.
 [def [cmd "ns_chmod"]]                 Use [cmd "file attributes"] instead.
 [def [cmd "ns_choosecharset"]]         Use standard internationalization commands instead.
 [def [cmd "ns_conncptofp"]]            Use [cmd "[cmd ns_conn] copy"] instead.
@@ -66,6 +66,7 @@ List of all documented and deprecated NaviServer commands.
 [def [cmd "ns_puts"]]                  Use [cmd "ns_adp_puts"] instead.
 [def [cmd "ns_register_adptag"]]       Use [cmd "[uri ./ns_adp_register.html ns_adp_registerscript]"] instead.
 [def [cmd "ns_rename"]]                Use [cmd "file rename"] instead.
+[def [cmd "ns_requestauthorize"]]      Use [cmd "ns_auth request"] instead.
 [def [cmd "ns_resetcachedform"]]       Obsolete.
 [def [cmd "ns_returnadminnotice"]]     Use [cmd "[uri ./returnstatus-cmds.html ns_returnnotice]"] instead.
 [def [cmd "ns_rmdir"]]                 Use [cmd "file delete"] instead.

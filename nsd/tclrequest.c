@@ -29,6 +29,25 @@ static Ns_ObjvTable filters[] = {
     {NULL, 0u}
 };
 
+typedef enum {
+    AUTHPROC_REQUEST,
+    AUTHPROC_USER
+} AUTHPROC;
+
+static Ns_ObjvTable authprocs[] = {
+    {"request",  (unsigned int)AUTHPROC_REQUEST},
+    {"user",     (unsigned int)AUTHPROC_USER},
+    {NULL, 0u}
+};
+
+static Ns_ReturnCode EvalTclAuthCallback(const Ns_TclCallback *cbPtr, Tcl_Interp *interp,
+                                         int numFixedArgs, const char **fixedArgs,
+                                         int *continuation)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+
+static Ns_AuthorizeRequestProc NsTclAuthorizeRequestProc;
+static Ns_AuthorizeUserProc    NsTclAuthorizeUserProc;
+
 
 /*
  *----------------------------------------------------------------------
@@ -421,11 +440,76 @@ NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclRegisterAuthObjCmd --
+ *
+ *      Implements "ns_register_auth".
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      See docs.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclRegisterAuthObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    Tcl_Obj      *scriptObj;
+    TCL_SIZE_T    remain = 0;
+    int           first = (int)NS_FALSE, result = TCL_OK;
+    const char   *authority = NULL;
+    unsigned int  proctype = 0u;
+    Ns_ObjvSpec opts[] = {
+        {"-authority", Ns_ObjvString, &authority, INT2PTR(NS_TRUE)},
+        {"-first",    Ns_ObjvBool,   &first,    INT2PTR(NS_TRUE)},
+        {"--",        Ns_ObjvBreak,  NULL,      NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec   args[] = {
+        {"type",       Ns_ObjvIndex,  &proctype,   authprocs},
+        {"script",     Ns_ObjvObj,    &scriptObj,  NULL},
+        {"?arg",       Ns_ObjvArgs,   &remain,     NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const NsInterp  *itPtr = clientData;
+        Ns_TclCallback  *cbPtr;
+
+        if (authority == NULL) {
+            authority = Tcl_GetString(scriptObj);
+        }
+        switch (proctype) {
+        case AUTHPROC_REQUEST: {
+            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclAuthorizeRequestProc,
+                                      scriptObj, remain, objv + ((TCL_SIZE_T)objc - remain));
+            Ns_RegisterAuthorizeRequest(itPtr->servPtr->server, NsTclAuthorizeRequestProc,
+                                        cbPtr, authority, first);
+            break;
+        }
+        case AUTHPROC_USER: {
+            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclAuthorizeUserProc,
+                                      scriptObj, remain, objv + ((TCL_SIZE_T)objc - remain));
+            Ns_RegisterAuthorizeUser(itPtr->servPtr->server, NsTclAuthorizeUserProc,
+                                     cbPtr, authority, first);
+            break;
+        }
+        }
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
  *
- * NsTclRequstProc --
+ * NsTclRequestProc --
  *
  *      Ns_OpProc for Tcl operations.
  *
@@ -583,13 +667,169 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
             status = NS_FILTER_RETURN;
 
         } else {
-            Ns_Log(Error, "ns:tclfilter: %s returnsb invalid result: %s",
+            Ns_Log(Error, "ns:tclfilter: %s returns invalid result: %s",
                    cbPtr->script, result);
             status = NS_ERROR;
         }
     }
     Tcl_DStringFree(&ds);
 
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EvalTclAuthCallback --
+ *
+ *      Build and invoke a Tcl‐based authorization callback.  Constructs a Tcl
+ *      command by concatenating the registered script, a fixed list of
+ *      arguments and any extra args provided at registration.  Runs the
+ *      script it in the supplied interpreter, stores the raw Tcl return code
+ *      in *continuationPtr, and then maps the Tcl result string to an
+ *      Ns_ReturnCode.
+ *
+ * Parameters:
+ *      cbPtr           – pointer to the Ns_TclCallback holding script & argv
+ *      interp          – Tcl interpreter in which to evaluate the script
+ *      numFixedArgs    – count of fixedArgs[] elements to append first
+ *      fixedArgs       – array of C strings (method/url/user/etc) to append
+ *      continuationPtr – receives the raw Tcl return code (TCL_OK, TCL_ERROR,
+ *                        TCL_CONTINUE, etc.)
+ *
+ * Results:
+ *      NS_OK           if the script returned "OK"
+ *      NS_FORBIDDEN    if the script returned "FORBIDDEN"
+ *      NS_UNAUTHORIZED if the script returned "UNAUTHORIZED"
+ *      NS_ERROR        on Tcl evaluation error or unexpected script result
+ *
+ * Side Effects:
+ *      Logs a warning on script errors or unexpected return values.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_ReturnCode
+EvalTclAuthCallback(const Ns_TclCallback *cbPtr, Tcl_Interp *interp,
+                    int numFixedArgs, const char **fixedArgs,
+                    int *continuation)
+{
+    Tcl_DString    ds;
+    int            rc;
+    const char    *result;
+    TCL_SIZE_T     i;
+    Ns_ReturnCode  status;
+
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, cbPtr->script, TCL_INDEX_NONE);
+
+    /*
+     * Append "fixed" arguments (method/url/user/pass/peer) or (user/pass)
+     */
+    for (i = 0;  i < (TCL_SIZE_T)numFixedArgs;  ++i) {
+        Tcl_DStringAppendElement(&ds, fixedArgs[i]);
+    }
+
+    /*
+     * Append arguments from the registration
+     */
+    for (i = 0;  i < cbPtr->argc;  ++i) {
+        Tcl_DStringAppendElement(&ds, cbPtr->argv[i]);
+    }
+
+    Tcl_AllowExceptions(interp);
+    rc     = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+    result = Tcl_GetStringResult(interp);
+    Tcl_DStringFree(&ds);
+
+    if (rc == TCL_ERROR) {
+        Ns_Log(Warning, "authorize script error: %s", result);
+        status = NS_ERROR;
+
+    } else if (STRIEQ(result, "OK")) {
+        status = NS_OK;
+    } else if (STRIEQ(result, "UNAUTHORIZED")) {
+        status = NS_UNAUTHORIZED;
+    } else if (STRIEQ(result, "FORBIDDEN")) {
+        status = NS_FORBIDDEN;
+    } else {
+        Ns_Log(Warning, "authorize script returned unexpected: %s", result);
+        status = NS_ERROR;
+    }
+    *continuation = rc;
+
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclAuthorizeRequestProc --
+ *
+ *      Tcl callback adapter for request‐level authorization.  Allocates its
+ *      own Tcl interpreter, packs method, URL, user, password and peer into
+ *      fixedArgs[], then delegates to EvalTclAuthCallback to run the script
+ *      and map its output.  The raw Tcl return code (TCL_OK, TCL_ERROR,
+ *      TCL_BREAK, ...) is returned in *continuationPtr to control whether
+ *      further callbacks in the chain should run.
+ *
+ * Results:
+ *      returns the Ns_ReturnCode from EvalTclAuthCallback
+ *
+ * Side Effects:
+ *      Allocates and deallocates a Tcl interpreter per invocation.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+NsTclAuthorizeRequestProc(void *arg, const Ns_Server *servPtr,
+                          const char *method, const char *url,
+                          const char *user, const char *pass, const char *peer,
+                          int *continuationPtr)
+{
+    const Ns_TclCallback *cbPtr = arg;
+    const char           *fixed[] = { method, url, user, pass, peer };
+    Tcl_Interp           *interp  = NsTclAllocateInterp((NsServer*)servPtr);
+    Ns_ReturnCode         status;
+
+    status = EvalTclAuthCallback(cbPtr, interp, 5, fixed, continuationPtr);
+
+    Ns_TclDeAllocateInterp(interp);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclAuthorizeUserProc --
+ *
+ *      Tcl callback adapter for user‐level password checks.  Allocates its
+ *      own Tcl interpreter, packs user and password into fixedArgs[], then
+ *      delegates to EvalTclAuthCallback. The raw Tcl return code (TCL_OK,
+ *      TCL_ERROR, TCL_BREAK, ...) is returned in *continuationPtr to control
+ *      whether further callbacks in the chain should run.
+ *
+ * Results:
+ *      returns the Ns_ReturnCode from EvalTclAuthCallback
+ *
+ * Side Effects:
+ *      Allocates and deallocates a Tcl interpreter per invocation.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+NsTclAuthorizeUserProc(void *arg, const Ns_Server *servPtr,
+                       const char *user, const char *passwd,
+                       int *continuationPtr)
+{
+    const Ns_TclCallback *cbPtr = arg;
+    const char           *fixed[] = { user, passwd };
+    Tcl_Interp           *interp  = NsTclAllocateInterp((NsServer*)servPtr);
+    Ns_ReturnCode         status;
+
+    status = EvalTclAuthCallback(cbPtr, interp, 2, fixed, continuationPtr);
+
+    Ns_TclDeAllocateInterp(interp);
     return status;
 }
 

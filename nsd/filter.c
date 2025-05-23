@@ -183,8 +183,7 @@ void *
 Ns_RegisterFilter(const char *server, const char *method, const char *url,
                   Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first)
 {
-    return Ns_RegisterFilter2(server, method, url,
-                              proc, when, arg, first, NULL);
+    return Ns_RegisterFilter2(server, method, url, proc, when, arg, first, NULL);
 }
 
 /*
