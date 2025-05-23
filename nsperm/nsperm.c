@@ -420,7 +420,7 @@ GetServer(const Ns_Server *servPtr) {
  *      when just a user is to be authenticated (e.g. nscp module).
  *
  *      The function looks up the given username in the the nsperm records and
- *      verifies the password via CheckPassword().  Whan a record for this
+ *      verifies the password via CheckPassword().  When a record for this
  *      user exists, it sets *continuationPtr to TCL_BREAK to halt any further
  *      user callbacks.
  *

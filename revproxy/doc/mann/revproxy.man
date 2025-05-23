@@ -42,7 +42,7 @@
  
  Runs after filters (e.g., post-authentication). Behaves like any other
  static or dynamic handler, matching method, path, and resource name.
- For example, you might forward all “.php” requests to a dedicated PHP backend.
+ For example, you might forward all ".php" requests to a dedicated PHP backend.
 
  [item] Direct invocation:
  
@@ -63,7 +63,7 @@
 [section CONFIGURATION]
 
 The reverse proxy module is configured by extending your standard
-NaviServer configuration file. In the “per-backend” style, each backend
+NaviServer configuration file. In the "per-backend" style, each backend
 is defined in its own [term ns_section]. It is also possible to
 register the calls via [cmd ns_registerproc] and [cmd ns_registerfilter]
 by calling directly in the "ns_param register" section the API
@@ -78,7 +78,7 @@ by calling directly in the "ns_param register" section the API
 
 [subsection {Loading the Module}]
 
- First, load the revproxy module in your server’s “modules” section:
+ First, load the revproxy module in your server’s "modules" section:
 
 [example_begin]
  ns_section "ns/server/$server/modules" {
