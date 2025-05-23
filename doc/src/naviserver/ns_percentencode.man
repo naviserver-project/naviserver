@@ -7,7 +7,7 @@
 [description]
 
  This group of commands lets you safely encode and decode strings by
- escaping unsafe characters as percent‑escape sequences (“%xx”) per
+ escaping unsafe characters as percent‑escape sequences ("%xx") per
  RFC 3986 (or RFC 1738 when in legacy mode). You can choose from
  several encoding schemes (query, path, cookie, oauth1) to control
  which characters remain unescaped and how spaces are handled. Hex
@@ -26,7 +26,7 @@
 
  Percent‑encodes a single string.
  All characters not in the selected scheme’s unreserved set are
- replaced by “%” and two hex digits.
+ replaced by "%" and two hex digits.
 
  [call [cmd ns_percentdecode] \
      [opt [option "-charset [arg value]"]] \
@@ -37,7 +37,7 @@
 
 
  Reverses the percent‑encoding in a string.  Under [var query] scheme
- only, “+” is converted back to space.  If decoding to UTF‑8 fails and
+ only, "+" is converted back to space.  If decoding to UTF‑8 fails and
  [option -fallbackcharset] is given (and [option -charset] is not), a second
  decode attempt uses the fallback charset instead of raising an exception.
 

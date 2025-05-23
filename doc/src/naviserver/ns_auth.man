@@ -1,0 +1,78 @@
+[include version_include.man]
+[manpage_begin ns_auth n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Authorization check}]
+
+[description]
+
+ The [cmd ns_auth] command provides access to NaviServer’s pluggable
+ authorization framework.  It dispatches calls through the chain of
+ registered authorization handlers, allowing user-provided C or Tcl
+ callbacks to grant, deny, or challenge requests at both the URL and
+ user/password level.
+
+[para]
+ Before using [cmd ns_auth], one or more callbacks must be registered
+ (e.g. via the [term nsperm] module or the [cmd ns_register_auth] Tcl API).
+ See the [uri ../../nsperm/files/admin-tuning.html \
+   "nsperm - NaviServer Permissions and Access Control Guide"]
+ for an example of how to configure and register handlers.
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd "ns_auth request"] \
+	[opt [option -dict]] \
+	[opt --] \
+        [arg method] \
+        [arg url] \
+        [arg username] \
+        [arg password] \
+        [opt [arg ipaddr]] \
+        ]
+
+ Performs a full request-level permission check exactly as done by
+ NaviServer before serving a URL.  The callbacks registered for
+ "request" authorization are invoked in order, each receiving
+ [arg method],  [arg url],  [arg authuser],  [arg authpasswd]
+ and optional  [arg ipaddr].  By default, the command returns one of
+ the following status codes:
+
+[list_begin itemized]
+[item] OK            - access granted
+[item] ERROR         - internal error during authorization
+[item] FORBIDDEN     - access denied, no possible retry
+[item] UNAUTHORIZED  - authentication required or failed, retry possible
+[item] FILTER_RETURN - authorization chain intentionally stopped
+[list_end]
+
+[para]
+If the [option -dict] flag is given, the result is returned as a dictionary:
+
+[example_begin]
+  { authority <authority> code <code> }
+[example_end]
+
+where [const <authority>] is the label of the handler that last ran, and
+[const <status>] is the same status code as shown above.
+
+
+[call [cmd "ns_auth user"] \
+      [opt [option -dict]] \
+      [opt --] \
+      [arg username] \
+      [arg password] \
+]
+
+Runs the user-level authorization handlers in order to verify only
+a [arg username] and [arg password] pair (with no URL context).
+Results and options are the same as for [cmd "ns_auth request"].
+
+[list_end]
+
+[keywords "server built-in" nsperm]
+
+[manpage_end]
+
