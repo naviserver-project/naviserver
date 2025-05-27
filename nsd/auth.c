@@ -20,8 +20,7 @@
 /*
  *  Structures for Authentication Chains
  */
-
-typedef struct RequestAuth {
+ typedef struct RequestAuth {
     struct RequestAuth      *nextPtr;   /* Next entry in the request‐auth callback chain */
     Ns_AuthorizeRequestProc *proc;      /* Function to invoke for request‐level authorization */
     void                    *arg;       /* Registration data to pass to proc() */
@@ -35,11 +34,14 @@ typedef struct UserAuth {
     const char              *authority; /* Identifier of the registration authority that installed this callback */
 } UserAuth;
 
+typedef struct AuthNode { /* common “base” for both types */
+    void *nextPtr;
+} AuthNode;
+
+
 /*
  * Static functions defined in this file.
  */
-
-
 static int
 HandleAuthorizationResult(Tcl_Interp *interp, Ns_ReturnCode status, const char *cmdName,
                           const char *authority, bool asDict,
@@ -49,9 +51,8 @@ HandleAuthorizationResult(Tcl_Interp *interp, Ns_ReturnCode status, const char *
 static void AuthLock(NsServer *servPtr, NS_RW rw) NS_GNUC_NONNULL(1);
 static void AuthUnlock(NsServer *servPtr) NS_GNUC_NONNULL(1);
 
-static void *RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr,
-                          bool first, void **nextPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+static void *RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr, bool first)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static TCL_OBJCMDPROC_T UserAuthorizeObjCmd;
 
@@ -270,56 +271,173 @@ Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd, const 
 /*
  *----------------------------------------------------------------------
  *
+ * NsGetAuthprocs --
+ *
+ *      Enumerate the registered user-level and request-level authorization
+ *      callbacks for a server, and append their metadata into a Tcl_DString
+ *      as a Tcl list of dict-style entries.
+ *
+ *      Each entry appended to to provide Tcl_DString
+ *      is itself a Tcl list containing key/value pairs:
+ *          type      – "user" or "request"
+ *          authority – the authority label supplied at registration
+ *          proc      – a string describing the C function or Tcl callback
+ *
+ * Parameters:
+ *      dsPtr   – initialized Tcl_DString; on return it will contain a Tcl list
+ *                of dict entries, one per registered auth proc.
+ *      servPtr – the NsServer whose authorization callback chains are inspected.
+ *
+ * Results:
+ *      None.  After this call, dsPtr holds a Tcl list of dict entries as above.
+ *
+ * Side Effects:
+ *      Acquires servPtr’s AuthLock in read mode while walking the lists,
+ *      then releases the lock.  Allocates temporary Tcl_Obj and Tcl_DString
+ *      structures for formatting each entry.
+ *
+ *----------------------------------------------------------------------
+ */
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsGetAuthprocs --
+ *
+ *      Return a list of auth procs
+ *
+ * Parameters:
+ *      dsPtr          - initialized Tcl_DString pointer
+ *      servPtr        - pointer to the NsServer from which the auth procs are taken
+ *
+ * Results:
+ *      None
+ *
+ * Side Effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsGetAuthprocs(Tcl_DString *dsPtr, NsServer *servPtr)
+{
+    AuthLock(servPtr, NS_READ);
+
+    /*
+     * User Auth procs
+     */
+    if (servPtr->request.firstUserAuthPtr != NULL) {
+        const UserAuth *authPtr = servPtr->request.firstUserAuthPtr;
+
+        while (authPtr != NULL) {
+            Tcl_Obj *innerListObj = Tcl_NewListObj(0, NULL);
+            Tcl_DString procInfo;
+
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("type", 4));
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("user", 4));
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("authority", 9));
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj(authPtr->authority, TCL_INDEX_NONE));
+
+            Tcl_DStringInit(&procInfo);
+            Ns_GetProcInfo(&procInfo, (ns_funcptr_t) authPtr->proc, authPtr->arg);
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("proc", 4));
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj(procInfo.string, procInfo.length));
+            Tcl_DStringFree(&procInfo);
+
+            Tcl_DStringAppendElement(dsPtr, Tcl_GetString(innerListObj));
+            Tcl_DecrRefCount(innerListObj);
+            authPtr = authPtr->nextPtr;
+        }
+    }
+    /*
+     * Request Auth procs
+     */
+    if (servPtr->request.firstRequestAuthPtr != NULL) {
+        const RequestAuth *authPtr = servPtr->request.firstRequestAuthPtr;
+
+        while (authPtr != NULL) {
+            Tcl_Obj *innerListObj = Tcl_NewListObj(0, NULL);
+            Tcl_DString procInfo;
+
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("type", 4));
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("request", 7));
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("authority", 9));
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj(authPtr->authority, TCL_INDEX_NONE));
+
+            Tcl_DStringInit(&procInfo);
+            Ns_GetProcInfo(&procInfo, (ns_funcptr_t) authPtr->proc, authPtr->arg);
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("proc", 4));
+            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj(procInfo.string, procInfo.length));
+            Tcl_DStringFree(&procInfo);
+
+            Tcl_DStringAppendElement(dsPtr, Tcl_GetString(innerListObj));
+            Tcl_DecrRefCount(innerListObj);
+            authPtr = authPtr->nextPtr;
+        }
+    }
+    AuthUnlock(servPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * RegisterAuth --
  *
  *      Generic helper to insert an authentication callback object into a
  *      server’s linked list, either at the head or the tail.
  *
+ *      This works for both RequestAuth and UserAuth, since they both
+ *      begin with a `nextPtr` field of type void *.
+ *
  * Parameters:
- *      servPtr        - pointer to the NsServer whose list is being modified.
- *      authPtr        - newly allocated authentication object (RequestAuth or UserAuth).
- *      firstAuthPtr   - address of the head pointer for this list in servPtr->request.
- *      first          - if true, insert authPtr at the front of the list; otherwise append.
- *      nextPtr        - address of authPtr->nextPtr, for walking/appending the list.
+ *      servPtr      - pointer to the NsServer whose list is being modified.
+ *      authPtr      - newly allocated authentication object
+ *                     (RequestAuth * or UserAuth *).
+ *      firstAuthPtr - address of the head pointer for this list
+ *      first        - if true, insert authPtr at the front of the list;
+ *                     otherwise append.
  *
  * Results:
- *      Returns authPtr (the pointer passed in), for deregistration or later reference.
+ *      Returns authPtr (the pointer you passed in), for deregistration
+ *      or later reference.
  *
  * Side Effects:
- *      Acquires the global AuthLock(servPtr) in write mode, updates the singly-linked list,
- *      then releases the lock.
- *
+ *      Acquires the global AuthLock(servPtr) in write mode, updates the
+ *      singly-linked list, then releases the lock.
  *----------------------------------------------------------------------
  */
-
 static void *
-RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr, bool first, void **nextPtr)
+RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr, bool first)
 {
-    NS_NONNULL_ASSERT(servPtr != NULL);
-    NS_NONNULL_ASSERT(authPtr != NULL);
+    AuthNode *node, *cursor;
+
+    NS_NONNULL_ASSERT(servPtr    != NULL);
+    NS_NONNULL_ASSERT(authPtr    != NULL);
+    NS_NONNULL_ASSERT(firstAuthPtr != NULL);
+
+    node = (AuthNode *)authPtr;
+    node->nextPtr = NULL;
 
     AuthLock(servPtr, NS_WRITE);
 
     if (first) {
-        /*
-         * Prepend at the head
-         */
-        *((void **)authPtr) = *firstAuthPtr;
+        /* Prepend at head */
+        node->nextPtr = *firstAuthPtr;
         *firstAuthPtr = authPtr;
     } else {
-        /*
-         * Append at the tail
-         */
-        void **cursor = firstAuthPtr; // Point to the first element in the list
-
-        while (*cursor != NULL) {
-            cursor = nextPtr;
+        /* Append at tail */
+        if (*firstAuthPtr == NULL) {
+            /* empty list */
+            *firstAuthPtr = authPtr;
+        } else {
+            cursor = (AuthNode *)*firstAuthPtr;
+            while (cursor->nextPtr != NULL) {
+                cursor = (AuthNode *)cursor->nextPtr;
+            }
+            cursor->nextPtr = authPtr;
         }
-        *cursor = authPtr;
     }
 
     AuthUnlock(servPtr);
-
     return authPtr;
 }
 
@@ -345,27 +463,23 @@ RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr, bool first, 
  *      Allocates a RequestAuth structure, fills it, and links it into
  *      servPtr->request.firstRequestAuthPtr under AuthLock.
  */
+
 void *
-Ns_RegisterAuthorizeRequest(const char *server, Ns_AuthorizeRequestProc *proc,
-                            void *arg, const char *authority, bool first)
+Ns_RegisterAuthorizeRequest(const char *server, Ns_AuthorizeRequestProc *proc, void *arg,
+                            const char *authority, bool first)
 {
-    NsServer    *servPtr;
-    RequestAuth *authPtr;
+    NsServer    *servPtr = NsGetServer(server);
+    RequestAuth *authPtr = ns_malloc(sizeof(RequestAuth));
 
-    NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(proc != NULL);
-
-    servPtr = NsGetServer(server);
-    authPtr = ns_malloc(sizeof(RequestAuth));
-    authPtr->proc = proc;
-    authPtr->arg = arg;
+    authPtr->proc      = proc;
+    authPtr->arg       = arg;
     authPtr->authority = ns_strdup(authority);
-    authPtr->nextPtr = NULL;
+    authPtr->nextPtr   = NULL;
 
-    return RegisterAuth(servPtr, authPtr,
-                        (void**)&servPtr->request.firstRequestAuthPtr,
-                        first,
-                        (void **)&authPtr->nextPtr);
+    return RegisterAuth(servPtr,
+                        authPtr,
+                        (void **)&servPtr->request.firstRequestAuthPtr,
+                        first);
 }
 
 /*
@@ -391,27 +505,23 @@ Ns_RegisterAuthorizeRequest(const char *server, Ns_AuthorizeRequestProc *proc,
  *      servPtr->request.firstUserAuthPtr under AuthLock.
  */
 void *
-Ns_RegisterAuthorizeUser(const char *server, Ns_AuthorizeUserProc *proc,
-                         void *arg, const char *authority, bool first)
+Ns_RegisterAuthorizeUser(const char *server, Ns_AuthorizeUserProc *proc, void *arg,
+                         const char *authority, bool first)
 {
-    NsServer    *servPtr;
-    UserAuth    *authPtr;
+    NsServer *servPtr = NsGetServer(server);
+    UserAuth *authPtr = ns_malloc(sizeof(UserAuth));
 
-    NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(proc != NULL);
-
-    servPtr = NsGetServer(server);
-    authPtr = ns_malloc(sizeof(UserAuth));
-    authPtr->proc = proc;
-    authPtr->arg = arg;
+    authPtr->proc      = proc;
+    authPtr->arg       = arg;
     authPtr->authority = ns_strdup(authority);
-    authPtr->nextPtr = NULL;
+    authPtr->nextPtr   = NULL;
 
-    return RegisterAuth(servPtr, authPtr,
-                        (void**)&servPtr->request.firstUserAuthPtr,
-                        first,
-                        (void **)&authPtr->nextPtr);
+    return RegisterAuth(servPtr,
+                        authPtr,
+                        (void **)&servPtr->request.firstUserAuthPtr,
+                        first);
 }
+
 
 #if 0
 /*

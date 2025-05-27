@@ -15,6 +15,16 @@ connection pools and queues.  The allowed options (which may be abbreviated) are
 
 [call [cmd ns_server] \
 	[opt [option "-server [arg server]"]] \
+	[cmd authprocs]]
+
+Returns currently defined authorization chain.
+Each element of the list is a tcl dict containing
+[const type] ("user" or "request"),
+[const authority] (the authority label supplied at registration), and
+[const proc] a string describing the C function or Tcl callback.
+
+[call [cmd ns_server] \
+	[opt [option "-server [arg server]"]] \
 	[cmd filters]]
 
 Returns a list of the currently defined filters.
