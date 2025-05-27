@@ -45,9 +45,6 @@ static Ns_ReturnCode EvalTclAuthCallback(const Ns_TclCallback *cbPtr, Tcl_Interp
                                          int *continuation)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
-static Ns_AuthorizeRequestProc NsTclAuthorizeRequestProc;
-static Ns_AuthorizeUserProc    NsTclAuthorizeUserProc;
-
 
 /*
  *----------------------------------------------------------------------
@@ -781,7 +778,7 @@ EvalTclAuthCallback(const Ns_TclCallback *cbPtr, Tcl_Interp *interp,
  *
  *----------------------------------------------------------------------
  */
-static Ns_ReturnCode
+Ns_ReturnCode
 NsTclAuthorizeRequestProc(void *arg, const Ns_Server *servPtr,
                           const char *method, const char *url,
                           const char *user, const char *pass, const char *peer,
@@ -817,7 +814,7 @@ NsTclAuthorizeRequestProc(void *arg, const Ns_Server *servPtr,
  *
  *----------------------------------------------------------------------
  */
-static Ns_ReturnCode
+Ns_ReturnCode
 NsTclAuthorizeUserProc(void *arg, const Ns_Server *servPtr,
                        const char *user, const char *passwd,
                        int *continuationPtr)

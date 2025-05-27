@@ -16,11 +16,78 @@ is subdivided into several stages: pre-authorization, authorization,
 post-authorization, the request handler, and finally a trace stage.
 
 [para][image naviserver-request-processing "NaviServer Request Processing"]
+[para] Figure 1: Request processing (Threads and Request Handling Stages)
+
+[para] The functions in chain depicted in Figure 1 chart can be scripted or implemented in C and are
+distinguished by the following properties:
+
+[list_begin itemized]
+
+[item] Filter Chains:
+  [list_begin itemized]
+  [item] Processed sequentially
+  [item] Wild-card match for filter procs based on method + path
+  [item] Multiple matches in the filter chain possible
+  [item] Result of proc determines whether to continue or terminate chain
+  [item] Can send response to the client (e.g. redirects)
+  [item] registered with [cmd ns_register_filter],
+  [cmd ns_register_shortcut_filter], [cmd ns_register_trace]
+  [list_end]
+
+[item] Response Authorization Chain:
+  [list_begin itemized]
+  [item] Registered procs are processed sequentually
+  [item] Procs can use [cmd ns_urlspace] based on HTTP method and URL
+         path to claim responsibility
+  [item] Result of proc determines whether to continue or terminate chain
+  [item] Can send response to the client (e.g. redirects)
+  [item] registered with [cmd "ns_register_auth request"],
+  [list_end]
+
+[item] Request procs:
+  [list_begin itemized]
+  [item] One proc per HTTP method + URL path
+  [item] Proc is determined via [term urlspace]
+  [item] Proc performs typically heavy work (SQL, ADP, …)
+  [item] Typically sends response for the request to the client
+         (HTTP status code, response headers and content)
+  [item] Registered with [cmd ns_register_adp],
+         [cmd ns_register_proc], [cmd ns_register_fastpath], [cmd ns_register_tcl]
+  [list_end]
+
+[list_end]
+
 
 [para]
+ The results of the procs in a chain determine, whether the chain
+ should be continue, terminated and proceed to the next stage, or
+ wether it should terminate the processing of the request completely.
+ The return code of these procs is interpreted as follows:
 
-The commands on this page demonstrate how to register scripted actions
-to be executed at each of these stages.
+[list_begin itemized]
+
+[item] TCL_ERROR: When the filter procs raises an error.
+
+[item] TCL_OK: When the script is executed successfully
+       and ends with [const {return -code continue}] (filters allow
+       also [const {return filter_ok}]).
+
+[item] TCL_BREAK: When the script is executed successfully
+       and ends with [const {return -code break}]
+       (filters allow also [const {return filter_break}]).
+
+[item] TCL_RETURN: When the script is executed successfully
+       and ends with [const {return -code return}]
+       (filters allow also  [const {return filter_return}]).
+
+[list_end]
+
+[para][image naviserver-chains "NaviServer Stages and Continuations"]
+[para] Figure 2: Continuations and Stages
+
+
+[para]
+The following commands explain the details of the registration functions.
 
 [section COMMANDS]
 
@@ -694,9 +761,10 @@ This example shows how to expire all HTML files after an hour:
 currently registered [term filters], [term traces] or [term procs].
 
 [example_begin]
-  ns_server filters
-  ns_server traces
-  ns_server requestprocs
+  [cmd ns_server] [opt [option "-server [arg server]"]] [cmd authprocs]
+  [cmd ns_server] [opt [option "-server [arg server]"]] [cmd filters]
+  [cmd ns_server] [opt [option "-server [arg server]"]] [cmd requestprocs]
+  [cmd ns_server] [opt [option "-server [arg server]"]] [cmd traces]
 [example_end]
 
 

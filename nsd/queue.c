@@ -1455,7 +1455,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 #endif
 
     enum {
-        SActiveIdx, SAllIdx,
+        SActiveIdx, SAllIdx, SAuthprocsIdx,
         SConnectionRateLimitIdx, SConnectionsIdx,
         SFiltersIdx,
         SHostsIdx,
@@ -1477,6 +1477,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     static Ns_ObjvTable subcmds[] = {
         {"active",              (unsigned int)SActiveIdx},
         {"all",                 (unsigned int)SAllIdx},
+        {"authprocs",           (unsigned int)SAuthprocsIdx},
         {"connectionratelimit", (unsigned int)SConnectionRateLimitIdx},
         {"connections",         (unsigned int)SConnectionsIdx},
         {"filters",             (unsigned int)SFiltersIdx},
@@ -1526,6 +1527,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     }
 
     if ((subcmd == SPoolsIdx
+         || subcmd == SAuthprocsIdx
          || subcmd == SFiltersIdx
          || subcmd == SHostsIdx
          || subcmd == SLogdirIdx
@@ -1621,6 +1623,15 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         /*
          * The following subcommands are server specific (do not allow -pool option)
          */
+    case SAuthprocsIdx:
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) == NS_OK) {
+            Tcl_DStringInit(dsPtr);
+            NsGetAuthprocs(dsPtr, servPtr);
+            Tcl_DStringResult(interp, dsPtr);
+            result = TCL_OK;
+        }
+        break;
+
     case SPoolsIdx:
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) == NS_OK) {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);

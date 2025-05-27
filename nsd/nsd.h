@@ -1668,6 +1668,8 @@ NS_EXTERN Ns_ReturnCode NsAuthorizeRequest(NsServer *servPtr,
                                            const char *method, const char *url,
                                            const char *user, const char *passwd, const char *peer)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+NS_EXTERN void NsGetAuthprocs(Tcl_DString *dsPtr, NsServer *servPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * binder.c
@@ -2101,6 +2103,8 @@ NS_EXTERN void NsTclInitMemUnitType(void);
 /*
  * tclrequest.c
  */
+NS_EXTERN Ns_AuthorizeRequestProc NsTclAuthorizeRequestProc;
+NS_EXTERN Ns_AuthorizeUserProc    NsTclAuthorizeUserProc;
 NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
     NS_GNUC_NONNULL(1);
 
