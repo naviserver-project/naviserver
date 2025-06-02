@@ -19,6 +19,8 @@
 #endif
 #include "locale.h"
 
+#define NS_TCLHTTP_CALLBACK_AS_STRING 1
+
 /*
  * Constants
  */
@@ -1217,7 +1219,11 @@ typedef struct {
     Ns_SockState       finalSockState;   /* state of the socket at completion */
     Tcl_Obj           *infoObj;          /* ancillary attr/value info */
     char              *doneCallback;     /* Tcl script run at task completion */
+#ifdef NS_TCLHTTP_CALLBACK_AS_STRING
+    const char        *responseHeaderCallback; /* Tcl script run when response headers were received */
+#else
     Tcl_Obj           *responseHeaderCallback; /* Tcl script run when response headers were received */
+#endif
     Tcl_Obj           *responseDataCallback;   /* Tcl script run when response data block is received */
     Tcl_Interp        *interp;           /* Tcl Interpreter when running in the caller's thread */
     NsServer          *servPtr;          /* Server for doneCallback */
@@ -1226,6 +1232,7 @@ typedef struct {
     size_t             pos;              /* needed only for HttpCancel() */
     Tcl_DString        ds;               /* for assembling request string */
     struct _NsHttpChunk *chunk;          /* for parsing chunked encodings */
+    //Ns_Mutex           lock;
 } NsHttpTask;
 
 /*

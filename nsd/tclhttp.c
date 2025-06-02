@@ -26,7 +26,6 @@
 # define NS_TCLHTTP_MAXTHREADS 64
 #endif
 
-
 #define TCLHTTP_USE_EXTERNALTOUTF 1
 
 /*
@@ -3200,8 +3199,12 @@ HttpQueue(
             httpPtr->spoolFileName =  ns_strdup(outputFileName);
         }
         if (responseHeaderObj != NULL) {
+#ifdef NS_TCLHTTP_CALLBACK_AS_STRING
+            httpPtr->responseHeaderCallback = ns_strdup(Tcl_GetString(responseHeaderObj));
+#else
             Tcl_IncrRefCount(responseHeaderObj);
             httpPtr->responseHeaderCallback = responseHeaderObj;
+#endif
         }
         if (responseDataObj != NULL) {
             Tcl_IncrRefCount(responseDataObj);
@@ -5058,7 +5061,7 @@ ResponseHeaderCallback(
         }
 
         if (result == TCL_OK) {
-            Tcl_Obj *cmdObj, *dictObj = Tcl_NewDictObj();
+            Tcl_Obj *dictObj = Tcl_NewDictObj();
 
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("status", 6),
@@ -5077,12 +5080,27 @@ ResponseHeaderCallback(
                                Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
             }
 
-            cmdObj = Tcl_DuplicateObj(httpPtr->responseHeaderCallback);
-            Tcl_IncrRefCount(cmdObj);
-            Tcl_ListObjAppendElement(NULL, cmdObj, dictObj);
+#ifdef NS_TCLHTTP_CALLBACK_AS_STRING
+            {
+                Tcl_DString ds;
+                Tcl_DStringInit(&ds);
+                Tcl_DStringAppend(&ds, httpPtr->responseHeaderCallback, TCL_INDEX_NONE);
+                Tcl_DStringAppendElement(&ds, Tcl_GetString(dictObj));
 
-            result = Tcl_EvalObjEx(interp, cmdObj, 0);
-            Tcl_DecrRefCount(cmdObj);
+                result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+                Tcl_DStringFree(&ds);
+            }
+#else
+            {
+                Tcl_Obj *cmdObj,
+                    cmdObj = Tcl_DuplicateObj(httpPtr->responseHeaderCallback);
+                Tcl_IncrRefCount(cmdObj);
+                Tcl_ListObjAppendElement(NULL, cmdObj, dictObj);
+
+                result = Tcl_EvalObjEx(interp, cmdObj, 0);
+                Tcl_DecrRefCount(cmdObj);
+            }
+#endif
         }
         if (result == TCL_ERROR) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: header received callback)");
@@ -5677,13 +5695,18 @@ HttpCleanupPerRequestData(
         httpPtr->doneCallback = NULL;
     }
     if (httpPtr->responseHeaderCallback != NULL) {
+#ifdef NS_TCLHTTP_CALLBACK_AS_STRING
+        ns_free((void *)httpPtr->responseHeaderCallback);
+#else
         Tcl_DecrRefCount(httpPtr->responseHeaderCallback);
+#endif
         httpPtr->responseHeaderCallback = NULL;
     }
     if (httpPtr->responseDataCallback != NULL) {
         Tcl_DecrRefCount(httpPtr->responseDataCallback);
         httpPtr->responseDataCallback = NULL;
     }
+
     if (httpPtr->spoolFd != NS_INVALID_FD) {
         (void)ns_close(httpPtr->spoolFd);
         httpPtr->spoolFd = NS_INVALID_SOCKET;
