@@ -885,7 +885,7 @@ NsUrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct s
  * Parameters:
  *      contextSpec    - Pointer to a UrlSpaceContextSpec describing the
  *                       filter to apply.
- *      context        - Pointer to a NsUrlSpaceContext containing the
+ *      context        - Pointer to an NsUrlSpaceContext containing the
  *                       request’s headers and sockaddr.
  *
  * Results:

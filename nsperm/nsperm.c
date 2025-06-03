@@ -419,7 +419,7 @@ GetServer(const Ns_Server *servPtr) {
  *      Authorize a user based on the nsperm records. This callback is called
  *      when just a user is to be authenticated (e.g. nscp module).
  *
- *      The function looks up the given username in the the nsperm records and
+ *      The function looks up the given username in the nsperm records and
  *      verifies the password via CheckPassword().  When a record for this
  *      user exists, it sets *continuationPtr to TCL_BREAK to halt any further
  *      user callbacks.
@@ -801,7 +801,7 @@ AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *me
  *             -> If any suffix is in userPtr->hosts, return allow or deny per USER_FILTER_ALLOW.
  *
  *      USER_FILTER_ALLOW is set, when the user was added with the -allow flag,
- *      meaning the the user is granted access only on the specified hosts.
+ *      meaning the user is granted access only on the specified hosts.
  *
  * Parameters:
  *      userPtr  - pointer to the User structure containing masks, nets, hosts, and flags.

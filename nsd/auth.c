@@ -277,7 +277,7 @@ Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd, const 
  *      callbacks for a server, and append their metadata into a Tcl_DString
  *      as a Tcl list of dict-style entries.
  *
- *      Each entry appended to to provide Tcl_DString
+ *      Each entry appended to provide Tcl_DString
  *      is itself a Tcl list containing key/value pairs:
  *          type      – "user" or "request"
  *          authority – the authority label supplied at registration

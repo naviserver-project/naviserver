@@ -61,7 +61,7 @@ distinguished by the following properties:
 [para]
  The results of the procs in a chain determine, whether the chain
  should be continue, terminated and proceed to the next stage, or
- wether it should terminate the processing of the request completely.
+ whether it should terminate the processing of the request completely.
  The return code of these procs is interpreted as follows:
 
 [list_begin itemized]
