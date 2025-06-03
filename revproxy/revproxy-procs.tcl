@@ -349,7 +349,7 @@ namespace eval ::revproxy {
         } elseif [ns_conn isconnected] {
             ns_returnerror $status $msg
         } else {
-            ns_log error "revproxy exception (no return channel open): $status '$msg'"
+            ns_log warning "revproxy exception (no return channel open): $status '$msg'"
         }
     }
 
