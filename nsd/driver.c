@@ -5199,7 +5199,7 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
             //assert(requestPtr->host == NULL);
             if (requestPtr->host != NULL) {
                 Ns_Log(Warning, "NormalizeHostEntry called with host already set to '%s'"
-                       " in a plain request", requestPtr->host);
+                       " in a plain request (new host header '%s')", requestPtr->host, hostDs->string);
                 ns_free((char *)requestPtr->host);
             }
 
