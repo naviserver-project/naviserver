@@ -1221,10 +1221,13 @@ typedef struct {
     char              *doneCallback;     /* Tcl script run at task completion */
 #ifdef NS_TCLHTTP_CALLBACK_AS_STRING
     const char        *responseHeaderCallback; /* Tcl script run when response headers were received */
+    const char        *responseDataCallback;   /* Tcl script run when response data block is received */
+    TCL_SIZE_T         responseHeaderCallbackLength;
+    TCL_SIZE_T         responseDataCallbackLength;
 #else
     Tcl_Obj           *responseHeaderCallback; /* Tcl script run when response headers were received */
-#endif
     Tcl_Obj           *responseDataCallback;   /* Tcl script run when response data block is received */
+#endif
     Tcl_Interp        *interp;           /* Tcl Interpreter when running in the caller's thread */
     NsServer          *servPtr;          /* Server for doneCallback */
     NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
