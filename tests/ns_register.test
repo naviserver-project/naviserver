@@ -189,6 +189,20 @@ test ns_register_auth-1.0 {syntax: ns_register_auth} -body {
     ns_register_auth
 } -returnCodes error -result {wrong # args: should be "ns_register_auth ?-authority /value/? ?-first? ?--? request|user /script/ ?/arg .../?"}
 
+#
+# Currently, there is no command to unregister an auth proc or filter proc.
+# As a result, tests that perform registration introduce persistent state
+# changes that can/will interfere with subsequent tests.
+#
+# test ns_register_auth-1.1 {syntax: ns_register_auth} -body {
+#     ns_register_auth -authority user_authority  user ::authuser
+#     ns_register_auth -authority request_authority request ::authrequest
+#     set r [ns_server authprocs]
+#     list \
+#         [string match "*type user authority user_authority*" $r ] \
+#         [string match "*type request authority request_authority*" $r ]
+# } -returnCodes {ok error} -result {1 1}
+
 cleanupTests
 
 # Local variables:

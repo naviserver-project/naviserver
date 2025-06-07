@@ -461,9 +461,9 @@ NsTclRegisterAuthObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
     const char   *authority = NULL;
     unsigned int  proctype = 0u;
     Ns_ObjvSpec opts[] = {
-        {"-authority", Ns_ObjvString, &authority, INT2PTR(NS_TRUE)},
-        {"-first",    Ns_ObjvBool,   &first,    INT2PTR(NS_TRUE)},
-        {"--",        Ns_ObjvBreak,  NULL,      NULL},
+        {"-authority", Ns_ObjvString, &authority, NULL},
+        {"-first",     Ns_ObjvBool,   &first,     INT2PTR(NS_TRUE)},
+        {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   args[] = {
