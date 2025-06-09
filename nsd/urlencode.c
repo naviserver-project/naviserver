@@ -674,10 +674,12 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *inputStr)
 
         /*
          * Don't try to distinguish for now between percents in
-         * pct-encoded input string and literal percents (same with '=').
+         * pct-encoded input string and literal percents (same with '='
+         * and ';').
          */
         mustBeEncoded[UCHAR('%')] = NS_FALSE;
         mustBeEncoded[UCHAR('=')] = NS_FALSE;
+        mustBeEncoded[UCHAR(';')] = NS_FALSE;
 
         /*
          * Don't warn about begin of fragment identifier. We would need
