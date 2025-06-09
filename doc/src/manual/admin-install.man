@@ -151,13 +151,8 @@ installation, please provide the location to make via parameter
 [example_end]
 
 
-At this moment the following modules are available:
-[para]
-
-[emph {nsaccess nsclamav nsdbi nsdbmysql nsdhcpd nsicmp nsmemcache nssip nsstats nsvfs nsaspell nsconf nsdbilite nsdbpg nsdns nsimap nsphp nssmtpd nssyslogd nszlib nsauthpam nsconfigrw nsdbimy nsdbsqlite nsexpat nsldapd nsradiusd nssnmp nstftpd nschartdir nsdbbdb nsdbipg nsdbtds nsgdchart nsloopctl nsrtsp nsssl nsoracle nsudp}]
-
-[para]
-To check what modules are available go to:
+At the time of this writing, 55 NaviServer modules are available on
+GitHub under "naviserver-project":
 [uri https://github.com/orgs/naviserver-project/repositories]
 
 [para]
