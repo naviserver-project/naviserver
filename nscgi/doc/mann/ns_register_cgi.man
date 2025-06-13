@@ -21,7 +21,7 @@ This document describes how to register a CGI handler programmatically.
      [arg url] \
      ]
 
-The command registers a handler requests matching [arg method] and
+The command registers the CGI handler for requests matching [arg method] and
 [arg URL] to be handled as CGI programs. The specified [arg url] can
 contain a match pattern, which is handled by the NaviServer urlspace
 (like in [cmd ns_register_proc]). The match will always be a match on
@@ -49,10 +49,22 @@ unregistered via [cmd ns_unregister_op]. In case the [option -path]
 was specified, it can be unregistered with
 [cmd ns_unregister_url2file].
 
-
+[para] The mapping via [cmd ns_register_cgi] is the programmatical
+counterpart to define the mapping via the configuration file in the
+section "ns/server/$servername/module/nscgi" (see [cmd nscgi]).
 [list_end]
 
+[section EXAMPLE]
 
-[see_also ns_unregister_op ns_register_fasturl2file ns_register]
+[example_begin]
+ # Bind CGI handler for /admin/panel only when the incoming request
+ # has the specified request header field.
+ ns_register_cgi -constraints {X-User *admin*} GET /admin/Panel ...
+[example_end]
+
+
+
+
+[see_also nscgi ns_register]
 [keywords "context constraints" nscgi CGI request callback fastpath urlspace handler]
 [manpage_end]
