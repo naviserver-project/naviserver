@@ -315,7 +315,7 @@ into a dedicated pool.
 
 [see_also nsv ns_server ns_set]
 [keywords "server built-in" trie urlspace shared variables \
-  "data structure" "context constraints" "context constraints"]
+  "data structure" "context constraints"]
 
 [manpage_end]
 
