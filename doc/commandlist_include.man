@@ -502,6 +502,7 @@
 [uri ../../naviserver/files/ns_sendmail.html {ns_sendmail_config}] ?log?
 [uri ../../naviserver/files/ns_server.html {ns_server active}] /server/? ?-pool /value/? active ?-checkforproxy?
 [uri ../../naviserver/files/ns_server.html {ns_server all}] /server/? ?-pool /value/? all ?-checkforproxy?
+[uri ../../naviserver/files/ns_server.html {ns_server authprocs}] /server/? authprocs
 [uri ../../naviserver/files/ns_server.html {ns_server connectionratelimit}] /server/? ?-pool /value/? connectionratelimit ?/value/?
 [uri ../../naviserver/files/ns_server.html {ns_server connections}] /server/? ?-pool /value/? connections
 [uri ../../naviserver/files/ns_server.html {ns_server filters}] /server/? filters
