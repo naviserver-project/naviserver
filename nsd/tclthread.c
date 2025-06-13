@@ -1617,7 +1617,8 @@ RWLockWriteevalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
  *
  * RWLockUnlockObjCmd --
  *
- *      This command implements "ns_rwlock unlock". It releases the
+ *      This command implements "ns_rwlock unlock", "ns_rwlock
+ *      readunlock" and "ns_rwlock writeunlock". It releases the
  *      currently held read or write lock on the specified read-write
  *      lock.
  *
