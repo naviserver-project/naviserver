@@ -7,7 +7,7 @@
 # Note: Two servers using these defaults cannot run on the same host.
 #
 # Either provide configuration values from the command line (see
-# below) or provide different values directly in the the configuration
+# below) or provide different values directly in the configuration
 # file.
 #
 ######################################################################
