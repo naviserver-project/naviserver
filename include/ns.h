@@ -820,13 +820,13 @@ Ns_AdpFlush(Tcl_Interp *interp, bool doStream)
  */
 
 NS_EXTERN Ns_ReturnCode
-Ns_AuthorizeRequest(Ns_Server *servPtr, const char *method, const char *url,
+Ns_AuthorizeRequest(Ns_Server *server, const char *method, const char *url,
                     const char *user, const char *passwd, const char *peer,
                     const char **authorityPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(7);
 
 NS_EXTERN Ns_ReturnCode
-Ns_AuthorizeUser(Ns_Server *servPtr, const char *user, const char *passwd,
+Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd,
                  const char ** authorityPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4);
 
@@ -3793,7 +3793,7 @@ Ns_DecodeUrlCharset(Tcl_DString *dsPtr, const char *urlSegment, const char *char
 #endif
 
 NS_EXTERN void
-Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
+Ns_UrlEncodingWarnUnencoded(const char *msg, const char *inputStr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -3832,7 +3832,7 @@ Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
-Ns_UrlSpecificGet(const Ns_Server *servPtr, const char *key,
+Ns_UrlSpecificGet(const Ns_Server *server, const char *key,
                   const char *url, int id, unsigned int flags, Ns_UrlSpaceOp op,
                   Ns_UrlSpaceMatchInfo *matchInfoPtr,
                   Ns_UrlSpaceContextFilterEvalProc proc, void *context)

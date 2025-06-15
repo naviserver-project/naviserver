@@ -408,7 +408,7 @@ NsGetAuthprocs(Tcl_DString *dsPtr, NsServer *servPtr)
 static void *
 RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr, bool first)
 {
-    AuthNode *node, *cursor;
+    AuthNode *node;
 
     NS_NONNULL_ASSERT(servPtr    != NULL);
     NS_NONNULL_ASSERT(authPtr    != NULL);
@@ -429,7 +429,7 @@ RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr, bool first)
             /* empty list */
             *firstAuthPtr = authPtr;
         } else {
-            cursor = (AuthNode *)*firstAuthPtr;
+            AuthNode *cursor = (AuthNode *)*firstAuthPtr;
             while (cursor->nextPtr != NULL) {
                 cursor = (AuthNode *)cursor->nextPtr;
             }

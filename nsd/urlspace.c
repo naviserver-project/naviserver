@@ -333,6 +333,9 @@ static const char *ContextFilterTypeString(UrlSpaceContextSpecType when);
 static void PrintSeq(const char *seq);
 #endif
 
+static void UrlSpaceContextPrint(const char *caller, const NsUrlSpaceContext *ctxPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * Trie functions
  */
@@ -730,7 +733,7 @@ NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
  *
  *----------------------------------------------------------------------
  */
-static void UrlSpaceContextPrint(const char *caller, NsUrlSpaceContext *ctxPtr)
+static void UrlSpaceContextPrint(const char *caller, const NsUrlSpaceContext *ctxPtr)
 {
     Tcl_DString ds;
 

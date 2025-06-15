@@ -115,7 +115,7 @@ static Ns_AuthorizeUserProc AuthorizeUserProc;
 static bool ValidateUserAddr(User *userPtr, const char *peer);
 static void WalkCallback(Tcl_DString *dsPtr, const void *arg);
 static Ns_ReturnCode CreateNonce(const char *privatekey, char **nonce, const char *uri);
-static Ns_ReturnCode CreateHeader(const PServer *psevPtr, const Ns_Conn *conn, bool stale);
+static Ns_ReturnCode CreateHeader(const PServer *psrvPtr, const Ns_Conn *conn, bool stale);
 /*static Ns_ReturnCode CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
 
 static void FreeUserInfo(User *userPtr, const char *name)
@@ -150,7 +150,6 @@ NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *UNUSED(module))
 {
     PServer       *psrvPtr;
-    Tcl_HashEntry *hPtr;
     int            isNew;
     Ns_ReturnCode  result;
 
@@ -185,6 +184,8 @@ Ns_ModuleInit(const char *server, const char *UNUSED(module))
                " module must be registered on a server");
         result = NS_ERROR;
     } else {
+        Tcl_HashEntry *hPtr;
+
         psrvPtr = ns_malloc(sizeof(PServer));
         psrvPtr->server = server;
         psrvPtr->servPtr = server != NULL ? Ns_GetServer(server) : NULL;
@@ -448,7 +449,6 @@ AuthorizeUserProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *user,
                   int *continuationPtr)
 {
     Ns_ReturnCode  result = NS_OK;
-    Tcl_HashEntry *hPtr;
     PServer       *psrvPtr;
 
     psrvPtr = GetServer(servPtr);
@@ -458,9 +458,10 @@ AuthorizeUserProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *user,
     if (psrvPtr == NULL) {
         result = NS_UNAUTHORIZED;
     } else {
-        hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
+
         if (hPtr != NULL) {
-            User *userPtr;
+            const User *userPtr;
 
             /*fprintf(stderr, "NSPERM ... user %s found\n", user);*/
             userPtr = Tcl_GetHashValue(hPtr);
