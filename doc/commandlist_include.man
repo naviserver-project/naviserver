@@ -286,8 +286,10 @@
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl epoch}]
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl get}]
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl getmodules}] ?-server /server/?
+[uri ../../naviserver/files/ns_ictl.html {ns_ictl gettraces}] allocate|create|deallocate|delete|freeconn|getconn|idle
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl markfordelete}]
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl maxconcurrentupdates}] ?/max/?
+[uri ../../naviserver/files/ns_ictl.html {ns_ictl runtraces}] allocate|create|deallocate|delete|freeconn|getconn|idle
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl save}] /script/
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl trace}] allocate|create|deallocate|delete|freeconn|getconn|idle /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_ictl.html {ns_ictl update}]
