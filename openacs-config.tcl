@@ -508,7 +508,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param maxinput	$max_file_upload_size   ;# Maximum file size for uploads in bytes
         ns_param recvwait	$max_file_upload_duration  ;# 30s, timeout for receive operations
         ns_param extraheaders	$https_extraheaders
-        ns_param OCSPstapling   on        ;# off; activate OCSP stapling
+        # ns_param OCSPstapling on        ;# off; activate OCSP stapling
         # ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
         # ns_param OCSPcheckInterval 15m   ;# default 5m; OCSP (re)check intervale
     }
