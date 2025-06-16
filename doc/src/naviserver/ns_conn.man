@@ -18,24 +18,44 @@ include:
 
 [call [cmd  "ns_conn acceptedcompression"]]
 
-Returns the compression formats accepted by the client, as indicated
-by the accept-encoding header.
+Returns a Tcl list of the compression algorithms the client accepts,
+as advertised by its Accept-Encoding header (for example,
+gzip, deflate, br).
 
 [call [cmd  "ns_conn auth"]]
 
- Returns the content of the Authorization header as an [cmd ns_set].  For
- Basic authentication, the ns_set includes reserved keys such as
- "Username" and "Password" (the values returned by
- [cmd "ns_conn authuser"] and [cmd "ns_conn authpassword"]).  For Digest
- authentication, all header fields are included in the ns_set.  For
- Bearer authentication, the ns_set contains the base64-encoded token.
- The returned ns_set can also be updated.
+ Returns the content of the Authorization header as an [cmd ns_set].
+ Every set containis the key [const AuthMethod] with values such as
+ [const Basic], [const Digest], or [const Bearer]. Depending on the
+ authorization method, different fields are returned
+
+[list_begin itemized]
+[item] Basic Authentication
+ The set also includes  [const username] and  [const password] entries
+ (equivalent to [cmd "ns_conn authuser"] and [cmd "ns_conn authpassword"]).
+
+[item] Digest Authentication
+ The set includes all standard digest fields as provided:
+ [const realm],
+ [const nonce],
+ [const uri],
+ [const qop],
+ [const nc],
+ [const cnonce],
+ [const response], and
+ [const opaque].
+
+[item] Bearer Authentication
+  The set contains the raw base64-encoded token.
+[list_end]
+
+You may also modify this ns_set.
 
 [para] For other authorization schemes, the [const Authorization] header is
  treated like any other request header. For example:
 
 [example_begin]
- set auth_header [lb]ns_set get -nocase [lb]ns_conn header[rb] Authorization ""[rb]
+ set auth_header [lb]ns_set get [lb]ns_conn header[rb] Authorization ""[rb]
 [example_end]
 
 [call [cmd  "ns_conn authpassword"]]
