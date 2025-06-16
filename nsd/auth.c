@@ -298,24 +298,6 @@ Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd, const 
  *
  *----------------------------------------------------------------------
  */
-/*
- *----------------------------------------------------------------------
- *
- * NsGetAuthprocs --
- *
- *      Return a list of auth procs
- *
- * Parameters:
- *      dsPtr          - initialized Tcl_DString pointer
- *      servPtr        - pointer to the NsServer from which the auth procs are taken
- *
- * Results:
- *      None
- *
- * Side Effects:
- *
- *----------------------------------------------------------------------
- */
 void
 NsGetAuthprocs(Tcl_DString *dsPtr, NsServer *servPtr)
 {
@@ -833,6 +815,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
 
     if (connPtr->auth == NULL) {
         connPtr->auth = Ns_SetCreate(NS_SET_NAME_AUTH);
+        connPtr->auth->flags |= NS_SET_OPTION_NOCASE;
     }
 
     Tcl_DStringInit(&authDs);
