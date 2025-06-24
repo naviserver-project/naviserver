@@ -2735,14 +2735,7 @@ ConnRun(Conn *connPtr)
 
         if (status == NS_OK) {
             const char *authority = NULL;
-
-            status = Ns_AuthorizeRequest((Ns_Server*)servPtr,
-                                         connPtr->request.method,
-                                         connPtr->request.url,
-                                         Ns_ConnAuthUser(conn),
-                                         Ns_ConnAuthPasswd(conn),
-                                         Ns_ConnPeerAddr(conn),
-                                         &authority);
+            status = Ns_AuthorizeRequest(conn, &authority);
             switch (status) {
             case NS_OK:            NS_FALL_THROUGH; /* fall through */
             case NS_FILTER_BREAK:

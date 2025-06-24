@@ -313,6 +313,8 @@ NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug;
 #endif
 
 struct Ns_ObjvSpec;
+struct Ns_Conn;
+
 
 /*
  * Typedefs of functions
@@ -340,15 +342,14 @@ typedef Ns_ReturnCode (Ns_ServerInitProc)(const char *server);
 typedef Ns_ReturnCode (Ns_ModuleInitProc)(const char *server, const char *module)
     NS_GNUC_NONNULL(2);
 typedef void          (Ns_AdpParserProc)(Tcl_DString *outPtr, char *page);
-typedef Ns_ReturnCode (Ns_AuthorizeRequestProc)(void *arg, const Ns_Server *servPtr,
-                                                const char *method, const char *url, const char *user,
-                                                const char *pass, const char *peer,
+typedef Ns_ReturnCode (Ns_AuthorizeRequestProc)(void *arg,
+                                                struct Ns_Conn *conn,
                                                 int *continuationPtr)
-    NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(8);
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 typedef Ns_ReturnCode (Ns_AuthorizeUserProc)(void *arg, const Ns_Server *servPtr,
                                              const char *user, const char *passwd,
                                              int *continuationPtr)
-    NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 typedef int           (Ns_ObjvProc)(struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                                     TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1);
@@ -820,15 +821,17 @@ Ns_AdpFlush(Tcl_Interp *interp, bool doStream)
  */
 
 NS_EXTERN Ns_ReturnCode
-Ns_AuthorizeRequest(Ns_Server *server, const char *method, const char *url,
-                    const char *user, const char *passwd, const char *peer,
-                    const char **authorityPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(7);
+Ns_AuthorizeRequest(Ns_Conn *conn, const char **authorityPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+//NS_EXTERN Ns_ReturnCode
+//Ns_AuthorizeUser(Ns_Conn *conn, const char **authorityPtr)
+//    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
 Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd,
                  const char ** authorityPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4);
+NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4);
 
 NS_EXTERN void *
 Ns_RegisterAuthorizeRequest(const char *server, Ns_AuthorizeRequestProc *proc,

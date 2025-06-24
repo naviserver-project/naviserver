@@ -104,77 +104,65 @@ AuthUnlock(NsServer *servPtr) {
  *
  * Ns_AuthorizeRequest --
  *
- *      Invoke the chain of registered request‐authorization callbacks
- *      for a single HTTP request.  Each callback is called in registration
- *      order with the signature:
+ *      Executes the chain of registered request-authorization callbacks
+ *      for a single HTTP request. Each callback is invoked in the order
+ *      of registration and uses the following signature:
  *
- *          Ns_ReturnCode proc(arg, servPtr, method, url, user, passwd, peer, &continuation);
+ *          Ns_ReturnCode proc(arg, conn, &continuation);
  *
- *      Callbacks return an Ns_ReturnCode and may set *continuation to
- *      a Tcl code (e.g. TCL_BREAK or TCL_RETURN) to halt further callbacks.
- *      After each callback, *authorityPtr is updated to that callback’s
- *      authority label, so callers know which module handled the request.
+ *      Callbacks return an `Ns_ReturnCode` and may set *continuation to
+ *      a Tcl code (e.g., TCL_BREAK, TCL_RETURN) to control the flow of
+ *      further callback execution. After each callback, *authorityPtr is
+ *      updated to reflect the authority label of the last invoked callback,
+ *      so callers can know which module handled the request.
  *
- *      When all callbacks have run (or one has set continuation different to
- *      TCL_OK), and continuation is TCL_RETURN, set status to NS_FILTER_RETURN
- *      to signal that further processing is not wanted.
+ *      If all callbacks have been invoked or one has set *continuation to
+ *      something other than TCL_OK, and *continuation is TCL_RETURN, the
+ *      status is set to NS_FILTER_RETURN to indicate that further processing
+ *      is not desired.
  *
  * Parameters:
- *      server       - the NsServer whose callbacks should be invoked
- *      method       - HTTP method (e.g. "GET", "POST")
- *      url          - request URL path
- *      user         - authenticated username (empty string if none)
- *      passwd       - provided password (empty string if none)
- *      peer         - client IP address string
- *      authorityPtr - out‐parameter; set to the authority label of the
- *                     last callback invoked, or NULL if no callbacks
- *                     were registered
+ *      conn         - The connection object for the HTTP request.
+ *      authorityPtr - Output parameter that is set to the authority label
+ *                    of the last callback invoked, or NULL if no callbacks
+ *                    were registered.
  *
  * Results:
- *      The Ns_ReturnCode returned by the last callback invoked, or NS_OK if
- *      no callbacks are registered.  Callback return codes have the following
- *      meanings:
+ *      Returns the `Ns_ReturnCode` from the last callback invoked, or NS_OK
+ *      if no callbacks were registered. The possible return codes from the
+ *      callbacks are:
  *
- *        NS_OK            -  access granted
- *        NS_FORBIDDEN     -  access denied, no retry (e.g. IP or deny rule)
- *        NS_UNAUTHORIZED  -  authentication required or failed, retry possible
- *        NS_ERROR         -  internal error (e.g. no server or module)
- *        NS_FILTER_RETURN -  mapped from continuation TCL_RETURN
+ *        NS_OK            - access granted
+ *        NS_FORBIDDEN     - access denied (e.g., IP-based deny rule)
+ *        NS_UNAUTHORIZED  - authentication required or failed (retry possible)
+ *        NS_ERROR         - internal error (e.g., server or module issue)
+ *        NS_FILTER_RETURN - mapped from Tcl continuation TCL_RETURN
  *
  * Side Effects:
- *      Acquires the server’s request auth list read‐lock.  Invokes each
- *      authProc in turn under that lock.
+ *      Acquires a read lock on the server’s request authorization list
+ *      and invokes each authorization procedure in turn under that lock.
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
-Ns_AuthorizeRequest(Ns_Server *server, const char *method, const char *url,
-                    const char *user, const char *passwd, const char *peer,
-                    const char **authorityPtr)
+Ns_AuthorizeRequest(Ns_Conn *conn, const char **authorityPtr)
 {
     Ns_ReturnCode status = NS_OK;
-    NsServer     *servPtr = (NsServer *)server;
+    NsServer     *servPtr;
     int           continuation = TCL_OK;
 
-    NS_NONNULL_ASSERT(server != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
-    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(authorityPtr != NULL);
 
     *authorityPtr = NULL;
+    servPtr = (NsServer *)Ns_ConnServPtr(conn);
 
     AuthLock(servPtr, NS_READ);
     if (servPtr->request.firstRequestAuthPtr != NULL) {
         const RequestAuth *authPtr = servPtr->request.firstRequestAuthPtr;
 
         while (authPtr != NULL && continuation == TCL_OK) {
-            status = (*authPtr->proc)(authPtr->arg, (Ns_Server *)servPtr,
-                                      method, url, user, passwd, peer, &continuation);
-            /*Ns_Log(Notice, "Ns_AuthorizeRequest: authority '%s'"
-                   " for %s %s user '%s' passwd '%s' peer %s -> %d (%s) continuation %s",
-                   authPtr->authority, method, url, user, passwd, peer,
-                   status , Ns_ReturnCodeString(status), Ns_TclReturnCodeString(continuation));*/
-
+            status = (*authPtr->proc)(authPtr->arg, conn, &continuation);
             *authorityPtr = authPtr->authority;
             authPtr = authPtr->nextPtr;
         }
@@ -191,42 +179,42 @@ Ns_AuthorizeRequest(Ns_Server *server, const char *method, const char *url,
 /*
  *----------------------------------------------------------------------
  *
- * NsAuthorizeUser --
+ * Ns_AuthorizeUser --
  *
- *      Invoke the chain of registered user‐authorization callbacks to verify
- *      the given username/password pair.  Each UserAuth proc is called in
- *      registration order under a shared read‐lock; iteration stops when a
- *      callback sets the continuation code to non‐TCL_OK or the list is
- *      exhausted. When all callbacks have run (or one has set continuation
- *      different to TCL_OK), and continuation is TCL_RETURN, set status to
- *      NS_FILTER_RETURN to signal that further processing is not wanted.
-
+ *      Executes the chain of registered user-authorization callbacks to verify
+ *      the given username/password pair. Each UserAuth callback is invoked
+ *      in registration order under a shared read-lock. Iteration stops when a
+ *      callback sets the continuation code to non-TCL_OK or the list is exhausted.
+ *      If all callbacks have been executed (or one sets continuation to non-TCL_OK),
+ *      and continuation is TCL_RETURN, the function returns NS_FILTER_RETURN to signal
+ *      that further processing is not desired.
  *
  * Parameters:
- *      server       - the NsServer whose user callbacks should be invoked
- *      user         - username string to verify
- *      passwd       - password string to check
- *      authorityPtr - out‐param set to the authority label of the callback
- *                     that determined the final status (NULL if none run)
+ *      server       - The NsServer whose user authorization callbacks should be invoked.
+ *      user         - Username string to verify.
+ *      passwd       - Password string to check.
+ *      authorityPtr - Out parameter; set to the authority label of the callback
+ *                     that determined the final status, or NULL if no callbacks ran.
  *
  * Results:
- *      Returns the Ns_ReturnCode from the last callback invoked.  if no
- *      callbacks are registered NS_UNAUTHORIZED is returned
+ *      Returns the `Ns_ReturnCode` from the last callback invoked, or NS_UNAUTHORIZED
+ *      if no callbacks are registered. Possible return codes are:
  *
- *        NS_OK            -  credentials accepted
- *        NS_FORBIDDEN     -  user exists but password incorrect
- *        NS_UNAUTHORIZED  -  user does not exist (or no callback registered)
- *        NS_FILTER_RETURN -  mapped from continuation TCL_RETURN
- *        NS_ERROR         -  internal error during checks
+ *        NS_OK            - Credentials accepted.
+ *        NS_FORBIDDEN     - User exists, but password is incorrect.
+ *        NS_UNAUTHORIZED  - User does not exist, or no callback registered.
+ *        NS_FILTER_RETURN - Mapped from continuation TCL_RETURN.
+ *        NS_ERROR         - Internal error during checks.
  *
  * Side Effects:
- *      Acquires the server’s user auth list read‐lock and invokes each
- *      authProc under that lock.
+ *      Acquires the server’s user authorization list read-lock and invokes each
+ *      authorization procedure under that lock.
  *
  *----------------------------------------------------------------------
  */
 Ns_ReturnCode
-Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd, const char **authorityPtr)
+Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd,
+                 const char ** authorityPtr)
 {
     Ns_ReturnCode status = NS_UNAUTHORIZED;
     NsServer     *servPtr = (NsServer *)server;
@@ -235,14 +223,11 @@ Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd, const 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(user != NULL);
     NS_NONNULL_ASSERT(passwd != NULL);
+    NS_NONNULL_ASSERT(authorityPtr != NULL);
 
     *authorityPtr = NULL;
 
     AuthLock(servPtr, NS_READ);
-
-    /*fprintf(stderr, "Ns_AuthorizeUser list %p user %s passwd %s\n",
-            (void*)(servPtr->request.firstUserAuthPtr),
-            user, passwd);*/
     if (servPtr->request.firstUserAuthPtr != NULL) {
         const UserAuth *authPtr = servPtr->request.firstUserAuthPtr;
 
@@ -689,14 +674,34 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
     } else {
         Ns_ReturnCode status = NS_OK;
         const char   *authority;
+        Conn  conn;
+        Ns_Set *auth;
 
-        status = Ns_AuthorizeRequest((Ns_Server*)(itPtr->servPtr), method, url,
-                                     authuser, authpasswd, ipaddr, &authority);
+        memcpy(&conn, itPtr->conn, sizeof(Conn));
+        conn.request.method = method;
+        conn.request.url = url;
+
+        auth = Ns_SetCopy(itPtr->conn->auth);
+        Ns_SetUpdateSz(auth, "username", 8, authuser, (TCL_SIZE_T)strlen(authuser));
+        Ns_SetUpdateSz(auth, "password", 8, authpasswd, (TCL_SIZE_T)strlen(authpasswd));
+
+        if (ipaddr != NULL) {
+            size_t ipaddrLen = strlen(ipaddr);
+            if (ipaddrLen+1 >= NS_IPADDR_SIZE) {
+                Ns_Log(Warning, "%s: ignore invalid values of provided IP address", ipaddr);
+            } else {
+                memcpy(conn.peer, ipaddr, ipaddrLen+1);
+                memcpy(conn. proxypeer, ipaddr, ipaddrLen+1);
+            }
+        }
+
+        status = Ns_AuthorizeRequest((Ns_Conn *)&conn, &authority);
         result = HandleAuthorizationResult(interp, status, "ns_auth request", authority, asDict,
                                            method, url, &result);
         /*fprintf(stderr, "NsTclRequestAuthorizeObjCmd for %s %s user %s passwd %s peer %s -> %d (%s)\n",
                 method, url, authuser, authpasswd, ipaddr == NULL ? "NULL" : ipaddr,
                 result , Ns_ReturnCodeString(result));*/
+        Ns_SetFree(auth);
     }
 
     return result;

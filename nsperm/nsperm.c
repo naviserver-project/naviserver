@@ -558,30 +558,38 @@ AuthorizeUserProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *user,
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *method, const char *url,
-                     const char *user, const char *pwd, const char *peer,
-                     int *continuationPtr)
+AuthorizeRequestProc(void *UNUSED(arg), Ns_Conn *conn, int *continuationPtr)
 {
     Ns_ReturnCode  status;
-    const Ns_Set  *set;
     PServer       *psrvPtr;
     Perm          *permPtr;
     User          *userPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    const char    *group, *auth = NULL;
-    const Ns_Conn *conn = Ns_GetConn();
+    const char    *username = NULL, *password = NULL;
+    const char    *method, *url, *peer, *group, *auth = NULL;
+    const Ns_Server *servPtr;
+    Ns_Set        *authSet;
 
-    if (conn == NULL) {
-        Ns_Log(Error, "nsperm: AuthorizeRequestProc called without connection");
-        return NS_ERROR;
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    servPtr = Ns_ConnServPtr(conn);
+    authSet = Ns_ConnAuth(conn);
+
+    if (authSet != NULL) {
+        username = Ns_SetGet(authSet, "username");
+        password = Ns_SetGet(authSet, "password");
     }
-    if (user == NULL) {
-        user = NS_EMPTY_STRING;
+
+    if (username == NULL) {
+        username = NS_EMPTY_STRING;
     }
-    if (pwd == NULL) {
-        pwd = NS_EMPTY_STRING;
+    if (password == NULL) {
+        password = NS_EMPTY_STRING;
     }
+    peer = Ns_ConnConfiguredPeerAddr(conn);
+    method = conn->request.method;
+    url = conn->request.url;
 
     psrvPtr = GetServer(servPtr);
     if (psrvPtr == NULL) {
@@ -606,9 +614,8 @@ AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *me
      * fallback to Basic method.
      */
 
-    set = Ns_ConnAuth(conn);
-    if (set != NULL) {
-        auth = Ns_SetIGet(set, "authmethod");
+    if (authSet != NULL) {
+        auth = Ns_SetIGet(authSet, "authmethod");
     }
     if (auth == NULL) {
         auth = "Basic";
@@ -624,11 +631,11 @@ AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *me
      * Find user record, this is true for all methods
      */
 
-    hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
+    hPtr = Tcl_FindHashEntry(&psrvPtr->users, username);
     if (hPtr == NULL) {
         goto done;
     }
-    /*fprintf(stderr, "... user %s found\n", user);*/
+    /*fprintf(stderr, "... user %s found\n", username);*/
 
     userPtr = Tcl_GetHashValue(hPtr);
 
@@ -650,10 +657,10 @@ AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *me
          * Basic Authentication: Verify user password (if any).
          */
         if (userPtr->pwd[0] != 0) {
-            if (pwd[0] == 0) {
+            if (password[0] == 0) {
                 goto done;
 
-            } else if (CheckPassword(pwd, userPtr->pwd, userPtr->flags) != NS_OK) {
+            } else if (CheckPassword(password, userPtr->pwd, userPtr->flags) != NS_OK) {
                 /*
                  * Incorrect password
                  */
@@ -665,12 +672,12 @@ AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *me
          * Digest Authentication
          */
         if (userPtr->pwd[0] != 0) {
-            if (pwd[0] != 0 && (userPtr->flags & USER_CLEAR_TEXT) == 0u) {
+            if (password[0] != 0 && (userPtr->flags & USER_CLEAR_TEXT) == 0u) {
                 /*
                  * Use the Digest Calculation to compute the hash based on a
                  * stored plain text password.
                  */
-                if (Ns_AuthDigestValidate(set, userPtr->pwd) != NS_OK) {
+                if (Ns_AuthDigestValidate(authSet, userPtr->pwd) != NS_OK) {
                     goto done;
                 }
             } else {
@@ -690,7 +697,7 @@ AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *me
          * Null user never gets forbidden--give a chance to enter password.
          */
     deny:
-        if (*user != '\0') {
+        if (*username != '\0') {
             status = NS_FORBIDDEN;
             *continuationPtr = TCL_BREAK;
         }
@@ -702,7 +709,7 @@ AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *me
      * Check user deny list.
      */
 
-    if (Tcl_FindHashEntry(&permPtr->denyuser, user) != NULL) {
+    if (Tcl_FindHashEntry(&permPtr->denyuser, username) != NULL) {
         goto deny;
     }
     /*fprintf(stderr, "... user not denied\n");*/
@@ -732,7 +739,7 @@ AuthorizeRequestProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *me
      * Check the allow lists, starting with users
      */
 
-    if (Tcl_FindHashEntry(&permPtr->allowuser, user) != NULL) {
+    if (Tcl_FindHashEntry(&permPtr->allowuser, username) != NULL) {
         goto done;
     }
     /*fprintf(stderr, "... user not in allowuser\n");*/
@@ -1056,7 +1063,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, T
     Tcl_InitHashTable(&userPtr->hosts, TCL_STRING_KEYS);
     Tcl_InitHashTable(&userPtr->groups, TCL_STRING_KEYS);
 
-    // fprintf(stderr, "============= add user <%s> pwd <%s> field <%s> nrags %d\n", name, pwd, field, nargs);
+    /* fprintf(stderr, "============= add user <%s> pwd <%s> field <%s> nrags %d\n", name, pwd, field, nargs);*/
 
     /*
      * Both -allow and -deny can be used for consistency, but
@@ -1801,7 +1808,9 @@ CheckPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             goto done;
         }
 
-        // Use the CheckPassword function for validation
+        /*
+         * Use the CheckPassword function for validation
+         */
         if (CheckPassword(pwd, userPtr->pwd, userPtr->flags) != NS_OK) {
             Ns_TclPrintfResult(interp, "incorrect password");
             goto done;

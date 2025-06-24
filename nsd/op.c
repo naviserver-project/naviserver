@@ -477,13 +477,7 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
         /*
          * Re-authorize and run the request.
          */
-        status = Ns_AuthorizeRequest(Ns_ConnServPtr(conn),
-                                     conn->request.method,
-                                     conn->request.url,
-                                     Ns_ConnAuthUser(conn),
-                                     Ns_ConnAuthPasswd(conn),
-                                     Ns_ConnPeerAddr(conn),
-                                     &authority);
+        status = Ns_AuthorizeRequest(conn, &authority);
     }
 
     switch (status) {
