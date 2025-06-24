@@ -13,11 +13,12 @@
  user/password level.
 
 [para]
- Before using [cmd ns_auth], one or more callbacks must be registered
- (e.g. via the [term nsperm] module or the [cmd ns_register_auth] Tcl API).
- See the [uri ../../nsperm/files/admin-tuning.html \
+ Before using [cmd ns_auth], one or more authorization callbacks must be registered
+ (e.g. via the [uri ./ns_register.html#2 ns_register_auth] Tcl API
+ or the [term nsperm] module).
+ See the [uri ../../nsperm/files/nsperm.html \
    "nsperm - NaviServer Permissions and Access Control Guide"]
- for an example of how to configure and register handlers.
+ for an example of how to configure and register nsperm handlers.
 
 [section COMMANDS]
 
@@ -72,7 +73,8 @@ Results and options are the same as for [cmd "ns_auth request"].
 
 [list_end]
 
-[keywords "server built-in" nsperm]
+[see_also ns_register]
+[keywords "server built-in" nsperm "request authentication" "user authentication"]
 
 [manpage_end]
 

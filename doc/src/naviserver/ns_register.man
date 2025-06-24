@@ -146,6 +146,9 @@ arguments to the callback when it is invoked.
 is added at the beginning of the filter list; otherwise, it is
 appended to the end.
 
+This logic of authorization chains is very similar to the handling of the filter chain
+(see [cmd ns_register_filter]).
+
 [para] The function can signal the result of authorization by
 returning one of the following status codes:
 
@@ -165,15 +168,28 @@ handler should be executed.
  # Register a user authorization handler
  ns_register_auth user ::authuser
  
- # Define a minimal handler, htat accepts a constant password
+ # Define a minimal user authorization handler, that accepts a constant password.
  # "-code break" prevents further authorization handlers to be called.
  proc ::authuser {user passwd} {
    return -code break [lb]expr {$passwd eq "x" ? "ok" : "forbidden"}[rb]
  }
 [example_end]
 
-This logic is very similar to the handling of the filter chain
-(see [cmd ns_register_filter]).
+[example_begin]
+ # Register a request authorization handler
+ ns_register_auth user ::authrequest
+
+ proc ::authrequest {method url user passwd peer} {
+   # very similar minimal logic similar to ::authuser
+   if {$passwd eq ""} {
+      return -code break unauthorized
+   }
+   return -code break [lb]expr {$passwd eq "x" ? "ok" : "forbidden"}[rb]
+ }
+[example_end]
+
+A slightly more elaborate example is provided in the documentation of the
+[uri https://github.com/naviserver-project/nsldap "nsladp"] module.
 
 [para]
 Once registered, these callbacks will be invoked
@@ -770,5 +786,7 @@ currently registered [term filters], [term traces] or [term procs].
 
 [see_also ns_adp ns_auth ns_adp_register ns_conn ns_http ns_server ns_time]
 [keywords "server built-in" ADP filter request callback fastpath \
-        "context constraints" urlspace proxy handler "forwarding proxy"]
+        "context constraints" urlspace proxy handler "forwarding proxy" \
+        "request authentication" "user authentication" ]
+
 [manpage_end]
