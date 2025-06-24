@@ -457,7 +457,7 @@ ns_section ns/server/${server}/httpclient {
     #
     #ns_param validateCertificates false        ;# default: true
 
-    if {[ns_config ns/server/default/httpclient validateCertificates true]} {
+    if {[ns_config ns/server/${server}/httpclient validateCertificates true]} {
         #
         # Specify trusted certificates using
         #   - A single CA bundle file (CAfile) for top-level certificates, or
