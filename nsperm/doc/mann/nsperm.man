@@ -312,6 +312,6 @@ Now, in the directory where access is wanted, create .htaccess file and add line
 [example_end]
 
 [see_also ns_perm ns_permreload ns_permpasswd]
-[keywords module nsperm password]
+[keywords module nsperm password "request authentication" "user authentication"]
 
 [manpage_end]
