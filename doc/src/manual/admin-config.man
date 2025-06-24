@@ -55,21 +55,24 @@ The main sections of a configuration file are:
 
 [item] Global configuration values
    [list_begin itemized]
-   [item] general parameters (starting with "ns/parameters")
-   [item] thread parameters (starting with "ns/threads")
-   [item] mimetypes (starting with "ns/mimetypes")
-   [item] database drivers (starting with "ns/db")
-   [item] global modules (starting with "ns/modules")
-   [item] servers (starting with "ns/servers")      
+   [item] general parameters (section starting with [const ns/parameters])
+   [item] thread parameters (section starting with [const ns/threads])
+   [item] mimetypes (section starting with [const ns/mimetypes])
+   [item] database drivers (section starting with [const ns/db])
+   [item] global modules (section starting with [const ns/modules])
+   [item] servers (section starting with [const ns/servers])
    [list_end]
 [para] Examples for global parameters are in the mentioned
-sample configuration files and also e.g. in [term tcl-libraries]
+sample configuration files and also, e.g., in [term tcl-libraries]
 and [term admin-tuning].
 
-[item] Server specific parameters (starting with "ns/server/$server")
+[item] Server specific parameters (section starting with
+[const {ns/server/$server}]), where [const {$server}] is either a Tcl
+variable with the server configuration name, or should be replaced by
+the actual name (typically, when multiple server configurations are used).
 
 [item] Module specific parameters (like [term nssock], [term nsssl],
-[term nscp], [term nslog], [term nscgi] or [term nsperm].
+[term nscp], [term nslog], [term nscgi] or [term nsperm]).
 
 [list_end]
 
@@ -304,23 +307,53 @@ instance.
 
 [subsection {Virtual servers}]
 
-By using virtual servers, multiple different server configurations can
-be used while using only a single IP address/port combination. The
-main different between a virtual server and the case of defining
-multiple alternative servers above is that the servers are available
-concurrently. The server determines by the "Host:" header field
-provided by the client to which server the request should be
-routed. Using such virtual servers is a common technique, where
-e.g. for the same IP address, multiple DNS names are
-registered. According to HTTP/1.1, clients have to send the hostname
-in the host header field to the server, such that the server can
-behave differently depending on the contents of this field.
+ Virtual servers allow you to host multiple, distinct server
+ configurations on the same IP address and port. Unlike defining
+ alternative server configurations that are activated one at a time
+ (what we have done above), virtual servers coexist concurrently.
+ When a request arrives, NaviServer examines the HTTP/1.1 [const Host:] header
+ to select the matching virtual server configuration.
 
-[para] NaviServer can define multiple virtual servers, where each of
-the servers has a separate setup (e.g., different number of threads defined,
-different page directories), separate blueprints (e.g., loading
-of different modules), uses different network drivers, etc. (see
-Figure 1).
+ [para ] A common use case is serving the same content under several
+ DNS names (e.g. [const foo.com] and [const www.foo.com]) using the
+ same server configuration. To enable this, list each hostname under
+ the [const ns/module/http/servers] section, mapping names to a single
+ server instance.
+
+
+[example_begin]
+ ns_section ns/servers {
+   ns_param s1  "Virtual Instance 1"
+ }
+ 
+ ns_section ns/modules {
+   ns_param http nssock.so
+ }
+ 
+ ns_section ns/module/http {
+   ns_param address  0.0.0.0
+   ns_param port     8000
+ }
+ 
+ #
+ # Map DNS names to the s1 server configuration
+ #
+ ns_section ns/module/http/servers {
+   #
+   # Domain names for s1
+   #
+   ns_param s1 foo.com
+   ns_param s1 www.foo.com
+ }
+[example_end]
+
+[para] In the example above, a single server instance "s1" responds to both
+[const foo.com] and [const www.foo.com]. You can also define multiple
+server configurations, each with its own thread pool, document root, loaded modules,
+and network driver by adding additional entries in [const ns/servers] and
+corresponding [const ns/module/http/servers] mappings. By doing so,
+you can define that a certain set of DNS names are routed to one
+server and some to another server (see Figure 1).
 
 [para][image blueprint3 "NaviServer Blueprint"]
 [para]Figure 1: NaviServer Blueprint (per server)
@@ -363,7 +396,7 @@ between the hostnames and the defined servers.
 
 [example_begin]
  #
- # Define two servers s1 and d2 as virtual servers
+ # Define two servers s1 and s2 as virtual servers
  #
  ns_section ns/servers {
    ns_param s1  "Virtual Server s1"
