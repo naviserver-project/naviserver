@@ -377,9 +377,12 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     NS_NONNULL_ASSERT(conn != NULL);
 
     if (Ns_SetIGet(conn->outputheaders, "www-authenticate") == NULL) {
+        NsServer *servPtr = connPtr->poolPtr->servPtr;
+
         Tcl_DStringInit(&ds);
-        Ns_DStringVarAppend(&ds, "Basic realm=\"",
-                            connPtr->poolPtr->servPtr->opts.realm, "\"", NS_SENTINEL);
+        Ns_RWLockRdLock(&servPtr->request.rwlock);
+        Ns_DStringVarAppend(&ds, "Basic realm=\"", servPtr->opts.realm, "\"", NS_SENTINEL);
+        Ns_RWLockUnlock(&servPtr->request.rwlock);
         Ns_ConnSetHeadersSz(conn, "www-authenticate", 16, ds.string, ds.length);
         Tcl_DStringFree(&ds);
     }

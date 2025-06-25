@@ -75,6 +75,30 @@ Returns a list of the pools defined for this server.
 
 [call [cmd ns_server] \
 	[opt [option "-server [arg server]"]] \
+	[cmd realm] \
+        [opt [arg newrealm]] \
+        ]
+
+Returns or sets the HTTP authentication “realm” for a server. The
+realm is the string presented in the browser’s login dialog (and in
+the WWW-Authenticate header) when Basic or Digest authentication is
+required—it identifies the protected area. When [arg newrealm] is
+specified, it updates the server’s realm to that value and returns the
+previous realm.
+
+[example_begin]
+ # Query the realm on the default server
+ % ns_server realm
+ Restricted Area
+
+ # Change the realm to "Administrators"
+ % ns_server realm "Administrators"
+ Restricted Area   ;# old value returned
+[example_end]
+
+
+[call [cmd ns_server] \
+	[opt [option "-server [arg server]"]] \
 	[cmd requestprocs]]
 
 Returns a list of the currently defined requestprocs  (the registered

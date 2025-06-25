@@ -15,16 +15,16 @@ test ns_server-1.0 {basic syntax: plain call} -body {
     ns_server
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]
-                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
-                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
                }]
 
 test ns_server-1.1 {basic syntax: wrong argument} -body {
     ns_server ?
 } -returnCodes error \
         -result [expr {[testConstraint with_deprecated]
-                       ? {bad option "?": must be active, all, authprocs, connectionratelimit, connections, filters, hosts, keepalive, logdir, map, mapped, maxthreads, minthreads, pagedir, poolratelimit, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, unmap, url2file, vhostenabled, or waiting}
-                       : {bad option "?": must be active, all, authprocs, connectionratelimit, connections, filters, hosts, logdir, map, mapped, maxthreads, minthreads, pagedir, poolratelimit, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, unmap, url2file, vhostenabled, or waiting}
+                       ? {bad option "?": must be active, all, authprocs, connectionratelimit, connections, filters, hosts, keepalive, logdir, map, mapped, maxthreads, minthreads, pagedir, poolratelimit, pools, queued, realm, requestprocs, serverdir, stats, tcllib, threads, traces, unmap, url2file, vhostenabled, or waiting}
+                       : {bad option "?": must be active, all, authprocs, connectionratelimit, connections, filters, hosts, logdir, map, mapped, maxthreads, minthreads, pagedir, poolratelimit, pools, queued, realm, requestprocs, serverdir, stats, tcllib, threads, traces, unmap, url2file, vhostenabled, or waiting}
                    }]
 
 test ns_server-1.2.1 {syntax: ns_server active} -body {
@@ -156,6 +156,11 @@ test ns_server-1.2.26 {syntax: ns_server authprocs} -body {
 } -returnCodes error -result {wrong # args: should be "ns_server authprocs"}
 # leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? authprocs"}
 
+test ns_server-1.2.27 {syntax: ns_server realm} -body {
+    ns_server realm "" -
+} -returnCodes error -result {wrong # args: should be "ns_server realm ?/newrealm/?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? realm ?/newrealm/?"}
+
 
 #######################################################################################
 #  Functional tests
@@ -165,32 +170,32 @@ test ns_server-1.3.1 {plain call, option but no argument} -body {
     ns_server -pool {}
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]
-                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
-                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
                }]
 
 test ns_server-1.3.2 {plain call, option but no argument} -body {
     ns_server -pool {} --
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]
-                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
-                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
                }]
 
 test ns_server-1.4.1 {plain call, option but no argument} -body {
     ns_server -server test
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]
-                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
-                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
                }]
 
 test ns_server-1.4.2 {plain call, option but no argument} -body {
     ns_server -server test --
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]
-                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
-                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   ? {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|keepalive|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
+                   : {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? ?--? active|all|authprocs|connectionratelimit|connections|filters|hosts|logdir|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|realm|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
                }]
 
 test ns_server-1.5 {provide invalid server argument} -body {
@@ -339,6 +344,17 @@ test ns_server-2.4.1.3 {query pools with explicit -server "testvhost2"} -body {
 test ns_server-2.4.2 {query hosts from default server} -body {
     lsort [ns_server hosts]
 } -match glob -result "example.com:* test:* test:*"
+
+test ns_server-2.4.3 {test realm} -body {
+    set r0 [ns_server realm]
+    set r1 [ns_server realm r1]
+    set r2 [ns_server realm]
+    set r3 [ns_server realm $r1]
+    set r4 [ns_server realm $r1]
+    list $r0 $r1 $r2 $r3 $r4
+} -cleanup {
+    nsv_unset -nocomplain r0 r1 r2 r3 r4
+} -result {test test r1 r1 test}
 
 
 test ns_server-2.5 {basic operation} -body {

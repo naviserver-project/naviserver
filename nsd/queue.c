@@ -1467,7 +1467,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         SMaxthreadsIdx, SMinthreadsIdx,
         SPagedirIdx, SPoolRateLimitIdx, SPoolsIdx,
         SQueuedIdx,
-        SRequestprocsIdx,
+        SRealmIdx, SRequestprocsIdx,
         SServerdirIdx, SStatsIdx,
         STcllibIdx, SThreadsIdx, STracesIdx,
         SUnmapIdx,
@@ -1494,6 +1494,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         {"poolratelimit",       (unsigned int)SPoolRateLimitIdx},
         {"pools",               (unsigned int)SPoolsIdx},
         {"queued",              (unsigned int)SQueuedIdx},
+        {"realm",               (unsigned int)SRealmIdx},
         {"requestprocs",        (unsigned int)SRequestprocsIdx},
         {"serverdir",           (unsigned int)SServerdirIdx},
         {"stats",               (unsigned int)SStatsIdx},
@@ -1512,7 +1513,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         {"--",      Ns_ObjvBreak,   NULL,     NULL},
         {NULL, NULL,  NULL, NULL}
     };
-    Ns_ObjvSpec diropts[] = {
+    Ns_ObjvSpec serverdirOpts[] = {
         {"-effective", Ns_ObjvBool,   &effective, INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
@@ -1532,6 +1533,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
          || subcmd == SHostsIdx
          || subcmd == SLogdirIdx
          || subcmd == SPagedirIdx
+         || subcmd == SRealmIdx
          || subcmd == SRequestprocsIdx
          || subcmd == SUrl2fileIdx
          || subcmd == SVhostenabledIdx
@@ -1690,13 +1692,39 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         break;
 
     case SServerdirIdx: {
-        if (Ns_ParseObjv(diropts, NULL, interp, objc-nargs, objc, objv) == NS_OK) {
+        if (Ns_ParseObjv(serverdirOpts, NULL, interp, objc-nargs, objc, objv) == NS_OK) {
             Tcl_DStringInit(dsPtr);
             if (effective) {
                 Ns_ServerPath(dsPtr, servPtr->server, NS_SENTINEL);
             } else {
                 Tcl_DStringAppend(dsPtr, servPtr->opts.serverdir, TCL_INDEX_NONE);
             }
+            Tcl_DStringResult(interp, dsPtr);
+            result = TCL_OK;
+        }
+        break;
+    }
+
+    case SRealmIdx: {
+        const char *realm = NULL;
+        Ns_ObjvSpec realmargs[] = {
+            {"?newrealm", Ns_ObjvString, &realm,    NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+        if (Ns_ParseObjv(NULL, realmargs, interp, objc-nargs, objc, objv) == NS_OK) {
+            Tcl_DStringInit(dsPtr);
+            if (realm == NULL) {
+                Ns_RWLockRdLock(&servPtr->request.rwlock);
+                Tcl_DStringAppend(dsPtr, servPtr->opts.realm, TCL_INDEX_NONE);
+            } else {
+                Ns_RWLockWrLock(&servPtr->request.rwlock);
+                Tcl_DStringAppend(dsPtr, servPtr->opts.realm, TCL_INDEX_NONE);
+                if (servPtr->opts.realm != NULL) {
+                    ns_free((void*)servPtr->opts.realm);
+                    servPtr->opts.realm = ns_strdup(realm);
+                }
+            }
+            Ns_RWLockUnlock(&servPtr->request.rwlock);
             Tcl_DStringResult(interp, dsPtr);
             result = TCL_OK;
         }
