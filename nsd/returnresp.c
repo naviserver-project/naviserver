@@ -378,11 +378,22 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
 
     if (Ns_SetIGet(conn->outputheaders, "www-authenticate") == NULL) {
         NsServer *servPtr = connPtr->poolPtr->servPtr;
+        const char *realm = Ns_SlsGetKeyed(Ns_ConnSockPtr(conn), "auth:realm");
 
         Tcl_DStringInit(&ds);
-        Ns_RWLockRdLock(&servPtr->request.rwlock);
-        Ns_DStringVarAppend(&ds, "Basic realm=\"", servPtr->opts.realm, "\"", NS_SENTINEL);
-        Ns_RWLockUnlock(&servPtr->request.rwlock);
+        Tcl_DStringAppend(&ds, "Basic realm=\"", 13);
+        if (realm == NULL) {
+            Ns_Log(Debug, "Ns_ConnReturnUnauthorized uses opts realm <%s>", servPtr->opts.realm);
+
+            Ns_RWLockRdLock(&servPtr->request.rwlock);
+            Tcl_DStringAppend(&ds, servPtr->opts.realm, TCL_INDEX_NONE);
+            Ns_RWLockUnlock(&servPtr->request.rwlock);
+        } else {
+            Ns_Log(Notice, "Ns_ConnReturnUnauthorized uses SLS realm  <%s>", realm);
+            Tcl_DStringAppend(&ds, realm, TCL_INDEX_NONE);
+        }
+        Tcl_DStringAppend(&ds, "\"", 1);
+        Ns_Log(Debug, "Ns_ConnReturnUnauthorized final www-authenticate value<%s>", ds.string);
         Ns_ConnSetHeadersSz(conn, "www-authenticate", 16, ds.string, ds.length);
         Tcl_DStringFree(&ds);
     }
