@@ -164,7 +164,7 @@ static int OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RE
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1);
 #endif
 
 # if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
@@ -172,7 +172,6 @@ static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(l
 static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file), int UNUSED(line)) NS_ALLOC_SIZE1(2);
 static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line));
 # endif
-
 
 #ifndef OPENSSL_HAVE_DH_AUTO
 /*
@@ -406,6 +405,139 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
 }
 
 #ifndef OPENSSL_NO_OCSP
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SSL_cert_has_must_staple --
+ *
+ *      Check whether an X.509 certificate has the “must-staple” TLS
+ *      Feature extension (OCSP Must-Staple, OID 1.3.6.1.5.5.7.1.24)
+ *      indicating that the certificate requires OCSP stapling.
+ *
+ * Parameters:
+ *      cert    - pointer to the X509 certificate to inspect
+ *
+ * Returns:
+ *      1  if the TLS Feature extension is present and includes the
+ *         status_request feature (value 5), indicating Must-Staple.
+ *      0  if the extension is absent or present but does not include
+ *         the status_request feature.
+ *     -1  on error (e.g. OID lookup or extension parsing failure).
+ *
+ * Side Effects:
+ *      Logs a warning if the TLS Feature extension is present but
+ *      cannot be parsed.
+ *
+ *----------------------------------------------------------------------
+ */
+static int SSL_cert_has_must_staple(X509 *cert) {
+    int ext_index;
+    ASN1_OBJECT *obj = OBJ_txt2obj("1.3.6.1.5.5.7.1.24", 1);  // TLS Feature OID
+
+    if (obj == NULL) {
+        return -1;
+    }
+    ext_index = X509_get_ext_by_OBJ(cert, obj, -1);
+    ASN1_OBJECT_free(obj);
+
+    if (ext_index < 0) {
+        /*
+         * TLS Feature extension not found
+         */
+        return 0;
+    } else {
+        X509_EXTENSION      *ext = X509_get_ext(cert, ext_index);
+        ASN1_OCTET_STRING   *octet = X509_EXTENSION_get_data(ext);
+        const unsigned char *p = ASN1_STRING_get0_data(octet);
+        long                 len = ASN1_STRING_length(octet);
+        STACK_OF(ASN1_TYPE) *features = d2i_ASN1_SEQUENCE_ANY(NULL, &p, len);
+
+        if (!features) {
+            Ns_Log(Warning, "OCSP: Failed to parse TLS Feature extension");
+            return -1;
+        }
+
+        for (int i = 0; i < sk_ASN1_TYPE_num(features); i++) {
+            ASN1_TYPE *type = sk_ASN1_TYPE_value(features, i);
+            if (type->type == V_ASN1_INTEGER) {
+                ASN1_INTEGER *feature = type->value.integer;
+                long val = ASN1_INTEGER_get(feature);
+                if (val == 5) { // 5 = status_request (i.e., Must-Staple)
+                    sk_ASN1_TYPE_pop_free(features, ASN1_TYPE_free);
+                    return 1;
+                }
+            }
+        }
+        sk_ASN1_TYPE_pop_free(features, ASN1_TYPE_free);
+    }
+
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * openssl_string_free --
+ *
+ *      Helper functionto free strings allocated by OpenSSL stack APIs.
+ *
+ * Parameters:
+ *      string - pointer to the string to free
+ *
+ * Side Effects:
+ *      Calls OPENSSL_free() on the given pointer.
+ *
+ *----------------------------------------------------------------------
+ */
+static void openssl_string_free(char *chars)
+{
+    OPENSSL_free(chars);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SSL_cert_can_staple --
+ *
+ *      Determine whether an X.509 certificate supports OCSP stapling
+ *      by checking for the presence of one or more OCSP responder URLs
+ *      in its Authority Information Access (AIA) extension.
+ *
+ * Parameters:
+ *      cert    - pointer to the X509 certificate to inspect (may be NULL)
+ *
+ * Returns:
+ *      true  if the certificate contains at least one OCSP URI and thus
+ *            can staple OCSP responses;
+ *      false if cert is NULL or if no OCSP URI is found.
+ *
+ * Side Effects:
+ *      Calls X509_get1_ocsp() to extract a STACK_OF(OPENSSL_STRING),
+ *      and then frees that stack and its strings via sk_OPENSSL_STRING_pop_free()
+ *      with openssl_free() as the deallocator.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool SSL_cert_can_staple(X509 *cert) {
+    bool success = NS_FALSE;
+
+    if (cert != NULL) {
+        /*
+         * Get the stack of OCSP URIs from the AIA extension
+         */
+        STACK_OF(OPENSSL_STRING) *ocsp_uris = X509_get1_ocsp(cert);
+        if (ocsp_uris != NULL) {
+            /*
+             * We have an OCSP URI, we can staple
+             */
+            success = NS_TRUE;
+            sk_OPENSSL_STRING_pop_free(ocsp_uris, openssl_string_free);
+        }
+    }
+    return success;
+}
+
 static int SSL_cert_statusCB(SSL *ssl, void *arg)
 {
     SSLCertStatusArg *srctx = arg;
@@ -413,10 +545,27 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
     OCSP_RESPONSE    *resp = NULL;
     unsigned char    *rspder = NULL;
     int               rspderlen;
+    bool              muststaple, canstaple;
     Ns_Time           now, diff;
+    X509             *cert;
 
     if (srctx->verbose) {
         Ns_Log(Notice, "cert_status: callback called");
+    }
+
+    cert = SSL_get_certificate(ssl);
+    if (cert == NULL) {
+        /*
+         * No certificate available
+         */
+        return SSL_TLSEXT_ERR_NOACK;
+    }
+    muststaple = (SSL_cert_has_must_staple(cert) == 1);
+    canstaple = (SSL_cert_can_staple(cert) == 1);
+
+    Ns_Log(Debug, "tls: SSL_cert_statusCB must staple %d, can staple %d", muststaple, canstaple);
+    if (!canstaple) {
+        return SSL_TLSEXT_ERR_NOACK;
     }
 
     Ns_GetTime(&now);
@@ -819,6 +968,7 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
             X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
 
             if (!OCSP_REQUEST_add_ext(req, ext, -1)) {
+                sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
                 goto err;
             }
         }
@@ -845,6 +995,7 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
 
             result = SSL_TLSEXT_ERR_OK;
         }
+        sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
         goto done;
     }
 
@@ -855,7 +1006,7 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
      * If we parsed AIA we need to free
      */
     if (aia != NULL) {
-        X509_email_free(aia);
+        sk_OPENSSL_STRING_pop_free(aia, openssl_string_free);
     }
     OCSP_CERTID_free(id);
     OCSP_REQUEST_free(req);
@@ -888,8 +1039,11 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
     int            derLength;
 
     NS_NONNULL_ASSERT(req != NULL);
-    NS_NONNULL_ASSERT(aiaURL != NULL);
 
+    if (aiaURL == NULL) {
+        Ns_Log(Warning, "The certificate says it supports OCSP, but has a NULL AIA URL");
+        return rsp;
+    }
     Ns_Log(Notice, "OCSP_FromAIA url <%s> timeout %d", aiaURL, req_timeout);
 
     /*
