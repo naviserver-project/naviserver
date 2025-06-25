@@ -502,31 +502,32 @@
 [uri ../../naviserver/files/ns_sema.html {ns_sema wait}] /handle/
 [uri ../../naviserver/files/ns_sendmail.html {ns_sendmail}] -to /value/ -from /value/ ?-subject /value/? ?-body /value/? ?-headers /value/? ?-bcc /value/? ?-cc /value/?
 [uri ../../naviserver/files/ns_sendmail.html {ns_sendmail_config}] ?log?
-[uri ../../naviserver/files/ns_server.html {ns_server active}] /server/? ?-pool /value/? active ?-checkforproxy?
-[uri ../../naviserver/files/ns_server.html {ns_server all}] /server/? ?-pool /value/? all ?-checkforproxy?
-[uri ../../naviserver/files/ns_server.html {ns_server authprocs}] /server/? authprocs
-[uri ../../naviserver/files/ns_server.html {ns_server connectionratelimit}] /server/? ?-pool /value/? connectionratelimit ?/value/?
-[uri ../../naviserver/files/ns_server.html {ns_server connections}] /server/? ?-pool /value/? connections
-[uri ../../naviserver/files/ns_server.html {ns_server filters}] /server/? filters
-[uri ../../naviserver/files/ns_server.html {ns_server hosts}] /server/? hosts
-[uri ../../naviserver/files/ns_server.html {ns_server map}] /server/? ?-pool /value/? map ?-noinherit? ?/mapspec/?
-[uri ../../naviserver/files/ns_server.html {ns_server mapped}] /server/? mapped ?-all? ?-exact? ?-noinherit? /mapspec/
-[uri ../../naviserver/files/ns_server.html {ns_server maxthreads}] /server/? ?-pool /value/? maxthreads ?/value/?
-[uri ../../naviserver/files/ns_server.html {ns_server minthreads}] /server/? ?-pool /value/? minthreads ?/value/?
-[uri ../../naviserver/files/ns_server.html {ns_server pagedir}] /server/? pagedir
-[uri ../../naviserver/files/ns_server.html {ns_server poolratelimit}] /server/? ?-pool /value/? poolratelimit ?/value/?
-[uri ../../naviserver/files/ns_server.html {ns_server pools}] /server/? pools
-[uri ../../naviserver/files/ns_server.html {ns_server queued}] /server/? ?-pool /value/? queued
-[uri ../../naviserver/files/ns_server.html {ns_server requestprocs}] /server/? requestprocs
-[uri ../../naviserver/files/ns_server.html {ns_server serverdir}] /server/? serverdir ?-effective?
-[uri ../../naviserver/files/ns_server.html {ns_server stats}] /server/? ?-pool /value/? stats
-[uri ../../naviserver/files/ns_server.html {ns_server tcllib}] /server/? tcllib
-[uri ../../naviserver/files/ns_server.html {ns_server threads}] /server/? ?-pool /value/? threads
-[uri ../../naviserver/files/ns_server.html {ns_server traces}] /server/? traces
-[uri ../../naviserver/files/ns_server.html {ns_server unmap}] /server/? ?-pool /value/? unmap ?-noinherit? /mapspec/
-[uri ../../naviserver/files/ns_server.html {ns_server url2file}] /server/? url2file
-[uri ../../naviserver/files/ns_server.html {ns_server vhostenabled}] /server/? vhostenabled
-[uri ../../naviserver/files/ns_server.html {ns_server waiting}] /server/? ?-pool /value/? waiting
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? active ?-checkforproxy?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? all ?-checkforproxy?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? authprocs
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? connectionratelimit ?/value/?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? connections
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? filters
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? hosts
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? map ?-noinherit? ?/mapspec/?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? mapped ?-all? ?-exact? ?-noinherit? /mapspec/
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? maxthreads ?/value/?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? minthreads ?/value/?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? pagedir
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? poolratelimit ?/value/?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? pools
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? queued
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? realm ?/newrealm/?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? requestprocs
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? serverdir ?-effective?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? stats
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? tcllib
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? threads
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? traces
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? unmap ?-noinherit? /mapspec/
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? url2file
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? vhostenabled
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? waiting
 [uri ../../naviserver/files/ns_serverpath.html {ns_serverpath}] ?-host /value/? ?--? ?/path-segment .../?
 [uri ../../naviserver/files/ns_serverrootproc.html {ns_serverrootproc}] /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_set.html {ns_set array}] /setId/
