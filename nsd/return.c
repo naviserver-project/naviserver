@@ -241,7 +241,7 @@ Ns_ConnCondSetHeadersSz(const Ns_Conn *conn,
  * Ns_ConnReplaceHeaders --
  *
  *      Free the existing outputheaders and set them to a copy of
- *      "newheaders", when it is different to the outputheaders
+ *      "newheaders", when it is different to the outputheaders.
  *
  * Results:
  *      None.
