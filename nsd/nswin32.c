@@ -759,7 +759,7 @@ ns_mkstemp(char *charTemplate)
 {
     int err, fd = NS_INVALID_FD;
 
-    err = _mktemp_s(charTemplate, strlen(charTemplate));
+    err = _mktemp_s(charTemplate, strlen(charTemplate)+1);
 
     if (err == 0) {
         /*
