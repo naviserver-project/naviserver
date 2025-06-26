@@ -123,6 +123,10 @@ The mime-type of the response body. Default [const */*].
 A set of headers which will replace any pending headers for the response.
 
 [opt_def -string [arg body]]
+The [term setid] of an ns_set containing the headers which will replace any pending headers for the response.
+If the parameter is not specified, [const "ns_conn outputheaders"] will be used.
+
+[opt_def -string]
 The Tcl string to send as the response body. The body may be encoded into
 an appropriate character set if required by the client and server settings.
 

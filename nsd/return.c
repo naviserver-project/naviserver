@@ -234,8 +234,8 @@ Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
  *
  * Ns_ConnReplaceHeaders --
  *
- *      Free the existing outpheaders and set them to a copy of
- *      newheaders.
+ *      Free the existing outputheaders and set them to a copy of
+ *      "newheaders", when it is different to the outputheaders
  *
  * Results:
  *      None.
@@ -249,8 +249,12 @@ Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 void
 Ns_ConnReplaceHeaders(Ns_Conn *conn, const Ns_Set *newheaders)
 {
-    Ns_SetFree(conn->outputheaders);
-    conn->outputheaders = Ns_SetCopy(newheaders);
+    if (newheaders != conn->outputheaders ) {
+        Ns_SetFree(conn->outputheaders);
+        conn->outputheaders = Ns_SetCopy(newheaders);
+    } else {
+        Ns_Log(Warning, "null operation: trying to replace outputheaders with itself");
+    }
 }
 
 
