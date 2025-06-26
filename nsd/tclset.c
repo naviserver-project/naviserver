@@ -440,7 +440,8 @@ static int SetCopyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
  */
 static int SetCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int       result = TCL_OK, nargs = 0, nocase = 0;
+    int       result = TCL_OK, nocase = 0;
+    TCL_SIZE_T nargs = 0;
     NsInterp *itPtr = clientData;
     Ns_ObjvSpec opts[] = {
         {"-nocase", Ns_ObjvBool,  &nocase, INT2PTR(NS_TRUE)},
