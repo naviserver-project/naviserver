@@ -1109,29 +1109,7 @@ inet_ntop(int af, const void *src, char *dst, socklen_t size)
  *
  *----------------------------------------------------------------------
  */
-# if defined(_WIN32)
-int
-ns_mkdtemp(char *charTemplate)
-{
-    int   err;
-    char *result;
 
-    err = _mktemp_s(charTemplate, strlen(charTemplate));
-
-    if (err == 0) {
-        /*
-         * We had for a while _O_TEMPORARY here as well, which deletes the
-         * file, when he file when the last file descriptor is
-         * closed. It is removed here for compatibility reasons.
-         *
-         * Note that O_TMPFILE (since Linux 3.11) has different semantics.
-         */
-        err = CreateDirectory(charTemplate, NULL);
-    }
-
-    return (err == 0) ? charTemplate : NULL;
-}
-# else
 /*
  * HAVE_MKDTEMP not defined, and no _WIN32
  *
@@ -1143,6 +1121,7 @@ ns_mkdtemp(char *charTemplate)
  * attacks. However, using this function is still better than home-brewed
  * solutions for the same task.
  */
+
 char *
 ns_mkdtemp(char *charTemplate)
 {
@@ -1157,7 +1136,6 @@ ns_mkdtemp(char *charTemplate)
 
     return (rc == TCL_OK) ? charTemplate : NULL;
 }
-# endif
 #endif
 
 
@@ -1182,6 +1160,31 @@ static void
 Abort(int signal)
 {
     Tcl_Panic("received fatal signal %d", signal);
+}
+
+#else
+
+#include "nsd.h"
+
+char *
+ns_mkdtemp(char *charTemplate)
+{
+    int   err;
+
+    err = _mktemp_s(charTemplate, strlen(charTemplate));
+
+    if (err == 0) {
+        /*
+         * We had for a while _O_TEMPORARY here as well, which deletes the
+         * file, when he file when the last file descriptor is
+         * closed. It is removed here for compatibility reasons.
+         *
+         * Note that O_TMPFILE (since Linux 3.11) has different semantics.
+         */
+        err = CreateDirectory(charTemplate, NULL);
+    }
+
+    return (err == 0) ? charTemplate : NULL;
 }
 
 #endif
