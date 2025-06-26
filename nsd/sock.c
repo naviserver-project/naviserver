@@ -1172,7 +1172,7 @@ Ns_SockConnectUnix(const char *path, int socktype, Ns_ReturnCode *statusPtr)
     NS_SOCKET sock;
 
 #ifdef _WIN32
-    result = NS_INVALID_SOCKET
+    sock = NS_INVALID_SOCKET;
 #else
     struct sockaddr_un server_addr;
     size_t             pathLength = strlen(path);
