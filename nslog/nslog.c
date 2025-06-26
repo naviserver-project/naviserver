@@ -670,7 +670,6 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             if (filepath == NULL) {
                 status = LogRoll(logPtr);
             } else  {
-                strarg = filepath;
                 if (Tcl_FSAccess(objv[2], F_OK) == 0) {
                     status = Ns_RollFile(filepath, logPtr->maxbackup);
                 } else {

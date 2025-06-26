@@ -1263,7 +1263,6 @@ static int SetStatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         size_t nr_dynamic = 0, size_dynamic = 0, allocated_dynamic = 0;
         size_t nr_static = 0,  size_static = 0,  allocated_static = 0;
 
-        tablePtr = &itPtr->sets;
         for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);
              hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)

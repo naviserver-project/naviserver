@@ -3141,7 +3141,8 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
         size_t       toSend;
         int          caseInt = -1;
 
-        //Ns_MutexLock(&servPtr->connchans.wlock);
+        iovecs[0].iov_len = 0;
+        iovecs[1].iov_len = 0;
 
         if (connChanPtr->debugLevel > 1 && connChanPtr->debugFD == 0) {
             static char  fnbuffer[256];
@@ -3292,7 +3293,6 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
          * Update the error number from the socket's send error value.
          */
         *errnoPtr = connChanPtr->sockPtr->sendErrno;
-        //Ns_MutexUnlock(&servPtr->connchans.wlock);
 
     }
     Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan write returns %s", connChanName, Ns_TclReturnCodeString(result));
@@ -3356,7 +3356,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
             Ns_Log(Deprecated, "ns_connchan write: '-buffered' option is deprecated;"
                    " activated by default");
         }
-#endif        
+#endif
         result = NsConnChanWrite(interp, name, msgString, msgLength, &bytesSent, &errorCode);
         if (result == TCL_OK) {
             Tcl_SetObjResult(interp, Tcl_NewLongObj((long)bytesSent));

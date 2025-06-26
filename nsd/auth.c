@@ -696,8 +696,9 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
         }
 
         status = Ns_AuthorizeRequest((Ns_Conn *)&conn, &authority);
-        result = HandleAuthorizationResult(interp, status, "ns_auth request", authority, asDict,
-                                           method, url, &result);
+        result = HandleAuthorizationResult(interp, status, "ns_auth request",
+                                           authority != NULL ? authority : "unknown",
+                                           asDict, method, url, &result);
         /*fprintf(stderr, "NsTclRequestAuthorizeObjCmd for %s %s user %s passwd %s peer %s -> %d (%s)\n",
                 method, url, authuser, authpasswd, ipaddr == NULL ? "NULL" : ipaddr,
                 result , Ns_ReturnCodeString(result));*/
@@ -759,8 +760,9 @@ UserAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         const char   *authority;
 
         status = Ns_AuthorizeUser((Ns_Server *)(itPtr->servPtr), authuser, authpasswd, &authority);
-        result = HandleAuthorizationResult(interp, status, "ns_auth user", authority, asDict,
-                                           authuser, authpasswd, &result);
+        result = HandleAuthorizationResult(interp, status, "ns_auth user",
+                                           authority != NULL ? authority : "unknown",
+                                           asDict, authuser, authpasswd, &result);
         /*fprintf(stderr, "NsTclUserAuthorizeObjCmd for user %s passwd %s -> %d (%s)\n",
                 authuser, authpasswd,
                 result , Ns_ReturnCodeString(result));*/

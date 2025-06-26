@@ -1915,6 +1915,7 @@ AppendLiteral(Tcl_DString *dsPtr, const Ns_ObjvSpec *specPtr)
     if (specPtr->proc == Ns_ObjvBool) {
         Tcl_DStringAppend(dsPtr, "true|false", 10);
     } else if (specPtr->proc == Ns_ObjvIndex) {
+        assert(specPtr->arg);
         Ns_ObjvTablePrint(dsPtr, specPtr->arg);
     }
 }
