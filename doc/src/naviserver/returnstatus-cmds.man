@@ -93,20 +93,28 @@ not try again without modifications.
 
 
 
-[call [cmd ns_returnunauthorized] ]
+[call [cmd ns_returnunauthorized]]
 
-Sends a response with status code [term 401], [term "Access Denied"]. A
-[term WWW-Authenticate] header will be set using the [term realm] specified
-in the configuration file option [term ns/server:realm].
+Issues a [const "401 Unauthorized"] response to the client.
+[list_begin itemized]
+[item] If a [const WWW-Authenticate] header is already present in the
+  connection’s output headers ([const "ns_conn outputheaders"]), it is left
+  intact.
+
+[item] Otherwise, the command adds a header of the form
+[const {WWW-Authenticate: Basic realm="<REALM>"}]
+
+where [const <REALM>] is selected in this order:
+[list_begin itemized]
+  [item] the connection’s local‐storage value under key [const auth:realm], if set
+  [item] otherwise the configured [const realm] parameter from the server section.
+[list_end]
 
 [para]
-Use this response to signal that the user is not authorized to access the URL,
-and to trigger [term "HTTP basic"] authorization. The client may present
-a pop-up window for the user to enter their [term username] and [term password].
-
-[para]
-NB: The username and password will be sent in plain text.
-
+Use [cmd ns_returnunauthorized] whenever you need to challenge a
+client for HTTP Basic authentication. Most browsers will, upon receipt
+of a 401 with a [const WWW-Authenticate] header, pop up a login dialog
+prompting the user to enter their [term username] and [term password].
 
 
 [call [cmd ns_returnforbidden] ]
