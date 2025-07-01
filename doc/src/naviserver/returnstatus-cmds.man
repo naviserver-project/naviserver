@@ -96,14 +96,11 @@ not try again without modifications.
 [call [cmd ns_returnunauthorized]]
 
 Issues a [const "401 Unauthorized"] response to the client.
-[list_begin itemized]
-[item] If a [const WWW-Authenticate] header is already present in the
+If a [const WWW-Authenticate] header is already present in the
   connection’s output headers ([const "ns_conn outputheaders"]), it is left
   intact.
-
-[item] Otherwise, the command adds a header of the form
+ Otherwise, the command adds a header of the form
 [const {WWW-Authenticate: Basic realm="<REALM>"}]
-
 where [const <REALM>] is selected in this order:
 [list_begin itemized]
   [item] the connection’s local‐storage value under key [const auth:realm], if set
