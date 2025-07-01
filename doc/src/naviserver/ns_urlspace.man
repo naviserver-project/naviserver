@@ -92,9 +92,12 @@
  returned. When the option [option "-noinherit"] is specified, only
  values set with the [option "-noinherit"] flag are considered.
 
- [para] The option [option "-context [arg setId]"] allows you to
- specify context constraints for the retrieval
- (see [sectref {Context Constraints}]).
+ [para] The option [option "-context"] allows you to specify context
+ constraints for the retrieval (see [sectref {Context Constraints}]).
+ If this option is not specified, the server tries to
+ use the current connection context, if available. This requires that
+ a connection is open and the socket is connected. Otherwise, no
+ context is provided.
 
 [example_begin]
  # Retrieve mappings without context
