@@ -39,6 +39,78 @@ static int ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr,
                      NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6);
 
+static char *DStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
+    NS_GNUC_NONNULL(1);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DStringAppendConnFlags --
+ *
+ *      Decode a connection‐flags bitmask into a human‐readable string
+ *      of flag names separated by '|' and append it to a Tcl_DString.
+ *
+ * Parameters:
+ *      dsPtr – pointer to an initialized Tcl_DString to append to (must not be NULL)
+ *      flags – bitmask of NS_CONN_* flags to decode
+ *
+ * Returns:
+ *      A pointer to the internal string buffer of dsPtr (i.e., dsPtr->string),
+ *      containing the appended flag names.
+ *
+ * Side Effects:
+ *      Appends the textual representations of each set flag to the
+ *      Tcl_DString, inserting '|' between multiple flags.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+DStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
+{
+    int    count = 0;
+    size_t i;
+    static const struct {
+        unsigned int state;
+        const char  *label;
+    } options[] = {
+        { NS_CONN_CLOSED,            "SOCK_CLOSED" },
+        { NS_CONN_SKIPHDRS,          "SKIPHDRS" },
+        { NS_CONN_SKIPBODY,          "SKIPBODY" },
+        { NS_CONN_READHDRS,          "READHDRS" },
+        { NS_CONN_SENTHDRS,          "SENTHDRS" },
+        { NS_CONN_WRITE_ENCODED,     "WRITE_ENCODED" },
+        { NS_CONN_STREAM,            "STREAM" },
+        { NS_CONN_STREAM_CLOSE,      "STREAM_CLOSE" },
+        { NS_CONN_CHUNK,             "CHUNK" },
+        { NS_CONN_SENT_LAST_CHUNK,   "SENT_LAST_CHUNK" },
+        { NS_CONN_SENT_VIA_WRITER,   "SENT_VIA_WRITER" },
+        { NS_CONN_SOCK_CORKED,       "SOCK_CORKED" },
+        { NS_CONN_SOCK_WAITING,      "SOCK_WAITING" },
+        { NS_CONN_ZIPACCEPTED,       "ZIPACCEPTED" },
+        { NS_CONN_BROTLIACCEPTED,    "BROTLIACCEPTED" },
+        { NS_CONN_CONTINUE,          "CONTINUE" },
+        { NS_CONN_ENTITYTOOLARGE,    "ENTITYTOOLARGE" },
+        { NS_CONN_REQUESTURITOOLONG, "REQUESTURITOOLONG" },
+        { NS_CONN_LINETOOLONG,       "LINETOOLONG" },
+        { NS_CONN_CONFIGURED,        "CONFIGURED" },
+        { NS_CONN_SSL_WANT_WRITE,    "SSL_WANT_WRITE" },
+    };
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    for (i = 0; i<sizeof(options) / sizeof(options[0]); i++) {
+        if ((options[i].state & flags) != 0u) {
+            if (count > 0) {
+                Tcl_DStringAppend(dsPtr, "|", 1);
+            }
+            Tcl_DStringAppend(dsPtr, options[i].label, TCL_INDEX_NONE);
+            count ++;
+        }
+    }
+    return dsPtr->string;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2365,6 +2437,27 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     return result;
 }
 
+#if 0
+static struct sockaddr *
+ConnGetSockAddr(const Ns_Conn *conn, struct sockaddr *saPtr)
+{
+    Ns_Sock *sockPtr = Ns_ConnSockPtr(conn);
+    struct sockaddr *sockSaPtr = NULL;
+
+    if (sockSaPtr != NULL) {
+        sockSaPtr = Ns_SockGetClientSockAddr(sockPtr);
+    }
+    if (saPtr == NULL || saPtr->sa_family == 0) {
+        const char* peerAddrString = Ns_ConnConfiguredPeerAddr(conn);
+
+        ns_inet_pton(saPtr, peerAddrString);
+    } else {
+        saPtr = sockSaPtr;
+    }
+    return saPtr;
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2642,19 +2735,41 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnDriverName(conn), TCL_INDEX_NONE));
         break;
 
-    case CDetailsIdx:
-        if (connPtr->drvPtr->connInfoProc != NULL) {
-            Ns_Sock         *sockPtr = Ns_ConnSockPtr(conn);
-            Tcl_Obj         *dictObj = connPtr->drvPtr->connInfoProc(sockPtr);
-            const struct sockaddr *saPtr = Ns_SockGetClientSockAddr(sockPtr);
+    case CDetailsIdx: {
+        Tcl_Obj     *dictObj;
+        const char  *currentAddr = Ns_ConnCurrentAddr(conn);
+        Tcl_DString  ds;
 
-            Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("proxied", 7),
-                           Tcl_NewBooleanObj(saPtr->sa_family != 0));
+        dictObj = (connPtr->drvPtr->connInfoProc != NULL)
+            ? connPtr->drvPtr->connInfoProc(Ns_ConnSockPtr(conn))
+            : Tcl_NewDictObj();
 
-            Tcl_SetObjResult(interp, dictObj);
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj("proxied", 7),
+                       Tcl_NewBooleanObj(nsconf.reverseproxymode.enabled));
+
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj("currentaddr", 11),
+                       Tcl_NewStringObj(currentAddr != NULL ? currentAddr : "na", -1));
+
+        if (currentAddr != NULL) {
+            struct NS_SOCKADDR_STORAGE sa;
+            struct sockaddr *saPtr = (struct sockaddr*)&sa;
+
+            ns_inet_pton(saPtr, currentAddr);
+            (void)Ns_SockaddrAddToDictIpProperties(saPtr, dictObj);
         }
+
+        Tcl_DStringInit(&ds);
+        DStringAppendConnFlags(&ds, connPtr->flags);
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj("flags", 5),
+                       Tcl_NewStringObj(ds.string, ds.length));
+        Tcl_DStringFree(&ds);
+
+        Tcl_SetObjResult(interp, dictObj);
         break;
+    }
 
     case CServerIdx:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnServer(conn), TCL_INDEX_NONE));

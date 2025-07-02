@@ -511,7 +511,8 @@ Keep(Ns_Sock *sock)
  *
  * ConnInfo --
  *
- *      Return Tcl_Obj hinting connection details
+ *      Return Tcl_Obj hinting connection details in case the socket is not
+ *      NULL.
  *
  * Results:
  *      Tcl_Obj *
@@ -525,36 +526,23 @@ Keep(Ns_Sock *sock)
 static Tcl_Obj*
 ConnInfo(Ns_Sock *sock)
 {
-    SSLContext *sslCtx;
     Tcl_Obj    *resultObj;
-    char        ipString[NS_IPADDR_SIZE];
-    const struct sockaddr *ipPtr;
-
-    NS_NONNULL_ASSERT(sock != NULL);
 
     resultObj = Tcl_NewDictObj();
-    sslCtx = sock->arg;
-    ipPtr = Ns_SockGetConfiguredSockAddr(sock);
-    (void)ns_inet_ntop(ipPtr, ipString, NS_IPADDR_SIZE);
 
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("currentaddr", 11),
-                   Tcl_NewStringObj(ipString, -1));
+    if (sock != NULL) {
+        SSLContext *sslCtx = sock->arg;
 
-    (void)Ns_SockaddrAddToDictIpProperties(ipPtr, resultObj);
-
-    /*Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("protocol", 8),
-                   Tcl_NewStringObj(sock->driver->protocol, TCL_INDEX_NONE));*/
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("sslversion", 10),
-                   Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), TCL_INDEX_NONE));
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("cipher", 6),
-                   Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), TCL_INDEX_NONE));
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("servername", 10),
-                   Tcl_NewStringObj(SSL_get_servername(sslCtx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("sslversion", 10),
+                       Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), TCL_INDEX_NONE));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("cipher", 6),
+                       Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), TCL_INDEX_NONE));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("servername", 10),
+                       Tcl_NewStringObj(SSL_get_servername(sslCtx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
+    }
 
     return resultObj;
 }
