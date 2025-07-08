@@ -678,8 +678,7 @@ typedef int
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 typedef Tcl_Obj *
-(Ns_DriverConnInfoProc)(Ns_Sock *sock)
-     NS_GNUC_NONNULL(1);
+(Ns_DriverConnInfoProc)(Ns_Sock *sock);
 
 typedef struct Ns_DriverClientInitArg {
     NS_TLS_SSL_CTX *ctx;
