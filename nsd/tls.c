@@ -108,11 +108,15 @@ static SSLCertStatusArg sslCertStatusArg;
  */
 static int ClientCtxDataIndex;
 
+static char *FilenameToEnvVar(Tcl_DString *dsPtr, const char *filename)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * OpenSSL callback functions.
  */
 static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
-static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
+static int TLSPasswordCB(char *buf, int size, int rwflag, void *userdata);
+
 # ifdef HAVE_OPENSSL_PRE_1_1
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
 # endif
@@ -1573,26 +1577,117 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
 /*
  *----------------------------------------------------------------------
  *
- * SSLPassword --
+ * FilenameToEnvVar --
  *
- *      Get the SSL password from the console (used by the OpenSSLs
- *      default_passwd_cb)
+ *      Convert a file path into a valid environment variable name by
+ *      prefixing it with "TLS_KEY_PASS_" and replacing non-alphanumeric
+ *      characters with underscores, while uppercasing letters.
  *
- * Results:
- *      Length of the password.
+ * Parameters:
+ *      dsPtr    - pointer to an initialized Tcl_DString to append to
+ *      filename - NUL-terminated file path string to convert
  *
- * Side effects:
- *      Password passed back in buf.
+ * Returns:
+ *      A pointer to the Tcl_DString's internal buffer (dsPtr->string),
+ *      which now contains the generated environment variable name.
+ *
+ * Side Effects:
+ *      Appends "TLS_KEY_PASS_" and then the mapped characters of 'filename'
+ *      to the Tcl_DString.  Caller is responsible for freeing or resetting
+ *      the Tcl_DString when done.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+FilenameToEnvVar(Tcl_DString *dsPtr, const char *filename) {
+    size_t inputLength, i;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(filename != NULL);
+
+    inputLength = strlen(filename);
+    Tcl_DStringAppend(dsPtr, "TLS_KEY_PASS_", 13);
+
+    for (i = 0; i < inputLength; ++i) {
+        unsigned char c = (unsigned char) filename[i];
+        if (CHARTYPE(alnum, c) != 0) {
+            c = (unsigned char)toupper(c);
+        } else {
+            c = '_';
+        }
+        Tcl_DStringAppend(dsPtr, (const char*)&c, 1);
+    }
+
+    return dsPtr->string;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TLSPasswordCB --
+ *
+ *      OpenSSL callback for obtaining the passphrase to decrypt an
+ *      encrypted private key (PEM file).  This function first derives
+ *      an environment variable name from the PEM file path and attempts
+ *      to read the passphrase from that variable.  If not found, it
+ *      falls back to the generic "TLS_KEY_PASS" environment variable.
+ *      As a last resort, it prompts the user on stdin.
+ *
+ * Returns:
+ *      The number of characters copied into 'buf' (excluding the
+ *      terminating NUL), or 0 if no passphrase was obtained.
+ *
+ * Side Effects:
+ *      Logs informational notices via Ns_Log when loading from an
+ *      environment variable or when falling back to prompting.
+ *      May block on stdin if neither environment variable is set.
  *
  *----------------------------------------------------------------------
  */
 static int
-SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
+TLSPasswordCB(char *buf, int size, int UNUSED(rwflag), void *userdata)
 {
+    const char *envName;
+    size_t      len;
     const char *pwd;
+    const char *pem_path = (const char *) userdata;
+    Tcl_DString ds;
 
-    fprintf(stdout, "Enter SSL password:");
-    pwd = fgets(buf, num, stdin);
+    if (pem_path == NULL) {
+        return 0;
+    }
+
+    Tcl_DStringInit(&ds);
+
+    envName = FilenameToEnvVar(&ds, pem_path);
+    pwd = getenv(envName);
+
+    if (pwd == NULL) {
+        Ns_Log(Notice, "No passphrase found for '%s' in '%s'", pem_path, envName);
+        envName = "TLS_KEY_PASS";
+        pwd = getenv(envName);
+        if (pwd == NULL) {
+            goto noEnv;
+        }
+    }
+    Ns_Log(Notice, "Passphrase for '%s' loaded from %s", pem_path, envName);
+
+    len = strlen(pwd);
+    if (len >= (size_t) size) {
+        len = (size_t)size - 1;
+    }
+
+    memcpy(buf, pwd, len);
+    buf[len] = '\0';
+    Tcl_DStringFree(&ds);
+
+    return (int) len;
+
+ noEnv:
+    Tcl_DStringFree(&ds);
+
+    fprintf(stdout, "Enter TLS password:");
+    pwd = fgets(buf, size, stdin);
     return (pwd != NULL ? (int)strlen(buf) : 0);
 }
 
@@ -2219,6 +2314,7 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
  *
  *----------------------------------------------------------------------
  */
+
 int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                        const char *cert, const char *caFile, const char *caPath,
@@ -2315,7 +2411,9 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-    SSL_CTX_set_default_passwd_cb(ctx, SSLPassword);
+    SSL_CTX_set_default_passwd_cb(ctx, TLSPasswordCB);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx, (void *)cert);
+
     DrainErrorStack(Warning, "Ns_TLS_CtxServerCreate", ERR_get_error());
 
     if (cert != NULL) {
