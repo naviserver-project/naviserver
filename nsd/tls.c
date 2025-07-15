@@ -111,11 +111,16 @@ static int ClientCtxDataIndex;
 static char *FilenameToEnvVar(Tcl_DString *dsPtr, const char *filename)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static Ns_ReturnCode BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * OpenSSL callback functions.
  */
 static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
 static int TLSPasswordCB(char *buf, int size, int rwflag, void *userdata);
+static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl), const unsigned char **out, unsigned char *outlen,
+                        const unsigned char *clientProtos, unsigned int clientProtosLength, void *arg);
 
 # ifdef HAVE_OPENSSL_PRE_1_1
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
@@ -1855,6 +1860,125 @@ NsSSLConfigNew(const char *section)
     return cfgPtr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BuildALPNWireFormat --
+ *
+ *      Encode a comma-separated list of ALPN protocol identifiers into
+ *      the TLS ALPN wire format and store the result in a Tcl_DString.
+ *      Each protocol name is prefixed by its length (one byte), as required
+ *      by SSL_CTX_set_alpn_protos or SSL_set_alpn_protos.
+ *
+ * Parameters:
+ *      dsPtr   - pointer to an initialized Tcl_DString; on return its
+ *                buffer (dsPtr->string) contains the encoded wire format.
+ *      alpnStr - NUL-terminated, comma-separated list of protocol names
+ *                (e.g. "h2,http/1.1"); must not be NULL.
+ *
+ * Returns:
+ *      A pointer to the internal string buffer of dsPtr (cast to unsigned char *).
+ *      If any protocol name is empty or longer than 255 bytes, returns NS_ERROR
+ *      (and leaves dsPtr unmodified). Otherwise NS_OK is returned.
+ *
+ * Side Effects:
+ *      Repeatedly resizes dsPtr to accommodate the growing wire format,
+ *      and writes length-prefixed protocol names into its buffer.
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
+{
+    const char    *start = alpnStr;
+    const char    *end;
+    size_t         len = 0;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(alpnStr != NULL);
+
+    while (*start != '\0') {
+        size_t plen;
+
+        end = strchr(start, ',');
+        if (end == NULL) {
+            end = start + strlen(start);
+        }
+        plen = (size_t)(end - start);
+
+        if (plen == 0 || plen > 255) {
+            return NS_ERROR;
+        }
+
+        Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)(len + 1 + plen));
+        dsPtr->string[len++] = (char)plen;
+        memcpy(&dsPtr->string[len], start, plen);
+        len += plen;
+
+        if (*end == '\0') {
+            break;
+        }
+        start = end + 1;
+    }
+    Tcl_DStringSetLength(dsPtr, (int)len);
+
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ALPNSelectCB --
+ *
+ *      OpenSSL ALPN (Application-Layer Protocol Negotiation) selection
+ *      callback.  When a TLS client offers a list of supported protocols,
+ *      this function picks the first one that the server also supports,
+ *      using OpenSSL’s built‐in SSL_select_next_proto() helper.
+ *
+ *      The server’s protocol list is passed in via the "arg" pointer,
+ *      but we pack the length immediately before the data in memory,
+ *      so we reconstruct it by reading the unsigned int stored just
+ *      before "arg".
+ *
+ * Parameters:
+ *      ssl                   - The current SSL connection (unused).
+ *      out                   - On success, set to point to the chosen
+ *                              protocol bytes within serverProtos.
+ *      outlen                - On success, set to the length of the
+ *                              chosen protocol.
+ *      clientProtos          - Wire‐format list of protocols offered by
+ *                              the client (each prefixed by its length).
+ *      clientProtosLength    - Total byte length of clientProtos.
+ *      arg                   - Pointer to the server’s wire‐format
+ *                              protocols list; its length is stored
+ *                              as an unsigned int immediately before
+ *                              the pointer in memory.
+ *
+ * Returns:
+ *      SSL_TLSEXT_ERR_OK     if a common protocol was negotiated
+ *      SSL_TLSEXT_ERR_NOACK  otherwise (no overlap or negotiation failure)
+ *
+ * Side Effects:
+ *      Logs the return code from SSL_select_next_proto() at DEBUG level.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl), const unsigned char **out, unsigned char *outlen,
+             const unsigned char *clientProtos, unsigned int clientProtosLength, void *arg)
+{
+    const unsigned char *serverProtos = arg;
+    unsigned int serverProtosLength = *(unsigned int *)((char *)arg - sizeof(unsigned int));
+
+    int rc = SSL_select_next_proto((unsigned char **)out, outlen,
+                                   serverProtos, serverProtosLength,
+                                   clientProtos, clientProtosLength);
+
+    Ns_Log(Debug, "ALPNSelectCB returns %d", rc);
+    return (rc == OPENSSL_NPN_NEGOTIATED) ? SSL_TLSEXT_ERR_OK : SSL_TLSEXT_ERR_NOACK;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1909,6 +2033,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                                            NULL /*caFile*/, NULL /*caPath*/,
                                            Ns_ConfigBool(section, "verify", 0),
                                            ciphers, ciphersuites, protocols,
+                                           "http/1.1",
                                            app_data,
                                            ctxPtr);
         if (result == TCL_OK) {
@@ -2464,11 +2589,11 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
  */
 int
 Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath,
-                       bool verify, const char *ciphers, const char *ciphersuites,
-                       const char *protocols,
-                       void *app_data,
-                       NS_TLS_SSL_CTX **ctxPtr)
+                          const char *cert, const char *caFile, const char *caPath,
+                          bool verify, const char *ciphers, const char *ciphersuites,
+                          const char *protocols, const char *alpn,
+                          void *app_data,
+                          NS_TLS_SSL_CTX **ctxPtr)
 {
     NS_TLS_SSL_CTX   *ctx;
     const SSL_METHOD *server_method;
@@ -2555,6 +2680,27 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         SSL_CTX_set_options(ctx, n);
     }
 
+#if OPENSSL_VERSION_NUMBER >= 0x1000200fL
+    {
+        Tcl_DString   alpnDs;
+        unsigned int *mem;
+
+        Tcl_DStringInit(&alpnDs);
+
+        if (BuildALPNWireFormat(&alpnDs, alpn) == NS_ERROR || alpnDs.length == 0) {
+            ReportError(interp, "invalid ALPN protocol string '%s'", alpn);
+            Tcl_DStringFree(&alpnDs);
+            goto fail;
+        }
+
+        mem = ns_malloc(sizeof(unsigned int) + (size_t)alpnDs.length);
+        *mem = (unsigned int)alpnDs.length;
+        memcpy(mem + 1, alpnDs.string, alpnDs.length);
+        SSL_CTX_set_alpn_select_cb(ctx, ALPNSelectCB, mem + 1);
+        Tcl_DStringFree(&alpnDs);
+    }
+#endif
+
     SSL_CTX_set_default_verify_paths(ctx);
     SSL_CTX_load_verify_locations(ctx, caFile, caPath);
     // SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
@@ -2630,12 +2776,13 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
  * Ns_TLS_CtxServerCreate --
  *
  *      Backward compatible legacy function calling
- *      Ns_TLS_CtxServerCreateCfg().  The only difference is that
- *      app_data (Opaque pointer stored in CTX via
- *      SSL_CTX_set_app_data) can't be provided thhrough this
- *      interface.
+ *      Ns_TLS_CtxServerCreateCfg().  The differences are
+ *      * app_data (Opaque pointer stored in CTX via
+ *        SSL_CTX_set_app_data) can't be provided through this
+ *        interface.
+ *      * ALPN can't be provided.
  *
- *      As a consequence, the internal NsSSLConfig data can't be
+ *      One consequence is, the internal NsSSLConfig data can't be
  *      provided over this interface, and the pass-phrase passing via
  *      external script can't be used.
  *
@@ -2656,7 +2803,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
 {
     return Ns_TLS_CtxServerCreateCfg(interp, cert, caFile, caPath,
                                      verify, ciphers, ciphersuites,
-                                     protocols,
+                                     protocols, "http/1.1",
                                      NULL,
                                      ctxPtr);
 }
@@ -3230,14 +3377,6 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     ReportError(interp, "CtxServerCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
-
-int
-Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath,
-                       bool verify, const char *ciphers, const char *ciphersuites,
-                       const char *protocols,
-                       void *app_data,
-                       NS_TLS_SSL_CTX **ctxPtr)
 
 void
 Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
