@@ -54,7 +54,7 @@ jobs:
             nsf_version: HEAD
             tcllib_version: "2.0"
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
-            tdom_version: 0.9.5
+            tdom_version: 0.9.6
             with_deprecated: 0
 
 
