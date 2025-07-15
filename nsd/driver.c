@@ -5406,7 +5406,6 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
                                                 Ns_ConfigGetValue(section, "ciphers"),
                                                 Ns_ConfigGetValue(section, "ciphersuites"),
                                                 Ns_ConfigGetValue(section, "protocols"),
-                                                NULL,
                                                 &ctx);
                 Ns_Log(Debug, "SSL_serverNameCB load cert -> ctx %p'", (void*)ctx);
 

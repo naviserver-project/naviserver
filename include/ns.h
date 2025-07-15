@@ -3962,12 +3962,20 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(6);
 
 NS_EXTERN int
-Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
+Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
                        const char *cert, const char *caFile, const char *caPath,
                        bool verify, const char *ciphers, const char *ciphersuites,
                        const char *protocols, void *app_data,
                        NS_TLS_SSL_CTX **ctxPtr)
     NS_GNUC_NONNULL(10);
+
+NS_EXTERN int
+Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
+                       const char *cert, const char *caFile, const char *caPath,
+                       bool verify, const char *ciphers, const char *ciphersuites,
+                       const char *protocols,
+                       NS_TLS_SSL_CTX **ctxPtr)
+    NS_GNUC_NONNULL(9);
 
 
 NS_EXTERN int

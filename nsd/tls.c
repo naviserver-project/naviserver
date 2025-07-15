@@ -1736,12 +1736,11 @@ TLSPasswordCB(char *buf, int size, int UNUSED(rwflag), void *userdata)
     {
         NS_TLS_SSL_CTX *ctxPtr = CertTableGetCtx(pemPath);
         NsSSLConfig    *cfgPtr = SSL_CTX_get_app_data(ctxPtr);
-        assert(cfgPtr != NULL);
 
         /*
          * 1) Try to get secret from external helper script
          */
-        if (cfgPtr->tlsKeyScript != NULL) {
+        if (cfgPtr  != NULL && cfgPtr->tlsKeyScript != NULL) {
             Ns_Log(Notice, "TLS key from script <%s>", cfgPtr->tlsKeyScript);
             if (ExecuteKeyScript(&ds, cfgPtr->tlsKeyScript, pemPath) == NS_OK) {
                 pwd = ds.string;
@@ -1906,12 +1905,12 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Ns_Log(Debug, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app data %p",
                (void*) app_data);
 
-        result = Ns_TLS_CtxServerCreate(interp, cert,
-                                        NULL /*caFile*/, NULL /*caPath*/,
-                                        Ns_ConfigBool(section, "verify", 0),
-                                        ciphers, ciphersuites, protocols,
-                                        app_data,
-                                        ctxPtr);
+        result = Ns_TLS_CtxServerCreateCfg(interp, cert,
+                                           NULL /*caFile*/, NULL /*caPath*/,
+                                           Ns_ConfigBool(section, "verify", 0),
+                                           ciphers, ciphersuites, protocols,
+                                           app_data,
+                                           ctxPtr);
         if (result == TCL_OK) {
             NsSSLConfig *cfgPtr = app_data;
 
@@ -2428,24 +2427,43 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
     return certificateAccepted;
 }
 
+
+
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TLS_CtxServerCreate --
+ * Ns_TLS_CtxServerCreateCfg --
  *
- *      Create and Initialize OpenSSL context
+ *      Create and fully configure an OpenSSL SSL_CTX for server‐side TLS,
+ *      using the given certificate, CA files, cipher settings, protocol
+ *      restrictions, and optional application data.
  *
- * Results:
- *      A standard Tcl result.
+ * Parameters:
+ *      interp       - Tcl interpreter for error messages (must not be NULL)
+ *      cert         - Path to server PEM file (certificate + chain + key)
+ *      caFile       - Path to CA bundle file for client authentication
+ *      caPath       - Path to directory of hashed CA files
+ *      verify       - true to require and verify client certificates
+ *      ciphers      - OpenSSL cipher list string, or NULL to leave default
+ *      ciphersuites - TLS1.3 ciphersuites string, or NULL if unused
+ *      protocols    - comma-separated exclusions like "!TLSv1.0,!SSLv3", or NULL
+ *      app_data     - Opaque pointer stored in CTX via SSL_CTX_set_app_data
+ *      ctxPtr       - Address where the new SSL_CTX* will be returned (non-NULL)
  *
- * Side effects:
- *      None.
+ * Returns:
+ *      TCL_OK on success (and *ctxPtr set to the new SSL_CTX)
+ *      TCL_ERROR on failure, with an error message left in interp;
+ *      the partially configured SSL_CTX is freed to avoid leaks.
+ *
+ * Side Effects:
+ *      - Allocates and configures an OpenSSL SSL_CTX.
+ *      - Logs notices for disabled protocols and errors.
+ *      - May populate the global certificate table for hot-reload support.
  *
  *----------------------------------------------------------------------
  */
-
 int
-Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
+Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
                        const char *cert, const char *caFile, const char *caPath,
                        bool verify, const char *ciphers, const char *ciphersuites,
                        const char *protocols,
@@ -2604,6 +2622,43 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     *ctxPtr = NULL;
 
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TLS_CtxServerCreate --
+ *
+ *      Backward compatible legacy function calling
+ *      Ns_TLS_CtxServerCreateCfg().  The only difference is that
+ *      app_data (Opaque pointer stored in CTX via
+ *      SSL_CTX_set_app_data) can't be provided thhrough this
+ *      interface.
+ *
+ *      As a consequence, the internal NsSSLConfig data can't be
+ *      provided over this interface, and the pass-phrase passing via
+ *      external script can't be used.
+ *
+ * Results:
+ *      Same as in Ns_TLS_CtxServerCreateCfg().
+ *
+ * Side effects:
+ *      Same as in Ns_TLS_CtxServerCreateCfg().
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
+                       const char *cert, const char *caFile, const char *caPath,
+                       bool verify, const char *ciphers, const char *ciphersuites,
+                       const char *protocols,
+                       NS_TLS_SSL_CTX **ctxPtr)
+{
+    return Ns_TLS_CtxServerCreateCfg(interp, cert, caFile, caPath,
+                                     verify, ciphers, ciphersuites,
+                                     protocols,
+                                     NULL,
+                                     ctxPtr);
 }
 
 
@@ -3164,6 +3219,25 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     ReportError(interp, "CtxServerCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
+int
+Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
+                          const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath),
+                          bool UNUSED(verify), const char *UNUSED(ciphers), const char *UNUSED(ciphersuites),
+                          const char *UNUSED(protocols),
+                          void *UNUSED(app_data),
+                          NS_TLS_SSL_CTX **UNUSED(ctxPtr))
+{
+    ReportError(interp, "CtxServerCreate failed: no support for OpenSSL built in");
+    return TCL_ERROR;
+}
+
+int
+Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
+                       const char *cert, const char *caFile, const char *caPath,
+                       bool verify, const char *ciphers, const char *ciphersuites,
+                       const char *protocols,
+                       void *app_data,
+                       NS_TLS_SSL_CTX **ctxPtr)
 
 void
 Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
