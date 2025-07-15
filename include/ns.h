@@ -3965,9 +3965,9 @@ NS_EXTERN int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                        const char *cert, const char *caFile, const char *caPath,
                        bool verify, const char *ciphers, const char *ciphersuites,
-                       const char *protocols,
+                       const char *protocols, void *app_data,
                        NS_TLS_SSL_CTX **ctxPtr)
-    NS_GNUC_NONNULL(9);
+    NS_GNUC_NONNULL(10);
 
 
 NS_EXTERN int

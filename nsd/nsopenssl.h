@@ -76,14 +76,15 @@
 # include <openssl/err.h>
 
 typedef struct NsSSLConfig {
-    SSL_CTX  *ctx;
-    Ns_Mutex  lock;
-    int       verify;
-    int       deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
-    int       nodelay;      /* Enable the TCP_NODELAY optimization. */
-    DH       *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
-    DH       *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
-    DH       *dhKey2048;    /* Fallback Diffie Hellman keys of length 2048 */
+    SSL_CTX    *ctx;
+    Ns_Mutex    lock;
+    const char *tlsKeyScript;
+    int         verify;
+    int         deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
+    int         nodelay;      /* Enable the TCP_NODELAY optimization. */
+    DH         *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
+    DH         *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
+    DH         *dhKey2048;    /* Fallback Diffie Hellman keys of length 2048 */
 } NsSSLConfig;
 
 NS_EXTERN NsSSLConfig *NsSSLConfigNew(const char *section)
