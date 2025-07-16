@@ -76,14 +76,18 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    Tcl_DString        ds;
-    int                num, result;
+    int                result;
     const char        *section, *vhostcertificates;
     NsSSLConfig       *drvCfgPtr;
     Ns_DriverInitData  init;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    int                num;
+    Tcl_DString        ds;
+
+    Tcl_DStringInit(&ds);
+#endif
 
     memset(&init, 0, sizeof(init));
-    Tcl_DStringInit(&ds);
 
     section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
     drvCfgPtr = NsSSLConfigNew(section);
@@ -162,6 +166,7 @@ Ns_ModuleInit(const char *server, const char *module)
         return NS_ERROR;
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     /*
      * Seed the OpenSSL Pseudo-Random Number Generator.
      */
@@ -180,6 +185,8 @@ Ns_ModuleInit(const char *server, const char *module)
     }
 
     Tcl_DStringFree(&ds);
+#endif
+
     Ns_Log(Notice, "nsssl: version %s loaded, based on %s",
            NSSSL_VERSION, init.libraryVersion);
     return NS_OK;
