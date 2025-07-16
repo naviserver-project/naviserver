@@ -2459,7 +2459,7 @@ DriverThread(void *arg)
     PollData       pdata;
 
     Ns_ThreadSetName("-driver:%s-", drvPtr->threadName);
-    Ns_Log(Notice, "starting");
+    Ns_Log(Notice, "starting %s", drvPtr->threadName);
 
     flags = DRIVER_STARTED;
 
