@@ -65,6 +65,9 @@
 #  if OPENSSL_VERSION_PREREQ(3,2)
 #   define HAVE_OPENSSL_3_2 1
 #  endif
+#  if OPENSSL_VERSION_PREREQ(3,5)
+#   define HAVE_OPENSSL_3_5 1
+#  endif
 # endif
 
 # if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
