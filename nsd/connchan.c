@@ -1954,9 +1954,9 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
                 connChanPtr->debugFD = 0;
             }
         }
-        connChanPtr->debugLevel = 0;
 
         if (connChanPtr != NULL) {
+            connChanPtr->debugLevel = 0;
             ConnChanFree(connChanPtr, servPtr);
         } else {
             result = TCL_ERROR;
