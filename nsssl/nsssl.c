@@ -35,7 +35,10 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
-#include <openssl/rand.h>
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+# include <openssl/rand.h>
+#endif
+
 #include "../nsd/nsopenssl.h"
 
 #define NSSSL_VERSION  "2.3"
