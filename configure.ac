@@ -75,6 +75,7 @@ TEA_ENABLE_SHARED
 TEA_CONFIG_CFLAGS
 TEA_ENABLE_SYMBOLS
 TEA_TIME_HANDLER
+TEA_PROG_TCLSH
 
 #
 # Extract Tcl library path and library name.
