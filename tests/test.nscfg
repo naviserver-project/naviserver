@@ -345,8 +345,15 @@ ns_section ns/server/test/module/nscgi {
 
 ns_section ns/interps/CGIinterps {
     set tclsh ""
-    foreach path {/usr/local/ns/bin /usr/local/bin /opt/local/bin /usr/bin} {
-        foreach version {tclsh8.6 tclsh8.7 tclsh9 tclsh} {
+    if {$::tcl_platform(platform) eq "windows"} {
+        set pathlist {c:/progra~1/tcl86/bin c:/progra~1/tcl87/bin c:/progra~1/tcl90/bin c:/progra~1/tcl/bin c:/activetcl/bin}
+        set versionlist {tclsh86t.exe tclsh87.exe tclsh90.exe tclsh.exe}
+    } else {
+        set pathlist {/usr/local/ns/bin /usr/local/bin /opt/local/bin /usr/bin}
+        set versionlist {tclsh8.6 tclsh8.7 tclsh9 tclsh}
+    }
+    foreach path $pathlist {
+        foreach version $versionlist {
             if {[file executable $path/$version]} {
                 set tclsh $path/$version
                 break
