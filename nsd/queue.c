@@ -1714,17 +1714,17 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         if (Ns_ParseObjv(NULL, realmargs, interp, objc-nargs, objc, objv) == NS_OK) {
             Tcl_DStringInit(dsPtr);
             if (realm == NULL) {
-                Ns_RWLockRdLock(&servPtr->request.rwlock);
+                Ns_RWLockRdLock(&servPtr->opts.rwlock);
                 Tcl_DStringAppend(dsPtr, servPtr->opts.realm, TCL_INDEX_NONE);
             } else {
-                Ns_RWLockWrLock(&servPtr->request.rwlock);
+                Ns_RWLockWrLock(&servPtr->opts.rwlock);
                 Tcl_DStringAppend(dsPtr, servPtr->opts.realm, TCL_INDEX_NONE);
                 if (servPtr->opts.realm != NULL) {
                     ns_free((void*)servPtr->opts.realm);
                     servPtr->opts.realm = ns_strdup(realm);
                 }
             }
-            Ns_RWLockUnlock(&servPtr->request.rwlock);
+            Ns_RWLockUnlock(&servPtr->opts.rwlock);
             Tcl_DStringResult(interp, dsPtr);
             result = TCL_OK;
         }

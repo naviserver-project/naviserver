@@ -678,8 +678,7 @@ typedef int
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 typedef Tcl_Obj *
-(Ns_DriverConnInfoProc)(Ns_Sock *sock)
-     NS_GNUC_NONNULL(1);
+(Ns_DriverConnInfoProc)(Ns_Sock *sock);
 
 typedef struct Ns_DriverClientInitArg {
     NS_TLS_SSL_CTX *ctx;
@@ -3961,6 +3960,14 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
                        const char *cert, const char *caFile, const char *caPath, bool verify,
                        NS_TLS_SSL_CTX **ctxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(6);
+
+NS_EXTERN int
+Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
+                          const char *cert, const char *caFile, const char *caPath,
+                          bool verify, const char *ciphers, const char *ciphersuites,
+                          const char *protocols, const char *alpn, void *app_data,
+                          NS_TLS_SSL_CTX **ctxPtr)
+    NS_GNUC_NONNULL(9) NS_GNUC_NONNULL(11);
 
 NS_EXTERN int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,

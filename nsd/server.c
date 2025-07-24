@@ -478,6 +478,9 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     Ns_RWLockInit(&servPtr->request.rwlock);
     Ns_RWLockSetName2(&servPtr->request.rwlock, "nsd:auth", server);
 
+    Ns_RWLockInit(&servPtr->opts.rwlock);
+    Ns_RWLockSetName2(&servPtr->opts.rwlock, "nsd:opts", server);
+
     Ns_MutexInit(&servPtr->tcl.synch.lock);
     Ns_MutexSetName2(&servPtr->tcl.synch.lock, "nsd:tcl:synch", server);
 

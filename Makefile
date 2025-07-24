@@ -368,7 +368,7 @@ dist: config.guess config.sub clean
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.c-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.h-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*~' -exec rm \{} \;
-	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --no-xattrs --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
+	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --exclude='*/.*' --no-xattrs --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
 

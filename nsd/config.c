@@ -760,7 +760,8 @@ NormalizePath(const char *input, TCL_SIZE_T *lengthPtr)
  */
 
 const char *
-Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength, const char *directory, const char* defaultValue,
+Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength,
+                  const char *directory, const char* defaultValue,
                   bool normalizePath, bool update)
 {
     const char *value, *result;

@@ -843,6 +843,7 @@ typedef struct NsServer {
         bool noticedetail;
         const char *serverdir;  /* Root for "logdir" and "pagedir" */
         const char *logDir;
+        Ns_RWLock rwlock;
     } opts;
 
     /*

@@ -3055,12 +3055,13 @@ HttpQueue(
     }
     if (result == TCL_OK) {
         const char *errorMsg = NULL;
+
         urlCopy = ns_strdup(url);
 
         if (Ns_ParseUrl(urlCopy, NS_FALSE, &u, &errorMsg) != NS_OK
             || u.protocol == NULL
             || u.host == NULL) {
-            Ns_TclPrintfResult(interp, "invalid URL \"%s\": %s", httpPtr->url, errorMsg);
+            Ns_TclPrintfResult(interp, "invalid URL \"%s\": %s", url, errorMsg);
             result = TCL_ERROR;
 
         } else if (u.port != NULL) {
@@ -3073,7 +3074,7 @@ HttpQueue(
             portNr = 443u;
 
         } else {
-            Ns_TclPrintfResult(interp, "invalid URL \"%s\": invalid scheme", httpPtr->url);
+            Ns_TclPrintfResult(interp, "invalid URL \"%s\": invalid scheme", u.protocol);
             result = TCL_ERROR;
         }
         if (u.userinfo != NULL) {
@@ -3832,7 +3833,9 @@ HttpCheckSpool(
             Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %" TCL_LL_MODIFIER "d",
                    contentLengthHeader, responseLength);
             result = CheckMaxResponse(httpPtr, responseLength);
-
+            if (result == TCL_ERROR) {
+                return result;
+            }
         } else {
             Ns_Log(Ns_LogTaskDebug, "ns_http: no content-length, HTTP status %d", httpPtr->status);
 

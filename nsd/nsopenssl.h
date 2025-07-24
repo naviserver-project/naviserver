@@ -65,6 +65,9 @@
 #  if OPENSSL_VERSION_PREREQ(3,2)
 #   define HAVE_OPENSSL_3_2 1
 #  endif
+#  if OPENSSL_VERSION_PREREQ(3,5)
+#   define HAVE_OPENSSL_3_5 1
+#  endif
 # endif
 
 # if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
@@ -76,14 +79,15 @@
 # include <openssl/err.h>
 
 typedef struct NsSSLConfig {
-    SSL_CTX  *ctx;
-    Ns_Mutex  lock;
-    int       verify;
-    int       deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
-    int       nodelay;      /* Enable the TCP_NODELAY optimization. */
-    DH       *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
-    DH       *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
-    DH       *dhKey2048;    /* Fallback Diffie Hellman keys of length 2048 */
+    SSL_CTX    *ctx;
+    Ns_Mutex    lock;
+    const char *tlsKeyScript;
+    int         verify;
+    int         deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
+    int         nodelay;      /* Enable the TCP_NODELAY optimization. */
+    DH         *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
+    DH         *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
+    DH         *dhKey2048;    /* Fallback Diffie Hellman keys of length 2048 */
 } NsSSLConfig;
 
 NS_EXTERN NsSSLConfig *NsSSLConfigNew(const char *section)

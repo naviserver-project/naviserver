@@ -108,11 +108,20 @@ static SSLCertStatusArg sslCertStatusArg;
  */
 static int ClientCtxDataIndex;
 
+static char *FilenameToEnvVar(Tcl_DString *dsPtr, const char *filename)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static Ns_ReturnCode BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * OpenSSL callback functions.
  */
 static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
-static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
+static int TLSPasswordCB(char *buf, int size, int rwflag, void *userdata);
+static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl), const unsigned char **out, unsigned char *outlen,
+                        const unsigned char *clientProtos, unsigned int clientProtosLength, void *arg);
+
 # ifdef HAVE_OPENSSL_PRE_1_1
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
 # endif
@@ -150,7 +159,10 @@ static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, const Ns_Time *tim
 
 static void CertTableInit(void);
 static void CertTableReload(void *UNUSED(arg));
-static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static NS_TLS_SSL_CTX *CertTableGetCtx(const char *cert)
+    NS_GNUC_NONNULL(1);
 
 
 # ifndef OPENSSL_NO_OCSP
@@ -1573,27 +1585,215 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
 /*
  *----------------------------------------------------------------------
  *
- * SSLPassword --
+ * FilenameToEnvVar --
  *
- *      Get the SSL password from the console (used by the OpenSSLs
- *      default_passwd_cb)
+ *      Convert a file path into a valid environment variable name by
+ *      prefixing it with "TLS_KEY_PASS_" and replacing non-alphanumeric
+ *      characters with underscores, while uppercasing letters.
  *
- * Results:
- *      Length of the password.
+ * Parameters:
+ *      dsPtr    - pointer to an initialized Tcl_DString to append to
+ *      filename - NUL-terminated file path string to convert
  *
- * Side effects:
- *      Password passed back in buf.
+ * Returns:
+ *      A pointer to the Tcl_DString's internal buffer (dsPtr->string),
+ *      which now contains the generated environment variable name.
+ *
+ * Side Effects:
+ *      Appends "TLS_KEY_PASS_" and then the mapped characters of 'filename'
+ *      to the Tcl_DString.  Caller is responsible for freeing or resetting
+ *      the Tcl_DString when done.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+FilenameToEnvVar(Tcl_DString *dsPtr, const char *filename) {
+    size_t inputLength, i;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(filename != NULL);
+
+    inputLength = strlen(filename);
+    Tcl_DStringAppend(dsPtr, "TLS_KEY_PASS_", 13);
+
+    for (i = 0; i < inputLength; ++i) {
+        unsigned char c = (unsigned char) filename[i];
+        if (CHARTYPE(alnum, c) != 0) {
+            c = (unsigned char)toupper(c);
+        } else {
+            c = '_';
+        }
+        Tcl_DStringAppend(dsPtr, (const char*)&c, 1);
+    }
+
+    return dsPtr->string;
+}
+
+/*
+ * Helper: ExecuteKeyScript --
+ *
+ *    If a "tlskeyproc" helper is configured, resolve its filename relative
+ *    to nsconf.binDir, build a Tcl exec command, and run it to obtain
+ *    a private-key passphrase for `pem_path`.
+ *
+ * Parameters:
+ *    dsPtr      - initialized Tcl_DString used for command construction.
+ *    section    - configuration section name (for path resolution).
+ *    pem_path   - filesystem path to the encrypted PEM file.
+ *    out_pass   - output buffer; on return, contains the passphrase
+ *                 (must be freed by caller via Tcl_DStringFree).
+ *
+ * Returns:
+ *    NS_OK      if the helper returned a non-empty passphrase;
+ *    NS_ERROR   on evaluation failure or empty output.
+ *
+ * Side Effects:
+ *    May call Ns_ConfigFilename(), Ns_ConfigGetValue(), and Ns_TclEval().
+ */
+static Ns_ReturnCode
+ExecuteKeyScript(Tcl_DString *dsPtr, const char *scriptPath, const char *pemPath)
+{
+    Ns_ReturnCode rc;
+    Tcl_DString   resultDs;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(scriptPath != NULL);
+
+    Tcl_DStringAppend(dsPtr, "exec -ignorestderr", 18);
+    Tcl_DStringAppendElement(dsPtr, scriptPath);
+    if (pemPath != NULL) {
+        Tcl_DStringAppendElement(dsPtr, pemPath);
+    }
+
+    Tcl_DStringInit(&resultDs);
+    rc = Ns_TclEval(&resultDs, NULL, dsPtr->string);
+    /*
+     * Reset input dsPtr to prepare for storing the result.
+     */
+    Tcl_DStringSetLength(dsPtr, 0);
+
+    if (rc != NS_OK || resultDs.length == 0) {
+        Tcl_DStringFree(&resultDs);
+        rc = NS_ERROR;
+    } else {
+        /*
+         * Copy helper output into dsPtr for caller to use
+         */
+        Tcl_DStringAppend(dsPtr, resultDs.string, resultDs.length);
+        Tcl_DStringFree(&resultDs);
+        rc = NS_OK;
+    }
+    return rc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TLSPasswordCB --
+ *
+ *      OpenSSL callback to obtain the passphrase for an encrypted
+ *      private key.  The lookup proceeds in three stages:
+ *
+ *        1) If the server’s NsSSLConfig has a tlsKeyScript defined,
+ *           run that helper script (`ExecuteKeyScript`) with the PEM
+ *           filename.  If it returns NS_OK, its output (in ds.string)
+ *           is used as the passphrase.
+ *
+ *        2) Otherwise, derive an environment‐variable name from the
+ *           PEM path (via FilenameToEnvVar) and look up that variable.
+ *           If not set, fall back to the generic TLS_KEY_PASS variable.
+ *
+ *        3) As a last resort, prompt the user on stdin with
+ *           “Enter TLS password:” and read from the console.
+ *
+ * Parameters:
+ *      buf    – buffer in which to store the passphrase
+ *      size   – size of buf (including space for terminating NUL)
+ *      rwflag – read/write flag (unused in this implementation)
+ *      userdata – pointer to the NUL-terminated PEM file path string
+ *
+ * Returns:
+ *      The number of bytes copied into buf (excluding the NUL), or 0
+ *      if no passphrase could be obtained (e.g. pemPath==NULL or EOF).
+ *
+ * Side Effects:
+ *      May invoke a Tcl script via ExecuteKeyScript(), read environment
+ *      variables, allocate/append to a Tcl_DString, and block on stdin
+ *      if prompting is necessary.
  *
  *----------------------------------------------------------------------
  */
 static int
-SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
+TLSPasswordCB(char *buf, int size, int UNUSED(rwflag), void *userdata)
 {
-    const char *pwd;
+    size_t        len = 0;
+    Tcl_DString   ds;
+    const char   *pwd = NULL;
+    const char   *pemPath = (const char *)userdata;
 
-    fprintf(stdout, "Enter SSL password:");
-    pwd = fgets(buf, num, stdin);
-    return (pwd != NULL ? (int)strlen(buf) : 0);
+    if (pemPath == NULL) {
+        return 0;
+    }
+
+    Ns_Log(Debug, "TLSPasswordCB");
+    Tcl_DStringInit(&ds);
+
+    {
+        NS_TLS_SSL_CTX *ctxPtr = CertTableGetCtx(pemPath);
+        NsSSLConfig    *cfgPtr = SSL_CTX_get_app_data(ctxPtr);
+
+        /*
+         * 1) Try to get secret from external helper script
+         */
+        if (cfgPtr  != NULL && cfgPtr->tlsKeyScript != NULL) {
+            Ns_Log(Notice, "TLS key from script <%s>", cfgPtr->tlsKeyScript);
+            if (ExecuteKeyScript(&ds, cfgPtr->tlsKeyScript, pemPath) == NS_OK) {
+                pwd = ds.string;
+            }
+        }
+    }
+
+    /*
+     * 2) Environment variables
+     */
+    if (pwd == NULL) {
+        const char *env = FilenameToEnvVar(&ds, pemPath);
+        Ns_Log(Notice, "TLS key from environment <%s>", env);
+        pwd = getenv(env);
+    }
+    if (pwd == NULL) {
+        Ns_Log(Notice, "TLS key from environment <TLS_KEY_PASS>");
+        pwd = getenv("TLS_KEY_PASS");
+    }
+
+    /*
+     * 3) Prompt if still not found
+     */
+    if (pwd == NULL) {
+        goto prompt;
+    }
+
+    assert(pwd != NULL);
+
+    len = strlen(pwd);
+    if (len >= (size_t) size) {
+        len = (size_t)size - 1;
+    }
+
+    memcpy(buf, pwd, len);
+    buf[len] = '\0';
+    Tcl_DStringFree(&ds);
+
+    return (int) len;
+
+ prompt:
+    Tcl_DStringFree(&ds);
+
+    fprintf(stdout, "Enter TLS password:");
+    if (fgets(buf, size, stdin) != NULL) {
+        len = strlen(buf);
+    }
+    return (int)len;
 }
 
 /*
@@ -1647,11 +1847,137 @@ NsSSLConfigNew(const char *section)
     NsSSLConfig *cfgPtr;
 
     cfgPtr = ns_calloc(1, sizeof(NsSSLConfig));
-    cfgPtr->deferaccept = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
-    cfgPtr->nodelay = Ns_ConfigBool(section, "nodelay", NS_TRUE);
-    cfgPtr->verify = Ns_ConfigBool(section, "verify", 0);
+    cfgPtr->deferaccept  = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
+    cfgPtr->nodelay      = Ns_ConfigBool(section, "nodelay", NS_TRUE);
+    cfgPtr->verify       = Ns_ConfigBool(section, "verify", 0);
+    cfgPtr->tlsKeyScript = Ns_ConfigGetValue(section, "tlskeyscript");
+    if (cfgPtr->tlsKeyScript != NULL) {
+        cfgPtr->tlsKeyScript = Ns_ConfigFilename(section, "tlskeyscript", 12,
+                                                 nsconf.binDir, /* directory to resolve against */
+                                                 ""             /* default no script */,
+                                                 NS_TRUE /*normalize*/, NS_FALSE /*updateCfg*/);
+    }
     return cfgPtr;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BuildALPNWireFormat --
+ *
+ *      Encode a comma-separated list of ALPN protocol identifiers into
+ *      the TLS ALPN wire format and store the result in a Tcl_DString.
+ *      Each protocol name is prefixed by its length (one byte), as required
+ *      by SSL_CTX_set_alpn_protos or SSL_set_alpn_protos.
+ *
+ * Parameters:
+ *      dsPtr   - pointer to an initialized Tcl_DString; on return its
+ *                buffer (dsPtr->string) contains the encoded wire format.
+ *      alpnStr - NUL-terminated, comma-separated list of protocol names
+ *                (e.g. "h2,http/1.1"); must not be NULL.
+ *
+ * Returns:
+ *      A pointer to the internal string buffer of dsPtr (cast to unsigned char *).
+ *      If any protocol name is empty or longer than 255 bytes, returns NS_ERROR
+ *      (and leaves dsPtr unmodified). Otherwise NS_OK is returned.
+ *
+ * Side Effects:
+ *      Repeatedly resizes dsPtr to accommodate the growing wire format,
+ *      and writes length-prefixed protocol names into its buffer.
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
+{
+    const char    *start = alpnStr;
+    const char    *end;
+    size_t         len = 0;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(alpnStr != NULL);
+
+    while (*start != '\0') {
+        size_t plen;
+
+        end = strchr(start, ',');
+        if (end == NULL) {
+            end = start + strlen(start);
+        }
+        plen = (size_t)(end - start);
+
+        if (plen == 0 || plen > 255) {
+            return NS_ERROR;
+        }
+
+        Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)(len + 1 + plen));
+        dsPtr->string[len++] = (char)plen;
+        memcpy(&dsPtr->string[len], start, plen);
+        len += plen;
+
+        if (*end == '\0') {
+            break;
+        }
+        start = end + 1;
+    }
+    Tcl_DStringSetLength(dsPtr, (int)len);
+
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ALPNSelectCB --
+ *
+ *      OpenSSL ALPN (Application-Layer Protocol Negotiation) selection
+ *      callback.  When a TLS client offers a list of supported protocols,
+ *      this function picks the first one that the server also supports,
+ *      using OpenSSL’s built‐in SSL_select_next_proto() helper.
+ *
+ *      The server’s protocol list is passed in via the "arg" pointer,
+ *      but we pack the length immediately before the data in memory,
+ *      so we reconstruct it by reading the unsigned int stored just
+ *      before "arg".
+ *
+ * Parameters:
+ *      ssl                   - The current SSL connection (unused).
+ *      out                   - On success, set to point to the chosen
+ *                              protocol bytes within serverProtos.
+ *      outlen                - On success, set to the length of the
+ *                              chosen protocol.
+ *      clientProtos          - Wire‐format list of protocols offered by
+ *                              the client (each prefixed by its length).
+ *      clientProtosLength    - Total byte length of clientProtos.
+ *      arg                   - Pointer to the server’s wire‐format
+ *                              protocols list; its length is stored
+ *                              as an unsigned int immediately before
+ *                              the pointer in memory.
+ *
+ * Returns:
+ *      SSL_TLSEXT_ERR_OK     if a common protocol was negotiated
+ *      SSL_TLSEXT_ERR_NOACK  otherwise (no overlap or negotiation failure)
+ *
+ * Side Effects:
+ *      Logs the return code from SSL_select_next_proto() at DEBUG level.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl), const unsigned char **out, unsigned char *outlen,
+             const unsigned char *clientProtos, unsigned int clientProtosLength, void *arg)
+{
+    const unsigned char *serverProtos = arg;
+    unsigned int serverProtosLength = *(unsigned int *)((char *)arg - sizeof(unsigned int));
+
+    int rc = SSL_select_next_proto((unsigned char **)out, outlen,
+                                   serverProtos, serverProtosLength,
+                                   clientProtos, clientProtosLength);
+
+    Ns_Log(Debug, "ALPNSelectCB returns %d", rc);
+    return (rc == OPENSSL_NPN_NEGOTIATED) ? SSL_TLSEXT_ERR_OK : SSL_TLSEXT_ERR_NOACK;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1703,24 +2029,24 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Ns_Log(Debug, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app data %p",
                (void*) app_data);
 
-        result = Ns_TLS_CtxServerCreate(interp, cert,
-                                        NULL /*caFile*/, NULL /*caPath*/,
-                                        Ns_ConfigBool(section, "verify", 0),
-                                        ciphers, ciphersuites, protocols,
-                                        ctxPtr);
+        result = Ns_TLS_CtxServerCreateCfg(interp, cert,
+                                           NULL /*caFile*/, NULL /*caPath*/,
+                                           Ns_ConfigBool(section, "verify", 0),
+                                           ciphers, ciphersuites, protocols,
+                                           "http/1.1",
+                                           app_data,
+                                           ctxPtr);
         if (result == TCL_OK) {
-            NsSSLConfig *cfgPtr;
+            NsSSLConfig *cfgPtr = app_data;
 
-            Ns_Log(Debug, "Ns_TLS_CtxServerInit ctx %p ctx app %p",
-                   (void*)*ctxPtr, SSL_CTX_get_app_data(*ctxPtr));
-
-            if (app_data == NULL) {
+            if (cfgPtr == NULL) {
                 /*
-                 * Get the app_data from the SSL_CTX.
+                 * Get the app_data (cfgPtr) from the SSL_CTX.
                  */
-                app_data = SSL_CTX_get_app_data(*ctxPtr);
+                cfgPtr = SSL_CTX_get_app_data(*ctxPtr);
+
             }
-            if (app_data == NULL) {
+            if (cfgPtr == NULL) {
                 /*
                  * Create new app_data (= NsSSLConfig).
                  *
@@ -1732,15 +2058,9 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                 cfgPtr->ctx = *ctxPtr;
                 Ns_Log(Debug, "Ns_TLS_CtxServerInit created new app data %p for cert <%s> ctx %p",
                         (void*)cfgPtr, cert, (void*)(cfgPtr->ctx));
-                app_data = (void *)cfgPtr;
-
-                Ns_Log(Debug, "Ns_TLS_CtxServerInit set app data %p ctx %p for cert <%s>",
-                       (void*) app_data, (void*)*ctxPtr, cert);
-                SSL_CTX_set_app_data(*ctxPtr, app_data);
+                SSL_CTX_set_app_data(*ctxPtr, (void *)cfgPtr);
             }
-#if !defined(OPENSSL_HAVE_DH_AUTO) || !defined(HAVE_OPENSSL_3)
-            cfgPtr = (NsSSLConfig *)app_data;
-#endif
+
             SSL_CTX_set_session_id_context(*ctxPtr, (const unsigned char *)&nsconf.pid, sizeof(pid_t));
             SSL_CTX_set_session_cache_mode(*ctxPtr, SSL_SESS_CACHE_SERVER);
 
@@ -1811,11 +2131,11 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                  * Initialize cert storage for the SSL_CTX; otherwise
                  * X509_STORE_CTX_get_* operations will fail.
                  */
-#ifdef SSL_CTX_build_cert_chain
-                if (SSL_CTX_build_cert_chain(*ctxPtr, 0) != 1) {
-                    Ns_Log(Notice, "nsssl SSL_CTX_build_cert_chain failed");
-                }
-#endif
+                //#ifdef SSL_CTX_build_cert_chain
+                //if (SSL_CTX_build_cert_chain(*ctxPtr, 0) != 1) {
+                //    Ns_Log(Notice, "nsssl SSL_CTX_build_cert_chain failed");
+                //}
+                //#endif
                 storePtr = SSL_CTX_get_cert_store(*ctxPtr /*SSL_get_SSL_CTX(s)*/);
                 Ns_Log(Debug, "nsssl:SSL_CTX_get_cert_store %p", (void*)storePtr);
 
@@ -1887,8 +2207,11 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 static Tcl_HashTable certTable;
 static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
 {
-    int            isNew    = 0;
+    int            isNew = 0;
     Tcl_HashEntry *hPtr;
+
+    NS_NONNULL_ASSERT(ctx != NULL);
+    NS_NONNULL_ASSERT(cert != NULL);
 
     Ns_MasterLock();
     hPtr = Tcl_CreateHashEntry(&certTable, (char *)ctx, &isNew);
@@ -1936,6 +2259,31 @@ static void CertTableReload(void *UNUSED(arg))
     }
     Ns_MasterUnlock();
 }
+static NS_TLS_SSL_CTX *CertTableGetCtx(const char *cert)
+{
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
+    NS_TLS_SSL_CTX *result = NULL;
+
+    NS_NONNULL_ASSERT(cert != NULL);
+
+    Ns_MasterLock();
+    hPtr = Tcl_FirstHashEntry(&certTable, &search);
+    while (hPtr != NULL) {
+        NS_TLS_SSL_CTX *ctx = (NS_TLS_SSL_CTX *)Tcl_GetHashKey(&certTable, hPtr);
+        const char     *storedCert = Tcl_GetHashValue(hPtr);
+
+        if (STREQ(cert, storedCert)) {
+            result = ctx;
+            break;
+        }
+
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+    Ns_MasterUnlock();
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2204,33 +2552,56 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
     return certificateAccepted;
 }
 
+
+
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TLS_CtxServerCreate --
+ * Ns_TLS_CtxServerCreateCfg --
  *
- *      Create and Initialize OpenSSL context
+ *      Create and fully configure an OpenSSL SSL_CTX for server‐side TLS,
+ *      using the given certificate, CA files, cipher settings, protocol
+ *      restrictions, and optional application data.
  *
- * Results:
- *      A standard Tcl result.
+ * Parameters:
+ *      interp       - Tcl interpreter for error messages (must not be NULL)
+ *      cert         - Path to server PEM file (certificate + chain + key)
+ *      caFile       - Path to CA bundle file for client authentication
+ *      caPath       - Path to directory of hashed CA files
+ *      verify       - true to require and verify client certificates
+ *      ciphers      - OpenSSL cipher list string, or NULL to leave default
+ *      ciphersuites - TLS1.3 ciphersuites string, or NULL if unused
+ *      protocols    - comma-separated exclusions like "!TLSv1.0,!SSLv3", or NULL
+ *      app_data     - Opaque pointer stored in CTX via SSL_CTX_set_app_data
+ *      ctxPtr       - Address where the new SSL_CTX* will be returned (non-NULL)
  *
- * Side effects:
- *      None.
+ * Returns:
+ *      TCL_OK on success (and *ctxPtr set to the new SSL_CTX)
+ *      TCL_ERROR on failure, with an error message left in interp;
+ *      the partially configured SSL_CTX is freed to avoid leaks.
+ *
+ * Side Effects:
+ *      - Allocates and configures an OpenSSL SSL_CTX.
+ *      - Logs notices for disabled protocols and errors.
+ *      - May populate the global certificate table for hot-reload support.
  *
  *----------------------------------------------------------------------
  */
 int
-Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath,
-                       bool verify, const char *ciphers, const char *ciphersuites,
-                       const char *protocols,
-                       NS_TLS_SSL_CTX **ctxPtr)
+Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
+                          const char *cert, const char *caFile, const char *caPath,
+                          bool verify, const char *ciphers, const char *ciphersuites,
+                          const char *protocols, const char *alpn,
+                          void *app_data,
+                          NS_TLS_SSL_CTX **ctxPtr)
 {
     NS_TLS_SSL_CTX   *ctx;
     const SSL_METHOD *server_method;
     int rc;
 
     NS_NONNULL_ASSERT(ctxPtr != NULL);
+
+    Ns_Log(Debug, "Ns_TLS_CtxServerCreate cert '%s' app_data %p", cert, (void*)app_data);
 
 #ifdef HAVE_OPENSSL_PRE_1_1
     server_method = SSLv23_server_method();
@@ -2239,6 +2610,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
 #endif
 
     ctx = SSL_CTX_new(server_method);
+
     *ctxPtr = ctx;
     if (ctx == NULL) {
         ReportError(interp, "ssl ctx init failed: %s", ERR_error_string(ERR_get_error(), NULL));
@@ -2308,6 +2680,27 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
         SSL_CTX_set_options(ctx, n);
     }
 
+#if OPENSSL_VERSION_NUMBER >= 0x1000200fL
+    {
+        Tcl_DString   alpnDs;
+        unsigned int *mem;
+
+        Tcl_DStringInit(&alpnDs);
+
+        if (BuildALPNWireFormat(&alpnDs, alpn) == NS_ERROR || alpnDs.length == 0) {
+            ReportError(interp, "invalid ALPN protocol string '%s'", alpn);
+            Tcl_DStringFree(&alpnDs);
+            goto fail;
+        }
+
+        mem = ns_malloc(sizeof(unsigned int) + (size_t)alpnDs.length);
+        *mem = (unsigned int)alpnDs.length;
+        memcpy(mem + 1, alpnDs.string, (size_t)alpnDs.length);
+        SSL_CTX_set_alpn_select_cb(ctx, ALPNSelectCB, mem + 1);
+        Tcl_DStringFree(&alpnDs);
+    }
+#endif
+
     SSL_CTX_set_default_verify_paths(ctx);
     SSL_CTX_load_verify_locations(ctx, caFile, caPath);
     // SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
@@ -2315,7 +2708,13 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-    SSL_CTX_set_default_passwd_cb(ctx, SSLPassword);
+    if (app_data != NULL) {
+        SSL_CTX_set_app_data(ctx, app_data);
+    }
+
+    SSL_CTX_set_default_passwd_cb(ctx, TLSPasswordCB);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx, (void *)cert);
+
     DrainErrorStack(Warning, "Ns_TLS_CtxServerCreate", ERR_get_error());
 
     if (cert != NULL) {
@@ -2327,17 +2726,16 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                         cert, ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
+        /*
+         * Remember ctx and certificate name for reloading.
+         */
+        CertTableAdd(ctx, cert);
 
         if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
             ReportError(interp, "certificate '%s' private key load error: %s",
                         cert, ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
-        /*
-         * Remember ctx and certificate name for reloading.
-         */
-        CertTableAdd(ctx, cert);
-
 #ifndef OPENSSL_HAVE_DH_AUTO
         /*
          * Get DH parameters from .pem file
@@ -2370,6 +2768,44 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     *ctxPtr = NULL;
 
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TLS_CtxServerCreate --
+ *
+ *      Backward compatible legacy function calling
+ *      Ns_TLS_CtxServerCreateCfg().  The differences are
+ *      * app_data (Opaque pointer stored in CTX via
+ *        SSL_CTX_set_app_data) can't be provided through this
+ *        interface.
+ *      * ALPN can't be provided.
+ *
+ *      One consequence is, the internal NsSSLConfig data can't be
+ *      provided over this interface, and the pass-phrase passing via
+ *      external script can't be used.
+ *
+ * Results:
+ *      Same as in Ns_TLS_CtxServerCreateCfg().
+ *
+ * Side effects:
+ *      Same as in Ns_TLS_CtxServerCreateCfg().
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
+                       const char *cert, const char *caFile, const char *caPath,
+                       bool verify, const char *ciphers, const char *ciphersuites,
+                       const char *protocols,
+                       NS_TLS_SSL_CTX **ctxPtr)
+{
+    return Ns_TLS_CtxServerCreateCfg(interp, cert, caFile, caPath,
+                                     verify, ciphers, ciphersuites,
+                                     protocols, "http/1.1",
+                                     NULL,
+                                     ctxPtr);
 }
 
 
@@ -2926,6 +3362,17 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                        bool UNUSED(verify), const char *UNUSED(ciphers), const char *UNUSED(ciphersuites),
                        const char *UNUSED(protocols),
                        NS_TLS_SSL_CTX **UNUSED(ctxPtr))
+{
+    ReportError(interp, "CtxServerCreate failed: no support for OpenSSL built in");
+    return TCL_ERROR;
+}
+int
+Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
+                          const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath),
+                          bool UNUSED(verify), const char *UNUSED(ciphers), const char *UNUSED(ciphersuites),
+                          const char *UNUSED(protocols),
+                          void *UNUSED(app_data),
+                          NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
     ReportError(interp, "CtxServerCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;

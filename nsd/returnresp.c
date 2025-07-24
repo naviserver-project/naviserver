@@ -385,11 +385,10 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
         if (realm == NULL) {
             Ns_Log(Debug, "Ns_ConnReturnUnauthorized uses opts realm <%s>", servPtr->opts.realm);
 
-            Ns_RWLockRdLock(&servPtr->request.rwlock);
+            Ns_RWLockRdLock(&servPtr->opts.rwlock);
             Tcl_DStringAppend(&ds, servPtr->opts.realm, TCL_INDEX_NONE);
-            Ns_RWLockUnlock(&servPtr->request.rwlock);
+            Ns_RWLockUnlock(&servPtr->opts.rwlock);
         } else {
-            Ns_Log(Notice, "Ns_ConnReturnUnauthorized uses SLS realm  <%s>", realm);
             Tcl_DStringAppend(&ds, realm, TCL_INDEX_NONE);
         }
         Tcl_DStringAppend(&ds, "\"", 1);

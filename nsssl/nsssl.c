@@ -76,14 +76,18 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    Tcl_DString        ds;
-    int                num, result;
+    int                result;
     const char        *section, *vhostcertificates;
     NsSSLConfig       *drvCfgPtr;
     Ns_DriverInitData  init;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    int                num;
+    Tcl_DString        ds;
+
+    Tcl_DStringInit(&ds);
+#endif
 
     memset(&init, 0, sizeof(init));
-    Tcl_DStringInit(&ds);
 
     section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
     drvCfgPtr = NsSSLConfigNew(section);
@@ -162,6 +166,7 @@ Ns_ModuleInit(const char *server, const char *module)
         return NS_ERROR;
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     /*
      * Seed the OpenSSL Pseudo-Random Number Generator.
      */
@@ -180,6 +185,8 @@ Ns_ModuleInit(const char *server, const char *module)
     }
 
     Tcl_DStringFree(&ds);
+#endif
+
     Ns_Log(Notice, "nsssl: version %s loaded, based on %s",
            NSSSL_VERSION, init.libraryVersion);
     return NS_OK;
@@ -511,7 +518,8 @@ Keep(Ns_Sock *sock)
  *
  * ConnInfo --
  *
- *      Return Tcl_Obj hinting connection details
+ *      Return Tcl_Obj hinting connection details in case the socket is not
+ *      NULL.
  *
  * Results:
  *      Tcl_Obj *
@@ -525,36 +533,23 @@ Keep(Ns_Sock *sock)
 static Tcl_Obj*
 ConnInfo(Ns_Sock *sock)
 {
-    SSLContext *sslCtx;
     Tcl_Obj    *resultObj;
-    char        ipString[NS_IPADDR_SIZE];
-    const struct sockaddr *ipPtr;
-
-    NS_NONNULL_ASSERT(sock != NULL);
 
     resultObj = Tcl_NewDictObj();
-    sslCtx = sock->arg;
-    ipPtr = Ns_SockGetConfiguredSockAddr(sock);
-    (void)ns_inet_ntop(ipPtr, ipString, NS_IPADDR_SIZE);
 
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("currentaddr", 11),
-                   Tcl_NewStringObj(ipString, -1));
+    if (sock != NULL) {
+        SSLContext *sslCtx = sock->arg;
 
-    (void)Ns_SockaddrAddToDictIpProperties(ipPtr, resultObj);
-
-    /*Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("protocol", 8),
-                   Tcl_NewStringObj(sock->driver->protocol, TCL_INDEX_NONE));*/
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("sslversion", 10),
-                   Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), TCL_INDEX_NONE));
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("cipher", 6),
-                   Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), TCL_INDEX_NONE));
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("servername", 10),
-                   Tcl_NewStringObj(SSL_get_servername(sslCtx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("sslversion", 10),
+                       Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), TCL_INDEX_NONE));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("cipher", 6),
+                       Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), TCL_INDEX_NONE));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("servername", 10),
+                       Tcl_NewStringObj(SSL_get_servername(sslCtx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
+    }
 
     return resultObj;
 }

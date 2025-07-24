@@ -3383,7 +3383,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             op = NS_URLSPACE_DEFAULT;
         }
         if (context == NULL) {
-            if (itPtr->conn != NULL) {
+            if (itPtr->conn != NULL && ((Conn *)itPtr->conn)->sockPtr != NULL) {
                 Ns_Log(Debug, "UrlSpaceGetObjCmd: get context from connection");
                 NsUrlSpaceContextInit(&ctx,
                                       ((Conn *)itPtr->conn)->sockPtr,

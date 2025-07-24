@@ -343,7 +343,7 @@ SockClose(Ns_Sock *sock)
  *
  * ConnInfo --
  *
- *      Return Tcl_Obj hinting connection details
+ *      Return Tcl_Obj hinting driver specific connection details
  *
  * Results:
  *      Tcl_Obj *
@@ -355,22 +355,9 @@ SockClose(Ns_Sock *sock)
  */
 
 static Tcl_Obj*
-ConnInfo(Ns_Sock *sock)
+ConnInfo(Ns_Sock *UNUSED(sock))
 {
-    Tcl_Obj *resultObj;
-    char     ipString[NS_IPADDR_SIZE];
-
-    NS_NONNULL_ASSERT(sock != NULL);
-
-    resultObj = Tcl_NewDictObj();
-    (void)ns_inet_ntop(Ns_SockGetConfiguredSockAddr(sock), ipString, NS_IPADDR_SIZE);
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("currentaddr", 11),
-                   Tcl_NewStringObj(ipString, -1));
-
-    (void)Ns_SockaddrAddToDictIpProperties((struct sockaddr *)&(sock->sa), resultObj);
-
-    return resultObj;
+    return Tcl_NewDictObj();
 }
 
 
