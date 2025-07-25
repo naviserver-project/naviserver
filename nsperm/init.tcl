@@ -272,7 +272,7 @@ try {
         "Please, change the password using:  ns_permpasswd nsadmin x /NEWPASSWORD/\n" \
         "or edit the password file [file join [ns_info home] modules nsperm passwd]\n" \
         "and change the encrypted password manually!\n" \
-        "=============================================================================\n"
+        "============================================================================="
 } on error {errorMsg} {
 }
 
