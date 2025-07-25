@@ -198,9 +198,7 @@ try {
                 |  Security Alert:</strong>
                 |  The 'nsperm' module is installed, but the default
                 |  system administrator password for 'nsadmin' remains
-                |  unchanged. Please update the password immediately.
-                |
-                |  <a href="#" id="changePwdBtn" class="btn-action">Change Password Now</a>
+                |  unchanged. <a href="#" id="changePwdBtn" class="btn-action">Change Password Now</a>
                 |
                 |  <div id="passwordModal" class="modal">
                 |    <div class="modal-content">
