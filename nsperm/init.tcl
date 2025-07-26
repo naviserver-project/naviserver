@@ -266,7 +266,7 @@ try {
     ns_perm checkpass nsadmin x
 
 } on ok {result} {
-    ns_log security Administration action required!\n \
+    ns_log security Administration action required!\n\n \
         "=============================================================================\n" \
         "The default password for system administrator 'nsadmin' has not been changed!\n" \
         "Please, change the password using:  ns_permpasswd nsadmin x /NEWPASSWORD/\n" \
