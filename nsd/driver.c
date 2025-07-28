@@ -355,6 +355,16 @@ static Driver *LookupDriver(Tcl_Interp *interp, const char* protocol, const char
 static void WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+
+static void BandwidthAdjustRateLimitsPerPool(WriterSock *writers, Tcl_HashTable *pools)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int BandwidthAdjustPollForWriters(WriterSock *writers, PollData *pdata)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int BandwidthComputeSleepTimeMs(const WriterSock *w)
+    NS_GNUC_NONNULL(1);
+
 static ConnPoolInfo *WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -6818,6 +6828,192 @@ WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
 /*
  *----------------------------------------------------------------------
  *
+ * BandwidthAdjustRateLimitsPerPool --
+ *
+ *      Recalculate per-pool bandwidth utilization and dynamically adjust
+ *      each writer's rate limit based on pool-level deltas.  Writers that
+ *      are currently transmitting above 90% of their individual limit will
+ *      have their rateLimit increased or decreased proportionally to the
+ *      pool's deltaPercentage, within the bounds of [5 KB/s, poolLimit].
+ *      If global bandwidth management is disabled, this function is a no-op.
+ *
+ * Parameters:
+ *      writers  - head of a linked list of WriterSock structures, one per
+ *                 active writer connection.
+ *      pools    - Tcl_HashTable mapping pool names to PoolRate statistics
+ *                 (populated by WriterPerPoolRates).
+ *
+ * Returns:
+ *      None.
+ *
+ * Side Effects:
+ *      May modify the rateLimit field of WriterSock entries and emit notice-
+ *      level logs via Ns_Log when a writer's limit is adjusted.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+BandwidthAdjustRateLimitsPerPool(WriterSock *writers, Tcl_HashTable *pools)
+{
+    WriterSock *cur;
+
+    if (!NsWriterBandwidthManagement) {
+        return;
+    }
+
+    /* Recompute pool-level rate info */
+    WriterPerPoolRates(writers, pools);
+
+    /* Adjust individual writer rate limits based on pool deltas */
+    for (cur = writers; cur != NULL; cur = cur->nextPtr) {
+        ConnPoolInfo *info = cur->infoPtr;
+        ConnPool     *pool = cur->poolPtr;
+        bool          onLimit;
+        int           newRate;
+
+        if (cur->rateLimit <= 0
+            || info == NULL
+            || info->deltaPercentage == 0
+            || pool->rate.poolLimit <= 0)
+            {
+                continue;
+            }
+
+        /* Only adjust busy writers near their limit */
+        onLimit = (cur->currentRate * 100 / cur->rateLimit) > 90;
+        if (!onLimit) {
+            continue;
+        }
+
+        newRate = cur->currentRate +
+            (cur->currentRate * info->deltaPercentage / 100);
+
+        /* Clamp between minimum and pool limit */
+        if (newRate > pool->rate.poolLimit) {
+            newRate = pool->rate.poolLimit;
+        } else if (newRate < 5) {
+            newRate = 5;
+        }
+
+        if (newRate != cur->rateLimit) {
+            Ns_Log(Notice,
+                   "... pool '%s' rate limit changed from %d to %d KB/s (delta %d%%)",
+                   pool->pool,
+                   cur->rateLimit,
+                   newRate,
+                   info->deltaPercentage);
+            cur->rateLimit = newRate;
+        }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BandwidthComputeSleepTimeMs --
+ *
+ *      Determine how long (in milliseconds) a writer should sleep in order
+ *      to adhere to its configured rateLimit.  The function compares the
+ *      actual elapsed time implied by bytes sent at the currentRate against
+ *      the target elapsed time implied by sending the same bytes at rateLimit.
+ *      If the writer is ahead of schedule, it returns a positive delay
+ *      (at least 1 ms) to throttle; otherwise returns 0.
+ *
+ * Parameters:
+ *      w  – pointer to a WriterSock structure with fields:
+ *             nsent       – total bytes sent so far
+ *             currentRate – measured throughput (bytes per millisecond)
+ *             rateLimit   – desired throughput limit (bytes per millisecond)
+ *
+ * Returns:
+ *      The number of milliseconds the writer should pause before sending
+ *      more data. Returns 0 if no sleep is needed or if any of nsent,
+ *      currentRate, or rateLimit are non-positive.
+ *
+ * Side Effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+BandwidthComputeSleepTimeMs(const WriterSock *w)
+{
+    if (w->rateLimit <= 0 || w->nsent <= 0 || w->currentRate <= 0) {
+        return 0;
+    } else {
+        int currentMs = (int)(w->nsent / (Tcl_WideInt)w->currentRate);
+        int targetMs  = (int)(w->nsent / (Tcl_WideInt)w->rateLimit);
+        return 1 + targetMs - currentMs;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BandwidthAdjustPollForWriters --
+ *
+ *      Prepare the poll set for writer sockets and compute the
+ *      appropriate timeout based on each writer’s rate-limiting needs.
+ *      Iterates through the linked list of WriterSock objects, determines
+ *      how long each should sleep (via ComputeSleepTimeMs), and:
+ *
+ *        - If a writer still has data to send (size > 0) and no sleep is needed,
+ *          adds its socket to the PollData for POLLOUT readiness and forces
+ *          an immediate poll (timeout = -1).
+ *        - If a writer must sleep before sending, adjusts the global timeout
+ *          to the minimum remaining sleep interval.
+ *        - If a writer is in STREAM_FINISH state with no remaining data,
+ *          forces an immediate poll to finalize the stream.
+ *
+ * Returns:
+ *      The timeout in milliseconds to use in the next PollWait call:
+ *        - -1 to indicate an immediate poll (ready writers present or streams to finish)
+ *        - A non-negative value equal to the shortest required sleep interval
+ *          among all writers, or the initial default (1000 ms) if no writers
+ *          need throttling.
+ *
+ * Side Effects:
+ *      Calls ComputeSleepTimeMs for each writer.
+ *      May call SockPoll to register sockets for POLLOUT.
+ *      Logs debug information about each writer’s send rate and sleep time.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+BandwidthAdjustPollForWriters(WriterSock *writers, PollData *pdata)
+{
+    int timeout = 1000;
+    WriterSock *cur;
+
+    for (cur = writers; cur != NULL; cur = cur->nextPtr) {
+        int sleepMs = BandwidthComputeSleepTimeMs(cur);
+
+        Ns_Log(DriverDebug,
+               "Writer(%p) sent=%" TCL_LL_MODIFIER "d curRate=%d limit=%d sleep=%d",
+               (void*)cur,
+               cur->nsent,
+               cur->currentRate,
+               cur->rateLimit,
+               sleepMs);
+
+        if (cur->size > 0) {
+            if (sleepMs <= 0) {
+                SockPoll(cur->sockPtr, POLLOUT, pdata);
+                timeout = -1;
+            } else {
+                timeout = MIN(sleepMs, timeout);
+            }
+        } else if (cur->doStream == NS_WRITER_STREAM_FINISH) {
+            timeout = -1;
+        }
+    }
+
+    return timeout;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * WriterThread --
  *
  *      Thread that writes files to clients.
@@ -6856,14 +7052,13 @@ WriterThread(void *arg)
      */
 
     Ns_Log(Notice, "writer%d: accepting connections", queuePtr->id);
-
     PollCreate(&pdata);
 
     while (!stopping) {
         char charBuffer[1];
 
         /*
-         * If there are any write sockets, set the bits.
+         * Prepare poll set
          */
 
         PollReset(&pdata);
@@ -6872,114 +7067,13 @@ WriterThread(void *arg)
         if (writePtr == NULL) {
             pollTimeout = 30 * 1000;
         } else {
-
-            /*
-             * If per-pool bandwidth management is requested, compute the base
-             * data for the adjustment. If there is no bandwidth management
-             * requested, there is no slowdow.
-             */
-            if (NsWriterBandwidthManagement) {
-                WriterPerPoolRates(writePtr, &pools);
-            }
-
-            /*
-             * There are writers active. Determine on which writers we poll
-             * and compute the maximal poll wait time.
-             */
             pollTimeout = 1000;
-            for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
-                int sleepTimeMs = 0;
-
-                Ns_Log(DriverDebug, "### Writer poll collect %p size %" PRIdz
-                       " streaming %d rateLimit %d",
-                       (void *)curPtr, curPtr->size, curPtr->doStream, curPtr->rateLimit);
-
-                if (curPtr->rateLimit > 0
-                    && curPtr->nsent > 0
-                    && curPtr->currentRate > 0
-                    ) {
-                    int  currentMs, targetTimeMs;
-
-                    /*
-                     * Perform per-pool rate management, when
-                     *  - a poolLimit is provided,
-                     *  - we have performance data of thee pool, and
-                     *  - changes are possible (as flagged by deltaPercentage).
-                     */
-                    if (NsWriterBandwidthManagement
-                        && curPtr->poolPtr->rate.poolLimit > 0
-                        && curPtr->infoPtr != NULL
-                        && curPtr->infoPtr->deltaPercentage != 0
-                        ) {
-                        /*
-                         * Only adjust data for busy writer jobs, which
-                         * are close to their limits.
-                         */
-                        bool onLimit = (curPtr->currentRate*100 / curPtr->rateLimit) > 90;
-
-                        Ns_Log(DriverDebug, "we allowed %d we use %d on limit %d (%d) , we can do %d%%",
-                               curPtr->rateLimit,  curPtr->currentRate,
-                               (int)onLimit, curPtr->currentRate*100/curPtr->rateLimit,
-                               curPtr->infoPtr->deltaPercentage);
-                        if (onLimit) {
-                            /*
-                             * Compute new rate limit based on
-                             * positive/negative delta percentage.
-                             */
-                            int newRate = curPtr->currentRate +
-                                (curPtr->currentRate * curPtr->infoPtr->deltaPercentage / 100);
-                            /*
-                             * Sanity checks:
-                             *  - never allow more than poolLimit
-                             *  - never kill connections completely (e.g. minRate 5KB/s)
-                             */
-                            if (newRate > curPtr->poolPtr->rate.poolLimit) {
-                                newRate = curPtr->poolPtr->rate.poolLimit;
-                            } else if (newRate < 5) {
-                                newRate = 5;
-                            }
-                            /*
-                             * It we were already at some limits, new and old
-                             * rate might be the same. There is no need to
-                             * tell this to the user.
-                             */
-                            if (curPtr->rateLimit != newRate) {
-                                Ns_Log(Notice, "... pool '%s' new rate limit changed from %d to %d KB/s (delta %d%%)",
-                                       curPtr->poolPtr->pool, curPtr->rateLimit, newRate,
-                                       curPtr->infoPtr->deltaPercentage);
-                                curPtr->rateLimit = newRate;
-                            }
-                        }
-                    }
-
-                    /*
-                     * Adjust rate to the rate limit.
-                     */
-                    currentMs    = (int)(curPtr->nsent/(Tcl_WideInt)curPtr->currentRate);
-                    targetTimeMs = (int)(curPtr->nsent/(Tcl_WideInt)curPtr->rateLimit);
-                    sleepTimeMs = 1 + targetTimeMs - currentMs;
-                    Ns_Log(WriterDebug, "### Writer(%d)"
-                           " byte sent %" TCL_LL_MODIFIER "d msecs %d rate %d KB/s"
-                           " targetRate %d KB/s sleep %d",
-                           curPtr->sockPtr->sock,
-                           curPtr->nsent, currentMs,
-                           curPtr->currentRate,
-                           curPtr->rateLimit,
-                           sleepTimeMs);
-                }
-
-                if (likely(curPtr->size > 0u)) {
-                    if (sleepTimeMs <= 0) {
-                        SockPoll(curPtr->sockPtr, (short)POLLOUT, &pdata);
-                        pollTimeout = -1;
-                    } else {
-                        pollTimeout = MIN(sleepTimeMs, pollTimeout);
-                    }
-                } else if (unlikely(curPtr->doStream == NS_WRITER_STREAM_FINISH)) {
-                    pollTimeout = -1;
-                }
-            }
+            /* 1. adjust rate limits per pool */
+            BandwidthAdjustRateLimitsPerPool(writePtr, &pools);
+            /* 2. set up writer sockets in poll and get minimal timeout */
+            pollTimeout = BandwidthAdjustPollForWriters(writePtr, &pdata);
         }
+
         Ns_Log(DriverDebug, "### Writer final pollTimeout %d", pollTimeout);
 
         /*
@@ -7163,18 +7257,11 @@ WriterThread(void *arg)
      * Free ConnPoolInfo
      */
     NsForeachHashValue(&pools, ConnPoolInfoFreeCB, NULL);
-        
+
     /*
      * Delete the hash table for pools.
      */
     Tcl_DeleteHashTable(&pools);
-
-    /*fprintf(stderr, "==== writerthread exits queuePtr %p writePtr %p\n",
-            (void*)queuePtr->sockPtr,
-            (void*)writePtr);
-    for (sockPtr = queuePtr->sockPtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
-        fprintf(stderr, "==== writerthread exits queuePtr %p sockPtr %p\n", (void*)queuePtr, (void*)sockPtr);
-        }*/
 
     Ns_Log(Notice, "exiting");
 
