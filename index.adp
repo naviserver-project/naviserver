@@ -1,399 +1,236 @@
+<!--
+    ;# Welcome to the upper terrority of an *.adp file,
+    ;#  As you scroll through this page looking in confusion, you may find it intriguring
+    ;#  Take a breath and start from the top
+    ;#    The first procedure is commented, see if you can tag along :-)
+--!>
+<%
+  ;#  We wish to safeguard this procedure, using try enables us to catch any errors
+  ;#  the command "proc" constructs a foundation for the procedure named probe_driver_info
+  ;#    the { } defines our information gates
+  ;##   This is where information can be passed within
+  ;#      In this case, we construct the gate "opt" short-hand for option, for our option menu below
+try { proc probe_driver_info {opt} {
+    ;# we've now created our procedure, well done.
+    ;# the pillars are up but we have no working sand
+    ;# so let's start
+
+      ;# This procedure enables us to evalulate an output of a variable
+        proc debug {enable input} { switch $enable { 1 { puts ">>> $input <<<" } } }
+        debug 0 [ns_driver info]  ;# raw output of the internals information
+        debug 0 [concat {*}[ns_driver info]] ;# we convert our long string of information in to a list
+                                             ;# the list enables us later on to pick and choose which value we desire
+        variable nssock_driver_info [concat {*}[ns_driver info]] ;# all our information we require is currently in one very long string without a fullstop
+        ;# and so lets begin this adventure
+        switch $opt {
+          protocol { ;# Was the protocol passed to the gate?
+            return "<code><strong>protocol:</strong> [dict get $nssock_driver_info protocol]"
+          }
+          address { ;# Or maybe it was a address request
+            ;#  This switch determines if the server is hosted on two IP addresses
+            ;#    A cute script to
+            switch [llength [dict get $nssock_driver_info address]] {
+              1       { return "<code id=\"terminal\">Listening on address:[dict get $nssock_driver_info address]</code>\
+                                at port <code class=\"terminal\"> [dict get $nssock_driver_info port]</code>"  }
+              default { return "<code id=\"terminal\">Listening on addresses:</code> <code id=\"general\">[dict get $nssock_driver_info address]</code> \
+                                at ports <code id=\"general\"> [dict get $nssock_driver_info port]</code>" }
+            }
+          }
+          port { ;# Was it a port?
+            switch [llength [dict get $nssock_driver_info address]] {
+              1       { return "<code id=\"terminal\">Listening at port: <code id=\"general\">[dict get $nssock_driver_info port]</code>" }
+              default { return "<code id=\"terminal\">Listening at ports: <code id=\"general\">[dict get $nssock_driver_info port]</code>" }
+            } ;# end switch
+          }
+          os { ;# maybe an os?
+            return "<code id=\"terminal\">Operating System:</code> <code>$::tcl_platform(os) $::tcl_platform(osVersion)</code>"
+          }
+          modules { ;# show me the shades
+            variable modules [ns_ictl getmodules]
+            variable modules [append modules "[nsv_dict get system modules_enabled live]"]
+
+            return "<code id=\"terminal\">Modules Available:</code> <code id=\"general\">$modules</code>"
+          }
+          navi_version { ;# Your navi's version code
+            return "<code id=\"terminal\">NaviServer Version:</code> <code id=\"general\">[ns_info patchlevel]</code>"
+          }
+        } ;# end switch option
+      } ;# end proc
+} ;# end try
+
+proc probe_nsstats {} {
+  try {
+    ;# Check to see if our file exists
+    variable ns_stats_existence [file exists [ns_server pagedir]/nsstats.tcl]
+    #
+    nsv_dict set nsstats text not_installed {Module nsstats was not detected <a href="extras/?package=nsstats" class="btn-action">Install It Now</a>}
+    nsv_dict set nsstats text installed {Explore the <a href="/nsstats.tcl"> the Navi Statistics Module</a> for real-time performance insights and logging analysis }
+    #
+  ;# return the following dictonary
+    switch $ns_stats_existence {
+      1 { append modules "\u00A0" ;# append a space to the front of our string
+          append modules "nsstats"
+          ;# include a front facing whitespace
+          nsv_dict set system modules_enabled live "$modules"
+          return [nsv_dict get nsstats text installed] }
+      0 { return [nsv_dict get nsstats text not_installed] }
+    } ;# end switch
+  } ;# end try
+} ;# end proc
+
+proc display { args } {
+  try {
+    nsv_dict set image icon alert { &#9888; }
+    nsv_dict set btn_action nsperm passwd_msg {The default system administrator password remains unchanged}
+    nsv_dict set btn_action nsperm passwd_resolve {Change System Password Now}
+
+    variable display_mode [lindex $args 0] ;# Display mode passed to the procedure
+    switch $display_mode {
+        css { return [read [open "/css/default.css" r]] }
+        welcome {
+        ###
+        return [ns_trim -delimiter | {
+        |<div>
+        | <h1>Welcome to your NaviServer</h1>
+        | <p>
+        |   Congratulations – your navi instance is up and running!
+        |   <br>
+        |   This page confirms that the default installation is active.
+        | </p>
+        |</div>
+          }]
+        ###
+      }
+      security_advice {
+        nsv_dict set security secure page {Please replace or secure this default page to protect your server credentials.}
+        ###
+        return [ns_trim -delimiter | [subst {
+        |<div class="security">
+        |    <table>
+        |        <tr>
+        |            <td class="icon_cell">
+        |            [nsv_dict get image icon alert]
+        |            </td>
+        |            <td>
+        |            [nsv_dict get security secure page]
+        |            </td>
+        |    </table>
+        |</div>
+          }]
+        ]
+        ###
+      }
+      password_unchanged {
+      ###
+      return [ns_trim -delimiter | [subst {
+      |<div class="security">
+      |    <table>
+      |        <tr>
+      |            <td class="icon_cell">
+      |            [nsv_dict get image icon alert]
+      |            </td>
+      |            <td>
+      |            [nsv_dict get btn_action nsperm passwd_msg]
+      |            </td>
+      |        </tr>
+      |        <tr>
+      |            <td class="icon_cell"></td> <!-- Empty icon cell for the second row -->
+      |            <td class="right_align">
+      |                <button id="changePwdBtn" class="btn_action">[nsv_dict get btn_action nsperm passwd_resolve]</button>
+      |            </td>
+      |        </tr>
+      |    </table>
+      |</div>
+        }]
+        ]
+      ###
+    }
+    header {
+    ###
+    return [ns_trim -delimiter | [subst {
+    |<a href="http://127.0.0.1:8080/"><strong>NaviServer</strong></a>
+    |<span class="tagline">Programmable Web Server</span>
+    }]
+    ]
+    ###
+    }
+    meta {
+      return [ns_trim -delimiter | [subst {
+      |  <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
+      |   <title>NaviServer – Welcome</title>
+      |   <link rel="stylesheet" href="doc/naviserver/man-5.0.css" type="text/css">
+      |   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+      }]
+      ]
+    }
+      connection_info_address { return [probe_driver_info address] }
+      connection_info_port    { return [probe_driver_info port] }
+      enabled_modules         { return [probe_driver_info modules] }
+      os_version              { return [probe_driver_info os] }
+      navi_version            { return [probe_driver_info navi_version] }
+      } ;# end switch
+    } ;# end try
+  } ;# end proc
+
+proc local_port {port} {
+  variable port [probe_driver_info port]
+}
+
+proc show_howto {opt} {
+  switch $opt {
+    documentation {
+      nsv_dict set show_howto documentation general "Review the <a href=\"doc/toc.html\">documentation</a> to understand complete setup instructions and feature details"
+      return [nsv_dict get show_howto documentation general]
+    }
+    replace {
+      nsv_dict set show_howto documentation replace_placeholder "Replace this placeholder page with your custom content by configuring the appropriate directory"
+      return [nsv_dict get show_howto documentation replace_placeholder]
+    }
+    nsstats {
+      return [probe_nsstats]
+    }
+  }
+  } ;# end proc
+%>
+
+<!--
+;#  This is the part where we cast the magic
+--!>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset='UTF-8'>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NaviServer <%=[ns_info patchlevel]%> – Welcome</title>
-  <link rel="stylesheet" href="doc/naviserver/man-5.0.css" type="text/css">
-  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" type="text/css">-->
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <style>
-
-    /* Additional Colors */
-    :root {
-        --color-security-bg: #fff3cd;
-        --color-security-strong: #856404;
-        --color-security-border: #ffeeba;
-        --color-action-btn-bg: #007BFF;   /* a brighter blue variant */
-        --color-action-btn-text: #fff;
-        --color-header-naviserver: var(--color-white);
-    }
-
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --color-security-bg: #6a4e00a6; /*#6A4E00;*/
-            --color-security-strong: #ffd966bf; /*#ffd966;*/
-            --color-security-border: #8C6400;
-            --color-action-btn-bg: #66B3FF;
-            --color-action-btn-text: #002347;
-            --color-header-naviserver: var(--color-anchor);
-        }
-    }
-    body { font-family: Arial, sans-serif; /*background: #f9f9f9; */ margin: 0; padding: 0; }
-    header { background: var(--color-primary-blue); padding: 20px; color: var(--color-white); }
-    header a { color: var(--color-header-naviserver); text-decoration: none; font-size: 1.5em; }
-    header a:hover {color: var(--color-header-naviserver);}
-    header span.tagline { font-size: 1em; margin-left: 10px; }
-    .container {
-        padding: 20px;
-        margin-left: auto;
-        margin-right: auto;
-        color: var(--color-body-text);
-    }
-    @media (min-width: 576px) { .container {max-width: 540px; }}
-    @media (min-width: 768px) { .container {max-width: 720px; }}
-    @media (min-width: 992px) { .container {max-width: 960px; }}
-    @media (min-width: 1200px) {.container {max-width: 1100px;}}
-    .external::after {
-      content: "↗";
-      font-size: 0.7em;
-      vertical-align: super;
-      margin-left: 0px;
-      /*color: #666;*/
-    }
-    ul { list-style-type: disc; margin-top: 0px; margin-left: 20px; padding-left: 2rem;}
-    p {margin-top: 0px; margin-bootom: 1rem;}
-    .config-details li { margin-bottom: 8px; }
-    .security {
-        background: var(--color-security-bg);
-        border: 1px solid var(--color-security-border);
-        padding: 10px;
-        margin-top: 20px;
-    }
-    .security strong {
-        color: var(--color-security-strong);
-    }
-    .security-icon {
-        vertical-align: -0.25em;
-    }
-    .security-icon .exclamation {
-        stroke: var(--color-security-bg);
-        fill: var(--color-security-bg);
-    }
-    a { /*color: #0066cc;*/ }
-    .btn-action {
-      display: inline-block;
-      padding: 2px 10px;
-      margin-left: 15x;
-      background-color: var(--color-action-btn-bg);
-      color:var(--color-action-btn-text);
-      text-decoration: none;
-      border-radius: 4px;
-      font-weight: bold; font-size: small;
-      transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-    .btn-action:hover, .btn-action:focus {
-      /*background-color: #0056b3; *//* A slightly darker blue for hover state */
-      transform: translateY(-2px); /* lift effect */
-    }
-
-    div.container h1 {
-      font-size: 2.5rem;          /* Large, prominent size */
-      /*color: #333; */               /* Dark grey for excellent readability */
-      font-weight: 700;           /* Bold to draw attention */
-      margin-top: 2.5rem;         /* Generous spacing above */
-      margin-bottom: 1.5rem;      /* A little spacing below */
-      line-height: 1.2;           /* Tighter line spacing for impact */
-    }
-    div.container h2 {
-      font-size: 1.8rem;          /* Slightly smaller than h1 */
-      /*color: #004080;*/             /* Using the same blue as the header for brand consistency */
-      font-weight: 600;           /* Semi-bold for prominence */
-      margin-top: 1.5rem;           /* Adequate spacing above */
-      margin-bottom: 0.5rem;      /* Consistent spacing below */
-      padding-bottom: 0.25rem;    /* Space for the underline */
-      border-bottom: 2px solid var(--color-border);  /* Subtle underline to separate sections */
-      line-height: 1.2;
-    }
-    @media (prefers-color-scheme: light) {
-        div.container h1 {
-            color: #333;
-        }
-        div.container h2 {
-            color: #004080;
-        }
-    }
-    @media (prefers-color-scheme: dark) {
-        div.container h1 {
-            color: var(--color-header-strong-text);
-        }
-        div.container h2 {
-            color: var(--color-header-strong-text);
-        }
-    }
-    @media (max-width: 768px) {
-        div.container h1 {font-size: 2.0rem;}
-    }
-    /* Modal overlay */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.4);
-    }
-    /* Modal content box */
-    .modal-content {
-      background-color: var(--color-body-bg);
-      margin: 10% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 300px;
-      border-radius: 5px;
-    }
-    .container .modal-content h2 {
-      margin-top: 0.1rem;
-    }
-    /* Close button */
-    .close {
-      /*color: #aaa;*/
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .close:hover,
-    .close:focus {
-      /*color: black;*/
-    }
-    /* Form element styles */
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    input[type="password"] {
-      width: 100%;
-      padding: 8px;
-      margin: 5px 0;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .modal-content .btn-action {
-        font-size: larger;
-        margin: 10px 0px 0px 0px;
-    }
-  </style>
+  <%=[display meta]%>
+<style>
+  <%=[display css]%>
+</style>
 </head>
-<%
-try {
-    set modules [ns_ictl getmodules]
-    set nsperm_warning ""
-    set password_dialog ""
-    if {"nsperm" in $modules} {
-        try {ns_perm checkpass nsadmin x} on error {errorMsg} {} on ok {result} {
-            set nsperm_warning [ns_trim -delimiter | [subst {
-                |<div class="security">
-                |  <strong>
-                |  <svg class="security-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-                |    <path d="M12 2L2 22h20L12 2z" fill="currentColor"></path>
-                |    <path class="exclamation" d="M12 10v4" stroke-width="2" stroke-linecap="round"></path>
-                |    <circle class="exclamation" cx="12" cy="18" r="1"></circle>
-                |  </svg>
-                |  Security Alert:</strong>
-                |  The 'nsperm' module is installed, but the default
-                |  system administrator password for 'nsadmin' remains
-                |  unchanged. <a href="#" id="changePwdBtn" class="btn-action">Change Password Now</a>
-                |
-                |  <div id="passwordModal" class="modal">
-                |    <div class="modal-content">
-                |      <span class="close">&times;</span>
-                |      <h2>Change Password</h2>
-                |      <form id="passwordForm">
-                |        <!-- <label for="currentPwd">Current Password:</label>
-                |        <input type="password" id="currentPwd" name="currentPwd" required> -->
-                |
-                |        <label for="newPwd">New Password:</label>
-                |        <input type="password" id="newPwd" name="newPwd" autocomplete="new-password" required>
-                |
-                |        <label for="confirmPwd">Confirm New Password:</label>
-                |        <input type="password" id="confirmPwd" name="confirmPwd" autocomplete="new-password" required>
-                |
-                |        <button type="submit" class="btn-action">Submit</button>
-                |      </form>
-                |    </div>
-                |  </div>
-                |</div>
-            }]]
-            set password_dialog [ns_trim -delimiter | {
-                |<!-- JavaScript to Control the Modal Dialog -->
-                |<script>
-                |  // Get modal element and control elements
-                |  var modal = document.getElementById('passwordModal');
-                |  var btn = document.getElementById('changePwdBtn');
-                |  var closeBtn = document.getElementsByClassName('close')[0];
-                |
-                |  // Open the modal when the button is clicked
-                |  btn.onclick = function(e) {
-                |    e.preventDefault();
-                |    modal.style.display = 'block';
-                |  }
-                |
-                |  // Close the modal when the close button is clicked
-                |  closeBtn.onclick = function() {
-                |    modal.style.display = 'none';
-                |  }
-                |
-                |  // Close modal if user clicks outside the modal content
-                |  window.onclick = function(event) {
-                |    if (event.target == modal) {
-                |      modal.style.display = 'none';
-                |    }
-                |  }
-                |
-                |  // Handle form submission with simple validation
-                |  document.getElementById('passwordForm').addEventListener('submit', function(e) {
-                |    e.preventDefault();
-                |
-                |    //var currentPwd = document.getElementById('currentPwd').value;
-                |    var newPwd = document.getElementById('newPwd').value;
-                |    var confirmPwd = document.getElementById('confirmPwd').value;
-                |
-                |    if(newPwd !== confirmPwd) {
-                |      alert('New passwords do not match!');
-                |      return;
-                |    }
-                |
-                |    // Prepare the data in URL-encoded form
-                |    var formData = new URLSearchParams();
-                |    //formData.append('currentPwd', currentPwd);
-                |    formData.append('newPwd', newPwd);
-                |
-                |    // Perform the AJAX request
-                |    fetch('/change-nsperm-site-password', {
-                |      method: 'POST',
-                |      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                |      body: formData.toString()
-                |    })
-                |    .then(function(response) {
-                |      if (!response.ok) {
-                |        throw new Error('Network response was not ok: ' + response.statusText);
-                |      }
-                |      // console.log(response);
-                |      return response.json(); // Expecting a JSON response
-                |    })
-                |   .then(function(data) {
-                |      console.log(data);
-                |      if (data.success) {
-                |          alert('Password changed successfully!');
-                |          location.reload();
-                |      } else {
-                |        alert('Error: ' + (data.error || 'Password change failed.'));
-                |      }
-                |      // Optionally close the modal dialog
-                |      document.getElementById('passwordModal').style.display = 'none';
-                |    })
-                |    .catch(function(error) {
-                |      alert('An error occurred: ' + error.message);
-                |    });
-                |  });
-                |</script>
-            }]
-            ns_register_proc POST /change-nsperm-site-password {
-                ns_permpasswd nsadmin x [ns_set get [ns_getform] newPwd]
-                ns_return 200 text/json [ns_trim -delimiter | {{
-                    |  "success": true,
-                    |  "error": ""
-                }}]
-            }
-        }
-    }
-    set nsstatsText {Explore the <a href="[dict get $nsstats href]">NaviServer Statistics Module</a>
-        for real-time performance insights and logging analysis. [dict get $nsstats installHTML]
-    }
-    if { ![file exists [ns_server pagedir]/nsstats.tcl] } {
-        dict set nsstats installHTML {
-            <p class="install-info">
-            Currently nsstats is not installed on your system.
-            <a href="install-from-repository.tcl?package=nsstats" class="btn-action">Install Now</a>
-            </p>
-        }
-        dict set nsstats href https://github.com/naviserver-project/nsstats
-    } else {
-        lappend modules nsstats
-        dict set nsstats installHTML {}
-        dict set nsstats href /nsstats.tcl
-    }
-    set includedModules {nscgi nscp nsdb nslog nsperm nsproxy nssock nsssl revproxy}
-    set docPrefix [expr {[file exists [ns_server pagedir]/doc]
-                         ? "/doc/"
-                         : "https://naviserver.sourceforge.io/[ns_info version]"}]
-    set modules [lmap m [lsort -unique $modules] {
-        set href [expr {$m in $includedModules
-                        ? "$docPrefix/$m/files/$m.html"
-                        : "https://github.com/naviserver-project/$m"}]
-        set html [subst {<a href="$href" [expr {$m in $includedModules ? "" : "class=external"}]>$m</a>}]
-    }]
-    set listenURLs {}
-    set listenAddresses {}
-    foreach di [ns_driver info] {
-        set proto [dict get $di protocol]
-        foreach addr [dict get $di address] {
-            foreach port [dict get $di port] {
-                if {$port != 0} {
-                    lappend listenURLs [ns_joinurl [list host $addr port $port proto $proto]]
-                    lappend listenAddresses $addr
-                }
-            }
-        }
-    }
-    set listenAddresses [lsort -unique $listenAddresses]
-    set maybePublic [expr {1 in [lmap addr $listenAddresses {expr {[ns_ip inany $addr] || [ns_ip public $addr]}}]
-                           ? "(Note: Your server may be publicly accessible)"
-                           : ""
-                       }]
-}
 
-%>
 <body>
-  <header>
-    <a href="/"><!-- <span class="logo">&nbsp;</span>--><strong>NaviServer</strong></a>
-    <span class="tagline">Programmable Web Server</span>
+  <header class="main_header_blue">
+    <%=[display header]%>
   </header>
 
-  <div class="container">
-    <h1>Welcome to NaviServer <%=[ns_info patchlevel]%></h1>
-    <!-- <a href="https://sourceforge.net/projects/naviserver/">NaviServer</a> -->
-    <p>
-     Congratulations – your NaviServer instance is up and running on <%=[set . "$::tcl_platform(os) $::tcl_platform(osVersion)"]%>!
-     This page confirms that your default installation is active.
-    </p>
+  <div class="display">
+    <%=[display welcome]%>
 
-    <h2>Getting Started</h2>
-    <p>
-      To begin using NaviServer, you can:
-    </p>
+    <h2>How To</h2>
     <ul>
-      <li>Replace this placeholder page with your custom content by configuring the appropriate directory.</li>
-      <li>Review our <a href="doc/toc.html">Documentation</a> for complete setup instructions and feature details.</li>
-       <li><%= [subst $nsstatsText]</li> %>
+      <li><%=[show_howto replace]%></li>
+      <li><%=[show_howto documentation]%></li>
+      <li><%=[show_howto nsstats]%></li>
     </ul>
 
     <h2>Current Server Configuration</h2>
-    <ul class="config-details">
-      <li><strong>Configuration File:</strong> <code><%=[ns_info config]%></code></li>
-      <li><strong>Listening:</strong> <%= [join [lsort $listenURLs] {, }] %> <%= $maybePublic %>
-      </li>
-      <li><strong>Loaded Modules:</strong> <%=[join $modules {, }]%></li>
-    </ul>
-
-  <!-- <li>The NaviServer <a href="examples/">Examples</a> include a few useful scripts and tricks.<p> -->
-    <div class="security">
-<strong>
-<svg class="security-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-  <path d="M12 2L2 22h20L12 2z" fill="currentColor"></path>
-  <path class="exclamation" d="M12 10v4" stroke-width="2" stroke-linecap="round"></path>
-  <circle class="exclamation" cx="12" cy="18" r="1"></circle>
-</svg>
-      Security Notice:</strong> For production environments, please replace or secure this default page to protect your server's details.
+    <div class="code">
+      <li><%=[display os_version]%></li>
+      <li><%=[display navi_version]%></li>
+      <li><%=[display connection_info_address]%></li>
+      <li><%=[display enabled_modules]%></li>
     </div>
-    <%= $nsperm_warning %>
+
+      <%=[display security_advice]%>
+      <%=[display password_unchanged]%>
   </div>
-  <%= $password_dialog %>
 </body>
 </html>
