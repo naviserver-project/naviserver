@@ -28,7 +28,7 @@ try { proc probe_driver_info {opt} {
           }
           address { ;# Or maybe it was a address request
             ;#  This switch determines if the server is hosted on two IP addresses
-            ;#    A cute script to
+            ;#    cute
             switch [llength [dict get $nssock_driver_info address]] {
               1       { return "<code id=\"terminal\">Listening on address:[dict get $nssock_driver_info address]</code>\
                                 at port <code class=\"terminal\"> [dict get $nssock_driver_info port]</code>"  }
