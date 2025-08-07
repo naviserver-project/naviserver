@@ -86,7 +86,7 @@ proc display { args } {
 
     variable display_mode [lindex $args 0] ;# Display mode passed to the procedure
     switch $display_mode {
-        css { return [read [open "/css/default.css" r]] }
+        css { return [read [open "/forest/fox/~navi/pages/css/default.css" r]] }
         welcome {
         ###
         return [ns_trim -delimiter | {
@@ -163,18 +163,10 @@ proc display { args } {
       }]
       ]
     }
-      connection_info_address { return [probe_driver_info address] }
-      connection_info_port    { return [probe_driver_info port] }
-      enabled_modules         { return [probe_driver_info modules] }
-      os_version              { return [probe_driver_info os] }
-      navi_version            { return [probe_driver_info navi_version] }
       } ;# end switch
     } ;# end try
   } ;# end proc
 
-proc local_port {port} {
-  variable port [probe_driver_info port]
-}
 
 proc show_howto {opt} {
   switch $opt {
@@ -223,10 +215,10 @@ proc show_howto {opt} {
 
     <h2>Current Server Configuration</h2>
     <div class="code">
-      <li><%=[display os_version]%></li>
-      <li><%=[display navi_version]%></li>
-      <li><%=[display connection_info_address]%></li>
-      <li><%=[display enabled_modules]%></li>
+      <li><%=[probe_driver_info os]%></li>
+      <li><%=[probe_driver_info navi_version]%></li>
+      <li><%=[probe_driver_info address]%></li>
+      <li><%=[probe_driver_info modules]%></li>
     </div>
 
       <%=[display security_advice]%>
