@@ -22,8 +22,8 @@
  * W2000 has no getaddrinfo, requires special headers for inline functions
  */
 
-#ifdef _MSC_VER
-#  include <Ws2tcpip.h>
+#if defined _MSC_VER || defined __MINGW__
+#  include <ws2tcpip.h>
 /*#  include <Wspiapi.h>*/
 #endif
 
