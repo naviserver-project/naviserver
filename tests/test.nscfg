@@ -370,7 +370,9 @@ ns_section ns/interps/CGIinterps {
 ns_section "ns/server/test/modules" {
     ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlibextension]
     ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb[sharedlibextension]
+    if {$tcl_platform(platform) ne "windows"} {
     ns_param   nsproxy         [ns_config "test" home]/../nsproxy/nsproxy[sharedlibextension]
+    }
     ns_param   nscgi           [ns_config "test" home]/../nscgi/nscgi[sharedlibextension]
     ns_param   nsperm          [ns_config "test" home]/../nsperm/nsperm[sharedlibextension]
     if {$nscp_port ne ""} {
