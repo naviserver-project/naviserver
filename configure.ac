@@ -145,6 +145,7 @@ esac
 
 SRCDIR=`cd $srcdir; pwd`
 NAVISERVER=$prefix
+AC_SUBST([EXEEXT])
 AC_SUBST([SRCDIR])
 AC_SUBST([LDLIB])
 AC_SUBST([LDSO])

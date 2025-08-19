@@ -63,6 +63,7 @@ INSTALL_DATA	 = $(INSTALL_SH) -m 644
 
 RANLIB           = @RANLIB@
 LIBEXT           = @SHLIB_SUFFIX@
+EXEEXT           = @EXEEXT@
 TCL_EXEC_PREFIX  = @TCL_EXEC_PREFIX@
 TCLSH_PROG	 = @TCLSH_PROG@
 LIB_RUNTIME_DIR  =
@@ -208,4 +209,11 @@ endif
 #
 ifneq (,$(findstring OpenBSD,$(uname)))
     NSLIBS += -lpthread
+endif
+
+#
+# MINGW needs additional system libraries
+#
+ifeq (.exe,$(EXEEXT))
+    NSLIBS += -static-libgcc -Wl,-Bstatic -lpthread -lws2_32 -lcrypt32
 endif
