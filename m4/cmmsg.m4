@@ -44,6 +44,8 @@ AC_DEFUN([AX_CHECK_SIZEOF_MSG_IOVLEN], [
     [AC_MSG_RESULT([yes])
      AC_DEFINE([NS_MSG_IOVLEN_IS_SIZE_T], [1], [Define to 1 if msg_iovlen is of type size_t])],
     [AC_MSG_RESULT([no])
+     AC_DEFINE([NS_MSG_IOVLEN_IS_SIZE_T], [0], [Define to 0 if msg_iovlen is not of type size_t])],
+    [AC_MSG_RESULT([no])
      AC_DEFINE([NS_MSG_IOVLEN_IS_SIZE_T], [0], [Could not determine if msghdr.msg_iovlen is of type size_t.])])
 ])
 
