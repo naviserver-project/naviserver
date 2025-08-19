@@ -1618,12 +1618,12 @@ Ns_SockSetKeepalive(NS_SOCKET sock, int optval)
          * Check on enabled debug the pre-existent status of the keepalive
          * socket option in order to compare it with the newly set value.
          */
-        if (getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &val0, &optlen) < 0) {
+        if (getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&val0, &optlen) < 0) {
             Ns_Log(Error, "sock(%d) can't set keepalive %d: %s",
                    sock, optval, ns_sockstrerror(ns_sockerrno));
 
         } else if (val0 != optval) {
-            if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+            if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&optval, optlen) < 0) {
                 Ns_Log(Error, "sock(%d) can't set keepalive %d: %s",
                        sock, optval, ns_sockstrerror(ns_sockerrno));
             }
@@ -1631,7 +1631,7 @@ Ns_SockSetKeepalive(NS_SOCKET sock, int optval)
         Ns_Log(Notice, "sock(%d): socket option SO_KEEPALIVE set from %d to %d",
                sock, val0, optval);
     } else {
-        if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+        if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&optval, optlen) < 0) {
             Ns_Log(Error, "sock(%d) can't set keepalive %d: %s",
                    sock, optval, ns_sockstrerror(ns_sockerrno));
         }
