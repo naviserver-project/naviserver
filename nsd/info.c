@@ -17,7 +17,7 @@
 
 #include "nsd.h"
 
-#ifndef _MSC_VER
+#if !(defined _MSC_VER || defined __MINGW32__)
 # include <dlfcn.h>
 #endif
 
@@ -562,7 +562,7 @@ NsInitInfo(void)
     Tcl_DStringFree(&addr);
 
 
-#ifndef _MSC_VER
+#if !(defined _MSC_VER || defined __MINGW32__)    
     {
         char *preloadString = getenv("LD_PRELOAD");
 
