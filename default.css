@@ -1,0 +1,230 @@
+   /* Additional Colors */
+    :root {
+        --color-security-bg: #fff3cd;
+        --color-security-strong: #856404;
+        --color-security-border: #ffeeba;
+        --color-action-btn-bg: #007BFF;   /* a brighter blue variant */
+        --color-action-btn-text: #fff;
+        --color-header-naviserver: var(--color-white);
+    }
+
+    .main_header_blue {
+ display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #d9872d
+
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --color-security-bg: #6a4e00a6; /*#6A4E00;*/
+            --color-security-strong: #ffd966bf; /*#ffd966;*/
+            --color-security-border: #8C6400;
+            --color-action-btn-bg: #66B3FF;
+            --color-action-btn-text: #002347;
+            --color-header-naviserver: var(--color-anchor);
+        }
+    }
+
+    body { font-family: Arial, sans-serif; /*background: #f9f9f9; */ margin: 0; padding: 0; }
+    header { background: var(--color-primary-blue); padding: 20px; color: var(--color-white); }
+    header a { color: var(--color-header-naviserver); text-decoration: none; font-size: 1.5em; }
+    header a:hover {color: var(--color-header-naviserver);}
+    header span.tagline { font-size: 1em; margin-left: 10px; }
+    .display {
+        padding: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        color: var(--color-body-text);
+    }
+    @media (min-width: 576px) { .display {max-width: 540px; }}
+    @media (min-width: 768px) { .display {max-width: 720px; }}
+    @media (min-width: 992px) { .display {max-width: 960px; }}
+    @media (min-width: 1200px) {.display {max-width: 1100px;}}
+    .external::after {
+      content: "↗";
+      font-size: 0.7em;
+      vertical-align: super;
+      margin-left: 0px;
+      /*color: #666;*/
+    }
+
+    ul { list-style-type: disc; margin-top: 0px; margin-left: 20px; padding-left: 2rem;}
+    p {margin-top: 0px; margin-bottom: 1rem;}
+
+    .config_details li { margin-bottom: 8px; }
+    .security {
+        background: var(--color-security-bg);
+        border: 1px solid var(--color-security-border);
+        padding: 10px;
+        margin-top: 20px;
+    }
+    .security strong {
+        color: var(--color-security-strong);
+    }
+    .security_icon {
+        vertical-align: -0.25em;
+    }
+    .security_icon .exclamation {
+        stroke: var(--color-security-bg);
+        fill: var(--color-security-bg);
+    }
+
+    .btn_action {
+      display: inline-block;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 16px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    button#changePwdBtn.btn_action {
+      padding: 6px 10px;
+      margin-left: 15px;
+      background-color: #f0f0f0;
+      color: #007BFF;
+    }
+
+    .btn_action:hover, .btn-action:focus {
+      /*background-color: #0056b3; *//* A slightly darker blue for hover state */
+      transform: translateY(-2px); /* lift effect */
+    }
+
+    div.display h1 {
+      font-size: 2.5rem;          /* Large, prominent size */
+      /*color: #333; */               /* Dark grey for excellent readability */
+      font-weight: 700;           /* Bold to draw attention */
+      margin-top: 2.5rem;         /* Generous spacing above */
+      margin-bottom: 1.5rem;      /* A little spacing below */
+      line-height: 1.2;           /* Tighter line spacing for impact */
+    }
+    div.display h2 {
+      font-size: 1.8rem;          /* Slightly smaller than h1 */
+      /*color: #004080;*/             /* Using the same blue as the header for brand consistency */
+      font-weight: 600;           /* Semi-bold for prominence */
+      margin-top: 1.5rem;           /* Adequate spacing above */
+      margin-bottom: 0.5rem;      /* Consistent spacing below */
+      padding-bottom: 0.25rem;    /* Space for the underline */
+      border-bottom: 2px solid var(--color-border);  /* Subtle underline to separate sections */
+      line-height: 1.2;
+    }
+    @media (prefers-color-scheme: light) {
+        div.display h1 {
+            color: #333;
+        }
+        div.display h2 {
+            color: #004080;
+        }
+    }
+    @media (prefers-color-scheme: dark) {
+        div.display h1 {
+            color: var(--color-header-strong-text);
+        }
+        div.display h2 {
+            color: var(--color-header-strong-text);
+        }
+    }
+    @media (max-width: 768px) {
+        div.display h1 {font-size: 2.0rem;}
+    }
+
+  .right_align {
+    text-align: right; /* Align the content of this cell to the right */
+  }
+
+    /* Modal overlay */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    /* Modal content box */
+    .modal-content {
+      background-color: var(--color-body-bg);
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 300px;
+      border-radius: 5px;
+    }
+    .display .modal-content h2 {
+      margin-top: 0.1rem;
+    }
+    /* Close button */
+    .close {
+      /*color: #aaa;*/
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+.close:hover,
+.close:focus {
+  /*color: black;*/
+}
+
+.code #terminal {
+    font-weight: bold;
+}
+.code #general {
+
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+input[type="password"] {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.container {
+    width: 100%; /* Ensure the container takes the full width */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+table {
+    width: 100%; /* Ensure the table takes the full width of the container */
+    border-collapse: collapse; /* Remove spacing between table cells */
+}
+
+td {
+    padding: 10px; /* Add some padding to the table cells */
+    border: 1px solid #ddd; /* Add a border to the table cells */
+}
+
+.icon_cell {
+    width: 50px; /* Set a fixed width for the icon cell */
+    text-align: center; /* Center the icon within the cell */
+    vertical-align: middle; /* Vertically center the icon within the cell */
+}
+
+.icon_class {
+    font-size: 24px; /* Set the size of the icon */
+    color: #333; /* Set the color of the icon */
+}
+
+.right_align {
+    text-align: right; /* Align the content of this cell to the right */
+}
+
+.modal_content .btn_action {
+        font-size: larger;
+        margin: 10px 0px 0px 0px;
+ }

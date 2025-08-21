@@ -80,13 +80,16 @@ proc probe_nsstats {} {
 
 proc display { args } {
   try {
+
+    # Dictonaries entries for displaying alerts
     nsv_dict set image icon alert { &#9888; }
     nsv_dict set btn_action nsperm passwd_msg {The default system administrator password remains unchanged}
     nsv_dict set btn_action nsperm passwd_resolve {Change System Password Now}
+    nsv_dict set security secure page {Please replace or secure this default page to protect your server credentials.}
 
     variable display_mode [lindex $args 0] ;# Display mode passed to the procedure
     switch $display_mode {
-        css { return [read [open "/forest/fox/~navi/pages/css/default.css" r]] }
+        css { return [read [open "[ns_server pagedir]/default.css" r]] }
         welcome {
         ###
         return [ns_trim -delimiter | {
@@ -102,7 +105,6 @@ proc display { args } {
         ###
       }
       security_advice {
-        nsv_dict set security secure page {Please replace or secure this default page to protect your server credentials.}
         ###
         return [ns_trim -delimiter | [subst {
         |<div class="security">
@@ -186,7 +188,7 @@ proc show_howto {opt} {
 %>
 
 <!--
-;#  This is the part where we cast the magic
+;#  Let's render above
 --!>
 
 <!DOCTYPE html>

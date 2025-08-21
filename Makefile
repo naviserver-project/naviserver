@@ -104,7 +104,7 @@ install-config: all
 	@for i in returnnotice.adp nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
 	done
-	@for i in index.adp install-from-repository.tcl; do \
+	@for i in index.adp default.css install-from-repository.tcl; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/; \
 	done
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
