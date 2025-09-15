@@ -297,6 +297,7 @@ typedef struct Ns_DList {
     size_t   size;
     size_t   avail;
     void    *static_data[30];
+    Ns_FreeProc *freeProc;
 } Ns_DList;
 
 /*
@@ -1748,20 +1749,19 @@ NS_EXTERN int NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, cons
 /*
  * dlist.c
  */
-NS_EXTERN void Ns_DListInit(Ns_DList *dlPtr)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN void Ns_DListAppend(Ns_DList *dlPtr, void *element)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN void Ns_DListFree(Ns_DList *dlPtr)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN char * Ns_DListSaveString(Ns_DList *dlPtr, const char *string)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN void Ns_DListFreeElements(Ns_DList *dlPtr)
-    NS_GNUC_NONNULL(1);
+NS_EXTERN bool Ns_DListAddUnique(Ns_DList *dlPtr, void *element) NS_GNUC_NONNULL(1);
+NS_EXTERN bool Ns_DListDelete(Ns_DList *dlPtr, void *element) NS_GNUC_NONNULL(1);
+NS_EXTERN char * Ns_DListSaveString(Ns_DList *dlPtr, const char *string) NS_GNUC_NONNULL(1);
+NS_EXTERN size_t Ns_DListCapacity(const Ns_DList *dlPtr)  NS_GNUC_PURE NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListAppend(Ns_DList *dlPtr, void *element) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListFree(Ns_DList *dlPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListFreeElements(Ns_DList *dlPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListFreeRange(Ns_DList *dlPtr, size_t from, size_t to_excl, bool clear) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListInit(Ns_DList *dlPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListReset(Ns_DList *dlPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListSetCapacity(Ns_DList *dlPtr, size_t new_cap)  NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListSetFreeProc(Ns_DList *dlPtr, Ns_FreeProc freeProc)  NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_DListSetLength(Ns_DList *dlPtr, size_t new_size) NS_GNUC_NONNULL(1);
 
 /*
  * dns.c
