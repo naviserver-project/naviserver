@@ -2415,6 +2415,7 @@ DriverThread(void *arg)
 
         if (readPtr == NULL && closePtr == NULL) {
             pollTimeout = 10 * 1000;
+
         } else {
 
             for (sockPtr = readPtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
@@ -2424,7 +2425,13 @@ DriverThread(void *arg)
                 SockPoll(sockPtr, (short)POLLIN, &pdata);
             }
 
-            if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
+            if (pdata.timeout.sec == TIME_T_MAX) {
+                /*
+                 * No deadline set. Use default instead.
+                 */
+                pollTimeout = 10 * 1000;
+
+            } else if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
                 /*
                  * The resolution of "pollTimeout" is ms, therefore, we round
                  * up. If we would round down (e.g. 500 microseconds to 0 ms),
@@ -2432,6 +2439,11 @@ DriverThread(void *arg)
                  * early.
                  */
                 pollTimeout = (int)Ns_TimeToMilliseconds(&diff) + 1;
+
+                /*
+                 * Negative timeouts are potentially harmful (wait forever).
+                 */
+                assert(pollTimeout >= 0);
 
             } else {
                 pollTimeout = 0;
