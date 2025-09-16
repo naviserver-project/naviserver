@@ -49,6 +49,9 @@ testConstraint http09 true
 # testConstraint binaryMismatch true
 # testConstraint broken true
 
+set devnull     [expr {$::tcl_platform(platform) eq "windows" ? "NUL:" : "/dev/null"}]
+set contentfile [expr {$::tcl_platform(platform) eq "windows" ? 0 : 1}]
+
 set curl ""
 catch {set curl [exec curl -V]}
 testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
