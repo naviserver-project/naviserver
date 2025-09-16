@@ -41,6 +41,7 @@
 #define LOG_USEC_DIFF 0x10u
 #define LOG_THREAD    0x20u
 #define LOG_COLORIZE  0x40u
+#define LOG_RELATIVE  0x80u
 
 /*
  * The following struct represents a log entry header as stored in the
@@ -429,6 +430,9 @@ NsConfigLog(void)
     }
     if (Ns_ConfigBool(section, "logthread", NS_TRUE) == NS_TRUE) {
         flags |= LOG_THREAD;
+    }
+    if (Ns_ConfigBool(section, "logrelative", NS_FALSE) == NS_TRUE) {
+        flags |= LOG_RELATIVE;
     }
     if (Ns_ConfigBool(section, "logcolorize", NS_FALSE) == NS_TRUE) {
         flags |= LOG_COLORIZE;
@@ -2024,9 +2028,11 @@ static Ns_ReturnCode
 LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             const char *msg, size_t len)
 {
-    Tcl_DString *dsPtr  = (Tcl_DString *)arg;
-    LogCache   *cachePtr = GetCache();
-    char        buffer[COLOR_BUFFER_SIZE];
+    Tcl_DString   *dsPtr  = (Tcl_DString *)arg;
+    LogCache      *cachePtr = GetCache();
+    char           buffer[COLOR_BUFFER_SIZE];
+    static Ns_Time startTime = {0};
+    Ns_Time        usedTime;
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(stamp != NULL);
@@ -2039,6 +2045,15 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         return NS_OK;
     }
 
+    if ((flags & LOG_RELATIVE) != 0u) {
+        if (startTime.sec == 0) {
+            Ns_GetTime(&startTime);
+        }
+        Ns_DiffTime(stamp, &startTime, &usedTime);
+        stamp = &usedTime;
+        Ns_DStringPrintf(dsPtr, "[%ld]", stamp->sec);
+    }
+
     /*
      * In case colorization was configured, add the necessary escape
      * sequences.
@@ -2047,7 +2062,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         Ns_DStringPrintf(dsPtr, "%s%d;%dm", LOG_COLORSTART, prefixIntensity, prefixColor);
     }
 
-    if ((flags & LOG_SEC) != 0u) {
+    if ((flags & LOG_SEC) != 0u && ((flags & LOG_RELATIVE) == 0)) {
         const char *timeString;
         size_t      timeStringLength;
 

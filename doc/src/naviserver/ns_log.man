@@ -205,8 +205,11 @@ See [cmd ns_rollfile] for details of log rotation.
 The system log is configured globally for the whole server process.
 
 [example_begin]
- [cmd ns_section] ns/parameters
- [cmd ns_param]   ...
+ [cmd ns_section] ns/parameters {
+   ...
+   [cmd ns_param] log*
+   ...
+ }
 [example_end]
 
 
@@ -216,42 +219,50 @@ The following are valid configuration parameters:
 
 [def logcolorize]
 If true, log entries will be colorized using ANSI color codes
-Default: false.
+Default: [const false].
 
 [def logdebug]
 If true messages of severity [emph Debug] are enabled.
-Default: false.
+Default: [const false].
 
 [def logdev]
 If true, messages of severity [emph Dev] are enabled.
-Default: false.
+Default: [const false].
 
 [def logexpanded]
 If true, an extra newline is added to each log entry.
-Default: false.
+Default: [const false].
 
 [def logmaxbackup]
 The number of old system log files to keep around if log rolling is enabled.
-Default: 10.
+Default: [const 10].
 
 [def lognotice]
 If true, messages of severity [emph Notice] are enabled.
-Default: true.
+Default: [const true].
 
 [def logprefixcolor]
 When logcolorize is true, provide a color for the timestamp prefix.
 Possible values are:
 [term "black red green yellow blue magenta cyan gray default"].
-Default: green.
+Default: [const green].
 
 [def logprefixintensity]
 When logcolorize is true, provide the intensity for the timestamp prefix.
 Possible values are: [term "normal bright"].
-Default: normal.
+Default: [const normal].
+
+[opt logrelative]
+When set to true, log timestamps are printed as relative offsets starting
+at zero, instead of using the system wall clock time. The first log entry
+always starts with 0. This mode makes logs from different runs
+directly comparable, since they all start counting from zero. The default
+is false, preserving the traditional absolute timestamps.
+The default: [const false].
 
 [def logroll]
 If true, the log file will be rolled when the server receives a SIGHUP signal.
-Default: true.
+Default: [const true|.
 
 [def logrollfmt]
 When specified, use a timestamp based logroll format based on the
@@ -264,24 +275,24 @@ Path to system log file. If the path is not fully qualified it is assumed to be
 relative to the server home directory ([lb][cmd ns_info] home[rb]). All the components of
 the path must exist. The server will fail to start if the log file cannot be
 opened.
-Default: logs/nsd.log
+Default: [const logs/nsd.log]
 
 [def logsec]
 If true, log entries will have seconds timestamps.
-Default: true.
+Default: [const true].
 
 [def logthread]
 If true, log entries will have thread ids included.
-Default: true.
+Default: [const true].
 
 [def logusec]
 If true, log entries will have timestamps with microsecond (usec) resolution.
-Default: false.
+Default: [const false].
 
 [def logusecdiff]
 If true, show time difference since last log entry with microsecond (usec)
 resolution. This option is useful for determine latencies with minimal effort.
-Default: false.
+Default: [const false].
 
 [list_end]
 
@@ -312,6 +323,8 @@ included in the NaviServer distribution.
  
    ns_param	logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
    ns_param	logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
+   ns_param     logrelative     false    ;# start timestamps from zero relative to first log entry (default: false)
+ 
    ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
    ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
    ns_param	logprefixintensity normal;# bright or normal
@@ -321,14 +334,15 @@ included in the NaviServer distribution.
  
    ns_param	logdebug	false    ;# debug messages
    ns_param	logdev		false    ;# development message
-   ns_param    lognotice       true     ;# informational messages
+   ns_param     lognotice       true     ;# informational messages
  
    # ...
  }
 [example_end]
 
-The logging behavior can be tailored at startup or at run time as well
-via [cmd ns_logctl] commands, as show below.
+The messages passed to the [cmd ns_log] command can be given either as
+a single string or as multiple arguments. In the latter case, the arguments
+are concatenated with spaces into one log message.
 
 [example_begin]
  % [cmd ns_log] notice "Hello World!"
@@ -338,6 +352,28 @@ via [cmd ns_logctl] commands, as show below.
  [lb]21/May/1974:15:30:01[rb][lb]12257.40348b90[rb][lb]-command-[rb] Notice: Hello World!
 [example_end]
 
+The following example shows the effect of different timestamp formatting
+options. The example assumes that [emph logusec] is enabled, so that
+timestamps include microsecond resolution. When [emph logrelative] is
+enabled at the same time, the relative offset is likewise shown in
+microseconds.
+
+[example_begin]
+ ;# logrelative = false (absolute wall clock time)
+ [lb]17/Sep/2025:19:11:23.456789[rb] Notice: server started
+ [lb]17/Sep/2025:19:11:23.987654[rb] Notice: listening on 0.0.0.0:8080
+ 
+ # logrelative = true (relative time since first entry)
+ [lb]0.000000[rb] Notice: server started
+ [lb]0.122119[rb] Notice: listening on 0.0.0.0:8080
+[example_end]
+
+If [emph logusec] is disabled, timestamps fall back to second-only
+precision, regardless of [emph logrelative].
+
+[para]
+The logging behavior can be tailored at startup or at run time as well
+via [cmd ns_logctl] commands, as show below.
 
 Enable debug logging while the server is running.
 
