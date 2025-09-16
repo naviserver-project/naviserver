@@ -18,6 +18,15 @@
 
 #include "nsd.h"
 
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
+#endif
+#include "rapidhash.h"
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif
+
 #define COLOR_BUFFER_SIZE 255u
 #define TIME_BUFFER_SIZE 100u
 
@@ -2149,16 +2158,17 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     int        fd = PTR2INT(arg);
     static NS_THREAD_LOCAL size_t sameLineCount = 1u;
     static NS_THREAD_LOCAL size_t lastLen = 0u;
-    static NS_THREAD_LOCAL size_t lastHash = 0u;
+    static NS_THREAD_LOCAL uint64_t lastHash = 0u;
     static NS_THREAD_LOCAL Ns_LogSeverity lastSeverity = 0u;
-    size_t hash = 0u;
+    uint64_t hash = 0u;
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(stamp != NULL);
     NS_NONNULL_ASSERT(msg != NULL);
 
-    hash = NsTclHash(msg);
-    //fprintf(stderr, "LOG compute hash len %lu MSG <%s> hash %lu\n", len, msg, hash);
+    //hash = NsTclHash(msg);
+    hash = rapidhash(msg, len);
+    //fprintf(stderr, "LOG compute hash len %lu MSG <%s> hash %llu\n", len, msg, hash);
 
     if (hash == lastHash && lastLen == len && lastSeverity == severity) {
         /*
@@ -2529,6 +2539,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
 
     return result;
 }
+
 
 #ifdef NS_WITH_DEPRECATED
 /*

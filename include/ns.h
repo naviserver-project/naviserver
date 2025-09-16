@@ -176,6 +176,7 @@ typedef enum {
 #define NS_DRIVER_UDP              0x08u /* UDP, can't use stream socket options */
 #define NS_DRIVER_CAN_USE_SENDFILE 0x10u /* Allow to send clear text via sendfile */
 #define NS_DRIVER_SNI              0x20u /* SNI - just used when NS_DRIVER_SSL is set as well */
+#define NS_DRIVER_QUIC             0x40u /* requires a different SSL_METHOD for creating the server context */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* IPv4 only */
