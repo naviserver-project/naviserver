@@ -102,6 +102,10 @@ typedef struct {
 static SSLCertStatusArg sslCertStatusArg;
 # endif
 
+# if OPENSSL_VERSION_NUMBER >= 0x10101000L
+static FILE *keylog_fp = NULL;
+# endif
+
 /*
  * For HTTP client requests, use a data index to obtain server
  * information from an SSL_CTX.
@@ -121,6 +125,9 @@ static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
 static int TLSPasswordCB(char *buf, int size, int rwflag, void *userdata);
 static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl), const unsigned char **out, unsigned char *outlen,
                         const unsigned char *clientProtos, unsigned int clientProtosLength, void *arg);
+# if OPENSSL_VERSION_NUMBER >= 0x10101000L
+static void KeylogCB(const SSL *ssl, const char *line);
+# endif
 
 # ifdef HAVE_OPENSSL_PRE_1_1
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
@@ -1844,20 +1851,42 @@ DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long
 NsSSLConfig *
 NsSSLConfigNew(const char *section)
 {
-    NsSSLConfig *cfgPtr;
+    NsSSLConfig *drvCfgPtr;
 
-    cfgPtr = ns_calloc(1, sizeof(NsSSLConfig));
-    cfgPtr->deferaccept  = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
-    cfgPtr->nodelay      = Ns_ConfigBool(section, "nodelay", NS_TRUE);
-    cfgPtr->verify       = Ns_ConfigBool(section, "verify", 0);
-    cfgPtr->tlsKeyScript = Ns_ConfigGetValue(section, "tlskeyscript");
-    if (cfgPtr->tlsKeyScript != NULL) {
-        cfgPtr->tlsKeyScript = Ns_ConfigFilename(section, "tlskeyscript", 12,
-                                                 nsconf.binDir, /* directory to resolve against */
-                                                 ""             /* default no script */,
-                                                 NS_TRUE /*normalize*/, NS_FALSE /*updateCfg*/);
+    drvCfgPtr = ns_calloc(1, sizeof(NsSSLConfig));
+    drvCfgPtr->deferaccept   = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
+    drvCfgPtr->nodelay       = Ns_ConfigBool(section, "nodelay", NS_TRUE);
+    drvCfgPtr->verify        = Ns_ConfigBool(section, "verify", 0);
+    drvCfgPtr->tlsKeylogFile = Ns_ConfigGetValue(section, "tlskeylogfile");
+    drvCfgPtr->tlsKeyScript  = Ns_ConfigGetValue(section, "tlskeyscript");
+    if (drvCfgPtr->tlsKeyScript != NULL) {
+        drvCfgPtr->tlsKeyScript = Ns_ConfigFilename(section, "tlskeyscript", 12,
+                                                    nsconf.binDir, /* directory to resolve against */
+                                                    ""             /* default no script */,
+                                                    NS_TRUE /*normalize*/, NS_FALSE /*updateCfg*/);
     }
-    return cfgPtr;
+    /*
+     * In case "vhostcertificates" was specified in the configuration file,
+     * and it is valid, activate NS_DRIVER_SNI.
+     */
+    drvCfgPtr->vhostcertificates = Ns_ConfigGetValue(section, "vhostcertificates");
+    if (drvCfgPtr->vhostcertificates != NULL && *drvCfgPtr->vhostcertificates != '\0') {
+        struct stat st;
+
+        if (stat(drvCfgPtr->vhostcertificates, &st) != 0) {
+            Ns_Log(Warning, "vhostcertificates directory '%s' does not exist",
+                   drvCfgPtr->vhostcertificates);
+            drvCfgPtr->vhostcertificates = NULL;
+        } else if (S_ISDIR(st.st_mode) == 0) {
+            Ns_Log(Warning, "value specified for vhostcertificates is not a directory: '%s'",
+                   drvCfgPtr->vhostcertificates);
+            drvCfgPtr->vhostcertificates = NULL;
+        } else {
+            Ns_Log(Notice, "vhostcertificates directory '%s' is valid, activating SNI",
+                   drvCfgPtr->vhostcertificates);
+        }
+    }
+    return drvCfgPtr;
 }
 
 
@@ -1978,6 +2007,38 @@ ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl), const unsigned char **out, unsigned char *
     return (rc == OPENSSL_NPN_NEGOTIATED) ? SSL_TLSEXT_ERR_OK : SSL_TLSEXT_ERR_NOACK;
 }
 
+# if OPENSSL_VERSION_NUMBER >= 0x10101000L
+static void KeylogCB(const SSL *ssl, const char *line)
+{
+    NsSSLConfig *cfgPtr;
+
+    NS_NONNULL_ASSERT(ssl != NULL);
+
+    cfgPtr = (NsSSLConfig *)SSL_CTX_get_app_data(SSL_get_SSL_CTX(ssl));
+    assert(cfgPtr != NULL);
+
+    /*Ns_Log(Notice, "KeylogCB called with: %s", line);*/
+    if (!keylog_fp) {
+        const char *path;
+        if (cfgPtr->tlsKeylogFile != NULL && *cfgPtr->tlsKeylogFile != '\0') {
+            path = cfgPtr->tlsKeylogFile;
+        } else {
+            path = getenv("SSLKEYLOGFILE");
+            if (!path) {
+                path = "/tmp/sslkeylog.log";   /* fallback */
+            }
+        }
+        keylog_fp = fopen(path, "a");
+        if (!keylog_fp) {
+            perror("fopen(keylog)");
+            return;
+        }
+    }
+
+    fprintf(keylog_fp, "%s\n", line);
+    fflush(keylog_fp);
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2701,6 +2762,17 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     }
 #endif
 
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    if (app_data != NULL) {
+        NsSSLConfig *cfgPtr = app_data;
+
+        if (cfgPtr->tlsKeylogFile != NULL) {
+            Ns_Log(Notice, "KeylogCB registered (file name '%s')", cfgPtr->tlsKeylogFile);
+            SSL_CTX_set_keylog_callback(ctx, KeylogCB);
+        }
+    }
+#endif
+
     SSL_CTX_set_default_verify_paths(ctx);
     SSL_CTX_load_verify_locations(ctx, caFile, caPath);
     // SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
@@ -3370,7 +3442,7 @@ int
 Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
                           const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath),
                           bool UNUSED(verify), const char *UNUSED(ciphers), const char *UNUSED(ciphersuites),
-                          const char *UNUSED(protocols),
+                          const char *UNUSED(protocols), const char *UNUSED(alpn),
                           void *UNUSED(app_data),
                           NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {

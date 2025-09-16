@@ -126,6 +126,35 @@ Transport Security (HSTS) is enabled.
 Obtain the password for the server’s private key included in the PEM
 file using the configured helper script.
 
+[def tlskeylogFile]
+
+Provide a name for the SSL key log file.
+
+[para]
+When this parameter is set, NaviServer writes TLS session secrets into
+the specified file. These secrets can be used by external analysis
+tools such as [term Wireshark] or [term tshark] to decrypt TLS traffic
+for debugging and troubleshooting.
+
+[list_begin itemized]
+
+[item] If [const tlskeylogFile] is set to a non-empty string, the
+   given filename is used for key logging. The file is opened in
+   append mode, and each new TLS session secret is written as it is
+   negotiated.
+
+[item] If [const tlskeylogFile] is set to an empty string
+   ([const ""]), NaviServer falls back to the standard environment variable
+   [const SSLKEYLOGFILE] to determine the output file name. This
+   environment variable is widely supported in browsers and other
+   OpenSSL-based applications.  [list_end]
+[list_end]
+
+Operational notes: TLS key logging exposes sensitive material that can be used to decrypt
+TLS connections. This feature should only be enabled in controlled
+environments for debugging or protocol analysis, and the key log file
+must be protected or removed once debugging is complete.
+
 [list_end]
 
 [subsection {Pass Phrase for Private Key in PEM File}]
@@ -243,6 +272,7 @@ For discussion and more examples see
 
 [see_also ns_log ns_write ns_http]
 [keywords module nsssl "network driver" \
+   SSLKEYLOGFILE TLS_KEY_PASS \
 	performance tuning configuration security TCP_FASTOPEN HTTPS driver \
         tlskeyScript signals OCSP TLS certificate nssock systemd]
 
