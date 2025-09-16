@@ -121,7 +121,58 @@ can be used to specify additional header fields be sent on every
 request handled by this driver. The example above, HTTP Strict
 Transport Security (HSTS) is enabled.
 
+[def tlskeyScript]
+
+Obtain the password for the server’s private key included in the PEM
+file using the configured helper script.
+
 [list_end]
+
+[subsection {Pass Phrase for Private Key in PEM File}]
+
+ The driver’s certificate file is expected to be a chain file that contains:
+
+ [list_begin itemized]
+ [item] the leaf certificate
+ [item] any required intermediate certificates
+ [item] the server’s private key
+ [list_end]
+
+[para] If the private key is unencrypted, the certificate file itself
+ must be carefully protected. In general, passwords should not be
+ stored in plain text on a public server without sufficient
+ safeguards.
+
+[para] NaviServer provides several mechanisms for supplying the
+ private key pass phrase without embedding it directly in
+ configuration files. The mechanisms are evaluated in the following
+ order:
+
+ [list_begin enumerated]
+ [enum] Output of the configured helper script ([const tlskeyScript])
+ [enum] Environment variable derived from the PEM filename ([const TLS_KEY_PASS_<FILENAME>])
+ [enum] Generic fallback environment variable ([const TLS_KEY_PASS])
+ [enum] Interactive prompt on stdin if all else fails (legacy mode)
+ [list_end]
+
+
+[para] The first option is recommended for integration with a secrets
+ manager, as it allows retrieval of the pass phrase at startup.
+
+[para] The second option derives the environment variable name from
+ the certificate filename. The variable name starts with
+ [const TLS_KEY_PASS_]. The remainder is formed by converting the filename to
+ uppercase and replacing all non-alphanumeric characters with
+ underscores ([const _]). This makes it convenient to handle multiple
+ certificates.
+
+[para] The third option ([const TLS_KEY_PASS]) provides a simpler
+ approach when only a single certificate is in use.
+
+[para] If none of these mechanisms succeed, NaviServer falls back to
+ prompting for the pass phrase on stdin during startup.
+
+
 
 [section EXAMPLES]
 
@@ -169,13 +220,30 @@ optional but necessary for achieving perfect forward secrecy.
 [example_end]
 
 [para]
+
+Example: Setting a pass phrase via environment variable in a systemd
+service file with [const ExecStartPre]:
+
+[example_begin]
+ExecStartPre=/bin/bash -c '\
+  PASS=$(aws secretsmanager get-secret-value \
+           --secret-id websrv/tls-pass-phrase \
+           --query SecretString --output text) && \
+  /bin/systemctl set-environment TLS_KEY_PASS="$PASS"
+…
+ExecStart=/usr/local/ns/bin/nsd ...
+[example_end]
+
+
+
+[para]
 For discussion and more examples see
 [uri ../../manual/files/admin-config.html admin-config].
 
 
 [see_also ns_log ns_write ns_http]
 [keywords module nsssl "network driver" \
-	performance tuning configuration TCP_FASTOPEN HTTPS driver \
-        signals OCSP TLS certificate ]
+	performance tuning configuration security TCP_FASTOPEN HTTPS driver \
+        tlskeyScript signals OCSP TLS certificate nssock systemd]
 
 [manpage_end]
