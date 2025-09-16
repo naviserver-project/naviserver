@@ -79,13 +79,22 @@
 # include <openssl/err.h>
 
 typedef struct NsSSLConfig {
-    SSL_CTX    *ctx;
-    Ns_Mutex    lock;
-    const char *tlsKeyScript;
+    SSL_CTX   *ctx;          /* Default context for driver                   */
+
+    /* --- TLS options --- */
     int         verify;
-    int         deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
-    int         nodelay;      /* Enable the TCP_NODELAY optimization. */
-    DH         *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
+    int         deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization.   */
+    int         nodelay;      /* Enable the TCP_NODELAY optimization.        */
+    const char *tlsKeyScript;
+    const char *tlsKeylogFile;
+    const char *vhostcertificates;
+
+    /* --- UDP / socket tuning --- */
+    int        packetSize;   /* max datagram size for sendfile-ish ops       */
+    //int        reuseport;  /* when exposed                                 */
+
+    /* fallback Diffie Hellman keys */
+    DH         *dhKey512;     /* Fallback Diffie Hellman keys of length 512  */
     DH         *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
     DH         *dhKey2048;    /* Fallback Diffie Hellman keys of length 2048 */
 } NsSSLConfig;
@@ -94,3 +103,12 @@ NS_EXTERN NsSSLConfig *NsSSLConfigNew(const char *section)
    NS_GNUC_NONNULL(1);
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
