@@ -440,7 +440,7 @@ proc ns_parseformfile {args} {
     if { [catch { set fp [open $file r] } errmsg] } {
         ns_log warning "ns_parseformfile could not open $file for reading"
     }
-    #file copy -force $file /tmp/up.load
+    #file copy -force $file /tmp/upload.raw
 
     #
     # Separate content-type and options
@@ -503,6 +503,13 @@ proc ns_parseformfile {args} {
     #
     # Everything below is just for content-type "multipart/form-data"
     #
+    ### BEGIN DB
+    #set content [read $fp]
+    #seek $fp 0
+    #ns_log notice "END_OF_CONTENT\n[string range $content end-200 end]"
+    #ns_log notice "CONTENT\n$content"
+    ### END DB
+
     fconfigure $fp -translation binary
     set boundary "--$b"
 
@@ -607,7 +614,7 @@ proc ns_parseformfile {args} {
                     }
                     # move beyond the leading newline
                     incr seekChar
-                    set end    [expr {$seekChar - [string length $boundary]}]
+                    set end    $seekChar
                     set length [expr {$end - $start - 2}]
                 }]
                 #ns_log notice "================== ns_fseekchars start $start end $end length $length // $t1"
@@ -647,6 +654,7 @@ proc ns_parseformfile {args} {
                 #ns_log notice "PARSE multipart fcopy $fp [fconfigure $fp -encoding]" \
                     "-> $tmp [fconfigure $tmp -encoding]"
 
+                #ns_log notice fcopy $fp $tmp -size $length
                 fcopy $fp $tmp -size $length
             }
 

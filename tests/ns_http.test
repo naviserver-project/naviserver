@@ -807,6 +807,59 @@ test http-5.6 {
 } -result {200 {utf-8 <text/html> AÄATest/üß☀ZÜZ}}
 
 
+test http-6.6.0 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set formFiles       <[ns_conn files]>
+        set formFileNames   [lmap {field fname} $formValues {if {![string match *.tmpfile $field]} continue; set fname} ]
+        set formFileSizes   [lmap fname $formFileNames {file size $fname}]
+        #ns_log notice XXX [exec ls -l {*}$formFileNames]
+        #ns_log notice maxUpload $maxUpload
+
+        ns_return 200 text/plain "contentFile $haveContentFile contentLength $contentLength needSpool $needSpool formFileSizes $formFileSizes"
+    }
+} -body {
+    set file1 [ns_server pagedir]/2048bytes
+    exec curl -g -s -F file1=@$file1 -F file2=@$file1 [ns_config test listenurl]/post 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r file1
+} -returnCodes {error ok return} -result {contentFile 0 contentLength 4472 needSpool 0 formFileSizes 2048 2048}
+
+test http-6.6.1 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set formFiles       <[ns_conn files]>
+        set formFileNames   [lmap {field fname} $formValues {if {![string match *.tmpfile $field]} continue; set fname} ]
+        set formFileSizes   [lmap fname $formFileNames {file size $fname}]
+        #ns_log notice XXX [exec ls -l {*}$formFileNames]
+        #ns_log notice maxUpload $maxUpload
+
+        ns_return 200 text/plain "contentFile $haveContentFile contentLength $contentLength needSpool $needSpool formFileSizes $formFileSizes"
+    }
+} -body {
+    set file1 [ns_server pagedir]/16480bytes
+    exec curl -g -s -F file1=@$file1 -F file2=@$file1 [ns_config test listenurl]/post 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r file1
+} -returnCodes {error ok return} -result {contentFile 1 contentLength 33338 needSpool 1 formFileSizes 16480 16480}
+
+
 test http-5.7.0 {
 
     Invalid encoding in query parameter with GET via ns_http
