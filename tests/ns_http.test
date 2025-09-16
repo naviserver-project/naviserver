@@ -870,7 +870,7 @@ test http-5.6 {
 } -returnCodes {error ok} -result {200 {utf-8 <text/html> AÄATest/üß☀ZÜZ}}
 
 
-test http-6.6.0 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constraints {curl serverListen} -setup {
+test http-6.6.0 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constraints {tcl86 curl serverListen} -setup {
     ns_register_proc POST /post {
         set contentType     [ns_set iget [ns_conn headers] content-type]
         set contentLength   [ns_set iget [ns_conn headers] content-length]
@@ -896,7 +896,7 @@ test http-6.6.0 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constr
     unset -nocomplain r file1
 } -returnCodes {error ok return} -result {contentFile 0 contentLength 4472 needSpool 0 formFileSizes 2048 2048}
 
-test http-6.6.1 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constraints {curl serverListen} -setup {
+test http-6.6.1 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constraints {tcl86 curl serverListen} -setup {
     ns_register_proc POST /post {
         set contentType     [ns_set iget [ns_conn headers] content-type]
         set contentLength   [ns_set iget [ns_conn headers] content-length]
