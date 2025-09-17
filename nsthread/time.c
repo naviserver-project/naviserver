@@ -141,19 +141,54 @@ Ns_AdjTime(Ns_Time *timePtr)
 }
 
 
+
 /*
  *----------------------------------------------------------------------
  *
  * Ns_DiffTime --
  *
- *      Determine the difference between values passed in t1 and t0
- *      Ns_Time structures.
+ *      Compute the signed time difference between two timestamps (`t1 - t0`)
+ *      expressed as `Ns_Time` structures. The result is written into
+ *      `diffPtr` (if provided) and normalized to ensure `usec` is always in
+ *      the range [0, 1,000,000). The function correctly handles negative
+ *      timestamps and returns the relative ordering of the two
+ *      times. `Ns_Time` may contain negative seconds and/or microseconds, so
+ *      normalization and sign handling are required.
  *
- * Results:
- *      -1, 0, or 1 if t1 is before, same, or after t0.
+ *      - If both `t1` and `t0` are positive: subtract normally.
+ *      - If one is positive and the other negative: sum absolute values and
+ *        set sign accordingly.
+ *      - If both are negative: subtract magnitudes but carefully determine sign.
+ *      - If `diffPtr` is NULL, the computed difference is stored in a local
+ *        buffer and discarded.
  *
- * Side effects:
- *      None.
+ *      Example:
+ *
+ *          Ns_Time t0 = { 10,  500000 };   // 10.5 seconds
+ *          Ns_Time t1 = { 13,  200000 };   // 13.2 seconds
+ *          Ns_Time diff;
+ *
+ *          int cmp = Ns_DiffTime(&t1, &t0, &diff);
+ *          // diff = { 2, 700000 }, cmp = 1
+ *
+ *
+ * Parameters:
+ *      t1       - Pointer to the first timestamp (`Ns_Time`).
+ *      t0       - Pointer to the second timestamp (`Ns_Time`).
+ *      diffPtr  - Pointer to an `Ns_Time` struct where the result will be stored.
+ *                 If NULL, the computed result is ignored.
+ *
+ * Returns:
+ *      < 0    if `t1` < `t0`
+ *        0    if `t1` == `t0`
+ *      > 0    if `t1` > `t0`
+ *
+ *
+ * Side Effects:
+ *      - If `diffPtr` is non-NULL, it is filled with the normalized time delta:
+ *          * `diffPtr->sec` = whole seconds difference
+ *          * `diffPtr->usec` = remaining microseconds difference
+ *      - Calls `Ns_AdjTime()` to normalize the result into canonical form.
  *
  *----------------------------------------------------------------------
  */
