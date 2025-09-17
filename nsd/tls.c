@@ -356,7 +356,7 @@ SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
  * ServerNameCallback for SNI
  */
 static int
-SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
+SSL_serverNameCB(SSL *ssl, int *al, void *arg)
 {
     const char  *serverName;
     int          result = SSL_TLSEXT_ERR_NOACK;
@@ -366,13 +366,11 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
     serverName = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
     if (serverName != NULL) {
-        Ns_Sock  *sockPtr = (Ns_Sock*)SSL_get_app_data(ssl);
-        Driver   *drvPtr;
-        bool      doSNI;
+        NsSSLConfig  *dc = arg;
+        Driver       *drvPtr;
+        bool          doSNI;
 
-        assert(sockPtr != NULL);
-
-        drvPtr = (Driver *)(sockPtr->driver);
+        drvPtr = (Driver *)(dc->driver);
         doSNI = ((drvPtr->opts & NS_DRIVER_SNI) != 0u);
 
         /*
@@ -389,8 +387,10 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
          */
         if (doSNI) {
             Tcl_DString     ds;
-            unsigned short  port = Ns_SockGetPort(sockPtr);
             NS_TLS_SSL_CTX *ctx;
+            unsigned short  port = dc->sni_idx >= 0
+                ? (unsigned short)(uintptr_t)SSL_get_ex_data(ssl, dc->sni_idx)
+                : (unsigned short)(drvPtr->listenfd[0]);
 
             /*
              * The virtual host entries are specified canonically, via
@@ -400,7 +400,7 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
             Tcl_DStringInit(&ds);
             Ns_DStringPrintf(&ds, "%s:%hu", serverName, port);
 
-            ctx = NsDriverLookupHostCtx(&ds, serverName, sockPtr->driver);
+            ctx = NsDriverLookupHostCtx(&ds, serverName, dc->driver);
 
             Ns_Log(Debug, "SSL_serverNameCB lookup result of <%s> location %s port %hu -> ctx %p",
                    serverName, ds.string, port, (void*)ctx);
@@ -2075,6 +2075,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
     } else {
         const char *ciphers, *ciphersuites, *protocols;
         Ns_DList dl, *dlPtr = &dl;
+        static int sni_idx = -1;
 
         /*
          * Keep configuration values in an Ns_DList to protect against
@@ -2102,13 +2103,6 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 
             if (cfgPtr == NULL) {
                 /*
-                 * Get the app_data (cfgPtr) from the SSL_CTX.
-                 */
-                cfgPtr = SSL_CTX_get_app_data(*ctxPtr);
-
-            }
-            if (cfgPtr == NULL) {
-                /*
                  * Create new app_data (= NsSSLConfig).
                  *
                  * The app_data of SSL_CTX is cfgPtr (NsSSLConfig*),
@@ -2117,6 +2111,13 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                  */
                 cfgPtr = NsSSLConfigNew(section);
                 cfgPtr->ctx = *ctxPtr;
+
+                if (sni_idx < 0) {
+                    sni_idx = SSL_get_ex_new_index(0, (void*)"SniCtx", NULL, NULL, NULL);
+                    assert(sni_idx >= 0);
+                }
+                cfgPtr->sni_idx = sni_idx;
+
                 Ns_Log(Debug, "Ns_TLS_CtxServerInit created new app data %p for cert <%s> ctx %p",
                         (void*)cfgPtr, cert, (void*)(cfgPtr->ctx));
                 SSL_CTX_set_app_data(*ctxPtr, (void *)cfgPtr);
@@ -2138,6 +2139,15 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
              * Prefer server ciphers to secure against BEAST attack.
              */
             SSL_CTX_set_options(*ctxPtr, SSL_OP_CIPHER_SERVER_PREFERENCE);
+
+            /*
+             * SNI: server name indication
+             */
+            if ((flags & NS_DRIVER_SNI) != 0) {
+                SSL_CTX_set_tlsext_servername_callback(*ctxPtr, SSL_serverNameCB);
+                SSL_CTX_set_tlsext_servername_arg(cfgPtr->ctx, cfgPtr);
+            }
+
             /*
              * Disable compression to avoid CRIME attack.
              */
@@ -2166,16 +2176,12 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 #endif
 
             /*
-             * Obsolete since 1.1.0 but also supported in 3.0
+             * Flags obsolete since 1.1.0 but also supported in 3.0
              */
             SSL_CTX_set_options(*ctxPtr, SSL_OP_SSLEAY_080_CLIENT_DH_BUG);
             SSL_CTX_set_options(*ctxPtr, SSL_OP_TLS_D5_BUG);
             SSL_CTX_set_options(*ctxPtr, SSL_OP_TLS_BLOCK_PADDING_BUG);
 
-            if ((flags & NS_DRIVER_SNI) != 0) {
-                SSL_CTX_set_tlsext_servername_callback(*ctxPtr, SSL_serverNameCB);
-                /* SSL_CTX_set_tlsext_servername_arg(cfgPtr->ctx, app_data); // not really needed */
-            }
 #ifdef OPENSSL_HAVE_DH_AUTO
             SSL_CTX_set_dh_auto(*ctxPtr, 1);
 #else

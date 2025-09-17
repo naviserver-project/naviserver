@@ -25,6 +25,7 @@
 #endif
 
 #include "ns.h"
+#include "../nsd/nsd.h"
 
 NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
@@ -46,7 +47,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 typedef struct {
     SSL         *ssl;
     int          verified;
-} SSLContext;
+} NssslSockCtx;
 
 /*
  * Local functions defined in this file
@@ -72,6 +73,44 @@ static unsigned long SSLThreadId(void);
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static Ns_Mutex *driver_locks = NULL;
+
+static void
+InitOpenSSL_1_0_Compat(const char *module)
+{
+    int num, n;
+    Tcl_DString ds;
+
+    Tcl_DStringInit(&ds);
+
+    num = CRYPTO_num_locks();
+    driver_locks = ns_calloc((size_t)num, sizeof(*driver_locks));
+
+    for (n = 0; n < num; n++) {
+        Ns_DStringPrintf(&ds, "nsssl:%s:%d", module, n);
+        Ns_MutexSetName(driver_locks + n, ds.string);
+        Tcl_DStringSetLength(&ds, 0);
+    }
+
+    CRYPTO_set_locking_callback(SSLLock);
+    CRYPTO_set_id_callback(SSLThreadId);
+
+    /* Seed the OpenSSL Pseudo-Random Number Generator. */
+    Tcl_DStringSetLength(&ds, 1024);
+    for (n = 0; !RAND_status() && n < 3; n++) {
+        int i;
+        Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
+        for (i = 0; i < 1024; i++) {
+            ds.string[i] = (char)(Ns_DRand() * 255);
+        }
+        RAND_seed(ds.string, 1024);
+    }
+
+    if (!RAND_status()) {
+        Ns_Log(Warning, "nsssl: PRNG fails to have enough entropy");
+    }
+
+    Tcl_DStringFree(&ds);
+}
 #endif
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
@@ -79,8 +118,8 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    int                result;
-    const char        *section, *vhostcertificates;
+    Ns_ReturnCode      result = NS_OK;
+    const char        *section;
     NsSSLConfig       *drvCfgPtr;
     Ns_DriverInitData  init;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -122,77 +161,36 @@ Ns_ModuleInit(const char *server, const char *module)
      * In case "vhostcertificates" was specified in the configuration file,
      * and it is valid, activate NS_DRIVER_SNI.
      */
-    vhostcertificates = Ns_ConfigGetValue(section, "vhostcertificates");
-    if (vhostcertificates != NULL && *vhostcertificates != '\0') {
-        struct stat st;
-
-        if (stat(vhostcertificates, &st) != 0) {
-            Ns_Log(Warning, "vhostcertificates directory '%s' does not exist",
-                   vhostcertificates);
-
-        } else if (S_ISDIR(st.st_mode) == 0) {
-            Ns_Log(Warning, "value specified for vhostcertificates is not a directory: '%s'",
-                   vhostcertificates);
-
-        } else {
-            Ns_Log(Notice, "vhostcertificates directory '%s' is valid, activating SNI",
-                   vhostcertificates);
-            init.opts |= NS_DRIVER_SNI;
-        }
+    if (drvCfgPtr->vhostcertificates != NULL) {
+        init.opts |= NS_DRIVER_SNI;
     }
 
     if (Ns_DriverInit(server, module, &init) != NS_OK) {
         Ns_Log(Error, "nsssl: driver init failed.");
         ns_free(drvCfgPtr);
-        return NS_ERROR;
-    }
+        result = NS_ERROR;
 
+    } else {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-    num = CRYPTO_num_locks();
-    driver_locks = ns_calloc((size_t)num, sizeof(*driver_locks));
-    {   int n;
-        for (n = 0; n < num; n++) {
-            Ns_DStringPrintf(&ds, "nsssl:%s:%d", module, n);
-            Ns_MutexSetName(driver_locks + n, ds.string);
-            Tcl_DStringSetLength(&ds, 0);
+        InitOpenSSL_1_0_Compat(module);
+#endif
+        int rc = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, drvCfgPtr, &drvCfgPtr->ctx);
+        Ns_Log(Notice, "nsssl: created sslCtx %p for dc %p",
+               (void*)drvCfgPtr->ctx, (void*)drvCfgPtr);
+
+        if (rc != TCL_OK) {
+            Ns_Log(Error, "nsssl: could not initialize OpenSSL context (section %s): %s",
+                   section, strerror(errno));
+            result = NS_ERROR;
         }
     }
 
-    CRYPTO_set_locking_callback(SSLLock);
-    CRYPTO_set_id_callback(SSLThreadId);
-#endif
-    Ns_Log(Notice, "nsssl: OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
-
-    result = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, drvCfgPtr, &drvCfgPtr->ctx);
-    if (result != TCL_OK) {
-        Ns_Log(Error, "nsssl: could not initialize OpenSSL context (section %s): %s", section, strerror(errno));
-        return NS_ERROR;
+    if (result != NS_ERROR) {
+        Ns_Log(Notice, "nsssl: OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
+        Ns_Log(Notice, "nsssl: version %s loaded, based on %s",
+               NSSSL_VERSION, init.libraryVersion);
     }
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    /*
-     * Seed the OpenSSL Pseudo-Random Number Generator.
-     */
-    Tcl_DStringSetLength(&ds, 1024);
-    for (num = 0; !RAND_status() && num < 3; num++) {
-        int n;
-
-        Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
-        for (n = 0; n < 1024; n++) {
-            ds.string[n] = (char)(Ns_DRand()*255);
-        }
-        RAND_seed(ds.string, 1024);
-    }
-    if (!RAND_status()) {
-        Ns_Log(Warning, "nsssl: PRNG fails to have enough entropy");
-    }
-
-    Tcl_DStringFree(&ds);
-#endif
-
-    Ns_Log(Notice, "nsssl: version %s loaded, based on %s",
-           NSSSL_VERSION, init.libraryVersion);
-    return NS_OK;
+    return result;
 }
 
 /*
@@ -225,8 +223,9 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
     } else {
         sock = Ns_SockListenEx(address, port, backlog, reuseport);
         if (sock != NS_INVALID_SOCKET) {
-            const NsSSLConfig *drvCfgPtr = driver->arg;
+            NsSSLConfig *drvCfgPtr = driver->arg;
 
+            drvCfgPtr->driver = driver;
             (void) Ns_SockSetNonBlocking(sock);
             if (drvCfgPtr->deferaccept) {
                 Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
@@ -258,8 +257,8 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
 static NS_DRIVER_ACCEPT_STATUS
 Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
-    NsSSLConfig *drvCfgPtr = sock->driver->arg;
-    SSLContext  *sslCtx = sock->arg;
+    NsSSLConfig  *dc = sock->driver->arg;
+    NssslSockCtx *sslCtx = sock->arg;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
 
@@ -273,16 +272,20 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
         int value = 1;
         setsockopt(sock->sock, SOL_SOCKET, SO_SNDLOWAT, &value, sizeof(value));
 #endif
+        //dc->driver = sock->driver;
         (void)Ns_SockSetNonBlocking(sock->sock);
-        if (drvCfgPtr->nodelay != 0) {
+        if (dc->nodelay != 0) {
             Ns_SockSetNodelay(sock->sock);
         }
 
         if (sslCtx == NULL) {
-            sslCtx = ns_calloc(1, sizeof(SSLContext));
-            sslCtx->ssl = SSL_new(drvCfgPtr->ctx);
+            unsigned short port;
+
+            sslCtx = ns_calloc(1, sizeof(NssslSockCtx));
+            sslCtx->ssl = SSL_new(dc->ctx);
             if (sslCtx->ssl == NULL) {
                 char ipString[NS_IPADDR_SIZE];
+
                 Ns_Log(Error, "%d: SSL session init error for %s: [%s]",
                        sock->sock,
                        ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)),
@@ -293,7 +296,15 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
             sock->arg = sslCtx;
             SSL_set_fd(sslCtx->ssl, sock->sock);
             SSL_set_accept_state(sslCtx->ssl);
-            SSL_set_app_data(sslCtx->ssl, sock);
+
+            port = Ns_SockGetPort(sock);           /* precise local port */
+            if ((unsigned short)(((Driver*)(sock->driver))->listenfd[0]) != port) {
+                /*
+                 * The default port differs from the actual port. Attach a
+                 * per-connection SNI context so callback knows driver+port.
+                 */
+                SSL_set_ex_data(sslCtx->ssl, dc->sni_idx, (void *)(uintptr_t)port);
+            }
         }
         return NS_DRIVER_ACCEPT_DATA;
     }
@@ -328,14 +339,14 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
     const NsSSLConfig *drvCfgPtr = sock->driver->arg;
-    SSLContext        *sslCtx = sock->arg;
+    NssslSockCtx      *sslCtx = sock->arg;
     Ns_SockState       sockState = NS_SOCK_NONE;
     ssize_t            nRead = 0;
     unsigned long      sslERRcode = 0u;
+
     /*
      * Verify client certificate, driver may require valid cert
      */
-
     if (drvCfgPtr->verify && sslCtx->verified == 0) {
         X509 *peer;
 #ifdef HAVE_OPENSSL_3
@@ -396,8 +407,8 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 static ssize_t
 Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(flags))
 {
-    SSLContext *sslCtx = sock->arg;
-    ssize_t     sent = 0;
+    NssslSockCtx *sslCtx = sock->arg;
+    ssize_t       sent = 0;
 
     if (sslCtx == NULL) {
         Ns_Log(Warning, "nsssl Send is called on a socket without sslCtx (sock %d)",
@@ -500,7 +511,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(fla
 static bool
 Keep(Ns_Sock *sock)
 {
-    SSLContext *sslCtx = sock->arg;
+    NssslSockCtx *sslCtx = sock->arg;
 
     if (SSL_get_shutdown(sslCtx->ssl) == 0) {
         BIO *bio = SSL_get_wbio(sslCtx->ssl);
@@ -541,7 +552,7 @@ ConnInfo(Ns_Sock *sock)
     resultObj = Tcl_NewDictObj();
 
     if (sock != NULL) {
-        SSLContext *sslCtx = sock->arg;
+        NssslSockCtx *sslCtx = sock->arg;
 
         Tcl_DictObjPut(NULL, resultObj,
                        Tcl_NewStringObj("sslversion", 10),
@@ -578,7 +589,7 @@ ConnInfo(Ns_Sock *sock)
 static void
 Close(Ns_Sock *sock)
 {
-    SSLContext *sslCtx = sock->arg;
+    NssslSockCtx *sslCtx = sock->arg;
 
     if (sslCtx != NULL) {
 
@@ -677,7 +688,7 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, void *arg)
                           params->caPath,
                           NULL,
                           &ssl) == NS_OK) {
-        SSLContext *sslCtx = ns_calloc(1, sizeof(SSLContext));
+        NssslSockCtx *sslCtx = ns_calloc(1, sizeof(NssslSockCtx));
 
         sslCtx->ssl = ssl;
         sockPtr->arg = sslCtx;

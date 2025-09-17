@@ -93,6 +93,10 @@ typedef struct NsSSLConfig {
     int        packetSize;   /* max datagram size for sendfile-ish ops       */
     //int        reuseport;  /* when exposed                                 */
 
+    /* --- SNI ex data idx --- */
+    int         sni_idx;
+    Ns_Driver  *driver;
+
     /* fallback Diffie Hellman keys */
     DH         *dhKey512;     /* Fallback Diffie Hellman keys of length 512  */
     DH         *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
