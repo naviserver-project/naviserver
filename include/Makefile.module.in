@@ -87,7 +87,7 @@ ifdef INCLUDED_IN_NAVISERVER
 endif
 
 ifdef MOD
-    ifneq (,$(findstring MINGW,$(uname)))
+    ifeq (.exe,$(EXEEXT))
         MOD := $(shell basename $(MOD) .so)$(LIBEXT)
     endif
     BUILD     += $(MOD)
@@ -127,8 +127,8 @@ ifdef ALIB
 endif
 
 ifdef PGM
-    ifneq (,$(findstring MINGW,$(uname)))
-        PGM := $(PGM).exe
+    ifeq (.exe,$(EXEEXT))
+        PGM := $(PGM)$(EXEEXT)
     endif
     BUILD   += $(PGM)
     INSTALL += install-pgm
@@ -173,9 +173,10 @@ install-tcl: $(TCL)
 	done
 
 install-lib: $(LIBFILE)
-	$(INSTALL_SH) $(LIBFILE) $(DESTDIR)$(INSTLIB)/
-    ifneq (,$(findstring MINGW,$(uname)))
+    ifeq (.exe,$(EXEEXT))
 		$(INSTALL_SH) $(LIBFILE) $(DESTDIR)$(INSTBIN)/
+    else
+        $(INSTALL_SH) $(LIBFILE) $(DESTDIR)$(INSTLIB)/
     endif
 
 install-alib: $(ALIBFILE)

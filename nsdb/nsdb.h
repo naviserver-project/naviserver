@@ -111,7 +111,11 @@ typedef struct {
 } Ns_DbTableInfo;
 
 #ifndef NS_DBTCL_C
+#ifdef __MINGW32__
+NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
+#else 
 extern NS_IMPORT Ns_LogSeverity Ns_LogSqlDebug;
+#endif
 #endif
 
 typedef Ns_ReturnCode (NsDb_DriverInitProc)(const char *driver, const char *configPath);

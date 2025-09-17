@@ -13,7 +13,7 @@ exec tclsh "$0" "$@"
 # Defaults for command-line arguments, stored in a Tcl array:
 set AA(-t) {C:/P/nsd/nsd} ; set AA(-c) 1 ; set AA(-f) [pwd]
 set AA(-N) 1 ; set AA(-h) 0 ; set AA(-i) 0
-set AA(-m) [list nsoracle]
+set AA(-m) [list]
 
 proc get_usage_help {argv0 core_dir install_dir module_l} {
    set USAGE "
@@ -104,7 +104,15 @@ proc copy_catch {from to} {
    # files.  Looks like the -force has no effect when recursively copying
    # whole directory trees:  --atp@piskorski.com, 2004/06/24 00:58 EDT
 
-   if { [catch { file copy -force -- "$from" "$to" } errmsg] } {
+   # NOTE: recursively copy/overwrite directory trees. ooa64@ua.fm, 2025/06/26
+   if {![file exists "$to"]} {
+       file mkdir "$to"
+   }
+   if { [file isdirectory "$from"] } {
+       foreach f [glob -directory $from -nocomplain *] {
+           copy_catch $f [file join $to [file tail $from]]
+       }
+   } elseif { [catch { file copy -force -- "$from" "$to" } errmsg] } {
       if { [string match {*error copying*file already exists*} $errmsg] } {
          puts "Notice: Did NOT overwrite these files:\n  $errmsg"
       } else {
@@ -152,11 +160,13 @@ proc install_naviserver_core {core_dir install_dir} {
       contrib/examples         pages/
       win32/test/servers/test  servers/
       win32/test/nsd.tcl       servers/test/
+      ca-bundle.crt            {}
+      tests/testserver/certificates/server.pem certificates/
    }
    foreach ff [list nsd-config.tcl simple-config.tcl openacs-config.tcl sample-config.tcl] {
       lappend cp_list $ff {conf/}
    }
-   foreach ff [list index.adp bitbucket-install.tcl tests] {
+   foreach ff [list index.adp install-from-repository.tcl tests] {
       lappend cp_list $ff {pages/}
    }
    foreach [list from to] $cp_list {
@@ -196,7 +206,7 @@ proc install_module_1 {mod from install_dir} {
    set fl_tcl [glob -nocomplain "$from/*.tcl" "$from/tcl/*.tcl"]
    if {[llength $fl_bin] > 0} { eval file copy -force -- $fl_bin "$install_dir/bin/" }
    if {[llength $fl_lib] > 0} { eval file copy -force -- $fl_lib "$install_dir/lib/" }
-   if {[llength $fl_tcl] > 0} { file mkdir "${install_dir}/tcl/${mod}" }
+   if {[llength $fl_tcl] > 0} { catch {file mkdir "${install_dir}/tcl/${mod}"} }
    foreach from $fl_tcl { copy_catch $from "${install_dir}/tcl/" }
 }
 

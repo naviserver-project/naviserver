@@ -31,7 +31,11 @@ typedef struct InterpData {
  * The data for this severity resides in this file (and is protected
  * in nsdb.h via NS_DBTCL_C).
  */
+#ifdef __MINGW32__
+NS_EXPORT Ns_LogSeverity Ns_LogSqlDebug;
+#else
 Ns_LogSeverity Ns_LogSqlDebug;
+#endif
 
 /*
  * Local functions defined in this file
