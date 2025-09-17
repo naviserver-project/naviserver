@@ -32,8 +32,10 @@
 # endif
 #endif
 
-#ifdef USE_TCL_STUBS
-# error USE_TCL_STUBS should be undefined
+#ifdef __MINGW32__
+# ifdef USE_TCL_STUBS
+#  error USE_TCL_STUBS should be undefined
+# endif
 #endif
 
 /*
