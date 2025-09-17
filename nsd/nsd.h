@@ -1775,6 +1775,9 @@ NS_EXTERN bool NsHostnameIsNumericIP(const char *hostname) NS_GNUC_PURE
 NS_EXTERN void NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *headers)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN TCL_SIZE_T NsDriverBindAddresses(Driver *drvPtr)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
@@ -1806,6 +1809,9 @@ NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void NsDriverStartSpoolers(Driver *drvPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsStopDrivers(void);

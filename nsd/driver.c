@@ -24,10 +24,11 @@ NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
  * The following are valid driver state flags.
  */
 
-#define DRIVER_STARTED           1u
-#define DRIVER_STOPPED           2u
-#define DRIVER_SHUTDOWN          4u
-#define DRIVER_FAILED            8u
+#define DRIVER_STARTED         0x01u
+#define DRIVER_READY           0x02u
+#define DRIVER_STOPPED         0x04u
+#define DRIVER_SHUTDOWN        0x08u
+#define DRIVER_FAILED          0x10u
 
 
 /*
@@ -2163,7 +2164,127 @@ NsSockClose(Sock *sockPtr, int keep)
     }
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverBindAddresses --
+ *
+ *   Bind all configured (address * port) combinations for a driver and
+ *   populate the driver's listener socket array.
+ *
+ *   The driver’s "address" field is expected to contain a Tcl list of one or
+ *   more local bind addresses (e.g., "127.0.0.1 ::1"). For each address in
+ *   that list and each port configured in drvPtr->ports, this function calls
+ *   DriverListen(drvPtr, addr, port). Every successful bind/listen returns an
+ *   NS_SOCKET which is stored consecutively into drvPtr->listenfd[0..n-1],
+ *   up to MAX_LISTEN_ADDR_PER_DRIVER.
+ *
+ *   Failed binds are skipped; the function continues with remaining
+ *   address/port pairs.
+ *
+ *   Capacity: If the Cartesian product (#addresses * #ports) exceeds
+ *   MAX_LISTEN_ADDR_PER_DRIVER, only the first capacity-many successful binds
+ *   are retained and a Warning is logged suggesting to raise the macro if
+ *   needed.
+ *
+ * Returns:
+ *   The number of successful binds/listens (i.e., the number of valid entries
+ *   written into drvPtr->listenfd starting at index 0).
+ *
+ * Side effects:
+ *   Modifies drvPtr->listenfd; the caller is responsible for closing any
+ *   previously-open listener sockets and clearing the array if this is a
+ *   re-bind.
+ *
+ *----------------------------------------------------------------------
+ */
+TCL_SIZE_T
+NsDriverBindAddresses(Driver *drvPtr)
+{
+    Tcl_Obj    *bindaddrsObj, **objv;
+    TCL_SIZE_T  i, nAddrs = 0, nElems = 0;
+    int         result;
+
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    bindaddrsObj = Tcl_NewStringObj(drvPtr->address, TCL_INDEX_NONE);
+    Tcl_IncrRefCount(bindaddrsObj);
+
+    result = Tcl_ListObjGetElements(NULL, bindaddrsObj, &nElems, &objv);
+    /* Was OK at startup; still must be OK. */
+    assert(result == TCL_OK);
+
+    if (result == TCL_OK) {
+        /* Bind all configured addresses. */
+        for (i = 0; i < nElems && nAddrs < (TCL_SIZE_T)MAX_LISTEN_ADDR_PER_DRIVER; i++) {
+            size_t      pNum;
+            const char *addr = Tcl_GetString(objv[i]);
+
+            /* Bind all configured ports for this address. */
+            for (pNum = 0;
+                 pNum < drvPtr->ports.size && nAddrs < (TCL_SIZE_T)MAX_LISTEN_ADDR_PER_DRIVER;
+                 pNum++) {
+                NS_SOCKET      s;
+                unsigned short port = DriverGetPort(drvPtr, pNum);
+
+                if (port == 0) {
+                    continue;
+                }
+
+                Ns_Log(Notice, "DriverThread: %p (%s/%s) try to bind '%s' port %hu [%zu]",
+                       (void*)drvPtr, drvPtr->moduleName, drvPtr->threadName,
+                       addr, port, pNum);
+
+                s = DriverListen(drvPtr, addr, port);
+
+                if (likely(s != NS_INVALID_SOCKET)) {
+                    drvPtr->listenfd[nAddrs++] = s;
+                } else {
+                    /* Optionally log per-failure here. */
+                }
+            }
+        }
+
+        /* Provide warning for binding failures. */
+        if (nAddrs > 0 && nAddrs < nElems) {
+            Ns_Log(Warning, "could only bind to %" PRITcl_Size
+                   " out of %" PRITcl_Size " addresses", nAddrs, nElems);
+        }
+
+        if (nAddrs == (TCL_SIZE_T)MAX_LISTEN_ADDR_PER_DRIVER
+            && (size_t)nElems * drvPtr->ports.size > MAX_LISTEN_ADDR_PER_DRIVER) {
+            Ns_Log(Warning, "bind array full: capacity=%d; consider increasing MAX_LISTEN_ADDR_PER_DRIVER",
+                   MAX_LISTEN_ADDR_PER_DRIVER);
+        }
+    }
+
+    Tcl_DecrRefCount(bindaddrsObj);
+    return nAddrs;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverStartSpoolers --
+ *
+ *      Start the background spooler and writer threads associated with
+ *      the given driver. Each queue’s first entry is passed to its
+ *      corresponding thread function.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Creates and launches the driver’s spooler and writer threads.
+ *
+ *----------------------------------------------------------------------
+ */
+void NsDriverStartSpoolers(Driver *drvPtr) {
+    SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
+    SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2473,64 +2594,13 @@ DriverThread(void *arg)
 
     flags = DRIVER_STARTED;
 
-    {
-        Tcl_Obj   *bindaddrsObj, **objv;
-        TCL_SIZE_T j = 0;
-        int        result;
-
-        bindaddrsObj = Tcl_NewStringObj(drvPtr->address, TCL_INDEX_NONE);
-        Tcl_IncrRefCount(bindaddrsObj);
-
-        result = Tcl_ListObjGetElements(NULL, bindaddrsObj, &nrBindaddrs, &objv);
-        /*
-         * "result" was ok during startup, it has still to be ok.
-         */
-        assert(result == TCL_OK);
-
-        if (result == TCL_OK) {
-            TCL_SIZE_T i;
-
-            /*
-             * Bind all provided addresses.
-             */
-            for (i = 0; i < nrBindaddrs && j < MAX_LISTEN_ADDR_PER_DRIVER; i++) {
-                size_t pNum;
-                /*
-                 * Bind all provided ports.
-                 */
-                for (pNum = 0u;
-                     (pNum < drvPtr->ports.size) && (j < MAX_LISTEN_ADDR_PER_DRIVER);
-                     pNum ++
-                     ) {
-                    drvPtr->listenfd[j] = DriverListen(drvPtr,
-                                                       Tcl_GetString(objv[i]),
-                                                       DriverGetPort(drvPtr, pNum));
-                    if (likely(drvPtr->listenfd[j] != NS_INVALID_SOCKET)) {
-                        j ++;
-                    } else {
-                        drvPtr->ports.data[pNum] = 0u;
-                    }
-                }
-            }
-            if (j > 0 && j < nrBindaddrs) {
-                Ns_Log(Warning, "could only bind to %" PRITcl_Size
-                       " out of %" PRITcl_Size
-                       " addresses", j, nrBindaddrs);
-            }
-        }
-
-        /*
-         * "j" refers to the number of successful listen() operations.
-         */
-        nrBindaddrs = j;
-        Tcl_DecrRefCount(bindaddrsObj);
-    }
-
+    nrBindaddrs = NsDriverBindAddresses(drvPtr);
     if (nrBindaddrs > 0) {
-        SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
-        SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
+        NsDriverStartSpoolers(drvPtr);
+        flags |= DRIVER_READY;
     } else {
-        Ns_Log(Warning, "could no bind any of the following addresses, stopping this driver: %s", drvPtr->address);
+        Ns_Log(Warning, "could not bind any of the following addresses, stopping this driver: %s",
+               drvPtr->address);
         flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
     }
 
