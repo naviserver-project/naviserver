@@ -1469,8 +1469,8 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
                            void *out_obj,          /* e.g., Tcl_DString* for HTTP/1; NsH3HeaderBlock* for H3 */
                            size_t *out_len)        /* optional: bytes (HTTP/1) or nv count (H3) */
 {
-    Ns_HeaderEncodeFn encode;
-    const Ns_Set     *merged;
+    Ns_HeaderEncodeProc *encodeProc;
+    const Ns_Set        *merged;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -1489,20 +1489,16 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
         merged = HdrMergeExtra(conn);
 
         /* 3) Dispatch to the active driver’s header encoder */
-#if 0
         {
             const Ns_Sock *sockPtr = Ns_ConnSockPtr(conn);
             const Driver  *drvPtr  = (Driver*)sockPtr->driver;
-            encode = (drvPtr->encodeHeadersProc != NULL)
-                ? drvPtr->encodeHeadersProc
+            encodeProc = (drvPtr->headerEncodeProc != NULL)
+                ? drvPtr->headerEncodeProc
                 : NsHttp1_EncodeHeaders;
         }
-#else
-        encode = NsHttp1_EncodeHeaders;
-#endif
     }
 
-    return encode(conn, merged, out_obj, out_len);
+    return encodeProc(conn, merged, out_obj, out_len);
 }
 #endif
 

@@ -440,7 +440,9 @@ typedef struct Driver {
     Ns_DriverConnInfoProc   *connInfoProc; /* Driver specific info about connection. */
     Ns_DriverRequestProc    *requestProc;
     Ns_DriverCloseProc      *closeProc;
-    Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
+    Ns_DriverClientInitProc *clientInitProc;   /* Optional - initialization of client connections */
+    Ns_ThreadProc           *driverThreadProc; /* Optional - use alternate driver thread proc */
+    Ns_HeaderEncodeProc     *headerEncodeProc; /* Optional - use alternate header encode proc */
 
     ssize_t                              locationLength;
     const char *path;                   /* Path in the configuration namespace */

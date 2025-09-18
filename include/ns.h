@@ -361,11 +361,12 @@ typedef int           (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 typedef bool (Ns_UrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
 
-typedef bool (*Ns_HeaderEncodeFn)(struct Ns_Conn *conn,
+typedef bool (Ns_HeaderEncodeProc)(
+    struct Ns_Conn     *conn,
     const Ns_Set       *merged,     /* merged, sanitized headers to encode */
     void               *out_obj,    /* backend-defined sink */
     size_t             *out_len     /* optional: item count or bytes written */
-);
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * Generic function pointer type, can be used for recasting between different
