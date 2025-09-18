@@ -7718,7 +7718,12 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         Tcl_DStringInit(&ds);
         Ns_Log(DriverDebug, "### Writer(%d): add header", fd);
         conn->flags |= NS_CONN_SENTHDRS;
+
+#if defined(USE_ENCODE_HEADERS)
+        (void)Ns_FinalizeResponseHeaders(conn, nsend, 0u, &ds, NULL);
+#else
         (void)Ns_CompleteHeaders(conn, nsend, 0u, &ds);
+#endif
 
         headerSize = (size_t)ds.length;
         if (headerSize > 0u) {

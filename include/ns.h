@@ -259,6 +259,7 @@ typedef struct Ns_Task          Ns_Task;
 typedef struct Ns_EventQueue    Ns_EventQueue;
 typedef struct Ns_Event         Ns_Event;
 typedef struct Ns_Server        Ns_Server;
+typedef struct Ns_Set           Ns_Set;
 
 #define NS_CACHE_MAX_TRANSACTION_DEPTH 16
 
@@ -360,6 +361,12 @@ typedef int           (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 typedef bool (Ns_UrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
 
+typedef bool (*Ns_HeaderEncodeFn)(struct Ns_Conn *conn,
+    const Ns_Set       *merged,     /* merged, sanitized headers to encode */
+    void               *out_obj,    /* backend-defined sink */
+    size_t             *out_len     /* optional: item count or bytes written */
+);
+
 /*
  * Generic function pointer type, can be used for recasting between different
  * function types.
@@ -413,7 +420,7 @@ typedef struct Ns_SetField {
 
 #define NS_SET_OPTION_NOCASE 0x01
 
-typedef struct Ns_Set {
+struct Ns_Set {
     const char  *name;
     size_t       size;
     size_t       maxSize;
@@ -422,7 +429,7 @@ typedef struct Ns_Set {
 #endif
     Ns_SetField *fields;
     unsigned int flags;
-} Ns_Set;
+};
 
 /*
  * The request structure.
@@ -1384,6 +1391,11 @@ Ns_WriteCharConn(Ns_Conn *conn, const char *buf, size_t toWrite)
 
 NS_EXTERN bool
 Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength, unsigned int flags, Tcl_DString *dsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+
+NS_EXTERN bool
+Ns_FinalizeResponseHeaders(Ns_Conn *conn, size_t bodyLength, unsigned int flags,
+                           void *out_obj, size_t *out_len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 /*
