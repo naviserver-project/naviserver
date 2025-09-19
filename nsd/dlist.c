@@ -446,7 +446,7 @@ Ns_DListAppend(Ns_DList *dlPtr, void *element)
             /*
              * Can't double: grow minimally to avoid overflow of size_t. This
              * could still overflow size_t after some insanly long period, but
-             * we assume that malloc will bail out befor we reach 16 EiB on 64
+             * we assume that malloc will bail out before we reach 16 EiB on 64
              * bit machines.
              */
             new_cap = curr_cap + 1u;
