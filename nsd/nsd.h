@@ -442,7 +442,7 @@ typedef struct Driver {
     Ns_DriverCloseProc      *closeProc;
     Ns_DriverClientInitProc *clientInitProc;   /* Optional - initialization of client connections */
     Ns_ThreadProc           *driverThreadProc; /* Optional - use alternate driver thread proc */
-    Ns_HeaderEncodeProc     *headerEncodeProc; /* Optional - use alternate header encode proc */
+    Ns_HeadersEncodeProc    *headersEncodeProc;/* Optional - use alternate header encode proc */
 
     ssize_t                              locationLength;
     const char *path;                   /* Path in the configuration namespace */
@@ -845,6 +845,7 @@ typedef struct NsServer {
         bool modsince;
         bool stealthmode;
         bool noticedetail;
+        bool h3enabled;
         const char *serverdir;  /* Root for "logdir" and "pagedir" */
         const char *logDir;
         Ns_RWLock rwlock;

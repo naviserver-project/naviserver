@@ -1371,8 +1371,26 @@ HdrMergeExtra(const Ns_Conn *conn)
     const NsServer *servPtr  = connPtr->poolPtr->servPtr;
     const Ns_Sock  *sockPtr  = Ns_ConnSockPtr(conn);
     Ns_Set         *headers  = conn->outputheaders;
+    Tcl_DString     ds;
 
     assert(headers != NULL);
+
+    Tcl_DStringInit(&ds);
+    (void)Ns_HttpTime(&ds, NULL);
+    Ns_SetUpdateSz(headers,
+                   "date", 4,
+                   ds.string, ds.length);
+
+
+    if (!servPtr->opts.stealthmode) {
+        Tcl_DStringSetLength(&ds, 0);
+        Ns_DStringVarAppend(&ds, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NS_SENTINEL);
+        Ns_SetUpdateSz(headers,
+                       "server", 6,
+                       ds.string, ds.length);
+    }
+    Tcl_DStringFree(&ds);
+
     if (servPtr->opts.extraHeaders) {
         Ns_SetIMerge(headers, servPtr->opts.extraHeaders);
     }
@@ -1396,7 +1414,7 @@ HdrSanitizeValue(const char *value, Tcl_DString *out)
 
 /* Default implementation used by HTTP/1 driver */
 static bool
-NsHttp1_EncodeHeaders(Ns_Conn *conn,
+h1_headersEncodeProc(Ns_Conn *conn,
                       const Ns_Set *merged,
                       void *out_obj,
                       size_t *out_len)   /* optional: set to ds.length */
@@ -1418,15 +1436,12 @@ NsHttp1_EncodeHeaders(Ns_Conn *conn,
                      connPtr->responseStatus,
                      NsHttpStatusPhrase(connPtr->responseStatus));
 
-    /* Server + Date (unless stealth) */
-    if (!servPtr->opts.stealthmode) {
-        Ns_DStringVarAppend(dsPtr, "Server: ",
-                            Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
-                            NS_SENTINEL);
+    if (servPtr->opts.h3enabled) {
+        const Ns_Sock *sockPtr = Ns_ConnSockPtr(conn);
+        Driver        *drvPtr = (Driver*)(sockPtr->driver);
+        Ns_DStringPrintf(dsPtr, "alt-svc: h3=\":%hu\"; ma=86400; persist=1\r\n", drvPtr->port);
+        Ns_Log(Debug, "quic: added <Alt-Svc: h3=\":%hu\"; ma=86400; persist=1>", drvPtr->port);
     }
-    Tcl_DStringAppend(dsPtr, "Date: ", 6);
-    (void)Ns_HttpTime(dsPtr, NULL);
-    Tcl_DStringAppend(dsPtr, "\r\n", 2);
 
     /* Emit merged headers, sanitized */
     if (merged != NULL) {
@@ -1469,8 +1484,8 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
                            void *out_obj,          /* e.g., Tcl_DString* for HTTP/1; NsH3HeaderBlock* for H3 */
                            size_t *out_len)        /* optional: bytes (HTTP/1) or nv count (H3) */
 {
-    Ns_HeaderEncodeProc *encodeProc;
-    const Ns_Set        *merged;
+    Ns_HeadersEncodeProc *encodeProc;
+    const Ns_Set         *merged;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -1492,9 +1507,9 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
         {
             const Ns_Sock *sockPtr = Ns_ConnSockPtr(conn);
             const Driver  *drvPtr  = (Driver*)sockPtr->driver;
-            encodeProc = (drvPtr->headerEncodeProc != NULL)
-                ? drvPtr->headerEncodeProc
-                : NsHttp1_EncodeHeaders;
+            encodeProc = (drvPtr->headersEncodeProc != NULL)
+                ? drvPtr->headersEncodeProc
+                : h1_headersEncodeProc;
         }
     }
 

@@ -361,7 +361,7 @@ typedef int           (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 typedef bool (Ns_UrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
 
-typedef bool (Ns_HeaderEncodeProc)(
+typedef bool (Ns_HeadersEncodeProc)(
     struct Ns_Conn     *conn,
     const Ns_Set       *merged,     /* merged, sanitized headers to encode */
     void               *out_obj,    /* backend-defined sink */
