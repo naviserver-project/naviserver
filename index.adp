@@ -49,12 +49,12 @@ try {
 
     ;# Lets begin this adventure with our first switch
     ;#  Switch: $opt       - What option did we decide to call
-    ;#    Case: address      - Execute the code within our address case                - Display the address from our driver information variable
-    ;#    Case: modules      - Execute the code within our modules case                - Display the loaded modules
-    ;#    Case: navi_version - Execute the code within our navi_version case           - Display NaviServer's version
-    ;#    Case: port         - Execute the code within our port case                   - Display the bound ports that NaviServer sits upon
-    ;#    Case: protocol     - Execute the code within our address case                - Display the working protocol
-    ;#    Case: os           - Execute the code within our operating system case       - Display our Operating System
+    ;#    Case: address      - Execute the code within our address case       - Displays the address(es) from our driver information variable
+    ;#    Case: modules      - Execute the code within our modules case       - Displays the loaded modules
+    ;#    Case: navi_version - Execute the code within our navi_version case  - Displays NaviServer's version
+    ;#    Case: port         - Execute the code within our port case          - Displays the bound ports that NaviServer sits upon
+    ;#    Case: protocol     - Execute the code within our protocol case      - Displays the working protocol
+    ;#    Case: os           - Execute the code within our os case            - Displays our Operating System
 
     switch $opt {
       address { ;# We need to differate between "Address" and "Addresses" in case of when the Navi instance is bound to one or more IP
@@ -77,7 +77,7 @@ try {
         } ;# end switch llength
       }
 
-      modules { ;# Show me the shades, return our modules
+      modules {    ;# Show me the shades, return our modules
         variable modules [ns_ictl getmodules]
         variable modules [append modules "[nsv_dict get system modules_enabled live]"]
         #
@@ -90,7 +90,7 @@ try {
           "<code id=\"terminal\">NaviServer Version:</code> <code id=\"general\">$navi_version</code>"
       }
 
-      port { ;# What ports are we bound on?
+      port {        ;# What ports are we bound on?
         switch [llength [dict get $nssock_driver_info port]] {
           1       { return "<code id=\"terminal\">Listening at port: <code id=\"general\">$at_port</code>" }
           default { return "<code id=\"terminal\">Listening at ports: <code id=\"general\">$at_port</code>" }
