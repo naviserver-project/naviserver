@@ -135,7 +135,7 @@ ns_section ns/parameters {
     ns_param    jobsperthread       1000     ;# default: 0
     #ns_param   jobtimeout          0s       ;# default: 5m
     ns_param	joblogminduration   100s     ;# default: 1s
-    ns_param    schedsperthread     10       ;# default: 0
+    ns_param    schedsperthread     10       ;# number of jobs before restart; default: 0 (no auto restart)
     #ns_param	schedlogminduration 2s       ;# print warnings when scheduled job takes longer than that
 
     #ns_param   dbcloseonexit       off      ;# default: off; from nsdb

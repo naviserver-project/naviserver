@@ -126,6 +126,7 @@ ns_section ns/parameters {
     ns_param	joblogminduration      1s      ;# default 1s
 
     # How many jobs to run in any schedule thread before thread exits.
+    # default: 0 (no auto restart)
     ns_param	schedsperthread		0
 
     # Log warnings when scheduled job takes longer than this time period

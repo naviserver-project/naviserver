@@ -293,7 +293,7 @@ ns_section ns/parameters {
     # ns_param	jobtimeout          5m    ;# default "ns_job wait" timeout
     # ns_param	joblogminduration   1s    ;# default: 1s
 
-    # ns_param	schedsperthread     0     ;# number of scheduled jobs before thread exits
+    # ns_param	schedsperthread     0     ;# number of jobs before restart; default: 0 (no auto restart)
     # ns_param	schedlogminduration 2s    ;# print warnings when scheduled job takes longer than that
 
     # Write asynchronously to log files (access log, httpclient log, and system log)

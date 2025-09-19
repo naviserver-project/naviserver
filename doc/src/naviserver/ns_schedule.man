@@ -212,10 +212,12 @@ NaviServer configuration file:
  [cmd ns_section] ns/parameters {
    # ...
    # How many jobs to run in any schedule thread before thread exit.
+   # When set to 0, there is no automatic restart of the thread.
+   # (default: 0)
    ns_param schedsperthread 1000
    #
    # Log the system log when a scheduled job takes longer than
-   # this time period
+   # this time period (default: 2s)
    ns_param schedlogminduration  2s
    # ...
  }
@@ -238,6 +240,7 @@ script as returned by the ns_schedule* commands.
 
 
 [see_also nsd ns_job ns_log ns_time]
-[keywords "global built-in" background "scheduled procedures"]
+[keywords "global built-in" background "scheduled procedures" \
+   schedsperthread schedlogminduration]
 
 [manpage_end]
