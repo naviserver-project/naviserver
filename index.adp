@@ -77,7 +77,7 @@ try {
         } ;# end switch llength
       }
 
-      modules {    ;# Show me the shades, return our modules
+      modules { ;# Show me the shades, return our modules
         variable modules [ns_ictl getmodules]
         variable modules [append modules "[nsv_dict get system modules_enabled live]"]
         #
@@ -90,7 +90,7 @@ try {
           "<code id=\"terminal\">NaviServer Version:</code> <code id=\"general\">$navi_version</code>"
       }
 
-      port {        ;# What ports are we bound on?
+      port { ;# What ports are we bound on?
         switch [llength [dict get $nssock_driver_info port]] {
           1       { return "<code id=\"terminal\">Listening at port: <code id=\"general\">$at_port</code>" }
           default { return "<code id=\"terminal\">Listening at ports: <code id=\"general\">$at_port</code>" }
