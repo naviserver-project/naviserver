@@ -49,12 +49,12 @@ try {
 
     ;# Lets begin this adventure with our first switch
     ;#  Switch: $opt       - What option did we decide to call
-    ;#    Case: address      - Execute the code within our address case       - Display the address from our driver information variable
-    ;#    Case: modules      - Execute the code within our modules case       - Display the loaded modules
-    ;#    Case: navi_version - Execute the code within our navi_version case  - Display NaviServer's version
-    ;#    Case: port         - Execute the code within our port case          - Display the bound ports that NaviServer sits upon
-    ;#    Case: protocol     - Execute the code within our address case       - Display the working protocol
-    ;#    Case: os           - Execute the code within our address case       - Display our Operating System
+    ;#    Case: address      - Execute the code within our address case                - Display the address from our driver information variable
+    ;#    Case: modules      - Execute the code within our modules case                - Display the loaded modules
+    ;#    Case: navi_version - Execute the code within our navi_version case           - Display NaviServer's version
+    ;#    Case: port         - Execute the code within our port case                   - Display the bound ports that NaviServer sits upon
+    ;#    Case: protocol     - Execute the code within our address case                - Display the working protocol
+    ;#    Case: os           - Execute the code within our operating system case       - Display our Operating System
 
     switch $opt {
       address { ;# We need to differate between "Address" and "Addresses" in case of when the Navi instance is bound to one or more IP
