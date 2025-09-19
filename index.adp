@@ -33,6 +33,7 @@ try {
                                           ;# this list enables us later on to pick and choose which value we desire
                                           ;# Enable to see the results :)
 
+    ;##### Variables for callings
     ;# Hold our driver information in to a list
     variable nssock_driver_info [concat {*}[ns_driver info]]
 
@@ -46,6 +47,7 @@ try {
     ;# Operating System & Version
     variable operating_system         $::tcl_platform(os)
     variable operating_system_version $::tcl_platform(osVersion)
+    ;#####
 
     ;# Lets begin this adventure with our first switch
     ;#  Switch: $opt       - What option did we decide to call
@@ -111,9 +113,12 @@ try {
 } ;# end try
 
 proc probe_nsstats {} {
+  ;#   Case: 0 - nsstats is not installed
+  nsv_dict set nsstats text not_installed {Module nsstats was not detected <a href="extras/?package=nsstats" class="btn-action">Install It Now</a>}
+  ;#   Case: 1 - nsstats is installed
+  nsv_dict set nsstats text installed {Explore the <a href="/nsstats.tcl"> the Navi Statistics Module</a> for real-time performance insights and logging analysis }
+
   try {
-    nsv_dict set nsstats text not_installed {Module nsstats was not detected <a href="extras/?package=nsstats" class="btn-action">Install It Now</a>}
-    nsv_dict set nsstats text installed {Explore the <a href="/nsstats.tcl"> the Navi Statistics Module</a> for real-time performance insights and logging analysis }
     ;# Check to see if our file exists
     variable ns_stats_existence [file exists [ns_server pagedir]/nsstats.tcl]
 
@@ -128,12 +133,14 @@ proc probe_nsstats {} {
 } ;# end proc
 
 proc display { args } {
-  try {
-    nsv_dict set image icon alert { &#9888; }
-    nsv_dict set btn_action nsperm passwd_msg {The default system administrator password remains unchanged}
-    nsv_dict set btn_action nsperm passwd_resolve {Change System Password Now}
-    nsv_dict set security secure page {Please replace or secure this default page to protect your server credentials.}
+  ;# Case: security_advice   - Displays a Security Notice with icon
+  nsv_dict set security secure page {Please replace or secure this default page to protect your server credentials.}
+  nsv_dict set image icon alert { &#9888; }
+  ;# Case: password_unchanged - Change your password!
+  nsv_dict set btn_action nsperm passwd_msg {The default system administrator password remains unchanged}
+  nsv_dict set btn_action nsperm passwd_resolve {Change System Password Now}
 
+  try {
     variable display_mode [lindex $args 0] ;# Display mode passed to the procedure
     switch $display_mode {
         css {
@@ -221,13 +228,16 @@ proc display { args } {
   } ;# end proc
 
 proc show_howto {opt} {
+  ;# Case: documentation
+  nsv_dict set show_howto documentation general "Review the <a href=\"doc/toc.html\">documentation</a> to understand complete setup instructions and feature details"
+  ;# Case: replace
+  nsv_dict set show_howto documentation replace_placeholder "Replace this placeholder page with your custom content by configuring the appropriate directory"
+
   switch $opt {
     documentation {
-      nsv_dict set show_howto documentation general "Review the <a href=\"doc/toc.html\">documentation</a> to understand complete setup instructions and feature details"
       return [nsv_dict get show_howto documentation general]
     }
     replace {
-      nsv_dict set show_howto documentation replace_placeholder "Replace this placeholder page with your custom content by configuring the appropriate directory"
       return [nsv_dict get show_howto documentation replace_placeholder]
     }
     nsstats {
