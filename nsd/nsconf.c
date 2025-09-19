@@ -124,15 +124,15 @@ NsConfUpdate(void)
     /*
      * nsmain.c
      */
-    Ns_ConfigTimeUnitRange(section, "shutdowntimeout",
-                           "20s", 0, 0, LONG_MAX, 0,
+    Ns_ConfigTimeUnitRange(section, "shutdowntimeout", "20s",
+                           /* min sec */ 0, /* min usec */ 0, LONG_MAX, 0,
                            &nsconf.shutdowntimeout);
     /*
      * sched.c
      */
     nsconf.sched.jobsperthread = Ns_ConfigIntRange(section, "schedsperthread", 0, 0, INT_MAX);
-    Ns_ConfigTimeUnitRange(section, "schedlogminduration",
-                           "2s", 1, 0, LONG_MAX, 0,
+    Ns_ConfigTimeUnitRange(section, "schedlogminduration", "2s",
+                           /* min sec */1, /* min usec */ 0, LONG_MAX, 0,
                            &nsconf.sched.maxelapsed);
     /*
      * binder.c, win32.c
