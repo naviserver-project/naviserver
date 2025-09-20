@@ -1782,6 +1782,9 @@ NS_EXTERN void NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, 
 NS_EXTERN TCL_SIZE_T NsDriverBindAddresses(Driver *drvPtr)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN Ns_ReturnCode NsDispatchRequest(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
@@ -1942,7 +1945,7 @@ NS_EXTERN void NsUpdateProgress(Ns_Sock *sock) NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_Set *NsHeaderSetGet(size_t size);
 
 NS_EXTERN Ns_ReturnCode NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);

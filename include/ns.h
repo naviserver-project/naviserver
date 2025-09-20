@@ -176,13 +176,14 @@ typedef enum {
 #define NS_DRIVER_UDP              0x08u /* UDP, can't use stream socket options */
 #define NS_DRIVER_CAN_USE_SENDFILE 0x10u /* Allow to send clear text via sendfile */
 #define NS_DRIVER_SNI              0x20u /* SNI - just used when NS_DRIVER_SSL is set as well */
-#define NS_DRIVER_QUIC             0x40u /* requires a different SSL_METHOD for creating the server context */
+#define NS_DRIVER_QUIC             0x40u /* Use OSSL_QUIC_server_method */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* IPv4 only */
 #define NS_DRIVER_VERSION_3        3    /* IPv4 and IPv6 */
 #define NS_DRIVER_VERSION_4        4    /* Client support, current version */
 #define NS_DRIVER_VERSION_5        5    /* Library info, current connection info */
+#define NS_DRIVER_VERSION_6        6    /* driverThreadProc, headersEncodeProc */
 
 /*
  * The following are valid Tcl interp traces types.
@@ -720,6 +721,8 @@ typedef struct Ns_DriverInitData {
     unsigned short           defaultPort;      /* Default port */
     Ns_DriverConnInfoProc   *connInfoProc;     /* NS_DRIVER_VERSION_5: Obtain information about a connection */
     const char              *libraryVersion;   /* NS_DRIVER_VERSION_5: Version of the used library */
+    Ns_ThreadProc           *driverThreadProc; /* NS_DRIVER_VERSION_6: event loop */
+    Ns_HeadersEncodeProc    *headersEncodeProc;/* NS_DRIVER_VERSION_6: encode headers from Ns_Set */
 } Ns_DriverInitData;
 
 

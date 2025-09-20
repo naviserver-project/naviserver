@@ -505,11 +505,15 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     Conn          *connPtr = NULL;
     bool           create = NS_FALSE;
     int            queued = NS_OK;
+    Ns_Time        now;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
-    NS_NONNULL_ASSERT(nowPtr != NULL);
     assert(sockPtr->drvPtr != NULL);
 
+    if (nowPtr == NULL) {
+        Ns_GetTime(&now);
+        nowPtr = &now;
+    }
     sockPtr->drvPtr->stats.received++;
     servPtr = sockPtr->servPtr;
 

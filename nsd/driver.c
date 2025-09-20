@@ -1295,10 +1295,15 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->clientInitProc = init->clientInitProc;
     drvPtr->arg            = init->arg;
     drvPtr->opts           = init->opts;
-    if (init->version == NS_DRIVER_VERSION_5) {
+    if (init->version >= NS_DRIVER_VERSION_5) {
         drvPtr->connInfoProc   = init->connInfoProc;
         drvPtr->libraryVersion = init->libraryVersion;
     }
+    if (init->version >= NS_DRIVER_VERSION_6) {
+        drvPtr->driverThreadProc  = init->driverThreadProc;
+        drvPtr->headersEncodeProc = init->headersEncodeProc;
+    }
+
     drvPtr->servPtr        = servPtr;
     drvPtr->defport        = defport;
     drvPtr->path           = ns_strdup(section);
@@ -3426,6 +3431,45 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     }
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDispatchRequest --
+ *
+ *      Perform final validation and dispatch of an accepted request
+ *      from the driver to the connection queue for processing.
+ *
+ *      The function first enforces validity of singleton HTTP header fields
+ *      (e.g., ensuring no duplicate "Host" headers) and extract these fields
+ *      for quick access.
+ *
+ *      Then, the function calls SockQueue, which associates the socket with
+ *      the correct virtual server context and queues the equest for further
+ *      handling by worker threads.
+ *
+ * Results:
+ *      NS_OK    - Request passed validation and was queued.
+ *      NS_ERROR - Validation or server mapping failed.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+NsDispatchRequest(Sock *sockPtr)
+{
+    //NsSSLConfig *dc = sockPtr->drvPtr->arg;
+    //Ns_Log(Notice, "[%lld] NsDispatchRequest", dc->iter);
+
+    if (CheckSingletonHeaderFields(sockPtr) != NS_OK) {
+        Ns_Log(Error, "Invalid host header fields (fields are not singletons)");
+        SockRelease(sockPtr, SOCK_BADHEADER, 0);
+        return NS_ERROR;
+    }
+    return SockQueue(sockPtr, NULL);
 }
 
 
