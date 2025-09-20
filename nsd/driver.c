@@ -21,17 +21,6 @@
 NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 
 /*
- * The following are valid driver state flags.
- */
-
-#define DRIVER_STARTED         0x01u
-#define DRIVER_READY           0x02u
-#define DRIVER_STOPPED         0x04u
-#define DRIVER_SHUTDOWN        0x08u
-#define DRIVER_FAILED          0x10u
-
-
-/*
  * Constants for SockState return and reason codes.
  */
 
@@ -1516,10 +1505,10 @@ NsStartDrivers(void)
 
         Ns_ThreadCreate(DriverThread, drvPtr, 0, &drvPtr->thread);
         Ns_MutexLock(&drvPtr->lock);
-        while ((drvPtr->flags & DRIVER_STARTED) == 0u) {
+        while ((drvPtr->flags & NS_DRIVER_THREAD_STARTED) == 0u) {
             Ns_CondWait(&drvPtr->cond, &drvPtr->lock);
         }
-        /*if ((drvPtr->flags & DRIVER_FAILED)) {
+        /*if ((drvPtr->flags & NS_DRIVER_THREAD_FAILED)) {
           status = NS_ERROR;
           }*/
         Ns_MutexUnlock(&drvPtr->lock);
@@ -1552,10 +1541,10 @@ NsStopDrivers(void)
     NsAsyncWriterQueueDisable(NS_TRUE);
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        if ((drvPtr->flags & DRIVER_STARTED)) {
+        if ((drvPtr->flags & NS_DRIVER_THREAD_STARTED)) {
             Ns_MutexLock(&drvPtr->lock);
             Ns_Log(Notice, "[driver:%s]: stopping", drvPtr->threadName);
-            drvPtr->flags |= DRIVER_SHUTDOWN;
+            drvPtr->flags |= NS_DRIVER_THREAD_SHUTDOWN;
             Ns_CondBroadcast(&drvPtr->cond);
             Ns_MutexUnlock(&drvPtr->lock);
             SockTrigger(drvPtr->trigger[1]);
@@ -1589,7 +1578,7 @@ NsStopSpoolers(void)
     Ns_Log(Notice, "driver: stopping writer and spooler threads");
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        if ((drvPtr->flags & DRIVER_STARTED)) {
+        if ((drvPtr->flags & NS_DRIVER_THREAD_STARTED)) {
             Ns_Time        timeout;
             const Ns_Time *shutdownTime = &nsconf.shutdowntimeout;
 
@@ -2022,11 +2011,11 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
     Ns_ReturnCode status = NS_OK;
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
+        if ((drvPtr->flags & NS_DRIVER_THREAD_STARTED) == 0u) {
             continue;
         }
         Ns_MutexLock(&drvPtr->lock);
-        while ((drvPtr->flags & DRIVER_STOPPED) == 0u && status == NS_OK) {
+        while ((drvPtr->flags & NS_DRIVER_THREAD_STOPPED) == 0u && status == NS_OK) {
             status = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
         }
         Ns_MutexUnlock(&drvPtr->lock);
@@ -2597,16 +2586,16 @@ DriverThread(void *arg)
     Ns_ThreadSetName("-driver:%s-", drvPtr->threadName);
     Ns_Log(Notice, "starting %s", drvPtr->threadName);
 
-    flags = DRIVER_STARTED;
+    flags = NS_DRIVER_THREAD_STARTED;
 
     nrBindaddrs = NsDriverBindAddresses(drvPtr);
     if (nrBindaddrs > 0) {
         NsDriverStartSpoolers(drvPtr);
-        flags |= DRIVER_READY;
+        flags |= NS_DRIVER_THREAD_READY;
     } else {
         Ns_Log(Warning, "could not bind any of the following addresses, stopping this driver: %s",
                drvPtr->address);
-        flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
+        flags |= (NS_DRIVER_THREAD_FAILED | NS_DRIVER_THREAD_SHUTDOWN);
     }
 
     Ns_MutexLock(&drvPtr->lock);
@@ -2621,7 +2610,7 @@ DriverThread(void *arg)
 
     PollCreate(&pdata);
     Ns_GetTime(&now);
-    stopping = ((flags & DRIVER_SHUTDOWN) != 0u);
+    stopping = ((flags & NS_DRIVER_THREAD_SHUTDOWN) != 0u);
 
     if (!stopping) {
         Ns_Log(Notice, "driver: accepting connections");
@@ -3016,7 +3005,7 @@ DriverThread(void *arg)
         flags            = drvPtr->flags;
         Ns_MutexUnlock(&drvPtr->lock);
 
-        stopping = ((flags & DRIVER_SHUTDOWN) != 0u);
+        stopping = ((flags & NS_DRIVER_THREAD_SHUTDOWN) != 0u);
 
         /*
          * Update the timeout for each closing socket and add to the
@@ -3107,7 +3096,7 @@ DriverThread(void *arg)
     Ns_Log(Notice, "exiting");
 
     Ns_MutexLock(&drvPtr->lock);
-    drvPtr->flags |= DRIVER_STOPPED;
+    drvPtr->flags |= NS_DRIVER_THREAD_STOPPED;
     Ns_CondBroadcast(&drvPtr->cond);
     Ns_MutexUnlock(&drvPtr->lock);
 }

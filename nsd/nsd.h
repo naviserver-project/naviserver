@@ -32,6 +32,15 @@
 NS_EXTERN const char *NS_EMPTY_STRING;
 
 /*
+ * Driver thread states.
+ */
+#define NS_DRIVER_THREAD_STARTED        0x01u
+#define NS_DRIVER_THREAD_READY          0x02u
+#define NS_DRIVER_THREAD_STOPPED        0x04u
+#define NS_DRIVER_THREAD_SHUTDOWN       0x08u
+#define NS_DRIVER_THREAD_FAILED         0x10u
+
+/*
  * Various ADP option bits.
  */
 
