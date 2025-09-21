@@ -1503,9 +1503,13 @@ NsStartDrivers(void)
             continue;
         }
 
-        Ns_ThreadCreate(DriverThread, drvPtr, 0, &drvPtr->thread);
+        Ns_ThreadCreate(drvPtr->driverThreadProc != NULL
+                        ? drvPtr->driverThreadProc
+                        : DriverThread,
+                        drvPtr, 0, &drvPtr->thread);
+
         Ns_MutexLock(&drvPtr->lock);
-        while ((drvPtr->flags & NS_DRIVER_THREAD_STARTED) == 0u) {
+        while ((drvPtr->flags & NS_DRIVER_THREAD_READY) == 0u) {
             Ns_CondWait(&drvPtr->cond, &drvPtr->lock);
         }
         /*if ((drvPtr->flags & NS_DRIVER_THREAD_FAILED)) {
@@ -2620,15 +2624,13 @@ DriverThread(void *arg)
         int  nrWaiting;
         bool reanimation = NS_FALSE;
 
-        /*
-         * Set the bits for all active drivers if a connection
-         * isn't already pending.
-         */
-
         PollReset(&pdata);
         (void)PollSet(&pdata, drvPtr->trigger[0], (short)POLLIN, NULL);
 
-        /* was peviously restricted to (waitPtr == NULL) */
+        /*
+         * Set the bits for all active drivers having a listening port
+         * registered.
+         */
         {
             TCL_SIZE_T addr;
             for (addr = 0; addr < nrBindaddrs; addr++) {
@@ -3125,6 +3127,24 @@ PollReset(PollData *pdata)
     pdata->timeout.usec = 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * PollSet --
+ *
+ *      Add a socket to the PollData’s pollfd array, growing the array if
+ *      necessary, and update the minimum timeout.
+ *
+ * Returns:
+ *      The index (nfds before increment) at which this socket was installed
+ *
+ * Side Effects:
+ *      - May realloc pdata->pfds to grow the pollfd array by 100 entries.
+ *      - Increments pdata->nfds.
+ *      - Updates pdata->timeout if *timeoutPtr represents a sooner deadline.
+ *
+ *----------------------------------------------------------------------
+ */
 static NS_POLL_NFDS_TYPE
 PollSet(PollData *pdata, NS_SOCKET sock, short type, const Ns_Time *timeoutPtr)
 {
@@ -3224,6 +3244,14 @@ RequestNew(void)
     }
 
     return reqPtr;
+}
+
+Request *
+NsSockEnsureRequest(Sock *sockPtr) {
+    if (sockPtr->reqPtr == NULL) {
+        sockPtr->reqPtr = RequestNew();
+    }
+    return sockPtr->reqPtr;
 }
 
 
@@ -3595,16 +3623,13 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
                  */
                 sockStatus = SOCK_READY;
             }
-        } else if (status == NS_DRIVER_ACCEPT_QUEUE) {
 
+        } else if (status == NS_DRIVER_ACCEPT_QUEUE) {
             /*
-             *  We need to call RequestNew() to make sure socket has request
-             *  structure allocated, otherwise NsGetRequest() will call
-             *  SockRead() which is not what this driver wants.
+             *  We need to call NsSockEnsureRequest() to make sure socket has
+             *  request structure allocated.
              */
-            if (sockPtr->reqPtr == NULL) {
-                sockPtr->reqPtr = RequestNew();
-            }
+            NsSockEnsureRequest(sockPtr);
             sockStatus = SOCK_READY;
         } else {
             sockStatus = SOCK_MORE;
@@ -3614,6 +3639,12 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
     *sockPtrPtr = sockPtr;
 
     return sockStatus;
+}
+
+int
+NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_Time *nowPtr)
+{
+    return (int)SockAccept((Driver *)drvPtr, sock, (Sock**)sockPtrPtr, nowPtr);
 }
 
 
@@ -4343,9 +4374,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     /*
      * Initialize request structure if needed.
      */
-    if (sockPtr->reqPtr == NULL) {
-        sockPtr->reqPtr = RequestNew();
-    }
+    NsSockEnsureRequest(sockPtr);
 
     /*
      * On the first read, attempt to read-ahead "bufsize" bytes.
@@ -4759,9 +4788,10 @@ EndOfHeader(Sock *sockPtr)
 
         } else {
             /*
-             * Parsing the string was not successful. Now try to process the string of
-             * multiple, comma separated addresses. Since strtok() might be
-             * destructive on the input string, we apply it on a copy.
+             * Parsing the IP string was not successful. Now try to process
+             * the string of multiple, comma separated addresses. Since
+             * strtok() might be destructive on the input string, we apply it
+             * on a copy.
              */
             char *parseString = ns_strdup(s);
             char *token = ns_strtok(parseString, ", ");
@@ -7083,7 +7113,7 @@ BandwidthComputeSleepTimeMs(const WriterSock *w)
  * Returns:
  *      The timeout in milliseconds to use in the next PollWait call:
  *        - -1 to indicate an immediate poll (ready writers present or streams to finish)
- *        - A non-negative value equal to the shortest required sleep interval
+ *        - A nonnegative value equal to the shortest required sleep interval
  *          among all writers, or the initial default (1000 ms) if no writers
  *          need throttling.
  *
