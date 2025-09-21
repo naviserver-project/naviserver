@@ -2803,16 +2803,19 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
 
 #ifdef HAVE_OPENSSL_PRE_1_1
     server_method = SSLv23_server_method();
-#else
+#elif HAVE_OPENSSL_3_5
     if ((flags & NS_DRIVER_QUIC) != 0) {
         server_method = OSSL_QUIC_server_method();
     } else {
         server_method = TLS_server_method();
     }
+#else
+    server_method = TLS_server_method();
 #endif
 
     ctx = SSL_CTX_new(server_method);
 
+#if HAVE_OPENSSL_3_5
     if ((flags & NS_DRIVER_QUIC) != 0) {
         uint64_t default_flags = 0, current_flags = 0;
         SSL_CTX_get_domain_flags(ctx, &default_flags);
@@ -2822,6 +2825,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         Ns_Log(Notice, "SSL_CTX domain_flags for ctx %p default %.8llx set to %.8llx",
                (void*)ctx, default_flags, current_flags);
     }
+#endif
 
     *ctxPtr = ctx;
     if (ctx == NULL) {
