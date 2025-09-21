@@ -120,7 +120,7 @@ Ns_ModuleInit(const char *server, const char *module)
 {
     Ns_ReturnCode      result = NS_OK;
     const char        *section;
-    NsSSLConfig       *drvCfgPtr;
+    NsTLSConfig       *dc;
     Ns_DriverInitData  init;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     int                num;
@@ -132,7 +132,10 @@ Ns_ModuleInit(const char *server, const char *module)
     memset(&init, 0, sizeof(init));
 
     section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
-    drvCfgPtr = NsSSLConfigNew(section);
+    dc = NsTLSConfigNew(section);
+
+    dc->u.h1.deferaccept   = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
+    dc->u.h1.nodelay       = Ns_ConfigBool(section, "nodelay", NS_TRUE);
 
     init.version = NS_DRIVER_VERSION_5;
     init.name = "nsssl";
@@ -147,7 +150,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.closeProc = Close;
     init.clientInitProc = ClientInit;
     init.opts = NS_DRIVER_SSL|NS_DRIVER_ASYNC;
-    init.arg = drvCfgPtr;
+    init.arg = dc;
     init.path = section;
     init.protocol = "https";
     init.defaultPort = 443;
@@ -161,22 +164,22 @@ Ns_ModuleInit(const char *server, const char *module)
      * In case "vhostcertificates" was specified in the configuration file,
      * and it is valid, activate NS_DRIVER_SNI.
      */
-    if (drvCfgPtr->vhostcertificates != NULL) {
+    if (dc->vhostcertificates != NULL) {
         init.opts |= NS_DRIVER_SNI;
     }
 
     if (Ns_DriverInit(server, module, &init) != NS_OK) {
         Ns_Log(Error, "nsssl: driver init failed.");
-        ns_free(drvCfgPtr);
+        ns_free(dc);
         result = NS_ERROR;
 
     } else {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
         InitOpenSSL_1_0_Compat(module);
 #endif
-        int rc = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, drvCfgPtr, &drvCfgPtr->ctx);
+        int rc = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, dc, &dc->ctx);
         Ns_Log(Notice, "nsssl: created sslCtx %p for dc %p",
-               (void*)drvCfgPtr->ctx, (void*)drvCfgPtr);
+               (void*)dc->ctx, (void*)dc);
 
         if (rc != TCL_OK) {
             Ns_Log(Error, "nsssl: could not initialize OpenSSL context (section %s): %s",
@@ -223,11 +226,11 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
     } else {
         sock = Ns_SockListenEx(address, port, backlog, reuseport);
         if (sock != NS_INVALID_SOCKET) {
-            NsSSLConfig *drvCfgPtr = driver->arg;
+            NsTLSConfig *dc = driver->arg;
 
-            drvCfgPtr->driver = driver;
+            dc->driver = driver;
             (void) Ns_SockSetNonBlocking(sock);
-            if (drvCfgPtr->deferaccept) {
+            if (dc->u.h1.deferaccept) {
                 Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
             }
 
@@ -257,7 +260,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
 static NS_DRIVER_ACCEPT_STATUS
 Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
-    NsSSLConfig  *dc = sock->driver->arg;
+    NsTLSConfig  *dc = sock->driver->arg;
     NssslSockCtx *sslCtx = sock->arg;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
@@ -274,7 +277,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
 #endif
         //dc->driver = sock->driver;
         (void)Ns_SockSetNonBlocking(sock->sock);
-        if (dc->nodelay != 0) {
+        if (dc->u.h1.nodelay != 0) {
             Ns_SockSetNodelay(sock->sock);
         }
 
@@ -338,7 +341,7 @@ static ssize_t
 Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
-    const NsSSLConfig *drvCfgPtr = sock->driver->arg;
+    const NsTLSConfig *dc = sock->driver->arg;
     NssslSockCtx      *sslCtx = sock->arg;
     Ns_SockState       sockState = NS_SOCK_NONE;
     ssize_t            nRead = 0;
@@ -347,7 +350,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     /*
      * Verify client certificate, driver may require valid cert
      */
-    if (drvCfgPtr->verify && sslCtx->verified == 0) {
+    if (dc->verify && sslCtx->verified == 0) {
         X509 *peer;
 #ifdef HAVE_OPENSSL_3
         peer = SSL_get0_peer_certificate(sslCtx->ssl);
