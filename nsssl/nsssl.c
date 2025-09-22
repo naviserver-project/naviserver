@@ -136,6 +136,8 @@ Ns_ModuleInit(const char *server, const char *module)
 
     dc->u.h1.deferaccept   = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
     dc->u.h1.nodelay       = Ns_ConfigBool(section, "nodelay", NS_TRUE);
+    dc->u.h1.h3advertise   = Ns_ConfigBool(section, "h3advertise", NS_TRUE);
+    dc->u.h1.h3persist     = Ns_ConfigBool(section, "h3persist", NS_TRUE);
 
     init.version = NS_DRIVER_VERSION_5;
     init.name = "nsssl";
@@ -174,10 +176,12 @@ Ns_ModuleInit(const char *server, const char *module)
         result = NS_ERROR;
 
     } else {
+        int rc;
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
         InitOpenSSL_1_0_Compat(module);
 #endif
-        int rc = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, dc, &dc->ctx);
+        rc = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, dc, &dc->ctx);
         Ns_Log(Notice, "nsssl: created sslCtx %p for dc %p",
                (void*)dc->ctx, (void*)dc);
 

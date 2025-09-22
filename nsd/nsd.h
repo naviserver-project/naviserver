@@ -458,6 +458,7 @@ typedef struct Driver {
     const char *defserver;              /* default server, might be NULL */
     Tcl_HashTable hosts;                /* Virtual hosts mapping to server */
     const struct ServerMap *defMapPtr;  /* Default for virtual host entry */
+    struct Driver *linkedDriver;
     Ns_Time closewait;                  /* Graceful close timeout */
     Ns_Time keepwait;                   /* Keepalive timeout */
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
@@ -1788,14 +1789,20 @@ NS_EXTERN bool NsHostnameIsNumericIP(const char *hostname) NS_GNUC_PURE
 NS_EXTERN void NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *headers)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN Ns_ReturnCode NsDispatchRequest(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN TCL_SIZE_T NsDriverBindAddresses(Driver *drvPtr)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN Ns_ReturnCode NsDispatchRequest(Sock *sockPtr)
+NS_EXTERN Ns_Driver *NsDriverFromConfigSection(const char *section)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+NS_EXTERN size_t NsDriversOfType(Ns_DList *dlPtr, const char *type)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void NsDriverMapVirtualServers(void);
 
@@ -2174,6 +2181,9 @@ NS_EXTERN int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureI
                                  const char *cert, const char *caFile, const char *caPath,
                                  const char **caFilePtr, const char **caPathPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
+
+NS_EXTERN void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock  *sockPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * unix.c

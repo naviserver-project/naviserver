@@ -1853,6 +1853,8 @@ NsTLSConfigNew(const char *section)
                                              ""             /* default no script */,
                                              NS_TRUE /*normalize*/, NS_FALSE /*updateCfg*/);
     }
+    dc->sni_idx = SSL_get_ex_new_index(0, (void*)"SniCtx", NULL, NULL, NULL);
+
     /*
      * In case "vhostcertificates" was specified in the configuration file,
      * and it is valid, activate NS_DRIVER_SNI.
@@ -2094,8 +2096,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         result = TCL_ERROR;
     } else {
         const char *ciphers, *ciphersuites, *protocols;
-        Ns_DList dl, *dlPtr = &dl;
-        static int sni_idx = -1;
+        Ns_DList    dl, *dlPtr = &dl;
 
         /*
          * Keep configuration values in an Ns_DList to protect against
@@ -2114,7 +2115,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                                            NULL /*caFile*/, NULL /*caPath*/,
                                            Ns_ConfigBool(section, "verify", 0),
                                            ciphers, ciphersuites, protocols,
-                                           "http/1.1,h3",
+                                           (flags & NS_DRIVER_QUIC) != 0 ? "h3" : "http/1.1",
                                            app_data, flags,
                                            ctxPtr);
         Ns_Log(Notice, "Ns_TLS_CtxServerInit: Ns_TLS_CtxServerCreate with dc %p -> sslCtx %p",
@@ -2122,6 +2123,12 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 
         if (result == TCL_OK) {
             NsTLSConfig *dc = app_data;
+            /*
+             * The driver modules pass the dc via app_data. dc should
+             * only be NULL, when Ns_TLS_CtxServerInit is called over
+             * other paths (e.g., a listening context outside the
+             * driver modules).
+             */
 
             if (dc == NULL) {
                 /*
@@ -2133,12 +2140,6 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                  */
                 dc = NsTLSConfigNew(section);
                 dc->ctx = *ctxPtr;
-
-                if (sni_idx < 0) {
-                    sni_idx = SSL_get_ex_new_index(0, (void*)"SniCtx", NULL, NULL, NULL);
-                    assert(sni_idx >= 0);
-                }
-                dc->sni_idx = sni_idx;
 
                 Ns_Log(Debug, "Ns_TLS_CtxServerInit created new app data %p for cert <%s> ctx %p",
                         (void*)dc, cert, (void*)(dc->ctx));
@@ -3427,7 +3428,64 @@ NsTclCertCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
+static void
+EnsureDriverLinkage(void)
+{
+    Ns_DList h3dl, h1dl;
+    size_t   i;
 
+    Ns_DListInit(&h3dl);
+    Ns_DListInit(&h1dl);
+    NsDriversOfType(&h3dl, "h3");
+    NsDriversOfType(&h1dl, "nsssl");
+
+    Ns_Log(Notice, "EnsureDriverLinkage h1 %ld h3 %ld", h1dl.size, h3dl.size);
+
+    for (i=0; i< h1dl.size; i++) {
+        Driver      *h1drvPtr = h1dl.data[i];
+        Ns_Log(Notice, "H1 driver %p thread name %s", (void*)h1drvPtr, h1drvPtr->threadName);
+    }
+    for (i=0; i< h3dl.size; i++) {
+        Driver      *h3drvPtr = h3dl.data[i];
+        const char  *section = h3drvPtr->path;
+        Driver      *h1drvPtr = (Driver *)NsDriverFromConfigSection(section);
+
+        Ns_Log(Notice, "h3 driver %s linked via path %s to h1 driver %s",
+               h3drvPtr->threadName, section, h3drvPtr->threadName);
+        h1drvPtr->linkedDriver = h3drvPtr;
+    }
+    Ns_DListFree(&h3dl);
+    Ns_DListFree(&h1dl);
+}
+
+void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
+{
+    NsTLSConfig *dc = sockPtr->driver->arg;
+
+    Ns_Log(Notice, "NsTlsAddOutputHeaders");
+
+    NS_INIT_ONCE(EnsureDriverLinkage);
+
+    /*
+     * Add alt-svc header field, if
+     *  - the h3 module is activated and linked to this driver, and
+     *  - h3advertise is turned on, and
+     *  - alt-svc" is not already set
+     */
+    if (1 //((Driver *)sockPtr->driver)->linkedDriver != NULL
+        && dc->u.h1.h3advertise
+        && Ns_SetFind(outputHeaders, "alt-svc") == -1) {
+        Driver      *drvPtr = (Driver*)(sockPtr->driver);
+        Tcl_DString  ds;
+
+        Tcl_DStringInit(&ds);
+        Ns_DStringPrintf(&ds, "alt-svc: h3=\":%hu\"; ma=86400%s",
+                         drvPtr->port,
+                         dc->u.h1.h3persist ? "; persist=1" : "");
+        Ns_Log(Notice, "quic: added <%s>", ds.string);
+        Tcl_DStringFree(&ds);
+    }
+}
 
 #else
 

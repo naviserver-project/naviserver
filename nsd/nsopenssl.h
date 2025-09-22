@@ -89,8 +89,10 @@ typedef struct NsTLSConfig {
     int         sni_idx;
     union {
         struct {
-            int    deferaccept;       /* Enable the TCP_DEFER_ACCEPT optimization.   */
-            int    nodelay;           /* Enable the TCP_NODELAY optimization.        */
+            int    deferaccept;       /* Enable the TCP_DEFER_ACCEPT optimization.         */
+            int    nodelay;           /* Enable the TCP_NODELAY optimization.              */
+            bool   h3advertise;       /* add h3 advertize automatically when h3 is enabled */
+            bool   h3persist;         /* add persit flag to h3 advertise when activated    */
         } h1;
         struct {
             int    cc_idx;

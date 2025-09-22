@@ -528,6 +528,58 @@ DriverModuleInitialized(const char *module)
     return found;
 }
 
+/*
+ * NsDriverFromConfigSection --
+ *
+ *    Look up a driver by its configuration section path.
+ *
+ * Returns:
+ *    Pointer to the Ns_Driver corresponding to the given section,
+ *    or NULL if no driver matches.
+ *
+ * Side Effects:
+ *    None.
+ */
+Ns_Driver *
+NsDriverFromConfigSection(const char *section)
+{
+    Driver *drvPtr;
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        if (strcmp(drvPtr->path, section) == 0) {
+            break;
+        }
+    }
+
+    return (Ns_Driver*)drvPtr;
+}
+
+/*
+ * NsDriversOfType --
+ *
+ *    Collect all drivers of a given type into the provided DList.
+ *
+ * Returns:
+ *    Number of drivers appended to dlPtr (equal to dlPtr->size after call).
+ *
+ * Side Effects:
+ *    Appends matching driver pointers to dlPtr.
+ *    Caller must ensure dlPtr is initialized before reusing it.
+ */
+size_t
+NsDriversOfType(Ns_DList *dlPtr, const char *type)
+{
+    Driver *drvPtr;
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        if (strcmp(drvPtr->type, type) == 0) {
+            Ns_DListAppend(dlPtr, drvPtr);
+        }
+    }
+
+    return dlPtr->size;
+}
+
 
 /*
  *----------------------------------------------------------------------
