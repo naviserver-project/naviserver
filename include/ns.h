@@ -3285,6 +3285,10 @@ NS_EXTERN bool
 Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
+NS_EXTERN bool
+Ns_SockaddrSetLoopback(struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN int
 ns_inet_pton(struct sockaddr *saPtr, const char *addr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);

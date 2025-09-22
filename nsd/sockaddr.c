@@ -994,6 +994,58 @@ Ns_SockaddrInAny(const struct sockaddr *saPtr) {
     return success;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockaddrSetLoopback --
+ *
+ *      Set the IP address of a given sockaddr structure to the loopback
+ *      address, depending on its address family.
+ *
+ *      - For AF_INET  (IPv4): sets sin_addr.s_addr to 127.0.0.1 (INADDR_LOOPBACK).
+ *      - For AF_INET6 (IPv6): sets sin6_addr to the standard IPv6 loopback (::1).
+ *      - For other address families: does nothing and reports failure.
+ *
+ * Returns:
+ *      NS_TRUE  if the address family is AF_INET or AF_INET6 and the loopback
+ *               address was successfully applied.
+ *      NS_FALSE if the address family is unsupported and no changes were made.
+ *
+ * Side Effects:
+ *      Modifies the input sockaddr structure in place.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_SockaddrSetLoopback(struct sockaddr *saPtr) {
+    bool success = NS_TRUE;
+
+    NS_NONNULL_ASSERT(saPtr != NULL);
+
+    switch (saPtr->sa_family) {
+    case AF_INET: {
+        struct sockaddr_in *ipv4_addr = (struct sockaddr_in*)saPtr;
+        ipv4_addr->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        break;
+    }
+    case AF_INET6: {
+        struct sockaddr_in6 *ipv6_addr = (struct sockaddr_in6*)saPtr;
+        ipv6_addr->sin6_addr = in6addr_loopback;
+        break;
+    }
+    default:
+        /*
+         * Not IPv4 or IPv6
+         */
+        success = NS_FALSE;
+        break;
+    }
+
+    return success;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
