@@ -859,7 +859,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
 
             byte4 = bytes[idx++];
             if ((byte4 & 0xC0u) != 0x80u) {
-                Ns_Log(Debug, "UTF8 decode '%s': 4-byte 4rd byte must be continuation byte", bytes);
+                Ns_Log(Debug, "UTF8 decode '%s': 4-byte 4th byte must be continuation byte", bytes);
                 InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx - 4, 4, NS_FALSE);
                 return NS_FALSE;
             }

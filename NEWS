@@ -1,4 +1,67 @@
 =======================================
+NaviServer 5.0.1, released 2025-09-23
+=======================================
+
+ 33 files changed, 463 insertions(+), 129 deletions(-)
+
+Bug Fixes:
+----------
+
+  - Prevented tail truncation of disk-spooled file uploads under
+    certain boundary conditions.
+
+  - Fixed potentially harmful negative timeout calculation in driver
+    thread by ensuring safe default and assertions
+
+  - Fixed incorrect return type in TLS context initialization error
+    path (TCL_ERROR instead of NS_ERROR).
+
+  - connchan: Fixed potential NULL dereferences with debug mode.
+
+  - Strengthened UTF-8 validation in Ns_Valid_UTF8():
+    * Added stricter checks for continuation bytes
+    * Prevented overlong encodings and surrogate ranges
+    * Improved diagnostic messages and error reporting
+
+  - Corrected Windows/MSVC build issues:
+    * Adjusted 'nargs' type in SetCreateObjCmd() to avoid stack
+      corruption warnings
+    * Fixed buffer size in _mktemp_s() usage
+    * Made ns_mkdtemp() visible in Windows builds
+    * Corrected Ns_SockConnectUnix() mistype in Windows build
+    * Updated ns/interps/CGIinterps for Windows compatibility
+    * Provided TCLSH_PROG for Makefile generation
+    * Improved handling of EXEEXT and MINGW-specific defines
+
+  - Fixed build system bugs:
+    * Corrected use of tabs in Makefiles to avoid GNU make errors
+    * Fixed cross-compilation test execution failures
+    * Updated MSVC Makefiles for modern builds
+
+  - Fixed test suite issues:
+    * Skipped new tests requiring "lmap" when running under Tcl 8.5
+    * Added comprehensive regression tests for UTF-8 validator
+    * Adapted "ns_strcoll" tests for macOS Sequoia collation order changes
+
+Documentation and Configuration:
+--------------------------------
+
+  - Clarified default values and meaning of "schedsperthread" and
+    related scheduling parameters in sample configs and docs.
+
+  - Minor corrections in comments and error messages for platform-specific
+    builds (e.g., MINGW).
+
+Notes:
+------
+
+  - This is a bug-fix only release for the 5.0 branch.
+  - It contains selected backports from the head branch that improve
+    robustness, portability (especially Windows/MSVC), and test coverage,
+    but introduces o new features.
+
+
+=======================================
 NaviServer 5.0.0, released 2025-07-08
 =======================================
 
@@ -1104,7 +1167,7 @@ New Features:
     "-filter defaults":
 
         Returns the defaults of the parameter. This is useful for
-        contrasting the actual values with the default values for
+        asting the actual values with the default values for
         Parameters, e.g. in a web based interface.
 
  - ns_set reform (per default deactivated in 4.99, but activated in 5.*)
@@ -1562,7 +1625,7 @@ nsoracle:
     lead to errors for the form:
 
          Database operation "getrow" failed (exception 1406, "nsoracle.c:3659:Ns_OracleGetRow:
-         error in `OCIStmtFetch ()': ORA-01406: fetched column value was truncated
+         error in OCIStmtFetch(): ORA-01406: fetched column value was truncated
 
     The driver needs for several output types special rules, where the
     timestamp cases were not supported so far. It is also recommended
@@ -2002,7 +2065,7 @@ nsoracle:
    lead to errors for the form:
 
          Database operation "getrow" failed (exception 1406, "nsoracle.c:3659:Ns_OracleGetRow:
-         error in `OCIStmtFetch ()': ORA-01406: fetched column value was truncated
+         error in OCIStmtFetch(): ORA-01406: fetched column value was truncated
 
    The driver needs for several output types special rules, where the
    timestamp cases were not supported so far. It is also recommended
@@ -3612,7 +3675,7 @@ nsoracle:
 
    * Changed the include order to avoid bad interactions between oci.h and zlib.
      with the previous include order, we run with recent oracle versions (19.5) into
-        /usr/include/zlib.h:1677:4: error: unknown type name ‘off64_t’
+        /usr/include/zlib.h:1677:4: error: unknown type name "off64_t"
      on 64-bit Linux systems (centos 7)
 
   * Added ORA_CFLAGS to allow developers to pass arbitrary include and library flags.

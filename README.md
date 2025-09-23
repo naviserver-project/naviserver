@@ -71,8 +71,8 @@ avoid version mismatches) or in a separate location.
 On a Unix-like system, run:
 
 ```bash
-gunzip < tcl8.6.13-src.tar.gz | tar xvf -
-cd tcl8.6.13/unix
+gunzip < tcl8.6.17-src.tar.gz | tar xvf -
+cd tcl8.6.17/unix
 ./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
 make install
 ```
@@ -105,8 +105,8 @@ get if via the package manager of your operating system.
 To compile official releases, execute:
 
 ```bash
-gunzip < naviserver-5.0.0.tar.gz | tar xvf -
-cd naviserver-5.0.0
+gunzip < naviserver-5.0.1.tar.gz | tar xvf -
+cd naviserver-5.0.1
 ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
 make
 su -c 'make install'
@@ -180,7 +180,7 @@ SourceForge. For example, to install a module named `nsfoo`:
 
 
 ```bash
-gunzip < naviserver-5.0.0-modules.tar.gz | tar xvf -
+gunzip < naviserver-5.0.1-modules.tar.gz | tar xvf -
 cd modules/nsfoo
 make install NAVISERVER=/usr/local/ns
 ```
@@ -204,7 +204,7 @@ Download the minimal environment from [https://sourceforge.net/projects/mingw/fi
 3. In the msys shell, run:
 
     ```bash
-    cd /c/naviserver-5.0.0
+    cd /c/naviserver-5.0.1
     ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
     make install
     ```
