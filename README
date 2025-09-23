@@ -72,8 +72,8 @@ macOS 10.2+ and Windows. To compile and install:
 
     The following commands should work on a Unix-like operating system:
 
-    $ gunzip < tcl8.6.14-src.tar.gz | tar xvf -
-    $ cd tcl8.6.14/unix
+    $ gunzip < tcl8.6.17-src.tar.gz | tar xvf -
+    $ cd tcl8.6.17/unix
     $ ./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
     $ make install
 
@@ -100,8 +100,8 @@ macOS 10.2+ and Windows. To compile and install:
 
     The following should work for official releases:
 
-        $ gunzip < naviserver-4.99.31.tar.gz | tar xvf -
-        $ cd naviserver-4.99.31
+        $ gunzip < naviserver-4.99.32.tar.gz | tar xvf -
+        $ cd naviserver-4.99.32
         $ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
         $ make
         $ su -c 'make install'
@@ -113,7 +113,7 @@ macOS 10.2+ and Windows. To compile and install:
         Path to library installation directory of Tcl where
         configure can find the tclConfig.sh script.  Without
         this option, configure will search around for
-        tclConfig.sh, perhaps finding it in ../tcl8.6.14/unix.
+        tclConfig.sh, perhaps finding it in ../tcl8.6.17/unix.
 
     --with-zlib=/usr
 
@@ -191,7 +191,7 @@ macOS 10.2+ and Windows. To compile and install:
     named "nsfoo", get it from the modules tar file and install it
     like sketched below:
 
-        $ gunzip < naviserver-4.99.31-modules.tar.gz | tar xvf -
+        $ gunzip < naviserver-4.99.32-modules.tar.gz | tar xvf -
         $ cd modules/nsfoo
         $ make install NAVISERVER=/usr/local/ns
 
@@ -229,7 +229,7 @@ macOS 10.2+ and Windows. To compile and install:
         c:>cd msys
         c:\msys> msys.bat
 
-        $ cd /c/naviserver-4.99.31
+        $ cd /c/naviserver-4.99.32
         $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
         $ make install
 

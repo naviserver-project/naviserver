@@ -1,4 +1,70 @@
 =======================================
+NaviServer 4.99.32, released 2025-09-23
+=======================================
+
+ 7 files changed, 80 insertions(+), 17 deletions(-)
+
+Bug Fixes:
+----------
+
+  - Fixed multipart/form-data parsing in 'ns_parseformfile': correct
+    boundary/end calculations and copied byte count to prevent
+    truncated or misaligned part reads under spooling.
+
+  - Adjust OpenACS sample configuration file: set
+    'nslog.checkforproxy' based on '$reverseproxymode' (was
+    '$proxy_mode') to match revised reverse proxy naming. This bug
+    affected mostly users which were using the example configution
+    file without local adaptions.
+
+  - Return correct Tcl error code in TLS context setup:
+    Ns_TLS_CtxServerInit() now returns TCL_ERROR when the certificate
+    parameter is missing (was NS_ERROR), aligning with Tcl
+    conventions.
+
+  - Make driver poll timeout robust: handle "no deadline" (TIME_T_MAX)
+    with a safe default, round up sub-millisecond waits, and assert
+    against negative timeouts to avoid indefinite waits.
+
+
+Documentation Updates:
+----------------------
+
+  - Refresh README build instructions and man pages to reflect actual
+    version numbers
+
+  - Clarify 'ns_return' manpage: document that the headers argument
+    accepts a setid and defaults to 'ns_conn outputheaders' when
+    omitted.
+
+  - Correct 'ns_set' examples to use 'ns_set create' (was 'ns_set new').
+
+  - Revise 'ns_issmallint' description to reflect unsigned 16-bit range
+    semantics instead of digit-count based description.
+
+Tests:
+------
+
+  - Add multipart upload tests validating spooling behavior and file
+    part sizes for small (2 KB) and larger (~16 KB) uploads.
+
+  - Make 'ns_http.test' portable across platforms by introducing
+    '$devnull' and '$contentfile' helpers.
+
+  - Relax 'ns_strcoll' expectations (glob match) to accommodate macOS
+    Sequoia 15.4 collation order changes, while preserving
+    deterministic sorting under specified locales.
+
+Notes:
+------
+
+  This is a bug-fix release for the 4.99 line (no new features) and
+  includes select backports from 5.0 that improve robustness,
+  documentation accuracy, and test portability. For Tcl9 compatibility
+  please use NaviServer 5.*.
+
+
+=======================================
 NaviServer 4.99.31, released 2024-08-11
 =======================================
 
@@ -862,7 +928,7 @@ nsoracle:
     lead to errors for the form:
 
          Database operation "getrow" failed (exception 1406, "nsoracle.c:3659:Ns_OracleGetRow:
-         error in `OCIStmtFetch ()': ORA-01406: fetched column value was truncated
+         error in 'OCIStmtFetch ()': ORA-01406: fetched column value was truncated
 
     The driver needs for several output types special rules, where the
     timestamp cases were not supported so far. It is also recommended
@@ -1302,7 +1368,7 @@ nsoracle:
    lead to errors for the form:
 
          Database operation "getrow" failed (exception 1406, "nsoracle.c:3659:Ns_OracleGetRow:
-         error in `OCIStmtFetch ()': ORA-01406: fetched column value was truncated
+         error in 'OCIStmtFetch ()': ORA-01406: fetched column value was truncated
 
    The driver needs for several output types special rules, where the
    timestamp cases were not supported so far. It is also recommended
