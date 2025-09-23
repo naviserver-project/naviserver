@@ -213,126 +213,129 @@ test ns_valid_utf8-1.3 {valid utf8, containing x85 at the end} -body {
 } -result 1
 
 test ns_valid_utf8-1.4 {invalid utf8, containing xF0 at the end} -body {
-    ns_valid_utf8 "forschungsprojek\xF0" errorString
-    set errorString
+    ns_valid_utf8 "forschungsprojek\xF0" errorString; set errorString
 } -result {forschungs...|\xf0|}
 
 test ns_valid_utf8-1.5 {invalid utf8, containing x85 in the middle} -body {
-    ns_valid_utf8 "mot\x85rhead" errorString
-    set errorString
+    ns_valid_utf8 "mot\x85rhead" errorString; set errorString
 } -result {mot|\x85r|...}
 
 test ns_valid_utf8-2.0 {invalid utf8, lone continuation byte} -body {
-    return [ns_valid_utf8 "\x80"]
-} -result 0
+    ns_valid_utf8 "\x80" errorString; set errorString
+} -result {|\x80|}
 
 test ns_valid_utf8-2.1 {invalid utf8, lone continuation byte at the start} -body {
-    return [ns_valid_utf8 "\x80hello"]
-} -result 0
+    ns_valid_utf8 "\x80hello" errorString; set errorString
+} -result {|\x80h|...}
 
 test ns_valid_utf8-2.2 {invalid utf8, lone continuation byte at the end} -body {
-    return [ns_valid_utf8 "hello\x80"]
-} -result 0
+    ns_valid_utf8 "hello\x80" errorString; set errorString
+} -result {hello|\x80|}
 
 test ns_valid_utf8-2.3 {invalid utf8, lone continuation byte in the middle} -body {
-    return [ns_valid_utf8 "hello\x80world"]
-} -result 0
+    ns_valid_utf8 "hello\x80world" errorString; set errorString
+} -result {hello|\x80w|...}
 
 test ns_valid_utf8-3.0 {invalid utf8, too few continuation bytes} -body {
-    return [ns_valid_utf8 "\xE2\x82"]
-} -result 0
+    ns_valid_utf8 "\xE2\x82" errorString; set errorString
+} -result {|\xe2\x82|}
 
 test ns_valid_utf8-3.1 {invalid utf8, too few continuation bytes at the start} -body {
-    return [ns_valid_utf8 "\xE2\x82hello"]
-} -result 0
+    ns_valid_utf8 "\xE2\x82hello" errorString; set errorString
+} -result {|\xe2\x82h|...}
 
 test ns_valid_utf8-3.2 {invalid utf8, too few continuation bytes at the end} -body {
-    return [ns_valid_utf8 "hello\xE2\x82"]
-} -result 0
+    ns_valid_utf8 "hello\xE2\x82" errorString; set errorString
+} -result {hello|\xe2\x82|}
 
 test ns_valid_utf8-3.3 {invalid utf8, too few continuation bytes in the middle} -body {
-    return [ns_valid_utf8 "hello\xE2\x82world"]
-} -result 0
+    ns_valid_utf8 "hello\xE2\x82world" errorString; set errorString
+} -result {hello|\xe2\x82w|...}
 
-test ns_valid_utf8-4.0 {invalid utf8, invalid continuation byte} -body {
-    return [ns_valid_utf8 "\xE2\x28\xA1"]
-} -result 0
 
-test ns_valid_utf8-4.1 {invalid utf8, invalid continuation byte at the start} -body {
-    return [ns_valid_utf8 "\xE2\x28\xA1hello"]
-} -result 0
+test ns_valid_utf8-4.0 {3-byte utf8, invalid 2nd byte} -body {
+    ns_valid_utf8 "\xE2_\xA1" errorString; set errorString
+} -result {|\xe2_\xa1|...}
 
-test ns_valid_utf8-4.2 {invalid utf8, invalid continuation byte at the end} -body {
-    return [ns_valid_utf8 "hello\xE2\x28\xA1"]
-} -result 0
+test ns_valid_utf8-4.1 {3-byte utf8, invalid continuation byte at the start} -body {
+    ns_valid_utf8 "\xE2_\xA1hello" errorString; set errorString
+} -result {|\xe2_\xa1|...}
 
-test ns_valid_utf8-4.3 {invalid utf8, invalid continuation byte in the middle} -body {
-    return [ns_valid_utf8 "hello\xE2\x28\xA1world"]
-} -result 0
+test ns_valid_utf8-4.2 {3-byte utf8, invalid continuation byte at the end} -body {
+    ns_valid_utf8 "hello\xE2_\xA1" errorString; set errorString
+} -result {hello|\xe2_\xa1|...}
+
+test ns_valid_utf8-4.3 {3-byte utf8, invalid continuation byte in the middle} -body {
+    ns_valid_utf8 "hello\xE2_\xA1world" errorString; set errorString
+} -result {hello|\xe2_\xa1|...}
+
 
 test ns_valid_utf8-5.0 {invalid utf8, invalid leading byte} -body {
-    return [ns_valid_utf8 "\xBF\xA3"]
-} -result 0
+    ns_valid_utf8 "\xBF\xA3" errorString; set errorString
+} -result {|\xbf\xa3|...}
 
 test ns_valid_utf8-5.1 {invalid utf8, invalid leading byte at the start} -body {
-    return [ns_valid_utf8 "\xBF\xA3hello"]
-} -result 0
+    ns_valid_utf8 "\xBF\xA3hello" errorString; set errorString
+} -result {|\xbf\xa3|...}
 
 test ns_valid_utf8-5.2 {invalid utf8, invalid leading byte at the end} -body {
-    return [ns_valid_utf8 "hello\xBF\xA3"]
-} -result 0
+    ns_valid_utf8 "hello\xBF\xA3" errorString; set errorString
+} -result {hello|\xbf\xa3|...}
 
 test ns_valid_utf8-5.3 {invalid utf8, invalid leading byte in the middle} -body {
-    return [ns_valid_utf8 "hello\xBF\xA3world"]
-} -result 0
+    ns_valid_utf8 "hello\xBF\xA3world" errorString; set errorString
+} -result {hello|\xbf\xa3|...}
 
-test ns_valid_utf8-6.0 {invalid utf8, out of range code point} -body {
-    return [ns_valid_utf8 "\xF8\x80\x80\x80\x80"]
-} -result 0
 
-test ns_valid_utf8-6.1 {invalid utf8, out of range code point at the start} -body {
-    return [ns_valid_utf8 "\xF8\x80\x80\x80\x80hello"]
-} -result 0
+test ns_valid_utf8-6.0 {invalid 4-byte utf8, out of range code point} -body {
+    ns_valid_utf8 "\xF8\x80\x80\x80\x80" errorString; set errorString
+} -result {|\xf8\x80\x80\x80|...}
 
-test ns_valid_utf8-6.2 {invalid utf8, out of range code point at the end} -body {
-    return [ns_valid_utf8 "hello\xF8\x80\x80\x80\x80"]
-} -result 0
+test ns_valid_utf8-6.1 {invalid 4-byte utf8, out of range code point at the start} -body {
+    ns_valid_utf8 "\xF8\x80\x80\x80\x80hello" errorString; set errorString
+} -result {|\xf8\x80\x80\x80|...}
 
-test ns_valid_utf8-6.3 {invalid utf8, out of range code point in the middle} -body {
-    return [ns_valid_utf8 "hello\xF8\x80\x80\x80\x80world"]
-} -result 0
+test ns_valid_utf8-6.2 {invalid 4-byte utf8, out of range code point at the end} -body {
+    ns_valid_utf8 "hello\xF8\x80\x80\x80\x80" errorString; set errorString
+} -result {hello|\xf8\x80\x80\x80|...}
+
+test ns_valid_utf8-6.3 {invalid 4-byte utf8, out of range code point in the middle} -body {
+    ns_valid_utf8 "hello\xF8\x80\x80\x80\x80world" errorString; set errorString
+} -result {hello|\xf8\x80\x80\x80|...}
+
 
 test ns_valid_utf8-7.0 {invalid utf8, surrogate halves} -body {
-    return [ns_valid_utf8 "\xED\xA0\x80"]
-} -result 0
+    ns_valid_utf8 "\xED\xA0\x80" errorString; set errorString
+} -result {|\xed\xa0\x80|...}
 
 test ns_valid_utf8-7.1 {invalid utf8, surrogate halves at the start} -body {
-    return [ns_valid_utf8 "\xED\xA0\x80hello"]
-} -result 0
+    ns_valid_utf8 "\xED\xA0\x80hello" errorString; set errorString
+} -result {|\xed\xa0\x80|...}
 
 test ns_valid_utf8-7.2 {invalid utf8, surrogate halves at the end} -body {
-    return [ns_valid_utf8 "hello\xED\xA0\x80"]
-} -result 0
+    ns_valid_utf8 "hello\xED\xA0\x80" errorString; set errorString
+} -result {hello|\xed\xa0\x80|...}
 
 test ns_valid_utf8-7.3 {invalid utf8, surrogate halves in the middle} -body {
-    return [ns_valid_utf8 "hello\xED\xA0\x80world"]
-} -result 0
+    ns_valid_utf8 "hello\xED\xA0\x80world" errorString; set errorString
+} -result {hello|\xed\xa0\x80|...}
+
 
 test ns_valid_utf8-8.0 {invalid utf8, overlong encoding} -body {
-    return [ns_valid_utf8 "\xC0\xAF"]
-} -result 0
+    ns_valid_utf8 "\xC0\xAF" errorString; set errorString
+} -result {|\xc0\xaf|...}
 
 test ns_valid_utf8-8.1 {invalid utf8, overlong encoding at the start} -body {
-    return [ns_valid_utf8 "\xC0\xAFhello"]
-} -result 0
+    ns_valid_utf8 "\xC0\xAFhello" errorString; set errorString
+} -result {|\xc0\xaf|...}
 
 test ns_valid_utf8-8.2 {invalid utf8, overlong encoding at the end} -body {
-    return [ns_valid_utf8 "hello\xC0\xAF"]
-} -result 0
+    ns_valid_utf8 "hello\xC0\xAF" errorString; set errorString
+} -result {hello|\xc0\xaf|...}
 
 test ns_valid_utf8-8.3 {invalid utf8, overlong encoding in the middle} -body {
-    return [ns_valid_utf8 "hello\xC0\xAFworld"]
-} -result 0
+    ns_valid_utf8 "hello\xC0\xAFworld" errorString; set errorString
+} -result {hello|\xc0\xaf|...}
 
 
 #######################################################################################

@@ -747,8 +747,10 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
 {
     size_t idx = 0;
 
+    /*NsHexPrint("Valid UTF8?", bytes, (size_t)nrBytes, 32, NS_FALSE);*/
+
     for (;;) {
-        unsigned char byte1, byte2;
+        unsigned char byte1, byte2, byte3, byte4;
 
         /*
          * First a loop over 7-bit ASCII characters.
@@ -806,20 +808,25 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
                 return NS_FALSE;
             }
             byte2 = bytes[idx++];
-            if (byte2 > 0xBF
-                /* Overlong? 5 most significant bits must not all be zero. */
-                || (byte1 == 0xE0 && byte2 < 0xA0)
-                /* Check for illegal surrogate codepoints. */
-                || (byte1 == 0xED && 0xA0 <= byte2)
-                /* Third byte trailing-byte test. */
-                || bytes[idx++] > 0xBF) {
+            /* second byte must be a continuation byte */
+            if ((byte2 & 0xC0u) != 0x80u
+                || (byte1 == 0xE0 && byte2 < 0xA0)   /* overlong */
+                || (byte1 == 0xED && byte2 >= 0xA0)) /* surrogate */
+                {
+                    InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx - 1, 3, NS_FALSE);
+                    Ns_Log(Debug, "UTF8 decode '%s': 3-byte 2nd byte must be continuation byte", bytes);
+                    return NS_FALSE;
+                }
 
-                Ns_Log(Debug, "UTF8 decode '%s': 3-byte invalid sequence byte %.2x %.2x %.2x",
-                       bytes, byte1, byte2, bytes[idx]);
-
-                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, bytes[idx-1] > 0xBF ? idx - 1 : idx, 3, NS_FALSE);
+            /* third byte must be a continuation byte */
+            byte3 = bytes[idx++];
+            if ((byte3 & 0xC0u) != 0x80u) {
+                Ns_Log(Debug, "UTF8 decode '%s': 3-byte invalid 3rd byte %.2x %.2x %.2x",
+                       bytes, byte1, byte2, byte3);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx - 2, 3, NS_FALSE);
                 return NS_FALSE;
             }
+
         } else {
             size_t startIndex;
             /*
@@ -835,22 +842,25 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
             }
             startIndex = idx;
             byte2 = bytes[idx++];
-            if (byte2 > 0xBF
-                /* Check that 1 <= plane <= 16. Tricky optimized form of:
-                 * if (byte1 > (byte) 0xF4
-                 *     || byte1 == (unsigned char) 0xF0 && byte2 < (unsigned char) 0x90
-                 *     || byte1 == (unsigned char) 0xF4 && byte2 > (unsigned char) 0x8F)
-                 */
-                || (((unsigned)(byte1 << 28) + (byte2 - 0x90u)) >> 30) != 0
-                /* Third byte trailing byte test */
-                || bytes[idx++] > 0xBF
-                /*  Fourth byte trailing byte test */
-                || bytes[idx++] > 0xBF) {
-
-                Ns_Log(Debug, "UTF8 decode '%s': 3-byte invalid sequence byte %.2x %.2x %.2x %.2x",
-                       bytes, byte1, byte2, bytes[idx-2], bytes[idx-1]);
-
+            /* byte2 must be continuation, plus range constraints for planes 1..16 */
+            if ((byte2 & 0xC0u) != 0x80u
+                || (((unsigned)(byte1 << 28) + (byte2 - 0x90u)) >> 30) != 0) {
+                Ns_Log(Debug, "UTF8 decode '%s': 4-byte 2nd byte must be continuation byte + range", bytes);
                 InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, startIndex, 4, NS_FALSE);
+                return NS_FALSE;
+            }
+
+            byte3 = bytes[idx++];
+            if ((byte3 & 0xC0u) != 0x80u) {
+                Ns_Log(Debug, "UTF8 decode '%s': 4-byte 3rd byte must be continuation byte", bytes);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx - 3, 4, NS_FALSE);
+                return NS_FALSE;
+            }
+
+            byte4 = bytes[idx++];
+            if ((byte4 & 0xC0u) != 0x80u) {
+                Ns_Log(Debug, "UTF8 decode '%s': 4-byte 4rd byte must be continuation byte", bytes);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, idx - 4, 4, NS_FALSE);
                 return NS_FALSE;
             }
         }
