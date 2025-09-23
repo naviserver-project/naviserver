@@ -840,6 +840,7 @@ NsUrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct s
     int         result = TCL_OK;
     const char *ipString = Ns_SetIGet(set, "x-ns-ip");
 
+    ctxPtr->saPtr = NULL;
     if (ipString != NULL) {
         int validIP = ns_inet_pton(ipPtr, ipString);
 
@@ -853,9 +854,6 @@ NsUrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct s
             result = TCL_ERROR;
         }
         Ns_SetDeleteKey(set, "x-ns-ip");
-
-    } else {
-        ctxPtr->saPtr = NULL;
     }
 
     ctxPtr->headers = set;

@@ -3185,7 +3185,7 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
         if (bytesSent > -1) {
             size_t unsentBytes = (size_t)toSend - (size_t)bytesSent;
 
-            if (connChanPtr->debugLevel > 1) {
+            if (connChanPtr->debugLevel > 1 && connChanPtr->sendBuffer != NULL) {
                 DebugLogBufferState(connChanPtr, toSend, bytesSent, connChanPtr->sendBuffer->string,
                                     "partial write, unsent bytes %ld", unsentBytes);
                 bytes_written = write(connChanPtr->debugFD, "\n-----CUT-HERE-----\n", 20u);
@@ -3203,7 +3203,7 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
                      * shift or concatenate.
                      */
 
-                    if (connChanPtr->debugLevel > 1) {
+                    if (connChanPtr->debugLevel > 1 && connChanPtr->sendBuffer != NULL) {
                         DebugLogBufferState(connChanPtr, toSend, bytesSent, connChanPtr->sendBuffer->string,
                                             "nothing was sent, unsent bytes %ld", unsentBytes);
                     }
