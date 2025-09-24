@@ -188,7 +188,7 @@ Ns_ModuleInit(const char *server, const char *UNUSED(module))
 
         psrvPtr = ns_malloc(sizeof(PServer));
         psrvPtr->server = server;
-        psrvPtr->servPtr = server != NULL ? Ns_GetServer(server) : NULL;
+        psrvPtr->servPtr = Ns_GetServer(server);
         Tcl_InitHashTable(&psrvPtr->users, TCL_STRING_KEYS);
         Tcl_InitHashTable(&psrvPtr->groups, TCL_STRING_KEYS);
         Ns_RWLockInit(&psrvPtr->lock);

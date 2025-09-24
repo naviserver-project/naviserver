@@ -122,12 +122,6 @@ Ns_ModuleInit(const char *server, const char *module)
     const char        *section;
     NsTLSConfig       *dc;
     Ns_DriverInitData  init;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    int                num;
-    Tcl_DString        ds;
-
-    Tcl_DStringInit(&ds);
-#endif
 
     memset(&init, 0, sizeof(init));
 

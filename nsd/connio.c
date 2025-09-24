@@ -1374,6 +1374,8 @@ HdrMergeExtra(const Ns_Conn *conn)
     Tcl_DString     ds;
 
     assert(headers != NULL);
+    assert(sockPtr != NULL);
+    assert(sockPtr->driver != NULL);
 
     Tcl_DStringInit(&ds);
     (void)Ns_HttpTime(&ds, NULL);
@@ -1398,10 +1400,10 @@ HdrMergeExtra(const Ns_Conn *conn)
         NsTlsAddOutputHeaders(headers, sockPtr);
     }
 
-    if (servPtr->opts.extraHeaders) {
+    if (servPtr->opts.extraHeaders != NULL) {
         Ns_SetIMerge(headers, servPtr->opts.extraHeaders);
     }
-    if (sockPtr && sockPtr->driver && sockPtr->driver->extraHeaders) {
+    if (sockPtr->driver->extraHeaders != NULL) {
         Ns_SetIMerge(headers, sockPtr->driver->extraHeaders);
     }
     return headers;
