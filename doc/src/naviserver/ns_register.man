@@ -767,7 +767,7 @@ This example shows how to expire all HTML files after an hour:
  }
 
  proc ExpireSoon {why seconds} {
-   ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
+   ns_set update [lb]ns_conn outputheaders[rb] expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
    return -code continue
  }
 [example_end]
