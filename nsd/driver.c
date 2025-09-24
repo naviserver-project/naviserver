@@ -3515,7 +3515,7 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
  *      for quick access.
  *
  *      Then, the function calls SockQueue, which associates the socket with
- *      the correct virtual server context and queues the equest for further
+ *      the correct virtual server context and queues the request for further
  *      handling by worker threads.
  *
  * Results:
