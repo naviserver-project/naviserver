@@ -131,12 +131,15 @@ You may also modify this ns_set.
 [call [cmd  "ns_conn currentaddr"]]
 
  Returns the local IP address (IPv4 or IPv6) of the current connection
- (i.e. the destination address of the socket). 
+ (i.e. the destination address the client connected to).
 
 [call [cmd  "ns_conn currentport"]]
 
- Returns the local port (i.e. the destination port of the socket) for
- the current connection.
+ Returns the local listen port on which NaviServer accepted the
+ connection. This is obtained directly from the socket's sockaddr
+ structure. For example, this will be [const 80] if the server was
+ listening on port [const 80], regardless of what the client specified
+ in the [const Host] header.
 
 
 [call [cmd  "ns_conn details"]]
@@ -300,7 +303,10 @@ You may also modify this ns_set.
 
 [call [cmd  "ns_conn peerport"]]
 
- Returns the connection pool associated with the current server.
+ Returns the TCP or UDP source port of the remote peer (the client).
+ This is the ephemeral port chosen by the client system when the
+ connection was established.
+
 
 [call [cmd  "ns_conn pool"]]
 
@@ -309,9 +315,22 @@ You may also modify this ns_set.
 
 [call [cmd  "ns_conn port"]]
 
- Returns the port specified in the host header or the protocol's
- default port.  In proxy mode, it returns the port specified in the
- HTTP request URL, or 0 for backwards compatibility.
+Returns the logical server port as indicated by the client.
+[list_begin itemized]
+
+[item] For normal HTTP(S) requests, the value is derived from the HTTP
+  [const Host] header. If no port is specified there, the protocol’s
+  default port is assumed (80 for HTTP, 443 for HTTPS).
+
+[item] In forward-proxy mode, the value is taken from the request line URL
+  instead of the Host header.
+
+[item] If no port can be determined, [const 0] is returned for backward
+  compatibility.
+[list_end]
+
+This represents the port the client believes it is addressing, which
+may differ from the actual local listen port.
 
 
 [call [cmd  "ns_conn protocol"]]
@@ -448,7 +467,38 @@ You may also modify this ns_set.
 
 [list_end]
 
+[section EXAMPLES]
 
+The following examples shows resolving of ports and addresses.
+Typical client request:
+
+[example_begin]
+ ;# Client connects from 192.0.2.55:54023 to server 203.0.113.10:8443
+ % ns_conn peeraddr
+ 192.0.2.55
+ % ns_conn peerport
+ 54023
+ % ns_conn currentaddr
+ 203.0.113.10
+ % ns_conn currentport
+ 8443
+ % ns_conn port
+ 8443
+[example_end]
+
+Request where NaviServer is having the role of a forwarding proxy server.
+
+[example_begin]
+ ;# Client connects to proxy.example.org:8080 (forward proxy case)
+ ;# Request line: GET http://www.example.com:1234/path HTTP/1.1
+ 
+ % ns_conn peerport
+ 54321         ;# client’s ephemeral port
+ % ns_conn currentport
+ 8080          ;# actual local port of proxy socket
+ % ns_conn port
+ 1234          ;# logical server port from request URL
+[example_end]
 
 [see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget \
   ns_time ns_getcontent]
