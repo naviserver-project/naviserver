@@ -2008,7 +2008,7 @@ ALPNSelectCB(NS_TLS_SSL *ssl, const unsigned char **out, unsigned char *outlen,
             unsigned char buffer[20];
             memcpy(buffer, &in[i + 1], len);
             buffer[len] = '\0';
-            Ns_Log(Notice, "ALPNSelectCB client offered '%s'", buffer);
+            //Ns_Log(Notice, "ALPNSelectCB client offered '%s'", buffer);
         }
         i += 1 + len;
     }
@@ -2021,9 +2021,9 @@ ALPNSelectCB(NS_TLS_SSL *ssl, const unsigned char **out, unsigned char *outlen,
 
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, (const char *)*out, *outlen);
-        Ns_Log(Notice, "ALPNSelectCB for ssl %p ctx %p returns %d <%s> ln %d",
+        /*Ns_Log(Notice, "ALPNSelectCB for ssl %p ctx %p returns %d <%s> ln %d",
                (void*)ssl, (void*)SSL_get_SSL_CTX(ssl),
-               rc, ds.string, *outlen);
+               rc, ds.string, *outlen);*/
         Tcl_DStringFree(&ds);
     }
     return (rc == OPENSSL_NPN_NEGOTIATED) ? SSL_TLSEXT_ERR_OK : SSL_TLSEXT_ERR_NOACK;
