@@ -2706,8 +2706,8 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         // default 0x00000012
         SSL_CTX_set_domain_flags(ctx, SSL_DOMAIN_FLAG_THREAD_ASSISTED);
         SSL_CTX_get_domain_flags(ctx, &current_flags);
-        Ns_Log(Notice, "SSL_CTX domain_flags for ctx %p default %.8llx set to %.8llx",
-               (void*)ctx, default_flags, current_flags);
+        Ns_Log(Notice, "SSL_CTX domain_flags for ctx %p default %.8lx set to %0" PRIx64,
+               (void*)ctx, (unsigned long)default_flags, current_flags);
     }
 #endif
 
@@ -3432,27 +3432,29 @@ static void
 EnsureDriverLinkage(void)
 {
     Ns_DList h3dl, h1dl;
-    size_t   i;
+    size_t   i, j;
 
     Ns_DListInit(&h3dl);
     Ns_DListInit(&h1dl);
-    NsDriversOfType(&h3dl, "h3");
+    NsDriversOfType(&h3dl, "quic");
     NsDriversOfType(&h1dl, "nsssl");
 
     Ns_Log(Notice, "EnsureDriverLinkage h1 %ld h3 %ld", h1dl.size, h3dl.size);
 
-    for (i=0; i< h1dl.size; i++) {
-        Driver      *h1drvPtr = h1dl.data[i];
-        Ns_Log(Notice, "H1 driver %p thread name %s", (void*)h1drvPtr, h1drvPtr->threadName);
-    }
-    for (i=0; i< h3dl.size; i++) {
+    for (i = 0; i < h3dl.size; i++) {
         Driver      *h3drvPtr = h3dl.data[i];
         const char  *section = h3drvPtr->path;
-        Driver      *h1drvPtr = (Driver *)NsDriverFromConfigSection(section);
 
-        Ns_Log(Notice, "h3 driver %s linked via path %s to h1 driver %s",
-               h3drvPtr->threadName, section, h3drvPtr->threadName);
-        h1drvPtr->linkedDriver = h3drvPtr;
+        for (j = 0; j < h3dl.size; j++) {
+            Driver *h1drvPtr = h1dl.data[j];
+            if (STREQ(h3drvPtr->path, section)) {
+                Ns_Log(Notice, "EnsureDriverLinkage common section %s h1 driver %p %s"
+                       " has linked driver %p %s", section,
+                       (void*)h1drvPtr, h1drvPtr->moduleName,
+                       (void*)h3drvPtr, h3drvPtr->moduleName);
+                h1drvPtr->linkedDriver = h3drvPtr;
+            }
+        }
     }
     Ns_DListFree(&h3dl);
     Ns_DListFree(&h1dl);
@@ -3462,27 +3464,34 @@ void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
 {
     NsTLSConfig *dc = sockPtr->driver->arg;
 
-    Ns_Log(Notice, "NsTlsAddOutputHeaders");
-
     NS_INIT_ONCE(EnsureDriverLinkage);
 
+    Ns_Log(Debug, "NsTlsAddOutputHeaders h1 driver %p %s linked to %p advertise %d"
+           " already set %d req %s",
+           (void*)sockPtr->driver, sockPtr->driver->threadName,
+           (void*)((Driver *)sockPtr->driver)->linkedDriver,
+           dc->u.h1.h3advertise, (Ns_SetFind(outputHeaders, "alt-svc") > -1),
+           ((Sock*)sockPtr)->reqPtr->request.line);
     /*
      * Add alt-svc header field, if
      *  - the h3 module is activated and linked to this driver, and
      *  - h3advertise is turned on, and
      *  - alt-svc" is not already set
      */
-    if (1 //((Driver *)sockPtr->driver)->linkedDriver != NULL
+    if (((Driver *)sockPtr->driver)->linkedDriver != NULL
         && dc->u.h1.h3advertise
         && Ns_SetFind(outputHeaders, "alt-svc") == -1) {
         Driver      *drvPtr = (Driver*)(sockPtr->driver);
         Tcl_DString  ds;
 
         Tcl_DStringInit(&ds);
-        Ns_DStringPrintf(&ds, "alt-svc: h3=\":%hu\"; ma=86400%s",
+        Ns_DStringPrintf(&ds, "h3=\":%hu\"; ma=86400%s",
                          drvPtr->port,
                          dc->u.h1.h3persist ? "; persist=1" : "");
-        Ns_Log(Notice, "quic: added <%s>", ds.string);
+        Ns_Log(Notice, "quic: added header field: alt-svc: %s", ds.string);
+        Ns_SetPutSz(outputHeaders,
+                    "alt-svc", 7,
+                    ds.string, ds.length);
         Tcl_DStringFree(&ds);
     }
 }

@@ -902,6 +902,9 @@ typedef int bool;
 #if !defined(PRIu64)
 # define PRIu64      "I64u"
 #endif
+#if !defined(PRIx64)
+# define PRIx64      "I64x"
+#endif
 
 #if !defined(SCNd64)
 # if !defined __PRI64_PREFIX
