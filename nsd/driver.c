@@ -226,6 +226,9 @@ static TCL_OBJCMDPROC_T AsyncLogfileCloseObjCmd;
 static Ns_ReturnCode CheckSingletonHeaderFields(Sock*sockPtr)
     NS_GNUC_NONNULL(1);
 
+static void DeterminePeerAddrFromHeaders(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+
 static Ns_ReturnCode DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj,
                                          const Ns_Conn *conn, DrvWriter **wrPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
@@ -3538,6 +3541,8 @@ NsDispatchRequest(Sock *sockPtr)
         SockRelease(sockPtr, SOCK_BADHEADER, 0);
         return NS_ERROR;
     }
+    DeterminePeerAddrFromHeaders(sockPtr);
+
     return SockQueue(sockPtr, NULL);
 }
 
@@ -4662,6 +4667,207 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeterminePeerAddrFromHeaders --
+ *
+ *      Inspect the request headers (in particular "X-Forwarded-For")
+ *      and update the client socket address (sockPtr->clientsa)
+ *      accordingly. This function is used in reverse-proxy scenarios
+ *      where the actual client IP address may be forwarded by one or
+ *      more proxy servers.
+ *
+ *      Behavior:
+ *      - If no valid "X-Forwarded-For" header is present, the client
+ *        address remains unset (zeroed).
+ *      - If a single IP address is present, it is parsed directly.
+ *      - If multiple addresses are present (comma-separated list),
+ *        processing depends on configuration:
+ *          * With trusted reverse proxies configured: process list
+ *            right-to-left, skipping over trusted proxies, and take
+ *            the first non-trusted, valid address.
+ *          * Without trusted proxies: process left-to-right, taking
+ *            the first valid (and optionally public) address.
+ *      - When "skipnonpublic" is enabled, non-public addresses are
+ *        ignored unless no public address is available.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *
+ *      - Updates sockPtr->clientsa if a valid address was found; otherwise
+ *        sets it to zero.
+ *      - Emits warnings for invalid IP tokens in the header.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DeterminePeerAddrFromHeaders(Sock *sockPtr)
+{
+    Request    *reqPtr = sockPtr->reqPtr;
+    const char *s = Ns_SetIGet(reqPtr->headers, "x-forwarded-for");
+
+    //Ns_Log(Notice, "XXXXX DeterminePeerAddrFromHeaders sockPtr %p reqPtr %p", (void*)sockPtr, (void*)reqPtr);
+
+    if (s != NULL && !strcasecmp(s, "unknown")) {
+        s = NULL;
+    }
+    if (s != NULL
+        && nsconf.reverseproxymode.trustedservers != NULL
+        && !Ns_SockaddrTrustedReverseProxy((struct sockaddr *)&sockPtr->sa)) {
+        s = NULL;
+    }
+
+    if (s != NULL) {
+        int success;
+
+        /*
+         * Try to parse the whole string as an IP address,.
+         */
+        success = ns_inet_pton((struct sockaddr *)&sockPtr->clientsa, s);
+        if (success > 0) {
+            /*
+             * We have a valid address. If skipping of non-public servers is
+             * enabled, check if this address is public (i.e., not suited for
+             * geo-location tracking etc.)
+             */
+            if (nsconf.reverseproxymode.skipnonpublic
+                && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
+                s = NULL;
+            }
+        } else {
+            /*
+             * Parsing the IP string was not successful. Now try to process
+             * the string of multiple, comma separated addresses. Since
+             * strtok() might be destructive on the input string, we apply it
+             * on a copy.
+             */
+            char *parseString = ns_strdup(s);
+            char *token       = ns_strtok(parseString, ", ");
+
+            //Ns_Log(Notice, "parse IP string <%s>", s);
+           /*
+             * Depending on the configuration of trusted reverse proxy
+             * servers, we apply a different strategy.
+             */
+            if (nsconf.reverseproxymode.trustedservers != NULL) {
+                /* Right-to-left walk, skipping trusted proxies */
+                Ns_DList dl, *dlPtr = &dl;
+                size_t   i;
+
+                /*
+                 * When trusted reverse proxies are configured, process the
+                 * list of values from right to left, until an address from a
+                 * non-trusted reverseproxy is found. This way, we skip
+                 * trusted servers in the chain and treat the first address
+                 * found as the address of the client.
+                 */
+                Ns_DListInit(dlPtr);
+
+                while (token != NULL) {
+                    Ns_DListAppend(dlPtr, token);
+                    token = ns_strtok(NULL, ", ");
+                }
+
+                success = -1;
+                for (i = dlPtr->size; i > 0; i--) {
+                    token = (char *)dlPtr->data[i - 1];
+
+                    success = ns_inet_pton((struct sockaddr *)&sockPtr->clientsa, token);
+                    if (success <= 0) {
+                        /*
+                         * The chunk before the comma was not a valid IP address.
+                         */
+                        Ns_Log(Warning, "invalid content in x-forwarded-for header: '%s'", token);
+                        break;
+                    }
+                    if (i == 1) {
+                        /*
+                         * The last entry, check only skipnonpublic if necessary
+                         */
+                        if (nsconf.reverseproxymode.skipnonpublic
+                            && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
+                            Ns_Log(Debug, "... skip last non-public token %s", token);
+                            success = -1;
+                        }
+                    } else if (!Ns_SockaddrTrustedReverseProxy((struct sockaddr *)&sockPtr->clientsa)) {
+
+                        /*Ns_Log(Notice, "... token %s not trusted, skipnonpublic %d public %d", token,
+                               nsconf.reverseproxymode.skipnonpublic,
+                               Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa));*/
+                        /*
+                         * It is not a trusted reverse proxy. Do we want to
+                         * skip non-public addresses?
+                         */
+                        if (nsconf.reverseproxymode.skipnonpublic
+                            && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
+                            Ns_Log(Debug, "... skip non-public token %s", token);
+                            success = -1;
+                        } else {
+                            /*
+                             * Accept token, since skipnonpublic is false
+                             */
+                            break;
+                        }
+                    } else {
+                        Ns_Log(Debug, "... skip trusted token %s ", token);
+                        success = -1;
+                    }
+                }
+                Ns_DListFree(dlPtr);
+
+            } else {
+                /* Classical behavior: take the leftmost public IP (or first IP).
+                 * No trusted severs were configured. Here we assume that the
+                 * data we get from the proxy server can be trusted.
+                 */
+                success = -1;
+                while (token != NULL) {
+                    /*Ns_Log(Notice, "check token '%s' in classic case, skipnonpublic %d",
+                      token, nsconf.reverseproxymode.skipnonpublic);*/
+
+                    success = ns_inet_pton((struct sockaddr *)&sockPtr->clientsa, token);
+                    if (success <= 0) {
+                        /*
+                         * The chunk before the comma was not a valid IP address.
+                         */
+                        Ns_Log(Warning, "invalid content in x-forwarded-for header: '%s'", token);
+                        break;
+                    }
+                    if (nsconf.reverseproxymode.skipnonpublic) {
+                        if (Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
+                            break;
+                        }
+                        Ns_Log(Debug, "... skipping token '%s'", token);
+                        success = -1;
+                    } else {
+                        success = 1;
+                        break;
+                    }
+                    /*
+                     * Continue to the next token.
+                     */
+                    token = ns_strtok(NULL, ", ");
+                }
+            }
+            ns_free(parseString);
+        }
+
+        Ns_Log(Debug, "x-forwarded-for: accept IP address from '%s' -> %d",
+               (s == NULL ? "(null)" : s), success);
+
+        if (success <= 0) {
+            s = NULL;
+        }
+    }
+
+    if (s == NULL) {
+        memset(&sockPtr->clientsa, 0, sizeof(struct NS_SOCKADDR_STORAGE));
+    }
+}
+
 /*----------------------------------------------------------------------
  *
  * EndOfHeader --
@@ -4802,168 +5008,13 @@ EndOfHeader(Sock *sockPtr)
             }
         }
     }
-
     /*
      * Determine the peer address for clients coming via reverse proxy
      * servers, based on the content of the "x-forwarded-for" header. If
      * trusted reverse proxy servers are specified, accept the field only from
      * these.
      */
-
-    s = Ns_SetIGet(reqPtr->headers, "x-forwarded-for");
-    if (s != NULL && !strcasecmp(s, "unknown")) {
-        s = NULL;
-    }
-    if (s != NULL
-        && nsconf.reverseproxymode.trustedservers != NULL
-        && !Ns_SockaddrTrustedReverseProxy((struct sockaddr *)&sockPtr->sa)) {
-        s = NULL;
-    }
-
-    if (s != NULL) {
-        int success;
-
-        /*
-         * Try to parse the whole string as an IP address,.
-         */
-        success = ns_inet_pton((struct sockaddr *)&sockPtr->clientsa, s);
-        if (success > 0) {
-            /*
-             * We have a valid address. If skipping of non-public servers is
-             * enabled, check if this address is public (i.e., not suited for
-             * geo-location tracking etc.)
-             */
-            if (nsconf.reverseproxymode.skipnonpublic
-                && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
-                s = NULL;
-            }
-
-        } else {
-            /*
-             * Parsing the IP string was not successful. Now try to process
-             * the string of multiple, comma separated addresses. Since
-             * strtok() might be destructive on the input string, we apply it
-             * on a copy.
-             */
-            char *parseString = ns_strdup(s);
-            char *token = ns_strtok(parseString, ", ");
-
-            //Ns_Log(Notice, "parse IP string <%s>", s);
-           /*
-             * Depending on the configuration of trusted reverse proxy
-             * servers, we apply a different strategy.
-             */
-            if (nsconf.reverseproxymode.trustedservers != NULL) {
-                Ns_DList dl, *dlPtr = &dl;
-                size_t   i;
-
-                /*
-                 * When trusted reverse proxies are configured, process the
-                 * list of values from right to left, until an address from a
-                 * non-trusted reverseproxy is found. This way, we skip
-                 * trusted servers in the chain and treat the first address
-                 * found as the address of the client.
-                 */
-                Ns_DListInit(dlPtr);
-
-                while (token != NULL) {
-                    Ns_DListAppend(dlPtr, token);
-                    token = ns_strtok(NULL, ", ");
-                }
-                //Ns_Log(Notice, "... parsed IP string into %ld tokens", dlPtr->size);
-                for (i = dlPtr->size; i > 0; i--) {
-                    token = (char *)dlPtr->data[i - 1];
-
-                    success = ns_inet_pton((struct sockaddr *)&sockPtr->clientsa, token);
-                    if (success <= 0) {
-                        /*
-                         * The chunk before the comma was not a valid IP address.
-                         */
-                        Ns_Log(Warning, "invalid content in x-forwarded-for header: '%s'", token);
-                        break;
-                    }
-                    if (i == 1) {
-                        /*
-                         * The last entry, check only skipnonpublic if necessary
-                         */
-                        if (nsconf.reverseproxymode.skipnonpublic
-                            && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
-                            Ns_Log(Debug, "... skip last non-public token %s", token);
-                            success = -1;
-                        }
-                    } else if (!Ns_SockaddrTrustedReverseProxy((struct sockaddr *)&sockPtr->clientsa)) {
-
-                        /*Ns_Log(Notice, "... token %s not trusted, skipnonpublic %d public %d", token,
-                               nsconf.reverseproxymode.skipnonpublic,
-                               Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa));*/
-                        /*
-                         * It is not a trusted reverse proxy. Do we want to
-                         * skip non-public addresses?
-                         */
-                        if (nsconf.reverseproxymode.skipnonpublic
-                            && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
-                            Ns_Log(Debug, "... skip non-public token %s", token);
-                            success = -1;
-                        } else {
-                            /*
-                             * Accept token, since skipnonpublic is false
-                             */
-                            break;
-                        }
-                    } else {
-                        Ns_Log(Debug, "... skip trusted token %s ", token);
-                        success = -1;
-                    }
-                }
-                Ns_DListFree(dlPtr);
-            } else {
-
-                /*
-                 * No trusted severs were configured. Here we assume that the
-                 * data we get from the proxy server can be trusted. We get
-                 * the first (leftmost) IP address from a comma separated list
-                 * (classical, default NaviServer behaviour).
-                 */
-
-                while (token != NULL) {
-                    /*Ns_Log(Notice, "check token '%s' in classic case, skipnonpublic %d",
-                      token, nsconf.reverseproxymode.skipnonpublic);*/
-
-                    success = ns_inet_pton((struct sockaddr *)&sockPtr->clientsa, token);
-                    if (success <= 0) {
-                        /*
-                         * The chunk before the comma was not a valid IP address.
-                         */
-                        Ns_Log(Warning, "invalid content in x-forwarded-for header: '%s'", token);
-                        break;
-                    }
-                    if (nsconf.reverseproxymode.skipnonpublic) {
-                        if (Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
-                            break;
-                        }
-                        success = -1;
-                        Ns_Log(Debug, "... skipping token '%s'", token);
-                    } else {
-                        break;
-                    }
-                    /*
-                     * Continue to the next token.
-                     */
-                    token = ns_strtok(NULL, ", ");
-                }
-            }
-            ns_free(parseString);
-        }
-        Ns_Log(Debug, "x-forwarded-for: accept IP address from '%s' -> %d",
-               (s == NULL ? "(null)" : s), success);
-
-        if (success <= 0) {
-            s = NULL;
-        }
-    }
-    if (s == NULL) {
-        memset(&sockPtr->clientsa, 0, sizeof(struct NS_SOCKADDR_STORAGE));
-    }
+    DeterminePeerAddrFromHeaders(sockPtr);
 
     /*
      * Set up request length for spooling and further read operations

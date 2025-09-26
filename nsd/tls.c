@@ -2021,6 +2021,7 @@ ALPNSelectCB(NS_TLS_SSL *ssl, const unsigned char **out, unsigned char *outlen,
 
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, (const char *)*out, *outlen);
+        (void)ssl;
         /*Ns_Log(Notice, "ALPNSelectCB for ssl %p ctx %p returns %d <%s> ln %d",
                (void*)ssl, (void*)SSL_get_SSL_CTX(ssl),
                rc, ds.string, *outlen);*/
