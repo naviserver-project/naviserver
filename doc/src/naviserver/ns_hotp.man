@@ -36,11 +36,14 @@ support and the nsf package is installed.
 	[opt [option "-digest [arg value]"]] \
 	[opt [option "-digits [arg integer]"]] \
 	[opt [option "-key [arg value]"]] \
-	[arg data]]
+	[arg counter]]
 
 [para]
- [arg data] specifies the moving factor for the one-time password
- (referred to as "C" in the formula above).
+
+ [arg counter] specifies the moving factor for the one-time password
+ (referred to as "C" in the formula above). The counter is a 64-bit
+ moving factor, encoded in big-endian order and passed as the message
+ to the HMAC calculation.
 
 [list_end]
 
@@ -58,7 +61,6 @@ support and the nsf package is installed.
  Specifies the number of digits for the resulting one-time
  password. The default is 6 digits.
 
-
 [opt_def -key [arg key]]
  Specifies the secret key used to generate the one-time password
  (corresponds to "K" in the formula above).
@@ -66,8 +68,9 @@ support and the nsf package is installed.
 [list_end]
 
 [example_begin]
- nscp 2> ns_hotp -key "tweedie123" 1
- 763540
+ # provide coutner in 64-bit big-endian order
+ % ns_hotp -key "tweedie123" [lb]binary format W 1[rb]
+ 601045
 [example_end]
 
 [see_also nsd ns_totp ns_hmac ns_md ns_sha1 ns_crypt ns_rand]

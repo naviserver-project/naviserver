@@ -45,49 +45,103 @@ the nsf package is installed.
 [list_begin options]
 
 [opt_def -digest [arg digest]]
-Digest algorithm for the checksum computation. The available algorithms
-are implemented in OpenSSL. The current versions of OpenSSL supports
-the following message digest algorithms: "dsa dsa-sha ecdsa-with-sha1
-md4 md5 mdc2 ripemd160 sha sha1 sha224 sha256 sha384 sha512
-whirlpool".  The default value is "sha256"
+
+ Specifies the message digest algorithm used for checksum computation.
+ The available algorithms are provided by OpenSSL. Typical choices
+ include [const sha1], [const sha256], and [const sha512].  The
+ default is [const sha256].
 
 [opt_def -digits [arg digits]]
-specifies the number of digits of the returned one time password.
-The default value (as used in the RFC) is 8.
+
+ Specifies the number of digits in the generated one-time password
+ (OTP). The default value, as recommended in the RFC, is [const 8].
 
 [opt_def -digits [arg interval]]
-specifies the time interval, for which the password should be vald.
-The default value is 30.
+
+ Specifies the validity period of the OTP in seconds (time step size).
+ The default value is [const 30].
 
 [opt_def -digits [arg user_id]]
-the secret can be either be provided via [arg key], or via
-[arg user_id] and a config parameter [term serversecret]. For testing
-purposes, the [arg key] is preferable. For usage scenarios,
-the secret should be personalized to the user. Therefore,
-the implementation uses the user_id and the per-server configured
-password value (see configuration section).
+
+ Specifies the user identifier for deriving a per-user secret.  The
+ secret can be provided explicitly with [arg -key], or indirectly via
+ [arg -user_id] in combination with a configured server secret
+ ([term serversecret]). For testing, use [arg -key]; for production, use
+ [arg -user_id] to ensure each user has a personalized secret, seeded
+ via configuration (see configuration section).
 
 [opt_def -key [arg key]]
-specifies the secret used for creating one time passwords
-(see option [arg user_id] for detail)
-("K" in the formula above).
+
+ Specifies the secret key used for generating the OTP (the "K" in the
+ RFC formula). This is usually a decoded Base32 string.  If [arg -key]
+ is not provided, [arg -user_id] together with [term serversecret]
+ must be used.
 
 [opt_def -time [arg time]]
-specifies time base for the computation (epoch in seconds).
-If no time is specified, the current time is used.
+
+ Specifies the time value (epoch seconds) used as the base for the OTP
+ computation. If omitted, the current system time is used.
 
 [list_end]
 
+[section EXAMPLES]
+
+ Minimal example:
 [example_begin]
- nscp 2> ns_totp -key "tweedie123" -time 1471107671
+ % ns_totp -key "tweedie123"
  33888450
 [example_end]
+
+
+[para] A common application for TOTP is integration with authenticator
+ apps such as Google Authenticator, which expect a specially formatted URL:
+ 
+ [para] [const otpauth://TYPE/LABEL?PARAMETERS][para]
+
+ where TYPE is either [const hotp] or [const totp].
+ This URL is typically encoded in a QR code. Most authenticator apps can scan
+ such codes directly, or provide means to enter the parameters manually.
+
+[para]
+The URL encodes several parameters relevant for TOTP generation:
+[list_begin itemized]
+[item] [const secret]: the Base32-encoded shared secret (mandatory)
+[item] [const period]: validity interval in seconds, default [const 30]
+[item] [const digits]: number of digits in the OTP, default [const 6]
+[item] [const algorithm]: hash algorithm, default [const SHA1]
+[list_end]
+
+Among these, the only mandatory parameter is the [const secret].
+When using [cmd ns_totp], it is usually necessary to extract at least
+[const secret] and [const digits] from the URL, and to provide
+[const -digest] explicitly, since the defaults of [cmd ns_totp]
+([const sha256] and [const 8] digits) differ from those used by many
+authenticator apps.
+
+[example_begin]
+ # Decoded authenticator URL
+ % set url otpauth://totp/IDENT?secret=XSECRETSECRETSECRETSECRETSECRETX&period=30&digits=6&issuer=WU%20Wien
+ 
+ # Extract parameters from URL
+ % set p [lb]ns_set array [lb]ns_parsequery [lb]dict get [lb]ns_parseurl $url[rb] query[rb][rb][rb]
+ secret XSECRETSECRETSECRETSECRETSECRETX period 30 digits 6 issuer {WU Wien}
+ 
+ # Generate TOTP
+ % package require base32
+ % ns_totp -digest sha1 -digits [lb]dict get $p digits[rb] -key [lb]base32::decode [lb]dict get $p secret[rb][rb]
+ 259664
+[example_end]
+
+
 
 [section CONFIGURATION]
 
 [example_begin]
- [cmd ns_section] "ns/server/server1"
- [cmd ns_param]   serversecret "swordfish"
+ ns_section "ns/server/server1" {
+   # ...
+   ns_param serversecret "swordfish"
+   # ...
+ }
 [example_end]
 
 
