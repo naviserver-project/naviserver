@@ -147,7 +147,7 @@ for debugging and troubleshooting.
    ([const ""]), NaviServer falls back to the standard environment variable
    [const SSLKEYLOGFILE] to determine the output file name. This
    environment variable is widely supported in browsers and other
-   OpenSSL-based applications.  [list_end]
+   OpenSSL-based applications.
 [list_end]
 
 Operational notes: TLS key logging exposes sensitive material that can be used to decrypt
