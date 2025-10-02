@@ -262,7 +262,7 @@ The default: [const false].
 
 [def logroll]
 If true, the log file will be rolled when the server receives a SIGHUP signal.
-Default: [const true|.
+Default: [const true].
 
 [def logrollfmt]
 When specified, use a timestamp based logroll format based on the
