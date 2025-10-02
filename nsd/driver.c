@@ -260,7 +260,7 @@ static char *PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
 
 static Ns_ReturnCode SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static SockState SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr)
+static SockState SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
@@ -2980,7 +2980,7 @@ DriverThread(void *arg)
 
                 for (i = 0; i < nrBindaddrs; i++) {
                     if (PollIn(&pdata, drvPtr->pidx[i])) {
-                        SockState s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[i]].fd, &sockPtr, &now);
+                        SockState s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[i]].fd, &sockPtr, &now, NULL);
 
                         switch (s) {
                         case SOCK_SPOOL:
@@ -3617,7 +3617,7 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
  */
 
 static SockState
-SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr)
+SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
 {
     Sock    *sockPtr;
     SockState sockStatus;
@@ -3626,6 +3626,10 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
     sockPtr = SockNew(drvPtr);
+    /*
+     * Pass the arg to the Accept function in sockPtr->arg.
+     */
+    sockPtr->arg = arg;
 
     /*
      * Accept the new connection.
@@ -3699,9 +3703,9 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
 }
 
 int
-NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_Time *nowPtr)
+NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
 {
-    return (int)SockAccept((Driver *)drvPtr, sock, (Sock**)sockPtrPtr, nowPtr);
+    return (int)SockAccept((Driver *)drvPtr, sock, (Sock**)sockPtrPtr, nowPtr, arg);
 }
 
 

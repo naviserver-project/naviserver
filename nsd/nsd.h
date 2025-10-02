@@ -1831,7 +1831,7 @@ NS_EXTERN int NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
 NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_Time *nowPtr)
+NS_EXTERN int NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Request *NsSockEnsureRequest(Sock *sockPtr)
