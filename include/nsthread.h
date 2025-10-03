@@ -118,6 +118,24 @@
 # define likely(x) (x)
 #endif
 
+/* NS_ALIGNOF(T) -> alignment in bytes required for objects of type T */
+#if defined(__cplusplus)
+  /* C++11 and later */
+  #define NS_ALIGNOF(T) alignof(T)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+  /* C11 or newer in C mode */
+  #define NS_ALIGNOF(T) _Alignof(T)
+#elif defined(_MSC_VER)
+  /* Older MSVC C mode: use MSVC extension */
+  #define NS_ALIGNOF(T) __alignof(T)
+#elif defined(__GNUC__) || defined(__clang__)
+  /* GCC/Clang in non-C11 modes */
+  #define NS_ALIGNOF(T) __alignof__(T)
+#else
+  /* Conservative fallback */
+  #define NS_ALIGNOF(T) (sizeof(void *))
+#endif
+
 /***************************************************************
  * Main Windows defines, including
  *
@@ -1168,6 +1186,7 @@ NS_EXTERN void ns_free(void *buf);
 NS_EXTERN void *ns_realloc(void *buf, size_t size) NS_ALLOC_SIZE1(2) NS_GNUC_WARN_UNUSED_RESULT;
 NS_EXTERN char *ns_strdup(const char *string) NS_GNUC_NONNULL(1) NS_GNUC_MALLOC NS_GNUC_WARN_UNUSED_RESULT;
 NS_EXTERN char *ns_strcopy(const char *string) NS_GNUC_MALLOC;
+NS_EXTERN void *ns_align_up(void *p, size_t a) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN char *ns_strncopy(const char *string, ssize_t size) NS_GNUC_MALLOC;
 NS_EXTERN int   ns_uint32toa(char *buffer, uint32_t n) NS_GNUC_NONNULL(1);
 NS_EXTERN int   ns_uint64toa(char *buffer, uint64_t n) NS_GNUC_NONNULL(1);

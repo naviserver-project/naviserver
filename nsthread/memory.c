@@ -131,6 +131,39 @@ ns_calloc(size_t num, size_t esize)
 #endif /* defined(SYSTEM_MALLOC) */
 
 /*
+ * ns_align_up --
+ *
+ *    Round a pointer address up to the next multiple of the given alignment.
+ *
+ *    This function computes an aligned address which is greater than or equal
+ *    to the original pointer, ensuring it satisfies the specified alignment
+ *    boundary. Unlike common implementations, it does not assume that the
+ *    alignment is a power of two.
+ *
+ * Arguments:
+ *    p - Original pointer to be aligned.
+ *    a - Alignment in bytes (must be > 0).
+ *
+ * Returns:
+ *    A pointer value greater than or equal to p, aligned to the next multiple
+ *    of a.
+ *
+ * Side Effects:
+ *    None.
+ *
+ * Notes:
+ *    - Typically used to ensure that subsequent allocations (e.g., char** vectors)
+ *      within a buffer meet the alignment requirements of the platform ABI.
+ *    - The alignment argument should be a small integer, usually alignof(type).
+ */
+void *ns_align_up(void *p, size_t a) {
+    uintptr_t u = (uintptr_t)p;
+    uintptr_t r = (u + a - 1) / a * a;   /* generic (no power-of-two assumption) */
+    return (void *)r;
+}
+
+
+/*
  *----------------------------------------------------------------------
  *
  * ns_strcopy --
