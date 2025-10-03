@@ -1216,17 +1216,20 @@ static int SetSplitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         result = TCL_ERROR;
 
     } else {
-        Tcl_Obj     *listObj = Tcl_NewListObj(0, NULL);
-        Ns_Set     **sets;
-        TCL_SIZE_T   i;
+        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+        size_t   i, len;
+        Ns_DList dl;
 
-        sets = Ns_SetSplit(set, *splitString);
-        for (i = 0; sets[i] != NULL; i++) {
+        Ns_DListInit(&dl);
+        len = Ns_SetSplitDList(set, *splitString, &dl);
+
+        for (i = 0; i < len; i++) {
             Tcl_ListObjAppendElement(interp, listObj,
-                                     EnterSet(itPtr, sets[i], NS_TCL_SET_DYNAMIC));
+                                     EnterSet(itPtr, dl.data[i], NS_TCL_SET_DYNAMIC));
         }
         Tcl_SetObjResult(interp, listObj);
-        ns_free(sets);
+        Ns_DListFree(&dl);
+
     }
     return result;
 }

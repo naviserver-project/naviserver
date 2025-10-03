@@ -1776,6 +1776,8 @@ NS_EXTERN void Ns_DListReset(Ns_DList *dlPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_DListSetCapacity(Ns_DList *dlPtr, size_t new_cap)  NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_DListSetFreeProc(Ns_DList *dlPtr, Ns_FreeProc freeProc)  NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_DListSetLength(Ns_DList *dlPtr, size_t new_size) NS_GNUC_NONNULL(1);
+NS_EXTERN size_t Ns_SetSplitDList(const Ns_Set *set, char sep, Ns_DList *out)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 /*
  * dns.c
