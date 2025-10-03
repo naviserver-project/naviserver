@@ -58,7 +58,7 @@ typedef struct Tag {
 typedef struct Parse {
     AdpCode       *codePtr; /* Pointer to compiled AdpCode struct. */
     int            line;    /* Current line number while parsing. */
-    Tcl_DString    lengths;    /* Length of text or script block. */
+    Tcl_DString    lengths; /* Length of text or script block. */
     Tcl_DString    lines;   /* Line number of block for debug messages. */
 } Parse;
 
@@ -75,8 +75,10 @@ static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *
 static int RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, int type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void AppendLengths(AdpCode *codePtr, const TCL_SIZE_T *length, const int *line)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static void AppendLengths(AdpCode *codePtr,
+                          const void *length_bytes, size_t length_nbytes,
+                          const void *line_bytes,   size_t line_nbytes)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 static void GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -341,7 +343,7 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
     }
     codePtr->nblocks = codePtr->nscripts = 1;
     size = -codePtr->text.length;
-    AppendLengths(codePtr, &size, &line);
+    AppendLengths(codePtr, &size, sizeof(size), &line, sizeof(line));
 }
 
 /*
@@ -807,14 +809,17 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
         /*
          * See also: AdpParseTclFile(), and AdpExec() in adpeval.c
          */
-
-        int line = 0;
+        int        line = 0;
         TCL_SIZE_T len = -codePtr->text.length;
+
         codePtr->nscripts = codePtr->nblocks = 1;
-        AppendLengths(codePtr, &len, &line);
+        AppendLengths(codePtr, &len, sizeof(len), &line, sizeof(line));
     } else {
-        AppendLengths(codePtr, (const TCL_SIZE_T *) parse.lengths.string,
-                      (const int *) parse.lines.string);
+        AppendLengths(codePtr,
+                      Tcl_DStringValue(&parse.lengths),
+                      (size_t)Tcl_DStringLength(&parse.lengths),
+                      Tcl_DStringValue(&parse.lines),
+                      (size_t)Tcl_DStringLength(&parse.lines));
     }
 
     Tcl_DStringFree(&parse.lengths);
@@ -1268,46 +1273,89 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
     Tcl_DStringFree(&script);
 }
 
-
 /*
- *----------------------------------------------------------------------
- *
  * AppendLengths --
  *
- *      Append the block length and line numbers to the given
- *      parse code.
+ *    Append block length and line number arrays to the backing
+ *    Tcl_DString of an AdpCode structure, storing them in an aligned
+ *    fashion. This ensures that typed pointers to length and line arrays
+ *    are safely embedded within the same contiguous buffer as the code
+ *    text.
  *
- * Results:
- *      None.
+ * Arguments:
+ *    codePtr       - Pointer to the AdpCode structure whose text buffer
+ *                    will be extended.
+ *    length_bytes  - Raw bytes for block lengths (array of TCL_SIZE_T).
+ *    length_nbytes - Number of bytes provided in length_bytes.
+ *    line_bytes    - Raw bytes for line numbers (array of int).
+ *    line_nbytes   - Number of bytes provided in line_bytes.
  *
- * Side effects:
- *      None.
+ * Returns:
+ *    None.
  *
- *----------------------------------------------------------------------
+ * Side Effects:
+ *    - Resizes codePtr->text to make room for aligned arrays.
+ *    - Updates codePtr->len and codePtr->line to point into the
+ *      newly appended storage.
+ *    - Copies caller-provided arrays into this space, truncating if fewer
+ *      bytes are provided than required for codePtr->nblocks.
+ *
+ * Notes:
+ *    - Alignment is computed as the stricter of alignof(TCL_SIZE_T) and
+ *      alignof(int).
+ *    - The arrays are valid only as long as the DString is not further
+ *      resized or freed.
+ *    - Caller must ensure that codePtr->nblocks is set consistently with
+ *      the contents of length_bytes and line_bytes.
  */
-
 static void
-AppendLengths(AdpCode *codePtr, const TCL_SIZE_T *length, const int *line)
+AppendLengths(AdpCode *codePtr,
+              const void *length_bytes, size_t length_nbytes,
+              const void *line_bytes,   size_t line_nbytes)
 {
-    Tcl_DString *textPtr;
-    TCL_SIZE_T   start, ncopy;
+    Tcl_DString *textPtr   = &codePtr->text;
+    TCL_SIZE_T   oldLen    = textPtr->length;
+    size_t       need_len  = (size_t)codePtr->nblocks * sizeof(TCL_SIZE_T);
+    size_t       need_line = (size_t)codePtr->nblocks * sizeof(int);
+    char        *base, *start, *mid;
+    const size_t a       = NS_ALIGNOF(TCL_SIZE_T) > NS_ALIGNOF(int)
+        ? NS_ALIGNOF(TCL_SIZE_T)
+        : NS_ALIGNOF(int);
 
     NS_NONNULL_ASSERT(codePtr != NULL);
-    NS_NONNULL_ASSERT(length != NULL);
-    NS_NONNULL_ASSERT(line != NULL);
+    NS_NONNULL_ASSERT(length_bytes != NULL);
+    NS_NONNULL_ASSERT(line_bytes != NULL);
+
+    /* Truncate if caller provided less than needed */
+    if (length_nbytes < need_len)  {
+        need_len  = length_nbytes;
+    }
+    if (line_nbytes < need_line) {
+        need_line = line_nbytes;
+    }
+
+    Tcl_DStringSetLength(textPtr, oldLen + (TCL_SIZE_T)(a - 1 + need_len + need_line));
 
     textPtr = &codePtr->text;
-    /*
-     * Need to round up start of lengths array to next word.
-     */
-    start = ((textPtr->length / LENGTH_SIZE) + 1) * LENGTH_SIZE;
-    ncopy = (TCL_SIZE_T)codePtr->nblocks * LENGTH_SIZE;
-    Tcl_DStringSetLength(textPtr, start + (ncopy * 2));
-    codePtr->len = (int *) (textPtr->string + start);
-    codePtr->line = (int *) (textPtr->string + start + ncopy);
-    memcpy(codePtr->len,  length, (size_t) ncopy);
-    memcpy(codePtr->line, line, (size_t) ncopy);
+    oldLen  = textPtr->length;
+
+    /* Reserve padding for alignment + storage for both byte arrays */
+    Tcl_DStringSetLength(textPtr, oldLen + (TCL_SIZE_T)(a - 1 + need_len + need_line));
+
+    /* Compute aligned start within (possibly reallocated) buffer */
+    base   = textPtr->string + oldLen;
+    start  = (char *)ns_align_up(base, a);
+    mid    = start + need_len;   /* second array immediately after the first */
+
+    /* Set the typed pointers without a cast that triggers -Wcast-align */
+    memcpy(&codePtr->len,  &start, sizeof(codePtr->len));
+    memcpy(&codePtr->line, &mid,   sizeof(codePtr->line));
+
+    /* Copy the raw bytes in */
+    memcpy(codePtr->len,  length_bytes, need_len);
+    memcpy(codePtr->line, line_bytes,   need_line);
 }
+
 
 /*
  * Local Variables:

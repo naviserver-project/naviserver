@@ -292,7 +292,7 @@ typedef struct AdpFrame {
 typedef struct AdpCode {
     int         nblocks;
     int         nscripts;
-    int        *len;
+    TCL_SIZE_T *len;
     int        *line;
     Tcl_DString text;
 } AdpCode;

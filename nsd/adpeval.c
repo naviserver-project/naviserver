@@ -17,8 +17,8 @@
 
 #include "nsd.h"
 
-#define AdpCodeLen(cp,i)    ((cp)->len[(i)])
-#define AdpCodeLine(cp,i)   ((cp)->line[(i)])
+#define AdpCodeLen(cp,i)    ((cp)->len[(i)])    /* TCL_SIZE_T */
+#define AdpCodeLine(cp,i)   ((cp)->line[(i)])   /* int */
 #define AdpCodeText(cp)     ((cp)->text.string)
 #define AdpCodeBlocks(cp)   ((cp)->nblocks)
 #define AdpCodeScripts(cp)  ((cp)->nscripts)
