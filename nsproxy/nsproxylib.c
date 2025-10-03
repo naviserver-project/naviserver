@@ -316,6 +316,11 @@ static Err    Wait(Tcl_Interp *interp, Proxy *proxyPtr, const Ns_Time *timeoutPt
 static Err    Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+static void FormatActiveSnippet(char *dst, size_t dstCap,
+                                const char *script, size_t want,
+                                const char *dots, Tcl_DString *ds)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+
 static void   GetStats(const Proxy *proxyPtr)  NS_GNUC_NONNULL(1);
 
 static Err    CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -451,6 +456,66 @@ Ns_ProxyTclInit(Tcl_Interp *interp)
     return TCL_OK;
 }
 
+/*
+ * FormatActiveSnippet --
+ *
+ *    Build a truncated snippet of a Tcl script for diagnostic or logging
+ *    purposes. The snippet is wrapped in braces and may include an ellipsis
+ *    marker when truncated.
+ *
+ * Arguments:
+ *    dst     - Output buffer for the final snippet string.
+ *    dstCap  - Capacity of the dst buffer in bytes.
+ *    script  - Input script string to take the snippet from.
+ *    want    - Maximum number of characters to copy from script before truncating.
+ *    dots    - String to append after the truncated snippet (e.g. "...").
+ *    ds      - Tcl_DString workspace used for building the intermediate result.
+ *
+ * Returns:
+ *    None.
+ *
+ * Side Effects:
+ *    - Resets and reuses the provided Tcl_DString.
+ *    - Copies the formatted snippet into dst (NUL-terminated), truncated if
+ *      necessary to fit dstCap.
+ *
+ * Example:
+ *    script = "set foo bar; do_something_long"
+ *    want   = 10
+ *    dots   = "..."
+ *
+ *    Result: "{set foo b...}"
+ */
+static void
+FormatActiveSnippet(char *dst, size_t dstCap,
+                    const char *script, size_t want,
+                    const char *dots, Tcl_DString *ds)
+{
+    size_t sc;
+
+    /* build in ds */
+    Tcl_DStringSetLength(ds, 0);
+    Tcl_DStringAppend(ds, "{", 1);
+
+    /* copy at most 'want' chars from script (don't over-read) */
+    sc = strnlen(script, want);
+    Tcl_DStringAppend(ds, script, (TCL_SIZE_T)sc);
+
+    Tcl_DStringAppend(ds, dots, TCL_INDEX_NONE);
+    Tcl_DStringAppend(ds, "}", 1);
+
+    /* copy into dst with truncation + NUL */
+    if (dstCap > 0) {
+        const char *src = Tcl_DStringValue(ds);
+        size_t      len = (size_t)Tcl_DStringLength(ds);
+        size_t      cp  = (len < dstCap - 1) ? len : (dstCap - 1);
+        if (cp != 0) {
+            memcpy(dst, src, cp);
+        }
+        dst[cp] = '\0';
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -476,8 +541,8 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
     Tcl_Interp  *interp;
     Worker        proc;
     int          result, max;
-    Tcl_DString  in, out;
-    const char  *script, *dots, *uarg = NULL, *user;
+    Tcl_DString  in, out, scratch;
+    const char  *script, *uarg = NULL, *user;
     char        *group = NULL, *active;
     uint16       major, minor;
     size_t       activeSize;
@@ -598,6 +663,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
 
     Tcl_DStringInit(&in);
     Tcl_DStringInit(&out);
+    Tcl_DStringInit(&scratch);
 
     while (RecvBuf(&proc, NULL, &in) == NS_TRUE) {
         Req      req, *reqPtr = &req;
@@ -617,8 +683,11 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
             Export(NULL, TCL_OK, &out);
         } else {
             script = Tcl_DStringValue(&in) + sizeof(Req);
+
             if (active != NULL) {
-                int n = (int)len;
+                const char *dots;
+                size_t      want;
+                int         n = (int)len;
 
                 if (n < max) {
                     dots = NS_EMPTY_STRING;
@@ -626,10 +695,16 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
                     dots = " ...";
                     n = max;
                 }
-                snprintf(active, activeSize, "{%.*s%s}", n, script, dots);
+
+                /* want is the clamped number of script bytes to show */
+                want = (n < 0) ? 0u : (size_t)n;
+
+                FormatActiveSnippet(active, activeSize, script, want, dots, &scratch);
             }
+
             result = Tcl_EvalEx(interp, script, (TCL_SIZE_T)len, 0);
             Export(interp, result, &out);
+
             if (active != NULL) {
                 assert(max > 0);
                 memset(active, ' ', (size_t)max);
@@ -647,6 +722,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
     }
     Tcl_DStringFree(&in);
     Tcl_DStringFree(&out);
+    Tcl_DStringFree(&scratch);
 
     return 0;
 }
