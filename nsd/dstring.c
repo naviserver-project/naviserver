@@ -258,16 +258,40 @@ Ns_DStringVPrintf(Tcl_DString *dsPtr, const char *fmt, va_list apSrc)
 
 /*
  *----------------------------------------------------------------------
+ *
  * Ns_DStringAppendArgv --
  *
- *      Append an argv vector pointing to the null terminated
- *      strings in the given dstring.
+ *      Convert the contents of a Tcl_DString (containing a sequence of
+ *      NUL-terminated strings packed consecutively) into a conventional
+ *      argv-style vector of 'char *'.
+ *
+ *     The function scans the existing dstring contents (which must consist of
+ *      NUL-terminated strings, followed by a terminating NUL) and appends an
+ *      array of (argc+1) char* pointers referencing these strings. The array
+ *      is NULL-terminated for standard argv semantics.
+ *
+ *      Memory for the pointer vector is allocated within the same dstring
+ *      buffer, immediately after the current string data, with alignment
+ *      padding to satisfy platform requirements.
  *
  * Results:
- *      Pointer char ** vector appended to end of dstring.
+ *      Returns a `char **` pointing to a NULL-terminated argv array,
+ *      suitable for use with APIs expecting argc/argv pairs.
  *
  * Side effects:
- *      None.
+ *      - The DString is resized to provide space for the argv array.
+ *      - The argv pointers remain valid as long as the DString is not
+ *        modified or freed.
+ *      - The caller must not free the argv elements individually.
+ *
+ * Example:
+ *      Suppose dsPtr contains "foo\0bar\0baz\0". After calling this
+ *      function, the returned argv will be:
+ *
+ *          argv[0] = "foo"
+ *          argv[1] = "bar"
+ *          argv[2] = "baz"
+ *          argv[3] = NULL
  *
  *----------------------------------------------------------------------
  */
@@ -275,15 +299,14 @@ Ns_DStringVPrintf(Tcl_DString *dsPtr, const char *fmt, va_list apSrc)
 char **
 Ns_DStringAppendArgv(Tcl_DString *dsPtr)
 {
-    char      *s, **argv;
-    TCL_SIZE_T len, size, i, argc;
-
-    /*
-     * Determine the number of strings.
-     */
+    char      *s, *base;
+    char     **argv;
+    void      *argv_start;
+    TCL_SIZE_T i, argc, oldLen, pad, vecsz;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
+    /* Count NUL-terminated strings in dsPtr->string until the first '\0' */
     argc = 0;
     s = dsPtr->string;
     while (*s != '\0') {
@@ -291,21 +314,23 @@ Ns_DStringAppendArgv(Tcl_DString *dsPtr)
         s += strlen(s) + 1u;
     }
 
-    /*
-     * Resize the dstring with space for the argv aligned
-     * on an 8 byte boundary.
-     */
+    /* Save current used length before resizing (might realloc) */
+    oldLen = dsPtr->length;
 
-    len = ((dsPtr->length / 8) + 1) * 8;
-    size = len + ((TCL_SIZE_T)sizeof(char *) * (argc + 1));
-    Tcl_DStringSetLength(dsPtr, size);
+    /* Reserve padding + space for (argc+1) pointers (NULL-terminated) */
+    pad   = (TCL_SIZE_T)(NS_ALIGNOF(char*) - 1);
+    vecsz = (TCL_SIZE_T)sizeof(char*) * (argc + 1);
+    Tcl_DStringSetLength(dsPtr, oldLen + pad + vecsz);
 
-    /*
-     * Set the argv elements to the strings.
-     */
+    /* Find an aligned address within the (possibly moved) buffer */
+    base = dsPtr->string + oldLen;
+    argv_start = ns_align_up(base, NS_ALIGNOF(char*));
 
+    /* Avoid pointer-to-pointer cast that can trigger -Wcast-align */
+    memcpy(&argv, &argv_start, sizeof(argv));
+
+    /* Fill argv with pointers to the strings */
     s = dsPtr->string;
-    argv = (char **) (s + len);
     for (i = 0; i < argc; ++i) {
         argv[i] = s;
         s += strlen(s) + 1u;
