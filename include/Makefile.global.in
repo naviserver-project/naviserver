@@ -94,9 +94,12 @@ CCLD             = @CCLD@
 #SANITIZE          = -fsanitize=address -fsanitize-recover=address
 #SANITIZE          =
 
-CFLAGS_CONVERSION = -Wconversion -Wsign-conversion
-CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes
-CFLAGS_TIDY       = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wimplicit-fallthrough=3 -Wold-style-definition -Wmissing-format-attribute -Wformat-security -Wstringop-truncation -Wformat=2 -Wnull-dereference -Wdouble-promotion 
+# -Wcast-qual
+
+CFLAGS_CONVERSION = -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
+CFLAGS_FORMAT     = -Wmissing-format-attribute -Wformat-security -Wformat=2
+CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
+CFLAGS_TIDY       = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wold-style-definition  -Wnull-dereference -Wdouble-promotion -Wvla  $(CFLAGS_FORMAT)
 #CFLAGS_FORTIFY    = -D_FORTIFY_SOURCE=2 -fstack-protector $(SANITIZE)
 #CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE) -fwrapv -ftrapv
 CFLAGS_WARNING   = @CFLAGS_WARNING@
@@ -115,7 +118,8 @@ DEFS             = @DEFS@
 ifneq (,$(findstring GCC,$(shell $(CC) -v 2>&1)))
   CFLAGS_COMPILER = -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wclobbered \
                     -Walloc-zero -Wfree-nonheap-object -Wstringop-overread \
-                    -Wstringop-overflow=4 -Wtrampolines
+                    -Wstringop-overflow=4 -Wtrampolines -Wformat-overflow=2 -Wformat-truncation=2 \
+                    -Wrestrict -Wimplicit-fallthrough=3 -Wstringop-truncation -Warray-bounds=2
 endif
 
 # Clang extras
