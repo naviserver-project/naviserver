@@ -268,8 +268,13 @@ typedef struct UrlSpaceContextSpec {
     Ns_FreeProc  *dataFreeProc;
     /*
      * Fields below are private.
+     *
+     * Member "field" can be a string or a list, depending on 'type'
      */
-    const char   *field;
+    union {
+        const char *str;   /* for SpecTypeHeader, SpecTypeIPv4, SpecTypeIPv6, etc. */
+        Ns_DList   *list;  /* for SpecTypeConjunction */
+    } field;
     const char   *patternString;
     struct NS_SOCKADDR_STORAGE ip;
     struct NS_SOCKADDR_STORAGE mask;
@@ -508,7 +513,7 @@ UrlSpaceContextSpecFree(void *arg)
 
     if (unlikely(spec->type == SpecTypeConjunction)) {
         size_t i;
-        Ns_DList *dlPtr = (Ns_DList *)spec->field;
+        Ns_DList *dlPtr = spec->field.list;
 
         /*fprintf(stderr, "FREE CONJUNCTION %p (%ld elements)\n", (void*)dlPtr, dlPtr->size);*/
         for (i = 0u; i < dlPtr->size; i++) {
@@ -519,7 +524,7 @@ UrlSpaceContextSpecFree(void *arg)
         ns_free(arg);
 
     } else {
-        ns_free((void*)spec->field);
+        ns_free((void*)spec->field.str);
         ns_free((void*)spec->patternString);
         ns_free(arg);
     }
@@ -571,7 +576,7 @@ NsObjToUrlSpaceContextSpec(Tcl_Interp *interp, Tcl_Obj *ctxFilterObj)
         spec = ns_calloc(1u, sizeof(UrlSpaceContextSpec));
         spec->freeProc = UrlSpaceContextSpecFree;
         spec->type = SpecTypeConjunction;
-        spec->field = (char*)dlPtr;
+        spec->field.list = dlPtr;
 
         Ns_DListInit(dlPtr);
         for (i=0; i < oc; i += 2) {
@@ -663,7 +668,7 @@ NsUrlSpaceContextSpecNew(const char *field, const char *patternString)
         spec->type = SpecTypeHeader;
     }
 
-    spec->field = ns_strdup(field);
+    spec->field.str = ns_strdup(field);
     spec->patternString = ns_strdup(patternString);
 
     //fprintf(stderr, "NsUrlSpaceContextSpecNew: <%s %s> type %c specificity %u\n",
@@ -696,15 +701,17 @@ NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
     Tcl_DStringAppend(dsPtr, " {", 2);
     /*fprintf(stderr, "NsUrlSpaceContextSpecAppend: ptr %p type %d\n", (void*)spec, specPtr->type);*/
     if (unlikely(specPtr->type == SpecTypeConjunction)) {
-        Ns_DList *dlPtr = (Ns_DList *)specPtr->field;
+        Ns_DList *dlPtr = specPtr->field.list;
         size_t    i;
 
         for (i = 0u; i < dlPtr->size; i++) {
-            Tcl_DStringAppendElement(dsPtr, ((UrlSpaceContextSpec *)dlPtr->data[i])->field);
-            Tcl_DStringAppendElement(dsPtr, ((UrlSpaceContextSpec *)dlPtr->data[i])->patternString);
+            UrlSpaceContextSpec *e = dlPtr->data[i];
+
+            Tcl_DStringAppendElement(dsPtr, e->field.str);
+            Tcl_DStringAppendElement(dsPtr, e->patternString);
         }
     } else {
-        Tcl_DStringAppendElement(dsPtr, specPtr->field);
+        Tcl_DStringAppendElement(dsPtr, specPtr->field.str);
         Tcl_DStringAppendElement(dsPtr, specPtr->patternString);
     }
     Tcl_DStringAppend(dsPtr, "}", 1);
@@ -906,7 +913,7 @@ NsUrlSpaceContextFilterEval(void *contextSpec, void *context)
 
     switch (spec->type) {
     case SpecTypeConjunction: {
-        Ns_DList *dlPtr = (Ns_DList *)spec->field;
+        Ns_DList *dlPtr = spec->field.list;
         size_t    i;
 
         Ns_Log(Ns_LogUrlspaceDebug, "NsUrlSpaceContextFilterEval: begin CONJUNCTION");
@@ -922,13 +929,13 @@ NsUrlSpaceContextFilterEval(void *contextSpec, void *context)
 
     case SpecTypeHeader: {
         if (likely(ctx->headers != NULL)) {
-            const char *val = Ns_SetIGet(ctx->headers, spec->field);
+            const char *val = Ns_SetIGet(ctx->headers, spec->field.str);
 
             if (val != NULL) {
                 success = Tcl_StringMatch(val, spec->patternString);
                 Ns_Log(Ns_LogUrlspaceDebug,
                        "NsUrlSpaceContextFilterEval: header match %s: '%s' vs '%s' -> %d",
-                       spec->field, val, spec->patternString, success);
+                       spec->field.str, val, spec->patternString, success);
             } else {
                 /*Tcl_DString ds;
 
@@ -939,12 +946,12 @@ NsUrlSpaceContextFilterEval(void *contextSpec, void *context)
 
                 Ns_Log(Ns_LogUrlspaceDebug,
                        "NsUrlSpaceContextFilterEval: no header field '%s'",
-                       spec->field);
+                       spec->field.str);
             }
         } else {
             Ns_Log(Ns_LogUrlspaceDebug,
                    "NsUrlSpaceContextFilterEval: header spec '%s' but no headers in context",
-                   spec->field);
+                   spec->field.str);
         }
         break;
     }
@@ -958,11 +965,11 @@ NsUrlSpaceContextFilterEval(void *contextSpec, void *context)
             success = Ns_SockaddrMaskedMatch(ctx->saPtr, maskPtr, ipPtr);
             Ns_Log(Ns_LogUrlspaceDebug,
                    "NsUrlSpaceContextFilterEval: IP match %s: '%s' -> %d",
-                   spec->field, spec->patternString, success);
+                   spec->field.str, spec->patternString, success);
         } else {
             Ns_Log(Ns_LogUrlspaceDebug,
                    "NsUrlSpaceContextFilterEval: IP spec '%s' but no client address",
-                   spec->field);
+                   spec->field.str);
         }
         break;
     }
@@ -970,7 +977,7 @@ NsUrlSpaceContextFilterEval(void *contextSpec, void *context)
     default:
         Ns_Log(Warning,
                "NsUrlSpaceContextFilterEval: unexpected spec type '%s' for %s: %s",
-               ContextFilterTypeString(spec->type), spec->field, spec->patternString);
+               ContextFilterTypeString(spec->type), spec->field.str, spec->patternString);
         break;
     }
 
@@ -1585,8 +1592,8 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
         } else if (ctxRight->type == SpecTypeConjunction) {
             result = ((int)ctxRight->specificity - (int)ctxLeft->specificity);
             if (result == 0) {
-                Ns_DList *ctxRightDlPtr = (Ns_DList *)ctxRight->field;
-                Ns_DList *ctxLeftDlPtr = (Ns_DList *)ctxLeft->field;
+                Ns_DList *ctxRightDlPtr = ctxRight->field.list;
+                Ns_DList *ctxLeftDlPtr  = ctxLeft->field.list;
                 /*
                  * The specificity of both conjunctions is the same.
                  */
