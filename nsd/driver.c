@@ -3003,7 +3003,7 @@ DriverThread(void *arg)
                         case SOCK_ERROR: {
                             int sockerrno = ns_sockerrno;
 
-                            if (sockerrno != 0 && sockerrno != NS_EAGAIN) {
+                            if (sockerrno != 0 && !NS_ERRNO_SHOULD_RETRY(sockerrno)) {
                                 Ns_Log(Warning, "sockAccept on fd %d returned error: %s",
                                        drvPtr->listenfd[i], ns_sockstrerror(sockerrno));
                             }
@@ -7437,7 +7437,7 @@ WriterThread(void *arg)
                     SockTimeout(sockPtr, &now, &curPtr->sockPtr->drvPtr->sendwait);
                 } else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
                     Ns_Log(DriverDebug, "Writer %p fd %d timeout", (void *)curPtr, sockPtr->sock);
-                    err          = ETIMEDOUT;
+                    err          = NS_ETIMEDOUT;
                     spoolerState = SPOOLER_CLOSETIMEOUT;
                 }
             }

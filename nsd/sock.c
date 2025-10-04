@@ -92,18 +92,17 @@ static Ns_SockProc CloseLater;
 static NS_INLINE bool
 Retry(int errorCode)
 {
-    return (errorCode == NS_EAGAIN
-            || errorCode == NS_EINTR
 #if defined(__APPLE__)
-            /*
-             * Due to a possible kernel bug at least in OS X 10.10 "Yosemite",
-             * EPROTOTYPE can be returned while trying to write to a socket
-             * that is shutting down. If we retry the write, we should get
-             * the expected EPIPE instead.
-             */
-            || errorCode == EPROTOTYPE
+    /*
+     * At least in OS X 10.10 "Yosemite", EPROTOTYPE can be returned while
+     * trying to write to a socket that is shutting down. The error means that
+     * the socket type is not supported by the protocol. If we retry the
+     * write, we should get the expected EPIPE instead.
+     */
+    return NS_ERRNO_SHOULD_RETRY(errorCode) || (errorCode == EPROTOTYPE);
+#else
+    return NS_ERRNO_SHOULD_RETRY(errorCode);
 #endif
-            || errorCode == NS_EWOULDBLOCK);
 }
 
 bool NsSockRetryCode(int errorCode)
@@ -1019,7 +1018,7 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 
     if (likely(sock != NS_INVALID_SOCKET)) {
         sock = SockSetup(sock);
-    } else if (sockerrno != 0 && sockerrno != NS_EAGAIN) {
+    } else if (sockerrno != 0 && !NS_ERRNO_SHOULD_RETRY(sockerrno)) {
         Ns_Log(Warning, "accept() fails, reason: %s", ns_sockstrerror(sockerrno));
     }
 
@@ -1324,7 +1323,7 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
                 break;
             }
         case NS_TIMEOUT:
-            errno = ETIMEDOUT;
+            errno = NS_ETIMEDOUT;
             break;
 
         case NS_ERROR:         NS_FALL_THROUGH; /* fall through */
@@ -2876,8 +2875,8 @@ NsErrorCodeString(int errorCode)
 #if defined(ETIME) && (!defined(ELOOP) || (ETIME != ELOOP))
     case ETIME: return "ETIME";
 #endif
-#if defined(ETIMEDOUT) && (!defined(ENOSTR) || (ETIMEDOUT != ENOSTR))
-    case ETIMEDOUT: return "ETIMEDOUT";
+#if defined(NS_ETIMEDOUT) && (!defined(ENOSTR) || (NS_ETIMEDOUT != ENOSTR))
+    case NS_ETIMEDOUT: return "ETIMEDOUT";
 #endif
 #ifdef ETOOMANYREFS
     case ETOOMANYREFS: return "ETOOMANYREFS";

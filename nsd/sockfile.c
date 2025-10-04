@@ -323,11 +323,6 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 # define NS_HAVE_NATIVE_SENDFILE 0
 #endif
 
-#ifndef ERRNO_WOULDBLOCK
-# define ERRNO_WOULDBLOCK(e) \
-    ((e) == EAGAIN || ((EAGAIN != EWOULDBLOCK) && (e) == EWOULDBLOCK))
-#endif
-
 static ssize_t
 SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
 {
@@ -355,7 +350,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
 # if defined(HAVE_LINUX_SENDFILE)
         sent = sendfile(sock->sock, fd, &offset, length);
         if (sent == -1) {
-            if (errno == EINTR || ERRNO_WOULDBLOCK(errno)) {
+            if (errno == EINTR || NS_ERRNO_WOULDBLOCK(errno)) {
                 sent = 0;
             } else if (errno == EINVAL || errno == ENOSYS) {
                 sent = ns_sendfile(sock, fd, offset, length);
@@ -366,7 +361,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
         off_t sbytes = 0;
 
         rc = sendfile(fd, sock->sock, offset, length, NULL, &sbytes, opt_flags);
-        if (rc == 0 || errno == EINTR || ERRNO_WOULDBLOCK(errno)) {
+        if (rc == 0 || errno == EINTR || NS_ERRNO_WOULDBLOCK(errno)) {
             sent = sbytes;
         } else if (errno == EOPNOTSUPP) {
             sent = ns_sendfile(sock, fd, offset, length);

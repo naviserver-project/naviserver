@@ -136,6 +136,7 @@
   #define NS_ALIGNOF(T) (sizeof(void *))
 #endif
 
+
 /***************************************************************
  * Main Windows defines, including
  *
@@ -847,9 +848,10 @@ typedef int bool;
 # define NS_EAGAIN                   WSAEWOULDBLOCK
 # define NS_EINPROGRESS              WSAEINPROGRESS
 # define NS_EINTR                    WSAEINTR
-# ifndef ETIMEDOUT
-#  define ETIMEDOUT                  1
-# endif
+# define NS_ETIMEDOUT                WSAETIMEDOUT
+
+  /* Get last socket error */
+# define NS_SOCK_ERRNO()             WSAGetLastError()
 # ifndef P_tmpdir
 #  define P_tmpdir "c:/temp"
 # endif
@@ -858,7 +860,16 @@ typedef int bool;
 # define NS_EINPROGRESS              EINPROGRESS
 # define NS_EINTR                    EINTR
 # define NS_EAGAIN                   EAGAIN
+# define NS_ETIMEDOUT                ETIMEDOUT
+
+# define NS_SOCK_ERRNO()             (errno)
 #endif
+
+#define NS_ERRNO_WOULDBLOCK(e) \
+    ((e) == NS_EAGAIN || ((NS_EAGAIN != NS_EWOULDBLOCK) && (e) == NS_EWOULDBLOCK))
+
+#define NS_ERRNO_SHOULD_RETRY(e) \
+    ((e) == NS_EINTR || NS_ERRNO_WOULDBLOCK(e))
 
 #ifndef S_ISREG
 # define S_ISREG(m)                 ((m) & _S_IFREG)

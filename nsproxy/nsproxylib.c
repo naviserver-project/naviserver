@@ -1403,9 +1403,10 @@ SendBuf(const Worker *workerPtr, const Ns_Time *timePtr, const Tcl_DString *dsPt
         } while (n == -1 && errno == NS_EINTR);
 
         if (n == -1) {
+            int  err = errno;
             long waitMs;
 
-            if ((errno != NS_EAGAIN) && (errno != NS_EWOULDBLOCK)) {
+            if (!NS_ERRNO_WOULDBLOCK(err)) {
                 success = NS_FALSE;
                 break;
 
@@ -1481,9 +1482,10 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
             break;
 
         } else if (n < 0) {
-            long  waitMs;
+            int  err = errno;
+            long waitMs;
 
-            if (errno != NS_EAGAIN && errno != NS_EWOULDBLOCK) {
+            if (!NS_ERRNO_WOULDBLOCK(err)) {
                 success = NS_FALSE;
                 break;
 
@@ -1525,9 +1527,10 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
                 break;
 
             } else if (n < 0) {
+                int  err = errno;
                 long waitMs;
 
-                if (errno != NS_EAGAIN && errno != NS_EWOULDBLOCK) {
+                if (!NS_ERRNO_WOULDBLOCK(err)) {
                     success = NS_FALSE;
                     break;
 

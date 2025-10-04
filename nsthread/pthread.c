@@ -798,7 +798,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
     do {
         err = pthread_cond_timedwait(GetCond(cond, "Ns_CondTimedWait"), NsGetLock(mutex), &ts);
     } while (err == NS_EINTR);
-    if (err == ETIMEDOUT) {
+    if (err == NS_ETIMEDOUT) {
         status = NS_TIMEOUT;
     } else if (err != 0) {
         fprintf(stderr, "Ns_CondTimedWait: timestamp " NS_TIME_FMT " secs %ld nanoseconds %ld\n",
