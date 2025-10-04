@@ -1674,11 +1674,15 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
             TCL_SIZE_T    len;
 
             poolPtr = GetPool(pool);
-            (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, TCL_INDEX_NONE));
-            len = (TCL_SIZE_T)snprintf(buffer, sizeof(buffer), NS_TIME_FMT,
-                                       (int64_t)poolPtr->minDuration.sec,
-                                       poolPtr->minDuration.usec);
-            (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));
+            if (poolPtr != NULL) {
+                (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, TCL_INDEX_NONE));
+                len = (TCL_SIZE_T)snprintf(buffer, sizeof(buffer), NS_TIME_FMT,
+                                           (int64_t)poolPtr->minDuration.sec,
+                                           poolPtr->minDuration.usec);
+                (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));
+            } else {
+                Ns_Log(Warning, "nsdb: can't obtain pool '%s'", pool);
+            }
         }
     }
     return resultObj;
