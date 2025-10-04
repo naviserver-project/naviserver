@@ -894,7 +894,8 @@ NsAdpFreeCode(AdpCode *codePtr)
 
     Tcl_DStringFree(&codePtr->text);
     codePtr->nblocks = codePtr->nscripts = 0;
-    codePtr->len = codePtr->line = NULL;
+    codePtr->len = NULL;
+    codePtr->line = NULL;
 }
 
 
