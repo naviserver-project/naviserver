@@ -37,7 +37,7 @@ endif
 
 # Pattern rule: shows short progress, runs real compile
 %.o: %.c
-	$(E) "  CC  $<"
+	$(E) "  $(CC)  $<"
 	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 #
