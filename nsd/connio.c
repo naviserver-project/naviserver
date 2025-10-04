@@ -31,7 +31,7 @@
  * CRLF (see e.g. RFC 2616 section 3.6.1). It has to fit the maximum
  * number of digits of a 64 byte number is 8, plus CRLF + NULL.
  */
-#define MAX_CHARS_CHUNK_HEADER 12
+#define MAX_CHARS_CHUNK_HEADER  ( (sizeof(size_t) * 2u) + 2u + 1u )
 
 
 /*

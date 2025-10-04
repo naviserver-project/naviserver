@@ -2702,10 +2702,11 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     NS_NONNULL_ASSERT(ctxPtr != NULL);
 
     Ns_Log(Debug, "Ns_TLS_CtxServerCreate cert '%s' app_data %p", cert, (void*)app_data);
+    (void)flags;
 
 #ifdef HAVE_OPENSSL_PRE_1_1
     server_method = SSLv23_server_method();
-#elif HAVE_OPENSSL_3_5
+#elif defined(HAVE_OPENSSL_3_5)
     if ((flags & NS_DRIVER_QUIC) != 0) {
         server_method = OSSL_QUIC_server_method();
     } else {
@@ -2717,9 +2718,10 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
 
     ctx = SSL_CTX_new(server_method);
 
-#if HAVE_OPENSSL_3_5
+#if defined(HAVE_OPENSSL_3_5)
     if ((flags & NS_DRIVER_QUIC) != 0) {
         uint64_t default_flags = 0, current_flags = 0;
+        
         SSL_CTX_get_domain_flags(ctx, &default_flags);
         // default 0x00000012
         SSL_CTX_set_domain_flags(ctx, SSL_DOMAIN_FLAG_THREAD_ASSISTED);

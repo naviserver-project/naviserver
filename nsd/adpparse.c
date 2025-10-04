@@ -474,11 +474,12 @@ NsParseTagEnd(char *str)
  legacy:
 
     str = strchr(startTagStr, INTCHAR('>'));
+    /*
     if (str != NULL) {
-        //report("NsParseTagEnd ===", startTagStr, str-startTagStr);
+        report("NsParseTagEnd ===", startTagStr, str-startTagStr);
     } else {
-        //Ns_Log(Notice, "NsParseTagEnd === NULL");
-    }
+        Ns_Log(Notice, "NsParseTagEnd === NULL");
+        }*/
 
     return str;
 }
