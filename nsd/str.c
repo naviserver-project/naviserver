@@ -758,10 +758,11 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
          * In most cases, the strings are longer. Reduce the number of
          * loops by processing eight characters at a time.
          */
-        if (likely(idx + 8 < nrBytes)) {
-            const uint64_t *p = (const uint64_t*)&bytes[idx];
+        if (likely(nrBytes - idx >= 8)) {
+            uint64_t w;
+            memcpy(&w, bytes + idx, sizeof w);
 
-            if ((*p & 0x8080808080808080u) == 0u) {
+            if ((w & 0x8080808080808080u) == 0u) {
                 idx += 8;
                 continue;
             }
@@ -898,7 +899,9 @@ bool Ns_Is7bit(const char *bytes, size_t nrBytes)
      * as well on other places, this should be ok.
      */
     for (; current < end - 32; current += 32) {
-        const uint64_t* p = (const uint64_t*)current;
+        uint64_t p[4];
+
+        memcpy(p, current, sizeof(p));
         mask1 |= p[0];
         mask2 |= p[1];
         mask3 |= p[2];
@@ -906,8 +909,9 @@ bool Ns_Is7bit(const char *bytes, size_t nrBytes)
     }
 
     for (; current < end - 8; current += 8) {
-        const uint64_t* p = (const uint64_t*)current;
-        mask1 |= p[0];
+        uint64_t p;
+        memcpy(&p, current, 8);
+        mask1 |= p;
     }
 
     for (; current < end; current++) {
