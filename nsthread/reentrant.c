@@ -106,19 +106,24 @@ GetTls(void)
  */
 
 char *
-ns_inet_ntoa(const struct sockaddr *saPtr)
+ns_inet_ntoa(struct sockaddr *saPtr)
 {
     Tls *tlsPtr = GetTls();
     union {
         unsigned int i;
         unsigned char b[4];
     } addr4;
+    struct sockaddr_in sin4;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
 #ifdef HAVE_IPV6
     if (saPtr->sa_family == AF_INET6) {
-        struct in6_addr addr = (((struct sockaddr_in6 *)saPtr)->sin6_addr);
+        struct sockaddr_in6 sin6;
+        struct in6_addr addr;
+
+        memcpy(&sin6, saPtr, sizeof sin6);
+        addr = sin6.sin6_addr;
 # ifndef _WIN32
         snprintf(tlsPtr->nabuf, NS_IPADDR_SIZE, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                 ntohs(S6_ADDR16(addr)[0]), ntohs(S6_ADDR16(addr)[1]),
@@ -133,10 +138,12 @@ ns_inet_ntoa(const struct sockaddr *saPtr)
                 ntohs(addr.u.Word[6]), ntohs(addr.u.Word[7]));
 # endif
     } else {
-        addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
+        memcpy(&sin4, saPtr, sizeof(sin4));
+        addr4.i = (unsigned int) sin4.sin_addr.s_addr;
         snprintf(tlsPtr->nabuf, NS_IPADDR_SIZE, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
     }
 #else
+    memcpy(&sin4, saPtr, sizeof(sin4));
     addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
     snprintf(tlsPtr->nabuf, NS_IPADDR_SIZE, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
 #endif
