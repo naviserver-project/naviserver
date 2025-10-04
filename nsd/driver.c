@@ -3705,7 +3705,7 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
 int
 NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
 {
-    return (int)SockAccept((Driver *)drvPtr, sock, (Sock**)sockPtrPtr, nowPtr, arg);
+    return SockAccept((Driver *)drvPtr, sock, (Sock**)sockPtrPtr, nowPtr, arg);
 }
 
 

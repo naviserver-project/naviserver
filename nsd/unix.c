@@ -71,6 +71,14 @@ static bool debugMode = NS_FALSE;
  *----------------------------------------------------------------------
  */
 
+#ifdef __APPLE__
+/* On macOS, avoid macro form of sigaddset etc. and use the real functions */
+/* Force function versions (avoid macro bit hacks that trigger -Wsign-conversion) */
+# ifdef sigaddset
+#  undef sigaddset
+# endif
+#endif
+
 void
 NsBlockSignal(int signal)
 {
