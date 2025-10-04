@@ -378,8 +378,9 @@ SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
         if (doSNI) {
             Tcl_DString     ds;
             NS_TLS_SSL_CTX *ctx;
-            unsigned short  port = dc->sni_idx >= 0
-                ? (unsigned short)(uintptr_t)SSL_get_ex_data(ssl, dc->sni_idx)
+            void           *ex = dc->sni_idx >= 0 ? SSL_get_ex_data(ssl, dc->sni_idx) : NULL;
+            unsigned short  port = ex != NULL
+                ? (unsigned short)(uintptr_t)ex
                 : (unsigned short)(drvPtr->listenfd[0]);
 
             /*
@@ -875,7 +876,19 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
 
             } else {
 
+#if defined(__clang__)
+#elif defined(__GNUC__)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wduplicated-branches"
+#endif
+
                 *resp = d2i_OCSP_RESPONSE_bio(derbio, NULL);
+
+#if defined(__clang__)
+#elif defined(__GNUC__)
+# pragma GCC diagnostic pop
+#endif
+
                 BIO_free(derbio);
 
                 if (*resp == NULL) {
@@ -1990,9 +2003,13 @@ ALPNSelectCB(NS_TLS_SSL *ssl, const unsigned char **out, unsigned char *outlen,
              const unsigned char *in, unsigned int inlen, void *arg)
 {
     const unsigned char *serverProtos = arg;
-    unsigned int serverProtosLength = *(unsigned int *)((char *)arg - sizeof(unsigned int));
-    unsigned int i = 0;
+    unsigned int serverProtosLength, i = 0;
     int          rc;
+
+    /* avoid unaliged access */
+    memcpy(&serverProtosLength,
+           (const char *)arg - sizeof(serverProtosLength),
+           sizeof(serverProtosLength));
 
     /*
      * Loop through ALPN list offered by client
