@@ -26,6 +26,20 @@ NS_PATCH_LEVEL   = @NS_PATCH_LEVEL@
 
 @SET_MAKE@
 
+# Toggle verbosity: make VERBOSE=1 shows full commands
+ifndef VERBOSE
+  Q := @
+  E := @echo
+else
+  Q :=
+  E := @true
+endif
+
+# Pattern rule: shows short progress, runs real compile
+%.o: %.c
+	$(E) "  CC  $<"
+	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+
 #
 # The following binaries are assumed to live in the /bin/ directory,
 # as specified by FHS 3.0 (Filesystem Hierarchy Standard).
@@ -79,12 +93,10 @@ CCLD             = @CCLD@
 # When compiling with sanitize: export ASAN_OPTIONS=halt_on_error=false:exitcode=0:print_stats=1:atexit=1
 #SANITIZE          = -fsanitize=address -fsanitize-recover=address
 #SANITIZE          =
-#CFLAGS_TIDY_GCC   =  -fipa-pure-const -Wsuggest-attribute=const -Wsuggest-attribute=pure -Wstringop-truncation 
-#CFLAGS_TIDY_GCC   =  -fipa-pure-const -Wsuggest-attribute=pure -Wstringop-truncation -Wflex-array-member-not-at-end -Warray-compare
 
-CFLAGS_CONVERSION = -Wconversion -Wsign-conversion -Wsign-compare
-CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wendif-labels -Wshadow -Wmissing-prototypes -Wstrict-prototypes
-CFLAGS_TIDY       = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wpointer-arith -Wold-style-definition -Wmissing-format-attribute -Wformat-security $(CFLAGS_TIDY_GCC)
+CFLAGS_CONVERSION = -Wconversion -Wsign-conversion
+CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes
+CFLAGS_TIDY       = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wimplicit-fallthrough=3 -Wold-style-definition -Wmissing-format-attribute -Wformat-security -Wstringop-truncation -Wformat=2 -Wnull-dereference -Wdouble-promotion 
 #CFLAGS_FORTIFY    = -D_FORTIFY_SOURCE=2 -fstack-protector $(SANITIZE)
 #CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE) -fwrapv -ftrapv
 CFLAGS_WARNING   = @CFLAGS_WARNING@
@@ -99,7 +111,20 @@ CFLAGS_EXTRA     = @SHLIB_CFLAGS@ @TCL_EXTRA_CFLAGS@ -DSYSTEM_MALLOC -std=c99
 DEFS             = @DEFS@
 #CFLAGS_DEFAULT    = @CFLAGS_DEFAULT@
 
-CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) $(PTHREAD_CFLAGS) @CPPFLAGS@ $(DEFS)
+# GCC extras
+ifneq (,$(findstring GCC,$(shell $(CC) -v 2>&1)))
+  CFLAGS_COMPILER = -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wclobbered \
+                    -Walloc-zero -Wfree-nonheap-object -Wstringop-overread \
+                    -Wstringop-overflow=4 -Wtrampolines
+endif
+
+# Clang extras
+ifneq (,$(findstring clang,$(shell $(CC) --version 2>/dev/null)))
+  CFLAGS_COMPILER = -Wshorten-64-to-32 -Wcomma -Wnewline-eof
+endif
+
+
+CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE) $(CFLAGS_WARNING) $(CFLAGS_COMPILER) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) $(PTHREAD_CFLAGS) @CPPFLAGS@ $(DEFS)
 LDFLAGS         += $(CFLAGS_OPTIMIZE) $(SANITIZE)
 LIBS		 = @LIBS@
 DL_LIBS		 =
