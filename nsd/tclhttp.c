@@ -3920,10 +3920,10 @@ HttpCheckSpool(
                     fd = ns_open(httpPtr->spoolFileName, flags, 0644);
                 } else {
                     const char *tmpDir, *tmpFile = "http.XXXXXX";
-                    size_t      tmpLen;
+                    size_t      dlen, flen = strlen(tmpFile);
 
                     tmpDir = nsconf.tmpDir;
-                    tmpLen = strlen(tmpDir) + 13;
+                    dlen = strlen(tmpDir);
 
                     /*
                      * This lock is necessary for [ns_http wait] backward
@@ -3931,8 +3931,13 @@ HttpCheckSpool(
                      * [ns_http wait] to disable options processing.
                      */
                     Ns_MutexLock(&httpPtr->lock);
-                    httpPtr->spoolFileName = ns_malloc(tmpLen);
-                    snprintf(httpPtr->spoolFileName, tmpLen, "%s/%s", tmpDir, tmpFile);
+                    {
+                        char *p = httpPtr->spoolFileName = ns_malloc(dlen + 1 + flen + 1);
+
+                        memcpy(p, tmpDir, dlen);
+                        p[dlen] = '/';
+                        memcpy(p + dlen + 1, tmpFile, flen + 1);  // includes NUL
+                    }
                     Ns_MutexUnlock(&httpPtr->lock);
 
                     fd = ns_mkstemp(httpPtr->spoolFileName);

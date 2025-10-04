@@ -81,10 +81,11 @@ Ns_RollFile(const char *fileName, TCL_SIZE_T max)
     } else {
         char  *first;
         int    err;
-        size_t bufferSize = strlen(fileName) + 5u;
+        size_t n = strlen(fileName);
 
-        first = ns_malloc(bufferSize);
-        snprintf(first, bufferSize, "%s.000", fileName);
+        first = ns_malloc(n + 5u);
+        memcpy(first, fileName, n);
+        memcpy(first + n, ".000", 5);  /* includes NUL */
         err = Exists(first);
 
         if (err > 0) {
@@ -209,9 +210,15 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
         if (ptm0 != NULL && ptm1 != NULL) {
             char timeBuf[512];
 
+#if defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
             (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt,
                             (ptm0->tm_mday < ptm1->tm_mday) ? ptm0 : ptm1);
-
+#if defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
             Ns_DStringVarAppend(&ds, file, ".", timeBuf, NS_SENTINEL);
         } else {
             Ns_Log(Warning, "RollFileFmt: localtime returned NULL");

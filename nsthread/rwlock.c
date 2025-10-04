@@ -105,7 +105,7 @@ void
 Ns_RWLockList(Tcl_DString *dsPtr)
 {
     RwLock *rwlockPtr;
-    char    buf[200];
+    char    buf[256];
 
     Ns_MasterLock();
     for (rwlockPtr = firstRwlockPtr; rwlockPtr != NULL; rwlockPtr = rwlockPtr->nextPtr) {
