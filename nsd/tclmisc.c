@@ -2036,7 +2036,8 @@ NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_SetUser(Tcl_GetString(objv[1]))));
+        int rv = Ns_SetUser(Tcl_GetString(objv[1])) == NS_OK ? 0 : -1;
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(rv));
     }
 
     return result;
@@ -2053,7 +2054,8 @@ NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_SetGroup(Tcl_GetString(objv[1]))));
+        int rv = Ns_SetGroup(Tcl_GetString(objv[1])) == NS_OK ? 0 : -1;
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(rv));
     }
     return result;
 }
