@@ -32,7 +32,7 @@ static void SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha)
     NS_GNUC_NONNULL(1);
-static void MD5Transform(uint32_t buf[4], const uint32_t block[16])
+static void MD5Transform(uint32_t buf[4], const unsigned char block[64])
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int Base64EncodeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, int encoding);
@@ -1741,7 +1741,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
         }
         memcpy(p, buf, t);
         byteReverse(ctx->in, 16);
-        MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+        MD5Transform(ctx->buf, ctx->in);
         buf += t;
         len -= t;
     }
@@ -1752,7 +1752,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
     while (len >= 64u) {
         memcpy(ctx->in, buf, 64u);
         byteReverse(ctx->in, 16);
-        MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+        MD5Transform(ctx->buf, ctx->in);
         buf += 64;
         len -= 64u;
     }
@@ -1771,12 +1771,9 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 {
     unsigned count;
     uint8_t  *p;
-    uint32_t *words;
 
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(digest != NULL);
-
-    words = (uint32_t *)ctx->in;
 
     /*
      * Compute number of bytes mod 64
@@ -1803,8 +1800,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
          * Two lots of padding:  Pad the first block to 64 bytes
          */
         memset(p, 0, count);
-        byteReverse(ctx->in, 16);
-        MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+        MD5Transform(ctx->buf, ctx->in);
 
         /*
          * Now fill the next block with 56 bytes
@@ -1816,24 +1812,23 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
          */
         memset(p, 0, count - 8u);
     }
-    byteReverse(ctx->in, 14);
 
-    /*
-     * Append length in bits and transform
-     */
-    words[14] = ctx->bits[0];
-    words[15] = ctx->bits[1];
+    /* Append length in bits as little-endian at bytes 56..63 */
+    ctx->in[56] = (unsigned char)( ctx->bits[0]        & 0xFFu);
+    ctx->in[57] = (unsigned char)((ctx->bits[0] >>  8) & 0xFFu);
+    ctx->in[58] = (unsigned char)((ctx->bits[0] >> 16) & 0xFFu);
+    ctx->in[59] = (unsigned char)((ctx->bits[0] >> 24) & 0xFFu);
+    ctx->in[60] = (unsigned char)( ctx->bits[1]        & 0xFFu);
+    ctx->in[61] = (unsigned char)((ctx->bits[1] >>  8) & 0xFFu);
+    ctx->in[62] = (unsigned char)((ctx->bits[1] >> 16) & 0xFFu);
+    ctx->in[63] = (unsigned char)((ctx->bits[1] >> 24) & 0xFFu);
 
-    MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+    /* Final transform */
+    MD5Transform(ctx->buf, ctx->in);
+
+    /* Output digest in little-endian */
     byteReverse((unsigned char *) ctx->buf, 4);
     memcpy(digest, ctx->buf, 16u);
-    /*
-     * This memset should not be needed, since this is performed at the end of
-     * the operation. In case, it would be needed, it should be necessary at
-     * the initialization of the structure.
-     *
-     *     memset(ctx, 0, sizeof(Ns_CtxMD5));
-     */
 }
 
 /*
@@ -1857,24 +1852,20 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
  * the addition of 16 32-bit words (64 bytes) of new data.  MD5Update blocks the
  * data and converts bytes into longwords for this routine.
  */
-static void MD5Transform(uint32_t buf[4], const uint32_t block[16])
-{
-    register uint32_t a, b, c, d;
 
-#ifndef HIGHFIRST
-    const uint32_t *in = block;
-#else
+static void
+MD5Transform(uint32_t buf[4], const unsigned char block[64])
+{
+    uint32_t a, b, c, d;
     uint32_t in[16];
 
-    memcpy(in, block, sizeof(in));
-
-    for (a = 0; a < 16; a++) {
-        in[a] = (uint32_t)(
-                            (uint32_t)(block[a * 4 + 0]) |
-                            (uint32_t)(block[a * 4 + 1]) <<  8 |
-                            (uint32_t)(block[a * 4 + 2]) << 16 |
-                            (uint32_t)(block[a * 4 + 3]) << 24);
+    /* Decode: MD5 uses little-endian 32-bit words */
+#ifdef WORDS_BIGENDIAN
+    for (int i = 0; i < 16; i++) {
+        in[i] = ns_bswap32(block[i]);
     }
+#else
+    memcpy(in, block, sizeof in);
 #endif
 
     NS_NONNULL_ASSERT(buf != NULL);

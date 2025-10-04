@@ -630,6 +630,33 @@ typedef int ns_sockerrno_t;
 #include <assert.h>
 #include <sys/stat.h>
 
+/* Fallback if the compiler doesn't support __has_builtin */
+#ifndef __has_builtin
+# define __has_builtin(x) 0
+#endif
+
+/*
+ * Define ns_bswap32 and use builtins if defined
+ */
+#if defined(_MSC_VER)
+# define ns_bswap32 _byteswap_ulong
+#elif __has_builtin(__builtin_bswap32)
+ /* Clang (and GCC >=10 via __has_builtin) */
+# define ns_bswap32 __builtin_bswap32
+#elif defined(__GNUC__) || defined(__clang__)
+ /* Older GCC/Clang: builtin exists even without __has_builtin */
+# define ns_bswap32 __builtin_bswap32
+#else
+/* Portable fallback */
+  static inline uint32_t ns_bswap32(uint32_t v) {
+    return ((v & 0x000000FFu) << 24) |
+           ((v & 0x0000FF00u) <<  8) |
+           ((v & 0x00FF0000u) >>  8) |
+           ((v & 0xFF000000u) >> 24);
+  }
+#endif
+
+
 #ifndef O_TEXT
 # define O_TEXT    (0)
 #endif
