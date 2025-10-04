@@ -78,6 +78,7 @@ static bool SockAddrInit(void);
  *
  *----------------------------------------------------------------------
  */
+
 void
 Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct sockaddr *maskedAddr)
 {
@@ -93,33 +94,40 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
     }
 
     if (addr->sa_family == AF_INET6 && mask->sa_family == AF_INET6) {
-        const struct in6_addr *addrBits   = &(((struct sockaddr_in6 *)addr)->sin6_addr);
-        const struct in6_addr *maskBits   = &(((struct sockaddr_in6 *)mask)->sin6_addr);
-        struct in6_addr       *maskedBits = &(((struct sockaddr_in6 *)maskedAddr)->sin6_addr);
-        int i;
+        const size_t   off = offsetof(struct sockaddr_in6, sin6_addr);
+        uint8_t       *dst = (uint8_t *)maskedAddr + off;
+        const uint8_t *src = (const uint8_t *)addr + off;
+        const uint8_t *msk = (const uint8_t *)mask + off;
 
         /*
          * Perform bitwise masking over the full array. Maybe we need
          * something special for IN6_IS_ADDR_V4MAPPED.
          */
-#ifndef _WIN32
-        for (i = 0; i < 4; i++) {
-            maskedBits->s6_addr32[i] = addrBits->s6_addr32[i] & maskBits->s6_addr32[i];
+        {
+            uint64_t a0, a1, m0, m1;
+
+            memcpy(&a0, src,      8);
+            memcpy(&a1, src +  8, 8);
+            memcpy(&m0, msk,      8);
+            memcpy(&m1, msk +  8, 8);
+            a0 &= m0;
+            a1 &= m1;
+            memcpy(dst,      &a0, 8);
+            memcpy(dst +  8, &a1, 8);
         }
-#else
-        for (i = 0; i < 8; i++) {
-            maskedBits->u.Word[i] = addrBits->u.Word[i] & maskBits->u.Word[i];
-        }
-#endif
         /*
           fprintf(stderr, "#### addr   %s\n", ns_inet_ntoa(addr));
           fprintf(stderr, "#### mask   %s\n", ns_inet_ntoa(mask));
           fprintf(stderr, "#### masked %s\n", ns_inet_ntoa(maskedAddr));
         */
     } else if (addr->sa_family == AF_INET && mask->sa_family == AF_INET) {
-        ((struct sockaddr_in *)maskedAddr)->sin_addr.s_addr =
-            ((struct sockaddr_in *)addr)->sin_addr.s_addr &
-            ((struct sockaddr_in *)mask)->sin_addr.s_addr;
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+        uint32_t a, m, o;
+        memcpy(&a, (const uint8_t *)addr + off4, 4);
+        memcpy(&m, (const uint8_t *)mask + off4, 4);
+        o = a & m;
+        memcpy((uint8_t *)maskedAddr + off4, &o, 4);
+
     } else if (addr->sa_family != AF_INET && addr->sa_family != AF_INET6) {
         Ns_Log(Error, "nsperm: invalid address family %d detected (Ns_SockaddrMask addr)", addr->sa_family);
     } else if (mask->sa_family != AF_INET && mask->sa_family != AF_INET6) {
@@ -146,50 +154,56 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
 bool
 Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
 {
-    bool success;
-
     NS_NONNULL_ASSERT(addr1 != NULL);
     NS_NONNULL_ASSERT(addr2 != NULL);
 
     if (addr1 == addr2) {
-        success = NS_TRUE;
+        return NS_TRUE;
 
     } else if (addr1->sa_family == AF_INET6 && addr2->sa_family == AF_INET6) {
-        const struct in6_addr *addr1Bits  = &(((struct sockaddr_in6 *)addr1)->sin6_addr);
-        const struct in6_addr *addr2Bits  = &(((struct sockaddr_in6 *)addr2)->sin6_addr);
-        int i;
+        const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
 
-        success = NS_TRUE;
-        /*
-         * Perform bitwise comparison. Maybe something special is needed for
-         * comparing IPv4 address with IN6_IS_ADDR_V4MAPPED
-         */
-#ifndef _WIN32
-        for (i = 0; i < 4; i++) {
-            if (addr1Bits->s6_addr32[i] != addr2Bits->s6_addr32[i]) {
-                success = NS_FALSE;
-                break;
-            }
-        }
-#else
-        for (i = 0; i < 8; i++) {
-            if (addr1Bits->u.Word[i] != addr2Bits->u.Word[i]) {
-                success = NS_FALSE;
-                break;
-            }
-        }
-#endif
+        return memcmp((const char *)addr1 + off6,
+                      (const char *)addr2 + off6,
+                      sizeof(struct in6_addr)) == 0 ? NS_TRUE : NS_FALSE;
+
     } else if (addr1->sa_family == AF_INET && addr2->sa_family == AF_INET) {
-        success = (((struct sockaddr_in *)addr1)->sin_addr.s_addr
-                  == ((struct sockaddr_in *)addr2)->sin_addr.s_addr);
-    } else {
-        /*
-         * Family mismatch.
-         */
-        success = NS_FALSE;
-    }
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
 
-    return success;
+        return memcmp((const char *)addr1 + off4,
+                      (const char *)addr2 + off4,
+                      sizeof(struct in_addr)) == 0 ? NS_TRUE : NS_FALSE;
+
+#if defined(IN6_IS_ADDR_V4MAPPED)
+    } else if (addr1->sa_family == AF_INET && addr2->sa_family == AF_INET6) {
+        /* treat IPv4 and v4-mapped IPv6 as equal */
+        const size_t off4 = offsetof(struct sockaddr_in,  sin_addr);
+        const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
+        const struct in6_addr *a6 = (const void *)((const char *)addr2 + off6);
+
+        if (IN6_IS_ADDR_V4MAPPED(a6)) {
+            return memcmp((const char *)addr1 + off4,
+                          ((const char *)a6) + 12, /* last 4 bytes */
+                          4) == 0 ? NS_TRUE : NS_FALSE;
+        }
+        return NS_FALSE;
+    }
+    if (addr1->sa_family == AF_INET6 && addr2->sa_family == AF_INET) {
+        const size_t off4 = offsetof(struct sockaddr_in,  sin_addr);
+        const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
+        const struct in6_addr *a6 = (const void *)((const char *)addr1 + off6);
+        if (IN6_IS_ADDR_V4MAPPED(a6)) {
+            return memcmp(((const char *)a6) + 12,
+                          (const char *)addr2 + off4,
+                          4) == 0 ? NS_TRUE : NS_FALSE;
+        }
+        return NS_FALSE;
+    }
+#endif
+    /*
+     * Family mismatch.
+     */
+    return NS_FALSE;
 }
 
 
@@ -213,8 +227,6 @@ bool
 Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
                        const struct sockaddr *masked)
 {
-    bool success;
-
     NS_NONNULL_ASSERT(addr != NULL);
     NS_NONNULL_ASSERT(mask != NULL);
     NS_NONNULL_ASSERT(masked != NULL);
@@ -222,52 +234,42 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
     //fprintf(stderr, "addr family %d mask family %d\n", addr->sa_family, mask->sa_family);
 
     if (addr == mask) {
-        success = NS_TRUE;
+        return NS_TRUE;
 
-    } else if (addr->sa_family == AF_INET6 && mask->sa_family == AF_INET6) {
-        const struct in6_addr *addrBits   = &(((struct sockaddr_in6 *)addr)->sin6_addr);
-        const struct in6_addr *maskBits   = &(((struct sockaddr_in6 *)mask)->sin6_addr);
-        const struct in6_addr *maskedBits = &(((struct sockaddr_in6 *)masked)->sin6_addr);
-        int i;
-
-        success = NS_TRUE;
-        /*
-         * Perform bitwise comparison. Maybe something special is needed for
-         * comparing IPv4 address with IN6_IS_ADDR_V4MAPPED
-         */
-#ifndef _WIN32
-        for (i = 0; i < 4; i++) {
-            if ((addrBits->s6_addr32[i] & maskBits->s6_addr32[i]) != maskedBits->s6_addr32[i]) {
-                success = NS_FALSE;
-                break;
-            }
-        }
-#else
-        for (i = 0; i < 8; i++) {
-            if ((addrBits->u.Word[i] & maskBits->u.Word[i]) != maskedBits->u.Word[i]) {
-                success = NS_FALSE;
-                break;
-            }
-        }
-#endif
-    } else if (addr->sa_family == AF_INET && mask->sa_family == AF_INET) {
-        /*fprintf(stderr, "addr %.8x & mask %.8x masked %.8x <-> %.8x\n",
-                ((struct sockaddr_in *)addr)->sin_addr.s_addr,
-                ((struct sockaddr_in *)mask)->sin_addr.s_addr,
-                ((struct sockaddr_in *)masked)->sin_addr.s_addr,
-                (((struct sockaddr_in *)addr)->sin_addr.s_addr
-                & ((struct sockaddr_in *)mask)->sin_addr.s_addr));*/
-        success = ((((struct sockaddr_in *)addr)->sin_addr.s_addr
-                    & ((struct sockaddr_in *)mask)->sin_addr.s_addr) ==
-                   (((struct sockaddr_in *)masked)->sin_addr.s_addr));
-    } else {
-        /*
-         * Family mismatch.
-         */
-        success = NS_FALSE;
     }
 
-    return success;
+    if (addr->sa_family == AF_INET6 && mask->sa_family == AF_INET6 && masked->sa_family == AF_INET6) {
+        const size_t        off6 = offsetof(struct sockaddr_in6, sin6_addr);
+        const unsigned char *a   = (const unsigned char *)addr   + off6;
+        const unsigned char *m   = (const unsigned char *)mask   + off6;
+        const unsigned char *o   = (const unsigned char *)masked + off6;
+
+        /* (a & m) == o over 16 bytes */
+        for (int i = 0; i < 16; i++) {
+            if ((unsigned char)(a[i] & m[i]) != o[i]) {
+                return NS_FALSE;
+            }
+        }
+        return NS_TRUE;
+    }
+
+
+    /* IPv4 */
+    if (addr->sa_family == AF_INET && mask->sa_family == AF_INET && masked->sa_family == AF_INET) {
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+        uint32_t     a, m, o;  /* network byte order, bitwise AND is fine */
+
+        memcpy(&a, (const unsigned char *)addr   + off4, 4);
+        memcpy(&m, (const unsigned char *)mask   + off4, 4);
+        memcpy(&o, (const unsigned char *)masked + off4, 4);
+
+        return ((a & m) == o);
+    }
+
+    /*
+     * Family mismatch.
+     */
+    return NS_FALSE;
 }
 
 /*
@@ -288,69 +290,63 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
 void
 Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
 {
+    size_t off;
+    unsigned char *dst;
+    unsigned full, rem;
+
     NS_NONNULL_ASSERT(mask != NULL);
 
     if (mask->sa_family == AF_INET6) {
-        struct in6_addr *addr = &(((struct sockaddr_in6 *)mask)->sin6_addr);
-        int i;
-
+        /* cap /128 */
         if (nrBits > 128u) {
-            Ns_Log(Warning, "Invalid bit mask /%d: can be most 128 bits", nrBits);
+            Ns_Log(Warning, "Invalid bit mask /%u: at most 128 bits", nrBits);
             nrBits = 128u;
         }
-#ifndef _WIN32
-        /*
-         * Set the mask bits in the leading 32 bit ints to 1.
-         */
-        for (i = 0; i < 4 && nrBits >= 32u; i++, nrBits -= 32u) {
-            addr->s6_addr32[i] = (~0u);
+
+        off = offsetof(struct sockaddr_in6, sin6_addr);
+        dst = (unsigned char *)mask + off; /* 16 bytes */
+
+        full = nrBits / 8u;     /* whole bytes set to 0xFF */
+        rem  = nrBits % 8u;     /* high-bit count in next byte */
+
+        memset(dst, 0xFF, full);
+        if (full < 16u) {
+            if (rem != 0u) {
+                dst[full] = (unsigned char)(0xFFu << (8u - rem));
+                memset(dst + full + 1u, 0x00, 16u - full - 1u);
+            } else {
+                memset(dst + full, 0x00, 16u - full);
+            }
         }
-        /*
-         * Set the partial mask.
-         */
-        if (i < 4 && nrBits > 0u) {
-            addr->s6_addr32[i] = htonl((~0u) << (32u - nrBits));
-            i++;
-        }
-        /*
-         * Clear trailing 32 bit ints.
-         */
-        for (; i < 4; i++) {
-            addr->s6_addr32[i] = 0u;
-        }
-#else
-        /*
-         * Windows does not have 32-bit members, so process in 16-bit
-         * chunks: Set the mask bits in the leading 16 bit Words to 1.
-         */
-        for (i = 0; i < 8 && nrBits >= 16u; i++, nrBits -= 16u) {
-            addr->u.Word[i] = (unsigned short)(~0u);
-        }
-        /*
-         * Set the partial mask.
-         */
-        if (i < 8 && nrBits > 0u) {
-            addr->u.Word[i] = htons((~0u) << (16u - nrBits));
-            i++;
-        }
-        /*
-         * Clear trailing 16 bit Words.
-         */
-        for (; i < 8; i++) {
-            addr->u.Word[i] = 0u;
-        }
-#endif
-        /*fprintf(stderr, "#### FINAL mask %s\n", ns_inet_ntoa(mask));*/
+
     } else if (mask->sa_family == AF_INET) {
+        /* cap /32 */
         if (nrBits > 32u) {
-            Ns_Log(Warning, "Invalid bit mask /%d: can be most 32 bits", nrBits);
+            Ns_Log(Warning, "Invalid bit mask /%u: at most 32 bits", nrBits);
             nrBits = 32u;
         }
-        ((struct sockaddr_in *)mask)->sin_addr.s_addr = htonl((~0u) << (32u - nrBits));
+
+        off = offsetof(struct sockaddr_in, sin_addr);
+        dst = (unsigned char *)mask + off; /* 4 bytes */
+
+        full = nrBits / 8u;
+        rem  = nrBits % 8u;
+
+        memset(dst, 0xFF, full);
+        if (full < 4u) {
+            if (rem != 0u) {
+                dst[full] = (unsigned char)(0xFFu << (8u - rem));
+                memset(dst + full + 1u, 0x00, 4u - full - 1u);
+            } else {
+                memset(dst + full, 0x00, 4u - full);
+            }
+        }
+
     } else {
         Ns_Log(Error, "invalid address family %d detected (Ns_SockaddrMaskBits)", mask->sa_family);
     }
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -474,11 +470,12 @@ ns_inet_ntop(const struct sockaddr *NS_RESTRICT saPtr, char *NS_RESTRICT buffer,
     NS_NONNULL_ASSERT(buffer != NULL);
 
     if (saPtr->sa_family == AF_INET6) {
-        result = inet_ntop(AF_INET6, &((const struct sockaddr_in6 *)saPtr)->sin6_addr,
-                           buffer, (socklen_t)size);
+        const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
+        const void  *src6 = (const char *)saPtr + off6;
 
+        result = inet_ntop(AF_INET6, src6, buffer, (socklen_t)size);
         if (result != NULL) {
-            const struct in6_addr *addr = &(((struct sockaddr_in6 *)saPtr)->sin6_addr);
+            struct in6_addr a6;
             /*
              * In case the address is V4MAPPED, return just the IPv4 portion,
              * since ns_inet_pton() tries to return as well first an IPv4
@@ -490,33 +487,21 @@ ns_inet_ntop(const struct sockaddr *NS_RESTRICT saPtr, char *NS_RESTRICT buffer,
              * Potential dangers:
              * https://tools.ietf.org/html/draft-itojun-v6ops-v4mapped-harmful-02
              */
-            if (IN6_IS_ADDR_V4MAPPED(addr)) {
-                const char *tail = strrchr(result, INTCHAR(':'));
+            memcpy(&a6, src6, sizeof a6);
 
-                /*
-                 * When the last ':' in the converted string is further away
-                 * from the end as possible with a pure IPv6 notation, then
-                 * assume the last portion is an IPv4 address.
-                 */
-                if (tail != NULL) {
-                    size_t len = strlen(tail);
-
-                    if (len > 6 && len < size) {
-                        tail ++;
-                        /*
-                         * The memory is overlapping. Do not use memcpy()
-                         * since this might fail on some platforms with a hard
-                         * trap (e.g., aarch64 musl).
-                         */
-                        memmove(buffer, tail, len);
-                        buffer[len] = '\0';
-                    }
-                }
+            if (IN6_IS_ADDR_V4MAPPED(&a6)) {
+                /* Render the last 4 bytes as IPv4 */
+                (void)inet_ntop(AF_INET, a6.s6_addr + 12, buffer, (socklen_t)size);
+                /* Keep return value semantics: return buffer */
+                result = buffer;
             }
         }
+
     } else {
-        result = inet_ntop(AF_INET, &((const struct sockaddr_in *)saPtr)->sin_addr,
-                           buffer, (socklen_t)size);
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+        const void  *src4 = (const char *)saPtr + off4;
+
+        result = inet_ntop(AF_INET, src4, buffer, (socklen_t)size);
     }
 
     return result;
@@ -550,24 +535,33 @@ ns_inet_pton(struct sockaddr *saPtr, const char *addr) {
     NS_NONNULL_ASSERT(saPtr != NULL);
     NS_NONNULL_ASSERT(addr != NULL);
 
-    /*
-     * First try whether the address parses as an IPv4 address
-     */
-    r = inet_pton(AF_INET, addr, &((struct sockaddr_in *)saPtr)->sin_addr);
-    if (r > 0) {
-        saPtr->sa_family = AF_INET;
-        /*Ns_LogSockaddr(Notice, "ns_inet_pton returns IPv4 address", saPtr);*/
-    } else {
-#ifdef HAVE_IPV6
-        /*
-         * No IPv4 address, try to parse as IPv6 address
-         */
-        r = inet_pton(AF_INET6, addr, &((struct sockaddr_in6 *)saPtr)->sin6_addr);
-        saPtr->sa_family = AF_INET6;
 
-        /*Ns_LogSockaddr(Notice, "ns_inet_pton returns IPv6 address", saPtr);*/
-#endif
+    /* Try IPv4 first */
+    {
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+        void        *dst4 = (void *)((char *)saPtr + off4);
+
+        r = inet_pton(AF_INET, addr, dst4);
+        if (r > 0) {
+            saPtr->sa_family = AF_INET;
+            return r;
+        }
     }
+#ifdef HAVE_IPV6
+    /* Fallback to IPv6 */
+    {
+        const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
+        void        *dst6 = (void *)((char *)saPtr + off6);
+
+        r = inet_pton(AF_INET6, addr, dst6);
+        if (r > 0) {
+            saPtr->sa_family = AF_INET6;
+            return r;
+        }
+    }
+#endif
+
+    /* r is 0 (parse error) or -1 (errno set) from the last attempt */
     return r;
 }
 
@@ -603,7 +597,18 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
 #ifdef HAVE_IPV6
     if (host == NULL) {
         saPtr->sa_family = AF_INET6;
-        ((struct sockaddr_in6 *)saPtr)->sin6_addr = in6addr_any;
+        /* sin6_addr = in6addr_any (no typed pointer cast) */
+        {
+            const size_t off = offsetof(struct sockaddr_in6, sin6_addr);
+            memcpy((char *)saPtr + off, &in6addr_any, sizeof(struct in6_addr));
+        }
+        /* sin6_port = htons(port) */
+        {
+            const size_t off = offsetof(struct sockaddr_in6, sin6_port);
+            uint16_t p = htons(port);
+            memcpy((char *)saPtr + off, &p, sizeof p);
+        }
+
     } else {
         int r;
 
@@ -669,21 +674,22 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
 unsigned short
 Ns_SockaddrGetPort(const struct sockaddr *saPtr)
 {
-    unsigned short port;
+    unsigned short port = 0;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
 #ifdef HAVE_IPV6
     if (saPtr->sa_family == AF_INET6) {
-        port = ((const struct sockaddr_in6 *)saPtr)->sin6_port;
-    } else {
-        port = ((const struct sockaddr_in *)saPtr)->sin_port;
-    }
-#else
-    port = ((const struct sockaddr_in *)saPtr)->sin_port;
+        const size_t off6 = offsetof(struct sockaddr_in6, sin6_port);
+        memcpy(&port, (const char *)saPtr + off6, sizeof(port));
+    } else
 #endif
+    {
+        const size_t off4 = offsetof(struct sockaddr_in, sin_port);
+        memcpy(&port, (const char *)saPtr + off4, sizeof(port));
+    }
 
-    return (unsigned short)htons(port);
+    return (unsigned short)ntohs(port);
 }
 
 /*
@@ -704,18 +710,23 @@ Ns_SockaddrGetPort(const struct sockaddr *saPtr)
 void
 Ns_SockaddrSetPort(struct sockaddr *saPtr, unsigned short port)
 {
+    uint16_t netport = htons(port);
+
+    NS_NONNULL_ASSERT(saPtr != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
 
 #ifdef HAVE_IPV6
     if (saPtr->sa_family == AF_INET6) {
-        ((struct sockaddr_in6 *)saPtr)->sin6_port = ntohs(port);
-    } else {
-        ((struct sockaddr_in *)saPtr)->sin_port = ntohs(port);
+        const size_t off6 = offsetof(struct sockaddr_in6, sin6_port);
+        memcpy((char *)saPtr + off6, &netport, sizeof netport);
+        return;
     }
-#else
-    ((struct sockaddr_in *)saPtr)->sin_port = ntohs(port);
 #endif
-
+    /* default / IPv4 */
+    {
+        const size_t off4 = offsetof(struct sockaddr_in, sin_port);
+        memcpy((char *)saPtr + off4, &netport, sizeof netport);
+    }
 }
 
 
@@ -973,13 +984,18 @@ Ns_SockaddrInAny(const struct sockaddr *saPtr) {
 
     switch (saPtr->sa_family) {
         case AF_INET: {
-            const struct sockaddr_in *ipv4_addr = (const struct sockaddr_in*)saPtr;
-            success = (ipv4_addr->sin_addr.s_addr == htonl(INADDR_ANY));
+            const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+            struct in_addr a4;
+
+            memcpy(&a4, (const char *)saPtr + off4, sizeof a4);
+            success = (a4.s_addr == htonl(INADDR_ANY));
             break;
         }
         case AF_INET6: {
-            const struct sockaddr_in6 *ipv6_addr = (const struct sockaddr_in6*)saPtr;
-            success = (memcmp(&ipv6_addr->sin6_addr, &in6addr_any, sizeof(in6addr_any)) == 0);
+            const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
+            struct in6_addr a6;
+            memcpy(&a6, (const char *)saPtr + off6, sizeof a6);
+            success = (memcmp(&a6, &in6addr_any, sizeof a6) == 0);
             break;
         }
         default: {
@@ -1025,13 +1041,15 @@ Ns_SockaddrSetLoopback(struct sockaddr *saPtr) {
 
     switch (saPtr->sa_family) {
     case AF_INET: {
-        struct sockaddr_in *ipv4_addr = (struct sockaddr_in*)saPtr;
-        ipv4_addr->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        const size_t   off = offsetof(struct sockaddr_in, sin_addr);
+        struct in_addr a4;
+        a4.s_addr = htonl(INADDR_LOOPBACK);                 /* 127.0.0.1 in network order */
+        memcpy((char *)saPtr + off, &a4, sizeof a4);
         break;
     }
     case AF_INET6: {
-        struct sockaddr_in6 *ipv6_addr = (struct sockaddr_in6*)saPtr;
-        ipv6_addr->sin6_addr = in6addr_loopback;
+        const size_t off = offsetof(struct sockaddr_in6, sin6_addr);
+        memcpy((char *)saPtr + off, &in6addr_loopback, sizeof(struct in6_addr)); /* ::1 */
         break;
     }
     default:
