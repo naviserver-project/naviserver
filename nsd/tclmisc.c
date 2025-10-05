@@ -1002,16 +1002,15 @@ int
 NsTclCrashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int result;
+    int result = TCL_OK;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        char *death;
-
-        death = NULL;
-        *death = 'x';
-        result = TCL_OK;
+        /*
+         * Perform the "crash"
+         */
+        (void)raise(SIGSEGV);
     }
     return result;
 }
