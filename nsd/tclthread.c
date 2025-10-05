@@ -1029,7 +1029,8 @@ MutexTrylockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_MutexTryLock(lockPtr)));
+        int rc = Ns_MutexTryLock(lockPtr) == TCL_OK ? 0 : -1;
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(rc);
     }
     return result;
 }
