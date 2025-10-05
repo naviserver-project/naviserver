@@ -1852,18 +1852,11 @@ AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
         Ns_DStringPrintf(dsPtr, "[%" TCL_LL_MODIFIER "d,", r->minValue);
     }
 
-    if (r->maxValue == TCL_SIZE_MAX) {
+    /* Upper bound: treat any of these sentinels as "MAX" */
+    if (r->maxValue == LLONG_MAX
+        || r->maxValue == (long long)TCL_SIZE_MAX
+        || r->maxValue == (long long)INT_MAX) {
         Tcl_DStringAppend(dsPtr, "MAX]", 4);
-
-#if TCL_SIZE_MAX != LLONG_MAX
-    } else if (r->maxValue == LLONG_MAX) {
-        Tcl_DStringAppend(dsPtr, "MAX]", 4);
-#endif
-#if TCL_SIZE_MAX != INT_MAX
-    } else if (r->maxValue == INT_MAX) {
-        Tcl_DStringAppend(dsPtr, "MAX]", 4);
-#endif
-
     } else {
         Ns_DStringPrintf(dsPtr, "%" TCL_LL_MODIFIER "d]", r->maxValue);
     }
