@@ -28,6 +28,7 @@ if {$::tcl_version >= 8.6} {
 }
 testConstraint http09 true
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 
 # testConstraint binaryMismatch true
 # testConstraint broken true
@@ -2802,7 +2803,7 @@ test proxy-1.1 {Test forward proxy with via HTTPS with HTTP request} -constraint
 } -result {0123456789}
 
 test proxy-1.2 {Test forward proxy with via HTTP with HTTPS request} -constraints {
-    curl serverListen
+    curl serverListen nsf
 } -body {
     #
     # When the request is for an HTTPS URL, curl uses the CONNECT method
@@ -2816,7 +2817,7 @@ test proxy-1.2 {Test forward proxy with via HTTP with HTTPS request} -constraint
 } -returnCodes {error ok} -match glob -result {0123456789}
 
 test proxy-1.3 {Test forward proxy with via HTTPS with HTTPS request} -constraints {
-    curl serverListen
+    curl serverListen nsf
 } -body {
     #
     # When the request is for an HTTPS URL, curl uses the CONNECT method

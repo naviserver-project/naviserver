@@ -304,6 +304,7 @@ test ns_info-2.22 {basic operation} -body {
 # show up in the sockcallbacks.
 #
 test ns_info-2.23 {ns_info sockcallbacks reasonable result} -body {
+    #ns_log notice SOCKCALLBACKS LEN [llength [ns_info sockcallbacks]] // [ns_info sockcallbacks]
     llength [ns_info sockcallbacks]
 } -result [llength [info commands "::nscp"]]
 
