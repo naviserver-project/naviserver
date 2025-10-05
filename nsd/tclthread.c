@@ -1030,7 +1030,7 @@ MutexTrylockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         result = TCL_ERROR;
     } else {
         int rc = Ns_MutexTryLock(lockPtr) == TCL_OK ? 0 : -1;
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(rc);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
     }
     return result;
 }
