@@ -1859,13 +1859,13 @@ AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
 
         if (r->maxValue == tsMax) {
             isMax = true;
-        } else if ((sizeof(Tcl_Size) < sizeof(long long))
+        } else if ((sizeof(TCL_SIZE_T) < sizeof(long long))
                    && (r->maxValue == LLONG_MAX)) {
-            /* Only distinct if Tcl_Size is narrower than long long */
+            /* Only distinct if TCL_SIZE_T is narrower than long long */
             isMax = true;
-        } else if ((sizeof(Tcl_Size) <= sizeof(int))
+        } else if ((sizeof(TCL_SIZE_T) <= sizeof(int))
                    && (r->maxValue == (long long)INT_MAX)) {
-            /* Only distinct if Tcl_Size can be int-sized */
+            /* Only distinct if TCL_SIZE_T can be int-sized */
             isMax = true;
         }
 
