@@ -168,7 +168,7 @@
  * 0x0601  Windows 7
  * 0x0602  Windows 8
  * 0x0603  Windows 8.1
- * 0x0A00  Windows 10
+ * 0x0A00  Windows 10 and Windows 11
  */
 # ifndef _WIN32_WINNT
 #  define _WIN32_WINNT                0x0600
@@ -247,6 +247,38 @@ MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
 MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015 version 14.0)
 MSVC++ 14.1 _MSC_VER == 1910 (Visual Studio 2017 version 15.0)
 MSVC++ 14.2 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
+MSVC++ 14.10 _MSC_VER == 1910 (Visual Studio 2017 version 15.0)
+MSVC++ 14.11 _MSC_VER == 1911 (Visual Studio 2017 version 15.3 / 15.4)
+MSVC++ 14.12 _MSC_VER == 1912 (Visual Studio 2017 version 15.5)
+MSVC++ 14.13 _MSC_VER == 1913 (Visual Studio 2017 version 15.6)
+MSVC++ 14.14 _MSC_VER == 1914 (Visual Studio 2017 version 15.7)
+MSVC++ 14.15 _MSC_VER == 1915 (Visual Studio 2017 version 15.8)
+MSVC++ 14.16 _MSC_VER == 1916 (Visual Studio 2017 version 15.9)
+MSVC++ 14.20 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
+MSVC++ 14.21 _MSC_VER == 1921 (Visual Studio 2019 version 16.1)
+MSVC++ 14.22 _MSC_VER == 1922 (Visual Studio 2019 version 16.2)
+MSVC++ 14.23 _MSC_VER == 1923 (Visual Studio 2019 version 16.3)
+MSVC++ 14.24 _MSC_VER == 1924 (Visual Studio 2019 version 16.4)
+MSVC++ 14.25 _MSC_VER == 1925 (Visual Studio 2019 version 16.5)
+MSVC++ 14.26 _MSC_VER == 1926 (Visual Studio 2019 version 16.6)
+MSVC++ 14.27 _MSC_VER == 1927 (Visual Studio 2019 version 16.7)
+MSVC++ 14.28 _MSC_VER == 1928 (Visual Studio 2019 version 16.8 / 16.9)
+MSVC++ 14.29 _MSC_VER == 1929 (Visual Studio 2019 version 16.10 / 16.11)
+MSVC++ 14.30 _MSC_VER == 1930 (Visual Studio 2022 version 17.0)
+MSVC++ 14.31 _MSC_VER == 1931 (Visual Studio 2022 version 17.1)
+MSVC++ 14.32 _MSC_VER == 1932 (Visual Studio 2022 version 17.2)
+MSVC++ 14.33 _MSC_VER == 1933 (Visual Studio 2022 version 17.3)
+MSVC++ 14.34 _MSC_VER == 1934 (Visual Studio 2022 version 17.4)
+MSVC++ 14.35 _MSC_VER == 1935 (Visual Studio 2022 version 17.5)
+MSVC++ 14.36 _MSC_VER == 1936 (Visual Studio 2022 version 17.6)
+MSVC++ 14.37 _MSC_VER == 1937 (Visual Studio 2022 version 17.7)
+MSVC++ 14.38 _MSC_VER == 1938 (Visual Studio 2022 version 17.8)
+MSVC++ 14.39 _MSC_VER == 1939 (Visual Studio 2022 version 17.9)
+MSVC++ 14.40 _MSC_VER == 1940 (Visual Studio 2022 version 17.10)
+MSVC++ 14.41 _MSC_VER == 1941 (Visual Studio 2022 version 17.11)
+MSVC++ 14.42 _MSC_VER == 1942 (Visual Studio 2022 version 17.12)
+MSVC++ 14.43 _MSC_VER == 1943 (Visual Studio 2022 version 17.13)
+MSVC++ 14.44 _MSC_VER == 1944 (Visual Studio 2022 version 17.14)
 */
 
 /*
