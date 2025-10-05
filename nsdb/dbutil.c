@@ -272,7 +272,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
     fclose(fp);
 
     /*
-     * If dstring contains anything but whitespace, return error
+     * If Tcl_DString contains anything but whitespace, return error
      */
     if (status != NS_ERROR) {
         const char *p;
