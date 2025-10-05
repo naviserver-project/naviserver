@@ -878,7 +878,7 @@ void NsDriverMapVirtualServers(void)
                 Tcl_DStringInit(dsPtr);
                 Tcl_DStringInit(&hostDString);
 
-                Tcl_DStringAppend(&hostDString, Ns_InfoHostname(), -1);
+                Tcl_DStringAppend(&hostDString, Ns_InfoHostname(), TCL_INDEX_NONE);
                 Ns_Log(Debug, "add localhost server %s location '%s' address '%s' port %hu",
                        drvPtr->server, drvPtr->location, drvPtr->address, drvPtr->port);
 
@@ -890,7 +890,7 @@ void NsDriverMapVirtualServers(void)
 
                 if (drvPtr->address != NULL) {
                     Tcl_DStringSetLength(&hostDString, 0);
-                    Tcl_DStringAppend(&hostDString, drvPtr->address, -1);
+                    Tcl_DStringAppend(&hostDString, drvPtr->address, TCL_INDEX_NONE);
 
                     (void)ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
                                             mapPtr->ctx, NS_FALSE);

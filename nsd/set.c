@@ -1919,17 +1919,17 @@ Ns_SetFormat(Tcl_DString *dsPtr, const Ns_Set *set, bool withName,
         Ns_DStringPrintf(dsPtr, "%s:\n", set->name);
     }
     for (i = 0u; i < set->size; ++i) {
-        Tcl_DStringAppend(dsPtr, leadString, -1);
+        Tcl_DStringAppend(dsPtr, leadString, TCL_INDEX_NONE);
         if (set->fields[i].name == NULL) {
             Tcl_DStringAppend(dsPtr, "(null)", 6);
         } else {
-            Tcl_DStringAppend(dsPtr, set->fields[i].name, -1);
+            Tcl_DStringAppend(dsPtr, set->fields[i].name, TCL_INDEX_NONE);
         }
-        Tcl_DStringAppend(dsPtr, separatorString, -1);
+        Tcl_DStringAppend(dsPtr, separatorString, TCL_INDEX_NONE);
         if (set->fields[i].value == NULL) {
             Tcl_DStringAppend(dsPtr, "(null)", 6);
         } else {
-            Tcl_DStringAppend(dsPtr, set->fields[i].value, -1);
+            Tcl_DStringAppend(dsPtr, set->fields[i].value, TCL_INDEX_NONE);
         }
         Tcl_DStringAppend(dsPtr, "\n", 1);
     }

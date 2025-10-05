@@ -110,7 +110,7 @@ static void report(const char *msg, const char *string, ssize_t len)
 {
     const int max = 3000;
 
-    if (len == -1) {
+    if (len == TCL_INDEX_NONE) {
         len = (ssize_t)strlen(string)+1;
     }
     {
@@ -628,7 +628,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
                   || (s[1] >= 'A' && s[1] <= 'Z')
                   || (s[1] >= '0' && s[1] <= '9')
                   )) {
-                //report("state TagNext, invalid begin of tag", s, -1);
+                //report("state TagNext, invalid begin of tag", s, TCL_INDEX_NONE);
                 adp = s + 1;
                 continue;
             }

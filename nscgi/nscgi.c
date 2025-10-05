@@ -870,7 +870,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
                  */
                 idx = Ns_SetFind(cgiPtr->env, s);
                 if (idx < 0) {
-                    (void)Ns_SetPutSz(cgiPtr->env, s, (TCL_SIZE_T)(e-s), e+1, -1);
+                    (void)Ns_SetPutSz(cgiPtr->env, s, (TCL_SIZE_T)(e-s), e+1, TCL_INDEX_NONE);
                 }
                 *e = '=';
             }
@@ -896,7 +896,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_NAME", 11, cgiPtr->name, TCL_INDEX_NONE);
-    Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_FILENAME", 15, cgiPtr->path, -1);
+    Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_FILENAME", 15, cgiPtr->path, TCL_INDEX_NONE);
     Ns_SetUpdateSz(cgiPtr->env, "REQUEST_URI", 11, Ns_ConnTarget(conn, dsPtr), TCL_INDEX_NONE);
     Tcl_DStringSetLength(dsPtr, 0);
 
