@@ -1852,13 +1852,28 @@ AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
         Ns_DStringPrintf(dsPtr, "[%" TCL_LL_MODIFIER "d,", r->minValue);
     }
 
-    /* Upper bound: treat any of these sentinels as "MAX" */
-    if (r->maxValue == LLONG_MAX
-        || r->maxValue == (long long)TCL_SIZE_MAX
-        || r->maxValue == (long long)INT_MAX) {
-        Tcl_DStringAppend(dsPtr, "MAX]", 4);
-    } else {
-        Ns_DStringPrintf(dsPtr, "%" TCL_LL_MODIFIER "d]", r->maxValue);
+    /* upper bound */
+    {
+        const long long tsMax = (long long)TCL_SIZE_MAX;
+        bool            isMax = false;
+
+        if (r->maxValue == tsMax) {
+            isMax = true;
+        } else if ((sizeof(Tcl_Size) < sizeof(long long))
+                   && (r->maxValue == LLONG_MAX)) {
+            /* Only distinct if Tcl_Size is narrower than long long */
+            isMax = true;
+        } else if ((sizeof(Tcl_Size) <= sizeof(int))
+                   && (r->maxValue == (long long)INT_MAX)) {
+            /* Only distinct if Tcl_Size can be int-sized */
+            isMax = true;
+        }
+
+        if (isMax) {
+            Tcl_DStringAppend(dsPtr, "MAX]", 4);
+        } else {
+            Ns_DStringPrintf(dsPtr, "%" TCL_LL_MODIFIER "d]", r->maxValue);
+        }
     }
 }
 
