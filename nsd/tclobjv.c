@@ -1870,7 +1870,7 @@ AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
         if (isMax) {
             Tcl_DStringAppend(dsPtr, "MAX]", 4);
         } else {
-            Ns_DStringPrintf(dsPtr, "%" TCL_LL_MODIFIER "d]", v);
+            Ns_DStringPrintf(dsPtr, "%" TCL_LL_MODIFIER "d]", (Tcl_WideInt)v);
         }
     }
 }
