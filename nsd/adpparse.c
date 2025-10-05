@@ -29,7 +29,8 @@
 #define APPEND      "ns_adp_append "
 #define APPEND_LEN  (sizeof(APPEND) - 1u)
 
-#define LENGTH_SIZE       ((TCL_SIZE_T)(sizeof(int)))
+#define LENGTH_ELEM_SIZE  ((int)sizeof(TCL_SIZE_T))
+#define LINE_ELEM_SIZE    ((int)sizeof(int))
 
 typedef enum {
     TagInlineCode,
@@ -969,8 +970,8 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
                 ++codePtr->nscripts;
                 l = -l;
             }
-            Tcl_DStringAppend(&parsePtr->lengths, (char *) &l, LENGTH_SIZE);
-            Tcl_DStringAppend(&parsePtr->lines, (char *) &parsePtr->line, LENGTH_SIZE);
+            Tcl_DStringAppend(&parsePtr->lengths, (const char *)&l,              LENGTH_ELEM_SIZE);
+            Tcl_DStringAppend(&parsePtr->lines,   (const char *)&parsePtr->line, LINE_ELEM_SIZE);
             /*
              * Increment line numbers based on the passed-in segment
              */
@@ -1315,12 +1316,12 @@ AppendLengths(AdpCode *codePtr,
               const void *length_bytes, size_t length_nbytes,
               const void *line_bytes,   size_t line_nbytes)
 {
+    char        *base, *start, *mid;
     Tcl_DString *textPtr   = &codePtr->text;
     TCL_SIZE_T   oldLen    = textPtr->length;
     size_t       need_len  = (size_t)codePtr->nblocks * sizeof(TCL_SIZE_T);
     size_t       need_line = (size_t)codePtr->nblocks * sizeof(int);
-    char        *base, *start, *mid;
-    const size_t a       = NS_ALIGNOF(TCL_SIZE_T) > NS_ALIGNOF(int)
+    const size_t a         = NS_ALIGNOF(TCL_SIZE_T) > NS_ALIGNOF(int)
         ? NS_ALIGNOF(TCL_SIZE_T)
         : NS_ALIGNOF(int);
 
@@ -1335,11 +1336,6 @@ AppendLengths(AdpCode *codePtr,
     if (line_nbytes < need_line) {
         need_line = line_nbytes;
     }
-
-    Tcl_DStringSetLength(textPtr, oldLen + (TCL_SIZE_T)(a - 1 + need_len + need_line));
-
-    textPtr = &codePtr->text;
-    oldLen  = textPtr->length;
 
     /* Reserve padding for alignment + storage for both byte arrays */
     Tcl_DStringSetLength(textPtr, oldLen + (TCL_SIZE_T)(a - 1 + need_len + need_line));
