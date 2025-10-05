@@ -1926,7 +1926,7 @@ WorkersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Ob
                            Tcl_NewStringObj(proxyPtr->state == Idle ? "idle"
                                             : proxyPtr->state == Busy ? "busy"
                                             : proxyPtr->state == Done ? "done"
-                                            : "unknown", -1));
+                                            : "unknown", TCL_INDEX_NONE));
 
             Tcl_DStringAppendElement(dsPtr, Tcl_GetString(elementObj));
             Tcl_DecrRefCount(elementObj);

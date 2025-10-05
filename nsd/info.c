@@ -953,7 +953,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
              */
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("tcl", 3),
-                           Tcl_NewStringObj(TCL_PATCH_LEVEL, -1));
+                           Tcl_NewStringObj(TCL_PATCH_LEVEL, TCL_INDEX_NONE));
 
             Tcl_SetObjResult(interp, dictObj);
             Tcl_DStringFree(&ds);

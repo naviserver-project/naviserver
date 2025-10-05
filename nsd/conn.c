@@ -2750,7 +2750,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
 
         Tcl_DictObjPut(NULL, dictObj,
                        Tcl_NewStringObj("currentaddr", 11),
-                       Tcl_NewStringObj(currentAddr != NULL ? currentAddr : "na", -1));
+                       Tcl_NewStringObj(currentAddr != NULL ? currentAddr : "na", TCL_INDEX_NONE));
 
         if (currentAddr != NULL) {
             struct NS_SOCKADDR_STORAGE sa;
