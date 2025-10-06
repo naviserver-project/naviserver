@@ -7,11 +7,12 @@ innovative and scalable websites and services.
 
 ## Contents
 
-1. [Introduction](#introduction)
-2. [Documentation](#documentation)
-3. [Compiling and Installing](#compiling-and-installing)
-4. [Install NSF/XOTcl](#install-nsfxotcl)
-5. [Mailing Lists](#mailing-lists)
+1. [Introduction](#1-introduction)
+2. [Documentation](#2-documentation)
+3. [Versioning and Release Policy](#3-versioning-and-release-policy)
+4. [Compiling and Installing](#4-compiling-and-installing)
+5. [Install NSF/XOTcl](#5-install-nsfxotcl)
+6. [Mailing Lists](#6-mailing-lists)
 
 ---
 
@@ -32,7 +33,6 @@ in this distribution.
 
 ## 2. Documentation
 
-
 Documentation is located in the `doc` subdirectory. Although it is
 still a work in progress, it will eventually be available in both Unix
 nroff format (ideal for viewing with the `man` command) and HTML
@@ -42,69 +42,7 @@ The latest development documentation is available online at:
 <https://naviserver.sourceforge.io/n/toc.html>
 
 
----
-
-## 3. Compiling and Installing
-
-NaviServer compiles and runs on various platforms, including FreeBSD,
-Linux, Solaris, macOS 10.2+, and Windows.
-
-An install script for Unix platforms (including macOS) with extensive
-configuration options is available from:  
-<https://github.com/gustafn/install-ns>
-
-The following sections describe, in detail, how to compile and install
-NaviServer along with NSF.
-
-
-### 3a. Download, Configure, Build and Install Tcl 8.5 or Better
-
-If you already have Tcl installed and it was built with threads
-enabled, you can use it. Otherwise, download the latest Tcl release
-from [tcl-lang.org](https://www.tcl-lang.org/) and follow the included
-README instructions. You may install Tcl in the same directory where
-you plan to install NaviServer (e.g., `/usr/local/ns`, recommended to
-avoid version mismatches) or in a separate location.
-
-> **Note:** NaviServer 4.99.* requires Tcl 8.5 or Tcl 8.6, while NaviServer 5 support Tcl 9.
-
-On a Unix-like system, run:
-
-```bash
-gunzip < tcl8.6.13-src.tar.gz | tar xvf -
-cd tcl8.6.13/unix
-./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
-make install
-```
-
-### 3b. Install GNU Make
-
-The NaviServer makefiles require GNU Make. Verify your installation
-with:
-
-```bash
-make -v
-```
-
-If necessary, install GNU Make from [gnu.org](https://www.gnu.org/) or
-get if via the package manager of your operating system.
-
-
-### 3c. Download, Configure, Build, and Install NaviServer
-
-**Official releases:**  
-<https://sourceforge.net/projects/naviserver/files/>
-
-**Latest development source code (Git repository):**  
-<https://github.com/naviserver-project/naviserver/>
-
-> **Git Branches:**  
-> - `main` (latest development code)  
-> - `release/4.99` (bug fixes for NaviServer 4.99.*)
-
----
-
-### Versioning and Release Policy
+## 3. Versioning and Release Policy
 
 NaviServer uses a **three-digit** version scheme:
 
@@ -135,9 +73,73 @@ NaviServer uses a **three-digit** version scheme:
 Development work happens on `main`; bug fixes may be cherry-picked
 into the relevant `release/*` branch before tagging.
 
-### Compilation
+---
 
-To compile official releases, execute:
+## 4. Compiling and Installing
+
+NaviServer compiles and runs on various platforms, including FreeBSD,
+Linux, Solaris, macOS 10.2+, and Windows.
+
+An install script for Unix platforms (including macOS) with extensive
+configuration options is available from:  
+<https://github.com/gustafn/install-ns>
+
+This script installs NaviServer with optionally extra NaviServer
+modules, it support different compile options such as choice the the
+malloc library, etc.
+
+The following sections describe, in detail, how to compile and install
+NaviServer along with NSF.
+
+### 4a. Download, Configure, Build and Install Tcl 8.5 or Better
+
+If you already have Tcl installed and it was built with threads
+enabled, you can use it. Otherwise, download the latest Tcl release
+from [tcl-lang.org](https://www.tcl-lang.org/) and follow the included
+README instructions. You may install Tcl in the same directory where
+you plan to install NaviServer (e.g., `/usr/local/ns`, recommended to
+avoid version mismatches) or in a separate location.
+
+> **Note:** NaviServer 4.99.* requires Tcl 8.5 or Tcl 8.6, while NaviServer 5 support Tcl 9.
+
+On a Unix-like system, run:
+
+```bash
+gunzip < tcl8.6.17-src.tar.gz | tar xvf -
+cd tcl8.6.17/unix
+./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
+make install
+```
+
+### 4b. Install GNU Make
+
+The NaviServer makefiles require GNU Make. Verify your installation
+with:
+
+```bash
+make -v
+```
+
+If necessary, install GNU Make from [gnu.org](https://www.gnu.org/) or
+get if via the package manager of your operating system.
+
+
+### 4c. Download, Configure, Build, and Install NaviServer
+
+One has two options to obtain the NaviServer source code: you can
+either download tar releases from SourceForge, or obtain the sources
+from GitHub:
+
+**Tar releases:**  
+<https://sourceforge.net/projects/naviserver/files/>
+
+**Latest development source code (Git repository):**  
+<https://github.com/naviserver-project/naviserver/>
+
+
+#### Compile from Tar Releases
+
+To compile from a tar releases, execute:
 
 ```bash
 gunzip < naviserver-5.0.0.tar.gz | tar xvf -
@@ -168,16 +170,20 @@ To compile with the Purify tool, run:
 make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
 ```
 
-If you clone NaviServer from GitHub, run `./autogen.sh` with the
-configure options (instead of `./configure`) to generate the
+See `make help` for the provided options for testing etc.
+
+#### Compile from Versions from GitHub
+
+If you clone NaviServer from the GitHub repository, run `./autogen.sh`
+with the configure options (instead of `./configure`) to generate the
 makefiles. You will need recent versions of autoconf, automake, and
 the `dtplite` package from `tcllib` to build the documentation.
 
 > **Tip:** Use `make build-doc` to generate documentation; otherwise, `make install` may complain.
 
-See `make help` for additional assistance.
+The other steps are identical to compilation from tar releases.
 
-### 3d. Create and Edit a NaviServer Configuration File
+### 4d. Create and Edit a NaviServer Configuration File
 
 By convention, NaviServer uses a configuration file named `nsd.tcl`.
 
@@ -197,7 +203,7 @@ Sample files are provided:
 Find the documentation for configuring NaviServer in
 [admin-config](https://naviserver.sourceforge.io/5.0/manual/files/admin-config.html).
 
-### 3e. Run the Server in a Shell
+### 4e. Run the Server in a Shell
 
 Test NaviServer by running:
 
@@ -208,7 +214,7 @@ cd /usr/local/ns
 
 The `-f` option runs the server in the foreground with important log messages directed to your terminal.
 
-### 3f. Install Additional Modules
+### 4f. Install Additional Modules
 
 For tarball releases, compatible modules are provided via
 SourceForge. For example, to install a module named `nsfoo`:
@@ -230,7 +236,7 @@ make install NAVISERVER=/usr/local/ns
 
 For a complete list of modules, visit [GitHub repositories](https://github.com/orgs/naviserver-project/repositories).
 
-### 3g. Compile for Windows with Msys + Mingw
+### 4g. Compile for Windows with Msys + Mingw
 
 Download the minimal environment from [https://sourceforge.net/projects/mingw/files/](https://sourceforge.net/projects/mingw/files/).
 
@@ -246,7 +252,7 @@ Download the minimal environment from [https://sourceforge.net/projects/mingw/fi
 
 *Note:* This example assumes Tcl is built with Mingw using the prefix `c:/naviserver`.
 
-### 3h. Compile for Windows with MSVC
+### 4h. Compile for Windows with MSVC
 
 Update the `tcl_64` and `tcllib_64` variables in `Makefile.win32` (in the NaviServer root directory) and check settings in `include/Makefile.win32` (such as `HAVE_OPENSSL_EVP_H` and `openssl_64`).
 
@@ -261,7 +267,7 @@ Then execute:
 nmake -f Makefile.win32
 ```
 
-### 3i. Cross-Compiling for Windows 64-bit (using gcc/mingw)
+### 4i. Cross-Compiling for Windows 64-bit (using gcc/mingw)
 
 Some Mingw settings may not be auto-detected. Specify them explicitly:
 
@@ -283,13 +289,13 @@ cp nsproxy/nsproxy.exe nsproxy/nsproxy
 make install
 ```
 
-### 3j. (Optional) To Compile for Windows with Cygwin
+### 4j. (Optional) To Compile for Windows with Cygwin
 
 *(Instructions for compiling with Cygwin will be provided if available.)*
 
 ---
 
-## 4. Install NSF/XOTcl
+## 5. Install NSF/XOTcl
 
 NSF/XOTcl provides essential functions (e.g., cryptographic and
 reverse proxy capabilities) that enhance NaviServer’s
@@ -311,7 +317,7 @@ sudo make install
 
 ---
 
-## 5. Mailing Lists
+## 6. Mailing Lists
 
 Join the NaviServer mailing lists to discuss configuration, development, and future directions. Visit:  
 <https://sourceforge.net/projects/naviserver>
