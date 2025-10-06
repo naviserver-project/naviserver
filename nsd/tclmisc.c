@@ -740,7 +740,7 @@ int
 NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *htmlString = (char *)NS_EMPTY_STRING;
+    char        *htmlString;
     Ns_ObjvSpec  args[] = {
         {"html", Ns_ObjvString,  &htmlString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -2282,7 +2282,7 @@ int
 NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *inputString = (char*)"";
+    char        *inputString;
     Ns_ObjvSpec  args[] = {
         {"value", Ns_ObjvString,  &inputString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -2523,7 +2523,7 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  *
  * IpMatchObjCmd --
  *
- *      This command implements "ns_ip_match". It compares a given IP address
+ *      This command implements "ns_ip match". It compares a given IP address
  *      against a CIDR and determines whether the IP address matches.  The IP
  *      address can be IPv4 or IPV6. The CIDR value supports variable-length
  *      subnet masking and specifies an IPv6 or IPv6 address, a slash ('/')
@@ -2884,7 +2884,8 @@ int
 NsTclGetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int           trimUnquoted = 0, result = TCL_OK;
-    char         *delimiter = (char *)",", *quoteString = (char *)"\"", *fileId, *varName;
+    char         *fileId, *varName;
+    const char   *delimiter =  ",", *quoteString = "\"";
     Tcl_Channel   chan;
     Ns_ObjvSpec   opts[] = {
         {"-delimiter", Ns_ObjvString,   &delimiter,    NULL},
