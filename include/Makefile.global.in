@@ -114,19 +114,51 @@ CFLAGS_EXTRA     = @SHLIB_CFLAGS@ @TCL_EXTRA_CFLAGS@ -DSYSTEM_MALLOC -std=c99
 DEFS             = @DEFS@
 #CFLAGS_DEFAULT    = @CFLAGS_DEFAULT@
 
-# GCC extras
-ifneq (,$(findstring GCC,$(shell $(CC) -v 2>&1)))
-  CFLAGS_COMPILER = -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wclobbered \
-                    -Walloc-zero -Wfree-nonheap-object -Wstringop-overread \
-                    -Wstringop-overflow=4 -Wtrampolines -Wformat-overflow=2 -Wformat-truncation=2 \
-                    -Wrestrict -Wimplicit-fallthrough=3 -Wstringop-truncation -Warray-bounds=2
+# Detect compiler kind (mutually exclusive) and avoid = overwrites
+CC_VERSION := $(shell $(CC) --version 2>/dev/null | head -1)
+
+IS_CLANG  := $(shell echo '$(CC_VERSION)' | grep -i -c clang)
+IS_GCC    := $(shell echo '$(CC_VERSION)' | grep -i -c gcc)
+GCC_VER   := $(shell $(CC) -dumpfullversion -dumpversion 2>/dev/null)
+GCC_MAJOR := $(word 1,$(subst ., ,$(GCC_VER)))
+
+# Helper: add flag only if the compiler accepts it
+# Usage: $(call cc-supports,<flag>)
+cc-supports = $(shell \
+  printf 'int main(void){return 0;}\n' | \
+  $(CC) $(1) -Werror -x c - -c -o /dev/null >/dev/null 2>&1 && \
+  echo "$(1)")
+
+CFLAGS_COMPILER :=
+
+# GCC extras (probe each)
+ifeq ($(IS_GCC),1)
+  # Always safe (pre-checked)
+  CFLAGS_COMPILER += -Wlogical-op -Wclobbered -Wtrampolines
+
+  # Known supported from GCC 7 upwards
+  ifeq ($(call ge,$(GCC_MAJOR),7),1)
+    CFLAGS_COMPILER += \
+      -Wduplicated-cond -Wduplicated-branches -Wformat-overflow=2 \
+      -Wformat-truncation=2 -Wrestrict -Wimplicit-fallthrough=3
+  endif
+
+  # Probe uncertain ones
+  ifeq ($(call ge,$(GCC_MAJOR),8),1)
+    CFLAGS_COMPILER += $(call cc-supports,-Wstringop-truncation)
+  endif
+  ifeq ($(call ge,$(GCC_MAJOR),11),1)
+    CFLAGS_COMPILER += $(call cc-supports,-Wstringop-overread)
+  endif
 endif
 
-# Clang extras
-ifneq (,$(findstring clang,$(shell $(CC) --version 2>/dev/null)))
-  CFLAGS_COMPILER = -Wshorten-64-to-32 -Wcomma -Wnewline-eof
+# Clang extras (probe each)
+ifeq ($(IS_CLANG),1)
+CFLAGS_COMPILER += \
+  $(call cc-supports,-Wshorten-64-to-32) \
+  $(call cc-supports,-Wcomma) \
+  $(call cc-supports,-Wnewline-eof)
 endif
-
 
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE) $(CFLAGS_WARNING) $(CFLAGS_COMPILER) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) $(PTHREAD_CFLAGS) @CPPFLAGS@ $(DEFS)
 LDFLAGS         += $(CFLAGS_OPTIMIZE) $(SANITIZE)
