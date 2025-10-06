@@ -3273,11 +3273,11 @@ Ns_SockGetConfiguredSockAddr(Ns_Sock *sock)
  * sockaddr.c:
  */
 
-NS_EXTERN void
+NS_EXTERN bool
 Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void
+NS_EXTERN bool
 Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct sockaddr *maskedAddr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 

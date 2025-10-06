@@ -79,9 +79,11 @@ static bool SockAddrInit(void);
  *----------------------------------------------------------------------
  */
 
-void
+bool
 Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct sockaddr *maskedAddr)
 {
+    bool success = NS_TRUE;
+
     NS_NONNULL_ASSERT(addr != NULL);
     NS_NONNULL_ASSERT(mask != NULL);
     NS_NONNULL_ASSERT(maskedAddr != NULL);
@@ -129,10 +131,13 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
         memcpy((uint8_t *)maskedAddr + off4, &o, 4);
 
     } else if (addr->sa_family != AF_INET && addr->sa_family != AF_INET6) {
-        Ns_Log(Error, "nsperm: invalid address family %d detected (Ns_SockaddrMask addr)", addr->sa_family);
+        Ns_Log(Debug, "SockaddrMask: invalid address family %d detected (Ns_SockaddrMask addr)", addr->sa_family);
+        success = NS_FALSE;
     } else if (mask->sa_family != AF_INET && mask->sa_family != AF_INET6) {
-        Ns_Log(Error, "nsperm: invalid address family %d detected (Ns_SockaddrMask mask)", mask->sa_family);
+        Ns_Log(Debug, "SockaddrMask: invalid address family %d detected (Ns_SockaddrMask mask)", mask->sa_family);
+        success = NS_FALSE;
     }
+    return success;
 }
 
 /*
@@ -235,7 +240,6 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
 
     if (addr == mask) {
         return NS_TRUE;
-
     }
 
     if (addr->sa_family == AF_INET6 && mask->sa_family == AF_INET6 && masked->sa_family == AF_INET6) {
@@ -287,12 +291,13 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
  *
  *----------------------------------------------------------------------
  */
-void
+bool
 Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
 {
-    size_t off;
     unsigned char *dst;
-    unsigned full, rem;
+    size_t         off;
+    unsigned       full, rem;
+    bool           success = NS_TRUE;
 
     NS_NONNULL_ASSERT(mask != NULL);
 
@@ -343,8 +348,10 @@ Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
         }
 
     } else {
-        Ns_Log(Error, "invalid address family %d detected (Ns_SockaddrMaskBits)", mask->sa_family);
+        Ns_Log(Debug, "invalid address family %d detected (Ns_SockaddrMaskBits)", mask->sa_family);
+        success = NS_FALSE;
     }
+    return success;
 }
 
 
@@ -395,7 +402,9 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
         if (validIP > 0) {
             maskPtr->sa_family = ipPtr->sa_family;
             nrBits = (maskPtr->sa_family == AF_INET6) ? 128 : 32;
-            Ns_SockaddrMaskBits(maskPtr, nrBits);
+            if (!Ns_SockaddrMaskBits(maskPtr, nrBits)) {
+                status = NS_ERROR;
+            }
         } else {
             status = NS_ERROR;
         }
@@ -414,8 +423,7 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
         if (strchr(slash, INTCHAR('.')) == NULL && strchr(slash, INTCHAR(':')) == NULL) {
             maskPtr->sa_family = ipPtr->sa_family;
             nrBits = (unsigned int)strtol(slash, NULL, 10);
-            Ns_SockaddrMaskBits(maskPtr, nrBits);
-            validMask = 1;
+            validMask = Ns_SockaddrMaskBits(maskPtr, nrBits);
         } else {
             nrBits = (maskPtr->sa_family == AF_INET6) ? 128 : 32;
             validMask = ns_inet_pton(maskPtr, slash);
@@ -435,7 +443,9 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
          * saves us from doing this operation every time a
          * connection comes in.
          */
-        Ns_SockaddrMask(ipPtr, maskPtr, ipPtr);
+        if (!Ns_SockaddrMask(ipPtr, maskPtr, ipPtr)) {
+            status = NS_ERROR;
+        }
         /*Ns_LogSockaddr(Notice, "NSPERM: maskedAddress", ipPtr);*/
     }
     if (status == NS_OK && nrBitsPtr != NULL) {
