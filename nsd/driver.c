@@ -771,7 +771,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         }
 
         if (hostDuplicated) {
-            ns_free((char*)host);
+            ns_free_const(host);
         }
     }
 
@@ -5462,7 +5462,7 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
             if (requestPtr->host != NULL) {
                 Ns_Log(Warning, "NormalizeHostEntry called with host already set to '%s'"
                        " in a plain request (new host header '%s')", requestPtr->host, hostDs->string);
-                ns_free((char *)requestPtr->host);
+                ns_free_const(requestPtr->host);
             }
 
             requestPtr->host = ns_strdup(hostStart);
@@ -5968,7 +5968,7 @@ SockSetServer(Sock *sockPtr)
 
  bad_request:
     Ns_Log(DriverDebug, "SockSetServer sets method to BAD");
-    ns_free((char *)reqPtr->request.method);
+    ns_free_const(reqPtr->request.method);
     reqPtr->request.method = ns_strdup("BAD");
     return NS_ERROR;
 }

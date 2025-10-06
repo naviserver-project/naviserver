@@ -325,7 +325,7 @@ NsInitStaticModules(const char *server)
             if ((*modPtr->proc)(server, modPtr->name) != NS_OK) {
                 Ns_Fatal("modload: %s: failed to initialize", modPtr->name);
             }
-            ns_free((char *)modPtr->name);
+            ns_free_const(modPtr->name);
             ns_free(modPtr);
             modPtr = nextPtr;
         }

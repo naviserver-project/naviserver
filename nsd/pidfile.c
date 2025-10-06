@@ -109,7 +109,7 @@ GetFile(void)
 
     file = Ns_ConfigFilename(NS_GLOBAL_CONFIG_PARAMETERS, "pidfile", 7, nsconf.logDir, "nsd.pid", NS_FALSE, NS_TRUE);
     pathObj = Tcl_NewStringObj(file, TCL_INDEX_NONE);
-    ns_free((void*)file);
+    ns_free_const(file);
 
     return pathObj;
 }

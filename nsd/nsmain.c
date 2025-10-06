@@ -294,7 +294,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             printf("%s/%s: configuration file %s looks OK\n",
                    PACKAGE_NAME, PACKAGE_VERSION, nsconf.configFile);
 
-            ns_free((char *)fileContent);
+            ns_free_const(fileContent);
         }
         return 0;
     }
@@ -609,7 +609,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
          * Evaluate the configuration file.
          */
         NsConfigEval(configFileContent, nsconf.configFile, argc, argv, optionIndex);
-        ns_free((char *)configFileContent);
+        ns_free_const(configFileContent);
     }
 
     /*

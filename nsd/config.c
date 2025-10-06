@@ -801,7 +801,7 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength,
             input = result;
             result = NormalizePath(input, &pathLength);
             if (result != input) {
-                ns_free((void*)input);
+                ns_free_const(input);
             }
             /*fprintf(stderr, "=== %s %s NORMAL '%s'\n", section, key, result);*/
         }
