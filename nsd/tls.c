@@ -232,7 +232,7 @@ SSL_infoCB(const SSL *ssl, int where, int ret) {
     if(where & SSL_CB_ALERT) {
         const char *state = SSL_state_string_long(ssl);
         const char *dir   = (where & SSL_CB_READ) ? "read" : "write";
-        Ns_Log(Notice, "[SSL_infoCB] TLS alert %s: type %s desc %s state=%s",
+        Ns_Log(Debug, "[SSL_infoCB] TLS alert %s: type %s desc %s state=%s",
                dir, SSL_alert_type_string(ret), SSL_alert_desc_string(ret),
                state);
     }
@@ -240,7 +240,7 @@ SSL_infoCB(const SSL *ssl, int where, int ret) {
         const unsigned char *alpn = NULL;
         unsigned int alpnlen = 0;
         SSL_get0_alpn_selected(ssl, &alpn, &alpnlen);
-        Ns_Log(Notice, "[SSL_infoCB] handshake done; ALPN='%.*s'",
+        Ns_Log(Debug, "[SSL_infoCB] handshake done; ALPN='%.*s'",
                 (int)alpnlen, alpn ? (const char *)alpn : "");
     }
 }
@@ -1011,7 +1011,16 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
             if (derbio == NULL) {
                 Ns_Log(Warning, "cert_status: Cannot write to OCSP response file: %s", fileName);
             } else {
+#if defined(__clang__) || defined(__GNUC__)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-qual"
+#endif
+
                 i2d_OCSP_RESPONSE_bio(derbio, *resp);
+
+#if defined(__clang__) || defined(__GNUC__)
+# pragma GCC diagnostic pop
+#endif
                 BIO_free(derbio);
             }
 
@@ -1228,6 +1237,7 @@ NsInitOpenSSL(void)
     static int initialized = 0;
 
     if (!initialized) {
+        static char ns_client_info_tag[] = "NaviServer Client Info";
         /*
          * With the release of OpenSSL 1.1.0 the interface of
          * CRYPTO_set_mem_functions() changed. Before that, we could
@@ -1255,7 +1265,7 @@ NsInitOpenSSL(void)
 #  else
         OPENSSL_init_ssl(0, NULL);
 #  endif
-        ClientCtxDataIndex = SSL_CTX_get_ex_new_index(0, (char*)"NaviServer Client Info", NULL, NULL, NULL);
+        ClientCtxDataIndex = SSL_CTX_get_ex_new_index(0, ns_client_info_tag, NULL, NULL, NULL);
         initialized = 1;
         /*
          * We do not want to get this message when, e.g., the nsproxy
@@ -1855,6 +1865,7 @@ NsTLSConfig *
 NsTLSConfigNew(const char *section)
 {
     NsTLSConfig *dc;
+    static char sni_info_tag[] = "SniCtx";
 
     dc = ns_calloc(1, sizeof(NsTLSConfig));
     dc->verify        = Ns_ConfigBool(section, "verify", 0);
@@ -1866,7 +1877,7 @@ NsTLSConfigNew(const char *section)
                                              ""             /* default no script */,
                                              NS_TRUE /*normalize*/, NS_FALSE /*updateCfg*/);
     }
-    dc->sni_idx = SSL_get_ex_new_index(0, (void*)"SniCtx", NULL, NULL, NULL);
+    dc->sni_idx = SSL_get_ex_new_index(0, sni_info_tag, NULL, NULL, NULL);
 
     /*
      * In case "vhostcertificates" was specified in the configuration file,
@@ -2321,7 +2332,7 @@ static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
          * passed-in value is volatile.
          */
         Tcl_SetHashValue(hPtr, ns_strdup(cert));
-        Ns_Log(Debug, "CertTableAdd: sslCtx %p cert '%s'", (void *)ctx, cert);
+        Ns_Log(Debug, "CertTableAdd: sslCtx %p cert '%s'", (const void *)ctx, cert);
     }
     Ns_MasterUnlock();
 }
@@ -2721,7 +2732,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
 #if defined(HAVE_OPENSSL_3_5)
     if ((flags & NS_DRIVER_QUIC) != 0) {
         uint64_t default_flags = 0, current_flags = 0;
-        
+
         SSL_CTX_get_domain_flags(ctx, &default_flags);
         // default 0x00000012
         SSL_CTX_set_domain_flags(ctx, SSL_DOMAIN_FLAG_THREAD_ASSISTED);
