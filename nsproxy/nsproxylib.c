@@ -542,7 +542,8 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
     Worker        proc;
     int          result, max;
     Tcl_DString  in, out, scratch;
-    const char  *script, *uarg = NULL, *user;
+    const char  *script, *user;
+    char        *uarg = NULL;
     char        *group = NULL, *active;
     uint16       major, minor;
     size_t       activeSize;
@@ -718,7 +719,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
     }
 
     if (uarg != NULL) {
-        ns_free((char *)uarg);
+        ns_free(uarg);
     }
     Tcl_DStringFree(&in);
     Tcl_DStringFree(&out);
@@ -2637,7 +2638,7 @@ SetOpt(const char *str, char const **optPtr)
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(optPtr != NULL);
 
-    ns_free((char*)*optPtr);
+    ns_free(optPtr);
     if (*str != '\0') {
         *optPtr = ns_strdup(str);
     } else {
@@ -3732,9 +3733,9 @@ FreePool(Pool *poolPtr)
 {
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
-    ns_free((char *)poolPtr->exec);
-    ns_free((char *)poolPtr->init);
-    ns_free((char *)poolPtr->reinit);
+    ns_free_const(poolPtr->exec);
+    ns_free_const(poolPtr->init);
+    ns_free_const(poolPtr->reinit);
     if (poolPtr->env) {
         Ns_SetFree(poolPtr->env);
     }
