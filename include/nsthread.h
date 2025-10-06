@@ -1267,6 +1267,40 @@ NS_EXTERN void *ns_memmem(const void *haystack, size_t haystackLength, const voi
 #endif
 
 /*
+ *----------------------------------------------------------------------
+ * ns_free_const --
+ *
+ *      Wrapper around ns_free() which accepts a const-qualified pointer.
+ *      This helper explicitly discards the const qualifier before freeing,
+ *      which is occasionally needed when the ownership of a buffer is
+ *      logically transferred but its declaration was const.
+ *
+ *      The cast is wrapped in diagnostic pragmas to suppress compiler
+ *      warnings (-Wcast-qual) on GCC/Clang, as the operation is deliberate
+ *      and safe when the memory was originally obtained from ns_malloc()
+ *      or equivalent.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Frees the provided memory block.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline void ns_free_const(const void *p) {
+#if defined(__GNUC__) || defined(__clang__)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcast-qual"
+#endif
+    ns_free((void *)p);       /* dropping const is intentional here */
+#if defined(__GNUC__) || defined(__clang__)
+# pragma GCC diagnostic pop
+#endif
+}
+
+
+/*
  * mutex.c:
  */
 
