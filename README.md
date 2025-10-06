@@ -319,8 +319,9 @@ sudo make install
 
 ## 6. Mailing Lists
 
-Join the NaviServer mailing lists to discuss configuration, development, and future directions. Visit:  
-<https://sourceforge.net/projects/naviserver>
+Join the NaviServer mailing lists to discuss user questions,
+configuration, development, and future directions. Visit:  
+<https://sourceforge.net/p/naviserver/mailman/>
 
 Thank you for your interest in NaviServer. We hope you find it
 valuable and look forward to your contributions on our mailing lists.
