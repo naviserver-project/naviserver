@@ -36,6 +36,12 @@ typedef struct Event {
 #define NS_EVENT_WAIT 1u  /* Event callback has requested a wait. */
 #define NS_EVENT_DONE 2u  /* Event callback has signaled Event done. */
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#  define FLEX /* flexible array */
+#else
+#  define FLEX 1 /* struct hack fallback */
+#endif
+
 /*
  * The following defines an event queue of sockets waiting for
  * I/O events or timeout.
@@ -47,7 +53,7 @@ typedef struct EventQueue {
     Event             *firstFreePtr;  /* Free, unused Event structs. */
     struct pollfd     *pfds;          /* Array of pollfd structs. */
     NS_SOCKET          trigger[2];    /* Trigger pipe to wake a polling queue. */
-    Event              events[1];     /* Array of maxevents Event structs. */
+    Event              events[FLEX];  /* Array of maxevents Event structs. */
 } EventQueue;
 
 
@@ -100,6 +106,7 @@ Ns_CreateEventQueue(int maxevents)
 
     queuePtr = ns_calloc(1u, sizeof(EventQueue) + (sizeof(Event) * ((size_t)maxevents + 1u)));
     queuePtr->pfds = ns_calloc((size_t)maxevents + 1u, sizeof(struct pollfd));
+
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
