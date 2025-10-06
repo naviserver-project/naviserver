@@ -2638,7 +2638,7 @@ SetOpt(const char *str, char const **optPtr)
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(optPtr != NULL);
 
-    ns_free(*optPtr);
+    ns_free_const(*optPtr);
     if (*str != '\0') {
         *optPtr = ns_strdup(str);
     } else {
