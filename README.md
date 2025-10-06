@@ -102,6 +102,41 @@ get if via the package manager of your operating system.
 > - `main` (latest development code)  
 > - `release/4.99` (bug fixes for NaviServer 4.99.*)
 
+---
+
+### Versioning and Release Policy
+
+NaviServer uses a **three-digit** version scheme:
+
+- **MAJOR.MINOR.PATCH** (for example, `5.0.1`)
+- The **PATCH** level is **strictly for fixes** — no new functionality or behavior changes.
+- New features and API changes appear only in **MINOR** or **MAJOR** releases.
+
+**Active Branches**
+
+- `release/4.99` - legacy maintenance
+- `release/5.0`  - current stable line
+- `main`         - active development
+
+**Tagging**
+
+- Each release is marked by an **annotated Git tag** in the form  
+  `naviserver-MAJOR.MINOR.PATCH`, for example:
+
+  ```bash
+  git checkout release/5.0
+  # ...
+  git tag -a naviserver-5.0.1 -m naviserver-5.0.1
+  git push --follow-tags
+  ```
+
+  Tags always correspond to versions in a `release/*` branch.
+
+Development work happens on `main`; bug fixes may be cherry-picked
+into the relevant `release/*` branch before tagging.
+
+### Compilation
+
 To compile official releases, execute:
 
 ```bash
