@@ -198,17 +198,21 @@ ifneq (,$(findstring Darwin,$(uname)))
 endif
 
 #
-# FreeBSD (at least 12) needs the POSIX thread library
+# FreeBSD, OpenBSD and NetBSD need the POSIX thread library and the math
+# library to resolve functions such as lround()
+#
+# NetBSD needs -lpthread instead of -lthr, but also -lm.
 #
 ifneq (,$(findstring FreeBSD,$(uname)))
-    NSLIBS += -lthr
+    NSLIBS += -lthr -lm
 endif
 
-#
-# OpenBSD needs the POSIX thread library
-#
 ifneq (,$(findstring OpenBSD,$(uname)))
-    NSLIBS += -lpthread
+    NSLIBS += -lpthread -lm
+endif
+
+ifneq (,$(findstring NetBSD,$(uname)))
+    NSLIBS += -lpthread -lm
 endif
 
 #
