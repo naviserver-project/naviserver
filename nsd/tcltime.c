@@ -18,17 +18,11 @@
  */
 
 #include "nsd.h"
-
-/*
- * math.h is only needed for round()
- *
- * But older Microsoft Windows compilers do not include round() in math.h!  So
- * for them, use the hack below:
- */
-#if defined(_MSC_VER) && _MSC_VER <= 1600
-static double round(double val) { return floor(val + 0.5); }
-#else
 #include <math.h>
+
+#if defined(_MSC_VER) && _MSC_VER < 1800
+# define round(x)   ((x) >= 0.0 ? floor((x) + 0.5) : ceil((x) - 0.5))
+# define lround(x)  ((long)round(x))
 #endif
 
 /*
@@ -732,11 +726,13 @@ DblValueToNstime( Ns_Time *timePtr, double dblValue)
         timePtr->usec = (long)round((dblValue - (double)timePtr->sec) * 1000000.0);
     }
     /* fprintf(stderr, "gen dbltime %f final sec %ld usec %.06ld float %.10f %.10f long %ld\n",
-       dblValue, timePtr->sec, timePtr->usec,
-       (dblValue - (double)timePtr->sec),
-       round((dblValue - (double)timePtr->sec) * 1000000.0),
-       (long)((dblValue - (double)timePtr->sec)));
-    */
+            dblValue, timePtr->sec, timePtr->usec,
+            (dblValue - (double)timePtr->sec),
+            ((dblValue - (double)timePtr->sec) * 1000000.0 >= 0.0)
+               ? floor((dblValue - (double)timePtr->sec) * 1000000.0 + 0.5)
+               : ceil((dblValue - (double)timePtr->sec) * 1000000.0 - 0.5),
+            (long)((dblValue - (double)timePtr->sec)));
+     */
 }
 
 
