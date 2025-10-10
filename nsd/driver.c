@@ -1011,7 +1011,8 @@ void NsDriverMapVirtualServers(void)
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", moduleName, server);
             } else {
-                char *writableHost, *hostName, *portStart, *end;
+                char *writableHost, *end;
+                const char *hostName, *portStart;
                 bool  hostParsedOk;
 
                 writableHost = ns_strdup(host);
@@ -5425,7 +5426,8 @@ SockParse(Sock *sockPtr)
 static bool
 NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
 {
-    char *hostStart, *portStart, *end;
+    const char *hostStartConst, *portStartConst;
+    char *end;
     bool  success = NS_TRUE;
 
     NS_NONNULL_ASSERT(hostDs != NULL);
@@ -5433,12 +5435,17 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
 
     Ns_Log(Debug, "NormalizeHostEntry <%s> reqPtr %p", hostDs->string, (void*)requestPtr);
 
-    if (!Ns_HttpParseHost2(hostDs->string, NS_FALSE, &hostStart, &portStart, &end)) {
+    if (!Ns_HttpParseHost2(hostDs->string, NS_FALSE,
+                           &hostStartConst,
+                           &portStartConst, &end)) {
         Ns_Log(Warning, "Cannot parse provided host header field <%s>", hostDs->string);
         success = NS_FALSE;
     } else {
         bool   ipLiteral, stripDot = NS_FALSE;
         size_t hostlen;
+        char  *base =  hostDs->string,
+            *hostStart = base + (hostStartConst - base),
+            *portStart = base + (portStartConst - base);
 
         /*
          * Remove trailing dot of host header field, since RFC 2976 allows fully

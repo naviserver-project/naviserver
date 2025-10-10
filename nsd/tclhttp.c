@@ -1247,13 +1247,20 @@ Ns_HttpParseHost(
     char **hostStart,
     char **portStart
 ) {
-    char *end;
+    const char *h = NULL, *p = NULL, *e = NULL;
 
     NS_NONNULL_ASSERT(hostString != NULL);
     NS_NONNULL_ASSERT(portStart != NULL);
 
-    (void) Ns_HttpParseHost2(hostString, NS_FALSE, hostStart, portStart, &end);
-    if (*portStart != NULL) {
+    (void) Ns_HttpParseHost2(hostString, NS_FALSE, &h, &p, &e);
+
+    /* Copy pointer values back into legacy char** without casts */
+    if (hostStart != NULL) {
+        memcpy(hostStart, &h, sizeof h);
+    }
+    memcpy(portStart, &p, sizeof p);
+
+    if (p != NULL) {
         /*
          * The old version was returning in portStart the position of the
          * character BEFORE the port (usually ':'). So, keep compatibility.
@@ -1305,8 +1312,8 @@ bool
 Ns_HttpParseHost2(
     char *hostString,
     bool strict,
-    char **hostStart,
-    char **portStart,
+    const char **hostStart,
+    const char **portStart,
     char **end
 ) {
     bool ipLiteral = NS_FALSE, success = NS_TRUE;

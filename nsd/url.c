@@ -907,8 +907,9 @@ NsTclParseHostportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        char *hostport, *hostStart, *portStart, *end;
-        bool  success;
+        const char *hostStart, *portStart;
+        char       *hostport, *end;
+        bool        success;
 
         hostport = ns_strdup(hostportString);
         success = Ns_HttpParseHost2(hostport, strict, &hostStart, &portStart, &end);

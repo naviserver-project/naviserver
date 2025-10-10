@@ -947,8 +947,8 @@ PrebindSockets(const char *spec)
          *    0/icmp[/count]
          */
         {
-            char *portStr;
-            bool  hostParsedOk = Ns_HttpParseHost2(line, NS_TRUE, &addr, &portStr, &end);
+            const char *portStr;
+            bool        hostParsedOk = Ns_HttpParseHost2(line, NS_TRUE, &addr, &portStr, &end);
 
             if (hostParsedOk && line != end && addr != portStr ) {
                 long l;
@@ -962,21 +962,19 @@ PrebindSockets(const char *spec)
                 }
                 port = (l >= 0) ? (unsigned short)l : 0u;
 
+                line = end;
                 /*
                  * Parse protocol
                  */
-                if (*end == '/') {
-                    *end++ = '\0';
-                    proto = end;
+                if (*line == '/') {
+                    *line++ = '\0';
+                    proto = line;
                 }
             } else {
+                line = end;
                 Ns_Log(Debug, "prebind: line <%s> was not parsed ok, must be UNIX", line);
                 proto = "unix";
             }
-            /*
-             * Continue parsing after "addr:port|port"
-             */
-            line = end;
         }
 
         /*

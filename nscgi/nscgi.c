@@ -949,8 +949,9 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         /*
          * Determine SERVER_NAME and SERVER_PORT from the conn location.
          */
-        char *end, *portString, *hostString;
-        bool  hostParsedOk;
+        const char *portString, *hostString;
+        char       *end;
+        bool        hostParsedOk;
 
         s = strchr(s, INTCHAR(':'));
         s += 3;                        /* Get past the protocol "://"  */
