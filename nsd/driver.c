@@ -990,7 +990,7 @@ void NsDriverMapVirtualServers(void)
 
         drvPtr->defMapPtr = NULL;
         Ns_Log(Debug, "driver <%s> defserver '%s' server with set %p size %ld",
-               moduleName, defserver, (void*)serverMapSet, Ns_SetSize(serverMapSet));
+               moduleName, defserver, (const void*)serverMapSet, Ns_SetSize(serverMapSet));
 
         /*
          * Iterating over set of server names (keys)
@@ -1322,7 +1322,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     }
 
     Ns_Log(DriverDebug, "DriverInit %s set server '%s' defserver %s %p",
-           moduleName, server, defserver, (void*)defserver);
+           moduleName, server, defserver, (const void*)defserver);
 
     drvPtr->server         = server;
     drvPtr->type           = init->name;
@@ -1563,7 +1563,6 @@ NsStartDrivers(void)
                         ? drvPtr->driverThreadProc
                         : DriverThread,
                         drvPtr, 0, &drvPtr->thread);
-
         Ns_MutexLock(&drvPtr->lock);
         while ((drvPtr->flags & NS_DRIVER_THREAD_READY) == 0u) {
             Ns_CondWait(&drvPtr->cond, &drvPtr->lock);
@@ -5557,7 +5556,6 @@ DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
 
     Ns_Log(Debug, "driver lookup parse <%s>", hostDs->string);
 
-
     /*
      * From which driver we get get the ServerMap entries. "provider" is
      * currently just used by the H3 module, which uses the configuration data
@@ -5580,7 +5578,7 @@ DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
 
     hPtr = Tcl_FindHashEntry(&drvPtr->hosts, hostDs->string);
     Ns_Log(Debug, "DriverLookupHost module '%s' host '%s' => %p",
-           drvPtr->moduleName, hostDs->string, (void*)hPtr);
+           drvPtr->moduleName, hostDs->string, (const void*)hPtr);
 
     if (hPtr != NULL) {
         /*
@@ -5840,7 +5838,7 @@ SockSetServer(Sock *sockPtr)
         Ns_Log(Notice, "REQPTR: SockSetServer reqPtr %p with host %p of sockPtr %p line '%s'"
                " (should not happen)",
                (void*)reqPtr,
-               (void*)reqPtr->request.host,
+               (const void*)reqPtr->request.host,
                (void*)sockPtr,
                reqPtr->request.line);
     }
@@ -5886,7 +5884,7 @@ SockSetServer(Sock *sockPtr)
          * which has to be defined in this case.
          */
         mapPtr = drvPtr->defMapPtr;
-        Ns_Log(Debug, "SockSetServer: get default map entry %p", (void*)mapPtr);
+        Ns_Log(Notice, "SockSetServer: get default map entry %p", (const void*)mapPtr);
     }
 
     if (mapPtr != NULL) {
@@ -5911,11 +5909,11 @@ SockSetServer(Sock *sockPtr)
          * Could not lookup the virtual host, get the default location from
          * the driver or from local side of the socket connection.
          */
-        Ns_Log(Debug, "SockSetServer: there is no predefined mapping for server '%s'", host);
+        Ns_Log(Notice, "SockSetServer: there is no predefined mapping for server '%s'", host);
 
         if (drvPtr->location != NULL) {
             sockPtr->location = ns_strncopy(drvPtr->location, drvPtr->locationLength);
-            Ns_Log(Debug, "SockSetServer: there is no virtual host mapping for host '%s',"
+            Ns_Log(Notice, "SockSetServer: there is no virtual host mapping for host '%s',"
                    "fall back to configured location '%s'",
                    host, drvPtr->location);
         } else {
@@ -5934,6 +5932,9 @@ SockSetServer(Sock *sockPtr)
                                   hostName != NULL ? hostName : Ns_SockGetAddr((Ns_Sock *)sockPtr),
                                   hostPort != 0 ? hostPort : Ns_SockGetPort((Ns_Sock *)sockPtr),
                                   drvPtr->defport);
+            Ns_Log(Notice, "SockSetServer: computed location string '%s' hostname '%s' reqPtr.host '%s'",
+                   drvPtr->location, hostName == NULL ? "NULL" : hostName,
+                   reqPtr != NULL ? "NULL" : reqPtr->request.host);
             sockPtr->location = ns_strncopy(locationDs.string, locationDs.length);
             if (hostName != NULL && sockPtr->servPtr != NULL) {
                 Ns_Log(Notice, "SockSetServer: serving request to server '%s'"
