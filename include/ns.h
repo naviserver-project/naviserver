@@ -468,8 +468,8 @@ typedef struct Ns_Request {
 typedef struct Ns_URL {
     char *protocol;
     char *userinfo;
-    char *host;
-    char *port;
+    const char *host;
+    const char *port;
     char *path;
     char *tail;
     char *query;
@@ -3582,7 +3582,8 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
  * tclhttp.c
  */
 NS_EXTERN bool
-Ns_HttpParseHost2(char *hostString, bool strict, char **hostStart, char **portStart, char **end)
+Ns_HttpParseHost2(char *hostString, bool strict,
+                  const char **hostStart, const char **portStart, char **end)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 #ifdef NS_WITH_DEPRECATED
