@@ -3483,7 +3483,8 @@ EnsureDriverLinkage(void)
                        " has linked driver %p %s", section,
                        (void*)h1drvPtr, h1drvPtr->moduleName,
                        (void*)h3drvPtr, h3drvPtr->moduleName);
-                h1drvPtr->linkedDriver = h3drvPtr;
+                h1drvPtr->consumer = h3drvPtr;
+                h3drvPtr->provider = h1drvPtr;
             }
         }
     }
@@ -3500,7 +3501,7 @@ void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
     Ns_Log(Debug, "NsTlsAddOutputHeaders h1 driver %p %s linked to %p advertise %d"
            " already set %d req %s",
            (void*)sockPtr->driver, sockPtr->driver->threadName,
-           (void*)((Driver *)sockPtr->driver)->linkedDriver,
+           (void*)((Driver *)sockPtr->driver)->consumer,
            dc->u.h1.h3advertise, (Ns_SetFind(outputHeaders, "alt-svc") > -1),
            ((Sock*)sockPtr)->reqPtr->request.line);
     /*
@@ -3509,7 +3510,7 @@ void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
      *  - h3advertise is turned on, and
      *  - alt-svc" is not already set
      */
-    if (((Driver *)sockPtr->driver)->linkedDriver != NULL
+    if (((Driver *)sockPtr->driver)->consumer != NULL
         && dc->u.h1.h3advertise
         && Ns_SetFind(outputHeaders, "alt-svc") == -1) {
         Driver      *drvPtr = (Driver*)(sockPtr->driver);

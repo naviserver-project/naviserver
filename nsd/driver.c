@@ -5550,6 +5550,15 @@ DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
 
     Ns_Log(Debug, "driver lookup parse <%s>", hostDs->string);
 
+
+    /*
+     * From which driver we get get the ServerMap entries. "provider" is
+     * currently just used by the H3 module, which uses the configuration data
+     * from an HTTPS driver.
+     */
+    if (drvPtr->provider != NULL) {
+        drvPtr = drvPtr->provider;
+    }
     if (!NormalizeHostEntry(hostDs, drvPtr, requestPtr)) {
         Ns_Log(Warning, "Cannot parse provided host header field <%s>", hostDs->string);
         return NULL;

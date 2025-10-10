@@ -458,7 +458,8 @@ typedef struct Driver {
     const char *defserver;              /* default server, might be NULL */
     Tcl_HashTable hosts;                /* Virtual hosts mapping to server */
     const struct ServerMap *defMapPtr;  /* Default for virtual host entry */
-    struct Driver *linkedDriver;
+    struct Driver *consumer;            /* Who consumes my config/state (optional) */
+    struct Driver *provider;            /* Where to get config/state from (optional) */
     Ns_Time closewait;                  /* Graceful close timeout */
     Ns_Time keepwait;                   /* Keepalive timeout */
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
