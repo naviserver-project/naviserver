@@ -67,19 +67,29 @@ path.
 
 [item] [option "-b [arg prebindinfo]"]:
 
-Prebinds to the specified address during startup (e.g., "ipaddr:port")
-to enable binding to privileged ports. To bind multiple sockets, use
-the syntax "ipaddr:port#N" (this requires SO_REUSEPORT configured for
-the driver). You can specify several prebind addresses by separating
-them with commas.
+ Prebinds one or more network addresses during server startup (e.g.,
+ [const ipaddr:port]) to allow binding to privileged ports before
+ dropping root privileges.
 
-[para]
+[para] To bind multiple sockets on the same port, use the syntax
+ [const ipaddr:port#N], where [const N] specifies the number of
+ sockets.  This requires that [const SO_REUSEPORT] is enabled for the
+ driver.  Multiple addresses can be specified by separating them with
+ commas.
 
-In the example below, NaviServer is bound to the privileged port
-[const 80] and port [const 443] for both the IPv4 address
-[const 137.208.116.31] and the IPv6 address [const 2001:628:404:74::31].
-The configuration for port 80 allows two sockets, thereby supporting two
-driver threads.
+[para] Any prebound sockets that are not used during the server's
+ runtime configuration are automatically closed.
+
+[para] By default, NaviServer prebinds both TCP and UDP sockets for
+ the specified address and port.  To restrict prebinding to a specific
+ protocol, append either [const /tcp] or [const /udp] (e.g.,
+ [const ipaddr:port/tcp#N] or [const ipaddr:port/udp#N]).
+
+[para] The example below prebinds NaviServer to the privileged ports
+ [const 80] and [const 443] on both IPv4 ([const 137.208.116.31]) and
+ IPv6 ([const 2001:628:404:74::31]) addresses.  For port 80, two
+ sockets are created, allowing two driver threads to handle
+ connections concurrently.
 
 [example_begin]
  nsd ... -b '[lb]137.208.116.31[rb]:80#2,[lb]2001:628:404:74::31[rb]:80#2,[lb]137.208.116.31[rb]:443,[lb]2001:628:404:74::31[rb]:443' ...

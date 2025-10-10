@@ -65,6 +65,17 @@ static void PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struc
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 #endif
 
+#ifdef LOGBIND
+static FILE *log_fp = NULL;
+
+static void log_bind(const char* proto, const char *addr, unsigned short port, const char*label) {
+    if (log_fp == NULL) {
+        log_fp = fopen("/tmp/binder.log", "a");
+    }
+    fprintf(log_fp, "DEBUG: prebind proto %s addr %s port %hu: %s\n",
+            proto, addr, port, label);
+}
+#endif
 
 #ifndef _WIN32
 
@@ -893,7 +904,8 @@ PrebindSockets(const char *spec)
 
     for (; line != NULL; line = next) {
         const char     *proto;
-        char           *addr, *p, *str = NULL, *end;
+        char           *p, *str = NULL, *end;
+        const char     *addr;
         unsigned short  port = 0u;
         long            reuses;
         struct Prebind *pPtr;
@@ -910,8 +922,8 @@ PrebindSockets(const char *spec)
         /*
          * Set default proto and addr.
          */
-        proto = "tcp";
-        addr = (char *)NS_IP_UNSPECIFIED;
+        proto = "*";
+        addr = NS_IP_UNSPECIFIED;
         reuses = 1;
 
         /*
@@ -946,16 +958,16 @@ PrebindSockets(const char *spec)
                 } else {
                     assert(addr != NULL);
                     l = strtol(addr, NULL, 10);
-                    addr = (char *)NS_IP_UNSPECIFIED;
+                    addr = NS_IP_UNSPECIFIED;
                 }
                 port = (l >= 0) ? (unsigned short)l : 0u;
 
                 /*
                  * Parse protocol
                  */
-                if (*line != '/' && (str = strchr(line, INTCHAR('/'))) != NULL) {
-                    *str++ = '\0';
-                    proto = str;
+                if (*end == '/') {
+                    *end++ = '\0';
+                    proto = end;
                 }
             } else {
                 Ns_Log(Debug, "prebind: line <%s> was not parsed ok, must be UNIX", line);
@@ -970,10 +982,14 @@ PrebindSockets(const char *spec)
         /*
          * TCP
          */
+#ifdef LOGBIND
+        log_bind(proto, addr, port, "try add entry");
+#endif
+
         Ns_Log(Notice, "prebind: try proto %s addr %s port %d reuses %ld",
                proto, addr, port, reuses);
 
-        if (STREQ(proto, "tcp") && port > 0) {
+        if ((STREQ(proto, "tcp") || *proto == '*') && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: tcp: invalid address: [%s]:%d", addr, port);
                 continue;
@@ -987,7 +1003,7 @@ PrebindSockets(const char *spec)
 
             Ns_LogSockaddr(Notice, "prebind adds", (const struct sockaddr *)saPtr);
 
-            pPtr = PrebindAlloc(proto, (size_t)reuses, saPtr);
+            pPtr = PrebindAlloc("tcp", (size_t)reuses, saPtr);
             if (pPtr == NULL) {
                 Tcl_DeleteHashEntry(hPtr);
                 status = NS_ERROR;
@@ -1000,7 +1016,7 @@ PrebindSockets(const char *spec)
         /*
          * UDP
          */
-        if (STREQ(proto, "udp") && port > 0) {
+        if ((STREQ(proto, "udp") || *proto == '*')  && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: udp: invalid address: [%s]:%d",
                        addr, port);
@@ -1012,7 +1028,7 @@ PrebindSockets(const char *spec)
                        addr, port);
                 continue;
             }
-            pPtr = PrebindAlloc(proto, (size_t)reuses, saPtr);
+            pPtr = PrebindAlloc("udp", (size_t)reuses, saPtr);
             if (pPtr == NULL) {
                 Tcl_DeleteHashEntry(hPtr);
                 status = NS_ERROR;
