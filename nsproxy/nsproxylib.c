@@ -977,13 +977,13 @@ int Ns_ProxyEval(Tcl_Interp *interp, PROXY handle, const char *script, const Ns_
 static Worker *
 ExecWorker(Tcl_Interp *interp, const Proxy *proxyPtr)
 {
-    Pool  *poolPtr;
-    char  *argv[5];
-    char   active[100];
-    Worker *workerPtr;
-    int    rpipe[2], wpipe[2];
-    size_t len;
-    pid_t  pid;
+    Pool       *poolPtr;
+    const char *argv[5];
+    char        active[100];
+    Worker     *workerPtr;
+    int         rpipe[2], wpipe[2];
+    size_t      len;
+    pid_t       pid;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
@@ -1018,8 +1018,8 @@ ExecWorker(Tcl_Interp *interp, const Proxy *proxyPtr)
     ns_close(rpipe[0]);
     ns_close(wpipe[1]);
 
-    ns_free(argv[0]);
-    ns_free(argv[1]);
+    ns_free_const(argv[0]);
+    ns_free_const(argv[1]);
 
     if (pid == NS_INVALID_PID) {
         Ns_TclPrintfResult(interp, "exec failed: %s", Tcl_PosixError(interp));

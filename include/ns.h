@@ -1585,20 +1585,20 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
 
 NS_EXTERN pid_t
 Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout,
-               char *args, const Ns_Set *env)
+               const char *args, const Ns_Set *env)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN pid_t
-Ns_ExecProc(const char *exec, char **argv)
+Ns_ExecProc(const char *exec, const char *const *argv)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN pid_t
 Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
-              char *args, const Ns_Set *env)
+              const char *args, const Ns_Set *env)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN pid_t
-Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout, char **argv, const Ns_Set *env)
+Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout, const char *const *argv, const Ns_Set *env)
     NS_GNUC_NONNULL(1);
 
 #ifdef NS_WITH_DEPRECATED

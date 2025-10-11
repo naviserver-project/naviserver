@@ -29,7 +29,7 @@ static void Set2Argv(Tcl_DString *dsPtr, const Ns_Set *env);
 # define ERR_CHDIR      (-2)
 # define ERR_EXEC       (-3)
 static int ExecProc(const char *exec, const char *dir, int fdin, int fdout,
-                    char **argv, char **envp)
+                    const char *const* argv, char **envp)
     NS_GNUC_NONNULL(1);
 #endif /* _WIN32 */
 
@@ -51,7 +51,7 @@ static int ExecProc(const char *exec, const char *dir, int fdin, int fdout,
  */
 
 pid_t
-Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, char *args,
+Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, const char *args,
                const Ns_Set *env)
 {
     NS_NONNULL_ASSERT(exec != NULL);
@@ -77,7 +77,7 @@ Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, char *arg
  */
 
 pid_t
-Ns_ExecProc(const char *exec, char **argv)
+Ns_ExecProc(const char *exec, const char *const *argv)
 {
     NS_NONNULL_ASSERT(exec != NULL);
 
@@ -226,33 +226,36 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
 
 pid_t
 Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
-              char *args, const Ns_Set *env)
+              const char *args, const Ns_Set *env)
 {
 #ifndef _WIN32
     pid_t  pid;
-    char **argv, *argList[256]; /* maximum 256 arguments */
+    const char *const *argv = NULL;
+    const char *argvLocal[256]; /* maximum 256 arguments */
 
     NS_NONNULL_ASSERT(exec != NULL);
 
     if (args == NULL) {
         argv = NULL;
     } else {
-        int i;
+        int i = 0;
+        const char *p = args;
         /*
          * Produce a NULL terminated argv from a string containing '\0'
          * characters as separators. We could make this dynamic, but the only
          * usage within the NaviServer source tree is nscgi, which uses always
          * exactly 2 or 0 arguments.
          */
-        argv = argList;
-        for (i = 0; i < 255 && *args != '\0'; i++) {
-            argv[i] = args;
-            args += strlen(args) + 1;
+
+        for (; i < 255 && *p != '\0'; i++) {
+            argvLocal[i] = p;
+            p += strlen(p) + 1;   /* next NUL-terminated chunk */
         }
-        argv[i] = NULL;
-        if (i == 255) {
-            Ns_Log(Warning, "as set up, exec accepts only 255 arguments");
+        argvLocal[i] = NULL;
+        if (i == 255 && *p != '\0') {
+            Ns_Log(Warning, "exec accepts only 255 arguments (truncated)");
         }
+        argv = argvLocal;
     }
     pid = Ns_ExecArgv(exec, dir, fdin, fdout, argv, env);
     return pid;
@@ -381,7 +384,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
 
 pid_t
 Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
-            char **argv, const Ns_Set *env)
+            const char *const *argv, const Ns_Set *env)
 {
 #ifdef _WIN32
     /*
@@ -407,19 +410,21 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
 
     return pid;
 #else
+    const char *const *argv_in = argv;
     Tcl_DString eds;
-    char *argvSh[4], **envp;
-    pid_t pid;
+    char      **envp;
+    const char *argvSh[4];
+    pid_t       pid;
 
     NS_NONNULL_ASSERT(exec != NULL);
 
-    if (argv == NULL) {
-        argv = argvSh;
-        argv[0] = (char *)"/bin/sh";
-        argv[1] = (char *)"-c";
-        argv[2] = (char *)exec;
-        argv[3] = NULL;
-        exec = argv[0];
+    if (argv_in == NULL) {
+        argvSh[0] = "/bin/sh";
+        argvSh[1] = "-c";
+        argvSh[2] = exec;
+        argvSh[3] = NULL;
+        //argv_in = argvSh;
+        exec = argvSh[0];
     }
     Tcl_DStringInit(&eds);
     if (env == NULL) {
@@ -441,7 +446,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
     if (fdout < 0) {
         fdout = 1;
     }
-    pid = ExecProc(exec, dir, fdin, fdout, argv, envp);
+    pid = ExecProc(exec, dir, fdin, fdout, argv_in == NULL ? argvSh : argv_in, envp);
     Tcl_DStringFree(&eds);
 
     return pid;
@@ -467,7 +472,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
  */
 
 static pid_t
-ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
+ExecProc(const char *exec, const char *dir, int fdin, int fdout, const char *const* argv,
          char **envp)
 {
     struct iovec iov[2];
@@ -494,9 +499,9 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
         Ns_Log(Error, "exec: ns_fork() failed: %s", strerror(errno));
         return NS_INVALID_PID;
     }
-    iov[0].iov_base = (void*) &result;
-    iov[1].iov_base = (void*) &errnum;
-    iov[0].iov_len = iov[1].iov_len = sizeof(int);
+    ns_iov_set(&iov[0], &result, sizeof(result));
+    ns_iov_set(&iov[1], &errnum, sizeof(errnum));
+
     if (pid == 0) {
 
         /*
@@ -513,6 +518,9 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
                     (fdout != 1 && ns_dup2(fdout, 1) < 0)) {
             //result = ERR_DUP;
         } else {
+            char *const *argv_mut;
+            memcpy(&argv_mut, &argv, sizeof(argv_mut));
+
             if (fdin > 2) {
                 ns_close(fdin);
             }
@@ -523,7 +531,8 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
             (void)Ns_NoCloseOnExec(0);
             (void)Ns_NoCloseOnExec(1);
             (void)Ns_NoCloseOnExec(2);
-            execve(exec, argv, envp);
+
+            execve(exec, argv_mut, envp);
             /* NB: Not reached on successful execve(). */
             //result = ERR_EXEC;
         }
