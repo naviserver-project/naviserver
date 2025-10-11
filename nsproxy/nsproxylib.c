@@ -1393,10 +1393,8 @@ SendBuf(const Worker *workerPtr, const Ns_Time *timePtr, const Tcl_DString *dsPt
     }
 
     ulen = htonl((unsigned int)dsPtr->length);
-    iov[0].iov_base = (void *)&ulen;
-    iov[0].iov_len  = sizeof(ulen);
-    iov[1].iov_base = dsPtr->string;
-    iov[1].iov_len  = (size_t)dsPtr->length;
+    ns_iov_set(&iov[0], &ulen, sizeof(ulen));
+    ns_iov_set(&iov[1], dsPtr->string, (size_t)dsPtr->length);
 
     while ((iov[0].iov_len + iov[1].iov_len) > 0u) {
         do {
@@ -1468,10 +1466,8 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
     }
 
     avail = (size_t)dsPtr->spaceAvl - 1u;
-    iov[0].iov_base = (void *)&ulen;
-    iov[0].iov_len  = sizeof(ulen);
-    iov[1].iov_base = dsPtr->string;
-    iov[1].iov_len  = avail;
+    ns_iov_set(&iov[0], &ulen, sizeof(ulen));
+    ns_iov_set(&iov[1], dsPtr->string, avail);
 
     while (iov[0].iov_len > 0) {
         do {
@@ -1601,14 +1597,21 @@ WaitFd(int fd, short events, long ms)
  *
  * UpdateIov --
  *
- *      Update the base and len in given iovec based on bytes
- *      already processed.
+ *      Adjust an array of two iovec structures after n bytes have been
+ *      consumed. The function advances the iov_base pointers and decreases
+ *      the iov_len fields accordingly, using ns_iov_set() for all updates.
+ *
+ *      If n consumes all data from the first vector, the remainder
+ *      is subtracted from the second. When n exceeds the total
+ *      length of both vectors, both entries are cleared.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      None.
+ *      Modifies the passed-in iovec structures to reflect the
+ *      remaining data to send. The resulting vectors may have
+ *      NULL bases and zero lengths when fully consumed.
  *
  *----------------------------------------------------------------------
  */
@@ -1616,19 +1619,26 @@ WaitFd(int fd, short events, long ms)
 static void
 UpdateIov(struct iovec *iov, size_t n)
 {
-    NS_NONNULL_ASSERT(iov != NULL);
+    const size_t l0 = iov[0].iov_len;
+    const size_t l1 = iov[1].iov_len;
 
-    if (n >= iov[0].iov_len) {
-        n -= iov[0].iov_len;
-        iov[0].iov_base = NULL;
-        iov[0].iov_len = 0;
-    } else {
-        iov[0].iov_len  -= n;
-        iov[0].iov_base = (char *)(iov[0].iov_base) + n;
-        n = 0;
+    /* If we've consumed everything (or more), zero both vectors. */
+    if (n >= l0 + l1) {
+        ns_iov_set(&iov[0], NULL, 0);
+        ns_iov_set(&iov[1], NULL, 0);
+        return;
     }
-    iov[1].iov_len  -= n;
-    iov[1].iov_base = (char *)(iov[1].iov_base) + n;
+
+    if (n >= l0) {
+        /* Consume all of iov[0] and the remainder from iov[1]. */
+        const size_t rem = n - l0;
+        ns_iov_set(&iov[0], NULL, 0);
+        ns_iov_set(&iov[1], (char *)iov[1].iov_base + rem, l1 - rem);
+    } else {
+        /* Consume part of iov[0]; iov[1] unchanged. */
+        ns_iov_set(&iov[0], (char *)iov[0].iov_base + n, l0 - n);
+        /* No change to iov[1]. */
+    }
 }
 
 
