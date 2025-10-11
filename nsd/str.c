@@ -898,7 +898,7 @@ bool Ns_Is7bit(const char *bytes, size_t nrBytes)
      * virtually all machines running Linux. ... and since we use this
      * as well on other places, this should be ok.
      */
-    for (; current < end - 32; current += 32) {
+    for (; current + 32 <= end; current += 32) {
         uint64_t p[4];
 
         memcpy(p, current, sizeof(p));
@@ -908,9 +908,9 @@ bool Ns_Is7bit(const char *bytes, size_t nrBytes)
         mask4 |= p[3];
     }
 
-    for (; current < end - 8; current += 8) {
+    for (; current + 8 <= end; current += 8) {
         uint64_t p;
-        memcpy(&p, current, 8);
+        memcpy(&p, current, sizeof(p));
         mask1 |= p;
     }
 
