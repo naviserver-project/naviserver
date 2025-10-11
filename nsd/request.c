@@ -318,7 +318,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
     request->port = 0u;
 
     /*
-     * If the content of "url" starts with a sluash, this is an "origin-form"
+     * If the content of "url" starts with a slash, this is an "origin-form"
      *
      *    https://www.rfc-editor.org/rfc/rfc9112#name-origin-form
      *
@@ -379,6 +379,9 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
             bool  hostParsedOk;
             char *h = p, *end;
             const char *hostName, *portString;
+            static char emptyPath[] = "/";
+
+            /*Ns_Log(Notice, "ParseRequest host:port <%s>", h);*/
 
             /*
              * Search for the next slash
@@ -388,7 +391,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 *p++ = '\0';
                 url = p;
             } else {
-                url[0] = '\0';
+                url = &emptyPath[1];
             }
 
             /*
@@ -396,12 +399,13 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
              */
             hostParsedOk = Ns_HttpParseHost2(h, NS_FALSE, &hostName, &portString, &end);
             if (hostParsedOk) {
-                Ns_Log(Notice, "Parse host+porthostName <%s> p <%s> end <%s>", hostName, portString, end);
-                if (p != NULL) {
+                Ns_Log(Ns_LogRequestDebug, "ParseRequest host:port <%s> host <%s> port <%s> end <%s>",
+                       h, hostName, portString, end);
+                if (portString != NULL) {
                     /*
                      * We know, the port string is terminated by a slash or NUL.
                      */
-                    request->port = (unsigned short)strtol(p, NULL, 10);
+                    request->port = (unsigned short)strtol(portString, NULL, 10);
                 }
                 request->host = ns_strdup(hostName);
             }
@@ -421,8 +425,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 
             } else if (request->requestType == NS_REQUEST_TYPE_PROXY) {
                 if (*url == '\0') {
-                    url[0] = '/';
-                    url[1] = '\0';
+                    url = emptyPath;
                 } else {
                     errorMsg = "invalid proxy request";
                     if (request->protocol == NULL) {
@@ -444,8 +447,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 /*
                  * We need a URL in SetUrl(), without SetUrl, NsUrlSpecificGet() will crash
                  */
-                url[0] = '/';
-                url[1] = '\0';
+                url = emptyPath;
 
             } else if (request->requestType == NS_REQUEST_TYPE_ASTERISK
                        && strcasecmp(request->method, "OPTIONS") != 0) {
