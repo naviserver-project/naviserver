@@ -4109,21 +4109,16 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
     NsAddNslogEntry(sockPtr, statusCode, NULL, headers);
 
     snprintf(firstline, sizeof(firstline), "HTTP/1.0 %d ", statusCode);
-    iov[0].iov_base = firstline;
-    iov[0].iov_len  = strlen(firstline);
-    iov[1].iov_base = (void *)errMsg;
-    iov[1].iov_len  = strlen(errMsg);
+    ns_iov_set(&iov[0], firstline,      strlen(firstline));
+    ns_iov_set(&iov[1], errMsg,         strlen(errMsg));
+
     if (headers == NULL) {
-        iov[2].iov_base = (void *)"\r\n\r\n";
-        iov[2].iov_len  = 4u;
+        ns_iov_set(&iov[2], "\r\n\r\n", 4u);
         nbufs = 3;
     } else {
-        iov[2].iov_base = (void *)"\r\n";
-        iov[2].iov_len  = 2u;
-        iov[3].iov_base = (char *)headers;
-        iov[3].iov_len  = strlen(headers);
-        iov[4].iov_base = (void *)"\r\n\r\n";
-        iov[4].iov_len  = 4u;
+        ns_iov_set(&iov[2], "\r\n",     2u);
+        ns_iov_set(&iov[3], headers,    strlen(headers));
+        ns_iov_set(&iov[4], "\r\n\r\n", 4u);
         nbufs = 5;
     }
     tosend = (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len);
@@ -5189,6 +5184,7 @@ SockParse(Sock *sockPtr)
                 } else {
                     struct iovec iov[1];
                     ssize_t      sent;
+                    static const char continueResponse[] = "HTTP/1.1 100 Continue\r\n\r\n";
 
                     /*
                      * Reply with "100 continue".
@@ -5197,9 +5193,7 @@ SockParse(Sock *sockPtr)
                     NsAddNslogEntry(sockPtr, 100, NULL, NULL);
                     Ns_Log(Notice, "**** 100-continue line <%s>", sockPtr->reqPtr->request.line);
 
-                    iov[0].iov_base = (char *)"HTTP/1.1 100 Continue\r\n\r\n";
-                    iov[0].iov_len = strlen(iov[0].iov_base);
-
+                    ns_iov_set(&iov[0], continueResponse, sizeof(continueResponse) - 1);
                     sent = Ns_SockSendBufs((Ns_Sock *)sockPtr, iov, 1,
                                            NULL, 0u);
                     if (sent != (ssize_t)iov[0].iov_len) {
