@@ -1165,14 +1165,10 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     /*
      * Build and send message.
      */
-    iov[0].iov_base = (void*) &options;
-    iov[0].iov_len = sizeof(options);
-    iov[1].iov_base = (void*) &port;
-    iov[1].iov_len = sizeof(port);
-    iov[2].iov_base = (void*) &type;
-    iov[2].iov_len = sizeof(type);
-    iov[3].iov_base = (void*) data;
-    iov[3].iov_len = sizeof(data);
+    ns_iov_set(&iov[0], &options, sizeof(options));
+    ns_iov_set(&iov[1], &port,    sizeof(port));
+    ns_iov_set(&iov[2], &type,    sizeof(type));
+    ns_iov_set(&iov[3], &data,    sizeof(data));
 
     strncpy(data, address, sizeof(data)-1);
     memset(&msg, 0, sizeof(msg));
@@ -1188,8 +1184,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     /*
      * Receive reply.
      */
-    iov[0].iov_base = (void*) &err;
-    iov[0].iov_len = sizeof(int);
+    ns_iov_set(&iov[0], &err, sizeof(err));
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;
     msg.msg_iovlen = 1;
@@ -1401,14 +1396,11 @@ Binder(void)
         /*
          * Receive a message with the following contents.
          */
-        iov[0].iov_base = (void*) &options;
-        iov[0].iov_len = sizeof(options);
-        iov[1].iov_base = (void*) &port;
-        iov[1].iov_len = sizeof(port);
-        iov[2].iov_base = (void*) &type;
-        iov[2].iov_len = sizeof(type);
-        iov[3].iov_base = (void*) address;
-        iov[3].iov_len = sizeof(address);
+        ns_iov_set(&iov[0], &options, sizeof(options));
+        ns_iov_set(&iov[1], &port,    sizeof(port));
+        ns_iov_set(&iov[2], &type,    sizeof(type));
+        ns_iov_set(&iov[3], &address, sizeof(address));
+
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 4;
@@ -1454,8 +1446,7 @@ Binder(void)
             err = errno;
         }
 
-        iov[0].iov_base = (void*) &err;
-        iov[0].iov_len = sizeof(err);
+        ns_iov_set(&iov[0], &err, sizeof(err));
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 1;
