@@ -1299,6 +1299,28 @@ static inline void ns_free_const(const void *p) {
 #endif
 }
 
+/*
+ *----------------------------------------------------------------------
+ * ns_iov_set --
+ *
+ *      Safely initialize an iovec structure with the specified base pointer
+ *      and length.  The pointer assignment is performed via memcpy to avoid
+ *      strict-aliasing and const-discard warnings when setting iov_base.
+ *      This approach is portable across compilers that treat iov_base as
+ *      a non-const void pointer.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The provided iovec structure is modified in place.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline void ns_iov_set(struct iovec *v, const void *base, size_t len) {
+    memcpy(&v->iov_base, &base, sizeof base); /* copy pointer value */
+    v->iov_len = len;
+}
 
 /*
  * mutex.c:
