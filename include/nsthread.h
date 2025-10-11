@@ -689,6 +689,7 @@ typedef int ns_sockerrno_t;
   }
 #endif
 
+#define NS_HAVE_PARSEHOST2_CONST 1
 
 #ifndef O_TEXT
 # define O_TEXT    (0)
