@@ -23,7 +23,9 @@ static const char *htmlQuoteChars = "<>&'\"";
 /*
  * Static functions defined in this file.
  */
-static void QuoteHtml(Tcl_DString *dsPtr, const char *breakChar, const char *htmlString)
+static void QuoteHtml(Tcl_DString *NS_RESTRICT dsPtr,
+                      const char  *NS_RESTRICT htmlString,
+                      const char  *firstHit)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static bool WordEndsInSemi(const char *word, size_t *lengthPtr)
@@ -60,14 +62,27 @@ static bool InitOnce(void);
  *
  *----------------------------------------------------------------------
  */
+ static inline const char *
+FirstHtmlQuoteChar(const char *s) {
+    return strpbrk(s, htmlQuoteChars);
+}
+
 static void
-QuoteHtml(Tcl_DString *dsPtr, const char *breakChar, const char *htmlString)
+QuoteHtml(Tcl_DString *NS_RESTRICT dsPtr, const char  *NS_RESTRICT htmlString, const char  *firstHit)
 {
     const char *toProcess = htmlString;
+    const char *breakChar = firstHit;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(breakChar != NULL);
+    NS_NONNULL_ASSERT(firstHit != NULL);
     NS_NONNULL_ASSERT(htmlString != NULL);
+
+#ifdef DEBUG
+    if (dsPtr->string) {
+        const char *d = dsPtr->string;
+        NS_ASSERT(!(htmlString >= d && htmlString < d + (size_t)dsPtr->length)); /* no alias */
+    }
+#endif
 
     do {
         /*
@@ -104,7 +119,7 @@ QuoteHtml(Tcl_DString *dsPtr, const char *breakChar, const char *htmlString)
          * Check for further protected characters.
          */
         toProcess = breakChar + 1;
-        breakChar = strpbrk(toProcess, htmlQuoteChars);
+        breakChar =  FirstHtmlQuoteChar(toProcess);;
 
     } while (breakChar != NULL);
 
@@ -127,10 +142,10 @@ Ns_QuoteHtml(Tcl_DString *dsPtr, const char *htmlString)
      * If the first character is a NUL character, there is nothing to do.
      */
     if (*htmlString != '\0') {
-        const char *breakChar = strpbrk(htmlString, htmlQuoteChars);
+        const char *first = FirstHtmlQuoteChar(htmlString);
 
-        if (breakChar != NULL) {
-            QuoteHtml(dsPtr, strpbrk(htmlString, htmlQuoteChars), htmlString);
+        if (first != NULL) {
+            QuoteHtml(dsPtr, htmlString, first);
         } else {
             Tcl_DStringAppend(dsPtr, htmlString, TCL_INDEX_NONE);
         }
@@ -172,9 +187,9 @@ NsTclQuoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         const char *htmlString = Tcl_GetString(htmlObj);
 
         if (*htmlString != '\0') {
-            const char *breakChar = strpbrk(htmlString, htmlQuoteChars);
+            const char *first = FirstHtmlQuoteChar(htmlString);
 
-            if (breakChar == NULL) {
+            if (first == NULL) {
                 /*
                  * No need to copy anything.
                  */
@@ -183,9 +198,8 @@ NsTclQuoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                 Tcl_DString ds;
 
                 Tcl_DStringInit(&ds);
-                QuoteHtml(&ds, breakChar, htmlString);
+                QuoteHtml(&ds, htmlString, first);
                 Tcl_DStringResult(interp, &ds);
-
             }
         }
     }
@@ -3254,7 +3268,7 @@ int
 NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK, withNoAngleOption = (int)NS_FALSE, onlyTagsOption = (int)NS_FALSE;
-    char        *htmlString = (char *)NS_EMPTY_STRING;
+    char        *htmlString;
     Ns_ObjvSpec opts[] = {
         {"-noangle",  Ns_ObjvBool, &withNoAngleOption, INT2PTR(NS_TRUE)},
         {"-onlytags", Ns_ObjvBool, &onlyTagsOption, INT2PTR(NS_TRUE)},
