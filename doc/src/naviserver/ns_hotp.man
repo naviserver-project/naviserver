@@ -68,7 +68,7 @@ support and the nsf package is installed.
 [list_end]
 
 [example_begin]
- # provide coutner in 64-bit big-endian order
+ # provide counter in 64-bit big-endian order
  % ns_hotp -key "tweedie123" [lb]binary format W 1[rb]
  601045
 [example_end]
