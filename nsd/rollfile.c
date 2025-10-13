@@ -293,7 +293,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
     /*
      * Close the logfile.
      */
-    status = closeProc(arg);
+    status = closeProc(ns_const2voidp(arg));
     if (status == NS_OK) {
         Tcl_Obj      *pathObj;
 
@@ -329,7 +329,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
     /*
      * Now open the logfile (maybe again).
      */
-    status = openProc(arg);
+    status = openProc(ns_const2voidp(arg));
     NsAsyncWriterQueueEnable();
 
     if (status == NS_OK) {

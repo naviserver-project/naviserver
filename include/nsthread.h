@@ -1338,6 +1338,11 @@ static inline void ns_iov_set(struct iovec *v, const void *base, size_t len) {
     v->iov_len = len;
 }
 
+static inline void *ns_const2voidp(const void *p) {
+    void *q;
+    memcpy(&q, &p, sizeof q);   // copy pointer bits; avoids -Wcast-qual
+    return q;
+}
 /*
  * mutex.c:
  */
