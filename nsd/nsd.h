@@ -1806,7 +1806,7 @@ NS_EXTERN TCL_SIZE_T NsDriverBindAddresses(Driver *drvPtr)
 NS_EXTERN Ns_Driver *NsDriverFromConfigSection(const char *section)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver *drvPtr)
+NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN size_t NsDriversOfType(Ns_DList *dlPtr, const char *type)

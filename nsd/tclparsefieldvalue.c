@@ -176,7 +176,7 @@ GetQuotedString(Tcl_DString *dsPtr, const unsigned char *source)
                 break;
             } else {
                 Ns_Log(Warning, "Unexpected character %c in header field <%s>",
-                       *p, (char *)source);
+                       *p, (const char *)source);
                 break;
             }
         }

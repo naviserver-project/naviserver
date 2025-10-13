@@ -328,7 +328,7 @@ static bool AEAD_Set_tag(EVP_CIPHER_CTX *ctx,
 
     params[0] = OSSL_PARAM_construct_octet_string(
                     OSSL_CIPHER_PARAM_AEAD_TAG,
-                    (void *)tag, taglen);
+                    ns_const2voidp(tag), taglen);
     params[1] = OSSL_PARAM_construct_end();
     return EVP_CIPHER_CTX_set_params(ctx, params) > 0;
 }
@@ -582,7 +582,7 @@ PEMOpenReadSteam(const char *fnOrData)
  */
 
 static EVP_PKEY *
-GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, bool private)
+GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
 {
     BIO        *bio;
     EVP_PKEY   *result;
@@ -593,13 +593,14 @@ GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, bo
         result = NULL;
     } else {
         if (private) {
-            result = PEM_read_bio_PrivateKey(bio, NULL, NULL, (char*)passPhrase);
+            result = PEM_read_bio_PrivateKey(bio, NULL, NULL, ns_const2voidp(passPhrase));
         } else {
-            result = PEM_read_bio_PUBKEY(bio, NULL, NULL, (char*)passPhrase);
+            result = PEM_read_bio_PUBKEY(bio, NULL, NULL, ns_const2voidp(passPhrase));
         }
         BIO_free(bio);
         if (result == NULL) {
-            Ns_TclPrintfResult(interp, "pem file contains no %s key", (private ? "private" : "public"));
+            Ns_TclPrintfResult(interp, "pem file contains no %s key",
+                               (private ? "private" : "public"));
         }
     }
     return result;
@@ -607,7 +608,7 @@ GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, bo
 
 # ifndef OPENSSL_NO_EC
 static EC_KEY *
-GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, bool private)
+GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
 {
     BIO        *bio;
     EC_KEY     *result;
@@ -618,9 +619,9 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, b
         result = NULL;
     } else {
         if (private) {
-            result = PEM_read_bio_ECPrivateKey(bio, NULL, NULL, (char*)passPhrase);
+            result = PEM_read_bio_ECPrivateKey(bio, NULL, NULL, ns_const2voidp(passPhrase));
         } else {
-            result = PEM_read_bio_EC_PUBKEY(bio, NULL, NULL, (char*)passPhrase);
+            result = PEM_read_bio_EC_PUBKEY(bio, NULL, NULL, ns_const2voidp(passPhrase));
         }
         BIO_free(bio);
         if (result == NULL) {
@@ -658,7 +659,7 @@ static int
 CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result, isBinary = 0;
-    char       *digestName = (char *)"sha256";
+    const char *digestName = "sha256";
     Tcl_Obj    *keyObj;
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
@@ -884,7 +885,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
 {
     int                result, isBinary = 0, encodingInt = -1;
     Tcl_Obj           *keyObj, *messageObj;
-    char              *digestName = (char *)"sha256";
+    const char        *digestName = "sha256";
 
     Ns_ObjvSpec    lopts[] = {
         {"-binary",   Ns_ObjvBool,     &isBinary,    INT2PTR(NS_TRUE)},
@@ -1013,7 +1014,7 @@ static int
 CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int           result;
-    char         *digestName = (char *)"sha256";
+    const char   *digestName = "sha256";
     Ns_ObjvSpec   args[] = {
         {"digest",  Ns_ObjvString, &digestName, NULL},
         {NULL, NULL, NULL, NULL}
@@ -1226,8 +1227,8 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
 {
     int                result, isBinary = 0, encodingInt = -1;
     Tcl_Obj           *messageObj, *signatureObj = NULL, *resultObj = NULL;
-    char              *digestName = (char *)"sha256",
-                      *passPhrase = (char *)NS_EMPTY_STRING,
+    const char        *digestName = "sha256",
+                      *passPhrase = NS_EMPTY_STRING,
                       *signKeyFile = NULL,
                       *verifyKeyFile = NULL;
 
@@ -1264,7 +1265,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         Ns_BinaryEncoding encoding = (encodingInt == -1 ? RESULT_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
         const EVP_MD *md;
         EVP_PKEY     *pkey = NULL;
-        char         *keyFile = NULL;
+        const char   *keyFile = NULL;
 
         /*
          * Compute Message Digest or sign or validate signature via OpenSSL.
@@ -1469,8 +1470,8 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 {
     int                result, isBinary = 0, encodingInt = -1;
     Tcl_Obj           *messageObj;
-    char              *digestName = (char *)"sha256", *pemFile = NULL,
-                      *passPhrase = (char *)NS_EMPTY_STRING;
+    const char        *digestName = "sha256", *pemFile = NULL,
+                      *passPhrase = NS_EMPTY_STRING;
     Ns_ObjvSpec lopts[] = {
         {"-binary",     Ns_ObjvBool,        &isBinary,    INT2PTR(NS_TRUE)},
         {"-digest",     Ns_ObjvString,      &digestName,  NULL},
@@ -1621,7 +1622,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 {
     int                result, isBinary = 0, outLength = 0, encodingInt = -1;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
-    char              *digestName = (char *)"sha256";
+    const char        *digestName = "sha256";
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,           &isBinary,  INT2PTR(NS_TRUE)},
         {"-digest",   Ns_ObjvString,         &digestName, NULL},
@@ -1923,9 +1924,11 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         EVP_KDF_free(kdf);
 
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
-                                                 (void*)secretString, (size_t)secretLength);
+                                                 ns_const2voidp(secretString),
+                                                 (size_t)secretLength);
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
-                                                 (void*)saltString, (size_t)saltLength);
+                                                 ns_const2voidp(saltString),
+                                                 (size_t)saltLength);
         *p++ = OSSL_PARAM_construct_uint64(OSSL_KDF_PARAM_SCRYPT_N, &nValueSSL);
         *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, &rValueSSL);
         *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, &pValueSSL);
@@ -2080,25 +2083,29 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         }
         //NsHexPrint("saltString", saltString, (size_t)saltLength, 32, NS_FALSE);
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
-                                                 (void*)saltString, (size_t)saltLength);
+                                                 ns_const2voidp(saltString),
+                                                 (size_t)saltLength);
 
         if (secretObj != NULL) {
             secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
             //NsHexPrint("secretString", secretString, (size_t)secretLength, 32, NS_FALSE);
             *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SECRET,
-                                                     (void*)secretString, (size_t)secretLength);
+                                                     ns_const2voidp(secretString),
+                                                     (size_t)secretLength);
         }
         if (adObj != NULL) {
             adString = Ns_GetBinaryString(adObj,     isBinary == 1, &adLength,     &adDs);
             //NsHexPrint("adString", adString, (size_t)adLength, 32, NS_FALSE);
             *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_ARGON2_AD,
-                                                     (void*)adString, (size_t)adLength);
+                                                     ns_const2voidp(adString),
+                                                     (size_t)adLength);
         }
         if (passObj != NULL) {
             passString = Ns_GetBinaryString(passObj, isBinary == 1, &passLength,   &passDs);
             //NsHexPrint("passString", passString, (size_t)passLength, 32, NS_FALSE);
             *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
-                                                     (void*)passString, (size_t)passLength);
+                                                     ns_const2voidp(passString),
+                                                     (size_t)passLength);
         }
 
         /*fprintf(stderr, "variant %s pass (%d) secret (%d) salt (%d) threads %d iter %d lanes %d memcost %d\n",
@@ -2198,7 +2205,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
 {
     int                result, isBinary = 0, encodingInt = -1, iter = 4096, dkLength = -1;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
-    char              *digestName = (char *)"sha256";
+    const char        *digestName = "sha256";
     Ns_ObjvSpec opts[] = {
         {"-binary",     Ns_ObjvBool,    &isBinary,   INT2PTR(NS_TRUE)},
         {"-digest",     Ns_ObjvString,  &digestName, NULL},
@@ -2343,8 +2350,8 @@ static int
 CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, encodingInt = -1;
-    char              *pemFile = NULL,
-                      *passPhrase = (char *)NS_EMPTY_STRING;
+    const char        *pemFile = NULL,
+                      *passPhrase = NS_EMPTY_STRING;
 
     Ns_ObjvSpec lopts[] = {
         {"-encoding",   Ns_ObjvIndex,   &encodingInt,binaryencodings},
@@ -2448,8 +2455,8 @@ static int
 CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, encodingInt = -1;
-    char              *pemFile = NULL,
-                      *passPhrase = (char *)NS_EMPTY_STRING;
+    const char        *pemFile = NULL,
+                      *passPhrase = NS_EMPTY_STRING;
     Ns_ObjvSpec lopts[] = {
         {"-encoding",   Ns_ObjvIndex,   &encodingInt,binaryencodings},
         {"-passphrase", Ns_ObjvString,  &passPhrase, NULL},
@@ -2622,7 +2629,7 @@ static int
 CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, nid;
-    char              *curvenameString = (char *)"prime256v1", *pemFileName = NULL;
+    const char        *curvenameString = "prime256v1", *pemFileName = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-name",     Ns_ObjvString, &curvenameString, NULL},
         {"-pem",      Ns_ObjvString, &pemFileName, NULL},
@@ -2699,8 +2706,8 @@ static int
 CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1;
-    char              *pemFileName = NULL,
-                      *passPhrase = (char *)NS_EMPTY_STRING;
+    const char        *pemFileName = NULL,
+                      *passPhrase = NS_EMPTY_STRING;
     Tcl_Obj           *pubkeyObj = NULL;
     EC_KEY            *eckey = NULL;
 
@@ -2975,13 +2982,13 @@ CryptoAeadStringGetArguments(
     const unsigned char **keyStringPtr,   TCL_SIZE_T *keyLengthPtr,
     const unsigned char **ivStringPtr,    TCL_SIZE_T *ivLengthPtr,
     const unsigned char **aadStringPtr,   TCL_SIZE_T *aadLengthPtr,
-    char                **tagStringPtr,   TCL_SIZE_T *tagLengthPtr,
+    const char          **tagStringPtr,   TCL_SIZE_T *tagLengthPtr,
     const unsigned char **inputStringPtr, TCL_SIZE_T *inputLengthPtr,
     const EVP_CIPHER    **cipherPtr, Ns_BinaryEncoding *encodingPtr, EVP_CIPHER_CTX **ctxPtr
 ) {
     Tcl_Obj      *ivObj = NULL, *keyObj = NULL, *aadObj = NULL, *tagObj = NULL, *inputObj;
     int           result, isBinary = 0, encodingInt = -1;
-    char         *cipherName = (char *)"aes-128-gcm";
+    const char   *cipherName = "aes-128-gcm";
 
     Ns_ObjvSpec lopts_encrypt[] = {
         {"-binary",   Ns_ObjvBool,           &isBinary,   INT2PTR(NS_TRUE)},
@@ -3048,7 +3055,7 @@ CryptoAeadStringGetArguments(
             const char *objType = tagObj->typePtr != NULL ? tagObj->typePtr->name : "NONE";
             TCL_SIZE_T  objLength = tagObj->length;
 
-            *tagStringPtr = (char *)Ns_GetBinaryString(tagObj, 1 /*isBinary == 1*/, tagLengthPtr, tagDsPtr);
+            *tagStringPtr = (const char *)Ns_GetBinaryString(tagObj, 1 /*isBinary == 1*/, tagLengthPtr, tagDsPtr);
             if (*tagLengthPtr != 16) {
                 Ns_Log(Error, "aead: invalid tag length %ld (isBinary %d, objType %s, objLength %ld)\n",
                        (long)*tagLengthPtr, isBinary, objType, (long)objLength);
@@ -3105,7 +3112,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     Ns_BinaryEncoding    encoding = RESULT_ENCODING_HEX;
     EVP_CIPHER_CTX      *ctx;
     const unsigned char *inputString = NULL, *ivString = NULL, *aadString = NULL, *keyString = NULL;
-    char                *tagString = NULL;
+    const char          *tagString = NULL;
     TCL_SIZE_T           inputLength, keyLength, ivLength, aadLength, tagLength;
 
     /*
@@ -3255,7 +3262,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
                 Ns_TclPrintfResult(interp, "could not set additional authenticated data (AAD)");
                 result = TCL_ERROR;
 
-            } else if (!AEAD_Set_tag(ctx, (unsigned char*)tagString, (size_t)tagLength)) {
+            } else if (!AEAD_Set_tag(ctx, (const unsigned char *)tagString, (size_t)tagLength)) {
                 Ns_TclPrintfResult(interp,
                                    "could not set authentication tag");
                 result = TCL_ERROR;

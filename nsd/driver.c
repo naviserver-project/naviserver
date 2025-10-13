@@ -5625,7 +5625,7 @@ DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
  */
 
 NS_TLS_SSL_CTX *
-NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver *drvPtr)
+NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvPtr)
 {
     const ServerMap *mapPtr;
     Driver *driver = (Driver *)drvPtr;
