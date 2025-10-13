@@ -12,7 +12,12 @@
 #ifndef NSD_H
 #define NSD_H
 
-#include "ns.h"
+/*
+ * Developer note:
+ * Use the in-tree ns.h to ensure prototype consistency during builds.
+ * Installed modules should include <ns.h> from the installation prefix.
+ */
+#include "../include/ns.h"
 
 #if defined(HAVE_XLOCALE_H)
 # include <xlocale.h>
