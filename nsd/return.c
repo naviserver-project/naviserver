@@ -918,8 +918,7 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
         Ns_ConnSetEncodedTypeHeader(conn, mimeType);
     }
 
-    sbuf.iov_base = (void *)data;
-    sbuf.iov_len = len < 0 ? strlen(data) : (size_t)len;
+    ns_iov_set(&sbuf, data, len < 0 ? strlen(data) : (size_t)len);
 
     Ns_ConnSetResponseStatus(conn, status);
     result = Ns_ConnWriteVChars(conn, &sbuf, 1, 0u);
@@ -1106,15 +1105,13 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
 
             if (rangeCount == 0) {
                 nbufs = 1;
-                vbuf[0].iov_base = (void *)data;
-                vbuf[0].iov_len  = dataLength;
+                ns_iov_set(&vbuf[0], data, dataLength);
             } else {
                 int i;
 
                 dataLength = 0u;
                 for (i = 0; i < nbufs; i++) {
-                    vbuf[i].iov_base = (char *)bufs[i].buffer + bufs[i].offset;
-                    vbuf[i].iov_len  = bufs[i].length;
+                    ns_iov_set(&vbuf[i], bufs[i].buffer + bufs[i].offset, bufs[i].length);
                     dataLength += bufs[i].length;
                 }
             }

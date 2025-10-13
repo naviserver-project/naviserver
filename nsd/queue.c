@@ -1724,7 +1724,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
                 Ns_RWLockWrLock(&servPtr->opts.rwlock);
                 Tcl_DStringAppend(dsPtr, servPtr->opts.realm, TCL_INDEX_NONE);
                 if (servPtr->opts.realm != NULL) {
-                    ns_free((void*)servPtr->opts.realm);
+                    ns_free_const(servPtr->opts.realm);
                     servPtr->opts.realm = ns_strdup(realm);
                 }
             }
@@ -2915,7 +2915,7 @@ ConnRun(Conn *connPtr)
         assert(connPtr->request.line == NULL);
     }
     if (connPtr->location != NULL) {
-        ns_free((char *)connPtr->location);
+        ns_free_const(connPtr->location);
         connPtr->location = NULL;
     }
 

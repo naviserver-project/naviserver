@@ -337,7 +337,7 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
             int        tagged = 0;
             TCL_SIZE_T i;
 
-            ns_free((char *)logPtr->extendedHeaders);
+            ns_free_const(logPtr->extendedHeaders);
             if (logPtr->requestHeaders != NULL) {
                 Tcl_Free((char *) logPtr->requestHeaders);
             }
@@ -447,7 +447,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     switch (cmd) {
 
     case ROLLFMT: {
-        char       *fmt = NULL;
+        const char *fmt = NULL;
         Ns_ObjvSpec largs[] = {
             {"?timeformat", Ns_ObjvString, &fmt, NULL},
             {NULL, NULL, NULL, NULL}
@@ -460,10 +460,10 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             Ns_MutexLock(&logPtr->lock);
 
             if (fmt != NULL) {
-                ns_free((char *)logPtr->rollfmt);
+                ns_free_const(logPtr->rollfmt);
                 logPtr->rollfmt = ns_strdup(fmt);
             }
-            fmt = (char *)logPtr->rollfmt;
+            fmt = logPtr->rollfmt;
             Ns_MutexUnlock(&logPtr->lock);
             if (fmt != NULL) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(fmt, TCL_INDEX_NONE));
@@ -642,7 +642,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
                     strarg = filepath;
                 }
                 LogClose(logPtr);
-                ns_free((char *)logPtr->filename);
+                ns_free_const(logPtr->filename);
                 logPtr->filename = ns_strdup(strarg);
                 Tcl_DStringFree(&ds);
                 LogOpen(logPtr);

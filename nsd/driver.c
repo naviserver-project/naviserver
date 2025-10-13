@@ -2604,7 +2604,7 @@ DriverClose(Sock *sockPtr)
 }
 
 static Ns_ReturnCode
-EnsureRunningCB(void *hashValue, void *UNUSED(ctx))
+EnsureRunningCB(void *hashValue, const void *UNUSED(ctx))
 {
     NsEnsureRunningConnectionThreads(hashValue, NULL);
     return NS_OK;
@@ -6880,7 +6880,7 @@ static ConnPoolInfo *ConnPoolInfoNew(ConnPool *poolPtr)
     return result;
 }
 
-static Ns_ReturnCode ConnPoolInfoFreeCB(void *hashValue, void *UNUSED(ctx))
+static Ns_ReturnCode ConnPoolInfoFreeCB(void *hashValue, const void *UNUSED(ctx))
 {
     ns_free(hashValue);
     return NS_OK;
@@ -6932,7 +6932,7 @@ WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-ConnPoolInfoResetRateCB(void *hashValue, void *UNUSED(ctx))
+ConnPoolInfoResetRateCB(void *hashValue, const void *UNUSED(ctx))
 {
     ((ConnPoolInfo *)hashValue)->currentPoolRate = 0;
     return NS_OK;
@@ -6966,7 +6966,7 @@ ConnPoolInfoResetRateCB(void *hashValue, void *UNUSED(ctx))
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-ConnPoolInfoUpdateCB(void *hashKey, void *hashValue, void *UNUSED(ctx))
+ConnPoolInfoUpdateCB(void *hashKey, void *hashValue, const void *UNUSED(ctx))
 {
     ConnPool     *poolPtr = hashKey;
     ConnPoolInfo *infoPtr = hashValue;

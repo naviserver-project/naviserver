@@ -1544,7 +1544,7 @@ FreeSpecs(Ns_ObjvSpec *specPtr)
             specPtr++;
             continue;
         }
-        ns_free((char *)specPtr->key);
+        ns_free_const(specPtr->key);
         if (specPtr->arg != NULL) {
             Tcl_DecrRefCount((Tcl_Obj *) specPtr->arg);
         }

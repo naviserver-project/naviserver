@@ -464,7 +464,7 @@ Ns_SetFree(Ns_Set *set)
         }
 #endif
         ns_free(set->fields);
-        ns_free((char *)set->name);
+        ns_free_const(set->name);
         ns_free(set);
     }
 }
@@ -1689,7 +1689,7 @@ Ns_SetCopy(const Ns_Set *old)
 # endif
 #endif
         Ns_Log(Ns_LogNsSetDebug, "Ns_SetCopy %p '%s' to %p",
-               (void*)old, old->name, (void*)new);
+               (const void*)old, old->name, (const void*)new);
     }
 
     return new;
@@ -1793,7 +1793,7 @@ SetCopyElements(const char* msg, const Ns_Set *from, Ns_Set *const to)
 
 #ifdef NS_SET_DSTRING
     Ns_Log(Notice, "SetCopyElements %s %p '%s': %lu elements from %p to %p",
-           msg, (void*)from, from->name, from->size, (void*)from, (void*)to);
+           msg, (const void*)from, from->name, from->size, (const void*)from, (void*)to);
 
     to->size = 0u;
     for (i = 0u; i < from->size; i++) {

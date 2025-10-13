@@ -1047,7 +1047,7 @@ ChanCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             } else {
                 (void) Tcl_UnregisterChannel(interp, regChan->chan);
             }
-            ns_free((char *)regChan->name);
+            ns_free_const(regChan->name);
             ns_free(regChan);
             Tcl_DeleteHashEntry(hPtr);
         }

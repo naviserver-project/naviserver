@@ -2090,7 +2090,7 @@ static void ThreadArgFree(void *arg)
     NS_NONNULL_ASSERT(arg != NULL);
     argPtr = (TclThreadArg *)arg;
 
-    ns_free((char *)argPtr->threadName);
+    ns_free_const(argPtr->threadName);
     ns_free(argPtr);
 }
 

@@ -524,8 +524,8 @@ UrlSpaceContextSpecFree(void *arg)
         ns_free(arg);
 
     } else {
-        ns_free((void*)spec->field.str);
-        ns_free((void*)spec->patternString);
+        ns_free_const(spec->field.str);
+        ns_free_const(spec->patternString);
         ns_free(arg);
     }
 }

@@ -284,7 +284,7 @@ ConfigServerTcl(const char *server)
                                            NS_TRUE, NS_FALSE);
         servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, TCL_INDEX_NONE);
         Tcl_IncrRefCount(servPtr->tcl.initfile);
-        ns_free((char *)initFileString);
+        ns_free_const(initFileString);
 
         servPtr->tcl.modules = Tcl_NewObj();
         Tcl_IncrRefCount(servPtr->tcl.modules);
@@ -1376,7 +1376,7 @@ ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         const char     *script = ns_strdup(Tcl_GetStringFromObj(scriptObj, &length));
 
         Ns_RWLockWrLock(&servPtr->tcl.lock);
-        ns_free((char *)servPtr->tcl.script);
+        ns_free_const(servPtr->tcl.script);
         servPtr->tcl.script = script;
         servPtr->tcl.length = length;
         if (++servPtr->tcl.epoch == 0) {
@@ -2072,7 +2072,7 @@ GetCacheEntry(const NsServer *servPtr)
         Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
         Ns_TlsSet(&tls, tablePtr);
     }
-    return Tcl_CreateHashEntry(tablePtr, (char *) servPtr, &ignored);
+    return Tcl_CreateHashEntry(tablePtr, (const char *) servPtr, &ignored);
 }
 
 
@@ -2349,7 +2349,7 @@ UpdateInterp(NsInterp *itPtr)
                    concurrentUpdates);
 
             itPtr->epoch = epoch;
-            ns_free((char *)script);
+            ns_free_const(script);
 
             Ns_MutexLock(&updateLock);
             concurrentUpdates--;
@@ -2560,7 +2560,7 @@ DeleteInterps(void *arg)
  *
  *----------------------------------------------------------------------
  */
-Ns_ReturnCode NsForeachHashValue(Tcl_HashTable *tablePtr, NsHashValueProc fn, void *ctx)
+Ns_ReturnCode NsForeachHashValue(Tcl_HashTable *tablePtr, NsHashValueProc fn, const void *ctx)
 {
     Ns_ReturnCode result = NS_OK;
     const Tcl_HashEntry *hPtr;
@@ -2602,7 +2602,7 @@ Ns_ReturnCode NsForeachHashValue(Tcl_HashTable *tablePtr, NsHashValueProc fn, vo
  *
  *----------------------------------------------------------------------
  */
-Ns_ReturnCode NsForeachHashKeyValue(Tcl_HashTable *tablePtr, NsHashKeyValueProc fn, void *ctx)
+Ns_ReturnCode NsForeachHashKeyValue(Tcl_HashTable *tablePtr, NsHashKeyValueProc fn, const void *ctx)
 {
     Ns_ReturnCode result = NS_OK;
     const Tcl_HashEntry *hPtr;

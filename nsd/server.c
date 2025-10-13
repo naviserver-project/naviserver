@@ -68,7 +68,7 @@ NsGetServerDebug(const char *server, const char *caller)
 
     if (server != NULL) {
         const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&nsconf.servertable, server);
-        fprintf(stderr, "NsGetServer LOOKUP <%s> %s -> %p\n", server, caller, (void*) hPtr);
+        fprintf(stderr, "NsGetServer LOOKUP <%s> %s -> %p\n", server, caller, (const void*) hPtr);
 
         if (hPtr != NULL) {
             result = Tcl_GetHashValue(hPtr);
@@ -147,14 +147,14 @@ NsGetInitServer(void)
  */
 
 static Ns_ReturnCode
-StartServerCB(void *hashValue, void *UNUSED(ctx))
+StartServerCB(void *hashValue, const void *UNUSED(ctx))
 {
     NsStartServer(hashValue);
     return NS_OK;
 }
 
 static Ns_ReturnCode
-StopServerCB(void *hashValue, void *UNUSED(ctx))
+StopServerCB(void *hashValue, const void *UNUSED(ctx))
 {
     NsStopHttp(hashValue);
     NsStopServer(hashValue);
@@ -162,7 +162,7 @@ StopServerCB(void *hashValue, void *UNUSED(ctx))
 }
 
 static Ns_ReturnCode
-WaitServerCB(void *hashValue, void *ctx)
+WaitServerCB(void *hashValue, const void *ctx)
 {
     const Ns_Time *toPtr = ctx;
 
@@ -214,7 +214,7 @@ NsStopServers(const Ns_Time *toPtr)
     NS_NONNULL_ASSERT(toPtr != NULL);
 
     NsForeachHashValue(&nsconf.servertable, StopServerCB, NULL);
-    NsForeachHashValue(&nsconf.servertable, WaitServerCB, (void*)toPtr);
+    NsForeachHashValue(&nsconf.servertable, WaitServerCB, (const void*)toPtr);
 }
 
 
@@ -340,7 +340,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     } else {
         if (servPtr->opts.serverdir != NULL) {
             Ns_Log(Notice, "overriding 'serverdir' setting from fastpath section with value from %s", section);
-            ns_free((void*)servPtr->opts.serverdir);
+            ns_free_const(servPtr->opts.serverdir);
         }
         servPtr->opts.serverdir = Ns_ConfigFilename(section, "serverdir", 9,
                                                         nsconf.home, NS_EMPTY_STRING,
@@ -989,7 +989,7 @@ Ns_ServerLogCloseAll(const char *server, const void *handle)
     Ns_ReturnCode result = NS_OK;
     NsServer     *servPtr = NsGetServer(server);
 
-    Ns_Log(Notice, "logfile closeall server '%s' %s", server, (char*)handle);
+    Ns_Log(Notice, "logfile closeall server '%s' %s", server, (const char*)handle);
 
     if (servPtr != NULL) {
         Tcl_HashSearch   search;
@@ -1003,12 +1003,12 @@ Ns_ServerLogCloseAll(const char *server, const void *handle)
                               Tcl_GetHashValue(hPtr)
             };
             if (handle == ctx.dataPtr->handle) {
-                Ns_Log(Notice, "... closeall %s is  for me: %s", (char*)ctx.dataPtr->handle, ctx.filename);
+                Ns_Log(Notice, "... closeall %s is  for me: %s", (const char*)ctx.dataPtr->handle, ctx.filename);
                 LogFileClose(&ctx);
                 ns_free(ctx.dataPtr);
                 Tcl_DeleteHashEntry(hPtr);
             } else {
-                Ns_Log(Notice, "... closeall %s not for me: %s", (char*)ctx.dataPtr->handle, ctx.filename);
+                Ns_Log(Notice, "... closeall %s not for me: %s", (const char*)ctx.dataPtr->handle, ctx.filename);
             }
             hPtr = Tcl_NextHashEntry(&search);
         }
@@ -1019,6 +1019,24 @@ Ns_ServerLogCloseAll(const char *server, const void *handle)
 
     return result;
 }
+
+/*
+ * maybe, we can reuse this.
+ */
+static inline const char *
+Ns_TclGetHashKeyConst(const Tcl_HashTable *table, const Tcl_HashEntry *entry)
+{
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wcast-qual"
+#endif
+    const char *key = (const char *)Tcl_GetHashKey(table, entry);
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif
+    return key;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1048,13 +1066,14 @@ Ns_ServerLogCloseAll(const char *server, const void *handle)
  *      - May trigger rollover (renaming/moving) of log files.
  *      - Logs messages for each log file processed.
  */
+
 Ns_ReturnCode
 Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt, TCL_SIZE_T maxbackup)
 {
     Ns_ReturnCode result = NS_OK;
     NsServer     *servPtr = NsGetServer(server);
 
-    Ns_Log(Notice, "logfile rollall server '%s' %s", server, (char *)handle);
+    Ns_Log(Notice, "logfile rollall server '%s' %s", server, (const char *)handle);
 
     if (servPtr != NULL) {
         Tcl_HashSearch       search;
@@ -1065,7 +1084,7 @@ Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt,
 #ifdef PRINT_FULL_TABLE
         hPtr = Tcl_FirstHashEntry(&servPtr->vhost.logfileTable, &search);
         while (hPtr != NULL) {
-            LogfileCtx ctx = {Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
+            LogfileCtx ctx = {Ns_TclGetHashKeyConst(&servPtr->vhost.logfileTable, hPtr),
                               Tcl_GetHashValue(hPtr)
             };
             Ns_Log(Notice, "... fd %d '%s'", ctx.fd, ctx.filename);
@@ -1075,16 +1094,16 @@ Ns_ServerLogRollAll(const char *server, const void *handle, const char *rollfmt,
 
         hPtr = Tcl_FirstHashEntry(&servPtr->vhost.logfileTable, &search);
         while (hPtr != NULL) {
-            LogfileCtx ctx = {Tcl_GetHashKey(&servPtr->vhost.logfileTable, hPtr),
+            LogfileCtx ctx = {Ns_TclGetHashKeyConst(&servPtr->vhost.logfileTable, hPtr),
                               Tcl_GetHashValue(hPtr)
             };
 
             if (handle == ctx.dataPtr->handle) {
-                Ns_Log(Notice, "... rollall %s is  for me: %s", (char*)ctx.dataPtr->handle, ctx.filename);
+                Ns_Log(Notice, "... rollall %s is  for me: %s", (const char*)ctx.dataPtr->handle, ctx.filename);
                 result = Ns_RollFileCondFmt(LogFileOpen, LogFileClose, &ctx,
                                             ctx.filename, rollfmt, maxbackup);
             } else {
-                Ns_Log(Notice, "... rollall %s not for me: %s", (char*)ctx.dataPtr->handle, ctx.filename);
+                Ns_Log(Notice, "... rollall %s not for me: %s", (const char*)ctx.dataPtr->handle, ctx.filename);
 
             }
 

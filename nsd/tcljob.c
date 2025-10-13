@@ -1777,8 +1777,8 @@ FreeQueue(Queue *queue)
 
     Ns_MutexDestroy(&queue->lock);
     Tcl_DeleteHashTable(&queue->jobs);
-    ns_free((char *)queue->desc);
-    ns_free((char *)queue->name);
+    ns_free_const(queue->desc);
+    ns_free_const(queue->name);
     ns_free(queue);
 }
 
@@ -1850,7 +1850,7 @@ FreeJob(Job *jobPtr)
     Tcl_DStringFree(&jobPtr->script);
     Tcl_DStringFree(&jobPtr->id);
 
-    ns_free((char *)jobPtr->queueId);
+    ns_free_const(jobPtr->queueId);
     ns_free(jobPtr->errorCode);
     ns_free(jobPtr->errorInfo);
     ns_free(jobPtr);

@@ -801,7 +801,7 @@ ReturnRedirectInternal(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
             } else {
                 connPtr->responseStatus = httpStatus;
                 if (httpStatus >= 400) {
-                    ns_free((char *)connPtr->request.method);
+                    ns_free_const(connPtr->request.method);
                     connPtr->request.method = ns_strdup("GET");
                 }
                 Ns_Log(Debug, "ReturnRedirectInternal '%s' to '%s'",

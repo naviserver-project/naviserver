@@ -121,7 +121,7 @@ Ns_RollFile(const char *fileName, TCL_SIZE_T max)
                 snprintf(dot, 4u, "%03u", MIN(num + 1u, 999u));
                 err = Rename(first, next);
             }
-            ns_free((char *)next);
+            ns_free_const(next);
         }
 
         if (err == 0) {
@@ -276,7 +276,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
  */
 Ns_ReturnCode
 Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
-                   void *arg,
+                   const void *arg,
                    const char *filename, const char *rollfmt, TCL_SIZE_T maxbackup)
 {
     Ns_ReturnCode status;

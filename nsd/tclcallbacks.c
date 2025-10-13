@@ -112,7 +112,7 @@ Ns_TclFreeCallback(void *arg)
         ns_free(cbPtr->argv[ii]);
     }
 
-    ns_free((void *)cbPtr->script);
+    ns_free_const(cbPtr->script);
     ns_free(cbPtr);
 }
 

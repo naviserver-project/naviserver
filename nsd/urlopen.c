@@ -193,7 +193,7 @@ Ns_FetchURL(Tcl_DString *dsPtr, const char *url, Ns_Set *headers)
         goto done;
     }
     if (headers != NULL && strncmp(ds.string, "HTTP", 4u) == 0) {
-        ns_free((char *)headers->name);
+        ns_free_const(headers->name);
         headers->name = Ns_DStringExport(&ds);
     }
 
