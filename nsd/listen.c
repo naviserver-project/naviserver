@@ -100,7 +100,6 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
         NS_SOCKET     bindsock;
         Ns_ReturnCode status = NS_OK;
 
-        //Ns_SockaddrSetPort(saPtr, 0u);
         bindsock = Ns_SockBind(saPtr, NS_FALSE);
 
         if (port == 0u) {
@@ -110,8 +109,19 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
              * the saPtr, update the local variable here to have a valid
              * entry for the hash table below.
              */
-            port = Ns_SockaddrGetPort(saPtr);
-            Ns_Log(Debug, "Ns_SockListenCallback: Ns_GetSockAddr obtained port %hu", port);
+            socklen_t slen = sizeof(sa);
+            if (getsockname(bindsock, (struct sockaddr *)&saPtr, &slen) == 0) {
+                port = Ns_SockaddrGetPort(saPtr);
+                Ns_Log(Debug, "Ns_SockListenCallback: Ns_GetSockAddr kernel assigned port %hu", port);
+            } else {
+                Ns_Log(Warning, "getsockname failed on ephemeral bind: %s",
+                       ns_sockstrerror(ns_sockerrno));
+                if (bindsock != NS_INVALID_SOCKET) {
+                    ns_sockclose(bindsock);
+                    bindsock = NS_INVALID_SOCKET;
+                }
+                status = NS_ERROR;
+            }
         }
 
         if (!bind) {

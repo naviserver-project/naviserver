@@ -130,8 +130,7 @@ bool NsSockRetryCode(int errorCode)
 size_t
 Ns_SetVec(struct iovec *bufs, int i, const void *data, size_t len)
 {
-    bufs[i].iov_base = (void *) data;
-    bufs[i].iov_len = len;
+    ns_iov_set(&bufs[i], data, len);
 
     return len;
 }
@@ -642,7 +641,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
             ) {
             Ns_Log(Debug, "Ns_SockSendBufs partial write: want to send %" PRIdz
                    " bytes, sent %" PRIdz " timeoutPtr %p",
-                   toWrite, sent, (void*)timeoutPtr);
+                   toWrite, sent, (const void*)timeoutPtr);
         }
         if (sent == 0
             && Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_WRITE,
@@ -1117,16 +1116,6 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;
         }
-
-        if (port == 0u && sock != NS_INVALID_SOCKET) {
-            /*
-             * Refetch the socket structure containing the potentially fresh port
-             */
-            socklen_t socklen = Ns_SockaddrGetSockLen((const struct sockaddr *)saPtr);
-
-            (void) getsockname(sock, (struct sockaddr *)saPtr, &socklen);
-        }
-
     }
 
     return sock;
@@ -2310,7 +2299,7 @@ SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags
     struct msghdr msg;
 
     memset(&msg, 0, sizeof(msg));
-    msg.msg_iov = (struct iovec *)bufs;
+    msg.msg_iov = (struct iovec *)(uintptr_t)bufs; /* safe: sendmsg() does not modify iov */
     msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
     numBytes = sendmsg(sock, &msg, (int)flags|MSG_NOSIGNAL|MSG_DONTWAIT);
     *errorCodePtr = (unsigned long)ns_sockerrno;
