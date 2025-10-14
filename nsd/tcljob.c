@@ -428,7 +428,7 @@ JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
 {
     int               result = TCL_OK, maxThreads = NS_JOB_DEFAULT_MAXTHREADS;
     Tcl_Obj          *queueIdObj;
-    char             *descString  = (char *)"";
+    const char       *descString  = NS_EMPTY_STRING;
     Ns_ObjvValueRange maxThreadsRange = {1, INT_MAX};
     Ns_ObjvSpec       lopts[] = {
         {"-desc",   Ns_ObjvString,   &descString,   NULL},

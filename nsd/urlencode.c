@@ -1219,7 +1219,7 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
 {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK, percentScheme = INTCHAR('q');
-    char        *charset = NULL, *inputStr = (char *)NS_EMPTY_STRING;
+    const char  *charset = NULL, *inputStr = NS_EMPTY_STRING;
     Tcl_Obj     *fallbackCharsetObj = NULL;
     Ns_ObjvSpec  lopts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
@@ -1328,7 +1328,7 @@ NsTclPercentDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
 {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK, percentScheme = INTCHAR('q');
-    char        *charset = NULL, *inputStr = (char *)NS_EMPTY_STRING;
+    const char  *charset = NULL, *inputStr = NS_EMPTY_STRING;
     Tcl_Obj     *fallbackCharsetObj = NULL;
     Ns_ObjvSpec  lopts[] = {
         {"-charset",         Ns_ObjvString, &charset,            NULL},

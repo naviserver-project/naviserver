@@ -473,8 +473,8 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
     if (url[0] == '/' && url[1] == '/') {
         bool  hostParsedOk;
 
-        urlPtr->path = (char *)"";
-        urlPtr->tail = (char *)"";
+        urlPtr->path = (char *)NS_EMPTY_STRING;
+        urlPtr->tail = (char *)NS_EMPTY_STRING;
 
         /*
          * The URL starts with two slashes, which means an authority part
@@ -563,8 +563,8 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
 
     } else {
         if (*end == '/') {
-            urlPtr->path = (char *)"";
-            urlPtr->tail = (char *)"";
+            urlPtr->path = (char *)NS_EMPTY_STRING;
+            urlPtr->tail = (char *)NS_EMPTY_STRING;
 
             /*
              * We have a path, tail, and maybe a query or fragment specified.
