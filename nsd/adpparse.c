@@ -723,7 +723,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 
                         if ((flags & ADP_SAFE) == 0u) {
                             if (((scriptFlags & SCRIPT_TAG_SERV_STREAM) != 0u) && (! scriptStreamDone)) {
-                                static char *const buffer = (char *)"ns_adp_ctl stream on";
+                                static char buffer[] = "ns_adp_ctl stream on";
                                 char *end = buffer + strlen(buffer);
 
                                 AppendBlock(&parse, buffer, end, 's', flags);
