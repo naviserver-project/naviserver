@@ -80,8 +80,7 @@ Ns_ConnWriteChars(Ns_Conn *conn, const char *buf, size_t toWrite, unsigned int f
 {
     struct iovec sbuf;
 
-    sbuf.iov_base = (void *) buf;
-    sbuf.iov_len  = toWrite;
+    ns_iov_set(&sbuf, buf, toWrite);
     return Ns_ConnWriteVChars(conn, &sbuf, 1, flags);
 }
 
@@ -176,7 +175,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
 static int
 CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags)
 {
-    const Ns_Conn  *conn = (Ns_Conn *) connPtr;
+    const Ns_Conn  *conn = (const Ns_Conn *)connPtr;
     const NsServer *servPtr;
     int             configuredCompressionLevel, compressionLevel = 0;
 
@@ -241,9 +240,7 @@ Ns_ConnWriteData(Ns_Conn *conn, const void *buf, size_t toWrite, unsigned int fl
 {
     struct iovec vbuf;
 
-    vbuf.iov_base = (void *) buf;
-    vbuf.iov_len  = toWrite;
-
+    ns_iov_set(&vbuf, buf, toWrite);
     return Ns_ConnWriteVData(conn, &vbuf, 1, flags);
 }
 
@@ -629,9 +626,7 @@ Ns_ConnPuts(Ns_Conn *conn, const char *s)
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(s != NULL);
 
-    vbuf.iov_base = (void *) s;
-    vbuf.iov_len  = strlen(s);
-
+    ns_iov_set(&vbuf, s, strlen(s));
     return Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
 }
 
@@ -857,10 +852,9 @@ Ns_ConnWrite(Ns_Conn *conn, const void *buf, size_t toWrite)
     int           result;
     struct iovec  vbuf;
 
-    vbuf.iov_base = (void *) buf;
-    vbuf.iov_len  = toWrite;
-
+    ns_iov_set(&vbuf, buf, toWrite);
     n = connPtr->nContentSent;
+
     status = Ns_ConnWriteVData(conn, &vbuf, 1, 0u);
     if (status == NS_OK) {
         result = (int)connPtr->nContentSent - (int)n;
@@ -879,9 +873,7 @@ Ns_WriteConn(Ns_Conn *conn, const char *buf, size_t toWrite)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    vbuf.iov_base = (void *) buf;
-    vbuf.iov_len  = toWrite;
-
+    ns_iov_set(&vbuf, buf, toWrite);
     return Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
 }
 
@@ -890,9 +882,7 @@ Ns_WriteCharConn(Ns_Conn *conn, const char *buf, size_t toWrite)
 {
     struct iovec sbuf;
 
-    sbuf.iov_base = (void *)buf;
-    sbuf.iov_len = toWrite;
-
+    ns_iov_set(&sbuf, buf, toWrite);
     return Ns_ConnWriteVChars(conn, &sbuf, 1, NS_CONN_STREAM);
 }
 #endif
@@ -1367,7 +1357,7 @@ HdrPlanFraming(Ns_Conn *conn, size_t bodyLength, unsigned int flags)
 static const Ns_Set *
 HdrMergeExtra(const Ns_Conn *conn)
 {
-    Conn           *connPtr  = (Conn*)conn;
+    const Conn     *connPtr  = (const Conn*)conn;
     const NsServer *servPtr  = connPtr->poolPtr->servPtr;
     const Ns_Sock  *sockPtr  = Ns_ConnSockPtr(conn);
     Ns_Set         *headers  = conn->outputheaders;

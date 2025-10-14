@@ -752,7 +752,7 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
         Tcl_DStringAppend(dsPtr, " ", 1);
         Tcl_DStringAppend(dsPtr, cbPtr->script, (TCL_SIZE_T)cbPtr->scriptCmdNameLength);
     } else {
-        Ns_Log(Notice, "connchan ArgProc cbPtr %p has no connChanPtr", (void*)cbPtr);
+        Ns_Log(Notice, "connchan ArgProc cbPtr %p has no connChanPtr", (const void*)cbPtr);
     }
     Tcl_DStringEndSublist(dsPtr);
 }
@@ -1199,7 +1199,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     int             result, insecureInt;
     Sock           *sockPtr = NULL;
     Ns_Set         *hdrPtr = NULL;
-    char           *url, *method = (char *)"GET", *version = (char *)"1.0",
+    const char     *url, *method = "GET", *version = "1.0",
                    *driverName = NULL, *udsPath = NULL,
                    *sniHostname = NULL, *caFile = NULL, *caPath = NULL, *cert = NULL;
     Ns_Time         timeout = {1, 0}, *timeoutPtr = &timeout;
@@ -1280,6 +1280,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
                 struct iovec buf[4];
                 Ns_Time      now;
                 ssize_t      nSent;
+                const char  *firstLine = sockPtr->reqPtr->request.line;
 
                 Ns_GetTime(&now);
                 connChanPtr = ConnChanCreate(servPtr,
@@ -1304,17 +1305,11 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
                  * Write the request header via the "send" operation of
                  * the driver.
                  */
-                buf[0].iov_base = (void *)sockPtr->reqPtr->request.line;
-                buf[0].iov_len  = strlen(buf[0].iov_base);
-
-                buf[1].iov_base = (void *)"\r\n";
-                buf[1].iov_len  = 2u;
-
-                buf[2].iov_base = (void *)sockPtr->reqPtr->buffer.string;
-                buf[2].iov_len  = (size_t)Tcl_DStringLength(&sockPtr->reqPtr->buffer);
-
-                buf[3].iov_base = (void *)"\r\n";
-                buf[3].iov_len  = 2u;
+                ns_iov_set(&buf[0], firstLine,  strlen(firstLine));
+                ns_iov_set(&buf[1], "\r\n",     2u);
+                ns_iov_set(&buf[2], sockPtr->reqPtr->buffer.string,
+                           (size_t) sockPtr->reqPtr->buffer.length);
+                ns_iov_set(&buf[3], "\r\n",     2u);
 
                 nSent = ConnchanDriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
                 Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend sent %" PRIdz " bytes state %s",
@@ -1376,7 +1371,7 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     NsInterp       *itPtr = clientData;
     int             result, doTLS = (int)NS_FALSE, insecureInt;
     unsigned short  portNr = 0u;
-    char           *host, *sniHostname = NULL, *caFile = NULL, *caPath = NULL, *cert = NULL;
+    const char     *host, *sniHostname = NULL, *caFile = NULL, *caPath = NULL, *cert = NULL;
     Ns_Time         timeout = {1, 0}, *timeoutPtr = &timeout;
     Ns_ObjvSpec     lopts[] = {
         {"-cafile",   Ns_ObjvString, &caFile,      NULL},
@@ -1404,7 +1399,8 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
 
     } else if (NsTlsGetParameters(itPtr, doTLS ==(int)NS_TRUE, insecureInt,
                                   cert, caFile, caPath,
-                                  (const char **)&caFile, (const char **)&caPath) != TCL_OK) {
+                                  (const char **)&caFile,
+                                  (const char **)&caPath) != TCL_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -1528,7 +1524,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     NsServer       *servPtr = itPtr->servPtr;
     int             result, doBind = (int)NS_FALSE;
     unsigned short  port = 0u;
-    char           *driverName = NULL, *addr = (char*)NS_EMPTY_STRING;
+    const char     *driverName = NULL, *addr = NS_EMPTY_STRING;
     Tcl_Obj        *scriptObj;
     Ns_ObjvSpec     lopts[] = {
         {"-driver",  Ns_ObjvString, &driverName, NULL},
@@ -1813,10 +1809,10 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 static int
 ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
+    const NsInterp *itPtr   = clientData;
     NsServer       *servPtr = itPtr->servPtr;
-    char           *name = (char*)NS_EMPTY_STRING;
-    int             result = TCL_OK;
+    const char     *name    = NS_EMPTY_STRING;
+    int             result  = TCL_OK;
     Ns_ObjvSpec     lopts[] = {
         {"-server", Ns_ObjvServer, &servPtr, NULL},
         {NULL, NULL, NULL, NULL}
@@ -1916,10 +1912,10 @@ ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 static int
 ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
+    const NsInterp *itPtr   = clientData;
     NsServer       *servPtr = itPtr->servPtr;
-    char           *name = (char*)NS_EMPTY_STRING;
-    int             result = TCL_OK;
+    const char     *name    = NS_EMPTY_STRING;
+    int             result  = TCL_OK;
     Ns_ObjvSpec     lopts[] = {
         {"-server", Ns_ObjvServer, &servPtr, NULL},
         {NULL, NULL, NULL, NULL}
@@ -2001,10 +1997,10 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
 static int
 ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int      result = TCL_OK;
-    char    *name = (char*)NS_EMPTY_STRING;
-    Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
-    Tcl_Obj *whenObj, *scriptObj;
+    int         result = TCL_OK;
+    const char *name = NS_EMPTY_STRING;
+    Ns_Time    *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
+    Tcl_Obj    *whenObj, *scriptObj;
     Ns_ObjvSpec lopts[] = {
         {"-timeout",        Ns_ObjvTime, &pollTimeoutPtr, NULL},
         {"-receivetimeout", Ns_ObjvTime, &recvTimeoutPtr, NULL},
@@ -2119,7 +2115,7 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
 static int
 ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char         *name = (char*)NS_EMPTY_STRING;
+    const char   *name   = NS_EMPTY_STRING;
     int           result = TCL_OK;
     Ns_ObjvSpec   args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
@@ -2167,8 +2163,7 @@ ConnChanReadBuffer(NsConnChan *connChanPtr, char *buffer, size_t bufferSize)
     /*
      * Read the data via the "receive" operation of the driver.
      */
-    buf.iov_base = buffer;
-    buf.iov_len = bufferSize;
+    ns_iov_set(&buf, buffer,  bufferSize);
 
     timeoutPtr = &connChanPtr->recvTimeout;
     if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
@@ -2537,7 +2532,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
 static int
 ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char        *name = (char*)NS_EMPTY_STRING;
+    const char  *name   = NS_EMPTY_STRING;
     int          result = TCL_OK, webSocketFrame = 0;
     Ns_ObjvSpec  opts[] = {
         {"-websocket", Ns_ObjvBool, &webSocketFrame, INT2PTR(NS_TRUE)},
@@ -2681,9 +2676,10 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
                    connChanPtr->channelName, connChanPtr->sockPtr->sock, connChanPtr->sockPtr->sendCount,
                    (long)connChanPtr->secondarySendBuffer->length, (long)msgLength);
         }
+        ns_iov_set(&iovecs[0],
+                   connChanPtr->sockPtr->sendRejectedBase,
+                   (size_t)connChanPtr->sockPtr->sendRejected);
 
-        iovecs[0].iov_base = (void *)connChanPtr->sockPtr->sendRejectedBase;
-        iovecs[0].iov_len = (size_t)connChanPtr->sockPtr->sendRejected;
         iovecs[1].iov_len = 0u;
         *nBuffers = 1;
 
@@ -2725,8 +2721,9 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
              *  We have both buffered data and new data.
              */
             Tcl_DStringAppend(connChanPtr->sendBuffer, msgString, msgLength);
-            iovecs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
-            iovecs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
+            ns_iov_set(&iovecs[0],
+                       connChanPtr->sendBuffer->string,
+                       (size_t)connChanPtr->sendBuffer->length);
             *nBuffers = 1;
             *caseInt = 1;
         } else {
@@ -2734,8 +2731,7 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
              * Only new data, but we need to copy it to stable buffer
              */
             Tcl_DStringAppend(connChanPtr->sendBuffer, msgString, msgLength);
-            iovecs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
-            iovecs[0].iov_len = (size_t)msgLength;
+            ns_iov_set(&iovecs[0], connChanPtr->sendBuffer->string, (size_t)msgLength);
             *nBuffers = 1;
             *caseInt = 3;
         }
@@ -2757,10 +2753,11 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
          */
         *caseInt = 1;
 
-        iovecs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
-        iovecs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
-        iovecs[1].iov_base = (void *)msgString;
-        iovecs[1].iov_len = (size_t)msgLength;
+        ns_iov_set(&iovecs[0],
+                   connChanPtr->sendBuffer->string,
+                   (size_t)connChanPtr->sendBuffer->length);
+        ns_iov_set(&iovecs[1], msgString, (size_t)msgLength);
+
         *nBuffers = 2;
         toSend = (size_t)msgLength + (size_t)connChanPtr->sendBuffer->length;
 
@@ -2777,9 +2774,12 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
          * Case 2: No new data; only buffered data exists.
          */
         *caseInt = 2;
-        iovecs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
-        iovecs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
-        iovecs[1].iov_len = 0u;
+
+        ns_iov_set(&iovecs[0],
+                   connChanPtr->sendBuffer->string,
+                   (size_t)connChanPtr->sendBuffer->length);
+        ns_iov_set(&iovecs[1], NULL, 0u);
+
         *nBuffers = 1;
         toSend = (size_t)connChanPtr->sendBuffer->length;
         /*Ns_Log(Ns_LogConnchanDebug,
@@ -2795,9 +2795,10 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
          * Case 3: No buffered data is available; use only the new message.
          */
         *caseInt = 3;
-        iovecs[0].iov_base = (void *)msgString;
-        iovecs[0].iov_len = (size_t)msgLength;
-        iovecs[1].iov_len = 0u;
+
+        ns_iov_set(&iovecs[0], msgString, (size_t)msgLength);
+        ns_iov_set(&iovecs[1], NULL, 0u);
+
         *nBuffers = 1;
         /*Ns_Log(Ns_LogConnchanDebug, "WS: send msgLength toSend %ld", iovecs[0].iov_len);*/
         toSend = (size_t)msgLength;
@@ -3324,7 +3325,7 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
 static int
 ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char       *name = (char*)NS_EMPTY_STRING;
+    const char *name   = NS_EMPTY_STRING;
     int         result = TCL_OK;
     Tcl_Obj    *msgObj;
     Ns_ObjvSpec args[] = {
@@ -3385,10 +3386,10 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
 static int
 ConnChanDebugObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
+    const NsInterp *itPtr   = clientData;
     NsServer       *servPtr = itPtr->servPtr;
-    char           *name = (char*)NS_EMPTY_STRING;
-    int             result = TCL_OK, debugLevel = -1;
+    const char     *name    = NS_EMPTY_STRING;
+    int             result  = TCL_OK, debugLevel = -1;
     Ns_ObjvSpec     args[] = {
         {"channel", Ns_ObjvString, &name,   NULL},
         {"?level",  Ns_ObjvInt,    &debugLevel, NULL},
