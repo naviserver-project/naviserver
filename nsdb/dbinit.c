@@ -658,7 +658,7 @@ NsDbInitPools(void)
         if (poolPtr == NULL) {
             Tcl_DeleteHashEntry(hPtr);
         } else {
-            Tcl_SetHashValue(hPtr, poolPtr);
+            Tcl_SetHashValue(hPtr, ns_const2voidp(poolPtr));
         }
     }
     Ns_RegisterProcInfo((ns_funcptr_t)CheckPool, "nsdb:check", CheckArgProc);
@@ -1539,7 +1539,7 @@ IncrCount(const char *UNUSED(context), const Pool *poolPtr, int incr)
         Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
         Ns_TlsSet(&tls, tablePtr);
     }
-    hPtr = Tcl_CreateHashEntry(tablePtr, (const char *) poolPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(tablePtr, ns_const2voidp(poolPtr), &isNew);
     if (isNew != 0) {
         prev = 0;
     } else {
