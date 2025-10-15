@@ -295,20 +295,21 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
      */
 
     if (((conn->flags & NS_CONN_SENTHDRS) == 0u)) {
-        bool encoded;
+        bool pushIOVec;
 
         conn->flags |= NS_CONN_SENTHDRS;
 #if defined(USE_ENCODE_HEADERS)
-        encoded = Ns_FinalizeResponseHeaders(conn, bodyLength, flags, &ds, NULL);
+        pushIOVec = Ns_FinalizeResponseHeaders(conn, bodyLength, flags, &ds, NULL);
 #else
 
         /* Notice: Ns_CompleteHeaders flags 0040
             Notice: Ns_CompleteHeaders connPtr->responseLength -1 conn->request.version 1.100000 connPtr->keep -1 no multipart 0
         */
 
-        encoded = Ns_CompleteHeaders(conn, bodyLength, flags, &ds);
+        pushIOVec = Ns_CompleteHeaders(conn, bodyLength, flags, &ds);
 #endif
-        if (encoded) {
+
+        if (pushIOVec) {
             toWrite += Ns_SetVec(sbufPtr, sbufIdx++, ds.string, (size_t)ds.length);
             nsbufs++;
         }
@@ -317,7 +318,6 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     /*
      * Send body.
      */
-
     if ((conn->flags & NS_CONN_SKIPBODY) == 0u) {
 
         if ((conn->flags & NS_CONN_CHUNK) == 0u) {
@@ -690,8 +690,9 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         towrite += bufs[i].iov_len;
     }
 
-    if (towrite == 0u) {
+    if (nbufs == 0) {
         sent = 0;
+        Ns_Log(Debug, "Ns_ConnSend: nothing to queue");
 
     } else if (NsWriterQueue(conn, towrite, NULL, NULL, NS_INVALID_FD,
                              bufs, nbufs, NULL, 0, NS_FALSE) == NS_OK) {
@@ -1475,7 +1476,7 @@ h1_headersEncodeProc(Ns_Conn *conn,
     return NS_TRUE;
 }
 
-/* Possible replacement for Ns_CompleteHeaders */
+/* Replacement for Ns_CompleteHeaders */
 bool
 Ns_FinalizeResponseHeaders(Ns_Conn *conn,
                            size_t bodyLength,
