@@ -290,7 +290,7 @@ AddCmds(Tcl_Interp *interp, const void *arg)
 {
     const Log *logPtr = arg;
 
-    TCL_CREATEOBJCOMMAND(interp, "ns_accesslog", LogObjCmd, (ClientData)logPtr, NULL);
+    TCL_CREATEOBJCOMMAND(interp, "ns_accesslog", LogObjCmd, ns_const2voidp(logPtr), NULL);
     return TCL_OK;
 }
 

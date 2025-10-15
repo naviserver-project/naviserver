@@ -222,7 +222,7 @@ Ns_ModuleInit(const char *server, const char *UNUSED(module))
 
 static int AddCmds(Tcl_Interp *interp, const void *arg)
 {
-    TCL_CREATEOBJCOMMAND(interp, "ns_perm", PermObjCmd, (ClientData)arg, NULL);
+    TCL_CREATEOBJCOMMAND(interp, "ns_perm", PermObjCmd, ns_const2voidp(arg), NULL);
     return TCL_OK;
 }
 
@@ -1729,7 +1729,7 @@ static int ListPermsObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc,
 
 static void WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
-    Perm *permPtr = (Perm *)arg;
+    Perm *permPtr = arg;
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 

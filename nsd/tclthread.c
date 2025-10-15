@@ -488,7 +488,7 @@ ThreadCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 {
     const NsInterp *itPtr = clientData;
     int             result = TCL_OK, isDetached = (int)NS_FALSE;
-    char           *threadName = (char *)"nsthread", *scriptString;
+    const char     *threadName = "nsthread", *scriptString;
     Ns_ObjvSpec opts[] = {
         {"-detached", Ns_ObjvBool,   &isDetached, INT2PTR(NS_TRUE)},
         {"-name",     Ns_ObjvString, &threadName, NULL},

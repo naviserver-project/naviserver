@@ -87,7 +87,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.closeProc    = SockClose;
     init.opts         = NS_DRIVER_ASYNC;
     init.arg          = drvCfgPtr;
-    init.path         = (char*)section;
+    init.path         = section;
     init.protocol     = "http";
     init.defaultPort  = 80;
 
