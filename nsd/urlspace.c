@@ -325,7 +325,7 @@ static TCL_OBJCMDPROC_T UrlSpaceUnsetObjCmd;
 static void MkSeq(Tcl_DString *dsPtr, const char *key, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void WalkTrie(const Trie *triePtr, Ns_ArgProc func,
+static void WalkTrie(const Trie *triePtr, Ns_WalkProc func,
                      Tcl_DString *dsPtr, char **stack, const char *filter)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
@@ -412,7 +412,7 @@ static int CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
 static int AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Ns_ArgProc WalkCallback;
+static Ns_WalkProc WalkCallback;
 static Ns_FreeProc UrlSpaceContextSpecFree;
 
 /*
@@ -694,9 +694,9 @@ NsUrlSpaceContextSpecNew(const char *field, const char *patternString)
  *----------------------------------------------------------------------
  */
 const char*
-NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
+NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, const NsUrlSpaceContextSpec *spec)
 {
-    UrlSpaceContextSpec *specPtr = (UrlSpaceContextSpec *)spec;
+    const UrlSpaceContextSpec *specPtr = (const UrlSpaceContextSpec *)spec;
 
     Tcl_DStringAppend(dsPtr, " {", 2);
     /*fprintf(stderr, "NsUrlSpaceContextSpecAppend: ptr %p type %d\n", (void*)spec, specPtr->type);*/
@@ -1149,7 +1149,7 @@ Ns_UrlSpecificGetExact(const char *server, const char *key, const char *url,
  */
 
 void *
-Ns_UrlSpecificGet(const Ns_Server *server, const char *key, const char *url, int id,
+Ns_UrlSpecificGet(Ns_Server *server, const char *key, const char *url, int id,
                  unsigned int flags, Ns_UrlSpaceOp op,
                  Ns_UrlSpaceMatchInfo *matchInfoPtr,
                  Ns_UrlSpaceContextFilterEvalProc proc, void *context)
@@ -1266,7 +1266,7 @@ Ns_UrlSpecificDestroy(const char *server, const char *key, const char *url,
  */
 
 void
-Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
+Ns_UrlSpecificWalk(int id, const char *server, Ns_WalkProc func, Tcl_DString *dsPtr)
 {
     NsServer *servPtr;
 
@@ -1298,7 +1298,7 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsP
 }
 
 static void
-WalkTrie(const Trie *triePtr, Ns_ArgProc func,
+WalkTrie(const Trie *triePtr, Ns_WalkProc func,
          Tcl_DString *dsPtr, char **stack, const char *filter)
 {
     const Branch *branchPtr;
@@ -1497,8 +1497,8 @@ CmpBranches(const void *leftPtrPtr, const void *rightPtrPtr)
     NS_NONNULL_ASSERT(leftPtrPtr != NULL);
     NS_NONNULL_ASSERT(rightPtrPtr != NULL);
 
-    wordLeft = (*(const Branch **)leftPtrPtr)->word;
-    wordRight = (*(const Branch **)rightPtrPtr)->word;
+    wordLeft  = (*(const Branch *const*)leftPtrPtr)->word;
+    wordRight = (*(const Branch *const*)rightPtrPtr)->word;
 #ifdef DEBUG
     fprintf(stderr, "CmpBranches '%s' with '%s' -> %d\n", wordLeft, wordRight,
             NS_strcmp(wordLeft, wordRight));
@@ -1554,8 +1554,8 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
     const UrlSpaceContextSpec *ctxLeft, *ctxRight;
     int result = 0;
 
-    ctxLeft = *(UrlSpaceContextSpec **)leftPtrPtr;
-    ctxRight = *(UrlSpaceContextSpec **)rightPtrPtr;
+    ctxLeft  = *(UrlSpaceContextSpec *const*)leftPtrPtr;
+    ctxRight = *(UrlSpaceContextSpec *const*)rightPtrPtr;
 
     if (ctxLeft->type != ctxRight->type) {
         //static const char *order = "&64h";
@@ -1620,8 +1620,8 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
                         Tcl_DStringInit(&left);
                         Tcl_DStringInit(&right);
 
-                        NsUrlSpaceContextSpecAppend(&left, (NsUrlSpaceContextSpec *)ctxLeft);
-                        NsUrlSpaceContextSpecAppend(&right, (NsUrlSpaceContextSpec *)ctxRight);
+                        NsUrlSpaceContextSpecAppend(&left, (const NsUrlSpaceContextSpec *)ctxLeft);
+                        NsUrlSpaceContextSpecAppend(&right, (const NsUrlSpaceContextSpec *)ctxRight);
 
                         Ns_Log(Warning, "Houston, we have a problem, two conjunctions with same specificity:\n"
                                "left:  %s\nright: %s\n", left.string, right.string);
@@ -1633,8 +1633,8 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
                         Tcl_DStringInit(&left);
                         Tcl_DStringInit(&right);
 
-                        NsUrlSpaceContextSpecAppend(&left, (NsUrlSpaceContextSpec *)ctxLeft);
-                        NsUrlSpaceContextSpecAppend(&right, (NsUrlSpaceContextSpec *)ctxRight);
+                        NsUrlSpaceContextSpecAppend(&left, (const NsUrlSpaceContextSpec *)ctxLeft);
+                        NsUrlSpaceContextSpecAppend(&right, (const NsUrlSpaceContextSpec *)ctxRight);
 
                         Ns_Log(Warning, "Comparison returned %d:\n"
                                "left:  %s\nright: %s\n", result, left.string, right.string);
@@ -1697,7 +1697,7 @@ CmpKeyWithBranch(const void *key, const void *elemPtr)
     NS_NONNULL_ASSERT(elemPtr != NULL);
 
     keyString = (const char *)key;
-    word = (*(const Branch **)elemPtr)->word;
+    word = (*(const Branch *const*)elemPtr)->word;
 
 #ifdef DEBUG
     fprintf(stderr, "CmpKeyWithBranch '%s' with '%s' -> %d %d\n",
@@ -1716,7 +1716,7 @@ CmpKeyWithUrlSpaceContextSpecs(const void *key, const void *elemPtr)
     NS_NONNULL_ASSERT(elemPtr != NULL);
 
     keyString = (const char *)key;
-    word = (*(const UrlSpaceContextSpec **)elemPtr)->patternString;
+    word = (*(const UrlSpaceContextSpec *const*)elemPtr)->patternString;
 
 #if 1 || defined(DEBUG)
     fprintf(stderr, "CmpKeyWithUrlSpaceContextSpecs '%s' with '%s' -> %d\n",
@@ -2364,8 +2364,8 @@ CmpChannels(const void *leftPtrPtr, const void *rightPtrPtr)
     NS_NONNULL_ASSERT(leftPtrPtr != NULL);
     NS_NONNULL_ASSERT(rightPtrPtr != NULL);
 
-    filterLeft = (*(const Channel **)leftPtrPtr)->filter;
-    filterRight = (*(const Channel **)rightPtrPtr)->filter;
+    filterLeft  = (*(const Channel *const*)leftPtrPtr)->filter;
+    filterRight = (*(const Channel *const*)rightPtrPtr)->filter;
 
     lcontainsr = NS_Tcl_StringMatch(filterRight, filterLeft);
     rcontainsl = NS_Tcl_StringMatch(filterLeft, filterRight);
@@ -2415,7 +2415,7 @@ CmpKeyWithChannel(const void *key, const void *elemPtr)
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(elemPtr != NULL);
 
-    filter = (*(const Channel **)elemPtr)->filter;
+    filter = (*(const Channel *const*)elemPtr)->filter;
 
     lcontainsr = NS_Tcl_StringMatch(filter, key);
     rcontainsl = NS_Tcl_StringMatch(key, filter);
@@ -2461,8 +2461,8 @@ CmpChannelsAsStrings(const void *leftPtrPtr, const  void *rightPtrPtr)
     NS_NONNULL_ASSERT(leftPtrPtr != NULL);
     NS_NONNULL_ASSERT(rightPtrPtr != NULL);
 
-    filterLeft = (*(const Channel **)leftPtrPtr)->filter;
-    filterRight = (*(const Channel **)rightPtrPtr)->filter;
+    filterLeft  = (*(const Channel *const*)leftPtrPtr)->filter;
+    filterRight = (*(const Channel *const*)rightPtrPtr)->filter;
 
 #ifdef DEBUG
     fprintf(stderr, "CmpChannelsAsStrings '%s' with '%s' -> %d\n",
@@ -2497,11 +2497,11 @@ CmpKeyWithChannelAsStrings(const void *key, const void *elemPtr)
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(elemPtr != NULL);
 
-    filter = (*(const Channel **)elemPtr)->filter;
+    filter = (*(const Channel *const*)elemPtr)->filter;
 
 #ifdef DEBUG
     fprintf(stderr, "CmpKeyWithChannelAsStrings key '%s' with '%s' -> %d\n",
-            (char*)key, filter, NS_strcmp(key, filter));
+            key, filter, NS_strcmp(key, filter));
 #endif
 
     return NS_strcmp(key, filter);
@@ -3306,7 +3306,7 @@ CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
  */
 
 static void
-WalkCallback(Tcl_DString *dsPtr, const void *arg)
+WalkCallback(Tcl_DString *dsPtr, void *arg)
 {
     const char *data = arg;
 
@@ -3344,7 +3344,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     NsServer       *servPtr = itPtr->servPtr;
     Ns_Set         *context = NULL;
     int             result = TCL_OK, id = -1;
-    char           *key = (char *)".", *url;
+    const char     *key = ".", *url;
     int             exact = (int)NS_FALSE, noinherit = (int)NS_FALSE;
     Ns_ObjvSpec     lopts[] = {
         {"-context",   Ns_ObjvSet,    &context,    NULL},
@@ -3554,7 +3554,7 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1, noinherit = 0;
-    char           *key = (char *)".", *url = (char*)NS_EMPTY_STRING, *data = (char*)NS_EMPTY_STRING;
+    const char     *key = ".", *url = NS_EMPTY_STRING, *data = NS_EMPTY_STRING;
     NsUrlSpaceContextSpec *specPtr = NULL;
     Ns_ObjvSpec     lopts[] = {
         {"-constraints", Ns_ObjvUrlspaceSpec, &specPtr, NULL},
@@ -3629,7 +3629,7 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1;
-    char           *key = (char *)".", *url;
+    const char     *key = ".", *url;
     int             recurse = 0, noinherit = 0, allconstraints = 0;
 #ifdef NS_WITH_DEPRECATED_5_0
     int             allfilters = (int)NS_FALSE;

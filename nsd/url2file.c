@@ -47,7 +47,7 @@ typedef struct {
 
 static Ns_Callback FreeMount;
 static void FreeUrl2File(void *arg);
-static Ns_ArgProc WalkCallback;
+static Ns_WalkProc WalkCallback;
 static Ns_ServerInitProc ConfigServerUrl2File;
 
 
@@ -704,7 +704,7 @@ NsGetUrl2FileProcs(Tcl_DString *dsPtr, const char *server)
 }
 
 static void
-WalkCallback(Tcl_DString *dsPtr, const void *arg)
+WalkCallback(Tcl_DString *dsPtr, void *arg)
 {
     const Url2File *u2fPtr = arg;
 

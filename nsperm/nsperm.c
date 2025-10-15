@@ -113,7 +113,7 @@ static Ns_AuthorizeRequestProc AuthorizeRequestProc;
 static Ns_AuthorizeUserProc AuthorizeUserProc;
 
 static bool ValidateUserAddr(User *userPtr, const char *peer);
-static void WalkCallback(Tcl_DString *dsPtr, const void *arg);
+static void WalkCallback(Tcl_DString *dsPtr, void *arg);
 static Ns_ReturnCode CreateNonce(const char *privatekey, char **nonce, const char *uri);
 static Ns_ReturnCode CreateHeader(const PServer *psrvPtr, const Ns_Conn *conn, bool stale);
 /*static Ns_ReturnCode CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
@@ -1727,7 +1727,7 @@ static int ListPermsObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc,
     return result;
 }
 
-static void WalkCallback(Tcl_DString *dsPtr, const void *arg)
+static void WalkCallback(Tcl_DString *dsPtr, void *arg)
 {
     Perm *permPtr = arg;
     Tcl_HashSearch search;

@@ -761,6 +761,10 @@ typedef struct Ns_CtxSHA1 {
 typedef void (Ns_ArgProc)
     (Tcl_DString *dsPtr, const void *arg);
 
+typedef void (Ns_WalkProc)
+    (Tcl_DString *dsPtr, void *arg)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 typedef Ns_ReturnCode (Ns_OpProc)
     (const void *arg, Ns_Conn *conn)
     NS_GNUC_NONNULL(2);
@@ -3841,7 +3845,7 @@ NS_EXTERN int
 Ns_UrlSpecificAlloc(void);
 
 NS_EXTERN void
-Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
+Ns_UrlSpecificWalk(int id, const char *server, Ns_WalkProc func, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
@@ -3856,7 +3860,7 @@ Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
-Ns_UrlSpecificGet(const Ns_Server *server, const char *key,
+Ns_UrlSpecificGet(Ns_Server *server, const char *key,
                   const char *url, int id, unsigned int flags, Ns_UrlSpaceOp op,
                   Ns_UrlSpaceMatchInfo *matchInfoPtr,
                   Ns_UrlSpaceContextFilterEvalProc proc, void *context)

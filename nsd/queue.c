@@ -96,7 +96,7 @@ static void ServerListQueued(Tcl_DString *dsPtr, ConnPool *poolPtr)
 static int SetPoolAttribute(Tcl_Interp *interp, TCL_SIZE_T nargs, ConnPool *poolPtr, int *valuePtr, int value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-static Ns_ArgProc WalkCallback;
+static Ns_WalkProc WalkCallback;
 
 /*
  * Static variables defined in this file.
@@ -753,9 +753,9 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
  *----------------------------------------------------------------------
  */
 static void
-WalkCallback(Tcl_DString *dsPtr, const void *arg)
+WalkCallback(Tcl_DString *dsPtr, void *arg)
 {
-    const ConnPool *poolPtr = (ConnPool *)arg;
+    const ConnPool *poolPtr = arg;
     Tcl_DStringAppendElement(dsPtr, poolPtr->pool);
 }
 

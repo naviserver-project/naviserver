@@ -36,7 +36,8 @@ typedef struct {
  */
 
 static Ns_ServerInitProc ConfigServerProxy;
-static void WalkCallback(Tcl_DString *dsPtr, const void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_WalkProc WalkCallback;
+
 static void RegisteredProcDecrRef(void *arg) NS_GNUC_NONNULL(1);
 static void RegisterRequest(const char *server, const char *method, const char *url,
                             Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
@@ -255,7 +256,7 @@ NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
     Ns_MutexLock(&ulock);
     regPtr = Ns_UrlSpecificGet((Ns_Server*)servPtr, method, url,
                                uid, flags, op, &matchInfo, proc, context);
-    Ns_Log(Debug, "NsGetRequest2 %s %s -> %p",  method, url, (void*)regPtr);
+    Ns_Log(Debug, "NsGetRequest2 %s %s -> %p",  method, url, (const void*)regPtr);
 
     if (regPtr != NULL) {
         *procPtr = regPtr->proc;
@@ -691,7 +692,7 @@ NsGetRequestProcs(Tcl_DString *dsPtr, const char *server)
 }
 
 static void
-WalkCallback(Tcl_DString *dsPtr, const void *arg)
+WalkCallback(Tcl_DString *dsPtr, void *arg)
 {
      const RegisteredProc *regPtr;
 
