@@ -39,14 +39,11 @@ static int ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr,
                      NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6);
 
-static char *DStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
-    NS_GNUC_NONNULL(1);
-
 
 /*
  *----------------------------------------------------------------------
  *
- * DStringAppendConnFlags --
+ * NsDStringAppendConnFlags --
  *
  *      Decode a connection‐flags bitmask into a human‐readable string
  *      of flag names separated by '|' and append it to a Tcl_DString.
@@ -65,8 +62,8 @@ static char *DStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
  *
  *----------------------------------------------------------------------
  */
-static char *
-DStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
+char *
+NsDStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
 {
     int    count = 0;
     size_t i;
@@ -2761,7 +2758,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
         }
 
         Tcl_DStringInit(&ds);
-        DStringAppendConnFlags(&ds, connPtr->flags);
+        NsDStringAppendConnFlags(&ds, connPtr->flags);
         Tcl_DictObjPut(NULL, dictObj,
                        Tcl_NewStringObj("flags", 5),
                        Tcl_NewStringObj(ds.string, ds.length));

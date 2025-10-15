@@ -1753,6 +1753,9 @@ NS_EXTERN void NsConnTimeStatsUpdate(Ns_Conn *conn)
 NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr, int *tclResultPtr)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN char *NsDStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
+    NS_GNUC_NONNULL(1);
+
 /*
  * connchan.c
  */
