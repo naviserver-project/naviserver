@@ -1365,7 +1365,7 @@ static int
 LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *string, *filename = (char *)logfileName;
+    const char  *string, *filename = logfileName;
     Ns_ObjvSpec  lopts[] = {
         {"-filename", Ns_ObjvString, &filename, NULL},
         {"--",        Ns_ObjvBreak,  NULL,      NULL},
@@ -2025,10 +2025,10 @@ LogClose(void *UNUSED(arg))
  */
 
 static Ns_ReturnCode
-LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
-            const char *msg, size_t len)
+LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
+             const char *msg, size_t len)
 {
-    Tcl_DString   *dsPtr  = (Tcl_DString *)arg;
+    Tcl_DString   *dsPtr  = arg;
     LogCache      *cachePtr = GetCache();
     char           buffer[COLOR_BUFFER_SIZE];
     static Ns_Time startTime = {0};
@@ -2166,7 +2166,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
+LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
           const char *msg, size_t len)
 {
 #if defined(NS_THREAD_LOCAL)
@@ -2270,7 +2270,7 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
  */
 
 static Ns_ReturnCode
-LogToTcl(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
+LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
          const char *msg, size_t len)
 {
     Ns_ReturnCode         status;

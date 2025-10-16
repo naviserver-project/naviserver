@@ -776,7 +776,7 @@ typedef Ns_ReturnCode (Ns_FilterProc)
     (const void *arg, Ns_Conn *conn, Ns_FilterType why);
 
 typedef Ns_ReturnCode (Ns_LogFilter)
-    (const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
+    (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 typedef Ns_ReturnCode (Ns_UrlToFileProc)
