@@ -412,10 +412,10 @@ Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)
  *----------------------------------------------------------------------
  */
 
-Ns_Time *
-Ns_RelativeTime(Ns_Time *relTimePtr, Ns_Time *absoluteTimePtr)
+const Ns_Time *
+Ns_RelativeTime(Ns_Time *relTimePtr, const Ns_Time *absoluteTimePtr)
 {
-    Ns_Time *resultTimePtr = absoluteTimePtr;
+    const Ns_Time *resultTimePtr = absoluteTimePtr;
 
     NS_NONNULL_ASSERT(relTimePtr != NULL);
 

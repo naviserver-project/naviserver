@@ -361,9 +361,10 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
                 Ns_Log(Notice, "ns_cache create entry collision cache %s key '%s', no timeout",
                        ((Cache*)cache)->name, key);
             } else {
-                Ns_Time  relTime, *relTimePtr;
+                Ns_Time        relTime;
+                const Ns_Time *relTimePtr;
 
-                relTimePtr =  Ns_RelativeTime(&relTime, (Ns_Time *)timeoutPtr);
+                relTimePtr =  Ns_RelativeTime(&relTime, timeoutPtr);
                 Ns_Log(Notice, "ns_cache create entry collision cache %s key '%s', timeout " NS_TIME_FMT,
                        ((Cache*)cache)->name, key,
                        (int64_t)relTimePtr->sec, relTimePtr->usec);
@@ -401,7 +402,7 @@ Ns_CacheName(const Ns_Cache *cache) {
 
     NS_NONNULL_ASSERT(cache != NULL);
 
-    return ((Cache*)cache)->name;
+    return ((const Cache*)cache)->name;
 }
 
 
@@ -428,7 +429,7 @@ Ns_CacheKey(const Ns_Entry *entry)
 
     NS_NONNULL_ASSERT(entry != NULL);
 
-    ePtr = (Entry *) entry;
+    ePtr = (const Entry *) entry;
     return Tcl_GetHashKey(&ePtr->cachePtr->entriesTable, ePtr->hPtr);
 }
 
