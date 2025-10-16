@@ -1868,7 +1868,7 @@ Ns_TaskRun(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
+Ns_TaskCallback(Ns_Task *task, Ns_SockState when, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void

@@ -689,13 +689,13 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 bool
 Ns_TaskCompleted(const Ns_Task *task)
 {
-    Task      *taskPtr;
-    TaskQueue *queuePtr;
-    bool       completed = NS_TRUE;
+    const Task *taskPtr;
+    TaskQueue  *queuePtr;
+    bool        completed = NS_TRUE;
 
     NS_NONNULL_ASSERT(task != NULL);
 
-    taskPtr = (Task *)task;
+    taskPtr = (const Task *)task;
     queuePtr = taskPtr->queuePtr;
 
     if (queuePtr != NULL) {
@@ -726,12 +726,12 @@ Ns_TaskCompleted(const Ns_Task *task)
 void
 Ns_TaskSetCompleted(const Ns_Task *task)
 {
-    Task      *taskPtr;
-    TaskQueue *queuePtr;
+    const Task *taskPtr;
+    TaskQueue  *queuePtr;
 
     NS_NONNULL_ASSERT(task != NULL);
 
-    taskPtr = (Task *)task;
+    taskPtr = (const Task *)task;
     queuePtr = taskPtr->queuePtr;
 
     if (queuePtr != NULL) {
@@ -800,7 +800,7 @@ void Ns_TaskWaitCompleted(Ns_Task *task)
  */
 
 void
-Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
+Ns_TaskCallback(Ns_Task *task, Ns_SockState when, Ns_Time *timeoutPtr)
 {
     Task         *taskPtr;
     unsigned int  idx, flags = 0u;
@@ -848,7 +848,7 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
         Ns_Time        atime;
         const Ns_Time *timePtr;
 
-        timePtr = Ns_AbsoluteTime(&atime, (Ns_Time *)timeoutPtr);
+        timePtr = Ns_AbsoluteTime(&atime, timeoutPtr);
         taskPtr->timeout = *timePtr;
         taskPtr->flags |= TASK_TIMEOUT;
     }
