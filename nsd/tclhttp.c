@@ -5643,7 +5643,7 @@ HttpAppendChunked(
     size_t size
 ) {
     int          result = TCL_OK;
-    char        *buf = (char *)buffer;
+    const char  *buf = buffer;
     size_t       len = size;
     NsHttpChunk *chunkPtr;
     NsHttpParseProc *parseProcPtr = NULL;
@@ -7086,12 +7086,12 @@ fail:
 static int
 ParseCRProc(
     NsHttpTask *UNUSED(httpPtr),
-    char **buffer,
+    const char **buffer,
     size_t *size
 ) {
-    char  *buf = *buffer;
-    int    result = TCL_OK;
-    size_t len = *size;
+    const char *buf = *buffer;
+    int         result = TCL_OK;
+    size_t      len = *size;
 
     Ns_Log(Ns_LogTaskDebug, "--- ParseCRProc char %c len %lu", *buf, len);
 
@@ -7135,12 +7135,12 @@ ParseCRProc(
 static int
 ParseLFProc(
     NsHttpTask *UNUSED(httpPtr),
-    char **buffer,
+    const char **buffer,
     size_t *size
 ) {
-    char  *buf  = *buffer;
-    int    result = TCL_OK;
-    size_t len = *size;
+    const char  *buf  = *buffer;
+    int          result = TCL_OK;
+    size_t       len = *size;
 
     Ns_Log(Ns_LogTaskDebug, "--- ParseLFProc");
 
@@ -7184,10 +7184,10 @@ ParseLFProc(
 static int
 ParseLengthProc(
     NsHttpTask *httpPtr,
-    char **buffer,
+    const char **buffer,
     size_t *size
 ) {
-    char        *buf = *buffer;
+    const char  *buf = *buffer;
     int          result = TCL_OK;
     size_t       len = *size;
     NsHttpChunk *chunkPtr = httpPtr->chunk;
@@ -7258,10 +7258,10 @@ ParseLengthProc(
 static int
 ParseBodyProc(
     NsHttpTask *httpPtr,
-    char **buffer,
+    const char **buffer,
     size_t *size
 ) {
-    char        *buf = *buffer;
+    const char  *buf = *buffer;
     int          result = TCL_OK;
     size_t       len = *size;
     NsHttpChunk *chunkPtr = httpPtr->chunk;
@@ -7350,10 +7350,10 @@ ParseBodyProc(
 static int
 ParseTrailerProc(
     NsHttpTask *httpPtr,
-    char **buffer,
+    const char **buffer,
     size_t *size
 ) {
-    char        *buf = *buffer;
+    const char  *buf = *buffer;
     int          result = TCL_OK;
     size_t       len = *size;
     NsHttpChunk *chunkPtr = httpPtr->chunk;
@@ -7417,7 +7417,7 @@ ParseTrailerProc(
 static int
 ParseEndProc(
     NsHttpTask *httpPtr,
-    char **UNUSED(buffer),
+    const char **UNUSED(buffer),
     size_t *size
 ) {
     Ns_Log(Ns_LogTaskDebug, "--- ParseEndProc");
@@ -7449,7 +7449,7 @@ ParseEndProc(
 static int
 ChunkInitProc(
     NsHttpTask *httpPtr,
-    char **UNUSED(buffer),
+    const char **UNUSED(buffer),
     size_t *UNUSED(size)
 ) {
     NsHttpChunk *chunkPtr = httpPtr->chunk;
@@ -7486,7 +7486,7 @@ ChunkInitProc(
 static int
 TrailerInitProc(
     NsHttpTask *httpPtr,
-    char **UNUSED(buffer),
+    const char **UNUSED(buffer),
     size_t *UNUSED(size)
 ) {
     NsHttpChunk *chunkPtr = httpPtr->chunk;
