@@ -48,8 +48,8 @@ HandleAuthorizationResult(Tcl_Interp *interp, Ns_ReturnCode status, const char *
                           const char *arg1, const char *arg2, int *result)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-static void AuthLock(NsServer *servPtr, NS_RW rw) NS_GNUC_NONNULL(1);
-static void AuthUnlock(NsServer *servPtr) NS_GNUC_NONNULL(1);
+static void AuthLock(const NsServer *servPtr, NS_RW rw) NS_GNUC_NONNULL(1);
+static void AuthUnlock(const NsServer *servPtr) NS_GNUC_NONNULL(1);
 
 static void *RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr, bool first)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -74,11 +74,11 @@ static TCL_OBJCMDPROC_T UserAuthorizeObjCmd;
  */
 
 static void
-AuthLock(NsServer *servPtr, NS_RW rw) {
+AuthLock(const NsServer *servPtr, NS_RW rw) {
     if (rw == NS_READ) {
-        Ns_RWLockRdLock(&servPtr->request.rwlock);
+        Ns_RWLockRdLock(ns_const2voidp(&servPtr->request.rwlock));
     } else {
-        Ns_RWLockWrLock(&servPtr->request.rwlock);
+        Ns_RWLockWrLock(ns_const2voidp(&servPtr->request.rwlock));
     }
 }
 /*
@@ -95,8 +95,8 @@ AuthLock(NsServer *servPtr, NS_RW rw) {
  *----------------------------------------------------------------------
  */
 static void
-AuthUnlock(NsServer *servPtr) {
-    Ns_RWLockUnlock(&servPtr->request.rwlock);
+AuthUnlock(const NsServer *servPtr) {
+    Ns_RWLockUnlock(ns_const2voidp(&servPtr->request.rwlock));
 }
 
 /*
@@ -213,12 +213,12 @@ Ns_AuthorizeRequest(Ns_Conn *conn, const char **authorityPtr)
  *----------------------------------------------------------------------
  */
 Ns_ReturnCode
-Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd,
+Ns_AuthorizeUser(const Ns_Server *server, const char *user, const char *passwd,
                  const char ** authorityPtr)
 {
-    Ns_ReturnCode status = NS_UNAUTHORIZED;
-    NsServer     *servPtr = (NsServer *)server;
-    int           continuation = TCL_OK;
+    Ns_ReturnCode   status = NS_UNAUTHORIZED;
+    const NsServer *servPtr = (const NsServer *)server;
+    int             continuation = TCL_OK;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(user != NULL);
@@ -232,7 +232,7 @@ Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd,
         const UserAuth *authPtr = servPtr->request.firstUserAuthPtr;
 
         while (authPtr != NULL && continuation == TCL_OK) {
-            status = (*authPtr->proc)(authPtr->arg, (Ns_Server *)servPtr, user, passwd, &continuation);
+            status = (*authPtr->proc)(authPtr->arg, (const Ns_Server *)servPtr, user, passwd, &continuation);
             Ns_Log(Notice, "Ns_AuthorizeUser: authority '%s'"
                    " for user '%s' passwd '%s' -> %d (%s) continuation %s",
                    authPtr->authority, user, passwd,

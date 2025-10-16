@@ -650,7 +650,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
              *   NS_UNAUTHORIZED -> ok = NS_FALSE, nscpUserLookup = NS_TRUE
              *
              */
-            status = Ns_AuthorizeUser((Ns_Server*)(sessPtr->modPtr->servPtr), user, pass, &authority);
+            status = Ns_AuthorizeUser((const Ns_Server*)(sessPtr->modPtr->servPtr), user, pass, &authority);
             /*fprintf(stderr, "NSCP LOGIN server '%s' -> %s %d (%s)\n", sessPtr->modPtr->server,
               authority, status, Ns_ReturnCodeString(status));*/
             Ns_Log(Notice, "nscp login user '%s' -> %s", user,  Ns_ReturnCodeString(status));

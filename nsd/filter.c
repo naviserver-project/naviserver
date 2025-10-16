@@ -224,7 +224,7 @@ FilterContextInit(NsUrlSpaceContext *ctxPtr, const Conn *connPtr, struct sockadd
     if (connPtr->sockPtr == NULL) {
         (void)Ns_SetIUpdate(connPtr->headers,
                             "x-ns-ip",
-                            Ns_ConnConfiguredPeerAddr((Ns_Conn*)connPtr));
+                            Ns_ConnConfiguredPeerAddr((const Ns_Conn*)connPtr));
         NsUrlSpaceContextFromSet(NULL, ctxPtr, ipPtr, connPtr->headers);
     } else {
         NsUrlSpaceContextInit(ctxPtr, connPtr->sockPtr, connPtr->headers);

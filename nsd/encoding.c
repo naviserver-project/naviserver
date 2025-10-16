@@ -704,7 +704,7 @@ AddExtension(const char *ext, const char *name)
     NS_NONNULL_ASSERT(name != NULL);
 
     hPtr = Tcl_CreateHashEntry(&extensions, ext, &isNew);
-    Tcl_SetHashValue(hPtr, name);
+    Tcl_SetHashValue(hPtr, ns_const2voidp(name));
 }
 
 static void
@@ -725,7 +725,7 @@ AddCharset(const char *charset, const char *name)
      */
 
     hPtr = Tcl_CreateHashEntry(&charsets, charset, &isNew);
-    Tcl_SetHashValue(hPtr, name);
+    Tcl_SetHashValue(hPtr, ns_const2voidp(name));
 
     /*
      * Map in the reverse direction: encodings to charsets.

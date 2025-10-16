@@ -844,7 +844,7 @@ Ns_AuthorizeRequest(Ns_Conn *conn, const char **authorityPtr)
 //    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd,
+Ns_AuthorizeUser(const Ns_Server *server, const char *user, const char *passwd,
                  const char ** authorityPtr)
 NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4);
 
