@@ -1290,7 +1290,7 @@ void Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
             const char *oldBuffer = set->data.string;
 
             set->data.string = ckalloc((size_t)maxAlloc);
-            ckfree((void*)oldBuffer);
+            ckfree(ns_const2voidp(oldBuffer));
             set->data.spaceAvl = maxAlloc;
         }
         memcpy(set->data.string, dsPtr->string, (size_t)dsPtr->length);

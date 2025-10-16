@@ -1942,7 +1942,7 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
+Ns_TclGetOpaqueFromObj(Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void

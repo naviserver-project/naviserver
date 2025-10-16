@@ -131,8 +131,10 @@ static Ns_ReturnCode BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr
  */
 static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
 static int TLSPasswordCB(char *buf, int size, int rwflag, void *userdata);
-static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl), const unsigned char **out, unsigned char *outlen,
-                        const unsigned char *in, unsigned int inlen, void *arg);
+static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl),
+                        const unsigned char **out, unsigned char *outlen,
+                        const unsigned char *in, unsigned int inlen,
+                        void *arg);
 # if OPENSSL_VERSION_NUMBER >= 0x10101000L
 static void KeylogCB(const SSL *ssl, const char *line);
 # endif
@@ -1521,7 +1523,7 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         if (sni_hostname != NULL) {
 # if HAVE_SSL_set_tlsext_host_name
             Ns_Log(Debug, "tls: setting SNI hostname '%s'", sni_hostname);
-            if (SSL_set_tlsext_host_name(ssl, sni_hostname) != 1) {
+            if (SSL_set_tlsext_host_name(ssl, ns_const2voidp(sni_hostname)) != 1) {
                 Ns_Log(Warning, "tls: setting SNI hostname '%s' failed, value ignored", sni_hostname);
             }
 # else
@@ -2010,12 +2012,15 @@ BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
  *----------------------------------------------------------------------
  */
 static int
-ALPNSelectCB(NS_TLS_SSL *ssl, const unsigned char **out, unsigned char *outlen,
-             const unsigned char *in, unsigned int inlen, void *arg)
+ALPNSelectCB(NS_TLS_SSL *ssl,
+             const unsigned char **out, unsigned char *outlen,
+             const unsigned char *in, unsigned int inlen,
+             void *arg)
 {
     const unsigned char *serverProtos = arg;
     unsigned int serverProtosLength, i = 0;
     int          rc;
+    unsigned char *tmp = NULL;
 
     /* avoid unaliged access */
     memcpy(&serverProtosLength,
@@ -2041,9 +2046,10 @@ ALPNSelectCB(NS_TLS_SSL *ssl, const unsigned char **out, unsigned char *outlen,
         i += 1 + len;
     }
 
-    rc = SSL_select_next_proto((unsigned char **)out, outlen,
+    rc = SSL_select_next_proto(&tmp, outlen,
                                serverProtos, serverProtosLength,
                                in, inlen);
+    *out = (const unsigned char *)tmp;   /* adopt as read-only */
     if (Ns_LogSeverityEnabled(Debug)) {
         Tcl_DString ds;
 
@@ -2325,7 +2331,7 @@ static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
     NS_NONNULL_ASSERT(cert != NULL);
 
     Ns_MasterLock();
-    hPtr = Tcl_CreateHashEntry(&certTable, (char *)ctx, &isNew);
+    hPtr = Tcl_CreateHashEntry(&certTable, (const char *)ctx, &isNew);
     if (isNew != 0) {
         /*
          * Keep a local copy of the certificate string in case the
@@ -2855,7 +2861,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     }
 
     SSL_CTX_set_default_passwd_cb(ctx, TLSPasswordCB);
-    SSL_CTX_set_default_passwd_cb_userdata(ctx, (void *)cert);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx, ns_const2voidp(cert));
 
     DrainErrorStack(Warning, "Ns_TLS_CtxServerCreate", ERR_get_error());
 
@@ -3503,7 +3509,7 @@ void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
            (void*)sockPtr->driver, sockPtr->driver->threadName,
            (void*)((Driver *)sockPtr->driver)->consumer,
            dc->u.h1.h3advertise, (Ns_SetFind(outputHeaders, "alt-svc") > -1),
-           ((Sock*)sockPtr)->reqPtr->request.line);
+           ((const Sock*)sockPtr)->reqPtr->request.line);
     /*
      * Add alt-svc header field, if
      *  - the h3 module is activated and linked to this driver, and

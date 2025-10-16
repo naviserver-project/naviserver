@@ -698,13 +698,13 @@ InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t n
 
         Tcl_DStringInit(dsPtr);
         if ((long)index > prefixLen) {
-            Tcl_DStringAppend(dsPtr, (char *)bytes, (TCL_SIZE_T)prefixLen);
+            Tcl_DStringAppend(dsPtr, (const char *)bytes, (TCL_SIZE_T)prefixLen);
             Tcl_DStringAppend(dsPtr, "...", 3);
         } else {
-            Tcl_DStringAppend(dsPtr, (char *)bytes, (TCL_SIZE_T)index-1);
+            Tcl_DStringAppend(dsPtr, (const char *)bytes, (TCL_SIZE_T)index-1);
         }
         Tcl_DStringAppend(dsPtr, "|", 1);
-        Tcl_DStringAppend(dsPtr, (char *)(bytes+index-1), MIN(nrMaxBytes, (TCL_SIZE_T)(nrBytes-(index-1))));
+        Tcl_DStringAppend(dsPtr, (const char *)(bytes+index-1), MIN(nrMaxBytes, (TCL_SIZE_T)(nrBytes-(index-1))));
         Tcl_DStringAppend(dsPtr, "|", 1);
         if (!isTruncated) {
             Tcl_DStringAppend(dsPtr, "...", 3);

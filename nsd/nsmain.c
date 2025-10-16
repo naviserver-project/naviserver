@@ -1455,7 +1455,7 @@ MakePath(const char *file)
              * If filename was given, check if the file exists
              */
             if (path != NULL && *file != '\0' && access(path, F_OK) != 0) {
-                ckfree((void *)path);
+                ckfree(ns_const2voidp(path));
                 path = NULL;
             }
             result = path;

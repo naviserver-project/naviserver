@@ -274,7 +274,7 @@ Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
     if (Tcl_ConvertToType(interp, objPtr, &addrType) != TCL_OK) {
         result = TCL_ERROR;
 
-    } else if (objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
+    } else if (objPtr->internalRep.twoPtrValue.ptr1 != (const void *)type) {
         Ns_TclPrintfResult(interp, "incorrect type: %s", Tcl_GetString(objPtr));
         result = TCL_ERROR;
 
@@ -312,7 +312,7 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
     if (Tcl_IsShared(objPtr)) {
         Tcl_Panic("Ns_TclSetAddrObj called with shared object");
     }
-    Ns_TclSetTwoPtrValue(objPtr, &addrType, (void *) type, addr);
+    Ns_TclSetTwoPtrValue(objPtr, &addrType, ns_const2voidp(type), addr);
     Tcl_InvalidateStringRep(objPtr);
 }
 
@@ -334,7 +334,7 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
  */
 
 int
-Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
+Ns_TclGetOpaqueFromObj(Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
 {
     int result = TCL_OK;
 
@@ -343,13 +343,14 @@ Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPt
     NS_NONNULL_ASSERT(addrPtrPtr != NULL);
 
     if (objPtr->typePtr == &addrType
-        && objPtr->internalRep.twoPtrValue.ptr1 == (void *) type) {
+        && objPtr->internalRep.twoPtrValue.ptr1 == (const void *)type) {
         *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
     } else {
         char      s[33] = {0};
         uintptr_t t = 0u, a = 0u;
+        const char *str = Tcl_GetString(objPtr);
 
-        if ((sscanf(Tcl_GetString((Tcl_Obj *) objPtr), "t%20" SCNxPTR "-a%20" SCNxPTR "-%32s", &t, &a, s) != 3)
+        if ((sscanf(str, "t%20" SCNxPTR "-a%20" SCNxPTR "-%32s", &t, &a, s) != 3)
             || (strcmp(s, type) != 0)
             || (t != (uintptr_t)type)
             ) {
@@ -387,7 +388,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(type != NULL);
 
-    Ns_TclSetTwoPtrValue(objPtr, &addrType, (void *) type, addr);
+    Ns_TclSetTwoPtrValue(objPtr, &addrType, ns_const2voidp(type), addr);
 }
 
 
@@ -425,7 +426,7 @@ NsTclObjIsByteArray(const Tcl_Obj *objPtr)
      */
     Ns_Log(Debug, "NsTclObjIsByteArray %p byteArrayTypePtr %d properByteArrayTypePtr %d"
            "objPtr->bytes %p",
-           (void*)objPtr,
+           (const void*)objPtr,
            (objPtr->typePtr == byteArrayTypePtr),
            (objPtr->typePtr == properByteArrayTypePtr),
            (void*)objPtr->bytes);
