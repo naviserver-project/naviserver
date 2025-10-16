@@ -102,7 +102,7 @@ Ns_GetServer(const char *server)
 const char *
 Ns_ServerName(const Ns_Server *servPtr)
 {
-    return ((NsServer *)servPtr)->server;
+    return ((const NsServer *)servPtr)->server;
 }
 
 

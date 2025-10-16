@@ -71,7 +71,7 @@ static Ns_ObjvTable traceWhen[] = {
  * Static functions defined in this file.
  */
 
-static NsInterp *PopInterp(NsServer *servPtr, Tcl_Interp *interp)
+static NsInterp *PopInterp(const NsServer *servPtr, Tcl_Interp *interp)
     NS_GNUC_RETURNS_NONNULL;
 
 static void PushInterp(NsInterp *itPtr)
@@ -80,11 +80,11 @@ static void PushInterp(NsInterp *itPtr)
 static Tcl_HashEntry *GetCacheEntry(const NsServer *servPtr)
     NS_GNUC_RETURNS_NONNULL;
 
-static Tcl_Interp *CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
+static Tcl_Interp *CreateInterp(NsInterp **itPtrPtr, const NsServer *servPtr)
     NS_GNUC_NONNULL(1)
     NS_GNUC_RETURNS_NONNULL;
 
-static NsInterp *NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
+static NsInterp *NewInterpData(Tcl_Interp *interp, const NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
 static int UpdateInterp(NsInterp *itPtr)
@@ -483,7 +483,7 @@ Ns_TclAllocateInterp(const char *server)
 }
 
 Tcl_Interp *
-NsTclAllocateInterp(NsServer *servPtr)
+NsTclAllocateInterp(const NsServer *servPtr)
 {
     const NsInterp *itPtr = PopInterp(servPtr, NULL);
 
@@ -1944,7 +1944,7 @@ NsTclTraceProc(Tcl_Interp *interp, const void *arg)
  */
 
 static NsInterp *
-PopInterp(NsServer *servPtr, Tcl_Interp *interp)
+PopInterp(const NsServer *servPtr, Tcl_Interp *interp)
 {
     NsInterp      *itPtr;
     Tcl_HashEntry *hPtr;
@@ -1966,7 +1966,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
             interp = CreateInterp(&itPtr, servPtr);
         }
         if (servPtr != NULL) {
-            itPtr->servPtr = servPtr;
+            itPtr->servPtr = ns_const2voidp(servPtr);
             NsTclAddServerCmds(itPtr);
             RunTraces(itPtr, NS_TCL_TRACE_CREATE);
             if (UpdateInterp(itPtr) != TCL_OK) {
@@ -2124,7 +2124,7 @@ NsTclCreateInterp(void) {
  *----------------------------------------------------------------------
  */
 static Tcl_Interp *
-CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
+CreateInterp(NsInterp **itPtrPtr, const NsServer *servPtr)
 {
     NsInterp   *itPtr;
     Tcl_Interp *interp;
@@ -2229,7 +2229,7 @@ static bool InitializeInterpData(void) {
  */
 
 static NsInterp *
-NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
+NewInterpData(Tcl_Interp *interp, const NsServer *servPtr)
 {
     NsInterp *itPtr;
 
@@ -2249,7 +2249,7 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
     if (itPtr == NULL) {
         itPtr = ns_calloc(1u, sizeof(NsInterp));
         itPtr->interp = interp;
-        itPtr->servPtr = servPtr;
+        itPtr->servPtr = ns_const2voidp(servPtr);
         Tcl_InitHashTable(&itPtr->sets, TCL_STRING_KEYS);
         Tcl_InitHashTable(&itPtr->chans, TCL_STRING_KEYS);
         Tcl_InitHashTable(&itPtr->httpRequests, TCL_STRING_KEYS);

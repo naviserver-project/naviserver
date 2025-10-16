@@ -68,7 +68,7 @@ Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, const void *data,
     bufs[i].fd = fd;
     bufs[i].length = length;
     bufs[i].offset = offset;
-    bufs[i].buffer = (char *)data;
+    bufs[i].buffer = (const char *)data;
 
     return length;
 }
@@ -160,7 +160,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs, unsigned i
             /*
              * Coalesce runs of memory buffers into fixed-sized iovec.
              */
-            (void) Ns_SetVec(sbufPtr, nsbufs++, (char*)bufs[i].buffer + offset, length);
+            (void) Ns_SetVec(sbufPtr, nsbufs++, bufs[i].buffer + offset, length);
         }
 
         if (   (fd == NS_INVALID_FD && (nsbufs == UIO_MAXIOV || i == nbufs-1))

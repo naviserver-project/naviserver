@@ -1499,7 +1499,7 @@ JobThread(void *UNUSED(arg))
         /*
          * Get an interpreter....
          */
-        interp = NsTclAllocateInterp((NsServer*)jobPtr->servPtr);
+        interp = NsTclAllocateInterp((const NsServer*)jobPtr->servPtr);
 
         /*
          * Initialize times ...

@@ -835,7 +835,7 @@ NsTclAuthorizeUserProc(void *arg, const Ns_Server *servPtr,
                        const char *username, const char *password, int *continuationPtr)
 {
     const Ns_TclCallback *cbPtr = arg;
-    Tcl_Interp           *interp = NsTclAllocateInterp((NsServer*)servPtr);
+    Tcl_Interp           *interp = NsTclAllocateInterp((const NsServer*)servPtr);
     Ns_ReturnCode         status;
 
     status = EvalTclAuthCallback(cbPtr, AUTH_TYPE_USER, interp, username, password, continuationPtr);
