@@ -75,7 +75,7 @@
 #define NS_CONN_SENT_LAST_CHUNK       0x200u /* Marks that the last chunk was sent in chunked mode */
 #define NS_CONN_SENT_VIA_WRITER       0x400u /* Response data has been sent via writer thread */
 #define NS_CONN_SOCK_CORKED           0x800u /* Underlying socket is corked */
-#define NS_CONN_SOCK_WAITING          0x800u /* Connection pushed to waiting list */
+#define NS_CONN_SOCK_WAITING        0x01000u /* Connection pushed to waiting list */
 #define NS_CONN_ZIPACCEPTED         0x10000u /* The request accepts zip compression */
 #define NS_CONN_BROTLIACCEPTED      0x20000u /* The request accept brotli compression */
 #define NS_CONN_CONTINUE            0x40000u /* The request got "Expect: 100-continue" */
