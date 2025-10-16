@@ -100,7 +100,7 @@ GetCacheNames(NsServer *servPtr, bool withUncommittedEntries) {
          hPtr != NULL;
          hPtr = Tcl_NextHashEntry(&search)
          ) {
-        const char *key = Tcl_GetHashKey(&servPtr->tcl.caches, hPtr);
+        const char *key = Ns_TclGetHashKeyString(&servPtr->tcl.caches, hPtr);
 
         if (withUncommittedEntries) {
             const TclCache *cPtr = Tcl_GetHashValue(hPtr);

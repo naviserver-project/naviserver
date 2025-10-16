@@ -269,7 +269,7 @@ CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
         Tcl_Obj     *keyv[2];
 
         keyv[0] = Tcl_NewStringObj(handlePtr->poolname, TCL_INDEX_NONE);
-        keyv[1] = Tcl_NewStringObj(Ns_TclHashKeyString(tablePtr, hPtr), TCL_INDEX_NONE);
+        keyv[1] = Tcl_NewStringObj(Ns_TclGetHashKeyString(tablePtr, hPtr), TCL_INDEX_NONE);
         Tcl_DictObjPutKeyList(interp, dictObj, 2, keyv, Tcl_NewIntObj(NsDbGetActive(handlePtr) ? 1 : 0));
         hPtr = Tcl_NextHashEntry(&search);
     }

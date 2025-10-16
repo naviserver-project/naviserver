@@ -554,7 +554,7 @@ NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
              hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)
              ) {
-            const char *key = Tcl_GetHashKey(&charsets, hPtr);
+            const char *key = Ns_TclGetHashKeyString(&charsets, hPtr);
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
         }
         Tcl_SetObjResult(interp, listObj);

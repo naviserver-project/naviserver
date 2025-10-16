@@ -253,7 +253,7 @@ Ns_SlsAppendKeyed(Tcl_DString *dest, Ns_Sock *sock)
         const Tcl_HashEntry  *hPtr = Tcl_FirstHashEntry(tblPtr, &search);
 
         while (hPtr != NULL) {
-            Tcl_DStringAppendElement(dest, Tcl_GetHashKey(tblPtr, hPtr));
+            Tcl_DStringAppendElement(dest, Ns_TclGetHashKeyString(tblPtr, hPtr));
             Tcl_DStringAppendElement(dest, Tcl_GetHashValue(hPtr));
             hPtr = Tcl_NextHashEntry(&search);
         }

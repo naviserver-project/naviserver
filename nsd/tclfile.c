@@ -980,7 +980,7 @@ ChanListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
          */
         for (hPtr = Tcl_FirstHashEntry(tabPtr, &search); hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)) {
-            const char *key = Tcl_GetHashKey(tabPtr, hPtr);
+            const char *key = Ns_TclGetHashKeyString(tabPtr, hPtr);
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
         }
         if (isShared != (int)NS_FALSE) {

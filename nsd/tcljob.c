@@ -450,7 +450,7 @@ JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
         Ns_MutexLock(&tp.queuelock);
         hPtr = Tcl_CreateHashEntry(&tp.queues, queueIdString, &isNew);
         if (isNew != 0) {
-            Queue *queue = NewQueue(Tcl_GetHashKey(&tp.queues, hPtr), descString, maxThreads);
+            Queue *queue = NewQueue(Ns_TclGetHashKeyString(&tp.queues, hPtr), descString, maxThreads);
 
             Tcl_SetHashValue(hPtr, queue);
         }
@@ -1036,7 +1036,7 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
              hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)
              ) {
-            const char *jobIdString = Tcl_GetHashKey(&queue->jobs, hPtr);
+            const char *jobIdString = Ns_TclGetHashKeyString(&queue->jobs, hPtr);
 
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(jobIdString, TCL_INDEX_NONE));
         }
@@ -1150,7 +1150,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
             char        threadId[32];
             Job        *jobPtr = (Job *)Tcl_GetHashValue(hPtr);
 
-            jobId1     = Tcl_GetHashKey(&queue->jobs, hPtr);
+            jobId1     = Ns_TclGetHashKeyString(&queue->jobs, hPtr);
             jobCode    = GetJobCodeStr( jobPtr->code);
             jobState   = GetJobStateStr(jobPtr->state);
             jobType    = GetJobTypeStr( jobPtr->type);

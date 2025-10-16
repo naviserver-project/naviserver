@@ -173,7 +173,7 @@ NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         Ns_MutexLock(&lock);
         hPtr = Tcl_FirstHashEntry(&limtable, &search);
         while (hPtr != NULL) {
-            const char *limits = Tcl_GetHashKey(&limtable, hPtr);
+            const char *limits = Ns_TclGetHashKeyString(&limtable, hPtr);
 
             if (pattern == NULL || Tcl_StringMatch(limits, pattern) != 0) {
                 Tcl_ListObjAppendElement(interp, listObj,

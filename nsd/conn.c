@@ -2633,7 +2633,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
                  hPtr != NULL;
                  hPtr = Tcl_NextHashEntry(&search)
                  ) {
-                const char *key = Ns_TclHashKeyString(&connPtr->files, hPtr);
+                const char *key = Ns_TclGetHashKeyString(&connPtr->files, hPtr);
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
             }
             Tcl_SetObjResult(interp, listObj);

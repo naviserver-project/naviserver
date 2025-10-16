@@ -1355,7 +1355,7 @@ Ns_TclFindHashEntryConst(const Tcl_HashTable *t, const char *key)
 
 /* String-key accessor that avoids Tcl_GetHashKey's (void*) cast */
 static inline const char *
-Ns_TclHashKeyString(const Tcl_HashTable *tablePtr, const Tcl_HashEntry *e)
+Ns_TclGetHashKeyString(const Tcl_HashTable *tablePtr, const Tcl_HashEntry *e)
 {
     /* Guard against non-string key tables; keeps call sites honest. */
     assert(tablePtr->keyType == TCL_STRING_KEYS);

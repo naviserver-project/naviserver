@@ -1499,7 +1499,7 @@ NsGetMimeTypes(Tcl_DString *dsPtr)
 
     hPtr = Tcl_FirstHashEntry(&types, &search);
     while (hPtr != NULL) {
-        Tcl_DStringAppendElement(dsPtr, Tcl_GetHashKey(&types, hPtr));
+        Tcl_DStringAppendElement(dsPtr, Ns_TclGetHashKeyString(&types, hPtr));
         Tcl_DStringAppendElement(dsPtr, Tcl_GetHashValue(hPtr));
         hPtr = Tcl_NextHashEntry(&search);
     }

@@ -370,7 +370,7 @@ int SetCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
         tablePtr = &itPtr->sets;
         hPtr = Tcl_FirstHashEntry(tablePtr, &search);
         while (hPtr != NULL) {
-            const char *key = Tcl_GetHashKey(tablePtr, hPtr);
+            const char *key = Ns_TclGetHashKeyString(tablePtr, hPtr);
 
             Ns_Log(Ns_LogNsSetDebug, "ns_set cleanup key <%s> dynamic %d",
                    key, IS_DYNAMIC(key));
@@ -926,7 +926,7 @@ static int SetListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
              hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)
              ) {
-            const char *listKey = Tcl_GetHashKey(tablePtr, hPtr);
+            const char *listKey = Ns_TclGetHashKeyString(tablePtr, hPtr);
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(listKey, TCL_INDEX_NONE));
         }
         Tcl_SetObjResult(interp, listObj);
@@ -1271,7 +1271,7 @@ static int SetStatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
              hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)
              ) {
-            const char *key = Tcl_GetHashKey(tablePtr, hPtr);
+            const char *key = Ns_TclGetHashKeyString(tablePtr, hPtr);
             Ns_Set *set     = (Ns_Set *) Tcl_GetHashValue(hPtr);
 
             if (IS_DYNAMIC(key)) {

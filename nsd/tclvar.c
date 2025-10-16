@@ -703,7 +703,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
             }
             hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
             while (hPtr != NULL) {
-                const char *keyString = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
+                const char *keyString = Ns_TclGetHashKeyString(&bucketPtr->arrays, hPtr);
 
                 if ((pattern == NULL) || (Tcl_StringMatch(keyString, pattern) != 0)) {
                     result = Tcl_ListObjAppendElement(interp, resultObj,
@@ -853,7 +853,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     const char          *pattern = (objc > 3) ? Tcl_GetString(objv[3]) : NULL;
 
                     while (hPtr != NULL) {
-                        const char *keyString = Tcl_GetHashKey(&arrayPtr->vars, hPtr);
+                        const char *keyString = Ns_TclGetHashKeyString(&arrayPtr->vars, hPtr);
 
                         if ((pattern == NULL) || (Tcl_StringMatch(keyString, pattern) != 0)) {
                             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(keyString, TCL_INDEX_NONE));
@@ -2133,7 +2133,7 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 
             hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
             while (hPtr != NULL) {
-                const char  *keyString = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
+                const char  *keyString = Ns_TclGetHashKeyString(&bucketPtr->arrays, hPtr);
                 const Array *arrayPtr  = Tcl_GetHashValue(hPtr);
                 Tcl_Obj     *elemObj   = Tcl_NewListObj(0, NULL);
 
