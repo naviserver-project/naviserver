@@ -413,7 +413,7 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     int         result;
     NsInterp   *itPtr = clientData;
     const char *charset = NULL;
-    char        chars[] = "";
+    char       *chars;
     Tcl_Obj    *fallbackCharsetObj = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-charset",         Ns_ObjvString, &charset, NULL},
