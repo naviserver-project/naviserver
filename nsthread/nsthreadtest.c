@@ -289,10 +289,10 @@ MemTime(int ns)
 static void
 DumpString(Tcl_DString *dsPtr)
 {
-    char **largv;
-    TCL_SIZE_T largc;
+    const char **largv = NULL;
+    TCL_SIZE_T   largc;
 
-    if (Tcl_SplitList(NULL, dsPtr->string, &largc, (const char***)&largv) == TCL_OK) {
+    if (Tcl_SplitList(NULL, dsPtr->string, &largc, &largv) == TCL_OK) {
         TCL_SIZE_T i;
 
         for (i = 0; i < largc; ++i) {
