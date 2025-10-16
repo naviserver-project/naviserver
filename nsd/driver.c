@@ -6966,9 +6966,9 @@ ConnPoolInfoResetRateCB(void *hashValue, const void *UNUSED(ctx))
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-ConnPoolInfoUpdateCB(void *hashKey, void *hashValue, const void *UNUSED(ctx))
+ConnPoolInfoUpdateCB(const void *hashKey, void *hashValue, const void *UNUSED(ctx))
 {
-    ConnPool     *poolPtr = hashKey;
+    ConnPool     *poolPtr = ns_const2voidp(hashKey);
     ConnPoolInfo *infoPtr = hashValue;
     int           totalPoolRate, writerThreadCount, threadDeltaRate;
 

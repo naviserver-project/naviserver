@@ -1076,7 +1076,7 @@ typedef struct NsServer {
 } NsServer;
 
 typedef Ns_ReturnCode (*NsHashValueProc)(void *hashValue, const void *ctx);
-typedef Ns_ReturnCode (*NsHashKeyValueProc)(void *hashKey, void *hashValue, const void *ctx);
+typedef Ns_ReturnCode (*NsHashKeyValueProc)(const void *hashKey, void *hashValue, const void *ctx);
 
 NS_EXTERN Ns_ReturnCode NsForeachHashValue(Tcl_HashTable *tablePtr, NsHashValueProc fn, const void *ctx)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
