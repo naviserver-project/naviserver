@@ -466,14 +466,14 @@ typedef struct Ns_Request {
  * Typedef for URL components
  */
 typedef struct Ns_URL {
-    char *protocol;
-    char *userinfo;
+    const char *protocol;
+    const char *userinfo;
     const char *host;
     const char *port;
-    char *path;
-    char *tail;
-    char *query;
-    char *fragment;
+    const char *path;
+    const char *tail;
+    const char *query;
+    const char *fragment;
 } Ns_URL;
 
 /*

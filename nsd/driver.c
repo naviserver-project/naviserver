@@ -9785,7 +9785,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
             Tcl_DString  urlds, *urldsPtr = &urlds;
             Request     *reqPtr;
             Sock        *sockPtr;
-            char        *path;
+            const char  *path;
 
             assert(drvPtr != NULL);
 

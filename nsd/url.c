@@ -104,7 +104,7 @@ Ns_RelativeUrl(const char *url, const char *location)
  */
 
 static char *
-ParseUserInfo(char *chars, char **userinfo)
+ParseUserInfo(char *chars, const char **userinfo)
 {
     char *p;
 
@@ -219,10 +219,10 @@ ParseUpTo(const char *chars, char ch)
  *----------------------------------------------------------------------
  */
 
-static char *
-ValidateChars(char *chars, const bool *table, const char *msg, const char** errorMsg)
+static const char *
+ValidateChars(const char *chars, const bool *table, const char *msg, const char** errorMsg)
 {
-    char *p, *result;
+    const char *p, *result;
 
     for (p = chars; table[UCHAR(*p)] != 0; p++) {
         ;
@@ -473,8 +473,8 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
     if (url[0] == '/' && url[1] == '/') {
         bool  hostParsedOk;
 
-        urlPtr->path = (char *)NS_EMPTY_STRING;
-        urlPtr->tail = (char *)NS_EMPTY_STRING;
+        urlPtr->path = NS_EMPTY_STRING;
+        urlPtr->tail = NS_EMPTY_STRING;
 
         /*
          * The URL starts with two slashes, which means an authority part
@@ -563,8 +563,8 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
 
     } else {
         if (*end == '/') {
-            urlPtr->path = (char *)NS_EMPTY_STRING;
-            urlPtr->tail = (char *)NS_EMPTY_STRING;
+            urlPtr->path = NS_EMPTY_STRING;
+            urlPtr->tail = NS_EMPTY_STRING;
 
             /*
              * We have a path, tail, and maybe a query or fragment specified.
