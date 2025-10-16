@@ -531,7 +531,7 @@ CmpStr(const void *leftPtr, const void *rightPtr)
     NS_NONNULL_ASSERT(leftPtr != NULL);
     NS_NONNULL_ASSERT(rightPtr != NULL);
 
-    return strcmp(*(const char**)leftPtr, *((const char**)rightPtr));
+    return strcmp(*(const char*const*)leftPtr, *((const char*const*)rightPtr));
 }
 
 

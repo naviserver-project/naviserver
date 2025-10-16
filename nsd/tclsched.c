@@ -65,7 +65,7 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     TCL_SIZE_T        remain = 0;
     int               result = TCL_OK;
     Ns_ObjvSpec       args[] = {
-        {"interval", Ns_ObjvTime, &interval,  (void*)&nonnegTimeRange},
+        {"interval", Ns_ObjvTime, &interval,  ns_const2voidp(&nonnegTimeRange)},
         {"script",   Ns_ObjvObj,  &scriptObj, NULL},
         {"?arg",     Ns_ObjvArgs, &remain,    NULL},
         {NULL, NULL, NULL, NULL}
@@ -329,7 +329,7 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"interval", Ns_ObjvTime,   &intervalPtr, (void*)&nonnegTimeRange},
+        {"interval", Ns_ObjvTime,   &intervalPtr, ns_const2voidp(&nonnegTimeRange)},
         {"script",   Ns_ObjvObj,    &scriptObj,   NULL},
         {"?arg",     Ns_ObjvArgs,   &remain,      NULL},
         {NULL, NULL, NULL, NULL}

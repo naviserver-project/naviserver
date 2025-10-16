@@ -380,7 +380,7 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     Ns_Conn          *conn = NULL;
     int               result = TCL_OK, httpStatus = 200;
     Tcl_WideInt       length = -1;
-    char             *type = (char *)"*/*";
+    const char       *type = "*/*";
     char             *chars = NULL, *filename = NULL, *chanid = NULL, *binary = NULL, *data = NULL;
     const Ns_Set     *set = NULL;
     Tcl_Channel       chan;

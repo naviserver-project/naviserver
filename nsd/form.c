@@ -410,10 +410,11 @@ Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding encoding)
 int
 NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int       result;
-    NsInterp *itPtr = clientData;
-    char     *charset = NULL, *chars = (char *)NS_EMPTY_STRING;
-    Tcl_Obj  *fallbackCharsetObj = NULL;
+    int         result;
+    NsInterp   *itPtr = clientData;
+    const char *charset = NULL;
+    char        chars[] = "";
+    Tcl_Obj    *fallbackCharsetObj = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-charset",         Ns_ObjvString, &charset, NULL},
         {"-fallbackcharset", Ns_ObjvObj,    &fallbackCharsetObj, NULL},

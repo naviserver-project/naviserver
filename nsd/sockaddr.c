@@ -803,6 +803,8 @@ Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockadd
 
     Ns_Log(severity, "%s: SockAddr family %s, ip %s, port %d",
            prefix, family, ipStrPtr, Ns_SockaddrGetPort(saPtr));
+    fprintf(stderr, "%s: SockAddr family %s, ip %s, port %d\n",
+           prefix, family, ipStrPtr, Ns_SockaddrGetPort(saPtr));
 }
 
 

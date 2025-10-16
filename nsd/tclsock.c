@@ -315,7 +315,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
 int
 NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char          *addr = (char*)NS_EMPTY_STRING;
+    const char    *addr = NS_EMPTY_STRING;
     int            result;
     unsigned short port = 0u;
     Ns_ObjvSpec    args[] = {
@@ -470,7 +470,7 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
 int
 NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char          *lhost = NULL, *host = (char*)NS_EMPTY_STRING;
+    const char    *lhost = NULL, *host = NS_EMPTY_STRING;
     unsigned short lport = 0u, port = 0u;
     int            nonblock = 0, async = 0, result;
     Ns_Time       *timeoutPtr = NULL;
@@ -799,7 +799,7 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 int
 NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char           *sockId, *whenString = (char*)NS_EMPTY_STRING;
+    const char     *sockId, *whenString = NS_EMPTY_STRING;
     NS_SOCKET       sock;
     int             result = TCL_OK;
     Tcl_Obj        *scriptObj;
@@ -914,7 +914,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 int
 NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char           *addr =  (char*)NS_EMPTY_STRING;
+    const char     *addr =  NS_EMPTY_STRING;
     Tcl_Obj        *scriptObj;
     unsigned short  port = 0u;
     int             result = TCL_OK;
@@ -935,7 +935,7 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZ
         const char     *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
 
         if (STREQ(addr, "*")) {
-            addr = (char *)NS_IP_UNSPECIFIED;
+            addr = NS_IP_UNSPECIFIED;
         }
         lcbPtr = ns_malloc(sizeof(ListenCallback) + (size_t)scriptLength);
         if (unlikely(lcbPtr == NULL)) {

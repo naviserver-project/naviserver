@@ -599,7 +599,7 @@ static int SetDelkeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
 static int SetFormatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, noname = 0;
-    char       *leadString = (char*)"  ", *separatorString = (char*)": ";
+    const char *leadString = "  ", *separatorString = ": ";
     Ns_Set     *set;
     Ns_ObjvSpec opts[] = {
         {"-noname",    Ns_ObjvBool,   &noname,          INT2PTR(NS_TRUE)},
@@ -1199,7 +1199,7 @@ static int SetSplitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
 {
     int         result = TCL_OK;
     NsInterp   *itPtr = clientData;
-    char       *splitString = (char *)".";
+    const char *splitString = ".";
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
         {"setId",      Ns_ObjvSet,    &set,         NULL},

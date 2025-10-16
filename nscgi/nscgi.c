@@ -177,7 +177,7 @@ AddCmds(Tcl_Interp *interp, const void *arg)
 
     Ns_Log(Ns_LogCGIDebug, "nscgi: adding command ns_register_cgi");
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_register_cgi", NsTclRegisterCGIObjCmd,
-                               (ClientData)modPtr, NULL);
+                               ns_const2voidp(modPtr), NULL);
     return TCL_OK;
 }
 
