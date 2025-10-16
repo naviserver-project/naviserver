@@ -145,25 +145,25 @@ Ns_InflateInit(Ns_CompressStream *cStream)
 
 
 Ns_ReturnCode
-Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSize)
+Ns_InflateBufferInit(Ns_CompressStream *cStream, const void *inBuf, size_t inSize)
 {
     z_stream *zPtr = &cStream->z;
 
     zPtr->avail_in = (uInt)inSize;
-    zPtr->next_in  = (unsigned char *)buffer;
+    zPtr->next_in  = ns_const2voidp(inBuf);
 
     return NS_OK;
 }
 
 int
-Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, size_t *nrBytes)
+Ns_InflateBuffer(Ns_CompressStream *cStream, void *outBuf, size_t outSize, size_t *nrBytes)
 {
     z_stream     *zPtr = &cStream->z;
     int           rc;
     int           tclStatus = TCL_OK;
 
     zPtr->avail_out = (uInt)outSize;
-    zPtr->next_out  = (unsigned char *)buffer;
+    zPtr->next_out  = outBuf;
     rc = inflate(zPtr, Z_NO_FLUSH);
 
     if (rc != Z_OK && rc != Z_PARTIAL_FLUSH) {

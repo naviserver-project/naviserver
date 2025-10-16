@@ -1105,11 +1105,11 @@ Ns_InflateInit(Ns_CompressStream *cStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSize)
+Ns_InflateBufferInit(Ns_CompressStream *cStream, const void *inBuf, size_t inSize)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, size_t *nrBytes)
+Ns_InflateBuffer(Ns_CompressStream *cStream, void *outBuf, size_t outSize, size_t *nrBytes)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Ns_ReturnCode
