@@ -1123,7 +1123,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
     Tcl_DStringInit(&cwd);
     frame.file = file;
     frame.objc = (unsigned short)objc;
-    frame.objv = (Tcl_Obj **)objv;
+    frame.objv = objv;
     if (stPtr != NULL) {
         frame.size = stPtr->st_size;
         frame.mtime = stPtr->st_mtime;

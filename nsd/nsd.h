@@ -274,7 +274,7 @@ typedef struct AdpFrame {
     time_t             mtime;
     off_t              size;
     Tcl_Obj          *ident;
-    Tcl_Obj          **objv;
+    Tcl_Obj    *const*objv;
     char              *savecwd;
     const char        *file;
     Tcl_DString        cwdbuf;
