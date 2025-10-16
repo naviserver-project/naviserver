@@ -292,7 +292,7 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
  *----------------------------------------------------------------------
  */
 bool
-Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
+Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
 {
     unsigned char *dst;
     size_t         off;
