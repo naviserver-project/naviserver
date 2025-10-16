@@ -1343,6 +1343,26 @@ static inline void *ns_const2voidp(const void *p) {
     memcpy(&q, &p, sizeof q);   // copy pointer bits; avoids -Wcast-qual
     return q;
 }
+/* Read-only wrapper: accept const table, feed Tcl a non-const lvalue. */
+static inline const Tcl_HashEntry *
+Ns_TclFindHashEntryConst(const Tcl_HashTable *t, const char *key)
+{
+    Tcl_HashTable *tw;
+    /* bit-copy the pointer; avoids a const-dropping cast and keeps -Wcast-qual happy */
+    memcpy(&tw, &t, sizeof tw);
+    return (const Tcl_HashEntry *)Tcl_FindHashEntry(tw, key);
+}
+
+/* String-key accessor that avoids Tcl_GetHashKey's (void*) cast */
+static inline const char *
+Ns_TclHashKeyString(const Tcl_HashTable *tablePtr, const Tcl_HashEntry *e)
+{
+    /* Guard against non-string key tables; keeps call sites honest. */
+    assert(tablePtr->keyType == TCL_STRING_KEYS);
+    (void)tablePtr;               /* quiet NDEBUG */
+    return e->key.string;         /* const view */
+}
+
 /*
  * mutex.c:
  */

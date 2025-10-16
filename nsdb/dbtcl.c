@@ -252,14 +252,6 @@ NsDbReleaseHandles(Tcl_Interp *interp, const void *UNUSED(arg))
  *
  *----------------------------------------------------------------------
  */
-static inline const char *
-GetHashKeyConst(const Tcl_HashTable *tablePtr, const Tcl_HashEntry *hPtr)
-{
-    /* Guard against non-string key tables; keeps call sites honest. */
-    assert(tablePtr->keyType == TCL_STRING_KEYS);
-    (void)tablePtr; /* used in assert only when NDEBUG */
-    return (const char *)hPtr->key.string;
-}
 
 static Ns_ReturnCode
 CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
@@ -277,7 +269,7 @@ CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
         Tcl_Obj     *keyv[2];
 
         keyv[0] = Tcl_NewStringObj(handlePtr->poolname, TCL_INDEX_NONE);
-        keyv[1] = Tcl_NewStringObj(GetHashKeyConst(tablePtr, hPtr), TCL_INDEX_NONE);
+        keyv[1] = Tcl_NewStringObj(Ns_TclHashKeyString(tablePtr, hPtr), TCL_INDEX_NONE);
         Tcl_DictObjPutKeyList(interp, dictObj, 2, keyv, Tcl_NewIntObj(NsDbGetActive(handlePtr) ? 1 : 0));
         hPtr = Tcl_NextHashEntry(&search);
     }
