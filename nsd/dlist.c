@@ -280,6 +280,56 @@ Ns_DListFreeRange(Ns_DList *dlPtr, size_t from, size_t to_excl, bool clear)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_calc_array_bytes --
+ *
+ *      Safely compute the total byte size for an array of n elements
+ *      of size "elem", with overflow and allocation sanity checks.
+ *
+ * Results:
+
+ *      Returns 1 on success and stores the computed byte count in the output
+ *      variable "*bytes". Returns 0 if an overflow occurs or if the result
+ *      exceeds the conservative allocation bound (NS_MAXOBJ (roughly
+ *      PTRDIFF_MAX).
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+#if (defined(__clang__) && defined(__has_builtin) && __has_builtin(__builtin_mul_overflow)) || \
+    (defined(__GNUC__)  && !defined(__clang__)      && (__GNUC__ >= 5))
+#  define NS_HAVE_BUILTIN_MUL_OVERFLOW 1
+#endif
+
+#ifndef NS_MAXOBJ
+#  define NS_MAXOBJ PTRDIFF_MAX
+#endif
+
+static inline int
+ns_calc_array_bytes(size_t n, size_t elem, size_t *bytes)
+{
+    size_t prod;
+
+#ifdef NS_HAVE_BUILTIN_MUL_OVERFLOW
+    if (__builtin_mul_overflow(n, elem, &prod)) {
+        return 0;
+    }
+#else
+    if (elem != 0 && n > (size_t)NS_MAXOBJ / elem) {
+        return 0;
+    }
+    prod = n * elem;
+#endif
+    if (prod > (size_t)NS_MAXOBJ) {
+        return 0;
+    }
+    *bytes = prod;
+    return 1;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -346,22 +396,26 @@ Ns_DListSetCapacity(Ns_DList *dlPtr, size_t new_cap)
 
     } else {
         void **newData;
+        size_t bytes;
 
-        if (dlPtr->data == dlPtr->static_data) {
-            /* First transition from static to heap */
-            newData = ns_malloc(new_cap * sizeof(dlPtr->data[0]));
-            if (size > 0) {
-                memcpy(newData, dlPtr->static_data,
-                       size * sizeof(dlPtr->data[0]));
-            }
+        if (!ns_calc_array_bytes(new_cap, sizeof dlPtr->data[0], &bytes)) {
+            Ns_Log(Error, "Ns_DList: capacity overflow (need=%zu elems)", new_cap);
         } else {
-            /* Reallocate existing heap buffer */
-            newData = ns_realloc(dlPtr->data,
-                                 new_cap * sizeof(dlPtr->data[0]));
+            if (dlPtr->data == dlPtr->static_data) {
+                /* First transition from static to heap */
+                newData = ns_malloc(new_cap * sizeof(dlPtr->data[0]));
+                if (size > 0) {
+                    memcpy(newData, dlPtr->static_data,
+                           size * sizeof(dlPtr->data[0]));
+                }
+            } else {
+                /* Reallocate existing heap buffer */
+                newData = ns_realloc(dlPtr->data,
+                                     new_cap * sizeof(dlPtr->data[0]));
+            }
+            dlPtr->data  = newData;
+            dlPtr->avail = new_cap - size;
         }
-
-        dlPtr->data  = newData;
-        dlPtr->avail = new_cap - size;
     }
 }
 
@@ -413,7 +467,6 @@ Ns_DListReset(Ns_DList *dlPtr)
 {
     Ns_DListSetLength(dlPtr, 0u); /* frees tail if owning */
 }
-
 
 /*
  *----------------------------------------------------------------------
