@@ -5878,7 +5878,7 @@ SockSetServer(Sock *sockPtr)
          * which has to be defined in this case.
          */
         mapPtr = drvPtr->defMapPtr;
-        Ns_Log(Notice, "SockSetServer: get default map entry %p", (const void*)mapPtr);
+        Ns_Log(DriverDebug, "SockSetServer: get default map entry %p", (const void*)mapPtr);
     }
 
     if (mapPtr != NULL) {

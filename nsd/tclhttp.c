@@ -5978,7 +5978,7 @@ HttpCancel(
     (void) Ns_TaskCancel(task);
     Ns_TaskWaitCompleted(task);
 
-    Ns_Log(Notice, "HttpCancel host %s:%hu pos %ld", httpPtr->host,  httpPtr->port, httpPtr->pos);
+    Ns_Log(Ns_LogTaskDebug, "HttpCancel host %s:%hu pos %ld", httpPtr->host,  httpPtr->port, httpPtr->pos);
     HttpCloseWaitingDataRelease(httpPtr);
 }
 
