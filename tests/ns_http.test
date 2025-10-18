@@ -884,10 +884,21 @@ test http-6.6.0 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constr
         set formFiles       <[ns_conn files]>
         set formFileNames   [lmap {field fname} $formValues {if {![string match *.tmpfile $field]} continue; set fname} ]
         set formFileSizes   [lmap fname $formFileNames {file size $fname}]
+        set formContentMD5s [lmap fname $formFileNames {
+            set F [open $fname]; set c [read $F]; close $F
+            #ns_log notice $fname: begin [string range $c 0 10] end [string range $c end-10 end]
+            ns_md5 $c
+        }]
+        set boundary        [lindex [split $contentType =] end]
+        set contentLengthWithoutBoundaries [expr {$contentLength - [string length $boundary]*3}]
+
+        #ns_log notice contentLength $contentLength boundary <$boundary> without boundaries $contentLengthWithoutBoundaries
         #ns_log notice XXX [exec ls -l {*}$formFileNames]
+        #ns_log notice XXX[ns_conn content]XXX
+        #ns_log notice [ns_set format [ns_conn headers]]
         #ns_log notice maxUpload $maxUpload
 
-        ns_return 200 text/plain "contentFile $haveContentFile contentLength $contentLength needSpool $needSpool formFileSizes $formFileSizes"
+        ns_return 200 text/plain "contentFile $haveContentFile contentLength $contentLengthWithoutBoundaries needSpool $needSpool formFileSizes $formFileSizes hashes $formContentMD5s"
     }
 } -body {
     set file1 [ns_server pagedir]/2048bytes
@@ -895,7 +906,7 @@ test http-6.6.0 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constr
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r file1
-} -returnCodes {error ok return} -result {contentFile 0 contentLength 4472 needSpool 0 formFileSizes 2048 2048}
+} -returnCodes {error ok return} -result {contentFile 0 contentLength 4334 needSpool 0 formFileSizes 2048 2048 hashes EDD3D7EB00FC3DCC8F6D41592B2AF34C EDD3D7EB00FC3DCC8F6D41592B2AF34C}
 
 test http-6.6.1 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constraints {tcl86 curl serverListen} -setup {
     ns_register_proc POST /post {
@@ -910,10 +921,20 @@ test http-6.6.1 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constr
         set formFiles       <[ns_conn files]>
         set formFileNames   [lmap {field fname} $formValues {if {![string match *.tmpfile $field]} continue; set fname} ]
         set formFileSizes   [lmap fname $formFileNames {file size $fname}]
+        set formContentMD5s [lmap fname $formFileNames {
+            set F [open $fname]; set c [read $F]; close $F
+            #ns_log notice $fname: begin [string range $c 0 10] end [string range $c end-10 end]
+            ns_md5 $c
+        }]
+        set boundary        [lindex [split $contentType =] end]
+        set contentLengthWithoutBoundaries [expr {$contentLength - [string length $boundary]*3}]
+
+        #ns_log notice contentLength $contentLength boundary <$boundary> without boundaries $contentLengthWithoutBoundaries
         #ns_log notice XXX [exec ls -l {*}$formFileNames]
         #ns_log notice maxUpload $maxUpload
+        #ns_log notice [ns_set format [ns_conn headers]]
 
-        ns_return 200 text/plain "contentFile $haveContentFile contentLength $contentLength needSpool $needSpool formFileSizes $formFileSizes"
+        ns_return 200 text/plain "contentFile $haveContentFile contentLength $contentLengthWithoutBoundaries needSpool $needSpool formFileSizes $formFileSizes hashes $formContentMD5s"
     }
 } -body {
     set file1 [ns_server pagedir]/16480bytes
@@ -921,7 +942,7 @@ test http-6.6.1 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constr
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r file1
-} -returnCodes {error ok return} -result {contentFile 1 contentLength 33338 needSpool 1 formFileSizes 16480 16480}
+} -returnCodes {error ok return} -result {contentFile 1 contentLength 33200 needSpool 1 formFileSizes 16480 16480 hashes 47DED396B91E5D83C5515F7CD7C80140 47DED396B91E5D83C5515F7CD7C80140}
 
 
 test http-5.7.0 {
