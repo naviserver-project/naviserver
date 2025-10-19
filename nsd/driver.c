@@ -4671,14 +4671,14 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
  *
  * DeterminePeerAddrFromHeaders --
  *
- *      Inspect the request headers (in particular "X-Forwarded-For")
+ *      Inspect the request headers (in particular "x-forwarded-for")
  *      and update the client socket address (sockPtr->clientsa)
  *      accordingly. This function is used in reverse-proxy scenarios
  *      where the actual client IP address may be forwarded by one or
  *      more proxy servers.
  *
  *      Behavior:
- *      - If no valid "X-Forwarded-For" header is present, the client
+ *      - If no valid "x-forwarded-for" header is present, the client
  *        address remains unset (zeroed).
  *      - If a single IP address is present, it is parsed directly.
  *      - If multiple addresses are present (comma-separated list),
