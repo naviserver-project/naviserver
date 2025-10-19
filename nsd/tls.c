@@ -78,7 +78,7 @@ ReportError(Tcl_Interp *interp, const char *fmt, ...)
 #  define OPENSSL_HAVE_READ_BUFFER_LEN
 # endif
 
-# ifndef HAVE_X509_STORE_CTX_GET_OBJ_BY_SUBJECT
+# ifdef HAVE_OPENSSL_3
 #  define OPENSSL_NO_OCSP 1
 # endif
 
