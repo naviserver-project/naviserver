@@ -2610,7 +2610,7 @@ Ns_ReturnCode NsForeachHashKeyValue(Tcl_HashTable *tablePtr, NsHashKeyValueProc 
 
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
     while (hPtr != NULL) {
-        result = fn(Ns_TclGetHashKeyString(tablePtr, hPtr), Tcl_GetHashValue(hPtr), ctx);
+        result = fn(Ns_TclGetHashKeyValue(tablePtr, hPtr), Tcl_GetHashValue(hPtr), ctx);
         if (result != NS_OK) {
             break;
         }

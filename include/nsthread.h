@@ -1343,6 +1343,7 @@ static inline void *ns_const2voidp(const void *p) {
     memcpy(&q, &p, sizeof q);   // copy pointer bits; avoids -Wcast-qual
     return q;
 }
+
 /* Read-only wrapper: accept const table, feed Tcl a non-const lvalue. */
 static inline const Tcl_HashEntry *
 Ns_TclFindHashEntryConst(const Tcl_HashTable *t, const char *key)
@@ -1353,14 +1354,30 @@ Ns_TclFindHashEntryConst(const Tcl_HashTable *t, const char *key)
     return (const Tcl_HashEntry *)Tcl_FindHashEntry(tw, key);
 }
 
-/* String-key accessor that avoids Tcl_GetHashKey's (void*) cast */
+/* one-word-key accessor that avoids Tcl_GetHashKey's (void*) cast */
+static inline const void *
+Ns_TclGetHashKeyValue(const Tcl_HashTable *tablePtr, const Tcl_HashEntry *e)
+{
+    /* Guard against complex key tables; keeps call sites honest. */
+    if (tablePtr->keyType == TCL_STRING_KEYS) {
+        return e->key.string;         /* const view */
+    }
+    if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
+        return (void *)e->key.oneWordValue; /* const view */
+    }
+    fprintf(stderr, "hash table %p has invalud teyType %d\n",(const void*)tablePtr, tablePtr->keyType);
+    assert(tablePtr->keyType == TCL_STRING_KEYS || tablePtr->keyType == TCL_ONE_WORD_KEYS);
+    (void)tablePtr;
+
+    return NULL;
+}
+
 static inline const char *
 Ns_TclGetHashKeyString(const Tcl_HashTable *tablePtr, const Tcl_HashEntry *e)
 {
-    /* Guard against non-string key tables; keeps call sites honest. */
     assert(tablePtr->keyType == TCL_STRING_KEYS);
-    (void)tablePtr;               /* quiet NDEBUG */
-    return e->key.string;         /* const view */
+    (void)tablePtr;
+    return e->key.string;
 }
 
 /*
