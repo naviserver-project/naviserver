@@ -194,7 +194,7 @@ proc ns_getform {args}  {
             # Get the content via memory (indirectly via [ns_conn
             # content], the command [ns_conn form] does this)
             #
-            ns_log debug "ns_getfrom: get content from memory (files [ns_conn files])"
+            ns_log debug "ns_getform: get content from memory (files [ns_conn files])"
             foreach {file} [ns_conn files] {
                 set offs [ns_conn fileoffset $file]
                 set lens [ns_conn filelength $file]
@@ -225,7 +225,7 @@ proc ns_getform {args}  {
             #
             # Get the content via external spool file
             #
-            ns_log debug "ns_getfrom: get content from file"
+            ns_log debug "ns_getform: get content from file"
             try {
                 #
                 # We have to provide a fallback charset here,
