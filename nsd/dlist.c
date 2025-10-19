@@ -42,10 +42,10 @@
  *
  *          Ns_DListSetFreeProc(&list, ns_free);
  *
- *      If a freeProc is set, it is automatically called on every element
- *      that is removed — via Ns_DListDelete(), Ns_DListSetLength(),
- *      Ns_DListReset(), or Ns_DListFree(). This is useful for lists of
- *      heap-allocated objects, such as:
+ *      If a freeProc is set, it is automatically called on every element that
+ *      is removed via Ns_DListDelete(), Ns_DListSetLength(), Ns_DListReset(),
+ *      or Ns_DListFree(). This is useful for lists of heap-allocated objects,
+ *      such as:
  *
  *          - dynamically allocated strings
  *          - other heap-allocated resources tied to the list's lifecycle
