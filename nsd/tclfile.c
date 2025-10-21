@@ -589,7 +589,7 @@ NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                  */
                 p = ns_memmem(buffer, (size_t)bytesRead + movedSize, charString, searchLength);
                 if (p != NULL) {
-                    offset += (p - buffer);
+                    offset += (off_t)((p - buffer) - (ptrdiff_t)movedSize);
                     done = NS_TRUE;
                     break;
                 }
