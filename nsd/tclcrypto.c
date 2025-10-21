@@ -1722,16 +1722,6 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
 # ifdef HAVE_OPENSSL_3
 /*
- * We could provide SCRYPT as well via EVP_PKEY_CTX provided in
- * OpenSSL 1.1.1:
- *
- *     https://www.openssl.org/docs/man1.1.1/man7/scrypt.html
- *
- * but the future interface is the OpenSSL 3.* way, via
- * EVP_KDF_fetch() + OSSL_PARAM_*.  Not sure, whether LibreSSL and
- * friends will follow.
- */
-/*
  *----------------------------------------------------------------------
  *
  * NsTclCryptoScryptObjCmd --
@@ -1746,16 +1736,15 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * Side effects:
  *      None
- *
  *----------------------------------------------------------------------
  */
 int
-NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, nValue = 1024, rValue = 8, pValue = 16, encodingInt = -1;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
+        {"-binary",   Ns_ObjvBool,    &isBinary,   INT2PTR(NS_TRUE)},
         {"-salt",     Ns_ObjvObj,     &saltObj,    NULL},
         {"-secret",   Ns_ObjvObj,     &secretObj,  NULL},
         {"-n",        Ns_ObjvInt,     &nValue,     &posIntRange1},
@@ -1819,7 +1808,7 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         EVP_KDF_CTX         *kctx;
         unsigned char        out[64];
         Tcl_DString          saltDs, secretDs;
-        int                  saltLength, secretLength;
+        TCL_SIZE_T           saltLength, secretLength;
         const unsigned char *saltString, *secretString;
         OSSL_PARAM           params[6], *p = params;
         uint64_t             nValueSSL = (uint64_t)nValue;
@@ -1831,7 +1820,6 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
          */
         Tcl_DStringInit(&saltDs);
         Tcl_DStringInit(&secretDs);
-        //keyString = ns_malloc((size_t)outLength);
 
         saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
         secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
@@ -1841,29 +1829,26 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         EVP_KDF_free(kdf);
 
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
-                                                 (void*)secretString, (size_t)secretLength);
+                                                 (void*)secretString,
+                                                 (size_t)secretLength);
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
-                                                 (void*)saltString, (size_t)saltLength);
+                                                 (void*)saltString,
+                                                 (size_t)saltLength);
         *p++ = OSSL_PARAM_construct_uint64(OSSL_KDF_PARAM_SCRYPT_N, &nValueSSL);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, &pValueSSL);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, &rValueSSL);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, &rValueSSL);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, &pValueSSL);
         *p = OSSL_PARAM_construct_end();
 
-        if (EVP_KDF_CTX_set_params(kctx, params) <= 0) {
-            Ns_TclPrintfResult(interp, "could not set parameters");
-            result = TCL_ERROR;
-
-        } else if (EVP_KDF_derive(kctx, out, sizeof(out), NULL) <= 0) {
-            Ns_TclPrintfResult(interp, "could not derive key");
-            result = TCL_ERROR;
-
-        } else {
+        if (EVP_KDF_derive(kctx, out, sizeof(out), params) > 0) {
             /*
              * Convert the result to the output format and set the interp
              * result.
              */
             Tcl_SetObjResult(interp, EncodedObj(out, sizeof(out), NULL, encoding));
             result = TCL_OK;
+        } else {
+            Ns_TclPrintfResult(interp, "could not derive key");
+            result = TCL_ERROR;
         }
 
         /*
