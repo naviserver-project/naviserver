@@ -1316,7 +1316,8 @@ AppendLengths(AdpCode *codePtr,
               const void *length_bytes, size_t length_nbytes,
               const void *line_bytes,   size_t line_nbytes)
 {
-    char        *base, *start, *mid;
+    char        *base, *start;
+    const char  *mid;
     Tcl_DString *textPtr   = &codePtr->text;
     TCL_SIZE_T   oldLen    = textPtr->length;
     size_t       need_len  = (size_t)codePtr->nblocks * sizeof(TCL_SIZE_T);

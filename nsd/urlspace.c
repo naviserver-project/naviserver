@@ -1592,8 +1592,8 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
         } else if (ctxRight->type == SpecTypeConjunction) {
             result = ((int)ctxRight->specificity - (int)ctxLeft->specificity);
             if (result == 0) {
-                Ns_DList *ctxRightDlPtr = ctxRight->field.list;
-                Ns_DList *ctxLeftDlPtr  = ctxLeft->field.list;
+                const Ns_DList *ctxRightDlPtr = ctxRight->field.list;
+                const Ns_DList *ctxLeftDlPtr  = ctxLeft->field.list;
                 /*
                  * The specificity of both conjunctions is the same.
                  */
