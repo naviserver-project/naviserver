@@ -1503,7 +1503,7 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
         /* Merge server/driver extra headers into outputheaders (outputheaders keep precedence) */
         merged = HdrMergeExtra(conn);
 
-        /* 3) Dispatch to the active driver’s header encoder */
+        /* Dispatch to the active driver’s header encoder */
         {
             const Ns_Sock *sockPtr = Ns_ConnSockPtr(conn);
             const Driver  *drvPtr  = (Driver*)sockPtr->driver;

@@ -1365,7 +1365,7 @@ Ns_TclGetHashKeyValue(const Tcl_HashTable *tablePtr, const Tcl_HashEntry *e)
     if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
         return (void *)e->key.oneWordValue; /* const view */
     }
-    fprintf(stderr, "hash table %p has invalud teyType %d\n",(const void*)tablePtr, tablePtr->keyType);
+    fprintf(stderr, "hash table %p has invalid keyType %d\n",(const void*)tablePtr, tablePtr->keyType);
     assert(tablePtr->keyType == TCL_STRING_KEYS || tablePtr->keyType == TCL_ONE_WORD_KEYS);
     (void)tablePtr;
 
