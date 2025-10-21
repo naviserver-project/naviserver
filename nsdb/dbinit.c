@@ -1669,12 +1669,13 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
     pool = Ns_DbPoolList(server);
     if (pool != NULL) {
         for ( ; *pool != '\0'; pool += strlen(pool) + 1u) {
-            char          buffer[100];
-            const Pool   *poolPtr;
-            TCL_SIZE_T    len;
+            const Pool *poolPtr;
 
             poolPtr = GetPool(pool);
             if (poolPtr != NULL) {
+                char        buffer[100];
+                TCL_SIZE_T len;
+
                 (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, TCL_INDEX_NONE));
                 len = (TCL_SIZE_T)snprintf(buffer, sizeof(buffer), NS_TIME_FMT,
                                            (int64_t)poolPtr->minDuration.sec,
