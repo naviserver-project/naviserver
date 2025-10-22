@@ -1,4 +1,93 @@
 =======================================
+NaviServer 5.0.2, released 2025-09-23
+=======================================
+
+ 28 files changed, 316 insertions(+), 101 deletions(-)
+
+Bug Fixes:
+----------
+
+ - ns_fseekchars: Fixed a buffer-overlap accounting bug that could
+   lead to incorrect search results when reading across internal
+   buffer boundaries.  Depending on file size and buffer
+   configuration, both small and large files could be
+   affected. (commit 39f89379)
+
+ - ns_internalredirect: Corrected the logic condition in
+   NsTclInternalRedirectObjCmd() that previously prevented redirects
+   from executing. The connection requirement check now correctly
+   proceeds only when NsConnRequire() succeeds.  Many thanks to Zoran
+   Vasiljevic for identifying and fixing this bug.  (commit ddb4fd6f7)
+
+ - nscp: Restored proper loop termination in EvalThread() via the stop
+   variable. In NaviServer 5.0.0–5.0.1, the loop could only be
+   terminated via Ctrl-D; it now exits cleanly when the Tcl exit
+   command is issued.  (commit 82708261)
+
+ - ns_cond wait: Clarified and fixed timeout handling logic — a zero
+   timeout now behaves as an indefinite wait, matching long-standing
+   but undocumented behavior. Ensures full backward
+   compatibility. (commit aedfad86)
+
+ - ns_conn flag definitions: Fixed overlapping bitmask assignment for
+   NS_CONN_SOCK_WAITING to use a unique non-conflicting bit
+   value. (commit cbb89147)
+
+ - OpenSSL/OCSP: Enabled OCSP support only for OpenSSL 3+ to avoid
+   partial or incomplete feature activation under certain OpenSSL 1.1.1
+   variants.  (commit 90a08ddc)
+
+Compatibility and Platform Fixes:
+---------------------------------
+
+ - Tcl 9 API compliance: Replaced deprecated -1 string length
+   arguments with TCL_INDEX_NONE in multiple modules (nscgi, adpparse,
+   conn, driver, info, set, nsproxy). Improves forward compatibility
+   with Tcl 9. (commit 3f9fbad42)
+
+ - NetBSD support: Added explicit build support and clarified
+   pthread/math linkage rules for BSD variants (FreeBSD, OpenBSD,
+   NetBSD). (commit 9adbeab9)
+
+ - MSVC math header handling: Improved conditional inclusion of
+   <math.h> for various MSVC versions. (commit 54835f6b)
+
+Documentation Updates:
+----------------------
+
+ - ns_cond wait: Updated manpage to clearly describe timeout semantics
+   (no timeout vs. zero vs. positive). (commit aedfad86)
+
+ - ns_totp / ns_hotp: Improved documentation for TOTP/HOTP usage and
+   examples.  (commit 55fe0cc0)
+
+Build System:
+-------------
+
+ - OpenSSL detection: Simplified and corrected OCSP feature detection
+   in m4/openssl.m4. (commit 90a08ddc)
+
+Tests:
+------
+
+Added regression tests for:
+
+ * ns_internalredirect correctness and redirect flow (commit a13e985f)
+ * ns_fseekchars overlap handling (commit 3d1cd941)
+ * multipart upload MD5 verification and boundary handling (commit 3d7ff1e5)
+
+Notes:
+------
+
+  This is a bug-fix and stability release addressing several
+  regressions introduced with NaviServer 5.0.0 and improving OpenSSL
+  compatibility, Tcl 9 readiness, and platform portability.
+
+  No configuration changes are required when upgrading from NaviServer
+  5.0.1.
+
+
+=======================================
 NaviServer 5.0.1, released 2025-09-23
 =======================================
 
