@@ -233,7 +233,7 @@ confiration file.
 
 [example_begin]
  buckel@tulpe:/usr/local/ns/bin> ./nsd -c -u nsadmin -g www -t ../sample-config.tcl
- [lb]-main-[rb] Notice: nsmain: NaviServer/5.0.1 (naviserver-5.0.1) starting
+ [lb]-main-[rb] Notice: nsmain: NaviServer/5.0.2 (naviserver-5.0.2) starting
  [lb]-main:conf-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
  [lb]-main:conf-[rb] Notice: nsmain: max files: soft limit 10240, hard limit 10240
  [lb]-main:default-[rb] Notice: nsd/init.tcl [lb]default[rb]: booting virtual server:  Tcl system encoding: "utf-8"
@@ -241,7 +241,7 @@ confiration file.
  [lb]-main:default-[rb] Notice: modload: loading '/usr/local/ns/bin/nslog.so'
  [lb]-main:default-[rb] Notice: nslog: opened '/usr/local/ns/servers/server1/modules/nslog/access.log'
  [lb]-main:default-[rb] Notice: conf: [lb]ns/server/server1[rb]enabletclpages = 0
- [lb]-main:default-[rb] Notice: nsmain: NaviServer/5.0.1 (naviserver-5.0.1) running
+ [lb]-main:default-[rb] Notice: nsmain: NaviServer/5.0.2 (naviserver-5.0.2) running
  [lb]-main:default-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
  [lb]-sched-[rb] Notice: sched: starting
  [lb]-driver:nssock:0-[rb] Notice: starting

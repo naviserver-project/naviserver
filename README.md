@@ -101,12 +101,13 @@ get if via the package manager of your operating system.
 > **Git Branches:**  
 > - `main` (latest development code)  
 > - `release/4.99` (bug fixes for NaviServer 4.99.*)
+> - `release/5.0` (bug fixes for NaviServer 5.0.*)
 
 To compile official releases, execute:
 
 ```bash
-gunzip < naviserver-5.0.1.tar.gz | tar xvf -
-cd naviserver-5.0.1
+gunzip < naviserver-5.0.2.tar.gz | tar xvf -
+cd naviserver-5.0.2
 ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
 make
 su -c 'make install'
@@ -180,7 +181,7 @@ SourceForge. For example, to install a module named `nsfoo`:
 
 
 ```bash
-gunzip < naviserver-5.0.1-modules.tar.gz | tar xvf -
+gunzip < naviserver-5.0.2-modules.tar.gz | tar xvf -
 cd modules/nsfoo
 make install NAVISERVER=/usr/local/ns
 ```
@@ -204,7 +205,7 @@ Download the minimal environment from [https://sourceforge.net/projects/mingw/fi
 3. In the msys shell, run:
 
     ```bash
-    cd /c/naviserver-5.0.1
+    cd /c/naviserver-5.0.2
     ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
     make install
     ```
