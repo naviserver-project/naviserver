@@ -914,8 +914,7 @@ NsTclInternalRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-
-    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) != NS_OK) {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, Ns_ConnRedirect(conn, location));
     }
 
