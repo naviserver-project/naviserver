@@ -414,8 +414,15 @@ EvalThread(void *arg)
     stop = 0;
     (void)TCL_CREATEOBJCOMMAND(interp, "exit", ExitObjCmd, (ClientData) &stop, NULL);
 
+    /*
+     * The nscp command loop runs until the variable 'stop' is set non-zero.
+     * The loop itself never modifies this variable -- it is changed only by
+     * the "exit" command, which updates 'stop' through the pointer passed
+     * when the command was registered. This mechanism provides a simple,
+     * thread-local way to signal graceful termination of the loop.
+     */
     ncmd = 0;
-    while (1 /* was "stop == 0", but stop is not modified in the loop */) {
+    while (stop == 0) {
         TCL_SIZE_T  len;
         const char *resultString;
         char        buf[64];
