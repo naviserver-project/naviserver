@@ -1298,8 +1298,9 @@ CondAbswaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
  *
  * CondWaitObjCmd --
  *
- *      This command implements "ns_cond wait". It waits on the specified
- *      condition variable for a relative timeout period (if provided).
+ *      This command implements "ns_cond wait". It waits on the
+ *      specified condition variable for a relative timeout period (if
+ *      provided with a non-zero value).
  *
  * Results:
  *      A standard Tcl result indicating whether the wait succeeded or
@@ -1332,7 +1333,7 @@ CondWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
         /*
          * Relative time wait: ns_cond wait
          */
-        if (timeoutPtr == NULL) {
+        if (timeoutPtr == NULL || (timeoutPtr->sec == 0 && timeoutPtr->usec == 0)) {
             Ns_CondWait(condPtr, lockPtr);
             status = NS_OK;
         } else {
