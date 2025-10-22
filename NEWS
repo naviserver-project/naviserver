@@ -1,4 +1,54 @@
 =======================================
+NaviServer 4.99.33, released 2025-10-22
+=======================================
+
+ 12 files changed, 143 insertions(+), 42 deletions(-)
+
+Bug Fixes:
+----------
+
+ - ns_fseekchars: Fixed an overlap-accounting bug that could produce
+   incorrect results when searching across read-buffer boundaries.
+   Earlier versions could fail on both very short and large files,
+   depending on buffer size interaction.  (commit 0fee6574 )
+
+ - ns_crypto::scrypt: Fixed argument-order inversion for -r and -p
+   options in the Tcl command interface.  Versions between 4.99.20 (Jun
+   2020) and 4.99.31 produced incorrect, non-RFC-compliant scrypt hashes.
+   NaviServer 5 is unaffected.  (commit d204e225 )
+
+ - ns_internalredirect: Fixed a bug a few years old, wherethe
+   connection requirement check used the wrong condition, preventing
+   redirects from being executed.  The issue was introduced in
+   November 2023 (shortly after 4.99.19) and is now corrected.  Many
+   thanks to Zoran Vasiljevic for identifying and fixing this bug.
+   (commit bffb05b0 )
+
+Documentation Updates:
+----------------------
+
+ - Clarified the behavior of optional timeout handling in ns_cond
+   wait: explicitly documents that a zero timeout now behaves as an
+   indefinite wait, preserving full backward compatibility.  (Manpage
+   updated in [naviserver/ns_cond.man])
+
+Tests:
+------
+
+ Added new regression tests for:
+  * ns_internalredirect (functional coverage for redirect behavior) (commit b8b9d107)
+  * ns_crypto::scrypt argument correctness and hash output validation (commit eb8f1ac7)
+
+Notes:
+------
+
+  This is a stability and correctness release focusing exclusively on
+  bug fixes and improved regression coverage.
+
+  No configuration changes are required.
+
+
+=======================================
 NaviServer 4.99.32, released 2025-09-23
 =======================================
 
