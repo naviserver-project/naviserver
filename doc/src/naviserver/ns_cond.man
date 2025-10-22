@@ -63,11 +63,15 @@ Returns 1 on success (condition met) or 0 on timeout.
 [call [cmd  "ns_cond wait"] [arg condId] [arg mutexId] [opt [arg timeout]]]
 
 Waits on the condition variable [arg condId] while holding the mutex
-[arg mutexId]. If [arg timeout] is provided, the thread will wait for up to
-timeout seconds; otherwise, it waits indefinitely until the condition
-is signaled.
+[arg mutexId]. If [arg timeout] is specified and
+greater than zero, the thread waits for up to that many seconds for the
+condition to be signaled. If no [arg timeout] is given, or it is zero,
+the thread waits indefinitely until another thread signals or broadcasts
+the condition.
 
-Returns 1 on success (condition met) or 0 on timeout.
+[para]
+Returns 1 if the condition was signaled before the timeout expired, or
+0 if the wait timed out.
 
 [list_end]
 
