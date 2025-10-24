@@ -68,6 +68,10 @@
 #  if OPENSSL_VERSION_PREREQ(3,5)
 #   define HAVE_OPENSSL_3_5 1
 #  endif
+#  if OPENSSL_VERSION_PREREQ(4,0)
+#   define HAVE_OPENSSL_4 1
+#   define HAVE_OPENSSL_4_0 1
+#  endif
 # endif
 
 # if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
@@ -91,13 +95,30 @@ typedef struct NsTLSConfig {
         struct {
             int    deferaccept;       /* Enable the TCP_DEFER_ACCEPT optimization.         */
             int    nodelay;           /* Enable the TCP_NODELAY optimization.              */
-            bool   h3advertise;       /* add h3 advertize automatically when h3 is enabled */
+            bool   h3advertise;       /* add h3 advertise automatically when h3 is enabled */
             bool   h3persist;         /* add persit flag to h3 advertise when activated    */
         } h1;
         struct {
-            int    cc_idx;
-            int    sc_idx;
-            // To be completed
+            size_t     recvbufsize;  /* value for setting SO_RCVBUF */
+            size_t     nr_listeners; /* number of listener SSL* at the start of the pollset */
+            int        cc_idx;       /* slot to fetch ConnCtx an SSL*                */
+            int        sc_idx;       /* slot to fetch StreamCtx an SSL*              */
+            size_t     first_dead;   /* marker for consolidation of pollset          */
+
+            /* --- TLS/QUIC waker (bypass limitation of SSL_Poll, not supporting trigger pipes --- */
+            Ns_Mutex   waker_lock;   /* protects waker_armed */
+            //bool       waker_armed;  /* edge-trigger gate */
+            struct sockaddr_storage waker_addr;
+            socklen_t   waker_addrlen;
+
+            SSL_POLL_ITEM *poll_items;    /* contiguous array, matches capacity */
+            Ns_DList       ssl_items;     /* parallel to poll_items[] */
+            Ns_DList       conns;
+            size_t         npoll;
+            size_t         poll_capacity;
+
+            struct timeval idle_timeout;  /* e.g., {1, 0} */
+            struct timeval drain_timeout; /* e.g., {0, 10*1000} -> 10ms */
         } h3;
     } u;
 } NsTLSConfig;

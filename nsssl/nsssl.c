@@ -130,7 +130,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
     dc->u.h1.deferaccept   = Ns_ConfigBool(section, "deferaccept", NS_FALSE);
     dc->u.h1.nodelay       = Ns_ConfigBool(section, "nodelay", NS_TRUE);
-    dc->u.h1.h3advertise   = Ns_ConfigBool(section, "h3advertise", NS_TRUE);
+    dc->u.h1.h3advertise   = Ns_ConfigBool(section, "h3advertise", NS_FALSE);
     dc->u.h1.h3persist     = Ns_ConfigBool(section, "h3persist", NS_TRUE);
 
     init.version = NS_DRIVER_VERSION_5;

@@ -133,6 +133,12 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
+/* Define if nghttp3 is available */
+#undef HAVE_NGHTTP3
+
+/* Define to 1 if you have the <nghttp3/nghttp3.h> header file. */
+#undef HAVE_NGHTTP3_NGHTTP3_H
+
 /* Defined when mingw does not support SEH */
 #undef HAVE_NO_SEH
 
@@ -245,9 +251,6 @@
 
 /* Defined when cygwin/mingw ignores VOID define in winnt.h */
 #undef HAVE_WINNT_IGNORE_VOID
-
-/* Define to X509_STORE_CTX_get_obj_by_subject */
-#undef HAVE_X509_STORE_CTX_GET_OBJ_BY_SUBJECT
 
 /* Define to 1 if you have the <xlocale.h> header file. */
 #undef HAVE_XLOCALE_H

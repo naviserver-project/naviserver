@@ -16,7 +16,7 @@ HEADER_INC=header-5.0.inc
 NSBUILD=1
 include include/Makefile.global
 
-dirs    = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl revproxy
+dirs    = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl quic revproxy
 
 # Unix only modules
 ifeq (,$(findstring MINGW,$(uname)))
@@ -189,6 +189,7 @@ build-doc:
 		       nsperm \
 		       nssock \
 		       nsssl \
+		       quic \
 		       revproxy \
 		       doc/src/manual \
 		       doc/src/naviserver \
@@ -312,9 +313,10 @@ CPPCHECK_SYS_INCLUDES=-I/usr/include
 #CPPCHECK_SYS_INCLUDES=-I`xcrun --show-sdk-path`/usr/include
 
 cppcheck:
-	$(CPPCHECK) --verbose --inconclusive -j4 --enable=all --output-file=cppcheck-output.txt --checkers-report=cppcheck.txt --check-level=exhaustive \
-		nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c nsssl/*.c \
-		-I./include $(CPPCHECK_SYS_INCLUDES) -D__x86_64__ -DNDEBUG $(DEFS)
+	$(CPPCHECK) --verbose --inconclusive -j4 --enable=all --check-level=exhaustive \
+		--output-file=cppcheck-output.txt --checkers-report=cppcheck.txt  \
+		nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c nsssl/*.c quic/*.c \
+		-I./include  -I./nsssl -I./quic $(CPPCHECK_SYS_INCLUDES) -D__x86_64__ -DNDEBUG $(DEFS)
 
 CLANG_TIDY_CHECKS=
 #CLANG_TIDY_CHECKS=-checks=-*,performance-*,portability-*,cert-*,modernize-*

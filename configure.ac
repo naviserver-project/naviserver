@@ -203,6 +203,7 @@ AX_HAVE_BSD_SENDFILE
 AX_HAVE_LINUX_SENDFILE
 AX_HAVE_MEMMEM
 AX_HAVE_MKDTEMP
+AX_CHECK_NGHTTP3
 
 AX_PTHREAD(
    [ AC_DEFINE([HAVE_PTHREAD], 1, [Define if you have POSIX threads libraries and header files]) ],
@@ -346,6 +347,7 @@ AC_CONFIG_FILES([
 include/nsversion.h
 include/Makefile.global
 include/Makefile.module
+quic/Makefile
 sample-config.tcl
 naviserver.rdf
 version_include.man

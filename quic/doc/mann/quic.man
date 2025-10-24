@@ -1,0 +1,250 @@
+[include version_include.man]
+
+[manpage_begin quic n [vset version]]
+[moddesc   {NaviServer Modules}]
+[titledesc {Network Driver for HTTP/3 (QUIC)}]
+
+[description]
+
+The driver module [term quic] provides support for the [emph HTTP/3]
+protocol over [emph QUIC] (UDP-based, encrypted transport).
+It integrates closely with [term nsssl] to share TLS configuration
+parameters and certificate handling, as QUIC relies on TLS 1.3 for
+encryption and authentication.
+
+[para]
+
+The [term quic] driver is the HTTP/3 counterpart of [term nsssl].
+While [term nsssl] handles encrypted HTTP/1.x and HTTP/2 traffic over TCP/TLS,
+the [term quic] driver provides equivalent functionality for HTTP/3 over QUIC (UDP).
+Both modules share the same TLS configuration (certificates, ciphers, protocols, and OCSP settings)
+so that administrators can manage all HTTPS and HTTP/3 parameters in a unified way.
+The driver uses OpenSSL’s native QUIC implementation introduced in
+OpenSSL 3.1 and integrates it directly into NaviServer’s driver model.
+
+[para]
+
+This module requires NaviServer to be built with
+[const --with-openssl] and OpenSSL 4.0 or newer, as HTTP/3 support is
+based on the OpenSSL QUIC API introduced in OpenSSL 3.1+, and which is
+feature complete for this server in OpenSSL 4.0+.
+
+[section CONFIGURATION]
+
+ To enable HTTP/3, the QUIC module must be loaded alongside
+[term nsssl] (used for HTTP/1.x). The two modules share security settings
+such as certificates, ciphers, and protocols.
+
+[example_begin]
+ ns_section ns/modules {
+   ns_param https nsssl.so
+   ns_param h3    quic.so
+ }
+ 
+ ns_section ns/module/https {
+   ns_param defaultserver  ...
+   ns_param address        ...
+   ns_param port           ...
+   ns_param hostname       ...
+   ns_param ciphers        ...
+   ns_param protocols      ...
+   ns_param certificate    ...
+   ...
+   # Extra parameters specific to HTTP/3
+   #ns_param h3advertise true   ;# default: false  -> advertise Alt-Svc header
+   #ns_param h3persist   false  ;# default: true   -> control 'persist' flag in Alt-Svc
+ }
+ 
+ ns_section ns/module/h3 {
+    ns_param https ns/module/https
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def h3advertise]
+ When set to [const true], NaviServer automatically advertises the HTTP/3
+ endpoint to clients using an [term Alt-Svc] header in the HTTP/1.x
+ response.
+ The first connection is served via HTTPS/TCP, and clients that support
+ HTTP/3 will use the advertised Alt-Svc to reconnect over QUIC.
+
+[def h3persist]
+ Controls the [arg persist] attribute of the generated Alt-Svc header.
+ When [const true] (default), the client may continue to use the cached
+ HTTP/3 endpoint across browser restarts until the Alt-Svc lifetime
+ expires.
+
+[list_end]
+
+[subsection {Notes}]
+
+ The NaviServer HTTP/3 module works best with publicly
+ trusted certificates (e.g., from Let’s Encrypt), especially when the
+ header field Alt-Svc is used to advertise the availability of HTTP/3
+ in an HTTP/1.* request.  Browsers will only attempt QUIC connections
+ for Alt-Svc endpoints whose certificates chain to a trusted public
+ root.  Self-signed or private-CA certificates (commonly used for
+ "localhost" testing) are typically rejected for QUIC even if accepted
+ for HTTPS/TCP.
+
+[subsection {Alt-Svc Behavior}]
+
+ When visiting an HTTPS site such as [const https://example.org],
+ the initial connection is made via HTTP/1.x or HTTP/2 over TCP.
+ If the server includes an Alt-Svc header such as:
+
+[example_begin]
+ Alt-Svc: h3=":8445"; ma=86400; persist=1
+[example_end]
+
+ the browser will cache this advertisement and may attempt to reconnect
+ using HTTP/3 on subsequent requests.
+
+ [para] Important: acceptance of Alt-Svc advertisements is determined
+ by the browser, not by the server. Most browsers ignore Alt-Svc
+ entries for endpoints with untrusted certificates.
+
+[subsection {Local Testing and Workarounds}]
+
+[list_begin itemized]
+[item]
+ For Chromium-based browsers (Chrome, Brave, Edge), HTTP/3 can be
+ forced manually for specific origins by launching the browser with
+ flags such as:
+
+[example_begin]
+ /Applications/Brave\ Browser.app/Contents/MacOS/Brave\ Browser \
+   --use-system-default-cert-verifier \
+   --disable-features=UseChromeRootStore \
+   --enable-quic \
+   --origin-to-force-quic-on=localhost:8445
+[example_end]
+
+[item]
+
+ A more robust approach is to use a publicly trusted
+ certificate.  For testing, you can create a hostname in a domain you
+ control (for example, [const test.example.org] via a DNS-01
+ challenge) and map it to 127.0.0.1 in [const /etc/hosts].  This
+ allows Alt-Svc-driven HTTP/3 without special browser flags.
+
+[item]
+
+ This limitation is due to browser policy, not a restriction of
+ NaviServer’s HTTP/3 implementation.  Policies may change over time;
+ if you discover reliable workarounds for e self-signed Alt-Svc
+ testing, please share them with the community.
+
+[list_end]
+
+[section USAGE]
+
+ To enable automatic advertisement of HTTP/3 support, set
+ [const h3advertise] to [const true] in the [const https] section.  Clients
+ that support HTTP/3 will transparently upgrade after the first
+ request.
+
+ To enable HTTP/3 selectively (for example, only for specific client
+ IPs or address ranges), configure [const h3advertise] with
+ [const false] and dynamically add an Alt-Svc header via a Tcl
+ filter:
+
+[example_begin]
+ proc register_alt_svc {args} {
+   set value [lb]subst {h3=":[lb]ns_conn port[rb]"; ma=86400; persist=1}[rb]
+   ns_set update [lb]ns_conn outputheaders[rb] alt-svc $value
+   return -code continue
+ }
+[example_end]
+
+ You can restrict advertisement to a specific IP address by using filter
+ constraints:
+
+[example_begin]
+ ns_register_filter -constraints {x-ns-ip 137.208.148.93} \
+   postauth GET /* register_alt_svc
+[example_end]
+
+
+[section COMPILATION]
+
+ The QUIC driver depends on the [term nghttp3] library, which provides
+ the HTTP/3 frame encoding and decoding layer.  The build system
+ automatically searches for [term libnghttp3] and its headers during
+ configuration.
+
+[para]
+
+ If the library is installed in a non-standard location, its location
+ can be specified using one of the following methods:
+
+[example_begin]
+ # Use a prefix directory
+ ./configure --with-nghttp3=/opt/nghttp3
+[example_end]
+
+ or, to override the include and library flags directly:
+
+[example_begin]
+ ./configure NGHTTP3_CFLAGS="-I$HOME/pfx/include" \
+   NGHTTP3_LIBS="-L$HOME/pfx/lib -lnghttp3"
+[example_end]
+
+ If [term pkg-config] cannot locate the appropriate `.pc` file, ensure
+ that [const PKG_CONFIG_PATH] points to the directory containing
+ either [term libnghttp3.pc] or [term nghttp3.pc] (for example,
+ [const /usr/local/lib/pkgconfig]).
+
+[para]
+
+ When [term nghttp3] is correctly detected, the [term quic] module will
+ be built automatically as part of the NaviServer build.
+ Otherwise, the driver will be skipped, and a summary message will be
+ displayed at the end of the configuration phase.
+
+
+[section NOTES]
+
+[list_begin itemized]
+[item]
+
+ HTTP/3 (QUIC) in NaviServer relies on OpenSSL’s QUIC stack, which was
+ introduced in OpenSSL 3.1 and is still under active development.
+ For the QUIC driver to function correctly, NaviServer 5 (or newer) and
+ OpenSSL 4 or later are required, as earlier versions do not provide
+ the necessary QUIC APIs.
+
+[item]
+
+ All TLS-related configuration parameters - such as certificates,
+ ciphers, protocols, and OCSP stapling - are inherited directly from
+ the referenced [term https] module.  No separate TLS directives are
+ required in the [const ns/module/h3] section.
+
+[item]
+
+ At this stage, the QUIC driver provides full integration of HTTP/3
+ within NaviServer’s driver architecture for serving inbound HTTP/3
+ requests.  However, as the implementation is still evolving, it may
+ produce verbose diagnostic output in the server log and expose
+ limitations within the underlying OpenSSL QUIC layer.  In particular,
+ occasional instability has been observed when querying the state of
+ existing QUIC streams.
+
+ [para] For this reason, production deployment on high-traffic public
+ sites is not yet recommended.
+
+[item]
+
+ Currently, the QUIC driver implements only the server side of the
+ HTTP/3 protocol.  Client-side HTTP/3 support (for example, via
+ [cmd ns_http] or [cmd ns_connchan]) is not yet available and will be
+ added once the server-side implementation reaches a stable and mature
+ state.
+
+[list_end]
+
+[see_also ns_section ns_param nsssl ns_sock ns_register_filter ns_set ns_conn]
+[keywords module quic "network driver" http3 h3 tls openssl altsvc configuration testing browser compatibility]
+[manpage_end]

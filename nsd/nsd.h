@@ -25,7 +25,7 @@
 #include "locale.h"
 
 #define NS_TCLHTTP_CALLBACK_AS_STRING 1
-//#define USE_ENCODE_HEADERS 1
+#define USE_ENCODE_HEADERS 1
 
 /*
  * Constants
