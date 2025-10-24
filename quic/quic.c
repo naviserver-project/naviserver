@@ -89,7 +89,6 @@
 
 #include "../include/ns.h"
 #include "../nsd/nsd.h"
-#include "shared.h"
 
 #define NS_ENABLE_THREAD_AFFINITY 1
 #include "thread-affinity.h"
@@ -103,8 +102,9 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "../nsd/nsopenssl.h"
-
+#include "shared.h"
 #include <nghttp3/nghttp3.h>
+
 #if NGHTTP3_VERSION_NUM < 0x010800
 # error "nghttp3 version 1.8.0 or newer are required for the used HTTP/3 APIs"
 #endif
