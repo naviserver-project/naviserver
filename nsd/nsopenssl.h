@@ -98,6 +98,7 @@ typedef struct NsTLSConfig {
             bool   h3advertise;       /* add h3 advertise automatically when h3 is enabled */
             bool   h3persist;         /* add persit flag to h3 advertise when activated    */
         } h1;
+# if defined(HAVE_OPENSSL_4)
         struct {
             size_t     recvbufsize;  /* value for setting SO_RCVBUF */
             size_t     nr_listeners; /* number of listener SSL* at the start of the pollset */
@@ -120,6 +121,7 @@ typedef struct NsTLSConfig {
             struct timeval idle_timeout;  /* e.g., {1, 0} */
             struct timeval drain_timeout; /* e.g., {0, 10*1000} -> 10ms */
         } h3;
+# endif
     } u;
 } NsTLSConfig;
 
