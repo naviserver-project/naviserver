@@ -77,13 +77,9 @@
 
 
 #include "../include/ns.h"
-#include "shared.h"
 
-
+#if defined(HAVE_NGHTTP3)
 #include "shared.h"
-#include "ns.h" /* Ns_Mutex*, Ns_Log */
-#include <string.h>
-#include <stdlib.h>
 
 /* ---------- Prototypes ---------- */
 static int resume_grow(SharedState *st) NS_GNUC_NONNULL(1);
@@ -782,6 +778,7 @@ void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out)
     out->closed_by_app  = ss->closed_by_app;
     Ns_MutexUnlock(&ss->lock);
 }
+#endif
 
 /*
  * Local Variables:
