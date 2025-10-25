@@ -93,7 +93,7 @@ jobs:
           echo "MAKEFLAGS=-j${CORES} -Oline" >> "$GITHUB_ENV"
       - name: Compile all
         run: |
-          sudo --preserve-env=MAKEFLAGS \
+          sudo \
             version_ns=.. \
             version_modules=GIT \
             version_tcl=${TCLTAG} \
