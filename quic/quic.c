@@ -7869,7 +7869,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
     if (sock->arg != NULL) {
         qctx->ssl = sock->arg;
 
-#if HAVE_OPENSSL_4
+#if defined(HAVE_OPENSSL_4)
         quic_conn_set_sockaddr(sock->arg, saPtr, socklenPtr);
 #else
         (void)saPtr;
