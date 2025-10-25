@@ -64,35 +64,14 @@ ReportError(Tcl_Interp *interp, const char *fmt, ...)
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 
-/*
- * OpenSSL < 0.9.8f does not have SSL_set_tlsext_host_name() In some
- * versions, this function is defined as a macro, on some versions as
- * a library call, which complicates detection via m4.
- */
-# if OPENSSL_VERSION_NUMBER > 0x00908070
-#  define HAVE_SSL_set_tlsext_host_name 1
-# endif
-
-# ifndef HAVE_OPENSSL_PRE_1_1
-#  define OPENSSL_HAVE_DH_AUTO
-#  define OPENSSL_HAVE_READ_BUFFER_LEN
-# endif
-
-# ifdef HAVE_OPENSSL_3
-#  define OPENSSL_NO_OCSP 1
-# endif
-
-# ifndef OPENSSL_NO_OCSP
+# ifdef HAVE_OPENSSL_OCSP
 #  include <openssl/ocsp.h>
-# endif
 
-# ifndef OPENSSL_NO_OCSP
 /*
  * Structure passed to cert status callback
  */
 typedef struct {
     int            timeout;
-    //char          *respin;     /* File to load OCSP Response from (or NULL if no file) */
     int            verbose;
     OCSP_RESPONSE *OCSPresp;
     Ns_Time        OCSPexpire;
@@ -109,6 +88,10 @@ static SSLCertStatusArg sslCertStatusArg;
 static int ClientCtxDataIndex;
 
 /*
+ * Local functions defined in this file
+ */
+
+/*
  * OpenSSL callback functions.
  */
 static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
@@ -123,26 +106,6 @@ static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int x509err, int curren
 static bool ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *validationExceptionsPtr, struct sockaddr *saPtr)
      NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-#ifndef OPENSSL_HAVE_DH_AUTO
-static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
-#endif
-
-# ifndef OPENSSL_NO_OCSP
-static int SSL_cert_statusCB(SSL *ssl, void *arg);
-
-/*
- * Local functions defined in this file
- */
-static Ns_ReturnCode
-PartialTimeout(const Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPartialTimeoutPtr,
-               Ns_Time **partialTimeoutPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
-
-static bool
-OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-# endif
-
 static void DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long sslERRcode)
     NS_GNUC_NONNULL(2);
 
@@ -152,8 +115,18 @@ static void CertTableInit(void);
 static void CertTableReload(void *UNUSED(arg));
 static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+# ifdef HAVE_OPENSSL_OCSP
+static int SSL_cert_statusCB(SSL *ssl, void *arg);
 
-# ifndef OPENSSL_NO_OCSP
+static Ns_ReturnCode
+PartialTimeout(const Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPartialTimeoutPtr,
+               Ns_Time **partialTimeoutPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+static bool
+OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static int OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -165,7 +138,7 @@ static int OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RE
 
 static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
     NS_GNUC_NONNULL(1);
-#endif
+# endif /* HAVE_OPENSSL_OCSP */
 
 # if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
 static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line)) NS_GNUC_MALLOC NS_ALLOC_SIZE1(1) NS_GNUC_RETURNS_NONNULL;
@@ -173,7 +146,7 @@ static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file),
 static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line));
 # endif
 
-#ifndef OPENSSL_HAVE_DH_AUTO
+#ifndef HAVE_OPENSSL_DH_AUTO
 /*
  *----------------------------------------------------------------------
  *
@@ -227,7 +200,9 @@ DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 }
 # endif /* LIBRESSL_VERSION_NUMBER */
 
-#include "dhparams.h"
+#ifndef HAVE_OPENSSL_DH_AUTO
+# include "dhparams.h"
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -404,8 +379,7 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
     return result;
 }
 
-#ifndef OPENSSL_NO_OCSP
-
+#ifdef HAVE_OPENSSL_OCSP
 /*
  *----------------------------------------------------------------------
  *
@@ -1162,7 +1136,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
     return rsp;
 }
 
-#endif /* Of OPENSSL_NO_OCSP */
+#endif /* HAVE_OPENSSL_OCSP */
 
 # if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
 static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line))
@@ -1487,14 +1461,10 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         int sslErr;
 
         if (sni_hostname != NULL) {
-# if HAVE_SSL_set_tlsext_host_name
             Ns_Log(Debug, "tls: setting SNI hostname '%s'", sni_hostname);
             if (SSL_set_tlsext_host_name(ssl, sni_hostname) != 1) {
                 Ns_Log(Warning, "tls: setting SNI hostname '%s' failed, value ignored", sni_hostname);
             }
-# else
-            Ns_Log(Warning, "tls: SNI hostname '%s' is not supported by version of OpenSSL", sni_hostname);
-# endif
         }
         SSL_set_fd(ssl, sock);
         SSL_set_connect_state(ssl);
@@ -1772,7 +1742,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
              *     SSL_MODE_ASYNC
              */
 
-#ifdef OPENSSL_HAVE_READ_BUFFER_LEN
+#ifdef HAVE_OPENSSL_READ_BUFFER_LEN
             /*
              * read_buffer_len is apparently just useful, when crypto
              * pipelining is set up. In general, the OpenSSL "dasync"
@@ -1795,7 +1765,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                 SSL_CTX_set_tlsext_servername_callback(*ctxPtr, SSL_serverNameCB);
                 /* SSL_CTX_set_tlsext_servername_arg(cfgPtr->ctx, app_data); // not really needed */
             }
-#ifdef OPENSSL_HAVE_DH_AUTO
+#ifdef HAVE_OPENSSL_DH_AUTO
             SSL_CTX_set_dh_auto(*ctxPtr, 1);
 #else
             cfgPtr->dhKey512 = get_dh512();
@@ -1822,7 +1792,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                 rc = X509_STORE_load_locations(storePtr, cert, NULL);
                 Ns_Log(Debug, "nsssl:X509_STORE_load_locations %d", rc);
             }
-#ifndef OPENSSL_NO_OCSP
+#ifdef HAVE_OPENSSL_OCSP
             if (Ns_ConfigBool(section, "ocspstapling", NS_FALSE)) {
                 Ns_Log(Notice, "nsssl: activate OCSP stapling for %s", section);
 
@@ -1838,7 +1808,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
             } else {
                 Ns_Log(Notice, "nsssl: OCSP stapling for %s not activated", section);
             }
-#endif
+#endif /* HAVE_OPENSSL_OCSP */
 
 #if OPENSSL_VERSION_NUMBER > 0x00908070 && !defined(HAVE_OPENSSL_3) && !defined(OPENSSL_NO_EC)
             /*
@@ -2338,7 +2308,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
          */
         CertTableAdd(ctx, cert);
 
-#ifndef OPENSSL_HAVE_DH_AUTO
+#ifndef HAVE_OPENSSL_DH_AUTO
         /*
          * Get DH parameters from .pem file
          */

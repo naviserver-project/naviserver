@@ -61,15 +61,31 @@
 # endif
 
 # if defined(OPENSSL_VERSION_MAJOR) && OPENSSL_VERSION_MAJOR >= 3
-#  define HAVE_OPENSSL_3 1
+#  define HAVE_OPENSSL_3
 #  if OPENSSL_VERSION_PREREQ(3,2)
-#   define HAVE_OPENSSL_3_2 1
+#   define HAVE_OPENSSL_3_2
+#  endif
+#  if OPENSSL_VERSION_PREREQ(3,5)
+#   define HAVE_OPENSSL_3_5
+#  endif
+#  if OPENSSL_VERSION_PREREQ(4,0)
+#   define HAVE_OPENSSL_4
+#   define HAVE_OPENSSL_4_0
 #  endif
 # endif
 
 # if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
 #  define HAVE_OPENSSL_HKDF
 #  define HAVE_OPENSSL_EC_PRIV2OCT
+# endif
+
+# if !defined(HAVE_OPENSSL_PRE_1_1)
+#  define HAVE_OPENSSL_DH_AUTO
+#  define HAVE_OPENSSL_READ_BUFFER_LEN
+# endif
+
+# if defined(HAVE_OPENSSL_3)
+#  define HAVE_OPENSSL_OCSP
 # endif
 
 # include <openssl/ssl.h>
