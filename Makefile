@@ -345,11 +345,11 @@ distclean: clean
 		$(PEM_FILE) $(PEM_PRIVATE) $(PEM_PUBLIC)
 
 config.guess:
-	wget -O config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
+	curl -s -fS -k -L -o config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
 config.sub:
-	wget -O config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
+	curl -s -fS -k -L -o config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
 ca-bundle.crt:
-	wget -O ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
+	curl -s -fS -k -L -o ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
 
 dist: config.guess config.sub clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
