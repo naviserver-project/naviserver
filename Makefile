@@ -16,27 +16,66 @@ HEADER_INC=header-5.0.inc
 NSBUILD=1
 include include/Makefile.global
 
-dirs    = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl quic revproxy
+# Subdirectories
+SUBDIRS_CORE := nsthread nsd
+SUBDIRS_MODS := nssock nscgi nscp nslog nsperm nsdb nsssl quic revproxy nsdbtest
+SUBDIRS      := $(SUBDIRS_CORE) $(SUBDIRS_MODS)
+
+#
+# Use -j per default, obey user serial wish or -j setting
+#
+USER_SET_J   := $(filter -j%,$(MAKEFLAGS))
+ifeq ($(SERIAL),1)
+  # stay serial
+else ifeq ($(strip $(USER_SET_J)$(HAS_JOBSERVER)),)
+  # user did not pass -j -> turn it on by default
+  MAKEFLAGS += -j
+  ifneq ($(filter 3.%,$(MAKE_VERSION)),)
+    # GNU make 3.81 (macOS): pass a bare "-j" to sub-makes
+    SUBMAKE_J := -j
+  else
+    # GNU make >=4: numeric -j is enough; jobserver propagates automatically
+    MAKEFLAGS += -j
+  endif
+endif
 
 # Unix only modules
 ifeq (,$(findstring MINGW,$(uname)))
-   dirs += nsproxy
+   SUBDIRS += nsproxy
 endif
 
-distfiles = $(dirs) doc tcl contrib include tests win win32 configure m4 \
+distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
 	config.guess config.sub \
 	README.md NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in install-from-repository.tcl
 
-all:
-	@for i in $(dirs); do \
-		( cd $$i && $(MAKE) all ) || exit 1; \
-	done
-	@if [ -n "${PEM_FILE}" ]; then \
-		$(MAKE) $(PEM_FILE) ; \
-	fi
+all: $(SUBDIRS)
+
+# Delegate the targets (or 'all' if none) to each subdir in a single call
+$(SUBDIRS):
+	@+$(MAKE) $(SUBMAKE_J) -C $@ $(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)
+
+# Subdir dependencies
+nsd: nsthread
+
+# modules depend on core
+$(SUBDIRS_MODS): nsd
+
+# specific extras
+nsdbtest: nsdb
+#quic: nsssl
+
+ifneq ($(strip $(PEM_FILE)),)
+all: $(PEM_FILE)
+$(PEM_FILE):
+	$(MAKE) $@
+endif
+
+# Passthrough for common goals
+clean install: $(SUBDIRS)
+
 
 help:
 	@echo 'Commonly used make targets:'
@@ -328,13 +367,8 @@ clang-tidy:
 		-I./include -I/usr/include $(DEFS)
 
 checkexports: all
-	@for i in $(dirs); do \
+	@for i in $(SUBDIRS); do \
 		nm -p $$i/*${LIBEXT} | awk '$$2 ~ /[TDB]/ { print $$3 }' | sort -n | uniq | grep -v '^[Nn]s\|^TclX\|^_'; \
-	done
-
-clean:
-	@for i in $(dirs); do \
-		(cd $$i && $(MAKE) clean) || exit 1; \
 	done
 
 clean-bak: clean
@@ -374,6 +408,6 @@ dist: config.guess config.sub clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
 
-.PHONY: all install clean distclean \
+.PHONY: all install clean distclean $(SUBDIRS) \
 	install-dirs install-include install-tcl install-modules \
 	install-config install-certificates install-doc install-examples install-notice
