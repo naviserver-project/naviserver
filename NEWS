@@ -1,4 +1,37 @@
 =======================================
+NaviServer 5.0.3, released 2025-09-26
+=======================================
+
+ 8 files changed, 83 insertions(+), 70 deletions(-)
+
+Bug Fixes:
+----------
+
+ - tls: Centralized OpenSSL feature detection and simplified
+   build-time guards.  OpenSSL version and capability checks have been
+   moved into a dedicated header (nsopenssl.h) and normalized to
+   presence-style macros (HAVE_OPENSSL_*). This eliminates a mix of
+   legacy macros and makes code paths for TLS features (such as OCSP,
+   DH auto-parameters, and read-buffer support) consistent and easier
+   to maintain. This fixes a bug introduced in 5.0.2. (commit 650f470)
+
+Compatibility and Platform Fixes:
+---------------------------------
+
+  - build(make): Replaced wget with curl for downloading build
+    helpers.  Network fetches for config.guess, config.sub, and
+    ca-bundle.crt now use curl, which is more portable across
+    platforms and already available in NaviServer’s toolchain
+    (e.g. for testing). (commit 336c91a)
+
+Notes:
+------
+
+  This is a bug-fix and stability release addressing a regression in
+  5.0.2 and improves portability.
+
+
+=======================================
 NaviServer 5.0.2, released 2025-09-23
 =======================================
 
