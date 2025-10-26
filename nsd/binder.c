@@ -1161,6 +1161,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     if (address == NULL) {
         address = NS_IP_UNSPECIFIED;
     }
+    strncpy(data, address, sizeof(data)-1);
 
     /*
      * Build and send message.
@@ -1170,7 +1171,6 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     ns_iov_set(&iov[2], &type,    sizeof(type));
     ns_iov_set(&iov[3], &data,    sizeof(data));
 
-    strncpy(data, address, sizeof(data)-1);
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;
     msg.msg_iovlen = 4;
