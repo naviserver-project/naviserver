@@ -23,7 +23,8 @@ SUBDIRS_MODS := nssock nscgi nscp nslog nsperm nsdb nsssl quic revproxy nsdbtest
 ifeq (,$(findstring MINGW,$(uname)))
    SUBDIRS_MODS += nsproxy
 endif
-SUBDIRS      := $(SUBDIRS_CORE) $(SUBDIRS_MODS)
+SUBDIRS   := $(SUBDIRS_CORE) $(SUBDIRS_MODS)
+TESTDIRS  :=
 
 #
 # Use -j per default, obey user serial wish or -j setting
@@ -50,11 +51,21 @@ distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in install-from-repository.tcl
 
-all: $(SUBDIRS)
+# Top-level goals
+all:     $(SUBDIRS:%=all-%)
+clean:   $(SUBDIRS:%=clean-%)
+install: $(SUBDIRS:%=install-%)
+test:    $(TESTDIRS:%=test-%)
 
-# Delegate the targets (or 'all' if none) to each subdir in a single call
-$(SUBDIRS):
-	@+$(MAKE) $(SUBMAKE_J) -C $@ $(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)
+# One recursive call per subdir/goal, delegate test to selected subdirs
+all-%:
+	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* all
+install-%:
+	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* install
+clean-%:
+	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* clean
+test-%:
+	+$(MAKE) $(SUBMAKE_J) -C $* test
 
 # Subdir dependencies
 nsd: nsthread
@@ -71,10 +82,6 @@ all: $(PEM_FILE)
 $(PEM_FILE):
 	$(MAKE) $@
 endif
-
-# Passthrough for common goals
-clean install: $(SUBDIRS)
-
 
 help:
 	@echo 'Commonly used make targets:'
@@ -282,9 +289,7 @@ NS_LD_LIBRARY_PATH	= \
    LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
    DYLD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$DYLD_LIBRARY_PATH"
 
-EXTRA_TEST_DIRS =
 ifneq ($(OPENSSL_LIBS),)
-  #EXTRA_TEST_DIRS += nsssl
   TEST_CERTIFICATES = tests/testserver/certificates
   PEM_FILE          = $(TEST_CERTIFICATES)/server.pem
   PEM_PRIVATE       = $(TEST_CERTIFICATES)/myprivate.pem
@@ -317,9 +322,6 @@ test: all $(EXTRA_TEST_REQ)
 	    $(CHOWN) -R nsadmin $(srcdir)/tests ; \
 	fi;
 	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
-	@for i in $(EXTRA_TEST_DIRS); do \
-		( cd $$i && $(MAKE) test ) || exit 1; \
-	done
 
 runtest: all
 	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
@@ -406,7 +408,7 @@ dist: config.guess config.sub clean
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --exclude='*/.*' --no-xattrs --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
-
-.PHONY: all install clean distclean $(SUBDIRS) \
+.PHONY: all install clean distclean \
 	install-dirs install-include install-tcl install-modules \
-	install-config install-certificates install-doc install-examples install-notice
+	install-config install-certificates install-doc install-examples install-notice \
+	all-% install-% clean-% test-%
