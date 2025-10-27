@@ -19,6 +19,10 @@ include include/Makefile.global
 # Subdirectories
 SUBDIRS_CORE := nsthread nsd
 SUBDIRS_MODS := nssock nscgi nscp nslog nsperm nsdb nsssl quic revproxy nsdbtest
+# Unix only modules
+ifeq (,$(findstring MINGW,$(uname)))
+   SUBDIRS_MODS += nsproxy
+endif
 SUBDIRS      := $(SUBDIRS_CORE) $(SUBDIRS_MODS)
 
 #
@@ -37,11 +41,6 @@ else ifeq ($(strip $(USER_SET_J)$(HAS_JOBSERVER)),)
     # GNU make >=4: numeric -j is enough; jobserver propagates automatically
     MAKEFLAGS += -j
   endif
-endif
-
-# Unix only modules
-ifeq (,$(findstring MINGW,$(uname)))
-   SUBDIRS += nsproxy
 endif
 
 distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
