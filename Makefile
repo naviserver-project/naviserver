@@ -77,6 +77,10 @@ $(SUBDIRS_MODS:%=all-%): | all-nsd
 all-nsdbtest: | all-nsdb
 #quic: | all-nsssl
 
+# Make sure that install-notice is printed as last thing of a "make install"
+$(SUBDIRS:%=install-%): | $(SUBDIRS:%=all-%)
+install-notice: | $(SUBDIRS:%=install-%)
+
 ifneq ($(strip $(PEM_FILE)),)
 all: $(PEM_FILE)
 $(PEM_FILE):
