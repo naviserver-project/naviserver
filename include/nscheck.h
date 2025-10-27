@@ -174,14 +174,20 @@
 # define NS_INLINE inline
 #endif
 
-#if defined(__cplusplus)
-# define NS_RESTRICT
-#else
-# ifdef _MSC_VER
-#  define NS_RESTRICT __restrict
-# else
-#  define NS_RESTRICT restrict
-# endif
+
+#ifndef NS_RESTRICT
+#  if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+      /* C99 or newer */
+#    define NS_RESTRICT restrict
+#  elif defined(_MSC_VER)
+      /* MSVC */
+#    define NS_RESTRICT __restrict
+#  elif defined(__GNUC__) || defined(__clang__)
+      /* GNU/Clang extensions in older modes */
+#    define NS_RESTRICT __restrict__
+#  else
+#    define NS_RESTRICT
+#  endif
 #endif
 
 #if defined(__GNUC__) && !defined(__OpenBSD__)
