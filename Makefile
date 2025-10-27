@@ -68,14 +68,14 @@ test-%:
 	+$(MAKE) $(SUBMAKE_J) -C $* test
 
 # Subdir dependencies
-nsd: nsthread
+all-nsd: | all-nsthread
 
 # modules depend on core
-$(SUBDIRS_MODS): nsd
+$(SUBDIRS_MODS:%=all-%): | all-nsd
 
 # specific extras
-nsdbtest: nsdb
-#quic: nsssl
+all-nsdbtest: | all-nsdb
+#quic: | all-nsssl
 
 ifneq ($(strip $(PEM_FILE)),)
 all: $(PEM_FILE)
@@ -103,7 +103,7 @@ help:
 	@echo '  make gdbtest TESTFLAGS="-verbose start -file cookies.test -match cookie-2.*"'
 	@echo
 
-install: install-dirs install-include install-tcl install-modules \
+install: all install-dirs install-include install-tcl install-modules \
 	install-config install-certificates install-doc install-examples install-notice
 
 HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
