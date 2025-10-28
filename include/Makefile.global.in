@@ -90,16 +90,40 @@ LDRPATH         += @LDRPATH@
 CC               = $(PURIFY) @CC@
 CCLD             = @CCLD@
 
-# When compiling with sanitize: export ASAN_OPTIONS=halt_on_error=false:exitcode=0:print_stats=1:atexit=1
-#SANITIZE          = -fsanitize=address -fsanitize-recover=address
-#SANITIZE          =
+# Detect compiler kind (mutually exclusive) and avoid = overwrites
+CC_VERSION := $(shell $(CC) --version 2>/dev/null | head -1)
+IS_CLANG  := $(shell echo '$(CC_VERSION)' | grep -i -c clang)
+IS_GCC    := $(shell echo '$(CC_VERSION)' | grep -i -c gcc)
+GCC_VER   := $(shell $(CC) -dumpfullversion -dumpversion 2>/dev/null)
+GCC_MAJOR := $(word 1,$(subst ., ,$(GCC_VER)))
+lt = $(shell [ $(1) -lt $(2) ] && echo 1 || echo 0)
 
-# -Wcast-qual
 
-CFLAGS_CONVERSION = -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
-CFLAGS_FORMAT     = -Wmissing-format-attribute -Wformat-security -Wformat=2
-CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
-CFLAGS_TIDY       = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wold-style-definition  -Wnull-dereference -Wdouble-promotion -Wvla  $(CFLAGS_FORMAT)
+# Defaults depend on compiler/version
+ifeq ($(IS_GCC),1)
+  # GCC <= 6: keep checks empty by default (user can override)
+  ifeq ($(call lt,$(GCC_MAJOR),6),1)
+    CFLAGS_CONVERSION ?=
+    CFLAGS_FORMAT     ?=
+    CFLAGS_DEFINITION ?=
+    CFLAGS_TIDY       ?=
+  else
+    # GCC >= 6:
+    # -Wcast-qual
+    CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
+    CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
+    CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
+    CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wold-style-definition -Wnull-dereference -Wdouble-promotion -Wvla $(CFLAGS_FORMAT)
+  endif
+else
+  # Non-GCC (e.g., Clang): keep your normal defaults
+  CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
+  CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
+  CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
+  CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wold-style-definition -Wdouble-promotion -Wvla $(CFLAGS_FORMAT)
+endif
+
+
 #CFLAGS_FORTIFY    = -D_FORTIFY_SOURCE=2 -fstack-protector $(SANITIZE)
 #CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE) -fwrapv -ftrapv
 CFLAGS_WARNING   = @CFLAGS_WARNING@
