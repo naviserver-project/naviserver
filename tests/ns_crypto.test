@@ -16,11 +16,15 @@ tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGO
 
 
 #######################################################################################
-#  Syntax tests no covered below
+#  Syntax tests not covered below
 #######################################################################################
 test ns_crypto::randombytes-1.0 {syntax: ns_crypto::randombytes} -body {
     ns_crypto::randombytes
 } -returnCodes error -result {wrong # args: should be "ns_crypto::randombytes ?-encoding hex|base64url|base64|binary? /nrbytes[1,MAX]/"}
+
+test ns_crypto::uuid-1.0 {syntax: ns_crypto::uuid} -body {
+    ns_crypto::uuid -
+} -returnCodes error -result {wrong # args: should be "ns_crypto::uuid ?-version v4|v7?"}
 
 
 #######################################################################################
@@ -770,6 +774,16 @@ test ns_crypto::eckey-1.6 {syntax: ns_crypto::eckey sharedsecret} -body {
     ns_crypto::eckey sharedsecret
 } -returnCodes error -result {wrong # args: should be "ns_crypto::eckey sharedsecret ?-binary? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? ?-pem /value/? ?--? /pubkey/"}
 
+############################################################################
+# Test Cases for ns_crypto::uuid
+############################################################################
+test ns_crypto::uuid-1.1 {UUID v4, length of UUID} -constraints crypto -body {
+    string length [ns_crypto::uuid -version v4]
+} -returnCodes {error ok} -result {36}
+
+test ns_crypto::uuid-1.2 {UUID v7, length of UUID} -constraints crypto -body {
+    string length [ns_crypto::uuid -version v7]
+} -returnCodes {error ok} -result {36}
 
 #
 # Local variables:
