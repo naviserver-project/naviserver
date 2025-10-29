@@ -234,40 +234,53 @@ nsf::proc ns_totp {
 #
 # ns_uuid: Generate a Version 4 UUID according to RFC 4122
 #
+proc ns_uuid {} {
+    return [ns_crypto::uuid -version v4]
+}
+# Tcl based version
+#
 # Uses the OpenSSL RAND_bytes function to generate a Version 4 UUID,
 # which is meant for generating UUIDs from truly-random or
 # pseudo-random numbers.
 #
-#   The algorithm is as follows:
-#
-#   o  Set the two most significant bits (bits 6 and 7) of the
-#      clock_seq_hi_and_reserved to zero and one, respectively.
-#
-#   o  Set the four most significant bits (bits 12 through 15) of the
-#      time_hi_and_version field to the 4-bit version number from
-#      Section 4.1.3.
-#
-#   o  Set all the other bits to randomly (or pseudo-randomly) chosen values.
-#
-proc ns_uuid {} {
-    set b [ns_crypto::randombytes 16]
-    set time_hi_and_version [string replace [string range $b 12 15] 0 0 4]
-    set clk_seq_hi_res      [string range $b 16 17]
-    set clk_seq_hi_res2     [format %2x [expr {("0x$clk_seq_hi_res" & 0x3f) | 0x80}]]
-    format %s-%s-%s-%s%s-%s \
-        [string range $b 0 7] \
-        [string range $b 8 11] \
-        $time_hi_and_version \
-        $clk_seq_hi_res2 \
-        [string range $b 18 19] \
-        [string range $b 20 31]
-}
-# % package require uuid
-# 1.0.5
-# % time {::uuid::uuid generate} 10000
+# proc ns_uuid {} {
+#    set b [ns_crypto::randombytes 16]
+#    set time_hi_and_version [string replace [string range $b 12 15] 0 0 4]
+#    set clk_seq_hi_res      [string range $b 16 17]
+#    set clk_seq_hi_res2     [format %2x [expr {("0x$clk_seq_hi_res" & 0x3f) | 0x80}]]
+#    format %s-%s-%s-%s%s-%s \
+#        [string range $b 0 7] \
+#        [string range $b 8 11] \
+#        $time_hi_and_version \
+#        $clk_seq_hi_res2 \
+#        [string range $b 18 19] \
+#        [string range $b 20 31]
+#}
+
+# %  Package uuid
+# 1.0.7
+# % time {::uuid::uuid generate} 100000
 # 366.14292850000004 microseconds per iteration
-# % time {ns_uuid} 10000
+
+# Purely Tcl based variant
+# % time {ns_uuid} 100000
 # 5.559969000000001 microseconds per iteration
+
+# C-based variant UUIDv4
+# %  time {ns_crypto::uuid} 100000
+# 0.5554475 microseconds per iteration
+
+# C-based variant UUIDv7
+# %  time {ns_crypto::uuid -version v7} 100000
+# 0.56665875 microseconds per iteration
+
+
+#                Time        Factor
+# Tcllib 1.0.7   366,1429     1,00
+# ns Tcl based     5,5600    65,85
+# ns C based v4    0,5554   659,19
+# ns C based v7    0,5667   646,14
+
 
 #
 # Local variables:

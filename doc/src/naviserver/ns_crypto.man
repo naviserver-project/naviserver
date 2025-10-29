@@ -531,7 +531,55 @@ The option [option -iterations] specifies the number of iterations
 [example_end]
 
 
+[call [cmd "ns_crypto::uuid"] \
+        [opt [option "-version v4|v7"]]]
+
+ Returns a newly generated UUID string in canonical textual form
+ "8-4-4-4-12" (36 lowercase hexadecimal characters plus 4
+ hyphens). The result is always NUL-free ASCII suitable for storage in
+ CHAR(36), VARCHAR(36), or database UUID types.
+
+[para]
+
+ If no [option "-version"] is specified, the command returns a Version
+ 4 (UUIDv4) identifier for backward compatibility with the historical
+ [cmd ns_uuid] command. UUIDv4 values are generated from cryptographic
+ random bytes and include no timestamp information, providing maximum
+ entropy and privacy without revealing creation time.  (UUIDv4 is
+ specified in [uri \
+        https://datatracker.ietf.org/doc/html/rfc4122 "RFC 4122"])
+
+[para]
+
+ When [option "-version v7"] is specified, the command returns a
+ Version 7 (UUIDv7) identifier as defined in [uri \
+     https://datatracker.ietf.org/doc/html/rfc9562 "RFC 9562"].
+
+ UUIDv7 values embed the current time in milliseconds in the
+ high-order bits and random data in the remaining bits. They are
+ globally unique and monotonically increasing with creation time,
+ which improves index locality and insertion performance in databases
+ and ordered data stores. However, UUIDv7 values encode their creation
+ time, so they can reveal when an ID was generated.
+
+[example_begin]
+ % ns_crypto::uuid
+ 3191eb43-60a3-4c9b-a3dc-9b5ef667641b
+ 
+ % ns_crypto::uuid -version v4
+ 75a2d2a1-7d67-4d59-8a2f-8e4f0eba4b36
+ 
+ % ns_crypto::uuid -version v7
+ 018fa74a-9f4c-7d82-9a5f-b59e22f14d35
+[example_end]
+
+ The built-in historical command [cmd ns_uuid] is equivalent to
+ [cmd {ns_crypto::uuid -version v4}] and is retained for backward
+ compatibility with existing applications and persisted identifiers.
+
+
 [list_end]
+
 [section OPTIONS]
 [list_begin options]
 

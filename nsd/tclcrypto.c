@@ -113,6 +113,10 @@ static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *
 static BIO *PEMOpenReadSteam(const char *fnOrData)
     NS_GNUC_NONNULL(1);
 
+static void uuid_format(unsigned char *b, char *dst) NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
+static int uuid_v4(char *dst) NS_GNUC_NONNULL(1);
+static int uuid_v7(char *dst) NS_GNUC_NONNULL(1);
+
 static TCL_OBJCMDPROC_T CryptoHmacAddObjCmd;
 static TCL_OBJCMDPROC_T CryptoHmacFreeObjCmd;
 static TCL_OBJCMDPROC_T CryptoHmacGetObjCmd;
@@ -3420,6 +3424,250 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
     return result;
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * uuid_format --
+ *
+ *      Convert 16 raw bytes into the canonical RFC 4122 UUID string
+ *      form (8-4-4-4-12 hex digits, lowercase, with hyphens). The
+ *      caller must provide a destination buffer of at least 37 bytes
+ *      to hold the 36-character UUID plus the trailing NUL.
+ *
+ * Results:
+ *      None. The formatted UUID string is written into 'dst'.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline void
+uuid_format(unsigned char *b, char *dst)
+{
+    /*
+     * Format into canonical string 8-4-4-4-12
+     */
+    Ns_HexString(&b[0],  &dst[0],  4, NS_FALSE);  /* bytes 0..3   -> dst[0..7]   */
+    dst[8]  = '-';
+
+    Ns_HexString(&b[4],  &dst[9],  2, NS_FALSE);  /* bytes 4..5   -> dst[9..12]  */
+    dst[13] = '-';
+
+    Ns_HexString(&b[6],  &dst[14], 2, NS_FALSE);  /* bytes 6..7   -> dst[14..17] */
+    dst[18] = '-';
+
+    Ns_HexString(&b[8],  &dst[19], 2, NS_FALSE);  /* bytes 8..9   -> dst[19..22] */
+    dst[23] = '-';
+
+    Ns_HexString(&b[10], &dst[24], 6, NS_FALSE);  /* bytes 10..15 -> dst[24..35] */
+    dst[36] = '\0';
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * uuid_v4 --
+ *
+ *      Generate a Version 4 (random) RFC 4122 UUID string.  The
+ *      function fills a 16-byte buffer with cryptographically strong
+ *      random bytes via RAND_bytes() and Sets the UUID version and
+ *      variant bits:
+ *         * byte[6] high nibble -> 0b0100 (version 4)
+ *         * byte[8] high bits   -> 0b10   (RFC 4122 variant)
+ *
+ *      Finally, it formats the result into canonical text using
+ *      uuid_format().
+ *
+ * Results:
+ *      Returns TCL_OK on success (UUID written into 'dst'),
+ *      or TCL_ERROR if RAND_bytes() failed and no valid UUID was produced.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline int
+uuid_v4(char *dst)
+{
+    unsigned char b[16];
+
+    if (RAND_bytes(b, sizeof(b)) != 1) {
+        return TCL_ERROR;
+    }
+
+    /*
+     * RFC 4122 version 4:
+     * - Set the 4 most significant bits of byte 6 (index 6) to 0100 (0x4).
+     * - Set the 2 most significant bits of byte 8 (index 8) to 10.
+     *
+     * Bytes are 0..15.
+     */
+    b[6] = (unsigned char)((b[6] & 0x0F) | 0x40); /* version 4 */
+    b[8] = (unsigned char)((b[8] & 0x3F) | 0x80); /* variant RFC4122 */
+
+    uuid_format(b, dst);
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * uuid_v7 --
+ *
+ *      Summary: Generate a Version 7 (time-ordered) UUID per RFC 9562 and
+ *      write its canonical textual form ("8-4-4-4-12") into 'dst'.
+ *
+ * Parameters:
+ *      dst - Pointer to a character buffer that will receive the textual
+ *            UUID; must not be NULL and must hold at least 37 bytes
+ *            (36 printable characters plus terminating NUL).
+ *
+ * Returns:
+ *      TCL_OK on success (a valid UUIDv7 string is written to 'dst' and NUL-terminated).
+ *      TCL_ERROR on failure when RAND_bytes() reports an error; in this case the function
+ *        does not guarantee a valid UUID in 'dst'.
+ *
+ * Side effects:
+ *      None. The function calls Ns_GetTime(), Ns_TimeToMilliseconds(),
+ *      RAND_bytes(), memcpy(), and uuid_format(); writes into 'dst'.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline int
+uuid_v7(char *dst)
+{
+    unsigned char   out[16];
+    unsigned char   rnd[10];
+    time_t          ms;
+    unsigned long   b0, b1, b2;
+    Ns_Time         now;
+
+    /*
+     * We need 10 random bytes:
+     *  - parts of them go into the rand_a / rand_b fields.
+     */
+    if (RAND_bytes(rnd, sizeof(rnd)) != 1) {
+        return TCL_ERROR;
+    }
+
+    /*
+     * We'll compose the 16 output bytes:
+     *
+     * Bytes 0..5  : timestamp ms (big-endian 48-bit)
+     * Byte  6     : high nibble = version(0x7), low nibble = top 4 bits of random
+     * Byte  7     : next 8 random bits
+     * Byte  8     : variant '10' in the top bits, then next 6 random bits
+     * Byte  9..15 : remaining random bytes
+     */
+
+    Ns_GetTime(&now);
+    ms = Ns_TimeToMilliseconds(&now);
+
+    /* timestamp big-endian into out[0..5] */
+    out[0] = (unsigned char)((ms >> 40) & 0xFF);
+    out[1] = (unsigned char)((ms >> 32) & 0xFF);
+    out[2] = (unsigned char)((ms >> 24) & 0xFF);
+    out[3] = (unsigned char)((ms >> 16) & 0xFF);
+    out[4] = (unsigned char)((ms >>  8) & 0xFF);
+    out[5] = (unsigned char)( ms        & 0xFF);
+
+    /*
+     * Pull first 3 random bytes for the structured fields.
+     */
+    b0 = rnd[0];
+    b1 = rnd[1];
+    b2 = rnd[2];
+
+    /*
+     * Byte 6:
+     *   high nibble = version (0111 -> 0x7)
+     *   low  nibble = low 4 bits of b0
+     */
+    out[6] = (unsigned char)(0x70 | (b0 & 0x0F));
+
+    /*
+     * Byte 7:
+     *   full 8 bits from b1
+     */
+    out[7] = (unsigned char)b1;
+
+    /*
+     * Byte 8:
+     *   variant '10' in the two MSBs -> 0b10xxxxxx
+     *   keep lower 6 bits from b2
+     *
+     *   mask lower 6 bits: b2 & 0x3F
+     *   set top bits to 10: | 0x80
+     */
+    out[8] = (unsigned char)((b2 & 0x3F) | 0x80);
+
+    /*
+     * The rest (bytes 9..15) are just rnd[3]..rnd[9]
+     */
+    memcpy(&out[9], &rnd[3], 7);
+    uuid_format(out, dst);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCryptoUUIDCmd --
+ *
+ *        Implements "ns_crypto::uuid". Returns UUID in version v4
+ *
+ *        Example: ns_crypto::randombytes 20
+ *
+ * Results:
+ *      Tcl Result Code.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclCryptoUUIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                 result, versionInt = 4;
+    static Ns_ObjvTable uuidVersions[] = {
+        {"v4",        4u},
+        {"v7",        7u},
+        {NULL,        0u}
+    };
+    Ns_ObjvSpec lopts[] = {
+        {"-version",   Ns_ObjvIndex,   &versionInt, uuidVersions},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString ds;
+
+        Tcl_DStringInit(&ds);
+        Tcl_DStringSetLength(&ds, (TCL_SIZE_T)36);
+
+        if (versionInt == 4) {
+            result = uuid_v4(ds.string);
+        } else {
+            result = uuid_v7(ds.string);
+        }
+        if (result == TCL_OK) {
+            Tcl_DStringResult(interp, &ds);
+        } else {
+            Ns_TclPrintfResult(interp, "UUID conversion failed");
+        }
+    }
+
+    return result;
+}
+
 # ifdef OPENSSL_NO_EC
 int
 NsTclCryptoEckeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
@@ -3463,6 +3711,13 @@ NsTclCryptoAeadEncryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 
 int
 NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
+NsTclCryptoUUIDCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
