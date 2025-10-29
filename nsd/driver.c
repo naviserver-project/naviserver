@@ -5872,10 +5872,10 @@ SockSetServer(Sock *sockPtr)
                reqPtr->request.line, (void*)sockPtr->servPtr);
     }
 
-    if (mapPtr == NULL && sockPtr->servPtr == NULL) {
+    if (mapPtr == NULL) {
         /*
-         * The driver is installed globally, fall back to the default server,
-         * which has to be defined in this case.
+         * If we have no mapPtr, fall back to the default server. This applies
+         * the same way for global and per-server drivers.
          */
         mapPtr = drvPtr->defMapPtr;
         Ns_Log(DriverDebug, "SockSetServer: get default map entry %p", (const void*)mapPtr);
