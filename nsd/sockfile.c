@@ -227,7 +227,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs, unsigned i
  *----------------------------------------------------------------------
  */
 bool
-Ns_SockCork(const Ns_Sock *sock, bool cork)
+Ns_SockCork(Ns_Sock *sock, bool cork)
 {
     bool success = NS_FALSE;
 #if defined(TCP_CORK) || defined(UDP_CORK)
