@@ -151,9 +151,9 @@ nsf::proc ns_hotp {
     {-digest sha256}
     {-digits:integer 6}
     {-key ""}
-    data
+    counter
 } {
-    set hmac [::ns_crypto::hmac string -digest $digest $key $data]
+    set hmac [::ns_crypto::hmac string -digest $digest $key $counter]
     return [::ns_crypto::hotp_truncate -digits $digits $hmac]
 }
 

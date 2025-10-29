@@ -14,6 +14,7 @@ ns_section ns/servers {
 ns_section ns/server/default/adp {
     ns_param    map              /*.adp
 }
+if {1} {
 ns_section ns/server/default/modules {
     #ns_param   nscp            nscp
     ns_param    nssock          nssock
@@ -23,3 +24,11 @@ ns_section ns/server/default/module/nssock {
     ns_param    address         0.0.0.0
     ns_param    port            8000
 }
+} else {
+ns_section ns/modules { ns_param    nssock          nssock }
+ns_section ns/module/nssock {
+    ns_param    address         0.0.0.0
+    ns_param    port            8000
+}
+}
+#ns_logctl severity Debug(ns:driver) on
