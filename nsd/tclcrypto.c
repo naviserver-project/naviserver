@@ -113,9 +113,9 @@ static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *
 static BIO *PEMOpenReadSteam(const char *fnOrData)
     NS_GNUC_NONNULL(1);
 
-static void uuid_format(unsigned char *b, char *dst) NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
-static int uuid_v4(char *dst) NS_GNUC_NONNULL(1);
-static int uuid_v7(char *dst) NS_GNUC_NONNULL(1);
+static char *uuid_format(unsigned char *b, char *dst) NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
+static const char *uuid_v4(char *dst) NS_GNUC_NONNULL(1);
+static const char *uuid_v7(char *dst) NS_GNUC_NONNULL(1);
 
 static TCL_OBJCMDPROC_T CryptoHmacAddObjCmd;
 static TCL_OBJCMDPROC_T CryptoHmacFreeObjCmd;
@@ -3442,7 +3442,7 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
  *----------------------------------------------------------------------
  */
 
-static inline void
+static inline char *
 uuid_format(unsigned char *b, char *dst)
 {
     /*
@@ -3462,6 +3462,8 @@ uuid_format(unsigned char *b, char *dst)
 
     Ns_HexString(&b[10], &dst[24], 6, NS_FALSE);  /* bytes 10..15 -> dst[24..35] */
     dst[36] = '\0';
+
+    return dst;
 }
 
 /*
@@ -3488,13 +3490,13 @@ uuid_format(unsigned char *b, char *dst)
  *
  *----------------------------------------------------------------------
  */
-static inline int
+static inline const char *
 uuid_v4(char *dst)
 {
     unsigned char b[16];
 
     if (RAND_bytes(b, sizeof(b)) != 1) {
-        return TCL_ERROR;
+        return NULL;
     }
 
     /*
@@ -3507,8 +3509,7 @@ uuid_v4(char *dst)
     b[6] = (unsigned char)((b[6] & 0x0F) | 0x40); /* version 4 */
     b[8] = (unsigned char)((b[8] & 0x3F) | 0x80); /* variant RFC4122 */
 
-    uuid_format(b, dst);
-    return TCL_OK;
+    return uuid_format(b, dst);
 }
 
 
@@ -3536,7 +3537,7 @@ uuid_v4(char *dst)
  *
  *----------------------------------------------------------------------
  */
-static inline int
+static inline const char *
 uuid_v7(char *dst)
 {
     unsigned char   out[16];
@@ -3550,7 +3551,7 @@ uuid_v7(char *dst)
      *  - parts of them go into the rand_a / rand_b fields.
      */
     if (RAND_bytes(rnd, sizeof(rnd)) != 1) {
-        return TCL_ERROR;
+        return NULL;
     }
 
     /*
@@ -3608,9 +3609,7 @@ uuid_v7(char *dst)
      * The rest (bytes 9..15) are just rnd[3]..rnd[9]
      */
     memcpy(&out[9], &rnd[3], 7);
-    uuid_format(out, dst);
-
-    return TCL_OK;
+    return uuid_format(out, dst);
 }
 
 /*
@@ -3649,19 +3648,22 @@ NsTclCryptoUUIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 
     } else {
         Tcl_DString ds;
+        const char* hexString;
 
         Tcl_DStringInit(&ds);
         Tcl_DStringSetLength(&ds, (TCL_SIZE_T)36);
 
         if (versionInt == 4) {
-            result = uuid_v4(ds.string);
+            hexString = uuid_v4(ds.string);
         } else {
-            result = uuid_v7(ds.string);
+            hexString = uuid_v7(ds.string);
         }
-        if (result == TCL_OK) {
+        if (hexString != NULL) {
             Tcl_DStringResult(interp, &ds);
+            result = TCL_OK;
         } else {
             Ns_TclPrintfResult(interp, "UUID conversion failed");
+            result = TCL_ERROR;
         }
     }
 

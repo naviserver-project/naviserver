@@ -3667,7 +3667,7 @@ Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 
 NS_EXTERN char *
 Ns_HexString(const unsigned char *octets, char *outputBuffer, TCL_SIZE_T size, bool isUpper)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * tclrequest.c:
