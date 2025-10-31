@@ -2265,7 +2265,7 @@ HttpListObjCmd(
     char          *idString = NULL;
     int            result = TCL_OK;
     Ns_ObjvSpec    args[] = {
-        {"?id", Ns_ObjvObj, &idString, NULL},
+        {"?id", Ns_ObjvString, &idString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -2388,7 +2388,7 @@ HttpStatsObjCmd(
     char          *idString = NULL;
     int            result = TCL_OK;
     Ns_ObjvSpec    args[] = {
-        {"?id", Ns_ObjvObj, &idString, NULL},
+        {"?id", Ns_ObjvString, &idString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
