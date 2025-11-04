@@ -4060,7 +4060,7 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
         isConnConstructed = NS_FALSE;
     }
     if (connPtr != NULL) {
-        Ns_Log(Notice, "--- non-trace access log entry: constructed %d user '%s' \"%s\" %d %ld",
+        Ns_Log(Debug, "--- non-trace access log entry: constructed %d user '%s' \"%s\" %d %ld",
                isConnConstructed,
                Ns_ConnAuthUser(connPtr),
                connPtr->request.line,
@@ -5191,7 +5191,7 @@ SockParse(Sock *sockPtr)
                      */
                     Ns_Log(Ns_LogRequestDebug, "100-continue: reply CONTINUE");
                     NsAddNslogEntry(sockPtr, 100, NULL, NULL);
-                    Ns_Log(Notice, "**** 100-continue line <%s>", sockPtr->reqPtr->request.line);
+                    Ns_Log(Debug, "**** 100-continue line <%s>", sockPtr->reqPtr->request.line);
 
                     ns_iov_set(&iov[0], continueResponse, sizeof(continueResponse) - 1);
                     sent = Ns_SockSendBufs((Ns_Sock *)sockPtr, iov, 1,
