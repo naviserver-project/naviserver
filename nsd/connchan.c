@@ -23,8 +23,10 @@
  */
 #if defined(__linux__)
 # include <endian.h>
+
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
-# include <sys/endian.h>
+#  include <sys/endian.h>
+
 #elif defined(__OpenBSD__)
 # include <sys/types.h>
 # ifndef be16toh
@@ -32,23 +34,45 @@
 #  define be32toh(x) betoh32(x)
 #  define be64toh(x) betoh64(x)
 # endif
-#elif defined(__APPLE__) || defined(_WIN32)
-# define be16toh(x) ntohs(x)
-# define htobe16(x) htons(x)
-# define be32toh(x) ntonl(x)
-# define htobe32(x) htonl(x)
-# if defined(_WIN32)
-/*
- * Not sure, why htonll() and ntohll() are undefined in Visual Studio 2019:
- *
- *#  define be64toh(x) ntohll(x)
- *#  define htobe64(x) htonll(x)
- */
-#  define htobe64(x) ((1==htonl(1)) ? (x) : (((uint64_t)htonl((x) & 0xFFFFFFFFUL)) << 32) | htonl((uint32_t)((x) >> 32)))
-#  define be64toh(x) ((1==ntohl(1)) ? (x) : (((uint64_t)ntohl((x) & 0xFFFFFFFFUL)) << 32) | ntohl((uint32_t)((x) >> 32)))
-# else
-#  define be64toh(x) ntohll(x)
-#  define htobe64(x) htonll(x)
+
+#elif defined(__APPLE__)
+/* Darwin does NOT have a native htonll/ntohll. Use OSByteOrder helpers. */
+# include <libkern/OSByteOrder.h>
+# ifndef htobe16
+#  define htobe16(x) OSSwapHostToBigInt16((uint16_t)(x))
+#  define be16toh(x) OSSwapBigToHostInt16((uint16_t)(x))
+#  define htobe32(x) OSSwapHostToBigInt32((uint32_t)(x))
+#  define be32toh(x) OSSwapBigToHostInt32((uint32_t)(x))
+#  define htobe64(x) OSSwapHostToBigInt64((uint64_t)(x))
+#  define be64toh(x) OSSwapBigToHostInt64((uint64_t)(x))
+# endif
+
+#elif defined(_WIN32)
+/* Windows lacks be*toh; build from htonl/ntohl or use byte-swap intrinsics. */
+# define be16toh(x) ntohs((uint16_t)(x))
+# define htobe16(x) htons((uint16_t)(x))
+# define be32toh(x) ntohl((uint32_t)(x))
+# define htobe32(x) htonl((uint32_t)(x))
+/* Portable 64-bit swap using two 32-bit ops */
+# define htobe64(x) ((1==htonl(1)) ? (uint64_t)(x) : (((uint64_t)htonl((uint32_t)((x) & 0xFFFFFFFFu))) << 32) | htonl((uint32_t)((x) >> 32)))
+# define be64toh(x) ((1==ntohl(1)) ? (uint64_t)(x) : (((uint64_t)ntohl((uint32_t)((x) & 0xFFFFFFFFu))) << 32) | ntohl((uint32_t)((x) >> 32)))
+#endif
+
+/* As a final fallback attempt, derive from compiler endianness macros */
+#ifndef htobe64
+# if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && defined(__ORDER_BIG_ENDIAN__)
+#  if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#   define __ns_bswap64(v) __builtin_bswap64((uint64_t)(v))
+#   define htobe64(x) __ns_bswap64(x)
+#   define be64toh(x) __ns_bswap64(x)
+#   define htobe32(x) htonl((uint32_t)(x))
+#   define be32toh(x) ntohl((uint32_t)(x))
+#   define htobe16(x) htons((uint16_t)(x))
+#   define be16toh(x) ntohs((uint16_t)(x))
+#  else
+#   define htobe64(x) (uint64_t)(x)
+#   define be64toh(x) (uint64_t)(x)
+#  endif
 # endif
 #endif
 
