@@ -666,6 +666,8 @@ QueueEvent(Event *ePtr)
             if ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) {
                 tp->tm_mday -= tp->tm_wday;
             }
+            /* Let mktime() recompute DST for this (possibly adjusted) date */
+            tp->tm_isdst = -1;
             ePtr->nextqueue.sec = mktime(tp);
             ePtr->nextqueue.usec = 0;
             d = Ns_DiffTime(&ePtr->nextqueue, &ePtr->scheduled, NULL);
@@ -676,7 +678,9 @@ QueueEvent(Event *ePtr)
                    d, (long)ePtr->nextqueue.sec-(long)ePtr->scheduled.sec);
 
             if (d <= 0) {
+                /* Move to next day/week and recompute DST as well. */
                 tp->tm_mday += ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) ? 7 : 1;
+                tp->tm_isdst = -1;
                 ePtr->nextqueue.sec = mktime(tp);
                 ePtr->nextqueue.usec = 0;
                 Ns_Log(Debug, "SCHED_DAILY: final next " NS_TIME_FMT ,
