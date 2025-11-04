@@ -115,12 +115,45 @@ ifeq ($(IS_GCC),1)
     CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
     CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wold-style-definition -Wnull-dereference -Wdouble-promotion -Wvla $(CFLAGS_FORMAT)
   endif
+else ifeq ($(IS_CLANG),1)
+
+  # Only compute CLANG_MAJOR when we know it's not GCC
+  CLANG_MAJOR := $(shell echo '$(CC_VERSION)' | \
+    sed -n 's/.*clang-\([0-9][0-9]*\)\..*/\1/p; \
+            s/.*LLVM version \([0-9][0-9]*\)\..*/\1/p; \
+            s/.*clang version \([0-9][0-9]*\)\..*/\1/p')
+
+  # Old clang (e.g. Apple clang 6.0) -> no -Wdouble-promotion/-Wnull-dereference
+  ifneq ($(CLANG_MAJOR),)
+    ifeq ($(call lt,$(CLANG_MAJOR),7),1)
+      CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
+      CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
+      CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
+      CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code \
+                           -Wswitch-enum -Wold-style-definition -Wvla $(CFLAGS_FORMAT)
+    else
+      # Newer clang: full set
+      CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
+      CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
+      CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
+      CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code \
+                           -Wswitch-enum -Wold-style-definition \
+                           -Wnull-dereference -Wdouble-promotion -Wvla $(CFLAGS_FORMAT)
+    endif
+  else
+    # Could not parse clang version -> conservative
+    CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
+    CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
+    CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
+    CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code \
+                         -Wswitch-enum -Wold-style-definition -Wvla $(CFLAGS_FORMAT)
+  endif
 else
-  # Non-GCC (e.g., Clang): keep your normal defaults
-  CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
-  CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
-  CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
-  CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wold-style-definition -Wdouble-promotion -Wvla $(CFLAGS_FORMAT)
+  # Other compilers: no checking
+  CFLAGS_CONVERSION ?=
+  CFLAGS_FORMAT     ?=
+  CFLAGS_DEFINITION ?=
+  CFLAGS_TIDY       ?=
 endif
 
 
