@@ -90,72 +90,59 @@ LDRPATH         += @LDRPATH@
 CC               = $(PURIFY) @CC@
 CCLD             = @CCLD@
 
-# Detect compiler kind (mutually exclusive) and avoid = overwrites
+# Detect compiler kind (mutually exclusive)
 CC_VERSION := $(shell $(CC) --version 2>/dev/null | head -1)
-IS_CLANG  := $(shell echo '$(CC_VERSION)' | grep -i -c clang)
-IS_GCC    := $(shell echo '$(CC_VERSION)' | grep -i -c gcc)
-GCC_VER   := $(shell $(CC) -dumpfullversion -dumpversion 2>/dev/null)
-GCC_MAJOR := $(word 1,$(subst ., ,$(GCC_VER)))
-lt = $(shell [ $(1) -lt $(2) ] && echo 1 || echo 0)
+IS_CLANG   := $(shell echo '$(CC_VERSION)' | grep -i -c clang)
+IS_GCC     := $(shell echo '$(CC_VERSION)' | grep -i -c gcc)
+GCC_VER    := $(shell $(CC) -dumpfullversion -dumpversion 2>/dev/null)
+GCC_MAJOR  := $(word 1,$(subst ., ,$(GCC_VER)))
+lt         = $(shell [ $(1) -lt $(2) ] && echo 1 || echo 0)
 
+# Defaults (empty; filled only for "new enough" compilers)
+CFLAGS_CONVERSION_DEFAULT :=
+CFLAGS_FORMAT_DEFAULT     :=
+CFLAGS_DEFINITION_DEFAULT :=
+CFLAGS_TIDY_DEFAULT       :=
 
-# Defaults depend on compiler/version
 ifeq ($(IS_GCC),1)
-  # GCC <= 6: keep checks empty by default (user can override)
-  ifeq ($(call lt,$(GCC_MAJOR),6),1)
-    CFLAGS_CONVERSION ?=
-    CFLAGS_FORMAT     ?=
-    CFLAGS_DEFINITION ?=
-    CFLAGS_TIDY       ?=
-  else
-    # GCC >= 6:
-    # -Wcast-qual
-    CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
-    CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
-    CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
-    CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wold-style-definition -Wnull-dereference -Wdouble-promotion -Wvla $(CFLAGS_FORMAT)
+
+  # GCC > 6 (i.e. >= 7): enable extensive checks
+  ifeq ($(call lt,$(GCC_MAJOR),7),0)
+    CFLAGS_CONVERSION_DEFAULT = -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
+    CFLAGS_FORMAT_DEFAULT     = -Wmissing-format-attribute -Wformat-security -Wformat=2
+    CFLAGS_DEFINITION_DEFAULT = -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
+    CFLAGS_TIDY_DEFAULT       = -Wno-missing-braces -Wundef -Wunreachable-code \
+                                -Wswitch-enum -Wold-style-definition \
+                                -Wnull-dereference -Wdouble-promotion -Wvla $(CFLAGS_FORMAT_DEFAULT)
   endif
+
 else ifeq ($(IS_CLANG),1)
 
-  # Only compute CLANG_MAJOR when we know it's not GCC
+  # Only compute CLANG_MAJOR for clang
   CLANG_MAJOR := $(shell echo '$(CC_VERSION)' | \
     sed -n 's/.*clang-\([0-9][0-9]*\)\..*/\1/p; \
             s/.*LLVM version \([0-9][0-9]*\)\..*/\1/p; \
             s/.*clang version \([0-9][0-9]*\)\..*/\1/p')
 
-  # Old clang (e.g. Apple clang 6.0) -> no -Wdouble-promotion/-Wnull-dereference
+  # Clang > 13 (i.e. >= 14): enable extensive checks
   ifneq ($(CLANG_MAJOR),)
-    ifeq ($(call lt,$(CLANG_MAJOR),7),1)
-      CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
-      CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
-      CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
-      CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code \
-                           -Wswitch-enum -Wold-style-definition -Wvla $(CFLAGS_FORMAT)
-    else
-      # Newer clang: full set
-      CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
-      CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
-      CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
-      CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code \
-                           -Wswitch-enum -Wold-style-definition \
-                           -Wnull-dereference -Wdouble-promotion -Wvla $(CFLAGS_FORMAT)
+    ifeq ($(call lt,$(CLANG_MAJOR),14),0)
+      CFLAGS_CONVERSION_DEFAULT = -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
+      CFLAGS_FORMAT_DEFAULT     = -Wmissing-format-attribute -Wformat-security -Wformat=2
+      CFLAGS_DEFINITION_DEFAULT = -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
+      CFLAGS_TIDY_DEFAULT       = -Wno-missing-braces -Wundef -Wunreachable-code \
+                                  -Wswitch-enum -Wold-style-definition \
+                                  -Wnull-dereference -Wdouble-promotion -Wvla $(CFLAGS_FORMAT_DEFAULT)
     endif
-  else
-    # Could not parse clang version -> conservative
-    CFLAGS_CONVERSION ?= -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
-    CFLAGS_FORMAT     ?= -Wmissing-format-attribute -Wformat-security -Wformat=2
-    CFLAGS_DEFINITION ?= -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
-    CFLAGS_TIDY       ?= -Wno-missing-braces -Wundef -Wunreachable-code \
-                         -Wswitch-enum -Wold-style-definition -Wvla $(CFLAGS_FORMAT)
   endif
-else
-  # Other compilers: no checking
-  CFLAGS_CONVERSION ?=
-  CFLAGS_FORMAT     ?=
-  CFLAGS_DEFINITION ?=
-  CFLAGS_TIDY       ?=
+
 endif
 
+# Allow user override; otherwise use computed defaults
+CFLAGS_CONVERSION ?= $(CFLAGS_CONVERSION_DEFAULT)
+CFLAGS_FORMAT     ?= $(CFLAGS_FORMAT_DEFAULT)
+CFLAGS_DEFINITION ?= $(CFLAGS_DEFINITION_DEFAULT)
+CFLAGS_TIDY       ?= $(CFLAGS_TIDY_DEFAULT)
 
 #CFLAGS_FORTIFY    = -D_FORTIFY_SOURCE=2 -fstack-protector $(SANITIZE)
 #CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE) -fwrapv -ftrapv
