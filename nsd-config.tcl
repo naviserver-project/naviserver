@@ -121,6 +121,7 @@ ns_section ns/parameters {
     #ns_param   logusecdiff         true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
     #ns_param   logthread           false    ;# add thread-info the log file lines (default: true)
     #ns_param   sanitizelogfiles    1        ;# default: 2; 0: none, 1: full, 2: human-friendly, 3: 2 with tab expansion
+    #ns_param   logdeduplicate      true     ;# default: false; collapse multiple identical log lines from a thread
 
     #
     # Encoding settings

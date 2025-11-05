@@ -286,6 +286,8 @@ ns_section ns/parameters {
     #ns_param	logdev		true     ;# development message
     #ns_param   lognotice       true     ;# informational messages
     #ns_param   sanitizelogfiles 2       ;# default: 2; 0: none, 1: full, 2: human-friendly, 3: 2 with tab expansion
+    #ns_param   logdeduplicate  true     ;# default: false; collapse multiple identical log lines from a thread
+
 
     # ns_param	mailhost            localhost
 
