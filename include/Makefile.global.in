@@ -118,15 +118,22 @@ ifeq ($(IS_GCC),1)
 
 else ifeq ($(IS_CLANG),1)
 
-  # Only compute CLANG_MAJOR for clang
-  CLANG_MAJOR := $(shell echo '$(CC_VERSION)' | \
-    sed -n 's/.*clang-\([0-9][0-9]*\)\..*/\1/p; \
-            s/.*LLVM version \([0-9][0-9]*\)\..*/\1/p; \
-            s/.*clang version \([0-9][0-9]*\)\..*/\1/p')
+  # Only compute CLANG_MAJOR for clang. More tricky, since we have to
+  # deal with Apple variants as well
 
-  # Clang > 13 (i.e. >= 14): enable extensive checks
+  CLANG_MAJOR := $(shell printf '%s\n' '$(CC_VERSION)' | \
+    sed -n 's/.*based on LLVM \([0-9][0-9]*\)\..*/\1/p; \
+          s/.*clang version \([0-9][0-9]*\)\..*/\1/p; \
+          s/.*LLVM version \([0-9][0-9]*\)\..*/\1/p; \
+          s/.*clang-\([0-9][0-9]*\)\..*/\1/p' | \
+    head -n 1)
+
+  #$(info CC_VERSION = '$(CC_VERSION)')
+  #$(info CLANG_MAJOR = '$(CLANG_MAJOR)')
+
+  # Clang > 3.* (i.e. >= 4): enable more extensive checks
   ifneq ($(CLANG_MAJOR),)
-    ifeq ($(call lt,$(CLANG_MAJOR),14),0)
+    ifeq ($(call lt,$(CLANG_MAJOR),4),0)
       CFLAGS_CONVERSION_DEFAULT = -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
       CFLAGS_FORMAT_DEFAULT     = -Wmissing-format-attribute -Wformat-security -Wformat=2
       CFLAGS_DEFINITION_DEFAULT = -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
