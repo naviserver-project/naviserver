@@ -973,6 +973,54 @@ FreeEvent(Event *ePtr)
     ns_free(ePtr);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDStringAppendSchedFlags --
+ *
+ *      Decode a scheduled flags bitmask into a human‐readable string
+ *      of flag names separated by '|' and append it to a Tcl_DString.
+ *
+ * Returns:
+ *      A pointer to the internal string buffer of dsPtr, containing the
+ *      appended flag names.
+ *
+ * Side Effects:
+ *      Appends the textual representations of each set flag to the
+ *      Tcl_DString, inserting '|' between multiple flags.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+DStringAppendSchedFlags(Tcl_DString *dsPtr, unsigned int flags)
+{
+    int    count = 0;
+    size_t i;
+    static const struct {
+        unsigned int state;
+        const char  *label;
+    } options[] = {
+        { NS_SCHED_THREAD, "THREAD" },
+        { NS_SCHED_ONCE,   "ONCE" },
+        { NS_SCHED_DAILY,  "DAILY" },
+        { NS_SCHED_WEEKLY, "WEEKLY" },
+        { NS_SCHED_PAUSED, "PAUSED" },
+        { NS_SCHED_RUNNING, "RUNNING"},
+    };
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    for (i = 0; i<sizeof(options) / sizeof(options[0]); i++) {
+        if ((options[i].state & flags) != 0u) {
+            if (count > 0) {
+                Tcl_DStringAppend(dsPtr, "|", 1);
+            }
+            Tcl_DStringAppend(dsPtr, options[i].label, TCL_INDEX_NONE);
+            count ++;
+        }
+    }
+    return dsPtr->string;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1003,6 +1051,23 @@ SchedThread(void *UNUSED(arg))
     Ns_Log(Notice, "sched: starting");
 
     Ns_MutexLock(&lock);
+
+    /*
+     * For all events whose nextqueue is already in the past (i.e., whose
+     * first scheduled time was during long startup), reset their base time to
+     * 'now' so they don't appear "late" on the very first run.
+     */
+    Ns_GetTime(&now);
+    for (int i = 1; i <= nqueue; ++i) {
+        Event *e = queue[i];
+
+        if (Ns_DiffTime(&e->nextqueue, &now, NULL) <= 0) {
+            e->scheduled = now;
+            e->nextqueue = now;
+            e->lastqueue = now;   /* optional, but keeps things consistent */
+        }
+    }
+
     while (!shutdownPending) {
 
         /*
@@ -1024,6 +1089,7 @@ SchedThread(void *UNUSED(arg))
              * Measure how late we are for THIS execution
              */
             if (Ns_DiffTime(&now, &ePtr->scheduled, &late) == 1) {    /* now > scheduled */
+
                 /*Ns_Log(Notice,
                        "at "NS_TIME_FMT ": sched id %d: job started late by %ld.%06ld sec (interval %ld.%06ld sec)",
                        (long long)now.sec, (long)now.usec,
@@ -1032,11 +1098,16 @@ SchedThread(void *UNUSED(arg))
                        (long)ePtr->interval.sec, (long)ePtr->interval.usec);*/
 
                 if (Ns_DiffTime(&late, &tolerate, NULL) == 1) {            /* late > tolerate */
+                    Tcl_DString ds;
+
+                    Tcl_DStringInit(&ds);
                     Ns_Log(Warning,
-                           "sched id %d: job started late by %ld.%06ld sec (interval %ld.%06ld sec)",
+                           "sched id %d: job started late by %ld.%06ld sec (flags %s, interval %ld.%06ld sec)",
                            ePtr->id,
                            (long)late.sec, (long)late.usec,
+                           DStringAppendSchedFlags(&ds, ePtr->flags),
                            (long)ePtr->interval.sec, (long)ePtr->interval.usec);
+                    Tcl_DStringFree(&ds);
                 }
             }
             if ((ePtr->flags & NS_SCHED_ONCE) != 0u) {

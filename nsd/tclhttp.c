@@ -2692,6 +2692,8 @@ HttpClientStartJanitor(void)
                              0,
                              &interval,
                              NULL);
+    Ns_RegisterProcInfo((ns_funcptr_t)CloseWaitingCheckExpire,
+                        "httpclient:close-waiting", NULL);
 }
 
 /*
