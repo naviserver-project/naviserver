@@ -2663,6 +2663,36 @@ HttpKeepalivesObjCmd(
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpClientStartJanitor --
+ *
+ *      Start the HTTP client janitor that periodically reaps stale
+ *      persistent outgoing connections.
+ *
+ * Returns:
+ *      None.
+ *
+ * Side effects:
+ *      Registers CloseWaitingCheckExpire as a scheduled procedure via
+ *      Ns_ScheduleProcEx() with a (hard-coded) 1-second interval, causing it
+ *      to run periodically in the scheduler infrastructure for the lifetime
+ *      of the process.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+HttpClientStartJanitor(void)
+{
+    Ns_Time interval = {1, 0};
+
+    (void) Ns_ScheduleProcEx(CloseWaitingCheckExpire,
+                             NULL /* poolPtr */,
+                             0,
+                             &interval,
+                             NULL);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2681,22 +2711,18 @@ HttpKeepalivesObjCmd(
  *----------------------------------------------------------------------
  */
 static bool InitOnceHttp(void) {
-    Ns_Time interval;
-
-    interval.sec = 1;
-    interval.usec = 0;
 
     Ns_DListInit(&closeWaitingList);
     Ns_MutexInit(&closeWaitingMutex);
     Ns_MutexSetName2(&closeWaitingMutex, "ns:closewaiting", NULL);
-
-    (void) Ns_ScheduleProcEx(CloseWaitingCheckExpire, NULL /*poolPtr*/, 0, &interval, NULL);
 
 #ifdef MEM_RECORD_DEBUG
     Ns_MutexInit(&ckMutex);
     Tcl_InitHashTable(&ckPointerTable, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(&ckPointerDeletionTable, TCL_ONE_WORD_KEYS);
 #endif
+
+    Ns_RegisterAtReady((Ns_Callback *)(ns_funcptr_t)HttpClientStartJanitor, NULL);
 
     return NS_TRUE;
 }

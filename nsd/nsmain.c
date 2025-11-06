@@ -1024,6 +1024,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_CondBroadcast(&nsconf.state.cond);
     Ns_MutexUnlock(&nsconf.state.lock);
 
+    /*
+     * The server is running now. Now fire the AtReady callbacks.
+     */
+    NsRunAtReadyProcs();
+
     if (mode != 'w' && nsconf.state.pipefd[1] != 0) {
         ssize_t nwrite;
 
