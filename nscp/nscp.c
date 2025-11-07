@@ -634,7 +634,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
          *     available, fall back to using the control port users.
          */
 
-        if (*user == '\0' && sessPtr->viaLoopback) {
+        if (*user == '\0' && sessPtr->viaLoopback && sessPtr->modPtr->allowLoopbackEmptyUser) {
             ok = NS_TRUE;
         } else if (sessPtr->modPtr->server == NULL) {
             Ns_Log(Warning, "nscp: to use AuthorizeUser, register the nscp module for a server, not globally");
