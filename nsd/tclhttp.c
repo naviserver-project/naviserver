@@ -3892,14 +3892,14 @@ HttpCheckSpool(
                  * but the unwrapped data after the chunked headers are
                  * removed.
                  */
-                Ns_Log(Notice, "HttpCheckSpool deletes header field 'transfer-encoding'"); // CHANGE LEVEL
+                Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool deletes header field 'transfer-encoding'");
                 Ns_SetIDeleteKey(httpPtr->responseHeaders, transferEncodingHeader);
             } else if (httpPtr->status != 204) {
                 /*
                  * No content-length provided and not chunked, assume
                  * streaming HTML.
                  */
-                Ns_Log(Notice /*Ns_LogTaskDebug*/, "ns_http: assume streaming HTML, status %d", httpPtr->status); // CHANGE LEVEL
+                Ns_Log(Ns_LogTaskDebug, "ns_http: assume streaming HTML, status %d", httpPtr->status);
                 httpPtr->flags |= NS_HTTP_STREAMING;
             }
         }
