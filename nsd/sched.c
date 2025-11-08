@@ -59,6 +59,7 @@ typedef struct Event {
     Ns_SchedProc   *deleteProc; /* Procedure to cleanup when done (if any). */
     unsigned int    flags;      /* One or more of NS_SCHED_ONCE, NS_SCHED_THREAD,
                                  * NS_SCHED_DAILY, or NS_SCHED_WEEKLY. */
+    bool            waslate;    /* true while we are in a \"late\" period */
 } Event;
 
 /*
@@ -1088,7 +1089,7 @@ SchedThread(void *UNUSED(arg))
             /*
              * Measure how late we are for THIS execution
              */
-            if (Ns_DiffTime(&now, &ePtr->scheduled, &late) == 1) {    /* now > scheduled */
+            if (Ns_DiffTime(&now, &ePtr->scheduled, &late) == 1) { /* now > scheduled */
 
                 /*Ns_Log(Notice,
                        "at "NS_TIME_FMT ": sched id %d: job started late by %ld.%06ld sec (interval %ld.%06ld sec)",
@@ -1097,19 +1098,34 @@ SchedThread(void *UNUSED(arg))
                        (long)late.sec, (long)late.usec,
                        (long)ePtr->interval.sec, (long)ePtr->interval.usec);*/
 
-                if (Ns_DiffTime(&late, &tolerate, NULL) == 1) {            /* late > tolerate */
-                    Tcl_DString ds;
+                if (Ns_DiffTime(&late, &tolerate, NULL) == 1) { /* late > tolerate */
+                    if (!ePtr->waslate) {
+                        Tcl_DString ds;
 
-                    Tcl_DStringInit(&ds);
-                    Ns_Log(Warning,
-                           "sched id %d: job started late by %ld.%06ld sec (flags %s, interval %ld.%06ld sec)",
-                           ePtr->id,
-                           (long)late.sec, (long)late.usec,
-                           DStringAppendSchedFlags(&ds, ePtr->flags),
-                           (long)ePtr->interval.sec, (long)ePtr->interval.usec);
-                    Tcl_DStringFree(&ds);
+                        Tcl_DStringInit(&ds);
+                        Ns_Log(Warning,
+                               "sched id %d: job started late by %ld.%06ld sec (flags %s, interval %ld.%06ld sec)",
+                               ePtr->id,
+                               (long)late.sec, (long)late.usec,
+                               DStringAppendSchedFlags(&ds, ePtr->flags),
+                               (long)ePtr->interval.sec, (long)ePtr->interval.usec);
+                        Tcl_DStringFree(&ds);
+                    }
+                    ePtr->waslate = NS_TRUE;
+                } else {
+                    /*
+                     * Late, but within tolerance: treat as "on time" for
+                     * warning purposes.
+                     */
+                    ePtr->waslate = NS_FALSE;
                 }
+            } else {
+                /*
+                 * on time or early
+                 */
+                ePtr->waslate = NS_FALSE;
             }
+
             if ((ePtr->flags & NS_SCHED_ONCE) != 0u) {
                 Tcl_DeleteHashEntry(ePtr->hPtr);
                 ePtr->hPtr = NULL;
