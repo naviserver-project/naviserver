@@ -144,11 +144,12 @@ install-notice:
 	echo ""
 
 install-dirs: all
-	@for i in bin lib logs include tcl pages conf certificates modules modules/tcl cgi-bin; do \
+	@for i in bin lib logs include tcl pages conf \
+		certificates invalid-certificates modules modules/tcl cgi-bin; do \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/$$i; \
 	done
 
-install-config: all
+install-config: all install-dirs
 	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
 	@for i in returnnotice.adp nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
@@ -158,9 +159,7 @@ install-config: all
 	done
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
 
-install-certificates: $(PEM_FILE) ca-bundle.crt
-	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/certificates
-	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/invalid-certificates
+install-certificates: $(PEM_FILE) ca-bundle.crt install-dirs
 	@if [ -f "$(DESTDIR)$(NAVISERVER)/etc" ]; then \
 		for i in `ls $(DESTDIR)$(NAVISERVER)/etc/*pem` ; do \
 			$(LN) -sf $$i $(DESTDIR)$(NAVISERVER)/certificates ; \
@@ -174,25 +173,25 @@ install-certificates: $(PEM_FILE) ca-bundle.crt
 	fi
 	$(INSTALL_DATA) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/
 
-install-modules: all
+install-modules: all install-dirs
 	@for i in $(dirs); do \
 		(cd $$i && $(MAKE) install) || exit 1; \
 	done
 
-install-tcl: all
+install-tcl: all install-dirs
 	@for i in tcl/*.tcl; do \
-		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/tcl/; \
+		$(INSTALL_DATA) -t $(DESTDIR)$(NAVISERVER)/tcl/ $$i; \
 	done
 
-install-include: all
+install-include: all install-dirs
 	@for i in include/*.h include/Makefile.global include/Makefile.module; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INSTHDR)/; \
 	done
 
-install-tests:
+install-tests: install-dirs
 	$(CP) tests $(INSTSRVPAG)
 
-install-doc:
+install-doc: install-dirs
 	@if [ -d doc/html ]; then \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc ; \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc/naviserver ; \
@@ -207,7 +206,7 @@ install-doc:
 		echo "or use the online documentation from https://naviserver.sourceforge.io/n/toc.html" ; \
 	fi;
 
-install-examples:
+install-examples: install-dirs
 	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/examples
 	@for i in contrib/examples/*.adp contrib/examples/*.tcl; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/examples/; \
@@ -416,3 +415,5 @@ dist: config.guess config.sub clean
 	install-dirs install-include install-tcl install-modules \
 	install-config install-certificates install-doc install-examples install-notice \
 	all-% install-% clean-% test-%
+
+#.NOTPARALLEL: install install-tcl install-dirs
