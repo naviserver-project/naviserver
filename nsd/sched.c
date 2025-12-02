@@ -698,7 +698,7 @@ QueueEvent(Event *ePtr)
              */
             scheduled_next = ePtr->scheduled;
 
-            /* Compute planed next run: scheduled + interval */
+            /* Compute planned next run: scheduled + interval */
             ePtr->nextqueue = ePtr->scheduled;
             Ns_IncrTime(&scheduled_next, ePtr->interval.sec, ePtr->interval.usec);
 

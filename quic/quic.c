@@ -3973,7 +3973,7 @@ h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc,
  *        - If EOF is already reached (no queued or pending bytes), it
  *          returns 0 with NGHTTP3_DATA_FLAG_EOF set.
  *        - If the stream has already been served during this write step
- *          (`tx_served_this_step`), it defers re-use by returning
+ *          (`tx_served_this_step`), it defers reuse by returning
  *          NGHTTP3_ERR_WOULDBLOCK.
  *        - If queued data is available but not yet pending, it moves bytes
  *          from the queued region into the pending buffer before building

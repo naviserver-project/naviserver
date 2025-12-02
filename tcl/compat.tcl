@@ -12,7 +12,7 @@
 #
 # compat.tcl --
 #
-#   Procs for forward annd backwards compatibility.
+#   Procs for forward and backwards compatibility.
 #
 #
 
