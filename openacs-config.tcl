@@ -67,6 +67,7 @@ set defaultConfig {
     httpsport         ""
     nscpport          ""
     smtpdport         ""
+    smtprelay         $hostname:25
 
     server            "openacs"
     serverprettyname  "My OpenACS Instance"
@@ -1482,7 +1483,7 @@ ns_section "ns/server/$server/module/nssmtpd" {
     #------------------------------------------------------------------
     ns_param port        $smtpdport
     ns_param address     127.0.0.1            ;# local interface for SMTP server
-    ns_param relay       localhost:25         ;# upstream MTA or mail relay
+    ns_param relay       $smtprelay           ;# upstream MTA or mail relay (e.g. localhost:25)
     ns_param spamd       localhost            ;# spamd/spamassassin daemon for filtering
 
     # SMTP processing callbacks (implemented in Tcl)
