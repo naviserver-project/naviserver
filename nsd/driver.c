@@ -2268,6 +2268,9 @@ NsDriverBindAddresses(Driver *drvPtr)
     assert(result == TCL_OK);
 
     if (result == TCL_OK) {
+        TCL_SIZE_T nOk    = 0;
+        TCL_SIZE_T nBinds = (TCL_SIZE_T)nElems * (TCL_SIZE_T)drvPtr->ports.size;
+
         /* Bind all configured addresses. */
         for (i = 0; i < nElems && nAddrs < (TCL_SIZE_T)MAX_LISTEN_ADDR_PER_DRIVER; i++) {
             size_t      pNum;
@@ -2292,6 +2295,14 @@ NsDriverBindAddresses(Driver *drvPtr)
 
                 if (likely(s != NS_INVALID_SOCKET)) {
                     drvPtr->listenfd[nAddrs++] = s;
+                    nOk++;
+                } else if (ns_sockerrno == EALREADY) {
+                    /*
+                     * Soft-skip (e.g. 0.0.0.0 is covered by a dual-stack [::]
+                     * bind).  Count as success for reporting, but do not
+                     * store an fd.
+                     */
+                    nOk++;
                 } else {
                     /* Optionally log per-failure here. */
                 }
@@ -2299,9 +2310,9 @@ NsDriverBindAddresses(Driver *drvPtr)
         }
 
         /* Provide warning for binding failures. */
-        if (nAddrs > 0 && nAddrs < nElems) {
+        if (nOk > 0 && nOk < nBinds) {
             Ns_Log(Warning, "could only bind to %" PRITcl_Size
-                   " out of %" PRITcl_Size " addresses", nAddrs, nElems);
+                   " out of %" PRITcl_Size " addresses", nOk, nBinds);
         }
 
         if (nAddrs == (TCL_SIZE_T)MAX_LISTEN_ADDR_PER_DRIVER
@@ -2368,9 +2379,15 @@ DriverListen(Driver *drvPtr, const char *bindaddr, unsigned short port)
                                  drvPtr->backlog,
                                  drvPtr->reuseport);
     if (sock == NS_INVALID_SOCKET) {
-        Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
-               drvPtr->threadName, bindaddr, port,
-               ns_sockstrerror(ns_sockerrno));
+        if (ns_sockerrno != EALREADY) {
+            Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
+                   drvPtr->threadName, bindaddr, port,
+                   ns_sockstrerror(ns_sockerrno));
+        } else {
+            /* optional: could be Debug here, since Ns_SockBind already logged Notice */
+            Ns_Log(Debug, "%s: bind on [%s]:%d skipped (covered by dual-stack wildcard)",
+                   drvPtr->threadName, bindaddr, port);
+        }
     }
 
     return sock;
