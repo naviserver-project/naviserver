@@ -302,6 +302,14 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
              */
             sock = Ns_SockBind(saPtr, reuseport);
             //fprintf(stderr, "listen on port %hd binding with reuseport %d\n", port, reuseport);
+
+            if (sock == NS_INVALID_SOCKET && Ns_GetSockErrno() == EALREADY) {
+                /*
+                 * soft-skip: already covered by dual-stack wildcard
+                 */
+                return NS_INVALID_SOCKET;
+            }
+
         } else {
             //fprintf(stderr, "listen on port %hd already prebound\n", port);
         }
@@ -329,7 +337,10 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
      * If forked binder is running and we could not allocate socket
      * directly, try to do it through the binder
      */
-    if (sock == NS_INVALID_SOCKET && binderRunning && saPtr != NULL) {
+    if (sock == NS_INVALID_SOCKET
+        && binderRunning
+        && saPtr != NULL
+        && Ns_GetSockErrno() != EALREADY) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
 
@@ -359,9 +370,9 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
 NS_SOCKET
 Ns_SockListenUdp(const char *address, unsigned short port, bool reuseport)
 {
-    NS_SOCKET        sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
     struct sockaddr *saPtr = (struct sockaddr *)&sa;
+    NS_SOCKET        sock = NS_INVALID_SOCKET;
 
     if (Ns_GetSockAddr(saPtr, address, port) == NS_OK) {
         bool found;
@@ -377,6 +388,8 @@ Ns_SockListenUdp(const char *address, unsigned short port, bool reuseport)
              */
             sock = Ns_SockBindUdp(saPtr, reuseport);
         }
+    } else {
+        saPtr = NULL;
     }
 
     /*
@@ -384,7 +397,11 @@ Ns_SockListenUdp(const char *address, unsigned short port, bool reuseport)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning) {
+    if (sock == NS_INVALID_SOCKET
+        && binderRunning
+        && saPtr != NULL
+        && Ns_GetSockErrno() != EALREADY
+        ) {
         sock = Ns_SockBinderListen('U', address, port, 0);
     }
 
@@ -541,33 +558,69 @@ NS_SOCKET
 Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 {
     NS_SOCKET sock;
-    int       n = 1;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
     sock = (NS_SOCKET)socket((int)saPtr->sa_family, SOCK_DGRAM, 0);
 
-    if (sock != NS_INVALID_SOCKET
-        && (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, (socklen_t)sizeof(n)) == -1
-            || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, (socklen_t)sizeof(n)) == -1
-            || bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1)
-        ) {
-        ns_sockerrno_t err = ns_sockerrno;
+    if (sock != NS_INVALID_SOCKET) {
+        int n = 1;
 
-        (void)ns_sockclose(sock);
-        sock = NS_INVALID_SOCKET;
-        Ns_SetSockErrno(err);
-    } else {
+        (void)setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *)&n,
+                         (socklen_t)sizeof(n));
+        (void)setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (const void *)&n,
+                         (socklen_t)sizeof(n));
+
 #if defined(SO_REUSEPORT)
         if (reusePort) {
             int optval = 1;
-            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, (socklen_t)sizeof(optval));
+            (void)setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
+                             (const void *)&optval, (socklen_t)sizeof(optval));
         }
 #endif
+
+#ifdef HAVE_IPV6
+        if (saPtr->sa_family == AF_INET6) {
+            /*
+             * Prefer dual-stack if the platform allows it (same rationale as TCP).
+             */
+            int v6only = 0;
+            (void)setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                             (const void *)&v6only, (socklen_t)sizeof(v6only));
+        }
+#endif
+
+        if (bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1) {
+            ns_sockerrno_t err = ns_sockerrno;
+
+            if (saPtr->sa_family == AF_INET
+                && err == EADDRINUSE
+                && Ns_SockaddrInAny(saPtr)) {
+
+                unsigned short port = Ns_SockaddrGetPort(saPtr);
+
+                Ns_Log(Notice,
+                       "skipping UDP bind on [0.0.0.0]:%hu: already covered by [::]:%hu",
+                       port, port);
+
+                (void)ns_sockclose(sock);
+                sock = NS_INVALID_SOCKET;
+
+                errno = EALREADY;
+                Ns_SetSockErrno(EALREADY);
+
+                return sock;
+            }
+
+            (void)ns_sockclose(sock);
+            sock = NS_INVALID_SOCKET;
+            Ns_SetSockErrno(err);
+        }
     }
 
     return sock;
 }
+
 
 
 /*

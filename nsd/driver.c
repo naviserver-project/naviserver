@@ -2153,7 +2153,6 @@ NsSockClose(Sock *sockPtr, int keep)
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2184,9 +2183,15 @@ DriverListen(Driver *drvPtr, const char *bindaddr, unsigned short port)
                                  drvPtr->backlog,
                                  drvPtr->reuseport);
     if (sock == NS_INVALID_SOCKET) {
-        Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
-               drvPtr->threadName, bindaddr, port,
-               ns_sockstrerror(ns_sockerrno));
+        if (ns_sockerrno != EALREADY) {
+            Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
+                   drvPtr->threadName, bindaddr, port,
+                   ns_sockstrerror(ns_sockerrno));
+        } else {
+            /* optional: could be Debug here, since Ns_SockBind already logged Notice */
+            Ns_Log(Debug, "%s: bind on [%s]:%d skipped (covered by dual-stack wildcard)",
+                   drvPtr->threadName, bindaddr, port);
+        }
     }
 
     return sock;
