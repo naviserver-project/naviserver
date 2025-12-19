@@ -131,14 +131,14 @@ else ifeq ($(IS_CLANG),1)
   #$(info CC_VERSION = '$(CC_VERSION)')
   #$(info CLANG_MAJOR = '$(CLANG_MAJOR)')
 
-  # Clang > 3.* (i.e. >= 4): enable more extensive checks
+  # Clang >= 4: enable more extensive checks
   ifneq ($(CLANG_MAJOR),)
     ifeq ($(call lt,$(CLANG_MAJOR),4),0)
       CFLAGS_CONVERSION_DEFAULT = -Wconversion -Wsign-conversion -Wbad-function-cast -Wcast-align
       CFLAGS_FORMAT_DEFAULT     = -Wmissing-format-attribute -Wformat-security -Wformat=2
       CFLAGS_DEFINITION_DEFAULT = -Wwrite-strings -Wdeclaration-after-statement -Wmissing-prototypes -Wmissing-declarations
       CFLAGS_TIDY_DEFAULT       = -Wno-missing-braces -Wundef -Wunreachable-code \
-                                  -Wswitch-enum -Wold-style-definition \
+                                  -Wswitch-enum -Wold-style-definition -Wtautological-compare \
                                   -Wnull-dereference -Wdouble-promotion -Wvla $(CFLAGS_FORMAT_DEFAULT)
     endif
   endif

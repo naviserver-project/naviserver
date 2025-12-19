@@ -44,6 +44,13 @@ else ifeq ($(strip $(USER_SET_J)$(HAS_JOBSERVER)),)
   endif
 endif
 
+VERBOSE ?= 0
+ifeq ($(VERBOSE),0)
+  SUBMAKE_SILENT := -s
+else
+  SUBMAKE_SILENT :=
+endif
+
 distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
 	config.guess config.sub \
@@ -59,13 +66,13 @@ test:    $(TESTDIRS:%=test-%)
 
 # One recursive call per subdir/goal, delegate test to selected subdirs
 all-%:
-	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* all
+	@+$(MAKE) -s $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* all
 install-%:
-	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* install
+	@+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* install
 clean-%:
-	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* clean
+	@+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* clean
 test-%:
-	+$(MAKE) $(SUBMAKE_J) -C $* test
+	+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) -C $* test
 
 # Subdir dependencies
 all-nsd: | all-nsthread
@@ -112,7 +119,7 @@ install: all install-dirs install-include install-tcl install-modules \
 
 HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
 
-install-notice:
+install-notice: install-certificates
 	@echo ""
 	@echo ""
 	@echo "Congratulations, you have installed NaviServer."
@@ -143,14 +150,17 @@ install-notice:
 	echo "Consult the sample configuration files in $(NAVISERVER)/conf/ as a reference."; \
 	echo ""
 
-install-dirs: all
-	@for i in bin lib logs include tcl pages conf \
-		certificates invalid-certificates modules modules/tcl cgi-bin; do \
-		$(MKDIR) $(DESTDIR)$(NAVISERVER)/$$i; \
-	done
+DIRS = bin lib logs include tcl pages conf \
+       certificates invalid-certificates modules modules/tcl cgi-bin
 
-install-config: all install-dirs
-	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
+DIR_TARGETS = $(addprefix $(DESTDIR)$(NAVISERVER)/,$(DIRS))
+
+$(DIR_TARGETS):
+	$(MKDIR) $@
+
+install-dirs: $(DIR_TARGETS)
+
+install-config: $(DESTDIR)$(NAVISERVER)/pages $(DESTDIR)$(NAVISERVER)/conf
 	@for i in returnnotice.adp nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
 	done
@@ -159,13 +169,13 @@ install-config: all install-dirs
 	done
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
 
-install-certificates: $(PEM_FILE) ca-bundle.crt install-dirs
+install-certificates: $(PEM_FILE) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/certificates $(DESTDIR)$(NAVISERVER)/invalid-certificates
 	@if [ -f "$(DESTDIR)$(NAVISERVER)/etc" ]; then \
 		for i in `ls $(DESTDIR)$(NAVISERVER)/etc/*pem` ; do \
 			$(LN) -sf $$i $(DESTDIR)$(NAVISERVER)/certificates ; \
 		done; \
 	fi
-	for i in `ls ./certificates/*` ; do \
+	@for i in `ls ./certificates/*` ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/certificates/; \
 	done
 	@if [ -n "$(OPENSSL_LIBS)" ]; then \
@@ -173,17 +183,17 @@ install-certificates: $(PEM_FILE) ca-bundle.crt install-dirs
 	fi
 	$(INSTALL_DATA) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/
 
-install-modules: all install-dirs
+install-modules: $(DESTDIR)$(NAVISERVER)/modules $(DESTDIR)$(NAVISERVER)/modules/tcl
 	@for i in $(dirs); do \
 		(cd $$i && $(MAKE) install) || exit 1; \
 	done
 
-install-tcl: all install-dirs
+install-tcl: $(DESTDIR)$(NAVISERVER)/tcl
 	@for i in tcl/*.tcl; do \
 		$(INSTALL_DATA) -t $(DESTDIR)$(NAVISERVER)/tcl/ $$i; \
 	done
 
-install-include: all install-dirs
+install-include: $(DESTDIR)$(NAVISERVER)/include
 	@for i in include/*.h include/Makefile.global include/Makefile.module; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INSTHDR)/; \
 	done
@@ -191,7 +201,7 @@ install-include: all install-dirs
 install-tests: install-dirs
 	$(CP) tests $(INSTSRVPAG)
 
-install-doc: install-dirs
+install-doc: $(DESTDIR)$(NAVISERVER)/pages
 	@if [ -d doc/html ]; then \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc ; \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc/naviserver ; \
@@ -206,7 +216,7 @@ install-doc: install-dirs
 		echo "or use the online documentation from https://naviserver.sourceforge.io/n/toc.html" ; \
 	fi;
 
-install-examples: install-dirs
+install-examples: $(DESTDIR)$(NAVISERVER)/pages
 	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/examples
 	@for i in contrib/examples/*.adp contrib/examples/*.tcl; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/examples/; \
