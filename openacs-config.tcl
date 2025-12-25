@@ -566,11 +566,14 @@ if {[info exists httpport] && $httpport ne ""} {
         foreach address $ipaddress {
             ns_param $server $address
         }
-        if {[info exists ::docker::containerMapping] && [dict exists $::docker::containerMapping $httpport/tcp]} {
-            set __host [dict get $::docker::containerMapping $httpport/tcp host]
-            set __port [dict get $::docker::containerMapping $httpport/tcp port]
-            ns_log notice "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
-            ns_param $server ${__host}:${__port}
+        if {[dict exists $::docker::containerMapping $httpport/tcp]} {
+            foreach {label info} $::docker::containerMapping {
+                if {$label ne "$httpport/tcp"} continue
+                set __host [dict get $info host]
+                set __port [dict get  $info port]
+                puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
+                ns_param $server ${__host}:${__port}
+            }
         }
     }
 }
@@ -694,11 +697,14 @@ if {[info exists httpsport] && $httpsport ne ""} {
         foreach address $ipaddress {
             ns_param $server $address
         }
-        if {[info exists ::docker::containerMapping] && [dict exists $::docker::containerMapping $httpsport/tcp]} {
-            set __host [dict get $::docker::containerMapping $httpsport/tcp host]
-            set __port [dict get $::docker::containerMapping $httpsport/tcp port]
-            ns_log notice "added white-listed address '${__host}:${__port}' for server $server on HTTPS driver"
-            ns_param $server ${__host}:${__port}
+        if {[dict exists $::docker::containerMapping $httpsport/tcp]} {
+            foreach {label info} $::docker::containerMapping {
+                if {$label ne "$httpsport/tcp"} continue
+                set __host [dict get $info host]
+                set __port [dict get $info port]
+                puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
+                ns_param $server ${__host}:${__port}
+            }
         }
     }
 }
