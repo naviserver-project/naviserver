@@ -564,6 +564,7 @@ if {[info exists httpport] && $httpport ne ""} {
             ns_param $server $domainname
         }
         foreach address $ipaddress {
+            if {[ns_ip inany $ipaddress]} continue
             ns_param $server $address
         }
         if {[dict exists $::docker::containerMapping $httpport/tcp]} {
@@ -571,11 +572,13 @@ if {[info exists httpport] && $httpport ne ""} {
                 if {$label ne "$httpport/tcp"} continue
                 set __host [dict get $info host]
                 set __port [dict get  $info port]
-                puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
+                if {[ns_ip valid $__host] && [ns_ip inany $__host]} continue
+                #puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
                 ns_param $server ${__host}:${__port}
             }
         }
     }
+    ns_log notice ns_configsection [ns_set format [ns_configsection ns/module/http/servers]]
 }
 
 #---------------------------------------------------------------------
@@ -695,6 +698,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
             ns_param $server $domainname
         }
         foreach address $ipaddress {
+            if {[ns_ip inany $address]} continue
             ns_param $server $address
         }
         if {[dict exists $::docker::containerMapping $httpsport/tcp]} {
@@ -702,10 +706,12 @@ if {[info exists httpsport] && $httpsport ne ""} {
                 if {$label ne "$httpsport/tcp"} continue
                 set __host [dict get $info host]
                 set __port [dict get $info port]
-                puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
+                if {[ns_ip valid $__host] && [ns_ip inany $__host]} continue
+                #puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
                 ns_param $server ${__host}:${__port}
             }
         }
+        ns_log notice ns_configsection [ns_set format [ns_configsection ns/module/https/servers]]
     }
 }
 
