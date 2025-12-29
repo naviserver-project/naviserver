@@ -1082,7 +1082,8 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj
         const NsServer  *servPtr = itPtr->servPtr;
 
         if (servPtr != NsGetInitServer()) {
-            Ns_TclPrintfResult(interp, "cannot add module after server startup");
+            Ns_TclPrintfResult(interp, "cannot add trace %s '%s' after server startup",
+                               Tcl_GetString(objv[1]),  Tcl_GetString(scriptObj));
             result = TCL_ERROR;
 
         } else {
@@ -1139,7 +1140,7 @@ ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         result = TCL_ERROR;
 
     } else if (servPtr != NsGetInitServer()) {
-        Ns_TclPrintfResult(interp, "cannot add module after server startup");
+        Ns_TclPrintfResult(interp, "cannot add module '%s' after server startup", Tcl_GetString(moduleObj));
         result = TCL_ERROR;
 
     } else {
