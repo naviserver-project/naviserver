@@ -118,6 +118,23 @@ typedef enum {
 
 #define NSD_TEXTHTML                   "text/html"
 
+/*
+ * The following result encodings can be used for NsEncodeObj
+ */
+typedef enum {
+    NS_OBJ_ENCODING_HEX       = 1,
+    NS_OBJ_ENCODING_BASE64URL = 2,
+    NS_OBJ_ENCODING_BASE64    = 3,
+    NS_OBJ_ENCODING_BINARY    = 4
+} Ns_BinaryEncoding;
+
+static Ns_ObjvTable binaryencodings[] = {
+    {"hex",       NS_OBJ_ENCODING_HEX},
+    {"base64url", NS_OBJ_ENCODING_BASE64URL},
+    {"base64",    NS_OBJ_ENCODING_BASE64},
+    {"binary",    NS_OBJ_ENCODING_BINARY},
+    {NULL,        0u}
+};
 
 /*
  * Type definitions.
@@ -2146,6 +2163,10 @@ NS_EXTERN void NsTclInitQueueType(void);
  */
 NS_EXTERN size_t NsTclHash(const char *inputString) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN Tcl_Obj *NsEncodedObj(unsigned char *octets, size_t octetLength,
+                              char *outputBuffer, Ns_BinaryEncoding encoding)
+    NS_GNUC_RETURNS_NONNULL NS_GNUC_NONNULL(1);
 
 /*
  * tclobj.c

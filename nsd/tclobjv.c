@@ -2327,6 +2327,67 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
    return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * EncodedObj --
+ *
+ *      Helper function result encodings.
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      Interp result Obj is updated in case of error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj*
+NsEncodedObj(unsigned char *octets, size_t octetLength,
+           char *outputBuffer, Ns_BinaryEncoding encoding) {
+    char    *origOutputBuffer = outputBuffer;
+    Tcl_Obj *resultObj = NULL; /* enumeration is complete, quiet some older compilers */
+
+    NS_NONNULL_ASSERT(octets != NULL);
+
+    if (outputBuffer == NULL && encoding != NS_OBJ_ENCODING_BINARY) {
+        /*
+         * It is a safe assumption to double the size, since the hex
+         * encoding needs the most space.
+         */
+        outputBuffer = ns_malloc(octetLength * 2u + 1u);
+    }
+
+    switch (encoding) {
+    case NS_OBJ_ENCODING_BINARY:
+        resultObj = Tcl_NewByteArrayObj(octets, (TCL_SIZE_T)octetLength);
+        break;
+
+    case NS_OBJ_ENCODING_BASE64URL:
+        (void)Ns_HtuuEncode2(octets, octetLength, outputBuffer, 1);
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)strlen(outputBuffer));
+        break;
+
+    case NS_OBJ_ENCODING_BASE64:
+        (void)Ns_HtuuEncode2(octets, octetLength, outputBuffer, 0);
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)strlen(outputBuffer));
+        break;
+
+    case NS_OBJ_ENCODING_HEX:
+        Ns_HexString(octets, outputBuffer, (TCL_SIZE_T)octetLength, NS_FALSE);
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)octetLength*2);
+        break;
+    }
+
+    if (outputBuffer != origOutputBuffer) {
+        ns_free(outputBuffer);
+    }
+
+    return resultObj;
+}
+
+
 
 /*
  * Local Variables:
