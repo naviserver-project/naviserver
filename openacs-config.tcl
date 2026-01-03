@@ -1,3 +1,4 @@
+
 ######################################################################
 #
 # Generic OpenACS Site Configuration for NaviServer
@@ -12,46 +13,46 @@
 #
 # Configuration structure overview
 #
-# Section 0 – Bootstrap & defaults (pure Tcl)
+# Section 0 -- Bootstrap & defaults (pure Tcl)
 #    - Logging and environment checks
 #    - defaultConfig dictionary and overrides (ns_configure_variables, CLI)
 #    - Derivation of basic variables: server, serverroot, homedir, logdir,
 #      hostname/ipaddress/httpport/httpsport, pageroot, etc.
 #
-# Section 1 – Global NaviServer parameters (ns/parameters)
+# Section 1 -- Global NaviServer parameters (ns/parameters)
 #    - Core ns/parameters
 #    - Optional reverse proxy mode (ns/parameters/reverseproxymode)
 #
-# Section 2 – Global network drivers & modules
+# Section 2 -- Global network drivers & modules
 #    - HTTP driver (nssock) as module "http"
 #    - HTTPS driver (nsssl) as module "https"
 #    - Global driver options and virtual-host mappings
 #
-# Section 3 – Global runtime configuration
+# Section 3 -- Global runtime configuration
 #    - Thread library parameters (ns/threads)
 #    - Extra MIME types (ns/mimetypes)
 #    - Global fastpath configuration (ns/fastpath)
 #
-# Section 4 – Global database drivers and pools
+# Section 4 -- Global database drivers and pools
 #    - ns/db/drivers
 #    - ns/db/driver-specific settings (e.g. postgres, nsoracle)
 #    - ns/db/pools and pool definitions
 #
-# Section 5 – Global utility modules
+# Section 5 -- Global utility modules
 #    - Global modules not bound to a specific server
 #      (e.g. nsstats, future monitoring or helper modules)
 #
-# Section 6 – Server configurations
+# Section 6 -- Server configurations
 #    - Pools, redirects, ADP, Tcl, fastpath, HTTP client,
 #      per-server modules;
 #
-# Section 7 – Final diagnostics / sample extras
+# Section 7 -- Final diagnostics / sample extras
 #    - Final ns_log diagnostics
 #
 ######################################################################
 
 ######################################################################
-# Section 0 – Bootstrap & defaults (pure Tcl)
+# Section 0 -- Bootstrap & defaults (pure Tcl)
 ######################################################################
 ns_log notice "nsd.tcl: starting to read configuration file..."
 
@@ -143,7 +144,7 @@ if { [dict get $defaultConfig dbms] eq "oracle" } {
 #
 
 # Check for the existence of the command "ns_configure_variables".
-# For backward compatibility with pre–NaviServer 5, source init.tcl if not found.
+# For backward compatibility with pre-NaviServer 5, source init.tcl if not found.
 if {[info commands ::ns_configure_variables] eq ""} {
     ns_log notice "backward compatibility hook (pre NaviServer 5): have to source init.tcl"
     source [file normalize [file dirname [file dirname [ns_info nsd]]]/tcl/init.tcl]
@@ -211,7 +212,7 @@ set ::env(LANG) en_US.UTF-8
 #ns_logctl severity "Debug(ns:driver)" $debug
 
 ######################################################################
-# Section 1 – Global NaviServer parameters (ns/parameters)
+# Section 1 -- Global NaviServer parameters (ns/parameters)
 ######################################################################
 # Global NaviServer parameters
 #---------------------------------------------------------------------
@@ -238,9 +239,9 @@ ns_section ns/parameters {
     #------------------------------------------------------------------
 
     # Parameter for controlling caching via ns_cache.
-    #   full    – normal operation (default)
-    #   none    – make all ns_cache operations no-ops
-    #   cluster – reserved for future clustered setups
+    #   full    -- normal operation (default)
+    #   none    -- make all ns_cache operations no-ops
+    #   cluster -- reserved for future clustered setups
     #
     # Using "none" is the most conservative setting, especially in
     # clusters or complex deployments.
@@ -286,9 +287,9 @@ ns_section ns/parameters {
     # send output on a connection that is already closed or detached
     # (for example, a second ns_return on the same incoming request).
     #
-    # true  (default) – reject such operations and log an error; avoids
-    #                   undefined behaviour and confusing partial output.
-    # false           – allow them (legacy behaviour; not recommended).
+    # true  (default) -- reject such operations and log an error; avoids
+    #                    undefined behaviour and confusing partial output.
+    # false           -- allow them (legacy behaviour; not recommended).
     #
     # ns_param rejectalreadyclosedconn false ;# default: true
 
@@ -453,7 +454,7 @@ if {[file exists /scripts/docker-dict.tcl]} {
 
 
 ######################################################################
-# Section 2 – Global network drivers (HTTP/HTTPS)
+# Section 2 -- Global network drivers (HTTP/HTTPS)
 ######################################################################
 # Configuration for plain HTTP interface -- core module "nssock"
 #---------------------------------------------------------------------
@@ -511,9 +512,9 @@ if {[info exists httpport] && $httpport ne ""} {
         # ns_param closewait     2s    ;# default: 2s; timeout when closing the socket
         # ns_param keepwait      2s    ;# default: 5s; keep-alive timeout
 
-        # Control TCP_NODELAY (Nagle’s algorithm) on accepted sockets.
-        #   true  – disable Nagle (set TCP_NODELAY), good for latency
-        #   false – leave Nagle enabled
+        # Control TCP_NODELAY (Nagle's algorithm) on accepted sockets.
+        #   true  -- disable Nagle (set TCP_NODELAY), good for latency
+        #   false -- leave Nagle enabled
         # ns_param nodelay       false ;# default: true
 
         ns_param keepalivemaxuploadsize   100kB   ;# default: 0; # 0 = no limit; disable keep-alive
@@ -665,9 +666,9 @@ if {[info exists httpsport] && $httpsport ne ""} {
         # is still in the kernel’s accept queue.
         # ns_param deferaccept      true   ;# default: false
 
-        # Control TCP_NODELAY (Nagle’s algorithm) on accepted sockets.
-        #   true  – disable Nagle (set TCP_NODELAY), lower latency
-        #   false – leave Nagle enabled
+        # Control TCP_NODELAY (Nagle's algorithm) on accepted sockets.
+        #   true  -- disable Nagle (set TCP_NODELAY), lower latency
+        #   false -- leave Nagle enabled
         # ns_param nodelay          false  ;# default: true
 
         #------------------------------------------------------------------
@@ -717,7 +718,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
 
 
 ######################################################################
-# Section 3 – Global runtime configuration (threads, MIME types, fastpath)
+# Section 3 -- Global runtime configuration (threads, MIME types, fastpath)
 ######################################################################
 
 #---------------------------------------------------------------------
@@ -762,7 +763,7 @@ ns_section ns/fastpath {
 }
 
 ######################################################################
-# Section 4 – Global database drivers and pools
+# Section 4 -- Global database drivers and pools
 ######################################################################
 
 #---------------------------------------------------------------------
@@ -770,8 +771,8 @@ ns_section ns/fastpath {
 #
 # Make sure the drivers are compiled and installed in $homedir/bin.
 # Supported values for $dbms in this template:
-#   oracle  – use the nsoracle driver
-#   postgres – use nsdbpg (PostgreSQL)
+#   oracle  -- use the nsoracle driver
+#   postgres -- use nsdbpg (PostgreSQL)
 #---------------------------------------------------------------------
 ns_section ns/db/drivers {
     if { $dbms eq "oracle" } {
@@ -812,9 +813,9 @@ ns_section ns/db/driver/postgres {
 # Database pools
 #
 # OpenACS uses three pools by default:
-#   pool1 – main pool, most queries
-#   pool2 – second pool (e.g., nested queries, not generally recommended)
-#   pool3 – optional third pool, used by some packages/tools
+#   pool1 -- main pool, most queries
+#   pool2 -- second pool (e.g., nested queries, not generally recommended)
+#   pool3 -- optional third pool, used by some packages/tools
 #
 # Make sure to set the db_* variables (db_host, db_port, db_name, db_user,
 # db_password, db_pool, etc.) at the top of the file.
@@ -831,7 +832,7 @@ ns_section ns/db/pools {
     ns_param pool3 "Pool 3"
 }
 
-# Pool 1 – main pool
+# Pool 1 -- main pool
 ns_section ns/db/pool/pool1 {
     # ns_param maxidle       0     ;# time until idle connections are closed; default: 5m
     # ns_param maxopen       0     ;# max lifetime of connections; default: 60m
@@ -846,7 +847,7 @@ ns_section ns/db/pool/pool1 {
     ns_param driver          $db_driver_name
 }
 
-# Pool 2 – secondary pool (e.g., nested queries)
+# Pool 2 -- secondary pool (e.g., nested queries)
 ns_section ns/db/pool/pool2 {
     # ns_param maxidle       0
     # ns_param maxopen       0
@@ -861,7 +862,7 @@ ns_section ns/db/pool/pool2 {
     ns_param driver          $db_driver_name
 }
 
-# Pool 3 – optional third pool
+# Pool 3 -- optional third pool
 ns_section ns/db/pool/pool3 {
     # ns_param maxidle       0
     # ns_param maxopen       0
@@ -899,7 +900,7 @@ if {"nsdbipg" in $extramodules} {
 }
 
 ######################################################################
-# Section 5 – Global utility modules
+# Section 5 -- Global utility modules
 ######################################################################
 
 #---------------------------------------------------------------------
@@ -923,14 +924,14 @@ ns_section ns/module/nsstats {
 
 
 ######################################################################
-# Section 6 – Server configurations
+# Section 6 -- Server configurations
 #
 #   6.1 Server "openacs" ($server)
 #   6.2 ...
 ######################################################################
 
 #=====================================================================
-# Section 6.1 – Server "openacs" ($server)
+# Section 6.1 -- Server "openacs" ($server)
 #=====================================================================
 
 #---------------------------------------------------------------------
@@ -1006,7 +1007,7 @@ ns_section ns/server/$server {
     # handlers can still control this via ns_conn compress.
     ns_param compressenable      on        ;# default: off
 
-    # ns_param compresslevel     4         ;# default: 4; 1–9; higher = more CPU / better compression
+    # ns_param compresslevel     4         ;# default: 4; 1--9; higher = more CPU / better compression
     # ns_param compressminsize   512       ;# default: 512; compress responses larger than this size
     # ns_param compresspreinit   true      ;# default: false; preallocate compression buffers at startup
 
@@ -1385,7 +1386,7 @@ ns_section ns/server/$server/module/nslog {
     #------------------------------------------------------------------
     # ns_param maxbackup   100     ;# default: 10; max number of rotated log files
     # ns_param rolllog     true    ;# default: true; rotate logs automatically
-    # ns_param rollhour    0       ;# default: 0; hour of day to roll (0–23)
+    # ns_param rollhour    0       ;# default: 0; hour of day to roll (0--23)
     # ns_param rollonsignal true   ;# default: false; rotate log on SIGHUP
 
     # Suffix appended to the log filename when rolling.
@@ -1402,17 +1403,17 @@ ns_section ns/server/$server/module/nslog {
 # Details about enabling and configuration:
 #     https://naviserver.sourceforge.io/n/nscp/files/nscp.html
 #
-ns_section "ns/server/$server/modules" {
+ns_section ns/server/$server/modules {
     if {$nscpport ne ""} {ns_param nscp nscp}
 }
-ns_section "ns/server/$server/module/nscp" {
+ns_section ns/server/$server/module/nscp {
     ns_param port $nscpport
     ns_param address  127.0.0.1        ;# default: 127.0.0.1 or ::1 for IPv6
     #ns_param echopasswd on            ;# default: off
     ns_param cpcmdlogging on           ;# default: off
     #ns_param allowLoopbackEmptyUser on ;# default: off
 }
-ns_section "ns/server/$server/module/nscp/users" {
+ns_section ns/server/$server/module/nscp/users {
     ns_param user "nsadmin:t2GqvvaiIUbF2:"
 }
 
@@ -1489,7 +1490,7 @@ ns_section ns/server/$server/modules {
 ns_section ns/server/$server/modules {
     if {$smtpdport ne ""} {ns_param nssmtpd nssmtpd}
 }
-ns_section "ns/server/$server/module/nssmtpd" {
+ns_section ns/server/$server/module/nssmtpd {
     #------------------------------------------------------------------
     # Basic binding and SMTP behaviour
     #------------------------------------------------------------------
@@ -1540,13 +1541,13 @@ ns_section "ns/server/$server/module/nssmtpd" {
 #---------------------------------------------------------------------
 # WebSocket -- extra module "websocket"
 #---------------------------------------------------------------------
-# ns_section "ns/server/$server/modules" {
+# ns_section ns/server/$server/modules {
 #    ns_param websocket tcl
 # }
-# ns_section "ns/server/$server/module/websocket/chat" {
+# ns_section ns/server/$server/module/websocket/chat {
 #    ns_param urls     /websocket/chat
 # }
-# ns_section "ns/server/$server/module/websocket/log-view" {
+# ns_section ns/server/$server/module/websocket/log-view {
 #    ns_param urls     /admin/websocket/log-view
 #    ns_param refresh  1000   ;# refresh time for file watcher in milliseconds
 # }
@@ -1554,11 +1555,11 @@ ns_section "ns/server/$server/module/nssmtpd" {
 #---------------------------------------------------------------------
 # Interactive Shell for NaviServer -- extra module "nsshell"
 #---------------------------------------------------------------------
-# ns_section "ns/server/$server/modules" {
+# ns_section ns/server/$server/modules {
 #     ns_param    nsshell   tcl
 # }
 #
-# ns_section "ns/server/$server/module/nsshell" {
+# ns_section ns/server/$server/module/nsshell {
 #     ns_param    url                 /nsshell
 #     ns_param    kernel_heartbeat    5
 #     ns_param    kernel_timeout      10
@@ -1574,7 +1575,7 @@ ns_section "ns/server/$server/module/nssmtpd" {
 #---------------------------------------------------------------------
 # Let's Encrypt -- extra module "letsencrypt"
 #---------------------------------------------------------------------
-ns_section "ns/server/$server/modules" {
+ns_section ns/server/$server/modules {
     #ns_param letsencrypt tcl
 }
 ns_section ns/server/$server/module/letsencrypt {
@@ -1734,7 +1735,7 @@ ns_section ns/server/$server/acs/acs-api-browser {
 
 
 #=====================================================================
-# Section 6.2 – additional servers
+# Section 6.2 -- additional servers
 #=====================================================================
 
 #
@@ -1743,7 +1744,7 @@ ns_section ns/server/$server/acs/acs-api-browser {
 
 
 ######################################################################
-# Section 7 – Final diagnostics / sample extras
+# Section 7 -- Final diagnostics / sample extras
 ######################################################################
 
 #ns_logctl severity Debug(ns:driver) on
