@@ -41,8 +41,6 @@ static int Base64DecodeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZ
 static void FinishElement(Tcl_DString *elemPtr, Tcl_DString *colsPtr, bool quoted)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-
-
 /*
  *----------------------------------------------------------------------
  *
