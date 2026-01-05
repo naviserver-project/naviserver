@@ -16,7 +16,8 @@
 #include "nsd.h"
 
 #define VALUE_SUPPLIED (INT2PTR(NS_TRUE))
-
+#define OPT_REQUIRED 0x01u
+#define OPT_SEEN     0x02u
 
 /*
  * Static functions defined in this file.
@@ -36,7 +37,8 @@ static void FreeSpecs(Ns_ObjvSpec *specPtr)
 static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
+static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
+                         const unsigned char *optIsRequired, Tcl_Interp *interp,
                          TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv);
 
 static int GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
@@ -205,12 +207,55 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     Tcl_Obj *const* parseObjv;
     TCL_SIZE_T      requiredArgs = 0, parseObjc, remain;
     TCL_SIZE_T      leadOffset = 0;
+    TCL_SIZE_T      nopts = 0;
+    TCL_SIZE_T      nreqopts = 0;
+    unsigned char  *optFlags = NULL;      /* bit0: required, bit1: seen */
+    Tcl_DString     optDs;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
     parseObjc = objc - leadOffset;
     parseObjv = objv + leadOffset;
     remain = (TCL_SIZE_T)(parseObjc - parseOffset);
+
+    /*
+     * Support required non-positional options by prefixing the option key
+     * with '!': e.g. {"!-name", ...} makes "-name" required.
+     *
+     * We normalize keys in-place ("!-foo" -> "-foo") so the existing option
+     * lookup (including Tcl_GetIndexFromObjStruct caching) stays unchanged.
+     * Therefore, optSpec must be writable when using this feature.
+     */
+    if (optSpec != NULL && optSpec->key != NULL) {
+        TCL_SIZE_T i;
+
+        for (specPtr = optSpec; specPtr->key != NULL; specPtr++) {
+            const char *k = specPtr->key;
+
+            nopts++;
+            if (k[0] == '!' && k[1] == '-') {
+                nreqopts++;
+            }
+        }
+
+        if (nreqopts > 0) {
+            Tcl_DStringInit(&optDs);
+            Tcl_DStringSetLength(&optDs, nopts);
+            optFlags = (unsigned char *)optDs.string;
+            memset(optFlags, 0, nopts);
+
+            /*
+             * Normalize and remember required option indices.
+             */
+            for (i = 0; i < nopts; i++) {
+                const char *k = optSpec[i].key;
+                if (k[0] == '!' && k[1] == '-') {
+                    optFlags[i] |= OPT_REQUIRED;
+                    optSpec[i].key = k + 1;  /* strip '!' */
+                }
+            }
+        }
+    }
 
     /*
      * In case, the number of actual arguments is equal to the number
@@ -229,7 +274,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             }
             requiredArgs++;
         }
-        if (requiredArgs+parseOffset == parseObjc) {
+        if (nreqopts == 0 && requiredArgs+parseOffset == parseObjc) {
             /*
              * No need to process optional parameters.
              */
@@ -259,33 +304,46 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
                 break;
             }
 #endif
-            result = Tcl_IsShared(obj) ?
-                GetOptIndexObjvSpec(obj, optSpec, &optIndex) :
-                Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
-                                          sizeof(Ns_ObjvSpec), "option",
-                                          TCL_EXACT, &optIndex);
+            result = Tcl_IsShared(obj)
+                ? GetOptIndexObjvSpec(obj, optSpec, &optIndex)
+                : Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
+                                            sizeof(Ns_ObjvSpec), "option",
+                                            TCL_EXACT, &optIndex);
             if (result != TCL_OK) {
                 break;
             }
 
             --remain;
             specPtr = optSpec + optIndex;
+            if (optFlags != NULL) {
+                optFlags[optIndex] |= OPT_SEEN;
+            }
             result = specPtr->proc(specPtr, interp, &remain, parseObjv + ((TCL_SIZE_T)parseObjc - remain));
 
             if (result == TCL_BREAK) {
                 break;
             } else if (result != TCL_OK) {
-                return NS_ERROR;
+                goto returnerr;
+            }
+        }
+
+        if (nreqopts > 0) {
+            TCL_SIZE_T i;
+
+            for (i = 0; i < nopts; i++) {
+                if ((optFlags[i] & OPT_REQUIRED) != 0u && (optFlags[i] & OPT_SEEN) == 0u) {
+                    goto badargs;  /* produce "wrong # args" usage */
+                }
             }
         }
     }
     if (unlikely(argSpec == NULL)) {
         if (remain > 0) {
         badargs:
-            WrongNumArgs(optSpec, argSpec, interp, leadOffset, parseOffset-leadOffset, objv);
-            return NS_ERROR;
+            WrongNumArgs(optSpec, argSpec, optFlags, interp, leadOffset, parseOffset-leadOffset, objv);
+            goto returnerr;
         }
-        return NS_OK;
+        goto returnok;
     }
 
     for (specPtr = argSpec; specPtr != NULL && specPtr->key != NULL; specPtr++) {
@@ -293,18 +351,22 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             if (unlikely(specPtr->key[0] != '?')) {
                 goto badargs; /* Too few args. */
             }
-            return NS_OK;
+            goto returnok;
         }
         if (unlikely(specPtr->proc(specPtr, interp, &remain, parseObjv + ((TCL_SIZE_T)parseObjc - remain)))
             != TCL_OK) {
-            return NS_ERROR;
+            goto returnerr;
         }
     }
     if (unlikely(remain > 0)) {
         goto badargs; /* Too many args. */
     }
-
+ returnok:
+    if (optFlags != NULL) {Tcl_DStringFree(&optDs);}
     return NS_OK;
+ returnerr:
+    if (optFlags != NULL) {Tcl_DStringFree(&optDs);}
+    return NS_ERROR;
 }
 
 
@@ -2090,8 +2152,9 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
  */
 
 static void
-WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-               TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
+             const unsigned char *optFlags, Tcl_Interp *interp,
+             TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_ObjvSpec *specPtr;
     Tcl_DString        ds;
@@ -2099,11 +2162,18 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
     Tcl_DStringInit(&ds);
 
     if (optSpec != NULL) {
-        for (specPtr = optSpec; specPtr->key != NULL; ++specPtr) {
+        TCL_SIZE_T idx = 0;
+
+        for (specPtr = optSpec; specPtr->key != NULL; ++specPtr, ++idx) {
+            int required = (optFlags != NULL && (optFlags[idx] & OPT_REQUIRED) != 0u);
+
             if (STREQ(specPtr->key, "--")) {
                 Tcl_DStringAppend(&ds, "?--? ", 5);
             } else {
-                AppendParameter(&ds, "?", 1,
+                const char *wrap = required ? "" : "?";
+                TCL_SIZE_T  wlen = required ? 0  : 1;
+
+                AppendParameter(&ds, wrap, wlen,
                                 ((specPtr->proc == Ns_ObjvInt
                                   || specPtr->proc == Ns_ObjvLong
                                   || specPtr->proc == Ns_ObjvWideInt
@@ -2345,7 +2415,7 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
 
 Tcl_Obj*
 NsEncodedObj(unsigned char *octets, size_t octetLength,
-           char *outputBuffer, Ns_BinaryEncoding encoding) {
+             char *outputBuffer, Ns_BinaryEncoding encoding) {
     char    *origOutputBuffer = outputBuffer;
     Tcl_Obj *resultObj = NULL; /* enumeration is complete, quiet some older compilers */
 
@@ -2386,8 +2456,6 @@ NsEncodedObj(unsigned char *octets, size_t octetLength,
 
     return resultObj;
 }
-
-
 
 /*
  * Local Variables:
