@@ -2562,7 +2562,7 @@ h3_conn_write_step(ConnCtx *cc)
     nghttp3_ssize nvec;
     int64_t       sid = -1;
     int           fin = 0;
-    bool          did_progress = NS_FALSE;   /* any bytes written or FIN concluded */
+    bool          did_progress = NS_FALSE;  /* any bytes written or FIN concluded */
     bool          any_keep_w   = NS_FALSE;  /* kept W armed on at least one stream */
     bool          hit_any_want = NS_FALSE;  /* saw SSL_ERROR_WANT_* on any stream */
     NsTLSConfig  *dc = cc->dc;
