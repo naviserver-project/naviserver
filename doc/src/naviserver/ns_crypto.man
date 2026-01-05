@@ -199,6 +199,47 @@ variant of the command.  The default value is "Argon2id".
 [example_end]
 
 
+[call [cmd "ns_crypto::eckey fromcoords"] \
+        [opt [option "-binary"]] \
+        [option "-curve [arg value]"] \
+        [option "-x [arg value]"] \
+        [option "-y [arg value]"] \
+        [opt [option "-encoding hex|base64url|base64|binary"]] \
+        [opt [option "-format pem|der"]] \
+        ]
+
+ Construct an elliptic curve public key from affine point coordinates.
+ The coordinates are provided via [option "-x"] and [option "-y"] and
+ are interpreted either as Tcl binary data when [option "-binary"] is
+ specified, or as ordinary strings otherwise.
+
+[para] The elliptic curve is selected via [option "-curve"].  For
+ [const prime256v1] (a.k.a. [const secp256r1]) the coordinates must be
+ 32 bytes each.
+
+[para] The result is returned either as a PEM encoded public key
+ ([const "BEGIN PUBLIC KEY"]) when [option "-format pem"] is selected
+ (the default), or as DER encoded SubjectPublicKeyInfo when
+ [option "-format der"] is selected.
+
+[para] When returning DER, [option "-encoding"] controls how the DER
+ bytes are encoded in the Tcl result. Typically, one uses [const -binary]
+ for DER output.
+
+[para] The command validates that the provided coordinates form a valid
+ point on the selected curve. Invalid points raise an error.
+
+[para] This function requires OpenSSL compiled with EC support enabled.
+
+[example_begin]
+% ns_crypto::eckey generate -name prime256v1 -pem /tmp/p256-priv.pem
+% set pub [ns_crypto::eckey pub -pem /tmp/p256-priv.pem -encoding binary]
+% if {[string length $pub] != 65 || [string index $pub 0] ne "\x04"} { error "bad point"}
+% set x [string range $pub 1 32]
+% set y [string range $pub 33 64]
+% set pubpem [ns_crypto::eckey fromcoords -curve prime256v1 -x $x -y $y -binary]
+[example_end]
+
 
 [call [cmd "ns_crypto::eckey generate"] \
      [opt [option "-name [arg value]"]] \

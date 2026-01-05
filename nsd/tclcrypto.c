@@ -2528,6 +2528,261 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 /*
  *----------------------------------------------------------------------
  *
+ * CryptoEckeyFromCoordsObjCmd -- Subcommand of NsTclCryptoEckeyObjCmd
+ *
+ *        Implements "ns_crypto::eckey fromcoords". Construct an EC public
+ *        key from affine coordinates (x/y) for a given curve and return
+ *        the public key in PEM (SubjectPublicKeyInfo) or DER form.
+ *
+ * Results:
+ *      Tcl Result Code.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                result, encodingInt = -1, isBinary = 0, formatInt = -1;
+    const char        *curveName = NULL;
+    Tcl_Obj           *xObj = NULL, *yObj = NULL;
+    static Ns_ObjvTable formats[] = {
+        {"pem",       0},
+        {"der",       1},
+        {NULL,        0u}
+    };
+    Ns_ObjvSpec lopts[] = {
+        {"-binary",    Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
+        {"!-curve",    Ns_ObjvString, &curveName,   NULL},
+        {"!-x",        Ns_ObjvObj,    &xObj,        NULL},
+        {"!-y",        Ns_ObjvObj,    &yObj,        NULL},
+        {"-encoding",  Ns_ObjvIndex,  &encodingInt, binaryencodings},
+        {"-format",    Ns_ObjvIndex,  &formatInt,   formats},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_BINARY : (Ns_BinaryEncoding)encodingInt);
+        int                  nid, ok, wantPem  = (formatInt == -1 || formatInt == 0); /* default pem */
+        const unsigned char *xBytes, *yBytes;
+        TCL_SIZE_T           xLen = 0, yLen = 0;
+        Tcl_DString          xDs, yDs;
+        EC_GROUP            *group = NULL;
+        EC_POINT            *point = NULL;
+        BN_CTX              *bn_ctx = NULL;
+        BIGNUM              *bx = NULL, *by = NULL;
+        EC_KEY              *eckey = NULL;
+        EVP_PKEY            *pkey;
+
+        Tcl_DStringInit(&xDs);
+        Tcl_DStringInit(&yDs);
+
+        xBytes = (const unsigned char *)Ns_GetBinaryString(xObj, isBinary == 1, &xLen, &xDs);
+        yBytes = (const unsigned char *)Ns_GetBinaryString(yObj, isBinary == 1, &yLen, &yDs);
+
+        if (xBytes == NULL || yBytes == NULL) {
+            Ns_TclPrintfResult(interp, "could not obtain coordinates");
+            result = TCL_ERROR;
+            goto done_coords;
+        }
+
+        /*
+         * Map curve name to NID. Accept secp256r1 as alias for prime256v1.
+         */
+        nid = OBJ_txt2nid(curveName);
+        if (nid == NID_undef) {
+            if (STREQ(curveName, "secp256r1")) {
+                nid = NID_X9_62_prime256v1;
+            }
+        }
+        if (nid == NID_undef) {
+            Ns_TclPrintfResult(interp, "unknown curve '%s'", curveName);
+            result = TCL_ERROR;
+            goto done_coords;
+        }
+
+        /*
+         * Sanity checks for P-256 (WebAuthn ES256).
+         */
+        if (nid == NID_X9_62_prime256v1) {
+            if (xLen != 32 || yLen != 32) {
+                Ns_TclPrintfResult(interp,
+                    "invalid coordinate length for prime256v1 (need 32 bytes each)");
+                result = TCL_ERROR;
+                goto done_coords;
+            }
+        }
+
+        /*
+         * Build EC_KEY from x/y.
+         */
+        group = EC_GROUP_new_by_curve_name(nid);
+        if (group == NULL) {
+            Ns_TclPrintfResult(interp, "EC_GROUP_new_by_curve_name failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+        point = EC_POINT_new(group);
+        if (point == NULL) {
+            Ns_TclPrintfResult(interp, "EC_POINT_new failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+        bn_ctx = BN_CTX_new();
+        if (bn_ctx == NULL) {
+            Ns_TclPrintfResult(interp, "BN_CTX_new failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+
+        bx = BN_bin2bn(xBytes, (int)xLen, NULL);
+        by = BN_bin2bn(yBytes, (int)yLen, NULL);
+        if (bx == NULL || by == NULL) {
+            Ns_TclPrintfResult(interp, "BN_bin2bn failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+        ok = EC_POINT_set_affine_coordinates_GFp(group, point, bx, by, bn_ctx);
+#else
+        ok = EC_POINT_set_affine_coordinates(group, point, bx, by, bn_ctx);
+#endif
+        if (ok != 1) {
+            Ns_TclPrintfResult(interp, "invalid EC point (cannot set affine coordinates)");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+        if (EC_POINT_is_on_curve(group, point, bn_ctx) != 1) {
+            Ns_TclPrintfResult(interp, "invalid EC point (not on curve)");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+
+        eckey = EC_KEY_new();
+        if (eckey == NULL) {
+            Ns_TclPrintfResult(interp, "EC_KEY_new failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+        if (EC_KEY_set_group(eckey, group) != 1) {
+            Ns_TclPrintfResult(interp, "EC_KEY_set_group failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+        if (EC_KEY_set_public_key(eckey, point) != 1) {
+            Ns_TclPrintfResult(interp, "EC_KEY_set_public_key failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+
+        /*
+         * Convert to EVP_PKEY and serialize as SPKI.
+         */
+        pkey = EVP_PKEY_new();
+        if (pkey == NULL) {
+            Ns_TclPrintfResult(interp, "EVP_PKEY_new failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+        if (EVP_PKEY_assign_EC_KEY(pkey, eckey) != 1) {
+            EVP_PKEY_free(pkey);
+            Ns_TclPrintfResult(interp, "EVP_PKEY_assign_EC_KEY failed");
+            result = TCL_ERROR;
+            goto done_ec;
+        }
+        eckey = NULL; /* now owned by pkey */
+
+        wantPem = (formatInt == -1 || formatInt == 0); /* default pem */
+        if (wantPem) {
+            BUF_MEM *bptr = NULL;
+            BIO     *bio = BIO_new(BIO_s_mem());
+
+            if (bio == NULL) {
+                EVP_PKEY_free(pkey);
+                Ns_TclPrintfResult(interp, "BIO_new failed");
+                result = TCL_ERROR;
+                goto done_ec;
+            }
+            if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
+                BIO_free(bio);
+                EVP_PKEY_free(pkey);
+                Ns_TclPrintfResult(interp, "PEM_write_bio_PUBKEY failed");
+                result = TCL_ERROR;
+                goto done_ec;
+            }
+            BIO_get_mem_ptr(bio, &bptr);
+            if (bptr == NULL || bptr->data == NULL || bptr->length == 0) {
+                BIO_free(bio);
+                EVP_PKEY_free(pkey);
+                Ns_TclPrintfResult(interp, "failed to obtain PEM output");
+                result = TCL_ERROR;
+                goto done_ec;
+            }
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(bptr->data, (TCL_SIZE_T)bptr->length));
+            BIO_free(bio);
+            EVP_PKEY_free(pkey);
+            result = TCL_OK;
+
+        } else {
+            int            len = i2d_PUBKEY(pkey, NULL);
+            Tcl_DString    ds;
+            unsigned char *p;
+
+            if (len <= 0) {
+                EVP_PKEY_free(pkey);
+                Ns_TclPrintfResult(interp, "i2d_PUBKEY failed");
+                result = TCL_ERROR;
+                goto done_ec;
+            }
+            Tcl_DStringInit(&ds);
+            Tcl_DStringSetLength(&ds, len);
+            p = (unsigned char *)ds.string;
+            if (i2d_PUBKEY(pkey, &p) != len) {
+                Tcl_DStringFree(&ds);
+                EVP_PKEY_free(pkey);
+                Ns_TclPrintfResult(interp, "i2d_PUBKEY produced unexpected length");
+                result = TCL_ERROR;
+                goto done_ec;
+            }
+
+            /*
+             * Output encoding (DER is binary). If caller asks for
+             * base64/base64url/hex, we convert here.
+             */
+            Tcl_SetObjResult(interp,
+                             NsEncodedObj((unsigned char *)ds.string,
+                                          (size_t)len, NULL, encoding));
+            Tcl_DStringFree(&ds);
+            EVP_PKEY_free(pkey);
+            result = TCL_OK;
+        }
+
+    done_ec:
+        if (eckey != NULL) { EC_KEY_free(eckey); }
+        if (point != NULL) { EC_POINT_free(point); }
+        if (group != NULL) { EC_GROUP_free(group); }
+        if (bx != NULL)    { BN_free(bx); }
+        if (by != NULL)    { BN_free(by); }
+        if (bn_ctx != NULL){ BN_CTX_free(bn_ctx); }
+
+    done_coords:
+        Tcl_DStringFree(&xDs);
+        Tcl_DStringFree(&yDs);
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * CryptoEckeyGenerateObjCmd -- Subcommand of NsTclCryptoEckeyObjCmd
  *
  *        Implements "ns_crypto::eckey generate". Subcommand to
@@ -2848,6 +3103,7 @@ int
 NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
+        {"fromcoords",   CryptoEckeyFromCoordsObjCmd},
         {"generate",     CryptoEckeyGenerateObjCmd},
 #  ifdef HAVE_OPENSSL_EC_PRIV2OCT
         {"import",       CryptoEckeyImportObjCmd},
