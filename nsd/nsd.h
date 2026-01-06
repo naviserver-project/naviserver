@@ -1393,6 +1393,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclCacheTransactionCommitObjCmd,
     NsTclCacheTransactionRollbackObjCmd,
     NsTclCancelObjCmd,
+    NsTclCborObjCmd,
     NsTclCertCtlObjCmd,
     NsTclChanObjCmd,
     NsTclCharsetsObjCmd,
@@ -2167,6 +2168,9 @@ NS_EXTERN size_t NsTclHash(const char *inputString) NS_GNUC_PURE
 NS_EXTERN Tcl_Obj *NsEncodedObj(unsigned char *octets, size_t octetLength,
                               char *outputBuffer, Ns_BinaryEncoding encoding)
     NS_GNUC_RETURNS_NONNULL NS_GNUC_NONNULL(1);
+
+NS_EXTERN TCL_SIZE_T NsEncodedObjScratchSize(Ns_BinaryEncoding encoding, size_t octetLength)
+    NS_GNUC_PURE;
 
 /*
  * tclobj.c

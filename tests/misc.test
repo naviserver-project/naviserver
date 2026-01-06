@@ -696,6 +696,189 @@ test ns_getcsv-2.1 {ns_getcsv with trim} -body {
 bb} ccc} {zzz yyy xxx} {1 2 3} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}} ;# "
 
 
+#######################################################################################
+#  test ns_cbor
+#######################################################################################
+
+test ns_cbor-1.0 {syntax: ns_cbor} -body {
+    ns_cbor
+} -returnCodes error -result {wrong # args: should be "ns_cbor decode|scan ?/arg .../"}
+
+test ns_cbor-1.1 {syntax: ns_cbor subcommand} -body {
+    ns_cbor x
+} -returnCodes error -result {ns_cbor: bad subcommand "x": must be decode or scan}
+
+test ns_cbor-1.2 {syntax: ns_cbor decode} -body {
+    ns_cbor decode
+} -returnCodes error -result {wrong # args: should be "ns_cbor decode ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/"}
+
+test ns_cbor-1.3 {syntax: ns_cbor scan} -body {
+    ns_cbor scan
+} -returnCodes error -result {wrong # args: should be "ns_cbor scan ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/"}
+
+test ns_cbor-1.4 {syntax: bad -encoding value} -body {
+    ns_cbor decode -encoding foo -- "\x00"
+} -returnCodes error -result {bad option "foo": must be hex, base64url, base64, or binary}
+
+test ns_cbor-1.5 {syntax: -encoding needs argument} -constraints knownBug -body {
+    ns_cbor decode -encoding
+} -returnCodes {error ok} -result {wrong # args: should be "ns_cbor decode ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/"}
+
+test ns_cbor-1.6 {syntax: unknown option} -body {
+    ns_cbor decode -bogus -- "\x00"
+} -returnCodes error -result {wrong # args: should be "ns_cbor decode ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/"}
+
+test ns_cbor-1.7 {syntax: -- separates options from value} -body {
+    # value looks like an option, must be treated as data after --
+    # The first byte is '-' = 0x2d. In CBOR, 0x2d is: major type 1 (negative integer), additional info 13 -> -14
+    ns_cbor decode -binary -- "-binary"
+} -returnCodes {ok error} -result {-14}
+
+test ns_cbor-2.0 {ns_cbor decode simple map case} -body {
+    set cbor_b64u "omNmbXRkbm9uZWdhdHRTdG10oA"
+    set bin [ns_base64urldecode -binary -- $cbor_b64u]
+    set value [ns_cbor decode -binary -encoding binary $bin]
+} -match exact -result {fmt none attStmt {}}
+
+test ns_cbor-2.1 {decode uint 0} -body {
+    # 0x00 => unsigned int 0
+    set bin [binary format H* 00]
+    ns_cbor decode -binary -encoding binary $bin
+} -result 0
+
+test ns_cbor-2.2 {decode uint 23} -body {
+    # 0x17 => 23
+    set bin [binary format H* 17]
+    ns_cbor decode -binary -encoding binary $bin
+} -result 23
+
+test ns_cbor-2.3 {decode uint 24} -body {
+    # 0x18 0x18 => 24
+    set bin [binary format H* 1818]
+    ns_cbor decode -binary -encoding binary $bin
+} -result 24
+
+test ns_cbor-2.4 {decode negative int -1} -body {
+    # 0x20 => -1
+    set bin [binary format H* 20]
+    ns_cbor decode -binary -encoding binary $bin
+} -result -1
+
+test ns_cbor-2.5 {decode negative int -24} -body {
+    # 0x37 => -24
+    set bin [binary format H* 37]
+    ns_cbor decode -binary -encoding binary $bin
+} -result -24
+
+test ns_cbor-2.6 {decode simple true} -body {
+    # 0xf5 => true
+    set bin [binary format H* f5]
+    ns_cbor decode -binary -encoding binary $bin
+} -result 1
+
+test ns_cbor-2.7 {decode simple false} -body {
+    # 0xf4 => false
+    set bin [binary format H* f4]
+    ns_cbor decode -binary -encoding binary $bin
+} -result 0
+
+test ns_cbor-2.8 {decode bstr as binary} -body {
+    # 0x43 01 02 03 => bstr(3) = 0x010203
+    set bin [binary format H* 43010203]
+    set v [ns_cbor decode -binary -encoding binary $bin]
+    binary encode hex $v
+} -result 010203
+
+test ns_cbor-2.9 {decode bstr as hex} -body {
+    # same as above, but request hex output encoding
+    set bin [binary format H* 43010203]
+    ns_cbor decode -binary -encoding hex $bin
+} -result 010203
+
+
+test ns_cbor-2.10 {decode tstr "a"} -body {
+    # 0x61 0x61 => "a"
+    set bin [binary format H* 6161]
+    ns_cbor decode -binary -encoding binary $bin
+} -result a
+
+test ns_cbor-2.11 {decode tstr "fmt"} -body {
+    # 0x63 'f' 'm' 't'
+    set bin [binary format H* 63666d74]
+    ns_cbor decode -binary -encoding binary $bin
+} -result fmt
+
+test ns_cbor-2.12 {decode empty array} -body {
+    # 0x80 => []
+    set bin [binary format H* 80]
+    ns_cbor decode -binary -encoding binary $bin
+} -result {}
+
+test ns_cbor-2.13 {decode array [1 2 3]} -body {
+    # 0x83 01 02 03
+    set bin [binary format H* 83010203]
+    ns_cbor decode -binary -encoding binary $bin
+} -result {1 2 3}
+
+test ns_cbor-2.14 {decode empty map} -body {
+    # 0xa0 => {}
+    set bin [binary format H* a0]
+    ns_cbor decode -binary -encoding binary $bin
+} -result {}
+
+test ns_cbor-2.15 {decode map {1:2, 3:-7}} -body {
+    # a2 01 02 03 26
+    set bin [binary format H* a201020326]
+    ns_cbor decode -binary -encoding binary $bin
+} -result {1 2 3 -7}
+
+test ns_cbor-2.16 {decode COSE_Key-like map, check x/y lengths} -body {
+    set cose_bin [binary format H* [string map {" " ""} {\
+        a5 01 02 03 26 20 01 \
+        21 58 20 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20 \
+        22 58 20 2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40 \
+    }]]
+    set cose [ns_cbor decode -binary -encoding binary $cose_bin]
+    list \
+        alg [dict get $cose 3] \
+        crv [dict get $cose -1] \
+        xlen [string length [dict get $cose -2]] \
+        ylen [string length [dict get $cose -3]]
+} -result {alg -7 crv 1 xlen 32 ylen 32}
+
+test ns_cbor-3.0 {scan returns bytes_consumed for single item} -body {
+    # a0 => empty map, 1 byte
+    set bin [binary format H* a0]
+    set r [ns_cbor scan -binary -encoding binary $bin]
+    list [lindex $r 0] [lindex $r 1]
+} -result {{} 1}
+
+test ns_cbor-3.1 {scan consumes only first item} -body {
+    # two items: a0 ({}), then 01
+    set bin [binary format H* a001]
+    set r [ns_cbor scan -binary -encoding binary $bin]
+    # should decode {} and report 1 byte consumed
+    list [lindex $r 0] [lindex $r 1]
+} -result {{} 1}
+
+test ns_cbor-4.0 {truncated: additional length missing} -body {
+    # 0x18 => uint with 1-byte argument, but missing that byte
+    set bin [binary format H* 18]
+    ns_cbor decode -binary -encoding binary $bin
+} -returnCodes {ok error} -result {CBOR truncated input}
+
+test ns_cbor-4.1 {truncated: bstr length says 3 but only 2 bytes provided} -body {
+    # 0x43 => bstr(3) but only 0x01 0x02 present
+    set bin [binary format H* 430102]
+    ns_cbor decode -binary -encoding binary $bin
+} -returnCodes {ok error} -result {CBOR truncated input}
+
+test ns_cbor-4.2 {truncated: map claims 1 pair but value missing} -body {
+    # a1 01 => map(1) with key=1 but missing value
+    set bin [binary format H* a101]
+    ns_cbor decode -binary -encoding binary $bin
+} -returnCodes {ok error} -result {CBOR truncated input}
+
 
 cleanupTests
 

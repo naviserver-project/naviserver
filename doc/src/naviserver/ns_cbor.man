@@ -1,0 +1,158 @@
+[include version_include.man]
+[manpage_begin ns_cbor n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Minimal CBOR decoder for WebAuthn needs.}]
+
+[description] The command [cmd ns_cbor] provides a minimal CBOR (RFC
+8949) decoder intended primarily for WebAuthn and related
+protocols. It decodes exactly one CBOR data item from the provided
+input.
+
+[para]
+The decoder is intentionally limited in scope and focuses on CBOR data
+types required by WebAuthn, such as maps, arrays, integers, byte
+strings, and text strings. It does not aim to be a full
+general-purpose CBOR implementation.
+
+Two subcommands are provided:
+
+[list_begin itemized]
+
+[item] [cmd "ns_cbor decode"] decodes a single CBOR item and returns
+its Tcl representation.
+
+[item] [cmd "ns_cbor scan"] decodes a single CBOR item and
+additionally returns the number of bytes consumed from the input.
+
+[list_end]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd "ns_cbor decode"] \
+        [opt [option "-binary"]] \
+        [opt [option "-encoding hex|base64url|base64|binary"]] \
+        [opt --] \
+        [arg value]]
+
+Decode a single CBOR item from [arg value] and return the decoded Tcl value.
+
+[para]CBOR major types are mapped as follows:
+
+[list_begin itemized]
+[item] Unsigned and negative integers are returned as Tcl integers.
+[item] CBOR byte strings (bstr) are returned as binary Tcl values or
+       encoded strings, depending on [option -encoding].
+[item] CBOR text strings (tstr) are returned as Tcl strings.
+[item] CBOR arrays are returned as Tcl lists.
+[item] CBOR maps are returned as Tcl dicts.
+[item] The simple values [term true], [term false], and [term null]
+       are returned as the corresponding Tcl boolean or empty value.
+[list_end]
+
+Only a single CBOR item is decoded. Any trailing data in the input is ignored.
+
+[call [cmd "ns_cbor scan"] \
+        [opt [option "-binary"]] \
+        [opt [option "-encoding hex|base64url|base64|binary"]] \
+        [opt --] \
+        [arg value]]
+
+[para] Decode a single CBOR item from [arg value] and return a
+two-element list. The first element is the decoded Tcl value, and the
+second element is the number of bytes consumed from the input.
+
+This subcommand is useful when parsing CBOR data embedded inside
+larger binary structures, such as WebAuthn [term authenticatorData] or
+COSE structures.
+
+[list_end]
+
+[section OPTIONS]
+[list_begin options]
+
+[opt_def -binary]
+
+[para] Treat the input [arg value] as binary data. The Tcl byte-array
+representation of the argument is used directly, and no UTF-8
+interpretation is performed. This option is required when decoding
+CBOR data obtained from binary protocols or base64/base64url decoding.
+
+[opt_def -encoding hex|base64url|base64|binary]
+
+[para] Specify the output encoding used for CBOR byte string (bstr)
+values returned by the decoder. Possible encodings are:
+
+[list_begin itemized]
+[item] [term hex]
+[item] [term base64url]
+[item] [term base64]
+[item] [term binary]
+[list_end]
+
+The default encoding is [term hex]. Text strings (tstr), integers,
+arrays, and maps are not affected by this option.
+
+[list_end]
+
+[section EXAMPLES]
+
+Decode a CBOR map encoded as base64url
+[example_begin]
+ set cbor_b64u "omNmbXRkbm9uZWdhdHRTdG10oA"
+ set bin [lb]ns_base64urldecode -binary -- $cbor_b64u[rb]
+ set value [lb]ns_cbor decode -binary -encoding binary $bin[rb]
+ ## output: fmt none attStmt {}
+ 
+ # Access map entries
+ dict get $value fmt
+ ## output: none
+[example_end]
+
+Decode sample authenticatorData. Note that many of the commands output binary
+data (byte array). The final [cmd list] command provides readable data.
+[example_begin]
+ # Fake authenticatorData header (37 bytes like real authData: rpIdHash(32) + flags(1) + signCount(4))
+ # Here all zeros, just to provide a realistic prefix length.
+ set authData [lb]binary format H* [lb]string map {" " ""} {\
+   0000000000000000000000000000000000000000000000000000000000000000 \
+   01 \
+   00000000}[rb][rb]
+ 
+ # COSE_Key (CBOR map) for ES256 / P-256:
+ # 1:2  (kty=EC2)
+ # 3:-7 (alg=ES256)
+ # -1:1 (crv=P-256)
+ # -2: <32 bytes> (x)
+ # -3: <32 bytes> (y)
+ #
+ # x = 0x01..0x20
+ # y = 0x21..0x40
+ set cose_bin [lb]binary format H* [lb]string map {" " ""} {\
+   a5 \
+   01 02 \
+   03 26 \
+   20 01 \
+   21 58 20 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20 \
+   22 58 20 2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40}[rb][rb]
+
+ # In real authData, COSE_Key starts at some offset.
+ # For this example, it's exactly after the 37-byte header.
+ set offset 37
+ append authData $cose_bin
+ 
+ set cose_bin [lb]string range $authData $offset end[rb]
+ set cose [lb]ns_cbor decode -binary -encoding binary $cose_bin[rb]
+ set x [lb]dict get $cose -2[rb]
+ set y [lb]dict get $cose -3[rb]
+ 
+ list x_hex [lb]binary encode hex $x[rb] y_hex [lb]binary encode hex $y[rb]
+ ## output: x_hex 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20 y_hex 2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40
+[example_end]
+
+[see_also ns_uudecode ns_base64]
+[keywords "global built-in" CBOR WebAuthn encoding]
+[manpage_end]
+

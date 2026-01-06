@@ -2457,6 +2457,26 @@ NsEncodedObj(unsigned char *octets, size_t octetLength,
     return resultObj;
 }
 
+TCL_SIZE_T
+NsEncodedObjScratchSize(Ns_BinaryEncoding encoding, size_t octetLength)
+{
+    switch (encoding) {
+    case NS_OBJ_ENCODING_BINARY:
+        return (TCL_SIZE_T)octetLength;
+
+    case NS_OBJ_ENCODING_BASE64URL:
+    case NS_OBJ_ENCODING_BASE64:
+        return (TCL_SIZE_T)(4*((octetLength + 2)/3) + 1);
+
+    case NS_OBJ_ENCODING_HEX:
+        return (TCL_SIZE_T)(2*octetLength + 1);
+        break;
+    }
+
+    Ns_Log(Error, "NsEncodedObjScratchSize called with invalid encoding: %d", (int)encoding);
+    return 0;
+}
+
 /*
  * Local Variables:
  * mode: c

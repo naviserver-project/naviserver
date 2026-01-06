@@ -36,7 +36,7 @@ LIBOBJS = adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  tclrequest.o tclresp.o tclsched.o tclset.o tclsock.o sockaddr.o \
 	  tclthread.o tcltime.o tclvar.o tclxkeylist.o tls.o stamp.o \
 	  url.o url2file.o urlencode.o urlopen.o urlspace.o uuencode.o \
-	  unix.o watchdog.o nswin32.o tclcrypto.o tclparsefieldvalue.o
+	  unix.o watchdog.o nswin32.o tclcrypto.o tclparsefieldvalue.o tclcbor.o
 
 include ../include/Makefile.build
 
