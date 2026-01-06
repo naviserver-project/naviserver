@@ -34,7 +34,7 @@ typedef struct UserAuth {
     const char              *authority; /* Identifier of the registration authority that installed this callback */
 } UserAuth;
 
-typedef struct AuthNode { /* common “base” for both types */
+typedef struct AuthNode { /* common "base" for both types */
     void *nextPtr;
 } AuthNode;
 

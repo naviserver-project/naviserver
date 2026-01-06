@@ -6961,7 +6961,7 @@ ConnPoolInfoResetRateCB(void *hashValue, const void *UNUSED(ctx))
  *
  * ConnPoolInfoUpdateCB --
  *
- *      Called for each (ConnPool → ConnPoolInfo) mapping to recalculate
+ *      Called for each (ConnPool -> ConnPoolInfo) mapping to recalculate
  *      how much bandwidth the current writer thread should be allowed
  *      to use in this pool.
  *
@@ -7053,7 +7053,7 @@ ConnPoolInfoUpdateCB(const void *hashKey, void *hashValue, const void *UNUSED(ct
  *
  * Parameters:
  *      writePtr   – first WriterSock in the thread’s list of active writers.
- *      pools      – Tcl_HashTable mapping ConnPool* → ConnPoolInfo*.
+ *      pools      – Tcl_HashTable mapping ConnPool* -> ConnPoolInfo*.
  *
  * Results:
  *      None.

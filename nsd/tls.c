@@ -399,7 +399,7 @@ SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
  *
  * SSL_cert_has_must_staple --
  *
- *      Check whether an X.509 certificate has the “must-staple” TLS
+ *      Check whether an X.509 certificate has the "must-staple" TLS
  *      Feature extension (OCSP Must-Staple, OID 1.3.6.1.5.5.7.1.24)
  *      indicating that the certificate requires OCSP stapling.
  *
@@ -1698,7 +1698,7 @@ ExecuteKeyScript(Tcl_DString *dsPtr, const char *scriptPath, const char *pemPath
  *           If not set, fall back to the generic TLS_KEY_PASS variable.
  *
  *        3) As a last resort, prompt the user on stdin with
- *           “Enter TLS password:” and read from the console.
+ *           "Enter TLS password:" and read from the console.
  *
  * Parameters:
  *      buf    – buffer in which to store the passphrase
@@ -1842,7 +1842,7 @@ NsTLSConfigNew(const char *section)
     static char sni_info_tag[] = "SniCtx";
 
     dc = ns_calloc(1, sizeof(NsTLSConfig));
-    dc->verify        = Ns_ConfigBool(section, "verify", 0);
+    dc->verify        = Ns_ConfigBool(section, "verify", NS_FALSE);
     dc->tlsKeylogFile = Ns_ConfigGetValue(section, "tlskeylogfile");
     dc->tlsKeyScript  = Ns_ConfigGetValue(section, "tlskeyscript");
     if (dc->tlsKeyScript != NULL) {
@@ -2120,7 +2120,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 
         result = Ns_TLS_CtxServerCreateCfg(interp, cert,
                                            NULL /*caFile*/, NULL /*caPath*/,
-                                           Ns_ConfigBool(section, "verify", 0),
+                                           Ns_ConfigBool(section, "verify", NS_FALSE),
                                            ciphers, ciphersuites, protocols,
                                            (flags & NS_DRIVER_QUIC) != 0 ? "h3" : "http/1.1",
                                            app_data, flags,
