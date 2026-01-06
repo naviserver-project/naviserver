@@ -697,7 +697,7 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     Tcl_Obj           *ctxObj;
 
     Ns_ObjvSpec    lopts[] = {
-        {"-encoding", Ns_ObjvIndex,  &encodingInt,  binaryencodings},
+        {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec    args[] = {
@@ -807,7 +807,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     Ns_ObjvSpec    lopts[] = {
         {"-binary",   Ns_ObjvBool,     &isBinary,    INT2PTR(NS_TRUE)},
         {"-digest",   Ns_ObjvString,   &digestName,  NULL},
-        {"-encoding", Ns_ObjvIndex,    &encodingInt, binaryencodings},
+        {"-encoding", Ns_ObjvIndex,    &encodingInt, NS_binaryencodings},
         {"--",        Ns_ObjvBreak,    NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1040,7 +1040,7 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     Tcl_Obj           *ctxObj;
 
     Ns_ObjvSpec lopts[] = {
-        {"-encoding", Ns_ObjvIndex, &encodingInt, binaryencodings},
+        {"-encoding", Ns_ObjvIndex, &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec    args[] = {
@@ -1150,14 +1150,14 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                       *verifyKeyFile = NULL;
 
     Ns_ObjvSpec lopts[] = {
-        {"-binary",     Ns_ObjvBool,     &isBinary,         INT2PTR(NS_TRUE)},
-        {"-digest",     Ns_ObjvString,   &digestName,       NULL},
-        {"-encoding",   Ns_ObjvIndex,    &encodingInt,      binaryencodings},
-        {"-passphrase", Ns_ObjvString,   &passPhrase,       NULL},
-        {"-sign",       Ns_ObjvString,   &signKeyFile,      NULL},
-        {"-signature",  Ns_ObjvObj,      &signatureObj,     NULL},
-        {"-verify",     Ns_ObjvString,   &verifyKeyFile,    NULL},
-        {"--",          Ns_ObjvBreak,    NULL,              NULL},
+        {"-binary",     Ns_ObjvBool,     &isBinary,      INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString,   &digestName,    NULL},
+        {"-encoding",   Ns_ObjvIndex,    &encodingInt,   NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString,   &passPhrase,    NULL},
+        {"-sign",       Ns_ObjvString,   &signKeyFile,   NULL},
+        {"-signature",  Ns_ObjvObj,      &signatureObj,  NULL},
+        {"-verify",     Ns_ObjvString,   &verifyKeyFile, NULL},
+        {"--",          Ns_ObjvBreak,    NULL,           NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1392,7 +1392,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     Ns_ObjvSpec lopts[] = {
         {"-binary",     Ns_ObjvBool,        &isBinary,    INT2PTR(NS_TRUE)},
         {"-digest",     Ns_ObjvString,      &digestName,  NULL},
-        {"-encoding",   Ns_ObjvIndex,       &encodingInt, binaryencodings},
+        {"-encoding",   Ns_ObjvIndex,       &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString,      &passPhrase,  NULL},
         {"-pem",        Ns_ObjvString,      &pemFile,     NULL},
         {"--",          Ns_ObjvBreak,       NULL,         NULL},
@@ -1541,13 +1541,13 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
     const char        *digestName = "sha256";
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,           &isBinary,  INT2PTR(NS_TRUE)},
-        {"-digest",   Ns_ObjvString,         &digestName, NULL},
-        {"-salt",     Ns_ObjvObj,            &saltObj,    NULL},
-        {"-secret",   Ns_ObjvObj,            &secretObj,  NULL},
-        {"-info",     Ns_ObjvObj,            &infoObj,    NULL},
-        {"-encoding", Ns_ObjvIndex,          &encodingInt,binaryencodings},
-        {"--",        Ns_ObjvBreak,          NULL,        NULL},
+        {"-binary",   Ns_ObjvBool,           &isBinary,    INT2PTR(NS_TRUE)},
+        {"-digest",   Ns_ObjvString,         &digestName,  NULL},
+        {"-salt",     Ns_ObjvObj,            &saltObj,     NULL},
+        {"-secret",   Ns_ObjvObj,            &secretObj,   NULL},
+        {"-info",     Ns_ObjvObj,            &infoObj,     NULL},
+        {"-encoding", Ns_ObjvIndex,          &encodingInt, NS_binaryencodings},
+        {"--",        Ns_ObjvBreak,          NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1755,13 +1755,13 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     int                result, isBinary = 0, nValue = 1024, rValue = 8, pValue = 16, encodingInt = -1;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
-        {"-salt",     Ns_ObjvObj,     &saltObj,    NULL},
-        {"-secret",   Ns_ObjvObj,     &secretObj,  NULL},
-        {"-n",        Ns_ObjvInt,     &nValue,     &posIntRange1},
-        {"-p",        Ns_ObjvInt,     &pValue,     &posIntRange1},
-        {"-r",        Ns_ObjvInt,     &rValue,     &posIntRange1},
-        {"-encoding", Ns_ObjvIndex,   &encodingInt,binaryencodings},
+        {"-binary",   Ns_ObjvBool,   &isBinary,   INT2PTR(NS_TRUE)},
+        {"-salt",     Ns_ObjvObj,    &saltObj,     NULL},
+        {"-secret",   Ns_ObjvObj,    &secretObj,   NULL},
+        {"-n",        Ns_ObjvInt,    &nValue,      &posIntRange1},
+        {"-p",        Ns_ObjvInt,    &pValue,      &posIntRange1},
+        {"-r",        Ns_ObjvInt,    &rValue,      &posIntRange1},
+        {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1928,18 +1928,18 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *adObj = NULL, *passObj = NULL;
     const char        *variant = "Argon2id";
     Ns_ObjvSpec lopts[] = {
-        {"-ad",       Ns_ObjvObj,     &adObj,      NULL},
-        {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
-        {"-encoding", Ns_ObjvIndex,   &encodingInt,binaryencodings},
-        {"-iter",     Ns_ObjvInt,     &iter,       &posIntRange1},
-        {"-lanes",    Ns_ObjvInt,     &lanes,      &posIntRange1},
-        {"-memcost",  Ns_ObjvInt,     &memcost,    &posIntRange1},
-        {"-outlen",   Ns_ObjvInt,     &outlen,     &posIntRange1},
-        {"-password", Ns_ObjvObj,     &passObj,    NULL},
-        {"-salt",     Ns_ObjvObj,     &saltObj,    NULL},
-        {"-secret",   Ns_ObjvObj,     &secretObj,  NULL},
-        {"-threads",  Ns_ObjvInt,     &threads,    NULL},
-        {"-variant",  Ns_ObjvString,  &variant,    NULL},
+        {"-ad",       Ns_ObjvObj,    &adObj,       NULL},
+        {"-binary",   Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
+        {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-iter",     Ns_ObjvInt,    &iter,        &posIntRange1},
+        {"-lanes",    Ns_ObjvInt,    &lanes,       &posIntRange1},
+        {"-memcost",  Ns_ObjvInt,    &memcost,     &posIntRange1},
+        {"-outlen",   Ns_ObjvInt,    &outlen,      &posIntRange1},
+        {"-password", Ns_ObjvObj,    &passObj,     NULL},
+        {"-salt",     Ns_ObjvObj,    &saltObj,     NULL},
+        {"-secret",   Ns_ObjvObj,    &secretObj,   NULL},
+        {"-threads",  Ns_ObjvInt,    &threads,     NULL},
+        {"-variant",  Ns_ObjvString, &variant,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -2124,13 +2124,13 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
     const char        *digestName = "sha256";
     Ns_ObjvSpec opts[] = {
-        {"-binary",     Ns_ObjvBool,    &isBinary,   INT2PTR(NS_TRUE)},
-        {"-digest",     Ns_ObjvString,  &digestName, NULL},
-        {"-dklen",      Ns_ObjvInt,     &dkLength,   &posIntRange1},
-        {"-iterations", Ns_ObjvInt,     &iter,       &posIntRange1},
-        {"-salt",       Ns_ObjvObj,     &saltObj,    NULL},
-        {"-secret",     Ns_ObjvObj,     &secretObj,  NULL},
-        {"-encoding",   Ns_ObjvIndex,   &encodingInt,binaryencodings},
+        {"-binary",     Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString, &digestName,  NULL},
+        {"-dklen",      Ns_ObjvInt,    &dkLength,    &posIntRange1},
+        {"-iterations", Ns_ObjvInt,    &iter,        &posIntRange1},
+        {"-salt",       Ns_ObjvObj,    &saltObj,     NULL},
+        {"-secret",     Ns_ObjvObj,    &secretObj,   NULL},
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2271,9 +2271,9 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
                       *passPhrase = NS_EMPTY_STRING;
 
     Ns_ObjvSpec lopts[] = {
-        {"-encoding",   Ns_ObjvIndex,   &encodingInt,binaryencodings},
-        {"-passphrase", Ns_ObjvString,  &passPhrase, NULL},
-        {"-pem",        Ns_ObjvString,  &pemFile,    NULL},
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"-pem",        Ns_ObjvString, &pemFile,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2375,9 +2375,9 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     const char        *pemFile = NULL,
                       *passPhrase = NS_EMPTY_STRING;
     Ns_ObjvSpec lopts[] = {
-        {"-encoding",   Ns_ObjvIndex,   &encodingInt,binaryencodings},
-        {"-passphrase", Ns_ObjvString,  &passPhrase, NULL},
-        {"-pem",        Ns_ObjvString,  &pemFile,    NULL},
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"-pem",        Ns_ObjvString, &pemFile,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2456,9 +2456,9 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     int                result, isBinary = 0, encodingInt = -1;
     Tcl_Obj           *importObj = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,    &isBinary,    INT2PTR(NS_TRUE)},
-        {"-string",   Ns_ObjvObj,     &importObj,   NULL},
-        {"-encoding", Ns_ObjvIndex,   &encodingInt, binaryencodings},
+        {"-binary",   Ns_ObjvBool,  &isBinary,    INT2PTR(NS_TRUE)},
+        {"-string",   Ns_ObjvObj,   &importObj,   NULL},
+        {"-encoding", Ns_ObjvIndex, &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2558,7 +2558,7 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         {"!-curve",    Ns_ObjvString, &curveName,   NULL},
         {"!-x",        Ns_ObjvObj,    &xObj,        NULL},
         {"!-y",        Ns_ObjvObj,    &yObj,        NULL},
-        {"-encoding",  Ns_ObjvIndex,  &encodingInt, binaryencodings},
+        {"-encoding",  Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-format",    Ns_ObjvIndex,  &formatInt,   formats},
         {NULL, NULL, NULL, NULL}
     };
@@ -2884,11 +2884,11 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     EC_KEY            *eckey = NULL;
 
     Ns_ObjvSpec lopts[] = {
-        {"-binary",     Ns_ObjvBool,    &isBinary,    INT2PTR(NS_TRUE)},
-        {"-encoding",   Ns_ObjvIndex,   &encodingInt, binaryencodings},
-        {"-passphrase", Ns_ObjvString,  &passPhrase,  NULL},
-        {"-pem",        Ns_ObjvString,  &pemFileName, NULL},
-        {"--",          Ns_ObjvBreak,   NULL,         NULL},
+        {"-binary",     Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"-pem",        Ns_ObjvString, &pemFileName, NULL},
+        {"--",          Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -3164,24 +3164,24 @@ CryptoAeadStringGetArguments(
     const char   *cipherName = "aes-128-gcm";
 
     Ns_ObjvSpec lopts_encrypt[] = {
-        {"-binary",   Ns_ObjvBool,           &isBinary,   INT2PTR(NS_TRUE)},
-        {"-aad",      Ns_ObjvObj,            &aadObj,     NULL},
-        {"-cipher",   Ns_ObjvString,         &cipherName, NULL},
-        {"-encoding", Ns_ObjvIndex,          &encodingInt,binaryencodings},
-        {"-iv",       Ns_ObjvObj,            &ivObj,      NULL},
-        {"-key",      Ns_ObjvObj,            &keyObj,     NULL},
-        {"--",        Ns_ObjvBreak,          NULL,        NULL},
+        {"-binary",   Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
+        {"-aad",      Ns_ObjvObj,    &aadObj,      NULL},
+        {"-cipher",   Ns_ObjvString, &cipherName,  NULL},
+        {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-iv",       Ns_ObjvObj,    &ivObj,       NULL},
+        {"-key",      Ns_ObjvObj,    &keyObj,      NULL},
+        {"--",        Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec lopts_decrypt[] = {
-        {"-binary",   Ns_ObjvBool,           &isBinary,   INT2PTR(NS_TRUE)},
-        {"-aad",      Ns_ObjvObj,            &aadObj,     NULL},
-        {"-cipher",   Ns_ObjvString,         &cipherName, NULL},
-        {"-encoding", Ns_ObjvIndex,          &encodingInt,binaryencodings},
-        {"-iv",       Ns_ObjvObj,            &ivObj,      NULL},
-        {"-key",      Ns_ObjvObj,            &keyObj,     NULL},
-        {"-tag",      Ns_ObjvObj,            &tagObj,     NULL},
-        {"--",        Ns_ObjvBreak,          NULL,        NULL},
+        {"-binary",   Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
+        {"-aad",      Ns_ObjvObj,    &aadObj,      NULL},
+        {"-cipher",   Ns_ObjvString, &cipherName,  NULL},
+        {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-iv",       Ns_ObjvObj,    &ivObj,       NULL},
+        {"-key",      Ns_ObjvObj,    &keyObj,      NULL},
+        {"-tag",      Ns_ObjvObj,    &tagObj,      NULL},
+        {"--",        Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -3561,11 +3561,11 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
     int                result, nrBytes = 0, encodingInt = -1;
     Ns_ObjvValueRange  lengthRange = {1, INT_MAX};
     Ns_ObjvSpec lopts[] = {
-        {"-encoding",   Ns_ObjvIndex,   &encodingInt, binaryencodings},
+        {"-encoding",   Ns_ObjvIndex, &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"nrbytes", Ns_ObjvInt, &nrBytes, &lengthRange},
+        {"nrbytes",     Ns_ObjvInt,   &nrBytes,     &lengthRange},
         {NULL, NULL, NULL, NULL}
     };
 

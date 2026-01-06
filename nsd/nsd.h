@@ -128,13 +128,7 @@ typedef enum {
     NS_OBJ_ENCODING_BINARY    = 4
 } Ns_BinaryEncoding;
 
-static Ns_ObjvTable binaryencodings[] = {
-    {"hex",       NS_OBJ_ENCODING_HEX},
-    {"base64url", NS_OBJ_ENCODING_BASE64URL},
-    {"base64",    NS_OBJ_ENCODING_BASE64},
-    {"binary",    NS_OBJ_ENCODING_BINARY},
-    {NULL,        0u}
-};
+NS_EXTERN Ns_ObjvTable NS_binaryencodings[];
 
 /*
  * Type definitions.

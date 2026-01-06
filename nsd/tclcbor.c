@@ -549,7 +549,7 @@ CborDecodeAny(Tcl_Interp *interp, const uint8_t **pPtr, const uint8_t *end,
  *                   Recognized options:
  *                     -binary           boolean; when true, interpret the input as a
  *                                       Tcl bytearray / binary data source.
- *                     -encoding         one of the values in "binaryencodings"; selects
+ *                     -encoding         one of the values in "NS_binaryencodings"; selects
  *                                       how CBOR byte strings are represented (defaults
  *                                       to NS_OBJ_ENCODING_BINARY when omitted).
  *                   Positional arguments:
@@ -581,7 +581,7 @@ CborDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,  &isBinary,    INT2PTR(NS_TRUE)},
-        {"-encoding", Ns_ObjvIndex, &encodingInt, binaryencodings},
+        {"-encoding", Ns_ObjvIndex, &encodingInt, NS_binaryencodings},
         {"--",        Ns_ObjvBreak, NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };

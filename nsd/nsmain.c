@@ -65,6 +65,14 @@ static const char *configServersSection = "ns/servers";
  */
 const char *NS_EMPTY_STRING = "";
 
+Ns_ObjvTable NS_binaryencodings[] = {
+    {"hex",       NS_OBJ_ENCODING_HEX},
+    {"base64url", NS_OBJ_ENCODING_BASE64URL},
+    {"base64",    NS_OBJ_ENCODING_BASE64},
+    {"binary",    NS_OBJ_ENCODING_BINARY},
+    {NULL,        0u}
+};
+
 
 /*
  *----------------------------------------------------------------------
