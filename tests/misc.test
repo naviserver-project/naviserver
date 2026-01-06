@@ -5,6 +5,7 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
 #######################################################################################
@@ -782,7 +783,7 @@ test ns_cbor-2.7 {decode simple false} -body {
     ns_cbor decode -binary -encoding binary $bin
 } -result 0
 
-test ns_cbor-2.8 {decode bstr as binary} -body {
+test ns_cbor-2.8 {decode bstr as binary} -constraints tcl86 -body {
     # 0x43 01 02 03 => bstr(3) = 0x010203
     set bin [binary format H* 43010203]
     set v [ns_cbor decode -binary -encoding binary $bin]

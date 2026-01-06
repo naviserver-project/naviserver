@@ -778,7 +778,7 @@ test ns_crypto:eckey-1.7 {syntax: ns_crypto::eckey fromcoords} -body {
     ns_crypto::eckey fromcoords
 } -returnCodes error -result {wrong # args: should be "ns_crypto::eckey fromcoords ?-binary? -curve /value/ -x /value/ -y /value/ ?-encoding hex|base64url|base64|binary? ?-format pem|der?"}
 
-test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -body {
+test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -constraints tcl86 -body {
     ns_crypto::eckey generate -name prime256v1 -pem /tmp/p256-priv.pem
     set Phex [ns_crypto::eckey pub -pem /tmp/p256-priv.pem -encoding hex]
     set Pbin [binary decode hex $Phex]
