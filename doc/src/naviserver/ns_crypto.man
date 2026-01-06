@@ -199,7 +199,6 @@ variant of the command.  The default value is "Argon2id".
 [example_end]
 
 
-
 [call [cmd "ns_crypto::eckey generate"] \
      [opt [option "-name [arg value]"]] \
      [opt [option "-pem [arg value]"]] \
