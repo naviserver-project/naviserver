@@ -242,7 +242,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             Tcl_DStringInit(&optDs);
             Tcl_DStringSetLength(&optDs, nopts);
             optFlags = (unsigned char *)optDs.string;
-            memset(optFlags, 0, nopts);
+            memset(optFlags, 0, (size_t)nopts);
 
             /*
              * Normalize and remember required option indices.
