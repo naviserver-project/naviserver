@@ -995,6 +995,165 @@ test ns_cache-13.1 {test mem units - reconfigure invalid value} -body {
     ns_cache_configure foo -maxsize 10B
 } -returnCodes error -result {invalid memory unit '10B'; valid units kB, MB, GB, KiB, MiB, and GiB}
 
+
+#
+# Testing cache collissions
+#
+
+test cache-collision-seeded-1 {seeded ns_cache_eval: concurrent callers should not wait} -body {
+    ns_cache_create cseed 16
+
+    #
+    # Seed the value in a single-thread context. The body sleeps, but only
+    # during seeding. After this, the value is cached and subsequent calls
+    # should not run the body.
+    #
+    ns_log notice "SEED: start"
+    set r0 [ns_cache_eval -- cseed k1 {
+        ns_log notice "SEED: computing value"
+        ns_sleep 200ms
+        return "seeded"
+    }]
+    ns_log notice "SEED: done -> $r0"
+
+    #
+    # Barrier for starting the threads at (roughly) the same time.
+    #
+    nsv_set sync seeded 0
+    nsv_set sync seeded_go 0
+
+    set names {T1 T2}
+
+    #
+    # All threads should see the same seeded value ("seeded").
+    #
+    set expected [lrepeat [llength $names] "seeded"]
+
+    foreach name $names {
+        nsv_set sync seeded_$name ""
+        ns_thread create -name $name -detached {
+            regexp {[-]tcl[-]([a-zA-Z0-9]+):\d+} [ns_thread name] . name
+            ns_log notice "DEBUG thread $name started"
+
+            nsv_incr sync seeded
+            while {[nsv_get sync seeded_go] == 0} { ns_sleep 1ms }
+
+            #
+            # Since value is seeded, the eval body should NOT run.
+            #
+            for {set count 0} {$count < 100} {incr count} {
+                set r [ns_cache_eval -- cseed k1 {
+                    ns_log notice "SEEDED-$name: UNEXPECTED body execution"
+                    ns_sleep 500ms
+                    return "$name-body"
+                }]
+                nsv_set sync seeded_$name $r
+            }
+            ns_log notice "DEBUG thread $name finished"
+        }
+    }
+
+    #
+    # Wait until all threads are ready, then release them.
+    #
+    while {[nsv_get sync seeded] < [llength $names]} { ns_sleep 1ms }
+    nsv_set sync seeded_go 1
+
+    #
+    # Wait for all results
+    #
+    set deadline [expr {[clock milliseconds] + 2000}]
+    while {[clock milliseconds] < $deadline} {
+        set results [lmap name $names { nsv_get sync seeded_$name }]
+        if {[lsearch -exact $results ""] == -1} {
+            break
+        }
+        ns_sleep 1ms
+    }
+
+    set results [lmap name $names { nsv_get sync seeded_$name }]
+    expr {$results eq $expected}
+
+} -cleanup {
+    foreach name {T1 T2} { nsv_unset -nocomplain sync seeded_$name }
+    nsv_unset -nocomplain sync seeded
+    nsv_unset -nocomplain sync seeded_go
+    ns_cache_flush cseed
+} -returnCodes {error ok} -result 1
+
+
+test cache-collision-unseeded-1 {unseeded ns_cache_eval: concurrent callers should wait} -body {
+    ns_cache_create cblock 16
+
+    #
+    # No seeding here. Two threads will start together and call ns_cache_eval
+    # on the same key with a long body. One computes; the other should wait,
+    # which triggers the "create entry collision" notice.
+    #
+    nsv_set sync block 0
+    nsv_set sync block_go 0
+
+    set names {T1 T2}
+
+    #
+    # All threads should see the same cached value ("value"). Typically only one
+    # eval body will execute; the other thread waits and returns the computed
+    # value.
+    #
+    set expected [lrepeat [llength $names] "value"]
+
+    foreach name $names {
+        nsv_set sync block_$name ""
+        ns_thread create -name $name -detached {
+            regexp {[-]tcl[-]([a-zA-Z0-9]+):\d+} [ns_thread name] . name
+            ns_log notice "DEBUG thread $name started"
+
+            nsv_incr sync block
+            while {[nsv_get sync block_go] == 0} { ns_sleep 1ms }
+
+            ns_log notice "BLOCK-$name: calling ns_cache_eval"
+            set r [ns_cache_eval -- cblock k1 {
+                #
+                # Long evaluation to keep the "value == NULL" window open long
+                # enough so the other thread will hit CreateEntry() and wait.
+                #
+                ns_log notice "BLOCK-$name: computing (long)"
+                ns_sleep 800ms
+                return "value"
+            }]
+            nsv_set sync block_$name $r
+            ns_log notice "DEBUG thread $name finished"
+        }
+    }
+
+    #
+    # Wait until all threads are ready, then release them.
+    #
+    while {[nsv_get sync block] < [llength $names]} { ns_sleep 1ms }
+    nsv_set sync block_go 1
+
+    #
+    # Wait for all results (generalized).
+    #
+    set deadline [expr {[clock milliseconds] + 4000}]
+    while {[clock milliseconds] < $deadline} {
+        set results [lmap name $names { nsv_get sync block_$name }]
+        if {[lsearch -exact $results ""] == -1} {
+            break
+        }
+        ns_sleep 1ms
+    }
+
+    set results [lmap name $names { nsv_get sync block_$name }]
+    expr {$results eq $expected}
+
+} -cleanup {
+    foreach name {T1 T2} { nsv_unset -nocomplain sync block_$name }
+    nsv_unset -nocomplain sync block
+    nsv_unset -nocomplain sync block_go
+    ns_cache_flush cblock
+} -returnCodes {error ok} -result 1
+
 cleanupTests
 
 # Local variables:
