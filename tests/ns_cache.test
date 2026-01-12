@@ -1001,7 +1001,7 @@ test ns_cache-13.1 {test mem units - reconfigure invalid value} -body {
 #
 
 test cache-collision-seeded-1 {seeded ns_cache_eval: concurrent callers should not wait} -body {
-    ns_cache_create cseed 16
+    ns_cache_create cseed 1000
 
     #
     # Seed the value in a single-thread context. The body sleeps, but only
@@ -1083,7 +1083,7 @@ test cache-collision-seeded-1 {seeded ns_cache_eval: concurrent callers should n
 
 
 test cache-collision-unseeded-1 {unseeded ns_cache_eval: concurrent callers should wait} -body {
-    ns_cache_create cblock 16
+    ns_cache_create cblock 1000
 
     #
     # No seeding here. Two threads will start together and call ns_cache_eval
