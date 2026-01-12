@@ -902,6 +902,10 @@ NS_EXTERN Ns_Entry *
 Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionStack *transactionStackPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN unsigned long
+Ns_CacheCommitEntries(Ns_Cache *cache, uintptr_t epoch)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN Ns_Entry *
 Ns_CacheCreateEntry(Ns_Cache *cache, const char *key, int *newPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -924,9 +928,9 @@ NS_EXTERN const char *
 Ns_CacheKey(const Ns_Entry *entry)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
-NS_EXTERN void *
-Ns_CacheGetValue(const Ns_Entry *entry)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const Ns_Time *
+Ns_CacheGetExpirey(const Ns_Entry *entry)
+    NS_GNUC_NONNULL(1) NS_GNUC_CONST;
 
 NS_EXTERN size_t
 Ns_CacheGetReuse(const Ns_Entry *entry)
@@ -936,29 +940,30 @@ NS_EXTERN size_t
 Ns_CacheGetSize(const Ns_Entry *entry)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
-NS_EXTERN const Ns_Time *
-Ns_CacheGetExpirey(const Ns_Entry *entry)
-    NS_GNUC_NONNULL(1) NS_GNUC_CONST;
-
 NS_EXTERN uintptr_t
 Ns_CacheGetTransactionEpoch(const Ns_Entry *entry)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
-NS_EXTERN unsigned long
-Ns_CacheCommitEntries(Ns_Cache *cache, uintptr_t epoch)
-    NS_GNUC_NONNULL(1);
+NS_EXTERN void *
+Ns_CacheGetValue(const Ns_Entry *entry)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
+NS_EXTERN void *
+Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transactionStackPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN unsigned long
 Ns_CacheRollbackEntries(Ns_Cache *cache, uintptr_t epoch)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN size_t
+Ns_CacheSetMaxsize(Ns_Cache *cache, size_t size)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
 NS_EXTERN void
 Ns_CacheSetValue(Ns_Entry *entry, void *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN void *
-Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transactionStackPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN void
 Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)

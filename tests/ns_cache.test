@@ -1154,6 +1154,40 @@ test cache-collision-unseeded-1 {unseeded ns_cache_eval: concurrent callers shou
     ns_cache_flush cblock
 } -returnCodes {error ok} -result 1
 
+
+
+test cache-configure-maxsize-stats-1 {ns_cache_configure -maxsize updates ns_cache_stats maxsize} -body {
+    #
+    # Create a fresh cache and verify initial configure/stats agree.
+    #
+    ns_cache_create A 10
+
+    set cfg0   [ns_cache_configure A]
+    set stats0 [ns_cache_stats A]
+
+    #
+    # Both should report maxsize 10 initially.
+    #
+    expr {[lindex $cfg0 1] == 10 && [lindex $stats0 1] == 10}
+
+    #
+    # Change maxsize via ns_cache_configure and verify configure and stats
+    # reflect the updated value.
+    #
+    ns_cache_configure A -maxsize 1000
+
+    set cfg1   [ns_cache_configure A]
+    set stats1 [ns_cache_stats A]
+
+    #
+    # cfg1 is an attribute-value list: {maxsize 1000 maxentry ...}
+    # stats1 begins with: "maxsize 1000 size ..."
+    #
+    expr {[lindex $cfg1 1] == 1000 && [lindex $stats1 1] == 1000}
+} -cleanup {
+    ns_cache_flush A
+} -result 1
+
 cleanupTests
 
 # Local variables:
