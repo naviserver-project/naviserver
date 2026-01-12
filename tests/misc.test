@@ -721,9 +721,9 @@ test ns_cbor-1.4 {syntax: bad -encoding value} -body {
     ns_cbor decode -encoding foo -- "\x00"
 } -returnCodes error -result {bad option "foo": must be hex, base64url, base64, or binary}
 
-test ns_cbor-1.5 {syntax: -encoding needs argument} -constraints knownBug -body {
+test ns_cbor-1.5 {syntax: -encoding needs argument} -body {
     ns_cbor decode -encoding
-} -returnCodes {error ok} -result {wrong # args: should be "ns_cbor decode ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/"}
+} -returnCodes {error ok} -result {missing argument to -encoding}
 
 test ns_cbor-1.6 {syntax: unknown option} -body {
     ns_cbor decode -bogus -- "\x00"
