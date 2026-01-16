@@ -958,7 +958,7 @@ Ns_CacheRollbackEntries(Ns_Cache *cache, uintptr_t epoch)
 
 NS_EXTERN size_t
 Ns_CacheSetMaxsize(Ns_Cache *cache, size_t size)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_CacheSetValue(Ns_Entry *entry, void *value)
