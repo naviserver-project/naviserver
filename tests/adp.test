@@ -120,6 +120,22 @@ test ns_adp_registeradp-1.0 {syntax: ns_adp_registeradp} -body {
     ns_adp_registeradp
 } -returnCodes error -result {wrong # args: should be "ns_adp_registeradp /tag/ ?/endtag/? /adpstring/"}
 
+test ns_adp_registeradp-1.1 {syntax: ns_adp_registeradp invalid start tag} -body {
+    ns_adp_registeradp "<x>" y {body}
+} -returnCodes error -result {invalid start tag: '<x>' (contains invalid character '<')}
+
+test ns_adp_registeradp-1.2 {syntax: ns_adp_registeradp invalid start tag} -body {
+    ns_adp_registeradp "x y" y {body}
+} -returnCodes error -result {invalid start tag: 'x y' (contains invalid character ' ')}
+
+test ns_adp_registeradp-1.3 {syntax: ns_adp_registeradp invalid end tag (does not start with a /} -body {
+    ns_adp_registeradp x y {body}
+} -returnCodes error -result {invalid end tag: 'y' (must start with a '/' followed by the name of the start tag)}
+
+test ns_adp_registeradp-1.4 {syntax: ns_adp_registeradp invalid end tag (wrong continuation} -body {
+    ns_adp_registeradp x /y {body}
+} -returnCodes error -result {invalid end tag: '/y' (must start with a '/' followed by the name of the start tag)}
+
 test ns_adp_registerproc-1.0 {syntax: ns_adp_registerproc} -body {
     ns_adp_registerproc
 } -returnCodes error -result {wrong # args: should be "ns_adp_registerproc /tag/ ?/endtag/? /proc/"}
@@ -624,7 +640,7 @@ test ns_adp_registerscript-4.0 {registerscript with proc, attributes, ending tag
 ############################################################################
 
 test ns_adp_registerproc-2.1 {registerproc with proc, no attributes, no ending tag} -body {
-    proc ::test_tag_proc {args} {return "hello world with args '$args'"}    
+    proc ::test_tag_proc {args} {return "hello world with args '$args'"}
     ns_adp_registerproc test21 ::test_tag_proc
     ns_adp_parse -string {start <b>x <test21> y</b> end}
 } -cleanup {
@@ -641,7 +657,7 @@ test ns_adp_registerproc-2.2 {registerproc with proc, attributes, no ending tag}
 } -result {start <b>x hello world with args '1 2' y</b> end}
 
 test ns_adp_registerproc-2.3 {registerproc with proc, no attributes, ending tag} -body {
-    proc ::test_tag_proc {args} {return "hello world with args '$args'"}    
+    proc ::test_tag_proc {args} {return "hello world with args '$args'"}
     ns_adp_registerproc test21 /test21 ::test_tag_proc
     ns_adp_parse -string {start <b>x <test21> y </test21> z </b> end}
 } -cleanup {
@@ -725,6 +741,62 @@ test ns_adp_registeradp-3.1 {registeradp with adp-file} -body {
 } -returnCodes {error ok} -match glob -result {start <b>x*argv a b c* y</b> end}
 
 
+test ns_adp_registeradp-4.0 {whitespace handling between adp tags} -body {
+    proc ::adp_button_handler {string attributes} {ns_log warning HANDLER $string $attributes; return "<button>$string</button>"}
+    ns_adp_registerscript adp:button /adp:button ::adp_button_handler
+    set text [ns_trim -delimiter | {
+            |  a
+            |  <adp:button>hello</adp:button>
+            |  <adp:button>second button</adp:button>
+            |  b
+    }]
+    ns_adp_parse -string $text
+} -cleanup {
+    rename ::adp_button_handler ""
+    unset -nocomplain text expected
+} -returnCodes {error ok} -match glob -result [ns_trim -delimiter | {
+    |  a
+    |  <button>hello</button>
+    |  <button>second button</button>
+    |  b
+}]
+
+test ns_adp_registeradp-4.1 {whitespace handling between adp tags} -body {
+    proc ::adp_button_handler {string attributes} {return "<button>$string</button>"}
+    ns_adp_registerscript adp:button /adp:button ::adp_button_handler
+    set text {
+        text1
+        <adp:button>1</adp:button> <adp:button>2</adp:button>
+        <adp:button>3</adp:button>
+        <button>4</button> <button>5</button>
+        <button>6</button>
+        text2
+    }
+    set expected [ns_trim -delimiter | {
+            |  a
+            |  <button>hello</button>
+            |  <button>second button</button>
+            |  b
+    }]
+    ns_adp_parse -string [ns_trim -delimiter | {
+        |  text1
+        |  <adp:button>1</adp:button> <adp:button>2</adp:button>
+        |  <adp:button>3</adp:button>
+        |  <button>4</button> <button>5</button>
+        |  <button>6</button>
+        |  text2
+    }]
+} -cleanup {
+    rename ::adp_button_handler ""
+    unset -nocomplain text expected
+} -returnCodes {error ok} -match glob -result [ns_trim -delimiter | {
+    |  text1
+    |  <button>1</button> <button>2</button>
+    |  <button>3</button>
+    |  <button>4</button> <button>5</button>
+    |  <button>6</button>
+    |  text2
+}]
 ############################################################################
 # DONE
 ############################################################################

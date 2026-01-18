@@ -76,15 +76,32 @@ Usage example in an ADP page:
 	[arg proc]]
 
  Registers a Tcl procedure to be evaluated when the given [arg tag] is
- encountered in ADP content. The procedure [arg proc] will be called
+ encountered in ADP content.
+
+ [para]
+ This command is intended for positional and lightweight tag handlers.
+ Only the value* of the attributes specified in the tag are passed to
+ the procedure [arg proc]; attribute names are discarded. Attribute
+ values are passed as positional arguments, in the order in which they
+ appear in the tag.
+
+
+ [para]
+ If the optional [arg endtag] is specified, the procedure will receive one
+ additional final argument containing the literal content enclosed
+ between the opening and closing tags. The enclosed content is not
+ evaluated and is passed unchanged as a single text block.
+
+ [para] The procedure [arg proc] will be called
  with a variable number of arguments, one for each attribute value
  provided in the tag. If the [arg endtag] argument is specified, the
  procedure will also receive a final argument containing the content
  enclosed between the tags. No evaluation of the enclosed content is
  performed; it is passed as a single text block.
 
-[para] When the procedure is invoked, its result replaces the tag (and
- the enclosed content, if [arg endtag] is specified) in the output.
+ [para]
+ When the procedure is invoked, its return value replaces the tag (and the
+ enclosed content, if [arg endtag] is specified) in the output.
 
 
 [example_begin]
@@ -115,12 +132,16 @@ Usage example in an ADP page:
  ... footer ...
 [example_end]
 
-[para] Note:
 
- When using this registration command, the attribute values specified
- in the tag are passed as arguments to the Tcl procedure. The
- attribute names are not passed, only their values, and they are
- provided in the order they appear in the tag.
+[para]
+ Note:
+
+ [list_begin itemized]
+ [item] Only attribute values are passed to the procedure; attribute names are not available.
+ [item] Attribute values are passed positionally, in the order they appear in the tag.
+ [item] This command is suitable when attribute names are irrelevant
+ and a simple positional calling convention is sufficient.
+ [list_end]
 
 [example_begin]
  proc ::reporttags {args} {
@@ -139,15 +160,24 @@ Usage example in an ADP page:
 	[arg proc]]
 
  Registers a Tcl procedure [arg proc] to be evaluated when the given
- [arg tag] is encountered. This command provides access to both the
- attribute names and values, as well as the enclosed content if an
- [arg endtag] is specified.
+ [arg tag] is encountered in ADP content.
 
-[para] When the tag is registered with an [arg endtag], the Tcl
- [arg proc] is called with two arguments: first, the enclosed content as a
- string, and second, the [cmd ns_set] with the tag's attributes.
- When registered without an end tag, the proc is called with a single
- argument (the ns_set with the arguments).
+ [para]
+ This command provides structured access to tag attributes and is
+ intended for cases where attribute names and values must be
+ distinguished. Attributes are passed to the procedure as an [cmd ns_set]
+ containing name/value pairs.
+
+ [para]
+ If the tag is registered with an [arg endtag], the procedure is invoked
+ with two arguments: first, the enclosed content as a string, and second,
+ the [cmd ns_set] containing the tag attributes. When registered without
+ an end tag, the procedure is called with a single argument (the
+ [cmd ns_set] of attributes).
+
+ [para]
+ Attributes specified without an explicit value (no equals sign) are
+ stored in the [cmd ns_set] with their name as the value.
 
 [para]
 When the tag is parsed, it is replaced by the result of the registered
@@ -184,36 +214,16 @@ Usage example in an ADP page:
  ... footer ...
 [example_end]
 
-Note: The major differences between [cmd ns_adp_registerscript] and
-[cmd ns_adp_registerproc] are the calling conventions and the passing
-of attributes:
+
+[para]
+Note:
 
 [list_begin itemized]
-[item] With [cmd ns_adp_registerproc], only the values of the
-       attributes are passed to the procedure, without the attribute
-       names.
-
-[item] With [cmd ns_adp_registerscript], both attribute names and
-       values are available, passed as an [cmd ns_set].
-
-[item] Attributes without a value (no equals sign) inside the tag are
-       assigned their name as the value in the [cmd ns_set].
+[item] Attribute names and values are available via the [cmd ns_set] passed to the procedure.
+[item] Attribute order is not significant.
+[item] This command should be used when tag behavior depends on
+       specific attribute names or optional flags.
 [list_end]
-
-[para] This command is useful when you need to access both attribute
- names and values, or when you need to process the enclosed content.
-
-[example_begin]
- proc ::reporttags {attributes} {
-   # Convert the ns_set to a list for display
-   ns_set array $attributes
- }
- ns_adp_registerscript reporttags  ::reporttags
- 
- ns_adp_parse -string {<reporttags CamelCase x=X A=a>}
- # Returns: CamelCase CamelCase x X A a
-[example_end]
-
 
 
 [para]
