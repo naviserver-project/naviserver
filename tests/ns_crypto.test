@@ -366,7 +366,7 @@ test pbkdf2_hmac-sha256.5 {Testcase 4 for pbkdf2-hmac-sha256, forcing a differen
 
 test ns_hotp-1.0 {syntax: ns_hotp} -constraints {crypto nsf} -body {
     ns_hotp x y
-} -returnCodes error -result {invalid argument 'y', maybe too many arguments; should be "ns_hotp ?-digest /value/? ?-digits /integer/? ?-key /value/? /data/"}
+} -returnCodes error -result {invalid argument 'y', maybe too many arguments; should be "ns_hotp ?-digest /value/? ?-digits /integer/? ?-key /value/? /counter/"}
 
 test hotp-1.1 {
 
