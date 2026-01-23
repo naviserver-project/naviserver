@@ -1,4 +1,116 @@
 =======================================
+NaviServer 5.0.4, released 2026-01-23
+=======================================
+
+ 28 files changed, 1771 insertions(+), 974 deletions(-)
+
+Bug Fixes
+---------
+
+ - ADP:
+   * Fixed ADP tag registration to strictly validate tag names.
+     Invalid characters in start tags are now rejected, and end tags
+     must exactly match the corresponding start tag.
+   * Prevents malformed ADP registrations that previously could lead
+     to runtime errors.
+
+ - Cache:
+   * Fixed synchronization between configured cache -maxsize and the
+     effective cache size.
+   * Ensured that changes via ns_cache_configure -maxsize are applied
+     immediately to the underlying cache.
+   * Corrected ns_cache_stats output to accurately reflect the
+     configured cache memory budget.
+
+ - Networking / HTTP:
+   * Fixed handling of Docker container mappings when containers resolve
+     to multiple IP addresses.
+   * Ignored wildcard ("any") IP addresses when building HTTP/HTTPS
+     server whitelists.
+   * Avoided redundant IPv4 binds already covered by dual-stack IPv6
+     wildcard binds.
+   * Fixed optional ID parsing in "ns_http list" and "ns_http stats"
+     (regression in NaviServer 5.0.0–5.0.3).
+
+ - nscp:
+   * Restored proper termination of the nscp command loop via the
+     "exit" command.
+   * Correctly enforced the allowLoopbackEmptyUser setting when enabled.
+
+ - Core:
+   * Fixed an overlap-accounting bug in ns_fseekchars affecting both
+     small and large files.
+   * Prevented truncation of disk-spooled multipart uploads.
+   * Corrected condition checks in ns_internalredirect.
+   * Fixed an off-by-one microsecond overflow in Ns_AdjTime() that could
+     trigger fatal thread errors.
+   * Prevented propagation of harmful negative timeout values in driver
+     threads.
+
+
+Compatibility and Platform Fixes
+--------------------------------
+
+ - Windows:
+   * Fixed Tcl tempfile handling on Windows.
+   * Resolved several MSVC build and runtime issues (buffer sizing,
+     stack corruption, array handling).
+   * Updated MSVC and MinGW build logic for improved reliability.
+
+ - Tcl:
+   * Improved forward compatibility with Tcl 9 by replacing uses of -1
+     with TCL_INDEX_NONE.
+   * Preserved Tcl 8.5 compatibility by skipping tests requiring newer
+     Tcl features.
+
+ - OpenSSL:
+   * Hardened OCSP feature detection to avoid partial activation with
+     incomplete OpenSSL 1.1.1 variants.
+   * Enabled OCSP support only when building against OpenSSL 3 or newer.
+   * Centralized OpenSSL feature detection for consistent cross-version
+     behavior.
+
+ - BSD Platforms:
+   * Added explicit NetBSD linker rules and clarified pthread/math
+     linkage across BSD variants.
+
+
+Documentation Updates
+---------------------
+
+ - Clarified ADP registration semantics and calling conventions.
+ - Improved cache documentation (memory budget vs. entry count and
+   eviction behavior).
+ - Fixed and clarified examples for IPv6 parsing, percent-encoding,
+   and configuration files.
+ - Improved documentation for ns_cond timeout semantics, ns_http
+   callbacks and limits, ns_totp/ns_hotp, ns_ip inany, and NSCP
+   configuration and security defaults.
+ - Numerous typo fixes, wording improvements, and cross-reference
+   cleanups.
+
+
+Build System
+------------
+
+ - Replaced wget with curl for helper downloads to improve portability.
+ - Fixed Makefile indentation issues that caused CI failures.
+ - Added missing build variables and cleaned up deprecated build paths.
+ - Improved compiler warning hygiene and attribute correctness.
+
+
+Tests
+-----
+
+ - Extended regression coverage for ADP tag validation, cache maxsize
+   reporting, multipart uploads (including MD5 verification),
+   UTF-8 validation, ns_ip inany, and ns_internalredirect.
+ - Improved test robustness across platforms (whitespace, collation,
+   curl boundary differences).
+ - Fixed cross-compilation and deprecated-test failures.
+
+
+=======================================
 NaviServer 5.0.3, released 2025-09-26
 =======================================
 
@@ -1136,10 +1248,10 @@ The following list contains the most important changes:
 
  - Extending nsstats:
 
-   - Introduced templating to improve style-ability
-   - Provided a more ,odern GUI based on the CSS classes from w3schools
-   - Added management of request handlers
-   - Added management of url2file mappings
+   * Introduced templating to improve style-ability
+   * Provided a more ,odern GUI based on the CSS classes from w3schools
+   * Added management of request handlers
+   * Added management of url2file mappings
 
  - Rework of module nsdbbdb:
     * properly initializing mutex variables (many thanks to John Buckman)

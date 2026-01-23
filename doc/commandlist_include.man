@@ -77,6 +77,8 @@
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_begin}]
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_commit}] ?-all?
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_rollback}] ?-all?
+[uri ../../naviserver/files/ns_cbor.html {ns_cbor decode}] ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/
+[uri ../../naviserver/files/ns_cbor.html {ns_cbor scan}] ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/
 [uri ../../naviserver/files/ns_certctl.html {ns_certctl list}]
 [uri ../../naviserver/files/ns_certctl.html {ns_certctl reload}]
 [uri ../../naviserver/files/ns_chan.html {ns_chan cleanup}] ?-shared?
@@ -175,6 +177,7 @@
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::aead::decrypt string}] ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? ?-key /value/? ?-tag /value/? ?--? /input/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::aead::encrypt string}] ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? ?-key /value/? ?--? /input/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::argon2}] ?-ad /value/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer/? ?-lanes /integer/? ?-memcost /integer/? ?-outlen /integer/? ?-password /value/? ?-salt /value/? ?-secret /value/? ?-threads /integer/? ?-variant /value/?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey fromcoords}] ?-binary? -curve /value/ -x /value/ -y /value/ ?-encoding hex|base64url|base64|binary? ?-format pem|der?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey generate}] ?-name /value/? ?-pem /value/?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey import}] ?-binary? ?-string /value/? ?-encoding hex|base64url|base64|binary?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey priv}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? ?-pem /value/?
@@ -195,6 +198,7 @@
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::pbkdf2_hmac}] ?-binary? ?-digest /value/? ?-dklen /integer/? ?-iterations /integer/? ?-salt /value/? ?-secret /value/? ?-encoding hex|base64url|base64|binary?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::randombytes}] ?-encoding hex|base64url|base64|binary? /nrbytes/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::scrypt}] ?-binary? ?-salt /value/? ?-secret /value/? ?-n /integer/? ?-p /integer/? ?-r /integer/? ?-encoding hex|base64url|base64|binary?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::uuid}] ?-version v4|v7?
 [uri ../../nsdb/files/ns_db.html {ns_db 0or1row}] /handle/ /sql/
 [uri ../../nsdb/files/ns_db.html {ns_db 1row}] /handle/ /sql/
 [uri ../../nsdb/files/ns_db.html {ns_db bindrow}] /handle/
@@ -268,7 +272,7 @@
 [uri ../../naviserver/files/ns_hmac.html {ns_hmac new}] ?-digest /value/? -key /value/
 [uri ../../naviserver/files/ns_hmac.html {ns_hmac string}] ?-digest /value/? ?-encoding /value/? /key/ /message/
 [uri ../../naviserver/files/ns_hostbyaddr.html {ns_hostbyaddr}] /address/
-[uri ../../naviserver/files/ns_hotp.html {ns_hotp}] ?-digest /value/? ?-digits /integer/? ?-key /value/? /data/
+[uri ../../naviserver/files/ns_hotp.html {ns_hotp}] ?-digest /value/? ?-digits /integer/? ?-key /value/? /counter/
 [uri ../../naviserver/files/ns_hrefs.html {ns_hrefs}] /html/
 [uri ../../naviserver/files/ns_htmlselect.html {ns_htmlselect}] ?-multi? ?-sort? ?-labels /labels/? /name/ /values/ ?/selectedData/?
 [uri ../../naviserver/files/ns_http.html {ns_http cancel}] /id/
