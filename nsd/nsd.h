@@ -2145,12 +2145,6 @@ NS_EXTERN void NsStopHttp(NsServer *servPtr)
 /*
  * tcljob.c
  */
-NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
-
-NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
-
 NS_EXTERN void NsTclInitQueueType(void);
 
 /*
@@ -2170,6 +2164,8 @@ NS_EXTERN TCL_SIZE_T NsEncodedObjScratchSize(Ns_BinaryEncoding encoding, size_t 
  * tclobj.c
  */
 NS_EXTERN void NsTclInitAddrType(void);
+NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *obj) NS_GNUC_NONNULL(1);
+NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
 
 /*
  * tclobjv.c

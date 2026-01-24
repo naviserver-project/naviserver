@@ -217,29 +217,15 @@ GetStringIfPure(Tcl_Obj *obj)
 {
     NS_NONNULL_ASSERT(obj != NULL);
 
-#if 0
-#ifdef NS_TCL_PRE87
-    /*
-     * In Tcl < 8.7, creating a stringrep on a pure bytearray loses the
-     * "pure" property, which can break later bytearray semantics.
-     */
-    if (obj->bytes == NULL) {
-        return NULL;
-    }
-#endif
-#endif
-    if (obj->bytes == NULL
-        && obj->typePtr != NULL
-        && obj->typePtr->name != NULL
-        && strcmp(obj->typePtr->name, "bytearray") == 0) {
+    if (obj->bytes == NULL && NsTclObjIsByteArray(obj)) {
         return NULL;
     }
 
     return Tcl_GetString(obj);
 }
 
-#define OPT_REQUIRED 0x01u
-#define OPT_SEEN     0x02u
+
+
 
 /*
  *----------------------------------------------------------------------
