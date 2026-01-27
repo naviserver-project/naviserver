@@ -44,6 +44,12 @@ static const unsigned int bitElements = NS_BITELEMENTS;
 static const unsigned int maxBitElements = NS_BITELEMENTS *
     (int)(sizeof(((Section*)0)->defaultArray) /
           sizeof(((Section*)0)->defaultArray[0]));
+static int CompareCStrings(const void *a, const void *b) NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
+static bool HasTclSuffix(const char *name) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+static char *JoinPath2(const char *dir, const char *file) NS_GNUC_NONNULL(1,2);
+
+static void ConfigEvalEx(Tcl_Interp *interp, const char *config, const char *configFileName) NS_GNUC_NONNULL(1,2,3);
+static Tcl_Interp *ConfigCreateInterp(int argc, char *const *argv, int optionIndex, Section **sectionPtrPtr)  NS_GNUC_NONNULL(2,4);
 
 /*
  * Local functions defined in this file.
@@ -61,20 +67,20 @@ static void PathAppend(Tcl_DString *dsPtr, const char *server, const char *modul
     NS_GNUC_NONNULL(1);
 
 static const char* ConfigGet(const char *section, const char *key, bool exact, const char *defaultString)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static bool ToBool(const char *value, bool *valuePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Tcl_WideInt ConfigWideIntRange(const char *section, const char *key,
                                       const char *defaultString, Tcl_WideInt defaultValue,
                                       Tcl_WideInt minValue, Tcl_WideInt maxValue,
                                       Ns_ReturnCode (converter)(const char *chars, Tcl_WideInt *intPtr),
                                       const char *kind)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
+    NS_GNUC_NONNULL(1,2,7,8);
 
 static const char *NormalizePath(const char *input, TCL_SIZE_T *lengthPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 
 /*
@@ -1177,7 +1183,6 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
  *
  *---------------------------------------------------------------------
  */
-
 const char *
 NsConfigRead(const char *file)
 {
@@ -1208,7 +1213,7 @@ NsConfigRead(const char *file)
             const char *data = Tcl_GetStringFromObj(buf, &length);
 
             fileContent = ns_strncopy(data, (ssize_t)length);
-            Ns_Log(Notice, "using configuration file '%s'", file);
+            Ns_Log(Debug, "using configuration file '%s'", file);
         }
     }
 
@@ -1226,61 +1231,454 @@ NsConfigRead(const char *file)
     return fileContent;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
  * NsConfigEval --
  *
- *      Eval config script in a startup Tcl interp.
+ *      Create a temporary Tcl interpreter configured for configuration
+ *      evaluation, run the provided configuration script, then destroy
+ *      the interpreter. Interpreter setup is performed via
+ *      ConfigCreateInterp().
  *
- * Results:
- *      None.
+ * Returns:
+ *      None (void).
  *
  * Side Effects:
- *      Various variables in the configInterp will be set as well as
- *      the sundry configuration hashes.
+ *      Allocates and destroys a Tcl interpreter; may update persistent
+ *      configuration/section state as maintained by ConfigCreateInterp().
+ *      On script errors, logs diagnostics and terminates the process via
+ *      Ns_Fatal(). No memory is retained on normal return.
  *
- *---------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
-
 void
 NsConfigEval(const char *config, const char *configFileName,
              int argc, char *const *argv, int optionIndex)
 {
     Tcl_Interp     *interp;
     static Section *sectionPtr = NULL;
-    int             i;
 
+    interp = ConfigCreateInterp(argc, argv, optionIndex, &sectionPtr);
+    ConfigEvalEx(interp, config, configFileName);
+    Ns_TclDestroyInterp(interp);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConfigEvalEx --
+ *
+ *      Evaluate the given configuration script in the provided Tcl
+ *      interpreter. If evaluation fails, log extended error information
+ *      (including a contextual trailer) and abort with Ns_Fatal(),
+ *      reporting the supplied file name and the interpreter's error
+ *      line number.
+ *
+ * Returns:
+ *      None (void). On success, returns after the script is evaluated.
+ *      On failure, does not return (Ns_Fatal() terminates the process).
+ *
+ * Side Effects:
+ *      May execute configuration commands that mutate server state within
+ *      the interpreter; logs error context via Ns_TclLogErrorInfo() on
+ *      failure; terminates the process with Ns_Fatal().
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ConfigEvalEx(Tcl_Interp *interp, const char *config, const char *configFileName)
+{
+    NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(config != NULL);
 
-    /*
-     * Create an interp with a few config-related commands.
-     */
+    if (Tcl_Eval(interp, config) != TCL_OK) {
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: configuration)");
+        Ns_Fatal("error in configuration file %s line %d",
+                 configFileName, Tcl_GetErrorLine(interp));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConfigCreateInterp --
+ *
+ *      Create and initialize a Tcl interpreter for configuration
+ *      evaluation. The interpreter is created with Ns_TclCreateInterp(),
+ *      sources the server init script "tcl/init.tcl" relative to
+ *      [ns_info nsd], registers the "ns_section" and "ns_param"
+ *      object commands (using sectionPtrPtr as clientData), and seeds
+ *      the standard command-line variables (argv, argc, optind).
+ *
+ * Returns:
+ *      Tcl_Interp * - a newly created, initialized interpreter ready to
+ *      evaluate configuration scripts. The caller owns the interpreter
+ *      and must destroy it with Ns_TclDestroyInterp().
+ *
+ * Side Effects:
+ *      Evaluates tcl/init.tcl (return code ignored), registers object
+ *      commands, and populates global variables "argv", "argc", and
+ *      "optind" in the interpreter. No logging is performed here beyond
+ *      what the sourced script may do.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Interp *
+ConfigCreateInterp(int argc, char *const *argv, int optionIndex, Section **sectionPtrPtr)
+{
+    Tcl_Interp *interp;
+    int i;
 
     interp = Ns_TclCreateInterp();
 
-    (void) Tcl_EvalEx(interp, "source [file normalize [file dirname [ns_info nsd]]/../tcl/init.tcl]",
+    (void) Tcl_EvalEx(interp,
+                      "source [file normalize [file dirname [ns_info nsd]]/../tcl/init.tcl]",
                       TCL_INDEX_NONE, 0);
 
-    (void)TCL_CREATEOBJCOMMAND(interp, "ns_section", SectionObjCmd, &sectionPtr, NULL);
-    (void)TCL_CREATEOBJCOMMAND(interp, "ns_param", ParamObjCmd, &sectionPtr, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_section", SectionObjCmd, sectionPtrPtr, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_param",   ParamObjCmd,   sectionPtrPtr, NULL);
+
     for (i = 0; argv[i] != NULL; ++i) {
-        (void) Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
+        (void) Tcl_SetVar(interp, "argv", argv[i],
+                          TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
     }
     (void) Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
     (void) Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optionIndex), TCL_GLOBAL_ONLY);
-    if (Tcl_Eval(interp, config) != TCL_OK) {
-        (void) Ns_TclLogErrorInfo(interp, "\n(context: configuration)");
-        if (configFileName != NULL) {
-            Ns_Fatal("error in configuration file %s line %d",
-                     configFileName, Tcl_GetErrorLine(interp));
-        } else {
-            Ns_Fatal("error in configuration");
+
+    return interp;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CompareCStrings --
+ *
+ *      Compare two C strings referenced via pointers as passed by qsort().
+ *      The function expects both arguments to point to elements of an array
+ *      containing (char *) values and performs a lexicographic comparison
+ *      using strcmp().
+ *
+ * Returns:
+ *      An integer less than, equal to, or greater than zero if the first
+ *      string is found, respectively, to be less than, to match, or be
+ *      greater than the second string.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CompareCStrings(const void *a, const void *b)
+{
+    const char *const sa = *(const char *const *)a;
+    const char *const sb = *(const char *const *)b;
+
+    return strcmp(sa, sb);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HasTclSuffix --
+ *
+ *      Check whether the provided file name ends with the suffix ".tcl".
+ *      a directory.
+ *
+ * Returns:
+ *      NS_TRUE when name ends with ".tcl", NS_FALSE otherwise (including
+ *      when name is NULL).
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+HasTclSuffix(const char *name)
+{
+    size_t n = strlen(name);
+
+    return (n >= 4u && strcmp(name + (n - 4u), ".tcl") == 0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JoinPath2 --
+ *
+ *      Join a directory name and a file name into a single path string.
+ *      A single '/' separator is inserted when the directory does not
+ *      already end with '/'.
+ *
+ * Returns:
+ *      Newly allocated NUL-terminated string containing the combined path.
+ *      The caller owns the returned string and must free it using ns_free().
+ *
+ * Side effects:
+ *      Allocates memory via ns_malloc().
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+JoinPath2(const char *dir, const char *file)
+{
+    const size_t dlen = strlen(dir);
+    const size_t flen = strlen(file);
+    const bool needSlash = (dlen > 0u && dir[dlen - 1u] != '/');
+    char *p = ns_malloc(dlen + (needSlash ? 1u : 0u) + flen + 1u);
+
+    memcpy(p, dir, dlen);
+    if (needSlash) {
+        p[dlen] = '/';
+    }
+    memcpy(p + dlen + (needSlash ? 1u : 0u), file, flen);
+    p[dlen + (needSlash ? 1u : 0u) + flen] = '\0';
+
+    return p;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigFragmentsCollect --
+ *
+ *      Collect configuration fragments from a single file or a directory.
+ *      For a directory, collect all "*.tcl" entries, sort lexicographically,
+ *      and read all contents immediately (before chroot/setuid).
+ *
+ * Parameters:
+ *      path            - path to a config file or directory
+ *      namesPtr        - receives a dlist of (char *) filenames/paths (ns_free)
+ *      contentsPtr     - receives a dlist of (const char *) contents (ns_free_const)
+ *      isDirectoryPtr  - set to NS_TRUE iff path is a directory
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR on error (with cleanup performed).
+ *
+ * Side effects:
+ *      Allocates memory for list elements and file contents.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+NsConfigFragmentsCollect(const char *path,
+                         Ns_DList *namesPtr,
+                         Ns_DList *contentsPtr,
+                         bool *isDirectoryPtr)
+{
+    struct stat    st;
+    Ns_ReturnCode  rc = NS_ERROR;
+    bool           isDir = NS_FALSE;
+
+    if (isDirectoryPtr != NULL) {
+        *isDirectoryPtr = NS_FALSE;
+    }
+
+    Ns_DListInit(namesPtr);
+    Ns_DListInit(contentsPtr);
+
+    /*
+     * Ownership rules:
+     *  - names:    (char *) freed via ns_free
+     *  - contents: (const char *) freed via ns_free_const
+     */
+    Ns_DListSetFreeProc(namesPtr, ns_free);
+    Ns_DListSetFreeProc(contentsPtr, ns_free);
+
+    if (stat(path, &st) != 0) {
+        Ns_Log(Error, "nsmain: cannot stat config path '%s': %s",
+               path, strerror(errno));
+        goto fail;
+    }
+
+    isDir = S_ISDIR(st.st_mode) ? NS_TRUE : NS_FALSE;
+    if (isDirectoryPtr != NULL) {
+        *isDirectoryPtr = isDir;
+    }
+
+    if (!isDir) {
+        /*
+         * Single file: collect exactly one fragment.
+         */
+        char       *name = ns_strdup(path);
+        const char *content = NsConfigRead(path);
+
+        if (content == NULL) {
+            Ns_Log(Error, "nsmain: cannot read config file '%s'", path);
+            ns_free(name);
+            goto fail;
+        }
+
+        Ns_DListAppend(namesPtr, name);
+        Ns_DListAppend(contentsPtr, (void *)content);
+
+        rc = NS_OK;
+        goto ok;
+    }
+
+    /*
+     * Directory: collect "*.tcl" file paths, sort, then read all contents.
+     */
+    {
+        DIR           *dp;
+        struct dirent *de;
+
+        dp = opendir(path);
+        if (dp == NULL) {
+            Ns_Log(Error, "nsmain: cannot open config directory '%s': %s",
+                   path, strerror(errno));
+            goto fail;
+        }
+
+        while ((de = readdir(dp)) != NULL) {
+            const char *fn = de->d_name;
+
+            if (fn[0] == '.' && (fn[1] == '\0' || (fn[1] == '.' && fn[2] == '\0'))) {
+                continue;
+            }
+            if (!HasTclSuffix(fn)) {
+                continue;
+            }
+
+            /*
+             * Store full path for logging + later evaluation.
+             */
+            Ns_DListAppend(namesPtr, JoinPath2(path, fn));
+        }
+
+        (void)closedir(dp);
+
+        /*
+         * Sort names lexicographically in-place.
+         *
+         * Ns_DList stores elements in an internal array reachable via dlPtr->data,
+         * with current length in dlPtr->size.
+         */
+        if (namesPtr->size > 1u) {
+            qsort((void **)namesPtr->data,
+                  namesPtr->size,
+                  sizeof(void *),
+                  CompareCStrings);
+        }
+
+        /*
+         * Read contents for every collected name, preserving index alignment.
+         */
+        for (size_t i = 0u; i < namesPtr->size; i++) {
+            const char *file = (const char *)((void **)namesPtr->data)[i];
+            const char *content = NsConfigRead(file);
+
+            if (content == NULL) {
+                Ns_Log(Error, "nsmain: cannot read config fragment '%s'", file);
+                goto fail;
+            }
+            Ns_DListAppend(contentsPtr, (void *)content);
+        }
+
+        if (namesPtr->size == 0u) {
+            Ns_Log(Error, "nsmain: config directory '%s' contains no '*.tcl' fragments", path);
+            goto fail;
         }
     }
-    Ns_TclDestroyInterp(interp);
+
+    rc = NS_OK;
+    goto ok;
+
+fail:
+    NsConfigFragmentsFree(namesPtr, contentsPtr);
+
+ok:
+    return rc;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigFragmentsEval --
+ *
+ *      Evaluate configuration fragments in order.
+ *
+ * Parameters:
+ *      namesPtr        - dlist of fragment filenames/paths
+ *      contentsPtr     - dlist of fragment contents
+ *      argc, argv      - process arguments (passed through to NsConfigEval)
+ *      firstArgIndex   - index of first non-option argument for NsConfigEval
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR on first failure.
+ *
+ * Side effects:
+ *      Executes Tcl config scripts via NsConfigEval().
+ *
+ *----------------------------------------------------------------------
+ */
+
+NS_EXTERN Ns_ReturnCode
+NsConfigFragmentsEval(const Ns_DList *namesPtr,
+                      const Ns_DList *contentsPtr,
+                      bool cfgIsDir,
+                      int argc, char *const* argv,
+                      int optionIndex)
+{
+    const void *const *names;
+    const void *const *contents;
+    Tcl_Interp *interp;
+    static Section *sectionPtr = NULL;
+
+    if (namesPtr->size != contentsPtr->size) {
+        Ns_Log(Error, "nsmain: internal error: config fragment dlists differ in length "
+               "(names=%lu contents=%lu)",
+               (unsigned long)namesPtr->size, (unsigned long)contentsPtr->size);
+        return NS_ERROR;
+    }
+
+    names = (const void *const *)namesPtr->data;
+    contents = (const void *const *)contentsPtr->data;
+
+    interp = ConfigCreateInterp(argc, argv, optionIndex, &sectionPtr);
+
+    for (size_t i = 0u; i < namesPtr->size; i++) {
+        const char *file   = (const char *)names[i];
+        const char *config = (const char *)contents[i];
+
+        Ns_Log(Notice, "nsmain: evaluating %s '%s'", cfgIsDir ? "config fragment" : "configuration file", file);
+        ConfigEvalEx(interp, config, file);
+    }
+
+    Ns_TclDestroyInterp(interp);
+    return NS_OK;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigFragmentsFree --
+ *
+ *      Free dlists produced by NsConfigFragmentsCollect().
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Releases memory held by the dlists and their elements.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigFragmentsFree(Ns_DList *namesPtr, Ns_DList *contentsPtr)
+{
+    Ns_DListFree(namesPtr);
+    Ns_DListFree(contentsPtr);
+}
+
 
 
 /*

@@ -100,7 +100,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_Time        timeout;
     Ns_Set        *set;
     bool           testMode = NS_FALSE;
-    const char    *configFileContent = NULL;
+    Ns_DList       cfgNames, cfgContents;
+    bool            cfgIsDir = NS_FALSE;
 #ifndef _WIN32
     bool           debug = NS_FALSE;
     bool           forked = NS_FALSE;
@@ -286,23 +287,27 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     if (testMode) {
-        const char *fileContent;
-
         if (nsconf.configFile == NULL) {
             UsageError("option -t <file> must be provided, when -T is used");
         }
-        fileContent = NsConfigRead(nsconf.configFile);
-        if (fileContent != NULL) {
+        if (NsConfigFragmentsCollect(nsconf.configFile, &cfgNames, &cfgContents, &cfgIsDir) != NS_OK) {
+            Ns_Fatal("nsmain: cannot read configuration '%s'", nsconf.configFile);
+        }
+
+        //fileContent = NsConfigRead(nsconf.configFile);
+        if (cfgNames.size > 0u) {
 
             /*
              * Evaluate the configuration file.
              */
-            NsConfigEval(fileContent, nsconf.configFile, argc, argv, optionIndex);
+            //NsConfigEval(fileContent, nsconf.configFile, argc, argv, optionIndex);
+            (void)NsConfigFragmentsEval(&cfgNames, &cfgContents, cfgIsDir, argc, argv, optionIndex);
 
             printf("%s/%s: configuration file %s looks OK\n",
                    PACKAGE_NAME, PACKAGE_VERSION, nsconf.configFile);
 
-            ns_free_const(fileContent);
+            NsConfigFragmentsFree(&cfgNames, &cfgContents);
+            //ns_free_const(fileContent);
         }
         return 0;
     }
@@ -517,7 +522,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * chroot() command.
      */
     if (nsconf.configFile != NULL) {
-        configFileContent = NsConfigRead(nsconf.configFile);
+        if (NsConfigFragmentsCollect(nsconf.configFile, &cfgNames, &cfgContents, &cfgIsDir) != NS_OK) {
+            Ns_Fatal("nsmain: cannot read configuration '%s'", nsconf.configFile);
+        }
+        //configFileContent = NsConfigRead(nsconf.configFile);
     }
 
 #ifndef _WIN32
@@ -612,12 +620,12 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    if (configFileContent != NULL) {
+    if (cfgNames.size > 0u) {
         /*
-         * Evaluate the configuration file.
+         * Evaluate the configuration file/fragments.
          */
-        NsConfigEval(configFileContent, nsconf.configFile, argc, argv, optionIndex);
-        ns_free_const(configFileContent);
+        (void)NsConfigFragmentsEval(&cfgNames, &cfgContents, cfgIsDir, argc, argv, optionIndex);
+        NsConfigFragmentsFree(&cfgNames, &cfgContents);
     }
 
     /*

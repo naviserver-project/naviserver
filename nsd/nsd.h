@@ -1745,11 +1745,25 @@ NS_EXTERN void NsClsCleanup(Conn *connPtr) NS_GNUC_NONNULL(1);
  * config.c
  */
 NS_EXTERN void NsConfigEval(const char *config, const char *configFileName,
-                            int argc, char *const *argv, int optionIndex)
-    NS_GNUC_NONNULL(1);
+                            int argc, char *const *argv, int optionIndex)  NS_GNUC_NONNULL(1,2,4);
+
 NS_EXTERN void NsConfigMarkAsRead(const char *section, size_t i) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *NsConfigRead(const char *file) NS_GNUC_MALLOC NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_Set *NsConfigSectionGetFiltered(const char *section, char filter) NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_ReturnCode NsConfigFragmentsCollect(const char *path,
+                                                 Ns_DList *namesPtr,
+                                                 Ns_DList *contentsPtr,
+                                                 bool *isDirectoryPtr)
+    NS_GNUC_NONNULL(1,2,3);
+NS_EXTERN Ns_ReturnCode NsConfigFragmentsEval(const Ns_DList *namesPtr,
+                                              const Ns_DList *contentsPtr,
+                                              bool cfgIsDir,
+                                              int argc, char *const* argv,
+                                              int firstArgIndex)
+    NS_GNUC_NONNULL(1,2,5);
+NS_EXTERN void NsConfigFragmentsFree(Ns_DList *namesPtr, Ns_DList *contentsPtr)
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * conn.c

@@ -1,3 +1,8 @@
+########################################################################
+# GENERATED FILE -- do not edit
+# Source: conf/openacs-config.d/
+########################################################################
+
 
 ######################################################################
 #
@@ -101,6 +106,7 @@ set defaultConfig {
     debug             false
     verboseSQL        false
 
+    setupfile         ""
     extramodules      ""
 }
 
@@ -141,6 +147,19 @@ if { [dict get $defaultConfig dbms] eq "oracle" } {
 # e.g. the HTTP port, call nsd like in the following example:
 #
 #    oacs_httpport=8100 ... /usr/local/ns/bin/nsd ...
+#
+# Optional per-instance setup file:
+#
+# If the dict contains the key "setupfile" and it is non-empty,
+# ns_configure_variables will source this Tcl file *after* applying
+# environment variable overrides.  The setup file is intended to hold
+# instance-specific variable assignments (no ns_section blocks), e.g. for
+# multiple developer instances sharing the same installation tree.
+#
+# When "setupfile" is a relative path, it is resolved relative to the
+# configuration root derived from [ns_info config] (the -t argument):
+#   - if -t is a directory:  <configdir>/<setupfile>
+#   - if -t is a file:       <dirname(-t)>/<setupfile>
 #
 
 # Check for the existence of the command "ns_configure_variables".
@@ -222,10 +241,10 @@ ns_section ns/parameters {
     # Core paths and process options
     #------------------------------------------------------------------
 
-    ns_param	home		$homedir
-    ns_param    logdir          $logdir
-    ns_param	pidfile		nsd.pid
-    ns_param	debug		$debug
+    ns_param home     $homedir
+    ns_param logdir   $logdir
+    ns_param pidfile  nsd.pid
+    ns_param  debug    $debug
 
     # Optional directory for temporary files. If not specified, the
     # environment variable TMPDIR is used. If that is not set either,
@@ -761,7 +780,6 @@ ns_section ns/fastpath {
     #                                                # on the fly using ::ns_brotlifile
     #ns_param        brotli_cmd          "/usr/bin/brotli -f -Z"  ;# use for re-compressing
 }
-
 ######################################################################
 # Section 4 -- Global database drivers and pools
 ######################################################################
@@ -898,7 +916,6 @@ if {"nsdbipg" in $extramodules} {
         ns_param   checkinterval 600
     }
 }
-
 ######################################################################
 # Section 5 -- Global utility modules
 ######################################################################
@@ -922,13 +939,6 @@ ns_section ns/module/nsstats {
 # The nsstats module consists of a single file, there is no need to
 # load it as a (Tcl) module, once the file is copied.
 
-
-######################################################################
-# Section 6 -- Server configurations
-#
-#   6.1 Server "openacs" ($server)
-#   6.2 ...
-######################################################################
 
 #=====================================================================
 # Section 6.1 -- Server "openacs" ($server)
@@ -1206,7 +1216,7 @@ ns_section ns/server/$server/fastpath {
     # ns_param directoryfile      "index.adp index.tcl index.html index.htm"
     # ns_param directoryadp       $pageroot/dirlist.adp ;# default: ""
     # ns_param directoryproc      _ns_dirlist           ;# default: "_ns_dirlist"
-    # ns_param	directorylisting  fancy ;# default "simple"; can be "simple",
+    # ns_param directorylisting   fancy ;# default "simple"; can be "simple",
     #                                   ;# "fancy" or "none"; parameter for _ns_dirlist
     # ns_param hidedotfiles       true  ;# default: false
 }
@@ -1294,10 +1304,89 @@ ns_section ns/server/$server/httpclient {
     #ns_param	logrollonsignal	true     ;# default: false; perform log rotation on SIGHUP
     #ns_param	logrollhour	0        ;# default: 0; specify at which hour to roll
 }
+#---------------------------------------------------------------------
+# Let's Encrypt -- extra module "letsencrypt"
+#---------------------------------------------------------------------
+ns_section ns/server/$server/modules {
+    #ns_param letsencrypt tcl
+}
+ns_section ns/server/$server/module/letsencrypt {
 
-#=====================================================================
-# Per-server modules
-#=====================================================================
+    # Provide one or more domain names (latter for multi-domain SAN
+    # certificates). These values are a default in case the domains
+    # are not provided by other means (e.g. "letsencrypt.tcl").  In
+    # case multiple NaviServer virtual hosts are in used, this
+    # definition must be on the $server, which is used for
+    # obtaining updates (e.g. main site) although it retrieves a
+    # certificate for many subsites.
+
+    #ns_param domains { openacs.org openacs.net fisheye.openacs.org cvs.openacs.org }
+}
+#---------------------------------------------------------------------
+# Tcl Thread library -- extra module "libthread"
+# ---------------------------------------------------------------------
+ns_section ns/server/$server/modules {
+    #
+    # Determine, if libthread is installed. First check for a version
+    # having the "-ns" suffix. If this does not exist, check for a
+    # legacy version without it.
+    #
+    set libthread \
+        [lindex [lsort [glob -nocomplain \
+                            $homedir/lib/thread*/libthread-ns*[info sharedlibextension]]] end]
+    if {$libthread eq ""} {
+        set libthread \
+            [lindex [lsort [glob -nocomplain \
+                                $homedir/lib/thread*/lib*thread*[info sharedlibextension]]] end]
+    }
+    if {$libthread eq ""} {
+        ns_log notice "No Tcl thread library installed in $homedir/lib/"
+    } else {
+        ns_param	libthread $libthread
+        ns_log notice "Use Tcl thread library $libthread"
+    }
+}
+
+
+#---------------------------------------------------------------------
+# CGI interface -- core module "nscgi"
+#---------------------------------------------------------------------
+# ns_section ns/server/$server/modules {
+#     ns_param	nscgi nscgi
+# }
+# ns_section ns/server/$server/module/nscgi {
+#     ns_param  map	"GET  /cgi-bin ${serverroot}/cgi-bin"
+#     ns_param  map	"POST /cgi-bin ${serverroot}/cgi-bin"
+#     ns_param  Interps CGIinterps
+#     ns_param  allowstaticresources true    ;# default: false
+# }
+# ns_section ns/interps/CGIinterps {
+#     ns_param .pl "/usr/bin/perl"
+# }
+
+#---------------------------------------------------------------------
+# NaviServer Control Port -- core module "nscp"
+# ---------------------------------------------------------------------
+# This module lets you connect to a specified host and port using a
+# telnet client to administer the server and execute database commands
+# on the running system.
+#
+# Details about enabling and configuration:
+#     https://naviserver.sourceforge.io/n/nscp/files/nscp.html
+#
+ns_section ns/server/$server/modules {
+    if {$nscpport ne ""} {ns_param nscp nscp}
+}
+ns_section ns/server/$server/module/nscp {
+    ns_param port $nscpport
+    ns_param address  127.0.0.1        ;# default: 127.0.0.1 or ::1 for IPv6
+    #ns_param echopasswd on            ;# default: off
+    ns_param cpcmdlogging on           ;# default: off
+    #ns_param allowLoopbackEmptyUser on ;# default: off
+}
+ns_section ns/server/$server/module/nscp/users {
+    ns_param user "nsadmin:t2GqvvaiIUbF2:"
+}
 
 #---------------------------------------------------------------------
 # Server's DB configuration -- core module "nsdb"
@@ -1309,6 +1398,7 @@ ns_section ns/server/$server/db {
     ns_param pools       pool1,pool2,pool3
     ns_param defaultpool pool1
 }
+
 
 #---------------------------------------------------------------------
 # Access log -- core module "nslog"
@@ -1394,28 +1484,15 @@ ns_section ns/server/$server/module/nslog {
 }
 
 #---------------------------------------------------------------------
-# NaviServer Control Port -- core module "nscp"
-# ---------------------------------------------------------------------
-# This module lets you connect to a specified host and port using a
-# telnet client to administer the server and execute database commands
-# on the running system.
-#
-# Details about enabling and configuration:
-#     https://naviserver.sourceforge.io/n/nscp/files/nscp.html
-#
-ns_section ns/server/$server/modules {
-    if {$nscpport ne ""} {ns_param nscp nscp}
-}
-ns_section ns/server/$server/module/nscp {
-    ns_param port $nscpport
-    ns_param address  127.0.0.1        ;# default: 127.0.0.1 or ::1 for IPv6
-    #ns_param echopasswd on            ;# default: off
-    ns_param cpcmdlogging on           ;# default: off
-    #ns_param allowLoopbackEmptyUser on ;# default: off
-}
-ns_section ns/server/$server/module/nscp/users {
-    ns_param user "nsadmin:t2GqvvaiIUbF2:"
-}
+# PAM authentication -- extra module "nspam"
+#---------------------------------------------------------------------
+# ns_section ns/server/$server/modules {
+#     ns_param	nspam nspam
+# }
+# ns_section ns/server/$server/module/nspam {
+#     ns_param	PamDomain "pam_domain"
+# }
+
 
 #---------------------------------------------------------------------
 # NaviServer NaviServer Process Proxy -- core module "nsproxy"
@@ -1431,48 +1508,18 @@ ns_section ns/server/$server/module/nsproxy {
     # ns_param	idletimeout       5m    ;# default: 5m
     # ns_param	logminduration    1s    ;# default: 1s
 }
-
 #---------------------------------------------------------------------
-# CGI interface -- core module "nscgi"
+# Interactive Shell for NaviServer -- extra module "nsshell"
 #---------------------------------------------------------------------
 # ns_section ns/server/$server/modules {
-#     ns_param	nscgi nscgi
+#     ns_param    nsshell   tcl
 # }
-# ns_section ns/server/$server/module/nscgi {
-#     ns_param  map	"GET  /cgi-bin ${serverroot}/cgi-bin"
-#     ns_param  map	"POST /cgi-bin ${serverroot}/cgi-bin"
-#     ns_param  Interps CGIinterps
-#     ns_param  allowstaticresources true    ;# default: false
+#
+# ns_section ns/server/$server/module/nsshell {
+#     ns_param    url                 /nsshell
+#     ns_param    kernel_heartbeat    5
+#     ns_param    kernel_timeout      10
 # }
-# ns_section ns/interps/CGIinterps {
-#     ns_param .pl "/usr/bin/perl"
-# }
-
-
-#---------------------------------------------------------------------
-# Tcl Thread library -- extra module "libthread"
-# ---------------------------------------------------------------------
-ns_section ns/server/$server/modules {
-    #
-    # Determine, if libthread is installed. First check for a version
-    # having the "-ns" suffix. If this does not exist, check for a
-    # legacy version without it.
-    #
-    set libthread \
-        [lindex [lsort [glob -nocomplain \
-                            $homedir/lib/thread*/libthread-ns*[info sharedlibextension]]] end]
-    if {$libthread eq ""} {
-        set libthread \
-            [lindex [lsort [glob -nocomplain \
-                                $homedir/lib/thread*/lib*thread*[info sharedlibextension]]] end]
-    }
-    if {$libthread eq ""} {
-        ns_log notice "No Tcl thread library installed in $homedir/lib/"
-    } else {
-        ns_param	libthread $libthread
-        ns_log notice "Use Tcl thread library $libthread"
-    }
-}
 
 #---------------------------------------------------------------------
 # SMTPD proxy/server for NaviServer -- extra module "nssmtpd"
@@ -1535,8 +1582,12 @@ ns_section ns/server/$server/module/nssmtpd {
     # Cipher suite selection (TLS 1.2 and below):
     # ns_param ciphers     "..."
 }
-
-
+#---------------------------------------------------------------------
+# Web Push for NaviServer -- extra module "nswebpush"
+#---------------------------------------------------------------------
+# ns_section ns/server/$server/modules {
+#    ns_param nswebpush tcl
+# }
 
 #---------------------------------------------------------------------
 # WebSocket -- extra module "websocket"
@@ -1551,58 +1602,6 @@ ns_section ns/server/$server/module/nssmtpd {
 #    ns_param urls     /admin/websocket/log-view
 #    ns_param refresh  1000   ;# refresh time for file watcher in milliseconds
 # }
-
-#---------------------------------------------------------------------
-# Interactive Shell for NaviServer -- extra module "nsshell"
-#---------------------------------------------------------------------
-# ns_section ns/server/$server/modules {
-#     ns_param    nsshell   tcl
-# }
-#
-# ns_section ns/server/$server/module/nsshell {
-#     ns_param    url                 /nsshell
-#     ns_param    kernel_heartbeat    5
-#     ns_param    kernel_timeout      10
-# }
-
-#---------------------------------------------------------------------
-# Web Push for NaviServer -- extra module "nswebpush"
-#---------------------------------------------------------------------
-# ns_section ns/server/$server/modules {
-#    ns_param nswebpush tcl
-# }
-
-#---------------------------------------------------------------------
-# Let's Encrypt -- extra module "letsencrypt"
-#---------------------------------------------------------------------
-ns_section ns/server/$server/modules {
-    #ns_param letsencrypt tcl
-}
-ns_section ns/server/$server/module/letsencrypt {
-
-    # Provide one or more domain names (latter for multi-domain SAN
-    # certificates). These values are a default in case the domains
-    # are not provided by other means (e.g. "letsencrypt.tcl").  In
-    # case multiple NaviServer virtual hosts are in used, this
-    # definition must be on the $server, which is used for
-    # obtaining updates (e.g. main site) although it retrieves a
-    # certificate for many subsites.
-
-    #ns_param domains { openacs.org openacs.net fisheye.openacs.org cvs.openacs.org }
-}
-
-#---------------------------------------------------------------------
-# PAM authentication -- extra module "nspam"
-#---------------------------------------------------------------------
-# ns_section ns/server/$server/modules {
-#     ns_param	nspam nspam
-# }
-# ns_section ns/server/$server/module/nspam {
-#     ns_param	PamDomain "pam_domain"
-# }
-
-
-
 #---------------------------------------------------------------------
 # OpenACS-specific server general configuration
 #---------------------------------------------------------------------
@@ -1714,7 +1713,6 @@ ns_section ns/server/$server/acs/acs-mail-lite {
 ns_section ns/server/$server/acs/acs-api-browser {
     # ns_param IncludeCallingInfo true    ;# useful mostly on development instances
 }
-
 #---------------------------------------------------------------------
 # WebDAV support (optional; requires oacs-dav)
 #---------------------------------------------------------------------
@@ -1732,17 +1730,6 @@ ns_section ns/server/$server/acs/acs-api-browser {
 #    ns_param	uri		"/dav/*"
 #    ns_param	options		"OPTIONS COPY GET PUT MOVE DELETE HEAD MKCOL POST PROPFIND PROPPATCH LOCK UNLOCK"
 #}
-
-
-#=====================================================================
-# Section 6.2 -- additional servers
-#=====================================================================
-
-#
-# Add more server configurations here when needed.
-#
-
-
 ######################################################################
 # Section 7 -- Final diagnostics / sample extras
 ######################################################################

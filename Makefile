@@ -59,7 +59,7 @@ distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
 	version_include.man.in install-from-repository.tcl
 
 # Top-level goals
-all:     $(SUBDIRS:%=all-%)
+all:     $(SUBDIRS:%=all-%) configs
 clean:   $(SUBDIRS:%=clean-%)
 install: $(SUBDIRS:%=install-%)
 test:    $(TESTDIRS:%=test-%)
@@ -160,9 +160,14 @@ $(DIR_TARGETS):
 
 install-dirs: $(DIR_TARGETS)
 
-install-config: $(DESTDIR)$(NAVISERVER)/pages $(DESTDIR)$(NAVISERVER)/conf
-	@for i in returnnotice.adp nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
+install-config: configs $(DESTDIR)$(NAVISERVER)/pages $(DESTDIR)$(NAVISERVER)/conf
+	@for i in returnnotice.adp conf/*.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
+	done
+	@for d in $(FRAGDIRS) ; do \
+		test -d $$d || continue; \
+		$(MKDIR) $(DESTDIR)$(NAVISERVER)/conf/$$(basename $$d); \
+		$(INSTALL_DATA) $$d/*.tcl $(DESTDIR)$(NAVISERVER)/conf/$$(basename $$d)/; \
 	done
 	@for i in index.adp install-from-repository.tcl; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/; \
@@ -421,8 +426,45 @@ dist: config.guess config.sub clean
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --exclude='*/.*' --no-xattrs --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
+# --------------------------------------------------------------------
+# Config generation from fragment directories
+# --------------------------------------------------------------------
+
+FRAGDIRS := conf/openacs-config.d conf/nsd-config.d
+# Map "conf/foo.d" -> "foo.tcl" (generated at repo top-level)
+#GENCONFIGS := $(patsubst conf/%.d,%.tcl,$(FRAGDIRS))
+
+# Map "conf/foo-config.d" -> "conf/foo-config.tcl"
+CONFIGS  := $(patsubst %.d,%.tcl,$(FRAGDIRS))
+
+# Helper: list of fragments for a given dir, sorted lexicographically
+frags = $(sort $(wildcard $(1)/*.tcl))
+
+# Create per-config rules
+define GEN_CONFIG_template
+$(patsubst %.d,%.tcl,$(1)): $$(call frags,$(1))
+	@echo "GEN  $$@"
+	@if test -z "$$(call frags,$(1))"; then \
+	  echo "ERROR: no fragments found in $(1)/*.tcl" 1>&2; \
+	  exit 1; \
+	fi
+	@{ \
+	  echo "########################################################################"; \
+	  echo "# GENERATED FILE -- do not edit"; \
+	  echo "# Source: $(1)/"; \
+	  echo "########################################################################"; \
+	  echo; \
+	  cat $$(call frags,$(1)); \
+	} > $$@
+endef
+
+$(foreach d,$(FRAGDIRS),$(eval $(call GEN_CONFIG_template,$(d))))
+
+configs: $(CONFIGS)
+
+
 .PHONY: all install clean distclean \
-	install-dirs install-include install-tcl install-modules \
+	install-dirs install-include install-tcl install-modules configs \
 	install-config install-certificates install-doc install-examples install-notice \
 	all-% install-% clean-% test-%
 
