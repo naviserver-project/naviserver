@@ -6,75 +6,240 @@
 
 [description]
 
-When NaviServer is started, typically a configuration file is provided
-containing certain settings for the server. The configuration file
-includes network configuration options, log file information, loading
-of modules and database drivers and the like. Actually, the
-configuration file can contain the definition of multiple servers,
-running concurrently or depending on command line arguments also
-separately (see [term admin-maintenance]).
+When NaviServer is started, a configuration is provided that defines how
+the server instance is initialized and run.  The configuration is
+written in Tcl and specifies, among other things, network listeners,
+logging, database drivers, module loading, and server-specific
+parameters.
+
+[para]
+
+A configuration may be supplied as a single Tcl file or as a directory
+containing multiple configuration fragments, which are evaluated in
+lexical order.  In both cases, the resulting configuration can define one or
+more server instances, which may run concurrently or be selected via
+command line arguments (see [term admin-maintenance]).
+
+[section {Configuration Files}]
+
+[para]
+The NaviServer configuration file consists of multiple sections
+containing global configuration of the instance as well as sections for
+each server and module.  The configuration file is actually a Tcl
+script, such that a user can set variables, define procs to avoid
+repeated patterns, and apply other Tcl mechanisms as needed.  Tcl
+variables are typically used to define parameters at the beginning of
+the file that are changed frequently, which eases maintenance.
 
 
-[para] The NaviServer configuration file consists of multiple sections
-containing global configuration of the instance and sections for each
-server and module. The configuration file is actually a Tcl script,
-such that at user can set variables, defined procs to avoid repeated
-patterns and the like. Tcl variables are typically used to certain
-parameters at the beginning of the file, which might be often
-changed. This eases the maintenance.
-
-[para] The following sample configuration files might be used as a
-starting point for site specific configurations:
+[para]
+The following sample configurations may be used as starting points for
+site-specific setups.  The main NaviServer and OpenACS configurations
+are available both as a single Tcl file and as a directory containing
+ordered configuration fragments.  The single-file variants are
+generated from the corresponding configuration directories.
 
 [list_begin itemized]
-[item] [uri \
-	https://raw.githubusercontent.com/naviserver-project/naviserver/main/simple-config.tcl \
-	simple-config.tcl]
-[item] [uri \
-	https://raw.githubusercontent.com/naviserver-project/naviserver/main/nsd-config.tcl \
-	nsd-config.tcl]
-[item] [uri \
-	https://raw.githubusercontent.com/naviserver-project/naviserver/main/openacs-config.tcl \
-	openacs-config.tcl]
+
+[item]
+Simple single-file configuration:
+[uri \
+    https://raw.githubusercontent.com/naviserver-project/naviserver/main/simple-config.tcl \
+    simple-config.tcl]
+
+[item]
+NaviServer base configuration:
+NaviServer base configuration:
+[list_begin itemized]
+[item] single file: [uri https://raw.githubusercontent.com/naviserver-project/naviserver/main/nsd-config.tcl nsd-config.tcl]
+[item] directory:   [uri https://github.com/naviserver-project/naviserver/tree/main/conf/nsd-config.d conf/nsd-config.d/]
 [list_end]
 
-Several configuration hints and details can be found also in other
-places in the manual, such as e.g. in [term admin-tuning] or for
-module specific parameters (which might not be necessary in every
-installation). Furthermore, the configuration mechanism of NaviServer
-is extensible, therefore, modules and applications can as well use the
-configuration file with its abstraction to define application specific
-parameters. So, a listing of the parameters can never complete. In
+[item]
+OpenACS configuration:
+[list_begin itemized]
+[item] single file: [uri https://raw.githubusercontent.com/naviserver-project/naviserver/main/openacs-config.tcl openacs-config.tcl]
+[item] directory:   [uri https://github.com/naviserver-project/naviserver/tree/main/conf/openacs-config.d conf/openacs-config.d/]
+[list_end]
+
+[list_end]
+
+[para]
+For new installations or more complex setups, using the directory-based
+configuration is recommended, as it allows modular customization and
+reuse of configuration fragments.
+
+[para]
+Several configuration hints and details can also be found in other
+places in the manual, such as e.g. in [term admin-tuning] or in the
+documentation of module-specific parameters (since not every module is
+required in every installation).  Furthermore, the configuration
+mechanism of NaviServer is extensible; therefore, modules and
+applications can also use the configuration file and its abstractions
+to define application-specific parameters.  As a consequence, a
+complete listing of all possible parameters can never be provided.  On
 this page, we primarily define introductory examples for typical usage
 scenarios.
 
+
+
+[subsection {Configuration directories}]
+
+NaviServer accepts configuration either from a single Tcl file or from a
+directory containing multiple Tcl fragments.
+
 [para]
-The main sections of a configuration file are:
+When the argument to [term -t] names a directory, NaviServer loads all files
+matching [const *.tcl] from that directory in lexicographic order.  This
+allows large configurations to be split into maintainable fragments while
+remaining backward compatible with single-file configurations.
+
+[para]
+Example:
+
+[example_begin]
+ /usr/local/ns/bin/nsd -t conf/nsd-config.d -T
+[example_end]
+
+[para]
+A configuration directory is typically organized into numbered fragments such
+as [const 00-bootstrap.tcl], [const 10-parameters.tcl], ...,
+[const 70-final.tcl].  The numbering is a convention; the only strict
+requirement is that fragments defining shared variables must run before
+fragments that use them.
+
+[para]
+Since fragments are loaded in order, concatenating them yields the same
+behavior as a single configuration file.
+
+[list_begin itemized]
+[item]
+Directory mode is supported for normal startup and for [term -T] test mode.
+
+[item]
+Only [const *.tcl] files are considered; other files are ignored.
+
+[item]
+Fragments are loaded in lexicographic order using the file names.
+[list_end]
+
+
+[subsection {Using ns_configure_variables for defaults and overrides}]
+
+The sample configuration files shipped with NaviServer use a helper procedure
+named [cmd ns_configure_variables] to manage configuration variables.
+
+[para]
+The procedure takes a dictionary of default values and a prefix for
+environment variables.  For each dictionary key, a Tcl variable of the same
+name is established in the configuration scope.  Values can reference other
+variables and are processed using Tcl substitution, allowing patterns such as
+[const {$home/logs}].
+
+[para]
+The precedence rules are:
+
+[list_begin enumerated]
+[enum]
+Values already set in the configuration script.
+[enum]
+Environment variables with the specified prefix (e.g. [const oacs_httpport]).
+[enum]
+Default values from the dictionary.
+[list_end]
+
+[para]
+This mechanism is especially useful for containerized deployments because it
+allows enabling features and overriding values without editing configuration
+files, simply by setting environment variables.
+
+[para]
+Some configurations support an optional [const setupfile] key in the defaults
+dictionary.  When present and non-empty, this file is sourced after applying
+the default and environment-based values and can be used for instance-specific
+variable assignments.
+
+
+[subsection {Configuration structure}]
+
+[para]
+NaviServer configuration files (either single files or configuration
+directories) are typically organized into a small number of logical
+sections.  The following structure is used by the sample configurations
+shipped with NaviServer and is recommended for larger installations.
 
 [list_begin itemized]
 
-[item] Global configuration values
-   [list_begin itemized]
-   [item] general parameters (section starting with [const ns/parameters])
-   [item] thread parameters (section starting with [const ns/threads])
-   [item] mimetypes (section starting with [const ns/mimetypes])
-   [item] database drivers (section starting with [const ns/db])
-   [item] global modules (section starting with [const ns/modules])
-   [item] servers (section starting with [const ns/servers])
-   [list_end]
-[para] Examples for global parameters are in the mentioned
-sample configuration files and also, e.g., in [term tcl-libraries]
-and [term admin-tuning].
+[item]
+Bootstrap and defaults
 
-[item] Server specific parameters (section starting with
-[const {ns/server/$server}]), where [const {$server}] is either a Tcl
-variable with the server configuration name, or should be replaced by
-the actual name (typically, when multiple server configurations are used).
+[list_begin itemized]
+[item] Tcl setup and environment checks
+[item] Definition of default configuration values
+[item] Application of overrides (e.g. via environment variables)
+[list_end]
 
-[item] Module specific parameters (like [term nssock], [term nsssl],
-[term nscp], [term nslog], [term nscgi] or [term nsperm]).
+[para]
+This section usually appears first and establishes variables that are
+used throughout the remainder of the configuration.
+
+[item]
+Global configuration
+
+[list_begin itemized]
+[item] general parameters (sections under [const ns/parameters])
+[item] thread configuration (sections under [const ns/threads])
+[item] MIME types (sections under [const ns/mimetypes])
+[item] global runtime settings (e.g. [const ns/fastpath])
+[item] database drivers and pools (sections under [const ns/db])
+[item] global modules (sections under [const ns/modules])
+[item] server registry (section [const ns/servers])
+[list_end]
+
+[para]
+These sections apply to all servers defined in the configuration.
+
+[item]
+Server-specific configuration
+
+[list_begin itemized]
+[item] server parameters (sections under [const {ns/server/$server}])
+[item] per-server modules (sections under
+       [const {ns/server/$server/modules}])
+[item] per-server module parameters (sections under
+       [const {ns/server/$server/module/...}])
+[list_end]
+
+[para]
+Here, [const {$server}] denotes the name of the server configuration.
+It may be provided via a Tcl variable or replaced by a literal name when
+multiple servers are configured.
+
+[item]
+Final diagnostics and optional extras
+
+[list_begin itemized]
+[item] diagnostic logging
+[item] optional helper commands
+[item] sample or commented configuration blocks
+[list_end]
+
+[para]
+These sections typically appear last and do not define core runtime
+behavior.
 
 [list_end]
+
+
+[para]
+When a configuration directory is used, each of these logical sections is
+usually placed into one or more numbered fragment files (for example,
+[const 00-bootstrap.tcl], [const 10-parameters.tcl], …, [const 70-final.tcl]).
+Fragments are loaded in lexicographic order and evaluated in a single
+interpreter, so variables defined in earlier fragments are available to
+later ones.
+
+
 
 
 [section {Server Network Configuration}]
