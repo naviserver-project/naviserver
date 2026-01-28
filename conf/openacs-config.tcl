@@ -3,6 +3,7 @@
 # Source: conf/openacs-config.d/
 ########################################################################
 
+# source: openacs-config.d/00-bootstrap.tcl
 
 ######################################################################
 #
@@ -107,7 +108,10 @@ set defaultConfig {
     verboseSQL        false
 
     setupfile         ""
-    extramodules      ""
+    extramodules      "nsstats"
+
+    servermodules     "nscgi"
+    letsencrypt_domains ""
 }
 
 
@@ -230,11 +234,11 @@ set ::env(LANG) en_US.UTF-8
 
 #ns_logctl severity "Debug(ns:driver)" $debug
 
+
+# source: openacs-config.d/10-parameters.tcl
 ######################################################################
 # Section 1 -- Global NaviServer parameters (ns/parameters)
 ######################################################################
-# Global NaviServer parameters
-#---------------------------------------------------------------------
 
 ns_section ns/parameters {
     #------------------------------------------------------------------
@@ -244,7 +248,7 @@ ns_section ns/parameters {
     ns_param home     $homedir
     ns_param logdir   $logdir
     ns_param pidfile  nsd.pid
-    ns_param  debug    $debug
+    ns_param debug    $debug
 
     # Optional directory for temporary files. If not specified, the
     # environment variable TMPDIR is used. If that is not set either,
@@ -472,6 +476,8 @@ if {[file exists /scripts/docker-dict.tcl]} {
 
 
 
+
+# source: openacs-config.d/20-network.tcl
 ######################################################################
 # Section 2 -- Global network drivers (HTTP/HTTPS)
 ######################################################################
@@ -736,6 +742,8 @@ if {[info exists httpsport] && $httpsport ne ""} {
 }
 
 
+
+# source: openacs-config.d/30-runtime.tcl
 ######################################################################
 # Section 3 -- Global runtime configuration (threads, MIME types, fastpath)
 ######################################################################
@@ -780,6 +788,8 @@ ns_section ns/fastpath {
     #                                                # on the fly using ::ns_brotlifile
     #ns_param        brotli_cmd          "/usr/bin/brotli -f -Z"  ;# use for re-compressing
 }
+
+# source: openacs-config.d/40-db.tcl
 ######################################################################
 # Section 4 -- Global database drivers and pools
 ######################################################################
@@ -916,6 +926,8 @@ if {"nsdbipg" in $extramodules} {
         ns_param   checkinterval 600
     }
 }
+
+# source: openacs-config.d/50-modules-global.tcl
 ######################################################################
 # Section 5 -- Global utility modules
 ######################################################################
@@ -929,17 +941,22 @@ if {"nsdbipg" in $extramodules} {
 # This section only configures the module; loading is optional and
 # typically controlled via ns/modules (see comment below).
 #---------------------------------------------------------------------
-ns_section ns/module/nsstats {
-    ns_param enabled  1
-    ns_param user     ""
-    ns_param password ""
-    ns_param bglocks  {oacs:sched_procs}
+if {"nsstats" in $extramodules} {
+    ns_section ns/module/nsstats {
+        ns_param enabled  1
+        ns_param user     ""
+        ns_param password ""
+        ns_param bglocks  {oacs:sched_procs}
+    }
+
+    # The nsstats module consists of a single file, there is no need to
+    # load it as a (Tcl) module, once the file is copied.
 }
 
-# The nsstats module consists of a single file, there is no need to
-# load it as a (Tcl) module, once the file is copied.
 
 
+
+# source: openacs-config.d/60-server-openacs-00.tcl
 #=====================================================================
 # Section 6.1 -- Server "openacs" ($server)
 #=====================================================================
@@ -1304,24 +1321,34 @@ ns_section ns/server/$server/httpclient {
     #ns_param	logrollonsignal	true     ;# default: false; perform log rotation on SIGHUP
     #ns_param	logrollhour	0        ;# default: 0; specify at which hour to roll
 }
+
+# source: openacs-config.d/60-server-openacs-module-letsencrypt.tcl
 #---------------------------------------------------------------------
 # Let's Encrypt -- extra module "letsencrypt"
 #---------------------------------------------------------------------
-ns_section ns/server/$server/modules {
-    #ns_param letsencrypt tcl
-}
-ns_section ns/server/$server/module/letsencrypt {
+# To use this module:
+#   1. Install the NaviServer module letsencrypt
+#   2. Configure 'letsencrypt_domains' with a list of domain names
+#
+if {$letsencrypt_domains ne ""} {
+    ns_section ns/server/$server/modules {
+        ns_param letsencrypt tcl
+    }
+    ns_section ns/server/$server/module/letsencrypt {
 
-    # Provide one or more domain names (latter for multi-domain SAN
-    # certificates). These values are a default in case the domains
-    # are not provided by other means (e.g. "letsencrypt.tcl").  In
-    # case multiple NaviServer virtual hosts are in used, this
-    # definition must be on the $server, which is used for
-    # obtaining updates (e.g. main site) although it retrieves a
-    # certificate for many subsites.
+        # Provide one or more domain names (latter for multi-domain SAN
+        # certificates). These values are a default in case the domains
+        # are not provided by other means (e.g. "letsencrypt.tcl").  In
+        # case multiple NaviServer virtual hosts are in used, this
+        # definition must be on the $server, which is used for
+        # obtaining updates (e.g. main site) although it retrieves a
+        # certificate for many subsites.
 
-    #ns_param domains { openacs.org openacs.net fisheye.openacs.org cvs.openacs.org }
+        ns_param domains $letsencrypt_domains
+    }
 }
+
+# source: openacs-config.d/60-server-openacs-module-libthread.tcl
 #---------------------------------------------------------------------
 # Tcl Thread library -- extra module "libthread"
 # ---------------------------------------------------------------------
@@ -1340,30 +1367,37 @@ ns_section ns/server/$server/modules {
                                 $homedir/lib/thread*/lib*thread*[info sharedlibextension]]] end]
     }
     if {$libthread eq ""} {
-        ns_log notice "No Tcl thread library installed in $homedir/lib/"
+        ns_log error "OpenACS configuration expects Tcl thread library (libthread), but none was found in $homedir/lib/"
     } else {
-        ns_param	libthread $libthread
+        ns_param libthread $libthread
         ns_log notice "Use Tcl thread library $libthread"
     }
 }
 
 
-#---------------------------------------------------------------------
-# CGI interface -- core module "nscgi"
-#---------------------------------------------------------------------
-# ns_section ns/server/$server/modules {
-#     ns_param	nscgi nscgi
-# }
-# ns_section ns/server/$server/module/nscgi {
-#     ns_param  map	"GET  /cgi-bin ${serverroot}/cgi-bin"
-#     ns_param  map	"POST /cgi-bin ${serverroot}/cgi-bin"
-#     ns_param  Interps CGIinterps
-#     ns_param  allowstaticresources true    ;# default: false
-# }
-# ns_section ns/interps/CGIinterps {
-#     ns_param .pl "/usr/bin/perl"
-# }
 
+# source: openacs-config.d/60-server-openacs-module-nscgi.tcl
+#---------------------------------------------------------------------
+# CGI interface -- core module "nscgi" (optional)
+# Enable via:
+#   set servermodules { ... nscgi ... }
+#---------------------------------------------------------------------
+if {"nscgi" in $servermodules} {
+    ns_section ns/server/$server/modules {
+        ns_param	nscgi nscgi
+    }
+    ns_section ns/server/$server/module/nscgi {
+        ns_param  map	"GET  /cgi-bin ${serverroot}/cgi-bin"
+        ns_param  map	"POST /cgi-bin ${serverroot}/cgi-bin"
+        ns_param  Interps CGIinterps
+        ns_param  allowstaticresources true    ;# default: false
+    }
+    ns_section ns/interps/CGIinterps {
+        ns_param .pl "/usr/bin/perl"
+    }
+}
+
+# source: openacs-config.d/60-server-openacs-module-nscp.tcl
 #---------------------------------------------------------------------
 # NaviServer Control Port -- core module "nscp"
 # ---------------------------------------------------------------------
@@ -1374,20 +1408,26 @@ ns_section ns/server/$server/modules {
 # Details about enabling and configuration:
 #     https://naviserver.sourceforge.io/n/nscp/files/nscp.html
 #
-ns_section ns/server/$server/modules {
-    if {$nscpport ne ""} {ns_param nscp nscp}
-}
-ns_section ns/server/$server/module/nscp {
-    ns_param port $nscpport
-    ns_param address  127.0.0.1        ;# default: 127.0.0.1 or ::1 for IPv6
-    #ns_param echopasswd on            ;# default: off
-    ns_param cpcmdlogging on           ;# default: off
-    #ns_param allowLoopbackEmptyUser on ;# default: off
-}
-ns_section ns/server/$server/module/nscp/users {
-    ns_param user "nsadmin:t2GqvvaiIUbF2:"
+# To use this module:
+#   1. Configure 'nscpport' to a non-empty value
+
+if {$nscpport ne ""} {
+    ns_section ns/server/$server/modules {
+        ns_param nscp nscp
+    }
+    ns_section ns/server/$server/module/nscp {
+        ns_param port $nscpport
+        ns_param address  127.0.0.1        ;# default: 127.0.0.1 or ::1 for IPv6
+        #ns_param echopasswd on            ;# default: off
+        ns_param cpcmdlogging on           ;# default: off
+        #ns_param allowLoopbackEmptyUser on ;# default: off
+    }
+    ns_section ns/server/$server/module/nscp/users {
+        ns_param user "nsadmin:t2GqvvaiIUbF2:"
+    }
 }
 
+# source: openacs-config.d/60-server-openacs-module-nsdb.tcl
 #---------------------------------------------------------------------
 # Server's DB configuration -- core module "nsdb"
 #---------------------------------------------------------------------
@@ -1399,7 +1439,7 @@ ns_section ns/server/$server/db {
     ns_param defaultpool pool1
 }
 
-
+# source: openacs-config.d/60-server-openacs-module-nslog.tcl
 #---------------------------------------------------------------------
 # Access log -- core module "nslog"
 #---------------------------------------------------------------------
@@ -1483,17 +1523,27 @@ ns_section ns/server/$server/module/nslog {
     ns_param rollfmt      %Y-%m-%d
 }
 
+
+# source: openacs-config.d/60-server-openacs-module-nspam.tcl
 #---------------------------------------------------------------------
 # PAM authentication -- extra module "nspam"
 #---------------------------------------------------------------------
-# ns_section ns/server/$server/modules {
-#     ns_param	nspam nspam
-# }
-# ns_section ns/server/$server/module/nspam {
-#     ns_param	PamDomain "pam_domain"
-# }
+# To use this module:
+#   1. Install the NaviServer module nspam
+#   2. Add 'nspam' to 'servermodules'
+#   3. Configure nspam parameters as needed
+#
+if {"nspam" in $servermodules} {
+    ns_section ns/server/$server/modules {
+        ns_param nspam nspam
+    }
+    ns_section ns/server/$server/module/nspam {
+        ns_param PamDomain "pam_domain"
+    }
+}
 
 
+# source: openacs-config.d/60-server-openacs-module-nsproxy.tcl
 #---------------------------------------------------------------------
 # NaviServer NaviServer Process Proxy -- core module "nsproxy"
 # ---------------------------------------------------------------------
@@ -1508,105 +1558,135 @@ ns_section ns/server/$server/module/nsproxy {
     # ns_param	idletimeout       5m    ;# default: 5m
     # ns_param	logminduration    1s    ;# default: 1s
 }
+
+# source: openacs-config.d/60-server-openacs-module-nsshell.tcl
 #---------------------------------------------------------------------
 # Interactive Shell for NaviServer -- extra module "nsshell"
 #---------------------------------------------------------------------
-# ns_section ns/server/$server/modules {
-#     ns_param    nsshell   tcl
-# }
+# To use this module:
+#   1. Install the NaviServer module nsshell
+#   2. Add 'nsshell' to 'servermodules'
+#   3. Configure nsshell parameters as needed
 #
-# ns_section ns/server/$server/module/nsshell {
-#     ns_param    url                 /nsshell
-#     ns_param    kernel_heartbeat    5
-#     ns_param    kernel_timeout      10
-# }
+if {"nsshell" in $servermodules} {
+    ns_section ns/server/$server/modules {
+        ns_param    nsshell   tcl
+    }
+    ns_section ns/server/$server/module/nsshell {
+        ns_param    url                 /nsshell
+        ns_param    kernel_heartbeat    5
+        ns_param    kernel_timeout      10
+    }
+}
 
+# source: openacs-config.d/60-server-openacs-module-nssmtpd.tcl
 #---------------------------------------------------------------------
 # SMTPD proxy/server for NaviServer -- extra module "nssmtpd"
 # ---------------------------------------------------------------------
 # Outgoing mail for OpenACS
 #
 # To use this module:
-#   1. Install the NaviServer nssmtpd module.
-#   2. Set a nonempty $smtpdport.
+#   1. Install the NaviServer module nssmtpd
+#   2. Configure a nonempty smtpdport.
 #   3. Set the OpenACS package parameter
 #        EmailDeliveryMode = nssmtpd
 #      in acs-mail-lite. See:
 #      https://openacs.org/xowiki/outgoing_email
 #
-ns_section ns/server/$server/modules {
-    if {$smtpdport ne ""} {ns_param nssmtpd nssmtpd}
+if {$smtpdport ne ""} {
+    ns_section ns/server/$server/modules {
+        ns_param nssmtpd nssmtpd
+    }
+    ns_section ns/server/$server/module/nssmtpd {
+        #------------------------------------------------------------------
+        # Basic binding and SMTP behaviour
+        #------------------------------------------------------------------
+        ns_param port        $smtpdport
+        ns_param address     127.0.0.1            ;# local interface for SMTP server
+        ns_param relay       $smtprelay           ;# upstream MTA or mail relay (e.g. localhost:25)
+        ns_param spamd       localhost            ;# spamd/spamassassin daemon for filtering
+
+        # SMTP processing callbacks (implemented in Tcl)
+        ns_param initproc    smtpd::init
+        ns_param rcptproc    smtpd::rcpt
+        ns_param dataproc    smtpd::data
+        ns_param errorproc   smtpd::error
+
+        # Domain handling
+        ns_param relaydomains "localhost"
+        ns_param localdomains "localhost"
+
+        #------------------------------------------------------------------
+        # Logging and log rotation
+        #------------------------------------------------------------------
+        ns_param logging     on                   ;# default: off
+        ns_param logfile     smtpsend.log
+        ns_param logrollfmt  %Y-%m-%d             ;# appended to log filename on rotation
+
+        # Optional rotation controls:
+        #
+        # ns_param logmaxbackup   100             ;# default: 10; max number of rotated logs
+        # ns_param logroll        true            ;# default: true; auto-rotate logs
+        # ns_param logrollonsignal true           ;# default: false; rotate on SIGHUP
+        # ns_param logrollhour    0               ;# default: 0; hour of day for rotation
+
+        #------------------------------------------------------------------
+        # STARTTLS configuration (optional)
+        #------------------------------------------------------------------
+        # Enable STARTTLS and specify certificate chain files if needed.
+        #
+        # ns_param certificate "path/to/your/certificate-chain.pem"
+        # ns_param cafile      ""
+        # ns_param capath      ""
+        #
+        # Cipher suite selection (TLS 1.2 and below):
+        # ns_param ciphers     "..."
+    }
 }
-ns_section ns/server/$server/module/nssmtpd {
-    #------------------------------------------------------------------
-    # Basic binding and SMTP behaviour
-    #------------------------------------------------------------------
-    ns_param port        $smtpdport
-    ns_param address     127.0.0.1            ;# local interface for SMTP server
-    ns_param relay       $smtprelay           ;# upstream MTA or mail relay (e.g. localhost:25)
-    ns_param spamd       localhost            ;# spamd/spamassassin daemon for filtering
 
-    # SMTP processing callbacks (implemented in Tcl)
-    ns_param initproc    smtpd::init
-    ns_param rcptproc    smtpd::rcpt
-    ns_param dataproc    smtpd::data
-    ns_param errorproc   smtpd::error
-
-    # Domain handling
-    ns_param relaydomains "localhost"
-    ns_param localdomains "localhost"
-
-    #------------------------------------------------------------------
-    # Logging and log rotation
-    #------------------------------------------------------------------
-    ns_param logging     on                   ;# default: off
-    ns_param logfile     smtpsend.log
-    ns_param logrollfmt  %Y-%m-%d             ;# appended to log filename on rotation
-
-    # Optional rotation controls:
-    #
-    # ns_param logmaxbackup   100             ;# default: 10; max number of rotated logs
-    # ns_param logroll        true            ;# default: true; auto-rotate logs
-    # ns_param logrollonsignal true           ;# default: false; rotate on SIGHUP
-    # ns_param logrollhour    0               ;# default: 0; hour of day for rotation
-
-    #------------------------------------------------------------------
-    # STARTTLS configuration (optional)
-    #------------------------------------------------------------------
-    # Enable STARTTLS and specify certificate chain files if needed.
-    #
-    # ns_param certificate "path/to/your/certificate-chain.pem"
-    # ns_param cafile      ""
-    # ns_param capath      ""
-    #
-    # Cipher suite selection (TLS 1.2 and below):
-    # ns_param ciphers     "..."
-}
+# source: openacs-config.d/60-server-openacs-module-nswebpush.tcl
 #---------------------------------------------------------------------
 # Web Push for NaviServer -- extra module "nswebpush"
 #---------------------------------------------------------------------
-# ns_section ns/server/$server/modules {
-#    ns_param nswebpush tcl
-# }
+# To use this module:
+#   1. Install the NaviServer module nswebpush
+#   2. Add nswebpush to servermodules
+#
+if {"nswebpush" in $servermodules} {
+    ns_section ns/server/$server/modules {
+        ns_param nswebpush tcl
+    }
+}
 
+
+# source: openacs-config.d/60-server-openacs-module-websocket.tcl
 #---------------------------------------------------------------------
 # WebSocket -- extra module "websocket"
 #---------------------------------------------------------------------
-# ns_section ns/server/$server/modules {
-#    ns_param websocket tcl
-# }
-# ns_section ns/server/$server/module/websocket/chat {
-#    ns_param urls     /websocket/chat
-# }
-# ns_section ns/server/$server/module/websocket/log-view {
-#    ns_param urls     /admin/websocket/log-view
-#    ns_param refresh  1000   ;# refresh time for file watcher in milliseconds
-# }
+# To use this module:
+#   1. Install the NaviServer module websocket
+#   2. Add websocket to servermodules
+#   3. Configure websocket parameters as needed
+#
+if {"websocket" in $servermodules} {
+    ns_section ns/server/$server/modules {
+        ns_param websocket tcl
+    }
+    ns_section ns/server/$server/module/websocket/chat {
+        ns_param urls     /websocket/chat
+    }
+    ns_section ns/server/$server/module/websocket/log-view {
+        ns_param urls     /admin/websocket/log-view
+        ns_param refresh  1000   ;# refresh time for file watcher in milliseconds
+    }
+}
+
+# source: openacs-config.d/60-server-openacs-packages.tcl
 #---------------------------------------------------------------------
 # OpenACS-specific server general configuration
 #---------------------------------------------------------------------
-# Define/override OpenACS kernel parameter for $server
 #
+# Define/override OpenACS kernel parameter in section "acs" for $server
 ns_section ns/server/$server/acs {
     #------------------------------------------------------------------
     # Cookie namespace and static CSP rules
@@ -1713,8 +1793,9 @@ ns_section ns/server/$server/acs/acs-mail-lite {
 ns_section ns/server/$server/acs/acs-api-browser {
     # ns_param IncludeCallingInfo true    ;# useful mostly on development instances
 }
+
 #---------------------------------------------------------------------
-# WebDAV support (optional; requires oacs-dav)
+# WebDAV support (optional; requires OpenACS package oacs-dav)
 #---------------------------------------------------------------------
 #ns_section ns/server/$server/tdav {
 #    ns_param	propdir            $serverroot/data/dav/properties
@@ -1730,6 +1811,8 @@ ns_section ns/server/$server/acs/acs-api-browser {
 #    ns_param	uri		"/dav/*"
 #    ns_param	options		"OPTIONS COPY GET PUT MOVE DELETE HEAD MKCOL POST PROPFIND PROPPATCH LOCK UNLOCK"
 #}
+
+# source: openacs-config.d/70-final.tcl
 ######################################################################
 # Section 7 -- Final diagnostics / sample extras
 ######################################################################
@@ -1755,3 +1838,4 @@ ns_logctl severity "Debug(sql)" $verboseSQL
 
 ns_log notice "nsd.tcl: using threadsafe tcl: [info exists ::tcl_platform(threaded)]"
 ns_log notice "nsd.tcl: finished reading configuration file."
+

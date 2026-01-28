@@ -1,8 +1,6 @@
 ######################################################################
 # Section 1 -- Global NaviServer parameters (ns/parameters)
 ######################################################################
-# Global NaviServer parameters
-#---------------------------------------------------------------------
 
 ns_section ns/parameters {
     #------------------------------------------------------------------
@@ -12,7 +10,7 @@ ns_section ns/parameters {
     ns_param home     $homedir
     ns_param logdir   $logdir
     ns_param pidfile  nsd.pid
-    ns_param  debug    $debug
+    ns_param debug    $debug
 
     # Optional directory for temporary files. If not specified, the
     # environment variable TMPDIR is used. If that is not set either,

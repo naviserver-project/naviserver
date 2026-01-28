@@ -440,11 +440,11 @@ CONFIGS  := $(patsubst %.d,%.tcl,$(FRAGDIRS))
 # Helper: list of fragments for a given dir, sorted lexicographically
 frags = $(sort $(wildcard $(1)/*.tcl))
 
-# Create per-config rules
+# Create a concatenated file from a directory
 define GEN_CONFIG_template
 $(patsubst %.d,%.tcl,$(1)): $$(call frags,$(1))
 	@echo "GEN  $$@"
-	@if test -z "$$(call frags,$(1))"; then \
+	@if test -z "$$(strip $$(call frags,$(1)))"; then \
 	  echo "ERROR: no fragments found in $(1)/*.tcl" 1>&2; \
 	  exit 1; \
 	fi
@@ -454,7 +454,11 @@ $(patsubst %.d,%.tcl,$(1)): $$(call frags,$(1))
 	  echo "# Source: $(1)/"; \
 	  echo "########################################################################"; \
 	  echo; \
-	  cat $$(call frags,$(1)); \
+	  $(foreach f,$(call frags,$(1)), \
+	    echo "# source: $(patsubst conf/%,%,$(f))"; \
+	    cat "$(f)"; \
+	    echo; \
+	  ) \
 	} > $$@
 endef
 

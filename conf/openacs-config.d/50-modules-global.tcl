@@ -11,14 +11,17 @@
 # This section only configures the module; loading is optional and
 # typically controlled via ns/modules (see comment below).
 #---------------------------------------------------------------------
-ns_section ns/module/nsstats {
-    ns_param enabled  1
-    ns_param user     ""
-    ns_param password ""
-    ns_param bglocks  {oacs:sched_procs}
+if {"nsstats" in $extramodules} {
+    ns_section ns/module/nsstats {
+        ns_param enabled  1
+        ns_param user     ""
+        ns_param password ""
+        ns_param bglocks  {oacs:sched_procs}
+    }
+
+    # The nsstats module consists of a single file, there is no need to
+    # load it as a (Tcl) module, once the file is copied.
 }
 
-# The nsstats module consists of a single file, there is no need to
-# load it as a (Tcl) module, once the file is copied.
 
 

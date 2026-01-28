@@ -102,7 +102,10 @@ set defaultConfig {
     verboseSQL        false
 
     setupfile         ""
-    extramodules      ""
+    extramodules      "nsstats"
+
+    servermodules     "nscgi"
+    letsencrypt_domains ""
 }
 
 
