@@ -77,8 +77,8 @@
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_begin}]
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_commit}] ?-all?
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_rollback}] ?-all?
-[uri ../../naviserver/files/ns_cbor.html {ns_cbor decode}] ?-binary? ?-encoding hex|base64url|base64|binary? /value/
-[uri ../../naviserver/files/ns_cbor.html {ns_cbor scan}] ?-binary? ?-encoding hex|base64url|base64|binary? /value/
+[uri ../../naviserver/files/ns_cbor.html {ns_cbor decode}] ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/
+[uri ../../naviserver/files/ns_cbor.html {ns_cbor scan}] ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/
 [uri ../../naviserver/files/ns_certctl.html {ns_certctl list}]
 [uri ../../naviserver/files/ns_certctl.html {ns_certctl reload}]
 [uri ../../naviserver/files/ns_chan.html {ns_chan cleanup}] ?-shared?
@@ -98,6 +98,7 @@
 [uri ../../naviserver/files/ns_config.html {ns_config}] ?-all? ?-bool? ?-int? ?-min /integer/? ?-max /integer/? ?-exact? ?-set? ?--? /section/ /key/ ?/default/?
 [uri ../../naviserver/files/ns_config.html {ns_configsection}] ?-filter unread|defaulted|defaults? ?--? /section/
 [uri ../../naviserver/files/ns_config.html {ns_configsections}]
+[uri ../../naviserver/files/ns_config.html {ns_configure_variables}] ?-configRoot /directory/? ?-silent /boolean/? ?--? /prefix/ /defaultConfig/
 [uri ../../naviserver/files/ns_conn.html {ns_conn acceptedcompression}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn auth}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn authpassword}]

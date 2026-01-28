@@ -10,8 +10,8 @@
 #
 #
 #
-MAN_CSS=man-5.0.css
-HEADER_INC=header-5.0.inc
+MAN_CSS=man-5.1.css
+HEADER_INC=header-5.1.inc
 
 NSBUILD=1
 include include/Makefile.global
@@ -54,8 +54,10 @@ endif
 distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
 	config.guess config.sub \
-	README.md NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
-	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
+	README.md NEWS \
+	conf/sample-config.tcl.in conf/simple-config.tcl \
+	conf/nsd-config.tcl conf/nsd-config.d conf/openacs-config.tcl conf/openacs-config.d \
+	index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in install-from-repository.tcl
 
 # Top-level goals
@@ -406,7 +408,7 @@ config.sub:
 ca-bundle.crt:
 	curl -s -fS -k -L -o ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
 
-dist: config.guess config.sub clean
+dist: config.guess config.sub clean configs
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)

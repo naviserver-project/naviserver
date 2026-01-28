@@ -5,8 +5,9 @@
       <span class="tagline">Programmable Web Server</span>
     </div>
 <!-- <div class="version-switcher">
-      <a href="https://naviserver.sourceforge.io/5.0/toc.html" class="active" title="Switch to version 5.0">5.0</a>
-      <a href="https://naviserver.sourceforge.io/4.99/toc.html" title="Switch to version 4.99">4.99</a>
+  <a href="https://naviserver.sourceforge.io/5.1/toc.html" title="Version 5.1 (alpha)">5.1a</a>
+  <a href="https://naviserver.sourceforge.io/5.0/toc.html" class="active" title="Version 5.0">5.0</a>
+  <a href="https://naviserver.sourceforge.io/4.99/toc.html" title="Version 4.99">4.99</a>
     </div>-->
   </div>
 <!--  <div class="man-info">
