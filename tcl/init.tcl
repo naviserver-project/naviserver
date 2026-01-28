@@ -52,10 +52,19 @@ if {[info exists ::auto_path] == 0} {
 #   - if -t is a directory:  <configdir>/<setupfile>
 #   - if -t is a file:       <dirname(-t)>/<setupfile>
 #
-proc ns_configure_variables {prefix defaultConfig} {
+proc ns_configure_variables {args} {
+    ns_parseargs {
+        {-configRoot ""}
+        {-silent false}
+        --
+        prefix
+        defaultConfig
+    } $args
+
     set builtins {
         argc argv auto_path defaultConfig env errorCode errorInfo optind
-        tcl_library tcl_patchLevel tcl_pkgPath tcl_platform tcl_version}
+        tcl_library tcl_patchLevel tcl_pkgPath tcl_platform tcl_version
+    }
     foreach var [uplevel {info vars}] {
         if {[uplevel [list array exists $var]]} continue
         dict set vars $var value  [uplevel [list set $var]]
@@ -89,7 +98,7 @@ proc ns_configure_variables {prefix defaultConfig} {
             # Keep setupfile local; still allow $substitutions.
             #
             set setupfile [uplevel [list subst [dict get $vars $var value]]]
-            if {$setupfile ne ""} {
+            if {$setupfile ne "" && !$silent} {
                 ns_log notice "setting $var to '$setupfile' from [dict get $vars $var source]"
             }
         } else {
@@ -110,13 +119,23 @@ proc ns_configure_variables {prefix defaultConfig} {
         if {[file pathtype $setupfile] eq "absolute"} {
             set _setupPath [file normalize $setupfile]
         } else {
-            set _cfg [ns_info config]
-            if {$_cfg eq ""} {
-                set _cfgRoot [pwd]
-            } elseif {[file isdirectory $_cfg]} {
-                set _cfgRoot $_cfg
+            if {$configRoot ne ""} {
+                #
+                # Explicit base directory (for tests / special setups)
+                #
+                set _cfgRoot $configRoot
             } else {
-                set _cfgRoot [file dirname $_cfg]
+                #
+                # Default: derive base from [ns_info config] (the -t argument)
+                #
+                set _cfg [ns_info config]
+                if {$_cfg eq ""} {
+                    set _cfgRoot [pwd]
+                } elseif {[file isdirectory $_cfg]} {
+                    set _cfgRoot $_cfg
+                } else {
+                    set _cfgRoot [file dirname $_cfg]
+                }
             }
             set _cfgRoot [file normalize $_cfgRoot]
             set _setupPath [file normalize [file join $_cfgRoot $setupfile]]
@@ -126,7 +145,9 @@ proc ns_configure_variables {prefix defaultConfig} {
             error "setupfile not found: $_setupPath"
         }
 
-        ns_log notice "sourcing setup file: $_setupPath"
+        if {!$silent} {
+            ns_log notice "sourcing setup file: $_setupPath"
+        }
         uplevel [list source $_setupPath]
 
 
@@ -149,13 +170,16 @@ proc ns_configure_variables {prefix defaultConfig} {
     }
 
     #
-    # Report all variables with their sources
+    # Report all variables with their sources (unless -silent)
     #
-    foreach var [lsort [dict keys $vars]] {
-        if {$var eq "setupfile"} continue
-        dict with vars $var {
-            if {$source ne "builtin"} {
-                ns_log notice "setting $var to '$value' from $source"
+    if {!$silent} {
+
+        foreach var [lsort [dict keys $vars]] {
+            if {$var eq "setupfile"} continue
+            dict with vars $var {
+                if {$source ne "builtin"} {
+                    ns_log notice "setting $var to '$value' from $source"
+                }
             }
         }
     }

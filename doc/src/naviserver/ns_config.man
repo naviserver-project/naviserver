@@ -213,17 +213,105 @@ Snippet 2:
       [arg key] \
       [arg value]]
 
- Sets the specified [arg key] to [arg value] in the currently active
+ Sets the specified [arg key] to [arg value] in  currently active
  section. Keys are matched in a case-insensitive manner, and duplicate
  keys are allowed.
+
+
+
+[call [cmd ns_configure_variables] \
+      [opt [option "-configRoot [arg directory]"]] \
+      [opt [option "-silent [arg boolean]"]] \
+      [opt --] \
+      [arg prefix] \
+      [arg defaultConfig] ]
+
+Turns the keys from the dict [arg defaultConfig] into Tcl variables in the
+caller's scope (the configuration file).  Values are determined per key
+using the following precedence:
+
+[list_begin enumerated]
+[enum] A variable already set in the configuration file (highest precedence).
+[enum] An environment variable named [const {${prefix}$key}].
+[enum] The value from the dict [arg defaultConfig] (lowest precedence).
+[list_end]
+
+
+[para]
+Values are processed via [cmd subst] to allow references to previously
+defined variables such as [const {$home}] inside dict values.
+
+[para]
+When the key [const setupfile] exists in [arg defaultConfig] and resolves
+to a non-empty value, the referenced Tcl file is sourced after the variable
+assignment pass.  This setup file is intended for instance-specific
+variable assignments (typically without [cmd ns_section] blocks).  A relative
+setupfile path is resolved against a configuration root directory (see
+[option -configRoot]).
+
+[list_begin options]
+
+[opt_def "-configRoot directory"]
+Specifies the base directory for resolving a relative [const setupfile].
+When not provided (or empty), the configuration root is derived from
+[cmd "ns_info config"] (the value passed to [option -t]): if [option -t] is a
+directory, that directory is used; if [option -t] is a file, its directory
+is used.  If [cmd "ns_info config"] is empty, the current working directory
+([cmd pwd]) is used.
+
+[opt_def "-silent boolean"]
+Controls logging of variable assignments.  When true, [cmd ns_configure_variables]
+does not emit the usual [cmd ns_log] notices about where values come from
+(defaults, environment variables, config file, or setup file).  The default
+is false.
+
+[list_end]
+[list_end]
+
+[para] This command is typically used near the beginning of a
+ configuration file to establish all configuration variables before
+ [cmd ns_section] blocks are evaluated.
+
+[example_begin]
+ set defaultConfig {
+   home        /var/www
+   logdir      {$home/logs}
+   httpport    8080
+   httpsport   ""
+   setupfile   ""
+ }
+ 
+ # Allow overrides via environment variables with prefix "oacs_"
+ ns_configure_variables "oacs_" $defaultConfig
+[example_end]
+
+[para] With this configuration, the following invocation overrides the
+ HTTP port and sources an instance-specific setup file:
+
+[example_begin]
+ oacs_httpport=8081 oacs_setupfile=instance.tcl nsd -t conf/openacs-config.d -f
+[example_end]
+
+[para] Notes:
+
+[list_begin itemized]
+
+[item] The command reports the origin of each variable value (default,
+ environment variable, configuration file, or setup file) via the
+ system log unless [option "-silent"] is used.
+
+[item] Only scalar variables are processed; array variables are
+ ignored.
+
+[item] This command is a core part of the shipped configuration
+ framework and is used by the sample configurations provided with
+ NaviServer.
+
 
 [list_end]
 
 
-
-
 [section EXAMPLES]
-
 
  The following example demonstrates how to set parameter values for
  the [const foo] module:

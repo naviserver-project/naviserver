@@ -243,6 +243,107 @@ test ns_config-8.4 {missing -set} -body {
 } -result {here}
 
 
+#
+# ns_configure_variables regression tests
+#
+test ns_configure_variables-1.0 {syntax: ns_configure_variables} -body {
+    ns_configure_variables
+} -returnCodes error -match glob -result {wrong # args: should be "?-configRoot /configRoot/? ?-silent /silent/? ?--? /prefix/ /defaultConfig/"}
+# "ns_configure_variables" message should be {wrong # args: should be "ns_configure_variables ?-configRoot /directory/? ?-silent /boolean/? ?--? /prefix/ /defaultConfig/"}
+
+#
+# Helper: run ns_configure_variables in a clean scope and return a dict
+# of selected variables.
+#
+proc _nscv_run {prefix defaultConfig presets {configRoot ""}} {
+    dict for {k v} $presets { set $k $v }
+    ns_configure_variables -configRoot $configRoot -silent true $prefix $defaultConfig
+    set out [dict create]
+    foreach v {home logdir extra_var} {
+        if {[info exists $v]} { dict set out $v [set $v] }
+    }
+    return $out
+}
+
+test ns_configure_variables-2.0 {defaults + subst are applied} -body {
+    _nscv_run "oacs_" {home "/h" logdir {$home/logs} setupfile ""} {}
+} -result [dict create home "/h" logdir "/h/logs"]
+
+test ns_configure_variables-2.1 {environment overrides defaults} -body {
+    set ::env(oacs_home) "/envhome"
+    _nscv_run "oacs_" {home "/h" logdir {$home/logs} setupfile ""} {}
+} -cleanup {
+    unset -nocomplain ::env(oacs_home)
+} -result [dict create home "/envhome" logdir "/envhome/logs"]
+
+test ns_configure_variables-2.2 {config-file preset overrides environment} -body {
+    set ::env(oacs_home) "/envhome"
+    _nscv_run "oacs_" {home "/h" setupfile ""} [dict create home "/cfg"]
+} -cleanup {
+    unset -nocomplain ::env(oacs_home)
+} -result [dict create home "/cfg"]
+
+test ns_configure_variables-2.3 {subst uses overridden values (env -> dependent var)} -body {
+    set ::env(oacs_home) "/envhome"
+    _nscv_run "oacs_" {home "/h" logdir {$home/logs}} [dict create]
+} -cleanup {
+    unset -nocomplain ::env(oacs_home)
+} -result [dict create home "/envhome" logdir "/envhome/logs"]
+
+
+test ns_configure_variables-3.0 {setupfile resolved relative to explicit configRoot} -body {
+    set tmpdir [file normalize [file join [pwd] .tmp-ns-configure-variables]]
+    file mkdir $tmpdir
+    set setup [file join $tmpdir setup.tcl]
+    set f [open $setup w]
+    puts $f { set home "/setup" ; set extra_var "from_setup" }
+    close $f
+
+    _nscv_run "oacs_" {home "/h" setupfile "setup.tcl"} [dict create] $tmpdir
+} -cleanup {
+    catch {file delete -force [file normalize [file join [pwd] .tmp-ns-configure-variables]]}
+} -returnCodes {error ok} -result [dict create home "/setup" extra_var "from_setup"]
+
+
+test ns_configure_variables-3.1 {setupfile resolves relative to explicit configRoot} -body {
+    set tmpdir [file normalize [file join [pwd] .tmp-ns-configure-variables]]
+    file mkdir $tmpdir
+    set setup [file join $tmpdir setup.tcl]
+    set f [open $setup w]
+    puts $f { set extra_var "dir_mode" }
+    close $f
+
+    _nscv_run "oacs_" {home "/h" setupfile "setup.tcl"} [dict create] $tmpdir
+} -cleanup {
+    catch {file delete -force [file normalize [file join [pwd] .tmp-ns-configure-variables]]}
+} -result [dict create home "/h" extra_var "dir_mode"]
+
+
+test ns_configure_variables-3.2 {setupfile can be absolute path} -body {
+    set tmpdir [file normalize [file join [pwd] .tmp-ns-configure-variables]]
+    file mkdir $tmpdir
+    set setup [file join $tmpdir setup.tcl]
+    set f [open $setup w]
+    puts $f { set extra_var "abs_path" }
+    close $f
+
+    _nscv_run "oacs_" [list home "/h" setupfile $setup] [dict create] $tmpdir
+} -cleanup {
+    catch {file delete -force [file normalize [file join [pwd] .tmp-ns-configure-variables]]}
+} -result [dict create home "/h" extra_var "abs_path"]
+
+test ns_configure_variables-3.3 {missing setupfile -> error} -body {
+    set tmpdir [file normalize [file join [pwd] .tmp-ns-configure-variables]]
+    file mkdir $tmpdir
+
+    _nscv_run "oacs_" {home "/h" setupfile "DOES-NOT-EXIST.tcl"} [dict create] $tmpdir
+} -cleanup {
+    catch {file delete -force [file normalize [file join [pwd] .tmp-ns-configure-variables]]}
+} -returnCodes error -match glob -result {*setupfile not found:*}
+
+
+rename _nscv_run ""
+
 
 cleanupTests
 
