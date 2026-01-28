@@ -101,7 +101,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_Set        *set;
     bool           testMode = NS_FALSE;
     Ns_DList       cfgNames, cfgContents;
-    bool            cfgIsDir = NS_FALSE;
+    bool           cfgIsDir = NS_FALSE;
 #ifndef _WIN32
     bool           debug = NS_FALSE;
     bool           forked = NS_FALSE;
@@ -119,6 +119,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     static char    mode = '\0', *procname, *server = NULL;
     static Ns_Set *servers;
 #endif
+
+    memset(&cfgNames, 0, sizeof(cfgNames));
+    memset(&cfgContents, 0, sizeof(cfgContents));
 
     /*
      * Before doing anything else, initialize the Tcl API
