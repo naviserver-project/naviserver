@@ -141,21 +141,21 @@ the set represents. The [cmd ns_set] name contains the [arg section].
 [list_begin definitions]
 
 [call [cmd ns_section] \
+      [opt [option "-set [arg ns_set]"]] \
       [opt [option -update]] \
       [opt --] \
       [arg name]]
 
- Begins a new configuration section identified by the specified
- [arg name]. All subsequent calls to [cmd ns_param] will add parameters to
- this section until another [cmd ns_section] command is invoked with a
- different section name.
-
+Begins a configuration section identified by the specified [arg name].
+All subsequent calls to [cmd ns_param] will add parameters to this
+section until another [cmd ns_section] command is invoked with a
+different section name.
 
 [para]
 
- Multiple invocations of [cmd ns_section] using the same [arg name]
- allow you to build the section incrementally. The following two
- snippets are equivalent:
+Multiple invocations of [cmd ns_section] using the same [arg name]
+allow you to build the section incrementally. The following two
+snippets are equivalent:
 
 [para]
 
@@ -179,26 +179,33 @@ Snippet 2:
 
 [para]
 
- All configuration data is stored internally in [cmd ns_set]
- structures. Since ns_set is defined as a multi-map storage, multiple
- values can be associated with the same key. This powerful feature may
- lead to surprises: when a scalar value is requested and multiple
- values are stored for the same key, only the first value is returned
- (as with [cmd "ns_set get"]). To retrieve all values for a key, use
- the [option -all] option with [cmd ns_config] or [cmd ns_set].
+All configuration data is stored internally in [cmd ns_set] structures.
+Since [cmd ns_set] is defined as a multi-map, multiple values may be
+associated with the same key. This powerful feature allows layered
+configuration but may also lead to surprises: when a scalar value is
+requested and multiple values are stored for the same key, only the
+first value is returned (as with [cmd "ns_set get"]).
 
 [para]
 
- The [option -update] flag can be used with [cmd ns_section] to update
- an existing section by overwriting previous values instead of simply
- appending new ones.
+To retrieve all values associated with a key, use the [option -all]
+option with [cmd ns_config] or access the underlying [cmd ns_set]
+directly.
+
+[para]
+
+The [option -update] flag can be used with [cmd ns_section] to indicate
+that parameters defined in the section should replace previously
+defined parameters with the same key, instead of simply appending new
+values. This affects how subsequent [cmd ns_param] calls are handled
+for that section.
 
 [example_begin]
  [cmd ns_section] foo {
    [cmd ns_param] x 1
  }
  
- # Later in the configuration file:
+ # Later in the configuration file: 
  [cmd ns_section] -update foo {
    [cmd ns_param] x 2
  }
@@ -208,6 +215,43 @@ Snippet 2:
  # Result: 2
 [example_end]
 
+[para]
+
+The [option -set] option allows pre-populating a configuration section
+from an existing [cmd ns_set] to simplify re-use of common
+blocks. Each key/value pair contained in the provided set is added to
+the section as if specified via individual [cmd ns_param] calls.
+
+[para]
+
+Using [option -set] is functionally equivalent to writing multiple
+[cmd ns_param] commands and therefore preserves the multi-map semantics
+of [cmd ns_set], including duplicate keys.
+
+[example_begin]
+ set common [lb][cmd ns_set] create a 1 b 2[rb]
+ 
+ [cmd ns_section] -set $common foo {
+   [cmd ns_param] c 3
+ }
+[example_end]
+
+[para]
+
+The [option -set] option can be combined with [option -update]. In this
+case, the section’s update mode applies to parameters added via
+[cmd ns_param] within the block, while values imported from the
+provided [cmd ns_set] are added according to their existing contents.
+If the supplied set contains duplicate keys, these duplicates are
+preserved.
+
+[para]
+
+This behavior makes [option -set] suitable as a concise shorthand for
+bulk parameter definitions (for example, shared defaults between
+sections), while still fully respecting NaviServer’s multi-map
+configuration model.
+
 
 [call [cmd ns_param] \
       [arg key] \
@@ -215,7 +259,8 @@ Snippet 2:
 
  Sets the specified [arg key] to [arg value] in  currently active
  section. Keys are matched in a case-insensitive manner, and duplicate
- keys are allowed.
+ keys are allowed, depending on the [option -update] flag on the
+ including section.
 
 
 

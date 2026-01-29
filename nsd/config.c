@@ -1679,6 +1679,53 @@ NsConfigFragmentsFree(Ns_DList *namesPtr, Ns_DList *contentsPtr)
     Ns_DListFree(contentsPtr);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConfigSectionPutSz --
+ *
+ *      Add or update a name/value pair in a configuration section, using
+ *      the same semantics as ns_param: in "update" mode replace prior
+ *      values, otherwise append (multimap).
+ *
+ *      When called before startup has completed, the affected entry is
+ *      marked for later reporting/inspection via ConfigMark().
+ *
+ * Results:
+ *      Index of the affected element in the target Ns_Set.
+ *
+ * Side Effects:
+ *      Modifies sectionPtr->set and may mark the entry.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline size_t
+ConfigSectionPutSz(Section *sectionPtr,
+                   const char *nameString, TCL_SIZE_T nameLength,
+                   const char *valueString, TCL_SIZE_T valueLength)
+{
+    size_t i;
+
+    NS_NONNULL_ASSERT(sectionPtr != NULL);
+    NS_NONNULL_ASSERT(nameString != NULL);
+    NS_NONNULL_ASSERT(valueString != NULL);
+
+    if (sectionPtr->update) {
+        i = Ns_SetUpdateSz(sectionPtr->set,
+                           nameString, nameLength,
+                           valueString, valueLength);
+    } else {
+        i = Ns_SetPutSz(sectionPtr->set,
+                        nameString, nameLength,
+                        valueString, valueLength);
+    }
+
+    if (!nsconf.state.started) {
+        ConfigMark(sectionPtr, i, value_set);
+    }
+
+    return i;
+}
 
 
 /*
@@ -1718,19 +1765,13 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj 
         if (likely(sectionPtr != NULL)) {
             const char *nameString, *valueString;
             TCL_SIZE_T  nameLength, valueLength;
-            size_t      i;
 
             nameString = Tcl_GetStringFromObj(nameObj, &nameLength);
             valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
+            ConfigSectionPutSz(sectionPtr,
+                               nameString, nameLength,
+                               valueString, valueLength);
 
-            if (sectionPtr->update) {
-                i = Ns_SetUpdateSz(sectionPtr->set, nameString, nameLength, valueString, valueLength);
-            } else {
-                i = Ns_SetPutSz(sectionPtr->set, nameString, nameLength, valueString, valueLength);
-            }
-            if (!nsconf.state.started) {
-                ConfigMark(sectionPtr, i, value_set);
-            }
         } else {
             Ns_TclPrintfResult(interp, "parameter %s not preceded by an ns_section command",
                                Tcl_GetString(nameObj));
@@ -1766,9 +1807,11 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Ob
     int         result = TCL_OK, update = 0;
     char       *sectionName = NULL;
     Tcl_Obj    *blockObj = NULL;
+    Ns_Set     *from = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-update", Ns_ObjvBool, &update, INT2PTR(NS_TRUE)},
-        {"--", Ns_ObjvBreak, NULL, NULL},
+        {"-update", Ns_ObjvBool,  &update, INT2PTR(NS_TRUE)},
+        {"-set",    Ns_ObjvSet,   &from,   NULL},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1783,12 +1826,22 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Ob
 
     } else {
         Section *sectionPtr, **passedSectionPtr = (Section **) clientData;
-
+        size_t   i;
 
         assert(sectionName != NULL);
         sectionPtr = GetSection(sectionName, NS_TRUE);
         sectionPtr->update = update;
         *passedSectionPtr = sectionPtr;
+
+        if (from != NULL) {
+            for (i = 0u; i < from->size; i++) {
+                const char *n = from->fields[i].name;
+                const char *v = from->fields[i].value;
+
+                (void) ConfigSectionPutSz(sectionPtr,
+                                          n, (TCL_SIZE_T)strlen(n),
+                                          v, (TCL_SIZE_T)strlen(v));            }
+        }
 
         if (blockObj != NULL) {
             result = Tcl_GlobalEvalObj(interp, blockObj);
