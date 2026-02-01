@@ -44,6 +44,10 @@ static const unsigned int bitElements = NS_BITELEMENTS;
 static const unsigned int maxBitElements = NS_BITELEMENTS *
     (int)(sizeof(((Section*)0)->defaultArray) /
           sizeof(((Section*)0)->defaultArray[0]));
+
+/*
+ * Local functions defined in this file.
+ */
 static int CompareCStrings(const void *a, const void *b) NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
 static bool HasTclSuffix(const char *name) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 static char *JoinPath2(const char *dir, const char *file) NS_GNUC_NONNULL(1,2);
@@ -51,9 +55,6 @@ static char *JoinPath2(const char *dir, const char *file) NS_GNUC_NONNULL(1,2);
 static void ConfigEvalEx(Tcl_Interp *interp, const char *config, const char *configFileName) NS_GNUC_NONNULL(1,2,3);
 static Tcl_Interp *ConfigCreateInterp(int argc, char *const *argv, int optionIndex, Section **sectionPtrPtr)  NS_GNUC_NONNULL(2,4);
 
-/*
- * Local functions defined in this file.
- */
 
 static TCL_OBJCMDPROC_T SectionObjCmd;
 static TCL_OBJCMDPROC_T ParamObjCmd;
@@ -82,6 +83,14 @@ static Tcl_WideInt ConfigWideIntRange(const char *section, const char *key,
 static const char *NormalizePath(const char *input, TCL_SIZE_T *lengthPtr)
     NS_GNUC_NONNULL(1,2);
 
+
+static inline size_t ConfigSectionPutSz(Section *sectionPtr,
+                                        const char *nameString,  TCL_SIZE_T nameLength,
+                                        const char *valueString, TCL_SIZE_T valueLength)
+    NS_GNUC_NONNULL(1,2,4);
+
+static void AddSetToSection(Section *sectionPtr, Ns_Set *inputSet)
+        NS_GNUC_NONNULL(1,2);
 
 /*
  *----------------------------------------------------------------------
@@ -1727,6 +1736,45 @@ ConfigSectionPutSz(Section *sectionPtr,
     return i;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddSetToSection --
+ *
+ *      Add all key/value pairs from the provided Ns_Set to the given
+ *      configuration section. The insertion semantics are identical to
+ *      ns_param for the target section, i.e., multi-map behavior is
+ *      preserved and the section's update mode (put vs. update) is honored
+ *      via ConfigSectionPutSz().
+ *
+ * Returns:
+ *
+ *      None.
+ *
+ * Side Effects:
+ *
+ *      Extends the Ns_Set associated with the specified Section. Depending
+ *      on the section mode, existing keys are either updated or an
+ *      additional value is added. The values are copied into the section;
+ *      the input Ns_Set is not modified.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+AddSetToSection(Section *sectionPtr, Ns_Set *inputSet)
+{
+    size_t   i;
+
+    for (i = 0u; i < inputSet->size; i++) {
+        const char *n = inputSet->fields[i].name;
+        const char *v = inputSet->fields[i].value;
+
+        (void) ConfigSectionPutSz(sectionPtr,
+                                  n, (TCL_SIZE_T)strlen(n),
+                                  v, (TCL_SIZE_T)strlen(v));
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1759,6 +1807,10 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj 
     if (unlikely(Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
 
+    } else if (*Tcl_GetString(nameObj) == '\0') {
+        Ns_TclPrintfResult(interp, "invalid parameter name: must not be empty");
+        result = TCL_ERROR;
+
     } else {
         Section *sectionPtr = *((Section **) clientData);
 
@@ -1781,6 +1833,8 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj 
 
     return result;
 }
+
+
 
 
 /*
@@ -1805,44 +1859,50 @@ static int
 SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, update = 0;
-    char       *sectionName = NULL;
+    char       *sectionName = NULL, *inputSection = NULL;
     Tcl_Obj    *blockObj = NULL;
-    Ns_Set     *from = NULL;
+    Ns_Set     *inputSet = NULL, *fromSectionSet = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-update", Ns_ObjvBool,  &update, INT2PTR(NS_TRUE)},
-        {"-set",    Ns_ObjvSet,   &from,   NULL},
-        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {"-update", Ns_ObjvBool,   &update,       INT2PTR(NS_TRUE)},
+        {"-from",   Ns_ObjvString, &inputSection, NULL},
+        {"-set",    Ns_ObjvSet,    &inputSet,     NULL},
+        {"--",      Ns_ObjvBreak,  NULL,          NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     Ns_ObjvSpec args[] = {
         {"sectionname", Ns_ObjvString, &sectionName, NULL},
-        {"?block",      Ns_ObjvObj,    &blockObj, NULL},
+        {"?block",      Ns_ObjvObj,    &blockObj,    NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     if (unlikely(Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
 
+    } else if (*sectionName == '\0') {
+        Ns_TclPrintfResult(interp, "invalid section name: must not be empty");
+        result = TCL_ERROR;
+
+    } else if (inputSection != NULL
+               && (fromSectionSet = Ns_ConfigGetSection(inputSection)) == NULL
+               ) {
+        Ns_TclPrintfResult(interp, "invalid value for -from parameter: must be an existing section");
+        result = TCL_ERROR;
+
     } else {
         Section *sectionPtr, **passedSectionPtr = (Section **) clientData;
-        size_t   i;
 
         assert(sectionName != NULL);
         sectionPtr = GetSection(sectionName, NS_TRUE);
         sectionPtr->update = update;
         *passedSectionPtr = sectionPtr;
 
-        if (from != NULL) {
-            for (i = 0u; i < from->size; i++) {
-                const char *n = from->fields[i].name;
-                const char *v = from->fields[i].value;
-
-                (void) ConfigSectionPutSz(sectionPtr,
-                                          n, (TCL_SIZE_T)strlen(n),
-                                          v, (TCL_SIZE_T)strlen(v));            }
+        if (fromSectionSet != NULL) {
+            AddSetToSection(sectionPtr, fromSectionSet);
         }
-
+        if (inputSet != NULL) {
+            AddSetToSection(sectionPtr, inputSet);
+        }
         if (blockObj != NULL) {
             result = Tcl_GlobalEvalObj(interp, blockObj);
         }

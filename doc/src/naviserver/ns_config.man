@@ -141,15 +141,50 @@ the set represents. The [cmd ns_set] name contains the [arg section].
 [list_begin definitions]
 
 [call [cmd ns_section] \
-      [opt [option "-set [arg ns_set]"]] \
       [opt [option -update]] \
+      [opt [option "-set [arg ns_set]"]] \
+      [opt [option "-from [arg sectionName]"]] \
       [opt --] \
-      [arg name]]
+      [arg sectionName] \
+      [opt [arg script]]]
 
-Begins a configuration section identified by the specified [arg name].
-All subsequent calls to [cmd ns_param] will add parameters to this
-section until another [cmd ns_section] command is invoked with a
-different section name.
+Define or update a configuration [arg sectionName] and evaluate [arg script]
+in the context of that section. The commands [cmd ns_param] and
+[cmd ns_section] (nested) can be used inside [arg script] to populate the
+section.
+
+[para]
+Configuration sections are multi-maps: a key may occur multiple times with
+different values. This behavior is identical to [cmd ns_set].
+
+[list_begin definitions]
+
+[def [arg -update]]
+When specified, inserting a key/value pair updates a potential
+pre-existing key if present. Without [arg -update], new key/value pairs are added
+and existing keys are not replaced (multi-map semantics).
+
+[def [arg {-from sectionName}]]
+Inject the content of an already defined configuration section [arg sectionName]
+into the target section. The insertion semantics are identical to repeated
+[cmd ns_param] operations for the target section and honor [arg -update].
+The source section's underlying [cmd ns_set] is used as input.
+
+[def [arg {-set setId}]]
+Inject the content of an [cmd ns_set] identified by [arg setId] into the
+configuration section. The insertion semantics are identical to repeated
+[cmd ns_param] operations for the target section and honor [arg -update].
+
+[para]
+When both [arg -from] and [arg -set] are specified, the content from
+[arg -from] is applied first, followed by the content from [arg -set].
+The [arg script] body is evaluated last and therefore can override
+injected values, subject to [arg -update] and multi-map semantics.
+
+The [option -from] option is intended for reusing parameters from
+another configuration section, while [option -set] is intended for
+reusing parameters collected programmatically in an [cmd ns_set].
+[list_end]
 
 [para]
 
@@ -236,14 +271,6 @@ of [cmd ns_set], including duplicate keys.
  }
 [example_end]
 
-[para]
-
-The [option -set] option can be combined with [option -update]. In this
-case, the section’s update mode applies to parameters added via
-[cmd ns_param] within the block, while values imported from the
-provided [cmd ns_set] are added according to their existing contents.
-If the supplied set contains duplicate keys, these duplicates are
-preserved.
 
 [para]
 

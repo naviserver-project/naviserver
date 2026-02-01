@@ -104,7 +104,7 @@ set defaultConfig {
     setupfile         ""
     extramodules      "nsstats"
 
-    servermodules     "nscgi"
+    servermodules     ""
     letsencrypt_domains ""
 }
 
@@ -204,7 +204,7 @@ if { $dbms eq "oracle" } {
 
 #---------------------------------------------------------------------
 # Set headers that should be included in every response from the
-# server.
+# server. These are used by the network driver sections later.
 #
 set http_extraheaders {
     x-frame-options            "SAMEORIGIN"

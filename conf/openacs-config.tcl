@@ -110,7 +110,7 @@ set defaultConfig {
     setupfile         ""
     extramodules      "nsstats"
 
-    servermodules     "nscgi"
+    servermodules     ""
     letsencrypt_domains ""
 }
 
@@ -210,7 +210,7 @@ if { $dbms eq "oracle" } {
 
 #---------------------------------------------------------------------
 # Set headers that should be included in every response from the
-# server.
+# server. These are used by the network driver sections later.
 #
 set http_extraheaders {
     x-frame-options            "SAMEORIGIN"
@@ -481,6 +481,70 @@ if {[file exists /scripts/docker-dict.tcl]} {
 ######################################################################
 # Section 2 -- Global network drivers (HTTP/HTTPS)
 ######################################################################
+
+# Name of the main server configuration
+set server default
+
+#
+# Collect domain names and IP addresses associated with the main server
+# configuration. Network drivers use this information to validate Host
+# headers and map incoming requests to the correct server.
+#
+set server_set [ns_set create $server]
+foreach domainname $hostname {
+    ns_set put $server_set $server $domainname
+}
+foreach address $ipaddress {
+    if {[ns_ip inany $address]} continue
+    ns_set put $server_set $server $address
+}
+
+if {[namespace exists ::docker] && [info commands ::docker::map_to_server] eq ""} {
+    #
+    # Docker support: determine externally visible host:port mappings.
+    #
+    # When NaviServer runs inside a container, ports are often published on the
+    # Docker host with a (potentially different) external address and port.
+    # The returned mappings can be used to whitelist additional Host header
+    # values (e.g., "host:port") for a given server configuration.
+    #
+    # Legacy implementation for setups where the docker environment does not
+    # provide this helper.
+    #
+    proc ::docker::map_external_address_to_server {server port} {
+        set label "$port/tcp"
+        set s [ns_set create]
+        if {$port eq ""
+            || ![info exists ::docker::containerMapping]
+            || ![dict exists $::docker::containerMapping $label]
+        } {
+            return $s
+        }
+        foreach {k info} $::docker::containerMapping {
+            if {$k ne $label} continue
+            set host    [dict get $info host]
+            set pubport [dict get $info port]
+            if {[ns_ip valid $host] && [ns_ip inany $host]} continue
+            ns_set put $s $server ${host}:${pubport}
+        }
+        return $s
+    }
+}
+
+#
+# Shared network driver defaults (for HTTP and HTTPS)
+#
+ns_section ns/driver/common {
+    ns_param defaultserver          $server
+    ns_param address                $ipaddress
+    ns_param hostname               [lindex $hostname 0]
+    ns_param maxinput               $max_file_upload_size
+    ns_param recvwait               $max_file_upload_duration
+    ns_param keepalivemaxuploadsize 100kB
+    ns_param writerthreads          2
+    ns_param  writersize            1kB
+}
+
 # Configuration for plain HTTP interface -- core module "nssock"
 #---------------------------------------------------------------------
 if {[info exists httpport] && $httpport ne ""} {
@@ -492,20 +556,21 @@ if {[info exists httpport] && $httpport ne ""} {
         ns_param http nssock
     }
 
-    ns_section ns/module/http {
-
+    ns_section -update \
+        -from ns/driver/common \
+        ns/module/http {
         #------------------------------------------------------------------
         # Basic binding and request size limits
         #------------------------------------------------------------------
-        ns_param defaultserver $server
-        ns_param address       $ipaddress
-        ns_param hostname      [lindex $hostname 0]
+        # ns_param defaultserver $server
+        # ns_param address       $ipaddress
+        # ns_param hostname      [lindex $hostname 0]
         ns_param port          $httpport              ;# default: 80
 
         # Per-driver limits for incoming requests; override ns/parameters
         # maxinput/recvwait if those are set there.
-        ns_param maxinput      $max_file_upload_size  ;# maximum size for request bodies (e.g. uploads)
-        ns_param recvwait      $max_file_upload_duration ;# timeout for receiving the full request
+        # ns_param maxinput      $max_file_upload_size  ;# maximum size for request bodies (e.g. uploads)
+        # ns_param recvwait      $max_file_upload_duration ;# timeout for receiving the full request
 
         # ns_param maxline      8192   ;# default: 8192; maximum size of a single header line
         # ns_param maxheaders   128    ;# default: 128; maximum number of header lines per request
@@ -542,7 +607,7 @@ if {[info exists httpport] && $httpport ne ""} {
         #   false -- leave Nagle enabled
         # ns_param nodelay       false ;# default: true
 
-        ns_param keepalivemaxuploadsize   100kB   ;# default: 0; # 0 = no limit; disable keep-alive
+        # ns_param keepalivemaxuploadsize   100kB   ;# default: 0; # 0 = no limit; disable keep-alive
         #                                         ;# for uploads larger than this value
         # ns_param keepalivemaxdownloadsize 1MB   ;# default: 0; 0 = no limit; disable keep-alive
         #                                         ;# for responses larger than this value
@@ -552,11 +617,11 @@ if {[info exists httpport] && $httpport ne ""} {
         #------------------------------------------------------------------
         # Spool uploads exceeding this size to a temporary file.
         # 0 = disabled; everything stays in memory.
-        ns_param maxupload          100kB  ;# default: 0; spool request bodies larger than this size
+        # ns_param maxupload          100kB  ;# default: 0; spool request bodies larger than this size
 
         # Use writer threads for sending large responses.
-        ns_param writerthreads      2      ;# default: 0; number of writer threads (0 = disabled)
-        ns_param writersize         1kB    ;# default: 1MB; use writer threads for responses larger than this size
+        # ns_param writerthreads      2      ;# default: 0; number of writer threads (0 = disabled)
+        # ns_param writersize         1kB    ;# default: 1MB; use writer threads for responses larger than this size
         # ns_param writerbufsize    16kB   ;# default: 8kB; buffer size for writer threads
 
         # ns_param writerstreaming  true   ;# default: false; enable writer threads for streaming output (ns_write)
@@ -581,30 +646,15 @@ if {[info exists httpport] && $httpport ne ""} {
         ns_param extraheaders   $http_extraheaders
     }
 
-    # Define which Host header values should be accepted on this driver
-    # and mapped to which server. The variable "hostname" may contain
-    # multiple domain names, all of which are registered below.
-
-    ns_section ns/module/http/servers {
-        foreach domainname $hostname {
-            ns_param $server $domainname
-        }
-        foreach address $ipaddress {
-            if {[ns_ip inany $ipaddress]} continue
-            ns_param $server $address
-        }
-        if {[dict exists $::docker::containerMapping $httpport/tcp]} {
-            foreach {label info} $::docker::containerMapping {
-                if {$label ne "$httpport/tcp"} continue
-                set __host [dict get $info host]
-                set __port [dict get  $info port]
-                if {[ns_ip valid $__host] && [ns_ip inany $__host]} continue
-                #puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
-                ns_param $server ${__host}:${__port}
-            }
-        }
+    #
+    # Register known Host header values for this driver and map them to server
+    # configurations.
+    #
+    ns_section -set $server_set ns/module/http/servers {}
+    if {[namespace exists ::docker]} {
+        ns_section -set [::docker::map_external_address_to_server $server $httpport] ns/module/http/servers {}
     }
-    ns_log notice ns_configsection [ns_set format [ns_configsection ns/module/http/servers]]
+    #ns_log notice ns_configsection [ns_set format [ns_configsection ns/module/http/servers]]
 }
 
 #---------------------------------------------------------------------
@@ -620,19 +670,21 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param https nsssl
     }
 
-    ns_section ns/module/https {
+    ns_section -update \
+        -from ns/driver/common \
+        ns/module/https {
         #------------------------------------------------------------------
         # Basic binding and request size limits
         #------------------------------------------------------------------
-        ns_param defaultserver	$server
-        ns_param address	$ipaddress
-        ns_param port		$httpsport
-        ns_param hostname	$hostname
+        # ns_param defaultserver $server
+        # ns_param address       $ipaddress
+        # ns_param hostname      [lindex $hostname 0]
+        ns_param port            $httpsport
 
         # Per-driver limits for incoming requests; override ns/parameters
         # maxinput/recvwait when set there.
-        ns_param maxinput           $max_file_upload_size      ;# max request body size (e.g. uploads)
-        ns_param recvwait           $max_file_upload_duration  ;# timeout for receiving the full request
+        # ns_param maxinput      $max_file_upload_size      ;# max request body size (e.g. uploads)
+        # ns_param recvwait      $max_file_upload_duration  ;# timeout for receiving the full request
 
         #------------------------------------------------------------------
         # Protocols and TLS configuration
@@ -667,12 +719,12 @@ if {[info exists httpsport] && $httpsport ne ""} {
         #------------------------------------------------------------------
         # Spool uploads exceeding this size to a temporary file.
         # 0 = disabled; everything stays in memory.
-        ns_param maxupload          100kB  ;# default: 0; spool request bodies larger than this size
+        # ns_param maxupload          100kB  ;# default: 0; spool request bodies larger than this size
 
         # Use writer threads for sending larger responses.
-        ns_param writerthreads      2      ;# default: 0; number of writer threads (0 = disabled)
-        ns_param writersize         1kB    ;# default: 1MB; use writer threads for responses larger than this size
-        ns_param writerbufsize      16kB   ;# default: 8kB; buffer size for writer threads
+        # ns_param writerthreads      2      ;# default: 0; number of writer threads (0 = disabled)
+        # ns_param writersize         1kB    ;# default: 1MB; use writer threads for responses larger than this size
+        # ns_param writerbufsize      16kB   ;# default: 8kB; buffer size for writer threads
 
         # ns_param writerstreaming  true   ;# default: false; enable writer threads for streaming output (ns_write)
         # ns_param spoolerthreads   1      ;# default: 0; number of upload spooler threads
@@ -715,33 +767,15 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param extraheaders	$https_extraheaders
     }
 
-    # Define which Host header values should be accepted on this HTTPS
-    # driver and mapped to which server. The variable "hostname" may
-    # contain multiple domain names, all of which are registered below.
     #
-    ns_section ns/module/https/servers {
-        foreach domainname $hostname {
-            ns_param $server $domainname
-        }
-        foreach address $ipaddress {
-            if {[ns_ip inany $address]} continue
-            ns_param $server $address
-        }
-        if {[dict exists $::docker::containerMapping $httpsport/tcp]} {
-            foreach {label info} $::docker::containerMapping {
-                if {$label ne "$httpsport/tcp"} continue
-                set __host [dict get $info host]
-                set __port [dict get $info port]
-                if {[ns_ip valid $__host] && [ns_ip inany $__host]} continue
-                #puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
-                ns_param $server ${__host}:${__port}
-            }
-        }
-        ns_log notice ns_configsection [ns_set format [ns_configsection ns/module/https/servers]]
+    # Register known Host header values for this driver and map them to server
+    # configurations.
+    #
+    ns_section -set $server_set ns/module/https/servers {}
+    if {[namespace exists ::docker]} {
+        ns_section -set [::docker::map_external_address_to_server $server $httpsport] ns/module/https/servers {}
     }
 }
-
-
 
 # source: openacs-config.d/30-runtime.tcl
 ######################################################################

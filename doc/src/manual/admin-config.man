@@ -24,6 +24,7 @@ command line arguments (see [term admin-maintenance]).
 
 [para]
 The NaviServer configuration file consists of multiple sections
+(defined via the [cmd ns_section] command)
 containing global configuration of the instance as well as sections for
 each server and module.  The configuration file is actually a Tcl
 script, such that a user can set variables, define procs to avoid
@@ -159,6 +160,54 @@ dictionary.  When present and non-empty, this file is sourced after applying
 the default and environment-based values and can be used for instance-specific
 variable assignments.
 
+
+[subsection {Bulk population of configuration sections}]
+
+In addition to listing parameters one by one with [cmd ns_param], a section
+can be populated from an existing [cmd ns_set] or from another configuration
+section. This is useful for sharing common parameter blocks (e.g., shared
+defaults between HTTP and HTTPS drivers) while keeping the configuration
+readable.
+
+[para]
+The [option -set] option injects the key/value pairs from the provided
+[cmd ns_set] into the target section as if they were specified via individual
+[cmd ns_param] calls. Since [cmd ns_set] is a multi-map, duplicate keys are
+preserved unless the section is defined with [option -update].
+
+[para]
+The [option -from] option injects the key/value pairs from an already-defined
+configuration section into the target section. When both [option -from] and
+[option -set] are specified, the content from [option -from] is applied first,
+followed by the content from [option -set]. The section body is evaluated last.
+
+[example_begin]
+ #
+ # Shared driver defaults (template section)
+ #
+ ns_section ns/driver/common {
+   ns_param defaultserver default
+   ns_param address       $ipaddress
+   ns_param hostname      [lb]lindex $hostname 0[rb]
+ }
+
+ #
+ # HTTP driver uses the shared defaults and overrides port
+ #
+ ns_section -update -from ns/driver/common ns/module/http {
+     ns_param port $httpport
+ }
+ 
+ #
+ # HTTPS driver uses the shared defaults and overrides port
+ #
+ ns_section -update -from ns/driver/common ns/module/https {
+     ns_param port $httpsport
+ }
+[example_end]
+
+For programmatically generated parameter blocks (e.g., derived from
+loops), [option -set] can be used with an [cmd ns_set].
 
 [subsection {Configuration structure}]
 
