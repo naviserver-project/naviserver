@@ -219,7 +219,8 @@ such as certificates, ciphers, and protocols.
 
  All TLS-related configuration parameters - such as certificates,
  ciphers, protocols, and OCSP stapling - are inherited directly from
- the referenced [term https] module.  No separate TLS directives are
+ the referenced [term https] module.  The parameter denotes a relation
+ (link) to the other section. No separate TLS directives are
  required in the [const ns/module/h3] section.
 
 [item]
