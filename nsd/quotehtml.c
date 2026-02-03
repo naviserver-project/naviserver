@@ -31,7 +31,7 @@ static void QuoteHtml(Tcl_DString *NS_RESTRICT dsPtr,
 static bool WordEndsInSemi(const char *word, size_t *lengthPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int ToUTF8(long value, char *outPtr)
+static size_t Ns_Utf8FromCodePoint(uint32_t cp, char *dst)
     NS_GNUC_NONNULL(2);
 
 static size_t EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outPtr, const char **toParse)
@@ -304,7 +304,6 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
              * Append the last chunk
              */
             Tcl_DStringAppend(dsPtr, htmlString, TCL_INDEX_NONE);
-
         }
 
         if (needEncode) {
@@ -326,48 +325,49 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
 /*
  *----------------------------------------------------------------------
  *
- * ToUTF8 --
+ * Ns_Utf8FromCodePoint --
  *
- *      Convert a unicode code point to UTF8. The function writes from 0 up to
- *      4 bytes to the output.
+ *      Encode the provided Unicode code point as UTF-8 and store the resulting
+ *      byte sequence in the buffer pointed to by dst.  The function encodes
+ *      Unicode scalar values in the range U+0000..U+10FFFF and rejects values
+ *      in the surrogate range U+D800..U+DFFF.
  *
  * Results:
- *      Returns number of bytes written to the output. The value of 0 means
- *      invalid input.
+ *      Number of UTF-8 bytes written to dst (1 to 4) on success.
+ *      0 when the code point is not a valid Unicode scalar value.
  *
- * Side effects:
- *      None.
+ * Side Effects:
+ *      Writes up to 4 bytes to dst on success.
  *
  *----------------------------------------------------------------------
  */
-
-static int
-ToUTF8(long value, char *outPtr)
+static size_t
+Ns_Utf8FromCodePoint(uint32_t cp, char *dst)
 {
-    int length = 0;
+    size_t length = 0u;
 
-    NS_NONNULL_ASSERT(outPtr != NULL);
+    NS_NONNULL_ASSERT(dst != NULL);
 
-    if(value <= 0x7F) {
-        *outPtr = (char)value;
+    if(cp <= 0x7F) {
+        *dst = (char)cp;
         length = 1;
 
-    } else if (value <= 0x7FF) {
-        *outPtr++ = (char)(((value >> 6) & 0x1F) | 0xC0);
-        *outPtr++ = (char)(((value >> 0) & 0x3F) | 0x80);
+    } else if (cp <= 0x7FF) {
+        *dst++ = (char)(((cp >> 6) & 0x1F) | 0xC0);
+        *dst++ = (char)(((cp >> 0) & 0x3F) | 0x80);
         length = 2;
 
-    } else if (value <= 0xFFFF) {
-        *outPtr++ = (char) (((value >> 12) & 0x0F) | 0xE0);
-        *outPtr++ = (char) (((value >>  6) & 0x3F) | 0x80);
-        *outPtr++ = (char) (((value >>  0) & 0x3F) | 0x80);
+    } else if (cp <= 0xFFFF) {
+        *dst++ = (char) (((cp >> 12) & 0x0F) | 0xE0);
+        *dst++ = (char) (((cp >>  6) & 0x3F) | 0x80);
+        *dst++ = (char) (((cp >>  0) & 0x3F) | 0x80);
         length = 3;
 
-    } else if (value <= 0x10FFFF) {
-        *outPtr++ = (char) (((value >> 18) & 0x07) | 0xF0);
-        *outPtr++ = (char) (((value >> 12) & 0x3F) | 0x80);
-        *outPtr++ = (char) (((value >>  6) & 0x3F) | 0x80);
-        *outPtr++ = (char) (((value >>  0) & 0x3F) | 0x80);
+    } else if (cp <= 0x10FFFF) {
+        *dst++ = (char) (((cp >> 18) & 0x07) | 0xF0);
+        *dst++ = (char) (((cp >> 12) & 0x3F) | 0x80);
+        *dst++ = (char) (((cp >>  6) & 0x3F) | 0x80);
+        *dst++ = (char) (((cp >>  0) & 0x3F) | 0x80);
         length = 4;
     } else {
         length = 0;
@@ -2669,6 +2669,60 @@ static bool InitOnce(void) {
     return NS_TRUE;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_StrToULongStrict --
+ *
+ *      Convert a NUL-terminated string to an unsigned long using strtoul()
+ *      with strict validation. The conversion is performed with the specified
+ *      base and requires that at least one digit is consumed and that the
+ *      entire input string is consumed (i.e., no trailing characters).
+ *
+ *      This function uses errno to detect range errors. Since the C library
+ *      does not guarantee that errno is cleared on successful conversion,
+ *      errno is set to 0 prior to calling strtoul() and ERANGE is checked
+ *      afterwards.
+ *
+ * Results:
+ *      NS_TRUE on successful conversion with *valuePtr set.
+ *      NS_FALSE if no digits were found, trailing characters were present,
+ *      or the value overflowed/underflowed the representable range.
+ *
+ * Side Effects:
+ *      May set errno (via strtoul()).
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+Ns_StrToULongNStrict(const char *s, size_t len, int base, unsigned long *valuePtr)
+{
+    char buf[32]; /* enough for entity numbers; adjust as needed */
+    char *end;
+    unsigned long v;
+
+    NS_NONNULL_ASSERT(s != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
+
+    if (len == 0 || len >= sizeof(buf)) {
+        return NS_FALSE;
+    }
+    memcpy(buf, s, len);
+    buf[len] = '\0';
+
+    errno = 0;
+    v = strtoul(buf, &end, base);
+
+    if (end == buf
+        || *end != '\0'
+        || errno == ERANGE) {
+        return NS_FALSE;
+    } else {
+        *valuePtr = v;
+    }
+    return NS_TRUE;
+}
+
 static size_t
 EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outPtr, const char **toParse)
 {
@@ -2687,34 +2741,39 @@ EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outP
      * Handle numeric entities.
      */
     if (*entity == '#' && length > 0) {
-        long value;
+        unsigned long value;
 
-        if (CHARTYPE(digit, *(entity + 1)) != 0) {
+        if (CHARTYPE(digit, *(entity + 1)) != 0
+            && Ns_StrToULongNStrict(entity + 1, (size_t)length - 1, 10, &value)) {
             /*
-             * Decimal numeric entity.
+             * Decimal numeric entity OK.
              */
-            value = strtol(entity + 1, NULL, 10);
 
-        } else if (*(entity + 1) == 'x' && length >= 3 && length <= 8) {
+        } else if (*(entity + 1) == 'x' && length >= 3 && length <= 8
+                   && Ns_StrToULongNStrict(entity + 2, (size_t)length - 2, 16, &value)) {
             /*
-             * Hexadecimal numeric entity.
+             * Hexadecimal numeric entity OK.
              */
-            value = strtol(entity + 2, NULL, 16);
 
         } else {
             Ns_Log(Warning, "invalid numeric entity: '%s'", entity);
             value = 0;
         }
 
-        if (value >= 32) {
-            decoded = (size_t)ToUTF8(value, outPtr);
+        if (value >= 32 &&  value <= 0x10FFFFul) {
+            decoded = Ns_Utf8FromCodePoint((uint32_t)value, outPtr);
+            if (unlikely(decoded == 0)) {
+                Ns_Log(Notice, "entity decode: ignore invalid unicode scalar value %ld",
+                       value);
 
-            Ns_Log(Debug, "entity decode: code point %.2lx %.2lx "
-                   "corresponds to %ld UTF-8 characters",
-                   ((value >> 8) & 0xff), (value & 0xff), decoded);
+            } else {
+                Ns_Log(Debug, "entity decode: code point %.2lx %.2lx "
+                       "corresponds to %ld UTF-8 characters",
+                       ((value >> 8) & 0xff), (value & 0xff), (unsigned long)decoded);
 
-            if (value > 127) {
-                *needEncodePtr = NS_TRUE;
+                if (value > 127) {
+                    *needEncodePtr = NS_TRUE;
+                }
             }
         } else {
             /*
