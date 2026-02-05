@@ -65,6 +65,8 @@ static void AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_
 static char *GetOptEnumeration(Tcl_DString *dsPtr, const Ns_SubCmdSpec *tablePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static char *ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
+    NS_GNUC_NONNULL(1, 2);
 
 static Ns_ReturnCode ObjvPreprocess(Ns_ObjvSpec **optSpecPtr, Ns_ObjvSpec *argSpec,
                                     Tcl_Interp *interp,
@@ -1264,7 +1266,6 @@ Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
              Tcl_Obj *const* objv)
@@ -1279,11 +1280,18 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
 
     if (likely(*objcPtr > 0)) {
         result = Tcl_GetIndexFromObjStruct(interp, objv[0], tablePtr,
-                                           sizeof(Ns_ObjvTable), "option",
+                                           sizeof(Ns_ObjvTable), "optioXXXXXXXXn",
                                            TCL_EXACT, &tableIdx);
         if (result == TCL_OK) {
             *dest = (int)tablePtr[tableIdx].value;
             *objcPtr -= 1;
+        } else {
+            Tcl_DString errDs;
+
+            Tcl_DStringInit(&errDs);
+            Ns_DStringPrintf(&errDs, "bad option \"%s\": must be ", Tcl_GetString(objv[0]));
+            ObjvTablePrintSentence(&errDs, tablePtr);
+            Tcl_DStringResult(interp, &errDs);
         }
     } else {
         Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
@@ -2090,13 +2098,82 @@ AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
  */
 char *Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
 {
-    const char *key;
-
+    const char  *key;
+    unsigned int lastValue = 0;
+    bool         first = NS_TRUE;
     for (key = values->key; key != NULL; key = (++values)->key) {
+        if (!first && lastValue == values->value) {
+            continue;
+        }
         Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
         Tcl_DStringAppend(dsPtr, "|", 1);
+        lastValue = values->value;
+        first = NS_FALSE;
     }
     Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
+    return dsPtr->string;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvTablePrintSentence --
+ *
+ *      Append enumeration strings from Ns_ObjvTable to Tcl_DString
+ *      in style of an sentence (i.e., with comma, and "or")
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updating Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
+{
+    size_t       n = 0u;
+    bool         first = NS_TRUE;
+    unsigned int lastValue = 0u;
+    const Ns_ObjvTable *v;
+
+    for (v = values; v->key != NULL; ++v) {
+        if (!first && v->value == lastValue) {
+            continue;
+        }
+        ++n;
+        lastValue = v->value;
+        first = NS_FALSE;
+    }
+
+    if (n == 0u) {
+        return dsPtr->string;
+    } else {
+        size_t i;
+
+        first = NS_TRUE;
+        lastValue = 0u;
+
+        for (v = values, i = 0u; v->key != NULL; ++v) {
+            if (!first && v->value == lastValue) {
+                continue;
+            }
+            ++i;
+
+            if (i == n) {
+                Tcl_DStringAppend(dsPtr, ", or ", 5);
+            } else if (i > 1u) {
+                Tcl_DStringAppend(dsPtr, ", ", 2);
+            }
+
+            Tcl_DStringAppend(dsPtr, v->key, TCL_INDEX_NONE);
+
+            lastValue = v->value;
+            first = NS_FALSE;
+        }
+    }
+
     return dsPtr->string;
 }
 
