@@ -68,7 +68,7 @@ test:    $(TESTDIRS:%=test-%)
 
 # One recursive call per subdir/goal, delegate test to selected subdirs
 all-%:
-	@+$(MAKE) -s $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* all
+	@+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* all
 install-%:
 	@+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* install
 clean-%:
