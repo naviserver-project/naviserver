@@ -19,10 +19,10 @@ Two subcommands are provided:
 
 [list_begin itemized]
 
-[item] [cmd "ns_cbor decode"] decodes a single CBOR item and returns
+[item] [cmd "ns_cbor parse"] parses a single CBOR item and returns
 its Tcl representation.
 
-[item] [cmd "ns_cbor scan"] decodes a single CBOR item and
+[item] [cmd "ns_cbor parse -scan"] parses a single CBOR item and
 additionally returns the number of bytes consumed from the input.
 
 [list_end]
@@ -31,13 +31,14 @@ additionally returns the number of bytes consumed from the input.
 
 [list_begin definitions]
 
-[call [cmd "ns_cbor decode"] \
+[call [cmd "ns_cbor parse"] \
         [opt [option "-binary"]] \
         [opt [option "-encoding hex|base64url|base64|binary"]] \
+        [opt [option "-scan"]] \
         [opt --] \
         [arg value]]
 
-Decode a single CBOR item from [arg value] and return the decoded Tcl value.
+Parse a single CBOR item from [arg value] and return the parsed Tcl value.
 
 [para]CBOR major types are mapped as follows:
 
@@ -52,19 +53,13 @@ Decode a single CBOR item from [arg value] and return the decoded Tcl value.
        are returned as the corresponding Tcl boolean or empty value.
 [list_end]
 
-Only a single CBOR item is decoded. Any trailing data in the input is ignored.
+Only a single CBOR item is parsed. Any trailing data in the input is
+ignored.
 
-[call [cmd "ns_cbor scan"] \
-        [opt [option "-binary"]] \
-        [opt [option "-encoding hex|base64url|base64|binary"]] \
-        [opt --] \
-        [arg value]]
-
-[para] Decode a single CBOR item from [arg value] and return a
-two-element list. The first element is the decoded Tcl value, and the
+[para] When the option [option -scan] is used the result is a
+two-element list. The first element is the parsed Tcl value, and the
 second element is the number of bytes consumed from the input.
-
-This subcommand is useful when parsing CBOR data embedded inside
+This option is useful when parsing CBOR data embedded inside
 larger binary structures, such as WebAuthn [term authenticatorData] or
 COSE structures.
 
@@ -83,7 +78,7 @@ CBOR data obtained from binary protocols or base64/base64url decoding.
 [opt_def -encoding hex|base64url|base64|binary]
 
 [para] Specify the output encoding used for CBOR byte string (bstr)
-values returned by the decoder. Possible encodings are:
+values returned by the parser. Possible encodings are:
 
 [list_begin itemized]
 [item] [term hex]
@@ -99,11 +94,11 @@ arrays, and maps are not affected by this option.
 
 [section EXAMPLES]
 
-Decode a CBOR map encoded as base64url
+Parse a CBOR map encoded as base64url
 [example_begin]
  set cbor_b64u "omNmbXRkbm9uZWdhdHRTdG10oA"
  set bin [lb]ns_base64urldecode -binary -- $cbor_b64u[rb]
- set value [lb]ns_cbor decode -binary -encoding binary $bin[rb]
+ set value [lb]ns_cbor parse -binary -encoding binary $bin[rb]
  ## output: fmt none attStmt {}
  
  # Access map entries
@@ -111,7 +106,7 @@ Decode a CBOR map encoded as base64url
  ## output: none
 [example_end]
 
-Decode sample authenticatorData. Note that many of the commands output binary
+Parse sample authenticatorData. Note that many of the commands output binary
 data (byte array). The final [cmd list] command provides readable data.
 [example_begin]
  # Fake authenticatorData header (37 bytes like real authData: rpIdHash(32) + flags(1) + signCount(4))
@@ -144,7 +139,7 @@ data (byte array). The final [cmd list] command provides readable data.
  append authData $cose_bin
  
  set cose_bin [lb]string range $authData $offset end[rb]
- set cose [lb]ns_cbor decode -binary -encoding binary $cose_bin[rb]
+ set cose [lb]ns_cbor parse -binary -encoding binary $cose_bin[rb]
  set x [lb]dict get $cose -2[rb]
  set y [lb]dict get $cose -3[rb]
  

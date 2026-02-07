@@ -53,7 +53,7 @@
  * Local functions defined in this file
  */
 
-static TCL_OBJCMDPROC_T   CborDecodeObjCmd;
+static TCL_OBJCMDPROC_T   CborParseObjCmd;
 
 static int
 CborNeed(Tcl_Interp *interp, const uint8_t *p, const uint8_t *end, size_t n)
@@ -532,7 +532,7 @@ CborDecodeAny(Tcl_Interp *interp, const uint8_t **pPtr, const uint8_t *end,
 /*
  *----------------------------------------------------------------------
  *
- * CborDecodeObjCmd --
+ * CborParseObjCmd --
  *
  *      Implements both "ns_cbor decode" and "ns_cbor scan". Parses options,
  *      decodes a single CBOR item from the input object, and returns either
@@ -573,15 +573,16 @@ CborDecodeAny(Tcl_Interp *interp, const uint8_t **pPtr, const uint8_t *end,
  */
 
 static int
-CborDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+CborParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int result, isBinary = 0, encodingInt = -1;
+    int result, isBinary = 0, encodingInt = -1, isScan = 0;
     Tcl_Obj *cborObj;
 
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,  &isBinary,    INT2PTR(NS_TRUE)},
         {"-encoding", Ns_ObjvIndex, &encodingInt, NS_binaryencodings},
+        {"-scan",     Ns_ObjvBool,  &isScan,      INT2PTR(NS_TRUE)},
         {"--",        Ns_ObjvBreak, NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -611,11 +612,29 @@ CborDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         result = CborDecodeAny(interp, &p, end, 0, encoding, &scratchDs, &resultObj);
         if (result == TCL_OK) {
-            const char  *subcmdName = Tcl_GetString(objv[1]);
-
-            if (*subcmdName == 'd') {
+            const char *subcmdName = Tcl_GetString(objv[1]);
+            
+            if (*subcmdName == 's') {
+                isScan = 1;
+            }
+            /*
+             * 5.1 prerelease handling. Should be removed after the 5.1 release.
+             */
+            switch (*subcmdName) {
+            case 's':
+                Ns_LogDeprecated(objv, 3, "ns_cbor parse -scan /value/", NULL);
+                break;
+            case 'd':
+                Ns_LogDeprecated(objv, 3, "ns_cbor parse /value/", NULL);
+                break;
+            default:
+                break;
+            }
+            
+            if (!isScan) {
                 Tcl_SetObjResult(interp, resultObj);
-            } else /* if (*subcmdName == 's') */ {
+
+            } else {
                 Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
                 Tcl_ListObjAppendElement(interp, listObj, resultObj);
@@ -635,7 +654,7 @@ CborDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  * NsTclCborObjCmd --
  *
  *      This command implements the "ns_cbor" command, dispatches the
- *      subcommands "decode" and "scan" to CborDecodeObjCmd via
+ *      subcommands "decode" and "scan" to CborParseObjCmd via
  *      Ns_SubcmdObjv().
  *
  * Results:
@@ -651,8 +670,9 @@ int
 NsTclCborObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-        {"decode", CborDecodeObjCmd},
-        {"scan",   CborDecodeObjCmd},
+        {"parse",  CborParseObjCmd},
+        {"decode", CborParseObjCmd},
+        {"scan",   CborParseObjCmd},
         {NULL, NULL}
     };
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
