@@ -562,10 +562,14 @@ NsInitInfo(void)
     Tcl_DStringFree(&addr);
 
 
-#if !(defined _MSC_VER || defined __MINGW32__)    
+#if !(defined _MSC_VER || defined __MINGW32__)
     {
+# ifndef __APPLE__
         char *preloadString = getenv("LD_PRELOAD");
-
+# else
+        preloadString = getenv("DYLD_INSERT_LIBRARIES");
+#endif
+        //Ns_Log(Notice, "================================ preloadString <%s>", preloadString);
         if (preloadString != NULL) {
             Tcl_DString ds;
             char       *token;
