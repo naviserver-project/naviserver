@@ -3457,6 +3457,13 @@ NsSockErrorCodeString(unsigned long errorCode, char *buffer, size_t bufferSize)
 
 NS_EXTERN const char *Ns_FilterTypeString(Ns_FilterType when);
 
+NS_EXTERN size_t Ns_Utf8FromCodePoint(uint32_t cp, char *dst)
+    NS_GNUC_NONNULL(2);
+
+NS_EXTERN bool Ns_StrToULongNStrict(const char *s, size_t len, int base, unsigned long *valuePtr)
+    NS_GNUC_NONNULL(1,4);
+
+
 /*
  * tclcallbacks.c:
  */
@@ -3607,6 +3614,7 @@ Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString,
                       const char *hostString,
                       unsigned short port, unsigned short defPort)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
 
 /*
  * tclmisc.c

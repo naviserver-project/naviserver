@@ -286,6 +286,60 @@ Ns_StrToWideInt(const char *chars, Tcl_WideInt *intPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_StrToULongStrict --
+ *
+ *      Convert a NUL-terminated string to an unsigned long using strtoul()
+ *      with strict validation. The conversion is performed with the specified
+ *      base and requires that at least one digit is consumed and that the
+ *      entire input string is consumed (i.e., no trailing characters).
+ *
+ *      This function uses errno to detect range errors. Since the C library
+ *      does not guarantee that errno is cleared on successful conversion,
+ *      errno is set to 0 prior to calling strtoul() and ERANGE is checked
+ *      afterwards.
+ *
+ * Results:
+ *      NS_TRUE on successful conversion with *valuePtr set.
+ *      NS_FALSE if no digits were found, trailing characters were present,
+ *      or the value overflowed/underflowed the representable range.
+ *
+ * Side Effects:
+ *      May set errno (via strtoul()).
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_StrToULongNStrict(const char *s, size_t len, int base, unsigned long *valuePtr)
+{
+    char buf[32]; /* enough for entity numbers; adjust as needed */
+    char *end;
+    unsigned long v;
+
+    NS_NONNULL_ASSERT(s != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
+
+    if (len == 0 || len >= sizeof(buf)) {
+        return NS_FALSE;
+    }
+    memcpy(buf, s, len);
+    buf[len] = '\0';
+
+    errno = 0;
+    v = strtoul(buf, &end, base);
+
+    if (end == buf
+        || *end != '\0'
+        || errno == ERANGE) {
+        return NS_FALSE;
+    } else {
+        *valuePtr = v;
+    }
+    return NS_TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_StrToMemUnit --
  *
  *      Attempt to convert the string value to a memory unit value
@@ -868,6 +922,59 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
             }
         }
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_Utf8FromCodePoint --
+ *
+ *      Encode the provided Unicode code point as UTF-8 and store the resulting
+ *      byte sequence in the buffer pointed to by dst.  The function encodes
+ *      Unicode scalar values in the range U+0000..U+10FFFF and rejects values
+ *      in the surrogate range U+D800..U+DFFF.
+ *
+ * Results:
+ *      Number of UTF-8 bytes written to dst (1 to 4) on success.
+ *      0 when the code point is not a valid Unicode scalar value.
+ *
+ * Side Effects:
+ *      Writes up to 4 bytes to dst on success.
+ *
+ *----------------------------------------------------------------------
+ */
+size_t
+Ns_Utf8FromCodePoint(uint32_t cp, char *dst)
+{
+    size_t length = 0u;
+
+    NS_NONNULL_ASSERT(dst != NULL);
+
+    if(cp <= 0x7F) {
+        *dst = (char)cp;
+        length = 1;
+
+    } else if (cp <= 0x7FF) {
+        *dst++ = (char)(((cp >> 6) & 0x1F) | 0xC0);
+        *dst++ = (char)(((cp >> 0) & 0x3F) | 0x80);
+        length = 2;
+
+    } else if (cp <= 0xFFFF) {
+        *dst++ = (char) (((cp >> 12) & 0x0F) | 0xE0);
+        *dst++ = (char) (((cp >>  6) & 0x3F) | 0x80);
+        *dst++ = (char) (((cp >>  0) & 0x3F) | 0x80);
+        length = 3;
+
+    } else if (cp <= 0x10FFFF) {
+        *dst++ = (char) (((cp >> 18) & 0x07) | 0xF0);
+        *dst++ = (char) (((cp >> 12) & 0x3F) | 0x80);
+        *dst++ = (char) (((cp >>  6) & 0x3F) | 0x80);
+        *dst++ = (char) (((cp >>  0) & 0x3F) | 0x80);
+        length = 4;
+    } else {
+        length = 0;
+    }
+    return length;
 }
 
 /*
