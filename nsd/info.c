@@ -567,7 +567,7 @@ NsInitInfo(void)
 # ifndef __APPLE__
         char *preloadString = getenv("LD_PRELOAD");
 # else
-        preloadString = getenv("DYLD_INSERT_LIBRARIES");
+        char *preloadString = getenv("DYLD_INSERT_LIBRARIES");
 #endif
         //Ns_Log(Notice, "================================ preloadString <%s>", preloadString);
         if (preloadString != NULL) {
