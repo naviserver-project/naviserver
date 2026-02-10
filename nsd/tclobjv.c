@@ -320,6 +320,8 @@ ObjvPreprocess(Ns_ObjvSpec **optSpecPtr, Ns_ObjvSpec *argSpec,
                 Ns_TclPrintfResult(interp, "too many options");
                 return NS_ERROR;
             }
+#else
+            (void)interp;
 #endif
             Tcl_DStringSetLength(optDsPtr, (int)nopts);
             *optFlagsPtr = (unsigned char *)optDsPtr->string;

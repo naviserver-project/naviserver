@@ -37,6 +37,14 @@
 # define NS_ISNAN(x)    isnan(x)
 #endif
 
+#ifndef TCL_HASH_TYPE
+#if TCL_MAJOR_VERSION > 8
+#  define TCL_HASH_TYPE size_t
+#else
+#  define TCL_HASH_TYPE unsigned
+#endif
+#endif
+
 #define NS_JSON_NULL_SENTINEL "__NS_JSON_NULL__"
 #define NS_JSON_NULL_SENTINEL_LEN (sizeof(NS_JSON_NULL_SENTINEL) - 1)
 
@@ -549,7 +557,7 @@ JsonKeyAlloc(JsonParser *UNUSED(jp), const char *bytes, TCL_SIZE_T len)
     //jp->nKeyAlloc++;
 
     dst = (char *)(k + 1);
-    memcpy(dst, bytes, len);
+    memcpy(dst, bytes, (size_t)len);
     dst[len] = '\0';
 
     k->len   = len;
@@ -613,7 +621,7 @@ JsonCompareKeysProc(void *keyPtr, Tcl_HashEntry *hPtr)
  *
  *----------------------------------------------------------------------
  */
-static unsigned int
+static TCL_HASH_TYPE
 JsonHashKeyProc(Tcl_HashTable *UNUSED(tablePtr), void *keyPtr)
 {
     const JsonKey       *k = (const JsonKey *)keyPtr;
