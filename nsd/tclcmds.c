@@ -98,6 +98,7 @@ static const Cmd basicCmds[] = {
     {"ns_ip",                    NsTclIpObjCmd},
     {"ns_job",                   NsTclJobObjCmd},
     {"ns_jpegsize",              NsTclJpegSizeObjCmd},
+    {"ns_json",                  NsTclJsonObjCmd},
     {"ns_kill",                  NsTclKillObjCmd},
     {"ns_localtime",             NsTclLocalTimeObjCmd},
     {"ns_locationproc",          NsTclLocationProcObjCmd},

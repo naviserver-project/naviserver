@@ -1443,6 +1443,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclIpObjCmd,
     NsTclJobObjCmd,
     NsTclJpegSizeObjCmd,
+    NsTclJsonObjCmd,
     NsTclKillObjCmd,
     NsTclLibraryObjCmd,
     NsTclListLimitsObjCmd,

@@ -79,6 +79,7 @@
 #define NS_CONN_ZIPACCEPTED         0x10000u /* The request accepts zip compression */
 #define NS_CONN_BROTLIACCEPTED      0x20000u /* The request accept brotli compression */
 #define NS_CONN_CONTINUE            0x40000u /* The request got "Expect: 100-continue" */
+#define NS_CONN_JSONPARSED          0x80000u /* The request body was parsed to a JSON ns_set */
 #define NS_CONN_ENTITYTOOLARGE    0x0100000u /* The sent entity was too large */
 #define NS_CONN_REQUESTURITOOLONG 0x0200000u /* Request-URI too long */
 #define NS_CONN_LINETOOLONG       0x0400000u /* Request header line too long */
@@ -297,6 +298,31 @@ typedef int Ns_LogSeverity;
 typedef enum {
     Preserve, ToLower, ToUpper
 } Ns_HeaderCaseDisposition;
+
+
+/*
+ * typedefs and enums for JSON parsing
+ */
+typedef enum {
+    NS_JSON_OUTPUT_DICT = 0u,
+    NS_JSON_OUTPUT_TRIPLES,
+    NS_JSON_OUTPUT_NS_SET
+} Ns_JsonOutput;
+
+typedef enum {
+    NS_JSON_TOP_ANY= 0u,
+    NS_JSON_TOP_CONTAINER
+} Ns_JsonTop;
+
+typedef struct {
+    int maxDepth;
+    int maxContainer;
+    int validateNumbers;
+    size_t maxString;
+    Ns_JsonOutput output;
+    Ns_JsonTop top;
+} Ns_JsonOptions;
+
 
 /*
  * Global variables:
@@ -3614,6 +3640,19 @@ Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString,
                       const char *hostString,
                       unsigned short port, unsigned short defPort)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+/*
+ * tcljson.c
+ */
+
+NS_EXTERN Ns_ReturnCode
+Ns_JsonParse(const unsigned char *buf, size_t len,
+             const Ns_JsonOptions *opt,
+             Tcl_Obj **resultObjPtr,
+             Ns_Set *setPtr,
+             size_t *consumedPtr,
+             Tcl_DString *errDsPtr)
+    NS_GNUC_NONNULL(1,3,6,7);
 
 
 /*

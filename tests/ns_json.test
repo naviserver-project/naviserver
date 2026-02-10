@@ -1,0 +1,1184 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+
+try {set curl [exec curl -V]} on error errorMsg {set curl ""}
+testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
+set devnull [expr {$::tcl_platform(platform) eq "windows" ? "NUL:" : "/dev/null"}]
+
+if {[ns_config test listenport] ne ""} {
+    testConstraint serverListen true
+}
+
+#######################################################################################
+#  test ns_json syntax
+#######################################################################################
+
+test ns_json-1.0 {syntax: ns_json} -body {
+    ns_json
+} -returnCodes error -result {wrong # args: should be "ns_json isnull|keydecode|keyencode|keyinfo|parse|value ?/arg .../"}
+
+test ns_json-1.1 {syntax: ns_json subcommand} -body {
+    ns_json x
+} -returnCodes error -result {ns_json: bad subcommand "x": must be isnull, keydecode, keyencode, keyinfo, parse, or value}
+
+test ns_json-1.2 {syntax: ns_json parse} -body {
+    ns_json parse
+} -returnCodes error -result {wrong # args: should be "ns_json parse ?-output dict|triples|set? ?-scan? ?-top any|container? ?-validatenumbers? ?-maxdepth /integer[1,MAX]/? ?-maxstring /integer[0,MAX]/? ?-maxcontainer /integer[0,MAX]/? ?--? /value/"}
+
+test ns_json-1.3 {syntax: bad -output value} -body {
+    ns_json parse -output foo -- {}
+} -returnCodes error -result {bad option "foo": must be dict, triples, or set}
+
+test ns_json-1.4 {syntax: -output needs argument} -body {
+    ns_json parse -output
+} -returnCodes {error ok} -result {missing argument to -output}
+
+test ns_json-1.6 {syntax: unknown option} -body {
+    ns_json parse -bogus -- {}
+} -returnCodes error -result {wrong # args: should be "ns_json parse ?-output dict|triples|set? ?-scan? ?-top any|container? ?-validatenumbers? ?-maxdepth /integer[1,MAX]/? ?-maxstring /integer[0,MAX]/? ?-maxcontainer /integer[0,MAX]/? ?--? /value/"}
+
+test ns_json-1.7 {syntax: -- separates options from value} -body {
+    # value looks like an option, must be treated as data after --
+    ns_json parse -- "-output"
+} -returnCodes error -result {ns_json: parse error at byte 1: expected digit after '-'}
+
+test ns_json-1.7 {syntax: -- ns_json value} -body {
+    ns_json value
+} -returnCodes error -result {wrong # args: should be "ns_json value ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?-validatenumbers? ?--? /value/"}
+
+test ns_json-1.8 {syntax: -- ns_json isnull} -body {
+    ns_json isnull
+} -returnCodes error -result {wrong # args: should be "ns_json isnull /value/"}
+
+test ns_json-1.9 {syntax: -- ns_json keyinfo} -body {
+    ns_json keyinfo
+} -returnCodes error -result {wrong # args: should be "ns_json keyinfo /key/"}
+
+test ns_json-1.10 {syntax: -- ns_json keyencode} -body {
+    ns_json keyencode
+} -returnCodes error -result {wrong # args: should be "ns_json keyencode /string/"}
+
+test ns_json-1.11 {syntax: -- ns_json keydecode} -body {
+    ns_json keydecode
+} -returnCodes error -result {wrong # args: should be "ns_json keydecode /string/"}
+
+
+#######################################################################################
+#  test ns_json parse/scan basic behavior
+#######################################################################################
+
+test ns_json-2.0 {parse object (dict output)} -body {
+    ns_json parse {{"a":1,"b":true}}
+} -result {a 1 b true}
+
+test ns_json-2.1 {parse array (dict output)} -body {
+    ns_json parse {[1,"x",null]}
+} -result {1 x __NS_JSON_NULL__}
+
+test ns_json-2.2 {parse scalar (dict output)} -body {
+    ns_json parse {true}
+} -result true
+
+test ns_json-2.3 {parse object (triples output)} -body {
+    ns_json parse -output triples {{"a":1,"b":true}}
+} -result {a number 1 b boolean true}
+
+test ns_json-2.4 {parse array (triples output)} -body {
+    ns_json parse -output triples {[1,"x",null]}
+} -result {0 number 1 1 string x 2 null __NS_JSON_NULL__}
+
+test ns_json-2.5 {parse scalar (triples output, empty name envelope)} -body {
+    ns_json parse -output triples {true}
+} -result {{} boolean true}
+
+test ns_json-2.7 {parse rejects trailing data} -body {
+    ns_json parse {{"a":1}{"b":2}}
+} -returnCodes error -result {ns_json parse: trailing data at byte 7}
+
+test ns_json-2.8 {parse -scan returns value and bytes_consumed (object)} -body {
+    ns_json parse -scan {{"a":1}{"b":2}}
+} -result {{a 1} 7}
+
+test ns_json-2.9 {parse to dict, more real-world example} -body  {
+    ns_json parse {{    "Image": {
+        "Width":  800,
+        "Height": 600,
+        "Title":  "View from 15th Floor",
+        "Thumbnail": {
+            "Url":    "http://www.example.com/image/481989943",
+            "Height": 125,
+            "Width":  "100"
+        },
+        "IDs": [116, 943, 234, 38793]
+    }}}
+} -result {Image {Width 800 Height 600 Title {View from 15th Floor} Thumbnail {Url http://www.example.com/image/481989943 Height 125 Width 100} IDs {116 943 234 38793}}}
+
+test ns_json-2.10 {scan includes leading whitespace in bytes_consumed} -body {
+    # leading ws (3 bytes), object ends at byte 10: "   {"a":1}"
+    ns_json parse -scan {   {"a":1}{"b":2}}
+} -result {{a 1} 10}
+
+test ns_json-2.11 {parse null (dict output uses sentinel)} -body {
+    ns_json parse {null}
+} -result __NS_JSON_NULL__
+
+test ns_json-2.12 {isnull detects sentinel} -body {
+    ns_json isnull [ns_json parse {null}]
+} -result 1
+
+test ns_json-2.13 {isnull rejects normal strings} -body {
+    list [ns_json isnull null] [ns_json isnull __NS_JSON_NULL__x]
+} -result {0 0}
+
+#######################################################################################
+#  test ns_json nesting in triples
+#######################################################################################
+
+test ns_json-3.0 {triples nesting: object contains array} -body {
+    ns_json parse -output triples {{"x":[1,2]}}
+} -result {x array {0 number 1 1 number 2}}
+
+test ns_json-3.1 {triples nesting: array contains object} -body {
+    ns_json parse -output triples {[{"k":"v"},3]}
+} -result {0 object {k string v} 1 number 3}
+
+#######################################################################################
+#  test ns_json number modes (sanity)
+#######################################################################################
+
+test ns_json-4.0 {integer number} -body {
+    ns_json parse -output triples {1}
+} -result {{} number 1}
+
+test ns_json-4.1 {float number} -body {
+    ns_json parse -output triples {1.25}
+} -result {{} number 1.25}
+
+test ns_json-4.2 {number preserves lexemes} -body {
+    ns_json parse -output triples {1e+03}
+} -result {{} number 1e+03}
+
+#######################################################################################
+#  test ns_json basic parse errors
+#######################################################################################
+
+test ns_json-5.0 {parse error: unterminated string} -body {
+    ns_json parse {"abc} ;# "
+} -returnCodes error -result {ns_json: parse error at byte 4: unterminated string}
+
+test ns_json-5.1 {parse error: trailing comma in array} -body {
+    ns_json parse {[1,]}
+} -returnCodes error -result {ns_json: parse error at byte 3: unexpected character ']'}
+
+#######################################################################################
+#  test ns_json -output set
+#######################################################################################
+
+test ns_json-6.0 {syntax: -output set accepted} -body {
+    # Just make sure option value is accepted and returns a set handle.
+    set s [ns_json parse -output set {{"a":1}}]
+    expr {[string length $s] > 0}
+} -returnCodes {error ok} -result 1
+
+test ns_json-6.1 {output set: flat object values and .type sidecars} -body {
+    set s [ns_json parse -output set {{"a":1,"b":true,"c":"x"}}]
+    list \
+        [ns_set get $s a]        [ns_set get $s a.type] \
+        [ns_set get $s b]        [ns_set get $s b.type] \
+        [ns_set get $s c]        [ns_set get $s c.type]
+} -returnCodes {error ok} -result {1 number true boolean x string}
+
+test ns_json-6.2 {output set: nested object + array paths} -body {
+    set s [ns_json parse -output set {{"x":{"y":"z"},"arr":[10,20]}}]
+    list \
+        [ns_set get $s x/y]      [ns_set get $s x/y.type] \
+        [ns_set get $s arr/0]    [ns_set get $s arr/0.type] \
+        [ns_set get $s arr/1]    [ns_set get $s arr/1.type]
+} -result {z string 10 number 20 number}
+
+test ns_json-6.3 {output set: null emits only .type (no value key)} -body {
+    set s [ns_json parse -output set {{"n":null}}]
+    # ns_set find returns -1 when key does not exist
+    list \
+        [ns_set find $s n] \
+        [ns_set get  $s n.type]
+} -result {1 null}
+
+test ns_json-6.4 {output set: escape '.', '/', '~' in keys via ~2/~1/~0} -body {
+    set s [ns_json parse -output set {{"a.b":"dot","a/b":"slash","a~b":"tilde"}}]
+    list \
+        [ns_set get $s a~2b]     [ns_set get $s a~2b.type] \
+        [ns_set get $s a~1b]     [ns_set get $s a~1b.type] \
+        [ns_set get $s a~0b]     [ns_set get $s a~0b.type]
+} -result {dot string slash string tilde string}
+
+test ns_json-6.5 {output set: empty containers get marker .type in nested position} -body {
+    set s [ns_json parse -output set {{"o":{},"a":[]}}]
+    list \
+        [ns_set find $s o]       [ns_set get $s o.type] \
+        [ns_set find $s a]       [ns_set get $s a.type]
+} -result {-1 object -1 array}
+
+
+#######################################################################################
+#  test ns_json keyinfo/keyencode/keydecode
+#######################################################################################
+
+test ns_json-7.0 {keyinfo: .type sidecar} -body {
+    ns_json keyinfo a~2b.type
+} -result {key a.b field type}
+
+test ns_json-7.1 {keyinfo: non-sidecar key with escaped slash} -body {
+    ns_json keyinfo x/y~1z
+} -result {key x/y/z field {}}
+
+test ns_json-7.2 {keyinfo splits .type and unescapes} -body {
+    ns_json keyinfo {a~2b/type~1x.type}
+} -result {key a.b/type/x field type}
+
+test ns_json-7.3 {keyencode/keydecode roundtrip} -body {
+    set s {a.b/~/x}
+    set e [ns_json keyencode $s]
+    list $e [ns_json keydecode $e]
+} -result {a~2b~1~0~1x a.b/~/x}
+
+#######################################################################################
+#  test ns_json value
+#######################################################################################
+
+test ns_json-value-1.0 {syntax: ns_json value} -body {
+    ns_json value
+} -returnCodes error -result {wrong # args: should be "ns_json value ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?-validatenumbers? ?--? /value/"}
+
+test ns_json-value-1.1 {syntax: missing -type argument} -body {
+    ns_json value -type
+} -returnCodes {error ok} -result {missing argument to -type}
+
+test ns_json-value-1.2 {syntax: bad -type value} -body {
+    ns_json value -type foo -- 1
+} -returnCodes error -result {bad option "foo": must be auto, string, number, boolean, null, object, or array}
+
+test ns_json-value-1.3 {syntax: -- separates options from value} -body {
+    ns_json value -type string -- -type
+} -result {"-type"}
+
+
+test ns_json-value-2.0 {value: string escaping (quotes/backslash)} -body {
+    ns_json value -type string {a"b\c}  ;#"
+} -result {"a\"b\\c"}
+
+test ns_json-value-2.1 {value: string escaping (control chars)} -body {
+    # newline and tab must be escaped
+    ns_json value -type string "a\n\tb"
+} -result {"a\n\tb"}
+
+test ns_json-value-2.2 {value: int} -body {
+    ns_json value -type int 12
+}  -returnCodes {error ok} -result {bad option "int": must be auto, string, number, boolean, null, object, or array}
+
+test ns_json-value-2.3 {value: bool true/false} -body {
+    list [ns_json value -type bool 1] [ns_json value -type bool 0]
+} -result {true false}
+
+test ns_json-value-2.4 {value: null ignores provided value} -body {
+    ns_json value -type null "anything"
+} -result {null}
+
+test ns_json-value-2.5 {value: number lexeme preserved} -body {
+    ns_json value -type number 1e+03
+} -result {1e+03}
+
+test ns_json-value-2.6 {value: string type for integer} -body {
+    ns_json value -type string 123
+} -result {"123"}
+
+test ns_json-value-2.7 {value: boolean type} -body {
+    ns_json value -type bool 1
+} -result {true}
+
+test ns_json-value-2.8 {value: number with -validatenumbers} -body {
+    ns_json value -validatenumbers -type number 123
+} -returnCodes {error ok} -result {123}
+
+test ns_json-value-2.9 {value: number with -validatenumbers} -body {
+    ns_json value -validatenumbers -type number NaN
+} -returnCodes {error ok} -result {ns_json: parse error at byte 0: invalid number}
+
+test ns_json-value-2.10 {value: number with -validatenumbers, trailing garbage} -body {
+    ns_json value -validatenumbers -type number 123x
+} -returnCodes {error ok} -result {ns_json: invalid number lexeme: trailing characters after byte 3}
+
+
+test ns_json-value-3.0 {value: object from triples} -body {
+    set t {a number 1 b bool 1 c string x n null null}
+    ns_json value -type object $t
+} -result {{"a":1,"b":true,"c":"x","n":null}}
+
+test ns_json-value-3.1 {value: array from triples} -body {
+    set t {0 number 1 1 string x 2 null null}
+    ns_json value -type array $t
+} -result {[1,"x",null]}
+
+test ns_json-value-3.2 {value: nested containers via triples} -body {
+    # {"x":[1,2],"y":{"z":"w"}}
+    set arr {0 number 1 1 number 2}
+    set obj {z string w}
+    set t [list x array $arr y object $obj]
+    ns_json value -type object $t
+} -result {{"x":[1,2],"y":{"z":"w"}}}
+
+test ns_json-value-3.3 {value: triples list length must be multiple of 3} -body {
+    ns_json value -type object {a number}
+} -returnCodes error -match glob -result {*triples*multiple of 3*}
+
+#######################################################################################
+#  test ns_json value auto (default): numbers first, no booleans (for now)
+#######################################################################################
+
+test ns_json-value-4.0 {value auto: integer} -body {
+    ns_json value 1
+} -result {1}
+
+test ns_json-value-4.1 {value auto: zero} -body {
+    ns_json value 0
+} -result {0}
+
+test ns_json-value-4.2 {value auto: negative integer} -body {
+    ns_json value -123
+} -result {-123}
+
+test ns_json-value-4.3 {value auto: double} -body {
+    ns_json value 1.5
+} -result {1.5}
+
+test ns_json-value-4.4 {value auto: exponent} -body {
+    ns_json value 1e+03
+} -result {1e+03}
+
+test ns_json-value-4.5 {value auto: leading zero is not a valid integer for RFC 8259, so fall back to string} -body {
+    ns_json value 01
+} -result {"01"}
+
+test ns_json-value-4.6 {value auto: boolean-like text stays string (for now)} -body {
+    list [ns_json value true] [ns_json value false] [ns_json value t] [ns_json value f] [ns_json value on] [ns_json value off]
+} -result {true false true false true false}
+
+#######################################################################################
+#  test ns_json strings
+#######################################################################################
+
+test ns_json-strings-1.0 {string: rejects unescaped control char} -body {
+    ns_json parse "\"a\nb\""
+} -returnCodes error -match glob -result {*control*}
+
+test ns_json-strings-1.1 {string: invalid escape} -body {
+    ns_json parse "\"\\q\""
+} -returnCodes error -match glob -result {*invalid escape*}
+
+test ns_json-strings-1.2 {string: unicode escape} -body {
+    ns_json parse "\"\\u0041\""
+} -returnCodes {error ok} -result {A}
+
+test ns_json-strings-1.3 {string: surrogate pair} -body {
+    # U+1F600 GRINNING FACE 😀
+    set s [ns_json parse "\"\\uD83D\\uDE00\""]
+    list [string length $s] [scan $s %c cp] $cp
+} -returnCodes {error ok} -result {2 1 128512}
+
+test ns_json-strings-1.4 {string: rejects invalid surrogate} -body {
+    ns_json parse "\"\\uD800\""
+} -returnCodes error -match glob -result {*surrogate*}
+
+#######################################################################################
+#  test JSON requests, parsed as ns_set similar to FORMs
+#######################################################################################
+
+test ns_json-http-1.0 {
+    HTTP/1.1 POST application/json auto-parsed to ns_conn form (simple scalars)
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set form [ns_conn form]
+        set a    [ns_set get $form a]
+        set b    [ns_set get $form b]
+        ns_return 200 application/json [ns_json value -type object \
+                                            [list a number $a b string $b]]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -returnCodes {error ok} -result {{"a":1,"b":"x"}}
+
+test ns_json-http-1.1 {
+    HTTP/1.1 POST application/json auto-parsed to ns_conn form, returning form content as list
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        ns_return 200 text/plain [ns_set array [ns_conn form]]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -returnCodes {error ok} -result {a.type number a 1 b.type string b x}
+
+test ns_json-http-1.2 {
+    HTTP/1.1 POST application/json auto-parsed to ns_conn form (simple scalars), getting types from from
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set f [ns_conn form]
+        ns_return 200 application/json \
+            [ns_json value -type object \
+                 [list a [ns_set get $f a.type] [ns_set get $f a] \
+                      b [ns_set get $f b.type] [ns_set get $f b]]]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -returnCodes {error ok} -result {{"a":1,"b":"x"}}
+
+test ns_json-http-1.3 {
+    HTTP/1.1 POST application/json via curl, UTF-8 payload; reply is JSON
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set name [ns_set get [ns_conn form] name]
+        ns_return 200 application/json [ns_json value -type object [list name string $name]]
+    }
+} -body {
+    set string {{"name":"Colchões"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"name":"Colchões"}}
+
+
+test ns_json-http-1.4 {
+    HTTP/1.1 POST application/json auto-parsed; nested keys are reachable
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set form  [ns_conn form]
+        set w     [ns_set get $form Image/Width]
+        set title [ns_set get $form Image/Title]
+        ns_return 200 application/json [ns_json value -type object \
+                                            [list w number $w title string $title]]
+    }
+} -body {
+    set string {{
+        "Image": {
+            "Width": 800,
+            "Title": "View from 15th Floor"
+        }
+    }}
+    exec curl -g -s \
+        -H "content-type: application/json" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"w":800,"title":"View from 15th Floor"}}
+
+
+test ns_json-http-1.5 {
+    HTTP/1.1 POST application/vnd.api+json auto-parsed (+json)
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        try {
+            set f [ns_conn form]
+            #ns_log notice "FORM [ns_set array $f]"
+            set a [ns_set get $f a]
+            ns_return 200 application/json \
+                [ns_json value -type object [list ok boolean true a number $a]]
+        } on error {errMsg} {
+            ns_return 400 application/json \
+                [ns_json value -type object [list ok boolean false error string $errMsg]]
+        }
+    }
+} -body {
+    set string {{"a":1}}
+    exec curl -g -s \
+        -H "content-type: application/vnd.api+json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"ok":true,"a":1}}
+
+
+test ns_json-http-1.6 {
+    HTTP/1.1 POST application/json auto-parsed (array indices in path)
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        try {
+            set f [ns_conn form]
+            set v0 [ns_set get $f IDs/0]
+            set v2 [ns_set get $f IDs/2]
+            set t0 [ns_set get $f IDs/0.type]
+            ns_return 200 application/json \
+                [ns_json value -type object [list v0 number $v0 v2 number $v2 t0 string $t0]]
+        } on error {errMsg} {
+            ns_return 400 application/json \
+                [ns_json value -type object [list ok boolean false error string $errMsg]]
+        }
+    }
+} -body {
+    set string {{"IDs":[116,943,234]}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"v0":116,"v2":234,"t0":"number"}}
+
+
+test ns_json-http-1.7 {
+    HTTP/1.1 POST application/json auto-parsed (duplicate keys preserved as multiset)
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        try {
+            set f [ns_conn form]
+            # 'ns_set get' returns first match; 'ns_set iget' is case-insensitive; neither gives all values.
+            # Use ns_set array to observe duplicates deterministically.
+            ns_return 200 text/plain [ns_set array $f]
+        } on error {errMsg} {
+            ns_return 400 application/json \
+                [ns_json value -type object [list ok boolean false error string $errMsg]]
+        }
+    }
+} -body {
+    # Two 'a' members -> should yield two 'a' values (and typically two 'a.type' entries).
+    set string {{"a":1,"a":2}}
+    exec curl -g -s \
+        -H "content-type: application/json" \
+        -H "accept: text/plain" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {a.type number a 1 a.type number a 2}
+
+
+test ns_json-http-1.8 {
+    HTTP/1.1 POST application/json auto-parsed (key contains '/' -> escaped or rejected)
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        try {
+            set f [ns_conn form]
+            # For now, we assume rejection is acceptable behavior and test for a 400 JSON error.
+            set v [ns_set get $f [ns_json  keyencode "a/b"]]
+            ns_return 200 application/json \
+                [ns_json value -type object [list ok boolean true v number $v]]
+        } on error {errMsg} {
+            ns_return 400 application/json \
+                [ns_json value -type object [list ok boolean false error string $errMsg]]
+        }
+    }
+} -body {
+    set string {{"a/b":1}}
+    exec curl -g -s \
+        -H "content-type: application/json" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"ok":true,"v":1}}
+
+
+test ns_json-http-1.9 {
+    HTTP/1.1 POST application/json auto-parsed (parse error -> 400 JSON error)
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        try {
+            # Force autoparse
+            ns_conn form
+            ns_return 200 application/json \
+                [ns_json value -type object [list ok boolean true]]
+        } on error {errMsg} {
+            ns_return 400 application/json \
+                [ns_json value -type object [list ok boolean false error string $errMsg]]
+        }
+    }
+} -body {
+    # Unterminated string
+    set string {{"a":"x}} ;# "
+    exec curl -g -s \
+        -H "content-type: application/json" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -match glob -result {{"ok":false,"error":"*unterminated string*"}}
+
+
+
+test ns_json-http-ct-1.0 {
+    HTTP/1.1 POST application/json is auto-parsed
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set f [ns_conn form]
+        if {[ns_set find $f a] >= 0} {
+            ns_return 200 application/json [ns_json value -type object {ok bool true}]
+        } else {
+            ns_return 200 application/json [ns_json value -type object {ok bool false}]
+        }
+    }
+} -body {
+    set string {{"a":1}}
+    exec curl -g -s \
+        -H "content-type: application/json" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"ok":true}}
+
+
+test ns_json-http-ct-1.1 {
+    HTTP/1.1 POST application/json; charset=utf-8 is auto-parsed
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set f [ns_conn form]
+        if {[ns_set find $f a] >= 0} {
+            ns_return 200 application/json [ns_json value -type object {ok bool true}]
+        } else {
+            ns_return 200 application/json [ns_json value -type object {ok bool false}]
+        }
+    }
+} -body {
+    set string {{"a":1}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"ok":true}}
+
+
+test ns_json-http-ct-1.2 {
+    HTTP/1.1 POST application/vnd.api+json is auto-parsed (+json)
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set f [ns_conn form]
+        if {[ns_set find $f a] >= 0} {
+            ns_return 200 application/json [ns_json value -type object {ok bool true}]
+        } else {
+            ns_return 200 application/json [ns_json value -type object {ok bool false}]
+        }
+    }
+} -body {
+    set string {{"a":1}}
+    exec curl -g -s \
+        -H "content-type: application/vnd.api+json" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"ok":true}}
+
+
+test ns_json-http-ct-1.3 {
+    HTTP/1.1 POST application/merge-patch+json is auto-parsed (+json)
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set f [ns_conn form]
+        if {[ns_set find $f a] >= 0} {
+            ns_return 200 application/json [ns_json value -type object {ok bool true}]
+        } else {
+            ns_return 200 application/json [ns_json value -type object {ok bool false}]
+        }
+    }
+} -body {
+    set string {{"a":1}}
+    exec curl -g -s \
+        -H "content-type: application/merge-patch+json" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"ok":true}}
+
+
+test ns_json-http-ct-1.4 {
+    HTTP/1.1 POST text/plain is NOT auto-parsed
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set f [ns_conn form]
+        if {[ns_set find $f a] >= 0} {
+            ns_return 200 application/json [ns_json value -type object {ok bool true}]
+        } else {
+            ns_return 200 application/json [ns_json value -type object {ok bool false}]
+        }
+    }
+} -body {
+    set string {{"a":1}}
+    exec curl -g -s \
+        -H "content-type: text/plain" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"ok":false}}
+
+#######################################################################################
+#  test ns_json keyencode/keydecode
+#######################################################################################
+
+test ns_json-key-1.0 {
+    ns_json keyencode: escapes "~" "/" "."
+} -body {
+    list \
+        [ns_json keyencode "~"] \
+        [ns_json keyencode "/"] \
+        [ns_json keyencode "."] \
+        [ns_json keyencode "a~b/c.d"]
+} -result {~0 ~1 ~2 a~0b~1c~2d}
+
+test ns_json-key-1.1 {
+    ns_json keydecode: unescapes "~0" "~1" "~2"
+} -body {
+    list \
+        [ns_json keydecode "~0"] \
+        [ns_json keydecode "~1"] \
+        [ns_json keydecode "~2"] \
+        [ns_json keydecode "a~0b~1c~2d"]
+} -result {~ / . a~b/c.d}
+
+test ns_json-key-1.2 {
+    ns_json keydecode: unknown escapes pass through literally
+} -body {
+    list \
+        [ns_json keydecode "a~3b"] \
+        [ns_json keydecode "~9"] \
+        [ns_json keydecode "x~yb"] \
+        [ns_json keydecode "~~3"] \
+} -result {a~3b ~9 x~yb ~~3}
+
+test ns_json-key-1.3 {
+    ns_json roundtrip decode(encode(x)) == x
+} -body {
+    set keys {
+        {}
+        a
+        "~"
+        "/"
+        "."
+        "a~b"
+        "a/b"
+        "a.b"
+        "a~b/c.d"
+        "~~//.."
+        "a~0b~1c~2d"
+        "a~3b"
+    }
+    set out {}
+    foreach k $keys {
+        lappend out [ns_json keydecode [ns_json keyencode $k]]
+    }
+    set out
+} -result {{} a ~ / . a~b a/b a.b a~b/c.d ~~//.. a~0b~1c~2d a~3b}
+
+test ns_json-key-1.4 {
+    ns_json encode(decode(y)) stable for properly encoded y
+} -body {
+    # last key is incorrectly encoded, so the decode return ~~
+    # literally, the encode encodes it.
+    set ys {
+        "~0"
+        "~1"
+        "~2"
+        "a~0b~1c~2d"
+        "~~0~~1~~2"
+    }
+    set out {}
+    foreach y $ys {
+        lappend out [ns_json keyencode [ns_json keydecode $y]]
+    }
+    set out
+} -result {~0 ~1 ~2 a~0b~1c~2d ~0~00~0~01~0~02}
+
+
+test ns_json-key-2.0 {
+    ns_json parse -output set: key with "." does not clash with ".type" sidecar
+} -body {
+    set JSON {{"a.b":1}}
+    set f [ns_json parse -output set $JSON]
+    # Raw stored key should be encoded (a~2b), plus sidecar (a~2b.type)
+    set v [ns_set get $f [ns_json keyencode "a.b"]]
+    set t [ns_set get $f "[ns_json keyencode "a.b"].type"]
+    ns_set free $f
+    list $v $t
+} -result {1 number}
+
+test ns_json-key-2.1 {
+    ns_json parse -output set: key with "/" is stored encoded and retrievable
+} -body {
+    set JSON {{"a/b":"x"}}
+    set f [ns_json parse -output set $JSON]
+    set v [ns_set get $f [ns_json keyencode "a/b"]]
+    set t [ns_set get $f "[ns_json keyencode "a/b"].type"]
+    ns_set free $f
+    list $v $t
+} -result {x string}
+
+test ns_json-key-2.2 {
+    ns_json parse -output set: key with "~" is stored encoded and retrievable
+} -body {
+    set JSON {{"a~b":true}}
+    set f [ns_json parse -output set $JSON]
+    set v [ns_set get $f [ns_json keyencode "a~b"]]
+    set t [ns_set get $f "[ns_json keyencode "a~b"].type"]
+    ns_set free $f
+    list $v $t
+} -result {true boolean}
+
+test ns_json-http-key-1.0 {
+    HTTP/1.1 POST application/json auto-parsed: client key "a/b" must be accessed via keyencode
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set f [ns_conn form]
+        set v [ns_set get $f [ns_json keyencode "a/b"]]
+        ns_return 200 application/json \
+            [ns_json value -type object [list ok bool true v string $v]]
+    }
+} -body {
+    set string {{"a/b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json
+} -result {{"ok":true,"v":"x"}}
+
+
+#######################################################################################
+#  test ns_json number parsing
+#######################################################################################
+
+test ns_json-numbers-1.1 {preserve numeric lexemes} -body {
+    set json {{"a":1,"b":1.0,"c":1e0,"d":-0,"e":0.000,"f":10E+02}}
+    set d [ns_json parse -output dict $json]
+    list \
+        [dict get $d a] \
+        [dict get $d b] \
+        [dict get $d c] \
+        [dict get $d d] \
+        [dict get $d e] \
+        [dict get $d f]
+} -result {1 1.0 1e0 -0 0.000 10E+02}
+
+test ns_json-numbers-1.2 {number lexemes behave as numbers in Tcl} -body {
+    set json {{"i":1,"f":1.0,"e":1e0}}
+    set d [ns_json parse -output dict $json]
+
+    set i [dict get $d i]
+    set f [dict get $d f]
+    set e [dict get $d e]
+
+    # i should look integer-like
+    set i_is_int [string is integer -strict $i]
+
+    # f/e should be usable as doubles
+    set f_d [expr {double($f)}]
+    set e_d [expr {double($e)}]
+
+    list $i_is_int $f_d $e_d
+} -result {1 1.0 1.0}
+
+
+test ns_json-numbers-1.3 {integer and float lexemes can be coerced to double} -body {
+    set json {{"i":1,"f":1.5,"e":1e0}}
+    set d [ns_json parse -output dict $json]
+
+    # Force double conversions; errors here should fail the test.
+    set i [expr {double([dict get $d i])}]
+    set f [expr {double([dict get $d f])}]
+    set e [expr {double([dict get $d e])}]
+
+    list $i $f $e
+} -result {1.0 1.5 1.0}
+
+test ns_json-numbers-1.4 {number lexeme keeps big integer} -body {
+    set json {{"big":9007199254740993}}
+    dict get [ns_json parse $json] big
+} -result {9007199254740993}
+
+test ns_json-numbers-1.5 {number lexeme keeps high number of decimals} -body {
+    set json {{"prec":0.123456789012345678901234567890}}
+    dict get [ns_json parse $json] prec
+} -result {0.123456789012345678901234567890}
+
+test ns_json-numbers-1.6 {ns_json parse with number lexemes} -body {
+    set values {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
+    lmap v $values {dict get [ns_json parse [format {{"x":%s}} $v]] x}
+} -returnCodes {error ok} -result {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
+
+test ns_json-numbers-1.7 {ns_son parse -validatenumbers with number lexemes} -body {
+    set values {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
+    lmap v $values {
+        try {dict get [ns_json parse -validatenumbers [format {{"x":%s}} $v]] x
+        } on ok {r}           { set r
+        } on error {errorMsg} { string cat ERR
+        }}
+} -returnCodes {error ok} -result {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 ERR ERR}
+
+test ns_json-numbers-1.8 {ns_json value with number lexemes} -body {
+    set values {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
+    lmap v $values {ns_json value -type number $v}
+} -result {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
+
+test ns_json-numbers-1.9 {ns_json value -validatenumbers with number lexemes} -body {
+    set values {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
+    lmap v $values {ns_json value -validatenumbers -type number $v}
+} -result {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
+
+test ns_json-numbers-2.1 {ns_json parse -validatenumbers rejects overflow to Inf} -body {
+    ns_json parse -validatenumbers {{"x":1e309}}
+} -returnCodes error -match glob -result {*not a finite Tcl double*Inf*}
+
+test ns_json-numbers-2.2 {parse -validatenumbers rejects overflow to -Inf} -body {
+    ns_json parse -validatenumbers {{"x":-1e309}}
+} -returnCodes error -match glob -result {*not a finite Tcl double*-Inf*}
+
+
+test ns_json-numbers-2.10 {value -validatenumbers rejects NaN} -body {
+    ns_json value -validatenumbers -type number NaN
+} -returnCodes error -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.11 {value -validatenumbers rejects Inf} -body {
+    ns_json value -validatenumbers -type number Inf
+} -returnCodes error -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.12 {value -validatenumbers rejects leading-zero integer} -body {
+    ns_json value -validatenumbers -type number 01
+} -returnCodes error -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.13 {value -validatenumbers rejects leading plus} -body {
+    ns_json value -validatenumbers -type number +1
+} -returnCodes error -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.14 {value -validatenumbers rejects leading decimal point} -body {
+    ns_json value -validatenumbers -type number .5
+} -returnCodes error -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.15 {value -validatenumbers rejects trailing decimal point} -body {
+    ns_json value -validatenumbers -type number 1.
+} -returnCodes error -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.16 {value -validatenumbers rejects incomplete exponent} -body {
+    ns_json value -validatenumbers -type number 1e
+} -returnCodes error -match glob -result {*invalid number*}
+
+test ns_json-auto-1.1 {value auto treats leading-zero integer as string} -body {
+    ns_json value 01
+} -result {"01"}
+
+test ns_json-numbers-2.3 {parse -validatenumbers rejects non-finite in object member} -body {
+    ns_json parse -validatenumbers {{"ok":1,"x":1e309,"after":2}}
+} -returnCodes error -match glob -result {*not a finite Tcl double*Inf*}
+
+test ns_json-numbers-2.4 {parse -validatenumbers rejects non-finite in array element} -body {
+    ns_json parse -validatenumbers {[1,1e309,2]}
+} -returnCodes error -match glob -result {*not a finite Tcl double*Inf*}
+
+test ns_json-numbers-2.5 {parse -validatenumbers rejects non-finite in nested containers} -body {
+    ns_json parse -validatenumbers {{"a":[{"x":1},{"y":1e309}]}}
+} -returnCodes {ok error} -match glob -result {*not a finite Tcl double*Inf*}
+
+test ns_json-numbers-2.20 {value -validatenumbers rejects invalid number in object triples} -body {
+    ns_json value -validatenumbers -type object {a number 01}
+} -returnCodes {ok error} -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.21 {value -validatenumbers rejects invalid number in array triples} -body {
+    ns_json value -validatenumbers -type array {0 number 01}
+} -returnCodes {ok error} -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.22 {value -validatenumbers rejects invalid number in nested containers} -body {
+    ns_json value -validatenumbers -type object {a array {0 number 1 1 number 01}}
+} -returnCodes {ok error} -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.23 {value -validatenumbers rejects invalid number in nested object inside array} -body {
+    ns_json value -validatenumbers -type array {0 object {x number 01}}
+} -returnCodes {ok error} -match glob -result {*invalid number*}
+
+test ns_json-numbers-2.24 {value -validatenumbers accepts RFC-valid huge exponent lexeme} -body {
+    ns_json value -validatenumbers -type number 1e309
+} -result {1e309}
+
+#######################################################################################
+#  test ns_json generation of JSON from triples
+#######################################################################################
+
+test ns_json-triples-1.1 {triples: NUMBER lexeme round-trip stays unquoted and lossless} -body {
+    # Use a JSON-valid number lexeme that Tcl double can't represent meaningfully (except as Inf)
+    set json {{"x":1e999999999999999999999999999999}}
+
+    # Parse JSON to triples with lexeme-preserving number handling.
+    set triples [ns_json parse -output triples $json]
+
+    # Re-materialize JSON from triples.
+    set json2 [ns_json value -type object $triples]
+
+    list $json $json2
+} -result {{{"x":1e999999999999999999999999999999}} {{"x":1e999999999999999999999999999999}}}
+
+test ns_json-triples-1.2 {triples: NUMBER lexeme is emitted literally without validation} -body {
+    # The literal NaN is intentionally not valid JSON, used to documennt the non-validating behavior.
+    ns_json value -type object {x number NaN}
+} -returnCodes {error ok}  -result {{"x":NaN}}
+
+test ns_json-triples-1.3 {triples: NUMBER lexeme is not quoted/validated} -body {
+    ns_json value -type object {x number "Hello World"}
+} -returnCodes {error ok} -result {{"x":Hello World}}
+
+#######################################################################################
+#  test ns_json generation of JSON from triples with -pretty option
+#######################################################################################
+
+test ns_json-pretty-1.1 {ns_json value -pretty formats nested containers; empty containers stay compact} -body {
+    set triples {
+        user object {
+            id    number  7
+            name  string  Alice
+            flags object  {admin boolean false active boolean true}
+        }
+        meta object {count number 2}
+        foo  object {}
+        bar  array  {}
+    }
+
+    set json [ns_json value -pretty -type object $triples]
+
+    list \
+        [string match "*\n  \"user\": \{*" $json] \
+        [string match "*\n    \"id\": 7,*" $json] \
+        [string match "*\n    \"flags\": \{*" $json] \
+        [string match "*\n      \"admin\": false,*" $json] \
+        [string match "*\n      \"active\": true*" $json] \
+        [string match "*\n  \"foo\": {},*" $json] \
+        [string match "*\n  \"bar\": []*" $json]
+
+} -result {1 1 1 1 1 1 1}
+
+
+#######################################################################################
+# ns_json parse -top any|container
+#######################################################################################
+
+# ---------------------------------------------------------------------------
+# -top any : accept any valid JSON value as the single top-level value
+# ---------------------------------------------------------------------------
+
+test ns_json-top-1.1 {-top any accepts object} -body {
+    ns_json parse -top any -output dict -- {{"a":1}}
+} -result {a 1}
+
+test ns_json-top-1.2 {-top any accepts array} -body {
+    ns_json parse -top any -output dict -- {[1,2,3]}
+} -result {1 2 3}
+
+test ns_json-top-1.3 {-top any accepts string} -body {
+    ns_json parse -top any -output dict -- {"x"}
+} -result x
+
+test ns_json-top-1.4 {-top any accepts number (lexeme preserved)} -body {
+    ns_json parse -top any -output dict -- {1.2300e+02}
+} -result {1.2300e+02}
+
+test ns_json-top-1.5 {-top any accepts true/false/null} -body {
+    list \
+        [ns_json parse -top any -output dict -- {true}] \
+        [ns_json parse -top any -output dict -- {false}] \
+        [ns_json parse -top any -output dict -- {null}]
+} -result {true false __NS_JSON_NULL__}
+
+# Whitespace around the single value is still legal.
+test ns_json-top-1.6 {-top any ignores leading/trailing whitespace} -body {
+    ns_json parse -top any -output dict -- " \n\t {\"a\": 1}\r\n "
+} -result {a 1}
+
+# ---------------------------------------------------------------------------
+# -top container : accept only object/array as the single top-level value
+# ---------------------------------------------------------------------------
+
+test ns_json-top-2.1 {-top container accepts object} -body {
+    ns_json parse -top container -output dict -- {{"a":1,"b":2}}
+} -result {a 1 b 2}
+
+test ns_json-top-2.2 {-top container accepts array} -body {
+    ns_json parse -top container -output dict -- {[true,false,null]}
+} -result {true false __NS_JSON_NULL__}
+
+test ns_json-top-2.3 {-top container accepts nested scalars inside containers} -body {
+    ns_json parse -top container -output dict -- {{"a":[1,"x",null,false,true]}}
+} -result {a {1 x __NS_JSON_NULL__ false true}}
+
+# ---------------------------------------------------------------------------
+# -top container : reject scalars at top-level
+# Keep the match conservative: we assert "parse error" and mention of top/container.
+# ---------------------------------------------------------------------------
+
+test ns_json-top-3.1 {-top container rejects null} -body {
+    ns_json parse -top container -output dict -- {null}
+} -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
+
+test ns_json-top-3.2 {-top container rejects true} -body {
+    ns_json parse -top container -output dict -- {true}
+} -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
+
+test ns_json-top-3.3 {-top container rejects false} -body {
+    ns_json parse -top container -output dict -- {false}
+} -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
+
+test ns_json-top-3.4 {-top container rejects number} -body {
+    ns_json parse -top container -output dict -- {123}
+} -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
+
+test ns_json-top-3.5 {-top container rejects string} -body {
+    ns_json parse -top container -output dict -- {"x"}
+} -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
+
+# ---------------------------------------------------------------------------
+# Smoke: -top container should not interfere with other accepted output forms
+# (only for container inputs)
+# ---------------------------------------------------------------------------
+
+test ns_json-top-4.1 {-top container with triples output on object} -body {
+    ns_json parse -top container -output triples -- {{"a":1,"b":null}}
+} -result {a number 1 b null __NS_JSON_NULL__}
+
+test ns_json-top-4.2 {-top container with triples output on array} -body {
+    ns_json parse -top container -output triples -- {[1,null,true]}
+} -result {0 number 1 1 null __NS_JSON_NULL__ 2 boolean true}
+
+cleanupTests
+return
+
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

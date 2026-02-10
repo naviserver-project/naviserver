@@ -92,6 +92,7 @@ NsDStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
         { NS_CONN_LINETOOLONG,       "LINETOOLONG" },
         { NS_CONN_CONFIGURED,        "CONFIGURED" },
         { NS_CONN_SSL_WANT_WRITE,    "SSL_WANT_WRITE" },
+        { NS_CONN_JSONPARSED,        "JSONPARSED" },
     };
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
