@@ -6,6 +6,7 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 
 try {set curl [exec curl -V]} on error errorMsg {set curl ""}
 testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
@@ -385,7 +386,8 @@ test ns_json-strings-1.2 {string: unicode escape} -body {
     ns_json parse "\"\\u0041\""
 } -returnCodes {error ok} -result {A}
 
-test ns_json-strings-1.3 {string: surrogate pair} -body {
+test ns_json-strings-1.3 {string: surrogate pair} -constraints tcl86 -body {
+    # The test requires at least tcl 8.6
     # U+1F600 GRINNING FACE 😀
     set s [ns_json parse "\"\\uD83D\\uDE00\""]
     list [string length $s] [scan $s %c cp] $cp
@@ -939,7 +941,7 @@ test ns_json-numbers-1.7 {ns_son parse -validatenumbers with number lexemes} -bo
     lmap v $values {
         try {dict get [ns_json parse -validatenumbers [format {{"x":%s}} $v]] x
         } on ok {r}           { set r
-        } on error {errorMsg} { string cat ERR
+        } on error {errorMsg} { set r ERR
         }}
 } -returnCodes {error ok} -result {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 ERR ERR}
 
