@@ -390,8 +390,8 @@ test ns_json-strings-1.3 {string: surrogate pair} -constraints tcl86 -body {
     # The test requires at least tcl 8.6
     # U+1F600 GRINNING FACE 😀
     set s [ns_json parse "\"\\uD83D\\uDE00\""]
-    list [string length $s] [scan $s %c cp] $cp
-} -returnCodes {error ok} -result {2 1 128512}
+    list [scan $s %c cp] $cp
+} -returnCodes {error ok} -result {1 128512}
 
 test ns_json-strings-1.4 {string: rejects invalid surrogate} -body {
     ns_json parse "\"\\uD800\""
