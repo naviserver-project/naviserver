@@ -77,8 +77,7 @@
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_begin}]
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_commit}] ?-all?
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_rollback}] ?-all?
-[uri ../../naviserver/files/ns_cbor.html {ns_cbor decode}] ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/
-[uri ../../naviserver/files/ns_cbor.html {ns_cbor scan}] ?-binary? ?-encoding hex|base64url|base64|binary? ?--? /value/
+[uri ../../naviserver/files/ns_cbor.html {ns_cbor parse}] ?-binary? ?-encoding hex|base64url|base64|binary? ?-scan? ?--? /value/
 [uri ../../naviserver/files/ns_certctl.html {ns_certctl list}]
 [uri ../../naviserver/files/ns_certctl.html {ns_certctl reload}]
 [uri ../../naviserver/files/ns_chan.html {ns_chan cleanup}] ?-shared?
@@ -360,6 +359,12 @@
 [uri ../../naviserver/files/ns_job.html {ns_job waitany}] ?-timeout /time/? /queueId/
 [uri ../../naviserver/files/ns_parseurl.html {ns_joinurl}] /dict/
 [uri ../../naviserver/files/ns_jpegsize.html {ns_jpegsize}] /filename/
+[uri ../../naviserver/files/ns_json.html {ns_json isnull}] /value/
+[uri ../../naviserver/files/ns_json.html {ns_json keydecode}] /string/
+[uri ../../naviserver/files/ns_json.html {ns_json keyencode}] /string/
+[uri ../../naviserver/files/ns_json.html {ns_json keyinfo}] /key/
+[uri ../../naviserver/files/ns_json.html {ns_json parse}] ?-output dict|triples|set? ?-scan? ?-top any|container? ?-validatenumbers? ?-maxdepth /integer/? ?-maxstring /integer/? ?-maxcontainer /integer/? ?--? /value/
+[uri ../../naviserver/files/ns_json.html {ns_json value}] ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?-validatenumbers? ?--? /value/
 [uri ../../naviserver/files/ns_kill.html {ns_kill}] ?-nocomplain? /pid/ /signal/
 [uri ../../naviserver/files/ns_library.html {ns_library}] private|shared ?/module/?
 [uri ../../nsdb/files/ns_buildsqldate.html {ns_localsqltimestamp}]
@@ -500,7 +505,7 @@
 [uri ../../naviserver/files/ns_schedule.html {ns_schedule_daily}] ?-once? ?-thread? ?--? /hour/ /minute/ /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_schedule.html {ns_schedule_proc}] ?-once? ?-thread? ?--? /interval/ /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_schedule.html {ns_schedule_weekly}] ?-once? ?-thread? ?--? /day/ /hour/ /minute/ /script/ ?/arg .../?
-[uri ../../naviserver/files/ns_config.html {ns_section}] ?-update? ?--? /name/
+[uri ../../naviserver/files/ns_config.html {ns_section}] ?-update? ?-set /ns_set/? ?-from /sectionName/? ?--? /sectionName/ ?/script/?
 [uri ../../naviserver/files/ns_sema.html {ns_sema create}] ?/count/?
 [uri ../../naviserver/files/ns_sema.html {ns_sema destroy}] /handle/
 [uri ../../naviserver/files/ns_sema.html {ns_sema release}] /handle/ ?/count/?
