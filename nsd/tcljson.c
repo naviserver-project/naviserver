@@ -23,7 +23,6 @@
 #ifndef NS_JSON_KEY_SHARING
 # define NS_JSON_KEY_SHARING 1
 #endif
-#define SHARED_ATOMS 0
 
 #include <math.h>
 
@@ -61,9 +60,6 @@ typedef enum {
     JSON_VT_ARRAY     /* triples */
 } JsonValueType;
 
-
-#if SHARED_ATOMS
-# include "nsatoms.h"
 typedef enum {
     JSON_ATOM_UNUSED = 0,          /* matches JSON_VT_AUTO */
 
@@ -84,66 +80,33 @@ typedef enum {
     JSON_ATOM_FIELD,
 
     JSON_ATOM_MAX
-} NsJsonAtom;
+} JsonAtom;
 
 static const NsAtomSpec jsonAtomSpecs[JSON_ATOM_MAX] = {
-    /* Keep indices aligned with NsJsonAtom enum order */
+    /* Keep indices aligned with JsonAtom enum order */
 
     /* JSON_ATOM_UNUSED (matches JSON_VT_AUTO) */
-    {NS_ATOM__MAX, "auto", 4},
+    {-1, "auto", 4},
 
     /* type atoms (MUST align with JsonValueType) */
-    {NS_ATOM_STRING,  NULL, 0},  /* JSON_ATOM_T_STRING */
-    {NS_ATOM_NUMBER,  NULL, 0},  /* JSON_ATOM_T_NUMBER */
-    {NS_ATOM_BOOLEAN, NULL, 0},  /* JSON_ATOM_T_BOOLEAN */
-    {NS_ATOM_NULL,    NULL, 0},  /* JSON_ATOM_T_NULL */
-    {NS_ATOM_OBJECT,  NULL, 0},  /* JSON_ATOM_T_OBJECT */
-    {NS_ATOM_ARRAY,   NULL, 0},  /* JSON_ATOM_T_ARRAY */
+    {-1, "string",  6},  /* JSON_ATOM_T_STRING */
+    {-1, "number",  6},  /* JSON_ATOM_T_NUMBER */
+    {-1, "boolean", 7},  /* JSON_ATOM_T_BOOLEAN */
+    {-1, "null",    4},  /* JSON_ATOM_T_NULL */
+    {-1, "object",  6},  /* JSON_ATOM_T_OBJECT */
+    {-1, "array",   5},  /* JSON_ATOM_T_ARRAY */
 
     /* non-type atoms */
-    {NS_ATOM_TRUE,  NULL, 0},          /* JSON_ATOM_TRUE */
-    {NS_ATOM_FALSE, NULL, 0},          /* JSON_ATOM_FALSE */
-    {NS_ATOM_EMPTY, NULL, 0},          /* JSON_ATOM_EMPTY */
-    {NS_ATOM__MAX, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN}, /* JSON_ATOM_VALUE_NULL */
+    {NS_ATOM_TRUE,    NULL, 0},  /* JSON_ATOM_TRUE */
+    {NS_ATOM_FALSE,   NULL, 0},  /* JSON_ATOM_FALSE */
+    {NS_ATOM_EMPTY,   NULL, 0},  /* JSON_ATOM_EMPTY */
+    {-1, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN}, /* JSON_ATOM_VALUE_NULL */
 
     /* misc */
-    {NS_ATOM__MAX, "key",   3},         /* JSON_ATOM_KEY */
-    {NS_ATOM__MAX, "field", 5}          /* JSON_ATOM_FIELD */
+    {-1, "key",   3},  /* JSON_ATOM_KEY */
+    {-1, "field", 5}   /* JSON_ATOM_FIELD */
 };
-static Tcl_Obj *NsJsonAtomObjs[JSON_ATOM_MAX];
-
-#else
-typedef enum {
-    JSON_ATOM_UNUSED = 0,          /* matches JSON_VT_AUTO */
-
-    JSON_ATOM_T_STRING,
-    JSON_ATOM_T_NUMBER,
-    JSON_ATOM_T_BOOLEAN,
-    JSON_ATOM_T_NULL,
-    JSON_ATOM_T_OBJECT,
-    JSON_ATOM_T_ARRAY,
-
-    /* non-type atoms after that */
-    JSON_ATOM_TRUE,
-    JSON_ATOM_FALSE,
-    JSON_ATOM_EMPTY,
-    JSON_ATOM_VALUE_NULL,
-
-    JSON_ATOM_KEY,
-    JSON_ATOM_FIELD,
-
-    JSON_ATOM_MAX
-} NsJsonAtom;
-
-static const char *NsJsonAtomStrings[JSON_ATOM_MAX] = {
-    "auto",
-    "string", "number", "boolean", "null", "object", "array",
-    "true", "false", "", NS_JSON_NULL_SENTINEL,
-    "key", "field"
-};
-
-static Tcl_Obj *NsJsonAtomObjs[JSON_ATOM_MAX];
-#endif
+static Tcl_Obj *JsonAtomObjs[JSON_ATOM_MAX];
 
 /*
  * Parser state
@@ -252,7 +215,6 @@ static const Tcl_HashKeyType JsonKeyType = {
 /*
  * Static functions defined in this file.
  */
-static void          NsJsonInitAtoms(void);
 static Tcl_Obj      *DStringToObj(Tcl_DString *dsPtr)  NS_GNUC_NONNULL(1);
 static Ns_ReturnCode JsonAppendDecoded(JsonParser *jp, const unsigned char *at, const char *bytes, size_t len) NS_GNUC_NONNULL(1,2,3);
 static void          JsonPrettyIndent(Tcl_DString *dsPtr, int depth) NS_GNUC_NONNULL(1);
@@ -337,22 +299,22 @@ static int           JsonCheckTrailingDecode(Tcl_Interp *interp, const unsigned 
  *
  * DStringToObj --
  *
- *	This function moves a dynamic string's contents to a new Tcl_Obj. Be
- *	aware that this function does *not* check that the encoding of the
- *	contents of the dynamic string is correct; this is the caller's
- *	responsibility to enforce.
+ *      This function moves a dynamic string's contents to a new Tcl_Obj. Be
+ *      aware that this function does *not* check that the encoding of the
+ *      contents of the dynamic string is correct; this is the caller's
+ *      responsibility to enforce.
  *
  *      The function is essentially a copy of the internal function
  *      TclDStringToOb and is a counter part to Tcl_DStringResult.
  *
  * Results:
- *	The newly-allocated untyped (i.e., typePtr==NULL) Tcl_Obj with a
- *	reference count of zero.
+ *      The newly-allocated untyped (i.e., typePtr==NULL) Tcl_Obj with a
+ *      reference count of zero.
  *
  * Side effects:
- *	The string is "moved" to the object. dsPtr is reinitialized to an
- *	empty string; it does not need to be Tcl_DStringFree'd after this if
- *	not used further.
+ *      The string is "moved" to the object. dsPtr is reinitialized to an
+ *      empty string; it does not need to be Tcl_DStringFree'd after this if
+ *      not used further.
  *
  *----------------------------------------------------------------------
  */
@@ -415,31 +377,11 @@ DStringToObj(Tcl_DString *dsPtr)
  *
  *----------------------------------------------------------------------
  */
-#if SHARED_ATOMS
-static void
-NsJsonInitAtoms(void)
+void
+NsAtomJsonInit(void)
 {
-    NsAtomInit();
-    (void) NsAtomsInit(jsonAtomSpecs, JSON_ATOM_MAX, NsJsonAtomObjs);
+    (void) NsAtomsInit(jsonAtomSpecs, JSON_ATOM_MAX, JsonAtomObjs);
 }
-#else
-static void
-NsJsonInitAtoms(void)
-{
-    size_t i;
-
-    for (i = 0; i < JSON_ATOM_MAX; i++) {
-        NsJsonAtomObjs[i] = Tcl_NewStringObj(NsJsonAtomStrings[i], TCL_INDEX_NONE);
-        Tcl_IncrRefCount(NsJsonAtomObjs[i]);
-    }
-
-    /*
-     * Optional: boolean atoms as actual boolean objects (faster in dict/list)
-     * Keep separate if you want both spellings and typed bools.
-     */
-    /* NsJsonTrueObj = Tcl_NewBooleanObj(1); Tcl_IncrRefCount(...); etc. */
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1273,19 +1215,19 @@ JsonParseLiteral(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueType
 
     if (jp->end - p >= 4 && p[0] == 't' && p[1] == 'r' && p[2] == 'u' && p[3] == 'e') {
         jp->p += 4;
-        *valueObjPtr = NsJsonAtomObjs[JSON_ATOM_TRUE];
+        *valueObjPtr = JsonAtomObjs[JSON_ATOM_TRUE];
         *valueTypePtr = JSON_VT_BOOL;
         return NS_OK;
     }
     if (jp->end - p >= 5 && p[0] == 'f' && p[1] == 'a' && p[2] == 'l' && p[3] == 's' && p[4] == 'e') {
         jp->p += 5;
-        *valueObjPtr = NsJsonAtomObjs[JSON_ATOM_FALSE];
+        *valueObjPtr = JsonAtomObjs[JSON_ATOM_FALSE];
         *valueTypePtr = JSON_VT_BOOL;
         return NS_OK;
     }
     if (jp->end - p >= 4 && p[0] == 'n' && p[1] == 'u' && p[2] == 'l' && p[3] == 'l') {
         jp->p += 4;
-        *valueObjPtr = NsJsonAtomObjs[JSON_ATOM_VALUE_NULL];
+        *valueObjPtr = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
         *valueTypePtr = JSON_VT_NULL;
         return NS_OK;
     }
@@ -2091,7 +2033,7 @@ JsonParseObject(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypeP
         if (jp->opt->output == NS_JSON_OUTPUT_TRIPLES) {
             if (JsonEmitTripleAppend(accObj,
                                      keyObj,
-                                     NsJsonAtomObjs[*valueTypePtr],
+                                     JsonAtomObjs[*valueTypePtr],
                                      valObj) != NS_OK) {
                 jp->depth--;
                 Ns_DStringPrintf(jp->errDsPtr,
@@ -2304,7 +2246,7 @@ JsonParseArray(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypePt
 
             if (JsonEmitTripleAppend(accObj,
                                      nameObj,
-                                     NsJsonAtomObjs[*valueTypePtr],
+                                     JsonAtomObjs[*valueTypePtr],
                                      valObj) != NS_OK) {
                 jp->depth--;
                 Ns_DStringPrintf(jp->errDsPtr,
@@ -2675,7 +2617,7 @@ static void
 JsonKeyPathAppendIndex(Tcl_DString *dsPtr, size_t idx)
 {
     char buf[TCL_INTEGER_SPACE];
-    int  n = snprintf(buf, sizeof(buf), "%lu", (unsigned long)idx);
+    int  n = ns_uint64toa(buf, idx);
 
     if (dsPtr->length > 0) {
         Tcl_DStringAppend(dsPtr, "/", 1);
@@ -2761,7 +2703,7 @@ JsonSetPutType(Ns_Set *set, Tcl_DString *typeKeyDsPtr,
     TCL_SIZE_T len;
 
     JsonKeyPathMakeTypeKey(typeKeyDsPtr, key, keyLen);
-    typeString = Tcl_GetStringFromObj(NsJsonAtomObjs[vt], &len);
+    typeString = Tcl_GetStringFromObj(JsonAtomObjs[vt], &len);
     JsonSetPutValue(set,
                     typeKeyDsPtr->string,
                     typeKeyDsPtr->length,
@@ -3131,7 +3073,7 @@ Ns_JsonParse(const unsigned char *buf, size_t len,
     NS_NONNULL_ASSERT(consumedPtr != NULL);
     NS_NONNULL_ASSERT(errDsPtr != NULL);
 
-    NS_INIT_ONCE(NsJsonInitAtoms);
+    //NS_INIT_ONCE(NsJsonInitAtoms);
 
     if (resultObjPtr != NULL) {
         *resultObjPtr = NULL;
@@ -3234,8 +3176,8 @@ Ns_JsonParse(const unsigned char *buf, size_t len,
                 *resultObjPtr = valueObj;
             } else {
                 Tcl_Obj *lv[3];
-                lv[0] = NsJsonAtomObjs[JSON_ATOM_EMPTY];
-                lv[1] = NsJsonAtomObjs[vt];
+                lv[0] = JsonAtomObjs[JSON_ATOM_EMPTY];
+                lv[1] = JsonAtomObjs[vt];
                 lv[2] = valueObj;
                 *resultObjPtr = Tcl_NewListObj(3, lv);
             }
@@ -3549,11 +3491,11 @@ JsonKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     dictObj = Tcl_NewDictObj();
 
     Tcl_DictObjPut(interp, dictObj,
-                   NsJsonAtomObjs[JSON_ATOM_KEY],
+                   JsonAtomObjs[JSON_ATOM_KEY],
                    DStringToObj(&outDs));
 
     Tcl_DictObjPut(interp, dictObj,
-                   NsJsonAtomObjs[JSON_ATOM_FIELD],
+                   JsonAtomObjs[JSON_ATOM_FIELD],
                    Tcl_NewStringObj(field, fieldLen));
 
     Tcl_DStringFree(&segDs);
@@ -3847,10 +3789,11 @@ NsTclJsonObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         {"value",      JsonValueObjCmd},
         {NULL, NULL}
     };
-    NS_INIT_ONCE(NsJsonInitAtoms);
+    //NS_INIT_ONCE(NsJsonInitAtoms);
 
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
+
 /*
  * Local Variables:
  * mode: c

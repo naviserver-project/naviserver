@@ -78,6 +78,8 @@ Nsd_LibInit(void)
         NsInitUrl2File();
         NsInitHttptime();
         NsInitDNS();
+        NsAtomCoreInit();
+        NsAtomJsonInit();
 #ifndef _WIN32
         /*
          * NsInitRandom() creates a thread. For whatever reason, this does not

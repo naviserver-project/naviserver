@@ -18,6 +18,7 @@
  * Installed modules should include <ns.h> from the installation prefix.
  */
 #include "../include/ns.h"
+#include "nsatoms.h"
 
 #if defined(HAVE_XLOCALE_H)
 # include <xlocale.h>
@@ -2157,6 +2158,10 @@ NS_EXTERN void NsInitHttp(NsServer *servPtr)
 NS_EXTERN void NsStopHttp(NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
+/*
+ * tcljson.c
+ */
+NS_EXTERN void NsAtomJsonInit(void);
 /*
  * tcljob.c
  */
