@@ -1290,23 +1290,23 @@ static int SetStatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         }
 
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("nr_dynamic", 10),
+                       NsAtomObj(NS_ATOM_NR_DYNAMIC),
                        Tcl_NewWideIntObj((Tcl_WideInt)nr_dynamic));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("size_dynamic", 12),
+                       NsAtomObj(NS_ATOM_SIZE_DYNAMIC),
                        Tcl_NewWideIntObj((Tcl_WideInt)size_dynamic));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("allocated_dynamic", 17),
+                       NsAtomObj(NS_ATOM_ALLOCATED_DYNAMIC),
                        Tcl_NewWideIntObj((Tcl_WideInt)allocated_dynamic));
 
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("nr_static", 9),
+                       NsAtomObj(NS_ATOM_NR_STATIC),
                        Tcl_NewWideIntObj((Tcl_WideInt)nr_static));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("size_static", 11),
+                       NsAtomObj(NS_ATOM_SIZE_STATIC),
                        Tcl_NewWideIntObj((Tcl_WideInt)size_static));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("allocated_static", 16),
+                       NsAtomObj(NS_ATOM_ALLOCATED_STATIC),
                        Tcl_NewWideIntObj((Tcl_WideInt)allocated_static));
 
         Tcl_SetObjResult(interp, resultObj);

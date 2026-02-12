@@ -595,9 +595,9 @@ HandleAuthorizationResult(Tcl_Interp *interp, Ns_ReturnCode status, const char *
         if (asDict) {
             Tcl_Obj *dictObj = Tcl_NewDictObj();
 
-            Tcl_DictObjPut(interp, dictObj,Tcl_NewStringObj("authority", 9),
+            Tcl_DictObjPut(interp, dictObj,NsAtomObj(NS_ATOM_AUTHORITY),
                            Tcl_NewStringObj(authority, TCL_INDEX_NONE));
-            Tcl_DictObjPut(interp, dictObj, Tcl_NewStringObj("code", 4), resultObj);
+            Tcl_DictObjPut(interp, dictObj, NsAtomObj(NS_ATOM_CODE), resultObj);
             resultObj = dictObj;
         }
         /*Ns_Log(Notice, "HandleAuthorizationResult authority %s status %s sets result %s",

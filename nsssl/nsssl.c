@@ -556,13 +556,13 @@ ConnInfo(Ns_Sock *sock)
         NssslSockCtx *sslCtx = sock->arg;
 
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("sslversion", 10),
+                       NsAtomObj(NS_ATOM_SSLVERSION),
                        Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), TCL_INDEX_NONE));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("cipher", 6),
+                       NsAtomObj(NS_ATOM_CIPHER),
                        Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), TCL_INDEX_NONE));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("servername", 10),
+                       NsAtomObj(NS_ATOM_SERVERNAME),
                        Tcl_NewStringObj(SSL_get_servername(sslCtx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
     }
 

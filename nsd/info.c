@@ -902,7 +902,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             Tcl_DStringAppend(&ds, "unknown", 7);
 #endif
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("compiler", 8),
+                           NsAtomObj(NS_ATOM_COMPILER),
                            Tcl_NewStringObj(ds.string, ds.length));
             /*
              * Compiled with assertion support? Actually, without
@@ -922,7 +922,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 #endif
                 ;
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("assertions", 10),
+                           NsAtomObj(NS_ATOM_ASSERTIONS),
                            Tcl_NewIntObj(defined_NDEBUG));
             /*
              * Compiled with SYSTEM_MALLOC?
@@ -935,7 +935,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 #endif
                 ;
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("system_malloc", 13),
+                           NsAtomObj(NS_ATOM_SYSTEM_MALLOC),
                            Tcl_NewIntObj(defined_SYSTEM_MALLOC));
 
             /*
@@ -949,14 +949,14 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 #endif
                 ;
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("with_deprecated", 15),
+                           NsAtomObj(NS_ATOM_WITH_DEPRECATED),
                            Tcl_NewIntObj(defined_NS_WITH_DEPRECATED));
 
             /*
              * The nsd binary was built against this version of Tcl
              */
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("tcl", 3),
+                           NsAtomObj(NS_ATOM_TCL),
                            Tcl_NewStringObj(TCL_PATCH_LEVEL, TCL_INDEX_NONE));
 
             Tcl_SetObjResult(interp, dictObj);
@@ -989,13 +989,13 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             }
         }
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("preload", 7),
+                       NsAtomObj(NS_ATOM_PRELOAD),
                        Tcl_NewStringObj(preload_library_name != NULL ? preload_library_name : "", TCL_INDEX_NONE));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("version", 7),
+                       NsAtomObj(NS_ATOM_VERSION),
                        Tcl_NewStringObj(mallocLibraryVersionString, TCL_INDEX_NONE));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("stats", 5),
+                       NsAtomObj(NS_ATOM_STATS),
                        Tcl_NewStringObj(memStatsBuffer, TCL_INDEX_NONE));
 #endif
         Tcl_SetObjResult(interp, resultObj);

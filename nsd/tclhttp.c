@@ -222,11 +222,12 @@ static Ns_ReturnCode HttpWaitForSocketEvent(
     const Ns_Time *timeoutPtr
 );
 
-static void HttpAddInfo(
+static void
+HttpAddInfo(
     NsHttpTask *httpPtr,
-    const char *key,
+    Tcl_Obj    *keyObj,
     const char *value
-)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+) NS_GNUC_NONNULL(1,2,3);
 
 static void HttpCheckHeader(
     NsHttpTask *httpPtr
@@ -4441,8 +4442,8 @@ EstablishTLSConnection(
             httpPtr->ssl = ssl;
 
 #ifdef HAVE_OPENSSL_EVP_H
-            HttpAddInfo(httpPtr, "sslversion", SSL_get_version(ssl));
-            HttpAddInfo(httpPtr, "cipher", SSL_get_cipher(ssl));
+            HttpAddInfo(httpPtr, NsAtomObj(NS_ATOM_SSLVERSION), SSL_get_version(ssl));
+            HttpAddInfo(httpPtr, NsAtomObj(NS_ATOM_CIPHER),     SSL_get_cipher(ssl));
             SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
 #endif
         }
@@ -6009,13 +6010,13 @@ HttpCancel(
 static void
 HttpAddInfo(
     NsHttpTask *httpPtr,
-    const char *key,
+    Tcl_Obj    *keyObj,
     const char *value
 ) {
-    Tcl_Obj *keyObj, *valObj;
+    Tcl_Obj *valObj;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(keyObj != NULL);
     NS_NONNULL_ASSERT(value != NULL);
 
     if (httpPtr->infoObj == NULL) {
@@ -6023,7 +6024,6 @@ HttpAddInfo(
         Tcl_IncrRefCount(httpPtr->infoObj);
     }
 
-    keyObj = Tcl_NewStringObj(key, TCL_INDEX_NONE);
     valObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
 
     Tcl_DictObjPut(NULL, httpPtr->infoObj, keyObj, valObj);
