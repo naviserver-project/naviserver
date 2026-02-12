@@ -1207,6 +1207,41 @@ NsSockErrorCodeString(unsigned long errorCode, char *buffer, size_t bufferSize)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * NsStringObj --
+ *
+ *      Create a Tcl string object from a NUL-terminated C string. When
+ *      the provided pointer is NULL, this function returns the shared
+ *      empty-string atom object instead of allocating a new Tcl_Obj.
+ *
+ *      Callers must treat the returned object as a normal Tcl object:
+ *      if the object is to be retained, the caller has to increment its
+ *      reference count. Note that the shared empty-string atom object is
+ *      owned by the global atom registry.
+ *
+ * Results:
+ *      A Tcl_Obj pointer containing the specified string, or the shared
+ *      empty-string atom object when chars is NULL.
+ *
+ * Side effects:
+ *      May allocate a new Tcl_Obj when chars is non-NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+NsStringObj(const char* chars) {
+    Tcl_Obj *resultObj;
+
+    if (chars != NULL) {
+        resultObj = Tcl_NewStringObj(chars, TCL_INDEX_NONE);
+    } else {
+        resultObj = NsAtomObj(NS_ATOM_EMPTY);
+    }
+    return resultObj;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

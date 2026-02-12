@@ -917,11 +917,11 @@ NsTclParseHostportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
             Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
 
             if (hostStart != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("host", 4));
+                Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_HOST));
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(hostStart, TCL_INDEX_NONE));
             }
             if (portStart != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("port", 4));
+                Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_PORT));
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(portStart, TCL_INDEX_NONE));
             }
 

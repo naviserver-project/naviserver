@@ -1117,15 +1117,13 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                     resultObj = Tcl_GetObjResult(interp);
                     Ns_Log(Error, "OCSP_REQUEST '%s' returned error '%s'", dsCMD.string, Tcl_GetString(resultObj));
                 } else {
-                    Tcl_Obj *statusObj = Tcl_NewStringObj("status", TCL_INDEX_NONE);
-                    Tcl_Obj *bodyObj = Tcl_NewStringObj("body", TCL_INDEX_NONE);
                     Tcl_Obj *valueObj = NULL;
                     Ns_ReturnCode status;
 
                     resultObj = Tcl_GetObjResult(interp);
                     Tcl_IncrRefCount(resultObj);
 
-                    if (Tcl_DictObjGet(interp, resultObj, statusObj, &valueObj) == TCL_OK
+                    if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_STATUS), &valueObj) == TCL_OK
                         && valueObj != NULL
                         ) {
                         const char *stringValue =  Tcl_GetString(valueObj);
@@ -1145,7 +1143,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                         status = NS_ERROR;
                     }
                     if (status == NS_OK) {
-                        if (Tcl_DictObjGet(interp, resultObj, bodyObj, &valueObj) == TCL_OK) {
+                        if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_BODY), &valueObj) == TCL_OK) {
                             TCL_SIZE_T           length;
                             const unsigned char *bytes;
 
@@ -1154,8 +1152,6 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                         }
                     }
                     Tcl_DecrRefCount(resultObj);
-                    Tcl_DecrRefCount(statusObj);
-                    Tcl_DecrRefCount(bodyObj);
 
                 }
                 Ns_TclDeAllocateInterp(interp);

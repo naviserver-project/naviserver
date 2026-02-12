@@ -1618,18 +1618,18 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
                     Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
                     char      ipString[NS_IPADDR_SIZE];
 
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("channel", 7));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_CHANNEL));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(connChanPtr->channelName, TCL_INDEX_NONE));
 
                     port = Ns_SockaddrGetPort((struct sockaddr *) &sa);
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("port", 4));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_PORT));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj((int)port));
 
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("sock", 4));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_SOCK));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj((int)sock));
 
                     ns_inet_ntop((struct sockaddr *) &sa, ipString, sizeof(ipString));
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_ADDRESS));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ipString, TCL_INDEX_NONE));
 
                     Tcl_SetObjResult(interp, listObj);

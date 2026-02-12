@@ -254,7 +254,7 @@ SetResultToOldValue(Tcl_Interp *interp, Array *arrayPtr, const char *key)
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE));
     } else {
         result = NS_FALSE;
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("", 0));
+        Tcl_SetObjResult(interp, NsAtomObj(NS_ATOM_EMPTY));
     }
     return result;
 }

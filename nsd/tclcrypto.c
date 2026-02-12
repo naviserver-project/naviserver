@@ -3395,7 +3395,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
                      * Convert the result to the output format and return a
                      * dict containing "bytes" and "tag" as the interp result.
                      */
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("bytes", 5));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_BYTES));
                     Tcl_ListObjAppendElement(interp, listObj, NsEncodedObj((unsigned char *)outputDs.string,
                                                                          (size_t)outputDs.length,
                                                                          NULL, encoding));

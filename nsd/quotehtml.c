@@ -3107,7 +3107,7 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                     nameObj = Tcl_NewStringObj(&string[attributeStart],
                                                (TCL_SIZE_T)(attributeNameEnd - attributeStart));
 
-                    valueObj = Tcl_NewStringObj("", 0);
+                    valueObj = NsAtomObj(NS_ATOM_EMPTY);
                     Tcl_DictObjPut(NULL, attributesObj, nameObj, valueObj);
                     Ns_Log(Debug, "... no equals %c i %ld length %ld att '%s' value '%s'", string[i], i, length,
                            Tcl_GetString(nameObj), Tcl_GetString(valueObj));

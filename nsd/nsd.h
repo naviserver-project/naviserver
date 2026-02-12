@@ -2119,6 +2119,7 @@ NS_EXTERN void NsWaitSockShutdown(const Ns_Time *toPtr);
 NS_EXTERN void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength,
                           unsigned int perLine, bool withChar)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN Tcl_Obj *NsStringObj(const char* chars);
 
 /*
  * task.c

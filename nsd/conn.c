@@ -2855,10 +2855,10 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
             if ((connPtr->flags & NS_CONN_BROTLIACCEPTED) != 0u) {
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("brotli", 6));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_BROTLI));
             }
             if ((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("gzip", 4));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_GZIP));
             }
 
             Tcl_SetObjResult(interp, listObj);
