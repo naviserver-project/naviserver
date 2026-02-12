@@ -770,43 +770,43 @@ NsUrlToDictObj(Tcl_Interp *interp, Ns_URL *urlPtr)
 
     if (urlPtr->protocol != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("proto", 5),
+                       NsAtomObj(NS_ATOM_PROTO),
                        Tcl_NewStringObj(urlPtr->protocol, TCL_INDEX_NONE));
     }
     if (urlPtr->userinfo != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("userinfo", 8),
+                       NsAtomObj(NS_ATOM_USERINFO),
                        Tcl_NewStringObj(urlPtr->userinfo, TCL_INDEX_NONE));
     }
     if (urlPtr->host != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("host", 4),
+                       NsAtomObj(NS_ATOM_HOST),
                        Tcl_NewStringObj(urlPtr->host, TCL_INDEX_NONE));
     }
     if (urlPtr->port != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("port", 4),
+                       NsAtomObj(NS_ATOM_PORT),
                        Tcl_NewStringObj(urlPtr->port, TCL_INDEX_NONE));
     }
     if (urlPtr->path != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("path", 4),
+                       NsAtomObj(NS_ATOM_PATH),
                        Tcl_NewStringObj(urlPtr->path, TCL_INDEX_NONE));
 
     }
     if (urlPtr->tail != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("tail", 4),
+                       NsAtomObj(NS_ATOM_TAIL),
                        Tcl_NewStringObj(urlPtr->tail, TCL_INDEX_NONE));
     }
     if (urlPtr->query != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("query", 5),
+                       NsAtomObj(NS_ATOM_QUERY),
                        Tcl_NewStringObj(urlPtr->query, TCL_INDEX_NONE));
     }
     if (urlPtr->fragment != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("fragment", 8),
+                       NsAtomObj(NS_ATOM_FRAGMENT),
                        Tcl_NewStringObj(urlPtr->fragment, TCL_INDEX_NONE));
     }
 
