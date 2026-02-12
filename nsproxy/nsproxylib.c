@@ -28,8 +28,9 @@
  */
 
 #include "nsproxy.h"
+#include "../nsd/nsd.h"
 
-static const char * NS_EMPTY_STRING = "";
+//static const char * NS_EMPTY_STRING = "";
 
 #ifndef NSPROXY_HELPER
 # define NSPROXY_HELPER "nsproxy-helper"
@@ -388,7 +389,7 @@ static Tcl_DString defexec;             /* Stores full path of the proxy executa
 /*
  *----------------------------------------------------------------------
  *
- * Nsproxy_Init --
+ * Nsproxy_LibInit --
  *
  *      libnsproxy initialization.
  *
@@ -400,6 +401,15 @@ static Tcl_DString defexec;             /* Stores full path of the proxy executa
  *
  *----------------------------------------------------------------------
  */
+static NsAtomId ATOM_BUSY = 0;
+static NsAtomId ATOM_CREATED = 0;
+static NsAtomId ATOM_DONE = 0;
+static NsAtomId ATOM_ID = 0;
+static NsAtomId ATOM_IDLE = 0;
+static NsAtomId ATOM_PID = 0;
+static NsAtomId ATOM_RUNS = 0;
+static NsAtomId ATOM_UNKNOWN = 0;
+
 void
 Nsproxy_LibInit(void)
 {
@@ -411,6 +421,17 @@ Nsproxy_LibInit(void)
         Ns_MutexInit(&plock);
         Ns_MutexSetName(&plock, "ns:proxy");
         Ns_CondInit(&pcond);
+
+        NsAtomRegister("busy",    4, &ATOM_BUSY);
+        NsAtomRegister("created", 7, &ATOM_CREATED);
+        NsAtomRegister("done",    4, &ATOM_DONE);
+        NsAtomRegister("id",      2, &ATOM_ID);
+        NsAtomRegister("idle",    4, &ATOM_IDLE);
+        NsAtomRegister("pid",     3, &ATOM_PID);
+        NsAtomRegister("runs",    4, &ATOM_RUNS);
+        NsAtomRegister("unknown", 7, &ATOM_UNKNOWN);
+
+        assert(ATOM_BUSY != 0);
 
         Nsd_LibInit();
 
@@ -1869,13 +1890,13 @@ PidsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *
                     Tcl_Obj *elementObj = Tcl_NewDictObj();
 
                     Tcl_DictObjPut(NULL, elementObj,
-                                   Tcl_NewStringObj("pid", 3),
+                                   NsAtomObj(ATOM_PID),
                                    Tcl_NewIntObj(proxyPtr->workerPtr->pid));
                     Tcl_DictObjPut(NULL, elementObj,
-                                   Tcl_NewStringObj("id", 2),
+                                   NsAtomObj(ATOM_ID),
                                    Tcl_NewStringObj(proxyPtr->id, TCL_INDEX_NONE));
                     Tcl_DictObjPut(NULL, elementObj,
-                                   Tcl_NewStringObj("runs", 4),
+                                   NsAtomObj(ATOM_RUNS),
                                    Tcl_NewIntObj(proxyPtr->numruns));
                     Tcl_DStringAppendElement(dsPtr, Tcl_GetString(elementObj));
                     Tcl_DecrRefCount(elementObj);
@@ -1921,23 +1942,24 @@ WorkersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Ob
             Tcl_Obj *elementObj = Tcl_NewDictObj();
 
             Tcl_DictObjPut(NULL, elementObj,
-                           Tcl_NewStringObj("id", 2),
+                           NsAtomObj(ATOM_ID),
                            Tcl_NewStringObj(proxyPtr->id, TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, elementObj,
-                           Tcl_NewStringObj("pid", 3),
+                           NsAtomObj(ATOM_PID),
                            Tcl_NewIntObj(proxyPtr->workerPtr != NULL ? proxyPtr->workerPtr->pid : 0));
             Tcl_DictObjPut(NULL, elementObj,
-                           Tcl_NewStringObj("created", 7),
+                           NsAtomObj(ATOM_CREATED),
                            Tcl_NewWideIntObj((Tcl_WideInt)proxyPtr->created));
             Tcl_DictObjPut(NULL, elementObj,
-                           Tcl_NewStringObj("runs", 4),
+                           NsAtomObj(ATOM_RUNS),
                            Tcl_NewIntObj(proxyPtr->numruns));
             Tcl_DictObjPut(NULL, elementObj,
-                           Tcl_NewStringObj("state", 5),
-                           Tcl_NewStringObj(proxyPtr->state == Idle ? "idle"
-                                            : proxyPtr->state == Busy ? "busy"
-                                            : proxyPtr->state == Done ? "done"
-                                            : "unknown", TCL_INDEX_NONE));
+                           NsAtomObj(NS_ATOM_STATE),
+                           NsAtomObj(proxyPtr->state == Idle ? ATOM_IDLE
+                                     : proxyPtr->state == Busy ? ATOM_BUSY
+                                     : proxyPtr->state == Done ? ATOM_DONE
+                                     : ATOM_UNKNOWN)
+                           );
 
             Tcl_DStringAppendElement(dsPtr, Tcl_GetString(elementObj));
             Tcl_DecrRefCount(elementObj);
@@ -2663,7 +2685,7 @@ StringObj(const char* chars) {
     if (chars != NULL) {
         resultObj = Tcl_NewStringObj(chars, TCL_INDEX_NONE);
     } else {
-        resultObj = Tcl_NewStringObj("", 0);
+        resultObj = NsAtomObj(NS_ATOM_EMPTY);
     }
     return resultObj;
 }
