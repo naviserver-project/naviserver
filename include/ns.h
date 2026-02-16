@@ -2027,6 +2027,11 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData,
               Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
+NS_EXTERN int
+Ns_SubsubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData,
+              Tcl_Interp *interp, TCL_SIZE_T offset, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
+
 NS_EXTERN char *
 Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);

@@ -2455,65 +2455,107 @@ GetOptEnumeration(Tcl_DString *dsPtr, const Ns_SubCmdSpec *tablePtr) {
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SubcmdObjv --
+ * Ns_SubsubcmdObjv --
  *
- *      Call subcommand based on the provided name and associated
- *      functions.
+ *      Dispatch to a subcommand implementation selected from the
+ *      provided subcommand table, while supporting nested subcommand
+ *      hierarchies via an offset.
+ *
+ *      The offset specifies how many leading words belong to the
+ *      already-processed command prefix. This is used to:
+ *
+ *        - locate the selector word at objv[1 + offset]
+ *        - generate "wrong # args" usage messages with the proper
+ *          prefix (Tcl_WrongNumArgs() uses 1 + offset)
+ *        - prefix "bad subcommand" errors with the main command words
+ *          (objv[0..offset])
  *
  * Results:
  *      Tcl result code.
  *
  * Side effects:
- *      Depends on the Ns_ObjvTypeProcs which run.
+ *      Sets the Tcl interpreter result on errors and calls the selected
+ *      subcommand procedure, which may have additional side effects.
  *
  *----------------------------------------------------------------------
  */
+int
+Ns_SubsubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData,
+                 Tcl_Interp *interp, TCL_SIZE_T offset,
+                 TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const TCL_SIZE_T prefixc       = offset + 1;   /* words before selector */
+    const TCL_SIZE_T selectorIndex = prefixc;      /* objv index of selector */
+    Tcl_Obj         *selectorObj;
+    int opt = 0, result;
 
+    if (objc - offset < 2) {
+        Tcl_DString ds;
+        Tcl_DStringInit(&ds);
+        (void) GetOptEnumeration(&ds, subcmdSpec);
+        Tcl_DStringAppend(&ds, " ?/arg .../?", 11);
+
+        Tcl_WrongNumArgs(interp, prefixc, objv, ds.string);
+
+        Tcl_DStringFree(&ds);
+        return TCL_ERROR;
+    }
+
+    selectorObj = objv[selectorIndex];
+
+    result = Tcl_IsShared(selectorObj)
+        ? GetOptIndexSubcmdSpec(interp, selectorObj, "subcommand", subcmdSpec, &opt)
+        : Tcl_GetIndexFromObjStruct(interp, selectorObj, subcmdSpec, sizeof(Ns_SubCmdSpec),
+                                    "subcommand", TCL_EXACT, &opt);
+
+    if (likely(result == TCL_OK)) {
+        return (*subcmdSpec[opt].proc)(clientData, interp, objc, objv);
+    }
+
+    /* Include prefix words (objv[0..prefixc-1]) in error message. */
+    {
+        Tcl_DString ds;
+        TCL_SIZE_T  i;
+
+        Tcl_DStringInit(&ds);
+        for (i = 0; i < prefixc; i++) {
+            TCL_SIZE_T len;
+            const char *s = Tcl_GetStringFromObj(objv[i], &len);
+            Tcl_DStringAppend(&ds, s, len);
+            Tcl_DStringAppend(&ds, " ", 1);
+        }
+        Tcl_DStringSetLength(&ds, ds.length - 1);
+
+        Ns_TclPrintfResult(interp, "%s: %s",
+                           ds.string,
+                           Tcl_GetString(Tcl_GetObjResult(interp)));
+        Tcl_DStringFree(&ds);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SubcmdObjv --
+ *
+ *      Backward-compatible shim for Ns_SubsubcmdObjv() for commands
+ *      where the subcommand selector is the second word (offset 0).
+ *
+ * Results:
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      See Ns_SubsubcmdObjv().
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp *interp,
               TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int opt = 0, result;
-
-    if (objc < 2) {
-        /*
-         * The command was called without selector for the
-         * subcmd. With our own machinery (as used in
-         * GetOptIndexSubcmdSpec()) we could list the available
-         * options, but that is just used for shared objects.
-         */
-        Tcl_DString ds;
-
-        Tcl_DStringInit(&ds);
-        (void)GetOptEnumeration(&ds, subcmdSpec);
-        Tcl_DStringAppend(&ds, " ?/arg .../?", 11);
-
-        Tcl_WrongNumArgs(interp, 1, objv, ds.string);
-        //Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/arg .../?");
-
-        Tcl_DStringFree(&ds);
-        result = TCL_ERROR;
-    } else {
-        Tcl_Obj *selectorObj = objv[1];
-        /*
-         * If the obj is shared, don't trust its internal representation.
-         */
-        result = Tcl_IsShared(selectorObj)
-            ? GetOptIndexSubcmdSpec(interp, selectorObj, "subcommand", subcmdSpec, &opt)
-            : Tcl_GetIndexFromObjStruct(interp, objv[1], subcmdSpec, sizeof(Ns_SubCmdSpec), "subcommand",
-                                        TCL_EXACT, &opt);
-        if (likely(result == TCL_OK)) {
-            result = (*subcmdSpec[opt].proc)(clientData, interp, objc, objv);
-        } else {
-            /*
-             * Include the main command name in the error message.
-             */
-            Ns_TclPrintfResult(interp, "%s: %s",
-                               Tcl_GetString(objv[0]),
-                               Tcl_GetString(Tcl_GetObjResult(interp)));
-        }
-    }
-    return result;
+    return Ns_SubsubcmdObjv(subcmdSpec, clientData, interp, 0, objc, objv);
 }
 
 
