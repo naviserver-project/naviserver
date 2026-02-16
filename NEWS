@@ -1,4 +1,301 @@
 =======================================
+NaviServer 5.0.4, released 2026-01-23
+=======================================
+
+ 28 files changed, 1771 insertions(+), 974 deletions(-)
+
+Bug Fixes
+---------
+
+ - ADP:
+   * Fixed ADP tag registration to strictly validate tag names.
+     Invalid characters in start tags are now rejected, and end tags
+     must exactly match the corresponding start tag.
+   * Prevents malformed ADP registrations that previously could lead
+     to runtime errors.
+
+ - Cache:
+   * Fixed synchronization between configured cache -maxsize and the
+     effective cache size.
+   * Ensured that changes via ns_cache_configure -maxsize are applied
+     immediately to the underlying cache.
+   * Corrected ns_cache_stats output to accurately reflect the
+     configured cache memory budget.
+
+ - Networking / HTTP:
+   * Fixed handling of Docker container mappings when containers resolve
+     to multiple IP addresses.
+   * Ignored wildcard ("any") IP addresses when building HTTP/HTTPS
+     server whitelists.
+   * Avoided redundant IPv4 binds already covered by dual-stack IPv6
+     wildcard binds.
+   * Fixed optional ID parsing in "ns_http list" and "ns_http stats"
+     (regression in NaviServer 5.0.0–5.0.3).
+
+ - nscp:
+   * Restored proper termination of the nscp command loop via the
+     "exit" command.
+   * Correctly enforced the allowLoopbackEmptyUser setting when enabled.
+
+ - Core:
+   * Fixed an overlap-accounting bug in ns_fseekchars affecting both
+     small and large files.
+   * Prevented truncation of disk-spooled multipart uploads.
+   * Corrected condition checks in ns_internalredirect.
+   * Fixed an off-by-one microsecond overflow in Ns_AdjTime() that could
+     trigger fatal thread errors.
+   * Prevented propagation of harmful negative timeout values in driver
+     threads.
+
+
+Compatibility and Platform Fixes
+--------------------------------
+
+ - Windows:
+   * Fixed Tcl tempfile handling on Windows.
+   * Resolved several MSVC build and runtime issues (buffer sizing,
+     stack corruption, array handling).
+   * Updated MSVC and MinGW build logic for improved reliability.
+
+ - Tcl:
+   * Improved forward compatibility with Tcl 9 by replacing uses of -1
+     with TCL_INDEX_NONE.
+   * Preserved Tcl 8.5 compatibility by skipping tests requiring newer
+     Tcl features.
+
+ - OpenSSL:
+   * Hardened OCSP feature detection to avoid partial activation with
+     incomplete OpenSSL 1.1.1 variants.
+   * Enabled OCSP support only when building against OpenSSL 3 or newer.
+   * Centralized OpenSSL feature detection for consistent cross-version
+     behavior.
+
+ - BSD Platforms:
+   * Added explicit NetBSD linker rules and clarified pthread/math
+     linkage across BSD variants.
+
+
+Documentation Updates
+---------------------
+
+ - Clarified ADP registration semantics and calling conventions.
+ - Improved cache documentation (memory budget vs. entry count and
+   eviction behavior).
+ - Fixed and clarified examples for IPv6 parsing, percent-encoding,
+   and configuration files.
+ - Improved documentation for ns_cond timeout semantics, ns_http
+   callbacks and limits, ns_totp/ns_hotp, ns_ip inany, and NSCP
+   configuration and security defaults.
+ - Numerous typo fixes, wording improvements, and cross-reference
+   cleanups.
+
+
+Build System
+------------
+
+ - Replaced wget with curl for helper downloads to improve portability.
+ - Fixed Makefile indentation issues that caused CI failures.
+ - Added missing build variables and cleaned up deprecated build paths.
+ - Improved compiler warning hygiene and attribute correctness.
+
+
+Tests
+-----
+
+ - Extended regression coverage for ADP tag validation, cache maxsize
+   reporting, multipart uploads (including MD5 verification),
+   UTF-8 validation, ns_ip inany, and ns_internalredirect.
+ - Improved test robustness across platforms (whitespace, collation,
+   curl boundary differences).
+ - Fixed cross-compilation and deprecated-test failures.
+
+
+=======================================
+NaviServer 5.0.3, released 2025-09-26
+=======================================
+
+ 8 files changed, 83 insertions(+), 70 deletions(-)
+
+Bug Fixes:
+----------
+
+ - tls: Centralized OpenSSL feature detection and simplified
+   build-time guards.  OpenSSL version and capability checks have been
+   moved into a dedicated header (nsopenssl.h) and normalized to
+   presence-style macros (HAVE_OPENSSL_*). This eliminates a mix of
+   legacy macros and makes code paths for TLS features (such as OCSP,
+   DH auto-parameters, and read-buffer support) consistent and easier
+   to maintain. This fixes a bug introduced in 5.0.2. (commit 650f470)
+
+Compatibility and Platform Fixes:
+---------------------------------
+
+  - build(make): Replaced wget with curl for downloading build
+    helpers.  Network fetches for config.guess, config.sub, and
+    ca-bundle.crt now use curl, which is more portable across
+    platforms and already available in NaviServer’s toolchain
+    (e.g. for testing). (commit 336c91a)
+
+Notes:
+------
+
+  This is a bug-fix and stability release addressing a regression in
+  5.0.2 and improves portability.
+
+
+=======================================
+NaviServer 5.0.2, released 2025-09-23
+=======================================
+
+ 28 files changed, 316 insertions(+), 101 deletions(-)
+
+Bug Fixes:
+----------
+
+ - ns_fseekchars: Fixed a buffer-overlap accounting bug that could
+   lead to incorrect search results when reading across internal
+   buffer boundaries.  Depending on file size and buffer
+   configuration, both small and large files could be
+   affected. (commit 39f89379)
+
+ - ns_internalredirect: Corrected the logic condition in
+   NsTclInternalRedirectObjCmd() that previously prevented redirects
+   from executing. The connection requirement check now correctly
+   proceeds only when NsConnRequire() succeeds.  Many thanks to Zoran
+   Vasiljevic for identifying and fixing this bug.  (commit ddb4fd6f7)
+
+ - nscp: Restored proper loop termination in EvalThread() via the stop
+   variable. In NaviServer 5.0.0–5.0.1, the loop could only be
+   terminated via Ctrl-D; it now exits cleanly when the Tcl exit
+   command is issued.  (commit 82708261)
+
+ - ns_cond wait: Clarified and fixed timeout handling logic - a zero
+   timeout now behaves as an indefinite wait, matching long-standing
+   but undocumented behavior. Ensures full backward
+   compatibility. (commit aedfad86)
+
+ - ns_conn flag definitions: Fixed overlapping bitmask assignment for
+   NS_CONN_SOCK_WAITING to use a unique non-conflicting bit
+   value. (commit cbb89147)
+
+ - OpenSSL/OCSP: Enabled OCSP support only for OpenSSL 3+ to avoid
+   partial or incomplete feature activation under certain OpenSSL 1.1.1
+   variants.  (commit 90a08ddc)
+
+Compatibility and Platform Fixes:
+---------------------------------
+
+ - Tcl 9 API compliance: Replaced deprecated -1 string length
+   arguments with TCL_INDEX_NONE in multiple modules (nscgi, adpparse,
+   conn, driver, info, set, nsproxy). Improves forward compatibility
+   with Tcl 9. (commit 3f9fbad42)
+
+ - NetBSD support: Added explicit build support and clarified
+   pthread/math linkage rules for BSD variants (FreeBSD, OpenBSD,
+   NetBSD). (commit 9adbeab9)
+
+ - MSVC math header handling: Improved conditional inclusion of
+   <math.h> for various MSVC versions. (commit 54835f6b)
+
+Documentation Updates:
+----------------------
+
+ - ns_cond wait: Updated manpage to clearly describe timeout semantics
+   (no timeout vs. zero vs. positive). (commit aedfad86)
+
+ - ns_totp / ns_hotp: Improved documentation for TOTP/HOTP usage and
+   examples.  (commit 55fe0cc0)
+
+Build System:
+-------------
+
+ - OpenSSL detection: Simplified and corrected OCSP feature detection
+   in m4/openssl.m4. (commit 90a08ddc)
+
+Tests:
+------
+
+Added regression tests for:
+
+ * ns_internalredirect correctness and redirect flow (commit a13e985f)
+ * ns_fseekchars overlap handling (commit 3d1cd941)
+ * multipart upload MD5 verification and boundary handling (commit 3d7ff1e5)
+
+Notes:
+------
+
+  This is a bug-fix and stability release addressing several
+  regressions introduced with NaviServer 5.0.0 and improving OpenSSL
+  compatibility, Tcl 9 readiness, and platform portability.
+
+  No configuration changes are required when upgrading from NaviServer
+  5.0.1.
+
+
+=======================================
+NaviServer 5.0.1, released 2025-09-23
+=======================================
+
+ 33 files changed, 463 insertions(+), 129 deletions(-)
+
+Bug Fixes:
+----------
+
+  - Prevented tail truncation of disk-spooled file uploads under
+    certain boundary conditions.
+
+  - Fixed potentially harmful negative timeout calculation in driver
+    thread by ensuring safe default and assertions
+
+  - Fixed incorrect return type in TLS context initialization error
+    path (TCL_ERROR instead of NS_ERROR).
+
+  - connchan: Fixed potential NULL dereferences with debug mode.
+
+  - Strengthened UTF-8 validation in Ns_Valid_UTF8():
+    * Added stricter checks for continuation bytes
+    * Prevented overlong encodings and surrogate ranges
+    * Improved diagnostic messages and error reporting
+
+  - Corrected Windows/MSVC build issues:
+    * Adjusted 'nargs' type in SetCreateObjCmd() to avoid stack
+      corruption warnings
+    * Fixed buffer size in _mktemp_s() usage
+    * Made ns_mkdtemp() visible in Windows builds
+    * Corrected Ns_SockConnectUnix() mistype in Windows build
+    * Updated ns/interps/CGIinterps for Windows compatibility
+    * Provided TCLSH_PROG for Makefile generation
+    * Improved handling of EXEEXT and MINGW-specific defines
+
+  - Fixed build system bugs:
+    * Corrected use of tabs in Makefiles to avoid GNU make errors
+    * Fixed cross-compilation test execution failures
+    * Updated MSVC Makefiles for modern builds
+
+  - Fixed test suite issues:
+    * Skipped new tests requiring "lmap" when running under Tcl 8.5
+    * Added comprehensive regression tests for UTF-8 validator
+    * Adapted "ns_strcoll" tests for macOS Sequoia collation order changes
+
+Documentation and Configuration:
+--------------------------------
+
+  - Clarified default values and meaning of "schedsperthread" and
+    related scheduling parameters in sample configs and docs.
+
+  - Minor corrections in comments and error messages for platform-specific
+    builds (e.g., MINGW).
+
+Notes:
+------
+
+  - This is a bug-fix only release for the 5.0 branch.
+  - It contains selected backports from the head branch that improve
+    robustness, portability (especially Windows/MSVC), and test coverage,
+    but introduces o new features.
+
+
+=======================================
 NaviServer 5.0.0, released 2025-07-08
 =======================================
 
@@ -9,421 +306,447 @@ New Features:
 
 Security Enhancements
 
-  • Security by Default when NaviServer is used as an HTTP client (ns_http and ns_connchan)
+  - Security by Default when NaviServer is used as an HTTP client (ns_http and ns_connchan)
     All HTTP client requests now validate the peer server certificate by default.
-    ◦ Introduced the -insecure flag to bypass validation in trusted scenarios.
-    ◦ Bundled a ca-bundle.crt with well-known root certificates for out-of-the-box verification support.
+    * Introduced the -insecure flag to bypass validation in trusted scenarios.
+    * Bundled a ca-bundle.crt with well-known root certificates for out-of-the-box verification support.
 
-    ◦ Fine-Grained Validation Management:
-      ▪ Configure validation exceptions in the httpclient section to allow specific
+    * Fine-Grained Validation Management:
+      + Configure validation exceptions in the httpclient section to allow specific
         certificate issues (e.g., self-signed certs) for defined IP ranges.
-      ▪ Define a directory for storing rejected certificates, enabling later review,
+      + Define a directory for storing rejected certificates, enabling later review,
         manual trust decisions, or audit trails.
-      ▪ For details, consult the admin-config manual.
+      + For details, consult the admin-config manual.
 
-  • Certificate Management
+  - Certificate Management
     Added new commands:
-    ◦ ns_certctl list – List loaded certificates.
-    ◦ ns_certctl reload – Reload certificates at runtime.
+    * ns_certctl list – List loaded certificates.
+    * ns_certctl reload – Reload certificates at runtime.
 
-  • Pluggable Authorization Framework
-    ◦ Introduced flexible, scriptable request- and user-level authorization:
-    ◦ Supports multiple authorization handlers ("authorities") with ordered evaluation.
-    ◦ Handlers can return continuation codes (TCL_OK, TCL_BREAK, TCL_RETURN)
+  - Pluggable Authorization Framework
+    * Introduced flexible, scriptable request- and user-level authorization:
+    * Supports multiple authorization handlers ("authorities") with ordered evaluation.
+    * Handlers can return continuation codes (TCL_OK, TCL_BREAK, TCL_RETURN)
       to control the authorization chain.
-    ◦ New Tcl commands:
-      ▪ ns_auth request – Evaluate configured request-level auth handlers.
-      ▪ ns_auth user – Evaluate user-level authorization logic.
+    * New Tcl commands:
+      + ns_auth request – Evaluate configured request-level auth handlers.
+      + ns_auth user – Evaluate user-level authorization logic.
 
-  • Improved Reverse Proxy Trust Management
-    ◦ Define trusted upstream proxies via CIDR ranges.
-    ◦ Configurable handling of X-Forwarded-For chains, including:
-      ▪ Skipping non-routable addresses.
-      ▪ Alternative resolution strategies.
-    ◦ Improves accuracy and security of client IP logging (e.g., in access.log).
-    ◦ For implementation details, see commit ab23158ece.
+  - Improved Reverse Proxy Trust Management
+    * Define trusted upstream proxies via CIDR ranges.
+    * Configurable handling of X-Forwarded-For chains, including:
+      + Skipping non-routable addresses.
+      + Alternative resolution strategies.
+    * Improves accuracy and security of client IP logging (e.g., in access.log).
+    * For implementation details, see commit ab23158ece.
 
-  • Argon2 Password Hashing New command: ns_crypto::argon2
+  - Argon2 Password Hashing New command: ns_crypto::argon2
     Provides support for modern, secure password hashing.
 
 
 User Interface and HTML Improvements
+------------------------------------
 
-  • Modernized Default Start Page
-    ◦ Redesigned layout with responsive and accessible design.
-    ◦ Added modal dialog for password updates.
-    ◦ Improved security guidance for publicly exposed installations.
-    ◦ Installer now fetches resources from GitHub (previously Bitbucket).
-  • Dark Mode Support
-    ◦ Automatically respects system preferences via the prefers-color-scheme media query.
-    ◦ Supported across modern versions of Windows, macOS, iOS, and Android.
-  • Consistent Visual Styling
-    ◦ Unified look and feel across:
-      ▪ Default start page
-      ▪ NaviServer documentation
-      ▪ nsstats module interface
+  - Modernized Default Start Page
+    * Redesigned layout with responsive and accessible design.
+    * Added modal dialog for password updates.
+    * Improved security guidance for publicly exposed installations.
+    * Installer now fetches resources from GitHub (previously Bitbucket).
+  - Dark Mode Support
+    * Automatically respects system preferences via the prefers-color-scheme media query.
+    * Supported across modern versions of Windows, macOS, iOS, and Android.
+  - Consistent Visual Styling
+    * Unified look and feel across:
+      + Default start page
+      + NaviServer documentation
+      + nsstats module interface
+
 
 Configuration and File Management
+---------------------------------
 
-  • Configuration via environment variables
-    ◦ Added ability to pull in environment variables with a certain prefix as
+  - Configuration via environment variables
+    * Added ability to pull in environment variables with a certain prefix as
       configuration variables for configuration files (new command
       ns_configure_variables). This helps configuration significantly for
       container-based deployments, where ports etc. have to be adjusted on
       standardized configuration files.
 
-  • New File Location Options
-    ◦ Unified log path resolution via logdir or serverdir.
-    ◦ Moved serverdir definition from fastpath to the top-level server section;
+  - New File Location Options
+    * Unified log path resolution via logdir or serverdir.
+    * Moved serverdir definition from fastpath to the top-level server section;
       it now acts as the root for both logdir and page directories.
-    ◦ Added bindir parameter for custom binary module and nsproxy worker locations.
+    * Added bindir parameter for custom binary module and nsproxy worker locations.
 
-  • Improved Log Configuration
-    ◦ Relative log file paths are now resolved consistently based on:
-      ▪ serverrootproc (for mass virtual hosting), or
-      ▪ serverdir.
-    ◦ Supports dynamic log file naming (e.g., using Host header) for per-vhost logging.
-    ◦ Log rotation now applies across multiple log targets.
-  • Improved Section Parameter Updates
-    ◦ New -update flag for ns_section, allowing ns_param to overwrite previously
+  - Improved Log Configuration
+    * Relative log file paths are now resolved consistently based on:
+      + serverrootproc (for mass virtual hosting), or
+      + serverdir.
+    * Supports dynamic log file naming (e.g., using Host header) for per-vhost logging.
+    * Log rotation now applies across multiple log targets.
+  - Improved Section Parameter Updates
+    * New -update flag for ns_section, allowing ns_param to overwrite previously
       defined values rather than appending.
 
 
 Proxy Features
+---------------
 
-  • Reverse Proxy Integration
-    ◦ The reverse proxy module is now built into the NaviServer core.
-    ◦ Leverages improvements in ns_http, including:
-      ▪ Persistent connections
-      ▪ Streaming request handling
-    ◦ New features:
-      ▪ -use_target_host_header flag for ::revproxy::upstream to control Host header forwarding.
-      ▪ Configurable transport mechanism using either ns_http or ns_connchan.
-      ▪ Support for backend connections via Unix domain sockets.
+  - Reverse Proxy Integration
+    * The reverse proxy module is now built into the NaviServer core.
+    * Leverages improvements in ns_http, including:
+      + Persistent connections
+      + Streaming request handling
+    * New features:
+      + -use_target_host_header flag for ::revproxy::upstream to control Host header forwarding.
+      + Configurable transport mechanism using either ns_http or ns_connchan.
+      + Support for backend connections via Unix domain sockets.
 
-  • Forward Proxy Implementation
-    ◦ Base implementation included, built on the same scalable architecture as the reverse proxy.
-    ◦ Full support for the HTTP CONNECT method:
-      ▪ Enables tunneling HTTPS connections through the proxy.
-      ▪ Eliminates the need for insecure plaintext fallbacks.
+  - Forward Proxy Implementation
+    * Base implementation included, built on the same scalable architecture as the reverse proxy.
+    * Full support for the HTTP CONNECT method:
+      + Enables tunneling HTTPS connections through the proxy.
+      + Eliminates the need for insecure plaintext fallbacks.
 
 
 Additional Functional Improvements
+----------------------------------
 
-  • Case Insensitive ns_sets
-    ◦ Optionally define ns_set to be case insensitive.
+  - Case Insensitive ns_sets
+    * Optionally define ns_set to be case insensitive.
       Many usages are per definition case insensitive (header fields,
       configuration values, SQL attribute names, ...).
       Has correctness and performance impacts.
 
-  • Unix Domain Socket Support
-    ◦ Both ns_http and ns_connchan now support connections via Unix domain sockets.
+  - Unix Domain Socket Support
+    * Both ns_http and ns_connchan now support connections via Unix domain sockets.
 
-  • Multibyte HTML Entity Support
-    ◦ ns_striphtml and ns_unquotehtml now correctly decode multibyte numeric HTML entities.
+  - Multibyte HTML Entity Support
+    * ns_striphtml and ns_unquotehtml now correctly decode multibyte numeric HTML entities.
 
-  • New Log Severities
-    ◦ Security – For security-related events.
-    ◦ Deprecated – For usage of deprecated features (e.g., API calls, parameters).
+  - New Log Severities
+    * Security – For security-related events.
+    * Deprecated – For usage of deprecated features (e.g., API calls, parameters).
 
-  • TclPro Debugger Support
-    ◦ Significantly improved integration with the TclPro debugger.
-    ◦ Resolved missing file references and corrected documentation.
-    ◦ See the ns_adp_debug manual for usage.
+  - TclPro Debugger Support
+    * Significantly improved integration with the TclPro debugger.
+    * Resolved missing file references and corrected documentation.
+    * See the ns_adp_debug manual for usage.
 
-  • Tcl 9 Compatibility
-    ◦ Internal updates to support Tcl 9 features and constraints.
-    ◦ Support for Tcl command argument counts >2^31.
+  - Tcl 9 Compatibility
+    * Internal updates to support Tcl 9 features and constraints.
+    * Support for Tcl command argument counts >2^31.
 
-  • License Upgrade
-    ◦ Changed from MPL 1.1 + GPL to MPL 1.2.
-    ◦ Announced previously on the mailing list and Tcl forums.
+  - License Upgrade
+    * Changed from MPL 1.1 + GPL to MPL 1.2.
+    * Announced previously on the mailing list and Tcl forums.
 
 
 Tcl API Changes
+---------------
 
-- ns_cache
-  • New option cachingmode: Accepts full or none to toggle caching behavior.
+  - ns_cache
+    * New option cachingmode: Accepts full or none to toggle caching behavior.
 
-- ns_configsection
-  • New option -filter: Filters variables by unread, defaulted, or defaults.
+  - ns_configsection
+    * New option -filter: Filters variables by unread, defaulted, or defaults.
 
-- ns_configure_variables
-  • New command to pull in configuration variables from environment variables (for use in configuration files)
+  - ns_configure_variables
+    * New command to pull in configuration variables from environment variables
+      (for use in configuration files)
 
-- ns_conn
-  • General enhancements:
-    ◦ ns_conn host, ns_conn port, ns_conn protocol: Now return appropriate
-      values for all request types (not limited to forward proxy requests).
-  • New subcommands:
-    ◦ ns_conn target: Returns the complete request target, including query parameters,
-                      from the HTTP start line.
-    ◦ ns_conn fragment: Returns the fragment identifier (after #) if present.
-    ◦ ns_conn urldict: Parses the request URL into a Tcl dictionary for structured access.
-    ◦ ns_conn host: Supports an optional default value if the host is not determined.
-    ◦ ns_conn details: Returns a dictionary with driver-specific connection metadata.
+  - ns_conn
+    * General enhancements:
+      * ns_conn host, ns_conn port, ns_conn protocol: Now return appropriate
+        values for all request types (not limited to forward proxy requests).
+    * New subcommands:
+      * ns_conn target: Returns the complete request target, including query parameters,
+                        from the HTTP start line.
+      * ns_conn fragment: Returns the fragment identifier (after #) if present.
+      * ns_conn urldict: Parses the request URL into a Tcl dictionary for structured access.
+      * ns_conn host: Supports an optional default value if the host is not determined.
+      * ns_conn details: Returns a dictionary with driver-specific connection metadata.
 
-- ns_connchan
-  • Security and diagnostics improvements:
-    ◦ ns_connchan debug: Set or query the debug level.
-    ◦ ns_connchan connect / ns_connchan open: Now accept additional security-related
-      options: -cafile, -capath, -cert, -hostname, -insecure, -driver, and -unixsocket.
-    ◦ ns_connchan status: Added -server option for multi-server introspection.
-    ◦ ns_connchan write: Now performs buffered writes.
-  • More detailed timeout handling
+  - ns_connchan
+    * Security and diagnostics improvements:
+      * ns_connchan debug: Set or query the debug level.
+      * ns_connchan connect / ns_connchan open: Now accept additional security-related
+        options: -cafile, -capath, -cert, -hostname, -insecure, -driver, and -unixsocket.
+      * ns_connchan status: Added -server option for multi-server introspection.
+      * ns_connchan write: Now performs buffered writes.
+    * More detailed timeout handling
 
-- ns_driver
-  • info, names, stats, and threads support the -server option to allow multi-server diagnostics.
+  - ns_driver
+    * info, names, stats, and threads support the -server option to allow multi-server diagnostics.
 
-- ns_http
-  • Connection handling and introspection:
-    ◦ Persistent HTTP connections supported via the keepalive option in httpclient configuration.
-    ◦ Introduced support for multiple task threads.
-    ◦ Streaming response support for incremental data handling (useful for large file transfers
-      and LLM interaction).
-    ◦ Default timeout configuration for requests.
-    ◦ New callbacks: response_header_callback and response_data_callback.
-    ◦ Renamed -donecallback to -done_callback (old name deprecated).
-    ◦ Added support for informational HTTP status codes (e.g., 100 Continue).
-    ◦ New subcommands:
-      ▪ ns_http keepalives: Displays active persistent connections.
-      ▪ ns_http taskthreads: Provides insight into HTTP client threads.
-    ◦ Major internal refactoring of tclhttp.c for modularity and maintainability.
+  - ns_http
+    * Connection handling and introspection:
+      * Persistent HTTP connections supported via the keepalive option in httpclient configuration.
+      * Introduced support for multiple task threads.
+      * Streaming response support for incremental data handling (useful for large file transfers
+        and LLM interaction).
+      * Default timeout configuration for requests.
+      * New callbacks: response_header_callback and response_data_callback.
+      * Renamed -donecallback to -done_callback (old name deprecated).
+      * Added support for informational HTTP status codes (e.g., 100 Continue).
+      * New subcommands:
+        + ns_http keepalives: Displays active persistent connections.
+        + ns_http taskthreads: Provides insight into HTTP client threads.
+      * Major internal refactoring of tclhttp.c for modularity and maintainability.
 
-- ns_ictl
-  • getmodules: Now supports the -server option for per-server introspection.
+  - ns_ictl
+    * getmodules: Now supports the -server option for per-server introspection.
 
-- ns_info
-  • Added subcommands:
-    ◦ argv: Returns the original argument vector.
-    ◦ bindir: Returns the binary directory path.
-    ◦ buildinfo: Displays build-time config and version info.
-    ◦ logdir: Path to the log directory.
-    ◦ meminfo: Displays memory statistics (when using tcmalloc).
+  - ns_info
+    * Added subcommands:
+      + argv: Returns the original argument vector.
+      + bindir: Returns the binary directory path.
+      + buildinfo: Displays build-time config and version info.
+      + logdir: Path to the log directory.
+      + meminfo: Displays memory statistics (when using tcmalloc).
 
-- ns_ip
-  • Added subcommands:
-    ◦ inany: Checks if an IP matches any configured address.
-    ◦ properties: Returns metadata about configured IPs.
-    ◦ public: Determines if an IP is publicly routable.
-    ◦ trusted: Checks if an IP is trusted.
-    ◦ valid: Validates IP syntax.
-  • These enhancements supersede the need for ns_subnetmatch.
+  - ns_ip
+    * Added subcommands:
+      + inany: Checks if an IP matches any configured address.
+      + properties: Returns metadata about configured IPs.
+      + public: Determines if an IP is publicly routable.
+      + trusted: Checks if an IP is trusted.
+      + valid: Validates IP syntax.
+    * These enhancements supersede the need for ns_subnetmatch.
 
-- ns_issmallint
-  • New command to check if a value is a valid small integer (replaces the old,
-    now deprecated issmallint).
+  - ns_issmallint
+    * New command to check if a value is a valid small integer (replaces the old,
+      now deprecated issmallint).
 
-- ns_logctl
-  • New subcommand grep: Searches log files with pattern matching,
-    stripping color codes and handling line continuations.
+  - ns_logctl
+    * New subcommand grep: Searches log files with pattern matching,
+      stripping color codes and handling line continuations.
 
-- ns_register* Enhancements
-  • All ns_register_* commands now support the -constraints option, enabling context-sensitive behavior.
-  • New command: ns_register_auth allows registration of user- and request-level authorization handlers.
+  - ns_register* Enhancements
+    * All ns_register_* commands now support the -constraints option, enabling context-sensitive behavior.
+    * New command: ns_register_auth allows registration of user- and request-level authorization handlers.
 
-- ns_server
-  • New subcommands:
-    ◦ authprocs: Lists registered request/user auth procedures.
-    ◦ hosts: Lists registered hostnames for the server.
-    ◦ logdir: Returns the server log directory.
-    ◦ realm: returns or sets the realm of the server
-    ◦ serverdir: Returns the base directory for the virtual server
-      (-effective returns the resolved runtime path).
-    ◦ vhostenabled: Returns a boolean indicating virtual hosting status.
-  • ns_server mapped: New option -all returns a dict with handler and pool info.
+  - ns_server
+    * New subcommands:
+      + authprocs: Lists registered request/user auth procedures.
+      + hosts: Lists registered hostnames for the server.
+      + logdir: Returns the server log directory.
+      + realm: returns or sets the realm of the server
+      + serverdir: Returns the base directory for the virtual server
+        (-effective returns the resolved runtime path).
+      + vhostenabled: Returns a boolean indicating virtual hosting status.
+    * ns_server mapped: New option -all returns a dict with handler and pool info.
 
-- ns_set
-  • Case-insensitive support:
-    ◦ New -nocase flag for ns_set create and related operations.
-    ◦ Deprecated the i* subcommands (e.g., iget, ifind) in favor of unified interface.
+  - ns_set
+    * Case-insensitive support:
+      + New -nocase flag for ns_set create and related operations.
+      + Deprecated the i* subcommands (e.g., iget, ifind) in favor of unified interface.
 
-  • Multi-valued key support:
-    ◦ -all option retrieves all values for a given key in ns_set and ns_config.
+    * Multi-valued key support:
+      + -all option retrieves all values for a given key in ns_set and ns_config.
 
-  • New subcommands:
-    ◦ format: Pretty-prints the set contents.
-    ◦ stats: Returns memory usage statistics.
+    * New subcommands:
+      + format: Pretty-prints the set contents.
+      + stats: Returns memory usage statistics.
 
-  • delkey: Now returns a boolean success flag.
+    * delkey: Now returns a boolean success flag.
 
-  • Internal improvements:
-    ◦ Refactored ns_set internals using dense storage for lower memory use and better cache locality.
-    ◦ Replaced deeply nested switch logic with modular, maintainable code.
+    * Internal improvements:
+      + Refactored ns_set internals using dense storage for lower memory use and better cache locality.
+      + Replaced deeply nested switch logic with modular, maintainable code.
 
-- ns_thread
-  • Unified thread creation:
-    ◦ Use ns_thread create for all thread types.
-    ◦ Deprecated begin and begindetached to align with ns_cond, ns_mutex,
-      and ns_sema usage.
+  - ns_thread
+    * Unified thread creation:
+      + Use ns_thread create for all thread types.
+      + Deprecated begin and begindetached to align with ns_cond, ns_mutex,
+        and ns_sema usage.
 
-- ns_urlspace
-  • Wildcard matching now supports path-segment-level matches (previously
-    limited to leaf nodes).
-  • Applied improved matching in nscgi to support directory-wide CGI mapping.
-  • Renamed option -contextfilter to -constraints in ns_urlspace set/unset
-    to match the new registration API.
+  - ns_urlspace
+    * Wildcard matching now supports path-segment-level matches (previously
+      limited to leaf nodes).
+    * Applied improved matching in nscgi to support directory-wide CGI mapping.
+    * Renamed option -contextfilter to -constraints in ns_urlspace set/unset
+      to match the new registration API.
+
 
 Database Enhancements
-  • ns_db info: Returns a dictionary of metadata for a given DB handle.
-  • ns_dbpooldescription: Renamed from the previous ns_pooldescription for consistent naming.
-  • ns_db rowcount: Fixed in this release to return actual row counts.
+---------------------
+  - ns_db info: Returns a dictionary of metadata for a given DB handle.
+  - ns_dbpooldescription: Renamed from the previous ns_pooldescription for consistent naming.
+  - ns_db rowcount: Fixed in this release to return actual row counts.
+
 
 New Utilities
-  • ns_fseekchars: Efficiently scans a stream for a string (e.g., for multipart/form-data parsing).
-  • ns_joinurl: Constructs well-formed URLs from path components.
-  • ns_mkdtemp: Creates a unique temporary directory (POSIX-style mkdtemp()).
-  • ns_parsehtml: Parses HTML fragments into a structured Tcl dict.
-  • ns_parsemessage: Parses MIME-style messages (e.g., emails or HTTP headers).
-  • ns_percentencode / ns_percentdecode: Replace deprecated ns_urlencode and ns_urldecode
+-------------
+  - ns_fseekchars: Efficiently scans a stream for a string (e.g., for multipart/form-data parsing).
+  - ns_joinurl: Constructs well-formed URLs from path components.
+  - ns_mkdtemp: Creates a unique temporary directory (POSIX-style mkdtemp()).
+  - ns_parsehtml: Parses HTML fragments into a structured Tcl dict.
+  - ns_parsemessage: Parses MIME-style messages (e.g., emails or HTTP headers).
+  - ns_percentencode / ns_percentdecode: Replace deprecated ns_urlencode and ns_urldecode
     for robust URL-safe encoding/decoding.
 
+
 Changes in Core Modules
+-----------------------
 
 nscgi
-  • New command: ns_register_cgi for dynamic CGI handler registration (supports -noinherit, -path, etc.).
-  • Supports unregistration via ns_unregister_op.
-  • New environment variables: SCRIPT_FILENAME, REQUEST_URI.
-  • Refactored to support major web apps (e.g., WordPress, Joomla).
-  • See commit 36027b70215 for implementation details.
+  - New command: ns_register_cgi for dynamic CGI handler registration (supports -noinherit, -path, etc.).
+  - Supports unregistration via ns_unregister_op.
+  - New environment variables: SCRIPT_FILENAME, REQUEST_URI.
+  - Refactored to support major web apps (e.g., WordPress, Joomla).
+  - See commit 36027b70215 for implementation details.
 
 nscp
-  • Integrated with new authorization system (e.g., via nsperm users).
-  • New command nscp users: Lists registered users for nscp authentication.
+  - Integrated with new authorization system (e.g., via nsperm users).
+  - New command nscp users: Lists registered users for nscp authentication.
 
 nsperm
-  • Acts as a pluggable authorization provider for request/user scopes.
-  • New config parameter: allowLoopbackEmptyUser—permits unauthenticated loopback access when enabled.
-  • Added support for setting default server start pages and nsstats.
+  - Acts as a pluggable authorization provider for request/user scopes.
+  - New config parameter: allowLoopbackEmptyUser - permits unauthenticated loopback access when enabled.
+  - Added support for setting default server start pages and nsstats.
 
 nsproxy
-  • New subcommand: ns_proxy workers—provides detailed runtime info on proxy worker processes.
+  - New subcommand: ns_proxy workers-provides detailed runtime info on proxy worker processes.
 
 
 Bug Fixes
+---------
 
 Stability and Crash Resolutions
+-------------------------------
 
-  • Addressed multiple potential crash scenarios:
-    ◦ Robust handling of HTTP CONNECT requests.
-    ◦ Fixed crashes caused by missing or empty argument lists in commands such as ns_filestat,
+  - Addressed multiple potential crash scenarios:
+    * Robust handling of HTTP CONNECT requests.
+    * Fixed crashes caused by missing or empty argument lists in commands such as ns_filestat,
       ns_sockcallback, and ns_ictl oncleanup.
-    ◦ Prevented crash in ns_log when invoked with an empty message.
-    ◦ Resolved a 24-year-old bug in Ns_AdjTime() that could lead to fatal errors due to
+    * Prevented crash in ns_log when invoked with an empty message.
+    * Resolved a 24-year-old bug in Ns_AdjTime() that could lead to fatal errors due to
       microsecond overflow in multithreaded environments.
-    ◦ Fixed crash in ns_conn copy when operating on empty content.
-    ◦ Prevented crash in ns_sema release with invalid semaphore counts.
-    ◦ Corrected off-by-one error in ns_adp_bind_args that could access uninitialized Tcl_Obj values.
-    ◦ Fixed crash in ns_inet_ntop due to unsafe memory operations with overlapping regions
+    * Fixed crash in ns_conn copy when operating on empty content.
+    * Prevented crash in ns_sema release with invalid semaphore counts.
+    * Corrected off-by-one error in ns_adp_bind_args that could access uninitialized Tcl_Obj values.
+    * Fixed crash in ns_inet_ntop due to unsafe memory operations with overlapping regions
       (notably on aarch64 with musl).
-    ◦ Resolved crash in Ns_SetIUpdateSz() caused by case mismatch in header keys with the legacy C API.
-    ◦ Fixed crash during nscp startup when the users section was not configured.
-    ◦ Prevented crash in debug mode when the Host: header could not be mapped to a virtual server
+    * Resolved crash in Ns_SetIUpdateSz() caused by case mismatch in header keys with the legacy C API.
+    * Fixed crash during nscp startup when the users section was not configured.
+    * Prevented crash in debug mode when the Host: header could not be mapped to a virtual server
       and the driver was installed locally.
-    ◦ Avoided crash when launching nsd with -c and -t options and no home parameter defined.
-    ◦ Fixed crash during computation of ns_conn location when the network driver was not
+    * Avoided crash when launching nsd with -c and -t options and no home parameter defined.
+    * Fixed crash during computation of ns_conn location when the network driver was not
       globally installed (global installation now recommended).
-    ◦ Fixed crash due to self-destructive header replacement when ns_conn outputheaders
+    * Fixed crash due to self-destructive header replacement when ns_conn outputheaders
       are passed via ns_respond ... -headers ...
 
 Functional Correctness and Logic Fixes:
-  • ns_conn status: Fixed issue where updated status codes were silently ignored.
-  • ns_conn doneCallback: Ensured this callback is always invoked in ns_http.
-  • nsv_dict get: Fixed a memory leak in value retrieval.
-  • ns_conn peeraddr: Resolved race condition in pipelined requests that
+---------------------------------------
+
+  - ns_conn status: Fixed issue where updated status codes were silently ignored.
+  - ns_conn doneCallback: Ensured this callback is always invoked in ns_http.
+  - nsv_dict get: Fixed a memory leak in value retrieval.
+  - ns_conn peeraddr: Resolved race condition in pipelined requests that
     could yield incorrect peer addresses.
-  • ns_cache_eval -force: Fixed race condition that could produce obsolete results.
-  • ns_sema create: Corrected handling of initial count values (e.g., 1000).
-  • ns_trim: Fixed spacing logic to trim only leading and trailing whitespace, preserving internal spacing.
-  • ns_config -int: Corrected fallback behavior when invalid values are supplied,
+  - ns_cache_eval -force: Fixed race condition that could produce obsolete results.
+  - ns_sema create: Corrected handling of initial count values (e.g., 1000).
+  - ns_trim: Fixed spacing logic to trim only leading and trailing whitespace, preserving internal spacing.
+  - ns_config -int: Corrected fallback behavior when invalid values are supplied,
     now correctly using documented defaults.
-  • ns_sockcallback: Now gracefully handles missing arguments.
-  • ns_socknread: Fixed inaccurate results for buffered connections.
-  • ns_crypto::aead::encrypt/decrypt: Restored compatibility with OpenSSL 1.1.1.
-  • Fixed incorrect parsing of encoded backslashes in URLs.
-  • Ns_StrTrimRight(): Corrected UTF-8 handling in right-side string trimming.
-  • Fixed ns_conn location when running behind a reverse proxy to always returns a value,
+  - ns_sockcallback: Now gracefully handles missing arguments.
+  - ns_socknread: Fixed inaccurate results for buffered connections.
+  - ns_crypto::aead::encrypt/decrypt: Restored compatibility with OpenSSL 1.1.1.
+  - Fixed incorrect parsing of encoded backslashes in URLs.
+  - Ns_StrTrimRight(): Corrected UTF-8 handling in right-side string trimming.
+  - Fixed ns_conn location when running behind a reverse proxy to always returns a value,
     even in broken configurations.
 
 OpenSSL fixes
-  • Added support for detecting and validating OCSP Must-Staple and AIA presence
+-------------
+  - Added support for detecting and validating OCSP Must-Staple and AIA presence
     in certificates. Without that, NaviServer might crash, when OCSP is turned on,
     and NULL values are passed for AIA URLs (letsencrypt)
-  • Introduced stable output buffers for send operations to support retries
+  - Introduced stable output buffers for send operations to support retries
     after SSL_ERROR_WANT_WRITE, preventing connection failures under high load.
-  • Improved error handling in OpenSSL integration by draining the error stack via DrainErrorStack().
+  - Improved error handling in OpenSSL integration by draining the error stack via DrainErrorStack().
 
 HTTP Client Fixes
-  • ns_http:
-    ◦ Reordered initialization in NsInitServer() to ensure submodules
+-----------------
+  - ns_http:
+    * Reordered initialization in NsInitServer() to ensure submodules
       can access a fully configured server state.
 
 HTML and ADP Parsing Fixes
-  • ADP Parser:
-    ◦ Enhanced support for quoted > characters inside attribute values, aligning with modern HTML parsing rules.
-  • return-notice handling:
-    ◦ Suppressed spurious error messages when fallback ADP templates are processed outside of a full ADP context.
-  • ns_striphtml:
-    ◦ Fixed long-standing bug where adjacent HTML entities were incorrectly decoded;
+--------------------------
+  - ADP Parser:
+    * Enhanced support for quoted > characters inside attribute values, aligning with modern HTML parsing rules.
+  - return-notice handling:
+    * Suppressed spurious error messages when fallback ADP templates are processed outside of a full ADP context.
+  - ns_striphtml:
+    * Fixed long-standing bug where adjacent HTML entities were incorrectly decoded;
       only the first entity was processed.
 
 Logging and Diagnostics Fixes
-
-  • Fixed misleading log output when dynamically changing extended headers via
+-----------------------------
+  - Fixed misleading log output when dynamically changing extended headers via
     ns_accesslog extendedheaders ....
-  • Improved error messages when port binding fails due to conflicts with driver assignment.
-  • Fixed off-by-one error in the virtual server port configuration logic.
-  • Clarified or corrected multiple logging messages across modules for better diagnostics.
+  - Improved error messages when port binding fails due to conflicts with driver assignment.
+  - Fixed off-by-one error in the virtual server port configuration logic.
+  - Clarified or corrected multiple logging messages across modules for better diagnostics.
 
 nscgi Module Fixes
-  • Fixed file upload failures when uploads were internally spooled by NaviServer —
+-------------
+  - Fixed file upload failures when uploads were internally spooled by NaviServer -
     previously returned 500 errors.
-  • Corrected processing of CGI script exit codes not 0.
-  • Fixed hostname and port reporting for SERVER_NAME.
+  - Corrected processing of CGI script exit codes not 0.
+  - Fixed hostname and port reporting for SERVER_NAME.
 
 Database Fixes
-  • ns_db rowcount: Fixed regression where the row count logic was not invoked, rendering the command a no-op.
+---------------
+  - ns_db rowcount: Fixed regression where the row count logic was not invoked, rendering the command a no-op.
 
 Build and Compatibility Fixes
-  • Suppressed obsolete --enable-threads warning for Tcl versions where thread support is now enabled by default.
-  • Fixed compilation failure with glibc 2.38+ due to PTHREAD_STACK_MIN becoming dynamic via sysconf().
+  - Suppressed obsolete --enable-threads warning for Tcl versions where thread support is now enabled by default.
+  - Fixed compilation failure with glibc 2.38+ due to PTHREAD_STACK_MIN becoming dynamic via sysconf().
 
 General Cleanups
-  • Fixed small memory leak triggered by serverrootproc reset.
-  • Numerous minor typo corrections, comment clarifications, and small logic cleanups across modules.
+----------------
+  - Fixed small memory leak triggered by serverrootproc reset.
+  - Numerous minor typo corrections, comment clarifications, and small logic cleanups across modules.
 
 
 C-Level Infrastructure, C API Enhancements, and Build System
+-------------------------------------------------------------
 
 Core Infrastructure Improvements
-  • Socket Layer Enhancements:
-    ◦ Added sendErrno field to the Sock structure to improve diagnostics and tracking of write errors.
-  • Modernized Initialization:
-    ◦ Introduced NS_INIT_ONCE() macro for thread-safe one-time initialization,
+--------------------------------
+  - Socket Layer Enhancements:
+    * Added sendErrno field to the Sock structure to improve diagnostics and tracking of write errors.
+  - Modernized Initialization:
+    * Introduced NS_INIT_ONCE() macro for thread-safe one-time initialization,
       replacing legacy double-lock patterns.
-  • Data Structure Utilities:
-    ◦ Added utility functions Ns_DListSaveString() and Ns_DListFreeElements()
+  - Data Structure Utilities:
+    * Added utility functions Ns_DListSaveString() and Ns_DListFreeElements()
       to simplify dynamic list management.
-    ◦ Replaced use of legacy Ns_DString functions with standard Tcl_DString,
+    * Replaced use of legacy Ns_DString functions with standard Tcl_DString,
       modernizing internal data handling.
-  • Debugging Support:
-    ◦ Added NsHexPrint() for hex-dumping of byte sequences, aiding in
+  - Debugging Support:
+    * Added NsHexPrint() for hex-dumping of byte sequences, aiding in
       low-level debugging and analysis.
-  • Introspection Enhancements:
-    ◦ Introduced Ns_TclReturnCodeString() and Ns_ReturnCodeString() to
+  - Introspection Enhancements:
+    * Introduced Ns_TclReturnCodeString() and Ns_ReturnCodeString() to
       convert internal return codes into readable strings, improving log clarity and diagnostics.
-  • Code Quality and Performance:
-    ◦ Applied extensive internal refactorings to improve performance, cache locality,
+  - Code Quality and Performance:
+    * Applied extensive internal refactorings to improve performance, cache locality,
       and maintainability across multiple subsystems.
 
 
 C API Enhancements
+------------------
 
-  • General:
-    ◦ Added typedefs for Ns_AuthorizeRequestProc, Ns_AuthorizeUserProc,
+  - General:
+    * Added typedefs for Ns_AuthorizeRequestProc, Ns_AuthorizeUserProc,
       Ns_UrlSpaceMatchInfo, Ns_DriverConnInfoProc
-    ◦ Added enum for Ns_RequestType, Ns_UrlSpaceOp, Ns_DriverClientInitArg
-    ◦ Added API calls in ns.h: Ns_ConfigFilename, Ns_ConnTarget, Ns_UrlSpaceMatchInfo,
+    * Added enum for Ns_RequestType, Ns_UrlSpaceOp, Ns_DriverClientInitArg
+    * Added API calls in ns.h: Ns_ConfigFilename, Ns_ConnTarget, Ns_UrlSpaceMatchInfo,
       Ns_ConnServPtr, Ns_DStringAppendSockState, Ns_RegisterFilter2, Ns_TaskQueueLength,
       Ns_TaskQueueName, Ns_TaskQueueRequests, Ns_ObjvTablePrint, Ns_InfoLogPath, Ns_LogPath,
       Ns_ServerLogDir, Ns_ServerRootProcEnabled, Ns_ServerLogGetFd, Ns_ServerLogCloseAll,
@@ -434,269 +757,282 @@ C API Enhancements
       Ns_SockaddrInAny, Ns_SockaddrAddToDictIpProperties, Ns_TclReturnCodeString, Ns_ReturnCodeString,
       Ns_TclInterpServPtr, Ns_LogDeprecatedParameter, Ns_RegisterFastUrl2File
 
-    ◦ Extended Ns_Request, Ns_TclCallback
-    ◦ Refactored Ns_ConnReturnMoved() and Ns_ConnReturnRedirect() to unify redirection logic.
+    * Extended Ns_Request, Ns_TclCallback
+    * Refactored Ns_ConnReturnMoved() and Ns_ConnReturnRedirect() to unify redirection logic.
 
-  • Secure Communication and Validation:
-    ◦ Added fine-grained certificate validation APIs
-    ◦ Improved error stack draining for OpenSSL operations.
+  - Secure Communication and Validation:
+    * Added fine-grained certificate validation APIs
+    * Improved error stack draining for OpenSSL operations.
 
-  • Extended C API for ns_connchan:
-    ◦ Introduced a minimal C-level API for connchan connections, enabling finer control
+  - Extended C API for ns_connchan:
+    * Introduced a minimal C-level API for connchan connections, enabling finer control
       over lower-level network operations.
 
-  • Build Platform Compatibility:
-    ◦ Updated Windows build system to use NS_IMPORT in place of deprecated NS_EXTERN.
-    ◦ Avoided use of deprecated C functions such as mktemp() to improve portability and security.
+  - Build Platform Compatibility:
+    * Updated Windows build system to use NS_IMPORT in place of deprecated NS_EXTERN.
+    * Avoided use of deprecated C functions such as mktemp() to improve portability and security.
 
 Build System and Tooling
-  • Configuration and Sample Support:
-    ◦ Replaced hard-coded OS commands (ls, mv, ...) consistently with build variables
-    ◦ Replaced hard-coded OpenSSL binary references with the $(OPENSSL) build variable.
-    ◦ Enhanced log path and configuration variable handling to support more dynamic setups.
+------------------------
 
-  • Test Infrastructure:
-    ◦ Extended regression and compatibility test coverage to validate edge cases
+  - Configuration and Sample Support:
+    * Replaced hard-coded OS commands (ls, mv, ...) consistently with build variables
+    * Replaced hard-coded OpenSSL binary references with the $(OPENSSL) build variable.
+    * Enhanced log path and configuration variable handling to support more dynamic setups.
+
+  - Test Infrastructure:
+    * Extended regression and compatibility test coverage to validate edge cases
       and cross-platform behavior.
 
-  • Build Metadata Introspection:
-    ◦ Added support for build-time introspection of environment settings,
+  - Build Metadata Introspection:
+    * Added support for build-time introspection of environment settings,
       including allocator type (e.g., malloc), compiler version, and Tcl build info.
 
-  • Optional Deprecation-Free Builds:
-    ◦ Introduced build flag NS_NO_DEPRECATED to exclude deprecated functions and
+  - Optional Deprecation-Free Builds:
+    * Introduced build flag NS_NO_DEPRECATED to exclude deprecated functions and
       APIs, mirroring Tcl’s TCL_NO_DEPRECATED mechanism.
 
-  • CI/CD Modernization:
-    ◦ Upgraded GitHub Actions workflows from version 3 to version 4 for
+  - CI/CD Modernization:
+    * Upgraded GitHub Actions workflows from version 3 to version 4 for
       improved performance and compatibility.
 
-  • Sample Configuration Files:
-    ◦ Improved sample configurations (nsd-config and openacs-config) to
+  - Sample Configuration Files:
+    * Improved sample configurations (nsd-config and openacs-config) to
       use environment-specific settings via ns_configure_variables
-    ◦ prefer names http and https instead of nsock and nsssl inside sample
+    * prefer names http and https instead of nsock and nsssl inside sample
       configuration files to ease configuration for new users.
 
 
 Documentation Updates
+---------------------
 
-  • Conducted a thorough review and restructuring of all documentation:
-    ◦ Tcl Command Documentation:
-      ▪ Ensured all implemented Tcl commands and their options are fully documented.
-      ▪ Removed documentation for obsolete or unimplemented commands.
-      ▪ Deprecated commands are no longer advertised in manuals or used in examples.
-      ▪ Introduced a dedicated section listing deprecated commands.
-      ▪ Enabled automated generation of a complete command reference.
-    ◦ Test Alignment:
-      ▪ Verified that every implemented Tcl command is covered by regression tests.
-      ▪ Ensured that all documented commands are also implemented and tested.
+  - Conducted a thorough review and restructuring of all documentation:
+    * Tcl Command Documentation:
+      + Ensured all implemented Tcl commands and their options are fully documented.
+      + Removed documentation for obsolete or unimplemented commands.
+      + Deprecated commands are no longer advertised in manuals or used in examples.
+      + Introduced a dedicated section listing deprecated commands.
+      + Enabled automated generation of a complete command reference.
+    * Test Alignment:
+      + Verified that every implemented Tcl command is covered by regression tests.
+      + Ensured that all documented commands are also implemented and tested.
 
-  • Standardized placeholder syntax across the documentation and syntax error messages
+  - Standardized placeholder syntax across the documentation and syntax error messages
     (see commit ffbd32774db for details).
 
 Manual Page Improvements
+------------------------
+  - nscgi: Significantly revised documentation and usage examples for clarity and completeness.
+  - admin-config.man: Added a new section on "Customizing File Locations".
+  - Added and updated sections covering:
+    * Basic templating features.
+    * Error handling mechanisms.
+    * Recently introduced Tcl commands and options.
 
-  • nscgi: Significantly revised documentation and usage examples for clarity and completeness.
-  • admin-config.man: Added a new section on “Customizing File Locations”.
-  • Added and updated sections covering:
-    ◦ Basic templating features.
-    ◦ Error handling mechanisms.
-    ◦ Recently introduced Tcl commands and options.
 Visual and Structural Enhancements
-  • Updated diagrams and usage examples related to:
-    ◦ Request processing flow.
-    ◦ Reverse proxy (revproxy) behavior.
+----------------------------------
+  - Updated diagrams and usage examples related to:
+    * Request processing flow.
+    * Reverse proxy (revproxy) behavior.
+
 Additional Improvements
-  • Numerous corrections to spelling, grammar, formatting, and internal linking
+-----------------------
+  - Numerous corrections to spelling, grammar, formatting, and internal linking
     throughout the documentation.
 
 Deprecation Management Infrastructure
-  • Introduced compiler warnings for usage of deprecated Ns_DString* functions
-  • Added log severity level Deprecated to better surface deprecated usage at runtime
-  • Documented all deprecated commands in a dedicated section of the command reference
-  • Deprecated the use of manual double-checked locking for one-time initialization
+-------------------------------------
+  - Introduced compiler warnings for usage of deprecated Ns_DString* functions
+  - Added log severity level Deprecated to better surface deprecated usage at runtime
+  - Documented all deprecated commands in a dedicated section of the command reference
+  - Deprecated the use of manual double-checked locking for one-time initialization
     replaced by the NS_INIT_ONCE() macro for safer and cleaner initialization semantics
 
 
 Deprecations
+------------
 
 Tcl-Level Command Deprecations
-  • Deprecated the following Tcl commands:
-    ◦ ns_set print → replaced by ns_set format
-    ◦ ns_checkurl and ns_requestauthorize → replaced by ns_auth request
-    ◦ ns_thread begin → replaced by ns_thread create
-    ◦ ns_thread begindetached → replaced by ns_thread create -detached
-    ◦ ns_event → replaced by ns_cond
-    ◦ ns_pooldescription → replaced by ns_dbpooldescription
-    ◦ keyldel, keylget, keylkeys, keylset (from TclX) → replaced by native dict functionality in Tcl
-    ◦ Legacy experimental functions (marked TBD for over 20 years) are now deprecated:
-      ▪ ns_browsermatch, ns_choosecharset, ns_cookiecharset, ns_formfieldcharset, ns_formvalueput,
+------------------------------
+
+  - Deprecated the following Tcl commands:
+    * ns_set print -> replaced by ns_set format
+    * ns_checkurl and ns_requestauthorize -> replaced by ns_auth request
+    * ns_thread begin -> replaced by ns_thread create
+    * ns_thread begindetached -> replaced by ns_thread create -detached
+    * ns_event -> replaced by ns_cond
+    * ns_pooldescription -> replaced by ns_dbpooldescription
+    * keyldel, keylget, keylkeys, keylset (from TclX) -> replaced by native dict functionality in Tcl
+    * Legacy experimental functions (marked TBD for over 20 years) are now deprecated:
+      + ns_browsermatch, ns_choosecharset, ns_cookiecharset, ns_formfieldcharset, ns_formvalueput,
         ns_paren, ns_tagelement, ns_tagelementset
-    ◦ Deprecated non-namespaced functions:
-      ▪ getformdata, issmallint
-    ◦ ns_parsetime: now officially deprecated (was internally marked "To be removed" for ~15 years)
-    ◦ ns_set_precision: deprecated in favor of standard Tcl idioms
+    * Deprecated non-namespaced functions:
+      + getformdata, issmallint
+    * ns_parsetime: now officially deprecated (was internally marked "To be removed" for ~15 years)
+    * ns_set_precision: deprecated in favor of standard Tcl idioms
 
 Tcl-Level Option Deprecations
-  • Deprecated options:
-    ◦ -buffered in ns_connchan write
-    ◦ -donecallback in ns_http → replaced by -done_callback (naming consistency)
-    ◦ -binary (previously used to indicate Tcl objects with binary data) → replaced
+-----------------------------
+  - Deprecated options:
+    * -buffered in ns_connchan write
+    * -donecallback in ns_http -> replaced by -done_callback (naming consistency)
+    * -binary (previously used to indicate Tcl objects with binary data) -> replaced
       by -data, aligning with conventions where -binary is a boolean flag
 
 C-Level API Deprecations
-  • Deprecated or removed C functions:
-    ◦ Ns_ObjvFlags() → replaced by Ns_ObjvIndex() for option parsing (removed redundancy)
-    ◦ Ns_SockSendBufs2() → replaced by Ns_SockSendBufsEx() which returns an additional errorCode
-    ◦ Ns_TclInitInterps() → removed (marked as deprecated since 2005)
-    ◦ Deprecated internal usage of OpenSSL and Tcl functions that have been marked as deprecated upstream
-    ◦ All C functions previously marked as deprecated in source comments are now
+------------------------
+  - Deprecated or removed C functions:
+    * Ns_ObjvFlags() -> replaced by Ns_ObjvIndex() for option parsing (removed redundancy)
+    * Ns_SockSendBufs2() -> replaced by Ns_SockSendBufsEx() which returns an additional errorCode
+    * Ns_TclInitInterps() -> removed (marked as deprecated since 2005)
+    * Deprecated internal usage of OpenSSL and Tcl functions that have been marked as deprecated upstream
+    * All C functions previously marked as deprecated in source comments are now
       officially deprecated
 
 Configuration Parameter Deprecations
-  • Global config parameters:
-    ◦ logroll: → replaced by logrollonsignal (standardized log rotation behavior on SIGHUP)
-    ◦ serverlog: → replaced by systemlog to reduce ambiguity between system and per-server logs
+------------------------------------
+  - Global config parameters:
+    * logroll: -> replaced by logrollonsignal (standardized log rotation behavior on SIGHUP)
+    * serverlog: -> replaced by systemlog to reduce ambiguity between system and per-server logs
 
-  • Section parameter changes:
-    ◦ serverdir in the fastpath section is now deprecated → use serverdir in the main
+  - Section parameter changes:
+    * serverdir in the fastpath section is now deprecated -> use serverdir in the main
       per-server section instead (reflecting its broader usage scope)
 
 
 Changes in Extra Modules
-
+------------------------
 letsencrypt
-  • Tcl9 compatibility changes
+  - Tcl9 compatibility changes
 
 nsauthpam
-  • Tcl9 compatibility changes
-  • License upgrade
+  - Tcl9 compatibility changes
+  - License upgrade
 
 nscoap
-  • Tcl9 compatibility changes
-  • NaviServer 5 compatibility
-  • License upgrade
+  - Tcl9 compatibility changes
+  - NaviServer 5 compatibility
+  - License upgrade
 
 nsdbbdb
-  • Replaced deprecated Ns_DString operations
-  • Support for LMDB
+  - Replaced deprecated Ns_DString operations
+  - Support for LMDB
 
 nsdbi
-  • Removed calls to deprecated functions
-  • Tcl9 compatibility changes
+  - Removed calls to deprecated functions
+  - Tcl9 compatibility changes
 
 nsdbilite
-  • Removed calls to deprecated functions
+  - Removed calls to deprecated functions
 
 nsdbimy
-  • Removed calls to deprecated functions
+  - Removed calls to deprecated functions
 
 nsdbipg
-  • Removed calls to deprecated functions
+  - Removed calls to deprecated functions
 
 nsdbmysql
-  • Removed calls to deprecated functions
+  - Removed calls to deprecated functions
 
 nsdbpg
-  • Tcl9 compatibility changes
-  • NaviServer 5 compatibility
-  • Removed calls to deprecated functions
-  • License upgrade
+  - Tcl9 compatibility changes
+  - NaviServer 5 compatibility
+  - Removed calls to deprecated functions
+  - License upgrade
 
 nsdbsqlite
-  • Fixed execution of DML queries.
-  • Removed calls to deprecated functions
-  • Pulled in new upstream version (3.47.2) of qlite3.c
+  - Fixed execution of DML queries.
+  - Removed calls to deprecated functions
+  - Pulled in new upstream version (3.47.2) of qlite3.c
 
 nsdns
-  • Removed calls to deprecated functions
-  • Code cleanup
+  - Removed calls to deprecated functions
+  - Code cleanup
 
 nsldap
-  • Added support for LDAP URIs in pool configuration
-  • Removed calls to deprecated functions
-  • Removed unneeded compile macro
-  • Fixed result setting of "connected" subcommand
-  • Refactor nsldap Tcl command into modular subcommands
-  • Tcl9 compatibility changes
-  • Updated documentation
+  - Added support for LDAP URIs in pool configuration
+  - Removed calls to deprecated functions
+  - Removed unneeded compile macro
+  - Fixed result setting of "connected" subcommand
+  - Refactor nsldap Tcl command into modular subcommands
+  - Tcl9 compatibility changes
+  - Updated documentation
 
 nsloopctl
-  • Tcl9 compatibility changes
-  • Minor code cleanup
+  - Tcl9 compatibility changes
+  - Minor code cleanup
 
 nsmemcache
-  • Removed calls to deprecated functions
+  - Removed calls to deprecated functions
 
 nsoracle
-  • Added experimental boolean configuration parameter convertEncoding:
+  - Added experimental boolean configuration parameter convertEncoding:
     When this Boolean parameter is true, the connection is created with
     OCIEnvNlsCreate() instead of OCIEnvCreate(). OCIEnvNlsCreate was
     introduced with Oracle9 and is an enhanced version of OCIEnvCreate()
     which is used by default (legacy setting) or when ConvertEncoding is not true.
     This parameter performs on-the-fly conversions when connecting to a Latin1
     encoded database.
-  • Removed calls to deprecated functions
-  • Modernized configuration (range checks) and use Ns_ReturnCode when appropriate
-  • Tcl9 compatibility changes
+  - Removed calls to deprecated functions
+  - Modernized configuration (range checks) and use Ns_ReturnCode when appropriate
+  - Tcl9 compatibility changes
 
 nsphp
-  • Removed calls to deprecated functions
+  - Removed calls to deprecated functions
 
 nsshell
-  • Updated command list for command completion for NaviServer 5
-  • Updated most JavaScript libraries
+  - Updated command list for command completion for NaviServer 5
+  - Updated most JavaScript libraries
 
 nssmtpd
-  • Simplified configuration (provided defaults were possible)
-  • Added support for providing mailserver password via userinfo in relayhost
-  • Fixed multi-line response parsing
-  • Tcl9 compatibility changes
-  • NaviServer 5 compatibility
-  • Removed calls to deprecated functions
-  • Updated documentation
-  • License upgrade
+  - Simplified configuration (provided defaults were possible)
+  - Added support for providing mailserver password via userinfo in relayhost
+  - Fixed multi-line response parsing
+  - Tcl9 compatibility changes
+  - NaviServer 5 compatibility
+  - Removed calls to deprecated functions
+  - Updated documentation
+  - License upgrade
 
 nssnmp
-  • Removed calls to deprecated functions
+  - Removed calls to deprecated functions
 
 nsstats
-  • More detailed reports:
-    ◦ added list of loaded modules per server
-    ◦ added list of all registered domain names for a driver
-    ◦ added server log dir to per-server information
-  • Refactored web UI (adjusted layout for NaviServer 4.99 and 5)
-  • Added support for darkmode
-  • Added support for nsperm module, when installed
-  • Made parsing of http client log file more robust
-  • License upgrade
+  - More detailed reports:
+    * added list of loaded modules per server
+    * added list of all registered domain names for a driver
+    * added server log dir to per-server information
+  - Refactored web UI (adjusted layout for NaviServer 4.99 and 5)
+  - Added support for darkmode
+  - Added support for nsperm module, when installed
+  - Made parsing of http client log file more robust
+  - License upgrade
 
 nssyslogd
-  • Removed calls to deprecated functions
-  • NaviServer 5 compatibility
+  - Removed calls to deprecated functions
+  - NaviServer 5 compatibility
 
 nstk
-  • Tcl9 compatibility changes
+  - Tcl9 compatibility changes
 
 nsudp
-  • Tcl9 compatibility changes
-  • NaviServer 5 compatibility
-  • License upgrade
+  - Tcl9 compatibility changes
+  - NaviServer 5 compatibility
+  - License upgrade
 
 nswebpush
-  • Tcl9 compatibility changes
-  • Updated code for newer and more picky web servers
-  • Fixed code for aes128gcm
+  - Tcl9 compatibility changes
+  - Updated code for newer and more picky web servers
+  - Fixed code for aes128gcm
 
 revproxy
-  • moved code to main repository
+  - moved code to main repository
 
 websocket
-  • NaviServer 5 compatibility
-  • Avoid deprecated messages for ns_conn write -buffered
-  • Improved documentation
-  • More detailed timeout handling
-
+  - NaviServer 5 compatibility
+  - Avoid deprecated messages for ns_conn write -buffered
+  - Improved documentation
+  - More detailed timeout handling
 
 
 
@@ -951,10 +1287,10 @@ The following list contains the most important changes:
 
  - Extending nsstats:
 
-   - Introduced templating to improve style-ability
-   - Provided a more ,odern GUI based on the CSS classes from w3schools
-   - Added management of request handlers
-   - Added management of url2file mappings
+   * Introduced templating to improve style-ability
+   * Provided a more ,odern GUI based on the CSS classes from w3schools
+   * Added management of request handlers
+   * Added management of url2file mappings
 
  - Rework of module nsdbbdb:
     * properly initializing mutex variables (many thanks to John Buckman)
@@ -1104,7 +1440,7 @@ New Features:
     "-filter defaults":
 
         Returns the defaults of the parameter. This is useful for
-        contrasting the actual values with the default values for
+        asting the actual values with the default values for
         Parameters, e.g. in a web based interface.
 
  - ns_set reform (per default deactivated in 4.99, but activated in 5.*)
@@ -1562,7 +1898,7 @@ nsoracle:
     lead to errors for the form:
 
          Database operation "getrow" failed (exception 1406, "nsoracle.c:3659:Ns_OracleGetRow:
-         error in `OCIStmtFetch ()': ORA-01406: fetched column value was truncated
+         error in OCIStmtFetch(): ORA-01406: fetched column value was truncated
 
     The driver needs for several output types special rules, where the
     timestamp cases were not supported so far. It is also recommended
@@ -2002,7 +2338,7 @@ nsoracle:
    lead to errors for the form:
 
          Database operation "getrow" failed (exception 1406, "nsoracle.c:3659:Ns_OracleGetRow:
-         error in `OCIStmtFetch ()': ORA-01406: fetched column value was truncated
+         error in OCIStmtFetch(): ORA-01406: fetched column value was truncated
 
    The driver needs for several output types special rules, where the
    timestamp cases were not supported so far. It is also recommended
@@ -3612,7 +3948,7 @@ nsoracle:
 
    * Changed the include order to avoid bad interactions between oci.h and zlib.
      with the previous include order, we run with recent oracle versions (19.5) into
-        /usr/include/zlib.h:1677:4: error: unknown type name ‘off64_t’
+        /usr/include/zlib.h:1677:4: error: unknown type name "off64_t"
      on 64-bit Linux systems (centos 7)
 
   * Added ORA_CFLAGS to allow developers to pass arbitrary include and library flags.
@@ -4726,29 +5062,29 @@ New Features:
       regression test of NaviServer was not effected by this change.
 
 
-    * Support for asynchronous “ns_http” tasks:
+    * Support for asynchronous "ns_http" tasks:
 
-      When the new flag "-donecallback” is provided, then a “ns_http”
+      When the new flag "-donecallback" is provided, then a "ns_http"
       task is started in the background and does not require an
-      “ns_http wait” anymore. Instead, when it finishes it executes
+      "ns_http wait" anymore. Instead, when it finishes it executes
       the provided donecallback which receives as additional arguments
       the Tcl result (in form of an integer) and the result dict,
-      returned otherwise from e.g. “ns_http run”.
+      returned otherwise from e.g. "ns_http run".
 
       As a consequence, requests of the form
          ns_http queue … -donecallback …
       differ from client requests without the callback
       in the following points:
 
-      a) the command does not return a handle for “ns_http wait”
+      a) the command does not return a handle for "ns_http wait"
       b) The command is not automatically cleaned up (canceled)
          at the end of a connection requests
       c) Typically, donecallbacks are executed in a different
          thread than it was started.
 
       Some more options, which were previously only valid on
-      “ns_http wait” (such as e.g. spoolsize) are now valid
-      for “ns_http queue” as well.
+      "ns_http wait" (such as e.g. spoolsize) are now valid
+      for "ns_http queue" as well.
 
       The new flag allows a developer to start many requests in
       parallel without having to start many threads or complex

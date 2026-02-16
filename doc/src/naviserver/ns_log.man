@@ -225,6 +225,14 @@ Default: [const false].
 If true messages of severity [emph Debug] are enabled.
 Default: [const false].
 
+[opt logdeduplicate] When set to [const true], consecutive identical
+log messages from the same thread are collapsed into a single
+entry. The first occurrence is written normally; subsequent identical
+lines are suppressed. When a different message is logged, an
+additional summary line is emitted indicating that the previous log
+entry for this thread was repeated [var n] times. The default is
+[const false].
+
 [def logdev]
 If true, messages of severity [emph Dev] are enabled.
 Default: [const false].

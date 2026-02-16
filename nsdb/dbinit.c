@@ -661,7 +661,6 @@ NsDbInitPools(void)
             Tcl_SetHashValue(hPtr, ns_const2voidp(poolPtr));
         }
     }
-    Ns_RegisterProcInfo((ns_funcptr_t)CheckPool, "nsdb:check", CheckArgProc);
 }
 
 
@@ -1457,6 +1456,10 @@ CreatePool(const char *pool, const char *section, const char *driver)
                                "5m", 1, 0, INT_MAX, 0, &checkinterval);
 
         (void) Ns_ScheduleProcEx(CheckPool, poolPtr, 0, &checkinterval, NULL);
+        Ns_RegisterProcInfo((ns_funcptr_t)CheckPool,
+                            "nsdb:checkpool", CheckArgProc);
+
+
     }
     return poolPtr;
 }

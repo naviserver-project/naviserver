@@ -1206,14 +1206,14 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
             Tcl_DStringInit(&ds);
 
-            Tcl_DictObjPut(interp, dictObj, Tcl_NewStringObj("pool", 4),
+            Tcl_DictObjPut(interp, dictObj, NsAtomObj(NS_ATOM_POOL),
                            Tcl_NewStringObj(mappedPoolPtr->pool, TCL_INDEX_NONE));
 
             NsGetRequest2(servPtr, method, url, flags, op, NULL, NULL,
                           &procPtr, &deletePtr, &argPtr, &requestFlags);
             Ns_GetProcInfo(&ds, (ns_funcptr_t)procPtr, argPtr);
 
-            Tcl_DictObjPut(interp, dictObj, Tcl_NewStringObj("handler", 7),
+            Tcl_DictObjPut(interp, dictObj, NsAtomObj(NS_ATOM_HANDLER),
                            Tcl_NewStringObj(ds.string, ds.length));
             Tcl_SetObjResult(interp, dictObj);
             Tcl_DStringFree(&ds);

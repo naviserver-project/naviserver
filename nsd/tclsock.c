@@ -1040,8 +1040,22 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
         while (fargc-- > 0) {
             Ns_ReturnCode rc = GetSocketFromChannel(interp, fargv[fargc], write, &sock);
 
-            if ((rc == NS_OK) && (setPtr != NULL) && FD_ISSET(sock, setPtr)) {
-                Tcl_DStringAppendElement(dsPtr, fargv[fargc]);
+            if ((rc == NS_OK) && (setPtr != NULL)) {
+                assert(sock != NS_INVALID_SOCKET);
+
+                if (sock >= FD_SETSIZE) {
+                    Ns_Log(Error, "sock returned from channel out of range: %ld",
+                           (long)sock);
+                } else {
+#ifdef _WIN32
+                    int isset = FD_ISSET(sock, setPtr);
+#else
+                    int isset = FD_ISSET((unsigned int)sock, setPtr);
+#endif
+                    if (isset) {
+                        Tcl_DStringAppendElement(dsPtr, fargv[fargc]);
+                    }
+                }
             }
         }
 
@@ -1160,15 +1174,24 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
                 result = TCL_ERROR;
                 break;
             }
+            assert(sock != NS_INVALID_SOCKET);
+
+            if (sock >= FD_SETSIZE) {
+                Ns_TclPrintfResult(interp,
+                                   "sock returned from channel out of range: %ld",
+                                   (long)sock);
+                result = NS_ERROR;
+                break;
+            }
 #ifndef _MSC_VER
             /* winsock ignores first argument of select */
             if (sock > *maxPtr) {
                 *maxPtr = sock;
             }
-#endif
-            assert(sock != NS_INVALID_SOCKET);
-
+            FD_SET((unsigned int)sock, setPtr);
+#else
             FD_SET(sock, setPtr);
+#endif
         }
         Tcl_Free((char *) fargv);
     }

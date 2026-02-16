@@ -34,14 +34,15 @@
  * The following define available flags bits.
  */
 
-#define LOG_ROLL      0x01u
-#define LOG_EXPAND    0x02u
-#define LOG_SEC       0x04u
-#define LOG_USEC      0x08u
-#define LOG_USEC_DIFF 0x10u
-#define LOG_THREAD    0x20u
-#define LOG_COLORIZE  0x40u
-#define LOG_RELATIVE  0x80u
+#define LOG_ROLL        0x0001u
+#define LOG_EXPAND      0x0002u
+#define LOG_SEC         0x0004u
+#define LOG_USEC        0x0008u
+#define LOG_USEC_DIFF   0x0010u
+#define LOG_THREAD      0x0020u
+#define LOG_COLORIZE    0x0040u
+#define LOG_RELATIVE    0x0080u
+#define LOG_DEDUPLICATE 0x0100u
 
 /*
  * The following struct represents a log entry header as stored in the
@@ -402,7 +403,6 @@ NsConfigLog(void)
     severityConfig[Dev   ].enabled = Ns_ConfigBool(section, "logdev",    NS_FALSE);
     severityConfig[Notice].enabled = Ns_ConfigBool(section, "lognotice", NS_TRUE);
 
-
     {
         bool rollonsignal = NS_TRUE;
 #ifdef NS_WITH_DEPRECATED_5_0
@@ -433,6 +433,9 @@ NsConfigLog(void)
     }
     if (Ns_ConfigBool(section, "logrelative", NS_FALSE) == NS_TRUE) {
         flags |= LOG_RELATIVE;
+    }
+    if (Ns_ConfigBool(section, "logdeduplicate", NS_FALSE) == NS_TRUE) {
+        flags |= LOG_DEDUPLICATE;
     }
     if (Ns_ConfigBool(section, "logcolorize", NS_FALSE) == NS_TRUE) {
         flags |= LOG_COLORIZE;
@@ -2170,32 +2173,40 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
           const char *msg, size_t len)
 {
 #if defined(NS_THREAD_LOCAL)
-    int        fd = PTR2INT(arg);
     static NS_THREAD_LOCAL size_t sameLineCount = 1u;
     static NS_THREAD_LOCAL size_t lastLen = 0u;
     static NS_THREAD_LOCAL uint64_t lastHash = 0u;
     static NS_THREAD_LOCAL Ns_LogSeverity lastSeverity = 0u;
+    int      fd = PTR2INT(arg);
     uint64_t hash = 0u;
+    bool     dedup    = ((flags & LOG_DEDUPLICATE) != 0u);
+    bool     suppress = false;
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(stamp != NULL);
     NS_NONNULL_ASSERT(msg != NULL);
 
-    //hash = NsTclHash(msg);
-    hash = rapidhash(msg, len);
-    //fprintf(stderr, "LOG compute hash len %lu MSG <%s> hash %llu\n", len, msg, hash);
+    if (dedup) {
+        //hash = NsTclHash(msg);
+        hash = rapidhash(msg, len);
+        //fprintf(stderr, "LOG compute hash len %lu MSG <%s> hash %llu\n", len, msg, hash);
+        if (hash == lastHash && lastLen == len && lastSeverity == severity) {
+           /*
+             * The last message was the same; just bump the counter
+             * and skip logging this one.
+             */
+            sameLineCount++;
+            suppress = true;
+            //fprintf(stderr, "LOG suppress len %lu MSG <%s> hash %lu\n", len, msg, NsTclHash(msg));
+        }
+    }
 
-    if (hash == lastHash && lastLen == len && lastSeverity == severity) {
+    if (!suppress) {
         /*
-         * The last message was the same.
-         */
-        sameLineCount++;
-        //fprintf(stderr, "LOG suppress len %lu MSG <%s> hash %lu\n", len, msg, NsTclHash(msg));
-    } else {
-        /*
-         * The last message was different. If we have sameLineCount >
-         * 0, add a message telling telling how often the last message
-         * was repeated, before reporting the actual message.
+         * Either deduplication is disabled, or this is a different
+         * message.  If sameLineCount > 1, add a message telling how
+         * often the last message was repeated, before reporting the
+         * actual message.
          */
         Tcl_DString ds;
 
@@ -2221,11 +2232,11 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         Tcl_DStringFree(&ds);
 
         lastLen = len;
-        lastHash = hash;
+        lastHash = hash; /* 0 when dedup is off, same as before */
         lastSeverity = severity;
     }
 #else
-    int        fd = PTR2INT(arg);
+    int         fd = PTR2INT(arg);
     Tcl_DString ds;
 
     NS_NONNULL_ASSERT(arg != NULL);

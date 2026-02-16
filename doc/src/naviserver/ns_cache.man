@@ -24,6 +24,10 @@ for new entries. Similarly, expired entries will remain in the cache and only be
 deleted when they reach the end of the LRU list, or are accessed and it is
 noticed that they have expired.
 
+[para]
+The size limits of a cache are based on the estimated memory consumption
+of all cache entries combined, not on the number of entries.
+
 [section {OPTIONS}]
 
 The following options are used for several commands below.
@@ -74,15 +78,27 @@ be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
      [arg cache] \
      [arg size]  ]
 
-Creates a new Tcl [arg cache] with maximum size
-[arg size]. The size determines the number of entries that can be kept in
-this particular cache.
+Creates a new Tcl [arg cache] with maximum size [arg size].
+The size specifies a memory budget for the cache. When the combined
+memory usage of all cache entries exceeds this limit, entries are
+evicted according to the cache replacement policy.
 
-[para] The maximum size of a single entry can be specified via the
-option [option -maxentry], where the size of an entry is defined by
-the size of the key plus the size of the value and the internal
-overhead per cache entry (about 126 bytes on a 64-bit machine). When a
-value to be stored is arger than  [option -maxentry], it is not cached.
+[para]
+Note: Very small cache sizes (smaller than the minimum per-entry overhead)
+can lead to immediate eviction, even when caching only a few keys or empty
+values. In such cases, the cache may repeatedly evict and recreate entries.
+
+[para]
+The maximum size of a single entry can be specified via the option
+[option -maxentry]. The size of an entry is defined as the size of the
+key plus the size of the value and the internal overhead per cache entry
+(about 126 bytes on a 64-bit machine). When a value to be stored is larger
+than [option -maxentry], it is not cached.
+
+[para]
+The total cache size is computed as the sum of the sizes of all cache
+entries. Space-based eviction occurs when this total exceeds the
+configured cache size.
 
 [para] Optionally, a [option -timeout], an [option -expires] time and
 [option -maxentry], the maximum size of a single cache entry value can
@@ -306,6 +322,29 @@ format since the cache was created or was last reset. For details, see
 [cmd ns_cache_stats] above.
 
 [list_end]
+
+
+[section "Cache Eviction"]
+
+Cache entries may be removed automatically according to two independent
+policies: time-based eviction and space-based eviction.
+
+[para]
+Time-based eviction is controlled by expiration times. When the expiration
+time of a cache entry has passed, the entry is considered expired and will
+no longer be returned. Expired entries are removed from the cache when they
+are accessed or encountered during cache maintenance. This guarantees that
+entries are not used beyond their specified lifetime, which is important for
+applications that need to retain information only for a limited time (for
+example login data, authentication tokens, or temporary keys).
+
+[para]
+Space-based eviction occurs when the combined memory usage of all cache
+entries exceeds the configured cache size. In this case, least-recently-used
+entries are removed to make room for new entries.
+
+[para]
+The cache size is a memory limit, not a limit on the number of entries.
 
 
 [section "Cache Transactions"]

@@ -142,20 +142,55 @@ the set represents. The [cmd ns_set] name contains the [arg section].
 
 [call [cmd ns_section] \
       [opt [option -update]] \
+      [opt [option "-set [arg ns_set]"]] \
+      [opt [option "-from [arg sectionName]"]] \
       [opt --] \
-      [arg name]]
+      [arg sectionName] \
+      [opt [arg script]]]
 
- Begins a new configuration section identified by the specified
- [arg name]. All subsequent calls to [cmd ns_param] will add parameters to
- this section until another [cmd ns_section] command is invoked with a
- different section name.
+Define or update a configuration [arg sectionName] and evaluate [arg script]
+in the context of that section. The commands [cmd ns_param] and
+[cmd ns_section] (nested) can be used inside [arg script] to populate the
+section.
 
+[para]
+Configuration sections are multi-maps: a key may occur multiple times with
+different values. This behavior is identical to [cmd ns_set].
+
+[list_begin definitions]
+
+[def [arg -update]]
+When specified, inserting a key/value pair updates a potential
+pre-existing key if present. Without [arg -update], new key/value pairs are added
+and existing keys are not replaced (multi-map semantics).
+
+[def [arg {-from sectionName}]]
+Inject the content of an already defined configuration section [arg sectionName]
+into the target section. The insertion semantics are identical to repeated
+[cmd ns_param] operations for the target section and honor [arg -update].
+The source section's underlying [cmd ns_set] is used as input.
+
+[def [arg {-set setId}]]
+Inject the content of an [cmd ns_set] identified by [arg setId] into the
+configuration section. The insertion semantics are identical to repeated
+[cmd ns_param] operations for the target section and honor [arg -update].
+
+[para]
+When both [arg -from] and [arg -set] are specified, the content from
+[arg -from] is applied first, followed by the content from [arg -set].
+The [arg script] body is evaluated last and therefore can override
+injected values, subject to [arg -update] and multi-map semantics.
+
+The [option -from] option is intended for reusing parameters from
+another configuration section, while [option -set] is intended for
+reusing parameters collected programmatically in an [cmd ns_set].
+[list_end]
 
 [para]
 
- Multiple invocations of [cmd ns_section] using the same [arg name]
- allow you to build the section incrementally. The following two
- snippets are equivalent:
+Multiple invocations of [cmd ns_section] using the same [arg name]
+allow you to build the section incrementally. The following two
+snippets are equivalent:
 
 [para]
 
@@ -179,26 +214,33 @@ Snippet 2:
 
 [para]
 
- All configuration data is stored internally in [cmd ns_set]
- structures. Since ns_set is defined as a multi-map storage, multiple
- values can be associated with the same key. This powerful feature may
- lead to surprises: when a scalar value is requested and multiple
- values are stored for the same key, only the first value is returned
- (as with [cmd "ns_set get"]). To retrieve all values for a key, use
- the [option -all] option with [cmd ns_config] or [cmd ns_set].
+All configuration data is stored internally in [cmd ns_set] structures.
+Since [cmd ns_set] is defined as a multi-map, multiple values may be
+associated with the same key. This powerful feature allows layered
+configuration but may also lead to surprises: when a scalar value is
+requested and multiple values are stored for the same key, only the
+first value is returned (as with [cmd "ns_set get"]).
 
 [para]
 
- The [option -update] flag can be used with [cmd ns_section] to update
- an existing section by overwriting previous values instead of simply
- appending new ones.
+To retrieve all values associated with a key, use the [option -all]
+option with [cmd ns_config] or access the underlying [cmd ns_set]
+directly.
+
+[para]
+
+The [option -update] flag can be used with [cmd ns_section] to indicate
+that parameters defined in the section should replace previously
+defined parameters with the same key, instead of simply appending new
+values. This affects how subsequent [cmd ns_param] calls are handled
+for that section.
 
 [example_begin]
  [cmd ns_section] foo {
    [cmd ns_param] x 1
  }
  
- # Later in the configuration file:
+ # Later in the configuration file: 
  [cmd ns_section] -update foo {
    [cmd ns_param] x 2
  }
@@ -208,22 +250,140 @@ Snippet 2:
  # Result: 2
 [example_end]
 
+[para]
+
+The [option -set] option allows pre-populating a configuration section
+from an existing [cmd ns_set] to simplify re-use of common
+blocks. Each key/value pair contained in the provided set is added to
+the section as if specified via individual [cmd ns_param] calls.
+
+[para]
+
+Using [option -set] is functionally equivalent to writing multiple
+[cmd ns_param] commands and therefore preserves the multi-map semantics
+of [cmd ns_set], including duplicate keys.
+
+[example_begin]
+ set common [lb][cmd ns_set] create a 1 b 2[rb]
+ 
+ [cmd ns_section] -set $common foo {
+   [cmd ns_param] c 3
+ }
+[example_end]
+
+
+[para]
+
+This behavior makes [option -set] suitable as a concise shorthand for
+bulk parameter definitions (for example, shared defaults between
+sections), while still fully respecting NaviServer’s multi-map
+configuration model.
+
 
 [call [cmd ns_param] \
       [arg key] \
       [arg value]]
 
- Sets the specified [arg key] to [arg value] in the currently active
+ Sets the specified [arg key] to [arg value] in  currently active
  section. Keys are matched in a case-insensitive manner, and duplicate
- keys are allowed.
+ keys are allowed, depending on the [option -update] flag on the
+ including section.
+
+
+
+[call [cmd ns_configure_variables] \
+      [opt [option "-configRoot [arg directory]"]] \
+      [opt [option "-silent [arg boolean]"]] \
+      [opt --] \
+      [arg prefix] \
+      [arg defaultConfig] ]
+
+Turns the keys from the dict [arg defaultConfig] into Tcl variables in the
+caller's scope (the configuration file).  Values are determined per key
+using the following precedence:
+
+[list_begin enumerated]
+[enum] A variable already set in the configuration file (highest precedence).
+[enum] An environment variable named [const {${prefix}$key}].
+[enum] The value from the dict [arg defaultConfig] (lowest precedence).
+[list_end]
+
+
+[para]
+Values are processed via [cmd subst] to allow references to previously
+defined variables such as [const {$home}] inside dict values.
+
+[para]
+When the key [const setupfile] exists in [arg defaultConfig] and resolves
+to a non-empty value, the referenced Tcl file is sourced after the variable
+assignment pass.  This setup file is intended for instance-specific
+variable assignments (typically without [cmd ns_section] blocks).  A relative
+setupfile path is resolved against a configuration root directory (see
+[option -configRoot]).
+
+[list_begin options]
+
+[opt_def "-configRoot directory"]
+Specifies the base directory for resolving a relative [const setupfile].
+When not provided (or empty), the configuration root is derived from
+[cmd "ns_info config"] (the value passed to [option -t]): if [option -t] is a
+directory, that directory is used; if [option -t] is a file, its directory
+is used.  If [cmd "ns_info config"] is empty, the current working directory
+([cmd pwd]) is used.
+
+[opt_def "-silent boolean"]
+Controls logging of variable assignments.  When true, [cmd ns_configure_variables]
+does not emit the usual [cmd ns_log] notices about where values come from
+(defaults, environment variables, config file, or setup file).  The default
+is false.
+
+[list_end]
+[list_end]
+
+[para] This command is typically used near the beginning of a
+ configuration file to establish all configuration variables before
+ [cmd ns_section] blocks are evaluated.
+
+[example_begin]
+ set defaultConfig {
+   home        /var/www
+   logdir      {$home/logs}
+   httpport    8080
+   httpsport   ""
+   setupfile   ""
+ }
+ 
+ # Allow overrides via environment variables with prefix "oacs_"
+ ns_configure_variables "oacs_" $defaultConfig
+[example_end]
+
+[para] With this configuration, the following invocation overrides the
+ HTTP port and sources an instance-specific setup file:
+
+[example_begin]
+ oacs_httpport=8081 oacs_setupfile=instance.tcl nsd -t conf/openacs-config.d -f
+[example_end]
+
+[para] Notes:
+
+[list_begin itemized]
+
+[item] The command reports the origin of each variable value (default,
+ environment variable, configuration file, or setup file) via the
+ system log unless [option "-silent"] is used.
+
+[item] Only scalar variables are processed; array variables are
+ ignored.
+
+[item] This command is a core part of the shipped configuration
+ framework and is used by the sample configurations provided with
+ NaviServer.
+
 
 [list_end]
 
 
-
-
 [section EXAMPLES]
-
 
  The following example demonstrates how to set parameter values for
  the [const foo] module:

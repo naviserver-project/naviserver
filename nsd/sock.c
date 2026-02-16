@@ -1095,24 +1095,43 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
 
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &n, (socklen_t)sizeof(n));
 #ifdef HAVE_IPV6
-            /*
-             * IPv4 connectivity through AF_INET6 can be disabled by
-             * default, for example by /proc/sys/net/ipv6/bindv6only to
-             * 1 on Linux. We explicitly enable IPv4 so we don't need to
-             * bind separate sockets for v4 and v6.
-             */
-            n = 0;
-            setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const void *) &n, (socklen_t)sizeof(n));
+            if (((const struct sockaddr *)saPtr)->sa_family == AF_INET6) {
+                /*
+                 * IPv4 connectivity through AF_INET6 can be disabled by
+                 * default, for example by /proc/sys/net/ipv6/bindv6only to
+                 * 1 on Linux. We explicitly enable IPv4 so we don't need to
+                 * bind separate sockets for v4 and v6.
+                 */
+                int v6only = 0;
+                setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                           (const void *) &v6only, (socklen_t)sizeof(v6only));
+            }
 #endif
         }
         Ns_LogSockaddr(Debug, "trying to bind on", (const struct sockaddr *) saPtr);
 
         if (bind(sock, (const struct sockaddr *)saPtr,
                  Ns_SockaddrGetSockLen((const struct sockaddr *)saPtr)) != 0) {
+            int err = ns_sockerrno;
 
-            Ns_Log(Notice, "bind operation on sock %d lead to error: %s",
-                   sock, ns_sockstrerror(ns_sockerrno));
-            Ns_LogSockaddr(Warning, "bind on", (const struct sockaddr *) saPtr);
+            if (((const struct sockaddr *)saPtr)->sa_family == AF_INET
+                && err == EADDRINUSE
+                && Ns_SockaddrInAny(saPtr)
+                ) {
+                /*
+                 * We probably already bound a dual-stack AF_INET6 wildcard
+                 * ([::]:port with IPV6_V6ONLY=0), which also covers
+                 * IPv4. Binding 0.0.0.0:port fails with EADDRINUSE. Skip
+                 * silently (but inform admin).
+                 */
+                Ns_Log(Notice, "skipping bind on [0.0.0.0]:%hu: already covered by [::]:%hu",
+                       port, port);
+                Ns_SetSockErrno(EALREADY);
+            } else {
+                Ns_Log(Notice, "bind operation on sock %d lead to error: %s",
+                       sock, ns_sockstrerror(ns_sockerrno));
+                Ns_LogSockaddr(Warning, "bind on", (const struct sockaddr *) saPtr);
+            }
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;
         }

@@ -56,6 +56,7 @@ static const Cmd basicCmds[] = {
 #ifdef NS_WITH_DEPRECATED
     {"ns_cancel",                NsTclCancelObjCmd},
 #endif
+    {"ns_cbor",                  NsTclCborObjCmd},
     {"ns_certctl",               NsTclCertCtlObjCmd},
     {"ns_charsets",              NsTclCharsetsObjCmd},
     {"ns_config",                NsTclConfigObjCmd},
@@ -97,6 +98,7 @@ static const Cmd basicCmds[] = {
     {"ns_ip",                    NsTclIpObjCmd},
     {"ns_job",                   NsTclJobObjCmd},
     {"ns_jpegsize",              NsTclJpegSizeObjCmd},
+    {"ns_json",                  NsTclJsonObjCmd},
     {"ns_kill",                  NsTclKillObjCmd},
     {"ns_localtime",             NsTclLocalTimeObjCmd},
     {"ns_locationproc",          NsTclLocationProcObjCmd},

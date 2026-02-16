@@ -2562,7 +2562,7 @@ h3_conn_write_step(ConnCtx *cc)
     nghttp3_ssize nvec;
     int64_t       sid = -1;
     int           fin = 0;
-    bool          did_progress = NS_FALSE;   /* any bytes written or FIN concluded */
+    bool          did_progress = NS_FALSE;  /* any bytes written or FIN concluded */
     bool          any_keep_w   = NS_FALSE;  /* kept W armed on at least one stream */
     bool          hit_any_want = NS_FALSE;  /* saw SSL_ERROR_WANT_* on any stream */
     NsTLSConfig  *dc = cc->dc;
@@ -3973,7 +3973,7 @@ h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc,
  *        - If EOF is already reached (no queued or pending bytes), it
  *          returns 0 with NGHTTP3_DATA_FLAG_EOF set.
  *        - If the stream has already been served during this write step
- *          (`tx_served_this_step`), it defers re-use by returning
+ *          (`tx_served_this_step`), it defers reuse by returning
  *          NGHTTP3_ERR_WOULDBLOCK.
  *        - If queued data is available but not yet pending, it moves bytes
  *          from the queued region into the pending buffer before building
@@ -8183,18 +8183,18 @@ ConnInfo(Ns_Sock *sock)
 
         if (qctx->is_h3) {
             Tcl_DictObjPut(NULL, resultObj,
-                           Tcl_NewStringObj("httpversion", sizeof("httpversion")-1),
+                           NsAtomObj(NS_ATOM_HTTPVERSION),
                            Tcl_NewStringObj("3", 1));
         }
         if (qctx->ssl != NULL) {
             Tcl_DictObjPut(NULL, resultObj,
-                           Tcl_NewStringObj("sslversion", 10),
+                           NsAtomObj(NS_ATOM_SSLVERSION),
                            Tcl_NewStringObj(SSL_get_version(qctx->ssl), TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, resultObj,
-                           Tcl_NewStringObj("cipher", 6),
+                           NsAtomObj(NS_ATOM_CIPHER),
                            Tcl_NewStringObj(SSL_get_cipher(qctx->ssl), TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, resultObj,
-                           Tcl_NewStringObj("servername", 10),
+                           NsAtomObj(NS_ATOM_SERVERNAME),
                            Tcl_NewStringObj(SSL_get_servername(qctx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
             {
                 const char  *alpnString;
@@ -8202,7 +8202,7 @@ ConnInfo(Ns_Sock *sock)
 
                 SSL_get0_alpn_selected(qctx->ssl, (const unsigned char **)&alpnString, &alpnLength);
                 Tcl_DictObjPut(NULL, resultObj,
-                               Tcl_NewStringObj("alpn", 4),
+                               NsAtomObj(NS_ATOM_ALPN),
                                Tcl_NewStringObj(alpnString, (TCL_SIZE_T)alpnLength));
             }
         }

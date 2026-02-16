@@ -569,6 +569,42 @@ Ns_CacheGetNrUncommittedEntries(const Ns_Cache *cache)
     return cachePtr->uncommittedTable.numEntries;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CacheSetMaxsize --
+ *
+ *      Set the maximum size (memory budget) for a cache.
+ *
+ *      This function updates the cache's configured maximum size used for
+ *      space-based eviction decisions. It is intended as a small accessor
+ *      for code outside of cache.c (e.g., Tcl wrappers) that must keep
+ *      wrapper-level configuration in sync with the underlying cache.
+ *
+ * Returns:
+ *      The previous maximum size of the cache.
+ *
+ * Side Effects:
+ *      Updates the cache's maxsize parameter. Callers must ensure proper
+ *      locking to avoid races with concurrent cache operations.
+ *
+ *----------------------------------------------------------------------
+ */
+size_t
+Ns_CacheSetMaxsize(Ns_Cache *cache, size_t size)
+{
+    size_t  oldSize;
+    Cache  *cachePtr;
+
+    NS_NONNULL_ASSERT(cache != NULL);
+
+    cachePtr = (Cache*)cache;
+    oldSize = cachePtr->maxSize;
+    cachePtr->maxSize = size;
+    return oldSize;
+}
+
 
 /*
  *----------------------------------------------------------------------

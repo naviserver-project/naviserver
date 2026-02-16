@@ -373,7 +373,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
 
 #else  /* ! NS_HAVE_NATIVE_SENDFILE */
     /*
-     * No native sendfile on this platform → always use fallback. The provided
+     * No native sendfile on this platform -> always use fallback. The provided
      * "flags" are ignored.
      */
     (void)flags;

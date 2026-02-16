@@ -213,7 +213,7 @@ Ns_ModuleInit(const char *server, const char *module)
 #ifdef NS_WITH_DEPRECATED
     if (Ns_ConfigBool(section, "checkforproxy", NS_FALSE)) {
         Ns_LogDeprecatedParameter(section, "checkforproxy",
-                                  "ns/parameter", "reversproxymode",
+                                  "ns/parameter", "reverseproxymode",
                                   NULL);
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
@@ -792,7 +792,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     if (logPtr->serverRootProcEnabled) {
         const char *section = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
-        const char *filename = Ns_ConfigGetValue(section, "file"), *fullFilename;
+        const char *filename = Ns_ConfigString(section, "file", "access.log"), *fullFilename;
 
         fullFilename = Ns_LogPath(dsPtr, server, filename);
         fprintf(stderr, "LogTrace: server %s filename '%s' -> fullFilename '%s'\n", server, filename, fullFilename);

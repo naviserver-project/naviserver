@@ -84,17 +84,17 @@ extern NS_IMPORT const Tcl_ObjType *NS_intTypePtr;
 static const char *const datakey = "nsdb:data";
 
 static const Ns_ObjvTable valueTypes[] = {
-    {"decimal",  UCHAR('n')},
-    {"double",   UCHAR('n')},
-    {"integer",  UCHAR('n')},
-    {"int",      UCHAR('n')},
-    {"real",     UCHAR('n')},
-    {"smallint", UCHAR('n')},
-    {"bigint",   UCHAR('n')},
-    {"bit",      UCHAR('n')},
-    {"float",    UCHAR('n')},
+    {"decimal",  UCHAR('d')},
+    {"double",   UCHAR('D')},
+    {"integer",  UCHAR('i')},
+    {"int",      UCHAR('I')},
+    {"real",     UCHAR('r')},
+    {"smallint", UCHAR('s')},
+    {"bigint",   UCHAR('b')},
+    {"bit",      UCHAR('B')},
+    {"float",    UCHAR('f')},
     {"numeric",  UCHAR('n')},
-    {"tinyint",  UCHAR('n')},
+    {"tinyint",  UCHAR('t')},
     {"text",     UCHAR('q')},
     {NULL,    0u}
 };
@@ -1267,7 +1267,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
          * Since we can trust the byterep, we can bypass the expensive
          * Tcl_UtfToExternalDString check.
          */
-        if (valueType == INTCHAR('n')) {
+        if (valueType != INTCHAR('q')) {
             Tcl_DStringAppend(dsPtr, valueString, valueLength);
         } else {
             Tcl_DStringAppend(dsPtr, "'", 1);
@@ -1286,7 +1286,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
         if (strlen(ds.string) < (size_t)ds.length) {
             result = NS_ERROR;
 
-        } else if (valueType == INTCHAR('n')) {
+        } else if (valueType != INTCHAR('q')) {
             Tcl_DStringAppend(dsPtr, valueString, valueLength);
 
         } else {

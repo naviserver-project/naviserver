@@ -16,7 +16,8 @@
 #include "nsd.h"
 
 #define VALUE_SUPPLIED (INT2PTR(NS_TRUE))
-
+#define OPT_REQUIRED 0x01u
+#define OPT_SEEN     0x02u
 
 /*
  * Static functions defined in this file.
@@ -36,7 +37,8 @@ static void FreeSpecs(Ns_ObjvSpec *specPtr)
 static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
+static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
+                         const unsigned char *optIsRequired, Tcl_Interp *interp,
                          TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv);
 
 static int GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
@@ -62,6 +64,20 @@ static void AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_
 
 static char *GetOptEnumeration(Tcl_DString *dsPtr, const Ns_SubCmdSpec *tablePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static char *ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
+    NS_GNUC_NONNULL(1, 2);
+
+static Ns_ReturnCode ObjvPreprocess(Ns_ObjvSpec **optSpecPtr, Ns_ObjvSpec *argSpec,
+                                    Tcl_Interp *interp,
+                                    Tcl_Obj *const* parseObjv, TCL_SIZE_T parseObjc, TCL_SIZE_T parseOffset,
+                                    TCL_SIZE_T *requiredArgsPtr,
+                                    TCL_SIZE_T *noptsPtr, TCL_SIZE_T *nreqoptsPtr,
+                                    Tcl_DString *optDsPtr, unsigned char **optFlagsPtr)
+    NS_GNUC_NONNULL(1, 3, 7, 8, 9, 10, 11);
+
+static const char *GetStringIfPure(Tcl_Obj *obj)
+    NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file.
@@ -180,6 +196,201 @@ GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetStringIfPure --
+ *
+ *      Return the string representation of a Tcl_Obj, but avoid creating
+ *      a stringrep for "pure" bytearrays on Tcl < 8.7 (obj->bytes == NULL).
+ *
+ * Results:
+ *      Pointer to string representation (Tcl_GetString()), or NULL when
+ *      the object is a pure/proper bytearray on Tcl < 8.7.
+ *
+ * Side Effects:
+ *      May create a string representation (as Tcl_GetString does),
+ *      except in the guarded Tcl < 8.7 case where NULL is returned.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+GetStringIfPure(Tcl_Obj *obj)
+{
+    NS_NONNULL_ASSERT(obj != NULL);
+
+    if (obj->bytes == NULL && NsTclObjIsByteArray(obj)) {
+        return NULL;
+    }
+
+    return Tcl_GetString(obj);
+}
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvPreprocess --
+ *
+ *      Preprocess option/argument specs:
+ *
+ *      - Required non-positional options are denoted by "!-foo" in optSpec.
+ *        Keys are normalized in-place ("!-foo" -> "-foo") and a bitmap is
+ *        allocated (optFlags) marking required options.
+ *
+ *      - Count required positional arguments in argSpec (up to first "?arg").
+ *
+ *      - Preserve historic behavior: when actual args match the number of
+ *        required positional args exactly, skip option parsing and treat the
+ *        remaining token(s) as positional values, so e.g. "ns_md5 --" or
+ *        "ns_md5 -binary" computes the checksum of the literal argument.
+ *
+ *        Exception: when the first remaining token is a known option that
+ *        expects a value (e.g. "-encoding"), do not skip option parsing, so
+ *        missing option arguments are detected.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR (only on internal/preprocessing failure).
+ *
+ * Side Effects:
+ *      May initialize/resize optDs and normalize optSpec keys in-place.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ObjvPreprocess(Ns_ObjvSpec **optSpecPtr, Ns_ObjvSpec *argSpec,
+               Tcl_Interp *interp,
+               Tcl_Obj *const* parseObjv, TCL_SIZE_T parseObjc, TCL_SIZE_T parseOffset,
+               TCL_SIZE_T *requiredArgsPtr,
+               TCL_SIZE_T *noptsPtr, TCL_SIZE_T *nreqoptsPtr,
+               Tcl_DString *optDsPtr, unsigned char **optFlagsPtr)
+{
+    Ns_ObjvSpec   *optSpec, *specPtr;
+    TCL_SIZE_T     requiredArgs = 0, nopts = 0, nreqopts = 0;
+
+    NS_NONNULL_ASSERT(optSpecPtr != NULL);
+    NS_NONNULL_ASSERT(requiredArgsPtr != NULL);
+    NS_NONNULL_ASSERT(noptsPtr != NULL);
+    NS_NONNULL_ASSERT(nreqoptsPtr != NULL);
+    NS_NONNULL_ASSERT(optDsPtr != NULL);
+    NS_NONNULL_ASSERT(optFlagsPtr != NULL);
+
+    optSpec = *optSpecPtr;
+
+    *requiredArgsPtr = 0;
+    *noptsPtr = 0;
+    *nreqoptsPtr = 0;
+    *optFlagsPtr = NULL;
+    Tcl_DStringInit(optDsPtr);
+
+    /*
+     * Count required positional args.
+     */
+    if (argSpec != NULL) {
+        for (specPtr = argSpec; specPtr->key != NULL; specPtr++) {
+            if (specPtr->key[0] == '?') {
+                break;
+            }
+            requiredArgs++;
+        }
+    }
+    *requiredArgsPtr = requiredArgs;
+
+    /*
+     * Preprocess required non-positional options ("!-foo").
+     */
+    if (optSpec != NULL && optSpec->key != NULL) {
+        TCL_SIZE_T i;
+
+        for (specPtr = optSpec; specPtr->key != NULL; specPtr++) {
+            const char *k = specPtr->key;
+            nopts++;
+            if (k[0] == '!' && k[1] == '-') {
+                nreqopts++;
+            }
+        }
+        *noptsPtr = nopts;
+        *nreqoptsPtr = nreqopts;
+
+        if (nreqopts > 0) {
+#ifdef NS_TCL_PRE9
+            if (unlikely(nopts > (TCL_SIZE_T)INT_MAX)) {
+                Ns_TclPrintfResult(interp, "too many options");
+                return NS_ERROR;
+            }
+#else
+            (void)interp;
+#endif
+            Tcl_DStringSetLength(optDsPtr, (int)nopts);
+            *optFlagsPtr = (unsigned char *)optDsPtr->string;
+            memset(*optFlagsPtr, 0, (size_t)nopts);
+
+            for (i = 0; i < nopts; i++) {
+                const char *k = optSpec[i].key;
+                if (k[0] == '!' && k[1] == '-') {
+                    (*optFlagsPtr)[i] |= OPT_REQUIRED;
+                    optSpec[i].key = k + 1;  /* strip '!' */
+                }
+            }
+        }
+    }
+
+    /*
+     * Historic optimization: if argc matches required positional args exactly,
+     * then typically there are no options and we can skip option parsing.
+     *
+     * Do not do this when required non-positional options exist.
+     */
+    if (optSpec != NULL && nreqopts == 0 && requiredArgs + parseOffset == parseObjc) {
+        int skip = 1;
+
+        if (parseObjv != NULL && parseObjc > parseOffset) {
+            Tcl_Obj    *obj = parseObjv[parseOffset];
+            const char *s   = GetStringIfPure(obj);
+
+            if (s != NULL && s[0] == '-') {
+
+                /* exact "--" keeps the special literal behavior */
+                if (!(s[1] == '-' && s[2] == '\0')) {
+                    int optIndex;
+
+                    /*
+                     * If it is a known option, do not skip option parsing
+                     * when the option expects a value. For flag options,
+                     * keep skipping so they can be used as literal values.
+                     */
+                    if (Tcl_IsShared(obj)) {
+                        if (GetOptIndexObjvSpec(obj, optSpec, &optIndex) == TCL_OK) {
+                            specPtr = optSpec + optIndex;
+                            if (specPtr->proc != Ns_ObjvBool && specPtr->proc != Ns_ObjvBreak) {
+                                skip = 0;
+                            }
+                        }
+                    } else {
+                        if (Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
+                                                      sizeof(Ns_ObjvSpec), "option",
+                                                      TCL_EXACT, &optIndex) == TCL_OK) {
+                            specPtr = optSpec + optIndex;
+                            if (specPtr->proc != Ns_ObjvBool && specPtr->proc != Ns_ObjvBreak) {
+                                skip = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (skip) {
+            *optSpecPtr = NULL;
+        }
+    }
+
+    return NS_OK;
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -203,8 +414,11 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     Ns_ObjvSpec    *specPtr;
     int             optIndex;
     Tcl_Obj *const* parseObjv;
-    TCL_SIZE_T      requiredArgs = 0, parseObjc, remain;
+    TCL_SIZE_T      parseObjc, remain;
     TCL_SIZE_T      leadOffset = 0;
+    TCL_SIZE_T      requiredArgs = 0, nopts = 0, nreqopts = 0;
+    unsigned char  *optFlags = NULL;      /* bit0: required, bit1: seen */
+    Tcl_DString     optDs;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -212,29 +426,11 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     parseObjv = objv + leadOffset;
     remain = (TCL_SIZE_T)(parseObjc - parseOffset);
 
-    /*
-     * In case, the number of actual arguments is equal to the number
-     * of required arguments, skip option processing and use the
-     * provided argument for the required arguments. This way,
-     * e.g. "ns_md5 --" will compute the checksum of "--" instead of
-     * spitting out an error message about a missing input string.
-     */
-    if (likely(argSpec != NULL) && likely(optSpec != NULL)) {
-        /*
-         * Count required args.
-         */
-        for (specPtr = argSpec; specPtr != NULL && specPtr->key != NULL; specPtr++) {
-            if (unlikely(specPtr->key[0] == '?')) {
-                break;
-            }
-            requiredArgs++;
-        }
-        if (requiredArgs+parseOffset == parseObjc) {
-            /*
-             * No need to process optional parameters.
-             */
-            optSpec = NULL;
-        }
+    if (ObjvPreprocess(&optSpec, argSpec, interp,
+                       parseObjv, parseObjc, parseOffset,
+                       &requiredArgs, &nopts, &nreqopts,
+                       &optDs, &optFlags) != NS_OK) {
+        goto returnerr;
     }
 
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
@@ -242,50 +438,52 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
         while (remain > 0) {
             Tcl_Obj *obj = parseObjv[parseObjc - (TCL_SIZE_T)remain];
             int      result;
+            const char *s = GetStringIfPure(obj);
 
-#ifdef NS_TCL_PRE87
-            /*
-             * In case a Tcl_Obj has no stringrep (e.g. a pure/proper
-             * byte array), it is assumed that this cannot be an
-             * option flag (starting with a '-'). Since
-             * GetOptIndexObjvSpec() and Tcl_GetIndexFromObjStruct()
-             * create on demand string representations, the "pure"
-             * property will be lost and Tcl cannot distinguish later
-             * whether it can use the string representation as byte
-             * array or not. Fortunately, this dangerous fragility is
-             * gone in Tcl 8.7.
-             */
-            if (obj->bytes == NULL) {
+            if (s == NULL) {
                 break;
             }
-#endif
-            result = Tcl_IsShared(obj) ?
-                GetOptIndexObjvSpec(obj, optSpec, &optIndex) :
-                Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
-                                          sizeof(Ns_ObjvSpec), "option",
-                                          TCL_EXACT, &optIndex);
+
+            result = Tcl_IsShared(obj)
+                ? GetOptIndexObjvSpec(obj, optSpec, &optIndex)
+                : Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
+                                            sizeof(Ns_ObjvSpec), "option",
+                                            TCL_EXACT, &optIndex);
             if (result != TCL_OK) {
                 break;
             }
 
             --remain;
             specPtr = optSpec + optIndex;
+            if (optFlags != NULL) {
+                optFlags[optIndex] |= OPT_SEEN;
+            }
             result = specPtr->proc(specPtr, interp, &remain, parseObjv + ((TCL_SIZE_T)parseObjc - remain));
 
             if (result == TCL_BREAK) {
                 break;
             } else if (result != TCL_OK) {
-                return NS_ERROR;
+                goto returnerr;
+            }
+        }
+
+        if (nreqopts > 0) {
+            TCL_SIZE_T i;
+
+            for (i = 0; i < nopts; i++) {
+                if ((optFlags[i] & OPT_REQUIRED) != 0u && (optFlags[i] & OPT_SEEN) == 0u) {
+                    goto badargs;  /* produce "wrong # args" usage */
+                }
             }
         }
     }
     if (unlikely(argSpec == NULL)) {
         if (remain > 0) {
         badargs:
-            WrongNumArgs(optSpec, argSpec, interp, leadOffset, parseOffset-leadOffset, objv);
-            return NS_ERROR;
+            WrongNumArgs(optSpec, argSpec, optFlags, interp, leadOffset, parseOffset-leadOffset, objv);
+            goto returnerr;
         }
-        return NS_OK;
+        goto returnok;
     }
 
     for (specPtr = argSpec; specPtr != NULL && specPtr->key != NULL; specPtr++) {
@@ -293,18 +491,22 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             if (unlikely(specPtr->key[0] != '?')) {
                 goto badargs; /* Too few args. */
             }
-            return NS_OK;
+            goto returnok;
         }
         if (unlikely(specPtr->proc(specPtr, interp, &remain, parseObjv + ((TCL_SIZE_T)parseObjc - remain)))
             != TCL_OK) {
-            return NS_ERROR;
+            goto returnerr;
         }
     }
     if (unlikely(remain > 0)) {
         goto badargs; /* Too many args. */
     }
-
+ returnok:
+    if (optFlags != NULL) {Tcl_DStringFree(&optDs);}
     return NS_OK;
+ returnerr:
+    if (optFlags != NULL) {Tcl_DStringFree(&optDs);}
+    return NS_ERROR;
 }
 
 
@@ -1066,7 +1268,6 @@ Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
              Tcl_Obj *const* objv)
@@ -1081,11 +1282,18 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
 
     if (likely(*objcPtr > 0)) {
         result = Tcl_GetIndexFromObjStruct(interp, objv[0], tablePtr,
-                                           sizeof(Ns_ObjvTable), "option",
+                                           sizeof(Ns_ObjvTable), "optioXXXXXXXXn",
                                            TCL_EXACT, &tableIdx);
         if (result == TCL_OK) {
             *dest = (int)tablePtr[tableIdx].value;
             *objcPtr -= 1;
+        } else {
+            Tcl_DString errDs;
+
+            Tcl_DStringInit(&errDs);
+            Ns_DStringPrintf(&errDs, "bad option \"%s\": must be ", Tcl_GetString(objv[0]));
+            ObjvTablePrintSentence(&errDs, tablePtr);
+            Tcl_DStringResult(interp, &errDs);
         }
     } else {
         Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
@@ -1892,13 +2100,82 @@ AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
  */
 char *Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
 {
-    const char *key;
-
+    const char  *key;
+    unsigned int lastValue = 0;
+    bool         first = NS_TRUE;
     for (key = values->key; key != NULL; key = (++values)->key) {
+        if (!first && lastValue == values->value) {
+            continue;
+        }
         Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
         Tcl_DStringAppend(dsPtr, "|", 1);
+        lastValue = values->value;
+        first = NS_FALSE;
     }
     Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
+    return dsPtr->string;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvTablePrintSentence --
+ *
+ *      Append enumeration strings from Ns_ObjvTable to Tcl_DString
+ *      in style of an sentence (i.e., with comma, and "or")
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updating Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
+{
+    size_t       n = 0u;
+    bool         first = NS_TRUE;
+    unsigned int lastValue = 0u;
+    const Ns_ObjvTable *v;
+
+    for (v = values; v->key != NULL; ++v) {
+        if (!first && v->value == lastValue) {
+            continue;
+        }
+        ++n;
+        lastValue = v->value;
+        first = NS_FALSE;
+    }
+
+    if (n == 0u) {
+        return dsPtr->string;
+    } else {
+        size_t i;
+
+        first = NS_TRUE;
+        lastValue = 0u;
+
+        for (v = values, i = 0u; v->key != NULL; ++v) {
+            if (!first && v->value == lastValue) {
+                continue;
+            }
+            ++i;
+
+            if (i == n) {
+                Tcl_DStringAppend(dsPtr, ", or ", 5);
+            } else if (i > 1u) {
+                Tcl_DStringAppend(dsPtr, ", ", 2);
+            }
+
+            Tcl_DStringAppend(dsPtr, v->key, TCL_INDEX_NONE);
+
+            lastValue = v->value;
+            first = NS_FALSE;
+        }
+    }
+
     return dsPtr->string;
 }
 
@@ -2090,8 +2367,9 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
  */
 
 static void
-WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-               TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
+             const unsigned char *optFlags, Tcl_Interp *interp,
+             TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_ObjvSpec *specPtr;
     Tcl_DString        ds;
@@ -2099,11 +2377,18 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
     Tcl_DStringInit(&ds);
 
     if (optSpec != NULL) {
-        for (specPtr = optSpec; specPtr->key != NULL; ++specPtr) {
+        TCL_SIZE_T idx = 0;
+
+        for (specPtr = optSpec; specPtr->key != NULL; ++specPtr, ++idx) {
+            int required = (optFlags != NULL && (optFlags[idx] & OPT_REQUIRED) != 0u);
+
             if (STREQ(specPtr->key, "--")) {
                 Tcl_DStringAppend(&ds, "?--? ", 5);
             } else {
-                AppendParameter(&ds, "?", 1,
+                const char *wrap = required ? "" : "?";
+                TCL_SIZE_T  wlen = required ? 0  : 1;
+
+                AppendParameter(&ds, wrap, wlen,
                                 ((specPtr->proc == Ns_ObjvInt
                                   || specPtr->proc == Ns_ObjvLong
                                   || specPtr->proc == Ns_ObjvWideInt
@@ -2327,6 +2612,85 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
    return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * EncodedObj --
+ *
+ *      Helper function result encodings.
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      Interp result Obj is updated in case of error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj*
+NsEncodedObj(unsigned char *octets, size_t octetLength,
+             char *outputBuffer, Ns_BinaryEncoding encoding) {
+    char    *origOutputBuffer = outputBuffer;
+    Tcl_Obj *resultObj = NULL; /* enumeration is complete, quiet some older compilers */
+
+    NS_NONNULL_ASSERT(octets != NULL);
+
+    if (outputBuffer == NULL && encoding != NS_OBJ_ENCODING_BINARY) {
+        /*
+         * It is a safe assumption to double the size, since the hex
+         * encoding needs the most space.
+         */
+        outputBuffer = ns_malloc(octetLength * 2u + 1u);
+    }
+
+    switch (encoding) {
+    case NS_OBJ_ENCODING_BINARY:
+        resultObj = Tcl_NewByteArrayObj(octets, (TCL_SIZE_T)octetLength);
+        break;
+
+    case NS_OBJ_ENCODING_BASE64URL:
+        (void)Ns_HtuuEncode2(octets, octetLength, outputBuffer, 1);
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)strlen(outputBuffer));
+        break;
+
+    case NS_OBJ_ENCODING_BASE64:
+        (void)Ns_HtuuEncode2(octets, octetLength, outputBuffer, 0);
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)strlen(outputBuffer));
+        break;
+
+    case NS_OBJ_ENCODING_HEX:
+        Ns_HexString(octets, outputBuffer, (TCL_SIZE_T)octetLength, NS_FALSE);
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)octetLength*2);
+        break;
+    }
+
+    if (outputBuffer != origOutputBuffer) {
+        ns_free(outputBuffer);
+    }
+
+    return resultObj;
+}
+
+TCL_SIZE_T
+NsEncodedObjScratchSize(Ns_BinaryEncoding encoding, size_t octetLength)
+{
+    switch (encoding) {
+    case NS_OBJ_ENCODING_BINARY:
+        return (TCL_SIZE_T)octetLength;
+
+    case NS_OBJ_ENCODING_BASE64URL:
+    case NS_OBJ_ENCODING_BASE64:
+        return (TCL_SIZE_T)(4*((octetLength + 2)/3) + 1);
+
+    case NS_OBJ_ENCODING_HEX:
+        return (TCL_SIZE_T)(2*octetLength + 1);
+        break;
+    }
+
+    Ns_Log(Error, "NsEncodedObjScratchSize called with invalid encoding: %d", (int)encoding);
+    return 0;
+}
 
 /*
  * Local Variables:

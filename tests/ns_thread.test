@@ -274,6 +274,11 @@ test ns_thread-2.6 {get thread handle of self} -body {
     ns_thread handle
 } -match regexp -result {^t.*ns:thread$}
 
+test ns_thread-2.7 {thread using atom table} -body {
+    ns_thread wait [ns_thread create {ns_info buildinfo}]
+} -match glob -result {*system_malloc*}
+
+
 
 test ns_thread-3.1 {create and destroy a mutex} -body {
     set mutex [ns_mutex create]

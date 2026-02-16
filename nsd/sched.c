@@ -59,6 +59,7 @@ typedef struct Event {
     Ns_SchedProc   *deleteProc; /* Procedure to cleanup when done (if any). */
     unsigned int    flags;      /* One or more of NS_SCHED_ONCE, NS_SCHED_THREAD,
                                  * NS_SCHED_DAILY, or NS_SCHED_WEEKLY. */
+    bool            waslate;    /* true while we are in a \"late\" period */
 } Event;
 
 /*
@@ -325,9 +326,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     } else {
         Event    *ePtr;
         int       isNew;
-        Ns_Time   now;
 
-        Ns_GetTime(&now);
         ePtr = ns_malloc(sizeof(Event));
         ePtr->flags = flags;
         ePtr->nextqueue.sec = 0;
@@ -344,6 +343,8 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
             id = (int)NS_ERROR;
             ns_free(ePtr);
         } else {
+            Ns_Time now;
+
             do {
                 static int nextId = 0;
 
@@ -354,6 +355,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
                 ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, INT2PTR(id), &isNew);
             } while (isNew == 0);
             Tcl_SetHashValue(ePtr->hPtr, ePtr);
+            Ns_GetTime(&now);
             ePtr->id = id;
             ePtr->scheduled = now;
             QueueEvent(ePtr);
@@ -665,6 +667,8 @@ QueueEvent(Event *ePtr)
             if ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) {
                 tp->tm_mday -= tp->tm_wday;
             }
+            /* Let mktime() recompute DST for this (possibly adjusted) date */
+            tp->tm_isdst = -1;
             ePtr->nextqueue.sec = mktime(tp);
             ePtr->nextqueue.usec = 0;
             d = Ns_DiffTime(&ePtr->nextqueue, &ePtr->scheduled, NULL);
@@ -675,7 +679,9 @@ QueueEvent(Event *ePtr)
                    d, (long)ePtr->nextqueue.sec-(long)ePtr->scheduled.sec);
 
             if (d <= 0) {
+                /* Move to next day/week and recompute DST as well. */
                 tp->tm_mday += ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) ? 7 : 1;
+                tp->tm_isdst = -1;
                 ePtr->nextqueue.sec = mktime(tp);
                 ePtr->nextqueue.usec = 0;
                 Ns_Log(Debug, "SCHED_DAILY: final next " NS_TIME_FMT ,
@@ -683,32 +689,64 @@ QueueEvent(Event *ePtr)
             }
             ePtr->scheduled = ePtr->nextqueue;
         } else {
-            Ns_Time diff, now;
+            Ns_Time scheduled_next, now;
+            long    cmp;
 
-            ePtr->nextqueue = ePtr->scheduled;
-            Ns_IncrTime(&ePtr->nextqueue, ePtr->interval.sec, ePtr->interval.usec);
             /*
-             * The update time is the next scheduled time.
+             * "scheduled"      : desired time for this run.
+             * "scheduled_next" : desired time for the next run.
              */
-            ePtr->scheduled = ePtr->nextqueue;
+            scheduled_next = ePtr->scheduled;
 
+            /* Compute planned next run: scheduled + interval */
+            ePtr->nextqueue = ePtr->scheduled;
+            Ns_IncrTime(&scheduled_next, ePtr->interval.sec, ePtr->interval.usec);
+
+            /*
+             * If the job finished before its next nominal start, queue
+             * exactly at scheduled_next. Otherwise we’d overlap: push the
+             * next run to now + 10ms.
+             */
             Ns_GetTime(&now);
-            d = Ns_DiffTime(&ePtr->nextqueue, &now, &diff);
-            Ns_Log(Debug, "sched: compute next run time based on: scheduled " NS_TIME_FMT
-                   " diff %ld",
-                   (int64_t)ePtr->scheduled.sec, ePtr->scheduled.usec, d);
 
-            if (d == -1) {
+            cmp = Ns_DiffTime(&scheduled_next, &now, NULL);
+
+            if (cmp == 1 || cmp == 0) {
                 /*
-                 * The last execution took longer than the schedule
-                 * interval. Re-schedule after 10ms.
+                 * scheduled_next >= now: we are on time or early
+                 */
+                ePtr->nextqueue = scheduled_next;
+            } else {
+                /*
+                 * scheduled_next < now: we already missed the nominal time
                  */
                 ePtr->nextqueue = now;
                 Ns_IncrTime(&ePtr->nextqueue, 0, 10000);
-                Ns_Log(Warning, "sched id %d: last execution overlaps with scheduled execution; "
-                       "running late", ePtr->id);
+                Ns_Log(Debug, "job %d: we missed nominal time", ePtr->id);
             }
+            /*Ns_Log(Notice,
+                   "QueueEvent id %d: now " NS_TIME_FMT " scheduled " NS_TIME_FMT " nextqueue " NS_TIME_FMT,
+                   ePtr->id,
+                   (int64_t)now.sec, now.usec,
+                   (int64_t)ePtr->scheduled.sec, ePtr->scheduled.usec,
+                   (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);*/
+
+            /* store the nominal time for the NEXT run */
+            ePtr->scheduled = scheduled_next;
         }
+#if 0
+        ns_pause 0
+        ns_schedule_proc 1s {ns_log notice ping}
+        ns_schedule_proc 1s {ns_sleep 2s}
+
+        ns_schedule_proc 1s {ns_log notice ping}
+        ns_schedule_proc 3s {ns_sleep 5s}
+
+        ns_schedule_proc 100ms {ns_sleep 50ms}
+
+        ns_schedule_proc 1s {ns_sleep 2s}
+        ns_schedule_proc -thread 1s {ns_sleep 2s}
+#endif
 
         ePtr->qid = ++nqueue;
         /*
@@ -936,6 +974,54 @@ FreeEvent(Event *ePtr)
     ns_free(ePtr);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDStringAppendSchedFlags --
+ *
+ *      Decode a scheduled flags bitmask into a human‐readable string
+ *      of flag names separated by '|' and append it to a Tcl_DString.
+ *
+ * Returns:
+ *      A pointer to the internal string buffer of dsPtr, containing the
+ *      appended flag names.
+ *
+ * Side Effects:
+ *      Appends the textual representations of each set flag to the
+ *      Tcl_DString, inserting '|' between multiple flags.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+DStringAppendSchedFlags(Tcl_DString *dsPtr, unsigned int flags)
+{
+    int    count = 0;
+    size_t i;
+    static const struct {
+        unsigned int state;
+        const char  *label;
+    } options[] = {
+        { NS_SCHED_THREAD, "THREAD" },
+        { NS_SCHED_ONCE,   "ONCE" },
+        { NS_SCHED_DAILY,  "DAILY" },
+        { NS_SCHED_WEEKLY, "WEEKLY" },
+        { NS_SCHED_PAUSED, "PAUSED" },
+        { NS_SCHED_RUNNING, "RUNNING"},
+    };
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    for (i = 0; i<sizeof(options) / sizeof(options[0]); i++) {
+        if ((options[i].state & flags) != 0u) {
+            if (count > 0) {
+                Tcl_DStringAppend(dsPtr, "|", 1);
+            }
+            Tcl_DStringAppend(dsPtr, options[i].label, TCL_INDEX_NONE);
+            count ++;
+        }
+    }
+    return dsPtr->string;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -966,15 +1052,33 @@ SchedThread(void *UNUSED(arg))
     Ns_Log(Notice, "sched: starting");
 
     Ns_MutexLock(&lock);
+
+    /*
+     * For all events whose nextqueue is already in the past (i.e., whose
+     * first scheduled time was during long startup), reset their base time to
+     * 'now' so they don't appear "late" on the very first run.
+     */
+    Ns_GetTime(&now);
+    for (int i = 1; i <= nqueue; ++i) {
+        Event *e = queue[i];
+
+        if (Ns_DiffTime(&e->nextqueue, &now, NULL) <= 0) {
+            e->scheduled = now;
+            e->nextqueue = now;
+            e->lastqueue = now;   /* optional, but keeps things consistent */
+        }
+    }
+
     while (!shutdownPending) {
 
         /*
          * For events ready to run, either create a thread for
          * detached events or add to a list of synchronous events.
          */
-
         Ns_GetTime(&now);
         while (nqueue > 0 && Ns_DiffTime(&queue[1]->nextqueue, &now, NULL) <= 0) {
+            Ns_Time late, tolerate = {0, 100000};  /* 100 ms */
+
             ePtr = DeQueueEvent(1);
 
 #ifdef NS_SCHED_TRACE_EVENTS
@@ -982,6 +1086,46 @@ SchedThread(void *UNUSED(arg))
                    ePtr->id,
                    (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);
 #endif
+            /*
+             * Measure how late we are for THIS execution
+             */
+            if (Ns_DiffTime(&now, &ePtr->scheduled, &late) == 1) { /* now > scheduled */
+
+                /*Ns_Log(Notice,
+                       "at "NS_TIME_FMT ": sched id %d: job started late by %ld.%06ld sec (interval %ld.%06ld sec)",
+                       (long long)now.sec, (long)now.usec,
+                       ePtr->id,
+                       (long)late.sec, (long)late.usec,
+                       (long)ePtr->interval.sec, (long)ePtr->interval.usec);*/
+
+                if (Ns_DiffTime(&late, &tolerate, NULL) == 1) { /* late > tolerate */
+                    if (!ePtr->waslate) {
+                        Tcl_DString ds;
+
+                        Tcl_DStringInit(&ds);
+                        Ns_Log(Warning,
+                               "sched id %d: job started late by %ld.%06ld sec (flags %s, interval %ld.%06ld sec)",
+                               ePtr->id,
+                               (long)late.sec, (long)late.usec,
+                               DStringAppendSchedFlags(&ds, ePtr->flags),
+                               (long)ePtr->interval.sec, (long)ePtr->interval.usec);
+                        Tcl_DStringFree(&ds);
+                    }
+                    ePtr->waslate = NS_TRUE;
+                } else {
+                    /*
+                     * Late, but within tolerance: treat as "on time" for
+                     * warning purposes.
+                     */
+                    ePtr->waslate = NS_FALSE;
+                }
+            } else {
+                /*
+                 * on time or early
+                 */
+                ePtr->waslate = NS_FALSE;
+            }
+
             if ((ePtr->flags & NS_SCHED_ONCE) != 0u) {
                 Tcl_DeleteHashEntry(ePtr->hPtr);
                 ePtr->hPtr = NULL;
@@ -1057,17 +1201,26 @@ SchedThread(void *UNUSED(arg))
                 QueueEvent(ePtr);
             }
         }
-
         /*
          * Wait for the next ready event.
          */
         if (nqueue == 0) {
             Ns_CondWait(&schedcond, &lock);
         } else if (!shutdownPending) {
-            timeout = queue[1]->nextqueue;
-            (void) Ns_CondTimedWait(&schedcond, &lock, &timeout);
-        }
+            Ns_ReturnCode status;
 
+            timeout = queue[1]->nextqueue;
+            /*Ns_Log(Notice, "after job next queue timeout " NS_TIME_FMT,
+                     (int64_t)timeout.sec, timeout.usec);*/
+            status = Ns_CondTimedWait(&schedcond, &lock, &timeout);
+            (void)status;
+            /*{
+                Ns_Time now;
+                Ns_GetTime(&now);
+                Ns_Log(Notice, "at " NS_TIME_FMT ": CondTimedWait returned %s",
+                       (int64_t)now.sec, now.usec, Ns_ReturnCodeString(status));
+                       }*/
+        }
     }
 
     /*

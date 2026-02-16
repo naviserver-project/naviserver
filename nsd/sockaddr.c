@@ -1099,13 +1099,13 @@ Ns_SockaddrAddToDictIpProperties(const struct sockaddr *ipPtr, Tcl_Obj *dictObj)
     Tcl_Obj *typeValueObj;
 
     Tcl_DictObjPut(NULL, dictObj,
-                   Tcl_NewStringObj("public", 6),
+                   NsAtomObj(NS_ATOM_PUBLIC),
                    Tcl_NewBooleanObj(isPublic));
     Tcl_DictObjPut(NULL, dictObj,
-                   Tcl_NewStringObj("trusted", 7),
+                   NsAtomObj(NS_ATOM_TRUSTED),
                    Tcl_NewBooleanObj(isTrusted));
     Tcl_DictObjPut(NULL, dictObj,
-                   Tcl_NewStringObj("inany", 5),
+                   NsAtomObj(NS_ATOM_INANY),
                    Tcl_NewBooleanObj(isInAny));
     if (ipPtr->sa_family == AF_INET) {
         typeValueObj = Tcl_NewStringObj("IPv4", 4);
@@ -1115,7 +1115,7 @@ Ns_SockaddrAddToDictIpProperties(const struct sockaddr *ipPtr, Tcl_Obj *dictObj)
         typeValueObj = Tcl_NewStringObj("unknown", 7);
     }
     Tcl_DictObjPut(NULL, dictObj,
-                   Tcl_NewStringObj("type", 4),
+                   NsAtomObj(NS_ATOM_TYPE),
                    typeValueObj);
     return TCL_OK;
 }

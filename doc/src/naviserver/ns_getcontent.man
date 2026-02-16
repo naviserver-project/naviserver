@@ -34,8 +34,8 @@ Typically this command is used on POST, PUT, PROPFIND or similar requests.
 
 [section EXAMPLES]
 
-The following script checks, whether the received request was a POST
-or POST requests, it checks the provided content type, and in case it
+The following script checks, whether the received request was a PUT
+or POST request, it checks the provided content type, and in case it
 was a JSON type, it retrieves the payload of the request and converts
 it to a Tcl dict. Note that the json package form tcllib has some
 restrictions. There are several alternative JSON parsers available for

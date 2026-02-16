@@ -10,8 +10,8 @@
 #
 #
 #
-MAN_CSS=man-5.0.css
-HEADER_INC=header-5.0.inc
+MAN_CSS=man-5.1.css
+HEADER_INC=header-5.1.inc
 
 NSBUILD=1
 include include/Makefile.global
@@ -44,28 +44,37 @@ else ifeq ($(strip $(USER_SET_J)$(HAS_JOBSERVER)),)
   endif
 endif
 
+VERBOSE ?= 0
+ifeq ($(VERBOSE),0)
+  SUBMAKE_SILENT := -s
+else
+  SUBMAKE_SILENT :=
+endif
+
 distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
 	config.guess config.sub \
-	README.md NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
-	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
+	README.md NEWS \
+	conf/sample-config.tcl.in conf/simple-config.tcl \
+	conf/nsd-config.tcl conf/nsd-config.d conf/openacs-config.tcl conf/openacs-config.d \
+	index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in install-from-repository.tcl
 
 # Top-level goals
-all:     $(SUBDIRS:%=all-%)
+all:     $(SUBDIRS:%=all-%) configs
 clean:   $(SUBDIRS:%=clean-%)
 install: $(SUBDIRS:%=install-%)
 test:    $(TESTDIRS:%=test-%)
 
 # One recursive call per subdir/goal, delegate test to selected subdirs
 all-%:
-	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* all
+	@+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* all
 install-%:
-	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* install
+	@+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* install
 clean-%:
-	@+$(MAKE) $(SUBMAKE_J) --no-print-directory -C $* clean
+	@+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) --no-print-directory -C $* clean
 test-%:
-	+$(MAKE) $(SUBMAKE_J) -C $* test
+	+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) -C $* test
 
 # Subdir dependencies
 all-nsd: | all-nsthread
@@ -112,7 +121,7 @@ install: all install-dirs install-include install-tcl install-modules \
 
 HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
 
-install-notice:
+install-notice: install-certificates
 	@echo ""
 	@echo ""
 	@echo "Congratulations, you have installed NaviServer."
@@ -143,30 +152,37 @@ install-notice:
 	echo "Consult the sample configuration files in $(NAVISERVER)/conf/ as a reference."; \
 	echo ""
 
-install-dirs: all
-	@for i in bin lib logs include tcl pages conf certificates modules modules/tcl cgi-bin; do \
-		$(MKDIR) $(DESTDIR)$(NAVISERVER)/$$i; \
-	done
+DIRS = bin lib logs include tcl pages conf \
+       certificates invalid-certificates modules modules/tcl cgi-bin
 
-install-config: all
-	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
-	@for i in returnnotice.adp nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
+DIR_TARGETS = $(addprefix $(DESTDIR)$(NAVISERVER)/,$(DIRS))
+
+$(DIR_TARGETS):
+	$(MKDIR) $@
+
+install-dirs: $(DIR_TARGETS)
+
+install-config: configs $(DESTDIR)$(NAVISERVER)/pages $(DESTDIR)$(NAVISERVER)/conf
+	@for i in returnnotice.adp conf/*.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
+	done
+	@for d in $(FRAGDIRS) ; do \
+		test -d $$d || continue; \
+		$(MKDIR) $(DESTDIR)$(NAVISERVER)/conf/$$(basename $$d); \
+		$(INSTALL_DATA) $$d/*.tcl $(DESTDIR)$(NAVISERVER)/conf/$$(basename $$d)/; \
 	done
 	@for i in index.adp install-from-repository.tcl; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/; \
 	done
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
 
-install-certificates: $(PEM_FILE) ca-bundle.crt
-	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/certificates
-	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/invalid-certificates
+install-certificates: $(PEM_FILE) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/certificates $(DESTDIR)$(NAVISERVER)/invalid-certificates
 	@if [ -f "$(DESTDIR)$(NAVISERVER)/etc" ]; then \
 		for i in `ls $(DESTDIR)$(NAVISERVER)/etc/*pem` ; do \
 			$(LN) -sf $$i $(DESTDIR)$(NAVISERVER)/certificates ; \
 		done; \
 	fi
-	for i in `ls ./certificates/*` ; do \
+	@for i in `ls ./certificates/*` ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/certificates/; \
 	done
 	@if [ -n "$(OPENSSL_LIBS)" ]; then \
@@ -174,25 +190,25 @@ install-certificates: $(PEM_FILE) ca-bundle.crt
 	fi
 	$(INSTALL_DATA) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/
 
-install-modules: all
+install-modules: $(DESTDIR)$(NAVISERVER)/modules $(DESTDIR)$(NAVISERVER)/modules/tcl
 	@for i in $(dirs); do \
 		(cd $$i && $(MAKE) install) || exit 1; \
 	done
 
-install-tcl: all
+install-tcl: $(DESTDIR)$(NAVISERVER)/tcl
 	@for i in tcl/*.tcl; do \
-		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/tcl/; \
+		$(INSTALL_DATA) -t $(DESTDIR)$(NAVISERVER)/tcl/ $$i; \
 	done
 
-install-include: all
+install-include: $(DESTDIR)$(NAVISERVER)/include
 	@for i in include/*.h include/Makefile.global include/Makefile.module; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INSTHDR)/; \
 	done
 
-install-tests:
+install-tests: install-dirs
 	$(CP) tests $(INSTSRVPAG)
 
-install-doc:
+install-doc: $(DESTDIR)$(NAVISERVER)/pages
 	@if [ -d doc/html ]; then \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc ; \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc/naviserver ; \
@@ -207,7 +223,7 @@ install-doc:
 		echo "or use the online documentation from https://naviserver.sourceforge.io/n/toc.html" ; \
 	fi;
 
-install-examples:
+install-examples: $(DESTDIR)$(NAVISERVER)/pages
 	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/examples
 	@for i in contrib/examples/*.adp contrib/examples/*.tcl; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/examples/; \
@@ -392,7 +408,7 @@ config.sub:
 ca-bundle.crt:
 	curl -s -fS -k -L -o ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
 
-dist: config.guess config.sub clean
+dist: config.guess config.sub clean configs
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
@@ -412,7 +428,50 @@ dist: config.guess config.sub clean
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --exclude='*/.*' --no-xattrs --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
+# --------------------------------------------------------------------
+# Config generation from fragment directories
+# --------------------------------------------------------------------
+
+FRAGDIRS := conf/openacs-config.d conf/nsd-config.d
+# Map "conf/foo.d" -> "foo.tcl" (generated at repo top-level)
+#GENCONFIGS := $(patsubst conf/%.d,%.tcl,$(FRAGDIRS))
+
+# Map "conf/foo-config.d" -> "conf/foo-config.tcl"
+CONFIGS  := $(patsubst %.d,%.tcl,$(FRAGDIRS))
+
+# Helper: list of fragments for a given dir, sorted lexicographically
+frags = $(sort $(wildcard $(1)/*.tcl))
+
+# Create a concatenated file from a directory
+define GEN_CONFIG_template
+$(patsubst %.d,%.tcl,$(1)): $$(call frags,$(1))
+	@echo "GEN  $$@"
+	@if test -z "$$(strip $$(call frags,$(1)))"; then \
+	  echo "ERROR: no fragments found in $(1)/*.tcl" 1>&2; \
+	  exit 1; \
+	fi
+	@{ \
+	  echo "########################################################################"; \
+	  echo "# GENERATED FILE -- do not edit"; \
+	  echo "# Source: $(1)/"; \
+	  echo "########################################################################"; \
+	  echo; \
+	  $(foreach f,$(call frags,$(1)), \
+	    echo "# source: $(patsubst conf/%,%,$(f))"; \
+	    cat "$(f)"; \
+	    echo; \
+	  ) \
+	} > $$@
+endef
+
+$(foreach d,$(FRAGDIRS),$(eval $(call GEN_CONFIG_template,$(d))))
+
+configs: $(CONFIGS)
+
+
 .PHONY: all install clean distclean \
-	install-dirs install-include install-tcl install-modules \
+	install-dirs install-include install-tcl install-modules configs \
 	install-config install-certificates install-doc install-examples install-notice \
 	all-% install-% clean-% test-%
+
+#.NOTPARALLEL: install install-tcl install-dirs

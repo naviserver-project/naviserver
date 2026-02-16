@@ -349,7 +349,7 @@ if {$::tcl_version < 8.6} {
     #
     proc ns_opentmpfile {varFilename {template ""}} {
         upvar $varFilename tmpFileName
-        set tmpFileName [ns_mktemp {*}$template]
+        set tmpFileName [ns_mktemp -nocomplain {*}$template]
         set fp [ns_openexcl $tmpFileName]
     }
 } else {
@@ -358,7 +358,17 @@ if {$::tcl_version < 8.6} {
         if {$template eq ""} {
             set template [ns_config ns/parameters tmpdir]/nsd-XXXXXX
         }
-        return [::file tempfile tmpFileName {*}$template]
+        #
+        # Apparently, "file tempfile" on windows does not support the
+        # path from the template and uses its own understanding, where
+        # tempfiles should be placed.
+        #
+        if {$::tcl_platform(platform) eq "windows"} {
+            set tmpFileName [ns_mktemp -nocomplain $template]
+            return [open $tmpFileName {RDWR CREAT EXCL}]
+        } else {
+            return [::file tempfile tmpFileName {*}$template]
+        }
     }
 }
 

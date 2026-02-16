@@ -241,8 +241,17 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         Tag            *tagPtr;
 
         /*
-         * Get the content
+         * Get tag and content
          */
+        tag = Tcl_GetStringFromObj(objv[1], &tlen);
+        content = strpbrk(tag, "<&> '\"");
+        if (content != NULL) {
+            Ns_TclPrintfResult(interp, "invalid start tag: '%s'"
+                               " (contains invalid character '%c')",
+                               tag, *content);
+            return TCL_ERROR;
+        }
+
         content = Tcl_GetStringFromObj(objv[objc-1], &slen);
         ++slen;
         if (objc == 3) {
@@ -256,6 +265,12 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
              * end tag provided.
              */
             end = Tcl_GetStringFromObj(objv[2], &elen);
+            if (*end != '/' || elen != tlen + 1 || memcmp(tag, end+1,  (size_t)tlen) != 0) {
+                Ns_TclPrintfResult(interp, "invalid end tag: '%s'"
+                                   " (must start with a '/' followed by the name of the start tag)",
+                                   end);
+                return TCL_ERROR;
+            }
             ++elen;
         }
         /*fprintf(stderr, "=========== RegisterObjCmd tag '%s', content '%s', end '%s'\n",
@@ -289,7 +304,6 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
          * Get the tag string and add it to the adp.tag table.
          */
         Tcl_DStringInit(&tbuf);
-        tag = Tcl_GetStringFromObj(objv[1], &tlen);
         (void)Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
         Ns_RWLockWrLock(&servPtr->adp.taglock);
         hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &isNew);
@@ -929,6 +943,7 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
     NS_NONNULL_ASSERT(s <= e);
 
     len = e - s;
+    //Ns_Log(Notice, "AppendBlock %c len %ld '%s'", type, (long)len, s);
 
     if (likely(len > 0)) {
 

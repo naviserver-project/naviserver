@@ -34,7 +34,7 @@ typedef struct UserAuth {
     const char              *authority; /* Identifier of the registration authority that installed this callback */
 } UserAuth;
 
-typedef struct AuthNode { /* common “base” for both types */
+typedef struct AuthNode { /* common "base" for both types */
     void *nextPtr;
 } AuthNode;
 
@@ -298,14 +298,14 @@ NsGetAuthprocs(Tcl_DString *dsPtr, NsServer *servPtr)
             Tcl_Obj *innerListObj = Tcl_NewListObj(0, NULL);
             Tcl_DString procInfo;
 
-            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("type", 4));
-            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("user", 4));
-            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("authority", 9));
+            Tcl_ListObjAppendElement(NULL, innerListObj, NsAtomObj(NS_ATOM_TYPE));
+            Tcl_ListObjAppendElement(NULL, innerListObj, NsAtomObj(NS_ATOM_USER));
+            Tcl_ListObjAppendElement(NULL, innerListObj, NsAtomObj(NS_ATOM_AUTHORITY));
             Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj(authPtr->authority, TCL_INDEX_NONE));
 
             Tcl_DStringInit(&procInfo);
             Ns_GetProcInfo(&procInfo, (ns_funcptr_t) authPtr->proc, authPtr->arg);
-            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("proc", 4));
+            Tcl_ListObjAppendElement(NULL, innerListObj, NsAtomObj(NS_ATOM_PROC));
             Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj(procInfo.string, procInfo.length));
             Tcl_DStringFree(&procInfo);
 
@@ -324,14 +324,14 @@ NsGetAuthprocs(Tcl_DString *dsPtr, NsServer *servPtr)
             Tcl_Obj *innerListObj = Tcl_NewListObj(0, NULL);
             Tcl_DString procInfo;
 
-            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("type", 4));
-            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("request", 7));
-            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("authority", 9));
+            Tcl_ListObjAppendElement(NULL, innerListObj, NsAtomObj(NS_ATOM_TYPE));
+            Tcl_ListObjAppendElement(NULL, innerListObj, NsAtomObj(NS_ATOM_REQUEST));
+            Tcl_ListObjAppendElement(NULL, innerListObj, NsAtomObj(NS_ATOM_AUTHORITY));
             Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj(authPtr->authority, TCL_INDEX_NONE));
 
             Tcl_DStringInit(&procInfo);
             Ns_GetProcInfo(&procInfo, (ns_funcptr_t) authPtr->proc, authPtr->arg);
-            Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj("proc", 4));
+            Tcl_ListObjAppendElement(NULL, innerListObj, NsAtomObj(NS_ATOM_PROC));
             Tcl_ListObjAppendElement(NULL, innerListObj, Tcl_NewStringObj(procInfo.string, procInfo.length));
             Tcl_DStringFree(&procInfo);
 
@@ -595,9 +595,9 @@ HandleAuthorizationResult(Tcl_Interp *interp, Ns_ReturnCode status, const char *
         if (asDict) {
             Tcl_Obj *dictObj = Tcl_NewDictObj();
 
-            Tcl_DictObjPut(interp, dictObj,Tcl_NewStringObj("authority", 9),
+            Tcl_DictObjPut(interp, dictObj,NsAtomObj(NS_ATOM_AUTHORITY),
                            Tcl_NewStringObj(authority, TCL_INDEX_NONE));
-            Tcl_DictObjPut(interp, dictObj, Tcl_NewStringObj("code", 4), resultObj);
+            Tcl_DictObjPut(interp, dictObj, NsAtomObj(NS_ATOM_CODE), resultObj);
             resultObj = dictObj;
         }
         /*Ns_Log(Notice, "HandleAuthorizationResult authority %s status %s sets result %s",

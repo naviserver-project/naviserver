@@ -1752,44 +1752,42 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
             if (isNew == 1) {
                 Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_MODULE));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("type", 4));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_TYPE));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->type, TCL_INDEX_NONE));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("server", 6));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->server != NULL ?
-                                                                           drvPtr->server : NS_EMPTY_STRING, TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_SERVER));
+                Tcl_ListObjAppendElement(interp, listObj, NsStringObj(drvPtr->server));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("location", 8));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->location != NULL ?
-                                                                           drvPtr->location : NS_EMPTY_STRING, TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_LOCATION));
+                Tcl_ListObjAppendElement(interp, listObj, NsStringObj(drvPtr->location));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_ADDRESS));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->address, TCL_INDEX_NONE));
 
                 {Tcl_DString ds;
                     Tcl_DStringInit(&ds);
                     PortsPrint(&ds, &drvPtr->ports);
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("port", 4));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_PORT));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
                     Tcl_DStringFree(&ds);
                 }
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("defaultport", 11));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_DEFAULTPORT));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj(drvPtr->defport));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("protocol", 8));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_PROTOCOL));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->protocol, TCL_INDEX_NONE));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("sendwait", 8));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_SENDWAIT));
                 Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("recvwait", 8));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_RECVWAIT));
                 Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("extraheaders", 12));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_EXTRAHEADERS));
                 if (drvPtr->extraHeaders != NULL) {
                     Tcl_DString ds;
 
@@ -1798,15 +1796,10 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
                     Tcl_DStringFree(&ds);
                 } else {
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(NS_EMPTY_STRING, 0));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_EMPTY));
                 }
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("libraryversion", 14));
-                if (drvPtr->libraryVersion != NULL) {
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->libraryVersion, TCL_INDEX_NONE));
-                } else {
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(NS_EMPTY_STRING, 0));
-                }
-
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_LIBRARYVERSION));
+                Tcl_ListObjAppendElement(interp, listObj, NsStringObj(drvPtr->libraryVersion));
 
                 Tcl_ListObjAppendElement(interp, resultObj, listObj);
             }
@@ -1864,22 +1857,22 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
             }
             listObj = Tcl_NewListObj(0, NULL);
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("thread", 6));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_THREAD));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->threadName, TCL_INDEX_NONE));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_MODULE));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("received", 8));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_RECEIVED));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.received));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("spooled", 7));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_SPOOLED));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.spooled));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("partial", 7));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_PARTIAL));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.partial));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("errors", 6));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_ERRORS));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.errors));
 
             Tcl_ListObjAppendElement(interp, resultObj, listObj);
@@ -2268,6 +2261,9 @@ NsDriverBindAddresses(Driver *drvPtr)
     assert(result == TCL_OK);
 
     if (result == TCL_OK) {
+        TCL_SIZE_T nOk    = 0;
+        TCL_SIZE_T nBinds = (TCL_SIZE_T)nElems * (TCL_SIZE_T)drvPtr->ports.size;
+
         /* Bind all configured addresses. */
         for (i = 0; i < nElems && nAddrs < (TCL_SIZE_T)MAX_LISTEN_ADDR_PER_DRIVER; i++) {
             size_t      pNum;
@@ -2292,6 +2288,14 @@ NsDriverBindAddresses(Driver *drvPtr)
 
                 if (likely(s != NS_INVALID_SOCKET)) {
                     drvPtr->listenfd[nAddrs++] = s;
+                    nOk++;
+                } else if (ns_sockerrno == EALREADY) {
+                    /*
+                     * Soft-skip (e.g. 0.0.0.0 is covered by a dual-stack [::]
+                     * bind).  Count as success for reporting, but do not
+                     * store an fd.
+                     */
+                    nOk++;
                 } else {
                     /* Optionally log per-failure here. */
                 }
@@ -2299,9 +2303,9 @@ NsDriverBindAddresses(Driver *drvPtr)
         }
 
         /* Provide warning for binding failures. */
-        if (nAddrs > 0 && nAddrs < nElems) {
+        if (nOk > 0 && nOk < nBinds) {
             Ns_Log(Warning, "could only bind to %" PRITcl_Size
-                   " out of %" PRITcl_Size " addresses", nAddrs, nElems);
+                   " out of %" PRITcl_Size " addresses", nOk, nBinds);
         }
 
         if (nAddrs == (TCL_SIZE_T)MAX_LISTEN_ADDR_PER_DRIVER
@@ -2368,9 +2372,15 @@ DriverListen(Driver *drvPtr, const char *bindaddr, unsigned short port)
                                  drvPtr->backlog,
                                  drvPtr->reuseport);
     if (sock == NS_INVALID_SOCKET) {
-        Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
-               drvPtr->threadName, bindaddr, port,
-               ns_sockstrerror(ns_sockerrno));
+        if (ns_sockerrno != EALREADY) {
+            Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
+                   drvPtr->threadName, bindaddr, port,
+                   ns_sockstrerror(ns_sockerrno));
+        } else {
+            /* optional: could be Debug here, since Ns_SockBind already logged Notice */
+            Ns_Log(Debug, "%s: bind on [%s]:%d skipped (covered by dual-stack wildcard)",
+                   drvPtr->threadName, bindaddr, port);
+        }
     }
 
     return sock;
@@ -4060,7 +4070,7 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
         isConnConstructed = NS_FALSE;
     }
     if (connPtr != NULL) {
-        Ns_Log(Notice, "--- non-trace access log entry: constructed %d user '%s' \"%s\" %d %ld",
+        Ns_Log(Debug, "--- non-trace access log entry: constructed %d user '%s' \"%s\" %d %ld",
                isConnConstructed,
                Ns_ConnAuthUser(connPtr),
                connPtr->request.line,
@@ -5191,7 +5201,7 @@ SockParse(Sock *sockPtr)
                      */
                     Ns_Log(Ns_LogRequestDebug, "100-continue: reply CONTINUE");
                     NsAddNslogEntry(sockPtr, 100, NULL, NULL);
-                    Ns_Log(Notice, "**** 100-continue line <%s>", sockPtr->reqPtr->request.line);
+                    Ns_Log(Debug, "**** 100-continue line <%s>", sockPtr->reqPtr->request.line);
 
                     ns_iov_set(&iov[0], continueResponse, sizeof(continueResponse) - 1);
                     sent = Ns_SockSendBufs((Ns_Sock *)sockPtr, iov, 1,
@@ -6944,7 +6954,7 @@ ConnPoolInfoResetRateCB(void *hashValue, const void *UNUSED(ctx))
  *
  * ConnPoolInfoUpdateCB --
  *
- *      Called for each (ConnPool → ConnPoolInfo) mapping to recalculate
+ *      Called for each (ConnPool -> ConnPoolInfo) mapping to recalculate
  *      how much bandwidth the current writer thread should be allowed
  *      to use in this pool.
  *
@@ -7036,7 +7046,7 @@ ConnPoolInfoUpdateCB(const void *hashKey, void *hashValue, const void *UNUSED(ct
  *
  * Parameters:
  *      writePtr   – first WriterSock in the thread’s list of active writers.
- *      pools      – Tcl_HashTable mapping ConnPool* → ConnPoolInfo*.
+ *      pools      – Tcl_HashTable mapping ConnPool* -> ConnPoolInfo*.
  *
  * Results:
  *      None.

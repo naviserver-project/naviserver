@@ -18,6 +18,7 @@
  * Installed modules should include <ns.h> from the installation prefix.
  */
 #include "../include/ns.h"
+#include "nsatoms.h"
 
 #if defined(HAVE_XLOCALE_H)
 # include <xlocale.h>
@@ -118,6 +119,17 @@ typedef enum {
 
 #define NSD_TEXTHTML                   "text/html"
 
+/*
+ * The following result encodings can be used for NsEncodeObj
+ */
+typedef enum {
+    NS_OBJ_ENCODING_HEX       = 1,
+    NS_OBJ_ENCODING_BASE64URL = 2,
+    NS_OBJ_ENCODING_BASE64    = 3,
+    NS_OBJ_ENCODING_BINARY    = 4
+} Ns_BinaryEncoding;
+
+NS_EXTERN Ns_ObjvTable NS_binaryencodings[];
 
 /*
  * Type definitions.
@@ -1376,6 +1388,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclCacheTransactionCommitObjCmd,
     NsTclCacheTransactionRollbackObjCmd,
     NsTclCancelObjCmd,
+    NsTclCborObjCmd,
     NsTclCertCtlObjCmd,
     NsTclChanObjCmd,
     NsTclCharsetsObjCmd,
@@ -1431,6 +1444,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclIpObjCmd,
     NsTclJobObjCmd,
     NsTclJpegSizeObjCmd,
+    NsTclJsonObjCmd,
     NsTclKillObjCmd,
     NsTclLibraryObjCmd,
     NsTclListLimitsObjCmd,
@@ -1733,11 +1747,25 @@ NS_EXTERN void NsClsCleanup(Conn *connPtr) NS_GNUC_NONNULL(1);
  * config.c
  */
 NS_EXTERN void NsConfigEval(const char *config, const char *configFileName,
-                            int argc, char *const *argv, int optionIndex)
-    NS_GNUC_NONNULL(1);
+                            int argc, char *const *argv, int optionIndex)  NS_GNUC_NONNULL(1,2,4);
+
 NS_EXTERN void NsConfigMarkAsRead(const char *section, size_t i) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *NsConfigRead(const char *file) NS_GNUC_MALLOC NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_Set *NsConfigSectionGetFiltered(const char *section, char filter) NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_ReturnCode NsConfigFragmentsCollect(const char *path,
+                                                 Ns_DList *namesPtr,
+                                                 Ns_DList *contentsPtr,
+                                                 bool *isDirectoryPtr)
+    NS_GNUC_NONNULL(1,2,3);
+NS_EXTERN Ns_ReturnCode NsConfigFragmentsEval(const Ns_DList *namesPtr,
+                                              const Ns_DList *contentsPtr,
+                                              bool cfgIsDir,
+                                              int argc, char *const* argv,
+                                              int firstArgIndex)
+    NS_GNUC_NONNULL(1,2,5);
+NS_EXTERN void NsConfigFragmentsFree(Ns_DList *namesPtr, Ns_DList *contentsPtr)
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * conn.c
@@ -2091,6 +2119,7 @@ NS_EXTERN void NsWaitSockShutdown(const Ns_Time *toPtr);
 NS_EXTERN void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength,
                           unsigned int perLine, bool withChar)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN Tcl_Obj *NsStringObj(const char* chars);
 
 /*
  * task.c
@@ -2131,14 +2160,12 @@ NS_EXTERN void NsStopHttp(NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
 /*
+ * tcljson.c
+ */
+NS_EXTERN void NsAtomJsonInit(void);
+/*
  * tcljob.c
  */
-NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
-
-NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
-
 NS_EXTERN void NsTclInitQueueType(void);
 
 /*
@@ -2147,10 +2174,19 @@ NS_EXTERN void NsTclInitQueueType(void);
 NS_EXTERN size_t NsTclHash(const char *inputString) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN Tcl_Obj *NsEncodedObj(unsigned char *octets, size_t octetLength,
+                              char *outputBuffer, Ns_BinaryEncoding encoding)
+    NS_GNUC_RETURNS_NONNULL NS_GNUC_NONNULL(1);
+
+NS_EXTERN TCL_SIZE_T NsEncodedObjScratchSize(Ns_BinaryEncoding encoding, size_t octetLength)
+    NS_GNUC_PURE;
+
 /*
  * tclobj.c
  */
 NS_EXTERN void NsTclInitAddrType(void);
+NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *obj) NS_GNUC_NONNULL(1);
+NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
 
 /*
  * tclobjv.c

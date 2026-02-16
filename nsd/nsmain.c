@@ -65,6 +65,14 @@ static const char *configServersSection = "ns/servers";
  */
 const char *NS_EMPTY_STRING = "";
 
+Ns_ObjvTable NS_binaryencodings[] = {
+    {"hex",       NS_OBJ_ENCODING_HEX},
+    {"base64url", NS_OBJ_ENCODING_BASE64URL},
+    {"base64",    NS_OBJ_ENCODING_BASE64},
+    {"binary",    NS_OBJ_ENCODING_BINARY},
+    {NULL,        0u}
+};
+
 
 /*
  *----------------------------------------------------------------------
@@ -92,7 +100,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_Time        timeout;
     Ns_Set        *set;
     bool           testMode = NS_FALSE;
-    const char    *configFileContent = NULL;
+    Ns_DList       cfgNames, cfgContents;
+    bool           cfgIsDir = NS_FALSE;
 #ifndef _WIN32
     bool           debug = NS_FALSE;
     bool           forked = NS_FALSE;
@@ -110,6 +119,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     static char    mode = '\0', *procname, *server = NULL;
     static Ns_Set *servers;
 #endif
+
+    memset(&cfgNames, 0, sizeof(cfgNames));
+    memset(&cfgContents, 0, sizeof(cfgContents));
 
     /*
      * Before doing anything else, initialize the Tcl API
@@ -278,23 +290,27 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     if (testMode) {
-        const char *fileContent;
-
         if (nsconf.configFile == NULL) {
             UsageError("option -t <file> must be provided, when -T is used");
         }
-        fileContent = NsConfigRead(nsconf.configFile);
-        if (fileContent != NULL) {
+        if (NsConfigFragmentsCollect(nsconf.configFile, &cfgNames, &cfgContents, &cfgIsDir) != NS_OK) {
+            Ns_Fatal("nsmain: cannot read configuration '%s'", nsconf.configFile);
+        }
+
+        //fileContent = NsConfigRead(nsconf.configFile);
+        if (cfgNames.size > 0u) {
 
             /*
              * Evaluate the configuration file.
              */
-            NsConfigEval(fileContent, nsconf.configFile, argc, argv, optionIndex);
+            //NsConfigEval(fileContent, nsconf.configFile, argc, argv, optionIndex);
+            (void)NsConfigFragmentsEval(&cfgNames, &cfgContents, cfgIsDir, argc, argv, optionIndex);
 
             printf("%s/%s: configuration file %s looks OK\n",
                    PACKAGE_NAME, PACKAGE_VERSION, nsconf.configFile);
 
-            ns_free_const(fileContent);
+            NsConfigFragmentsFree(&cfgNames, &cfgContents);
+            //ns_free_const(fileContent);
         }
         return 0;
     }
@@ -509,7 +525,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * chroot() command.
      */
     if (nsconf.configFile != NULL) {
-        configFileContent = NsConfigRead(nsconf.configFile);
+        if (NsConfigFragmentsCollect(nsconf.configFile, &cfgNames, &cfgContents, &cfgIsDir) != NS_OK) {
+            Ns_Fatal("nsmain: cannot read configuration '%s'", nsconf.configFile);
+        }
+        //configFileContent = NsConfigRead(nsconf.configFile);
     }
 
 #ifndef _WIN32
@@ -604,12 +623,12 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    if (configFileContent != NULL) {
+    if (cfgNames.size > 0u) {
         /*
-         * Evaluate the configuration file.
+         * Evaluate the configuration file/fragments.
          */
-        NsConfigEval(configFileContent, nsconf.configFile, argc, argv, optionIndex);
-        ns_free_const(configFileContent);
+        (void)NsConfigFragmentsEval(&cfgNames, &cfgContents, cfgIsDir, argc, argv, optionIndex);
+        NsConfigFragmentsFree(&cfgNames, &cfgContents);
     }
 
     /*
@@ -1023,6 +1042,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     nsconf.state.started = NS_TRUE;
     Ns_CondBroadcast(&nsconf.state.cond);
     Ns_MutexUnlock(&nsconf.state.lock);
+
+    /*
+     * The server is running now. Now fire the AtReady callbacks.
+     */
+    NsRunAtReadyProcs();
 
     if (mode != 'w' && nsconf.state.pipefd[1] != 0) {
         ssize_t nwrite;

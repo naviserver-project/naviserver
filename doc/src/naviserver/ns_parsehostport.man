@@ -40,7 +40,7 @@ following elements: [term host], [term port].
  % ns_parsehostport localhost
  host localhost
  
- % ns_parsehostport {[lb] 2001:628:404:74::31]:443[rb]}
+ % ns_parsehostport {[lb]2001:628:404:74::31]:443[rb]}
  host 2001:628:404:74::31 port 443
 [example_end]
 

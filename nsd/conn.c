@@ -92,6 +92,7 @@ NsDStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
         { NS_CONN_LINETOOLONG,       "LINETOOLONG" },
         { NS_CONN_CONFIGURED,        "CONFIGURED" },
         { NS_CONN_SSL_WANT_WRITE,    "SSL_WANT_WRITE" },
+        { NS_CONN_JSONPARSED,        "JSONPARSED" },
     };
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -2742,11 +2743,11 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
             : Tcl_NewDictObj();
 
         Tcl_DictObjPut(NULL, dictObj,
-                       Tcl_NewStringObj("proxied", 7),
+                       NsAtomObj(NS_ATOM_PROXIED),
                        Tcl_NewBooleanObj(nsconf.reverseproxymode.enabled));
 
         Tcl_DictObjPut(NULL, dictObj,
-                       Tcl_NewStringObj("currentaddr", 11),
+                       NsAtomObj(NS_ATOM_CURRENTADDR),
                        Tcl_NewStringObj(currentAddr != NULL ? currentAddr : "na", TCL_INDEX_NONE));
 
         if (currentAddr != NULL) {
@@ -2760,7 +2761,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
         Tcl_DStringInit(&ds);
         NsDStringAppendConnFlags(&ds, connPtr->flags);
         Tcl_DictObjPut(NULL, dictObj,
-                       Tcl_NewStringObj("flags", 5),
+                       NsAtomObj(NS_ATOM_FLAGS),
                        Tcl_NewStringObj(ds.string, ds.length));
         Tcl_DStringFree(&ds);
 
@@ -2854,10 +2855,10 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
             if ((connPtr->flags & NS_CONN_BROTLIACCEPTED) != 0u) {
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("brotli", 6));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_BROTLI));
             }
             if ((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("gzip", 4));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_GZIP));
             }
 
             Tcl_SetObjResult(interp, listObj);

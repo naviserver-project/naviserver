@@ -31,9 +31,6 @@ static void QuoteHtml(Tcl_DString *NS_RESTRICT dsPtr,
 static bool WordEndsInSemi(const char *word, size_t *lengthPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int ToUTF8(long value, char *outPtr)
-    NS_GNUC_NONNULL(2);
-
 static size_t EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outPtr, const char **toParse)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
@@ -304,7 +301,6 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
              * Append the last chunk
              */
             Tcl_DStringAppend(dsPtr, htmlString, TCL_INDEX_NONE);
-
         }
 
         if (needEncode) {
@@ -323,59 +319,6 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     return result;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * ToUTF8 --
- *
- *      Convert a unicode code point to UTF8. The function writes from 0 up to
- *      4 bytes to the output.
- *
- * Results:
- *      Returns number of bytes written to the output. The value of 0 means
- *      invalid input.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ToUTF8(long value, char *outPtr)
-{
-    int length = 0;
-
-    NS_NONNULL_ASSERT(outPtr != NULL);
-
-    if(value <= 0x7F) {
-        *outPtr = (char)value;
-        length = 1;
-
-    } else if (value <= 0x7FF) {
-        *outPtr++ = (char)(((value >> 6) & 0x1F) | 0xC0);
-        *outPtr++ = (char)(((value >> 0) & 0x3F) | 0x80);
-        length = 2;
-
-    } else if (value <= 0xFFFF) {
-        *outPtr++ = (char) (((value >> 12) & 0x0F) | 0xE0);
-        *outPtr++ = (char) (((value >>  6) & 0x3F) | 0x80);
-        *outPtr++ = (char) (((value >>  0) & 0x3F) | 0x80);
-        length = 3;
-
-    } else if (value <= 0x10FFFF) {
-        *outPtr++ = (char) (((value >> 18) & 0x07) | 0xF0);
-        *outPtr++ = (char) (((value >> 12) & 0x3F) | 0x80);
-        *outPtr++ = (char) (((value >>  6) & 0x3F) | 0x80);
-        *outPtr++ = (char) (((value >>  0) & 0x3F) | 0x80);
-        length = 4;
-    } else {
-        length = 0;
-    }
-    return length;
-}
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2687,34 +2630,39 @@ EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outP
      * Handle numeric entities.
      */
     if (*entity == '#' && length > 0) {
-        long value;
+        unsigned long value;
 
-        if (CHARTYPE(digit, *(entity + 1)) != 0) {
+        if (CHARTYPE(digit, *(entity + 1)) != 0
+            && Ns_StrToULongNStrict(entity + 1, (size_t)length - 1, 10, &value)) {
             /*
-             * Decimal numeric entity.
+             * Decimal numeric entity OK.
              */
-            value = strtol(entity + 1, NULL, 10);
 
-        } else if (*(entity + 1) == 'x' && length >= 3 && length <= 8) {
+        } else if (*(entity + 1) == 'x' && length >= 3 && length <= 8
+                   && Ns_StrToULongNStrict(entity + 2, (size_t)length - 2, 16, &value)) {
             /*
-             * Hexadecimal numeric entity.
+             * Hexadecimal numeric entity OK.
              */
-            value = strtol(entity + 2, NULL, 16);
 
         } else {
             Ns_Log(Warning, "invalid numeric entity: '%s'", entity);
             value = 0;
         }
 
-        if (value >= 32) {
-            decoded = (size_t)ToUTF8(value, outPtr);
+        if (value >= 32 &&  value <= 0x10FFFFul) {
+            decoded = Ns_Utf8FromCodePoint((uint32_t)value, outPtr);
+            if (unlikely(decoded == 0)) {
+                Ns_Log(Notice, "entity decode: ignore invalid unicode scalar value %ld",
+                       value);
 
-            Ns_Log(Debug, "entity decode: code point %.2lx %.2lx "
-                   "corresponds to %ld UTF-8 characters",
-                   ((value >> 8) & 0xff), (value & 0xff), decoded);
+            } else {
+                Ns_Log(Debug, "entity decode: code point %.2lx %.2lx "
+                       "corresponds to %ld UTF-8 characters",
+                       ((value >> 8) & 0xff), (value & 0xff), (unsigned long)decoded);
 
-            if (value > 127) {
-                *needEncodePtr = NS_TRUE;
+                if (value > 127) {
+                    *needEncodePtr = NS_TRUE;
+                }
             }
         } else {
             /*
@@ -3159,7 +3107,7 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                     nameObj = Tcl_NewStringObj(&string[attributeStart],
                                                (TCL_SIZE_T)(attributeNameEnd - attributeStart));
 
-                    valueObj = Tcl_NewStringObj("", 0);
+                    valueObj = NsAtomObj(NS_ATOM_EMPTY);
                     Tcl_DictObjPut(NULL, attributesObj, nameObj, valueObj);
                     Ns_Log(Debug, "... no equals %c i %ld length %ld att '%s' value '%s'", string[i], i, length,
                            Tcl_GetString(nameObj), Tcl_GetString(valueObj));

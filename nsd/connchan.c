@@ -23,8 +23,10 @@
  */
 #if defined(__linux__)
 # include <endian.h>
+
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
-# include <sys/endian.h>
+#  include <sys/endian.h>
+
 #elif defined(__OpenBSD__)
 # include <sys/types.h>
 # ifndef be16toh
@@ -32,23 +34,45 @@
 #  define be32toh(x) betoh32(x)
 #  define be64toh(x) betoh64(x)
 # endif
-#elif defined(__APPLE__) || defined(_WIN32)
-# define be16toh(x) ntohs(x)
-# define htobe16(x) htons(x)
-# define be32toh(x) ntonl(x)
-# define htobe32(x) htonl(x)
-# if defined(_WIN32)
-/*
- * Not sure, why htonll() and ntohll() are undefined in Visual Studio 2019:
- *
- *#  define be64toh(x) ntohll(x)
- *#  define htobe64(x) htonll(x)
- */
-#  define htobe64(x) ((1==htonl(1)) ? (x) : (((uint64_t)htonl((x) & 0xFFFFFFFFUL)) << 32) | htonl((uint32_t)((x) >> 32)))
-#  define be64toh(x) ((1==ntohl(1)) ? (x) : (((uint64_t)ntohl((x) & 0xFFFFFFFFUL)) << 32) | ntohl((uint32_t)((x) >> 32)))
-# else
-#  define be64toh(x) ntohll(x)
-#  define htobe64(x) htonll(x)
+
+#elif defined(__APPLE__)
+/* Darwin does NOT have a native htonll/ntohll. Use OSByteOrder helpers. */
+# include <libkern/OSByteOrder.h>
+# ifndef htobe16
+#  define htobe16(x) OSSwapHostToBigInt16((uint16_t)(x))
+#  define be16toh(x) OSSwapBigToHostInt16((uint16_t)(x))
+#  define htobe32(x) OSSwapHostToBigInt32((uint32_t)(x))
+#  define be32toh(x) OSSwapBigToHostInt32((uint32_t)(x))
+#  define htobe64(x) OSSwapHostToBigInt64((uint64_t)(x))
+#  define be64toh(x) OSSwapBigToHostInt64((uint64_t)(x))
+# endif
+
+#elif defined(_WIN32)
+/* Windows lacks be*toh; build from htonl/ntohl or use byte-swap intrinsics. */
+# define be16toh(x) ntohs((uint16_t)(x))
+# define htobe16(x) htons((uint16_t)(x))
+# define be32toh(x) ntohl((uint32_t)(x))
+# define htobe32(x) htonl((uint32_t)(x))
+/* Portable 64-bit swap using two 32-bit ops */
+# define htobe64(x) ((1==htonl(1)) ? (uint64_t)(x) : (((uint64_t)htonl((uint32_t)((x) & 0xFFFFFFFFu))) << 32) | htonl((uint32_t)((x) >> 32)))
+# define be64toh(x) ((1==ntohl(1)) ? (uint64_t)(x) : (((uint64_t)ntohl((uint32_t)((x) & 0xFFFFFFFFu))) << 32) | ntohl((uint32_t)((x) >> 32)))
+#endif
+
+/* As a final fallback attempt, derive from compiler endianness macros */
+#ifndef htobe64
+# if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && defined(__ORDER_BIG_ENDIAN__)
+#  if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#   define __ns_bswap64(v) __builtin_bswap64((uint64_t)(v))
+#   define htobe64(x) __ns_bswap64(x)
+#   define be64toh(x) __ns_bswap64(x)
+#   define htobe32(x) htonl((uint32_t)(x))
+#   define be32toh(x) ntohl((uint32_t)(x))
+#   define htobe16(x) htons((uint16_t)(x))
+#   define be16toh(x) ntohs((uint16_t)(x))
+#  else
+#   define htobe64(x) (uint64_t)(x)
+#   define be64toh(x) (uint64_t)(x)
+#  endif
 # endif
 #endif
 
@@ -1594,18 +1618,18 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
                     Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
                     char      ipString[NS_IPADDR_SIZE];
 
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("channel", 7));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_CHANNEL));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(connChanPtr->channelName, TCL_INDEX_NONE));
 
                     port = Ns_SockaddrGetPort((struct sockaddr *) &sa);
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("port", 4));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_PORT));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj((int)port));
 
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("sock", 4));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_SOCK));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj((int)sock));
 
                     ns_inet_ntop((struct sockaddr *) &sa, ipString, sizeof(ipString));
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_ADDRESS));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ipString, TCL_INDEX_NONE));
 
                     Tcl_SetObjResult(interp, listObj);
@@ -1834,47 +1858,47 @@ ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
             Tcl_Obj     *dictObj = Tcl_NewDictObj();
 
             Tcl_DStringInit(&ds);
-            Ns_DStringPrintf(&ds, NS_TIME_FMT, (int64_t) connChanPtr->startTime.sec, connChanPtr->startTime.usec);
+            Ns_DStringPrintf(&ds, NS_TIME_FMT, (int64_t)connChanPtr->startTime.sec, connChanPtr->startTime.usec);
 
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("start", 5),
+                           NsAtomObj(NS_ATOM_START),
                            Tcl_NewStringObj(ds.string, ds.length));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("driver", 6),
+                           NsAtomObj(NS_ATOM_DRIVER),
                            Tcl_NewStringObj(connChanPtr->sockPtr->drvPtr->moduleName, TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("peer", 4),
+                           NsAtomObj(NS_ATOM_PEER),
                            Tcl_NewStringObj(*connChanPtr->peer == '\0' ? "" : connChanPtr->peer, TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("sent", 4),
+                           NsAtomObj(NS_ATOM_SENT),
                            Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->wBytes));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("received", 8),
+                           NsAtomObj(NS_ATOM_RECEIVED),
                            Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->rBytes));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("framebuffer", 8),
+                           NsAtomObj(NS_ATOM_FRAMEBUFFER),
                            Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,frameBuffer)));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("sendbuffer", 10),
+                           NsAtomObj(NS_ATOM_SENDBUFFER),
                            Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,sendBuffer)));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("fragments", 9),
+                           NsAtomObj(NS_ATOM_FRAGMENTS),
                            Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
 
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("senderror", 9),
+                           NsAtomObj(NS_ATOM_SENDERROR),
                            Tcl_NewStringObj(NsErrorCodeString((int)connChanPtr->sockPtr->sendErrno), TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("recverror", 9),
+                           NsAtomObj(NS_ATOM_RECVERROR),
                            Tcl_NewStringObj(NsErrorCodeString((int)connChanPtr->sockPtr->recvErrno), TCL_INDEX_NONE));
 
 
             if (connChanPtr->cbPtr != NULL) {
                 char whenBuffer[6] = {0};
 
-                Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("callback", 8),
+                Tcl_DictObjPut(NULL, dictObj, NsAtomObj(NS_ATOM_CALLBACK),
                                Tcl_NewStringObj(connChanPtr->cbPtr->script, TCL_INDEX_NONE));
-                Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("condition", 9),
+                Tcl_DictObjPut(NULL, dictObj, NsAtomObj(NS_ATOM_CONDITION),
                                Tcl_NewStringObj(WhenToString(whenBuffer, connChanPtr->cbPtr->when), TCL_INDEX_NONE));
             }
             Tcl_DStringFree(&ds);
@@ -2257,13 +2281,13 @@ WebsocketFrameSetCommonMembers(Tcl_Obj *resultObj, ssize_t nRead, const NsConnCh
     NS_NONNULL_ASSERT(resultObj != NULL);
     NS_NONNULL_ASSERT(connChanPtr != NULL);
 
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("bytes", 5),
+    Tcl_DictObjPut(NULL, resultObj, NsAtomObj(NS_ATOM_BYTES),
                    Tcl_NewLongObj((long)nRead));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("unprocessed", 11),
+    Tcl_DictObjPut(NULL, resultObj, NsAtomObj(NS_ATOM_UNPROCESSED),
                    Tcl_NewIntObj(connChanPtr->frameBuffer->length));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fragments", 9),
+    Tcl_DictObjPut(NULL, resultObj, NsAtomObj(NS_ATOM_FRAGMENTS),
                    Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("havedata", 8),
+    Tcl_DictObjPut(NULL, resultObj, NsAtomObj(NS_ATOM_HAVEDATA),
                    Tcl_NewIntObj(!connChanPtr->frameNeedsData));
 }
 
@@ -2383,8 +2407,8 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         goto incomplete;
     }
 
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fin", 3), Tcl_NewIntObj(finished));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("complete", 8));
+    Tcl_DictObjPut(NULL, resultObj, NsAtomObj(NS_ATOM_FIN), Tcl_NewIntObj(finished));
+    Tcl_DictObjPut(NULL, resultObj, NsAtomObj(NS_ATOM_FRAME), NsAtomObj(NS_ATOM_COMPLETE));
 
     if (!finished) {
         Ns_Log(Warning, "WS: unfinished frame, bytes %ld payload length %zu offset %zu "
@@ -2433,10 +2457,10 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
             opcode = connChanPtr->fragmentsOpcode;
         }
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("opcode", 6),
+                       NsAtomObj(NS_ATOM_OPCODE),
                        Tcl_NewIntObj(opcode));
         Tcl_DictObjPut(NULL, resultObj,
-                       Tcl_NewStringObj("payload", 7),
+                       NsAtomObj(NS_ATOM_PAYLOAD),
                        payloadObj);
     } else {
         /*
@@ -2484,15 +2508,14 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     connChanPtr->frameNeedsData = NS_TRUE;
     Ns_Log(Notice, "WS: incomplete frameLength %" PRITcl_Size " avail %" PRITcl_Size,
            frameLength, connChanPtr->frameBuffer->length);
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("incomplete", 10));
+    Tcl_DictObjPut(NULL, resultObj, NsAtomObj(NS_ATOM_FRAME), NsAtomObj(NS_ATOM_INCOMPLETE));
     WebsocketFrameSetCommonMembers(resultObj, nRead, connChanPtr);
     return resultObj;
 
  exception:
     connChanPtr->frameNeedsData = NS_FALSE;
-    Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("frame", 5),
-                   Tcl_NewStringObj("exception", 10));
+    Tcl_DictObjPut(NULL, resultObj, NsAtomObj(NS_ATOM_FRAME),
+                   NsAtomObj(NS_ATOM_EXCEPTION));
     WebsocketFrameSetCommonMembers(resultObj, nRead, connChanPtr);
     return resultObj;
 }

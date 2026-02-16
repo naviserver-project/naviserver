@@ -55,6 +55,80 @@ static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char 
 static bool GetValue(const char *hdr, const char *att, size_t attLength, const char **vsPtr, const char **vePtr, char *uPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
+static bool IsJsonContentType(const char *contentType, const char* typeEnd)
+    NS_GNUC_NONNULL(1,2);
+
+static Ns_ReturnCode ParseJsonContent(const char *content, TCL_SIZE_T contentLength, const char *charset, Ns_Set *setPtr,
+                                      Tcl_DString *errOutPtr)
+    NS_GNUC_NONNULL(1,4);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsJsonContentType --
+ *
+ *      Determine whether a media type denotes JSON.
+ *
+ *      Accepted forms:
+ *        - application/json
+ *        - application/...+json
+ *        - text/json        (legacy, optional but common)
+ *
+ *      The input must NOT contain parameters (e.g. "; charset=utf-8").
+ *
+ * Parameters:
+ *      contentType  - media type string (e.g. "application/json")
+ *
+ * Results:
+ *      NS_TRUE if JSON media type, NS_FALSE otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+IsJsonContentType(const char *contentType, const char *typeEnd)
+{
+    const char *p, *slash;
+
+    if (*contentType == '\0') {
+        return NS_FALSE;
+    }
+
+    /*
+     * Consider only the media-type token up to ';' (ignore parameters).
+     */
+    p = contentType;
+
+    /*
+     * Fast-path: application/json or text/json (must match whole token).
+     * (Case-sensitive as in your original; can be changed to case-insensitive.)
+     */
+    if ((typeEnd - p) == 16 && strncmp(p, "application/json", 16) == 0) {
+        return NS_TRUE;
+    }
+    if ((typeEnd - p) == 9 && strncmp(p, "text/json", 9) == 0) {
+        return NS_TRUE;
+    }
+
+    /*
+     * Structured syntax suffix: .../...+json
+     */
+    slash = memchr(p, '/', (size_t)(typeEnd - p));
+    if (slash == NULL || slash + 1 >= typeEnd) {
+        return NS_FALSE;
+
+    } else {
+        /* subtype is (slash+1 .. typeEnd) */
+        const char *sub = slash + 1;
+        size_t subLen = (size_t)(typeEnd - sub);
+
+        if (subLen >= 5 && memcmp(sub + subLen - 5, "+json", 5) == 0) {
+            return NS_TRUE;
+        }
+    }
+
+    return NS_FALSE;
+}
+
 
 
 /*
@@ -76,24 +150,135 @@ static bool GetValue(const char *hdr, const char *att, size_t attLength, const c
  *
  *----------------------------------------------------------------------
  */
+typedef enum {
+    FORM_CONTENT_UNKNOWN = 0u,
+    FORM_CONTENT_URLENCODED,
+    FORM_CONTENT_MULTIPART,
+    FORM_CONTENT_JSON
+} FormContentType;
+
+
+static Ns_ReturnCode
+ParseJsonContent(const char *content, TCL_SIZE_T contentLength, const char *charset, Ns_Set *setPtr,
+                 Tcl_DString *errOutPtr)
+{
+    Ns_JsonOptions opt;
+    Tcl_Encoding   encoding;
+    Tcl_DString    utfDs, errDs;
+    const char    *utf;
+    size_t         utfLen, consumed = 0u;
+    Ns_ReturnCode  status;
+
+    memset(&opt, 0, sizeof(opt));
+    opt.output       = NS_JSON_OUTPUT_NS_SET;     /* "set" output */
+    opt.validateNumbers = 0;
+    opt.top          = NS_JSON_TOP_CONTAINER;     /* require { } or [ ] for POST bodies */
+    opt.maxDepth     = 1000;
+    opt.maxString    = 0;
+    opt.maxContainer = 0;
+
+    /*
+     * Determine external encoding from charset (default UTF-8).
+     */
+    if (charset != NULL) {
+        encoding = Ns_GetCharsetEncoding(charset);
+    } else {
+        encoding = Ns_GetCharsetEncoding("utf-8");
+    }
+    if (encoding == NULL) {
+        encoding = Ns_GetCharsetEncoding("utf-8");
+    }
+
+    /*
+     * Convert request body to UTF-8 before JSON parsing (Tcl 8/9 friendly).
+     */
+    Tcl_DStringInit(&utfDs);
+    utf = Tcl_ExternalToUtfDString(encoding, content, contentLength, &utfDs);
+    utfLen = (size_t)Tcl_DStringLength(&utfDs);
+
+    Tcl_DStringInit(&errDs);
+
+    /*
+     * Parse into the existing query set (same lifecycle as form parsing).
+     */
+    Ns_SetTrunc(setPtr, 0u);
+
+    status = Ns_JsonParse((const unsigned char *)utf, utfLen,
+                          &opt,
+                          NULL,    /* resultObjPtr */
+                          setPtr,
+                          &consumed,
+                          &errDs);
+
+    if (status == NS_OK) {
+        /*
+         * Non-scan parse: reject trailing non-whitespace after the value.
+         */
+        size_t i;
+        for (i = consumed; i < utfLen; i++) {
+            switch ((unsigned char)utf[i]) {
+            case ' ':
+            case '\t':
+            case '\r':
+            case '\n':
+                break;
+            default:
+                Ns_DStringPrintf(&errDs,
+                                 "ns_json: parse error at byte %lu: trailing data",
+                                 (unsigned long)i);
+                status = NS_ERROR;
+                break;
+            }
+            if (status == NS_ERROR) {
+                break;
+            }
+        }
+    }
+
+    if (status == NS_ERROR) {
+        /*
+         * Follow existing form.c error conventions:
+         * - clear query
+         * - set Tcl error message and errorCode if interp is present
+         * - propagate NS_ERROR
+         */
+        Ns_Log(Warning, "%s", Tcl_DStringValue(&errDs));
+
+        /*if (interp != NULL) {
+            Tcl_DStringResult(interp, &errDs);
+            Tcl_SetErrorCode(interp, "NS_INVALID_JSON", NULL);
+            }*/
+        if (errOutPtr != NULL) {
+            Tcl_DStringSetLength(errOutPtr, 0);
+            Tcl_DStringAppend(errOutPtr, Tcl_DStringValue(&errDs), TCL_INDEX_NONE);
+        }
+    }
+
+    Tcl_DStringFree(&errDs);
+    Tcl_DStringFree(&utfDs);
+    return status;
+}
+
+
 Ns_Set *
 Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, Ns_ReturnCode *rcPtr)
 {
     Conn *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    connPtr = (Conn *) conn;
+    connPtr = (Conn *)conn;
 
     /*
      * connPtr->query is used to cache the result, in case this function is
      * called multiple times during a single request.
      */
     if (connPtr->query == NULL) {
-        const char   *contentType, *charset = NULL;
-        char         *content = NULL, *toParse = NULL;
-        size_t        charsetOffset;
-        bool          haveFormData = NS_FALSE;
-        Ns_ReturnCode status = NS_OK;
+        const char     *contentType, *charset = NULL, *typeEnd;
+        char           *content = NULL, *toParse = NULL;
+        size_t          charsetOffset = 0u;
+        Ns_ReturnCode   status = NS_OK;
+        Tcl_DString     errDs;
+        FormContentType fct;
 
         /*
          * We are called the first time, so create an ns_set named (slightly
@@ -104,17 +289,24 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
         }
         connPtr->query = connPtr->formData;
         contentType = Ns_SetIGet(connPtr->headers, "content-type");
+        fct = FORM_CONTENT_UNKNOWN;
+        Tcl_DStringInit(&errDs);
 
         if (contentType != NULL) {
+            const char *semi = strchr(contentType, ';');
+            typeEnd = (semi != NULL) ? semi : (contentType + strlen(contentType));
             charset = NsFindCharset(contentType, &charsetOffset);
-            if (strncmp(contentType, "application/x-www-form-urlencoded", 33u) == 0) {
-                haveFormData = NS_TRUE;
-            } else if (strncmp(contentType, "multipart/form-data", 19u) == 0) {
-                haveFormData = NS_TRUE;
+
+            if (*contentType == 'a' && strncmp(contentType, "application/x-www-form-urlencoded", 33u) == 0) {
+                fct = FORM_CONTENT_URLENCODED;
+            } else if (*contentType == 'm' && strncmp(contentType, "multipart/form-data", 19u) == 0) {
+                fct = FORM_CONTENT_MULTIPART;
+            } else if (IsJsonContentType(contentType, typeEnd)) {
+                fct = FORM_CONTENT_JSON;
             }
         }
 
-        if (haveFormData) {
+        if (fct != FORM_CONTENT_UNKNOWN) {
             /*
              * It is unsafe to access the content when the
              * connection is already closed due to potentially
@@ -142,14 +334,8 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
         }
 
         if (content != NULL) {
-            Tcl_DString boundaryDs;
-            /*
-             * We have one of the accepted content types AND the data is
-             * provided via content string.
-             */
-            Tcl_DStringInit(&boundaryDs);
-
-            if (*contentType == 'a') {
+            switch (fct) {
+            case FORM_CONTENT_URLENCODED: {
                 /*
                  * The content-type is "application/x-www-form-urlencoded"
                  */
@@ -186,105 +372,127 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                 if (fallbackCharsetCompatibilityObj != NULL) {
                     Tcl_DecrRefCount(fallbackCharsetCompatibilityObj);
                 }
-
-            } else if (GetBoundary(&boundaryDs, contentType)) {
-                /*
-                 * GetBoundary cares for "multipart/form-data; boundary=...".
-                 */
-                const char  *formEndPtr = content + connPtr->reqPtr->length;
-                char        *firstBoundary, *s;
-                Tcl_Encoding valueEncoding = connPtr->urlEncoding;
-
-#if defined(NS_USE_MEMMEM)
-                firstBoundary = NextBoundary(content, connPtr->reqPtr->length, &boundaryDs);
-#else
-                firstBoundary = NextBoundary(&boundaryDs, content, formEndPtr);
-#endif
-                /*NsHexPrint("multipart content",
-                           (const unsigned char *)content, connPtr->reqPtr->length,
-                           20, NS_TRUE);*/
-
-                s = firstBoundary;
-                for (;;) {
-                    const char *defaultCharset;
-
-                    while (s != NULL) {
-                        char  *e;
-
-                        s += boundaryDs.length + 1;
-                        if (*s == '\r') {
-                            ++s;
-                        }
-                        if (*s == '\n') {
-                            ++s;
-                        }
-#if defined(NS_USE_MEMMEM)
-                        e = NextBoundary(s, (size_t)(formEndPtr - s), &boundaryDs);
-#else
-                        e = NextBoundary(&boundaryDs, s, formEndPtr);
-#endif
-                        if (e != NULL) {
-                            status = ParseMultipartEntry(connPtr, valueEncoding, s, e);
-                            if (status == NS_ERROR) {
-                                Ns_Log(Debug, "ParseMultipartEntry -> error");
-                                toParse = s;
-                            }
-                        }
-                        s = e;
-                    }
-
-                    /*
-                     * We have now parsed all form fields into
-                     * connPtr->query. According to the HTML5 standard, we
-                     * have to check for a form entry named "_charset_"
-                     * specifying the "default charset".
-                     * https://datatracker.ietf.org/doc/html/rfc7578#section-4.6
-                     */
-                    defaultCharset = Ns_SetGet(connPtr->query, "_charset_");
-                    if (defaultCharset != NULL && strcmp(defaultCharset, "utf-8") != 0) {
-                        /*
-                         * We got an explicit charset different from UTF-8. We
-                         * have to reparse the input data.
-                         */
-                        Tcl_Encoding defaultEncoding = Ns_GetCharsetEncoding(defaultCharset);
-
-                        if (valueEncoding != NULL) {
-                            if (valueEncoding != defaultEncoding) {
-                                valueEncoding = defaultEncoding;
-                                s = firstBoundary;
-                                Ns_SetTrunc(connPtr->query, 0u);
-                                Ns_Log(Debug, "form: retry with default charset %s", defaultCharset);
-                                continue;
-                            }
-                        } else {
-                            Ns_Log(Error, "multipart form: invalid charset specified"
-                                   " inside of form '%s'", defaultCharset);
-                            status = NS_ERROR;
-                            break;
-                        }
-                    }
-                    /*
-                     * In case, we have still an unhandled error, we might
-                     * provide more mechanism in the future, when client could
-                     * not pass a proper fallbackEncoding. For now, just
-                     * provide a warning.
-                     */
-                    if (status == NS_ERROR) {
-                        Ns_ReturnCode rc;
-                        Tcl_Encoding fallbackEncoding = NULL;
-
-                        rc = NsGetFallbackEncoding(interp, connPtr->poolPtr->servPtr,
-                                                   fallbackCharsetObj, NS_TRUE, &fallbackEncoding);
-                        Ns_Log(Warning, "multipart form: error rc %d fallbackCharsetObj '%s'"
-                               " valueEncoding %p"
-                               " fallbackencoding %p",
-                               rc, fallbackCharsetObj == NULL ? "NONE" : Tcl_GetString(fallbackCharsetObj),
-                               (void*)valueEncoding, (void*)fallbackEncoding);
-                    }
-                    break;
-                }
+                break;
             }
-            Tcl_DStringFree(&boundaryDs);
+
+            case FORM_CONTENT_MULTIPART: {
+                Tcl_DString boundaryDs;
+                Tcl_DStringInit(&boundaryDs);
+
+                if (GetBoundary(&boundaryDs, contentType)) {
+                    /*
+                     * GetBoundary cares for "multipart/form-data; boundary=...".
+                     */
+                    const char  *formEndPtr = content + connPtr->reqPtr->length;
+                    char        *firstBoundary, *s;
+                    Tcl_Encoding valueEncoding = connPtr->urlEncoding;
+
+#if defined(NS_USE_MEMMEM)
+                    firstBoundary = NextBoundary(content, connPtr->reqPtr->length, &boundaryDs);
+#else
+                    firstBoundary = NextBoundary(&boundaryDs, content, formEndPtr);
+#endif
+                    /*NsHexPrint("multipart content",
+                      (const unsigned char *)content, connPtr->reqPtr->length,
+                      20, NS_TRUE);*/
+
+                    s = firstBoundary;
+                    for (;;) {
+                        const char *defaultCharset;
+
+                        while (s != NULL) {
+                            char  *e;
+
+                            s += boundaryDs.length + 1;
+                            if (*s == '\r') {
+                                ++s;
+                            }
+                            if (*s == '\n') {
+                                ++s;
+                            }
+#if defined(NS_USE_MEMMEM)
+                            e = NextBoundary(s, (size_t)(formEndPtr - s), &boundaryDs);
+#else
+                            e = NextBoundary(&boundaryDs, s, formEndPtr);
+#endif
+                            if (e != NULL) {
+                                status = ParseMultipartEntry(connPtr, valueEncoding, s, e);
+                                if (status == NS_ERROR) {
+                                    Ns_Log(Debug, "ParseMultipartEntry -> error");
+                                    toParse = s;
+                                }
+                            }
+                            s = e;
+                        }
+
+                        /*
+                         * We have now parsed all form fields into
+                         * connPtr->query. According to the HTML5 standard, we
+                         * have to check for a form entry named "_charset_"
+                         * specifying the "default charset".
+                         * https://datatracker.ietf.org/doc/html/rfc7578#section-4.6
+                         */
+                        defaultCharset = Ns_SetGet(connPtr->query, "_charset_");
+                        if (defaultCharset != NULL && strcmp(defaultCharset, "utf-8") != 0) {
+                            /*
+                             * We got an explicit charset different from UTF-8. We
+                             * have to reparse the input data.
+                             */
+                            Tcl_Encoding defaultEncoding = Ns_GetCharsetEncoding(defaultCharset);
+
+                            if (valueEncoding != NULL) {
+                                if (valueEncoding != defaultEncoding) {
+                                    valueEncoding = defaultEncoding;
+                                    s = firstBoundary;
+                                    Ns_SetTrunc(connPtr->query, 0u);
+                                    Ns_Log(Debug, "form: retry with default charset %s", defaultCharset);
+                                    continue;
+                                }
+                            } else {
+                                Ns_Log(Error, "multipart form: invalid charset specified"
+                                       " inside of form '%s'", defaultCharset);
+                                status = NS_ERROR;
+                                break;
+                            }
+                        }
+                        /*
+                         * In case, we have still an unhandled error, we might
+                         * provide more mechanism in the future, when client could
+                         * not pass a proper fallbackEncoding. For now, just
+                         * provide a warning.
+                         */
+                        if (status == NS_ERROR) {
+                            Ns_ReturnCode rc;
+                            Tcl_Encoding fallbackEncoding = NULL;
+
+                            rc = NsGetFallbackEncoding(interp, connPtr->poolPtr->servPtr,
+                                                       fallbackCharsetObj, NS_TRUE, &fallbackEncoding);
+                            Ns_Log(Warning, "multipart form: error rc %d fallbackCharsetObj '%s'"
+                                   " valueEncoding %p"
+                                   " fallbackencoding %p",
+                                   rc, fallbackCharsetObj == NULL ? "NONE" : Tcl_GetString(fallbackCharsetObj),
+                                   (void*)valueEncoding, (void*)fallbackEncoding);
+                        }
+                        break;
+                    }
+                }
+                Tcl_DStringFree(&boundaryDs);
+                break;
+            }
+
+            case FORM_CONTENT_JSON:
+                toParse = content;
+                status = ParseJsonContent(content, (TCL_SIZE_T)connPtr->reqPtr->length, charset, connPtr->query, &errDs);
+                if (status == NS_OK) {
+                    connPtr->flags |= NS_CONN_JSONPARSED;
+                }
+                break;
+
+            case FORM_CONTENT_UNKNOWN:
+            default:
+                /* nothing to parse */
+                break;
+            }
         }
 
         if (status == NS_ERROR) {
@@ -293,21 +501,27 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
             if (rcPtr != NULL) {
                 *rcPtr = status;
                 if (interp != NULL) {
-                    Ns_TclPrintfResult(interp,
-                                       "cannot decode '%s'; contains invalid UTF-8",
-                                       toParse);
-                    Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
+                    if (fct == FORM_CONTENT_JSON && toParse != NULL && *toParse != '\0') {
+                        Ns_TclPrintfResult(interp, "%s", errDs.string);
+                        Tcl_SetErrorCode(interp, "NS_INVALID_JSON", NULL);
+                    } else {
+                        Ns_TclPrintfResult(interp,
+                                           "cannot decode '%s'; contains invalid UTF-8",
+                                           toParse);
+                        Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
+                    }
                 }
             }
+            Tcl_DStringFree(&errDs);
             return NULL;
         }
+        Tcl_DStringFree(&errDs);
     }
 
     return connPtr->query;
 }
 
 
-
 /*
  *----------------------------------------------------------------------
  *
