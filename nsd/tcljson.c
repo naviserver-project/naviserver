@@ -24,6 +24,10 @@
 # define NS_JSON_KEY_SHARING 1
 #endif
 
+/*
+ * math.h is needed for JsonParseNumber and the macros NS_ISFINITE, NS_ISINF,
+ * and NS_ISNAN
+ */
 #include <math.h>
 
 #if defined(_MSC_VER)
@@ -120,12 +124,12 @@ typedef struct JsonParser {
 
     const Ns_JsonOptions *opt;
     long                  depth;
-    size_t                nKeyAlloc;
-    size_t                nKeyFree;
+    //size_t              nKeyAlloc;
+    //size_t              nKeyFree;
     size_t                nKeyReuse;
     size_t                nKeyObjIncr;
-    size_t                nKeyObjDecr;
-    size_t                nKeyAllocDropped;
+    //size_t              nKeyObjDecr;
+    //size_t              nKeyAllocDropped;
 
     Tcl_HashTable         keyTable;
     Tcl_DString          *errDsPtr;
@@ -181,7 +185,16 @@ static Ns_ObjvTable jsonValueTypes[] = {
     {"array",    JSON_VT_ARRAY},
     {NULL,       0u}
 };
+typedef enum {
+    JSON_OUT_JSON = 0,
+    JSON_OUT_TRIPLES
+} JsonOutputMode;
 
+static Ns_ObjvTable outputModeTable[] = {
+    {"json",    JSON_OUT_JSON},
+    {"triples", JSON_OUT_TRIPLES},
+    {NULL, 0}
+};
 
 /*
  * Local functions defined in this file
@@ -192,6 +205,10 @@ static TCL_OBJCMDPROC_T JsonKeyDecodeObjCmd;
 static TCL_OBJCMDPROC_T JsonKeyEncodeObjCmd;
 static TCL_OBJCMDPROC_T JsonKeyInfoObjCmd;
 static TCL_OBJCMDPROC_T JsonParseObjCmd;
+static TCL_OBJCMDPROC_T JsonTriplesGettypeObjCmd;
+static TCL_OBJCMDPROC_T JsonTriplesGetvalueObjCmd;
+static TCL_OBJCMDPROC_T JsonTriplesObjCmd;
+static TCL_OBJCMDPROC_T JsonTriplesSetvalueObjCmd;
 static TCL_OBJCMDPROC_T JsonValueObjCmd;
 
 static Tcl_HashKeyProc JsonHashKeyProc;
@@ -243,8 +260,25 @@ static Ns_ReturnCode JsonCheckStringSpan(JsonParser *jp, const unsigned char *p,
     NS_GNUC_NONNULL(1,2,3);
 
 static JsonKey      *JsonKeyAlloc(JsonParser *jp, const char *bytes, TCL_SIZE_T len) NS_GNUC_NONNULL(2);
-static Tcl_HashEntry*JsonKeyTableCreate(JsonParser *jp, const char *bytes, TCL_SIZE_T len, int *isNewPtr) NS_GNUC_NONNULL(1,2,4);
 static Tcl_Obj      *JsonInternKeyObj(JsonParser *jp, const char *bytes, TCL_SIZE_T len) NS_GNUC_NONNULL(1,2);
+
+static JsonValueType JsonTypeObjToVt(Tcl_Obj *typeObj) NS_GNUC_NONNULL(1);
+static JsonValueType JsonInferValueType(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(1,2);
+static bool          JsonTriplesIsPlausible(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode JsonTriplesRequireValidContainerObj(Tcl_Interp *interp, Tcl_Obj *containerObj,
+                                                         bool allowEmpty, bool validateNumbers,
+                                                         const char *what) NS_GNUC_NONNULL(1,2,5);
+static Ns_ReturnCode TriplesLookupPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
+                                       Tcl_Obj **valuePtr, Tcl_Obj **typePtr, JsonValueType *vtPtr,
+                                       Tcl_Obj **valueIndexPathPtr, Tcl_Obj **typeIndexPathPtr) NS_GNUC_NONNULL(1,2,3);
+
+static bool          TripleKeyMatches(Tcl_Obj *keyObj, Tcl_Obj *segObj)  NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode TriplesFind(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj *segObj, TCL_SIZE_T *tripleBaseIdxPtr) NS_GNUC_NONNULL(1,2,3,4);
+
+static bool          JsonIsNullObj(Tcl_Obj *valueObj) NS_GNUC_NONNULL(1);
+static Ns_ReturnCode JsonRequireValidNumberObj(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(2);
+static void          JsonTriplesDetectContainerType(Tcl_Interp *interp, Tcl_Obj *valueObj, JsonValueType *vtPtr) NS_GNUC_NONNULL(1,2,3);
+static Tcl_Obj      *JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len) NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode JsonParseLiteral(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypePtr) NS_GNUC_NONNULL(1,2,3);
 static Ns_ReturnCode JsonParseNumber(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypePtr) NS_GNUC_NONNULL(1,2,3);
@@ -268,8 +302,12 @@ static Ns_ReturnCode JsonValidateNumberString(const unsigned char *s, size_t len
 
 static TCL_SIZE_T    JsonKeySplitSidecarField(const char *key, TCL_SIZE_T keyLen,
                                            const char **fieldPtr, TCL_SIZE_T *fieldLenPtr) NS_GNUC_NONNULL(1,3,4);
-static void          JsonKeyPathAppendEscaped(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen) NS_GNUC_NONNULL(1,2);
-static void          JsonKeyPathUnescapeSegment(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen) NS_GNUC_NONNULL(1,2);
+static void          JsonKeyPathEscapeSegment(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen, bool rfc6901) NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode JsonTriplesGetPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *pointerObj, Tcl_Obj **outPathObj) NS_GNUC_NONNULL(1,4);
+static Ns_ReturnCode TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj, Tcl_Obj *newValueObj,
+                                     JsonValueType vt, Tcl_Obj **resultTriplesPtr) NS_GNUC_NONNULL(1,2,3,4,6);
+
+static Ns_ReturnCode JsonKeyPathUnescapeSegment(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen, bool rfc6901) NS_GNUC_NONNULL(1,2);
 
 static void          JsonKeyPathAppendSegment(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen) NS_GNUC_NONNULL(1,2);
 static void          JsonKeyPathAppendIndex(Tcl_DString *dsPtr, size_t idx) NS_GNUC_NONNULL(1);
@@ -279,7 +317,7 @@ static void          JsonSetPutValue(Ns_Set *set, const char *key, TCL_SIZE_T ke
 static void          JsonSetPutType(Ns_Set *set, Tcl_DString *typeKeyDsPtr, const char *key, TCL_SIZE_T keyLen, JsonValueType vt) NS_GNUC_NONNULL(1,2,3);
 
 static void          JsonAppendQuotedString(Tcl_DString *dsPtr, const char *s, TCL_SIZE_T len) NS_GNUC_NONNULL(1,2);
-static Ns_ReturnCode JsonEmitTripleAppend(Tcl_Obj *listObj, Tcl_Obj *nameObj, Tcl_Obj *typeObj, Tcl_Obj *valueObj);
+static void          JsonEmitTripleAppend(Tcl_Obj *listObj, Tcl_Obj *nameObj, Tcl_Obj *typeObj, Tcl_Obj *valueObj);
 static int           JsonEmitValueFromTriple(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valObj,
                                              bool validateNumbers, int depth, bool pretty,
                                              Tcl_DString *dsPtr) NS_GNUC_NONNULL(1,2,3,7);
@@ -287,9 +325,8 @@ static int           JsonEmitContainerFromTriples(Tcl_Interp *interp, Tcl_Obj *t
                                                   bool validateNumbers, int depth, bool pretty,
                                                   Tcl_DString *dsPtr) NS_GNUC_NONNULL(1,2,7);
 
-static Ns_ReturnCode JsonFlattenToSet(Ns_Set *set, Tcl_DString *pathDsPtr, Tcl_DString *typeKeyDsPtr,
+static void          JsonFlattenToSet(Ns_Set *set, const Tcl_DString *pathDsPtr, Tcl_DString *typeKeyDsPtr,
                                       Tcl_Obj *valueObj,  const char *valStr, TCL_SIZE_T valLen, JsonValueType vt) NS_GNUC_NONNULL(1,2,3);
-
 static int           JsonMaybeWrapScanResult(Tcl_Interp *interp, bool isScan, size_t consumed) NS_GNUC_NONNULL(1);
 static int           JsonCheckTrailingDecode(Tcl_Interp *interp, const unsigned char *buf, size_t len, size_t consumed) NS_GNUC_NONNULL(1,2);
 
@@ -581,33 +618,6 @@ JsonHashKeyProc(Tcl_HashTable *UNUSED(tablePtr), void *keyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * JsonKeyTableCreate --
- *
- *      Create (or intern) a key in the JSON key sharing table.
- *
- * Results:
- *      Pointer to the canonical, stable, NUL-terminated key buffer for the
- *      interned key.
- *
- * Side effects:
- *      May allocate memory for a new key and insert a new entry into the
- *      hash table.
- *
- *----------------------------------------------------------------------
- */
-static inline Tcl_HashEntry *
-JsonKeyTableCreate(JsonParser *jp, const char *bytes, TCL_SIZE_T len, int *isNewPtr)
-{
-    JsonKey probe;
-    probe.bytes = bytes;
-    probe.len   = len;
-
-    return Tcl_CreateHashEntry(&jp->keyTable, (const char *)&probe, isNewPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * JsonInternKeyObj --
  *
  *      Intern a JSON object member name and return it as a Tcl_Obj.
@@ -634,9 +644,12 @@ JsonInternKeyObj(JsonParser *jp, const char *bytes, TCL_SIZE_T len)
 {
     Tcl_HashEntry *hPtr;
     int            isNew;
+    JsonKey        probe;
 
-    hPtr = JsonKeyTableCreate(jp, bytes, len, &isNew);
+    probe.bytes = bytes;
+    probe.len   = len;
 
+    hPtr = Tcl_CreateHashEntry(&jp->keyTable, (const char *)&probe, &isNew);
     if (isNew) {
         Tcl_Obj *o = Tcl_NewStringObj(bytes, len);
 
@@ -1194,6 +1207,43 @@ JsonDecodeUnicodeEscape(JsonParser *jp, uint32_t *cpPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * JsonIsNullObj --
+ *
+ *      Determine whether the provided Tcl object represents a JSON null
+ *      value.
+ *
+ *      The function recognizes the canonical internal null atom as well as
+ *      the textual null sentinel string used by the triples interface
+ *      (e.g., "__NS_JSON_NULL__").  This allows callers to accept either
+ *      representation without allocating new objects.
+ *
+ * Results:
+ *      NS_TRUE if the value is the null atom or matches the null sentinel,
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+JsonIsNullObj(Tcl_Obj *valueObj)
+{
+    bool success = NS_TRUE;
+
+    if (valueObj != JsonAtomObjs[JSON_ATOM_VALUE_NULL]) {
+        TCL_SIZE_T  n = 0;
+        const char *s = Tcl_GetStringFromObj(valueObj, &n);
+
+        success = ((size_t)n == NS_JSON_NULL_SENTINEL_LEN
+                   && memcmp(s, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN) == 0);
+    }
+    return success;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * JsonParseLiteral --
  *
  *      Parse a JSON literal at the current cursor position. Supported
@@ -1389,8 +1439,6 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
  *
  *----------------------------------------------------------------------
  */
-#include <math.h>
-
 static Ns_ReturnCode
 JsonParseNumber(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypePtr)
 {
@@ -1897,10 +1945,7 @@ JsonParseValueSet(JsonParser *jp, Ns_Set *set,
             goto done;
         }
         *valueTypePtr = JSON_VT_STRING;
-        if (JsonFlattenToSet(set, pathDsPtr, typeKeyDsPtr, valObj, s, len, *valueTypePtr) != NS_OK) {
-            Ns_DStringPrintf(jp->errDsPtr, "ns_json: internal error flattening string");
-            goto done;
-        }
+        JsonFlattenToSet(set, pathDsPtr, typeKeyDsPtr, valObj, s, len, *valueTypePtr);
         rc = NS_OK;
         goto done;
 
@@ -1911,10 +1956,7 @@ JsonParseValueSet(JsonParser *jp, Ns_Set *set,
             goto done;
         }
         Tcl_IncrRefCount(valObj);
-        if (JsonFlattenToSet(set, pathDsPtr, typeKeyDsPtr, valObj, NULL, 0, *valueTypePtr) != NS_OK) {
-            Ns_DStringPrintf(jp->errDsPtr, "ns_json: internal error flattening literal");
-            goto done;
-        }
+        JsonFlattenToSet(set, pathDsPtr, typeKeyDsPtr, valObj, NULL, 0, *valueTypePtr);
         rc = NS_OK;
         goto done;
 
@@ -1924,10 +1966,7 @@ JsonParseValueSet(JsonParser *jp, Ns_Set *set,
                 goto done;
             }
             Tcl_IncrRefCount(valObj);
-            if (JsonFlattenToSet(set, pathDsPtr, typeKeyDsPtr, valObj, NULL, 0, *valueTypePtr) != NS_OK) {
-                Ns_DStringPrintf(jp->errDsPtr, "ns_json: internal error flattening number");
-                goto done;
-            }
+            JsonFlattenToSet(set, pathDsPtr, typeKeyDsPtr, valObj, NULL, 0, *valueTypePtr);
             rc = NS_OK;
             goto done;
         }
@@ -2031,15 +2070,8 @@ JsonParseObject(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypeP
          * append
          */
         if (jp->opt->output == NS_JSON_OUTPUT_TRIPLES) {
-            if (JsonEmitTripleAppend(accObj,
-                                     keyObj,
-                                     JsonAtomObjs[*valueTypePtr],
-                                     valObj) != NS_OK) {
-                jp->depth--;
-                Ns_DStringPrintf(jp->errDsPtr,
-                                 "ns_json: internal error building triples");
-                return NS_ERROR;
-            }
+            JsonEmitTripleAppend(accObj, keyObj, JsonAtomObjs[*valueTypePtr],
+                                 valObj);
         } else {
             if (Tcl_DictObjPut(NULL, accObj, keyObj, valObj) != TCL_OK) {
                 jp->depth--;
@@ -2218,11 +2250,7 @@ JsonParseArray(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypePt
     (void) JsonGet(jp); /* consume '[' */
     JsonSkipWs(jp);
 
-    if (jp->opt->output == NS_JSON_OUTPUT_TRIPLES) {
-        accObj = Tcl_NewListObj(0, NULL);
-    } else {
-        accObj = Tcl_NewListObj(0, NULL);
-    }
+    accObj = Tcl_NewListObj(0, NULL);
 
     if (JsonPeek(jp) == ']') {
         (void) JsonGet(jp);
@@ -2244,15 +2272,8 @@ JsonParseArray(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypePt
         if (jp->opt->output == NS_JSON_OUTPUT_TRIPLES) {
             Tcl_Obj *nameObj = Tcl_NewWideIntObj(idx);
 
-            if (JsonEmitTripleAppend(accObj,
-                                     nameObj,
-                                     JsonAtomObjs[*valueTypePtr],
-                                     valObj) != NS_OK) {
-                jp->depth--;
-                Ns_DStringPrintf(jp->errDsPtr,
-                                 "ns_json: internal error building triples");
-                return NS_ERROR;
-            }
+            JsonEmitTripleAppend(accObj, nameObj, JsonAtomObjs[*valueTypePtr],
+                                 valObj);
         } else {
             (void) Tcl_ListObjAppendElement(NULL, accObj, valObj);
         }
@@ -2394,10 +2415,9 @@ done:
  *      Validate that the byte sequence is a syntactically valid JSON number
  *      lexeme according to RFC 8259.
  *
- *      This helper is intended for JSON generation paths (e.g.,
- *      ns_json value -validatenumbers), where a Tcl value is emitted as a
- *      JSON number literal. Validation is purely lexical and does not perform
- *      numeric conversion.
+ *      This helper is intended for JSON generation paths, where a Tcl value
+ *      is emitted as a JSON number literal. Validation is purely lexical and
+ *      does not perform numeric conversion.
  *
  * Results:
  *      NS_OK if the sequence is a valid JSON number.
@@ -2484,7 +2504,7 @@ JsonKeySplitSidecarField(const char *key, TCL_SIZE_T keyLen,
 /*
  *----------------------------------------------------------------------
  *
- * JsonKeyPathAppendEscaped --
+ * JsonKeyPathEscapeSegment --
  *
  *      Append a single path segment in escaped form to the provided
  *      Tcl_DString.  The escaping scheme is used for flattened keys and is
@@ -2503,26 +2523,22 @@ JsonKeySplitSidecarField(const char *key, TCL_SIZE_T keyLen,
  *----------------------------------------------------------------------
  */
 static void
-JsonKeyPathAppendEscaped(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen)
+JsonKeyPathEscapeSegment(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen, bool rfc6901)
 {
     const char *p = seg;
     const char *end = seg + segLen;
 
     while (p < end) {
-        const char c = *p++;
-        switch (c) {
-        case '~':
+        char c = *p++;
+
+        if (c == '~') {
             Tcl_DStringAppend(dsPtr, "~0", 2);
-            break;
-        case '/':
+        } else if (c == '/') {
             Tcl_DStringAppend(dsPtr, "~1", 2);
-            break;
-        case '.':
+        } else if (c == '.' && !rfc6901) {
             Tcl_DStringAppend(dsPtr, "~2", 2);
-            break;
-        default:
+        } else {
             Tcl_DStringAppend(dsPtr, &c, 1);
-            break;
         }
     }
 }
@@ -2534,7 +2550,7 @@ JsonKeyPathAppendEscaped(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen)
  *
  *      Unescape a previously escaped path segment and append the unescaped
  *      bytes to the provided Tcl_DString.  This is the inverse of
- *      JsonKeyPathAppendEscaped().
+ *      JsonKeyPathEscapeSegment().
  *
  * Results:
  *      None.
@@ -2544,30 +2560,59 @@ JsonKeyPathAppendEscaped(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen)
  *
  *----------------------------------------------------------------------
  */
-static void
-JsonKeyPathUnescapeSegment(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen)
+static Ns_ReturnCode
+JsonKeyPathUnescapeSegment(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen, bool rfc6901)
 {
     const char *p = seg;
     const char *end = seg + segLen;
 
     while (p < end) {
-        char c = *p++;
-        if (c == '~' && p < end) {
-            char e = *p++;
+        char c = *p++, e;
+
+        if (c == '~') {
+            if (p >= end) {
+                if (rfc6901) {
+                    return NS_ERROR;  /* dangling '~' */
+                }
+                Tcl_DStringAppend(dsPtr, "~", 1);
+                break;
+            }
+
+            e = *p++;
+
             switch (e) {
-            case '0': Tcl_DStringAppend(dsPtr, "~", 1); break;
-            case '1': Tcl_DStringAppend(dsPtr, "/", 1); break;
-            case '2': Tcl_DStringAppend(dsPtr, ".", 1); break;
+            case '0':
+                Tcl_DStringAppend(dsPtr, "~", 1);
+                break;
+
+            case '1':
+                Tcl_DStringAppend(dsPtr, "/", 1);
+                break;
+
+            case '2':
+                if (rfc6901) {
+                    return NS_ERROR;
+                }
+                Tcl_DStringAppend(dsPtr, ".", 1);
+                break;
+
             default:
+                if (rfc6901) {
+                    return NS_ERROR;
+                }
                 Tcl_DStringAppend(dsPtr, "~", 1);
                 Tcl_DStringAppend(dsPtr, &e, 1);
                 break;
             }
+
         } else {
             Tcl_DStringAppend(dsPtr, &c, 1);
         }
     }
+
+    return NS_OK;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -2593,7 +2638,7 @@ JsonKeyPathAppendSegment(Tcl_DString *dsPtr, const char *seg, TCL_SIZE_T segLen)
     if (dsPtr->length > 0) {
         Tcl_DStringAppend(dsPtr, "/", 1);
     }
-    JsonKeyPathAppendEscaped(dsPtr, seg, segLen);
+    JsonKeyPathEscapeSegment(dsPtr, seg, segLen, NS_FALSE);
 }
 
 /*
@@ -2767,18 +2812,19 @@ JsonAppendQuotedString(Tcl_DString *dsPtr, const char *s, TCL_SIZE_T len)
  * JsonEmitTripleAppend --
  *
  *      Append one NAME TYPE VALUE triple to the given Tcl list object.
+ *
  *      This helper is used to build the triples representation for JSON
- *      containers.
+ *      containers by extending listObj with exactly three elements.
  *
  * Results:
- *      NS_OK on success, NS_ERROR if list append operations fail.
+ *      None.
  *
- * Side Effects:
+ * Side effects:
  *      Extends listObj by three elements.
  *
  *----------------------------------------------------------------------
  */
-static Ns_ReturnCode
+static void
 JsonEmitTripleAppend(Tcl_Obj *listObj,
                      Tcl_Obj *nameObj,
                      Tcl_Obj *typeObj,
@@ -2787,7 +2833,6 @@ JsonEmitTripleAppend(Tcl_Obj *listObj,
     (void) Tcl_ListObjAppendElement(NULL, listObj, nameObj);
     (void) Tcl_ListObjAppendElement(NULL, listObj, typeObj);
     (void) Tcl_ListObjAppendElement(NULL, listObj, valueObj);
-    return NS_OK;
 }
 
 /*
@@ -2862,6 +2907,88 @@ JsonEmitValueFromTriple(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valObj,
         Ns_TclPrintfResult(interp, "ns_json: unsupported triple type \"%s\"", t);
         return TCL_ERROR;
     }
+}
+
+/*
+ * Convert a (vt,valueObj) pair (as returned by triples navigation)
+ * to JSON text.
+ *
+ *  * vt is the *node* type (string/number/boolean/null/object/array)
+ *  * valueObj is:
+ *    scalar -> Tcl_Obj containing scalar representation
+ *    object/array -> Tcl list with container-content triples
+ *
+ * validateNumbers is expected to be NS_TRUE now (contract).
+ */
+static int
+JsonTriplesValueToJson(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *valueObj,
+                       bool pretty, bool validateNumbers, Tcl_Obj **outObjPtr)
+{
+    Tcl_DString ds;
+    int         depth = 0;
+    int         isObject;
+
+    Tcl_DStringInit(&ds);
+
+    switch (vt) {
+    case JSON_VT_OBJECT:
+    case JSON_VT_ARRAY:
+        /*
+         * Ensure container triples are structurally valid and, if enabled,
+         * validate number lexemes recursively.
+         */
+        if (JsonTriplesRequireValidContainerObj(interp, valueObj, NS_TRUE,
+                                                validateNumbers,
+                                                "triples getvalue") != NS_OK) {
+            Tcl_DStringFree(&ds);
+            return TCL_ERROR;
+        }
+
+        isObject = (vt == JSON_VT_OBJECT);
+        if (JsonEmitContainerFromTriples(interp, valueObj, isObject,
+                                         validateNumbers,
+                                         depth, pretty,
+                                         &ds) != TCL_OK) {
+            Tcl_DStringFree(&ds);
+            return TCL_ERROR;
+        }
+        break;
+
+    case JSON_VT_STRING:
+    case JSON_VT_NUMBER:
+    case JSON_VT_BOOL:
+    case JSON_VT_NULL: {
+        /*
+         * For scalars, reuse JsonEmitValueFromTriple() by providing
+         * a typeObj that names the scalar type.
+         *
+         * If you already have cached type atoms/objs (JsonAtomObjs[]),
+         * use them here rather than constructing new objects.
+         */
+        Tcl_Obj *typeObj = JsonAtomObjs[vt];
+
+        if (JsonEmitValueFromTriple(interp, typeObj, valueObj,
+                                    validateNumbers,
+                                    depth, pretty,
+                                    &ds) != TCL_OK) {
+            Tcl_DStringFree(&ds);
+            return TCL_ERROR;
+        }
+        break;
+
+    }
+
+    case JSON_VT_AUTO:
+    default:
+        Ns_TclPrintfResult(interp,
+                           "ns_json triples getvalue: invalid value type");
+        Tcl_DStringFree(&ds);
+        return TCL_ERROR;
+    }
+
+    *outObjPtr = DStringToObj(&ds);
+    Tcl_DStringFree(&ds);
+    return TCL_OK;
 }
 
 /*
@@ -2972,23 +3099,27 @@ JsonEmitContainerFromTriples(Tcl_Interp *interp, Tcl_Obj *triplesObj, bool isObj
  * JsonFlattenToSet --
  *
  *      Store a parsed JSON value into an Ns_Set using the flattened key-path
- *      representation.  The function uses the current path stored in pathDsPtr
- *      and maintains the corresponding type sidecar key in typeKeyDsPtr.  The
- *      JSON type is provided in typeStr and determines how the value is stored
- *      (e.g., scalar value entry, null representation, or container handling).
+ *      representation.
+ *
+ *      The function uses the current key path stored in pathDsPtr and the
+ *      corresponding type sidecar key in typeKeyDsPtr.  The JSON value type
+ *      vt determines the emitted "<key>.type" entry.  The value is taken from
+ *      valueObj when non-NULL, otherwise from (valStr,valLen).
+ *
+ *      For ns_set output, the top-level container marker has an empty key
+ *      path; in that case no key/value entry is emitted.
  *
  * Results:
- *      NS_OK on success, NS_ERROR on internal errors with a message appended
- *      to jp->errDsPtr.
+ *      None.
  *
- * Side Effects:
- *      Adds entries to the Ns_Set and may modify pathDsPtr/typeKeyDsPtr.
+ * Side effects:
+ *      Adds entries to the Ns_Set and may read/modify pathDsPtr/typeKeyDsPtr.
  *
  *----------------------------------------------------------------------
  */
-static Ns_ReturnCode
+static void
 JsonFlattenToSet(Ns_Set *set,
-                 Tcl_DString *pathDsPtr,
+                 const Tcl_DString *pathDsPtr,
                  Tcl_DString *typeKeyDsPtr,
                  Tcl_Obj *valueObj,
                  const char *valStr, TCL_SIZE_T valLen,
@@ -3007,24 +3138,20 @@ JsonFlattenToSet(Ns_Set *set,
      * so keyLen==0 should only happen for that top-level container marker
      * case. We simply avoid emitting empty keys.
      */
-    if (keyLen == 0) {
-        return NS_OK;
+    if (keyLen != 0) {
+        /*
+         * Always emit "<key>.type".
+         */
+        JsonSetPutType(set, typeKeyDsPtr, key, keyLen, vt);
+
+        /*
+         * Store key and value
+         */
+        if (valueObj != NULL) {
+            valStr = Tcl_GetStringFromObj(valueObj, &valLen);
+        }
+        JsonSetPutValue(set, key, keyLen, valStr, valLen);
     }
-
-    /*
-     * Always emit "<key>.type".
-     */
-    JsonSetPutType(set, typeKeyDsPtr, key, keyLen, vt);
-
-    /*
-     * Store key and value
-     */
-    if (valueObj != NULL) {
-        valStr = Tcl_GetStringFromObj(valueObj, &valLen);
-    }
-    JsonSetPutValue(set, key, keyLen, valStr, valLen);
-
-    return NS_OK;
 }
 
 
@@ -3304,15 +3431,7 @@ JsonIsNullObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        TCL_SIZE_T  n = 0;
-        const char *s = Tcl_GetStringFromObj(valueObj, &n);
-
-        if ((size_t)n == NS_JSON_NULL_SENTINEL_LEN
-            && memcmp(s, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN) == 0) {
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
-        } else {
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-        }
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(JsonIsNullObj(valueObj)));
     }
     return result;
 }
@@ -3357,7 +3476,7 @@ JsonKeyDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     s = Tcl_GetStringFromObj(sObj, &len);
 
     Tcl_DStringInit(&ds);
-    JsonKeyPathUnescapeSegment(&ds, s, len);
+    JsonKeyPathUnescapeSegment(&ds, s, len, NS_FALSE);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;
@@ -3403,7 +3522,7 @@ JsonKeyEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     s = Tcl_GetStringFromObj(sObj, &len);
 
     Tcl_DStringInit(&ds);
-    JsonKeyPathAppendEscaped(&ds, s, len);
+    JsonKeyPathEscapeSegment(&ds, s, len, NS_FALSE);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;
@@ -3475,7 +3594,7 @@ JsonKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 TCL_SIZE_T segLen = (TCL_SIZE_T)(p - segStart);
 
                 Tcl_DStringSetLength(&segDs, 0);
-                JsonKeyPathUnescapeSegment(&segDs, segStart, segLen);
+                JsonKeyPathUnescapeSegment(&segDs, segStart, segLen, NS_FALSE);
 
                 if (outDs.length > 0) {
                     Tcl_DStringAppend(&outDs, "/", 1);
@@ -3622,6 +3741,429 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
 }
 
 /*
+ *-----------------------------------------------------------------------
+ *
+ * JsonTriplesIsPlausible --
+ *
+ *      Check whether a Tcl object looks like a triples list, i.e. a Tcl list
+ *      whose length is a multiple of three. This predicate is used as a cheap
+ *      guard to avoid treating malformed lists as triples containers.
+ *
+ *      The check is intentionally conservative: it validates only list-ness
+ *      and the length multiple-of-3 constraint. It does not validate per-triplet
+ *      types or nested container structure.
+ *
+ * Results:
+ *      NS_TRUE when valueObj is a list and its length is a multiple of 3,
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------
+ */
+static bool
+JsonTriplesIsPlausible(Tcl_Interp *interp, Tcl_Obj *valueObj)
+{
+    Tcl_Obj   **lv;
+    TCL_SIZE_T  lc;
+
+    if (Tcl_ListObjGetElements(interp, valueObj, &lc, &lv) != TCL_OK) {
+        return NS_FALSE;
+    }
+    return (lc != 0 && (lc % 3) == 0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonTypeObjToVt --
+ *
+ *      Map a type token Tcl object to the corresponding JsonValueType.
+ *
+ *      The type token is expected to name a JSON value type such as
+ *      "string", "number", "boolean", "null", "object", or "array".
+ *      The returned value is used to drive validation and emission of
+ *      values stored in the triples representation.
+ *
+ * Results:
+ *      JsonValueType value corresponding to the provided type token.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static JsonValueType
+JsonTypeObjToVt(Tcl_Obj *typeObj)
+{
+    /* Fast path: atom identity checks. */
+    if (typeObj == JsonAtomObjs[JSON_ATOM_T_STRING])   { return JSON_VT_STRING; }
+    if (typeObj == JsonAtomObjs[JSON_ATOM_T_NUMBER])   { return JSON_VT_NUMBER; }
+    if (typeObj == JsonAtomObjs[JSON_ATOM_T_BOOLEAN])  { return JSON_VT_BOOL;   }
+    if (typeObj == JsonAtomObjs[JSON_ATOM_T_NULL])     { return JSON_VT_NULL;   }
+    if (typeObj == JsonAtomObjs[JSON_ATOM_T_OBJECT])   { return JSON_VT_OBJECT; }
+    if (typeObj == JsonAtomObjs[JSON_ATOM_T_ARRAY])    { return JSON_VT_ARRAY;  }
+
+    {
+        TCL_SIZE_T  tlen;
+        const char *t = Tcl_GetStringFromObj(typeObj, &tlen);
+
+        if (tlen == 6 && memcmp(t, "string", 6) == 0)   { return JSON_VT_STRING; }
+        if (tlen == 6 && memcmp(t, "number", 6) == 0)   { return JSON_VT_NUMBER; }
+        if (tlen == 7 && memcmp(t, "boolean", 7) == 0)  { return JSON_VT_BOOL;   }
+        if (tlen == 4 && memcmp(t, "bool", 4) == 0)     { return JSON_VT_BOOL;   }
+        if (tlen == 4 && memcmp(t, "null", 4) == 0)     { return JSON_VT_NULL;   }
+        if (tlen == 6 && memcmp(t, "object", 6) == 0)   { return JSON_VT_OBJECT; }
+        if (tlen == 5 && memcmp(t, "array", 5) == 0)    { return JSON_VT_ARRAY;  }
+    }
+    return JSON_VT_AUTO;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonTriplesDetectContainerType --
+ *
+ *      Determine whether a triples list represents an object container or
+ *      an array container based on its keys.
+ *
+ *      The function inspects the "key-or-index" positions of the triples
+ *      list.  If the entries appear to be numeric indices, the container
+ *      is classified as an array; otherwise it is classified as an object.
+ *      This is used only when a container type is needed but not explicitly
+ *      provided by surrounding context.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      On return, *vtPtr is set to JSON_VT_OBJECT or JSON_VT_ARRAY.
+ *      If the container type cannot be determined reliably, *vtPtr is set
+ *      to JSON_VT_AUTO.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+JsonTriplesDetectContainerType(Tcl_Interp *interp, Tcl_Obj *valueObj, JsonValueType *vtPtr)
+{
+    Tcl_Obj   **lv;
+    TCL_SIZE_T  lc;
+
+    *vtPtr = JSON_VT_AUTO;
+
+    if (Tcl_ListObjGetElements(interp, valueObj, &lc, &lv) != TCL_OK) {
+        return;
+    }
+    if (lc == 0 || (lc % 3) != 0) {
+        return;
+    }
+
+    /*
+     * Triples look like: {key|index type value} ...
+     * Recognize only explicit container markers ("object" / "array") in the
+     * first triple's type token.
+     */
+    {
+        JsonValueType vt = JsonTypeObjToVt(lv[1]);
+
+        if (vt == JSON_VT_OBJECT || vt == JSON_VT_ARRAY) {
+            *vtPtr = JSON_VT_OBJECT;
+        }
+    }
+}
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * JsonInferValueType --
+ *
+ *      Determine the JSON value type for valueObj in the same conservative
+ *      manner as ns_json value -type auto.
+ *
+ *      This function is a pure classifier: it never reports an error and
+ *      never sets the interpreter result. The final fallback is always
+ *      JSON_VT_STRING.
+ *
+ *      Container detection is performed first using
+ *      JsonTriplesDetectContainerType(). A value is only classified as a
+ *      container (object/array) when it is a plausible triples list (length
+ *      multiple of 3). Otherwise, container markers are ignored and the value
+ *      is classified as a scalar.
+ *
+ *      Number validation is not performed here. If the classifier selects
+ *      JSON_VT_NUMBER, the number lexeme must be validated at emission time
+ *      (e.g. in the JSON_VT_NUMBER output branch), regardless of whether the
+ *      type was chosen explicitly or via AUTO.
+ *
+ * Results:
+ *      The inferred JsonValueType.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------
+ */
+static JsonValueType
+JsonInferValueType(Tcl_Interp *interp, Tcl_Obj *valueObj)
+{
+    JsonValueType tvt = JSON_VT_AUTO;
+
+    JsonTriplesDetectContainerType(interp, valueObj, &tvt);
+    if (tvt != JSON_VT_AUTO) {
+        if (JsonTriplesIsPlausible(interp, valueObj)) {
+            return tvt;
+        }
+        /*
+         * Ignore malformed/ambiguous container-looking inputs in AUTO.
+         * The final fallback remains VT_STRING via scalar classification.
+         */
+    }
+
+    /*
+     * Conservative scalar AUTO: number, boolean, null sentinel, else string.
+     */
+    {
+        int         b;
+        TCL_SIZE_T  len;
+        const char *s = Tcl_GetStringFromObj(valueObj, &len);
+
+        if (JsonNumberLexemeIsValid((const unsigned char *)s, (size_t)len)) {
+            return JSON_VT_NUMBER;
+        }
+        if (!(s[0] == '0' && len > 1)
+            && Tcl_GetBooleanFromObj(NULL, valueObj, &b) == TCL_OK) {
+            return JSON_VT_BOOL;
+        }
+        if ((size_t)len == NS_JSON_NULL_SENTINEL_LEN
+            && memcmp(s, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN) == 0) {
+            return JSON_VT_NULL;
+        }
+    }
+
+    return JSON_VT_STRING;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonTriplesRequireValidContainerObj --
+ *
+ *      Validate that a Tcl object contains plausible triples for a JSON
+ *      container value (object or array).
+ *
+ *      The function requires that containerObj is a Tcl list whose length
+ *      is a multiple of 3 (key-or-index, type, value).  When allowEmpty is
+ *      false, an empty list is rejected.  When validateNumbers is true,
+ *      the function additionally validates all number lexemes tagged with
+ *      type "number" within the container, recursing into nested object/array
+ *      triples.
+ *
+ *      The what argument is included in generated error messages to provide
+ *      context (e.g., "triples setvalue", "value").
+ *
+ * Results:
+ *      NS_OK when the container triples are valid, NS_ERROR otherwise.
+ *
+ * Side effects:
+ *      On error, leaves an explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonTriplesRequireValidContainerObj(Tcl_Interp *interp, Tcl_Obj *containerObj,
+                                   bool allowEmpty, bool validateNumbers,
+                                   const char *what)
+{
+    Tcl_Obj   **lv;
+    TCL_SIZE_T  lc;
+
+    if (Tcl_ListObjGetElements(interp, containerObj, &lc, &lv) != TCL_OK) {
+        return NS_ERROR;
+    }
+    if ((!allowEmpty && lc == 0) || (lc % 3) != 0) {
+        Ns_TclPrintfResult(interp,
+            "ns_json %s: triples length must be multiple of 3%s",
+            what,
+            allowEmpty ? "" : " and non-empty");
+        return NS_ERROR;
+    }
+
+    if (validateNumbers) {
+        for (TCL_SIZE_T i = 0; i < lc; i += 3) {
+            Tcl_Obj      *typeObj      = lv[i+1];
+            Tcl_Obj      *elemValueObj = lv[i+2];
+            JsonValueType vt           = JsonTypeObjToVt(typeObj);
+
+            switch (vt) {
+            case JSON_VT_OBJECT:
+            case JSON_VT_ARRAY:
+                if (JsonTriplesRequireValidContainerObj(interp, elemValueObj,
+                        NS_TRUE, validateNumbers, what) != NS_OK) {
+                    return NS_ERROR;
+                }
+                break;
+
+            case JSON_VT_NUMBER:
+                if (JsonRequireValidNumberObj(interp, elemValueObj) != NS_OK) {
+                    return NS_ERROR;
+                }
+                break;
+
+            case JSON_VT_STRING:
+            case JSON_VT_BOOL:
+            case JSON_VT_NULL:
+                /* no validation here */
+                break;
+
+            case JSON_VT_AUTO:
+            default:
+                Ns_TclPrintfResult(interp,
+                    "ns_json %s: invalid triple type: %s",
+                    what, Tcl_GetString(typeObj));
+                return NS_ERROR;
+            }
+        }
+    }
+
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonRequireValidNumberObj --
+ *
+ *      Validate that the provided Tcl object contains a valid JSON number
+ *      lexeme.
+ *
+ *      The input is interpreted as a JSON number token (not as a Tcl number).
+ *      The function rejects lexemes that are not valid per JSON syntax
+ *      (e.g., leading zeros such as "01", or non-numeric tokens such as "NaN").
+ *
+ * Results:
+ *      NS_OK when valueObj contains a valid JSON number lexeme, NS_ERROR
+ *      otherwise.
+ *
+ * Side effects:
+ *      On error, leaves an explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonRequireValidNumberObj(Tcl_Interp *interp, Tcl_Obj *valueObj)
+{
+    Tcl_DString errDs;
+    TCL_SIZE_T  len;
+    const char *s = Tcl_GetStringFromObj(valueObj, &len);
+
+    Tcl_DStringInit(&errDs);
+    if (JsonValidateNumberString((const unsigned char *)s, (size_t)len, &errDs) != NS_OK) {
+        if (interp != NULL) {
+            Tcl_DStringResult(interp, &errDs);
+        } else {
+            Tcl_DStringFree(&errDs);
+        }
+        return NS_ERROR;
+    }
+    Tcl_DStringFree(&errDs);
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonValidateValue --
+ *
+ *      Validate and optionally normalize a value according to a requested
+ *      JSON value type.
+ *
+ *      For scalar types, this function checks that inObj is compatible with
+ *      the requested type and, when applicable, produces a canonicalized
+ *      representation in *outObjPtr (e.g., canonical boolean objects and the
+ *      null sentinel).  For numbers, the function validates the JSON number
+ *      lexeme.  For container types (object/array), it validates that inObj
+ *      is a plausible triples list (length multiple of 3) and may perform
+ *      additional checks depending on the configuration (e.g., number
+ *      validation within the container).
+ *
+ *      The what argument is included in generated error messages to provide
+ *      context (e.g., "triples setvalue").
+ *
+ * Results:
+ *      NS_OK when the input is valid for the requested type, NS_ERROR
+ *      otherwise.
+ *
+ * Side effects:
+ *      On success, *outObjPtr may be set to a normalized Tcl object that the
+ *      caller should use in place of inObj.  On error, leaves an explanatory
+ *      message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj **outObjPtr,
+                  const char *what)
+{
+    Tcl_Obj *outObj = inObj;
+
+    switch (vt) {
+
+    case JSON_VT_OBJECT:
+    case JSON_VT_ARRAY:
+        if (JsonTriplesRequireValidContainerObj(interp, inObj, NS_TRUE, NS_TRUE, what) != NS_OK) {
+            return NS_ERROR;
+        }
+        break;
+
+    case JSON_VT_NUMBER:
+        if (JsonRequireValidNumberObj(interp, inObj) != NS_OK) {
+            return NS_ERROR;
+        }
+        break;
+
+    case JSON_VT_BOOL: {
+        int isTrue = 0;
+
+        if (Tcl_GetBooleanFromObj(interp, inObj, &isTrue) != TCL_OK) {
+            return NS_ERROR;
+        }
+
+        /*
+         * Prefer canonical JSON atoms when available (true/false), otherwise
+         * fall back to a boolean object.
+         */
+        outObj = JsonAtomObjs[isTrue ? JSON_ATOM_TRUE : JSON_ATOM_FALSE];
+        break;
+
+    }
+
+    case JSON_VT_NULL:
+        /*
+         * Normalize to the null sentinel (or a dedicated null atom if you have one).
+         */
+        outObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
+        break;
+
+    case JSON_VT_STRING:
+        /* no validation */
+        break;
+
+    case JSON_VT_AUTO:
+    default:
+        Ns_TclPrintfResult(interp, "ns_json %s: unsupported type", what);
+        return NS_ERROR;
+    }
+
+    *outObjPtr = outObj;
+    return NS_OK;
+}
+
+
+
+/*
  *----------------------------------------------------------------------
  *
  * JsonValueObjCmd --
@@ -3653,12 +4195,11 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     Tcl_Obj      *valueObj;
     JsonValueType vt = JSON_VT_AUTO;
-    int           validateNumbers = 0, pretty = 0;
+    int           validateNumbers = 1, pretty = 0;
     Ns_ObjvSpec   opts[] = {
-        {"-type",            Ns_ObjvIndex, &vt, jsonValueTypes},
-        {"-pretty",          Ns_ObjvBool,  &pretty,          INT2PTR(NS_TRUE)},
-        {"-validatenumbers", Ns_ObjvBool,  &validateNumbers, INT2PTR(NS_TRUE)},
-        {"--",               Ns_ObjvBreak, NULL, NULL},
+        {"-type",   Ns_ObjvIndex, &vt,     jsonValueTypes},
+        {"-pretty", Ns_ObjvBool,  &pretty, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -3668,6 +4209,7 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
+
     } else {
         Tcl_DString   ds, errDs;
         TCL_SIZE_T    len;
@@ -3677,23 +4219,7 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Tcl_DStringInit(&errDs);
 
         if (vt == JSON_VT_AUTO) {
-            /*
-             * Conservative AUTO: try int/double/boolean, else string
-             */
-            int         b;
-            TCL_SIZE_T len;
-            const char *s = Tcl_GetStringFromObj(valueObj, &len);
-
-            if (JsonNumberLexemeIsValid((const unsigned char *)s, (size_t)len)) {
-                vt = JSON_VT_NUMBER;
-            } else if (! (s[0] == '0' && len > 1) && Tcl_GetBooleanFromObj(NULL, valueObj, &b) == TCL_OK) {
-                vt = JSON_VT_BOOL;
-            } else if ((size_t)len == NS_JSON_NULL_SENTINEL_LEN
-                       && memcmp(s, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN) == 0) {
-                vt = JSON_VT_NULL;
-            } else {
-                vt = JSON_VT_STRING;
-            }
+            vt = JsonInferValueType(interp, valueObj);
         }
 
         switch (vt) {
@@ -3712,7 +4238,6 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 && (JsonValidateNumberString((const unsigned char *)s, (size_t)len, &errDs) != NS_OK)
                 ) {
                 Tcl_DStringResult(interp, &errDs);
-                Tcl_DStringFree(&ds);
                 return TCL_ERROR;
             } else {
                 Tcl_DStringAppend(&ds, s, len);
@@ -3739,8 +4264,10 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
              * Treat valueObj as triples list and serialize accordingly.
              * Call the same serializer you’ll implement for "ns_json triples".
              */
-            if (JsonEmitContainerFromTriples(interp, valueObj, (vt == JSON_VT_OBJECT),
-                                             validateNumbers, 0, pretty, &ds) != TCL_OK) {
+
+            if (JsonTriplesRequireValidContainerObj(interp, valueObj, NS_TRUE, NS_TRUE, "value") != NS_OK
+                || JsonEmitContainerFromTriples(interp, valueObj, (vt == JSON_VT_OBJECT),
+                                                validateNumbers, 0, pretty, &ds) != TCL_OK) {
                 Tcl_DStringFree(&ds);
                 return TCL_ERROR;
             }
@@ -3763,6 +4290,730 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
+ * TripleKeyMatches --
+ *
+ *      Compare a triples key object with a path segment object.
+ *
+ *      The triples representation uses a "key-or-index" field for each
+ *      element.  This helper determines whether a stored key matches the
+ *      requested path segment, handling the object-key vs. array-index
+ *      comparison rules used by TriplesFind().
+ *
+ * Results:
+ *      NS_TRUE if keyObj matches segObj, NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+TripleKeyMatches(Tcl_Obj *keyObj, Tcl_Obj *segObj)
+{
+
+    TCL_SIZE_T  klen, slen;
+    const char *k = Tcl_GetStringFromObj(keyObj, &klen);
+    const char *s = Tcl_GetStringFromObj(segObj, &slen);
+
+    if (slen == 1 && s[0] == '*') return NS_TRUE;
+    return (klen == slen && memcmp(k, s, (size_t)klen) == 0);
+#if 0
+    {bool matches;
+
+        matches = Tcl_StringMatch(k, s);
+        Ns_Log(Notice, "compare k <%s> with seg <%s> -> matches %d", k, s, matches);
+        return matches;
+    }
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TriplesFind --
+ *
+ *      Locate a key or index within a triples list and return the base
+ *      index of the matching triple.
+ *
+ *      triplesObj must be a Tcl list in triples format:
+ *          key-or-index type value ...
+ *      The segObj argument identifies the requested element (object key or
+ *      array index).  On success, *tripleBaseIdxPtr is set to the list index
+ *      of the matching triple's key-or-index field.  The corresponding type
+ *      and value are at base+1 and base+2.
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR if the element cannot be found or the
+ *      triples list is malformed.
+ *
+ * Side effects:
+ *      On error, leaves an explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+TriplesFind(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj *segObj, TCL_SIZE_T *tripleBaseIdxPtr)
+{
+    Tcl_Obj   **lv;
+    TCL_SIZE_T  lc;
+
+    if (Tcl_ListObjGetElements(interp, triplesObj, &lc, &lv) != TCL_OK) {
+        return NS_ERROR;
+    }
+    if (lc == 0 || (lc % 3) != 0) {
+        Ns_TclPrintfResult(interp,
+            "ns_json triples: input must be a list of {key|index type value} elements");
+        return NS_ERROR;
+    }
+
+    for (TCL_SIZE_T i = 0; i < lc; i += 3) {
+        if (TripleKeyMatches(lv[i], segObj)) {
+            *tripleBaseIdxPtr = i;
+            return NS_OK;
+        }
+    }
+
+    Ns_TclPrintfResult(interp, "ns_json triples: no such element: %s",
+                       Tcl_GetString(segObj));
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonPointerToPathObj --
+ *
+ *      Convert an RFC 6901 JSON Pointer string into a Tcl path list
+ *      suitable for triples navigation.
+ *
+ *      The JSON Pointer is split into reference tokens, with "~1" and "~0"
+ *      unescaped to "/" and "~" respectively.  The result is a Tcl list
+ *      where each element is a decoded path segment used by TriplesFind().
+ *
+ * Results:
+ *      Tcl path list object on success, NULL on error.
+ *
+ * Side effects:
+ *      On error, leaves an explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len)
+{
+    Tcl_DString listDs, segDs;
+    TCL_SIZE_T i, start;
+    Tcl_Obj *pathObj = NULL;
+
+    if (len < 0) {
+        len = (TCL_SIZE_T)strlen(p);
+    }
+
+    /*
+     * RFC 6901 JSON Pointer:
+     * "" => whole document (map to empty path list)
+     * "/a/b" => segments a, b
+     */
+    if (len == 0) {
+        return Tcl_NewListObj(0, NULL);
+    }
+    if (p[0] != '/') {
+        Ns_TclPrintfResult(interp,
+                           "ns_json triples: invalid JSON pointer (must start with '/'): %s", p);
+        return NULL;
+    }
+
+    Tcl_DStringInit(&listDs);
+    Tcl_DStringInit(&segDs);
+
+    start = 1;
+    for (i = 1; i <= len; i++) {
+        if (i == len || p[i] == '/') {
+            const char *seg = p + start;
+            TCL_SIZE_T segLen = i - start;
+
+
+            Tcl_DStringSetLength(&segDs, 0);
+            if (JsonKeyPathUnescapeSegment(&segDs, seg, segLen, NS_TRUE) != NS_OK) {
+                /*
+                 * RFC 6901 allows only ~0 and ~1 escapes.
+                 */
+                Ns_TclPrintfResult(interp,
+                                   "ns_json triples: invalid JSON pointer escape in: %s", p);
+                goto fail;
+            }
+
+
+            Tcl_DStringAppendElement(&listDs, segDs.string);
+            start = i + 1;
+        }
+    }
+
+    pathObj = DStringToObj(&listDs);
+
+ fail:
+    Tcl_DStringFree(&segDs);
+    Tcl_DStringFree(&listDs);
+    return pathObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TriplesLookupPath --
+ *
+ *      Locate an element in a triples structure and optionally return the
+ *      stored value, stored type token, value type enum, and/or index paths
+ *      suitable for use with lindex/lset.
+ *
+ *      The provided pathObj is a Tcl list of path segments.  The function
+ *      walks the triples structure starting at triplesObj, resolving each
+ *      segment with TriplesFind().  Descent into nested triples is permitted
+ *      only when the stored type is object or array; attempting to descend
+ *      into a scalar results in an error.
+ *
+ *      When requested, valueIndexPathPtr and typeIndexPathPtr are set to Tcl
+ *      index paths that address, respectively, the leaf value slot (base+2)
+ *      and the leaf type slot (base+1) within the original triples list.
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR if the path cannot be resolved or the
+ *      triples structure is malformed.
+ *
+ * Side effects:
+ *      On success, sets the requested output pointers.  On error, leaves an
+ *      explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+TriplesLookupPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
+                  Tcl_Obj **valuePtr, Tcl_Obj **typePtr, JsonValueType *vtPtr,
+                  Tcl_Obj **valueIndexPathPtr, Tcl_Obj **typeIndexPathPtr)
+{
+    Tcl_Obj   **pv;
+    TCL_SIZE_T  pc;
+
+    Tcl_Obj   *curTriples = triplesObj;
+    Tcl_Obj   *vIndexPath = NULL;
+    Tcl_Obj   *tIndexPath = NULL;
+
+    if (valuePtr != NULL)         { *valuePtr = NULL; }
+    if (typePtr != NULL)          { *typePtr = NULL; }
+    if (vtPtr != NULL)            { *vtPtr = JSON_VT_AUTO; }
+    if (valueIndexPathPtr != NULL){ *valueIndexPathPtr = NULL; }
+    if (typeIndexPathPtr != NULL) { *typeIndexPathPtr = NULL; }
+
+    if (Tcl_ListObjGetElements(interp, pathObj, &pc, &pv) != TCL_OK) {
+        return NS_ERROR;
+    }
+    if (pc == 0) {
+        Ns_TclPrintfResult(interp, "ns_json triples: empty path");
+        return NS_ERROR;
+    }
+
+    vIndexPath = Tcl_NewListObj(0, NULL);
+    tIndexPath = Tcl_NewListObj(0, NULL);
+
+    for (TCL_SIZE_T pi = 0; pi < pc; pi++) {
+        TCL_SIZE_T    base, lc;
+        Tcl_Obj     **lv;
+        JsonValueType vt;
+
+        if (TriplesFind(interp, curTriples, pv[pi], &base) != NS_OK) {
+            goto err;
+        }
+
+        if (Tcl_ListObjGetElements(interp, curTriples, &lc, &lv) != TCL_OK) {
+            goto err;
+        }
+
+        if (pi == pc - 1) {
+
+            if (valuePtr != NULL) { *valuePtr = lv[base + 2]; }
+            if (typePtr != NULL)  { *typePtr  = lv[base + 1]; }
+            if (vtPtr != NULL) { *vtPtr = JsonTypeObjToVt(lv[base + 1]); }
+
+            (void)Tcl_ListObjAppendElement(interp, vIndexPath, Tcl_NewIntObj((int)(base + 2)));
+            (void)Tcl_ListObjAppendElement(interp, tIndexPath, Tcl_NewIntObj((int)(base + 1)));
+
+            if (valueIndexPathPtr != NULL) {
+                *valueIndexPathPtr = vIndexPath;
+            } else {
+                Tcl_DecrRefCount(vIndexPath);
+            }
+            if (typeIndexPathPtr != NULL)  {
+                *typeIndexPathPtr  = tIndexPath;
+            } else {
+                Tcl_DecrRefCount(tIndexPath);
+            }
+
+            return NS_OK;
+        }
+
+        vt = JsonTypeObjToVt(lv[base + 1]);
+
+        if (vt != JSON_VT_OBJECT && vt != JSON_VT_ARRAY) {
+            Ns_TclPrintfResult(interp,
+                               "ns_json triples: cannot descend into %s at path element %s",
+                               Tcl_GetString(lv[base + 1]),
+                               Tcl_GetString(pv[pi]));
+            goto err;
+        }
+        /*
+         * Descend into nested triples (value element).
+         */
+        (void)Tcl_ListObjAppendElement(interp, vIndexPath, Tcl_NewIntObj((int)(base + 2)));
+        (void)Tcl_ListObjAppendElement(interp, tIndexPath, Tcl_NewIntObj((int)(base + 2)));
+
+        curTriples = lv[base + 2];
+    }
+
+ err:
+    if (vIndexPath != NULL) Tcl_DecrRefCount(vIndexPath);
+    if (tIndexPath != NULL) Tcl_DecrRefCount(tIndexPath);
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TriplesSetValue --
+ *
+ *      Update the value at the specified path within a triples structure and
+ *      return a modified triples list.
+ *
+ *      The pathObj is a Tcl list of path segments.  The function resolves the
+ *      path to the leaf element, applies type handling according to vt, and
+ *      constructs an updated triples list in *resultTriplesPtr.
+ *
+ *      For scalar types, the newValueObj is stored as the leaf value after
+ *      required validation/normalization has been performed by the caller or
+ *      at commit time.  For container types (object/array), newValueObj must
+ *      be a triples list representing the container content; the container
+ *      content is validated (structure and, when enabled, nested number
+ *      lexemes) before committing the update.
+ *
+ * Results:
+ *      NS_OK on success and *resultTriplesPtr is set to the updated triples
+ *      list, NS_ERROR otherwise.
+ *
+ * Side effects:
+ *      On success, creates a new Tcl object for the updated triples list.
+ *      On error, leaves an explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj, Tcl_Obj *newValueObj, JsonValueType vt,
+                Tcl_Obj **resultTriplesPtr)
+{
+    Tcl_Obj   **pv;
+    TCL_SIZE_T  pc;
+
+    if (Tcl_ListObjGetElements(interp, pathObj, &pc, &pv) != TCL_OK) {
+        return NS_ERROR;
+    }
+    if (pc == 0) {
+        Ns_TclPrintfResult(interp, "ns_json triples setvalue: empty path");
+        return NS_ERROR;
+    }
+
+    /*
+     * Recursive, duplicating rewrite.
+     */
+    {
+        Tcl_Obj *out = Tcl_DuplicateObj(triplesObj);
+        Tcl_Obj *cur = out;
+
+        for (TCL_SIZE_T pi = 0; pi < pc; pi++) {
+            Tcl_Obj   **lv;
+            TCL_SIZE_T  lc;
+            TCL_SIZE_T  base;
+
+            if (Tcl_ListObjGetElements(interp, cur, &lc, &lv) != TCL_OK) {
+                return NS_ERROR;
+            }
+            if (lc == 0 || (lc % 3) != 0) {
+                Ns_TclPrintfResult(interp,
+                    "ns_json triples setvalue: input must be a list of {key|index type value} elements");
+                return NS_ERROR;
+            }
+
+            base = -1;
+            for (TCL_SIZE_T i = 0; i < lc; i += 3) {
+                if (TripleKeyMatches(lv[i], pv[pi])) {
+                    base = i;
+                    break;
+                }
+            }
+            if (base < 0) {
+                Ns_TclPrintfResult(interp, "ns_json triples setvalue: no such element: %s",
+                                   Tcl_GetString(pv[pi]));
+                return NS_ERROR;
+            }
+
+            if (pi == pc - 1) {
+
+                if (vt == JSON_VT_AUTO) {
+                    Tcl_Obj       *normObj, *oldTypeObj = lv[base+1];
+                    JsonValueType  oldVt = JsonTypeObjToVt(oldTypeObj);
+
+                    if (JsonIsNullObj(newValueObj)) {
+                        vt = JSON_VT_NULL;
+
+                    } else if (oldVt != JSON_VT_AUTO) {
+                        if (JsonValidateValue(interp, oldVt, newValueObj, &normObj, "triples setvalue") == NS_OK) {
+                            vt = oldVt;
+                            newValueObj = normObj;
+                        } else {
+                            if (oldVt == JSON_VT_NUMBER) {
+                                return TCL_ERROR;  /* keep the “invalid number” message */
+                            }
+                            Tcl_ResetResult(interp); /* since we used NULL interp above */
+                        }
+                    }
+                    if (vt == JSON_VT_AUTO) {
+                        vt = JsonInferValueType(interp, newValueObj);
+                        JsonValidateValue(interp, vt, newValueObj, &newValueObj, "triples setvalue");
+                    }
+                } else {
+                    if (vt == JSON_VT_NULL) {
+                        newValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
+                    }
+                }
+
+                /*
+                 * Replace the VALUE slot (base+2). Keep KEY and TYPE unchanged.
+                 */
+                (void)Tcl_ListObjReplace(interp, cur, base + 1, 1, 1, &JsonAtomObjs[vt]);
+                (void)Tcl_ListObjReplace(interp, cur, base + 2, 1, 1, &newValueObj);
+                *resultTriplesPtr = out;
+                return NS_OK;
+            }
+
+            /*
+             * Descend: duplicate nested list at VALUE slot and replace it in-place,
+             * then continue with that nested list.
+             */
+            {
+                Tcl_Obj *nested = lv[base + 2];
+                Tcl_Obj *nestedDup = Tcl_DuplicateObj(nested);
+
+                (void)Tcl_ListObjReplace(interp, cur, base + 2, 1, 1, &nestedDup);
+                cur = nestedDup;
+            }
+        }
+
+        return NS_ERROR;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonTriplesGetPath --
+ *
+ *      Determine the effective path list for triples operations from either
+ *      a Tcl path list or a JSON Pointer string.
+ *
+ *      Exactly one of pathObj and pointerObj must be provided.  When pathObj
+ *      is given, it is used as-is.  When pointerObj is given, it is parsed as
+ *      an RFC 6901 JSON Pointer and converted into a Tcl list of reference
+ *      tokens suitable for triples navigation.
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR on invalid arguments or conversion errors.
+ *
+ * Side effects:
+ *      On success, *outPathObj is set to the effective path list object.
+ *      On error, leaves an explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonTriplesGetPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *pointerObj,
+                   Tcl_Obj **outPathObj)
+{
+    if (pointerObj != NULL) {
+        TCL_SIZE_T  pointerLen;
+        const char *pointerString = Tcl_GetStringFromObj(pointerObj, &pointerLen);
+        Tcl_Obj    *pObj = JsonPointerToPathObj(interp, pointerString, pointerLen);
+
+        if (pObj == NULL) {
+            return NS_ERROR;
+        }
+        *outPathObj = pObj;
+        return NS_OK;
+    }
+
+    if (pathObj == NULL) {
+        Ns_TclPrintfResult(interp, "ns_json triples: missing -path or -pointer");
+        return NS_ERROR;
+    }
+
+    *outPathObj = pathObj;
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonTriplesGetvalueObjCmd --
+ *
+ *      Implements "ns_json triples getvalue".
+ *
+ *      Parse arguments, resolve the requested path (via -path or -pointer),
+ *      and return the value at that location from a triples structure.
+ *      The default output format is JSON; with "-output triples" the command
+ *      returns the underlying Tcl representation (scalar Tcl value or
+ *      container-content triples list).  With "-indices" the command returns
+ *      an index path suitable for use with lindex/lset on the original
+ *      triples object.  The "-pretty" flag applies only to JSON output.
+ *
+ * Results:
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      On success, sets the interpreter result to the requested value or
+ *      index path.  On error, leaves an explanatory message in the
+ *      interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+JsonTriplesGetvalueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                          TCL_SIZE_T objc, Tcl_Obj *const* objv) {
+    Tcl_Obj       *inputPathObj = NULL, *pointerObj = NULL, *triplesObj, *pathObj = NULL;
+    int            wantIndex = 0, pretty = 0;
+    JsonOutputMode outputMode = JSON_OUT_JSON;
+    Ns_ObjvSpec    opts[] = {
+        {"-path",    Ns_ObjvObj,   &inputPathObj, NULL},
+        {"-pointer", Ns_ObjvObj,   &pointerObj,   NULL},
+        {"-indices", Ns_ObjvBool,  &wantIndex,    INT2PTR(NS_TRUE)},
+        {"-output",  Ns_ObjvIndex, &outputMode,   outputModeTable},
+        {"-pretty",  Ns_ObjvBool,  &pretty,       INT2PTR(NS_TRUE)},
+        {"--",       Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"triples", Ns_ObjvObj, &triplesObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 3, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+
+    } else if (outputMode == JSON_OUT_TRIPLES && pretty) {
+        Ns_TclPrintfResult(interp,
+                           "ns_json triples getvalue: -pretty requires -output json");
+        return TCL_ERROR;
+
+    } else if (JsonTriplesGetPath(interp, inputPathObj, pointerObj, &pathObj) != NS_OK) {
+        return TCL_ERROR;
+
+    }
+
+    if (wantIndex) {
+        Tcl_Obj *idxPath = NULL;
+
+        if (TriplesLookupPath(interp, pathObj, triplesObj, NULL, NULL, NULL, &idxPath, NULL) != NS_OK) {
+            return TCL_ERROR;
+        }
+        Tcl_SetObjResult(interp, idxPath);
+    } else {
+        Tcl_Obj *valueObj = NULL;
+        JsonValueType vt;
+
+        if (TriplesLookupPath(interp, pathObj, triplesObj, &valueObj, NULL, &vt, NULL, NULL) != NS_OK) {
+            return TCL_ERROR;
+        }
+        if (outputMode == JSON_OUT_TRIPLES) {
+            /*
+             * For power users: raw scalar or container triples list.
+             */
+            Tcl_SetObjResult(interp, valueObj);
+
+        } else {
+            Tcl_Obj *jsonObj;
+
+            if (JsonTriplesValueToJson(interp, vt, valueObj, (pretty != 0), NS_TRUE,
+                                       &jsonObj) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            Tcl_SetObjResult(interp, jsonObj);
+        }
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonTriplesGettypeObjCmd --
+ *
+ *      Implements "ns_json triples gettype".
+ *
+ *      Parse arguments, resolve the requested path (via -path or -pointer),
+ *      and return the JSON type token at that location from a triples
+ *      structure.  With "-indices" the command returns an index path to the
+ *      type slot suitable for use with lindex/lset on the original triples
+ *      object.
+ *
+ * Results:
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      On success, sets the interpreter result to the type token or index
+ *      path.  On error, leaves an explanatory message in the interpreter
+ *      result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+JsonTriplesGettypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                  TCL_SIZE_T objc, Tcl_Obj *const* objv) {
+    Tcl_Obj *inputPathObj = NULL, *pointerObj = NULL, *triplesObj, *pathObj = NULL;
+    int      wantIndex = 0;
+
+    Ns_ObjvSpec opts[] = {
+        {"-path",    Ns_ObjvObj,  &inputPathObj,    NULL},
+        {"-pointer", Ns_ObjvObj,  &pointerObj,    NULL},
+        {"-indices", Ns_ObjvBool, &wantIndex, INT2PTR(NS_TRUE)},
+        {"--",       Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"triples", Ns_ObjvObj, &triplesObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 3, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+
+    } else if (JsonTriplesGetPath(interp, inputPathObj, pointerObj, &pathObj) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    if (wantIndex) {
+        Tcl_Obj *idxPath = NULL;
+
+        if (TriplesLookupPath(interp, pathObj, triplesObj, NULL, NULL, NULL, NULL, &idxPath) != NS_OK) {
+            return TCL_ERROR;
+        }
+        Tcl_SetObjResult(interp, idxPath);
+    } else {
+        Tcl_Obj *typeObj = NULL;
+
+        if (TriplesLookupPath(interp, pathObj, triplesObj, NULL, &typeObj, NULL, NULL, NULL) != NS_OK) {
+            return TCL_ERROR;
+        }
+        Tcl_SetObjResult(interp, typeObj);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonTriplesSetvalueObjCmd --
+ *
+ *      Implements "ns_json triples setvalue".
+ *
+ *      Parse arguments, resolve the requested path (via -path or -pointer),
+ *      validate and normalize the provided value according to "-type", and
+ *      update the triples structure at the specified location.
+ *
+ *      When "-type auto" is used, the command infers a type from the input
+ *      while preserving and validating certain existing leaf types where
+ *      applicable (e.g., number slots remain numeric and reject invalid
+ *      number lexemes).  For explicit container types, the provided value
+ *      must be a triples list representing the container content and is
+ *      validated before committing the update.
+ *
+ * Results:
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      On success, sets the interpreter result to the updated triples list.
+ *      On error, leaves an explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+JsonTriplesSetvalueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                  TCL_SIZE_T objc, Tcl_Obj *const* objv) {
+    Tcl_Obj      *inputPathObj = NULL, *pointerObj = NULL, *triplesObj, *pathObj = NULL;
+    Tcl_Obj      *valueObj, *outObj, *outTriples = NULL;
+    JsonValueType vt = JSON_VT_AUTO;
+    Ns_ObjvSpec opts[] = {
+        {"-path",    Ns_ObjvObj,   &inputPathObj, NULL},
+        {"-pointer", Ns_ObjvObj,   &pointerObj,   NULL},
+        {"-type",    Ns_ObjvIndex, &vt,           jsonValueTypes},
+        {"--", Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"triples", Ns_ObjvObj, &triplesObj,  NULL},
+        {"value",   Ns_ObjvObj, &valueObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 3, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+
+    } else if (JsonTriplesGetPath(interp, inputPathObj, pointerObj, &pathObj) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    outObj = valueObj;
+    if (vt != JSON_VT_AUTO && JsonValidateValue(interp, vt, valueObj, &outObj, "triples setvalue") != NS_OK) {
+        return TCL_ERROR;
+    }
+    if (TriplesSetValue(interp, pathObj, triplesObj, outObj, vt, &outTriples) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, outTriples);
+    return TCL_OK;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclJsonObjCmd --
+ *
+ *      This command implements the "ns_json triples" command, dispatches the
+ *      registered subcommands.
+ *
+ * Results:
+ *      A standard Tcl result. TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      Depends on the specific subcommand invoked.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+JsonTriplesObjCmd(ClientData clientData, Tcl_Interp *interp,
+                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"getvalue",  JsonTriplesGetvalueObjCmd},
+        {"setvalue",  JsonTriplesSetvalueObjCmd},
+        {"gettype",   JsonTriplesGettypeObjCmd},
+        {NULL, NULL}
+    };
+
+    return Ns_SubsubcmdObjv(subcmds, clientData, interp, 1, objc, objv);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclJsonObjCmd --
  *
  *      This command implements the "ns_json" command, dispatches the
@@ -3776,7 +5027,6 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  *----------------------------------------------------------------------
  */
-
 int
 NsTclJsonObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -3786,6 +5036,7 @@ NsTclJsonObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         {"keyencode",  JsonKeyEncodeObjCmd},
         {"keyinfo",    JsonKeyInfoObjCmd},
         {"parse",      JsonParseObjCmd},
+        {"triples",    JsonTriplesObjCmd},
         {"value",      JsonValueObjCmd},
         {NULL, NULL}
     };

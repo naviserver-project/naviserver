@@ -16,8 +16,15 @@ errors via Tcl exceptions.
 [para]
 In addition to returning conventional Tcl structures, the command supports
 output formats that preserve JSON type information and lexical representations
-explicitly.  This enables reliable round-tripping between JSON input and output
+explicitly (the [arg tripple] format|.  This enables reliable round-tripping between JSON input and output
 and avoids unintended data transformations.
+
+[para]
+The [cmd "ns_json triples"] ensemble provides structured access to the
+internal triples representation produced by
+[cmd "ns_json parse -output triples"].  These commands allow querying
+and updating JSON data in its typed intermediate form without
+re-parsing or serializing JSON text.
 
 [para]
 The implementation performs strict validation of JSON syntax as defined by
@@ -294,15 +301,26 @@ type based on the Tcl value.
 following precedence rules:
 
 [list_begin itemized]
-[item] Values matching a valid JSON number lexeme are encoded as JSON numbers.
+[item] If the value is a triples list whose first triple has an explicit
+container type marker ([term object] or [term array]), it is treated as
+a JSON container and encoded accordingly.
+[item] Otherwise, values matching a valid JSON number lexeme are encoded
+as JSON numbers.
 [item] Tcl boolean values are encoded as JSON booleans.
 [item] The null sentinel value [const __NS_JSON_NULL__] is encoded as JSON [term null].
 [item] All other values are encoded as JSON strings.
 [list_end]
 
-[para] In this mode, typed triples are not interpreted as container input.
-To generate JSON objects or arrays from triples, the option
-[option "-type object"] or [option "-type array"] must be specified explicitly.
+[para] In [term auto] mode, only container triples with an explicit
+[term object] or [term array] type marker in the first triple are recognized.
+Scalar-looking triples such as
+
+[example_begin]
+ {0 number 1}
+[example_end]
+
+are not interpreted as JSON containers and are instead treated as ordinary
+Tcl values.
 
 [para] Since automatic type detection cannot preserve intent in ambiguous cases,
 it is recommended to specify the JSON type explicitly via [option -type] when
@@ -324,18 +342,26 @@ Tcl value is used as the JSON number lexeme.
 [item] [term object]
 [para] Encode the value as a JSON object.  The input must be a flat list of
 triples as returned by [option "-output triples"].
-The [term TYPE] element specifies the JSON type for each value and
+
+[para] Each triple has the form:
+
+[example_begin]
+ key type value
+[example_end]
+
+[para] The [term type] element specifies the JSON type for each value and
 enables unambiguous encoding (e.g., boolean vs string, number vs string, null
-vs string). Also the values of nested objects and arrays
-are expected in the form of triples.
+vs string).  Values of nested objects and arrays must themselves be provided
+in triples form.
 
 [item] [term array]
 [para] Encode the value as a JSON array.  The input must be a flat list of
-triples as returned by [option "-output triples"]
-using zero-based array indices.
-The [term TYPE] element specifies the JSON type for each element and
-enables unambiguous encoding. Also the values of nested objects and arrays
-are expected in the form of triples.
+triples as returned by [option "-output triples"] using zero-based array
+indices as keys.
+
+[para] The [term type] element specifies the JSON type for each element and
+enables unambiguous encoding.  Values of nested objects and arrays must
+also be provided in triples form.
 
 [list_end]
 
@@ -390,6 +416,16 @@ before being classified as JSON numbers.
  ns_json value -type array {0 number 1 1 number 2 2 number 3 3 null __NS_JSON_NULL__}
  ## output: [lb]1,2,3,null[rb]
  
+ # AUTO container detection (explicit container marker present)
+ set JSON {{"user":{"id":7}}}
+ set t [lb]ns_json parse -output triples $JSON[rb]
+ ns_json value $t
+ ## output: {"user":{"id":7}}
+ 
+ # Scalar-looking triples are not auto-detected as containers
+ ns_json value {0 number 1}
+ ## output: "0 number 1"
+ 
  ns_json value -type number 01
  ## output: 01
  ns_json value -validatenumbers -type number 01
@@ -438,7 +474,256 @@ in [term set] output keys.  The escaping rules are:
 
 Return the unescaped form of an escaped path segment (inverse of [cmd keyencode]).
 
+
+[call [cmd "ns_json triples getvalue"] \
+        [opt [option "-path [arg value]"]] \
+        [opt [option "-pointer [arg value]"]] \
+        [opt [option "-indices"]] \
+        [opt [option "-output json|triples"]] \
+        [opt [option "-pretty"]] \
+        [opt --] \
+        [arg triples]]
+
+
+[para]
+Return the value located at the specified path within a triples
+structure.
+
+[para]
+Exactly one of [option -path] or [option -pointer] must be specified.
+
+[list_begin itemized]
+[item] [option "-path [arg value]"] specifies a Tcl list describing the
+hierarchical location.
+
+[item] [option "-pointer [arg value]"] specifies a JSON Pointer (RFC 6901)
+string.  A trailing [const /] denotes an empty reference token and is
+not ignored.
+
+[item] [option -indices] causes the command to return a Tcl index path
+suitable for use with [cmd lindex] or [cmd lset] on the original
+triples list instead of the value itself.
+
+[item] [option "-output json|triples"] controls the output format.
+The default is [const json].
+
+[list_begin itemized]
+[item] [const json] (default) returns the selected value formatted as JSON text. Note that
+  for strings, the commands provides the quoting needed for JSON.
+[item] [const triples] returns the stored Tcl representation.
+For scalar values this is the scalar Tcl value.
+For container values this is the container-content triples list.
 [list_end]
+
+[item] [option -pretty] applies only when [option "-output json"] is used and
+formats the JSON output with indentation.
+[list_end]
+
+[example_begin]
+ set t [lb]ns_json parse -output triples {{"o":{"x":1},"s":"Bob"}}[rb]
+ 
+ # Default: JSON projection
+ ns_json triples getvalue -pointer /o $t
+ ## output: {"x":1}
+ 
+ ns_json triples getvalue -pointer /s $t
+ ## output: "Bob"
+ 
+ # Raw triples/Tcl representation
+ ns_json triples getvalue -output triples -pointer /o $t
+ ## output: x number 1
+[example_end]
+
+
+[call [cmd "ns_json triples gettype"] \
+        [opt [option "-path [arg value]"]] \
+        [opt [option "-pointer [arg value]"]] \
+        [opt [option "-indices"]] \
+        [opt --] \
+        [arg triples]]
+
+[para]
+Return the JSON type token at the specified path within a triples
+structure.
+
+[para]
+The result is one of:
+[const string], [const number], [const boolean],
+[const null], [const object], or [const array].
+
+
+[para]
+The location within the triples structure is specified via either
+[option -path] or [option -pointer].  Exactly one of these options must
+be provided.
+
+[list_begin itemized]
+[item]
+[option "-path [arg value]"] specifies a Tcl list describing the
+hierarchical location.
+
+[item]
+[option "-pointer [arg value]"] specifies a JSON Pointer (RFC 6901)
+string.  A trailing [const /] denotes an empty reference token and is
+not ignored.
+[list_end]
+
+[para]
+With [option -indices], the command returns an index path pointing to
+the type element inside the triples list.  This index path can be
+used with [cmd lindex] or [cmd lset].
+
+[example_begin]
+ set t [lb]ns_json parse -output triples {{"user":{"flags":{"active":true}}}}[rb]
+ 
+ ns_json triples gettype -pointer /user/flags/active $t
+ ## output: boolean
+[example_end]
+
+
+[call [cmd "ns_json triples setvalue"] \
+        [opt [option "-path [arg value]"]] \
+        [opt [option "-pointer [arg value]"]] \
+        [opt [option "-type auto|string|number|boolean|null|object|array"]] \
+        [opt --] \
+        [arg triples] \
+        [arg value] \
+        ]
+
+[para]
+Update the value at the specified path within a triples structure and
+return a modified triples list.
+
+[para]
+The location to be updated within the triples structure is specified via
+either [option -path] or [option -pointer].  Exactly one of these options
+must be provided.
+
+[list_begin itemized]
+[item]
+[option "-path [arg value]"] specifies a Tcl list describing the
+hierarchical location.
+
+[item]
+[option "-pointer [arg value]"] specifies a JSON Pointer (RFC 6901)
+string.  A trailing [const /] denotes an empty reference token and is
+not ignored.
+[list_end]
+
+[para]
+The optional [option -type] flag controls how the new value is
+interpreted:
+
+[list_begin itemized]
+[item]
+[const auto] (default): infer the type from the value, while preserving
+and validating existing leaf types where applicable (for example,
+number slots remain numeric and reject invalid number lexemes).
+
+[item]
+Explicit types ([const string], [const number], [const boolean],
+[const null], [const object], [const array]) enforce validation and
+normalization of the supplied value.
+
+[item]
+For container types ([const object] and [const array]), the supplied
+value must be a triples list.  The empty list [const {}] represents
+an empty container.
+[list_end]
+
+[para]
+Setting a null value can be done using the sentinel
+[const __NS_JSON_NULL__], which stores a [const null] leaf.
+
+[example_begin]
+ set t  [lb]ns_json parse -output triples {{"user":{"name":"Alice"}}}[rb]
+ ns_json triples gettype -path {user name} $t
+ ## output: string
+ 
+ set t2 [lb]ns_json triples setvalue -path {user name} $t __NS_JSON_NULL__[rb]
+ ns_json triples gettype -path {user name} $t2
+ ## output: null
+[example_end]
+
+
+[list_end]
+
+
+[section "Triple Format"]
+
+[para]
+The triples representation is a typed Tcl list format used internally
+by [cmd ns_json].  It is produced by:
+
+[list_begin itemized]
+[item] [cmd "ns_json parse -output triples"]
+[item] [cmd "ns_json triples getvalue -output triples"]
+[list_end]
+
+[para]
+A triples list has the structure:
+
+[example_begin]
+ key-or-index type value key-or-index type value ...
+[example_end]
+
+[para]
+Each logical element consists of three consecutive fields:
+
+[list_begin itemized]
+[item] A key (for objects) or numeric index (for arrays)
+[item] A type token
+[item] A value
+[list_end]
+
+[para]
+Valid type tokens are:
+[const string], [const number], [const boolean],
+[const null], [const object], and [const array].
+
+[para]
+The meaning of the [arg value] field depends on the type:
+
+[list_begin itemized]
+
+[item]
+[const string] — the value is a Tcl string containing the decoded
+JSON string (without surrounding quotes).
+
+[item]
+[const number] — the value is a Tcl string containing the original
+JSON number lexeme.  The lexeme must conform to JSON number syntax.
+
+[item]
+[const boolean] — the value is the canonical Tcl representation of
+the JSON boolean ([const true] or [const false]).
+
+[item]
+[const null] — the value is the null sentinel
+[const __NS_JSON_NULL__].
+
+[item]
+[const object] — the value is a triples list describing the object
+members.  The empty list [const {}] represents an empty object.
+
+[item]
+[const array] — the value is a triples list describing the array
+elements.  The empty list [const {}] represents an empty array.
+
+[list_end]
+
+[para]
+Example:
+
+[example_begin]
+ set t [lb]ns_json parse -output triples {{"o":{"x":1},"s":"Bob","n":null}}[rb]
+ ## output: o object {x number 1} s string Bob n null __NS_JSON_NULL__
+[example_end]
+
+[para]
+The triples representation preserves JSON type information explicitly
+and allows efficient navigation and modification without re-parsing
+JSON text.
 
 
 
@@ -531,7 +816,7 @@ Encode JSON strings safely
 
 Generate JSON from triples
 [example_begin]
- ns_json value -type object {a int 1 b boolean 1 c string x n null __NS_JSON_NULL__}
+ ns_json value -type object {a number 1 b boolean 1 c string x n null __NS_JSON_NULL__}
  ## output: {"a":1,"b":true,"c":"x","n":null}
 [example_end]
 
@@ -543,6 +828,64 @@ Key helpers for set output
  ns_json keyinfo {a~2b.type}
  ## output: key a.b field type
 [example_end]
+
+
+[subsection "Example: Navigating and Updating JSON Structures via Triples"]
+
+[para]
+Assume a JSON document with the following structure,
+where a response from a sever contains an array of invoices,
+and every invoice contains a [const BillEmail]
+(irrelevant parts omitted):
+
+[example_begin]
+ {
+   "QueryResponse": {
+     "Invoice": [lb]{
+         ...,
+         "BillEmail": {
+           "Address": "joe.user@nowhere.com"
+         },
+         ...
+     }[rb],
+     ...
+   }
+ }
+[example_end]
+
+[para]
+Parse the JSON document into triples:
+
+[example_begin]
+ set t [lb]ns_json parse -output triples $JSON[rb]
+[example_end]
+
+[para] Retrieve the [const BillEmail] object of the first invoice
+(default output is JSON):
+
+[example_begin]
+ ns_json triples getvalue -pointer /QueryResponse/Invoice/0/BillEmail $t
+ ## output: {"Address":"joe.user@nowhere.com"}
+[example_end]
+
+[para]
+Update the email address:
+
+[example_begin]
+ set t2 [lb]ns_json triples setvalue -pointer /QueryResponse/Invoice/0/BillEmail/Address $t "customer@somewhere.com"[rb]
+[example_end]
+
+[para]
+Inspect the updated [const BillEmail] object (using formatted JSON output):
+
+[example_begin]
+ ns_json triples getvalue -pretty -pointer /QueryResponse/Invoice/0/BillEmail $t2
+ ## output:
+ {
+   "Address": "customer@somewhere.com"
+ }
+[example_end]
+
 
 [see_also ns_set ns_base64 ns_cbor]
 [keywords "global built-in" JSON WebAuthn encoding parsing]

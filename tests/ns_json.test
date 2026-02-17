@@ -22,11 +22,11 @@ if {[ns_config test listenport] ne ""} {
 
 test ns_json-1.0 {syntax: ns_json} -body {
     ns_json
-} -returnCodes error -result {wrong # args: should be "ns_json isnull|keydecode|keyencode|keyinfo|parse|value ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_json isnull|keydecode|keyencode|keyinfo|parse|triples|value ?/arg .../"}
 
 test ns_json-1.1 {syntax: ns_json subcommand} -body {
     ns_json x
-} -returnCodes error -result {ns_json: bad subcommand "x": must be isnull, keydecode, keyencode, keyinfo, parse, or value}
+} -returnCodes error -result {ns_json: bad subcommand "x": must be isnull, keydecode, keyencode, keyinfo, parse, triples, or value}
 
 test ns_json-1.2 {syntax: ns_json parse} -body {
     ns_json parse
@@ -44,14 +44,14 @@ test ns_json-1.6 {syntax: unknown option} -body {
     ns_json parse -bogus -- {}
 } -returnCodes error -result {wrong # args: should be "ns_json parse ?-output dict|triples|set? ?-scan? ?-top any|container? ?-validatenumbers? ?-maxdepth /integer[1,MAX]/? ?-maxstring /integer[0,MAX]/? ?-maxcontainer /integer[0,MAX]/? ?--? /value/"}
 
-test ns_json-1.7 {syntax: -- separates options from value} -body {
+test ns_json-1.7.0 {syntax: -- separates options from value} -body {
     # value looks like an option, must be treated as data after --
     ns_json parse -- "-output"
 } -returnCodes error -result {ns_json: parse error at byte 1: expected digit after '-'}
 
-test ns_json-1.7 {syntax: -- ns_json value} -body {
+test ns_json-1.7.1 {syntax: -- ns_json value} -body {
     ns_json value
-} -returnCodes error -result {wrong # args: should be "ns_json value ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?-validatenumbers? ?--? /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_json value ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?--? /value/"}
 
 test ns_json-1.8 {syntax: -- ns_json isnull} -body {
     ns_json isnull
@@ -255,7 +255,7 @@ test ns_json-7.3 {keyencode/keydecode roundtrip} -body {
 
 test ns_json-value-1.0 {syntax: ns_json value} -body {
     ns_json value
-} -returnCodes error -result {wrong # args: should be "ns_json value ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?-validatenumbers? ?--? /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_json value ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?--? /value/"}
 
 test ns_json-value-1.1 {syntax: missing -type argument} -body {
     ns_json value -type
@@ -303,23 +303,23 @@ test ns_json-value-2.7 {value: boolean type} -body {
     ns_json value -type bool 1
 } -result {true}
 
-test ns_json-value-2.8 {value: number with -validatenumbers} -body {
-    ns_json value -validatenumbers -type number 123
+test ns_json-value-2.8 {value: number with -type number} -body {
+    ns_json value -type number 123
 } -returnCodes {error ok} -result {123}
 
-test ns_json-value-2.9 {value: number with -validatenumbers} -body {
-    ns_json value -validatenumbers -type number NaN
+test ns_json-value-2.9 {value: number with invalid number} -body {
+    ns_json value -type number NaN
 } -returnCodes {error ok} -result {ns_json: parse error at byte 0: invalid number}
 
-test ns_json-value-2.10 {value: number with -validatenumbers, trailing garbage} -body {
-    ns_json value -validatenumbers -type number 123x
+test ns_json-value-2.10 {value: number with -invalid number, trailing garbage} -body {
+    ns_json value -type number 123x
 } -returnCodes {error ok} -result {ns_json: invalid number lexeme: trailing characters after byte 3}
 
 
 test ns_json-value-3.0 {value: object from triples} -body {
     set t {a number 1 b bool 1 c string x n null null}
     ns_json value -type object $t
-} -result {{"a":1,"b":true,"c":"x","n":null}}
+} -returnCodes {error ok} -result {{"a":1,"b":true,"c":"x","n":null}}
 
 test ns_json-value-3.1 {value: array from triples} -body {
     set t {0 number 1 1 string x 2 null null}
@@ -950,46 +950,41 @@ test ns_json-numbers-1.8 {ns_json value with number lexemes} -body {
     lmap v $values {ns_json value -type number $v}
 } -result {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
 
-test ns_json-numbers-1.9 {ns_json value -validatenumbers with number lexemes} -body {
-    set values {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
-    lmap v $values {ns_json value -validatenumbers -type number $v}
-} -result {9007199254740993 0.123456789012345678901234567890 -0 -0.0 0.000 1e309 1e999999999999999999999999999999}
-
-test ns_json-numbers-2.1 {ns_json parse -validatenumbers rejects overflow to Inf} -body {
+test ns_json-numbers-2.1 {ns_json parse rejects overflow to Inf} -body {
     ns_json parse -validatenumbers {{"x":1e309}}
-} -returnCodes error -match glob -result {*not a finite Tcl double*Inf*}
+} -returnCodes {error ok} -match glob -result {*not a finite Tcl double*Inf*}
 
 test ns_json-numbers-2.2 {parse -validatenumbers rejects overflow to -Inf} -body {
     ns_json parse -validatenumbers {{"x":-1e309}}
 } -returnCodes error -match glob -result {*not a finite Tcl double*-Inf*}
 
 
-test ns_json-numbers-2.10 {value -validatenumbers rejects NaN} -body {
-    ns_json value -validatenumbers -type number NaN
+test ns_json-numbers-2.10 {valuerejects NaN} -body {
+    ns_json value -type number NaN
 } -returnCodes error -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.11 {value -validatenumbers rejects Inf} -body {
-    ns_json value -validatenumbers -type number Inf
+test ns_json-numbers-2.11 {value rejects Inf} -body {
+    ns_json value -type number Inf
 } -returnCodes error -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.12 {value -validatenumbers rejects leading-zero integer} -body {
-    ns_json value -validatenumbers -type number 01
+test ns_json-numbers-2.12 {value rejects leading-zero integer} -body {
+    ns_json value -type number 01
 } -returnCodes error -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.13 {value -validatenumbers rejects leading plus} -body {
-    ns_json value -validatenumbers -type number +1
+test ns_json-numbers-2.13 {value rejects leading plus} -body {
+    ns_json value -type number +1
 } -returnCodes error -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.14 {value -validatenumbers rejects leading decimal point} -body {
-    ns_json value -validatenumbers -type number .5
+test ns_json-numbers-2.14 {value rejects leading decimal point} -body {
+    ns_json value -type number .5
 } -returnCodes error -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.15 {value -validatenumbers rejects trailing decimal point} -body {
-    ns_json value -validatenumbers -type number 1.
+test ns_json-numbers-2.15 {value rejects trailing decimal point} -body {
+    ns_json value -type number 1.
 } -returnCodes error -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.16 {value -validatenumbers rejects incomplete exponent} -body {
-    ns_json value -validatenumbers -type number 1e
+test ns_json-numbers-2.16 {value rejects incomplete exponent} -body {
+    ns_json value -type number 1e
 } -returnCodes error -match glob -result {*invalid number*}
 
 test ns_json-auto-1.1 {value auto treats leading-zero integer as string} -body {
@@ -1008,31 +1003,47 @@ test ns_json-numbers-2.5 {parse -validatenumbers rejects non-finite in nested co
     ns_json parse -validatenumbers {{"a":[{"x":1},{"y":1e309}]}}
 } -returnCodes {ok error} -match glob -result {*not a finite Tcl double*Inf*}
 
-test ns_json-numbers-2.20 {value -validatenumbers rejects invalid number in object triples} -body {
-    ns_json value -validatenumbers -type object {a number 01}
+test ns_json-numbers-2.20 {value rejects invalid number in object triples} -body {
+    ns_json value -type object {a number 01}
 } -returnCodes {ok error} -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.21 {value -validatenumbers rejects invalid number in array triples} -body {
-    ns_json value -validatenumbers -type array {0 number 01}
+test ns_json-numbers-2.21 {value rejects invalid number in array triples} -body {
+    ns_json value -type array {0 number 01}
 } -returnCodes {ok error} -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.22 {value -validatenumbers rejects invalid number in nested containers} -body {
-    ns_json value -validatenumbers -type object {a array {0 number 1 1 number 01}}
+test ns_json-numbers-2.22 {value rejects invalid number in nested containers} -body {
+    ns_json value -type object {a array {0 number 1 1 number 01}}
 } -returnCodes {ok error} -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.23 {value -validatenumbers rejects invalid number in nested object inside array} -body {
-    ns_json value -validatenumbers -type array {0 object {x number 01}}
+test ns_json-numbers-2.23 {value rejects invalid number in nested object inside array} -body {
+    ns_json value -type array {0 object {x number 01}}
 } -returnCodes {ok error} -match glob -result {*invalid number*}
 
-test ns_json-numbers-2.24 {value -validatenumbers accepts RFC-valid huge exponent lexeme} -body {
-    ns_json value -validatenumbers -type number 1e309
+test ns_json-numbers-2.24 {value accepts RFC-valid huge exponent lexeme} -body {
+    ns_json value -type number 1e309
 } -result {1e309}
+
+#######################################################################################
+#  test  ns_json value with triples input (object/array/scalar).
+#######################################################################################
+
+test ns_json-value-1.1 {value from object triples (string value inside object)} -body {
+    set JSON {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}
+    set triples [ns_json parse -output triples $JSON]
+    ns_json value $triples
+} -returnCodes {error ok} -result {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}
+
+test ns_json-value-1.2 {value are triples, but not with object/array type marker, auto-detection fails} -body {
+    set JSON {[1,"Alice",{"active":true}]}
+    set triples [ns_json parse -output triples $JSON]
+    ns_json value $triples
+} -returnCodes {error ok} -result {"0 number 1 1 string Alice 2 object {active boolean true}"}
 
 #######################################################################################
 #  test ns_json generation of JSON from triples
 #######################################################################################
 
-test ns_json-triples-1.1 {triples: NUMBER lexeme round-trip stays unquoted and lossless} -body {
+test ns_json-gen-triples-1.1 {triples: NUMBER lexeme round-trip stays unquoted and lossless} -body {
     # Use a JSON-valid number lexeme that Tcl double can't represent meaningfully (except as Inf)
     set json {{"x":1e999999999999999999999999999999}}
 
@@ -1045,14 +1056,17 @@ test ns_json-triples-1.1 {triples: NUMBER lexeme round-trip stays unquoted and l
     list $json $json2
 } -result {{{"x":1e999999999999999999999999999999}} {{"x":1e999999999999999999999999999999}}}
 
-test ns_json-triples-1.2 {triples: NUMBER lexeme is emitted literally without validation} -body {
-    # The literal NaN is intentionally not valid JSON, used to documennt the non-validating behavior.
+test ns_json-gen-triples-1.2 {triples: invalid NUMBER lexeme NaN is rejected} -body {
     ns_json value -type object {x number NaN}
-} -returnCodes {error ok}  -result {{"x":NaN}}
+} -returnCodes error -match glob -result {*invalid*number*}
 
-test ns_json-triples-1.3 {triples: NUMBER lexeme is not quoted/validated} -body {
-    ns_json value -type object {x number "Hello World"}
-} -returnCodes {error ok} -result {{"x":Hello World}}
+test ns_json-gen-triples-1.3 {triples: invalid NUMBER lexeme is rejected (not treated as string)} -body {
+    ns_json value -type object {x number {Hello World}}
+} -returnCodes error -match glob -result {*invalid*number*}
+
+test ns_json-gen-triples-1.4 {triples: valid NUMBER lexeme is emitted literally} -body {
+    ns_json value -type object {x number 1e2}
+} -result {{"x":1e2}}
 
 #######################################################################################
 #  test ns_json generation of JSON from triples with -pretty option
@@ -1174,10 +1188,274 @@ test ns_json-top-4.2 {-top container with triples output on array} -body {
     ns_json parse -top container -output triples -- {[1,null,true]}
 } -result {0 number 1 1 null __NS_JSON_NULL__ 2 boolean true}
 
+
+
+
+#######################################################################################
+# ns_json triples
+#######################################################################################
+#
+# --- Syntax / dispatch tests
+#
+
+test ns_json-triples-1.1 {triples: missing subcommand} -body {
+    ns_json triples
+} -returnCodes error -result {wrong # args: should be "ns_json triples getvalue|setvalue|gettype ?/arg .../"}
+
+test ns_json-triples-1.2 {triples: missing subcommand (only 'triples')} -body {
+    ns_json triples --
+} -returnCodes error -result {ns_json triples: bad subcommand "--": must be getvalue, setvalue, or gettype}
+
+test ns_json-triples-1.3 {triples: unknown subcommand} -body {
+    ns_json triples doesnotexist
+} -returnCodes error -result {ns_json triples: bad subcommand "doesnotexist": must be getvalue, setvalue, or gettype}
+
+test ns_json-triples-1.4 {getvalue: missing args} -body {
+    ns_json triples getvalue
+} -returnCodes error -result {wrong # args: should be "ns_json triples getvalue ?-path /value/? ?-pointer /value/? ?-indices? ?-output json|triples? ?-pretty? ?--? /triples/"}
+
+test ns_json-triples-1.5 {gettype: missing args} -body {
+    ns_json triples gettype
+} -returnCodes error -result {wrong # args: should be "ns_json triples gettype ?-path /value/? ?-pointer /value/? ?-indices? ?--? /triples/"}
+
+test ns_json-triples-1.6 {setvalue: missing args} -body {
+    ns_json triples setvalue
+} -returnCodes error -result {wrong # args: should be "ns_json triples setvalue ?-path /value/? ?-pointer /value/? ?-type auto|string|number|boolean|null|object|array? ?--? /triples/ /value/"}
+
+test ns_json-triples-1.7 {getvalue: unknown option} -body {
+    ns_json triples getvalue -doesnotexist -path {* a} {a string x}
+} -returnCodes error -result {wrong # args: should be "ns_json triples getvalue ?-path /value/? ?-pointer /value/? ?-indices? ?-output json|triples? ?-pretty? ?--? /triples/"}
+
+test ns_json-triples-1.8 {gettype: unknown option} -body {
+    ns_json triples gettype -doesnotexist {* a} {a string x}
+} -returnCodes error -result {wrong # args: should be "ns_json triples gettype ?-path /value/? ?-pointer /value/? ?-indices? ?--? /triples/"}
+
+test ns_json-triples-1.9 {getvalue: -index still needs path+triples} -body {
+    ns_json triples getvalue -index
+} -returnCodes error -result {ns_json triples: missing -path or -pointer}
+
+test ns_json-triples-1.10 {gettype: -index still needs path+triples} -body {
+    ns_json triples gettype -index
+} -returnCodes error -result {ns_json triples: missing -path or -pointer}
+
+#
+# --- Basic behavior tests
+#
+
+test ns_json-triples-2.1 {getvalue: leaf scalar} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    list \
+        [ns_json triples getvalue -path {user name} $t] \
+        [ns_json triples getvalue -pointer /user/name $t]
+} -returnCodes {error ok} -result {{"Alice"} {"Alice"}}
+
+test ns_json-triples-2.2 {gettype: leaf scalar} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    list \
+        [ns_json triples gettype -path {user name} $t] \
+        [ns_json triples gettype -pointer /user/name $t]
+} -result {string string}
+
+test ns_json-triples-2.3 {getvalue: nested object subtree} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    list \
+        [ns_json triples getvalue -path {user flags} $t] \
+        [ns_json triples getvalue -pointer /user/flags $t]
+} -result {{{"admin":false,"active":true}} {{"admin":false,"active":true}}}
+
+test ns_json-triples-2.4 {gettype: nested object type} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    list \
+        [ns_json triples gettype -path {user flags} $t] \
+        [ns_json triples gettype -pointer /user/flags $t]
+} -result {object object}
+
+test ns_json-triples-2.5 {getvalue -indices: returns usable index path} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    set idx1 [ns_json triples getvalue -indices -path {user flags active} $t]
+    set idx2 [ns_json triples getvalue -indices -pointer /user/flags/active $t]
+    list \
+        [lindex $t {*}$idx1] \
+        [lindex $t {*}$idx2] \
+        $idx1 $idx2
+} -returnCodes {error ok} -result {true true {2 8 5} {2 8 5}}
+
+test ns_json-triples-2.6 {gettype -indices: returns usable index path} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    set idx1 [ns_json triples gettype -indices -path {user flags active} $t]
+    set idx2 [ns_json triples gettype -indices -pointer /user/flags/active $t]
+    ns_log notice idx1 $idx1 idx $idx2
+    list \
+        [lindex $t {*}$idx1] \
+        [lindex $t {*}$idx2]
+} -result {boolean boolean}
+
+test ns_json-triples-2.7.0 {setvalue: update leaf and re-emit JSON} -body {
+    set json {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}
+    set t [ns_json parse -output triples $json]
+    set t2 [ns_json triples setvalue -path {user name} $t Bob]
+    ns_json value $t2
+} -result {{"user":{"id":7,"name":"Bob","flags":{"admin":false,"active":true}}}}
+
+test ns_json-triples-2.7.1 {setvalue: update leaf and re-emit JSON} -body {
+    set json {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}
+    set t [ns_json parse -output triples $json]
+    set t2 [ns_json triples setvalue -pointer /user/name $t Bob]
+    ns_json value $t2
+} -result {{"user":{"id":7,"name":"Bob","flags":{"admin":false,"active":true}}}}
+
+test ns_json-triples-2.8.0 {setvalue: original triples unchanged (functional update)} -body {
+    set json {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}
+    set t [ns_json parse -output triples $json]
+    set t2 [ns_json triples setvalue -path {user name} $t Bob]
+    list \
+        [ns_json triples getvalue -output triples -path {user name} $t] \
+        [ns_json triples getvalue -output triples -path {user name} $t2]
+} -returnCodes {error ok} -result {Alice Bob}
+
+test ns_json-triples-2.8.1 {setvalue: original triples unchanged (functional update)} -body {
+    set json {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}
+    set t [ns_json parse -output triples $json]
+    set t2 [ns_json triples setvalue -pointer /user/name $t Bob]
+    list \
+        [ns_json triples getvalue -output triples -pointer /user/name $t] \
+        [ns_json triples getvalue -output triples -pointer /user/name $t2]
+} -returnCodes {error ok} -result {Alice Bob}
+
+test ns_json-triples-2.9.0 {getvalue: missing path element errors} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples getvalue -path {user doesnotexist} $t
+} -returnCodes error -match glob -result {*no such element*}
+
+test ns_json-triples-2.9.1 {getvalue: missing path element errors} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples getvalue -pointer /user/doesnotexist $t
+} -returnCodes error -match glob -result {*no such element*}
+
+
+test ns_json-triples-2.10.0 {gettype: missing path element errors} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples gettype -path {user doesnotexist} $t
+} -returnCodes error -match glob -result {*no such element*}
+
+test ns_json-triples-2.10.1 {gettype: missing path element errors} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples gettype -pointer /user/doesnotexist $t
+} -returnCodes error -match glob -result {*no such element*}
+
+
+test ns_json-triples-2.11.0 {setvalue: missing path element errors} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples setvalue -path {user doesnotexist} $t X
+} -returnCodes error -match glob -result {*no such element*}
+
+test ns_json-triples-2.11.1 {setvalue: missing path element errors} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples setvalue -pointer /user/doesnotexist $t X
+} -returnCodes error -match glob -result {*no such element*}
+
+#
+# --- Boundary cases for -pointer (RFC 6901)
+#
+
+test ns_json-triples-pointer-1.1 {-pointer: empty string maps to empty path -> error (no root get)} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples getvalue -pointer "" $t
+} -returnCodes error -match glob -result {*empty path}
+
+test ns_json-triples-pointer-1.2 {-pointer: must start with '/'} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples getvalue -pointer "user/name" $t
+} -returnCodes error -match glob -result {*invalid JSON pointer*start with*/*}
+
+test ns_json-triples-pointer-1.3 {-pointer: root member access} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples getvalue -output triples -pointer /user/name $t
+} -result {Alice}
+
+test ns_json-triples-pointer-1.4 {-pointer: nested boolean} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples getvalue -pointer /user/flags/active $t
+} -result {true}
+
+test ns_json-triples-pointer-1.5 {-pointer: gettype} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    ns_json triples gettype -pointer /user/flags/active $t
+} -result {boolean}
+
+test ns_json-triples-pointer-1.6 {-pointer: -indices returns usable index list} -body {
+    set t [ns_json parse -output triples {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}]
+    set idx [ns_json triples getvalue -indices -pointer "/user/flags/active" $t]
+    lindex $t {*}$idx
+} -result {true}
+
+test ns_json-triples-pointer-1.7 {-pointer: ~1 unescapes to '/'} -body {
+    # Create a triples list with a key containing '/' and access it via pointer.
+    set t {a/b string X}
+    ns_json triples getvalue -output triples -pointer "/a~1b" $t
+} -result {X}
+
+test ns_json-triples-pointer-1.8 {-pointer: ~0 unescapes to '~'} -body {
+    set t {a~b string X}
+    ns_json triples getvalue -output triples  -pointer "/a~0b" $t
+} -result {X}
+
+test ns_json-triples-pointer-1.9 {-pointer: invalid escape '~' at end of segment} -body {
+    set t {a string X}
+    ns_json triples getvalue -pointer "/a~" $t
+} -returnCodes error -match glob -result {*invalid JSON pointer escape*}
+
+test ns_json-triples-pointer-1.10 {-pointer: invalid escape '~2' (reserved for keypath only)} -body {
+    set t {a.b string X}
+    ns_json triples getvalue -pointer "/a~2b" $t
+} -returnCodes error -match glob -result {*invalid JSON pointer escape*}
+
+test ns_json-triples-pointer-1.11 {-pointer: invalid escape '~x'} -body {
+    set t {axb string X}
+    ns_json triples getvalue -pointer "/a~xb" $t
+} -returnCodes error -match glob -result {*invalid JSON pointer escape*}
+
+test ns_json-triples-pointer-1.12 {-pointer: empty segment via '//' (key is empty string)} -body {
+    # RFC 6901: consecutive slashes produce an empty reference token.
+    set t {{} object {"" string E}}
+    # But our triples keys are plain strings; represent empty key as "".
+    # For our flat triples list: empty key is "".
+    set t {"" string E}
+    ns_json triples getvalue -output triples -pointer "/" $t
+} -result {E}
+
+test ns_json-triples-pointer-1.13 {-pointer: empty segment in middle (key is empty string)} -body {
+    # /user//name refers to key "" under user.
+    set t {user object {"" object {name string E}}}
+    ns_json triples getvalue -pointer "/user//name" $t
+} -result {"E"}
+
+test ns_json-triples-pointer-1.14 {-pointer: trailing slash selects empty-key member at leaf} -body {
+    set t {user object {"" string E}}
+    ns_json triples getvalue -pointer "/user/" $t
+} -result {"E"}
+} -returnCodes {error ok} -match glob -result {*invalid*number*}
+
+
+test ns_json-triples-contract-5.2 {ns_json value rejects non-triples container content for object} -body {
+    # object "o" has value list of length 2 -> invalid
+    set bad {o object {k string}}
+    ns_json value -type object $bad
+} -returnCodes error -match glob -result {*length*3*}
+
+test ns_json-triples-contract-5.3 {ns_json value accepts empty container content for object} -body {
+    set ok {o object {}}
+    ns_json value -type object $ok
+} -returnCodes ok -result {{"o":{}}}
+
+test ns_json-triples-contract-5.4 {ns_json value accepts empty container content for array} -body {
+    set ok {a array {}}
+    ns_json value -type object $ok
+} -returnCodes ok -result {{"a":[]}}
+# --- cleanup ---------------------------------------------------------------
+
 cleanupTests
 return
-
-
 #
 # Local variables:
 #    mode: tcl
