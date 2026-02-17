@@ -276,7 +276,6 @@ acceptance only, not the returned representation.
 [call [cmd "ns_json value"] \
         [opt [option "-type auto|string|number|boolean|null|object|array"]] \
         [opt [option "-pretty"]] \
-        [opt [option "-validatenumbers"]] \
         [opt --] \
         [arg value]]
 
@@ -390,24 +389,9 @@ rendered in compact form as [term "{}"] and [term {[]}].
  ## }
  [example_end]
 
-
-[opt_def -validatenumbers]
-[para] Validate JSON number lexemes before emitting them.
-
-[list_begin itemized]
-[item] When used with [option "-type number"], the string representation of the
-Tcl value is validated according to RFC 8259 before being emitted as a JSON
-number.
-[item] This rejects non-JSON number spellings such as [const NaN], [const Inf],
-leading plus signs (e.g., [const +1]), leading decimal points (e.g., [const .5]),
-trailing decimal points (e.g., [const 1.]), or leading-zero integers
-(e.g., [const 01]).
-[item] When used with [option "-type auto"], number candidates are validated
-before being classified as JSON numbers.
 [list_end]
 
-[list_end]
-
+Quick examples:
 
 [example_begin]
  ns_json value -type object {a number 1 b boolean 1 c string x n null __NS_JSON_NULL__}
@@ -419,17 +403,13 @@ before being classified as JSON numbers.
  # AUTO container detection (explicit container marker present)
  set JSON {{"user":{"id":7}}}
  set t [lb]ns_json parse -output triples $JSON[rb]
+ ## output: user object {id number 7}
  ns_json value $t
  ## output: {"user":{"id":7}}
  
- # Scalar-looking triples are not auto-detected as containers
+ # Note: Scalar-looking triples are not auto-detected as containers
  ns_json value {0 number 1}
  ## output: "0 number 1"
- 
- ns_json value -type number 01
- ## output: 01
- ns_json value -validatenumbers -type number 01
- ## output: ns_json: parse error at byte 1: invalid number
 [example_end]
 
 
@@ -687,27 +667,22 @@ The meaning of the [arg value] field depends on the type:
 [list_begin itemized]
 
 [item]
-[const string] — the value is a Tcl string containing the decoded
+[const string]: the value is a Tcl string containing the decoded
 JSON string (without surrounding quotes).
 
-[item]
-[const number] — the value is a Tcl string containing the original
+[item] [const number]: the value is a Tcl string containing the original
 JSON number lexeme.  The lexeme must conform to JSON number syntax.
 
-[item]
-[const boolean] — the value is the canonical Tcl representation of
+[item] [const boolean]: the value is the canonical Tcl representation of
 the JSON boolean ([const true] or [const false]).
 
-[item]
-[const null] — the value is the null sentinel
+[item] [const null]: the value is the null sentinel
 [const __NS_JSON_NULL__].
 
-[item]
-[const object] — the value is a triples list describing the object
+[item] [const object]: the value is a triples list describing the object
 members.  The empty list [const {}] represents an empty object.
 
-[item]
-[const array] — the value is a triples list describing the array
+[item] [const array]: the value is a triples list describing the array
 elements.  The empty list [const {}] represents an empty array.
 
 [list_end]

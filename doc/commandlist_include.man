@@ -364,7 +364,10 @@
 [uri ../../naviserver/files/ns_json.html {ns_json keyencode}] /string/
 [uri ../../naviserver/files/ns_json.html {ns_json keyinfo}] /key/
 [uri ../../naviserver/files/ns_json.html {ns_json parse}] ?-output dict|triples|set? ?-scan? ?-top any|container? ?-validatenumbers? ?-maxdepth /integer/? ?-maxstring /integer/? ?-maxcontainer /integer/? ?--? /value/
-[uri ../../naviserver/files/ns_json.html {ns_json value}] ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?-validatenumbers? ?--? /value/
+[uri ../../naviserver/files/ns_json.html {ns_json triples gettype}] gettype ?-path /value/? ?-pointer /value/? ?-indices? ?--? /triples/
+[uri ../../naviserver/files/ns_json.html {ns_json triples getvalue}] getvalue ?-path /value/? ?-pointer /value/? ?-indices? ?-output json|triples? ?-pretty? ?--? /triples/
+[uri ../../naviserver/files/ns_json.html {ns_json triples setvalue}] setvalue ?-path /value/? ?-pointer /value/? ?-type auto|string|number|boolean|null|object|array? ?--? /triples/ /value/
+[uri ../../naviserver/files/ns_json.html {ns_json value}] ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?--? /value/
 [uri ../../naviserver/files/ns_kill.html {ns_kill}] ?-nocomplain? /pid/ /signal/
 [uri ../../naviserver/files/ns_library.html {ns_library}] private|shared ?/module/?
 [uri ../../nsdb/files/ns_buildsqldate.html {ns_localsqltimestamp}]

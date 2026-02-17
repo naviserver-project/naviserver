@@ -1434,7 +1434,6 @@ test ns_json-triples-pointer-1.14 {-pointer: trailing slash selects empty-key me
     set t {user object {"" string E}}
     ns_json triples getvalue -pointer "/user/" $t
 } -result {"E"}
-} -returnCodes {error ok} -match glob -result {*invalid*number*}
 
 
 test ns_json-triples-contract-5.2 {ns_json value rejects non-triples container content for object} -body {
