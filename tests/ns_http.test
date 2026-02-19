@@ -870,7 +870,9 @@ test http-5.6 {
     unset -nocomplain r
 } -returnCodes {error ok} -result {200 {utf-8 <text/html> AÄATest/üß☀ZÜZ}}
 
-
+#
+# The test server is configured to spool request bodies larger than 10000 bytes.
+#
 test http-6.6.0 {ns_getform and ns_getformfile + 2x 16KB file multipart} -constraints {tcl86 curl serverListen} -setup {
     ns_register_proc POST /post {
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -2839,10 +2841,179 @@ test http-11.2.2 {
     unset -nocomplain i r0 r1 r2
 } -returnCodes {error ok} -result {200 200 2000 10}
 
+
+#######################################################################################
+# JSON spooled-content tests for ns_getform/ns_parseformfile
+#######################################################################################
+
 #
+# The test server is configured to spool request bodies larger than 10000 bytes.
+# These tests therefore use JSON bodies > 10k to force ns_conn contentfile != "".
+#
+#
+# 1) application/json, spooled, parsed into ns_set via ns_getform
+#
+test http-json-1.1 {ns_getform: spooled application/json is flattened into ns_set} -constraints {tcl86 curl serverListen} -setup {
+    ns_register_proc POST /post {
+        set d [ns_conn contenttype]
+        set ctType [dict get $d type]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set form [ns_getform]
+        set keys [lsort [ns_set keys $form]]
+
+        ns_return 200 text/plain \
+            [string cat \
+                 "type $ctType contentFile $haveContentFile " \
+                 "id <[ns_set get $form user/id]> name <[ns_set get $form user/name]> " \
+                 "admin <[ns_set get $form user/flags/admin]> active <[ns_set get $form user/flags/active]> " \
+                 "id.type <[ns_set get $form user/id.type]> name.type <[ns_set get $form user/name.type]> " \
+                 "admin.type <[ns_set get $form user/flags/admin.type]> active.type <[ns_set get $form user/flags/active.type]> " \
+                 "keys <$keys>"]
+    }
+} -body {
+    set json [subst {{"user":{"id":7,"name":"Alice","payload":"[string repeat A 12000]","flags":{"admin":false,"active":true}}}}]
+    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    exec curl -g -s \
+        -H "Content-Type: application/json" \
+        --data-binary @$tmp \
+        [ns_config test listenurl]/post 2> $devnull
+} -cleanup {
+    file delete -- $tmp
+    ns_unregister_op POST /post
+    unset -nocomplain stmp json
+} -returnCodes {error ok return} -result \
+{type application/json contentFile 1 id <7> name <Alice> admin <false> active <true> id.type <number> name.type <string> admin.type <boolean> active.type <boolean> keys <user/flags/active user/flags/active.type user/flags/admin user/flags/admin.type user/id user/id.type user/name user/name.type user/payload user/payload.type>}
+
+
+# 2) application/*+json (suffix detection), spooled, parsed
+
+test http-json-1.2 {ns_getform: spooled application/*+json is flattened into ns_set} -constraints {tcl86 curl serverListen} -setup {
+    ns_register_proc POST /post {
+        set d [ns_conn contenttype]
+        set ctType [dict get $d type]
+        set suffix [expr {[dict exists $d suffix] ? [dict get $d suffix] : ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set form [ns_getform]
+        set keys [lsort [ns_set keys $form]]
+
+        ns_return 200 text/plain \
+            [string cat \
+                 "type $ctType suffix <$suffix> contentFile $haveContentFile " \
+                 "name <[ns_set get $form user/name]> " \
+                 "name.type <[ns_set get $form user/name.type]> " \
+                 "keys <$keys>"]
+    }
+} -body {
+    set json [subst {{"user":{"id":7,"name":"Alice","payload":"[string repeat A 12000]","flags":{"admin":false,"active":true}}}}]
+    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    exec curl -g -s \
+        -H "Content-Type: application/vnd.api+json" \
+        --data-binary @$tmp \
+        [ns_config test listenurl]/post 2> $devnull
+} -cleanup {
+    file delete -- $tmp
+    ns_unregister_op POST /post
+    unset -nocomplain tmp json
+} -returnCodes {error ok return} -result \
+{type application/vnd.api+json suffix <json> contentFile 1 name <Alice> name.type <string> keys <user/flags/active user/flags/active.type user/flags/admin user/flags/admin.type user/id user/id.type user/name user/name.type user/payload user/payload.type>}
+
+
+# 3) JSON with charset parameter (ensures charset is extracted and does not break parsing)
+# Note: we don't try to validate encoding conversion deeply here; we just ensure parsing works.
+
+test http-json-1.3 {ns_getform: spooled application/json; charset=utf-8 parses} -constraints {tcl86 curl serverListen} -setup {
+    ns_register_proc POST /post {
+        set d [ns_conn contenttype]
+        set ctType [dict get $d type]
+        set charset [expr {[dict exists $d charset] ? [dict get $d charset] : ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set form [ns_getform]
+        set keys [lsort [ns_set keys $form]]
+
+        ns_return 200 text/plain \
+            [string cat \
+                 "type $ctType charset <$charset> contentFile $haveContentFile " \
+                 "id <[ns_set get $form user/id]> " \
+                 "id.type <[ns_set get $form user/id.type]> " \
+                 "keys <$keys>"]
+    }
+} -body {
+    set json [subst {{"user":{"id":7,"name":"Alice","payload":"[string repeat A 12000]","flags":{"admin":false,"active":true}}}}]
+    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    exec curl -g -s \
+        -H "Content-Type: application/json; charset=utf-8" \
+        --data-binary @$tmp \
+        [ns_config test listenurl]/post 2> $devnull
+} -cleanup {
+    file delete -- $tmp
+    ns_unregister_op POST /post
+    unset -nocomplain tmp json
+} -returnCodes {error ok return} -result \
+{type application/json charset <utf-8> contentFile 1 id <7> id.type <number> keys <user/flags/active user/flags/active.type user/flags/admin user/flags/admin.type user/id user/id.type user/name user/name.type user/payload user/payload.type>}
+
+#
+# 4) JSON invalid syntax should raise and propagate error from ns_conn form/ns_getform
+#
+
+test http-json-1.4 {ns_getform: spooled invalid JSON raises} -constraints {tcl86 curl serverListen} -setup {
+    ns_register_proc POST /post {
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set ok [catch {ns_getform} msg]
+        ns_return 200 text/plain [string cat "contentFile $haveContentFile ok $ok msg <$msg>"]
+    }
+} -body {
+    #
+    # Invalid JSON but large enough to spool.
+    #
+    set json "\"user\": \"[string repeat A 12000]\""
+    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    exec curl -g -s \
+        -H "Content-Type: application/json" \
+        --data-binary @$tmp \
+        [ns_config test listenurl]/post 2> $devnull
+} -cleanup {
+    file delete -- $tmp
+    ns_unregister_op POST /post
+    unset -nocomplain tmp json
+} -returnCodes {error ok return} -match glob -result {contentFile 1 ok 1 msg <*ns_json*parse*trailing*}
+
+
+# 5) JSON below spooling threshold should not spool (sanity check),
+# but must still parse (uses in-memory path; this guards the size threshold)
+
+test http-json-1.5 {ns_getform: small JSON is not spooled and parses} -constraints {tcl86 curl serverListen} -setup {
+    ns_register_proc POST /post {
+        set d [ns_conn contenttype]
+        set ctType [dict get $d type]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set form [ns_getform]
+
+        ns_return 200 text/plain \
+            [string cat \
+                 "type $ctType contentFile $haveContentFile " \
+                 "name <[ns_set get $form user/name]>"]
+    }
+} -body {
+    set json {{"user":{"id":7,"name":"Alice","payload":"short","flags":{"admin":false,"active":true}}}}
+    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    exec curl -g -s \
+        -H "Content-Type: application/json" \
+        --data-binary @$tmp \
+        [ns_config test listenurl]/post 2> $devnull
+} -cleanup {
+    file delete -- $tmp
+    ns_unregister_op POST /post
+    unset -nocomplain tmp json
+} -returnCodes {error ok return} -result {type application/json contentFile 0 name <Alice>}
+
+
+
+
+
+#######################################################################################
 # Testing forward proxy.
 # In these tests, we forward the request to ourselves.
-#
+#######################################################################################
 
 test proxy-1.0 {Test forward proxy with via HTTP with HTTP request} -constraints {
     curl serverListen

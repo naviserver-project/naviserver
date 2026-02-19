@@ -239,7 +239,7 @@ proc ns_getform {args}  {
                     -fallbackcharset $fallbackcharset \
                     $tmpfile \
                     $::_ns_form \
-                    [ns_set iget [ns_conn headers] content-type]
+                    [ns_conn contenttype]
             } on error {errorMsg errorDict} {
                 #ns_log notice "ns_parseformfile: error in first round, set = [ns_set array $::_ns_form]"
             } on ok {result} {
@@ -256,7 +256,7 @@ proc ns_getform {args}  {
                     -fallbackcharset $fallbackcharset \
                     $tmpfile \
                     $::_ns_form \
-                    [ns_set iget [ns_conn headers] content-type]
+                    [ns_conn contenttype]
             } elseif {$errorDict ne ""} {
                 #
                 # There was no "_charset_" specified, throw the error
@@ -375,23 +375,53 @@ if {$::tcl_version < 8.6} {
 #
 # ns_parseformfile --
 #
-#   Parse a multi-part form data file, this proc does the same
-#   thing what internal server does for request content. Primary
-#   purpose of this proc to be used with spooled content, when
-#   server puts the whole request into temporary file. The proc handles
-#   just multipart/form-data and *www-form-urlencoded.
+#    Parse HTTP request body data from a spool file and populate the
+#    provided ns_set with the extracted form fields.
+#
+#    This procedure mirrors the server’s internal request-content
+#    handling for connections where the request body has been written
+#    to a temporary file (spooled content).  It is primarily used by
+#    ns_getform when the connection content is not available in
+#    memory.
+#
+# Supported content types:
+#
+#  * application/x-www-form-urlencoded
+#    The complete file is read into memory and decoded as
+#    URL-encoded form data.
+#
+#  * multipart/form-data
+#    Individual parts are parsed.  Regular fields are added
+#    to the ns_set as name/value pairs.  Uploaded files are
+#    written to separate temporary files; their original
+#    filename is stored under the field name, and the path to
+#    the created temporary file is stored as “name.tmpfile”.
+#
+#  * application/json and structured “+json” types
+#    The JSON body is read into memory, parsed via ns_json,
+#    and flattened into name/value pairs compatible with the
+#    ns_set representation used for form data.
 #
 # Result:
-#   Parses query parameters and uploaded files, puts name/value
-#   pairs into provided ns_set, all files are copied into separate temp
-#   files and stored as name.tmpfile in the ns_set
+#    On success, the provided ns_set is populated with parsed
+#    name/value pairs.  For multipart uploads, additional entries
+#    of the form “name.tmpfile” are created to reference the
+#    generated temporary files.
 #
+# Side effects:
+#    May create temporary files for uploaded multipart content.
+#    May throw errors on invalid encoding or malformed multipart
+#    data.
+#
+
 
 proc ns_parseformfile {args} {
     ns_parseargs {
         {-fallbackcharset ""}
         {-encoding ""}
-        file form contentType
+        file
+        form
+        ctDict
     } $args
 
     if { [catch { set fp [open $file r] } errmsg] } {
@@ -399,35 +429,75 @@ proc ns_parseformfile {args} {
     }
     #file copy -force $file /tmp/upload.raw
 
+    set ctRaw [dict get $ctDict raw]
+    set ctType [dict get $ctDict type]
+    set ctCharset ""
+    set ctBoundary ""
+    set ctSuffix ""
+
+    if {[dict exists $ctDict charset]}  { set ctCharset  [dict get $ctDict charset] }
+    if {[dict exists $ctDict boundary]} { set ctBoundary [dict get $ctDict boundary] }
+    if {[dict exists $ctDict suffix]}   { set ctSuffix   [dict get $ctDict suffix] }
+
+    set jsonCt [expr {$ctType eq "application/json"
+                      || $ctType eq "text/json"
+                      || ($ctSuffix ne "" && [string equal -nocase $ctSuffix "json"])}]
     #
-    # Separate content-type and options
-    #
-    set options ""
-    regexp {^(.*)\s*;(.*)$} $contentType . contentType options
-    #
-    # Handle charset unless we have and explicit encoding from the caller
+    # Decide encoding unless we have explicit -encoding from the caller.
     #
     if {$encoding eq ""} {
-        set mimetypeEncoding ""
-        if {[regexp {charset\s*=\s*(\S+)} $options . mimetypeCharset]} {
-            set mimetypeEncoding [ns_encodingforcharset $mimetypeCharset]
-        }
-        if {$mimetypeEncoding ne ""} {
-            set encoding $mimetypeEncoding
+        if {$jsonCt} {
+            #
+            # JSON: default is UTF-8 unless charset parameter is provided.
+            #
+            set default_encoding utf-8
         } else {
-            set encoding [ns_conn urlencoding]
+            set default_encoding [ns_conn urlencoding]
+        }
+        set encoding $default_encoding
+        if {$ctCharset ne ""} {
+            set enc [ns_encodingforcharset $ctCharset]
+            if {$enc ne ""} {set encoding $enc}
         }
     }
 
-    if {[string match "*www-form-urlencoded" $contentType]} {
+    if {$jsonCt} {
         #
-        # Handle content type application/x-www-form-urlencoded (and
-        # similar for strange browsers). We revert here to in-memory
-        # parsing for content that is probably not really huge. Also
-        # writing a file-based decoder for www-form-urlencoded that
-        # sets the contents to the form would require the held the
-        # final result in memory.
+        # Handle JSON content (spooled): read into memory and parse.
         #
+        try {
+            fconfigure $fp -translation binary
+            set bytes [read $fp]
+
+            if {$encoding ne ""} {
+                set json [encoding convertfrom $encoding $bytes]
+            } else {
+                set json $bytes
+            }
+
+            #
+            # Flatten JSON to an ns_set (like ns_conn form does in-memory).
+            # Copy into provided form set to preserve ns_parseformfile contract.
+            #
+            set s [ns_json parse -output set $json]
+            foreach {name value} [ns_set array $s] {
+                if {[string match "*.tmpfile" $name]} {
+                    ns_log warning "Someone tries to sneak-in a fake upload file " \
+                        "'$name' value '$value': [ns_conn url]"
+                } else {
+                    ns_set put $form $name $value
+                }
+            }
+        } finally {
+            close $fp
+        }
+        return
+    }
+
+    #
+    # Handle content type application/x-www-form-urlencoded
+    #
+    if {[string match "*www-form-urlencoded" $ctType]} {
         try {
             set content [read $fp]
             #ns_log warning "===== ns_parseformfile reads $file $form $contentType -> [string length $content] bytes"
@@ -447,11 +517,9 @@ proc ns_parseformfile {args} {
     }
 
     #
-    # Note: Currently there is no parsing performed, when the content
-    # type is neither *www-form-urlencoded nor it has boundaries
-    # defined (multipart/form-data).
+    # multipart/form-data requires boundary
     #
-    if {![regexp -nocase {boundary=(.*)$} $options . b] } {
+    if {$ctBoundary eq ""} {
         #ns_log warning "ns_parseformfile skips form processing: content-type '$contentType' options '$options'"
         close $fp
         return
@@ -468,7 +536,7 @@ proc ns_parseformfile {args} {
     ### END DB
 
     fconfigure $fp -translation binary
-    set boundary "--$b"
+    set boundary "--$ctBoundary"
 
     #ns_log notice "PARSE multipart inputfile $fp [fconfigure $fp -encoding]"
 
