@@ -266,10 +266,12 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_AUTHORITY].name        = "authority";     atoms[NS_ATOM_AUTHORITY].len = 9;
     atoms[NS_ATOM_BODY].name             = "body";          atoms[NS_ATOM_BODY].len = 4;
     atoms[NS_ATOM_BODY_CHAN].name        = "body_chan";     atoms[NS_ATOM_BODY_CHAN].len = 9;
+    atoms[NS_ATOM_BOUNDARY].name         = "boundary";      atoms[NS_ATOM_BOUNDARY].len = 8;
     atoms[NS_ATOM_BROTLI].name           = "brotli";        atoms[NS_ATOM_BROTLI].len = 6;
     atoms[NS_ATOM_BYTES].name            = "bytes";         atoms[NS_ATOM_BYTES].len = 5;
     atoms[NS_ATOM_CALLBACK].name         = "callback";      atoms[NS_ATOM_CALLBACK].len = 8;
     atoms[NS_ATOM_CHANNEL].name          = "channel";       atoms[NS_ATOM_CHANNEL].len = 7;
+    atoms[NS_ATOM_CHARSET].name          = "charset";       atoms[NS_ATOM_CHARSET].len = 7;
     atoms[NS_ATOM_CIPHER].name           = "cipher";        atoms[NS_ATOM_CIPHER].len = 6;
     atoms[NS_ATOM_CODE].name             = "code";          atoms[NS_ATOM_CODE].len = 4;
     atoms[NS_ATOM_COMPILER].name         = "compiler";      atoms[NS_ATOM_COMPILER].len = 8;
@@ -325,6 +327,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_PROXIED].name          = "proxied";       atoms[NS_ATOM_PROXIED].len = 7;
     atoms[NS_ATOM_PUBLIC].name           = "public";        atoms[NS_ATOM_PUBLIC].len = 6;
     atoms[NS_ATOM_QUERY].name            = "query";         atoms[NS_ATOM_QUERY].len = 5;
+    atoms[NS_ATOM_RAW].name              = "raw";           atoms[NS_ATOM_RAW].len = 3;
     atoms[NS_ATOM_RECEIVED].name         = "received";      atoms[NS_ATOM_RECEIVED].len = 8;
     atoms[NS_ATOM_RECVERROR].name        = "recverror";     atoms[NS_ATOM_RECVERROR].len = 9;
     atoms[NS_ATOM_RECVWAIT].name         = "recvwait";      atoms[NS_ATOM_RECVWAIT].len = 8;
@@ -352,6 +355,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_STATE].name            = "state";         atoms[NS_ATOM_STATE].len = 5;
     atoms[NS_ATOM_STATS].name            = "stats";         atoms[NS_ATOM_STATS].len = 5;
     atoms[NS_ATOM_STATUS].name           = "status";        atoms[NS_ATOM_STATUS].len = 6;
+    atoms[NS_ATOM_SUFFIX].name           = "suffix";        atoms[NS_ATOM_SUFFIX].len = 6;
     atoms[NS_ATOM_SYSTEM_MALLOC].name    = "system_malloc"; atoms[NS_ATOM_SYSTEM_MALLOC].len = 13;
     atoms[NS_ATOM_TAIL].name             = "tail";          atoms[NS_ATOM_TAIL].len = 4;
     atoms[NS_ATOM_TASK].name             = "task";          atoms[NS_ATOM_TASK].len = 4;

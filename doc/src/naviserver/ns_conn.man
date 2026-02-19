@@ -116,6 +116,17 @@ You may also modify this ns_set.
 
  Queries or sets the number of bytes of content that have been sent.
 
+[call [cmd "ns_conn contenttype"]]
+
+ Returns a dict describing the request [const Content-Type] header.
+ The dict always contains the members [const raw] (the original header
+ value) and [const type] (the lowercased media type without
+ parameters). The optional members [const charset] and
+ [const boundary] are included only when present in the header. For
+ structured syntax suffix types (e.g., [const application/*+json]),
+ the optional member [const suffix] is included and contains the part
+ after the last [const +].
+
 [call [cmd  "ns_conn copy"] [arg offset] [arg length] [arg channelId]]
 
  Copies a specified number of bytes from the connection’s buffered

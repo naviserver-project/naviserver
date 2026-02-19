@@ -22,23 +22,193 @@ static Ns_ObjvValueRange posintRange0 = {0, INT_MAX};
 static Ns_ObjvValueRange posSizeRange0 = {0, TCL_SIZE_MAX};
 static Ns_ObjvValueRange posSizeRange1 = {1, TCL_SIZE_MAX};
 
+#include "nsd.h"
+
+static int ConnContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, unsigned int flags);
+static int ConnContentTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, unsigned int flags);
+static int ConnCopyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, unsigned int flags);
+static int ConnFormObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, unsigned int flags);
+
 /*
  * Static functions defined in this file.
  */
 
 static int GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static Tcl_Channel MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static const Ns_Driver* ConnGetDriver(const Ns_Conn *conn) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
 static int ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr,
                      NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-    NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(4,6);
 
+static void ParseContentTypeSuffix(const char *typeStart, const char *typeEnd, NsContentTypeParams *paramsPtr)
+    NS_GNUC_NONNULL(1,2,3);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseContentTypeSuffix --
+ *
+ *      Extract the structured syntax suffix from a media type token.
+ *
+ *      The function examines the subtype portion of the media type
+ *      (everything after the first '/').  If the subtype contains one or
+ *      more '+' characters, the suffix is defined as the part after the
+ *      last '+', as used by structured syntax suffix media types such as
+ *      "application/merge-patch+json" or "application/vnd.api+json".
+ *
+ *      The returned suffix is provided as a pointer/length pair referring
+ *      to the original media type token; no memory is allocated.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      On return, paramsPtr->suffix and paramsPtr->suffixLen are set when
+ *      a suffix is present; otherwise they are set to NULL and 0.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ParseContentTypeSuffix(const char *typeStart, const char *typeEnd,
+                       NsContentTypeParams *paramsPtr)
+{
+    const char *slash, *sub, *plus = NULL;
+
+    paramsPtr->suffix = NULL;
+    paramsPtr->suffixLen = 0;
+
+    slash = memchr(typeStart, '/', (size_t)(typeEnd - typeStart));
+    if (slash == NULL || slash + 1 >= typeEnd) {
+        return;
+    }
+
+    sub = slash + 1;
+
+    for (const char *q = sub; q < typeEnd; q++) {
+        if (*q == '+') {
+            plus = q;
+        }
+    }
+    if (plus != NULL && plus + 1 < typeEnd) {
+        paramsPtr->suffix = plus + 1;
+        paramsPtr->suffixLen = (TCL_SIZE_T)(typeEnd - (plus + 1));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseContentTypeParams --
+ *
+ *      Parse Content-Type parameters from the substring starting at p.
+ *      The parser is intentionally small and permissive: it recognizes
+ *      attribute=value pairs separated by semicolons and extracts the
+ *      values for "charset" and "boundary" (case-insensitive).
+ *
+ *      Values may be tokens or quoted strings (double quotes). Quoted
+ *      values are returned without the surrounding quotes.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Fills *paramsPtr with pointers/lengths into the original string.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsParseContentTypeParams(const char *typeStart, const char *typeEnd,
+                       const char *p, const char *end,
+                       NsContentTypeParams *paramsPtr)
+{
+    paramsPtr->charset = NULL;
+    paramsPtr->boundary = NULL;
+    paramsPtr->suffix = NULL;
+    paramsPtr->charsetLen = 0;
+    paramsPtr->boundaryLen = 0;
+    paramsPtr->suffixLen = 0;
+
+    /*
+     * Structured syntax suffix (e.g. application/...+json).
+     */
+    ParseContentTypeSuffix(typeStart, typeEnd, paramsPtr);
+
+    /*
+     * Parameters (charset/boundary).
+     */
+    while (p < end) {
+        const char *aStart, *aEnd, *vStart, *vEnd;
+        TCL_SIZE_T  aLen;
+
+        while (p < end && (*p == ';' || CHARTYPE(space, *p))) {
+            p++;
+        }
+        if (p >= end) {
+            break;
+        }
+
+        aStart = p;
+        while (p < end && *p != '=' && *p != ';') {
+            p++;
+        }
+        aEnd = p;
+
+        while (aEnd > aStart && CHARTYPE(space, aEnd[-1])) {
+            aEnd--;
+        }
+        aLen = (TCL_SIZE_T)(aEnd - aStart);
+
+        if (p >= end || *p != '=') {
+            while (p < end && *p != ';') {
+                p++;
+            }
+            continue;
+        }
+        p++; /* skip '=' */
+
+        while (p < end && CHARTYPE(space, *p)) {
+            p++;
+        }
+
+        if (p >= end || *p == ';') {
+            vStart = p;
+            vEnd = p;
+        } else if (*p == '"') {
+            p++;
+            vStart = p;
+            while (p < end && *p != '"') {
+                p++;
+            }
+            vEnd = p;
+            if (p < end && *p == '"') {
+                p++;
+            }
+        } else {
+            vStart = p;
+            while (p < end && *p != ';') {
+                p++;
+            }
+            vEnd = p;
+            while (vEnd > vStart && CHARTYPE(space, vEnd[-1])) {
+                vEnd--;
+            }
+        }
+
+        if (aLen == 7 && strncasecmp(aStart, "charset", 7u) == 0) {
+            paramsPtr->charset = vStart;
+            paramsPtr->charsetLen = (TCL_SIZE_T)(vEnd - vStart);
+        } else if (aLen == 8 && strncasecmp(aStart, "boundary", 8u) == 0) {
+            paramsPtr->boundary = vStart;
+            paramsPtr->boundaryLen = (TCL_SIZE_T)(vEnd - vStart);
+        }
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1817,6 +1987,132 @@ ConnContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 /*
  *----------------------------------------------------------------------
  *
+ * ConnContentTypeObjCmd --
+ *
+ *      Implements "ns_conn contenttype".
+ *
+ *      Return a dict describing the request Content-Type header. The dict
+ *      contains:
+ *
+ *          raw      - the raw Content-Type header value (may be empty)
+ *          type     - the media type without parameters, lowercased
+ *          charset  - the charset parameter value (or empty)
+ *          boundary - the boundary parameter value (or empty)
+ *
+ * Results:
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      Sets the interpreter result to the returned dict.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnContentTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
+                      Tcl_Obj *const *objv, unsigned int flags)
+{
+    Tcl_Obj    *dictObj;
+    NsInterp   *itPtr = clientData;
+    Conn       *connPtr;
+    const char *raw;
+    const char *p, *typeStart, *typeEnd, *end;
+    int         result = TCL_OK;
+    NsContentTypeParams params;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK
+        || NsConnRequire(interp, flags, NULL, &result) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    connPtr = (Conn *)itPtr->conn;
+
+    raw = Ns_SetGet(connPtr->headers, "content-type");
+    if (raw == NULL) {
+        raw = "";
+    }
+
+    dictObj = Tcl_NewDictObj();
+
+    /*
+     * raw
+     */
+    (void) Tcl_DictObjPut(interp, dictObj,
+                          NsAtomObj(NS_ATOM_RAW),
+                          Tcl_NewStringObj(raw, -1));
+
+    /*
+     * Parse media type token (typeStart..typeEnd) and parameter region (p..end).
+     */
+    p = raw;
+    end = raw + strlen(raw);
+
+    while (p < end && CHARTYPE(space, *p)) {
+        p++;
+    }
+    typeStart = p;
+
+    while (p < end && *p != ';') {
+        p++;
+    }
+    typeEnd = p;
+
+    while (typeEnd > typeStart && CHARTYPE(space, typeEnd[-1])) {
+        typeEnd--;
+    }
+
+    /*
+     * type (lowercased media type without parameters)
+     */
+    if (typeEnd > typeStart) {
+        TCL_SIZE_T  len = (TCL_SIZE_T)(typeEnd - typeStart);
+        Tcl_Obj    *typeObj = Tcl_NewStringObj(typeStart, len);
+        char       *s = Tcl_GetString(typeObj);
+
+        Ns_StrToLower(s);
+
+        (void) Tcl_DictObjPut(interp, dictObj,
+                              NsAtomObj(NS_ATOM_TYPE),
+                              typeObj);
+    } else {
+        (void) Tcl_DictObjPut(interp, dictObj,
+                              NsAtomObj(NS_ATOM_TYPE),
+                              NsAtomObj(NS_ATOM_EMPTY));
+    }
+
+    /*
+     * Centralized parsing of structured suffix and parameters.
+     * The parameter scanner expects p..end to start at the ';' (or end),
+     * which is exactly where p currently points.
+     */
+    NsParseContentTypeParams(typeStart, typeEnd, p, end, &params);
+
+    if (params.suffix != NULL) {
+        (void) Tcl_DictObjPut(interp, dictObj,
+                              NsAtomObj(NS_ATOM_SUFFIX),
+                              Tcl_NewStringObj(params.suffix, params.suffixLen));
+    }
+
+    if (params.charset != NULL) {
+        (void) Tcl_DictObjPut(interp, dictObj,
+                              NsAtomObj(NS_ATOM_CHARSET),
+                              Tcl_NewStringObj(params.charset, params.charsetLen));
+    }
+
+    if (params.boundary != NULL) {
+        (void) Tcl_DictObjPut(interp, dictObj,
+                              NsAtomObj(NS_ATOM_BOUNDARY),
+                              Tcl_NewStringObj(params.boundary, params.boundaryLen));
+    }
+
+    Tcl_SetObjResult(interp, dictObj);
+    return result;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ConnCopyObjCmd --
  *
  *      Implements "ns_conn copy"
@@ -1987,7 +2283,7 @@ ConnFormObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 enum ISubCmdIdx {
     CAacceptedcompressionIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
     CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
-    CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx,
+    CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CContenttypeIdx, CCopyIdx,
     CCurrentAddrIdx, CCurrentPortIdx,
     CDetailsIdx, CDriverIdx,
     CEncodingIdx,
@@ -2021,7 +2317,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     static const char *const opts[] = {
         "acceptedcompression", "auth", "authpassword", "authuser",
         "channel", "clientdata", "close", "compress", "content",
-        "contentfile", "contentlength", "contentsentlength", "copy",
+        "contentfile", "contentlength", "contentsentlength", "contenttype", "copy",
         "currentaddr", "currentport",
         "details", "driver",
         "encoding",
@@ -2045,11 +2341,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     static const unsigned int required_flags[] = {
         /* A */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
-        /* C */ NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
+        /* C channel */ NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
-        /* C */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
-        /* line continued */ NS_CONN_REQUIRE_OPEN,
-        /* C */ NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONNECTED,
+        /* C contentfile */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
+        /* line continued */ NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_OPEN,
+        /* C currentaddr */ NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONNECTED,
         /* D */ NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED,
         /* E */ NS_CONN_REQUIRE_CONFIGURED,
         /* F */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
@@ -2162,6 +2458,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             }
             break;
         }
+
+        case CContenttypeIdx:
+            result = ConnContentTypeObjCmd(clientData, interp, objc, objv, required_flags[opt]);
+            break;
 
         case CCopyIdx:
             result = ConnCopyObjCmd(clientData, interp, objc, objv, required_flags[opt]);

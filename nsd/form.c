@@ -87,7 +87,8 @@ static Ns_ReturnCode ParseJsonContent(const char *content, TCL_SIZE_T contentLen
 static bool
 IsJsonContentType(const char *contentType, const char *typeEnd)
 {
-    const char *p, *slash;
+    const char          *p;
+    NsContentTypeParams  params;
 
     if (*contentType == '\0') {
         return NS_FALSE;
@@ -95,6 +96,7 @@ IsJsonContentType(const char *contentType, const char *typeEnd)
 
     /*
      * Consider only the media-type token up to ';' (ignore parameters).
+     * The caller provides typeEnd pointing either to ';' or to the string end.
      */
     p = contentType;
 
@@ -109,25 +111,15 @@ IsJsonContentType(const char *contentType, const char *typeEnd)
         return NS_TRUE;
     }
 
-    /*
-     * Structured syntax suffix: .../...+json
-     */
-    slash = memchr(p, '/', (size_t)(typeEnd - p));
-    if (slash == NULL || slash + 1 >= typeEnd) {
-        return NS_FALSE;
+    NsParseContentTypeParams(contentType, typeEnd, typeEnd, typeEnd + strlen(typeEnd), &params);
 
-    } else {
-        /* subtype is (slash+1 .. typeEnd) */
-        const char *sub = slash + 1;
-        size_t subLen = (size_t)(typeEnd - sub);
-
-        if (subLen >= 5 && memcmp(sub + subLen - 5, "+json", 5) == 0) {
-            return NS_TRUE;
-        }
+    if (params.suffixLen == 4 && memcmp(params.suffix, "json", 4) == 0) {
+        return NS_TRUE;
     }
 
     return NS_FALSE;
 }
+
 
 
 

@@ -135,6 +135,15 @@ NS_EXTERN Ns_ObjvTable NS_binaryencodings[];
  * Type definitions.
  */
 
+typedef struct {
+    const char *charset;
+    TCL_SIZE_T  charsetLen;
+    const char *boundary;
+    TCL_SIZE_T  boundaryLen;
+    const char *suffix;
+    TCL_SIZE_T  suffixLen;
+} NsContentTypeParams;
+
 struct Sock;
 struct NsServer;
 typedef struct NsWriterSock NsWriterSock;
@@ -1785,6 +1794,9 @@ NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns
 NS_EXTERN char *NsDStringAppendConnFlags(Tcl_DString *dsPtr, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN void NsParseContentTypeParams(const char *typeStart, const char *typeEnd,
+                                        const char *p, const char *end,
+                                        NsContentTypeParams *paramsPtr) NS_GNUC_NONNULL(1,2,3,4,5);
 /*
  * connchan.c
  */

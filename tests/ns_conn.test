@@ -17,7 +17,7 @@ test ns_conn-1.0 {basic syntax: plain call} -body {
 
 test ns_conn-1.1 {basic syntax: wrong argument} -body {
      ns_conn 123
-} -returnCodes error -result {bad subcommand "123": must be acceptedcompression, auth, authpassword, authuser, channel, clientdata, close, compress, content, contentfile, contentlength, contentsentlength, copy, currentaddr, currentport, details, driver, encoding, fileheaders, filelength, fileoffset, files, flags, form, fragment, headerlength, headers, host, id, isconnected, keepalive, location, method, outputheaders, partialtimes, peeraddr, peerport, pool, port, protocol, query, ratelimit, request, server, sock, start, status, target, timeout, url, urlc, urldict, urlencoding, urlv, version, or zipaccepted}
+} -returnCodes error -result {bad subcommand "123": must be acceptedcompression, auth, authpassword, authuser, channel, clientdata, close, compress, content, contentfile, contentlength, contentsentlength, contenttype, copy, currentaddr, currentport, details, driver, encoding, fileheaders, filelength, fileoffset, files, flags, form, fragment, headerlength, headers, host, id, isconnected, keepalive, location, method, outputheaders, partialtimes, peeraddr, peerport, pool, port, protocol, query, ratelimit, request, server, sock, start, status, target, timeout, url, urlc, urldict, urlencoding, urlv, version, or zipaccepted}
 
 
 test ns_conn-1.1.1 {syntax: ns_conn acceptedcompression} -body {
@@ -67,6 +67,10 @@ test ns_conn-1.1.11 {syntax: ns_conn contentlength} -body {
 test ns_conn-1.1.12 {syntax: ns_conn contentsentlength} -body {
     ns_conn contentsentlength 1 x
 } -returnCodes error -result {wrong # args: should be "ns_conn contentsentlength ?/bytes[0,MAX]/?"}
+
+test ns_conn-1.1.12.1 {syntax: ns_conn contenttype} -body {
+    ns_conn contenttype x
+} -returnCodes error -result {wrong # args: should be "ns_conn contenttype"}
 
 test ns_conn-1.1.13 {syntax: ns_conn copy} -body {
     ns_conn copy
@@ -483,6 +487,137 @@ test ns_conn-4.2 {behind proxy peer} -setup {
 } -cleanup {
     ns_unregister_op GET /foo
 } -result {200 <1.2.3.4>}
+
+
+#######################################################################################
+#  ns_conn contenttype tests
+#######################################################################################
+
+#
+# ns_conn contenttype tests (optional dict members)
+#
+
+test ns_conn-contenttype-1.1 {contenttype: missing header -> raw/type only} -setup {
+    ns_register_proc GET /ct {
+        set d [ns_conn contenttype]
+        set out [list \
+                     raw  [dict get $d raw] \
+                     type [dict get $d type] \
+                     charset [list [dict exists $d charset] [expr {[dict exists $d charset] ? [dict get $d charset] : ""}]] \
+                     boundary [list [dict exists $d boundary] [expr {[dict exists $d boundary] ? [dict get $d boundary] : ""}]]]
+        ns_return 200 text/plain $out
+    }
+} -body {
+    nstest::http -getbody 1 GET /ct
+} -cleanup {
+    ns_unregister_op GET /ct
+} -result {200 {raw {} type {} charset {0 {}} boundary {0 {}}}}
+
+test ns_conn-contenttype-1.2 {contenttype: type only} -setup {
+    ns_register_proc GET /ct {
+        set d [ns_conn contenttype]
+        set out [list \
+                     raw  [dict get $d raw] \
+                     type [dict get $d type] \
+                     charset [list [dict exists $d charset] [expr {[dict exists $d charset] ? [dict get $d charset] : ""}]] \
+                     boundary [list [dict exists $d boundary] [expr {[dict exists $d boundary] ? [dict get $d boundary] : ""}]]]
+        ns_return 200 text/plain $out
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders {content-type application/json} GET /ct
+} -cleanup {
+    ns_unregister_op GET /ct
+} -result {200 {raw application/json type application/json charset {0 {}} boundary {0 {}}}}
+
+test ns_conn-contenttype-1.3 {contenttype: parse charset} -setup {
+    ns_register_proc GET /ct {
+        set d [ns_conn contenttype]
+        set out [list \
+                     raw  [dict get $d raw] \
+                     type [dict get $d type] \
+                     charset [list [dict exists $d charset] [expr {[dict exists $d charset] ? [dict get $d charset] : ""}]] \
+                     boundary [list [dict exists $d boundary] [expr {[dict exists $d boundary] ? [dict get $d boundary] : ""}]]]
+        ns_return 200 text/plain $out
+    }
+} -body {
+    nstest::http -getbody 1 \
+        -setheaders {content-type {Application/JSON ; charset=utf-8}} \
+        GET /ct
+} -cleanup {
+    ns_unregister_op GET /ct
+} -result {200 {raw {Application/JSON ; charset=utf-8} type application/json charset {1 utf-8} boundary {0 {}}}}
+
+test ns_conn-contenttype-1.4 {contenttype: parse boundary} -setup {
+    ns_register_proc GET /ct {
+        set d [ns_conn contenttype]
+        set out [list \
+                     raw  [dict get $d raw] \
+                     type [dict get $d type] \
+                     charset [list [dict exists $d charset] [expr {[dict exists $d charset] ? [dict get $d charset] : ""}]] \
+                     boundary [list [dict exists $d boundary] [expr {[dict exists $d boundary] ? [dict get $d boundary] : ""}]]]
+        ns_return 200 text/plain $out
+    }
+} -body {
+    nstest::http -getbody 1 \
+        -setheaders {content-type {multipart/form-data; boundary=----abc}} \
+        GET /ct
+} -cleanup {
+    ns_unregister_op GET /ct
+} -result {200 {raw {multipart/form-data; boundary=----abc} type multipart/form-data charset {0 {}} boundary {1 ----abc}}}
+
+test ns_conn-contenttype-1.5 {contenttype: charset present but empty} -setup {
+    ns_register_proc GET /ct {
+        set d [ns_conn contenttype]
+        set out [list \
+                     raw  [dict get $d raw] \
+                     type [dict get $d type] \
+                     charset [list [dict exists $d charset] [expr {[dict exists $d charset] ? [dict get $d charset] : ""}]]]
+        ns_return 200 text/plain $out
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders {content-type {application/json; charset=}} GET /ct
+} -cleanup {
+    ns_unregister_op GET /ct
+} -result {200 {raw {application/json; charset=} type application/json charset {1 {}}}}
+
+test ns_conn-contenttype-1.6 {contenttype: boundary present but empty} -setup {
+    ns_register_proc GET /ct {
+        set d [ns_conn contenttype]
+        set out [list \
+            raw  [dict get $d raw] \
+            type [dict get $d type] \
+            boundary [list [dict exists $d boundary] [expr {[dict exists $d boundary] ? [dict get $d boundary] : ""}]]]
+        ns_return 200 text/plain $out
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders {content-type {multipart/form-data; boundary=}} GET /ct
+} -cleanup {
+    ns_unregister_op GET /ct
+} -result {200 {raw {multipart/form-data; boundary=} type multipart/form-data boundary {1 {}}}}
+
+test ns_conn-contenttype-1.7 {contenttype: structured suffix +json} -setup {
+    ns_register_proc GET /ct {
+        ns_return 200 text/plain [ns_conn contenttype]
+    }
+} -body {
+    nstest::http -getbody 1 \
+        -setheaders {content-type application/merge-patch+json} \
+        GET /ct
+} -cleanup {
+    ns_unregister_op GET /ct
+} -result {200 {raw application/merge-patch+json type application/merge-patch+json suffix json}}
+
+test ns_conn-contenttype-1.8 {contenttype: vendor +json suffix} -setup {
+    ns_register_proc GET /ct {
+        ns_return 200 text/plain [ns_conn contenttype]
+    }
+} -body {
+    nstest::http -getbody 1 \
+        -setheaders {content-type application/vnd.api+json} \
+        GET /ct
+} -cleanup {
+    ns_unregister_op GET /ct
+} -result {200 {raw application/vnd.api+json type application/vnd.api+json suffix json}}
 
 
 cleanupTests
