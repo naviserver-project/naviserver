@@ -1166,12 +1166,33 @@ ns_mkdtemp(char *charTemplate)
  *
  *----------------------------------------------------------------------
  */
-
 static void
-Abort(int signal)
+Abort(int sig)
 {
-    Tcl_Panic("received fatal signal %d", signal);
+    static volatile sig_atomic_t inAbort = 0;
+
+    if (inAbort) {
+        _exit(128 + sig);
+    }
+    inAbort = 1;
+
+#ifdef LEGACY_PANIC
+    Tcl_Panic("received fatal signal %d", sig);
+    _exit(128 + sig);
+#else
+    {
+        const char msg[] = "Fatal: received fatal signal\n";
+        (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+    }
+
+    /* Restore default action for this signal, then re-raise. */
+    (void)ns_signal(sig, SIG_DFL);
+    raise(sig);
+
+    _exit(128 + sig);
+#endif
 }
+
 
 #else
 

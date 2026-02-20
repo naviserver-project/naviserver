@@ -982,6 +982,14 @@ static void
 Panic(const char *fmt, ...)
 {
     va_list ap;
+    static volatile sig_atomic_t inPanic = 0;
+
+    if (inPanic) {
+        const char msg[] = "Fatal: recursive panic\n";
+        (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+        _exit(1);
+    }
+    inPanic = 1;
 
     va_start(ap, fmt);
     Ns_VALog(Fatal, fmt, ap);
