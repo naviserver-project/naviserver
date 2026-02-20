@@ -22,9 +22,14 @@ if {[ns_config test listenport] ne ""} {
 }
 if {$::tcl_version >= 8.6} {
     testConstraint tcl86 true
+    
+    proc _tmpfile {} { ::file tempfile }
 } else {
     package require try
     package require throw
+
+    # portability wrapper for Tcl 8.5
+    proc _tmpfile {} { ns_mktemp }
 }
 testConstraint http09 true
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
@@ -32,6 +37,9 @@ tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 
 # testConstraint binaryMismatch true
 # testConstraint broken true
+
+
+
 
 set devnull     [expr {$::tcl_platform(platform) eq "windows" ? "NUL:" : "/dev/null"}]
 set contentfile [expr {$::tcl_platform(platform) eq "windows" ? 0 : 1}]
@@ -2872,7 +2880,7 @@ test http-json-1.1 {ns_getform: spooled application/json is flattened into ns_se
     }
 } -body {
     set json [subst {{"user":{"id":7,"name":"Alice","payload":"[string repeat A 12000]","flags":{"admin":false,"active":true}}}}]
-    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    set tmp [_tmpfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
     exec curl -g -s \
         -H "Content-Type: application/json" \
         --data-binary @$tmp \
@@ -2905,7 +2913,7 @@ test http-json-1.2 {ns_getform: spooled application/*+json is flattened into ns_
     }
 } -body {
     set json [subst {{"user":{"id":7,"name":"Alice","payload":"[string repeat A 12000]","flags":{"admin":false,"active":true}}}}]
-    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    set tmp [_tmpfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
     exec curl -g -s \
         -H "Content-Type: application/vnd.api+json" \
         --data-binary @$tmp \
@@ -2939,7 +2947,7 @@ test http-json-1.3 {ns_getform: spooled application/json; charset=utf-8 parses} 
     }
 } -body {
     set json [subst {{"user":{"id":7,"name":"Alice","payload":"[string repeat A 12000]","flags":{"admin":false,"active":true}}}}]
-    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    set tmp [_tmpfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
     exec curl -g -s \
         -H "Content-Type: application/json; charset=utf-8" \
         --data-binary @$tmp \
@@ -2966,7 +2974,7 @@ test http-json-1.4 {ns_getform: spooled invalid JSON raises} -constraints {tcl86
     # Invalid JSON but large enough to spool.
     #
     set json "\"user\": \"[string repeat A 12000]\""
-    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    set tmp [_tmpfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
     exec curl -g -s \
         -H "Content-Type: application/json" \
         --data-binary @$tmp \
@@ -2995,7 +3003,7 @@ test http-json-1.5 {ns_getform: small JSON is not spooled and parses} -constrain
     }
 } -body {
     set json {{"user":{"id":7,"name":"Alice","payload":"short","flags":{"admin":false,"active":true}}}}
-    set tmp [file tempfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
+    set tmp [_tmpfile]; set fp [open $tmp w]; puts -nonewline $fp $json; close $fp
     exec curl -g -s \
         -H "Content-Type: application/json" \
         --data-binary @$tmp \
