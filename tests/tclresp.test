@@ -12,12 +12,6 @@ if {[ns_config test listenport]} {
 testConstraint http09 true
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
-if {$::tcl_version >= 8.6} {
-    proc _tmpfile {} { ::file tempfile }
-} else {
-    # portability wrapper for Tcl 8.5
-    proc _tmpfile {} { ns_mktemp }
-}
 
 #######################################################################################
 # Syntax tests
@@ -491,6 +485,12 @@ test tclresp-5.3 {ns_returnfile fastpath cache collision} -constraints serverLis
     # the problem is in fact a cache collision and not a race condition
     nsv_set fast_coll lock [ns_mutex create]
     ns_eval -sync [list proc fast_coll {} {
+        if {$::tcl_version >= 8.6} {
+            proc _tmpfile {} { ::file tempfile }
+        } else {
+            # portability wrapper for Tcl 8.5
+            proc _tmpfile {} { ns_mktemp }
+        }
         set filename [_tmpfile]
         ns_mutex lock [nsv_get fast_coll lock]
         set fd [open $filename w]
