@@ -48,7 +48,7 @@ static Ns_Mutex atomLock = NULL;
 static bool     atomInited = NS_FALSE;
 static bool     atomSealed = NS_FALSE;
 
-static NS_THREAD_LOCAL AtomTlsCache *tlsCache = NULL;
+static Ns_Tls atomTls = NULL;
 
 static void EnsureTlsCapacity(AtomTlsCache *c, NsAtomId need) NS_GNUC_NONNULL(1);
 static void EnsureCapacity(NsAtomId need);
@@ -87,7 +87,7 @@ static void
 EnsureCapacity(NsAtomId need)
 {
     if (need > capAtoms) {
-        NsAtomId newCap = (capAtoms == 0) ? 32 : capAtoms;
+        NsAtomId newCap = (capAtoms == 0) ? 16 : capAtoms;
         while (newCap < need) {
             newCap *= 2;
         }
@@ -130,10 +130,17 @@ static void
 EnsureTlsCapacity(AtomTlsCache *c, NsAtomId need)
 {
     if (need > c->cap) {
-        Tcl_Obj **newVec = (Tcl_Obj **)ns_realloc(c->objs, (size_t)need * sizeof(Tcl_Obj *));
-        memset(newVec + c->cap, 0, (size_t)(need - c->cap) * sizeof(Tcl_Obj *));
-        c->objs = newVec;
-        c->cap  = need;
+        NsAtomId oldCap = c->cap;
+        NsAtomId newCap = oldCap + 16;
+
+        if (newCap < need) {
+            newCap = need;
+        }
+
+        c->objs = (Tcl_Obj **)ns_realloc(c->objs, (size_t)newCap * sizeof(Tcl_Obj *));
+        memset(c->objs + oldCap, 0, (size_t)(newCap - oldCap) * sizeof(Tcl_Obj *));
+
+        c->cap = newCap;
     }
 }
 
@@ -166,10 +173,11 @@ AtomTlsCleanup(ClientData clientData)
 {
     AtomTlsCache *c = (AtomTlsCache *)clientData;
 
-    Ns_Log(Notice, "AtomTlsCleanup");
+    /*fprintf(stderr, "====== AtomTlsCleanup %p ============================\n", clientData);*/
     if (c != NULL) {
         for (NsAtomId i = 0; i < c->cap; i++) {
             if (c->objs[i] != NULL) {
+                /*fprintf(stderr, "====== AtomTlsCleanup %p atom <%s>\n", clientData, Tcl_GetString(c->objs[i]));*/
                 Tcl_DecrRefCount(c->objs[i]);
                 c->objs[i] = NULL;
             }
@@ -180,6 +188,43 @@ AtomTlsCleanup(ClientData clientData)
         ns_free(c);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtomsTlsInit --
+ *
+ *      Initialize the NaviServer thread-local storage slot used for
+ *      per-thread atom caches. This function allocates a TLS slot via
+ *      Ns_TlsAlloc() and associates AtomTlsCleanup() as the cleanup
+ *      procedure for values stored in this slot.
+ *
+ *      The function is intended to be invoked exactly once through
+ *      NS_INIT_ONCE() (typically from EnsureAtomTlsSlot()). It must
+ *      not perform any additional side effects beyond allocating and
+ *      initializing the TLS slot descriptor.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Allocates a NaviServer TLS slot and registers AtomTlsCleanup()
+ *      as its cleanup procedure. For each thread that stores a value
+ *      in this slot via Ns_TlsSet(), AtomTlsCleanup() will be invoked
+ *      from NsCleanupTls() during controlled thread teardown.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+AtomsTlsInit(void)
+{
+    /*
+     * Called once via GetTlsCache().
+     * Keep this function free of side effects beyond slot allocation.
+     */
+    Ns_TlsAlloc(&atomTls, AtomTlsCleanup);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -208,19 +253,18 @@ AtomTlsCleanup(ClientData clientData)
 static AtomTlsCache *
 GetTlsCache(void)
 {
-    AtomTlsCache *c = tlsCache;
+    AtomTlsCache *c;
 
+    /*
+     * NS_INIT_ONCE() uses a function-local static control variable.
+     * Therefore, call it from exactly ONE function.
+     */
+    NS_INIT_ONCE(AtomsTlsInit);
+
+    c = (AtomTlsCache *)Ns_TlsGet(&atomTls);
     if (c == NULL) {
         c = (AtomTlsCache *)ns_calloc(1u, sizeof(*c));
-        tlsCache = c;
-
-        /*
-         * Arrange for cleanup on thread finalization.
-         * This avoids depending on platform TLS destructors.
-         */
-        //Ns_Log(Notice, "register make installAtomTlsCleanup");
-
-        Tcl_CreateThreadExitHandler(AtomTlsCleanup, (ClientData)c);
+        Ns_TlsSet(&atomTls, c);
     }
     return c;
 }
@@ -587,9 +631,6 @@ NsAtomObj(NsAtomId id)
 {
     AtomTlsCache *c;
 
-    /*if ((unsigned)id >= (unsigned)nAtoms) {
-        return NULL;
-        }*/
     assert((unsigned)id < (unsigned)nAtoms);
 
     c = GetTlsCache();
