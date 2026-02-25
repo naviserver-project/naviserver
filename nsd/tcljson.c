@@ -263,8 +263,8 @@ static JsonKey      *JsonKeyAlloc(JsonParser *jp, const char *bytes, TCL_SIZE_T 
 static Tcl_Obj      *JsonInternKeyObj(JsonParser *jp, const char *bytes, TCL_SIZE_T len) NS_GNUC_NONNULL(1,2);
 
 static JsonValueType JsonTypeObjToVt(Tcl_Obj *typeObj) NS_GNUC_NONNULL(1);
-static JsonValueType JsonInferValueType(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(1,2);
-static bool          JsonTriplesIsPlausible(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(1,2);
+static JsonValueType JsonValueTypeDetect(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(1,2);
+static JsonValueType TriplesDetectRootWrapper(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj **rootTypeObjPtr, Tcl_Obj **rootValuePtr)  NS_GNUC_NONNULL(1,2,4);
 static Ns_ReturnCode JsonTriplesRequireValidContainerObj(Tcl_Interp *interp, Tcl_Obj *containerObj,
                                                          bool allowEmpty, bool validateNumbers,
                                                          const char *what) NS_GNUC_NONNULL(1,2,5);
@@ -277,7 +277,6 @@ static Ns_ReturnCode TriplesFind(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Ob
 
 static bool          JsonIsNullObj(Tcl_Obj *valueObj) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode JsonRequireValidNumberObj(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(2);
-static void          JsonTriplesDetectContainerType(Tcl_Interp *interp, Tcl_Obj *valueObj, JsonValueType *vtPtr) NS_GNUC_NONNULL(1,2,3);
 static Tcl_Obj      *JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len) NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode JsonParseLiteral(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueTypePtr) NS_GNUC_NONNULL(1,2,3);
@@ -3294,20 +3293,16 @@ Ns_JsonParse(const unsigned char *buf, size_t len,
 
         /*
          * Output shaping for triples:
-         *   - Top-level object/array: return element triples directly
-         *   - Top-level scalar: return "" TYPE VALUE
+         *   - Always return a root wrapper: "" TYPE VALUE
+         *   - For object/array, VALUE is the element-triples list for that container
+         *   - For scalars, VALUE is the scalar Tcl_Obj
          */
         if (opt->output == NS_JSON_OUTPUT_TRIPLES) {
-            if (vt == JSON_VT_OBJECT || vt == JSON_VT_ARRAY) {
-                /* valueObj already is the triples list for that container */
-                *resultObjPtr = valueObj;
-            } else {
-                Tcl_Obj *lv[3];
-                lv[0] = JsonAtomObjs[JSON_ATOM_EMPTY];
-                lv[1] = JsonAtomObjs[vt];
-                lv[2] = valueObj;
-                *resultObjPtr = Tcl_NewListObj(3, lv);
-            }
+            Tcl_Obj *lv[3];
+            lv[0] = JsonAtomObjs[JSON_ATOM_EMPTY];
+            lv[1] = JsonAtomObjs[vt];
+            lv[2] = valueObj;
+            *resultObjPtr = Tcl_NewListObj(3, lv);
         } else {
             *resultObjPtr = valueObj;
         }
@@ -3741,37 +3736,67 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
 }
 
 /*
- *-----------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  *
- * JsonTriplesIsPlausible --
+ * TriplesDetectRootWrapper --
  *
- *      Check whether a Tcl object looks like a triples list, i.e. a Tcl list
- *      whose length is a multiple of three. This predicate is used as a cheap
- *      guard to avoid treating malformed lists as triples containers.
+ *      Return the value type based on the a root element. For wrapper it is
+ *      of the form: {"" TYPE VALUE}
  *
- *      The check is intentionally conservative: it validates only list-ness
- *      and the length multiple-of-3 constraint. It does not validate per-triplet
- *      types or nested container structure.
+ *      When present, return the root type (object/array/string/number/boolean/null)
+ *      and optionally the wrapped root value.
+ *
+ *      This function is intentionally strict: it recognizes only the wrapper
+ *      with an empty key (JSON_ATOM_EMPTY) and a valid JSON type token.
  *
  * Results:
- *      NS_TRUE when valueObj is a list and its length is a multiple of 3,
- *      NS_FALSE otherwise.
+ *      Detected JsonValueType (never JSON_VT_AUTO). On no wrapper, returns
+ *      JSON_VT_AUTO.
  *
  * Side effects:
  *      None.
  *
- *-----------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
-static bool
-JsonTriplesIsPlausible(Tcl_Interp *interp, Tcl_Obj *valueObj)
+static JsonValueType
+TriplesDetectRootWrapper(Tcl_Interp *interp, Tcl_Obj *triplesObj,Tcl_Obj **rootTypeObjPtr, Tcl_Obj **rootValuePtr)
 {
-    Tcl_Obj   **lv;
-    TCL_SIZE_T  lc;
+    Tcl_Obj     **lv;
+    TCL_SIZE_T    lc, klen;
+    JsonValueType vt;
 
-    if (Tcl_ListObjGetElements(interp, valueObj, &lc, &lv) != TCL_OK) {
-        return NS_FALSE;
+    *rootValuePtr = NULL;
+    if (rootTypeObjPtr != NULL) {
+        *rootTypeObjPtr = NULL;
     }
-    return (lc != 0 && (lc % 3) == 0);
+
+    if (Tcl_ListObjGetElements(interp, triplesObj, &lc, &lv) != TCL_OK) {
+        return JSON_VT_AUTO;
+    }
+
+    if (lc != 3) {
+        return JSON_VT_AUTO;
+    }
+
+    /*
+     * Root wrapper key is the empty string.
+     */
+    (void) Tcl_GetStringFromObj(lv[0], &klen);
+    if (klen != 0) {
+        return JSON_VT_AUTO;
+    }
+
+    vt = JsonTypeObjToVt(lv[1]);
+    if (vt == JSON_VT_AUTO) {
+        return JSON_VT_AUTO;
+    }
+
+    *rootValuePtr = lv[2];
+    if (rootTypeObjPtr != NULL) {
+        *rootTypeObjPtr = lv[1];
+    }
+
+    return vt;
 }
 
 
@@ -3822,62 +3847,9 @@ JsonTypeObjToVt(Tcl_Obj *typeObj)
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * JsonTriplesDetectContainerType --
- *
- *      Determine whether a triples list represents an object container or
- *      an array container based on its keys.
- *
- *      The function inspects the "key-or-index" positions of the triples
- *      list.  If the entries appear to be numeric indices, the container
- *      is classified as an array; otherwise it is classified as an object.
- *      This is used only when a container type is needed but not explicitly
- *      provided by surrounding context.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      On return, *vtPtr is set to JSON_VT_OBJECT or JSON_VT_ARRAY.
- *      If the container type cannot be determined reliably, *vtPtr is set
- *      to JSON_VT_AUTO.
- *
- *----------------------------------------------------------------------
- */
-static void
-JsonTriplesDetectContainerType(Tcl_Interp *interp, Tcl_Obj *valueObj, JsonValueType *vtPtr)
-{
-    Tcl_Obj   **lv;
-    TCL_SIZE_T  lc;
-
-    *vtPtr = JSON_VT_AUTO;
-
-    if (Tcl_ListObjGetElements(interp, valueObj, &lc, &lv) != TCL_OK) {
-        return;
-    }
-    if (lc == 0 || (lc % 3) != 0) {
-        return;
-    }
-
-    /*
-     * Triples look like: {key|index type value} ...
-     * Recognize only explicit container markers ("object" / "array") in the
-     * first triple's type token.
-     */
-    {
-        JsonValueType vt = JsonTypeObjToVt(lv[1]);
-
-        if (vt == JSON_VT_OBJECT || vt == JSON_VT_ARRAY) {
-            *vtPtr = JSON_VT_OBJECT;
-        }
-    }
-}
-
-/*
  *-----------------------------------------------------------------------
  *
- * JsonInferValueType --
+ * JsonValueTypeDetect --
  *
  *      Determine the JSON value type for valueObj in the same conservative
  *      manner as ns_json value -type auto.
@@ -3906,19 +3878,15 @@ JsonTriplesDetectContainerType(Tcl_Interp *interp, Tcl_Obj *valueObj, JsonValueT
  *-----------------------------------------------------------------------
  */
 static JsonValueType
-JsonInferValueType(Tcl_Interp *interp, Tcl_Obj *valueObj)
+JsonValueTypeDetect(Tcl_Interp *interp, Tcl_Obj *valueObj)
 {
-    JsonValueType tvt = JSON_VT_AUTO;
+    Tcl_Obj      *rootValue = NULL;
+    JsonValueType tvt;
 
-    JsonTriplesDetectContainerType(interp, valueObj, &tvt);
+    tvt = TriplesDetectRootWrapper(interp, valueObj, NULL, &rootValue);
     if (tvt != JSON_VT_AUTO) {
-        if (JsonTriplesIsPlausible(interp, valueObj)) {
-            return tvt;
-        }
-        /*
-         * Ignore malformed/ambiguous container-looking inputs in AUTO.
-         * The final fallback remains VT_STRING via scalar classification.
-         */
+        /* Root wrapper present: its TYPE wins. */
+        return tvt;
     }
 
     /*
@@ -4219,7 +4187,25 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Tcl_DStringInit(&errDs);
 
         if (vt == JSON_VT_AUTO) {
-            vt = JsonInferValueType(interp, valueObj);
+            vt = JsonValueTypeDetect(interp, valueObj);
+        }
+
+        /*
+         * If the input is a canonical root-wrapped triples document ("" TYPE VALUE),
+         * unwrap it for encoding.  For AUTO, the wrapper TYPE wins.
+         */
+        {
+            Tcl_Obj      *wTypeObj = NULL;
+            Tcl_Obj      *wValueObj = NULL;
+            JsonValueType wVt;
+
+            wVt = TriplesDetectRootWrapper(interp, valueObj, &wTypeObj, &wValueObj);
+            if (wVt != JSON_VT_AUTO) {
+                if (vt == JSON_VT_AUTO) {
+                    vt = wVt;
+                }
+                valueObj = wValueObj;
+            }
         }
 
         switch (vt) {
@@ -4230,7 +4216,8 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         case JSON_VT_NUMBER:
             /*
-             * all numeric-ish: emit as bytes (caller responsibility for number lexeme validity in -type number)
+             * All numeric-ish: emit print string (caller responsibility for
+             * number lexeme validity in -type number)
              */
             s = Tcl_GetStringFromObj(valueObj, &len);
 
@@ -4260,18 +4247,56 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         case JSON_VT_OBJECT:
         case JSON_VT_ARRAY:
-            /*
-             * Treat valueObj as triples list and serialize accordingly.
-             * Call the same serializer you’ll implement for "ns_json triples".
-             */
+            {
+                Tcl_Obj      *rootValue = NULL;
+                JsonValueType rootVt;
 
-            if (JsonTriplesRequireValidContainerObj(interp, valueObj, NS_TRUE, NS_TRUE, "value") != NS_OK
-                || JsonEmitContainerFromTriples(interp, valueObj, (vt == JSON_VT_OBJECT),
-                                                validateNumbers, 0, pretty, &ds) != TCL_OK) {
-                Tcl_DStringFree(&ds);
-                return TCL_ERROR;
+                rootVt = TriplesDetectRootWrapper(interp, valueObj, NULL, &rootValue);
+
+                if (vt != JSON_VT_AUTO) {
+                    /*
+                     * Explicit container type: accept either wrapped root or legacy
+                     * container triples.
+                     */
+                    if (rootVt == vt) {
+                        /* Wrapped root: serialize wrapped VALUE. */
+                        valueObj = rootValue;
+
+                    } else if (rootVt == JSON_VT_AUTO) {
+                        /* No wrapper: treat valueObj itself as legacy container VALUE. */
+                        /* nothing to do */
+
+                    } else {
+                        /* Wrapper present but mismatched type. */
+                        Ns_TclPrintfResult(interp,
+                                           "ns_json value: -type %s requires root-wrapped triples (\"\" %s VALUE)",
+                                           (vt == JSON_VT_OBJECT ? "object" : "array"),
+                                           (vt == JSON_VT_OBJECT ? "object" : "array"));
+                        Tcl_DStringFree(&ds);
+                        return TCL_ERROR;
+                    }
+
+                } else {
+                    /*
+                     * AUTO: accept wrapped container roots; otherwise fall back to
+                     * legacy container detection (already in JsonValueTypeDetect()).
+                     * Here, vt is already OBJECT/ARRAY from inference.
+                     */
+                    if (rootVt == JSON_VT_OBJECT || rootVt == JSON_VT_ARRAY) {
+                        vt = rootVt;
+                        valueObj = rootValue;
+                    }
+                }
+
+                if (JsonTriplesRequireValidContainerObj(interp, valueObj, NS_TRUE, NS_TRUE, "value") != NS_OK
+                    || JsonEmitContainerFromTriples(interp, valueObj, (vt == JSON_VT_OBJECT),
+                                                    validateNumbers, 0, pretty, &ds) != TCL_OK) {
+                    Tcl_DStringFree(&ds);
+                    return TCL_ERROR;
+                }
+
+                break;
             }
-            break;
 
         case JSON_VT_AUTO:
             break;
@@ -4317,14 +4342,6 @@ TripleKeyMatches(Tcl_Obj *keyObj, Tcl_Obj *segObj)
 
     if (slen == 1 && s[0] == '*') return NS_TRUE;
     return (klen == slen && memcmp(k, s, (size_t)klen) == 0);
-#if 0
-    {bool matches;
-
-        matches = Tcl_StringMatch(k, s);
-        Ns_Log(Notice, "compare k <%s> with seg <%s> -> matches %d", k, s, matches);
-        return matches;
-    }
-#endif
 }
 
 /*
@@ -4378,8 +4395,7 @@ TriplesFind(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj *segObj, TCL_SIZE_T
     return NS_ERROR;
 }
 
-/*
- *----------------------------------------------------------------------
+/*----------------------------------------------------------------------
  *
  * JsonPointerToPathObj --
  *
@@ -4390,36 +4406,65 @@ TriplesFind(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj *segObj, TCL_SIZE_T
  *      unescaped to "/" and "~" respectively.  The result is a Tcl list
  *      where each element is a decoded path segment used by TriplesFind().
  *
+ *      In addition to plain JSON Pointer strings ("" or "/..."), this
+ *      function accepts the fragment form used in specifications and
+ *      Problem Details error messages:
+ *
+ *          "#"        => whole document (map to empty path list)
+ *          "#/a/b"    => same as "/a/b"
+ *
+ *      The leading '#' is treated only as the fragment marker.  URI
+ *      percent-decoding of fragments is intentionally not performed.
+ *
  * Results:
  *      Tcl path list object on success, NULL on error.
  *
  * Side effects:
  *      On error, leaves an explanatory message in the interpreter result.
  *
- *----------------------------------------------------------------------
- */
+ *----------------------------------------------------------------------*/
 static Tcl_Obj *
 JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len)
 {
     Tcl_DString listDs, segDs;
-    TCL_SIZE_T i, start;
-    Tcl_Obj *pathObj = NULL;
+    TCL_SIZE_T  i, start;
+    Tcl_Obj     *pathObj = NULL;
+    const char  *origP = p;
 
     if (len < 0) {
         len = (TCL_SIZE_T)strlen(p);
     }
 
-    /*
+   /*
      * RFC 6901 JSON Pointer:
-     * "" => whole document (map to empty path list)
-     * "/a/b" => segments a, b
+     * ""      => whole document (empty path list)
+     * "/a/b"  => segments a, b
+     *
+     * Also accept fragment form:
+     * "#"     => whole document
+     * "#/a/b" => same as "/a/b"
      */
     if (len == 0) {
         return Tcl_NewListObj(0, NULL);
     }
+
+    if (p[0] == '#') {
+        if (len == 1) {
+            return Tcl_NewListObj(0, NULL);
+        }
+        if (p[1] == '/') {
+            p++;
+            len--;
+        } else {
+            Ns_TclPrintfResult(interp,
+                               "ns_json triples: invalid JSON pointer fragment (expected \"#\" or \"#/...\"): %s",
+                               origP);
+            return NULL;
+        }
+    }
     if (p[0] != '/') {
         Ns_TclPrintfResult(interp,
-                           "ns_json triples: invalid JSON pointer (must start with '/'): %s", p);
+                           "ns_json triples: invalid JSON pointer (must start with '/'): %s", origP);
         return NULL;
     }
 
@@ -4439,7 +4484,7 @@ JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len)
                  * RFC 6901 allows only ~0 and ~1 escapes.
                  */
                 Ns_TclPrintfResult(interp,
-                                   "ns_json triples: invalid JSON pointer escape in: %s", p);
+                                   "ns_json triples: invalid JSON pointer escape in: %s", origP);
                 goto fail;
             }
 
@@ -4458,7 +4503,7 @@ JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len)
 }
 
 /*
- *----------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  *
  * TriplesLookupPath --
  *
@@ -4472,9 +4517,15 @@ JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len)
  *      only when the stored type is object or array; attempting to descend
  *      into a scalar results in an error.
  *
- *      When requested, valueIndexPathPtr and typeIndexPathPtr are set to Tcl
- *      index paths that address, respectively, the leaf value slot (base+2)
- *      and the leaf type slot (base+1) within the original triples list.
+ *      An empty path list addresses the root value (i.e., the whole triples
+ *      document).  In this case, the returned value is triplesObj itself and
+ *      the returned index paths are empty Tcl lists.  An empty index path is
+ *      suitable for replacing the whole document via lset (e.g., "lset t {} v").
+ *
+ *      When requested for non-empty paths, valueIndexPathPtr and typeIndexPathPtr
+ *      are set to Tcl index paths that address, respectively, the leaf value
+ *      slot (base+2) and the leaf type slot (base+1) within the original
+ *      triples list.
  *
  * Results:
  *      NS_OK on success, NS_ERROR if the path cannot be resolved or the
@@ -4498,22 +4549,78 @@ TriplesLookupPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
     Tcl_Obj   *vIndexPath = NULL;
     Tcl_Obj   *tIndexPath = NULL;
 
-    if (valuePtr != NULL)         { *valuePtr = NULL; }
-    if (typePtr != NULL)          { *typePtr = NULL; }
-    if (vtPtr != NULL)            { *vtPtr = JSON_VT_AUTO; }
-    if (valueIndexPathPtr != NULL){ *valueIndexPathPtr = NULL; }
-    if (typeIndexPathPtr != NULL) { *typeIndexPathPtr = NULL; }
+    /* root wrapper detection */
+    Tcl_Obj      *rootValue = NULL;
+    Tcl_Obj      *rootType  = NULL;
+    JsonValueType rootVt    = JSON_VT_AUTO;
+    bool          isWrapped = NS_FALSE;
+
+    if (valuePtr != NULL)          { *valuePtr = NULL; }
+    if (typePtr != NULL)           { *typePtr = NULL; }
+    if (vtPtr != NULL)             { *vtPtr = JSON_VT_AUTO; }
+    if (valueIndexPathPtr != NULL) { *valueIndexPathPtr = NULL; }
+    if (typeIndexPathPtr != NULL)  { *typeIndexPathPtr = NULL; }
 
     if (Tcl_ListObjGetElements(interp, pathObj, &pc, &pv) != TCL_OK) {
         return NS_ERROR;
     }
+
+    /*
+     * Detect canonical root wrapper: "" TYPE VALUE
+     */
+    rootVt    = TriplesDetectRootWrapper(interp, triplesObj, &rootType, &rootValue);
+    isWrapped = (rootVt != JSON_VT_AUTO);
+
+    /*
+     * Empty path addresses the root value (whole document).
+     *
+     * Note: callers that want to preserve the wrapper (e.g. getvalue -output triples)
+     * should special-case pc==0 in the command and return triplesObj.
+     */
     if (pc == 0) {
-        Ns_TclPrintfResult(interp, "ns_json triples: empty path");
-        return NS_ERROR;
+        if (isWrapped) {
+            if (valuePtr != NULL) { *valuePtr = rootValue; }
+            if (typePtr != NULL)  { *typePtr  = rootType; }
+            if (vtPtr != NULL)    { *vtPtr    = rootVt; }
+        } else {
+            Ns_TclPrintfResult(interp, "ns_json triples: empty path requires root wrapper {\"\" TYPE VALUE}");
+            goto err;
+        }
+
+        if (valueIndexPathPtr != NULL) {
+            *valueIndexPathPtr = Tcl_NewListObj(0, NULL);
+        }
+        if (typeIndexPathPtr != NULL) {
+            *typeIndexPathPtr = Tcl_NewListObj(0, NULL);
+        }
+
+        return NS_OK;
     }
 
+    /*
+     * Non-empty path: when wrapped, apply path to the wrapped VALUE.
+     */
+    if (isWrapped) {
+        if (rootVt != JSON_VT_OBJECT && rootVt != JSON_VT_ARRAY) {
+            Ns_TclPrintfResult(interp,
+                               "ns_json triples: cannot descend into %s",
+                               Tcl_GetString(rootType));
+            return NS_ERROR;
+        }
+        curTriples = rootValue;
+    }
+
+    /*
+     * Build index paths. When wrapped, prefix "2" so the returned index path
+     * applies to the original wrapped triples object.
+     */
     vIndexPath = Tcl_NewListObj(0, NULL);
     tIndexPath = Tcl_NewListObj(0, NULL);
+
+    if (isWrapped) {
+        (void)Tcl_ListObjAppendElement(interp, vIndexPath, Tcl_NewIntObj(2));
+        (void)Tcl_ListObjAppendElement(interp, tIndexPath, Tcl_NewIntObj(2));
+    }
 
     for (TCL_SIZE_T pi = 0; pi < pc; pi++) {
         TCL_SIZE_T    base, lc;
@@ -4529,10 +4636,9 @@ TriplesLookupPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
         }
 
         if (pi == pc - 1) {
-
             if (valuePtr != NULL) { *valuePtr = lv[base + 2]; }
             if (typePtr != NULL)  { *typePtr  = lv[base + 1]; }
-            if (vtPtr != NULL) { *vtPtr = JsonTypeObjToVt(lv[base + 1]); }
+            if (vtPtr != NULL)    { *vtPtr    = JsonTypeObjToVt(lv[base + 1]); }
 
             (void)Tcl_ListObjAppendElement(interp, vIndexPath, Tcl_NewIntObj((int)(base + 2)));
             (void)Tcl_ListObjAppendElement(interp, tIndexPath, Tcl_NewIntObj((int)(base + 1)));
@@ -4542,8 +4648,8 @@ TriplesLookupPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
             } else {
                 Tcl_DecrRefCount(vIndexPath);
             }
-            if (typeIndexPathPtr != NULL)  {
-                *typeIndexPathPtr  = tIndexPath;
+            if (typeIndexPathPtr != NULL) {
+                *typeIndexPathPtr = tIndexPath;
             } else {
                 Tcl_DecrRefCount(tIndexPath);
             }
@@ -4552,7 +4658,6 @@ TriplesLookupPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
         }
 
         vt = JsonTypeObjToVt(lv[base + 1]);
-
         if (vt != JSON_VT_OBJECT && vt != JSON_VT_ARRAY) {
             Ns_TclPrintfResult(interp,
                                "ns_json triples: cannot descend into %s at path element %s",
@@ -4560,56 +4665,52 @@ TriplesLookupPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
                                Tcl_GetString(pv[pi]));
             goto err;
         }
-        /*
-         * Descend into nested triples (value element).
-         */
+
         (void)Tcl_ListObjAppendElement(interp, vIndexPath, Tcl_NewIntObj((int)(base + 2)));
         (void)Tcl_ListObjAppendElement(interp, tIndexPath, Tcl_NewIntObj((int)(base + 2)));
 
         curTriples = lv[base + 2];
     }
 
- err:
+err:
     if (vIndexPath != NULL) Tcl_DecrRefCount(vIndexPath);
     if (tIndexPath != NULL) Tcl_DecrRefCount(tIndexPath);
     return NS_ERROR;
 }
 
-/*
- *----------------------------------------------------------------------
+/*----------------------------------------------------------------------
  *
  * TriplesSetValue --
  *
- *      Update the value at the specified path within a triples structure and
- *      return a modified triples list.
+ *      Replace the value at the specified path; the replacement may be scalar
+ *      or a nested triples subtree.
  *
- *      The pathObj is a Tcl list of path segments.  The function resolves the
- *      path to the leaf element, applies type handling according to vt, and
- *      constructs an updated triples list in *resultTriplesPtr.
+ *      Supports both legacy container triples (key type value ...) and the
+ *      canonical root-wrapped form:
  *
- *      For scalar types, the newValueObj is stored as the leaf value after
- *      required validation/normalization has been performed by the caller or
- *      at commit time.  For container types (object/array), newValueObj must
- *      be a triples list representing the container content; the container
- *      content is validated (structure and, when enabled, nested number
- *      lexemes) before committing the update.
+ *          "" TYPE VALUE
+ *
+ *      For wrapped inputs, the path is applied to VALUE.  The returned triples
+ *      preserve the wrapper.
  *
  * Results:
- *      NS_OK on success and *resultTriplesPtr is set to the updated triples
- *      list, NS_ERROR otherwise.
+ *      NS_OK on success, NS_ERROR on failure.
  *
  * Side effects:
- *      On success, creates a new Tcl object for the updated triples list.
  *      On error, leaves an explanatory message in the interpreter result.
  *
- *----------------------------------------------------------------------
- */
+ *----------------------------------------------------------------------*/
 static Ns_ReturnCode
-TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj, Tcl_Obj *newValueObj, JsonValueType vt,
+TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
+                Tcl_Obj *newValueObj, JsonValueType vt,
                 Tcl_Obj **resultTriplesPtr)
 {
     Tcl_Obj   **pv;
     TCL_SIZE_T  pc;
+
+    Tcl_Obj      *out;
+    Tcl_Obj      *cur;
+    JsonValueType rootVt = JSON_VT_AUTO;
 
     if (Tcl_ListObjGetElements(interp, pathObj, &pc, &pv) != TCL_OK) {
         return NS_ERROR;
@@ -4620,93 +4721,165 @@ TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj, Tcl_O
     }
 
     /*
-     * Recursive, duplicating rewrite.
+     * Duplicate whole document (copy-on-write).
+     */
+    out = Tcl_DuplicateObj(triplesObj);
+    cur = out;
+
+    /*
+     * Detect and unwrap root wrapper in the duplicated object.
+     *
+     * Wrapper form: "" TYPE VALUE
      */
     {
-        Tcl_Obj *out = Tcl_DuplicateObj(triplesObj);
-        Tcl_Obj *cur = out;
+        Tcl_Obj   **lv;
+        TCL_SIZE_T  lc;
 
-        for (TCL_SIZE_T pi = 0; pi < pc; pi++) {
-            Tcl_Obj   **lv;
-            TCL_SIZE_T  lc;
-            TCL_SIZE_T  base;
+        if (Tcl_ListObjGetElements(interp, out, &lc, &lv) == TCL_OK && lc == 3) {
+            TCL_SIZE_T  klen;
 
-            if (Tcl_ListObjGetElements(interp, cur, &lc, &lv) != TCL_OK) {
-                return NS_ERROR;
-            }
-            if (lc == 0 || (lc % 3) != 0) {
-                Ns_TclPrintfResult(interp,
-                    "ns_json triples setvalue: input must be a list of {key|index type value} elements");
-                return NS_ERROR;
-            }
+            (void)Tcl_GetStringFromObj(lv[0], &klen);
+            if (klen == 0) {
+                JsonValueType tvt = JsonTypeObjToVt(lv[1]);
 
-            base = -1;
-            for (TCL_SIZE_T i = 0; i < lc; i += 3) {
-                if (TripleKeyMatches(lv[i], pv[pi])) {
-                    base = i;
-                    break;
+                if (tvt != JSON_VT_AUTO) {
+                    /*
+                     * The triples are wrapped.
+                     */
+                    Tcl_Obj *nestedDup;
+
+                    rootVt = tvt;
+                    /*
+                     * For non-empty paths, we can only descend into container roots.
+                     */
+                    if (rootVt != JSON_VT_OBJECT && rootVt != JSON_VT_ARRAY) {
+                        Ns_TclPrintfResult(interp,
+                                           "ns_json triples setvalue: cannot descend into %s",
+                                           Tcl_GetString(lv[1]));
+                        return NS_ERROR;
+                    }
+
+                    /*
+                     * Duplicate wrapped VALUE and replace it in-place, then traverse VALUE.
+                     */
+                    nestedDup = Tcl_DuplicateObj(lv[2]);
+                    (void)Tcl_ListObjReplace(interp, out, 2, 1, 1, &nestedDup);
+                    cur = nestedDup;
                 }
             }
-            if (base < 0) {
-                Ns_TclPrintfResult(interp, "ns_json triples setvalue: no such element: %s",
-                                   Tcl_GetString(pv[pi]));
-                return NS_ERROR;
+        }
+    }
+
+    /*
+     * Recursive, duplicating rewrite starting at cur.
+     */
+    for (TCL_SIZE_T pi = 0; pi < pc; pi++) {
+        Tcl_Obj   **lv;
+        TCL_SIZE_T  lc;
+        TCL_SIZE_T  base;
+
+        if (Tcl_ListObjGetElements(interp, cur, &lc, &lv) != TCL_OK) {
+            return NS_ERROR;
+        }
+        if (lc == 0 || (lc % 3) != 0) {
+            Ns_TclPrintfResult(interp,
+                               "ns_json triples setvalue: input must be a list of {key|index type value} elements");
+            return NS_ERROR;
+        }
+
+        base = -1;
+        for (TCL_SIZE_T i = 0; i < lc; i += 3) {
+            if (TripleKeyMatches(lv[i], pv[pi])) {
+                base = i;
+                break;
             }
+        }
+        if (base < 0) {
+            Ns_TclPrintfResult(interp, "ns_json triples setvalue: no such element: %s",
+                               Tcl_GetString(pv[pi]));
+            return NS_ERROR;
+        }
 
-            if (pi == pc - 1) {
+        if (pi == pc - 1) {
 
-                if (vt == JSON_VT_AUTO) {
-                    Tcl_Obj       *normObj, *oldTypeObj = lv[base+1];
-                    JsonValueType  oldVt = JsonTypeObjToVt(oldTypeObj);
+            /*
+             * If caller provides a root-wrapped triples document as the replacement,
+             * unwrap it here to avoid embedding the wrapper as a subtree (which would
+             * later serialize as an object with key \"\"). The wrapper TYPE also gives
+             * a reliable type for AUTO (and must match explicit -type when provided).
+             */
+            {
+                Tcl_Obj      *wTypeObj = NULL;
+                Tcl_Obj      *wValueObj = NULL;
+                JsonValueType wVt;
 
-                    if (JsonIsNullObj(newValueObj)) {
-                        vt = JSON_VT_NULL;
-
-                    } else if (oldVt != JSON_VT_AUTO) {
-                        if (JsonValidateValue(interp, oldVt, newValueObj, &normObj, "triples setvalue") == NS_OK) {
-                            vt = oldVt;
-                            newValueObj = normObj;
-                        } else {
-                            if (oldVt == JSON_VT_NUMBER) {
-                                return TCL_ERROR;  /* keep the “invalid number” message */
-                            }
-                            Tcl_ResetResult(interp); /* since we used NULL interp above */
-                        }
-                    }
+                wVt = TriplesDetectRootWrapper(interp, newValueObj, &wTypeObj, &wValueObj);
+                if (wVt != JSON_VT_AUTO) {
                     if (vt == JSON_VT_AUTO) {
-                        vt = JsonInferValueType(interp, newValueObj);
-                        JsonValidateValue(interp, vt, newValueObj, &newValueObj, "triples setvalue");
+                        vt = wVt;
+                    } else if (vt != wVt) {
+                        Ns_TclPrintfResult(interp,
+                                           "ns_json triples setvalue: replacement wrapper type %s does not match -type %s",
+                                           Tcl_GetString(wTypeObj),
+                                           Tcl_GetString(JsonAtomObjs[vt]));
+                        return NS_ERROR;
                     }
-                } else {
-                    if (vt == JSON_VT_NULL) {
-                        newValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
+                    newValueObj = wValueObj;
+                }
+            }
+
+            if (vt == JSON_VT_AUTO) {
+                Tcl_Obj       *normObj, *oldTypeObj = lv[base+1];
+                JsonValueType  oldVt = JsonTypeObjToVt(oldTypeObj);
+
+                if (JsonIsNullObj(newValueObj)) {
+                    vt = JSON_VT_NULL;
+
+                } else if (oldVt != JSON_VT_AUTO) {
+                    if (JsonValidateValue(interp, oldVt, newValueObj, &normObj, "triples setvalue") == NS_OK) {
+                        vt = oldVt;
+                        newValueObj = normObj;
+                    } else {
+                        if (oldVt == JSON_VT_NUMBER) {
+                            return TCL_ERROR;  /* keep the “invalid number” message */
+                        }
+                        Tcl_ResetResult(interp); /* ignore normalization error; fall back below */
                     }
                 }
-
-                /*
-                 * Replace the VALUE slot (base+2). Keep KEY and TYPE unchanged.
-                 */
-                (void)Tcl_ListObjReplace(interp, cur, base + 1, 1, 1, &JsonAtomObjs[vt]);
-                (void)Tcl_ListObjReplace(interp, cur, base + 2, 1, 1, &newValueObj);
-                *resultTriplesPtr = out;
-                return NS_OK;
+                if (vt == JSON_VT_AUTO) {
+                    vt = JsonValueTypeDetect(interp, newValueObj);
+                    (void)JsonValidateValue(interp, vt, newValueObj, &newValueObj, "triples setvalue");
+                }
+            } else {
+                if (vt == JSON_VT_NULL) {
+                    newValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
+                }
             }
 
             /*
-             * Descend: duplicate nested list at VALUE slot and replace it in-place,
-             * then continue with that nested list.
+             * Replace TYPE and VALUE slots.
              */
-            {
-                Tcl_Obj *nested = lv[base + 2];
-                Tcl_Obj *nestedDup = Tcl_DuplicateObj(nested);
+            (void)Tcl_ListObjReplace(interp, cur, base + 1, 1, 1, &JsonAtomObjs[vt]);
+            (void)Tcl_ListObjReplace(interp, cur, base + 2, 1, 1, &newValueObj);
 
-                (void)Tcl_ListObjReplace(interp, cur, base + 2, 1, 1, &nestedDup);
-                cur = nestedDup;
-            }
+            *resultTriplesPtr = out;
+            return NS_OK;
         }
 
-        return NS_ERROR;
+        /*
+         * Descend: duplicate nested list at VALUE slot and replace it in-place,
+         * then continue with that nested list.
+         */
+        {
+            Tcl_Obj *nested = lv[base + 2];
+            Tcl_Obj *nestedDup = Tcl_DuplicateObj(nested);
+
+            (void)Tcl_ListObjReplace(interp, cur, base + 2, 1, 1, &nestedDup);
+            cur = nestedDup;
+        }
     }
+
+    return NS_ERROR;
 }
 
 /*
