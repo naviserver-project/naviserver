@@ -48,8 +48,14 @@
 #endif
 #endif
 
+#define JSON_NULL_SENTINEL_LONG 0
+#if JSON_NULL_SENTINEL_LONG
 #define NS_JSON_NULL_SENTINEL "__NS_JSON_NULL__"
 #define NS_JSON_NULL_SENTINEL_LEN (sizeof(NS_JSON_NULL_SENTINEL) - 1)
+#else
+#define NS_JSON_NULL_SENTINEL "null"
+#define NS_JSON_NULL_SENTINEL_LEN (sizeof(NS_JSON_NULL_SENTINEL) - 1)
+#endif
 
 #define NS_JSON_TYPE_SUFFIX ".type"
 #define NS_JSON_TYPE_SUFFIX_LEN (sizeof(NS_JSON_TYPE_SUFFIX) - 1)
@@ -1276,7 +1282,7 @@ JsonParseLiteral(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueType
     }
     if (jp->end - p >= 4 && p[0] == 'n' && p[1] == 'u' && p[2] == 'l' && p[3] == 'l') {
         jp->p += 4;
-        *valueObjPtr = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
+        *valueObjPtr = jp->opt->nullValueObj;
         *valueTypePtr = JSON_VT_NULL;
         return NS_OK;
     }
@@ -3656,6 +3662,7 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
         {"-output",          Ns_ObjvIndex, &opt.output,          outputFormats},
         {"-scan",            Ns_ObjvBool,  &isScan,              INT2PTR(NS_TRUE)},
         {"-top",             Ns_ObjvIndex, &opt.top,             topModes},
+        {"-nullvalue",       Ns_ObjvObj,   &opt.nullValueObj,    NULL},
         {"-validatenumbers", Ns_ObjvBool,  &opt.validateNumbers, INT2PTR(NS_TRUE)},
         {"-maxdepth",        Ns_ObjvInt,   &opt.maxDepth,        &posIntRange1},
         {"-maxstring",       Ns_ObjvInt,   &opt.maxString,       &posIntRange0},
@@ -3673,6 +3680,7 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     opt.output       = NS_JSON_OUTPUT_DICT;
     //opt.utf8         = NS_JSON_UTF8_STRICT;
     opt.top          = NS_JSON_TOP_ANY;
+    opt.nullValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
     opt.maxDepth     = 1000;
     opt.maxString    = 0;     /* 0 == unlimited (for now) */
     opt.maxContainer = 0;     /* 0 == unlimited (for now) */
@@ -4110,7 +4118,7 @@ JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj 
 
     case JSON_VT_NULL:
         /*
-         * Normalize to the null sentinel (or a dedicated null atom if you have one).
+         * Normalize to the null sentinel
          */
         outObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
         break;

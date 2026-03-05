@@ -318,6 +318,7 @@ typedef struct {
     int maxDepth;
     int maxContainer;
     int validateNumbers;
+    Tcl_Obj *nullValueObj;
     size_t maxString;
     Ns_JsonOutput output;
     Ns_JsonTop top;
