@@ -210,6 +210,7 @@ static TCL_OBJCMDPROC_T JsonIsNullObjCmd;
 static TCL_OBJCMDPROC_T JsonKeyDecodeObjCmd;
 static TCL_OBJCMDPROC_T JsonKeyEncodeObjCmd;
 static TCL_OBJCMDPROC_T JsonKeyInfoObjCmd;
+static TCL_OBJCMDPROC_T JsonNullObjCmd;
 static TCL_OBJCMDPROC_T JsonParseObjCmd;
 static TCL_OBJCMDPROC_T JsonTriplesGettypeObjCmd;
 static TCL_OBJCMDPROC_T JsonTriplesGetvalueObjCmd;
@@ -220,11 +221,23 @@ static TCL_OBJCMDPROC_T JsonValueObjCmd;
 static Tcl_HashKeyProc JsonHashKeyProc;
 static Tcl_CompareHashKeysProc JsonCompareKeysProc;
 
+static Tcl_DupInternalRepProc JsonNullDupIntRep;
+static Tcl_UpdateStringProc JsonNullUpdateString;
+static Tcl_FreeInternalRepProc JsonNullFreeIntRep;
+
 static Tcl_AllocHashEntryProc JsonAllocEntryProc;
 static Tcl_FreeHashEntryProc JsonFreeEntryProc;
 
+static const Tcl_ObjType JsonNullObjType = {
+    "jsonNull",
+    JsonNullFreeIntRep,   /* freeIntRepProc */
+    JsonNullDupIntRep,    /* dupIntRepProc */
+    JsonNullUpdateString, /* updateStringProc */
+    NULL                  /* setFromAnyProc (explicit construction only) */
+};
+
 /*
- * Descriptor for custum hash table
+ * Descriptor for custom hash table
  */
 static const Tcl_HashKeyType JsonKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,
@@ -238,6 +251,9 @@ static const Tcl_HashKeyType JsonKeyType = {
 /*
  * Static functions defined in this file.
  */
+static Tcl_Obj      *JsonNewNullObj(Tcl_Obj *labelObj) NS_GNUC_NONNULL(1);
+static bool          JsonIsNullObj(Tcl_Obj *valueObj) NS_GNUC_NONNULL(1);
+
 static Tcl_Obj      *DStringToObj(Tcl_DString *dsPtr)  NS_GNUC_NONNULL(1);
 static Ns_ReturnCode JsonAppendDecoded(JsonParser *jp, const unsigned char *at, const char *bytes, size_t len) NS_GNUC_NONNULL(1,2,3);
 static void          JsonPrettyIndent(Tcl_DString *dsPtr, int depth) NS_GNUC_NONNULL(1);
@@ -281,7 +297,6 @@ static Ns_ReturnCode TriplesLookupPath(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl
 static bool          TripleKeyMatches(Tcl_Obj *keyObj, Tcl_Obj *segObj)  NS_GNUC_NONNULL(1,2);
 static Ns_ReturnCode TriplesFind(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj *segObj, TCL_SIZE_T *tripleBaseIdxPtr) NS_GNUC_NONNULL(1,2,3,4);
 
-static bool          JsonIsNullObj(Tcl_Obj *valueObj) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode JsonRequireValidNumberObj(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(2);
 static Tcl_Obj      *JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len) NS_GNUC_NONNULL(1,2);
 
@@ -335,6 +350,147 @@ static void          JsonFlattenToSet(Ns_Set *set, const Tcl_DString *pathDsPtr,
 static int           JsonMaybeWrapScanResult(Tcl_Interp *interp, bool isScan, size_t consumed) NS_GNUC_NONNULL(1);
 static int           JsonCheckTrailingDecode(Tcl_Interp *interp, const unsigned char *buf, size_t len, size_t consumed) NS_GNUC_NONNULL(1,2);
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * JsonNullObjType --
+ *
+ *      Tcl object type representing JSON null.
+ *
+ *      The internal representation stores a label Tcl_Obj* (typically a
+ *      string) which defines the string representation of this null object.
+ *      This allows "ns_json parse -nullvalue <value>" to materialize JSON
+ *      null as a typed Tcl object while still using a caller-chosen string
+ *      representation.
+ *
+ *      Important:
+ *        - Null detection must be based on ObjType, not string matching.
+ *        - setFromAnyProc is NULL: the string "null" is not implicitly
+ *          converted to JsonNullObjType.
+ *
+ *      internalRep.twoPtrValue.ptr1 : Tcl_Obj* label (IncrRefCount'd)
+ *      internalRep.twoPtrValue.ptr2 : unused (NULL)
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+JsonNullFreeIntRep(Tcl_Obj *objPtr)
+{
+    Tcl_Obj *labelObj = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr1;
+
+    if (labelObj != NULL) {
+        Tcl_DecrRefCount(labelObj);
+        objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    }
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+}
+
+static void
+JsonNullDupIntRep(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
+{
+    Tcl_Obj *labelObj = (Tcl_Obj *)srcPtr->internalRep.twoPtrValue.ptr1;
+
+    dupPtr->internalRep.twoPtrValue.ptr1 = (void *)labelObj;
+    dupPtr->internalRep.twoPtrValue.ptr2 = NULL;
+
+    if (labelObj != NULL) {
+        Tcl_IncrRefCount(labelObj);
+    }
+
+    dupPtr->typePtr = &JsonNullObjType;
+}
+
+static void
+JsonNullUpdateString(Tcl_Obj *objPtr)
+{
+    Tcl_Obj   *labelObj = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr1;
+    TCL_SIZE_T len = 0;
+    const char *s;
+
+    if (labelObj == NULL) {
+        s = "null";
+        len = 4;
+    } else {
+        s = Tcl_GetStringFromObj(labelObj, &len);
+    }
+
+    objPtr->bytes = (char *)ckalloc((unsigned)len + 1u);
+    memcpy(objPtr->bytes, s, (size_t)len);
+    objPtr->bytes[len] = '\0';
+    objPtr->length = (int)len;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonNewNullObj --
+ *
+ *      Create a new Tcl object representing JSON null.
+ *
+ *      The returned object uses the dedicated JSON-null Tcl object type
+ *      (JsonNullObjType).  The provided labelObj defines the string
+ *      representation of the null object.  This allows JSON null values
+ *      parsed with the "-nullvalue" option to retain a caller-defined
+ *      textual representation while still being identifiable via the
+ *      JSON-null object type.
+ *
+ *      The label object is retained in the internal representation of the
+ *      returned object and its reference count is incremented accordingly.
+ *
+ * Results:
+ *      A newly allocated Tcl_Obj of type JsonNullObjType.
+ *
+ * Side effects:
+ *      Increments the reference count of labelObj.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+JsonNewNullObj(Tcl_Obj *labelObj)
+{
+    Tcl_Obj *objPtr = Tcl_NewObj();
+
+    Tcl_InvalidateStringRep(objPtr);
+
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+
+    Tcl_IncrRefCount(labelObj);
+    objPtr->internalRep.twoPtrValue.ptr1 = (void *)labelObj;
+
+    objPtr->typePtr = &JsonNullObjType;
+
+    return objPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonIsNullObj --
+ *
+ *      Determine whether the provided Tcl object represents a JSON null
+ *      value as used internally by ns_json.
+ *
+ *      JSON null values are represented by a dedicated Tcl object type
+ *      (JsonNullObjType).  This function checks the object's type pointer
+ *      and therefore distinguishes JSON null values from ordinary Tcl
+ *      strings such as "null", the empty string, or other values that may
+ *      appear when parsing JSON with a custom "-nullvalue" option.
+ *
+ * Results:
+ *      true  when the object has type JsonNullObjType,
+ *      false otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+JsonIsNullObj(Tcl_Obj *valueObj)
+{
+    return (valueObj->typePtr == &JsonNullObjType);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -423,6 +579,17 @@ void
 NsAtomJsonInit(void)
 {
     (void) NsAtomsInit(jsonAtomSpecs, JSON_ATOM_MAX, JsonAtomObjs);
+    /*
+     * Replace the default NULL atom with a dedicated JsonNullObjType object.
+     * The singleton is stored in the atom table, so callers can safely use
+     * JsonAtomObjs[JSON_ATOM_VALUE_NULL] for typed null without allocating
+     * fresh objects.
+     */
+    Tcl_DecrRefCount(JsonAtomObjs[JSON_ATOM_VALUE_NULL]);
+    JsonAtomObjs[JSON_ATOM_VALUE_NULL] = JsonNewNullObj(JsonAtomObjs[JSON_ATOM_T_NULL]);
+    Tcl_IncrRefCount(JsonAtomObjs[JSON_ATOM_VALUE_NULL]);
+
+    fprintf(stderr, "DEBUG: NsAtomJsonInit JSON_ATOM_VALUE_NULL obj %p\n", (void*)JsonAtomObjs[JSON_ATOM_VALUE_NULL]);
 }
 
 /*
@@ -1207,43 +1374,6 @@ JsonDecodeUnicodeEscape(JsonParser *jp, uint32_t *cpPtr)
 
     *cpPtr = (uint32_t)u1;
     return NS_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * JsonIsNullObj --
- *
- *      Determine whether the provided Tcl object represents a JSON null
- *      value.
- *
- *      The function recognizes the canonical internal null atom as well as
- *      the textual null sentinel string used by the triples interface
- *      (e.g., "__NS_JSON_NULL__").  This allows callers to accept either
- *      representation without allocating new objects.
- *
- * Results:
- *      NS_TRUE if the value is the null atom or matches the null sentinel,
- *      NS_FALSE otherwise.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static bool
-JsonIsNullObj(Tcl_Obj *valueObj)
-{
-    bool success = NS_TRUE;
-
-    if (valueObj != JsonAtomObjs[JSON_ATOM_VALUE_NULL]) {
-        TCL_SIZE_T  n = 0;
-        const char *s = Tcl_GetStringFromObj(valueObj, &n);
-
-        success = ((size_t)n == NS_JSON_NULL_SENTINEL_LEN
-                   && memcmp(s, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN) == 0);
-    }
-    return success;
 }
 
 /*
@@ -3401,14 +3531,57 @@ JsonCheckTrailingDecode(Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
+ * JsonNullObjCmd --
+ *
+ *      Implements "ns_json null".
+ *
+ *      Return a Tcl value representing JSON null.  The returned object
+ *      uses the dedicated JSON-null Tcl object type (JsonNullObjType)
+ *      and serves as the canonical representation of JSON null within
+ *      ns_json.
+ *
+ *      The string representation of this object defaults to "null", but
+ *      null detection must rely on the object type rather than the string
+ *      representation.  The helper command "ns_json isnull" can be used
+ *      to test whether a Tcl value represents JSON null.
+ *
+ * Results:
+ *      TCL_OK with the interpreter result set to the canonical JSON-null
+ *      Tcl object.
+ *
+ * Side effects:
+ *      Sets the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+JsonNullObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Tcl_SetObjResult(interp, JsonAtomObjs[JSON_ATOM_VALUE_NULL]);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * JsonIsNullObjCmd --
  *
  *      Implements "ns_json isnull".
  *
- *      Determine whether the provided Tcl value is the distinguished JSON null
- *      sentinel used by ns_json in dict output mode to represent JSON null
- *      without ambiguity (i.e., distinct from the JSON string "null" or other
- *      empty values).
+ *      Determine whether the provided Tcl value is represented by the
+ *      dedicated JSON-null Tcl object type used by ns_json.
+ *
+ *      This check is based on the Tcl object type, not on the string
+ *      representation.  Therefore, plain Tcl strings such as "null",
+ *      the empty string, or values produced via "-nullvalue" during
+ *      parsing are not considered JSON null unless they are represented
+ *      by the dedicated JSON-null object type.
  *
  * Results:
  *      TCL_OK with the interpreter result set to a boolean value (1 or 0),
@@ -3687,6 +3860,10 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
+    }
+
+    if (opt.nullValueObj != JsonAtomObjs[JSON_ATOM_VALUE_NULL]) {
+        opt.nullValueObj = JsonNewNullObj(opt.nullValueObj);
     }
 
     buf = (const unsigned char *)Tcl_GetStringFromObj(valueObj, &len);
@@ -4059,11 +4236,16 @@ JsonRequireValidNumberObj(Tcl_Interp *interp, Tcl_Obj *valueObj)
  *      For scalar types, this function checks that inObj is compatible with
  *      the requested type and, when applicable, produces a canonicalized
  *      representation in *outObjPtr (e.g., canonical boolean objects and the
- *      null sentinel).  For numbers, the function validates the JSON number
- *      lexeme.  For container types (object/array), it validates that inObj
- *      is a plausible triples list (length multiple of 3) and may perform
- *      additional checks depending on the configuration (e.g., number
- *      validation within the container).
+ *      dedicated JSON-null Tcl object).  For numbers, the function validates
+ *      the JSON number lexeme.  For container types (object/array), it
+ *      validates that inObj is a plausible triples list (length multiple of 3)
+ *      and may perform additional checks depending on the configuration
+ *      (e.g., number validation within the container).
+ *
+ *      JSON null values are represented by a dedicated Tcl object type
+ *      (JsonNullObjType).  When normalization for JSON_VT_NULL is requested,
+ *      the value is replaced by the canonical null object stored in the
+ *      JSON atom table.
  *
  *      The what argument is included in generated error messages to provide
  *      context (e.g., "triples setvalue").
@@ -4118,7 +4300,7 @@ JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj 
 
     case JSON_VT_NULL:
         /*
-         * Normalize to the null sentinel
+         * Normalize to the canonical JSON null object.
          */
         outObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
         break;
@@ -5213,6 +5395,7 @@ NsTclJsonObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"isnull",     JsonIsNullObjCmd},
+        {"null",       JsonNullObjCmd},
         {"keydecode",  JsonKeyDecodeObjCmd},
         {"keyencode",  JsonKeyEncodeObjCmd},
         {"keyinfo",    JsonKeyInfoObjCmd},

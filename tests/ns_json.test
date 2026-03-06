@@ -22,11 +22,11 @@ if {[ns_config test listenport] ne ""} {
 
 test ns_json-1.0 {syntax: ns_json} -body {
     ns_json
-} -returnCodes error -result {wrong # args: should be "ns_json isnull|keydecode|keyencode|keyinfo|parse|triples|value ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_json isnull|null|keydecode|keyencode|keyinfo|parse|triples|value ?/arg .../"}
 
 test ns_json-1.1 {syntax: ns_json subcommand} -body {
     ns_json x
-} -returnCodes error -result {ns_json: bad subcommand "x": must be isnull, keydecode, keyencode, keyinfo, parse, triples, or value}
+} -returnCodes error -result {ns_json: bad subcommand "x": must be isnull, null, keydecode, keyencode, keyinfo, parse, triples, or value}
 
 test ns_json-1.2 {syntax: ns_json parse} -body {
     ns_json parse
@@ -53,9 +53,13 @@ test ns_json-1.7.1 {syntax: -- ns_json value} -body {
     ns_json value
 } -returnCodes error -result {wrong # args: should be "ns_json value ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?--? /value/"}
 
-test ns_json-1.8 {syntax: -- ns_json isnull} -body {
+test ns_json-1.8.0 {syntax: -- ns_json isnull} -body {
     ns_json isnull
 } -returnCodes error -result {wrong # args: should be "ns_json isnull /value/"}
+
+test ns_json-1.8.1 {syntax: -- ns_json null} -body {
+    ns_json null x
+} -returnCodes error -result {wrong # args: should be "ns_json null"}
 
 test ns_json-1.9 {syntax: -- ns_json keyinfo} -body {
     ns_json keyinfo
@@ -134,12 +138,18 @@ test ns_json-2.12 {isnull detects default null value} -body {
 } -result 1
 
 test ns_json-2.13 {isnull recognizes parsed null value only} -body {
-    set n [ns_json parse {null}]
+    set n1 [ns_json parse {null}]
+    set n2 [ns_json parse -nullvalue XXX {null}]
     list \
-        [ns_json isnull $n] \
+        [ns_json isnull $n1] \
+        [ns_json isnull $n2] \
         [ns_json isnull ""] \
-        [ns_json isnull "x"]
-} -result {1 0 0}
+        [ns_json isnull "x"] \
+        [ns_json isnull "XXX"] \
+        [ns_json isnull null] \
+        [ns_json isnull __NS_JSON_NULL__] \
+        [ns_json isnull [ns_json null]]
+} -result {1 1 0 0 0 0 0 1}
 
 #######################################################################################
 #  test ns_json nesting in triples

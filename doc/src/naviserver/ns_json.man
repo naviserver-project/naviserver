@@ -245,8 +245,9 @@ Quick examples:
   When using [option "-output set"] or [option "-output triples"], the JSON
   type information remains available ([const .type] sidecars or triples TYPE
   tokens). Using an empty string as [option -nullvalue] is therefore possible,
-  but applications that need to distinguish JSON [term null] from an empty
-  JSON string must consult the associated type information.
+  but applications that need to distinguish JSON null from an empty
+  JSON string should use [cmd "ns_json isnull"] or consult the
+  associated type information.
 
 [opt_def -maxdepth [arg n]]
   [para] Limit maximum nesting depth.  A value of 0 means no limit.
@@ -390,13 +391,66 @@ Quick examples:
 
 
 
+[call [cmd "ns_json null"]]
+
+  [para]
+  Returns a Tcl value representing JSON [term null].
+
+  [para]
+  The returned value has a dedicated internal Tcl object type and can be
+  used to construct or update JSON values unambiguously, without relying on
+  string contents.
+
+  [para]
+  Its string representation defaults to [const null], but this textual form
+  is only a presentation detail.  Null detection should use [cmd "ns_json isnull"]
+  or explicit JSON type information.
+
+[example_begin]
+ # Create a JSON null value explicitly
+ 
+ set n [lb]ns_json null[rb]
+ ns_json isnull $n
+ ## output: 1
+ 
+ # Use it when updating triples
+ 
+ set t1  [lb]ns_json parse -output triples {{"user":{"name":"Alice"}}}[rb]
+ set t2 [lb]ns_json triples setvalue -path {user name} $t1 $n[rb]
+ ns_json value $t2
+ ## output: {"user":{"name":null}}
+[example_end]
+
+
 [call [cmd "ns_json isnull"] \
         [arg value]]
 
-  Checks whether [arg value] equals the current default null
-  value used by ns_json parse (default: [const null]). If parse was run
-  with [option -nullvalue], consult the associated type information
-  ([const .type] sidecars or [cmd "ns_json triples gettype"]) instead.
+ [para]
+ Returns a boolean indicating whether [arg value] is a Tcl value of the
+ dedicated JSON-null object type.
+
+ [para]
+ This command checks the Tcl object type, not the string representation.
+ Therefore, plain Tcl strings such as [const null], [const ""], or any
+ caller-supplied [option -nullvalue] mapping are not considered JSON null
+ unless they are represented by the dedicated JSON-null object type
+ returned by [cmd "ns_json null"].
+
+ [para]
+ When working with parsed JSON in [term set] or [term triples] mode,
+ JSON types can also be distinguished via [const .type] sidecars or via
+ [cmd "ns_json triples gettype"].
+
+[example_begin]
+ set n1 [lb]ns_json parse {null}[rb]
+ set n2 [lb]ns_json parse -nullvalue XXX {null}[rb]
+ list \
+    [lb]ns_json isnull $n1[rb] \
+    [lb]ns_json isnull $n2[rb] \
+    [lb]ns_json isnull null[rb] \
+    [lb]ns_json isnull XXX[rb]
+ ## output: 1 1 0 0
+[example_end]
 
 
 [call [cmd "ns_json keyinfo"] \
@@ -576,14 +630,12 @@ either [option -path] or [option -pointer].  Exactly one of these options
 must be provided.
 
 [list_begin itemized]
-[item]
-[option "-path [arg value]"] specifies a Tcl list describing the
-hierarchical location.
+  [item] [option "-path [arg value]"] specifies a Tcl list describing the
+         hierarchical location.
 
-[item]
-[option "-pointer [arg value]"] specifies a JSON Pointer (RFC 6901)
-string.  A trailing [const /] denotes an empty reference token and is
-not ignored.
+  [item] [option "-pointer [arg value]"] specifies a JSON Pointer (RFC 6901)
+         string.  A trailing [const /] denotes an empty reference token and is
+         not ignored.
 [list_end]
 
 [para]
@@ -591,34 +643,30 @@ The optional [option -type] flag controls how the new value is
 interpreted:
 
 [list_begin itemized]
-[item]
-[const auto] (default): infer the type from the value, while preserving
-and validating existing leaf types where applicable (for example,
-number slots remain numeric and reject invalid number lexemes).
+  [item] [const auto] (default): infer the type from the value, while preserving
+         and validating existing leaf types where applicable (for example,
+         number slots remain numeric and reject invalid number lexemes).
 
-[item]
-Explicit types ([const string], [const number], [const boolean],
-[const null], [const object], [const array]) enforce validation and
-normalization of the supplied value.
+  [item] Explicit types ([const string], [const number], [const boolean],
+         [const null], [const object], [const array]) enforce validation and
+         normalization of the supplied value.
 
-[item]
-For container types ([const object] and [const array]), the supplied
-value must be a triples list.  The empty list [const {}] represents
-an empty container.
+  [item] For container types ([const object] and [const array]), the supplied
+         value must be a triples list.  The empty list [const {}] represents
+         an empty container.
 [list_end]
 
 [para]
 Setting a null value can be done using
-[const null], which stores a [const null] leaf.
-Make sure to use [option "-type null"] as well to avoid ambiguities
-when setting scalars.
+[cmd "ns_json null"], or via a null value retrieved from triples,
+or via [option "-type null"].
 
 [example_begin]
- set t  [lb]ns_json parse -output triples {{"user":{"name":"Alice"}}}[rb]
- ns_json triples gettype -path {user name} $t
+ set t1  [lb]ns_json parse -output triples {{"user":{"name":"Alice"}}}[rb]
+ ns_json triples gettype -path {user name} $t1
  ## output: string
  
- set t2 [lb]ns_json triples setvalue -type null -path {user name} $t null[rb]
+ set t2 [lb]ns_json triples setvalue -path {user name} $t1 [lb]ns_json null[rb][rb]
  ns_json triples gettype -path {user name} $t2
  ## output: null
 [example_end]
@@ -841,7 +889,8 @@ Key helpers for set output
 [example_end]
 
 
-[subsection "Example: Navigating and Updating JSON Structures via Triples"]
+[para]
+Example: Navigating and Updating JSON Structures via Triples (4 steps)
 
 [para]
 Assume a JSON document with the following structure,
@@ -864,30 +913,36 @@ and every invoice contains a [const BillEmail]
  }
 [example_end]
 
-[para]
-Parse the JSON document into triples:
+[para] 1)
+Parse the JSON document into a triples representation for convenient
+navigation and modification:
 
 [example_begin]
  set t [lb]ns_json parse -output triples $JSON[rb]
 [example_end]
 
-[para] Retrieve the [const BillEmail] object of the first invoice
-(default output is JSON):
+The variable [const t] now contains the triples representation of the
+JSON document.
+
+[para] 2)
+Retrieve the [const BillEmail] object of the first invoice
+(the default output format is JSON):
 
 [example_begin]
  ns_json triples getvalue -pointer /QueryResponse/Invoice/0/BillEmail $t
  ## output: {"Address":"joe.user@nowhere.com"}
 [example_end]
 
-[para]
-Update the email address:
+[para] 3)
+Update the email address inside the triples structure:
 
 [example_begin]
  set t2 [lb]ns_json triples setvalue -pointer /QueryResponse/Invoice/0/BillEmail/Address $t "customer@somewhere.com"[rb]
 [example_end]
 
-[para]
-Inspect the updated [const BillEmail] object (using formatted JSON output):
+[para] 4)
+Inspect the updated [const BillEmail] object using formatted JSON
+output:
 
 [example_begin]
  ns_json triples getvalue -pretty -pointer /QueryResponse/Invoice/0/BillEmail $t2
