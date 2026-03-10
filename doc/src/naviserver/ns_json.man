@@ -321,8 +321,10 @@ type based on the Tcl value.
 [para] Encode the value as a JSON string.
 
 [item] [term number]
-[para] Encode the value as a JSON number.  The string representation of the
-Tcl value is used as the JSON number lexeme.
+[para] Encode the value as a JSON number.  If the current string
+representation is already a valid JSON number lexeme, it is
+preserved. Otherwise the Tcl numeric value is converted
+to a normalized JSON-compatible representation.
 
 [item] [term boolean]
 [para] Encode the value as a JSON boolean.
@@ -581,7 +583,6 @@ The result is one of:
 [const string], [const number], [const boolean],
 [const null], [const object], or [const array].
 
-
 [para]
 The location within the triples structure is specified via either
 [option -path] or [option -pointer].  Exactly one of these options must
@@ -650,6 +651,11 @@ interpreted:
   [item] Explicit types ([const string], [const number], [const boolean],
          [const null], [const object], [const array]) enforce validation and
          normalization of the supplied value.
+
+  [item] With [const number], valid JSON number lexemes are preserved.
+         Other Tcl numeric forms are accepted when they can be interpreted as
+         numbers and are normalized to a JSON-compatible number
+         representation.
 
   [item] For container types ([const object] and [const array]), the supplied
          value must be a triples list.  The empty list [const {}] represents

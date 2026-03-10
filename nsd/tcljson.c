@@ -327,6 +327,7 @@ static Ns_ReturnCode JsonScanNumber(JsonParser *jp, const unsigned char **startP
     NS_GNUC_NONNULL(1,2,3,4);
 static bool          JsonNumberLexemeIsValid(const unsigned char *s, size_t len) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode JsonValidateNumberString(const unsigned char *s, size_t len, Ns_DString *errDsPtr) NS_GNUC_NONNULL(1,3);
+static Ns_ReturnCode JsonNumberObjToLexeme(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj **outObjPtr) NS_GNUC_NONNULL(1,2,3);
 static Ns_ReturnCode JsonCheckStringSpan(JsonParser *jp, const unsigned char *p, const unsigned char *q, size_t outLen)
     NS_GNUC_NONNULL(1,2,3);
 static Ns_ReturnCode JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj **outObjPtr, const char *what)
@@ -1566,6 +1567,104 @@ JsonValidateNumberString(const unsigned char *s, size_t len, Ns_DString *errDsPt
 /*
  *----------------------------------------------------------------------
  *
+ * JsonNumberObjToLexeme --
+ *
+ *      Convert a Tcl object to a valid JSON number lexeme.
+ *
+ *      This helper is used for explicit numeric typing (e.g. "-type number")
+ *      in commands such as "ns_json value" and "ns_json triples setvalue".
+ *      The function attempts to interpret the supplied Tcl value as a JSON
+ *      number and returns a Tcl object whose string representation is a
+ *      valid JSON number lexeme.
+ *
+ *      The conversion follows these rules:
+ *
+ *        1. If the current string representation of the object is already
+ *           a valid JSON number lexeme, it is preserved unchanged.
+ *
+ *        2. Otherwise, the function attempts to interpret the value as a
+ *           Tcl numeric value (integer or double).  If successful, the
+ *           normalized Tcl numeric representation is used.
+ *
+ *        3. The resulting string representation is validated again to
+ *           ensure that it conforms to the JSON number grammar.
+ *
+ *      Values that cannot be interpreted as numeric Tcl values or whose
+ *      normalized representation is not a valid JSON number cause an
+ *      error to be reported.
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR on failure.
+ *
+ * Side effects:
+ *      On success, *outObjPtr is set to a Tcl object whose string
+ *      representation is a valid JSON number lexeme.  This may be the
+ *      original object or a newly created normalized numeric object.
+ *      On failure, an error message is left in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonNumberObjToLexeme(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj **outObjPtr)
+{
+    const char *s;
+    TCL_SIZE_T len;
+    Ns_DString errDs;
+
+    NS_NONNULL_ASSERT(valueObj != NULL);
+    NS_NONNULL_ASSERT(outObjPtr != NULL);
+
+    Tcl_DStringInit(&errDs);
+    s = Tcl_GetStringFromObj(valueObj, &len);
+    if (JsonValidateNumberString((const unsigned char *)s, (size_t)len, &errDs) == NS_OK) {
+        *outObjPtr = valueObj;
+        Tcl_DStringFree(&errDs);
+        return NS_OK;
+    }
+    Tcl_DStringSetLength(&errDs, 0);
+
+    {
+        Tcl_WideInt w;
+
+        if (Tcl_GetWideIntFromObj(NULL, valueObj, &w) == TCL_OK) {
+            Tcl_Obj *obj = Tcl_NewWideIntObj(w);
+
+            s = Tcl_GetStringFromObj(obj, &len);
+            if (JsonValidateNumberString((const unsigned char *)s, (size_t)len, &errDs) != NS_OK) {
+                Tcl_DStringResult(interp, &errDs);
+                return NS_ERROR;
+            }
+            *outObjPtr = obj;
+            Tcl_DStringFree(&errDs);
+            return NS_OK;
+        }
+    }
+
+    {
+        double d;
+
+        if (Tcl_GetDoubleFromObj(NULL, valueObj, &d) == TCL_OK) {
+            Tcl_Obj *obj = Tcl_NewDoubleObj(d);
+
+            s = Tcl_GetStringFromObj(obj, &len);
+            if (JsonValidateNumberString((const unsigned char *)s, (size_t)len, &errDs) != NS_OK) {
+                Tcl_DStringResult(interp, &errDs);
+                return NS_ERROR;
+            }
+            *outObjPtr = obj;
+            Tcl_DStringFree(&errDs);
+            return NS_OK;
+        }
+    }
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("expected numeric Tcl value, got \"%s\"", s));
+    Tcl_DStringFree(&errDs);
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * JsonCheckStringSpan --
  *
  *      Validate a plain (already decoded) substring of a JSON string and
@@ -1666,7 +1765,7 @@ JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj 
         break;
 
     case JSON_VT_NUMBER:
-        if (JsonRequireValidNumberObj(interp, inObj) != NS_OK) {
+        if (JsonNumberObjToLexeme(interp, inObj, outObjPtr) != NS_OK) {
             return NS_ERROR;
         }
         break;
@@ -6876,7 +6975,7 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     Tcl_Obj      *valueObj;
     JsonValueType vt = JSON_VT_AUTO;
-    int           validateNumbers = 1, pretty = 0;
+    int           pretty = 0;
     Ns_ObjvSpec   opts[] = {
         {"-type",   Ns_ObjvIndex, &vt,     jsonValueTypes},
         {"-pretty", Ns_ObjvBool,  &pretty, INT2PTR(NS_TRUE)},
@@ -6927,22 +7026,16 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             JsonAppendQuotedString(&ds, s, len);
             break;
 
-        case JSON_VT_NUMBER:
-            /*
-             * All numeric-ish: emit print string (caller responsibility for
-             * number lexeme validity in -type number)
-             */
-            s = Tcl_GetStringFromObj(valueObj, &len);
+        case JSON_VT_NUMBER: {
+            Tcl_Obj *numObj;
 
-            if (validateNumbers
-                && (JsonValidateNumberString((const unsigned char *)s, (size_t)len, &errDs) != NS_OK)
-                ) {
-                Tcl_DStringResult(interp, &errDs);
+            if (JsonNumberObjToLexeme(interp, valueObj, &numObj) != NS_OK) {
                 return TCL_ERROR;
-            } else {
-                Tcl_DStringAppend(&ds, s, len);
             }
+            s = Tcl_GetStringFromObj(numObj, &len);
+            Tcl_DStringAppend(&ds, s, len);
             break;
+        }
 
         case JSON_VT_BOOL: {
             int b = 0;
@@ -7003,7 +7096,7 @@ JsonValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
                 if (JsonTriplesRequireValidContainerObj(interp, valueObj, NS_TRUE, NS_TRUE, "value") != NS_OK
                     || JsonEmitContainerFromTriples(interp, valueObj, (vt == JSON_VT_OBJECT),
-                                                    validateNumbers, 0, pretty, &ds) != TCL_OK) {
+                                                    1, 0, pretty, &ds) != TCL_OK) {
                     Tcl_DStringFree(&ds);
                     return TCL_ERROR;
                 }
