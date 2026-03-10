@@ -185,7 +185,8 @@ static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};   /* >= 0 */
  * Enumeration tables for command options
  */
 static Ns_ObjvTable outputFormats[] = {
-    {"dict",     NS_JSON_OUTPUT_DICT},
+    {"tclvalue", NS_JSON_OUTPUT_TCL_VALUE},
+    {"dict",     NS_JSON_OUTPUT_TCL_VALUE}, /* legacy alias kept for prerelease compatibility */
     {"triples",  NS_JSON_OUTPUT_TRIPLES},
     {"set",      NS_JSON_OUTPUT_NS_SET},
     {NULL,       0u}
@@ -6773,7 +6774,7 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     };
 
     memset(&opt, 0, sizeof(opt));
-    opt.output       = NS_JSON_OUTPUT_DICT;
+    opt.output       = NS_JSON_OUTPUT_TCL_VALUE;
     //opt.utf8         = NS_JSON_UTF8_STRICT;
     opt.top          = NS_JSON_TOP_ANY;
     opt.nullValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];

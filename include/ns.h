@@ -304,7 +304,7 @@ typedef enum {
  * typedefs and enums for JSON parsing
  */
 typedef enum {
-    NS_JSON_OUTPUT_DICT = 0u,
+    NS_JSON_OUTPUT_TCL_VALUE = 0u,
     NS_JSON_OUTPUT_TRIPLES,
     NS_JSON_OUTPUT_NS_SET
 } Ns_JsonOutput;

@@ -30,11 +30,11 @@ test ns_json-1.1 {syntax: ns_json subcommand} -body {
 
 test ns_json-1.2 {syntax: ns_json parse} -body {
     ns_json parse
-} -returnCodes error -result {wrong # args: should be "ns_json parse ?-output dict|triples|set? ?-scan? ?-top any|container? ?-nullvalue /value/? ?-validatenumbers? ?-maxdepth /integer[1,MAX]/? ?-maxstring /integer[0,MAX]/? ?-maxcontainer /integer[0,MAX]/? ?--? /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_json parse ?-output tclvalue|triples|set? ?-scan? ?-top any|container? ?-nullvalue /value/? ?-validatenumbers? ?-maxdepth /integer[1,MAX]/? ?-maxstring /integer[0,MAX]/? ?-maxcontainer /integer[0,MAX]/? ?--? /value/"}
 
 test ns_json-1.3 {syntax: bad -output value} -body {
     ns_json parse -output foo -- {}
-} -returnCodes error -result {bad option "foo": must be dict, triples, or set}
+} -returnCodes error -result {bad option "foo": must be tclvalue, triples, or set}
 
 test ns_json-1.4 {syntax: -output needs argument} -body {
     ns_json parse -output
@@ -42,7 +42,7 @@ test ns_json-1.4 {syntax: -output needs argument} -body {
 
 test ns_json-1.6 {syntax: unknown option} -body {
     ns_json parse -bogus -- {}
-} -returnCodes error -result {wrong # args: should be "ns_json parse ?-output dict|triples|set? ?-scan? ?-top any|container? ?-nullvalue /value/? ?-validatenumbers? ?-maxdepth /integer[1,MAX]/? ?-maxstring /integer[0,MAX]/? ?-maxcontainer /integer[0,MAX]/? ?--? /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_json parse ?-output tclvalue|triples|set? ?-scan? ?-top any|container? ?-nullvalue /value/? ?-validatenumbers? ?-maxdepth /integer[1,MAX]/? ?-maxstring /integer[0,MAX]/? ?-maxcontainer /integer[0,MAX]/? ?--? /value/"}
 
 test ns_json-1.7.0 {syntax: -- separates options from value} -body {
     # value looks like an option, must be treated as data after --
@@ -78,15 +78,15 @@ test ns_json-1.11 {syntax: -- ns_json keydecode} -body {
 #  test ns_json parse/scan basic behavior
 #######################################################################################
 
-test ns_json-2.0 {parse object (dict output)} -body {
+test ns_json-2.0 {parse object (tclvalue output)} -body {
     ns_json parse {{"a":1,"b":true}}
 } -result {a 1 b true}
 
-test ns_json-2.1 {parse array (dict output)} -body {
+test ns_json-2.1 {parse array (tclvalue output)} -body {
     ns_json parse {[1,"x",null]}
 } -result {1 x null}
 
-test ns_json-2.2 {parse scalar (dict output)} -body {
+test ns_json-2.2 {parse scalar (tclvalue output)} -body {
     ns_json parse {true}
 } -result true
 
@@ -110,7 +110,7 @@ test ns_json-2.8 {parse -scan returns value and bytes_consumed (object)} -body {
     ns_json parse -scan {{"a":1}{"b":2}}
 } -result {{a 1} 7}
 
-test ns_json-2.9 {parse to dict, more real-world example} -body  {
+test ns_json-2.9 {parse to tclvalue, more real-world example} -body  {
     ns_json parse {{    "Image": {
         "Width":  800,
         "Height": 600,
@@ -129,7 +129,7 @@ test ns_json-2.10 {scan includes leading whitespace in bytes_consumed} -body {
     ns_json parse -scan {   {"a":1}{"b":2}}
 } -result {{a 1} 10}
 
-test ns_json-2.11 {parse null (dict output uses default null value)} -body {
+test ns_json-2.11 {parse null (tclvalue output uses default null value)} -body {
     ns_json parse {null}
 } -result null
 
@@ -972,7 +972,7 @@ test ns_json-http-key-1.0 {
 
 test ns_json-numbers-1.1 {preserve numeric lexemes} -body {
     set json {{"a":1,"b":1.0,"c":1e0,"d":-0,"e":0.000,"f":10E+02}}
-    set d [ns_json parse -output dict $json]
+    set d [ns_json parse -output tclvalue $json]
     list \
         [dict get $d a] \
         [dict get $d b] \
@@ -984,7 +984,7 @@ test ns_json-numbers-1.1 {preserve numeric lexemes} -body {
 
 test ns_json-numbers-1.2 {number lexemes behave as numbers in Tcl} -body {
     set json {{"i":1,"f":1.0,"e":1e0}}
-    set d [ns_json parse -output dict $json]
+    set d [ns_json parse -output tclvalue $json]
 
     set i [dict get $d i]
     set f [dict get $d f]
@@ -1003,7 +1003,7 @@ test ns_json-numbers-1.2 {number lexemes behave as numbers in Tcl} -body {
 
 test ns_json-numbers-1.3 {integer and float lexemes can be coerced to double} -body {
     set json {{"i":1,"f":1.5,"e":1e0}}
-    set d [ns_json parse -output dict $json]
+    set d [ns_json parse -output tclvalue $json]
 
     # Force double conversions; errors here should fail the test.
     set i [expr {double([dict get $d i])}]
@@ -1199,31 +1199,31 @@ test ns_json-pretty-1.1 {ns_json value -pretty formats nested containers; empty 
 # ---------------------------------------------------------------------------
 
 test ns_json-top-1.1 {-top any accepts object} -body {
-    ns_json parse -top any -output dict -- {{"a":1}}
+    ns_json parse -top any -output tclvalue -- {{"a":1}}
 } -result {a 1}
 
 test ns_json-top-1.2 {-top any accepts array} -body {
-    ns_json parse -top any -output dict -- {[1,2,3]}
+    ns_json parse -top any -output tclvalue -- {[1,2,3]}
 } -result {1 2 3}
 
 test ns_json-top-1.3 {-top any accepts string} -body {
-    ns_json parse -top any -output dict -- {"x"}
+    ns_json parse -top any -output tclvalue -- {"x"}
 } -result x
 
 test ns_json-top-1.4 {-top any accepts number (lexeme preserved)} -body {
-    ns_json parse -top any -output dict -- {1.2300e+02}
+    ns_json parse -top any -output tclvalue -- {1.2300e+02}
 } -result {1.2300e+02}
 
 test ns_json-top-1.5 {-top any accepts true/false/null} -body {
     list \
-        [ns_json parse -top any -output dict -- {true}] \
-        [ns_json parse -top any -output dict -- {false}] \
-        [ns_json parse -top any -output dict -- {null}]
+        [ns_json parse -top any -output tclvalue -- {true}] \
+        [ns_json parse -top any -output tclvalue -- {false}] \
+        [ns_json parse -top any -output tclvalue -- {null}]
 } -result {true false null}
 
 # Whitespace around the single value is still legal.
 test ns_json-top-1.6 {-top any ignores leading/trailing whitespace} -body {
-    ns_json parse -top any -output dict -- " \n\t {\"a\": 1}\r\n "
+    ns_json parse -top any -output tclvalue -- " \n\t {\"a\": 1}\r\n "
 } -result {a 1}
 
 # ---------------------------------------------------------------------------
@@ -1231,15 +1231,15 @@ test ns_json-top-1.6 {-top any ignores leading/trailing whitespace} -body {
 # ---------------------------------------------------------------------------
 
 test ns_json-top-2.1 {-top container accepts object} -body {
-    ns_json parse -top container -output dict -- {{"a":1,"b":2}}
+    ns_json parse -top container -output tclvalue -- {{"a":1,"b":2}}
 } -result {a 1 b 2}
 
 test ns_json-top-2.2 {-top container accepts array} -body {
-    ns_json parse -top container -output dict -- {[true,false,null]}
+    ns_json parse -top container -output tclvalue -- {[true,false,null]}
 } -result {true false null}
 
 test ns_json-top-2.3 {-top container accepts nested scalars inside containers} -body {
-    ns_json parse -top container -output dict -- {{"a":[1,"x",null,false,true]}}
+    ns_json parse -top container -output tclvalue -- {{"a":[1,"x",null,false,true]}}
 } -result {a {1 x null false true}}
 
 # ---------------------------------------------------------------------------
@@ -1248,23 +1248,23 @@ test ns_json-top-2.3 {-top container accepts nested scalars inside containers} -
 # ---------------------------------------------------------------------------
 
 test ns_json-top-3.1 {-top container rejects null} -body {
-    ns_json parse -top container -output dict -- {null}
+    ns_json parse -top container -output tclvalue -- {null}
 } -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
 
 test ns_json-top-3.2 {-top container rejects true} -body {
-    ns_json parse -top container -output dict -- {true}
+    ns_json parse -top container -output tclvalue -- {true}
 } -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
 
 test ns_json-top-3.3 {-top container rejects false} -body {
-    ns_json parse -top container -output dict -- {false}
+    ns_json parse -top container -output tclvalue -- {false}
 } -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
 
 test ns_json-top-3.4 {-top container rejects number} -body {
-    ns_json parse -top container -output dict -- {123}
+    ns_json parse -top container -output tclvalue -- {123}
 } -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
 
 test ns_json-top-3.5 {-top container rejects string} -body {
-    ns_json parse -top container -output dict -- {"x"}
+    ns_json parse -top container -output tclvalue -- {"x"}
 } -returnCodes error -match regexp -result {ns_json: parse error at byte 0:.*top-level.*\(-top container\)}
 
 # ---------------------------------------------------------------------------

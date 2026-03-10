@@ -128,7 +128,7 @@ querying should use higher-level libraries built on top of this foundation.
 [list_begin definitions]
 
 [call [cmd "ns_json parse"] \
-        [opt [option "-output dict|triples|set"]] \
+        [opt [option "-output tclvalue|triples|set"]] \
         [opt [option "-scan"]] \
         [opt [option "-top any|container"]] \
         [opt [option "-nullvalue [arg value]"]] \
@@ -162,7 +162,7 @@ is embedded in larger payloads.
 
 [list_begin itemized]
 
-  [item] [arg dict]
+  [item] [arg tclvalue]
   [list_begin itemized]
     [item] JSON strings are returned as Tcl strings.
     [item] JSON numbers are returned as their original lexical representation
@@ -175,7 +175,7 @@ is embedded in larger payloads.
            [option -nullvalue].
   [list_end]
 
-  [para] Note that dict output is inherently lossy; use triples or set output
+  [para] Note that tclvalue output is inherently lossy; use triples or set output
   when distinguishing strings from JSON types such as numbers,
   booleans or null.
 
@@ -211,8 +211,8 @@ Quick examples:
    "d": [lb]2, 3[rb]
  }}
  
- # using -output dict (default output format)
- ns_json parse -output dict $JSON
+ # using -output tclvalue (default output format)
+ ns_json parse -output tclvalue $JSON
  ## output: a 1 b true c null d {2 3}
  
  # using -output triples
@@ -237,7 +237,7 @@ Quick examples:
 [opt_def -nullvalue [arg value]]
   [para]
   Specify the Tcl value used to represent JSON [term null] in the
-  generated Tcl output for [option "-output dict"], [option "-output set"],
+  generated Tcl output for [option "-output tclvalue"], [option "-output set"],
   and [option "-output triples"]. The default null value is
   [const null].
 
