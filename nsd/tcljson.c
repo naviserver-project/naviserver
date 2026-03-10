@@ -1540,7 +1540,6 @@ JsonValidateNumberString(const unsigned char *s, size_t len, Ns_DString *errDsPt
 
     /*
      * Init synthetic parser over the lexeme.
-     * NOTE: adjust field names to your JsonParser.
      */
     memset(&jp, 0, sizeof(jp));
     jp.p        = s;
@@ -1851,7 +1850,7 @@ JsonKeyAlloc(JsonParser *UNUSED(jp), const char *bytes, TCL_SIZE_T len)
  * Results:
  *      Standard Tcl hash key compare result:
  *        - returns 0 when the keys are equal
- *        - returns non-zero when the keys differ
+ *        - returns nonzero when the keys differ
  *
  * Side effects:
  *      None.
@@ -4333,7 +4332,7 @@ JsonTriplesValueToJson(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *valueObj,
          * For scalars, reuse JsonEmitValueFromTriple() by providing
          * a typeObj that names the scalar type.
          *
-         * If you already have cached type atoms/objs (JsonAtomObjs[]),
+         * If we already have cached type atoms/objs (JsonAtomObjs[]),
          * use them here rather than constructing new objects.
          */
         Tcl_Obj *typeObj = JsonAtomObjs[vt];
@@ -6338,7 +6337,7 @@ Ns_JsonParse(const unsigned char *buf, size_t len,
     }
 
     memset(&jp, 0, sizeof(jp));
-    jp.interp   = NULL; /* not needed unless you want Tcl conversion helpers that require interp */
+    jp.interp   = NULL; /* not needed but maybe useful in the future */
     jp.start    = buf;
     jp.p        = buf;
     jp.end      = buf + len;
