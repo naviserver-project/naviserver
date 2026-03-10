@@ -1292,15 +1292,15 @@ test ns_json-top-4.2 {-top container with triples output on array} -body {
 
 test ns_json-triples-1.1 {triples: missing subcommand} -body {
     ns_json triples
-} -returnCodes error -result {wrong # args: should be "ns_json triples getvalue|setvalue|gettype ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_json triples getvalue|setvalue|gettype|schema ?/arg .../"}
 
 test ns_json-triples-1.2 {triples: missing subcommand (only 'triples')} -body {
     ns_json triples --
-} -returnCodes error -result {ns_json triples: bad subcommand "--": must be getvalue, setvalue, or gettype}
+} -returnCodes error -result {ns_json triples: bad subcommand "--": must be getvalue, setvalue, gettype, or schema}
 
 test ns_json-triples-1.3 {triples: unknown subcommand} -body {
     ns_json triples doesnotexist
-} -returnCodes error -result {ns_json triples: bad subcommand "doesnotexist": must be getvalue, setvalue, or gettype}
+} -returnCodes error -result {ns_json triples: bad subcommand "doesnotexist": must be getvalue, setvalue, gettype, or schema}
 
 test ns_json-triples-1.4 {getvalue: missing args} -body {
     ns_json triples getvalue
@@ -1645,6 +1645,243 @@ test ns_json-triples-contract-5.4 {ns_json value accepts empty container content
     set ok {a array {}}
     ns_json value -type object $ok
 } -returnCodes ok -result {{"a":[]}}
+
+#
+# --- "ns_json triples schema"
+#
+
+test ns_json-triples-schema-1.0 "schema: array of objects with nullable field" -body {
+    set json {{
+      "users": [
+        {"id": 1, "name": "Alice", "active": true},
+        {"id": 2, "name": "Bob",   "active": false},
+        {"id": 3, "name": "Eve",   "active": null}
+      ],
+      "count": 3
+    }}
+    set t [ns_json parse -output triples $json]
+    ns_json triples schema $t
+} -returnCodes {error ok} -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"count":{"type":"number"},"users":{"type":"array","items":{"type":"object","properties":{"active":{"type":["boolean","null"]},"id":{"type":"number"},"name":{"type":"string"}}}}}}}
+
+test ns_json-triples-schema-1.1 "schema: mixed scalar array uses compact type union" -body {
+    set t [ns_json parse -output triples {[true,null]}]
+    ns_json triples schema $t
+} -returnCodes {error ok} -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"array","items":{"type":["boolean","null"]}}}
+
+test ns_json-triples-schema-1.2 "schema: scalar root" -body {
+    set t [ns_json parse -output triples {"x"}]
+    ns_json triples schema $t
+} -returnCodes {error ok} -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"string"}}
+
+test ns_json-triples-schema-1.3 "schema: mixed scalar array uses compact type union" -body {
+    set t [ns_json parse -output triples {[true,null]}]
+    ns_json triples schema $t
+} -returnCodes {error ok} -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"array","items":{"type":["boolean","null"]}}}
+
+test ns_json-triples-schema-1.4 "schema: object properties are canonicalized" -body {
+    set t [ns_json parse -output triples {{"z":1,"a":2,"m":3}}]
+    ns_json triples schema $t
+} -returnCodes {error ok} -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"a":{"type":"number"},"m":{"type":"number"},"z":{"type":"number"}}}}
+
+test ns_json-triples-schema-1.5 "schema: empty array" -body {
+    set t [ns_json parse -output triples {[]}]
+    ns_json triples schema $t
+} -returnCodes {error ok} -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"array","items":{}}}
+
+test ns_json-triples-schema-1.6 "schema -required: stable required order" -body {
+    set t [ns_json parse -output triples {{"z":1,"a":2}}]
+    ns_json triples schema -required $t
+} -returnCodes {error ok} -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"a":{"type":"number"},"z":{"type":"number"}},"required":["a","z"]}}
+
+test ns_json-triples-schema-1.7 "schema: empty object" -body {
+    set t [ns_json parse -output triples {{}}]
+    ns_json triples schema $t
+} -returnCodes {error ok} -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{}}}
+
+
+#
+# --- "ns_json triples schema" + merge + required
+#
+test ns_json-triples-schema-merge-1.1 \
+    "schema merge of multiple objects without -required omits required" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+
+        ns_json triples schema $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"email":{"type":"string"},"id":{"type":"number"}}}}
+
+test ns_json-triples-schema-merge-1.2 \
+    "schema merge of multiple objects with -required uses intersection semantics" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+        set t3 [ns_json parse -output triples {{"id":3,"email":"c@example.com"}}]
+
+        ns_json triples schema -required $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"email":{"type":"string"},"id":{"type":"number"}},"required":["id"]}}
+
+test ns_json-triples-schema-merge-1.3 \
+    "schema merge with -required keeps all properties required when present in every instance" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+        set t2 [ns_json parse -output triples {{"id":2,"email":"b@example.com"}}]
+
+        ns_json triples schema -required $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"email":{"type":"string"},"id":{"type":"number"}},"required":["email","id"]}}
+
+test ns_json-triples-schema-merge-1.4 \
+    "schema merge across multiple instances compacts scalar type unions per property" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+        set t2 [ns_json parse -output triples {{"id":2,"email":null}}]
+
+        ns_json triples schema $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"email":{"type":["null","string"]},"id":{"type":"number"}}}}
+
+test ns_json-triples-schema-merge-1.5 \
+    "schema merge with -required and nullable property keeps property required when present in every instance" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+        set t2 [ns_json parse -output triples {{"id":2,"email":null}}]
+
+        ns_json triples schema -required $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"email":{"type":["null","string"]},"id":{"type":"number"}},"required":["email","id"]}}
+
+
+test ns_json-triples-schema-merge-1.6 \
+    "schema merge across multiple instances unions property type when property appears only in some documents" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+        set t3 [ns_json parse -output triples {{"id":3,"email":null}}]
+
+        ns_json triples schema $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"email":{"type":["null","string"]},"id":{"type":"number"}}}}
+
+test ns_json-triples-schema-merge-1.7 \
+    "schema merge with -required drops property missing from one instance even when types merge compactly" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+        set t3 [ns_json parse -output triples {{"id":3,"email":null}}]
+
+        ns_json triples schema -required $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"email":{"type":["null","string"]},"id":{"type":"number"}},"required":["id"]}}
+
+test ns_json-triples-schema-merge-1.8 \
+    "schema merge of optional property with differing scalar types produces compact type union" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"flag":true}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+        set t3 [ns_json parse -output triples {{"id":3,"flag":"yes"}}]
+
+        ns_json triples schema $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"flag":{"type":["boolean","string"]},"id":{"type":"number"}}}}
+
+test ns_json-triples-schema-merge-1.9 \
+    "schema merge with -required drops optional property whose scalar types differ across instances" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"flag":true}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+        set t3 [ns_json parse -output triples {{"id":3,"flag":"yes"}}]
+
+        ns_json triples schema -required $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"flag":{"type":["boolean","string"]},"id":{"type":"number"}},"required":["id"]}}
+
+test ns_json-triples-schema-merge-1.10 \
+    "schema merge with -required keeps mixed-type property required when present in every instance" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"flag":true}}]
+        set t2 [ns_json parse -output triples {{"id":2,"flag":"yes"}}]
+
+        ns_json triples schema -required $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"flag":{"type":["boolean","string"]},"id":{"type":"number"}},"required":["flag","id"]}}
+
+test ns_json-triples-schema-merge-1.11 \
+    "schema merge with -required drops property seen in only one of several instances" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"nickname":"joe"}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+        set t3 [ns_json parse -output triples {{"id":3}}]
+
+        ns_json triples schema -required $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"id":{"type":"number"},"nickname":{"type":"string"}},"required":["id"]}}
+
+test ns_json-triples-schema-merge-1.12 \
+    "schema merge of nested object without -required omits nested required" -body {
+        set t1 [ns_json parse -output triples {{"user":{"id":1,"email":"a@example.com"}}}]
+        set t2 [ns_json parse -output triples {{"user":{"id":2}}}]
+
+        ns_json triples schema $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"user":{"type":"object","properties":{"email":{"type":"string"},"id":{"type":"number"}}}}}}
+
+test ns_json-triples-schema-merge-1.13 \
+    "schema merge of nested object with -required uses nested intersection semantics" -body {
+        set t1 [ns_json parse -output triples {{"user":{"id":1,"email":"a@example.com"}}}]
+        set t2 [ns_json parse -output triples {{"user":{"id":2}}}]
+        set t3 [ns_json parse -output triples {{"user":{"id":3,"email":"c@example.com"}}}]
+
+        ns_json triples schema -required $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"user":{"type":"object","properties":{"email":{"type":"string"},"id":{"type":"number"}},"required":["id"]}},"required":["user"]}}
+
+test ns_json-triples-schema-merge-1.14 \
+    "schema merge with -required drops top-level property missing in one instance and nested required is intersected independently" -body {
+        set t1 [ns_json parse -output triples {{"user":{"id":1,"email":"a@example.com"}}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+        set t3 [ns_json parse -output triples {{"user":{"id":3}}}]
+
+        ns_json triples schema -required $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"id":{"type":"number"},"user":{"type":"object","properties":{"email":{"type":"string"},"id":{"type":"number"}},"required":["id"]}}}}
+
+test ns_json-triples-schema-merge-1.15 \
+    "schema merge of arrays with differing scalar item types produces compact item type union" -body {
+        set t1 [ns_json parse -output triples {{"tags":["a","b"]}}]
+        set t2 [ns_json parse -output triples {{"tags":[1,2]}}]
+
+        ns_json triples schema $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"tags":{"type":"array","items":{"type":["number","string"]}}}}}
+
+test ns_json-triples-schema-merge-1.16 \
+    "schema merge of arrays with null and string items produces compact nullable item type union" -body {
+        set t1 [ns_json parse -output triples {{"tags":["a"]}}]
+        set t2 [ns_json parse -output triples {{"tags":[null]}}]
+
+        ns_json triples schema $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"tags":{"type":"array","items":{"type":["null","string"]}}}}}
+
+test ns_json-triples-schema-merge-1.17 \
+    "schema merge with -required keeps array property required when present in every instance" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"tags":["a"]}}]
+        set t2 [ns_json parse -output triples {{"id":2,"tags":[1]}}]
+
+        ns_json triples schema -required $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"id":{"type":"number"},"tags":{"type":"array","items":{"type":["number","string"]}}},"required":["id","tags"]}}
+
+test ns_json-triples-schema-merge-1.18 \
+    "schema merge with -required drops array property missing in one instance" -body {
+        set t1 [ns_json parse -output triples {{"id":1,"tags":["a"]}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+        set t3 [ns_json parse -output triples {{"id":3,"tags":[1]}}]
+
+        ns_json triples schema -required $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"id":{"type":"number"},"tags":{"type":"array","items":{"type":["number","string"]}}},"required":["id"]}}
+
+
+test ns_json-triples-schema-merge-1.19 \
+    "schema merge with -required intersects required properties in object-valued array items" -body {
+        set t1 [ns_json parse -output triples {{"users":[{"id":1,"email":"a@example.com"}]}}]
+        set t2 [ns_json parse -output triples {{"users":[{"id":2}]}}]
+        set t3 [ns_json parse -output triples {{"users":[{"id":3,"email":"c@example.com"}]}}]
+
+        ns_json triples schema -required $t1 $t2 $t3
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"users":{"type":"array","items":{"type":"object","properties":{"email":{"type":"string"},"id":{"type":"number"}},"required":["id"]}}},"required":["users"]}}
+
+test ns_json-triples-schema-merge-1.20 \
+    "schema merge of object-valued array items without -required omits nested required" -body {
+        set t1 [ns_json parse -output triples {{"users":[{"id":1,"email":"a@example.com"}]}}]
+        set t2 [ns_json parse -output triples {{"users":[{"id":2}]}}]
+
+        ns_json triples schema $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"users":{"type":"array","items":{"type":"object","properties":{"email":{"type":"string"},"id":{"type":"number"}}}}}}}
+
+test ns_json-triples-schema-merge-1.21 \
+    "schema merge with -required omits empty required after top-level intersection becomes empty" -body {
+        set t1 [ns_json parse -output triples {{"user":{"id":1}}}]
+        set t2 [ns_json parse -output triples {{"id":2}}]
+
+        ns_json triples schema -required $t1 $t2
+    } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"id":{"type":"number"},"user":{"type":"object","properties":{"id":{"type":"number"}},"required":["id"]}}}}
+
 # --- cleanup ---------------------------------------------------------------
 
 cleanupTests

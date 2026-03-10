@@ -672,6 +672,109 @@ or via [option "-type null"].
 [example_end]
 
 
+[call [cmd "ns_json triples schema"] \
+        [opt [option -pretty]] \
+        [opt [option -required]] \
+        [opt --] \
+        [arg triples] \
+        [arg "triples ..."] \
+        ]
+
+[para]
+Derive a JSON Schema-like description from one or more JSON instances
+represented as canonical root-wrapped triples documents.
+
+[para]
+Schema generation can be useful when inspecting unknown JSON structures,
+documenting API responses, or deriving validation rules from example
+data.  The command analyzes the provided JSON instances and produces a
+schema describing the observed structure and value types.
+
+[para]
+When multiple input documents are provided, the individual schema
+fragments are merged into a single schema describing all observed
+instances.
+
+[para]
+The result is returned as JSON text.  The generated schema follows a
+JSON Schema-like structure and includes a top-level [const \$schema]
+field naming the supported draft.
+
+[list_begin itemized]
+  [item] [option -pretty] returns the generated schema in pretty-printed
+         form.
+
+  [item] [option -required] includes [const required] arrays in object
+         schemas.  With a single input document, all observed properties
+         are considered required.  With multiple input documents,
+         [const required] is computed using intersection semantics, so
+         only properties present in every input document remain required.
+[list_end]
+
+[para]
+Without [option -required], the generated schema omits [const required]
+fields.
+
+[para]
+Each input value must be a canonical root-wrapped triples document, such
+as one returned by [cmd "ns_json parse -output triples"].
+
+[example_begin]
+ set t [lb]ns_json parse -output triples {{"id":1,"email":"a@example.com"}}[rb]
+ 
+ ns_json triples schema -pretty $t
+ ## output:
+ ## {
+ ##   "$schema": "https://json-schema.org/draft/2020-12/schema",
+ ##   "type": "object",
+ ##   "properties": {
+ ##     "email": { "type": "string" },
+ ##     "id": { "type": "number" }
+ ##   }
+ ## }
+[example_end]
+
+[para]
+When multiple instances are provided, the generated schema reflects the
+combined structure of all observed values.
+
+[example_begin]
+ set t1 [lb]ns_json parse -output triples {{"id":1,"email":"a@example.com"}}[rb]
+ set t2 [lb]ns_json parse -output triples {{"id":2}}[rb]
+ set t3 [lb]ns_json parse -output triples {{"id":3,"email":"c@example.com"}}[rb]
+ 
+ ns_json triples schema -pretty -required $t1 $t2 $t3
+ ## output:
+ ## {
+ ##   "$schema": "https://json-schema.org/draft/2020-12/schema",
+ ##   "type": "object",
+ ##   "properties": {
+ ##     "email": { "type": "string" },
+ ##     "id": { "type": "number" }
+ ##   },
+ ##   "required": [lb]"id"[rb]
+ ## }
+[example_end]
+
+[para]
+When a property is observed with different scalar types across multiple
+instances, the generated schema uses a compact type union.
+
+[example_begin]
+ set t1 [lb]ns_json parse -output triples {{"email":"a@example.com"}}[rb]
+ set t2 [lb]ns_json parse -output triples {{"email":null}}[rb]
+ 
+ ns_json triples schema -pretty $t1 $t2
+ ## output:
+ ## {
+ ##   "$schema": "https://json-schema.org/draft/2020-12/schema",
+ ##   "type": "object",
+ ##   "properties": {
+ ##     "email": { "type": [lb]"null", "string"[rb] }
+ ##   }
+ ## }
+[example_end]
+
 [list_end]
 
 
