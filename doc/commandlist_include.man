@@ -110,6 +110,7 @@
 [uri ../../naviserver/files/ns_conn.html {ns_conn contentfile}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn contentlength}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn contentsentlength}] ?/bytes/?
+[uri ../../naviserver/files/ns_conn.html {ns_conn contenttype}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn copy}] /offset/ /length/ /channelId/
 [uri ../../naviserver/files/ns_conn.html {ns_conn currentaddr}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn currentport}]
@@ -363,10 +364,12 @@
 [uri ../../naviserver/files/ns_json.html {ns_json keydecode}] /string/
 [uri ../../naviserver/files/ns_json.html {ns_json keyencode}] /string/
 [uri ../../naviserver/files/ns_json.html {ns_json keyinfo}] /key/
-[uri ../../naviserver/files/ns_json.html {ns_json parse}] ?-output dict|triples|set? ?-scan? ?-top any|container? ?-validatenumbers? ?-maxdepth /integer/? ?-maxstring /integer/? ?-maxcontainer /integer/? ?--? /value/
-[uri ../../naviserver/files/ns_json.html {ns_json triples gettype}] gettype ?-path /value/? ?-pointer /value/? ?-indices? ?--? /triples/
-[uri ../../naviserver/files/ns_json.html {ns_json triples getvalue}] getvalue ?-path /value/? ?-pointer /value/? ?-indices? ?-output json|triples? ?-pretty? ?--? /triples/
-[uri ../../naviserver/files/ns_json.html {ns_json triples setvalue}] setvalue ?-path /value/? ?-pointer /value/? ?-type auto|string|number|boolean|null|object|array? ?--? /triples/ /value/
+[uri ../../naviserver/files/ns_json.html {ns_json null}]
+[uri ../../naviserver/files/ns_json.html {ns_json parse}] ?-output tclvalue|triples|set? ?-scan? ?-top any|container? ?-nullvalue /value/? ?-validatenumbers? ?-maxdepth /integer/? ?-maxstring /integer/? ?-maxcontainer /integer/? ?--? /value/
+[uri ../../naviserver/files/ns_json.html {ns_json triples gettype}] ?-path /value/? ?-pointer /value/? ?-indices? ?--? /triples/
+[uri ../../naviserver/files/ns_json.html {ns_json triples getvalue}] ?-path /value/? ?-pointer /value/? ?-indices? ?-output json|triples? ?-pretty? ?--? /triples/
+[uri ../../naviserver/files/ns_json.html {ns_json triples schema}] ?-pretty? ?-required? ?--? /triples .../
+[uri ../../naviserver/files/ns_json.html {ns_json triples setvalue}] ?-path /value/? ?-pointer /value/? ?-type auto|string|number|boolean|null|object|array? ?--? /triples/ /value/
 [uri ../../naviserver/files/ns_json.html {ns_json value}] ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?--? /value/
 [uri ../../naviserver/files/ns_kill.html {ns_kill}] ?-nocomplain? /pid/ /signal/
 [uri ../../naviserver/files/ns_library.html {ns_library}] private|shared ?/module/?

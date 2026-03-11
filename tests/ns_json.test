@@ -74,6 +74,7 @@ test ns_json-1.11 {syntax: -- ns_json keydecode} -body {
 } -returnCodes error -result {wrong # args: should be "ns_json keydecode /string/"}
 
 
+
 #######################################################################################
 #  test ns_json parse/scan basic behavior
 #######################################################################################
@@ -1329,6 +1330,10 @@ test ns_json-triples-1.9 {getvalue: -index still needs path+triples} -body {
 test ns_json-triples-1.10 {gettype: -index still needs path+triples} -body {
     ns_json triples gettype -index
 } -returnCodes error -result {ns_json triples: missing -path or -pointer}
+
+test ns_json-triples-1.11 {triples schema: missing triples} -body {
+    ns_json triples schema
+} -returnCodes error -result {wrong # args: should be "ns_json triples schema ?-pretty? ?-required? ?--? /triples .../"}
 
 #
 # --- Basic behavior tests

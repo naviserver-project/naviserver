@@ -35,7 +35,7 @@ well-defined checks.
 
 [para]
 Features such as comments, JSON5 extensions, or schema validation are
-intentionally not supported.
+not supported.
 
 [para]
 The following design goals guided the implementation:
@@ -682,13 +682,21 @@ or via [option "-type null"].
         [opt [option -pretty]] \
         [opt [option -required]] \
         [opt --] \
-        [arg triples] \
         [arg "triples ..."] \
         ]
 
 [para]
 Derive a JSON Schema-like description from one or more JSON instances
 represented as canonical root-wrapped triples documents.
+
+[para] The generated schema is canonicalized to ensure a stable and
+deterministic structure.  Schema objects are emitted with a fixed
+member order ([const \$schema], [const type], [const properties],
+[const items], [const required], [const anyOf]).  Property names are
+sorted lexicographically and arrays such as [const required] are
+normalized to a stable order.  This canonicalization makes the output
+predictable and suitable for comparisons in tests, diffs, or generated
+documentation.
 
 [para]
 Schema generation can be useful when inspecting unknown JSON structures,
