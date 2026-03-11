@@ -101,9 +101,10 @@ help:
 	@echo '  all          - build program and documentation'
 	@echo '  install      - install program and man pages under $(NAVISERVER)'
 	@echo '  test         - run all tests in the automatic test suite'
-	@echo '  gdbtest      - run all tests, under the control of the debugger'
+	@echo '  gdbtest      - run all tests, under the control of gdb'
+	@echo '  lldbtest     - run all tests, under the control of lldb'
 	@echo '  runtest      - start the server in interactive command mode'
-	@echo '  gdbruntest   - start the server in command mode, under the debugger'
+	@echo '  gdbruntest   - start the server in command mode, under gdb'
 	@echo '  memcheck     - run all tests, under the valgrind memory checker'
 	@echo '  build-doc    - build the HTML and nroff documentation'
 	@echo '  dist         - create a source tarball naviserver-'$(NS_PATCH_LEVEL)'.tar.gz'
@@ -111,6 +112,9 @@ help:
 	@echo
 	@echo 'Example for a system-wide installation under /usr/local/ns:'
 	@echo '  make all && su -c "make install"'
+	@echo
+	@echo 'Example for verbose compilation:'
+	@echo '  make VERBOSE=1'
 	@echo
 	@echo 'Example for running selected test in the test suite, under the debugger:'
 	@echo '  make gdbtest TESTFLAGS="-verbose start -file cookies.test -match cookie-2.*"'
