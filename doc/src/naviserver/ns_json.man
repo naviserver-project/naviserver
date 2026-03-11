@@ -698,6 +698,12 @@ normalized to a stable order.  This canonicalization makes the output
 predictable and suitable for comparisons in tests, diffs, or generated
 documentation.
 
+[para ]The generated schemata use a small subset of the JSON Schema
+vocabulary and are valid JSON Schema documents. They can therefore be
+used directly with standard JSON Schema validators, although they
+represent inferred structure rather than human certified validation
+constraints.
+
 [para]
 Schema generation can be useful when inspecting unknown JSON structures,
 documenting API responses, or deriving validation rules from example
