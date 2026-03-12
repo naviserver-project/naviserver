@@ -2,7 +2,7 @@ name: Build
 on: [push, workflow_dispatch]
 jobs:
   naviserver:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     env:
       CC:              ${{ matrix.compiler }}
       TCLTAG:          ${{ matrix.tcltag }}
@@ -74,7 +74,7 @@ jobs:
           sudo apt-get install -y ${CC} libpam0g-dev
       - name: Checkout
         #if: github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: naviserver-project/naviserver
           #token: ${{ secrets.PAT }}
