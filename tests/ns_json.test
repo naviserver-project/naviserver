@@ -1293,15 +1293,15 @@ test ns_json-top-4.2 {-top container with triples output on array} -body {
 
 test ns_json-triples-1.1 {triples: missing subcommand} -body {
     ns_json triples
-} -returnCodes error -result {wrong # args: should be "ns_json triples getvalue|setvalue|gettype|schema ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_json triples getvalue|setvalue|gettype|schema|match ?/arg .../"}
 
 test ns_json-triples-1.2 {triples: missing subcommand (only 'triples')} -body {
     ns_json triples --
-} -returnCodes error -result {ns_json triples: bad subcommand "--": must be getvalue, setvalue, gettype, or schema}
+} -returnCodes error -result {ns_json triples: bad subcommand "--": must be getvalue, setvalue, gettype, schema, or match}
 
 test ns_json-triples-1.3 {triples: unknown subcommand} -body {
     ns_json triples doesnotexist
-} -returnCodes error -result {ns_json triples: bad subcommand "doesnotexist": must be getvalue, setvalue, gettype, or schema}
+} -returnCodes error -result {ns_json triples: bad subcommand "doesnotexist": must be getvalue, setvalue, gettype, schema, or match}
 
 test ns_json-triples-1.4 {getvalue: missing args} -body {
     ns_json triples getvalue
@@ -1334,6 +1334,10 @@ test ns_json-triples-1.10 {gettype: -index still needs path+triples} -body {
 test ns_json-triples-1.11 {triples schema: missing triples} -body {
     ns_json triples schema
 } -returnCodes error -result {wrong # args: should be "ns_json triples schema ?-pretty? ?-required? ?--? /triples .../"}
+
+test ns_json-triples-1.12 {triples match: missing schema and triples} -body {
+    ns_json triples match
+} -returnCodes error -result {wrong # args: should be "ns_json triples match -schema /value/ ?-ignoreunsupported? ?--? /triples/"}
 
 #
 # --- Basic behavior tests
@@ -1886,6 +1890,157 @@ test ns_json-triples-schema-merge-1.21 \
 
         ns_json triples schema -required $t1 $t2
     } -result {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"id":{"type":"number"},"user":{"type":"object","properties":{"id":{"type":"number"}},"required":["id"]}}}}
+
+
+#
+# --- "ns_json triples match"
+#
+test ns_json-triples-match-1.1 {match: simple object schema succeeds} -body {
+    set t [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+    set s [ns_json triples schema -required $t]
+
+    ns_json triples match -schema $s $t
+} -result 1
+
+test ns_json-triples-match-1.2 {match: missing required property fails} -body {
+    set tref [ns_json parse -output triples {{"id":1,"email":"a@example.com"}}]
+    set t    [ns_json parse -output triples {{"email":"a@example.com"}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /: missing required property "id"}
+
+test ns_json-triples-match-1.3 {match: wrong scalar type fails} -body {
+    set tref [ns_json parse -output triples {{"id":1}}]
+    set t    [ns_json parse -output triples {{"id":"1"}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /id: expected number, got string}
+
+test ns_json-triples-match-1.4 {match: unexpected property fails} -body {
+    set tref [ns_json parse -output triples {{"id":1}}]
+    set t    [ns_json parse -output triples {{"id":1,"extra":true}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /extra: property not allowed by schema}
+
+test ns_json-triples-match-1.5 {match: nullable union accepts null} -body {
+    set t1 [ns_json parse -output triples {{"email":"a@example.com"}}]
+    set t2 [ns_json parse -output triples {{"email":null}}]
+    set s  [ns_json triples schema $t1 $t2]
+
+    ns_json triples match -schema $s $t2
+} -result 1
+
+test ns_json-triples-match-1.6 {match: nullable union rejects wrong type} -body {
+    set t1 [ns_json parse -output triples {{"email":"a@example.com"}}]
+    set t2 [ns_json parse -output triples {{"email":null}}]
+    set t3 [ns_json parse -output triples {{"email":{}}}]
+    set s  [ns_json triples schema $t1 $t2]
+
+    ns_json triples match -schema $s $t3
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /email: *}
+
+test ns_json-triples-match-1.7 {match: array item type succeeds} -body {
+    set tref [ns_json parse -output triples {{"tags":["a","b"]}}]
+    set t    [ns_json parse -output triples {{"tags":["x","y"]}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -result 1
+
+test ns_json-triples-match-1.8 {match: array item type mismatch fails} -body {
+    set tref [ns_json parse -output triples {{"tags":["a","b"]}}]
+    set t    [ns_json parse -output triples {{"tags":["x",1]}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /tags/1: expected string, got number}
+
+test ns_json-triples-match-1.9 {match: nested object succeeds} -body {
+    set tref [ns_json parse -output triples {{"user":{"id":1,"email":"a@example.com"}}}]
+    set t    [ns_json parse -output triples {{"user":{"id":2,"email":"b@example.com"}}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -result 1
+
+test ns_json-triples-match-1.10 {match: nested object missing required fails} -body {
+    set tref [ns_json parse -output triples {{"user":{"id":1,"email":"a@example.com"}}}]
+    set t    [ns_json parse -output triples {{"user":{"email":"b@example.com"}}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /user: missing required property "id"}
+
+test ns_json-triples-match-1.11 {match: unsupported schema keyword rejected by default} -body {
+    set t [ns_json parse -output triples {{"id":1}}]
+    set s {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"id":{"type":"number"}},"additionalProperties":false}}
+
+    ns_json triples match -schema $s $t
+} -returnCodes error -match glob -result {ns_json: unsupported schema keyword "additionalProperties"}
+
+test ns_json-triples-match-1.12 {match: unsupported schema keyword ignored with -ignoreunsupported} -body {
+    set t [ns_json parse -output triples {{"id":1}}]
+    set s {{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"id":{"type":"number"}},"additionalProperties":false}}
+
+    ns_json triples match -ignoreunsupported -schema $s $t
+} -result 1
+
+
+test ns_json-triples-match-2.1 {match: nested array mismatch path} -body {
+    set tref [ns_json parse -output triples {{"a":[{"id":1},{"id":2}]}}]
+    set t    [ns_json parse -output triples {{"a":[{"id":1},{"id":"x"}]}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /a/1/id:*}
+
+test ns_json-triples-match-2.2 {match: path escaping in error} -body {
+    set tref [ns_json parse -output triples {{"a/b":1}}]
+    set t    [ns_json parse -output triples {{"a/b":"x"}}]
+    set s [ns_json triples schema -required $tref]
+
+    ns_json triples match -schema $s $t
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /a~1b:*}
+
+test ns_json-triples-match-2.3 {match: anyOf branch success} -body {
+    set t1 [ns_json parse -output triples {{"x":1}}]
+    set t2 [ns_json parse -output triples {{"x":"a"}}]
+
+    set s [ns_json triples schema $t1 $t2]
+
+    ns_json triples match -schema $s $t2
+} -result 1
+
+test ns_json-triples-match-2.4 {match: anyOf branch failure} -body {
+    set t1 [ns_json parse -output triples {{"x":1}}]
+    set t2 [ns_json parse -output triples {{"x":"a"}}]
+    set t3 [ns_json parse -output triples {{"x":{}}}]
+
+    set s [ns_json triples schema $t1 $t2]
+
+    ns_json triples match -schema $s $t3
+} -returnCodes error -match glob -result {ns_json: schema mismatch at /x:*}
+
+test ns_json-triples-match-2.5 {match: schema without required} -body {
+    set t [ns_json parse -output triples {{"id":1}}]
+
+    set s {{"type":"object","properties":{"id":{"type":"number"}}}}
+
+    ns_json triples match -schema $s $t
+} -result 1
+
+test ns_json-triples-match-2.6 {match: nested unsupported keyword ignored} -body {
+    set t [ns_json parse -output triples {{"id":1}}]
+
+    set s {{"type":"object",
+            "properties":{"id":{"type":"number","minimum":0}}}}
+
+    ns_json triples match -ignoreunsupported -schema $s $t
+} -result 1
 
 # --- cleanup ---------------------------------------------------------------
 

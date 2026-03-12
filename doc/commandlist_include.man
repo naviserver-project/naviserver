@@ -368,6 +368,7 @@
 [uri ../../naviserver/files/ns_json.html {ns_json parse}] ?-output tclvalue|triples|set? ?-scan? ?-top any|container? ?-nullvalue /value/? ?-validatenumbers? ?-maxdepth /integer/? ?-maxstring /integer/? ?-maxcontainer /integer/? ?--? /value/
 [uri ../../naviserver/files/ns_json.html {ns_json triples gettype}] ?-path /value/? ?-pointer /value/? ?-indices? ?--? /triples/
 [uri ../../naviserver/files/ns_json.html {ns_json triples getvalue}] ?-path /value/? ?-pointer /value/? ?-indices? ?-output json|triples? ?-pretty? ?--? /triples/
+[uri ../../naviserver/files/ns_json.html {ns_json triples match}] -schema /value/ ?-ignoreunsupported? ?--? /triples/
 [uri ../../naviserver/files/ns_json.html {ns_json triples schema}] ?-pretty? ?-required? ?--? /triples .../
 [uri ../../naviserver/files/ns_json.html {ns_json triples setvalue}] ?-path /value/? ?-pointer /value/? ?-type auto|string|number|boolean|null|object|array? ?--? /triples/ /value/
 [uri ../../naviserver/files/ns_json.html {ns_json value}] ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?--? /value/

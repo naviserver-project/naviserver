@@ -98,6 +98,12 @@ typedef enum {
     JSON_ATOM_ANYOF,       /* "anyOf" */
     JSON_ATOM_SCHEMA,      /* "$schema" */
 
+    JSON_ATOM_TITLE,       /* "title */
+    JSON_ATOM_DESCRIPTION, /* "description */
+    JSON_ATOM_DEFAULT,     /* "default */
+    JSON_ATOM_EXAMPLES,    /* "examples */
+    JSON_ATOM_BOOL,        /* "bool */
+
     JSON_ATOM_MAX
 } JsonAtom;
 
@@ -130,7 +136,14 @@ static const NsAtomSpec jsonAtomSpecs[JSON_ATOM_MAX] = {
     {-1, "required",      8},   /* JSON_ATOM_REQUIRED */
     {-1, "items",         5},   /* JSON_ATOM_ITEMS */
     {-1, "anyOf",         5},   /* JSON_ATOM_ANYOF */
-    {-1, "$schema",       7}    /* JSON_ATOM_SCHEMA */
+    {-1, "$schema",       7},   /* JSON_ATOM_SCHEMA */
+
+    {-1, "title",         5},   /* JSON_ATOM_TITLE */
+    {-1, "description",  11},   /* JSON_ATOM_DESCRIPTION */
+    {-1, "default",       7},   /* JSON_ATOM_TITLE */
+    {-1, "examples",      8},   /* JSON_ATOM_EXAMPLES */
+    {-1, "bool",          4}    /* JSON_ATOM_BOOL */
+
 };
 static Tcl_Obj *JsonAtomObjs[JSON_ATOM_MAX];
 
@@ -243,6 +256,7 @@ static TCL_OBJCMDPROC_T JsonNullObjCmd;
 static TCL_OBJCMDPROC_T JsonParseObjCmd;
 static TCL_OBJCMDPROC_T JsonTriplesGettypeObjCmd;
 static TCL_OBJCMDPROC_T JsonTriplesGetvalueObjCmd;
+static TCL_OBJCMDPROC_T JsonTriplesMatchObjCmd;
 static TCL_OBJCMDPROC_T JsonTriplesObjCmd;
 static TCL_OBJCMDPROC_T JsonTriplesSchemaObjCmd;
 static TCL_OBJCMDPROC_T JsonTriplesSetvalueObjCmd;
@@ -283,10 +297,10 @@ static const Tcl_HashKeyType JsonKeyType = {
  */
 
 /*
- * JSON atom initialization.
+ * JSON atom helpers.
  */
-void NsAtomJsonInit(void);
-
+void                 NsAtomJsonInit(void);
+static bool          JsonObjIsAtom(Tcl_Obj *obj, JsonAtom atom)  NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 /*
  * Null value helpers.
  */
@@ -342,6 +356,7 @@ static Tcl_Obj      *JsonInternKeyObj(JsonParser *jp, const char *bytes, TCL_SIZ
 /*
  * Type detection and triples/container validation.
  */
+static const char *  JsonTypeString(JsonValueType vt);
 static JsonValueType JsonTypeObjToVt(Tcl_Obj *typeObj) NS_GNUC_NONNULL(1);
 static JsonValueType JsonValueTypeDetect(Tcl_Interp *interp, Tcl_Obj *valueObj) NS_GNUC_NONNULL(1,2);
 static JsonValueType TriplesDetectRootWrapper(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj **rootTypeObjPtr, Tcl_Obj **rootValuePtr)  NS_GNUC_NONNULL(1,2,4);
@@ -463,6 +478,34 @@ static Ns_ReturnCode JsonSchemaCanonicalize(Tcl_Interp *interp, Tcl_Obj *schemaO
 static Ns_ReturnCode JsonSchemaCanonicalizeTypeField(Tcl_Interp *interp, Tcl_Obj *typeTypeObj, Tcl_Obj *typeValueObj, Tcl_Obj **outTypeObjPtr) NS_GNUC_NONNULL(1,2,3,4);
 static Ns_ReturnCode JsonSchemaCanonicalizeRequired(Tcl_Interp *interp, Tcl_Obj *requiredObj, Tcl_Obj **canonRequiredObjPtr) NS_GNUC_NONNULL(1,2,3);
 static Ns_ReturnCode JsonSchemaCanonicalizeProperties(Tcl_Interp *interp, Tcl_Obj *propertiesObj, Tcl_Obj **canonPropsObjPtr) NS_GNUC_NONNULL(1,2,3);
+
+/*
+ * Schema mismatch reporting helpers.
+ */
+static Ns_ReturnCode JsonSchemaMismatchType(Tcl_Interp *interp, Tcl_DString *pathDsPtr, const char *expected, const char *actual)  NS_GNUC_NONNULL(1,2,3,4);
+static Ns_ReturnCode JsonSchemaMismatchTypeUnion(Tcl_Interp *interp, Tcl_DString *pathDsPtr, Tcl_Obj *typeObj, const char *actual) NS_GNUC_NONNULL(1,2,3,4);
+static Ns_ReturnCode JsonSchemaMismatchMissingRequired(Tcl_Interp *interp, Tcl_DString *pathDsPtr, Tcl_Obj *nameObj) NS_GNUC_NONNULL(1,2,3);
+static Ns_ReturnCode JsonSchemaMismatchUnexpectedProperty(Tcl_Interp *interp, Tcl_DString *pathDsPtr)  NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode JsonSchemaMismatchAnyOf(Tcl_Interp *interp, Tcl_DString *pathDsPtr, JsonValueType actualVt) NS_GNUC_NONNULL(1,2);
+
+/*
+ * JSON Pointer path construction helpers.
+ */
+static void          JsonPointerPathPushKey(Tcl_DString *dsPtr, Tcl_Obj *keyObj) NS_GNUC_NONNULL(1,2);
+static void          JsonPointerPathPushIndex(Tcl_DString *dsPtr, TCL_SIZE_T idx)  NS_GNUC_NONNULL(1);
+static void          JsonPointerPathPop(Tcl_DString *dsPtr, TCL_SIZE_T oldLen) NS_GNUC_NONNULL(1);
+
+/*
+ * Schema validation/matching helpers.
+ */
+static const char *  JsonSchemaMisMatchGetPath(Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1);
+static Ns_ReturnCode JsonSchemaRequireSupportedSubset(Tcl_Interp *interp, Tcl_Obj *schemaObj, bool ignoreUnsupported) NS_GNUC_NONNULL(1,2);
+static Tcl_Obj      *JsonSchemaDictGet(Tcl_Obj *schemaObj, JsonAtom atom) NS_GNUC_NONNULL(1);
+static Ns_ReturnCode JsonSchemaMatchValue(Tcl_Interp *interp, Tcl_Obj *schemaObj, JsonValueType actualVt, Tcl_Obj *actualObj, Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1,2,4,5);
+static Ns_ReturnCode JsonSchemaMatchType(Tcl_Interp *interp, Tcl_Obj *typeObj, JsonValueType actualVt, Tcl_DString *pathDsPtr);
+static Ns_ReturnCode JsonSchemaMatchAnyOf(Tcl_Interp *interp, Tcl_Obj *anyOfObj, JsonValueType actualVt, Tcl_Obj *actualObj, Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1,2,4,5);
+static Ns_ReturnCode JsonSchemaMatchObject(Tcl_Interp *interp, Tcl_Obj *schemaObj, Tcl_Obj *triplesObj, Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1,2,3,4);
+static Ns_ReturnCode JsonSchemaMatchArray(Tcl_Interp *interp, Tcl_Obj *schemaObj, Tcl_Obj *triplesObj, Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1,2,3,4);
 
 /*
  * Schema type helpers.
@@ -1657,8 +1700,9 @@ JsonNumberObjToLexeme(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj **outObjPtr
         }
     }
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("expected numeric Tcl value, got \"%s\"", s));
+    Ns_TclPrintfResult(interp, "expected numeric Tcl value, got \"%s\"", s);
     Tcl_DStringFree(&errDs);
+
     return NS_ERROR;
 }
 
@@ -1812,6 +1856,7 @@ JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj 
  * Function Implementations: Key sharing/interning helpers.
  *======================================================================
  */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2062,6 +2107,33 @@ JsonInternKeyObj(JsonParser *jp, const char *bytes, TCL_SIZE_T len)
 /*
  *----------------------------------------------------------------------
  *
+ * JsonTypeString --
+ *
+ *      Return the canonical string representation of a JsonValueType.
+ *
+ *      The function maps the internal JsonValueType enumeration to the
+ *      corresponding atomized JSON type name (e.g., "string", "number",
+ *      "object").  The returned string is taken from the atom table
+ *      (JsonAtomObjs[]) and is therefore stable and shared.
+ *
+ * Results:
+ *      Returns a pointer to the constant string representation of the
+ *      specified JSON value type.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+JsonTypeString(JsonValueType vt)
+{
+    return Tcl_GetString(JsonAtomObjs[vt]);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * JsonTypeObjToVt --
  *
  *      Map a type token Tcl object to the corresponding JsonValueType.
@@ -2103,6 +2175,54 @@ JsonTypeObjToVt(Tcl_Obj *typeObj)
         if (tlen == 5 && memcmp(t, "array", 5) == 0)    { return JSON_VT_ARRAY;  }
     }
     return JSON_VT_AUTO;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonObjIsAtom --
+ *
+ *      Test whether a Tcl object corresponds to a specific JSON atom.
+ *
+ *      This helper compares a Tcl object with one of the predefined
+ *      JSON keyword atoms (e.g., "type", "properties", "items").
+ *      The comparison is optimized for atomized objects by first
+ *      checking pointer identity.  If the object is not the same
+ *      instance as the atom object, the function falls back to
+ *      comparing the string representations.
+ *
+ *      This allows callers to efficiently test schema dictionary
+ *      keys against known JSON keywords while still accepting
+ *      non-atomized input originating from user-provided schemas.
+ *
+ * Results:
+ *      true if the Tcl object represents the specified atom.
+ *      false otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline bool
+JsonObjIsAtom(Tcl_Obj *obj, JsonAtom atom)
+{
+    Tcl_Obj *atomObj = JsonAtomObjs[atom];
+
+    /* Fast path: pointer identity (most common case). */
+    if (atomObj == obj) {
+        return NS_TRUE;
+    }
+
+    /* Slow path: compare string representations. */
+    {
+        TCL_SIZE_T slen = 0, olen = 0;
+        const char *s = Tcl_GetStringFromObj(atomObj, &slen);
+        const char *o = Tcl_GetStringFromObj(obj, &olen);
+
+        return (slen == olen && memcmp(o, s, (size_t)olen) == 0);
+    }
 }
 
 /*
@@ -4486,13 +4606,13 @@ JsonEmitValueFromTriple(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valObj,
 {
     const char *t = Tcl_GetString(typeObj);
 
-    if (*t == 's' && strcmp(t, "string") == 0) {
+    if (JsonObjIsAtom(typeObj, JSON_ATOM_T_STRING)) {
         const char *s; TCL_SIZE_T len;
         s = Tcl_GetStringFromObj(valObj, &len);
         JsonAppendQuotedString(dsPtr, s, len);
         return TCL_OK;
 
-    } else if (*t == 'n' && strcmp(t, "number") == 0) {
+    } else if (JsonObjIsAtom(typeObj, JSON_ATOM_T_NUMBER)) {
         /*
          * Emit numeric lexeme as-is (caller should ensure validity for "number").
          */
@@ -4511,7 +4631,8 @@ JsonEmitValueFromTriple(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valObj,
         Tcl_DStringAppend(dsPtr, s, len);
         return TCL_OK;
 
-    } else if (*t == 'b' && (strcmp(t, "bool") == 0 || strcmp(t, "boolean") == 0)) {
+    } else if (JsonObjIsAtom(typeObj, JSON_ATOM_T_BOOLEAN)
+               || JsonObjIsAtom(typeObj, JSON_ATOM_BOOL)) {
         int b = 0;
         if (Tcl_GetBooleanFromObj(interp, valObj, &b) != TCL_OK) {
             return TCL_ERROR;
@@ -4519,14 +4640,14 @@ JsonEmitValueFromTriple(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valObj,
         Tcl_DStringAppend(dsPtr, b ? "true" : "false", b ? 4 : 5);
         return TCL_OK;
 
-    } else if (*t == 'n' && strcmp(t, "null") == 0) {
+    } else if (JsonObjIsAtom(typeObj, JSON_ATOM_T_NULL)) {
         Tcl_DStringAppend(dsPtr, "null", 4);
         return TCL_OK;
 
-    } else if (*t == 'o' && strcmp(t, "object") == 0) {
+    } else if (JsonObjIsAtom(typeObj, JSON_ATOM_T_OBJECT)) {
         return JsonEmitContainerFromTriples(interp, valObj, NS_TRUE, validateNumbers, depth, pretty, dsPtr);
 
-    } else if (*t == 'a' && strcmp(t, "array") == 0) {
+    } else if (JsonObjIsAtom(typeObj, JSON_ATOM_T_ARRAY)) {
         return JsonEmitContainerFromTriples(interp, valObj, NS_FALSE, validateNumbers, depth, pretty, dsPtr);
 
     } else {
@@ -5382,13 +5503,12 @@ JsonSchemaMerge(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2Obj,
         *mergedObjPtr = JsonSchemaBuildAnyOf2(schema1Obj, schema2Obj);
 
     } else if (strcmp(Tcl_GetString(type1Obj), Tcl_GetString(type2Obj)) == 0) {
-        const char *typeName = Tcl_GetString(type1Obj);
 
-        if (strcmp(typeName, "object") == 0) {
+        if (JsonObjIsAtom(type1Obj, JSON_ATOM_T_OBJECT)) {
             return JsonSchemaMergeObject(interp, schema1Obj, schema2Obj, mergedObjPtr);
         }
 
-        if (strcmp(typeName, "array") == 0) {
+        if (JsonObjIsAtom(type1Obj, JSON_ATOM_T_ARRAY)) {
             return JsonSchemaMergeArray(interp, schema1Obj, schema2Obj, mergedObjPtr);
         }
 
@@ -5875,6 +5995,907 @@ JsonSchemaCanonicalizeProperties(Tcl_Interp *interp, Tcl_Obj *propertiesObj,
 }
 
 /*======================================================================
+ * Function Implementations: Schema validation/matching helpers.
+ *======================================================================
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMisMatchGetPath --
+ *
+ *      Prepend "/" to the path string, when it is emtpy.
+ *
+ * Results:
+ *     JSON Pointer string.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+JsonSchemaMisMatchGetPath(Tcl_DString *pathDsPtr)
+{
+    return pathDsPtr->length > 0 ? pathDsPtr->string : "/";
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaRequireSupportedSubset --
+ *
+ *      Verify that the provided schema uses only the subset of JSON
+ *      Schema supported by the triples matcher.
+ *
+ *      The function performs a structural validation of the schema
+ *      dictionary before it is used for matching.  It ensures that the
+ *      schema node is a dictionary and that only supported schema
+ *      keywords are present.  Nested schema objects occurring in
+ *      "properties", "items", and "anyOf" are validated recursively.
+ *
+ *      The currently supported subset corresponds to the schemata
+ *      generated by "ns_json triples schema".  This includes the
+ *      keywords:
+ *
+ *          type
+ *          properties
+ *          items
+ *          required
+ *          anyOf
+ *
+ *      Metadata keys such as "$schema", "title", or "description"
+ *      are accepted but ignored by the matcher.
+ *
+ *      When the flag ignoreUnsupported is false, encountering an
+ *      unsupported keyword causes an error.  When the flag is true,
+ *      unsupported keywords are silently ignored.
+ *
+ * Results:
+ *      NS_OK if the schema conforms to the supported subset or if
+ *      unsupported keywords are ignored.
+ *
+ *      NS_ERROR if the schema is malformed (e.g., wrong container
+ *      types) or contains unsupported keywords while strict checking
+ *      is enabled.
+ *
+ * Side effects:
+ *      On error, an explanatory message is left in the interpreter
+ *      result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaRequireSupportedSubset(Tcl_Interp *interp, Tcl_Obj *schemaObj,
+                                 bool ignoreUnsupported)
+{
+    Tcl_DictSearch search;
+    Tcl_Obj       *keyObj, *valueObj;
+    int            done;
+
+    if (Tcl_DictObjFirst(interp, schemaObj, &search, &keyObj, &valueObj, &done) != TCL_OK) {
+        Tcl_SetObjResult(interp,
+                         Tcl_NewStringObj("ns_json: malformed schema: schema node must be an object", -1));
+        return NS_ERROR;
+    }
+
+    while (!done) {
+
+        if (JsonObjIsAtom(keyObj, JSON_ATOM_SCHEMA)
+            || JsonObjIsAtom(keyObj, JSON_ATOM_TITLE)
+            || JsonObjIsAtom(keyObj, JSON_ATOM_DESCRIPTION)
+            || JsonObjIsAtom(keyObj, JSON_ATOM_DEFAULT)
+            || JsonObjIsAtom(keyObj, JSON_ATOM_EXAMPLES)
+            ) {
+            /*
+             * Accepted metadata keys.  These are ignored by the matcher.
+             */
+
+        } else if (JsonObjIsAtom(keyObj, JSON_ATOM_TYPE)) {
+            /*
+             * Type validity is checked later by JsonSchemaMatchType().
+             */
+
+        } else if (JsonObjIsAtom(keyObj, JSON_ATOM_REQUIRED)) {
+            Tcl_Obj  **rv;
+            TCL_SIZE_T rc, i;
+
+            if (Tcl_ListObjGetElements(interp, valueObj, &rc, &rv) != TCL_OK) {
+                Tcl_SetObjResult(interp,
+                                 Tcl_NewStringObj("ns_json: malformed schema: required must be a list", -1));
+                Tcl_DictObjDone(&search);
+                return NS_ERROR;
+            }
+            for (i = 0; i < rc; i++) {
+                /*
+                 * Require string-like elements.
+                 */
+                if (Tcl_GetString(rv[i]) == NULL) {
+                    Tcl_SetObjResult(interp,
+                                     Tcl_NewStringObj("ns_json: malformed schema: required elements must be strings", -1));
+                    Tcl_DictObjDone(&search);
+                    return NS_ERROR;
+                }
+            }
+
+        } else if (JsonObjIsAtom(keyObj, JSON_ATOM_PROPERTIES)) {
+            Tcl_DictSearch psearch;
+            Tcl_Obj       *pkeyObj, *pschemaObj;
+            int            pdone;
+
+            if (Tcl_DictObjFirst(interp, valueObj, &psearch, &pkeyObj, &pschemaObj, &pdone) != TCL_OK) {
+                Tcl_SetObjResult(interp,
+                                 Tcl_NewStringObj("ns_json: malformed schema: properties must be an object", -1));
+                Tcl_DictObjDone(&search);
+                return NS_ERROR;
+            }
+
+            while (!pdone) {
+                if (JsonSchemaRequireSupportedSubset(interp, pschemaObj, ignoreUnsupported) != NS_OK) {
+                    Tcl_DictObjDone(&psearch);
+                    Tcl_DictObjDone(&search);
+                    return NS_ERROR;
+                }
+                Tcl_DictObjNext(&psearch, &pkeyObj, &pschemaObj, &pdone);
+            }
+            Tcl_DictObjDone(&psearch);
+
+        } else if (JsonObjIsAtom(keyObj, JSON_ATOM_ITEMS)) {
+            if (JsonSchemaRequireSupportedSubset(interp, valueObj, ignoreUnsupported) != NS_OK) {
+                Tcl_DictObjDone(&search);
+                return NS_ERROR;
+            }
+
+        } else if (JsonObjIsAtom(keyObj, JSON_ATOM_ANYOF)) {
+            Tcl_Obj  **ov;
+            TCL_SIZE_T oc, i;
+
+            if (Tcl_ListObjGetElements(interp, valueObj, &oc, &ov) != TCL_OK || oc == 0) {
+                Tcl_SetObjResult(interp,
+                                 Tcl_NewStringObj("ns_json: malformed schema: anyOf must be a non-empty list", -1));
+                Tcl_DictObjDone(&search);
+                return NS_ERROR;
+            }
+            for (i = 0; i < oc; i++) {
+                if (JsonSchemaRequireSupportedSubset(interp, ov[i], ignoreUnsupported) != NS_OK) {
+                    Tcl_DictObjDone(&search);
+                    return NS_ERROR;
+                }
+            }
+
+        } else {
+            if (!ignoreUnsupported) {
+                Ns_TclPrintfResult(interp, "ns_json: unsupported schema keyword \"%s\"", Tcl_GetString(keyObj));
+                Tcl_DictObjDone(&search);
+                return NS_ERROR;
+            }
+            /*
+             * Unsupported keyword is ignored in permissive mode.
+             */
+        }
+
+        Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
+    }
+
+    Tcl_DictObjDone(&search);
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaDictGet --
+ *
+ *      Retrieve a schema field from a schema dictionary using the
+ *      atomized field name.
+ *
+ *      The function performs a dictionary lookup for the specified
+ *      schema keyword and returns the associated value if present.
+ *      When the field does not exist, NULL is returned.
+ *
+ *      This helper hides the Tcl dictionary lookup and provides a
+ *      concise way to access schema fields such as "type", "properties",
+ *      "items", or "anyOf".
+ *
+ * Results:
+ *      Returns the Tcl object representing the field value, or NULL
+ *      if the field is not present.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+JsonSchemaDictGet(Tcl_Obj *schemaObj, JsonAtom atom)
+{
+    Tcl_Obj *valObj = NULL;
+
+    NS_NONNULL_ASSERT(schemaObj != NULL);
+
+    if (Tcl_DictObjGet(NULL, schemaObj, JsonAtomObjs[atom], &valObj) != TCL_OK) {
+        return NULL;
+    }
+    return valObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMatchValue --
+ *
+ *      Match a value against a schema node.
+ *
+ *      This function implements the main recursive dispatcher used by
+ *      the triples schema matcher.  It evaluates the schema constraints
+ *      that apply to the current value and delegates further checks to
+ *      specialized helpers.
+ *
+ *      The following schema keywords are handled:
+ *
+ *          anyOf       try alternative schema branches
+ *          type        verify the JSON value type
+ *          properties  validate object members
+ *          items       validate array elements
+ *
+ *      For container values (objects and arrays), the function calls
+ *      JsonSchemaMatchObject() or JsonSchemaMatchArray() respectively
+ *      to perform recursive validation of nested values.
+ *
+ * Results:
+ *      NS_OK if the value conforms to the schema.
+ *      NS_ERROR if the value violates the schema.
+ *
+ * Side effects:
+ *      On mismatch, an explanatory error message is left in the
+ *      interpreter result, including the JSON Pointer path stored in
+ *      pathDsPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMatchValue(Tcl_Interp *interp, Tcl_Obj *schemaObj,
+                     JsonValueType actualVt, Tcl_Obj *actualObj,
+                     Tcl_DString *pathDsPtr)
+{
+    Tcl_Obj *typeObj = NULL, *anyOfObj = NULL;
+
+    anyOfObj = JsonSchemaDictGet(schemaObj, JSON_ATOM_ANYOF);
+    if (anyOfObj != NULL) {
+        return JsonSchemaMatchAnyOf(interp, anyOfObj, actualVt, actualObj, pathDsPtr);
+    }
+
+    typeObj = JsonSchemaDictGet(schemaObj, JSON_ATOM_TYPE);
+    if (typeObj != NULL) {
+        if (JsonSchemaMatchType(interp, typeObj, actualVt, pathDsPtr) != NS_OK) {
+            return NS_ERROR;
+        }
+    }
+
+    switch (actualVt) {
+    case JSON_VT_OBJECT:
+        return JsonSchemaMatchObject(interp, schemaObj, actualObj, pathDsPtr);
+
+    case JSON_VT_ARRAY:
+        return JsonSchemaMatchArray(interp, schemaObj, actualObj, pathDsPtr);
+
+    case JSON_VT_STRING:
+    case JSON_VT_NUMBER:
+    case JSON_VT_NULL:
+    case JSON_VT_BOOL:
+    case JSON_VT_AUTO:
+    default:
+        return NS_OK;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMatchType --
+ *
+ *      Verify that the actual value type satisfies the schema "type"
+ *      constraint.
+ *
+ *      The schema may specify either a single type name or a list of
+ *      type names (a type union).  The function checks whether the
+ *      actual value type matches one of the permitted schema types.
+ *
+ * Results:
+ *      NS_OK if the value type matches the schema type constraint.
+ *      NS_ERROR if the type constraint is violated.
+ *
+ * Side effects:
+ *      On mismatch, an explanatory error message is left in the
+ *      interpreter result describing the expected and actual types.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMatchType(Tcl_Interp *interp, Tcl_Obj *typesObj,
+                    JsonValueType actualVt, Tcl_DString *pathDsPtr)
+{
+    TCL_SIZE_T objc;
+
+    if (Tcl_ListObjLength(NULL, typesObj, &objc) != TCL_OK) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid type field", -1));
+        return NS_ERROR;
+    }
+
+    if (objc <= 1) {
+        JsonValueType expectedVt = JsonTypeObjToVt(typesObj);
+
+        if (expectedVt != actualVt) {
+            return JsonSchemaMismatchType(interp, pathDsPtr,
+                                          Tcl_GetString(typesObj),
+                                          JsonTypeString(actualVt));
+        }
+        return NS_OK;
+    }
+
+    /*
+     * Union case: typesObj is a list of type names.
+     */
+    {
+        Tcl_Obj   **objv;
+        TCL_SIZE_T  i;
+        const char *actualName = JsonTypeString(actualVt);
+
+        if (Tcl_ListObjGetElements(interp, typesObj, &objc, &objv) != TCL_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid type field", -1));
+            return NS_ERROR;
+        }
+
+        for (i = 0; i < objc; i++) {
+            JsonValueType expectedVt = JsonTypeObjToVt(objv[i]);
+
+            if (expectedVt == actualVt) {
+                return NS_OK;
+            }
+        }
+
+        return JsonSchemaMismatchTypeUnion(interp, pathDsPtr, typesObj, actualName);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMatchAnyOf --
+ *
+ *      Evaluate an "anyOf" schema constraint.
+ *
+ *      The function iterates over the schema branches contained in
+ *      the "anyOf" array and attempts to match the value against each
+ *      branch in turn.  The value is considered valid if any branch
+ *      matches successfully.
+ *
+ * Results:
+ *      NS_OK if at least one branch matches the value.
+ *      NS_ERROR if none of the branches match.
+ *
+ * Side effects:
+ *      On failure, an explanatory error message is left in the
+ *      interpreter result indicating that the value does not satisfy
+ *      any of the allowed alternatives.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMatchAnyOf(Tcl_Interp *interp, Tcl_Obj *anyOfObj,
+                     JsonValueType actualVt, Tcl_Obj *actualObj,
+                     Tcl_DString *pathDsPtr)
+{
+    Tcl_Obj  **ov;
+    TCL_SIZE_T oc, i;
+    Tcl_Obj   *savedResultObj;
+
+    if (Tcl_ListObjGetElements(interp, anyOfObj, &oc, &ov) != TCL_OK) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid anyOf field", -1));
+        return NS_ERROR;
+    }
+    if (oc == 0) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: empty anyOf field", -1));
+        return NS_ERROR;
+    }
+
+    /*
+     * Try each branch.  Suppress branch-specific diagnostics and report
+     * a single mismatch if none matches.
+     */
+    savedResultObj = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(savedResultObj);
+
+    for (i = 0; i < oc; i++) {
+        Tcl_ResetResult(interp);
+
+        if (JsonSchemaMatchValue(interp, ov[i], actualVt, actualObj, pathDsPtr) == NS_OK) {
+            Tcl_DecrRefCount(savedResultObj);
+            return NS_OK;
+        }
+    }
+
+    Tcl_SetObjResult(interp, savedResultObj);
+    Tcl_DecrRefCount(savedResultObj);
+
+    return JsonSchemaMismatchAnyOf(interp, pathDsPtr, actualVt);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMatchObject --
+ *
+ *      Validate a triples object value against an object schema.
+ *
+ *      The function checks the schema constraints applicable to JSON
+ *      objects.  In particular, it verifies that all required properties
+ *      are present and that every object member defined in the triples
+ *      value has a corresponding schema definition in "properties".
+ *
+ *      For each object member, the associated schema is retrieved and
+ *      JsonSchemaMatchValue() is called recursively to validate the
+ *      member value.
+ *
+ * Results:
+ *      NS_OK if the object satisfies the schema constraints.
+ *      NS_ERROR if a required property is missing, an unexpected
+ *      property appears, or a nested value violates its schema.
+ *
+ * Side effects:
+ *      On mismatch, an explanatory error message is left in the
+ *      interpreter result containing the JSON Pointer path of the
+ *      failing location.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMatchObject(Tcl_Interp *interp, Tcl_Obj *schemaObj,
+                      Tcl_Obj *triplesObj, Tcl_DString *pathDsPtr)
+{
+    Tcl_Obj     *propertiesObj;
+    Tcl_Obj     *requiredObj;
+    Tcl_Obj    **ov;
+    TCL_SIZE_T   oc, i;
+
+    propertiesObj = JsonSchemaDictGet(schemaObj, JSON_ATOM_PROPERTIES);
+    requiredObj   = JsonSchemaDictGet(schemaObj, JSON_ATOM_REQUIRED);
+
+    if (Tcl_ListObjGetElements(interp, triplesObj, &oc, &ov) != TCL_OK) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed triples object", -1));
+        return NS_ERROR;
+    }
+    if ((oc % 3) != 0) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed triples object", -1));
+        return NS_ERROR;
+    }
+
+    /*
+     * Check required properties.
+     */
+    if (requiredObj != NULL) {
+        Tcl_Obj   **rv;
+        TCL_SIZE_T  rc, j;
+
+        if (Tcl_ListObjGetElements(interp, requiredObj, &rc, &rv) != TCL_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid required field", -1));
+            return NS_ERROR;
+        }
+
+        for (j = 0; j < rc; j++) {
+            Tcl_Obj *requiredNameObj = rv[j];
+            bool     found = NS_FALSE;
+
+            for (i = 0; i < oc; i += 3) {
+                if (TripleKeyMatches(ov[i], requiredNameObj)) {
+                    found = NS_TRUE;
+                    break;
+                }
+            }
+            if (!found) {
+                return JsonSchemaMismatchMissingRequired(interp, pathDsPtr, requiredNameObj);
+            }
+        }
+    }
+
+    /*
+     * Check actual properties.
+     */
+    for (i = 0; i < oc; i += 3) {
+        Tcl_Obj       *nameObj  = ov[i];
+        Tcl_Obj       *typeObj  = ov[i + 1];
+        Tcl_Obj       *valueObj = ov[i + 2];
+        Tcl_Obj       *subschemaObj = NULL;
+        JsonValueType  childVt;
+        TCL_SIZE_T     oldLen;
+
+        if (propertiesObj == NULL) {
+            oldLen = Tcl_DStringLength(pathDsPtr);
+            JsonPointerPathPushKey(pathDsPtr, nameObj);
+            JsonSchemaMismatchUnexpectedProperty(interp, pathDsPtr);
+            JsonPointerPathPop(pathDsPtr, oldLen);
+            return NS_ERROR;
+        }
+
+        if (Tcl_DictObjGet(interp, propertiesObj, nameObj, &subschemaObj) != TCL_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid properties field", -1));
+            return NS_ERROR;
+        }
+        if (subschemaObj == NULL) {
+            oldLen = Tcl_DStringLength(pathDsPtr);
+            JsonPointerPathPushKey(pathDsPtr, nameObj);
+            JsonSchemaMismatchUnexpectedProperty(interp, pathDsPtr);
+            JsonPointerPathPop(pathDsPtr, oldLen);
+            return NS_ERROR;
+        }
+
+        childVt = JsonTypeObjToVt(typeObj);
+
+        oldLen = Tcl_DStringLength(pathDsPtr);
+        JsonPointerPathPushKey(pathDsPtr, nameObj);
+
+        if (JsonSchemaMatchValue(interp, subschemaObj, childVt, valueObj, pathDsPtr) != NS_OK) {
+            JsonPointerPathPop(pathDsPtr, oldLen);
+            return NS_ERROR;
+        }
+
+        JsonPointerPathPop(pathDsPtr, oldLen);
+    }
+
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMatchArray --
+ *
+ *      Validate a triples array value against an array schema.
+ *
+ *      The function applies the schema specified by the "items"
+ *      keyword to every element of the array.  Each element is
+ *      validated by recursively invoking JsonSchemaMatchValue().
+ *
+ * Results:
+ *      NS_OK if all array elements satisfy the schema constraint.
+ *      NS_ERROR if any element violates the schema.
+ *
+ * Side effects:
+ *      On mismatch, an explanatory error message is left in the
+ *      interpreter result containing the JSON Pointer path of the
+ *      failing array element.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMatchArray(Tcl_Interp *interp, Tcl_Obj *schemaObj,
+                     Tcl_Obj *triplesObj, Tcl_DString *pathDsPtr)
+{
+    Tcl_Obj   *itemsObj;
+    Tcl_Obj   **ov;
+    TCL_SIZE_T  oc, i, idx;
+
+    itemsObj = JsonSchemaDictGet(schemaObj, JSON_ATOM_ITEMS);
+    if (itemsObj == NULL) {
+        return NS_OK;
+    }
+
+    if (Tcl_ListObjGetElements(interp, triplesObj, &oc, &ov) != TCL_OK) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed triples array", -1));
+        return NS_ERROR;
+    }
+    if ((oc % 3) != 0) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed triples array", -1));
+        return NS_ERROR;
+    }
+
+    for (i = 0, idx = 0; i < oc; i += 3, idx++) {
+        Tcl_Obj       *typeObj  = ov[i + 1];
+        Tcl_Obj       *valueObj = ov[i + 2];
+        JsonValueType  childVt;
+        TCL_SIZE_T     oldLen;
+
+        childVt = JsonTypeObjToVt(typeObj);
+
+        oldLen = Tcl_DStringLength(pathDsPtr);
+        JsonPointerPathPushIndex(pathDsPtr, idx);
+
+        if (JsonSchemaMatchValue(interp, itemsObj, childVt, valueObj, pathDsPtr) != NS_OK) {
+            JsonPointerPathPop(pathDsPtr, oldLen);
+            return NS_ERROR;
+        }
+
+        JsonPointerPathPop(pathDsPtr, oldLen);
+    }
+
+    return NS_OK;
+}
+
+
+
+
+/*======================================================================
+ * Function Implementations: Schema mismatch reporting helpers.
+ *======================================================================
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMismatchType --
+ *
+ *      Report a schema mismatch caused by an incorrect value type.
+ *
+ *      This helper formats an error message indicating that the actual
+ *      JSON value type does not match the type required by the schema.
+ *      The message includes the JSON Pointer path of the failing
+ *      location.
+ *
+ * Results:
+ *      Always returns NS_ERROR.
+ *
+ * Side effects:
+ *      Leaves a descriptive error message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMismatchType(Tcl_Interp *interp, Tcl_DString *pathDsPtr,
+                       const char *expectedType, const char *actualType)
+{
+    const char *path = JsonSchemaMisMatchGetPath(pathDsPtr);
+
+    Ns_TclPrintfResult(interp,
+                       "ns_json: schema mismatch at %s: expected %s, got %s",
+                       path, expectedType, actualType);
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMismatchTypeUnion --
+ *
+ *      Report a schema mismatch for a type union constraint.
+ *
+ *      This helper is used when the schema specifies multiple allowed
+ *      types (e.g., via a "type" list).  The function reports that the
+ *      actual value type does not match any of the permitted types.
+ *
+ * Results:
+ *      Always returns NS_ERROR.
+ *
+ * Side effects:
+ *      Leaves a descriptive error message in the interpreter result,
+ *      including the JSON Pointer path of the failing location.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMismatchTypeUnion(Tcl_Interp *interp, Tcl_DString *pathDsPtr,
+                            Tcl_Obj *typeObj, const char *actualType)
+{
+    Tcl_DString expectedDs;
+    Tcl_Obj   **ov;
+    TCL_SIZE_T  oc, i;
+    const char *path = JsonSchemaMisMatchGetPath(pathDsPtr);
+
+    if (Tcl_ListObjGetElements(interp, typeObj, &oc, &ov) != TCL_OK || oc == 0) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+            "ns_json: malformed schema: invalid type field", -1));
+        return NS_ERROR;
+    }
+
+    Tcl_DStringInit(&expectedDs);
+    Tcl_DStringAppend(&expectedDs, "[", 1);
+    for (i = 0; i < oc; i++) {
+        if (i > 0) {
+            Tcl_DStringAppend(&expectedDs, ",", 1);
+        }
+        Tcl_DStringAppend(&expectedDs, Tcl_GetString(ov[i]), TCL_INDEX_NONE);
+    }
+    Tcl_DStringAppend(&expectedDs, "]", 1);
+
+    Ns_TclPrintfResult(interp,
+                       "ns_json: schema mismatch at %s: expected one of %s, got %s",
+                       path, Tcl_DStringValue(&expectedDs), actualType);
+
+    Tcl_DStringFree(&expectedDs);
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMismatchMissingRequired --
+ *
+ *      Report a missing required property in an object.
+ *
+ *      This helper formats an error message indicating that an object
+ *      value does not contain a property listed in the schema's
+ *      "required" constraint.
+ *
+ * Results:
+ *      Always returns NS_ERROR.
+ *
+ * Side effects:
+ *      Leaves a descriptive error message in the interpreter result,
+ *      including the JSON Pointer path of the object where the
+ *      required property is missing.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMismatchMissingRequired(Tcl_Interp *interp, Tcl_DString *pathDsPtr,
+                                  Tcl_Obj *nameObj)
+{
+    const char *path = JsonSchemaMisMatchGetPath(pathDsPtr);
+
+    Ns_TclPrintfResult(interp,
+                       "ns_json: schema mismatch at %s: missing required property \"%s\"",
+                       path, Tcl_GetString(nameObj));
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMismatchUnexpectedProperty --
+ *
+ *      Report an unexpected property in an object.
+ *
+ *      This helper is used when an object member appears that is not
+ *      defined in the schema's "properties" section.
+ *
+ * Results:
+ *      Always returns NS_ERROR.
+ *
+ * Side effects:
+ *      Leaves a descriptive error message in the interpreter result,
+ *      including the JSON Pointer path of the unexpected property.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMismatchUnexpectedProperty(Tcl_Interp *interp, Tcl_DString *pathDsPtr)
+{
+    const char *path = JsonSchemaMisMatchGetPath(pathDsPtr);
+
+    Ns_TclPrintfResult(interp,
+                       "ns_json: schema mismatch at %s: property not allowed by schema",
+                       path);
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaMismatchAnyOf --
+ *
+ *      Report a mismatch for an "anyOf" schema constraint.
+ *
+ *      This helper is used when none of the schema branches listed in
+ *      an "anyOf" constraint match the provided value.
+ *
+ * Results:
+ *      Always returns NS_ERROR.
+ *
+ * Side effects:
+ *      Leaves a descriptive error message in the interpreter result
+ *      indicating that the value does not satisfy any of the allowed
+ *      alternatives at the specified JSON Pointer path.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+JsonSchemaMismatchAnyOf(Tcl_Interp *interp, Tcl_DString *pathDsPtr,
+                        JsonValueType actualVt)
+{
+    const char *actualType;
+    const char *path = JsonSchemaMisMatchGetPath(pathDsPtr);
+
+    actualType = Tcl_GetString(JsonAtomObjs[actualVt]);
+    Ns_TclPrintfResult(interp,
+                       "ns_json: schema mismatch at %s: no anyOf alternative matched (got %s)",
+                       path, actualType);
+
+    return NS_ERROR;
+}
+
+
+/*======================================================================
+ * Function Implementations: JSON Pointer path construction helpers.
+ *======================================================================
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonPointerPathPushKey --
+ *
+ *      Append an object member name to the current JSON Pointer path.
+ *
+ *      The function extends the pointer stored in dsPtr by adding a
+ *      slash followed by the escaped object key.  The key is encoded
+ *      according to RFC 6901 using the same escaping rules as other
+ *      pointer helpers.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      dsPtr is extended with a new path segment representing the
+ *      specified object key.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+JsonPointerPathPushKey(Tcl_DString *dsPtr, Tcl_Obj *keyObj)
+{
+    const char *s;
+    TCL_SIZE_T  len;
+
+    s = Tcl_GetStringFromObj(keyObj, &len);
+    Tcl_DStringAppend(dsPtr, "/", 1);
+    JsonKeyPathEscapeSegment(dsPtr, s, len, NS_TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonPointerPathPushIndex --
+ *
+ *      Append an array index to the current JSON Pointer path.
+ *
+ *      The function extends the pointer stored in dsPtr by adding a
+ *      slash followed by the decimal representation of the array index.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      dsPtr is extended with a new path segment representing the
+ *      specified array index.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+JsonPointerPathPushIndex(Tcl_DString *dsPtr, TCL_SIZE_T idx)
+{
+    JsonKeyPathAppendIndex(dsPtr, (size_t)idx);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonPointerPathPop --
+ *
+ *      Restore the JSON Pointer path to a previous length.
+ *
+ *      This helper truncates the path stored in dsPtr to the length
+ *      specified by oldLen.  It is typically used to undo a previous
+ *      JsonPointerPathPushKey() or JsonPointerPathPushIndex() call
+ *      after returning from recursive schema matching.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      dsPtr is shortened to the specified length.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+JsonPointerPathPop(Tcl_DString *dsPtr, TCL_SIZE_T oldLen)
+{
+    if (oldLen < 0) {
+        oldLen = 0;
+    }
+    Tcl_DStringSetLength(dsPtr, oldLen);
+}
+
+
+/*======================================================================
  * Function Implementations: Schema type helpers.
  *======================================================================
  */
@@ -6212,6 +7233,35 @@ JsonSchemaBuildAnyOf2(Tcl_Obj *schema1Obj, Tcl_Obj *schema2Obj)
  * Function Implementations: Schema required-field helpers.
  *======================================================================
  */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonSchemaRequiredIntersection --
+ *
+ *      Compute the intersection of two "required" property lists.
+ *
+ *      This helper is used during schema merging when the -required
+ *      option is active.  The function determines which property names
+ *      occur in both input "required" arrays and returns a new array
+ *      containing only these common elements.
+ *
+ *      The order of elements in the resulting list follows the order
+ *      of the first input list.  Duplicate entries are not introduced.
+ *
+ * Results:
+ *      NS_OK on success.  The resulting intersection list is stored in
+ *      *requiredOutObjPtr.
+ *
+ *      NS_ERROR on failure (e.g., malformed input).
+ *
+ * Side effects:
+ *      A new Tcl list object is created and returned via
+ *      *requiredOutObjPtr.  On error, an explanatory message is left in
+ *      the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
 static Ns_ReturnCode
 JsonSchemaRequiredIntersection(Tcl_Interp *interp, Tcl_Obj *required1Obj, Tcl_Obj *required2Obj,
                                Tcl_Obj **requiredOutObjPtr)
@@ -6420,8 +7470,8 @@ Ns_JsonParse(const unsigned char *buf, size_t len,
              size_t *consumedPtr,
              Tcl_DString *errDsPtr)
 {
-    JsonParser jp;
-    Tcl_Obj   *valueObj = NULL;
+    JsonParser    jp;
+    Tcl_Obj      *valueObj = NULL;
     JsonValueType vt = JSON_VT_AUTO;
     Ns_ReturnCode status = NS_ERROR;
 
@@ -7451,6 +8501,108 @@ JsonTriplesSchemaObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonTriplesMatchObjCmd --
+ *
+ *      Implements "ns_json triples match".
+ *
+ *      Parse arguments, parse the provided schema JSON into Tcl value
+ *      form, validate that the schema uses the supported subset, detect
+ *      the canonical root wrapper of the triples instance, and match the
+ *      instance against the schema.
+ *
+ *      Matching is structural and type-based.  On success, the command
+ *      returns 1.  On mismatch, it returns TCL_ERROR and leaves a
+ *      diagnostic in the interpreter result, including a JSON Pointer
+ *      path to the failing location.
+ *
+ * Results:
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      On success, sets the interpreter result to 1.
+ *      On error, leaves an explanatory message in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+JsonTriplesMatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                       TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    Tcl_Obj      *schemaJsonObj = NULL, *triplesObj, *schemaObj = NULL;
+    Tcl_Obj      *rootTypeObj = NULL, *rootValueObj = NULL;
+    JsonValueType rootVt;
+    Tcl_DString   pathDs;
+    int           ignoreUnsupported = 0;
+    Ns_ObjvSpec   opts[] = {
+        {"!-schema",           Ns_ObjvObj,   &schemaJsonObj,     NULL},
+        {"-ignoreunsupported", Ns_ObjvBool,  &ignoreUnsupported, INT2PTR(NS_TRUE)},
+        {"--",                 Ns_ObjvBreak, NULL,               NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec   args[] = {
+        {"triples", Ns_ObjvObj, &triplesObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 3, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+
+    } else {
+        Ns_JsonOptions opt;
+        Tcl_DString    errDs;
+        TCL_SIZE_T     jsonLength;
+        const char    *jsonString;
+        size_t         consumed;
+
+        /*
+         * Parse schema JSON to Tcl value form ("tclvalue" semantics).
+         */
+        Tcl_DStringInit(&errDs);
+
+        memset(&opt, 0, sizeof(opt));
+        opt.output       = NS_JSON_OUTPUT_TCL_VALUE;
+        opt.top          = NS_JSON_TOP_CONTAINER;     /* require { } or [ ] */
+        opt.maxDepth     = 1000;
+        jsonString = Tcl_GetStringFromObj(schemaJsonObj, &jsonLength);
+
+        if (Ns_JsonParse((const unsigned char *)jsonString, (size_t)jsonLength, &opt,
+                         &schemaObj, NULL, &consumed, &errDs) != NS_OK) {
+            Tcl_DStringResult(interp, &errDs);
+            return TCL_ERROR;
+        }
+
+        /*
+         * Validate that the parsed schema uses only the supported subset:
+         * $schema, type, properties, items, required, anyOf.
+         */
+        if (JsonSchemaRequireSupportedSubset(interp, schemaObj, ignoreUnsupported) != NS_OK) {
+            return TCL_ERROR;
+        }
+
+        rootVt = TriplesDetectRootWrapper(interp, triplesObj, &rootTypeObj, &rootValueObj);
+        if (rootVt == JSON_VT_AUTO) {
+            return TCL_ERROR;
+        }
+
+        Tcl_DStringInit(&pathDs);
+
+        if (JsonSchemaMatchValue(interp, schemaObj, rootVt, rootValueObj, &pathDs) != NS_OK) {
+            Tcl_DStringFree(&pathDs);
+            return TCL_ERROR;
+        }
+
+        Tcl_DStringFree(&pathDs);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+        return TCL_OK;
+    }
+}
+
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7476,6 +8628,7 @@ JsonTriplesObjCmd(ClientData clientData, Tcl_Interp *interp,
         {"setvalue",  JsonTriplesSetvalueObjCmd},
         {"gettype",   JsonTriplesGettypeObjCmd},
         {"schema",    JsonTriplesSchemaObjCmd},
+        {"match",     JsonTriplesMatchObjCmd},
         {NULL, NULL}
     };
 
