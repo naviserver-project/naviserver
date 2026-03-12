@@ -985,8 +985,11 @@ Panic(const char *fmt, ...)
     static volatile sig_atomic_t inPanic = 0;
 
     if (inPanic) {
+        ssize_t ignored;
         const char msg[] = "Fatal: recursive panic\n";
-        (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+
+        ignored = write(STDERR_FILENO, msg, sizeof(msg) - 1);
+        (void)(ignored);
         _exit(1);
     }
     inPanic = 1;

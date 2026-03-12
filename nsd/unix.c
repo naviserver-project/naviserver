@@ -1181,8 +1181,11 @@ Abort(int sig)
     _exit(128 + sig);
 #else
     {
+        ssize_t    ignored;
         const char msg[] = "Fatal: received fatal signal\n";
-        (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+
+        ignored = write(STDERR_FILENO, msg, sizeof(msg) - 1);
+        (void)(ignored);
     }
 
     /* Restore default action for this signal, then re-raise. */
