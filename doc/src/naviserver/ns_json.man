@@ -170,9 +170,8 @@ is embedded in larger payloads.
     [item] JSON arrays are returned as Tcl lists.
     [item] JSON objects are returned as Tcl dicts.
     [item] JSON booleans are returned as Tcl boolean values.
-    [item] JSON [term null] is returned by default
-           [const null], but it can be changed via the option
-           [option -nullvalue].
+    [item] JSON null values are returned as the empty string by default,
+           but this can be changed via the option [option -nullvalue].
   [list_end]
 
   [para] Note that tclvalue output is inherently lossy; use triples or set output
@@ -197,7 +196,7 @@ is embedded in larger payloads.
 
   [para] Array elements are stored using zero-based numeric path segments (e.g.,
   [term "d/0"], [term "d/1"]), consistent with the array indexing used by
-  [arg triples]. JSON [term null] is stored with value [const null]
+  [arg triples]. JSON [term null] is stored as the empty string
   and its [term ".type"] entry is set to [term null].
 
 [list_end]
@@ -213,16 +212,16 @@ Quick examples:
  
  # using -output tclvalue (default output format)
  ns_json parse -output tclvalue $JSON
- ## output: a 1 b true c null d {2 3}
+ ## output: a 1 b true c {} d {2 3}
  
  # using -output triples
  ns_json parse -output triples $JSON
- ## output: {} object {a number 1 b boolean true c null null d array {0 number 2 1 number 3}}
+ ## output: {} object {a number 1 b boolean true c null {} d array {0 number 2 1 number 3}}
  
  # using -output set
  set s [lb]ns_json parse -output set $JSON[rb]
  ns_set array $s
- ## output: a.type number a 1 b.type boolean b true c.type null c null d/0.type number d/0 2 d/1.type number d/1 3
+ ## output: a.type number a 1 b.type boolean b true c.type null c {} d/0.type number d/0 2 d/1.type number d/1 3
 [example_end]
 
 [opt_def -top [arg any|container]]
@@ -238,8 +237,7 @@ Quick examples:
   [para]
   Specify the Tcl value used to represent JSON [term null] in the
   generated Tcl output for [option "-output tclvalue"], [option "-output set"],
-  and [option "-output triples"]. The default null value is
-  [const null].
+  and [option "-output triples"]. The default null value is the empty string.
 
   [para]
   When using [option "-output set"] or [option "-output triples"], the JSON
@@ -376,10 +374,10 @@ Quick examples:
  ## }
 
 
- ns_json value -type object {a number 1 b boolean 1 c string x n null null}
+ ns_json value -type object {a number 1 b boolean 1 c string x n null {}}
  ## output: {"a":1,"b":true,"c":"x","n":null}
  
- ns_json value -type array {0 number 1 1 number 2 2 number 3 3 null null}
+ ns_json value -type array {0 number 1 1 number 2 2 number 3 3 null {}}
  ## output: [lb]1,2,3,null[rb]
  
  # Canonical root-wrapped triples document
@@ -404,9 +402,9 @@ Quick examples:
   string contents.
 
   [para]
-  Its string representation defaults to [const null], but this textual form
-  is only a presentation detail.  Null detection should use [cmd "ns_json isnull"]
-  or explicit JSON type information.
+  The string representation of the null value defaults to the empty
+  string, but this textual form is only a presentation detail.
+  Null detection should use [cmd "ns_json isnull"] or explicit JSON type information.
 
 [example_begin]
  # Create a JSON null value explicitly
@@ -433,7 +431,7 @@ Quick examples:
 
  [para]
  This command checks the Tcl object type, not the string representation.
- Therefore, plain Tcl strings such as [const null], [const ""], or any
+ Therefore, plain Tcl strings such as [const {""}], [const null], or any
  caller-supplied [option -nullvalue] mapping are not considered JSON null
  unless they are represented by the dedicated JSON-null object type
  returned by [cmd "ns_json null"].
@@ -976,7 +974,7 @@ violation and the location within the document.
 
 [example_begin]
  set t [lb]ns_json parse -output triples {{"o":{"x":1},"s":"Bob","n":null}}[rb]
- ## output: {} object {o object {x number 1} s string Bob n null null }
+ ## output: {} object {o object {x number 1} s string Bob n null {} }
 [example_end]
 
 [para]
@@ -984,7 +982,7 @@ Example: container-content triples list (object VALUE only)
 
 [example_begin]
  ## VALUE part of the root object above:
- o object {x number 1} s string Bob n null **NS_JSON_NULL**
+ o object {x number 1} s string Bob n null {}
 [example_end]
 
 
@@ -1104,7 +1102,7 @@ Encode JSON strings safely
 
 Generate JSON from triples
 [example_begin]
- ns_json value -type object {a number 1 b boolean 1 c string x n null null}
+ ns_json value -type object {a number 1 b boolean 1 c string x n null {}}
  ## output: {"a":1,"b":true,"c":"x","n":null}
 [example_end]
 

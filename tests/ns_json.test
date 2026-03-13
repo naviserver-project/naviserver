@@ -85,7 +85,7 @@ test ns_json-2.0 {parse object (tclvalue output)} -body {
 
 test ns_json-2.1 {parse array (tclvalue output)} -body {
     ns_json parse {[1,"x",null]}
-} -result {1 x null}
+} -result {1 x {}}
 
 test ns_json-2.2 {parse scalar (tclvalue output)} -body {
     ns_json parse {true}
@@ -97,7 +97,7 @@ test ns_json-2.3 {parse object (triples output)} -body {
 
 test ns_json-2.4 {parse array (triples output)} -body {
     ns_json parse -output triples {[1,"x",null]}
-} -result {{} array {0 number 1 1 string x 2 null null}}
+} -result {{} array {0 number 1 1 string x 2 null {}}}
 
 test ns_json-2.5 {parse scalar (triples output, empty name envelope)} -body {
     ns_json parse -output triples {true}
@@ -132,7 +132,7 @@ test ns_json-2.10 {scan includes leading whitespace in bytes_consumed} -body {
 
 test ns_json-2.11 {parse null (tclvalue output uses default null value)} -body {
     ns_json parse {null}
-} -result null
+} -result {}
 
 test ns_json-2.12 {isnull detects default null value} -body {
     ns_json isnull [ns_json parse {null}]
@@ -304,7 +304,7 @@ test ns_json-value-2.3 {value: bool true/false} -body {
 
 test ns_json-value-2.4 {value: null ignores provided value} -body {
     ns_json value -type null "anything"
-} -result {null}
+} -result null
 
 test ns_json-value-2.5 {value: number lexeme preserved} -body {
     ns_json value -type number 1e+03
@@ -331,22 +331,22 @@ test ns_json-value-2.10 {value: number with -invalid number, trailing garbage} -
 } -returnCodes error -match glob -result {expected numeric Tcl value,*}
 
 test ns_json-value-3.0a {value: object from triples, no root container} -body {
-    set t {a number 1 b bool 1 c string x n null null}
+    set t {a number 1 b bool 1 c string x n null {}}
     ns_json value -type object $t
 } -returnCodes {error ok} -result {{"a":1,"b":true,"c":"x","n":null}}
 
 test ns_json-value-3.0b {value: object from triples} -body {
-    set t {{} object {a number 1 b boolean true c string x n null null}}
+    set t {{} object {a number 1 b boolean true c string x n null {}}}
     ns_json value -type object $t
 } -returnCodes {error ok} -result {{"a":1,"b":true,"c":"x","n":null}}
 
 test ns_json-value-3.0c {value: object from triples} -body {
-    set t {{} object {a number 1 b boolean true c string x n null null}}
+    set t {{} object {a number 1 b boolean true c string x n null {}}}
     ns_json value $t
 } -returnCodes {error ok} -result {{"a":1,"b":true,"c":"x","n":null}}
 
 test ns_json-value-3.1a {value: array from triples} -body {
-    set t {0 number 1 1 string x 2 null null}
+    set t {0 number 1 1 string x 2 null {}}
     ns_json value -type array $t
 } -returnCodes {error ok} -result {[1,"x",null]}
 
@@ -356,7 +356,7 @@ test ns_json-value-3.1b {value: array from triples} -body {
 } -returnCodes {error ok} -result {[1,"x",null]}
 
 test ns_json-value-3.1c {value: array from triples} -body {
-    set t {"" array {0 number 1 1 string x 2 null null}}
+    set t {"" array {0 number 1 1 string x 2 null {}}}
     ns_json value $t
 } -returnCodes {error ok} -result {[1,"x",null]}
 
@@ -388,6 +388,48 @@ test ns_json-value-3.3a {value: triples list length must be multiple of 3} -body
 test ns_json-value-3.3b {value: no type is given, must be a string} -body {
     ns_json value {a number}
 } -returnCodes {error ok} -match glob -result {"a number"}
+
+test ns_json-value-3.4a {ns_json value testing null values from string} -body {
+    set n1 [ns_json parse {null}]
+    set n2 [ns_json parse -nullvalue XXX {null}]
+    list \
+        [ns_json value $n1] \
+        [ns_json value $n2] \
+        [ns_json value ""] \
+        [ns_json value "x"] \
+        [ns_json value "XXX"] \
+        [ns_json value null] \
+        [ns_json value __NS_JSON_NULL__] \
+        [ns_json value [ns_json null]]    
+} -returnCodes {ok} -result {null null {""} {"x"} {"XXX"} {"null"} {"__NS_JSON_NULL__"} null}
+
+test ns_json-value-3.4b {ns_json value testing null values with "-type null" - string rep does not matter} -body {
+    set n1 [ns_json parse {null}]
+    set n2 [ns_json parse -nullvalue XXX {null}]
+    list \
+        [ns_json value -type null $n1] \
+        [ns_json value -type null $n2] \
+        [ns_json value -type null ""] \
+        [ns_json value -type null "x"] \
+        [ns_json value -type null "XXX"] \
+        [ns_json value -type null null] \
+        [ns_json value -type null __NS_JSON_NULL__] \
+        [ns_json value -type null [ns_json null]]
+} -returnCodes {ok} -result {null null null null null null null null}
+
+test ns_json-value-3.4c {ns_json value testing null values from tiple - string rep does not matter} -body {
+    set n1 [ns_json parse {null}]
+    set n2 [ns_json parse -nullvalue XXX {null}]
+    list \
+        [ns_json value {{} null $n1}] \
+        [ns_json value {{} null $n2}] \
+        [ns_json value {{} null ""}] \
+        [ns_json value {{} null "x"}] \
+        [ns_json value {{} null "XXX"}] \
+        [ns_json value {{} null null}] \
+        [ns_json value {{} null __NS_JSON_NULL__}]
+} -returnCodes {ok error} -result {null null null null null null null}
+
 
 #######################################################################################
 #  test ns_json value auto (default): numbers first, no booleans (for now)
@@ -1120,13 +1162,13 @@ test ns_json-numbers-2.24 {value accepts RFC-valid huge exponent lexeme} -body {
 #  test  ns_json value with triples input (object/array/scalar).
 #######################################################################################
 
-test ns_json-value-1.1 {value from object triples (string value inside object)} -body {
+test ns_json-value-1.0.1 {value from object triples (string value inside object)} -body {
     set JSON {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}
     set triples [ns_json parse -output triples $JSON]
     ns_json value $triples
 } -returnCodes {error ok} -result {{"user":{"id":7,"name":"Alice","flags":{"admin":false,"active":true}}}}
 
-test ns_json-value-1.2 {value are triples, but not with object/array type marker, auto-detection works} -body {
+test ns_json-value-1.0.2 {value are triples, but not with object/array type marker, auto-detection works} -body {
     set JSON {[1,"Alice",{"active":true}]}
     set triples [ns_json parse -output triples $JSON]
     ns_json value $triples
@@ -1220,7 +1262,7 @@ test ns_json-top-1.5 {-top any accepts true/false/null} -body {
         [ns_json parse -top any -output tclvalue -- {true}] \
         [ns_json parse -top any -output tclvalue -- {false}] \
         [ns_json parse -top any -output tclvalue -- {null}]
-} -result {true false null}
+} -result {true false {}}
 
 # Whitespace around the single value is still legal.
 test ns_json-top-1.6 {-top any ignores leading/trailing whitespace} -body {
@@ -1237,11 +1279,11 @@ test ns_json-top-2.1 {-top container accepts object} -body {
 
 test ns_json-top-2.2 {-top container accepts array} -body {
     ns_json parse -top container -output tclvalue -- {[true,false,null]}
-} -result {true false null}
+} -result {true false {}}
 
 test ns_json-top-2.3 {-top container accepts nested scalars inside containers} -body {
     ns_json parse -top container -output tclvalue -- {{"a":[1,"x",null,false,true]}}
-} -result {a {1 x null false true}}
+} -result {a {1 x {} false true}}
 
 # ---------------------------------------------------------------------------
 # -top container : reject scalars at top-level
@@ -1275,11 +1317,11 @@ test ns_json-top-3.5 {-top container rejects string} -body {
 
 test ns_json-top-4.1 {-top container with triples output on object} -body {
     ns_json parse -top container -output triples -- {{"a":1,"b":null}}
-} -result {{} object {a number 1 b null null}}
+} -result {{} object {a number 1 b null {}}}
 
 test ns_json-top-4.2 {-top container with triples output on array} -body {
     ns_json parse -top container -output triples -- {[1,null,true]}
-} -result {{} array {0 number 1 1 null null 2 boolean true}}
+} -result {{} array {0 number 1 1 null {} 2 boolean true}}
 
 
 
@@ -1499,7 +1541,7 @@ test ns_json-triples-3.2 {setvalue: replace subtree with scalar value and emit J
     set t    [ns_json parse -output triples $json]
 
     # Replace an object subtree with a scalar.
-    set t2 [ns_json triples setvalue -path {user flags} $t null]
+    set t2 [ns_json triples setvalue -type null -path {user flags} $t ""]
     ns_json value $t2
 } -returnCodes {error ok} -result {{"user":{"id":7,"name":"Alice","flags":null}}}
 

@@ -48,14 +48,8 @@
 #endif
 #endif
 
-#define JSON_NULL_SENTINEL_LONG 0
-#if JSON_NULL_SENTINEL_LONG
-#define NS_JSON_NULL_SENTINEL "__NS_JSON_NULL__"
-#define NS_JSON_NULL_SENTINEL_LEN (sizeof(NS_JSON_NULL_SENTINEL) - 1)
-#else
-#define NS_JSON_NULL_SENTINEL "null"
-#define NS_JSON_NULL_SENTINEL_LEN (sizeof(NS_JSON_NULL_SENTINEL) - 1)
-#endif
+#define NS_JSON_NULL_STRING ""
+#define NS_JSON_NULL_STRING_LEN (sizeof(NS_JSON_NULL_STRING) - 1)
 
 #define NS_JSON_TYPE_SUFFIX ".type"
 #define NS_JSON_TYPE_SUFFIX_LEN (sizeof(NS_JSON_TYPE_SUFFIX) - 1)
@@ -84,7 +78,7 @@ typedef enum {
     JSON_ATOM_TRUE,
     JSON_ATOM_FALSE,
     JSON_ATOM_EMPTY,
-    JSON_ATOM_VALUE_NULL,
+    JSON_ATOM_VALUE_NULL_STRING,
 
     JSON_ATOM_KEY,
     JSON_ATOM_FIELD,
@@ -125,7 +119,7 @@ static const NsAtomSpec jsonAtomSpecs[JSON_ATOM_MAX] = {
     {NS_ATOM_TRUE,    NULL, 0},  /* JSON_ATOM_TRUE */
     {NS_ATOM_FALSE,   NULL, 0},  /* JSON_ATOM_FALSE */
     {NS_ATOM_EMPTY,   NULL, 0},  /* JSON_ATOM_EMPTY */
-    {-1, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN}, /* JSON_ATOM_VALUE_NULL */
+    {-1, NS_JSON_NULL_STRING, NS_JSON_NULL_STRING_LEN}, /* JSON_ATOM_VALUE_NULL_STRING */
 
     /* misc */
     {-1, "key",   3},           /* JSON_ATOM_KEY */
@@ -567,12 +561,13 @@ NsAtomJsonInit(void)
     /*
      * Replace the default NULL atom with a dedicated JsonNullObjType object.
      * The singleton is stored in the atom table, so callers can safely use
-     * JsonAtomObjs[JSON_ATOM_VALUE_NULL] for typed null without allocating
+     * JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING] for typed null without allocating
      * fresh objects.
      */
-    Tcl_DecrRefCount(JsonAtomObjs[JSON_ATOM_VALUE_NULL]);
-    JsonAtomObjs[JSON_ATOM_VALUE_NULL] = JsonNewNullObj(JsonAtomObjs[JSON_ATOM_T_NULL]);
-    Tcl_IncrRefCount(JsonAtomObjs[JSON_ATOM_VALUE_NULL]);
+    Tcl_DecrRefCount(JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING]);
+    JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING] =
+        JsonNewNullObj(Tcl_NewStringObj(NS_JSON_NULL_STRING, NS_JSON_NULL_STRING_LEN));
+    Tcl_IncrRefCount(JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING]);
 
 }
 
@@ -1803,7 +1798,6 @@ JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj 
     case JSON_VT_OBJECT:
     case JSON_VT_ARRAY:
         if (JsonTriplesRequireValidContainerObj(interp, inObj, NS_TRUE, NS_TRUE, what) != NS_OK) {
-            fprintf(stderr, "DEBUG JsonValidateValue OBJECT|ARRAY <%s> fails\n", Tcl_GetString(inObj));
             return NS_ERROR;
         }
         break;
@@ -1834,7 +1828,7 @@ JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj 
         /*
          * Normalize to the canonical JSON null object.
          */
-        outObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
+        outObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING];
         break;
 
     case JSON_VT_STRING:
@@ -2269,7 +2263,7 @@ JsonValueTypeDetect(Tcl_Interp *interp, Tcl_Obj *valueObj)
     }
 
     /*
-     * Conservative scalar AUTO: number, boolean, null sentinel, else string.
+     * Conservative scalar AUTO: number, boolean, null atom, else string.
      */
     {
         int         b;
@@ -2283,8 +2277,7 @@ JsonValueTypeDetect(Tcl_Interp *interp, Tcl_Obj *valueObj)
             && Tcl_GetBooleanFromObj(NULL, valueObj, &b) == TCL_OK) {
             return JSON_VT_BOOL;
         }
-        if ((size_t)len == NS_JSON_NULL_SENTINEL_LEN
-            && memcmp(s, NS_JSON_NULL_SENTINEL, NS_JSON_NULL_SENTINEL_LEN) == 0) {
+        if (JsonIsNullObj(valueObj)) {
             return JSON_VT_NULL;
         }
     }
@@ -2316,7 +2309,7 @@ JsonValueTypeDetect(Tcl_Interp *interp, Tcl_Obj *valueObj)
  *----------------------------------------------------------------------
  */
 static JsonValueType
-TriplesDetectRootWrapper(Tcl_Interp *interp, Tcl_Obj *triplesObj,Tcl_Obj **rootTypeObjPtr, Tcl_Obj **rootValuePtr)
+TriplesDetectRootWrapper(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj **rootTypeObjPtr, Tcl_Obj **rootValuePtr)
 {
     Tcl_Obj     **lv;
     TCL_SIZE_T    lc, klen;
@@ -2327,6 +2320,24 @@ TriplesDetectRootWrapper(Tcl_Interp *interp, Tcl_Obj *triplesObj,Tcl_Obj **rootT
         *rootTypeObjPtr = NULL;
     }
 
+    /*
+     * Check for a typed null object before converting triplesObj to a list.
+     * Such a conversion would shimmer the Tcl_Obj and break null-object
+     * detection.  Similar fast-path checks could be added later for other
+     * relevant Tcl object types.
+     */
+    if (JsonIsNullObj(triplesObj)) {
+        return JSON_VT_AUTO;
+    }
+
+#if 0
+    {
+        TCL_SIZE_T len;
+        (void)Tcl_GetStringFromObj(triplesObj, &len);
+        fprintf(stderr, "DEBUG TriplesDetectRootWrapper length %d type %s\n",
+                len, triplesObj->typePtr ? triplesObj->typePtr->name : "NONE");
+    }
+#endif
     if (Tcl_ListObjGetElements(interp, triplesObj, &lc, &lv) != TCL_OK) {
         return JSON_VT_AUTO;
     }
@@ -2453,8 +2464,6 @@ JsonTriplesRequireValidContainerObj(Tcl_Interp *interp, Tcl_Obj *containerObj,
             case JSON_VT_ARRAY:
                 if (JsonTriplesRequireValidContainerObj(interp, elemValueObj,
                         NS_TRUE, validateNumbers, what) != NS_OK) {
-                    fprintf(stderr, "DEBUG JsonTriplesRequireValidContainerObj OBJECT|ARRAY <%s> fails\n", Tcl_GetString(containerObj));
-
                     return NS_ERROR;
                 }
                 break;
@@ -3133,7 +3142,7 @@ TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
                 }
             } else {
                 if (vt == JSON_VT_NULL) {
-                    newValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
+                    newValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING];
                 }
             }
 
@@ -7637,7 +7646,7 @@ JsonNullObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Tcl_SetObjResult(interp, JsonAtomObjs[JSON_ATOM_VALUE_NULL]);
+        Tcl_SetObjResult(interp, JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING]);
     }
     return result;
 }
@@ -7926,7 +7935,7 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     opt.output       = NS_JSON_OUTPUT_TCL_VALUE;
     //opt.utf8         = NS_JSON_UTF8_STRICT;
     opt.top          = NS_JSON_TOP_ANY;
-    opt.nullValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL];
+    opt.nullValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING];
     opt.maxDepth     = 1000;
     opt.maxString    = 0;     /* 0 == unlimited (for now) */
     opt.maxContainer = 0;     /* 0 == unlimited (for now) */
@@ -7935,7 +7944,7 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
         return TCL_ERROR;
     }
 
-    if (opt.nullValueObj != JsonAtomObjs[JSON_ATOM_VALUE_NULL]) {
+    if (opt.nullValueObj != JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING]) {
         opt.nullValueObj = JsonNewNullObj(opt.nullValueObj);
     }
 
