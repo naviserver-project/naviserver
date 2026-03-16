@@ -46,9 +46,9 @@ static char *LowerStringWhenNeeded(char *inputString, size_t stringLength)
     NS_GNUC_NONNULL(1);
 
 #ifdef NS_SET_DSTRING
-static void ShiftData(Ns_Set *set, const char *oldDataStart)
+static void ShiftData(Ns_Set *set, const char *oldDataStart, size_t nvalid)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static char *AppendData(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T valueSize)
+static char *AppendData(Ns_Set *set, size_t index, size_t nvalid, const char *value, TCL_SIZE_T valueSize)
     NS_GNUC_NONNULL(1);
 #endif
 
@@ -240,29 +240,43 @@ Ns_SetUpdate(Ns_Set *set, const char *keyString, const char *valueString)
  *
  * ShiftData --
  *
- *      When the string buffer of an Ns_Set has shifted (e.g., due to realloc
- *      from static to dynamic memory) the addresses of the keys and values of
- *      the ns_set are readjusted by this function
+ *      Adjust pointers into the Tcl_DString storage of an Ns_Set after
+ *      the underlying buffer has moved (e.g., due to a realloc).
+ *
+ *      The fields of an Ns_Set store their key and value strings as
+ *      pointers into set->data.string.  When the Tcl_DString grows and
+ *      the buffer address changes, all such pointers must be relocated
+ *      by the difference between the old and the new buffer start.
+ *
+ *      Only the first "nvalid" fields are adjusted.  This parameter
+ *      specifies the number of already initialized tuples whose
+ *      pointers may reference the buffer.  During tuple construction
+ *      (Ns_SetPutSz), the current slot might not yet be fully
+ *      initialized, so it must not be shifted prematurely.
  *
  * Results:
- *      none.
+ *      None.
  *
  * Side effects:
- *      None.
+ *      The name and value pointers of the first "nvalid" fields are
+ *      adjusted when the underlying Tcl_DString buffer has moved.
  *
  *----------------------------------------------------------------------
  */
 static void
-ShiftData(Ns_Set *set, const char *oldDataStart) {
+ShiftData(Ns_Set *set, const char *oldDataStart, size_t nvalid)
+{
     const char *newDataStart = set->data.string;
 
-    if (oldDataStart != newDataStart && set->size > 0) {
+    assert(nvalid <= set->size + 1u);
+
+    if (oldDataStart != newDataStart && nvalid > 0u) {
         ptrdiff_t shift = newDataStart - oldDataStart;
         size_t    i;
 
-        Ns_Log(Ns_LogNsSetDebug, "... shift %lu elements", set->size);
+        Ns_Log(Ns_LogNsSetDebug, "... shift %lu elements", nvalid);
 
-        for (i = 0u; i < set->size; i++) {
+        for (i = 0u; i < nvalid; i++) {
             set->fields[i].name += shift;
             if (set->fields[i].value != NULL) {
                 set->fields[i].value += shift;
@@ -271,25 +285,43 @@ ShiftData(Ns_Set *set, const char *oldDataStart) {
     }
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
  * AppendData --
  *
- *      Add string with a given size to the Tcl_DString set->data, "value"
- *      might be NULL. When the underlying set->data.string is reallocated,
- *      all the existing "name" and "value" fields are adjusted.
+ *      Append a string of a given size to the Tcl_DString "set->data".
+ *      The argument "value" may be NULL, in which case only space
+ *      accounting is performed.
+ *
+ *      The returned pointer refers to the start of the newly appended
+ *      string within the Tcl_DString buffer.
+ *
+ *      When the Tcl_DString grows and its storage is reallocated, the
+ *      buffer address may change.  In this case all existing field
+ *      pointers referring into the buffer must be relocated.  The
+ *      parameter "nvalid" specifies how many fields are already fully
+ *      initialized and therefore require pointer adjustment.
+ *
+ *      This distinction is important during Ns_SetPutSz(): while
+ *      appending the key only the previously existing tuples are valid,
+ *      while after installing the key pointer the new tuple itself must
+ *      also be included when appending the value.
  *
  * Results:
- *      Start of the inserted string.
+ *      Pointer to the start of the appended string within the
+ *      Tcl_DString buffer, or NULL when "value" is NULL.
  *
  * Side effects:
- *      None.
+ *      The Tcl_DString backing storage may grow and relocate, causing
+ *      existing field pointers to be adjusted via ShiftData().
  *
  *----------------------------------------------------------------------
  */
 static char *
-AppendData(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T valueSize)
+AppendData(Ns_Set *set, size_t index, size_t nvalid,
+           const char *value, TCL_SIZE_T valueSize)
 {
     const char *oldDataStart;
     TCL_SIZE_T  oldLength, oldAvail;
@@ -297,24 +329,28 @@ AppendData(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T valueSize)
     oldDataStart = set->data.string;
     oldLength = set->data.length;
     oldAvail = set->data.spaceAvl;
+
     if (valueSize == TCL_INDEX_NONE && value == NULL) {
         valueSize = 0;
     }
+
     Tcl_DStringAppend(&set->data, value, (TCL_SIZE_T)valueSize);
+
     if (value != NULL) {
         Tcl_DStringSetLength(&set->data, set->data.length + 1);
-        set->data.string[set->data.length-1] = '\0';
+        set->data.string[set->data.length - 1] = '\0';
     }
+
     if (oldDataStart != set->data.string) {
         Ns_Log(Ns_LogNsSetDebug, "MUST SHIFT %p '%s':"
                " length %" PRITcl_Size "->%" PRITcl_Size
                " buffer %" PRITcl_Size "->%" PRITcl_Size
-               " (while appending %ld '%s')",
-               (void*)set, set->name,
+               " (while appending %lu '%s')",
+               (void *)set, set->name,
                oldLength, set->data.length,
                oldAvail, set->data.spaceAvl,
-               index, value);
-        ShiftData(set, oldDataStart);
+               (unsigned long)index, value);
+        ShiftData(set, oldDataStart, nvalid);
     }
 
     return likely(value != NULL) ? set->data.string + oldLength : NULL;
@@ -359,7 +395,7 @@ NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)
     if (bufferSize > TCL_DSTRING_STATIC_SIZE) {
         oldDataStart = set->data.string;
         NsSetDataPrealloc(set, (TCL_SIZE_T)bufferSize);
-        ShiftData(set, oldDataStart);
+        ShiftData(set, oldDataStart, set->size);
     }
 #endif
 }
@@ -496,36 +532,52 @@ Ns_SetPutSz(Ns_Set *set,
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(keyString != NULL);
 
-    assert(set->size <=  set->maxSize);
+    assert(set->size <= set->maxSize);
     idx = set->size;
-    set->size++;
 
-    if (set->size >= set->maxSize) {
-        size_t oldSize = set->size;
+    if (idx + 1u >= set->maxSize) {
+        size_t oldMax = set->maxSize;
 
-        set->maxSize = set->size * 2u;
+        set->maxSize = (idx + 1u) * 2u;
         set->fields = ns_realloc(set->fields,
                                  sizeof(Ns_SetField) * set->maxSize);
         Ns_Log(Ns_LogNsSetDebug, "Ns_SetPutSz %p '%s': [%lu] realloc from %lu to maxsize %lu"
                " (while adding '%s')",
-               (void*)set, set->name, idx, oldSize, set->maxSize, valueString);
-        memset(&set->fields[idx], 0, sizeof(Ns_SetField) * (set->maxSize - set->size));
+               (void *)set, set->name, idx, oldMax, set->maxSize, valueString);
+
+        memset(&set->fields[idx], 0,
+               sizeof(Ns_SetField) * (set->maxSize - idx));
+    } else {
+        memset(&set->fields[idx], 0, sizeof(Ns_SetField));
     }
+
 #ifdef NS_SET_DSTRING
-    set->fields[idx].name = AppendData(set, idx, keyString, keyLength);
-    set->fields[idx].value = AppendData(set, idx, valueString, valueLength);
+    /*
+     * While appending the key, only the old entries [0..idx-1] are valid.
+     */
+    set->fields[idx].name = AppendData(set, idx, idx, keyString, keyLength);
+
+    /*
+     * After storing the key pointer, the new entry's name is valid as well.
+     * So while appending the value, [0..idx] must be shifted if relocation happens.
+     */
+    set->fields[idx].value = AppendData(set, idx, idx + 1u, valueString, valueLength);
 #else
     set->fields[idx].name = ns_strncopy(keyString, keyLength);
     set->fields[idx].value = ns_strncopy(valueString, valueLength);
 #endif
+
     if ((set->flags & NS_SET_OPTION_NOCASE) != 0u) {
         LowerStringWhenNeeded(set->fields[idx].name,
                               unlikely(keyLength == TCL_INDEX_NONE)
                               ? strlen(set->fields[idx].name)
                               : (size_t)keyLength);
     }
+
+    set->size++;
+
     Ns_Log(Ns_LogNsSetDebug, "Ns_SetPut %p [%lu] key '%s' value '%s' size %" PRITcl_Size,
-           (void*)set, idx, set->fields[idx].name, set->fields[idx].value, valueLength);
+           (void *)set, idx, set->fields[idx].name, set->fields[idx].value, valueLength);
     return idx;
 }
 
@@ -1208,7 +1260,7 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T size)
                 if (set->fields[index].value != NULL) {
                     *(set->fields[index].value) = '\3';
                 }
-                set->fields[index].value = AppendData(set, index, value, size);
+                set->fields[index].value = AppendData(set, index, set->size, value, size);
             }
         } else {
             Tcl_Panic("Ns_SetPutValueSz called on a set with size 0");
