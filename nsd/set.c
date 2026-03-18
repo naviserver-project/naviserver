@@ -1321,12 +1321,18 @@ void Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
 
         Tcl_DStringInit(dsPtr);
         Ns_DListInit(dlPtr);
-        for (i = 0u; i < set->size; ++i) {
-            size_t nameSize = strlen(set->fields[i].name);
 
-            Tcl_DStringAppend(dsPtr, set->fields[i].name, (TCL_SIZE_T)nameSize);
-            Tcl_DStringSetLength(dsPtr, dsPtr->length+1);
-            Ns_DListAppend(dlPtr, (void*)(ptrdiff_t)(nameSize+1));
+        /*
+         * Rebuild compact name storage by copying each field name together
+         * with its terminating NUL byte. This avoids relying on implicit
+         * separator-byte behavior when extending the temporary Tcl_DString,
+         * which could lead to merged adjacent field names on some platforms.
+         */
+        for (i = 0u; i < set->size; ++i) {
+            size_t copySize = strlen(set->fields[i].name) + 1;
+
+            Tcl_DStringAppend(dsPtr, set->fields[i].name, (TCL_SIZE_T)copySize);
+            Ns_DListAppend(dlPtr, (void*)(ptrdiff_t)(copySize));
             set->fields[i].value = NULL;
         }
         Tcl_DStringSetLength(&set->data, dsPtr->length);
