@@ -266,28 +266,28 @@ proc _nscv_run {prefix defaultConfig presets {configRoot ""}} {
 }
 
 test ns_configure_variables-2.0 {defaults + subst are applied} -body {
-    _nscv_run "oacs_" {home "/h" logdir {$home/logs} setupfile ""} {}
+    _nscv_run "test_nscv_" {home "/h" logdir {$home/logs} setupfile ""} {}
 } -result [dict create home "/h" logdir "/h/logs"]
 
 test ns_configure_variables-2.1 {environment overrides defaults} -body {
-    set ::env(oacs_home) "/envhome"
-    _nscv_run "oacs_" {home "/h" logdir {$home/logs} setupfile ""} {}
+    set ::env(test_nscv_home) "/envhome"
+    _nscv_run "test_nscv_" {home "/h" logdir {$home/logs} setupfile ""} {}
 } -cleanup {
-    unset -nocomplain ::env(oacs_home)
+    unset -nocomplain ::env(test_nscv_home)
 } -result [dict create home "/envhome" logdir "/envhome/logs"]
 
 test ns_configure_variables-2.2 {config-file preset overrides environment} -body {
-    set ::env(oacs_home) "/envhome"
-    _nscv_run "oacs_" {home "/h" setupfile ""} [dict create home "/cfg"]
+    set ::env(test_nscv_home) "/envhome"
+    _nscv_run "test_nscv_" {home "/h" setupfile ""} [dict create home "/cfg"]
 } -cleanup {
-    unset -nocomplain ::env(oacs_home)
+    unset -nocomplain ::env(test_nscv_home)
 } -result [dict create home "/cfg"]
 
 test ns_configure_variables-2.3 {subst uses overridden values (env -> dependent var)} -body {
-    set ::env(oacs_home) "/envhome"
-    _nscv_run "oacs_" {home "/h" logdir {$home/logs}} [dict create]
+    set ::env(test_nscv_home) "/envhome"
+    _nscv_run "test_nscv_" {home "/h" logdir {$home/logs}} [dict create]
 } -cleanup {
-    unset -nocomplain ::env(oacs_home)
+    unset -nocomplain ::env(test_nscv_home)
 } -result [dict create home "/envhome" logdir "/envhome/logs"]
 
 
@@ -299,7 +299,7 @@ test ns_configure_variables-3.0 {setupfile resolved relative to explicit configR
     puts $f { set home "/setup" ; set extra_var "from_setup" }
     close $f
 
-    _nscv_run "oacs_" {home "/h" setupfile "setup.tcl"} [dict create] $tmpdir
+    _nscv_run "test_nscv_" {home "/h" setupfile "setup.tcl"} [dict create] $tmpdir
 } -cleanup {
     catch {file delete -force [file normalize [file join [pwd] .tmp-ns-configure-variables]]}
 } -returnCodes {error ok} -result [dict create home "/setup" extra_var "from_setup"]
@@ -313,7 +313,7 @@ test ns_configure_variables-3.1 {setupfile resolves relative to explicit configR
     puts $f { set extra_var "dir_mode" }
     close $f
 
-    _nscv_run "oacs_" {home "/h" setupfile "setup.tcl"} [dict create] $tmpdir
+    _nscv_run "test_nscv_" {home "/h" setupfile "setup.tcl"} [dict create] $tmpdir
 } -cleanup {
     catch {file delete -force [file normalize [file join [pwd] .tmp-ns-configure-variables]]}
 } -result [dict create home "/h" extra_var "dir_mode"]
@@ -327,7 +327,7 @@ test ns_configure_variables-3.2 {setupfile can be absolute path} -body {
     puts $f { set extra_var "abs_path" }
     close $f
 
-    _nscv_run "oacs_" [list home "/h" setupfile $setup] [dict create] $tmpdir
+    _nscv_run "test_nscv_" [list home "/h" setupfile $setup] [dict create] $tmpdir
 } -cleanup {
     catch {file delete -force [file normalize [file join [pwd] .tmp-ns-configure-variables]]}
 } -result [dict create home "/h" extra_var "abs_path"]
@@ -336,7 +336,7 @@ test ns_configure_variables-3.3 {missing setupfile -> error} -body {
     set tmpdir [file normalize [file join [pwd] .tmp-ns-configure-variables]]
     file mkdir $tmpdir
 
-    _nscv_run "oacs_" {home "/h" setupfile "DOES-NOT-EXIST.tcl"} [dict create] $tmpdir
+    _nscv_run "test_nscv_" {home "/h" setupfile "DOES-NOT-EXIST.tcl"} [dict create] $tmpdir
 } -cleanup {
     catch {file delete -force [file normalize [file join [pwd] .tmp-ns-configure-variables]]}
 } -returnCodes error -match glob -result {*setupfile not found:*}
