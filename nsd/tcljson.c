@@ -302,7 +302,7 @@ static bool          JsonObjIsAtom(Tcl_Obj *obj, JsonAtom atom)  NS_GNUC_NONNULL
  * Null value helpers.
  */
 static Tcl_Obj      *JsonNewNullObj(Tcl_Obj *labelObj) NS_GNUC_NONNULL(1);
-static bool          JsonIsNullObj(Tcl_Obj *valueObj) NS_GNUC_NONNULL(1);
+static bool          JsonIsNullObj(const Tcl_Obj *valueObj) NS_GNUC_NONNULL(1);
 
 /*
  * Generic object helper and string encoding helpers.
@@ -479,8 +479,8 @@ static Ns_ReturnCode JsonSchemaCanonicalizeProperties(Tcl_Interp *interp, Tcl_Ob
 /*
  * Schema mismatch reporting helpers.
  */
-static Ns_ReturnCode JsonSchemaMismatchType(Tcl_Interp *interp, Tcl_DString *pathDsPtr, const char *expected, const char *actual)  NS_GNUC_NONNULL(1,2,3,4);
-static Ns_ReturnCode JsonSchemaMismatchTypeUnion(Tcl_Interp *interp, Tcl_DString *pathDsPtr, Tcl_Obj *typeObj, const char *actual) NS_GNUC_NONNULL(1,2,3,4);
+static Ns_ReturnCode JsonSchemaMismatchType(Tcl_Interp *interp, Tcl_DString *pathDsPtr, const char *expectedType, const char *actualType)  NS_GNUC_NONNULL(1,2,3,4);
+static Ns_ReturnCode JsonSchemaMismatchTypeUnion(Tcl_Interp *interp, Tcl_DString *pathDsPtr, Tcl_Obj *typeObj, const char *actualType) NS_GNUC_NONNULL(1,2,3,4);
 static Ns_ReturnCode JsonSchemaMismatchMissingRequired(Tcl_Interp *interp, Tcl_DString *pathDsPtr, Tcl_Obj *nameObj) NS_GNUC_NONNULL(1,2,3);
 static Ns_ReturnCode JsonSchemaMismatchUnexpectedProperty(Tcl_Interp *interp, Tcl_DString *pathDsPtr)  NS_GNUC_NONNULL(1,2);
 static Ns_ReturnCode JsonSchemaMismatchAnyOf(Tcl_Interp *interp, Tcl_DString *pathDsPtr, JsonValueType actualVt) NS_GNUC_NONNULL(1,2);
@@ -499,7 +499,7 @@ static const char *  JsonSchemaMisMatchGetPath(Tcl_DString *pathDsPtr) NS_GNUC_N
 static Ns_ReturnCode JsonSchemaRequireSupportedSubset(Tcl_Interp *interp, Tcl_Obj *schemaObj, bool ignoreUnsupported) NS_GNUC_NONNULL(1,2);
 static Tcl_Obj      *JsonSchemaDictGet(Tcl_Obj *schemaObj, JsonAtom atom) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode JsonSchemaMatchValue(Tcl_Interp *interp, Tcl_Obj *schemaObj, JsonValueType actualVt, Tcl_Obj *actualObj, Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1,2,4,5);
-static Ns_ReturnCode JsonSchemaMatchType(Tcl_Interp *interp, Tcl_Obj *typeObj, JsonValueType actualVt, Tcl_DString *pathDsPtr);
+static Ns_ReturnCode JsonSchemaMatchType(Tcl_Interp *interp, Tcl_Obj *typesObj, JsonValueType actualVt, Tcl_DString *pathDsPtr);
 static Ns_ReturnCode JsonSchemaMatchAnyOf(Tcl_Interp *interp, Tcl_Obj *anyOfObj, JsonValueType actualVt, Tcl_Obj *actualObj, Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1,2,4,5);
 static Ns_ReturnCode JsonSchemaMatchObject(Tcl_Interp *interp, Tcl_Obj *schemaObj, Tcl_Obj *triplesObj, Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1,2,3,4);
 static Ns_ReturnCode JsonSchemaMatchArray(Tcl_Interp *interp, Tcl_Obj *schemaObj, Tcl_Obj *triplesObj, Tcl_DString *pathDsPtr) NS_GNUC_NONNULL(1,2,3,4);
@@ -717,7 +717,7 @@ JsonNewNullObj(Tcl_Obj *labelObj)
  *----------------------------------------------------------------------
  */
 static bool
-JsonIsNullObj(Tcl_Obj *valueObj)
+JsonIsNullObj(const Tcl_Obj *valueObj)
 {
     return (valueObj->typePtr == &JsonNullObjType);
 }
@@ -3003,7 +3003,6 @@ TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
 
     Tcl_Obj      *out;
     Tcl_Obj      *cur;
-    JsonValueType rootVt = JSON_VT_AUTO;
 
     if (Tcl_ListObjGetElements(interp, pathObj, &pc, &pv) != TCL_OK) {
         return NS_ERROR;
@@ -3040,8 +3039,7 @@ TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
                      * The triples are wrapped.
                      */
                     Tcl_Obj *nestedDup;
-
-                    rootVt = tvt;
+                    JsonValueType rootVt = tvt;
                     /*
                      * For non-empty paths, we can only descend into container roots.
                      */
@@ -6270,16 +6268,16 @@ JsonSchemaMatchValue(Tcl_Interp *interp, Tcl_Obj *schemaObj,
                      JsonValueType actualVt, Tcl_Obj *actualObj,
                      Tcl_DString *pathDsPtr)
 {
-    Tcl_Obj *typeObj = NULL, *anyOfObj = NULL;
+    Tcl_Obj *typesObj = NULL, *anyOfObj = NULL;
 
     anyOfObj = JsonSchemaDictGet(schemaObj, JSON_ATOM_ANYOF);
     if (anyOfObj != NULL) {
         return JsonSchemaMatchAnyOf(interp, anyOfObj, actualVt, actualObj, pathDsPtr);
     }
 
-    typeObj = JsonSchemaDictGet(schemaObj, JSON_ATOM_TYPE);
-    if (typeObj != NULL) {
-        if (JsonSchemaMatchType(interp, typeObj, actualVt, pathDsPtr) != NS_OK) {
+    typesObj = JsonSchemaDictGet(schemaObj, JSON_ATOM_TYPE);
+    if (typesObj != NULL) {
+        if (JsonSchemaMatchType(interp, typesObj, actualVt, pathDsPtr) != NS_OK) {
             return NS_ERROR;
         }
     }
