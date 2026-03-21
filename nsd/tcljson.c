@@ -272,6 +272,9 @@ static const Tcl_ObjType JsonNullObjType = {
     JsonNullDupIntRep,    /* dupIntRepProc */
     JsonNullUpdateString, /* updateStringProc */
     NULL                  /* setFromAnyProc (explicit construction only) */
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
 };
 
 /*
