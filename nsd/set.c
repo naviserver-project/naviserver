@@ -1293,79 +1293,68 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T size)
  *
  *----------------------------------------------------------------------
  */
-void Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
+void
+Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
 {
     size_t i;
 
 #ifdef NS_SET_DSTRING
-    bool mustShift = NS_FALSE;
+    bool mustClear = NS_FALSE;
 
+    /*
+     * Check, if there is something to clear.
+     */
     for (i = 0u; i < set->size; ++i) {
         if (set->fields[i].value != NULL) {
-            mustShift = NS_TRUE;
+            mustClear = NS_TRUE;
             break;
         }
     }
+
     Ns_Log(Ns_LogNsSetDebug,
-           "Ns_SetClearValues %p '%s': size %ld/%ld"
-           " data %" PRITcl_Size "/%" PRITcl_Size
-           " (created %ld)",
-           (void*)set, set->name, set->size, set->maxSize,
-           set->data.length, set->data.spaceAvl, createdSets);
+           "Ns_SetClearValues %p '%s': size %ld/%ld data %" PRITcl_Size "/%" PRITcl_Size,
+           (void *)set, set->name, set->size, set->maxSize,
+           set->data.length, set->data.spaceAvl);
 
-    if (mustShift) {
-        Tcl_DString ds, *dsPtr = &ds;
-        Ns_DList    dl, *dlPtr = &dl;
-        char       *p;
-        TCL_SIZE_T  oldLength = set->data.length;
+    if (mustClear) {
+        char      *dst = set->data.string;
+        TCL_SIZE_T newLength = 0;
 
-        Tcl_DStringInit(dsPtr);
-        Ns_DListInit(dlPtr);
-
-        /*
-         * Rebuild compact name storage by copying each field name together
-         * with its terminating NUL byte. This avoids relying on implicit
-         * separator-byte behavior when extending the temporary Tcl_DString,
-         * which could lead to merged adjacent field names on some platforms.
-         */
         for (i = 0u; i < set->size; ++i) {
-            size_t copySize = strlen(set->fields[i].name) + 1;
+            char   *src = set->fields[i].name;
+            size_t  len = strlen(src) + 1u;
 
-            Tcl_DStringAppend(dsPtr, set->fields[i].name, (TCL_SIZE_T)copySize);
-            Ns_DListAppend(dlPtr, (void*)(ptrdiff_t)(copySize));
+            if (dst != src) {
+                memmove(dst, src, len);
+            }
+            set->fields[i].name  = dst;
             set->fields[i].value = NULL;
+
+            dst       += len;
+            newLength += (TCL_SIZE_T)len;
         }
-        Tcl_DStringSetLength(&set->data, dsPtr->length);
 
-        /*
-         * In cases, where the allocated memory was larger than maxAlloc, and
-         * the actually needed amount is less than a quarter, shrink the
-         * buffer. We do not have to use realloc(), since the content is
-         * anyhow copied later. Note that we have to use the same
-         * alloc()/free() functions that also Tcl uses.
-         */
-        if (set->data.spaceAvl > maxAlloc && (oldLength < maxAlloc/4)) {
-            const char *oldBuffer = set->data.string;
+        Tcl_DStringSetLength(&set->data, newLength);
 
-            set->data.string = ckalloc((size_t)maxAlloc);
-            ckfree(ns_const2voidp(oldBuffer));
+        if (set->data.spaceAvl > maxAlloc && newLength < maxAlloc/4) {
+            char *oldBuffer = set->data.string;
+            char *newBuffer = ckalloc((size_t)maxAlloc);
+
+            memcpy(newBuffer, oldBuffer, (size_t)newLength);
+            set->data.string   = newBuffer;
             set->data.spaceAvl = maxAlloc;
-        }
-        memcpy(set->data.string, dsPtr->string, (size_t)dsPtr->length);
 
-        p = set->data.string;
-        set->fields[0].name = p;
-        for (i = 1u; i < set->size; ++i) {
-            p += (ptrdiff_t)(dlPtr->data[i-1]);
-            set->fields[i].name = p;
+            for (i = 0u; i < set->size; ++i) {
+                ptrdiff_t off = set->fields[i].name - oldBuffer;
+                set->fields[i].name = newBuffer + off;
+            }
+            ckfree(oldBuffer);
         }
-        Tcl_DStringFree(dsPtr);
-        Ns_DListFree(dlPtr);
 
         Ns_Log(Ns_LogNsSetDebug,
-           "... final size %ld/%ld data %" PRITcl_Size "/%" PRITcl_Size,
-           set->size, set->maxSize,
-           set->data.length, set->data.spaceAvl);
+               "... final size %ld/%ld data %" PRITcl_Size "/%" PRITcl_Size,
+               set->size, set->maxSize,
+               set->data.length, set->data.spaceAvl);
     }
 
 #else
