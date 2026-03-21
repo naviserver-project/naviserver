@@ -77,7 +77,7 @@ install-notice:
 		echo "  useradd nsadmin"; \
 		echo ""; \
 	    else \
-		if [ ! `sudo -u nsadmin test -w $(NAVISERVER)/logs && echo 1` ] ; then \
+		if ! su -s /bin/sh nsadmin -c "test -w $(NAVISERVER)/logs"; then \
 		    echo "The permissions for log directory have to be set up:"; \
 		    echo ""; \
 		    echo "  chown -R nsadmin:nsadmin $(NAVISERVER)/logs"; \
