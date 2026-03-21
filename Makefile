@@ -300,6 +300,7 @@ build-doc:
 #
 # Testing:
 #
+NS_TEST_ENV     = LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 ifeq ($(shell id -u),0)
 NS_TEST_CFG	= -u nsadmin -c -d -t $(srcdir)/tests/test.nscfg
@@ -345,33 +346,33 @@ test: all $(EXTRA_TEST_REQ)
 	@if [ $(shell id -u) = 0 ]; then \
 	    $(CHOWN) -R nsadmin $(srcdir)/tests ; \
 	fi;
-	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 runtest: all
-	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
 
 gdbtest: all
-	$(NS_LD_LIBRARY_PATH) gdb -ex=run --args ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) gdb -ex=run --args ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 #	@echo set args $(NS_TEST_CFG) $(NS_TEST_ALL) > gdb.run
 #	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 #	$(RM) gdb.run
 
 lldbtest: all
-	$(NS_LD_LIBRARY_PATH) lldb -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) lldb -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
-lldb-sample: all
-	lldb -o run -- $(DESTDIR)$(NAVISERVER)/bin/nsd -f -u nsadmin -t $(DESTDIR)$(NAVISERVER)/conf/nsd-config.tcl
+#lldb-sample: all
+#	lldb -o run -- $(DESTDIR)$(NAVISERVER)/bin/nsd -f -u nsadmin -t $(DESTDIR)$(NAVISERVER)/conf/nsd-config.tcl
 
 
 gdbruntest: all
 	@echo set args $(NS_TEST_CFG) > gdb.run
-	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 	$(RM) gdb.run
 
 memcheck: all
-	$(NS_LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 helgrind: all
-	$(NS_LD_LIBRARY_PATH) valgrind --tool=helgrind ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) valgrind --tool=helgrind ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 CPPCHECK_SYS_INCLUDES=-I/usr/include
 #CPPCHECK_SYS_INCLUDES=-I`xcrun --show-sdk-path`/usr/include
