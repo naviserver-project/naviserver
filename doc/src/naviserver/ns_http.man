@@ -688,6 +688,16 @@ otherwise stored in memory.
  % close $chan
 [example_end]
 
+Debugging example: To see the full
+outgoing and incoming requests including the final headers in the
+system log, activate temporarily task logging:
+
+[example_begin]
+ % ns_logctl severity Debug(task) on
+ % set d [lb]ns_http run http://www.google.com[rb]
+ % ns_logctl severity Debug(task) off
+[example_end]
+
 
 [section CONFIGURATION]
 
