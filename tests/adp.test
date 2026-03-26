@@ -371,7 +371,7 @@ test adp-6.3 {adp-parse file} -body {
 
 test adp-6.4 {adp-parse file with arguments} -body {
     string map {\r ""} [ns_adp_parse -file adp2.adp hello world]
-} -match glob -result {*ns_adp_argc 7*ns_adp_argv 1 2 3 a A z Z*}
+} -match glob -result {*ns_adp_argc: 7*ns_adp_argv: 1 2 3 a A z Z*}
 
 test adp-7.1 {adp-parse string with tag, quoted and unquoted} -body {
     proc ::test_tag_proc {params} {return [ns_set array $params]}
@@ -740,7 +740,7 @@ test ns_adp_registeradp-2.4 {registeradp with adp-markup, attributes, ending tag
 test ns_adp_registeradp-3.1 {registeradp with adp-file} -body {
     ns_adp_registeradp regadp {<% ns_adp_include adp2.adp A B C %>}
     ns_adp_parse -string {start <b>x <regadp a=1> y</b> end}
-} -returnCodes {error ok} -match glob -result {start <b>x*argv 1 2 3 a A z Z*end*}
+} -returnCodes {error ok} -match glob -result {start <b>x*argv: 1 2 3 a A z Z*end*}
 
 
 test ns_adp_registeradp-4.0 {whitespace handling between adp tags} -body {
