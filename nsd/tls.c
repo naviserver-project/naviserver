@@ -812,7 +812,6 @@ OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
  *
  *----------------------------------------------------------------------
  */
-
 static int
 OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
 {
@@ -1040,7 +1039,6 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
  *
  *----------------------------------------------------------------------
  */
-
 static OCSP_RESPONSE *
 OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
 {
@@ -2344,6 +2342,7 @@ static void CertTableReload(void *UNUSED(arg))
     }
     Ns_MasterUnlock();
 }
+
 static NS_TLS_SSL_CTX *CertTableGetCtx(const char *cert)
 {
     Tcl_HashEntry  *hPtr;
@@ -2387,7 +2386,6 @@ static NS_TLS_SSL_CTX *CertTableGetCtx(const char *cert)
  *
  *----------------------------------------------------------------------
  */
-
 static bool
 ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *validationExceptionsPtr, struct sockaddr *saPtr)
 {
@@ -3293,7 +3291,7 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
  *
  * NsCertCtlListCmd - subcommand of NsTclCertCtlObjCmd --
  *
- *      Implements "ns_certctl reload" command for listing
+ *      Implements "ns_certctl list" command for listing
  *      certificates. This function retrieves and formats a list of
  *      certificates currently loaded or managed by the server,
  *      returning the information as a Tcl list.
@@ -3306,7 +3304,6 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
  *
  *----------------------------------------------------------------------
  */
-
 static int
 NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -3360,7 +3357,7 @@ NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
 /*
  *----------------------------------------------------------------------
  *
- * NsCertCtlListCmd - subcommand of NsTclCertCtlObjCmd --
+ * NsCertCtlReloadCmd - subcommand of NsTclCertCtlObjCmd --
  *
  *      Implements the "ns_certctl reload" command for certificate
  *      control.  This function triggers a reload of certificates -
