@@ -599,7 +599,6 @@ NsDriversOfType(Ns_DList *dlPtr, const char *type)
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *init)
 {
@@ -796,7 +795,6 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
  *
  *----------------------------------------------------------------------
  */
-
 static ServerMap *
 ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
                   NsServer *servPtr, Driver *drvPtr,
@@ -995,6 +993,7 @@ void NsDriverMapVirtualServers(void)
         /*
          * Iterating over set of server names (keys)
          */
+
         Tcl_DStringInit(dsPtr);
         for (j = 0u; j < Ns_SetSize(serverMapSet); ++j) {
             const char     *server  = Ns_SetKey(serverMapSet, j);
@@ -1011,14 +1010,15 @@ void NsDriverMapVirtualServers(void)
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", moduleName, server);
             } else {
-                char *writableHost, *end;
+                char       *writableHost, *end;
                 const char *hostName, *portStart;
-                bool  hostParsedOk;
+                bool        hostParsedOk;
 
                 writableHost = ns_strdup(host);
                 hostParsedOk = Ns_HttpParseHost2(writableHost, NS_TRUE, &hostName, &portStart, &end);
                 if (!hostParsedOk) {
-                    Ns_Log(Warning, "server map: ignore invalid hostname: '%s'", writableHost);
+                    Ns_Log(Warning, "server map: ignore invalid server hostname: '%s'", host);
+                    ns_free(writableHost);
                     continue;
                 }
 
@@ -1269,7 +1269,6 @@ PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static Ns_ReturnCode
 DriverInit(const char *server, const char *moduleName, const char *threadName,
            const Ns_DriverInitData *init,
@@ -1670,7 +1669,6 @@ NsStopSpoolers(void)
  *
  *----------------------------------------------------------------------
  */
-
 static bool
 DriverIsRegisterdForServer(const Driver *drvPtr, NsServer *servPtr)
 {
@@ -2357,7 +2355,6 @@ void NsDriverStartSpoolers(Driver *drvPtr) {
  *
  *----------------------------------------------------------------------
  */
-
 static NS_SOCKET
 DriverListen(Driver *drvPtr, const char *bindaddr, unsigned short port)
 {
@@ -2406,7 +2403,6 @@ DriverListen(Driver *drvPtr, const char *bindaddr, unsigned short port)
  *
  *----------------------------------------------------------------------
  */
-
 static NS_DRIVER_ACCEPT_STATUS
 DriverAccept(Sock *sockPtr, NS_SOCKET sock)
 {
@@ -2570,7 +2566,6 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
  *
  *----------------------------------------------------------------------
  */
-
 static bool
 DriverKeep(Sock *sockPtr)
 {
@@ -2604,7 +2599,6 @@ DriverKeep(Sock *sockPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 DriverClose(Sock *sockPtr)
 {
@@ -2638,7 +2632,6 @@ EnsureRunningCB(void *hashValue, const void *UNUSED(ctx))
  *
  *----------------------------------------------------------------------
  */
-
 static void
 DriverThread(void *arg)
 {
@@ -3275,7 +3268,6 @@ PollWait(const PollData *pdata, int timeout)
  *
  *----------------------------------------------------------------------
  */
-
 static Request *
 RequestNew(void)
 {
@@ -3337,7 +3329,6 @@ NsSockEnsureRequest(Sock *sockPtr) {
  *
  *----------------------------------------------------------------------
  */
-
 static void
 RequestFree(Sock *sockPtr)
 {
@@ -3484,7 +3475,6 @@ RequestFree(Sock *sockPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static Ns_ReturnCode
 SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 {
@@ -3573,7 +3563,6 @@ NsDispatchRequest(Sock *sockPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 SockPoll(Sock *sockPtr, short type, PollData *pdata)
 {
@@ -3598,7 +3587,6 @@ SockPoll(Sock *sockPtr, short type, PollData *pdata)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
 {
@@ -3625,7 +3613,6 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
  *
  *----------------------------------------------------------------------
  */
-
 static SockState
 SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
 {
@@ -3735,7 +3722,6 @@ NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_T
  *
  *----------------------------------------------------------------------
  */
-
 static Sock *
 SockNew(Driver *drvPtr)
 {
@@ -3788,7 +3774,6 @@ SockNew(Driver *drvPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 SockRelease(Sock *sockPtr, SockState reason, int err)
 {
@@ -3856,7 +3841,6 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 SockError(Sock *sockPtr, SockState reason, int err)
 {
@@ -4101,7 +4085,6 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
  *
  *----------------------------------------------------------------------
  */
-
 static void
 SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *headers)
 {
@@ -4210,7 +4193,6 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
  *
  *----------------------------------------------------------------------
  */
-
 static void
 SockTrigger(NS_SOCKET sock)
 {
@@ -4242,7 +4224,6 @@ SockTrigger(NS_SOCKET sock)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 SockClose(Sock *sockPtr, int keep)
 {
@@ -4409,7 +4390,6 @@ ChunkedDecode(Request *reqPtr, bool update)
  *
  *----------------------------------------------------------------------
  */
-
 static SockState
 SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 {
@@ -5060,7 +5040,6 @@ EndOfHeader(Sock *sockPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static SockState
 SockParse(Sock *sockPtr)
 {
@@ -5425,7 +5404,51 @@ SockParse(Sock *sockPtr)
     return result;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * NormalizeHostEntry --
+ *
+ *      Normalize a Host header field into canonical "host:port" form.
+ *
+ *      The function parses the provided host string, removes optional
+ *      syntactic variations, and ensures that a port is always present.
+ *      In particular:
+ *
+ *        - The host is parsed into hostname and optional port using
+ *          Ns_HttpParseHost2().
+ *
+ *        - Trailing dots in DNS names (fully qualified domain names)
+ *          are removed.
+ *
+ *        - If no port is provided, the driver's default port is appended.
+ *
+ *        - For IP-literal addresses (e.g., "[::1]"), surrounding brackets
+ *          are preserved and correctly restored after parsing.
+ *
+ *        - If a port is provided, the host string is rewritten to ensure
+ *          a consistent "host:port" representation.
+ *
+ *      When requestPtr is provided and refers to a plain request, the
+ *      parsed host and port are stored in the request structure.  Any
+ *      previously set host value is replaced.
+ *
+ * Results:
+ *      NS_TRUE  on successful parsing and normalization.
+ *      NS_FALSE if the host header could not be parsed.
+ *
+ * Side effects:
+ *      The content of hostDs is modified in place to contain the
+ *      normalized "host:port" string.
+ *
+ *      When requestPtr is non-NULL and refers to a plain request,
+ *      requestPtr->host and requestPtr->port are updated.
+ *
+ *      Warning messages are logged on parse errors or when replacing
+ *      an already set request host.
+ *
+ *----------------------------------------------------------------------
+ */
 static bool
 NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
 {
@@ -5819,7 +5842,6 @@ CheckSingletonHeaderFields(Sock *sockPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static Ns_ReturnCode
 SockSetServer(Sock *sockPtr)
 {
@@ -6018,7 +6040,6 @@ SockSetServer(Sock *sockPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 SpoolerThread(void *arg)
 {
@@ -6432,7 +6453,6 @@ WriterSockFileVecCleanup(const WriterSock *wrSockPtr) {
  *
  *----------------------------------------------------------------------
  */
-
 static WriterSock *
 WriterSockRequire(const Conn *connPtr) {
     WriterSock *wrSockPtr;
@@ -6577,7 +6597,6 @@ WriterSockRelease(WriterSock *wrSockPtr) {
  *
  *----------------------------------------------------------------------
  */
-
 static SpoolerState
 WriterReadFromSpool(WriterSock *curPtr) {
     NsWriterStreamState doStream;
@@ -6740,7 +6759,6 @@ WriterReadFromSpool(WriterSock *curPtr) {
  *
  *----------------------------------------------------------------------
  */
-
 static SpoolerState
 WriterSend(WriterSock *curPtr, int *err) {
     const struct iovec *bufs;
@@ -7057,7 +7075,6 @@ ConnPoolInfoUpdateCB(const void *hashKey, void *hashValue, const void *UNUSED(ct
  *
  *----------------------------------------------------------------------
  */
-
 static void
 WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
 {
@@ -7300,7 +7317,6 @@ BandwidthAdjustPollForWriters(WriterSock *writers, PollData *pdata)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 WriterThread(void *arg)
 {
@@ -8609,7 +8625,6 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 }
 
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -9192,7 +9207,6 @@ AsyncWriterRelease(AsyncWriteData *wdPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 AsyncWriterThread(void *arg)
 {
@@ -9625,7 +9639,6 @@ NsTclAsyncLogfileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 }
 
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -9642,7 +9655,6 @@ NsTclAsyncLogfileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
  *
  *----------------------------------------------------------------------
  */
-
 static Driver *
 LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
 {
@@ -9681,6 +9693,7 @@ LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
 
     return drvPtr;
 }
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9698,7 +9711,6 @@ LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
  *
  *----------------------------------------------------------------------
  */
-
 int
 NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                    const char *url, const char *httpMethod, const char *version,
@@ -9867,7 +9879,6 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
  *
  *----------------------------------------------------------------------
  */
-
 int
 NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
                  const char *protocol, const char *driverName, const char *methodName,
