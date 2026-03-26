@@ -178,11 +178,6 @@ test ns_adp_flush-1.0 {syntax: ns_adp_flush} -body {
     ns_adp_flush ?
 } -returnCodes error -result {wrong # args: should be "ns_adp_flush"}
 
-test ns_adp_include-1.0 {syntax: ns_adp_include} -body {
-    ns_adp_include
-} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?"}
-# ns_adp_include is a Tcl proc: message should be {wrong # args: should be "ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?"}
-
 test ns_adp_mimetype-1.0 {syntax: ns_adp_mimetype} -body {
     ns_adp_mimetype ? ?
 } -returnCodes error -result {wrong # args: should be "ns_adp_mimetype ?/mimetype/?"}
@@ -372,15 +367,11 @@ test adp-6.2 {adp-parse string} -body {
 
 test adp-6.3 {adp-parse file} -body {
     string map {\r ""} [ns_adp_parse -file adp1.adp]
-} -result {2 + 2 = 4 !!!
-}
+} -match glob -result {2 + 2 = 4 !!!*}
 
 test adp-6.4 {adp-parse file with arguments} -body {
     string map {\r ""} [ns_adp_parse -file adp2.adp hello world]
-} -result {2 + 2 = 4 !!!
-argc 3
-argv adp2.adp hello world
-}
+} -match glob -result {*ns_adp_argc 7*ns_adp_argv 1 2 3 a A z Z*}
 
 test adp-7.1 {adp-parse string with tag, quoted and unquoted} -body {
     proc ::test_tag_proc {params} {return [ns_set array $params]}
@@ -704,6 +695,17 @@ test ns_adp_registerproc-3.3 {registerproc with proc, attributes, ending tag, ch
     rename  ::reporttags ""
 } -result {CamelCase Hello World X a}
 
+############################################################################
+# ns_adp_include
+############################################################################
+test ns_adp_include-1.0 {syntax: ns_adp_include} -body {
+    ns_adp_include
+} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?"}
+# ns_adp_include is a Tcl proc: message should be {wrong # args: should be "ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?"}
+
+test ns_adp_include-1.1 {adp2 uses ns_adp_include includes b.adp and passes argv to included adp} -constraints {serverListen} -body {
+    nstest::http -getbody 1 GET /adp2.adp
+} -match glob -result {*Hello, world*ns_adp_argc 7*ns_adp_argv 1 2 3 a A z Z*v1..v7: 1, 2, 3, a, A, z, Z*end*end*}
 
 
 ############################################################################
@@ -738,7 +740,7 @@ test ns_adp_registeradp-2.4 {registeradp with adp-markup, attributes, ending tag
 test ns_adp_registeradp-3.1 {registeradp with adp-file} -body {
     ns_adp_registeradp regadp {<% ns_adp_include adp2.adp A B C %>}
     ns_adp_parse -string {start <b>x <regadp a=1> y</b> end}
-} -returnCodes {error ok} -match glob -result {start <b>x*argv a b c* y</b> end}
+} -returnCodes {error ok} -match glob -result {start <b>x*argv 1 2 3 a A z Z*end*}
 
 
 test ns_adp_registeradp-4.0 {whitespace handling between adp tags} -body {
