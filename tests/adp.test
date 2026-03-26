@@ -705,7 +705,7 @@ test ns_adp_include-1.0 {syntax: ns_adp_include} -body {
 
 test ns_adp_include-1.1 {adp2 uses ns_adp_include includes b.adp and passes argv to included adp} -constraints {serverListen} -body {
     nstest::http -getbody 1 GET /adp2.adp
-} -match glob -result {*Hello, world*ns_adp_argc 7*ns_adp_argv 1 2 3 a A z Z*v1..v7: 1, 2, 3, a, A, z, Z*end*end*}
+} -match glob -result {*Hello, world*ns_adp_argc: 7*ns_adp_argv: 1 2 3 a A z Z*ns_adp_argv 0: 1*ns_adp_argv 10 DEFAULT DEFAULT*1, 2, 3, a, A, z, Z*end*end*}
 
 
 ############################################################################
