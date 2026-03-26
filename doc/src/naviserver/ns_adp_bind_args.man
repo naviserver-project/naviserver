@@ -6,20 +6,26 @@
 
 [description]
 
- This command assigns the ADP arguments from the current ADP frame to variables
- specified in one or more varName parameters.  There must be an equal number
- of varName arguments as there are ADP arguments, otherwise an error will
- be thrown.
+ This command assigns the arguments of the current ADP invocation to
+ local variables.
 
- Note that the first varName is not assigned the name of the ADP.  In other
- words, varName starts from index 1 in the ns_adp_argv list.
+ The arguments are typically provided via [cmd ns_adp_include].  Each
+ [arg varname] is assigned the corresponding argument value, in order.
+
+ The number of [arg varname] parameters must match the number of
+ arguments; otherwise, an error is raised.
+
+[para]
+ The binding starts with the first argument (index 0 of
+ [cmd ns_adp_argv]).  The name of the ADP itself is not included in the
+ argument list.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 [call [cmd ns_adp_bind_args] [arg "varname ..."]]
-
+Assign the ADP arguments to the specified variables.
 [list_end]
 
 
@@ -34,7 +40,7 @@
  # In b.adp:
  <%
    ns_adp_bind_args x y z
-   ns_adp_puts "x=$x y=$y z=$z"      ;# => {1 2 3}
+   ns_adp_puts "x=$x y=$y z=$z"      ;# => {x=1 y=2 z=3}
  %>
 [example_end]
 

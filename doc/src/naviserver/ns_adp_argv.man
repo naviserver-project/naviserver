@@ -2,24 +2,32 @@
 [manpage_begin ns_adp_argv n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {Return the number of arguments to the current ADP}]
+[titledesc {Return the arguments to the current (included) ADP}]
 
 [description]
 
- This command returns a list of arguments to the current ADP, including the name of the ADP itself as the first element.  If index is specified, only that element from the list is returned.
+This command returns the list of arguments passed to the current ADP
+invocation.  The arguments are typically provided via
+[cmd ns_adp_include].
 
 [section {COMMANDS}]
 
 [list_begin definitions]
-
 
 [call [cmd ns_adp_argv] \
         [opt [arg index]] \
         [opt [arg default]] \
         ]
 
+[para]
+When called without [arg index] and [arg default], the full argument
+list is returned.
+
+[para]
+When the optional [arg index] is specified, the command returns only
+the element at that position (starting with 0).  If the index is out
+of range, the optional [arg default] value is returned.  If no default
+is provided, an empty string is returned.
 
 [list_end]
 
@@ -34,17 +42,17 @@
 [example_begin]
  # In b.adp:
  <%
-   ns_adp_argv      ;# => b.adp example a b c
-   ns_adp_argv 0    ;# => b.adp
-   ns_adp_argv 4    ;# => c
+   ns_adp_argv      ;# => example a b c
+   ns_adp_argv 0    ;# => example
+   ns_adp_argv 3    ;# => c
+   ns_adp_argv 10 X ;# => X
  %>
 [example_end]
 
 
-[see_also ns_adp_include ns_adp_parse ns_adp_argc ns_adp_bind_args nsd]
+
+[see_also ns_adp_include ns_adp_argc ns_adp_bind_args ns_adp_parse]
 [keywords "server built-in" ADP]
-
-
 
 [manpage_end]
 
