@@ -2755,8 +2755,8 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     int                result, nid;
     const char        *curvenameString = "prime256v1", *pemFileName = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-name",     Ns_ObjvString, &curvenameString, NULL},
-        {"!-pem",     Ns_ObjvString, &pemFileName,     NULL},
+        {"-name", Ns_ObjvString, &curvenameString, NULL},
+        {"-pem",  Ns_ObjvString, &pemFileName,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2773,9 +2773,8 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
         result = TCL_ERROR;
 
     } else {
-        EC_KEY       *eckey;
+        EC_KEY *eckey = EC_KEY_new_by_curve_name(nid);
 
-        eckey = EC_KEY_new_by_curve_name(nid);
         if (eckey == NULL) {
             Ns_TclPrintfResult(interp, "could not create ec key");
             result = TCL_ERROR;
@@ -2785,17 +2784,41 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
             result = TCL_ERROR;
 
         } else {
-            BIO        *bio;
+            BIO  *bio = (pemFileName != NULL)
+                ? BIO_new_file(pemFileName, "w")
+                : BIO_new(BIO_s_mem());
 
-            bio = BIO_new_file(pemFileName, "w");
             if (bio == NULL) {
-                Ns_TclPrintfResult(interp, "could not open pem-file '%s' for writing", pemFileName);
+                if (pemFileName != NULL) {
+                    Ns_TclPrintfResult(interp, "could not open pem-file '%s' for writing", pemFileName);
+                } else {
+                    Ns_TclPrintfResult(interp, "could not allocate memory bio");
+                }
                 result = TCL_ERROR;
-            } else {
-                (void) PEM_write_bio_ECPrivateKey(bio, eckey, NULL,
-                                                  NULL, 0, NULL, NULL);
+
+            } else if (PEM_write_bio_ECPrivateKey(bio, eckey, NULL,
+                                                  NULL, 0, NULL, NULL) != 1) {
+                Ns_TclPrintfResult(interp, "could not write ec key");
                 BIO_free(bio);
+                result = TCL_ERROR;
+
+            } else {
                 result = TCL_OK;
+
+                if (pemFileName == NULL) {
+                    BUF_MEM *bptr = NULL;
+
+                    if (BIO_get_mem_ptr(bio, &bptr) != 1
+                        || bptr == NULL
+                        || bptr->data == NULL) {
+                        Ns_TclPrintfResult(interp, "could not obtain generated ec key");
+                        result = TCL_ERROR;
+                    } else {
+                        Tcl_SetObjResult(interp,
+                                         Tcl_NewStringObj(bptr->data, (TCL_SIZE_T)bptr->length));
+                    }
+                }
+                BIO_free(bio);
             }
             EC_KEY_free(eckey);
         }

@@ -243,14 +243,16 @@ variant of the command.  The default value is "Argon2id".
 
 [call [cmd "ns_crypto::eckey generate"] \
      [opt [option "-name [arg value]"]] \
-     [option "-pem [arg value]"] \
+     [opt [option "-pem [arg value]"]] \
      ]
 
 Generate an EC pemfile without the need of an external command.
 If no [option -name] is provided (name of the elliptic curve),
 [term prime256v1] is assumed. An other popular candidate is
 [term secp384r1]. The [option "-pem"] denotes the name
-of the output file, which is in PEM format.
+of the output file, which is in PEM format. If [option "-pem"]
+is not specified, the command returns the PEM encoded
+private key as result.
 
 [para]
 This function requires OpenSSL compiled with EC support enabled.

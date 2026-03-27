@@ -756,7 +756,7 @@ test ns_crypto:eckey-1.1 {syntax: ns_crypto::eckey subcommands} -body {
 
 test ns_crypto::eckey-1.2 {syntax: ns_crypto::eckey generate} -body {
     ns_crypto::eckey generate ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate ?-name /value/? -pem /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate ?-name /value/? ?-pem /value/?"}
 
 test ns_crypto::eckey-1.3 {syntax: ns_crypto::eckey import} -body {
     ns_crypto::eckey import ?
@@ -777,6 +777,10 @@ test ns_crypto::eckey-1.6 {syntax: ns_crypto::eckey sharedsecret} -body {
 test ns_crypto:eckey-1.7 {syntax: ns_crypto::eckey fromcoords} -body {
     ns_crypto::eckey fromcoords
 } -returnCodes error -result {wrong # args: should be "ns_crypto::eckey fromcoords ?-binary? -curve /value/ -x /value/ -y /value/ ?-encoding hex|base64url|base64|binary? ?-format pem|der?"}
+
+test ns_crypto:eckey-1.7.0 {ns_crypto::eckey generate and return PEM as result} -body {
+    ns_crypto::eckey generate -name prime256v1
+} -match glob -result {*-----BEGIN EC PRIVATE KEY-----*-----END EC PRIVATE KEY-----*}
 
 test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -constraints tcl86 -body {
     ns_crypto::eckey generate -name prime256v1 -pem /tmp/p256-priv.pem
