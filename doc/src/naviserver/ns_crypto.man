@@ -31,7 +31,7 @@ Note: some common options are described in a separate section below.
      [opt [option "-cipher [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-iv [arg value]"]] \
-     [opt [option "-key [arg value]"]] \
+     [option "-key [arg value]"] \
      [opt --] \
      [arg input]]
 
@@ -94,8 +94,8 @@ encryption.
      [opt [option "-cipher [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-iv [arg value]"]] \
-     [opt [option "-key [arg value]"]] \
-     [opt [option "-tag [arg value]"]] \
+     [option "-key [arg value]"] \
+     [option "-tag [arg value]"] \
      [opt --] \
      [arg input]]
 
@@ -128,7 +128,7 @@ The argument [arg input] (the cipher text) is always treated as byte array.
      [opt [option "-memcost [arg integer]"]] \
      [opt [option "-outlen [arg integer]"]] \
      [opt [option "-password [arg value]"]] \
-     [opt [option "-salt [arg value]"]] \
+     [option "-salt [arg value]"] \
      [opt [option "-secret [arg value]"]] \
      [opt [option "-threads [arg integer]"]] \
      [opt [option "-variant [arg value]"]] \
@@ -262,7 +262,7 @@ This function requires OpenSSL compiled with EC support enabled.
 
 [call [cmd "ns_crypto::eckey import"] \
      [opt [option -binary]] \
-     [opt [option "-string [arg value]"]] \
+     [option "-string [arg value]"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      ]
 
@@ -420,9 +420,9 @@ the following key types: CMAC, DSA, ECDSA, HMAC and RSA.
 [call [cmd "ns_crypto::md hkdf"] \
      [opt [option -binary]] \
      [opt [option "-digest [arg value]"]] \
-     [opt [option "-salt [arg value]"]] \
-     [opt [option "-secret [arg value]"]] \
-     [opt [option "-info [arg value]"]] \
+     [option "-salt [arg value]"] \
+     [option "-secret [arg value]"] \
+     [option "-info [arg value]"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt --] \
      [arg length]]
@@ -486,8 +486,8 @@ Returns the specified number of random bytes in the specified encoding
 
 [call [cmd "ns_crypto::scrypt"] \
      [opt [option -binary]] \
-     [opt [option "-salt [arg value]"]] \
-     [opt [option "-secret [arg value]"]] \
+     [option "-salt [arg value]"] \
+     [option "-secret [arg value]"] \
      [opt [option "-n [arg integer]"]] \
      [opt [option "-p [arg integer]"]] \
      [opt [option "-r [arg integer]"]] \
@@ -532,8 +532,8 @@ When the option [option -binary] is specified, it applies to
      [opt [option "-digest [arg value]"]] \
      [opt [option "-dklen [arg integer]"]] \
      [opt [option "-iterations [arg integer]"]] \
-     [opt [option "-salt [arg value]"]] \
-     [opt [option "-secret [arg value]"]] \
+     [option "-salt [arg value]"] \
+     [option "-secret [arg value]"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      ]
 

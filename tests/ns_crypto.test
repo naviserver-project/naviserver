@@ -49,7 +49,7 @@ test ns_crypto::md-1.4 {syntax: ns_crypto::md get} -body {
 
 test ns_crypto::md-1.5 {syntax: ns_crypto::md hkdf} -body {
     ns_crypto::md hkdf
-} -returnCodes error -result {wrong # args: should be "ns_crypto::md hkdf ?-binary? ?-digest /value/? ?-salt /value/? ?-secret /value/? ?-info /value/? ?-encoding hex|base64url|base64|binary? ?--? /length[0,MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::md hkdf ?-binary? ?-digest /value/? -salt /value/ -secret /value/ -info /value/ ?-encoding hex|base64url|base64|binary? ?--? /length[0,MAX]/"}
 
 test ns_crypto::md-1.6 {syntax: ns_crypto::md new} -body {
     ns_crypto::md new
@@ -310,7 +310,7 @@ test ns_md-file-1.2 {ns_hmac file function} -constraints {crypto nsf} -body {
 ############################################################################
 test pbkdf2_hmac-sha1.0 {syntax: ns_crypto::pbkdf2_hmac} -constraints crypto -body {
     ns_crypto::pbkdf2_hmac ""
-} -returnCodes error -result {wrong # args: should be "ns_crypto::pbkdf2_hmac ?-binary? ?-digest /value/? ?-dklen /integer[1,MAX]/? ?-iterations /integer[1,MAX]/? ?-salt /value/? ?-secret /value/? ?-encoding hex|base64url|base64|binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::pbkdf2_hmac ?-binary? ?-digest /value/? ?-dklen /integer[1,MAX]/? ?-iterations /integer[1,MAX]/? -salt /value/ -secret /value/ ?-encoding hex|base64url|base64|binary?"}
 
 test pbkdf2_hmac-sha1.0 {Testcase 1 for pbkdf2-hmac-sha1 based on RFC 6070} -body {
     ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 1 -salt "salt" -digest sha1
@@ -588,7 +588,7 @@ test ns_crypto::aead::encrypt-1.0 {syntax: ns_crypto::aead::encrypt} -body {
 
 test ns_crypto::aead::encrypt-1.1 {syntax: ns_crypto::aead::encrypt string} -body {
     ns_crypto::aead::encrypt string
-} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::encrypt string ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? ?-key /value/? ?--? /input/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::encrypt string ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? -key /value/ ?--? /input/"}
 
 test ns_crypto::aead::decrypt-1.0 {syntax: ns_crypto::aead::decrypt} -body {
     ns_crypto::aead::decrypt
@@ -596,7 +596,7 @@ test ns_crypto::aead::decrypt-1.0 {syntax: ns_crypto::aead::decrypt} -body {
 
 test ns_crypto::aead::decrypt-1.1 {syntax: ns_crypto::aead::decrypt string} -body {
     ns_crypto::aead::decrypt string
-} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::decrypt string ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? ?-key /value/? ?-tag /value/? ?--? /input/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::decrypt string ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? -key /value/ -tag /value/ ?--? /input/"}
 
 test aead-1.0 {aead::encrypt} -body {
     set d [ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"]
@@ -618,7 +618,7 @@ test aead-1.1 {aead::encrypt and decrypt} -body {
 ############################################################################
 test scrypt-1.0 {syntax: ns_crypto::scrypt} -constraints {crypto scrypt} -body {
     ns_crypto::scrypt ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::scrypt ?-binary? ?-salt /value/? ?-secret /value/? ?-n /integer[1,MAX]/? ?-p /integer[1,MAX]/? ?-r /integer[1,MAX]/? ?-encoding hex|base64url|base64|binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::scrypt ?-binary? -salt /value/ -secret /value/ ?-n /integer[1,MAX]/? ?-p /integer[1,MAX]/? ?-r /integer[1,MAX]/? ?-encoding hex|base64url|base64|binary?"}
 
 test scrypt-1.1 {
     Test case from RFC 7914 (example 2 in sect 12)
@@ -643,7 +643,7 @@ test scrypt-1.2 {
 ############################################################################
 test argon2-1.0 {syntax: ns_crypto::argon2} -constraints {crypto argon2} -body {
     ns_crypto::argon2 ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::argon2 ?-ad /value/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer[1,MAX]/? ?-lanes /integer[1,MAX]/? ?-memcost /integer[1,MAX]/? ?-outlen /integer[1,MAX]/? ?-password /value/? ?-salt /value/? ?-secret /value/? ?-threads /integer/? ?-variant /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::argon2 ?-ad /value/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer[1,MAX]/? ?-lanes /integer[1,MAX]/? ?-memcost /integer[1,MAX]/? ?-outlen /integer[1,MAX]/? ?-password /value/? -salt /value/ ?-secret /value/? ?-threads /integer/? ?-variant /value/?"}
 
 test argon2-1.1 {
     Test case from the OpenSSL EVP_KDF-ARGON2 manual page, using ARGON2D
@@ -760,7 +760,7 @@ test ns_crypto::eckey-1.2 {syntax: ns_crypto::eckey generate} -body {
 
 test ns_crypto::eckey-1.3 {syntax: ns_crypto::eckey import} -body {
     ns_crypto::eckey import ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey import ?-binary? ?-string /value/? ?-encoding hex|base64url|base64|binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey import ?-binary? -string /value/ ?-encoding hex|base64url|base64|binary?"}
 
 test ns_crypto::eckey-1.4 {syntax: ns_crypto::eckey priv} -body {
     ns_crypto::eckey priv ?

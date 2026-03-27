@@ -1539,9 +1539,9 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,           &isBinary,    INT2PTR(NS_TRUE)},
         {"-digest",   Ns_ObjvString,         &digestName,  NULL},
-        {"-salt",     Ns_ObjvObj,            &saltObj,     NULL},
-        {"-secret",   Ns_ObjvObj,            &secretObj,   NULL},
-        {"-info",     Ns_ObjvObj,            &infoObj,     NULL},
+        {"!-salt",    Ns_ObjvObj,            &saltObj,     NULL},
+        {"!-secret",  Ns_ObjvObj,            &secretObj,   NULL},
+        {"!-info",    Ns_ObjvObj,            &infoObj,     NULL},
         {"-encoding", Ns_ObjvIndex,          &encodingInt, NS_binaryencodings},
         {"--",        Ns_ObjvBreak,          NULL,         NULL},
         {NULL, NULL, NULL, NULL}
@@ -1579,18 +1579,6 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
      */
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (saltObj == NULL) {
-        Ns_TclPrintfResult(interp, "no -salt specified");
-        result = TCL_ERROR;
-
-    } else if (secretObj == NULL) {
-        Ns_TclPrintfResult(interp, "no -secret specified");
-        result = TCL_ERROR;
-
-    } else if (infoObj == NULL) {
-        Ns_TclPrintfResult(interp, "no -info specified");
         result = TCL_ERROR;
 
     } else {
@@ -1752,8 +1740,8 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,   &isBinary,   INT2PTR(NS_TRUE)},
-        {"-salt",     Ns_ObjvObj,    &saltObj,     NULL},
-        {"-secret",   Ns_ObjvObj,    &secretObj,   NULL},
+        {"!-salt",    Ns_ObjvObj,    &saltObj,     NULL},
+        {"!-secret",  Ns_ObjvObj,    &secretObj,   NULL},
         {"-n",        Ns_ObjvInt,    &nValue,      &posIntRange1},
         {"-p",        Ns_ObjvInt,    &pValue,      &posIntRange1},
         {"-r",        Ns_ObjvInt,    &rValue,      &posIntRange1},
@@ -1800,14 +1788,6 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     */
 
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (saltObj == NULL) {
-        Ns_TclPrintfResult(interp, "no -salt specified");
-        result = TCL_ERROR;
-
-    } else if (secretObj == NULL) {
-        Ns_TclPrintfResult(interp, "no -secret specified");
         result = TCL_ERROR;
 
     } else {
@@ -1932,7 +1912,7 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         {"-memcost",  Ns_ObjvInt,    &memcost,     &posIntRange1},
         {"-outlen",   Ns_ObjvInt,    &outlen,      &posIntRange1},
         {"-password", Ns_ObjvObj,    &passObj,     NULL},
-        {"-salt",     Ns_ObjvObj,    &saltObj,     NULL},
+        {"!-salt",    Ns_ObjvObj,    &saltObj,     NULL},
         {"-secret",   Ns_ObjvObj,    &secretObj,   NULL},
         {"-threads",  Ns_ObjvInt,    &threads,     NULL},
         {"-variant",  Ns_ObjvString, &variant,     NULL},
@@ -1943,10 +1923,6 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     };
 
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (saltObj == NULL) {
-        Ns_TclPrintfResult(interp, "no -salt specified");
         result = TCL_ERROR;
 
     } else if (threads > lanes)  {
@@ -2124,8 +2100,8 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         {"-digest",     Ns_ObjvString, &digestName,  NULL},
         {"-dklen",      Ns_ObjvInt,    &dkLength,    &posIntRange1},
         {"-iterations", Ns_ObjvInt,    &iter,        &posIntRange1},
-        {"-salt",       Ns_ObjvObj,    &saltObj,     NULL},
-        {"-secret",     Ns_ObjvObj,    &secretObj,   NULL},
+        {"!-salt",      Ns_ObjvObj,    &saltObj,     NULL},
+        {"!-secret",    Ns_ObjvObj,    &secretObj,   NULL},
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
@@ -2185,14 +2161,6 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
    */
 
     if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (saltObj == NULL) {
-        Ns_TclPrintfResult(interp, "no -salt specified");
-        result = TCL_ERROR;
-
-    } else if (secretObj == NULL) {
-        Ns_TclPrintfResult(interp, "no -secret specified");
         result = TCL_ERROR;
 
     } else {
@@ -2445,7 +2413,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     Tcl_Obj           *importObj = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,  &isBinary,    INT2PTR(NS_TRUE)},
-        {"-string",   Ns_ObjvObj,   &importObj,   NULL},
+        {"!-string",  Ns_ObjvObj,   &importObj,   NULL},
         {"-encoding", Ns_ObjvIndex, &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
@@ -2458,10 +2426,6 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     */
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (importObj == NULL) {
-        Ns_TclPrintfResult(interp, "no import string specified");
         result = TCL_ERROR;
 
     } else {
@@ -3149,7 +3113,7 @@ CryptoAeadStringGetArguments(
         {"-cipher",   Ns_ObjvString, &cipherName,  NULL},
         {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-iv",       Ns_ObjvObj,    &ivObj,       NULL},
-        {"-key",      Ns_ObjvObj,    &keyObj,      NULL},
+        {"!-key",     Ns_ObjvObj,    &keyObj,      NULL},
         {"--",        Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -3159,8 +3123,8 @@ CryptoAeadStringGetArguments(
         {"-cipher",   Ns_ObjvString, &cipherName,  NULL},
         {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-iv",       Ns_ObjvObj,    &ivObj,       NULL},
-        {"-key",      Ns_ObjvObj,    &keyObj,      NULL},
-        {"-tag",      Ns_ObjvObj,    &tagObj,      NULL},
+        {"!-key",     Ns_ObjvObj,    &keyObj,      NULL},
+        {"!-tag",     Ns_ObjvObj,    &tagObj,      NULL},
         {"--",        Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -3172,10 +3136,6 @@ CryptoAeadStringGetArguments(
     *ctxPtr = NULL;
 
     if (Ns_ParseObjv(encrypt ? lopts_encrypt : lopts_decrypt, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (keyObj == NULL) {
-        Ns_TclPrintfResult(interp, "no key in specified");
         result = TCL_ERROR;
 
     } else if ((result = GetCipher(interp, cipherName, EVP_CIPH_GCM_MODE, "gcm", cipherPtr)) == TCL_OK) {
@@ -3394,11 +3354,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
              */
             assert(!encrypt);
 
-            if (tagString == NULL) {
-                Ns_TclPrintfResult(interp, "option '-tag' has to be provided for decryption");
-                result = TCL_ERROR;
-
-            } else if ( EVP_DecryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1
+            if ( EVP_DecryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1
                         || !AEAD_Set_ivlen(ctx, (size_t)ivLength)
                         || EVP_DecryptInit_ex(ctx, NULL, NULL, keyString, ivString) != 1
                         ) {
