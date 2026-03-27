@@ -488,6 +488,13 @@ proc ns_parseformfile {args} {
                     ns_set put $form $name $value
                 }
             }
+
+            #
+            # Cache JSON content for faster access in ns_getjson
+            #
+            unset -nocomplain ::_ns_json_triples
+            set ::_ns_json_body $json
+
         } finally {
             close $fp
         }
@@ -837,6 +844,64 @@ proc ns_getcontent {args} {
         }
     }
     return $result
+}
+
+#
+# Request-local cache variables used by ns_getjson:
+#
+#   ::_ns_json_body
+#       Raw JSON request body as string, obtained via ns_getcontent.
+#
+#   ::_ns_json_triples
+#       Canonical JSON triples, obtained via ns_json parse -output triples.
+#
+#----------------------------------------------------------------------
+#
+# ns_getjson --
+#
+#      Return the request JSON body, or its parsed triples form.
+#
+# Results:
+#
+#      With default output mode ("json"), return the raw request body as
+#      a string. With "-output triples", return the parsed triples form.
+#
+# Side effects:
+#
+#      Uses ns_getcontent to retrieve the request body when not cached
+#      already. Caches the raw request body in ::_ns_json_body and the
+#      parsed triples in ::_ns_json_triples.
+#
+#----------------------------------------------------------------------
+#
+proc ns_getjson {args} {
+    ns_parseargs {
+        {-output json}
+    } $args
+
+    switch -- $output {
+        json {
+            if {[info exists ::_ns_json_body]} {
+                return $::_ns_json_body
+            }
+            unset -nocomplain ::_ns_json_triples
+            set ::_ns_json_body [ns_getcontent -as_file false]
+            return $::_ns_json_body
+        }
+        triples {
+            if {[info exists ::_ns_json_triples]} {
+                return $::_ns_json_triples
+            }
+            if {![info exists ::_ns_json_body]} {
+                set ::_ns_json_body [ns_getcontent -as_file false]
+            }
+            set ::_ns_json_triples [ns_json parse -output triples -- $::_ns_json_body]
+            return $::_ns_json_triples
+        }
+        default {
+            error "invalid value \"$output\" for -output: should be json or triples"
+        }
+    }
 }
 
 if {[dict get [ns_info buildinfo] with_deprecated]} {

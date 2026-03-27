@@ -793,6 +793,7 @@ instances, the generated schema uses a compact type union.
  ## }
 [example_end]
 
+
 [call [cmd "ns_json triples match"] \
         [option "-schema [arg value]"] \
         [opt [option "-ignoreunsupported"]] \
@@ -897,6 +898,49 @@ violation and the location within the document.
  
  ns_json triples match -schema $schema $t3
  ## error: ns_json: schema mismatch at /user/id: expected number, got string
+[example_end]
+
+
+
+[call [cmd ns_getjson] \
+      [opt [option "-output json|triples"]] \
+      ]
+
+ Returns the JSON request body or its parsed representation as
+ triples.
+ 
+ [para]
+ The command provides convenient, spool-aware access to JSON request
+ content and integrates with NaviServer's automatic JSON parsing
+ similar to [cmd ns_getform].
+
+ [para]
+ When JSON auto-parsing is triggered based on the content type of
+ the request, the request body may already be cached internally.
+ In this case, [cmd ns_getjson] returns the cached value without
+ re-reading the request body.
+
+ [para]
+
+ The option [option "-output [arg json|triples]"] controls the
+ return format
+
+ [list_begin itemized]
+   [item] [const json] (default): return the JSON request body as a string
+   [item] [const triples]: return the canonical triples representation
+ [list_end]
+
+ [para] The parsed representation is computed lazily and cached per request.
+
+[example_begin]
+ # Return raw JSON body
+ set body [lb]ns_getjson[rb]
+ 
+ # Return parsed triples
+ set triples [lb]ns_getjson -output triples[rb]
+ 
+ # Extract a value via JSON Pointer
+ set value [lb]ns_json getvalue $triples /user/id[rb]
 [example_end]
 
 [list_end]
@@ -1180,6 +1224,6 @@ output:
 [example_end]
 
 
-[see_also ns_set ns_base64 ns_cbor]
+[see_also ns_set ns_base64 ns_cbor ns_getform getcontent]
 [keywords "global built-in" JSON WebAuthn encoding parsing]
 [manpage_end]

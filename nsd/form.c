@@ -58,9 +58,9 @@ static bool GetValue(const char *hdr, const char *att, size_t attLength, const c
 static bool IsJsonContentType(const char *contentType, const char* typeEnd)
     NS_GNUC_NONNULL(1,2);
 
-static Ns_ReturnCode ParseJsonContent(const char *content, TCL_SIZE_T contentLength, const char *charset, Ns_Set *setPtr,
-                                      Tcl_DString *errOutPtr)
-    NS_GNUC_NONNULL(1,4);
+static Ns_ReturnCode ParseJsonContent(Tcl_Interp *interp, const char *content, TCL_SIZE_T contentLength,
+                                      const char *charset, Ns_Set *setPtr, Tcl_DString *errOutPtr)
+    NS_GNUC_NONNULL(1,2,5);
 
 /*
  *----------------------------------------------------------------------
@@ -151,8 +151,8 @@ typedef enum {
 
 
 static Ns_ReturnCode
-ParseJsonContent(const char *content, TCL_SIZE_T contentLength, const char *charset, Ns_Set *setPtr,
-                 Tcl_DString *errOutPtr)
+ParseJsonContent(Tcl_Interp *interp, const char *content, TCL_SIZE_T contentLength,
+                 const char *charset, Ns_Set *setPtr, Tcl_DString *errOutPtr)
 {
     Ns_JsonOptions opt;
     Tcl_Encoding   encoding;
@@ -225,6 +225,35 @@ ParseJsonContent(const char *content, TCL_SIZE_T contentLength, const char *char
                 break;
             }
         }
+    }
+
+
+
+    if (status == NS_OK) {
+        Tcl_Obj *bodyObj;
+
+        /*
+         * Cache the decoded JSON body for faster access via ns_getjson.
+         * Cache population is opportunistic and must not affect parsing
+         * success.
+         *
+         * Since the body cache is refreshed here, invalidate any cached
+         * triples representation to keep both caches consistent.
+         */
+        bodyObj = Tcl_NewStringObj(utfDs.string, utfDs.length);
+        Tcl_IncrRefCount(bodyObj);
+
+        if (Tcl_SetVar2Ex(interp, "_ns_json_body", NULL, bodyObj,
+                          TCL_GLOBAL_ONLY) == NULL) {
+            Ns_Log(Warning,
+                   "ParseJsonContent: could not cache JSON body: %s",
+                   Tcl_GetStringResult(interp));
+            Tcl_ResetResult(interp);
+        } else {
+            Tcl_UnsetVar(interp, "_ns_json_triples", TCL_GLOBAL_ONLY);
+        }
+
+        Tcl_DecrRefCount(bodyObj);
     }
 
     if (status == NS_ERROR) {
@@ -474,7 +503,8 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
 
             case FORM_CONTENT_JSON:
                 toParse = content;
-                status = ParseJsonContent(content, (TCL_SIZE_T)connPtr->reqPtr->length, charset, connPtr->query, &errDs);
+                status = ParseJsonContent(interp, content, (TCL_SIZE_T)connPtr->reqPtr->length,
+                                          charset, connPtr->query, &errDs);
                 if (status == NS_OK) {
                     connPtr->flags |= NS_CONN_JSONPARSED;
                 }

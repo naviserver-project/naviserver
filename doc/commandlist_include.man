@@ -263,6 +263,7 @@
 [uri ../../naviserver/files/ns_getcsv.html {ns_getcsv}] ?-delimiter /value/? ?-quotechar /value/? ?-trim? ?--? /channelId/ /varname/
 [uri ../../naviserver/files/ns_getform.html {ns_getform}] ?-fallbackcharset /charset/? ?/charset/?
 [uri ../../naviserver/files/ns_getformfile.html {ns_getformfile}] /name/
+[uri ../../naviserver/files/ns_json.html {ns_getjson}] ?-output json|triples?
 [uri ../../naviserver/files/ns_gifsize.html {ns_gifsize}] /filename/
 [uri ../../naviserver/files/ns_gmtime.html {ns_gmtime}]
 [uri ../../naviserver/files/ns_guesstype.html {ns_guesstype}] /filename/

@@ -877,6 +877,154 @@ test ns_json-http-ct-1.4 {
     ns_unregister_op POST /json
 } -result {{"ok":false}}
 
+
+#######################################################################################
+#  test ns_getjson
+#######################################################################################
+
+
+test ns_getjson-1.0.1 {syntax: ns_getjson wrong flag} -body {
+    ns_getjson -foo
+} -returnCodes error -result {wrong # args: should be "?-output /output/?"}
+# Tcl proc "ns_getjson" - message should be {wrong # args: should be "ns_getjson ?-output json|triples?"}
+
+
+test ns_getjson-1.0.2 {syntax: ns_getjson missing value for -output} -body {
+    ns_getjson -output
+} -returnCodes error -result {missing argument to -output}
+
+test ns_getjson-1.0.3 {syntax: ns_getjson invalid value for -output} -body {
+    ns_getjson -output foo
+} -returnCodes error -result {invalid value "foo" for -output: should be json or triples}
+
+
+test ns_getjson-1.0.4 {syntax: ns_getjson unexpected positional argument} -body {
+    ns_getjson foo
+} -returnCodes error -result {wrong # args: should be "?-output /output/?"}
+
+
+test ns_getjson-1.0.5 {syntax: ns_getjson too many arguments} -body {
+    ns_getjson -output json foo
+} -returnCodes error -result {wrong # args: should be "?-output /output/?"}
+
+
+test ns_getjson-1.1 {
+    ns_getjson returns raw JSON body after HTTP/1.1 POST with application/json with autoparsing
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json-getjson-raw {
+        # trigger autoparse
+        set form [ns_conn form]
+        ns_return 200 application/json [list [info exists ::_ns_json_body] [ns_getjson]]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json-getjson-raw << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json-getjson-raw
+} -result {1 {{"a":1,"b":"x"}}}
+
+
+test ns_getjson-1.2 {
+    ns_getjson returns raw JSON body after HTTP/1.1 POST with application/json without autoparsing
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json-getjson-raw {
+        ns_return 200 application/json [list [info exists ::_ns_json_body] [ns_getjson]]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json-getjson-raw << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json-getjson-raw
+} -result {0 {{"a":1,"b":"x"}}}
+
+test ns_getjson-1.3 {
+    ns_getjson populates raw JSON cache after HTTP/1.1 POST with application/json without autoparsing
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json-getjson-raw {
+        set before [info exists ::_ns_json_body]
+        set body   [ns_getjson]
+        set after  [info exists ::_ns_json_body]
+        ns_return 200 application/json [list $before $after $body]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        -H "accept: application/json" \
+        --data @- [ns_config test listenurl]/json-getjson-raw << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json-getjson-raw
+} -result {0 1 {{"a":1,"b":"x"}}}
+
+test ns_getjson-1.4 {
+    ns_getjson -output triples returns triples after HTTP/1.1 POST with application/json with autoparsing
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json-getjson-triples {
+        # trigger autoparse
+        ns_getform
+        ns_return 200 text/plain [list [info exists ::_ns_json_body] [ns_getjson -output triples]]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        --data @- [ns_config test listenurl]/json-getjson-triples << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json-getjson-triples
+} -result {1 {{} object {a number 1 b string x}}}
+
+test ns_getjson-1.4 {
+    ns_getjson -output triples returns triples after HTTP/1.1 POST with application/json with autoparsing
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json-getjson-triples {
+        # trigger autoparse
+        ns_getform
+        ns_return 200 text/plain [list [info exists ::_ns_json_body] [ns_getjson -output triples]]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        --data @- [ns_config test listenurl]/json-getjson-triples << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json-getjson-triples
+} -result {1 {{} object {a number 1 b string x}}}
+
+
+test ns_getjson-1.6 {
+    ns_getjson -output triples populates raw and triples caches without autoparsing
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json-getjson-triples {
+        set beforeBody    [info exists ::_ns_json_body]
+        set beforeTriples [info exists ::_ns_json_triples]
+        set triples       [ns_getjson -output triples]
+        set afterBody     [info exists ::_ns_json_body]
+        set afterTriples  [info exists ::_ns_json_triples]
+        ns_return 200 text/plain [list \
+                                      $beforeBody \
+                                      $beforeTriples \
+                                      $afterBody \
+                                      $afterTriples \
+                                      $triples]
+    }
+} -body {
+    set string {{"a":1,"b":"x"}}
+    exec curl -g -s \
+        -H "content-type: application/json; charset=utf-8" \
+        --data @- [ns_config test listenurl]/json-getjson-triples << $string 2> $devnull
+} -cleanup {
+    ns_unregister_op POST /json-getjson-triples
+} -result {0 0 1 1 {{} object {a number 1 b string x}}}
+
+
+
+
 #######################################################################################
 #  test ns_json keyencode/keydecode
 #######################################################################################
