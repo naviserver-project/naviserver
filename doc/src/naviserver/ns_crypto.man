@@ -243,7 +243,7 @@ variant of the command.  The default value is "Argon2id".
 
 [call [cmd "ns_crypto::eckey generate"] \
      [opt [option "-name [arg value]"]] \
-     [opt [option "-pem [arg value]"]] \
+     [option "-pem [arg value]"] \
      ]
 
 Generate an EC pemfile without the need of an external command.
@@ -274,7 +274,7 @@ This function requires OpenSSL compiled with EC support enabled.
 [call [cmd "ns_crypto::eckey priv"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-passphrase [arg value]"]] \
-     [opt [option "-pem [arg value]"]] \
+     [option "-pem [arg value]"] \
      ]
 
 Obtain the private key in various encodings from an elliptic curve
@@ -290,7 +290,7 @@ enabled.
      [opt [option "-binary"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-passphrase [arg value]"]] \
-     [opt [option "-pem [arg value]"]] \
+     [option "-pem [arg value]"] \
      [opt --] \
      [arg pubkey]]
 
@@ -310,7 +310,7 @@ support enabled.
 [call [cmd "ns_crypto::eckey pub"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-passphrase [arg value]"]] \
-     [opt [option "-pem [arg value]"]] \
+     [option "-pem [arg value]"] \
     ]
 
 Obtain the public key in various encodings from an elliptic curves PEM
@@ -444,7 +444,7 @@ This function requires OpenSSL 1.1.0.
      [opt [option "-digest [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-passphrase [arg value]"]] \
-     [opt [option "-pem [arg value]"]] \
+     [option "-pem [arg value]"] \
      [opt --] \
      [arg message]]
 

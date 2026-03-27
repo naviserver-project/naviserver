@@ -1394,7 +1394,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         {"-digest",     Ns_ObjvString,      &digestName,  NULL},
         {"-encoding",   Ns_ObjvIndex,       &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString,      &passPhrase,  NULL},
-        {"-pem",        Ns_ObjvString,      &pemFile,     NULL},
+        {"!-pem",       Ns_ObjvString,      &pemFile,     NULL},
         {"--",          Ns_ObjvBreak,       NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1427,10 +1427,6 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     */
 
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (pemFile == NULL) {
-        Ns_TclPrintfResult(interp, "no pem file specified");
         result = TCL_ERROR;
 
     } else {
@@ -2273,7 +2269,7 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     Ns_ObjvSpec lopts[] = {
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
-        {"-pem",        Ns_ObjvString, &pemFile,     NULL},
+        {"!-pem",       Ns_ObjvString, &pemFile,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2282,10 +2278,6 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     */
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (pemFile == NULL) {
-        Ns_TclPrintfResult(interp, "no pem file specified");
         result = TCL_ERROR;
 
     } else {
@@ -2377,7 +2369,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     Ns_ObjvSpec lopts[] = {
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
-        {"-pem",        Ns_ObjvString, &pemFile,     NULL},
+        {"!-pem",       Ns_ObjvString, &pemFile,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2386,10 +2378,6 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     */
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (pemFile == NULL) {
-        Ns_TclPrintfResult(interp, "no pem file specified");
         result = TCL_ERROR;
 
     } else {
@@ -2804,7 +2792,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     const char        *curvenameString = "prime256v1", *pemFileName = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-name",     Ns_ObjvString, &curvenameString, NULL},
-        {"-pem",      Ns_ObjvString, &pemFileName, NULL},
+        {"!-pem",     Ns_ObjvString, &pemFileName,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2818,10 +2806,6 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
         /*
          * Function cares about error message
          */
-        result = TCL_ERROR;
-
-    } else if (pemFileName == NULL) {
-        Ns_TclPrintfResult(interp, "no pem filename provided");
         result = TCL_ERROR;
 
     } else {
@@ -2887,7 +2871,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {"-binary",     Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
-        {"-pem",        Ns_ObjvString, &pemFileName, NULL},
+        {"!-pem",        Ns_ObjvString, &pemFileName, NULL},
         {"--",          Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -2902,10 +2886,6 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     */
 
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (pemFileName == NULL) {
-        Ns_TclPrintfResult(interp, "no pem file specified");
         result = TCL_ERROR;
 
     } else {
