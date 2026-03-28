@@ -812,23 +812,23 @@ test ns_crypto::uuid-1.2 {UUID v7, length of UUID} -constraints crypto -body {
 ############################################################################
 # Test Cases for ns_crypto::kem
 ############################################################################
-test ns_crypto::kem-1.0 {syntax: ns_crypto::kem} -body {
+test ns_crypto::kem-1.0 {syntax: ns_crypto::kem} -constraints {kem} -body {
     ns_crypto::kem
 } -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate|pub|encapsulate|decapsulate ?/arg .../"}
 
-test ns_crypto::kem-1.1 {syntax: ns_crypto::kem generate} -body {
+test ns_crypto::kem-1.1 {syntax: ns_crypto::kem generate} -constraints {kem} -body {
     ns_crypto::kem generate x
 } -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-pem /value/?"}
 
-test ns_crypto::kem-1.2 {syntax: ns_crypto::kem pub} -body {
+test ns_crypto::kem-1.2 {syntax: ns_crypto::kem pub} -constraints {kem} -body {
     ns_crypto::kem pub
 } -returnCodes error -result {wrong # args: should be "ns_crypto::kem pub ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
 
-test ns_crypto::kem-1.3 {syntax: ns_crypto::kem encapsulate} -body {
+test ns_crypto::kem-1.3 {syntax: ns_crypto::kem encapsulate} -constraints {kem} -body {
     ns_crypto::kem encapsulate x
 } -returnCodes error -result {wrong # args: should be "ns_crypto::kem encapsulate ?-encoding hex|base64url|base64|binary? ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-passphrase /value/? ?-pub /value/? ?-pem /value/?"}
 
-test ns_crypto::kem-1.4 {syntax: ns_crypto::kem decapsulate} -body {
+test ns_crypto::kem-1.4 {syntax: ns_crypto::kem decapsulate} -constraints {kem} -body {
     ns_crypto::kem decapsulate
 } -returnCodes error -result {wrong # args: should be "ns_crypto::kem decapsulate ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ -ciphertext /value/"}
 
