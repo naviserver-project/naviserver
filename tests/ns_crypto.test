@@ -13,6 +13,7 @@ tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -secret 42}]}]
 tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
+tcltest::testConstraint kem [expr {![catch {::ns_crypto::kem generate}]}]
 
 
 #######################################################################################
@@ -807,6 +808,90 @@ test ns_crypto::uuid-1.1 {UUID v4, length of UUID} -constraints crypto -body {
 test ns_crypto::uuid-1.2 {UUID v7, length of UUID} -constraints crypto -body {
     string length [ns_crypto::uuid -version v7]
 } -returnCodes {error ok} -result {36}
+
+############################################################################
+# Test Cases for ns_crypto::kem
+############################################################################
+test ns_crypto::kem-1.0 {syntax: ns_crypto::kem} -body {
+    ns_crypto::kem
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate|pub|encapsulate|decapsulate ?/arg .../"}
+
+test ns_crypto::kem-1.1 {syntax: ns_crypto::kem generate} -body {
+    ns_crypto::kem generate x
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-pem /value/?"}
+
+test ns_crypto::kem-1.2 {syntax: ns_crypto::kem pub} -body {
+    ns_crypto::kem pub
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem pub ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
+
+test ns_crypto::kem-1.3 {syntax: ns_crypto::kem encapsulate} -body {
+    ns_crypto::kem encapsulate x
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem encapsulate ?-encoding hex|base64url|base64|binary? ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-passphrase /value/? ?-pub /value/? ?-pem /value/?"}
+
+test ns_crypto::kem-1.4 {syntax: ns_crypto::kem decapsulate} -body {
+    ns_crypto::kem decapsulate
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem decapsulate ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ -ciphertext /value/"}
+
+
+test ns_crypto::kem-2.1 {ns_crypto::kem end-to-end with PEM string} -constraints {kem tcl86} -body {
+    set pem [ns_crypto::kem generate]
+
+    set r [ns_crypto::kem encapsulate -pem $pem]
+    set ciphertext [dict get $r ciphertext]
+    set secret1 [dict get $r secret]
+
+    set secret2 [ns_crypto::kem decapsulate -pem $pem -ciphertext [binary decode hex $ciphertext]]
+    string equal $secret1 $secret2
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::kem-2.2  {ns_crypto::kem end-to-end with exported public key} -constraints {kem tcl86} -body {
+    set pem [ns_crypto::kem generate]
+    set pub [ns_crypto::kem pub -pem $pem]
+
+    set r [ns_crypto::kem encapsulate -name ml-kem-768 -pub [binary decode hex $pub]]
+    set ciphertext [dict get $r ciphertext]
+    set secret1 [dict get $r secret]
+
+    set secret2 [ns_crypto::kem decapsulate -pem $pem -ciphertext [binary decode hex $ciphertext]]
+    string equal $secret1 $secret2
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::kem-2.3 {ns_crypto::kem end-to-end with binary public key} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate]
+    set pub [ns_crypto::kem pub -pem $pem -encoding binary]
+
+    set r [ns_crypto::kem encapsulate -name ml-kem-768 -pub $pub -encoding binary]
+    set ciphertext [dict get $r ciphertext]
+    set secret1 [dict get $r secret]
+
+    set secret2 [ns_crypto::kem decapsulate -pem $pem -ciphertext $ciphertext -encoding binary]
+
+    string equal $secret1 $secret2
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::kem-2.4 {ns_crypto::kem public key length must match KEM name} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate -name ml-kem-768]
+    set pub [ns_crypto::kem pub -pem $pem -encoding binary]
+
+    ns_crypto::kem encapsulate -name ml-kem-512 -pub $pub
+} -returnCodes error -match glob -result {invalid public key length*ML-KEM-512*}
+
+test ns_crypto::kem-2.5 {ns_crypto::kem roundtrip} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate]
+    set pub [ns_crypto::kem pub -pem $pem -encoding binary]
+
+    set r [ns_crypto::kem encapsulate -name ml-kem-768 -pub $pub]
+    set ciphertext [dict get $r ciphertext]
+    set secret1 [dict get $r secret]
+
+    set secret2 [ns_crypto::kem decapsulate -pem $pem -ciphertext [binary decode hex $ciphertext]]
+
+    # note, that we getting the length of the hex-encoded values
+    list \
+        [string length $ciphertext] \
+        [string length $secret1] \
+        [string equal $secret1 $secret2]
+} -returnCodes {error ok} -result {2176 64 1}
 
 #
 # Local variables:

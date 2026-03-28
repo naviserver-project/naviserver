@@ -317,6 +317,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_CHANNEL].name          = "channel";       atoms[NS_ATOM_CHANNEL].len = 7;
     atoms[NS_ATOM_CHARSET].name          = "charset";       atoms[NS_ATOM_CHARSET].len = 7;
     atoms[NS_ATOM_CIPHER].name           = "cipher";        atoms[NS_ATOM_CIPHER].len = 6;
+    atoms[NS_ATOM_CIPHERTEXT].name       = "ciphertext";    atoms[NS_ATOM_CIPHERTEXT].len = 10;
     atoms[NS_ATOM_CODE].name             = "code";          atoms[NS_ATOM_CODE].len = 4;
     atoms[NS_ATOM_COMPILER].name         = "compiler";      atoms[NS_ATOM_COMPILER].len = 8;
     atoms[NS_ATOM_COMPLETE].name         = "complete";      atoms[NS_ATOM_COMPLETE].len = 8;
@@ -382,6 +383,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_REQUESTS].name         = "requests";      atoms[NS_ATOM_REQUESTS].len = 8;
     atoms[NS_ATOM_REQUEST].name          = "request";       atoms[NS_ATOM_REQUEST].len = 7;
     atoms[NS_ATOM_RUNNING].name          = "running";       atoms[NS_ATOM_RUNNING].len = 7;
+    atoms[NS_ATOM_SECRET].name           = "secret";        atoms[NS_ATOM_SECRET].len = 6;
     atoms[NS_ATOM_SENDBODYSIZE].name     = "sendbodysize";  atoms[NS_ATOM_SENDBODYSIZE].len = 12;
     atoms[NS_ATOM_SENDBUFFER].name       = "sendbuffer";    atoms[NS_ATOM_SENDBUFFER].len = 10;
     atoms[NS_ATOM_SENDERROR].name        = "senderror";     atoms[NS_ATOM_SENDERROR].len = 9;

@@ -351,6 +351,157 @@ be in memory). In order to compute HMACs on large data, use
 [cmd ns_hmac].
 
 
+
+
+[call [cmd "ns_crypto::kem generate"] \
+    [opt [option "-name ml-kem-512|ml-kem-768|ml-kem-1024"]] \
+    [opt [option "-pem [arg value]"]]]
+
+  Generate a new ML-KEM private key.
+
+  [para] When [option -pem] is specified, the generated private key is written in PEM
+  format to the provided file. Otherwise, the generated PEM string is returned
+  as the Tcl result.
+
+  [para] The optional [option -name] argument selects the ML-KEM parameter set. When
+  omitted, [const ml-kem-768] is used.
+
+[example_begin]
+ # Return a PEM string
+ set pem [lb]ns_crypto::kem generate[rb]
+ 
+ # Write a PEM file
+ ns_crypto::kem generate -name ml-kem-1024 -pem /tmp/mlkem.pem
+[example_end]
+
+  [para] This function requires OpenSSL 3.5.
+
+
+[call [cmd "ns_crypto::kem pub"] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [opt [option "-passphrase [arg value]"]] \
+    [option "-pem [arg value]"] \
+    ]
+
+  Return the ML-KEM public key corresponding to the provided private key.
+
+  [para] The argument to [option -pem] may be either a PEM file name or a PEM string.
+  When the private key is encrypted, provide the passphrase via
+  [option -passphrase].
+
+ [para] The returned public key is encoded according to [option -encoding]. When
+ [option -encoding] is omitted, the result is returned as [const hex].
+
+[example_begin]
+ # Obtain the public key as hex
+ set pub [lb]ns_crypto::kem pub -pem $pem[rb]
+ 
+ # Obtain the public key as binary
+ set pubBin [lb]ns_crypto::kem pub -pem $pem -encoding binary[rb]
+[example_end]
+
+  [para] This function requires OpenSSL 3.5.
+
+
+[call [cmd "ns_crypto::kem encapsulate"] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [opt [option "-name ml-kem-512|ml-kem-768|ml-kem-1024"]] \
+    [opt [option "-passphrase [arg value]"]] \
+    [opt [option "-pub [arg value]"]] \
+    [opt [option "-pem [arg value]"]] \
+    ]
+
+  Encapsulate a shared secret for an ML-KEM public key.
+ 
+  [para] Exactly one of [option -pub] or [option -pem] must be specified.
+  When [option -pub] is used, it must contain the public key as binary data.
+  The [option -name] option selects the ML-KEM parameter set for this public
+  key. When omitted, [const ml-kem-768] is used.
+
+  [para] When [option -pem] is used, it may be either a PEM file name or a PEM string.
+  In this case, the public key is derived from the provided private key. If the
+  private key is encrypted, specify the passphrase via [option -passphrase].
+
+  [para] The result is a dictionary containing the keys [const ciphertext] and
+  [const secret]. Both values are encoded according to [option -encoding]. When
+  [option -encoding] is omitted, the result values are returned as [const hex].
+
+  [para]
+  Important: [option -pub] expects binary key material. Therefore, when using the
+  default hex output of [cmd "ns_crypto::kem pub"], decode it before passing it
+  via [option -pub]. Alternatively, request [option "-encoding binary"] from
+  [cmd "ns_crypto::kem pub"].
+
+[example_begin]
+ # Encapsulate via PEM input
+ set pem [lb]ns_crypto::kem generate[rb]
+ set r   [lb]ns_crypto::kem encapsulate -pem $pem[rb]
+ 
+ # Encapsulate via public key returned as binary
+ set pub [lb]ns_crypto::kem pub -pem $pem -encoding binary[rb]
+ set r   [lb]ns_crypto::kem encapsulate -name ml-kem-768 -pub $pub -encoding binary[rb]
+ 
+ # Encapsulate via public key returned as hex
+ set pubHex [lb]ns_crypto::kem pub -pem $pem]
+ set r [lb]ns_crypto::kem encapsulate -name ml-kem-768 \
+            -pub [lb]binary decode hex $pubHex[rb][rb]
+ 
+ dict get $r ciphertext
+ dict get $r secret
+[example_end]
+
+  [para] This function requires OpenSSL 3.5.
+
+[call [cmd "ns_crypto::kem decapsulate"] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [opt [option "-passphrase [arg value]"]] \
+    [option "-pem [arg value]"] \
+    [option "-ciphertext [arg value]"]]
+
+  Decapsulate a shared secret from an ML-KEM ciphertext using the provided
+  private key.
+
+  [para] The argument to [option -pem] may be either a PEM file name or a PEM string.
+  When the private key is encrypted, provide the passphrase via
+  [option -passphrase].
+
+  [para] The argument to [option -ciphertext] must contain the ciphertext as binary
+  data.
+
+  [para] The recovered shared secret is returned encoded according to [option -encoding].
+  When [option -encoding] is omitted, the result is returned as [const hex].
+
+  [para]
+  Important: [option -ciphertext] expects binary ciphertext. Therefore, when
+  using the default hex output of [cmd "ns_crypto::kem encapsulate"], decode the
+  [cmd ciphertext] value before passing it via [option -ciphertext]. Alternatively,
+  request [option "-encoding binary"] from [cmd "ns_crypto::kem encapsulate"].
+
+[example_begin]
+ # Decapsulate from default hex output of encapsulate
+ set pem [lb]ns_crypto::kem generate[rb]
+ set r   [lb]ns_crypto::kem encapsulate -pem $pem[rb]
+ set ct  [lb]dict get $r ciphertext]
+ set secret [lb]ns_crypto::kem decapsulate \
+                 -pem $pem \
+                 -ciphertext [lb]binary decode hex $ct[rb][rb]
+ 
+ # Decapsulate from binary output of encapsulate
+ set pub [lb]ns_crypto::kem pub -pem $pem -encoding binary[rb]
+ set r   [lb]ns_crypto::kem encapsulate \
+            -name ml-kem-768 \
+            -pub $pub \
+            -encoding binary[rb]
+ set ct [lb]dict get $r ciphertext[rb]
+ set secret [lb]ns_crypto::kem decapsulate \
+                 -pem $pem \
+                 -ciphertext $ct \
+                 -encoding binary[rb]
+[example_end]
+
+  [para] This function requires OpenSSL 3.5.
+
+
 [call [cmd "ns_crypto::md string"] \
      [opt [option "-digest [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
