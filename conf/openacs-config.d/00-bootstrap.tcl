@@ -76,6 +76,7 @@ set defaultConfig {
     homedir           "[file dirname [file dirname [ns_info nsd]]]"
     logdir            $serverroot/log
     certificate       $serverroot/etc/certfile.pem
+    key               ""
     vhostcertificates $serverroot/etc/certificates
 
     dbms              postgres

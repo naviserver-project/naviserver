@@ -137,8 +137,8 @@ static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, const Ns_Time *tim
 
 static void CertTableInit(void);
 static void CertTableReload(void *UNUSED(arg));
-static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert, const char *key)
+    NS_GNUC_NONNULL(1,2);
 static NS_TLS_SSL_CTX *CertTableGetCtx(const char *cert)
     NS_GNUC_NONNULL(1);
 
@@ -2096,8 +2096,13 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Ns_Log(Error, "nsssl: certificate parameter must be specified in the configuration file under %s", section);
         result = TCL_ERROR;
     } else {
-        const char *ciphers, *ciphersuites, *protocols;
+        const char *key, *ciphers, *ciphersuites, *protocols;
         Ns_DList    dl, *dlPtr = &dl;
+
+        key  = Ns_ConfigGetValue(section, "key");
+        if (key != NULL && *key == '\0') {
+            key = NULL;
+        }
 
         /*
          * Keep configuration values in an Ns_DList to protect against
@@ -2109,10 +2114,13 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         ciphers      = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphers"));
         ciphersuites = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphersuites"));
         protocols    = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "protocols"));
+        if (key != NULL) {
+            key      = Ns_DListSaveString(dlPtr, key);
+        }
 
         Ns_Log(Notice, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app_data %p", (void*)app_data);
 
-        result = Ns_TLS_CtxServerCreateCfg(interp, cert,
+        result = Ns_TLS_CtxServerCreateCfg(interp, cert, key,
                                            NULL /*caFile*/, NULL /*caPath*/,
                                            Ns_ConfigBool(section, "verify", NS_FALSE),
                                            ciphers, ciphersuites, protocols,
@@ -2288,10 +2296,16 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 static Tcl_HashTable certTable;
-static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
+
+typedef struct CertTableEntry {
+    char *cert;
+    char *key;   /* NULL means: use cert */
+} CertTableEntry;
+
+static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert, const char *key)
 {
-    int            isNew = 0;
-    Tcl_HashEntry *hPtr;
+    int             isNew = 0;
+    Tcl_HashEntry  *hPtr;
 
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(cert != NULL);
@@ -2299,12 +2313,22 @@ static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
     Ns_MasterLock();
     hPtr = Tcl_CreateHashEntry(&certTable, (const char *)ctx, &isNew);
     if (isNew != 0) {
-        /*
-         * Keep a local copy of the certificate string in case the
-         * passed-in value is volatile.
-         */
-        Tcl_SetHashValue(hPtr, ns_strdup(cert));
-        Ns_Log(Debug, "CertTableAdd: sslCtx %p cert '%s'", (const void *)ctx, cert);
+        CertTableEntry *entryPtr;
+
+        entryPtr = ns_calloc(1u, sizeof(CertTableEntry));
+        entryPtr->cert = ns_strdup(cert);
+        entryPtr->key  = (key != NULL) ? ns_strdup(key) : NULL;
+
+        Tcl_SetHashValue(hPtr, entryPtr);
+
+        Ns_Log(Debug,
+               "CertTableAdd: sslCtx %p cert '%s' key '%s'",
+               (const void *)ctx,
+               entryPtr->cert,
+               (entryPtr->key != NULL) ? entryPtr->key : "<cert>");
+    } else {
+        Ns_Log(Error, "CertTableAdd: sslCtx %p for certificate '%s' was already registered; ignore attempt",
+               (const void*)ctx, cert);
     }
     Ns_MasterUnlock();
 }
@@ -2322,20 +2346,47 @@ static void CertTableReload(void *UNUSED(arg))
 
     Ns_MasterLock();
     hPtr = Tcl_FirstHashEntry(&certTable, &search);
+
     while (hPtr != NULL) {
         NS_TLS_SSL_CTX *ctx = (NS_TLS_SSL_CTX *)Tcl_GetHashKey(&certTable, hPtr);
-        const char     *cert = Tcl_GetHashValue(hPtr);
+        CertTableEntry  *entryPtr = (CertTableEntry *)Tcl_GetHashValue(hPtr);
+        const char      *cert;
+        const char      *keyFile;
 
-        Ns_Log(Notice, "CertTableReload: sslCtx %p cert '%s'", (void *)ctx, cert);
+        if (entryPtr == NULL || entryPtr->cert == NULL) {
+            Ns_Log(Warning,
+                   "CertTableReload: sslCtx %p has invalid certificate table entry",
+                   (void *)ctx);
+            hPtr = Tcl_NextHashEntry(&search);
+            continue;
+        }
+
+        cert = entryPtr->cert;
+        keyFile = (entryPtr->key != NULL) ? entryPtr->key : entryPtr->cert;
+
+        Ns_Log(Notice,
+               "CertTableReload: sslCtx %p cert '%s' key '%s'",
+               (void *)ctx,
+               cert,
+               (entryPtr->key != NULL) ? entryPtr->key : "<cert>");
 
         /*
          * Reload certificate and private key
          */
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
-            Ns_Log(Warning, "certificate reload error: %s", ERR_error_string(ERR_get_error(), NULL));
+            Ns_Log(Warning,
+                   "certificate reload error for '%s': %s",
+                   cert, ERR_error_string(ERR_get_error(), NULL));
 
-        } else if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
-            Ns_Log(Warning, "private key reload error: %s", ERR_error_string(ERR_get_error(), NULL));
+        } else if (SSL_CTX_use_PrivateKey_file(ctx, keyFile, SSL_FILETYPE_PEM) != 1) {
+            Ns_Log(Warning,
+                   "private key reload error for '%s': %s",
+                   keyFile, ERR_error_string(ERR_get_error(), NULL));
+
+        } else if (SSL_CTX_check_private_key(ctx) != 1) {
+            Ns_Log(Warning,
+                   "certificate/private key mismatch cert '%s' key '%s': %s",
+                   cert, keyFile, ERR_error_string(ERR_get_error(), NULL));
         }
 
         hPtr = Tcl_NextHashEntry(&search);
@@ -2648,7 +2699,8 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
  *
  * Parameters:
  *      interp       - Tcl interpreter for error messages (must not be NULL)
- *      cert         - Path to server PEM file (certificate + chain + key)
+ *      cert         - Path to server PEM chain file (certificate chain + (optional) key)
+ *      key          - Path to server PEM private key, or NULL to load it from cert
  *      caFile       - Path to CA bundle file for client authentication
  *      caPath       - Path to directory of hashed CA files
  *      verify       - true to require and verify client certificates
@@ -2672,7 +2724,8 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
  */
 int
 Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
-                          const char *cert, const char *caFile, const char *caPath,
+                          const char *cert, const char *key,
+                          const char *caFile, const char *caPath,
                           bool verify, const char *ciphers, const char *ciphersuites,
                           const char *protocols, const char *alpn,
                           void *app_data, unsigned int flags,
@@ -2718,6 +2771,11 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     if (ctx == NULL) {
         ReportError(interp, "ssl ctx init failed: %s", ERR_error_string(ERR_get_error(), NULL));
         return TCL_ERROR;
+    }
+
+    if (cert == NULL && key != NULL) {
+        ReportError(interp, "private key specified without certificate");
+        goto fail;
     }
 
     if (cert == NULL && caFile == NULL) {
@@ -2832,6 +2890,8 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     DrainErrorStack(Warning, "Ns_TLS_CtxServerCreate", ERR_get_error());
 
     if (cert != NULL) {
+        const char *keyFile = (key != NULL) ? key : cert;
+
         /*
          * Load certificate and private key
          */
@@ -2840,16 +2900,24 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
                         cert, ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
-        /*
-         * Remember ctx and certificate name for reloading.
-         */
-        CertTableAdd(ctx, cert);
 
-        if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
+        if (SSL_CTX_use_PrivateKey_file(ctx, keyFile, SSL_FILETYPE_PEM) != 1) {
             ReportError(interp, "certificate '%s' private key load error: %s",
                         cert, ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
+
+        if (SSL_CTX_check_private_key(ctx) != 1) {
+            ReportError(interp, "private key '%s' load error: %s",
+                        keyFile, ERR_error_string(ERR_get_error(), NULL));
+            goto fail;
+        }
+
+        /*
+         * Remember ctx and certificate name for reloading.
+         */
+        CertTableAdd(ctx, cert, key);
+
         /*Ns_Log(Notice, "SSL_CTX_use_certificate_chain_file and SSL_CTX_use_PrivateKey_file into SSL_CTX %p", (void*)ctx);*/
 #ifndef HAVE_OPENSSL_DH_AUTO
         /*
@@ -2857,12 +2925,15 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
          */
         {
             BIO *bio = BIO_new_file(cert, "r");
-            DH  *dh  = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
-            BIO_free(bio);
+            DH  *dh  = (bio != NULL) ? PEM_read_bio_DHparams(bio, NULL, NULL, NULL) : NULL;
+            if (bio != NULL) {
+                BIO_free(bio);
+            }
 
             if (dh != NULL) {
                 if (SSL_CTX_set_tmp_dh(ctx, dh) < 0) {
                     Ns_Log(Error, "nsssl: Couldn't set DH parameters");
+                    DH_free(dh);
                     return TCL_ERROR;
                 }
                 DH_free(dh);
@@ -2916,7 +2987,8 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                        const char *protocols,
                        NS_TLS_SSL_CTX **ctxPtr)
 {
-    return Ns_TLS_CtxServerCreateCfg(interp, cert, caFile, caPath,
+    return Ns_TLS_CtxServerCreateCfg(interp, cert, NULL,
+                                     caFile, caPath,
                                      verify, ciphers, ciphersuites,
                                      protocols, "http/1.1",
                                      NULL, 0u,
@@ -3549,7 +3621,8 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
 }
 int
 Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
-                          const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath),
+                          const char *UNUSED(cert), const char *UNUSED(key),
+                          const char *UNUSED(caFile), const char *UNUSED(caPath),
                           bool UNUSED(verify), const char *UNUSED(ciphers), const char *UNUSED(ciphersuites),
                           const char *UNUSED(protocols), const char *UNUSED(alpn),
                           void *UNUSED(app_data),

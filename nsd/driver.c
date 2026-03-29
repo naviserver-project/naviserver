@@ -5679,43 +5679,88 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
         Ns_Log(Debug, "SSL_serverNameCB %s/vhostcertificates -> '%s'", section, vhostcertificates);
 
         if (vhostcertificates != NULL) {
-            Tcl_DString dsFileName, *dsPtr = &dsFileName;
-            NsServer   *servPtr = driver->servPtr;
-            struct stat st;
+            Tcl_DString  dsCertFile, dsKeyFile;
+            Tcl_DString *dsCertPtr = &dsCertFile;
+            Tcl_DString *dsKeyPtr  = &dsKeyFile;
+            NsServer    *servPtr   = driver->servPtr;
+            struct stat  st;
+            const char  *keyFile   = NULL;
 
             if (servPtr == NULL && driver->defMapPtr != NULL) {
                 servPtr = driver->defMapPtr->servPtr;
             }
-            Tcl_DStringInit(dsPtr);
-            Tcl_DStringAppend(dsPtr, vhostcertificates, TCL_INDEX_NONE);
-            Tcl_DStringAppend(dsPtr, "/", 1);
-            Tcl_DStringAppend(dsPtr, hostName, TCL_INDEX_NONE);
-            Tcl_DStringAppend(dsPtr, ".pem", 4);
 
-            if (stat(dsPtr->string, &st) != 0) {
-                Ns_Log(Notice, "SSL_serverNameCB pem file does not exist: '%s'", dsPtr->string);
+            Tcl_DStringInit(dsCertPtr);
+            Tcl_DStringAppend(dsCertPtr, vhostcertificates, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsCertPtr, "/", 1);
+            Tcl_DStringAppend(dsCertPtr, hostName, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsCertPtr, ".pem", 4);
+
+            if (stat(dsCertPtr->string, &st) != 0) {
+                Ns_Log(Notice,
+                       "SSL_serverNameCB certificate file does not exist: '%s'",
+                       dsCertPtr->string);
+
             } else if (servPtr == NULL) {
-                Ns_Log(Notice, "SSL_serverNameCB driver %s has no configured defaultserver,"
-                       " ignoring vhostcertificates", section);
+                Ns_Log(Notice,
+                       "SSL_serverNameCB driver %s has no configured defaultserver, "
+                       "ignoring vhostcertificates",
+                       section);
+
             } else {
                 NS_TLS_SSL_CTX *ctx = NULL;
                 int             result;
+                /*
+                 * Look for optional separate private key:
+                 *   <vhostcertificates>/<hostName>.key
+                 */
+                Tcl_DStringInit(dsKeyPtr);
+                Tcl_DStringAppend(dsKeyPtr, vhostcertificates, TCL_INDEX_NONE);
+                Tcl_DStringAppend(dsKeyPtr, "/", 1);
+                Tcl_DStringAppend(dsKeyPtr, hostName, TCL_INDEX_NONE);
+                Tcl_DStringAppend(dsKeyPtr, ".key", 4);
 
-                Ns_Log(Debug, "SSL_serverNameCB pem file exists: '%s'", dsPtr->string);
+                if (stat(dsKeyPtr->string, &st) == 0) {
+                    keyFile = dsKeyPtr->string;
+                    Ns_Log(Debug,
+                           "SSL_serverNameCB key file exists: '%s'",
+                           keyFile);
+                } else {
+                    Ns_Log(Debug,
+                           "SSL_serverNameCB key file does not exist, "
+                           "using combined PEM semantics: '%s'",
+                           dsKeyPtr->string);
+                }
 
-                result = Ns_TLS_CtxServerCreate(NULL, dsPtr->string,
-                                                NULL /*caFile*/, NULL /*caPath*/,
-                                                Ns_ConfigBool(section, "verify", 0),
-                                                Ns_ConfigGetValue(section, "ciphers"),
-                                                Ns_ConfigGetValue(section, "ciphersuites"),
-                                                Ns_ConfigGetValue(section, "protocols"),
-                                                &ctx);
-                Ns_Log(Debug, "SSL_serverNameCB load cert -> ctx %p'", (void*)ctx);
+                Ns_Log(Debug,
+                       "SSL_serverNameCB certificate file exists: '%s' key '%s'",
+                       dsCertPtr->string,
+                       (keyFile != NULL) ? keyFile : "<cert>");
+
+                result = Ns_TLS_CtxServerCreateCfg(NULL,
+                                                   dsCertPtr->string,
+                                                   keyFile,
+                                                   NULL /* caFile */,
+                                                   NULL /* caPath */,
+                                                   Ns_ConfigBool(section, "verify", 0),
+                                                   Ns_ConfigGetValue(section, "ciphers"),
+                                                   Ns_ConfigGetValue(section, "ciphersuites"),
+                                                   Ns_ConfigGetValue(section, "protocols"),
+                                                   "http/1.1",
+                                                   NULL,
+                                                   0u,
+                                                   &ctx);
+
+                Ns_Log(Debug, "SSL_serverNameCB load cert -> ctx %p", (void*)ctx);
 
                 if (result == TCL_OK) {
                     Tcl_DString dsHostPort, *dsHostPortPtr = &dsHostPort;
 
-                    Ns_Log(Notice, "SSL_serverNameCB pem file loaded: '%s'", dsPtr->string);
+                    Ns_Log(Notice,
+                           "SSL_serverNameCB certificate loaded: '%s' key '%s'",
+                           dsCertPtr->string,
+                           (keyFile != NULL) ? keyFile : "<cert>");
+
                     /*
                      * We need here just the TLS_Ctx, and not the full server
                      * init as in nsssl as provided by Ns_TLS_CtxServerInit(),
@@ -5726,21 +5771,22 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
                     Tcl_DStringInit(dsHostPortPtr);
                     (void) Ns_DStringPrintf(dsHostPortPtr, "%s:%hu", hostName, driver->port);
 
-                    Tcl_DStringSetLength(dsPtr, 0);
                     /*
                      * Register this name to be used with the configure or
                      * default server. Since this happens in a driver thread,
                      * no lock is required, even when with multiple driver
                      * threads, since these have different driver structures.
                      */
-                    mapPtr = ServerMapEntryAdd(dsPtr, dsHostPortPtr->string,
+                    Tcl_DStringSetLength(dsCertPtr, 0);
+                    mapPtr = ServerMapEntryAdd(dsCertPtr, dsHostPortPtr->string,
                                                servPtr,
                                                driver, ctx, NS_FALSE);
 
                     Tcl_DStringFree(dsHostPortPtr);
                 }
+                Tcl_DStringFree(dsKeyPtr);
             }
-            Tcl_DStringFree(dsPtr);
+            Tcl_DStringFree(dsCertPtr);
         }
     }
 

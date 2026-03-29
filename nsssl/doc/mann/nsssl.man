@@ -14,26 +14,46 @@ enabled.
 
 [section CONFIGURATION]
 
-This module support all configuration options of [term nssock] module,
+This module supports all configuration options of [term nssock] module,
 plus in addition the following configuration options:
 
 [list_begin definitions]
 
 [def certificate]
-is a required parameter, nsssl won't load without it.  The parameter
-points to a file containing certificates, which must be in PEM format
-and must be sorted starting with the subject's certificate (actual
-client or server certificate), followed by intermediate CA
-certificates if applicable, and ending at the highest level (root) CA.
-The PEM file cem can contain DH parameters (see the example below how
-to add these).
+is a required parameter, nsssl won't load without it. The parameter
+points to a file containing the server certificate chain in PEM format.
+The file must be sorted starting with the subject's certificate (actual
+server certificate), followed by intermediate CA certificates if
+applicable, and ending at the highest level (root) CA.
+
+[para] When no separate [term key] parameter is specified, the
+certificate file is expected to also contain the server's private key
+in PEM format (combined file, as in previous NaviServer versions).
+
+[para] The PEM file can contain DH parameters (see the example below
+how to add these).
+
+[def key]
+optional parameter specifying a separate file containing the server's
+private key in PEM format.
+
+[para] When [term key] is provided, the private key is loaded from this
+file instead of the [term certificate] file. This allows deployments
+with separate certificate chain and private key files.
+
+[para] When [term key] is not specified, the private key is expected to
+be included in the [term certificate] file (combined PEM file), which
+is the default and backward-compatible behavior.
+
+[para] Specifying a [term key] without a [term certificate] is not
+allowed.
 
 [para] When the server receives a hangup signal (HUP), the
-certificates and private keys are reloaded without server restart.
+certificate and private key are reloaded without server restart.
 The signal can be send also from a script executed in the server:
 
 [example_begin]
-  ns_kill [pid] 1    ;# SIGHUP has signal number 1
+  ns_kill [lb]pid[rb] 1    ;# SIGHUP has signal number 1
 [example_end]
 
 
@@ -159,47 +179,57 @@ must be protected or removed once debugging is complete.
 
 [subsection {Pass Phrase for Private Key in PEM File}]
 
- The driver’s certificate file is expected to be a chain file that contains:
+The server’s private key can be provided either embedded in the
+[term certificate] file or via a separate [term key] file.
 
- [list_begin itemized]
- [item] the leaf certificate
- [item] any required intermediate certificates
- [item] the server’s private key
- [list_end]
+[list_begin itemized]
+[item] certificate chain file ([term certificate])
+[item] optional private key file ([term key])
+[list_end]
 
-[para] If the private key is unencrypted, the certificate file itself
- must be carefully protected. In general, passwords should not be
- stored in plain text on a public server without sufficient
- safeguards.
+[para] If no [term key] is specified, the [term certificate] file is
+expected to contain:
+
+[list_begin itemized]
+[item] the leaf certificate
+[item] any required intermediate certificates
+[item] the server’s private key
+[list_end]
+
+[para] If the private key is unencrypted, the corresponding file must
+be carefully protected. In general, passwords should not be stored in
+plain text on a public server without sufficient safeguards.
 
 [para] NaviServer provides several mechanisms for supplying the
- private key pass phrase without embedding it directly in
- configuration files. The mechanisms are evaluated in the following
- order:
+private key pass phrase without embedding it directly in
+configuration files. The mechanisms are evaluated in the following
+order:
 
- [list_begin enumerated]
- [enum] Output of the configured helper script ([const tlskeyScript])
- [enum] Environment variable derived from the PEM filename ([const TLS_KEY_PASS_<FILENAME>])
- [enum] Generic fallback environment variable ([const TLS_KEY_PASS])
- [enum] Interactive prompt on stdin if all else fails (legacy mode)
- [list_end]
-
+[list_begin enumerated]
+[enum] Output of the configured helper script ([const tlskeyScript])
+[enum] Environment variable derived from the PEM filename ([const TLS_KEY_PASS_<FILENAME>])
+[enum] Generic fallback environment variable ([const TLS_KEY_PASS])
+[enum] Interactive prompt on stdin if all else fails (legacy mode)
+[list_end]
 
 [para] The first option is recommended for integration with a secrets
- manager, as it allows retrieval of the pass phrase at startup.
+manager, as it allows retrieval of the pass phrase at startup.
+
+[para] The filename used for deriving the environment variable is the
+one from which the private key is loaded (i.e., [term key] when
+specified, otherwise [term certificate]).
 
 [para] The second option derives the environment variable name from
- the certificate filename. The variable name starts with
- [const TLS_KEY_PASS_]. The remainder is formed by converting the filename to
- uppercase and replacing all non-alphanumeric characters with
- underscores ([const _]). This makes it convenient to handle multiple
- certificates.
+the filename. The variable name starts with [const TLS_KEY_PASS_]. The
+remainder is formed by converting the filename to uppercase and
+replacing all non-alphanumeric characters with underscores ([const _]).
+This makes it convenient to handle multiple certificates.
 
 [para] The third option ([const TLS_KEY_PASS]) provides a simpler
- approach when only a single certificate is in use.
+approach when only a single certificate/key is in use.
 
 [para] If none of these mechanisms succeed, NaviServer falls back to
- prompting for the pass phrase on stdin during startup.
+prompting for the pass phrase on stdin during startup.
 
 
 
@@ -215,6 +245,7 @@ below in the variable "server"):
  
  ns_section    ns/server/$server/module/nsssl {
     ns_param   certificate   /usr/local/ns/modules/nsssl/server.pem
+    ns_param   key           /usr/local/ns/modules/nsssl/server.key   ;# optional
     ns_param   address       0.0.0.0
     ns_param   port          443
     ns_param   ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
@@ -238,14 +269,21 @@ ciphers, etc.) or additional settings from [term nssock] such as e.g.
 
 [para]
 Below is an example, how a web site can create a self-signed
-certificate in PEM format.  The last line with the DH parameters is
-optional but necessary for achieving perfect forward secrecy.
+certificate in PEM format.
 
 [example_begin]
- openssl req -new -x509 -sha256 -newkey rsa:2048 -days 365 -nodes  -keyout host.key.pem -out host.cert.pem
+ openssl req -new -x509 -sha256 -newkey rsa:2048 -days 365 -nodes \
+     -keyout host.key.pem -out host.cert.pem
+ 
+ # combined file (default NaviServer behavior)
  cat host.cert.pem host.key.pem > server.pem
- rm host.cert.pem host.key.pem
- openssl dhparam 2048 >> server.pem
+ 
+ # optional: separate files
+ # certificate: host.cert.pem
+ # key:         host.key.pem
+
+ # optional: adding DH params (obsolete for OpenSSL 1.1 or newer)
+ # openssl dhparam 2048 >> server.pem
 [example_end]
 
 [para]
@@ -270,7 +308,7 @@ For discussion and more examples see
 [uri ../../manual/files/admin-config.html admin-config].
 
 
-[see_also ns_log ns_write ns_http]
+[see_also ns_http]
 [keywords module nsssl "network driver" \
    SSLKEYLOGFILE TLS_KEY_PASS \
 	performance tuning configuration security TCP_FASTOPEN HTTPS driver \

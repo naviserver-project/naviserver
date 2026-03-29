@@ -214,6 +214,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         #  - "vhostcertificates" is a directory with certificates for
         #    additional virtual hosts of the default server.
         ns_param certificate        $certificate
+        ns_param key                $key
         ns_param vhostcertificates  $vhostcertificates  ;# directory for vhost certificates of the default server
 
         # Client certificate verification level (see nsssl docs for details)

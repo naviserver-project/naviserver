@@ -192,6 +192,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         #ns_param ciphersuites   "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
         ns_param protocols       "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
         ns_param certificate     $certificate
+        ns_param key             $key
         #ns_param vhostcertificates $home/etc/certificates ;# directory for vhost certificates of the default server
         ns_param verify          0
 

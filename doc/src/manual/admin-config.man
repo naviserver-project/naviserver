@@ -665,12 +665,13 @@ directed to it.
 
 [subsection {Virtual servers with HTTPS}]
 
+
 In general, the logic of the definition of servers and network drivers
 is the same for HTTP (driver [term nssock]) and
 HTTPS (driver [term nsssl]), except that the latter has some
 additional configuration parameters, such as
-e.g. the certificate, or a special configuration of the ciphers,
-etc.
+e.g. the certificate, the private key, or a special configuration of
+the ciphers, etc.
 
 [para] In order to define virtual servers with HTTPS, one can
 essentially use the definition of the previous section, and load as
@@ -689,6 +690,7 @@ and configure it accordingly.
    ns_param port          8433
    ns_param defaultserver s1
    ns_param certificate   /usr/local/ns/modules/https/server.pem
+   ns_param key           /usr/local/ns/modules/https/server.key   ;# optional
  }
  
  ns_section ns/module/https/servers {
@@ -697,6 +699,11 @@ and configure it accordingly.
    ns_param s2 baz.com
  } 
 [example_end]
+
+[para] The parameter [term certificate] specifies the certificate chain.
+Optionally, a separate private key can be provided via [term key]. When
+[term key] is not specified, the private key is expected to be included
+in the [term certificate] file.
 
 However, this case requires that all accepted hostnames are listed in
 the certificate. Such certificates are called multi-domain SAN
@@ -717,9 +724,12 @@ during the TLS handshake as well).
 [subsection {Virtual servers with HTTPS and SNI}]
 
 In order to configure SNI (Server Name Indication) for HTTPS, one can
-simply add additional certificates for the server needed.  In the
-following example the default certificate is defined on the level of
-the global driver ([const server.pem]), whereas the certificate for the
+simply add additional certificates for the server needed. Optionally,
+separate private key files can be specified via [term key].
+
+[para]
+In the following example the default certificate is defined on the level
+of the global driver ([const server.pem]), whereas the certificate for the
 server "foo.com" (which will be served by "s1") is defined for the
 server "s1" separately ([const foo.com.pem]).
 
@@ -734,6 +744,7 @@ server "s1" separately ([const foo.com.pem]).
    ns_param port          8433
    ns_param defaultserver s1
    ns_param certificate   /usr/local/ns/modules/https/server.pem
+   ns_param key           /usr/local/ns/modules/https/server.key   ;# optional
  }
  ns_section ns/module/https/servers {
    ns_param s1 foo.com
@@ -747,6 +758,7 @@ server "s1" separately ([const foo.com.pem]).
  # 
  ns_section ns/server/s1/module/https {
    ns_param certificate       /usr/local/ns/modules/https/foo.com.pem
+   ns_param key               /usr/local/ns/modules/https/foo.com.key ;# optional
    ns_param OCSPstapling      on
    ns_param OCSPcheckInterval 5m
  }
@@ -837,6 +849,7 @@ under [const /var/www], it is used as the pageroot for this request.
 [para] With this approach additional domains can be added at runtime
 of NaviServer by adding new directories for them.
 
+
 [subsection {Single virtual server with mass virtual hosting using
 HTTPS and SNI}]
 
@@ -851,7 +864,17 @@ directory containing individual certificates for virtual hosts with
 the parameter [term vhostcertificates] in the [term nsssl]
 module definition. When NaviServer receives a request with an SNI hostname, it
 will search in this directory at runtime for a certificate file with
-the name based on the SNI hostname, where ".pem" was added
+the name based on the SNI hostname, where ".pem" was added.
+
+[para] The certificate files in this directory are expected to contain
+the certificate chain in PEM format. By default, these files must also
+contain the corresponding private key (combined PEM file), as in
+previous NaviServer versions.
+
+[para] When separate private key files are used, the key file must have
+the same base name as the certificate file and suffix ".key").
+In this case, NaviServer will load the private key from
+this file instead of the certificate file.
 
 [example_begin]
  set serverroot /var/www
@@ -862,6 +885,7 @@ the name based on the SNI hostname, where ".pem" was added
    ns_param address            $address
    ns_param port               $httpsport
    ns_param certificate        $serverroot/default.pem
+   ns_param key                $serverroot/default.key   ;# optional
    ns_param vhostcertificates  $serverroot
  }
 [example_end]
@@ -878,21 +902,28 @@ where the websites are served. Any request with a different host than
 served from the [const default] directory with the [const default.pem]
 certificate.
 
+[para] When a separate private key file is present, NaviServer will
+look for a file with the same base name as the certificate file and a
+".key" suffix (e.g., "example.com.pem" -> "example.com.key").
 
 [example_begin]
  /var/www/
  ├── default
- │   └── index.html
+ │   └── index.html
  ├── example.com.pem
+ ├── example.com.key        ;# optional
  ├── example.com
- │   └── index.html
+ │   └── index.html
  ├── dotlrn.net.pem
+ ├── dotlrn.net.key         ;# optional
  ├── dotlrn.net
- │   ├── index.html
- │   └── test
- │       └── file
- └── default.pem
+ │   ├── index.html
+ │   └── test
+ │       └── file
+ ├── default.pem
+ └── default.key            ;# optional
 [example_end]
+
 
 [subsection {Redirecting from HTTP to HTTPS}]
 
