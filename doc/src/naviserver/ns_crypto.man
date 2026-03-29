@@ -357,7 +357,8 @@ be in memory). In order to compute HMACs on large data, use
     [opt [option "-name ml-kem-512|ml-kem-768|ml-kem-1024"]] \
     [opt [option "-pem [arg value]"]]]
 
-  Generate a new ML-KEM private key.
+  Generate a new ML-KEM key pair. The private key is returned/stored in
+  PEM format; the public key can be derived via [cmd "ns_crypto::kem pub"].
 
   [para] When [option -pem] is specified, the generated private key is written in PEM
   format to the provided file. Otherwise, the generated PEM string is returned
