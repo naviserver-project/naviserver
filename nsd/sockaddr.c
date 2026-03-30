@@ -24,7 +24,11 @@ static const char *nonPublicCIDR[] = {
     "10.0.0.0/8",
     "172.16.0.0/12",
     "192.168.0.0/16",
-    "fd00::/8",
+
+    /*
+     * IPv6 unique local
+     */
+    "fc00::/7",
 
     /*
      * Private loopback addresses
@@ -35,7 +39,7 @@ static const char *nonPublicCIDR[] = {
     /*
      * Link-local addresses
      */
-    "69.254.0.0/16",
+    "169.254.0.0/16",
     "fe80::/10",
 
     /*
