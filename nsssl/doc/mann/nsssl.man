@@ -244,8 +244,8 @@ below in the variable "server"):
  }
  
  ns_section    ns/server/$server/module/nsssl {
-    ns_param   certificate   /usr/local/ns/modules/nsssl/server.pem
-    ns_param   key           /usr/local/ns/modules/nsssl/server.key   ;# optional
+    ns_param   certificate   /usr/local/ns/modules/nsssl/server.pem  ;# required, PEM format
+    ns_param   key           /usr/local/ns/modules/nsssl/server.key  ;# optional, PEM format
     ns_param   address       0.0.0.0
     ns_param   port          443
     ns_param   ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
@@ -273,14 +273,14 @@ certificate in PEM format.
 
 [example_begin]
  openssl req -new -x509 -sha256 -newkey rsa:2048 -days 365 -nodes \
-     -keyout host.key.pem -out host.cert.pem
+     -keyout host.key -out host.cert.pem
  
  # combined file (default NaviServer behavior)
- cat host.cert.pem host.key.pem > server.pem
+ cat host.cert.pem host.key > server.pem
  
  # optional: separate files
  # certificate: host.cert.pem
- # key:         host.key.pem
+ # key:         host.key
 
  # optional: adding DH params (obsolete for OpenSSL 1.1 or newer)
  # openssl dhparam 2048 >> server.pem

@@ -689,8 +689,8 @@ and configure it accordingly.
  ns_section ns/module/https {
    ns_param port          8433
    ns_param defaultserver s1
-   ns_param certificate   /usr/local/ns/modules/https/server.pem
-   ns_param key           /usr/local/ns/modules/https/server.key   ;# optional
+   ns_param certificate   /usr/local/ns/modules/https/server.pem  ;# required, PEM format
+   ns_param key           /usr/local/ns/modules/https/server.key  ;# optional, PEM format
  }
  
  ns_section ns/module/https/servers {
@@ -702,8 +702,8 @@ and configure it accordingly.
 
 [para] The parameter [term certificate] specifies the certificate chain.
 Optionally, a separate private key can be provided via [term key]. When
-[term key] is not specified, the private key is expected to be included
-in the [term certificate] file.
+[term key] is not specified (or an empty string), the private key
+is expected to be included in the [term certificate] file.
 
 However, this case requires that all accepted hostnames are listed in
 the certificate. Such certificates are called multi-domain SAN
@@ -743,8 +743,8 @@ server "s1" separately ([const foo.com.pem]).
  ns_section ns/module/https {
    ns_param port          8433
    ns_param defaultserver s1
-   ns_param certificate   /usr/local/ns/modules/https/server.pem
-   ns_param key           /usr/local/ns/modules/https/server.key   ;# optional
+   ns_param certificate   /usr/local/ns/modules/https/server.pem  ;# required, PEM format
+   ns_param key           /usr/local/ns/modules/https/server.key  ;# optional, PEM format
  }
  ns_section ns/module/https/servers {
    ns_param s1 foo.com
@@ -757,8 +757,8 @@ server "s1" separately ([const foo.com.pem]).
  # Furthermore, activate for server "s1" also OCSP stapling.
  # 
  ns_section ns/server/s1/module/https {
-   ns_param certificate       /usr/local/ns/modules/https/foo.com.pem
-   ns_param key               /usr/local/ns/modules/https/foo.com.key ;# optional
+   ns_param certificate       /usr/local/ns/modules/https/foo.com.pem  ;# required, PEM format
+   ns_param key               /usr/local/ns/modules/https/foo.com.key  ;# optional, PEM format
    ns_param OCSPstapling      on
    ns_param OCSPcheckInterval 5m
  }
@@ -884,8 +884,8 @@ this file instead of the certificate file.
  ns_section ns/server/s1/module/https {
    ns_param address            $address
    ns_param port               $httpsport
-   ns_param certificate        $serverroot/default.pem
-   ns_param key                $serverroot/default.key   ;# optional
+   ns_param certificate        $serverroot/default.pem  ;# required, PEM format
+   ns_param key                $serverroot/default.key  ;# optional, PEM format
    ns_param vhostcertificates  $serverroot
  }
 [example_end]

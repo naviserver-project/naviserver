@@ -415,9 +415,13 @@ be in memory). In order to compute HMACs on large data, use
   Encapsulate a shared secret for an ML-KEM public key.
  
   [para] Exactly one of [option -pub] or [option -pem] must be specified.
-  When [option -pub] is used, it must contain the public key as binary data.
-  The [option -name] option selects the ML-KEM parameter set for this public
-  key. When omitted, [const ml-kem-768] is used.
+  When [option -pub] is used, it must contain the public key as
+  binary data in the native representation of the selected ML-KEM
+  parameter set (i.e., raw key bytes, not PEM or DER encoding).
+
+  [para] The [option -name] option selects the ML-KEM parameter set for this public
+  key. When omitted, [const ml-kem-768] is used. The size of the
+  binary public key depends on the specified value.
 
   [para] When [option -pem] is used, it may be either a PEM file name or a PEM string.
   In this case, the public key is derived from the provided private key. If the

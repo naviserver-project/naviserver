@@ -691,11 +691,13 @@ if {[info exists httpsport] && $httpsport ne ""} {
         # Protocols and TLS configuration
         #------------------------------------------------------------------
         # Server certificate configuration:
-        #  - "certificate" points to the main certificate/key for this driver
+        #  - "certificate" points to the main certificate chain for this driver
+        #  - "key" points to the private key, if not included in "certificate"
         #  - "vhostcertificates" is a directory with certificates for
         #    additional virtual hosts of the default server.
-        ns_param certificate        $certificate
-        ns_param key                $key
+
+        ns_param certificate        $certificate ;# required, PEM format
+        ns_param key                $key         ;# optional, PEM format
         ns_param vhostcertificates  $vhostcertificates  ;# directory for vhost certificates of the default server
 
         # Client certificate verification level (see nsssl docs for details)
