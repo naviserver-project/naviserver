@@ -157,13 +157,13 @@
 [uri ../../naviserver/files/ns_conn.html {ns_conn zipaccepted}]
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan callback}] ?-timeout /time/? ?-receivetimeout /time/? ?-sendtimeout /time/? /channel/ /command/ /when/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan close}] ?-server /server/? /channel/
-[uri ../../naviserver/files/ns_connchan.html {ns_connchan connect}] ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-hostname /value/? ?-insecure? ?-timeout /time/? ?-tls? ?--? /host/ /port/
+[uri ../../naviserver/files/ns_connchan.html {ns_connchan connect}] ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-key /value/? ?-hostname /value/? ?-insecure? ?-timeout /time/? ?-tls? ?--? /host/ /port/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan debug}] /channel/ ?/level/?
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan detach}]
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan exists}] /channel/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan list}] ?-server /server/?
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan listen}] ?-driver /value/? ?-server /server/? ?-bind? ?--? /address/ /port/ /script/
-[uri ../../naviserver/files/ns_connchan.html {ns_connchan open}] ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-driver /value/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-method /value/? ?-timeout /time/? ?-unix_socket /value/? ?-version /value/? ?--? /url/
+[uri ../../naviserver/files/ns_connchan.html {ns_connchan open}] ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-key /value/? ?-driver /value/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-method /value/? ?-timeout /time/? ?-unix_socket /value/? ?-version /value/? ?--? /url/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan read}] ?-websocket? /channel/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan status}] ?-server /server/? /channel/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan write}] /channel/ /message/
@@ -285,8 +285,8 @@
 [uri ../../naviserver/files/ns_http.html {ns_http cleanup}]
 [uri ../../naviserver/files/ns_http.html {ns_http keepalives}]
 [uri ../../naviserver/files/ns_http.html {ns_http list}] ?/id/?
-[uri ../../naviserver/files/ns_http.html {ns_http queue}] ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-connecttimeout /time/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-maxresponse /memory-size/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? /url/
-[uri ../../naviserver/files/ns_http.html {ns_http run}] ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-connecttimeout /time/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-maxresponse /memory-size/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? /url/
+[uri ../../naviserver/files/ns_http.html {ns_http queue}] ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-key /value/? ?-connecttimeout /time/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-maxresponse /memory-size/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? /url/
+[uri ../../naviserver/files/ns_http.html {ns_http run}] ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-key /value/? ?-connecttimeout /time/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-insecure? ?-keep_host_header? ?-keepalive /time/? ?-maxresponse /memory-size/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_data_callback /value/? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? /url/
 [uri ../../naviserver/files/ns_http.html {ns_http stats}] ?/id/?
 [uri ../../naviserver/files/ns_http.html {ns_http taskthreads}]
 [uri ../../naviserver/files/ns_http.html {ns_http wait}] ?-timeout /time/? /id/

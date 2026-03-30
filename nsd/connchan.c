@@ -1225,12 +1225,14 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     Ns_Set         *hdrPtr = NULL;
     const char     *url, *method = "GET", *version = "1.0",
                    *driverName = NULL, *udsPath = NULL,
-                   *sniHostname = NULL, *caFile = NULL, *caPath = NULL, *cert = NULL;
+                   *sniHostname = NULL, *caFile = NULL, *caPath = NULL,
+                   *cert = NULL, *key = NULL;
     Ns_Time         timeout = {1, 0}, *timeoutPtr = &timeout;
     Ns_ObjvSpec     lopts[] = {
         {"-cafile",      Ns_ObjvString, &caFile,      NULL},
         {"-capath",      Ns_ObjvString, &caPath,      NULL},
-        {"-cert",        Ns_ObjvString, &cert,       NULL},
+        {"-cert",        Ns_ObjvString, &cert,        NULL},
+        {"-key",         Ns_ObjvString, &key,         NULL},
         {"-driver",      Ns_ObjvString, &driverName,  NULL},
         {"-headers",     Ns_ObjvSet,    &hdrPtr,      NULL},
         {"-hostname",    Ns_ObjvString, &sniHostname, NULL},
@@ -1267,17 +1269,27 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 
             if (STREQ(sockPtr->drvPtr->protocol, "https")) {
                 NS_TLS_SSL_CTX *ctx;
+                bool            verifyCert = NS_TRUE;
+
+                if (insecureInt != 0) {
+                    Ns_Log(Ns_LogTaskDebug, "ns_connchan %s: using an insecure connection to %s", Tcl_GetString(objv[1]), url);
+                    verifyCert = NS_FALSE;
+                }
 
                 assert(sockPtr->drvPtr->clientInitProc != NULL);
 
                 result = NsTlsGetParameters(itPtr, NS_TRUE, insecureInt,
-                                            cert, caFile, caPath,
+                                            cert, key, caFile, caPath,
                                             (const char **)&caFile, (const char **)&caPath);
                 if (result == TCL_OK) {
-                    result = Ns_TLS_CtxClientCreate(interp,
-                                                    cert, caFile,
-                                                    caPath, insecureInt == 0,
-                                                    &ctx);
+                    result = Ns_TLS_CtxClientCreateCfg(interp,
+                                                       cert, key,
+                                                       caFile, caPath,
+                                                       verifyCert,
+                                                       NULL /*ciphers*/, NULL /*ciphersuites*/, NULL /*protocols*/,
+                                                       NULL /*alpn*/,
+                                                       NULL /*app_data*/, 0u /*flags*/,
+                                                       &ctx);
                 }
 
                 if (likely(result == TCL_OK)) {
@@ -1395,12 +1407,14 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     NsInterp       *itPtr = clientData;
     int             result, doTLS = (int)NS_FALSE, insecureInt;
     unsigned short  portNr = 0u;
-    const char     *host, *sniHostname = NULL, *caFile = NULL, *caPath = NULL, *cert = NULL;
+    const char     *host, *sniHostname = NULL, *caFile = NULL, *caPath = NULL,
+                   *cert = NULL, *key = NULL;
     Ns_Time         timeout = {1, 0}, *timeoutPtr = &timeout;
     Ns_ObjvSpec     lopts[] = {
         {"-cafile",   Ns_ObjvString, &caFile,      NULL},
         {"-capath",   Ns_ObjvString, &caPath,      NULL},
         {"-cert",     Ns_ObjvString, &cert,        NULL},
+        {"-key",      Ns_ObjvString, &key,         NULL},
         {"-hostname", Ns_ObjvString, &sniHostname, NULL},
         {"-insecure", Ns_ObjvBool,   &insecureInt, INT2PTR(NS_TRUE)},
         {"-timeout",  Ns_ObjvTime,   &timeoutPtr,  NULL},
@@ -1422,7 +1436,7 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         result = TCL_ERROR;
 
     } else if (NsTlsGetParameters(itPtr, doTLS ==(int)NS_TRUE, insecureInt,
-                                  cert, caFile, caPath,
+                                  cert, key, caFile, caPath,
                                   (const char **)&caFile,
                                   (const char **)&caPath) != TCL_OK) {
         result = TCL_ERROR;
@@ -1432,6 +1446,12 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         Sock           *sockPtr = NULL;
         NS_SOCKET       sock;
         Ns_ReturnCode   status;
+        bool            verifyCert = NS_TRUE;
+
+        if (insecureInt != 0) {
+            Ns_Log(Ns_LogTaskDebug, "ns_connchan %s: using an insecure connection to %s:%hu", Tcl_GetString(objv[1]), host, portNr);
+            verifyCert = NS_FALSE;
+        }
 
         sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr, &status);
 
@@ -1455,10 +1475,14 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
                  * structures. Probably, we could create the
                  * SSLcontext.
                  */
-                result = Ns_TLS_CtxClientCreate(interp,
-                                                NULL /*cert*/, NULL /*caFile*/,
-                                                NULL /* caPath*/, NS_FALSE /*verify*/,
-                                                &ctx);
+                result = Ns_TLS_CtxClientCreateCfg(interp,
+                                                   cert, key,
+                                                   caFile, caPath,
+                                                   verifyCert,
+                                                   NULL /*ciphers*/, NULL /*ciphersuites*/, NULL /*protocols*/,
+                                                   NULL /*alpn*/,
+                                                   NULL /*app_data*/, 0u /*flags*/,
+                                                   &ctx);
                 if (likely(result == TCL_OK)) {
                     Ns_DriverClientInitArg params = {ctx, host, caFile, caPath};
 

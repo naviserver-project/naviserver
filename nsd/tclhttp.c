@@ -137,6 +137,7 @@ static int HttpConnect(
     Tcl_Obj *bodyObj,
     const char *bodyFileName,
     const char *cert,
+    const char *key,
     const char *caFile,
     const char *caPath,
     const char *sniHostname,
@@ -171,7 +172,7 @@ static int EstablishTCPConnection(
 static int EstablishTLSConnection(
     NsInterp *itPtr, NsHttpTask *httpPtr, Ns_URL *urlPtr, unsigned short portNr,
     char *proxyHost, unsigned short proxyPortNr, bool httpProxy, Ns_Time *toPtr,
-    const char *sniHostname,  const char *cert, const char *caFile, const char *caPath,
+    const char *sniHostname,  const char *cert, const char *key, const char *caFile, const char *caPath,
     bool verifyCert)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(8);
 
@@ -2923,6 +2924,7 @@ HttpQueue(
                *caFile = NULL,
                *caPath = NULL;
     char       *cert = NULL,
+               *key = NULL,
                *sniHostname = NULL,
                *udsPath = NULL,
                *outputFileName = NULL,
@@ -2955,6 +2957,7 @@ HttpQueue(
         {"-cafile",                   Ns_ObjvString,  &caFile,                 NULL},
         {"-capath",                   Ns_ObjvString,  &caPath,                 NULL},
         {"-cert",                     Ns_ObjvString,  &cert,                   NULL},
+        {"-key",                      Ns_ObjvString,  &key,                    NULL},
         {"-connecttimeout",           Ns_ObjvTime,    &connectTimeoutPtr,      NULL},
         {"-decompress",               Ns_ObjvBool,    &decompress,             INT2PTR(NS_TRUE)},
 #ifdef NS_WITH_DEPRECATED_5_0
@@ -3074,7 +3077,7 @@ HttpQueue(
      */
     if (result == TCL_OK) {
         result = NsTlsGetParameters(itPtr, (strncmp(url, "https", 5u) == 0), insecureInt,
-                                    cert, caFile, caPath,
+                                    cert, key, caFile, caPath,
                                     (const char **)&caFile, (const char **)&caPath);
     }
     if (result == TCL_OK) {
@@ -3136,6 +3139,7 @@ HttpQueue(
                                  bodyObj,
                                  bodyFileName,
                                  cert,
+                                 key,
                                  caFile,
                                  caPath,
                                  sniHostname,
@@ -4375,6 +4379,7 @@ EstablishTLSConnection(
     Ns_Time *toPtr,
     const char *sniHostname,
     const char *cert,
+    const char *key,
     const char *caFile,
     const char *caPath,
     bool verifyCert)
@@ -4411,7 +4416,15 @@ EstablishTLSConnection(
          * Perform the TLS handshake.  Create a TLS context for this client
          * connection.
          */
-        result = Ns_TLS_CtxClientCreate(interp, cert, caFile, caPath, verifyCert, &ctx);
+        result = Ns_TLS_CtxClientCreateCfg(interp,
+                                           cert, key,
+                                           caFile, caPath,
+                                           verifyCert,
+                                           NULL /*ciphers*/, NULL /*ciphersuites*/, NULL /*protocols*/,
+                                           NULL /*alpn*/,
+                                           NULL /*app_data*/, 0u /*flags*/,
+                                           &ctx);
+
         Ns_Log(Ns_LogTaskDebug, "EstablishHttpsConnection: TLS ctx creation result %s",
                Ns_TclReturnCodeString(result));
         if (result == TCL_OK) {
@@ -4479,6 +4492,7 @@ HttpConnect(
     Tcl_Obj *bodyObj,
     const char *bodyFileName,
     const char *cert,
+    const char *key,
     const char *caFile,
     const char *caPath,
     const char *sniHostname,
@@ -4666,7 +4680,7 @@ HttpConnect(
         } else if (STREQ("https", urlPtr->protocol)) {
             result = EstablishTLSConnection(itPtr, httpPtr, urlPtr, portNr,
                                             proxyHost, proxyPortNr, httpProxy, toPtr,
-                                            sniHostname, cert, caFile, caPath, verifyCert);
+                                            sniHostname, cert, key, caFile, caPath, verifyCert);
         } else {
             result = EstablishTCPConnection(itPtr, httpPtr, urlPtr, portNr,
                                             proxyHost, proxyPortNr, httpProxy, toPtr);

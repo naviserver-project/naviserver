@@ -2239,9 +2239,10 @@ NS_EXTERN void NsTclInitKeylistType(void);
  */
 
 NS_EXTERN int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
-                                 const char *cert, const char *caFile, const char *caPath,
+                                 const char *cert, const char* key,
+                                 const char *caFile, const char *caPath,
                                  const char **caFilePtr, const char **caPathPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(8) NS_GNUC_NONNULL(9);
 
 NS_EXTERN void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock  *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);

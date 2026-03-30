@@ -1258,24 +1258,72 @@ NsInitOpenSSL(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TLS_CtxClientCreate --
+ * Ns_TLS_CtxClientCreateCfg --
  *
- *      Create and Initialize OpenSSL context
+ *      Create and initialize an OpenSSL client SSL context with extended
+ *      configuration options.
+ *
+ *      This function provides a future-proof interface for
+ *      client-side TLS context creation. It supports loading client
+ *      certificates and private keys (combined or separate files),
+ *      configuring certificate verification, and allows passing
+ *      additional parameters for future extensions such as ALPN,
+ *      QUIC, or application-specific data.
+ *
+ *      When a client certificate is specified, the private key is
+ *      loaded either from the same file (combined PEM) or from a
+ *      separate file when "key" is provided. The certificate/key
+ *      pairing is validated.
+ *
+ *      Certificate verification is enabled or disabled via
+ *      "verify". When enabled, default verify paths are used and
+ *      optionally augmented by "caFile" and/or "caPath". If
+ *      available, server-specific validation settings (e.g.,
+ *      verification depth and validation exceptions) are applied.
+ *
+ * Parameters:
+ *      interp       - Tcl interpreter used for error reporting (must not be NULL)
+ *      cert         - Path to client certificate chain in PEM format, or NULL
+ *      key          - Path to client private key in PEM format, or NULL.
+ *                     When NULL, the private key is expected in "cert".
+ *      caFile       - Path to CA bundle file for certificate verification, or NULL
+ *      caPath       - Path to directory of hashed CA files, or NULL
+ *      verify       - If true, enable peer certificate verification
+ *      ciphers      - (currently unused) cipher list for TLS <= 1.2
+ *      ciphersuites - (currently unused) cipher suites for TLS 1.3
+ *      protocols    - (currently unused) protocol selection string
+ *      alpn         - (currently unused) ALPN protocol string
+ *      app_data     - (currently unused) application-specific data pointer
+ *      flags        - (currently unused) option flags for future extensions
+ *      ctxPtr       - Output pointer receiving the created SSL_CTX
  *
  * Results:
- *      A standard Tcl result.
+ *      TCL_OK on success, TCL_ERROR on failure (with error message in interp)
  *
- * Side effects:
- *      None.
+ * Side Effects:
+ *      Allocates and initializes an OpenSSL SSL_CTX. On failure, frees any
+ *      partially initialized context and sets *ctxPtr to NULL.
+ *
+ * Notes:
+ *      - The private key must be in PEM format.
+ *      - It is an error to specify "key" without "cert".
+ *      - The function uses SSLv23_client_method() (OpenSSL flexible method)
+ *        and enables automatic retry and partial write modes.
  *
  *----------------------------------------------------------------------
  */
-
-
 int
-Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath, bool verify,
-                       NS_TLS_SSL_CTX **ctxPtr)
+Ns_TLS_CtxClientCreateCfg(Tcl_Interp *interp,
+                          const char *cert, const char *key,
+                          const char *caFile, const char *caPath,
+                          bool verify,
+                          const char *UNUSED(ciphers),
+                          const char *UNUSED(ciphersuites),
+                          const char *UNUSED(protocols),
+                          const char *UNUSED(alpn),
+                          void *UNUSED(app_data),
+                          unsigned int UNUSED(flags),
+                          NS_TLS_SSL_CTX **ctxPtr)
 {
     NS_TLS_SSL_CTX *ctx;
     char errorBuffer[256];
@@ -1346,16 +1394,35 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     if (cert != NULL) {
+        const char *keyFile = (key != NULL) ? key : cert;
+
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
-            Ns_TclPrintfResult(interp, "certificate load error: %s",
+            Ns_TclPrintfResult(interp,
+                               "certificate '%s' load error: %s",
+                               cert,
                                ERR_error_string(ERR_get_error(), errorBuffer));
             goto fail;
         }
 
-        if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
-            Ns_TclPrintfResult(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
+        if (SSL_CTX_use_PrivateKey_file(ctx, keyFile, SSL_FILETYPE_PEM) != 1) {
+            Ns_TclPrintfResult(interp,
+                               "private key '%s' load error: %s",
+                               keyFile,
+                               ERR_error_string(ERR_get_error(), errorBuffer));
             goto fail;
         }
+
+        if (SSL_CTX_check_private_key(ctx) != 1) {
+            Ns_TclPrintfResult(interp,
+                               "certificate '%s' and private key '%s' do not match: %s",
+                               cert, keyFile,
+                               ERR_error_string(ERR_get_error(), errorBuffer));
+            goto fail;
+        }
+    } else if (key != NULL) {
+        Ns_TclPrintfResult(interp,
+                           "private key specified without certificate");
+        goto fail;
     }
 
     return TCL_OK;
@@ -1365,6 +1432,39 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     *ctxPtr = NULL;
 
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TLS_CtxClientCreate --
+ *
+ *      Create and Initialize OpenSSL context
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+int
+Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
+                       const char *cert, const char *caFile, const char *caPath,
+                       bool verify,
+                       NS_TLS_SSL_CTX **ctxPtr)
+{
+    return Ns_TLS_CtxClientCreateCfg(interp,
+                                     cert, NULL,
+                                     caFile, caPath,
+                                     verify,
+                                     NULL, NULL, NULL,
+                                     NULL,
+                                     NULL, 0u,
+                                     ctxPtr);
 }
 
 
@@ -3605,7 +3705,24 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
                        const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), bool UNUSED(verify),
                        NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
-    Ns_TclPrintfResult(interp, "CtxCreate failed: no support for OpenSSL built in");
+    Ns_TclPrintfResult(interp, "CtxClientCreate failed: no support for OpenSSL built in");
+    return TCL_ERROR;
+}
+
+int
+Ns_TLS_CtxClientCreateCfg(Tcl_Interp *interp,
+                          const char *UNUSED(cert), const char *UNUSED(key),
+                          const char *UNUSED(caFile), const char *UNUSED(caPath),
+                          bool UNUSED(verify),
+                          const char *UNUSED(ciphers),
+                          const char *UNUSED(ciphersuites),
+                          const char *UNUSED(protocols),
+                          const char *UNUSED(alpn),
+                          void *UNUSED(app_data),
+                          unsigned int UNUSED(flags),
+                          NS_TLS_SSL_CTX **UNUSED(ctxPtr))
+{
+    ReportError(interp, "CtxClientCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
 
@@ -3675,7 +3792,7 @@ Ns_TLS_CtxServerInit(const char *UNUSED(path), Tcl_Interp *UNUSED(interp),
  *----------------------------------------------------------------------
  */
 int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
-                       const char *cert, const char *caFile, const char *caPath,
+                       const char *cert, const char *key, const char *caFile, const char *caPath,
                        const char **caFilePtr, const char **caPathPtr)
 {
     int         result = TCL_OK;
@@ -3709,6 +3826,9 @@ int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
         result = TCL_ERROR;
     } else if (cert != NULL) {
         Ns_TclPrintfResult(interp, "parameter '-cert' only allowed on HTTPS connections");
+        result = TCL_ERROR;
+    } else if (key != NULL) {
+        Ns_TclPrintfResult(interp, "parameter '-key' only allowed on HTTPS connections");
         result = TCL_ERROR;
     }
 
