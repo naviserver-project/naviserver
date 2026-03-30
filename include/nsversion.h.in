@@ -17,23 +17,23 @@
  */
 
 #ifndef NSVERSION_H
-#define NSVERSION_H
+# define NSVERSION_H
 
 
-#define NS_MAJOR_VERSION    @NS_MAJOR_VERSION@
-#define NS_MINOR_VERSION    @NS_MINOR_VERSION@
-#define NS_RELEASE_SERIAL   @NS_RELEASE_SERIAL@
-#define NS_VERSION_NUM      (NS_MAJOR_VERSION * 10000 \
+# define NS_MAJOR_VERSION    @NS_MAJOR_VERSION@
+# define NS_MINOR_VERSION    @NS_MINOR_VERSION@
+# define NS_RELEASE_SERIAL   @NS_RELEASE_SERIAL@
+# define NS_VERSION_NUM      (NS_MAJOR_VERSION * 10000 \
                              + NS_MINOR_VERSION * 100 \
                              + NS_RELEASE_SERIAL)
 
-#define NS_VERSION          @NS_VERSION@
-#define NS_PATCH_LEVEL      @NS_PATCH_LEVEL@
+# define NS_VERSION          @NS_VERSION@
+# define NS_PATCH_LEVEL      @NS_PATCH_LEVEL@
 
-#define NS_ALPHA_RELEASE    1
-#define NS_BETA_RELEASE     2
-#define NS_FINAL_RELEASE    3
-#define NS_RELEASE_LEVEL    (@NS_RELEASE_LEVEL@)
-#define NS_NAVISERVER       "@NAVISERVER@"
+# define NS_ALPHA_RELEASE    1
+# define NS_BETA_RELEASE     2
+# define NS_FINAL_RELEASE    3
+# define NS_RELEASE_LEVEL    (@NS_RELEASE_LEVEL@)
+# define NS_NAVISERVER       "@NAVISERVER@"
 
 #endif /* NSVERSION_H */
