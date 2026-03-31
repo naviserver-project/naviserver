@@ -932,12 +932,10 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
             /*
              * Call the HMAC computation.
              */
-            ctx = HMAC_CTX_new();
             HMAC(md,
                  (const void *)keyString, (int)keyLength,
                  (const void *)messageString, (size_t)messageLength,
                  digest, &mdLength);
-            HMAC_CTX_free(ctx);
 
             /*
              * Convert the result to the output format and set the interp
@@ -1560,7 +1558,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
             EVP_DigestUpdate(mdctx, messageString, (unsigned long)messageLength);
             EVP_DigestFinal_ex(mdctx, digest, &mdLength);
 
-            sig = ECDSA_do_sign(digest, SHA256_DIGEST_LENGTH, eckey);
+            sig = ECDSA_do_sign(digest, (int)mdLength, eckey);
             ECDSA_SIG_get0(sig, &r, &s);
             rLen = (unsigned int) BN_num_bytes(r);
             sLen = (unsigned int) BN_num_bytes(s);
