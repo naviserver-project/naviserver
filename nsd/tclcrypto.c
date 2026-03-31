@@ -47,12 +47,35 @@
 #  include <openssl/kdf.h>
 # endif
 
+/*
+ * Data structure local to this file.
+ */
+typedef struct NsDigest {
+    const EVP_MD *md;
+# ifdef HAVE_OPENSSL_3
+    EVP_MD       *fetchedMd;
+# endif
+} NsDigest;
+
+typedef enum {
+    NS_DIGEST_USAGE_MD          = 1 << 0,
+    NS_DIGEST_USAGE_HMAC        = 1 << 1,
+    NS_DIGEST_USAGE_HKDF        = 1 << 2,
+    NS_DIGEST_USAGE_PBKDF2      = 1 << 3,
+    NS_DIGEST_USAGE_SIGN_VERIFY = 1 << 4
+} NsDigestUsage;
+
+typedef struct {
+    Tcl_Obj       *listObj;
+    NsDigestUsage  usage;
+} NsDigestListCtx;
 
 /*
  * Static functions defined in this file.
  */
-static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static int GetDigest(Tcl_Interp *interp, const char *digestName, NsDigestUsage usage, NsDigest *digestPtr)
+    NS_GNUC_NONNULL(1,2,4);
+
 static int SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     NS_GNUC_NONNULL(1,2,3);
 
@@ -83,7 +106,7 @@ static bool AEAD_Set_tag(EVP_CIPHER_CTX *ctx, const unsigned char *tag, size_t t
 static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx, unsigned char *tag, size_t taglen)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-# ifndef HAVE_OPENSSL_PRE_1_0
+# if !defined(HAVE_OPENSSL_PRE_1_0) && !defined(HAVE_OPENSSL_3)
 static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
 # endif
 
@@ -348,7 +371,7 @@ SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
  *----------------------------------------------------------------------
  */
 
-# ifndef HAVE_OPENSSL_PRE_1_0
+# if !defined(HAVE_OPENSSL_PRE_1_0) && !defined(HAVE_OPENSSL_3)
 static void
 ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
 {
@@ -369,23 +392,293 @@ ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
 }
 # endif
 
+/*----------------------------------------------------------------------
+ *
+ * FreeDigest --
+ *
+ *      Release resources associated with an NsDigest structure.
+ *
+ *      In OpenSSL 3.x builds, this function frees the fetched digest
+ *      implementation obtained via EVP_MD_fetch(). For legacy builds,
+ *      no action is required beyond resetting the pointer.
+ *
+ * Parameters:
+ *      digestPtr - pointer to NsDigest structure to clean up
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      May call EVP_MD_free() when using OpenSSL 3.x. The fields of
+ *      digestPtr are reset to NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FreeDigest(NsDigest *digestPtr)
+{
+    NS_NONNULL_ASSERT(digestPtr != NULL);
+
+# ifdef HAVE_OPENSSL_3
+    if (digestPtr->fetchedMd != NULL) {
+        EVP_MD_free(digestPtr->fetchedMd);
+        digestPtr->fetchedMd = NULL;
+    }
+# endif
+    digestPtr->md = NULL;
+}
+
+# ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * DigestAllowed --
+ *
+ *      Decide whether a digest algorithm is suitable for the requested
+ *      usage. This function filters out algorithms that are not usable
+ *      with the current NaviServer crypto API (e.g., XOF-based digests
+ *      requiring special handling).
+ *
+ *      In particular:
+ *        - "NULL" is always rejected
+ *        - XOF digests (SHAKE-*) are rejected (require explicit length)
+ *        - KMAC digests (KECCAK-KMAC-*) are rejected (use EVP_MAC instead)
+ *        - Plain KECCAK-* digests are allowed for message digests
+ *        - HMAC excludes XOF/KMAC as well
+ *
+ * Parameters:
+ *      name   - canonical OpenSSL digest name (must not be NULL)
+ *      usage  - bitmask indicating intended usage (e.g., MD, HMAC, HKDF)
+ *
+ * Results:
+ *      NS_TRUE if allowed, NS_FALSE otherwise
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+DigestAllowed(const char *name, NsDigestUsage usage)
+{
+    NS_NONNULL_ASSERT(name != NULL);
+
+    /*
+     * Reject "NULL" digest explicitly.
+     */
+    if (strcmp(name, "NULL") == 0) {
+        return NS_FALSE;
+    }
+
+    /*
+     * Reject XOF digests (variable-length output, not supported by the
+     * current EVP_DigestFinal_ex()-based code paths).
+     */
+    if (strncmp(name, "SHAKE-", 6) == 0) {
+        return NS_FALSE;
+    }
+
+    /*
+     * Reject KMAC digests. These are not plain message digests for our
+     * current use cases and belong to EVP_MAC-oriented handling.
+     */
+    if (strncmp(name, "KECCAK-KMAC-", 12) == 0) {
+        return NS_FALSE;
+    }
+
+    if ((usage & NS_DIGEST_USAGE_HMAC) != 0u) {
+        /*
+         * HMAC requires fixed-length digest functions.
+         */
+        return NS_TRUE;
+    }
+
+    if ((usage & NS_DIGEST_USAGE_HKDF) != 0u) {
+        /*
+         * HKDF requires a fixed-length digest function.
+         */
+        return NS_TRUE;
+    }
+
+    if ((usage & NS_DIGEST_USAGE_PBKDF2) != 0u) {
+        /*
+         * PBKDF2-HMAC requires a fixed-length digest function.
+         */
+        return NS_TRUE;
+    }
+
+    if ((usage & NS_DIGEST_USAGE_SIGN_VERIFY) != 0u) {
+        /*
+         * Signing/verifying via EVP_DigestSign/Verify currently accepts
+         * the same digest set as plain message digests in NaviServer.
+         */
+        return NS_TRUE;
+    }
+
+    if ((usage & NS_DIGEST_USAGE_MD) != 0u) {
+        /*
+         * Plain message digests: allow standard fixed-length digests,
+         * including KECCAK-*.
+         */
+        return NS_TRUE;
+    }
+
+    /*
+     * Fallback: reject unknown/unspecified usage classes explicitly.
+     */
+    return NS_FALSE;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * ListMDfuncProvided --
+ *
+ *      Callback used with EVP_MD_do_all_provided() to collect available
+ *      message digest algorithm names.
+ *
+ *      The function retrieves the canonical name of each provided digest
+ *      and appends it to the Tcl list stored in the supplied context,
+ *      subject to filtering via DigestAllowed().
+ *
+ * Parameters:
+ *      md  - OpenSSL message digest implementation
+ *      arg - pointer to NsDigestListCtx containing:
+ *              listObj - Tcl list to append names to
+ *              usage   - usage flags for filtering
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends zero or more elements to the Tcl list in the provided
+ *      context. Elements are appended only when the digest name is
+ *      non-NULL and allowed for the specified usage.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ListMDfuncProvided(EVP_MD *md, void *arg)
+{
+    NsDigestListCtx *ctxPtr = arg;
+    Tcl_Obj         *listObj;
+    const char      *name;
+
+    NS_NONNULL_ASSERT(md != NULL);
+    NS_NONNULL_ASSERT(ctxPtr != NULL);
+
+    listObj = ctxPtr->listObj;
+    name = EVP_MD_get0_name(md);
+
+    if (name != NULL && DigestAllowed(name, ctxPtr->usage)) {
+        Tcl_ListObjAppendElement(NULL, listObj,
+                                 Tcl_NewStringObj(name, TCL_INDEX_NONE));
+    }
+}
+
+/*----------------------------------------------------------------------
+ *
+ * GetDigest --
+ *
+ *      Resolve a message digest by name and return an initialized
+ *      NsDigest structure suitable for use with OpenSSL EVP APIs.
+ *
+ *      In OpenSSL 3.x builds, this function uses EVP_MD_fetch() to
+ *      obtain a provider-based implementation and validates the
+ *      resolved canonical name against the requested usage via
+ *      DigestAllowed(). In legacy builds, EVP_get_digestbyname()
+ *      is used without usage-based filtering.
+ *
+ *      When the lookup fails or the digest is not permitted for the
+ *      specified usage, an error is returned and a Tcl error message
+ *      is set, including a list of valid digest names (filtered and
+ *      sorted when applicable).
+ *
+ * Parameters:
+ *      interp      - Tcl interpreter for error reporting
+ *      digestName  - name of the requested digest algorithm
+ *      usage       - bitmask describing intended usage
+ *                    (e.g., NS_DIGEST_USAGE_MD, _HMAC, _HKDF, ...)
+ *      digestPtr   - pointer to NsDigest structure to be filled
+ *
+ * Results:
+ *      TCL_OK    - digest successfully resolved and stored in digestPtr
+ *      TCL_ERROR - digest not found or not allowed; error message set
+ *
+ * Side effects:
+ *      On success, digestPtr is initialized and may contain a fetched
+ *      EVP_MD object requiring later cleanup via FreeDigest().
+ *      On failure, a descriptive error message is stored in the
+ *      interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
-GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
+GetDigest(Tcl_Interp *interp, const char *digestName,
+          NsDigestUsage usage, NsDigest *digestPtr)
+{
+    int         result;
+    const char *resolvedName = NULL;
+
+    digestPtr->md = NULL;
+    digestPtr->fetchedMd = EVP_MD_fetch(NULL, digestName, NULL);
+    if (digestPtr->fetchedMd != NULL) {
+        digestPtr->md = digestPtr->fetchedMd;
+        resolvedName = EVP_MD_get0_name(digestPtr->fetchedMd);
+
+        if (resolvedName != NULL && DigestAllowed(resolvedName, usage)) {
+            return TCL_OK;
+        }
+
+        FreeDigest(digestPtr);
+    }
+
+    {
+        Tcl_Obj         *listObj, *sortedObj;
+        NsDigestListCtx  listCtx;
+
+        listObj = Tcl_NewListObj(0, NULL);
+        Tcl_IncrRefCount(listObj);
+
+        listCtx.listObj = listObj;
+        listCtx.usage   = usage;
+
+        EVP_MD_do_all_provided(NULL, ListMDfuncProvided, &listCtx);
+
+        sortedObj = NsTclListSort(interp, listObj);
+        if (sortedObj != NULL) {
+            Tcl_DecrRefCount(listObj);
+            listObj = sortedObj;
+            Tcl_IncrRefCount(listObj);
+        }
+
+        Ns_TclPrintfResult(interp, "Unknown value for digest \"%s\", valid: %s",
+                           digestName, Tcl_GetString(listObj));
+        Tcl_DecrRefCount(listObj);
+    }
+
+    result = TCL_ERROR;
+    return result;
+}
+
+# else
+/* legacy version */
+static int
+GetDigest(Tcl_Interp *interp, const char *digestName,
+          NsDigestUsage UNUSED(usage), NsDigest *digestPtr)
 {
     int result;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(digestName != NULL);
-    NS_NONNULL_ASSERT(mdPtr != NULL);
+    NS_NONNULL_ASSERT(digestPtr != NULL);
 
-    *mdPtr = EVP_get_digestbyname(digestName);
-    if (*mdPtr == NULL) {
-# ifndef HAVE_OPENSSL_PRE_1_0
-        /*
-         * EVP_MD_do_all_sorted was added in OpenSSL 1.0.0. The
-         * function is an iterator, which we provide with a tailored
-         * callback.
-         */
+    digestPtr->md = EVP_get_digestbyname(digestName);
+    if (digestPtr->md != NULL) {
+        return TCL_OK;
+    }
+
+#  ifndef HAVE_OPENSSL_PRE_1_0
+    {
         Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
         Tcl_IncrRefCount(listObj);
@@ -393,15 +686,16 @@ GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
         Ns_TclPrintfResult(interp, "Unknown value for digest \"%s\", valid: %s",
                            digestName, Tcl_GetString(listObj));
         Tcl_DecrRefCount(listObj);
-# else
-        Ns_TclPrintfResult(interp, "Unknown message digest \"%s\"", digestName);
-# endif
-        result = TCL_ERROR;
-    } else {
-        result = TCL_OK;
     }
+#  else
+    Ns_TclPrintfResult(interp, "Unknown message digest \"%s\"", digestName);
+#  endif
+
+    result = TCL_ERROR;
     return result;
 }
+# endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -643,12 +937,12 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         result = TCL_ERROR;
 
     } else {
-        const EVP_MD  *md;
+        NsDigest digest;
 
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, &md);
+        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_HMAC, &digest);
         if (result != TCL_ERROR) {
             HMAC_CTX            *ctx;
             const unsigned char *keyString;
@@ -658,9 +952,10 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
             Tcl_DStringInit(&keyDs);
             keyString = Ns_GetBinaryString(keyObj, isBinary == 1, &keyLength, &keyDs);
             ctx = HMAC_CTX_new();
-            HMAC_Init_ex(ctx, keyString, (int)keyLength, md, NULL);
+            HMAC_Init_ex(ctx, keyString, (int)keyLength, digest.md, NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
             Tcl_DStringFree(&keyDs);
+            FreeDigest(&digest);
         }
     }
     return result;
@@ -871,17 +1166,16 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         result = TCL_ERROR;
 
     } else {
-        const EVP_MD  *md;
+        NsDigest digest;
         Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
 
         /*
          * Look up the Message digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, &md);
+        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_HMAC, &digest);
         if (result != TCL_ERROR) {
-            unsigned char        digest[EVP_MAX_MD_SIZE];
+            unsigned char        digestBytes[EVP_MAX_MD_SIZE];
             char                 digestChars[EVP_MAX_MD_SIZE*2 + 1];
-            HMAC_CTX            *ctx;
             const unsigned char *keyString, *messageString;
             unsigned int         mdLength;
             TCL_SIZE_T           keyLength, messageLength;
@@ -900,18 +1194,17 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
             /*
              * Call the HMAC computation.
              */
-            ctx = HMAC_CTX_new();
-            HMAC(md,
+            HMAC(digest.md,
                  (const void *)keyString, (int)keyLength,
                  (const void *)messageString, (size_t)messageLength,
-                 digest, &mdLength);
-            HMAC_CTX_free(ctx);
+                 digestBytes, &mdLength);
+            FreeDigest(&digest);
 
             /*
              * Convert the result to the output format and set the interp
              * result.
              */
-            Tcl_SetObjResult(interp, NsEncodedObj(digest, mdLength, digestChars, encoding));
+            Tcl_SetObjResult(interp, NsEncodedObj(digestBytes, mdLength, digestChars, encoding));
 
             Tcl_DStringFree(&keyDs);
             Tcl_DStringFree(&messageDs);
@@ -954,10 +1247,6 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
 
 
 
-
-
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -990,18 +1279,19 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        const EVP_MD  *md;
+        NsDigest digest;
 
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, &md);
+        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_MD, &digest);
         if (result != TCL_ERROR) {
             EVP_MD_CTX    *mdctx;
 
             mdctx = NS_EVP_MD_CTX_new();
-            EVP_DigestInit_ex(mdctx, md, NULL);
+            EVP_DigestInit_ex(mdctx, digest.md, NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), mdCtxType, mdctx);
+            FreeDigest(&digest);
         }
     }
     return result;
@@ -1230,9 +1520,10 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
 
     } else {
         Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        const EVP_MD *md;
+        NsDigest      digest;
         EVP_PKEY     *pkey = NULL;
         const char   *keyFile = NULL;
+        bool          haveDigest = NS_FALSE;
 
         /*
          * Compute Message Digest or sign or validate signature via OpenSSL.
@@ -1243,7 +1534,14 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
          * ::ns_crypto::md string -digest sha1 -sign /usr/local/src/naviserver/myprivate.pem "abcdefghijklmnopqrstuvwxyz\n"
          *
          */
-        result = GetDigest(interp, digestName, &md);
+
+        result = GetDigest(interp, digestName,
+                           (signKeyFile != NULL || verifyKeyFile != NULL) ? NS_DIGEST_USAGE_SIGN_VERIFY : NS_DIGEST_USAGE_MD,
+                           &digest);
+        if (result == TCL_OK) {
+            haveDigest = NS_TRUE;
+        }
+
         if (signKeyFile != NULL) {
             keyFile = signKeyFile;
         } else if (verifyKeyFile != NULL) {
@@ -1256,7 +1554,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             }
         }
         if (result != TCL_ERROR) {
-            unsigned char        digestBuffer[EVP_MAX_MD_SIZE], *digest = digestBuffer;
+            unsigned char        digestBuffer[EVP_MAX_MD_SIZE], *digestBytes = digestBuffer;
             char                 digestChars[EVP_MAX_MD_SIZE*2 + 1], *outputBuffer = digestChars;
             EVP_MD_CTX          *mdctx;
             const unsigned char *messageString;
@@ -1282,9 +1580,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                 int            r;
 
                 if (signKeyFile != NULL) {
-                    r =  EVP_DigestSignInit(mdctx, &pctx, md, NULL /*engine*/, pkey);
+                    r =  EVP_DigestSignInit(mdctx, &pctx, digest.md, NULL /*engine*/, pkey);
                 } else {
-                    r =  EVP_DigestVerifyInit(mdctx, &pctx, md, NULL /*engine*/, pkey);
+                    r =  EVP_DigestVerifyInit(mdctx, &pctx, digest.md, NULL /*engine*/, pkey);
                 }
 
                 if (r == 0) {
@@ -1309,9 +1607,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                                  * this as "digest".
                                  */
                                 Tcl_DStringSetLength(&signatureDs, (TCL_SIZE_T)mdSize);
-                                digest = (unsigned char*)signatureDs.string;
+                                digestBytes = (unsigned char*)signatureDs.string;
 
-                                r = EVP_DigestSignFinal(mdctx, digest, &mdSize);
+                                r = EVP_DigestSignFinal(mdctx, digestBytes, &mdSize);
 
                                 outputBuffer = ns_malloc(mdSize * 2u + 1u);
                                 mdLength = (unsigned int)mdSize;
@@ -1376,9 +1674,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                 EVP_PKEY_free(pkey);
 
             } else {
-                EVP_DigestInit_ex(mdctx, md, NULL);
+                EVP_DigestInit_ex(mdctx, digest.md, NULL);
                 EVP_DigestUpdate(mdctx, messageString, (unsigned long)messageLength);
-                EVP_DigestFinal_ex(mdctx, digest, &mdLength);
+                EVP_DigestFinal_ex(mdctx, digestBytes, &mdLength);
             }
 
             if (mdctx != NULL) {
@@ -1391,7 +1689,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                  * unless we have already some resultObj.
                  */
                 if (resultObj == NULL) {
-                    resultObj = NsEncodedObj(digest, mdLength, outputBuffer, encoding);
+                    resultObj = NsEncodedObj(digestBytes, mdLength, outputBuffer, encoding);
                 }
 
                 Tcl_SetObjResult(interp, resultObj);
@@ -1401,6 +1699,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             }
             Tcl_DStringFree(&messageDs);
             Tcl_DStringFree(&signatureDs);
+        }
+        if (haveDigest) {
+            FreeDigest(&digest);
         }
     }
 
@@ -1481,14 +1782,16 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 
     } else {
         Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        const EVP_MD *md;
-        EC_KEY       *eckey = NULL;
+        NsDigest          digest;
+        bool              haveDigest = NS_FALSE;
+        EC_KEY           *eckey = NULL;
 
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, &md);
+        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_MD, &digest);
         if (result != TCL_ERROR) {
+            haveDigest = NS_TRUE;
 
             eckey = GetEckeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
             if (eckey == NULL) {
@@ -1499,7 +1802,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
             }
         }
         if (result != TCL_ERROR) {
-            unsigned char        digest[EVP_MAX_MD_SIZE];
+            unsigned char        digestBytes[EVP_MAX_MD_SIZE];
             EVP_MD_CTX          *mdctx;
             const unsigned char *messageString;
             TCL_SIZE_T           messageLength;
@@ -1520,11 +1823,11 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
              */
             mdctx = NS_EVP_MD_CTX_new();
 
-            EVP_DigestInit_ex(mdctx, md, NULL);
+            EVP_DigestInit_ex(mdctx, digest.md, NULL);
             EVP_DigestUpdate(mdctx, messageString, (unsigned long)messageLength);
-            EVP_DigestFinal_ex(mdctx, digest, &mdLength);
+            EVP_DigestFinal_ex(mdctx, digestBytes, &mdLength);
 
-            sig = ECDSA_do_sign(digest, SHA256_DIGEST_LENGTH, eckey);
+            sig = ECDSA_do_sign(digestBytes, (int)mdLength, eckey);
             ECDSA_SIG_get0(sig, &r, &s);
             rLen = (unsigned int) BN_num_bytes(r);
             sLen = (unsigned int) BN_num_bytes(s);
@@ -1552,6 +1855,9 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
             NS_EVP_MD_CTX_free(mdctx);
             ns_free(rawSig);
             Tcl_DStringFree(&messageDs);
+        }
+        if (haveDigest) {
+            FreeDigest(&digest);
         }
     }
 
@@ -1633,15 +1939,17 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
     } else {
         Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        const EVP_MD *md;
-        EVP_PKEY_CTX *pctx = NULL;
+        NsDigest          digest;
+        bool              haveDigest = NS_FALSE;
+        EVP_PKEY_CTX     *pctx = NULL;
 
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, &md);
+        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_HKDF, &digest);
 
         if (result != TCL_ERROR) {
+            haveDigest = NS_TRUE;
             pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL);
             if (pctx == NULL) {
                 Ns_TclPrintfResult(interp, "could not obtain context HKDF");
@@ -1652,7 +1960,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             Ns_TclPrintfResult(interp, "could not initialize for derivation");
             result = TCL_ERROR;
         }
-        if (result != TCL_ERROR && (EVP_PKEY_CTX_set_hkdf_md(pctx, md) <= 0)) {
+        if (result != TCL_ERROR && (EVP_PKEY_CTX_set_hkdf_md(pctx, digest.md) <= 0)) {
             Ns_TclPrintfResult(interp, "could not set digest algorithm");
             result = TCL_ERROR;
         }
@@ -1710,6 +2018,9 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             Tcl_DStringFree(&infoDs);
         }
 
+        if (haveDigest) {
+            FreeDigest(&digest);
+        }
         EVP_PKEY_CTX_free(pctx);
     }
     return result;
@@ -2215,12 +2526,12 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
 
     } else {
         Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        const EVP_MD     *md;
+        NsDigest          digest;
 
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, &md);
+        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_PBKDF2, &digest);
         if (result == TCL_OK) {
             Tcl_DString          saltDs, secretDs;
             TCL_SIZE_T           saltLength, secretLength;
@@ -2233,7 +2544,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
             Tcl_DStringInit(&saltDs);
             Tcl_DStringInit(&secretDs);
             if (dkLength == -1) {
-                dkLength = EVP_MD_size(md);
+                dkLength = EVP_MD_size(digest.md);
             }
             out = ns_malloc((size_t)dkLength);
 
@@ -2242,7 +2553,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
 
             if (PKCS5_PBKDF2_HMAC((const char *)secretString, (int)secretLength,
                                   saltString, (int)saltLength,
-                                  iter, md,
+                                  iter, digest.md,
                                   dkLength, out) == 1) {
                 Tcl_SetObjResult(interp, NsEncodedObj(out, (size_t)dkLength, NULL, encoding));
                 result = TCL_OK;
@@ -2250,6 +2561,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
                 Ns_TclPrintfResult(interp, "could not derive key");
                 result = TCL_ERROR;
             }
+            FreeDigest(&digest);
             ns_free(out);
         }
     }
