@@ -579,6 +579,83 @@ SetAddrFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     return result;
 }
 
+/*----------------------------------------------------------------------
+ *
+ * CompareTclObjs --
+ *
+ *      Comparison function for sorting Tcl_Obj elements based on their
+ *      string representation. This function is intended for use with
+ *      qsort().
+ *
+ * Results:
+ *      Returns < 0, 0, or > 0 depending on lexicographic ordering of
+ *      the string values of the provided Tcl objects.
+ *
+ * Side effects:
+ *      May trigger string representation generation in Tcl objects via
+ *      Tcl_GetString().
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CompareTclObjs(const void *a, const void *b)
+{
+    const Tcl_Obj *oa = *(const Tcl_Obj * const *)a;
+    const Tcl_Obj *ob = *(const Tcl_Obj * const *)b;
+
+    return strcmp(Tcl_GetString((Tcl_Obj *)oa), Tcl_GetString((Tcl_Obj *)ob));
+}
+
+/*----------------------------------------------------------------------
+ *
+ * NsTclListSort --
+ *
+ *      Create a new Tcl list object containing the elements of the
+ *      provided list sorted in lexicographic order based on their
+ *      string representation.
+ *
+ *      The function extracts the list elements, performs a qsort()
+ *      using CompareTclObjs(), and builds a new Tcl list object with
+ *      the sorted elements. The original list object remains unchanged.
+ *
+ * Results:
+ *      Returns a newly allocated Tcl list object containing the sorted
+ *      elements, or NULL if the input object is not a valid list.
+ *
+ * Side effects:
+ *      Allocates temporary memory for sorting and a new Tcl list object.
+ *      May trigger string representation generation for list elements.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+NsTclListSort(Tcl_Interp *interp, Tcl_Obj *listObj)
+{
+    Tcl_Obj    *sortedObj = NULL;
+    Tcl_Obj   **objv;
+    Tcl_Obj   **copyv;
+    TCL_SIZE_T objc;
+    TCL_SIZE_T i;
+
+    if (Tcl_ListObjGetElements(interp, listObj, &objc, &objv) != TCL_OK) {
+        return NULL;
+    }
+
+    copyv = ns_malloc((size_t)objc * sizeof(Tcl_Obj *));
+    for (i = 0; i < objc; ++i) {
+        copyv[i] = objv[i];
+    }
+
+    qsort(copyv, (size_t)objc, sizeof(Tcl_Obj *), CompareTclObjs);
+
+    sortedObj = Tcl_NewListObj(0, NULL);
+    for (i = 0; i < objc; ++i) {
+        Tcl_ListObjAppendElement(interp, sortedObj, copyv[i]);
+    }
+
+    ns_free(copyv);
+    return sortedObj;
+}
 
 /*
  * Local Variables:
