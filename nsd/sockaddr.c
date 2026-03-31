@@ -63,9 +63,152 @@ static MaskedEntry *nonPublicEntries = NULL;
 static void SockkAddrInitMaskedEntry(const char *cdirString, MaskedEntry *entryPtr, const char *errorString)
     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(3);
 
+static bool SockaddrGetMappedV4(const struct sockaddr *sa, const unsigned char **bytes)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void SockaddrSetMappedV4(struct sockaddr *sa, uint32_t addr4)
+    NS_GNUC_NONNULL(1);
+
+static bool SockaddrGetComparableV4(const struct sockaddr *sa, const unsigned char **bytes)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static bool SockAddrInit(void);
 
-
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SockaddrGetMappedV4 --
+ *
+ *      Extract the embedded IPv4 address from an IPv4-mapped IPv6
+ *      sockaddr.
+ *
+ * Results:
+ *      NS_TRUE  - when "sa" is of family AF_INET6 and contains an
+ *                 IPv4-mapped IPv6 address (::ffff:a.b.c.d). In this
+ *                 case, "*bytes" is set to point to the last 4 bytes
+ *                 of the IPv6 address (the embedded IPv4 address).
+ *
+ *      NS_FALSE - when "sa" is not AF_INET6 or does not contain an
+ *                 IPv4-mapped address. "*bytes" is not modified.
+ *
+ * Side effects:
+ *      None.
+ *
+ * Notes:
+ *      The function uses IN6_IS_ADDR_V4MAPPED() when available. When
+ *      the macro is not provided by the platform, the check is
+ *      performed manually by comparing the first 96 bits against the
+ *      ::ffff:0:0/96 prefix.
+ *
+ *      The returned pointer refers to the internal storage of "sa" and
+ *      must not be freed or modified by the caller.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline bool
+SockaddrGetMappedV4(const struct sockaddr *sa, const unsigned char **bytes)
+{
+    if (sa->sa_family == AF_INET6) {
+        const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
+        const struct in6_addr *a6 = (const void *)((const unsigned char *)sa + off6);
+        const unsigned char   *p  = (const unsigned char *)a6;
+
+#if defined(IN6_IS_ADDR_V4MAPPED)
+        if (IN6_IS_ADDR_V4MAPPED(a6)) {
+            *bytes = p + 12;
+            return NS_TRUE;
+        }
+#else
+        if (p[0]  == 0 && p[1]  == 0 && p[2]  == 0 && p[3]  == 0 &&
+            p[4]  == 0 && p[5]  == 0 && p[6]  == 0 && p[7]  == 0 &&
+            p[8]  == 0 && p[9]  == 0 && p[10] == 0xff && p[11] == 0xff) {
+            *bytes = p + 12;
+            return NS_TRUE;
+        }
+#endif
+    }
+    return NS_FALSE;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SockaddrSetMappedV4 --
+ *
+ *      Store an IPv4 address into a sockaddr_in6 as an IPv4-mapped
+ *      IPv6 address (::ffff:a.b.c.d).
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Overwrites the sin6_addr field of "sa" with the mapped IPv4
+ *      representation. The first 80 bits are set to zero, the next
+ *      16 bits to 0xffff, and the final 32 bits are set to "addr4".
+ *
+ * Notes:
+ *      The caller must ensure that "sa" is a valid sockaddr_in6 and
+ *      that sa_family is set to AF_INET6.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline void
+SockaddrSetMappedV4(struct sockaddr *sa, uint32_t addr4)
+{
+    const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
+    uint8_t *dst = (uint8_t *)sa + off6;
+
+    assert(sa->sa_family == AF_INET6);
+
+    memset(dst, 0, 10);
+    dst[10] = 0xff;
+    dst[11] = 0xff;
+    memcpy(dst + 12, &addr4, 4);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SockaddrGetComparableV4 --
+ *
+ *      Obtain a pointer to an IPv4 address representation from a
+ *      sockaddr, treating native IPv4 and IPv4-mapped IPv6 uniformly.
+ *
+ * Results:
+ *      NS_TRUE  - when "sa" is either AF_INET or AF_INET6 containing
+ *                 an IPv4-mapped address. In this case, "*bytes" is
+ *                 set to point to the 4-byte IPv4 address.
+ *
+ *      NS_FALSE - when "sa" cannot be interpreted as IPv4 (e.g.,
+ *                 native IPv6 address without mapping). "*bytes" is
+ *                 not modified.
+ *
+ * Side effects:
+ *      None.
+ *
+ * Notes:
+ *      This function is intended for comparison and masking
+ *      operations where IPv4 and IPv4-mapped IPv6 addresses should be
+ *      treated equivalently.
+ *
+ *      The returned pointer refers to the internal storage of "sa" and
+ *      must not be freed or modified by the caller.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline bool
+SockaddrGetComparableV4(const struct sockaddr *sa, const unsigned char **bytes)
+{
+    if (sa->sa_family == AF_INET) {
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+
+        *bytes = (const unsigned char *)sa + off4;
+        return NS_TRUE;
+    }
+
+    return SockaddrGetMappedV4(sa, bytes);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -82,7 +225,6 @@ static bool SockAddrInit(void);
  *
  *----------------------------------------------------------------------
  */
-
 bool
 Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct sockaddr *maskedAddr)
 {
@@ -106,8 +248,7 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
         const uint8_t *msk = (const uint8_t *)mask + off;
 
         /*
-         * Perform bitwise masking over the full array. Maybe we need
-         * something special for IN6_IS_ADDR_V4MAPPED.
+         * Perform bitwise masking over the full array.
          */
         {
             uint64_t a0, a1, m0, m1;
@@ -121,29 +262,69 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
             memcpy(dst,      &a0, 8);
             memcpy(dst +  8, &a1, 8);
         }
-        /*
-          fprintf(stderr, "#### addr   %s\n", ns_inet_ntoa(addr));
-          fprintf(stderr, "#### mask   %s\n", ns_inet_ntoa(mask));
-          fprintf(stderr, "#### masked %s\n", ns_inet_ntoa(maskedAddr));
-        */
+
     } else if (addr->sa_family == AF_INET && mask->sa_family == AF_INET) {
         const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
         uint32_t a, m, o;
+
         memcpy(&a, (const uint8_t *)addr + off4, 4);
         memcpy(&m, (const uint8_t *)mask + off4, 4);
         o = a & m;
         memcpy((uint8_t *)maskedAddr + off4, &o, 4);
 
+    } else if (addr->sa_family == AF_INET && mask->sa_family == AF_INET6) {
+        const unsigned char *mask4;
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+        uint32_t a, m, o;
+
+        /*
+         * Treat IPv4 and v4-mapped IPv6 mask as compatible.
+         */
+        if (SockaddrGetMappedV4(mask, &mask4)) {
+            memcpy(&a, (const uint8_t *)addr + off4, 4);
+            memcpy(&m, mask4, 4);
+            o = a & m;
+            memcpy((uint8_t *)maskedAddr + off4, &o, 4);
+        } else {
+            success = NS_FALSE;
+        }
+
+    } else if (addr->sa_family == AF_INET6 && mask->sa_family == AF_INET) {
+        const unsigned char *addr4;
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+        uint32_t a, m, o;
+
+        /*
+         * Treat v4-mapped IPv6 and IPv4 mask as compatible.
+         * Preserve the mapped IPv6 prefix in the destination.
+         */
+
+        if (SockaddrGetMappedV4(addr, &addr4)) {
+            memcpy(&a, addr4, 4);
+            memcpy(&m, (const uint8_t *)mask + off4, 4);
+            o = a & m;
+
+            SockaddrSetMappedV4(maskedAddr, o);
+        } else {
+            success = NS_FALSE;
+        }
+
     } else if (addr->sa_family != AF_INET && addr->sa_family != AF_INET6) {
         Ns_Log(Debug, "SockaddrMask: invalid address family %d detected (Ns_SockaddrMask addr)", addr->sa_family);
         success = NS_FALSE;
+
     } else if (mask->sa_family != AF_INET && mask->sa_family != AF_INET6) {
         Ns_Log(Debug, "SockaddrMask: invalid address family %d detected (Ns_SockaddrMask mask)", mask->sa_family);
         success = NS_FALSE;
+
+    } else {
+        success = NS_FALSE;
     }
+
     return success;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -183,39 +364,30 @@ Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
                       (const char *)addr2 + off4,
                       sizeof(struct in_addr)) == 0 ? NS_TRUE : NS_FALSE;
 
-#if defined(IN6_IS_ADDR_V4MAPPED)
     } else if (addr1->sa_family == AF_INET && addr2->sa_family == AF_INET6) {
-        /* treat IPv4 and v4-mapped IPv6 as equal */
-        const size_t off4 = offsetof(struct sockaddr_in,  sin_addr);
-        const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
-        const struct in6_addr *a6 = (const void *)((const char *)addr2 + off6);
+        const unsigned char *a6v4;
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
 
-        if (IN6_IS_ADDR_V4MAPPED(a6)) {
-            return memcmp((const char *)addr1 + off4,
-                          ((const char *)a6) + 12, /* last 4 bytes */
-                          4) == 0 ? NS_TRUE : NS_FALSE;
+        if (SockaddrGetMappedV4(addr2, &a6v4)) {
+            return memcmp((const char *)addr1 + off4, a6v4, 4) == 0 ? NS_TRUE : NS_FALSE;
         }
-        return NS_FALSE;
-    }
-    if (addr1->sa_family == AF_INET6 && addr2->sa_family == AF_INET) {
-        const size_t off4 = offsetof(struct sockaddr_in,  sin_addr);
-        const size_t off6 = offsetof(struct sockaddr_in6, sin6_addr);
-        const struct in6_addr *a6 = (const void *)((const char *)addr1 + off6);
-        if (IN6_IS_ADDR_V4MAPPED(a6)) {
-            return memcmp(((const char *)a6) + 12,
-                          (const char *)addr2 + off4,
-                          4) == 0 ? NS_TRUE : NS_FALSE;
+
+    } else if (addr1->sa_family == AF_INET6 && addr2->sa_family == AF_INET) {
+        const unsigned char *a6v4;
+        const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
+
+        if (SockaddrGetMappedV4(addr1, &a6v4)) {
+            return memcmp(a6v4, (const char *)addr2 + off4, 4) == 0 ? NS_TRUE : NS_FALSE;
         }
-        return NS_FALSE;
     }
-#endif
+
     /*
      * Family mismatch.
      */
     return NS_FALSE;
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -242,7 +414,7 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
 
     //fprintf(stderr, "addr family %d mask family %d\n", addr->sa_family, mask->sa_family);
 
-    if (addr == mask) {
+    if (addr == mask && mask == masked) {
         return NS_TRUE;
     }
 
@@ -261,7 +433,6 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
         return NS_TRUE;
     }
 
-
     /* IPv4 */
     if (addr->sa_family == AF_INET && mask->sa_family == AF_INET && masked->sa_family == AF_INET) {
         const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
@@ -272,6 +443,24 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
         memcpy(&o, (const unsigned char *)masked + off4, 4);
 
         return ((a & m) == o);
+    }
+
+    /*
+     * Fallback: treat native IPv4 and v4-mapped IPv6 uniformly as IPv4.
+     */
+    {
+        const unsigned char *a4, *m4, *o4;
+        uint32_t a, m, o;
+
+        if (SockaddrGetComparableV4(addr, &a4)
+            && SockaddrGetComparableV4(mask, &m4)
+            && SockaddrGetComparableV4(masked, &o4)) {
+            memcpy(&a, a4, 4);
+            memcpy(&m, m4, 4);
+            memcpy(&o, o4, 4);
+
+            return ((a & m) == o);
+        }
     }
 
     /*
@@ -364,18 +553,43 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
  *
  * Ns_SockaddrParseIPMask --
  *
- *      Build a mask and IPv4 or IpV6 address from an IP string notation,
- *      potentially containing a '/' for denoting the number of bits (CIDR
- *      notation)
+ *      Build a mask and IPv4 or IPv6 address from an IP string
+ *      notation, optionally containing a '/' suffix specifying the
+ *      prefix length (CIDR notation).
  *
- *      Example: "137.208.1.10/16"
+ *      Examples:
+ *          "137.208.1.10/16"
+ *          "2001:db8::1/64"
+ *          "::ffff:137.208.1.10/112"
+ *
+ *      When no mask is provided, a full-length mask is assumed
+ *      (32 bits for IPv4, 128 bits for IPv6).
+ *
+ *      IPv4-mapped IPv6 addresses (::ffff:a.b.c.d) are treated
+ *      specially: when a numeric prefix length in the range 96..128
+ *      is specified, the address is interpreted as an IPv4 CIDR.
+ *      In this case, the prefix length is reduced by 96 and a mapped
+ *      IPv4 mask (::ffff:mask) is constructed. This provides
+ *      consistent behavior with native IPv4 addresses for matching
+ *      and classification.
+ *
+ *      Prefix lengths below 96 for mapped IPv6 addresses are treated
+ *      as regular IPv6 CIDR prefixes.
  *
  * Results:
- *      Binary IP address and mask are filled into last arguments,
- *      returns Ns_ReturnCode.
+ *      On success, the parsed address (network address) is stored in
+ *      "ipPtr", the corresponding netmask in "maskPtr", and optionally
+ *      the number of prefix bits in "nrBitsPtr". The function returns
+ *      NS_OK.
+ *
+ *      On error (invalid address or mask specification), an error
+ *      message is stored in "interp" (when provided), and NS_ERROR
+ *      is returned.
  *
  * Side effects:
- *      Memory pointed to by ipPtr and maskPtr is modified.
+ *      The memory pointed to by "ipPtr" and "maskPtr" is modified.
+ *      The resulting address in "ipPtr" is normalized by applying
+ *      the mask (host bits are cleared).
  *
  *----------------------------------------------------------------------
  */
@@ -427,10 +641,31 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
         if (strchr(slash, INTCHAR('.')) == NULL && strchr(slash, INTCHAR(':')) == NULL) {
             maskPtr->sa_family = ipPtr->sa_family;
             nrBits = (unsigned int)strtol(slash, NULL, 10);
-            validMask = Ns_SockaddrMaskBits(maskPtr, nrBits);
+
+            if (ipPtr->sa_family == AF_INET6) {
+                const unsigned char *v4;
+
+                if (SockaddrGetMappedV4(ipPtr, &v4) && nrBits >= 96u && nrBits <= 128u) {
+                    uint32_t v4mask;
+                    unsigned int v4bits = nrBits - 96u;
+
+                    maskPtr->sa_family = AF_INET6;
+                    v4mask = (v4bits == 0u) ? 0u : htonl(~((1u << (32u - v4bits)) - 1u));
+                    SockaddrSetMappedV4(maskPtr, v4mask);
+
+                    validMask = 1;
+                } else {
+                    validMask = Ns_SockaddrMaskBits(maskPtr, nrBits);
+                }
+            } else {
+                validMask = Ns_SockaddrMaskBits(maskPtr, nrBits);
+            }
+
         } else {
-            nrBits = (maskPtr->sa_family == AF_INET6) ? 128 : 32;
             validMask = ns_inet_pton(maskPtr, slash);
+            if (validMask > 0) {
+                nrBits = (maskPtr->sa_family == AF_INET6) ? 128 : 32;
+            }
         }
 
         if (validIP <= 0 || validMask < 0) {
@@ -976,18 +1211,20 @@ Ns_SockaddrPublicIpAddress(const struct sockaddr *saPtr) {
  *
  * Ns_SockaddrInAny --
  *
- *      Determines whether the given socket address represents the
- *      "any" (unspecified) address. For an IPv4 address, this is equivalent to
- *      INADDR_ANY (usually 0.0.0.0), and for an IPv6 address, it is equivalent
- *      to the in6addr_any (an all-zero address). The function returns NS_TRUE
- *      if the address is unspecified, and NS_FALSE otherwise.
+ *      Determine whether the given socket address is the canonical
+ *      unspecified ("any") address of its address family.
  *
- * Returns:
- *      NS_TRUE  if the address is the "any" address (i.e., unspecified).
- *      NS_FALSE otherwise, including when the address family is neither AF_INET
- *               nor AF_INET6.
+ *      For IPv4, this is INADDR_ANY (typically 0.0.0.0). For IPv6,
+ *      this is the all-zero address (::). IPv4-mapped IPv6 addresses
+ *      such as ::ffff:0.0.0.0 are not treated as unspecified.
  *
- * Side Effects:
+ * Results:
+ *      NS_TRUE  - when the address is the unspecified address of
+ *                 family AF_INET or AF_INET6.
+ *      NS_FALSE - otherwise, including for unsupported address
+ *                 families.
+ *
+ * Side effects:
  *      None.
  *
  *----------------------------------------------------------------------
