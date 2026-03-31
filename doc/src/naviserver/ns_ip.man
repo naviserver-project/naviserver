@@ -21,8 +21,6 @@
 
 [call [cmd "ns_ip inany"] [arg ipaddr]]
 
- ***to be completed***
- 
  Determines whether the provided IP address is an "any" (unspecified)
  address. For IPv4, this is equivalent to INADDR_ANY (typically
  [const 0.0.0.0]; for IPv6, it corresponds to in6addr_any (an all-zero
@@ -41,13 +39,27 @@
 
 [call [cmd "ns_ip match"] [arg cidr] [arg ipaddr]]
 
- Validates the provided [arg cidr] (subnet) specification (IPv4
- or IPv6 address followed by slash and number of significant bits) and
- the provided [arg ipaddr] and tests whether the IP address is in the
- implied range. The command returns a boolean value as the result. When
- comparing an IPv4 and IPv6 address/CIDR specification or vice versa,
- the result is always false.
+ Validates the provided [arg cidr] (subnet) specification (IPv4 or
+ IPv6 address followed by a slash and prefix length) and the provided
+ [arg ipaddr], and tests whether the IP address is contained in the
+ specified range. The command returns a boolean value.
 
+ [para]
+ IPv4 and IPv6 are normally treated as distinct address families.
+ However, IPv4-mapped IPv6 addresses of the form
+ [const ::ffff:a.b.c.d] are treated as equivalent to their IPv4
+ counterparts. Therefore, comparisons between IPv4 and IPv4-mapped
+ IPv6 addresses succeed when the embedded IPv4 address matches.
+
+ [para]
+ For CIDR specifications using IPv4-mapped IPv6 addresses with prefix
+ lengths in the range 96..128, the prefix is interpreted as an IPv4
+ prefix (i.e., the effective prefix length is reduced by 96). This
+ allows symmetric matching between IPv4 and IPv4-mapped IPv6 CIDRs.
+
+ [para]
+ For all other mixed-family comparisons (e.g., native IPv6 vs IPv4),
+ the result is false.
 
 [call [cmd "ns_ip properties"]  [arg ipaddr]]
 
@@ -56,10 +68,16 @@
 
 [call [cmd "ns_ip public"]  [arg ipaddr]]
 
- Tests if the provided [arg ipaddr] is a public IP
- address, i.e., reachable from the public Internet. This excludes
- e.g. loopback, private, link-local addresses and networks.
+ Tests whether the provided [arg ipaddr] is a public IP address,
+ i.e., reachable from the public Internet. This excludes loopback,
+ private, link-local, and other non-public address ranges.
 
+ [para]
+ IPv4-mapped IPv6 addresses (of the form [const ::ffff:a.b.c.d]) are
+ evaluated based on their embedded IPv4 address. For example,
+ [const ::ffff:127.0.0.1] is treated as loopback and therefore not
+ public, while [const ::ffff:137.208.116.31] is treated as a public
+ IPv4 address.
 
 [call [cmd "ns_ip trusted"]  [arg ipaddr]]
 
@@ -104,10 +122,16 @@
  % ns_ip match 0.0.0.0/0 $ip
  % string equal IPv4 [lb]dict get [lb]ns_ip properties $ip[rb] type[rb]
 
+ # IPv4-mapped IPv6 addresses are classified by their embedded IPv4 address:
+ % ns_ip public ::ffff:127.0.0.1
+ 0
+ 
+ % ns_ip public ::ffff:137.208.116.31
+ 1
 [example_end]
 
-[section CONFIGURATION]
 
+[section CONFIGURATION]
 
 [example_begin]
  ns_section ns/parameters/reverseproxymode {
