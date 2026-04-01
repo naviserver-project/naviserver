@@ -778,7 +778,7 @@ test ns_crypto::eckey-1.6 {syntax: ns_crypto::eckey sharedsecret} -body {
 
 test ns_crypto:eckey-1.7 {syntax: ns_crypto::eckey fromcoords} -body {
     ns_crypto::eckey fromcoords
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey fromcoords ?-binary? -curve /value/ -x /value/ -y /value/ ?-encoding hex|base64url|base64|binary? ?-format pem|der?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey fromcoords ?-binary? -curve /value/ -x /value/ -y /value/ ?-format pem|der? ?-outfile /value/?"}
 
 test ns_crypto:eckey-1.7.0 {ns_crypto::eckey generate and return PEM as result} -body {
     ns_crypto::eckey generate -name prime256v1

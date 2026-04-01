@@ -2902,8 +2902,8 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 static int
 CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1, isBinary = 0, formatInt = -1;
-    const char        *curveName = NULL;
+    int                result, isBinary = 0, formatInt = -1;
+    const char        *curveName = NULL, *outfileName = NULL;
     Tcl_Obj           *xObj = NULL, *yObj = NULL;
     static Ns_ObjvTable formats[] = {
         {"pem",       0},
@@ -2915,8 +2915,8 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         {"!-curve",    Ns_ObjvString, &curveName,   NULL},
         {"!-x",        Ns_ObjvObj,    &xObj,        NULL},
         {"!-y",        Ns_ObjvObj,    &yObj,        NULL},
-        {"-encoding",  Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-format",    Ns_ObjvIndex,  &formatInt,   formats},
+        {"-outfile",   Ns_ObjvString, &outfileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -2924,7 +2924,6 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         result = TCL_ERROR;
 
     } else {
-        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_BINARY : (Ns_BinaryEncoding)encodingInt);
         int                  nid, ok, wantPem  = (formatInt == -1 || formatInt == 0); /* default pem */
         const unsigned char *xBytes, *yBytes;
         TCL_SIZE_T           xLen = 0, yLen = 0;
@@ -2934,7 +2933,8 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         BN_CTX              *bn_ctx = NULL;
         BIGNUM              *bx = NULL, *by = NULL;
         EC_KEY              *eckey = NULL;
-        EVP_PKEY            *pkey;
+        EVP_PKEY            *pkey = NULL;
+        BIO                 *bio = NULL;
 
         Tcl_DStringInit(&xDs);
         Tcl_DStringInit(&yDs);
@@ -3048,43 +3048,25 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
             goto done_ec;
         }
         if (EVP_PKEY_assign_EC_KEY(pkey, eckey) != 1) {
-            EVP_PKEY_free(pkey);
             Ns_TclPrintfResult(interp, "EVP_PKEY_assign_EC_KEY failed");
             result = TCL_ERROR;
             goto done_ec;
         }
         eckey = NULL; /* now owned by pkey */
 
-        wantPem = (formatInt == -1 || formatInt == 0); /* default pem */
         if (wantPem) {
-            BUF_MEM *bptr = NULL;
-            BIO     *bio = BIO_new(BIO_s_mem());
+            bio = PEMOpenWriteStream(interp, outfileName);
 
             if (bio == NULL) {
-                EVP_PKEY_free(pkey);
-                Ns_TclPrintfResult(interp, "BIO_new failed");
                 result = TCL_ERROR;
                 goto done_ec;
             }
             if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
-                BIO_free(bio);
-                EVP_PKEY_free(pkey);
-                Ns_TclPrintfResult(interp, "PEM_write_bio_PUBKEY failed");
+                Ns_TclPrintfResult(interp, "could not write EC public key");
                 result = TCL_ERROR;
                 goto done_ec;
             }
-            BIO_get_mem_ptr(bio, &bptr);
-            if (bptr == NULL || bptr->data == NULL || bptr->length == 0) {
-                BIO_free(bio);
-                EVP_PKEY_free(pkey);
-                Ns_TclPrintfResult(interp, "failed to obtain PEM output");
-                result = TCL_ERROR;
-                goto done_ec;
-            }
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(bptr->data, (TCL_SIZE_T)bptr->length));
-            BIO_free(bio);
-            EVP_PKEY_free(pkey);
-            result = TCL_OK;
+            result = PEMWriteResult(interp, bio, outfileName, "EC public key");
 
         } else {
             int            len = i2d_PUBKEY(pkey, NULL);
@@ -3092,36 +3074,49 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
             unsigned char *p;
 
             if (len <= 0) {
-                EVP_PKEY_free(pkey);
                 Ns_TclPrintfResult(interp, "i2d_PUBKEY failed");
                 result = TCL_ERROR;
                 goto done_ec;
             }
+
             Tcl_DStringInit(&ds);
             Tcl_DStringSetLength(&ds, len);
             p = (unsigned char *)ds.string;
             if (i2d_PUBKEY(pkey, &p) != len) {
                 Tcl_DStringFree(&ds);
-                EVP_PKEY_free(pkey);
                 Ns_TclPrintfResult(interp, "i2d_PUBKEY produced unexpected length");
                 result = TCL_ERROR;
                 goto done_ec;
             }
 
-            /*
-             * Output encoding (DER is binary). If caller asks for
-             * base64/base64url/hex, we convert here.
-             */
-            Tcl_SetObjResult(interp,
-                             NsEncodedObj((unsigned char *)ds.string,
-                                          (size_t)len, NULL, encoding));
+            if (outfileName != NULL) {
+                FILE *f = fopen(outfileName, "wb");
+                if (f == NULL) {
+                    Ns_TclPrintfResult(interp, "could not open file '%s' for writing", outfileName);
+                    result = TCL_ERROR;
+                } else if (fwrite(ds.string, 1u, (size_t)len, f) != (size_t)len) {
+                    Ns_TclPrintfResult(interp, "could not write DER key to file '%s'", outfileName);
+                    result = TCL_ERROR;
+                } else {
+                    result = TCL_OK;
+                }
+                if (f != NULL) {
+                    fclose(f);
+                }
+            } else {
+
+                Tcl_SetObjResult(interp,
+                                 NsEncodedObj((unsigned char *)ds.string,
+                                              (size_t)len, NULL, NS_OBJ_ENCODING_BINARY));
+                result = TCL_OK;
+            }
             Tcl_DStringFree(&ds);
-            EVP_PKEY_free(pkey);
-            result = TCL_OK;
         }
 
     done_ec:
+        if (bio != NULL)   { BIO_free(bio); }
         if (eckey != NULL) { EC_KEY_free(eckey); }
+        if (pkey != NULL)  { EVP_PKEY_free(pkey); }
         if (point != NULL) { EC_POINT_free(point); }
         if (group != NULL) { EC_GROUP_free(group); }
         if (bx != NULL)    { BN_free(bx); }

@@ -204,30 +204,35 @@ variant of the command.  The default value is "Argon2id".
         [option "-curve [arg value]"] \
         [option "-x [arg value]"] \
         [option "-y [arg value]"] \
-        [opt [option "-encoding hex|base64url|base64|binary"]] \
         [opt [option "-format pem|der"]] \
+        [opt [option "-outfile [arg value]"]] \
         ]
 
- Construct an elliptic curve public key from affine point coordinates.
- The coordinates are provided via [option "-x"] and [option "-y"] and
- are interpreted either as Tcl binary data when [option "-binary"] is
- specified, or as ordinary strings otherwise.
+Construct an elliptic curve public key from affine point coordinates.
+The coordinates are provided via [option "-x"] and [option "-y"] and
+are interpreted either as Tcl binary data when [option "-binary"] is
+specified, or as ordinary strings otherwise.
 
-[para] The elliptic curve is selected via [option "-curve"].  For
- [const prime256v1] (a.k.a. [const secp256r1]) the coordinates must be
- 32 bytes each.
+[para] The elliptic curve is selected via [option "-curve"]. For
+[const prime256v1] (a.k.a. [const secp256r1]) the coordinates must be
+32 bytes each.
 
 [para] The result is returned either as a PEM encoded public key
- ([const "BEGIN PUBLIC KEY"]) when [option "-format pem"] is selected
- (the default), or as DER encoded SubjectPublicKeyInfo when
- [option "-format der"] is selected.
+([const "BEGIN PUBLIC KEY"]) when [option "-format pem"] is selected
+(the default), or as DER encoded SubjectPublicKeyInfo when
+[option "-format der"] is selected.
 
-[para] When returning DER, [option "-encoding"] controls how the DER
- bytes are encoded in the Tcl result. Typically, one uses [const -binary]
- for DER output.
+[para] When [option "-outfile"] is specified, the generated public key
+is written to the provided file. Otherwise, it is returned as the
+command result.
+
+[para] When [option "-format der"] is selected and no [option "-outfile"]
+is specified, the result is returned as binary Tcl data. If a textual
+representation is required, it can be obtained using Tcl commands such
+as [cmd "binary encode"].
 
 [para] The command validates that the provided coordinates form a valid
- point on the selected curve. Invalid points raise an error.
+point on the selected curve. Invalid points raise an error.
 
 [para] This function requires OpenSSL compiled with EC support enabled.
 
@@ -237,7 +242,13 @@ variant of the command.  The default value is "Argon2id".
  if {[lb]string length $pub[rb] != 65 || [lb]string index $pub 0[rb] ne "\x04"} { error "bad point"}
  set x [lb]string range $pub 1 32[rb]
  set y [lb]string range $pub 33 64[rb]
+
+ # Return the reconstructed public key as PEM string
  set pubpem [lb]ns_crypto::eckey fromcoords -curve prime256v1 -x $x -y $y -binary[rb]
+
+ # Write the reconstructed public key directly to a PEM file
+ ns_crypto::eckey fromcoords -curve prime256v1 -x $x -y $y -binary \
+     -outfile /tmp/p256-pub.pem
 [example_end]
 
 
