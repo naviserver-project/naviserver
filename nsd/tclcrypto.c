@@ -3116,17 +3116,22 @@ static int
 CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, nid;
-    const char        *curvenameString = "prime256v1", *pemFileName = NULL;
+    const char        *curvenameString = "prime256v1", *pemFileName = NULL, *outfileName = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-name", Ns_ObjvString, &curvenameString, NULL},
-        {"-pem",  Ns_ObjvString, &pemFileName,     NULL},
+        {"-name",    Ns_ObjvString, &curvenameString, NULL},
+        {"-pem",     Ns_ObjvString, &pemFileName,     NULL},
+        {"-outfile", Ns_ObjvString, &outfileName,     NULL},
         {NULL, NULL, NULL, NULL}
     };
-    /*
-      ns_crypto::eckey generate -name prime256v1 -pem /tmp/foo.pem
-    */
 
+    /*
+     * ns_crypto::eckey generate -name prime256v1 -outfile /tmp/foo.pem
+     */
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (pemFileName != NULL && outfileName != NULL) {
+        Ns_TclPrintfResult(interp, "specify either '-outfile' or '-pem' (legacy), but not both");
         result = TCL_ERROR;
 
     } else if (GetCurve(interp, curvenameString, &nid) == TCL_ERROR) {
@@ -3138,6 +3143,11 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     } else {
         EC_KEY *eckey = EC_KEY_new_by_curve_name(nid);
 
+        if (pemFileName != NULL) {
+            // todo: warn about usage of legacy name in the future (maybe in 5.2?)
+            outfileName = pemFileName;
+        }
+
         if (eckey == NULL) {
             Ns_TclPrintfResult(interp, "could not create ec key");
             result = TCL_ERROR;
@@ -3147,13 +3157,13 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
             result = TCL_ERROR;
 
         } else {
-            BIO  *bio = (pemFileName != NULL)
-                ? BIO_new_file(pemFileName, "w")
+            BIO  *bio = (outfileName != NULL)
+                ? BIO_new_file(outfileName, "w")
                 : BIO_new(BIO_s_mem());
 
             if (bio == NULL) {
-                if (pemFileName != NULL) {
-                    Ns_TclPrintfResult(interp, "could not open pem-file '%s' for writing", pemFileName);
+                if (outfileName != NULL) {
+                    Ns_TclPrintfResult(interp, "could not open pem-file '%s' for writing", outfileName);
                 } else {
                     Ns_TclPrintfResult(interp, "could not allocate memory bio");
                 }
@@ -3514,13 +3524,13 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     int                result, kemINamedx = 1;
     const char        *nameString = "ml-kem-768";
-    const char        *pemFileName = NULL;
+    const char        *outfileName = NULL;
     EVP_PKEY_CTX      *ctx = NULL;
     EVP_PKEY          *pkey = NULL;
     BIO               *bio = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-name",   Ns_ObjvIndex, &kemINamedx,  kemNames},
-        {"-pem",  Ns_ObjvString, &pemFileName, NULL},
+        {"-name",     Ns_ObjvIndex, &kemINamedx,  kemNames},
+        {"-outfile",  Ns_ObjvString, &outfileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -3557,15 +3567,15 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
-    bio = (pemFileName != NULL)
-        ? BIO_new_file(pemFileName, "w")
+    bio = (outfileName != NULL)
+        ? BIO_new_file(outfileName, "w")
         : BIO_new(BIO_s_mem());
 
     if (bio == NULL) {
-        if (pemFileName != NULL) {
+        if (outfileName != NULL) {
             Ns_TclPrintfResult(interp,
                                "could not open pem-file '%s' for writing",
-                               pemFileName);
+                               outfileName);
         } else {
             Ns_TclPrintfResult(interp, "could not allocate memory bio");
         }
@@ -3581,7 +3591,7 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
-    if (pemFileName == NULL) {
+    if (outfileName == NULL) {
         result = SetResultFromMemBio(interp, bio, "generated KEM key");
     } else {
         result = TCL_OK;

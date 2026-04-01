@@ -232,7 +232,7 @@ variant of the command.  The default value is "Argon2id".
 [para] This function requires OpenSSL compiled with EC support enabled.
 
 [example_begin]
- ns_crypto::eckey generate -name prime256v1 -pem /tmp/p256-priv.pem
+ ns_crypto::eckey generate -name prime256v1 -outfile /tmp/p256-priv.pem
  set pub [lb]ns_crypto::eckey pub -pem /tmp/p256-priv.pem -encoding binary[rb]
  if {[lb]string length $pub[rb] != 65 || [lb]string index $pub 0[rb] ne "\x04"} { error "bad point"}
  set x [lb]string range $pub 1 32[rb]
@@ -243,14 +243,14 @@ variant of the command.  The default value is "Argon2id".
 
 [call [cmd "ns_crypto::eckey generate"] \
      [opt [option "-name [arg value]"]] \
-     [opt [option "-pem [arg value]"]] \
+     [opt [option "-outfile [arg value]"]] \
      ]
 
 Generate an EC pemfile without the need of an external command.
 If no [option -name] is provided (name of the elliptic curve),
 [term prime256v1] is assumed. An other popular candidate is
-[term secp384r1]. The [option "-pem"] denotes the name
-of the output file, which is in PEM format. If [option "-pem"]
+[term secp384r1]. The [option "-outfile"] denotes the name
+of the output file, which is in PEM format. If [option "-outfile"]
 is not specified, the command returns the PEM encoded
 private key as result.
 
@@ -258,7 +258,7 @@ private key as result.
 This function requires OpenSSL compiled with EC support enabled.
 
 [example_begin]
- % ns_crypto::eckey generate -name prime256v1 -pem /tmp/priv.key.pem
+ % ns_crypto::eckey generate -name prime256v1 -outfile /tmp/priv.key.pem
 [example_end]
 
 
@@ -355,14 +355,13 @@ be in memory). In order to compute HMACs on large data, use
 
 [call [cmd "ns_crypto::kem generate"] \
     [opt [option "-name ml-kem-512|ml-kem-768|ml-kem-1024"]] \
-    [opt [option "-pem [arg value]"]]]
+    [opt [option "-outfile [arg value]"]]]
 
   Generate a new ML-KEM key pair. The private key is returned/stored in
   PEM format; the public key can be derived via [cmd "ns_crypto::kem pub"].
 
-  [para] When [option -pem] is specified, the generated private key is written in PEM
-  format to the provided file. Otherwise, the generated PEM string is returned
-  as the Tcl result.
+  [para] When [option -outfile] is specified, the generated private key is written in PEM
+  format to the provided file. Otherwise, the generated PEM string is returned.
 
   [para] The optional [option -name] argument selects the ML-KEM parameter set. When
   omitted, [const ml-kem-768] is used.
@@ -372,7 +371,7 @@ be in memory). In order to compute HMACs on large data, use
  set pem [lb]ns_crypto::kem generate[rb]
  
  # Write a PEM file
- ns_crypto::kem generate -name ml-kem-1024 -pem /tmp/mlkem.pem
+ ns_crypto::kem generate -name ml-kem-1024 -outfile /tmp/mlkem.pem
 [example_end]
 
   [para] This function requires OpenSSL 3.5.

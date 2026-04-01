@@ -757,7 +757,8 @@ test ns_crypto:eckey-1.1 {syntax: ns_crypto::eckey subcommands} -body {
 
 test ns_crypto::eckey-1.2 {syntax: ns_crypto::eckey generate} -body {
     ns_crypto::eckey generate ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate ?-name /value/? ?-pem /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate ?-name /value/? ?-pem /value/? ?-outfile /value/?"}
+# contains legacy alias, message should be {{wrong # args: should be "ns_crypto::eckey generate ?-name /value/? ?-outfile /value/?"}
 
 test ns_crypto::eckey-1.3 {syntax: ns_crypto::eckey import} -body {
     ns_crypto::eckey import ?
@@ -818,7 +819,7 @@ test ns_crypto::kem-1.0 {syntax: ns_crypto::kem} -constraints {kem} -body {
 
 test ns_crypto::kem-1.1 {syntax: ns_crypto::kem generate} -constraints {kem} -body {
     ns_crypto::kem generate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-pem /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-outfile /value/?"}
 
 test ns_crypto::kem-1.2 {syntax: ns_crypto::kem pub} -constraints {kem} -body {
     ns_crypto::kem pub
