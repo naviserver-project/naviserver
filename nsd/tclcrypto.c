@@ -79,6 +79,13 @@ static int GetDigest(Tcl_Interp *interp, const char *digestName, NsDigestUsage u
 static int SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     NS_GNUC_NONNULL(1,2,3);
 
+static BIO * PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
+    NS_GNUC_NONNULL(1);
+
+static int PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
+    NS_GNUC_NONNULL(1,2,4);
+
+
 # ifndef OPENSSL_NO_EC
 static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -150,8 +157,8 @@ static TCL_OBJCMDPROC_T CryptoKemPubObjCmd;
 static TCL_OBJCMDPROC_T CryptoKemEncapsulateObjCmd;
 static TCL_OBJCMDPROC_T CryptoKemDecapsulateObjCmd;
 
-static EVP_PKEY *GetKemPublicKey(Tcl_Interp *interp, const unsigned char *pubString, TCL_SIZE_T pubLength, int kemNameIdx) NS_GNUC_NONNULL(1,2);
 static int       KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding) NS_GNUC_NONNULL(1,2);
+static bool      PkeyIsMlKem(EVP_PKEY *pkey) NS_GNUC_NONNULL(1);
 #endif
 
 /*
@@ -349,6 +356,41 @@ SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     }
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(bptr->data, (TCL_SIZE_T)bptr->length));
+    return TCL_OK;
+}
+
+static BIO *
+PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
+{
+    BIO *bio;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+
+    bio = (outfileName != NULL)
+        ? BIO_new_file(outfileName, "w")
+        : BIO_new(BIO_s_mem());
+
+    if (bio == NULL) {
+        if (outfileName != NULL) {
+            Ns_TclPrintfResult(interp, "could not open pem-file '%s' for writing", outfileName);
+        } else {
+            Ns_TclPrintfResult(interp, "could not allocate memory bio");
+        }
+    }
+
+    return bio;
+}
+
+static int
+PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
+{
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(bio != NULL);
+    NS_NONNULL_ASSERT(what != NULL);
+
+    if (outfileName == NULL) {
+        return SetResultFromMemBio(interp, bio, what);
+    }
     return TCL_OK;
 }
 
@@ -3157,29 +3199,20 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
             result = TCL_ERROR;
 
         } else {
-            BIO  *bio = (outfileName != NULL)
-                ? BIO_new_file(outfileName, "w")
-                : BIO_new(BIO_s_mem());
+            BIO *bio = PEMOpenWriteStream(interp, outfileName);
 
             if (bio == NULL) {
-                if (outfileName != NULL) {
-                    Ns_TclPrintfResult(interp, "could not open pem-file '%s' for writing", outfileName);
-                } else {
-                    Ns_TclPrintfResult(interp, "could not allocate memory bio");
-                }
                 result = TCL_ERROR;
 
-            } else if (PEM_write_bio_ECPrivateKey(bio, eckey, NULL,
-                                                  NULL, 0, NULL, NULL) != 1) {
-                Ns_TclPrintfResult(interp, "could not write ec key");
+            } else if (PEM_write_bio_ECPrivateKey(bio, eckey, NULL, NULL, 0, NULL, NULL) != 1) {
+                Ns_TclPrintfResult(interp,
+                                   "could not write EC key \"%s\"",
+                                   curvenameString);
                 result = TCL_ERROR;
-
-            } else if (pemFileName == NULL) {
-                result = SetResultFromMemBio(interp, bio, "generated ec key");
-
             } else {
-                result = TCL_OK;
+                result = PEMWriteResult(interp, bio, outfileName, "generated EC key");
             }
+
             if (bio != NULL) {
                 BIO_free(bio);
             }
@@ -3458,29 +3491,6 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
 
 # ifdef HAVE_OPENSSL_3_5
 
-/*
- *----------------------------------------------------------------------
- *
- * CryptoKemGenerateObjCmd -- Subcommand of NsTclCryptoKemObjCmd
- *
- *      Implements "ns_crypto::kem generate". Subcommand to generate an
- *      ML-KEM private key in PEM format without the need of an external
- *      command.
- *
- *      When -pem is specified, the generated key is written to the
- *      provided file. Otherwise, the generated PEM string is returned
- *      as Tcl result.
- *
- * Results:
- *      Tcl Result Code.
- *
- * Side effects:
- *      Creates an ML-KEM key pair and either writes it to a file or
- *      returns it as PEM string.
- *
- *----------------------------------------------------------------------
- */
-
 const char *kemNameCanonical[] = {
     "ML-KEM-512",
     "ML-KEM-768",
@@ -3567,18 +3577,8 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
-    bio = (outfileName != NULL)
-        ? BIO_new_file(outfileName, "w")
-        : BIO_new(BIO_s_mem());
-
+    bio = PEMOpenWriteStream(interp, outfileName);
     if (bio == NULL) {
-        if (outfileName != NULL) {
-            Ns_TclPrintfResult(interp,
-                               "could not open pem-file '%s' for writing",
-                               outfileName);
-        } else {
-            Ns_TclPrintfResult(interp, "could not allocate memory bio");
-        }
         result = TCL_ERROR;
         goto done;
     }
@@ -3591,11 +3591,7 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
-    if (outfileName == NULL) {
-        result = SetResultFromMemBio(interp, bio, "generated KEM key");
-    } else {
-        result = TCL_OK;
-    }
+    result = PEMWriteResult(interp, bio, outfileName, "generated KEM key");
 
  done:
     if (bio != NULL) {
@@ -3633,127 +3629,75 @@ static int
 CryptoKemPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1;
-    const char        *pem = NULL,
+    int                result;
+    const char        *pem = NULL, *outfileName = NULL,
                       *passPhrase = NS_EMPTY_STRING;
     Ns_ObjvSpec lopts[] = {
-        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
-        {"!-pem",       Ns_ObjvString, &pem,         NULL},
+        {"-outfile",    Ns_ObjvString, &outfileName, NULL},
+        {"!-pem",       Ns_ObjvString, &pem,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
-      ns_crypto::kem pub -pem /tmp/mlkem.pem -encoding base64url
-      ns_crypto::kem pub -pem $pemString     -encoding base64url
+      ns_crypto::kem pub -pem /tmp/mlkem.pem -outfile /tmp/pub.pem
+      ns_crypto::kem pub -pem $pemString
     */
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-        Ns_BinaryEncoding  encoding = (encodingInt == -1
-                                       ? NS_OBJ_ENCODING_HEX
-                                       : (Ns_BinaryEncoding)encodingInt);
-        EVP_PKEY          *pkey;
-        unsigned char     *pub = NULL;
-        size_t             publen;
+        EVP_PKEY  *pkey;
 
         pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
         if (pkey == NULL) {
             return TCL_ERROR;
         }
 
-        /*
-         * EVP_PKEY_get1_encoded_public_key() allocates the returned buffer
-         * with OPENSSL_malloc(); must be freeed with OPENSSL_free().
-         */
-        publen = EVP_PKEY_get1_encoded_public_key(pkey, &pub);
-        if (publen == 0u || pub == NULL) {
-            Ns_TclPrintfResult(interp,
-                               "could not obtain encoded public key from specified pem");
+        if (!PkeyIsMlKem(pkey)) {
+            Ns_TclPrintfResult(interp, "provided PEM does not contain an ML-KEM key");
             result = TCL_ERROR;
-
-        } else {
-
-            Tcl_SetObjResult(interp, NsEncodedObj(pub, publen, NULL, encoding));
-            result = TCL_OK;
+            goto done;
         }
 
-        if (pub != NULL) {
-            OPENSSL_free(pub);
+        {
+            BIO *bio = PEMOpenWriteStream(interp, outfileName);
+            if (bio == NULL) {
+                result = TCL_ERROR;
+
+            } else if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
+                Ns_TclPrintfResult(interp, "could not write KEM public key");
+                result = TCL_ERROR;
+
+            } else {
+                result = PEMWriteResult(interp, bio, outfileName, "KEM public key");
+            }
+
+            if (bio != NULL) {
+                BIO_free(bio);
+            }
         }
+
+    done:
         EVP_PKEY_free(pkey);
     }
 
     return result;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * GetKemPublicKey --
- *
- *      Create an OpenSSL EVP_PKEY object representing an ML-KEM public
- *      key from raw binary key material.
- *
- *      The function performs a sanity check on the provided key length
- *      against the expected size for the selected ML-KEM parameter set
- *      (ML-KEM-512, ML-KEM-768, ML-KEM-1024). On success, it constructs
- *      a new EVP_PKEY using EVP_PKEY_new_raw_public_key_ex().
- *
- *      The caller is responsible for providing the correct KEM variant
- *      index (kemNameIdx), which determines both the expected key length
- *      and the canonical OpenSSL algorithm name.
- *
- * Results:
- *      On success, returns a newly allocated EVP_PKEY containing the
- *      public key. The caller must free the returned object via
- *      EVP_PKEY_free().
- *
- *      On error, returns NULL and sets a descriptive error message in
- *      the Tcl interpreter result. Errors occur when:
- *
- *        - the provided key length does not match the expected length
- *          for the selected ML-KEM variant, or
- *        - OpenSSL fails to construct the EVP_PKEY object.
- *
- * Side effects:
- *      Sets the interpreter result on error.
- *
- *----------------------------------------------------------------------
- */
-static EVP_PKEY *
-GetKemPublicKey(Tcl_Interp *interp, const unsigned char *pubString, TCL_SIZE_T pubLength, int kemNameIdx)
+static bool
+PkeyIsMlKem(EVP_PKEY *pkey)
 {
-    static const size_t kemPubKeyLen[] = {
-        800u,   /* ML-KEM-512  */
-        1184u,  /* ML-KEM-768  */
-        1568u   /* ML-KEM-1024 */
-    };
-    EVP_PKEY            *pkey = NULL;
+    size_t i;
 
-    if ((size_t)pubLength != kemPubKeyLen[kemNameIdx]) {
-        Ns_TclPrintfResult(interp,
-                           "invalid public key length %" PRITcl_Size
-                           " for %s (expected %zu bytes)",
-                           pubLength,
-                           kemNameCanonical[kemNameIdx],
-                           kemPubKeyLen[kemNameIdx]);
-    } else {
-        pkey = EVP_PKEY_new_raw_public_key_ex(NULL,
-                                              kemNameCanonical[kemNameIdx],
-                                              NULL,
-                                              pubString,
-                                              (size_t)pubLength);
-        if (pkey == NULL) {
-            Ns_TclPrintfResult(interp,
-                               "could not import public key for %s",
-                               kemNameCanonical[kemNameIdx]);
+    NS_NONNULL_ASSERT(pkey != NULL);
+
+    for (i = 0u; i < Ns_NrElements(kemNameCanonical); ++i) {
+        if (EVP_PKEY_is_a(pkey, kemNameCanonical[i]) == 1) {
+            return NS_TRUE;
         }
     }
-
-    return pkey;
+    return NS_FALSE;
 }
 
 /*
@@ -3891,62 +3835,43 @@ static int
 CryptoKemEncapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                            TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1, kemNameIdx = -1;
-    Tcl_Obj           *pubObj = NULL;
+    int                result, encodingInt = -1;
     const char        *pem = NULL;
     const char        *passPhrase = NS_EMPTY_STRING;
     EVP_PKEY          *pkey = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
-        {"-name",       Ns_ObjvIndex,  &kemNameIdx,  kemNames},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
-        {"-pub",        Ns_ObjvObj,    &pubObj,      NULL},
-        {"-pem",        Ns_ObjvString, &pem,         NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
-
-    } else if ((pubObj == NULL && pem == NULL) || (pubObj != NULL && pem != NULL)) {
-        Ns_TclPrintfResult(interp, "either -pub or -pem must be specified");
-        return TCL_ERROR;
-
-    } else if (pem != NULL && kemNameIdx != -1) {
-        Ns_TclPrintfResult(interp, "-name cannot be specified together with -pem");
-        return TCL_ERROR;
-    }
-
-    if (kemNameIdx == -1) {
-        kemNameIdx = 1;
     }
 
     /*
       set pem [ns_crypto::kem generate]
       ns_crypto::kem encapsulate -pem $pem
-      ns_crypto::kem encapsulate -pub $pub -name ml-kem-768
-      ns_crypto::kem encapsulate -pub $pub -name ml-kem-768 -encoding base64url
+      ns_crypto::kem encapsulate -pem $pem -encoding base64url
     */
 
-    if (pem != NULL) {
-        pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
-
-    } else {
-        TCL_SIZE_T           pubLength;
-        const unsigned char *pubString = (const unsigned char *)Tcl_GetByteArrayFromObj(pubObj, &pubLength);
-
-        pkey = GetKemPublicKey(interp, pubString, pubLength, kemNameIdx);
-    }
-
+    pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_FALSE);
     if (pkey == NULL) {
-        return TCL_ERROR;
+        pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+        if (pkey == NULL) {
+            return TCL_ERROR;
+        }
+    }
+    if (!PkeyIsMlKem(pkey)) {
+        Ns_TclPrintfResult(interp, "provided PEM does not contain an ML-KEM key");
+        result = TCL_ERROR;
+        goto done;
     }
 
     result = KemEncapsulate(interp, pkey,
-                            (encodingInt == -1
-                             ? NS_OBJ_ENCODING_HEX
-                             : (Ns_BinaryEncoding)encodingInt));
-
+                            (encodingInt == -1 ? NS_OBJ_ENCODING_HEX: (Ns_BinaryEncoding)encodingInt));
+ done:
     EVP_PKEY_free(pkey);
     return result;
 }
@@ -4009,8 +3934,8 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             goto done;
         }
 
-        ciphertextString = (const unsigned char *)Tcl_GetByteArrayFromObj(ciphertextObj, &ciphertextLength);
-
+        ciphertextString = (const unsigned char *)Tcl_GetByteArrayFromObj(ciphertextObj,
+                                                                          &ciphertextLength);
         ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
         if (ctx == NULL) {
             Ns_TclPrintfResult(interp, "could not create KEM context");

@@ -823,11 +823,11 @@ test ns_crypto::kem-1.1 {syntax: ns_crypto::kem generate} -constraints {kem} -bo
 
 test ns_crypto::kem-1.2 {syntax: ns_crypto::kem pub} -constraints {kem} -body {
     ns_crypto::kem pub
-} -returnCodes error -result {wrong # args: should be "ns_crypto::kem pub ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem pub ?-passphrase /value/? ?-outfile /value/? -pem /value/"}
 
 test ns_crypto::kem-1.3 {syntax: ns_crypto::kem encapsulate} -constraints {kem} -body {
     ns_crypto::kem encapsulate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::kem encapsulate ?-encoding hex|base64url|base64|binary? ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-passphrase /value/? ?-pub /value/? ?-pem /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem encapsulate ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
 
 test ns_crypto::kem-1.4 {syntax: ns_crypto::kem decapsulate} -constraints {kem} -body {
     ns_crypto::kem decapsulate
@@ -849,7 +849,7 @@ test ns_crypto::kem-2.2  {ns_crypto::kem end-to-end with exported public key} -c
     set pem [ns_crypto::kem generate]
     set pub [ns_crypto::kem pub -pem $pem]
 
-    set r [ns_crypto::kem encapsulate -name ml-kem-768 -pub [binary decode hex $pub]]
+    set r [ns_crypto::kem encapsulate -pem $pub]
     set ciphertext [dict get $r ciphertext]
     set secret1 [dict get $r secret]
 
@@ -857,11 +857,11 @@ test ns_crypto::kem-2.2  {ns_crypto::kem end-to-end with exported public key} -c
     string equal $secret1 $secret2
 } -returnCodes {error ok} -result 1
 
-test ns_crypto::kem-2.3 {ns_crypto::kem end-to-end with binary public key} -constraints {kem} -body {
+test ns_crypto::kem-2.3 {ns_crypto::kem end-to-end with exported public key and binary output} -constraints {kem} -body {
     set pem [ns_crypto::kem generate]
-    set pub [ns_crypto::kem pub -pem $pem -encoding binary]
+    set pub [ns_crypto::kem pub -pem $pem]
 
-    set r [ns_crypto::kem encapsulate -name ml-kem-768 -pub $pub -encoding binary]
+    set r [ns_crypto::kem encapsulate -pem $pub -encoding binary]
     set ciphertext [dict get $r ciphertext]
     set secret1 [dict get $r secret]
 
@@ -870,18 +870,11 @@ test ns_crypto::kem-2.3 {ns_crypto::kem end-to-end with binary public key} -cons
     string equal $secret1 $secret2
 } -returnCodes {error ok} -result 1
 
-test ns_crypto::kem-2.4 {ns_crypto::kem public key length must match KEM name} -constraints {kem} -body {
-    set pem [ns_crypto::kem generate -name ml-kem-768]
-    set pub [ns_crypto::kem pub -pem $pem -encoding binary]
-
-    ns_crypto::kem encapsulate -name ml-kem-512 -pub $pub
-} -returnCodes error -match glob -result {invalid public key length*ML-KEM-512*}
-
 test ns_crypto::kem-2.5 {ns_crypto::kem roundtrip} -constraints {kem} -body {
     set pem [ns_crypto::kem generate]
-    set pub [ns_crypto::kem pub -pem $pem -encoding binary]
+    set pub [ns_crypto::kem pub -pem $pem]
 
-    set r [ns_crypto::kem encapsulate -name ml-kem-768 -pub $pub]
+    set r [ns_crypto::kem encapsulate -pem $pub]
     set ciphertext [dict get $r ciphertext]
     set secret1 [dict get $r secret]
 

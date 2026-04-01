@@ -179,7 +179,7 @@
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::aead::encrypt string}] ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? -key /value/ ?--? /input/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::argon2}] ?-ad /value/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer/? ?-lanes /integer/? ?-memcost /integer/? ?-outlen /integer/? ?-password /value/? -salt /value/ ?-secret /value/? ?-threads /integer/? ?-variant /value/?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey fromcoords}] ?-binary? -curve /value/ -x /value/ -y /value/ ?-encoding hex|base64url|base64|binary? ?-format pem|der?
-[uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey generate}] ?-name /value/? ?-pem /value/?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey generate}] ?-name /value/? ?-outfile /value/?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey import}] ?-binary? -string /value/ ?-encoding hex|base64url|base64|binary?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey priv}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey pub}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/
@@ -190,9 +190,9 @@
 [uri ../../naviserver/files/ns_hmac.html {ns_crypto::hmac new}] ?-binary? ?--? /digest/ /key/
 [uri ../../naviserver/files/ns_hmac.html {ns_crypto::hmac string}] ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem decapsulate}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ -ciphertext /value/
-[uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem encapsulate}] ?-encoding hex|base64url|base64|binary? ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-passphrase /value/? ?-pub /value/? ?-pem /value/?
-[uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem generate}] ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-pem /value/?
-[uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem pub}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem encapsulate}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem generate}] ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-outfile /value/?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem pub}] ?-passphrase /value/? ?-outfile /value/? -pem /value/
 [uri ../../naviserver/files/ns_md.html {ns_crypto::md add}] ?-binary? ?--? /ctx/ /message/
 [uri ../../naviserver/files/ns_md.html {ns_crypto::md free}] /ctx/
 [uri ../../naviserver/files/ns_md.html {ns_crypto::md get}] ?-encoding hex|base64url|base64|binary? /ctx/
