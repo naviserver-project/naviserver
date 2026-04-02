@@ -985,7 +985,7 @@ test ns_crypto::key-4.2 {pub: EC public key binary matches eckey pub} -constrain
 test ns_crypto::key-4.3 {pub: EC public key from public PEM} -constraints {ec} -body {
     set pem [ns_crypto::eckey generate -name prime256v1]
     set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
-    binary encode hex [ns_crypto::key pub -pem $pubpem -encoding binary]
+    ns_crypto::key pub -pem $pubpem -encoding hex
 } -match glob -returnCodes {error ok} -result 04*
 
 
