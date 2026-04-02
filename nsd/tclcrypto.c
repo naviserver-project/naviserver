@@ -85,6 +85,8 @@ static BIO * PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
 static int PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
     NS_GNUC_NONNULL(1,2,4);
 
+static int WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, const char *outfileName, bool wantPem)
+    NS_GNUC_NONNULL(1,2);
 
 # ifndef OPENSSL_NO_EC
 static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
@@ -359,6 +361,28 @@ SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * PEMOpenWriteStream --
+ *
+ *      Create a BIO suitable for writing PEM output either to a file
+ *      or to an in-memory buffer.
+ *
+ *      When an output file name is provided, a file BIO is opened for
+ *      writing. Otherwise, a memory BIO is created, allowing the caller
+ *      to retrieve the generated PEM data and return it as a Tcl result.
+ *
+ * Results:
+ *      Returns a BIO pointer on success.
+ *      Returns NULL on error and sets an error message in the Tcl
+ *      interpreter result.
+ *
+ * Side effects:
+ *      Opens a file for writing when outfileName is not NULL.
+ *
+ *----------------------------------------------------------------------
+ */
 static BIO *
 PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
 {
@@ -381,6 +405,29 @@ PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
     return bio;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * PEMWriteResult --
+ *
+ *      Finalize writing of PEM data produced via a BIO and propagate
+ *      the result to the Tcl interpreter.
+ *
+ *      When an output file name is provided, the function assumes the
+ *      BIO has already written the data to the file and returns TCL_OK.
+ *      Otherwise, the content of the memory BIO is extracted and set
+ *      as the Tcl result.
+ *
+ * Results:
+ *      Returns TCL_OK on success.
+ *      Returns TCL_ERROR if extracting the result from the memory BIO
+ *      fails (via SetResultFromMemBio).
+ *
+ * Side effects:
+ *      Sets the Tcl interpreter result when no output file is specified.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
 {
@@ -392,6 +439,105 @@ PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char
         return SetResultFromMemBio(interp, bio, what);
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WritePublicKey --
+ *
+ *      Serialize an EVP_PKEY public key into PEM or DER format and
+ *      either return the result to the Tcl interpreter or write it
+ *      to a file.
+ *
+ *      When wantPem is true, the public key is written as a PEM encoded
+ *      SubjectPublicKeyInfo ("BEGIN PUBLIC KEY") using a BIO obtained
+ *      via PEMOpenWriteStream().
+ *
+ *      When wantPem is false, the public key is encoded as DER using
+ *      i2d_PUBKEY(). If an output file is specified, the DER data is
+ *      written directly to the file. Otherwise, the DER data is returned
+ *      as binary Tcl data.
+ *
+ * Results:
+ *      Returns TCL_OK on success.
+ *      Returns TCL_ERROR on failure and sets an error message in the
+ *      Tcl interpreter result.
+ *
+ * Side effects:
+ *      May open and write to a file when outfileName is not NULL.
+ *      Sets the Tcl interpreter result when no output file is specified.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
+               const char *outfileName, bool wantPem)
+{
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(pkey != NULL);
+
+    if (wantPem) {
+        BIO *bio = PEMOpenWriteStream(interp, outfileName);
+        int result;
+
+        if (bio == NULL) {
+            return TCL_ERROR;
+        }
+
+        if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
+            Ns_TclPrintfResult(interp, "could not write public key");
+            BIO_free(bio);
+            return TCL_ERROR;
+        }
+
+        result = PEMWriteResult(interp, bio, outfileName, "public key");
+        BIO_free(bio);
+
+        return result;
+
+    } else {
+        int len = i2d_PUBKEY(pkey, NULL);
+        unsigned char *buf, *p;
+
+        if (len <= 0) {
+            Ns_TclPrintfResult(interp, "i2d_PUBKEY failed");
+            return TCL_ERROR;
+        }
+
+        buf = ns_malloc((size_t)len);
+        p   = buf;
+
+        if (i2d_PUBKEY(pkey, &p) != len) {
+            ns_free(buf);
+            Ns_TclPrintfResult(interp, "i2d_PUBKEY produced unexpected length");
+            return TCL_ERROR;
+        }
+
+        if (outfileName != NULL) {
+            FILE *f = fopen(outfileName, "wb");
+            if (f == NULL) {
+                Ns_TclPrintfResult(interp, "could not open file '%s' for writing", outfileName);
+                ns_free(buf);
+                return TCL_ERROR;
+            }
+            if (fwrite(buf, 1u, (size_t)len, f) != (size_t)len) {
+                Ns_TclPrintfResult(interp, "could not write DER key to file '%s'", outfileName);
+                fclose(f);
+                ns_free(buf);
+                return TCL_ERROR;
+            }
+            fclose(f);
+            ns_free(buf);
+            return TCL_OK;
+
+        } else {
+            Tcl_SetObjResult(interp,
+                NsEncodedObj(buf, (size_t)len, NULL, NS_OBJ_ENCODING_BINARY));
+            ns_free(buf);
+            return TCL_OK;
+        }
+    }
 }
 
 /*
@@ -2732,18 +2878,28 @@ SetResultFromEC_POINT(
  *
  *----------------------------------------------------------------------
  */
+
 static int
-CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1;
-    const char        *pemFile = NULL,
-                      *passPhrase = NS_EMPTY_STRING;
+    int                result, encodingInt = -1, formatInt = 0 /* raw */;
+    const char        *pemFile = NULL, *outfileName = NULL, *passPhrase = NS_EMPTY_STRING;
+    static Ns_ObjvTable formats[] = {
+        {"raw", 0},
+        {"pem", 1},
+        {"der", 2},
+        {NULL,  0u}
+    };
     Ns_ObjvSpec lopts[] = {
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"-format",     Ns_ObjvIndex,  &formatInt,   formats},
+        {"-outfile",    Ns_ObjvString, &outfileName, NULL},
         {"!-pem",       Ns_ObjvString, &pemFile,     NULL},
         {NULL, NULL, NULL, NULL}
     };
+
     /*
       ns_crypto::eckey pub -pem /usr/local/ns/modules/vapid/prime256v1_key.pem -encoding base64url
       BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0
@@ -2752,29 +2908,38 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
-        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        EC_KEY         *eckey;
-        const EC_POINT *ecpoint = NULL;
+    } else if (formatInt == 0 && outfileName != NULL) {
+        Ns_TclPrintfResult(interp, "-outfile requires -format pem or -format der");
+        result =  TCL_ERROR;
 
+    } else if (formatInt != 0 && encodingInt != -1) {
+        Ns_TclPrintfResult(interp, "-encoding is only valid with -format raw");
+        result =  TCL_ERROR;
+
+    } else {
+        EC_KEY            *eckey = NULL;
+        const EC_POINT    *ecpoint = NULL;
+        EVP_PKEY          *pkey = NULL;
+        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
         /*
          * The .pem file does not have a separate pub-key included,
-         * but we get the pub-key grom the priv-key in form of an
+         * but we get the pub-key from the priv-key in form of an
          * EC_POINT.
          */
         eckey = GetEckeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
-        if (eckey != NULL) {
-            ecpoint = EC_KEY_get0_public_key(eckey);
-            if (ecpoint == NULL) {
-                Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
-                result = TCL_ERROR;
-            } else {
-                result = TCL_OK;
-            }
-        } else {
+        if (eckey == NULL) {
             result = TCL_ERROR;
+            goto done;
         }
-        if (result != TCL_ERROR) {
+
+        ecpoint = EC_KEY_get0_public_key(eckey);
+        if (ecpoint == NULL) {
+            Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
+            result = TCL_ERROR;
+            goto done;
+        }
+
+        if (formatInt == 0) {
             Tcl_DString  ds;
             BN_CTX      *bn_ctx = BN_CTX_new();
 
@@ -2782,15 +2947,36 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             SetResultFromEC_POINT(interp, &ds, eckey, ecpoint, bn_ctx, encoding);
             BN_CTX_free(bn_ctx);
             Tcl_DStringFree(&ds);
+            result = TCL_OK;
+
+        } else {
+            pkey = EVP_PKEY_new();
+            if (pkey == NULL) {
+                Ns_TclPrintfResult(interp, "EVP_PKEY_new failed");
+                result = TCL_ERROR;
+                goto done;
+            }
+
+            if (EVP_PKEY_assign_EC_KEY(pkey, eckey) != 1) {
+                Ns_TclPrintfResult(interp, "EVP_PKEY_assign_EC_KEY failed");
+                result = TCL_ERROR;
+                goto done;
+            }
+            eckey = NULL; /* now owned by pkey */
+
+            result = WritePublicKey(interp, pkey, outfileName, formatInt == 1);
         }
+    done:
         if (eckey != NULL) {
             EC_KEY_free(eckey);
+        }
+        if (pkey != NULL) {
+            EVP_PKEY_free(pkey);
         }
     }
 
     return result;
 }
-
 
 
 #  ifdef HAVE_OPENSSL_EC_PRIV2OCT
@@ -2934,7 +3120,6 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         BIGNUM              *bx = NULL, *by = NULL;
         EC_KEY              *eckey = NULL;
         EVP_PKEY            *pkey = NULL;
-        BIO                 *bio = NULL;
 
         Tcl_DStringInit(&xDs);
         Tcl_DStringInit(&yDs);
@@ -3054,67 +3239,8 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         }
         eckey = NULL; /* now owned by pkey */
 
-        if (wantPem) {
-            bio = PEMOpenWriteStream(interp, outfileName);
-
-            if (bio == NULL) {
-                result = TCL_ERROR;
-                goto done_ec;
-            }
-            if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
-                Ns_TclPrintfResult(interp, "could not write EC public key");
-                result = TCL_ERROR;
-                goto done_ec;
-            }
-            result = PEMWriteResult(interp, bio, outfileName, "EC public key");
-
-        } else {
-            int            len = i2d_PUBKEY(pkey, NULL);
-            Tcl_DString    ds;
-            unsigned char *p;
-
-            if (len <= 0) {
-                Ns_TclPrintfResult(interp, "i2d_PUBKEY failed");
-                result = TCL_ERROR;
-                goto done_ec;
-            }
-
-            Tcl_DStringInit(&ds);
-            Tcl_DStringSetLength(&ds, len);
-            p = (unsigned char *)ds.string;
-            if (i2d_PUBKEY(pkey, &p) != len) {
-                Tcl_DStringFree(&ds);
-                Ns_TclPrintfResult(interp, "i2d_PUBKEY produced unexpected length");
-                result = TCL_ERROR;
-                goto done_ec;
-            }
-
-            if (outfileName != NULL) {
-                FILE *f = fopen(outfileName, "wb");
-                if (f == NULL) {
-                    Ns_TclPrintfResult(interp, "could not open file '%s' for writing", outfileName);
-                    result = TCL_ERROR;
-                } else if (fwrite(ds.string, 1u, (size_t)len, f) != (size_t)len) {
-                    Ns_TclPrintfResult(interp, "could not write DER key to file '%s'", outfileName);
-                    result = TCL_ERROR;
-                } else {
-                    result = TCL_OK;
-                }
-                if (f != NULL) {
-                    fclose(f);
-                }
-            } else {
-
-                Tcl_SetObjResult(interp,
-                                 NsEncodedObj((unsigned char *)ds.string,
-                                              (size_t)len, NULL, NS_OBJ_ENCODING_BINARY));
-                result = TCL_OK;
-            }
-            Tcl_DStringFree(&ds);
-        }
-
+        result = WritePublicKey(interp, pkey, outfileName, wantPem);
     done_ec:
-        if (bio != NULL)   { BIO_free(bio); }
         if (eckey != NULL) { EC_KEY_free(eckey); }
         if (pkey != NULL)  { EVP_PKEY_free(pkey); }
         if (point != NULL) { EC_POINT_free(point); }

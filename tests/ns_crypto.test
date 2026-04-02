@@ -770,7 +770,7 @@ test ns_crypto::eckey-1.4 {syntax: ns_crypto::eckey priv} -body {
 
 test ns_crypto::eckey-1.5 {syntax: ns_crypto::eckey pub} -body {
     ns_crypto::eckey pub ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey pub ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey pub ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? ?-format raw|pem|der? ?-outfile /value/? -pem /value/"}
 
 test ns_crypto::eckey-1.6 {syntax: ns_crypto::eckey sharedsecret} -body {
     ns_crypto::eckey sharedsecret

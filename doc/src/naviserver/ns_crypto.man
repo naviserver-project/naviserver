@@ -323,15 +323,56 @@ support enabled.
 [call [cmd "ns_crypto::eckey pub"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-passphrase [arg value]"]] \
+     [opt [option "-format raw|pem|der"]] \
+     [opt [option "-outfile [arg value]"]] \
      [option "-pem [arg value]"] \
     ]
 
-Obtain the public key in various encodings from an elliptic curves PEM
-file. It is possible to provide the filename of the PEM file or its
-content as a string. When the .pem file is secured by a passphrase, this has to be
-provided via [option "-passphrase"].
+  Returns the public key corresponding to the provided elliptic curve private key.
 
-[para] This function requires OpenSSL compiled with EC support enabled.
+  [para] The argument to [option -pem] may be either a PEM file name
+  or a PEM string. When the private key is encrypted, provide the
+  passphrase via [option -passphrase].
+
+  [para] The default output format is [const raw]. In this format, the
+  public key is returned as the uncompressed EC point (leading 0x04,
+  followed by X and Y coordinates). The representation is encoded
+  according to [option -encoding], which defaults to [const hex].
+
+  [para] When [option "-format pem"] is specified, the result is
+  returned as a PEM encoded SubjectPublicKeyInfo structure (i.e., a
+  [const "BEGIN PUBLIC KEY"] block).
+
+  [para] When [option "-format der"] is specified, the result is
+  returned as a DER encoded SubjectPublicKeyInfo. If no
+  [option "-outfile"] is specified, the DER data is returned as binary Tcl
+  Data.
+
+  [para] When [option "-outfile"] is specified, the result is written
+  to the provided file instead of being returned. This option requires
+  [option "-format pem"] or [option "-format der"].
+
+  [para] The option [option "-encoding"] is only valid with
+  [option "-format raw"].
+
+[example_begin]
+ # Return public key in raw format (default hex encoding)
+ set pub [lb]ns_crypto::eckey pub -pem /tmp/p256-priv.pem[rb]
+ 
+ # Return public key in raw format with binary encoding
+ set pubBin [lb]ns_crypto::eckey pub -pem /tmp/p256-priv.pem -encoding binary[rb]
+ 
+ # Return public key as PEM string
+ set pubpem [lb]ns_crypto::eckey pub -pem /tmp/p256-priv.pem -format pem[rb]
+ 
+ # Write public key as PEM file
+ ns_crypto::eckey pub -pem /tmp/p256-priv.pem -format pem -outfile /tmp/p256-pub.pem
+ 
+ # Return public key as DER (binary Tcl value)
+ set pubder [lb]ns_crypto::eckey pub -pem /tmp/p256-priv.pem -format der[rb]
+[example_end]
+
+  [para] This function requires OpenSSL compiled with EC support enabled.
 
 
 [call [cmd "ns_crypto::hmac string"] \
@@ -434,8 +475,8 @@ be in memory). In order to compute HMACs on large data, use
  set pem [lb]ns_crypto::kem generate[rb]
  set r   [lb]ns_crypto::kem encapsulate -pem $pem[rb]
  
- # Encapsulate via public key returned as binary
- set pub [lb]ns_crypto::kem pub -pem $pem[[rb]
+ # Encapsulate via PUM public key
+ set pub [lb]ns_crypto::kem pub -pem $pem[rb]
  set r   [lb]ns_crypto::kem encapsulate -pem $pub[rb]
  
  dict get $r ciphertext
@@ -448,7 +489,8 @@ be in memory). In order to compute HMACs on large data, use
     [opt [option "-encoding hex|base64url|base64|binary"]] \
     [opt [option "-passphrase [arg value]"]] \
     [option "-pem [arg value]"] \
-    [option "-ciphertext [arg value]"]]
+    [option "-ciphertext [arg value]"] \
+    ]
 
   Decapsulate a shared secret from an ML-KEM ciphertext using the provided
   private key.
