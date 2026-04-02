@@ -1555,6 +1555,10 @@ NS_EXTERN const char *
 Ns_DStringAppendSockState(Tcl_DString *dsPtr, Ns_SockState state)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN Tcl_Obj *
+Ns_DStringToObj(Tcl_DString *dsPtr)
+    NS_GNUC_NONNULL(1);
+
 #ifdef NS_WITH_DEPRECATED
 NS_EXTERN Tcl_DString *
 Ns_DStringPop(void)
@@ -1564,7 +1568,6 @@ NS_EXTERN void
 Ns_DStringPush(Tcl_DString *dsPtr)
      NS_GNUC_DEPRECATED;
 #endif
-
 
 #ifdef NS_WITH_DEPRECATED_5_0
 NS_EXTERN char *Ns_DStringValue(const Tcl_DString *dsPtr) NS_GNUC_PURE

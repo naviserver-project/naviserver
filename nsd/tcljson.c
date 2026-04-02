@@ -307,7 +307,6 @@ static bool          JsonIsNullObj(const Tcl_Obj *valueObj) NS_GNUC_NONNULL(1);
 /*
  * Generic object helper and string encoding helpers.
  */
-static Tcl_Obj      *DStringToObj(Tcl_DString *dsPtr)  NS_GNUC_NONNULL(1);
 static Ns_ReturnCode JsonAppendDecoded(JsonParser *jp, const unsigned char *at, const char *bytes, size_t len) NS_GNUC_NONNULL(1,2,3);
 static void          JsonAppendQuotedString(Tcl_DString *dsPtr, const char *s, TCL_SIZE_T len) NS_GNUC_NONNULL(1,2);
 
@@ -728,64 +727,6 @@ JsonIsNullObj(const Tcl_Obj *valueObj)
  * Function Implementation: Generic object helper and string encoding helpers.
  *======================================================================
  */
-
-/*
- *----------------------------------------------------------------------
- *
- * DStringToObj --
- *
- *      This function moves a dynamic string's contents to a new Tcl_Obj. Be
- *      aware that this function does *not* check that the encoding of the
- *      contents of the dynamic string is correct; this is the caller's
- *      responsibility to enforce.
- *
- *      The function is essentially a copy of the internal function
- *      TclDStringToOb and is a counter part to Tcl_DStringResult.
- *
- * Results:
- *      The newly-allocated untyped (i.e., typePtr==NULL) Tcl_Obj with a
- *      reference count of zero.
- *
- * Side effects:
- *      The string is "moved" to the object. dsPtr is reinitialized to an
- *      empty string; it does not need to be Tcl_DStringFree'd after this if
- *      not used further.
- *
- *----------------------------------------------------------------------
- */
-static Tcl_Obj *
-DStringToObj(Tcl_DString *dsPtr)
-{
-    Tcl_Obj *result;
-
-    if (dsPtr->string == dsPtr->staticSpace) {
-        if (dsPtr->length == 0) {
-            result = Tcl_NewObj();
-        } else {
-            /*
-             * Static buffer, so must copy.
-             */
-            result = Tcl_NewStringObj(dsPtr->string, dsPtr->length);
-        }
-    } else {
-        /*
-         * Dynamic buffer, so transfer ownership and reset.
-         */
-        result = Tcl_NewObj();
-        result->bytes = dsPtr->string;
-        result->length = dsPtr->length;
-    }
-
-    /*
-     * Re-establish the DString as empty with no buffer allocated.
-     */
-    dsPtr->string = dsPtr->staticSpace;
-    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-    dsPtr->length = 0;
-    dsPtr->staticSpace[0] = '\0';
-
-    return result;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -2916,7 +2857,7 @@ JsonPointerToPathObj(Tcl_Interp *interp, const char *p, TCL_SIZE_T len)
         }
     }
 
-    pathObj = DStringToObj(&listDs);
+    pathObj = Ns_DStringToObj(&listDs);
 
  fail:
     Tcl_DStringFree(&segDs);
@@ -4586,7 +4527,7 @@ JsonTriplesValueToJson(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *valueObj,
         return TCL_ERROR;
     }
 
-    *outObjPtr = DStringToObj(&ds);
+    *outObjPtr = Ns_DStringToObj(&ds);
     Tcl_DStringFree(&ds);
     return TCL_OK;
 }
@@ -7869,7 +7810,7 @@ JsonKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     Tcl_DictObjPut(interp, dictObj,
                    JsonAtomObjs[JSON_ATOM_KEY],
-                   DStringToObj(&outDs));
+                   Ns_DStringToObj(&outDs));
 
     Tcl_DictObjPut(interp, dictObj,
                    JsonAtomObjs[JSON_ATOM_FIELD],
