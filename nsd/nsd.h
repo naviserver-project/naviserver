@@ -1417,6 +1417,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclCryptoEckeyObjCmd,
     NsTclCryptoHmacObjCmd,
     NsTclCryptoKemObjCmd,
+    NsTclCryptoKeyObjCmd,
     NsTclCryptoMdObjCmd,
     NsTclCryptoPbkdf2hmacObjCmd,
     NsTclCryptoRandomBytesObjCmd,

@@ -308,6 +308,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_ALPN].name             = "alpn";          atoms[NS_ATOM_ALPN].len = 4;
     atoms[NS_ATOM_ASSERTIONS].name       = "assertions";    atoms[NS_ATOM_ASSERTIONS].len = 10;
     atoms[NS_ATOM_AUTHORITY].name        = "authority";     atoms[NS_ATOM_AUTHORITY].len = 9;
+    atoms[NS_ATOM_BITS].name             = "bits";          atoms[NS_ATOM_BITS].len = 4;
     atoms[NS_ATOM_BODY].name             = "body";          atoms[NS_ATOM_BODY].len = 4;
     atoms[NS_ATOM_BODY_CHAN].name        = "body_chan";     atoms[NS_ATOM_BODY_CHAN].len = 9;
     atoms[NS_ATOM_BOUNDARY].name         = "boundary";      atoms[NS_ATOM_BOUNDARY].len = 8;
@@ -323,6 +324,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_COMPLETE].name         = "complete";      atoms[NS_ATOM_COMPLETE].len = 8;
     atoms[NS_ATOM_CONDITION].name        = "condition";     atoms[NS_ATOM_CONDITION].len = 9;
     atoms[NS_ATOM_CURRENTADDR].name      = "currentaddr";   atoms[NS_ATOM_CURRENTADDR].len = 11;
+    atoms[NS_ATOM_CURVE].name            = "curve";         atoms[NS_ATOM_CURVE].len = 5;
     atoms[NS_ATOM_DATA].name             = "data";          atoms[NS_ATOM_DATA].len = 4;
     atoms[NS_ATOM_DEFAULTPORT].name      = "defaultport";   atoms[NS_ATOM_DEFAULTPORT].len = 11;
     atoms[NS_ATOM_DRIVER].name           = "driver";        atoms[NS_ATOM_DRIVER].len = 6;

@@ -73,6 +73,12 @@ typedef struct {
 /*
  * Static functions defined in this file.
  */
+static EVP_PKEY *GetAnyPkeyFromPem(Tcl_Interp *interp, const char *pem, const char *passPhrase)
+    NS_GNUC_NONNULL(1,2);
+
+static EVP_PKEY *GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
+    NS_GNUC_NONNULL(1,2);
+
 static int GetDigest(Tcl_Interp *interp, const char *digestName, NsDigestUsage usage, NsDigest *digestPtr)
     NS_GNUC_NONNULL(1,2,4);
 
@@ -86,6 +92,19 @@ static int PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName,
     NS_GNUC_NONNULL(1,2,4);
 
 static int WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, const char *outfileName, bool wantPem)
+    NS_GNUC_NONNULL(1,2);
+
+
+static int SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2);
+
+static int SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2);
+
+static Tcl_Obj *CryptoKeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1,2);
+
+static bool PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
     NS_GNUC_NONNULL(1,2);
 
 # ifndef OPENSSL_NO_EC
@@ -137,6 +156,11 @@ static TCL_OBJCMDPROC_T CryptoMdFreeObjCmd;
 static TCL_OBJCMDPROC_T CryptoMdGetObjCmd;
 static TCL_OBJCMDPROC_T CryptoMdNewObjCmd;
 static TCL_OBJCMDPROC_T CryptoMdStringObjCmd;
+
+static TCL_OBJCMDPROC_T CryptoKeyInfoObjCmd;
+static TCL_OBJCMDPROC_T CryptoKeyPrivObjCmd;
+static TCL_OBJCMDPROC_T CryptoKeyPubObjCmd;
+static TCL_OBJCMDPROC_T CryptoKeyTypeObjCmd;
 
 # ifndef OPENSSL_NO_EC
 static TCL_OBJCMDPROC_T CryptoEckeyFromCoordsObjCmd;
@@ -1017,19 +1041,18 @@ PEMOpenReadSteam(const char *fnOrData)
 /*
  *----------------------------------------------------------------------
  *
- * GetPkeyFromPem, GetEckeyFromPem --
+ * GetPkeyFromPem --
  *
- *      Helper function for reading .pem-files
+ *      Helper function to get pkey from PEM files
  *
  * Results:
- *      Tcl result code
+ *      EVP_PKEY *, potentially NULL.
  *
  * Side effects:
  *      Interp result Obj is updated in case of error.
  *
  *----------------------------------------------------------------------
  */
-
 static EVP_PKEY *
 GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
 {
@@ -1055,7 +1078,49 @@ GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhra
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetAnyPkeyFromPem --
+ *
+ *      Helper function to get private or public key from PEM files
+ *
+ * Results:
+ *      EVP_PKEY *, might be NULL
+ *
+ * Side effects:
+ *      Interp result Obj is updated in case of error.
+ *
+ *----------------------------------------------------------------------
+ */
+static EVP_PKEY *
+GetAnyPkeyFromPem(Tcl_Interp *interp, const char *pem, const char *passPhrase)
+{
+    EVP_PKEY *pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_FALSE);
+
+    if (pkey == NULL) {
+        pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+    }
+    return pkey;
+}
+
 # ifndef OPENSSL_NO_EC
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetEckeyFromPem --
+ *
+ *      Helper function to get eckey from PEM files
+ *
+ * Results:
+ *      EC_KEY *, might be NULL
+ *
+ * Side effects:
+ *      Interp result Obj is updated in case of error.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static EC_KEY *
 GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
 {
@@ -4525,7 +4590,7 @@ CryptoAeadDecryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZ
  * NsTclCryptoAeadEncryptObjCmd, NsTclCryptoAeadDecryptObjCmd --
  *
  *      Implements "ns_crypto::aead::encrypt" and
- *      "ns_crypto::aead::dncrypt". Returns encrypted/decrypted data.
+ *      "ns_crypto::aead::decrypt". Returns encrypted/decrypted data.
  *
  * Results:
  *      NS_OK
@@ -4555,6 +4620,398 @@ NsTclCryptoAeadDecryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE
 
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
+
+/*======================================================================
+ * Function Implementations: ns_crypto::key
+ *======================================================================
+ */
+static int
+SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+{
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(pkey != NULL);
+
+# ifndef OPENSSL_NO_EC
+#  ifdef HAVE_OPENSSL_3
+    if (EVP_PKEY_is_a(pkey, "EC") == 1)
+#  else
+    if (EVP_PKEY_base_id(pkey) == EVP_PKEY_EC)
+#  endif
+    {
+        EC_KEY         *eckey = EVP_PKEY_get1_EC_KEY(pkey);
+        const EC_POINT *ecpoint = NULL;
+        int             result;
+        Tcl_DString     ds;
+        BN_CTX         *bn_ctx = NULL;
+
+        if (eckey == NULL) {
+            Ns_TclPrintfResult(interp, "could not obtain EC key");
+            return TCL_ERROR;
+        }
+
+        ecpoint = EC_KEY_get0_public_key(eckey);
+        if (ecpoint == NULL) {
+            EC_KEY_free(eckey);
+            Ns_TclPrintfResult(interp, "no public EC point available");
+            return TCL_ERROR;
+        }
+
+        bn_ctx = BN_CTX_new();
+        Tcl_DStringInit(&ds);
+        SetResultFromEC_POINT(interp, &ds, eckey, ecpoint, bn_ctx, encoding);
+        Tcl_DStringFree(&ds);
+        BN_CTX_free(bn_ctx);
+        EC_KEY_free(eckey);
+
+        result = TCL_OK;
+        return result;
+    }
+# endif
+
+# ifdef HAVE_OPENSSL_3
+    {
+        unsigned char *pub = NULL;
+        size_t         publen = 0u;
+
+        /*
+         * For provider-era raw/exportable public keys such as
+         * Ed25519/X25519 and ML-KEM.
+         */
+        publen = EVP_PKEY_get1_encoded_public_key(pkey, &pub);
+        if (publen > 0u && pub != NULL) {
+            Tcl_SetObjResult(interp, NsEncodedObj(pub, publen, NULL, encoding));
+            OPENSSL_free(pub);
+            return TCL_OK;
+        }
+    }
+# endif
+
+    /*
+     * Fallback for raw public-key APIs available for selected legacy/raw types.
+     */
+# ifndef HAVE_OPENSSL_PRE_1_1
+    {
+        unsigned char *buf = NULL;
+        size_t         len = 0u;
+
+        if (EVP_PKEY_get_raw_public_key(pkey, NULL, &len) == 1 && len > 0u) {
+            buf = ns_malloc(len);
+            if (EVP_PKEY_get_raw_public_key(pkey, buf, &len) == 1) {
+                Tcl_SetObjResult(interp, NsEncodedObj(buf, len, NULL, encoding));
+                ns_free(buf);
+                return TCL_OK;
+            }
+            ns_free(buf);
+        }
+    }
+# endif
+
+    Ns_TclPrintfResult(interp, "raw public key extraction is not supported for this key type");
+    return TCL_ERROR;
+}
+
+static int
+SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+{
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(pkey != NULL);
+
+# ifndef HAVE_OPENSSL_PRE_1_1
+    {
+        unsigned char *buf = NULL;
+        size_t         len = 0u;
+
+        if (EVP_PKEY_get_raw_private_key(pkey, NULL, &len) == 1 && len > 0u) {
+            buf = ns_malloc(len);
+            if (EVP_PKEY_get_raw_private_key(pkey, buf, &len) == 1) {
+                Tcl_SetObjResult(interp, NsEncodedObj(buf, len, NULL, encoding));
+                ns_free(buf);
+                return TCL_OK;
+            }
+            ns_free(buf);
+        }
+    }
+# endif
+
+    Ns_TclPrintfResult(interp, "raw private key extraction is not supported for this key type");
+    return TCL_ERROR;
+}
+
+
+static Tcl_Obj *
+CryptoKeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
+{
+#ifdef HAVE_OPENSSL_3
+    const char *typeName = EVP_PKEY_get0_type_name(pkey);
+    Tcl_DString ds;
+
+    if (typeName == NULL) {
+        Ns_TclPrintfResult(interp, "could not determine key type");
+        return NULL;
+    }
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, typeName, TCL_INDEX_NONE);
+    Ns_StrToLower(ds.string);
+    return Ns_DStringToObj(&ds);
+#else
+    const char *typeName = NULL;
+
+    switch (EVP_PKEY_base_id(pkey)) {
+    case EVP_PKEY_RSA:     typeName = "rsa";     break;
+    case EVP_PKEY_DSA:     typeName = "dsa";     break;
+    case EVP_PKEY_DH:      typeName = "dh";      break;
+    case EVP_PKEY_EC:      typeName = "ec";      break;
+#ifdef EVP_PKEY_X25519
+    case EVP_PKEY_X25519:  typeName = "x25519";  break;
+#endif
+#ifdef EVP_PKEY_X448
+    case EVP_PKEY_X448:    typeName = "x448";    break;
+#endif
+#ifdef EVP_PKEY_ED25519
+    case EVP_PKEY_ED25519: typeName = "ed25519"; break;
+#endif
+#ifdef EVP_PKEY_ED448
+    case EVP_PKEY_ED448:   typeName = "ed448";   break;
+#endif
+    default:
+        Ns_TclPrintfResult(interp, "unsupported or unknown key type");
+        return NULL;
+    }
+    return Tcl_NewStringObj(typeName, TCL_INDEX_NONE);
+#endif
+}
+
+static bool
+PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
+{
+#ifdef HAVE_OPENSSL_3
+    (void)legacyId;
+    return EVP_PKEY_is_a(pkey, name) == 1;
+#else
+    (void)name;
+    return EVP_PKEY_base_id(pkey) == legacyId;
+#endif
+}
+
+
+static int
+CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result;
+    const char *pem = NULL;
+    const char *passPhrase = NS_EMPTY_STRING;
+    Tcl_Obj    *resultObj;
+    Ns_ObjvSpec lopts[] = {
+        {"-passphrase", Ns_ObjvString, &passPhrase, NULL},
+        {"!-pem",       Ns_ObjvString, &pem,        NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        EVP_PKEY   *pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+        Tcl_Obj    *typeNameObj;
+
+        if (pkey == NULL) {
+            return TCL_ERROR;
+        }
+        typeNameObj = CryptoKeyTypeNameObj(interp, pkey);
+        if (typeNameObj == NULL) {
+            result = TCL_ERROR;
+            goto done;
+        }
+
+        resultObj = Tcl_NewDictObj();
+
+        Tcl_DictObjPut(NULL, resultObj,
+                       NsAtomObj(NS_ATOM_TYPE),
+                       typeNameObj);
+
+        if (PkeyIsType(pkey, "EC", EVP_PKEY_EC) == 1) {
+            EC_KEY         *ec = EVP_PKEY_get1_EC_KEY(pkey);
+            const EC_GROUP *group;
+            int             nid, bits = 0;
+            const char     *curveName = NULL;
+
+            if (ec != NULL) {
+                group = EC_KEY_get0_group(ec);
+                if (group != NULL) {
+                    nid = EC_GROUP_get_curve_name(group);
+                    if (nid != NID_undef) {
+                        curveName = OBJ_nid2sn(nid);
+                        if (curveName != NULL) {
+                            Tcl_DictObjPut(NULL, resultObj,
+                                           NsAtomObj(NS_ATOM_CURVE),
+                                           Tcl_NewStringObj(curveName, TCL_INDEX_NONE));
+                        }
+                    }
+                    bits = EC_GROUP_order_bits(group);
+                    if (bits > 0) {
+                        Tcl_DictObjPut(NULL, resultObj,
+                                       NsAtomObj(NS_ATOM_BITS),
+                                       Tcl_NewIntObj(bits));
+                    }
+                }
+                EC_KEY_free(ec);
+            }
+
+        } else if (PkeyIsType(pkey, "RSA", EVP_PKEY_RSA) == 1
+                   || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA) == 1
+                   || PkeyIsType(pkey, "DH", EVP_PKEY_DH) == 1) {
+            int bits = EVP_PKEY_bits(pkey);
+
+            if (bits > 0) {
+                Tcl_DictObjPut(NULL, resultObj,
+                               NsAtomObj(NS_ATOM_BITS),
+                               Tcl_NewIntObj(bits));
+            }
+        }
+
+        Tcl_SetObjResult(interp, resultObj);
+        result = TCL_OK;
+    done:
+        EVP_PKEY_free(pkey);
+    }
+    return result;
+}
+
+static int
+CryptoKeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                result, encodingInt = -1;
+    const char        *pem = NULL;
+    const char        *passPhrase = NS_EMPTY_STRING;
+    EVP_PKEY          *pkey = NULL;
+    Ns_BinaryEncoding  encoding;
+    Ns_ObjvSpec        lopts[] = {
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    encoding = (encodingInt == -1
+                ? NS_OBJ_ENCODING_HEX
+                : (Ns_BinaryEncoding)encodingInt);
+
+    pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+    if (pkey == NULL) {
+        return TCL_ERROR;
+    }
+
+    result = SetResultFromRawPrivateKey(interp, pkey, encoding);
+
+    EVP_PKEY_free(pkey);
+    return result;
+}
+
+static int
+CryptoKeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                   TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                result, encodingInt = -1;
+    const char        *pem = NULL;
+    const char        *passPhrase = NS_EMPTY_STRING;
+    EVP_PKEY          *pkey = NULL;
+    Ns_BinaryEncoding  encoding;
+    Ns_ObjvSpec        lopts[] = {
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    encoding = (encodingInt == -1
+                ? NS_OBJ_ENCODING_HEX
+                : (Ns_BinaryEncoding)encodingInt);
+
+    pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+    if (pkey == NULL) {
+        return TCL_ERROR;
+    }
+
+    result = SetResultFromRawPublicKey(interp, pkey, encoding);
+
+    EVP_PKEY_free(pkey);
+    return result;
+}
+static int
+CryptoKeyTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result;
+    const char *pem = NULL;
+    const char *passPhrase = NS_EMPTY_STRING;
+    EVP_PKEY   *pkey = NULL;
+    Tcl_Obj    *typeNameObj;
+    Ns_ObjvSpec lopts[] = {
+        {"-passphrase", Ns_ObjvString, &passPhrase, NULL},
+        {"!-pem",       Ns_ObjvString, &pem,        NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+    if (pkey == NULL) {
+        return TCL_ERROR;
+    }
+    typeNameObj = CryptoKeyTypeNameObj(interp, pkey);
+    if (typeNameObj == NULL) {
+        result = TCL_ERROR;
+    } else {
+        Tcl_SetObjResult(interp, typeNameObj);
+        result = TCL_OK;
+    }
+
+    EVP_PKEY_free(pkey);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCryptoKeyObjCmd --
+ *
+ *      Implements "ns_crypto::key" with various subcommands to
+ *      analyse (PEM) keys for its content.
+ *
+ * Results:
+ *      Tcl Return code.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclCryptoKeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"info", CryptoKeyInfoObjCmd},
+        {"priv", CryptoKeyPrivObjCmd},
+        {"pub",  CryptoKeyPubObjCmd},
+        {"type", CryptoKeyTypeObjCmd},
+        {NULL, NULL}
+    };
+
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
+
 
 /*
  *----------------------------------------------------------------------

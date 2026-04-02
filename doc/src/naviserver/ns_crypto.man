@@ -536,6 +536,121 @@ be in memory). In order to compute HMACs on large data, use
   [para] This function requires OpenSSL 3.5.
 
 
+
+[call [cmd "ns_crypto::key info"] \
+     [opt [option "-passphrase [arg value]"]] \
+     [option "-pem [arg value]"] \
+    ]
+
+  Return information about a key stored in PEM format.
+
+  [para] The argument to [option -pem] may be either a PEM file name or a
+  PEM string. It may contain either a public or a private key. When the
+  key is encrypted, provide the passphrase via [option -passphrase].
+
+  [para] The result is a Tcl dictionary containing properties of the key.
+  The available fields depend on the key type and the OpenSSL version.
+
+  [para] The dictionary always contains at least:
+
+  [list_begin itemized]
+  [item] [const type] — the key type as returned by
+  [cmd "ns_crypto::key type"]
+  [list_end]
+
+  [para] Additional fields may include:
+
+  [list_begin itemized]
+  [item] [const bits] — key size in bits (e.g., RSA, DSA, DH, EC)
+  [item] [const curve] — curve name for elliptic curve keys (e.g., [const prime256v1])
+  [list_end]
+
+  [para] The presence and naming of fields depend on the key type and
+  OpenSSL capabilities. New fields may be added in future versions as
+  additional key properties become available.
+
+  [para] This command is intended for lightweight inspection of keys. It
+  does not perform validation beyond what OpenSSL provides.
+
+[example_begin]
+ # Inspect key properties
+ set info [lb]ns_crypto::key info -pem /tmp/key.pem[rb]
+ 
+ dict get $info type
+ dict exists $info bits
+ dict exists $info curve
+ 
+ if {[lb]dict get $info type[rb] eq "ec"} {
+     puts "curve: [lb]dict get $info curve[rb]"
+ }
+[example_end]
+
+[call [cmd "ns_crypto::key priv"] \
+     [opt [option "-encoding hex|base64url|base64|binary"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [option "-pem [arg value]"] \
+    ]
+
+  Extract the raw private key material from a PEM-encoded private key.
+
+  [para] The argument to [option -pem] may be either a PEM file name or a
+  PEM string. It must contain a private key. When the private key is
+  encrypted, provide the passphrase via [option -passphrase].
+
+  [para] The result is returned in an algorithm-specific raw
+  representation, where supported. The output encoding is controlled via
+  [option -encoding], which defaults to [const hex].
+
+
+[call [cmd "ns_crypto::key pub"] \
+     [opt [option "-encoding hex|base64url|base64|binary"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [option "-pem [arg value]"] \
+    ]
+
+  Extract the raw public key material from a PEM-encoded key.
+
+  [para] The argument to [option -pem] may be either a PEM file name or a
+  PEM string. It may contain either a public key or a private key. When
+  the private key is encrypted, provide the passphrase via
+  [option -passphrase].
+
+  [para] The result is returned in an algorithm-specific raw
+  representation. The output encoding is controlled via [option -encoding],
+  which defaults to [const hex].
+
+  [para] This function is intended for extraction of raw public key
+  material only.
+
+
+[call [cmd "ns_crypto::key type"] \
+     [opt [option "-passphrase [arg value]"]] \
+     [option "-pem [arg value]"] \
+    ]
+
+  Return the type of a key stored in PEM format.
+
+  [para] The argument to [option -pem] may be either a PEM file name or a
+  PEM string. It may contain either a public or a private key. When the
+  key is encrypted, provide the passphrase via [option -passphrase].
+
+  [para] The result is a lowercase string naming the key type as reported
+  by OpenSSL (e.g., [const rsa], [const ec], [const ed25519],
+  [const ml-kem-768]). The exact naming depends on the OpenSSL version
+  and available providers.
+
+  [para] This command is a thin wrapper around OpenSSL key type
+  introspection and does not impose its own naming scheme.
+
+[example_begin]
+ # Determine key type
+ set type [lb]ns_crypto::key type -pem /tmp/key.pem[rb]
+ if {$type eq "ec"} {
+     puts "elliptic curve key"
+ }
+[example_end]
+
+
 [call [cmd "ns_crypto::md string"] \
      [opt [option "-digest [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
