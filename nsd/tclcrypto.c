@@ -4625,6 +4625,32 @@ NsTclCryptoAeadDecryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE
  * Function Implementations: ns_crypto::key
  *======================================================================
  */
+
+/*----------------------------------------------------------------------
+ *
+ * SetResultFromRawPublicKey --
+ *
+ *      Extract raw public key material from an EVP_PKEY and set the
+ *      result in the Tcl interpreter.
+ *
+ *      For EC keys, the public key is returned as an uncompressed point
+ *      (0x04 || X || Y). For provider-based keys (e.g., EdDSA, ML-KEM),
+ *      the raw public key is obtained via OpenSSL export functions.
+ *
+ *      When available, legacy raw public key APIs are used as a fallback.
+ *
+ *      The extracted key material is encoded according to the provided
+ *      Ns_BinaryEncoding.
+ *
+ * Results:
+ *      TCL_OK on success.
+ *      TCL_ERROR if extraction fails or is not supported.
+ *
+ * Side effects:
+ *      Sets the Tcl interpreter result on success.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
 {
@@ -4710,6 +4736,29 @@ SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding 
     return TCL_ERROR;
 }
 
+/*----------------------------------------------------------------------
+ *
+ * SetResultFromRawPrivateKey --
+ *
+ *      Extract raw private key material from an EVP_PKEY and set the
+ *      result in the Tcl interpreter.
+ *
+ *      This function uses OpenSSL raw key APIs where available. Only
+ *      key types supporting raw private key export are handled. For
+ *      unsupported key types, an error is returned.
+ *
+ *      The extracted key material is encoded according to the provided
+ *      Ns_BinaryEncoding.
+ *
+ * Results:
+ *      TCL_OK on success.
+ *      TCL_ERROR if extraction fails or is not supported.
+ *
+ * Side effects:
+ *      Sets the Tcl interpreter result on success.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
 {
@@ -4737,7 +4786,28 @@ SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding
     return TCL_ERROR;
 }
 
-
+/*----------------------------------------------------------------------
+ *
+ * CryptoKeyTypeNameObj --
+ *
+ *      Helper function to obtain the type name of an EVP_PKEY as a
+ *      Tcl object.
+ *
+ *      Under OpenSSL 3, the type name is retrieved via
+ *      EVP_PKEY_get0_type_name() and normalized to lowercase.
+ *      For older versions, the type name is derived from the legacy
+ *      key identifier.
+ *
+ * Results:
+ *      Returns a Tcl_Obj containing the lowercase key type name.
+ *      Returns NULL and sets an error message in the interpreter
+ *      on failure.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static Tcl_Obj *
 CryptoKeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
 {
@@ -4781,6 +4851,26 @@ CryptoKeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
 #endif
 }
 
+/*----------------------------------------------------------------------
+ *
+ * PkeyIsType --
+ *
+ *      Helper function to test whether a given EVP_PKEY matches a
+ *      specified key type.
+ *
+ *      For OpenSSL 3, EVP_PKEY_is_a() is used with the provided type
+ *      name. For older OpenSSL versions, the check falls back to
+ *      EVP_PKEY_base_id() using the provided legacy identifier.
+ *
+ * Results:
+ *      Returns NS_TRUE when the key matches the requested type,
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static bool
 PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
 {
@@ -4793,7 +4883,32 @@ PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
 #endif
 }
 
-
+/*----------------------------------------------------------------------
+ *
+ * CryptoKeyInfoObjCmd --
+ *
+ *      Implements "ns_crypto::key info". Returns a dictionary with
+ *      information about a key provided in PEM format.
+ *
+ *      The result always contains at least the key type ("type").
+ *      Additional fields are included depending on the key type and
+ *      OpenSSL capabilities:
+ *
+ *        - "bits": key size in bits (RSA, DSA, DH, EC)
+ *        - "curve": curve name for EC keys
+ *
+ *      The command is designed for lightweight inspection and may be
+ *      extended in future versions to include additional properties.
+ *
+ * Results:
+ *      TCL_OK on success, with a Tcl dictionary as result.
+ *      TCL_ERROR on failure (e.g., invalid PEM).
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -4878,6 +4993,32 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
+/*----------------------------------------------------------------------
+ *
+ * CryptoKeyPrivObjCmd --
+ *
+ *      Implements "ns_crypto::key priv". Extracts raw private key material
+ *      from a PEM-encoded private key.
+ *
+ *      The input must contain a private key. When the key is encrypted,
+ *      a passphrase may be provided.
+ *
+ *      Raw private key extraction is supported only for key types where
+ *      OpenSSL exposes raw key material (e.g., EdDSA, ML-KEM). For other
+ *      key types (e.g., EC, RSA), the operation is not supported and
+ *      results in an error.
+ *
+ *      The output encoding is controlled via the "-encoding" option.
+ *
+ * Results:
+ *      TCL_OK on success, with encoded private key as interpreter result.
+ *      TCL_ERROR on failure or when extraction is not supported.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CryptoKeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -4913,6 +5054,33 @@ CryptoKeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
+/*----------------------------------------------------------------------
+ *
+ * CryptoKeyPubObjCmd --
+ *
+ *      Implements "ns_crypto::key pub". Extracts raw public key material
+ *      from a PEM-encoded key.
+ *
+ *      The input may be either a public or private key. When a private
+ *      key is provided, the corresponding public key is derived.
+ *
+ *      The result is returned in an algorithm-specific raw format:
+ *
+ *        - EC: uncompressed point (0x04 || X || Y)
+ *        - Provider-based keys (e.g., Ed25519, ML-KEM): exported raw key
+ *          via OpenSSL APIs
+ *
+ *      The output encoding is controlled via the "-encoding" option.
+ *
+ * Results:
+ *      TCL_OK on success, with encoded public key as interpreter result.
+ *      TCL_ERROR on failure (e.g., invalid PEM, unsupported key type).
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CryptoKeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -4947,6 +5115,30 @@ CryptoKeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     EVP_PKEY_free(pkey);
     return result;
 }
+
+/*----------------------------------------------------------------------
+ *
+ * CryptoKeyTypeObjCmd --
+ *
+ *      Implements "ns_crypto::key type". Determines the type of a key
+ *      provided in PEM format and returns it as a lowercase string.
+ *
+ *      The command accepts either a PEM file name or PEM content. When
+ *      the key is encrypted, a passphrase may be provided.
+ *
+ *      The returned type name is derived directly from OpenSSL. Under
+ *      OpenSSL 3, EVP_PKEY_get0_type_name() is used; for older versions,
+ *      the type is derived from EVP_PKEY_base_id().
+ *
+ * Results:
+ *      TCL_OK on success, with the key type set as interpreter result.
+ *      TCL_ERROR on failure (e.g., invalid PEM, unsupported key type).
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CryptoKeyTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -5405,6 +5597,13 @@ int
 NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.2 built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
+NsTclCryptoKeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
