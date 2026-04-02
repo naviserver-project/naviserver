@@ -130,7 +130,8 @@ Ns_StrTrimRight(char *chars)
  *
  * Ns_StrToLower --
  *
- *      All alphabetic characters in "chars" are changed to lowercase.
+ *      All alphabetic characters in "chars" are changed inplace 
+ *      to lowercase.
  *
  * Results:
  *      Same string as passed in.
