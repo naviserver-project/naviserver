@@ -1001,7 +1001,7 @@ NsAdpLogError(NsInterp *itPtr)
     Tcl_DString     ds;
     const AdpFrame *framePtr;
     TCL_SIZE_T      len;
-    const char     *err, *adp, *inc, *dot;
+    const char     *err, *adp, *inc;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 
@@ -1023,6 +1023,8 @@ NsAdpLogError(NsInterp *itPtr)
                 Ns_DStringPrintf(&ds, " {%s}", Tcl_GetString(framePtr->ident));
             }
         } else {
+            const char *dot;
+
             adp = Tcl_GetStringFromObj(framePtr->objv[0], &len);
             dot = NS_EMPTY_STRING;
             if (len > 150) {

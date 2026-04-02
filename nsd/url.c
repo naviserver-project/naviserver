@@ -453,7 +453,7 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
          * every non-accepted scheme here (the remainding URL must not have a
          * colon before a slash.
          */
-        char *p;
+        const char *p;
 
         for (p = end; *p != '\0' && *p != '/'; p++) {
             if (*p == ':') {

@@ -33,7 +33,7 @@ typedef enum {
 static int Pipe(int *fds, int sockpair)
     NS_GNUC_NONNULL(1);
 
-static void Abort(int signal)
+static void Abort(int sig)
 #ifndef NS_TCL_PRE86
     NS_GNUC_NORETURN
 #endif

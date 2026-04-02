@@ -132,7 +132,6 @@ void
 NsClsCleanup(Conn *connPtr)
 {
     int tries, retry;
-    void *arg;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
 
@@ -144,7 +143,8 @@ NsClsCleanup(Conn *connPtr)
         i = NS_CONN_MAXCLS;
         while (i-- > 0u) {
             if (cleanupProcs[i] != NULL && connPtr->cls[i] != NULL) {
-                arg = connPtr->cls[i];
+                void *arg = connPtr->cls[i];
+
                 connPtr->cls[i] = NULL;
                 (*cleanupProcs[i])(arg);
                 retry = 1;

@@ -216,11 +216,11 @@ typedef struct NsAtomSpec {
 } NsAtomSpec;
 
 NS_EXTERN Ns_ReturnCode
-NsAtomsInit(const NsAtomSpec *specs, size_t nSpecs, Tcl_Obj **atoms)
+NsAtomsInit(const NsAtomSpec *specs, size_t nSpecs, Tcl_Obj **outAtoms)
     NS_GNUC_NONNULL(1,3);
 
 NS_EXTERN void
-NsAtomsFreeOwned(const NsAtomSpec *specs, size_t nSpecs, Tcl_Obj **atoms)
+NsAtomsFreeOwned(const NsAtomSpec *specs, size_t nSpecs, Tcl_Obj **atomsVec)
     NS_GNUC_NONNULL(1,3);
 
 #ifdef __cplusplus

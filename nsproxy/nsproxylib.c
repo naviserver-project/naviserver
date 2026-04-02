@@ -540,7 +540,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
 {
     Tcl_Interp  *interp;
     Worker        proc;
-    int          result, max;
+    int          max;
     Tcl_DString  in, out, scratch;
     const char  *script, *user;
     char        *uarg = NULL;
@@ -683,6 +683,8 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
         if (len == 0) {
             Export(NULL, TCL_OK, &out);
         } else {
+            int result;
+
             script = Tcl_DStringValue(&in) + sizeof(Req);
 
             if (active != NULL) {

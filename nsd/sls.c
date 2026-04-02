@@ -455,7 +455,6 @@ NsTclSlsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 void
 NsSlsCleanup(Sock *sockPtr)
 {
-    void *arg;
     int   tries, retry;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
@@ -467,7 +466,8 @@ NsSlsCleanup(Sock *sockPtr)
         retry = 0;
         while (i-- > 0u) {
             if (cleanupProcs[i] != NULL && sockPtr->sls[i] != NULL) {
-                arg = sockPtr->sls[i];
+                void *arg = arg = sockPtr->sls[i];
+
                 sockPtr->sls[i] = NULL;
                 (*cleanupProcs[i])(arg);
                 retry = 1;

@@ -377,8 +377,6 @@ FillBuf(Stream *sPtr)
 static bool
 GetLine(Stream *sPtr, Tcl_DString *dsPtr)
 {
-    char   *eol;
-    size_t  n;
     bool    success = NS_FALSE;
 
     NS_NONNULL_ASSERT(sPtr != NULL);
@@ -387,7 +385,9 @@ GetLine(Stream *sPtr, Tcl_DString *dsPtr)
     Tcl_DStringSetLength(dsPtr, 0);
     do {
         if (sPtr->cnt > 0u) {
-            eol = strchr(sPtr->ptr, INTCHAR('\n'));
+            char *eol = strchr(sPtr->ptr, INTCHAR('\n'));
+            size_t  n;
+
             if (eol == NULL) {
                 n = sPtr->cnt;
             } else {
