@@ -554,8 +554,9 @@ be in memory). In order to compute HMACs on large data, use
   [para] The dictionary always contains at least:
 
   [list_begin itemized]
-  [item] [const type] — the key type as returned by
-  [cmd "ns_crypto::key type"]
+  [item] [const type] — the key type as returned by [cmd "ns_crypto::key type"]
+  [item] [const signature] — boolean indicating whether the key
+         supports signature operations
   [list_end]
 
   [para] Additional fields may include:
@@ -783,6 +784,161 @@ Returns the specified number of random bytes in the specified encoding
 [example_begin]
  % ns_crypto::randombytes 20
  3191eb4360a3dc9b5ef667641b264d43aa1019aa
+[example_end]
+
+
+[call [cmd "ns_crypto::signature generate"] \
+     [opt [option "-name ml-dsa-44|ml-dsa-65|ml-dsa-87"]] \
+     [opt [option "-outfile [arg value]"]] \
+    ]
+
+  Generate a new signature key pair.
+
+  [para] This command provides key generation for signature algorithms
+  (e.g., ML-DSA) analogous to [cmd "ns_crypto::kem generate"] for
+  key encapsulation mechanisms and [cmd "ns_crypto::eckey generate"]
+  for elliptic curve keys.
+
+  [para] The key type is selected via [option -name]. The available
+  algorithms depend on the OpenSSL version and configured providers.
+  Typical values include [const ml-dsa-44], [const ml-dsa-65], and
+  [const ml-dsa-87].
+
+  [para] The generated key is returned as a PEM encoded private key.
+  When [option "-outfile"] is specified, the key is written to the
+  provided file instead.
+
+  [para] The generated PEM contains the private key; the corresponding
+  public key can be obtained via [cmd "ns_crypto::signature pub"].
+
+[example_begin]
+ # Generate a new ML-DSA key (default)
+ set pem [lb]ns_crypto::signature generate[rb]
+ 
+ # Generate a specific key and write to file
+ ns_crypto::signature generate -name ml-dsa-65 -outfile /tmp/sigkey.pem
+[example_end]
+
+
+[call [cmd "ns_crypto::signature pub"] \
+     [opt [option "-passphrase [arg value]"]] \
+     [opt [option "-outfile [arg value]"]] \
+     [option "-pem [arg value]"] \
+    ]
+
+  Return the public key corresponding to a signature key.
+
+  [para] This command is analogous to [cmd "ns_crypto::kem pub"] and
+  [cmd "ns_crypto::eckey pub"], providing a uniform interface for
+  extracting public keys from PEM-encoded key material.
+
+  [para] The argument to [option -pem] may be either a PEM file name or
+  a PEM string containing a private or public key. When the private key
+  is encrypted, provide the passphrase via [option -passphrase].
+
+  [para] The result is returned as a PEM encoded public key
+  ([const "BEGIN PUBLIC KEY"]). When [option "-outfile"] is specified,
+  the result is written to the provided file instead.
+
+[example_begin]
+ # Extract public key from private key
+ set pubpem [lb]ns_crypto::signature pub -pem /tmp/sigkey.pem[rb]
+
+ # Write public key to file
+ ns_crypto::signature pub -pem /tmp/sigkey.pem -outfile /tmp/sigpub.pem
+[example_end]
+
+
+[call [cmd "ns_crypto::signature sign"] \
+     [opt [option -binary]] \
+     [opt [option "-digest [arg value]"]] \
+     [opt [option "-encoding hex|base64url|base64|binary"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [option "-pem [arg value]"] \
+     [opt [option "--"]] \
+     [arg message] \
+    ]
+
+  Compute a digital signature over the provided message.
+
+  [para] This command provides a dedicated interface for signature
+  operations and is closely related to the [option "-sign"] option of
+  [cmd "ns_crypto::md string"]. While both commands perform similar
+  operations, this command focuses exclusively on signatures and
+  automatically adapts to modern algorithms (e.g., ML-DSA, Ed25519)
+  without requiring special handling.
+
+  [para] When the option [option -binary] is specified, it applies to
+  the input arguemnt [arg message].
+
+  [para] The argument to [option -pem] may be either a PEM file name or
+  a PEM string containing a private key. When the private key is
+  encrypted, provide the passphrase via [option -passphrase].
+
+  [para] The result is the signature encoded according to
+  [option -encoding], which defaults to [const hex].
+
+  [para] The option [option -digest] specifies the message digest
+  algorithm used for signature computation (e.g., [const sha256],
+  [const sha384]). For algorithms with built-in hashing (e.g.,
+  Ed25519 or ML-DSA), no external digest is used and the option is
+  ignored.
+
+[example_begin]
+ # Sign message with default encoding (hex)
+ set sig [lb]ns_crypto::signature sign -pem /tmp/sigkey.pem "hello"[rb]
+
+ # Sign message with base64url encoding
+ set sig [lb]ns_crypto::signature sign -encoding base64url \
+              -pem /tmp/sigkey.pem "hello"[rb]
+[example_end]
+
+
+[call [cmd "ns_crypto::signature verify"] \
+     [opt [option -binary]] \
+     [opt [option "-digest [arg value]"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [option "-pem [arg value]"] \
+     [option "-signature [arg value]"] \
+     [opt [option "--"]] \
+     [arg message] \
+    ]
+
+  Verify a digital signature over the provided message.
+
+  [para] This command is the counterpart to
+  [cmd "ns_crypto::signature sign"] and corresponds to the
+  [option "-verify"] option of [cmd "ns_crypto::md string"].
+
+  [para] The argument to [option -pem] may be either a PEM file name or
+  a PEM string containing a public or private key. When the private key
+  is encrypted, provide the passphrase via [option -passphrase].
+
+  [para] When the option [option -binary] is specified, it applies to
+  the input arguemnt [arg message].
+
+  [para] The argument to [option -signature] must be provided as binary
+  data. When the signature is stored in textual form (e.g., hex or
+  base64url), it must be decoded before calling this command.
+
+  [para] The result is [const 1] when the signature is valid and
+  [const 0] when the signature is invalid.
+
+  [para] The option [option -digest] specifies the message digest
+  algorithm for verification. For algorithms with built-in hashing,
+  this option is ignored.
+
+[example_begin]
+ # Verify signature (hex-encoded input)
+ set sig [lb]ns_crypto::signature sign -pem /tmp/sigkey.pem "hello"[rb]
+ set ok  [lb]ns_crypto::signature verify -pem /tmp/sigkey.pem \
+              -signature [lb]binary decode hex $sig[rb] "hello"[rb]
+
+ # Verify base64url signature
+ set sig [lb]ns_crypto::signature sign -encoding base64url \
+              -pem /tmp/sigkey.pem "hello"[rb]
+ set ok  [lb]ns_crypto::signature verify -pem /tmp/sigkey.pem \
+              -signature [lb]ns_base64urldecode -binary $sig[rb] "hello"[rb]
 [example_end]
 
 

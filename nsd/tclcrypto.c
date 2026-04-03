@@ -94,7 +94,6 @@ static int PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName,
 static int WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, const char *outfileName, bool wantPem)
     NS_GNUC_NONNULL(1,2);
 
-
 static int SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
 
@@ -106,6 +105,33 @@ static Tcl_Obj *CryptoKeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
 
 static bool PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
     NS_GNUC_NONNULL(1,2);
+
+static bool PkeySupportsSignature(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static bool PkeyIsMlDsa(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static bool PkeyUsesExternalDigest(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static int GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
+                                 const char *digestName,
+                                 const EVP_MD **mdPtr)
+    NS_GNUC_NONNULL(1,2,4);
+
+static int SignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
+                         const unsigned char *message, size_t messageLength,
+                         const EVP_MD *md, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2,3);
+
+static int SignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
+                           const unsigned char *message, size_t messageLength,
+                           const unsigned char *signature, size_t signatureLength,
+                           const EVP_MD *md)
+    NS_GNUC_NONNULL(1,2,3,5);
+
+
 
 # ifndef OPENSSL_NO_EC
 static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
@@ -162,19 +188,23 @@ static TCL_OBJCMDPROC_T CryptoKeyPrivObjCmd;
 static TCL_OBJCMDPROC_T CryptoKeyPubObjCmd;
 static TCL_OBJCMDPROC_T CryptoKeyTypeObjCmd;
 
+static TCL_OBJCMDPROC_T CryptoSignatureSignObjCmd;
+static TCL_OBJCMDPROC_T CryptoSignatureVerifyObjCmd;
+
 # ifndef OPENSSL_NO_EC
 static TCL_OBJCMDPROC_T CryptoEckeyFromCoordsObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyPubObjCmd;
-
 #  ifndef HAVE_OPENSSL_PRE_1_1
 static TCL_OBJCMDPROC_T CryptoEckeySharedsecretObjCmd;
 #  endif
-
 #  ifdef HAVE_OPENSSL_EC_PRIV2OCT
 static TCL_OBJCMDPROC_T CryptoEckeyPrivObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyImportObjCmd;
 #  endif
+
+static EVP_PKEY *GetPkeyFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
+    NS_GNUC_NONNULL(1,2);
 # endif
 
 # ifdef HAVE_OPENSSL_3_5
@@ -183,8 +213,26 @@ static TCL_OBJCMDPROC_T CryptoKemPubObjCmd;
 static TCL_OBJCMDPROC_T CryptoKemEncapsulateObjCmd;
 static TCL_OBJCMDPROC_T CryptoKemDecapsulateObjCmd;
 
-static int       KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding) NS_GNUC_NONNULL(1,2);
-static bool      PkeyIsMlKem(EVP_PKEY *pkey) NS_GNUC_NONNULL(1);
+static TCL_OBJCMDPROC_T CryptoSignatureGenerateObjCmd;
+static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
+#endif
+
+static int GeneratePrivateKeyPem(Tcl_Interp *interp,
+                                 const char *typeName,
+                                 const char *what,
+                                 const char *resultWhat,
+                                 const char *outfileName)
+    NS_GNUC_NONNULL(1,2,3,4);
+static int WritePublicKeyPem(Tcl_Interp *interp,
+                             EVP_PKEY   *pkey,
+                             const char *what,
+                             const char *resultWhat,
+                             const char *outfileName)
+    NS_GNUC_NONNULL(1,2,3,4);
+static int KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2);
+static bool PkeyIsMlKem(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
 #endif
 
 /*
@@ -563,6 +611,105 @@ WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
         }
     }
 }
+
+# ifdef HAVE_OPENSSL_3_5
+static int
+GeneratePrivateKeyPem(Tcl_Interp *interp,
+                      const char *typeName,
+                      const char *what,
+                      const char *resultWhat,
+                      const char *outfileName)
+{
+    int           result;
+    EVP_PKEY_CTX *ctx = NULL;
+    EVP_PKEY     *pkey = NULL;
+    BIO          *bio = NULL;
+
+    ctx = EVP_PKEY_CTX_new_from_name(NULL, typeName, NULL);
+    if (ctx == NULL) {
+        Ns_TclPrintfResult(interp,
+                           "could not create context for %s \"%s\"",
+                           what, typeName);
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (EVP_PKEY_keygen_init(ctx) <= 0) {
+        Ns_TclPrintfResult(interp,
+                           "could not initialize key generation for %s \"%s\"",
+                           what, typeName);
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (EVP_PKEY_generate(ctx, &pkey) <= 0) {
+        Ns_TclPrintfResult(interp,
+                           "could not generate %s key \"%s\"",
+                           what, typeName);
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    bio = PEMOpenWriteStream(interp, outfileName);
+    if (bio == NULL) {
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (PEM_write_bio_PrivateKey(bio, pkey, NULL, NULL, 0, NULL, NULL) != 1) {
+        Ns_TclPrintfResult(interp,
+                           "could not write %s key \"%s\"",
+                           what, typeName);
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    result = PEMWriteResult(interp, bio, outfileName, resultWhat);
+
+done:
+    if (bio != NULL) {
+        BIO_free(bio);
+    }
+    if (pkey != NULL) {
+        EVP_PKEY_free(pkey);
+    }
+    if (ctx != NULL) {
+        EVP_PKEY_CTX_free(ctx);
+    }
+
+    return result;
+}
+
+static int
+WritePublicKeyPem(Tcl_Interp *interp,
+                  EVP_PKEY   *pkey,
+                  const char *what,
+                  const char *resultWhat,
+                  const char *outfileName)
+{
+    BIO *bio = NULL;
+    int  result;
+
+    bio = PEMOpenWriteStream(interp, outfileName);
+    if (bio == NULL) {
+        return TCL_ERROR;
+    }
+
+    if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
+        Ns_TclPrintfResult(interp,
+                           "could not write %s public key",
+                           what);
+        BIO_free(bio);
+        return TCL_ERROR;
+    }
+
+    result = PEMWriteResult(interp, bio, outfileName, resultWhat);
+
+    BIO_free(bio);
+    return result;
+}
+
+# endif
 
 /*
  *----------------------------------------------------------------------
@@ -1809,11 +1956,11 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         if (result != TCL_ERROR) {
             unsigned char        digestBuffer[EVP_MAX_MD_SIZE], *digestBytes = digestBuffer;
             char                 digestChars[EVP_MAX_MD_SIZE*2 + 1], *outputBuffer = digestChars;
-            EVP_MD_CTX          *mdctx;
             const unsigned char *messageString;
             TCL_SIZE_T           messageLength;
             unsigned int         mdLength = 0u;
             Tcl_DString          messageDs, signatureDs;
+            bool                 haveDirectResult = NS_FALSE;
 
             /*
              * All input parameters are valid, get data.
@@ -1827,116 +1974,46 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             /*
              * Call the Digest or Signature computation
              */
-            mdctx = NS_EVP_MD_CTX_new();
+
             if (signKeyFile != NULL || verifyKeyFile != NULL) {
-                EVP_PKEY_CTX  *pctx;
-                int            r;
-
                 if (signKeyFile != NULL) {
-                    r =  EVP_DigestSignInit(mdctx, &pctx, digest.md, NULL /*engine*/, pkey);
+                    result = SignatureSign(interp, pkey,
+                                           messageString, (size_t)messageLength,
+                                           digest.md, encoding);
+                    if (result == TCL_OK) {
+                        haveDirectResult = NS_TRUE;
+                    }
                 } else {
-                    r =  EVP_DigestVerifyInit(mdctx, &pctx, digest.md, NULL /*engine*/, pkey);
-                }
+                    TCL_SIZE_T           signatureLength;
+                    const unsigned char *signatureString;
 
-                if (r == 0) {
-                    Ns_TclPrintfResult(interp, "could not initialize signature context");
-                    result = TCL_ERROR;
-                    pctx = NULL;
-                } else {
-                    size_t mdSize;
+                    signatureString = Ns_GetBinaryString(signatureObj, 1,
+                                                         &signatureLength,
+                                                         &signatureDs);
 
-                    if (signKeyFile != NULL) {
-                        /*
-                         * A sign operation was requested.
-                         */
-                        r = EVP_DigestSignUpdate(mdctx, messageString, (size_t)messageLength);
-
-                        if (r == 1) {
-                            r = EVP_DigestSignFinal(mdctx, NULL, &mdSize);
-                            if (r == 1) {
-                                /*
-                                 * Everything was fine, get a buffer
-                                 * with the requested size and use
-                                 * this as "digest".
-                                 */
-                                Tcl_DStringSetLength(&signatureDs, (TCL_SIZE_T)mdSize);
-                                digestBytes = (unsigned char*)signatureDs.string;
-
-                                r = EVP_DigestSignFinal(mdctx, digestBytes, &mdSize);
-
-                                outputBuffer = ns_malloc(mdSize * 2u + 1u);
-                                mdLength = (unsigned int)mdSize;
-                                mdctx = NULL;
-                            } else {
-                                char errorBuffer[256];
-
-                                Ns_TclPrintfResult(interp, "error while signing input: %s",
-                                                   ERR_error_string(ERR_get_error(), errorBuffer));
-                                result = TCL_ERROR;
-                                mdctx = NULL;
-                            }
-                        }
-                        if (r != 1) {
-                            Ns_TclPrintfResult(interp, "error while signing input");
-                            result = TCL_ERROR;
-                        }
-                    } else {
-                        /*
-                         * A signature verification was requested.
-                         */
-                        r = EVP_DigestVerifyUpdate(mdctx,
-                                                   messageString,
-                                                   (size_t)messageLength);
-
-                        if (r == 1) {
-                            TCL_SIZE_T           signatureLength;
-                            const unsigned char *signatureString;
-
-                            signatureString = Ns_GetBinaryString(signatureObj, 1,
-                                                                 &signatureLength,
-                                                                 &signatureDs);
-                            r = EVP_DigestVerifyFinal(mdctx,
-                                                      signatureString,
-                                                      (size_t)signatureLength);
-
-                            if (r == 1) {
-                                /*
-                                 * The signature was successfully verified.
-                                 */
-                                resultObj = Tcl_NewIntObj(1);
-                                mdctx = NULL;
-                            } else if (r == 0) {
-                                /*
-                                 * Signature verification failure.
-                                 */
-                                resultObj = Tcl_NewIntObj(0);
-                                mdctx = NULL;
-                            } else {
-                                Ns_TclPrintfResult(interp, "error while verifying signature");
-                                result = TCL_ERROR;
-                            }
-                        } else {
-                            Ns_TclPrintfResult(interp, "error while updating verify digest");
-                            result = TCL_ERROR;
-                        }
+                    result = SignatureVerify(interp, pkey,
+                                             messageString, (size_t)messageLength,
+                                             signatureString, (size_t)signatureLength,
+                                             digest.md);
+                    if (result == TCL_OK) {
+                        haveDirectResult = NS_TRUE;
                     }
                 }
-                if (pctx != NULL) {
-                    EVP_PKEY_CTX_free(pctx);
-                }
+
                 EVP_PKEY_free(pkey);
 
             } else {
+                EVP_MD_CTX *mdctx = NS_EVP_MD_CTX_new();
+
                 EVP_DigestInit_ex(mdctx, digest.md, NULL);
                 EVP_DigestUpdate(mdctx, messageString, (unsigned long)messageLength);
                 EVP_DigestFinal_ex(mdctx, digestBytes, &mdLength);
+                if (mdctx != NULL) {
+                    NS_EVP_MD_CTX_free(mdctx);
+                }
             }
 
-            if (mdctx != NULL) {
-                NS_EVP_MD_CTX_free(mdctx);
-            }
-
-            if (result == TCL_OK) {
+            if (result == TCL_OK && !haveDirectResult) {
                 /*
                  * Convert the result to the requested output format,
                  * unless we have already some resultObj.
@@ -1947,6 +2024,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
 
                 Tcl_SetObjResult(interp, resultObj);
             }
+
             if (outputBuffer != digestChars) {
                 ns_free(outputBuffer);
             }
@@ -2929,6 +3007,47 @@ SetResultFromEC_POINT(
 /*
  *----------------------------------------------------------------------
  *
+ * GetPkeyFromEcKey --
+ *
+ *      Wrap an EC_KEY object into an EVP_PKEY container.
+ *
+ *      Ownership of the EC_KEY is transferred to the returned EVP_PKEY
+ *      on success. The caller must not free the EC_KEY separately after
+ *      a successful call.
+ *
+ * Results:
+ *      EVP_PKEY * on success.
+ *      NULL on failure, with an error message set in the interpreter.
+ *
+ * Side effects:
+ *      Transfers ownership of EC_KEY to EVP_PKEY.
+ *      Sets interpreter result on error.
+ *
+ *----------------------------------------------------------------------
+ */
+static EVP_PKEY *
+GetPkeyFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
+{
+    EVP_PKEY *pkey = EVP_PKEY_new();
+
+    if (pkey == NULL) {
+        Ns_TclPrintfResult(interp, "EVP_PKEY_new failed");
+        return NULL;
+    }
+
+    if (EVP_PKEY_assign_EC_KEY(pkey, eckey) != 1) {
+        EVP_PKEY_free(pkey);
+        Ns_TclPrintfResult(interp, "EVP_PKEY_assign_EC_KEY failed");
+        return NULL;
+    }
+
+    return pkey;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * CryptoEckeyPubObjCmd -- Subcommand of NsTclCryptoEckeyObjCmd
  *
  *        Implements "ns_crypto::eckey pub". Subcommand to obtain the
@@ -2943,7 +3062,6 @@ SetResultFromEC_POINT(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -2984,7 +3102,6 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         EC_KEY            *eckey = NULL;
         const EC_POINT    *ecpoint = NULL;
-        EVP_PKEY          *pkey = NULL;
         Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
         /*
          * The .pem file does not have a separate pub-key included,
@@ -3004,7 +3121,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             goto done;
         }
 
-        if (formatInt == 0) {
+        if (formatInt == 0 /* raw */) {
             Tcl_DString  ds;
             BN_CTX      *bn_ctx = BN_CTX_new();
 
@@ -3015,28 +3132,30 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             result = TCL_OK;
 
         } else {
-            pkey = EVP_PKEY_new();
-            if (pkey == NULL) {
-                Ns_TclPrintfResult(interp, "EVP_PKEY_new failed");
-                result = TCL_ERROR;
-                goto done;
-            }
+            EVP_PKEY *pkey = GetPkeyFromEcKey(interp, eckey);
 
-            if (EVP_PKEY_assign_EC_KEY(pkey, eckey) != 1) {
-                Ns_TclPrintfResult(interp, "EVP_PKEY_assign_EC_KEY failed");
+            if (pkey == NULL) {
                 result = TCL_ERROR;
                 goto done;
             }
             eckey = NULL; /* now owned by pkey */
 
-            result = WritePublicKey(interp, pkey, outfileName, formatInt == 1);
+            if (formatInt == 1 /* pem */) {
+                result = WritePublicKeyPem(interp, pkey,
+                                           "EC",
+                                           "EC public key",
+                                           outfileName);
+            } else if (formatInt == 2 /* der */) {
+                result = WritePublicKey(interp, pkey, outfileName, NS_FALSE);
+            } else {
+                Ns_TclPrintfResult(interp, "unexpected format code");
+                result = TCL_ERROR; /* should not happen */
+            }
+            EVP_PKEY_free(pkey);
         }
     done:
         if (eckey != NULL) {
             EC_KEY_free(eckey);
-        }
-        if (pkey != NULL) {
-            EVP_PKEY_free(pkey);
         }
     }
 
@@ -3291,20 +3410,15 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         /*
          * Convert to EVP_PKEY and serialize as SPKI.
          */
-        pkey = EVP_PKEY_new();
+        pkey = GetPkeyFromEcKey(interp, eckey);
         if (pkey == NULL) {
-            Ns_TclPrintfResult(interp, "EVP_PKEY_new failed");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-        if (EVP_PKEY_assign_EC_KEY(pkey, eckey) != 1) {
-            Ns_TclPrintfResult(interp, "EVP_PKEY_assign_EC_KEY failed");
             result = TCL_ERROR;
             goto done_ec;
         }
         eckey = NULL; /* now owned by pkey */
 
         result = WritePublicKey(interp, pkey, outfileName, wantPem);
+
     done_ec:
         if (eckey != NULL) { EC_KEY_free(eckey); }
         if (pkey != NULL)  { EVP_PKEY_free(pkey); }
@@ -3718,14 +3832,10 @@ static int
 CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, kemINamedx = 1;
-    const char        *nameString = "ml-kem-768";
-    const char        *outfileName = NULL;
-    EVP_PKEY_CTX      *ctx = NULL;
-    EVP_PKEY          *pkey = NULL;
-    BIO               *bio = NULL;
+    int         kemINamedx = 1 /* ml-kem-768 */ ;
+    const char *outfileName = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-name",     Ns_ObjvIndex, &kemINamedx,  kemNames},
+        {"-name",     Ns_ObjvIndex,  &kemINamedx,  kemNames},
         {"-outfile",  Ns_ObjvString, &outfileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -3738,59 +3848,11 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-    ctx = EVP_PKEY_CTX_new_from_name(NULL, kemNameCanonical[kemINamedx], NULL);
-    if (ctx == NULL) {
-        Ns_TclPrintfResult(interp,
-                           "could not create context for KEM \"%s\"",
-                           nameString);
-        result = TCL_ERROR;
-        goto done;
-    }
-
-    if (EVP_PKEY_keygen_init(ctx) <= 0) {
-        Ns_TclPrintfResult(interp,
-                           "could not initialize key generation for KEM \"%s\"",
-                           nameString);
-        result = TCL_ERROR;
-        goto done;
-    }
-
-    if (EVP_PKEY_generate(ctx, &pkey) <= 0) {
-        Ns_TclPrintfResult(interp,
-                           "could not generate KEM key \"%s\"",
-                           nameString);
-        result = TCL_ERROR;
-        goto done;
-    }
-
-    bio = PEMOpenWriteStream(interp, outfileName);
-    if (bio == NULL) {
-        result = TCL_ERROR;
-        goto done;
-    }
-
-    if (PEM_write_bio_PrivateKey(bio, pkey, NULL, NULL, 0, NULL, NULL) != 1) {
-        Ns_TclPrintfResult(interp,
-                           "could not write KEM key \"%s\"",
-                           nameString);
-        result = TCL_ERROR;
-        goto done;
-    }
-
-    result = PEMWriteResult(interp, bio, outfileName, "generated KEM key");
-
- done:
-    if (bio != NULL) {
-        BIO_free(bio);
-    }
-    if (pkey != NULL) {
-        EVP_PKEY_free(pkey);
-    }
-    if (ctx != NULL) {
-        EVP_PKEY_CTX_free(ctx);
-    }
-
-    return result;
+    return GeneratePrivateKeyPem(interp,
+                                 kemNameCanonical[kemINamedx],
+                                 "KEM",
+                                 "generated KEM key",
+                                 outfileName);
 }
 
 
@@ -3824,50 +3886,30 @@ CryptoKemPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {"!-pem",       Ns_ObjvString, &pem,        NULL},
         {NULL, NULL, NULL, NULL}
     };
-    /*
-      ns_crypto::kem pub -pem /tmp/mlkem.pem -outfile /tmp/pub.pem
-      ns_crypto::kem pub -pem $pemString
-    */
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-        EVP_PKEY  *pkey;
+        EVP_PKEY *pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
 
-        pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
         if (pkey == NULL) {
-            return TCL_ERROR;
-        }
-
-        if (!PkeyIsMlKem(pkey)) {
-            Ns_TclPrintfResult(interp, "provided PEM does not contain an ML-KEM key");
             result = TCL_ERROR;
-            goto done;
+
+        } else if (!PkeyIsMlKem(pkey)) {
+            Ns_TclPrintfResult(interp, "provided PEM does not contain an ML-KEM key");
+            EVP_PKEY_free(pkey);
+            result = TCL_ERROR;
+
+        } else {
+            result = WritePublicKeyPem(interp,
+                                       pkey,
+                                       "KEM",
+                                       "generated KEM public key",
+                                       outfileName);
+            EVP_PKEY_free(pkey);
         }
-
-        {
-            BIO *bio = PEMOpenWriteStream(interp, outfileName);
-            if (bio == NULL) {
-                result = TCL_ERROR;
-
-            } else if (PEM_write_bio_PUBKEY(bio, pkey) != 1) {
-                Ns_TclPrintfResult(interp, "could not write KEM public key");
-                result = TCL_ERROR;
-
-            } else {
-                result = PEMWriteResult(interp, bio, outfileName, "KEM public key");
-            }
-
-            if (bio != NULL) {
-                BIO_free(bio);
-            }
-        }
-
-    done:
-        EVP_PKEY_free(pkey);
     }
-
     return result;
 }
 
@@ -4174,7 +4216,6 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     return result;
 }
-
 
 
 /*
@@ -4985,6 +5026,10 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }
         }
 
+        Tcl_DictObjPut(NULL, resultObj,
+                       NsAtomObj(NS_ATOM_SIGNATURE),
+                       Tcl_NewIntObj(PkeySupportsSignature(pkey)));
+
         Tcl_SetObjResult(interp, resultObj);
         result = TCL_OK;
     done:
@@ -5174,6 +5219,7 @@ CryptoKeyTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5203,6 +5249,685 @@ NsTclCryptoKeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
+
+/*======================================================================
+ * Function Implementations: ns_crypto::key
+ *======================================================================
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyIsMlDsa --
+ *
+ *      Determine whether the provided EVP_PKEY represents an ML-DSA
+ *      (post-quantum signature) key.
+ *
+ * Results:
+ *      NS_TRUE  if the key is of type ML-DSA (e.g., ml-dsa-44/65/87).
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeyIsMlDsa(EVP_PKEY *pkey)
+{
+# ifdef HAVE_OPENSSL_3
+    const char *name = EVP_PKEY_get0_type_name(pkey);
+    return (name != NULL && strncmp(name, "ML-DSA-", 7) == 0);
+# else
+    return NS_FALSE;
+# endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySupportsSignature --
+ *
+ *      Determine whether the provided EVP_PKEY supports signing and
+ *      verification operations.
+ *
+ *      This includes classical algorithms (RSA, DSA, EC), modern raw
+ *      signature schemes (Ed25519, Ed448), and post-quantum schemes
+ *      (e.g., ML-DSA).
+ *
+ * Results:
+ *      NS_TRUE  if the key supports signature operations.
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeySupportsSignature(EVP_PKEY *pkey)
+{
+     return (PkeyIsMlDsa(pkey)
+            || PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
+            || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA)
+            || PkeyIsType(pkey, "EC",  EVP_PKEY_EC)
+# ifdef EVP_PKEY_ED25519
+            || PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)
+# endif
+# ifdef EVP_PKEY_ED448
+            || PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)
+# endif
+           );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyUsesExternalDigest --
+ *
+ *      Determine whether the provided key type requires an external
+ *      message digest (hash function) when performing signature
+ *      operations.
+ *
+ *      Classical algorithms such as RSA, DSA, and ECDSA require an
+ *      external digest (e.g., SHA-256), while modern algorithms such
+ *      as Ed25519, Ed448, and ML-DSA perform hashing internally and
+ *      must be used with a NULL digest.
+ *
+ * Results:
+ *      NS_TRUE  if an external digest must be provided.
+ *      NS_FALSE if the algorithm uses an internal digest.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeyUsesExternalDigest(EVP_PKEY *pkey)
+{
+    return (PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
+            || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA)
+            || PkeyIsType(pkey, "EC",  EVP_PKEY_EC));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetDigestForSignature --
+ *
+ *      Determine the effective digest to be used for signature
+ *      operations based on the requested digest and the key type.
+ *
+ *      For key types that require an external digest (e.g., RSA, EC),
+ *      the provided digest is returned.
+ *
+ *      For key types with internal hashing (e.g., Ed25519, ML-DSA),
+ *      the function enforces a NULL digest and may raise an error if
+ *      a non-NULL digest was explicitly requested.
+ *
+ * Results:
+ *      Standard Tcl result
+ *
+ * Side effects:
+ *      May set the Tcl interpreter result in case of invalid digest
+ *      usage for the given key type.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
+                      const char *digestName,
+                      const EVP_MD **mdPtr)
+{
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(pkey != NULL);
+    NS_NONNULL_ASSERT(mdPtr != NULL);
+
+    *mdPtr = NULL;
+
+    if (!PkeySupportsSignature(pkey)) {
+        Ns_TclPrintfResult(interp, "key type does not support signatures");
+        return TCL_ERROR;
+    }
+
+    if (!PkeyUsesExternalDigest(pkey)) {
+        if (digestName != NULL) {
+            Ns_TclPrintfResult(interp,
+                               "digest specification is not supported for this key type");
+            return TCL_ERROR;
+        }
+        return TCL_OK;
+    }
+
+    if (digestName == NULL) {
+        digestName = "sha256";
+    }
+
+    *mdPtr = EVP_get_digestbyname(digestName);
+    if (*mdPtr == NULL) {
+        Ns_TclPrintfResult(interp, "unknown digest \"%s\"", digestName);
+        return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SignatureSign --
+ *
+ *      Compute a digital signature over the provided message using
+ *      the specified private key.
+ *
+ *      The function automatically selects the correct signing mode
+ *      depending on the key type:
+ *
+ *        - For classical algorithms (RSA, DSA, EC), an external digest
+ *          is applied using EVP_DigestSign*().
+ *
+ *        - For modern algorithms (Ed25519, Ed448, ML-DSA), the message
+ *          is passed directly to EVP_DigestSign*() with a NULL digest.
+ *
+ *      The resulting signature is returned in the Tcl interpreter
+ *      result, encoded according to the requested output encoding.
+ *
+ * Results:
+ *      TCL_OK on success, with the encoded signature as result.
+ *      TCL_ERROR on failure, with an error message set.
+ *
+ * Side effects:
+ *      Allocates temporary OpenSSL contexts and buffers.
+ *      Sets the Tcl interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
+              const unsigned char *message, size_t messageLength,
+              const EVP_MD *md, Ns_BinaryEncoding encoding)
+{
+    int            result = TCL_ERROR;
+    EVP_MD_CTX    *mdctx = NULL;
+    EVP_PKEY_CTX  *pctx = NULL;
+    size_t         sigLen = 0u;
+    unsigned char *sig = NULL;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(pkey != NULL);
+    NS_NONNULL_ASSERT(message != NULL);
+
+    mdctx = EVP_MD_CTX_new();
+    if (mdctx == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate message digest context");
+        goto done;
+    }
+
+    if (EVP_DigestSignInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
+        Ns_TclPrintfResult(interp, "could not initialize signature generation");
+        goto done;
+    }
+
+    if (EVP_DigestSign(mdctx, NULL, &sigLen, message, messageLength) <= 0) {
+        Ns_TclPrintfResult(interp, "could not determine signature length");
+        goto done;
+    }
+
+    sig = ns_malloc(sigLen);
+    if (sig == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate signature buffer");
+        goto done;
+    }
+
+    if (EVP_DigestSign(mdctx, sig, &sigLen, message, messageLength) <= 0) {
+        Ns_TclPrintfResult(interp, "could not create signature");
+        goto done;
+    }
+
+    Tcl_SetObjResult(interp, NsEncodedObj(sig, sigLen, NULL, encoding));
+    result = TCL_OK;
+
+done:
+    if (sig != NULL) {
+        ns_free(sig);
+    }
+    if (mdctx != NULL) {
+        EVP_MD_CTX_free(mdctx);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SignatureVerify --
+ *
+ *      Verify a digital signature over the provided message using
+ *      the specified public or private key.
+ *
+ *      The function automatically selects the correct verification
+ *      mode depending on the key type:
+ *
+ *        - For classical algorithms (RSA, DSA, EC), an external digest
+ *          is applied using EVP_DigestVerify*().
+ *
+ *        - For modern algorithms (Ed25519, Ed448, ML-DSA), the message
+ *          is passed directly to EVP_DigestVerify*() with a NULL digest.
+ *
+ * Results:
+ *      TCL_OK with integer result:
+ *          1  signature valid
+ *          0  signature invalid
+ *
+ *      TCL_ERROR on failure (e.g., malformed signature or internal
+ *      OpenSSL error), with an error message set.
+ *
+ * Side effects:
+ *      Allocates temporary OpenSSL contexts.
+ *      Sets the Tcl interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
+                const unsigned char *message, size_t messageLength,
+                const unsigned char *signature, size_t signatureLength,
+                const EVP_MD *md)
+{
+    int           rc, result = TCL_ERROR;
+    EVP_MD_CTX   *mdctx = NULL;
+    EVP_PKEY_CTX *pctx = NULL;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(pkey != NULL);
+    NS_NONNULL_ASSERT(message != NULL);
+    NS_NONNULL_ASSERT(signature != NULL);
+
+    mdctx = EVP_MD_CTX_new();
+    if (mdctx == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate message digest context");
+        goto done;
+    }
+
+    if (EVP_DigestVerifyInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
+        Ns_TclPrintfResult(interp, "could not initialize signature verification");
+        goto done;
+    }
+
+    rc = EVP_DigestVerify(mdctx, signature, signatureLength, message, messageLength);
+    if (rc == 1) {
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+        result = TCL_OK;
+
+    } else if (rc == 0) {
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+        result = TCL_OK;
+
+    } else {
+        Ns_TclPrintfResult(interp, "signature verification failed");
+        result = TCL_ERROR;
+    }
+
+done:
+    if (mdctx != NULL) {
+        EVP_MD_CTX_free(mdctx);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoSignatureSignObjCmd --
+ *
+ *      Implements the Tcl command:
+ *
+ *          ns_crypto::signature sign
+ *
+ *      Generate a digital signature over the provided message using
+ *      a private key in PEM format.
+ *
+ *      The command supports both classical and modern signature
+ *      algorithms. The appropriate signing mode (external digest or
+ *      internal hashing) is selected automatically based on the key type.
+ *
+ * Results:
+ *      TCL_OK on success, with the encoded signature as result.
+ *      TCL_ERROR on failure, with an error message set.
+ *
+ * Side effects:
+ *      Reads key material from PEM input.
+ *      Allocates OpenSSL contexts.
+ *      Sets the Tcl interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoSignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                          TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                result, isBinary = 0, encodingInt = -1;
+    const char        *pem = NULL, *passPhrase = NS_EMPTY_STRING;
+    const char        *digestName = NULL;
+    Tcl_Obj           *messageObj = NULL;
+    EVP_PKEY          *pkey = NULL;
+    const EVP_MD      *md = NULL;
+    const unsigned char *message;
+    TCL_SIZE_T         messageLength;
+    Tcl_DString        messageDs;
+    Ns_BinaryEncoding  encoding;
+    Ns_ObjvSpec lopts[] = {
+        {"-binary",     Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString, &digestName,  NULL},
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
+        {"--",          Ns_ObjvBreak,  NULL,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"message", Ns_ObjvObj, &messageObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    encoding = (encodingInt == -1
+                ? NS_OBJ_ENCODING_HEX
+                : (Ns_BinaryEncoding)encodingInt);
+
+    pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+    if (pkey == NULL) {
+        return TCL_ERROR;
+    }
+
+    if (!PkeySupportsSignature(pkey)) {
+        Ns_TclPrintfResult(interp, "key type does not support signatures");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    result = GetDigestForSignature(interp, pkey, digestName, &md);
+    if (result != TCL_OK) {
+        goto done;
+    }
+
+    Tcl_DStringInit(&messageDs);
+    message = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
+
+    result = SignatureSign(interp, pkey, message, (size_t)messageLength, md, encoding);
+
+    Tcl_DStringFree(&messageDs);
+
+done:
+    EVP_PKEY_free(pkey);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoSignatureVerifyObjCmd --
+ *
+ *      Implements the Tcl command:
+ *
+ *          ns_crypto::signature verify
+ *
+ *      Verify a digital signature over the provided message using
+ *      a public or private key in PEM format.
+ *
+ *      The command supports both classical and modern signature
+ *      algorithms. The appropriate verification mode is selected
+ *      automatically based on the key type.
+ *
+ * Results:
+ *      TCL_OK with integer result:
+ *          1  signature valid
+ *          0  signature invalid
+ *
+ *      TCL_ERROR on failure (e.g., malformed signature input or
+ *      internal OpenSSL error).
+ *
+ * Side effects:
+ *      Reads key material from PEM input.
+ *      Allocates OpenSSL contexts.
+ *      Sets the Tcl interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoSignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                            TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                 result, isBinary = 0;
+    const char         *pem = NULL, *passPhrase = NS_EMPTY_STRING;
+    const char         *digestName = NULL;
+    Tcl_Obj            *messageObj = NULL, *signatureObj = NULL;
+    EVP_PKEY           *pkey = NULL;
+    const EVP_MD       *md = NULL;
+    const unsigned char *message, *signature;
+    TCL_SIZE_T          messageLength, signatureLength;
+    Tcl_DString         messageDs;
+    Ns_ObjvSpec lopts[] = {
+        {"-binary",     Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString, &digestName,  NULL},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
+        {"!-signature", Ns_ObjvObj,    &signatureObj, NULL},
+        {"--",          Ns_ObjvBreak,  NULL,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"message", Ns_ObjvObj, &messageObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+   pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+    if (pkey == NULL) {
+        return TCL_ERROR;
+    }
+
+    if (!PkeySupportsSignature(pkey)) {
+        Ns_TclPrintfResult(interp, "key type does not support signatures");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    result = GetDigestForSignature(interp, pkey, digestName, &md);
+    if (result != TCL_OK) {
+        goto done;
+    }
+
+    Tcl_DStringInit(&messageDs);
+
+    message = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
+    signature = (const unsigned char *)Tcl_GetByteArrayFromObj(signatureObj,
+                                                               &signatureLength);
+
+    result = SignatureVerify(interp, pkey,
+                             message, (size_t)messageLength,
+                             signature, (size_t)signatureLength,
+                             md);
+
+    Tcl_DStringFree(&messageDs);
+
+done:
+    EVP_PKEY_free(pkey);
+    return result;
+}
+
+
+# ifdef HAVE_OPENSSL_3_5
+
+static Ns_ObjvTable signatureNames[] = {
+    {"ml-dsa-44", 0},
+    {"ml-dsa-65", 1},
+    {"ml-dsa-87", 2},
+    {NULL, 0u}
+};
+
+static const char *signatureNameCanonical[] = {
+    "ML-DSA-44",
+    "ML-DSA-65",
+    "ML-DSA-87"
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoSignatureGenerateObjCmd --
+ *
+ *      Implements "ns_crypto::signature generate".
+ *
+ *      Generate a new signature key pair using OpenSSL provider-based
+ *      key generation (e.g., ML-DSA).
+ *
+ *      The generated private key is written in PEM format either to
+ *      a file or returned as command result.
+ *
+ * Results:
+ *      TCL_OK on success, with PEM data or empty result when written
+ *      to a file.
+ *      TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      Allocates OpenSSL contexts and may write to a file.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                              TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         sigNameIdx = 1; /* default ml-dsa-65 */
+    const char *outfileName = NULL;
+    Ns_ObjvSpec lopts[] = {
+        {"-name",    Ns_ObjvIndex,  &sigNameIdx,   signatureNames},
+        {"-outfile",  Ns_ObjvString, &outfileName, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ns_crypto::signature generate -name ml-dsa-65 -outfile /tmp/ml-dsa-65.pem
+      ns_crypto::signature generate -name ml-dsa-65
+    */
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    return GeneratePrivateKeyPem(interp,
+                                 signatureNameCanonical[sigNameIdx],
+                                 "signature",
+                                 "generated signature key",
+                                 outfileName);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoSignaturePubObjCmd --
+ *
+ *      Implements "ns_crypto::signature pub".
+ *
+ *      Extract the public key corresponding to a signature key in
+ *      PEM format.
+ *
+ *      The public key is returned or written as PEM encoded
+ *      SubjectPublicKeyInfo ("BEGIN PUBLIC KEY").
+ *
+ * Results:
+ *      TCL_OK on success.
+ *      TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      Reads key material and may write to a file or set interpreter
+ *      result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoSignaturePubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                         TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                result;
+    const char *pem = NULL, *passPhrase = NS_EMPTY_STRING, *outfileName = NULL;
+    Ns_ObjvSpec lopts[] = {
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"-outfile",    Ns_ObjvString, &outfileName, NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ns_crypto::signature pub -pem /tmp/mldsa.pem -outfile /tmp/pub.pem
+      ns_crypto::signature pub -pem $pemString
+    */
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        EVP_PKEY *pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+
+        if (pkey == NULL) {
+            result = TCL_ERROR;
+
+        } else {
+            result = WritePublicKeyPem(interp,
+                                       pkey,
+                                       "signature",
+                                       "generated signature public key",
+                                       outfileName);
+            EVP_PKEY_free(pkey);
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  NsTclCryptoSignatureObjCmd --
+ *
+ *      Implements "ns_crypto::signature" with various subcommands to
+ *      for signing and verification of signatures.
+ *
+ * Results:
+ *      Tcl Return code.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclCryptoSignatureObjCmd(ClientData clientData, Tcl_Interp *interp,
+                          TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+#ifdef HAVE_OPENSSL_3_5
+        {"generate", CryptoSignatureGenerateObjCmd},
+        {"pub",      CryptoSignaturePubObjCmd},
+#endif
+        {"sign",     CryptoSignatureSignObjCmd},
+        {"verify",   CryptoSignatureVerifyObjCmd},
+        {NULL, NULL}
+    };
+
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
+
+
+/*======================================================================
+ * Function Implementations: ns_crypto::randombytes
+ *======================================================================
+ */
 
 
 /*
@@ -5262,6 +5987,10 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 }
 
 
+/*======================================================================
+ * Function Implementations: ns_crypto::uuid
+ *======================================================================
+ */
 
 /*
  *----------------------------------------------------------------------
@@ -5602,6 +6331,13 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 
 int
 NsTclCryptoKeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
+NsTclCryptoSignatureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;

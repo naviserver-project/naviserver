@@ -14,8 +14,13 @@ tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -secret 42}]}]
 tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
 tcltest::testConstraint kem [expr {![catch {::ns_crypto::kem generate}]}]
+tcltest::testConstraint mldsa [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
 tcltest::testConstraint ec [expr {![catch {::ns_crypto::eckey generate}]}]
+tcltest::testConstraint haveExtEd25519 [expr {![catch {exec openssl genpkey -algorithm Ed25519}]}]
 
+#foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec haveExtEd25519} {
+#    ns_log notice constraint $c [tcltest::testConstraint $c]
+#}
 
 #######################################################################################
 #  Syntax tests not covered below
@@ -967,6 +972,21 @@ test ns_crypto::key-3.4 {info: ML-KEM has type} -constraints {kem} -body {
     expr {[dict exists $info type] && [string match "ml-kem-*" [dict get $info type]]}
 } -result 1
 
+test ns_crypto::key-3.5 {info: EC supports signature} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    dict get [ns_crypto::key info -pem $pem] signature
+} -result 1
+
+test ns_crypto::key-3.6 {info: ML-KEM does not support signature} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate]
+    dict get [ns_crypto::key info -pem $pem] signature
+} -result 0
+
+test ns_crypto::key-3.7 {info: ML-DSA supports signature} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate]
+    dict get [ns_crypto::key info -pem $pem] signature
+} -result 1
+
 
 test ns_crypto::key-4.1 {pub: EC public key raw hex matches eckey pub} -constraints {ec} -body {
     set pem [ns_crypto::eckey generate -name prime256v1]
@@ -1062,6 +1082,316 @@ test ns_crypto::key-7.4 {priv: public PEM rejected} -constraints {ec} -body {
     ns_crypto::key priv -pem $pubpem
 } -returnCodes error -match glob -result *
 
+
+############################################################################
+# Test Cases for ns_crypto::signature
+############################################################################
+
+test ns_crypto::signature-1.0 {syntax: ns_crypto::signature subcommands} -constraints {mldsa} -body {
+    ns_crypto::signature
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate|pub|sign|verify ?/arg .../"}
+
+test ns_crypto::signature-1.1 {syntax: ns_crypto::signature sign} -body {
+    ns_crypto::signature sign
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature sign ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ ?--? /message/"}
+
+test ns_crypto::signature-1.2 {syntax: ns_crypto::signature verify} -body {
+    ns_crypto::signature verify
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature verify ?-binary? ?-digest /value/? ?-passphrase /value/? -pem /value/ -signature /value/ ?--? /message/"}
+
+test ns_crypto::signature-1.3 {syntax: ns_crypto::signature generate} -constraints {mldsa} -body {
+    ns_crypto::signature generate x
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name ml-dsa-44|ml-dsa-65|ml-dsa-87? ?-outfile /value/?"}
+
+test ns_crypto::signature-1.4 {syntax: ns_crypto::signature pub} -constraints {mldsa} -body {
+    ns_crypto::signature pub
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature pub ?-passphrase /value/? ?-outfile /value/? -pem /value/"}
+
+#---------------------------------------------------------------------------
+# Test Cases for ns_crypto::signature functional tests
+#---------------------------------------------------------------------------
+
+test ns_crypto::signature-2.1 {EC sign/verify roundtrip with default digest and hex encoding} -constraints {ec tcl86} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
+    set msg "hello world"
+
+    set sig [ns_crypto::signature sign -pem $pem $msg]
+    ns_crypto::signature verify -pem $pubpem -signature [binary decode hex $sig] $msg
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::signature-2.2 {EC sign/verify roundtrip with binary message and binary signature} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
+    set msg [binary format H* 00010203040506070809]
+
+    set sig [ns_crypto::signature sign -binary -encoding binary -pem $pem $msg]
+    ns_crypto::signature verify -binary -pem $pubpem -signature $sig $msg
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::signature-2.3 {EC sign/verify roundtrip with explicit digest sha384 and base64url encoding} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
+    set msg "abcdefghijklmnopqrstuvwxyz"
+
+    set sig [ns_crypto::signature sign -digest sha384 -encoding base64url -pem $pem $msg]
+    ns_crypto::signature verify -digest sha384 -pem $pubpem \
+        -signature [ns_base64urldecode -binary $sig] $msg
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::signature-2.4 {EC verify fails on modified message} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
+
+    set sig [ns_crypto::signature sign -pem $pem "hello"]
+
+    ns_crypto::signature verify -pem $pubpem -signature [binary decode hex $sig] "hello!"
+} -returnCodes {error ok} -result 0
+
+test ns_crypto::signature-2.5a {EC verify raises on truncated signature encoding} -constraints {ec tcl86} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
+    set sig [ns_crypto::signature sign -pem $pem "hello"]
+    set sigbin [binary decode hex $sig]
+
+    ns_crypto::signature verify -pem $pubpem \
+        -signature [string range $sigbin 0 end-1] \
+        "hello"
+} -returnCodes error -match glob -result *
+
+test ns_crypto::signature-2.5b {EC verify returns 0 with wrong public key} -constraints {ec tcl86} -body {
+    set pem1 [ns_crypto::eckey generate -name prime256v1]
+    set pem2 [ns_crypto::eckey generate -name prime256v1]
+    set pubpem2 [ns_crypto::eckey pub -pem $pem2 -format pem]
+
+    set sig [ns_crypto::signature sign -pem $pem1 "hello"]
+    ns_crypto::signature verify -pem $pubpem2 -signature [binary decode hex $sig] "hello"
+} -result 0
+
+test ns_crypto::signature-2.6 {EC sign/verify using private key PEM for verify} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set sig [ns_crypto::signature sign -encoding binary -pem $pem "hello"]
+    ns_crypto::signature verify -pem $pem -signature $sig "hello"
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::signature-2.7 {ML-DSA sign/verify roundtrip} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65]
+    set pubpem [ns_crypto::signature pub -pem $pem]
+
+    set sig [ns_crypto::signature sign -encoding binary -pem $pem "hello"]
+    ns_crypto::signature verify -pem $pubpem -signature $sig "hello"
+} -returnCodes {error ok} -result 1
+
+
+#---------------------------------------------------------------------------
+# Test Cases for ns_crypto::signature with negative tests
+#---------------------------------------------------------------------------
+
+test ns_crypto::signature-3.1 {sign: unknown digest} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    ns_crypto::signature sign -digest no-such-digest -pem $pem "hello"
+} -returnCodes error -match glob -result *
+
+test ns_crypto::signature-3.2 {verify: unknown digest} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
+    ns_crypto::signature verify -digest no-such-digest -pem $pubpem -signature deadbeef "hello"
+} -returnCodes error -match glob -result *
+
+test ns_crypto::signature-4.1 {ML-KEM does not support sign} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate]
+    ns_crypto::signature sign -pem $pem "hello"
+} -returnCodes error -match glob -result {*does not support signatures*}
+
+test ns_crypto::signature-4.2 {ML-KEM does not support verify} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate]
+    ns_crypto::signature verify -pem $pem -signature deadbeef "hello"
+} -returnCodes error -match glob -result {*does not support signatures*}
+
+
+test ns_crypto::signature-5.1 {sign: invalid PEM} -body {
+    ns_crypto::signature sign -pem "not a pem" "hello"
+} -returnCodes error -match glob -result *
+
+test ns_crypto::signature-5.2 {verify: invalid PEM} -body {
+    ns_crypto::signature verify -pem "not a pem" -signature deadbeef "hello"
+} -returnCodes error -match glob -result *
+
+
+test ns_crypto::signature-6.1 {verify: invalid hex signature encoding} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
+    ns_crypto::signature verify -pem $pubpem -signature "not-hex!!" "hello"
+} -returnCodes error -match glob -result *
+
+test ns_crypto::signature-6.2 {verify: invalid base64 signature encoding} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
+    ns_crypto::signature verify -pem $pubpem -signature "%%%%" "hello"
+} -returnCodes error -match glob -result *
+
+#---------------------------------------------------------------------------
+# Test Cases for ns_crypto::signature with external Ed25519
+#---------------------------------------------------------------------------
+
+test ns_crypto::signature-7.1 {Ed25519 sign/verify roundtrip} -constraints {haveExtEd25519} -setup {
+    set privFile /tmp/ns_crypto_ed25519_priv.pem
+    set pubFile  /tmp/ns_crypto_ed25519_pub.pem
+
+    file delete -force $privFile $pubFile
+    exec openssl genpkey -algorithm Ed25519 -out $privFile
+    exec openssl pkey -in $privFile -pubout -out $pubFile
+} -body {
+    set sig [ns_crypto::signature sign -encoding binary -pem $privFile "hello"]
+    ns_crypto::signature verify -pem $pubFile -signature $sig "hello"
+} -cleanup {
+    file delete -force $privFile $pubFile
+    unset -nocomplain privFile pubFile
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::signature-7.2 {Ed25519 rejects explicit digest on sign} -constraints {haveExtEd25519} -setup {
+    set privFile /tmp/ns_crypto_ed25519_priv.pem
+    set pubFile  /tmp/ns_crypto_ed25519_pub.pem
+
+    file delete -force $privFile $pubFile
+    exec openssl genpkey -algorithm Ed25519 -out $privFile
+    exec openssl pkey -in $privFile -pubout -out $pubFile
+
+} -body {
+    ns_crypto::signature sign -digest sha256 -pem $privFile "hello"
+} -cleanup {
+    file delete -force $privFile $pubFile
+    unset -nocomplain privFile pubFile
+} -returnCodes error -match glob -result {*digest*not supported*}
+
+test ns_crypto::signature-7.3 {Ed25519 rejects explicit digest on verify} -constraints {haveExtEd25519} -setup {
+    set privFile /tmp/ns_crypto_ed25519_priv.pem
+    set pubFile  /tmp/ns_crypto_ed25519_pub.pem
+
+    file delete -force $privFile $pubFile
+    exec openssl genpkey -algorithm Ed25519 -out $privFile
+    exec openssl pkey -in $privFile -pubout -out $pubFile
+
+    set sig [ns_crypto::signature sign -encoding binary -pem $privFile "hello"]
+} -body {
+    ns_crypto::signature verify -digest sha256 -pem $pubFile -signature $sig "hello"
+} -cleanup {
+    file delete -force $privFile $pubFile
+    unset -nocomplain privFile pubFile
+} -returnCodes error -match glob -result {*digest*not supported*}
+
+
+#---------------------------------------------------------------------------
+# Test Cases for ns_crypto::signature with ML-DSA
+#---------------------------------------------------------------------------
+
+test ns_crypto::signature-8.0 {syntax: ns_crypto::signature generate} -constraints {mldsa} -body {
+    ns_crypto::signature generate x
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name ml-dsa-44|ml-dsa-65|ml-dsa-87? ?-outfile /value/?"}
+
+test ns_crypto::signature-8.1 {syntax: ns_crypto::signature pub} -constraints {mldsa} -body {
+    ns_crypto::signature pub
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature pub ?-passphrase /value/? ?-outfile /value/? -pem /value/"}
+
+test ns_crypto::signature-8.2 {ML-DSA generate default returns PEM private key} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate]
+    expr {[string match {*-----BEGIN PRIVATE KEY-----*} $pem]
+          || [string match {*-----BEGIN ML-DSA PRIVATE KEY-----*} $pem]}
+} -result 1
+
+test ns_crypto::signature-8.3 {ML-DSA generate specific parameter set} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65]
+    set type [ns_crypto::key type -pem $pem]
+    string match "ml-dsa-*" $type
+} -result 1
+
+test ns_crypto::signature-8.4 {ML-DSA pub returns PEM public key} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65]
+    set pubpem [ns_crypto::signature pub -pem $pem]
+    expr {[string match {*-----BEGIN PUBLIC KEY-----*} $pubpem]}
+} -result 1
+
+test ns_crypto::signature-8.5 {ML-DSA sign/verify roundtrip} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65]
+    set pubpem [ns_crypto::signature pub -pem $pem]
+
+    set sig [ns_crypto::signature sign -encoding binary -pem $pem "hello"]
+    ns_crypto::signature verify -pem $pubpem -signature $sig "hello"
+} -returnCodes {error ok} -result 1
+
+test ns_crypto::signature-8.6 {ML-DSA sign/verify roundtrip all parameter sets} -constraints {mldsa} -body {
+    set r {}
+    foreach name {ml-dsa-44 ml-dsa-65 ml-dsa-87} {
+        set pem [ns_crypto::signature generate -name $name]
+        set pubpem [ns_crypto::signature pub -pem $pem]
+        set sig [ns_crypto::signature sign -encoding binary -pem $pem "hello"]
+        lappend r [ns_crypto::signature verify -pem $pubpem -signature $sig "hello"]
+    }
+    set r
+} -result {1 1 1}
+
+test ns_crypto::signature-8.7 {ML-DSA verify fails on modified message} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65]
+    set pubpem [ns_crypto::signature pub -pem $pem]
+    set sig [ns_crypto::signature sign -encoding binary -pem $pem "hello"]
+
+    ns_crypto::signature verify -pem $pubpem -signature $sig "hello!"
+} -returnCodes {error ok} -result 0
+
+test ns_crypto::signature-8.8 {ML-DSA verify fails with wrong public key} -constraints {mldsa} -body {
+    set pem1 [ns_crypto::signature generate -name ml-dsa-65]
+    set pem2 [ns_crypto::signature generate -name ml-dsa-65]
+    set pubpem2 [ns_crypto::signature pub -pem $pem2]
+    set sig [ns_crypto::signature sign -encoding binary -pem $pem1 "hello"]
+
+    ns_crypto::signature verify -pem $pubpem2 -signature $sig "hello"
+} -returnCodes {error ok} -result 0
+
+test ns_crypto::signature-8.9 {ML-DSA rejects explicit digest on sign} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65]
+    ns_crypto::signature sign -digest sha256 -pem $pem "hello"
+} -returnCodes error -match glob -result {*digest*}
+
+test ns_crypto::signature-8.10 {ML-DSA rejects explicit digest on verify} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65]
+    set pubpem [ns_crypto::signature pub -pem $pem]
+    set sig [ns_crypto::signature sign -encoding binary -pem $pem "hello"]
+
+    ns_crypto::signature verify -digest sha256 -pem $pubpem -signature $sig "hello"
+} -returnCodes error -match glob -result {*digest*}
+
+test ns_crypto::signature-8.11 {ML-DSA pub can write outfile} -constraints {mldsa} -setup {
+    set privFile /tmp/ns_crypto_mldsa_priv.pem
+    set pubFile  /tmp/ns_crypto_mldsa_pub.pem
+    file delete -force $privFile $pubFile
+} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65 -outfile $privFile]
+    ns_crypto::signature pub -pem $privFile -outfile $pubFile
+    expr {[file exists $pubFile] && [file size $pubFile] > 0}
+} -cleanup {
+    file delete -force $privFile $pubFile
+} -result 1
+
+test ns_crypto::signature-8.12 {ML-DSA generate can write outfile} -constraints {mldsa} -setup {
+    set privFile /tmp/ns_crypto_mldsa_priv.pem
+    file delete -force $privFile
+} -body {
+    ns_crypto::signature generate -name ml-dsa-65 -outfile $privFile
+    expr {[file exists $privFile] && [file size $privFile] > 0}
+} -cleanup {
+    file delete -force $privFile
+} -result 1
+
+test ns_crypto::signature-8.13 {ML-DSA generated key type} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-87]
+    ns_crypto::key type -pem $pem
+} -result ml-dsa-87
+
+test ns_crypto::signature-8.14 {ML-DSA public key type} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-44]
+    set pubpem [ns_crypto::signature pub -pem $pem]
+    ns_crypto::key type -pem $pubpem
+} -result ml-dsa-44
 
 #
 # Local variables:

@@ -207,6 +207,10 @@
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::pbkdf2_hmac}] ?-binary? ?-digest /value/? ?-dklen /integer/? ?-iterations /integer/? -salt /value/ -secret /value/ ?-encoding hex|base64url|base64|binary?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::randombytes}] ?-encoding hex|base64url|base64|binary? /nrbytes/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::scrypt}] ?-binary? -salt /value/ -secret /value/ ?-n /integer/? ?-p /integer/? ?-r /integer/? ?-encoding hex|base64url|base64|binary?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::signature generate}] ?-name ml-dsa-44|ml-dsa-65|ml-dsa-87? ?-outfile /value/?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::signature pub}] ?-passphrase /value/? ?-outfile /value/? -pem /value/
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::signature sign}] ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ ?--? /message/
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::signature verify}] ?-binary? ?-digest /value/? ?-passphrase /value/? -pem /value/ -signature /value/ ?--? /message/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::uuid}] ?-version v4|v7?
 [uri ../../nsdb/files/ns_db.html {ns_db 0or1row}] /handle/ /sql/
 [uri ../../nsdb/files/ns_db.html {ns_db 1row}] /handle/ /sql/

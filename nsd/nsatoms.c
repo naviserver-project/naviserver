@@ -393,6 +393,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_SENT].name             = "sent";          atoms[NS_ATOM_SENT].len = 4;
     atoms[NS_ATOM_SERVERNAME].name       = "servername";    atoms[NS_ATOM_SERVERNAME].len = 10;
     atoms[NS_ATOM_SERVER].name           = "server";        atoms[NS_ATOM_SERVER].len = 6;
+    atoms[NS_ATOM_SIGNATURE].name        = "signature";     atoms[NS_ATOM_SIGNATURE].len = 9;
     atoms[NS_ATOM_SIZE_DYNAMIC].name     = "size_dynamic";  atoms[NS_ATOM_SIZE_DYNAMIC].len = 12;
     atoms[NS_ATOM_SIZE_STATIC].name      = "size_static";   atoms[NS_ATOM_SIZE_STATIC].len = 11;
     atoms[NS_ATOM_SLOT].name             = "slot";          atoms[NS_ATOM_SLOT].len = 4;
