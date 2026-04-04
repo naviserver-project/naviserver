@@ -14,11 +14,11 @@ tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -secret 42}]}]
 tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
 tcltest::testConstraint kem [expr {![catch {::ns_crypto::kem generate}]}]
+tcltest::testConstraint signature [expr {![catch {::ns_crypto::signature generate}]}]
 tcltest::testConstraint mldsa [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
 tcltest::testConstraint ec [expr {![catch {::ns_crypto::eckey generate}]}]
-tcltest::testConstraint haveExtEd25519 [expr {![catch {exec openssl genpkey -algorithm Ed25519}]}]
 
-#foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec haveExtEd25519} {
+#foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec signature} {
 #    ns_log notice constraint $c [tcltest::testConstraint $c]
 #}
 
@@ -1259,53 +1259,32 @@ test ns_crypto::signature-6.2 {verify: invalid base64 signature encoding} -const
 } -returnCodes error -match glob -result *
 
 #---------------------------------------------------------------------------
-# Test Cases for ns_crypto::signature with external Ed25519
+# Test Cases for ns_crypto::signature with Ed25519
 #---------------------------------------------------------------------------
 
-test ns_crypto::signature-7.1 {Ed25519 sign/verify roundtrip} -constraints {haveExtEd25519} -setup {
-    set privFile /tmp/ns_crypto_ed25519_priv.pem
-    set pubFile  /tmp/ns_crypto_ed25519_pub.pem
-
-    file delete -force $privFile $pubFile
-    exec openssl genpkey -algorithm Ed25519 -out $privFile
-    exec openssl pkey -in $privFile -pubout -out $pubFile
-} -body {
-    set sig [ns_crypto::signature sign -encoding binary -pem $privFile "hello"]
-    ns_crypto::signature verify -pem $pubFile -signature $sig "hello"
+test ns_crypto::signature-7.1 {Ed25519 sign/verify roundtrip} -constraints {signature} -body {
+    set priv [ns_crypto::signature generate -name ed25519]
+    set pub [ns_crypto::signature pub -pem $priv]
+    set sig [ns_crypto::signature sign -encoding binary -pem $priv "hello"]
+    ns_crypto::signature verify -pem $pub -signature $sig "hello"
 } -cleanup {
-    file delete -force $privFile $pubFile
-    unset -nocomplain privFile pubFile
+    unset -nocomplain priv pub
 } -returnCodes {error ok} -result 1
 
-test ns_crypto::signature-7.2 {Ed25519 rejects explicit digest on sign} -constraints {haveExtEd25519} -setup {
-    set privFile /tmp/ns_crypto_ed25519_priv.pem
-    set pubFile  /tmp/ns_crypto_ed25519_pub.pem
-
-    file delete -force $privFile $pubFile
-    exec openssl genpkey -algorithm Ed25519 -out $privFile
-    exec openssl pkey -in $privFile -pubout -out $pubFile
-
-} -body {
-    ns_crypto::signature sign -digest sha256 -pem $privFile "hello"
+test ns_crypto::signature-7.2 {Ed25519 rejects explicit digest on sign} -constraints {signature} -body {
+    set priv [ns_crypto::signature generate -name ed25519]
+    ns_crypto::signature sign -digest sha256 -pem $priv "hello"
 } -cleanup {
-    file delete -force $privFile $pubFile
-    unset -nocomplain privFile pubFile
+    unset -nocomplain priv
 } -returnCodes error -match glob -result {*digest*not supported*}
 
-test ns_crypto::signature-7.3 {Ed25519 rejects explicit digest on verify} -constraints {haveExtEd25519} -setup {
-    set privFile /tmp/ns_crypto_ed25519_priv.pem
-    set pubFile  /tmp/ns_crypto_ed25519_pub.pem
-
-    file delete -force $privFile $pubFile
-    exec openssl genpkey -algorithm Ed25519 -out $privFile
-    exec openssl pkey -in $privFile -pubout -out $pubFile
-
-    set sig [ns_crypto::signature sign -encoding binary -pem $privFile "hello"]
-} -body {
-    ns_crypto::signature verify -digest sha256 -pem $pubFile -signature $sig "hello"
+test ns_crypto::signature-7.3 {Ed25519 rejects explicit digest on verify} -constraints {signature} -body {
+    set priv [ns_crypto::signature generate -name ed25519]
+    set pub [ns_crypto::signature pub -pem $priv]
+    set sig [ns_crypto::signature sign -encoding binary -pem $priv "hello"]
+    ns_crypto::signature verify -digest sha256 -pem $pub -signature $sig "hello"
 } -cleanup {
-    file delete -force $privFile $pubFile
-    unset -nocomplain privFile pubFile
+    unset -nocomplain priv pub
 } -returnCodes error -match glob -result {*digest*not supported*}
 
 
