@@ -132,6 +132,14 @@ static bool PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixL
 static bool PkeySignatureRequiresDigest(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
+static int WritePublicKeyPem(Tcl_Interp *interp,
+                             EVP_PKEY   *pkey,
+                             const char *what,
+                             const char *resultWhat,
+                             const char *outfileName)
+    NS_GNUC_NONNULL(1,2,3,4);
+
+
 static int GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
                                  const char *digestName,
                                  const EVP_MD **mdPtr)
@@ -238,12 +246,6 @@ static int GeneratePrivateKeyPem(Tcl_Interp *interp,
                                  const char *what,
                                  const char *outfileName,
                                  NsCryptoKeygenUsage usage)
-    NS_GNUC_NONNULL(1,2,3,4);
-static int WritePublicKeyPem(Tcl_Interp *interp,
-                             EVP_PKEY   *pkey,
-                             const char *what,
-                             const char *resultWhat,
-                             const char *outfileName)
     NS_GNUC_NONNULL(1,2,3,4);
 static int KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
@@ -474,8 +476,6 @@ PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
 {
     BIO *bio;
 
-    NS_NONNULL_ASSERT(interp != NULL);
-
     bio = (outfileName != NULL)
         ? BIO_new_file(outfileName, "w")
         : BIO_new(BIO_s_mem());
@@ -517,10 +517,6 @@ PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
 static int
 PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
 {
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(bio != NULL);
-    NS_NONNULL_ASSERT(what != NULL);
-
     if (outfileName == NULL) {
         return SetResultFromMemBio(interp, bio, what);
     }
@@ -5082,9 +5078,13 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }
         }
 
-        Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_KEM),
-                       Tcl_NewIntObj(PkeySupportsKem(pkey)));
+        {
+            int supportsKEM = PkeySupportsKem(pkey);
+
+            Tcl_DictObjPut(interp, resultObj,
+                           NsAtomObj(NS_ATOM_KEM),
+                           Tcl_NewIntObj(supportsKEM));
+        }
 
         Tcl_SetObjResult(interp, resultObj);
         result = TCL_OK;
