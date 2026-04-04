@@ -556,7 +556,19 @@ be in memory). In order to compute HMACs on large data, use
   [list_begin itemized]
   [item] [const type] — the key type as returned by [cmd "ns_crypto::key type"]
   [item] [const signature] — boolean indicating whether the key
-         supports signature operations
+     provides a digital signature algorithm ((i.e., supports
+     sign/verify operations directly).. This is independent of digest support; key agreement (e.g.,
+     [const X25519]) and encapsulation ([const ML-KEM]) keys do not support
+     signatures.
+  [item] [const requiresdigest] — boolean indicating
+     whether the signature algorithm requires a message digest (hash
+     function) to be specified. This field is only present when
+     signature is true.
+     [para] For classical algorithms (e.g., [const RSA], [const DSA],
+     [const ECDSA]), a digest such as [const sha256] must be
+     provided. For algorithms with built-in hashing (e.g.,
+     [const Ed25519], [const Ed448], [const ML-DSA], [const SLH-DSA]),
+     no digest is required and specifying one is not supported.
   [list_end]
 
   [para] Additional fields may include:
@@ -788,21 +800,32 @@ Returns the specified number of random bytes in the specified encoding
 
 
 [call [cmd "ns_crypto::signature generate"] \
-     [opt [option "-name ml-dsa-44|ml-dsa-65|ml-dsa-87"]] \
+     [opt [option "-name [arg value]"]] \
      [opt [option "-outfile [arg value]"]] \
     ]
 
   Generate a new signature key pair.
 
   [para] This command provides key generation for signature algorithms
-  (e.g., ML-DSA) analogous to [cmd "ns_crypto::kem generate"] for
-  key encapsulation mechanisms and [cmd "ns_crypto::eckey generate"]
-  for elliptic curve keys.
+  analogous to [cmd "ns_crypto::kem generate"] for key encapsulation
+  mechanisms and [cmd "ns_crypto::eckey generate"] for elliptic curve keys.
 
-  [para] The key type is selected via [option -name]. The available
-  algorithms depend on the OpenSSL version and configured providers.
-  Typical values include [const ml-dsa-44], [const ml-dsa-65], and
-  [const ml-dsa-87].
+  [para] The key type is selected via [option -name]. The value is passed
+  to OpenSSL's provider-based key management layer and is therefore not
+  restricted to a fixed set of algorithms. The available values depend on
+  the OpenSSL version and the configured providers.
+
+  [para] Supported values include classical algorithms such as
+  [const RSA] and [const RSA-PSS], modern algorithms such as
+  [const ED25519] and [const ED448], and post-quantum algorithms such as
+  [const ML-DSA-*] and [const SLH-DSA-*].
+
+  [para] Not all OpenSSL key types support signature operations. When a
+  key type that does not provide a signature algorithm is specified, the
+  command returns an error.
+
+  [para] When [option -name] is omitted, a provider-dependent default
+  algorithm is used (currently [const ml-dsa-65] when available).
 
   [para] The generated key is returned as a PEM encoded private key.
   When [option "-outfile"] is specified, the key is written to the
@@ -812,11 +835,17 @@ Returns the specified number of random bytes in the specified encoding
   public key can be obtained via [cmd "ns_crypto::signature pub"].
 
 [example_begin]
- # Generate a new ML-DSA key (default)
+ # Generate a new key using the default algorithm
  set pem [lb]ns_crypto::signature generate[rb]
  
- # Generate a specific key and write to file
- ns_crypto::signature generate -name ml-dsa-65 -outfile /tmp/sigkey.pem
+ # Generate a post-quantum ML-DSA key
+ set pem [lb]ns_crypto::signature generate -name ml-dsa-65[rb]
+ 
+ # Generate a classical RSA key
+ set pem [lb]ns_crypto::signature generate -name RSA[rb]
+ 
+ # Generate a key and write it to a file
+ ns_crypto::signature generate -name ED25519 -outfile /tmp/sigkey.pem
 [example_end]
 
 
@@ -869,7 +898,7 @@ Returns the specified number of random bytes in the specified encoding
   without requiring special handling.
 
   [para] When the option [option -binary] is specified, it applies to
-  the input arguemnt [arg message].
+  the input argument [arg message].
 
   [para] The argument to [option -pem] may be either a PEM file name or
   a PEM string containing a private key. When the private key is
@@ -915,7 +944,7 @@ Returns the specified number of random bytes in the specified encoding
   is encrypted, provide the passphrase via [option -passphrase].
 
   [para] When the option [option -binary] is specified, it applies to
-  the input arguemnt [arg message].
+  the input argument [arg message].
 
   [para] The argument to [option -signature] must be provided as binary
   data. When the signature is stored in textual form (e.g., hex or

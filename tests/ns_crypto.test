@@ -987,6 +987,31 @@ test ns_crypto::key-3.7 {info: ML-DSA supports signature} -constraints {mldsa} -
     dict get [ns_crypto::key info -pem $pem] signature
 } -result 1
 
+test ns_crypto::key-3.8 {info: EC requires digest for signatures} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set info [ns_crypto::key info -pem $pem]
+    list \
+        [dict get $info signature] \
+        [dict get $info requiresdigest]
+} -result {1 1}
+
+test ns_crypto::key-3.9 {info: ML-DSA signature key does not require digest} -constraints {mldsa} -body {
+    set pem [ns_crypto::signature generate -name ml-dsa-65]
+    set info [ns_crypto::key info -pem $pem]
+    list \
+        [dict get $info type] \
+        [dict get $info signature] \
+        [dict get $info requiresdigest]
+} -result {ml-dsa-65 1 0}
+
+test ns_crypto::key-3.10 {info: non-signature key has no requiresdigest field} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate]
+    set info [ns_crypto::key info -pem $pem]
+    list \
+        [dict get $info signature] \
+        [dict exists $info requiresdigest]
+} -result {0 0}
+
 
 test ns_crypto::key-4.1 {pub: EC public key raw hex matches eckey pub} -constraints {ec} -body {
     set pem [ns_crypto::eckey generate -name prime256v1]
@@ -1101,7 +1126,7 @@ test ns_crypto::signature-1.2 {syntax: ns_crypto::signature verify} -body {
 
 test ns_crypto::signature-1.3 {syntax: ns_crypto::signature generate} -constraints {mldsa} -body {
     ns_crypto::signature generate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name ml-dsa-44|ml-dsa-65|ml-dsa-87? ?-outfile /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name /value/? ?-outfile /value/?"}
 
 test ns_crypto::signature-1.4 {syntax: ns_crypto::signature pub} -constraints {mldsa} -body {
     ns_crypto::signature pub
@@ -1287,7 +1312,7 @@ test ns_crypto::signature-7.3 {Ed25519 rejects explicit digest on verify} -const
 
 test ns_crypto::signature-8.0 {syntax: ns_crypto::signature generate} -constraints {mldsa} -body {
     ns_crypto::signature generate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name ml-dsa-44|ml-dsa-65|ml-dsa-87? ?-outfile /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name /value/? ?-outfile /value/?"}
 
 test ns_crypto::signature-8.1 {syntax: ns_crypto::signature pub} -constraints {mldsa} -body {
     ns_crypto::signature pub
@@ -1392,6 +1417,46 @@ test ns_crypto::signature-8.14 {ML-DSA public key type} -constraints {mldsa} -bo
     set pubpem [ns_crypto::signature pub -pem $pem]
     ns_crypto::key type -pem $pubpem
 } -result ml-dsa-44
+
+#---------------------------------------------------------------------------
+# Test Cases for ns_crypto::signature generate name lookup failures
+#---------------------------------------------------------------------------
+
+test ns_crypto::signature-9.1 {generate: unknown algorithm name} -constraints {mldsa} -body {
+    ns_crypto::signature generate -name no-such-algorithm
+} -returnCodes error -match glob -result {*no-such-algorithm*}
+
+test ns_crypto::signature-9.2 {generate: empty algorithm name} -constraints {mldsa} -body {
+    ns_crypto::signature generate -name ""
+} -returnCodes error -match glob -result {*}
+
+test ns_crypto::signature-9.3 {generate: KEM algorithm name rejected for signature API} -constraints {kem} -body {
+    ns_crypto::signature generate -name ml-kem-768
+} -returnCodes {error} -match glob -result {*signature*}
+
+test ns_crypto::signature-9.4 {generate: symmetric algorithm name rejected} -constraints {mldsa} -body {
+    ns_crypto::signature generate -name AES-256-GCM
+} -returnCodes error -match glob -result {*AES-256-GCM*}
+
+test ns_crypto::signature-9.5 {generate: digest name rejected as key type} -constraints {mldsa} -body {
+    ns_crypto::signature generate -name sha256
+} -returnCodes error -match glob -result {*sha256*}
+
+test ns_crypto::signature-9.6 {generate: lowercase/uppercase unknown variant rejected} -constraints {mldsa} -body {
+    ns_crypto::signature generate -name ml-dsa-999
+} -returnCodes error -match glob -result {*ml-dsa-999*}
+
+test ns_crypto::signature-9.7 {sign: generated KEM key rejected} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate]
+    ns_crypto::signature sign -pem $pem "hello"
+} -returnCodes error -match glob -result {*does not support signatures*}
+
+test ns_crypto::signature-9.8 {verify: generated KEM public key rejected} -constraints {kem} -body {
+    set pem [ns_crypto::kem generate]
+    set pubpem [ns_crypto::kem pub -pem $pem]
+    ns_crypto::signature verify -pem $pubpem -signature [binary format H* 00] "hello"
+} -returnCodes error -match glob -result {*does not support signatures*}
+
 
 #
 # Local variables:

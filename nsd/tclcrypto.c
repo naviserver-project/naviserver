@@ -65,10 +65,21 @@ typedef enum {
     NS_DIGEST_USAGE_SIGN_VERIFY = 1 << 4
 } NsDigestUsage;
 
+typedef enum {
+    NS_CRYPTO_KEYGEN_USAGE_ANY = 0,
+    NS_CRYPTO_KEYGEN_USAGE_SIGNATURE,
+    NS_CRYPTO_KEYGEN_USAGE_KEM
+} NsCryptoKeygenUsage;
+
 typedef struct {
     Tcl_Obj       *listObj;
     NsDigestUsage  usage;
 } NsDigestListCtx;
+
+typedef struct {
+    Tcl_Obj           *listObj;
+    NsCryptoKeygenUsage usage;
+} NsKeygenListCtx;
 
 /*
  * Static functions defined in this file.
@@ -109,10 +120,10 @@ static bool PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
 static bool PkeySupportsSignature(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
-static bool PkeyIsMlDsa(EVP_PKEY *pkey)
-    NS_GNUC_NONNULL(1);
+static bool PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixLength)
+    NS_GNUC_NONNULL(1,2);
 
-static bool PkeyUsesExternalDigest(EVP_PKEY *pkey)
+static bool PkeySignatureRequiresDigest(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
 static int GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
@@ -221,7 +232,8 @@ static int GeneratePrivateKeyPem(Tcl_Interp *interp,
                                  const char *typeName,
                                  const char *what,
                                  const char *resultWhat,
-                                 const char *outfileName)
+                                 const char *outfileName,
+                                 NsCryptoKeygenUsage usage)
     NS_GNUC_NONNULL(1,2,3,4);
 static int WritePublicKeyPem(Tcl_Interp *interp,
                              EVP_PKEY   *pkey,
@@ -613,32 +625,82 @@ WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
 }
 
 # ifdef HAVE_OPENSSL_3_5
+static void
+ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
+{
+    NsKeygenListCtx *ctx = arg;
+    bool                addToList;
+    const char         *name = EVP_KEYMGMT_get0_name(keymgmt);
+
+    if (name == NULL) {
+        return;
+    }
+
+    if (ctx->usage == NS_CRYPTO_KEYGEN_USAGE_SIGNATURE) {
+        addToList = (STREQ(name, "RSA")
+                     || STREQ(name, "RSA-PSS")
+                     || STREQ(name, "ED25519")
+                     || STREQ(name, "ED448")
+                     || strncmp(name, "ML-DSA-", 7) == 0
+                     || strncmp(name, "SLH-DSA-", 8) == 0);
+    } else if (ctx->usage == NS_CRYPTO_KEYGEN_USAGE_KEM) {
+        addToList = (strncmp(name, "ML-KEM-", 7) == 0);
+    } else {
+        addToList = NS_TRUE;
+    }
+    /*Ns_Log(Notice, "DEBUG name %s add to list %d", name, addToList);*/
+
+    if (addToList) {
+        Tcl_ListObjAppendElement(NULL, ctx->listObj,
+                                 Tcl_NewStringObj(name, TCL_INDEX_NONE));
+    }
+}
+
 static int
 GeneratePrivateKeyPem(Tcl_Interp *interp,
                       const char *typeName,
                       const char *what,
                       const char *resultWhat,
-                      const char *outfileName)
+                      const char *outfileName,
+                      NsCryptoKeygenUsage usage)
 {
-    int           result;
+    int           result = TCL_ERROR;
     EVP_PKEY_CTX *ctx = NULL;
     EVP_PKEY     *pkey = NULL;
     BIO          *bio = NULL;
 
+    if (*typeName == '\0') {
+        Ns_TclPrintfResult(interp, "missing %s key algorithm name", what);
+        goto done;
+    }
+
     ctx = EVP_PKEY_CTX_new_from_name(NULL, typeName, NULL);
     if (ctx == NULL) {
+        NsKeygenListCtx sigCtx;
+        const char         *sortedNames;
+        Tcl_Obj            *sorted;
+
+        sigCtx.listObj = Tcl_NewListObj(0, NULL);
+        sigCtx.usage = usage;
+        Tcl_IncrRefCount(sigCtx.listObj);
+
+        EVP_KEYMGMT_do_all_provided(NULL, ListKeymgmt, &sigCtx);
+        sorted = NsTclListSort(interp, sigCtx.listObj);
+        sortedNames = (sorted != NULL ? Tcl_GetString(sorted) : "");
+
         Ns_TclPrintfResult(interp,
-                           "could not create context for %s \"%s\"",
-                           what, typeName);
-        result = TCL_ERROR;
+                           "unknown or unsupported %s key algorithm \"%s\","
+                           " valid names: %s",
+                           what, typeName, sortedNames);
+        Tcl_DecrRefCount(sigCtx.listObj);
         goto done;
     }
 
     if (EVP_PKEY_keygen_init(ctx) <= 0) {
+
         Ns_TclPrintfResult(interp,
                            "could not initialize key generation for %s \"%s\"",
                            what, typeName);
-        result = TCL_ERROR;
         goto done;
     }
 
@@ -646,13 +708,25 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
         Ns_TclPrintfResult(interp,
                            "could not generate %s key \"%s\"",
                            what, typeName);
-        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (usage == NS_CRYPTO_KEYGEN_USAGE_SIGNATURE && !PkeySupportsSignature(pkey)) {
+        Ns_TclPrintfResult(interp,
+                           "generated key \"%s\" does not support signatures",
+                           typeName);
+        goto done;
+    }
+
+    if (usage == NS_CRYPTO_KEYGEN_USAGE_KEM && !PkeyIsMlKem(pkey)) {
+        Ns_TclPrintfResult(interp,
+                           "generated key \"%s\" does not support key encapsulation",
+                           typeName);
         goto done;
     }
 
     bio = PEMOpenWriteStream(interp, outfileName);
     if (bio == NULL) {
-        result = TCL_ERROR;
         goto done;
     }
 
@@ -660,7 +734,6 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
         Ns_TclPrintfResult(interp,
                            "could not write %s key \"%s\"",
                            what, typeName);
-        result = TCL_ERROR;
         goto done;
     }
 
@@ -3852,7 +3925,8 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                  kemNameCanonical[kemINamedx],
                                  "KEM",
                                  "generated KEM key",
-                                 outfileName);
+                                 outfileName,
+                                 NS_CRYPTO_KEYGEN_USAGE_KEM);
 }
 
 
@@ -5026,9 +5100,18 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }
         }
 
-        Tcl_DictObjPut(NULL, resultObj,
-                       NsAtomObj(NS_ATOM_SIGNATURE),
-                       Tcl_NewIntObj(PkeySupportsSignature(pkey)));
+        {
+            int supportsSignature = PkeySupportsSignature(pkey);
+
+            Tcl_DictObjPut(NULL, resultObj,
+                           NsAtomObj(NS_ATOM_SIGNATURE),
+                           Tcl_NewIntObj(supportsSignature));
+            if (supportsSignature) {
+                Tcl_DictObjPut(NULL, resultObj,
+                               NsAtomObj(NS_ATOM_REQUIRESDIGEST),
+                               Tcl_NewIntObj(PkeySignatureRequiresDigest(pkey)));
+            }
+        }
 
         Tcl_SetObjResult(interp, resultObj);
         result = TCL_OK;
@@ -5258,14 +5341,13 @@ NsTclCryptoKeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 /*
  *----------------------------------------------------------------------
  *
- * PkeyIsMlDsa --
+ * PkeyMatchesPrefix --
  *
- *      Determine whether the provided EVP_PKEY represents an ML-DSA
- *      (post-quantum signature) key.
+ *      Determine whether the type name of the provided EVP_PKEY
+ *      matches the specified prefix.
  *
  * Results:
- *      NS_TRUE  if the key is of type ML-DSA (e.g., ml-dsa-44/65/87).
- *      NS_FALSE otherwise.
+ *      Boolean
  *
  * Side effects:
  *      None.
@@ -5273,12 +5355,14 @@ NsTclCryptoKeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
  *----------------------------------------------------------------------
  */
 static bool
-PkeyIsMlDsa(EVP_PKEY *pkey)
+PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixLength)
 {
 # ifdef HAVE_OPENSSL_3
     const char *name = EVP_PKEY_get0_type_name(pkey);
-    return (name != NULL && strncmp(name, "ML-DSA-", 7) == 0);
+    return (name != NULL && strncmp(name, prefix, prefixLength) == 0);
 # else
+    (void)prefix;
+    (void)prefixLength;
     return NS_FALSE;
 # endif
 }
@@ -5307,7 +5391,8 @@ PkeyIsMlDsa(EVP_PKEY *pkey)
 static bool
 PkeySupportsSignature(EVP_PKEY *pkey)
 {
-     return (PkeyIsMlDsa(pkey)
+    return (PkeyMatchesPrefix(pkey, "ML-DSA-", 7)
+            || PkeyMatchesPrefix(pkey, "SLH-DSA-", 8)
             || PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
             || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA)
             || PkeyIsType(pkey, "EC",  EVP_PKEY_EC)
@@ -5317,13 +5402,13 @@ PkeySupportsSignature(EVP_PKEY *pkey)
 # ifdef EVP_PKEY_ED448
             || PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)
 # endif
-           );
+            );
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * PkeyUsesExternalDigest --
+ * PkeySignatureRequiresDigest --
  *
  *      Determine whether the provided key type requires an external
  *      message digest (hash function) when performing signature
@@ -5344,7 +5429,7 @@ PkeySupportsSignature(EVP_PKEY *pkey)
  *----------------------------------------------------------------------
  */
 static bool
-PkeyUsesExternalDigest(EVP_PKEY *pkey)
+PkeySignatureRequiresDigest(EVP_PKEY *pkey)
 {
     return (PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
             || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA)
@@ -5391,7 +5476,7 @@ GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
         return TCL_ERROR;
     }
 
-    if (!PkeyUsesExternalDigest(pkey)) {
+    if (!PkeySignatureRequiresDigest(pkey)) {
         if (digestName != NULL) {
             Ns_TclPrintfResult(interp,
                                "digest specification is not supported for this key type");
@@ -5766,19 +5851,6 @@ done:
 
 # ifdef HAVE_OPENSSL_3_5
 
-static Ns_ObjvTable signatureNames[] = {
-    {"ml-dsa-44", 0},
-    {"ml-dsa-65", 1},
-    {"ml-dsa-87", 2},
-    {NULL, 0u}
-};
-
-static const char *signatureNameCanonical[] = {
-    "ML-DSA-44",
-    "ML-DSA-65",
-    "ML-DSA-87"
-};
-
 /*
  *----------------------------------------------------------------------
  *
@@ -5806,10 +5878,10 @@ static int
 CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                               TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         sigNameIdx = 1; /* default ml-dsa-65 */
+    const char *nameString = "ml-dsa-65";
     const char *outfileName = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-name",    Ns_ObjvIndex,  &sigNameIdx,   signatureNames},
+        {"-name",    Ns_ObjvString,  &nameString,  NULL},
         {"-outfile",  Ns_ObjvString, &outfileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -5823,10 +5895,11 @@ CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
 
     return GeneratePrivateKeyPem(interp,
-                                 signatureNameCanonical[sigNameIdx],
+                                 nameString,
                                  "signature",
                                  "generated signature key",
-                                 outfileName);
+                                 outfileName,
+                                 NS_CRYPTO_KEYGEN_USAGE_SIGNATURE);
 }
 
 /*

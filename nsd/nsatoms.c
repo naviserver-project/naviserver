@@ -384,6 +384,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_REQUESTLENGTH].name    = "requestlength"; atoms[NS_ATOM_REQUESTLENGTH].len = 13;
     atoms[NS_ATOM_REQUESTS].name         = "requests";      atoms[NS_ATOM_REQUESTS].len = 8;
     atoms[NS_ATOM_REQUEST].name          = "request";       atoms[NS_ATOM_REQUEST].len = 7;
+    atoms[NS_ATOM_REQUIRESDIGEST].name   = "requiresdigest"; atoms[NS_ATOM_REQUIRESDIGEST].len = 14;
     atoms[NS_ATOM_RUNNING].name          = "running";       atoms[NS_ATOM_RUNNING].len = 7;
     atoms[NS_ATOM_SECRET].name           = "secret";        atoms[NS_ATOM_SECRET].len = 6;
     atoms[NS_ATOM_SENDBODYSIZE].name     = "sendbodysize";  atoms[NS_ATOM_SENDBODYSIZE].len = 12;
