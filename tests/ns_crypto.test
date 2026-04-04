@@ -1171,9 +1171,9 @@ test ns_crypto::signature-2.4 {EC verify fails on modified message} -constraints
     set pem [ns_crypto::eckey generate -name prime256v1]
     set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
 
-    set sig [ns_crypto::signature sign -pem $pem "hello"]
+    set sig [ns_crypto::signature sign -encoding binary -pem $pem "hello"]
 
-    ns_crypto::signature verify -pem $pubpem -signature [binary decode hex $sig] "hello!"
+    ns_crypto::signature verify -pem $pubpem -signature $sig "hello!"
 } -returnCodes {error ok} -result 0
 
 test ns_crypto::signature-2.5a {EC verify raises on truncated signature encoding} -constraints {ec tcl86} -body {

@@ -5165,11 +5165,13 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             Tcl_DictObjPut(interp, resultObj,
                            NsAtomObj(NS_ATOM_SIGNATURE),
-                           Tcl_NewIntObj(supportsSignature));
+                           Tcl_NewBooleanObj(supportsSignature));
             if (supportsSignature) {
+                int requiresDigest = PkeySignatureRequiresDigest(pkey);
+
                 Tcl_DictObjPut(interp, resultObj,
                                NsAtomObj(NS_ATOM_REQUIRESDIGEST),
-                               Tcl_NewIntObj(PkeySignatureRequiresDigest(pkey)));
+                               Tcl_NewBooleanObj(requiresDigest));
             }
         }
 
@@ -5178,7 +5180,7 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             Tcl_DictObjPut(interp, resultObj,
                            NsAtomObj(NS_ATOM_KEM),
-                           Tcl_NewIntObj(supportsKEM));
+                           Tcl_NewBooleanObj(supportsKEM));
         }
 
         Tcl_SetObjResult(interp, resultObj);
