@@ -623,6 +623,31 @@ WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
 }
 
 # ifdef HAVE_OPENSSL_3_5
+/*----------------------------------------------------------------------
+ *
+ * WritePublicKeyPem --
+ *
+ *      Serialize the public key of the provided EVP_PKEY into PEM
+ *      format and either return it as Tcl result or write it to a
+ *      file.
+ *
+ *      The function creates a BIO via PEMOpenWriteStream(), writes
+ *      the public key using PEM_write_bio_PUBKEY(), and finalizes the
+ *      result via PEMWriteResult().
+ *
+ *      The "what" argument is used to construct human-readable error
+ *      messages (e.g., "signature", "key encapsulation").
+ *
+ * Results:
+ *      TCL_OK    - public key successfully written or returned
+ *      TCL_ERROR - on failure (error message set in interpreter)
+ *
+ * Side effects:
+ *      May create or overwrite a file when outfileName is provided.
+ *      Sets the Tcl interpreter result when no output file is used.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
 {
@@ -654,6 +679,46 @@ ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
     }
 }
 
+/*----------------------------------------------------------------------
+ *
+ * GeneratePrivateKeyPem --
+ *
+ *      Generate a private key of the specified type via OpenSSL's
+ *      provider-based key management API and return it as PEM or
+ *      write it to a file.
+ *
+ *      The key type is specified via "typeName" and resolved through
+ *      EVP_PKEY_CTX_new_from_name(). The function performs the
+ *      following steps:
+ *
+ *        - create a key generation context
+ *        - initialize key generation
+ *        - generate the key
+ *        - validate usage constraints (e.g., signature or KEM)
+ *        - write the key in PEM format
+ *
+ *      The "usage" parameter restricts the allowed key types:
+ *        - NS_CRYPTO_KEYGEN_USAGE_SIGNATURE: key must support signing
+ *        - NS_CRYPTO_KEYGEN_USAGE_KEM:       key must support KEM
+ *
+ *      The "what" argument is used for consistent error reporting
+ *      (e.g., "signature", "key encapsulation").
+ *
+ *      When the algorithm name is unknown or unsupported, a list of
+ *      valid names (filtered by usage) is generated via
+ *      EVP_KEYMGMT_do_all_provided() and returned in the error message.
+ *
+ * Results:
+ *      TCL_OK    - key successfully generated and returned/written
+ *      TCL_ERROR - on failure (error message set in interpreter)
+ *
+ * Side effects:
+ *      Allocates OpenSSL EVP_PKEY and BIO objects.
+ *      May create or overwrite a file when outfileName is provided.
+ *      Sets the Tcl interpreter result when no output file is used.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 GeneratePrivateKeyPem(Tcl_Interp *interp,
                       const char *typeName,
@@ -749,7 +814,39 @@ done:
 
     return result;
 }
+# endif /* HAVE_OPENSSL_3_5 */
 
+/*----------------------------------------------------------------------
+ *
+ * ListKeymgmt --
+ *
+ *      Callback used with EVP_KEYMGMT_do_all_provided() to collect
+ *      available key management algorithm names.
+ *
+ *      The function filters algorithms based on the requested usage
+ *      stored in NsKeygenListCtx:
+ *
+ *        - NS_CRYPTO_KEYGEN_USAGE_SIGNATURE:
+ *            include signature-capable algorithms (e.g., RSA,
+ *            RSA-PSS, ED25519, ED448, ML-DSA-*, SLH-DSA-*)
+ *
+ *        - NS_CRYPTO_KEYGEN_USAGE_KEM:
+ *            include key encapsulation mechanisms (ML-KEM-*)
+ *
+ *        - NS_CRYPTO_KEYGEN_USAGE_ANY:
+ *            include all available algorithms
+ *
+ *      Matching algorithm names are appended to the Tcl list provided
+ *      in the context structure.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends zero or more elements to ctx->listObj.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 WritePublicKeyPem(Tcl_Interp *interp,
                   EVP_PKEY   *pkey,
@@ -778,8 +875,6 @@ WritePublicKeyPem(Tcl_Interp *interp,
     BIO_free(bio);
     return result;
 }
-
-# endif
 
 /*
  *----------------------------------------------------------------------
@@ -4263,7 +4358,7 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  * NsTclCryptoKemObjCmd --
  *
  *      Implements "ns_crypto::kem" with various subcommands to
- *      provide subcommands to Quantum-safe Key Exchange and related
+ *      provide subcommands to Quantum-safe key exchange and related
  *      commands.
  *
  * Results:
