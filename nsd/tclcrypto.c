@@ -93,6 +93,9 @@ static EVP_PKEY *GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, con
 static int GetDigest(Tcl_Interp *interp, const char *digestName, NsDigestUsage usage, NsDigest *digestPtr)
     NS_GNUC_NONNULL(1,2,4);
 
+static void FreeDigest(NsDigest *digestPtr)
+    NS_GNUC_NONNULL(1);
+
 static int SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     NS_GNUC_NONNULL(1,2,3);
 
