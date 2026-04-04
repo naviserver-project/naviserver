@@ -117,6 +117,9 @@ static Tcl_Obj *CryptoKeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
 static bool PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
     NS_GNUC_NONNULL(1,2);
 
+static bool PkeySupportsKem(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
 static bool PkeySupportsSignature(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
@@ -231,7 +234,6 @@ static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
 static int GeneratePrivateKeyPem(Tcl_Interp *interp,
                                  const char *typeName,
                                  const char *what,
-                                 const char *resultWhat,
                                  const char *outfileName,
                                  NsCryptoKeygenUsage usage)
     NS_GNUC_NONNULL(1,2,3,4);
@@ -243,8 +245,6 @@ static int WritePublicKeyPem(Tcl_Interp *interp,
     NS_GNUC_NONNULL(1,2,3,4);
 static int KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
-static bool PkeyIsMlKem(EVP_PKEY *pkey)
-    NS_GNUC_NONNULL(1);
 #endif
 
 /*
@@ -437,7 +437,7 @@ SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     if (BIO_get_mem_ptr(bio, &bptr) != 1
         || bptr == NULL
         || bptr->data == NULL) {
-        Ns_TclPrintfResult(interp, "could not obtain %s", what);
+        Ns_TclPrintfResult(interp, "could not obtain generated %s key", what);
         return TCL_ERROR;
     }
 
@@ -575,7 +575,7 @@ WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
             return TCL_ERROR;
         }
 
-        result = PEMWriteResult(interp, bio, outfileName, "public key");
+        result = PEMWriteResult(interp, bio, outfileName, "public");
         BIO_free(bio);
 
         return result;
@@ -660,7 +660,6 @@ static int
 GeneratePrivateKeyPem(Tcl_Interp *interp,
                       const char *typeName,
                       const char *what,
-                      const char *resultWhat,
                       const char *outfileName,
                       NsCryptoKeygenUsage usage)
 {
@@ -670,7 +669,7 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
     BIO          *bio = NULL;
 
     if (*typeName == '\0') {
-        Ns_TclPrintfResult(interp, "missing %s key algorithm name", what);
+        Ns_TclPrintfResult(interp, "missing %s algorithm name", what);
         goto done;
     }
 
@@ -689,15 +688,14 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
         sortedNames = (sorted != NULL ? Tcl_GetString(sorted) : "");
 
         Ns_TclPrintfResult(interp,
-                           "unknown or unsupported %s key algorithm \"%s\","
-                           " valid names: %s",
+                           "unknown or unsupported %s algorithm \"%s\","
+                           " supported names: %s",
                            what, typeName, sortedNames);
         Tcl_DecrRefCount(sigCtx.listObj);
         goto done;
     }
 
     if (EVP_PKEY_keygen_init(ctx) <= 0) {
-
         Ns_TclPrintfResult(interp,
                            "could not initialize key generation for %s \"%s\"",
                            what, typeName);
@@ -706,24 +704,25 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
 
     if (EVP_PKEY_generate(ctx, &pkey) <= 0) {
         Ns_TclPrintfResult(interp,
-                           "could not generate %s key \"%s\"",
-                           what, typeName);
+                           "key type \"%s\" cannot be used for %s generation",
+                           typeName, what);
         goto done;
     }
 
     if (usage == NS_CRYPTO_KEYGEN_USAGE_SIGNATURE && !PkeySupportsSignature(pkey)) {
         Ns_TclPrintfResult(interp,
-                           "generated key \"%s\" does not support signatures",
-                           typeName);
+                           "generated key \"%s\" does not support %s operations",
+                           typeName, what);
         goto done;
     }
 
-    if (usage == NS_CRYPTO_KEYGEN_USAGE_KEM && !PkeyIsMlKem(pkey)) {
+    if (usage == NS_CRYPTO_KEYGEN_USAGE_KEM && !PkeySupportsKem(pkey)) {
         Ns_TclPrintfResult(interp,
-                           "generated key \"%s\" does not support key encapsulation",
-                           typeName);
+                           "generated key \"%s\" does not support %s operations",
+                           typeName, what);
         goto done;
     }
+
 
     bio = PEMOpenWriteStream(interp, outfileName);
     if (bio == NULL) {
@@ -737,7 +736,7 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
         goto done;
     }
 
-    result = PEMWriteResult(interp, bio, outfileName, resultWhat);
+    result = PEMWriteResult(interp, bio, outfileName, what);
 
 done:
     if (bio != NULL) {
@@ -3583,7 +3582,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
                                    curvenameString);
                 result = TCL_ERROR;
             } else {
-                result = PEMWriteResult(interp, bio, outfileName, "generated EC key");
+                result = PEMWriteResult(interp, bio, outfileName, "EC");
             }
 
             if (bio != NULL) {
@@ -3864,28 +3863,13 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
 
 # ifdef HAVE_OPENSSL_3_5
 
-const char *kemNameCanonical[] = {
-    "ML-KEM-512",
-    "ML-KEM-768",
-    "ML-KEM-1024"
-};
-static Ns_ObjvTable kemNames[] = {
-    {"ml-kem-512",  0u},
-    {"ML-KEM-512",  0u},
-    {"ml-kem-768",  1u},
-    {"ML-KEM-768",  1u},
-    {"ml-kem-1024", 2u},
-    {"ML-KEM-1024", 2u},
-    {NULL,          0u}
-};
-
 /*
  *----------------------------------------------------------------------
  *
  * CryptoKemGenerateObjCmd -- Subcommand of NsTclCryptoKemObjCmd
  *
  *      Implements "ns_crypto::kem generate". Subcommand to generate an
- *      ML-KEM private key in PEM format without the need of an external
+ *      KEM private key in PEM format without the need of an external
  *      command.
  *
  *      When -pem is specified, the generated key is written to the
@@ -3896,7 +3880,7 @@ static Ns_ObjvTable kemNames[] = {
  *      Tcl Result Code.
  *
  * Side effects:
- *      Creates an ML-KEM key pair and either writes it to a file or
+ *      Creates a KEM key pair and either writes it to a file or
  *      returns it as PEM string.
  *
  *----------------------------------------------------------------------
@@ -3905,11 +3889,11 @@ static int
 CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         kemINamedx = 1 /* ml-kem-768 */ ;
+    const char *nameString = "ml-kem-768";
     const char *outfileName = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-name",     Ns_ObjvIndex,  &kemINamedx,  kemNames},
-        {"-outfile",  Ns_ObjvString, &outfileName, NULL},
+        {"-name",    Ns_ObjvString, &nameString,  NULL},
+        {"-outfile", Ns_ObjvString, &outfileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -3922,13 +3906,11 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
 
     return GeneratePrivateKeyPem(interp,
-                                 kemNameCanonical[kemINamedx],
-                                 "KEM",
-                                 "generated KEM key",
+                                 nameString,
+                                 "key encapsulation",
                                  outfileName,
                                  NS_CRYPTO_KEYGEN_USAGE_KEM);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -3970,8 +3952,8 @@ CryptoKemPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         if (pkey == NULL) {
             result = TCL_ERROR;
 
-        } else if (!PkeyIsMlKem(pkey)) {
-            Ns_TclPrintfResult(interp, "provided PEM does not contain an ML-KEM key");
+        } else if (!PkeySupportsKem(pkey)) {
+            Ns_TclPrintfResult(interp, "provided PEM does not support key encapsulation");
             EVP_PKEY_free(pkey);
             result = TCL_ERROR;
 
@@ -3985,21 +3967,6 @@ CryptoKemPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         }
     }
     return result;
-}
-
-static bool
-PkeyIsMlKem(EVP_PKEY *pkey)
-{
-    size_t i;
-
-    NS_NONNULL_ASSERT(pkey != NULL);
-
-    for (i = 0u; i < Ns_NrElements(kemNameCanonical); ++i) {
-        if (EVP_PKEY_is_a(pkey, kemNameCanonical[i]) == 1) {
-            return NS_TRUE;
-        }
-    }
-    return NS_FALSE;
 }
 
 /*
@@ -4165,8 +4132,8 @@ CryptoKemEncapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             return TCL_ERROR;
         }
     }
-    if (!PkeyIsMlKem(pkey)) {
-        Ns_TclPrintfResult(interp, "provided PEM does not contain an ML-KEM key");
+    if (!PkeySupportsKem(pkey)) {
+        Ns_TclPrintfResult(interp, "provided PEM does not support key encapsulation");
         result = TCL_ERROR;
         goto done;
     }
@@ -5056,7 +5023,7 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         resultObj = Tcl_NewDictObj();
 
-        Tcl_DictObjPut(NULL, resultObj,
+        Tcl_DictObjPut(interp, resultObj,
                        NsAtomObj(NS_ATOM_TYPE),
                        typeNameObj);
 
@@ -5073,14 +5040,14 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     if (nid != NID_undef) {
                         curveName = OBJ_nid2sn(nid);
                         if (curveName != NULL) {
-                            Tcl_DictObjPut(NULL, resultObj,
+                            Tcl_DictObjPut(interp, resultObj,
                                            NsAtomObj(NS_ATOM_CURVE),
                                            Tcl_NewStringObj(curveName, TCL_INDEX_NONE));
                         }
                     }
                     bits = EC_GROUP_order_bits(group);
                     if (bits > 0) {
-                        Tcl_DictObjPut(NULL, resultObj,
+                        Tcl_DictObjPut(interp, resultObj,
                                        NsAtomObj(NS_ATOM_BITS),
                                        Tcl_NewIntObj(bits));
                     }
@@ -5094,7 +5061,7 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             int bits = EVP_PKEY_bits(pkey);
 
             if (bits > 0) {
-                Tcl_DictObjPut(NULL, resultObj,
+                Tcl_DictObjPut(interp, resultObj,
                                NsAtomObj(NS_ATOM_BITS),
                                Tcl_NewIntObj(bits));
             }
@@ -5103,15 +5070,19 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {
             int supportsSignature = PkeySupportsSignature(pkey);
 
-            Tcl_DictObjPut(NULL, resultObj,
+            Tcl_DictObjPut(interp, resultObj,
                            NsAtomObj(NS_ATOM_SIGNATURE),
                            Tcl_NewIntObj(supportsSignature));
             if (supportsSignature) {
-                Tcl_DictObjPut(NULL, resultObj,
+                Tcl_DictObjPut(interp, resultObj,
                                NsAtomObj(NS_ATOM_REQUIRESDIGEST),
                                Tcl_NewIntObj(PkeySignatureRequiresDigest(pkey)));
             }
         }
+
+        Tcl_DictObjPut(interp, resultObj,
+                       NsAtomObj(NS_ATOM_KEM),
+                       Tcl_NewIntObj(PkeySupportsKem(pkey)));
 
         Tcl_SetObjResult(interp, resultObj);
         result = TCL_OK;
@@ -5403,6 +5374,31 @@ PkeySupportsSignature(EVP_PKEY *pkey)
             || PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)
 # endif
             );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySupportsKem --
+ *
+ *      Determine whether the provided EVP_PKEY supports key
+ *      encapsulation operations.
+ *
+ *      This includes post-quantum schemes such as ML_KEM.
+ *
+ * Results:
+ *      NS_TRUE  if the key supports key encapsulation operations.
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeySupportsKem(EVP_PKEY *pkey)
+{
+    return (PkeyMatchesPrefix(pkey, "ML-KEM-", 7));
 }
 
 /*
@@ -5897,7 +5893,6 @@ CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return GeneratePrivateKeyPem(interp,
                                  nameString,
                                  "signature",
-                                 "generated signature key",
                                  outfileName,
                                  NS_CRYPTO_KEYGEN_USAGE_SIGNATURE);
 }

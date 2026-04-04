@@ -406,24 +406,40 @@ be in memory). In order to compute HMACs on large data, use
 
 
 [call [cmd "ns_crypto::kem generate"] \
-    [opt [option "-name ml-kem-512|ml-kem-768|ml-kem-1024"]] \
+    [opt [option "-name [arg value]"]] \
     [opt [option "-outfile [arg value]"]]]
 
-  Generate a new ML-KEM key pair. The private key is returned/stored in
-  PEM format; the public key can be derived via [cmd "ns_crypto::kem pub"].
+  Generate a new key pair for a key encapsulation mechanism (KEM).
+  The private key is returned/stored in PEM format; the corresponding
+  public key can be derived via [cmd "ns_crypto::kem pub"].
 
-  [para] When [option -outfile] is specified, the generated private key is written in PEM
-  format to the provided file. Otherwise, the generated PEM string is returned.
+  [para] The key type is selected via [option -name]. The value is passed
+  to OpenSSL's provider-based key management layer and is therefore not
+  restricted to a fixed set of algorithms. The available values depend on
+  the OpenSSL version and configured providers.
 
-  [para] The optional [option -name] argument selects the ML-KEM parameter set. When
-  omitted, [const ml-kem-768] is used.
+  [para] or example, OpenSSL 3.5 provides ML-KEM parameter sets such as
+  [const ml-kem-512], [const ml-kem-768], and [const ml-kem-1024].
+
+  [para] When [option -name] is omitted, a provider-dependent default
+  algorithm is used (currently [const ml-kem-768] when available).
+
+  [para] Not all OpenSSL key types support key encapsulation. When a key
+  type that does not provide key encapsulation operations is specified,
+  the command returns an error.
+
+  [para] When [option -outfile] is specified, the generated private key is written
+  in PEM format to the provided file. Otherwise, the generated PEM string is returned.
 
 [example_begin]
- # Return a PEM string
+ # Return a PEM string (default algorithm)
  set pem [lb]ns_crypto::kem generate[rb]
  
+ # Generate a specific KEM key
+ set pem [lb]ns_crypto::kem generate -name ml-kem-1024[rb]
+ 
  # Write a PEM file
- ns_crypto::kem generate -name ml-kem-1024 -outfile /tmp/mlkem.pem
+ ns_crypto::kem generate -name ml-kem-1024 -outfile /tmp/kem.pem
 [example_end]
 
   [para] This function requires OpenSSL 3.5.
@@ -435,14 +451,16 @@ be in memory). In order to compute HMACs on large data, use
     [option "-pem [arg value]"] \
     ]
 
-  Returns the ML-KEM public key corresponding to the provided private key.
+  Returns the public key corresponding to the provided private key.
 
-  [para] The argument to [option -pem] may be either a PEM file name or a PEM string.
-  When the private key is encrypted, provide the passphrase via
+  [para] The argument to [option -pem] may be either a PEM file name or a
+  PEM string. When the private key is encrypted, provide the passphrase via
   [option -passphrase].
 
- [para] When [option "-outfile"] is specified, the public key is
- written to the file. Otherwise, it is returned as command result.
+  [para] The key must represent a key encapsulation mechanism (KEM) key.
+
+  [para] When [option "-outfile"] is specified, the public key is written
+  to the file. Otherwise, it is returned as command result.
 
 [example_begin]
  # Obtain the public key as PEM string
@@ -458,24 +476,26 @@ be in memory). In order to compute HMACs on large data, use
     [option "-pem [arg value]"] \
     ]
 
-  Encapsulate a shared secret for an ML-KEM public key.
- 
+  Encapsulate a shared secret for a KEM public key.
+
   [para] The argument to [option -pem] may be either a PEM file name or a
-  PEM string. It may contain an ML-KEM public key or private key. When a
+  PEM string. It may contain a KEM public key or private key. When a
   private key is provided, the corresponding public key is derived
   automatically. If the private key is encrypted, specify the passphrase
   via [option -passphrase].
 
-  [para] The result is a dictionary containing the keys [const ciphertext] and
-  [const secret]. Both values are encoded according to [option -encoding]. When
-  [option -encoding] is omitted, the result values are returned as [const hex].
+  [para] The key must represent a key encapsulation mechanism (KEM) key.
+
+  [para] The result is a dictionary containing the keys [const ciphertext]
+  and [const secret]. Both values are encoded according to [option -encoding].
+  When [option -encoding] is omitted, the result values are returned as [const hex].
 
 [example_begin]
  # Encapsulate via PEM private key
  set pem [lb]ns_crypto::kem generate[rb]
  set r   [lb]ns_crypto::kem encapsulate -pem $pem[rb]
  
- # Encapsulate via PUM public key
+ # Encapsulate via PEM public key
  set pub [lb]ns_crypto::kem pub -pem $pem[rb]
  set r   [lb]ns_crypto::kem encapsulate -pem $pub[rb]
  
@@ -485,6 +505,7 @@ be in memory). In order to compute HMACs on large data, use
 
   [para] This function requires OpenSSL 3.5.
 
+
 [call [cmd "ns_crypto::kem decapsulate"] \
     [opt [option "-encoding hex|base64url|base64|binary"]] \
     [opt [option "-passphrase [arg value]"]] \
@@ -492,27 +513,32 @@ be in memory). In order to compute HMACs on large data, use
     [option "-ciphertext [arg value]"] \
     ]
 
-  Decapsulate a shared secret from an ML-KEM ciphertext using the provided
+  Decapsulate a shared secret from a KEM ciphertext using the provided
   private key.
 
-  [para] The argument to [option -pem] may be either a PEM file name or a PEM string.
-  When the private key is encrypted, provide the passphrase via
-  [option -passphrase].
+  [para] The argument to [option -pem] may be either a PEM file name or a
+  PEM string. When the private key is encrypted, provide the passphrase
+  via [option -passphrase].
 
-  [para] The argument to [option -ciphertext] must contain the ciphertext as binary
-  data.
+  [para] The key must represent a key encapsulation mechanism (KEM) key.
 
-  [para] The recovered shared secret is returned encoded according to [option -encoding].
-  When [option -encoding] is omitted, the result is returned as [const hex].
+  [para] The argument to [option -ciphertext] must contain the ciphertext
+  as binary data.
+
+  [para] The recovered shared secret is returned encoded according to
+  [option -encoding]. When [option -encoding] is omitted, the result is
+  returned as [const hex].
 
   [para]
-  Important: [option -ciphertext] expects binary ciphertext. Therefore, when
-  using the default hex output of [cmd "ns_crypto::kem encapsulate"], decode the
-  [cmd ciphertext] value before passing it via [option -ciphertext]. Alternatively,
-  request [option "-encoding binary"] from [cmd "ns_crypto::kem encapsulate"].
+  Important: [option -ciphertext] expects binary ciphertext. Therefore,
+  when using the default hex output of
+  [cmd "ns_crypto::kem encapsulate"], decode the [cmd ciphertext] value
+  before passing it via [option -ciphertext]. Alternatively, request
+  [option "-encoding binary"] from
+  [cmd "ns_crypto::kem encapsulate"].
 
 [example_begin]
- # Decapsulate from default hex output of encapsulate
+ # Decapsulate from default hex output
  set pem [lb]ns_crypto::kem generate[rb]
  set r   [lb]ns_crypto::kem encapsulate -pem $pem[rb]
  set ct  [lb]dict get $r ciphertext]
@@ -520,7 +546,7 @@ be in memory). In order to compute HMACs on large data, use
                  -pem $pem \
                  -ciphertext [lb]binary decode hex $ct[rb][rb]
  
- # Decapsulate from binary output of encapsulate
+ # Decapsulate from binary output
  set pub [lb]ns_crypto::kem pub -pem $pem -encoding binary[rb]
  set r   [lb]ns_crypto::kem encapsulate \
             -name ml-kem-768 \
@@ -534,7 +560,6 @@ be in memory). In order to compute HMACs on large data, use
 [example_end]
 
   [para] This function requires OpenSSL 3.5.
-
 
 
 [call [cmd "ns_crypto::key info"] \
@@ -569,6 +594,8 @@ be in memory). In order to compute HMACs on large data, use
      provided. For algorithms with built-in hashing (e.g.,
      [const Ed25519], [const Ed448], [const ML-DSA], [const SLH-DSA]),
      no digest is required and specifying one is not supported.
+  [item] [const kem] - boolean indicating whether the key provides a
+     key encapsulation mechanism.
   [list_end]
 
   [para] Additional fields may include:

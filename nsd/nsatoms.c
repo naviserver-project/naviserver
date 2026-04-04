@@ -353,6 +353,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_INCOMPLETE].name       = "incomplete";    atoms[NS_ATOM_INCOMPLETE].len = 10;
     atoms[NS_ATOM_LIBRARYVERSION].name   = "libraryversion"; atoms[NS_ATOM_LIBRARYVERSION].len = 14;
     atoms[NS_ATOM_LOCATION].name         = "location";      atoms[NS_ATOM_LOCATION].len = 8;
+    atoms[NS_ATOM_KEM].name              = "kem";           atoms[NS_ATOM_KEM].len = 3;
     atoms[NS_ATOM_MODULE].name           = "module";        atoms[NS_ATOM_MODULE].len = 6;
     atoms[NS_ATOM_NAME].name             = "name";          atoms[NS_ATOM_NAME].len = 4;
     atoms[NS_ATOM_NR_DYNAMIC].name       = "nr_dynamic";    atoms[NS_ATOM_NR_DYNAMIC].len = 10;

@@ -825,7 +825,7 @@ test ns_crypto::kem-1.0 {syntax: ns_crypto::kem} -constraints {kem} -body {
 
 test ns_crypto::kem-1.1 {syntax: ns_crypto::kem generate} -constraints {kem} -body {
     ns_crypto::kem generate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate ?-name ml-kem-512|ml-kem-768|ml-kem-1024? ?-outfile /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate ?-name /value/? ?-outfile /value/?"}
 
 test ns_crypto::kem-1.2 {syntax: ns_crypto::kem pub} -constraints {kem} -body {
     ns_crypto::kem pub
@@ -992,8 +992,9 @@ test ns_crypto::key-3.8 {info: EC requires digest for signatures} -constraints {
     set info [ns_crypto::key info -pem $pem]
     list \
         [dict get $info signature] \
+        [dict get $info kem] \
         [dict get $info requiresdigest]
-} -result {1 1}
+} -result {1 0 1}
 
 test ns_crypto::key-3.9 {info: ML-DSA signature key does not require digest} -constraints {mldsa} -body {
     set pem [ns_crypto::signature generate -name ml-dsa-65]
@@ -1001,16 +1002,18 @@ test ns_crypto::key-3.9 {info: ML-DSA signature key does not require digest} -co
     list \
         [dict get $info type] \
         [dict get $info signature] \
+        [dict get $info kem] \
         [dict get $info requiresdigest]
-} -result {ml-dsa-65 1 0}
+} -result {ml-dsa-65 1 0 0}
 
 test ns_crypto::key-3.10 {info: non-signature key has no requiresdigest field} -constraints {kem} -body {
     set pem [ns_crypto::kem generate]
     set info [ns_crypto::key info -pem $pem]
     list \
         [dict get $info signature] \
+        [dict get $info kem] \
         [dict exists $info requiresdigest]
-} -result {0 0}
+} -result {0 1 0}
 
 
 test ns_crypto::key-4.1 {pub: EC public key raw hex matches eckey pub} -constraints {ec} -body {
