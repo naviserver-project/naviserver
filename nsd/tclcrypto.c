@@ -229,7 +229,6 @@ static TCL_OBJCMDPROC_T CryptoKemDecapsulateObjCmd;
 
 static TCL_OBJCMDPROC_T CryptoSignatureGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
-#endif
 
 static int GeneratePrivateKeyPem(Tcl_Interp *interp,
                                  const char *typeName,
@@ -245,7 +244,7 @@ static int WritePublicKeyPem(Tcl_Interp *interp,
     NS_GNUC_NONNULL(1,2,3,4);
 static int KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
-#endif
+# endif
 
 /*
  * Local variables defined in this file.
@@ -258,7 +257,7 @@ static const char * const hmacCtxType  = "ns:hmacctx";
 static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
 # endif
 # ifdef HAVE_OPENSSL_3
-#include <openssl/core_names.h>
+# include <openssl/core_names.h>
 # endif
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
 
@@ -5846,7 +5845,6 @@ done:
 
 
 # ifdef HAVE_OPENSSL_3_5
-
 /*
  *----------------------------------------------------------------------
  *
@@ -5957,6 +5955,7 @@ CryptoSignaturePubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
     return result;
 }
+# endif
 
 /*
  *----------------------------------------------------------------------
