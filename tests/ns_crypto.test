@@ -1451,7 +1451,7 @@ test ns_crypto::agreement-1.0 {syntax: ns_crypto::agreement subcommands} -constr
 
 test ns_crypto::agreement-1.1 {syntax: ns_crypto::agreement generate} -constraints {agreement} -body {
     ns_crypto::agreement generate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::agreement generate ?-name /value/? ?-outfile /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::agreement generate ?-name /value/? ?-group /value/? ?-outfile /value/?"}
 
 test ns_crypto::agreement-1.2 {syntax: ns_crypto::agreement pub} -constraints {agreement} -body {
     ns_crypto::agreement pub
@@ -1523,6 +1523,21 @@ test ns_crypto::agreement-2.6 {pub: write X25519 public key to outfile} -constra
     unset -nocomplain privFile pubFile
 } -result 1
 
+test ns_crypto::agreement-2.7 {generate: EC with group} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name EC -group prime256v1]
+    dict get [ns_crypto::key info -pem $pem] agreement
+} -result 1
+
+test ns_crypto::agreement-2.8 {generate: DH with group} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name DH -group ffdhe2048]
+    dict get [ns_crypto::key info -pem $pem] agreement
+} -result 1
+
+test ns_crypto::agreement-2.9 {generate: DHX with group} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name DHX -group modp_2048]
+    dict get [ns_crypto::key info -pem $pem] agreement
+} -result 1
+
 #---------------------------------------------------------------------------
 # Functional tests: agreement shared secret derivation
 #---------------------------------------------------------------------------
@@ -1587,17 +1602,17 @@ test ns_crypto::agreement-4.2 {generate: empty algorithm name} -constraints {agr
     ns_crypto::agreement generate -name ""
 } -returnCodes error -match glob -result {*}
 
-test ns_crypto::agreement-4.3 {generate: EC rejected for current agreement generation interface} -constraints {agreement} -body {
+test ns_crypto::agreement-4.3 {generate: EC without -group rejected} -constraints {agreement} -body {
     ns_crypto::agreement generate -name EC
-} -returnCodes error -match glob -result {*EC*key agreement generation*}
+} -returnCodes error -match glob -result {*-group*required*EC*}
 
-test ns_crypto::agreement-4.4 {generate: DH rejected for current agreement generation interface} -constraints {agreement} -body {
+test ns_crypto::agreement-4.4 {generate: DH without -group rejected} -constraints {agreement} -body {
     ns_crypto::agreement generate -name DH
-} -returnCodes error -match glob -result {*DH*key agreement generation*}
+} -returnCodes error -match glob -result {*-group*required*DH*}
 
-test ns_crypto::agreement-4.5 {generate: DHX rejected for current agreement generation interface} -constraints {agreement} -body {
+test ns_crypto::agreement-4.5 {generate: DHX without -group rejected} -constraints {agreement} -body {
     ns_crypto::agreement generate -name DHX
-} -returnCodes error -match glob -result {*DHX*key agreement generation*}
+} -returnCodes error -match glob -result {*-group*required*DHX*}
 
 test ns_crypto::agreement-4.6 {generate: KEM algorithm rejected for agreement} -constraints {kem agreement} -body {
     ns_crypto::agreement generate -name ml-kem-768
@@ -1606,6 +1621,7 @@ test ns_crypto::agreement-4.6 {generate: KEM algorithm rejected for agreement} -
 test ns_crypto::agreement-4.7 {generate: signature algorithm rejected for agreement} -constraints {agreement} -body {
     ns_crypto::agreement generate -name RSA
 } -returnCodes error -match glob -result {*does not support key agreement operations*}
+
 
 #---------------------------------------------------------------------------
 # Negative tests: agreement invalid PEM / wrong capability

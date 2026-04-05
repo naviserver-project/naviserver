@@ -274,7 +274,8 @@ static int GeneratePrivateKeyPem(Tcl_Interp *interp,
                                  const char *typeName,
                                  const char *what,
                                  const char *outfileName,
-                                 NsCryptoKeygenUsage usage)
+                                 NsCryptoKeygenUsage usage,
+                                 OSSL_PARAM *params)
     NS_GNUC_NONNULL(1,2,3,4);
 
 static void ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
@@ -690,9 +691,9 @@ ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
                      );
     } else if (ctx->usage == NS_CRYPTO_KEYGEN_USAGE_AGREEMENT) {
         addToList = (NS_FALSE
-                     //|| STREQ(name, "DH")
-                     //|| STREQ(name, "EC")
-                     //|| STREQ(name, "DHX")
+                     || STREQ(name, "DH")
+                     || STREQ(name, "DHX")
+                     || STREQ(name, "EC")
                      || STREQ(name, "X25519")
                      || STREQ(name, "X448")
                      );
@@ -753,12 +754,13 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
                       const char *typeName,
                       const char *what,
                       const char *outfileName,
-                      NsCryptoKeygenUsage usage)
+                      NsCryptoKeygenUsage usage,
+                      OSSL_PARAM *params)
 {
     int           result = TCL_ERROR;
-    EVP_PKEY_CTX *ctx = NULL;
+    EVP_PKEY_CTX *ctx  = NULL;
     EVP_PKEY     *pkey = NULL;
-    BIO          *bio = NULL;
+    BIO          *bio  = NULL;
 
     if (*typeName == '\0') {
         Ns_TclPrintfResult(interp, "missing %s algorithm name", what);
@@ -790,6 +792,13 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
     if (EVP_PKEY_keygen_init(ctx) <= 0) {
         Ns_TclPrintfResult(interp,
                            "could not initialize key generation for %s \"%s\"",
+                           what, typeName);
+        goto done;
+    }
+
+    if (params != NULL && EVP_PKEY_CTX_set_params(ctx, params) <= 0) {
+        Ns_TclPrintfResult(interp,
+                           "could not set parameters for %s algorithm \"%s\"",
                            what, typeName);
         goto done;
     }
@@ -4038,7 +4047,8 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                  nameString,
                                  "key encapsulation",
                                  outfileName,
-                                 NS_CRYPTO_KEYGEN_USAGE_KEM);
+                                 NS_CRYPTO_KEYGEN_USAGE_KEM,
+                                 NULL);
 }
 
 /*
@@ -4450,10 +4460,13 @@ static int
 CryptoAgreementGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const char *nameString = "X25519";
-    const char *outfileName = NULL;
+    const char *typeName = "X25519" ;
+    const char *outfileName = NULL, *groupName = NULL;
+    bool        requiresGroup = NS_FALSE, acceptsOptionalGroup = NS_FALSE;
+    OSSL_PARAM  params[2], *paramPtr = NULL;
     Ns_ObjvSpec lopts[] = {
-        {"-name",    Ns_ObjvString, &nameString,  NULL},
+        {"-name",    Ns_ObjvString, &typeName,  NULL},
+        {"-group",   Ns_ObjvString, &groupName,   NULL},
         {"-outfile", Ns_ObjvString, &outfileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -4466,11 +4479,44 @@ CryptoAgreementGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
+    if (strcasecmp(typeName, "EC") == 0
+        || strcasecmp(typeName, "DH") == 0
+        || strcasecmp(typeName, "DHX") == 0) {
+        requiresGroup = NS_TRUE;
+    } else if (strcasecmp(typeName, "X25519") == 0
+               || strcasecmp(typeName, "X448") == 0) {
+        acceptsOptionalGroup = NS_TRUE;
+    }
+
+    if (requiresGroup && (groupName == NULL || *groupName == '\0')) {
+        Ns_TclPrintfResult(interp,
+                           "the option \"-group\" is required for key agreement algorithm \"%s\"",
+                           typeName);
+        return TCL_ERROR;
+
+    } else if (acceptsOptionalGroup && groupName != NULL) {
+        if ((strcasecmp(typeName, "X25519") == 0 && strcasecmp(groupName, "x25519") != 0)
+            || (strcasecmp(typeName, "X448") == 0 && strcasecmp(groupName, "x448") != 0)) {
+            Ns_TclPrintfResult(interp,
+                               "group \"%s\" is not valid for key agreement algorithm \"%s\"",
+                               groupName, typeName);
+            return TCL_ERROR;
+        }
+    }
+
+    if (groupName != NULL) {
+        params[0] = OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME,
+                                                     (char *)groupName, 0);
+        params[1] = OSSL_PARAM_construct_end();
+        paramPtr = params;
+    }
+
     return GeneratePrivateKeyPem(interp,
-                                 nameString,
+                                 typeName,
                                  "key agreement",
                                  outfileName,
-                                 NS_CRYPTO_KEYGEN_USAGE_AGREEMENT);
+                                 NS_CRYPTO_KEYGEN_USAGE_AGREEMENT,
+                                 paramPtr);
 }
 
 /*----------------------------------------------------------------------
@@ -6407,7 +6453,8 @@ CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                  nameString,
                                  "signature",
                                  outfileName,
-                                 NS_CRYPTO_KEYGEN_USAGE_SIGNATURE);
+                                 NS_CRYPTO_KEYGEN_USAGE_SIGNATURE,
+                                 NULL);
 }
 
 /*

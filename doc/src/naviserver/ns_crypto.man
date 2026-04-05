@@ -120,6 +120,7 @@ The argument [arg input] (the cipher text) is always treated as byte array.
 
 [call [cmd "ns_crypto::agreement generate"] \
      [opt [option "-name [arg value]"]] \
+     [opt [option "-group [arg value]"]] \
      [opt [option "-outfile [arg value]"]] \
     ]
 
@@ -145,6 +146,21 @@ The argument [arg input] (the cipher text) is always treated as byte array.
   [para] When [option -name] is omitted, a provider-dependent default
   algorithm is used (currently [const X25519] when available).
 
+  [para] The option [option -group] specifies the domain parameters or
+  named group used for key generation. For key agreement algorithms such
+  as [const EC], [const DH], and [const DHX], this option is required and
+  must be set to a valid group name supported by the underlying OpenSSL
+  provider (e.g., [const prime256v1], [const ffdhe2048], or
+  [const modp_2048]). For algorithms with fixed domain parameters such as
+  [const X25519] and [const X448], the [option -group] option is optional
+  and typically not needed; when provided, it must match the algorithm
+  name. An error is returned if an unsupported or incompatible group is
+  specified.
+
+  [para] Valid group names depend on the underlying OpenSSL provider.
+  Common examples are [const prime256v1], [const ffdhe2048], and
+  [const modp_2048]. Please check used OpenSSL documentation.
+
   [para] The generated key is returned as a PEM encoded private key.
   When [option "-outfile"] is specified, the key is written to the
   provided file instead.
@@ -161,6 +177,18 @@ The argument [arg input] (the cipher text) is always treated as byte array.
  
  # Generate a key and write it to a file
  ns_crypto::agreement generate -name X25519 -outfile /tmp/agreement.pem
+ 
+ # Generate an X25519 agreement key
+ set pem [lb]ns_crypto::agreement generate -name X25519[rb]
+ 
+ # Generate an EC agreement key on a named curve
+ set pem [lb]ns_crypto::agreement generate -name EC -group prime256v1[rb]
+ 
+ # Generate a DH agreement key for a named safe-prime group
+ set pem [lb]ns_crypto::agreement generate -name DH -group ffdhe2048[rb]
+ 
+ # Generate a DHX agreement key for a MODP group
+ set pem [lb]ns_crypto::agreement generate -name DHX -group modp_2048[rb]
 [example_end]
 
   [para] This function requires OpenSSL 3.0 or newer.

@@ -178,7 +178,7 @@
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::aead::decrypt string}] ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? -key /value/ -tag /value/ ?--? /input/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::aead::encrypt string}] ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? -key /value/ ?--? /input/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::agreement derive}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ -peer /value/
-[uri ../../naviserver/files/ns_crypto.html {ns_crypto::agreement generate}] ?-name /value/? ?-outfile /value/?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::agreement generate}] ?-name /value/? ?-group /value/? ?-outfile /value/?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::agreement pub}] ?-passphrase /value/? ?-outfile /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::argon2}] ?-ad /value/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer/? ?-lanes /integer/? ?-memcost /integer/? ?-outlen /integer/? ?-password /value/? -salt /value/ ?-secret /value/? ?-threads /integer/? ?-variant /value/?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::eckey fromcoords}] ?-binary? -curve /value/ -x /value/ -y /value/ ?-format pem|der? ?-outfile /value/?
