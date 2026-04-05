@@ -15,6 +15,7 @@ tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -s
 tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
 tcltest::testConstraint kem [expr {![catch {::ns_crypto::kem generate}]}]
 tcltest::testConstraint signature [expr {![catch {::ns_crypto::signature generate}]}]
+tcltest::testConstraint agreement [expr {![catch {::ns_crypto::agreement generate}]}]
 tcltest::testConstraint mldsa [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
 tcltest::testConstraint ec [expr {![catch {::ns_crypto::eckey generate}]}]
 
@@ -755,11 +756,11 @@ test argon2-1.6 {
 
 test ns_crypto:eckey-1.0 {syntax: ns_crypto::eckey} -constraints {ec} -body {
     ns_crypto::eckey
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey fromcoords|generate|import|priv|sharedsecret|pub ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate|pub|fromcoords|import|priv|sharedsecret ?/arg .../"}
 
 test ns_crypto:eckey-1.1 {syntax: ns_crypto::eckey subcommands} -constraints {ec} -body {
     ns_crypto::eckey ?
-} -returnCodes error -result {ns_crypto::eckey: bad subcommand "?": must be fromcoords, generate, import, priv, sharedsecret, or pub}
+} -returnCodes error -result {ns_crypto::eckey: bad subcommand "?": must be generate, pub, fromcoords, import, priv, or sharedsecret}
 
 test ns_crypto::eckey-1.2 {syntax: ns_crypto::eckey generate} -constraints {ec} -body {
     ns_crypto::eckey generate ?
@@ -1440,6 +1441,214 @@ test ns_crypto::signature-9.8 {verify: generated KEM public key rejected} -const
 } -returnCodes error -match glob -result {*does not support signatures*}
 
 
+############################################################################
+# Test Cases for ns_crypto::agreement
+############################################################################
+
+test ns_crypto::agreement-1.0 {syntax: ns_crypto::agreement subcommands} -constraints {agreement} -body {
+    ns_crypto::agreement
+} -returnCodes error -result {wrong # args: should be "ns_crypto::agreement generate|pub|derive ?/arg .../"}
+
+test ns_crypto::agreement-1.1 {syntax: ns_crypto::agreement generate} -constraints {agreement} -body {
+    ns_crypto::agreement generate x
+} -returnCodes error -result {wrong # args: should be "ns_crypto::agreement generate ?-name /value/? ?-outfile /value/?"}
+
+test ns_crypto::agreement-1.2 {syntax: ns_crypto::agreement pub} -constraints {agreement} -body {
+    ns_crypto::agreement pub
+} -returnCodes error -result {wrong # args: should be "ns_crypto::agreement pub ?-passphrase /value/? ?-outfile /value/? -pem /value/"}
+
+test ns_crypto::agreement-1.3 {syntax: ns_crypto::agreement derive} -constraints {agreement} -body {
+    ns_crypto::agreement derive
+} -returnCodes error -result {wrong # args: should be "ns_crypto::agreement derive ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ -peer /value/"}
+
+#---------------------------------------------------------------------------
+# Functional tests: agreement key generation and public key extraction
+#---------------------------------------------------------------------------
+
+test ns_crypto::agreement-2.1 {generate: X25519 private key} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name X25519]
+    list \
+        [string match {*-----BEGIN PRIVATE KEY-----*} $pem] \
+        [dict get [ns_crypto::key info -pem $pem] type] \
+        [dict get [ns_crypto::key info -pem $pem] agreement]
+} -result {1 x25519 1}
+
+test ns_crypto::agreement-2.2 {generate: X448 private key} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name X448]
+    list \
+        [string match {*-----BEGIN PRIVATE KEY-----*} $pem] \
+        [dict get [ns_crypto::key info -pem $pem] type] \
+        [dict get [ns_crypto::key info -pem $pem] agreement]
+} -result {1 x448 1}
+
+test ns_crypto::agreement-2.3 {pub: X25519 public key extraction} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name X25519]
+    set pub [ns_crypto::agreement pub -pem $pem]
+    list \
+        [string match {*-----BEGIN PUBLIC KEY-----*} $pub] \
+        [dict get [ns_crypto::key info -pem $pub] type] \
+        [dict get [ns_crypto::key info -pem $pub] agreement]
+} -result {1 x25519 1}
+
+test ns_crypto::agreement-2.4 {pub: X448 public key extraction} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name X448]
+    set pub [ns_crypto::agreement pub -pem $pem]
+    list \
+        [string match {*-----BEGIN PUBLIC KEY-----*} $pub] \
+        [dict get [ns_crypto::key info -pem $pub] type] \
+        [dict get [ns_crypto::key info -pem $pub] agreement]
+} -result {1 x448 1}
+
+test ns_crypto::agreement-2.5 {generate: write X25519 key to outfile} -constraints {agreement} -setup {
+    set privFile /tmp/ns_crypto_x25519_priv.pem
+    file delete -force $privFile
+} -body {
+    ns_crypto::agreement generate -name X25519 -outfile $privFile
+    expr {[file exists $privFile] && [file size $privFile] > 0}
+} -cleanup {
+    file delete -force $privFile
+    unset -nocomplain privFile
+} -result 1
+
+test ns_crypto::agreement-2.6 {pub: write X25519 public key to outfile} -constraints {agreement} -setup {
+    set privFile /tmp/ns_crypto_x25519_priv.pem
+    set pubFile  /tmp/ns_crypto_x25519_pub.pem
+    file delete -force $privFile $pubFile
+    ns_crypto::agreement generate -name X25519 -outfile $privFile
+} -body {
+    ns_crypto::agreement pub -pem $privFile -outfile $pubFile
+    expr {[file exists $pubFile] && [file size $pubFile] > 0}
+} -cleanup {
+    file delete -force $privFile $pubFile
+    unset -nocomplain privFile pubFile
+} -result 1
+
+#---------------------------------------------------------------------------
+# Functional tests: agreement shared secret derivation
+#---------------------------------------------------------------------------
+
+test ns_crypto::agreement-3.1 {derive: X25519 roundtrip default hex encoding} -constraints {agreement} -body {
+    set pemA [ns_crypto::agreement generate -name X25519]
+    set pemB [ns_crypto::agreement generate -name X25519]
+    set pubA [ns_crypto::agreement pub -pem $pemA]
+    set pubB [ns_crypto::agreement pub -pem $pemB]
+
+    set s1 [ns_crypto::agreement derive -pem $pemA -peer $pubB]
+    set s2 [ns_crypto::agreement derive -pem $pemB -peer $pubA]
+
+    list [string length $s1] [string equal $s1 $s2]
+} -returnCodes {error ok} -result {64 1}
+
+test ns_crypto::agreement-3.2 {derive: X25519 roundtrip binary encoding} -constraints {agreement} -body {
+    set pemA [ns_crypto::agreement generate -name X25519]
+    set pemB [ns_crypto::agreement generate -name X25519]
+    set pubA [ns_crypto::agreement pub -pem $pemA]
+    set pubB [ns_crypto::agreement pub -pem $pemB]
+
+    set s1 [ns_crypto::agreement derive -encoding binary -pem $pemA -peer $pubB]
+    set s2 [ns_crypto::agreement derive -encoding binary -pem $pemB -peer $pubA]
+
+    list [string length $s1] [string equal $s1 $s2]
+} -returnCodes {error ok} -result {32 1}
+
+test ns_crypto::agreement-3.3 {derive: X25519 roundtrip base64url encoding} -constraints {agreement} -body {
+    set pemA [ns_crypto::agreement generate -name X25519]
+    set pemB [ns_crypto::agreement generate -name X25519]
+    set pubA [ns_crypto::agreement pub -pem $pemA]
+    set pubB [ns_crypto::agreement pub -pem $pemB]
+
+    set s1 [ns_crypto::agreement derive -encoding base64url -pem $pemA -peer $pubB]
+    set s2 [ns_crypto::agreement derive -encoding base64url -pem $pemB -peer $pubA]
+
+    string equal $s1 $s2
+} -result 1
+
+test ns_crypto::agreement-3.4 {derive: X448 roundtrip binary encoding} -constraints {agreement} -body {
+    set pemA [ns_crypto::agreement generate -name X448]
+    set pemB [ns_crypto::agreement generate -name X448]
+    set pubA [ns_crypto::agreement pub -pem $pemA]
+    set pubB [ns_crypto::agreement pub -pem $pemB]
+
+    set s1 [ns_crypto::agreement derive -encoding binary -pem $pemA -peer $pubB]
+    set s2 [ns_crypto::agreement derive -encoding binary -pem $pemB -peer $pubA]
+
+    list [string length $s1] [string equal $s1 $s2]
+} -returnCodes {error ok} -result {56 1}
+
+#---------------------------------------------------------------------------
+# Negative tests: agreement unsupported / invalid algorithms
+#---------------------------------------------------------------------------
+
+test ns_crypto::agreement-4.1 {generate: unknown algorithm name} -constraints {agreement} -body {
+    ns_crypto::agreement generate -name FOO
+} -returnCodes error -match glob -result {*FOO*}
+
+test ns_crypto::agreement-4.2 {generate: empty algorithm name} -constraints {agreement} -body {
+    ns_crypto::agreement generate -name ""
+} -returnCodes error -match glob -result {*}
+
+test ns_crypto::agreement-4.3 {generate: EC rejected for current agreement generation interface} -constraints {agreement} -body {
+    ns_crypto::agreement generate -name EC
+} -returnCodes error -match glob -result {*EC*key agreement generation*}
+
+test ns_crypto::agreement-4.4 {generate: DH rejected for current agreement generation interface} -constraints {agreement} -body {
+    ns_crypto::agreement generate -name DH
+} -returnCodes error -match glob -result {*DH*key agreement generation*}
+
+test ns_crypto::agreement-4.5 {generate: DHX rejected for current agreement generation interface} -constraints {agreement} -body {
+    ns_crypto::agreement generate -name DHX
+} -returnCodes error -match glob -result {*DHX*key agreement generation*}
+
+test ns_crypto::agreement-4.6 {generate: KEM algorithm rejected for agreement} -constraints {kem agreement} -body {
+    ns_crypto::agreement generate -name ml-kem-768
+} -returnCodes error -match glob -result {*does not support key agreement operations*}
+
+test ns_crypto::agreement-4.7 {generate: signature algorithm rejected for agreement} -constraints {agreement} -body {
+    ns_crypto::agreement generate -name RSA
+} -returnCodes error -match glob -result {*does not support key agreement operations*}
+
+#---------------------------------------------------------------------------
+# Negative tests: agreement invalid PEM / wrong capability
+#---------------------------------------------------------------------------
+
+test ns_crypto::agreement-5.1 {pub: invalid PEM} -constraints {agreement} -body {
+    ns_crypto::agreement pub -pem "not a pem"
+} -returnCodes error -match glob -result {*}
+
+test ns_crypto::agreement-5.2 {derive: invalid local PEM} -constraints {agreement} -body {
+    ns_crypto::agreement derive -pem "not a pem" -peer "also not a pem"
+} -returnCodes error -match glob -result {*}
+
+test ns_crypto::agreement-5.3 {pub: signature key rejected} -constraints {agreement} -body {
+    set pem [ns_crypto::signature generate -name RSA]
+    ns_crypto::agreement pub -pem $pem
+} -returnCodes error -match glob -result {*does not support key agreement*}
+
+test ns_crypto::agreement-5.4 {derive: KEM key rejected} -constraints {agreement kem} -body {
+    set pem [ns_crypto::kem generate]
+    set peer [ns_crypto::kem pub -pem $pem]
+    ns_crypto::agreement derive -pem $pem -peer $peer
+} -returnCodes error -match glob -result {*does not support key agreement*}
+
+#---------------------------------------------------------------------------
+# Negative tests: agreement incompatible peers
+#---------------------------------------------------------------------------
+
+test ns_crypto::agreement-6.1 {derive: incompatible X25519/X448 peer keys} -constraints {agreement} -body {
+    set pemA [ns_crypto::agreement generate -name X25519]
+    set pemB [ns_crypto::agreement generate -name X448]
+    set pubB [ns_crypto::agreement pub -pem $pemB]
+
+    ns_crypto::agreement derive -pem $pemA -peer $pubB
+} -returnCodes error -match glob -result {*compatible*key agreement*}
+
+test ns_crypto::agreement-6.2 {derive: RSA peer rejected} -constraints {agreement} -body {
+    set pemA [ns_crypto::agreement generate -name X25519]
+    set pemR [ns_crypto::signature generate -name RSA]
+    set pubR [ns_crypto::signature pub -pem $pemR]
+
+    ns_crypto::agreement derive -pem $pemA -peer $pubR
+} -returnCodes error -match glob -result {*does not support key agreement*}
 #
 # Local variables:
 #    mode: tcl

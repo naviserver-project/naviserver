@@ -118,6 +118,138 @@ The argument [arg input] (the cipher text) is always treated as byte array.
 [example_end]
 
 
+[call [cmd "ns_crypto::agreement generate"] \
+     [opt [option "-name [arg value]"]] \
+     [opt [option "-outfile [arg value]"]] \
+    ]
+
+  Generate a new key pair for key agreement.
+
+  [para] This command provides key generation for key agreement
+  algorithms analogous to [cmd "ns_crypto::signature generate"] for
+  signature algorithms and [cmd "ns_crypto::kem generate"] for key
+  encapsulation mechanisms.
+
+  [para] The key type is selected via [option -name]. The value is passed
+  to OpenSSL's provider-based key management layer and is therefore not
+  restricted to a fixed set of algorithms. The available values depend on
+  the OpenSSL version and configured providers.
+
+  [para] upported values include key agreement algorithms such as
+  [const X25519] and [const X448].
+
+  [para] Not all OpenSSL key types support key agreement operations. When
+  a key type that does not provide key agreement is specified, the command
+  returns an error.
+
+  [para] When [option -name] is omitted, a provider-dependent default
+  algorithm is used (currently [const X25519] when available).
+
+  [para] The generated key is returned as a PEM encoded private key.
+  When [option "-outfile"] is specified, the key is written to the
+  provided file instead.
+
+  [para] The generated PEM contains the private key; the corresponding
+  public key can be obtained via [cmd "ns_crypto::agreement pub"].
+
+[example_begin]
+ # Generate a new key using the default algorithm
+ set pem [lb]ns_crypto::agreement generate[rb]
+ 
+ # Generate a specific agreement key
+ set pem [lb]ns_crypto::agreement generate -name X448[rb]
+ 
+ # Generate a key and write it to a file
+ ns_crypto::agreement generate -name X25519 -outfile /tmp/agreement.pem
+[example_end]
+
+  [para] This function requires OpenSSL 3.0 or newer.
+
+
+[call [cmd "ns_crypto::agreement pub"] \
+     [opt [option "-passphrase [arg value]"]] \
+     [opt [option "-outfile [arg value]"]] \
+     [option "-pem [arg value]"] \
+    ]
+
+  Return the public key corresponding to an agreement key.
+
+  [para] This command is analogous to [cmd "ns_crypto::signature pub"] and
+  [cmd "ns_crypto::kem pub"], providing a uniform interface for
+  extracting public keys from PEM-encoded key material.
+
+  [para] The argument to [option -pem] may be either a PEM file name or
+  a PEM string containing a private key. When the private key is
+  encrypted, provide the passphrase via [option -passphrase].
+
+  [para] The key must support key agreement operations.
+
+  [para] The result is returned as a PEM encoded public key
+  ([const "BEGIN PUBLIC KEY"]). When [option "-outfile"] is specified,
+  the result is written to the provided file instead.
+
+[example_begin]
+ # Extract the public key from a private key
+ set pubpem [lb]ns_crypto::agreement pub -pem /tmp/agreement.pem[rb]
+ 
+ # Write the public key to a file
+ ns_crypto::agreement pub -pem /tmp/agreement.pem -outfile /tmp/agreement-pub.pem
+[example_end]
+
+  [para] This function requires OpenSSL 3.0 or newer.
+
+
+[call [cmd "ns_crypto::agreement derive"] \
+     [opt [option "-encoding hex|base64url|base64|binary"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [option "-pem [arg value]"] \
+     [option "-peer [arg value]"] \
+    ]
+
+  Derive a shared secret via key agreement.
+
+  [para] The local key is provided via [option -pem] and must contain a
+  private key in PEM format. The peer key is provided via
+  [option -peer] and must contain a public key in PEM format. Both
+  arguments may be either PEM file names or PEM strings.
+
+  [para] When the private key is encrypted, provide the passphrase via
+  [option -passphrase].
+
+  [para] Both keys must support key agreement operations and must be
+  compatible with each other.
+
+  [para] The derived shared secret is returned encoded according to
+  [option -encoding], which defaults to [const hex].
+
+  [para] This command implements key agreement (shared secret
+  derivation). It does not support key transport mechanisms such as
+  RSA. Post-quantum key establishment is provided via
+  [cmd "ns_crypto::kem encapsulate"] and
+  [cmd "ns_crypto::kem decapsulate"].
+
+[example_begin]
+ # Derive a shared secret via X25519
+ set pemA [lb]ns_crypto::agreement generate -name X25519[rb]
+ set pemB [lb]ns_crypto::agreement generate -name X25519[rb]
+ 
+ set pubA [lb]ns_crypto::agreement pub -pem $pemA[rb]
+ set pubB [lb]ns_crypto::agreement pub -pem $pemB[rb]
+ 
+ set secretA [lb]ns_crypto::agreement derive -pem $pemA -peer $pubB[rb]
+ set secretB [lb]ns_crypto::agreement derive -pem $pemB -peer $pubA[rb]
+ 
+ string equal $secretA $secretB
+ 
+ # Obtain the shared secret as binary data
+ set secret [lb]ns_crypto::agreement derive \
+                 -pem $pemA \
+                 -peer $pubB \
+                 -encoding binary[rb]
+[example_end]
+
+  [para] This function requires OpenSSL 3.0 or newer.
+
 
 [call [cmd "ns_crypto::argon2"] \
      [opt [option "-ad [arg value]"]] \

@@ -68,7 +68,8 @@ typedef enum {
 typedef enum {
     NS_CRYPTO_KEYGEN_USAGE_ANY = 0,
     NS_CRYPTO_KEYGEN_USAGE_SIGNATURE,
-    NS_CRYPTO_KEYGEN_USAGE_KEM
+    NS_CRYPTO_KEYGEN_USAGE_KEM,
+    NS_CRYPTO_KEYGEN_USAGE_AGREEMENT
 } NsCryptoKeygenUsage;
 
 typedef struct {
@@ -123,10 +124,16 @@ static bool PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
 static bool PkeySupportsKem(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
+static bool PkeySupportsAgreement(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
 static bool PkeySupportsSignature(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
 static bool PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixLength)
+    NS_GNUC_NONNULL(1,2);
+
+static bool PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
     NS_GNUC_NONNULL(1,2);
 
 static bool PkeySignatureRequiresDigest(EVP_PKEY *pkey)
@@ -241,12 +248,6 @@ static TCL_OBJCMDPROC_T CryptoKemDecapsulateObjCmd;
 static TCL_OBJCMDPROC_T CryptoSignatureGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
 
-static int GeneratePrivateKeyPem(Tcl_Interp *interp,
-                                 const char *typeName,
-                                 const char *what,
-                                 const char *outfileName,
-                                 NsCryptoKeygenUsage usage)
-    NS_GNUC_NONNULL(1,2,3,4);
 static int KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
 # endif
@@ -261,9 +262,25 @@ static const char * const hmacCtxType  = "ns:hmacctx";
 # ifdef HAVE_OPENSSL_HKDF
 static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
 # endif
+
 # ifdef HAVE_OPENSSL_3
 # include <openssl/core_names.h>
-# endif
+
+static TCL_OBJCMDPROC_T CryptoAgreementGenerateObjCmd;
+static TCL_OBJCMDPROC_T CryptoAgreementPubObjCmd;
+static TCL_OBJCMDPROC_T CryptoAgreementDeriveObjCmd;
+
+static int GeneratePrivateKeyPem(Tcl_Interp *interp,
+                                 const char *typeName,
+                                 const char *what,
+                                 const char *outfileName,
+                                 NsCryptoKeygenUsage usage)
+    NS_GNUC_NONNULL(1,2,3,4);
+
+static void ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
+    NS_GNUC_NONNULL(1,2);
+# endif /* HAVE_OPENSSL_3 */
+
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
 
 /*
@@ -622,7 +639,7 @@ WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
     }
 }
 
-# ifdef HAVE_OPENSSL_3_5
+# ifdef HAVE_OPENSSL_3
 /*----------------------------------------------------------------------
  *
  * WritePublicKeyPem --
@@ -665,9 +682,20 @@ ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
                      || STREQ(name, "ED25519")
                      || STREQ(name, "ED448")
                      || strncmp(name, "ML-DSA-", 7) == 0
-                     || strncmp(name, "SLH-DSA-", 8) == 0);
+                     || strncmp(name, "SLH-DSA-", 8) == 0
+                     );
     } else if (ctx->usage == NS_CRYPTO_KEYGEN_USAGE_KEM) {
-        addToList = (strncmp(name, "ML-KEM-", 7) == 0);
+        addToList = (strncmp(name, "ML-KEM-", 7) == 0
+                     //|| strstr(name, "MLKEM") != NULL
+                     );
+    } else if (ctx->usage == NS_CRYPTO_KEYGEN_USAGE_AGREEMENT) {
+        addToList = (NS_FALSE
+                     //|| STREQ(name, "DH")
+                     //|| STREQ(name, "EC")
+                     //|| STREQ(name, "DHX")
+                     || STREQ(name, "X25519")
+                     || STREQ(name, "X448")
+                     );
     } else {
         addToList = NS_TRUE;
     }
@@ -678,6 +706,7 @@ ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
                                  Tcl_NewStringObj(name, TCL_INDEX_NONE));
     }
 }
+
 
 /*----------------------------------------------------------------------
  *
@@ -786,6 +815,13 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
         goto done;
     }
 
+    if (usage == NS_CRYPTO_KEYGEN_USAGE_AGREEMENT && !PkeySupportsAgreement(pkey)) {
+        Ns_TclPrintfResult(interp,
+                           "generated key \"%s\" does not support %s operations",
+                           typeName, what);
+        goto done;
+    }
+
 
     bio = PEMOpenWriteStream(interp, outfileName);
     if (bio == NULL) {
@@ -814,7 +850,7 @@ done:
 
     return result;
 }
-# endif /* HAVE_OPENSSL_3_5 */
+#endif
 
 /*----------------------------------------------------------------------
  *
@@ -3931,8 +3967,9 @@ int
 NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-        {"fromcoords",   CryptoEckeyFromCoordsObjCmd},
         {"generate",     CryptoEckeyGenerateObjCmd},
+        {"pub",          CryptoEckeyPubObjCmd},
+        {"fromcoords",   CryptoEckeyFromCoordsObjCmd},
 #  ifdef HAVE_OPENSSL_EC_PRIV2OCT
         {"import",       CryptoEckeyImportObjCmd},
         {"priv",         CryptoEckeyPrivObjCmd},
@@ -3940,7 +3977,6 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
 #  ifndef HAVE_OPENSSL_PRE_1_1
         {"sharedsecret", CryptoEckeySharedsecretObjCmd},
 #  endif
-        {"pub",          CryptoEckeyPubObjCmd},
         {NULL, NULL}
     };
 
@@ -4358,7 +4394,7 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  * NsTclCryptoKemObjCmd --
  *
  *      Implements "ns_crypto::kem" with various subcommands to
- *      provide subcommands to Quantum-safe key exchange and related
+ *      provide subcommands for key embedding and related
  *      commands.
  *
  * Results:
@@ -4384,7 +4420,312 @@ NsTclCryptoKemObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 }
 # endif /* HAVE_OPENSSL_3_5 */
 
+/*======================================================================
+ * Function Implementations: ns_crypto::agreement
+ *======================================================================
+ */
 
+
+# ifdef HAVE_OPENSSL_3
+/*----------------------------------------------------------------------
+ *
+ * CryptoAgreementGenerateObjCmd --
+ *
+ *      Implements "ns_crypto::agreement generate". Generate a private key
+ *      for key agreement in PEM format.
+ *
+ *      The key type is selected via "-name" and resolved through
+ *      OpenSSL's provider-based key management layer.
+ *
+ * Results:
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      Creates a key pair and either writes it to a file or returns
+ *      it as PEM string.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoAgreementGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                        TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const char *nameString = "X25519";
+    const char *outfileName = NULL;
+    Ns_ObjvSpec lopts[] = {
+        {"-name",    Ns_ObjvString, &nameString,  NULL},
+        {"-outfile", Ns_ObjvString, &outfileName, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ns_crypto::agreement generate -name X25519 -outfile /tmp/x25519.pem
+      ns_crypto::agreement generate -name X448
+    */
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    return GeneratePrivateKeyPem(interp,
+                                 nameString,
+                                 "key agreement",
+                                 outfileName,
+                                 NS_CRYPTO_KEYGEN_USAGE_AGREEMENT);
+}
+
+/*----------------------------------------------------------------------
+ *
+ * CryptoAgreementPubObjCmd --
+ *
+ *      Implements "ns_crypto::agreement pub".
+ *
+ *      Extract the public key corresponding to a
+ *      key agreement key in PEM format.
+ *
+ *      The public key is returned or written as PEM encoded
+ *      SubjectPublicKeyInfo ("BEGIN PUBLIC KEY").
+ *
+ * Results:
+ *      TCL_OK on success.
+ *      TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      Reads key material and may write to a file or set interpreter
+ *      result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoAgreementPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                   TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result;
+    const char *pem = NULL;
+    const char *passPhrase = NS_EMPTY_STRING;
+    const char *outfileName = NULL;
+    Ns_ObjvSpec lopts[] = {
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"-outfile",    Ns_ObjvString, &outfileName, NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ns_crypto::agreement pub -pem /tmp/x25519.pem -outfile /tmp/x25519-pub.pem
+      ns_crypto::agreement pub -pem $pemString
+    */
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    /*
+     * Accept a private key PEM and derive/export the corresponding public key.
+     */
+    {
+        EVP_PKEY *pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+
+        if (pkey == NULL) {
+            result = TCL_ERROR;
+
+        } else if (!PkeySupportsAgreement(pkey)) {
+            Ns_TclPrintfResult(interp,
+                               "provided PEM does not support key agreement");
+            EVP_PKEY_free(pkey);
+            result = TCL_ERROR;
+
+        } else {
+            result = WritePublicKeyPem(interp,
+                                       pkey,
+                                       "key agreement",
+                                       "public",
+                                       outfileName);
+            EVP_PKEY_free(pkey);
+        }
+    }
+
+    return result;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * CryptoAgreementDeriveObjCmd --
+ *
+ *      Implements "ns_crypto::agreement derive".
+ *
+ *      Derive a shared secret from a private key and a peer public key
+ *      using a key agreement algorithm such as X25519,
+ *      X448, DH, or EC-based ECDH.
+ *
+ *      The local key is provided via "-pem" and must contain a private
+ *      key. The peer key is provided via "-peer" and must contain a
+ *      public key.
+ *
+ * Results:
+ *      TCL_OK on success, with the derived secret returned in the
+ *      requested encoding.
+ *      TCL_ERROR on failure, with an error message set in the
+ *      interpreter.
+ *
+ * Side effects:
+ *      Reads key material from PEM input and sets the Tcl interpreter
+ *      result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoAgreementDeriveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                result, encodingInt = -1;
+    const char        *pem = NULL;
+    const char        *peerPem = NULL;
+    const char        *passPhrase = NS_EMPTY_STRING;
+    EVP_PKEY          *pkey = NULL;
+    EVP_PKEY          *peerPkey = NULL;
+    EVP_PKEY_CTX      *ctx = NULL;
+    Ns_BinaryEncoding  encoding;
+    unsigned char     *secret = NULL;
+    size_t             secretLen = 0u;
+    Ns_ObjvSpec        lopts[] = {
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
+        {"!-peer",      Ns_ObjvString, &peerPem,     NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    encoding = (encodingInt == -1
+                ? NS_OBJ_ENCODING_HEX
+                : (Ns_BinaryEncoding)encodingInt);
+
+    /*
+     * Local key must be a private key.
+     */
+    pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+    if (pkey == NULL) {
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (!PkeySupportsAgreement(pkey)) {
+        Ns_TclPrintfResult(interp,
+                           "provided PEM does not support key agreement");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    /*
+     * Peer key must be a public key.
+     */
+    peerPkey = GetPkeyFromPem(interp, peerPem, NS_EMPTY_STRING, NS_FALSE);
+    if (peerPkey == NULL) {
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (!PkeySupportsAgreement(peerPkey)) {
+        Ns_TclPrintfResult(interp,
+                           "provided peer key does not support key agreement");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
+    if (ctx == NULL) {
+        Ns_TclPrintfResult(interp, "could not create key agreement context");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (EVP_PKEY_derive_init(ctx) <= 0) {
+        Ns_TclPrintfResult(interp, "could not initialize key agreement");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (EVP_PKEY_derive_set_peer(ctx, peerPkey) <= 0) {
+        Ns_TclPrintfResult(interp,
+                           "private and peer keys are not compatible for key agreement");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (EVP_PKEY_derive(ctx, NULL, &secretLen) <= 0) {
+        Ns_TclPrintfResult(interp,
+                           "could not determine derived secret length");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    secret = ns_malloc(secretLen);
+    if (secret == NULL) {
+        Ns_TclPrintfResult(interp,
+                           "could not allocate derived secret buffer");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (EVP_PKEY_derive(ctx, secret, &secretLen) <= 0) {
+        Ns_TclPrintfResult(interp,
+                           "could not derive shared secret");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    Tcl_SetObjResult(interp,
+                     NsEncodedObj(secret, secretLen, NULL, encoding));
+    result = TCL_OK;
+
+done:
+    if (secret != NULL) {
+        ns_free(secret);
+    }
+    if (ctx != NULL) {
+        EVP_PKEY_CTX_free(ctx);
+    }
+    if (peerPkey != NULL) {
+        EVP_PKEY_free(peerPkey);
+    }
+    if (pkey != NULL) {
+        EVP_PKEY_free(pkey);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCryptoAgreementObjCmd --
+ *
+ *      Implements "ns_crypto::agreement" with various subcommands to
+ *      provide subcommands for key agreement algorithms.
+ *
+ * Results:
+ *      Tcl Return code.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclCryptoAgreementObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"generate",    CryptoAgreementGenerateObjCmd},
+        {"pub",         CryptoAgreementPubObjCmd},
+        {"derive",      CryptoAgreementDeriveObjCmd},
+        {NULL, NULL}
+    };
+
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
+# endif /* HAVE_OPENSSL_3 */
 
 /*======================================================================
  * Function Implementations: ns_crypto::aead support
@@ -5183,6 +5524,14 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                            Tcl_NewBooleanObj(supportsKEM));
         }
 
+        {
+            int supportsAgreement = PkeySupportsAgreement(pkey);
+
+            Tcl_DictObjPut(interp, resultObj,
+                           NsAtomObj(NS_ATOM_AGREEMENT),
+                           Tcl_NewBooleanObj(supportsAgreement));
+        }
+
         Tcl_SetObjResult(interp, resultObj);
         result = TCL_OK;
     done:
@@ -5440,6 +5789,34 @@ PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixLength)
 /*
  *----------------------------------------------------------------------
  *
+ * PkeyMatchesSubstring --
+ *
+ *      Determine whether the type name of the provided EVP_PKEY
+ *      includes the specified needle string.
+ *
+ * Results:
+ *      Boolean
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
+{
+# ifdef HAVE_OPENSSL_3
+    const char *name = EVP_PKEY_get0_type_name(pkey);
+    return (name != NULL && strstr(name, needle) != NULL);
+# else
+    (void)needle;
+    return NS_FALSE;
+# endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * PkeySupportsSignature --
  *
  *      Determine whether the provided EVP_PKEY supports signing and
@@ -5497,7 +5874,45 @@ PkeySupportsSignature(EVP_PKEY *pkey)
 static bool
 PkeySupportsKem(EVP_PKEY *pkey)
 {
-    return (PkeyMatchesPrefix(pkey, "ML-KEM-", 7));
+    return (PkeyMatchesPrefix(pkey, "ML-KEM-", 7)
+            || PkeyMatchesSubstring(pkey, "MLKEM")
+            );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySupportsAgreement --
+ *
+ *      Determine whether the provided EVP_PKEY supports key
+ *      agreement operations.
+ *
+ *      This includes schemes such as DH, X25519 and X448.
+ *
+ * Results:
+ *      NS_TRUE  if the key supports key agreement operations.
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeySupportsAgreement(EVP_PKEY *pkey)
+{
+    return (PkeyIsType(pkey, "DH", EVP_PKEY_DH)
+# ifdef EVP_PKEY_DHX
+            || PkeyIsType(pkey, "DHX", EVP_PKEY_DHX)
+# endif
+            || PkeyIsType(pkey, "EC", EVP_PKEY_EC)
+# ifdef EVP_PKEY_X25519
+            || PkeyIsType(pkey, "X25519", EVP_PKEY_X25519)
+# endif
+# ifdef EVP_PKEY_X448
+            || PkeyIsType(pkey, "X448", EVP_PKEY_X448)
+# endif
+            );
 }
 
 /*
@@ -6403,6 +6818,10 @@ NsTclCryptoUUIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     return result;
 }
 
+/*======================================================================
+ * Backward compatibility checks
+ *======================================================================
+ */
 # ifdef OPENSSL_NO_EC
 int
 NsTclCryptoEckeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
@@ -6422,9 +6841,20 @@ NsTclCryptoKemObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 }
 # endif
 
+# ifndef HAVE_OPENSSL_3
+int
+NsTclCryptoAgreementObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 or newer built into NaviServer");
+    return TCL_ERROR;
+}
+#endif
+
 #else
-/*
+/*======================================================================
  * Compiled without OpenSSL support or too old OpenSSL versions
+ *======================================================================
  */
 
 int
@@ -6478,21 +6908,21 @@ NsTclCryptoEckeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
 int
 NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
-    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 built into NaviServer");
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 or newer built into NaviServer");
     return TCL_ERROR;
 }
 
 int
 NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 1.1.1 built into NaviServer");
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 1.1.1 or newer built into NaviServer");
     return TCL_ERROR;
 }
 
 int
 NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
-    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.2 built into NaviServer");
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.2 or newer built into NaviServer");
     return TCL_ERROR;
 }
 
@@ -6500,6 +6930,14 @@ int
 NsTclCryptoKeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
+NsTclCryptoAgreementObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 or newer built into NaviServer");
     return TCL_ERROR;
 }
 
