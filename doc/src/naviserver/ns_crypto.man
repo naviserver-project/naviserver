@@ -6,16 +6,79 @@
 
 [description]
 
-These functions perform low-level cryptographic functions based on the
+These functions provide low-level cryptographic operations based on the
 OpenSSL crypto library. These commands are only implemented when
-NaviServer was compiled with OpenSSL support. The level of support
-depends on the version of OpenSSL. Versions earlier than OpenSSL 1.0
-are not supported.
+NaviServer was compiled with OpenSSL support. The available command set
+depends on the OpenSSL version used at build time. Versions earlier than
+OpenSSL 1.1 are not supported.
 
 [para]
-For some higher level
-functions (e.g. performing e.g. digest or HMAC operations of huge
-amounts of data) see e.g.[cmd ns_md] and [cmd ns_hmac].
+The commands cover both primitive operations (such as message digests,
+HMAC, password-based key derivation, authenticated encryption, and
+random byte generation) and public-key based operations such as key
+generation, digital signatures, key agreement, and key encapsulation.
+
+[para]
+In addition to classical cryptographic algorithms, NaviServer supports
+modern and post-quantum cryptography when available via OpenSSL
+providers. This includes post-quantum signature schemes (e.g. ML-DSA,
+SLH-DSA) and key encapsulation mechanisms (e.g. ML-KEM), enabling
+applications to prepare for cryptographic environments resilient against
+attacks based on quantum algorithms such as Shor's algorithm.
+
+[para]
+For some higher level functions (e.g. digest or HMAC operations on huge
+amounts of data) see for example [cmd ns_md] and [cmd ns_hmac].
+
+[para]
+The newer public-key related command families are grouped by
+cryptographic purpose rather than by concrete key type. These newer
+purpose-oriented groups depend on provider-based OpenSSL support and are
+therefore available only with newer OpenSSL versions. In particular,
+[cmd ns_crypto::agreement] requires OpenSSL 3.0 or newer, while
+post-quantum oriented commands such as [cmd ns_crypto::kem] and parts of
+[cmd ns_crypto::signature] require OpenSSL 3.5 or newer.
+
+[list_begin itemized]
+[item]
+[cmd ns_crypto::signature] provides commands for digital signature
+algorithms. Its purpose is to generate signing keys, extract public
+keys, create signatures, and verify signatures. This family covers
+classical algorithms such as RSA as well as newer and post-quantum
+algorithms such as Ed25519, ML-DSA, or SLH-DSA, depending on OpenSSL
+support.
+
+[item]
+[cmd ns_crypto::agreement] provides commands for key agreement
+algorithms. Its purpose is to generate agreement keys, extract public
+keys, and derive shared secrets from a private key and a peer public
+key. Typical examples are X25519, X448, ECDH via EC keys, and finite
+field Diffie-Hellman groups, depending on OpenSSL support.
+
+[item]
+[cmd ns_crypto::kem] provides commands for key encapsulation
+mechanisms. Its purpose is to generate KEM keys, extract public keys,
+encapsulate shared secrets for a recipient, and decapsulate them again.
+This family is used in particular for post-quantum key establishment
+mechanisms such as ML-KEM, depending on OpenSSL support.
+
+[item]
+[cmd ns_crypto::key] provides generic key inspection and extraction
+operations independent of the key type. Its purpose is to query
+properties of keys (e.g. type, capabilities such as signature, KEM, or
+agreement support) and to provide a uniform interface for working with
+PEM-encoded key material across all algorithm families.
+[list_end]
+
+[para]
+This grouping is intended to make the API easier to understand and use.
+Instead of requiring users to start from a concrete key type and then
+determine which operations are applicable, the command structure follows
+the intended cryptographic task: signing, shared-secret derivation, key
+encapsulation, or generic key inspection and extraction. This makes the
+interface clearer for modern algorithms, where several unrelated key
+families may serve the same purpose, and it allows new
+OpenSSL-supported algorithms to be integrated more naturally.
 
 [para]
 Note: some common options are described in a separate section below.
