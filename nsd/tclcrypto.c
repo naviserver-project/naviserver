@@ -85,29 +85,29 @@ typedef struct {
 /*
  * Static functions defined in this file.
  */
-static EVP_PKEY *GetAnyPkeyFromPem(Tcl_Interp *interp, const char *pem, const char *passPhrase)
-    NS_GNUC_NONNULL(1,2);
-
-static EVP_PKEY *GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
-    NS_GNUC_NONNULL(1,2);
-
-static int GetDigest(Tcl_Interp *interp, const char *digestName, NsDigestUsage usage, NsDigest *digestPtr)
+static int DigestGet(Tcl_Interp *interp, const char *digestName, NsDigestUsage usage, NsDigest *digestPtr)
     NS_GNUC_NONNULL(1,2,4);
 
-static void FreeDigest(NsDigest *digestPtr)
+static void DigestFree(NsDigest *digestPtr)
     NS_GNUC_NONNULL(1);
+
+# if !defined(HAVE_OPENSSL_PRE_1_0) && !defined(HAVE_OPENSSL_3)
+static void DigestListCallback(const EVP_MD *m, const char *from, const char *to, void *arg);
+# endif
+
+
+static BIO * PemOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
+    NS_GNUC_NONNULL(1);
+
+static int PemWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
+    NS_GNUC_NONNULL(1,2,4);
+
+static BIO *PemOpenReadStream(const char *fnOrData)
+    NS_GNUC_NONNULL(1);
+
 
 static int SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     NS_GNUC_NONNULL(1,2,3);
-
-static BIO * PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
-    NS_GNUC_NONNULL(1);
-
-static int PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
-    NS_GNUC_NONNULL(1,2,4);
-
-static int WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, const char *outfileName, bool wantPem)
-    NS_GNUC_NONNULL(1,2);
 
 static int SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
@@ -115,7 +115,24 @@ static int SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_Bina
 static int SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
 
-static Tcl_Obj *CryptoKeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
+
+static int PkeyPublicWrite(Tcl_Interp *interp, EVP_PKEY *pkey, const char *outfileName, bool wantPem)
+    NS_GNUC_NONNULL(1,2);
+
+static EVP_PKEY *PkeyGetAnyFromPem(Tcl_Interp *interp, const char *pem, const char *passPhrase)
+    NS_GNUC_NONNULL(1,2);
+
+static EVP_PKEY *PkeyGetFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
+    NS_GNUC_NONNULL(1,2);
+
+static int PkeyPublicPemWrite(Tcl_Interp *interp,
+                             EVP_PKEY   *pkey,
+                             const char *what,
+                             const char *resultWhat,
+                             const char *outfileName)
+    NS_GNUC_NONNULL(1,2,3,4);
+
+static Tcl_Obj *PkeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1,2);
 
 static bool PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
@@ -139,34 +156,24 @@ static bool PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
 static bool PkeySignatureRequiresDigest(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
-static int WritePublicKeyPem(Tcl_Interp *interp,
-                             EVP_PKEY   *pkey,
-                             const char *what,
-                             const char *resultWhat,
-                             const char *outfileName)
-    NS_GNUC_NONNULL(1,2,3,4);
-
-
-static int GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
+static int PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
                                  const char *digestName,
                                  const EVP_MD **mdPtr)
     NS_GNUC_NONNULL(1,2,4);
 
-static int SignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
+static int PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
                          const unsigned char *message, size_t messageLength,
                          const EVP_MD *md, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2,3);
 
-static int SignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
+static int PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
                            const unsigned char *message, size_t messageLength,
                            const unsigned char *signature, size_t signatureLength,
                            const EVP_MD *md)
     NS_GNUC_NONNULL(1,2,3,5);
 
-
-
 # ifndef OPENSSL_NO_EC
-static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
+static int CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void
@@ -192,12 +199,6 @@ static bool AEAD_Set_tag(EVP_CIPHER_CTX *ctx, const unsigned char *tag, size_t t
 static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx, unsigned char *tag, size_t taglen)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-# if !defined(HAVE_OPENSSL_PRE_1_0) && !defined(HAVE_OPENSSL_3)
-static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
-# endif
-
-static BIO *PEMOpenReadSteam(const char *fnOrData)
-    NS_GNUC_NONNULL(1);
 
 static char *uuid_format(unsigned char *b, char *dst) NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
 static const char *uuid_v4(char *dst) NS_GNUC_NONNULL(1);
@@ -220,8 +221,8 @@ static TCL_OBJCMDPROC_T CryptoKeyPrivObjCmd;
 static TCL_OBJCMDPROC_T CryptoKeyPubObjCmd;
 static TCL_OBJCMDPROC_T CryptoKeyTypeObjCmd;
 
-static TCL_OBJCMDPROC_T CryptoSignatureSignObjCmd;
-static TCL_OBJCMDPROC_T CryptoSignatureVerifyObjCmd;
+static TCL_OBJCMDPROC_T CryptoPkeySignatureSignObjCmd;
+static TCL_OBJCMDPROC_T CryptoPkeySignatureVerifyObjCmd;
 
 # ifndef OPENSSL_NO_EC
 static TCL_OBJCMDPROC_T CryptoEckeyFromCoordsObjCmd;
@@ -235,7 +236,7 @@ static TCL_OBJCMDPROC_T CryptoEckeyPrivObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyImportObjCmd;
 #  endif
 
-static EVP_PKEY *GetPkeyFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
+static EVP_PKEY *PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
     NS_GNUC_NONNULL(1,2);
 # endif
 
@@ -248,7 +249,7 @@ static TCL_OBJCMDPROC_T CryptoKemDecapsulateObjCmd;
 static TCL_OBJCMDPROC_T CryptoSignatureGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
 
-static int KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+static int PkeyKemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
 # endif
 
@@ -278,7 +279,7 @@ static int GeneratePrivateKeyPem(Tcl_Interp *interp,
                                  OSSL_PARAM *params)
     NS_GNUC_NONNULL(1,2,3,4);
 
-static void ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
+static void KeymgmtListCallback(EVP_KEYMGMT *keymgmt, void *arg)
     NS_GNUC_NONNULL(1,2);
 # endif /* HAVE_OPENSSL_3 */
 
@@ -470,7 +471,7 @@ SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
 /*
  *----------------------------------------------------------------------
  *
- * PEMOpenWriteStream --
+ * PemOpenWriteStream --
  *
  *      Create a BIO suitable for writing PEM output either to a file
  *      or to an in-memory buffer.
@@ -490,7 +491,7 @@ SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
  *----------------------------------------------------------------------
  */
 static BIO *
-PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
+PemOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
 {
     BIO *bio;
 
@@ -512,7 +513,7 @@ PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
 /*
  *----------------------------------------------------------------------
  *
- * PEMWriteResult --
+ * PemWriteResult --
  *
  *      Finalize writing of PEM data produced via a BIO and propagate
  *      the result to the Tcl interpreter.
@@ -533,7 +534,7 @@ PEMOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
  *----------------------------------------------------------------------
  */
 static int
-PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
+PemWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
 {
     if (outfileName == NULL) {
         return SetResultFromMemBio(interp, bio, what);
@@ -544,7 +545,7 @@ PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char
 /*
  *----------------------------------------------------------------------
  *
- * WritePublicKey --
+ * PkeyPublicWrite --
  *
  *      Serialize an EVP_PKEY public key into PEM or DER format and
  *      either return the result to the Tcl interpreter or write it
@@ -552,7 +553,7 @@ PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char
  *
  *      When wantPem is true, the public key is written as a PEM encoded
  *      SubjectPublicKeyInfo ("BEGIN PUBLIC KEY") using a BIO obtained
- *      via PEMOpenWriteStream().
+ *      via PemOpenWriteStream().
  *
  *      When wantPem is false, the public key is encoded as DER using
  *      i2d_PUBKEY(). If an output file is specified, the DER data is
@@ -571,14 +572,14 @@ PEMWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char
  *----------------------------------------------------------------------
  */
 static int
-WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
+PkeyPublicWrite(Tcl_Interp *interp, EVP_PKEY *pkey,
                const char *outfileName, bool wantPem)
 {
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(pkey != NULL);
 
     if (wantPem) {
-        BIO *bio = PEMOpenWriteStream(interp, outfileName);
+        BIO *bio = PemOpenWriteStream(interp, outfileName);
         int result;
 
         if (bio == NULL) {
@@ -591,7 +592,7 @@ WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
             return TCL_ERROR;
         }
 
-        result = PEMWriteResult(interp, bio, outfileName, "public");
+        result = PemWriteResult(interp, bio, outfileName, "public");
         BIO_free(bio);
 
         return result;
@@ -643,15 +644,15 @@ WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
 # ifdef HAVE_OPENSSL_3
 /*----------------------------------------------------------------------
  *
- * WritePublicKeyPem --
+ * PkeyPublicPemWrite --
  *
  *      Serialize the public key of the provided EVP_PKEY into PEM
  *      format and either return it as Tcl result or write it to a
  *      file.
  *
- *      The function creates a BIO via PEMOpenWriteStream(), writes
+ *      The function creates a BIO via PemOpenWriteStream(), writes
  *      the public key using PEM_write_bio_PUBKEY(), and finalizes the
- *      result via PEMWriteResult().
+ *      result via PemWriteResult().
  *
  *      The "what" argument is used to construct human-readable error
  *      messages (e.g., "signature", "key encapsulation").
@@ -667,7 +668,7 @@ WritePublicKey(Tcl_Interp *interp, EVP_PKEY *pkey,
  *----------------------------------------------------------------------
  */
 static void
-ListKeymgmt(EVP_KEYMGMT *keymgmt, void *arg)
+KeymgmtListCallback(EVP_KEYMGMT *keymgmt, void *arg)
 {
     NsKeygenListCtx *ctx = arg;
     bool                addToList;
@@ -777,7 +778,7 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
         sigCtx.usage = usage;
         Tcl_IncrRefCount(sigCtx.listObj);
 
-        EVP_KEYMGMT_do_all_provided(NULL, ListKeymgmt, &sigCtx);
+        EVP_KEYMGMT_do_all_provided(NULL, KeymgmtListCallback, &sigCtx);
         sorted = NsTclListSort(interp, sigCtx.listObj);
         sortedNames = (sorted != NULL ? Tcl_GetString(sorted) : "");
 
@@ -832,7 +833,7 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
     }
 
 
-    bio = PEMOpenWriteStream(interp, outfileName);
+    bio = PemOpenWriteStream(interp, outfileName);
     if (bio == NULL) {
         goto done;
     }
@@ -844,7 +845,7 @@ GeneratePrivateKeyPem(Tcl_Interp *interp,
         goto done;
     }
 
-    result = PEMWriteResult(interp, bio, outfileName, what);
+    result = PemWriteResult(interp, bio, outfileName, what);
 
 done:
     if (bio != NULL) {
@@ -863,7 +864,7 @@ done:
 
 /*----------------------------------------------------------------------
  *
- * ListKeymgmt --
+ * KeymgmtListCallback --
  *
  *      Callback used with EVP_KEYMGMT_do_all_provided() to collect
  *      available key management algorithm names.
@@ -893,7 +894,7 @@ done:
  *----------------------------------------------------------------------
  */
 static int
-WritePublicKeyPem(Tcl_Interp *interp,
+PkeyPublicPemWrite(Tcl_Interp *interp,
                   EVP_PKEY   *pkey,
                   const char *what,
                   const char *resultWhat,
@@ -902,7 +903,7 @@ WritePublicKeyPem(Tcl_Interp *interp,
     BIO *bio = NULL;
     int  result;
 
-    bio = PEMOpenWriteStream(interp, outfileName);
+    bio = PemOpenWriteStream(interp, outfileName);
     if (bio == NULL) {
         return TCL_ERROR;
     }
@@ -915,7 +916,7 @@ WritePublicKeyPem(Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-    result = PEMWriteResult(interp, bio, outfileName, resultWhat);
+    result = PemWriteResult(interp, bio, outfileName, resultWhat);
 
     BIO_free(bio);
     return result;
@@ -924,10 +925,10 @@ WritePublicKeyPem(Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * GetDigest, ListMDfunc --
+ * DigestGet, DigestListCallback --
  *
  *      Converter from a digest string to internal OpenSSL
- *      representation.  ListMDfunc is an iterator usable in OpenSSL
+ *      representation.  DigestListCallback is an iterator usable in OpenSSL
  *      1.0.0 or newer to obtain the names of all available digest
  *      functions to provide nicer error messages.
  *
@@ -942,7 +943,7 @@ WritePublicKeyPem(Tcl_Interp *interp,
 
 # if !defined(HAVE_OPENSSL_PRE_1_0) && !defined(HAVE_OPENSSL_3)
 static void
-ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
+DigestListCallback(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
 {
     Tcl_Obj *listPtr = (Tcl_Obj *)arg;
 
@@ -963,7 +964,7 @@ ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
 
 /*----------------------------------------------------------------------
  *
- * FreeDigest --
+ * DigestFree --
  *
  *      Release resources associated with an NsDigest structure.
  *
@@ -984,7 +985,7 @@ ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
  *----------------------------------------------------------------------
  */
 static void
-FreeDigest(NsDigest *digestPtr)
+DigestFree(NsDigest *digestPtr)
 {
     NS_NONNULL_ASSERT(digestPtr != NULL);
 
@@ -1100,7 +1101,7 @@ DigestAllowed(const char *name, NsDigestUsage usage)
 
 /*----------------------------------------------------------------------
  *
- * ListMDfuncProvided --
+ * DigestListCallbackProvided --
  *
  *      Callback used with EVP_MD_do_all_provided() to collect available
  *      message digest algorithm names.
@@ -1126,7 +1127,7 @@ DigestAllowed(const char *name, NsDigestUsage usage)
  *----------------------------------------------------------------------
  */
 static void
-ListMDfuncProvided(EVP_MD *md, void *arg)
+DigestListCallbackProvided(EVP_MD *md, void *arg)
 {
     NsDigestListCtx *ctxPtr = arg;
     Tcl_Obj         *listObj;
@@ -1146,7 +1147,7 @@ ListMDfuncProvided(EVP_MD *md, void *arg)
 
 /*----------------------------------------------------------------------
  *
- * GetDigest --
+ * DigestGet --
  *
  *      Resolve a message digest by name and return an initialized
  *      NsDigest structure suitable for use with OpenSSL EVP APIs.
@@ -1175,14 +1176,14 @@ ListMDfuncProvided(EVP_MD *md, void *arg)
  *
  * Side effects:
  *      On success, digestPtr is initialized and may contain a fetched
- *      EVP_MD object requiring later cleanup via FreeDigest().
+ *      EVP_MD object requiring later cleanup via DigestFree().
  *      On failure, a descriptive error message is stored in the
  *      interpreter result.
  *
  *----------------------------------------------------------------------
  */
 static int
-GetDigest(Tcl_Interp *interp, const char *digestName,
+DigestGet(Tcl_Interp *interp, const char *digestName,
           NsDigestUsage usage, NsDigest *digestPtr)
 {
     int         result;
@@ -1198,7 +1199,7 @@ GetDigest(Tcl_Interp *interp, const char *digestName,
             return TCL_OK;
         }
 
-        FreeDigest(digestPtr);
+        DigestFree(digestPtr);
     }
 
     {
@@ -1211,7 +1212,7 @@ GetDigest(Tcl_Interp *interp, const char *digestName,
         listCtx.listObj = listObj;
         listCtx.usage   = usage;
 
-        EVP_MD_do_all_provided(NULL, ListMDfuncProvided, &listCtx);
+        EVP_MD_do_all_provided(NULL, DigestListCallbackProvided, &listCtx);
 
         sortedObj = NsTclListSort(interp, listObj);
         if (sortedObj != NULL) {
@@ -1232,7 +1233,7 @@ GetDigest(Tcl_Interp *interp, const char *digestName,
 # else
 /* legacy version */
 static int
-GetDigest(Tcl_Interp *interp, const char *digestName,
+DigestGet(Tcl_Interp *interp, const char *digestName,
           NsDigestUsage UNUSED(usage), NsDigest *digestPtr)
 {
     int result;
@@ -1251,7 +1252,7 @@ GetDigest(Tcl_Interp *interp, const char *digestName,
         Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
         Tcl_IncrRefCount(listObj);
-        EVP_MD_do_all_sorted(ListMDfunc, listObj);
+        EVP_MD_do_all_sorted(DigestListCallback, listObj);
         Ns_TclPrintfResult(interp, "Unknown value for digest \"%s\", valid: %s",
                            digestName, Tcl_GetString(listObj));
         Tcl_DecrRefCount(listObj);
@@ -1309,7 +1310,7 @@ GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long flags, const
 /*
  *----------------------------------------------------------------------
  *
- * GetCurve --
+ * CurveNidGet --
  *
  *      Helper function to lookup a nid from a curve name.
  *      The logic is from apps/ecparam.c
@@ -1323,7 +1324,7 @@ GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long flags, const
  *----------------------------------------------------------------------
  */
 static int
-GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
+CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
 {
     int result, nid;
 
@@ -1364,7 +1365,7 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * PEMOpenReadSteam --
+ * PemOpenReadStream --
  *
  *      Open an OpenSSL BIO stream based on either the provided
  *      string, if it has the right signature, or a .pem-file.  In
@@ -1380,7 +1381,7 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
  *----------------------------------------------------------------------
  */
 static BIO *
-PEMOpenReadSteam(const char *fnOrData)
+PemOpenReadStream(const char *fnOrData)
 {
     BIO *result;
 
@@ -1398,7 +1399,7 @@ PEMOpenReadSteam(const char *fnOrData)
 /*
  *----------------------------------------------------------------------
  *
- * GetPkeyFromPem --
+ * PkeyGetFromPem --
  *
  *      Helper function to get pkey from PEM files
  *
@@ -1411,12 +1412,12 @@ PEMOpenReadSteam(const char *fnOrData)
  *----------------------------------------------------------------------
  */
 static EVP_PKEY *
-GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
+PkeyGetFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
 {
     BIO        *bio;
     EVP_PKEY   *result;
 
-    bio = PEMOpenReadSteam(pemFileName);
+    bio = PemOpenReadStream(pemFileName);
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
         result = NULL;
@@ -1438,7 +1439,7 @@ GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhra
 /*
  *----------------------------------------------------------------------
  *
- * GetAnyPkeyFromPem --
+ * PkeyGetAnyFromPem --
  *
  *      Helper function to get private or public key from PEM files
  *
@@ -1451,12 +1452,12 @@ GetPkeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhra
  *----------------------------------------------------------------------
  */
 static EVP_PKEY *
-GetAnyPkeyFromPem(Tcl_Interp *interp, const char *pem, const char *passPhrase)
+PkeyGetAnyFromPem(Tcl_Interp *interp, const char *pem, const char *passPhrase)
 {
-    EVP_PKEY *pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_FALSE);
+    EVP_PKEY *pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_FALSE);
 
     if (pkey == NULL) {
-        pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+        pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_TRUE);
     }
     return pkey;
 }
@@ -1484,7 +1485,7 @@ GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhr
     BIO        *bio;
     EC_KEY     *result;
 
-    bio = PEMOpenReadSteam(pemFileName);
+    bio = PemOpenReadStream(pemFileName);
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
         result = NULL;
@@ -1552,7 +1553,7 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_HMAC, &digest);
+        result = DigestGet(interp, digestName, NS_DIGEST_USAGE_HMAC, &digest);
         if (result != TCL_ERROR) {
             HMAC_CTX            *ctx;
             const unsigned char *keyString;
@@ -1565,7 +1566,7 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
             HMAC_Init_ex(ctx, keyString, (int)keyLength, digest.md, NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
             Tcl_DStringFree(&keyDs);
-            FreeDigest(&digest);
+            DigestFree(&digest);
         }
     }
     return result;
@@ -1782,7 +1783,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         /*
          * Look up the Message digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_HMAC, &digest);
+        result = DigestGet(interp, digestName, NS_DIGEST_USAGE_HMAC, &digest);
         if (result != TCL_ERROR) {
             unsigned char        digestBytes[EVP_MAX_MD_SIZE];
             char                 digestChars[EVP_MAX_MD_SIZE*2 + 1];
@@ -1808,7 +1809,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
                  (const void *)keyString, (int)keyLength,
                  (const void *)messageString, (size_t)messageLength,
                  digestBytes, &mdLength);
-            FreeDigest(&digest);
+            DigestFree(&digest);
 
             /*
              * Convert the result to the output format and set the interp
@@ -1894,14 +1895,14 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_MD, &digest);
+        result = DigestGet(interp, digestName, NS_DIGEST_USAGE_MD, &digest);
         if (result != TCL_ERROR) {
             EVP_MD_CTX    *mdctx;
 
             mdctx = NS_EVP_MD_CTX_new();
             EVP_DigestInit_ex(mdctx, digest.md, NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), mdCtxType, mdctx);
-            FreeDigest(&digest);
+            DigestFree(&digest);
         }
     }
     return result;
@@ -2145,7 +2146,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
          *
          */
 
-        result = GetDigest(interp, digestName,
+        result = DigestGet(interp, digestName,
                            (signKeyFile != NULL || verifyKeyFile != NULL) ? NS_DIGEST_USAGE_SIGN_VERIFY : NS_DIGEST_USAGE_MD,
                            &digest);
         if (result == TCL_OK) {
@@ -2158,7 +2159,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             keyFile = verifyKeyFile;
         }
         if (result != TCL_ERROR && keyFile != NULL) {
-            pkey = GetPkeyFromPem(interp, keyFile, passPhrase, (signKeyFile != NULL));
+            pkey = PkeyGetFromPem(interp, keyFile, passPhrase, (signKeyFile != NULL));
             if (pkey == NULL) {
                 result = TCL_ERROR;
             }
@@ -2187,7 +2188,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
 
             if (signKeyFile != NULL || verifyKeyFile != NULL) {
                 if (signKeyFile != NULL) {
-                    result = SignatureSign(interp, pkey,
+                    result = PkeySignatureSign(interp, pkey,
                                            messageString, (size_t)messageLength,
                                            digest.md, encoding);
                     if (result == TCL_OK) {
@@ -2201,7 +2202,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                                                          &signatureLength,
                                                          &signatureDs);
 
-                    result = SignatureVerify(interp, pkey,
+                    result = PkeySignatureVerify(interp, pkey,
                                              messageString, (size_t)messageLength,
                                              signatureString, (size_t)signatureLength,
                                              digest.md);
@@ -2242,7 +2243,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             Tcl_DStringFree(&signatureDs);
         }
         if (haveDigest) {
-            FreeDigest(&digest);
+            DigestFree(&digest);
         }
     }
 
@@ -2330,7 +2331,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_MD, &digest);
+        result = DigestGet(interp, digestName, NS_DIGEST_USAGE_MD, &digest);
         if (result != TCL_ERROR) {
             haveDigest = NS_TRUE;
 
@@ -2398,7 +2399,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
             Tcl_DStringFree(&messageDs);
         }
         if (haveDigest) {
-            FreeDigest(&digest);
+            DigestFree(&digest);
         }
     }
 
@@ -2487,7 +2488,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_HKDF, &digest);
+        result = DigestGet(interp, digestName, NS_DIGEST_USAGE_HKDF, &digest);
 
         if (result != TCL_ERROR) {
             haveDigest = NS_TRUE;
@@ -2560,7 +2561,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         }
 
         if (haveDigest) {
-            FreeDigest(&digest);
+            DigestFree(&digest);
         }
         EVP_PKEY_CTX_free(pctx);
     }
@@ -3072,7 +3073,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         /*
          * Look up the Message Digest from OpenSSL
          */
-        result = GetDigest(interp, digestName, NS_DIGEST_USAGE_PBKDF2, &digest);
+        result = DigestGet(interp, digestName, NS_DIGEST_USAGE_PBKDF2, &digest);
         if (result == TCL_OK) {
             Tcl_DString          saltDs, secretDs;
             TCL_SIZE_T           saltLength, secretLength;
@@ -3102,7 +3103,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
                 Ns_TclPrintfResult(interp, "could not derive key");
                 result = TCL_ERROR;
             }
-            FreeDigest(&digest);
+            DigestFree(&digest);
             ns_free(out);
         }
     }
@@ -3156,10 +3157,10 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         EVP_PKEY *pkey;
         EC_KEY   *eckey = NULL;
 
-        pkey = GetPkeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
+        pkey = PkeyGetFromPem(interp, pemFile, passPhrase, NS_TRUE);
         if (pkey == NULL) {
             /*
-             * GetPkeyFromPem handles error message
+             * PkeyGetFromPem handles error message
              */
             result = TCL_ERROR;
         } else {
@@ -3217,7 +3218,7 @@ SetResultFromEC_POINT(
 /*
  *----------------------------------------------------------------------
  *
- * GetPkeyFromEcKey --
+ * PkeyGetFromEcKey --
  *
  *      Wrap an EC_KEY object into an EVP_PKEY container.
  *
@@ -3236,7 +3237,7 @@ SetResultFromEC_POINT(
  *----------------------------------------------------------------------
  */
 static EVP_PKEY *
-GetPkeyFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
+PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
 {
     EVP_PKEY *pkey = EVP_PKEY_new();
 
@@ -3342,7 +3343,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             result = TCL_OK;
 
         } else {
-            EVP_PKEY *pkey = GetPkeyFromEcKey(interp, eckey);
+            EVP_PKEY *pkey = PkeyGetFromEcKey(interp, eckey);
 
             if (pkey == NULL) {
                 result = TCL_ERROR;
@@ -3351,12 +3352,12 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             eckey = NULL; /* now owned by pkey */
 
             if (formatInt == 1 /* pem */) {
-                result = WritePublicKeyPem(interp, pkey,
+                result = PkeyPublicPemWrite(interp, pkey,
                                            "EC",
                                            "EC public key",
                                            outfileName);
             } else if (formatInt == 2 /* der */) {
-                result = WritePublicKey(interp, pkey, outfileName, NS_FALSE);
+                result = PkeyPublicWrite(interp, pkey, outfileName, NS_FALSE);
             } else {
                 Ns_TclPrintfResult(interp, "unexpected format code");
                 result = TCL_ERROR; /* should not happen */
@@ -3620,14 +3621,14 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         /*
          * Convert to EVP_PKEY and serialize as SPKI.
          */
-        pkey = GetPkeyFromEcKey(interp, eckey);
+        pkey = PkeyGetFromEcKey(interp, eckey);
         if (pkey == NULL) {
             result = TCL_ERROR;
             goto done_ec;
         }
         eckey = NULL; /* now owned by pkey */
 
-        result = WritePublicKey(interp, pkey, outfileName, wantPem);
+        result = PkeyPublicWrite(interp, pkey, outfileName, wantPem);
 
     done_ec:
         if (eckey != NULL) { EC_KEY_free(eckey); }
@@ -3686,7 +3687,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
         Ns_TclPrintfResult(interp, "specify either '-outfile' or '-pem' (legacy), but not both");
         result = TCL_ERROR;
 
-    } else if (GetCurve(interp, curvenameString, &nid) == TCL_ERROR) {
+    } else if (CurveNidGet(interp, curvenameString, &nid) == TCL_ERROR) {
         /*
          * Function cares about error message
          */
@@ -3709,7 +3710,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
             result = TCL_ERROR;
 
         } else {
-            BIO *bio = PEMOpenWriteStream(interp, outfileName);
+            BIO *bio = PemOpenWriteStream(interp, outfileName);
 
             if (bio == NULL) {
                 result = TCL_ERROR;
@@ -3720,7 +3721,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
                                    curvenameString);
                 result = TCL_ERROR;
             } else {
-                result = PEMWriteResult(interp, bio, outfileName, "EC");
+                result = PemWriteResult(interp, bio, outfileName, "EC");
             }
 
             if (bio != NULL) {
@@ -3842,7 +3843,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             EVP_PKEY            *peerKey, *params = NULL;
             EVP_PKEY            *pkey;
 
-            pkey = GetPkeyFromPem(interp, pemFileName, NS_EMPTY_STRING, NS_TRUE);
+            pkey = PkeyGetFromPem(interp, pemFileName, NS_EMPTY_STRING, NS_TRUE);
             peerKeyEC = EC_KEY_new_by_curve_name(EC_GROUP_get_curve_name(group));
             peerKey = EVP_PKEY_new();
 
@@ -4086,7 +4087,7 @@ CryptoKemPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        EVP_PKEY *pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+        EVP_PKEY *pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_TRUE);
 
         if (pkey == NULL) {
             result = TCL_ERROR;
@@ -4097,7 +4098,7 @@ CryptoKemPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             result = TCL_ERROR;
 
         } else {
-            result = WritePublicKeyPem(interp,
+            result = PkeyPublicPemWrite(interp,
                                        pkey,
                                        "KEM",
                                        "generated KEM public key",
@@ -4111,7 +4112,7 @@ CryptoKemPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * KemEncapsulate --
+ * PkeyKemEncapsulate --
  *
  *      Perform ML-KEM encapsulation using the provided EVP_PKEY and
  *      return the resulting ciphertext and shared secret.
@@ -4148,7 +4149,7 @@ CryptoKemPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 static int
-KemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+PkeyKemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
 {
     int            result = TCL_ERROR;
     EVP_PKEY_CTX  *ctx = NULL;
@@ -4264,9 +4265,9 @@ CryptoKemEncapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
       ns_crypto::kem encapsulate -pem $pem -encoding base64url
     */
 
-    pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_FALSE);
+    pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_FALSE);
     if (pkey == NULL) {
-        pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+        pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_TRUE);
         if (pkey == NULL) {
             return TCL_ERROR;
         }
@@ -4277,7 +4278,7 @@ CryptoKemEncapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
-    result = KemEncapsulate(interp, pkey,
+    result = PkeyKemEncapsulate(interp, pkey,
                             (encodingInt == -1 ? NS_OBJ_ENCODING_HEX: (Ns_BinaryEncoding)encodingInt));
  done:
     EVP_PKEY_free(pkey);
@@ -4336,7 +4337,7 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         unsigned char       *secret = NULL;
         size_t               secretLen = 0u, secretAllocLen = 0u;
 
-        pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+        pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_TRUE);
         if (pkey == NULL) {
             result = TCL_ERROR;
             goto done;
@@ -4404,7 +4405,7 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  * NsTclCryptoKemObjCmd --
  *
  *      Implements "ns_crypto::kem" with various subcommands to
- *      provide subcommands for key embedding and related
+ *      provide subcommands for key encapsulation and related
  *      commands.
  *
  * Results:
@@ -4568,7 +4569,7 @@ CryptoAgreementPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
      * Accept a private key PEM and derive/export the corresponding public key.
      */
     {
-        EVP_PKEY *pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+        EVP_PKEY *pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_TRUE);
 
         if (pkey == NULL) {
             result = TCL_ERROR;
@@ -4580,7 +4581,7 @@ CryptoAgreementPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             result = TCL_ERROR;
 
         } else {
-            result = WritePublicKeyPem(interp,
+            result = PkeyPublicPemWrite(interp,
                                        pkey,
                                        "key agreement",
                                        "public",
@@ -4651,7 +4652,7 @@ CryptoAgreementDeriveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     /*
      * Local key must be a private key.
      */
-    pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+    pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_TRUE);
     if (pkey == NULL) {
         result = TCL_ERROR;
         goto done;
@@ -4667,7 +4668,7 @@ CryptoAgreementDeriveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     /*
      * Peer key must be a public key.
      */
-    peerPkey = GetPkeyFromPem(interp, peerPem, NS_EMPTY_STRING, NS_FALSE);
+    peerPkey = PkeyGetFromPem(interp, peerPem, NS_EMPTY_STRING, NS_FALSE);
     if (peerPkey == NULL) {
         result = TCL_ERROR;
         goto done;
@@ -5350,7 +5351,7 @@ SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding
 
 /*----------------------------------------------------------------------
  *
- * CryptoKeyTypeNameObj --
+ * PkeyTypeNameObj --
  *
  *      Helper function to obtain the type name of an EVP_PKEY as a
  *      Tcl object.
@@ -5371,7 +5372,7 @@ SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding
  *----------------------------------------------------------------------
  */
 static Tcl_Obj *
-CryptoKeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
+PkeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
 {
 #ifdef HAVE_OPENSSL_3
     const char *typeName = EVP_PKEY_get0_type_name(pkey);
@@ -5489,13 +5490,13 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        EVP_PKEY   *pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+        EVP_PKEY   *pkey = PkeyGetAnyFromPem(interp, pem, passPhrase);
         Tcl_Obj    *typeNameObj;
 
         if (pkey == NULL) {
             return TCL_ERROR;
         }
-        typeNameObj = CryptoKeyTypeNameObj(interp, pkey);
+        typeNameObj = PkeyTypeNameObj(interp, pkey);
         if (typeNameObj == NULL) {
             result = TCL_ERROR;
             goto done;
@@ -5636,7 +5637,7 @@ CryptoKeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 ? NS_OBJ_ENCODING_HEX
                 : (Ns_BinaryEncoding)encodingInt);
 
-    pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+    pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_TRUE);
     if (pkey == NULL) {
         return TCL_ERROR;
     }
@@ -5698,7 +5699,7 @@ CryptoKeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 ? NS_OBJ_ENCODING_HEX
                 : (Ns_BinaryEncoding)encodingInt);
 
-    pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+    pkey = PkeyGetAnyFromPem(interp, pem, passPhrase);
     if (pkey == NULL) {
         return TCL_ERROR;
     }
@@ -5751,11 +5752,11 @@ CryptoKeyTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-    pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+    pkey = PkeyGetAnyFromPem(interp, pem, passPhrase);
     if (pkey == NULL) {
         return TCL_ERROR;
     }
-    typeNameObj = CryptoKeyTypeNameObj(interp, pkey);
+    typeNameObj = PkeyTypeNameObj(interp, pkey);
     if (typeNameObj == NULL) {
         result = TCL_ERROR;
     } else {
@@ -5995,7 +5996,7 @@ PkeySignatureRequiresDigest(EVP_PKEY *pkey)
 /*
  *----------------------------------------------------------------------
  *
- * GetDigestForSignature --
+ * PkeySignatureDigestGet --
  *
  *      Determine the effective digest to be used for signature
  *      operations based on the requested digest and the key type.
@@ -6017,7 +6018,7 @@ PkeySignatureRequiresDigest(EVP_PKEY *pkey)
  *----------------------------------------------------------------------
  */
 static int
-GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
+PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
                       const char *digestName,
                       const EVP_MD **mdPtr)
 {
@@ -6057,7 +6058,7 @@ GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
 /*
  *----------------------------------------------------------------------
  *
- * SignatureSign --
+ * PkeySignatureSign --
  *
  *      Compute a digital signature over the provided message using
  *      the specified private key.
@@ -6085,7 +6086,7 @@ GetDigestForSignature(Tcl_Interp *interp, EVP_PKEY *pkey,
  *----------------------------------------------------------------------
  */
 static int
-SignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
+PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
               const unsigned char *message, size_t messageLength,
               const EVP_MD *md, Ns_BinaryEncoding encoding)
 {
@@ -6142,7 +6143,7 @@ done:
 /*
  *----------------------------------------------------------------------
  *
- * SignatureVerify --
+ * PkeySignatureVerify --
  *
  *      Verify a digital signature over the provided message using
  *      the specified public or private key.
@@ -6171,7 +6172,7 @@ done:
  *----------------------------------------------------------------------
  */
 static int
-SignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
+PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
                 const unsigned char *message, size_t messageLength,
                 const unsigned char *signature, size_t signatureLength,
                 const EVP_MD *md)
@@ -6220,7 +6221,7 @@ done:
 /*
  *----------------------------------------------------------------------
  *
- * CryptoSignatureSignObjCmd --
+ * CryptoPkeySignatureSignObjCmd --
  *
  *      Implements the Tcl command:
  *
@@ -6245,7 +6246,7 @@ done:
  *----------------------------------------------------------------------
  */
 static int
-CryptoSignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+CryptoPkeySignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                           TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1;
@@ -6280,7 +6281,7 @@ CryptoSignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 ? NS_OBJ_ENCODING_HEX
                 : (Ns_BinaryEncoding)encodingInt);
 
-    pkey = GetPkeyFromPem(interp, pem, passPhrase, NS_TRUE);
+    pkey = PkeyGetFromPem(interp, pem, passPhrase, NS_TRUE);
     if (pkey == NULL) {
         return TCL_ERROR;
     }
@@ -6291,7 +6292,7 @@ CryptoSignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
-    result = GetDigestForSignature(interp, pkey, digestName, &md);
+    result = PkeySignatureDigestGet(interp, pkey, digestName, &md);
     if (result != TCL_OK) {
         goto done;
     }
@@ -6299,7 +6300,7 @@ CryptoSignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Tcl_DStringInit(&messageDs);
     message = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
 
-    result = SignatureSign(interp, pkey, message, (size_t)messageLength, md, encoding);
+    result = PkeySignatureSign(interp, pkey, message, (size_t)messageLength, md, encoding);
 
     Tcl_DStringFree(&messageDs);
 
@@ -6311,7 +6312,7 @@ done:
 /*
  *----------------------------------------------------------------------
  *
- * CryptoSignatureVerifyObjCmd --
+ * CryptoPkeySignatureVerifyObjCmd --
  *
  *      Implements the Tcl command:
  *
@@ -6340,7 +6341,7 @@ done:
  *----------------------------------------------------------------------
  */
 static int
-CryptoSignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+CryptoPkeySignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                 result, isBinary = 0;
@@ -6370,7 +6371,7 @@ CryptoSignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-   pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+   pkey = PkeyGetAnyFromPem(interp, pem, passPhrase);
     if (pkey == NULL) {
         return TCL_ERROR;
     }
@@ -6381,7 +6382,7 @@ CryptoSignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
-    result = GetDigestForSignature(interp, pkey, digestName, &md);
+    result = PkeySignatureDigestGet(interp, pkey, digestName, &md);
     if (result != TCL_OK) {
         goto done;
     }
@@ -6392,7 +6393,7 @@ CryptoSignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     signature = (const unsigned char *)Tcl_GetByteArrayFromObj(signatureObj,
                                                                &signatureLength);
 
-    result = SignatureVerify(interp, pkey,
+    result = PkeySignatureVerify(interp, pkey,
                              message, (size_t)messageLength,
                              signature, (size_t)signatureLength,
                              md);
@@ -6501,13 +6502,13 @@ CryptoSignaturePubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        EVP_PKEY *pkey = GetAnyPkeyFromPem(interp, pem, passPhrase);
+        EVP_PKEY *pkey = PkeyGetAnyFromPem(interp, pem, passPhrase);
 
         if (pkey == NULL) {
             result = TCL_ERROR;
 
         } else {
-            result = WritePublicKeyPem(interp,
+            result = PkeyPublicPemWrite(interp,
                                        pkey,
                                        "signature",
                                        "generated signature public key",
@@ -6544,8 +6545,8 @@ NsTclCryptoSignatureObjCmd(ClientData clientData, Tcl_Interp *interp,
         {"generate", CryptoSignatureGenerateObjCmd},
         {"pub",      CryptoSignaturePubObjCmd},
 #endif
-        {"sign",     CryptoSignatureSignObjCmd},
-        {"verify",   CryptoSignatureVerifyObjCmd},
+        {"sign",     CryptoPkeySignatureSignObjCmd},
+        {"verify",   CryptoPkeySignatureVerifyObjCmd},
         {NULL, NULL}
     };
 
