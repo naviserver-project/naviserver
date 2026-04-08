@@ -533,6 +533,25 @@ PemOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
  *
  *----------------------------------------------------------------------
  */
+#if defined(__clang__) && defined(__APPLE__)
+/*
+ * Work around an optimizer/code generation issue observed with
+ * Apple clang (Xcode 21, arm64) when compiling with -Os:
+ *
+ * When this function is inlined, the compiler may miscompile the
+ * NULL check on outfileName, causing the wrong branch to be taken
+ * (SetResultFromMemBio() not called even when outfileName == NULL).
+ *
+ * The issue disappears when:
+ *   - the function is not inlined (noinline), or
+ *   - additional code (e.g., logging) inhibits the optimization.
+ *
+ * GCC (e.g., gcc-mp-15) does not exhibit this behavior.
+ *
+ * Keep this function out-of-line to ensure correct semantics.
+ */
+__attribute__((noinline))
+#endif
 static int
 PemWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
 {
