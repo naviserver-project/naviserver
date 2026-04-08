@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------
-# AC_CHECK_OPENSSL --
+# AX_CHECK_OPENSSL --
 #
 #       Set the openssl compile flags, possibly using a special directory
 #       or pkg-config (when --with-openssl is specified without parameters)
@@ -14,7 +14,7 @@
 #
 #       Defines the following vars:
 #               OPENSSL_INCLUDES   Full path to the directory containing
-#                                  the openssl/evp.h file if a openssl
+#                                  the openssl/evp.h file if an openssl
 #                                  directory was specified.
 #               OPENSSL_LIBS       Linker line for openssl.
 #------------------------------------------------------------------------
@@ -22,14 +22,31 @@
 AC_DEFUN([AX_CHECK_OPENSSL], [
 AC_MSG_CHECKING([for OpenSSL libraries])
 AC_ARG_WITH([openssl],
-  AS_HELP_STRING(--with-openssl=DIR,Build and link with OpenSSL),
+  AS_HELP_STRING([--with-openssl=DIR],[Build and link with OpenSSL]),
   [
     ac_openssl=$withval
     if test "${ac_openssl}" != "no" -a "${ac_openssl}" != "yes" ; then
       ac_openssl=yes
       if test -d "$withval" ; then
         OPENSSL_INCLUDES="-I$withval/include"
-        if test -r "$withval/lib64/libssl.so" ; then
+
+        dnl
+        dnl When an explicit OpenSSL prefix is provided, prefer absolute
+        dnl library pathnames when possible. This avoids accidental
+        dnl resolution of -lssl/-lcrypto from unrelated earlier -L flags
+        dnl such as /opt/local/lib.
+        dnl
+        if test -r "$withval/lib/libssl.dylib" -a -r "$withval/lib/libcrypto.dylib" ; then
+           OPENSSL_LIBS="$withval/lib/libssl.dylib $withval/lib/libcrypto.dylib"
+        elif test -r "$withval/lib64/libssl.so" -a -r "$withval/lib64/libcrypto.so" ; then
+           OPENSSL_LIBS="$withval/lib64/libssl.so $withval/lib64/libcrypto.so"
+        elif test -r "$withval/lib/libssl.so" -a -r "$withval/lib/libcrypto.so" ; then
+           OPENSSL_LIBS="$withval/lib/libssl.so $withval/lib/libcrypto.so"
+        elif test -r "$withval/lib64/libssl.a" -a -r "$withval/lib64/libcrypto.a" ; then
+           OPENSSL_LIBS="$withval/lib64/libssl.a $withval/lib64/libcrypto.a"
+        elif test -r "$withval/lib/libssl.a" -a -r "$withval/lib/libcrypto.a" ; then
+           OPENSSL_LIBS="$withval/lib/libssl.a $withval/lib/libcrypto.a"
+        elif test -r "$withval/lib64/libssl.so" ; then
            OPENSSL_LIBS="-L$withval/lib64 -lssl -lcrypto"
         else
            OPENSSL_LIBS="-L$withval/lib -lssl -lcrypto"
@@ -73,12 +90,12 @@ if test "${ac_openssl}" = "yes" ; then
   CPPFLAGS="${OPENSSL_INCLUDES} ${CPPFLAGS}"
   LIBS="${LIBS} ${OPENSSL_LIBS}"
   CFLAGS="${OPENSSL_INCLUDES} ${CFLAGS}"
-  LDFLAGS="${LIBS} ${LDFLAGS}"
+  LDFLAGS="${LDFLAGS_saved}"
 
   AC_CHECK_HEADERS([openssl/evp.h])
   FOUND_SSL_LIB="no"
-  AC_CHECK_LIB(ssl, OPENSSL_init_ssl, [FOUND_SSL_LIB="yes"])
-  AC_CHECK_LIB(ssl, SSL_library_init, [FOUND_SSL_LIB="yes"])
+  AC_CHECK_LIB([ssl], [OPENSSL_init_ssl], [FOUND_SSL_LIB="yes"])
+  AC_CHECK_LIB([ssl], [SSL_library_init], [FOUND_SSL_LIB="yes"])
   AC_CHECK_LIB([crypto], [PEM_read_bio_DHparams])
 
   dnl echo "OpenSSL headers found:    $ac_cv_header_openssl_evp_h"
