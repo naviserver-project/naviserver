@@ -999,7 +999,7 @@ test ns_crypto::key-3.7 {info: ML-DSA supports signature} -constraints {mldsa} -
     dict get [ns_crypto::key info -pem $pem] signature
 } -result 1
 
-test ns_crypto::key-3.8 {info: EC requires digest for signatures} -constraints {ec} -body {
+test ns_crypto::key-3.8 {info: EC requires digest for signatures} -constraints {ec kem} -body {
     set pem [ns_crypto::eckey generate -name prime256v1]
     set info [ns_crypto::key info -pem $pem]
     list \
