@@ -913,7 +913,6 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         if (result != TCL_ERROR) {
             unsigned char        digest[EVP_MAX_MD_SIZE];
             char                 digestChars[EVP_MAX_MD_SIZE*2 + 1];
-            HMAC_CTX            *ctx;
             const unsigned char *keyString, *messageString;
             unsigned int         mdLength;
             TCL_SIZE_T           keyLength, messageLength;
