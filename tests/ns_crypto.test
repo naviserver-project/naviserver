@@ -13,15 +13,22 @@ tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -secret 42}]}]
 tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
-tcltest::testConstraint kem [expr {![catch {::ns_crypto::kem generate}]}]
-tcltest::testConstraint signature [expr {![catch {::ns_crypto::signature generate}]}]
-tcltest::testConstraint agreement [expr {![catch {::ns_crypto::agreement generate}]}]
-tcltest::testConstraint mldsa [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
-tcltest::testConstraint ec [expr {![catch {::ns_crypto::eckey generate}]}]
 
-#foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec signature} {
+tcltest::testConstraint agreement [expr {![catch {::ns_crypto::agreement generate}]}]
+tcltest::testConstraint ec        [expr {![catch {::ns_crypto::eckey generate}]}]
+tcltest::testConstraint kem       [expr {![catch {::ns_crypto::kem generate}]}]
+tcltest::testConstraint keygen    [tcltest::testConstraint agreement] ;# both require OpenSSL 3.0+
+tcltest::testConstraint mldsa     [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
+tcltest::testConstraint signature [expr {![catch {::ns_crypto::signature generate}]}]
+tcltest::testConstraint sm2       [expr {![catch {::ns_crypto::signature generate -name sm2}]}]
+
+#foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec signature keygen sm2} {
 #    ns_log notice constraint $c [tcltest::testConstraint $c]
 #}
+
+if {![tcltest::testConstraint ssl]} {
+    ns_log notice "These tests require OpenSSL, with is not available in this installation"
+}
 
 #######################################################################################
 #  Syntax tests not covered below
@@ -826,7 +833,7 @@ test ns_crypto::kem-1.0 {syntax: ns_crypto::kem} -constraints {kem} -body {
 
 test ns_crypto::kem-1.1 {syntax: ns_crypto::kem generate} -constraints {kem} -body {
     ns_crypto::kem generate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate ?-name /value/? ?-outfile /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::kem generate ?-name /value/? ?-group /value/? ?-outfile /value/?"}
 
 test ns_crypto::kem-1.2 {syntax: ns_crypto::kem pub} -constraints {kem} -body {
     ns_crypto::kem pub
@@ -901,7 +908,7 @@ test ns_crypto::kem-2.5 {ns_crypto::kem roundtrip} -constraints {kem} -body {
 
 test ns_crypto::key-1.0 {syntax: ns_crypto::key subcommands} -body {
     ns_crypto::key
-} -returnCodes error -result {wrong # args: should be "ns_crypto::key info|priv|pub|type ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::key generate|info|priv|pub|type ?/arg .../"}
 
 test ns_crypto::key-1.1 {syntax: ns_crypto::key type} -body {
     ns_crypto::key type
@@ -913,11 +920,15 @@ test ns_crypto::key-1.2 {syntax: ns_crypto::key info} -body {
 
 test ns_crypto::key-1.3 {syntax: ns_crypto::key pub} -body {
     ns_crypto::key pub
-} -returnCodes error -result {wrong # args: should be "ns_crypto::key pub ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::key pub ?-encoding hex|base64url|base64|binary? ?-format raw|pem? ?-passphrase /value/? ?-outfile /value/? -pem /value/"}
 
 test ns_crypto::key-1.4 {syntax: ns_crypto::key priv} -body {
     ns_crypto::key priv
 } -returnCodes error -result {wrong # args: should be "ns_crypto::key priv ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
+
+test ns_crypto::key-1.5 {syntax: ns_crypto::key generate} -body {
+    ns_crypto::key generate
+} -returnCodes error -result {wrong # args: should be "ns_crypto::key generate -name /value/ ?-group /value/? ?-outfile /value/?"}
 
 
 test ns_crypto::key-2.1 {type: EC private key from generated PEM string} -constraints {ec} -body {
@@ -995,7 +1006,7 @@ test ns_crypto::key-3.8 {info: EC requires digest for signatures} -constraints {
         [dict get $info signature] \
         [dict get $info kem] \
         [dict get $info requiresdigest]
-} -result {1 0 1}
+} -result {1 1 1}
 
 test ns_crypto::key-3.9 {info: ML-DSA signature key does not require digest} -constraints {mldsa} -body {
     set pem [ns_crypto::signature generate -name ml-dsa-65]
@@ -1112,6 +1123,215 @@ test ns_crypto::key-7.4 {priv: public PEM rejected} -constraints {ec} -body {
 } -returnCodes error -match glob -result *
 
 
+#---------------------------------------------------------------------------
+# Generic tests for ns_crypto::key generate
+#---------------------------------------------------------------------------
+
+test ns_crypto-key-generate-1.1 {ns_crypto::key generate -name EC -group prime256v1 returns PEM private key} \
+    -constraints {keygen ec} \
+    -body {
+        set pem [ns_crypto::key generate -name EC -group prime256v1]
+        expr {
+            [string match {*BEGIN PRIVATE KEY*} $pem]
+            || [string match {*BEGIN ENCRYPTED PRIVATE KEY*} $pem]
+        }
+    } \
+    -result 1
+
+
+test ns_crypto-key-generate-1.2 {ns_crypto::key generate -name EC -group prime256v1 yields type ec and curve prime256v1} \
+    -constraints {keygen ec} \
+    -body {
+        set pem [ns_crypto::key generate -name EC -group prime256v1]
+        set info [ns_crypto::key info -pem $pem]
+        list [dict get $info type] [dict get $info curve]
+    } \
+    -result {ec prime256v1}
+
+
+test ns_crypto-key-generate-1.3 {ns_crypto::key generate -name EC without -group fails} \
+    -constraints {keygen ec} \
+    -body {
+        ns_crypto::key generate -name EC
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {*option "-group" is required*}
+
+
+test ns_crypto-key-generate-1.4 {ns_crypto::key generate -name X25519 works without -group} \
+    -constraints {keygen} \
+    -body {
+        set pem [ns_crypto::key generate -name X25519]
+        dict get [ns_crypto::key info -pem $pem] type
+    } \
+    -result x25519
+
+
+test ns_crypto-key-generate-1.5 {ns_crypto::key generate -name X25519 accepts matching -group} \
+    -constraints {keygen} \
+    -body {
+        set pem [ns_crypto::key generate -name X25519 -group x25519]
+        dict get [ns_crypto::key info -pem $pem] type
+    } \
+    -result x25519
+
+
+test ns_crypto-key-generate-1.6 {ns_crypto::key generate -name X25519 rejects wrong -group} \
+    -constraints {keygen} \
+    -body {
+        ns_crypto::key generate -name X25519 -group prime256v1
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {*group "*" is not valid*}
+
+
+test ns_crypto-key-generate-1.7 {ns_crypto::key generate -name RSA rejects unsupported -group} \
+    -constraints {keygen} \
+    -body {
+        ns_crypto::key generate -name RSA -group prime256v1
+    } \
+    -returnCodes {error ok} \
+    -match glob \
+    -result {*option "-group" is not supported*}
+
+#---------------------------------------------------------------------------
+# SM2 tests for generic key generation and signature sign/verify with -id
+#---------------------------------------------------------------------------
+
+test ns_crypto-sm2-1.1 {ns_crypto::key generate -name SM2 returns PEM private key} \
+    -constraints {sm2} \
+    -body {
+        set pem [ns_crypto::key generate -name SM2]
+        expr {
+            [string match {*BEGIN PRIVATE KEY*} $pem]
+            || [string match {*BEGIN ENCRYPTED PRIVATE KEY*} $pem]
+        }
+    } \
+    -result 1
+
+
+test ns_crypto-sm2-1.2 {ns_crypto::key generate -name SM2 yields type sm2} \
+    -constraints {sm2} \
+    -body {
+        set pem [ns_crypto::key generate -name SM2]
+        dict get [ns_crypto::key info -pem $pem] type
+    } \
+    -result sm2
+
+
+test ns_crypto-sm2-1.3 {ns_crypto::key generate -name SM2 yields signature capability} \
+    -constraints {sm2} \
+    -body {
+        set pem [ns_crypto::key generate -name SM2]
+        set info [ns_crypto::key info -pem $pem]
+        list \
+            [dict get $info signature] \
+            [dict get $info requiresdigest] \
+            [dict get $info agreement] \
+            [dict get $info kem]
+    } \
+    -result {1 1 0 0}
+
+
+test ns_crypto-sm2-1.4 {SM2 sign/verify succeeds with explicit -id} \
+    -constraints {sm2} \
+    -body {
+        set pem [ns_crypto::signature generate -name SM2]
+        set pub [ns_crypto::signature pub -pem $pem]
+        set sig [ns_crypto::signature sign -pem $pem -id "alice@example.com" -- "hello world"]
+        ns_crypto::signature verify \
+            -pem $pub \
+            -id "alice@example.com" \
+            -signature [binary decode hex $sig] \
+            -- "hello world"
+    } \
+    -result 1
+
+
+test ns_crypto-sm2-1.5 {SM2 verify fails with different -id} \
+    -constraints {sm2} \
+    -body {
+        set pem [ns_crypto::signature generate -name SM2]
+        set pub [ns_crypto::signature pub -pem $pem]
+        set sig [ns_crypto::signature sign -pem $pem -id "alice@example.com" -- "hello world"]
+        ns_crypto::signature verify \
+            -pem $pub \
+            -id "bob@example.com" \
+            -signature [binary decode hex $sig] \
+            -- "hello world"
+    } \
+    -result 0
+
+
+test ns_crypto-sm2-1.6 {SM2 sign/verify succeeds with empty -id} \
+    -constraints {sm2} \
+    -body {
+        set pem [ns_crypto::signature generate -name SM2]
+        set pub [ns_crypto::signature pub -pem $pem]
+        set sig [ns_crypto::signature sign -pem $pem -id "" -- "hello world"]
+        ns_crypto::signature verify \
+            -pem $pub \
+            -id "" \
+            -signature [binary decode hex $sig] \
+            -- "hello world"
+    } \
+    -result 1
+
+
+test ns_crypto-sm2-1.7 {SM2 sign with unsupported digest sha256 fails when -id is present} \
+    -constraints {sm2} \
+    -body {
+        set pem [ns_crypto::signature generate -name SM2]
+        ns_crypto::signature sign -pem $pem -id "alice@example.com" -digest sha256 -- "hello world"
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {*invalid digest*}
+
+
+test ns_crypto-sm2-1.8 {SM2 sign defaults work without explicit -id} \
+    -constraints {sm2} \
+    -body {
+        set pem [ns_crypto::signature generate -name SM2]
+        set pub [ns_crypto::signature pub -pem $pem]
+        set sig [ns_crypto::signature sign -pem $pem -- "hello world"]
+        ns_crypto::signature verify \
+            -pem $pub \
+            -signature [binary decode hex $sig] \
+            -- "hello world"
+    } \
+    -result 1
+
+
+test ns_crypto-sm2-1.9 {non-SM2 signature key rejects -id on sign} \
+    -constraints {signature} \
+    -body {
+        set pem [ns_crypto::signature generate -name Ed25519]
+        ns_crypto::signature sign -pem $pem -id "alice@example.com" -- "hello world"
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {*does not support parameter -id*}
+
+
+test ns_crypto-sm2-1.10 {non-SM2 signature key rejects -id on verify} \
+    -constraints {signature} \
+    -body {
+        set pem [ns_crypto::signature generate -name Ed25519]
+        set pub [ns_crypto::signature pub -pem $pem]
+        set sig [ns_crypto::signature sign -pem $pem -- "hello world"]
+        ns_crypto::signature verify \
+            -pem $pub \
+            -id "alice@example.com" \
+            -signature [binary decode hex $sig] \
+            -- "hello world"
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {*does not support parameter -id*}
+
 ############################################################################
 # Test Cases for ns_crypto::signature
 ############################################################################
@@ -1122,15 +1342,15 @@ test ns_crypto::signature-1.0 {syntax: ns_crypto::signature subcommands} -constr
 
 test ns_crypto::signature-1.1 {syntax: ns_crypto::signature sign} -body {
     ns_crypto::signature sign
-} -returnCodes error -result {wrong # args: should be "ns_crypto::signature sign ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ ?--? /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature sign ?-binary? ?-digest /value/? ?-id /value/? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ ?--? /message/"}
 
 test ns_crypto::signature-1.2 {syntax: ns_crypto::signature verify} -body {
     ns_crypto::signature verify
-} -returnCodes error -result {wrong # args: should be "ns_crypto::signature verify ?-binary? ?-digest /value/? ?-passphrase /value/? -pem /value/ -signature /value/ ?--? /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature verify ?-binary? ?-digest /value/? ?-id /value/? ?-passphrase /value/? -pem /value/ -signature /value/ ?--? /message/"}
 
 test ns_crypto::signature-1.3 {syntax: ns_crypto::signature generate} -constraints {mldsa} -body {
     ns_crypto::signature generate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name /value/? ?-outfile /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name /value/? ?-group /value/? ?-outfile /value/?"}
 
 test ns_crypto::signature-1.4 {syntax: ns_crypto::signature pub} -constraints {mldsa} -body {
     ns_crypto::signature pub
@@ -1295,7 +1515,7 @@ test ns_crypto::signature-7.3 {Ed25519 rejects explicit digest on verify} -const
 
 test ns_crypto::signature-8.0 {syntax: ns_crypto::signature generate} -constraints {mldsa} -body {
     ns_crypto::signature generate x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name /value/? ?-outfile /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::signature generate ?-name /value/? ?-group /value/? ?-outfile /value/?"}
 
 test ns_crypto::signature-8.1 {syntax: ns_crypto::signature pub} -constraints {mldsa} -body {
     ns_crypto::signature pub
@@ -1665,6 +1885,7 @@ test ns_crypto::agreement-6.2 {derive: RSA peer rejected} -constraints {agreemen
 
     ns_crypto::agreement derive -pem $pemA -peer $pubR
 } -returnCodes error -match glob -result {*does not support key agreement*}
+
 #
 # Local variables:
 #    mode: tcl

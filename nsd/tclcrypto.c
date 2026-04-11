@@ -29,7 +29,6 @@
 #include "nsd.h"
 
 #ifdef HAVE_OPENSSL_EVP_H
-
 # include "nsopenssl.h"
 #endif
 
@@ -39,12 +38,17 @@
  */
 #if defined(HAVE_OPENSSL_EVP_H) && !defined(HAVE_OPENSSL_PRE_1_0)
 
-#include <openssl/err.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
+# include <openssl/err.h>
+# include <openssl/evp.h>
+# include <openssl/rand.h>
 
 # ifdef HAVE_OPENSSL_HKDF
 #  include <openssl/kdf.h>
+# endif
+
+# ifdef HAVE_OPENSSL_3
+#  include <openssl/core_names.h>
+#  include <openssl/provider.h>
 # endif
 
 /*
@@ -64,6 +68,14 @@ typedef enum {
     NS_DIGEST_USAGE_PBKDF2      = 1 << 3,
     NS_DIGEST_USAGE_SIGN_VERIFY = 1 << 4
 } NsDigestUsage;
+
+typedef enum {
+    NS_CRYPTO_CAP_NONE      = 0u,
+    NS_CRYPTO_CAP_KEYMGMT   = 1u << 0, /* key can be generated/imported/exported */
+    NS_CRYPTO_CAP_SIGNATURE = 1u << 1, /* sign/verify */
+    NS_CRYPTO_CAP_AGREEMENT = 1u << 2, /* derive/key exchange */
+    NS_CRYPTO_CAP_KEM       = 1u << 3  /* encapsulate/decapsulate */
+} Ns_CryptoCapabilities;
 
 typedef enum {
     NS_CRYPTO_KEYGEN_USAGE_ANY = 0,
@@ -105,6 +117,9 @@ static int PemWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName,
 static BIO *PemOpenReadStream(const char *fnOrData)
     NS_GNUC_NONNULL(1);
 
+
+static void SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
+    NS_GNUC_NONNULL(1,2);
 
 static int SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     NS_GNUC_NONNULL(1,2,3);
@@ -150,10 +165,15 @@ static bool PkeySupportsSignature(EVP_PKEY *pkey)
 static bool PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixLength)
     NS_GNUC_NONNULL(1,2);
 
+# ifndef HAVE_OPENSSL_3
 static bool PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
     NS_GNUC_NONNULL(1,2);
+# endif
 
 static bool PkeySignatureRequiresDigest(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static bool PkeySignatureSupportsNullDigest(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
 static int PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
@@ -161,16 +181,30 @@ static int PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
                                  const EVP_MD **mdPtr)
     NS_GNUC_NONNULL(1,2,4);
 
+static const char *PkeySignatureDigestDefaultName(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static bool PkeySignatureAcceptsId(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static int PkeySignatureAcceptsIdFromObj(Tcl_Interp *interp, EVP_PKEY *pkey, Tcl_Obj *idObj,
+                              const unsigned char **idPtr, size_t *idLengthPtr)
+    NS_GNUC_NONNULL(1,2,4,5);
+
 static int PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
-                         const unsigned char *message, size_t messageLength,
-                         const EVP_MD *md, Ns_BinaryEncoding encoding)
+                             const unsigned char *message, size_t messageLength,
+                             const unsigned char *id, size_t idLength,
+                             const EVP_MD *md, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2,3);
 
 static int PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
-                           const unsigned char *message, size_t messageLength,
-                           const unsigned char *signature, size_t signatureLength,
-                           const EVP_MD *md)
+                               const unsigned char *message, size_t messageLength,
+                               const unsigned char *signature, size_t signatureLength,
+                               const unsigned char* id, size_t idLength,
+                               const EVP_MD *md)
     NS_GNUC_NONNULL(1,2,3,5);
+
+
 
 # ifndef OPENSSL_NO_EC
 static int CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
@@ -265,11 +299,10 @@ static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
 # endif
 
 # ifdef HAVE_OPENSSL_3
-# include <openssl/core_names.h>
-
 static TCL_OBJCMDPROC_T CryptoAgreementGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoAgreementPubObjCmd;
 static TCL_OBJCMDPROC_T CryptoAgreementDeriveObjCmd;
+static TCL_OBJCMDPROC_T CryptoKeyGenerateObjCmd;
 
 static int GeneratePrivateKeyPem(Tcl_Interp *interp,
                                  const char *typeName,
@@ -279,11 +312,51 @@ static int GeneratePrivateKeyPem(Tcl_Interp *interp,
                                  OSSL_PARAM *params)
     NS_GNUC_NONNULL(1,2,3,4);
 
+static int KeygenGroupParams(Tcl_Interp *interp,
+                             const char *typeName,
+                             const char *groupName,
+                             const char *what,
+                             OSSL_PARAM params[2],
+                             OSSL_PARAM **paramPtr)
+    NS_GNUC_NONNULL(1,2,4,5);
+
 static void KeymgmtListCallback(EVP_KEYMGMT *keymgmt, void *arg)
     NS_GNUC_NONNULL(1,2);
+
+static unsigned PkeyInstanceCapabilities(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static unsigned PkeyProbeSignatureCaps(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static int PkeySignatureInitSm2(Tcl_Interp *interp, EVP_MD_CTX *mdctx,  EVP_PKEY *pkey,
+                                const EVP_MD *md, const unsigned char *id, size_t idLength,
+                                bool sign, EVP_PKEY_CTX **pctxPtr)
+    NS_GNUC_NONNULL(1,2,3,8);
+
 # endif /* HAVE_OPENSSL_3 */
 
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
+
+
+
+static void
+SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
+{
+    unsigned long err = ERR_peek_last_error();
+
+    if (err == 0ul) {
+        Ns_TclPrintfResult(interp, "%s", prefix);
+    } else {
+        const char *reason = ERR_reason_error_string(err);
+
+        if (reason == NULL) {
+            Ns_TclPrintfResult(interp, "%s", prefix);
+        } else {
+            Ns_TclPrintfResult(interp, "%s: %s", prefix, reason);
+        }
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -661,6 +734,104 @@ PkeyPublicWrite(Tcl_Interp *interp, EVP_PKEY *pkey,
 }
 
 # ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * KeygenGroupParams --
+ *
+ *      Validate the optional -group parameter for provider-based key
+ *      generation and, when applicable, prepare OpenSSL parameter
+ *      settings.
+ *
+ *      For EC, DH, and DHX, -group is required. For X25519 and X448,
+ *      -group is optional but, when specified, must match the fixed
+ *      algorithm name. For other key types, -group is not supported.
+ *
+ * Parameters:
+ *      interp     - Tcl interpreter for error reporting
+ *      typeName   - key algorithm name
+ *      groupName  - optional group name, may be empty
+ *      what       - wording for error messages (e.g. "key agreement",
+ *                   "key")
+ *      params     - caller-provided two-element OSSL_PARAM array
+ *      paramPtr   - result pointer receiving NULL or params
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      On success, *paramPtr is set either to NULL or to params.
+ *      On failure, an error message is left in the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+KeygenGroupParams(Tcl_Interp *interp,
+                  const char *typeName,
+                  const char *groupName,
+                  const char *what,
+                  OSSL_PARAM params[2],
+                  OSSL_PARAM **paramPtr)
+{
+    bool requiresGroup = NS_FALSE;
+    bool acceptsOptionalGroup = NS_FALSE;
+
+    *paramPtr = NULL;
+
+    if (groupName != NULL && *groupName == '\0') {
+        groupName = NULL;
+    }
+
+    if (strcasecmp(typeName, "EC") == 0
+        || strcasecmp(typeName, "DH") == 0
+        || strcasecmp(typeName, "DHX") == 0) {
+        requiresGroup = NS_TRUE;
+        } else if (strcasecmp(typeName, "X25519") == 0
+                   || strcasecmp(typeName, "X448") == 0) {
+        acceptsOptionalGroup = NS_TRUE;
+    }
+
+    /*Ns_Log(Notice, "DEBUG typeName <%s> groupName <%s> accepts opt group %d requires group %d",
+      typeName, groupName, acceptsOptionalGroup, requiresGroup);*/
+
+    if (requiresGroup) {
+        if (groupName == NULL) {
+            Ns_TclPrintfResult(interp,
+                               "the option \"-group\" is required for %s algorithm \"%s\"",
+                               what, typeName);
+            return TCL_ERROR;
+        }
+
+    } else if (acceptsOptionalGroup) {
+        if (groupName != NULL) {
+            if ((strcasecmp(typeName, "X25519") == 0
+                 && strcasecmp(groupName, "x25519") != 0)
+                || (strcasecmp(typeName, "X448") == 0
+                    && strcasecmp(groupName, "x448") != 0)) {
+                Ns_TclPrintfResult(interp,
+                                   "group \"%s\" is not valid for %s algorithm \"%s\"",
+                                   groupName, what, typeName);
+                return TCL_ERROR;
+            }
+        }
+
+    } else if (groupName != NULL) {
+        Ns_TclPrintfResult(interp,
+                           "the option \"-group\" is not supported for %s algorithm \"%s\"",
+                           what, typeName);
+        return TCL_ERROR;
+    }
+
+    if (groupName != NULL) {
+        params[0] = OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME,
+                                                     (char *)groupName, 0);
+        params[1] = OSSL_PARAM_construct_end();
+        *paramPtr = params;
+    }
+
+    return TCL_OK;
+}
+
 /*----------------------------------------------------------------------
  *
  * PkeyPublicPemWrite --
@@ -700,6 +871,7 @@ KeymgmtListCallback(EVP_KEYMGMT *keymgmt, void *arg)
     if (ctx->usage == NS_CRYPTO_KEYGEN_USAGE_SIGNATURE) {
         addToList = (STREQ(name, "RSA")
                      || STREQ(name, "RSA-PSS")
+                     || STREQ(name, "EC")
                      || STREQ(name, "ED25519")
                      || STREQ(name, "ED448")
                      || strncmp(name, "ML-DSA-", 7) == 0
@@ -707,6 +879,7 @@ KeymgmtListCallback(EVP_KEYMGMT *keymgmt, void *arg)
                      );
     } else if (ctx->usage == NS_CRYPTO_KEYGEN_USAGE_KEM) {
         addToList = (strncmp(name, "ML-KEM-", 7) == 0
+                     || STREQ(name, "EC")
                      //|| strstr(name, "MLKEM") != NULL
                      );
     } else if (ctx->usage == NS_CRYPTO_KEYGEN_USAGE_AGREEMENT) {
@@ -714,13 +887,14 @@ KeymgmtListCallback(EVP_KEYMGMT *keymgmt, void *arg)
                      || STREQ(name, "DH")
                      || STREQ(name, "DHX")
                      || STREQ(name, "EC")
+                     //|| STREQ(name, "SM2")
                      || STREQ(name, "X25519")
                      || STREQ(name, "X448")
                      );
-    } else {
+    } else /* ctx->usage == NS_CRYPTO_KEYGEN_USAGE_ANY */ {
         addToList = NS_TRUE;
     }
-    /*Ns_Log(Notice, "DEBUG name %s add to list %d", name, addToList);*/
+    Ns_Log(Debug, "key type name %s add to list %d", name, addToList);
 
     if (addToList) {
         Tcl_ListObjAppendElement(NULL, ctx->listObj,
@@ -1852,7 +2026,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
  *      Hash-based message authentications codes (HMAC)
  *
  * Results:
- *      NS_OK
+ *      Tcl result code
  *
  * Side effects:
  *      Tcl result is set to a string value.
@@ -2208,8 +2382,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             if (signKeyFile != NULL || verifyKeyFile != NULL) {
                 if (signKeyFile != NULL) {
                     result = PkeySignatureSign(interp, pkey,
-                                           messageString, (size_t)messageLength,
-                                           digest.md, encoding);
+                                               messageString, (size_t)messageLength,
+                                               NULL, 0,
+                                               digest.md, encoding);
                     if (result == TCL_OK) {
                         haveDirectResult = NS_TRUE;
                     }
@@ -2222,9 +2397,10 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                                                          &signatureDs);
 
                     result = PkeySignatureVerify(interp, pkey,
-                                             messageString, (size_t)messageLength,
-                                             signatureString, (size_t)signatureLength,
-                                             digest.md);
+                                                 messageString, (size_t)messageLength,
+                                                 signatureString, (size_t)signatureLength,
+                                                 NULL, 0u,
+                                                 digest.md);
                     if (result == TCL_OK) {
                         haveDirectResult = NS_TRUE;
                     }
@@ -2504,6 +2680,8 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         bool              haveDigest = NS_FALSE;
         EVP_PKEY_CTX     *pctx = NULL;
 
+        ERR_clear_error();
+
         /*
          * Look up the Message Digest from OpenSSL
          */
@@ -2513,16 +2691,16 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             haveDigest = NS_TRUE;
             pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL);
             if (pctx == NULL) {
-                Ns_TclPrintfResult(interp, "could not obtain context HKDF");
+                SetResultFromOsslError(interp, "could not obtain context HKDF");
                 result = TCL_ERROR;
             }
         }
         if (result != TCL_ERROR && (EVP_PKEY_derive_init(pctx) <= 0)) {
-            Ns_TclPrintfResult(interp, "could not initialize for derivation");
+            SetResultFromOsslError(interp, "could not initialize for derivation");
             result = TCL_ERROR;
         }
         if (result != TCL_ERROR && (EVP_PKEY_CTX_set_hkdf_md(pctx, digest.md) <= 0)) {
-            Ns_TclPrintfResult(interp, "could not set digest algorithm");
+            SetResultFromOsslError(interp, "could not set digest algorithm");
             result = TCL_ERROR;
         }
         if (result != TCL_ERROR) {
@@ -2597,7 +2775,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  *      message authentication codes.
  *
  * Results:
- *      NS_OK
+ *      Tcl result code
  *
  * Side effects:
  *      Tcl result is set to a string value.
@@ -2941,13 +3119,14 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         }
 
         Tcl_DStringSetLength(&outDs, (TCL_SIZE_T)outlen);
+        ERR_clear_error();
 
         if (EVP_KDF_CTX_set_params(kctx, params) <= 0) {
-            Ns_TclPrintfResult(interp, "argon2: could not set parameters");
+            SetResultFromOsslError(interp, "argon2: could not set parameters");
             result = TCL_ERROR;
 
         } else if (EVP_KDF_derive(kctx, (unsigned char *)outDs.string, (size_t)outlen, params) <= 0) {
-            Ns_TclPrintfResult(interp, "argon2: could not derive key");
+            SetResultFromOsslError(interp, "argon2: could not derive key");
             result = TCL_ERROR;
         }  else {
             /*
@@ -3871,6 +4050,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, EC_GROUP_get_curve_name(group));
             Ns_Log(Notice, "NID X9_62_prime256v1 %d, privKey curve %d ", NID_X9_62_prime256v1, EC_GROUP_get_curve_name(group));
 
+            ERR_clear_error();
             result = TCL_ERROR;
             if (EC_KEY_oct2key(peerKeyEC, pubkeyString, (size_t)pubkeyLength, NULL) != 1) {
                 Ns_Log(Notice, "could not import peer key");
@@ -3886,7 +4066,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 Ns_TclPrintfResult(interp, "could not generate kctx");
             } else if (EVP_PKEY_keygen_init(kctx) != 1) {
                 Ns_Log(Notice, "could not init kctx");
-                Ns_TclPrintfResult(interp, "could not init kctx");
+                SetResultFromOsslError(interp, "could not init kctx");
             } else if (EVP_PKEY_keygen(kctx, &pkey) != 1) {
                 Ns_Log(Notice, "could not generate key for kctx");
                 Ns_TclPrintfResult(interp, "could not generate key for ctx");
@@ -3894,7 +4074,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 Ns_TclPrintfResult(interp, "could not create ctx");
             } else if (EVP_PKEY_derive_init(ctx) != 1) {
                 Ns_Log(Notice, "could not derive init ctx");
-                Ns_TclPrintfResult(interp, "could not derive init ctx");
+                SetResultFromOsslError(interp, "could not derive init ctx");
             } else if (EVP_PKEY_derive_set_peer(ctx, peerKey) != 1) {
                 Ns_Log(Notice, "could set peer key");
                 Ns_TclPrintfResult(interp, "could not set peer key");
@@ -4047,19 +4227,25 @@ static int
 CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const char *nameString = "ml-kem-768";
-    const char *outfileName = NULL;
+    const char *nameString = "ml-kem-768", *groupName = NULL, *outfileName = NULL;
+    OSSL_PARAM  params[2], *paramPtr = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-name",    Ns_ObjvString, &nameString,  NULL},
+        {"-group",   Ns_ObjvString, &groupName,   NULL},
         {"-outfile", Ns_ObjvString, &outfileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
+
     /*
       ns_crypto::kem generate -name ml-kem-768 -pem /tmp/mlkem.pem
       ns_crypto::kem generate -name ml-kem-768
     */
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+
+    } else if (KeygenGroupParams(interp, nameString, groupName,
+                                 "key encapsulation", params, &paramPtr) != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -4068,7 +4254,7 @@ CryptoKemGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                  "key encapsulation",
                                  outfileName,
                                  NS_CRYPTO_KEYGEN_USAGE_KEM,
-                                 NULL);
+                                 paramPtr);
 }
 
 /*
@@ -4177,26 +4363,28 @@ PkeyKemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encodin
     size_t         ciphertextLen = 0u;
     size_t         secretLen = 0u;
 
+    ERR_clear_error();
+
     ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
     if (ctx == NULL) {
-        Ns_TclPrintfResult(interp, "could not create KEM context");
+        SetResultFromOsslError(interp, "could not create KEM context");
         goto done;
     }
 
     if (EVP_PKEY_encapsulate_init(ctx, NULL) <= 0) {
-        Ns_TclPrintfResult(interp, "could not initialize KEM encapsulation");
+        SetResultFromOsslError(interp, "could not initialize KEM encapsulation");
         goto done;
     }
 
     if (EVP_PKEY_encapsulate(ctx, NULL, &ciphertextLen, NULL, &secretLen) <= 0) {
-        Ns_TclPrintfResult(interp, "could not determine KEM output lengths");
+        SetResultFromOsslError(interp, "could not determine KEM output lengths");
         goto done;
     }
 
     ciphertext = OPENSSL_malloc(ciphertextLen);
     secret     = OPENSSL_malloc(secretLen);
     if (ciphertext == NULL || secret == NULL) {
-        Ns_TclPrintfResult(interp, "could not allocate KEM output buffers");
+        SetResultFromOsslError(interp, "could not allocate KEM output buffers");
         goto done;
     }
 
@@ -4364,29 +4552,31 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         ciphertextString = (const unsigned char *)Tcl_GetByteArrayFromObj(ciphertextObj,
                                                                           &ciphertextLength);
+        ERR_clear_error();
+
         ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
         if (ctx == NULL) {
-            Ns_TclPrintfResult(interp, "could not create KEM context");
+            SetResultFromOsslError(interp, "could not create KEM context");
             result = TCL_ERROR;
             goto done;
         }
 
         if (EVP_PKEY_decapsulate_init(ctx, NULL) <= 0) {
-            Ns_TclPrintfResult(interp, "could not initialize KEM decapsulation");
+            SetResultFromOsslError(interp, "could not initialize KEM decapsulation");
             result = TCL_ERROR;
             goto done;
         }
 
         if (EVP_PKEY_decapsulate(ctx, NULL, &secretAllocLen,
                                  ciphertextString, (size_t)ciphertextLength) <= 0) {
-            Ns_TclPrintfResult(interp, "could not determine KEM shared secret length");
+            SetResultFromOsslError(interp, "could not determine KEM shared secret length");
             result = TCL_ERROR;
             goto done;
         }
 
         secret = OPENSSL_malloc(secretAllocLen);
         if (secret == NULL) {
-            Ns_TclPrintfResult(interp, "could not allocate KEM output buffer");
+            SetResultFromOsslError(interp, "could not allocate KEM output buffer");
             result = TCL_ERROR;
             goto done;
         }
@@ -4394,7 +4584,7 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         secretLen = secretAllocLen;
         if (EVP_PKEY_decapsulate(ctx, secret, &secretLen,
                                  ciphertextString, (size_t)ciphertextLength) <= 0) {
-            Ns_TclPrintfResult(interp, "could not decapsulate shared secret");
+            SetResultFromOsslError(interp, "could not decapsulate shared secret");
             result = TCL_ERROR;
             goto done;
         }
@@ -4480,9 +4670,7 @@ static int
 CryptoAgreementGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const char *typeName = "X25519" ;
-    const char *outfileName = NULL, *groupName = NULL;
-    bool        requiresGroup = NS_FALSE, acceptsOptionalGroup = NS_FALSE;
+    const char *typeName = "X25519", *outfileName = NULL, *groupName = NULL;
     OSSL_PARAM  params[2], *paramPtr = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-name",    Ns_ObjvString, &typeName,  NULL},
@@ -4497,46 +4685,19 @@ CryptoAgreementGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
-    }
 
-    if (strcasecmp(typeName, "EC") == 0
-        || strcasecmp(typeName, "DH") == 0
-        || strcasecmp(typeName, "DHX") == 0) {
-        requiresGroup = NS_TRUE;
-    } else if (strcasecmp(typeName, "X25519") == 0
-               || strcasecmp(typeName, "X448") == 0) {
-        acceptsOptionalGroup = NS_TRUE;
-    }
-
-    if (requiresGroup && (groupName == NULL || *groupName == '\0')) {
-        Ns_TclPrintfResult(interp,
-                           "the option \"-group\" is required for key agreement algorithm \"%s\"",
-                           typeName);
+    } else if (KeygenGroupParams(interp, typeName, groupName,
+                                 "key agreement", params, &paramPtr) != TCL_OK) {
         return TCL_ERROR;
 
-    } else if (acceptsOptionalGroup && groupName != NULL) {
-        if ((strcasecmp(typeName, "X25519") == 0 && strcasecmp(groupName, "x25519") != 0)
-            || (strcasecmp(typeName, "X448") == 0 && strcasecmp(groupName, "x448") != 0)) {
-            Ns_TclPrintfResult(interp,
-                               "group \"%s\" is not valid for key agreement algorithm \"%s\"",
-                               groupName, typeName);
-            return TCL_ERROR;
-        }
+    } else {
+        return GeneratePrivateKeyPem(interp,
+                                     typeName,
+                                     "key agreement",
+                                     outfileName,
+                                     NS_CRYPTO_KEYGEN_USAGE_AGREEMENT,
+                                     paramPtr);
     }
-
-    if (groupName != NULL) {
-        params[0] = OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME,
-                                                     (char *)groupName, 0);
-        params[1] = OSSL_PARAM_construct_end();
-        paramPtr = params;
-    }
-
-    return GeneratePrivateKeyPem(interp,
-                                 typeName,
-                                 "key agreement",
-                                 outfileName,
-                                 NS_CRYPTO_KEYGEN_USAGE_AGREEMENT,
-                                 paramPtr);
 }
 
 /*----------------------------------------------------------------------
@@ -4700,15 +4861,17 @@ CryptoAgreementDeriveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
+    ERR_clear_error();
+
     ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
     if (ctx == NULL) {
-        Ns_TclPrintfResult(interp, "could not create key agreement context");
+        SetResultFromOsslError(interp, "could not create key agreement context");
         result = TCL_ERROR;
         goto done;
     }
 
     if (EVP_PKEY_derive_init(ctx) <= 0) {
-        Ns_TclPrintfResult(interp, "could not initialize key agreement");
+        SetResultFromOsslError(interp, "could not initialize key agreement");
         result = TCL_ERROR;
         goto done;
     }
@@ -4721,8 +4884,7 @@ CryptoAgreementDeriveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
 
     if (EVP_PKEY_derive(ctx, NULL, &secretLen) <= 0) {
-        Ns_TclPrintfResult(interp,
-                           "could not determine derived secret length");
+        SetResultFromOsslError(interp, "could not determine derived secret length");
         result = TCL_ERROR;
         goto done;
     }
@@ -5175,7 +5337,7 @@ CryptoAeadDecryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZ
  *      "ns_crypto::aead::decrypt". Returns encrypted/decrypted data.
  *
  * Results:
- *      NS_OK
+ *      Tcl result code
  *
  * Side effects:
  *      Tcl result is set to a string value.
@@ -5368,6 +5530,347 @@ SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding
     return TCL_ERROR;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyMatchesPrefix --
+ *
+ *      Determine whether the type name of the provided EVP_PKEY
+ *      matches the specified prefix.
+ *
+ * Results:
+ *      Boolean
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixLength)
+{
+# ifdef HAVE_OPENSSL_3
+    const char *name = EVP_PKEY_get0_type_name(pkey);
+    return (name != NULL && strncmp(name, prefix, prefixLength) == 0);
+# else
+    (void)prefix;
+    (void)prefixLength;
+    return NS_FALSE;
+# endif
+}
+
+# ifndef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyMatchesSubstring --
+ *
+ *      Determine whether the type name of the provided EVP_PKEY
+ *      includes the specified needle string.
+ *
+ * Results:
+ *      Boolean
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
+{
+#  ifdef HAVE_OPENSSL_3
+    const char *name = EVP_PKEY_get0_type_name(pkey);
+    return (name != NULL && strstr(name, needle) != NULL);
+#  else
+    (void)needle;
+    return NS_FALSE;
+#  endif
+}
+# endif
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySupportsSignature --
+ *
+ *      Determine whether the provided EVP_PKEY supports signing and
+ *      verification operations.
+ *
+ *      This includes classical algorithms (RSA, DSA, EC), modern raw
+ *      signature schemes (Ed25519, Ed448), and post-quantum schemes
+ *      (e.g., ML-DSA).
+ *
+ * Results:
+ *      NS_TRUE  if the key supports signature operations.
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeySupportsSignature(EVP_PKEY *pkey)
+{
+# ifdef HAVE_OPENSSL_3
+    return (PkeyInstanceCapabilities(pkey) & NS_CRYPTO_CAP_SIGNATURE) != 0u;
+# else
+    return (PkeyMatchesPrefix(pkey, "ML-DSA-", 7)
+            || PkeyMatchesPrefix(pkey, "SLH-DSA-", 8)
+            || PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
+            || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA)
+            || PkeyIsType(pkey, "EC",  EVP_PKEY_EC)
+#  ifdef EVP_PKEY_ED25519
+            || PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)
+#  endif
+#  ifdef EVP_PKEY_ED448
+            || PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)
+#  endif
+            );
+# endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySupportsKem --
+ *
+ *      Determine whether the provided EVP_PKEY supports key
+ *      encapsulation operations.
+ *
+ *      This includes post-quantum schemes such as ML_KEM.
+ *
+ * Results:
+ *      NS_TRUE  if the key supports key encapsulation operations.
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeySupportsKem(EVP_PKEY *pkey)
+{
+# ifdef HAVE_OPENSSL_3
+    return (PkeyInstanceCapabilities(pkey) & NS_CRYPTO_CAP_KEM) != 0u;
+# else
+    return (PkeyMatchesPrefix(pkey, "ML-KEM-", 7)
+            || PkeyMatchesSubstring(pkey, "MLKEM")
+            );
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySupportsAgreement --
+ *
+ *      Determine whether the provided EVP_PKEY supports key
+ *      agreement operations.
+ *
+ *      This includes schemes such as DH, X25519 and X448.
+ *
+ * Results:
+ *      NS_TRUE  if the key supports key agreement operations.
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeySupportsAgreement(EVP_PKEY *pkey)
+{
+# ifdef HAVE_OPENSSL_3
+    return (PkeyInstanceCapabilities(pkey) & NS_CRYPTO_CAP_AGREEMENT) != 0u;
+# else
+    return (PkeyIsType(pkey, "DH", EVP_PKEY_DH)
+#  ifdef EVP_PKEY_DHX
+            || PkeyIsType(pkey, "DHX", EVP_PKEY_DHX)
+#  endif
+            || PkeyIsType(pkey, "EC", EVP_PKEY_EC)
+            //# ifdef EVP_PKEY_SM2
+            //|| PkeyIsType(pkey, "SM2", EVP_PKEY_X448)
+            //# endif
+#  ifdef EVP_PKEY_X25519
+            || PkeyIsType(pkey, "X25519", EVP_PKEY_X25519)
+#  endif
+#  ifdef EVP_PKEY_X448
+            || PkeyIsType(pkey, "X448", EVP_PKEY_X448)
+#  endif
+            );
+# endif
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySignatureRequiresDigest --
+ *
+ *      Determine whether the provided key type requires an external
+ *      message digest (hash function) when performing signature
+ *      operations.
+ *
+ *      Classical algorithms such as RSA, DSA, and ECDSA require an
+ *      external digest (e.g., SHA-256), while modern algorithms such
+ *      as Ed25519, Ed448, and ML-DSA perform hashing internally and
+ *      must be used with a NULL digest.
+ *
+ * Results:
+ *      NS_TRUE  if an external digest must be provided.
+ *      NS_FALSE if the algorithm uses an internal digest.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeySignatureSupportsNullDigest(EVP_PKEY *pkey)
+{
+# ifdef HAVE_OPENSSL_3
+    if (PkeyMatchesPrefix(pkey, "ML-DSA-", 7)
+        || PkeyMatchesPrefix(pkey, "SLH-DSA-", 8)) {
+        return NS_TRUE;
+    }
+# endif
+
+# ifdef EVP_PKEY_ED25519
+    if (PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)) {
+        return NS_TRUE;
+    }
+# endif
+# ifdef EVP_PKEY_ED448
+    if (PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)) {
+        return NS_TRUE;
+    }
+# endif
+
+    return NS_FALSE;
+}
+
+static bool
+PkeySignatureRequiresDigest(EVP_PKEY *pkey)
+{
+# ifdef HAVE_OPENSSL_3
+    return ((PkeyProbeSignatureCaps(pkey) & NS_CRYPTO_CAP_SIGNATURE) != 0u
+            && !PkeySignatureSupportsNullDigest(pkey));
+# else
+    return (PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
+            || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA)
+            || PkeyIsType(pkey, "EC",  EVP_PKEY_EC));
+# endif
+}
+
+
+# ifdef HAVE_OPENSSL_3
+static unsigned
+PkeyProbeSignatureCaps(EVP_PKEY *pkey)
+{
+    unsigned      caps = NS_CRYPTO_CAP_NONE;
+    EVP_MD_CTX   *mctx = NULL;
+    EVP_PKEY_CTX *pctx = NULL;
+    int           rcNull, rcSha256;
+
+    mctx = EVP_MD_CTX_new();
+    if (mctx == NULL) {
+        return NS_CRYPTO_CAP_NONE;
+    }
+
+    /*
+     * Probe 1: NULL digest.
+     *
+     * For Ed25519/Ed448 this is the required mode.
+     */
+    rcNull = EVP_DigestSignInit_ex(mctx, &pctx,
+                                   NULL, NULL, NULL, pkey, NULL);
+
+    EVP_MD_CTX_free(mctx);
+    mctx = EVP_MD_CTX_new();
+    pctx = NULL;
+    if (mctx == NULL) {
+        caps = NS_CRYPTO_CAP_NONE;
+
+    } else {
+        /*
+         * Probe 2: explicit digest.
+         *
+         * SHA256 is a reasonable generic probe for digest-based signing.
+         */
+        rcSha256 = EVP_DigestSignInit_ex(mctx, &pctx,
+                                         "SHA256", NULL, NULL, pkey, NULL);
+
+        EVP_MD_CTX_free(mctx);
+
+        if (rcNull > 0 || rcSha256 > 0) {
+            caps |= NS_CRYPTO_CAP_SIGNATURE;
+        }
+    }
+
+    ERR_clear_error();
+    return caps;
+}
+
+static unsigned
+PkeyInstanceCapabilities(EVP_PKEY *pkey)
+{
+    unsigned      caps = NS_CRYPTO_CAP_NONE;
+    EVP_PKEY_CTX *ctx = NULL;
+
+    NS_NONNULL_ASSERT(pkey != NULL);
+
+    ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
+    if (ctx == NULL) {
+        caps = NS_CRYPTO_CAP_NONE;
+
+    } else {
+
+        caps |= NS_CRYPTO_CAP_KEYMGMT;
+        EVP_PKEY_CTX_free(ctx);
+
+        /*
+         * Signature capability + requires-digest
+         */
+        caps |= PkeyProbeSignatureCaps(pkey);
+
+        /*
+         * Agreement capability
+         */
+        ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
+        if (ctx != NULL) {
+            if (EVP_PKEY_derive_init(ctx) > 0) {
+                caps |= NS_CRYPTO_CAP_AGREEMENT;
+            }
+            EVP_PKEY_CTX_free(ctx);
+        }
+
+#  ifdef HAVE_OPENSSL_3_5
+        /*
+         * KEM capability
+         */
+        ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
+        if (ctx != NULL) {
+            if (EVP_PKEY_encapsulate_init(ctx, NULL) > 0
+                || EVP_PKEY_decapsulate_init(ctx, NULL) > 0
+                //&& !PkeyIsType(pkey, "EC", EVP_PKEY_EC)
+                ) {
+                caps |= NS_CRYPTO_CAP_KEM;
+            }
+            EVP_PKEY_CTX_free(ctx);
+        }
+#  endif
+    }
+
+    ERR_clear_error();
+    return caps;
+}
+# endif /* HAVE_OPENSSL_3 */
+
 /*----------------------------------------------------------------------
  *
  * PkeyTypeNameObj --
@@ -5465,6 +5968,220 @@ PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
 #endif
 }
 
+
+/*======================================================================
+ * Function Implementations: ns_crypto::key
+ *======================================================================
+ */
+
+static int PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1,2,3);
+static int PkeyInfoPutCapabilities(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+        NS_GNUC_NONNULL(1,2,3);
+
+#ifdef HAVE_OPENSSL_3
+static int PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+        NS_GNUC_NONNULL(1,2,3);
+#endif
+
+static int
+PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+{
+    int bits = EVP_PKEY_bits(pkey);
+
+    if (bits > 0) {
+        Tcl_DictObjPut(interp, resultObj,
+                       NsAtomObj(NS_ATOM_BITS),
+                       Tcl_NewIntObj(bits));
+    }
+
+    /*
+     * Keep current EC curve reporting for 1.1.1 and for legacy keys.
+     */
+    if (PkeyIsType(pkey, "EC", EVP_PKEY_EC) == 1) {
+        EC_KEY         *ec = EVP_PKEY_get1_EC_KEY(pkey);
+        const EC_GROUP *group;
+        int             nid;
+        const char     *curveName = NULL;
+
+        if (ec != NULL) {
+            group = EC_KEY_get0_group(ec);
+            if (group != NULL) {
+                nid = EC_GROUP_get_curve_name(group);
+                if (nid != NID_undef) {
+                    curveName = OBJ_nid2sn(nid);
+                    if (curveName != NULL) {
+                        Tcl_DictObjPut(interp, resultObj,
+                                       NsAtomObj(NS_ATOM_CURVE),
+                                       Tcl_NewStringObj(curveName, TCL_INDEX_NONE));
+                    }
+                }
+            }
+            EC_KEY_free(ec);
+        }
+    }
+
+    return TCL_OK;
+}
+
+#ifdef HAVE_OPENSSL_3
+static int
+PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+{
+    const OSSL_PROVIDER *provider;
+    const char          *providerName;
+    const char          *description;
+    int                  ibits;
+
+    provider = EVP_PKEY_get0_provider(pkey);
+    if (provider != NULL) {
+        providerName = OSSL_PROVIDER_get0_name(provider);
+        if (providerName != NULL) {
+            Tcl_DictObjPut(interp, resultObj,
+                           Tcl_NewStringObj("provider", TCL_INDEX_NONE),
+                           Tcl_NewStringObj(providerName, TCL_INDEX_NONE));
+        }
+    }
+
+    description = EVP_PKEY_get0_description(pkey);
+    if (description != NULL) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("description", TCL_INDEX_NONE),
+                       Tcl_NewStringObj(description, TCL_INDEX_NONE));
+    }
+
+    /*
+     * Bits may already be present via EVP_PKEY_bits().  Keep the legacy value
+     * if present; only add if not already set.
+     */
+    ibits = EVP_PKEY_get_bits(pkey);
+    if (ibits > 0) {
+        int exists;
+        Tcl_Obj *dummyObj = NULL;
+
+        exists = Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_BITS), &dummyObj);
+        if (exists == TCL_OK && dummyObj == NULL) {
+            Tcl_DictObjPut(interp, resultObj,
+                           NsAtomObj(NS_ATOM_BITS),
+                           Tcl_NewIntObj(ibits));
+        }
+    }
+
+    /*
+     * Prefer provider-side group/curve name if available and not already set.
+     * This is useful for provider-native EC/DH/X25519-style keys.
+     */
+    {
+        Tcl_Obj *dummyObj = NULL;
+        size_t   len = 0;
+
+        if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_CURVE), &dummyObj) == TCL_OK
+            && dummyObj == NULL) {
+            (void)EVP_PKEY_get_utf8_string_param(pkey, OSSL_PKEY_PARAM_GROUP_NAME,
+                                                 NULL, 0, &len);
+            if (len > 0) {
+                char *buf = ns_malloc(len + 1u);
+
+                if (EVP_PKEY_get_utf8_string_param(pkey, OSSL_PKEY_PARAM_GROUP_NAME,
+                                                   buf, len + 1u, &len) == 1) {
+                    Tcl_DictObjPut(interp, resultObj,
+                                   NsAtomObj(NS_ATOM_CURVE),
+                                   Tcl_NewStringObj(buf, TCL_INDEX_NONE));
+                }
+                ns_free(buf);
+            }
+        }
+    }
+
+    /*
+     * Optional richer metadata.
+     */
+    if (EVP_PKEY_get_int_param(pkey, OSSL_PKEY_PARAM_SECURITY_BITS, &ibits) == 1
+        && ibits > 0) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("securityBits", TCL_INDEX_NONE),
+                       Tcl_NewIntObj(ibits));
+    }
+
+# ifdef HAVE_OPENSSL_3_5
+    if (EVP_PKEY_get_int_param(pkey, OSSL_PKEY_PARAM_SECURITY_CATEGORY, &ibits) == 1
+        && ibits >= 0) {
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("securityCategory", TCL_INDEX_NONE),
+                       Tcl_NewIntObj(ibits));
+    }
+# endif
+
+    return TCL_OK;
+}
+#endif
+
+
+static int
+PkeyInfoPutCapabilities(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+{
+    int supportsSignature;
+    int supportsAgreement;
+    int supportsKEM;
+
+    supportsSignature = PkeySupportsSignature(pkey);
+    Tcl_DictObjPut(interp, resultObj,
+                   NsAtomObj(NS_ATOM_SIGNATURE),
+                   Tcl_NewBooleanObj(supportsSignature));
+    if (supportsSignature) {
+        int requiresDigest = PkeySignatureRequiresDigest(pkey);
+
+        Tcl_DictObjPut(interp, resultObj,
+                       NsAtomObj(NS_ATOM_REQUIRESDIGEST),
+                       Tcl_NewBooleanObj(requiresDigest));
+    }
+
+    supportsAgreement = PkeySupportsAgreement(pkey);
+    Tcl_DictObjPut(interp, resultObj,
+                   NsAtomObj(NS_ATOM_AGREEMENT),
+                   Tcl_NewBooleanObj(supportsAgreement));
+
+    supportsKEM = PkeySupportsKem(pkey);
+    Tcl_DictObjPut(interp, resultObj,
+                   NsAtomObj(NS_ATOM_KEM),
+                   Tcl_NewBooleanObj(supportsKEM));
+
+    return TCL_OK;
+}
+
+# ifdef HAVE_OPENSSL_3
+static int
+CryptoKeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                        TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const char *typeName = NULL, *outfileName = NULL, *groupName = NULL;
+    OSSL_PARAM  params[2];
+    OSSL_PARAM *paramPtr = NULL;
+    Ns_ObjvSpec lopts[] = {
+        {"!-name",   Ns_ObjvString, &typeName,    NULL},
+        {"-group",   Ns_ObjvString, &groupName,   NULL},
+        {"-outfile", Ns_ObjvString, &outfileName, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    if (KeygenGroupParams(interp, typeName, groupName,
+                          "key", params, &paramPtr) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    return GeneratePrivateKeyPem(interp,
+                                 typeName,
+                                 "key",
+                                 outfileName,
+                                 NS_CRYPTO_KEYGEN_USAGE_ANY,
+                                 paramPtr);
+}
+#endif
+
 /*----------------------------------------------------------------------
  *
  * CryptoKeyInfoObjCmd --
@@ -5506,19 +6223,21 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     };
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
+        return TCL_ERROR;
+    }
 
-    } else {
-        EVP_PKEY   *pkey = PkeyGetAnyFromPem(interp, pem, passPhrase);
-        Tcl_Obj    *typeNameObj;
+    {
+        EVP_PKEY *pkey = PkeyGetAnyFromPem(interp, pem, passPhrase);
+        Tcl_Obj  *typeNameObj;
 
         if (pkey == NULL) {
             return TCL_ERROR;
         }
+
         typeNameObj = PkeyTypeNameObj(interp, pkey);
         if (typeNameObj == NULL) {
-            result = TCL_ERROR;
-            goto done;
+            EVP_PKEY_free(pkey);
+            return TCL_ERROR;
         }
 
         resultObj = Tcl_NewDictObj();
@@ -5527,82 +6246,35 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                        NsAtomObj(NS_ATOM_TYPE),
                        typeNameObj);
 
-        if (PkeyIsType(pkey, "EC", EVP_PKEY_EC) == 1) {
-            EC_KEY         *ec = EVP_PKEY_get1_EC_KEY(pkey);
-            const EC_GROUP *group;
-            int             nid, bits = 0;
-            const char     *curveName = NULL;
-
-            if (ec != NULL) {
-                group = EC_KEY_get0_group(ec);
-                if (group != NULL) {
-                    nid = EC_GROUP_get_curve_name(group);
-                    if (nid != NID_undef) {
-                        curveName = OBJ_nid2sn(nid);
-                        if (curveName != NULL) {
-                            Tcl_DictObjPut(interp, resultObj,
-                                           NsAtomObj(NS_ATOM_CURVE),
-                                           Tcl_NewStringObj(curveName, TCL_INDEX_NONE));
-                        }
-                    }
-                    bits = EC_GROUP_order_bits(group);
-                    if (bits > 0) {
-                        Tcl_DictObjPut(interp, resultObj,
-                                       NsAtomObj(NS_ATOM_BITS),
-                                       Tcl_NewIntObj(bits));
-                    }
-                }
-                EC_KEY_free(ec);
-            }
-
-        } else if (PkeyIsType(pkey, "RSA", EVP_PKEY_RSA) == 1
-                   || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA) == 1
-                   || PkeyIsType(pkey, "DH", EVP_PKEY_DH) == 1) {
-            int bits = EVP_PKEY_bits(pkey);
-
-            if (bits > 0) {
-                Tcl_DictObjPut(interp, resultObj,
-                               NsAtomObj(NS_ATOM_BITS),
-                               Tcl_NewIntObj(bits));
-            }
+        /*
+         * Basic/legacy-compatible details first.
+         */
+        if (PkeyInfoPutLegacyDetails(interp, resultObj, pkey) != TCL_OK) {
+            EVP_PKEY_free(pkey);
+            return TCL_ERROR;
         }
 
-        {
-            int supportsSignature = PkeySupportsSignature(pkey);
-
-            Tcl_DictObjPut(interp, resultObj,
-                           NsAtomObj(NS_ATOM_SIGNATURE),
-                           Tcl_NewBooleanObj(supportsSignature));
-            if (supportsSignature) {
-                int requiresDigest = PkeySignatureRequiresDigest(pkey);
-
-                Tcl_DictObjPut(interp, resultObj,
-                               NsAtomObj(NS_ATOM_REQUIRESDIGEST),
-                               Tcl_NewBooleanObj(requiresDigest));
-            }
+# ifdef HAVE_OPENSSL_3
+        /*
+         * Optional provider-side enrichment. This must be best-effort:
+         * if a key is not provider-backed, just skip these fields.
+         */
+        if (PkeyInfoPutProviderDetails(interp, resultObj, pkey) != TCL_OK) {
+            EVP_PKEY_free(pkey);
+            return TCL_ERROR;
         }
+# endif
 
-        {
-            int supportsKEM = PkeySupportsKem(pkey);
-
-            Tcl_DictObjPut(interp, resultObj,
-                           NsAtomObj(NS_ATOM_KEM),
-                           Tcl_NewBooleanObj(supportsKEM));
-        }
-
-        {
-            int supportsAgreement = PkeySupportsAgreement(pkey);
-
-            Tcl_DictObjPut(interp, resultObj,
-                           NsAtomObj(NS_ATOM_AGREEMENT),
-                           Tcl_NewBooleanObj(supportsAgreement));
+        if (PkeyInfoPutCapabilities(interp, resultObj, pkey) != TCL_OK) {
+            EVP_PKEY_free(pkey);
+            return TCL_ERROR;
         }
 
         Tcl_SetObjResult(interp, resultObj);
         result = TCL_OK;
-    done:
         EVP_PKEY_free(pkey);
     }
+
     return result;
 }
 
@@ -5694,18 +6366,27 @@ CryptoKeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  *----------------------------------------------------------------------
  */
+static Ns_ObjvTable keyPubFormats[] = {
+    {"raw", 0},
+    {"pem", 1},
+    {NULL,  0}
+};
+
 static int
 CryptoKeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1;
+    int                result, encodingInt = -1, formatInt = 0;
     const char        *pem = NULL;
     const char        *passPhrase = NS_EMPTY_STRING;
+    const char        *outfileName = NULL;
     EVP_PKEY          *pkey = NULL;
     Ns_BinaryEncoding  encoding;
     Ns_ObjvSpec        lopts[] = {
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-format",     Ns_ObjvIndex,  &formatInt,   keyPubFormats},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"-outfile",    Ns_ObjvString, &outfileName, NULL},
         {"!-pem",       Ns_ObjvString, &pem,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -5723,7 +6404,29 @@ CryptoKeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-    result = SetResultFromRawPublicKey(interp, pkey, encoding);
+    if (formatInt == 0) {
+        /*
+         * Backward-compatible default: raw public key bytes in the
+         * requested encoding.
+         */
+        if (outfileName != NULL) {
+            Ns_TclPrintfResult(interp,
+                               "the option \"-outfile\" requires \"-format pem\"");
+            result = TCL_ERROR;
+        } else {
+            result = SetResultFromRawPublicKey(interp, pkey, encoding);
+        }
+
+    } else {
+        /*
+         * PEM-encoded SubjectPublicKeyInfo.
+         */
+        result = PkeyPublicPemWrite(interp,
+                                   pkey,
+                                   "key",
+                                   "public",
+                                   outfileName);
+    }
 
     EVP_PKEY_free(pkey);
     return result;
@@ -5808,10 +6511,13 @@ int
 NsTclCryptoKeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-        {"info", CryptoKeyInfoObjCmd},
-        {"priv", CryptoKeyPrivObjCmd},
-        {"pub",  CryptoKeyPubObjCmd},
-        {"type", CryptoKeyTypeObjCmd},
+# ifdef HAVE_OPENSSL_3
+        {"generate", CryptoKeyGenerateObjCmd},
+# endif
+        {"info",     CryptoKeyInfoObjCmd},
+        {"priv",     CryptoKeyPrivObjCmd},
+        {"pub",      CryptoKeyPubObjCmd},
+        {"type",     CryptoKeyTypeObjCmd},
         {NULL, NULL}
     };
 
@@ -5819,198 +6525,10 @@ NsTclCryptoKeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 }
 
 /*======================================================================
- * Function Implementations: ns_crypto::key
+ * Function Implementations: ns_crypto::signature
  *======================================================================
  */
 
-/*
- *----------------------------------------------------------------------
- *
- * PkeyMatchesPrefix --
- *
- *      Determine whether the type name of the provided EVP_PKEY
- *      matches the specified prefix.
- *
- * Results:
- *      Boolean
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static bool
-PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixLength)
-{
-# ifdef HAVE_OPENSSL_3
-    const char *name = EVP_PKEY_get0_type_name(pkey);
-    return (name != NULL && strncmp(name, prefix, prefixLength) == 0);
-# else
-    (void)prefix;
-    (void)prefixLength;
-    return NS_FALSE;
-# endif
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PkeyMatchesSubstring --
- *
- *      Determine whether the type name of the provided EVP_PKEY
- *      includes the specified needle string.
- *
- * Results:
- *      Boolean
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static bool
-PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
-{
-# ifdef HAVE_OPENSSL_3
-    const char *name = EVP_PKEY_get0_type_name(pkey);
-    return (name != NULL && strstr(name, needle) != NULL);
-# else
-    (void)needle;
-    return NS_FALSE;
-# endif
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PkeySupportsSignature --
- *
- *      Determine whether the provided EVP_PKEY supports signing and
- *      verification operations.
- *
- *      This includes classical algorithms (RSA, DSA, EC), modern raw
- *      signature schemes (Ed25519, Ed448), and post-quantum schemes
- *      (e.g., ML-DSA).
- *
- * Results:
- *      NS_TRUE  if the key supports signature operations.
- *      NS_FALSE otherwise.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static bool
-PkeySupportsSignature(EVP_PKEY *pkey)
-{
-    return (PkeyMatchesPrefix(pkey, "ML-DSA-", 7)
-            || PkeyMatchesPrefix(pkey, "SLH-DSA-", 8)
-            || PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
-            || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA)
-            || PkeyIsType(pkey, "EC",  EVP_PKEY_EC)
-# ifdef EVP_PKEY_ED25519
-            || PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)
-# endif
-# ifdef EVP_PKEY_ED448
-            || PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)
-# endif
-            );
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PkeySupportsKem --
- *
- *      Determine whether the provided EVP_PKEY supports key
- *      encapsulation operations.
- *
- *      This includes post-quantum schemes such as ML_KEM.
- *
- * Results:
- *      NS_TRUE  if the key supports key encapsulation operations.
- *      NS_FALSE otherwise.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static bool
-PkeySupportsKem(EVP_PKEY *pkey)
-{
-    return (PkeyMatchesPrefix(pkey, "ML-KEM-", 7)
-            || PkeyMatchesSubstring(pkey, "MLKEM")
-            );
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PkeySupportsAgreement --
- *
- *      Determine whether the provided EVP_PKEY supports key
- *      agreement operations.
- *
- *      This includes schemes such as DH, X25519 and X448.
- *
- * Results:
- *      NS_TRUE  if the key supports key agreement operations.
- *      NS_FALSE otherwise.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static bool
-PkeySupportsAgreement(EVP_PKEY *pkey)
-{
-    return (PkeyIsType(pkey, "DH", EVP_PKEY_DH)
-# ifdef EVP_PKEY_DHX
-            || PkeyIsType(pkey, "DHX", EVP_PKEY_DHX)
-# endif
-            || PkeyIsType(pkey, "EC", EVP_PKEY_EC)
-# ifdef EVP_PKEY_X25519
-            || PkeyIsType(pkey, "X25519", EVP_PKEY_X25519)
-# endif
-# ifdef EVP_PKEY_X448
-            || PkeyIsType(pkey, "X448", EVP_PKEY_X448)
-# endif
-            );
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PkeySignatureRequiresDigest --
- *
- *      Determine whether the provided key type requires an external
- *      message digest (hash function) when performing signature
- *      operations.
- *
- *      Classical algorithms such as RSA, DSA, and ECDSA require an
- *      external digest (e.g., SHA-256), while modern algorithms such
- *      as Ed25519, Ed448, and ML-DSA perform hashing internally and
- *      must be used with a NULL digest.
- *
- * Results:
- *      NS_TRUE  if an external digest must be provided.
- *      NS_FALSE if the algorithm uses an internal digest.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static bool
-PkeySignatureRequiresDigest(EVP_PKEY *pkey)
-{
-    return (PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
-            || PkeyIsType(pkey, "DSA", EVP_PKEY_DSA)
-            || PkeyIsType(pkey, "EC",  EVP_PKEY_EC));
-}
 
 /*
  *----------------------------------------------------------------------
@@ -6036,15 +6554,22 @@ PkeySignatureRequiresDigest(EVP_PKEY *pkey)
  *
  *----------------------------------------------------------------------
  */
+static const char *
+PkeySignatureDigestDefaultName(EVP_PKEY *pkey)
+{
+# ifdef HAVE_OPENSSL_3
+    if (PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1) {
+        return "sm3";
+    }
+# endif
+    return  "sha256";
+}
+
 static int
 PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
                       const char *digestName,
                       const EVP_MD **mdPtr)
 {
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(pkey != NULL);
-    NS_NONNULL_ASSERT(mdPtr != NULL);
-
     *mdPtr = NULL;
 
     if (!PkeySupportsSignature(pkey)) {
@@ -6062,7 +6587,7 @@ PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
     }
 
     if (digestName == NULL) {
-        digestName = "sha256";
+        digestName = PkeySignatureDigestDefaultName(pkey);
     }
 
     *mdPtr = EVP_get_digestbyname(digestName);
@@ -6073,6 +6598,79 @@ PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
 
     return TCL_OK;
 }
+
+# ifdef HAVE_OPENSSL_3
+
+static int
+PkeySignatureInitSm2(Tcl_Interp *interp,
+                     EVP_MD_CTX *mdctx,
+                     EVP_PKEY *pkey,
+                     const EVP_MD *md,
+                     const unsigned char *id, size_t idLength,
+                     bool sign,
+                     EVP_PKEY_CTX **pctxPtr)
+{
+    static const unsigned char defaultSm2Id[] = "1234567812345678";
+    EVP_PKEY_CTX              *pctx = NULL;
+    const EVP_MD              *useMd = md;
+
+    *pctxPtr = NULL;
+    ERR_clear_error();
+
+    if (id == NULL) {
+        id = defaultSm2Id;
+        idLength = sizeof(defaultSm2Id) - 1u;
+    }
+
+    if (idLength > (size_t)INT_MAX) {
+        Ns_TclPrintfResult(interp, "SM2 identifier is too long");
+        return TCL_ERROR;
+    }
+
+    pctx = EVP_PKEY_CTX_new(pkey, NULL);
+    if (pctx == NULL) {
+        SetResultFromOsslError(interp, "could not allocate SM2 signature context");
+        return TCL_ERROR;
+    }
+
+    if (EVP_PKEY_CTX_set1_id(pctx, id, (int)idLength) <= 0) {
+        SetResultFromOsslError(interp, "could not set SM2 identifier");
+        EVP_PKEY_CTX_free(pctx);
+        return TCL_ERROR;
+    }
+
+    /*
+     * SM2 is used through DigestSign/DigestVerify.  When no digest was
+     * specified by the caller, default to SM3.
+     */
+    if (useMd == NULL) {
+        useMd = EVP_sm3();
+    }
+
+    EVP_MD_CTX_set_pkey_ctx(mdctx, pctx);
+
+    /*
+     * Since mdctx already has an EVP_PKEY_CTX assigned, there is normally
+     * no need to request another one from EVP_DigestSignInit().
+     */
+    if (sign) {
+        if (EVP_DigestSignInit(mdctx, NULL, useMd, NULL, pkey) <= 0) {
+            SetResultFromOsslError(interp, "could not initialize SM2 signature generation");
+            EVP_PKEY_CTX_free(pctx);
+            return TCL_ERROR;
+        }
+    } else {
+        if (EVP_DigestVerifyInit(mdctx, NULL, useMd, NULL, pkey) <= 0) {
+            SetResultFromOsslError(interp,
+                                   "could not initialize SM2 signature verification");
+            EVP_PKEY_CTX_free(pctx);
+            return TCL_ERROR;
+        }
+    }
+    *pctxPtr = pctx;
+    return TCL_OK;
+}
+# endif
 
 /*
  *----------------------------------------------------------------------
@@ -6106,8 +6704,9 @@ PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
  */
 static int
 PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
-              const unsigned char *message, size_t messageLength,
-              const EVP_MD *md, Ns_BinaryEncoding encoding)
+                  const unsigned char *message, size_t messageLength,
+                  const unsigned char *id, size_t idLength,
+                  const EVP_MD *md, Ns_BinaryEncoding encoding)
 {
     int            result = TCL_ERROR;
     EVP_MD_CTX    *mdctx = NULL;
@@ -6115,34 +6714,41 @@ PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
     size_t         sigLen = 0u;
     unsigned char *sig = NULL;
 
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(pkey != NULL);
-    NS_NONNULL_ASSERT(message != NULL);
+    ERR_clear_error();
 
     mdctx = EVP_MD_CTX_new();
     if (mdctx == NULL) {
-        Ns_TclPrintfResult(interp, "could not allocate message digest context");
+        SetResultFromOsslError(interp, "could not allocate message digest context");
         goto done;
     }
 
+#ifdef HAVE_OPENSSL_3
+    if (PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1) {
+        if (PkeySignatureInitSm2(interp, mdctx, pkey, md,
+                                 id, idLength,
+                                 NS_TRUE, &pctx) != TCL_OK) {
+            goto done;
+        }
+    } else
+#endif
     if (EVP_DigestSignInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
-        Ns_TclPrintfResult(interp, "could not initialize signature generation");
+        SetResultFromOsslError(interp, "could not initialize signature generation");
         goto done;
     }
 
     if (EVP_DigestSign(mdctx, NULL, &sigLen, message, messageLength) <= 0) {
-        Ns_TclPrintfResult(interp, "could not determine signature length");
+        SetResultFromOsslError(interp, "could not determine signature length");
         goto done;
     }
 
     sig = ns_malloc(sigLen);
     if (sig == NULL) {
-        Ns_TclPrintfResult(interp, "could not allocate signature buffer");
+        SetResultFromOsslError(interp, "could not allocate signature buffer");
         goto done;
     }
 
     if (EVP_DigestSign(mdctx, sig, &sigLen, message, messageLength) <= 0) {
-        Ns_TclPrintfResult(interp, "could not create signature");
+        SetResultFromOsslError(interp, "could not create signature");
         goto done;
     }
 
@@ -6192,27 +6798,33 @@ done:
  */
 static int
 PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
-                const unsigned char *message, size_t messageLength,
-                const unsigned char *signature, size_t signatureLength,
-                const EVP_MD *md)
+                    const unsigned char *message, size_t messageLength,
+                    const unsigned char *signature, size_t signatureLength,
+                    const unsigned char* id, size_t idLength,
+                    const EVP_MD *md)
 {
     int           rc, result = TCL_ERROR;
     EVP_MD_CTX   *mdctx = NULL;
     EVP_PKEY_CTX *pctx = NULL;
 
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(pkey != NULL);
-    NS_NONNULL_ASSERT(message != NULL);
-    NS_NONNULL_ASSERT(signature != NULL);
+    ERR_clear_error();
 
     mdctx = EVP_MD_CTX_new();
     if (mdctx == NULL) {
-        Ns_TclPrintfResult(interp, "could not allocate message digest context");
+        SetResultFromOsslError(interp, "could not allocate message digest context");
         goto done;
     }
 
+#ifdef HAVE_OPENSSL_3
+    if (PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1) {
+        if (PkeySignatureInitSm2(interp, mdctx, pkey, md,
+                                 id, idLength, NS_FALSE, &pctx) != TCL_OK) {
+            goto done;
+        }
+    } else
+#endif
     if (EVP_DigestVerifyInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
-        Ns_TclPrintfResult(interp, "could not initialize signature verification");
+        SetResultFromOsslError(interp, "could not initialize signature verification");
         goto done;
     }
 
@@ -6226,13 +6838,56 @@ PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
         result = TCL_OK;
 
     } else {
-        Ns_TclPrintfResult(interp, "signature verification failed");
+        SetResultFromOsslError(interp, "signature verification failed");
         result = TCL_ERROR;
     }
 
 done:
     if (mdctx != NULL) {
         EVP_MD_CTX_free(mdctx);
+    }
+    return result;
+}
+
+static bool
+PkeySignatureAcceptsId(EVP_PKEY *pkey)
+{
+#ifdef HAVE_OPENSSL_3
+# ifdef EVP_PKEY_SM2
+    return PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1;
+# else
+    return NS_FALSE;
+# endif
+#else
+    return NS_FALSE;
+#endif
+}
+
+
+static int
+PkeySignatureAcceptsIdFromObj(Tcl_Interp *interp, EVP_PKEY *pkey, Tcl_Obj *idObj,
+                              const unsigned char **idPtr, size_t *idLengthPtr)
+{
+    int result = TCL_OK;
+
+    *idPtr = NULL;
+    *idLengthPtr = 0u;
+
+    if (PkeySignatureAcceptsId(pkey)) {
+        if (idObj == NULL) {
+            *idPtr = NULL;
+            *idLengthPtr = 0;
+        } else {
+            TCL_SIZE_T idSize;
+
+            *idPtr = (const unsigned char *)Tcl_GetStringFromObj(idObj, &idSize);
+            *idLengthPtr  = (size_t)idSize;
+        }
+    } else {
+        if (idObj != NULL) {
+            Ns_TclPrintfResult(interp, "key type does not support parameter -id");
+            result = TCL_ERROR;
+        }
     }
     return result;
 }
@@ -6268,19 +6923,21 @@ static int
 CryptoPkeySignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                           TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, isBinary = 0, encodingInt = -1;
-    const char        *pem = NULL, *passPhrase = NS_EMPTY_STRING;
-    const char        *digestName = NULL;
-    Tcl_Obj           *messageObj = NULL;
-    EVP_PKEY          *pkey = NULL;
-    const EVP_MD      *md = NULL;
+    int                  result, isBinary = 0, encodingInt = -1;
+    const char          *pem = NULL, *passPhrase = NS_EMPTY_STRING, *digestName = NULL;
+    const unsigned char *id = NULL;
+    size_t               idLength = 0u;
+    Tcl_Obj             *messageObj = NULL, *idObj = NULL;
+    EVP_PKEY            *pkey = NULL;
+    const EVP_MD        *md = NULL;
     const unsigned char *message;
-    TCL_SIZE_T         messageLength;
-    Tcl_DString        messageDs;
-    Ns_BinaryEncoding  encoding;
+    TCL_SIZE_T           messageLength;
+    Tcl_DString          messageDs;
+    Ns_BinaryEncoding    encoding;
     Ns_ObjvSpec lopts[] = {
         {"-binary",     Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
         {"-digest",     Ns_ObjvString, &digestName,  NULL},
+        {"-id",         Ns_ObjvObj,    &idObj,       NULL},
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
         {"!-pem",       Ns_ObjvString, &pem,         NULL},
@@ -6311,6 +6968,12 @@ CryptoPkeySignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         goto done;
     }
 
+    if (PkeySignatureAcceptsIdFromObj(interp, pkey, idObj,
+                                      &id, &idLength) != TCL_OK) {
+        result = TCL_ERROR;
+        goto done;
+    }
+
     result = PkeySignatureDigestGet(interp, pkey, digestName, &md);
     if (result != TCL_OK) {
         goto done;
@@ -6319,7 +6982,8 @@ CryptoPkeySignatureSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Tcl_DStringInit(&messageDs);
     message = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
 
-    result = PkeySignatureSign(interp, pkey, message, (size_t)messageLength, md, encoding);
+    result = PkeySignatureSign(interp, pkey, message, (size_t)messageLength,
+                               id, idLength, md, encoding);
 
     Tcl_DStringFree(&messageDs);
 
@@ -6363,18 +7027,20 @@ static int
 CryptoPkeySignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                 result, isBinary = 0;
-    const char         *pem = NULL, *passPhrase = NS_EMPTY_STRING;
-    const char         *digestName = NULL;
-    Tcl_Obj            *messageObj = NULL, *signatureObj = NULL;
-    EVP_PKEY           *pkey = NULL;
-    const EVP_MD       *md = NULL;
+    int                  result, isBinary = 0;
+    const char          *pem = NULL, *passPhrase = NS_EMPTY_STRING, *digestName = NULL;
+    const unsigned char *id = NULL;
+    size_t               idLength;
+    Tcl_Obj             *messageObj = NULL, *signatureObj = NULL, *idObj = NULL;
+    EVP_PKEY            *pkey = NULL;
+    const EVP_MD        *md = NULL;
     const unsigned char *message, *signature;
-    TCL_SIZE_T          messageLength, signatureLength;
-    Tcl_DString         messageDs;
+    TCL_SIZE_T           messageLength, signatureLength;
+    Tcl_DString          messageDs;
     Ns_ObjvSpec lopts[] = {
         {"-binary",     Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
         {"-digest",     Ns_ObjvString, &digestName,  NULL},
+        {"-id",         Ns_ObjvObj,    &idObj,       NULL},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
         {"!-pem",       Ns_ObjvString, &pem,         NULL},
         {"!-signature", Ns_ObjvObj,    &signatureObj, NULL},
@@ -6401,6 +7067,12 @@ CryptoPkeySignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *inter
         goto done;
     }
 
+    if (PkeySignatureAcceptsIdFromObj(interp, pkey, idObj,
+                                      &id, &idLength) != TCL_OK) {
+        result = TCL_ERROR;
+        goto done;
+    }
+
     result = PkeySignatureDigestGet(interp, pkey, digestName, &md);
     if (result != TCL_OK) {
         goto done;
@@ -6413,9 +7085,10 @@ CryptoPkeySignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *inter
                                                                &signatureLength);
 
     result = PkeySignatureVerify(interp, pkey,
-                             message, (size_t)messageLength,
-                             signature, (size_t)signatureLength,
-                             md);
+                                 message, (size_t)messageLength,
+                                 signature, (size_t)signatureLength,
+                                 id, idLength,
+                                 md);
 
     Tcl_DStringFree(&messageDs);
 
@@ -6453,13 +7126,15 @@ static int
 CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                               TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const char *nameString = "ml-dsa-65";
-    const char *outfileName = NULL;
+    const char *nameString = "ml-dsa-65", *groupName = NULL, *outfileName = NULL;
+    OSSL_PARAM  params[2], *paramPtr = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-name",    Ns_ObjvString,  &nameString,  NULL},
+        {"-group",   Ns_ObjvString, &groupName,   NULL},
         {"-outfile",  Ns_ObjvString, &outfileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
+
     /*
       ns_crypto::signature generate -name ml-dsa-65 -outfile /tmp/ml-dsa-65.pem
       ns_crypto::signature generate -name ml-dsa-65
@@ -6467,14 +7142,17 @@ CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
-    }
+
+    } else if (KeygenGroupParams(interp, nameString, groupName,
+                                 "signature", params, &paramPtr) != TCL_OK) {
+        return TCL_ERROR;   }
 
     return GeneratePrivateKeyPem(interp,
                                  nameString,
                                  "signature",
                                  outfileName,
                                  NS_CRYPTO_KEYGEN_USAGE_SIGNATURE,
-                                 NULL);
+                                 paramPtr);
 }
 
 /*

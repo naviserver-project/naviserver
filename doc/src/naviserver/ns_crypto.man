@@ -45,15 +45,15 @@ post-quantum oriented commands such as [cmd ns_crypto::kem] and parts of
 algorithms. Its purpose is to generate signing keys, extract public
 keys, create signatures, and verify signatures. This family covers
 classical algorithms such as RSA as well as newer and post-quantum
-algorithms such as Ed25519, ML-DSA, or SLH-DSA, depending on OpenSSL
+algorithms such as Ed25519, ML-DSA, SLH-DSA, or SM2 depending on OpenSSL
 support.
 
 [item]
 [cmd ns_crypto::agreement] provides commands for key agreement
 algorithms. Its purpose is to generate agreement keys, extract public
 keys, and derive shared secrets from a private key and a peer public
-key. Typical examples are X25519, X448, ECDH via EC keys, and finite
-field Diffie-Hellman groups, depending on OpenSSL support.
+key. Typical examples are X25519, X448, ECDH via EC keys,
+and finite field Diffie-Hellman groups, depending on OpenSSL support.
 
 [item]
 [cmd ns_crypto::kem] provides commands for key encapsulation
@@ -79,6 +79,10 @@ encapsulation, or generic key inspection and extraction. This makes the
 interface clearer for modern algorithms, where several unrelated key
 families may serve the same purpose, and it allows new
 OpenSSL-supported algorithms to be integrated more naturally.
+
+[para] The API is designed to align with modern cryptographic
+practice, including post-quantum and hybrid key establishment
+mechanisms introduced in recent OpenSSL versions.
 
 [para]
 Note: some common options are described in a separate section below.
@@ -629,44 +633,37 @@ be in memory). In order to compute HMACs on large data, use
 
 
 [call [cmd "ns_crypto::kem generate"] \
-    [opt [option "-name [arg value]"]] \
-    [opt [option "-outfile [arg value]"]]]
+     [opt [option "-name [arg value]"]] \
+     [opt [option "-group [arg value]"]] \
+     [opt [option "-outfile [arg value]"]] \
+    ]
 
-  Generate a new key pair for a key encapsulation mechanism (KEM).
-  The private key is returned/stored in PEM format; the corresponding
-  public key can be derived via [cmd "ns_crypto::kem pub"].
+  Generate a new private key for use with key encapsulation mechanisms.
 
-  [para] The key type is selected via [option -name]. The value is passed
-  to OpenSSL's provider-based key management layer and is therefore not
-  restricted to a fixed set of algorithms. The available values depend on
-  the OpenSSL version and configured providers.
+  [para] The key type is selected via [option -name]. The available
+  values depend on the OpenSSL version and configured providers. Typical
+  examples are [const ML-KEM-*] and, depending on OpenSSL support,
+  [const EC] for EC-based KEM operation.
 
-  [para] or example, OpenSSL 3.5 provides ML-KEM parameter sets such as
-  [const ml-kem-512], [const ml-kem-768], and [const ml-kem-1024].
+  [para] The option [option -group] specifies the domain parameters or
+  named group used for key generation. For algorithms such as
+  [const EC], this option is required. For algorithms with fixed domain
+  parameters or algorithms that do not use named groups, this option is
+  not supported.
 
-  [para] When [option -name] is omitted, a provider-dependent default
-  algorithm is used (currently [const ml-kem-768] when available).
-
-  [para] Not all OpenSSL key types support key encapsulation. When a key
-  type that does not provide key encapsulation operations is specified,
-  the command returns an error.
-
-  [para] When [option -outfile] is specified, the generated private key is written
-  in PEM format to the provided file. Otherwise, the generated PEM string is returned.
+  [para] The generated key is returned as a PEM encoded private key.
+  When [option "-outfile"] is specified, the key is written to the
+  provided file instead.
 
 [example_begin]
- # Return a PEM string (default algorithm)
- set pem [lb]ns_crypto::kem generate[rb]
+ # Generate an ML-KEM key
+ set pem [lb]ns_crypto::kem generate -name ml-kem-768[rb]
  
- # Generate a specific KEM key
- set pem [lb]ns_crypto::kem generate -name ml-kem-1024[rb]
- 
- # Write a PEM file
- ns_crypto::kem generate -name ml-kem-1024 -outfile /tmp/kem.pem
+ # Generate an EC key usable for KEM encapsulation
+ set pem [lb]ns_crypto::kem generate -name EC -group prime256v1[rb]
 [example_end]
 
   [para] This function requires OpenSSL 3.5.
-
 
 [call [cmd "ns_crypto::kem pub"] \
     [opt [option "-passphrase [arg value]"]] \
@@ -785,6 +782,60 @@ be in memory). In order to compute HMACs on large data, use
   [para] This function requires OpenSSL 3.5.
 
 
+
+
+[call [cmd "ns_crypto::key generate"] \
+     [option "-name [arg value]"] \
+     [opt [option "-group [arg value]"]] \
+     [opt [option "-outfile [arg value]"]] \
+    ]
+
+  Generate a new private key of the specified type.
+
+  [para] This command provides generic provider-based key generation.
+  In contrast to the purpose-oriented command families
+  [cmd "ns_crypto::signature"], [cmd "ns_crypto::agreement"], and
+  [cmd "ns_crypto::kem"], it does not require that the generated key
+  supports a particular cryptographic operation.
+
+  [para] The key type is selected via [option -name]. The available
+  values depend on the OpenSSL version and configured providers.
+
+  [para] The option [option -group] specifies the domain parameters or
+  named group used for key generation. For algorithms such as
+  [const EC], [const DH], and [const DHX], this option is required.
+  For algorithms with fixed domain parameters such as [const X25519]
+  and [const X448], it is optional and typically not needed.
+
+  [para] The generated key is returned as a PEM encoded private key.
+  When [option "-outfile"] is specified, the key is written to the
+  provided file instead.
+
+  [para] This command is intended as a generic fallback for key types
+  supported by OpenSSL. Whether a generated key can be used with
+  [cmd "ns_crypto::signature"], [cmd "ns_crypto::agreement"], or
+  [cmd "ns_crypto::kem"] depends on the capabilities of the key type and
+  can be inspected via [cmd "ns_crypto::key info"].
+
+[example_begin]
+ # Generate a generic SM2 key
+ set pem [lb]ns_crypto::key generate -name SM2[rb]
+
+ # Generate an EC key on a named curve
+ set pem [lb]ns_crypto::key generate -name EC -group prime256v1[rb]
+
+ # Generate a DH key for a named group
+ set pem [lb]ns_crypto::key generate -name DH -group ffdhe2048[rb]
+ 
+ # Generate a generic EC key and use it for signatures
+ set pem [lb]ns_crypto::key generate -name EC -group prime256v1[rb]
+ set sig [lb]ns_crypto::signature sign -pem $pem -- "hello world"[rb]
+[example_end]
+
+  [para] This function requires OpenSSL 3.0 or newer.
+
+
+
 [call [cmd "ns_crypto::key info"] \
      [opt [option "-passphrase [arg value]"]] \
      [option "-pem [arg value]"] \
@@ -865,25 +916,49 @@ be in memory). In order to compute HMACs on large data, use
   [option -encoding], which defaults to [const hex].
 
 
+
 [call [cmd "ns_crypto::key pub"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
+     [opt [option "-format raw|pem"]] \
      [opt [option "-passphrase [arg value]"]] \
+     [opt [option "-outfile [arg value]"]] \
      [option "-pem [arg value]"] \
     ]
 
-  Extract the raw public key material from a PEM-encoded key.
+  Return the public key corresponding to the provided key.
 
-  [para] The argument to [option -pem] may be either a PEM file name or a
-  PEM string. It may contain either a public key or a private key. When
-  the private key is encrypted, provide the passphrase via
+  [para] The argument to [option -pem] may be either a PEM file name or
+  a PEM string. It may contain either a public key or a private key.
+  When a private key is provided, the corresponding public key is
+  derived. When the private key is encrypted, provide the passphrase via
   [option -passphrase].
 
-  [para] The result is returned in an algorithm-specific raw
-  representation. The output encoding is controlled via [option -encoding],
-  which defaults to [const hex].
+  [para] When [option -format] is omitted, the default format is
+  [const raw]. In this case, the public key is returned in an
+  algorithm-specific raw representation encoded according to
+  [option -encoding], which defaults to [const hex].
 
-  [para] This function is intended for extraction of raw public key
-  material only.
+  [para] When [option "-format pem"] is specified, the public key is
+  returned as a PEM encoded SubjectPublicKeyInfo
+  ([const "BEGIN PUBLIC KEY"]). In this case, [option "-outfile"] may be
+  used to write the result to a file.
+
+  [para] The option [option "-outfile"] is supported only together with
+  [option "-format pem"].
+
+[example_begin]
+ # Obtain the raw public key as hex
+ set pub [lb]ns_crypto::key pub -pem $pem[rb]
+ 
+ # Obtain the raw public key as binary
+ set pub [lb]ns_crypto::key pub -pem $pem -encoding binary[rb]
+ 
+ # Obtain the public key as PEM
+ set pubpem [lb]ns_crypto::key pub -pem $pem -format pem[rb]
+ 
+ # Write the PEM encoded public key to a file
+ ns_crypto::key pub -pem $pem -format pem -outfile /tmp/key-pub.pem
+[example_end]
 
 
 [call [cmd "ns_crypto::key type"] \
@@ -1051,52 +1126,40 @@ Returns the specified number of random bytes in the specified encoding
 
 [call [cmd "ns_crypto::signature generate"] \
      [opt [option "-name [arg value]"]] \
+     [opt [option "-group [arg value]"]] \
      [opt [option "-outfile [arg value]"]] \
     ]
 
-  Generate a new signature key pair.
+  Generate a new private key for use with signature algorithms.
 
-  [para] This command provides key generation for signature algorithms
-  analogous to [cmd "ns_crypto::kem generate"] for key encapsulation
-  mechanisms and [cmd "ns_crypto::eckey generate"] for elliptic curve keys.
+  [para] The key type is selected via [option -name]. The available
+  values depend on the OpenSSL version and configured providers. Typical
+  examples are [const RSA], [const EC], [const Ed25519], [const Ed448],
+  [const ML-DSA-*], [const SLH-DSA-*], and [const SM2], depending on
+  OpenSSL support.
 
-  [para] The key type is selected via [option -name]. The value is passed
-  to OpenSSL's provider-based key management layer and is therefore not
-  restricted to a fixed set of algorithms. The available values depend on
-  the OpenSSL version and the configured providers.
-
-  [para] Supported values include classical algorithms such as
-  [const RSA] and [const RSA-PSS], modern algorithms such as
-  [const ED25519] and [const ED448], and post-quantum algorithms such as
-  [const ML-DSA-*] and [const SLH-DSA-*].
-
-  [para] Not all OpenSSL key types support signature operations. When a
-  key type that does not provide a signature algorithm is specified, the
-  command returns an error.
-
-  [para] When [option -name] is omitted, a provider-dependent default
-  algorithm is used (currently [const ml-dsa-65] when available).
+  [para] The option [option -group] specifies the domain parameters or
+  named group used for key generation. For algorithms such as
+  [const EC], this option is required. For algorithms with fixed domain
+  parameters or algorithms that do not use named groups, this option is
+  not supported.
 
   [para] The generated key is returned as a PEM encoded private key.
   When [option "-outfile"] is specified, the key is written to the
   provided file instead.
 
-  [para] The generated PEM contains the private key; the corresponding
-  public key can be obtained via [cmd "ns_crypto::signature pub"].
-
 [example_begin]
- # Generate a new key using the default algorithm
- set pem [lb]ns_crypto::signature generate[rb]
- 
- # Generate a post-quantum ML-DSA key
+ # Generate an ML-DSA signing key
  set pem [lb]ns_crypto::signature generate -name ml-dsa-65[rb]
  
- # Generate a classical RSA key
- set pem [lb]ns_crypto::signature generate -name RSA[rb]
+ # Generate an EC signing key on a named curve
+ set pem [lb]ns_crypto::signature generate -name EC -group prime256v1[rb]
  
- # Generate a key and write it to a file
- ns_crypto::signature generate -name ED25519 -outfile /tmp/sigkey.pem
+ # Generate an SM2 signing key
+ set pem [lb]ns_crypto::signature generate -name SM2[rb]
 [example_end]
+
+  [para] This function requires OpenSSL 3.0 or newer.
 
 
 [call [cmd "ns_crypto::signature pub"] \
@@ -1129,8 +1192,9 @@ Returns the specified number of random bytes in the specified encoding
 
 
 [call [cmd "ns_crypto::signature sign"] \
-     [opt [option -binary]] \
+     [opt [option "-binary"]] \
      [opt [option "-digest [arg value]"]] \
+     [opt [option "-id [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-passphrase [arg value]"]] \
      [option "-pem [arg value]"] \
@@ -1138,44 +1202,55 @@ Returns the specified number of random bytes in the specified encoding
      [arg message] \
     ]
 
-  Compute a digital signature over the provided message.
-
-  [para] This command provides a dedicated interface for signature
-  operations and is closely related to the [option "-sign"] option of
-  [cmd "ns_crypto::md string"]. While both commands perform similar
-  operations, this command focuses exclusively on signatures and
-  automatically adapts to modern algorithms (e.g., ML-DSA, Ed25519)
-  without requiring special handling.
-
-  [para] When the option [option -binary] is specified, it applies to
-  the input argument [arg message].
+  Create a signature over the provided message using the specified
+  private key.
 
   [para] The argument to [option -pem] may be either a PEM file name or
   a PEM string containing a private key. When the private key is
   encrypted, provide the passphrase via [option -passphrase].
 
-  [para] The result is the signature encoded according to
+  [para] By default, [arg message] is treated as a character string.
+  When [option -binary] is specified, the message is interpreted as raw
+  binary data.
+
+  [para] For key types requiring an external digest, the digest
+  algorithm may be selected via [option -digest]. When omitted, a
+  suitable default is used. For example, [const sha256] is used for many
+  classical signature algorithms, while [const sm3] is used for
+  [const SM2].
+
+  [para] For key types using an internal digest, such as
+  [const Ed25519] and [const Ed448], the option [option -digest] is not
+  supported.
+
+  [para] The option [option -id] specifies the distinguishing identifier
+  used for signature algorithms that support such a parameter. At
+  present this applies to [const SM2] keys. The same identifier must be used
+  for signing and verification. When [option -id] is omitted for
+  [const SM2], the OpenSSL default identifier is used.
+
+  [para] The resulting signature is returned encoded according to
   [option -encoding], which defaults to [const hex].
 
-  [para] The option [option -digest] specifies the message digest
-  algorithm used for signature computation (e.g., [const sha256],
-  [const sha384]). For algorithms with built-in hashing (e.g.,
-  Ed25519 or ML-DSA), no external digest is used and the option is
-  ignored.
-
 [example_begin]
- # Sign message with default encoding (hex)
- set sig [lb]ns_crypto::signature sign -pem /tmp/sigkey.pem "hello"[rb]
-
- # Sign message with base64url encoding
- set sig [lb]ns_crypto::signature sign -encoding base64url \
-              -pem /tmp/sigkey.pem "hello"[rb]
+ # Create an RSA signature with the default digest
+ set sig [lb]ns_crypto::signature sign -pem $pem -- "hello world"[rb]
+ 
+ # Create an Ed25519 signature
+ set sig [lb]ns_crypto::signature sign -pem $pem -- "hello world"[rb]
+ 
+ # Create an SM2 signature using the default SM2 digest and identifier
+ set sig [lb]ns_crypto::signature sign -pem $pem -- "hello world"[rb]
+ 
+ # Create an SM2 signature with an explicit identifier
+ set sig [lb]ns_crypto::signature sign -pem $pem -id "alice@example.com" -- "hello world"[rb]
 [example_end]
 
 
 [call [cmd "ns_crypto::signature verify"] \
-     [opt [option -binary]] \
+     [opt [option "-binary"]] \
      [opt [option "-digest [arg value]"]] \
+     [opt [option "-id [arg value]"]] \
      [opt [option "-passphrase [arg value]"]] \
      [option "-pem [arg value]"] \
      [option "-signature [arg value]"] \
@@ -1183,41 +1258,41 @@ Returns the specified number of random bytes in the specified encoding
      [arg message] \
     ]
 
-  Verify a digital signature over the provided message.
-
-  [para] This command is the counterpart to
-  [cmd "ns_crypto::signature sign"] and corresponds to the
-  [option "-verify"] option of [cmd "ns_crypto::md string"].
+  Verify a signature over the provided message using the specified key.
 
   [para] The argument to [option -pem] may be either a PEM file name or
-  a PEM string containing a public or private key. When the private key
-  is encrypted, provide the passphrase via [option -passphrase].
+  a PEM string containing a public key or a private key. When a private
+  key is provided, the corresponding public key is used. When the key is
+  encrypted, provide the passphrase via [option -passphrase].
 
-  [para] When the option [option -binary] is specified, it applies to
-  the input argument [arg message].
+  [para] By default, [arg message] is treated as a character string.
+  When [option -binary] is specified, the message is interpreted as raw
+  binary data.
 
   [para] The argument to [option -signature] must be provided as binary
-  data. When the signature is stored in textual form (e.g., hex or
-  base64url), it must be decoded before calling this command.
+  data. When the signature is stored in textual form such as hex or
+  base64url, it must be decoded before calling this command.
 
-  [para] The result is [const 1] when the signature is valid and
-  [const 0] when the signature is invalid.
+  [para] For key types requiring an external digest, the digest
+  algorithm may be selected via [option -digest]. When omitted, a
+  suitable default is used.
 
-  [para] The option [option -digest] specifies the message digest
-  algorithm for verification. For algorithms with built-in hashing,
-  this option is ignored.
+  [para] The option [option -id] specifies the distinguishing identifier
+  for algorithms that support it, currently [const SM2]. When verifying
+  such signatures, the same identifier that was used during signing must
+  be provided. When [option -id] is omitted for [const SM2], the OpenSSL
+  default identifier is used.
+
+  [para] The result is [const 1] for a valid signature and [const 0] for
+  an invalid signature.
 
 [example_begin]
- # Verify signature (hex-encoded input)
- set sig [lb]ns_crypto::signature sign -pem /tmp/sigkey.pem "hello"[rb]
- set ok  [lb]ns_crypto::signature verify -pem /tmp/sigkey.pem \
-              -signature [lb]binary decode hex $sig[rb] "hello"[rb]
-
- # Verify base64url signature
- set sig [lb]ns_crypto::signature sign -encoding base64url \
-              -pem /tmp/sigkey.pem "hello"[rb]
- set ok  [lb]ns_crypto::signature verify -pem /tmp/sigkey.pem \
-              -signature [lb]ns_base64urldecode -binary $sig[rb] "hello"[rb]
+ # Verify an RSA or EC signature
+ ns_crypto::signature verify -pem $pub -signature [lb]binary decode hex $sig[rb] -- "hello world"
+ 
+ # Verify an SM2 signature with an explicit identifier
+ ns_crypto::signature verify -pem $pub -id "alice@example.com" \
+     -signature [lb]binary decode hex $sig[rb] -- "hello world"
 [example_end]
 
 

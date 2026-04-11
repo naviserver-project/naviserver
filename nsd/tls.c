@@ -435,10 +435,10 @@ static int SSL_cert_has_must_staple(X509 *cert) {
          */
         return 0;
     } else {
-        X509_EXTENSION      *ext = X509_get_ext(cert, ext_index);
-        ASN1_OCTET_STRING   *octet = X509_EXTENSION_get_data(ext);
-        const unsigned char *p = ASN1_STRING_get0_data(octet);
-        long                 len = ASN1_STRING_length(octet);
+        const X509_EXTENSION    *ext = X509_get_ext(cert, ext_index);
+        const ASN1_OCTET_STRING *octet = X509_EXTENSION_get_data(ext);
+        const unsigned char     *p = ASN1_STRING_get0_data(octet);
+        long                     len = ASN1_STRING_length(octet);
         STACK_OF(ASN1_TYPE) *features = d2i_ASN1_SEQUENCE_ANY(NULL, &p, len);
 
         if (!features) {
@@ -826,11 +826,15 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
         Tcl_DString outputBuffer;
         struct stat fileInfo;
         const char *fileName;
+        const unsigned char *serial_data = NULL;
+        int                  serial_len = 0;
+
+        serial_len  = ASN1_STRING_length((const ASN1_STRING *)pserial);
+        serial_data = ASN1_STRING_get0_data((const ASN1_STRING *)pserial);
 
         Tcl_DStringInit(&outputBuffer);
-        Tcl_DStringSetLength(&outputBuffer, (TCL_SIZE_T)(pserial->length*2 + 1));
-
-        Ns_HexString(pserial->data, outputBuffer.string, (TCL_SIZE_T)pserial->length, NS_TRUE);
+        Tcl_DStringSetLength(&outputBuffer, (TCL_SIZE_T)(serial_len * 2 + 1));
+        Ns_HexString(serial_data, outputBuffer.string, (TCL_SIZE_T)serial_len, NS_TRUE);
 
         /*
          * A result of TCL_CONTINUE or TCL_OK implies a computed filename
