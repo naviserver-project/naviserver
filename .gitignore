@@ -42,3 +42,6 @@ include/nsversion.h
 include/nsversion-win32.h
 include/stamp-h1
 
+dump500.tcl
+
+tests/testserver/access.log
