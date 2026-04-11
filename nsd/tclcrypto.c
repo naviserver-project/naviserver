@@ -5849,7 +5849,6 @@ PkeyInstanceCapabilities(EVP_PKEY *pkey)
             EVP_PKEY_CTX_free(ctx);
         }
 
-#  ifdef HAVE_OPENSSL_3_5
         /*
          * KEM capability
          */
@@ -5863,7 +5862,6 @@ PkeyInstanceCapabilities(EVP_PKEY *pkey)
             }
             EVP_PKEY_CTX_free(ctx);
         }
-#  endif
     }
 
     ERR_clear_error();
