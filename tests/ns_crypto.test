@@ -46,7 +46,7 @@ test ns_crypto::uuid-1.0 {syntax: ns_crypto::uuid} -body {
 #  Message digests: sha1, sha224, sha256, sha512
 #######################################################################################
 
-test ns_crypto_md-1.1 {syntax: ns_crypto::md} -constraints crypto -body {
+test ns_crypto_md-1.1 {syntax: ns_crypto::md} -body {
      ns_crypto::md
 } -returnCodes error -result {wrong # args: should be "ns_crypto::md string|new|add|get|free|hkdf|vapidsign ?/arg .../"}
 
@@ -79,27 +79,27 @@ test ns_crypto::md-1.8 {syntax: ns_crypto::md vapidsign} -body {
 } -returnCodes error -result {wrong # args: should be "ns_crypto::md vapidsign ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ ?--? /message/"}
 
 
-test ns_crypto_sha2-1.3 {operation with invalid digest} -constraints crypto -body {
+test ns_crypto_sha2-1.3 {operation with invalid digest} -body {
      ns_crypto::md string -digest sha123 x
 } -returnCodes error  -match glob -result {Unknown value for digest "sha123", valid: *}
 
-test ns_crypto_sha2-2.0 {basic operation} -constraints crypto -body {
+test ns_crypto_sha2-2.0 {basic operation} -body {
     ns_crypto::md string foo
 } -result "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
 
-test ns_crypto_sha2-2.1 {basic operation} -constraints crypto -body {
+test ns_crypto_sha2-2.1 {basic operation} -body {
     ns_crypto::md string -digest sha224 foo
 } -result "0808f64e60d58979fcb676c96ec938270dea42445aeefcd3a4e6f8db"
 
-test ns_crypto_sha2-2.2 {basic operation} -constraints crypto -body {
+test ns_crypto_sha2-2.2 {basic operation} -body {
     ns_crypto::md string -digest sha256 foo
 } -result "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
 
-test ns_crypto_sha2-2.3 {basic operation} -constraints crypto -body {
+test ns_crypto_sha2-2.3 {basic operation} -body {
     ns_crypto::md string -digest sha384 foo
 } -result "98c11ffdfdd540676b1a137cb1a22b2a70350c9a44171d6b1180c6be5cbb2ee3f79d532c8a1dd9ef2e8e08e752a3babb"
 
-test ns_crypto_sha2-2.4 {basic operation} -constraints crypto -body {
+test ns_crypto_sha2-2.4 {basic operation} -body {
     ns_crypto::md string -digest sha512 foo
 } -result "f7fbba6e0636f890e56fbbf3283e524c6fa3204ae298382d624741d0dc6638326e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7"
 
@@ -112,12 +112,12 @@ test ns_crypto_sha2-2.4 {basic operation} -constraints crypto -body {
 #  Example from:
 #  https://medium.com/@bn121rajesh/rsa-sign-and-verify-using-openssl-behind-the-scene-bf3cac0aade2
 #######################################################################################
-test ns_crypto_sign-1.0 {basic operation, reading .pem from a file} -constraints crypto -body {
+test ns_crypto_sign-1.0 {basic operation, reading .pem from a file} -body {
     set path [ns_config "test" home]/testserver/certificates/
     ::ns_crypto::md string -digest sha1 -sign $path/TESTKEY.pem "abcdefghijklmnopqrstuvwxyz\n"
 } -returnCodes {error ok} -result "9139be98f16cf53d22da63cb559bb06a93338da6a344e28a4285c2da33facb7080d26e7a09483779a016eebc207602fc3f90492c2f2fb8143f0fe30fd855593d"
 
-test ns_crypto_sign-1.1 {basic operation, providing .pem as a string} -constraints crypto -body {
+test ns_crypto_sign-1.1 {basic operation, providing .pem as a string} -body {
     set path [ns_config "test" home]/testserver/certificates/
     set F [open $path/TESTKEY.pem]; set content [read $F]; close $F
     ::ns_crypto::md string -digest sha1 -sign $content "abcdefghijklmnopqrstuvwxyz\n"
@@ -131,7 +131,7 @@ test ns_crypto_sign-1.1 {basic operation, providing .pem as a string} -constrain
 #
 #######################################################################################
 
-test ns_crypto_signature_verify-1.0 {basic operation, reading .pem from a file} -constraints crypto -body {
+test ns_crypto_signature_verify-1.0 {basic operation, reading .pem from a file} -body {
     set path [ns_config "test" home]/testserver/certificates/
     set sig [::ns_crypto::md string \
                  -digest sha1 \
@@ -152,7 +152,7 @@ test ns_crypto_signature_verify-1.0 {basic operation, reading .pem from a file} 
     return [list $vfy_ok $vfy_nok]
 } -returnCodes {error return} -result {1 0}
 
-test ns_crypto_signature_verify-1.1 {basic operation, providing .pem as a string} -constraints crypto -body {
+test ns_crypto_signature_verify-1.1 {basic operation, providing .pem as a string} -body {
     set path [ns_config "test" home]/testserver/certificates/
     set F [open $path/myprivate.pem]; set privateKey [read $F]; close $F
     set F [open $path/mypublic.pem]; set publicKey [read $F]; close $F
@@ -183,7 +183,7 @@ test ns_crypto_signature_verify-1.1 {basic operation, providing .pem as a string
 #  RFC 2104 https://tools.ietf.org/html/rfc2104
 #######################################################################################
 
-test ns_crypto::ns_hmac-1.1 {syntax: ns_crypto::hmac} -constraints crypto -body {
+test ns_crypto::ns_hmac-1.1 {syntax: ns_crypto::hmac} -body {
     ns_crypto::hmac
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string|new|add|get|free ?/arg .../"}
 
@@ -208,48 +208,48 @@ test ns_crypto::hmac-1.6 {syntax: ns_crypto::hmac string} -body {
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
 
 
-test ns_hmac-2.1 {syntax: ns_crypto::hmac string} -constraints crypto -body {
+test ns_hmac-2.1 {syntax: ns_crypto::hmac string} -body {
     ns_crypto::hmac string
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
 
-test ns_hmac-2.3 {hmac string with unknown digest} -constraints crypto -body {
+test ns_hmac-2.3 {hmac string with unknown digest} -body {
     ns_crypto::hmac string -digest sha123 x
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
 
-test ns_hmac-2.4 {hmac string with unknown digest} -constraints crypto -body {
+test ns_hmac-2.4 {hmac string with unknown digest} -body {
     ns_crypto::hmac string -digest sha123 x y
 } -returnCodes error -match glob -result {Unknown value for digest "sha123", valid: *}
 
-test ns_hmac_sha2-2.0 {ns_hmac with sha2 digest} -constraints crypto -body {
+test ns_hmac_sha2-2.0 {ns_hmac with sha2 digest} -body {
     ns_crypto::hmac string "Jefe" "what do ya want for nothing?"
 } -result "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
 
-test ns_hmac_sha2-2.1 {ns_hmac with sha224 digest} -constraints crypto -body {
+test ns_hmac_sha2-2.1 {ns_hmac with sha224 digest} -body {
     ns_crypto::hmac string -digest sha224 "Jefe" "what do ya want for nothing?"
 } -result "a30e01098bc6dbbf45690f3a7e9e6d0f8bbea2a39e6148008fd05e44"
 
-test ns_hmac_sha2-2.2 {ns_hmac with sha256 digest} -constraints crypto -body {
+test ns_hmac_sha2-2.2 {ns_hmac with sha256 digest} -body {
     ns_crypto::hmac string -digest sha256 "Jefe" "what do ya want for nothing?"
 } -result "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
 
-test ns_hmac_sha2-2.3 {ns_hmac with sha384 digest} -constraints crypto -body {
+test ns_hmac_sha2-2.3 {ns_hmac with sha384 digest} -body {
     ns_crypto::hmac string -digest sha384 "Jefe" "what do ya want for nothing?"
 } -result "af45d2e376484031617f78d2b58a6b1b9c7ef464f5a01b47e42ec3736322445e8e2240ca5e69e2c78b3239ecfab21649"
 
-test ns_hmac_sha2-2.4 {ns_hmac with sha512 digest} -constraints crypto -body {
+test ns_hmac_sha2-2.4 {ns_hmac with sha512 digest} -body {
     ns_crypto::hmac string -digest sha512 "Jefe" "what do ya want for nothing?"
 } -result "164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea2505549758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737"
 
 
-test ns_hmac_sha1-1.1 {ns_hmac with sha1 digest} -constraints crypto -body {
+test ns_hmac_sha1-1.1 {ns_hmac with sha1 digest} -body {
      ns_crypto::hmac string -digest sha1 "Jefe" "what do ya want for nothing?"
 } -result "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79"
 
-test ns_hmac_sha1-1.2 {ns_hmac binary operation (example from RFC 4226, appendix D)} -constraints crypto -body {
+test ns_hmac_sha1-1.2 {ns_hmac binary operation (example from RFC 4226, appendix D)} -body {
      ns_crypto::hmac string -digest sha1 12345678901234567890 [binary format W 0]
 } -result "cc93cf18508d94934c64b65d8ba7667fb7cde4b0"
 
-test ns_hmac_sha1-1.3 {ns_hmac binary operation (example from RFC 4226, appendix D)} -constraints crypto -body {
+test ns_hmac_sha1-1.3 {ns_hmac binary operation (example from RFC 4226, appendix D)} -body {
     ns_crypto::hmac string -digest sha1 12345678901234567890 [binary format W 1]
 } -result "75a48a19d4cbe100644e8ac1397eea747a2d33ab"
 
@@ -259,41 +259,41 @@ test ns_hmac_sha1-1.3 {ns_hmac binary operation (example from RFC 4226, appendix
 #######################################################################################
 
 
-test ns_md-1.0 {syntax: ns_md subcommands} -constraints {crypto nsf} -body {
+test ns_md-1.0 {syntax: ns_md subcommands} -constraints {nsf} -body {
     ns_md ?
 } -returnCodes error -result {method '?' unknown for ::ns_md; in order to create an instance of class ::ns_md, consider using '::ns_md create ? ?...?'}
 
-test ns_md-1.1 {syntax: ns_md new} -constraints {crypto nsf} -body {
+test ns_md-1.1 {syntax: ns_md new} -constraints {nsf} -body {
     ns_md new -x
 } -returnCodes error -match glob -result {* ?-digest /value/? *}
 # "ns_md new: don't advertise all {wrong # args: should be "ns_md new ?-digest /value/?"}
 
-test ns_md-1.2 {syntax: ns_md file} -constraints {crypto nsf} -body {
+test ns_md-1.2 {syntax: ns_md file} -constraints {nsf} -body {
     ns_md file
 } -returnCodes error -match glob -result {*ns_md file ?-digest /value/? ?-encoding /value/? /filename/ ?/arg .../?}
 # "ns_md file" don't advertise all {wrong # args: should be "ns_md file ?-digest /value/? ?-encoding /value/? /filename/ ?/filename .../?"}
 
-test ns_md-1.3 {syntax: ns_md string} -constraints {crypto nsf} -body {
+test ns_md-1.3 {syntax: ns_md string} -constraints {nsf} -body {
     ns_md string
 } -returnCodes error -match glob -result {*ns_md string ?-digest /value/? ?-encoding /value/? /message/}
 # "ns_md string" don't advertise all {wrong # args: should be "ns_md string ?-digest /value/? ?-encoding /value/? /message/"}
 
 
-test ns_hmac-1.0 {syntax: ns_hmac sucommands} -constraints {crypto nsf} -body {
+test ns_hmac-1.0 {syntax: ns_hmac sucommands} -constraints {nsf} -body {
     ns_hmac ?
 } -returnCodes error -result {method '?' unknown for ::ns_hmac; in order to create an instance of class ::ns_hmac, consider using '::ns_hmac create ? ?...?'}
 
-test ns_hmac-1.1 {syntax: ns_hmac new} -constraints {crypto nsf} -body {
+test ns_hmac-1.1 {syntax: ns_hmac new} -constraints {nsf} -body {
     ns_hmac new -x
 } -returnCodes error -match glob -result {* -key /value/ ?-digest /value/? *}
 # "ns_hmac new: don't advertise all {wrong # args: should be "ns_hmac new ?-digest /value/? -key /value/"}
 
-test ns_hmac-1.2 {syntax: ns_hmac file} -constraints {crypto nsf} -body {
+test ns_hmac-1.2 {syntax: ns_hmac file} -constraints {nsf} -body {
     ns_hmac file
 } -returnCodes error -match glob -result {*ns_hmac file ?-digest /value/? ?-encoding /value/? /key/ /filename/ ?/arg .../?}
 # "ns_hmac file" don't advertise all {wrong # args: should be "ns_hmac file ?-digest /value/? ?-encoding /value/?  /key/ /filename .../"}
 
-test ns_hmac-1.3 {syntax: ns_hmac string} -constraints {crypto nsf} -body {
+test ns_hmac-1.3 {syntax: ns_hmac string} -constraints {nsf} -body {
     ns_hmac string
 } -returnCodes error -match glob -result {*ns_hmac string ?-digest /value/? ?-encoding /value/? /key/ /message/}
 # "ns_hmac string" don't advertise all {wrong # args: should be "ns_hmac string ?-digest /value/? ?-encoding /value/? /key/ /message/"}
@@ -302,16 +302,16 @@ test ns_hmac-1.3 {syntax: ns_hmac string} -constraints {crypto nsf} -body {
 # Functional tests
 #
 
-test ns_hmac_file-1.0 {ns_crypto::hmac file without file} -constraints crypto -body {
+test ns_hmac_file-1.0 {ns_crypto::hmac file without file} -body {
     ns_crypto::hmac file
 } -returnCodes error -result {ns_crypto::hmac: bad subcommand "file": must be string, new, add, get, or free}
 
-test ns_hmac-file-1.1 {ns_hmac file function} -constraints {crypto nsf} -body {
+test ns_hmac-file-1.1 {ns_hmac file function} -constraints {nsf} -body {
     catch {ns_hmac file -digest sha256 foo [ns_server pagedir]/16480bytes} result
     set result
 } -result "a3d3b7ad986f84a8e4b170ec576747361b31596b63c9135b049624612126ffd7"
 
-test ns_md-file-1.2 {ns_hmac file function} -constraints {crypto nsf} -body {
+test ns_md-file-1.2 {ns_hmac file function} -constraints {nsf} -body {
     catch {ns_md file -digest sha256 [ns_server pagedir]/16480bytes} result
     set result
 } -result "53deaf2e6c268ed0aae583e1c6f8679eedf08fb1218914530fa09b954c4bd621"
@@ -323,7 +323,7 @@ test ns_md-file-1.2 {ns_hmac file function} -constraints {crypto nsf} -body {
 # Test Cases for pbkdf2-hmac-sha1 based on RFC 6070
 # (PKCS #5_ Password-Based Key Derivation Function 2 (PBKDF2) Test Vectors)
 ############################################################################
-test pbkdf2_hmac-sha1.0 {syntax: ns_crypto::pbkdf2_hmac} -constraints crypto -body {
+test pbkdf2_hmac-sha1.0 {syntax: ns_crypto::pbkdf2_hmac} -body {
     ns_crypto::pbkdf2_hmac ""
 } -returnCodes error -result {wrong # args: should be "ns_crypto::pbkdf2_hmac ?-binary? ?-digest /value/? ?-dklen /integer[1,MAX]/? ?-iterations /integer[1,MAX]/? -salt /value/ -secret /value/ ?-encoding hex|base64url|base64|binary?"}
 
@@ -383,7 +383,7 @@ test pbkdf2_hmac-sha256.5 {Testcase 4 for pbkdf2-hmac-sha256, forcing a differen
 #  RFC 4426 https://tools.ietf.org/html/rfc4226
 #######################################################################################
 
-test ns_hotp-1.0 {syntax: ns_hotp} -constraints {crypto nsf} -body {
+test ns_hotp-1.0 {syntax: ns_hotp} -constraints {nsf} -body {
     ns_hotp x y
 } -returnCodes error -result {invalid argument 'y', maybe too many arguments; should be "ns_hotp ?-digest /value/? ?-digits /integer/? ?-key /value/? /counter/"}
 
@@ -392,7 +392,7 @@ test hotp-1.1 {
     Test for HOTP based on testvector in Appendix D from RFC 4226
     https://www.ietf.org/rfc/rfc4226.txt
 
-} -constraints {crypto nsf} -body {
+} -constraints {nsf} -body {
     set result ""
     foreach C {0 1 2 3 4 5 6 7 8 9} {
         lappend result [ns_hotp -digest sha1 -key 12345678901234567890 [binary format W $C]]
@@ -406,7 +406,7 @@ test hotp-1.1 {
 #  RFC 6238 https://tools.ietf.org/html/rfc6238
 #######################################################################################
 
-test ns_totp-1.0 {syntax: ns_totp} -constraints {crypto nsf} -body {
+test ns_totp-1.0 {syntax: ns_totp} -constraints {nsf} -body {
     ns_totp -x
 } -returnCodes error -result {invalid non-positional argument '-x', valid are: -digest, -digits, -interval, -user_id, -key, -time;
  should be "ns_totp ?-digest /value/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /value/? ?-time /value/?"}
@@ -418,7 +418,7 @@ test ns_totp-1.1 {
     Test for HOTP based on testvector from Appendix B of RFC 6238
     https://tools.ietf.org/html/rfc6238
 
-} -constraints {crypto nsf} -body {
+} -constraints {nsf} -body {
     set result {}
     foreach time {59 1111111109 1111111111 1234567890 2000000000 20000000000} {
         foreach digest {
@@ -816,11 +816,11 @@ test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -constraints {ec 
 ############################################################################
 # Test Cases for ns_crypto::uuid
 ############################################################################
-test ns_crypto::uuid-1.1 {UUID v4, length of UUID} -constraints crypto -body {
+test ns_crypto::uuid-1.1 {UUID v4, length of UUID} -body {
     string length [ns_crypto::uuid -version v4]
 } -returnCodes {error ok} -result {36}
 
-test ns_crypto::uuid-1.2 {UUID v7, length of UUID} -constraints crypto -body {
+test ns_crypto::uuid-1.2 {UUID v7, length of UUID} -body {
     string length [ns_crypto::uuid -version v7]
 } -returnCodes {error ok} -result {36}
 
