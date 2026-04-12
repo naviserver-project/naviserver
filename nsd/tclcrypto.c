@@ -786,18 +786,20 @@ KeygenGroupParams(Tcl_Interp *interp,
      * Provide a default named group for EC for consistency with the
      * legacy eckey interface.
      */
-    if (strcasecmp(typeName, "EC") == 0) {
+    if (STRIEQ(typeName, "EC")) {
         requiresGroup = NS_TRUE;
         if (groupName == NULL) {
             groupName = "prime256v1";
         }
 
-    } else if (strcasecmp(typeName, "DH") == 0
-               || strcasecmp(typeName, "DHX") == 0) {
+    } else if (STRIEQ(typeName, "DH")
+               || STRIEQ(typeName, "DHX")
+               ) {
         requiresGroup = NS_TRUE;
 
-    } else if (strcasecmp(typeName, "X25519") == 0
-               || strcasecmp(typeName, "X448") == 0) {
+    } else if (STRIEQ(typeName, "X25519")
+               || STRIEQ(typeName, "X448")
+               ) {
         acceptsOptionalGroup = NS_TRUE;
     }
 
@@ -811,10 +813,8 @@ KeygenGroupParams(Tcl_Interp *interp,
 
     } else if (acceptsOptionalGroup) {
         if (groupName != NULL) {
-            if ((strcasecmp(typeName, "X25519") == 0
-                 && strcasecmp(groupName, "x25519") != 0)
-                || (strcasecmp(typeName, "X448") == 0
-                    && strcasecmp(groupName, "x448") != 0)) {
+            if ((STRIEQ(typeName, "X25519")  && !STRIEQ(groupName, "x25519"))
+                || (STRIEQ(typeName, "X448") && !STRIEQ(groupName, "x448"))) {
                 Ns_TclPrintfResult(interp,
                                    "group \"%s\" is not valid for %s algorithm \"%s\"",
                                    groupName, what, typeName);
@@ -1236,7 +1236,7 @@ DigestAllowed(const char *name, NsDigestUsage usage)
     /*
      * Reject "NULL" digest explicitly.
      */
-    if (strcmp(name, "NULL") == 0) {
+    if (STREQ(name, "NULL")) {
         return NS_FALSE;
     }
 
@@ -1537,10 +1537,10 @@ CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
      * are the same as the curves prime192v1 and prime256v1 defined in
      * X9.62).
      */
-    if (strcmp(curveName, "secp192r1") == 0) {
+    if (STREQ(curveName, "secp192r1")) {
         Ns_Log(Warning, "using curve name prime192v1 instead of secp192r1");
         nid = NID_X9_62_prime192v1;
-    } else if (strcmp(curveName, "secp256r1") == 0) {
+    } else if (STREQ(curveName, "secp256r1")) {
         Ns_Log(Warning, "using curve name prime256v1 instead of secp256r1");
         nid = NID_X9_62_prime256v1;
     } else {
