@@ -5238,7 +5238,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
                     Tcl_ListObjAppendElement(interp, listObj, NsEncodedObj((unsigned char *)outputDs.string,
                                                                          (size_t)outputDs.length,
                                                                          NULL, encoding));
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("tag", 3));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_TAG));
                     Tcl_ListObjAppendElement(interp, listObj, NsEncodedObj((unsigned char *)tagDs.string,
                                                                          (size_t)tagDs.length,
                                                                          NULL, encoding));
@@ -6043,7 +6043,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
         providerName = OSSL_PROVIDER_get0_name(provider);
         if (providerName != NULL) {
             Tcl_DictObjPut(interp, resultObj,
-                           Tcl_NewStringObj("provider", TCL_INDEX_NONE),
+                           NsAtomObj(NS_ATOM_PROVIDER),
                            Tcl_NewStringObj(providerName, TCL_INDEX_NONE));
         }
     }
@@ -6051,7 +6051,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
     description = EVP_PKEY_get0_description(pkey);
     if (description != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("description", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_DESCRIPTION),
                        Tcl_NewStringObj(description, TCL_INDEX_NONE));
     }
 
@@ -6098,9 +6098,6 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
         }
     }
 
-    /*
-     * Optional richer metadata.
-     */
     if (EVP_PKEY_get_int_param(pkey, OSSL_PKEY_PARAM_SECURITY_BITS, &ibits) == 1
         && ibits > 0) {
         Tcl_DictObjPut(interp, resultObj,

@@ -863,7 +863,8 @@ be in memory). In order to compute HMACs on large data, use
   [item] [const type] — the key type as returned by [cmd "ns_crypto::key type"]
   [item] [const signature] — boolean indicating whether the key
      provides a digital signature algorithm ((i.e., supports
-     sign/verify operations directly).. This is independent of digest support; key agreement (e.g.,
+     sign/verify operations directly).
+     This is independent of digest support; key agreement (e.g.,
      [const X25519]) and encapsulation ([const ML-KEM]) keys do not support
      signatures.
   [item] [const requiresdigest] — boolean indicating
@@ -884,7 +885,27 @@ be in memory). In order to compute HMACs on large data, use
   [list_begin itemized]
   [item] [const bits] — key size in bits (e.g., RSA, DSA, DH, EC)
   [item] [const curve] — curve name for elliptic curve keys (e.g., [const prime256v1])
+  [item] [const securityBits] — the estimated cryptographic strength of the key.
+  [item] [const securityCategory] — an integer indicating the security
+    category of the key as defined by the underlying OpenSSL provider.
+
   [list_end]
+
+  [para] 
+  The field [const bits] denotes the size of the key or its domain parameters,
+  while [const securityBits] denotes the estimated cryptographic strength of
+  the key. These values differ for many algorithms (e.g., RSA-2048 has
+  2048 bits but about 112 bits of security).
+
+  [para] Security categories are primarily used for post-quantum
+  algorithms and correspond to standardized security levels (e.g.,
+  NIST PQC categories 1, 3, and 5). Higher values indicate stronger
+  security guarantees against both classical and quantum attacks.
+
+  [para] This field is only present when the OpenSSL provider exposes
+  this information. It is typically available for post-quantum
+  algorithms such as [const ML-KEM] and [const ML-DSA], but not for
+  classical algorithms like [const RSA] or [const EC].
 
   [para] The presence and naming of fields depend on the key type and
   OpenSSL capabilities. New fields may be added in future versions as

@@ -328,6 +328,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_CURVE].name            = "curve";         atoms[NS_ATOM_CURVE].len = 5;
     atoms[NS_ATOM_DATA].name             = "data";          atoms[NS_ATOM_DATA].len = 4;
     atoms[NS_ATOM_DEFAULTPORT].name      = "defaultport";   atoms[NS_ATOM_DEFAULTPORT].len = 11;
+    atoms[NS_ATOM_DESCRIPTION].name      = "description";   atoms[NS_ATOM_DESCRIPTION].len = 11;
     atoms[NS_ATOM_DRIVER].name           = "driver";        atoms[NS_ATOM_DRIVER].len = 6;
     atoms[NS_ATOM_ERRORS].name           = "errors";        atoms[NS_ATOM_ERRORS].len = 6;
     atoms[NS_ATOM_ERROR].name            = "error";         atoms[NS_ATOM_ERROR].len = 5;
@@ -371,8 +372,9 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_PORT].name             = "port";          atoms[NS_ATOM_PORT].len = 4;
     atoms[NS_ATOM_PRELOAD].name          = "preload";       atoms[NS_ATOM_PRELOAD].len = 7;
     atoms[NS_ATOM_PROC].name             = "proc";          atoms[NS_ATOM_PROC].len = 4;
-    atoms[NS_ATOM_PROTOCOL].name         = "protocol";      atoms[NS_ATOM_PROTOCOL].len = 8;
     atoms[NS_ATOM_PROTO].name            = "proto";         atoms[NS_ATOM_PROTO].len = 5;
+    atoms[NS_ATOM_PROTOCOL].name         = "protocol";      atoms[NS_ATOM_PROTOCOL].len = 8;
+    atoms[NS_ATOM_PROVIDER].name         = "provider";      atoms[NS_ATOM_PROVIDER].len = 8;
     atoms[NS_ATOM_PROXIED].name          = "proxied";       atoms[NS_ATOM_PROXIED].len = 7;
     atoms[NS_ATOM_PUBLIC].name           = "public";        atoms[NS_ATOM_PUBLIC].len = 6;
     atoms[NS_ATOM_QUERY].name            = "query";         atoms[NS_ATOM_QUERY].len = 5;
@@ -409,6 +411,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_STATUS].name           = "status";        atoms[NS_ATOM_STATUS].len = 6;
     atoms[NS_ATOM_SUFFIX].name           = "suffix";        atoms[NS_ATOM_SUFFIX].len = 6;
     atoms[NS_ATOM_SYSTEM_MALLOC].name    = "system_malloc"; atoms[NS_ATOM_SYSTEM_MALLOC].len = 13;
+    atoms[NS_ATOM_TAG].name              = "tag";           atoms[NS_ATOM_TAG].len = 3;
     atoms[NS_ATOM_TAIL].name             = "tail";          atoms[NS_ATOM_TAIL].len = 4;
     atoms[NS_ATOM_TASK].name             = "task";          atoms[NS_ATOM_TASK].len = 4;
     atoms[NS_ATOM_TCL].name              = "tcl";           atoms[NS_ATOM_TCL].len = 3;
