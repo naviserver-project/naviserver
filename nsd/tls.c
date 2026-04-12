@@ -435,7 +435,10 @@ static int SSL_cert_has_must_staple(X509 *cert) {
          */
         return 0;
     } else {
-        const X509_EXTENSION    *ext = X509_get_ext(cert, ext_index);
+#ifdef HAVE_OPENSSL_4
+        const
+#endif
+        X509_EXTENSION          *ext = X509_get_ext(cert, ext_index);
         const ASN1_OCTET_STRING *octet = X509_EXTENSION_get_data(ext);
         const unsigned char     *p = ASN1_STRING_get0_data(octet);
         long                     len = ASN1_STRING_length(octet);
