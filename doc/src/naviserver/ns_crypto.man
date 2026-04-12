@@ -214,8 +214,11 @@ The argument [arg input] (the cipher text) is always treated as byte array.
   algorithm is used (currently [const X25519] when available).
 
   [para] The option [option -group] specifies the domain parameters or
-  named group used for key generation. For key agreement algorithms such
-  as [const EC], [const DH], and [const DHX], this option is required and
+  named group used for key generation.
+  For the [const EC] algorithm, the option [option -group] specifies
+  the elliptic curve to use and defaults to [const prime256v1].
+  For key agreement algorithms such
+  as [const DH] and [const DHX], this option is required and
   must be set to a valid group name supported by the underlying OpenSSL
   provider (e.g., [const prime256v1], [const ffdhe2048], or
   [const modp_2048]). For algorithms with fixed domain parameters such as
@@ -646,8 +649,10 @@ be in memory). In order to compute HMACs on large data, use
   [const EC] for EC-based KEM operation.
 
   [para] The option [option -group] specifies the domain parameters or
-  named group used for key generation. For algorithms such as
-  [const EC], this option is required. For algorithms with fixed domain
+  named group used for key generation.
+  For the [const EC] algorithm, the option [option -group] specifies
+  the elliptic curve to use and defaults to [const prime256v1].
+  For algorithms with fixed domain
   parameters or algorithms that do not use named groups, this option is
   not supported.
 
@@ -802,8 +807,10 @@ be in memory). In order to compute HMACs on large data, use
   values depend on the OpenSSL version and configured providers.
 
   [para] The option [option -group] specifies the domain parameters or
-  named group used for key generation. For algorithms such as
-  [const EC], [const DH], and [const DHX], this option is required.
+  named group used for key generation.
+  For the [const EC] algorithm, the option [option -group] specifies
+  the elliptic curve to use and defaults to [const prime256v1].
+  For algorithms such as [const DH] and [const DHX], this option is required.
   For algorithms with fixed domain parameters such as [const X25519]
   and [const X448], it is optional and typically not needed.
 
@@ -1139,8 +1146,10 @@ Returns the specified number of random bytes in the specified encoding
   OpenSSL support.
 
   [para] The option [option -group] specifies the domain parameters or
-  named group used for key generation. For algorithms such as
-  [const EC], this option is required. For algorithms with fixed domain
+  named group used for key generation.
+  For the [const EC] algorithm, the option [option -group] specifies
+  the elliptic curve to use and defaults to [const prime256v1].
+  For algorithms with fixed domain
   parameters or algorithms that do not use named groups, this option is
   not supported.
 

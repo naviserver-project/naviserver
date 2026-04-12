@@ -1096,6 +1096,7 @@ test ns_crypto::key-5.4 {priv: ML-KEM-1024 raw private key extraction} -constrai
 } -result {ml-kem-1024 3168}
 
 
+
 #test ns_crypto::key-6.1 {type: encrypted PEM requires passphrase} -constraints {pem_passphrase_fixture} -body {
 #    ns_crypto::key type -pem $::encryptedPem
 #} -returnCodes error -match glob -result *
@@ -1138,7 +1139,6 @@ test ns_crypto-key-generate-1.1 {ns_crypto::key generate -name EC -group prime25
     } \
     -result 1
 
-
 test ns_crypto-key-generate-1.2 {ns_crypto::key generate -name EC -group prime256v1 yields type ec and curve prime256v1} \
     -constraints {keygen ec} \
     -body {
@@ -1148,16 +1148,14 @@ test ns_crypto-key-generate-1.2 {ns_crypto::key generate -name EC -group prime25
     } \
     -result {ec prime256v1}
 
-
-test ns_crypto-key-generate-1.3 {ns_crypto::key generate -name EC without -group fails} \
+test ns_crypto-key-generate-1.3 {ns_crypto::key generate -name EC default -group} \
     -constraints {keygen ec} \
     -body {
-        ns_crypto::key generate -name EC
+        set pem [ns_crypto::key generate -name EC]
+        dict get [ns_crypto::key info -pem $pem] curve
     } \
-    -returnCodes error \
-    -match glob \
-    -result {*option "-group" is required*}
-
+    -returnCodes ok \
+    -result {prime256v1}
 
 test ns_crypto-key-generate-1.4 {ns_crypto::key generate -name X25519 works without -group} \
     -constraints {keygen} \
@@ -1167,7 +1165,6 @@ test ns_crypto-key-generate-1.4 {ns_crypto::key generate -name X25519 works with
     } \
     -result x25519
 
-
 test ns_crypto-key-generate-1.5 {ns_crypto::key generate -name X25519 accepts matching -group} \
     -constraints {keygen} \
     -body {
@@ -1175,7 +1172,6 @@ test ns_crypto-key-generate-1.5 {ns_crypto::key generate -name X25519 accepts ma
         dict get [ns_crypto::key info -pem $pem] type
     } \
     -result x25519
-
 
 test ns_crypto-key-generate-1.6 {ns_crypto::key generate -name X25519 rejects wrong -group} \
     -constraints {keygen} \
@@ -1185,7 +1181,6 @@ test ns_crypto-key-generate-1.6 {ns_crypto::key generate -name X25519 rejects wr
     -returnCodes error \
     -match glob \
     -result {*group "*" is not valid*}
-
 
 test ns_crypto-key-generate-1.7 {ns_crypto::key generate -name RSA rejects unsupported -group} \
     -constraints {keygen} \
@@ -1360,8 +1355,8 @@ test ns_crypto::signature-1.4 {syntax: ns_crypto::signature pub} -constraints {m
 # Test Cases for ns_crypto::signature functional tests
 #---------------------------------------------------------------------------
 
-test ns_crypto::signature-2.1 {EC sign/verify roundtrip with default digest and hex encoding} -constraints {ec tcl86} -body {
-    set pem [ns_crypto::eckey generate -name prime256v1]
+test ns_crypto::signature-2.1 {EC sign/verify roundtrip with default digest and hex encoding using default curve} -constraints {ec tcl86} -body {
+    set pem [ns_crypto::eckey generate]
     set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
     set msg "hello world"
 
@@ -1743,10 +1738,16 @@ test ns_crypto::agreement-2.6 {pub: write X25519 public key to outfile} -constra
     unset -nocomplain privFile pubFile
 } -result 1
 
-test ns_crypto::agreement-2.7 {generate: EC with group} -constraints {agreement} -body {
+test ns_crypto::agreement-2.7.0 {generate: EC with explicit group} -constraints {agreement} -body {
     set pem [ns_crypto::agreement generate -name EC -group prime256v1]
     dict get [ns_crypto::key info -pem $pem] agreement
 } -result 1
+
+test ns_crypto::agreement-2.7.1 {generate: EC with default group} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name EC]
+    list [dict get [ns_crypto::key info -pem $pem] agreement] \
+        [dict get [ns_crypto::key info -pem $pem] curve]
+} -result {1 prime256v1}
 
 test ns_crypto::agreement-2.8 {generate: DH with group} -constraints {agreement} -body {
     set pem [ns_crypto::agreement generate -name DH -group ffdhe2048]
@@ -1822,9 +1823,10 @@ test ns_crypto::agreement-4.2 {generate: empty algorithm name} -constraints {agr
     ns_crypto::agreement generate -name ""
 } -returnCodes error -match glob -result {*}
 
-test ns_crypto::agreement-4.3 {generate: EC without -group rejected} -constraints {agreement} -body {
-    ns_crypto::agreement generate -name EC
-} -returnCodes error -match glob -result {*-group*required*EC*}
+test ns_crypto::agreement-4.3 {generate: EC with default -group allowed} -constraints {agreement} -body {
+    set pem [ns_crypto::agreement generate -name EC]
+    dict get [ns_crypto::key info -pem $pem] curve
+} -returnCodes ok -result {prime256v1}
 
 test ns_crypto::agreement-4.4 {generate: DH without -group rejected} -constraints {agreement} -body {
     ns_crypto::agreement generate -name DH
@@ -1865,6 +1867,9 @@ test ns_crypto::agreement-5.4 {derive: KEM key rejected} -constraints {agreement
     set peer [ns_crypto::kem pub -pem $pem]
     ns_crypto::agreement derive -pem $pem -peer $peer
 } -returnCodes error -match glob -result {*does not support key agreement*}
+
+
+
 
 #---------------------------------------------------------------------------
 # Negative tests: agreement incompatible peers

@@ -782,17 +782,24 @@ KeygenGroupParams(Tcl_Interp *interp,
         groupName = NULL;
     }
 
-    if (strcasecmp(typeName, "EC") == 0
-        || strcasecmp(typeName, "DH") == 0
-        || strcasecmp(typeName, "DHX") == 0) {
+    /*
+     * Provide a default named group for EC for consistency with the
+     * legacy eckey interface.
+     */
+    if (strcasecmp(typeName, "EC") == 0) {
         requiresGroup = NS_TRUE;
-        } else if (strcasecmp(typeName, "X25519") == 0
-                   || strcasecmp(typeName, "X448") == 0) {
+        if (groupName == NULL) {
+            groupName = "prime256v1";
+        }
+
+    } else if (strcasecmp(typeName, "DH") == 0
+               || strcasecmp(typeName, "DHX") == 0) {
+        requiresGroup = NS_TRUE;
+
+    } else if (strcasecmp(typeName, "X25519") == 0
+               || strcasecmp(typeName, "X448") == 0) {
         acceptsOptionalGroup = NS_TRUE;
     }
-
-    /*Ns_Log(Notice, "DEBUG typeName <%s> groupName <%s> accepts opt group %d requires group %d",
-      typeName, groupName, acceptsOptionalGroup, requiresGroup);*/
 
     if (requiresGroup) {
         if (groupName == NULL) {
