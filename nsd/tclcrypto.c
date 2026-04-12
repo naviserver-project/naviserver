@@ -6108,7 +6108,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
                        Tcl_NewIntObj(ibits));
     }
 
-# ifdef HAVE_OPENSSL_3_5
+# ifdef OSSL_PKEY_PARAM_SECURITY_CATEGORY
     if (EVP_PKEY_get_int_param(pkey, OSSL_PKEY_PARAM_SECURITY_CATEGORY, &ibits) == 1
         && ibits >= 0) {
         Tcl_DictObjPut(interp, resultObj,
