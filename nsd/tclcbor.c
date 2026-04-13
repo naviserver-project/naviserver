@@ -618,7 +618,8 @@ CborParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 isScan = 1;
             }
             /*
-             * 5.1 prerelease handling. Should be removed after the 5.1 release.
+             * 5.1 prerelease handling. "ns_cbor decode" and "ns_cbor scan"
+             * should be removed after the 5.1 release.
              */
             switch (*subcmdName) {
             case 's':
