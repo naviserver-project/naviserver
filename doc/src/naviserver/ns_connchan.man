@@ -39,14 +39,31 @@
 
 [call [cmd "ns_connchan detach"]]
 
- The command [cmd "ns_connchan detach"] unplugs the connection channel from
- the current connection thread and stores it with a fresh handle name
- in a per-virtual-server private table. The command returns the
- created handle as result.
+  Detaches the current connection channel from the active connection
+  thread and stores it under a fresh handle name in a per-virtual-server
+  private table. The command returns the created handle as result.
 
-[para]
- After this command was issued in a connection thread, all attempts to
- access the connection socket directly (e.g. via [cmd ns_write]) will fail.
+  [para]
+  When this command is called from a request handler, NaviServer has
+  already received the full client request, including the request body.
+
+  [para]
+  This command is primarily intended for cases where longer-running
+  request processing should be performed in the background without
+  blocking a connection thread. Background processing can be done, for
+  example, via [cmd ns_job].
+
+  [para]
+  It can also be used for spooling data to a client, where the duration
+  of the request depends on the client (e.g., slow readers). When the
+  primary concern is protection against slow-read attacks, the use of
+  writer threads is typically more appropriate.
+
+  [para]
+  After this command has been issued in a connection thread, direct access
+  to the original connection socket via connection-thread commands such as
+  [cmd ns_write] will fail. Further processing of the detached connection
+  must use the returned handle and the [cmd ns_connchan] subcommands.
 
 
 [call [cmd "ns_connchan close"] \
