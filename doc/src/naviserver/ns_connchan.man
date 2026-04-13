@@ -504,9 +504,67 @@ multi-segment messages, where later segments have the opcode
 [list_end]
 
 
-[section EXAMPLE]
+[section EXAMPLES]
 
-  [para] The following example shows the typical two-stage use of
+  [para]
+  The following example demonstrates how to detach an incoming HTTP
+  request from the connection thread and process it asynchronously in
+  the background. The request handler returns immediately after calling
+  [cmd "ns_connchan detach"], while the actual work is performed later
+  (e.g., via [cmd ns_job]). This pattern avoids blocking connection
+  threads for longer-running tasks and allows the application to send
+  the HTTP response at a later time via the detached connection channel.
+
+  [para]
+  After detaching, the application is responsible for sending a complete
+  HTTP response (including status line and headers) and for closing the
+  connection explicitly.
+
+[example_begin]
+ # Example: detach request and process it in the background
+ 
+ # Log request details
+ set identifier "[lb]ns_conn request[rb] [lb]ns_set format [lb]ns_conn headers[rb][rb]"
+ ns_log notice "REQUEST START $identifier"
+ 
+ # Ensure a job queue exists
+ if {"q1" ni [lb]ns_job queues[rb]} { ns_job create q1 }
+ 
+ # Detach the connection channel from the connection thread
+ set channel [lb]ns_connchan detach[rb]
+ 
+ # Process the request asynchronously
+ ns_job queue -detached q1 [lb]subst {
+     ns_log notice "start detached job"
+ 
+     # Simulate a long-running task
+     ns_sleep 2s
+ 
+     # Send minimal HTTP response and close connection
+     ns_connchan write $channel "HTTP/1.0 200 OK\r\n\r\n"
+     ns_connchan close $channel
+ 
+     ns_log notice "DONE detached job"
+ }[rb]
+ 
+ ns_log notice "REQUEST DONE $identifier"
+[example_end]
+
+  [para]
+  The log output below shows that the request handler completes before
+  the background job starts and finishes, demonstrating that the
+  connection thread is not blocked.
+
+[example_begin]
+ REQUEST START ...
+ REQUEST DONE ...
+ start detached job
+ ... (delay)
+ DONE detached job
+[example_end]
+
+
+  [para] The next example shows a two-stage use of
   [cmd "ns_connchan listen"] and [cmd "ns_connchan callback"]. The
   callback provided to [cmd "ns_connchan listen"] is invoked when a new
   connection is accepted and must return a true value to keep the
