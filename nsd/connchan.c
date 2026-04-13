@@ -1577,7 +1577,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     Ns_ObjvSpec     lopts[] = {
         {"-driver",  Ns_ObjvString, &driverName, NULL},
         {"-server",  Ns_ObjvServer, &servPtr, NULL},
-        {"-bind",    Ns_ObjvBool,   &doBind, INT2PTR(NS_TRUE)},
+        {"-bind",    Ns_ObjvBool,   &doBind,  INT2PTR(NS_TRUE)},
         {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
