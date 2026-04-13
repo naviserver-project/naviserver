@@ -3,7 +3,9 @@
 ######################################################################
 
 # Name of the main server configuration
-set server default
+if {![info exists server]} {
+    set server default
+}
 
 #
 # Collect domain names and IP addresses associated with the main server
