@@ -110,7 +110,7 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
              * entry for the hash table below.
              */
             socklen_t slen = sizeof(sa);
-            if (getsockname(bindsock, (struct sockaddr *)&saPtr, &slen) == 0) {
+            if (getsockname(bindsock, (struct sockaddr *)saPtr, &slen) == 0) {
                 port = Ns_SockaddrGetPort(saPtr);
                 Ns_Log(Debug, "Ns_SockListenCallback: Ns_GetSockAddr kernel assigned port %hu", port);
             } else {
