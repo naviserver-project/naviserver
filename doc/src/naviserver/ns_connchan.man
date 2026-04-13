@@ -86,6 +86,7 @@ When NaviServer is running in reverse proxy mode, the client IP
 address is taken from the value as provided by the reverse proxy
 server.
 
+
 [call [cmd "ns_connchan callback"] \
 	[opt [option "-timeout [arg time]"]] \
 	[opt [option "-receivetimeout [arg time]"]] \
@@ -95,43 +96,53 @@ server.
 	[arg when] \
 ]
 
-Registers a Tcl callback for the named connection [arg channel].
-[option -timeout] is the poll timeout (the maximum time between
-two events), [option -receivetimeout] is a
-timeout for incoming packets, [option -sendtimeout] is the timeout for
-outgoing packets.  When [option -sendtimeout] has the value of 0, a
-read operation might return the empty string. A value larger than 0
-might block the event processing for the specified time.
-All timeouts values are specified in the form [arg secs[opt :microseconds]], or
-[arg secs.fraction] or as a number with a time unit.
+  Registers a Tcl callback for the named connection [arg channel].
+  [option -timeout] is the poll timeout (the maximum time between
+  two events), [option -receivetimeout] is a
+  timeout for incoming packets, [option -sendtimeout] is the timeout for
+  outgoing packets.  When [option -sendtimeout] has the value of 0, a
+  read operation might return the empty string. A value larger than 0
+  might block the event processing for the specified time.
+  All timeouts values are specified in the form [arg secs[opt :microseconds]], or
+  [arg secs.fraction] or as a number with a time unit.
 
-[para]
-The argument [arg when] consist of one or more characters
-of r, w, e, or x, specifying, when the callback should fire.
+  [para]
+  The argument [arg when] consist of one or more characters
+  of r, w, e, or x, specifying, when the callback should fire.
 
-[para] When the callback is fired, the specified Tcl [arg commands] will be
-called with an additional argument, which is an indicator for the
-reason of the call [arg when]. The value of [arg when] will be as
-follows:
+  [para] When the callback is fired, the specified Tcl [arg commands] will be
+  called with an additional argument, which is an indicator for the
+  reason of the call [arg when]. The value of [arg when] will be as
+  follows:
 
-[list_begin itemized]
-[item] r - the socket is readable
-[item] w - the socket is writable
-[item] e - the socket has an exceptional condition
-[item] x - the server is shutting down
-[item] t - timeout received
-[list_end]
+  [list_begin itemized]
+  [item] r - the socket is readable
+  [item] w - the socket is writable
+  [item] e - the socket has an exceptional condition
+  [item] x - the server is shutting down (not related to peer connection closure)
+  [item] t - timeout received
+  [list_end]
 
-[para] When the callback exits, its return value determines, whether
-the callback should be canceled or not. The return value is
-interpreted as follows:
-[list_begin itemized]
-[item] 0 - the callback is canceled, and the channel is deleted
-         automatically (typically, when an error occurs)
-[item] 1 - the callback will be used as well for further events
-[item] 2 - the callback will be suspended. No further events will
-         be fired, but the channel is not deleted.
-[list_end]
+  [para] When the callback exits, its return value determines, whether
+  the callback should be canceled or not. The return value is
+  interpreted as follows:
+  [list_begin itemized]
+  [item] 0 - the callback is canceled, and the channel is deleted
+             automatically (typically, when an error occurs)
+  [item] 1 - the callback will be used as well for further events
+  [item] 2 - the callback will be suspended. No further events will
+             be fired, but the channel is not deleted.
+  [list_end]
+
+  [para] When the callback returns a value greater than or equal to 1,
+  the channel remains open. A return value of 1 keeps the callback
+  registered for future events, while a return value of 2 suspends the
+  callback without deleting the channel.
+
+  [para] When the peer closes its side of the connection, the channel
+  typically becomes readable and [cmd "ns_connchan read"] returns the
+  empty string. This condition can be used to detect end-of-file (EOF)
+  or peer connection closure.
 
 
 [call [cmd "ns_connchan connect"] \
@@ -181,6 +192,19 @@ or as a number with a time unit.
   an ephemeral local port automatically. The selected port is returned in
   the result dictionary under the key [term port].
 
+  [para] The callback [arg script] is invoked for each incoming
+  connection and is passed the connection channel as argument.
+
+  [para] The return value of the callback controls the lifetime of the
+  connection. When the callback returns a true value, the connection
+  remains open and can be managed via [cmd ns_connchan] commands. When
+  the callback returns a false value, the connection is closed
+  immediately.
+
+  [para] When the connection is kept open, the accept callback will
+  typically register an event handler via [cmd "ns_connchan callback"] to
+  process incoming or outgoing data.
+
   [list_begin options]
 
     [opt_def -bind]
@@ -206,8 +230,8 @@ or as a number with a time unit.
 
       [para] This option does not enable protocol-specific request processing. The
       accepted connection is exposed to the script as a raw socket-style connection
-      channel, to be handled via commands such as [cmd ns_connchan read] and
-      [cmd ns_connchan write].
+      channel, to be handled via commands such as [cmd "ns_connchan read"] and
+      [cmd "ns_connchan write"].
 
       [para] Currently, [cmd "ns_connchan listen"] uses the built-in [const http]
       driver class for connection setup, and [option -driver] can only be
@@ -461,6 +485,152 @@ multi-segment messages, where later segments have the opcode
   The default for this parameter can be specified in the [sectref {CONFIGURATION}] file.
 
 [list_end]
+
+
+[section EXAMPLE]
+
+  [para] The following example shows the typical two-stage use of
+  [cmd "ns_connchan listen"] and [cmd "ns_connchan callback"]. The
+  callback provided to [cmd "ns_connchan listen"] is invoked when a new
+  connection is accepted and must return a true value to keep the
+  connection open. The accepted channel is then typically passed to
+  [cmd "ns_connchan callback"] for event-driven processing. In such a
+  callback, peer connection closure is commonly detected when the channel
+  becomes readable and [cmd "ns_connchan read"] returns the empty
+  string.
+
+[example_begin]
+ package require nx
+ 
+ namespace eval connchanserver {
+ 
+     #
+     # Server class: manages the listening socket and accepts connections
+     #
+     nx::Class create Server {
+ 
+         # Default settings:
+         #    - bind to IPv6 loopback and ephemeral port.
+         #    - The OS assigned port is in the logentry (listening on ...)
+ 
+         :property {host ::1}
+         :property {port 0}
+ 
+         #
+         # Start listening for incoming connections
+         #
+         :public method start-listen {} {
+ 
+             # Create a listening socket via ns_connchan.
+             # -bind ensures that the socket is bound exactly to :host/:port.
+             # The callback is invoked for every new incoming connection.
+             set d [lb]ns_connchan listen -bind ${:host} ${:port} \
+                        [lb]list [lb]self[rb] accept-handler[rb][rb]
+ 
+             # On success, ns_connchan listen returns a dict with details
+             if {[lb]dict exists $d channel[rb]} {
+ 
+                 # Extract returned values (channel, port, address, sock)
+                 dict with d {
+                     ns_log notice "Listening on address $address port $port"
+ 
+                     # Remember the listening channel (needed to close later)
+                     set :listen $channel
+                 }
+             } else {
+                 # Failure (e.g., port already in use or bind not possible)
+                 ns_log warning "Failed to listen on host ${:host} port ${:port}"
+             }
+         }
+ 
+         #
+         # Callback invoked for every accepted connection
+         #
+         # channel: connection channel for the accepted client socket
+         #
+         :public method accept-handler {channel} {
+ 
+             ns_log notice "incoming data on channel $channel"
+ 
+             # Create a new Connection object to handle this client
+             Connection new -channel $channel
+ 
+             # Return 1 to accept the connection and keep it open
+             # Returning 0 would close the connection immediately
+             return 1
+         }
+     }
+ 
+     #
+     # Connection class: handles a single client connection
+     #
+     nx::Class create Connection {
+ 
+         # Channel associated with this connection
+         :property {channel}
+ 
+         #
+         # Constructor: called after object creation
+         #
+         :method init {} {
+ 
+             ns_log notice "[lb]current class[rb] starting with channel ${:channel}"
+ 
+             # Register a callback for this connection channel 
+             ns_connchan callback ${:channel} \
+                 [lb]list [lb]self[rb] receive[rb] rex
+         }
+ 
+         #
+         # Callback invoked when data is available or connection state changes
+         #
+         # condition: one of r/e/x (readable, exceptional condition, server shutdown)
+         #
+         :public method receive {condition} {
+ 
+             # Read available data from the channel
+             # ns_connchan read returns raw bytes
+             set bytes [lb]encoding convertfrom utf-8 \
+                            [lb]ns_connchan read ${:channel}[rb][rb]
+ 
+             # Determine length of received data
+             set rlen [lb]string length $bytes[rb]
+ 
+             ns_log notice "[lb]current class[rb] received $rlen bytes on ${:channel} cond $condition\n$bytes"
+ 
+             # Return value controls whether the callback remains active:
+             #   0 -> close channel and stop callbacks
+             #   1 -> keep channel open and continue receiving callbacks
+             #   2 -> keep channel open but suspend the current callback
+             #
+             # Here: close when no data was received (e.g., EOF)
+             if {$rlen == 0} {
+                 #
+                 # destroy the Connection object
+                 #
+                 :destroy
+                 return 0
+             } else {
+                 return 1
+             }
+         }
+     }
+ 
+     #
+     # Create a server instance bound to IPv4 loopback
+     #
+     Server create s1 -host 127.0.0.1 -port 9000
+ }
+ 
+ #
+ # Register startup hook to begin listening when NaviServer starts
+ #
+ ns_atstartup {
+ 
+     # Start listening on configured host/port
+     connchanserver::s1 start-listen
+ }
+[example_end]
 
 
 [section CONFIGURATION]
