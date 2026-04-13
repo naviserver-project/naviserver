@@ -173,9 +173,86 @@ or as a number with a time unit.
 	[arg script] \
 ]
 
-Opens a listening socket. Call the [arg script] callback on incoming
-connections. On success, this command returns a dict containing
-[term channel], [term port], [term sock] and [term address].
+  Opens a listening socket. Invokes the [arg script] callback for each
+  incoming connection. On success, this command returns a dict containing
+  [term channel], [term port], [term sock] and [term address].
+
+  [para] When [arg port] is specified as [const 0], the operating system selects
+  an ephemeral local port automatically. The selected port is returned in
+  the result dictionary under the key [term port].
+
+  [list_begin options]
+
+    [opt_def -bind]
+
+      When specified, the listening socket is explicitly bound to the
+      provided [arg address] and [arg port], and remains open for accepting
+      incoming connections.
+
+      [para] When this option is omitted, the command performs only a bindability
+      check on the specified [arg address]/[arg port] combination (i.e., it
+      verifies that the address can be bound), but does not keep the bound
+      socket. The actual listening socket is then created via the default
+      mechanism, which may not be restricted to the exact interface specified
+      by [arg address].
+
+      [para] This option is therefore required when the listening socket must be
+      restricted to a specific local interface or IP address.
+
+    [opt_def -driver [arg value]]
+
+      Selects the NaviServer driver module (by module name) used as context
+      for the accepted connection channel.
+
+      [para] This option does not enable protocol-specific request processing. The
+      accepted connection is exposed to the script as a raw socket-style connection
+      channel, to be handled via commands such as [cmd ns_connchan read] and
+      [cmd ns_connchan write].
+
+      [para] Currently, [cmd "ns_connchan listen"] uses the built-in [const http]
+      driver class for connection setup, and [option -driver] can only be
+      used to select among loaded drivers of that class via their
+      module name. This is mainly relevant when multiple such drivers are configured
+      differently. It does not by itself enable TLS or HTTP request parsing.
+
+      [para] If omitted, the first matching driver is used.
+
+    [opt_def -server [arg server]]
+
+      Specifies the server instance in which the listening socket is
+      registered. The callback [arg script] will be executed in the context
+      of this server.
+
+      [para] If omitted, the current server (as returned by [cmd ns_server]) is used.
+
+[list_end]
+
+
+[example_begin]
+ # Listen only on the loopback interface (localhost)
+ set info [lb]ns_connchan listen -bind 127.0.0.1 9000 {
+   # handle incoming connection
+ }[rb]
+ # Connections are accepted only from local clients
+[example_end]
+
+[example_begin]
+ # Without -bind: address is only validated, not enforced
+ set info [lb]ns_connchan listen 127.0.0.1 9000 {
+   # handle incoming connection
+ }[rb]
+ # The listening socket may accept connections on all interfaces
+ # (depending on system defaults, e.g. 0.0.0.0)
+[example_end]
+
+[example_begin]
+ # Allocate an ephemeral port bound to a specific interface
+ set info [lb]ns_connchan listen -bind 192.168.1.10 0 {
+   # handle incoming connection
+ }[rb]
+ # The returned dict contains the kernel-assigned port
+ set port [lb]dict get $info port]
+[example_end]
 
 
 [call [cmd "ns_connchan open"] \
@@ -196,7 +273,7 @@ connections. On success, this command returns a dict containing
 ]
 
 [para]
-Opens a connection channel to the specified [arg url].  The URL can
+Opens a client connection channel to the specified [arg url].  The URL can
 either be an HTTP or an HTTPS URL.
 
 [para] Note that the network [arg driver] for the used protocol

@@ -1185,8 +1185,8 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
  * ConnChanOpenObjCmd --
  *
  *      Implements the "ns_connchan open" Tcl command, which
- *      establishes a new connection channel based on the provided
- *      host, port, and other optional parameters. This command
+ *      establishes a new client connection channel based on the provided
+ *      URL and other optional parameters. This command
  *      initiates a socket connection (optionally over TLS), creates a
  *      connection channel, and returns the name of the channel for
  *      further operations.
