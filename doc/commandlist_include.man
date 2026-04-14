@@ -197,7 +197,8 @@
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem generate}] ?-name /value/? ?-group /value/? ?-outfile /value/?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem pub}] ?-passphrase /value/? ?-outfile /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::key generate}] -name /value/ ?-group /value/? ?-outfile /value/?
-[uri ../../naviserver/files/ns_crypto.html {ns_crypto::key info}] ?-passphrase /value/? -pem /value/
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::key import}] -name /value/ ?-from public|private|keypair? -params /value/ ?-format raw|pem? ?-encoding hex|base64url|base64|binary? ?-outfile /value/?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::key info}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::key priv}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::key pub}] ?-encoding hex|base64url|base64|binary? ?-format raw|pem? ?-passphrase /value/? ?-outfile /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::key type}] ?-passphrase /value/? -pem /value/

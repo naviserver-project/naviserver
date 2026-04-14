@@ -908,7 +908,7 @@ test ns_crypto::kem-2.5 {ns_crypto::kem roundtrip} -constraints {kem} -body {
 
 test ns_crypto::key-1.0 {syntax: ns_crypto::key subcommands} -body {
     ns_crypto::key
-} -returnCodes error -result {wrong # args: should be "ns_crypto::key generate|info|priv|pub|type ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::key generate|import|info|type|pub|priv ?/arg .../"}
 
 test ns_crypto::key-1.1 {syntax: ns_crypto::key type} -body {
     ns_crypto::key type
@@ -916,7 +916,7 @@ test ns_crypto::key-1.1 {syntax: ns_crypto::key type} -body {
 
 test ns_crypto::key-1.2 {syntax: ns_crypto::key info} -body {
     ns_crypto::key info
-} -returnCodes error -result {wrong # args: should be "ns_crypto::key info ?-passphrase /value/? -pem /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::key info ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
 
 test ns_crypto::key-1.3 {syntax: ns_crypto::key pub} -body {
     ns_crypto::key pub
@@ -930,6 +930,21 @@ test ns_crypto::key-1.5 {syntax: ns_crypto::key generate} -body {
     ns_crypto::key generate
 } -returnCodes error -result {wrong # args: should be "ns_crypto::key generate -name /value/ ?-group /value/? ?-outfile /value/?"}
 
+test ns_crypto::key-1.6 {syntax: ns_crypto::key import} -constraints {keygen} -body {
+    ns_crypto::key import
+} -returnCodes error -result {wrong # args: should be "ns_crypto::key import -name /value/ ?-from public|private|keypair? -params /value/ ?-format raw|pem? ?-encoding hex|base64url|base64|binary? ?-outfile /value/?"}
+
+test ns_crypto::key-1.7 {syntax: ns_crypto::key import validates EC coordinate length} -constraints {keygen} -body {
+    ns_crypto::key import -name EC -params [dict create group prime256v1 x abc y def]
+} -returnCodes error -match glob -result {invalid coordinate length for prime256v1 (need * bytes each)}
+
+test ns_crypto::key-1.8 {syntax: ns_crypto::key import requires dict params} -constraints {keygen} -body {
+    ns_crypto::key import -name EC -params x
+} -returnCodes error -match glob -result {*-params*dictionary*}
+
+#---------------------------------------------------------------------------
+# key generate tests
+#---------------------------------------------------------------------------
 
 test ns_crypto::key-2.1 {type: EC private key from generated PEM string} -constraints {ec} -body {
     set pem [ns_crypto::eckey generate -name prime256v1]
@@ -1123,6 +1138,87 @@ test ns_crypto::key-7.4 {priv: public PEM rejected} -constraints {ec} -body {
     ns_crypto::key priv -pem $pubpem
 } -returnCodes error -match glob -result *
 
+#---------------------------------------------------------------------------
+# ns_crypto::key import
+#---------------------------------------------------------------------------
+
+test ns_crypto::key-8.1 {ns_crypto::key import EC public key from coords} -constraints {keygen ec tcl86} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set Phex [ns_crypto::eckey pub -pem $pem -encoding hex]
+    set Pbin [binary decode hex $Phex]
+
+    if {[string length $Pbin] != 65 || [string index $Pbin 0] ne "\x04"} {
+        error "bad point"
+    }
+
+    set x [string range $Pbin 1 32]
+    set y [string range $Pbin 33 64]
+
+    set pubpem2 [ns_crypto::key import -name EC -params [dict create group prime256v1 x $x y $y]]
+
+    if {![string match "-----BEGIN PUBLIC KEY-----*" $pubpem2]} {
+        error "bad pem: $pubpem2"
+    }
+
+    set data "hello\n"
+    set sig [ns_crypto::md string -digest sha256 -encoding binary -sign $pem $data]
+    ns_crypto::md string -digest sha256 -encoding binary -verify $pubpem2 -signature $sig $data
+} -returnCodes {error ok} -result {1}
+
+test ns_crypto::key-8.2 {ns_crypto::key import EC public key from coords raw} -constraints {keygen ec tcl86} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set Phex [ns_crypto::eckey pub -pem $pem -encoding hex]
+    set Pbin [binary decode hex $Phex]
+
+    set x [string range $Pbin 1 32]
+    set y [string range $Pbin 33 64]
+
+    set pubraw [ns_crypto::key import -name EC -format raw -encoding binary \
+                    -params [dict create group prime256v1 x $x y $y]]
+
+    string equal $pubraw $Pbin
+} -result 1
+
+test ns_crypto::key-8.3 {ns_crypto::key import EC requires x and y} -constraints {keygen ec} -body {
+    ns_crypto::key import -name EC -params [dict create group prime256v1 x abc]
+} -returnCodes error -match glob -result {*requires dict keys "group", "x", and "y"*}
+
+
+test ns_crypto::key-8.4 {ns_crypto::key import RSA public key from modulus/exponent} \
+    -constraints {keygen signature tcl86} \
+    -body {
+        #
+        # Generate RSA key pair
+        #
+        set privpem [ns_crypto::signature generate -name RSA]
+
+        #
+        # Extract modulus and exponent as hex data
+        #
+        set info [ns_crypto::key info -pem $privpem -encoding binary]
+        set n [dict get $info n]
+        set e [dict get $info e]
+
+        #
+        # Import public key from n/e
+        #
+        set pubpem2 [ns_crypto::key import -name RSA \
+                         -params [dict create n $n e $e]]
+
+        if {![string match "-----BEGIN PUBLIC KEY-----*" $pubpem2]} {
+            error "bad pem: $pubpem2"
+        }
+
+        #
+        # Sign/verify roundtrip
+        #
+        set data "hello\n"
+        set sig [ns_crypto::md string -digest sha256 -encoding binary -sign $privpem $data]
+
+        ns_crypto::md string -digest sha256 -encoding binary -verify $pubpem2 -signature $sig $data
+    } \
+    -returnCodes {error ok} \
+    -result {1}
 
 #---------------------------------------------------------------------------
 # Generic tests for ns_crypto::key generate

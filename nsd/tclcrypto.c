@@ -49,6 +49,7 @@
 # ifdef HAVE_OPENSSL_3
 #  include <openssl/core_names.h>
 #  include <openssl/provider.h>
+#  include <openssl/param_build.h>
 # endif
 
 /*
@@ -60,6 +61,11 @@ typedef struct NsDigest {
     EVP_MD       *fetchedMd;
 # endif
 } NsDigest;
+
+typedef struct {
+    void        *ptr;
+    Ns_FreeProc *freeProc;
+} Ns_OsslTmp;
 
 typedef enum {
     NS_DIGEST_USAGE_MD          = 1 << 0,
@@ -83,6 +89,18 @@ typedef enum {
     NS_CRYPTO_KEYGEN_USAGE_KEM,
     NS_CRYPTO_KEYGEN_USAGE_AGREEMENT
 } NsCryptoKeygenUsage;
+
+typedef enum {
+    NS_CRYPTO_KEYIMPORT_PUBLIC = 1,
+    NS_CRYPTO_KEYIMPORT_PRIVATE,
+    NS_CRYPTO_KEYIMPORT_KEYPAIR
+} Ns_CryptoKeyImportSelection;
+
+typedef enum {
+    OUTPUT_FORMAT_RAW    = 0,
+    OUTPUT_FORMAT_PEM    = 1,
+    OUTPUT_FORMAT_DER    = 2
+} OutputFormats;
 
 typedef struct {
     Tcl_Obj       *listObj;
@@ -140,11 +158,8 @@ static EVP_PKEY *PkeyGetAnyFromPem(Tcl_Interp *interp, const char *pem, const ch
 static EVP_PKEY *PkeyGetFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
     NS_GNUC_NONNULL(1,2);
 
-static int PkeyPublicPemWrite(Tcl_Interp *interp,
-                             EVP_PKEY   *pkey,
-                             const char *what,
-                             const char *resultWhat,
-                             const char *outfileName)
+static int PkeyPublicPemWrite(Tcl_Interp *interp, EVP_PKEY *pkey, const char *what, const char *resultWhat,
+                              const char *outfileName)
     NS_GNUC_NONNULL(1,2,3,4);
 
 static Tcl_Obj *PkeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
@@ -204,27 +219,31 @@ static int PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
                                const EVP_MD *md)
     NS_GNUC_NONNULL(1,2,3,5);
 
+static int PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1,2,3);
+
+static int PkeyInfoPutCapabilities(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+        NS_GNUC_NONNULL(1,2,3);
+
+static int PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding  encoding)
+    NS_GNUC_NONNULL(1,2,3);
 
 
 # ifndef OPENSSL_NO_EC
 static int CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
-static void
-SetResultFromEC_POINT(
-    Tcl_Interp       *interp,
-    Tcl_DString      *dsPtr,
-    EC_KEY           *eckey,
-    const EC_POINT   *ecpoint,
-    BN_CTX           *bn_ctx,
-    Ns_BinaryEncoding encoding)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+static void SetResultFromEC_POINT(Tcl_Interp *interp, Tcl_DString *dsPtr, EC_KEY *eckey, const EC_POINT *ecpoint,
+                                  BN_CTX *bn_ctx, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2,3,4,5);
+
+static int EcGroupCoordinateLength(const char *groupName, size_t *coordLenPtr)
+    NS_GNUC_NONNULL(1,2);
 # endif /* OPENSSL_NO_EC */
 
-static int GetCipher(
-  Tcl_Interp *interp, const char *cipherName, unsigned long flags,
-  const char *modeMsg, const EVP_CIPHER **cipherPtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+static int GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long flags,
+                     const char *modeMsg, const EVP_CIPHER **cipherPtr)
+    NS_GNUC_NONNULL(1,2,4,5);
 
 static bool AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen)
     NS_GNUC_NONNULL(1);
@@ -274,50 +293,25 @@ static EVP_PKEY *PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
     NS_GNUC_NONNULL(1,2);
 # endif
 
-# ifdef HAVE_OPENSSL_3_5
-static TCL_OBJCMDPROC_T CryptoKemGenerateObjCmd;
-static TCL_OBJCMDPROC_T CryptoKemPubObjCmd;
-static TCL_OBJCMDPROC_T CryptoKemEncapsulateObjCmd;
-static TCL_OBJCMDPROC_T CryptoKemDecapsulateObjCmd;
-
-static TCL_OBJCMDPROC_T CryptoSignatureGenerateObjCmd;
-static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
-
-static int PkeyKemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
-    NS_GNUC_NONNULL(1,2);
-# endif
-
-/*
- * Local variables defined in this file.
- */
-
-static const char * const mdCtxType  = "ns:mdctx";
-static const char * const hmacCtxType  = "ns:hmacctx";
-
-# ifdef HAVE_OPENSSL_HKDF
-static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
-# endif
-
 # ifdef HAVE_OPENSSL_3
 static TCL_OBJCMDPROC_T CryptoAgreementGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoAgreementPubObjCmd;
 static TCL_OBJCMDPROC_T CryptoAgreementDeriveObjCmd;
 static TCL_OBJCMDPROC_T CryptoKeyGenerateObjCmd;
+static TCL_OBJCMDPROC_T CryptoKeyImportObjCmd;
 
-static int GeneratePrivateKeyPem(Tcl_Interp *interp,
-                                 const char *typeName,
-                                 const char *what,
-                                 const char *outfileName,
-                                 NsCryptoKeygenUsage usage,
-                                 OSSL_PARAM *params)
+static int FreelistAdd(Tcl_Interp *interp, Ns_DList *dlPtr, void *ptr, Ns_FreeProc freeProc)
     NS_GNUC_NONNULL(1,2,3,4);
 
-static int KeygenGroupParams(Tcl_Interp *interp,
-                             const char *typeName,
-                             const char *groupName,
-                             const char *what,
-                             OSSL_PARAM params[2],
-                             OSSL_PARAM **paramPtr)
+static void FreelistFree(void *arg)
+    NS_GNUC_NONNULL(1);
+
+static int GeneratePrivateKeyPem(Tcl_Interp *interp, const char *typeName, const char *what,
+                                 const char *outfileName, NsCryptoKeygenUsage usage, OSSL_PARAM *params)
+    NS_GNUC_NONNULL(1,2,3,4);
+
+static int KeygenGroupParams(Tcl_Interp *interp, const char *typeName, const char *groupName, const char *what,
+                             OSSL_PARAM params[2], OSSL_PARAM **paramPtr)
     NS_GNUC_NONNULL(1,2,4,5);
 
 static void KeymgmtListCallback(EVP_KEYMGMT *keymgmt, void *arg)
@@ -334,12 +328,81 @@ static int PkeySignatureInitSm2(Tcl_Interp *interp, EVP_MD_CTX *mdctx,  EVP_PKEY
                                 bool sign, EVP_PKEY_CTX **pctxPtr)
     NS_GNUC_NONNULL(1,2,3,8);
 
+static int PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
+        NS_GNUC_NONNULL(1,2,3);
+
+static int PkeyImportParamsFromDict(Tcl_Interp *interp, const char *typeName, Ns_CryptoKeyImportSelection selection,
+                                    Tcl_Obj *paramsObj, OSSL_PARAM_BLD *bld, Ns_DList *tmpData)
+    NS_GNUC_NONNULL(1,2,4,5);
+
+#  ifndef OPENSSL_NO_EC
+static int PkeyImportEcFromCoords(Tcl_Interp *interp, const char *groupName, const unsigned char *x, size_t xLen,
+                                  const unsigned char *y, size_t yLen, int outputFormat, const char *outfileName)
+    NS_GNUC_NONNULL(1,2,3,5);
+
+static int PkeyImportEcPublicParamsFromDict(Tcl_Interp *interp, Tcl_Obj *paramsObj, OSSL_PARAM_BLD *bld, Ns_DList *tmpData)
+    NS_GNUC_NONNULL(1,2,3,4);
+#   endif /* OPENSSL_NO_EC */
+
+static int PkeyImportRsaPublicParamsFromDict(Tcl_Interp *interp, Tcl_Obj *paramsObj, OSSL_PARAM_BLD *bld,
+                                  Ns_DList *tmpData)
+    NS_GNUC_NONNULL(1,2,3,4);
+
+static int PkeyImportFromParams(Tcl_Interp *interp, const char *typeName, Ns_CryptoKeyImportSelection selection,
+                                OSSL_PARAM *params, int formatInt, Ns_BinaryEncoding encoding, const char *outfileName)
+    NS_GNUC_NONNULL(1,2,4);
+
 # endif /* HAVE_OPENSSL_3 */
+
+# ifdef HAVE_OPENSSL_3_5
+static TCL_OBJCMDPROC_T CryptoKemGenerateObjCmd;
+static TCL_OBJCMDPROC_T CryptoKemPubObjCmd;
+static TCL_OBJCMDPROC_T CryptoKemEncapsulateObjCmd;
+static TCL_OBJCMDPROC_T CryptoKemDecapsulateObjCmd;
+
+static TCL_OBJCMDPROC_T CryptoSignatureGenerateObjCmd;
+static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
+
+static int PkeyKemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2);
+# endif /* HAVE_OPENSSL_3_5 */
+
+/*
+ * Local variables defined in this file.
+ */
+
+static const char * const mdCtxType  = "ns:mdctx";
+static const char * const hmacCtxType  = "ns:hmacctx";
+
+# ifdef HAVE_OPENSSL_HKDF
+static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
+# endif
 
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
 
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetResultFromOsslError --
+ *
+ *      Set the interpreter result from the current OpenSSL error queue,
+ *      optionally prefixed with a caller-provided message.
+ *
+ * Results:
+ *      None. The interpreter result is set.
+ *
+ * Side effects:
+ *      Consumes the OpenSSL per-thread error queue and overwrites the
+ *      interpreter result.
+ *
+ * Description:
+ *      Retrieves the most relevant OpenSSL error, formats it into a
+ *      human-readable message, and prepends the optional prefix.
+ *      Should be called immediately after a failing OpenSSL call.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
 {
@@ -453,15 +516,12 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
     }
 }
 #  endif
-# endif
+# endif /* HAVE_OPENSSL_PRE_1_1 */
 
-#ifdef HAVE_OPENSSL_3
+# ifdef HAVE_OPENSSL_3
 /*
  * OpenSSL 3.x: use parameter-based API
  */
-#include <openssl/param_build.h>
-#include <openssl/params.h>
-#include <openssl/core_names.h>
 
 static bool AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen) {
     OSSL_PARAM params[2];
@@ -491,9 +551,9 @@ static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
     return EVP_CIPHER_CTX_get_params(ctx, params) > 0;
 }
 
-#else
+# else
 /*
- * OpenSSL 1.x: use legacy ctrl-based API
+ * OpenSSL 1.x: use legacy API
  */
 static bool AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen) {
     return EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, (int)ivlen, NULL);
@@ -508,7 +568,14 @@ static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
     return EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG,
                                (int)taglen, tag);
 }
-#endif
+static int PkeyEcFromCoordsLegacy(Tcl_Interp *interp,
+                                  const char *curveName,
+                                  const unsigned char *xBytes, size_t xLen,
+                                  const unsigned char *yBytes, size_t yLen,
+                                  int formatInt,
+                                  const char *outfileName)
+    NS_GNUC_NONNULL(1,2,3,8);
+# endif /* HAVE_OPENSSL_3 */
 
 /*
  *----------------------------------------------------------------------
@@ -737,6 +804,71 @@ PkeyPublicWrite(Tcl_Interp *interp, EVP_PKEY *pkey,
 /*
  *----------------------------------------------------------------------
  *
+ * FreelistAdd --
+ *
+ *      Add a temporary object together with its free procedure to a
+ *      cleanup list. The ownership is always transferred to this function.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on allocation failure.
+ *
+ * Side effects:
+ *      Allocates a bookkeeping entry and appends it to the provided
+ *      Ns_DList. The object will be released later via FreelistFree().
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+FreelistAdd(Tcl_Interp *interp, Ns_DList *dlPtr, void *ptr, Ns_FreeProc freeProc)
+{
+    Ns_OsslTmp *entry;
+
+    entry = ns_malloc(sizeof(Ns_OsslTmp));
+    if (entry == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate temporary cleanup record");
+        (*freeProc)(ptr);
+        return TCL_ERROR;
+    }
+
+    entry->ptr = ptr;
+    entry->freeProc = freeProc;
+    Ns_DListAppend(dlPtr, entry);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreelistFree --
+ *
+ *      Free a single entry from the temporary cleanup list.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Invokes the stored free procedure on the associated pointer and
+ *      releases the bookkeeping structure itself.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FreelistFree(void *arg)
+{
+    Ns_OsslTmp *entry = arg;
+
+    if (entry != NULL) {
+        if (entry->ptr != NULL && entry->freeProc != NULL) {
+            (*entry->freeProc)(entry->ptr);
+        }
+        ns_free(entry);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * KeygenGroupParams --
  *
  *      Validate the optional -group parameter for provider-based key
@@ -841,26 +973,32 @@ KeygenGroupParams(Tcl_Interp *interp,
 
 /*----------------------------------------------------------------------
  *
- * PkeyPublicPemWrite --
+ * KeymgmtListCallback --
  *
- *      Serialize the public key of the provided EVP_PKEY into PEM
- *      format and either return it as Tcl result or write it to a
- *      file.
+ *      Callback used with EVP_KEYMGMT_do_all_provided() to collect
+ *      available key management algorithm names.
  *
- *      The function creates a BIO via PemOpenWriteStream(), writes
- *      the public key using PEM_write_bio_PUBKEY(), and finalizes the
- *      result via PemWriteResult().
+ *      The function filters algorithms based on the requested usage
+ *      stored in NsKeygenListCtx:
  *
- *      The "what" argument is used to construct human-readable error
- *      messages (e.g., "signature", "key encapsulation").
+ *        - NS_CRYPTO_KEYGEN_USAGE_SIGNATURE:
+ *            include signature-capable algorithms (e.g., RSA,
+ *            RSA-PSS, ED25519, ED448, ML-DSA-*, SLH-DSA-*)
+ *
+ *        - NS_CRYPTO_KEYGEN_USAGE_KEM:
+ *            include key encapsulation mechanisms (ML-KEM-*)
+ *
+ *        - NS_CRYPTO_KEYGEN_USAGE_ANY:
+ *            include all available algorithms
+ *
+ *      Matching algorithm names are appended to the Tcl list provided
+ *      in the context structure.
  *
  * Results:
- *      TCL_OK    - public key successfully written or returned
- *      TCL_ERROR - on failure (error message set in interpreter)
+ *      None.
  *
  * Side effects:
- *      May create or overwrite a file when outfileName is provided.
- *      Sets the Tcl interpreter result when no output file is used.
+ *      Appends zero or more elements to ctx->listObj.
  *
  *----------------------------------------------------------------------
  */
@@ -1060,36 +1198,30 @@ done:
 
     return result;
 }
-#endif
+# endif /* HAVE_OPENSSL_3 */
 
 /*----------------------------------------------------------------------
  *
- * KeymgmtListCallback --
+ * PkeyPublicPemWrite --
  *
- *      Callback used with EVP_KEYMGMT_do_all_provided() to collect
- *      available key management algorithm names.
+ *      Serialize the public key of the provided EVP_PKEY into PEM
+ *      format and either return it as Tcl result or write it to a
+ *      file.
  *
- *      The function filters algorithms based on the requested usage
- *      stored in NsKeygenListCtx:
+ *      The function creates a BIO via PemOpenWriteStream(), writes
+ *      the public key using PEM_write_bio_PUBKEY(), and finalizes the
+ *      result via PemWriteResult().
  *
- *        - NS_CRYPTO_KEYGEN_USAGE_SIGNATURE:
- *            include signature-capable algorithms (e.g., RSA,
- *            RSA-PSS, ED25519, ED448, ML-DSA-*, SLH-DSA-*)
- *
- *        - NS_CRYPTO_KEYGEN_USAGE_KEM:
- *            include key encapsulation mechanisms (ML-KEM-*)
- *
- *        - NS_CRYPTO_KEYGEN_USAGE_ANY:
- *            include all available algorithms
- *
- *      Matching algorithm names are appended to the Tcl list provided
- *      in the context structure.
+ *      The "what" argument is used to construct human-readable error
+ *      messages (e.g., "signature", "key encapsulation").
  *
  * Results:
- *      None.
+ *      TCL_OK    - public key successfully written or returned
+ *      TCL_ERROR - on failure (error message set in interpreter)
  *
  * Side effects:
- *      Appends zero or more elements to ctx->listObj.
+ *      May create or overwrite a file when outfileName is provided.
+ *      Sets the Tcl interpreter result when no output file is used.
  *
  *----------------------------------------------------------------------
  */
@@ -3315,6 +3447,269 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
     return result;
 }
 
+# ifndef OPENSSL_NO_EC
+#  ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * EcGroupCoordinateLength --
+ *
+ *      Return the expected affine coordinate length in bytes for a
+ *      supported named EC group.
+ *
+ * Results:
+ *      TCL_OK if a fixed coordinate length is known for the specified
+ *      group, TCL_CONTINUE otherwise.
+ *
+ * Side effects:
+ *      On TCL_OK, *coordLenPtr is set to the expected coordinate
+ *      length.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+EcGroupCoordinateLength(const char *groupName, size_t *coordLenPtr)
+{
+    if (STRIEQ(groupName, "prime256v1") || STRIEQ(groupName, "secp256r1")) {
+        *coordLenPtr = 32u;
+        return TCL_OK;
+    }
+    if (STRIEQ(groupName, "secp384r1")) {
+        *coordLenPtr = 48u;
+        return TCL_OK;
+    }
+    if (STRIEQ(groupName, "secp521r1")) {
+        *coordLenPtr = 66u;
+        return TCL_OK;
+    }
+    return TCL_CONTINUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyImportEcFromCoords --
+ *
+ *      Construct an EC public key from affine coordinates and return it
+ *      in the requested output format.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on invalid input or import failure.
+ *
+ * Side effects:
+ *      Creates an EVP_PKEY from the provided group name and public
+ *      point coordinates, and sets the interpreter result to either a
+ *      PEM encoding or raw public key bytes.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyImportEcFromCoords(Tcl_Interp *interp,
+                       const char *groupName,
+                       const unsigned char *x, size_t xLen,
+                       const unsigned char *y, size_t yLen,
+                       int outputFormat,
+                       const char *outfileName)
+{
+    int           result = TCL_ERROR;
+    EVP_PKEY_CTX *ctx = NULL;
+    EVP_PKEY     *pkey = NULL;
+    OSSL_PARAM    params[3];
+    unsigned char *pub = NULL;
+    size_t         coordLen, expectedLen;
+
+    if (xLen == 0u || yLen == 0u || xLen != yLen) {
+        Ns_TclPrintfResult(interp,
+                           "EC public key coordinates must be non-empty and of equal length");
+        return TCL_ERROR;
+    }
+
+    if (EcGroupCoordinateLength(groupName, &expectedLen) == TCL_OK) {
+        if ((size_t)xLen != expectedLen || (size_t)yLen != expectedLen) {
+            Ns_TclPrintfResult(interp,
+                               "invalid coordinate length for %s (need %zu bytes each)",
+                               groupName, expectedLen);
+            goto done;
+        }
+    }
+
+    /*
+     * Build SEC1 uncompressed point: 0x04 || X || Y
+     */
+    coordLen = xLen;
+    pub = ns_malloc(1u + coordLen + coordLen);
+    if (pub == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate EC public key buffer");
+        return TCL_ERROR;
+    }
+    pub[0] = 0x04;
+    memcpy(pub + 1, x, coordLen);
+    memcpy(pub + 1 + coordLen, y, coordLen);
+
+    params[0] = OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME,
+                                                 (char *)groupName, 0);
+    params[1] = OSSL_PARAM_construct_octet_string(OSSL_PKEY_PARAM_PUB_KEY,
+                                                  pub, 1u + coordLen + coordLen);
+    params[2] = OSSL_PARAM_construct_end();
+
+    ERR_clear_error();
+    ctx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
+    if (ctx == NULL) {
+        SetResultFromOsslError(interp, "could not create EC import context");
+        goto done;
+    }
+
+    if (EVP_PKEY_fromdata_init(ctx) <= 0) {
+        SetResultFromOsslError(interp, "could not initialize EC key import");
+        goto done;
+    }
+
+    if (EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_PUBLIC_KEY, params) <= 0) {
+        SetResultFromOsslError(interp, "could not import EC public key");
+        goto done;
+    }
+
+    if (outputFormat == OUTPUT_FORMAT_PEM) {
+        result = PkeyPublicPemWrite(interp, pkey, "eckey", "public", outfileName);
+    } else {
+        result = SetResultFromRawPublicKey(interp, pkey, NS_OBJ_ENCODING_BINARY);
+    }
+
+done:
+    if (pkey != NULL) {
+        EVP_PKEY_free(pkey);
+    }
+    if (ctx != NULL) {
+        EVP_PKEY_CTX_free(ctx);
+    }
+    if (pub != NULL) {
+        ns_free(pub);
+    }
+    return result;
+}
+
+#  else /* HAVE_OPENSSL_3 */
+
+static int
+PkeyImportEcFromCoords(Tcl_Interp *interp,
+                       const char *curveName,
+                       const unsigned char *xBytes, size_t xLen,
+                       const unsigned char *yBytes, size_t yLen,
+                       int formatInt,
+                       const char *outfileName)
+{
+    int             result = TCL_ERROR, nid, ok;
+    int             wantPem = (formatInt == OUTPUT_FORMAT_PEM);
+    EC_GROUP       *group = NULL;
+    EC_POINT       *point = NULL;
+    EC_KEY         *eckey = NULL;
+    EVP_PKEY       *pkey = NULL;
+    BIGNUM         *bx = NULL, *by = NULL;
+    BN_CTX         *bn_ctx = NULL;
+
+    /*
+     * Map curve name to NID. Accept secp256r1 as alias for prime256v1.
+     */
+    nid = OBJ_txt2nid(curveName);
+    if (nid == NID_undef) {
+        if (STREQ(curveName, "secp256r1")) {
+            nid = NID_X9_62_prime256v1;
+        }
+    }
+    if (nid == NID_undef) {
+        Ns_TclPrintfResult(interp, "unknown curve '%s'", curveName);
+        goto done;
+    }
+
+    /*
+     * Sanity checks for P-256 (WebAuthn ES256).
+     */
+    if (nid == NID_X9_62_prime256v1) {
+        if (xLen != 32 || yLen != 32) {
+            Ns_TclPrintfResult(interp,
+                "invalid coordinate length for prime256v1 (need 32 bytes each)");
+            goto done;
+        }
+    }
+
+    /*
+     * Build EC_KEY from x/y.
+     */
+    group = EC_GROUP_new_by_curve_name(nid);
+    if (group == NULL) {
+        Ns_TclPrintfResult(interp, "EC_GROUP_new_by_curve_name failed");
+        goto done;
+    }
+    point = EC_POINT_new(group);
+    if (point == NULL) {
+        Ns_TclPrintfResult(interp, "EC_POINT_new failed");
+        goto done;
+    }
+    bn_ctx = BN_CTX_new();
+    if (bn_ctx == NULL) {
+        Ns_TclPrintfResult(interp, "BN_CTX_new failed");
+        goto done;
+    }
+
+    bx = BN_bin2bn(xBytes, (int)xLen, NULL);
+    by = BN_bin2bn(yBytes, (int)yLen, NULL);
+    if (bx == NULL || by == NULL) {
+        Ns_TclPrintfResult(interp, "BN_bin2bn failed");
+        goto done;
+    }
+
+#   if OPENSSL_VERSION_NUMBER < 0x10100000L
+    ok = EC_POINT_set_affine_coordinates_GFp(group, point, bx, by, bn_ctx);
+#   else
+    ok = EC_POINT_set_affine_coordinates(group, point, bx, by, bn_ctx);
+#   endif
+    if (ok != 1) {
+        Ns_TclPrintfResult(interp, "invalid EC point (cannot set affine coordinates)");
+        goto done;
+    }
+    if (EC_POINT_is_on_curve(group, point, bn_ctx) != 1) {
+        Ns_TclPrintfResult(interp, "invalid EC point (not on curve)");
+        goto done;
+    }
+
+    eckey = EC_KEY_new();
+    if (eckey == NULL) {
+        Ns_TclPrintfResult(interp, "EC_KEY_new failed");
+        goto done;
+    }
+    if (EC_KEY_set_group(eckey, group) != 1) {
+        Ns_TclPrintfResult(interp, "EC_KEY_set_group failed");
+        goto done;
+    }
+    if (EC_KEY_set_public_key(eckey, point) != 1) {
+        Ns_TclPrintfResult(interp, "EC_KEY_set_public_key failed");
+        goto done;
+    }
+
+    /*
+     * Convert to EVP_PKEY and serialize as SPKI.
+     */
+    pkey = PkeyGetFromEcKey(interp, eckey);
+    if (pkey == NULL) {
+        goto done;
+    }
+    eckey = NULL; /* now owned by pkey */
+
+    result = PkeyPublicWrite(interp, pkey, outfileName, wantPem);
+
+done:
+    if (eckey != NULL) { EC_KEY_free(eckey); }
+    if (pkey != NULL)  { EVP_PKEY_free(pkey); }
+    if (point != NULL) { EC_POINT_free(point); }
+    if (group != NULL) { EC_GROUP_free(group); }
+    if (bx != NULL)    { BN_free(bx); }
+    if (by != NULL)    { BN_free(by); }
+    if (bn_ctx != NULL){ BN_CTX_free(bn_ctx); }
+
+    return result;
+}
+#  endif /* HAVE_OPENSSL_3 */
+# endif /* !OPENSSL_NO_EC */
 
 
 # ifndef OPENSSL_NO_EC
@@ -3419,7 +3814,6 @@ SetResultFromEC_POINT(
     Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)dsPtr->string, octLength, NULL, encoding));
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -3482,12 +3876,12 @@ static int
 CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1, formatInt = 0 /* raw */;
+    int                result, encodingInt = -1, formatInt = OUTPUT_FORMAT_RAW;
     const char        *pemFile = NULL, *outfileName = NULL, *passPhrase = NS_EMPTY_STRING;
     static Ns_ObjvTable formats[] = {
-        {"raw", 0},
-        {"pem", 1},
-        {"der", 2},
+        {"raw", OUTPUT_FORMAT_RAW},
+        {"pem", OUTPUT_FORMAT_PEM},
+        {"der", OUTPUT_FORMAT_DER},
         {NULL,  0u}
     };
     Ns_ObjvSpec lopts[] = {
@@ -3507,11 +3901,11 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (formatInt == 0 && outfileName != NULL) {
+    } else if (formatInt == OUTPUT_FORMAT_RAW && outfileName != NULL) {
         Ns_TclPrintfResult(interp, "-outfile requires -format pem or -format der");
         result =  TCL_ERROR;
 
-    } else if (formatInt != 0 && encodingInt != -1) {
+    } else if (formatInt != OUTPUT_FORMAT_RAW && encodingInt != -1) {
         Ns_TclPrintfResult(interp, "-encoding is only valid with -format raw");
         result =  TCL_ERROR;
 
@@ -3537,7 +3931,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             goto done;
         }
 
-        if (formatInt == 0 /* raw */) {
+        if (formatInt == OUTPUT_FORMAT_RAW) {
             Tcl_DString  ds;
             BN_CTX      *bn_ctx = BN_CTX_new();
 
@@ -3556,12 +3950,12 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }
             eckey = NULL; /* now owned by pkey */
 
-            if (formatInt == 1 /* pem */) {
+            if (formatInt == OUTPUT_FORMAT_PEM) {
                 result = PkeyPublicPemWrite(interp, pkey,
                                            "EC",
                                            "EC public key",
                                            outfileName);
-            } else if (formatInt == 2 /* der */) {
+            } else if (formatInt == OUTPUT_FORMAT_DER) {
                 result = PkeyPublicWrite(interp, pkey, outfileName, NS_FALSE);
             } else {
                 Ns_TclPrintfResult(interp, "unexpected format code");
@@ -3665,7 +4059,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 
     return result;
 }
-#  endif
+#  endif /* HAVE_OPENSSL_EC_PRIV2OCT */
 
 
 /*
@@ -3688,12 +4082,12 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 static int
 CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, isBinary = 0, formatInt = -1;
+    int                result, isBinary = 0, formatInt = OUTPUT_FORMAT_PEM;
     const char        *curveName = NULL, *outfileName = NULL;
     Tcl_Obj           *xObj = NULL, *yObj = NULL;
     static Ns_ObjvTable formats[] = {
-        {"pem",       0},
-        {"der",       1},
+        {"pem",       OUTPUT_FORMAT_PEM},
+        {"der",       OUTPUT_FORMAT_DER},
         {NULL,        0u}
     };
     Ns_ObjvSpec lopts[] = {
@@ -3710,16 +4104,9 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         result = TCL_ERROR;
 
     } else {
-        int                  nid, ok, wantPem  = (formatInt == -1 || formatInt == 0); /* default pem */
         const unsigned char *xBytes, *yBytes;
         TCL_SIZE_T           xLen = 0, yLen = 0;
         Tcl_DString          xDs, yDs;
-        EC_GROUP            *group = NULL;
-        EC_POINT            *point = NULL;
-        BN_CTX              *bn_ctx = NULL;
-        BIGNUM              *bx = NULL, *by = NULL;
-        EC_KEY              *eckey = NULL;
-        EVP_PKEY            *pkey = NULL;
 
         Tcl_DStringInit(&xDs);
         Tcl_DStringInit(&yDs);
@@ -3730,121 +4117,13 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         if (xBytes == NULL || yBytes == NULL) {
             Ns_TclPrintfResult(interp, "could not obtain coordinates");
             result = TCL_ERROR;
-            goto done_coords;
+        } else {
+            result = PkeyImportEcFromCoords(interp, curveName,
+                                            xBytes, (size_t)xLen,
+                                            yBytes, (size_t)yLen,
+                                            formatInt, outfileName);
         }
 
-        /*
-         * Map curve name to NID. Accept secp256r1 as alias for prime256v1.
-         */
-        nid = OBJ_txt2nid(curveName);
-        if (nid == NID_undef) {
-            if (STREQ(curveName, "secp256r1")) {
-                nid = NID_X9_62_prime256v1;
-            }
-        }
-        if (nid == NID_undef) {
-            Ns_TclPrintfResult(interp, "unknown curve '%s'", curveName);
-            result = TCL_ERROR;
-            goto done_coords;
-        }
-
-        /*
-         * Sanity checks for P-256 (WebAuthn ES256).
-         */
-        if (nid == NID_X9_62_prime256v1) {
-            if (xLen != 32 || yLen != 32) {
-                Ns_TclPrintfResult(interp,
-                    "invalid coordinate length for prime256v1 (need 32 bytes each)");
-                result = TCL_ERROR;
-                goto done_coords;
-            }
-        }
-
-        /*
-         * Build EC_KEY from x/y.
-         */
-        group = EC_GROUP_new_by_curve_name(nid);
-        if (group == NULL) {
-            Ns_TclPrintfResult(interp, "EC_GROUP_new_by_curve_name failed");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-        point = EC_POINT_new(group);
-        if (point == NULL) {
-            Ns_TclPrintfResult(interp, "EC_POINT_new failed");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-        bn_ctx = BN_CTX_new();
-        if (bn_ctx == NULL) {
-            Ns_TclPrintfResult(interp, "BN_CTX_new failed");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-
-        bx = BN_bin2bn(xBytes, (int)xLen, NULL);
-        by = BN_bin2bn(yBytes, (int)yLen, NULL);
-        if (bx == NULL || by == NULL) {
-            Ns_TclPrintfResult(interp, "BN_bin2bn failed");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-        ok = EC_POINT_set_affine_coordinates_GFp(group, point, bx, by, bn_ctx);
-#else
-        ok = EC_POINT_set_affine_coordinates(group, point, bx, by, bn_ctx);
-#endif
-        if (ok != 1) {
-            Ns_TclPrintfResult(interp, "invalid EC point (cannot set affine coordinates)");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-        if (EC_POINT_is_on_curve(group, point, bn_ctx) != 1) {
-            Ns_TclPrintfResult(interp, "invalid EC point (not on curve)");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-
-        eckey = EC_KEY_new();
-        if (eckey == NULL) {
-            Ns_TclPrintfResult(interp, "EC_KEY_new failed");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-        if (EC_KEY_set_group(eckey, group) != 1) {
-            Ns_TclPrintfResult(interp, "EC_KEY_set_group failed");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-        if (EC_KEY_set_public_key(eckey, point) != 1) {
-            Ns_TclPrintfResult(interp, "EC_KEY_set_public_key failed");
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-
-        /*
-         * Convert to EVP_PKEY and serialize as SPKI.
-         */
-        pkey = PkeyGetFromEcKey(interp, eckey);
-        if (pkey == NULL) {
-            result = TCL_ERROR;
-            goto done_ec;
-        }
-        eckey = NULL; /* now owned by pkey */
-
-        result = PkeyPublicWrite(interp, pkey, outfileName, wantPem);
-
-    done_ec:
-        if (eckey != NULL) { EC_KEY_free(eckey); }
-        if (pkey != NULL)  { EVP_PKEY_free(pkey); }
-        if (point != NULL) { EC_POINT_free(point); }
-        if (group != NULL) { EC_GROUP_free(group); }
-        if (bx != NULL)    { BN_free(bx); }
-        if (by != NULL)    { BN_free(by); }
-        if (bn_ctx != NULL){ BN_CTX_free(bn_ctx); }
-
-    done_coords:
         Tcl_DStringFree(&xDs);
         Tcl_DStringFree(&yDs);
     }
@@ -5979,16 +6258,22 @@ PkeyIsType(EVP_PKEY *pkey, const char *name, int legacyId)
  *======================================================================
  */
 
-static int PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
-    NS_GNUC_NONNULL(1,2,3);
-static int PkeyInfoPutCapabilities(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
-        NS_GNUC_NONNULL(1,2,3);
-
-#ifdef HAVE_OPENSSL_3
-static int PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
-        NS_GNUC_NONNULL(1,2,3);
-#endif
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutLegacyDetails --
+ *
+ *      Populate basic key properties (e.g., type, bits, curve) using
+ *      legacy OpenSSL APIs.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      Adds general key metadata to resultObj.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
 {
@@ -6029,7 +6314,24 @@ PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
     return TCL_OK;
 }
 
-#ifdef HAVE_OPENSSL_3
+# ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutProviderDetails --
+ *
+ *      Add provider-specific metadata (provider name, description,
+ *      securityBits, securityCategory) to the result dictionary.
+ *
+ * Results:
+ *      TCL_OK.
+ *
+ * Side effects:
+ *      Queries OpenSSL provider-side attributes and augments resultObj
+ *      with additional key properties when available.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
 {
@@ -6105,20 +6407,180 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
                        Tcl_NewIntObj(ibits));
     }
 
-# ifdef OSSL_PKEY_PARAM_SECURITY_CATEGORY
+#  ifdef OSSL_PKEY_PARAM_SECURITY_CATEGORY
     if (EVP_PKEY_get_int_param(pkey, OSSL_PKEY_PARAM_SECURITY_CATEGORY, &ibits) == 1
         && ibits >= 0) {
         Tcl_DictObjPut(interp, resultObj,
                        Tcl_NewStringObj("securityCategory", TCL_INDEX_NONE),
                        Tcl_NewIntObj(ibits));
     }
-# endif
+#  endif
 
     return TCL_OK;
 }
+#endif /* HAVE_OPENSSL_3 */
+
+
+# ifdef HAVE_OPENSSL_3
+static int
+PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding  encoding)
+{
+    BIGNUM *n = NULL, *e = NULL;
+    int result = TCL_ERROR;
+
+    if (!PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
+        && !PkeyIsType(pkey, "RSA-PSS", EVP_PKEY_RSA_PSS)) {
+        return TCL_OK;
+    }
+
+    if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, &n) != 1) {
+        goto done;
+    }
+    if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_E, &e) != 1) {
+        goto done;
+    }
+
+    if (n != NULL) {
+        int nLen = BN_num_bytes(n);
+        unsigned char *buf = ns_malloc((size_t)nLen);
+
+        if (buf == NULL) {
+            Ns_TclPrintfResult(interp, "could not allocate RSA modulus buffer");
+            goto done;
+        }
+        if (BN_bn2bin(n, buf) != nLen) {
+            ns_free(buf);
+            Ns_TclPrintfResult(interp, "could not convert RSA modulus");
+            goto done;
+        }
+
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("n", TCL_INDEX_NONE),
+                       NsEncodedObj(buf, (size_t)nLen, NULL, encoding));
+        ns_free(buf);
+    }
+
+    if (e != NULL) {
+        int            eLen = BN_num_bytes(e);
+        unsigned char *buf = ns_malloc((size_t)eLen);
+
+        if (buf == NULL) {
+            Ns_TclPrintfResult(interp, "could not allocate RSA exponent buffer");
+            goto done;
+        }
+        if (BN_bn2bin(e, buf) != eLen) {
+            ns_free(buf);
+            Ns_TclPrintfResult(interp, "could not convert RSA exponent");
+            goto done;
+        }
+
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("e", TCL_INDEX_NONE),
+                       NsEncodedObj(buf, (size_t)eLen, NULL, encoding));
+        ns_free(buf);
+    }
+
+    result = TCL_OK;
+
+done:
+    if (n != NULL) {
+        BN_free(n);
+    }
+    if (e != NULL) {
+        BN_free(e);
+    }
+    return result;
+}
+
+#else
+/* legacy implementation */
+static int
+PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding  encoding)
+{
+    RSA *rsa = NULL;
+    const BIGNUM *n = NULL, *e = NULL;
+
+    if (!PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
+#ifdef EVP_PKEY_RSA_PSS
+        && !PkeyIsType(pkey, "RSA-PSS", EVP_PKEY_RSA_PSS)
 #endif
+        ) {
+        return TCL_OK;
+    }
 
+    rsa = EVP_PKEY_get1_RSA(pkey);
+    if (rsa == NULL) {
+        return TCL_OK;
+    }
 
+    RSA_get0_key(rsa, &n, &e, NULL);
+
+    if (n != NULL) {
+        int nLen = BN_num_bytes(n);
+        unsigned char *buf = ns_malloc((size_t)nLen);
+
+        if (buf == NULL) {
+            RSA_free(rsa);
+            Ns_TclPrintfResult(interp, "could not allocate RSA modulus buffer");
+            return TCL_ERROR;
+        }
+        if (BN_bn2bin(n, buf) != nLen) {
+            ns_free(buf);
+            RSA_free(rsa);
+            Ns_TclPrintfResult(interp, "could not convert RSA modulus");
+            return TCL_ERROR;
+        }
+
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("n", TCL_INDEX_NONE),
+                       NsEncodedObj(buf, (size_t)nLen, NULL, encoding));
+        ns_free(buf);
+    }
+
+    if (e != NULL) {
+        int eLen = BN_num_bytes(e);
+        unsigned char *buf = ns_malloc((size_t)eLen);
+
+        if (buf == NULL) {
+            RSA_free(rsa);
+            Ns_TclPrintfResult(interp, "could not allocate RSA exponent buffer");
+            return TCL_ERROR;
+        }
+        if (BN_bn2bin(e, buf) != eLen) {
+            ns_free(buf);
+            RSA_free(rsa);
+            Ns_TclPrintfResult(interp, "could not convert RSA exponent");
+            return TCL_ERROR;
+        }
+
+        Tcl_DictObjPut(interp, resultObj,
+                       Tcl_NewStringObj("e", TCL_INDEX_NONE),
+                       NsEncodedObj(buf, (size_t)eLen, NULL, encoding));
+        ns_free(buf);
+    }
+
+    RSA_free(rsa);
+    return TCL_OK;
+}
+# endif /* HAVE_OPENSSL_3 */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutCapabilities --
+ *
+ *      Populate capability flags (signature, agreement, kem,
+ *      requiresdigest) for a key into the result dictionary.
+ *
+ * Results:
+ *      TCL_OK.
+ *
+ * Side effects:
+ *      Adds entries to resultObj describing supported operations of
+ *      the provided EVP_PKEY.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 PkeyInfoPutCapabilities(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
 {
@@ -6152,6 +6614,23 @@ PkeyInfoPutCapabilities(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
 }
 
 # ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoKeyGenerateObjCmd --
+ *
+ *      Implements "ns_crypto::key generate". Generates a new private
+ *      key for the specified algorithm.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      Creates a new key via OpenSSL and returns it in PEM format or
+ *      writes it to a file.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 CryptoKeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -6181,6 +6660,452 @@ CryptoKeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                  outfileName,
                                  NS_CRYPTO_KEYGEN_USAGE_ANY,
                                  paramPtr);
+}
+
+#  ifndef OPENSSL_NO_EC
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyImportEcPublicParamsFromDict --
+ *
+ *      Extract EC public key parameters from a Tcl dictionary and add
+ *      them to an OpenSSL parameter builder.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on invalid input or failure.
+ *
+ * Side effects:
+ *      Allocates temporary buffers for the encoded EC point and records
+ *      them in tmpData for later cleanup. Appends parameters to bld.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyImportEcPublicParamsFromDict(Tcl_Interp *interp,
+                                 Tcl_Obj *paramsObj,
+                                 OSSL_PARAM_BLD *bld,
+                                 Ns_DList *tmpData)
+{
+    Tcl_Obj             *groupObj = NULL, *xObj = NULL, *yObj = NULL;
+    const char          *groupName;
+    const unsigned char *x, *y;
+    unsigned char       *pub = NULL;
+    TCL_SIZE_T           groupLen, xLen, yLen;
+    size_t               pubLen, expectedLen;
+    int                  result = TCL_ERROR;
+
+    if (Tcl_DictObjGet(interp, paramsObj,
+                       Tcl_NewStringObj("group", TCL_INDEX_NONE),
+                       &groupObj) != TCL_OK
+        || Tcl_DictObjGet(interp, paramsObj,
+                          Tcl_NewStringObj("x", TCL_INDEX_NONE),
+                          &xObj) != TCL_OK
+        || Tcl_DictObjGet(interp, paramsObj,
+                          Tcl_NewStringObj("y", TCL_INDEX_NONE),
+                          &yObj) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    if (groupObj == NULL || xObj == NULL || yObj == NULL) {
+        Ns_TclPrintfResult(interp,
+                           "EC public key import requires dict keys \"group\", \"x\", and \"y\"");
+        return TCL_ERROR;
+    }
+
+    groupName = Tcl_GetStringFromObj(groupObj, &groupLen);
+    if (groupLen == 0) {
+        Ns_TclPrintfResult(interp, "EC public key import requires non-empty \"group\"");
+        return TCL_ERROR;
+    }
+
+    x = (unsigned char *)Tcl_GetByteArrayFromObj(xObj, &xLen);
+    y = (unsigned char *)Tcl_GetByteArrayFromObj(yObj, &yLen);
+
+    if (xLen <= 0 || yLen <= 0 || xLen != yLen) {
+        Ns_TclPrintfResult(interp,
+                           "EC public key coordinates \"x\" and \"y\" must be non-empty and have equal length");
+        goto done;
+    }
+    if (EcGroupCoordinateLength(groupName, &expectedLen) == TCL_OK) {
+        if ((size_t)xLen != expectedLen || (size_t)yLen != expectedLen) {
+            Ns_TclPrintfResult(interp,
+                               "invalid coordinate length for %s (need %zu bytes each)",
+                               groupName, expectedLen);
+            goto done;
+        }
+    }
+
+    /*
+     * SEC1 uncompressed point: 0x04 || X || Y
+     */
+    pubLen = 1u + (size_t)xLen + (size_t)yLen;
+    pub = ns_malloc(pubLen);
+    if (pub == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate EC public key buffer");
+        goto done;
+    }
+    if (FreelistAdd(interp, tmpData, pub, ns_free) != TCL_OK) {
+        goto done;
+    }
+
+    pub[0] = 0x04;
+    memcpy(pub + 1u, x, (size_t)xLen);
+    memcpy(pub + 1u + (size_t)xLen, y, (size_t)yLen);
+
+    if (OSSL_PARAM_BLD_push_utf8_string(bld, OSSL_PKEY_PARAM_GROUP_NAME,
+                                        groupName, 0) != 1) {
+        SetResultFromOsslError(interp, "could not add EC group parameter");
+        goto done;
+    }
+
+    if (OSSL_PARAM_BLD_push_octet_string(bld, OSSL_PKEY_PARAM_PUB_KEY,
+                                         pub, pubLen) != 1) {
+        SetResultFromOsslError(interp, "could not add EC public key parameter");
+        goto done;
+    }
+
+    result = TCL_OK;
+
+done:
+    return result;
+}
+#  endif /* OPENSSL_NO_EC */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyImportRsaPublicParamsFromDict --
+ *
+ *      Extract RSA public key parameters (modulus n and exponent e)
+ *      from a Tcl dictionary and add them to an OpenSSL parameter
+ *      builder.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on invalid input or failure.
+ *
+ * Side effects:
+ *      Allocates BIGNUM objects and registers them in tmpData for later
+ *      cleanup. Appends parameters to bld.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyImportRsaPublicParamsFromDict(Tcl_Interp *interp,
+                                  Tcl_Obj *paramsObj,
+                                  OSSL_PARAM_BLD *bld,
+                                  Ns_DList *tmpData)
+{
+    Tcl_Obj             *nObj = NULL, *eObj = NULL;
+    const unsigned char *nBytes, *eBytes;
+    TCL_SIZE_T           nLen, eLen;
+    BIGNUM              *nBn = NULL, *eBn = NULL;
+    int                  result = TCL_ERROR;
+
+    if (Tcl_DictObjGet(interp, paramsObj,
+                       Tcl_NewStringObj("n", TCL_INDEX_NONE),
+                       &nObj) != TCL_OK
+        || Tcl_DictObjGet(interp, paramsObj,
+                          Tcl_NewStringObj("e", TCL_INDEX_NONE),
+                          &eObj) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    if (nObj == NULL || eObj == NULL) {
+        Ns_TclPrintfResult(interp,
+                           "RSA public key import requires dict keys \"n\" and \"e\"");
+        return TCL_ERROR;
+    }
+
+    nBytes = (unsigned char *)Tcl_GetByteArrayFromObj(nObj, &nLen);
+    eBytes = (unsigned char *)Tcl_GetByteArrayFromObj(eObj, &eLen);
+
+    if (nLen <= 0 || eLen <= 0) {
+        Ns_TclPrintfResult(interp,
+                           "RSA public key parameters \"n\" and \"e\" must be non-empty");
+        goto done;
+    }
+
+    nBn = BN_bin2bn(nBytes, (int)nLen, NULL);
+    eBn = BN_bin2bn(eBytes, (int)eLen, NULL);
+    if (nBn == NULL || eBn == NULL) {
+        SetResultFromOsslError(interp, "could not convert RSA parameters");
+        goto done;
+    }
+    if (FreelistAdd(interp, tmpData, nBn, (Ns_FreeProc*)BN_free) != TCL_OK) {
+        goto done;
+    }
+    if (FreelistAdd(interp, tmpData, eBn, (Ns_FreeProc*)BN_free) != TCL_OK) {
+        goto done;
+    }
+
+    if (OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_RSA_N, nBn) != 1) {
+        SetResultFromOsslError(interp, "could not add RSA modulus parameter");
+        goto done;
+    }
+
+    if (OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_RSA_E, eBn) != 1) {
+        SetResultFromOsslError(interp, "could not add RSA exponent parameter");
+        goto done;
+    }
+
+    result = TCL_OK;
+
+done:
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyImportFromParams --
+ *
+ *      Construct an EVP_PKEY from OpenSSL parameters and return or
+ *      serialize the resulting key.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *      Creates an EVP_PKEY via EVP_PKEY_fromdata() and sets the Tcl
+ *      result to either a PEM encoding or raw public key bytes.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyImportFromParams(Tcl_Interp *interp,
+                     const char *typeName,
+                     Ns_CryptoKeyImportSelection selection,
+                     OSSL_PARAM *params,
+                     int formatInt,
+                     Ns_BinaryEncoding encoding,
+                     const char *outfileName)
+{
+    int result = TCL_ERROR;
+    EVP_PKEY_CTX *ctx = NULL;
+    EVP_PKEY *pkey = NULL;
+    int selectionInt;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(typeName != NULL);
+    NS_NONNULL_ASSERT(params != NULL);
+
+    switch (selection) {
+    case NS_CRYPTO_KEYIMPORT_PUBLIC:
+        selectionInt = EVP_PKEY_PUBLIC_KEY;
+        break;
+    case NS_CRYPTO_KEYIMPORT_PRIVATE:
+        selectionInt = EVP_PKEY_PRIVATE_KEY;
+        break;
+    case NS_CRYPTO_KEYIMPORT_KEYPAIR:
+        selectionInt = EVP_PKEY_KEYPAIR;
+        break;
+    default:
+        Ns_TclPrintfResult(interp, "invalid key import selection");
+        return TCL_ERROR;
+    }
+
+    ERR_clear_error();
+
+    ctx = EVP_PKEY_CTX_new_from_name(NULL, typeName, NULL);
+    if (ctx == NULL) {
+        SetResultFromOsslError(interp, "could not create key import context");
+        goto done;
+    }
+
+    if (EVP_PKEY_fromdata_init(ctx) <= 0) {
+        SetResultFromOsslError(interp, "could not initialize key import");
+        goto done;
+    }
+
+    if (EVP_PKEY_fromdata(ctx, &pkey, selectionInt, params) <= 0) {
+        SetResultFromOsslError(interp, "could not import key");
+        goto done;
+    }
+
+    if (formatInt == OUTPUT_FORMAT_PEM) {
+        result = PkeyPublicPemWrite(interp, pkey, "key", "public", outfileName);
+    } else {
+        if (outfileName != NULL) {
+            Ns_TclPrintfResult(interp,
+                               "the option \"-outfile\" requires \"-format pem\"");
+            goto done;
+        }
+        result = SetResultFromRawPublicKey(interp, pkey, encoding);
+    }
+
+done:
+    if (pkey != NULL) {
+        EVP_PKEY_free(pkey);
+    }
+    if (ctx != NULL) {
+        EVP_PKEY_CTX_free(ctx);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyImportParamsFromDict --
+ *
+ *      Dispatch parameter extraction for key import based on algorithm
+ *      type and selection.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR if the algorithm is unsupported or
+ *      parameters are invalid.
+ *
+ * Side effects:
+ *      Appends parameters to the provided OpenSSL builder and records
+ *      temporary allocations in tmpData.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyImportParamsFromDict(Tcl_Interp *interp,
+                         const char *typeName,
+                         Ns_CryptoKeyImportSelection selection,
+                         Tcl_Obj *paramsObj,
+                         OSSL_PARAM_BLD *bld,
+                         Ns_DList *tmpData)
+{
+#  ifndef OPENSSL_NO_EC
+    if (STRIEQ(typeName, "EC")) {
+        if (selection != NS_CRYPTO_KEYIMPORT_PUBLIC) {
+            Ns_TclPrintfResult(interp,
+                               "key import for algorithm \"%s\" currently supports only -public",
+                               typeName);
+            return TCL_ERROR;
+        }
+        return PkeyImportEcPublicParamsFromDict(interp, paramsObj, bld, tmpData);
+    }
+#  endif /* OPENSSL_NO_EC */
+
+    if (STRIEQ(typeName, "RSA")) {
+        if (selection != NS_CRYPTO_KEYIMPORT_PUBLIC) {
+            Ns_TclPrintfResult(interp,
+                               "key import for algorithm \"%s\" currently supports only -public",
+                               typeName);
+            return TCL_ERROR;
+        }
+        return PkeyImportRsaPublicParamsFromDict(interp, paramsObj, bld, tmpData);
+    }
+
+    Ns_TclPrintfResult(interp,
+                       "key import for algorithm \"%s\" is not yet implemented",
+                       typeName);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoKeyImportObjCmd --
+ *
+ *      Implements "ns_crypto::key import". Constructs a key from
+ *      algorithm-specific parameters provided as a Tcl dictionary.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on invalid input or failure.
+ *
+ * Side effects:
+ *      Builds OpenSSL parameter structures, creates an EVP_PKEY, and
+ *      returns it in the requested format. Temporary objects are
+ *      tracked and freed via a cleanup list.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CryptoKeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int             formatInt = OUTPUT_FORMAT_PEM, encodingInt = -1;
+    int             fromInt = NS_CRYPTO_KEYIMPORT_PUBLIC;
+    const char     *typeName = NULL, *outfileName = NULL;
+    Tcl_Obj        *paramsObj = NULL;
+    OSSL_PARAM_BLD *bld = NULL;
+    OSSL_PARAM     *params = NULL;
+    int             result = TCL_ERROR;
+    Ns_DList        tmpData;
+    TCL_SIZE_T      dictSize = 0;
+    Ns_BinaryEncoding           encoding;
+    Ns_CryptoKeyImportSelection selection;
+    static Ns_ObjvTable keyImportFormats[] = {
+        {"raw", OUTPUT_FORMAT_RAW},
+        {"pem", OUTPUT_FORMAT_PEM},
+        {NULL,  0}
+    };
+    static Ns_ObjvTable keyImportSelections[] = {
+        {"public",  NS_CRYPTO_KEYIMPORT_PUBLIC},
+        {"private", NS_CRYPTO_KEYIMPORT_PRIVATE},
+        {"keypair", NS_CRYPTO_KEYIMPORT_KEYPAIR},
+        {NULL, 0}
+    };
+    Ns_ObjvSpec lopts[] = {
+        {"!-name",    Ns_ObjvString, &typeName,    NULL},
+        {"-from",     Ns_ObjvIndex,  &fromInt,     keyImportSelections},
+        {"!-params",  Ns_ObjvObj,    &paramsObj,   NULL},
+        {"-format",   Ns_ObjvIndex,  &formatInt,   keyImportFormats},
+        {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-outfile",  Ns_ObjvString, &outfileName, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    if (Tcl_DictObjSize(interp, paramsObj, &dictSize) != TCL_OK) {
+        Ns_TclPrintfResult(interp, "the option \"-params\" requires a dictionary");
+        return TCL_ERROR;
+    }
+    (void)dictSize;
+
+    if (formatInt != OUTPUT_FORMAT_RAW && encodingInt != -1) {
+        Ns_TclPrintfResult(interp, "-encoding is only valid with -format raw");
+        return TCL_ERROR;
+    }
+
+    selection = (Ns_CryptoKeyImportSelection)fromInt;
+    encoding = (encodingInt == -1
+                ? NS_OBJ_ENCODING_HEX
+                : (Ns_BinaryEncoding)encodingInt);
+
+    Ns_DListInit(&tmpData);
+    Ns_DListSetFreeProc(&tmpData, FreelistFree);
+
+    bld = OSSL_PARAM_BLD_new();
+    if (bld == NULL) {
+        SetResultFromOsslError(interp, "could not allocate key import parameter builder");
+        goto done;
+    }
+
+    result = PkeyImportParamsFromDict(interp, typeName, selection, paramsObj,
+                                      bld, &tmpData);
+    if (result != TCL_OK) {
+        goto done;
+    }
+
+    params = OSSL_PARAM_BLD_to_param(bld);
+    if (params == NULL) {
+        SetResultFromOsslError(interp, "could not finalize key import parameters");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    result = PkeyImportFromParams(interp, typeName, selection, params,
+                                  formatInt, encoding, outfileName);
+
+done:
+    Ns_DListFree(&tmpData);
+
+    if (params != NULL) {
+        OSSL_PARAM_free(params);
+    }
+    if (bld != NULL) {
+        OSSL_PARAM_BLD_free(bld);
+    }
+    return result;
 }
 #endif
 
@@ -6214,23 +7139,27 @@ static int
 CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         result;
-    const char *pem = NULL;
-    const char *passPhrase = NS_EMPTY_STRING;
-    Tcl_Obj    *resultObj;
+    int                result, encodingInt = -1;
+    Ns_BinaryEncoding  encoding;
+    const char        *pem = NULL, *passPhrase = NS_EMPTY_STRING;
+    Tcl_Obj           *resultObj;
     Ns_ObjvSpec lopts[] = {
-        {"-passphrase", Ns_ObjvString, &passPhrase, NULL},
-        {"!-pem",       Ns_ObjvString, &pem,        NULL},
+        {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+        {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
+        {"!-pem",       Ns_ObjvString, &pem,         NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    {
+    } else {
         EVP_PKEY *pkey = PkeyGetAnyFromPem(interp, pem, passPhrase);
         Tcl_Obj  *typeNameObj;
+
+        encoding = (encodingInt == -1
+                    ? NS_OBJ_ENCODING_HEX
+                    : (Ns_BinaryEncoding)encodingInt);
 
         if (pkey == NULL) {
             return TCL_ERROR;
@@ -6252,6 +7181,11 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
          * Basic/legacy-compatible details first.
          */
         if (PkeyInfoPutLegacyDetails(interp, resultObj, pkey) != TCL_OK) {
+            EVP_PKEY_free(pkey);
+            return TCL_ERROR;
+        }
+
+        if (PkeyInfoPutRsaDetails(interp, resultObj, pkey, encoding) != TCL_OK) {
             EVP_PKEY_free(pkey);
             return TCL_ERROR;
         }
@@ -6368,22 +7302,21 @@ CryptoKeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  *----------------------------------------------------------------------
  */
-static Ns_ObjvTable keyPubFormats[] = {
-    {"raw", 0},
-    {"pem", 1},
-    {NULL,  0}
-};
-
 static int
 CryptoKeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1, formatInt = 0;
+    int                result, encodingInt = -1, formatInt = OUTPUT_FORMAT_RAW;
     const char        *pem = NULL;
     const char        *passPhrase = NS_EMPTY_STRING;
     const char        *outfileName = NULL;
     EVP_PKEY          *pkey = NULL;
     Ns_BinaryEncoding  encoding;
+    static Ns_ObjvTable keyPubFormats[] = {
+        {"raw", OUTPUT_FORMAT_RAW},
+        {"pem", OUTPUT_FORMAT_PEM},
+        {NULL,  0}
+    };
     Ns_ObjvSpec        lopts[] = {
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-format",     Ns_ObjvIndex,  &formatInt,   keyPubFormats},
@@ -6406,7 +7339,7 @@ CryptoKeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-    if (formatInt == 0) {
+    if (formatInt == OUTPUT_FORMAT_RAW) {
         /*
          * Backward-compatible default: raw public key bytes in the
          * requested encoding.
@@ -6492,7 +7425,6 @@ CryptoKeyTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -6515,11 +7447,12 @@ NsTclCryptoKeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     const Ns_SubCmdSpec subcmds[] = {
 # ifdef HAVE_OPENSSL_3
         {"generate", CryptoKeyGenerateObjCmd},
+        {"import",   CryptoKeyImportObjCmd},
 # endif
         {"info",     CryptoKeyInfoObjCmd},
-        {"priv",     CryptoKeyPrivObjCmd},
-        {"pub",      CryptoKeyPubObjCmd},
         {"type",     CryptoKeyTypeObjCmd},
+        {"pub",      CryptoKeyPubObjCmd},
+        {"priv",     CryptoKeyPrivObjCmd},
         {NULL, NULL}
     };
 
@@ -7596,7 +8529,7 @@ NsTclCryptoAgreementObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 or newer built into NaviServer");
     return TCL_ERROR;
 }
-#endif
+# endif
 
 #else
 /*======================================================================

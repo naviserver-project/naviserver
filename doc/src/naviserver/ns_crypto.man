@@ -842,8 +842,109 @@ be in memory). In order to compute HMACs on large data, use
   [para] This function requires OpenSSL 3.0 or newer.
 
 
+[call [cmd "ns_crypto::key import"] \
+      [option "-name [arg value]"] \
+      [opt [option "-from public|private|keypair"]] \
+      [option "-params [arg value]"] \
+      [opt [option "-format raw|pem"]] \
+      [opt [option "-encoding hex|base64url|base64|binary"]] \
+      [opt [option "-outfile [arg value]"]] \
+]
+
+  Import a cryptographic key from algorithm-specific parameters.
+
+  [para] This command constructs a key using parameters provided as a Tcl
+  dictionary via [option -params]. The required dictionary members depend
+  on the selected algorithm and key type.
+
+  [para] The option [option -name] specifies the algorithm (e.g.,
+  [const EC], [const RSA]). Supported algorithms depend on the OpenSSL
+  version and configured providers.
+
+  [para] The option [option -from] specifies which part of the key is
+  constructed:
+  [list_begin itemized]
+  [item] [const public] — import a public key (default)
+  [item] [const private] — import a private key (currently not supported for all algorithms)
+  [item] [const keypair] — import a full key pair (currently not supported for all algorithms)
+  [list_end]
+
+  [para] The option [option -params] must be a Tcl dictionary containing
+  algorithm-specific parameters. Parameter values are interpreted according
+  to the selected algorithm. For example, [const group] is a string,
+  while values such as [const x], [const y], [const n], and [const e]
+  are treated as binary data.
+
+  [para] The option [option -format] controls the output format:
+  [list_begin itemized]
+  [item] [const pem] — return a PEM-encoded key (default)
+  [item] [const raw] — return the raw public key bytes
+  [list_end]
+
+  [para] When [option "-format raw"] is used, the option [option -encoding]
+  controls the encoding of the returned byte sequence. The default is
+  [const hex].
+
+  [para] The option [option -outfile] writes the result to the specified
+  file. This option is only supported with [option "-format pem"].
+
+  [para] Currently supported parameter sets include:
+
+  [list_begin itemized]
+  [item] [term "EC public key"]
+          A public elliptic curve key defined by affine coordinates:
+    [list_begin itemized]
+    [item] [const group] — curve name (e.g., [const prime256v1])
+    [item] [const x] — x-coordinate (binary string)
+    [item] [const y] — y-coordinate (binary string)
+    [list_end]
+
+  [item] [term "RSA public key"]
+         A public RSA key defined by modulus and exponent:
+    [list_begin itemized]
+    [item] [const n] — modulus (binary string)
+    [item] [const e] — public exponent (binary string)
+    [list_end]
+  [list_end]
+
+  [para] For EC keys, the coordinates must have the correct length for
+  the specified curve (e.g., 32 bytes each for [const prime256v1]).
+  Invalid sizes result in an error.
+
+  [para] For RSA keys, the parameters [const n] and [const e] must be
+  non-empty binary values.
+
+  [para] This command is intended for interoperability scenarios such as
+  importing keys from COSE, JWK, or other external representations.
+
+[example_begin]
+ # Import EC public key (COSE ES256)
+ set pubpem [lb]ns_crypto::key import \
+     -name EC \
+     -params [lb]dict create group prime256v1 x $x y $y[rb][rb]
+ [example_end]
+
+[example_begin]
+ # Import RSA public key (COSE RS256)
+ set pubpem [lb]ns_crypto::key import \
+     -name RSA \
+     -params [lb]dict create n $n e $e[rb][rb]
+ [example_end]
+
+[example_begin]
+ # Import EC key and obtain raw public key bytes
+ set raw [lb]ns_crypto::key import \
+     -name EC \
+     -format raw \
+     -encoding binary \
+     -params [lb]dict create group prime256v1 x $x y $y[rb][rb]
+ [example_end]
+
+  [para] The command requires OpenSSL 3.0 or newer.
+
 
 [call [cmd "ns_crypto::key info"] \
+     [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-passphrase [arg value]"]] \
      [option "-pem [arg value]"] \
     ]
@@ -856,6 +957,11 @@ be in memory). In order to compute HMACs on large data, use
 
   [para] The result is a Tcl dictionary containing properties of the key.
   The available fields depend on the key type and the OpenSSL version.
+
+  [para] Binary-valued fields returned by this command are encoded
+  according to [option -encoding], which defaults to [const hex].
+  This applies for example to RSA parameters such as [const n] and
+  [const e].
 
   [para] The dictionary always contains at least:
 
