@@ -332,8 +332,9 @@ static int PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EV
         NS_GNUC_NONNULL(1,2,3);
 
 static int PkeyImportParamsFromDict(Tcl_Interp *interp, const char *typeName, Ns_CryptoKeyImportSelection selection,
-                                    Tcl_Obj *paramsObj, OSSL_PARAM_BLD *bld, Ns_DList *tmpData)
-    NS_GNUC_NONNULL(1,2,4,5);
+                                    Tcl_Obj *paramsObj, const char **resolvedTypeNamePtr,
+                                    OSSL_PARAM_BLD *bld, Ns_DList *tmpData)
+    NS_GNUC_NONNULL(1,2,4,5,6,7);
 
 #  ifndef OPENSSL_NO_EC
 static int PkeyImportEcFromCoords(Tcl_Interp *interp, const char *groupName, const unsigned char *x, size_t xLen,
@@ -351,6 +352,14 @@ static int PkeyImportRsaPublicParamsFromDict(Tcl_Interp *interp, Tcl_Obj *params
 static int PkeyImportFromParams(Tcl_Interp *interp, const char *typeName, Ns_CryptoKeyImportSelection selection,
                                 OSSL_PARAM *params, int formatInt, Ns_BinaryEncoding encoding, const char *outfileName)
     NS_GNUC_NONNULL(1,2,4);
+
+static int OkpCurveInfo(const char *crv, const char **typeNamePtr, size_t *pubLenPtr)
+    NS_GNUC_NONNULL(1,2,3);
+
+static int PkeyImportOkpPublicParamsFromDict(Tcl_Interp *interp, Tcl_Obj *paramsObj,
+                                  const char **resolvedTypeNamePtr, OSSL_PARAM_BLD *bld,
+                                  Ns_DList *tmpData)
+    NS_GNUC_NONNULL(1,2,3,4,5);
 
 # endif /* HAVE_OPENSSL_3 */
 
@@ -3470,7 +3479,9 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
 static int
 EcGroupCoordinateLength(const char *groupName, size_t *coordLenPtr)
 {
-    if (STRIEQ(groupName, "prime256v1") || STRIEQ(groupName, "secp256r1")) {
+    if (STRIEQ(groupName, "prime256v1")
+        || STRIEQ(groupName, "secp256r1")
+        || STRIEQ(groupName, "secp256k1")) {
         *coordLenPtr = 32u;
         return TCL_OK;
     }
@@ -4303,92 +4314,6 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         group = EC_KEY_get0_group(eckey);
 
-#if 0
-        {
-            /*
-             * Steps as recommended from OpenSSL wiki page. However,
-             * the code based on the low-level EC_POINT_oct2point()
-             * appears to be correct.
-             */
-
-            /*
-             * Further ingredients:
-             *
-             *  pkey        : private key, from PEM, EVP_PKEY
-             *  peerKeyEC   : peer key locally regenerated, same curve as pkey, get filled with octets
-             *  peerKey     : peer key as EVP_PKEY, filled with peerKeyEC
-             *  pctx        : parameter generation contenxt
-             *  params      : parameter object
-             *  kctx        : key generation context, uses params, used for EVP_PKEY_keygen_init and EVP_PKEY_keygen
-             *  ctx         : shared secret generation context, uses pkey
-             */
-            EVP_PKEY_CTX        *pctx, *ctx = NULL, *kctx = NULL;
-            EC_KEY              *peerKeyEC;
-            EVP_PKEY            *peerKey, *params = NULL;
-            EVP_PKEY            *pkey;
-
-            pkey = PkeyGetFromPem(interp, pemFileName, NS_EMPTY_STRING, NS_TRUE);
-            peerKeyEC = EC_KEY_new_by_curve_name(EC_GROUP_get_curve_name(group));
-            peerKey = EVP_PKEY_new();
-
-            pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
-            EVP_PKEY_paramgen_init(pctx);
-            EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, EC_GROUP_get_curve_name(group));
-            Ns_Log(Notice, "NID X9_62_prime256v1 %d, privKey curve %d ", NID_X9_62_prime256v1, EC_GROUP_get_curve_name(group));
-
-            ERR_clear_error();
-            result = TCL_ERROR;
-            if (EC_KEY_oct2key(peerKeyEC, pubkeyString, (size_t)pubkeyLength, NULL) != 1) {
-                Ns_Log(Notice, "could not import peer key");
-                Ns_TclPrintfResult(interp, "could not import peer key");
-            } else if (EVP_PKEY_set1_EC_KEY(peerKey, peerKeyEC) != 1) {
-                Ns_Log(Notice, "could not convert EC key to EVP key");
-                Ns_TclPrintfResult(interp, "could not convert EC key to EVP key");
-            } else if (EVP_PKEY_paramgen(pctx, &params) != 1) {
-                Ns_Log(Notice, "could not generate parameters");
-                Ns_TclPrintfResult(interp, "could not generate parameters");
-            } else if ((kctx = EVP_PKEY_CTX_new(params, NULL)) == NULL) {
-                Ns_Log(Notice, "could not generate kctx");
-                Ns_TclPrintfResult(interp, "could not generate kctx");
-            } else if (EVP_PKEY_keygen_init(kctx) != 1) {
-                Ns_Log(Notice, "could not init kctx");
-                SetResultFromOsslError(interp, "could not init kctx");
-            } else if (EVP_PKEY_keygen(kctx, &pkey) != 1) {
-                Ns_Log(Notice, "could not generate key for kctx");
-                Ns_TclPrintfResult(interp, "could not generate key for ctx");
-            } else if ((ctx = EVP_PKEY_CTX_new(pkey, NULL)) == NULL) {
-                Ns_TclPrintfResult(interp, "could not create ctx");
-            } else if (EVP_PKEY_derive_init(ctx) != 1) {
-                Ns_Log(Notice, "could not derive init ctx");
-                SetResultFromOsslError(interp, "could not derive init ctx");
-            } else if (EVP_PKEY_derive_set_peer(ctx, peerKey) != 1) {
-                Ns_Log(Notice, "could set peer key");
-                Ns_TclPrintfResult(interp, "could not set peer key");
-                result = TCL_OK;
-            } else {
-                Tcl_DString  ds;
-                size_t       sharedKeySize = 0u;
-
-                Tcl_DStringInit(&ds);
-                (void)EVP_PKEY_derive(ctx, NULL, &sharedKeySize);
-                if (sharedKeySize > 0) {
-                    Tcl_DStringSetLength(&ds, (TCL_SIZE_T)sharedKeySize);
-                    (void)EVP_PKEY_derive(ctx, (unsigned char *)ds.string, &sharedKeySize);
-                    hexPrint("recommended", (unsigned char *)ds.string, sharedKeySize);
-                    result = TCL_OK;
-                }
-                Tcl_DStringFree(&ds);
-            }
-
-            EC_KEY_free(peerKeyEC);
-            EVP_PKEY_free(peerKey);
-            EVP_PKEY_free(pkey);
-            EVP_PKEY_CTX_free(ctx);
-            EVP_PKEY_CTX_free(pctx);
-            EVP_PKEY_CTX_free(kctx);
-            EVP_PKEY_free(params);
-        }
-#endif
         /*
          * Computes the ECDH shared secret, used as the input key material (IKM) for
          * HKDF.
@@ -6885,10 +6810,6 @@ PkeyImportFromParams(Tcl_Interp *interp,
     EVP_PKEY *pkey = NULL;
     int selectionInt;
 
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(typeName != NULL);
-    NS_NONNULL_ASSERT(params != NULL);
-
     switch (selection) {
     case NS_CRYPTO_KEYIMPORT_PUBLIC:
         selectionInt = EVP_PKEY_PUBLIC_KEY;
@@ -6915,6 +6836,11 @@ PkeyImportFromParams(Tcl_Interp *interp,
     if (EVP_PKEY_fromdata_init(ctx) <= 0) {
         SetResultFromOsslError(interp, "could not initialize key import");
         goto done;
+    }
+
+    for (const OSSL_PARAM *p = params; p != NULL && p->key != NULL; p++) {
+        Ns_Log(Debug, "import param key <%s> type %u size %zu",
+               p->key, p->data_type, p->data_size);
     }
 
     if (EVP_PKEY_fromdata(ctx, &pkey, selectionInt, params) <= 0) {
@@ -6946,6 +6872,185 @@ done:
 /*
  *----------------------------------------------------------------------
  *
+ * OkpCurveInfo --
+ *
+ *      Map a JWK OKP curve name ("crv") to the corresponding OpenSSL
+ *      key type name and expected public key length.
+ *
+ * Results:
+ *      TCL_OK       - on success, *typeNamePtr and *pubLenPtr are set
+ *      TCL_CONTINUE - if the provided curve name is not supported
+ *
+ * Side effects:
+ *      None.
+ *
+ * Description:
+ *      This function translates the JWK "crv" parameter used for OKP
+ *      (Octet Key Pair) keys into the OpenSSL key type name required
+ *      for EVP_PKEY_CTX_new_from_name() and validates the expected
+ *      size of the public key.
+ *
+ *      Supported mappings include:
+ *
+ *          Ed25519 -> type "ED25519", public key length 32 bytes
+ *          Ed448   -> type "ED448",   public key length 57 bytes
+ *          X25519  -> type "X25519",  public key length 32 bytes
+ *          X448    -> type "X448",    public key length 56 bytes
+ *
+ *      The returned type name is later used as the resolved key type
+ *      for EVP_PKEY_fromdata(), while the length is used to validate
+ *      the "x" parameter provided by the caller.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+OkpCurveInfo(const char *crv, const char **typeNamePtr, size_t *pubLenPtr)
+{
+    if (STRIEQ(crv, "Ed25519")) {
+        *typeNamePtr = "ED25519";
+        *pubLenPtr = 32u;
+        return TCL_OK;
+    }
+    if (STRIEQ(crv, "Ed448")) {
+        *typeNamePtr = "ED448";
+        *pubLenPtr = 57u;
+        return TCL_OK;
+    }
+    if (STRIEQ(crv, "X25519")) {
+        *typeNamePtr = "X25519";
+        *pubLenPtr = 32u;
+        return TCL_OK;
+    }
+    if (STRIEQ(crv, "X448")) {
+        *typeNamePtr = "X448";
+        *pubLenPtr = 56u;
+        return TCL_OK;
+    }
+    return TCL_CONTINUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyImportOkpPublicParamsFromDict --
+ *
+ *      Extract OKP public key parameters from a Tcl dictionary and
+ *      populate an OpenSSL parameter builder.
+ *
+ * Results:
+ *      TCL_OK    - on success
+ *      TCL_ERROR - on invalid input or failure (error message set)
+ *
+ * Side effects:
+ *      Appends parameters to the provided OSSL_PARAM_BLD and sets
+ *      *resolvedTypeNamePtr to the OpenSSL key type name.
+ *      Allocates temporary buffers recorded in tmpData for cleanup.
+ *
+ * Description:
+ *      This function implements the parameter extraction for
+ *      "ns_crypto::key import -name OKP" for public keys.
+ *
+ *      The input dictionary must contain:
+ *
+ *          crv - JWK curve name (e.g., "Ed25519", "X25519")
+ *          x   - raw public key bytes
+ *
+ *      The function performs the following steps:
+ *
+ *        - Validates presence and non-emptiness of "crv" and "x"
+ *        - Maps "crv" to an OpenSSL key type via OkpCurveInfo()
+ *        - Verifies that the provided public key length matches the
+ *          expected size for the curve
+ *        - Adds the public key bytes as OSSL_PKEY_PARAM_PUB_KEY to
+ *          the parameter builder
+ *        - Sets *resolvedTypeNamePtr to the resolved OpenSSL type
+ *          name (e.g., "ED25519", "X25519")
+ *
+ *      The resulting parameters are later consumed by
+ *      EVP_PKEY_fromdata() to construct the key.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyImportOkpPublicParamsFromDict(Tcl_Interp *interp,
+                                  Tcl_Obj *paramsObj,
+                                  const char **resolvedTypeNamePtr,
+                                  OSSL_PARAM_BLD *bld,
+                                  Ns_DList *tmpData)
+{
+    Tcl_Obj             *crvObj = NULL, *xObj = NULL;
+    const char          *crv, *typeName = NULL;
+    const unsigned char *xBytes;
+    TCL_SIZE_T           crvLen, xLen;
+    size_t               expectedLen;
+    unsigned char       *pub = NULL;
+    int                  result = TCL_ERROR;
+
+    if (Tcl_DictObjGet(interp, paramsObj,
+                       Tcl_NewStringObj("crv", TCL_INDEX_NONE),
+                       &crvObj) != TCL_OK
+        || Tcl_DictObjGet(interp, paramsObj,
+                          Tcl_NewStringObj("x", TCL_INDEX_NONE),
+                          &xObj) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    if (crvObj == NULL || xObj == NULL) {
+        Ns_TclPrintfResult(interp,
+                           "OKP public key import requires dict keys \"crv\" and \"x\"");
+        return TCL_ERROR;
+    }
+
+    crv = Tcl_GetStringFromObj(crvObj, &crvLen);
+    if (crvLen == 0) {
+        Ns_TclPrintfResult(interp, "OKP public key import requires non-empty \"crv\"");
+        return TCL_ERROR;
+    }
+
+    xBytes = (const unsigned char *)Tcl_GetByteArrayFromObj(xObj, &xLen);
+    if (xLen <= 0) {
+        Ns_TclPrintfResult(interp,
+                           "OKP public key parameter \"x\" must be non-empty");
+        return TCL_ERROR;
+    }
+
+    if (OkpCurveInfo(crv, &typeName, &expectedLen) != TCL_OK) {
+        Ns_TclPrintfResult(interp, "unsupported OKP curve \"%s\"", crv);
+        return TCL_ERROR;
+    }
+
+    if ((size_t)xLen != expectedLen) {
+        Ns_TclPrintfResult(interp,
+                           "invalid public key length for %s (need %zu bytes)",
+                           crv, expectedLen);
+        return TCL_ERROR;
+    }
+
+    pub = ns_malloc((size_t)xLen);
+    if (pub == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate OKP public key buffer");
+        return TCL_ERROR;
+    }
+    memcpy(pub, xBytes, (size_t)xLen);
+
+    if (FreelistAdd(interp, tmpData, pub, ns_free) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    if (OSSL_PARAM_BLD_push_octet_string(bld, OSSL_PKEY_PARAM_PUB_KEY,
+                                         pub, (size_t)xLen) != 1) {
+        SetResultFromOsslError(interp, "could not add OKP public key parameter");
+        return TCL_ERROR;
+    }
+
+    *resolvedTypeNamePtr = typeName;
+    result = TCL_OK;
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * PkeyImportParamsFromDict --
  *
  *      Dispatch parameter extraction for key import based on algorithm
@@ -6966,29 +7071,46 @@ PkeyImportParamsFromDict(Tcl_Interp *interp,
                          const char *typeName,
                          Ns_CryptoKeyImportSelection selection,
                          Tcl_Obj *paramsObj,
+                         const char **resolvedTypeNamePtr,
                          OSSL_PARAM_BLD *bld,
                          Ns_DList *tmpData)
 {
+    *resolvedTypeNamePtr = NULL;
+
 #  ifndef OPENSSL_NO_EC
     if (STRIEQ(typeName, "EC")) {
         if (selection != NS_CRYPTO_KEYIMPORT_PUBLIC) {
             Ns_TclPrintfResult(interp,
-                               "key import for algorithm \"%s\" currently supports only -public",
+                               "key import for algorithm \"%s\" currently supports only -from public",
                                typeName);
             return TCL_ERROR;
         }
+        *resolvedTypeNamePtr = "EC";
         return PkeyImportEcPublicParamsFromDict(interp, paramsObj, bld, tmpData);
     }
-#  endif /* OPENSSL_NO_EC */
+#  endif
 
     if (STRIEQ(typeName, "RSA")) {
         if (selection != NS_CRYPTO_KEYIMPORT_PUBLIC) {
             Ns_TclPrintfResult(interp,
-                               "key import for algorithm \"%s\" currently supports only -public",
+                               "key import for algorithm \"%s\" currently supports only -from public",
                                typeName);
             return TCL_ERROR;
         }
+        *resolvedTypeNamePtr = "RSA";
         return PkeyImportRsaPublicParamsFromDict(interp, paramsObj, bld, tmpData);
+    }
+
+    if (STRIEQ(typeName, "OKP")) {
+        if (selection != NS_CRYPTO_KEYIMPORT_PUBLIC) {
+            Ns_TclPrintfResult(interp,
+                               "key import for algorithm \"%s\" currently supports only -from public",
+                               typeName);
+            return TCL_ERROR;
+        }
+        return PkeyImportOkpPublicParamsFromDict(interp, paramsObj,
+                                                 resolvedTypeNamePtr,
+                                                 bld, tmpData);
     }
 
     Ns_TclPrintfResult(interp,
@@ -7021,7 +7143,7 @@ CryptoKeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     int             formatInt = OUTPUT_FORMAT_PEM, encodingInt = -1;
     int             fromInt = NS_CRYPTO_KEYIMPORT_PUBLIC;
-    const char     *typeName = NULL, *outfileName = NULL;
+    const char     *typeName = NULL, *outfileName = NULL, *resolvedTypeName = NULL;
     Tcl_Obj        *paramsObj = NULL;
     OSSL_PARAM_BLD *bld = NULL;
     OSSL_PARAM     *params = NULL;
@@ -7081,8 +7203,13 @@ CryptoKeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
 
     result = PkeyImportParamsFromDict(interp, typeName, selection, paramsObj,
-                                      bld, &tmpData);
+                                      &resolvedTypeName, bld, &tmpData);
     if (result != TCL_OK) {
+        goto done;
+    }
+    if (resolvedTypeName == NULL) {
+        Ns_TclPrintfResult(interp, "internal error: unresolved key import type");
+        result = TCL_ERROR;
         goto done;
     }
 
@@ -7092,8 +7219,7 @@ CryptoKeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
         goto done;
     }
-
-    result = PkeyImportFromParams(interp, typeName, selection, params,
+    result = PkeyImportFromParams(interp, resolvedTypeName, selection, params,
                                   formatInt, encoding, outfileName);
 
 done:

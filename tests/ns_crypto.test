@@ -21,6 +21,10 @@ tcltest::testConstraint keygen    [tcltest::testConstraint agreement] ;# both re
 tcltest::testConstraint mldsa     [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
 tcltest::testConstraint signature [expr {![catch {::ns_crypto::signature generate}]}]
 tcltest::testConstraint sm2       [expr {![catch {::ns_crypto::signature generate -name sm2}]}]
+tcltest::testConstraint ed25519   [expr {![catch {::ns_crypto::signature generate -name Ed25519}]}]
+tcltest::testConstraint x25519    [expr {![catch {::ns_crypto::agreement generate -name X25519}]}]
+tcltest::testConstraint ed448     [expr {![catch {ns_crypto::key generate -name Ed448}]}]
+tcltest::testConstraint secp256k1 [expr {![catch {ns_crypto::eckey generate -name secp256k1}]}]
 
 #foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec signature keygen sm2} {
 #    ns_log notice constraint $c [tcltest::testConstraint $c]
@@ -1190,7 +1194,7 @@ test ns_crypto::key-8.4 {ns_crypto::key import RSA public key from modulus/expon
         #
         # Generate RSA key pair
         #
-        set privpem [ns_crypto::signature generate -name RSA]
+        set privpem [ns_crypto::key generate -name RSA]
 
         #
         # Extract modulus and exponent as hex data
@@ -1219,6 +1223,137 @@ test ns_crypto::key-8.4 {ns_crypto::key import RSA public key from modulus/expon
     } \
     -returnCodes {error ok} \
     -result {1}
+
+
+test ns_crypto::key-8.5 {ns_crypto::key import OKP Ed25519 public key from x} \
+    -constraints {keygen ed25519 tcl86} \
+    -body {
+        set privpem [ns_crypto::key generate -name Ed25519]
+        set pubraw  [ns_crypto::key pub -pem $privpem -encoding binary]
+
+        if {[string length $pubraw] != 32} {
+            error "bad Ed25519 public key length"
+        }
+
+        set pubpem2 [ns_crypto::key import \
+                         -name OKP \
+                         -params [dict create crv Ed25519 x $pubraw]]
+
+        if {![string match "-----BEGIN PUBLIC KEY-----*" $pubpem2]} {
+            error "bad pem: $pubpem2"
+        }
+
+        set data "hello\n"
+        set sig [ns_crypto::signature sign -binary -pem $privpem -- $data]
+        ns_crypto::signature verify \
+            -binary \
+            -pem $pubpem2 \
+            -signature [binary decode hex $sig] \
+            -- $data
+    } \
+    -returnCodes {error ok} \
+    -result {1}
+
+
+test ns_crypto::key-8.6 {ns_crypto::key import OKP Ed25519 public key raw} \
+    -constraints {keygen ed25519 tcl86} \
+    -body {
+        set privpem [ns_crypto::key generate -name Ed25519]
+        set pubraw  [ns_crypto::key pub -pem $privpem -encoding binary]
+
+        set imported [ns_crypto::key import \
+                          -name OKP \
+                          -format raw \
+                          -encoding binary \
+                          -params [dict create crv Ed25519 x $pubraw]]
+
+        string equal $pubraw $imported
+    } \
+    -result 1
+
+
+test ns_crypto::key-8.7 {ns_crypto::key import OKP X25519 public key from x} \
+    -constraints {keygen x25519 tcl86} \
+    -body {
+        set privpem [ns_crypto::key generate -name X25519]
+        set pubraw  [ns_crypto::key pub -pem $privpem -encoding binary]
+
+        if {[string length $pubraw] != 32} {
+            error "bad X25519 public key length"
+        }
+
+        set pubpem2 [ns_crypto::key import \
+                         -name OKP \
+                         -params [dict create crv X25519 x $pubraw]]
+
+        if {![string match "-----BEGIN PUBLIC KEY-----*" $pubpem2]} {
+            error "bad pem: $pubpem2"
+        }
+
+        set info [ns_crypto::key info -pem $pubpem2]
+        list [dict get $info type] [dict get $info agreement]
+    } \
+    -result {x25519 1}
+
+
+test ns_crypto::key-8.8 {ns_crypto::key import OKP requires crv and x} \
+    -constraints {keygen ed25519} \
+    -body {
+        ns_crypto::key import -name OKP -params [dict create crv Ed25519]
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {*requires dict keys "crv" and "x"*}
+
+
+test ns_crypto::key-8.9 {ns_crypto::key import OKP rejects unsupported crv} \
+    -constraints {keygen} \
+    -body {
+        ns_crypto::key import \
+            -name OKP \
+            -params [dict create crv Ed25518 x [binary format a32 ""]]
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {*unsupported OKP curve*}
+
+
+test ns_crypto::key-8.10 {ns_crypto::key import OKP validates Ed25519 public key length} \
+    -constraints {keygen ed25519} \
+    -body {
+        ns_crypto::key import \
+            -name OKP \
+            -params [dict create crv Ed25519 x "abc"]
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {invalid public key length for Ed25519 (need * bytes)}
+
+
+test ns_crypto::key-8.11 {ns_crypto::key import OKP validates X25519 public key length} \
+    -constraints {keygen x25519} \
+    -body {
+        ns_crypto::key import \
+            -name OKP \
+            -params [dict create crv X25519 x "abc"]
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {invalid public key length for X25519 (need * bytes)}
+
+
+test ns_crypto::key-8.12 {ns_crypto::key import OKP currently supports only public} \
+    -constraints {keygen ed25519} \
+    -body {
+        ns_crypto::key import \
+            -name OKP \
+            -from private \
+            -params [dict create crv Ed25519 x [binary format a32 ""]]
+    } \
+    -returnCodes error \
+    -match glob \
+    -result {*currently supports only -from public*}
+
 
 #---------------------------------------------------------------------------
 # Generic tests for ns_crypto::key generate
@@ -1254,7 +1389,7 @@ test ns_crypto-key-generate-1.3 {ns_crypto::key generate -name EC default -group
     -result {prime256v1}
 
 test ns_crypto-key-generate-1.4 {ns_crypto::key generate -name X25519 works without -group} \
-    -constraints {keygen} \
+    -constraints {keygen x25519} \
     -body {
         set pem [ns_crypto::key generate -name X25519]
         dict get [ns_crypto::key info -pem $pem] type
@@ -1262,7 +1397,7 @@ test ns_crypto-key-generate-1.4 {ns_crypto::key generate -name X25519 works with
     -result x25519
 
 test ns_crypto-key-generate-1.5 {ns_crypto::key generate -name X25519 accepts matching -group} \
-    -constraints {keygen} \
+    -constraints {keygen x25519} \
     -body {
         set pem [ns_crypto::key generate -name X25519 -group x25519]
         dict get [ns_crypto::key info -pem $pem] type
@@ -1270,7 +1405,7 @@ test ns_crypto-key-generate-1.5 {ns_crypto::key generate -name X25519 accepts ma
     -result x25519
 
 test ns_crypto-key-generate-1.6 {ns_crypto::key generate -name X25519 rejects wrong -group} \
-    -constraints {keygen} \
+    -constraints {keygen x25519} \
     -body {
         ns_crypto::key generate -name X25519 -group prime256v1
     } \
@@ -1397,7 +1532,7 @@ test ns_crypto-sm2-1.8 {SM2 sign defaults work without explicit -id} \
 
 
 test ns_crypto-sm2-1.9 {non-SM2 signature key rejects -id on sign} \
-    -constraints {signature} \
+    -constraints {signature ed25519} \
     -body {
         set pem [ns_crypto::signature generate -name Ed25519]
         ns_crypto::signature sign -pem $pem -id "alice@example.com" -- "hello world"
@@ -1408,7 +1543,7 @@ test ns_crypto-sm2-1.9 {non-SM2 signature key rejects -id on sign} \
 
 
 test ns_crypto-sm2-1.10 {non-SM2 signature key rejects -id on verify} \
-    -constraints {signature} \
+    -constraints {signature ed25519} \
     -body {
         set pem [ns_crypto::signature generate -name Ed25519]
         set pub [ns_crypto::signature pub -pem $pem]
@@ -1574,7 +1709,7 @@ test ns_crypto::signature-6.2 {verify: invalid base64 signature encoding} -const
 # Test Cases for ns_crypto::signature with Ed25519
 #---------------------------------------------------------------------------
 
-test ns_crypto::signature-7.1 {Ed25519 sign/verify roundtrip} -constraints {signature} -body {
+test ns_crypto::signature-7.1 {Ed25519 sign/verify roundtrip} -constraints {signature ed25519} -body {
     set priv [ns_crypto::signature generate -name ed25519]
     set pub [ns_crypto::signature pub -pem $priv]
     set sig [ns_crypto::signature sign -encoding binary -pem $priv "hello"]
@@ -1583,14 +1718,14 @@ test ns_crypto::signature-7.1 {Ed25519 sign/verify roundtrip} -constraints {sign
     unset -nocomplain priv pub
 } -returnCodes {error ok} -result 1
 
-test ns_crypto::signature-7.2 {Ed25519 rejects explicit digest on sign} -constraints {signature} -body {
+test ns_crypto::signature-7.2 {Ed25519 rejects explicit digest on sign} -constraints {signature ed25519} -body {
     set priv [ns_crypto::signature generate -name ed25519]
     ns_crypto::signature sign -digest sha256 -pem $priv "hello"
 } -cleanup {
     unset -nocomplain priv
 } -returnCodes error -match glob -result {*digest*not supported*}
 
-test ns_crypto::signature-7.3 {Ed25519 rejects explicit digest on verify} -constraints {signature} -body {
+test ns_crypto::signature-7.3 {Ed25519 rejects explicit digest on verify} -constraints {signature ed25519} -body {
     set priv [ns_crypto::signature generate -name ed25519]
     set pub [ns_crypto::signature pub -pem $priv]
     set sig [ns_crypto::signature sign -encoding binary -pem $priv "hello"]
@@ -1776,7 +1911,7 @@ test ns_crypto::agreement-1.3 {syntax: ns_crypto::agreement derive} -constraints
 # Functional tests: agreement key generation and public key extraction
 #---------------------------------------------------------------------------
 
-test ns_crypto::agreement-2.1 {generate: X25519 private key} -constraints {agreement} -body {
+test ns_crypto::agreement-2.1 {generate: X25519 private key} -constraints {agreement x25519} -body {
     set pem [ns_crypto::agreement generate -name X25519]
     list \
         [string match {*-----BEGIN PRIVATE KEY-----*} $pem] \
@@ -1792,7 +1927,7 @@ test ns_crypto::agreement-2.2 {generate: X448 private key} -constraints {agreeme
         [dict get [ns_crypto::key info -pem $pem] agreement]
 } -result {1 x448 1}
 
-test ns_crypto::agreement-2.3 {pub: X25519 public key extraction} -constraints {agreement} -body {
+test ns_crypto::agreement-2.3 {pub: X25519 public key extraction} -constraints {agreement x25519} -body {
     set pem [ns_crypto::agreement generate -name X25519]
     set pub [ns_crypto::agreement pub -pem $pem]
     list \
@@ -1810,7 +1945,7 @@ test ns_crypto::agreement-2.4 {pub: X448 public key extraction} -constraints {ag
         [dict get [ns_crypto::key info -pem $pub] agreement]
 } -result {1 x448 1}
 
-test ns_crypto::agreement-2.5 {generate: write X25519 key to outfile} -constraints {agreement} -setup {
+test ns_crypto::agreement-2.5 {generate: write X25519 key to outfile} -constraints {agreement x25519} -setup {
     set privFile /tmp/ns_crypto_x25519_priv.pem
     file delete -force $privFile
 } -body {
@@ -1821,7 +1956,7 @@ test ns_crypto::agreement-2.5 {generate: write X25519 key to outfile} -constrain
     unset -nocomplain privFile
 } -result 1
 
-test ns_crypto::agreement-2.6 {pub: write X25519 public key to outfile} -constraints {agreement} -setup {
+test ns_crypto::agreement-2.6 {pub: write X25519 public key to outfile} -constraints {agreement x25519} -setup {
     set privFile /tmp/ns_crypto_x25519_priv.pem
     set pubFile  /tmp/ns_crypto_x25519_pub.pem
     file delete -force $privFile $pubFile
@@ -1859,7 +1994,7 @@ test ns_crypto::agreement-2.9 {generate: DHX with group} -constraints {agreement
 # Functional tests: agreement shared secret derivation
 #---------------------------------------------------------------------------
 
-test ns_crypto::agreement-3.1 {derive: X25519 roundtrip default hex encoding} -constraints {agreement} -body {
+test ns_crypto::agreement-3.1 {derive: X25519 roundtrip default hex encoding} -constraints {agreement x25519} -body {
     set pemA [ns_crypto::agreement generate -name X25519]
     set pemB [ns_crypto::agreement generate -name X25519]
     set pubA [ns_crypto::agreement pub -pem $pemA]
@@ -1871,7 +2006,7 @@ test ns_crypto::agreement-3.1 {derive: X25519 roundtrip default hex encoding} -c
     list [string length $s1] [string equal $s1 $s2]
 } -returnCodes {error ok} -result {64 1}
 
-test ns_crypto::agreement-3.2 {derive: X25519 roundtrip binary encoding} -constraints {agreement} -body {
+test ns_crypto::agreement-3.2 {derive: X25519 roundtrip binary encoding} -constraints {agreement x25519} -body {
     set pemA [ns_crypto::agreement generate -name X25519]
     set pemB [ns_crypto::agreement generate -name X25519]
     set pubA [ns_crypto::agreement pub -pem $pemA]
@@ -1883,7 +2018,7 @@ test ns_crypto::agreement-3.2 {derive: X25519 roundtrip binary encoding} -constr
     list [string length $s1] [string equal $s1 $s2]
 } -returnCodes {error ok} -result {32 1}
 
-test ns_crypto::agreement-3.3 {derive: X25519 roundtrip base64url encoding} -constraints {agreement} -body {
+test ns_crypto::agreement-3.3 {derive: X25519 roundtrip base64url encoding} -constraints {agreement x25519} -body {
     set pemA [ns_crypto::agreement generate -name X25519]
     set pemB [ns_crypto::agreement generate -name X25519]
     set pubA [ns_crypto::agreement pub -pem $pemA]
@@ -1971,7 +2106,7 @@ test ns_crypto::agreement-5.4 {derive: KEM key rejected} -constraints {agreement
 # Negative tests: agreement incompatible peers
 #---------------------------------------------------------------------------
 
-test ns_crypto::agreement-6.1 {derive: incompatible X25519/X448 peer keys} -constraints {agreement} -body {
+test ns_crypto::agreement-6.1 {derive: incompatible X25519/X448 peer keys} -constraints {agreement x25519} -body {
     set pemA [ns_crypto::agreement generate -name X25519]
     set pemB [ns_crypto::agreement generate -name X448]
     set pubB [ns_crypto::agreement pub -pem $pemB]
@@ -1979,13 +2114,240 @@ test ns_crypto::agreement-6.1 {derive: incompatible X25519/X448 peer keys} -cons
     ns_crypto::agreement derive -pem $pemA -peer $pubB
 } -returnCodes error -match glob -result {*compatible*key agreement*}
 
-test ns_crypto::agreement-6.2 {derive: RSA peer rejected} -constraints {agreement} -body {
+test ns_crypto::agreement-6.2 {derive: RSA peer rejected} -constraints {agreement x25519} -body {
     set pemA [ns_crypto::agreement generate -name X25519]
     set pemR [ns_crypto::signature generate -name RSA]
     set pubR [ns_crypto::signature pub -pem $pemR]
 
     ns_crypto::agreement derive -pem $pemA -peer $pubR
 } -returnCodes error -match glob -result {*does not support key agreement*}
+
+
+############################################################################
+# Test Cases for JWT/JWK
+############################################################################
+
+namespace eval jwt {}
+proc ::jwt::public_key_from_jwk {jwk} {
+    set kty [dict get $jwk kty]
+
+    switch -- $kty {
+        EC {
+            set crv [dict get $jwk crv]
+            set curveMap {
+                P-256 prime256v1
+                P-384 secp384r1
+                P-521 secp521r1
+                secp256k1 secp256k1
+            }
+            if {![dict exists $curveMap $crv]} {
+                error "unsupported EC curve \"$crv\""
+            }
+            set group [dict get $curveMap $crv]
+            set x [ns_base64urldecode -binary [dict get $jwk x]]
+            set y [ns_base64urldecode -binary [dict get $jwk y]]
+
+            return [ns_crypto::key import \
+                        -name EC \
+                        -params [dict create group $group x $x y $y]]
+        }
+        RSA {
+            set n [ns_base64urldecode -binary [dict get $jwk n]]
+            set e [ns_base64urldecode -binary [dict get $jwk e]]
+            return [ns_crypto::key import \
+                        -name RSA \
+                        -params [dict create n $n e $e]]
+        }
+        OKP {
+            set crv [dict get $jwk crv]
+            set x [ns_base64urldecode -binary [dict get $jwk x]]
+            return [ns_crypto::key import \
+                        -name OKP \
+                        -params [dict create crv $crv x $x]]
+        }
+        default {
+            error "unsupported JWK kty \"$kty\""
+        }
+    }
+}
+
+proc ::jwt::alg_to_verify_spec {alg} {
+    switch -- $alg {
+        ES256  { return {keytype EC  digest sha256} }
+        ES256K { return {keytype EC  digest sha256} }
+        ES384  { return {keytype EC  digest sha384} }
+        ES512  { return {keytype EC  digest sha512} }
+
+        RS256  { return {keytype RSA digest sha256} }
+        RS384  { return {keytype RSA digest sha384} }
+        RS512  { return {keytype RSA digest sha512} }
+
+        default {
+            error "unsupported JWT alg \"$alg\""
+        }
+    }
+}
+
+#---------------------------------------------------------------------------
+# JWT/JWK adapter-style regression tests based on helper procs
+#---------------------------------------------------------------------------
+
+test ns_crypto::jwk-1.0 {JWK helpers: verify all supported ES* algorithms} \
+    -constraints {keygen ec tcl86 secp256k1} \
+    -body {
+        set curveMap {
+            ES256  {nsCurve prime256v1 jwkCrv P-256     coordLen 32}
+            ES256K {nsCurve secp256k1  jwkCrv secp256k1 coordLen 32}
+            ES384  {nsCurve secp384r1  jwkCrv P-384     coordLen 48}
+            ES512  {nsCurve secp521r1  jwkCrv P-521     coordLen 66}
+        }
+        set results {}
+        foreach {alg details} $curveMap {
+            dict with details {
+                #
+                # Generate EC key pair on the required curve
+                #
+                set privpem   [ns_crypto::key generate -name EC -group $nsCurve]
+                set pubrawHex [ns_crypto::key pub -pem $privpem -encoding hex]
+                set pubraw    [binary decode hex $pubrawHex]
+
+                if {[string length $pubraw] != (1 + 2 * $coordLen)
+                    || [string index $pubraw 0] ne "\x04"} {
+                    error "bad EC public point for $alg"
+                }
+
+                set x [string range $pubraw 1 $coordLen]
+                set y [string range $pubraw [expr {$coordLen + 1}] end]
+
+                #
+                # Build JWK-like dict and import public key
+                #
+                set jwk [dict create \
+                             kty EC \
+                             crv $jwkCrv \
+                             x [ns_base64urlencode -binary -- $x] \
+                             y [ns_base64urlencode -binary -- $y]]
+
+                set pubpem2 [::jwt::public_key_from_jwk $jwk]
+                set spec    [::jwt::alg_to_verify_spec $alg]
+                set digest  [dict get $spec digest]
+
+                #
+                # Sign/verify roundtrip
+                #
+                set data "hello $alg\n"
+                set sig [ns_crypto::md string -digest $digest -encoding binary -sign $privpem $data]
+                lappend results $alg [ns_crypto::md string -digest $digest -encoding binary \
+                                          -verify $pubpem2 -signature $sig $data]
+            }
+        }
+        set results
+    } \
+    -returnCodes {error ok} \
+    -result {ES256 1 ES256K 1 ES384 1 ES512 1}
+
+
+test ns_crypto::jwk-2.0 {JWK helpers: verify all supported RS* algorithms} \
+    -constraints {keygen signature tcl86} \
+    -body {
+        set results {}
+        foreach alg {RS256 RS384 RS512} {
+            #
+            # Generate RSA key pair
+            #
+            set privpem [ns_crypto::signature generate -name RSA]
+            set info [ns_crypto::key info -pem $privpem -encoding binary]
+
+            set n [dict get $info n]
+            set e [dict get $info e]
+
+            #
+            # Build JWK-like dict and import public key
+            #
+            set jwk [dict create \
+                         kty RSA \
+                         n [ns_base64urlencode -binary -- $n] \
+                         e [ns_base64urlencode -binary -- $e]]
+
+            set pubpem2 [::jwt::public_key_from_jwk $jwk]
+            set spec    [::jwt::alg_to_verify_spec $alg]
+            set digest  [dict get $spec digest]
+
+            #
+            # Sign/verify roundtrip
+            #
+            set data "hello $alg\n"
+            set sig [ns_crypto::md string -digest $digest -encoding binary -sign $privpem $data]
+            lappend results $alg [ns_crypto::md string -digest $digest -encoding binary \
+                                      -verify $pubpem2 -signature $sig $data]
+        }
+        set results
+    } \
+    -returnCodes {error ok} \
+    -result {RS256 1 RS384 1 RS512 1}
+
+test ns_crypto::jwk-3.0 {JWK helpers: verify all supported OKP algorithms} \
+    -constraints {keygen tcl86 ed25519 x25519 ed448} \
+    -body {
+
+        #
+        # Map alg → parameters (similar to EC map)
+        #
+        set okp_map {
+            EdDSA  {name Ed25519 type signature}
+            Ed448  {name Ed448   type signature}
+            X25519 {name X25519 type agreement}
+        }
+
+        set results {}
+
+        foreach {alg details} $okp_map {
+            dict with details {
+
+                #
+                # Generate key
+                #
+                set privpem [ns_crypto::key generate -name $name]
+                set pubraw  [ns_crypto::key pub -pem $privpem -encoding binary]
+
+                #
+                # Import via OKP
+                #
+                set pubpem2 [ns_crypto::key import \
+                                 -name OKP \
+                                 -params [dict create crv $name x $pubraw]]
+
+                #
+                # Verify behavior
+                #
+                if {$type eq "signature"} {
+                    set data "hello\n"
+                    set sig [ns_crypto::signature sign -binary -pem $privpem -- $data]
+
+                    set ok [ns_crypto::signature verify \
+                                -binary \
+                                -pem $pubpem2 \
+                                -signature [binary decode hex $sig] \
+                                -- $data]
+                    lappend results $alg $ok
+
+                } else {
+                    #
+                    # For X25519: just check capability
+                    #
+                    set info [ns_crypto::key info -pem $pubpem2]
+                    lappend results $alg [dict get $info agreement]
+                }
+            }
+        }
+
+        set results
+
+    } \
+    -returnCodes {error ok} \
+    -result {EdDSA 1 Ed448 1 X25519 1}
+
+
 
 #
 # Local variables:
