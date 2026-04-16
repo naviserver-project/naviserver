@@ -949,8 +949,13 @@ violation and the location within the document.
 [section "Triple Format"]
 
 [para]
-  The triples representation uses a single uniform structure.  A
-  JSON document is represented in canonical form as a
+  The triples representation uses a single uniform structure to provide
+  explicit JSON typing information together with key names and values.
+  This avoids ambiguity between JSON types and enables lossless
+  round-trip conversion between JSON and Tcl data structures.
+
+[para]
+  A JSON document is represented in canonical form as a
   [term "triples document"], which is a container-content triples list
   wrapped in an explicit root triple:
 
