@@ -1,0 +1,325 @@
+[manpage_begin ns_jwt n 1.0]
+[moddesc   {NaviServer Built-in Commands}]
+[titledesc {JSON Web Token support}]
+[description]
+
+The command [cmd ns_jwt] provides a Tcl-level interface for creating,
+decoding, and verifying JSON Web Tokens (JWTs) in compact serialization
+format.
+
+[para]
+The implementation is built on top of NaviServer's JSON and cryptographic
+facilities.  It is intended as a convenience interface for common JWT
+workflows and hides most low-level details of key handling and signature
+verification.
+
+[para]
+The commands documented here operate on compact JWTs of the form
+[const header.payload.signature].
+
+[para]
+This command requires a NaviServer version built with OpenSSL support
+and NSF installed.
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd "ns_jwt encode"] \
+     [option "-alg [arg value]"] \
+     [opt [option "-key [arg value]"]] \
+     [opt [option "-jwk [arg value]"]] \
+     [opt [option "-secret [arg value]"]] \
+     [opt [option "-kid [arg value]"]] \
+     [opt [option "-typ [arg value]"]] \
+     [opt [option "-cty [arg value]"]] \
+     [opt [option "-extraheader [arg value]"]] \
+     [opt [option "-iss [arg value]"]] \
+     [opt [option "-sub [arg value]"]] \
+     [opt [option "-aud [arg value]"]] \
+     [opt [option "-exp [arg value]"]] \
+     [opt [option "-nbf [arg value]"]] \
+     [opt [option "-iat [arg value]"]] \
+     [opt [option "-jti [arg value]"]] \
+     [opt [arg extrapayload]] \
+    ]
+
+Create a JSON Web Token (JWT) in compact serialization format.
+
+[para]
+  The command builds a protected header and payload, encodes both as
+  base64url, and signs the resulting input using the specified algorithm.
+  The payload is constructed from standard JWT claims provided as named
+  parameters and optional additional claims in triple form.
+  
+[para]
+  The option [option -alg] specifies the signature algorithm (for example
+  [const HS256], [const HS384], [const HS512],
+  [const EdDSA], [const ES256], [const ES256K], [const ES384],
+  [const ES512], [const RS256], [const RS384], or [const RS512]).
+  The set of available algorithms depends on the underlying OpenSSL
+  version and provider configuration; the values listed above correspond
+  to typical configurations based on OpenSSL 3.x.
+  
+[para]
+  The algorithms [const HS256], [const HS384], and [const HS512] use
+  symmetric keys (shared secrets) and require the option
+  [option -secret]. All other algorithms use asymmetric keys and require
+  [option -key]. Support for signing via [option -jwk] is reserved for
+  future use and is not implemented yet.
+  
+[para]
+  When [const none] is specified, no signature is added and the JWT ends
+  with an empty signature component.
+
+[para]
+[para]
+  The option [option -key] specifies the private key in PEM form. The
+  value may be a PEM string or a PEM file name.
+
+[para]
+  The option [option -jwk] is reserved for future support of signing
+  with private keys in JWK form and is currently not implemented.
+
+[para]
+  The option [option -secret] specifies the shared secret used for
+  HMAC-based algorithms ([const HS256], [const HS384], [const HS512]).
+  This option is only valid for these algorithms.
+
+[para]
+  The option [option -kid] adds a key identifier to the protected header.
+  The options [option -typ] and [option -cty] set the corresponding JWT
+  header fields.  The default for [option -typ] is [const JWT].
+
+[para]
+  The option [option -extraheader] specifies additional protected header
+  fields in JSON triples form (see [uri ./ns_json.html#section4 "ns_json"]),
+  using the representation [const "name type value ..."].
+
+[para]
+  The options [option -iss], [option -sub], [option -aud], [option -exp],
+  [option -nbf], [option -iat], and [option -jti] set the corresponding
+  registered JWT claims.  The audience claim [option -aud] may be either
+  a single value or a Tcl list of values.  A single value is encoded as a
+  JSON string; multiple values are encoded as a JSON array.
+
+[para]
+  The final argument [arg extrapayload], when provided, contains additional
+  payload fields in JSON triples form (see [uri ./ns_json.html#section4 "ns_json"]),
+  using the representation [const "name type value ..."].
+
+[para]
+  The command returns the compact JWT string
+  [const header.payload.signature].
+
+[example_begin]
+ # Generate a PEM key containing the private key for demonstration purposes.
+ set privpem [lb]ns_crypto::key generate -name Ed25519[rb]
+ 
+ set token [lb]ns_jwt encode \
+                -alg EdDSA \
+                -key $privpem \
+                -kid ed1 \
+                -iss naviserver \
+                -sub alice \
+                -aud myservice \
+                -exp [lb]expr {[lb]clock seconds[rb] + 300}[rb] \
+                {role string admin}[rb]
+[example_end]
+
+
+[call [cmd "ns_jwt decode"] \
+     [arg token] \
+    ]
+
+  Decode a JSON Web Token without performing signature verification.
+
+[para]
+  The command splits the token into its three compact components, decodes
+  the protected header and payload from base64url, and parses them as JSON.
+
+[para]
+  The result is a Tcl dictionary containing the keys [const header],
+  [const payload], and [const signature].  The values of [const header]
+  and [const payload] are parsed Tcl dictionaries.  The value of
+  [const signature] is the raw binary signature.  For unsigned tokens
+  ([const alg=none]), the signature value is empty.
+
+[example_begin]
+ set decoded [lb]ns_jwt decode $token[rb]
+ set header  [lb]dict get $decoded header[rb]
+ set payload [lb]dict get $decoded payload[rb]
+ 
+ dict get $header alg
+ # returns the "alg" component of the JWT header
+ 
+ dict get $payload sub
+ # returns the "sub" component of the JWT payload
+[example_end]
+
+
+[call [cmd "ns_jwt verify"] \
+     [opt [option "-alg [arg value]"]] \
+     [opt [option "-key [arg value]"]] \
+     [opt [option "-jwk [arg value]"]] \
+     [opt [option "-jwks [arg value]"]] \
+     [opt [option "-secret [arg value]"]] \
+     [opt [option "-kid [arg value]"]] \
+     [opt [option "-requirekid"]] \
+     [opt [option "-verifyclaims"]] \
+     [opt [option "-aud [arg value]"]] \
+     [opt [option "-iss [arg value]"]] \
+     [opt [option "-sub [arg value]"]] \
+     [opt [option "-clockskew [arg value]"]] \
+     [opt [option "-now [arg value]"]] \
+     [arg token] \
+    ]
+
+  Verify a JSON Web Token and optionally validate claims.
+
+[para]
+  The command decodes the token, resolves a verification key, and verifies
+  the signature according to the algorithm specified in the JWT header.
+
+[para]
+  Verification keys may be provided in one of the following forms,
+  depending on the algorithm:
+  
+  [list_begin itemized]
+  [item] [option -secret] - shared secret for HMAC-based algorithms
+         ([const HS256], [const HS384], [const HS512])
+  [item] [option -key] - public key in PEM form for asymmetric algorithms
+  [item] [option -jwk] - a single JWK for asymmetric algorithms
+  [item] [option -jwks] - a JWK set from which a key is selected
+  [list_end]
+  
+[para]
+  When [option -alg] is specified, its value must match the [const alg]
+  field in the JWT header.  When [option -kid] is specified, its value
+  must match the [const kid] field in the JWT header.  When
+  [option -requirekid] is used, the JWT header must contain a
+  [const kid] field.
+
+[para]
+  Unsigned JWTs using [const alg=none] are rejected by this command.
+
+[para]
+  When [option -verifyclaims] is specified, the command additionally
+  validates registered claims.  The options [option -aud],
+  [option -iss], and [option -sub] specify expected values for these
+  claims.  The option [option -clockskew] specifies an allowed time skew
+  in seconds for validating time-based claims such as [const exp],
+  [const nbf], and [const iat].  The option [option -now] specifies the
+  reference time as seconds since the epoch; when omitted, the current
+  time is used.
+
+[para]
+  On success, the command returns a Tcl dictionary containing:
+  
+  [list_begin itemized]
+  [item] [const valid] — boolean value [const 1]
+  [item] [const header] — parsed JWT header
+  [item] [const payload] — parsed JWT payload
+  [item] [const kid] — resolved key identifier, possibly empty
+  [item] [const alg] — algorithm used for verification
+  [list_end]
+
+[para]
+  On failure, the command raises a Tcl error.
+
+[example_begin]
+ # Derive the public key in PEM format from the private key and verify
+ # the token.
+ set pubpem [lb]ns_crypto::key pub -pem $privpem -format pem[rb]
+ 
+ set verified [lb]ns_jwt verify \
+                   -key $pubpem \
+                   -verifyclaims \
+                   -iss naviserver \
+                   -aud myservice \
+                   $token[rb]
+ 
+ set payload [lb]dict get $verified payload[rb]
+
+ dict get $payload sub
+ # returns the "sub" component of the JWT payload
+[example_end]
+
+[list_end]
+
+
+[section NOTES]
+
+[para]
+  The options [option -extraheader] and [arg extrapayload] use the JSON
+  triples representation as used by [cmd ns_json].  This representation
+  preserves JSON types precisely and avoids ambiguity between strings,
+  numbers, booleans, null values, arrays, and objects.
+
+[para]
+  Standard claims passed via dedicated options are encoded with their
+  natural JSON types.  In particular, [option -exp], [option -nbf], and
+  [option -iat] are encoded as numbers.
+
+[para]
+  The set of supported algorithms depends on the cryptographic algorithms
+  available through the underlying [cmd ns_crypto] implementation and the
+  OpenSSL version in use.
+
+[para]
+  HMAC-based algorithms use symmetric keys. This means that the same
+  secret is used for both signing and verification. All parties that
+  verify such tokens must know the shared secret. For applications that
+  require key separation or public-key distribution, asymmetric
+  algorithms (e.g., [const RS256], [const ES256], [const EdDSA]) should
+  be preferred.
+
+[para]
+  When using HMAC-based algorithms, the security of the token depends
+  entirely on the secrecy of the shared key provided via
+  [option -secret]. While [const kid] may still be present in the JWT
+  header, key distribution and shared-secret management remain the
+  responsibility of the application.
+
+[section EXAMPLES]
+
+[example_begin]
+ # Create and verify an Ed25519-signed JWT
+ 
+ set privpem [lb]ns_crypto::key generate -name Ed25519[rb]
+ set pubpem  [lb]ns_crypto::key pub -pem $privpem -format pem[rb]
+ 
+ set token [lb]ns_jwt encode \
+                -alg EdDSA \
+                -key $privpem \
+                -iss naviserver \
+                -sub alice \
+                {role string admin}[rb]
+ 
+ set result [lb]ns_jwt verify -key $pubpem $token[rb]
+ dict get [lb]dict get $result payload[rb] role
+[example_end]
+
+[example_begin]
+ # Verify a token against a JWK
+ 
+ set privpem [lb]ns_crypto::key generate -name EC -group prime256v1[rb]
+ set info    [lb]ns_crypto::key info -pem $privpem -encoding base64url[rb]
+ 
+ set jwk [lb]dict create \
+              kty EC \
+              crv P-256 \
+              x [lb]dict get $info x[rb] \
+              y [lb]dict get $info y[rb][rb]
+ 
+ set token [lb]ns_jwt encode \
+                -alg ES256 \
+                -key $privpem \
+                -sub alice[rb]
+ 
+ ns_jwt verify -jwk $jwk $token
+[example_end]
+
+[see_also ns_crypto ns_json]
+[keywords JWT JWK JWKS JSON Web Token JSON Web Key signature verification]
+[manpage_end]
