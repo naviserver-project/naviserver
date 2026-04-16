@@ -219,11 +219,22 @@ static int PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
                                const EVP_MD *md)
     NS_GNUC_NONNULL(1,2,3,5);
 
+static int PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
+                            const char *name, const BIGNUM *bn, size_t width,
+                            Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2,3,4);
+
 static int PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1,2,3);
 
 static int PkeyInfoPutCapabilities(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
         NS_GNUC_NONNULL(1,2,3);
+
+static int PkeyInfoPutEcDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding  encoding)
+    NS_GNUC_NONNULL(1,2,3);
+
+static int PkeyInfoPutOkpDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2,3);
 
 static int PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding  encoding)
     NS_GNUC_NONNULL(1,2,3);
@@ -359,6 +370,15 @@ static int OkpCurveInfo(const char *crv, const char **typeNamePtr, size_t *pubLe
 static int PkeyImportOkpPublicParamsFromDict(Tcl_Interp *interp, Tcl_Obj *paramsObj,
                                   const char **resolvedTypeNamePtr, OSSL_PARAM_BLD *bld,
                                   Ns_DList *tmpData)
+    NS_GNUC_NONNULL(1,2,3,4,5);
+
+static int PkeyInfoPutOctets(Tcl_Interp *interp, Tcl_Obj *resultObj, const char *name,
+                             const unsigned char *value, size_t valueLen, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2,3,4);
+
+static int
+PkeyInfoPutOctetParam(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, const char *dictName,
+                      const char *paramName, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2,3,4,5);
 
 # endif /* HAVE_OPENSSL_3 */
@@ -6345,6 +6365,403 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
 }
 #endif /* HAVE_OPENSSL_3 */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutBnPad --
+ *
+ *      Store a BIGNUM value under the specified dictionary key after
+ *      converting it to a fixed-width, zero-padded big-endian byte
+ *      string and applying the requested binary encoding.
+ *
+ *      This helper is intended for key parameters whose exported form
+ *      must have a predictable width, such as EC affine coordinates
+ *      used for JWK-style representations. In contrast to minimal-length
+ *      integer encodings, the result is always exactly "width" bytes long.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on allocation or conversion failure.
+ *      On error, an explanatory message is left in the interpreter.
+ *
+ * Side effects:
+ *      Adds the encoded value to resultObj under "name".
+ *      Allocates and frees a temporary buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
+                 const char *name, const BIGNUM *bn, size_t width,
+                 Ns_BinaryEncoding encoding)
+{
+    unsigned char *buf;
+    int            result = TCL_ERROR;
+
+    buf = ns_malloc((size_t)width);
+    if (buf == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate buffer for %s", name);
+        return TCL_ERROR;
+    }
+
+    if (BN_bn2binpad(bn, buf, (int)width) != (int)width) {
+        ns_free(buf);
+        Ns_TclPrintfResult(interp, "could not convert %s", name);
+        return TCL_ERROR;
+    }
+
+    Tcl_DictObjPut(interp, resultObj,
+                   Tcl_NewStringObj(name, TCL_INDEX_NONE),
+                   NsEncodedObj(buf, width, NULL, encoding));
+    ns_free(buf);
+
+    result = TCL_OK;
+    return result;
+}
+
+# ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutOctets --
+ *
+ *      Store a raw octet string under the specified dictionary key after
+ *      applying the requested binary encoding.
+ *
+ *      This helper is intended for public key components that are
+ *      naturally represented as raw bytes rather than integer values,
+ *      such as the public key value of OKP-style key types.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on allocation failure.
+ *      On error, an explanatory message is left in the interpreter.
+ *
+ * Side effects:
+ *      Adds the encoded value to resultObj under "name".
+ *      Allocates and frees a temporary copy buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyInfoPutOctets(Tcl_Interp *interp, Tcl_Obj *resultObj,
+                  const char *name,
+                  const unsigned char *value, size_t valueLen,
+                  Ns_BinaryEncoding encoding)
+{
+    unsigned char *buf;
+    int            result = TCL_ERROR;
+
+    buf = ns_malloc(valueLen);
+    if (buf == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate buffer for %s", name);
+        return TCL_ERROR;
+    }
+
+    memcpy(buf, value, valueLen);
+
+    Tcl_DictObjPut(interp, resultObj,
+                   Tcl_NewStringObj(name, TCL_INDEX_NONE),
+                   NsEncodedObj(buf, valueLen, NULL, encoding));
+    ns_free(buf);
+
+    result = TCL_OK;
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutOctetParam --
+ *
+ *      Query an octet-string parameter from an OpenSSL 3 EVP_PKEY and
+ *      store it in the result dictionary under the specified key after
+ *      applying the requested binary encoding.
+ *
+ *      This helper is used for provider-based key types whose public
+ *      components are exposed as octet-string parameters, such as the
+ *      public value of OKP-style key types.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR if the parameter cannot be queried,
+ *      memory allocation fails, or the value cannot be stored.
+ *      On error, an explanatory message is left in the interpreter.
+ *
+ * Side effects:
+ *      Adds the encoded parameter value to resultObj under "dictName".
+ *      Allocates and frees a temporary buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeyInfoPutOctetParam(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
+                      const char *dictName, const char *paramName,
+                      Ns_BinaryEncoding encoding)
+{
+    unsigned char *buf = NULL;
+    size_t         len = 0u;
+    int            result = TCL_ERROR;
+
+    if (EVP_PKEY_get_octet_string_param(pkey, paramName,
+                                        NULL, 0, &len) != 1) {
+        Ns_TclPrintfResult(interp, "could not obtain %s length", dictName);
+        goto done;
+    }
+
+    buf = ns_malloc(len);
+    if (buf == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate buffer for %s", dictName);
+        goto done;
+    }
+
+    if (EVP_PKEY_get_octet_string_param(pkey, paramName,
+                                        buf, len, &len) != 1) {
+        Ns_TclPrintfResult(interp, "could not obtain %s value", dictName);
+        goto done;
+    }
+
+    if (PkeyInfoPutOctets(interp, resultObj, dictName, buf, len, encoding) != TCL_OK) {
+        goto done;
+    }
+
+    result = TCL_OK;
+
+done:
+    if (buf != NULL) {
+        ns_free(buf);
+    }
+    return result;
+}
+
+# endif /* HAVE_OPENSSL_3 */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutOkpDetails --
+ *
+ *      Add OKP-specific public key details to the dictionary returned by
+ *      "ns_crypto::key info".
+ *
+ *      For supported OpenSSL 3 key types such as Ed25519, Ed448,
+ *      X25519, and X448, this function exports the raw public key value
+ *      under the key "x" using the requested binary encoding. This
+ *      matches the JWK representation of OKP public keys.
+ *
+ *      For key types outside this family, the function performs no
+ *      action and succeeds. On older OpenSSL versions where these key
+ *      types are not handled through provider parameters, this function
+ *      may be a no-op.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR if the public key value cannot be
+ *      queried or stored. On error, an explanatory message is left in
+ *      the interpreter.
+ *
+ * Side effects:
+ *      For supported OKP keys, adds the key "x" to resultObj.
+ *      May allocate and free temporary buffers.
+ *
+ *----------------------------------------------------------------------
+ */
+# ifdef HAVE_OPENSSL_3
+static int
+PkeyInfoPutOkpDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
+                      Ns_BinaryEncoding encoding)
+{
+    if (PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)
+        || PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)
+        || PkeyIsType(pkey, "X25519", EVP_PKEY_X25519)
+        || PkeyIsType(pkey, "X448", EVP_PKEY_X448)) {
+
+        if (PkeyInfoPutOctetParam(interp, resultObj, pkey,
+                                  "x", OSSL_PKEY_PARAM_PUB_KEY,
+                                  encoding) != TCL_OK) {
+            return TCL_ERROR;
+        }
+    }
+
+    return TCL_OK;
+}
+# else
+/* legacy implementation */
+static int
+PkeyInfoPutOkpDetails(Tcl_Interp * UNUSED(interp), Tcl_Obj * UNUSED(resultObj), EVP_PKEY * UNUSED(pkey),
+                      Ns_BinaryEncoding UNUSED(encoding))
+{
+    return TCL_OK;
+}
+# endif /* HAVE_OPENSSL_3 */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutEcDetails --
+ *
+ *      Add EC-specific public key details to the dictionary returned by
+ *      "ns_crypto::key info".
+ *
+ *      For EC keys, this function exports the affine public coordinates
+ *      "x" and "y" using the requested binary encoding. The coordinates
+ *      are emitted as fixed-width, zero-padded big-endian byte strings
+ *      whose lengths are determined by the curve. This makes the values
+ *      suitable for JWK-style use and consistent across supported
+ *      OpenSSL versions.
+ *
+ *      For non-EC keys, the function performs no action and succeeds.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR on unsupported curves, allocation
+ *      failures, provider/query failures, or coordinate conversion
+ *      errors. On error, an explanatory message is left in the
+ *      interpreter.
+ *
+ * Side effects:
+ *      For EC keys, adds the keys "x" and "y" to resultObj.
+ *      Allocates and frees temporary OpenSSL and buffer objects.
+ *
+ *----------------------------------------------------------------------
+ */
+# ifdef HAVE_OPENSSL_3
+static int
+PkeyInfoPutEcDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
+                     Ns_BinaryEncoding encoding)
+{
+    char    groupName[80];
+    size_t  groupNameLen = 0u;
+    BIGNUM *x = NULL, *y = NULL;
+    size_t  coordLen;
+    int     result = TCL_ERROR;
+
+    if (!PkeyIsType(pkey, "EC", EVP_PKEY_EC)) {
+        return TCL_OK;
+    }
+
+    if (EVP_PKEY_get_utf8_string_param(pkey,
+                                       OSSL_PKEY_PARAM_GROUP_NAME,
+                                       groupName, sizeof(groupName),
+                                       &groupNameLen) != 1) {
+        Ns_TclPrintfResult(interp, "could not obtain EC group name");
+        goto done;
+    }
+
+    if (EcGroupCoordinateLength(groupName, &coordLen) != TCL_OK) {
+        Ns_TclPrintfResult(interp, "unsupported EC group \"%s\"", groupName);
+        goto done;
+    }
+
+    if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_X, &x) != 1) {
+        Ns_TclPrintfResult(interp, "could not obtain EC x coordinate");
+        goto done;
+    }
+    if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_Y, &y) != 1) {
+        Ns_TclPrintfResult(interp, "could not obtain EC y coordinate");
+        goto done;
+    }
+
+    if (PkeyInfoPutBnPad(interp, resultObj, "x", x, coordLen, encoding) != TCL_OK) {
+        goto done;
+    }
+    if (PkeyInfoPutBnPad(interp, resultObj, "y", y, coordLen, encoding) != TCL_OK) {
+        goto done;
+    }
+
+    result = TCL_OK;
+
+done:
+    if (x != NULL) {
+        BN_free(x);
+    }
+    if (y != NULL) {
+        BN_free(y);
+    }
+    return result;
+}
+# else
+/* legacy implementation */
+static int
+PkeyInfoPutEcDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
+                     Ns_BinaryEncoding encoding)
+{
+    EC_KEY         *ec = NULL;
+    const EC_GROUP *group;
+    const EC_POINT *point;
+    BIGNUM         *x = NULL, *y = NULL;
+    int             nid, result = TCL_ERROR;
+    size_t          coordLen;
+    const char     *groupName = NULL;
+
+    if (EVP_PKEY_base_id(pkey) != EVP_PKEY_EC) {
+        return TCL_OK;
+    }
+
+    ec = EVP_PKEY_get1_EC_KEY(pkey);
+    if (ec == NULL) {
+        Ns_TclPrintfResult(interp, "could not obtain EC key");
+        goto done;
+    }
+
+    group = EC_KEY_get0_group(ec);
+    point = EC_KEY_get0_public_key(ec);
+    if (group == NULL || point == NULL) {
+        Ns_TclPrintfResult(interp, "EC key does not contain group/public point");
+        goto done;
+    }
+
+    nid = EC_GROUP_get_curve_name(group);
+    if (nid != NID_undef) {
+        groupName = OBJ_nid2sn(nid);
+    }
+    if (groupName == NULL) {
+        Ns_TclPrintfResult(interp, "could not determine EC group name");
+        goto done;
+    }
+
+    if (EcGroupCoordinateLength(groupName, &coordLen) != TCL_OK) {
+        Ns_TclPrintfResult(interp, "unsupported EC group \"%s\"", groupName);
+        goto done;
+    }
+
+    x = BN_new();
+    y = BN_new();
+    if (x == NULL || y == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate EC coordinate bignums");
+        goto done;
+    }
+
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    if (EC_POINT_get_affine_coordinates(group, point, x, y, NULL) != 1) {
+        Ns_TclPrintfResult(interp, "could not obtain EC affine coordinates");
+        goto done;
+    }
+# else
+    if (EC_POINT_get_affine_coordinates_GFp(group, point, x, y, NULL) != 1) {
+        Ns_TclPrintfResult(interp, "could not obtain EC affine coordinates");
+        goto done;
+    }
+# endif
+
+    if (PkeyInfoPutBnPad(interp, resultObj, "x", x, coordLen, encoding) != TCL_OK) {
+        goto done;
+    }
+    if (PkeyInfoPutBnPad(interp, resultObj, "y", y, coordLen, encoding) != TCL_OK) {
+        goto done;
+    }
+
+    result = TCL_OK;
+
+done:
+    if (x != NULL) {
+        BN_free(x);
+    }
+    if (y != NULL) {
+        BN_free(y);
+    }
+    if (ec != NULL) {
+        EC_KEY_free(ec);
+    }
+    return result;
+}
+# endif /* HAVE_OPENSSL_3 */
 
 # ifdef HAVE_OPENSSL_3
 static int
@@ -7311,7 +7728,10 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             return TCL_ERROR;
         }
 
-        if (PkeyInfoPutRsaDetails(interp, resultObj, pkey, encoding) != TCL_OK) {
+        if (PkeyInfoPutRsaDetails(interp, resultObj, pkey, encoding) != TCL_OK
+            || PkeyInfoPutEcDetails(interp, resultObj, pkey, encoding) != TCL_OK
+            || PkeyInfoPutOkpDetails(interp, resultObj, pkey, encoding) != TCL_OK
+            ) {
             EVP_PKEY_free(pkey);
             return TCL_ERROR;
         }
@@ -8142,8 +8562,7 @@ CryptoPkeySignatureVerifyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *inter
     Tcl_DStringInit(&messageDs);
 
     message = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
-    signature = (const unsigned char *)Tcl_GetByteArrayFromObj(signatureObj,
-                                                               &signatureLength);
+    signature = (const unsigned char *)Tcl_GetByteArrayFromObj(signatureObj, &signatureLength);
 
     result = PkeySignatureVerify(interp, pkey,
                                  message, (size_t)messageLength,

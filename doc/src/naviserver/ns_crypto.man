@@ -1001,7 +1001,9 @@ be in memory). In order to compute HMACs on large data, use
   [para] Binary-valued fields returned by this command are encoded
   according to [option -encoding], which defaults to [const hex].
   This applies for example to RSA parameters such as [const n] and
-  [const e].
+  [const e], EC coordinates [const x] and [const y], and OKP public
+  values [const x]. The option affects only binary-valued fields,
+  not textual metadata such as [const type] or [const curve].
 
   [para] The dictionary always contains at least:
 
@@ -1030,14 +1032,30 @@ be in memory). In order to compute HMACs on large data, use
 
   [list_begin itemized]
   [item] [const bits] — key size in bits (e.g., RSA, DSA, DH, EC)
-  [item] [const curve] — curve name for elliptic curve keys (e.g., [const prime256v1])
+  [item] [const curve] — curve name for EC keys (e.g., [const prime256v1])
+  [item] [const x] — public key component. For EC keys, this is the
+     affine x-coordinate. For OKP keys (e.g., [const Ed25519],
+     [const Ed448], [const X25519], [const X448]), this is the raw
+     public key value.
+  [item] [const y] — affine y-coordinate for elliptic curve keys
+     (present only for EC keys)
+  [item] [const n] — RSA modulus
+  [item] [const e] — RSA public exponent
   [item] [const securityBits] — the estimated cryptographic strength of the key.
   [item] [const securityCategory] — an integer indicating the security
     category of the key as defined by the underlying OpenSSL provider.
-
   [list_end]
 
-  [para] 
+  [para]
+  For EC keys, the coordinates [const x] and [const y] are returned as
+  fixed-width, big-endian byte strings whose length is determined by the
+  curve. This makes them suitable for use in JWK-style representations.
+
+  [para]
+  For OKP-style keys, the field [const x] contains the raw public key
+  value as defined by the underlying algorithm.
+
+  [para]
   The field [const bits] denotes the size of the key or its domain parameters,
   while [const securityBits] denotes the estimated cryptographic strength of
   the key. These values differ for many algorithms (e.g., RSA-2048 has
@@ -1070,8 +1088,15 @@ be in memory). In order to compute HMACs on large data, use
  
  if {[lb]dict get $info type[rb] eq "ec"} {
      puts "curve: [lb]dict get $info curve[rb]"
+     puts "x:     [lb]dict get $info x[rb]"
+     puts "y:     [lb]dict get $info y[rb]"
+ }
+ 
+ if {[lb]dict get $info type[rb] eq "ed25519"} {
+     puts "x: [lb]dict get $info x[rb]"
  }
 [example_end]
+
 
 [call [cmd "ns_crypto::key priv"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \

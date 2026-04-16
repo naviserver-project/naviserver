@@ -2348,6 +2348,185 @@ test ns_crypto::jwk-3.0 {JWK helpers: verify all supported OKP algorithms} \
     -result {EdDSA 1 Ed448 1 X25519 1}
 
 
+############################################################################
+# Test Cases for ns_crypto key info components
+############################################################################
+test ns_crypto-key-info-ec-1.1 {key info: EC P-256 x/y decode to 32 bytes each} -body {
+    set privpem [ns_crypto::key generate -name EC -group prime256v1]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+    set y [ns_base64urldecode -binary -- [dict get $info y]]
+
+    list \
+        [dict get $info curve] \
+        [string length $x] \
+        [string length $y]
+} -result {prime256v1 32 32}
+
+test ns_crypto-key-info-ec-1.2 {key info: EC secp256k1 x/y decode to 32 bytes each} -body {
+    set privpem [ns_crypto::key generate -name EC -group secp256k1]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+    set y [ns_base64urldecode -binary -- [dict get $info y]]
+
+    list \
+        [dict get $info curve] \
+        [string length $x] \
+        [string length $y]
+} -result {secp256k1 32 32}
+
+test ns_crypto-key-info-ec-1.3 {key info: EC P-384 x/y decode to 48 bytes each} -body {
+    set privpem [ns_crypto::key generate -name EC -group secp384r1]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+    set y [ns_base64urldecode -binary -- [dict get $info y]]
+
+    list \
+        [dict get $info curve] \
+        [string length $x] \
+        [string length $y]
+} -result {secp384r1 48 48}
+
+test ns_crypto-key-info-ec-1.4 {key info: EC P-521 x/y decode to 66 bytes each} -body {
+    set privpem [ns_crypto::key generate -name EC -group secp521r1]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+    set y [ns_base64urldecode -binary -- [dict get $info y]]
+
+    list \
+        [dict get $info curve] \
+        [string length $x] \
+        [string length $y]
+} -result {secp521r1 66 66}
+
+test ns_crypto-key-info-okp-1.1 {key info: Ed25519 x decodes to 32 bytes} -constraints {ed25519} -body {
+    set privpem [ns_crypto::key generate -name Ed25519]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+    list \
+        [dict get $info type] \
+        [string length $x]
+} -returnCodes {error ok} -result {ed25519 32}
+
+test ns_crypto-key-info-okp-1.2 {key info: Ed448 x decodes to 57 bytes} -constraints {ed448} -body {
+    set privpem [ns_crypto::key generate -name Ed448]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+
+    list \
+        [dict get $info type] \
+        [string length $x]
+} -returnCodes {error ok} -result {ed448 57}
+
+test ns_crypto-key-info-okp-1.3 {key info: X25519 x decodes to 32 bytes} -constraints {x25519} -body {
+    set privpem [ns_crypto::key generate -name X25519]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+
+    list \
+        [dict get $info type] \
+        [string length $x]
+} -returnCodes {error ok} -result {x25519 32}
+
+test ns_crypto-key-info-rsa-1.1 {key info: RSA n/e decode to non-empty binary values} -body {
+    set privpem [ns_crypto::key generate -name RSA]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set n [ns_base64urldecode -binary -- [dict get $info n]]
+    set e [ns_base64urldecode -binary -- [dict get $info e]]
+
+    list \
+        [expr {[string length $n] > 0}] \
+        [expr {[string length $e] > 0}]
+} -result {1 1}
+
+test ns_crypto-key-info-ec-2.1 {key info/import: EC P-256 public coordinates roundtrip} -body {
+    set privpem [ns_crypto::key generate -name EC -group prime256v1]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+    set y [ns_base64urldecode -binary -- [dict get $info y]]
+
+    set pubpem [ns_crypto::key import \
+                    -from public \
+                    -name EC \
+                    -params [list group [dict get $info curve] x $x y $y] \
+                    -format pem]
+
+    expr {[string first "BEGIN PUBLIC KEY" $pubpem] >= 0}
+} -result {1}
+
+test ns_crypto-key-info-rsa-2.1 {key info/import: RSA public parameters roundtrip} -body {
+    set privpem [ns_crypto::key generate -name RSA]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set n [ns_base64urldecode -binary -- [dict get $info n]]
+    set e [ns_base64urldecode -binary -- [dict get $info e]]
+
+    set pubpem [ns_crypto::key import \
+                    -from public \
+                    -name RSA \
+                    -params [list n $n e $e] \
+                    -format pem]
+
+    expr {[string first "BEGIN PUBLIC KEY" $pubpem] >= 0}
+} -result {1}
+
+test ns_crypto-key-info-okp-2.1 {key info/import: Ed25519 public value roundtrip} -constraints {ed25519} -body {
+    set privpem [ns_crypto::key generate -name Ed25519]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+
+    set pubpem [ns_crypto::key import \
+                    -from public \
+                    -name OKP \
+                    -params [list crv Ed25519 x $x] \
+                    -format pem]
+
+    expr {[string first "BEGIN PUBLIC KEY" $pubpem] >= 0}
+} -result {1}
+
+test ns_crypto-key-info-okp-2.2 {key info/import: X25519 public value roundtrip} -constraints {x25519} -body {
+    set privpem [ns_crypto::key generate -name X25519]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+
+    set pubpem [ns_crypto::key import \
+                    -from public \
+                    -name OKP \
+                    -params [list crv X25519 x $x] \
+                    -format pem]
+
+    expr {[string first "BEGIN PUBLIC KEY" $pubpem] >= 0}
+} -result {1}
+
+test ns_crypto-key-info-ec-2.2 {key info/import: EC P-256 imported public key verifies signature} -body {
+    set msg     "hello"
+    set privpem [ns_crypto::key generate -name EC -group prime256v1]
+    set info    [ns_crypto::key info -pem $privpem -encoding base64url]
+
+    set x [ns_base64urldecode -binary -- [dict get $info x]]
+    set y [ns_base64urldecode -binary -- [dict get $info y]]
+
+    set pubpem [ns_crypto::key import \
+                    -from public \
+                    -name EC \
+                    -params [list group [dict get $info curve] x $x y $y] \
+                    -format pem]
+
+    set sig [ns_crypto::signature sign -digest sha256 -encoding binary -pem $privpem -- $msg]
+
+    ns_crypto::signature verify -pem $pubpem -signature $sig -- $msg
+} -result {1}
 
 #
 # Local variables:
