@@ -6138,9 +6138,28 @@ PkeyTypeNameObj(Tcl_Interp *interp, EVP_PKEY *pkey)
         Ns_TclPrintfResult(interp, "could not determine key type");
         return NULL;
     }
+
     Tcl_DStringInit(&ds);
     Tcl_DStringAppend(&ds, typeName, TCL_INDEX_NONE);
     Ns_StrToLower(ds.string);
+    if (ds.length == 2 && STREQ(ds.string, "ec")) {
+        char   groupName[80];
+        size_t groupNameLen = 0u;
+        /*
+         * Some versions of OpenSSL return for SM2 wrongly EC, so
+         * check the groupname to return a stable result for SM2
+         */
+        if (EVP_PKEY_get_utf8_string_param(pkey,
+                                           OSSL_PKEY_PARAM_GROUP_NAME,
+                                           groupName, sizeof(groupName),
+                                           &groupNameLen) == 1) {
+            if (groupNameLen == 3 && STRIEQ(groupName, "SM2")) {
+                Tcl_DStringSetLength(&ds, 0);
+                Tcl_DStringAppend(&ds, groupName, 3);
+                Ns_StrToLower(ds.string);
+            }
+        }
+    }
     return Ns_DStringToObj(&ds);
 #else
     const char *typeName = NULL;
@@ -9409,7 +9428,7 @@ Ns_InfoSSLDetailsObj(void)
         Tcl_ListObjAppendElement(NULL, keytypesObj,
                                  Tcl_NewStringObj("ml-dsa", TCL_INDEX_NONE));
     }
-    /* 
+    /*
      * Add synthetic key type as supported by ns_crypto::key import -name ...
      */
     if (CryptoKeyTypeSupported("ED25519")
@@ -9419,7 +9438,7 @@ Ns_InfoSSLDetailsObj(void)
         Tcl_ListObjAppendElement(NULL, keytypesObj,
                                  Tcl_NewStringObj("okp", TCL_INDEX_NONE));
     }
-    
+
 
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("capabilities", TCL_INDEX_NONE),

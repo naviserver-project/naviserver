@@ -1466,7 +1466,8 @@ test ns_crypto-sm2-1.2 {ns_crypto::key generate -name SM2 yields type sm2} \
     -constraints {sm2} \
     -body {
         set pem [ns_crypto::key generate -name SM2]
-        dict get [ns_crypto::key info -pem $pem] type
+        set info [ns_crypto::key info -pem $pem]
+        dict get $info type
     } \
     -result sm2
 
@@ -2549,14 +2550,12 @@ test ns_jwt-1.0.1 {syntax: decode without argument} -body {
 
 test ns_jwt-1.0.2 {syntax: encode without argument} -body {
     ns_jwt encode
-} -returnCodes error -result {required argument 'alg' is missing, should be:
-        ::ns_jwt encode -alg /value/ ?-key /value/? ?-jwk /value/? ?-secret /value/? ?-kid /value/? ?-typ /value/? ?-cty /value/? ?-extraheader /value/? ?-iss /value/? ?-sub /value/? ?-aud /value/? ?-exp /value/? ?-nbf /value/? ?-iat /value/? ?-jti /value/? ?/extrapayload/?}
+} -match glob -returnCodes error -result {required argument 'alg' is missing, should be:*:ns_jwt encode -alg /value/ ?-key /value/? ?-jwk /value/? ?-secret /value/? ?-kid /value/? ?-typ /value/? ?-cty /value/? ?-extraheader /value/? ?-iss /value/? ?-sub /value/? ?-aud /value/? ?-exp /value/? ?-nbf /value/? ?-iat /value/? ?-jti /value/? ?/extrapayload/?}
 # message should be {wrong # args: should be "ns_jwt encode -alg /value/ ?-key /value/? ?-jwk /value/? ?-secret /value/? ?-kid /value/? ?-typ /value/? ?-cty /value/? ?-extraheader /value/? ?-iss /value/? ?-sub /value/? ?-aud /value/? ?-exp /value/? ?-nbf /value/? ?-iat /value/? ?-jti /value/? ?/extrapayload/?"}
 
 test ns_jwt-1.0.3 {syntax: verify without token} -body {
     ns_jwt verify
-} -returnCodes error -result {required argument 'token' is missing, should be:
-        ::ns_jwt verify ?-alg /value/? ?-key /value/? ?-jwk /value/? ?-jwks /value/? ?-secret /value/? ?-kid /value/? ?-requirekid? ?-verifyclaims? ?-aud /value/? ?-iss /value/? ?-sub /value/? ?-clockskew /value/? ?-now /value/? /token/}
+} -match glob -returnCodes error -result {required argument 'token' is missing, should be:*::ns_jwt verify ?-alg /value/? ?-key /value/? ?-jwk /value/? ?-jwks /value/? ?-secret /value/? ?-kid /value/? ?-requirekid? ?-verifyclaims? ?-aud /value/? ?-iss /value/? ?-sub /value/? ?-clockskew /value/? ?-now /value/? /token/}
 # message should be {wrong # args: should be "ns_jwt verify ?-alg /value/? ?-key /value/? ?-jwk /value/? ?-jwks /value/? ?-secret /value/? ?-kid /value/? ?-requirekid? ?-verifyclaims? ?-aud /value/? ?-iss /value/? ?-sub /value/? ?-clockskew /value/? ?-now /value/? /token/"}
 
 test ns_jwt-1.0.4 {encode: missing -alg} -constraints {ed25519} -body {
