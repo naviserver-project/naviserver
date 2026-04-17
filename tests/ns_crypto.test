@@ -9,30 +9,54 @@ namespace import -force ::tcltest::*
 # Most of these tests require the OpenSSL API, some require nsf
 #
 tcltest::testConstraint ssl [ns_info ssl]
+
+if {![tcltest::testConstraint ssl]} {
+    ns_log notice "These tests require OpenSSL, with is not available in this installation"
+    return
+}
+
+
 tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -secret 42}]}]
 tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
 
-tcltest::testConstraint agreement [expr {![catch {::ns_crypto::agreement generate}]}]
-tcltest::testConstraint ec        [expr {![catch {::ns_crypto::eckey generate}]}]
-tcltest::testConstraint kem       [expr {![catch {::ns_crypto::kem generate}]}]
-tcltest::testConstraint keygen    [tcltest::testConstraint agreement] ;# both require OpenSSL 3.0+
-tcltest::testConstraint mldsa     [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
-tcltest::testConstraint signature [expr {![catch {::ns_crypto::signature generate}]}]
-tcltest::testConstraint sm2       [expr {![catch {::ns_crypto::signature generate -name sm2}]}]
-tcltest::testConstraint ed25519   [expr {![catch {::ns_crypto::signature generate -name Ed25519}]}]
-tcltest::testConstraint x25519    [expr {![catch {::ns_crypto::agreement generate -name X25519}]}]
-tcltest::testConstraint ed448     [expr {![catch {ns_crypto::key generate -name Ed448}]}]
-tcltest::testConstraint secp256k1 [expr {![catch {ns_crypto::eckey generate -name secp256k1}]}]
+
+set sslDetails   [ns_info ssl -details]
+set sslCaps      [dict get $sslDetails capabilities]
+set sslKeytypes  [dict get $sslDetails keytypes]
+
+tcltest::testConstraint agreement [expr {"agreement" in $sslCaps}]
+tcltest::testConstraint ec        [expr {"ec" in $sslKeytypes}]
+tcltest::testConstraint kem       [expr {"kem" in $sslCaps}]
+
+# Since key generation starts with OpenSSL 3.0 in this interface, use the runtime major.
+tcltest::testConstraint keygen    [expr {[dict get $sslDetails major] >= 3}]
+
+tcltest::testConstraint mldsa     [expr {"ml-dsa" in $sslKeytypes}]
+tcltest::testConstraint signature [expr {"signature" in $sslCaps}]
+tcltest::testConstraint sm2       [expr {"sm2" in $sslKeytypes}]
+tcltest::testConstraint ed25519   [expr {"ed25519" in $sslKeytypes}]
+tcltest::testConstraint x25519    [expr {"x25519" in $sslKeytypes}]
+tcltest::testConstraint ed448     [expr {"ed448" in $sslKeytypes}]
+tcltest::testConstraint secp256k1 [expr {![catch {ns_crypto::key generate -name EC -group secp256k1}]}]
+
+#tcltest::testConstraint agreement [expr {![catch {::ns_crypto::agreement generate}]}]
+#tcltest::testConstraint ec        [expr {![catch {::ns_crypto::eckey generate}]}]
+#tcltest::testConstraint kem       [expr {![catch {::ns_crypto::kem generate}]}]
+#tcltest::testConstraint keygen    [tcltest::testConstraint agreement] ;# both require OpenSSL 3.0+
+#tcltest::testConstraint mldsa     [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
+#tcltest::testConstraint signature [expr {![catch {::ns_crypto::signature generate}]}]
+#tcltest::testConstraint sm2       [expr {![catch {::ns_crypto::signature generate -name sm2}]}]
+#tcltest::testConstraint ed25519   [expr {![catch {::ns_crypto::signature generate -name Ed25519}]}]
+#tcltest::testConstraint x25519    [expr {![catch {::ns_crypto::agreement generate -name X25519}]}]
+#tcltest::testConstraint ed448     [expr {![catch {ns_crypto::key generate -name Ed448}]}]
+#tcltest::testConstraint secp256k1 [expr {![catch {ns_crypto::eckey generate -name secp256k1}]}]
 
 #foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec signature keygen sm2} {
 #    ns_log notice constraint $c [tcltest::testConstraint $c]
 #}
 
-if {![tcltest::testConstraint ssl]} {
-    ns_log notice "These tests require OpenSSL, with is not available in this installation"
-}
 
 #######################################################################################
 #  Syntax tests not covered below
@@ -448,7 +472,7 @@ test ns_totp-1.1 {
 catch {ns_crypto::md x} errorMsg
 if {[string match "*hkdf*" $errorMsg]} {
 
-    test hkdf-1.0 {test HKDF based on sha256, test case 1 from RFC 5869} -constraints {crypto} -body {
+    test hkdf-1.0 {test HKDF based on sha256, test case 1 from RFC 5869} -body {
         ::ns_crypto::md hkdf -digest sha256 \
             -salt   [binary format H* 000102030405060708090a0b0c] \
             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
@@ -456,7 +480,7 @@ if {[string match "*hkdf*" $errorMsg]} {
             42
     } -returnCodes {ok error} -result "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
 
-    test hkdf-1.1 {test HKDF based on sha256, test case 3 from RFC 5869} -constraints {crypto} -body {
+    test hkdf-1.1 {test HKDF based on sha256, test case 3 from RFC 5869} -body {
         ::ns_crypto::md hkdf -digest sha256 \
             -salt   "" \
             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
@@ -464,7 +488,7 @@ if {[string match "*hkdf*" $errorMsg]} {
             42
     } -returnCodes {ok error} -result "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8"
 
-    test hkdf-1.2 {test HKDF based on sha1, test case 4 from RFC 5869} -constraints {crypto} -body {
+    test hkdf-1.2 {test HKDF based on sha1, test case 4 from RFC 5869} -body {
         ::ns_crypto::md hkdf -digest sha1 \
             -salt   [binary format H* 000102030405060708090a0b0c] \
             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b] \
@@ -635,38 +659,38 @@ test aead-1.1 {aead::encrypt and decrypt} -body {
 ############################################################################
 # Test Cases for ns_crypto::scrypt
 ############################################################################
-test scrypt-1.0 {syntax: ns_crypto::scrypt} -constraints {crypto scrypt} -body {
+test scrypt-1.0 {syntax: ns_crypto::scrypt} -constraints {scrypt} -body {
     ns_crypto::scrypt ?
 } -returnCodes error -result {wrong # args: should be "ns_crypto::scrypt ?-binary? -salt /value/ -secret /value/ ?-n /integer[1,MAX]/? ?-p /integer[1,MAX]/? ?-r /integer[1,MAX]/? ?-encoding hex|base64url|base64|binary?"}
 
 test scrypt-1.1 {
     Test case from RFC 7914 (example 2 in sect 12)
-} -constraints {crypto scrypt} -body {
+} -constraints {scrypt} -body {
     ::ns_crypto::scrypt -secret "password" -salt "NaCl" -n 1024 -r 8 -p 16
 } -returnCodes {ok error} -result {fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640}
 
 test scrypt-1.2 {
     Test case from RFC 7914 (example 3 in sect 12)
-} -constraints {crypto scrypt} -body {
+} -constraints {scrypt} -body {
     ::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 16384 -r 8 -p 1
 } -returnCodes {ok error} -result {7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887}
 
 # test scrypt-1.3 {
 #     Test case from RFC 7914 (example 4 in sect 12)
-# } -constraints {crypto scrypt} -body {
+# } -constraints {scrypt} -body {
 #     ::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 1048576 -r 8 -p 1
 # } -returnCodes {ok error} -result {2101cb9b6a511aaeaddbbe09cf70f881ec568d574a2ffd4dabe5ee9820adaa478e56fd8f4ba5d09ffa1c6d927c40f4c337304049e8a952fbcbf45c6fa77a41a4}
 
 ############################################################################
 # Test Cases for ns_crypto::argon2
 ############################################################################
-test argon2-1.0 {syntax: ns_crypto::argon2} -constraints {crypto argon2} -body {
+test argon2-1.0 {syntax: ns_crypto::argon2} -constraints {argon2} -body {
     ns_crypto::argon2 ?
 } -returnCodes error -result {wrong # args: should be "ns_crypto::argon2 ?-ad /value/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer[1,MAX]/? ?-lanes /integer[1,MAX]/? ?-memcost /integer[1,MAX]/? ?-outlen /integer[1,MAX]/? ?-password /value/? -salt /value/ ?-secret /value/? ?-threads /integer/? ?-variant /value/?"}
 
 test argon2-1.1 {
     Test case from the OpenSSL EVP_KDF-ARGON2 manual page, using ARGON2D
-} -constraints {crypto argon2} -body {
+} -constraints {argon2} -body {
     # This example uses Argon2d with password "1234567890", salt
     # "saltsalt", using 2 lanes, 2 threads, and memory cost of 65536:
     ::ns_crypto::argon2 -variant argon2d \
@@ -680,7 +704,7 @@ test argon2-1.1 {
 
 test argon2-1.2 {
     Test case from RFC 9106, test vector 1 using ARGON2d
-} -constraints {crypto argon2} -body {
+} -constraints {argon2} -body {
     ::ns_crypto::argon2 -variant argon2d \
         -password [binary format H* [string repeat 01 32]] \
         -salt     [binary format H* [string repeat 02 16]] \
@@ -691,7 +715,7 @@ test argon2-1.2 {
 
 test argon2-1.3 {
     Test case from RFC 9106, test vector 2 using ARGON2i
-} -constraints {crypto argon2} -body {
+} -constraints {argon2} -body {
     ::ns_crypto::argon2 -variant argon2i \
         -password [binary format H* [string repeat 01 32]] \
         -salt     [binary format H* [string repeat 02 16]] \
@@ -702,7 +726,7 @@ test argon2-1.3 {
 
 test argon2-1.4 {
     Test case from RFC 9106, test vector 2 using ARGON2id
-} -constraints {crypto argon2} -body {
+} -constraints {argon2} -body {
     ::ns_crypto::argon2 -variant argon2id \
         -password [binary format H* [string repeat 01 32]] \
         -salt     [binary format H* [string repeat 02 16]] \
@@ -713,7 +737,7 @@ test argon2-1.4 {
 
 test argon2-1.5 {
     Test case using size recommendations based on ARGON2ID
-} -constraints {crypto argon2} -body {
+} -constraints {argon2} -body {
     #
     # This example uses argon2id with password "1234567890", 16 bytes
     # salt, using 4 lanes and theads, and memory cost of 1 GB (1,0485,76 KB)
@@ -739,7 +763,7 @@ test argon2-1.5 {
 
 test argon2-1.6 {
     Test case from the OpenSSL EVP_KDF-ARGON2 manual page, using ARGON2ID
-} -constraints {crypto argon2} -body {
+} -constraints {argon2} -body {
     #
     # This example uses argon2id with password "1234567890", 16 bytes
     # salt, using one of the recommendations of the OWASP project.
@@ -2362,7 +2386,7 @@ test ns_crypto-key-info-ec-1.1 {key info: EC P-256 x/y decode to 32 bytes each} 
         [dict get $info curve] \
         [string length $x] \
         [string length $y]
-} -result {prime256v1 32 32}
+} -returnCodes {error ok} -result {prime256v1 32 32}
 
 test ns_crypto-key-info-ec-1.2 {key info: EC secp256k1 x/y decode to 32 bytes each} -body {
     set privpem [ns_crypto::key generate -name EC -group secp256k1]
@@ -2375,7 +2399,7 @@ test ns_crypto-key-info-ec-1.2 {key info: EC secp256k1 x/y decode to 32 bytes ea
         [dict get $info curve] \
         [string length $x] \
         [string length $y]
-} -result {secp256k1 32 32}
+} -returnCodes {error ok} -result {secp256k1 32 32}
 
 test ns_crypto-key-info-ec-1.3 {key info: EC P-384 x/y decode to 48 bytes each} -body {
     set privpem [ns_crypto::key generate -name EC -group secp384r1]
@@ -2388,7 +2412,7 @@ test ns_crypto-key-info-ec-1.3 {key info: EC P-384 x/y decode to 48 bytes each} 
         [dict get $info curve] \
         [string length $x] \
         [string length $y]
-} -result {secp384r1 48 48}
+} -returnCodes {error ok} -result {secp384r1 48 48}
 
 test ns_crypto-key-info-ec-1.4 {key info: EC P-521 x/y decode to 66 bytes each} -body {
     set privpem [ns_crypto::key generate -name EC -group secp521r1]
@@ -2401,7 +2425,7 @@ test ns_crypto-key-info-ec-1.4 {key info: EC P-521 x/y decode to 66 bytes each} 
         [dict get $info curve] \
         [string length $x] \
         [string length $y]
-} -result {secp521r1 66 66}
+} -returnCodes {error ok} -result {secp521r1 66 66}
 
 test ns_crypto-key-info-okp-1.1 {key info: Ed25519 x decodes to 32 bytes} -constraints {ed25519} -body {
     set privpem [ns_crypto::key generate -name Ed25519]
@@ -2445,7 +2469,7 @@ test ns_crypto-key-info-rsa-1.1 {key info: RSA n/e decode to non-empty binary va
     list \
         [expr {[string length $n] > 0}] \
         [expr {[string length $e] > 0}]
-} -result {1 1}
+} -returnCodes {error ok} -result {1 1}
 
 test ns_crypto-key-info-ec-2.1 {key info/import: EC P-256 public coordinates roundtrip} -body {
     set privpem [ns_crypto::key generate -name EC -group prime256v1]
@@ -2461,7 +2485,7 @@ test ns_crypto-key-info-ec-2.1 {key info/import: EC P-256 public coordinates rou
                     -format pem]
 
     expr {[string first "BEGIN PUBLIC KEY" $pubpem] >= 0}
-} -result {1}
+} -returnCodes {error ok} -result {1}
 
 test ns_crypto-key-info-rsa-2.1 {key info/import: RSA public parameters roundtrip} -body {
     set privpem [ns_crypto::key generate -name RSA]
@@ -2477,7 +2501,7 @@ test ns_crypto-key-info-rsa-2.1 {key info/import: RSA public parameters roundtri
                     -format pem]
 
     expr {[string first "BEGIN PUBLIC KEY" $pubpem] >= 0}
-} -result {1}
+} -returnCodes {error ok} -result {1}
 
 test ns_crypto-key-info-okp-2.1 {key info/import: Ed25519 public value roundtrip} -constraints {ed25519} -body {
     set privpem [ns_crypto::key generate -name Ed25519]
@@ -2715,7 +2739,7 @@ test ns_jwt-2.1 {verify: ES256 token with public JWK} -body {
         [dict get $verified alg] \
         [dict get $payload sub] \
         [dict get $payload scope]
-} -result {1 ES256 alice read}
+} -returnCodes {error ok} -result {1 ES256 alice read}
 
 test ns_jwt-2.2 {verify: RS256 token with public JWK} -body {
     set privpem [ns_crypto::key generate -name RSA]
@@ -2740,7 +2764,7 @@ test ns_jwt-2.2 {verify: RS256 token with public JWK} -body {
         [dict get $verified alg] \
         [dict get $payload sub] \
         [dict get $payload dept]
-} -result {1 RS256 alice eng}
+} -returnCodes {error ok} -result {1 RS256 alice eng}
 
 test ns_jwt-2.3 {verify: EdDSA token with OKP public JWK} -constraints {ed25519} -body {
     set privpem [ns_crypto::key generate -name Ed25519]
