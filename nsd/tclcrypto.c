@@ -327,7 +327,7 @@ static void FreelistFree(void *arg)
 
 static int GeneratePrivateKeyPem(Tcl_Interp *interp, const char *typeName, const char *what,
                                  const char *outfileName, NsCryptoKeygenUsage usage, OSSL_PARAM *params)
-    NS_GNUC_NONNULL(1,2,3,4);
+    NS_GNUC_NONNULL(1,2,3);
 
 static int KeygenGroupParams(Tcl_Interp *interp, const char *typeName, const char *groupName, const char *what,
                              OSSL_PARAM params[2], OSSL_PARAM **paramPtr)

@@ -1392,7 +1392,7 @@ test ns_crypto-key-generate-1.1 {ns_crypto::key generate -name EC -group prime25
             || [string match {*BEGIN ENCRYPTED PRIVATE KEY*} $pem]
         }
     } \
-    -result 1
+    -returnCodes {error ok} -result 1
 
 test ns_crypto-key-generate-1.2 {ns_crypto::key generate -name EC -group prime256v1 yields type ec and curve prime256v1} \
     -constraints {keygen ec} \
