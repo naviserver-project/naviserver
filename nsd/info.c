@@ -526,6 +526,27 @@ Ns_InfoSSL(void)
 #endif
 }
 
+static int
+SSLInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         detailsInt = 0, result = TCL_OK;
+    Ns_ObjvSpec opts[] = {
+        {"-details", Ns_ObjvBool, &detailsInt, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        if (detailsInt == NS_TRUE) {
+            Tcl_SetObjResult(interp, Ns_InfoSSLDetailsObj());
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Ns_InfoSSL()));
+        }
+    }
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -723,7 +744,10 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                                      &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
-    if ((opt != IMeminfoIdx && objc != 2)
+    if (opt == ISSLIdx) {
+        result = SSLInfoObjCmd(clientData, interp, objc, objv);
+
+    } else if ((opt != IMeminfoIdx && objc != 2)
         || (opt == IMeminfoIdx && objc > 3)) {
         if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
@@ -877,7 +901,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         }
 
     case ISSLIdx:
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Ns_InfoSSL()));
+        /* handled above */
         break;
 
     case IBuildinfoIdx:

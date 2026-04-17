@@ -4115,6 +4115,11 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
     NS_GNUC_NONNULL(1);
 #endif
 
+/*
+ * tclcrypto.c:
+ */
+NS_EXTERN Tcl_Obj *
+Ns_InfoSSLDetailsObj(void);
 
 #endif /* NS_H */
 

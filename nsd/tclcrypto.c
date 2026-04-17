@@ -185,6 +185,11 @@ static bool PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
     NS_GNUC_NONNULL(1,2);
 # endif
 
+static bool CryptoKeyTypeSupported(const char *name)
+    NS_GNUC_NONNULL(1);
+
+static const char *SignatureDefaultKeyName(void);
+
 static bool PkeySignatureRequiresDigest(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
@@ -311,6 +316,9 @@ static TCL_OBJCMDPROC_T CryptoAgreementDeriveObjCmd;
 static TCL_OBJCMDPROC_T CryptoKeyGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoKeyImportObjCmd;
 
+static TCL_OBJCMDPROC_T CryptoSignatureGenerateObjCmd;
+static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
+
 static int FreelistAdd(Tcl_Interp *interp, Ns_DList *dlPtr, void *ptr, Ns_FreeProc freeProc)
     NS_GNUC_NONNULL(1,2,3,4);
 
@@ -388,9 +396,6 @@ static TCL_OBJCMDPROC_T CryptoKemGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoKemPubObjCmd;
 static TCL_OBJCMDPROC_T CryptoKemEncapsulateObjCmd;
 static TCL_OBJCMDPROC_T CryptoKemDecapsulateObjCmd;
-
-static TCL_OBJCMDPROC_T CryptoSignatureGenerateObjCmd;
-static TCL_OBJCMDPROC_T CryptoSignaturePubObjCmd;
 
 static int PkeyKemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
@@ -8577,8 +8582,55 @@ done:
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SignatureDefaultKeyName --
+ *
+ *      Determine a suitable default key type for signature key generation.
+ *
+ *      The function prefers modern algorithms when available:
+ *      ML-DSA (post-quantum), Ed25519, EC, and finally RSA as fallback.
+ *      Availability depends on the OpenSSL version, configured providers,
+ *      and compile-time support.
+ *
+ * Results:
+ *      Returns a pointer to a static string naming the key type.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+SignatureDefaultKeyName(void)
+{
+#ifdef HAVE_OPENSSL_3
+    if (CryptoKeyTypeSupported("ML-DSA-65")) {
+        return "ml-dsa-65";
+    }
+    if (CryptoKeyTypeSupported("ED25519")) {
+        return "Ed25519";
+    }
+    if (CryptoKeyTypeSupported("EC")) {
+        return "EC";
+    }
+    if (CryptoKeyTypeSupported("RSA")) {
+        return "RSA";
+    }
+#else
+# ifdef EVP_PKEY_ED25519
+    return "Ed25519";
+# elif defined(HAVE_OPENSSL_EC_H)
+    return "EC";
+# else
+    return "RSA";
+# endif
+#endif
+    return "RSA";
+}
 
-# ifdef HAVE_OPENSSL_3_5
+# ifdef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
@@ -8606,7 +8658,7 @@ static int
 CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                               TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const char *nameString = "ml-dsa-65", *groupName = NULL, *outfileName = NULL;
+    const char *nameString = SignatureDefaultKeyName(), *groupName = NULL, *outfileName = NULL;
     OSSL_PARAM  params[2], *paramPtr = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-name",    Ns_ObjvString,  &nameString,  NULL},
@@ -8695,7 +8747,7 @@ CryptoSignaturePubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
     return result;
 }
-# endif
+# endif /* HAVE_OPENSSL_3 */
 
 /*
  *----------------------------------------------------------------------
@@ -8718,7 +8770,7 @@ NsTclCryptoSignatureObjCmd(ClientData clientData, Tcl_Interp *interp,
                           TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-#ifdef HAVE_OPENSSL_3_5
+#ifdef HAVE_OPENSSL_3
         {"generate", CryptoSignatureGenerateObjCmd},
         {"pub",      CryptoSignaturePubObjCmd},
 #endif
@@ -9044,6 +9096,343 @@ NsTclCryptoUUIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 }
 
 /*======================================================================
+ * Function Implementations: "ns_info ssl -details" helpers
+ *======================================================================
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoKeyTypeSupported --
+ *
+ *      Determine whether a specific cryptographic key type is supported
+ *      by the underlying OpenSSL build.
+ *
+ *      The function checks for availability of key types such as RSA,
+ *      EC, Ed25519/Ed448, X25519/X448, SM2, or post-quantum types like
+ *      ML-KEM and ML-DSA. The result depends on the OpenSSL version,
+ *      configured providers, and build-time options.
+ *
+ *      This function is used to populate the "keytypes" list returned by
+ *      "ns_info ssl -details".
+ *
+ * Results:
+ *      Returns NS_TRUE when the key type is available, NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef HAVE_OPENSSL_3
+static bool
+CryptoKeyTypeSupported(const char *name)
+{
+    EVP_PKEY_CTX *ctx;
+    bool          success = NS_FALSE;
+
+    ctx = EVP_PKEY_CTX_new_from_name(NULL, name, NULL);
+    if (ctx != NULL) {
+        success = NS_TRUE;
+        EVP_PKEY_CTX_free(ctx);
+    }
+    return success;
+}
+#else
+static bool
+CryptoKeyTypeSupported(const char *name)
+{
+    if (STRIEQ(name, "RSA")) {
+        return NS_TRUE;
+    }
+# ifdef HAVE_OPENSSL_EC_H
+    if (STRIEQ(name, "EC")) {
+        return NS_TRUE;
+    }
+# endif
+# ifdef HAVE_OPENSSL_SM2_H
+    if (STRIEQ(name, "SM2")) {
+        return NS_TRUE;
+    }
+# endif
+    return NS_FALSE;
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoSignatureSupported, CryptoAgreementSupported,
+ * CryptoKemSupported, TrimmedLength --
+ *
+ *      Helper functions used to determine runtime capabilities of the
+ *      OpenSSL-based cryptographic subsystem and to normalize metadata.
+ *
+ *      CryptoSignatureSupported:
+ *          Checks whether the OpenSSL build supports asymmetric
+ *          signature operations via EVP (e.g., RSA, ECDSA, EdDSA).
+ *
+ *      CryptoAgreementSupported:
+ *          Checks whether key agreement mechanisms (e.g., ECDH, X25519)
+ *          are available.
+ *
+ *      CryptoKemSupported:
+ *          Checks whether key encapsulation mechanisms (e.g., ML-KEM)
+ *          are supported by the active OpenSSL providers.
+ *
+ *      These functions are used when constructing the detailed result
+ *      of "ns_info ssl -details", providing a structured view of
+ *      available cryptographic capabilities and supported key types.
+ *
+ * Results:
+ *      The functions return NS_TRUE or NS_FALSE depending on
+ *      feature availability.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+CryptoSignatureSupported(void)
+{
+    return CryptoKeyTypeSupported("RSA")
+        || CryptoKeyTypeSupported("EC")
+        || CryptoKeyTypeSupported("ED25519")
+        || CryptoKeyTypeSupported("ED448")
+        || CryptoKeyTypeSupported("SM2")
+        || CryptoKeyTypeSupported("ML-DSA-44");
+}
+
+static bool
+CryptoAgreementSupported(void)
+{
+#ifdef HAVE_OPENSSL_3
+    return CryptoKeyTypeSupported("X25519")
+        || CryptoKeyTypeSupported("X448")
+        || CryptoKeyTypeSupported("EC");
+#else
+    return NS_FALSE;
+#endif
+}
+
+static bool
+CryptoKemSupported(void)
+{
+    return CryptoKeyTypeSupported("ML-KEM-512");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TrimmedLength --
+ *
+ *      Compute the length of a NUL-terminated string excluding trailing
+ *      whitespace characters.
+ *
+ *      The function scans the string from the end and removes all
+ *      characters for which isspace() returns true. The returned length
+ *      can be used to create Tcl objects without copying or modifying
+ *      the original string.
+ *
+ * Results:
+ *      Returns the length of the string without trailing whitespace.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static TCL_SIZE_T
+TrimmedLength(const char *s)
+{
+    TCL_SIZE_T len = (TCL_SIZE_T)strlen(s);
+
+    while (len > 0 && isspace((unsigned char)s[len - 1])) {
+        len--;
+    }
+    return len;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_InfoSSLDetailsObj --
+ *
+ *      Return a Tcl dictionary describing OpenSSL support in the
+ *      current NaviServer build/runtime environment.
+ *
+ *      The dictionary contains a boolean field "enabled", compile-time
+ *      and runtime OpenSSL version information, and a list of enabled
+ *      "capabilities" and "keytypes".
+ *
+ * Results:
+ *      Tcl dictionary object with SSL/OpenSSL details.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+Ns_InfoSSLDetailsObj(void)
+{
+    Tcl_Obj *resultObj = Tcl_NewDictObj();
+    Tcl_Obj *capabilitiesObj = Tcl_NewListObj(0, NULL);
+    Tcl_Obj *keytypesObj = Tcl_NewListObj(0, NULL);
+    unsigned long runtimeVersion = 0ul;
+    const char   *runtimeVersionString = NULL;
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("enabled", TCL_INDEX_NONE),
+                   Tcl_NewBooleanObj(1));
+
+    /*
+     * Compile-time version.
+     */
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("headersVersion", TCL_INDEX_NONE),
+                   Tcl_NewStringObj(OPENSSL_VERSION_TEXT, TrimmedLength(OPENSSL_VERSION_TEXT)));
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("headersVersionNumber", TCL_INDEX_NONE),
+                   Tcl_NewWideIntObj((Tcl_WideInt)OPENSSL_VERSION_NUMBER));
+
+    /*
+     * Runtime version.
+     */
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    runtimeVersion = OpenSSL_version_num();
+    runtimeVersionString = OpenSSL_version(OPENSSL_VERSION);
+# else
+    runtimeVersion = SSLeay();
+    runtimeVersionString = SSLeay_version(SSLEAY_VERSION);
+# endif
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("runtimeVersion", TCL_INDEX_NONE),
+                   Tcl_NewStringObj(runtimeVersionString, TrimmedLength(runtimeVersionString)));
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("runtimeVersionNumber", TCL_INDEX_NONE),
+                   Tcl_NewWideIntObj((Tcl_WideInt)runtimeVersion));
+
+    /*
+     * Decoded major/minor/patch from runtime version.
+     * This layout matches the traditional OpenSSL numeric format.
+     */
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("major", TCL_INDEX_NONE),
+                   Tcl_NewIntObj((int)((runtimeVersion >> 28) & 0xf)));
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("minor", TCL_INDEX_NONE),
+                   Tcl_NewIntObj((int)((runtimeVersion >> 20) & 0xff)));
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("patch", TCL_INDEX_NONE),
+                   Tcl_NewIntObj((int)((runtimeVersion >> 4) & 0xfff)));
+
+    /*
+     * Generic features.
+     */
+    Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                             Tcl_NewStringObj("digest", TCL_INDEX_NONE));
+    Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                             Tcl_NewStringObj("cipher", TCL_INDEX_NONE));
+    Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                             Tcl_NewStringObj("hmac", TCL_INDEX_NONE));
+
+    /*
+     * Signature family.
+     */
+    if (CryptoSignatureSupported()) {
+        Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                                 Tcl_NewStringObj("signature", TCL_INDEX_NONE));
+    }
+
+    /*
+     * Agreement family.
+     */
+    if (CryptoAgreementSupported()) {
+        Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                                 Tcl_NewStringObj("agreement", TCL_INDEX_NONE));
+    }
+
+    /*
+     * KEM family.
+     */
+    if (CryptoKemSupported()) {
+        Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                                 Tcl_NewStringObj("kem", TCL_INDEX_NONE));
+    }
+
+    /*
+     * Key-type / algorithm-family probes.
+     *
+     * These helper predicates use cheap runtime/provider probes where
+     * available and conservative compile-time checks on legacy OpenSSL
+     * versions. No real key generation is performed in the info path.
+     */
+    if (CryptoKeyTypeSupported("RSA")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("rsa", TCL_INDEX_NONE));
+    }
+    if (CryptoKeyTypeSupported("EC")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("ec", TCL_INDEX_NONE));
+    }
+    if (CryptoKeyTypeSupported("ED25519")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("ed25519", TCL_INDEX_NONE));
+    }
+    if (CryptoKeyTypeSupported("ED448")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("ed448", TCL_INDEX_NONE));
+    }
+    if (CryptoKeyTypeSupported("X25519")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("x25519", TCL_INDEX_NONE));
+    }
+    if (CryptoKeyTypeSupported("X448")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("x448", TCL_INDEX_NONE));
+    }
+    if (CryptoKeyTypeSupported("SM2")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("sm2", TCL_INDEX_NONE));
+    }
+    if (CryptoKeyTypeSupported("ML-KEM-512")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("ml-kem", TCL_INDEX_NONE));
+    }
+    if (CryptoKeyTypeSupported("ML-DSA-44")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("ml-dsa", TCL_INDEX_NONE));
+    }
+    /* 
+     * Add synthetic key type as supported by ns_crypto::key import -name ...
+     */
+    if (CryptoKeyTypeSupported("ED25519")
+        || CryptoKeyTypeSupported("ED448")
+        || CryptoKeyTypeSupported("X25519")
+        || CryptoKeyTypeSupported("X448")) {
+        Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                 Tcl_NewStringObj("okp", TCL_INDEX_NONE));
+    }
+    
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("capabilities", TCL_INDEX_NONE),
+                   capabilitiesObj);
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("keytypes", TCL_INDEX_NONE),
+                   keytypesObj);
+
+    return resultObj;
+}
+
+
+/*======================================================================
  * Backward compatibility checks
  *======================================================================
  */
@@ -9171,6 +9560,27 @@ NsTclCryptoSignatureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
+}
+
+Tcl_Obj *
+Ns_InfoSSLDetailsObj(void)
+{
+    Tcl_Obj *resultObj = Tcl_NewDictObj();
+    Tcl_Obj *capabilitiesObj = Tcl_NewListObj(0, NULL);
+    Tcl_Obj *keytypesObj = Tcl_NewListObj(0, NULL);
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("enabled", TCL_INDEX_NONE),
+                   Tcl_NewBooleanObj(0));
+
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("capabilities", TCL_INDEX_NONE),
+                   capabilitiesObj);
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("keytypes", TCL_INDEX_NONE),
+                   keytypesObj);
+
+    return resultObj;
 }
 
 #endif

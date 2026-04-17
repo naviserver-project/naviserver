@@ -230,10 +230,66 @@ listening callback for the nscp module. Each list element is itself a
  {11 {read exit} nscp {127.0.0.1 9999} 0}
 [example_end]
 
-[call [cmd  "ns_info ssl"]]
+[call [cmd  "ns_info ssl"] \
+     [opt [option -details]] \
+    ]
 
-Returns information if the binary was compiled with OpenSSL support.
+  Return information about SSL/OpenSSL support in the current
+  NaviServer build.
 
+[para]
+  Without options, this command returns a boolean value indicating
+  whether NaviServer was compiled with OpenSSL support.
+
+[para]
+  When the option [option -details] is specified, the command returns a
+  Tcl dictionary providing detailed information about the OpenSSL
+  configuration at compile time and runtime.
+
+[para]
+  The returned dictionary contains the following keys:
+
+  [list_begin itemized]
+  [item] [const enabled] — boolean indicating whether OpenSSL support is enabled
+  [item] [const headersVersion] — OpenSSL version string used at compile time
+  [item] [const headersVersionNumber] — numeric OpenSSL version used at compile time
+  [item] [const runtimeVersion] — OpenSSL version string of the loaded library
+  [item] [const runtimeVersionNumber] — numeric OpenSSL version of the loaded library
+  [item] [const major], [const minor], [const patch] — decoded runtime version components
+  [item] [const capabilities] — list of available cryptographic capability groups
+  [item] [const keytypes] — list of supported key types
+  [list_end]
+
+[para]
+  The value of [const capabilities] is a list of symbolic names describing
+  available functionality exposed via [cmd ns_crypto], such as
+  [const digest], [const cipher], [const hmac], [const signature],
+  [const agreement], and [const kem].
+
+[para]
+  The value of [const keytypes] is a list of supported key types or
+  algorithm families, such as [const rsa], [const ec], [const ed25519],
+  [const ed448], [const x25519], [const x448], [const sm2],
+  [const ml-kem], [const ml-dsa], and [const okp].  The synthetic type
+  [const okp] denotes support for Octet Key Pair algorithms (e.g.,
+  Ed25519, Ed448, X25519, X448) as used by [cmd ns_crypto::key import].
+
+[para]
+  The reported capabilities and key types depend on the OpenSSL version,
+  configured providers, and compile-time options.
+
+[example_begin]
+ % ns_info ssl
+ 1
+
+ % ns_info ssl -details
+ # result dict reformatted for easier reading:
+    enabled 1
+    headersVersion {OpenSSL 4.1.0-dev}
+    runtimeVersion {OpenSSL 4.1.0-dev}
+    capabilities {digest cipher hmac signature agreement kem}
+    keytypes {rsa ec ed25519 ed448 x25519 x448 sm2 ml-kem ml-dsa okp}
+[example_end]
 
 [call [cmd  "ns_info started"]]
 

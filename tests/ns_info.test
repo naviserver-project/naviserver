@@ -154,7 +154,7 @@ test ns_info-1.31a {syntax: ns_info  sockcallbacks} -body {
 
 test ns_info-1.33 {syntax: ns_info ssl} -body {
     ns_info ssl x
-} -returnCodes error -result {wrong # args: should be "ns_info ssl"}
+} -returnCodes error -result {wrong # args: should be "ns_info ssl ?-details?"}
 
 test ns_info-1.34 {syntax: ns_info started} -body {
     ns_info started x
@@ -342,6 +342,56 @@ test ns_info-2.30 {ns_info buildinfo keys} -body {
     lsort [dict keys [ns_info buildinfo]]
 } -returnCodes ok -result {assertions compiler system_malloc tcl with_deprecated}
 
+test ns_info-2.31 {ns_info ssl -details: structure and basic invariants} -body {
+    set d [ns_info ssl -details]
+
+    # Must be a dict
+    if {![dict size $d] >= 1} {
+        error "result is not a dict"
+    }
+
+    # Required keys
+    foreach k {
+        enabled
+        headersVersion headersVersionNumber
+        runtimeVersion runtimeVersionNumber
+        major minor patch
+        capabilities keytypes
+    } {
+        if {![dict exists $d $k]} {
+            error "missing key $k"
+        }
+    }
+
+    # enabled must be boolean 0/1
+    set enabled [dict get $d enabled]
+    if {$enabled ni {0 1}} {
+        error "enabled not boolean"
+    }
+
+    # capabilities and keytypes must be lists
+    set caps [dict get $d capabilities]
+    set keys [dict get $d keytypes]
+
+    if {[catch {llength $caps}]} {
+        error "capabilities not a list"
+    }
+    if {[catch {llength $keys}]} {
+        error "keytypes not a list"
+    }
+
+    # basic expectations when SSL is enabled
+    if {$enabled} {
+        # these should always be present
+        foreach c {digest cipher hmac} {
+            if {$c ni $caps} {
+                error "missing capability $c"
+            }
+        }
+    }
+
+    return ok
+} -result {ok}
 
 
 cleanupTests
