@@ -1529,7 +1529,7 @@ test ns_crypto-sm2-1.6 {SM2 sign/verify succeeds with empty -id} \
             -- "hello world"
     } \
     -returnCodes {error ok} \
-    -result 1
+    -result "SM2 identifier must not be empty"
 
 
 test ns_crypto-sm2-1.7 {SM2 sign with unsupported digest sha256 fails when -id is present} \

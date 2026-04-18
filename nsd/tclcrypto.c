@@ -8382,6 +8382,10 @@ PkeySignatureAcceptsIdFromObj(Tcl_Interp *interp, EVP_PKEY *pkey, Tcl_Obj *idObj
 
             *idPtr = (const unsigned char *)Tcl_GetStringFromObj(idObj, &idSize);
             *idLengthPtr  = (size_t)idSize;
+            if (*idLengthPtr == 0u) {
+                Ns_TclPrintfResult(interp, "SM2 identifier must not be empty");
+                return TCL_ERROR;
+            }
         }
     } else {
         if (idObj != NULL) {
