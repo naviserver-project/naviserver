@@ -936,7 +936,11 @@ test ns_crypto::kem-2.5 {ns_crypto::kem roundtrip} -constraints {kem} -body {
 
 test ns_crypto::key-1.0 {syntax: ns_crypto::key subcommands} -body {
     ns_crypto::key
-} -returnCodes error -result {wrong # args: should be "ns_crypto::key generate|import|info|type|pub|priv ?/arg .../"}
+} -returnCodes error -match glob -result [expr {
+    {[dict get [ns_info ssl -details] major] >= 3}
+    ? {wrong # args: should be "ns_crypto::key generate|import|info|type|pub|priv ?/arg .../"}
+    : {wrong # args: should be "ns_crypto::key info|type|pub|priv ?/arg .../"}
+}]
 
 test ns_crypto::key-1.1 {syntax: ns_crypto::key type} -body {
     ns_crypto::key type
@@ -954,7 +958,7 @@ test ns_crypto::key-1.4 {syntax: ns_crypto::key priv} -body {
     ns_crypto::key priv
 } -returnCodes error -result {wrong # args: should be "ns_crypto::key priv ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/"}
 
-test ns_crypto::key-1.5 {syntax: ns_crypto::key generate} -body {
+test ns_crypto::key-1.5 {syntax: ns_crypto::key generate} -constraints keygen -body {
     ns_crypto::key generate
 } -returnCodes error -result {wrong # args: should be "ns_crypto::key generate -name /value/ ?-group /value/? ?-outfile /value/?"}
 
@@ -2379,7 +2383,7 @@ test ns_crypto::jwk-3.0 {JWK helpers: verify all supported OKP algorithms} \
 ############################################################################
 # Test Cases for ns_crypto key info components
 ############################################################################
-test ns_crypto-key-info-ec-1.1 {key info: EC P-256 x/y decode to 32 bytes each} -body {
+test ns_crypto-key-info-ec-1.1 {key info: EC P-256 x/y decode to 32 bytes each} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name EC -group prime256v1]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
@@ -2392,7 +2396,7 @@ test ns_crypto-key-info-ec-1.1 {key info: EC P-256 x/y decode to 32 bytes each} 
         [string length $y]
 } -returnCodes {error ok} -result {prime256v1 32 32}
 
-test ns_crypto-key-info-ec-1.2 {key info: EC secp256k1 x/y decode to 32 bytes each} -body {
+test ns_crypto-key-info-ec-1.2 {key info: EC secp256k1 x/y decode to 32 bytes each} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name EC -group secp256k1]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
@@ -2405,7 +2409,7 @@ test ns_crypto-key-info-ec-1.2 {key info: EC secp256k1 x/y decode to 32 bytes ea
         [string length $y]
 } -returnCodes {error ok} -result {secp256k1 32 32}
 
-test ns_crypto-key-info-ec-1.3 {key info: EC P-384 x/y decode to 48 bytes each} -body {
+test ns_crypto-key-info-ec-1.3 {key info: EC P-384 x/y decode to 48 bytes each} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name EC -group secp384r1]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
@@ -2418,7 +2422,7 @@ test ns_crypto-key-info-ec-1.3 {key info: EC P-384 x/y decode to 48 bytes each} 
         [string length $y]
 } -returnCodes {error ok} -result {secp384r1 48 48}
 
-test ns_crypto-key-info-ec-1.4 {key info: EC P-521 x/y decode to 66 bytes each} -body {
+test ns_crypto-key-info-ec-1.4 {key info: EC P-521 x/y decode to 66 bytes each} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name EC -group secp521r1]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
@@ -2463,7 +2467,7 @@ test ns_crypto-key-info-okp-1.3 {key info: X25519 x decodes to 32 bytes} -constr
         [string length $x]
 } -returnCodes {error ok} -result {x25519 32}
 
-test ns_crypto-key-info-rsa-1.1 {key info: RSA n/e decode to non-empty binary values} -body {
+test ns_crypto-key-info-rsa-1.1 {key info: RSA n/e decode to non-empty binary values} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name RSA]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
@@ -2475,7 +2479,7 @@ test ns_crypto-key-info-rsa-1.1 {key info: RSA n/e decode to non-empty binary va
         [expr {[string length $e] > 0}]
 } -returnCodes {error ok} -result {1 1}
 
-test ns_crypto-key-info-ec-2.1 {key info/import: EC P-256 public coordinates roundtrip} -body {
+test ns_crypto-key-info-ec-2.1 {key info/import: EC P-256 public coordinates roundtrip} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name EC -group prime256v1]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
@@ -2491,7 +2495,7 @@ test ns_crypto-key-info-ec-2.1 {key info/import: EC P-256 public coordinates rou
     expr {[string first "BEGIN PUBLIC KEY" $pubpem] >= 0}
 } -returnCodes {error ok} -result {1}
 
-test ns_crypto-key-info-rsa-2.1 {key info/import: RSA public parameters roundtrip} -body {
+test ns_crypto-key-info-rsa-2.1 {key info/import: RSA public parameters roundtrip} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name RSA]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
@@ -2717,7 +2721,7 @@ test ns_jwt-1.6 {encode/decode: extra protected header triples} -constraints {ed
 # ns_jwt verify tests
 # -------------------------------------------------------------------------
 
-test ns_jwt-2.1 {verify: ES256 token with public JWK} -body {
+test ns_jwt-2.1 {verify: ES256 token with public JWK} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name EC -group prime256v1]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
@@ -2743,7 +2747,7 @@ test ns_jwt-2.1 {verify: ES256 token with public JWK} -body {
         [dict get $payload scope]
 } -returnCodes {error ok} -result {1 ES256 alice read}
 
-test ns_jwt-2.2 {verify: RS256 token with public JWK} -body {
+test ns_jwt-2.2 {verify: RS256 token with public JWK} -constraints {keygen} -body {
     set privpem [ns_crypto::key generate -name RSA]
     set info    [ns_crypto::key info -pem $privpem -encoding base64url]
 
