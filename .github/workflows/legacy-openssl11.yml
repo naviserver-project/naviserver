@@ -1,0 +1,88 @@
+name: Legacy OpenSSL 1.1
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-focal-openssl11:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:20.04
+
+    env:
+      CC: gcc-9
+      TCLTAG: core-8-6-17
+      TCLLIB_VERSION:
+      NSF_VERSION: 2.3.0
+      NS_MODULES:
+      TDOM_VERSION: 0.9.1
+      WITH_DEPRECATED: 1
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Intro
+        run: |
+          echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
+          cat /etc/os-release
+
+      - name: Install Linux dependencies
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y \
+            ca-certificates \
+            curl \
+            git \
+            make \
+            gcc-9 \
+            g++-9 \
+            openssl \
+            libssl-dev \
+            libpam0g-dev \
+            wget
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          repository: naviserver-project/naviserver
+          fetch-depth: 0
+
+      - name: Show what we have now
+        run: |
+          git clone https://github.com/gustafn/install-ns.git
+          openssl version
+          ${CC} --version
+
+      - name: Debug git describe
+        run: |
+          git rev-parse --is-inside-work-tree
+          git describe --abbrev=12 --always --dirty=+ || true
+          git tag --list | tail -20 || true          
+
+      - name: Set MAKEFLAGS for parallel build
+        run: |
+          CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
+          echo "MAKEFLAGS=-j${CORES} -Oline" >> "$GITHUB_ENV"
+
+      - name: Compile all
+        run: |
+          env \
+            version_ns=.. \
+            version_modules=GIT \
+            version_tcl=${TCLTAG} \
+            version_tcllib=${TCLLIB_VERSION} \
+            version_xotcl=${NSF_VERSION} \
+            version_tdom=${TDOM_VERSION} \
+            ns_modules="${NS_MODULES}" \
+            with_ns_deprecated="${WITH_DEPRECATED}" \
+            CC=${CC} \
+            with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
+            bash install-ns.sh build
+        working-directory: install-ns
+
+      - name: Regression test
+        run: |
+          make test
