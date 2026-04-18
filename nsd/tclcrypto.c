@@ -92,7 +92,6 @@ typedef enum {
 
 typedef enum {
     NS_CRYPTO_KEYIMPORT_PUBLIC = 1,
-    NS_CRYPTO_KEYIMPORT_PRIVATE,
     NS_CRYPTO_KEYIMPORT_KEYPAIR
 } Ns_CryptoKeyImportSelection;
 
@@ -7255,9 +7254,6 @@ PkeyImportFromParams(Tcl_Interp *interp,
     case NS_CRYPTO_KEYIMPORT_PUBLIC:
         selectionInt = EVP_PKEY_PUBLIC_KEY;
         break;
-    case NS_CRYPTO_KEYIMPORT_PRIVATE:
-        selectionInt = EVP_PKEY_PRIVATE_KEY;
-        break;
     case NS_CRYPTO_KEYIMPORT_KEYPAIR:
         selectionInt = EVP_PKEY_KEYPAIR;
         break;
@@ -7600,7 +7596,6 @@ CryptoKeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     };
     static Ns_ObjvTable keyImportSelections[] = {
         {"public",  NS_CRYPTO_KEYIMPORT_PUBLIC},
-        {"private", NS_CRYPTO_KEYIMPORT_PRIVATE},
         {"keypair", NS_CRYPTO_KEYIMPORT_KEYPAIR},
         {NULL, 0}
     };

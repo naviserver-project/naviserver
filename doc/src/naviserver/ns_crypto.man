@@ -853,7 +853,7 @@ be in memory). In order to compute HMACs on large data, use
 
 [call [cmd "ns_crypto::key import"] \
       [option "-name [arg value]"] \
-      [opt [option "-from public|private|keypair"]] \
+      [opt [option "-from public|keypair"]] \
       [option "-params [arg value]"] \
       [opt [option "-format raw|pem"]] \
       [opt [option "-encoding hex|base64url|base64|binary"]] \
@@ -874,7 +874,6 @@ be in memory). In order to compute HMACs on large data, use
   constructed:
   [list_begin itemized]
   [item] [const public] — import a public key (default)
-  [item] [const private] — import a private key (currently not supported for all algorithms)
   [item] [const keypair] — import a full key pair (currently not supported for all algorithms)
   [list_end]
 

@@ -960,7 +960,7 @@ test ns_crypto::key-1.5 {syntax: ns_crypto::key generate} -body {
 
 test ns_crypto::key-1.6 {syntax: ns_crypto::key import} -constraints {keygen} -body {
     ns_crypto::key import
-} -returnCodes error -result {wrong # args: should be "ns_crypto::key import -name /value/ ?-from public|private|keypair? -params /value/ ?-format raw|pem? ?-encoding hex|base64url|base64|binary? ?-outfile /value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::key import -name /value/ ?-from public|keypair? -params /value/ ?-format raw|pem? ?-encoding hex|base64url|base64|binary? ?-outfile /value/?"}
 
 test ns_crypto::key-1.7 {syntax: ns_crypto::key import validates EC coordinate length} -constraints {keygen} -body {
     ns_crypto::key import -name EC -params [dict create group prime256v1 x abc y def]
@@ -1366,12 +1366,12 @@ test ns_crypto::key-8.11 {ns_crypto::key import OKP validates X25519 public key 
     -result {invalid public key length for X25519 (need * bytes)}
 
 
-test ns_crypto::key-8.12 {ns_crypto::key import OKP currently supports only public} \
+test ns_crypto::key-8.12 {ns_crypto::key import OKP currently supports only public import} \
     -constraints {keygen ed25519} \
     -body {
         ns_crypto::key import \
             -name OKP \
-            -from private \
+            -from keypair \
             -params [dict create crv Ed25519 x [binary format a32 ""]]
     } \
     -returnCodes error \
