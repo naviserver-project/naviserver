@@ -187,12 +187,7 @@ static bool PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
 static bool CryptoKeyTypeSupported(const char *name)
     NS_GNUC_NONNULL(1);
 
-static const char *SignatureDefaultKeyName(void);
-
 static bool PkeySignatureRequiresDigest(EVP_PKEY *pkey)
-    NS_GNUC_NONNULL(1);
-
-static bool PkeySignatureSupportsNullDigest(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
 static int PkeySignatureDigestGet(Tcl_Interp *interp, EVP_PKEY *pkey,
@@ -339,6 +334,11 @@ static unsigned PkeyInstanceCapabilities(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
 static unsigned PkeyProbeSignatureCaps(EVP_PKEY *pkey)
+    NS_GNUC_NONNULL(1);
+
+static const char *SignatureDefaultKeyName(void);
+
+static bool PkeySignatureSupportsNullDigest(EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1);
 
 static int PkeySignatureInitSm2(Tcl_Interp *interp, EVP_MD_CTX *mdctx,  EVP_PKEY *pkey,
@@ -5938,6 +5938,62 @@ PkeySupportsAgreement(EVP_PKEY *pkey)
 
 
 
+
+# ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySignatureSupportsNullDigest --
+ *
+ *      Determine whether the given key type supports signature
+ *      operations without an explicit message digest.
+ *
+ *      Some signature algorithms (e.g., Ed25519, Ed448) operate on the
+ *      message directly and do not use a separate hash function. For
+ *      these algorithms, passing a NULL digest to the OpenSSL EVP
+ *      signing/verification APIs is required.
+ *
+ *      Other algorithms (e.g., RSA, ECDSA, SM2) require a digest to be
+ *      specified and will fail when used with a NULL digest.
+ *
+ *      This helper is used to decide whether a NULL digest can be passed
+ *      to EVP_DigestSignInit()/EVP_DigestVerifyInit(), or whether a
+ *      digest must be provided or defaulted.
+ *
+ * Results:
+ *      Returns NS_TRUE if the key supports NULL digest usage,
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PkeySignatureSupportsNullDigest(EVP_PKEY *pkey)
+{
+#  ifdef HAVE_OPENSSL_3
+    if (PkeyMatchesPrefix(pkey, "ML-DSA-", 7)
+        || PkeyMatchesPrefix(pkey, "SLH-DSA-", 8)) {
+        return NS_TRUE;
+    }
+#  endif
+
+#  ifdef EVP_PKEY_ED25519
+    if (PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)) {
+        return NS_TRUE;
+    }
+#  endif
+#  ifdef EVP_PKEY_ED448
+    if (PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)) {
+        return NS_TRUE;
+    }
+#  endif
+
+    return NS_FALSE;
+}
+#endif /* HAVE_OPENSSL_3 */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5962,30 +6018,6 @@ PkeySupportsAgreement(EVP_PKEY *pkey)
  *----------------------------------------------------------------------
  */
 static bool
-PkeySignatureSupportsNullDigest(EVP_PKEY *pkey)
-{
-# ifdef HAVE_OPENSSL_3
-    if (PkeyMatchesPrefix(pkey, "ML-DSA-", 7)
-        || PkeyMatchesPrefix(pkey, "SLH-DSA-", 8)) {
-        return NS_TRUE;
-    }
-# endif
-
-# ifdef EVP_PKEY_ED25519
-    if (PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)) {
-        return NS_TRUE;
-    }
-# endif
-# ifdef EVP_PKEY_ED448
-    if (PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)) {
-        return NS_TRUE;
-    }
-# endif
-
-    return NS_FALSE;
-}
-
-static bool
 PkeySignatureRequiresDigest(EVP_PKEY *pkey)
 {
 # ifdef HAVE_OPENSSL_3
@@ -6000,6 +6032,37 @@ PkeySignatureRequiresDigest(EVP_PKEY *pkey)
 
 
 # ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyProbeSignatureCaps --
+ *
+ *      Probe signature-related capabilities for a given key type name
+ *      using OpenSSL provider-based mechanisms.
+ *
+ *      The function performs a lightweight capability check without
+ *      generating an actual key. It determines whether the specified
+ *      key type supports signature operations and whether these
+ *      operations require or accept a message digest.
+ *
+ *      The probe is typically implemented via EVP_PKEY_CTX creation
+ *      and initialization attempts, and reflects the capabilities
+ *      exposed by the active OpenSSL providers at runtime.
+ *
+ *      This function is used to populate capability metadata such as
+ *      "signature" and "requiresdigest" in higher-level interfaces
+ *      (e.g., ns_crypto::key info or ns_info ssl -details).
+ *
+ * Results:
+ *      Returns NS_TRUE when the key type supports signature operations,
+ *      NS_FALSE otherwise. Additional capability details are returned
+ *      via out parameters.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static unsigned
 PkeyProbeSignatureCaps(EVP_PKEY *pkey)
 {
@@ -6047,6 +6110,37 @@ PkeyProbeSignatureCaps(EVP_PKEY *pkey)
     return caps;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInstanceCapabilities --
+ *
+ *      Determine the operational capabilities of a concrete EVP_PKEY
+ *      instance.
+ *
+ *      The function inspects the provided key and determines which
+ *      cryptographic operations are supported, such as signature,
+ *      key agreement, or key encapsulation. The result reflects the
+ *      effective capabilities of the key instance, which may depend
+ *      on both the key type and the OpenSSL provider configuration.
+ *
+ *      Unlike type-based probing, this function operates on an actual
+ *      key object and therefore reflects its real, usable capabilities.
+ *
+ *      The results are used to populate fields in higher-level
+ *      interfaces such as ns_crypto::key info, including flags like
+ *      "signature", "agreement", "kem", and related attributes.
+ *
+ * Results:
+ *      Returns NS_TRUE when capability detection succeeds. Capability
+ *      flags are returned via out parameters or stored in result
+ *      structures.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static unsigned
 PkeyInstanceCapabilities(EVP_PKEY *pkey)
 {
@@ -8317,6 +8411,10 @@ PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
         SetResultFromOsslError(interp, "could not allocate message digest context");
         goto done;
     }
+#ifndef HAVE_OPENSSL_3
+    (void)id;
+    (void)idLength;
+#endif
 
 #ifdef HAVE_OPENSSL_3
     if (PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1) {
@@ -8639,9 +8737,7 @@ SignatureDefaultKeyName(void)
     if (CryptoKeyTypeSupported("EC")) {
         return "EC";
     }
-    if (CryptoKeyTypeSupported("RSA")) {
-        return "RSA";
-    }
+    return "RSA";
 }
 
 /*
