@@ -136,6 +136,9 @@ jobs:
         run: |
           sudo env \
           PATH="/usr/lib/ccache:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" \
+          NS_INSTALL_DEBUG_ENV=1 \
+          CCACHE_DIR="${CCACHE_DIR}" \
+          CCACHE_MAXSIZE="${CCACHE_MAXSIZE}" \
           version_ns=.. \
           version_modules=GIT \
           version_tcl=${TCLTAG} \
@@ -154,6 +157,11 @@ jobs:
       - name: Show ccache stats
         run: |
           ccache -s
+
+      - name: Show cache contents
+        run: |
+          echo "CCACHE_DIR=$CCACHE_DIR"
+          find "$CCACHE_DIR" -maxdepth 2 -type f | head -20 || true
 
       - name: Regression test
         run: |
