@@ -93,7 +93,7 @@ jobs:
       - name: Cache ccache
         uses: actions/cache@v4
         with:
-          path: ~/.ccache
+          path: ${{ github.workspace }}/.ccache
           key: ccache-${{ matrix.os }}-${{ matrix.compiler }}-${{ github.sha }}
           restore-keys: |
             ccache-${{ matrix.os }}-${{ matrix.compiler }}-
@@ -113,6 +113,10 @@ jobs:
           CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu || echo 1)"
           echo "MAKEFLAGS=-j${CORES} -Oline" >> "$GITHUB_ENV"
 
+      - name: Enable ccache wrappers
+        run: |
+          echo "/usr/lib/ccache" >> "$GITHUB_PATH"
+
       - name: Compile all
         run: |
           sudo \
@@ -128,6 +132,10 @@ jobs:
             with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
             bash install-ns.sh build
         working-directory: install-ns
+
+      - name: Show ccache stats
+        run: |
+          ccache -s
 
       - name: Regression test
         run: |
