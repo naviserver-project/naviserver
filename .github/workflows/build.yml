@@ -140,7 +140,7 @@ jobs:
       TCLTAG: core-8-6-17
       TCLLIB_VERSION:
       NSF_VERSION: 2.3.0
-      NS_MODULES:
+      NS_MODULES: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
       TDOM_VERSION: 0.9.1
       WITH_DEPRECATED: 1
 
