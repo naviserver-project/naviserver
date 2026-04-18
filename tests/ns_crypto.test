@@ -936,11 +936,12 @@ test ns_crypto::kem-2.5 {ns_crypto::kem roundtrip} -constraints {kem} -body {
 
 test ns_crypto::key-1.0 {syntax: ns_crypto::key subcommands} -body {
     ns_crypto::key
-} -returnCodes error -match glob -result [expr {
-    {[dict get [ns_info ssl -details] major] >= 3}
-    ? {wrong # args: should be "ns_crypto::key generate|import|info|type|pub|priv ?/arg .../"}
-    : {wrong # args: should be "ns_crypto::key info|type|pub|priv ?/arg .../"}
-}]
+} -returnCodes error -match glob -result \
+    [expr {
+           [dict get [ns_info ssl -details] major] >= 3
+           ? {wrong # args: should be "ns_crypto::key generate|import|info|type|pub|priv ?/arg .../"}
+           : {wrong # args: should be "ns_crypto::key info|type|pub|priv ?/arg .../"}
+       }]
 
 test ns_crypto::key-1.1 {syntax: ns_crypto::key type} -body {
     ns_crypto::key type
