@@ -117,6 +117,18 @@ jobs:
         run: |
           echo "/usr/lib/ccache" >> "$GITHUB_PATH"
 
+      - name: Check ccache compiler resolution
+        run: |
+          echo "CC=${CC}"
+          which ${CC} || true
+          type -a ${CC} || true
+          ls -l /usr/lib/ccache/${CC} || true
+          ccache -z
+
+      - name: Check compiler resolution under sudo
+        run: |
+          sudo env "CC=${CC}" bash -c 'echo PATH=$PATH; which $CC; type -a $CC || true'
+
       - name: Compile all
         run: |
           sudo \
