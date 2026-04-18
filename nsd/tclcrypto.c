@@ -601,13 +601,7 @@ static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
     return EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG,
                                (int)taglen, tag);
 }
-static int PkeyEcFromCoordsLegacy(Tcl_Interp *interp,
-                                  const char *curveName,
-                                  const unsigned char *xBytes, size_t xLen,
-                                  const unsigned char *yBytes, size_t yLen,
-                                  int formatInt,
-                                  const char *outfileName)
-    NS_GNUC_NONNULL(1,2,3,8);
+
 # endif /* HAVE_OPENSSL_3 */
 
 /*
@@ -3481,7 +3475,6 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
 }
 
 # ifndef OPENSSL_NO_EC
-#  ifdef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
@@ -3520,6 +3513,7 @@ EcGroupCoordinateLength(const char *groupName, size_t *coordLenPtr)
     return TCL_CONTINUE;
 }
 
+#  ifdef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
@@ -5789,6 +5783,7 @@ PkeyMatchesPrefix(EVP_PKEY *pkey, const char *prefix, size_t prefixLength)
     const char *name = EVP_PKEY_get0_type_name(pkey);
     return (name != NULL && strncmp(name, prefix, prefixLength) == 0);
 # else
+    (void)pkey;
     (void)prefix;
     (void)prefixLength;
     return NS_FALSE;
@@ -5819,6 +5814,7 @@ PkeyMatchesSubstring(EVP_PKEY *pkey, const char *needle)
     const char *name = EVP_PKEY_get0_type_name(pkey);
     return (name != NULL && strstr(name, needle) != NULL);
 #  else
+    (void)pkey;
     (void)needle;
     return NS_FALSE;
 #  endif
@@ -8061,6 +8057,8 @@ PkeySignatureDigestDefaultName(EVP_PKEY *pkey)
     if (PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1) {
         return "sm3";
     }
+# else
+    (void)pkey;
 # endif
     return  "sha256";
 }
@@ -8222,7 +8220,12 @@ PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
         goto done;
     }
 
-#ifdef HAVE_OPENSSL_3
+# ifndef HAVE_OPENSSL_3
+    (void)id;
+    (void)idLength;
+# endif
+
+# ifdef HAVE_OPENSSL_3
     if (PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1) {
         if (PkeySignatureInitSm2(interp, mdctx, pkey, md,
                                  id, idLength,
@@ -8230,7 +8233,7 @@ PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
             goto done;
         }
     } else
-#endif
+# endif
     if (EVP_DigestSignInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
         SetResultFromOsslError(interp, "could not initialize signature generation");
         goto done;
@@ -8359,6 +8362,7 @@ PkeySignatureAcceptsId(EVP_PKEY *pkey)
     return NS_FALSE;
 # endif
 #else
+    (void)pkey;
     return NS_FALSE;
 #endif
 }
@@ -8600,6 +8604,9 @@ done:
     return result;
 }
 
+
+
+# ifdef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
@@ -8623,7 +8630,6 @@ done:
 static const char *
 SignatureDefaultKeyName(void)
 {
-#ifdef HAVE_OPENSSL_3
     if (CryptoKeyTypeSupported("ML-DSA-65")) {
         return "ml-dsa-65";
     }
@@ -8636,19 +8642,8 @@ SignatureDefaultKeyName(void)
     if (CryptoKeyTypeSupported("RSA")) {
         return "RSA";
     }
-#else
-# ifdef EVP_PKEY_ED25519
-    return "Ed25519";
-# elif defined(HAVE_OPENSSL_EC_H)
-    return "EC";
-# else
-    return "RSA";
-# endif
-#endif
-    return "RSA";
 }
 
-# ifdef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
