@@ -309,6 +309,7 @@ test ns_info-2.23 {ns_info sockcallbacks reasonable result} -body {
 } -result [llength [info commands "::nscp"]]
 
 test ns_info-2.24 {ns_info tag reasonable result} -body {
+    ns_log warning DEBUG ns_info tag <[ns_info tag]>
     expr {[ns_info tag] ne ""}
 } -result 1
 
