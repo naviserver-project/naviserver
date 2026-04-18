@@ -16,7 +16,6 @@ jobs:
       WITH_DEPRECATED: ${{ matrix.with_deprecated }}
       CCACHE_DIR:      ${{ github.workspace }}/.ccache
       CCACHE_MAXSIZE:  500M
-      CCACHE_PREFIX:   ccache
 
     strategy:
       fail-fast: false
@@ -115,7 +114,8 @@ jobs:
 
       - name: Enable ccache wrappers
         run: |
-          echo "/usr/lib/ccache" >> "$GITHUB_PATH"
+          export PATH="/usr/lib/ccache:$PATH"
+          echo "PATH=$PATH" >> "$GITHUB_ENV"
 
       - name: Check ccache compiler resolution
         run: |
@@ -131,18 +131,18 @@ jobs:
 
       - name: Compile all
         run: |
-          sudo \
-            version_ns=.. \
-            version_modules=GIT \
-            version_tcl=${TCLTAG} \
-            version_tcllib=${TCLLIB_VERSION} \
-            version_xotcl=${NSF_VERSION} \
-            version_tdom=${TDOM_VERSION} \
-            ns_modules="${NS_MODULES}" \
-            with_ns_deprecated="${WITH_DEPRECATED}" \
-            CC=${CC} \
-            with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
-            bash install-ns.sh build
+          sudo -E \
+          version_ns=.. \
+          version_modules=GIT \
+          version_tcl=${TCLTAG} \
+          version_tcllib=${TCLLIB_VERSION} \
+          version_xotcl=${NSF_VERSION} \
+          version_tdom=${TDOM_VERSION} \
+          ns_modules="${NS_MODULES}" \
+          with_ns_deprecated="${WITH_DEPRECATED}" \
+          CC=${CC} \
+          with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
+          bash install-ns.sh build
         working-directory: install-ns
 
       - name: Show ccache stats
