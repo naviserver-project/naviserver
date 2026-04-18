@@ -132,24 +132,24 @@ jobs:
           CC="${CC}" \
           bash -c 'echo PATH=$PATH; which "$CC"; type -a "$CC" || true'
 
-          - name: Compile all
-            run: |
-              sudo env \
-              PATH="/usr/lib/ccache:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" \
-              version_ns=.. \
-              version_modules=GIT \
-              version_tcl=${TCLTAG} \
-              version_tcllib=${TCLLIB_VERSION} \
-              version_xotcl=${NSF_VERSION} \
-              version_tdom=${TDOM_VERSION} \
-              ns_modules="${NS_MODULES}" \
-              with_ns_deprecated="${WITH_DEPRECATED}" \
-              CC=${CC} \
-              with_postgres=0 \
-              with_postgres_driver=1 \
-              with_ns_doc=0 \
-              bash install-ns.sh build
-            working-directory: install-ns
+      - name: Compile all
+        run: |
+          sudo env \
+          PATH="/usr/lib/ccache:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" \
+          version_ns=.. \
+          version_modules=GIT \
+          version_tcl=${TCLTAG} \
+          version_tcllib=${TCLLIB_VERSION} \
+          version_xotcl=${NSF_VERSION} \
+          version_tdom=${TDOM_VERSION} \
+          ns_modules="${NS_MODULES}" \
+          with_ns_deprecated="${WITH_DEPRECATED}" \
+          CC=${CC} \
+          with_postgres=0 \
+          with_postgres_driver=1 \
+          with_ns_doc=0 \
+          bash install-ns.sh build
+        working-directory: install-ns
 
       - name: Show ccache stats
         run: |
