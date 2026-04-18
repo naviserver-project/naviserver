@@ -1487,7 +1487,7 @@ test ns_crypto-sm2-1.3 {ns_crypto::key generate -name SM2 yields signature capab
 
 
 test ns_crypto-sm2-1.4 {SM2 sign/verify succeeds with explicit -id} \
-    -constraints {sm2} \
+    -constraints {sm2 tcl86} \
     -body {
         set pem [ns_crypto::signature generate -name SM2]
         set pub [ns_crypto::signature pub -pem $pem]
@@ -1502,7 +1502,7 @@ test ns_crypto-sm2-1.4 {SM2 sign/verify succeeds with explicit -id} \
 
 
 test ns_crypto-sm2-1.5 {SM2 verify fails with different -id} \
-    -constraints {sm2} \
+    -constraints {sm2 tcl86} \
     -body {
         set pem [ns_crypto::signature generate -name SM2]
         set pub [ns_crypto::signature pub -pem $pem]
@@ -1517,7 +1517,7 @@ test ns_crypto-sm2-1.5 {SM2 verify fails with different -id} \
 
 
 test ns_crypto-sm2-1.6 {SM2 sign/verify succeeds with empty -id} \
-    -constraints {sm2} \
+    -constraints {sm2 tcl86} \
     -body {
         set pem [ns_crypto::signature generate -name SM2]
         set pub [ns_crypto::signature pub -pem $pem]
@@ -1543,7 +1543,7 @@ test ns_crypto-sm2-1.7 {SM2 sign with unsupported digest sha256 fails when -id i
 
 
 test ns_crypto-sm2-1.8 {SM2 sign defaults work without explicit -id} \
-    -constraints {sm2} \
+    -constraints {sm2 tcl86} \
     -body {
         set pem [ns_crypto::signature generate -name SM2]
         set pub [ns_crypto::signature pub -pem $pem]
@@ -1568,7 +1568,7 @@ test ns_crypto-sm2-1.9 {non-SM2 signature key rejects -id on sign} \
 
 
 test ns_crypto-sm2-1.10 {non-SM2 signature key rejects -id on verify} \
-    -constraints {signature ed25519} \
+    -constraints {signature ed25519 tcl86} \
     -body {
         set pem [ns_crypto::signature generate -name Ed25519]
         set pub [ns_crypto::signature pub -pem $pem]
@@ -1611,7 +1611,8 @@ test ns_crypto::signature-1.4 {syntax: ns_crypto::signature pub} -constraints {m
 # Test Cases for ns_crypto::signature functional tests
 #---------------------------------------------------------------------------
 
-test ns_crypto::signature-2.1 {EC sign/verify roundtrip with default digest and hex encoding using default curve} -constraints {ec tcl86} -body {
+test ns_crypto::signature-2.1 {EC sign/verify roundtrip with default digest and hex encoding using default curve}\
+    -constraints {ec tcl86} -body {
     set pem [ns_crypto::eckey generate]
     set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
     set msg "hello world"
@@ -1629,7 +1630,8 @@ test ns_crypto::signature-2.2 {EC sign/verify roundtrip with binary message and 
     ns_crypto::signature verify -binary -pem $pubpem -signature $sig $msg
 } -returnCodes {error ok} -result 1
 
-test ns_crypto::signature-2.3 {EC sign/verify roundtrip with explicit digest sha384 and base64url encoding} -constraints {ec} -body {
+test ns_crypto::signature-2.3 {EC sign/verify roundtrip with explicit digest sha384 and base64url encoding} \
+    -constraints {ec} -body {
     set pem [ns_crypto::eckey generate -name prime256v1]
     set pubpem [ns_crypto::eckey pub -pem $pem -format pem]
     set msg "abcdefghijklmnopqrstuvwxyz"
