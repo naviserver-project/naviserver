@@ -14,13 +14,17 @@ jobs:
   naviserver:
     runs-on: ${{ matrix.os }}
     env:
-      CC:              "ccache ${{ matrix.compiler }}"
+      CC:              ${{ matrix.compiler }}
+      #CC:              "ccache ${{ matrix.compiler }}"
       TCLTAG:          ${{ matrix.tcltag }}
       TCLLIB_VERSION:  ${{ matrix.tcllib_version }}
       NSF_VERSION:     ${{ matrix.nsf_version }}
       NS_MODULES:      ${{ matrix.ns_modules }}
       TDOM_VERSION:    ${{ matrix.tdom_version }}
       WITH_DEPRECATED: ${{ matrix.with_deprecated }}
+      CCACHE_DIR:      ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE:  500M
+      CCACHE_PREFIX:   ccache
 
     strategy:
       fail-fast: false
