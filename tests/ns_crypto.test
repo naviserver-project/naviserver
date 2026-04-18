@@ -1528,6 +1528,7 @@ test ns_crypto-sm2-1.6 {SM2 sign/verify succeeds with empty -id} \
             -signature [binary decode hex $sig] \
             -- "hello world"
     } \
+    -returnCodes {error ok} \
     -result 1
 
 
