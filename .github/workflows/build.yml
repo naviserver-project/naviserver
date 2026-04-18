@@ -14,7 +14,7 @@ jobs:
   naviserver:
     runs-on: ${{ matrix.os }}
     env:
-      CC:              ${{ matrix.compiler }}
+      CC:              "ccache ${{ matrix.compiler }}"
       TCLTAG:          ${{ matrix.tcltag }}
       TCLLIB_VERSION:  ${{ matrix.tcllib_version }}
       NSF_VERSION:     ${{ matrix.nsf_version }}
@@ -87,12 +87,20 @@ jobs:
         run: |
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install -y ${CC} libpam0g-dev
+          sudo apt-get install -y ${CC} libpam0g-dev ccache
 
       - name: Checkout
         uses: actions/checkout@v5
         with:
           repository: naviserver-project/naviserver
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ matrix.os }}-${{ matrix.compiler }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.os }}-${{ matrix.compiler }}-
 
       - name: Check IP
         run: curl -ks https://api.ipify.org
