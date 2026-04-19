@@ -1665,7 +1665,7 @@ is performed. When the type of the Tcl value is clearly a binary type
 
 [list_end]
 
-[see_also nsd ns_md ns_hmac]
+[see_also nsd ns_md ns_hmac ns_jwk]
 [keywords crypto HMAC HKDF AEAD ECDSA random]
 
 [manpage_end]
