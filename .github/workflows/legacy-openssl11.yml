@@ -17,6 +17,9 @@ jobs:
       NS_MODULES:
       TDOM_VERSION: 0.9.1
       WITH_DEPRECATED: 1
+      # generic setup
+      DEBIAN_FRONTEND: noninteractive
+      TZ: Etc/UTC
 
     defaults:
       run:
