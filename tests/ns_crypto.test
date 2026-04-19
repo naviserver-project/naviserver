@@ -15,16 +15,15 @@ if {![tcltest::testConstraint ssl]} {
     return
 }
 
-
 tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
-tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -secret 42}]}]
-tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
-
 
 set sslDetails   [ns_info ssl -details]
 set sslCaps      [dict get $sslDetails capabilities]
 set sslKeytypes  [dict get $sslDetails keytypes]
+
+tcltest::testConstraint scrypt    [expr {"scrypt" in $sslCaps}]
+tcltest::testConstraint argon2    [expr {"argon2" in $sslCaps}]
 
 tcltest::testConstraint agreement [expr {"agreement" in $sslCaps}]
 tcltest::testConstraint ec        [expr {"ec" in $sslKeytypes}]
@@ -41,17 +40,12 @@ tcltest::testConstraint x25519    [expr {"x25519" in $sslKeytypes}]
 tcltest::testConstraint ed448     [expr {"ed448" in $sslKeytypes}]
 tcltest::testConstraint secp256k1 [expr {![catch {ns_crypto::key generate -name EC -group secp256k1}]}]
 
-#tcltest::testConstraint agreement [expr {![catch {::ns_crypto::agreement generate}]}]
-#tcltest::testConstraint ec        [expr {![catch {::ns_crypto::eckey generate}]}]
-#tcltest::testConstraint kem       [expr {![catch {::ns_crypto::kem generate}]}]
-#tcltest::testConstraint keygen    [tcltest::testConstraint agreement] ;# both require OpenSSL 3.0+
-#tcltest::testConstraint mldsa     [expr {![catch {::ns_crypto::signature generate -name ml-dsa-65}]}]
-#tcltest::testConstraint signature [expr {![catch {::ns_crypto::signature generate}]}]
-#tcltest::testConstraint sm2       [expr {![catch {::ns_crypto::signature generate -name sm2}]}]
-#tcltest::testConstraint ed25519   [expr {![catch {::ns_crypto::signature generate -name Ed25519}]}]
-#tcltest::testConstraint x25519    [expr {![catch {::ns_crypto::agreement generate -name X25519}]}]
-#tcltest::testConstraint ed448     [expr {![catch {ns_crypto::key generate -name Ed448}]}]
-#tcltest::testConstraint secp256k1 [expr {![catch {ns_crypto::eckey generate -name secp256k1}]}]
+if {1 || $::tcl_version >= 8.6} {
+    set sslMsg [lmap item {enabled headersVersion runtimeVersion capabilities keytypes digests} {
+        set _ "$item: [dict get [ns_info ssl -details] $item]"
+    }]
+    puts stderr "OpenSSL configuration:\n    [join $sslMsg [subst {\n    }]]"
+}
 
 #foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec signature keygen sm2} {
 #    ns_log notice constraint $c [tcltest::testConstraint $c]
