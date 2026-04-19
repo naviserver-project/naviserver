@@ -285,6 +285,10 @@ build-doc:
 	    else \
 	       $(CP) ../../version_include.man .; \
 	    fi; \
+	    for f in $(find "$$srcdir" -name '*.man' | sort); do \
+                echo "checking $$f"; \
+                $(DTPLITE) validate "$$f" || exit 1; \
+            done; \
 	    echo $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
 		       -header ../src/$(HEADER_INC) \
 		       -footer ../src/footer.inc \
