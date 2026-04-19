@@ -12,17 +12,19 @@
 /*
  * tclcrypto.c --
  *
- *      Function callable from Tcl to use OpenSSL crypto support
- */
-
-/*
- * We define for the time being that we want to use an API compatible
- * with OpenSSL 1.1.0.  OpenSSL defines two versions, a hex version
+ *      Tcl-level interface to NaviServer's OpenSSL-based cryptographic
+ *      functionality.  This file implements the commands in the
+ *      ns_crypto namespace, providing access to message digests,
+ *      HMAC/KDFs, key management, signatures, key agreement, and
+ *      key encapsulation mechanisms.
  *
- *   #define OPENSSL_API_COMPAT 0x10100000L
- *
- * and a decimal variant, which should be apparently used in versions
- * beyond OpenSSL 1.1.x.
+ *      The implementation supports both legacy OpenSSL (1.1.1) and
+ *      provider-based APIs (OpenSSL 3.x and newer), performing
+ *      capability detection at runtime and adapting behavior
+ *      accordingly.  It handles encoding/decoding, PEM and raw key
+ *      representations, and integrates tightly with Tcl objects and
+ *      NaviServer utilities for memory management, error reporting,
+ *      and argument parsing.
  */
 # define OPENSSL_API_COMPAT 10000
 
@@ -33,10 +35,10 @@
 #endif
 
 /*
- * We need OpenSSL least in version 1.0 or newer for the crypto
+ * We need OpenSSL least in version 1.1.1 or newer for the crypto
  * functions.
  */
-#if defined(HAVE_OPENSSL_EVP_H) && !defined(HAVE_OPENSSL_PRE_1_0)
+#if defined(HAVE_OPENSSL_EVP_H) && !defined(HAVE_OPENSSL_PRE_1_1_1)
 
 # include <openssl/err.h>
 # include <openssl/evp.h>
@@ -123,10 +125,9 @@ static int DigestGet(Tcl_Interp *interp, const char *digestName, NsDigestUsage u
 static void DigestFree(NsDigest *digestPtr)
     NS_GNUC_NONNULL(1);
 
-# if !defined(HAVE_OPENSSL_PRE_1_0) && !defined(HAVE_OPENSSL_3)
+# ifndef HAVE_OPENSSL_3
 static void DigestListCallback(const EVP_MD *m, const char *from, const char *to, void *arg);
 # endif
-
 
 static BIO * PemOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
     NS_GNUC_NONNULL(1);
@@ -294,9 +295,7 @@ static TCL_OBJCMDPROC_T CryptoPkeySignatureVerifyObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyFromCoordsObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyGenerateObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyPubObjCmd;
-#  ifndef HAVE_OPENSSL_PRE_1_1
 static TCL_OBJCMDPROC_T CryptoEckeySharedsecretObjCmd;
-#  endif
 #  ifdef HAVE_OPENSSL_EC_PRIV2OCT
 static TCL_OBJCMDPROC_T CryptoEckeyPrivObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyImportObjCmd;
@@ -464,7 +463,8 @@ SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
  *
  *----------------------------------------------------------------------
  */
-static void hexPrint(const char *msg, const unsigned char *octets, size_t octetLength)
+static void
+hexPrint(const char *msg, const unsigned char *octets, size_t octetLength)
 {
     if (Ns_LogSeverityEnabled(Debug)) {
         size_t i;
@@ -480,90 +480,16 @@ static void hexPrint(const char *msg, const unsigned char *octets, size_t octetL
     }
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * Compatibility functions for older versions of OpenSSL.
- *
- *----------------------------------------------------------------------
- */
-
-# ifdef HAVE_OPENSSL_PRE_1_1
-#  define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
-#  define NS_EVP_MD_CTX_free EVP_MD_CTX_destroy
-
-static HMAC_CTX *HMAC_CTX_new(void);
-static void HMAC_CTX_free(HMAC_CTX *ctx) NS_GNUC_NONNULL(1);
-
-# else
-#  define NS_EVP_MD_CTX_new  EVP_MD_CTX_new
-#  define NS_EVP_MD_CTX_free EVP_MD_CTX_free
-# endif
-
-# ifdef HAVE_OPENSSL_PRE_1_1
-/*
- *----------------------------------------------------------------------
- *
- * HMAC_CTX_new, HMAC_CTX_free --
- *
- *      The NEW/FREE interface for HMAC_CTX is new in OpenSSL 1.1.0.
- *      Before, HMAC_CTX_init and HMAC_CTX_cleanup were used. We
- *      provide here a forward compatible version.
- *
- *----------------------------------------------------------------------
- */
-static HMAC_CTX *HMAC_CTX_new(void)
-{
-    HMAC_CTX *ctx = ns_malloc(sizeof(HMAC_CTX));
-    HMAC_CTX_init(ctx);
-    return ctx;
-}
-
-static void HMAC_CTX_free(HMAC_CTX *ctx)
-{
-    NS_NONNULL_ASSERT(ctx != NULL);
-
-    HMAC_CTX_cleanup(ctx);
-    ns_free(ctx);
-}
-# endif
-
-
-# ifdef HAVE_OPENSSL_PRE_1_1
-#  ifndef OPENSSL_NO_EC
-/*
- *----------------------------------------------------------------------
- *
- * ECDSA_SIG_get0 --
- *
- *      The function ECDSA_SIG_get0 is new in OpenSSL 1.1.0 (and not
- *      available in LIBRESSL). We provide here a forward compatible
- *      version.
- *
- *----------------------------------------------------------------------
- */
-static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
-{
-    if (pr != NULL) {
-        *pr = sig->r;
-    }
-    if (ps != NULL) {
-        *ps = sig->s;
-    }
-}
-#  endif
-# endif /* HAVE_OPENSSL_PRE_1_1 */
-
 # ifdef HAVE_OPENSSL_3
 /*
  * OpenSSL 3.x: use parameter-based API
  */
 
-static bool AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen) {
+static bool
+AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen) {
     OSSL_PARAM params[2];
 
-    params[0] = OSSL_PARAM_construct_size_t(
-                    OSSL_CIPHER_PARAM_IVLEN, &ivlen);
+    params[0] = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_IVLEN, &ivlen);
     params[1] = OSSL_PARAM_construct_end();
     return EVP_CIPHER_CTX_set_params(ctx, params) > 0;
 }
@@ -577,7 +503,8 @@ static bool AEAD_Set_tag(EVP_CIPHER_CTX *ctx,
     params[1] = OSSL_PARAM_construct_end();
     return EVP_CIPHER_CTX_set_params(ctx, params) > 0;
 }
-static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
+static bool
+AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
                         unsigned char *tag, size_t taglen) {
     OSSL_PARAM params[2];
     params[0] = OSSL_PARAM_construct_octet_string(
@@ -591,15 +518,18 @@ static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
 /*
  * OpenSSL 1.x: use legacy API
  */
-static bool AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen) {
+static bool
+AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen) {
     return EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, (int)ivlen, NULL);
 }
-static bool AEAD_Set_tag(EVP_CIPHER_CTX *ctx,
+static bool
+AEAD_Set_tag(EVP_CIPHER_CTX *ctx,
                         const unsigned char *tag, size_t taglen) {
     return EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG,
                                (int)taglen, (void *)tag);
 }
-static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
+static bool
+AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
                         unsigned char *tag, size_t taglen) {
     return EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG,
                                (int)taglen, tag);
@@ -1287,10 +1217,9 @@ PkeyPublicPemWrite(Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * DigestGet, DigestListCallback --
+ * DigestListCallback --
  *
- *      Converter from a digest string to internal OpenSSL
- *      representation.  DigestListCallback is an iterator usable in OpenSSL
+ *      DigestListCallback is an iterator usable in OpenSSL
  *      1.0.0 or newer to obtain the names of all available digest
  *      functions to provide nicer error messages.
  *
@@ -1303,7 +1232,7 @@ PkeyPublicPemWrite(Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 
-# if !defined(HAVE_OPENSSL_PRE_1_0) && !defined(HAVE_OPENSSL_3)
+# ifndef HAVE_OPENSSL_3
 static void
 DigestListCallback(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
 {
@@ -1322,7 +1251,7 @@ DigestListCallback(const EVP_MD *m, const char *from, const char *UNUSED(to), vo
         }
     }
 }
-# endif
+# endif /* !HAVE_OPENSSL_3 */
 
 /*----------------------------------------------------------------------
  *
@@ -1651,9 +1580,7 @@ DigestNamesAppend(Tcl_Interp *interp, Tcl_Obj *listObj, NsDigestUsage usage)
 static Tcl_Obj *
 DigestNamesAppend(Tcl_Interp *interp, Tcl_Obj *listObj, NsDigestUsage UNUSED(usage))
 {
-#  ifndef HAVE_OPENSSL_PRE_1_0
     EVP_MD_do_all_sorted(DigestListCallback, listObj);
-#  endif
     return listObj;
 }
 # endif /* HAVE_OPENSSL_3 */
@@ -1737,11 +1664,9 @@ CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     } else {
         nid = OBJ_sn2nid(curveName);
     }
-#  ifndef HAVE_OPENSSL_PRE_1_0_2
     if (nid == 0) {
         nid = EC_curve_nist2nid(curveName);
     }
-#  endif
     if (nid == 0) {
         Ns_TclPrintfResult(interp, "Unknown curve name \"%s\"", curveName);
         result = TCL_ERROR;
@@ -2290,7 +2215,7 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         if (result != TCL_ERROR) {
             EVP_MD_CTX    *mdctx;
 
-            mdctx = NS_EVP_MD_CTX_new();
+            mdctx = EVP_MD_CTX_new();
             EVP_DigestInit_ex(mdctx, digest.md, NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), mdCtxType, mdctx);
             DigestFree(&digest);
@@ -2404,10 +2329,10 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         unsigned int   mdLength;
         EVP_MD_CTX    *partial_ctx;
 
-        partial_ctx = NS_EVP_MD_CTX_new();
+        partial_ctx = EVP_MD_CTX_new();
         EVP_MD_CTX_copy(partial_ctx, mdctx);
         EVP_DigestFinal_ex(partial_ctx, digest, &mdLength);
-        NS_EVP_MD_CTX_free(partial_ctx);
+        EVP_MD_CTX_free(partial_ctx);
 
         /*
          * Convert the result to the output format and set the interp
@@ -2454,7 +2379,7 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         result = TCL_ERROR;
 
     } else {
-        NS_EVP_MD_CTX_free(mdctx);
+        EVP_MD_CTX_free(mdctx);
         Ns_TclResetObjType(ctxObj, NULL);
     }
 
@@ -2607,13 +2532,13 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                 EVP_PKEY_free(pkey);
 
             } else {
-                EVP_MD_CTX *mdctx = NS_EVP_MD_CTX_new();
+                EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
 
                 EVP_DigestInit_ex(mdctx, digest.md, NULL);
                 EVP_DigestUpdate(mdctx, messageString, (unsigned long)messageLength);
                 EVP_DigestFinal_ex(mdctx, digestBytes, &mdLength);
                 if (mdctx != NULL) {
-                    NS_EVP_MD_CTX_free(mdctx);
+                    EVP_MD_CTX_free(mdctx);
                 }
             }
 
@@ -2756,7 +2681,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
             /*
              * Call the Digest or Signature computation
              */
-            mdctx = NS_EVP_MD_CTX_new();
+            mdctx = EVP_MD_CTX_new();
 
             EVP_DigestInit_ex(mdctx, digest.md, NULL);
             EVP_DigestUpdate(mdctx, messageString, (unsigned long)messageLength);
@@ -2787,7 +2712,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
              * Clean up.
              */
             EC_KEY_free(eckey);
-            NS_EVP_MD_CTX_free(mdctx);
+            EVP_MD_CTX_free(mdctx);
             ns_free(rawSig);
             Tcl_DStringFree(&messageDs);
         }
@@ -4269,7 +4194,6 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     return result;
 }
 
-#  ifndef HAVE_OPENSSL_PRE_1_1
 /*
  *----------------------------------------------------------------------
  *
@@ -4403,7 +4327,6 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     return result;
 }
-#  endif
 
 
 /*
@@ -4434,9 +4357,7 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
         {"import",       CryptoEckeyImportObjCmd},
         {"priv",         CryptoEckeyPrivObjCmd},
 #  endif
-#  ifndef HAVE_OPENSSL_PRE_1_1
         {"sharedsecret", CryptoEckeySharedsecretObjCmd},
-#  endif
         {NULL, NULL}
     };
 
@@ -5710,7 +5631,6 @@ SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding 
     /*
      * Fallback for raw public-key APIs available for selected legacy/raw types.
      */
-# ifndef HAVE_OPENSSL_PRE_1_1
     {
         unsigned char *buf = NULL;
         size_t         len = 0u;
@@ -5725,7 +5645,6 @@ SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding 
             ns_free(buf);
         }
     }
-# endif
 
     Ns_TclPrintfResult(interp, "raw public key extraction is not supported for this key type");
     return TCL_ERROR;
@@ -5757,25 +5676,18 @@ SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding 
 static int
 SetResultFromRawPrivateKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
 {
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(pkey != NULL);
+    unsigned char *buf = NULL;
+    size_t         len = 0u;
 
-# ifndef HAVE_OPENSSL_PRE_1_1
-    {
-        unsigned char *buf = NULL;
-        size_t         len = 0u;
-
-        if (EVP_PKEY_get_raw_private_key(pkey, NULL, &len) == 1 && len > 0u) {
-            buf = ns_malloc(len);
-            if (EVP_PKEY_get_raw_private_key(pkey, buf, &len) == 1) {
-                Tcl_SetObjResult(interp, NsEncodedObj(buf, len, NULL, encoding));
-                ns_free(buf);
-                return TCL_OK;
-            }
+    if (EVP_PKEY_get_raw_private_key(pkey, NULL, &len) == 1 && len > 0u) {
+        buf = ns_malloc(len);
+        if (EVP_PKEY_get_raw_private_key(pkey, buf, &len) == 1) {
+            Tcl_SetObjResult(interp, NsEncodedObj(buf, len, NULL, encoding));
             ns_free(buf);
+            return TCL_OK;
         }
+        ns_free(buf);
     }
-# endif
 
     Ns_TclPrintfResult(interp, "raw private key extraction is not supported for this key type");
     return TCL_ERROR;

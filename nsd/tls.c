@@ -167,7 +167,7 @@ static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int re
     NS_GNUC_NONNULL(1);
 # endif /* HAVE_OPENSSL_OCSP */
 
-# if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
+# if !defined(LIBRESSL_VERSION_NUMBER)
 static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line)) NS_GNUC_MALLOC NS_ALLOC_SIZE1(1) NS_GNUC_RETURNS_NONNULL;
 static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file), int UNUSED(line)) NS_ALLOC_SIZE1(2);
 static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line));
@@ -203,11 +203,6 @@ SSL_infoCB(const SSL *ssl, int where, int ret) {
 
     NS_NONNULL_ASSERT(ssl != NULL);
 
-#ifdef HAVE_OPENSSL_PRE_1_1
-    if ((where & SSL_CB_HANDSHAKE_DONE)) {
-        ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
-    }
-#endif
     if(where & SSL_CB_ALERT) {
         const char *state = SSL_state_string_long(ssl);
         const char *dir   = (where & SSL_CB_READ) ? "read" : "write";
@@ -1174,7 +1169,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
 
 #endif /* HAVE_OPENSSL_OCSP */
 
-# if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
+# if !defined(LIBRESSL_VERSION_NUMBER)
 static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line))
 {
     return ns_malloc(num);
@@ -1226,24 +1221,17 @@ NsInitOpenSSL(void)
          * function prototypes were introduced CRYPTO_malloc_fn,
          * CRYPTO_realloc_fn and CRYPTO_free_fn.
          */
-#  if defined(HAVE_OPENSSL_PRE_1_1) || defined(LIBRESSL_VERSION_NUMBER)
+#  if defined(LIBRESSL_VERSION_NUMBER)
         CRYPTO_set_mem_functions(ns_malloc, ns_realloc, ns_free);
 #  else
         CRYPTO_set_mem_functions(NS_CRYPTO_malloc, NS_CRYPTO_realloc, NS_CRYPTO_free);
 #  endif
         /*
-         * With OpenSSL 1.1.0 or above the OpenSSL library initializes
-         * itself automatically.
+         * OpenSSL 1.1.1 and newer initialize automatically.  Call
+         * OPENSSL_init_ssl() explicitly to ensure the SSL library is ready.
          */
-#  if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_1_0_2)
-        OpenSSL_add_all_algorithms();
-        SSL_load_error_strings();
-#   if OPENSSL_VERSION_NUMBER < 0x010100000 || defined(LIBRESSL_1_0_2)
-        SSL_library_init();
-#   endif
-#  else
         OPENSSL_init_ssl(0, NULL);
-#  endif
+
         ClientCtxDataIndex = SSL_CTX_get_ex_new_index(0, ns_client_info_tag, NULL, NULL, NULL);
         initialized = 1;
         /*
@@ -2300,7 +2288,6 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
              *     SSL_MODE_ASYNC
              */
 
-#ifdef HAVE_OPENSSL_READ_BUFFER_LEN
             /*
              * read_buffer_len is apparently just useful, when crypto
              * pipelining is set up. In general, the OpenSSL "dasync"
@@ -2310,7 +2297,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
              *
              *  SSL_CTX_set_default_read_buffer_len(*ctxPtr, 65000);
              */
-#endif
+
             /*
              * Flags obsolete since 1.1.0 but also supported in 3.0
              */
@@ -2318,9 +2305,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
             SSL_CTX_set_options(*ctxPtr, SSL_OP_TLS_D5_BUG);
             SSL_CTX_set_options(*ctxPtr, SSL_OP_TLS_BLOCK_PADDING_BUG);
 
-#ifdef HAVE_OPENSSL_DH_AUTO
             SSL_CTX_set_dh_auto(*ctxPtr, 1);
-#endif
 
             {
                 X509_STORE *storePtr;
@@ -2847,9 +2832,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     Ns_Log(Debug, "Ns_TLS_CtxServerCreate cert '%s' app_data %p", cert, (void*)app_data);
     (void)flags;
 
-#ifdef HAVE_OPENSSL_PRE_1_1
-    server_method = SSLv23_server_method();
-#elif defined(HAVE_OPENSSL_3_5)
+#if defined(HAVE_OPENSSL_3_5)
     if ((flags & NS_DRIVER_QUIC) != 0) {
         server_method = OSSL_QUIC_server_method();
     } else {
@@ -2899,7 +2882,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         }
     }
 
-#if !defined(HAVE_OPENSSL_PRE_1_1) && defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
     if (ciphersuites != NULL) {
         rc = SSL_CTX_set_ciphersuites(ctx, ciphersuites);
         if (rc == 0) {
@@ -3026,28 +3009,6 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         CertTableAdd(ctx, cert, key);
 
         /*Ns_Log(Notice, "SSL_CTX_use_certificate_chain_file and SSL_CTX_use_PrivateKey_file into SSL_CTX %p", (void*)ctx);*/
-#ifndef HAVE_OPENSSL_DH_AUTO
-        /*
-         * Get DH parameters from .pem file
-         */
-        {
-            BIO *bio = BIO_new_file(cert, "r");
-            DH  *dh  = (bio != NULL) ? PEM_read_bio_DHparams(bio, NULL, NULL, NULL) : NULL;
-            if (bio != NULL) {
-                BIO_free(bio);
-            }
-
-            if (dh != NULL) {
-                if (SSL_CTX_set_tmp_dh(ctx, dh) < 0) {
-                    Ns_Log(Error, "nsssl: Couldn't set DH parameters");
-                    DH_free(dh);
-                    return TCL_ERROR;
-                }
-                DH_free(dh);
-            }
-        }
-#endif
-
     }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
