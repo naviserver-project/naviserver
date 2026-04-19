@@ -114,6 +114,9 @@ typedef struct {
 /*
  * Static functions defined in this file.
  */
+static Tcl_Obj *DigestNamesAppend(Tcl_Interp *interp, Tcl_Obj *listObj, NsDigestUsage usage)
+    NS_GNUC_NONNULL(2);
+
 static int DigestGet(Tcl_Interp *interp, const char *digestName, NsDigestUsage usage, NsDigest *digestPtr)
     NS_GNUC_NONNULL(1,2,4);
 
@@ -1503,6 +1506,8 @@ DigestListCallbackProvided(EVP_MD *md, void *arg)
                                  Tcl_NewStringObj(name, TCL_INDEX_NONE));
     }
 }
+# endif /* HAVE_OPENSSL_3 */
+
 
 /*----------------------------------------------------------------------
  *
@@ -1545,7 +1550,7 @@ static int
 DigestGet(Tcl_Interp *interp, const char *digestName,
           NsDigestUsage usage, NsDigest *digestPtr)
 {
-    int         result;
+# ifdef HAVE_OPENSSL_3
     const char *resolvedName = NULL;
 
     digestPtr->md = NULL;
@@ -1558,73 +1563,100 @@ DigestGet(Tcl_Interp *interp, const char *digestName,
             return TCL_OK;
         }
 
+        /*
+         * Cleanup in error case.
+         */
         DigestFree(digestPtr);
     }
-
-    {
-        Tcl_Obj         *listObj, *sortedObj;
-        NsDigestListCtx  listCtx;
-
-        listObj = Tcl_NewListObj(0, NULL);
-        Tcl_IncrRefCount(listObj);
-
-        listCtx.listObj = listObj;
-        listCtx.usage   = usage;
-
-        EVP_MD_do_all_provided(NULL, DigestListCallbackProvided, &listCtx);
-
-        sortedObj = NsTclListSort(interp, listObj);
-        if (sortedObj != NULL) {
-            Tcl_DecrRefCount(listObj);
-            listObj = sortedObj;
-            Tcl_IncrRefCount(listObj);
-        }
-
-        Ns_TclPrintfResult(interp, "Unknown value for digest \"%s\", valid: %s",
-                           digestName, Tcl_GetString(listObj));
-        Tcl_DecrRefCount(listObj);
-    }
-
-    result = TCL_ERROR;
-    return result;
-}
-
 # else
-/* legacy version */
-static int
-DigestGet(Tcl_Interp *interp, const char *digestName,
-          NsDigestUsage UNUSED(usage), NsDigest *digestPtr)
-{
-    int result;
-
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(digestName != NULL);
-    NS_NONNULL_ASSERT(digestPtr != NULL);
-
+    /* legacy version */
     digestPtr->md = EVP_get_digestbyname(digestName);
     if (digestPtr->md != NULL) {
         return TCL_OK;
     }
+# endif /* HAVE_OPENSSL_3 */
 
-#  ifndef HAVE_OPENSSL_PRE_1_0
+    /*
+     * Lookup failed, provide a friendly error message.
+     */
     {
         Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
         Tcl_IncrRefCount(listObj);
-        EVP_MD_do_all_sorted(DigestListCallback, listObj);
+        listObj = DigestNamesAppend(interp, listObj, usage);
         Ns_TclPrintfResult(interp, "Unknown value for digest \"%s\", valid: %s",
                            digestName, Tcl_GetString(listObj));
         Tcl_DecrRefCount(listObj);
     }
-#  else
-    Ns_TclPrintfResult(interp, "Unknown message digest \"%s\"", digestName);
-#  endif
 
-    result = TCL_ERROR;
-    return result;
+    return TCL_ERROR;
 }
-# endif
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DigestNamesAppend --
+ *
+ *      Append the names of available message digest algorithms to a
+ *      Tcl list object.
+ *
+ *      The function enumerates digest algorithms provided by OpenSSL
+ *      and appends their canonical names to the provided list object.
+ *      The set of returned names is filtered according to the specified
+ *      usage (e.g., plain message digests via NS_DIGEST_USAGE_MD).
+ *
+ *      When compiled against OpenSSL 3.x, the enumeration is performed
+ *      via EVP_MD_do_all_provided() and therefore reflects the active
+ *      provider configuration at runtime.  For older OpenSSL versions,
+ *      EVP_MD_do_all_sorted() is used when available.
+ *
+ *      The resulting list may be sorted (when NsTclListSort() succeeds),
+ *      in which case a new Tcl_Obj is returned and the input list object
+ *      is decremented accordingly.
+ *
+ * Results:
+ *      Returns a Tcl_Obj* containing the (possibly sorted) list of
+ *      digest names.  The returned object has a reference count of at
+ *      least 1 and is owned by the caller.
+ *
+ * Side effects:
+ *      Appends elements to the provided list object.  May replace the
+ *      input list object with a new sorted object.
+ *
+ *----------------------------------------------------------------------
+ */
+# ifdef HAVE_OPENSSL_3
+static Tcl_Obj *
+DigestNamesAppend(Tcl_Interp *interp, Tcl_Obj *listObj, NsDigestUsage usage)
+{
+    Tcl_Obj         *sortedObj;
+    NsDigestListCtx  listCtx;
+
+    listCtx.listObj = listObj;
+    listCtx.usage   = usage;
+
+    EVP_MD_do_all_provided(NULL, DigestListCallbackProvided, &listCtx);
+
+    sortedObj = NsTclListSort(interp, listObj);
+    if (sortedObj != NULL) {
+        Tcl_IncrRefCount(sortedObj);
+        Tcl_DecrRefCount(listObj);
+        listObj = sortedObj;
+    }
+
+    return listObj;
+}
+# else
+static Tcl_Obj *
+DigestNamesAppend(Tcl_Interp *interp, Tcl_Obj *listObj, NsDigestUsage UNUSED(usage))
+{
+#  ifndef HAVE_OPENSSL_PRE_1_0
+    EVP_MD_do_all_sorted(DigestListCallback, listObj);
+#  endif
+    return listObj;
+}
+# endif /* HAVE_OPENSSL_3 */
 
 /*
  *----------------------------------------------------------------------
@@ -2971,16 +3003,6 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
 
 
 # ifdef HAVE_OPENSSL_3
-/*
- * We could provide SCRYPT as well via EVP_PKEY_CTX provided in
- * OpenSSL 1.1.1:
- *
- *     https://www.openssl.org/docs/man1.1.1/man7/scrypt.html
- *
- * but the future interface is the OpenSSL 3.* way, via
- * EVP_KDF_fetch() + OSSL_PARAM_*.  Not sure, whether LibreSSL and
- * friends will follow.
- */
 /*
  *----------------------------------------------------------------------
  *
@@ -9385,11 +9407,12 @@ TrimmedLength(const char *s)
 Tcl_Obj *
 Ns_InfoSSLDetailsObj(void)
 {
-    Tcl_Obj *resultObj = Tcl_NewDictObj();
-    Tcl_Obj *capabilitiesObj = Tcl_NewListObj(0, NULL);
-    Tcl_Obj *keytypesObj = Tcl_NewListObj(0, NULL);
-    unsigned long runtimeVersion = 0ul;
-    const char   *runtimeVersionString = NULL;
+    Tcl_Obj *resultObj               = Tcl_NewDictObj();
+    Tcl_Obj *capabilitiesObj         = Tcl_NewListObj(0, NULL);
+    Tcl_Obj *keytypesObj             = Tcl_NewListObj(0, NULL);
+    Tcl_Obj *digestsObj              = Tcl_NewListObj(0, NULL);
+    unsigned long runtimeVersion     = 0ul;
+    const char *runtimeVersionString = NULL;
 
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("enabled", TCL_INDEX_NONE),
@@ -9474,6 +9497,17 @@ Ns_InfoSSLDetailsObj(void)
         Tcl_ListObjAppendElement(NULL, capabilitiesObj,
                                  Tcl_NewStringObj("kem", TCL_INDEX_NONE));
     }
+    /*
+     * Argon2 and scrypt.
+     */
+# ifdef HAVE_OPENSSL_3_2
+    Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                             Tcl_NewStringObj("argon2", TCL_INDEX_NONE));
+# endif
+# ifdef HAVE_OPENSSL_3
+    Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                             Tcl_NewStringObj("scrypt", TCL_INDEX_NONE));
+# endif
 
     /*
      * Key-type / algorithm-family probes.
@@ -9536,6 +9570,13 @@ Ns_InfoSSLDetailsObj(void)
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("keytypes", TCL_INDEX_NONE),
                    keytypesObj);
+
+    Tcl_IncrRefCount(digestsObj);
+    digestsObj = DigestNamesAppend(NULL, digestsObj, NS_DIGEST_USAGE_MD);
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("digests", TCL_INDEX_NONE),
+                   digestsObj);
+    Tcl_DecrRefCount(digestsObj);
 
     return resultObj;
 }
@@ -9674,9 +9715,10 @@ NsTclCryptoSignatureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
 Tcl_Obj *
 Ns_InfoSSLDetailsObj(void)
 {
-    Tcl_Obj *resultObj = Tcl_NewDictObj();
+    Tcl_Obj *resultObj       = Tcl_NewDictObj();
     Tcl_Obj *capabilitiesObj = Tcl_NewListObj(0, NULL);
-    Tcl_Obj *keytypesObj = Tcl_NewListObj(0, NULL);
+    Tcl_Obj *keytypesObj     = Tcl_NewListObj(0, NULL);
+    Tcl_Obj *digestsObj      = Tcl_NewListObj(0, NULL);
 
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("enabled", TCL_INDEX_NONE),
@@ -9688,6 +9730,9 @@ Ns_InfoSSLDetailsObj(void)
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("keytypes", TCL_INDEX_NONE),
                    keytypesObj);
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("digests", TCL_INDEX_NONE),
+                   digestsObj);
 
     return resultObj;
 }

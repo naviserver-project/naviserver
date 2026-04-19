@@ -631,11 +631,8 @@ CompareTclObjs(const void *a, const void *b)
 Tcl_Obj *
 NsTclListSort(Tcl_Interp *interp, Tcl_Obj *listObj)
 {
-    Tcl_Obj    *sortedObj = NULL;
-    Tcl_Obj   **objv;
-    Tcl_Obj   **copyv;
-    TCL_SIZE_T objc;
-    TCL_SIZE_T i;
+    Tcl_Obj   *sortedObj = NULL, **objv, **copyv;
+    TCL_SIZE_T objc, i;
 
     if (Tcl_ListObjGetElements(interp, listObj, &objc, &objv) != TCL_OK) {
         return NULL;

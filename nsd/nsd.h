@@ -2203,7 +2203,7 @@ NS_EXTERN TCL_SIZE_T NsEncodedObjScratchSize(Ns_BinaryEncoding encoding, size_t 
 NS_EXTERN void NsTclInitAddrType(void);
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
-NS_EXTERN Tcl_Obj *NsTclListSort(Tcl_Interp *interp, Tcl_Obj *listObj) NS_GNUC_NONNULL(1,2);
+NS_EXTERN Tcl_Obj *NsTclListSort(Tcl_Interp *interp, Tcl_Obj *listObj) NS_GNUC_NONNULL(2);
 
 /*
  * tclobjv.c

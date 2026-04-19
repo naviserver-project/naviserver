@@ -250,21 +250,24 @@ listening callback for the nscp module. Each list element is itself a
   The returned dictionary contains the following keys:
 
   [list_begin itemized]
-  [item] [const enabled] — boolean indicating whether OpenSSL support is enabled
-  [item] [const headersVersion] — OpenSSL version string used at compile time
-  [item] [const headersVersionNumber] — numeric OpenSSL version used at compile time
-  [item] [const runtimeVersion] — OpenSSL version string of the loaded library
-  [item] [const runtimeVersionNumber] — numeric OpenSSL version of the loaded library
-  [item] [const major], [const minor], [const patch] — decoded runtime version components
-  [item] [const capabilities] — list of available cryptographic capability groups
-  [item] [const keytypes] — list of supported key types
+  [item] [const enabled] - boolean indicating whether OpenSSL support is enabled
+  [item] [const headersVersion] - OpenSSL version string used at compile time
+  [item] [const headersVersionNumber] - numeric OpenSSL version used at compile time
+  [item] [const runtimeVersion] - OpenSSL version string of the loaded library
+  [item] [const runtimeVersionNumber] - numeric OpenSSL version of the loaded library
+  [item] [const major], [const minor], [const patch] - decoded runtime version components
+  [item] [const capabilities] - list of available cryptographic capability groups
+  [item] [const keytypes] - list of supported key types
+  [item] [const digests] - list of available message digest algorithms
   [list_end]
 
 [para]
   The value of [const capabilities] is a list of symbolic names describing
   available functionality exposed via [cmd ns_crypto], such as
   [const digest], [const cipher], [const hmac], [const signature],
-  [const agreement], and [const kem].
+  [const agreement], and [const kem].  Depending on the OpenSSL version,
+  additional capabilities such as [const scrypt] and [const argon2] may
+  be present.
 
 [para]
   The value of [const keytypes] is a list of supported key types or
@@ -272,8 +275,15 @@ listening callback for the nscp module. Each list element is itself a
   [const ed448], [const x25519], [const x448], [const sm2],
   [const ml-kem], [const ml-dsa], and [const okp].  The synthetic type
   [const okp] denotes support for Octet Key Pair algorithms (e.g.,
-  Ed25519, Ed448, X25519, X448) as used by [cmd ns_crypto::key import].
+  Ed25519, Ed448, X25519, X448) as used by [cmd "ns_crypto::key import"].
 
+[para]
+  The value of [const digests] is a list of available message digest
+  algorithms as provided by OpenSSL (restricted to plain message digest
+  usage).  Typical entries include algorithms such as [const sha2-256],
+  [const sha3-256], [const blake2b-512], [const sm3], and others,
+  depending on the configured providers and OpenSSL version.
+  
 [para]
   The reported capabilities and key types depend on the OpenSSL version,
   configured providers, and compile-time options.
@@ -281,7 +291,7 @@ listening callback for the nscp module. Each list element is itself a
 [example_begin]
  % ns_info ssl
  1
-
+ 
  % ns_info ssl -details
  # result dict reformatted for easier reading:
     enabled 1
@@ -289,6 +299,7 @@ listening callback for the nscp module. Each list element is itself a
     runtimeVersion {OpenSSL 4.1.0-dev}
     capabilities {digest cipher hmac signature agreement kem}
     keytypes {rsa ec ed25519 ed448 x25519 x448 sm2 ml-kem ml-dsa okp}
+    digests {sha2-256 sha3-256 blake2b-512 ...}
 [example_end]
 
 [call [cmd  "ns_info started"]]
@@ -333,6 +344,8 @@ number combined with a dot).
 
 
 [list_end]
+
+[see_also nsd ns_crypto]
 [keywords "global built-in" introspection nsproxy]
 
 [manpage_end]
