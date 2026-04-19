@@ -197,7 +197,7 @@
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem generate}] ?-name /value/? ?-group /value/? ?-outfile /value/?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::kem pub}] ?-passphrase /value/? ?-outfile /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::key generate}] -name /value/ ?-group /value/? ?-outfile /value/?
-[uri ../../naviserver/files/ns_crypto.html {ns_crypto::key import}] -name /value/ ?-from public|private|keypair? -params /value/ ?-format raw|pem? ?-encoding hex|base64url|base64|binary? ?-outfile /value/?
+[uri ../../naviserver/files/ns_crypto.html {ns_crypto::key import}] -name /value/ ?-from public|keypair? -params /value/ ?-format raw|pem? ?-encoding hex|base64url|base64|binary? ?-outfile /value/?
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::key info}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::key priv}] ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::key pub}] ?-encoding hex|base64url|base64|binary? ?-format raw|pem? ?-passphrase /value/? ?-outfile /value/? -pem /value/
@@ -348,7 +348,7 @@
 [uri ../../naviserver/files/ns_info.html {ns_info servers}]
 [uri ../../naviserver/files/ns_info.html {ns_info shutdownpending}]
 [uri ../../naviserver/files/ns_info.html {ns_info sockcallbacks}]
-[uri ../../naviserver/files/ns_info.html {ns_info ssl}]
+[uri ../../naviserver/files/ns_info.html {ns_info ssl}] ?-details?
 [uri ../../naviserver/files/ns_info.html {ns_info started}]
 [uri ../../naviserver/files/ns_info.html {ns_info tag}]
 [uri ../../naviserver/files/ns_info.html {ns_info threads}]
@@ -390,6 +390,9 @@
 [uri ../../naviserver/files/ns_json.html {ns_json triples schema}] ?-pretty? ?-required? ?--? /triples .../
 [uri ../../naviserver/files/ns_json.html {ns_json triples setvalue}] ?-path /value/? ?-pointer /value/? ?-type auto|string|number|boolean|null|object|array? ?--? /triples/ /value/
 [uri ../../naviserver/files/ns_json.html {ns_json value}] ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?--? /value/
+[uri ../../naviserver/files/ns_jwt.html {ns_jwt decode}] /token/
+[uri ../../naviserver/files/ns_jwt.html {ns_jwt encode}] -alg /value/ ?-key /value/? ?-jwk /value/? ?-secret /value/? ?-kid /value/? ?-typ /value/? ?-cty /value/? ?-extraheader /value/? ?-iss /value/? ?-sub /value/? ?-aud /value/? ?-exp /value/? ?-nbf /value/? ?-iat /value/? ?-jti /value/? ?/extrapayload/?
+[uri ../../naviserver/files/ns_jwt.html {ns_jwt verify}] ?-alg /value/? ?-key /value/? ?-jwk /value/? ?-jwks /value/? ?-secret /value/? ?-kid /value/? ?-requirekid? ?-verifyclaims? ?-aud /value/? ?-iss /value/? ?-sub /value/? ?-clockskew /value/? ?-now /value/? /token/
 [uri ../../naviserver/files/ns_kill.html {ns_kill}] ?-nocomplain? /pid/ /signal/
 [uri ../../naviserver/files/ns_library.html {ns_library}] private|shared ?/module/?
 [uri ../../nsdb/files/ns_buildsqldate.html {ns_localsqltimestamp}]
