@@ -4343,7 +4343,7 @@ static int
 CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1, formatInt = OUTPUT_FORMAT_RAW;
+    int                encodingInt = -1, formatInt = OUTPUT_FORMAT_RAW;
     const char        *pemFile = NULL, *outfileName = NULL, *passPhrase = NS_EMPTY_STRING;
     Ns_BinaryEncoding  encoding;
     static Ns_ObjvTable formats[] = {
@@ -4379,9 +4379,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 ? NS_OBJ_ENCODING_HEX
                 : (Ns_BinaryEncoding)encodingInt);
 
-    result = SetResultFromEcPublicKey(interp, pemFile, passPhrase, formatInt, outfileName, encoding);
-
-    return result;
+    return SetResultFromEcPublicKey(interp, pemFile, passPhrase, formatInt, outfileName, encoding);
 }
 
 
@@ -4404,33 +4402,37 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                        TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, isBinary = 0, encodingInt = -1;
-    Tcl_Obj           *importObj = NULL;
+    int         result, isBinary = 0, encodingInt = -1;
+    Tcl_Obj    *importObj = NULL;
+
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,  &isBinary,    INT2PTR(NS_TRUE)},
         {"!-string",  Ns_ObjvObj,   &importObj,   NULL},
         {"-encoding", Ns_ObjvIndex, &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
-    /*
-      ns_crypto::eckey import -encoding base64url \
-          -string [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
 
-      ns_crypto::eckey import -encoding base64url \
-          -string [ns_base64urldecode BDwwYm4O5dZG9SO6Vaz168iDLGWMmitkj5LFvunvMfgmI2fZdAEaiHTDfKR0fvr0D3V56cSGSeUwP0xNdrXho5k]
+    /*
+      ns_crypto::eckey import -encoding base64url                       \
+         -string [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
+
+      ns_crypto::eckey import -encoding base64url                 \
+         -string [ns_base64urldecode BDwwYm4O5dZG9SO6Vaz168iDLGWMmitkj5LFvunvMfgmI2fZdAEaiHTDfKR0fvr0D3V56cSGSeUwP0xNdrXho5k]
     */
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
+        return TCL_ERROR;
 
     } else {
-        TCL_SIZE_T           rawKeyLength;
-        const unsigned char *rawKeyString;
-        EC_KEY              *eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        Ns_BinaryEncoding    encoding = (encodingInt == -1
+                                         ? NS_OBJ_ENCODING_HEX
+                                         : (Ns_BinaryEncoding)encodingInt);
         Tcl_DString          keyDs;
-        Ns_BinaryEncoding    encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
+        const unsigned char *rawKeyString;
+        TCL_SIZE_T           rawKeyLength;
 
         Tcl_DStringInit(&keyDs);
         rawKeyString = Ns_GetBinaryString(importObj, isBinary == 1, &rawKeyLength, &keyDs);
@@ -4438,38 +4440,103 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         Ns_Log(Debug, "import: raw key length %" PRITcl_Size, rawKeyLength);
         hexPrint("key", rawKeyString, (size_t)rawKeyLength);
 
-        if (EC_KEY_oct2key(eckey, rawKeyString, (size_t)rawKeyLength, NULL) != 1) {
-            Ns_TclPrintfResult(interp, "could not import string to ec key");
-            result = TCL_ERROR;
-        } else {
-            Tcl_DString  ds;
-            const EC_POINT *ecpoint = EC_KEY_get0_public_key(eckey);
+#ifdef HAVE_OPENSSL_3
+        {
+            EVP_PKEY_CTX   *ctx = NULL;
+            EVP_PKEY       *pkey = NULL;
+            OSSL_PARAM_BLD *bld = NULL;
+            OSSL_PARAM     *params = NULL;
 
-            Tcl_DStringInit(&ds);
-            if (ecpoint == NULL) {
-                Ns_TclPrintfResult(interp, "no valid public key");
+            bld = OSSL_PARAM_BLD_new();
+            if (bld == NULL) {
+                result = SetResultFromOsslError(interp, "could not allocate EC parameter builder");
+                goto done3;
+            }
+
+            if (!OSSL_PARAM_BLD_push_utf8_string(bld, OSSL_PKEY_PARAM_GROUP_NAME,
+                                                 "prime256v1", 0)
+                || !OSSL_PARAM_BLD_push_octet_string(bld, OSSL_PKEY_PARAM_PUB_KEY,
+                                                     rawKeyString,
+                                                     (size_t)rawKeyLength)) {
+                result = SetResultFromOsslError(interp, "could not build EC public key parameters");
+                goto done3;
+            }
+
+            params = OSSL_PARAM_BLD_to_param(bld);
+            if (params == NULL) {
+                result = SetResultFromOsslError(interp, "could not create EC public key parameters");
+                goto done3;
+            }
+
+            ctx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
+            if (ctx == NULL) {
+                result = SetResultFromOsslError(interp, "could not allocate EC import context");
+                goto done3;
+            }
+
+            if (EVP_PKEY_fromdata_init(ctx) <= 0
+                || EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_PUBLIC_KEY, params) <= 0) {
+                result = SetResultFromOsslError(interp, "could not import string to EC key");
+                goto done3;
+            }
+
+            result = SetResultFromEcPublicPoint(interp, pkey, encoding);
+
+        done3:
+            if (pkey != NULL) {
+                EVP_PKEY_free(pkey);
+            }
+            if (ctx != NULL) {
+                EVP_PKEY_CTX_free(ctx);
+            }
+            if (params != NULL) {
+                OSSL_PARAM_free(params);
+            }
+            if (bld != NULL) {
+                OSSL_PARAM_BLD_free(bld);
+            }
+        }
+#else
+        {
+            EC_KEY *eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+
+            if (eckey == NULL) {
+                Ns_TclPrintfResult(interp, "could not create EC key");
+                result = TCL_ERROR;
+                goto done111;
+            }
+
+            if (EC_KEY_oct2key(eckey, rawKeyString, (size_t)rawKeyLength, NULL) != 1) {
+                Ns_TclPrintfResult(interp, "could not import string to ec key");
                 result = TCL_ERROR;
             } else {
-                BN_CTX  *bn_ctx = BN_CTX_new();
+                Tcl_DString    ds;
+                const EC_POINT *ecpoint = EC_KEY_get0_public_key(eckey);
 
-                SetResultFromEC_POINT(interp, &ds, eckey, ecpoint, bn_ctx, encoding);
-                BN_CTX_free(bn_ctx);
+                Tcl_DStringInit(&ds);
+                if (ecpoint == NULL) {
+                    Ns_TclPrintfResult(interp, "no valid public key");
+                    result = TCL_ERROR;
+                } else {
+                    BN_CTX *bn_ctx = BN_CTX_new();
 
-                result = TCL_OK;
+                    SetResultFromEC_POINT(interp, &ds, eckey, ecpoint, bn_ctx, encoding);
+                    BN_CTX_free(bn_ctx);
+                    result = TCL_OK;
+                }
+                Tcl_DStringFree(&ds);
             }
-            Tcl_DStringFree(&ds);
-        }
 
-        /*
-         * Clean up.
-         */
-        if (eckey != NULL) {
-            EC_KEY_free(eckey);
+        done111:
+            if (eckey != NULL) {
+                EC_KEY_free(eckey);
+            }
         }
+#endif
+
         Tcl_DStringFree(&keyDs);
+        return result;
     }
-
-    return result;
 }
 #  endif /* HAVE_OPENSSL_EC_PRIV2OCT */
 
