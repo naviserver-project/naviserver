@@ -281,12 +281,11 @@ static int CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_GNUC_NONNULL(1,2,3);
 static EC_KEY *GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
     NS_GNUC_NONNULL(1,2,3);
-
-#  endif /* HAVE_OPENSSL_3 */
-
 static void SetResultFromEC_POINT(Tcl_Interp *interp, Tcl_DString *dsPtr, EC_KEY *eckey, const EC_POINT *ecpoint,
                                   BN_CTX *bn_ctx, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2,3,4,5);
+
+#  endif /* HAVE_OPENSSL_3 */
 
 static int EcGroupCoordinateLength(const char *groupName, size_t *coordLenPtr)
     NS_GNUC_NONNULL(1,2);
@@ -3899,7 +3898,7 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             EC_KEY_free(eckey);
             EVP_PKEY_free(pkey);
             return TCL_OK;
-#endif
+#endif /* HAVE_OPENSSL_3 */
         }
     }
 }
@@ -3945,7 +3944,6 @@ PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
 
     return pkey;
 }
-#  endif /* HAVE_OPENSSL_3 */
 
 static void
 SetResultFromEC_POINT(
@@ -3967,8 +3965,7 @@ SetResultFromEC_POINT(
     Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)dsPtr->string, octLength, NULL, encoding));
 }
 
-
-
+#  endif /* !HAVE_OPENSSL_3 */
 
 # ifdef HAVE_OPENSSL_3
 /*
@@ -6109,19 +6106,25 @@ NsTclCryptoAeadDecryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE
 static int
 SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
 {
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(pkey != NULL);
 
-# ifndef OPENSSL_NO_EC
-#  ifdef HAVE_OPENSSL_3
-    if (EVP_PKEY_is_a(pkey, "EC") == 1)
-#  else
-    if (EVP_PKEY_base_id(pkey) == EVP_PKEY_EC)
-#  endif
-    {
+#ifndef OPENSSL_NO_EC
+# ifdef HAVE_OPENSSL_3
+    /*
+     * For OpenSSL 3 provider-side EC keys, reuse the dedicated helper.
+     * This preserves the historical behavior of returning the EC public
+     * point in raw octet-string form and normalizes compressed provider
+     * output to uncompressed form when needed.
+     */
+    if (EVP_PKEY_is_a(pkey, "EC") == 1) {
+        return SetResultFromEcPublicPoint(interp, pkey, encoding);
+    }
+# else
+    /*
+     * Legacy EC path for OpenSSL 1.1.1.
+     */
+    if (EVP_PKEY_base_id(pkey) == EVP_PKEY_EC) {
         EC_KEY         *eckey = EVP_PKEY_get1_EC_KEY(pkey);
         const EC_POINT *ecpoint = NULL;
-        int             result;
         Tcl_DString     ds;
         BN_CTX         *bn_ctx = NULL;
 
@@ -6144,19 +6147,20 @@ SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding 
         BN_CTX_free(bn_ctx);
         EC_KEY_free(eckey);
 
-        result = TCL_OK;
-        return result;
+        return TCL_OK;
     }
 # endif
+#endif
 
-# ifdef HAVE_OPENSSL_3
+#ifdef HAVE_OPENSSL_3
     {
         unsigned char *pub = NULL;
         size_t         publen = 0u;
 
         /*
-         * For provider-era raw/exportable public keys such as
-         * Ed25519/X25519 and ML-KEM.
+         * For provider-era exportable public keys such as ML-KEM and
+         * ML-DSA, and possibly other provider-native key types that
+         * expose an encoded public key representation.
          */
         publen = EVP_PKEY_get1_encoded_public_key(pkey, &pub);
         if (publen > 0u && pub != NULL) {
@@ -6165,10 +6169,11 @@ SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding 
             return TCL_OK;
         }
     }
-# endif
+#endif
 
     /*
-     * Fallback for raw public-key APIs available for selected legacy/raw types.
+     * Fallback for raw public-key APIs available for selected raw key
+     * types such as Ed25519, X25519, Ed448, and X448.
      */
     {
         unsigned char *buf = NULL;
@@ -6176,6 +6181,10 @@ SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding 
 
         if (EVP_PKEY_get_raw_public_key(pkey, NULL, &len) == 1 && len > 0u) {
             buf = ns_malloc(len);
+            if (buf == NULL) {
+                Ns_TclPrintfResult(interp, "could not allocate raw public key buffer");
+                return TCL_ERROR;
+            }
             if (EVP_PKEY_get_raw_public_key(pkey, buf, &len) == 1) {
                 Tcl_SetObjResult(interp, NsEncodedObj(buf, len, NULL, encoding));
                 ns_free(buf);
