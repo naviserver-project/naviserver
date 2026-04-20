@@ -9794,10 +9794,20 @@ Ns_InfoSSLDetailsObj(void)
         Tcl_ListObjAppendElement(NULL, keytypesObj,
                                  Tcl_NewStringObj("rsa", TCL_INDEX_NONE));
     }
-    if (CryptoKeyTypeSupported("EC")) {
-        Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("ec", TCL_INDEX_NONE));
+
+# ifndef OPENSSL_NO_EC
+    {
+        bool ecSupported = CryptoKeyTypeSupported("EC");
+#  ifndef HAVE_OPENSSL_3
+        ecSupported = NS_TRUE;
+#  endif
+        if (ecSupported) {
+            Tcl_ListObjAppendElement(NULL, keytypesObj,
+                                     Tcl_NewStringObj("ec", TCL_INDEX_NONE));
+        }
     }
+# endif /* OPENSSL_NO_EC */
+
     if (CryptoKeyTypeSupported("ED25519")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
                                  Tcl_NewStringObj("ed25519", TCL_INDEX_NONE));
