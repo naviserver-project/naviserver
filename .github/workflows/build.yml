@@ -68,6 +68,7 @@ jobs:
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
             tdom_version: 0.9.6
             with_deprecated: 0
+            makeflags_override: "-j1"
 
     defaults:
       run:
@@ -110,7 +111,13 @@ jobs:
       - name: Set MAKEFLAGS for parallel build
         run: |
           CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu || echo 1)"
-          echo "MAKEFLAGS=-j${CORES} -Oline" >> "$GITHUB_ENV"
+          DEFAULT_FLAGS="-j${CORES} -Oline"
+
+          if [ -n "${{ matrix.makeflags_override }}" ]; then
+            echo "MAKEFLAGS=${{ matrix.makeflags_override }}" >> "$GITHUB_ENV"
+          else
+            echo "MAKEFLAGS=${DEFAULT_FLAGS}" >> "$GITHUB_ENV"
+          fi
 
       - name: Enable ccache wrappers
         run: |
@@ -135,33 +142,34 @@ jobs:
       - name: Compile all
         run: |
           sudo env \
-          PATH="/usr/lib/ccache:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" \
-          NS_INSTALL_DEBUG_ENV=1 \
-          CCACHE_DIR="${CCACHE_DIR}" \
-          CCACHE_MAXSIZE="${CCACHE_MAXSIZE}" \
-          version_ns=.. \
-          version_modules=GIT \
-          version_tcl=${TCLTAG} \
-          version_tcllib=${TCLLIB_VERSION} \
-          version_xotcl=${NSF_VERSION} \
-          version_tdom=${TDOM_VERSION} \
-          ns_modules="${NS_MODULES}" \
-          with_ns_deprecated="${WITH_DEPRECATED}" \
-          CC=${CC} \
-          with_postgres=0 \
-          with_postgres_driver=1 \
-          with_ns_doc=0 \
-          bash install-ns.sh build
+            PATH="/usr/lib/ccache:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" \
+            NS_INSTALL_DEBUG_ENV=1 \
+            CCACHE_DIR="${CCACHE_DIR}" \
+            CCACHE_MAXSIZE="${CCACHE_MAXSIZE}" \
+            MAKEFLAGS="${MAKEFLAGS}" \
+            version_ns=.. \
+            version_modules=GIT \
+            version_tcl=${TCLTAG} \
+            version_tcllib=${TCLLIB_VERSION} \
+            version_xotcl=${NSF_VERSION} \
+            version_tdom=${TDOM_VERSION} \
+            ns_modules="${NS_MODULES}" \
+            with_ns_deprecated="${WITH_DEPRECATED}" \
+            CC=${CC} \
+            with_postgres=0 \
+            with_postgres_driver=1 \
+            with_ns_doc=0 \
+            bash install-ns.sh build
         working-directory: install-ns
 
       - name: Show ccache stats
         run: |
           ccache -s
 
-      - name: Show cache contents
-        run: |
-          echo "CCACHE_DIR=$CCACHE_DIR"
-          find "$CCACHE_DIR" -maxdepth 2 -type f | head -20 || true
+      #- name: Show cache contents
+      #  run: |
+      #    echo "CCACHE_DIR=$CCACHE_DIR"
+      #    find "$CCACHE_DIR" -maxdepth 2 -type f | head -20 || true
 
       - name: Regression test
         run: |
