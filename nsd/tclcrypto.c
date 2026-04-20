@@ -52,6 +52,8 @@
 #  include <openssl/core_names.h>
 #  include <openssl/provider.h>
 #  include <openssl/param_build.h>
+# else
+#include <openssl/bn.h>
 # endif
 
 /*
@@ -1597,7 +1599,7 @@ DigestNamesAppend(Tcl_Interp *interp, Tcl_Obj *listObj, NsDigestUsage usage)
 }
 # else
 static Tcl_Obj *
-DigestNamesAppend(Tcl_Interp *interp, Tcl_Obj *listObj, NsDigestUsage UNUSED(usage))
+DigestNamesAppend(Tcl_Interp *UNUSED(interp), Tcl_Obj *listObj, NsDigestUsage UNUSED(usage))
 {
     EVP_MD_do_all_sorted(DigestListCallback, listObj);
     return listObj;
