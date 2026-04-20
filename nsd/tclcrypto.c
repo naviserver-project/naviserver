@@ -4034,12 +4034,13 @@ SetResultFromEcPublicPoint(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding
         Ns_TclPrintfResult(interp, "could not obtain EC public key point");
         goto done;
     }
-    if (len > 0 && ds.string[0] != POINT_CONVERSION_UNCOMPRESSED) {
+    if (len > 0u && ((unsigned char *)ds.string)[0] != POINT_CONVERSION_UNCOMPRESSED) {
         if (EcPointToUncompressed(interp, pkey,
                                   (unsigned char *)ds.string, len,
                                   &ds) != TCL_OK) {
             goto done;
         }
+        len = (size_t)ds.length;
     }
 
     Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)ds.string, len, NULL, encoding));
