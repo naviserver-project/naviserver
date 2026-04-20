@@ -832,8 +832,9 @@ test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -constraints {ec 
     if {![string match "-----BEGIN PUBLIC KEY-----*" $pubpem2]} {error "bad pem: $pubpem2"}
     set data "hello\n"
     set sig [ns_crypto::md string -digest sha256 -encoding binary -sign /tmp/p256-priv.pem $data]
-    ns_logctl severity Debug off
     set ok [ns_crypto::md string -digest sha256 -encoding binary -verify $pubpem2 -signature $sig $data]
+} -cleanup {
+    ns_logctl severity Debug off
 } -returnCodes {error ok} -result {1}
 
 
