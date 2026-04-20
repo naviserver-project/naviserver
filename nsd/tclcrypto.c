@@ -155,6 +155,10 @@ static int SetResultFromEcPublicPoint(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_Bin
 static int SetResultFromEcdsaDerAsRaw(Tcl_Interp *interp,  const unsigned char *sig, size_t sigLen,
                                       size_t bnLen, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
+
+static int SetResultFromEcSharedSecret(Tcl_Interp *interp, EVP_PKEY *privPkey,
+                                       const unsigned char *pubkey, size_t pubkeyLen, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2,3);
 # endif
 
 static int SetResultFromEcPublicKey(Tcl_Interp *interp, const char *pemFile, const char *passPhrase,
@@ -275,6 +279,9 @@ static int EcPointToUncompressed(Tcl_Interp *interp, EVP_PKEY *pkey, const unsig
 #  else
 static int CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_GNUC_NONNULL(1,2,3);
+static EC_KEY *GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
+    NS_GNUC_NONNULL(1,2,3);
+
 #  endif /* HAVE_OPENSSL_3 */
 
 static void SetResultFromEC_POINT(Tcl_Interp *interp, Tcl_DString *dsPtr, EC_KEY *eckey, const EC_POINT *ecpoint,
@@ -1814,7 +1821,8 @@ PkeyGetAnyFromPem(Tcl_Interp *interp, const char *pem, const char *passPhrase)
     return pkey;
 }
 
-# ifndef OPENSSL_NO_EC
+# ifndef HAVE_OPENSSL_3
+#  ifndef OPENSSL_NO_EC
 /*
  *----------------------------------------------------------------------
  *
@@ -1830,7 +1838,6 @@ PkeyGetAnyFromPem(Tcl_Interp *interp, const char *pem, const char *passPhrase)
  *
  *----------------------------------------------------------------------
  */
-
 static EC_KEY *
 GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhrase, bool private)
 {
@@ -1855,9 +1862,8 @@ GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhr
     }
     return result;
 }
-# endif /* OPENSSL_NO_EC */
-
-
+#  endif /* OPENSSL_NO_EC */
+# endif /* HAVE_OPENSSL_3 */
 
 
 
@@ -4644,19 +4650,18 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                              TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, isBinary = 0, encodingInt = -1;
-    const char        *pemFileName = NULL,
-                      *passPhrase = NS_EMPTY_STRING;
-    Tcl_Obj           *pubkeyObj = NULL;
-    EC_KEY            *eckey = NULL;
+    int          result, isBinary = 0, encodingInt = -1;
+    const char  *pemFileName = NULL, *passPhrase = NS_EMPTY_STRING;
+    Tcl_Obj     *pubkeyObj = NULL;
 
     Ns_ObjvSpec lopts[] = {
         {"-binary",     Ns_ObjvBool,   &isBinary,    INT2PTR(NS_TRUE)},
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
         {"-passphrase", Ns_ObjvString, &passPhrase,  NULL},
-        {"!-pem",        Ns_ObjvString, &pemFileName, NULL},
+        {"!-pem",       Ns_ObjvString, &pemFileName, NULL},
         {"--",          Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -4665,96 +4670,100 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {NULL, NULL, NULL, NULL}
     };
 
-    /*
-      ns_crypto::eckey sharedsecret -pem /usr/local/ns/modules/vapid/prime256v1_key.pem \
-        [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
-    */
-
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-        eckey = GetEckeyFromPem(interp, pemFileName, passPhrase, NS_TRUE);
-        if (eckey == NULL) {
-            /*
-             * GetEckeyFromPem handles error message
-             */
-            result = TCL_ERROR;
-        } else {
-            result = TCL_OK;
-        }
-    }
-
-    if (result == TCL_OK) {
-        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        TCL_SIZE_T           pubkeyLength;
-        const unsigned char *pubkeyString;
+        Ns_BinaryEncoding    encoding = (encodingInt == -1
+                                         ? NS_OBJ_ENCODING_HEX
+                                         : (Ns_BinaryEncoding)encodingInt);
         Tcl_DString          importDs;
-        const EC_GROUP      *group;
-        EC_POINT            *pubKeyPt;
-        BN_CTX              *bn_ctx = BN_CTX_new();
-
-        /*
-         * Ingredients:
-         *  eckey       : private key, from PEM, EC_KEY (currently redundant)
-         *  pubkeyString: public key of peer as octet string
-         */
-
-        Tcl_DStringInit(&importDs);
-        pubkeyString = Ns_GetBinaryString(pubkeyObj, isBinary == 1, &pubkeyLength, &importDs);
+        const unsigned char *pubkeyString;
+        TCL_SIZE_T           pubkeyLength;
 
         /*
           ns_crypto::eckey generate -name prime256v1 -pem /tmp/prime256v1_key.pem
-          ns_crypto::eckey sharedsecret -pem /tmp/prime256v1_key.pem [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
+          ns_crypto::eckey sharedsecret -pem /tmp/prime256v1_key.pem \
+              [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
         */
 
-        group = EC_KEY_get0_group(eckey);
+        Tcl_DStringInit(&importDs);
+        pubkeyString = Ns_GetBinaryString(pubkeyObj, isBinary == 1,
+                                          &pubkeyLength, &importDs);
 
-        /*
-         * Computes the ECDH shared secret, used as the input key material (IKM) for
-         * HKDF.
-         */
+#ifdef HAVE_OPENSSL_3
+        {
+            EVP_PKEY *pkey = PkeyGetFromPem(interp, pemFileName, passPhrase, NS_TRUE);
 
-        pubKeyPt = EC_POINT_new(group);
-
-        if (EC_POINT_oct2point(group, pubKeyPt, pubkeyString, (size_t)pubkeyLength, bn_ctx) != 1) {
-            Ns_TclPrintfResult(interp, "could not derive EC point from provided key");
-            result = TCL_ERROR;
-
-        } else {
-            size_t      sharedSecretLength;
-            Tcl_DString ds;
-
-            Tcl_DStringInit(&ds);
-            sharedSecretLength = (size_t)((EC_GROUP_get_degree(group) + 7) / 8);
-            Tcl_DStringSetLength(&ds, (TCL_SIZE_T)sharedSecretLength);
-
-            if (ECDH_compute_key(ds.string, sharedSecretLength, pubKeyPt, eckey, NULL) <= 0) {
-                Ns_TclPrintfResult(interp, "could not derive shared secret");
+            if (pkey == NULL) {
                 result = TCL_ERROR;
-
             } else {
-                /*
-                 * Success: we were able to convert the octets to EC
-                 * points and to compute a shared secret from this. So
-                 * we can return the shared secret in the requested
-                 * encoding.
-                 */
-                /* hexPrint("ecec       ", (unsigned char *)ds.string, sharedSecretLength);*/
-                Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)ds.string, sharedSecretLength, NULL, encoding));
+                result = SetResultFromEcSharedSecret(interp, pkey,
+                                                     pubkeyString, (size_t)pubkeyLength,
+                                                     encoding);
+                EVP_PKEY_free(pkey);
             }
-            Tcl_DStringFree(&ds);
         }
-        /*
-         * Clean up.
-         */
-        BN_CTX_free(bn_ctx);
-        EC_POINT_free(pubKeyPt);
-        Tcl_DStringFree(&importDs);
+#else
+        {
+            EC_KEY         *eckey = NULL;
+            const EC_GROUP *group;
+            EC_POINT       *pubKeyPt = NULL;
+            BN_CTX         *bn_ctx = NULL;
 
-        if (eckey != NULL) {
-            EC_KEY_free(eckey);
+            eckey = GetEckeyFromPem(interp, pemFileName, passPhrase, NS_TRUE);
+            if (eckey == NULL) {
+                result = TCL_ERROR;
+                goto done111;
+            }
+
+            group = EC_KEY_get0_group(eckey);
+            pubKeyPt = EC_POINT_new(group);
+            bn_ctx = BN_CTX_new();
+
+            if (pubKeyPt == NULL || bn_ctx == NULL) {
+                Ns_TclPrintfResult(interp, "could not initialize EC shared secret computation");
+                result = TCL_ERROR;
+                goto done111;
+            }
+
+            if (EC_POINT_oct2point(group, pubKeyPt,
+                                   pubkeyString, (size_t)pubkeyLength, bn_ctx) != 1) {
+                Ns_TclPrintfResult(interp, "could not derive EC point from provided key");
+                result = TCL_ERROR;
+            } else {
+                size_t      sharedSecretLength;
+                Tcl_DString ds;
+
+                Tcl_DStringInit(&ds);
+                sharedSecretLength = (size_t)((EC_GROUP_get_degree(group) + 7) / 8);
+                Tcl_DStringSetLength(&ds, (TCL_SIZE_T)sharedSecretLength);
+
+                if (ECDH_compute_key(ds.string, sharedSecretLength, pubKeyPt, eckey, NULL) <= 0) {
+                    Ns_TclPrintfResult(interp, "could not derive shared secret");
+                    result = TCL_ERROR;
+                } else {
+                    Tcl_SetObjResult(interp,
+                                     NsEncodedObj((unsigned char *)ds.string,
+                                                  sharedSecretLength, NULL, encoding));
+                    result = TCL_OK;
+                }
+                Tcl_DStringFree(&ds);
+            }
+
+        done111:
+            if (bn_ctx != NULL) {
+                BN_CTX_free(bn_ctx);
+            }
+            if (pubKeyPt != NULL) {
+                EC_POINT_free(pubKeyPt);
+            }
+            if (eckey != NULL) {
+                EC_KEY_free(eckey);
+            }
         }
+#endif
+        Tcl_DStringFree(&importDs);
     }
 
     return result;
@@ -8715,6 +8724,173 @@ done:
     }
     if (ecdsaSig != NULL) {
         ECDSA_SIG_free(ecdsaSig);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetResultFromEcSharedSecret --
+ *
+ *      Compute an ECDH shared secret from a private EC key and a peer
+ *      public key provided as an octet string, and set the Tcl result
+ *      to the encoded shared secret.
+ *
+ *      This function implements the OpenSSL 3 provider-based key
+ *      agreement path. The peer public key is supplied as a raw EC
+ *      point (typically uncompressed SEC1 format) and is first
+ *      imported into an EVP_PKEY using EVP_PKEY_fromdata() together
+ *      with the curve/group name obtained from the private key.
+ *
+ *      A key agreement context is then created via EVP_PKEY_CTX and
+ *      the shared secret is derived using EVP_PKEY_derive().
+ *
+ *      The resulting shared secret (IKM) is returned as a byte string
+ *      encoded according to the requested Ns_BinaryEncoding (e.g.,
+ *      hex, base64url, binary).
+ *
+ *      The function expects that privPkey is an EC private key. The
+ *      peer public key must be a valid EC point on the same curve.
+ *
+ * Results:
+ *      TCL_OK on success. The interpreter result contains the encoded
+ *      shared secret.
+ *
+ *      TCL_ERROR on failure. An error message is left in the interpreter
+ *      result if the peer key cannot be imported, the key agreement
+ *      cannot be initialized, or the shared secret cannot be derived.
+ *
+ * Side effects:
+ *      Allocates temporary OpenSSL contexts (EVP_PKEY, EVP_PKEY_CTX)
+ *      and parameter structures (OSSL_PARAM). Allocates a buffer for
+ *      the derived shared secret. All temporary resources are released
+ *      before returning.
+ *
+ *      Clears and uses the OpenSSL error stack. Overwrites the Tcl
+ *      interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SetResultFromEcSharedSecret(Tcl_Interp *interp,
+                            EVP_PKEY *privPkey,
+                            const unsigned char *pubkey, size_t pubkeyLen,
+                            Ns_BinaryEncoding encoding)
+{
+    int             result = TCL_ERROR;
+    char            groupName[80];
+    size_t          groupNameLen = 0u;
+    OSSL_PARAM_BLD *bld = NULL;
+    OSSL_PARAM     *params = NULL;
+    EVP_PKEY_CTX   *importCtx = NULL;
+    EVP_PKEY_CTX   *deriveCtx = NULL;
+    EVP_PKEY       *peerPkey = NULL;
+    unsigned char  *secret = NULL;
+    size_t          secretLen = 0u;
+
+    if (!EVP_PKEY_is_a(privPkey, "EC")) {
+        Ns_TclPrintfResult(interp, "specified key is not an EC key");
+        return TCL_ERROR;
+    }
+
+    if (!EVP_PKEY_get_utf8_string_param(privPkey,
+                                        OSSL_PKEY_PARAM_GROUP_NAME,
+                                        groupName, sizeof(groupName),
+                                        &groupNameLen)) {
+        Ns_TclPrintfResult(interp, "could not obtain EC group name");
+        return TCL_ERROR;
+    }
+    
+    ERR_clear_error();    
+    bld = OSSL_PARAM_BLD_new();
+    if (bld == NULL) {
+        SetResultFromOsslError(interp, "could not allocate parameter builder");
+        goto done;
+    }
+
+    if (!OSSL_PARAM_BLD_push_utf8_string(bld,
+                                         OSSL_PKEY_PARAM_GROUP_NAME,
+                                         groupName, 0)
+        || !OSSL_PARAM_BLD_push_octet_string(bld,
+                                             OSSL_PKEY_PARAM_PUB_KEY,
+                                             pubkey, pubkeyLen)) {
+        SetResultFromOsslError(interp, "could not build EC public key parameters");
+        goto done;
+    }
+
+    params = OSSL_PARAM_BLD_to_param(bld);
+    if (params == NULL) {
+        SetResultFromOsslError(interp, "could not create EC public key parameters");
+        goto done;
+    }
+
+    importCtx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
+    if (importCtx == NULL) {
+        SetResultFromOsslError(interp, "could not allocate EC import context");
+        goto done;
+    }
+
+    if (EVP_PKEY_fromdata_init(importCtx) <= 0
+        || EVP_PKEY_fromdata(importCtx, &peerPkey,
+                             EVP_PKEY_PUBLIC_KEY, params) <= 0) {
+        SetResultFromOsslError(interp, "could not import EC peer public key");
+        goto done;
+    }
+
+    deriveCtx = EVP_PKEY_CTX_new_from_pkey(NULL, privPkey, NULL);
+    if (deriveCtx == NULL) {
+        SetResultFromOsslError(interp, "could not allocate key agreement context");
+        goto done;
+    }
+
+    if (EVP_PKEY_derive_init(deriveCtx) <= 0) {
+        SetResultFromOsslError(interp, "could not initialize shared secret derivation");
+        goto done;
+    }
+
+    if (EVP_PKEY_derive_set_peer(deriveCtx, peerPkey) <= 0) {
+        SetResultFromOsslError(interp, "could not set peer public key");
+        goto done;
+    }
+
+    if (EVP_PKEY_derive(deriveCtx, NULL, &secretLen) <= 0) {
+        SetResultFromOsslError(interp, "could not determine shared secret length");
+        goto done;
+    }
+
+    secret = ns_malloc(secretLen);
+    if (secret == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate shared secret buffer");
+        goto done;
+    }
+
+    if (EVP_PKEY_derive(deriveCtx, secret, &secretLen) <= 0) {
+        SetResultFromOsslError(interp, "could not derive shared secret");
+        goto done;
+    }
+
+    Tcl_SetObjResult(interp, NsEncodedObj(secret, secretLen, NULL, encoding));
+    result = TCL_OK;
+
+done:
+    if (secret != NULL) {
+        ns_free(secret);
+    }
+    if (peerPkey != NULL) {
+        EVP_PKEY_free(peerPkey);
+    }
+    if (deriveCtx != NULL) {
+        EVP_PKEY_CTX_free(deriveCtx);
+    }
+    if (importCtx != NULL) {
+        EVP_PKEY_CTX_free(importCtx);
+    }
+    if (params != NULL) {
+        OSSL_PARAM_free(params);
+    }
+    if (bld != NULL) {
+        OSSL_PARAM_BLD_free(bld);
     }
     return result;
 }
