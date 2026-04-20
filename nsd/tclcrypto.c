@@ -6704,21 +6704,18 @@ PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
                        Tcl_NewIntObj(bits));
     }
 
-    /*
-     * Keep current EC curve reporting for 1.1.1 and for legacy keys.
-     */
+#ifndef HAVE_OPENSSL_3
     if (PkeyIsType(pkey, "EC", EVP_PKEY_EC) == 1) {
         EC_KEY         *ec = EVP_PKEY_get1_EC_KEY(pkey);
         const EC_GROUP *group;
         int             nid;
-        const char     *curveName = NULL;
 
         if (ec != NULL) {
             group = EC_KEY_get0_group(ec);
             if (group != NULL) {
                 nid = EC_GROUP_get_curve_name(group);
                 if (nid != NID_undef) {
-                    curveName = OBJ_nid2sn(nid);
+                    const char *curveName = OBJ_nid2sn(nid);
                     if (curveName != NULL) {
                         Tcl_DictObjPut(interp, resultObj,
                                        NsAtomObj(NS_ATOM_CURVE),
@@ -6729,6 +6726,7 @@ PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
             EC_KEY_free(ec);
         }
     }
+#endif
 
     return TCL_OK;
 }
