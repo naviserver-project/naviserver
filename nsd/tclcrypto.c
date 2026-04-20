@@ -26,7 +26,7 @@
  *      NaviServer utilities for memory management, error reporting,
  *      and argument parsing.
  */
-# define OPENSSL_API_COMPAT 10000
+#define OPENSSL_API_COMPAT 0x10101000L
 
 #include "nsd.h"
 
@@ -145,6 +145,15 @@ static void SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
 static int SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
     NS_GNUC_NONNULL(1,2,3);
 
+# ifdef HAVE_OPENSSL_3
+static int SetResultFromEcPublicPoint(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2);
+# endif
+
+static int SetResultFromEcPublicKey(Tcl_Interp *interp, const char *pemFile, const char *passPhrase,
+                                    int formatInt, const char *outfileName, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2,3);
+
 static int SetResultFromRawPublicKey(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
 
@@ -244,8 +253,10 @@ static int PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKE
 
 
 # ifndef OPENSSL_NO_EC
+#  ifndef HAVE_OPENSSL_3
 static int CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_GNUC_NONNULL(1,2,3);
+#  endif
 
 static void SetResultFromEC_POINT(Tcl_Interp *interp, Tcl_DString *dsPtr, EC_KEY *eckey, const EC_POINT *ecpoint,
                                   BN_CTX *bn_ctx, Ns_BinaryEncoding encoding)
@@ -301,8 +312,10 @@ static TCL_OBJCMDPROC_T CryptoEckeyPrivObjCmd;
 static TCL_OBJCMDPROC_T CryptoEckeyImportObjCmd;
 #  endif
 
+#  ifndef HAVE_OPENSSL_3
 static EVP_PKEY *PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
     NS_GNUC_NONNULL(1,2);
+#  endif
 # endif
 
 # ifdef HAVE_OPENSSL_3
@@ -1625,6 +1638,7 @@ GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long flags, const
 }
 
 # ifndef OPENSSL_NO_EC
+#  ifndef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
@@ -1676,6 +1690,7 @@ CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     }
     return result;
 }
+# endif
 # endif /* OPENSSL_NO_EC */
 
 /*
@@ -3768,28 +3783,9 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 
     return result;
 }
-#  endif
+#  endif /* HAVE_OPENSSL_EC_PRIV2OCT */
 
-static void
-SetResultFromEC_POINT(
-    Tcl_Interp       *interp,
-    Tcl_DString      *dsPtr,
-    EC_KEY           *eckey,
-    const EC_POINT   *ecpoint,
-    BN_CTX           *bn_ctx,
-    Ns_BinaryEncoding encoding)
-{
-    size_t   octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint,
-                                            POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
-
-    Ns_Log(Debug, "SetResultFromEC_POINT: octet length %" PRIuz, octLength);
-
-    Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)octLength);
-    octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
-                                   (unsigned char *)dsPtr->string, octLength, bn_ctx);
-    Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)dsPtr->string, octLength, NULL, encoding));
-}
-
+#  ifndef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
@@ -3829,7 +3825,250 @@ PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
 
     return pkey;
 }
+#  endif /* HAVE_OPENSSL_3 */
 
+static void
+SetResultFromEC_POINT(
+    Tcl_Interp       *interp,
+    Tcl_DString      *dsPtr,
+    EC_KEY           *eckey,
+    const EC_POINT   *ecpoint,
+    BN_CTX           *bn_ctx,
+    Ns_BinaryEncoding encoding)
+{
+    size_t   octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint,
+                                            POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
+
+    Ns_Log(Debug, "SetResultFromEC_POINT: octet length %" PRIuz, octLength);
+
+    Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)octLength);
+    octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
+                                   (unsigned char *)dsPtr->string, octLength, bn_ctx);
+    Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)dsPtr->string, octLength, NULL, encoding));
+}
+
+
+
+
+# ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetResultFromEcPublicPoint --
+ *
+ *      Extract the EC public key point from the provided EVP_PKEY and
+ *      set it as the Tcl result in the requested encoding.
+ *
+ *      This function uses the OpenSSL 3 provider-based API to obtain
+ *      the public key as an octet string via
+ *      OSSL_PKEY_PARAM_PUB_KEY. The returned value represents the
+ *      encoded EC point (typically in uncompressed form, e.g. 0x04 || X || Y),
+ *      matching the historical behavior of "ns_crypto::eckey pub -format raw".
+ *
+ *      The raw bytes are encoded according to the specified
+ *      Ns_BinaryEncoding (e.g., hex, base64url) before being returned
+ *      as a Tcl object.
+ *
+ * Results:
+ *      TCL_OK on success. The interpreter result is set to the encoded
+ *      EC public point.
+ *
+ *      TCL_ERROR on failure. An error message is left in the interpreter
+ *      result when the EC public key cannot be obtained.
+ *
+ * Side effects:
+ *      Allocates temporary storage via Tcl_DString. The interpreter
+ *      result is overwritten.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SetResultFromEcPublicPoint(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+{
+    int            result = TCL_ERROR;
+    size_t         len = 0u;
+    Tcl_DString    ds;
+
+    if (!EVP_PKEY_get_octet_string_param(pkey,
+                                         OSSL_PKEY_PARAM_PUB_KEY,
+                                         NULL, 0u, &len)) {
+        Ns_TclPrintfResult(interp, "could not obtain EC public key point");
+        return TCL_ERROR;
+    }
+
+    Tcl_DStringInit(&ds);
+    Tcl_DStringSetLength(&ds, (TCL_SIZE_T)len);
+
+    if (!EVP_PKEY_get_octet_string_param(pkey,
+                                         OSSL_PKEY_PARAM_PUB_KEY,
+                                         (unsigned char *)ds.string, len, &len)) {
+        Ns_TclPrintfResult(interp, "could not obtain EC public key point");
+        goto done;
+    }
+
+    Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)ds.string, len, NULL, encoding));
+    result = TCL_OK;
+
+done:
+    Tcl_DStringFree(&ds);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CryptoEckeyPubResult --
+ *
+ *      Produce the public key representation of an EC key loaded from
+ *      a PEM file, using OpenSSL 3 EVP/provider APIs.
+ *
+ *      The function loads a key via PkeyGetAnyFromPem(), verifies that
+ *      it is of type "EC", and then returns the public key in one of
+ *      several formats depending on formatInt:
+ *
+ *        OUTPUT_FORMAT_RAW:
+ *            Return the encoded EC public point (octet string as
+ *            obtained via OSSL_PKEY_PARAM_PUB_KEY) in the requested
+ *            Ns_BinaryEncoding. This preserves the historical
+ *            behavior of "ns_crypto::eckey pub -format raw".
+ *
+ *        OUTPUT_FORMAT_PEM:
+ *            Write the public key in PEM-encoded SubjectPublicKeyInfo
+ *            format, optionally to a file when outfileName is
+ *            provided.
+ *
+ *        OUTPUT_FORMAT_DER:
+ *            Write the public key in DER-encoded SubjectPublicKeyInfo
+ *            format, optionally to a file when outfileName is
+ *            provided.
+ *
+ *      The interpreter result is set according to the selected format.
+ *
+ * Results:
+ *      TCL_OK on success. The interpreter result contains either the
+ *      encoded EC public point (raw) or the PEM/DER representation.
+ *
+ *      TCL_ERROR on failure. An error message is left in the interpreter
+ *      result if the key cannot be loaded, is not an EC key, or if the
+ *      requested format cannot be produced.
+ *
+ * Side effects:
+ *      Loads a key from the specified PEM file. Allocates and frees an
+ *      EVP_PKEY. May write output to a file when outfileName is
+ *      specified. Overwrites the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SetResultFromEcPublicKey(Tcl_Interp *interp,
+                         const char *pemFile,
+                         const char *passPhrase,
+                         int formatInt,
+                         const char *outfileName,
+                         Ns_BinaryEncoding encoding)
+{
+    int       result;
+    EVP_PKEY *pkey = NULL;
+
+    pkey = PkeyGetAnyFromPem(interp, pemFile, passPhrase);
+    if (pkey == NULL) {
+        return TCL_ERROR;
+    }
+
+    if (!EVP_PKEY_is_a(pkey, "EC")) {
+        Ns_TclPrintfResult(interp, "specified key is not an EC key");
+        result =  TCL_ERROR;
+        goto done;
+    }
+
+    if (formatInt == OUTPUT_FORMAT_RAW) {
+        result = SetResultFromEcPublicPoint(interp, pkey, encoding);
+
+    } else if (formatInt == OUTPUT_FORMAT_PEM) {
+        result = PkeyPublicPemWrite(interp,
+                                    pkey,
+                                    "EC",
+                                    "EC public key",
+                                    outfileName);
+
+    } else if (formatInt == OUTPUT_FORMAT_DER) {
+        result = PkeyPublicWrite(interp, pkey, outfileName, NS_FALSE);
+
+    } else {
+        Ns_TclPrintfResult(interp, "unexpected format code");
+        result = TCL_ERROR;
+    }
+
+ done:
+    EVP_PKEY_free(pkey);
+    return result;
+}
+# else
+static int
+SetResultFromEcPublicKey(Tcl_Interp *interp,
+                         const char *pemFile,
+                         const char *passPhrase,
+                         int formatInt,
+                         const char *outfileName,
+                         Ns_BinaryEncoding encoding)
+{
+    int             result;
+    EC_KEY         *eckey = NULL;
+    const EC_POINT *ecpoint = NULL;
+
+    eckey = GetEckeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
+    if (eckey == NULL) {
+        return TCL_ERROR;
+    }
+
+    ecpoint = EC_KEY_get0_public_key(eckey);
+    if (ecpoint == NULL) {
+        Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    if (formatInt == OUTPUT_FORMAT_RAW) {
+        Tcl_DString  ds;
+        BN_CTX      *bn_ctx = BN_CTX_new();
+
+        Tcl_DStringInit(&ds);
+        SetResultFromEC_POINT(interp, &ds, eckey, ecpoint, bn_ctx, encoding);
+        BN_CTX_free(bn_ctx);
+        Tcl_DStringFree(&ds);
+        result = TCL_OK;
+
+    } else {
+        EVP_PKEY *pkey = PkeyGetFromEcKey(interp, eckey);
+
+        if (pkey == NULL) {
+            result = TCL_ERROR;
+            goto done;
+        }
+        eckey = NULL; /* now owned by pkey */
+
+        if (formatInt == OUTPUT_FORMAT_PEM) {
+            result = PkeyPublicPemWrite(interp, pkey,
+                                        "EC",
+                                        "EC public key",
+                                        outfileName);
+        } else if (formatInt == OUTPUT_FORMAT_DER) {
+            result = PkeyPublicWrite(interp, pkey, outfileName, NS_FALSE);
+        } else {
+            Ns_TclPrintfResult(interp, "unexpected format code");
+            result = TCL_ERROR;
+        }
+        EVP_PKEY_free(pkey);
+    }
+
+done:
+    if (eckey != NULL) {
+        EC_KEY_free(eckey);
+    }
+    return result;
+}
+# endif /* HAVE_OPENSSL_3 */
 
 /*
  *----------------------------------------------------------------------
@@ -3848,12 +4087,14 @@ PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
  *
  *----------------------------------------------------------------------
  */
+
 static int
 CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, encodingInt = -1, formatInt = OUTPUT_FORMAT_RAW;
     const char        *pemFile = NULL, *outfileName = NULL, *passPhrase = NS_EMPTY_STRING;
+    Ns_BinaryEncoding  encoding;
     static Ns_ObjvTable formats[] = {
         {"raw", OUTPUT_FORMAT_RAW},
         {"pem", OUTPUT_FORMAT_PEM},
@@ -3869,81 +4110,25 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {NULL, NULL, NULL, NULL}
     };
 
-    /*
-      ns_crypto::eckey pub -pem /usr/local/ns/modules/vapid/prime256v1_key.pem -encoding base64url
-      BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0
-    */
-
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (formatInt == OUTPUT_FORMAT_RAW && outfileName != NULL) {
-        Ns_TclPrintfResult(interp, "-outfile requires -format pem or -format der");
-        result =  TCL_ERROR;
-
-    } else if (formatInt != OUTPUT_FORMAT_RAW && encodingInt != -1) {
-        Ns_TclPrintfResult(interp, "-encoding is only valid with -format raw");
-        result =  TCL_ERROR;
-
-    } else {
-        EC_KEY            *eckey = NULL;
-        const EC_POINT    *ecpoint = NULL;
-        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        /*
-         * The .pem file does not have a separate pub-key included,
-         * but we get the pub-key from the priv-key in form of an
-         * EC_POINT.
-         */
-        eckey = GetEckeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
-        if (eckey == NULL) {
-            result = TCL_ERROR;
-            goto done;
-        }
-
-        ecpoint = EC_KEY_get0_public_key(eckey);
-        if (ecpoint == NULL) {
-            Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
-            result = TCL_ERROR;
-            goto done;
-        }
-
-        if (formatInt == OUTPUT_FORMAT_RAW) {
-            Tcl_DString  ds;
-            BN_CTX      *bn_ctx = BN_CTX_new();
-
-            Tcl_DStringInit(&ds);
-            SetResultFromEC_POINT(interp, &ds, eckey, ecpoint, bn_ctx, encoding);
-            BN_CTX_free(bn_ctx);
-            Tcl_DStringFree(&ds);
-            result = TCL_OK;
-
-        } else {
-            EVP_PKEY *pkey = PkeyGetFromEcKey(interp, eckey);
-
-            if (pkey == NULL) {
-                result = TCL_ERROR;
-                goto done;
-            }
-            eckey = NULL; /* now owned by pkey */
-
-            if (formatInt == OUTPUT_FORMAT_PEM) {
-                result = PkeyPublicPemWrite(interp, pkey,
-                                           "EC",
-                                           "EC public key",
-                                           outfileName);
-            } else if (formatInt == OUTPUT_FORMAT_DER) {
-                result = PkeyPublicWrite(interp, pkey, outfileName, NS_FALSE);
-            } else {
-                Ns_TclPrintfResult(interp, "unexpected format code");
-                result = TCL_ERROR; /* should not happen */
-            }
-            EVP_PKEY_free(pkey);
-        }
-    done:
-        if (eckey != NULL) {
-            EC_KEY_free(eckey);
-        }
+        return TCL_ERROR;
     }
+
+    if (formatInt == OUTPUT_FORMAT_RAW && outfileName != NULL) {
+        Ns_TclPrintfResult(interp, "-outfile requires -format pem or -format der");
+        return TCL_ERROR;
+    }
+
+    if (formatInt != OUTPUT_FORMAT_RAW && encodingInt != -1) {
+        Ns_TclPrintfResult(interp, "-encoding is only valid with -format raw");
+        return TCL_ERROR;
+    }
+
+    encoding = (encodingInt == -1
+                ? NS_OBJ_ENCODING_HEX
+                : (Ns_BinaryEncoding)encodingInt);
+
+    result = SetResultFromEcPublicKey(interp, pemFile, passPhrase, formatInt, outfileName, encoding);
 
     return result;
 }
@@ -4126,11 +4311,14 @@ CryptoEckeyFromCoordsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                          TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, nid;
-    const char        *curvenameString = "prime256v1", *pemFileName = NULL, *outfileName = NULL;
-    Ns_ObjvSpec lopts[] = {
+    int          result = TCL_ERROR;
+    const char  *curvenameString = "prime256v1";
+    const char  *pemFileName = NULL;
+    const char  *outfileName = NULL;
+    Ns_ObjvSpec  lopts[] = {
         {"-name",    Ns_ObjvString, &curvenameString, NULL},
         {"-pem",     Ns_ObjvString, &pemFileName,     NULL},
         {"-outfile", Ns_ObjvString, &outfileName,     NULL},
@@ -4141,55 +4329,93 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
      * ns_crypto::eckey generate -name prime256v1 -outfile /tmp/foo.pem
      */
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
+        return TCL_ERROR;
+    }
 
-    } else if (pemFileName != NULL && outfileName != NULL) {
-        Ns_TclPrintfResult(interp, "specify either '-outfile' or '-pem' (legacy), but not both");
-        result = TCL_ERROR;
+    if (pemFileName != NULL && outfileName != NULL) {
+        Ns_TclPrintfResult(interp,
+                           "specify either '-outfile' or '-pem' (legacy), but not both");
+        return TCL_ERROR;
+    }
 
-    } else if (CurveNidGet(interp, curvenameString, &nid) == TCL_ERROR) {
+    if (pemFileName != NULL) {
         /*
-         * Function cares about error message
+         * Legacy synonym.
+         * Warn about usage of legacy name in the future (maybe in 5.2?)
          */
-        result = TCL_ERROR;
+        outfileName = pemFileName;
+    }
 
-    } else {
-        EC_KEY *eckey = EC_KEY_new_by_curve_name(nid);
+# ifdef HAVE_OPENSSL_3
+    /*
+     * OpenSSL 3.x:
+     * Use the generic provider-based key generation path to avoid
+     * deprecated low-level EC_KEY APIs.
+     */
+    {
+        OSSL_PARAM  params[2];
+        OSSL_PARAM *paramPtr = NULL;
 
-        if (pemFileName != NULL) {
-            // todo: warn about usage of legacy name in the future (maybe in 5.2?)
-            outfileName = pemFileName;
+        if (KeygenGroupParams(interp, "EC", curvenameString,
+                              "EC key", params, &paramPtr) != TCL_OK) {
+            return TCL_ERROR;
         }
 
+        result = GeneratePrivateKeyPem(interp,
+                                       "EC",
+                                       "EC key",
+                                       outfileName,
+                                       NS_CRYPTO_KEYGEN_USAGE_ANY,
+                                       paramPtr);
+    }
+# else
+    /*
+     * OpenSSL 1.1.1:
+     * Keep the legacy EC_KEY-based implementation.
+     */
+    {
+        int     nid;
+        EC_KEY *eckey = NULL;
+        BIO    *bio   = NULL;
+
+        if (CurveNidGet(interp, curvenameString, &nid) != TCL_OK) {
+            return TCL_ERROR;
+        }
+
+        eckey = EC_KEY_new_by_curve_name(nid);
         if (eckey == NULL) {
             Ns_TclPrintfResult(interp, "could not create ec key");
-            result = TCL_ERROR;
-
-        } else if (EC_KEY_generate_key(eckey) == 0) {
-            Ns_TclPrintfResult(interp, "could not generate ec key");
-            result = TCL_ERROR;
-
-        } else {
-            BIO *bio = PemOpenWriteStream(interp, outfileName);
-
-            if (bio == NULL) {
-                result = TCL_ERROR;
-
-            } else if (PEM_write_bio_ECPrivateKey(bio, eckey, NULL, NULL, 0, NULL, NULL) != 1) {
-                Ns_TclPrintfResult(interp,
-                                   "could not write EC key \"%s\"",
-                                   curvenameString);
-                result = TCL_ERROR;
-            } else {
-                result = PemWriteResult(interp, bio, outfileName, "EC");
-            }
-
-            if (bio != NULL) {
-                BIO_free(bio);
-            }
+            goto done;
         }
-        EC_KEY_free(eckey);
+
+        if (EC_KEY_generate_key(eckey) == 0) {
+            Ns_TclPrintfResult(interp, "could not generate ec key");
+            goto done;
+        }
+
+        bio = PemOpenWriteStream(interp, outfileName);
+        if (bio == NULL) {
+            goto done;
+        }
+
+        if (PEM_write_bio_ECPrivateKey(bio, eckey, NULL, NULL, 0, NULL, NULL) != 1) {
+            Ns_TclPrintfResult(interp,
+                               "could not write EC key \"%s\"",
+                               curvenameString);
+            goto done;
+        }
+
+        result = PemWriteResult(interp, bio, outfileName, "EC");
+
+    done:
+        if (bio != NULL) {
+            BIO_free(bio);
+        }
+        if (eckey != NULL) {
+            EC_KEY_free(eckey);
+        }
     }
+#endif /* HAVE_OPENSSL_3 */
 
     return result;
 }
