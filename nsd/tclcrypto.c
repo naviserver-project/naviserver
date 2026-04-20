@@ -3798,11 +3798,12 @@ done:
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, encodingInt = -1;
-    const char        *pemFile = NULL,
-                      *passPhrase = NS_EMPTY_STRING;
+    int         encodingInt = -1;
+    const char *pemFile = NULL;
+    const char *passPhrase = NS_EMPTY_STRING;
 
     Ns_ObjvSpec lopts[] = {
         {"-encoding",   Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
@@ -3810,53 +3811,97 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         {"!-pem",       Ns_ObjvString, &pemFile,     NULL},
         {NULL, NULL, NULL, NULL}
     };
-    /*
-      ns_crypto::eckey priv -pem /usr/local/ns/modules/vapid/prime256v1_key.pem -encoding base64url
-      pwLi7T1QqrgTiNBFBLUcndjNxzx_vZiKuCcvapwjQlM
-    */
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
+        return TCL_ERROR;
+    }
 
-    } else {
-        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        EVP_PKEY *pkey;
-        EC_KEY   *eckey = NULL;
+    {
+        Ns_BinaryEncoding encoding = (encodingInt == -1
+                                      ? NS_OBJ_ENCODING_HEX
+                                      : (Ns_BinaryEncoding)encodingInt);
+        EVP_PKEY *pkey = PkeyGetFromPem(interp, pemFile, passPhrase, NS_TRUE);
 
-        pkey = PkeyGetFromPem(interp, pemFile, passPhrase, NS_TRUE);
         if (pkey == NULL) {
-            /*
-             * PkeyGetFromPem handles error message
-             */
-            result = TCL_ERROR;
-        } else {
-            eckey = EVP_PKEY_get1_EC_KEY(pkey);
-            if (eckey == NULL) {
-                EVP_PKEY_free(pkey);
-                Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
-                result = TCL_ERROR;
-            } else {
-                result = TCL_OK;
-            }
+            return TCL_ERROR;
         }
-        if (result != TCL_ERROR) {
+
+        if (!PkeyIsType(pkey, "EC", EVP_PKEY_EC)) {
+            EVP_PKEY_free(pkey);
+            Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
+            return TCL_ERROR;
+        }
+
+        {
+#ifdef HAVE_OPENSSL_3
+            BIGNUM     *priv = NULL;
+            int         bits = 0;
+            size_t      octLength;
             Tcl_DString ds;
-            size_t      octLength = EC_KEY_priv2oct(eckey, NULL, 0);
+
+            if (!EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, &priv)) {
+                EVP_PKEY_free(pkey);
+                return SetResultFromOsslError(interp, "could not encode EC private key value");
+            }
+
+            /*
+             * Match historical EC private key octet output width by using
+             * the key size in bits and padding to whole bytes.
+             */
+            bits = EVP_PKEY_get_bits(pkey);
+            if (bits <= 0) {
+                BN_clear_free(priv);
+                EVP_PKEY_free(pkey);
+                Ns_TclPrintfResult(interp, "could not obtain EC key size");
+                return TCL_ERROR;
+            }
+
+            octLength = (size_t)((bits + 7) / 8);
 
             Tcl_DStringInit(&ds);
             Tcl_DStringSetLength(&ds, (TCL_SIZE_T)octLength);
-            octLength = EC_KEY_priv2oct(eckey, (unsigned char *)ds.string, octLength);
-            Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
 
-            /*
-             * Clean up.
-             */
-            EVP_PKEY_free(pkey);
+            if (BN_bn2binpad(priv, (unsigned char *)ds.string, (int)octLength) != (int)octLength) {
+                Tcl_DStringFree(&ds);
+                BN_clear_free(priv);
+                EVP_PKEY_free(pkey);
+                return SetResultFromOsslError(interp, "could not encode EC private key value");
+            }
+
+            Tcl_SetObjResult(interp,
+                             NsEncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
+
             Tcl_DStringFree(&ds);
+            BN_clear_free(priv);
+            EVP_PKEY_free(pkey);
+            return TCL_OK;
+#else
+            EC_KEY     *eckey = NULL;
+            Tcl_DString ds;
+            size_t      octLength;
+
+            eckey = EVP_PKEY_get1_EC_KEY(pkey);
+            if (eckey == NULL) {
+                EVP_PKEY_free(pkey);
+                return SetResultFromOsslError(interp, "no valid EC key in specified pem file");
+            }
+
+            octLength = EC_KEY_priv2oct(eckey, NULL, 0);
+
+            Tcl_DStringInit(&ds);
+            Tcl_DStringSetLength(&ds, (TCL_SIZE_T)octLength);
+
+            octLength = EC_KEY_priv2oct(eckey, (unsigned char *)ds.string, octLength);
+            Tcl_SetObjResult(interp,
+                             NsEncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
+
+            Tcl_DStringFree(&ds);
+            EC_KEY_free(eckey);
+            EVP_PKEY_free(pkey);
+            return TCL_OK;
+#endif
         }
     }
-
-    return result;
 }
 #  endif /* HAVE_OPENSSL_EC_PRIV2OCT */
 
@@ -8779,8 +8824,8 @@ SetResultFromEcSharedSecret(Tcl_Interp *interp,
         Ns_TclPrintfResult(interp, "could not obtain EC group name");
         return TCL_ERROR;
     }
-    
-    ERR_clear_error();    
+
+    ERR_clear_error();
     bld = OSSL_PARAM_BLD_new();
     if (bld == NULL) {
         SetResultFromOsslError(interp, "could not allocate parameter builder");
