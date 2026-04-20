@@ -53,7 +53,8 @@
 #  include <openssl/provider.h>
 #  include <openssl/param_build.h>
 # else
-#include <openssl/bn.h>
+#  include <openssl/bn.h>
+#  include <openssl/rsa.h>
 # endif
 
 /*
@@ -255,14 +256,15 @@ static int PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKE
 
 
 # ifndef OPENSSL_NO_EC
-#  ifndef HAVE_OPENSSL_3
-static int CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
-    NS_GNUC_NONNULL(1,2,3);
 
+#  ifdef HAVE_OPENSSL_3
 static int EcPointToUncompressed(Tcl_Interp *interp, EVP_PKEY *pkey, const unsigned char *in, size_t inLen,
                                  Tcl_DString *outDs)
     NS_GNUC_NONNULL(1,2,3,5);
-#  endif
+#  else
+static int CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
+    NS_GNUC_NONNULL(1,2,3);
+#  endif /* HAVE_OPENSSL_3 */
 
 static void SetResultFromEC_POINT(Tcl_Interp *interp, Tcl_DString *dsPtr, EC_KEY *eckey, const EC_POINT *ecpoint,
                                   BN_CTX *bn_ctx, Ns_BinaryEncoding encoding)
