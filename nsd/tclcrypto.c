@@ -142,7 +142,7 @@ static BIO *PemOpenReadStream(const char *fnOrData)
     NS_GNUC_NONNULL(1);
 
 
-static void SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
+static int SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
     NS_GNUC_NONNULL(1,2);
 
 static int SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
@@ -466,7 +466,7 @@ static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
  *      optionally prefixed with a caller-provided message.
  *
  * Results:
- *      None. The interpreter result is set.
+ *      TCL_ERROR;
  *
  * Side effects:
  *      Consumes the OpenSSL per-thread error queue and overwrites the
@@ -479,7 +479,7 @@ static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
  *
  *----------------------------------------------------------------------
  */
-static void
+static int
 SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
 {
     unsigned long err = ERR_peek_last_error();
@@ -495,6 +495,7 @@ SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
             Ns_TclPrintfResult(interp, "%s: %s", prefix, reason);
         }
     }
+    return TCL_ERROR;
 }
 
 /*
@@ -2776,8 +2777,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 
                 sig = ECDSA_do_sign(digestBytes, (int)mdLength, eckey);
                 if (sig == NULL) {
-                    SetResultFromOsslError(interp, "could not create signature");
-                    result = TCL_ERROR;
+                    result = SetResultFromOsslError(interp, "could not create signature");
                     goto done;
                 }
 
@@ -2789,8 +2789,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
                 memset(rawSig, 0, sizeof(rawSig));
                 if (BN_bn2binpad(r, rawSig, 32) != 32
                     || BN_bn2binpad(s, rawSig + 32, 32) != 32) {
-                    SetResultFromOsslError(interp, "could not convert signature components");
-                    result = TCL_ERROR;
+                    result = SetResultFromOsslError(interp, "could not convert signature components");
                     goto done;
                 }
 
@@ -2910,17 +2909,14 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             haveDigest = NS_TRUE;
             pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL);
             if (pctx == NULL) {
-                SetResultFromOsslError(interp, "could not obtain context HKDF");
-                result = TCL_ERROR;
+                result = SetResultFromOsslError(interp, "could not obtain context HKDF");
             }
         }
         if (result != TCL_ERROR && (EVP_PKEY_derive_init(pctx) <= 0)) {
-            SetResultFromOsslError(interp, "could not initialize for derivation");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "could not initialize for derivation");
         }
         if (result != TCL_ERROR && (EVP_PKEY_CTX_set_hkdf_md(pctx, digest.md) <= 0)) {
-            SetResultFromOsslError(interp, "could not set digest algorithm");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "could not set digest algorithm");
         }
         if (result != TCL_ERROR) {
             const unsigned char *infoString, *saltString, *secretString;
@@ -3331,12 +3327,10 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         ERR_clear_error();
 
         if (EVP_KDF_CTX_set_params(kctx, params) <= 0) {
-            SetResultFromOsslError(interp, "argon2: could not set parameters");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "argon2: could not set parameters");
 
         } else if (EVP_KDF_derive(kctx, (unsigned char *)outDs.string, (size_t)outlen, params) <= 0) {
-            SetResultFromOsslError(interp, "argon2: could not derive key");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "argon2: could not derive key");
         }  else {
             /*
              * Convert the result to the output format and set the interp
@@ -5169,36 +5163,31 @@ CryptoKemDecapsulateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
         if (ctx == NULL) {
-            SetResultFromOsslError(interp, "could not create KEM context");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "could not create KEM context");
             goto done;
         }
 
         if (EVP_PKEY_decapsulate_init(ctx, NULL) <= 0) {
-            SetResultFromOsslError(interp, "could not initialize KEM decapsulation");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "could not initialize KEM decapsulation");
             goto done;
         }
 
         if (EVP_PKEY_decapsulate(ctx, NULL, &secretAllocLen,
                                  ciphertextString, (size_t)ciphertextLength) <= 0) {
-            SetResultFromOsslError(interp, "could not determine KEM shared secret length");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "could not determine KEM shared secret length");
             goto done;
         }
 
         secret = OPENSSL_malloc(secretAllocLen);
         if (secret == NULL) {
-            SetResultFromOsslError(interp, "could not allocate KEM output buffer");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "could not allocate KEM output buffer");
             goto done;
         }
 
         secretLen = secretAllocLen;
         if (EVP_PKEY_decapsulate(ctx, secret, &secretLen,
                                  ciphertextString, (size_t)ciphertextLength) <= 0) {
-            SetResultFromOsslError(interp, "could not decapsulate shared secret");
-            result = TCL_ERROR;
+            result = SetResultFromOsslError(interp, "could not decapsulate shared secret");
             goto done;
         }
 
@@ -5478,14 +5467,12 @@ CryptoAgreementDeriveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
     if (ctx == NULL) {
-        SetResultFromOsslError(interp, "could not create key agreement context");
-        result = TCL_ERROR;
+        result = SetResultFromOsslError(interp, "could not create key agreement context");
         goto done;
     }
 
     if (EVP_PKEY_derive_init(ctx) <= 0) {
-        SetResultFromOsslError(interp, "could not initialize key agreement");
-        result = TCL_ERROR;
+        result = SetResultFromOsslError(interp, "could not initialize key agreement");
         goto done;
     }
 
@@ -5497,8 +5484,7 @@ CryptoAgreementDeriveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
 
     if (EVP_PKEY_derive(ctx, NULL, &secretLen) <= 0) {
-        SetResultFromOsslError(interp, "could not determine derived secret length");
-        result = TCL_ERROR;
+        result = SetResultFromOsslError(interp, "could not determine derived secret length");
         goto done;
     }
 
@@ -7941,8 +7927,7 @@ PkeyImportOkpPublicParamsFromDict(Tcl_Interp *interp,
 
     if (OSSL_PARAM_BLD_push_octet_string(bld, OSSL_PKEY_PARAM_PUB_KEY,
                                          pub, (size_t)xLen) != 1) {
-        SetResultFromOsslError(interp, "could not add OKP public key parameter");
-        return TCL_ERROR;
+        return SetResultFromOsslError(interp, "could not add OKP public key parameter");
     }
 
     *resolvedTypeNamePtr = typeName;
@@ -8116,8 +8101,7 @@ CryptoKeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     params = OSSL_PARAM_BLD_to_param(bld);
     if (params == NULL) {
-        SetResultFromOsslError(interp, "could not finalize key import parameters");
-        result = TCL_ERROR;
+        result = SetResultFromOsslError(interp, "could not finalize key import parameters");
         goto done;
     }
     result = PkeyImportFromParams(interp, resolvedTypeName, selection, params,
@@ -8596,14 +8580,12 @@ PkeySignatureInitSm2(Tcl_Interp *interp,
 
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
     if (pctx == NULL) {
-        SetResultFromOsslError(interp, "could not allocate SM2 signature context");
-        return TCL_ERROR;
+        return SetResultFromOsslError(interp, "could not allocate SM2 signature context");
     }
 
     if (EVP_PKEY_CTX_set1_id(pctx, id, (int)idLength) <= 0) {
-        SetResultFromOsslError(interp, "could not set SM2 identifier");
         EVP_PKEY_CTX_free(pctx);
-        return TCL_ERROR;
+        return SetResultFromOsslError(interp, "could not set SM2 identifier");
     }
 
     /*
@@ -8622,16 +8604,14 @@ PkeySignatureInitSm2(Tcl_Interp *interp,
      */
     if (sign) {
         if (EVP_DigestSignInit(mdctx, NULL, useMd, NULL, pkey) <= 0) {
-            SetResultFromOsslError(interp, "could not initialize SM2 signature generation");
             EVP_PKEY_CTX_free(pctx);
-            return TCL_ERROR;
+            return SetResultFromOsslError(interp, "could not initialize SM2 signature generation");
         }
     } else {
         if (EVP_DigestVerifyInit(mdctx, NULL, useMd, NULL, pkey) <= 0) {
-            SetResultFromOsslError(interp,
-                                   "could not initialize SM2 signature verification");
             EVP_PKEY_CTX_free(pctx);
-            return TCL_ERROR;
+            return SetResultFromOsslError(interp,
+                                   "could not initialize SM2 signature verification");
         }
     }
     *pctxPtr = pctx;
@@ -9147,8 +9127,7 @@ PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
         result = TCL_OK;
 
     } else {
-        SetResultFromOsslError(interp, "signature verification failed");
-        result = TCL_ERROR;
+        result = SetResultFromOsslError(interp, "signature verification failed");
     }
 
 done:
