@@ -173,7 +173,7 @@ jobs:
 
       - name: Regression test
         run: |
-          make test
+          MAKEFLAGS= make SERIAL=1 test
 
 # Reference of the GitHub runner images with the supported packages and versions
 # https://github.com/actions/runner-images
