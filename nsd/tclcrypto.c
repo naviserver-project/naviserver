@@ -151,6 +151,10 @@ static int SetResultFromMemBio(Tcl_Interp *interp, BIO *bio, const char *what)
 # ifdef HAVE_OPENSSL_3
 static int SetResultFromEcPublicPoint(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2);
+
+static int SetResultFromEcdsaDerAsRaw(Tcl_Interp *interp,  const unsigned char *sig, size_t sigLen,
+                                      size_t bnLen, Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2);
 # endif
 
 static int SetResultFromEcPublicKey(Tcl_Interp *interp, const char *pemFile, const char *passPhrase,
@@ -220,6 +224,13 @@ static bool PkeySignatureAcceptsId(EVP_PKEY *pkey)
 static int PkeySignatureAcceptsIdFromObj(Tcl_Interp *interp, EVP_PKEY *pkey, Tcl_Obj *idObj,
                               const unsigned char **idPtr, size_t *idLengthPtr)
     NS_GNUC_NONNULL(1,2,4,5);
+
+
+static int PkeySignatureSignBytes(Tcl_Interp *interp, EVP_PKEY *pkey,
+                                  const unsigned char *message, size_t messageLength,
+                                  const unsigned char *id, size_t idLength,
+                                  const EVP_MD *md,  unsigned char **sigPtr, size_t *sigLenPtr)
+    NS_GNUC_NONNULL(1,2,3,8,9);
 
 static int PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
                              const unsigned char *message, size_t messageLength,
@@ -2666,81 +2677,135 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         result = TCL_ERROR;
 
     } else {
-        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
+        Ns_BinaryEncoding encoding = (encodingInt == -1
+                                      ? NS_OBJ_ENCODING_HEX
+                                      : (Ns_BinaryEncoding)encodingInt);
         NsDigest          digest;
         bool              haveDigest = NS_FALSE;
-        EC_KEY           *eckey = NULL;
 
-        /*
-         * Look up the Message Digest from OpenSSL
-         */
         result = DigestGet(interp, digestName, NS_DIGEST_USAGE_MD, &digest);
-        if (result != TCL_ERROR) {
+        if (result == TCL_OK) {
             haveDigest = NS_TRUE;
-
-            eckey = GetEckeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
-            if (eckey == NULL) {
-                /*
-                 * GetEckeyFromPem handles error message
-                 */
-                result = TCL_ERROR;
-            }
         }
-        if (result != TCL_ERROR) {
-            unsigned char        digestBytes[EVP_MAX_MD_SIZE];
-            EVP_MD_CTX          *mdctx;
+
+        if (result == TCL_OK) {
             const unsigned char *messageString;
             TCL_SIZE_T           messageLength;
-            unsigned int         sigLen, mdLength, rLen, sLen;
             Tcl_DString          messageDs;
-            ECDSA_SIG           *sig;
-            const BIGNUM        *r, *s;
-            uint8_t             *rawSig;
 
-            /*
-             * All input parameters are valid, get key and data.
-             */
             Tcl_DStringInit(&messageDs);
-            messageString = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
+            messageString = Ns_GetBinaryString(messageObj, isBinary == 1,
+                                               &messageLength, &messageDs);
 
-            /*
-             * Call the Digest or Signature computation
-             */
-            mdctx = EVP_MD_CTX_new();
+#ifdef HAVE_OPENSSL_3
+            {
+                EVP_PKEY     *pkey = NULL;
+                unsigned char *sig = NULL;
+                size_t         sigLen = 0u;
 
-            EVP_DigestInit_ex(mdctx, digest.md, NULL);
-            EVP_DigestUpdate(mdctx, messageString, (unsigned long)messageLength);
-            EVP_DigestFinal_ex(mdctx, digestBytes, &mdLength);
+                pkey = PkeyGetFromPem(interp, pemFile, passPhrase, NS_TRUE);
+                if (pkey == NULL) {
+                    result = TCL_ERROR;
+                    goto done;
+                }
 
-            sig = ECDSA_do_sign(digestBytes, (int)mdLength, eckey);
-            ECDSA_SIG_get0(sig, &r, &s);
-            rLen = (unsigned int) BN_num_bytes(r);
-            sLen = (unsigned int) BN_num_bytes(s);
-            sigLen = rLen + sLen;
-            //fprintf(stderr, "siglen r %u + s%u -> %u\n", rLen, sLen, sigLen);
+                if (!EVP_PKEY_is_a(pkey, "EC")) {
+                    Ns_TclPrintfResult(interp, "specified key is not an EC key");
+                    result = TCL_ERROR;
+                    goto done;
+                }
 
-            rawSig = ns_calloc(sigLen, sizeof(uint8_t));
-            assert(rawSig != NULL);
+                /*
+                 * Sign via EVP. For EC keys, OpenSSL returns a DER-encoded
+                 * ECDSA signature. Convert it to raw ES256 form (r || s).
+                 */
+                result = PkeySignatureSignBytes(interp, pkey,
+                                                messageString, (size_t)messageLength,
+                                                NULL, 0u,
+                                                digest.md,
+                                                &sig, &sigLen);
+                if (result != TCL_OK) {
+                    goto done;
+                }
 
-            BN_bn2bin(r, rawSig);
-            hexPrint("r", rawSig, rLen);
-            BN_bn2bin(s, &rawSig[rLen]);
-            hexPrint("s", &rawSig[rLen], sLen);
+                /*
+                 * VAPID uses ES256, i.e. fixed-width 32-byte r and 32-byte s.
+                 */
+                result = SetResultFromEcdsaDerAsRaw(interp, sig, sigLen, 32u, encoding);
 
-            /*
-             * Convert the result to the output format and set the interp
-             * result.
-             */
-            Tcl_SetObjResult(interp, NsEncodedObj(rawSig, sigLen, NULL, encoding));
+            done:
+                if (sig != NULL) {
+                    ns_free(sig);
+                }
+                if (pkey != NULL) {
+                    EVP_PKEY_free(pkey);
+                }
+            }
+#else
+            {
+                unsigned char        digestBytes[EVP_MAX_MD_SIZE];
+                EVP_MD_CTX          *mdctx = NULL;
+                unsigned int         mdLength = 0u;
+                EC_KEY              *eckey = NULL;
+                ECDSA_SIG           *sig = NULL;
+                const BIGNUM        *r = NULL, *s = NULL;
+                uint8_t              rawSig[64];
 
-            /*
-             * Clean up.
-             */
-            EC_KEY_free(eckey);
-            EVP_MD_CTX_free(mdctx);
-            ns_free(rawSig);
+                eckey = GetEckeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
+                if (eckey == NULL) {
+                    result = TCL_ERROR;
+                    goto done;
+                }
+
+                mdctx = EVP_MD_CTX_new();
+                if (mdctx == NULL) {
+                    Ns_TclPrintfResult(interp, "could not allocate message digest context");
+                    result = TCL_ERROR;
+                    goto done;
+                }
+
+                EVP_DigestInit_ex(mdctx, digest.md, NULL);
+                EVP_DigestUpdate(mdctx, messageString, (unsigned long)messageLength);
+                EVP_DigestFinal_ex(mdctx, digestBytes, &mdLength);
+
+                sig = ECDSA_do_sign(digestBytes, (int)mdLength, eckey);
+                if (sig == NULL) {
+                    SetResultFromOsslError(interp, "could not create signature");
+                    result = TCL_ERROR;
+                    goto done;
+                }
+
+                ECDSA_SIG_get0(sig, &r, &s);
+
+                /*
+                 * ES256 raw signature: fixed-width 32-byte r || 32-byte s
+                 */
+                memset(rawSig, 0, sizeof(rawSig));
+                if (BN_bn2binpad(r, rawSig, 32) != 32
+                    || BN_bn2binpad(s, rawSig + 32, 32) != 32) {
+                    SetResultFromOsslError(interp, "could not convert signature components");
+                    result = TCL_ERROR;
+                    goto done;
+                }
+
+                Tcl_SetObjResult(interp, NsEncodedObj(rawSig, sizeof(rawSig), NULL, encoding));
+                result = TCL_OK;
+
+            done:
+                if (sig != NULL) {
+                    ECDSA_SIG_free(sig);
+                }
+                if (mdctx != NULL) {
+                    EVP_MD_CTX_free(mdctx);
+                }
+                if (eckey != NULL) {
+                    EC_KEY_free(eckey);
+                }
+            }
+#endif
             Tcl_DStringFree(&messageDs);
         }
+
         if (haveDigest) {
             DigestFree(&digest);
         }
@@ -8563,7 +8628,217 @@ PkeySignatureInitSm2(Tcl_Interp *interp,
     *pctxPtr = pctx;
     return TCL_OK;
 }
-# endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetResultFromEcdsaDerAsRaw --
+ *
+ *      Convert a DER-encoded ECDSA signature into raw fixed-width
+ *      concatenated form (r || s), and set the Tcl interpreter result
+ *      to the encoded value.
+ *
+ *      The input signature is expected to be in ASN.1 DER format as
+ *      produced by OpenSSL EVP signing functions for EC keys. This
+ *      function decodes the signature into its (r, s) components via
+ *      d2i_ECDSA_SIG(), and then serializes each component into a
+ *      fixed-width big-endian byte sequence using BN_bn2binpad().
+ *
+ *      The output format is:
+ *
+ *          raw = r (bnLen bytes) || s (bnLen bytes)
+ *
+ *      where bnLen is the coordinate size of the underlying curve
+ *      (e.g., 32 bytes for P-256 / ES256).
+ *
+ *      This representation is required by JWS/JWT (ES256, ES384, ES512)
+ *      and VAPID, which mandate fixed-length concatenation rather than
+ *      DER encoding.
+ *
+ *      The resulting byte sequence is encoded according to the provided
+ *      Ns_BinaryEncoding (e.g., hex, base64url, binary) and stored as
+ *      the Tcl interpreter result.
+ *
+ * Results:
+ *      TCL_OK on success. The interpreter result contains the encoded
+ *      raw signature.
+ *
+ *      TCL_ERROR on failure. An error message is left in the interpreter
+ *      result if the DER signature cannot be decoded or the components
+ *      cannot be converted.
+ *
+ * Side effects:
+ *      Allocates temporary buffers for the raw signature and frees them
+ *      before returning. Uses OpenSSL ECDSA_SIG and BIGNUM APIs.
+ *      Overwrites the Tcl interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SetResultFromEcdsaDerAsRaw(Tcl_Interp *interp,
+                           const unsigned char *sig, size_t sigLen,
+                           size_t bnLen,
+                           Ns_BinaryEncoding encoding)
+{
+    int                  result = TCL_ERROR;
+    ECDSA_SIG           *ecdsaSig = NULL;
+    const unsigned char *p = sig;
+    const BIGNUM        *r = NULL, *s = NULL;
+    unsigned char       *raw = NULL;
+
+    ecdsaSig = d2i_ECDSA_SIG(NULL, &p, (long)sigLen);
+    if (ecdsaSig == NULL) {
+        SetResultFromOsslError(interp, "could not decode ECDSA signature");
+        goto done;
+    }
+
+    ECDSA_SIG_get0(ecdsaSig, &r, &s);
+
+    raw = ns_calloc(2u * bnLen, sizeof(unsigned char));
+    if (raw == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate raw signature buffer");
+        goto done;
+    }
+
+    if (BN_bn2binpad(r, raw, (int)bnLen) != (int)bnLen
+        || BN_bn2binpad(s, raw + bnLen, (int)bnLen) != (int)bnLen) {
+        SetResultFromOsslError(interp, "could not convert ECDSA signature components");
+        goto done;
+    }
+
+    Tcl_SetObjResult(interp, NsEncodedObj(raw, 2u * bnLen, NULL, encoding));
+    result = TCL_OK;
+
+done:
+    if (raw != NULL) {
+        ns_free(raw);
+    }
+    if (ecdsaSig != NULL) {
+        ECDSA_SIG_free(ecdsaSig);
+    }
+    return result;
+}
+# endif /* HAVE_OPENSSL_3 */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeySignatureSignBytes --
+ *
+ *      Generate a digital signature over the provided message using
+ *      the given EVP_PKEY and message digest, and return the raw
+ *      signature bytes.
+ *
+ *      This function implements the OpenSSL EVP-based signing path
+ *      (suitable for OpenSSL 3.x provider APIs and OpenSSL 1.1.1),
+ *      without performing any post-processing or encoding of the
+ *      signature result.
+ *
+ *      The signature is produced via EVP_DigestSign*() and returned
+ *      as provided by OpenSSL:
+ *
+ *        - For EC keys: DER-encoded ECDSA signature (ASN.1 SEQUENCE
+ *          of r and s values)
+ *        - For RSA keys: PKCS#1 or PSS signature blob depending on
+ *          key configuration
+ *        - For other key types: algorithm-specific signature format
+ *
+ *      The caller is responsible for interpreting or transforming the
+ *      signature as required (e.g., converting EC DER signatures to
+ *      raw r||s form for JWS/VAPID usage).
+ *
+ *      When using SM2 keys (OpenSSL 3), this function delegates to
+ *      PkeySignatureInitSm2() to set the SM2 ID parameter.
+ *
+ * Results:
+ *      TCL_OK on success. *sigPtr is set to a newly allocated buffer
+ *      containing the signature, and *sigLenPtr contains its length.
+ *
+ *      TCL_ERROR on failure. An error message is left in the interpreter
+ *      result, and *sigPtr is set to NULL.
+ *
+ * Side effects:
+ *      Allocates memory for the signature buffer via ns_malloc().
+ *      The caller is responsible for freeing this buffer with ns_free().
+ *
+ *      Uses OpenSSL EVP APIs and may populate the OpenSSL error stack.
+ *      Clears the OpenSSL error stack at entry.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PkeySignatureSignBytes(Tcl_Interp *interp, EVP_PKEY *pkey,
+                       const unsigned char *message, size_t messageLength,
+                       const unsigned char *id, size_t idLength,
+                       const EVP_MD *md,
+                       unsigned char **sigPtr, size_t *sigLenPtr)
+{
+    int           result = TCL_ERROR;
+    EVP_MD_CTX   *mdctx = NULL;
+    EVP_PKEY_CTX *pctx = NULL;
+    size_t        sigLen = 0u;
+    unsigned char *sig = NULL;
+
+    *sigPtr = NULL;
+    *sigLenPtr = 0u;
+
+    ERR_clear_error();
+
+    mdctx = EVP_MD_CTX_new();
+    if (mdctx == NULL) {
+        SetResultFromOsslError(interp, "could not allocate message digest context");
+        goto done;
+    }
+
+#ifndef HAVE_OPENSSL_3
+    (void)id;
+    (void)idLength;
+#endif
+
+#ifdef HAVE_OPENSSL_3
+    if (PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1) {
+        if (PkeySignatureInitSm2(interp, mdctx, pkey, md,
+                                 id, idLength,
+                                 NS_TRUE, &pctx) != TCL_OK) {
+            goto done;
+        }
+    } else
+#endif
+    if (EVP_DigestSignInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
+        SetResultFromOsslError(interp, "could not initialize signature generation");
+        goto done;
+    }
+
+    if (EVP_DigestSign(mdctx, NULL, &sigLen, message, messageLength) <= 0) {
+        SetResultFromOsslError(interp, "could not determine signature length");
+        goto done;
+    }
+
+    sig = ns_malloc(sigLen);
+    if (sig == NULL) {
+        Ns_TclPrintfResult(interp, "could not allocate signature buffer");
+        goto done;
+    }
+
+    if (EVP_DigestSign(mdctx, sig, &sigLen, message, messageLength) <= 0) {
+        SetResultFromOsslError(interp, "could not create signature");
+        goto done;
+    }
+
+    *sigPtr = sig;
+    *sigLenPtr = sigLen;
+    sig = NULL;
+    result = TCL_OK;
+
+done:
+    if (sig != NULL) {
+        ns_free(sig);
+    }
+    if (mdctx != NULL) {
+        EVP_MD_CTX_free(mdctx);
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -8601,64 +8876,20 @@ PkeySignatureSign(Tcl_Interp *interp, EVP_PKEY *pkey,
                   const unsigned char *id, size_t idLength,
                   const EVP_MD *md, Ns_BinaryEncoding encoding)
 {
-    int            result = TCL_ERROR;
-    EVP_MD_CTX    *mdctx = NULL;
-    EVP_PKEY_CTX  *pctx = NULL;
-    size_t         sigLen = 0u;
+    int            result;
     unsigned char *sig = NULL;
+    size_t         sigLen = 0u;
 
-    ERR_clear_error();
-
-    mdctx = EVP_MD_CTX_new();
-    if (mdctx == NULL) {
-        SetResultFromOsslError(interp, "could not allocate message digest context");
-        goto done;
+    result = PkeySignatureSignBytes(interp, pkey,
+                                    message, messageLength,
+                                    id, idLength,
+                                    md,
+                                    &sig, &sigLen);
+    if (result == TCL_OK) {
+        Tcl_SetObjResult(interp, NsEncodedObj(sig, sigLen, NULL, encoding));
     }
-
-# ifndef HAVE_OPENSSL_3
-    (void)id;
-    (void)idLength;
-# endif
-
-# ifdef HAVE_OPENSSL_3
-    if (PkeyIsType(pkey, "SM2", EVP_PKEY_SM2) == 1) {
-        if (PkeySignatureInitSm2(interp, mdctx, pkey, md,
-                                 id, idLength,
-                                 NS_TRUE, &pctx) != TCL_OK) {
-            goto done;
-        }
-    } else
-# endif
-    if (EVP_DigestSignInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
-        SetResultFromOsslError(interp, "could not initialize signature generation");
-        goto done;
-    }
-
-    if (EVP_DigestSign(mdctx, NULL, &sigLen, message, messageLength) <= 0) {
-        SetResultFromOsslError(interp, "could not determine signature length");
-        goto done;
-    }
-
-    sig = ns_malloc(sigLen);
-    if (sig == NULL) {
-        SetResultFromOsslError(interp, "could not allocate signature buffer");
-        goto done;
-    }
-
-    if (EVP_DigestSign(mdctx, sig, &sigLen, message, messageLength) <= 0) {
-        SetResultFromOsslError(interp, "could not create signature");
-        goto done;
-    }
-
-    Tcl_SetObjResult(interp, NsEncodedObj(sig, sigLen, NULL, encoding));
-    result = TCL_OK;
-
-done:
     if (sig != NULL) {
         ns_free(sig);
-    }
-    if (mdctx != NULL) {
-        EVP_MD_CTX_free(mdctx);
     }
     return result;
 }
