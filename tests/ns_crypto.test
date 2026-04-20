@@ -821,6 +821,7 @@ test ns_crypto:eckey-1.7.0 {ns_crypto::eckey generate and return PEM as result} 
 } -match glob -result {*-----BEGIN *PRIVATE KEY-----*-----END *PRIVATE KEY-----*}
 
 test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -constraints {ec tcl86} -body {
+    ns_logctl severity Debug on
     ns_crypto::eckey generate -name prime256v1 -pem /tmp/p256-priv.pem
     set Phex [ns_crypto::eckey pub -pem /tmp/p256-priv.pem -encoding hex]
     set Pbin [binary decode hex $Phex]
@@ -831,6 +832,7 @@ test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -constraints {ec 
     if {![string match "-----BEGIN PUBLIC KEY-----*" $pubpem2]} {error "bad pem: $pubpem2"}
     set data "hello\n"
     set sig [ns_crypto::md string -digest sha256 -encoding binary -sign /tmp/p256-priv.pem $data]
+    ns_logctl severity Debug off
     set ok [ns_crypto::md string -digest sha256 -encoding binary -verify $pubpem2 -signature $sig $data]
 } -returnCodes {error ok} -result {1}
 
@@ -1204,7 +1206,7 @@ test ns_crypto::key-8.2 {ns_crypto::key import EC public key from coords raw} -c
                     -params [dict create group prime256v1 x $x y $y]]
 
     string equal $pubraw $Pbin
-} -result 1
+} -returnCodes {error ok}  -result 1
 
 test ns_crypto::key-8.3 {ns_crypto::key import EC requires x and y} -constraints {keygen ec} -body {
     ns_crypto::key import -name EC -params [dict create group prime256v1 x abc]

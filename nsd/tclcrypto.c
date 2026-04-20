@@ -3885,6 +3885,119 @@ SetResultFromEC_POINT(
 static int
 SetResultFromEcPublicPoint(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
 {
+    int             result = TCL_ERROR;
+    char            groupName[80];
+    size_t          groupNameLen = 0u;
+    size_t          inLen = 0u, outLen = 0u;
+    Tcl_DString     inDs, outDs;
+    EC_GROUP       *group = NULL;
+    EC_POINT       *point = NULL;
+    BN_CTX         *bnCtx = NULL;
+    int             nid;
+
+    if (!EVP_PKEY_get_utf8_string_param(pkey,
+                                        OSSL_PKEY_PARAM_GROUP_NAME,
+                                        groupName, sizeof(groupName),
+                                        &groupNameLen)) {
+        Ns_TclPrintfResult(interp, "could not obtain EC group name");
+        return TCL_ERROR;
+    }
+
+    if (!EVP_PKEY_get_octet_string_param(pkey,
+                                         OSSL_PKEY_PARAM_PUB_KEY,
+                                         NULL, 0u, &inLen)) {
+        Ns_TclPrintfResult(interp, "could not obtain EC public key point");
+        return TCL_ERROR;
+    }
+
+    Tcl_DStringInit(&inDs);
+    Tcl_DStringInit(&outDs);
+    Tcl_DStringSetLength(&inDs, (TCL_SIZE_T)inLen);
+
+    if (!EVP_PKEY_get_octet_string_param(pkey,
+                                         OSSL_PKEY_PARAM_PUB_KEY,
+                                         (unsigned char *)inDs.string, inLen, &inLen)) {
+        Ns_TclPrintfResult(interp, "could not obtain EC public key point");
+        goto done;
+    }
+
+    Ns_Log(Debug, "EC pub point len=%" PRIuz " first=%02x",
+       inLen, inLen > 0 ? ((unsigned char *)inDs.string)[0] : 0);
+
+    nid = OBJ_sn2nid(groupName);
+    if (nid == NID_undef) {
+        nid = OBJ_ln2nid(groupName);
+    }
+    if (nid == NID_undef) {
+        Ns_TclPrintfResult(interp, "unknown EC group \"%s\"", groupName);
+        goto done;
+    }
+
+    group = EC_GROUP_new_by_curve_name(nid);
+    if (group == NULL) {
+        Ns_TclPrintfResult(interp, "could not create EC group \"%s\"", groupName);
+        goto done;
+    }
+
+    point = EC_POINT_new(group);
+    if (point == NULL) {
+        Ns_TclPrintfResult(interp, "could not create EC point");
+        goto done;
+    }
+
+    bnCtx = BN_CTX_new();
+    if (bnCtx == NULL) {
+        Ns_TclPrintfResult(interp, "could not create BN_CTX");
+        goto done;
+    }
+
+    if (EC_POINT_oct2point(group, point,
+                           (unsigned char *)inDs.string, inLen, bnCtx) != 1) {
+        Ns_TclPrintfResult(interp, "could not decode EC public key point");
+        goto done;
+    }
+
+    outLen = EC_POINT_point2oct(group, point,
+                                POINT_CONVERSION_UNCOMPRESSED,
+                                NULL, 0u, bnCtx);
+    if (outLen == 0u) {
+        Ns_TclPrintfResult(interp, "could not encode EC public key point");
+        goto done;
+    }
+
+    Tcl_DStringSetLength(&outDs, (TCL_SIZE_T)outLen);
+    outLen = EC_POINT_point2oct(group, point,
+                                POINT_CONVERSION_UNCOMPRESSED,
+                                (unsigned char *)outDs.string, outLen, bnCtx);
+    if (outLen == 0u) {
+        Ns_TclPrintfResult(interp, "could not encode EC public key point");
+        goto done;
+    }
+
+    Tcl_SetObjResult(interp,
+                     NsEncodedObj((unsigned char *)outDs.string, outLen, NULL, encoding));
+    result = TCL_OK;
+
+done:
+    if (bnCtx != NULL) {
+        BN_CTX_free(bnCtx);
+    }
+    if (point != NULL) {
+        EC_POINT_free(point);
+    }
+    if (group != NULL) {
+        EC_GROUP_free(group);
+    }
+    Tcl_DStringFree(&inDs);
+    Tcl_DStringFree(&outDs);
+
+    return result;
+}
+
+#if 0
+static int
+SetResultFromEcPublicPoint(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
+{
     int            result = TCL_ERROR;
     size_t         len = 0u;
     Tcl_DString    ds;
@@ -3914,6 +4027,7 @@ done:
 
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
