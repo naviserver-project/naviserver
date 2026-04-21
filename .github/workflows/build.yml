@@ -170,10 +170,28 @@ jobs:
       #  run: |
       #    echo "CCACHE_DIR=$CCACHE_DIR"
       #    find "$CCACHE_DIR" -maxdepth 2 -type f | head -20 || true
+      
+      - name: Debug installed NSF
+        run: |
+          echo "=== /usr/local/ns/lib ==="
+          ls -l /usr/local/ns/lib || true
+          echo "=== nsf dirs ==="
+          find /usr/local/ns/lib -maxdepth 2 -type d | grep nsf || true
+          echo "=== nsf pkgIndex ==="
+          find /usr/local/ns/lib -name pkgIndex.tcl | xargs grep -l nsf || true
 
+      - name: Debug Tcl package loading
+        run: |
+          /usr/local/ns/bin/tclsh <<'EOF'
+          puts "auto_path=<$auto_path>"
+          puts "env(TCLLIBPATH)=<[expr {[info exists ::env(TCLLIBPATH)] ? $::env(TCLLIBPATH) : ""}]>"
+          puts "require nsf => [catch {package require nsf} msg]; $msg"
+          puts "require nx  => [catch {package require nx} msg]; $msg"
+          EOF
+          
       - name: Regression test
         run: |
-          MAKEFLAGS= sh -c 'echo "shell sees MAKEFLAGS=<$MAKEFLAGS>"; make SERIAL=1 test'
+          MAKEFLAGS= sh -c 'echo "shell sees MAKEFLAGS=<$MAKEFLAGS>"; env|sort|make SERIAL=1 test'
 
 # Reference of the GitHub runner images with the supported packages and versions
 # https://github.com/actions/runner-images
