@@ -108,16 +108,16 @@ jobs:
           cat /etc/os-release
           ls -ltr
 
-      - name: Set MAKEFLAGS for parallel build
-        run: |
-          CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu || echo 1)"
-          DEFAULT_FLAGS="-j${CORES} -Oline"
-
-          if [ -n "${{ matrix.makeflags_override }}" ]; then
-            echo "MAKEFLAGS=${{ matrix.makeflags_override }}" >> "$GITHUB_ENV"
-          else
-            echo "MAKEFLAGS=${DEFAULT_FLAGS}" >> "$GITHUB_ENV"
-          fi
+      #- name: Set MAKEFLAGS for parallel build
+      #  run: |
+      #    CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu || echo 1)"
+      #    DEFAULT_FLAGS="-j${CORES} -Oline"
+      #
+      #    if [ -n "${{ matrix.makeflags_override }}" ]; then
+      #      echo "MAKEFLAGS=${{ matrix.makeflags_override }}" >> "$GITHUB_ENV"
+      #    else
+      #      echo "MAKEFLAGS=${DEFAULT_FLAGS}" >> "$GITHUB_ENV"
+      #    fi
 
       - name: Enable ccache wrappers
         run: |
@@ -146,7 +146,6 @@ jobs:
             NS_INSTALL_DEBUG_ENV=1 \
             CCACHE_DIR="${CCACHE_DIR}" \
             CCACHE_MAXSIZE="${CCACHE_MAXSIZE}" \
-            MAKEFLAGS="${MAKEFLAGS}" \
             version_ns=.. \
             version_modules=GIT \
             version_tcl=${TCLTAG} \
