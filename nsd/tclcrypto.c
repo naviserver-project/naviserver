@@ -26,7 +26,14 @@
  *      NaviServer utilities for memory management, error reporting,
  *      and argument parsing.
  */
-#define OPENSSL_API_COMPAT 0x10101000L
+
+/*
+ * Activate backward compatibility in the future, when the API changes
+ * require it. The following definition would provide compatibility
+ * with OpenSSL 1.1.1.
+ *
+ * #define OPENSSL_API_COMPAT 0x10101000L
+ */
 
 #include "nsd.h"
 
@@ -1886,47 +1893,106 @@ GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhr
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result, isBinary = 0;
     const char *digestName = "sha256";
     Tcl_Obj    *keyObj;
+
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec    args[] = {
+    Ns_ObjvSpec args[] = {
         {"digest",  Ns_ObjvString, &digestName, NULL},
-        {"key",     Ns_ObjvObj,    &keyObj, NULL},
+        {"key",     Ns_ObjvObj,    &keyObj,     NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
+        return TCL_ERROR;
 
     } else {
-        NsDigest digest;
+        NsDigest            digest;
+        const unsigned char *keyString;
+        TCL_SIZE_T           keyLength;
+        Tcl_DString          keyDs;
 
-        /*
-         * Look up the Message Digest from OpenSSL
-         */
         result = DigestGet(interp, digestName, NS_DIGEST_USAGE_HMAC, &digest);
-        if (result != TCL_ERROR) {
-            HMAC_CTX            *ctx;
-            const unsigned char *keyString;
-            TCL_SIZE_T           keyLength;
-            Tcl_DString          keyDs;
-
-            Tcl_DStringInit(&keyDs);
-            keyString = Ns_GetBinaryString(keyObj, isBinary == 1, &keyLength, &keyDs);
-            ctx = HMAC_CTX_new();
-            HMAC_Init_ex(ctx, keyString, (int)keyLength, digest.md, NULL);
-            Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
-            Tcl_DStringFree(&keyDs);
-            DigestFree(&digest);
+        if (result != TCL_OK) {
+            return TCL_ERROR;
         }
+
+        Tcl_DStringInit(&keyDs);
+        keyString = Ns_GetBinaryString(keyObj, isBinary == 1, &keyLength, &keyDs);
+
+#ifdef HAVE_OPENSSL_3
+        {
+            EVP_MAC *mac = EVP_MAC_fetch(NULL, "HMAC", NULL);
+            if (mac == NULL) {
+                result = SetResultFromOsslError(interp, "could not fetch HMAC implementation");
+
+            } else {
+                EVP_MAC_CTX *ctx = EVP_MAC_CTX_new(mac);
+
+                if (ctx == NULL) {
+                    result = SetResultFromOsslError(interp, "could not allocate HMAC context");
+
+                } else {
+                    OSSL_PARAM params[2];
+                    size_t     digestNameLen = strlen(digestName);
+
+                    params[0] = OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST,
+                                                                 (char *)digestName,
+                                                                 digestNameLen);
+                    params[1] = OSSL_PARAM_construct_end();
+
+                    if (EVP_MAC_init(ctx, keyString, (size_t)keyLength, params) != 1) {
+                        result = SetResultFromOsslError(interp, "could not initialize HMAC context");
+
+                    } else {
+                        Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
+                        ctx = NULL; /* ownership transferred */
+                        result = TCL_OK;
+                    }
+                }
+                if (mac != NULL) {
+                    EVP_MAC_free(mac);
+                }
+                if (ctx != NULL) {
+                    EVP_MAC_CTX_free(ctx);
+                }
+            }
+        }
+#else
+        {
+            HMAC_CTX *ctx = HMAC_CTX_new();
+
+            if (ctx == NULL) {
+                SetResultFromOsslError(interp, "could not allocate HMAC context");
+                result = TCL_ERROR;
+
+            } else {
+
+                if (HMAC_Init_ex(ctx, keyString, (int)keyLength, digest.md, NULL) != 1) {
+                    SetResultFromOsslError(interp, "could not initialize HMAC context");
+                    HMAC_CTX_free(ctx);
+                    result = TCL_ERROR;
+
+                } else {
+                    Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
+                    result = TCL_OK;
+                }
+            }
+        }
+#endif
+
+        Tcl_DStringFree(&keyDs);
+        DigestFree(&digest);
     }
+
     return result;
 }
 
@@ -1952,10 +2018,13 @@ static int
 CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, isBinary = 0;
-    HMAC_CTX   *ctx;
+# ifdef HAVE_OPENSSL_3
+    EVP_MAC_CTX *ctx;
+# else
+    HMAC_CTX    *ctx;
+# endif
     Tcl_Obj    *ctxObj;
     Tcl_Obj    *messageObj;
-    TCL_SIZE_T  messageLength;
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
@@ -1976,17 +2045,25 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
 
     } else {
         const unsigned char *message;
+        TCL_SIZE_T           messageLength;
         Tcl_DString          messageDs;
+        int                  rc;
 
         Tcl_DStringInit(&messageDs);
         message = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
-        HMAC_Update(ctx, message, (size_t)messageLength);
+# ifdef HAVE_OPENSSL_3
+        rc = EVP_MAC_update(ctx, message, (size_t)messageLength);
+# else
+        rc = HMAC_Update(ctx, message, (size_t)messageLength);
+# endif
+        if (rc != 1) {
+            result = SetResultFromOsslError(interp, "could not update HMAC");
+        }
         Tcl_DStringFree(&messageDs);
     }
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2004,18 +2081,22 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result = TCL_OK, encodingInt = -1;
-    HMAC_CTX          *ctx;
-    Tcl_Obj           *ctxObj;
-
-    Ns_ObjvSpec    lopts[] = {
-        {"-encoding", Ns_ObjvIndex,  &encodingInt, NS_binaryencodings},
+    int          result = TCL_OK, encodingInt = -1;
+    Tcl_Obj     *ctxObj;
+# ifdef HAVE_OPENSSL_3
+    EVP_MAC_CTX *ctx;
+# else
+    HMAC_CTX    *ctx;
+# endif
+    Ns_ObjvSpec  lopts[] = {
+        {"-encoding", Ns_ObjvIndex, &encodingInt, NS_binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec    args[] = {
-        {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
+    Ns_ObjvSpec args[] = {
+        {"ctx", Ns_ObjvObj, &ctxObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -2027,23 +2108,53 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         result = TCL_ERROR;
 
     } else {
-        Ns_BinaryEncoding encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        unsigned char  digest[EVP_MAX_MD_SIZE];
-        char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
-        unsigned int   mdLength;
-        HMAC_CTX      *partial_ctx;
+        Ns_BinaryEncoding encoding = (encodingInt == -1
+                                      ? NS_OBJ_ENCODING_HEX
+                                      : (Ns_BinaryEncoding)encodingInt);
+        unsigned char     digest[EVP_MAX_MD_SIZE];
+        char              digestChars[EVP_MAX_MD_SIZE * 2 + 1];
+#ifdef HAVE_OPENSSL_3
+        size_t            mdLength = 0u;
+        EVP_MAC_CTX      *partial_ctx = EVP_MAC_CTX_dup(ctx);
 
-        partial_ctx = HMAC_CTX_new();
-        HMAC_CTX_copy(partial_ctx, ctx);
-        HMAC_Final(partial_ctx, digest, &mdLength);
-        HMAC_CTX_free(partial_ctx);
+        if (partial_ctx == NULL) {
+            result = SetResultFromOsslError(interp, "could not duplicate HMAC context");
 
-        /*
-         * Convert the result to the output format and set the interp
-         * result.
-         */
-        Tcl_SetObjResult(interp, NsEncodedObj(digest, mdLength, digestChars, encoding));
+        } else if (EVP_MAC_final(partial_ctx, digest, &mdLength,
+                                 sizeof(digest)) != 1) {
+            result = SetResultFromOsslError(interp, "could not finalize HMAC context");
+
+        } else {
+            Tcl_SetObjResult(interp, NsEncodedObj(digest, mdLength, digestChars, encoding));
+            result = TCL_OK;
+        }
+
+        if (partial_ctx != NULL) {
+            EVP_MAC_CTX_free(partial_ctx);
+        }
+#else
+        unsigned int      mdLength;
+        HMAC_CTX         *partial_ctx = HMAC_CTX_new();
+
+        if (partial_ctx == NULL) {
+            result = SetResultFromOsslError(interp, "could not allocate HMAC context");
+
+        } else if (HMAC_CTX_copy(partial_ctx, ctx) != 1) {
+            HMAC_CTX_free(partial_ctx);
+            result = SetResultFromOsslError(interp, "could not copy HMAC context");
+
+        } else if (HMAC_Final(partial_ctx, digest, &mdLength) != 1) {
+            HMAC_CTX_free(partial_ctx);
+            result = SetResultFromOsslError(interp, "could not finalize HMAC context");
+
+        } else {
+            HMAC_CTX_free(partial_ctx);
+            Tcl_SetObjResult(interp,  NsEncodedObj(digest, mdLength, digestChars, encoding));
+            result = TCL_OK;
+        }
+#endif
     }
+
     return result;
 }
 
@@ -2068,7 +2179,11 @@ static int
 CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
+# ifdef HAVE_OPENSSL_3
+    EVP_MAC_CTX   *ctx;
+# else
     HMAC_CTX      *ctx;
+# endif
     Tcl_Obj       *ctxObj;
     Ns_ObjvSpec    args[] = {
         {"ctx",  Ns_ObjvObj, &ctxObj, NULL},
@@ -2083,8 +2198,11 @@ CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         result = TCL_ERROR;
 
     } else {
-
+# ifdef HAVE_OPENSSL_3
+        EVP_MAC_CTX_free(ctx);
+# else
         HMAC_CTX_free(ctx);
+# endif
         Ns_TclResetObjType(ctxObj, NULL);
     }
     return result;
