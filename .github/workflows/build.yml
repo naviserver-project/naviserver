@@ -68,6 +68,7 @@ jobs:
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
             tdom_version: 0.9.6
             with_deprecated: 0
+            tcl_makeflags: "-j1"
 
     defaults:
       run:
@@ -134,6 +135,7 @@ jobs:
             NS_INSTALL_DEBUG_ENV=1 \
             CCACHE_DIR="${CCACHE_DIR}" \
             CCACHE_MAXSIZE="${CCACHE_MAXSIZE}" \
+            tcl_makeflags=${{ matrix.tcl_makeflags }} \
             version_ns=.. \
             version_modules=GIT \
             version_tcl=${TCLTAG} \
