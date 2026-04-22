@@ -786,7 +786,7 @@ static void UrlSpaceContextPrint(const char *caller, const NsUrlSpaceContext *ct
  *
  *----------------------------------------------------------------------
  */
-void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, Ns_Set *headers)
+void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, const Ns_Set *headers)
 {
     assert(sockPtr != NULL);
     assert(sockPtr->reqPtr != NULL);
@@ -907,9 +907,9 @@ NsUrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr, struct s
 bool
 NsUrlSpaceContextFilterEval(void *contextSpec, void *context)
 {
-    UrlSpaceContextSpec *spec = contextSpec;
-    NsUrlSpaceContext   *ctx  = context;
-    bool                 success = NS_FALSE;
+    UrlSpaceContextSpec     *spec = contextSpec;
+    const NsUrlSpaceContext *ctx  = context;
+    bool                     success = NS_FALSE;
 
     switch (spec->type) {
     case SpecTypeConjunction: {
@@ -1598,7 +1598,7 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
                  * The specificity of both conjunctions is the same.
                  */
                 if (ctxLeftDlPtr->size == ctxRightDlPtr->size) {
-#if 0
+#ifdef URLSPACE_LEXICAL_ORDER
                     size_t i;
                     /*
                      * Both conjunctions have the same length, take

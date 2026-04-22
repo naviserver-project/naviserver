@@ -2297,7 +2297,7 @@ NS_EXTERN const char *NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, const NsUr
 NS_EXTERN NsUrlSpaceContextSpec *NsObjToUrlSpaceContextSpec(Tcl_Interp *interp, Tcl_Obj *ctxFilterObj)
     NS_GNUC_NONNULL(2);
 
-NS_EXTERN void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, Ns_Set *headers)
+NS_EXTERN void NsUrlSpaceContextInit(NsUrlSpaceContext *ctxPtr, Sock *sockPtr, const Ns_Set *headers)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsUrlSpaceContextFromSet(Tcl_Interp *interp, NsUrlSpaceContext *ctxPtr,
