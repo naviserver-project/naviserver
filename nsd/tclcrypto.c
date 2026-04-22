@@ -123,6 +123,43 @@ typedef struct {
     NsCryptoKeygenUsage usage;
 } NsKeygenListCtx;
 
+# ifdef HAVE_OPENSSL_3
+typedef enum {
+    PARAM_TYPE_BN,      /* BIGNUM */
+    PARAM_TYPE_OCTETS,  /* raw bytes (octet string) */
+    PARAM_TYPE_UTF8,    /* string (e.g., group name) */
+    PARAM_TYPE_INT,     /* int */
+    PARAM_TYPE_UINT64,  /* uint64_t */
+    PARAM_TYPE_UINT32,  /* uint32_t */
+} KeyParamType;
+
+typedef struct {
+    const char *ossl_name;      /* OpenSSL parameter name (e.g., OSSL_PKEY_PARAM_RSA_N) */
+    const char *dict_key;       /* key to use in Tcl dictionary */
+    KeyParamType type;          /* how to retrieve and encode the value */
+    size_t width;               /* for BN: zero-pad to this width (0 = minimal) */
+} KeyParamInfo;
+
+typedef struct {
+    const char   *key;   /* OSSL_PARAM key (e.g., OSSL_PKEY_PARAM_GROUP_NAME) */
+    KeyParamType  type;
+    union {
+        const char *utf8;
+        struct {
+            const void *data;
+            size_t      len;
+        } octets;
+        struct {
+            const BIGNUM *bn;
+            size_t        width;   /* for PARAM_TYPE_BN: 0 = minimal, >0 = zero-padded */
+        } bignum;
+        int      i;
+        uint32_t u32;
+        uint64_t u64;
+    } value;
+} ParamBuildEntry;
+
+# endif /* HAVE_OPENSSL_3 */
 /*
  * Static functions defined in this file.
  */
@@ -256,11 +293,6 @@ static int PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
                                const EVP_MD *md)
     NS_GNUC_NONNULL(1,2,3,5);
 
-static int PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
-                            const char *name, const BIGNUM *bn, size_t width,
-                            Ns_BinaryEncoding encoding)
-    NS_GNUC_NONNULL(1,2,3,4);
-
 static int PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
     NS_GNUC_NONNULL(1,2,3);
 
@@ -349,6 +381,10 @@ static TCL_OBJCMDPROC_T CryptoEckeyImportObjCmd;
 #  ifndef HAVE_OPENSSL_3
 static EVP_PKEY *PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
     NS_GNUC_NONNULL(1,2);
+static int PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
+                            const char *name, const BIGNUM *bn, size_t width,
+                            Ns_BinaryEncoding encoding)
+    NS_GNUC_NONNULL(1,2,3,4);
 #  endif
 # endif
 
@@ -428,14 +464,13 @@ static int PkeyImportOkpPublicParamsFromDict(Tcl_Interp *interp, Tcl_Obj *params
                                   Ns_DList *tmpData)
     NS_GNUC_NONNULL(1,2,3,4,5);
 
-static int PkeyInfoPutOctets(Tcl_Interp *interp, Tcl_Obj *resultObj, const char *name,
-                             const unsigned char *value, size_t valueLen, Ns_BinaryEncoding encoding)
-    NS_GNUC_NONNULL(1,2,3,4);
+static Tcl_Obj *EncodedObjFromBytes(const unsigned char *octets, size_t len,
+                                    Ns_BinaryEncoding encoding, Tcl_DString *dsPtr)
+    NS_GNUC_NONNULL(1);
 
-static int
-PkeyInfoPutOctetParam(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, const char *dictName,
-                      const char *paramName, Ns_BinaryEncoding encoding)
-    NS_GNUC_NONNULL(1,2,3,4,5);
+static int DictAddKeyParams(Tcl_Interp *interp, EVP_PKEY *pkey, const KeyParamInfo *params,
+                            Ns_BinaryEncoding encoding, Tcl_Obj *dictObj)
+    NS_GNUC_NONNULL(1,2,3,5);
 
 # endif /* HAVE_OPENSSL_3 */
 
@@ -462,6 +497,352 @@ static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
 
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
 
+# ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * EncodedObjFromBytes --
+ *
+ *      Return a Tcl object for the provided byte sequence using the
+ *      requested binary encoding.
+ *
+ *      For binary output, the function returns a Tcl byte-array object.
+ *      For textual encodings (hex, base64, base64url), the function
+ *      optionally uses the provided Tcl_DString as temporary output
+ *      storage to avoid extra heap allocations. When dsPtr is NULL,
+ *      NsEncodedObj() performs its own temporary allocation as needed.
+ *
+ * Results:
+ *      Tcl_Obj * containing the encoded value.
+ *
+ * Side effects:
+ *      May resize the provided Tcl_DString when dsPtr is not NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+EncodedObjFromBytes(const unsigned char *octets, size_t len,
+                    Ns_BinaryEncoding encoding, Tcl_DString *dsPtr)
+{
+    char *outputBuffer = NULL;
+
+    if (encoding != NS_OBJ_ENCODING_BINARY && dsPtr != NULL) {
+        /*
+         * Hex needs the largest temporary buffer.  Base64/base64url
+         * fit as well.
+         */
+        Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)(len * 2u + 1u));
+        outputBuffer = dsPtr->string;
+    }
+
+    return NsEncodedObj((unsigned char *)octets, len, outputBuffer, encoding);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictAddKeyParams --
+ *
+ *      Query one or more provider-side key parameters from the given
+ *      EVP_PKEY and add them to the specified Tcl dictionary.
+ *
+ *      The parameters to retrieve are described declaratively by the
+ *      KeyParamInfo table. Supported parameter types include BIGNUM,
+ *      octet string, UTF-8 string, int, uint32_t, and uint64_t.
+ *
+ *      For BIGNUM parameters, width == 0 requests minimal-length
+ *      encoding, while width > 0 requests zero-padded fixed-width
+ *      encoding. Octet-string and BIGNUM values are encoded according
+ *      to the requested Ns_BinaryEncoding before insertion into the
+ *      dictionary.
+ *
+ *      Parameters that are unavailable are currently skipped. For the
+ *      current call sites, such cases are treated as unexpected and
+ *      may be logged for diagnostics.
+ *
+ * Results:
+ *      TCL_OK on success. Queried values are added to dictObj.
+ *
+ *      TCL_ERROR on failure. An error message is left in the
+ *      interpreter result when a parameter cannot be converted or an
+ *      OpenSSL call fails unexpectedly.
+ *
+ * Side effects:
+ *      Modifies dictObj by inserting zero or more key/value pairs.
+ *      Uses temporary Tcl_DString storage for value retrieval and
+ *      encoding.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+DictAddKeyParams(Tcl_Interp *interp, EVP_PKEY *pkey, const KeyParamInfo *params,
+                 Ns_BinaryEncoding encoding, Tcl_Obj *dictObj)
+{
+    const KeyParamInfo *p;
+    Tcl_DString         valueDs, encodeDs;
+    int                 result = TCL_OK;
+
+    Tcl_DStringInit(&valueDs);
+    Tcl_DStringInit(&encodeDs);
+
+    for (p = params; p->ossl_name != NULL; ++p) {
+        Tcl_Obj *valueObj = NULL;
+
+        switch (p->type) {
+        case PARAM_TYPE_BN: {
+            BIGNUM *bn = NULL;
+
+            /*
+             * Missing parameter: skip silently.
+             */
+            if (EVP_PKEY_get_bn_param(pkey, p->ossl_name, &bn) != 1) {
+                Ns_Log(Warning, "DictAddKeyParams: skipped unavailable parameter '%s'",  p->ossl_name);
+                continue;
+            }
+
+            Tcl_DStringSetLength(&encodeDs, 0);
+            if (p->width > 0u) {
+                Tcl_DStringSetLength(&valueDs, (TCL_SIZE_T)p->width);
+                if (BN_bn2binpad(bn, (unsigned char *)valueDs.string,
+                                 (int)p->width) != (int)p->width) {
+                    result = SetResultFromOsslError(interp, "could not encode key parameter");
+                    BN_clear_free(bn);
+                    goto done;
+                }
+                valueObj = EncodedObjFromBytes((unsigned char *)valueDs.string,
+                                               p->width, encoding, &encodeDs);
+            } else {
+                size_t len = (size_t)BN_num_bytes(bn);
+
+                /*
+                 * Minimal-length encoding.  Preserve zero as empty/minimal
+                 * behavior consistent with BN_num_bytes().
+                 */
+                Tcl_DStringSetLength(&valueDs, (TCL_SIZE_T)len);
+                if (len > 0u) {
+                    (void)BN_bn2bin(bn, (unsigned char *)valueDs.string);
+                }
+                valueObj = EncodedObjFromBytes((unsigned char *)valueDs.string,
+                                               len, encoding, &encodeDs);
+            }
+            BN_clear_free(bn);
+            break;
+        }
+
+        case PARAM_TYPE_OCTETS: {
+            size_t  len = 0u;
+
+            if (EVP_PKEY_get_octet_string_param(pkey, p->ossl_name,
+                                                NULL, 0, &len) != 1) {
+                Ns_Log(Warning, "DictAddKeyParams: skipped unavailable parameter '%s'",  p->ossl_name);
+                continue;
+            }
+
+            Tcl_DStringSetLength(&valueDs, (TCL_SIZE_T)len);
+
+            if (EVP_PKEY_get_octet_string_param(pkey, p->ossl_name,
+                                                (unsigned char *)valueDs.string,
+                                                len, &len) != 1) {
+                result = SetResultFromOsslError(interp, "could not obtain key parameter");
+                goto done;
+            }
+
+            Tcl_DStringSetLength(&encodeDs, 0);
+            valueObj = EncodedObjFromBytes((unsigned char *)valueDs.string,
+                                           len, encoding, &encodeDs);
+            break;
+
+        }
+        case PARAM_TYPE_UTF8: {
+            size_t  len = 0u;
+
+            if (EVP_PKEY_get_utf8_string_param(pkey, p->ossl_name,
+                                               NULL, 0, &len) != 1) {
+                Ns_Log(Warning, "DictAddKeyParams: skipped unavailable parameter '%s'",  p->ossl_name);
+                continue;
+            }
+
+            Tcl_DStringSetLength(&valueDs, (TCL_SIZE_T)(len + 1u));
+
+            if (EVP_PKEY_get_utf8_string_param(pkey, p->ossl_name,
+                                               valueDs.string, len + 1u, &len) != 1) {
+                result = SetResultFromOsslError(interp, "could not obtain key parameter");
+                goto done;
+            }
+
+            valueObj = Tcl_NewStringObj(valueDs.string, (TCL_SIZE_T)len);
+            break;
+        }
+        case PARAM_TYPE_INT: {
+            int value;
+
+            if (EVP_PKEY_get_int_param(pkey, p->ossl_name, &value) != 1) {
+                Ns_Log(Warning, "DictAddKeyParams: skipped unavailable parameter '%s'",  p->ossl_name);
+                continue;
+            }
+            valueObj = Tcl_NewIntObj(value);
+            break;
+        }
+
+        case PARAM_TYPE_UINT32: {
+            uint32_t   value;
+            OSSL_PARAM getParams[2];
+
+            getParams[0] = OSSL_PARAM_construct_uint32(p->ossl_name, &value);
+            getParams[1] = OSSL_PARAM_construct_end();
+
+            if (EVP_PKEY_get_params(pkey, getParams) != 1) {
+                Ns_Log(Warning, "DictAddKeyParams: skipped unavailable parameter '%s'",  p->ossl_name);
+                continue;
+            }
+            valueObj = Tcl_NewWideIntObj((Tcl_WideInt)value);
+            break;
+        }
+
+        case PARAM_TYPE_UINT64: {
+            uint64_t   value;
+            OSSL_PARAM getParams[2];
+
+            getParams[0] = OSSL_PARAM_construct_uint64(p->ossl_name, &value);
+            getParams[1] = OSSL_PARAM_construct_end();
+
+            if (EVP_PKEY_get_params(pkey, getParams) != 1) {
+                Ns_Log(Warning, "DictAddKeyParams: skipped unavailable parameter '%s'",  p->ossl_name);
+                continue;
+            }
+            valueObj = Tcl_NewWideIntObj((Tcl_WideInt)value);
+            break;
+        }
+        }
+
+        if (valueObj != NULL) {
+            Tcl_DictObjPut(interp, dictObj,
+                           Tcl_NewStringObj(p->dict_key, TCL_INDEX_NONE),
+                           valueObj);
+        }
+    }
+ done:
+    Tcl_DStringFree(&valueDs);
+    Tcl_DStringFree(&encodeDs);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParamBuildFromEntries --
+ *
+ *      Build an OSSL_PARAM array from a declarative table of parameter
+ *      descriptions.
+ *
+ *      The provided ParamBuildEntry array specifies the OpenSSL
+ *      parameter key, type, and value for each entry. This function
+ *      uses OSSL_PARAM_BLD to construct the parameter array and
+ *      returns the finalized OSSL_PARAM block suitable for use with
+ *      provider-based APIs such as EVP_PKEY_fromdata().
+ *
+ *      For PARAM_TYPE_BN entries, width == 0 uses minimal BIGNUM
+ *      encoding, while width > 0 requests zero-padded fixed-width
+ *      encoding via OSSL_PARAM_BLD_push_BN_pad().
+ *
+ * Results:
+ *      OSSL_PARAM * on success.
+ *
+ *      NULL on failure. An error message is left in the interpreter
+ *      result.
+ *
+ * Side effects:
+ *      Allocates an OSSL_PARAM array and associated storage managed by
+ *      OpenSSL. The caller must release the returned array with
+ *      OSSL_PARAM_free().
+ *
+ *----------------------------------------------------------------------
+ */
+static OSSL_PARAM *
+ParamBuildFromEntries(Tcl_Interp *interp, const ParamBuildEntry *entries)
+{
+    OSSL_PARAM_BLD        *bld = NULL;
+    OSSL_PARAM            *params = NULL;
+    const ParamBuildEntry *e;
+
+    NS_NONNULL_ASSERT(entries != NULL);
+
+    bld = OSSL_PARAM_BLD_new();
+    if (bld == NULL) {
+        (void)SetResultFromOsslError(interp, "could not allocate parameter builder");
+        return NULL;
+    }
+
+    for (e = entries; e->key != NULL; ++e) {
+        int ok = 0;
+
+        switch (e->type) {
+        case PARAM_TYPE_UTF8:
+            ok = OSSL_PARAM_BLD_push_utf8_string(bld,
+                                                 e->key,
+                                                 e->value.utf8,
+                                                 0);
+            break;
+
+        case PARAM_TYPE_OCTETS:
+            ok = OSSL_PARAM_BLD_push_octet_string(bld,
+                                                  e->key,
+                                                  e->value.octets.data,
+                                                  e->value.octets.len);
+            break;
+
+        case PARAM_TYPE_BN:
+            if (e->value.bignum.width > 0u) {
+                ok = OSSL_PARAM_BLD_push_BN_pad(bld,
+                                                e->key,
+                                                e->value.bignum.bn,
+                                                e->value.bignum.width);
+            } else {
+                ok = OSSL_PARAM_BLD_push_BN(bld,
+                                            e->key,
+                                            e->value.bignum.bn);
+            }
+            break;
+
+        case PARAM_TYPE_INT:
+            ok = OSSL_PARAM_BLD_push_int(bld,
+                                         e->key,
+                                         e->value.i);
+            break;
+
+        case PARAM_TYPE_UINT32:
+            ok = OSSL_PARAM_BLD_push_uint32(bld,
+                                            e->key,
+                                            e->value.u32);
+            break;
+
+        case PARAM_TYPE_UINT64:
+            ok = OSSL_PARAM_BLD_push_uint64(bld,
+                                            e->key,
+                                            e->value.u64);
+            break;
+        }
+
+        if (ok != 1) {
+            OSSL_PARAM_BLD_free(bld);
+            (void)SetResultFromOsslError(interp, "could not build OSSL_PARAM entry");
+            return NULL;
+        }
+    }
+
+    params = OSSL_PARAM_BLD_to_param(bld);
+    OSSL_PARAM_BLD_free(bld);
+
+    if (params == NULL) {
+        (void)SetResultFromOsslError(interp, "could not finalize OSSL_PARAM array");
+        return NULL;
+    }
+
+    return params;
+}
+
+# endif /* HAVE_OPENSSL_3 */
 
 /*
  *----------------------------------------------------------------------
@@ -564,7 +945,7 @@ AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
 
 # else
 /*
- * OpenSSL 1.x: use legacy API
+ * OpenSSL 1.1.1: use legacy API
  */
 static bool
 AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen) {
@@ -582,7 +963,6 @@ AEAD_Get_tag(EVP_CIPHER_CTX *ctx,
     return EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG,
                                (int)taglen, tag);
 }
-
 # endif /* HAVE_OPENSSL_3 */
 
 /*
@@ -4520,7 +4900,7 @@ static int
 CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         result, isBinary = 0, encodingInt = -1;
+    int         result = TCL_ERROR, isBinary = 0, encodingInt = -1;
     Tcl_Obj    *importObj = NULL;
 
     Ns_ObjvSpec lopts[] = {
@@ -4559,27 +4939,15 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {
             EVP_PKEY_CTX   *ctx = NULL;
             EVP_PKEY       *pkey = NULL;
-            OSSL_PARAM_BLD *bld = NULL;
             OSSL_PARAM     *params = NULL;
+            ParamBuildEntry entries[] = {
+                { OSSL_PKEY_PARAM_GROUP_NAME, PARAM_TYPE_UTF8, { .utf8 = "prime256v1" } },
+                { OSSL_PKEY_PARAM_PUB_KEY, PARAM_TYPE_OCTETS,  { .octets = { rawKeyString, (size_t)rawKeyLength } } },
+                { NULL, 0, {0} }
+            };
 
-            bld = OSSL_PARAM_BLD_new();
-            if (bld == NULL) {
-                result = SetResultFromOsslError(interp, "could not allocate EC parameter builder");
-                goto done3;
-            }
-
-            if (!OSSL_PARAM_BLD_push_utf8_string(bld, OSSL_PKEY_PARAM_GROUP_NAME,
-                                                 "prime256v1", 0)
-                || !OSSL_PARAM_BLD_push_octet_string(bld, OSSL_PKEY_PARAM_PUB_KEY,
-                                                     rawKeyString,
-                                                     (size_t)rawKeyLength)) {
-                result = SetResultFromOsslError(interp, "could not build EC public key parameters");
-                goto done3;
-            }
-
-            params = OSSL_PARAM_BLD_to_param(bld);
+            params = ParamBuildFromEntries(interp, entries);
             if (params == NULL) {
-                result = SetResultFromOsslError(interp, "could not create EC public key parameters");
                 goto done3;
             }
 
@@ -4606,9 +4974,6 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }
             if (params != NULL) {
                 OSSL_PARAM_free(params);
-            }
-            if (bld != NULL) {
-                OSSL_PARAM_BLD_free(bld);
             }
         }
 #else
@@ -7074,8 +7439,9 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
 
     return TCL_OK;
 }
-#endif /* HAVE_OPENSSL_3 */
+# endif /* HAVE_OPENSSL_3 */
 
+# ifndef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
@@ -7128,122 +7494,7 @@ PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
     result = TCL_OK;
     return result;
 }
-
-# ifdef HAVE_OPENSSL_3
-/*
- *----------------------------------------------------------------------
- *
- * PkeyInfoPutOctets --
- *
- *      Store a raw octet string under the specified dictionary key after
- *      applying the requested binary encoding.
- *
- *      This helper is intended for public key components that are
- *      naturally represented as raw bytes rather than integer values,
- *      such as the public key value of OKP-style key types.
- *
- * Results:
- *      TCL_OK on success, TCL_ERROR on allocation failure.
- *      On error, an explanatory message is left in the interpreter.
- *
- * Side effects:
- *      Adds the encoded value to resultObj under "name".
- *      Allocates and frees a temporary copy buffer.
- *
- *----------------------------------------------------------------------
- */
-static int
-PkeyInfoPutOctets(Tcl_Interp *interp, Tcl_Obj *resultObj,
-                  const char *name,
-                  const unsigned char *value, size_t valueLen,
-                  Ns_BinaryEncoding encoding)
-{
-    unsigned char *buf;
-    int            result = TCL_ERROR;
-
-    buf = ns_malloc(valueLen);
-    if (buf == NULL) {
-        Ns_TclPrintfResult(interp, "could not allocate buffer for %s", name);
-        return TCL_ERROR;
-    }
-
-    memcpy(buf, value, valueLen);
-
-    Tcl_DictObjPut(interp, resultObj,
-                   Tcl_NewStringObj(name, TCL_INDEX_NONE),
-                   NsEncodedObj(buf, valueLen, NULL, encoding));
-    ns_free(buf);
-
-    result = TCL_OK;
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PkeyInfoPutOctetParam --
- *
- *      Query an octet-string parameter from an OpenSSL 3 EVP_PKEY and
- *      store it in the result dictionary under the specified key after
- *      applying the requested binary encoding.
- *
- *      This helper is used for provider-based key types whose public
- *      components are exposed as octet-string parameters, such as the
- *      public value of OKP-style key types.
- *
- * Results:
- *      TCL_OK on success, TCL_ERROR if the parameter cannot be queried,
- *      memory allocation fails, or the value cannot be stored.
- *      On error, an explanatory message is left in the interpreter.
- *
- * Side effects:
- *      Adds the encoded parameter value to resultObj under "dictName".
- *      Allocates and frees a temporary buffer.
- *
- *----------------------------------------------------------------------
- */
-static int
-PkeyInfoPutOctetParam(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
-                      const char *dictName, const char *paramName,
-                      Ns_BinaryEncoding encoding)
-{
-    unsigned char *buf = NULL;
-    size_t         len = 0u;
-    int            result = TCL_ERROR;
-
-    if (EVP_PKEY_get_octet_string_param(pkey, paramName,
-                                        NULL, 0, &len) != 1) {
-        Ns_TclPrintfResult(interp, "could not obtain %s length", dictName);
-        goto done;
-    }
-
-    buf = ns_malloc(len);
-    if (buf == NULL) {
-        Ns_TclPrintfResult(interp, "could not allocate buffer for %s", dictName);
-        goto done;
-    }
-
-    if (EVP_PKEY_get_octet_string_param(pkey, paramName,
-                                        buf, len, &len) != 1) {
-        Ns_TclPrintfResult(interp, "could not obtain %s value", dictName);
-        goto done;
-    }
-
-    if (PkeyInfoPutOctets(interp, resultObj, dictName, buf, len, encoding) != TCL_OK) {
-        goto done;
-    }
-
-    result = TCL_OK;
-
-done:
-    if (buf != NULL) {
-        ns_free(buf);
-    }
-    return result;
-}
-
-# endif /* HAVE_OPENSSL_3 */
-
+# endif /* !HAVE_OPENSSL_3 */
 
 /*
  *----------------------------------------------------------------------
@@ -7279,19 +7530,19 @@ static int
 PkeyInfoPutOkpDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
                       Ns_BinaryEncoding encoding)
 {
-    if (PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)
-        || PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)
-        || PkeyIsType(pkey, "X25519", EVP_PKEY_X25519)
-        || PkeyIsType(pkey, "X448", EVP_PKEY_X448)) {
+    if (!(PkeyIsType(pkey, "ED25519", EVP_PKEY_ED25519)
+          || PkeyIsType(pkey, "ED448", EVP_PKEY_ED448)
+          || PkeyIsType(pkey, "X25519", EVP_PKEY_X25519)
+          || PkeyIsType(pkey, "X448", EVP_PKEY_X448))) {
+        return TCL_OK;
 
-        if (PkeyInfoPutOctetParam(interp, resultObj, pkey,
-                                  "x", OSSL_PKEY_PARAM_PUB_KEY,
-                                  encoding) != TCL_OK) {
-            return TCL_ERROR;
-        }
+    } else {
+        static const KeyParamInfo okp_params[] = {
+            { OSSL_PKEY_PARAM_PUB_KEY, "x", PARAM_TYPE_OCTETS, 0 },
+            { NULL, NULL, 0, 0 }
+        };
+        return DictAddKeyParams(interp, pkey, okp_params, encoding, resultObj);
     }
-
-    return TCL_OK;
 }
 # else
 /* legacy implementation */
@@ -7302,6 +7553,60 @@ PkeyInfoPutOkpDetails(Tcl_Interp * UNUSED(interp), Tcl_Obj * UNUSED(resultObj), 
     return TCL_OK;
 }
 # endif /* HAVE_OPENSSL_3 */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictAddEcParams --
+ *
+ *      Add EC public coordinate parameters from the specified EVP_PKEY
+ *      to the provided Tcl dictionary.
+ *
+ *      The function first queries the EC group name from the key and
+ *      determines the coordinate width for the supported curve. It
+ *      then retrieves the public X and Y coordinates and stores them
+ *      in dictObj using fixed-width encoded values.
+ *
+ *      Unsupported curves are skipped silently by returning TCL_OK
+ *      without adding coordinates.
+ *
+ * Results:
+ *      TCL_OK on success. When the curve is supported, the dictionary
+ *      is updated with "x" and "y" entries.
+ *
+ *      TCL_ERROR on failure. An error message is left in the
+ *      interpreter result when required EC parameters cannot be
+ *      obtained or converted.
+ *
+ * Side effects:
+ *      Modifies dictObj by adding EC coordinate entries.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+DictAddEcParams(Tcl_Interp *interp, EVP_PKEY *pkey,
+                Ns_BinaryEncoding encoding, Tcl_Obj *dictObj)
+{
+    char   group_name[80];
+    size_t len = 0, coord_len = 0;
+
+    if (EVP_PKEY_get_utf8_string_param(pkey, OSSL_PKEY_PARAM_GROUP_NAME,
+                                       group_name, sizeof(group_name), &len) != 1) {
+        return SetResultFromOsslError(interp, "could not obtain group name");
+
+    } else if (EcGroupCoordinateLength(group_name, &coord_len) != TCL_OK) {
+        /* Unsupported curve – skip coordinates */
+        return TCL_OK;
+
+    } else {
+        const KeyParamInfo ec_params[] = {
+            { OSSL_PKEY_PARAM_EC_PUB_X, "x", PARAM_TYPE_BN, coord_len },
+            { OSSL_PKEY_PARAM_EC_PUB_Y, "y", PARAM_TYPE_BN, coord_len },
+            { NULL, NULL, 0, 0 }
+        };
+        return DictAddKeyParams(interp, pkey, ec_params, encoding, dictObj);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -7337,55 +7642,10 @@ static int
 PkeyInfoPutEcDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
                      Ns_BinaryEncoding encoding)
 {
-    char    groupName[80];
-    size_t  groupNameLen = 0u;
-    BIGNUM *x = NULL, *y = NULL;
-    size_t  coordLen;
-    int     result = TCL_ERROR;
-
     if (!PkeyIsType(pkey, "EC", EVP_PKEY_EC)) {
         return TCL_OK;
     }
-
-    if (EVP_PKEY_get_utf8_string_param(pkey,
-                                       OSSL_PKEY_PARAM_GROUP_NAME,
-                                       groupName, sizeof(groupName),
-                                       &groupNameLen) != 1) {
-        Ns_TclPrintfResult(interp, "could not obtain EC group name");
-        goto done;
-    }
-
-    if (EcGroupCoordinateLength(groupName, &coordLen) != TCL_OK) {
-        Ns_TclPrintfResult(interp, "unsupported EC group \"%s\"", groupName);
-        goto done;
-    }
-
-    if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_X, &x) != 1) {
-        Ns_TclPrintfResult(interp, "could not obtain EC x coordinate");
-        goto done;
-    }
-    if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_Y, &y) != 1) {
-        Ns_TclPrintfResult(interp, "could not obtain EC y coordinate");
-        goto done;
-    }
-
-    if (PkeyInfoPutBnPad(interp, resultObj, "x", x, coordLen, encoding) != TCL_OK) {
-        goto done;
-    }
-    if (PkeyInfoPutBnPad(interp, resultObj, "y", y, coordLen, encoding) != TCL_OK) {
-        goto done;
-    }
-
-    result = TCL_OK;
-
-done:
-    if (x != NULL) {
-        BN_free(x);
-    }
-    if (y != NULL) {
-        BN_free(y);
-    }
-    return result;
+    return DictAddEcParams(interp, pkey, encoding, resultObj);
 }
 # else
 /* legacy implementation */
@@ -7474,75 +7734,49 @@ done:
 }
 # endif /* HAVE_OPENSSL_3 */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * PkeyInfoPutRsaDetails --
+ *
+ *      Add RSA-specific key details to the provided Tcl dictionary.
+ *
+ *      For RSA and RSA-PSS keys, the function queries provider-side
+ *      RSA parameters and stores them in resultObj using the requested
+ *      binary encoding. The current implementation exports the public
+ *      modulus ("n") and public exponent ("e").
+ *
+ *      Keys of other types are ignored and cause the function to
+ *      return TCL_OK without modifying the dictionary.
+ *
+ * Results:
+ *      TCL_OK on success.
+ *
+ *      TCL_ERROR on failure. An error message is left in the
+ *      interpreter result when required RSA parameters cannot be
+ *      obtained or converted.
+ *
+ * Side effects:
+ *      Modifies resultObj by adding RSA parameter entries.
+ *
+ *----------------------------------------------------------------------
+ */
 # ifdef HAVE_OPENSSL_3
 static int
-PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding  encoding)
+PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
 {
-    BIGNUM *n = NULL, *e = NULL;
-    int result = TCL_ERROR;
+    static const KeyParamInfo rsa_params[] = {
+        { OSSL_PKEY_PARAM_RSA_N, "n", PARAM_TYPE_BN, 0 },
+        { OSSL_PKEY_PARAM_RSA_E, "e", PARAM_TYPE_BN, 0 },
+        //{ OSSL_PKEY_PARAM_RSA_D, "d", PARAM_TYPE_BN, 0 },
+        { NULL, NULL, 0, 0 }
+    };
 
     if (!PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
         && !PkeyIsType(pkey, "RSA-PSS", EVP_PKEY_RSA_PSS)) {
         return TCL_OK;
     }
-
-    if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, &n) != 1) {
-        goto done;
-    }
-    if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_E, &e) != 1) {
-        goto done;
-    }
-
-    if (n != NULL) {
-        int nLen = BN_num_bytes(n);
-        unsigned char *buf = ns_malloc((size_t)nLen);
-
-        if (buf == NULL) {
-            Ns_TclPrintfResult(interp, "could not allocate RSA modulus buffer");
-            goto done;
-        }
-        if (BN_bn2bin(n, buf) != nLen) {
-            ns_free(buf);
-            Ns_TclPrintfResult(interp, "could not convert RSA modulus");
-            goto done;
-        }
-
-        Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("n", TCL_INDEX_NONE),
-                       NsEncodedObj(buf, (size_t)nLen, NULL, encoding));
-        ns_free(buf);
-    }
-
-    if (e != NULL) {
-        int            eLen = BN_num_bytes(e);
-        unsigned char *buf = ns_malloc((size_t)eLen);
-
-        if (buf == NULL) {
-            Ns_TclPrintfResult(interp, "could not allocate RSA exponent buffer");
-            goto done;
-        }
-        if (BN_bn2bin(e, buf) != eLen) {
-            ns_free(buf);
-            Ns_TclPrintfResult(interp, "could not convert RSA exponent");
-            goto done;
-        }
-
-        Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("e", TCL_INDEX_NONE),
-                       NsEncodedObj(buf, (size_t)eLen, NULL, encoding));
-        ns_free(buf);
-    }
-
-    result = TCL_OK;
-
-done:
-    if (n != NULL) {
-        BN_free(n);
-    }
-    if (e != NULL) {
-        BN_free(e);
-    }
-    return result;
+    return DictAddKeyParams(interp, pkey, rsa_params, encoding, resultObj);
 }
 
 #else
