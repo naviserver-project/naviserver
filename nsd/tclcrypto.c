@@ -7592,6 +7592,8 @@ PkeyInfoPutOkpDetails(Tcl_Interp * UNUSED(interp), Tcl_Obj * UNUSED(resultObj), 
 }
 # endif /* HAVE_OPENSSL_3 */
 
+
+# ifdef HAVE_OPENSSL_3
 /*
  *----------------------------------------------------------------------
  *
@@ -7645,6 +7647,7 @@ DictAddEcParams(Tcl_Interp *interp, EVP_PKEY *pkey,
         return DictAddKeyParams(interp, pkey, ec_params, encoding, dictObj);
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
