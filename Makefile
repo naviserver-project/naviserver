@@ -333,7 +333,7 @@ $(PEM_FILE): $(PEM_PRIVATE)
 	$(OPENSSL) req -new -config $(SSLCONFIG) -x509 -nodes -sha256 -days 365 -key host.key > host.cert
 	$(CAT) host.cert host.key > server.pem
 	$(RM) -rf host.cert host.key
-	$(OPENSSL) dhparam 1024 >> server.pem
+	#$(OPENSSL) dhparam 1024 >> server.pem
 	$(MKDIR) certificates
 	$(CP) server.pem certificates/
 	$(MV) server.pem $(PEM_FILE)
