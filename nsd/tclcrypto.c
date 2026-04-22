@@ -143,6 +143,7 @@ typedef struct {
 typedef struct {
     const char   *key;   /* OSSL_PARAM key (e.g., OSSL_PKEY_PARAM_GROUP_NAME) */
     KeyParamType  type;
+    bool enabled;
     union {
         const char *utf8;
         struct {
@@ -472,6 +473,8 @@ static int DictAddKeyParams(Tcl_Interp *interp, EVP_PKEY *pkey, const KeyParamIn
                             Ns_BinaryEncoding encoding, Tcl_Obj *dictObj)
     NS_GNUC_NONNULL(1,2,3,5);
 
+static OSSL_PARAM *ParamBuildFromEntries(Tcl_Interp *interp, const ParamBuildEntry *entries)
+    NS_GNUC_NONNULL(1,2);
 # endif /* HAVE_OPENSSL_3 */
 
 # ifdef HAVE_OPENSSL_3_5
@@ -766,8 +769,6 @@ ParamBuildFromEntries(Tcl_Interp *interp, const ParamBuildEntry *entries)
     OSSL_PARAM            *params = NULL;
     const ParamBuildEntry *e;
 
-    NS_NONNULL_ASSERT(entries != NULL);
-
     bld = OSSL_PARAM_BLD_new();
     if (bld == NULL) {
         (void)SetResultFromOsslError(interp, "could not allocate parameter builder");
@@ -776,6 +777,10 @@ ParamBuildFromEntries(Tcl_Interp *interp, const ParamBuildEntry *entries)
 
     for (e = entries; e->key != NULL; ++e) {
         int ok = 0;
+
+        if (!e->enabled) {
+            continue;
+        }
 
         switch (e->type) {
         case PARAM_TYPE_UTF8:
@@ -2321,21 +2326,27 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     result = SetResultFromOsslError(interp, "could not allocate HMAC context");
 
                 } else {
-                    OSSL_PARAM params[2];
-                    size_t     digestNameLen = strlen(digestName);
+                    OSSL_PARAM     *params;
+                    ParamBuildEntry entries[] = {
+                        { OSSL_MAC_PARAM_DIGEST, PARAM_TYPE_UTF8, NS_TRUE, { .utf8 = digestName } },
+                        { NULL, 0, 0, {0} }
+                    };
 
-                    params[0] = OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST,
-                                                                 (char *)digestName,
-                                                                 digestNameLen);
-                    params[1] = OSSL_PARAM_construct_end();
+                    params = ParamBuildFromEntries(interp, entries);
+                    if (params == NULL) {
+                        result = TCL_ERROR;
 
-                    if (EVP_MAC_init(ctx, keyString, (size_t)keyLength, params) != 1) {
+                    } else if (EVP_MAC_init(ctx, keyString, (size_t)keyLength, params) != 1) {
                         result = SetResultFromOsslError(interp, "could not initialize HMAC context");
 
                     } else {
                         Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
                         ctx = NULL; /* ownership transferred */
                         result = TCL_OK;
+                    }
+
+                    if (params != NULL) {
+                        OSSL_PARAM_free(params);
                     }
                 }
                 if (mac != NULL) {
@@ -3600,7 +3611,6 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         Tcl_DString          saltDs, secretDs;
         TCL_SIZE_T           saltLength, secretLength;
         const unsigned char *saltString, *secretString;
-        OSSL_PARAM           params[6], *p = params;
         uint64_t             nValueSSL = (uint64_t)nValue;
         uint32_t             pValueSSL = (uint32_t)pValue;
         uint32_t             rValueSSL = (uint32_t)rValue;
@@ -3615,42 +3625,54 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
 
         kdf = EVP_KDF_fetch(NULL, "SCRYPT", NULL);
-        kctx = EVP_KDF_CTX_new(kdf);
-        EVP_KDF_free(kdf);
-
-        *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
-                                                 ns_const2voidp(secretString),
-                                                 (size_t)secretLength);
-        *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
-                                                 ns_const2voidp(saltString),
-                                                 (size_t)saltLength);
-        *p++ = OSSL_PARAM_construct_uint64(OSSL_KDF_PARAM_SCRYPT_N, &nValueSSL);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, &rValueSSL);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, &pValueSSL);
-        *p = OSSL_PARAM_construct_end();
-
-        if (EVP_KDF_derive(kctx, out, sizeof(out), params) <= 0) {
-            Ns_TclPrintfResult(interp, "could not derive key");
-            result = TCL_ERROR;
+        if (kdf == NULL) {
+            result = SetResultFromOsslError(interp, "could not fetch SCRYPT implementation");
 
         } else {
-            /*
-             * Convert the result to the output format and set the interp
-             * result.
-             */
-            /*printf("Output = %s\n", OPENSSL_buf2hexstr(out, sizeof(out)));*/
+            kctx = EVP_KDF_CTX_new(kdf);
+            EVP_KDF_free(kdf);
 
-            Tcl_SetObjResult(interp, NsEncodedObj(out, sizeof(out), NULL, encoding));
-            result = TCL_OK;
+            if (kctx == NULL) {
+                result = SetResultFromOsslError(interp, "could not allocate SCRYPT context");
+
+            } else {
+                OSSL_PARAM *params = NULL;
+                ParamBuildEntry entries[] = {
+                    { OSSL_KDF_PARAM_PASSWORD, PARAM_TYPE_OCTETS, NS_TRUE, { .octets = { secretString, (size_t)secretLength } } },
+                    { OSSL_KDF_PARAM_SALT, PARAM_TYPE_OCTETS,     NS_TRUE, { .octets = { saltString, (size_t)saltLength } } },
+                    { OSSL_KDF_PARAM_SCRYPT_N, PARAM_TYPE_UINT64, NS_TRUE, { .u64 = nValueSSL } },
+                    { OSSL_KDF_PARAM_SCRYPT_R, PARAM_TYPE_UINT32, NS_TRUE, { .u32 = rValueSSL } },
+                    { OSSL_KDF_PARAM_SCRYPT_P, PARAM_TYPE_UINT32, NS_TRUE, { .u32 = pValueSSL } },
+                    { NULL, 0, 0, {0} }
+                };
+
+                params = ParamBuildFromEntries(interp, entries);
+                if (params == NULL) {
+                    result = TCL_ERROR;
+
+                } else if (EVP_KDF_derive(kctx, out, sizeof(out), params) <= 0) {
+                    result = SetResultFromOsslError(interp, "could not derive key");
+
+                } else {
+                    Tcl_SetObjResult(interp, NsEncodedObj(out, sizeof(out), NULL, encoding));
+                    result = TCL_OK;
+                }
+
+                if (params != NULL) {
+                    OSSL_PARAM_free(params);
+                }
+            }
+
+            if (kctx != NULL) {
+                EVP_KDF_CTX_free(kctx);
+            }
         }
-
         /*
          * Clean up.
          */
         Tcl_DStringFree(&saltDs);
         Tcl_DStringFree(&secretDs);
 
-        EVP_KDF_CTX_free(kctx);
     }
 
     return result;
@@ -3701,7 +3723,7 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 int
 NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                result, isBinary = 0, encodingInt = -1,
+    int                result = TCL_OK, isBinary = 0, encodingInt = -1,
                        memcost = 1024, iter = 3, lanes = 1, threads = 1, outlen = 64;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *adObj = NULL, *passObj = NULL;
     const char        *variant = "Argon2id";
@@ -3737,12 +3759,10 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 
     } else {
         Ns_BinaryEncoding    encoding = (encodingInt == -1 ? NS_OBJ_ENCODING_HEX : (Ns_BinaryEncoding)encodingInt);
-        EVP_KDF             *kdf;
-        EVP_KDF_CTX         *kctx = NULL;
         Tcl_DString          saltDs, secretDs, adDs, passDs, outDs;
         TCL_SIZE_T           saltLength, secretLength = 0, adLength = 0, passLength = 0;
         const unsigned char *saltString, *secretString = NULL, *adString = NULL, *passString = NULL;
-        OSSL_PARAM           params[9], *p = params;
+        OSSL_PARAM          *params = NULL;
         uint32_t             memcostSSL = (uint32_t)memcost; // memory, OSSL_KDF_PARAM_ARGON2_MEMCOST
         uint32_t             iterSSL = (uint32_t)iter; // passes, OSSL_KDF_PARAM_ITER
         uint32_t             lanesSSL = (uint32_t)lanes; // lanes, OSSL_KDF_PARAM_ARGON2_LANES
@@ -3757,14 +3777,7 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         Tcl_DStringInit(&passDs);
         Tcl_DStringInit(&outDs);
 
-        if (threads > 1) {
-            if (OSSL_set_max_threads(NULL, threadsSSL) != 1) {
-                Ns_TclPrintfResult(interp, "could not set max threads");
-                result = TCL_ERROR;
-                goto cleanup;
-            }
-            *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_THREADS, &threadsSSL);
-        }
+        ERR_clear_error();
 
         saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
         if (saltLength < 8) {
@@ -3773,70 +3786,83 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
             goto cleanup;
         }
         //NsHexPrint("saltString", saltString, (size_t)saltLength, 32, NS_FALSE);
-        *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
-                                                 ns_const2voidp(saltString),
-                                                 (size_t)saltLength);
 
         if (secretObj != NULL) {
             secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
-            //NsHexPrint("secretString", secretString, (size_t)secretLength, 32, NS_FALSE);
-            *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SECRET,
-                                                     ns_const2voidp(secretString),
-                                                     (size_t)secretLength);
         }
         if (adObj != NULL) {
             adString = Ns_GetBinaryString(adObj,     isBinary == 1, &adLength,     &adDs);
             //NsHexPrint("adString", adString, (size_t)adLength, 32, NS_FALSE);
-            *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_ARGON2_AD,
-                                                     ns_const2voidp(adString),
-                                                     (size_t)adLength);
         }
         if (passObj != NULL) {
             passString = Ns_GetBinaryString(passObj, isBinary == 1, &passLength,   &passDs);
-            //NsHexPrint("passString", passString, (size_t)passLength, 32, NS_FALSE);
-            *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
-                                                     ns_const2voidp(passString),
-                                                     (size_t)passLength);
         }
 
-        /*fprintf(stderr, "variant %s pass (%d) secret (%d) salt (%d) threads %d iter %d lanes %d memcost %d\n",
-                variant,
-                passLength, secretLength, saltLength,
-                threads, iterSSL, lanesSSL, memcostSSL);*/
+        if (threads > 1) {
+            if (OSSL_set_max_threads(NULL, threadsSSL) != 1) {
+                result = SetResultFromOsslError(interp, "could not set max threads");
+                goto cleanup;
+            }
+        }
 
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_ARGON2_LANES, &lanesSSL);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_ARGON2_MEMCOST, &memcostSSL);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_ITER, &iterSSL);
-        *p = OSSL_PARAM_construct_end();
+        if (result == TCL_OK) {
+            EVP_KDF_CTX    *kctx = NULL;
+            EVP_KDF        *kdf = NULL;
+            ParamBuildEntry entries[] = {
+                { OSSL_KDF_PARAM_THREADS, PARAM_TYPE_UINT32,       threads > 1, {.u32 = threadsSSL} },
+                { OSSL_KDF_PARAM_SALT, PARAM_TYPE_OCTETS,              NS_TRUE, {.octets = {saltString, (size_t)saltLength}} },
+                { OSSL_KDF_PARAM_SECRET, PARAM_TYPE_OCTETS, secretObj != NULL,  {.octets = {secretString, (size_t)secretLength}} },
+                { OSSL_KDF_PARAM_ARGON2_AD, PARAM_TYPE_OCTETS,  adObj != NULL,  {.octets = {adString, (size_t)adLength}} },
+                { OSSL_KDF_PARAM_PASSWORD, PARAM_TYPE_OCTETS, passObj != NULL,  {.octets = {passString, (size_t)passLength}} },
+                { OSSL_KDF_PARAM_ARGON2_LANES, PARAM_TYPE_UINT32,      NS_TRUE, {.u32 = lanesSSL} },
+                { OSSL_KDF_PARAM_ARGON2_MEMCOST, PARAM_TYPE_UINT32,    NS_TRUE, {.u32 = memcostSSL} },
+                { OSSL_KDF_PARAM_ITER, PARAM_TYPE_UINT32,              NS_TRUE, {.u32 = iterSSL} },
+                { NULL, 0, 0, {0} }
+            };
 
-        kdf = EVP_KDF_fetch(NULL, variant, NULL);
-        if (kdf != NULL) {
+            /*fprintf(stderr, "variant %s pass (%d) secret (%d) salt (%d) threads %d iter %d lanes %d memcost %d\n",
+              variant,
+              passLength, secretLength, saltLength,
+              threads, iterSSL, lanesSSL, memcostSSL);*/
+
+            params = ParamBuildFromEntries(interp, entries);
+            if (params == NULL) {
+                result = TCL_ERROR;
+                goto cleanup;
+            }
+
+            kdf = EVP_KDF_fetch(NULL, variant, NULL);
+            if (kdf == NULL) {
+                result = SetResultFromOsslError(interp, "argon2: could not fetch kdf");
+                goto cleanup;
+            }
             kctx = EVP_KDF_CTX_new(kdf);
+            if (kctx == NULL) {
+                result = SetResultFromOsslError(interp, "argon2: could not initialize KDF context");
+                goto cleanup;
+            }
             EVP_KDF_free(kdf);
-        }
-        if (kctx == NULL) {
-            Ns_TclPrintfResult(interp, "argon2: could not initialize KDF context for algorithm '%s'", variant);
-            result = TCL_ERROR;
-            goto cleanup;
-        }
 
-        Tcl_DStringSetLength(&outDs, (TCL_SIZE_T)outlen);
-        ERR_clear_error();
+            Tcl_DStringSetLength(&outDs, (TCL_SIZE_T)outlen);
 
-        if (EVP_KDF_CTX_set_params(kctx, params) <= 0) {
-            result = SetResultFromOsslError(interp, "argon2: could not set parameters");
+            if (EVP_KDF_CTX_set_params(kctx, params) <= 0) {
+                result = SetResultFromOsslError(interp, "argon2: could not set parameters");
 
-        } else if (EVP_KDF_derive(kctx, (unsigned char *)outDs.string, (size_t)outlen, params) <= 0) {
-            result = SetResultFromOsslError(interp, "argon2: could not derive key");
-        }  else {
-            /*
-             * Convert the result to the output format and set the interp
-             * result.
-             */
-            //fprintf(stderr, "Output = %s\n", OPENSSL_buf2hexstr((unsigned char *)outDs.string, outlen));
+            } else if (EVP_KDF_derive(kctx, (unsigned char *)outDs.string, (size_t)outlen, params) <= 0) {
+                result = SetResultFromOsslError(interp, "argon2: could not derive key");
+            }  else {
+                /*
+                 * Convert the result to the output format and set the interp
+                 * result.
+                 */
+                //fprintf(stderr, "Output = %s\n", OPENSSL_buf2hexstr((unsigned char *)outDs.string, outlen));
 
-            Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)outDs.string, (size_t)outlen, NULL, encoding));
-            result = TCL_OK;
+                Tcl_SetObjResult(interp, NsEncodedObj((unsigned char *)outDs.string, (size_t)outlen, NULL, encoding));
+                result = TCL_OK;
+            }
+            if (kctx != NULL) {
+                EVP_KDF_CTX_free(kctx);
+            }
         }
 
     cleanup:
@@ -3849,9 +3875,10 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         Tcl_DStringFree(&passDs);
         Tcl_DStringFree(&outDs);
 
-        if (kctx != NULL) {
-            EVP_KDF_CTX_free(kctx);
+        if (params != NULL) {
+            OSSL_PARAM_free(params);
         }
+
     }
 
     return result;
@@ -4074,10 +4101,10 @@ PkeyImportEcFromCoords(Tcl_Interp *interp,
                        int outputFormat,
                        const char *outfileName)
 {
-    int           result = TCL_ERROR;
-    EVP_PKEY_CTX *ctx = NULL;
-    EVP_PKEY     *pkey = NULL;
-    OSSL_PARAM    params[3];
+    int            result = TCL_ERROR;
+    EVP_PKEY_CTX  *ctx = NULL;
+    EVP_PKEY      *pkey = NULL;
+    OSSL_PARAM    *params = NULL;
     unsigned char *pub = NULL;
     size_t         coordLen, expectedLen;
 
@@ -4109,26 +4136,34 @@ PkeyImportEcFromCoords(Tcl_Interp *interp,
     memcpy(pub + 1, x, coordLen);
     memcpy(pub + 1 + coordLen, y, coordLen);
 
-    params[0] = OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME,
-                                                 (char *)groupName, 0);
-    params[1] = OSSL_PARAM_construct_octet_string(OSSL_PKEY_PARAM_PUB_KEY,
-                                                  pub, 1u + coordLen + coordLen);
-    params[2] = OSSL_PARAM_construct_end();
+    /* All input data is available. */
+    {
+        ParamBuildEntry entries[] = {
+            { OSSL_PKEY_PARAM_GROUP_NAME, PARAM_TYPE_UTF8, NS_TRUE, { .utf8 = groupName } },
+            { OSSL_PKEY_PARAM_PUB_KEY, PARAM_TYPE_OCTETS,  NS_TRUE, { .octets = { pub, 1u + coordLen + coordLen } } },
+            { NULL, 0, 0, {0} }
+        };
+
+        params = ParamBuildFromEntries(interp, entries);
+        if (params == NULL) {
+            goto done;
+        }
+    }
 
     ERR_clear_error();
     ctx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
     if (ctx == NULL) {
-        SetResultFromOsslError(interp, "could not create EC import context");
+        result = SetResultFromOsslError(interp, "could not create EC import context");
         goto done;
     }
 
     if (EVP_PKEY_fromdata_init(ctx) <= 0) {
-        SetResultFromOsslError(interp, "could not initialize EC key import");
+        result = SetResultFromOsslError(interp, "could not initialize EC key import");
         goto done;
     }
 
     if (EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_PUBLIC_KEY, params) <= 0) {
-        SetResultFromOsslError(interp, "could not import EC public key");
+        result = SetResultFromOsslError(interp, "could not import EC public key");
         goto done;
     }
 
@@ -4147,6 +4182,9 @@ done:
     }
     if (pub != NULL) {
         ns_free(pub);
+    }
+    if (params != NULL) {
+        OSSL_PARAM_free(params);
     }
     return result;
 }
@@ -4941,9 +4979,9 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             EVP_PKEY       *pkey = NULL;
             OSSL_PARAM     *params = NULL;
             ParamBuildEntry entries[] = {
-                { OSSL_PKEY_PARAM_GROUP_NAME, PARAM_TYPE_UTF8, { .utf8 = "prime256v1" } },
-                { OSSL_PKEY_PARAM_PUB_KEY, PARAM_TYPE_OCTETS,  { .octets = { rawKeyString, (size_t)rawKeyLength } } },
-                { NULL, 0, {0} }
+                { OSSL_PKEY_PARAM_GROUP_NAME, PARAM_TYPE_UTF8, NS_TRUE, { .utf8 = "prime256v1" } },
+                { OSSL_PKEY_PARAM_PUB_KEY, PARAM_TYPE_OCTETS,  NS_TRUE, { .octets = { rawKeyString, (size_t)rawKeyLength } } },
+                { NULL, 0, 0, {0} }
             };
 
             params = ParamBuildFromEntries(interp, entries);
@@ -9232,7 +9270,6 @@ SetResultFromEcSharedSecret(Tcl_Interp *interp,
     int             result = TCL_ERROR;
     char            groupName[80];
     size_t          groupNameLen = 0u;
-    OSSL_PARAM_BLD *bld = NULL;
     OSSL_PARAM     *params = NULL;
     EVP_PKEY_CTX   *importCtx = NULL;
     EVP_PKEY_CTX   *deriveCtx = NULL;
@@ -9254,26 +9291,18 @@ SetResultFromEcSharedSecret(Tcl_Interp *interp,
     }
 
     ERR_clear_error();
-    bld = OSSL_PARAM_BLD_new();
-    if (bld == NULL) {
-        SetResultFromOsslError(interp, "could not allocate parameter builder");
-        goto done;
-    }
 
-    if (!OSSL_PARAM_BLD_push_utf8_string(bld,
-                                         OSSL_PKEY_PARAM_GROUP_NAME,
-                                         groupName, 0)
-        || !OSSL_PARAM_BLD_push_octet_string(bld,
-                                             OSSL_PKEY_PARAM_PUB_KEY,
-                                             pubkey, pubkeyLen)) {
-        SetResultFromOsslError(interp, "could not build EC public key parameters");
-        goto done;
-    }
+    {
+        ParamBuildEntry entries[] = {
+            { OSSL_PKEY_PARAM_GROUP_NAME, PARAM_TYPE_UTF8, NS_TRUE, { .utf8 = groupName } },
+            { OSSL_PKEY_PARAM_PUB_KEY, PARAM_TYPE_OCTETS,  NS_TRUE, { .octets = { pubkey, pubkeyLen } } },
+            { NULL, 0, 0, {0} }
+        };
 
-    params = OSSL_PARAM_BLD_to_param(bld);
-    if (params == NULL) {
-        SetResultFromOsslError(interp, "could not create EC public key parameters");
-        goto done;
+        params = ParamBuildFromEntries(interp, entries);
+        if (params == NULL) {
+            goto done;
+        }
     }
 
     importCtx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
@@ -9340,9 +9369,7 @@ done:
     if (params != NULL) {
         OSSL_PARAM_free(params);
     }
-    if (bld != NULL) {
-        OSSL_PARAM_BLD_free(bld);
-    }
+
     return result;
 }
 # endif /* HAVE_OPENSSL_3 */
