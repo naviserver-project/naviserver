@@ -386,6 +386,7 @@ cppcheck:
 		--output-file=cppcheck-output.txt --checkers-report=cppcheck.txt  \
 		nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c nsssl/*.c quic/*.c \
 		-I./include  -I./nsssl -I./quic $(CPPCHECK_SYS_INCLUDES) -D__x86_64__ -DNDEBUG $(DEFS)
+	echo "log written to cppcheck-output.txt"
 
 CLANG_TIDY_CHECKS=
 #CLANG_TIDY_CHECKS=-checks=-*,performance-*,portability-*,cert-*,modernize-*
