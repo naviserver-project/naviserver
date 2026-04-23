@@ -821,7 +821,7 @@ test ns_crypto:eckey-1.7.0 {ns_crypto::eckey generate and return PEM as result} 
 } -match glob -result {*-----BEGIN *PRIVATE KEY-----*-----END *PRIVATE KEY-----*}
 
 test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -constraints {ec tcl86} -body {
-    ns_logctl severity Debug on
+    #ns_logctl severity Debug on
     ns_crypto::eckey generate -name prime256v1 -pem /tmp/p256-priv.pem
     set Phex [ns_crypto::eckey pub -pem /tmp/p256-priv.pem -encoding hex]
     set Pbin [binary decode hex $Phex]
@@ -834,7 +834,7 @@ test ns_crypto:eckey-1.7.1 {ns_crypto::eckey fromcoords cycle} -constraints {ec 
     set sig [ns_crypto::md string -digest sha256 -encoding binary -sign /tmp/p256-priv.pem $data]
     set ok [ns_crypto::md string -digest sha256 -encoding binary -verify $pubpem2 -signature $sig $data]
 } -cleanup {
-    ns_logctl severity Debug off
+    #ns_logctl severity Debug off
 } -returnCodes {error ok} -result {1}
 
 
