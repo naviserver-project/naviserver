@@ -1,0 +1,59 @@
+name: OpenBSD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  openbsd:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          repository: naviserver-project/naviserver
+          fetch-depth: 0
+
+      - name: Build and test on OpenBSD VM
+        uses: vmactions/openbsd-vm@v1
+        with:
+          release: "7.8"
+          usesh: true
+          mem: 4096
+          cpu: 2
+          prepare: |
+            pkg_add \
+              bash \
+              curl \
+              git \
+              gmake \
+              gtar \
+              openssl
+
+            git clone https://github.com/gustafn/install-ns.git
+          run: |
+            set -e
+
+            echo "=== System ==="
+            uname -a
+            openssl version
+            gmake --version
+
+            cd install-ns
+
+            env \
+              version_ns=.. \
+              version_modules=GIT \
+              version_tcl=core-8-6-17 \
+              version_tcllib= \
+              version_xotcl=2.4.0 \
+              version_tdom=0.9.6 \
+              ns_modules="" \
+              with_ns_deprecated=1 \
+              CC=clang \
+              with_postgres=0 \
+              with_postgres_driver=1 \
+              with_ns_doc=0 \
+              bash install-ns.sh build
+
+            gmake -C .. CHOWN=/usr/sbin/chown test
