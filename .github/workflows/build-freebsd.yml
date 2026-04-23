@@ -28,12 +28,8 @@ jobs:
               curl \
               git \
               gmake \
-              gcc \
               openssl \
-              gtar \
-              zip \
-              unzip \
-              wget
+              gtar
 
             git clone https://github.com/gustafn/install-ns.git
           run: |
@@ -43,7 +39,6 @@ jobs:
             uname -a
             freebsd-version
             openssl version
-            gcc --version || true
             gmake --version
 
             cd install-ns
