@@ -331,25 +331,26 @@ test http-3.3new {limits: too many headers} -constraints serverListen -setup {
     }
 } -body {
     ns_logctl severity notice on
-    ns_log notice DEBUG start request
     try {
         nstest::http -http 1.1 -getbody 1 \
             -partialresults 1 \
             -setheaders [split [string repeat xy 1024] ""] \
             GET /limits
     } on error {errorMsg} {
-        ns_log notice DEBUG error $errorMsg
+        # Expected on Linux/macOS latforms: the client connection breaks
+        # very early and raises an error in the HTTP client with partial results.
         error $errorMsg
     } on ok {r} {
-        ns_log notice DEBUG $r
-    } finally {
-        ns_logctl severity notice off
+        # Also acceptable: the client receives a normal status code response.
+        set logstatus [ns_logctl severity warning on]
+        ns_log warning "client connection was not failing but returning '$r', probably on a *BSD system"
+        ns_logctl severity warning $logstatus
+        set r "status $r"
     }
     set r
 } -cleanup {
     ns_unregister_op GET /limits
-} -match glob  -returnCodes {error ok
-} -result {status 414 time * headers d* body {} error {http read failed (initial receive from server)} state * flags *}
+} -match glob -returnCodes {error ok} -result {status 414*}
 
 
 
