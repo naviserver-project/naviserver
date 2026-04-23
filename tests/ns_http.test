@@ -330,7 +330,6 @@ test http-3.3new {limits: too many headers} -constraints serverListen -setup {
             "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
     }
 } -body {
-    ns_logctl severity notice on
     try {
         nstest::http -http 1.1 -getbody 1 \
             -partialresults 1 \
