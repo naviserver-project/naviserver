@@ -31,28 +31,28 @@ NS_PATCH_LEVEL   = @NS_PATCH_LEVEL@
 # as specified by FHS 3.0 (Filesystem Hierarchy Standard).
 # https://refspecs.linuxfoundation.org/FHS_3.0/fhs/ch03s04.html
 #
-# These locations have severed us well over the last 20+ years on a
-# large variety of unix like systems. The paths are used for security
+# The paths are used for security
 # reasons:
 # - prevent command spoofing
 # - reduce ambiguity
 # - improves reliabilty (not depend on PATH settings)
-# The reason for using variables is to provide a single place of
-# definition, and the ability to override this also from the command
-# line.
+#
+# The reason for using make variables is to provide a single place of
+# definition, while still allowing overrides from the command line when
+# required for platform-specific differences.
 #
 # Maybe, we should consider in the future some autoconf magic, when
 # necessary.
 #
-RM               = /bin/rm -Rf
-MKDIR            = /bin/mkdir -p
-CP               = /bin/cp -pR
-LN               = /bin/ln
-MV               = /bin/mv
-CAT              = /bin/cat
-CHMOD            = /bin/chmod
-CHOWN            = /bin/chown
-OPENSSL          = openssl
+RM               ?= /bin/rm -Rf
+MKDIR            ?= /bin/mkdir -p
+CP               ?= /bin/cp -pR
+LN               ?= /bin/ln
+MV               ?= /bin/mv
+CAT              ?= /bin/cat
+CHMOD            ?= /bin/chmod
+CHOWN            ?= /bin/chown
+OPENSSL          ?= openssl
 
 ifdef NSBUILD
     INSTALL_SH	 = $(srcdir)/install-sh -c
