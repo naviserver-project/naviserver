@@ -44,7 +44,7 @@ if {1 || $::tcl_version >= 8.6} {
     set sslMsg [lmap item {enabled headersVersion runtimeVersion capabilities keytypes digests} {
         set _ "$item: [dict get [ns_info ssl -details] $item]"
     }]
-    puts stderr "OpenSSL configuration:\n    [join $sslMsg [subst {\n    }]]"
+    puts stderr "OpenSSL configuration ($::tcl_platform(os) $::tcl_platform(osVersion))\n    [join $sslMsg [subst {\n    }]]"
 }
 
 #foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec signature keygen sm2} {
