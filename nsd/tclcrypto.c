@@ -9100,13 +9100,15 @@ PkeySignatureInitSm2(Tcl_Interp *interp,
         return SetResultFromOsslError(interp, "could not set SM2 identifier");
     }
 
+# ifndef OPENSSL_NO_SM3
     /*
      * SM2 is used through DigestSign/DigestVerify.  When no digest was
-     * specified by the caller, default to SM3.
+     * specified by the caller, default to SM3 when available.
      */
     if (useMd == NULL) {
         useMd = EVP_sm3();
     }
+# endif
 
     EVP_MD_CTX_set_pkey_ctx(mdctx, pctx);
 
