@@ -330,10 +330,22 @@ test http-3.3new {limits: too many headers} -constraints serverListen -setup {
             "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 \
-        -partialresults 1 \
-        -setheaders [split [string repeat xy 1024] ""] \
-        GET /limits
+    ns_logctl severity notice on
+    ns_log notice DEBUG start request
+    try {
+        nstest::http -http 1.1 -getbody 1 \
+            -partialresults 1 \
+            -setheaders [split [string repeat xy 1024] ""] \
+            GET /limits
+    } on error {errorMsg} {
+        ns_log notice DEBUG error $errorMsg
+        error $errorMsg
+    } on ok {r} {
+        ns_log notice DEBUG $r
+    } finally {
+        ns_logctl severity notice off
+    }
+    set r
 } -cleanup {
     ns_unregister_op GET /limits
 } -match glob  -returnCodes {error ok
