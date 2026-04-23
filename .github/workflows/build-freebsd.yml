@@ -65,5 +65,4 @@ jobs:
               with_ns_doc=0 \
               bash install-ns.sh build
 
-            cd ../naviserver
-            gmake test
+            gmake -C .. test
