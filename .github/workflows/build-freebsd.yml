@@ -53,8 +53,6 @@ jobs:
               ns_modules="" \
               with_ns_deprecated=1 \
               CC=gcc \
-              make=gmake \
-              tar=gtar \
               with_postgres=0 \
               with_postgres_driver=1 \
               with_ns_doc=0 \
