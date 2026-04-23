@@ -27,7 +27,7 @@ jobs:
               curl \
               git \
               gmake \
-              gtar \
+              gtar-- \
               openssl
 
             git clone https://github.com/gustafn/install-ns.git
