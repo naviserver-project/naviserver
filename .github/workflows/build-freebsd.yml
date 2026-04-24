@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: naviserver-project/naviserver
           fetch-depth: 0
@@ -28,16 +28,37 @@ jobs:
             host pkg.FreeBSD.org || true
             host pkg0.fra.freebsd.org || true
 
-            mkdir -p /usr/local/etc/pkg/repos
-            cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
-            FreeBSD: {
-              url: "http://pkg0.nyi.freebsd.org/FreeBSD:15:amd64/latest",
-              mirror_type: "none",
-              signature_type: "fingerprints",
-              fingerprints: "/usr/share/keys/pkg",
-              enabled: yes
-              }
-            EOF
+            # Try multiple mirrors until one works
+            for mirror in \
+              "https://pkg0.fra.freebsd.org" \
+              "https://pkg0.bme.freebsd.org" \
+              "https://pkg0.nyi.freebsd.org" \
+              "https://mirror.leaseweb.com/freebsd"
+            do
+              echo "Trying mirror $mirror"
+              cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<EOF
+          FreeBSD: {
+            url: "$mirror/\${ABI}/latest",
+            mirror_type: "none",
+            signature_type: "fingerprints",
+            fingerprints: "/usr/share/keys/pkg",
+            enabled: yes
+          }
+          EOF
+              pkg update -f && break
+              echo "Mirror $mirror failed, trying next..."
+            done
+
+            #mkdir -p /usr/local/etc/pkg/repos
+            #cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
+            #FreeBSD: {
+            #  url: "https://pkg0.nyi.freebsd.org/FreeBSD:15:amd64/latest",
+            #  mirror_type: "none",
+            #  signature_type: "fingerprints",
+            #  fingerprints: "/usr/share/keys/pkg",
+            #  enabled: yes
+            #  }
+            #EOF
 
             pkg update -f
             pkg install -y bash git gmake
