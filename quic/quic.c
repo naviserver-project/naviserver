@@ -8212,8 +8212,8 @@ ConnInfo(Ns_Sock *sock)
 }
 
 #else
-NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module) {
-    Ns_Log(Warning, "OpenSSL 4+ and nghttp3 are needed to load this module");
+NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *UNUSED(server), const char *module) {
+    Ns_Log(Warning, "OpenSSL 4+ and nghttp3 are needed to load module '%s'", module);
     return NS_ERROR;
 }
 
