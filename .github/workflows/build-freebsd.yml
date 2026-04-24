@@ -35,13 +35,13 @@ jobs:
 
               mkdir -p /usr/local/etc/pkg/repos
 
-              cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
-              FreeBSD: { enabled: no }
-              EOF
+              printf '%s\n' \
+                'FreeBSD: { enabled: no }' \
+                > /usr/local/etc/pkg/repos/FreeBSD.conf
 
-              cat > /usr/local/etc/pkg/repos/FreeBSD-ports-kmods.conf <<'EOF'
-              FreeBSD-ports-kmods: { enabled: no }
-              EOF
+              printf '%s\n' \
+                 'FreeBSD-ports-kmods: { enabled: no }' \
+                 > /usr/local/etc/pkg/repos/FreeBSD-ports-kmods.conf
 
               ok=0
 
@@ -51,15 +51,15 @@ jobs:
               do
                 echo "Trying mirror $mirror"
 
-                cat > /usr/local/etc/pkg/repos/FreeBSD-ports.conf <<EOF
-              FreeBSD-ports: {
-                url: "$mirror/${ABI}/latest",
-                mirror_type: "none",
-                signature_type: "fingerprints",
-                fingerprints: "/usr/share/keys/pkg",
-                enabled: yes
-              }
-              EOF
+                printf '%s\n' \
+                  "FreeBSD-ports: {" \
+                  "  url: \"$mirror/${ABI}/latest\"," \
+                  '  mirror_type: "none",' \
+                  '  signature_type: "fingerprints",' \
+                  '  fingerprints: "/usr/share/keys/pkg",' \
+                  '  enabled: yes' \
+                  "}" \
+                  > /usr/local/etc/pkg/repos/FreeBSD-ports.conf
 
                 rm -rf /var/db/pkg/repos/*
                 pkg update -f || true
@@ -75,7 +75,6 @@ jobs:
                 exit 1
               fi
             else
-
               pkg update -f
               pkg install -y bash git gmake
             fi
