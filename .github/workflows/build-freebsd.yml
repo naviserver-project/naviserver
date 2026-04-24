@@ -24,11 +24,15 @@ jobs:
           prepare: |
             echo "ABI=$(pkg config ABI || true)"
 
+            host pkg0.nyi.freebsd.org || true
+            host pkg.FreeBSD.org || true
+            host pkg0.fra.freebsd.org || true
+
             mkdir -p /usr/local/etc/pkg/repos
             cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
             FreeBSD: {
-              url: "https://pkg0.fra.freebsd.org/FreeBSD:15:amd64/latest",
-              mirror_type: "srv",
+              url: "https://pkg0.nyi.freebsd.org/FreeBSD:15:amd64/latest",
+              mirror_type: "none",
               signature_type: "fingerprints",
               fingerprints: "/usr/share/keys/pkg",
               enabled: yes
