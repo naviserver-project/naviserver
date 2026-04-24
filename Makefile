@@ -248,7 +248,7 @@ else
 endif
 
 build-doc:
-	$(RM) doc/html doc/man doc/tmp
+	$(RMRF) doc/html doc/man doc/tmp
 	$(MKDIR) doc/html doc/man doc/tmp
 	@for srcdir in nscgi \
 		       nslog \
@@ -299,7 +299,7 @@ build-doc:
 		       -o ../html/ html $$srcdir; \
 	    $(DTPLITE) -merge -o ../man/ nroff $$srcdir; \
 	done
-	$(RM) doc/tmp
+	$(RMRF) doc/tmp
 
 #
 # Testing:

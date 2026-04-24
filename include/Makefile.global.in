@@ -58,7 +58,8 @@ endif
 # Maybe, we should consider in the future some autoconf magic, when
 # necessary.
 #
-RM               ?= /bin/rm -Rf
+RM               ?= /bin/rm -f
+RMRF             ?= /bin/rm -rf
 MKDIR            ?= /bin/mkdir -p
 CP               ?= /bin/cp -pR
 LN               ?= /bin/ln
