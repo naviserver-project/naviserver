@@ -493,6 +493,7 @@ proc ns_parseformfile {args} {
             # Cache JSON content for faster access in ns_getjson
             #
             unset -nocomplain ::_ns_json_triples
+            ns_log debug "ns_parseformfile: setting cache value:_ns_json_body"
             set ::_ns_json_body $json
 
         } finally {
@@ -879,21 +880,23 @@ proc ns_getjson {args} {
         {-output json}
     } $args
 
+    # Make sure, we autoparse the content
+    ns_getform
+
     switch -- $output {
         json {
             if {[info exists ::_ns_json_body]} {
                 return $::_ns_json_body
             }
             unset -nocomplain ::_ns_json_triples
-            set ::_ns_json_body [ns_getcontent -as_file false]
-            return $::_ns_json_body
+            return ""
         }
         triples {
             if {[info exists ::_ns_json_triples]} {
                 return $::_ns_json_triples
             }
             if {![info exists ::_ns_json_body]} {
-                set ::_ns_json_body [ns_getcontent -as_file false]
+                return ""
             }
             set ::_ns_json_triples [ns_json parse -output triples -- $::_ns_json_body]
             return $::_ns_json_triples

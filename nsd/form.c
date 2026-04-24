@@ -243,6 +243,7 @@ ParseJsonContent(Tcl_Interp *interp, const char *content, TCL_SIZE_T contentLeng
         bodyObj = Tcl_NewStringObj(utfDs.string, utfDs.length);
         Tcl_IncrRefCount(bodyObj);
 
+        Ns_Log(Debug, "ParseJsonContent: setting cache value:_ns_json_body");
         if (Tcl_SetVar2Ex(interp, "_ns_json_body", NULL, bodyObj,
                           TCL_GLOBAL_ONLY) == NULL) {
             Ns_Log(Warning,
