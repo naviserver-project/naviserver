@@ -21,15 +21,24 @@ jobs:
           usesh: true
           mem: 4096
           cpu: 2
-          envs: 'PACKAGESITE=https://pkg0.fra.freebsd.org/FreeBSD:15:amd64/latest'
           prepare: |
-            pkg update
-            pkg install -y \
-              bash \
-              git \
-              gmake
+            echo "ABI=$(pkg config ABI || true)"
 
+            mkdir -p /usr/local/etc/pkg/repos
+            cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
+            FreeBSD: {
+              url: "pkg+https://pkg0.fra.freebsd.org/FreeBSD:15:amd64/latest",
+              mirror_type: "srv",
+              signature_type: "fingerprints",
+              fingerprints: "/usr/share/keys/pkg",
+              enabled: yes
+              }
+            EOF
+
+            pkg update -f
+            pkg install -y bash git gmake
             git clone https://github.com/gustafn/install-ns.git
+
           run: |
             set -e
 
@@ -39,7 +48,6 @@ jobs:
             gmake --version
 
             cd install-ns
-
             env \
               version_ns=.. \
               version_modules=GIT \
