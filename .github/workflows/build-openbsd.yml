@@ -55,3 +55,12 @@ jobs:
 
             . /usr/local/ns/lib/install-ns.env
             gmake -C .. CHOWN=/usr/sbin/chown OPENSSL="$OPENSSL" test
+
+            rc=$?
+            echo "gmake rc=$rc"
+            ps auxww | egrep 'nsd|tclsh|gmake|all.tcl' || true
+            pgrep -laf nsd || true
+
+            pkill nsd || true
+            sleep 1
+            exit $rc
