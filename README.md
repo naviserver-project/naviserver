@@ -100,7 +100,8 @@ README instructions. You may install Tcl in the same directory where
 you plan to install NaviServer (e.g., `/usr/local/ns`, recommended to
 avoid version mismatches) or in a separate location.
 
-> **Note:** NaviServer 4.99.* requires Tcl 8.5 or Tcl 8.6, while NaviServer 5 support Tcl 9.
+> **Note:** NaviServer 4.99.* requires Tcl 8.5 or Tcl 8.6, while
+> NaviServer 5 supports additionally Tcl 9.
 
 On a Unix-like system, run:
 
@@ -163,6 +164,31 @@ su -c 'make install'
 - `--prefix=/usr/local/ns`  
   Set the installation directory for programs, man pages, and runtime
   files. If you compile Tcl, use also for Tcl the same `--prefix` location.
+
+- `--with-openssl[=DIR|INCLUDEDIR,LIBDIR]`  
+  Enable OpenSSL support and specify how to locate headers and libraries.
+
+  The option supports three forms:
+
+  - `--with-openssl`  
+    Use OpenSSL via `pkg-config` (if available) or fall back to system defaults.
+
+  - `--with-openssl=/path/to/openssl`  
+    Use an OpenSSL installation prefix. The build system will use:
+    - headers from `/path/to/openssl/include`
+    - libraries from `/path/to/openssl/lib` or `/path/to/openssl/lib64`
+
+    When possible, absolute library paths (e.g., `libssl.so`, `libcrypto.so`)
+    are used to avoid accidentally linking against unrelated libraries found
+    via earlier `-L` flags.
+
+  - `--with-openssl=/path/to/include,/path/to/lib`  
+    Specify include and library directories explicitly. This is useful for
+    non-standard installations or staged builds where headers and libraries
+    are located in different directories.
+
+  If this option is provided explicitly and the specified directories are
+  invalid or OpenSSL cannot be detected, configuration will fail.
 
 To compile with the Purify tool, run:
 
