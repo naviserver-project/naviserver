@@ -31,7 +31,7 @@ jobs:
             mkdir -p /usr/local/etc/pkg/repos
             cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
             FreeBSD: {
-              url: "https://pkg0.nyi.freebsd.org/FreeBSD:15:amd64/latest",
+              url: "http://pkg0.nyi.freebsd.org/FreeBSD:15:amd64/latest",
               mirror_type: "none",
               signature_type: "fingerprints",
               fingerprints: "/usr/share/keys/pkg",
