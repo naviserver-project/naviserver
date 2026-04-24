@@ -22,31 +22,39 @@ jobs:
           mem: 4096
           cpu: 2
           prepare: |
-            echo "ABI=$(pkg config ABI || true)"
+            ABI=$(pkg config ABI)
+            mkdir -p /usr/local/etc/pkg/repos
+            rm -rf /var/db/pkg/repos/*
 
-            host pkg0.nyi.freebsd.org || true
-            host pkg.FreeBSD.org || true
-            host pkg0.fra.freebsd.org || true
+            cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
+            FreeBSD: { enabled: no }
+            EOF
 
-            # Try multiple mirrors until one works
+            cat > /usr/local/etc/pkg/repos/FreeBSD-ports-kmods.conf <<'EOF'
+            FreeBSD-ports-kmods: { enabled: no }
+            EOF
+
             for mirror in \
-              "https://pkg0.fra.freebsd.org" \
-              "https://pkg0.bme.freebsd.org" \
-              "https://pkg0.nyi.freebsd.org" \
+              "http://pkg0.nyi.freebsd.org" \
+              "http://pkg.FreeBSD.org" \
               "https://mirror.leaseweb.com/freebsd"
             do
               echo "Trying mirror $mirror"
-              cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<EOF
-          FreeBSD: {
-            url: "$mirror/\${ABI}/latest",
-            mirror_type: "none",
-            signature_type: "fingerprints",
-            fingerprints: "/usr/share/keys/pkg",
-            enabled: yes
-          }
-          EOF
-              pkg update -f && break
-              echo "Mirror $mirror failed, trying next..."
+
+              cat > /usr/local/etc/pkg/repos/FreeBSD-ports.conf <<EOF
+            FreeBSD-ports: {
+              url: "$mirror/${ABI}/latest",
+              mirror_type: "none",
+              signature_type: "fingerprints",
+              fingerprints: "/usr/share/keys/pkg",
+              enabled: yes
+            }
+            EOF
+
+              rm -rf /var/db/pkg/repos/*
+              if pkg update -f && pkg install -y bash git gmake; then
+                break
+              fi
             done
 
             #mkdir -p /usr/local/etc/pkg/repos
@@ -99,4 +107,3 @@ jobs:
               rc=0
             fi
             exit $rc
-
