@@ -24,6 +24,7 @@ configure
 
 nsd/nsd
 nsproxy/nsproxy
+nsproxy/nsproxy-helper
 nsthread/nsthreadtest
 infer-out
 
