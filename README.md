@@ -190,6 +190,8 @@ su -c 'make install'
   If this option is provided explicitly and the specified directories are
   invalid or OpenSSL cannot be detected, configuration will fail.
 
+For a detailed list of all options, use `./configure --help`
+
 To compile with the Purify tool, run:
 
 ```bash
@@ -201,9 +203,10 @@ See `make help` for the provided options for testing etc.
 #### Compile from Versions from GitHub
 
 If you clone NaviServer from the GitHub repository, run `./autogen.sh`
-with the configure options (instead of `./configure`) to generate the
-makefiles. You will need recent versions of autoconf, automake, and
-the `dtplite` package from `tcllib` to build the documentation.
+with the configure options (instead of `./configure`) to generate
+`configure` and the makefiles. You will need recent versions of
+autoconf, automake. For generating the documentation, 
+the `dtplite` package from `tcllib` is required.
 
 > **Tip:** Use `make build-doc` to generate documentation; otherwise, `make install` may complain.
 
