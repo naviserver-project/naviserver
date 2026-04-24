@@ -17,6 +17,7 @@ jobs:
       - name: Build and test on FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
+          # the package mirrors for release 15.0 is still not stable, the package checkout fails currently
           #release: "15.0"
           release: "14.4"
           usesh: true
@@ -25,67 +26,60 @@ jobs:
           prepare: |
             set -e
 
-            ABI=$(pkg config ABI)
-            echo "ABI=$ABI"
+            USE_MIRROR_LOOP="${USE_MIRROR_LOOP:-0}"
 
-            mkdir -p /usr/local/etc/pkg/repos
+            if [ "$USE_MIRROR_LOOP" = "1" ]; then
 
-            cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
-            FreeBSD: { enabled: no }
-            EOF
+              ABI=$(pkg config ABI)
+              echo "ABI=$ABI"
 
-            cat > /usr/local/etc/pkg/repos/FreeBSD-ports-kmods.conf <<'EOF'
-            FreeBSD-ports-kmods: { enabled: no }
-            EOF
+              mkdir -p /usr/local/etc/pkg/repos
 
-            ok=0
+              cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
+              FreeBSD: { enabled: no }
+              EOF
 
-            for mirror in \
-              "http://pkg0.nyi.freebsd.org" \
-              "http://pkg.FreeBSD.org"
-            do
-              echo "Trying mirror $mirror"
+              cat > /usr/local/etc/pkg/repos/FreeBSD-ports-kmods.conf <<'EOF'
+              FreeBSD-ports-kmods: { enabled: no }
+              EOF
 
-              cat > /usr/local/etc/pkg/repos/FreeBSD-ports.conf <<EOF
-            FreeBSD-ports: {
-              url: "$mirror/${ABI}/latest",
-              mirror_type: "none",
-              signature_type: "fingerprints",
-              fingerprints: "/usr/share/keys/pkg",
-              enabled: yes
-            }
-            EOF
+              ok=0
 
-              rm -rf /var/db/pkg/repos/*
-              pkg update -f || true
+              for mirror in \
+                "http://pkg0.nyi.freebsd.org" \
+                "http://pkg.FreeBSD.org"
+              do
+                echo "Trying mirror $mirror"
 
-              if pkg install -y bash git gmake; then
-                ok=1
-                break
+                cat > /usr/local/etc/pkg/repos/FreeBSD-ports.conf <<EOF
+              FreeBSD-ports: {
+                url: "$mirror/${ABI}/latest",
+                mirror_type: "none",
+                signature_type: "fingerprints",
+                fingerprints: "/usr/share/keys/pkg",
+                enabled: yes
+              }
+              EOF
+
+                rm -rf /var/db/pkg/repos/*
+                pkg update -f || true
+
+                if pkg install -y bash git gmake; then
+                  ok=1
+                  break
+                fi
+              done
+
+              if [ "$ok" != "1" ]; then
+                echo "No FreeBSD package mirror worked"
+                exit 1
               fi
-            done
+            else
 
-            if [ "$ok" != "1" ]; then
-              echo "No FreeBSD package mirror worked"
-              exit 1
+              pkg update -f
+              pkg install -y bash git gmake
             fi
-
             git clone https://github.com/gustafn/install-ns.git
-
-            #mkdir -p /usr/local/etc/pkg/repos
-            #cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
-            #FreeBSD: {
-            #  url: "https://pkg0.nyi.freebsd.org/FreeBSD:15:amd64/latest",
-            #  mirror_type: "none",
-            #  signature_type: "fingerprints",
-            #  fingerprints: "/usr/share/keys/pkg",
-            #  enabled: yes
-            #  }
-            #EOF
-
-            #pkg update -f
-            #pkg install -y bash git gmake
-            #git clone https://github.com/gustafn/install-ns.git
 
           run: |
             set -e
@@ -111,6 +105,7 @@ jobs:
               with_ns_doc=0 \
               bash install-ns.sh build
 
+            set +e
             gmake -C .. CHOWN=/usr/sbin/chown test
             rc=$?
             set -e
