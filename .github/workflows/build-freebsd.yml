@@ -17,7 +17,8 @@ jobs:
       - name: Build and test on FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          release: "15.0"
+          #release: "15.0"
+          release: "14.4"
           usesh: true
           mem: 4096
           cpu: 2
@@ -83,9 +84,8 @@ jobs:
             #EOF
 
             #pkg update -f
-
-            pkg install -y bash git gmake
-            git clone https://github.com/gustafn/install-ns.git
+            #pkg install -y bash git gmake
+            #git clone https://github.com/gustafn/install-ns.git
 
           run: |
             set -e
