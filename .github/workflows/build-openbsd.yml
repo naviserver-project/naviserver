@@ -50,6 +50,8 @@ jobs:
               with_postgres=0 \
               with_postgres_driver=1 \
               with_ns_doc=0 \
+              print_build_env=1 \
               bash install-ns.sh build
 
-            gmake -C .. CHOWN=/usr/sbin/chown test
+            . /usr/local/ns/lib/install-ns.env
+            gmake -C .. CHOWN=/usr/sbin/chown OPENSSL="$OPENSSL" test
