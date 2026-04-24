@@ -24,10 +24,8 @@ jobs:
           prepare: |
             pkg_add \
               bash \
-              curl \
               git \
-              gmake \
-              openssl
+              gmake
 
             git clone https://github.com/gustafn/install-ns.git
           run: |
@@ -35,7 +33,6 @@ jobs:
 
             echo "=== System ==="
             uname -a
-            openssl version
             gmake --version
 
             cd install-ns

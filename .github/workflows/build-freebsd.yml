@@ -25,11 +25,8 @@ jobs:
             pkg update
             pkg install -y \
               bash \
-              curl \
               git \
-              gmake \
-              openssl \
-              gtar
+              gmake
 
             git clone https://github.com/gustafn/install-ns.git
           run: |
@@ -38,7 +35,6 @@ jobs:
             echo "=== System ==="
             uname -a
             freebsd-version
-            openssl version
             gmake --version
 
             cd install-ns
