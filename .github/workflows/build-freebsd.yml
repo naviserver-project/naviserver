@@ -22,9 +22,12 @@ jobs:
           mem: 4096
           cpu: 2
           prepare: |
+            set -e
+
             ABI=$(pkg config ABI)
+            echo "ABI=$ABI"
+
             mkdir -p /usr/local/etc/pkg/repos
-            rm -rf /var/db/pkg/repos/*
 
             cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
             FreeBSD: { enabled: no }
@@ -34,10 +37,11 @@ jobs:
             FreeBSD-ports-kmods: { enabled: no }
             EOF
 
+            ok=0
+
             for mirror in \
               "http://pkg0.nyi.freebsd.org" \
-              "http://pkg.FreeBSD.org" \
-              "https://mirror.leaseweb.com/freebsd"
+              "http://pkg.FreeBSD.org"
             do
               echo "Trying mirror $mirror"
 
@@ -52,10 +56,20 @@ jobs:
             EOF
 
               rm -rf /var/db/pkg/repos/*
-              if pkg update -f && pkg install -y bash git gmake; then
+              pkg update -f || true
+
+              if pkg install -y bash git gmake; then
+                ok=1
                 break
               fi
             done
+
+            if [ "$ok" != "1" ]; then
+              echo "No FreeBSD package mirror worked"
+              exit 1
+            fi
+
+            git clone https://github.com/gustafn/install-ns.git
 
             #mkdir -p /usr/local/etc/pkg/repos
             #cat > /usr/local/etc/pkg/repos/FreeBSD.conf <<'EOF'
@@ -68,7 +82,8 @@ jobs:
             #  }
             #EOF
 
-            pkg update -f
+            #pkg update -f
+
             pkg install -y bash git gmake
             git clone https://github.com/gustafn/install-ns.git
 
