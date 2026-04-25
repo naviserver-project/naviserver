@@ -55,10 +55,9 @@ endif
 # definition, while still allowing overrides from the command line when
 # required for platform-specific differences.
 #
-# Maybe, we should consider in the future some autoconf magic, when
-# necessary.
-#
-RM               ?= /bin/rm -f
+ifeq ($(origin RM),default)
+RM = /bin/rm -f
+endif
 RMRF             ?= /bin/rm -rf
 MKDIR            ?= /bin/mkdir -p
 CP               ?= /bin/cp -pR
