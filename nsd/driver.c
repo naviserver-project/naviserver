@@ -5414,17 +5414,35 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
             } else {
                 NS_TLS_SSL_CTX *ctx = NULL;
                 int             result;
+                const char     *clientcafile = NULL, *clientcapath = NULL, *configValue;
 
-                Ns_Log(Debug, "SSL_serverNameCB pem file exists: '%s'", dsPtr->string);
+                configValue = Ns_ConfigGetValue(section, "clientcafile");
+                if (configValue != NULL) {
+                    clientcafile = Ns_ConfigFilename(section, "clientcafile", 12,
+                                                     nsconf.home, configValue, NS_TRUE, NS_TRUE);
+                }
+                configValue = Ns_ConfigGetValue(section, "clientcapath");
+                if (configValue != NULL) {
+                    clientcapath = Ns_ConfigFilename(section, "clientcapath", 12,
+                                                     nsconf.home, configValue, NS_TRUE, NS_TRUE);
+                }
 
-                result = Ns_TLS_CtxServerCreate(NULL, dsPtr->string,
-                                                NULL /*caFile*/, NULL /*caPath*/,
+                result = Ns_TLS_CtxServerCreate(NULL,
+                                                dsPtr->string,
+                                                clientcafile, clientcapath,
                                                 Ns_ConfigBool(section, "verify", 0),
                                                 Ns_ConfigGetValue(section, "ciphers"),
                                                 Ns_ConfigGetValue(section, "ciphersuites"),
                                                 Ns_ConfigGetValue(section, "protocols"),
                                                 &ctx);
-                Ns_Log(Debug, "SSL_serverNameCB load cert -> ctx %p'", (void*)ctx);
+
+                Ns_Log(Debug, "SSL_serverNameCB load cert -> ctx %p", (void*)ctx);
+                if (clientcafile != NULL) {
+                    ns_free((char*)clientcafile);
+                }
+                if (clientcapath != NULL) {
+                    ns_free((char*)clientcapath);
+                }
 
                 if (result == TCL_OK) {
                     Tcl_DString dsHostPort, *dsHostPortPtr = &dsHostPort;

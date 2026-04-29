@@ -255,11 +255,11 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
 
     if (sock->sock != NS_INVALID_SOCKET) {
 #ifdef __APPLE__
-      /*
-       * Darwin's poll returns per default writable in situations,
-       * where nothing can be written.  Setting the socket option for
-       * the send low watermark to 1 fixes this problem.
-       */
+        /*
+         * Darwin's poll returns per default writable in situations,
+         * where nothing can be written.  Setting the socket option for
+         * the send low watermark to 1 fixes this problem.
+         */
         int value = 1;
         setsockopt(sock->sock, SOL_SOCKET, SO_SNDLOWAT, &value, sizeof(value));
 #endif
@@ -322,17 +322,23 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     Ns_SockState       sockState = NS_SOCK_NONE;
     ssize_t            nRead = 0;
     unsigned long      sslERRcode = 0u;
+
+    nRead = Ns_SSLRecvBufs2(sslCtx->ssl, bufs, nbufs, &sockState, &sslERRcode);
+
     /*
      * Verify client certificate, driver may require valid cert
      */
+    if (nRead > -1
+        && SSL_is_init_finished(sslCtx->ssl)
+        && drvCfgPtr->verify
+        && sslCtx->verified == 0) {
 
-    if (drvCfgPtr->verify && sslCtx->verified == 0) {
-        X509 *peer;
 #ifdef HAVE_OPENSSL_3
-        peer = SSL_get0_peer_certificate(sslCtx->ssl);
+        X509 *peer = SSL_get0_peer_certificate(sslCtx->ssl);
 #else
-        peer = SSL_get_peer_certificate(sslCtx->ssl);
+        X509 *peer = SSL_get_peer_certificate(sslCtx->ssl);
 #endif
+
         if (peer != NULL) {
 #ifndef HAVE_OPENSSL_3
             X509_free(peer);
@@ -356,10 +362,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
             sockState = NS_SOCK_EXCEPTION;
         }
         sslCtx->verified = 1;
-    }
 
-    if (nRead > -1) {
-        nRead = Ns_SSLRecvBufs2(sslCtx->ssl, bufs, nbufs, &sockState, &sslERRcode);
     }
     Ns_SockSetReceiveState(sock, sockState, sslERRcode);
 
@@ -410,7 +413,8 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(fla
                            sock->sock, Ns_SockGetSendCount(sock), lastSend,
                            bufs->iov_base, bufs->iov_len, Ns_SockGetSendErrno(sock));
                     if ((size_t)lastSend != bufs->iov_len) {
-                        Ns_Log(Notice, "nsssl send: sock (%d,%ld) last send %ld now %ld: expect error!", sock->sock, Ns_SockGetSendCount(sock), lastSend, bufs->iov_len);
+                        Ns_Log(Notice, "nsssl send: sock (%d,%ld) last send %ld now %ld: expect error!",
+                               sock->sock, Ns_SockGetSendCount(sock), lastSend, bufs->iov_len);
                     }
                 }
 
@@ -440,8 +444,8 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(fla
                            errorCode, ERR_GET_LIB(errorCode), ERR_LIB_SYS);
 
                     if (ERR_GET_LIB(errorCode) == ERR_LIB_SYS) {
-                         Ns_Log(Debug, "...... reason %d", ERR_GET_REASON(errorCode));
-                         Ns_SockSetSendErrno(sock, (unsigned long)ERR_GET_REASON(errorCode));
+                        Ns_Log(Debug, "...... reason %d", ERR_GET_REASON(errorCode));
+                        Ns_SockSetSendErrno(sock, (unsigned long)ERR_GET_REASON(errorCode));
                     } else {
                         Ns_SockSetSendErrno(sock, errorCode);
                     }

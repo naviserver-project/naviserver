@@ -1653,11 +1653,12 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
     Ns_Log(Notice, "load certificate '%s' specified in section %s", cert, section);
 
     if (cert == NULL) {
-        Ns_Log(Error, "nsssl: certificate parameter must be specified in the configuration file under %s", section);
+        Ns_Log(Error, "tls: certificate parameter must be specified in the configuration file under %s", section);
         result = TCL_ERROR;
     } else {
         const char *ciphers, *ciphersuites, *protocols;
-        Ns_DList dl, *dlPtr = &dl;
+        const char *clientcafile = NULL, *clientcapath = NULL, *configValue;
+        Ns_DList    dl, *dlPtr = &dl;
 
         /*
          * Keep configuration values in an Ns_DList to protect against
@@ -1670,14 +1671,32 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         ciphersuites = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphersuites"));
         protocols    = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "protocols"));
 
-        Ns_Log(Debug, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app data %p",
-               (void*) app_data);
+        configValue = Ns_ConfigGetValue(section, "clientcafile");
+        if (configValue != NULL) {
+            clientcafile = Ns_ConfigFilename(section, "clientcafile", 12,
+                                             nsconf.home, configValue, NS_TRUE, NS_TRUE);
+        }
+        configValue = Ns_ConfigGetValue(section, "clientcapath");
+        if (configValue != NULL) {
+            clientcapath = Ns_ConfigFilename(section, "clientcapath", 12,
+                                             nsconf.home, configValue, NS_TRUE, NS_TRUE);
+        }
 
         result = Ns_TLS_CtxServerCreate(interp, cert,
-                                        NULL /*caFile*/, NULL /*caPath*/,
-                                        Ns_ConfigBool(section, "verify", 0),
+                                        clientcafile, clientcapath,
+                                        Ns_ConfigBool(section, "verify", NS_FALSE),
                                         ciphers, ciphersuites, protocols,
                                         ctxPtr);
+        Ns_Log(Notice, "Ns_TLS_CtxServerInit: Ns_TLS_CtxServerCreate with dc %p -> sslCtx %p",
+               (void*)app_data, (void*)(*ctxPtr));
+
+        if (clientcafile != NULL) {
+            ns_free((char*)clientcafile);
+        }
+        if (clientcapath != NULL) {
+            ns_free((char*)clientcapath);
+        }
+
         if (result == TCL_OK) {
             NsSSLConfig *cfgPtr;
 
@@ -1783,18 +1802,18 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                  */
 #ifdef SSL_CTX_build_cert_chain
                 if (SSL_CTX_build_cert_chain(*ctxPtr, 0) != 1) {
-                    Ns_Log(Notice, "nsssl SSL_CTX_build_cert_chain failed");
+                    Ns_Log(Notice, "tls SSL_CTX_build_cert_chain failed");
                 }
 #endif
                 storePtr = SSL_CTX_get_cert_store(*ctxPtr /*SSL_get_SSL_CTX(s)*/);
-                Ns_Log(Debug, "nsssl:SSL_CTX_get_cert_store %p", (void*)storePtr);
+                Ns_Log(Debug, "tls:SSL_CTX_get_cert_store %p", (void*)storePtr);
 
                 rc = X509_STORE_load_locations(storePtr, cert, NULL);
-                Ns_Log(Debug, "nsssl:X509_STORE_load_locations %d", rc);
+                Ns_Log(Debug, "tls:X509_STORE_load_locations %d", rc);
             }
 #ifdef HAVE_OPENSSL_OCSP
             if (Ns_ConfigBool(section, "ocspstapling", NS_FALSE)) {
-                Ns_Log(Notice, "nsssl: activate OCSP stapling for %s", section);
+                Ns_Log(Notice, "tls: activate OCSP stapling for %s", section);
 
                 memset(&sslCertStatusArg, 0, sizeof(sslCertStatusArg));
                 sslCertStatusArg.timeout = -1;
@@ -1806,7 +1825,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                 SSL_CTX_set_tlsext_status_cb(*ctxPtr, SSL_cert_statusCB);
                 SSL_CTX_set_tlsext_status_arg(*ctxPtr, &sslCertStatusArg);
             } else {
-                Ns_Log(Notice, "nsssl: OCSP stapling for %s not activated", section);
+                Ns_Log(Notice, "tls: OCSP stapling for %s not activated", section);
             }
 #endif /* HAVE_OPENSSL_OCSP */
 
@@ -1822,7 +1841,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                 EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 
                 if (ecdh == NULL) {
-                    Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
+                    Ns_Log(Error, "tls: Couldn't obtain ecdh parameters");
                     return TCL_ERROR;
                 }
                 SSL_CTX_set_options(cfgPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
@@ -2248,30 +2267,30 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
         if (protocols != NULL) {
             if (strstr(protocols, "!SSLv2") != NULL) {
                 n |= SSL_OP_NO_SSLv2;
-                Ns_Log(Notice, "nsssl: disabling SSLv2");
+                Ns_Log(Notice, "tls: disabling SSLv2");
             }
             if (strstr(protocols, "!SSLv3") != NULL) {
                 n |= SSL_OP_NO_SSLv3;
-                Ns_Log(Notice, "nsssl: disabling SSLv3");
+                Ns_Log(Notice, "tls: disabling SSLv3");
             }
             if (strstr(protocols, "!TLSv1.0") != NULL) {
                 n |= SSL_OP_NO_TLSv1;
-                Ns_Log(Notice, "nsssl: disabling TLSv1.0");
+                Ns_Log(Notice, "tls: disabling TLSv1.0");
             }
             if (strstr(protocols, "!TLSv1.1") != NULL) {
                 n |= SSL_OP_NO_TLSv1_1;
-                Ns_Log(Notice, "nsssl: disabling TLSv1.1");
+                Ns_Log(Notice, "tls: disabling TLSv1.1");
             }
 #ifdef SSL_OP_NO_TLSv1_2
             if (strstr(protocols, "!TLSv1.2") != NULL) {
                 n |= SSL_OP_NO_TLSv1_2;
-                Ns_Log(Notice, "nsssl: disabling TLSv1.2");
+                Ns_Log(Notice, "tls: disabling TLSv1.2");
             }
 #endif
 #ifdef SSL_OP_NO_TLSv1_3
             if (strstr(protocols, "!TLSv1.3") != NULL) {
                 n |= SSL_OP_NO_TLSv1_3;
-                Ns_Log(Notice, "nsssl: disabling TLSv1.3");
+                Ns_Log(Notice, "tls: disabling TLSv1.3");
             }
 #endif
         }
@@ -2279,9 +2298,34 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     }
 
     SSL_CTX_set_default_verify_paths(ctx);
-    SSL_CTX_load_verify_locations(ctx, caFile, caPath);
-    // SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
-    SSL_CTX_set_verify(ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
+    if ((caFile != NULL) || (caPath != NULL)) {
+        Ns_Log(Notice, "tls: Loading clientcafile <%s> clientcapath <%s> verify %d",
+               caFile, caPath, verify);
+        if (SSL_CTX_load_verify_locations(ctx, caFile, caPath) != 1) {
+            Ns_Log(Error, "tls: could not load client CA locations "
+                   "clientcafile <%s> clientcapath <%s>",
+                   caFile != NULL ? caFile : "(null)",
+                   caPath != NULL ? caPath : "(null)");
+            goto fail;
+        }
+    }
+
+    if (caFile != NULL) {
+        STACK_OF(X509_NAME) *caNames = SSL_load_client_CA_file(caFile);
+
+        if (caNames == NULL) {
+            Ns_Log(Error, "tls: could not load client CA names from <%s>", caFile);
+            goto fail;
+        } else {
+            SSL_CTX_set_client_CA_list(ctx, caNames);
+        }
+    }
+
+    SSL_CTX_set_verify(ctx,
+                       verify ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
+                       : SSL_VERIFY_NONE,
+                       NULL);
+
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 

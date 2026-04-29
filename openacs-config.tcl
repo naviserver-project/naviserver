@@ -619,9 +619,6 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param certificate        $certificate
         ns_param vhostcertificates  $vhostcertificates  ;# directory for vhost certificates of the default server
 
-        # Client certificate verification level (see nsssl docs for details)
-        # ns_param verify             0  ;# default: 0
-
         # Cipher suites for TLS 1.2 and below.
         ns_param ciphers \
             "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
@@ -636,6 +633,13 @@ if {[info exists httpsport] && $httpsport ne ""} {
         # ns_param OCSPstapling        on   ;# default: off; enable OCSP stapling
         # ns_param OCSPstaplingVerbose on   ;# default: off; more verbose OCSP logging
         # ns_param OCSPcheckInterval   15m  ;# default: 5m; OCSP (re)check interval
+
+        #------------------------------------------------------------------
+        # Client certificate management (see nsssl docs for details)
+        #------------------------------------------------------------------
+        #ns_param verify             1  ;# default: 0
+        #ns_param clientcafile       client-ca.crt ;# trusted CA certificates
+        #ns_param clientcapath       client-ca     ;# trusted CA certificates folder
 
         #------------------------------------------------------------------
         # Writer threads and upload handling
