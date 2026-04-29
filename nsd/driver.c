@@ -5710,6 +5710,7 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
             } else {
                 NS_TLS_SSL_CTX *ctx = NULL;
                 int             result;
+                const char     *clientcafile = NULL, *clientcapath = NULL, *configValue;
                 /*
                  * Look for optional separate private key:
                  *   <vhostcertificates>/<hostName>.key
@@ -5737,11 +5738,20 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
                        dsCertPtr->string,
                        (keyFile != NULL) ? keyFile : "<cert>");
 
+                configValue = Ns_ConfigGetValue(section, "clientcafile");
+                if (configValue != NULL) {
+                    clientcafile = Ns_ConfigFilename(section, "clientcafile", 12,
+                                                     nsconf.home, configValue, NS_TRUE, NS_TRUE);
+                }
+                configValue = Ns_ConfigGetValue(section, "clientcapath");
+                if (configValue != NULL) {
+                    clientcapath = Ns_ConfigFilename(section, "clientcapath", 12,
+                                                     nsconf.home, configValue, NS_TRUE, NS_TRUE);
+                }
+
                 result = Ns_TLS_CtxServerCreateCfg(NULL,
-                                                   dsCertPtr->string,
-                                                   keyFile,
-                                                   NULL /* caFile */,
-                                                   NULL /* caPath */,
+                                                   dsCertPtr->string, keyFile,
+                                                   clientcafile, clientcapath,
                                                    Ns_ConfigBool(section, "verify", 0),
                                                    Ns_ConfigGetValue(section, "ciphers"),
                                                    Ns_ConfigGetValue(section, "ciphersuites"),
@@ -5752,6 +5762,12 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
                                                    &ctx);
 
                 Ns_Log(Debug, "SSL_serverNameCB load cert -> ctx %p", (void*)ctx);
+                if (clientcafile != NULL) {
+                    ns_free_const(clientcafile);
+                }
+                if (clientcapath != NULL) {
+                    ns_free_const(clientcapath);
+                }
 
                 if (result == TCL_OK) {
                     Tcl_DString dsHostPort, *dsHostPortPtr = &dsHostPort;

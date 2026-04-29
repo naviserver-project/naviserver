@@ -194,12 +194,20 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param certificate     $certificate ;# required, PEM format
         ns_param key             $key         ;# optional, PEM format
         #ns_param vhostcertificates $home/etc/certificates ;# directory for vhost certificates of the default server
-        ns_param verify          0
 
+        #------------------------------------------------------------------
         # OCSP stapling configuration:
-        # ns_param OCSPstapling    on          ;# off; activate OCSP stapling
+        #------------------------------------------------------------------
+        # ns_param OCSPstapling    on         ;# off; activate OCSP stapling
         # ns_param OCSPstaplingVerbose  on    ;# off; make OCSP stapling more verbose
         # ns_param OCSPcheckInterval 15m      ;# default 5m; OCSP (re)check intervale
+
+        #------------------------------------------------------------------
+        # Client certificate management (see nsssl docs for details)
+        #------------------------------------------------------------------
+        #ns_param verify             1  ;# default: 0
+        #ns_param clientcafile       client-ca.crt ;# trusted CA certificates
+        #ns_param clientcapath       client-ca     ;# trusted CA certificates folder
 
         ns_param extraheaders    $https_extraheaders
     }
