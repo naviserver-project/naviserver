@@ -548,7 +548,6 @@ typedef enum {
     NS_EXTRACTED_NONE =                   4
 } NsExtractedHeaderIndex;
 
-
 /*
  * The following structure maintains a socket to a
  * connected client.  The socket is used to maintain state

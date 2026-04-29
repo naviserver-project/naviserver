@@ -77,27 +77,47 @@ plus in addition the following configuration options:
   enabled. It is recommended to deactivate SSLv2 and SSLv3 as shown
   in the example above.
 
-[def verify]
-  Specifies whether nsssl should request and verify a client
-  certificate during the TLS handshake.
+[def clientcertmode]
+  Specifies how nsssl handles TLS client certificates.
+
+  The following values are supported:
+
+  [list_begin definitions]
+
+  [def none]
+    Do not request a client certificate. This is the default.
+
+  [def request]
+    Request a client certificate during the TLS handshake and verify it
+    when the client provides one. Connections without a client
+    certificate are accepted.
+
+  [def require]
+    Request and require a client certificate during the TLS handshake.
+    Connections without a client certificate, or with a certificate that
+    cannot be verified against the configured client CA certificates, are
+    terminated.
+
+  [list_end]
 
   [para]
-  When this parameter is set to true, the server sends a
-  CertificateRequest message to the client and attempts to verify the
-  returned client certificate against the configured trusted client
-  certificate authorities.
+  The [option clientcertmode] parameter replaces the legacy boolean
+  [option verify] parameter. For compatibility, when
+  [option clientcertmode] is not specified, [option "verify 1"] is
+  interpreted as [option "clientcertmode require"]. When
+  [option clientcertmode] is specified explicitly, it takes precedence
+  over [option verify].
 
-  If no client certificate is provided, or if verification fails, the
-  connection is terminated.
+  [para]
+  Client certificates are verified against the trusted client CA
+  certificates configured via [option clientcafile] and/or
+  [option clientcapath].
 
+  [para]
   This parameter applies at the driver level and therefore affects all
   TLS contexts created by this driver, including dynamically created
-  virtual hosts (see below).
+  virtual hosts using [option vhostcertificates].
 
-  [para]
-  Note: The [option verify] parameter is a legacy boolean switch. Future
-  versions may replace it with a more fine-grained control (e.g.,
-  optional vs. required client certificates).
 
 [def clientcafile]
   Specifies a file containing trusted Certificate Authority (CA)

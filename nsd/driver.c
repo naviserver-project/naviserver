@@ -20,6 +20,10 @@
 #include "nsd.h"
 NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 
+#ifdef HAVE_OPENSSL_EVP_H
+# include "nsopenssl.h"
+#endif
+
 /*
  * Constants for SockState return and reason codes.
  */
@@ -5711,6 +5715,10 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
                 NS_TLS_SSL_CTX *ctx = NULL;
                 int             result;
                 const char     *clientcafile = NULL, *clientcapath = NULL, *configValue;
+                NsTLSConfig    *dc = drvPtr->arg;
+
+                assert(dc != NULL);
+
                 /*
                  * Look for optional separate private key:
                  *   <vhostcertificates>/<hostName>.key
@@ -5752,7 +5760,7 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
                 result = Ns_TLS_CtxServerCreateCfg(NULL,
                                                    dsCertPtr->string, keyFile,
                                                    clientcafile, clientcapath,
-                                                   Ns_ConfigBool(section, "verify", 0),
+                                                   dc->clientCertMode,
                                                    Ns_ConfigGetValue(section, "ciphers"),
                                                    Ns_ConfigGetValue(section, "ciphersuites"),
                                                    Ns_ConfigGetValue(section, "protocols"),

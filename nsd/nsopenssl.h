@@ -56,7 +56,7 @@ typedef struct NsTLSConfig {
     Ns_Driver  *driver; /* Default context for driver                   */
     SSL_CTX    *ctx;
     uint64_t    iter;
-    int         verify;
+    Ns_TLSClientCertMode clientCertMode;
     const char *tlsKeyScript;
     const char *tlsKeylogFile;
     const char *vhostcertificates;

@@ -352,39 +352,44 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      */
     if (nRead > -1
         && SSL_is_init_finished(sslCtx->ssl)
-        && dc->verify
-        && sslCtx->verified == 0) {
-
+        && dc->clientCertMode != NS_TLS_CLIENT_CERT_NONE
+        && sslCtx->verified == 0
+        ) {
+        Ns_ReturnCode status = NS_OK;
+        const char   *errorMsg;
 #ifdef HAVE_OPENSSL_3
         X509 *peer = SSL_get0_peer_certificate(sslCtx->ssl);
 #else
         X509 *peer = SSL_get_peer_certificate(sslCtx->ssl);
 #endif
 
-        if (peer != NULL) {
-#ifndef HAVE_OPENSSL_3
-            X509_free(peer);
-#endif
-            if (SSL_get_verify_result(sslCtx->ssl) != X509_V_OK) {
-                char ipString[NS_IPADDR_SIZE];
-
-                Ns_Log(Error, "nsssl: client certificate not valid by %s",
-                       ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
-                                    sizeof(ipString)));
-                nRead = -1;
-                sockState = NS_SOCK_EXCEPTION;
+        if (peer == NULL) {
+            if (dc->clientCertMode == NS_TLS_CLIENT_CERT_REQUIRE) {
+                status = NS_ERROR;
+                errorMsg = "no client certificate provided";
             }
-        } else {
+        } else if (SSL_get_verify_result(sslCtx->ssl) != X509_V_OK) {
+            status = NS_ERROR;
+            errorMsg = "client certificate not valid";
+        }
+
+        if (status == NS_ERROR) {
             char ipString[NS_IPADDR_SIZE];
 
-            Ns_Log(Error, "nsssl: no client certificate provided by %s",
+            Ns_Log(Error, "nsssl: %s by %s",
+                   errorMsg,
                    ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
                                 sizeof(ipString)));
             nRead = -1;
             sockState = NS_SOCK_EXCEPTION;
         }
-        sslCtx->verified = 1;
 
+#ifndef HAVE_OPENSSL_3
+        if (peer != NULL) {
+            X509_free(peer);
+        }
+#endif
+        sslCtx->verified = 1;
     }
     Ns_SockSetReceiveState(sock, sockState, sslERRcode);
 

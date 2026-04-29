@@ -239,7 +239,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         #------------------------------------------------------------------
         # Client certificate management (see nsssl docs for details)
         #------------------------------------------------------------------
-        #ns_param verify             1  ;# default: 0
+        #ns_param clientcertmode     require       ;# default: none; valid: none|request|require
         #ns_param clientcafile       client-ca.crt ;# trusted CA certificates
         #ns_param clientcapath       client-ca     ;# trusted CA certificates folder
 

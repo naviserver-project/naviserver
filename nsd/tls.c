@@ -122,6 +122,9 @@ static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl),
 static void KeylogCB(const SSL *ssl, const char *line);
 # endif
 
+static Ns_TLSClientCertMode NsTLSClientCertModeParse(const char *section)
+    NS_GNUC_NONNULL(1);
+
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
 static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
 
@@ -1911,6 +1914,72 @@ DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long
 /*
  *----------------------------------------------------------------------
  *
+ * NsTLSClientCertModeParse --
+ *
+ *      Parse the configuration parameter "clientcertmode" from the
+ *      specified configuration section and map it to the internal
+ *      Ns_TLSClientCertMode enumeration.
+ *
+ *      Supported values are:
+ *        - "none"    : do not request a client certificate
+ *        - "request" : request a client certificate but do not require it
+ *        - "require" : request and require a valid client certificate
+ *
+ *      If the parameter is not specified, the legacy parameter
+ *      "verify" is evaluated for backward compatibility:
+ *        - verify = true  -> NS_TLS_CLIENT_CERT_REQUIRE
+ *        - verify = false -> NS_TLS_CLIENT_CERT_NONE
+ *
+ *      If both "clientcertmode" and "verify" are specified, the
+ *      explicit "clientcertmode" value takes precedence.
+ *
+ *      Invalid values for "clientcertmode" are ignored with a warning,
+ *      and the mode falls back to NS_TLS_CLIENT_CERT_NONE.
+ *
+ * Results:
+ *      Returns the parsed Ns_TLSClientCertMode value.
+ *
+ * Side effects:
+ *      Writes warnings to the log when deprecated or invalid
+ *      configuration values are encountered.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_TLSClientCertMode
+NsTLSClientCertModeParse(const char *section)
+{
+    Ns_TLSClientCertMode result;
+    const char          *value =  Ns_ConfigGetValue(section, "clientcertmode");
+
+    if (value == NULL) {
+        result = NS_TLS_CLIENT_CERT_NONE;
+        /*
+         * legacy mode.
+         */
+        if (Ns_ConfigBool(section, "verify", NS_FALSE)) {
+            Ns_Log(Warning, "tls: parameter 'verify' is deprecated; use 'clientcertmode require'");
+            result = NS_TLS_CLIENT_CERT_REQUIRE;
+        }
+    } else if (STRIEQ(value, "none")) {
+        result = NS_TLS_CLIENT_CERT_NONE;
+    } else if (STRIEQ(value, "request")) {
+        result = NS_TLS_CLIENT_CERT_REQUEST;
+    } else if (STRIEQ(value, "require")) {
+        result = NS_TLS_CLIENT_CERT_REQUIRE;
+    } else {
+        Ns_Log(Warning, "tls: configure parameter 'clientcertmode': ignore invalid parameter value '%s'."
+               " Fallback to 'none'",
+               value);
+        result = NS_TLS_CLIENT_CERT_NONE;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTLSConfigNew --
  *
  *      Creates a new NsTLSConfig structure and sets standard
@@ -1931,9 +2000,9 @@ NsTLSConfigNew(const char *section)
     static char sni_info_tag[] = "SniCtx";
 
     dc = ns_calloc(1, sizeof(NsTLSConfig));
-    dc->verify        = Ns_ConfigBool(section, "verify", NS_FALSE);
-    dc->tlsKeylogFile = Ns_ConfigGetValue(section, "tlskeylogfile");
-    dc->tlsKeyScript  = Ns_ConfigGetValue(section, "tlskeyscript");
+    dc->clientCertMode = NsTLSClientCertModeParse(section);
+    dc->tlsKeylogFile  = Ns_ConfigGetValue(section, "tlskeylogfile");
+    dc->tlsKeyScript   = Ns_ConfigGetValue(section, "tlskeyscript");
     if (dc->tlsKeyScript != NULL) {
         dc->tlsKeyScript = Ns_ConfigFilename(section, "tlskeyscript", 12,
                                              nsconf.binDir, /* directory to resolve against */
@@ -2191,11 +2260,13 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Ns_Log(Error, "tls: certificate parameter must be specified in the configuration file under %s", section);
         result = TCL_ERROR;
     } else {
-        const char *key, *ciphers, *ciphersuites, *protocols;
-        const char     *clientcafile = NULL, *clientcapath = NULL, *configValue;
+        const char  *key, *ciphers, *ciphersuites, *protocols;
+        const char  *clientcafile = NULL, *clientcapath = NULL, *configValue;
+        NsTLSConfig *dc = app_data;
+        Ns_DList     dl, *dlPtr = &dl;
 
-        Ns_DList    dl, *dlPtr = &dl;
-
+        assert(dc != NULL);
+        
         key  = Ns_ConfigGetValue(section, "key");
         if (key != NULL && *key == '\0') {
             key = NULL;
@@ -2230,13 +2301,13 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 
         result = Ns_TLS_CtxServerCreateCfg(interp, cert, key,
                                            clientcafile, clientcapath,
-                                           Ns_ConfigBool(section, "verify", NS_FALSE),
+                                           dc->clientCertMode,
                                            ciphers, ciphersuites, protocols,
                                            (flags & NS_DRIVER_QUIC) != 0 ? "h3" : "http/1.1",
                                            app_data, flags,
                                            ctxPtr);
         Ns_Log(Notice, "Ns_TLS_CtxServerInit: Ns_TLS_CtxServerCreate with dc %p -> sslCtx %p",
-               (void*)app_data, (void*)(*ctxPtr));
+               (void*)dc, (void*)(*ctxPtr));
 
         if (clientcafile != NULL) {
             ns_free_const(clientcafile);
@@ -2246,7 +2317,6 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         }
 
         if (result == TCL_OK) {
-            NsTLSConfig *dc = app_data;
             /*
              * The driver modules pass the dc via app_data. dc should
              * only be NULL, when Ns_TLS_CtxServerInit is called over
@@ -2838,7 +2908,8 @@ int
 Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
                           const char *cert, const char *key,
                           const char *caFile, const char *caPath,
-                          bool verify, const char *ciphers, const char *ciphersuites,
+                          Ns_TLSClientCertMode clientCertMode,
+                          const char *ciphers, const char *ciphersuites,
                           const char *protocols, const char *alpn,
                           void *app_data, unsigned int flags,
                           NS_TLS_SSL_CTX **ctxPtr)
@@ -2985,8 +3056,8 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
 
     SSL_CTX_set_default_verify_paths(ctx);
     if ((caFile != NULL) || (caPath != NULL)) {
-        Ns_Log(Notice, "tls: Loading clientcafile <%s> clientcapath <%s> verify %d",
-               caFile, caPath, verify);
+        Ns_Log(Notice, "tls: Loading clientcafile <%s> clientcapath <%s> clientcertmode %d",
+               caFile, caPath, clientCertMode);
         if (SSL_CTX_load_verify_locations(ctx, caFile, caPath) != 1) {
             Ns_Log(Error, "tls: could not load client CA locations "
                    "clientcafile <%s> clientcapath <%s>",
@@ -3007,10 +3078,24 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         }
     }
 
-    SSL_CTX_set_verify(ctx,
-                       verify ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
-                       : SSL_VERIFY_NONE,
-                       NULL);
+    {
+        int verifyMode;
+
+        switch (clientCertMode) {
+        case NS_TLS_CLIENT_CERT_NONE:
+            verifyMode = SSL_VERIFY_NONE;
+            break;
+
+        case NS_TLS_CLIENT_CERT_REQUEST:
+            verifyMode = SSL_VERIFY_PEER;
+            break;
+
+        case NS_TLS_CLIENT_CERT_REQUIRE:
+            verifyMode = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+            break;
+        }
+        SSL_CTX_set_verify(ctx, verifyMode, NULL);
+    }
 
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
@@ -3102,7 +3187,8 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
 {
     return Ns_TLS_CtxServerCreateCfg(interp, cert, NULL,
                                      caFile, caPath,
-                                     verify, ciphers, ciphersuites,
+                                     verify ? NS_TLS_CLIENT_CERT_REQUIRE : NS_TLS_CLIENT_CERT_NONE,
+                                     ciphers, ciphersuites,
                                      protocols, "http/1.1",
                                      NULL, 0u,
                                      ctxPtr);

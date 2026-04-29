@@ -40,6 +40,12 @@
 # define NS_TLS_SSL void*
 #endif
 
+typedef enum {
+    NS_TLS_CLIENT_CERT_NONE,
+    NS_TLS_CLIENT_CERT_REQUEST,
+    NS_TLS_CLIENT_CERT_REQUIRE
+} Ns_TLSClientCertMode;
+
 #ifdef NSD_EXPORTS
 #undef NS_EXTERN
 #ifdef __cplusplus
@@ -4067,7 +4073,8 @@ NS_EXTERN int
 Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
                           const char *cert, const char *key,
                           const char *caFile, const char *caPath,
-                          bool verify, const char *ciphers, const char *ciphersuites,
+                          Ns_TLSClientCertMode clientCertMode,
+                          const char *ciphers, const char *ciphersuites,
                           const char *protocols, const char *alpn, void *app_data,
                           unsigned int flags, NS_TLS_SSL_CTX **ctxPtr)
     NS_GNUC_NONNULL(10,13);
