@@ -873,8 +873,8 @@ be in memory). In order to compute HMACs on large data, use
   [para] The option [option -from] specifies which part of the key is
   constructed:
   [list_begin itemized]
-  [item] [const public] — import a public key (default)
-  [item] [const keypair] — import a full key pair (currently not supported for all algorithms)
+  [item] [const public] - import a public key (default)
+  [item] [const keypair] - import a full key pair (currently not supported for all algorithms)
   [list_end]
 
  [para] At present, imported key material is supported primarily for
@@ -889,8 +889,8 @@ be in memory). In order to compute HMACs on large data, use
 
   [para] The option [option -format] controls the output format:
   [list_begin itemized]
-  [item] [const pem] — return a PEM-encoded key (default)
-  [item] [const raw] — return the raw public key bytes
+  [item] [const pem] - return a PEM-encoded key (default)
+  [item] [const raw] - return the raw public key bytes
   [list_end]
 
   [para] When [option "-format raw"] is used, the option [option -encoding]
@@ -906,16 +906,16 @@ be in memory). In order to compute HMACs on large data, use
   [item] [term "EC public key"]
           A public elliptic curve key defined by affine coordinates:
     [list_begin itemized]
-    [item] [const group] — curve name (e.g., [const prime256v1], [const secp256k1])
-    [item] [const x] — x-coordinate (binary string)
-    [item] [const y] — y-coordinate (binary string)
+    [item] [const group] - curve name (e.g., [const prime256v1], [const secp256k1])
+    [item] [const x] - x-coordinate (binary string)
+    [item] [const y] - y-coordinate (binary string)
     [list_end]
 
   [item] [term "RSA public key"]
          A public RSA key defined by modulus and exponent:
     [list_begin itemized]
-    [item] [const n] — modulus (binary string)
-    [item] [const e] — public exponent (binary string)
+    [item] [const n] - modulus (binary string)
+    [item] [const e] - public exponent (binary string)
     [list_end]
 
   [item] [term "OKP public key"]
@@ -1007,14 +1007,14 @@ be in memory). In order to compute HMACs on large data, use
   [para] The dictionary always contains at least:
 
   [list_begin itemized]
-  [item] [const type] — the key type as returned by [cmd "ns_crypto::key type"]
-  [item] [const signature] — boolean indicating whether the key
+  [item] [const type] - the key type as returned by [cmd "ns_crypto::key type"]
+  [item] [const signature] - boolean indicating whether the key
      provides a digital signature algorithm ((i.e., supports
      sign/verify operations directly).
      This is independent of digest support; key agreement (e.g.,
      [const X25519]) and encapsulation ([const ML-KEM]) keys do not support
      signatures.
-  [item] [const requiresdigest] — boolean indicating
+  [item] [const requiresdigest] - boolean indicating
      whether the signature algorithm requires a message digest (hash
      function) to be specified. This field is only present when
      signature is true.
@@ -1030,18 +1030,18 @@ be in memory). In order to compute HMACs on large data, use
   [para] Additional fields may include:
 
   [list_begin itemized]
-  [item] [const bits] — key size in bits (e.g., RSA, DSA, DH, EC)
-  [item] [const curve] — curve name for EC keys (e.g., [const prime256v1])
-  [item] [const x] — public key component. For EC keys, this is the
+  [item] [const bits] - key size in bits (e.g., RSA, DSA, DH, EC)
+  [item] [const curve] - curve name for EC keys (e.g., [const prime256v1])
+  [item] [const x] - public key component. For EC keys, this is the
      affine x-coordinate. For OKP keys (e.g., [const Ed25519],
      [const Ed448], [const X25519], [const X448]), this is the raw
      public key value.
-  [item] [const y] — affine y-coordinate for elliptic curve keys
+  [item] [const y] - affine y-coordinate for elliptic curve keys
      (present only for EC keys)
-  [item] [const n] — RSA modulus
-  [item] [const e] — RSA public exponent
-  [item] [const securityBits] — the estimated cryptographic strength of the key.
-  [item] [const securityCategory] — an integer indicating the security
+  [item] [const n] - RSA modulus
+  [item] [const e] - RSA public exponent
+  [item] [const securityBits] - the estimated cryptographic strength of the key.
+  [item] [const securityCategory] - an integer indicating the security
     category of the key as defined by the underlying OpenSSL provider.
   [list_end]
 

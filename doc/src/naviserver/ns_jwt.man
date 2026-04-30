@@ -217,11 +217,11 @@ Create a JSON Web Token (JWT) in compact serialization format.
   On success, the command returns a Tcl dictionary containing:
   
   [list_begin itemized]
-  [item] [const valid] — boolean value [const 1]
-  [item] [const header] — parsed JWT header
-  [item] [const payload] — parsed JWT payload
-  [item] [const kid] — resolved key identifier, possibly empty
-  [item] [const alg] — algorithm used for verification
+  [item] [const valid] - boolean value [const 1]
+  [item] [const header] - parsed JWT header
+  [item] [const payload] - parsed JWT payload
+  [item] [const kid] - resolved key identifier, possibly empty
+  [item] [const alg] - algorithm used for verification
   [list_end]
 
 [para]
