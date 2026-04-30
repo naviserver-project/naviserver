@@ -17,54 +17,7 @@
 
 #include "nsd.h"
 
-#define LOG_LOCAL_CERT
-static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
-    NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
-
-#ifdef LOG_LOCAL_CERT
-static void LogLocalCert(SSL *ssl, const char *tag)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-#endif
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ReportError --
- *
- *      Error reporting function for this file.  The function has the
- *      fprintf interface (format string plus arguments) and leaves an
- *      error message in the interpreter's result object, when an
- *      interpreter is provided. Otherwise, it outputs a warning to
- *      the system log.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Error reporting.
- *
- *----------------------------------------------------------------------
- */
-static void
-ReportError(Tcl_Interp *interp, const char *fmt, ...)
-{
-    va_list     ap;
-    Tcl_DString ds;
-
-    NS_NONNULL_ASSERT(fmt != NULL);
-
-    Tcl_DStringInit(&ds);
-    va_start(ap, fmt);
-    Ns_DStringVPrintf(&ds, fmt, ap);
-    va_end(ap);
-    if (interp != NULL) {
-        Tcl_DStringResult(interp, &ds);
-    } else {
-        Ns_Log(Warning, "%s", ds.string);
-        Tcl_DStringFree(&ds);
-    }
-}
+//#define LOG_LOCAL_CERT
 
 #ifdef HAVE_OPENSSL_EVP_H
 # include "nsopenssl.h"
@@ -106,12 +59,6 @@ static TCL_OBJCMDPROC_T NsCertCtlReloadObjCmd;
  * Local functions defined in this file
  */
 
-static char *FilenameToEnvVar(Tcl_DString *dsPtr, const char *filename)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-static Ns_ReturnCode BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 /*
  * OpenSSL callback functions.
  */
@@ -130,6 +77,20 @@ static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
 /*
  * Misc helper
  */
+#ifdef LOG_LOCAL_CERT
+static void LogLocalCert(SSL *ssl, const char *tag)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+#endif
+
+static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
+    NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
+
+static char *FilenameToEnvVar(Tcl_DString *dsPtr, const char *filename)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static Ns_ReturnCode BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void DStringAppendX509Name(Tcl_DString *dsPtr, const X509_NAME *name)
     NS_GNUC_NONNULL(1);
 
@@ -196,6 +157,45 @@ static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(l
 static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file), int UNUSED(line)) NS_ALLOC_SIZE1(2);
 static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line));
 # endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReportError --
+ *
+ *      Error reporting function for this file.  The function has the
+ *      fprintf interface (format string plus arguments) and leaves an
+ *      error message in the interpreter's result object, when an
+ *      interpreter is provided. Otherwise, it outputs a warning to
+ *      the system log.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Error reporting.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ReportError(Tcl_Interp *interp, const char *fmt, ...)
+{
+    va_list     ap;
+    Tcl_DString ds;
+
+    NS_NONNULL_ASSERT(fmt != NULL);
+
+    Tcl_DStringInit(&ds);
+    va_start(ap, fmt);
+    Ns_DStringVPrintf(&ds, fmt, ap);
+    va_end(ap);
+    if (interp != NULL) {
+        Tcl_DStringResult(interp, &ds);
+    } else {
+        Ns_Log(Warning, "%s", ds.string);
+        Tcl_DStringFree(&ds);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
