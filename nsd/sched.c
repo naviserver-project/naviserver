@@ -1101,13 +1101,15 @@ SchedThread(void *UNUSED(arg))
                 if (Ns_DiffTime(&late, &tolerate, NULL) == 1) { /* late > tolerate */
                     if (!ePtr->waslate) {
                         Tcl_DString ds;
+                        const char *flagsString;
 
                         Tcl_DStringInit(&ds);
+                        flagsString = DStringAppendSchedFlags(&ds, ePtr->flags);
                         Ns_Log(Warning,
                                "sched id %d: job started late by %ld.%06ld sec (flags %s, interval %ld.%06ld sec)",
                                ePtr->id,
                                (long)late.sec, (long)late.usec,
-                               DStringAppendSchedFlags(&ds, ePtr->flags),
+                               (*flagsString == '\0' ? "none" : flagsString),
                                (long)ePtr->interval.sec, (long)ePtr->interval.usec);
                         Tcl_DStringFree(&ds);
                     }
