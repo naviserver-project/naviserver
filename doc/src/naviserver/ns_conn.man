@@ -94,8 +94,8 @@ You may also modify this ns_set.
  present      1
  verified     1
  verifyresult ok
- subject      /CN=test-client/O=NaviServer Test
- issuer       /CN=NaviServer Test Client CA
+ subject      {CN = test-client, O = NaviServer Test}
+ issuer       {CN = NaviServer Test Client CA}
  serial       538810D38E442686F1431D499F011619C174EA8F
  notbefore    {Apr 28 13:16:37 2026 GMT}
  notafter     {Apr 28 13:16:37 2027 GMT}
@@ -238,8 +238,8 @@ You may also modify this ns_set.
     present      1
     verified     1
     verifyresult ok
-    subject      /CN=test-client/O=NaviServer Test
-    issuer       /CN=NaviServer Test Client CA
+    subject      {CN = test-client, O = NaviServer Test}
+    issuer       {CN = NaviServer Test Client CA}
  }
 [example_end]
 
@@ -606,8 +606,8 @@ Request where NaviServer is having the role of a forwarding proxy server.
 [example_end]
 
 [see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget \
-  ns_time ns_getcontent]
-[keywords "server built-in" IPv4 IPv6 gzip connection "reverse proxy" SNI \
+  ns_time ns_getcontent ns_certctl]
+[keywords "server built-in" IPv4 IPv6 gzip certificate connection "reverse proxy" SNI \
   "virtual host"]
 
 [manpage_end]

@@ -2162,6 +2162,13 @@ NS_EXTERN Tcl_Interp *NsTclAllocateInterp(const NsServer *servPtr) NS_GNUC_RETUR
 NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)          NS_GNUC_NONNULL(1);
 
 /*
+ * tclcrypto.c
+ */
+#ifdef HAVE_OPENSSL_EVP_H
+NS_EXTERN BIO *NsPemOpenReadStream(const char *fnOrData)  NS_GNUC_NONNULL(1);
+#endif
+
+/*
  * tcljob.c
  */
 NS_EXTERN void NsStartJobsShutdown(void);

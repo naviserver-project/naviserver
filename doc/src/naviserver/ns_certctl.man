@@ -11,18 +11,81 @@ This command is used for managing (server) certificates loaded into NaviServer.
 
 [list_begin definitions]
 
+[call [cmd "ns_certctl info"] [arg cert]]
+
+  Return information about an X.509 certificate.
+
+  [para]
+  The argument [arg cert] specifies the certificate and can be either:
+
+  [list_begin itemized]
+  [item] the name of a file containing a PEM-encoded certificate, or
+  [item] a string containing the PEM-encoded certificate itself.
+  [list_end]
+
+  [para]
+  The command returns a Tcl dictionary with information extracted from
+  the certificate. The returned fields include:
+
+  [list_begin definitions]
+
+  [def subject]
+  Textual representation of the certificate subject distinguished name.
+
+  [def issuer]
+  Textual representation of the issuer distinguished name.
+
+  [def serial]
+  Serial number of the certificate (hex-encoded).
+
+  [def notbefore]
+  Start of the certificate validity period.
+
+  [def notafter]
+  End of the certificate validity period.
+
+  [def fingerprint]
+  SHA-256 fingerprint of the certificate (hex-encoded).
+
+  [def san]
+  Dictionary containing subjectAltName entries, when present. Possible
+  keys include:
+    [list_begin itemized]
+    [item] [term dns] - list of DNS names
+    [item] [term email] - list of email addresses
+    [item] [term uri] - list of URIs (e.g., SPIFFE IDs)
+    [item] [term ip] - list of IP addresses
+    [list_end]
+  [list_end]
+
+  [para]
+  The values of [term notbefore] and [term notafter] are formatted using
+  OpenSSL and can be parsed via Tcl's [cmd "clock scan"].
+
+[example_begin]
+ set info [lb]ns_certctl info /path/to/cert.pem[rb]
+ set days [lb]expr {
+     ([lb]clock scan [lb]dict get $info notafter[rb][rb] - [lb]clock seconds[rb]) / 86400.0
+ }[rb]
+[example_end]
+
+  [para]
+  In contrast to [cmd "ns_conn clientcert"], this command operates on
+  static certificate data and does not include connection-specific
+  fields such as [term present] or [term verified].
+
 [call [cmd "ns_certctl list"] ]
 
-List the loaded certificates and their expiry dates.
+  List the loaded certificates and their expiry dates.
 
 [call [cmd "ns_certctl reload"] ]
 
-Reload the used certificates from the disk. This is e.g. needed, when
-expired certificates are renewed and should be loaded into a running
-NaviServer instance.
+  Reload the used certificates from the disk. This is e.g. needed, when
+  expired certificates are renewed and should be loaded into a running
+  NaviServer instance.
 
 [list_end]
 
-[see_also ]
+[see_also ns_conn]
 [keywords "server built-in" HTTPS certificate TLS]
 [manpage_end]

@@ -183,10 +183,6 @@ static BIO * PemOpenWriteStream(Tcl_Interp *interp, const char *outfileName)
 static int PemWriteResult(Tcl_Interp *interp, BIO *bio, const char *outfileName, const char *what)
     NS_GNUC_NONNULL(1,2,4);
 
-static BIO *PemOpenReadStream(const char *fnOrData)
-    NS_GNUC_NONNULL(1);
-
-
 static int SetResultFromOsslError(Tcl_Interp *interp, const char *prefix)
     NS_GNUC_NONNULL(1,2);
 
@@ -2116,7 +2112,7 @@ CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * PemOpenReadStream --
+ * NsPemOpenReadStream --
  *
  *      Open an OpenSSL BIO stream based on either the provided
  *      string, if it has the right signature, or a .pem-file.  In
@@ -2131,8 +2127,8 @@ CurveNidGet(Tcl_Interp *interp, const char *curveName, int *nidPtr)
  *
  *----------------------------------------------------------------------
  */
-static BIO *
-PemOpenReadStream(const char *fnOrData)
+BIO *
+NsPemOpenReadStream(const char *fnOrData)
 {
     BIO *result;
 
@@ -2168,7 +2164,7 @@ PkeyGetFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhra
     BIO        *bio;
     EVP_PKEY   *result;
 
-    bio = PemOpenReadStream(pemFileName);
+    bio = NsPemOpenReadStream(pemFileName);
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
         result = NULL;
@@ -2236,7 +2232,7 @@ GetEckeyFromPem(Tcl_Interp *interp, const char *pemFileName, const char *passPhr
     BIO        *bio;
     EC_KEY     *result;
 
-    bio = PemOpenReadStream(pemFileName);
+    bio = NsPemOpenReadStream(pemFileName);
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
         result = NULL;
