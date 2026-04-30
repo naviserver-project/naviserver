@@ -103,6 +103,7 @@
 [uri ../../naviserver/files/ns_conn.html {ns_conn authpassword}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn authuser}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn channel}]
+[uri ../../naviserver/files/ns_conn.html {ns_conn clientcert}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn clientdata}] ?/value/?
 [uri ../../naviserver/files/ns_conn.html {ns_conn close}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn compress}] ?/level/?

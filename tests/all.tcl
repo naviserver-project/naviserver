@@ -9,6 +9,7 @@
 # America Online, Inc. All Rights Reserved.
 #
 #
+#ns_log notice "DEBUG all.tcl"
 
 #
 # all.tcl --

@@ -70,6 +70,71 @@ You may also modify this ns_set.
 
  Returns the Tcl channel name for the current connection.
 
+[call [cmd "ns_conn clientcert"]]
+
+ Returns detailed information about the TLS client certificate presented
+ by the peer as a dictionary.
+
+ This command is available only for TLS connections whose driver supports
+ client certificate reporting. It returns an error for non-TLS
+ connections.
+
+ When no client certificate was provided, the result contains:
+
+[example_begin]
+ present      0
+ verified     0
+ verifyresult absent
+[example_end]
+
+  When a client certificate is available, the result contains fields
+  such as:
+
+[example_begin]
+ present      1
+ verified     1
+ verifyresult ok
+ subject      /CN=test-client/O=NaviServer Test
+ issuer       /CN=NaviServer Test Client CA
+ serial       538810D38E442686F1431D499F011619C174EA8F
+ notbefore    {Apr 28 13:16:37 2026 GMT}
+ notafter     {Apr 28 13:16:37 2027 GMT}
+ fingerprint  babaf98c0384c377fd4f6c7db1e1a9d7d25305a119b0cd542892e08b1060ac30
+ pem          {-----BEGIN CERTIFICATE-----
+               ...
+               -----END CERTIFICATE-----}
+ san          {dns {client1.example.org client2.example.org}
+               email test-client@example.org
+               uri spiffe://example.org/user/test-client}
+[example_end]
+
+ The [const verified] field is true when OpenSSL reports
+ [const X509_V_OK] for the peer certificate. The [const verifyresult]
+ field contains the textual OpenSSL verification result, or
+ [const absent] when no client certificate was provided.
+
+ The [const san] field is present when the certificate contains a
+ subjectAltName extension. Supported entries include [const dns],
+ [const email], [const uri], and [const ip]. Multiple values of the same
+ type are returned as Tcl lists.
+
+ [para]
+ For authentication decisions, prefer identities from
+ [const "san email"] or [const "san uri"] over the certificate subject
+ common name. For example, a client certificate intended for user login
+ may contain an email address in the subjectAltName extension, while a
+ service or workload identity may use a URI such as a SPIFFE ID.
+
+[example_begin]
+ set cert [lb]ns_conn clientcert]
+ 
+ if {[lb]dict get $cert present[rb] && [lb]dict get $cert verified[rb]} {
+   if {[lb]dict exists $cert san email[rb]} {
+     set email [lb]lindex [lb]dict get $cert san email[rb] 0[rb]
+     # Map $email to a local user account.
+   }
+ }
+[example_end]
 
 [call [cmd  "ns_conn clientdata"] [opt [arg value]]]
 
@@ -162,6 +227,35 @@ You may also modify this ns_set.
  connections, additional fields such as [const sslversion],
  [const cipher], and [const servername] (as provided via SNI) are included.
 
+ For TLS connections, the dictionary includes TLS details such as
+ [const sslversion], [const cipher], and [const servername]. When the
+ driver supports client certificate reporting, the dictionary also
+ contains a nested [const clientcert] dictionary with a lightweight
+ summary:
+
+[example_begin]
+ clientcert {
+    present      1
+    verified     1
+    verifyresult ok
+    subject      /CN=test-client/O=NaviServer Test
+    issuer       /CN=NaviServer Test Client CA
+ }
+[example_end]
+
+ When no client certificate was provided, the nested dictionary contains:
+
+[example_begin]
+ clientcert {
+    present      0
+    verified     0
+    verifyresult absent
+ }
+[example_end]
+
+ The [const clientcert] entry in [cmd "ns_conn details"] is intended for
+ lightweight inspection and logging. For the full peer certificate
+ information, use [cmd "ns_conn clientcert"].
 
 [call [cmd  "ns_conn driver"]]
 

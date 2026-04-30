@@ -520,6 +520,7 @@ static Ns_DriverSendProc Send;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 static Ns_DriverConnInfoProc ConnInfo;
+static Ns_DriverClientcertInfoProc ClientcertInfo;
 
 
 /*======================================================================
@@ -7082,6 +7083,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     init.sendFileProc = NULL;
     init.keepProc = Keep;
     init.connInfoProc = ConnInfo;
+    init.clientcertInfoProc = ClientcertInfo;
     init.closeProc = Close;
     //init.opts = NS_DRIVER_ASYNC | NS_DRIVER_UDP | NS_DRIVER_QUIC;
     init.opts = NS_DRIVER_UDP | NS_DRIVER_QUIC;
@@ -8205,7 +8207,51 @@ ConnInfo(Ns_Sock *sock)
                                NsAtomObj(NS_ATOM_ALPN),
                                Tcl_NewStringObj(alpnString, (TCL_SIZE_T)alpnLength));
             }
+            {
+                Tcl_Obj *clientcertSummaryObj = Tcl_NewDictObj();
+
+                NsTLSAddClientCertInfo(NULL, qctx->ssl, clientcertSummaryObj);
+                Tcl_DictObjPut(NULL, resultObj,
+                               Tcl_NewStringObj("clientcert", TCL_INDEX_NONE),
+                               clientcertSummaryObj);
+
+            }
         }
+    }
+
+    return resultObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClientcertInfo --
+ *
+ *      Return detailed client certificate information for the given
+ *      TLS socket as a Tcl dictionary object.
+ *
+ *      The function retrieves the SSL context from the socket-specific
+ *      driver data (QuicSockCtx) and extracts client certificate
+ *      information via NsTLSAddClientCertDetails().
+ *
+ * Results:
+ *      Tcl_Obj * containing a dictionary with client certificate details.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj*
+ClientcertInfo(Ns_Sock *sock)
+{
+    Tcl_Obj *resultObj;
+
+    resultObj = Tcl_NewDictObj();
+    if (sock != NULL) {
+        QuicSockCtx *qctx = sock->arg;
+
+        NsTLSAddClientCertDetails(NULL, qctx->ssl, resultObj);
     }
 
     return resultObj;

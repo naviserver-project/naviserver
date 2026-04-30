@@ -723,6 +723,9 @@ typedef int
 typedef Tcl_Obj *
 (Ns_DriverConnInfoProc)(Ns_Sock *sock);
 
+typedef Tcl_Obj *
+(Ns_DriverClientcertInfoProc)(Ns_Sock *sock);
+
 typedef struct Ns_DriverClientInitArg {
     NS_TLS_SSL_CTX *ctx;
     const char *sniHostname;
@@ -755,7 +758,8 @@ typedef struct Ns_DriverInitData {
     Ns_DriverConnInfoProc   *connInfoProc;     /* NS_DRIVER_VERSION_5: Obtain information about a connection */
     const char              *libraryVersion;   /* NS_DRIVER_VERSION_5: Version of the used library */
     Ns_ThreadProc           *driverThreadProc; /* NS_DRIVER_VERSION_6: event loop */
-    Ns_HeadersEncodeProc    *headersEncodeProc;/* NS_DRIVER_VERSION_6: encode headers from Ns_Set */
+    Ns_HeadersEncodeProc    *headersEncodeProc; /* NS_DRIVER_VERSION_6: encode headers from Ns_Set */
+    Ns_DriverClientcertInfoProc *clientcertInfoProc; /* NS_DRIVER_VERSION_6: Obtain client certificate */
 } Ns_DriverInitData;
 
 

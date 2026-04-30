@@ -1388,7 +1388,7 @@ HdrMergeExtra(const Ns_Conn *conn)
      * Handle alt-svc only for HTTPS connections via HTTP/1
      */
     if (STREQ(sockPtr->driver->type, "nsssl")) {
-        NsTlsAddOutputHeaders(headers, sockPtr);
+        NsTLSAddOutputHeaders(headers, sockPtr);
     }
 
     if (servPtr->opts.extraHeaders != NULL) {

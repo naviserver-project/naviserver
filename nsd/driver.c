@@ -1348,8 +1348,9 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
         drvPtr->libraryVersion = init->libraryVersion;
     }
     if (init->version >= NS_DRIVER_VERSION_6) {
-        drvPtr->driverThreadProc  = init->driverThreadProc;
-        drvPtr->headersEncodeProc = init->headersEncodeProc;
+        drvPtr->driverThreadProc   = init->driverThreadProc;
+        drvPtr->headersEncodeProc  = init->headersEncodeProc;
+        drvPtr->clientcertInfoProc = init->clientcertInfoProc;
     }
 
     drvPtr->servPtr        = servPtr;

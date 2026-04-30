@@ -1278,7 +1278,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 
                 assert(sockPtr->drvPtr->clientInitProc != NULL);
 
-                result = NsTlsGetParameters(itPtr, NS_TRUE, insecureInt,
+                result = NsTLSGetParameters(itPtr, NS_TRUE, insecureInt,
                                             cert, key, caFile, caPath,
                                             (const char **)&caFile, (const char **)&caPath);
                 if (result == TCL_OK) {
@@ -1435,7 +1435,7 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (NsTlsGetParameters(itPtr, doTLS ==(int)NS_TRUE, insecureInt,
+    } else if (NsTLSGetParameters(itPtr, doTLS ==(int)NS_TRUE, insecureInt,
                                   cert, key, caFile, caPath,
                                   (const char **)&caFile,
                                   (const char **)&caPath) != TCL_OK) {

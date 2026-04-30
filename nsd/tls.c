@@ -121,12 +121,24 @@ static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl),
 # if OPENSSL_VERSION_NUMBER >= 0x10101000L
 static void KeylogCB(const SSL *ssl, const char *line);
 # endif
+static void SSL_infoCB(const SSL *ssl, int where, int ret);
+static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
+
+/*
+ * Misc helper
+ */
+static Tcl_Obj *GetAsn1TimeToObj(const ASN1_TIME *t);
+static const char* GetAsn1String(ASN1_STRING *asn, int *lengthPtr)
+    NS_GNUC_NONNULL(1);
+
+static void DictAppend(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Tcl_Obj *valueObj)
+    NS_GNUC_NONNULL(2,3,4);
+
+static Ns_ReturnCode NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool details)
+    NS_GNUC_NONNULL(2,3);
 
 static Ns_TLSClientCertMode NsTLSClientCertModeParse(const char *section)
     NS_GNUC_NONNULL(1);
-
-static void SSL_infoCB(const SSL *ssl, int where, int ret);
-static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
 
 static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int x509err, int currentDepth, NsServer *servPtr)
     NS_GNUC_NONNULL(4);
@@ -462,6 +474,449 @@ static int SSL_cert_has_must_staple(X509 *cert) {
     }
 
     return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetAsn1String --
+ *
+ *      Return a pointer to the raw data of an ASN1_STRING together with
+ *      its length.
+ *
+ *      The returned pointer refers to internal OpenSSL-managed memory
+ *      and must not be modified or freed by the caller. The data may
+ *      contain binary bytes and is not guaranteed to be NUL-terminated.
+ *
+ * Results:
+ *      Pointer to the ASN1 string data (const char *).
+ *
+ * Side effects:
+ *      If lengthPtr is not NULL, the length of the ASN1 string is stored
+ *      in *lengthPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char*
+GetAsn1String(ASN1_STRING *asnString, int *lengthPtr)
+{
+    if (lengthPtr != NULL) {
+        *lengthPtr = ASN1_STRING_length(asnString);
+    }
+    return (const char*)ASN1_STRING_get0_data(asnString);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetAsn1TimeToObj --
+ *
+ *      Convert an ASN1_TIME value into a Tcl string object.
+ *
+ *      The ASN1 time is formatted using OpenSSL's ASN1_TIME_print(),
+ *      producing a human-readable representation (e.g.,
+ *      "Apr 28 13:16:37 2026 GMT").
+ *
+ * Results:
+ *      Tcl_Obj * containing the formatted time string. When the input
+ *      is NULL or conversion fails, an empty Tcl string object is
+ *      returned.
+ *
+ * Side effects:
+ *      Allocates temporary BIO memory, which is freed before returning.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+GetAsn1TimeToObj(const ASN1_TIME *t)
+{
+    BIO     *bio;
+    BUF_MEM *bptr;
+    Tcl_Obj *result;
+
+    if (t == NULL) {
+        return Tcl_NewStringObj("", 0);
+    }
+
+    bio = BIO_new(BIO_s_mem());
+    if (bio == NULL) {
+        return Tcl_NewStringObj("", 0);
+    }
+    if (ASN1_TIME_print(bio, t) != 1) {
+        BIO_free(bio);
+        return Tcl_NewStringObj("", 0);
+    }
+
+    BIO_get_mem_ptr(bio, &bptr);
+    result = Tcl_NewStringObj(bptr->data, (TCL_SIZE_T)bptr->length);
+
+    BIO_free(bio);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictAppend --
+ *
+ *      Append a value to a list stored under a dictionary key.
+ *
+ *      If the specified key does not exist in the dictionary, a new
+ *      list is created and inserted under that key. The value is then
+ *      appended to the list.
+ *
+ *      This helper is useful for accumulating multiple values under
+ *      the same key (e.g., SAN entries such as DNS, email, URI).
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Modifies dictObj by creating or updating a list value associated
+ *      with keyObj. The valueObj is appended to this list.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DictAppend(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Tcl_Obj *valueObj)
+{
+    Tcl_Obj *listObj;
+
+    if (Tcl_DictObjGet(interp, dictObj, keyObj, &listObj) != TCL_OK
+        || listObj == NULL
+        ) {
+        listObj = Tcl_NewListObj(0, NULL);
+        Tcl_DictObjPut(interp, dictObj, keyObj, listObj);
+    }
+
+    Tcl_ListObjAppendElement(interp, listObj, valueObj);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTLSAddClientCertFields --
+ *
+ *      Extract client certificate information from an SSL connection
+ *      and add it to the provided Tcl dictionary.
+ *
+ *      The function inspects the peer certificate obtained from the
+ *      TLS session and populates dictObj with information about its
+ *      presence, verification status, and (depending on the mode)
+ *      additional certificate attributes.
+ *
+ *      When no client certificate is present, the dictionary will
+ *      contain:
+ *
+ *          present      = 0
+ *          verified     = 0
+ *          verifyresult = "absent"
+ *
+ *      When a certificate is present, the dictionary contains at least:
+ *
+ *          present      = 1
+ *          verified     = boolean (based on OpenSSL verification result)
+ *          verifyresult = textual representation of verification status
+ *
+ *      In non-minimal mode, further attributes such as subject, issuer,
+ *      serial number, validity period, fingerprint, PEM encoding, and
+ *      subjectAltName entries (DNS, email, URI, etc.) are added.
+ *
+ *      The "minimal" flag controls the amount of information returned:
+ *
+ *          minimal = NS_TRUE
+ *              Only basic fields (present, verified, verifyresult, and
+ *              optionally a small subset such as subject/issuer) are
+ *              added. Intended for lightweight use (e.g., ns_conn details).
+ *
+ *          minimal = NS_FALSE
+ *              Full certificate details are added. Intended for
+ *              ns_conn clientcert.
+ *
+ * Results:
+ *      NS_OK on success.
+ *
+ * Side effects:
+ *      Modifies dictObj by adding or updating key/value pairs.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool minimal)
+{
+    X509           *cert;
+
+    Ns_Log(Debug, "NsTLSAddClientCertFields minimal: %d", minimal);
+
+#ifdef HAVE_OPENSSL_3
+    cert = SSL_get0_peer_certificate(ssl);
+#else
+    cert = SSL_get_peer_certificate(ssl);
+#endif
+
+    if (cert == NULL) {
+        Tcl_DictObjPut(interp, dictObj,
+                       Tcl_NewStringObj("present", TCL_INDEX_NONE),
+                       Tcl_NewBooleanObj(NS_FALSE));
+        Tcl_DictObjPut(interp, dictObj,
+                       Tcl_NewStringObj("verified", TCL_INDEX_NONE),
+                       Tcl_NewBooleanObj(NS_FALSE));
+        Tcl_DictObjPut(interp, dictObj,
+                       Tcl_NewStringObj("verifyresult", TCL_INDEX_NONE),
+                       Tcl_NewStringObj("absent", TCL_INDEX_NONE));
+    } else {
+        /*
+         * present
+         */
+        Tcl_DictObjPut(interp, dictObj,
+                       Tcl_NewStringObj("present", TCL_INDEX_NONE),
+                       Tcl_NewBooleanObj(NS_TRUE));
+
+        /*
+         * verifyresult
+         */
+        {
+            long verifyResult = SSL_get_verify_result(ssl);
+
+            Tcl_DictObjPut(interp, dictObj,
+                           Tcl_NewStringObj("verified", TCL_INDEX_NONE),
+                           Tcl_NewBooleanObj(verifyResult == X509_V_OK));
+
+            Tcl_DictObjPut(interp, dictObj,
+                           Tcl_NewStringObj("verifyresult", TCL_INDEX_NONE),
+                           Tcl_NewStringObj(X509_verify_cert_error_string(verifyResult),
+                                            TCL_INDEX_NONE));
+        }
+
+        /*
+         * subject / issuer
+         */
+        {
+            char subject[1024], issuer[1024];
+
+            X509_NAME_oneline(X509_get_subject_name(cert),
+                              subject, sizeof(subject));
+            X509_NAME_oneline(X509_get_issuer_name(cert),
+                              issuer, sizeof(issuer));
+
+            Tcl_DictObjPut(interp, dictObj,
+                           Tcl_NewStringObj("subject", TCL_INDEX_NONE),
+                           Tcl_NewStringObj(subject, TCL_INDEX_NONE));
+            Tcl_DictObjPut(interp, dictObj,
+                           Tcl_NewStringObj("issuer", TCL_INDEX_NONE),
+                           Tcl_NewStringObj(issuer, TCL_INDEX_NONE));
+        }
+
+        if (!minimal) {
+            /*
+             * serial
+             */
+            {
+                ASN1_INTEGER *serial = X509_get_serialNumber(cert);
+                BIGNUM       *bn = ASN1_INTEGER_to_BN(serial, NULL);
+                char         *hex = BN_bn2hex(bn);
+
+                if (hex != NULL) {
+                    Tcl_DictObjPut(interp, dictObj,
+                                   Tcl_NewStringObj("serial", TCL_INDEX_NONE),
+                                   Tcl_NewStringObj(hex, TCL_INDEX_NONE));
+                    OPENSSL_free(hex);
+                }
+                BN_free(bn);
+            }
+
+            /*
+             * validity period
+             */
+            {
+                const ASN1_TIME *notBefore = X509_get0_notBefore(cert);
+                const ASN1_TIME *notAfter  = X509_get0_notAfter(cert);
+
+                Tcl_DictObjPut(interp, dictObj,
+                               Tcl_NewStringObj("notbefore", TCL_INDEX_NONE),
+                               GetAsn1TimeToObj(notBefore));
+
+                Tcl_DictObjPut(interp, dictObj,
+                               Tcl_NewStringObj("notafter", TCL_INDEX_NONE),
+                               GetAsn1TimeToObj(notAfter));
+            }
+
+            /*
+             * fingerprint sha256
+             */
+            {
+                unsigned int  mdLen = 0u;
+                unsigned char md[EVP_MAX_MD_SIZE];
+                char          digestChars[EVP_MAX_MD_SIZE * 2 + 1];
+
+                if (X509_digest(cert, EVP_sha256(), md, &mdLen) == 1) {
+                    Tcl_DictObjPut(interp, dictObj,
+                                   Tcl_NewStringObj("fingerprint", TCL_INDEX_NONE),
+                                   NsEncodedObj(md, (size_t)mdLen, digestChars, NS_OBJ_ENCODING_HEX));
+                }
+            }
+
+            /*
+             * PEM
+             */
+            {
+                BIO *bio = BIO_new(BIO_s_mem());
+
+                if (bio != NULL && PEM_write_bio_X509(bio, cert) == 1) {
+                    BUF_MEM *mem;
+
+                    BIO_get_mem_ptr(bio, &mem);
+                    Tcl_DictObjPut(interp, dictObj,
+                                   Tcl_NewStringObj("pem", TCL_INDEX_NONE),
+                                   Tcl_NewStringObj(mem->data, (TCL_SIZE_T)mem->length));
+                }
+                BIO_free(bio);
+            }
+
+            /*
+             * SAN: subjectAltName
+             */
+            {
+                GENERAL_NAMES *names;
+
+                names = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+
+                Ns_Log(Debug, "NsTLSAddClientCertFields: san names %p", (void*)names);
+
+                if (names != NULL) {
+                    int        i, count = sk_GENERAL_NAME_num(names);
+                    Tcl_Obj   *sanDict = Tcl_NewDictObj();
+                    TCL_SIZE_T sanNrEntries;
+
+                    for (i = 0; i < count; i++) {
+                        const GENERAL_NAME *gn = sk_GENERAL_NAME_value(names, i);
+
+                        switch (gn->type) {
+
+                        case GEN_EMAIL: {
+                            int         len = 0;
+                            const char *email = GetAsn1String(gn->d.rfc822Name, &len);
+                            DictAppend(interp, sanDict,
+                                       Tcl_NewStringObj("email", TCL_INDEX_NONE),
+                                       Tcl_NewStringObj(email, (TCL_SIZE_T)len));
+                            break;
+                        }
+
+                        case GEN_DNS: {
+                            int         len = 0;
+                            const char *dns = GetAsn1String(gn->d.dNSName, &len);
+
+                            DictAppend(interp, sanDict,
+                                       Tcl_NewStringObj("dns", TCL_INDEX_NONE),
+                                       Tcl_NewStringObj(dns, (TCL_SIZE_T)len));
+                            break;
+                        }
+
+                        case GEN_URI: {
+                            int         len = 0;
+                            const char *uri = GetAsn1String(gn->d.uniformResourceIdentifier, &len);
+
+                            DictAppend(interp, sanDict,
+                                       Tcl_NewStringObj("uri", TCL_INDEX_NONE),
+                                       Tcl_NewStringObj(uri, (TCL_SIZE_T)len));
+                            break;
+                        }
+
+                        case GEN_IPADD: {
+                            int                  len = ASN1_STRING_length(gn->d.iPAddress);
+                            const unsigned char *ip = ASN1_STRING_get0_data(gn->d.iPAddress);
+
+                            char ipbuf[NS_IPADDR_SIZE];
+                            if (len == 4) {
+                                inet_ntop(AF_INET, ip, ipbuf, sizeof(ipbuf));
+                            } else if (len == 16) {
+                                inet_ntop(AF_INET6, ip, ipbuf, sizeof(ipbuf));
+                            } else {
+                                break;
+                            }
+
+                            DictAppend(interp, sanDict,
+                                       Tcl_NewStringObj("ip", TCL_INDEX_NONE),
+                                       Tcl_NewStringObj(ipbuf, TCL_INDEX_NONE));
+                            break;
+                        }
+                        }
+                    }
+
+                    GENERAL_NAMES_free(names);
+
+                    if (Tcl_DictObjSize(interp, sanDict, &sanNrEntries) == TCL_OK
+                        && sanNrEntries > 0
+                        ) {
+                        Tcl_DictObjPut(interp, dictObj,
+                                       Tcl_NewStringObj("san", TCL_INDEX_NONE),
+                                       sanDict);
+                    }
+                }
+            }
+        }
+
+#ifndef HAVE_OPENSSL_3
+        X509_free(cert);
+#endif
+    }
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTLSAddClientCertInfo --
+ *
+ *      Add a minimal set of client certificate information to the
+ *      provided Tcl dictionary.
+ *
+ *      This is a convenience wrapper around NsTLSAddClientCertFields()
+ *      with minimal output enabled. It is intended for lightweight
+ *      inspection of connection properties (e.g., ns_conn details).
+ *
+ * Results:
+ *      NS_OK on success.
+ *
+ * Side effects:
+ *      Modifies dictObj by adding a minimal set of certificate fields.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+NsTLSAddClientCertInfo(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
+{
+    return NsTLSAddClientCertFields(interp, ssl, dictObj, NS_TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTLSAddClientCertDetails --
+ *
+ *      Add a full set of client certificate information to the
+ *      provided Tcl dictionary.
+ *
+ *      This is a convenience wrapper around NsTLSAddClientCertFields()
+ *      with extended output enabled. It provides detailed certificate
+ *      attributes including subject, issuer, validity, SAN entries,
+ *      fingerprint, and PEM encoding.
+ *
+ *      Intended for use in commands such as ns_conn clientcert.
+ *
+ * Results:
+ *      NS_OK on success.
+ *
+ * Side effects:
+ *      Modifies dictObj by adding detailed certificate information.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+NsTLSAddClientCertDetails(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
+{
+    return NsTLSAddClientCertFields(interp, ssl, dictObj, NS_FALSE);
 }
 
 /*
@@ -2264,9 +2719,8 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         const char  *clientcafile = NULL, *clientcapath = NULL, *configValue;
         NsTLSConfig *dc = app_data;
         Ns_DList     dl, *dlPtr = &dl;
+        Ns_TLSClientCertMode clientCertMode;
 
-        assert(dc != NULL);
-        
         key  = Ns_ConfigGetValue(section, "key");
         if (key != NULL && *key == '\0') {
             key = NULL;
@@ -2299,9 +2753,17 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                                              nsconf.home, configValue, NS_TRUE, NS_TRUE);
         }
 
+        if (dc == NULL) {
+            /*
+             * The nsssl module was not initialized, probably test mode.
+             */
+            clientCertMode = NsTLSClientCertModeParse(section);
+        } else {
+            clientCertMode = dc->clientCertMode;
+        }
         result = Ns_TLS_CtxServerCreateCfg(interp, cert, key,
                                            clientcafile, clientcapath,
-                                           dc->clientCertMode,
+                                           clientCertMode,
                                            ciphers, ciphersuites, protocols,
                                            (flags & NS_DRIVER_QUIC) != 0 ? "h3" : "http/1.1",
                                            app_data, flags,
@@ -3734,13 +4196,13 @@ EnsureDriverLinkage(void)
     Ns_DListFree(&h1dl);
 }
 
-void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
+void NsTLSAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
 {
     NsTLSConfig *dc = sockPtr->driver->arg;
 
     NS_INIT_ONCE(EnsureDriverLinkage);
 
-    Ns_Log(Debug, "NsTlsAddOutputHeaders h1 driver %p %s linked to %p advertise %d"
+    Ns_Log(Debug, "NsTLSAddOutputHeaders h1 driver %p %s linked to %p advertise %d"
            " already set %d req %s",
            (void*)sockPtr->driver, sockPtr->driver->threadName,
            (void*)((Driver *)sockPtr->driver)->consumer,
@@ -3875,7 +4337,7 @@ Ns_TLS_CtxServerInit(const char *UNUSED(path), Tcl_Interp *UNUSED(interp),
 /*
  *----------------------------------------------------------------------
  *
- * NsTlsGetParameters --
+ * NsTLSGetParameters --
  *
  *      Check TLS specific parameters and return optionally the
  *      default values.  For insecure requests, set "caFile" and
@@ -3890,7 +4352,7 @@ Ns_TLS_CtxServerInit(const char *UNUSED(path), Tcl_Interp *UNUSED(interp),
  *
  *----------------------------------------------------------------------
  */
-int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
+int NsTLSGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
                        const char *cert, const char *key, const char *caFile, const char *caPath,
                        const char **caFilePtr, const char **caPathPtr)
 {

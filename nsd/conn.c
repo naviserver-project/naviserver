@@ -22,8 +22,6 @@ static Ns_ObjvValueRange posintRange0 = {0, INT_MAX};
 static Ns_ObjvValueRange posSizeRange0 = {0, TCL_SIZE_MAX};
 static Ns_ObjvValueRange posSizeRange1 = {1, TCL_SIZE_MAX};
 
-#include "nsd.h"
-
 static int ConnContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, unsigned int flags);
 static int ConnContentTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, unsigned int flags);
 static int ConnCopyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, unsigned int flags);
@@ -2282,7 +2280,7 @@ ConnFormObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 
 enum ISubCmdIdx {
     CAacceptedcompressionIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
-    CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
+    CChannelIdx, CClientcertIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
     CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CContenttypeIdx, CCopyIdx,
     CCurrentAddrIdx, CCurrentPortIdx,
     CDetailsIdx, CDriverIdx,
@@ -2316,7 +2314,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
     static const char *const opts[] = {
         "acceptedcompression", "auth", "authpassword", "authuser",
-        "channel", "clientdata", "close", "compress", "content",
+        "channel", "clientcert", "clientdata", "close", "compress", "content",
         "contentfile", "contentlength", "contentsentlength", "contenttype", "copy",
         "currentaddr", "currentport",
         "details", "driver",
@@ -2341,8 +2339,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     static const unsigned int required_flags[] = {
         /* A */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
-        /* C channel */ NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
-        /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        /* C channel */ NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED,
+        /* line continued */ NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* C contentfile */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
         /* line continued */ NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_OPEN,
         /* C currentaddr */ NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONNECTED,
@@ -2413,6 +2411,32 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             }
             break;
         }
+        case CClientcertIdx:
+            if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK
+                || (NsConnRequire(interp, required_flags[opt], NULL, &result) != NS_OK) ) {
+                result = TCL_ERROR;
+
+            } else {
+                Ns_Sock *sock = Ns_ConnSockPtr(conn);
+                Sock    *sockPtr = (Sock *)sock;
+
+                if (!STREQ(sockPtr->drvPtr->protocol, "https")) {
+                    Ns_TclPrintfResult(interp, "connection is not TLS");
+                    result = TCL_ERROR;
+
+                } else if (connPtr->drvPtr->clientcertInfoProc == NULL) {
+                    Ns_TclPrintfResult(interp, "connection driver does not provide client certificate information");
+                    result = TCL_ERROR;
+
+                } else {
+                    Tcl_Obj *dictObj = (connPtr->drvPtr->clientcertInfoProc != NULL)
+                        ? connPtr->drvPtr->clientcertInfoProc(Ns_ConnSockPtr(conn))
+                        : Tcl_NewDictObj();
+                    Tcl_SetObjResult(interp, dictObj);
+                }
+            }
+            break;
+
         case CCompressIdx: {
             int               level = -1;
             Ns_ObjvValueRange compressRange = {0, 9};

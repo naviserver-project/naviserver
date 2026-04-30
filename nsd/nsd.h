@@ -473,6 +473,7 @@ typedef struct Driver {
     Ns_DriverSendFileProc   *sendFileProc; /* Optional - optimize direct file send. */
     Ns_DriverKeepProc       *keepProc;
     Ns_DriverConnInfoProc   *connInfoProc; /* Driver specific info about connection. */
+    Ns_DriverClientcertInfoProc *clientcertInfoProc; /* Specific info about client certificate. */
     Ns_DriverRequestProc    *requestProc;
     Ns_DriverCloseProc      *closeProc;
     Ns_DriverClientInitProc *clientInitProc;   /* Optional - initialization of client connections */
@@ -2241,14 +2242,22 @@ NS_EXTERN void NsTclInitKeylistType(void);
  * tls.c
  */
 
-NS_EXTERN int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
+NS_EXTERN int NsTLSGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
                                  const char *cert, const char* key,
                                  const char *caFile, const char *caPath,
                                  const char **caFilePtr, const char **caPathPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(8) NS_GNUC_NONNULL(9);
 
-NS_EXTERN void NsTlsAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock  *sockPtr)
+NS_EXTERN void NsTLSAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN Ns_ReturnCode NsTLSAddClientCertInfo(Tcl_Interp *interp,  SSL *ssl, Tcl_Obj *dictObj)
+        NS_GNUC_NONNULL(2,3);
+
+NS_EXTERN Ns_ReturnCode NsTLSAddClientCertDetails(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
+        NS_GNUC_NONNULL(2,3);
+
+
 
 /*
  * unix.c

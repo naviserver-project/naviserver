@@ -3076,7 +3076,7 @@ HttpQueue(
      * an TLS context.
      */
     if (result == TCL_OK) {
-        result = NsTlsGetParameters(itPtr, (strncmp(url, "https", 5u) == 0), insecureInt,
+        result = NsTLSGetParameters(itPtr, (strncmp(url, "https", 5u) == 0), insecureInt,
                                     cert, key, caFile, caPath,
                                     (const char **)&caFile, (const char **)&caPath);
     }

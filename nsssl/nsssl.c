@@ -59,6 +59,7 @@ static Ns_DriverRecvProc Recv;
 static Ns_DriverSendProc Send;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverConnInfoProc ConnInfo;
+static Ns_DriverClientcertInfoProc ClientcertInfo;
 static Ns_DriverCloseProc Close;
 static Ns_DriverClientInitProc ClientInit;
 
@@ -123,6 +124,8 @@ Ns_ModuleInit(const char *server, const char *module)
     NsTLSConfig       *dc;
     Ns_DriverInitData  init;
 
+    /*Ns_Log(Notice, "DEBUG ===================================================== Ns_ModuleInit %s", module);*/
+
     memset(&init, 0, sizeof(init));
 
     section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
@@ -133,7 +136,7 @@ Ns_ModuleInit(const char *server, const char *module)
     dc->u.h1.h3advertise   = Ns_ConfigBool(section, "h3advertise", NS_FALSE);
     dc->u.h1.h3persist     = Ns_ConfigBool(section, "h3persist", NS_TRUE);
 
-    init.version = NS_DRIVER_VERSION_5;
+    init.version = NS_DRIVER_VERSION_6;
     init.name = "nsssl";
     init.listenProc = Listen;
     init.acceptProc = Accept;
@@ -142,6 +145,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.sendFileProc = NULL;
     init.keepProc = Keep;
     init.connInfoProc = ConnInfo;
+    init.clientcertInfoProc = ClientcertInfo;
     init.requestProc = NULL;
     init.closeProc = Close;
     init.clientInitProc = ClientInit;
@@ -573,11 +577,54 @@ ConnInfo(Ns_Sock *sock)
         Tcl_DictObjPut(NULL, resultObj,
                        NsAtomObj(NS_ATOM_SERVERNAME),
                        Tcl_NewStringObj(SSL_get_servername(sslCtx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
+        {
+            Tcl_Obj *clientcertSummaryObj = Tcl_NewDictObj();
+
+            NsTLSAddClientCertInfo(NULL, sslCtx->ssl, clientcertSummaryObj);
+            Tcl_DictObjPut(NULL, resultObj,
+                           Tcl_NewStringObj("clientcert", TCL_INDEX_NONE),
+                           clientcertSummaryObj);
+
+        }
     }
 
     return resultObj;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClientcertInfo --
+ *
+ *      Return detailed client certificate information for the given
+ *      TLS socket as a Tcl dictionary object.
+ *
+ *      The function retrieves the SSL context from the socket-specific
+ *      driver data (NssslSockCtx) and extracts client certificate
+ *      information via NsTLSAddClientCertDetails().
+ *
+ * Results:
+ *      Tcl_Obj * containing a dictionary with client certificate details.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj*
+ClientcertInfo(Ns_Sock *sock)
+{
+    Tcl_Obj *resultObj;
+
+    resultObj = Tcl_NewDictObj();
+    if (sock != NULL) {
+        NssslSockCtx *sslCtx = sock->arg;
+
+        NsTLSAddClientCertDetails(NULL, sslCtx->ssl, resultObj);
+    }
+
+    return resultObj;
+}
 
 
 /*

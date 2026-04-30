@@ -90,7 +90,6 @@ ns_section "ns/testconfig" {
 #
 # Global config.
 #
-
 ns_section "ns/modules" {
     if {[ns_config "test" listenport]} {
         ns_param nssock [ns_config "test" home]/../nssock/nssock
@@ -497,6 +496,6 @@ ns_section "ns/db/pool/b" {
     ns_param   maxidle         1
     ns_param   maxopen         1
 }
-puts stderr "=================================="
 ns_logctl severity notice off
 ns_logctl severity warning off
+puts stderr "================================== test config file loaded"
