@@ -90,7 +90,7 @@ NaviServer accepts configuration either from a single Tcl file or from a
 directory containing multiple Tcl fragments.
 
 [para]
-When the argument to [term -t] names a directory, NaviServer loads all files
+When the argument to [const -t] names a directory, NaviServer loads all files
 matching [const *.tcl] from that directory in lexicographic order.  This
 allows large configurations to be split into maintainable fragments while
 remaining backward compatible with single-file configurations.
@@ -115,7 +115,7 @@ behavior as a single configuration file.
 
 [list_begin itemized]
 [item]
-Directory mode is supported for normal startup and for [term -T] test mode.
+Directory mode is supported for normal startup and for [const -T] test mode.
 
 [item]
 Only [const *.tcl] files are considered; other files are ignored.
@@ -297,7 +297,7 @@ In general, when modifying configuration files, it is always a good
 idea to check whether a configuration file is syntactically correct
 before starting the server. This can reduce the downtime of a
 production server in case of typos. A configuration file named
-[const nsd-config.tcl] can be checked with the command line option [term -T]
+[const nsd-config.tcl] can be checked with the command line option [const -T]
 of NaviServer.
 
 [example_begin]
@@ -335,14 +335,14 @@ files.
 One of the core components of the configuration file are the network
 drivers: what protocols should be used, on which addresses/ports
 should be used, or how to set up virtual servers. The most important
-network drivers of NaviServer are [term nssock] (for HTTP connections)
-and [term nsssl] (for HTTPS connections).
+network drivers of NaviServer are [const nssock] (for HTTP connections)
+and [const nsssl] (for HTTPS connections).
 
 [para] Several additional network drivers are available via
-extra modules, such as e.g. [term nsudp], [term nssmtpd]
+extra modules, such as e.g. [const nsudp], [const nssmtpd]
 (for a full list of modules, see the [uri \
-	https://github.com/orgs/naviserver-project/repositories \
-	"module repository"]).
+   https://github.com/orgs/naviserver-project/repositories \
+   "module repository"]).
 
 
 [subsection {Single Server, single address, single port}]
@@ -515,7 +515,7 @@ network driver [emph http1] and [emph http1].
 It would be as well possible to register multiple addresses for every
 network driver instance (here "http1" and "http2"). In general, by
 loading a network driver multiple times, all the of parameters of the
-driver modules (here [term nssock]) can be modified per driver
+driver modules (here [const nssock]) can be modified per driver
 instance.
 
 
@@ -590,20 +590,20 @@ single NaviServer server definition, but this will be covered later.
 and "s2", which should act as virtual web servers. This means, we want
 to define one network driver, which listens on a single port, but
 which should direct requests to one of the two potentially differently
-configured servers based on the content of the [term host] header
+configured servers based on the content of the [const host] header
 field.
 
 [para] Assume for the IP address of the server the DNS names
-[term foo.com], [term bar.com] and [term baz.com] are registered. We define
+[const foo.com], [const bar.com] and [const baz.com] are registered. We define
 server "s1" and "s2" such that "s1" should receive requests from
-[term foo.com], and "s2" should receive requests from [term bar.com] and
-[term baz.com]. Servers "s1" and "s2" have different [term pagedir]
+[const foo.com], and "s2" should receive requests from [const bar.com] and
+[const baz.com]. Servers "s1" and "s2" have different [const pagedir]
 definitions.
 
 [para] For defining virtual servers, the network driver has to be
 loaded globally (i.e., as module [const ns/module/http]).  For
 requests with missing/invalid host header fields, we have to define a
-[term defaultserver] to handle such requests in the global definition.
+[const defaultserver] to handle such requests in the global definition.
 
 In the section [const ns/module/http/servers] we define the mapping
 between the hostnames and the defined servers.
@@ -657,8 +657,8 @@ between the hostnames and the defined servers.
 [example_end]
 
 Note that one can define multiple DNS names also for a single
-server. With the definition above, "s1" serves [term foo.com] and
-"s2" serves [term bar.com] and [term baz.com]. Since "s1" is the
+server. With the definition above, "s1" serves [const foo.com] and
+"s2" serves [const bar.com] and [const baz.com]. Since "s1" is the
 default server, requests with unregistered hostnames will also be
 directed to it.
 
@@ -667,15 +667,15 @@ directed to it.
 
 
 In general, the logic of the definition of servers and network drivers
-is the same for HTTP (driver [term nssock]) and
-HTTPS (driver [term nsssl]), except that the latter has some
+is the same for HTTP (driver [const nssock]) and
+HTTPS (driver [const nsssl]), except that the latter has some
 additional configuration parameters, such as
 e.g. the certificate, the private key, or a special configuration of
 the ciphers, etc.
 
 [para] In order to define virtual servers with HTTPS, one can
 essentially use the definition of the previous section, and load as
-well the [term nsssl] driver globally with the name "https",
+well the [const nsssl] driver globally with the name "https",
 and configure it accordingly.
 
 [example_begin]
@@ -700,10 +700,10 @@ and configure it accordingly.
  } 
 [example_end]
 
-[para] The parameter [term certificate] specifies the certificate chain.
-Optionally, a separate private key can be provided via [term key]. When
-[term key] is not specified (or an empty string), the private key
-is expected to be included in the [term certificate] file.
+[para] The parameter [const certificate] specifies the certificate chain.
+Optionally, a separate private key can be provided via [const key]. When
+[const key] is not specified (or an empty string), the private key
+is expected to be included in the [const certificate] file.
 
 However, this case requires that all accepted hostnames are listed in
 the certificate. Such certificates are called multi-domain SAN
@@ -723,9 +723,9 @@ during the TLS handshake as well).
 
 [subsection {Virtual servers with HTTPS and SNI}]
 
-In order to configure SNI (Server Name Indication) for HTTPS, one can
-simply add additional certificates for the server needed. Optionally,
-separate private key files can be specified via [term key].
+In order to configure SNI (Server Name Indication) for HTTPS, additional
+certificates can be configured for the virtual servers. Optionally,
+separate private key files can be specified via parameter [const key].
 
 [para]
 In the following example the default certificate is defined on the level
@@ -754,23 +754,12 @@ server "s1" separately ([const foo.com.pem]).
  
  #
  # Define a server-specific certificate to enable SNI.
- # Furthermore, activate for server "s1" also OCSP stapling.
- # 
+ #
  ns_section ns/server/s1/module/https {
    ns_param certificate       /usr/local/ns/modules/https/foo.com.pem  ;# required, PEM format
    ns_param key               /usr/local/ns/modules/https/foo.com.key  ;# optional, PEM format
-   ns_param OCSPstapling      on
-   ns_param OCSPcheckInterval 5m
  }
 [example_end]
-
-OCSP (abbreviation of Online Certificate Status Protocol, RFC 2560 and
-RFC 6066) is a protocol that checks the validity status of a
-certificate. The term [term "OCSP stapling"] refers to the use of
-digitally-signed time-stamped OCSP responses in the web server for
-performance reasons. In the example above, OCSP stapling is defined
-for server "s1". The parameter [term OCSPcheckInterval] defines the
-interval for re-checking the validity of a certificate.
 
 
 [subsection {Single virtual server with mass virtual hosting (HTTP)}]
@@ -861,7 +850,7 @@ are added.
 
 [para] Starting with NaviServer 5, it is possible to specify a
 directory containing individual certificates for virtual hosts with
-the parameter [term vhostcertificates] in the [term nsssl]
+the parameter [const vhostcertificates] in the [const nsssl]
 module definition. When NaviServer receives a request with an SNI hostname, it
 will search in this directory at runtime for a certificate file with
 the name based on the SNI hostname, where ".pem" was added.
@@ -892,7 +881,7 @@ this file instead of the certificate file.
 
 Note that in this setup only a single server configuration is needed
 (in the example above, the server "s1"). Together with the definition
-of the [term serverrootproc] callback, it will provide mass virtual hosting over
+of the [const serverrootproc] callback, it will provide mass virtual hosting over
 HTTPS. Below is a minimal setup showing the directory structure for
 serving [const dotlrn.net] via this mechanism. Note the certificates
 [const dotlrn.net.pem], [const example.com.pem], and [const default.pem]
@@ -1001,401 +990,6 @@ register the [const /.well-known] target via [cmd ns_register_fastpath]:
  }
 [example_end]
 
-[subsection {Adding extra header fields}]
-
-For security reasons, it is a common requirement to provide additional
-header fields to the responses of a server. For scripted pages, such
-additional header fields can be added depending on the needs of these
-pages (e.g., by providing page specific CSP policies). However, there
-are as well requirements for adding response header fields for all
-requests. The following response header fields are often recommended:
-
-[example_begin]
- x-frame-options            "SAMEORIGIN"
- x-content-type-options     "nosniff"
- x-xss-protection           "1; mode=block"
- referrer-policy            "strict-origin"
-[example_end]
-
-or for HTTPS requests
-
-[example_begin]
-  strict-transport-security "max-age=31536000; includeSubDomains"
-[example_end]
-
-or, e.g., CSP rules on static pages to address the security threads of
-SVG files.
-
-[para] In the NaviServer configuration file, one can specify extra
-response header files for drivers and/or for servers, as the following
-example shows. The specified header files are merged together. In
-case, the same header field is provided at the level of the driver and
-the server, the more specific (i.e., the server-specific) value is
-used.
-
-[example_begin]
- ns_section ns/servers {
-   ns_param s1  "Server s1"
- }
- ns_section ns/modules {
-   ns_param http  nssock.so
-   ns_param https nsssl.so
- }
- ns_section ns/module/http {
-   ns_param address localhost
-   ns_param port    8081
-   #
-   # Driver-specific extra response header fields for HTTP requests
-   #
-   ns_param extraheaders {
-     X-driver-extra http
-     X-extra driver-http
-   }
- }
- ns_section ns/module/https {
-   ns_param address localhost
-   ns_param port    8441
-   ns_param certificate  /var/www/default.pem
-   #
-   # Driver-specific extra response header fields for HTTPS requests
-   #
-   ns_param extraheaders {
-     X-driver-extra https
-     X-extra driver-https
-   }
- }
- ns_section ns/server/s1/fastpath {ns_param pagedir /var/www/s1}
- ns_section ns/server/s1/adp      {ns_param map "/*.adp"}
- 
- #
- # Server-specific extra response header fields for all requests to
- # this server.
- #
- ns_section ns/server/s1 {
-   ns_param extraheaders {
-     X-server-extra s1
-     X-extra server-s1
-   }
- }
-[example_end]
-
-When the configuration above is used, all requests via HTTPS
-will be served with the following extra response header fields.
-
-[example_begin]
-  X-driver-extra https
-  X-server-extra s1
-  X-extra        server-s1
-[example_end]
-
-[para]
-
-[subsection {HTTPS Client Certificate Management}]
-
- The sections above explain how to configure server certificates when
- NaviServer handles incoming HTTPS connections
- (see parameters [const certificate] and
- [const vhostcertificates]). In contrast, this section focuses on cases
- where NaviServer acts as an HTTPS client - for example, when it
- performs web service requests or manages infrastructure and
- administrative tasks over HTTPS. Historically, some systems and
- libraries have been configured to disable certificate validation
- entirely
- (see e.g., [uri https://www.cs.utexas.edu/~shmat/shmat_ccs12.pdf "The Most Dangerous Code"]),
- leaving them vulnerable to man-in-the-middle attacks.
-
- [para]
-
- In NaviServer, client-side certificate management (for outgoing HTTPS
- connections) is configured in the per-server [term httpclient]
- section of the server configuration. While above examples refers to
- server names like [term s1] or [term s2], any valid server name can be used.
-
-
-[para]
-This [term httpclient] section also includes parameters for managing
-keep-alive behavior and logging for outgoing requests. In this subsection,
-we focus on certificate management and security-related settings.
-
- [para]
-
- The most important parameter is [term validateCertificates], which
- defaults to [const true]. This is the recommended setting and
- protects against man-in-the-middle attacks by rejecting forged or
- otherwise invalid certificates. Nonetheless, internal or development
- servers often use self-signed or expired certificates, leading to
- request failures under strict validation. This likely explains why
- NaviServer 4.x was historically permissive by default.
-
-[example_begin]
- #---------------------------------------------------------------------
- # HTTP client (ns_http, ns_connchan) configuration
- #---------------------------------------------------------------------
- ns_section ns/server/$server/httpclient {
-  
-   # Set default keep-alive timeout for outgoing ns_http requests.
-   ...
-   #
-   ns_param validateCertificates true        ;# default: true
-   ...
-   # ... additional validation settings ...
-   ...
-   # Configure log file for outgoing ns_http requests
-   ...
- }
-[example_end]
-
- [para]
- 
- In NaviServer 5, you can specify the default location of trusted
- certificates:
- [list_begin itemized]
- [item] [term CAfile] references a single file with trusted root certificates (commonly [term ca-bundle.crt])]
- [item] [term CApath] references a directory containing multiple trusted certificates]
- [list_end]
-
- Both parameters map directly to OpenSSL
- settings. Whenever new certificates are added to [term CApath], you
- must run [term "openssl rehash"] for OpenSSL to recognize them on
- subsequent requests.
-
- [para]
- 
- You can further control the depth of certificate validation using
- [term validationDepth]:
- [list_begin itemized]
- [item] 0 means accepting only self-signed certificates]
- [item] 1 means certificates are issued by at most one CA or are self-signed
- [item] 2 or higher means certificate chains up to that length are allowed
- [list_end]
-
- [para]
- 
- Use [term validationException] to define exceptions for specific
- validation errors (e.g., [term certificate-expired] or
- [term self-signed-certificate]) from certain IP addresses or CIDR
- ranges. Multiple rules can be defined, each possibly including:
-
-[list_begin itemized]
-[item] [term ip:] The IP address or CIDR range. If omitted, the rule applies
-   to all hosts.
-[item] [term accept:] A list of validation errors to allow, or [term "*"] to allow all.
-   If omitted, the default is [term "accept *"].
-[list_end]
-
- For example:
- 
-[example_begin]
-ns_param validationException {
-  ip 127.0.0.1
-  accept {certificate-expired self-signed-certificate}
-}
-[example_end]
-The sample [term httpclient] configuration below contains several examples.
-
-[para]
-
- Acceptance rules do not replace [term CApath] or [term CAfile], but
- help simplify certificate management. Administrators can manually
- consolidate rejected certificates into the CA path, but doing so can
- be laborious when they reside in multiple administrative domains.
-
- [para]
- 
- Whenever an acceptance rule is applied, NaviServer stores the flagged
- certificate in a directory for invalid certificates and logs an entry
- to the system log. By default, this directory is named
- [const invalid-certificates], though you can specify an alternative name or
- path via [term invalidCertificates]. This mechanism allows
- administrators to review such certificates later for potential manual
- handling or auditing.
-
- [para] A recejected certificate can be examined with:
-[example_begin]
- openssl x509 -in CERT.PEM -noout -text
-[example_end]
-
-[para]
-
-Below is a sample [term httpclient] configuration illustrating
-certificate validation and exception rules:
-
-
-[example_begin]
- #---------------------------------------------------------------------
- # HTTP client (ns_http, ns_connchan) configuration
- #---------------------------------------------------------------------
- ns_section ns/server/$server/httpclient {
-    #
-    # Set default keep-alive timeout for outgoing ns_http requests.
-    # The specified value determines how long connections remain open for reuse.
-    #
-    ns_param    keepalive       5s       ;# default: 0s
- 
-    #
-    # If you wish to disable certificate validation for "ns_http" or
-    # "ns_connchan" requests, set "validateCertificates" to "false".
-    # However, this is NOT recommended, as it significantly increases
-    # vulnerability to man-in-the-middle attacks.
-    #
-    #ns_param validateCertificates false        ;# default: true
- 
-    if {[lb]ns_config ns/server/$server/httpclient validateCertificates true[rb]} {
-        #
-        # The following parameters are only relevant when peer certificate
-        # validation is enabled.
-        #
- 
-        # Specify trusted certificates using
-        #   - A single CA bundle file (CAfile) for top-level certificates, or
-        #   - A directory (CApath) containing multiple trusted certificates.
-        #
-        # These default locations can be overridden per request in
-        # "ns_http" and "ns_connchan" requests.
- 
-        ns_param CApath certificates           ;# default: [lb]ns_info home[rb]/certificates/
-        ns_param CAfile ca-bundle.crt          ;# default: [lb]ns_info home[rb]/ca-bundle.crt
- 
-        #
-        # "validationDepth" sets the maximum allowed length of a certificate chain:
-        #   0: Accept only self-signed certificates.
-        #   1: Accept certificates issued by a single CA or self-signed.
-        #   2 or higher: Accept chains up to the specified length.
- 
-        #ns_param validationDepth 0   ;# default: 9
- 
-        #
-        # When defining exceptions below, invalid certificates are stored
-        # in the specified directory. Administrators can move these
-        # certificates to the accepted certificates folder and run "openssl rehash"
-        # to reduce future security warnings.
- 
-        #ns_param invalidCertificates ;# default: [lb]ns_info home[rb]/invalid-certificates/
- 
-        #
-        # Define white-listed validation exceptions:
-        #
-        # Accept all certificates from ::1 (IPv6 loopback):
-        ns_param validationException {ip ::1}
- 
-        # For IPv4 127.0.0.1, ignore two specific validation errors:
-        ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
- 
-        # Allow expired certificates from any IP in the 192.168.1.0/24 range:
-        ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
- 
-        # Accept self-signed certificates from any IP address:
-        ns_param validationException {accept self-signed-certificate}
- 
-        # Accept all validation errors from any IP address (like disabled validation, but collects certificates)
-        #ns_param validationException {accept *}
-    }
- 
-    #
-    # Configure log file for outgoing ns_http requests
-    #
-    ns_param     logging          on       ;# default: off
-    ns_param     logfile          httpclient.log ;# default: [lb]ns_info home[rb]/logs/httpclient.log
-    ns_param     logrollfmt       %Y-%m-%d ;# format appended to log filename
-    #ns_param    logmaxbackup     100      ;# 10, max number of backup log files
-    #ns_param    logroll          true     ;# true, should server log files automatically
-    #ns_param    logrollonsignal  true     ;# false, perform log rotation on SIGHUP
-    #ns_param    logrollhour      0        ;# 0, specify at which hour to roll
- }
-[example_end]
-
-[subsection {Maintenance Tasks for Client Certificate Management}]
-
-[list_begin itemized]
-
-[item] Transitioning to certificate validation:
-
- [para] Switching from a configuration with certificate validation disabled
- to one with validation enabled can initially result in many failures,
- especially if various services rely on self-signed or otherwise
- untrusted certificates. One approach is to enable validation but
- accept all validation failures. This allows the HTTPS connections to
- remain functional while NaviServer logs warnings and stores the
- rejected certificates, giving you the opportunity to address them
- individually.
-
-[example_begin]
- ns_section ns/server/$server/httpclient {
-   ...
-   ns_param validateCertificates true
-   ns_param validationException {accept *}
-   ...
- }
-[example_end]
-
- With these settings, any validation errors will be logged, and the
- invalid certificates will be saved:
-
-[example_begin]
- ... Warning: invalid certificate accepted (... self-signed certificate in certificate chain)
- ... Notice: saved invalid certificate: .../invalid-certificates/...-2-19.pem
-[example_end]
-
-[item] Updating [const ca-bundle.crt]:
-
- [para] Keeping your [const ca-bundle.crt] file up to date ensures that your
- application trusts the newest certificate authorities (CAs) and
- rejects compromised or revoked certificates. Most operating systems
- and distributions offer automated updates via package managers (e.g.,
- [const "apt-get install ca-certificates"] on Debian/Ubuntu or
- ca-certificates RPM packages on Fedora/RHEL).
-
- [para]
- Alternatively, you can manually download and replace your CA bundle,
- often derived from
- [uri https://curl.se/docs/caextract.html "Mozilla’s trusted CA list"].
- Whenever you update [const ca-bundle.crt], verify its integrity
- (e.g., via checksums).
- You might consider to schedule these updates (e.g., through [cmd ns_schedule]).
-
-[list_end]
-
-
-[subsection {Forward and Reverse Proxy Server Configuration}]
-
-NaviServer can be configured additionally as a classical "forward"
-HTTP proxy server, and/or as a reverse proxy server. As described
-above, NaviServer can be configured to run behind a reverse proxy
-server, which has consequences on determining, e.g., the client's peer
-IP address and logging. The configuration for running behind a reverse
-proxy server was described in the section
-[sectref {Server Network Configuration}].
-
-[para] A forwarding proxy server handles outbound traffic on behalf of
-clients, shielding the client’s identity or controlling outbound
-traffic.  This is different from a reverse proxy server, which is
-managing traffic towards internal servers. A reverse proxy server
-receives HTTP requests from outside and forwards these requests to
-some internal servers (backend servers), which are typically not
-reachable directly from the clients.
-
-[para] For the configuration as a forwarding proxy server, the
-parameter [term enablehttpproxy] must be activated. It is also
-recommended to load the [term revproxy] module to since this contains
-a scaling infrastructure for proxy requests. If the module is not
-activated, a simple fallback is used.
-
-[example_begin]
- ns_section ns/server/s1 {
-    ...
-    ns_param enablehttpproxy true
-    ...
- }
- ns_section ns/server/s1/modules {
-   ns_param revproxy tcl
- }
-[example_end]
-
-For the activation and configuration of NaviServer as a reverse proxy
-server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuration.
-
-
-[para] More to come here...
 
 
 [section {Customizing System Generated HTTP Responses}]
@@ -1475,6 +1069,736 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
    ns_param 500 /shared/500
  }
 [example_end]
+
+
+[subsection {Adding extra header fields}]
+
+ For security reasons, it is a common requirement to provide additional
+ header fields to the responses of a server. For scripted pages, such
+ additional header fields can be added depending on the needs of these
+ pages (e.g., by providing page specific CSP policies). However, there
+ are as well requirements for adding response header fields for all
+ requests. The following response header fields are often recommended:
+
+[example_begin]
+ x-frame-options            "SAMEORIGIN"
+ x-content-type-options     "nosniff"
+ x-xss-protection           "1; mode=block"
+ referrer-policy            "strict-origin"
+[example_end]
+
+or for HTTPS requests
+
+[example_begin]
+  strict-transport-security "max-age=31536000; includeSubDomains"
+[example_end]
+
+ or, e.g., CSP rules on static pages to address the security threats of
+ SVG files.
+
+ [para] In the NaviServer configuration file, one can specify extra
+ response header files for drivers and/or for servers, as the following
+ example shows. The specified header files are merged together. In
+ case, the same header field is provided at the level of the driver and
+ the server, the more specific (i.e., the server-specific) value is
+ used.
+
+[example_begin]
+ ns_section ns/servers {
+   ns_param s1  "Server s1"
+ }
+ ns_section ns/modules {
+   ns_param http  nssock.so
+   ns_param https nsssl.so
+ }
+ ns_section ns/module/http {
+   ns_param address localhost
+   ns_param port    8081
+   #
+   # Driver-specific extra response header fields for HTTP requests
+   #
+   ns_param extraheaders {
+     X-driver-extra http
+     X-extra driver-http
+   }
+ }
+ ns_section ns/module/https {
+   ns_param address localhost
+   ns_param port    8441
+   ns_param certificate  /var/www/default.pem
+   #
+   # Driver-specific extra response header fields for HTTPS requests
+   #
+   ns_param extraheaders {
+     X-driver-extra https
+     X-extra driver-https
+   }
+ }
+ ns_section ns/server/s1/fastpath {ns_param pagedir /var/www/s1}
+ ns_section ns/server/s1/adp      {ns_param map "/*.adp"}
+ 
+ #
+ # Server-specific extra response header fields for all requests to
+ # this server.
+ #
+ ns_section ns/server/s1 {
+   ns_param extraheaders {
+     X-server-extra s1
+     X-extra server-s1
+   }
+ }
+[example_end]
+
+ When the configuration above is used, all requests via HTTPS
+ will be served with the following extra response header fields.
+
+[example_begin]
+  X-driver-extra https
+  X-server-extra s1
+  X-extra        server-s1
+[example_end]
+
+
+
+
+[section {TLS and Certificate Handling}]
+
+[para]
+This section describes TLS-related configuration and certificate
+handling in NaviServer. It covers server certificates, mutual TLS
+(mTLS) for authenticating qclients, OCSP stapling, automated renewal,
+and tools for inspecting and managing certificates.
+
+
+[subsection {Server Certificates (HTTPS)}]
+
+HTTPS support in NaviServer requires an X.509 server certificate and
+its corresponding private key. These are used during the TLS handshake
+to establish the server’s identity.
+
+[para]
+
+Certificates are typically stored in PEM format and may contain:
+
+[list_begin itemized]
+[item] the server certificate
+[item] intermediate certificates (certificate chain)
+[item] optionally the private key (in the same file)
+[list_end]
+
+[para]
+
+Alternatively, the private key can be stored in a separate file.
+
+[para]
+
+Basic configuration example:
+
+[example_begin]
+ ns_section ns/server/$server/module/https {
+     ns_param certificate server.crt
+     ns_param key         server.key
+ }
+[example_end]
+
+[para]
+
+When the private key is included in the certificate file, the [const key]
+parameter can be omitted:
+
+[example_begin]
+ ns_section ns/server/$server/module/https {
+     ns_param certificate server.pem
+ }
+[example_end]
+
+[para]
+
+For virtual hosting and SNI, multiple certificates can be configured
+via [const vhostcertificates] (see above sections).
+
+[para]
+
+Certificate chains should include all intermediate certificates required
+for client validation. These are typically concatenated in the
+certificate file.
+
+[subsection {Private Key Protection and Passphrases}]
+
+  Private keys may be protected with a passphrase. NaviServer supports
+  non-interactive and script-based retrieval of these passphrases.
+
+  [para]
+  The passphrase lookup is performed in the following order:
+
+  [list_begin enumerated]
+
+  [enum] If configured, execute a helper script defined via the
+         configuration parameter [const tlskeyscript] in the driver
+         section. The script should output the passphrase on stdout.
+
+  [enum] Environment variable derived from the key filename:
+
+[example_begin]
+ TLS_KEY_PASS_<key-file-name>
+[example_end]
+
+  The filename is converted to uppercase and non-alphanumeric characters
+  are replaced by underscores. Example:
+
+[example_begin]
+ /etc/ssl/private/server.key -> TLS_KEY_PASS_ETC_SSL_PRIVATE_SERVER_KEY
+[example_end]
+
+  [enum] Fallback to the generic environment variable:
+
+[example_begin]
+ TLS_KEY_PASS
+[example_end]
+
+  [enum] Interactive prompt on stdin (last resort)
+  [list_end]
+
+  [para]
+  Example configuration using a helper script:
+
+[example_begin]
+ ns_section ns/server/$server/module/https {
+     ns_param certificate   server.crt
+     ns_param key           server.key
+     ns_param tlskeyscript  get-passphrase.sh
+ }
+[example_end]
+
+  [para]
+  The helper script can be specified as an absolute path. Relative paths
+  are resolved against the NaviServer [const bin] directory (typically
+  [const /usr/local/ns/bin]).
+
+  [para]
+  Example environment-based configuration:
+
+[example_begin]
+ export TLS_KEY_PASS="s3cr3t"
+[example_end]
+
+  or for per-key passphrases:
+
+[example_begin]
+ export TLS_KEY_PASS_ETC_SSL_PRIVATE_SERVER_KEY="s3cr3t"
+[example_end]
+
+  [para]
+  This mechanism allows secure, non-interactive deployments while
+  preserving compatibility with interactive setups.
+
+
+[subsection {OCSP Stapling}]
+
+  OCSP (Online Certificate Status Protocol, RFC 2560 and RFC 6066)
+  provides a mechanism to check the revocation status of X.509
+  certificates.
+
+  [para]
+  Normally, clients query OCSP responders directly to verify that a
+  certificate has not been revoked. With [const "OCSP stapling"], the
+  server periodically retrieves a signed OCSP response and "staples" it
+  to the TLS handshake. This avoids additional network round-trips and
+  improves performance and privacy.
+
+  [para]
+  OCSP stapling can be enabled per virtual server:
+
+[example_begin]
+ ns_section ns/server/$server/module/nsssl {
+     ns_param certificate       server.pem
+     ns_param key               server.key
+     ns_param OCSPstapling      on
+     ns_param OCSPcheckInterval 5m
+ }
+[example_end]
+
+  [list_begin definitions]
+  [def [const OCSPstapling]]
+       Enable or disable OCSP stapling ([const on] or [const off]).
+  [def [const OCSPcheckInterval]]
+      Interval for refreshing the OCSP response from the responder. Typical
+      values are in minutes (e.g., [const 5m]).
+  [list_end]
+
+  [para]
+  When enabled, NaviServer periodically retrieves OCSP responses for the
+  configured certificate and provides them during TLS handshakes.
+
+  [para]
+  OCSP stapling is particularly useful for production deployments, as it
+  reduces latency and avoids reliance on client-side OCSP checks.
+
+
+
+[subsection {Automated Certificate Management (Let's Encrypt)}]
+
+The optional NaviServer module [uri \
+    https://github.com/naviserver-project/letsencrypt \
+    letsencrypt]
+
+can be used to automate certificate renewal. For example,
+OpenACS provides fully automated renewal based on this module by
+defining a scheduled procedure checking the expiration dates of the
+loaded certificates. When necessary, it updates and reports the
+results via email to the configured administrators.
+
+[para]
+This module can:
+
+[list_begin itemized]
+[item] obtain certificates from Let's Encrypt
+[item] install them into the configured locations
+[list_end]
+
+[para]
+
+After renewal, certificates can be reloaded without restarting the
+server using:
+
+[example_begin]
+ ns_certctl reload
+[example_end]
+
+[para]
+A signal handler can be installed to automate reloads:
+
+[example_begin]
+ ns_atsignal { ns_certctl reload }
+[example_end]
+
+[para]
+
+This allows fully automated certificate lifecycle management in
+production environments.
+
+
+
+[subsection {Mutual TLS (Client Certificate Authentication)}]
+
+  In standard TLS, only the server presents a certificate. With mutual
+  TLS (mTLS), the client also presents a certificate, allowing the server
+  to authenticate the client based on X.509 credentials.
+
+  [para]
+  mTLS is configured in the HTTPS driver section:
+
+[example_begin]
+ ns_section ns/server/$server/module/https {
+     # Activation
+     ns_param clientcertmode   request   ;# none|request|require
+ 
+     # Specify trusted certificates using
+     #   - A single CA bundle file (CAfile) for top-level certificates, or
+     #   - A directory (CApath) containing multiple trusted certificates.
+     ns_param clientCAfile     client-ca-bundle.crt
+     #ns_param clientCApath    client-ca
+ }
+[example_end]
+
+  Possible values for [const clientcertmode] are:
+  [list_begin definitions]
+  [def [const none]]
+       Do not request a client certificate (default).
+
+  [def [const request]]
+       Request a client certificate and verify it when
+       provided. Connections without a certificate are accepted.
+
+  [def [const require]]
+       Require a valid client certificate. Connections without a
+       valid certificate are rejected.
+  [list_end]
+
+  [para]
+  The parameters [const clientCAfile] and [const clientCApath] define the
+  trusted Certificate Authorities (CAs) used to verify client
+  certificates.
+
+  [para]
+  These parameters correspond to standard OpenSSL concepts:
+
+  [list_begin itemized]
+  [item] [const clientCAfile] - a CA bundle file containing trusted root
+        or intermediate certificates (similar to [const ca-bundle.crt])
+  [item] [const clientCApath] - a directory containing CA certificates
+        in hashed form (requires [const "openssl rehash"])
+  [list_end]
+
+  [para]
+  Either parameter can be used alone, or both can be combined. The CA
+  bundle approach ([const clientCAfile]) is typically easier to manage,
+  while [const clientCApath] is more flexible in dynamic environments.
+
+  [para]
+  When a client certificate is provided, it is verified against these
+  trusted CAs. In [const require] mode, connections without a valid
+  client certificate are rejected.
+
+  [para]
+  Earlier NaviServer versions had incomplete support for server-side
+  client certificate validation, since the trusted CA configuration for
+  incoming TLS connections was not properly configurable. As a result,
+  client certificate verification was not practically usable.
+
+  [para]
+  The current implementation provides full support for:
+
+  [list_begin itemized]
+  [item] CA-based validation of client certificates
+  [item] runtime access via [cmd "ns_conn clientcert"]
+  [item] consistent handling across TLS and QUIC drivers
+  [list_end]
+
+
+  The certificate presented by the client can be inspected at runtime via:
+
+[example_begin]
+ set cert [lb]ns_conn clientcert[rb]
+[example_end]
+
+  Example result:
+
+[example_begin]
+ present      1
+ verified     1
+ verifyresult ok
+ subject      {CN = test-client, O = NaviServer Test}
+ issuer       {CN = NaviServer Test Client CA}
+ serial       538810D38E442686F1431D499F011619C174EA92
+ notbefore    {Apr 30 08:12:20 2026 GMT}
+ notafter     {Apr 30 08:12:20 2027 GMT}
+ fingerprint  cba8c79368235286bddeec9959d5b09230520b6a65d1b1cc6fb33a7aaf3c18f1
+ san {
+     dns   {client1.example.org client2.example.org}
+     email test-client@example.org
+     uri   spiffe://example.org/user/test-client
+ }
+[example_end]
+
+  [para]
+  A reduced summary is also included in:
+
+[example_begin]
+ ns_conn details
+[example_end]
+
+  [para]
+  For authentication decisions, it is recommended to use identities from
+  the [const subjectAltName] extension (e.g., [const uri] or [const email])
+  instead of parsing the subject string.
+
+  [para]
+  Client certificates suitable for mTLS should include the
+  [const clientAuth] extended key usage and appropriate SAN entries:
+
+[example_begin]
+ cat > client.ext <<EOF
+ [lb]client_ext[rb]
+ basicConstraints = CA:FALSE
+ keyUsage = digitalSignature
+ extendedKeyUsage = clientAuth
+ subjectAltName = @alt_names
+ 
+ [lb]alt_names[rb]
+ DNS.1 = client1.example.org
+ DNS.2 = client2.example.org
+ email.1 = test-client@example.org
+ URI.1 = spiffe://example.org/user/test-client
+ EOF
+ 
+ openssl x509 -req -in client.csr \
+   -CA ca.crt -CAkey ca.key -CAcreateserial \
+   -out client.crt -days 365 -sha256 \
+   -extfile client.ext \
+   -extensions client_ext
+[example_end]
+
+
+[subsection {Certificate Inspection and Management (ns_certctl)}]
+
+  NaviServer provides the command [cmd ns_certctl] for inspecting and
+  managing certificates.
+
+  [para]
+  Inspect a certificate (file or PEM string):
+
+[example_begin]
+ set info [lb]ns_certctl info /path/to/cert.pem[rb]
+[example_end]
+
+  This returns a dictionary with certificate metadata such as subject,
+  issuer, validity period, fingerprint, and SAN entries.
+
+[example_begin]
+ set days [lb]expr {
+     ([lb]clock scan [lb]dict get $info notafter[rb][rb] - [lb]clock seconds[rb]) / 86400.0
+ }[rb]
+[example_end]
+
+  [para]
+  List currently loaded server certificates:
+
+[example_begin]
+ ns_certctl list
+[example_end]
+
+  [para]
+  Reload certificates after renewal:
+
+[example_begin]
+ ns_certctl reload
+[example_end]
+
+  [para]
+  A signal handler can be installed to reload certificates on SIGHUP:
+
+[example_begin]
+ ns_atsignal { ns_certctl reload }
+[example_end]
+
+
+
+
+
+[section {Outgoing HTTPS Requests (ns_http, ns_connchan)}]
+
+  When NaviServer acts as an HTTPS client (e.g., via [cmd ns_http] or
+  [cmd ns_connchan]), TLS and certificate handling is configured in
+  the per-server [const httpclient] section.
+
+  [para]
+  In contrast to mutual TLS (mTLS) for incoming connections, this
+  configuration applies to outgoing HTTPS requests and focuses on
+  validation of remote server certificates.
+
+  [para]
+  The most important parameter is [const validateCertificates], which
+  defaults to [const true]. This setting ensures that server
+  certificates are properly validated and protects against
+  man-in-the-middle attacks.
+
+  [para]
+  When client certificates are required for outgoing mTLS, they are
+  specified per request via [cmd ns_http] or [cmd "ns_connchan connect"].
+
+[example_begin]
+ ns_section ns/server/$server/httpclient {
+ 
+   # Validate server certificates (recommended)
+   ns_param validateCertificates true
+ 
+   # Optional: CA bundle and directory for validation
+   #ns_param CAfile /path/to/ca-bundle.crt
+   #ns_param CApath /path/to/ca-directory
+ }
+[example_end]
+
+  [para]
+  When mutual TLS (mTLS) is required for outgoing connections, client
+  certificates must be specified per request:
+
+[example_begin]
+ ns_http run \
+   -url https://example.org/ \
+   -cert client.crt \
+   -key  client.key
+[example_end]
+
+  [para]
+  Likewise, [cmd "ns_connchan connect"] supports [const -cert] and
+  [const -key] parameters for outbound mTLS connections.
+
+
+
+[subsection {TLS Validation Configuration}]
+
+  Historically, some systems disabled certificate validation entirely
+  (see e.g., [uri https://www.cs.utexas.edu/~shmat/shmat_ccs12.pdf "The Most Dangerous Code"]),
+  leaving them vulnerable to man-in-the-middle attacks. NaviServer
+  defaults to secure behavior by enabling certificate validation.
+
+  [para]
+  The [const httpclient] section also includes parameters for managing
+  keep-alive behavior and logging for outgoing requests. This subsection
+  focuses on certificate validation and trust management.
+
+  [para]
+  Trusted certificate authorities can be configured via:
+
+  [list_begin itemized]
+  [item] [const CAfile] - file containing trusted root certificates (e.g., [const ca-bundle.crt])]
+  [item] [const CApath] - directory containing trusted certificates]
+  [list_end]
+
+  These parameters map directly to OpenSSL settings. When adding
+  certificates to [const CApath], run [const "openssl rehash"] to make
+  them visible to OpenSSL.
+
+  [para]
+  The maximum certificate chain length is controlled via
+  [const validationDepth]:
+
+  [list_begin itemized]
+  [item] 0 - accept only self-signed certificates]
+  [item] 1 - accept certificates issued by a single CA or self-signed]
+  [item] 2 or higher - allow longer chains]
+  [list_end]
+
+  [para]
+  Exceptions can be defined via [const validationException] to allow
+  specific validation errors for selected hosts or networks.
+
+[list_begin itemized]
+[item] [const ip:] IP address or CIDR range (optional)]
+[item] [const accept:] list of validation errors or [const "*"]]
+[list_end]
+
+[example_begin]
+ ns_param validationException {
+   ip 127.0.0.1
+   accept {certificate-expired self-signed-certificate}
+ }
+[example_end]
+
+  [para]
+  Accepted certificates that would otherwise fail validation are stored
+  (by default in [const invalid-certificates]) and logged. This allows
+  administrators to review and later trust these certificates manually.
+
+  [para]
+  Rejected certificates can be inspected via:
+
+[example_begin]
+ openssl x509 -in CERT.PEM -noout -text
+[example_end]
+
+
+[example_begin]
+ #---------------------------------------------------------------------
+ # HTTP client (ns_http, ns_connchan) configuration
+ #---------------------------------------------------------------------
+ ns_section ns/server/$server/httpclient {
+ 
+    ns_param keepalive 5s
+ 
+    if {[lb]ns_config ns/server/$server/httpclient validateCertificates true[rb]} {
+ 
+        ns_param CApath certificates
+        ns_param CAfile ca-bundle.crt
+ 
+        #ns_param validationDepth 0
+ 
+        #ns_param invalidCertificates
+ 
+        ns_param validationException {ip ::1}
+        ns_param validationException {ip 127.0.0.1 accept {certificate-expired self-signed-certificate}}
+        ns_param validationException {ip 192.168.1.0/24 accept certificate-expired}
+        ns_param validationException {accept self-signed-certificate}
+    }
+ 
+    ns_param logging on
+    ns_param logfile httpclient.log
+    ns_param logrollfmt %Y-%m-%d
+ }
+[example_end]
+pa
+
+[subsection {Maintenance and Operations}]
+
+[list_begin itemized]
+
+[item] Transitioning to certificate validation:
+
+  [para]
+  When enabling validation in an existing setup, failures may occur due
+  to self-signed or otherwise untrusted certificates. A practical
+  transition strategy is to enable validation while temporarily
+  accepting all validation errors:
+
+[example_begin]
+ ns_param validateCertificates true
+ ns_param validationException {accept *}
+[example_end]
+
+  This allows continued operation while collecting problematic
+  certificates for later review.
+
+  [para]
+  Logged output will indicate accepted invalid certificates:
+
+[example_begin]
+ ... Warning: invalid certificate accepted (... self-signed certificate ...)
+ ... Notice: saved invalid certificate: .../invalid-certificates/...pem
+[example_end]
+
+
+[item] Updating [const ca-bundle.crt]:
+
+  [para]
+  Keeping the CA bundle up to date ensures trust in current certificate
+  authorities and revocation of compromised ones.
+
+  [para]
+  Typically this is handled by the operating system (e.g.,
+  [const "apt-get install ca-certificates"] or RPM packages).
+
+  [para]
+  Alternatively, the bundle can be updated manually, e.g. from
+  [uri https://curl.se/docs/caextract.html "Mozilla’s trusted CA list"].
+
+  [para]
+  Automated updates can be scheduled via [cmd ns_schedule].
+
+[list_end]
+
+
+[section {Proxy and Gateway Configuration}]
+[subsection {Forward and Reverse Proxy Server Configuration}]
+
+NaviServer can be configured additionally as a classical "forward"
+HTTP proxy server, and/or as a reverse proxy server. As described
+above, NaviServer can be configured to run behind a reverse proxy
+server, which has consequences on determining, e.g., the client's peer
+IP address and logging. The configuration for running behind a reverse
+proxy server was described in the section
+[sectref {Server Network Configuration}].
+
+[para] A forwarding proxy server handles outbound traffic on behalf of
+clients, shielding the client’s identity or controlling outbound
+traffic.  This is different from a reverse proxy server, which is
+managing traffic towards internal servers. A reverse proxy server
+receives HTTP requests from outside and forwards these requests to
+some internal servers (backend servers), which are typically not
+reachable directly from the clients.
+
+[para] For the configuration as a forwarding proxy server, the
+parameter [const enablehttpproxy] must be activated. It is also
+recommended to load the [const revproxy] module to since this contains
+a scaling infrastructure for proxy requests. If the module is not
+activated, a simple fallback is used.
+
+[example_begin]
+ ns_section ns/server/s1 {
+    ...
+    ns_param enablehttpproxy true
+    ...
+ }
+ ns_section ns/server/s1/modules {
+   ns_param revproxy tcl
+ }
+[example_end]
+
+For the activation and configuration of NaviServer as a reverse proxy
+server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuration.
+
+
+
 
 
 [section {Customizing Directory Structure}]
@@ -1582,10 +1906,10 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
  NaviServer maintains a single system log (by default [const nsd.log])
  that aggregates system and application messages via [cmd ns_log]. In
  addition, each server can have its own log files, such as
- [const access.log] (managed by the [term nslog] module) or
- [const httpclient.log] (configured in the [term httpclient] section). All
+ [const access.log] (managed by the [const nslog] module) or
+ [const httpclient.log] (configured in the [const httpclient] section). All
  per-server log files can be automatically rotated by enabling the
- boolean [term rolllog] parameter in the section where the logfile is
+ boolean [const rolllog] parameter in the section where the logfile is
  defined.
 
  [para] For instance, the snippet below defines automated rolling for
@@ -1598,33 +1922,33 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
  }
  
  ns_section ns/server/SERVER1/module/nslog {
-    # ns_param	file		access.log
-    ns_param	rolllog		true
+    # ns_param  file            access.log
+    ns_param    rolllog         true
     #
-    # ns_param	suppressquery	true	;# false, suppress query portion in log entry
-    # ns_param	logreqtime	true	;# false, include time to service the request
-    ns_param	logpartialtimes	true	;# false, include high-res start time and partial request durations
+    # ns_param  suppressquery   true    ;# false, suppress query portion in log entry
+    # ns_param  logreqtime      true    ;# false, include time to service the request
+    ns_param    logpartialtimes true    ;# false, include high-res start time and partial request durations
     ns_param    logthreadname   true    ;# default: false; include thread name for linking with nsd.log
-    # ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
-    # ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
-    ns_param	masklogaddr     true    ;# false, mask IP address in log file for GDPR (like anonip IP anonymizer)
-    ns_param	maskipv4        255.255.255.0  ;# mask for IPv4 addresses
-    ns_param	maskipv6        ff:ff:ff:ff::  ;# mask for IPv6 addresses
+    # ns_param  formattedtime   true    ;# true, timestamps formatted or in secs (unix time)
+    # ns_param  logcombined     true    ;# true, Log in NSCA Combined Log Format (referer, user-agent)
+    ns_param    masklogaddr     true    ;# false, mask IP address in log file for GDPR (like anonip IP anonymizer)
+    ns_param    maskipv4        255.255.255.0  ;# mask for IPv4 addresses
+    ns_param    maskipv6        ff:ff:ff:ff::  ;# mask for IPv6 addresses
     # ...
-    # ns_param	maxbackup	100	 ;# 10, max number of backup log files
-    # ns_param	rollhour	0	 ;# 0, specify at which hour to roll
-    # ns_param	rollonsignal	true	 ;# false, perform log rotation on SIGHUP
-    # ns_param	rollfmt		%Y-%m-%d ;# format appended to log filename
+    # ns_param  maxbackup       100      ;# 10, max number of backup log files
+    # ns_param  rollhour        0        ;# 0, specify at which hour to roll
+    # ns_param  rollonsignal    true     ;# false, perform log rotation on SIGHUP
+    # ns_param  rollfmt         %Y-%m-%d ;# format appended to log filename
 }
 [example_end]
 
-While the accesslog is activated, when the [term nslog] module is
+While the accesslog is activated, when the [const nslog] module is
 loaded and the full section is just for configuring this particular
 access log. 
 
 [para] the situation for the httpclient log is slightly
 different. Here, no extra module has to be loaded, but the logging is
-turned on via the [term logging] parameter. Since the [term httpclient]
+turned on via the [const logging] parameter. Since the [const httpclient]
 section is used for multiple purposes concerning HTTP client requests,
 the parameters are prefixed with [const log] to avoid potential
 confusions.
@@ -1636,14 +1960,14 @@ this log file:
 [example_begin]
  ns_section ns/server/SERVER1/httpclient {
     # ...
-    # ns_param	logfile		httpclient.log
-    ns_param	logging		on       ;# default: off
-    ns_param	logroll		true     ;# true, roll log files automatically
+    # ns_param  logfile         httpclient.log
+    ns_param    logging         on       ;# default: off
+    ns_param    logroll         true     ;# true, roll log files automatically
     #
-    # ns_param	logmaxbackup	100      ;# 10, max number of backup log files
-    # ns_param	logrollhour	0        ;# 0, specify at which hour to roll
-    # ns_param	logrollonsignal	true     ;# false, perform roll on SIGHUP
-    # ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
+    # ns_param  logmaxbackup    100      ;# 10, max number of backup log files
+    # ns_param  logrollhour     0        ;# 0, specify at which hour to roll
+    # ns_param  logrollonsignal true     ;# false, perform roll on SIGHUP
+    # ns_param  logrollfmt      %Y-%m-%d ;# format appended to log filename
     # ...
 }
 [example_end]
@@ -1670,7 +1994,7 @@ this log file:
 
  [para] By default, log files are rolled by appending a numerical
  suffix indicating their age. Alternatively, you can specify a custom
- roll format for all log files. For example, setting [term rollfmt]
+ roll format for all log files. For example, setting [const rollfmt]
  to [const %Y-%m-%d] causes the log rotation process to append the
  actual date instead of a number. This method offers the advantage of
  stable log filenames after rolling, which may simplify long-term log
@@ -1682,17 +2006,17 @@ this log file:
 [example_begin]
  ns_section ns/parameters {
     # ...
-    # ns_param	logdir      	log
-    # ns_param	systemlog	nsd.log
-    # ns_param	logrollonsignal	on       ;# enable log rotation on SIGHUP
-    ns_param	logmaxbackup	100      ;# 10 is default
-    ns_param	logrollfmt	%Y-%m-%d ;# format appended to system log filename when rolled
+    # ns_param  logdir          log
+    # ns_param  systemlog       nsd.log
+    # ns_param  logrollonsignal on       ;# enable log rotation on SIGHUP
+    ns_param    logmaxbackup    100      ;# 10 is default
+    ns_param    logrollfmt      %Y-%m-%d ;# format appended to system log filename when rolled
     # ns_param  logsec          false    ;# add timestamps in second resolution (default: true)
     # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
     # ns_param  logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
     # ns_param  logthread       false    ;# add thread-info the log file lines (default: true)
-    # ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
-    # ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
+    # ns_param  logcolorize     true     ;# colorize log file with ANSI colors (default: false)
+    # ns_param  logprefixcolor  green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
     # ns_param  logprefixintensity normal;# bright or normal
     # ns_param  sanitizelogfiles 2       ;# default: 2; 0: none, 1: full, 2: human-friendly, 3: 2 with tab expansion
     # ...
@@ -1726,10 +2050,10 @@ this log file:
 
 
 [keywords module nssock nsssl "network driver" \
-	performance tuning configuration \
-	SO_REUSEPORT TCP TCP_FASTOPEN \
-	"connection thread pools" \
-	driver pagedir logging logdir serverdir systemlog \
+        performance tuning configuration \
+        SO_REUSEPORT TCP TCP_FASTOPEN \
+        "connection thread pools" \
+        driver pagedir logging logdir serverdir systemlog \
         "scheduled procedures" \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate vhostcertificates invalid-certificates \

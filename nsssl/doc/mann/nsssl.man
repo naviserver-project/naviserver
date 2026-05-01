@@ -110,8 +110,8 @@ plus in addition the following configuration options:
 
   [para]
   Client certificates are verified against the trusted client CA
-  certificates configured via [option clientcafile] and/or
-  [option clientcapath].
+  certificates configured via [option clientCAfile] and/or
+  [option clientCApath].
 
   [para]
   This parameter applies at the driver level and therefore affects all
@@ -119,7 +119,7 @@ plus in addition the following configuration options:
   virtual hosts using [option vhostcertificates].
 
 
-[def clientcafile]
+[def clientCAfile]
   Specifies a file containing trusted Certificate Authority (CA)
   certificates used to validate client certificates.
 
@@ -139,7 +139,7 @@ plus in addition the following configuration options:
   The value can be a relative name (relative to NaviServer home) or can
   be specified as an absolute path.
 
-[def clientcapath]
+[def clientCApath]
   Specifies a directory containing trusted Certificate Authority (CA)
   certificates used to validate client certificates.
 
@@ -147,17 +147,17 @@ plus in addition the following configuration options:
   OpenSSL can locate certificates via hashed symbolic links.
 
   This parameter can be used as an alternative or in addition to
-  [option clientcafile].
+  [option clientCAfile].
 
   The value can be a path relative to NaviServer home or an absolute path.
 
   [para]
-  If both [option clientcafile] and [option clientcapath] are provided,
+  If both [option clientCAfile] and [option clientCApath] are provided,
   both locations are used for certificate verification.
 
   [para]
-  The configuration parameters [option verify], [option clientcafile],
-  and [option clientcapath] are evaluated at the driver level. All TLS
+  The configuration parameters [option verify], [option clientCAfile],
+  and [option clientCApath] are evaluated at the driver level. All TLS
   contexts created by the driver inherit these settings.
 
   This includes TLS contexts created dynamically for mass virtual
@@ -179,8 +179,8 @@ plus in addition the following configuration options:
 [example_begin]
  ns_section ns/server/$server/module/https {
     ns_param verify           1
-    ns_param clientcafile     /usr/local/ns/client-ca.crt
-    # ns_param clientcapath   /usr/local/ns/client-ca
+    ns_param clientCAfile     /usr/local/ns/client-ca.crt
+    # ns_param clientCApath   /usr/local/ns/client-ca
  }
 [example_end]
 
