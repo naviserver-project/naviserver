@@ -302,6 +302,58 @@ build-doc:
 	$(RMRF) doc/tmp
 
 #
+# Local copy of Source Forge Documentation
+#
+SF_HTDOCS         ?= /usr/local/ns/sf-naviserver-htdocs
+DOC_VERSION_FILE  ?= ./version_include.man
+DOC_VERSION       := $(shell sed -n 's/^\[vset version \([^]]*\)\]/\1/p' $(DOC_VERSION_FILE))
+DOC_VERSION_MINOR := $(shell printf '%s\n' '$(DOC_VERSION)' | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/')
+
+install-sf-doc:
+	@if [ -z "$(DOC_VERSION)" ] || [ -z "$(DOC_VERSION_MINOR)" ]; then \
+		echo "Cannot determine documentation version from $(DOC_VERSION_FILE)" ; \
+		exit 1 ; \
+	fi
+	@if [ ! -d doc/html ]; then \
+		echo "No generated documentation found in doc/html." ; \
+		echo "Run: make build-doc" ; \
+		exit 1 ; \
+	fi
+	@target="$(SF_HTDOCS)/$(DOC_VERSION_MINOR)" ; \
+	tmp="$${target}.new" ; \
+	old="$${target}.old" ; \
+	echo "Installing documentation version $(DOC_VERSION) as $(DOC_VERSION_MINOR)" ; \
+	echo "Target: $${target}" ; \
+	$(RM) -rf "$${tmp}" ; \
+	$(MKDIR) "$${tmp}" ; \
+	$(CP) doc/html/* "$${tmp}/" ; \
+	find "$${tmp}" -name '*-original' -type f -exec rm -f {} + ; \
+	$(MKDIR) "$${tmp}/naviserver/files" ; \
+	$(CP) "doc/src/$(MAN_CSS)" "$${tmp}/naviserver/" ; \
+	$(CP) "$${tmp}/naviserver/$(MAN_CSS)" "$${tmp}/naviserver/files/" ; \
+	( cd "$${tmp}/naviserver" || exit 1 ; $(RM) -f index.html ; $(LN) -s toc.html index.html ) ; \
+	$(RM) -rf "$${old}" ; \
+	if [ -d "$${target}" ] || [ -L "$${target}" ]; then mv "$${target}" "$${old}" ; fi ; \
+	mv "$${tmp}" "$${target}" ; \
+	echo "" ; \
+	echo "Installed SourceForge documentation tree:" ; \
+	echo "  $${target}" ; \
+	echo "" ; \
+	if [ -d "$${old}" ]; then \
+		echo "Previous tree saved as:" ; \
+		echo "  $${old}" ; \
+		echo "" ; \
+		echo "Review changes with:" ; \
+		echo "  diff -rwu $${old}/ $${target}/" ; \
+		echo "" ; \
+	fi ; \
+	echo "Inspect the documentation tree with:" ; \
+	echo "  (cd $(SF_HTDOCS); tree -a -F -L 2)" ; \
+	echo "" ; \
+	echo "Preview locally with:" ; \
+	echo "  nsd_pagedir=$(SF_HTDOCS) /usr/local/ns/bin/nsd -t /usr/local/ns/conf/nsd-config.tcl -f"
+
+#
 # Testing:
 #
 NS_TEST_ENV     = LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
