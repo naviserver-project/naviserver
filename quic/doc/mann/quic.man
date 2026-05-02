@@ -141,8 +141,9 @@ such as certificates, ciphers, and protocols.
 [section USAGE]
 
  To enable automatic advertisement of HTTP/3 support, set
- [const h3advertise] to [const true] in the [const https] section.  Clients
- that support HTTP/3 will transparently upgrade after the first
+ [const h3advertise] to [const true] in the [const ns/module/https]
+ section.
+ Clients that support HTTP/3 will transparently upgrade after the first
  request.
 
  To enable HTTP/3 selectively (for example, only for specific client

@@ -1166,7 +1166,7 @@ or for HTTPS requests
 [para]
 This section describes TLS-related configuration and certificate
 handling in NaviServer. It covers server certificates, mutual TLS
-(mTLS) for authenticating qclients, OCSP stapling, automated renewal,
+(mTLS) for authenticating clients, OCSP stapling, automated renewal,
 and tools for inspecting and managing certificates.
 
 
@@ -1237,18 +1237,22 @@ certificate file.
          configuration parameter [const tlskeyscript] in the driver
          section. The script should output the passphrase on stdout.
 
-  [enum] Environment variable derived from the key filename:
+  [enum] Environment variable derived from the certificate filename:
 
 [example_begin]
- TLS_KEY_PASS_<key-file-name>
+ TLS_KEY_PASS_<cert-file-name>
 [example_end]
 
   The filename is converted to uppercase and non-alphanumeric characters
   are replaced by underscores. Example:
 
 [example_begin]
- /etc/ssl/private/server.key -> TLS_KEY_PASS_ETC_SSL_PRIVATE_SERVER_KEY
+ /etc/ssl/private/server.pem -> TLS_KEY_PASS_ETC_SSL_PRIVATE_SERVER_PEM
 [example_end]
+
+  [para]
+  The file name used is the one specified via [const certificate], even
+  when a separate [const key] file is used.
 
   [enum] Fallback to the generic environment variable:
 
@@ -1256,8 +1260,27 @@ certificate file.
  TLS_KEY_PASS
 [example_end]
 
+  [para]
+  The generic [const TLS_KEY_PASS] variable is convenient when only one
+  encrypted key is used. Filename-specific variables are better when
+  multiple certificates or keys use different passphrases.
+
   [enum] Interactive prompt on stdin (last resort)
   [list_end]
+
+  [para]
+  Example: Setting a passphrase via environment variable in a systemd
+  service file with [const ExecStartPre]:
+
+[example_begin]
+ ExecStartPre=/bin/bash -c '\
+ PASS=$(aws secretsmanager get-secret-value \
+   --secret-id websrv/tls-pass-phrase \
+   --query SecretString --output text) && \
+ /bin/systemctl set-environment TLS_KEY_PASS="$PASS"'
+ ...
+ ExecStart=/usr/local/ns/bin/nsd ...
+[example_end]
 
   [para]
   Example configuration using a helper script:
@@ -1291,6 +1314,88 @@ certificate file.
   [para]
   This mechanism allows secure, non-interactive deployments while
   preserving compatibility with interactive setups.
+
+
+
+[subsection {Obtaining and Creating Certificates}]
+
+ [para]
+ TLS certificates used by NaviServer (for servers and, optionally,
+ clients) can be obtained from public Certificate Authorities or
+ created locally. For development, testing, or internal deployments,
+ it is common to create a local Certificate Authority (CA) and use it
+ to sign server and client certificates.
+
+ [para]
+ The file [const ca.crt] can be used as a trust anchor for:
+ [list_begin itemized]
+ [item] validating server certificates (outgoing HTTPS)
+ [item] validating client certificates in mTLS ([const clientCAfile])
+ [list_end]
+
+ [para]
+ Create a local CA:
+
+[example_begin]
+ openssl genrsa -out ca.key 4096
+ 
+ openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 \
+    -out ca.crt \
+    -subj "/CN=Local Test CA"
+[example_end]
+
+ [para]
+ Create a server key and certificate signing request (CSR):
+
+[example_begin]
+ openssl genrsa -out server.key 2048
+ 
+ openssl req -new -key server.key -out server.csr \
+     -subj "/CN=localhost"
+[example_end]
+
+ [para]
+ Sign the server certificate with the CA:
+
+[example_begin]
+ openssl x509 -req -in server.csr \
+    -CA ca.crt -CAkey ca.key -CAcreateserial \
+    -out server.crt -days 365 -sha256
+[example_end]
+
+ [para]
+ Create a combined PEM file (default NaviServer usage, containing
+ certificate and private key):
+ 
+[example_begin]
+ cat server.crt server.key > server.pem
+[example_end]
+
+ [para]
+ Alternatively, keep certificate and key in separate files:
+
+ [list_begin itemized]
+ [item] certificate: [const server.crt]
+ [item] private key: [const server.key]
+ [list_end]
+
+ [para]
+ The resulting files can be used directly in the HTTPS configuration:
+
+[example_begin]
+ ns_section ns/server/$server/module/https {
+    ns_param certificate server.pem
+    # or:
+    # ns_param certificate server.crt
+    # ns_param key         server.key
+}
+[example_end]
+
+[para]
+The resulting certificates can be used for HTTPS configuration (see
+[sectref "Server Certificates (HTTPS)"]) and for client authentication in
+mTLS setups (see
+[sectref "Mutual TLS (mTLS, Client Certificate Authentication)"]).
 
 
 [subsection {OCSP Stapling}]
@@ -1379,7 +1484,7 @@ production environments.
 
 
 
-[subsection {Mutual TLS (Client Certificate Authentication)}]
+[subsection {Mutual TLS (mTLS, Client Certificate Authentication)}]
 
   In standard TLS, only the server presents a certificate. With mutual
   TLS (mTLS), the client also presents a certificate, allowing the server

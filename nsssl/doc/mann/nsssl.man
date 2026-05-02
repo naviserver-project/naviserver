@@ -178,9 +178,9 @@ plus in addition the following configuration options:
 
 [example_begin]
  ns_section ns/server/$server/module/https {
-    ns_param verify           1
-    ns_param clientCAfile     /usr/local/ns/client-ca.crt
-    # ns_param clientCApath   /usr/local/ns/client-ca
+    ns_param clientcertmode  require
+    ns_param clientCAfile    /usr/local/ns/client-ca.crt
+    #ns_param clientCApath   /usr/local/ns/client-ca
  }
 [example_end]
 
@@ -189,7 +189,7 @@ plus in addition the following configuration options:
   This parameter activates OCSP Stapling for TLS/SSL connections
   (default off).  OCSP Stapling allows a client to check during
   connection startup the state of the server certificate at the server
-  of the issuer of the certificate (in particular, whether the
+  of the issuer of the server certificate (in particular, whether the
   certificate was revoked or not).
 
   [para] NaviServer performs two level of caching: in-memory caching and
@@ -199,7 +199,7 @@ plus in addition the following configuration options:
   server and uses the serial number of the certificate to be checked as
   filename with ".der" as extension.  When the disk cache file does
   not exist, an HTTP/HTTPS request is made to the server issuing the
-  servers certificate as defined by the Authority Information Access
+  server's certificate as defined by the Authority Information Access
   (AIA) Extension. The names of the file and the HTTP/HTTPS request for
   the OCSP response can be obtained from the system log of the server:
 
@@ -225,13 +225,18 @@ plus in addition the following configuration options:
 
   OCSP support requires OpenSSL 1.1.0 or newer.
 
+[def OCSPcheckInterval]
+  Defines the interval for refreshing OCSP responses when
+  [option OCSPstapling] is enabled. The default is typically
+  [const 5m].
+  
 [def OCSPstaplingVerbose]
 
   Optionally make OCSP requests more verbose in the log file.
 
 [def vhostcertificates]
 
-  specify the directory for lookup of certificates for mass virtual hosting
+  specify the directory for lookup of server certificates for mass virtual hosting
   (see [uri ../../manual/files/admin-config.html#subsection10 admin-config]).
 
 [def extraheaders]
@@ -242,7 +247,7 @@ plus in addition the following configuration options:
 
 [def tlskeyScript]
 
-  Obtain the password for the server’s private key included in the PEM
+  Obtain the password for the server's private key included in the PEM
   file using the configured helper script.
 
 [def tlskeylogFile]
@@ -272,62 +277,30 @@ plus in addition the following configuration options:
   environments for debugging or protocol analysis, and the key log file
   must be protected or removed once debugging is complete.
 
+[def h3advertise]
+  For details, see [uri ../quic/files/quic.html "QUIC module"].
+
+[def h3persist]
+  For details, see [uri ../quic/files/quic.html "QUIC module"].
+
 [list_end]
 
-[subsection {Pass Phrase for Private Key in PEM File}]
+[subsection {Private Key Passphrase Lookup}]
 
-The server’s private key can be provided either embedded in the
-[term certificate] file or via a separate [term key] file.
-
-[list_begin itemized]
-[item] certificate chain file ([term certificate])
-[item] optional private key file ([term key])
-[list_end]
-
-[para] If no [term key] is specified, the [term certificate] file is
-expected to contain:
-
-[list_begin itemized]
-[item] the leaf certificate
-[item] any required intermediate certificates
-[item] the server’s private key
-[list_end]
-
-[para] If the private key is unencrypted, the corresponding file must
-be carefully protected. In general, passwords should not be stored in
-plain text on a public server without sufficient safeguards.
-
-[para] NaviServer provides several mechanisms for supplying the
-private key pass phrase without embedding it directly in
-configuration files. The mechanisms are evaluated in the following
-order:
+When the private key is encrypted, NaviServer obtains the passphrase in
+the following order:
 
 [list_begin enumerated]
-[enum] Output of the configured helper script ([const tlskeyScript])
-[enum] Environment variable derived from the PEM filename ([const TLS_KEY_PASS_<FILENAME>])
-[enum] Generic fallback environment variable ([const TLS_KEY_PASS])
-[enum] Interactive prompt on stdin if all else fails (legacy mode)
+[enum] output of the helper script configured via [const tlskeyScript]
+[enum] filename-specific environment variable [const TLS_KEY_PASS_...]
+[enum] generic environment variable [const TLS_KEY_PASS]
+[enum] interactive prompt on stdin
 [list_end]
 
-[para] The first option is recommended for integration with a secrets
-manager, as it allows retrieval of the pass phrase at startup.
-
-[para] The filename used for deriving the environment variable is the
-one from which the private key is loaded (i.e., [term key] when
-specified, otherwise [term certificate]).
-
-[para] The second option derives the environment variable name from
-the filename. The variable name starts with [const TLS_KEY_PASS_]. The
-remainder is formed by converting the filename to uppercase and
-replacing all non-alphanumeric characters with underscores ([const _]).
-This makes it convenient to handle multiple certificates.
-
-[para] The third option ([const TLS_KEY_PASS]) provides a simpler
-approach when only a single certificate/key is in use.
-
-[para] If none of these mechanisms succeed, NaviServer falls back to
-prompting for the pass phrase on stdin during startup.
-
+[para]
+Relative [const tlskeyScript] paths are resolved against the NaviServer
+[const bin] directory. For examples and deployment guidance, see
+[uri ../../manual/files/admin-config.html admin-config].
 
 
 [section EXAMPLES]
@@ -349,7 +322,7 @@ below in the variable "server"):
     ns_param   ciphersuites "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
     ns_param   protocols    "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
     ns_param   OCSPstapling   on
-    ns_param   verify         0
+    ns_param   clientcertmode none
   
     ns_param   extraheaders {
        strict-transport-security "max-age=31536000; includeSubDomains"
@@ -360,13 +333,12 @@ below in the variable "server"):
 [example_end]
 
 This amount of configuration is sufficient for many installations, but
-often one needs different security setting (path the to certificate, port,
+often one needs different security settings (path to server certificate, port,
 ciphers, etc.) or additional settings from [term nssock] such as e.g.
 [term writerthreads], [term maxinput] or [term maxupload].
 
 [para]
-Below is an example, how a web site can create a self-signed
-certificate in PEM format.
+Example: creating a simple self-signed certificate (for testing only):
 
 [example_begin]
  openssl req -new -x509 -sha256 -newkey rsa:2048 -days 365 -nodes \
@@ -382,23 +354,6 @@ certificate in PEM format.
  # optional: adding DH params (obsolete for OpenSSL 1.1 or newer)
  # openssl dhparam 2048 >> server.pem
 [example_end]
-
-[para]
-
-Example: Setting a pass phrase via environment variable in a systemd
-service file with [const ExecStartPre]:
-
-[example_begin]
-ExecStartPre=/bin/bash -c '\
-  PASS=$(aws secretsmanager get-secret-value \
-           --secret-id websrv/tls-pass-phrase \
-           --query SecretString --output text) && \
-  /bin/systemctl set-environment TLS_KEY_PASS="$PASS"
-…
-ExecStart=/usr/local/ns/bin/nsd ...
-[example_end]
-
-
 
 [para]
 For discussion and more examples see
