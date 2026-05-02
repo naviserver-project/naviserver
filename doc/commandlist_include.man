@@ -78,6 +78,7 @@
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_commit}] ?-all?
 [uri ../../naviserver/files/ns_cache.html {ns_cache_transaction_rollback}] ?-all?
 [uri ../../naviserver/files/ns_cbor.html {ns_cbor parse}] ?-binary? ?-encoding hex|base64url|base64|binary? ?-scan? ?--? /value/
+[uri ../../naviserver/files/ns_certctl.html {ns_certctl info}] /cert/
 [uri ../../naviserver/files/ns_certctl.html {ns_certctl list}]
 [uri ../../naviserver/files/ns_certctl.html {ns_certctl reload}]
 [uri ../../naviserver/files/ns_chan.html {ns_chan cleanup}] ?-shared?
