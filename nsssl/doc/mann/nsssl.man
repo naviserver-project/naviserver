@@ -364,6 +364,6 @@ For discussion and more examples see
 [keywords module nsssl "network driver" \
    SSLKEYLOGFILE TLS_KEY_PASS \
 	performance tuning configuration security TCP_FASTOPEN HTTPS driver \
-        tlskeyScript signals OCSP TLS certificate nssock systemd]
+        tlskeyScript signals OCSP TLS certificate nssock]
 
 [manpage_end]

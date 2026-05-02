@@ -2156,12 +2156,13 @@ this log file:
 
 [keywords module nssock nsssl "network driver" \
         performance tuning configuration \
-        SO_REUSEPORT TCP TCP_FASTOPEN \
+        SO_REUSEPORT TCP TCP_FASTOPEN SSLKEYLOGFILE TLS_KEY_PASS \
         "connection thread pools" \
         driver pagedir logging logdir serverdir systemlog \
         "scheduled procedures" \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate vhostcertificates invalid-certificates \
+        tlskeyScript systemd \
         TLS HTTPS OCSP SNI initcmds letsencrypt redirect CApath CAfile \
         ADP templates reverseproxymode stealthMode noticeDetail]
 [see_also tcl-libraries tcl-overview]
