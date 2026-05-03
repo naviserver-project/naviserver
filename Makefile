@@ -202,9 +202,9 @@ install-certificates: $(EXTRA_INSTALL_CERT_REQ) ca-bundle.crt $(DESTDIR)$(NAVISE
 		fi; \
 	done
 	@if [ -n "$(OPENSSL_LIBS)" ]; then \
-		$(OPENSSL) rehash "$(DESTDIR)$(NAVISERVER)/certificates"; \
+	        $(OPENSSL) rehash "$(DESTDIR)$(NAVISERVER)/certificates" 2>/dev/null || true; \
 	fi
-	$(INSTALL_DATA) ca-bundle.crt "$(DESTDIR)$(NAVISERVER)/"
+	@$(INSTALL_DATA) ca-bundle.crt "$(DESTDIR)$(NAVISERVER)/"
 
 install-modules: $(DESTDIR)$(NAVISERVER)/modules $(DESTDIR)$(NAVISERVER)/modules/tcl
 	@for i in $(dirs); do \

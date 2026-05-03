@@ -43,9 +43,9 @@ dict set defaultConfig home        [file dirname [file dirname [info nameofexecu
 dict set defaultConfig hostname    localhost
 dict set defaultConfig pagedir     {$home/pages}
 dict set defaultConfig logdir      {$home/logs}
-dict set defaultConfig certificate {$home/etc/server.pem}
+dict set defaultConfig certificate {$home/certificates/server.pem}
 dict set defaultConfig key         ""
-dict set defaultConfig vhostcertificates {$home/etc/certificates}
+dict set defaultConfig vhostcertificates {$home/certificates}
 dict set defaultConfig serverprettyname "My NaviServer Instance"
 dict set defaultConfig reverseproxymode false
 dict set defaultConfig trustedservers ""

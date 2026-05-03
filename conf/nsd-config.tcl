@@ -49,9 +49,9 @@ dict set defaultConfig home        [file dirname [file dirname [info nameofexecu
 dict set defaultConfig hostname    localhost
 dict set defaultConfig pagedir     {$home/pages}
 dict set defaultConfig logdir      {$home/logs}
-dict set defaultConfig certificate {$home/etc/server.pem}
+dict set defaultConfig certificate {$home/certificates/server.pem}
 dict set defaultConfig key         ""
-dict set defaultConfig vhostcertificates {$home/etc/certificates}
+dict set defaultConfig vhostcertificates {$home/certificates}
 dict set defaultConfig serverprettyname "My NaviServer Instance"
 dict set defaultConfig reverseproxymode false
 dict set defaultConfig trustedservers ""
@@ -404,7 +404,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param protocols       "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
         ns_param certificate     $certificate ;# required, PEM format
         ns_param key             $key         ;# optional, PEM format
-        #ns_param vhostcertificates $home/etc/certificates ;# directory for vhost certificates of the default server
+        #ns_param vhostcertificates $home/certificates ;# directory for vhost certificates of the default server
 
         #------------------------------------------------------------------
         # OCSP stapling configuration:
