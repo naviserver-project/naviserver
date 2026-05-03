@@ -3700,6 +3700,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
          * Load certificate and private key
          */
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
+            Ns_Log(Error, "nsssl: cannot load certificate chain file '%s'", cert);
             ReportError(interp, "certificate '%s' load chain error: %s",
                         cert, ERR_error_string(ERR_get_error(), NULL));
             goto fail;
