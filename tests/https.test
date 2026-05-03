@@ -23,6 +23,9 @@ if {[ns_info ssl] ne ""} {
     testConstraint serverListen true
 }
 
+try {set curl [exec curl -V]} on error errorMsg {set curl ""}
+testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
+
 #
 # Syntax tests
 #
@@ -234,7 +237,68 @@ test https-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     unset -nocomplain result
 } -returnCodes {error ok} -result {200 {utf-8 <text/plain> <123>}}
 
+#
+# mTLS regression tests
+#
+# Requirements:
+# - nsssl loaded in test config
+# - HTTPS test server uses generated server.pem
+# - clientcertmode request/require tested via config or test vhost
+# - clientCAfile points to tests/testserver/certificates/ca.crt
+#
+set certdir   [file join [ns_config test home] testserver certificates]
+set ca        [file join $certdir ca.crt]
+set cert      [file join $certdir client.crt]
+set key       [file join $certdir client.key]
+set http_url  [ns_config test listenurl]
+set https_url [ns_config test tls_listenurl]
 
+test mtls-1.0 {mTLS request: request without client certificate succeeds} -constraints {curl serverListen} -setup {
+    ns_register_proc GET /mtls {
+        ns_return 200 text/plain [ns_conn clientcert]
+    }
+} -body {
+    exec curl -sS --cacert $ca --fail $https_url/mtls
+} -cleanup {
+    ns_unregister_op GET /mtls
+} -match glob -result {*present 0*verified 0*verifyresult absent*}
+
+test mtls-1.1 {mTLS require: request with client certificate succeeds} -constraints {curl serverListen} -body {
+    exec curl -sS --cacert $ca --cert $cert --key $key --fail $https_url/
+    return ok
+} -result ok
+
+test mtls-1.2 {mTLS client certificate visible via ns_conn clientcert via HTTP} -constraints {curl serverListen} -setup {
+    ns_register_proc GET /mtls {
+        try { ns_conn clientcert } on ok {result} {} on error {result} {}
+        ns_return 200 text/plain $result
+    }
+} -body {
+    exec curl -sS --cacert $ca --cert $cert --key $key --fail $http_url/mtls
+} -cleanup {
+    ns_unregister_op GET /mtls
+} -returnCodes {error ok} -result {connection is not TLS}
+
+test mtls-1.3 {mTLS client certificate visible via ns_conn clientcert via HTTPS} -constraints {curl serverListen} -setup {
+    ns_register_proc GET /mtls {
+        ns_return 200 text/plain [ns_conn clientcert]
+    }
+} -body {
+    exec curl -sS --cacert $ca --cert $cert --key $key --fail $https_url/mtls
+} -cleanup {
+    ns_unregister_op GET /mtls
+} -match glob -returnCodes {error ok} -result {*present 1*verified 1*verifyresult ok*test-client*}
+
+
+test mtls-1.4 {mTLS client certificate, extracting san from "ns_conn clientcert"} -constraints {curl serverListen} -setup {
+    ns_register_proc GET /mtls {
+        ns_return 200 text/plain [dict get [ns_conn clientcert] san]
+    }
+} -body {
+    exec curl -sS --cacert $ca --cert $cert --key $key --fail $https_url/mtls
+} -cleanup {
+    ns_unregister_op GET /mtls
+} -match glob -returnCodes ok -result {dns {client1.example.org client2.example.org} email test-client@example.org uri spiffe://example.org/user/test-client}
 
 cleanupTests
 

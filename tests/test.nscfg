@@ -128,9 +128,10 @@ ns_section "ns/module/nsssl" {
     ns_param   ciphers         "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
     ns_param   protocols       "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
     ns_param   certificate     [ns_config "test" home]/testserver/certificates/server.pem
-    ns_param   verify          0
     ns_param   writerthreads   2
     ns_param   writersize      2048
+    ns_param   clientcertmode  request
+    ns_param   clientCAfile    [ns_config "test" home]/testserver/certificates/ca.crt
 }
 
 ns_section "ns/module/nssock/servers" {
