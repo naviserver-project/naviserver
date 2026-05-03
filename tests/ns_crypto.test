@@ -158,17 +158,17 @@ test ns_crypto_signature_verify-1.0 {basic operation, reading .pem from a file} 
     set sig [::ns_crypto::md string \
                  -digest sha1 \
                  -encoding binary \
-                 -sign $path/myprivate.pem \
+                 -sign $path/server.key \
                  "abcdefghijklmnopqrstuxvwxyz\n"]
     set vfy_ok [::ns_crypto::md string \
                     -digest sha1 \
                     -encoding binary \
-                    -verify $path/mypublic.pem \
+                    -verify $path/server-public.pem \
                     -signature $sig \
                     "abcdefghijklmnopqrstuxvwxyz\n"]
     set vfy_nok [::ns_crypto::md string \
                      -digest sha1 \
-                     -verify $path/mypublic.pem \
+                     -verify $path/server-public.pem \
                      -signature $sig \
                      "abcdefghijklmnopqrstuxvwxyz"]
     return [list $vfy_ok $vfy_nok]
@@ -176,8 +176,8 @@ test ns_crypto_signature_verify-1.0 {basic operation, reading .pem from a file} 
 
 test ns_crypto_signature_verify-1.1 {basic operation, providing .pem as a string} -body {
     set path [ns_config "test" home]/testserver/certificates/
-    set F [open $path/myprivate.pem]; set privateKey [read $F]; close $F
-    set F [open $path/mypublic.pem]; set publicKey [read $F]; close $F
+    set F [open $path/server.key]; set privateKey [read $F]; close $F
+    set F [open $path/server-public.pem]; set publicKey [read $F]; close $F
 
     set sig [::ns_crypto::md string \
                  -digest sha1 \

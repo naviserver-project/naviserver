@@ -409,6 +409,7 @@ CA_CERT     = $(CERT_DIR)/ca.crt
 
 SERVER_EXT  = $(CERT_DIR)/server.ext
 SERVER_KEY  = $(CERT_DIR)/server.key
+SERVER_PUB  = $(CERT_DIR)/server-public.pem
 SERVER_CSR  = $(CERT_DIR)/server.csr
 SERVER_CERT = $(CERT_DIR)/server.crt
 SERVER_PEM  = $(CERT_DIR)/server.pem
@@ -463,6 +464,9 @@ $(SERVER_EXT): | $(CERT_DIR)
 $(SERVER_KEY): | $(CERT_DIR)
 	$(OPENSSL) genrsa -out $@ 2048
 
+$(SERVER_PUB): $(SERVER_KEY)
+	$(OPENSSL) rsa -in $(SERVER_KEY) -pubout -out $@
+
 $(SERVER_CSR): $(SERVER_KEY)
 	$(OPENSSL) req -new -key $< -out $@ -subj "/CN=localhost"
 
@@ -508,7 +512,7 @@ $(CLIENT_CERT): $(CLIENT_CSR) $(CA_CERT) $(CA_KEY) $(CLIENT_EXT)
 ca-bundle.crt:
 	curl -s -fS -k -L -o ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
 
-demo-certificates: $(SERVER_PEM) $(CLIENT_CERT)
+demo-certificates: $(SERVER_PEM) $(CLIENT_CERT) $(SERVER_PUB)
 	($(OPENSSL) rehash $(CERT_DIR) 2>/dev/null || true)
 
 # --------------------------------------------------------------------
@@ -520,7 +524,7 @@ $(TEST_CERT_DIR):
 	$(MKDIR) $(TEST_CERT_DIR)
 
 test-certificates: demo-certificates $(TEST_CERT_DIR)
-	@for i in ca.crt server.crt server.key server.pem client.crt client.key client.ext server.ext ca.ext; do \
+	@for i in ca.crt server.crt server.key server-public.pem server.pem client.crt client.key client.ext server.ext ca.ext; do \
 		$(CP) certificates/$$i $(TEST_CERT_DIR)/; \
 	done
 	@if [ -n "$(OPENSSL_LIBS)" ]; then \
@@ -529,9 +533,9 @@ test-certificates: demo-certificates $(TEST_CERT_DIR)
 
 DISTCLEAN_CERTS = \
 	$(CA_KEY) $(CA_CERT) $(CA_CSR) $(CERT_DIR)/ca.ext $(CERT_DIR)/ca.srl \
-	$(SERVER_KEY) $(SERVER_CSR) $(SERVER_CERT) $(SERVER_PEM) $(CERT_DIR)/server.ext $(CERT_DIR)/server.srl \
+	$(SERVER_KEY) $(SERVER_PUB) $(SERVER_CSR) $(SERVER_CERT) $(SERVER_PEM) $(CERT_DIR)/server.ext $(CERT_DIR)/server.srl \
 	$(CLIENT_KEY) $(CLIENT_CSR) $(CLIENT_CERT) $(CERT_DIR)/client.ext $(CERT_DIR)/client.srl \
-	$(TEST_CERT_DIR)/server.pem $(TEST_CERT_DIR)/server.key $(TEST_CERT_DIR)/server.csr \
+	$(TEST_CERT_DIR)/server.pem $(TEST_CERT_DIR)/server.key $(TEST_CERT_DIR)/server-public.pem $(TEST_CERT_DIR)/server.csr \
 	$(TEST_CERT_DIR)/server.crt $(TEST_CERT_DIR)/server.ext $(TEST_CERT_DIR)/server.srl \
 	$(TEST_CERT_DIR)/client.key $(TEST_CERT_DIR)/client.csr $(TEST_CERT_DIR)/client.crt $(TEST_CERT_DIR)/client.srl \
 	$(TEST_CERT_DIR)/client.ext $(TEST_CERT_DIR)/ca.key \
