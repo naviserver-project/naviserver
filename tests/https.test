@@ -142,11 +142,11 @@ test https-7.0 {ns_http with body and text datatype} -constraints {serverListen}
     #ns_log notice "queueing request for [ns_config test listenurl]/post"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
-    return [list [dict get $result status] [dict get $result body]]
+    list [dict get $result status] [dict get $result body]
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -returnCodes {error return ok} -result {200 {utf-8 <text/plain> AÄATesting 'äöüß'ZÜZ}}
+} -returnCodes {error ok} -result {200 {utf-8 <text/plain> AÄATesting 'äöüß'ZÜZ}}
 
 test https-7.1 {ns_http with body and text datatype with encoding} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
@@ -161,11 +161,11 @@ test https-7.1 {ns_http with body and text datatype with encoding} -constraints 
     ns_set update $queryHeaders content-type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
-    return [list [dict get $result status] [dict get $result body]]
+    list [dict get $result status] [dict get $result body]
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -returnCodes {error return ok} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß'ZÜZ}}
+} -returnCodes {error ok} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß'ZÜZ}}
 
 test https-7.2a {ns_http with body and binary datataype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
@@ -181,11 +181,11 @@ test https-7.2a {ns_http with body and binary datataype} -constraints {serverLis
     set R [dict get $result body]
     set status [dict get $result status]
     set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
-    return [list $status $R1]
+    list $status $R1
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -returnCodes {error return ok} -result {200 {0000 0001 0002 000D}}
+} -returnCodes {error ok} -result {200 {0000 0001 0002 000D}}
 
 test https-7.2b {ns_http with body and binary datataype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
@@ -210,11 +210,11 @@ test https-7.2b {ns_http with body and binary datataype} -constraints {serverLis
     foreach c [split [encoding convertto utf-8 $R] ""] {
         lappend R1 [format %4.4X [scan $c %c]]
     }
-    return [list $status $R1]
+    list $status $R1
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain result R R1
-} -returnCodes {error return ok} -result {200 {0000 0001 0002 000D}}
+} -returnCodes {error ok} -result {200 {0000 0001 0002 000D}}
 
 
 test https-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
@@ -228,12 +228,11 @@ test https-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     #ns_log notice "queueing request for [ns_config test listenurl]/put in dir [pwd]"
     set result [ns_http run -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
                     [ns_config test listenurl]/put]
-    return [list [dict get $result status] [dict get $result body]]
+    list [dict get $result status] [dict get $result body]
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain result
-} -returnCodes {error return ok} -result {200 {utf-8 <text/plain> <123>}}
-#-returnCodes error
+} -returnCodes {error ok} -result {200 {utf-8 <text/plain> <123>}}
 
 
 
