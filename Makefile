@@ -14,7 +14,18 @@ MAN_CSS=man-5.1.css
 HEADER_INC=header-5.1.inc
 
 NSBUILD=1
+
+ifneq ($(MAKECMDGOALS),distclean)
 include include/Makefile.global
+else
+-include include/Makefile.global
+endif
+
+#
+# Fallback in repeated "make distclean", when Makefile.global is gone
+#
+RM   ?= /bin/rm -f
+RMRF ?= /bin/rm -rf
 
 # Subdirectories
 SUBDIRS_CORE := nsthread nsd
@@ -89,12 +100,6 @@ all-nsdbtest: | all-nsdb
 # Make sure that install-notice is printed as last thing of a "make install"
 $(SUBDIRS:%=install-%): | $(SUBDIRS:%=all-%)
 install-notice: | $(SUBDIRS:%=install-%)
-
-ifneq ($(strip $(PEM_FILE)),)
-all: $(PEM_FILE)
-$(PEM_FILE):
-	$(MAKE) $@
-endif
 
 help:
 	@echo 'Commonly used make targets:'
@@ -180,19 +185,26 @@ install-config: configs $(DESTDIR)$(NAVISERVER)/pages $(DESTDIR)$(NAVISERVER)/co
 	done
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
 
-install-certificates: $(PEM_FILE) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/certificates $(DESTDIR)$(NAVISERVER)/invalid-certificates
-	@if [ -f "$(DESTDIR)$(NAVISERVER)/etc" ]; then \
-		for i in `ls $(DESTDIR)$(NAVISERVER)/etc/*pem` ; do \
-			$(LN) -sf $$i $(DESTDIR)$(NAVISERVER)/certificates ; \
+install-certificates: $(EXTRA_INSTALL_CERT_REQ) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/certificates $(DESTDIR)$(NAVISERVER)/invalid-certificates
+	@if [ -d "$(DESTDIR)$(NAVISERVER)/etc" ]; then \
+		for i in "$(DESTDIR)$(NAVISERVER)"/etc/*pem; do \
+			if [ -f "$$i" ]; then \
+				$(LN) -sf "$$i" "$(DESTDIR)$(NAVISERVER)/certificates/"; \
+			fi; \
 		done; \
 	fi
-	@for i in `ls ./certificates/*` ; do \
-		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/certificates/; \
+	@for i in ./certificates/*; do \
+		if [ -f "$$i" ]; then \
+			case "$$i" in \
+				*.key|*.csr|*.srl|*.ext) ;; \
+				*) $(INSTALL_DATA) "$$i" "$(DESTDIR)$(NAVISERVER)/certificates/" ;; \
+			esac; \
+		fi; \
 	done
 	@if [ -n "$(OPENSSL_LIBS)" ]; then \
-		$(OPENSSL) rehash $(DESTDIR)$(NAVISERVER)/certificates ; \
+		$(OPENSSL) rehash "$(DESTDIR)$(NAVISERVER)/certificates"; \
 	fi
-	$(INSTALL_DATA) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/
+	$(INSTALL_DATA) ca-bundle.crt "$(DESTDIR)$(NAVISERVER)/"
 
 install-modules: $(DESTDIR)$(NAVISERVER)/modules $(DESTDIR)$(NAVISERVER)/modules/tcl
 	@for i in $(dirs); do \
@@ -370,31 +382,164 @@ NS_LD_LIBRARY_PATH	= \
    LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
    DYLD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$DYLD_LIBRARY_PATH"
 
+#
+# Handling installs without OpenSSL
+#
 ifneq ($(OPENSSL_LIBS),)
-  TEST_CERTIFICATES = tests/testserver/certificates
-  PEM_FILE          = $(TEST_CERTIFICATES)/server.pem
-  PEM_PRIVATE       = $(TEST_CERTIFICATES)/myprivate.pem
-  PEM_PUBLIC        = $(TEST_CERTIFICATES)/mypublic.pem
-  SSLCONFIG         = $(TEST_CERTIFICATES)/openssl.cnf
-  EXTRA_TEST_REQ    = $(PEM_FILE)
+  EXTRA_TEST_REQ += test-certificates
+  EXTRA_INSTALL_CERT_REQ = demo-certificates
+else
+  EXTRA_INSTALL_CERT_REQ =
+demo-certificates:
+	@echo "OpenSSL support not configured; skipping demo certificate generation"
+
+test-certificates:
+	@echo "OpenSSL support not configured; skipping test certificate generation"
 endif
 
-$(PEM_FILE): $(PEM_PRIVATE)
-	$(OPENSSL) genrsa 2048 > host.key
-	# openssl rejects on some platforms building certificates with SHA1, which requires TLS>1.0, excluding Windows XP.
-	$(OPENSSL) req -new -config $(SSLCONFIG) -x509 -nodes -sha256 -days 365 -key host.key > host.cert
-	$(CAT) host.cert host.key > server.pem
-	$(RM) -rf host.cert host.key
-	#$(OPENSSL) dhparam 1024 >> server.pem
-	$(MKDIR) certificates
-	$(CP) server.pem certificates/
-	$(MV) server.pem $(PEM_FILE)
-	($(OPENSSL) rehash $(TEST_CERTIFICATES) 2>/dev/null || true)
+# --------------------------------------------------------------------
+# Demo Certificates
+# --------------------------------------------------------------------
+CERT_DIR = certificates
 
-$(PEM_PRIVATE):
-	$(OPENSSL) genrsa -out $(PEM_PRIVATE) 512
-	$(OPENSSL) rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
-	$(CHMOD) 644 $(PEM_PRIVATE)
+CA_CSR      = $(CERT_DIR)/ca.csr
+CA_EXT      = $(CERT_DIR)/ca.ext
+CA_KEY      = $(CERT_DIR)/ca.key
+CA_CERT     = $(CERT_DIR)/ca.crt
+
+SERVER_EXT  = $(CERT_DIR)/server.ext
+SERVER_KEY  = $(CERT_DIR)/server.key
+SERVER_CSR  = $(CERT_DIR)/server.csr
+SERVER_CERT = $(CERT_DIR)/server.crt
+SERVER_PEM  = $(CERT_DIR)/server.pem
+
+CLIENT_EXT  = $(CERT_DIR)/client.ext
+CLIENT_KEY  = $(CERT_DIR)/client.key
+CLIENT_CSR  = $(CERT_DIR)/client.csr
+CLIENT_CERT = $(CERT_DIR)/client.crt
+
+$(CERT_DIR):
+	$(MKDIR) $(CERT_DIR)
+
+$(CA_CSR): $(CA_KEY)
+	$(OPENSSL) req -new \
+	    -key $(CA_KEY) \
+	    -out $@ \
+	    -subj "/CN=NaviServer Demo CA"
+
+$(CA_EXT): | $(CERT_DIR)
+	@printf '%s\n' \
+	    '[ca_ext]' \
+	    'basicConstraints = critical, CA:TRUE' \
+	    'keyUsage = critical, keyCertSign, cRLSign' \
+	    'subjectKeyIdentifier = hash' \
+	    > $@
+
+$(CA_KEY): | $(CERT_DIR)
+	$(OPENSSL) genrsa -out $@ 4096
+
+$(CA_CERT): $(CA_CSR) $(CA_KEY) $(CA_EXT)
+	$(OPENSSL) x509 -req \
+	    -in $(CA_CSR) \
+	    -signkey $(CA_KEY) \
+	    -out $@ \
+	    -days 3650 -sha256 \
+	    -extfile $(CA_EXT) -extensions ca_ext
+
+$(SERVER_EXT): | $(CERT_DIR)
+	@printf '%s\n' \
+	    '[server_ext]' \
+	    'basicConstraints = CA:FALSE' \
+	    'keyUsage = digitalSignature, keyEncipherment' \
+	    'extendedKeyUsage = serverAuth' \
+	    'subjectAltName = @alt_names' \
+	    '' \
+	    '[alt_names]' \
+	    'DNS.1 = localhost' \
+	    'IP.1 = 127.0.0.1' \
+	    'IP.2 = ::1' \
+	    > $@
+
+$(SERVER_KEY): | $(CERT_DIR)
+	$(OPENSSL) genrsa -out $@ 2048
+
+$(SERVER_CSR): $(SERVER_KEY)
+	$(OPENSSL) req -new -key $< -out $@ -subj "/CN=localhost"
+
+$(SERVER_CERT): $(SERVER_CSR) $(CA_CERT) $(CA_KEY) $(SERVER_EXT)
+	$(OPENSSL) x509 -req -in $(SERVER_CSR) \
+	    -CA $(CA_CERT) -CAkey $(CA_KEY) \
+	    -CAserial $(CERT_DIR)/server.srl -CAcreateserial \
+	    -out $@ -days 365 -sha256 \
+	    -extfile $(SERVER_EXT) -extensions server_ext
+
+$(SERVER_PEM): $(SERVER_CERT) $(SERVER_KEY)
+	cat $(SERVER_CERT) $(SERVER_KEY) > $@
+
+
+$(CLIENT_EXT): | $(CERT_DIR)
+	@printf '%s\n' \
+	    '[client_ext]' \
+	    'basicConstraints = CA:FALSE' \
+	    'keyUsage = digitalSignature' \
+	    'extendedKeyUsage = clientAuth' \
+	    'subjectAltName = @alt_names' \
+	    '' \
+	    '[alt_names]' \
+	    'DNS.1 = client1.example.org' \
+	    'DNS.2 = client2.example.org' \
+	    'email.1 = test-client@example.org' \
+	    'URI.1 = spiffe://example.org/user/test-client' \
+	    > $@
+
+$(CLIENT_KEY): | $(CERT_DIR)
+	$(OPENSSL) genrsa -out $@ 2048
+
+$(CLIENT_CSR): $(CLIENT_KEY)
+	$(OPENSSL) req -new -key $< -out $@ -subj "/CN=test-client"
+
+$(CLIENT_CERT): $(CLIENT_CSR) $(CA_CERT) $(CA_KEY) $(CLIENT_EXT)
+	$(OPENSSL) x509 -req -in $(CLIENT_CSR) \
+	    -CA $(CA_CERT) -CAkey $(CA_KEY) \
+	    -CAserial $(CERT_DIR)/client.srl -CAcreateserial \
+	    -out $@ -days 365 -sha256 \
+	    -extfile $(CLIENT_EXT) -extensions client_ext
+
+ca-bundle.crt:
+	curl -s -fS -k -L -o ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
+
+demo-certificates: $(SERVER_PEM) $(CLIENT_CERT)
+	($(OPENSSL) rehash $(CERT_DIR) 2>/dev/null || true)
+
+# --------------------------------------------------------------------
+# Test Certificates
+# --------------------------------------------------------------------
+TEST_CERT_DIR = tests/testserver/certificates
+
+$(TEST_CERT_DIR):
+	$(MKDIR) $(TEST_CERT_DIR)
+
+test-certificates: demo-certificates $(TEST_CERT_DIR)
+	@for i in ca.crt server.crt server.key server.pem client.crt client.key client.ext server.ext ca.ext; do \
+		$(CP) certificates/$$i $(TEST_CERT_DIR)/; \
+	done
+	@if [ -n "$(OPENSSL_LIBS)" ]; then \
+		$(OPENSSL) rehash "$(TEST_CERT_DIR)" 2>/dev/null || true; \
+	fi
+
+DISTCLEAN_CERTS = \
+	$(CA_KEY) $(CA_CERT) $(CA_CSR) $(CERT_DIR)/ca.ext $(CERT_DIR)/ca.srl \
+	$(SERVER_KEY) $(SERVER_CSR) $(SERVER_CERT) $(SERVER_PEM) $(CERT_DIR)/server.ext $(CERT_DIR)/server.srl \
+	$(CLIENT_KEY) $(CLIENT_CSR) $(CLIENT_CERT) $(CERT_DIR)/client.ext $(CERT_DIR)/client.srl \
+	$(TEST_CERT_DIR)/server.pem $(TEST_CERT_DIR)/server.key $(TEST_CERT_DIR)/server.csr \
+	$(TEST_CERT_DIR)/server.crt $(TEST_CERT_DIR)/server.ext $(TEST_CERT_DIR)/server.srl \
+	$(TEST_CERT_DIR)/client.key $(TEST_CERT_DIR)/client.csr $(TEST_CERT_DIR)/client.crt $(TEST_CERT_DIR)/client.srl \
+	$(TEST_CERT_DIR)/client.ext $(TEST_CERT_DIR)/ca.key \
+	$(TEST_CERT_DIR)/ca.crt $(TEST_CERT_DIR)/ca.csr $(TEST_CERT_DIR)/ca.ext $(TEST_CERT_DIR)/ca.srl
+
+# --------------------------------------------------------------------
+# Tests
+# --------------------------------------------------------------------
 
 check: test
 
@@ -449,6 +594,13 @@ clang-tidy:
 		$(CLANG_TIDY_CHECKS) -- \
 		-I./include -I/usr/include $(DEFS)
 
+
+
+# --------------------------------------------------------------------
+# Misc
+# --------------------------------------------------------------------
+
+
 checkexports: all
 	@for i in $(SUBDIRS); do \
 		nm -p $$i/*${LIBEXT} | awk '$$2 ~ /[TDB]/ { print $$3 }' | sort -n | uniq | grep -v '^[Nn]s\|^TclX\|^_'; \
@@ -458,17 +610,17 @@ clean-bak: clean
 	@find . -name '*~' -exec rm "{}" ";"
 
 distclean: clean
-	$(RM) config.status config.log config.cache autom4te.cache aclocal.m4 configure \
+	$(RMRF) autom4te.cache
+	$(RM) config.status config.log config.cache aclocal.m4 configure \
 		include/{Makefile.global,Makefile.module,config.h,config.h.in,stamp-h1} \
 		naviserver-$(NS_PATCH_LEVEL).tar.gz sample-config.tcl \
-		$(PEM_FILE) $(PEM_PRIVATE) $(PEM_PUBLIC)
+		$(DISTCLEAN_CERTS)
+	@find "$(CERT_DIR)" "$(TEST_CERT_DIR)" -type l -delete 2>/dev/null || true
 
 config.guess:
 	curl -s -fS -k -L -o config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
 config.sub:
 	curl -s -fS -k -L -o config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
-ca-bundle.crt:
-	curl -s -fS -k -L -o ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
 
 dist: config.guess config.sub clean configs
 	$(RMRF) naviserver-$(NS_PATCH_LEVEL)

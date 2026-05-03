@@ -1031,7 +1031,7 @@ register the [const /.well-known] target via [cmd ns_register_fastpath]:
 
  The appearance of system-generated HTTP responses can be customized
  using an ADP template, typically located at
- [const SERVERHOME/conf/returnnotice.adp]. This template receives the
+ [const {$SERVERHOME/conf/returnnotice.adp}]. This template receives the
  variables [const title], [const notice], and [const noticedetail] to
  render the response. For a consistent look when using custom themes,
  you can specify an alternative template via the [const noticeADP]
@@ -1046,7 +1046,7 @@ register the [const /.well-known] target via [cmd ns_register_fastpath]:
 [example_end]
 
  If the [const noticeadp] value is not an absolute path, it is assumed
- to reside in [const SERVERHOME/conf/]. When set to an empty string,
+ to reside in [const {$SERVERHOME/conf/}]. When set to an empty string,
  the module falls back to a hard-coded template. In cases where the
  custom template causes an error, a basic built-in template is used as
  a fallback.
@@ -1560,7 +1560,6 @@ production environments.
   [item] consistent handling across TLS and QUIC drivers
   [list_end]
 
-
   The certificate presented by the client can be inspected at runtime via:
 
 [example_begin]
@@ -1623,6 +1622,62 @@ production environments.
    -extfile client.ext \
    -extensions client_ext
 [example_end]
+
+
+
+[subsection {Quick mTLS Test}]
+
+ [para]
+ After installation, NaviServer provides demo certificates in
+ [const {$SERVERHOME/certificates/}]. These can be used for a quick
+ end-to-end test of mutual TLS (mTLS).
+
+ [para]
+ When specifying relative paths in the configuration, they are resolved
+ relative to [const {$SERVERHOME}], not the certificates directory. Therefore,
+ the CA bundle is referenced via [const certificates/ca.crt].
+
+ [para]
+ Example configuration:
+
+[example_begin]
+ ns_section ns/server/$server/module/https {
+    ns_param clientcertmode require
+    ns_param clientCAfile   certificates/ca.crt
+ }
+[example_end]
+
+ [para]
+ After restarting the server, a client can connect using the provided
+ demo client certificate:
+
+[example_begin]
+ curl https://localhost:8443/ \
+   --cert $SERVERHOME/certificates/client.crt \
+   --key  $SERVERHOME/certificates/client.key \
+   --cacert $SERVERHOME/certificates/ca.crt
+[example_end]
+
+ [para]
+ On successful connection, the server exposes the client certificate
+ information via:
+
+[example_begin]
+ set cert [lb]ns_conn clientcert[rb]
+[example_end]
+
+ [para]
+ The returned dictionary contains fields such as [const subject],
+ [const issuer], [const verified], and [const san].
+
+ [para]
+ The provided CA certificate [const ca.crt] acts as trust anchor for this
+ demo setup and can be used directly as [term clientCAfile].
+
+ [para]
+ Note: The installed certificates are intended for testing purposes only
+ and must not be used in production environments.
+
 
 
 [subsection {Certificate Inspection and Management (ns_certctl)}]
