@@ -4255,11 +4255,7 @@ PkeyImportEcFromCoords(Tcl_Interp *interp,
         goto done;
     }
 
-#   if OPENSSL_VERSION_NUMBER < 0x10100000L
-    ok = EC_POINT_set_affine_coordinates_GFp(group, point, bx, by, bn_ctx);
-#   else
     ok = EC_POINT_set_affine_coordinates(group, point, bx, by, bn_ctx);
-#   endif
     if (ok != 1) {
         Ns_TclPrintfResult(interp, "invalid EC point (cannot set affine coordinates)");
         goto done;
@@ -7736,17 +7732,10 @@ PkeyInfoPutEcDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
         goto done;
     }
 
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L
     if (EC_POINT_get_affine_coordinates(group, point, x, y, NULL) != 1) {
         Ns_TclPrintfResult(interp, "could not obtain EC affine coordinates");
         goto done;
     }
-# else
-    if (EC_POINT_get_affine_coordinates_GFp(group, point, x, y, NULL) != 1) {
-        Ns_TclPrintfResult(interp, "could not obtain EC affine coordinates");
-        goto done;
-    }
-# endif
 
     if (PkeyInfoPutBnPad(interp, resultObj, "x", x, coordLen, encoding) != TCL_OK) {
         goto done;
@@ -10596,13 +10585,8 @@ Ns_InfoSSLDetailsObj(void)
     /*
      * Runtime version.
      */
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L
     runtimeVersion = OpenSSL_version_num();
     runtimeVersionString = OpenSSL_version(OPENSSL_VERSION);
-# else
-    runtimeVersion = SSLeay();
-    runtimeVersionString = SSLeay_version(SSLEAY_VERSION);
-# endif
 
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("runtimeVersion", TCL_INDEX_NONE),

@@ -41,9 +41,7 @@ typedef struct {
 static SSLCertStatusArg sslCertStatusArg;
 # endif /* HAVE_OPENSSL_OCSP */
 
-# if OPENSSL_VERSION_NUMBER >= 0x10101000L
 static FILE *keylog_fp = NULL;
-# endif
 
 /*
  * For HTTP client requests, use a data index to obtain server
@@ -68,9 +66,7 @@ static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl),
                         const unsigned char **out, unsigned char *outlen,
                         const unsigned char *in, unsigned int inlen,
                         void *arg);
-# if OPENSSL_VERSION_NUMBER >= 0x10101000L
 static void KeylogCB(const SSL *ssl, const char *line);
-# endif
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
 static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
 
@@ -2771,7 +2767,6 @@ ALPNSelectCB(NS_TLS_SSL *ssl,
     return (rc == OPENSSL_NPN_NEGOTIATED) ? SSL_TLSEXT_ERR_OK : SSL_TLSEXT_ERR_NOACK;
 }
 
-# if OPENSSL_VERSION_NUMBER >= 0x10101000L
 static void KeylogCB(const SSL *ssl, const char *line)
 {
     NsTLSConfig *dc;
@@ -2802,7 +2797,6 @@ static void KeylogCB(const SSL *ssl, const char *line)
     fprintf(keylog_fp, "%s\n", line);
     fflush(keylog_fp);
 }
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -3017,7 +3011,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
             }
 #endif /* HAVE_OPENSSL_OCSP */
 
-#if OPENSSL_VERSION_NUMBER > 0x00908070 && !defined(HAVE_OPENSSL_3) && !defined(OPENSSL_NO_EC)
+#if !defined(HAVE_OPENSSL_3) && !defined(OPENSSL_NO_EC)
             /*
              * Generate key for elliptic curve cryptography (potentially used
              * for Elliptic Curve Digital Signature Algorithm (ECDSA) and
@@ -3606,7 +3600,6 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         SSL_CTX_set_options(ctx, n);
     }
 
-#if OPENSSL_VERSION_NUMBER >= 0x1000200fL
     {
         Tcl_DString   alpnDs;
         unsigned int *mem;
@@ -3625,9 +3618,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         SSL_CTX_set_alpn_select_cb(ctx, ALPNSelectCB, mem + 1);
         Tcl_DStringFree(&alpnDs);
     }
-#endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
     if (app_data != NULL) {
         NsTLSConfig *dc = app_data;
 
@@ -3636,7 +3627,6 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
             SSL_CTX_set_keylog_callback(ctx, KeylogCB);
         }
     }
-#endif
 
     SSL_CTX_set_default_verify_paths(ctx);
     if ((caFile != NULL) || (caPath != NULL)) {
@@ -3726,9 +3716,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         /*Ns_Log(Notice, "SSL_CTX_use_certificate_chain_file and SSL_CTX_use_PrivateKey_file into SSL_CTX %p", (void*)ctx);*/
     }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
     SSL_CTX_set_quiet_shutdown(ctx, 1);
-#endif
 
     return TCL_OK;
 

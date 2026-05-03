@@ -36,9 +36,6 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-# include <openssl/rand.h>
-#endif
 
 #include "../nsd/nsopenssl.h"
 
@@ -63,56 +60,9 @@ static Ns_DriverClientcertInfoProc ClientcertInfo;
 static Ns_DriverCloseProc Close;
 static Ns_DriverClientInitProc ClientInit;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static void SSLLock(int mode, int n, const char *file, int line);
-static unsigned long SSLThreadId(void);
-#endif
-
 /*
  * Static variables defined in this file.
  */
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static Ns_Mutex *driver_locks = NULL;
-
-static void
-InitOpenSSL_1_0_Compat(const char *module)
-{
-    int num, n;
-    Tcl_DString ds;
-
-    Tcl_DStringInit(&ds);
-
-    num = CRYPTO_num_locks();
-    driver_locks = ns_calloc((size_t)num, sizeof(*driver_locks));
-
-    for (n = 0; n < num; n++) {
-        Ns_DStringPrintf(&ds, "nsssl:%s:%d", module, n);
-        Ns_MutexSetName(driver_locks + n, ds.string);
-        Tcl_DStringSetLength(&ds, 0);
-    }
-
-    CRYPTO_set_locking_callback(SSLLock);
-    CRYPTO_set_id_callback(SSLThreadId);
-
-    /* Seed the OpenSSL Pseudo-Random Number Generator. */
-    Tcl_DStringSetLength(&ds, 1024);
-    for (n = 0; !RAND_status() && n < 3; n++) {
-        int i;
-        Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
-        for (i = 0; i < 1024; i++) {
-            ds.string[i] = (char)(Ns_DRand() * 255);
-        }
-        RAND_seed(ds.string, 1024);
-    }
-
-    if (!RAND_status()) {
-        Ns_Log(Warning, "nsssl: PRNG fails to have enough entropy");
-    }
-
-    Tcl_DStringFree(&ds);
-}
-#endif
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
@@ -174,12 +124,8 @@ Ns_ModuleInit(const char *server, const char *module)
         result = NS_ERROR;
 
     } else {
-        int rc;
+        int rc = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, dc, &dc->ctx);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-        InitOpenSSL_1_0_Compat(module);
-#endif
-        rc = Ns_TLS_CtxServerInit(section, NULL, NS_DRIVER_SNI, dc, &dc->ctx);
         Ns_Log(Notice, "nsssl: created sslCtx %p for dc %p",
                (void*)dc->ctx, (void*)dc);
 
@@ -694,26 +640,6 @@ Close(Ns_Sock *sock)
     }
     sock->arg = NULL;
 }
-
-
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static void
-SSLLock(int mode, int n, const char *UNUSED(file), int UNUSED(line))
-{
-    if (mode & CRYPTO_LOCK) {
-        Ns_MutexLock(driver_locks + n);
-    } else {
-        Ns_MutexUnlock(driver_locks + n);
-    }
-}
-
-static unsigned long
-SSLThreadId(void)
-{
-    return (unsigned long) Ns_ThreadId();
-}
-#endif
 
 
 /*

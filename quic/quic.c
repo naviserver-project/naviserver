@@ -97,7 +97,7 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 #if defined(HAVE_NGHTTP3) && defined(HAVE_OPENSSL_EVP_H)
-#if OPENSSL_VERSION_NUMBER >= 0x40000000L
+#if defined(HAVE_OPENSSL_4)
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -8263,7 +8263,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *UNUSED(server), const char *mo
     return NS_ERROR;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER >= 0x40000000L */
+#endif /* HAVE_OPENSSL_4 */
 #endif
 /* End: HAVE_OPENSSL_EVP_H: Big ifdef block that covers most of this file. */
 
