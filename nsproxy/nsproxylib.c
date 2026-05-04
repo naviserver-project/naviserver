@@ -302,29 +302,29 @@ static void   FreePool(Pool *poolPtr) NS_GNUC_NONNULL(1);
 
 static Proxy* CreateProxy(Pool *poolPtr) NS_GNUC_NONNULL(1);
 static Err    PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, const Ns_Time *timePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static void   PushProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
-static Proxy* GetProxy(const char *proxyId, InterpData *idataPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Proxy* GetProxy(const char *proxyId, InterpData *idataPtr) NS_GNUC_NONNULL(1,2);
 
 static int    Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *scriptString, TCL_SIZE_T scriptLength, const Ns_Time *timeoutPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Err    Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *scriptString, TCL_SIZE_T scriptLength)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static Err    Wait(Tcl_Interp *interp, Proxy *proxyPtr, const Ns_Time *timeoutPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static Err    Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static void FormatActiveSnippet(char *dst, size_t dstCap,
                                 const char *script, size_t want,
                                 const char *dots, Tcl_DString *ds)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,3,5,6);
 
 static void   GetStats(const Proxy *proxyPtr)  NS_GNUC_NONNULL(1);
 
-static Err    CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int    ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Err    CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1,2);
+static int    ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1,2);
 static void   CloseProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static int    CloseWorkerOfProxy(Proxy *proxyPtr, const char *proxyId, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
@@ -333,32 +333,32 @@ static void   FreeProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static void   ResetProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static void   ProxyError(Tcl_Interp *interp, Err err) NS_GNUC_NONNULL(1);
 static void   FmtActiveProxy(Tcl_Interp *interp, const Proxy *proxyPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void   ReleaseHandles(Tcl_Interp *interp, InterpData *idataPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static Worker* ExecWorker(Tcl_Interp *interp, const Proxy *proxyPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static Err    CreateWorker(Tcl_Interp *interp, Proxy *proxyPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void   SetExpire(Worker *workerPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static bool   SendBuf(const Worker *workerPtr, const Ns_Time *timePtr, const Tcl_DString *dsPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static bool   RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static bool   WaitFd(int fd, short events, long ms);
 
 static int    Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 static void   Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(3);
 
 static void   UpdateIov(struct iovec *iov, size_t n)
     NS_GNUC_NONNULL(1);
 static void   SetOpt(const char *str, char const **optPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static void   ReaperThread(void *UNUSED(arg));
 static void   CloseWorker(Worker *workerPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
@@ -367,7 +367,7 @@ static long   GetTimeDiff(const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 
 static void   AppendObj(Tcl_Obj *listObj, const char *flag, Tcl_Obj *obj)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static Tcl_Obj* StringObj(const char* chars);
 
 /*

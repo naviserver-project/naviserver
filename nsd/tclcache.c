@@ -39,10 +39,10 @@ static int CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE
 
 static Ns_Entry *CreateEntry(const NsInterp *itPtr, TclCache *cPtr, const char *key,
                              int *newPtr, Ns_Time *timeoutPtr, const Ns_CacheTransactionStack *transactionStackPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,3,4);
 
 static void SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,3,4);
 
 static bool noGlobChars(const char *pattern)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
@@ -59,11 +59,11 @@ CacheTransactionFinishObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE
 
 static int
 CacheTransactionFinish(NsServer *servPtr, const char *cacheName, uintptr_t transactionEpoch, bool commit, unsigned long *countPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,5);
 
 static int
 CacheTransactionFinishPop(NsInterp *itPtr, Tcl_Obj *listObj, bool commit, unsigned long *countPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 static int CacheEval(Tcl_Interp *interp, TCL_SIZE_T nargs, TCL_SIZE_T objc, Tcl_Obj *const* objv);
 

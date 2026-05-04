@@ -28,11 +28,11 @@
 
 static const unsigned char *
 GetToken(Tcl_DString *dsPtr, const unsigned char *source)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static const unsigned char *
 GetQuotedString(Tcl_DString *dsPtr, const unsigned char *source)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static const unsigned char *
 SkipWhitespace(const unsigned char *source) NS_GNUC_CONST

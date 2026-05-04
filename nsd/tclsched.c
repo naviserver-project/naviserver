@@ -35,7 +35,7 @@ static const Ns_ObjvTimeRange nonnegTimeRange = {{0, 0}, {LONG_MAX, 0}};
 static Ns_SchedProc FreeSchedCallback;
 static int SchedObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, char cmd);
 static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
-    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 
 
 

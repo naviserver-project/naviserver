@@ -21,7 +21,7 @@
 static int GetBoolFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defObj);
 static int GetIntFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defObj, Tcl_WideInt minValue, Tcl_WideInt maxValue);
 static void ReturnAllValues(Tcl_Interp *interp, int all, Ns_DList *dlPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 
 /*
  *----------------------------------------------------------------------

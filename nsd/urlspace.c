@@ -323,11 +323,11 @@ static TCL_OBJCMDPROC_T UrlSpaceUnsetObjCmd;
  */
 
 static void MkSeq(Tcl_DString *dsPtr, const char *key, const char *url)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static void WalkTrie(const Trie *triePtr, Ns_WalkProc func,
                      Tcl_DString *dsPtr, char **stack, const char *filter)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,3,4,5);
 
 static size_t CountNonWildcharChars(const char *chars)
     NS_GNUC_NONNULL(1) NS_GNUC_CONST;
@@ -339,7 +339,7 @@ static void PrintSeq(const char *seq);
 #endif
 
 static void UrlSpaceContextPrint(const char *caller, const NsUrlSpaceContext *ctxPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * Trie functions
@@ -350,24 +350,24 @@ static void  TrieInit(Trie *triePtr)
 
 static void  TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
                      Ns_FreeProc deleteProc, void *contextSpec)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static void *TrieFind(const Trie *triePtr, char *seq,
                       Ns_UrlSpaceContextFilterEvalProc proc, void *context,
                       int *depthPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,5);
 
 static void *TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags, Node **nodePtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 static void *TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void  TrieTrunc(Trie *triePtr)
     NS_GNUC_NONNULL(1);
 
 static int   TrieTruncBranch(Trie *triePtr, char *seq)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void  TrieDestroy(Trie *triePtr)
     NS_GNUC_NONNULL(1);
@@ -387,30 +387,30 @@ static Junction *JunctionGet(NsServer *servPtr, int id)
 static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
                         unsigned int flags, Ns_FreeProc freeProc,
                         void *contextSpec)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void *JunctionFind(const Junction *juncPtr, char *seq,
                           Ns_UrlSpaceMatchInfo *matchInfoPtr,
                           Ns_UrlSpaceContextFilterEvalProc proc, void *context)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void *JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void *JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void JunctionTruncBranch(const Junction *juncPtr, char *seq)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * Functions for ns_urlspace
  */
 static int CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static int AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_WalkProc WalkCallback;
 static Ns_FreeProc UrlSpaceContextSpecFree;

@@ -85,7 +85,7 @@ typedef struct InterpPage {
  */
 
 static Page *ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned int flags)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static int AdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resvar)
     NS_GNUC_NONNULL(1);
@@ -93,14 +93,14 @@ static int AdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const
 static int AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file,
                    const AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
                    const struct stat *stPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(7);
+    NS_GNUC_NONNULL(1,5,7);
 
 static int AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file,
                      const Ns_Time *expiresPtr, Tcl_DString *outputPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,4,6);
 
 static int AdpDebug(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len, int nscript)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void DecrCache(AdpCache *cachePtr)
     NS_GNUC_NONNULL(1);
@@ -111,7 +111,7 @@ static void FreeObjs(Objs *objsPtr)
     NS_GNUC_NONNULL(1);
 
 static void AdpTrace(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_Callback FreeInterpPage;
 static Ns_ServerInitProc ConfigServerAdp;

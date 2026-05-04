@@ -63,7 +63,7 @@ static ssize_t SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
 static NS_SOCKET BindToSameFamily(const struct sockaddr *saPtr,
                                   struct sockaddr *lsaPtr,
                                   const char *lhost, unsigned short lport)
-                                  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+                                  NS_GNUC_NONNULL(1,2);
 
 static NS_INLINE bool Retry(int errorCode) NS_GNUC_CONST;
 

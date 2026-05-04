@@ -56,13 +56,13 @@ static Ns_ReturnCode PrebindSockets(const char *spec)
 static void Binder(void);
 
 static struct Prebind* PrebindAlloc(const char *proto, size_t reuses, struct sockaddr *saPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 
 static bool PrebindGet(const char *proto, struct sockaddr *saPtr, NS_SOCKET *sockPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static void PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struct Prebind *pPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 #endif
 
 #ifdef LOGBIND

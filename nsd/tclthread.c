@@ -38,13 +38,13 @@ static Ns_Tls argtls = NULL;
 
 static Ns_ReturnCode CreateTclThread(const NsInterp *itPtr, const char *script, bool detached,
                                      const char *threadName, Ns_Thread *thrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 static void *CreateSynchObject(const NsInterp *itPtr,
                                Tcl_HashTable *typeTable, unsigned int *idPtr,
                                Ns_Callback *initProc, const char *type,
                                Tcl_Obj *objPtr, TCL_SIZE_T cnt)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,3,5);
 
 static void ThreadArgFree(void *arg)
     NS_GNUC_NONNULL(1);

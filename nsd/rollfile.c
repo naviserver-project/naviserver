@@ -27,13 +27,13 @@ typedef struct File {
  */
 
 static TCL_SIZE_T MatchFiles(Tcl_Obj *pathObj, File **files)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int CmpFile(const void *arg1, const void *arg2)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int Rename(const char *from, const char *to)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int Exists(const char *file)
     NS_GNUC_NONNULL(1);

@@ -47,7 +47,7 @@ static Ns_ObjvTable authprocs[] = {
 
 static Ns_ReturnCode EvalTclAuthCallback(const Ns_TclCallback *cbPtr, AuthType authType, void *arg,
                                          const char *username, const char *password, int *continuation)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,6);
 
 
 /*

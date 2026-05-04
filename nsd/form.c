@@ -26,34 +26,34 @@
  */
 
 static Ns_ReturnCode ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr,
                                             char *toParse, Ns_Set *set,
                                             Tcl_Encoding encoding, bool translate,
                                             Tcl_Obj *fallbackCharsetObj)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,3,4);
 
 static Ns_ReturnCode ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start, char *end)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,3,4);
 
 static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static bool GetBoundary(Tcl_DString *dsPtr, const char *contentType)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 #define NS_USE_MEMMEM 1
 #if defined(NS_USE_MEMMEM)
 static char *NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1,3) NS_GNUC_PURE;
 #else
 static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
 #endif
 
 static bool GetValue(const char *hdr, const char *att, size_t attLength, const char **vsPtr, const char **vePtr, char *uPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,2,4,5,6);
 
 static bool IsJsonContentType(const char *contentType, const char* typeEnd)
     NS_GNUC_NONNULL(1,2);

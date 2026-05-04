@@ -36,7 +36,7 @@ typedef struct Stream {
  */
 
 static bool GetLine(Stream *sPtr, Tcl_DString *dsPtr)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+     NS_GNUC_NONNULL(1,2);
 
 static bool FillBuf(Stream *sPtr)
      NS_GNUC_NONNULL(1);

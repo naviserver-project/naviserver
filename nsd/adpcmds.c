@@ -28,9 +28,9 @@ static Ns_ObjvValueRange posintRange0 = {0, TCL_SIZE_MAX};
 
 static int ExceptionObjCmd(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                            AdpResult exception) NS_GNUC_NONNULL(1);
-static int GetFrame(const ClientData clientData, AdpFrame **framePtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int GetOutput(ClientData clientData, Tcl_DString **dsPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int GetFrame(const ClientData clientData, AdpFrame **framePtrPtr) NS_GNUC_NONNULL(1,2);
+static int GetOutput(ClientData clientData, Tcl_DString **dsPtrPtr) NS_GNUC_NONNULL(1,2);
+static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1,2);
 
 static int AdpFlushObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
                           Tcl_Obj *const* objv, bool doStream);

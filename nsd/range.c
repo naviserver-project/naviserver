@@ -29,7 +29,7 @@ typedef struct Range {
  */
 static int ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                              Range *ranges, int maxRanges)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 
 static void SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength)
     NS_GNUC_NONNULL(1);
@@ -39,7 +39,7 @@ static void SetMultipartRangeHeader(const Ns_Conn *conn)
 
 static TCL_SIZE_T AppendMultipartRangeHeader(Tcl_DString *dsPtr, const char *type,
                                       off_t start, off_t end, size_t objLength)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1,1);
 
 static TCL_SIZE_T AppendMultipartRangeTrailer(Tcl_DString *dsPtr)
         NS_GNUC_NONNULL(1);
@@ -48,7 +48,7 @@ static bool MatchRange(const Ns_Conn *conn, time_t mtime)
         NS_GNUC_NONNULL(1);
 
 static void InvalidSyntax(const char *rangeString, const char *headerString, ptrdiff_t offset)
-        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+        NS_GNUC_NONNULL(1,2);
 
 
 /*

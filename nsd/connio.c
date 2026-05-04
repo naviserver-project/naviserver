@@ -53,7 +53,7 @@ static int CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbuf
     NS_GNUC_NONNULL(1);
 
 static bool HdrEq(const Ns_Set *set, const char *name, const char *value, size_t valueLength)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 
 /*

@@ -28,7 +28,7 @@ static NsLimits *FindLimits(const char *limits, int create)
     NS_GNUC_NONNULL(1);
 
 static void LimitsResult(Tcl_Interp *interp, const NsLimits *limitsPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 
 /*

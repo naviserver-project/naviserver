@@ -80,7 +80,7 @@ typedef struct RwLock {
 } RwLock;
 
 static RwLock *GetRwLock(Ns_RWLock *rwPtr, const char *caller)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
+    NS_GNUC_NONNULL(1,2) NS_GNUC_RETURNS_NONNULL;
 
 
 static RwLock *firstRwlockPtr = NULL;

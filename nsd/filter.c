@@ -45,7 +45,7 @@ static void RunTraces(Ns_Conn *conn, const Trace *tracePtr)
     NS_GNUC_NONNULL(1);
 
 static void RunSelectedTraces(Ns_Conn *conn, const Trace *tracePtr, Ns_TraceProc *traceProc)
-     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(3);
+     NS_GNUC_NONNULL(1,3);
 
 static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
     NS_GNUC_NONNULL(2);
@@ -57,7 +57,7 @@ static void FilterUnlock(NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
 static void FilterContextInit(NsUrlSpaceContext *ctxPtr, const Conn *connPtr, struct sockaddr *ipPtr)
-    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 /*
  *----------------------------------------------------------------------

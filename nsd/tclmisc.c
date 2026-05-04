@@ -29,17 +29,17 @@ static TCL_OBJCMDPROC_T   IpTrustedObjCmd;
 static TCL_OBJCMDPROC_T   IpValidObjCmd;
 
 static void SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static void SHATransform(Ns_CtxSHA1 *sha)
     NS_GNUC_NONNULL(1);
 static void MD5Transform(uint32_t buf[4], const unsigned char block[64])
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int Base64EncodeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, int encoding);
 static int Base64DecodeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, int encoding);
 
 static void FinishElement(Tcl_DString *elemPtr, Tcl_DString *colsPtr, bool quoted)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 /*
  *----------------------------------------------------------------------

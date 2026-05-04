@@ -28,7 +28,7 @@ typedef void *(AtProc)(Ns_Callback *proc, void *data);
 
 static Ns_ShutdownProc ShutdownProc;
 static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 
 

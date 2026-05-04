@@ -38,23 +38,23 @@ typedef struct ByteKey {
 
 static char *UrlEncode(Tcl_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char percentScheme, bool upperCase)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static char *UrlDecode(Tcl_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char percentScheme, Ns_ReturnCode *resultPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static TCL_SIZE_T PercentDecode(char *dest, const char *source, char percentScheme)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int UrlPercentDecode(NsInterp *itPtr, const char *inputStr,
                             char percentScheme, const char *charset,
                             Tcl_Obj *fallbackCharsetObj)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode UrlFallbackDecode(NsInterp *itPtr, Tcl_DString *dsPtr,
                                        const char *inputStr, Tcl_Obj *fallbackCharsetObj,
                                        Tcl_Encoding initialEncoding, char percentScheme)
-        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(3);
+        NS_GNUC_NONNULL(1,2,3);
 /*
  * Local variables defined in this file.
  */

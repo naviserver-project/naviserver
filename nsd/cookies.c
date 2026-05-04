@@ -24,26 +24,26 @@
 
 static int GetFirstNamedCookie(Tcl_DString *dest, const Ns_Set *hdrs,
                                const char *setName, const char *name)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(2,3,4);
 
 static int GetAllNamedCookies(Tcl_DString *dest, const Ns_Set *hdrs,
                               const char *setName, const char *name)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,3,4);
 
 static bool DeleteNamedCookies(Ns_Set *hdrs, const char *setName,
                                const char *name)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 
 typedef char* (CookieParser)(Tcl_DString *dest, char *chars, const char *name,
                              size_t nameLen, char **nextPtr)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2,3);
 
 static CookieParser GetFromCookieHeader;
 static CookieParser GetFromSetCookieHeader;
 
 static char *CopyCookieValue(Tcl_DString *dest, char *valueStart)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ObjvTable samesiteValues[] = {
     {"strict", UCHAR('s')},

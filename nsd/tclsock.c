@@ -44,12 +44,11 @@ typedef struct ListenCallback {
 
 static int GetSet(Tcl_Interp *interp, const char *flist, int write,
                   fd_set **setPtrPtr, fd_set *setPtr, int *const maxPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4)
-    NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,2,4,5,6);
 
 static void AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj, const fd_set *setPtr,
                              int write, const char *flist, Tcl_DString *dsPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,5);
 
 static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
     NS_GNUC_NONNULL(1);
@@ -59,10 +58,10 @@ static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
     NS_GNUC_NONNULL(1);
 
 static int SockSetBlocking(const char *value, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode GetSocketFromChannel(Tcl_Interp *interp, const char *chanId, int write, NS_SOCKET *socketPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 static Ns_SockProc SockListenCallback;
 

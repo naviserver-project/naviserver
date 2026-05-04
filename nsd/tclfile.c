@@ -34,13 +34,13 @@ typedef struct {
 } NsRegChan;
 
 static void SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
-        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+        NS_GNUC_NONNULL(1,2);
 
 static int  FileObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *cmd)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,4);
 
 static TCL_OBJCMDPROC_T ChanCleanupObjCmd;
 static TCL_OBJCMDPROC_T ChanListObjCmd;

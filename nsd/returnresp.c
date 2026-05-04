@@ -26,10 +26,10 @@
 
 static Ns_ServerInitProc ConfigServerRedirects;
 static bool ReturnRedirectInternal(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static Ns_ReturnCode RedirectResponse(Ns_Conn *conn, const char *url, int statusCode,
                                       const char *statusPharse, const char *comment)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,4,5);
 
 
 /*

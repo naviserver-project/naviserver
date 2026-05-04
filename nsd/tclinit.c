@@ -94,7 +94,7 @@ static void RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
     NS_GNUC_NONNULL(1);
 
 static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void LogErrorInTrace(const NsInterp *itPtr, const char *context, Ns_TclTraceType why)
     NS_GNUC_NONNULL(1);

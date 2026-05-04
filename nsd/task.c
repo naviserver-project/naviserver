@@ -81,18 +81,18 @@ static void JoinQueue(TaskQueue *queuePtr)
 static void StopQueue(TaskQueue *queuePtr)
     NS_GNUC_NONNULL(1);
 static bool SignalQueue(TaskQueue *queuePtr, Task *taskPtr, unsigned int signal)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static void FreeTask(Task *taskPtr)
     NS_GNUC_NONNULL(1);
 static void RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static void ReleaseTask(Task *taskPtr)
     NS_GNUC_NONNULL(1);
 static void ReserveTask(Task *taskPtr)
     NS_GNUC_NONNULL(1);
 
 static void LogDebug(const char *before, Task *taskPtr, const char *after)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 static char *DStringAppendTaskFlags(Tcl_DString *dsPtr, unsigned int flags)
     NS_GNUC_NONNULL(1);
 

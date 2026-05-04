@@ -37,13 +37,13 @@ typedef struct Callback {
 static Ns_ThreadProc ShutdownThread;
 
 static void *RegisterAt(Callback **firstPtrPtr, ns_funcptr_t proc, void *arg, bool fifo)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void RunCallbacks(const char *list, const Callback *cbPtr)
     NS_GNUC_NONNULL(1);
 
 static void DStringAppendCallbackList(Tcl_DString *dsPtr, const char *list, const Callback *cbPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * Static variables defined in this file

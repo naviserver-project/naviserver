@@ -61,16 +61,16 @@ static MaskedEntry *nonPublicEntries = NULL;
 
 
 static void SockkAddrInitMaskedEntry(const char *cdirString, MaskedEntry *entryPtr, const char *errorString)
-    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static bool SockaddrGetMappedV4(const struct sockaddr *sa, const unsigned char **bytes)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void SockaddrSetMappedV4(struct sockaddr *sa, uint32_t addr4)
     NS_GNUC_NONNULL(1);
 
 static bool SockaddrGetComparableV4(const struct sockaddr *sa, const unsigned char **bytes)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static bool SockAddrInit(void);
 

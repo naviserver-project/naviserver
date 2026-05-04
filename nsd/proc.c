@@ -34,7 +34,7 @@ typedef struct Info {
 
 static Ns_ArgProc ServerArgProc;
 static void AppendAddr(Tcl_DString *dsPtr, const char *prefix, const void *addr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Tcl_HashKeyProc         FuncptrKey;
 static Tcl_CompareHashKeysProc CompareFuncptrKeys;

@@ -42,11 +42,11 @@ enum imgtype {
  * Local functions defined in this file
  */
 
-static int JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-static int PngSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-static int GifSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static int JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1,2,3);
+static int PngSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1,2,3);
+static int GifSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1,2,3);
 
-static bool JpegRead2Bytes(Tcl_Channel chan, uint32_t *value) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static bool JpegRead2Bytes(Tcl_Channel chan, uint32_t *value) NS_GNUC_NONNULL(1,2);
 static int JpegNextMarker(Tcl_Channel chan) NS_GNUC_NONNULL(1);
 
 static enum imgtype GetImageType(Tcl_Channel chan) NS_GNUC_NONNULL(1);
@@ -54,7 +54,7 @@ static enum imgtype GetImageType(Tcl_Channel chan) NS_GNUC_NONNULL(1);
 static void SetResultObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h) NS_GNUC_NONNULL(1);
 
 static int ChanGetc(Tcl_Channel chan) NS_GNUC_NONNULL(1);
-static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path) NS_GNUC_NONNULL(1,2);
 
 
 /*

@@ -36,11 +36,11 @@ static char *MakePath(Tcl_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 static const char *ServerRoot(Tcl_DString *dest, const NsServer *servPtr, const char *rawHost)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_NONNULL(1,2)
     NS_GNUC_RETURNS_NONNULL;
 
 static const char *NormalizePath(Tcl_DString *dsPtr, const char *path, bool url)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
+    NS_GNUC_NONNULL(1,2) NS_GNUC_RETURNS_NONNULL;
 
 static bool IsSlashInPath(bool inUrl, const char c)
     NS_GNUC_PURE;

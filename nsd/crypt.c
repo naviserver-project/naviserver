@@ -192,10 +192,10 @@ static const int e[] = {
  * Locally defined functions
  */
 static void setkey_private(struct sched *sp, const unsigned char *key)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * Set up the key schedule from the key.

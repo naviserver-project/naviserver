@@ -121,7 +121,7 @@ size_t SharedDrainResume(SharedState *st, int64_t *out, size_t cap)  NS_GNUC_NON
 
 
 /* Fills out with a consistent snapshot. Takes the internal Shared lock. */
-void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out) NS_GNUC_NONNULL(1,2);
 static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss) NS_GNUC_NONNULL(1);
 
 /* Tiny helpers (header-only / static inline) */

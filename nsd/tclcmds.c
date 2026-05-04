@@ -327,7 +327,7 @@ static const Cmd servCmds[] = {
  * Locally defined functions.
  */
 static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+     NS_GNUC_NONNULL(1,2);
 
 
 /*

@@ -29,9 +29,9 @@ static void CreateConnThread(ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
 
 static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool checkforproxy)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state, bool checkforproxy)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 
 static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
@@ -41,60 +41,60 @@ static void WakeupConnThreads(ConnPool *poolPtr)
 
 static Ns_ReturnCode MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
                                   NsUrlSpaceContextSpec **specPtr)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2,3,4,5);
 
 static int ServerMaxThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                                   ConnPool *poolPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2,4,5);
 
 static int ServerMinThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                                   ConnPool *poolPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2,4,5);
 
 
 static int ServerConnectionRateLimitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                                            ConnPool *poolPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2,4,5);
 
 
 static int ServerPoolRateLimitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                                      ConnPool *poolPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2,4,5);
 
 
 static int ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                            NsServer  *servPtr, ConnPool *poolPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(2,4,5,6);
 
 static int ServerMappedObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                               NsServer *servPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2,4,5);
 
 static int ServerUnmapObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                              NsServer *servPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2,4,5);
 
 static void ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uintptr_t connId)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int ServerListActiveCmd(Tcl_DString *dsPtr, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                                ConnPool *poolPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,4,5);
 static int ServerListAllCmd(Tcl_DString *dsPtr, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                             ConnPool *poolPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,4,5);
 static int ServerListQueuedCmd(Tcl_DString *dsPtr, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                                ConnPool *poolPtr, TCL_SIZE_T nargs)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,4,5);
 
 static void ServerListActive(Tcl_DString *dsPtr, ConnPool *poolPtr, bool checkforproxy)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void ServerListQueued(Tcl_DString *dsPtr, ConnPool *poolPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int SetPoolAttribute(Tcl_Interp *interp, TCL_SIZE_T nargs, ConnPool *poolPtr, int *valuePtr, int value)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,3,4);
 
 static Ns_WalkProc WalkCallback;
 

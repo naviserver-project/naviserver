@@ -336,9 +336,9 @@ static int GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long f
 static bool AEAD_Set_ivlen(EVP_CIPHER_CTX *ctx, size_t ivlen)
     NS_GNUC_NONNULL(1);
 static bool AEAD_Set_tag(EVP_CIPHER_CTX *ctx, const unsigned char *tag, size_t taglen)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static bool AEAD_Get_tag(EVP_CIPHER_CTX *ctx, unsigned char *tag, size_t taglen)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 
 static char *uuid_format(unsigned char *b, char *dst) NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
@@ -2358,8 +2358,7 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             HMAC_CTX *ctx = HMAC_CTX_new();
 
             if (ctx == NULL) {
-                SetResultFromOsslError(interp, "could not allocate HMAC context");
-                result = TCL_ERROR;
+                result = SetResultFromOsslError(interp, "could not allocate HMAC context");
 
             } else {
 

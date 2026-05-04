@@ -54,7 +54,7 @@ typedef struct Mutex {
 #define GETMUTEX(mutex, caller) (*(mutex) != NULL ? ((Mutex *)*(mutex)) : GetMutex((mutex), (caller)))
 
 static Mutex *GetMutex(Ns_Mutex *mutex, const char *caller)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
+    NS_GNUC_NONNULL(1,2) NS_GNUC_RETURNS_NONNULL;
 static Mutex *firstMutexPtr = NULL;
 
 

@@ -96,7 +96,7 @@ typedef struct LogCache {
 } LogCache;
 
 static LogEntry *LogEntryGet(LogCache *cachePtr) NS_GNUC_NONNULL(1);
-static void LogEntryFree(LogCache *cachePtr, LogEntry *logEntryPtr)  NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
+static void LogEntryFree(LogCache *cachePtr, LogEntry *logEntryPtr)  NS_GNUC_NONNULL(1,2);
 
 #if !defined(NS_THREAD_LOCAL)
 static void LogEntriesFree(void *arg);
@@ -125,17 +125,17 @@ static LogCache* GetCache(void)
 
 static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
                               void **addrPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
                       bool trunc, bool locked)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_LogCallbackProc LogOpen;
 static Ns_LogCallbackProc LogClose;
 
 static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Tcl_Obj *LogStats(void);
 
@@ -143,7 +143,7 @@ static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity)
     NS_GNUC_NONNULL(1);
 
 static int ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,3,4);
 
 
 

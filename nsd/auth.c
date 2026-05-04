@@ -46,13 +46,13 @@ static int
 HandleAuthorizationResult(Tcl_Interp *interp, Ns_ReturnCode status, const char *cmdName,
                           const char *authority, bool asDict,
                           const char *arg1, const char *arg2, int *result)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,3,4);
 
 static void AuthLock(const NsServer *servPtr, NS_RW rw) NS_GNUC_NONNULL(1);
 static void AuthUnlock(const NsServer *servPtr) NS_GNUC_NONNULL(1);
 
 static void *RegisterAuth(NsServer *servPtr, void *authPtr, void **firstAuthPtr, bool first)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static TCL_OBJCMDPROC_T UserAuthorizeObjCmd;
 

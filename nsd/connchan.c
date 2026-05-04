@@ -110,40 +110,40 @@ static void CancelCallback(const NsConnChan *connChanPtr)
 static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
                                   const Ns_Time *startTime, const char *peer, bool binary,
                                   const char *clientData)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
+    NS_GNUC_NONNULL(1,2,3)
     NS_GNUC_RETURNS_NONNULL;
 
 static void ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
 static ssize_t ConnChanReadBuffer(NsConnChan *connChanPtr, char *buffer, size_t bufferSize)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2,3);
 
 static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, Tcl_Obj *scriptObj,
                                           unsigned int when, const Ns_Time *timeoutPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static ssize_t ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                                   struct iovec *bufs, int nbufs, unsigned int flags,
                                   const Ns_Time *timeoutPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,2,6);
 
 static TCL_SIZE_T CompactBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T msgLength, ssize_t bytesSent,
                                  struct iovec *iovecs, int nBuffers, size_t toSend, int caseInt)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,5);
 
 static void CompactSendBuffer(NsConnChan  *connChanPtr, struct iovec *iovecPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static size_t PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T msgLength,
                                  struct iovec *iovecs, int *nBuffers, int *caseInt)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,5);
 
 static void DebugLogBufferState(NsConnChan *connChanPtr, size_t bytesToSend, ssize_t bytesSent, const char *data, const char *fmt, ...)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5)
+    NS_GNUC_NONNULL(1,5)
     NS_GNUC_PRINTF(5, 6);
 
 static char *WhenToString(char *buffer, unsigned int when)
@@ -152,7 +152,7 @@ static char *WhenToString(char *buffer, unsigned int when)
 static bool SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why));
 static void RequireDsBuffer(Tcl_DString **dsPtr)  NS_GNUC_NONNULL(1);
 static void WebsocketFrameSetCommonMembers(Tcl_Obj *resultObj, ssize_t nRead, const NsConnChan *connChanPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 
 static Ns_SockProc NsTclConnChanProc;
 

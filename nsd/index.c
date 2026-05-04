@@ -23,9 +23,9 @@
  */
 
 static ssize_t BinSearch(void *const*elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 static ssize_t BinSearchKey(const void *key, void *const*listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 static Ns_IndexCmpProc CmpStr;
 static Ns_IndexKeyCmpProc CmpKeyWithStr;

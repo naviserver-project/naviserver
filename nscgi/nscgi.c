@@ -103,21 +103,21 @@ static Ns_OpProc CgiRequest;
 static Ns_Callback CgiFreeMap;
 
 static Ns_ReturnCode CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
-static void          CgiRegister(Mod *modPtr, const char *map)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void          CgiRegister(Mod *modPtr, const char *map)   NS_GNUC_NONNULL(1,2);
 static Tcl_DString  *CgiDs(Cgi *cgiPtr)                          NS_GNUC_NONNULL(1);
 static Ns_ReturnCode CgiFree(Cgi *cgiPtr)                        NS_GNUC_NONNULL(1);
-static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)         NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)  NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)         NS_GNUC_NONNULL(1,2);
 static ssize_t       CgiRead(Cgi *cgiPtr)                        NS_GNUC_NONNULL(1);
-static ssize_t       CgiReadLine(Cgi *cgiPtr, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static ssize_t       CgiReadLine(Cgi *cgiPtr, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1,2);
 static char         *NextWord(char *s)                           NS_GNUC_NONNULL(1);
 static void          SetAppend(Ns_Set *set, int index, const char *sep, char *value)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,3,4);
 static void          CgiRegisterFastUrl2File(const char *server, const char *url, const char *path)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static TCL_OBJCMDPROC_T NsTclRegisterCGIObjCmd;
 

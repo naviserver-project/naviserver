@@ -35,35 +35,35 @@ static void FreeSpecs(Ns_ObjvSpec *specPtr)
     NS_GNUC_NONNULL(1);
 
 static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
                          const unsigned char *optIsRequired, Tcl_Interp *interp,
                          TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv);
 
 static int GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 static int GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const Ns_SubCmdSpec *tablePtr, int *idxPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,3,4,5);
 
 static void UpdateStringOfMemUnit(Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1);
 
 static int SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void AppendRange(Tcl_DString *dsPtr, const Ns_ObjvValueRange *r)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void AppendLiteral(Tcl_DString *dsPtr, const Ns_ObjvSpec *specPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorLength,
                             bool withRange, bool withDots, const Ns_ObjvSpec *specPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,2,6);
 
 static char *GetOptEnumeration(Tcl_DString *dsPtr, const Ns_SubCmdSpec *tablePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static char *ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
     NS_GNUC_NONNULL(1, 2);

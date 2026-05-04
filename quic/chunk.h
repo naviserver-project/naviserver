@@ -42,7 +42,7 @@ ChunkInit(const char *buffer, size_t sz)
 
 void
 ChunkEnqueue(ChunkQueue *q, Chunk *ch, const char *label)
- NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+ NS_GNUC_NONNULL(1,2);
 
 size_t
 ChunkQueueTrim(ChunkQueue *q, size_t nbytes, bool drain)
@@ -54,10 +54,10 @@ ChunkQueueClear(ChunkQueue *q)
 
 size_t
 ChunkQueueMove(ChunkQueue *src, ChunkQueue *dst,size_t maxbytes)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+  NS_GNUC_NONNULL(1,2);
 
 void ChunkQueuePrint(const char *msg, ChunkQueue *q)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_UNUSED;
+  NS_GNUC_NONNULL(1,2) NS_GNUC_UNUSED;
 
 # ifdef __cplusplus
 }

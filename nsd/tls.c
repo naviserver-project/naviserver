@@ -75,17 +75,17 @@ static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
  */
 #ifdef LOG_LOCAL_CERT
 static void LogLocalCert(SSL *ssl, const char *tag)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 #endif
 
 static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
     NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
 
 static char *FilenameToEnvVar(Tcl_DString *dsPtr, const char *filename)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void DStringAppendX509Name(Tcl_DString *dsPtr, const X509_NAME *name)
     NS_GNUC_NONNULL(1);
@@ -109,7 +109,7 @@ static Ns_TLSClientCertMode NsTLSClientCertModeParse(const char *section)
 static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int x509err, int currentDepth, NsServer *servPtr)
     NS_GNUC_NONNULL(4);
 static bool ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *validationExceptionsPtr, struct sockaddr *saPtr)
-     NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+     NS_GNUC_NONNULL(3,4);
 
 static void DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long sslERRcode)
     NS_GNUC_NONNULL(2);
@@ -129,20 +129,20 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg);
 static Ns_ReturnCode
 PartialTimeout(const Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPartialTimeoutPtr,
                Ns_Time **partialTimeoutPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,3,4);
 
 static bool
 OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static OCSP_CERTID *OCSP_get_cert_id(const SSL *ssl, X509 *cert, bool *selfSignedPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
     NS_GNUC_NONNULL(1);

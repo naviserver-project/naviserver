@@ -119,7 +119,7 @@ static Ns_ReturnCode CreateHeader(const PServer *psrvPtr, const Ns_Conn *conn, b
 /*static Ns_ReturnCode CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
 
 static void FreeUserInfo(User *userPtr, const char *name)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * Static variables defined in this file.

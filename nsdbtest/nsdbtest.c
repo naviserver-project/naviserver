@@ -29,8 +29,8 @@ static const char    *DbType(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode  OpenDb(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode  CloseDb(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static Ns_Set        *BindRow(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
-static int            Exec(const Ns_DbHandle *handle, char *sql) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int            GetRow(Ns_DbHandle *handle, Ns_Set *row) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int            Exec(const Ns_DbHandle *handle, char *sql) NS_GNUC_NONNULL(1,2);
+static int            GetRow(Ns_DbHandle *handle, Ns_Set *row) NS_GNUC_NONNULL(1,2);
 static Ns_ReturnCode  Flush(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode  ResetHandle(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 

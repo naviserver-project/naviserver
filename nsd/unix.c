@@ -40,7 +40,7 @@ static void Abort(int sig)
     ;
 
 static bool GetPwNam(const char *user, PwElement elem, long *longResult, Tcl_DString *dsPtr, char **freePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,5);
 
 static bool GetPwUID(uid_t uid, PwElement elem, int *intResult, Tcl_DString *dsPtr, char **freePtr)
     NS_GNUC_NONNULL(5);

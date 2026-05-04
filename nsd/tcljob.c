@@ -189,7 +189,7 @@ static void   JobThread(void *arg);
 static Job*   GetNextJob(void);
 
 static Queue* NewQueue(const char* queueName, const char* queueDesc, int maxThreads)
-    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2)
+    NS_GNUC_NONNULL(1,2)
     NS_GNUC_RETURNS_NONNULL;
 
 static void   FreeQueue(Queue *queue)
@@ -197,7 +197,7 @@ static void   FreeQueue(Queue *queue)
 
 static Job*   NewJob(const NsServer *servPtr, const char *queueName,
                      JobTypes type, const char *script)
-    NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4)
+    NS_GNUC_NONNULL(2,4)
     NS_GNUC_RETURNS_NONNULL;
 
 static void   FreeJob(Job *jobPtr)
@@ -207,7 +207,7 @@ static int    JobAbort(ClientData clientData, Tcl_Interp *interp, int code);
 
 static int    LookupQueue(Tcl_Interp *interp, const char *queueName,
                           Queue **queuePtr, bool locked)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2,3);
 
 static bool   ReleaseQueue(Queue *queue, bool locked)
     NS_GNUC_NONNULL(1);
@@ -226,16 +226,16 @@ static const char* GetTpReqStr(ThreadPoolRequests req) NS_GNUC_PURE;
 
 static int AppendField(Tcl_Interp *interp, Tcl_Obj *list,
                        const char *name, const char *value)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(2,3,4);
 
 
 static int AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list,
                           const char *name, int value)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2,3);
 
 static int AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list,
                            const char *name, long value)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2,3);
 
 /*
  * Globals

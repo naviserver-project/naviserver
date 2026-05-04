@@ -46,16 +46,16 @@ static void DecrEntry(File *filePtr)
     NS_GNUC_NONNULL(1);
 
 static bool UrlIs(const char *server, const char *url, bool isDir)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode FastGetRestart(Ns_Conn *conn, const char *page)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *fileName)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,4);
 
 static int  CompressExternalFile(Tcl_Interp *interp, const char *cmdName, const char *fileName, const char *gzFileName)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,3,4);
 
 
 static const char *
@@ -68,7 +68,7 @@ CheckStaticCompressedDelivery(
     const char *fileName,
     const char *encoding,
     size_t encodingLength
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
+) NS_GNUC_NONNULL(1,2,4,5,6,7);
 
 
 static Ns_Callback FreeEntry;

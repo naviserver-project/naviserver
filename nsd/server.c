@@ -33,7 +33,7 @@ typedef struct ServerInit {
  */
 
 static void CreatePool(NsServer *servPtr, const char *pool)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 
 /*

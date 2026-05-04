@@ -30,7 +30,7 @@
  */
 
 static pthread_cond_t *GetCond(Ns_Cond *cond, const char *caller)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
+    NS_GNUC_NONNULL(1,2) NS_GNUC_RETURNS_NONNULL;
 static void CleanupTls(void *arg)
     NS_GNUC_NONNULL(1);
 static void *ThreadMain(void *arg);

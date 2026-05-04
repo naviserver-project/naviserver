@@ -24,11 +24,11 @@
 
 static Ns_ReturnCode ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
                                 FILE *fp, int fd, size_t len)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 
 static Ns_ReturnCode ReturnRange(Ns_Conn *conn, const char *mimeType,
                                  int fd, const void *data, size_t dataLength)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * This structure connections HTTP response codes to their descriptions.

@@ -147,34 +147,33 @@ static int HttpConnect(
     Ns_Time *timeoutPtr,
     Ns_Time *expirePtr,
     Ns_Time *keepAliveTimeoutPtr//,
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+) NS_GNUC_NONNULL(1,2,3);
 
 static bool HttpGet(
     NsInterp *itPtr,
     const char *taskID,
     NsHttpTask **httpPtrPtr,
     bool remove
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+) NS_GNUC_NONNULL(1,2,3);
 
 static int ConfigureProxy(
     Tcl_Interp *interp, Tcl_Obj *proxyObj, Ns_URL *urlPtr,
     char **proxyHost, unsigned short *proxyPortNr,
     bool *httpTunnel, bool *httpProxy)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
-    NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
+    NS_GNUC_NONNULL(1,3,4,5,6,7);
 
 static int EstablishTCPConnection(
     NsInterp *itPtr, NsHttpTask *httpPtr, Ns_URL *urlPtr,
     unsigned short portNr, char *proxyHost, unsigned short proxyPortNr,
     bool httpProxy, Ns_Time *toPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(8);
+    NS_GNUC_NONNULL(1,2,3,8);
 
 static int EstablishTLSConnection(
     NsInterp *itPtr, NsHttpTask *httpPtr, Ns_URL *urlPtr, unsigned short portNr,
     char *proxyHost, unsigned short proxyPortNr, bool httpProxy, Ns_Time *toPtr,
     const char *sniHostname,  const char *cert, const char *key, const char *caFile, const char *caPath,
     bool verifyCert)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(8);
+    NS_GNUC_NONNULL(1,2,3,8);
 
 static void HttpClose(
     NsHttpTask *httpPtr,
@@ -193,25 +192,25 @@ static int HttpAppendContent(
     NsHttpTask *httpPtr,
     const char *buffer,
     size_t size
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(1,2);
 
 static int HttpAppendChunked(
     NsHttpTask *httpPtr,
     const char *buffer,
     size_t size
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(1,2);
 
 static int HttpAppendBuffer(
     NsHttpTask *httpPtr,
     const char *buffer,
     size_t size
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(1,2);
 
 static int HttpAppendRawBuffer(
     NsHttpTask *httpPtr,
     const char *buffer,
     size_t size
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(1,2);
 
 static int SkipMessage(
     NsHttpTask *httpPtr
@@ -247,14 +246,14 @@ static ssize_t HttpTaskSend(
     const NsHttpTask *httpPtr,
     const void *buffer,
     size_t length
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(1,2);
 
 static ssize_t HttpTaskRecv(
     const NsHttpTask *httpPtr,
     char *buffer,
     size_t length,
     Ns_SockState *statePtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(1,2);
 
 static void HttpTaskTimeoutSet(NsHttpTask *httpPtr, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
@@ -277,7 +276,7 @@ static void HttpSpliceChannels(
 static int HttpGetResult(
     Tcl_Interp *interp,
     NsHttpTask *httpPtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(1,2);
 
 
 static NS_SOCKET HttpTunnel(
@@ -287,25 +286,25 @@ static NS_SOCKET HttpTunnel(
     const char *host,
     unsigned short port,
     const Ns_Time *timeout
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+) NS_GNUC_NONNULL(1,2,4);
 
 
 static bool PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
                                        CloseWaitingData *cwDataPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static bool PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static void HttpCloseWaitingDataRelease(NsHttpTask *httpPtr)
     NS_GNUC_NONNULL(1);
 
 static void LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 #ifdef MEM_RECORD_DEBUG
 static void CkAlloc(const void *ptr, const char *label)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static void CkFree(const void *ptr, const char *message)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static const char *CkCheck(const void *ptr)
     NS_GNUC_NONNULL(1);
 #else
@@ -326,13 +325,13 @@ static int ResponseHeaderCallback(NsHttpTask *httpPtr)
 
 static int ResponseDataCallback(NsHttpTask *httpPtr, const char *inputBuffer, size_t inputSize,
                                 char *errorBuffer, size_t errorBufferSize, const char **reason)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,2,4,6);
 
 static void DoneCallback(NsHttpTask *httpPtr)
     NS_GNUC_NONNULL(1);
 
 static void RunDoneCallback(Tcl_Interp *interp, const char *doneCallback, int rc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_SchedProc       SchedLogRollCallback;
 static Ns_ArgProc         SchedLogArg;
@@ -345,7 +344,7 @@ static Ns_TaskProc HttpProc;
 static Ns_LogCallbackProc HttpClientLogOpen;
 static Ns_LogCallbackProc HttpClientLogClose;
 static Ns_LogCallbackProc HttpClientLogRoll;
-static void HttpClientLogWrite(const NsHttpTask *httpPtr, const char *causeString) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void HttpClientLogWrite(const NsHttpTask *httpPtr, const char *causeString) NS_GNUC_NONNULL(1,2);
 
 /*
  * Functions implementing the Tcl interface.

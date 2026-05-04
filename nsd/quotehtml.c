@@ -23,21 +23,19 @@ static const char *htmlQuoteChars = "<>&'\"";
 /*
  * Static functions defined in this file.
  */
-static void QuoteHtml(Tcl_DString *NS_RESTRICT dsPtr,
-                      const char  *NS_RESTRICT htmlString,
-                      const char  *firstHit)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static void QuoteHtml(Tcl_DString *NS_RESTRICT dsPtr, const char  *NS_RESTRICT htmlString, const char  *firstHit)
+    NS_GNUC_NONNULL(1,2,3);
 
 static bool WordEndsInSemi(const char *word, size_t *lengthPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static size_t EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outPtr, const char **toParse)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,3,4,5);
 
 static void
 HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *lastStart,
                   const char *currentPtr, bool noAngle,  bool onlyTags, Tcl_Obj *contentObj)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,3,4);
 static Tcl_Obj *
 HtmlParseTagAtts(const char *string, ptrdiff_t length)
     NS_GNUC_NONNULL(1);

@@ -37,7 +37,7 @@ static int RegisterPage(const ClientData clientData, const char *method,
                         const char *url, Tcl_Obj *fileObj, const Ns_Time *expiresPtr,
                         unsigned int rflags, unsigned int aflags,
                         void *contextSpec)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static Ns_ReturnCode PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr,
                                  unsigned int aflags)

@@ -22,10 +22,10 @@
  */
 
 static void AddCharset(const char *charset, const char *name)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void AddExtension(const char *ext, const char *name)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Tcl_Encoding LoadEncoding(const char *name)
     NS_GNUC_NONNULL(1);

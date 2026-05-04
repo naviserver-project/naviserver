@@ -49,7 +49,7 @@ static GetProc GetAddr;
 static GetProc GetHost;
 static bool DnsGet(GetProc *getProc, Tcl_DString *dsPtr,
                    Ns_Cache *cache, const char *key, bool all)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 
 #if !defined(HAVE_GETADDRINFO) && !defined(HAVE_GETNAMEINFO)

@@ -235,10 +235,10 @@ static void DeterminePeerAddrFromHeaders(Sock *sockPtr)
 
 static Ns_ReturnCode DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj,
                                          const Ns_Conn *conn, DrvWriter **wrPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,4);
 
 static NS_SOCKET DriverListen(Driver *drvPtr, const char *bindaddr, unsigned short port)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr, NS_SOCKET sock)
     NS_GNUC_NONNULL(1);
 static bool    DriverKeep(Sock *sockPtr)
@@ -250,17 +250,16 @@ static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, cons
                                 NsServer *servPtr, const char *section,
                                 const char *bindaddrs,
                                 const char *defserver)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6)
-    NS_GNUC_NONNULL(7);
+    NS_GNUC_NONNULL(2,3,4,6,7);
 static bool DriverModuleInitialized(const char *module)
     NS_GNUC_NONNULL(1);
 static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 
 static size_t PortsParse(Ns_DList *dlPtr, const char *listString, const char *section)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static char *PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -277,7 +276,7 @@ static void  SockRelease(Sock *sockPtr, SockState reason, int err)
 static void  SockError(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
 static void  SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *headers)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
     NS_GNUC_NONNULL(1);
@@ -288,13 +287,13 @@ static SockState SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 static SockState SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void SockPoll(Sock *sockPtr, short type, PollData *pdata)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static void SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static void SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
     NS_GNUC_NONNULL(2);
 static void SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *name)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2,3);
 static void PollCreate(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void PollFree(PollData *pdata)
@@ -314,15 +313,15 @@ static void WriterSockRelease(WriterSock *wrSockPtr)
 static SpoolerState WriterReadFromSpool(WriterSock *curPtr)
     NS_GNUC_NONNULL(1);
 static SpoolerState WriterSend(WriterSock *curPtr, int *err)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode WriterSetupStreamingMode(Conn *connPtr, const struct iovec *bufs, int nbufs, int *fdPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,4);
 static void WriterSockFileVecCleanup(const WriterSock *wrSockPtr)
     NS_GNUC_NONNULL(1);
 static int WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj,
                                     const Ns_ObjvValueRange *rangePtr, Tcl_WideInt *valuePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(1,2,3,5);
 
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
@@ -338,35 +337,35 @@ static  Request *RequestNew(void)
 static void RequestFree(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2,3);
 
 static ServerMap *ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
                                     NsServer *servPtr, Driver *drvPtr,
                                     NS_TLS_SSL_CTX *ctx,
                                     bool addDefaultMapEntry)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,3,4);
 
 static Driver *LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 
 static void BandwidthAdjustRateLimitsPerPool(WriterSock *writers, Tcl_HashTable *pools)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+     NS_GNUC_NONNULL(1,2);
 
 static int BandwidthAdjustPollForWriters(WriterSock *writers, PollData *pdata)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int BandwidthComputeSleepTimeMs(const WriterSock *w)
     NS_GNUC_NONNULL(1);
 
 static ConnPoolInfo *WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static bool DriverIsRegisterdForServer(const Driver *drvPtr, NsServer *servPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 /*
  * Global variables defined in this file.

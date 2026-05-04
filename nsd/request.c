@@ -26,18 +26,18 @@
  */
 
 static Ns_ReturnCode SetUrl(Ns_Request *request, char *url)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void FreeUrl(Ns_Request *request)
     NS_GNUC_NONNULL(1);
 
 static const char *GetQvalue(const char *str, int *lenPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static const char *GetEncodingFormat(const char *encodingString,
                                      const char *encodingFormat, size_t encodingFormatLength,
                                      double *qValue)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 static void RequestCleanupMembers(Ns_Request *request)
     NS_GNUC_NONNULL(1);

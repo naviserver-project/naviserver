@@ -59,9 +59,9 @@ static Ns_SockProc AcceptProc;
 static TCL_OBJCMDPROC_T ExitObjCmd;
 static bool Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
 static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2,3);
 static void LoadUsers(Mod *localModPtr, const char *server, const char *module)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,3);
 static Ns_ArgProc ArgProc;
 static Ns_TclTraceProc NscpAddCmds;
 static TCL_OBJCMDPROC_T NsTclNscpObjCmd;

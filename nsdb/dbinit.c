@@ -109,9 +109,9 @@ static bool IsStale(const Handle *handlePtr, time_t now)
 static Ns_ReturnCode Connect(Handle *handlePtr)
     NS_GNUC_NONNULL(1);
 static Pool *CreatePool(const char *pool, const char *section, const char *driver)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static int IncrCount(const char *context, const Pool *poolPtr, int incr)
-    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static ServData *GetServer(const char *server)
     NS_GNUC_NONNULL(1);
 static void TransferHandleStats(Handle *handlePtr)

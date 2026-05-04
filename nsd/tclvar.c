@@ -48,13 +48,13 @@ typedef struct Array {
  */
 
 static void SetVar(Array *arrayPtr, const char *keyString, const char *value, size_t len)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,2,3);
 
 static void UpdateVar(Tcl_HashEntry *hPtr, const char *value, size_t len)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int IncrVar(Array *arrayPtr, const char *keyString, int incr, Tcl_WideInt *valuePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 static Ns_ReturnCode Unset(Array *arrayPtr, const char *keyString)
     NS_GNUC_NONNULL(1);
@@ -63,23 +63,23 @@ static void Flush(Array *arrayPtr)
     NS_GNUC_NONNULL(1);
 
 static Array *LockArray(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void UnlockArray(const Array *arrayPtr)
     NS_GNUC_NONNULL(1);
 
 static Array *LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create, NS_RW rw)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static Array *GetArray(Bucket *bucketPtr, const char *arrayName, bool create)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static unsigned int BucketIndex(const char *arrayName)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 static int GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString,
                           NS_RW rw, Array  **arrayPtrPtr, Tcl_Obj **objPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1,2,3,5,6);
 
 
 /*

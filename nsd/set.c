@@ -29,25 +29,25 @@ typedef int (*SetFindProc)(const Ns_Set *set, const char *key);
  */
 
 static void SetMerge(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void SetCopyElements(const char*msg, const Ns_Set *from, Ns_Set *const to)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static const char *SetGetValueCmp(const Ns_Set *set, const char *key, const char *def, StringCmpProc cmp)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1,2,4);
 
 static Ns_Set *SetCreate(const char *name, size_t size);
 
 static const char *DStringLowerStringWhenNeeded(Tcl_DString *dsPtr, const char *inputString, size_t stringLength)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static char *LowerStringWhenNeeded(char *inputString, size_t stringLength)
     NS_GNUC_NONNULL(1);
 
 #ifdef NS_SET_DSTRING
 static void ShiftData(Ns_Set *set, const char *oldDataStart, size_t nvalid)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 static char *AppendData(Ns_Set *set, size_t index, size_t nvalid, const char *value, TCL_SIZE_T valueSize)
     NS_GNUC_NONNULL(1);
 #endif

@@ -30,10 +30,10 @@
  */
 
 static void SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static int SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1,2);
 
 static void UpdateStringOfTime(Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1);
@@ -42,7 +42,7 @@ static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
     NS_GNUC_NONNULL(2);
 
 static int GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *tPtr)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(2,4);
 
 static void DblValueToNstime(Ns_Time *timePtr, double dblValue)
     NS_GNUC_NONNULL(1);
