@@ -420,79 +420,6 @@ SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
     return result;
 }
 
-#ifdef HAVE_OPENSSL_OCSP
-/*
- *----------------------------------------------------------------------
- *
- * SSL_cert_has_must_staple --
- *
- *      Check whether an X.509 certificate has the "must-staple" TLS
- *      Feature extension (OCSP Must-Staple, OID 1.3.6.1.5.5.7.1.24)
- *      indicating that the certificate requires OCSP stapling.
- *
- * Parameters:
- *      cert    - pointer to the X509 certificate to inspect
- *
- * Returns:
- *      1  if the TLS Feature extension is present and includes the
- *         status_request feature (value 5), indicating Must-Staple.
- *      0  if the extension is absent or present but does not include
- *         the status_request feature.
- *     -1  on error (e.g. OID lookup or extension parsing failure).
- *
- * Side Effects:
- *      Logs a warning if the TLS Feature extension is present but
- *      cannot be parsed.
- *
- *----------------------------------------------------------------------
- */
-static int SSL_cert_has_must_staple(X509 *cert) {
-    int ext_index;
-    ASN1_OBJECT *obj = OBJ_txt2obj("1.3.6.1.5.5.7.1.24", 1);  // TLS Feature OID
-
-    if (obj == NULL) {
-        return -1;
-    }
-    ext_index = X509_get_ext_by_OBJ(cert, obj, -1);
-    ASN1_OBJECT_free(obj);
-
-    if (ext_index < 0) {
-        /*
-         * TLS Feature extension not found
-         */
-        return 0;
-    } else {
-#ifdef HAVE_OPENSSL_4
-        const
-#endif
-        X509_EXTENSION          *ext = X509_get_ext(cert, ext_index);
-        const ASN1_OCTET_STRING *octet = X509_EXTENSION_get_data(ext);
-        const unsigned char     *p = ASN1_STRING_get0_data(octet);
-        long                     len = ASN1_STRING_length(octet);
-        STACK_OF(ASN1_TYPE) *features = d2i_ASN1_SEQUENCE_ANY(NULL, &p, len);
-
-        if (!features) {
-            Ns_Log(Warning, "OCSP: Failed to parse TLS Feature extension");
-            return -1;
-        }
-
-        for (int i = 0; i < sk_ASN1_TYPE_num(features); i++) {
-            ASN1_TYPE *type = sk_ASN1_TYPE_value(features, i);
-            if (type->type == V_ASN1_INTEGER) {
-                ASN1_INTEGER *feature = type->value.integer;
-                long val = ASN1_INTEGER_get(feature);
-                if (val == 5) { // 5 = status_request (i.e., Must-Staple)
-                    sk_ASN1_TYPE_pop_free(features, ASN1_TYPE_free);
-                    return 1;
-                }
-            }
-        }
-        sk_ASN1_TYPE_pop_free(features, ASN1_TYPE_free);
-    }
-
-    return 0;
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1037,12 +964,14 @@ NsTLSAddClientCertDetails(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
     return NsTLSAddClientCertFields(interp, ssl, dictObj, NS_FALSE);
 }
 
+#ifdef HAVE_OPENSSL_OCSP
+
 /*
  *----------------------------------------------------------------------
  *
  * openssl_string_free --
  *
- *      Helper functionto free strings allocated by OpenSSL stack APIs.
+ *      Helper function to free strings allocated by OpenSSL stack APIs.
  *
  * Parameters:
  *      string - pointer to the string to free
@@ -1055,6 +984,78 @@ NsTLSAddClientCertDetails(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
 static void openssl_string_free(char *chars)
 {
     OPENSSL_free(chars);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SSL_cert_has_must_staple --
+ *
+ *      Check whether an X.509 certificate has the "must-staple" TLS
+ *      Feature extension (OCSP Must-Staple, OID 1.3.6.1.5.5.7.1.24)
+ *      indicating that the certificate requires OCSP stapling.
+ *
+ * Parameters:
+ *      cert    - pointer to the X509 certificate to inspect
+ *
+ * Returns:
+ *      1  if the TLS Feature extension is present and includes the
+ *         status_request feature (value 5), indicating Must-Staple.
+ *      0  if the extension is absent or present but does not include
+ *         the status_request feature.
+ *     -1  on error (e.g. OID lookup or extension parsing failure).
+ *
+ * Side Effects:
+ *      Logs a warning if the TLS Feature extension is present but
+ *      cannot be parsed.
+ *
+ *----------------------------------------------------------------------
+ */
+static int SSL_cert_has_must_staple(X509 *cert) {
+    int ext_index;
+    ASN1_OBJECT *obj = OBJ_txt2obj("1.3.6.1.5.5.7.1.24", 1);  // TLS Feature OID
+
+    if (obj == NULL) {
+        return -1;
+    }
+    ext_index = X509_get_ext_by_OBJ(cert, obj, -1);
+    ASN1_OBJECT_free(obj);
+
+    if (ext_index < 0) {
+        /*
+         * TLS Feature extension not found
+         */
+        return 0;
+    } else {
+#ifdef HAVE_OPENSSL_4
+        const
+#endif
+        X509_EXTENSION          *ext = X509_get_ext(cert, ext_index);
+        const ASN1_OCTET_STRING *octet = X509_EXTENSION_get_data(ext);
+        const unsigned char     *p = ASN1_STRING_get0_data(octet);
+        long                     len = ASN1_STRING_length(octet);
+        STACK_OF(ASN1_TYPE) *features = d2i_ASN1_SEQUENCE_ANY(NULL, &p, len);
+
+        if (!features) {
+            Ns_Log(Warning, "OCSP: Failed to parse TLS Feature extension");
+            return -1;
+        }
+
+        for (int i = 0; i < sk_ASN1_TYPE_num(features); i++) {
+            ASN1_TYPE *type = sk_ASN1_TYPE_value(features, i);
+            if (type->type == V_ASN1_INTEGER) {
+                ASN1_INTEGER *feature = type->value.integer;
+                long val = ASN1_INTEGER_get(feature);
+                if (val == 5) { // 5 = status_request (i.e., Must-Staple)
+                    sk_ASN1_TYPE_pop_free(features, ASN1_TYPE_free);
+                    return 1;
+                }
+            }
+        }
+        sk_ASN1_TYPE_pop_free(features, ASN1_TYPE_free);
+    }
+
+    return 0;
 }
 
 /*
