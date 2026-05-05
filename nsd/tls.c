@@ -3658,7 +3658,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     }
 
     {
-        int verifyMode;
+        int verifyMode = SSL_VERIFY_NONE; /* just to silence some older compiler */
 
         switch (clientCertMode) {
         case NS_TLS_CLIENT_CERT_NONE:
