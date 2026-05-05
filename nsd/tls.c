@@ -24,6 +24,10 @@
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 
+# ifndef  HAVE_OPENSSL_3
+#  include <openssl/x509v3.h>
+# endif
+
 # ifdef HAVE_OPENSSL_OCSP
 #  include <openssl/ocsp.h>
 
