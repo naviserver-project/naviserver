@@ -135,7 +135,7 @@ typedef enum {
 
 typedef struct {
     const char *ossl_name;      /* OpenSSL parameter name (e.g., OSSL_PKEY_PARAM_RSA_N) */
-    const char *dict_key;       /* key to use in Tcl dictionary */
+    NsAtomId dict_key;      /* key to use in Tcl dictionary */
     KeyParamType type;          /* how to retrieve and encode the value */
     size_t width;               /* for BN: zero-pad to this width (0 = minimal) */
 } KeyParamInfo;
@@ -379,7 +379,7 @@ static TCL_OBJCMDPROC_T CryptoEckeyImportObjCmd;
 static EVP_PKEY *PkeyGetFromEcKey(Tcl_Interp *interp, EC_KEY *eckey)
     NS_GNUC_NONNULL(1,2);
 static int PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
-                            const char *name, const BIGNUM *bn, size_t width,
+                            Tcl_Obj *nameObj, const BIGNUM *bn, size_t width,
                             Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1,2,3,4);
 #  endif
@@ -715,9 +715,7 @@ DictAddKeyParams(Tcl_Interp *interp, EVP_PKEY *pkey, const KeyParamInfo *params,
         }
 
         if (valueObj != NULL) {
-            Tcl_DictObjPut(interp, dictObj,
-                           Tcl_NewStringObj(p->dict_key, TCL_INDEX_NONE),
-                           valueObj);
+            Tcl_DictObjPut(interp, dictObj, NsAtomObj(p->dict_key), valueObj);
         }
     }
  done:
@@ -7497,7 +7495,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
  */
 static int
 PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
-                 const char *name, const BIGNUM *bn, size_t width,
+                 Tcl_Obj *nameObj, const BIGNUM *bn, size_t width,
                  Ns_BinaryEncoding encoding)
 {
     unsigned char *buf;
@@ -7516,7 +7514,7 @@ PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
     }
 
     Tcl_DictObjPut(interp, resultObj,
-                   Tcl_NewStringObj(name, TCL_INDEX_NONE),
+                   nameObj,
                    NsEncodedObj(buf, width, NULL, encoding));
     ns_free(buf);
 
@@ -7567,8 +7565,8 @@ PkeyInfoPutOkpDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
 
     } else {
         static const KeyParamInfo okp_params[] = {
-            { OSSL_PKEY_PARAM_PUB_KEY, "x", PARAM_TYPE_OCTETS, 0 },
-            { NULL, NULL, 0, 0 }
+            { OSSL_PKEY_PARAM_PUB_KEY, NS_ATOM_x, PARAM_TYPE_OCTETS, 0 },
+            { NULL, 0, 0, 0 }
         };
         return DictAddKeyParams(interp, pkey, okp_params, encoding, resultObj);
     }
@@ -7631,9 +7629,9 @@ DictAddEcParams(Tcl_Interp *interp, EVP_PKEY *pkey,
 
     } else {
         const KeyParamInfo ec_params[] = {
-            { OSSL_PKEY_PARAM_EC_PUB_X, "x", PARAM_TYPE_BN, coord_len },
-            { OSSL_PKEY_PARAM_EC_PUB_Y, "y", PARAM_TYPE_BN, coord_len },
-            { NULL, NULL, 0, 0 }
+            { OSSL_PKEY_PARAM_EC_PUB_X, NS_ATOM_x, PARAM_TYPE_BN, coord_len },
+            { OSSL_PKEY_PARAM_EC_PUB_Y, NS_ATOM_y, PARAM_TYPE_BN, coord_len },
+            { NULL, 0, 0, 0 }
         };
         return DictAddKeyParams(interp, pkey, ec_params, encoding, dictObj);
     }
@@ -7736,10 +7734,10 @@ PkeyInfoPutEcDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
         goto done;
     }
 
-    if (PkeyInfoPutBnPad(interp, resultObj, "x", x, coordLen, encoding) != TCL_OK) {
+    if (PkeyInfoPutBnPad(interp, resultObj, NsAtomObj(NS_ATOM_x), x, coordLen, encoding) != TCL_OK) {
         goto done;
     }
-    if (PkeyInfoPutBnPad(interp, resultObj, "y", y, coordLen, encoding) != TCL_OK) {
+    if (PkeyInfoPutBnPad(interp, resultObj, NsAtomObj(NS_ATOM_Y), y, coordLen, encoding) != TCL_OK) {
         goto done;
     }
 
@@ -7791,10 +7789,10 @@ static int
 PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns_BinaryEncoding encoding)
 {
     static const KeyParamInfo rsa_params[] = {
-        { OSSL_PKEY_PARAM_RSA_N, "n", PARAM_TYPE_BN, 0 },
-        { OSSL_PKEY_PARAM_RSA_E, "e", PARAM_TYPE_BN, 0 },
-        //{ OSSL_PKEY_PARAM_RSA_D, "d", PARAM_TYPE_BN, 0 },
-        { NULL, NULL, 0, 0 }
+        { OSSL_PKEY_PARAM_RSA_N, NS_ATOM_n, PARAM_TYPE_BN, 0 },
+        { OSSL_PKEY_PARAM_RSA_E, NS_ATOM_e, PARAM_TYPE_BN, 0 },
+        //{ OSSL_PKEY_PARAM_RSA_D, NS_ATOM_d, PARAM_TYPE_BN, 0 },
+        { NULL, 0, 0, 0 }
     };
 
     if (!PkeyIsType(pkey, "RSA", EVP_PKEY_RSA)
