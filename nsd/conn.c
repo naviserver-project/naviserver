@@ -2036,7 +2036,7 @@ ConnContentTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
      */
     (void) Tcl_DictObjPut(interp, dictObj,
                           NsAtomObj(NS_ATOM_RAW),
-                          Tcl_NewStringObj(raw, -1));
+                          Tcl_NewStringObj(raw, TCL_INDEX_NONE));
 
     /*
      * Parse media type token (typeStart..typeEnd) and parameter region (p..end).
