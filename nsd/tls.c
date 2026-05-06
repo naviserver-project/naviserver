@@ -530,16 +530,16 @@ GetAsn1TimeToObj(const ASN1_TIME *t)
     Tcl_Obj *result;
 
     if (t == NULL) {
-        return Tcl_NewStringObj("", 0);
+        return NsAtomObj(NS_ATOM_EMPTY);
     }
 
     bio = BIO_new(BIO_s_mem());
     if (bio == NULL) {
-        return Tcl_NewStringObj("", 0);
+        return  NsAtomObj(NS_ATOM_EMPTY);
     }
     if (ASN1_TIME_print(bio, t) != 1) {
         BIO_free(bio);
-        return Tcl_NewStringObj("", 0);
+        return  NsAtomObj(NS_ATOM_EMPTY);
     }
 
     BIO_get_mem_ptr(bio, &bptr);
