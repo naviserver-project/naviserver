@@ -499,4 +499,4 @@ ns_section "ns/db/pool/b" {
 }
 ns_logctl severity notice off
 ns_logctl severity warning off
-puts stderr "================================== test config file loaded"
+#puts stderr "================================== test config file loaded"

@@ -513,7 +513,7 @@ ca-bundle.crt:
 	curl -s -fS -k -L -o ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
 
 demo-certificates: $(SERVER_PEM) $(CLIENT_CERT) $(SERVER_PUB)
-	($(OPENSSL) rehash $(CERT_DIR) 2>/dev/null || true)
+	@($(OPENSSL) rehash $(CERT_DIR) 2>/dev/null || true)
 
 # --------------------------------------------------------------------
 # Test Certificates
