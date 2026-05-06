@@ -8185,18 +8185,18 @@ ConnInfo(Ns_Sock *sock)
 
         if (qctx->is_h3) {
             Tcl_DictObjPut(NULL, resultObj,
-                           NsAtomObj(NS_ATOM_HTTPVERSION),
+                           NsAtomObj(NS_ATOM_httpversion),
                            Tcl_NewStringObj("3", 1));
         }
         if (qctx->ssl != NULL) {
             Tcl_DictObjPut(NULL, resultObj,
-                           NsAtomObj(NS_ATOM_SSLVERSION),
+                           NsAtomObj(NS_ATOM_sslversion),
                            Tcl_NewStringObj(SSL_get_version(qctx->ssl), TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, resultObj,
-                           NsAtomObj(NS_ATOM_CIPHER),
+                           NsAtomObj(NS_ATOM_cipher),
                            Tcl_NewStringObj(SSL_get_cipher(qctx->ssl), TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, resultObj,
-                           NsAtomObj(NS_ATOM_SERVERNAME),
+                           NsAtomObj(NS_ATOM_servername),
                            Tcl_NewStringObj(SSL_get_servername(qctx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
             {
                 const char  *alpnString;
@@ -8204,7 +8204,7 @@ ConnInfo(Ns_Sock *sock)
 
                 SSL_get0_alpn_selected(qctx->ssl, (const unsigned char **)&alpnString, &alpnLength);
                 Tcl_DictObjPut(NULL, resultObj,
-                               NsAtomObj(NS_ATOM_ALPN),
+                               NsAtomObj(NS_ATOM_alpn),
                                Tcl_NewStringObj(alpnString, (TCL_SIZE_T)alpnLength));
             }
             {

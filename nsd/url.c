@@ -770,43 +770,43 @@ NsUrlToDictObj(Tcl_Interp *interp, Ns_URL *urlPtr)
 
     if (urlPtr->protocol != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_PROTO),
+                       NsAtomObj(NS_ATOM_proto),
                        Tcl_NewStringObj(urlPtr->protocol, TCL_INDEX_NONE));
     }
     if (urlPtr->userinfo != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_USERINFO),
+                       NsAtomObj(NS_ATOM_userinfo),
                        Tcl_NewStringObj(urlPtr->userinfo, TCL_INDEX_NONE));
     }
     if (urlPtr->host != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_HOST),
+                       NsAtomObj(NS_ATOM_host),
                        Tcl_NewStringObj(urlPtr->host, TCL_INDEX_NONE));
     }
     if (urlPtr->port != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_PORT),
+                       NsAtomObj(NS_ATOM_port),
                        Tcl_NewStringObj(urlPtr->port, TCL_INDEX_NONE));
     }
     if (urlPtr->path != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_PATH),
+                       NsAtomObj(NS_ATOM_path),
                        Tcl_NewStringObj(urlPtr->path, TCL_INDEX_NONE));
 
     }
     if (urlPtr->tail != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_TAIL),
+                       NsAtomObj(NS_ATOM_tail),
                        Tcl_NewStringObj(urlPtr->tail, TCL_INDEX_NONE));
     }
     if (urlPtr->query != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_QUERY),
+                       NsAtomObj(NS_ATOM_query),
                        Tcl_NewStringObj(urlPtr->query, TCL_INDEX_NONE));
     }
     if (urlPtr->fragment != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_FRAGMENT),
+                       NsAtomObj(NS_ATOM_fragment),
                        Tcl_NewStringObj(urlPtr->fragment, TCL_INDEX_NONE));
     }
 
@@ -917,11 +917,11 @@ NsTclParseHostportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
             Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
 
             if (hostStart != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_HOST));
+                Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_host));
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(hostStart, TCL_INDEX_NONE));
             }
             if (portStart != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_PORT));
+                Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_port));
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(portStart, TCL_INDEX_NONE));
             }
 

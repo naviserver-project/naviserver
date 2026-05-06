@@ -5627,10 +5627,10 @@ PkeyKemEncapsulate(Tcl_Interp *interp, EVP_PKEY *pkey, Ns_BinaryEncoding encodin
         Tcl_Obj *dictObj = Tcl_NewDictObj();
 
         Tcl_DictObjPut(interp, dictObj,
-                       NsAtomObj(NS_ATOM_CIPHERTEXT),
+                       NsAtomObj(NS_ATOM_ciphertext),
                        NsEncodedObj(ciphertext, ciphertextLen, NULL, encoding));
         Tcl_DictObjPut(interp, dictObj,
-                       NsAtomObj(NS_ATOM_SECRET),
+                       NsAtomObj(NS_ATOM_secret),
                        NsEncodedObj(secret, secretLen, NULL, encoding));
 
         Tcl_SetObjResult(interp, dictObj);
@@ -6447,11 +6447,11 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
                      * Convert the result to the output format and return a
                      * dict containing "bytes" and "tag" as the interp result.
                      */
-                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_BYTES));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_bytes));
                     Tcl_ListObjAppendElement(interp, listObj, NsEncodedObj((unsigned char *)outputDs.string,
                                                                          (size_t)outputDs.length,
                                                                          NULL, encoding));
-                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_TAG));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_tag));
                     Tcl_ListObjAppendElement(interp, listObj, NsEncodedObj((unsigned char *)tagDs.string,
                                                                          (size_t)tagDs.length,
                                                                          NULL, encoding));
@@ -7333,7 +7333,7 @@ PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
 
     if (bits > 0) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_BITS),
+                       NsAtomObj(NS_ATOM_bits),
                        Tcl_NewIntObj(bits));
     }
 
@@ -7351,7 +7351,7 @@ PkeyInfoPutLegacyDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
                     const char *curveName = OBJ_nid2sn(nid);
                     if (curveName != NULL) {
                         Tcl_DictObjPut(interp, resultObj,
-                                       NsAtomObj(NS_ATOM_CURVE),
+                                       NsAtomObj(NS_ATOM_curve),
                                        Tcl_NewStringObj(curveName, TCL_INDEX_NONE));
                     }
                 }
@@ -7395,7 +7395,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
         providerName = OSSL_PROVIDER_get0_name(provider);
         if (providerName != NULL) {
             Tcl_DictObjPut(interp, resultObj,
-                           NsAtomObj(NS_ATOM_PROVIDER),
+                           NsAtomObj(NS_ATOM_provider),
                            Tcl_NewStringObj(providerName, TCL_INDEX_NONE));
         }
     }
@@ -7403,7 +7403,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
     description = EVP_PKEY_get0_description(pkey);
     if (description != NULL) {
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_DESCRIPTION),
+                       NsAtomObj(NS_ATOM_description),
                        Tcl_NewStringObj(description, TCL_INDEX_NONE));
     }
 
@@ -7416,10 +7416,10 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
         int exists;
         Tcl_Obj *dummyObj = NULL;
 
-        exists = Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_BITS), &dummyObj);
+        exists = Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_bits), &dummyObj);
         if (exists == TCL_OK && dummyObj == NULL) {
             Tcl_DictObjPut(interp, resultObj,
-                           NsAtomObj(NS_ATOM_BITS),
+                           NsAtomObj(NS_ATOM_bits),
                            Tcl_NewIntObj(ibits));
         }
     }
@@ -7432,7 +7432,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
         Tcl_Obj *dummyObj = NULL;
         size_t   len = 0;
 
-        if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_CURVE), &dummyObj) == TCL_OK
+        if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_curve), &dummyObj) == TCL_OK
             && dummyObj == NULL) {
             (void)EVP_PKEY_get_utf8_string_param(pkey, OSSL_PKEY_PARAM_GROUP_NAME,
                                                  NULL, 0, &len);
@@ -7442,7 +7442,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
                 if (EVP_PKEY_get_utf8_string_param(pkey, OSSL_PKEY_PARAM_GROUP_NAME,
                                                    buf, len + 1u, &len) == 1) {
                     Tcl_DictObjPut(interp, resultObj,
-                                   NsAtomObj(NS_ATOM_CURVE),
+                                   NsAtomObj(NS_ATOM_curve),
                                    Tcl_NewStringObj(buf, TCL_INDEX_NONE));
                 }
                 ns_free(buf);
@@ -7902,24 +7902,24 @@ PkeyInfoPutCapabilities(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey)
 
     supportsSignature = PkeySupportsSignature(pkey);
     Tcl_DictObjPut(interp, resultObj,
-                   NsAtomObj(NS_ATOM_SIGNATURE),
+                   NsAtomObj(NS_ATOM_signature),
                    Tcl_NewBooleanObj(supportsSignature));
     if (supportsSignature) {
         int requiresDigest = PkeySignatureRequiresDigest(pkey);
 
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_REQUIRESDIGEST),
+                       NsAtomObj(NS_ATOM_requiresdigest),
                        Tcl_NewBooleanObj(requiresDigest));
     }
 
     supportsAgreement = PkeySupportsAgreement(pkey);
     Tcl_DictObjPut(interp, resultObj,
-                   NsAtomObj(NS_ATOM_AGREEMENT),
+                   NsAtomObj(NS_ATOM_agreement),
                    Tcl_NewBooleanObj(supportsAgreement));
 
     supportsKEM = PkeySupportsKem(pkey);
     Tcl_DictObjPut(interp, resultObj,
-                   NsAtomObj(NS_ATOM_KEM),
+                   NsAtomObj(NS_ATOM_kem),
                    Tcl_NewBooleanObj(supportsKEM));
 
     return TCL_OK;
@@ -8681,7 +8681,7 @@ CryptoKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         resultObj = Tcl_NewDictObj();
 
         Tcl_DictObjPut(interp, resultObj,
-                       NsAtomObj(NS_ATOM_TYPE),
+                       NsAtomObj(NS_ATOM_type),
                        typeNameObj);
 
         /*

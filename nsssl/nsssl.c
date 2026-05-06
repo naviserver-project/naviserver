@@ -515,13 +515,13 @@ ConnInfo(Ns_Sock *sock)
         NssslSockCtx *sslCtx = sock->arg;
 
         Tcl_DictObjPut(NULL, resultObj,
-                       NsAtomObj(NS_ATOM_SSLVERSION),
+                       NsAtomObj(NS_ATOM_sslversion),
                        Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), TCL_INDEX_NONE));
         Tcl_DictObjPut(NULL, resultObj,
-                       NsAtomObj(NS_ATOM_CIPHER),
+                       NsAtomObj(NS_ATOM_cipher),
                        Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), TCL_INDEX_NONE));
         Tcl_DictObjPut(NULL, resultObj,
-                       NsAtomObj(NS_ATOM_SERVERNAME),
+                       NsAtomObj(NS_ATOM_servername),
                        Tcl_NewStringObj(SSL_get_servername(sslCtx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
         {
             Tcl_Obj *clientcertSummaryObj = Tcl_NewDictObj();

@@ -1645,11 +1645,11 @@ NsTclParseMessageObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
                     firstLineLength--;
                 }
 
-                (void) Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_FIRSTLINE),
+                (void) Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_firstline),
                                       Tcl_NewStringObj(messageString, (TCL_SIZE_T)firstLineLength));
-                (void) Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_HEADERS),
+                (void) Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_headers),
                                       setObj);
-                (void) Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_BODY),
+                (void) Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_body),
                                       Tcl_NewStringObj(bodyString, TCL_INDEX_NONE));
 
                 Tcl_SetObjResult(interp, resultObj);
@@ -2050,16 +2050,16 @@ HttpWaitObjCmd(
              * Pick up corresponding dictionary elements
              * and fill-in passed variables.
              */
-            oObj[0] = NsAtomObj(NS_ATOM_TIME);
+            oObj[0] = NsAtomObj(NS_ATOM_time);
             oObj[1] = elapsedVarObj;
 
-            oObj[2] = NsAtomObj(NS_ATOM_BODY);
+            oObj[2] = NsAtomObj(NS_ATOM_body);
             oObj[3] = resultVarObj;
 
-            oObj[4] = NsAtomObj(NS_ATOM_STATUS);
+            oObj[4] = NsAtomObj(NS_ATOM_status);
             oObj[5] = statusVarObj;
 
-            oObj[6] = NsAtomObj(NS_ATOM_FILE);
+            oObj[6] = NsAtomObj(NS_ATOM_file);
             oObj[7] = fileVarObj;
 
             rObj = Tcl_GetObjResult(interp);
@@ -2079,7 +2079,7 @@ HttpWaitObjCmd(
                 /*
                  * Merge respond "headers" into the user-passed set.
                  */
-                Tcl_DictObjGet(interp, rObj, NsAtomObj(NS_ATOM_HEADERS), &vObj);
+                Tcl_DictObjGet(interp, rObj, NsAtomObj(NS_ATOM_headers), &vObj);
                 NS_NONNULL_ASSERT(vObj != NULL);
                 headers = Ns_TclGetSet(interp, Tcl_GetString(vObj));
                 NS_NONNULL_ASSERT(headers != NULL);
@@ -2424,13 +2424,13 @@ HttpStatsObjCmd(
                  * so we need no extra lock here.
                  */
 
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_TASK),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_task),
                                       Tcl_NewStringObj(taskString, TCL_INDEX_NONE));
 
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_URL),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_url),
                                       Tcl_NewStringObj(httpPtr->url, TCL_INDEX_NONE));
 
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_REQUESTLENGTH),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_requestlength),
                                       Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->requestLength));
 
                 /*
@@ -2445,34 +2445,34 @@ HttpStatsObjCmd(
                  * sake of backwards compatibility. Actually, this is
                  * the value of the returned content-length header.
                  */
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_REPLYLENGTH),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_replylength),
                                       Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->responseLength));
 
                 /*
                  * Counter of bytes of the request sent so far.
                  * It includes all of the request (status line, headers, body).
                  */
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_SENT),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_sent),
                                       Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sent));
 
                 /*
                  * Counter of bytes of the response received so far.
                  * It includes all of the response (status line, headers, body).
                  */
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_RECEIVED),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_received),
                                       Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->received));
 
                 /*
                  * Counter of the request body sent so far.
                  */
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_SENDBODYSIZE),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_sendbodysize),
                                       Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sendBodySize));
 
                 /*
                  * Counter of processed (potentially deflated)
                  * response body received so far.
                  */
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_REPLYBODYSIZE),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_replybodysize),
                                       Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->responseBodySize));
 
                 /*
@@ -2481,7 +2481,7 @@ HttpStatsObjCmd(
                  * For compressed but not deflated response content
                  * the replybodysize and replysize will be equal.
                  */
-                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_REPLYSIZE),
+                (void) Tcl_DictObjPut(interp, entryObj, NsAtomObj(NS_ATOM_replysize),
                      Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->responseSize));
 
                 Ns_MutexUnlock(&httpPtr->lock);
@@ -2544,13 +2544,13 @@ HttpTaskthreadsObjCmd(
             const char   *qName   = Ns_TaskQueueName(queue);
 
             (void) Tcl_DictObjPut(NULL, dictObj,
-                                  NsAtomObj(NS_ATOM_NAME),
+                                  NsAtomObj(NS_ATOM_name),
                                   Tcl_NewStringObj(qName, TCL_INDEX_NONE));
             (void) Tcl_DictObjPut(NULL, dictObj,
-                                  NsAtomObj(NS_ATOM_RUNNING),
+                                  NsAtomObj(NS_ATOM_running),
                                   Tcl_NewIntObj(Ns_TaskQueueLength(queue)));
             (void) Tcl_DictObjPut(NULL, dictObj,
-                                  NsAtomObj(NS_ATOM_REQUESTS),
+                                  NsAtomObj(NS_ATOM_requests),
                                   Tcl_NewWideIntObj(Ns_TaskQueueRequests(queue)));
 
             Tcl_ListObjAppendElement(interp, resultObj, dictObj);
@@ -2613,11 +2613,11 @@ HttpKeepalivesObjCmd(
             Ns_Time           diffTime;
 
             (void) Tcl_DictObjPut(interp, entryObj,
-                                  NsAtomObj(NS_ATOM_SLOT),
+                                  NsAtomObj(NS_ATOM_slot),
                                   Tcl_NewLongObj((long)i));
 
             (void) Tcl_DictObjPut(interp, entryObj,
-                                  NsAtomObj(NS_ATOM_STATE),
+                                  NsAtomObj(NS_ATOM_state),
                                   Tcl_NewStringObj(CloseWaitingDataPrettyState(currentCwDataPtr),
                                                    TCL_INDEX_NONE));
 
@@ -2626,18 +2626,18 @@ HttpKeepalivesObjCmd(
 
                 Ns_DStringPrintf(&ds, NS_TIME_FMT, (int64_t)diffTime.sec, diffTime.usec);
                 (void) Tcl_DictObjPut(interp, entryObj,
-                                      NsAtomObj(NS_ATOM_EXPIRE),
+                                      NsAtomObj(NS_ATOM_expire),
                                       Tcl_NewStringObj(ds.string, ds.length));
 
                 Tcl_DStringSetLength(&ds, 0);
                 Ns_DStringPrintf(&ds, "%s:%hu", currentCwDataPtr->host, currentCwDataPtr->port);
                 (void) Tcl_DictObjPut(interp, entryObj,
-                                      NsAtomObj(NS_ATOM_PEER),
+                                      NsAtomObj(NS_ATOM_peer),
                                       Tcl_NewStringObj(ds.string, ds.length));
                 Tcl_DStringSetLength(&ds, 0);
 
                 (void) Tcl_DictObjPut(interp, entryObj,
-                                      NsAtomObj(NS_ATOM_SOCK),
+                                      NsAtomObj(NS_ATOM_sock),
                                       Tcl_NewIntObj((int)currentCwDataPtr->sock));
             }
 
@@ -3555,57 +3555,57 @@ HttpGetResult(
      */
     resultObj = Tcl_NewDictObj();
 
-    Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_STATUS),
+    Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_status),
                    statusObj);
 
-    Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_TIME),
+    Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_time),
                    elapsedTimeObj);
 
-    Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_HEADERS),
+    Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_headers),
                    responseHeadersObj);
 
     if (fileNameObj != NULL) {
-        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_FILE),
+        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_file),
                        fileNameObj);
     }
     if (responseBodyObj != NULL) {
-        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_BODY),
+        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_body),
                        responseBodyObj);
     }
     if (errorObj != NULL) {
-        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_ERROR),
+        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_error),
                        errorObj);
 
         DStringAppendHttpSockState(&ds, httpPtr->errorSockState);
-        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_STATE),
+        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_state),
                        Tcl_NewStringObj(ds.string, ds.length));
 
         Tcl_DStringSetLength(&ds, 0);
     }
 
     if (httpPtr->infoObj != NULL) {
-        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_HTTPS),
+        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_https),
                        httpPtr->infoObj);
     }
     if (httpPtr->bodyChan != NULL) {
         const char *chanName = Tcl_GetChannelName(httpPtr->bodyChan);
 
-        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_BODY_CHAN),
+        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_body_chan),
                        Tcl_NewStringObj(chanName, TCL_INDEX_NONE));
     }
 
     if (httpPtr->spoolChan != NULL) {
         const char *chanName = Tcl_GetChannelName(httpPtr->spoolChan);
 
-        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_OUTPUTCHAN),
+        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_outputchan),
                        Tcl_NewStringObj(chanName, TCL_INDEX_NONE));
     } else if ((httpPtr->flags & NS_HTTP_CONNCHAN) != 0u) {
-        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_OUTPUTCHAN),
+        Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_outputchan),
                        Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
     }
 
     DStringAppendHttpFlags(&ds, httpPtr->flags);
-    Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_FLAGS),
+    Tcl_DictObjPut(interp, resultObj, NsAtomObj(NS_ATOM_flags),
                    Tcl_NewStringObj(ds.string, ds.length));
     Tcl_DStringSetLength(&ds, 0);
 
@@ -4160,7 +4160,7 @@ static int ConfigureProxy(
     /*
      * Look for the "host" key in the proxy dictionary.
      */
-    if (Tcl_DictObjGet(interp, proxyObj, NsAtomObj(NS_ATOM_HOST), &valObj) != TCL_OK) {
+    if (Tcl_DictObjGet(interp, proxyObj, NsAtomObj(NS_ATOM_host), &valObj) != TCL_OK) {
         Ns_TclPrintfResult(interp, "Invalid proxy dictionary");
         return TCL_ERROR;
     }
@@ -4176,7 +4176,7 @@ static int ConfigureProxy(
     /*
      * Get the "port" key from the proxy dictionary
      */
-    if (Tcl_DictObjGet(interp, proxyObj, NsAtomObj(NS_ATOM_PORT), &valObj) != TCL_OK) {
+    if (Tcl_DictObjGet(interp, proxyObj, NsAtomObj(NS_ATOM_port), &valObj) != TCL_OK) {
         Ns_TclPrintfResult(interp, "Failed to retrieve proxy port");
         return TCL_ERROR;
     }
@@ -4205,7 +4205,7 @@ static int ConfigureProxy(
     if (STREQ("https", urlPtr->protocol)) {
         *httpTunnel = NS_TRUE;
     } else {
-        if (Tcl_DictObjGet(interp, proxyObj, NsAtomObj(NS_ATOM_TUNNEL), &valObj) != TCL_OK) {
+        if (Tcl_DictObjGet(interp, proxyObj, NsAtomObj(NS_ATOM_tunnel), &valObj) != TCL_OK) {
             return TCL_ERROR;
         }
         if (valObj == NULL) {
@@ -4454,8 +4454,8 @@ EstablishTLSConnection(
             httpPtr->ssl = ssl;
 
 #ifdef HAVE_OPENSSL_EVP_H
-            HttpAddInfo(httpPtr, NsAtomObj(NS_ATOM_SSLVERSION), SSL_get_version(ssl));
-            HttpAddInfo(httpPtr, NsAtomObj(NS_ATOM_CIPHER),     SSL_get_cipher(ssl));
+            HttpAddInfo(httpPtr, NsAtomObj(NS_ATOM_sslversion), SSL_get_version(ssl));
+            HttpAddInfo(httpPtr, NsAtomObj(NS_ATOM_cipher),     SSL_get_cipher(ssl));
             SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
 #endif
         }
@@ -4993,16 +4993,16 @@ ResponseDataCallback(
         Tcl_Obj *dictObj = Tcl_NewDictObj();
 
         Tcl_DictObjPut(NULL, dictObj,
-                       NsAtomObj(NS_ATOM_HEADERS),
+                       NsAtomObj(NS_ATOM_headers),
                        Tcl_GetObjResult(interp));
 
         Tcl_DictObjPut(NULL, dictObj,
-                       NsAtomObj(NS_ATOM_DATA),
+                       NsAtomObj(NS_ATOM_data),
                        Tcl_NewStringObj(inputBuffer, (TCL_SIZE_T)inputSize));
 
         if (httpPtr->outputChanName != NULL) {
             Tcl_DictObjPut(NULL, dictObj,
-                           NsAtomObj(NS_ATOM_OUTPUTCHAN),
+                           NsAtomObj(NS_ATOM_outputchan),
                            Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
         }
 #ifdef NS_TCLHTTP_CALLBACK_AS_STRING
@@ -5118,19 +5118,19 @@ ResponseHeaderCallback(
             Tcl_Obj *dictObj = Tcl_NewDictObj();
 
             Tcl_DictObjPut(NULL, dictObj,
-                           NsAtomObj(NS_ATOM_STATUS),
+                           NsAtomObj(NS_ATOM_status),
                            Tcl_NewIntObj(httpPtr->status));
             Tcl_DictObjPut(NULL, dictObj,
-                           NsAtomObj(NS_ATOM_PHRASE),
+                           NsAtomObj(NS_ATOM_phrase),
                            Tcl_NewStringObj(NsHttpStatusPhrase(httpPtr->status), TCL_INDEX_NONE));
 
             Tcl_DictObjPut(NULL, dictObj,
-                           NsAtomObj(NS_ATOM_HEADERS),
+                           NsAtomObj(NS_ATOM_headers),
                            Tcl_GetObjResult(interp));
 
             if (httpPtr->outputChanName != NULL) {
                 Tcl_DictObjPut(NULL, dictObj,
-                               NsAtomObj(NS_ATOM_OUTPUTCHAN),
+                               NsAtomObj(NS_ATOM_outputchan),
                                Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
             }
 

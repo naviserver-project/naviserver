@@ -1704,7 +1704,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                     resultObj = Tcl_GetObjResult(interp);
                     Tcl_IncrRefCount(resultObj);
 
-                    if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_STATUS), &valueObj) == TCL_OK
+                    if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_status), &valueObj) == TCL_OK
                         && valueObj != NULL
                         ) {
                         const char *stringValue =  Tcl_GetString(valueObj);
@@ -1724,7 +1724,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                         status = NS_ERROR;
                     }
                     if (status == NS_OK) {
-                        if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_BODY), &valueObj) == TCL_OK) {
+                        if (Tcl_DictObjGet(interp, resultObj, NsAtomObj(NS_ATOM_body), &valueObj) == TCL_OK) {
                             TCL_SIZE_T           length;
                             const unsigned char *bytes;
 

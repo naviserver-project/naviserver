@@ -2035,7 +2035,7 @@ ConnContentTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
      * raw
      */
     (void) Tcl_DictObjPut(interp, dictObj,
-                          NsAtomObj(NS_ATOM_RAW),
+                          NsAtomObj(NS_ATOM_raw),
                           Tcl_NewStringObj(raw, TCL_INDEX_NONE));
 
     /*
@@ -2069,11 +2069,11 @@ ConnContentTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         Ns_StrToLower(s);
 
         (void) Tcl_DictObjPut(interp, dictObj,
-                              NsAtomObj(NS_ATOM_TYPE),
+                              NsAtomObj(NS_ATOM_type),
                               typeObj);
     } else {
         (void) Tcl_DictObjPut(interp, dictObj,
-                              NsAtomObj(NS_ATOM_TYPE),
+                              NsAtomObj(NS_ATOM_type),
                               NsAtomObj(NS_ATOM_EMPTY));
     }
 
@@ -2086,19 +2086,19 @@ ConnContentTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
 
     if (params.suffix != NULL) {
         (void) Tcl_DictObjPut(interp, dictObj,
-                              NsAtomObj(NS_ATOM_SUFFIX),
+                              NsAtomObj(NS_ATOM_suffix),
                               Tcl_NewStringObj(params.suffix, params.suffixLen));
     }
 
     if (params.charset != NULL) {
         (void) Tcl_DictObjPut(interp, dictObj,
-                              NsAtomObj(NS_ATOM_CHARSET),
+                              NsAtomObj(NS_ATOM_charset),
                               Tcl_NewStringObj(params.charset, params.charsetLen));
     }
 
     if (params.boundary != NULL) {
         (void) Tcl_DictObjPut(interp, dictObj,
-                              NsAtomObj(NS_ATOM_BOUNDARY),
+                              NsAtomObj(NS_ATOM_boundary),
                               Tcl_NewStringObj(params.boundary, params.boundaryLen));
     }
 
@@ -3067,11 +3067,11 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
             : Tcl_NewDictObj();
 
         Tcl_DictObjPut(NULL, dictObj,
-                       NsAtomObj(NS_ATOM_PROXIED),
+                       NsAtomObj(NS_ATOM_proxied),
                        Tcl_NewBooleanObj(nsconf.reverseproxymode.enabled));
 
         Tcl_DictObjPut(NULL, dictObj,
-                       NsAtomObj(NS_ATOM_CURRENTADDR),
+                       NsAtomObj(NS_ATOM_currentaddr),
                        Tcl_NewStringObj(currentAddr != NULL ? currentAddr : "na", TCL_INDEX_NONE));
 
         if (currentAddr != NULL) {
@@ -3085,7 +3085,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
         Tcl_DStringInit(&ds);
         NsDStringAppendConnFlags(&ds, connPtr->flags);
         Tcl_DictObjPut(NULL, dictObj,
-                       NsAtomObj(NS_ATOM_FLAGS),
+                       NsAtomObj(NS_ATOM_flags),
                        Tcl_NewStringObj(ds.string, ds.length));
         Tcl_DStringFree(&ds);
 
@@ -3179,10 +3179,10 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
             if ((connPtr->flags & NS_CONN_BROTLIACCEPTED) != 0u) {
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_BROTLI));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_brotli));
             }
             if ((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_GZIP));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_gzip));
             }
 
             Tcl_SetObjResult(interp, listObj);

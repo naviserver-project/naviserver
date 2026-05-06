@@ -116,8 +116,8 @@ static const NsAtomSpec jsonAtomSpecs[JSON_ATOM_MAX] = {
     {-1, "array",   5},  /* JSON_ATOM_T_ARRAY */
 
     /* non-type atoms */
-    {NS_ATOM_TRUE,    NULL, 0},  /* JSON_ATOM_TRUE */
-    {NS_ATOM_FALSE,   NULL, 0},  /* JSON_ATOM_FALSE */
+    {NS_ATOM_true,    NULL, 0},  /* JSON_ATOM_TRUE */
+    {NS_ATOM_false,   NULL, 0},  /* JSON_ATOM_FALSE */
     {NS_ATOM_EMPTY,   NULL, 0},  /* JSON_ATOM_EMPTY */
     {-1, NS_JSON_NULL_STRING, NS_JSON_NULL_STRING_LEN}, /* JSON_ATOM_VALUE_NULL_STRING */
 
@@ -125,7 +125,7 @@ static const NsAtomSpec jsonAtomSpecs[JSON_ATOM_MAX] = {
     {-1, "key",   3},           /* JSON_ATOM_KEY */
     {-1, "field", 5},           /* JSON_ATOM_FIELD */
 
-    {NS_ATOM_TYPE,  NULL, 0},   /* JSON_ATOM_TYPE */
+    {NS_ATOM_type,  NULL, 0},   /* JSON_ATOM_TYPE */
     {-1, "properties",   10},   /* JSON_ATOM_PROPERTIES */
     {-1, "required",      8},   /* JSON_ATOM_REQUIRED */
     {-1, "items",         5},   /* JSON_ATOM_ITEMS */

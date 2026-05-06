@@ -1754,42 +1754,42 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
             if (isNew == 1) {
                 Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_MODULE));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_module));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_TYPE));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_type));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->type, TCL_INDEX_NONE));
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_SERVER));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_server));
                 Tcl_ListObjAppendElement(interp, listObj, NsStringObj(drvPtr->server));
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_LOCATION));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_location));
                 Tcl_ListObjAppendElement(interp, listObj, NsStringObj(drvPtr->location));
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_ADDRESS));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_address));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->address, TCL_INDEX_NONE));
 
                 {Tcl_DString ds;
                     Tcl_DStringInit(&ds);
                     PortsPrint(&ds, &drvPtr->ports);
-                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_PORT));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_port));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
                     Tcl_DStringFree(&ds);
                 }
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_DEFAULTPORT));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_defaultport));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj(drvPtr->defport));
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_PROTOCOL));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_protocol));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->protocol, TCL_INDEX_NONE));
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_SENDWAIT));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_sendwait));
                 Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_RECVWAIT));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_recvwait));
                 Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
 
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_EXTRAHEADERS));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_extraheaders));
                 if (drvPtr->extraHeaders != NULL) {
                     Tcl_DString ds;
 
@@ -1800,7 +1800,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                 } else {
                     Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_EMPTY));
                 }
-                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_LIBRARYVERSION));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_libraryversion));
                 Tcl_ListObjAppendElement(interp, listObj, NsStringObj(drvPtr->libraryVersion));
 
                 Tcl_ListObjAppendElement(interp, resultObj, listObj);
@@ -1859,22 +1859,22 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
             }
             listObj = Tcl_NewListObj(0, NULL);
 
-            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_THREAD));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_thread));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->threadName, TCL_INDEX_NONE));
 
-            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_MODULE));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_module));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
 
-            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_RECEIVED));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_received));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.received));
 
-            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_SPOOLED));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_spooled));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.spooled));
 
-            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_PARTIAL));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_partial));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.partial));
 
-            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_ERRORS));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_errors));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.errors));
 
             Tcl_ListObjAppendElement(interp, resultObj, listObj);
