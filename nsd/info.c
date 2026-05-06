@@ -1057,7 +1057,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
          */
 
         if (unlikely(itPtr->servPtr == NULL)) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("no server", TCL_INDEX_NONE));
+            Ns_TclPrintfResult(interp, "no server");
             result = TCL_ERROR;
 
         } else {
@@ -1111,7 +1111,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
 #endif
             default:
-                Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognized option", TCL_INDEX_NONE));
+                Ns_TclPrintfResult(interp, "unrecognized option");
                 result = TCL_ERROR;
                 break;
             }

@@ -3308,7 +3308,7 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
             toCopy = (TCL_SIZE_T)reqPtr->avail;
         }
         if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("could not copy content", TCL_INDEX_NONE));
+            Ns_TclPrintfResult(interp, "could not copy content");
             result = TCL_ERROR;
         }
     }
@@ -3514,24 +3514,24 @@ NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr, int *tc
 
     conn = Ns_TclGetConn(interp);
     if (conn == NULL) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("no connection", TCL_INDEX_NONE));
+        Ns_TclPrintfResult(interp, "no connection");
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_CONNECTED) != 0u)
                && (Ns_ConnSockPtr(conn) == NULL)) {
         softError = (!nsconf.reject_already_closed_or_detached_connection);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection socket is detached", TCL_INDEX_NONE));
+        Ns_TclPrintfResult(interp, "connection socket is detached");
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_OPEN) != 0u)
                && ((conn->flags & NS_CONN_CLOSED) != 0u)) {
         softError = (!nsconf.reject_already_closed_or_detached_connection);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", TCL_INDEX_NONE));
+        Ns_TclPrintfResult(interp, "connection already closed");
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_CONFIGURED) != 0u)
                && ((conn->flags & NS_CONN_CONFIGURED) == 0u)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection is not configured", TCL_INDEX_NONE));
+        Ns_TclPrintfResult(interp, "connection is not configured");
         status = NS_ERROR;
 
     } else {
