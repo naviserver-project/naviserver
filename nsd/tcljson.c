@@ -6025,8 +6025,7 @@ JsonSchemaRequireSupportedSubset(Tcl_Interp *interp, Tcl_Obj *schemaObj,
     int            done;
 
     if (Tcl_DictObjFirst(interp, schemaObj, &search, &keyObj, &valueObj, &done) != TCL_OK) {
-        Tcl_SetObjResult(interp,
-                         Tcl_NewStringObj("ns_json: malformed schema: schema node must be an object", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed schema: schema node must be an object");
         return NS_ERROR;
     }
 
@@ -6052,8 +6051,7 @@ JsonSchemaRequireSupportedSubset(Tcl_Interp *interp, Tcl_Obj *schemaObj,
             TCL_SIZE_T rc, i;
 
             if (Tcl_ListObjGetElements(interp, valueObj, &rc, &rv) != TCL_OK) {
-                Tcl_SetObjResult(interp,
-                                 Tcl_NewStringObj("ns_json: malformed schema: required must be a list", -1));
+                Ns_TclPrintfResult(interp, "ns_json: malformed schema: required must be a list");
                 Tcl_DictObjDone(&search);
                 return NS_ERROR;
             }
@@ -6062,8 +6060,7 @@ JsonSchemaRequireSupportedSubset(Tcl_Interp *interp, Tcl_Obj *schemaObj,
                  * Require string-like elements.
                  */
                 if (Tcl_GetString(rv[i]) == NULL) {
-                    Tcl_SetObjResult(interp,
-                                     Tcl_NewStringObj("ns_json: malformed schema: required elements must be strings", -1));
+                    Ns_TclPrintfResult(interp, "ns_json: malformed schema: required elements must be strings");
                     Tcl_DictObjDone(&search);
                     return NS_ERROR;
                 }
@@ -6075,8 +6072,7 @@ JsonSchemaRequireSupportedSubset(Tcl_Interp *interp, Tcl_Obj *schemaObj,
             int            pdone;
 
             if (Tcl_DictObjFirst(interp, valueObj, &psearch, &pkeyObj, &pschemaObj, &pdone) != TCL_OK) {
-                Tcl_SetObjResult(interp,
-                                 Tcl_NewStringObj("ns_json: malformed schema: properties must be an object", -1));
+                Ns_TclPrintfResult(interp, "ns_json: malformed schema: properties must be an object");
                 Tcl_DictObjDone(&search);
                 return NS_ERROR;
             }
@@ -6102,8 +6098,7 @@ JsonSchemaRequireSupportedSubset(Tcl_Interp *interp, Tcl_Obj *schemaObj,
             TCL_SIZE_T oc, i;
 
             if (Tcl_ListObjGetElements(interp, valueObj, &oc, &ov) != TCL_OK || oc == 0) {
-                Tcl_SetObjResult(interp,
-                                 Tcl_NewStringObj("ns_json: malformed schema: anyOf must be a non-empty list", -1));
+                Ns_TclPrintfResult(interp, "ns_json: malformed schema: anyOf must be a non-empty list");
                 Tcl_DictObjDone(&search);
                 return NS_ERROR;
             }
@@ -6269,7 +6264,7 @@ JsonSchemaMatchType(Tcl_Interp *interp, Tcl_Obj *typesObj,
     TCL_SIZE_T objc;
 
     if (Tcl_ListObjLength(NULL, typesObj, &objc) != TCL_OK) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid type field", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed schema: invalid type field");
         return NS_ERROR;
     }
 
@@ -6293,7 +6288,7 @@ JsonSchemaMatchType(Tcl_Interp *interp, Tcl_Obj *typesObj,
         const char *actualName = JsonTypeString(actualVt);
 
         if (Tcl_ListObjGetElements(interp, typesObj, &objc, &objv) != TCL_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid type field", -1));
+            Ns_TclPrintfResult(interp, "ns_json: malformed schema: invalid type field");
             return NS_ERROR;
         }
 
@@ -6342,11 +6337,11 @@ JsonSchemaMatchAnyOf(Tcl_Interp *interp, Tcl_Obj *anyOfObj,
     Tcl_Obj   *savedResultObj;
 
     if (Tcl_ListObjGetElements(interp, anyOfObj, &oc, &ov) != TCL_OK) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid anyOf field", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed schema: invalid anyOf field");
         return NS_ERROR;
     }
     if (oc == 0) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: empty anyOf field", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed schema: empty anyOf field");
         return NS_ERROR;
     }
 
@@ -6413,11 +6408,11 @@ JsonSchemaMatchObject(Tcl_Interp *interp, Tcl_Obj *schemaObj,
     requiredObj   = JsonSchemaDictGet(schemaObj, JSON_ATOM_REQUIRED);
 
     if (Tcl_ListObjGetElements(interp, triplesObj, &oc, &ov) != TCL_OK) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed triples object", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed triples object");
         return NS_ERROR;
     }
     if ((oc % 3) != 0) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed triples object", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed triples object");
         return NS_ERROR;
     }
 
@@ -6429,7 +6424,7 @@ JsonSchemaMatchObject(Tcl_Interp *interp, Tcl_Obj *schemaObj,
         TCL_SIZE_T  rc, j;
 
         if (Tcl_ListObjGetElements(interp, requiredObj, &rc, &rv) != TCL_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid required field", -1));
+            Ns_TclPrintfResult(interp, "ns_json: malformed schema: invalid required field");
             return NS_ERROR;
         }
 
@@ -6469,7 +6464,7 @@ JsonSchemaMatchObject(Tcl_Interp *interp, Tcl_Obj *schemaObj,
         }
 
         if (Tcl_DictObjGet(interp, propertiesObj, nameObj, &subschemaObj) != TCL_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed schema: invalid properties field", -1));
+            Ns_TclPrintfResult(interp, "ns_json: malformed schema: invalid properties field");
             return NS_ERROR;
         }
         if (subschemaObj == NULL) {
@@ -6532,11 +6527,11 @@ JsonSchemaMatchArray(Tcl_Interp *interp, Tcl_Obj *schemaObj,
     }
 
     if (Tcl_ListObjGetElements(interp, triplesObj, &oc, &ov) != TCL_OK) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed triples array", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed triples array");
         return NS_ERROR;
     }
     if ((oc % 3) != 0) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("ns_json: malformed triples array", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed triples array");
         return NS_ERROR;
     }
 
@@ -6632,8 +6627,7 @@ JsonSchemaMismatchTypeUnion(Tcl_Interp *interp, Tcl_DString *pathDsPtr,
     const char *path = JsonSchemaMisMatchGetPath(pathDsPtr);
 
     if (Tcl_ListObjGetElements(interp, typeObj, &oc, &ov) != TCL_OK || oc == 0) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(
-            "ns_json: malformed schema: invalid type field", -1));
+        Ns_TclPrintfResult(interp, "ns_json: malformed schema: invalid type field");
         return NS_ERROR;
     }
 
