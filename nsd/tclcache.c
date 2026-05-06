@@ -374,13 +374,13 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         maxEntry = (long)cPtr->maxEntry;
         Ns_RWLockUnlock(&servPtr->tcl.cachelock);
 
-        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("maxsize", 7));
+        Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_maxsize));
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(maxSize));
 
-        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("maxentry", 8));
+        Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_maxentry));
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(maxEntry));
 
-        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("expires", 7));
+        Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_expires));
         if (cPtr->expires.sec != 0 || cPtr->expires.usec != 0) {
             Ns_DStringAppendTime(&ds, &cPtr->expires);
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(ds.string, ds.length));
@@ -389,7 +389,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
             Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_EMPTY));
         }
 
-        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("timeout", 7));
+        Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_timeout));
         if (cPtr->timeout.sec != 0 || cPtr->timeout.usec != 0) {
             Ns_DStringAppendTime(&ds, &cPtr->timeout);
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(ds.string, ds.length));

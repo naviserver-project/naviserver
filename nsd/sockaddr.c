@@ -1349,11 +1349,11 @@ Ns_SockaddrAddToDictIpProperties(const struct sockaddr *ipPtr, Tcl_Obj *dictObj)
                    NsAtomObj(NS_ATOM_inany),
                    Tcl_NewBooleanObj(isInAny));
     if (ipPtr->sa_family == AF_INET) {
-        typeValueObj = Tcl_NewStringObj("IPv4", 4);
+        typeValueObj = NsAtomObj(NS_ATOM_IPv4);
     } else if (ipPtr->sa_family == AF_INET6) {
-        typeValueObj = Tcl_NewStringObj("IPv6", 4);
+        typeValueObj = NsAtomObj(NS_ATOM_IPv6);
     } else {
-        typeValueObj = Tcl_NewStringObj("unknown", 7);
+        typeValueObj = NsAtomObj(NS_ATOM_unknown);
     }
     Tcl_DictObjPut(NULL, dictObj,
                    NsAtomObj(NS_ATOM_type),

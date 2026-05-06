@@ -8590,9 +8590,9 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         Ns_ObjvValueRange sizeRange = {1, LLONG_MAX};
 
         filebufs = (Ns_FileVec *)ns_calloc((size_t)nrSpecDicts, sizeof(Ns_FileVec));
-        keys[0] = Tcl_NewStringObj("filename", 8);
-        keys[1] = Tcl_NewStringObj("-offset", 7);
-        keys[2] = Tcl_NewStringObj("-size", 5);
+        keys[0] = NsAtomObj(NS_ATOM_filename);
+        keys[1] = NsAtomObj(NS_ATOM_DASH_offset);
+        keys[2] = NsAtomObj(NS_ATOM_DASH_size);
 
         Tcl_IncrRefCount(keys[0]);
         Tcl_IncrRefCount(keys[1]);

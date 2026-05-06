@@ -7453,7 +7453,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
     if (EVP_PKEY_get_int_param(pkey, OSSL_PKEY_PARAM_SECURITY_BITS, &ibits) == 1
         && ibits > 0) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("securityBits", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_securityBits),
                        Tcl_NewIntObj(ibits));
     }
 
@@ -7461,7 +7461,7 @@ PkeyInfoPutProviderDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pke
     if (EVP_PKEY_get_int_param(pkey, OSSL_PKEY_PARAM_SECURITY_CATEGORY, &ibits) == 1
         && ibits >= 0) {
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("securityCategory", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_securityCategory),
                        Tcl_NewIntObj(ibits));
     }
 #  endif
@@ -7844,7 +7844,7 @@ PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns
         }
 
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("n", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_n),
                        NsEncodedObj(buf, (size_t)nLen, NULL, encoding));
         ns_free(buf);
     }
@@ -7866,7 +7866,7 @@ PkeyInfoPutRsaDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey, Ns
         }
 
         Tcl_DictObjPut(interp, resultObj,
-                       Tcl_NewStringObj("e", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_e),
                        NsEncodedObj(buf, (size_t)eLen, NULL, encoding));
         ns_free(buf);
     }
@@ -8007,13 +8007,13 @@ PkeyImportEcPublicParamsFromDict(Tcl_Interp *interp,
     int                  result = TCL_ERROR;
 
     if (Tcl_DictObjGet(interp, paramsObj,
-                       Tcl_NewStringObj("group", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_group),
                        &groupObj) != TCL_OK
         || Tcl_DictObjGet(interp, paramsObj,
-                          Tcl_NewStringObj("x", TCL_INDEX_NONE),
+                          NsAtomObj(NS_ATOM_x),
                           &xObj) != TCL_OK
         || Tcl_DictObjGet(interp, paramsObj,
-                          Tcl_NewStringObj("y", TCL_INDEX_NONE),
+                          NsAtomObj(NS_ATOM_y),
                           &yObj) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -8114,10 +8114,10 @@ PkeyImportRsaPublicParamsFromDict(Tcl_Interp *interp,
     int                  result = TCL_ERROR;
 
     if (Tcl_DictObjGet(interp, paramsObj,
-                       Tcl_NewStringObj("n", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_n),
                        &nObj) != TCL_OK
         || Tcl_DictObjGet(interp, paramsObj,
-                          Tcl_NewStringObj("e", TCL_INDEX_NONE),
+                          NsAtomObj(NS_ATOM_e),
                           &eObj) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -8371,10 +8371,10 @@ PkeyImportOkpPublicParamsFromDict(Tcl_Interp *interp,
     int                  result = TCL_ERROR;
 
     if (Tcl_DictObjGet(interp, paramsObj,
-                       Tcl_NewStringObj("crv", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_crv),
                        &crvObj) != TCL_OK
         || Tcl_DictObjGet(interp, paramsObj,
-                          Tcl_NewStringObj("x", TCL_INDEX_NONE),
+                          NsAtomObj(NS_ATOM_x),
                           &xObj) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -10567,18 +10567,18 @@ Ns_InfoSSLDetailsObj(void)
     const char *runtimeVersionString = NULL;
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("enabled", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_enabled),
                    Tcl_NewBooleanObj(1));
 
     /*
      * Compile-time version.
      */
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("headersVersion", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_headersVersion),
                    Tcl_NewStringObj(OPENSSL_VERSION_TEXT, TrimmedLength(OPENSSL_VERSION_TEXT)));
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("headersVersionNumber", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_headersVersionNumber),
                    Tcl_NewWideIntObj((Tcl_WideInt)OPENSSL_VERSION_NUMBER));
 
     /*
@@ -10588,11 +10588,11 @@ Ns_InfoSSLDetailsObj(void)
     runtimeVersionString = OpenSSL_version(OPENSSL_VERSION);
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("runtimeVersion", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_runtimeVersion),
                    Tcl_NewStringObj(runtimeVersionString, TrimmedLength(runtimeVersionString)));
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("runtimeVersionNumber", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_runtimeVersionNumber),
                    Tcl_NewWideIntObj((Tcl_WideInt)runtimeVersion));
 
     /*
@@ -10600,33 +10600,33 @@ Ns_InfoSSLDetailsObj(void)
      * This layout matches the traditional OpenSSL numeric format.
      */
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("major", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_major),
                    Tcl_NewIntObj((int)((runtimeVersion >> 28) & 0xf)));
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("minor", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_minor),
                    Tcl_NewIntObj((int)((runtimeVersion >> 20) & 0xff)));
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("patch", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_patch),
                    Tcl_NewIntObj((int)((runtimeVersion >> 4) & 0xfff)));
 
     /*
      * Generic features.
      */
     Tcl_ListObjAppendElement(NULL, capabilitiesObj,
-                             Tcl_NewStringObj("digest", TCL_INDEX_NONE));
+                             NsAtomObj(NS_ATOM_digest));
     Tcl_ListObjAppendElement(NULL, capabilitiesObj,
-                             Tcl_NewStringObj("cipher", TCL_INDEX_NONE));
+                             NsAtomObj(NS_ATOM_cipher));
     Tcl_ListObjAppendElement(NULL, capabilitiesObj,
-                             Tcl_NewStringObj("hmac", TCL_INDEX_NONE));
+                             NsAtomObj(NS_ATOM_hmac));
 
     /*
      * Signature family.
      */
     if (CryptoSignatureSupported()) {
         Tcl_ListObjAppendElement(NULL, capabilitiesObj,
-                                 Tcl_NewStringObj("signature", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_signature));
     }
 
     /*
@@ -10634,7 +10634,7 @@ Ns_InfoSSLDetailsObj(void)
      */
     if (CryptoAgreementSupported()) {
         Tcl_ListObjAppendElement(NULL, capabilitiesObj,
-                                 Tcl_NewStringObj("agreement", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_agreement));
     }
 
     /*
@@ -10642,18 +10642,18 @@ Ns_InfoSSLDetailsObj(void)
      */
     if (CryptoKemSupported()) {
         Tcl_ListObjAppendElement(NULL, capabilitiesObj,
-                                 Tcl_NewStringObj("kem", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_kem));
     }
     /*
      * Argon2 and scrypt.
      */
 # ifdef HAVE_OPENSSL_3_2
     Tcl_ListObjAppendElement(NULL, capabilitiesObj,
-                             Tcl_NewStringObj("argon2", TCL_INDEX_NONE));
+                             NsAtomObj(NS_ATOM_argon2));
 # endif
 # ifdef HAVE_OPENSSL_3
     Tcl_ListObjAppendElement(NULL, capabilitiesObj,
-                             Tcl_NewStringObj("scrypt", TCL_INDEX_NONE));
+                             NsAtomObj(NS_ATOM_scrypt));
 # endif
 
     /*
@@ -10665,7 +10665,7 @@ Ns_InfoSSLDetailsObj(void)
      */
     if (CryptoKeyTypeSupported("RSA")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("rsa", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_rsa));
     }
 
 # ifndef OPENSSL_NO_EC
@@ -10676,38 +10676,38 @@ Ns_InfoSSLDetailsObj(void)
 #  endif
         if (ecSupported) {
             Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                     Tcl_NewStringObj("ec", TCL_INDEX_NONE));
+                                     NsAtomObj(NS_ATOM_ec));
         }
     }
 # endif /* OPENSSL_NO_EC */
 
     if (CryptoKeyTypeSupported("ED25519")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("ed25519", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_ed25519));
     }
     if (CryptoKeyTypeSupported("ED448")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("ed448", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_ed448));
     }
     if (CryptoKeyTypeSupported("X25519")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("x25519", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_x25519));
     }
     if (CryptoKeyTypeSupported("X448")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("x448", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_x448));
     }
     if (CryptoKeyTypeSupported("SM2")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("sm2", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_sm2));
     }
     if (CryptoKeyTypeSupported("ML-KEM-512")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("ml-kem", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_ml_DASH_kem));
     }
     if (CryptoKeyTypeSupported("ML-DSA-44")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("ml-dsa", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_ml_DASH_dsa));
     }
     /*
      * Add synthetic key type as supported by ns_crypto::key import -name ...
@@ -10717,21 +10717,21 @@ Ns_InfoSSLDetailsObj(void)
         || CryptoKeyTypeSupported("X25519")
         || CryptoKeyTypeSupported("X448")) {
         Tcl_ListObjAppendElement(NULL, keytypesObj,
-                                 Tcl_NewStringObj("okp", TCL_INDEX_NONE));
+                                 NsAtomObj(NS_ATOM_okp));
     }
 
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("capabilities", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_capabilities),
                    capabilitiesObj);
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("keytypes", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_keytypes),
                    keytypesObj);
 
     Tcl_IncrRefCount(digestsObj);
     digestsObj = DigestNamesAppend(NULL, digestsObj, NS_DIGEST_USAGE_MD);
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("digests", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_digests),
                    digestsObj);
     Tcl_DecrRefCount(digestsObj);
 
@@ -10878,17 +10878,17 @@ Ns_InfoSSLDetailsObj(void)
     Tcl_Obj *digestsObj      = Tcl_NewListObj(0, NULL);
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("enabled", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_enabled),
                    Tcl_NewBooleanObj(0));
 
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("capabilities", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_capabilities),
                    capabilitiesObj);
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("keytypes", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_keytypes),
                    keytypesObj);
     Tcl_DictObjPut(NULL, resultObj,
-                   Tcl_NewStringObj("digests", TCL_INDEX_NONE),
+                   NsAtomObj(NS_ATOM_digests),
                    digestsObj);
 
     return resultObj;

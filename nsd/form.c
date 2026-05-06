@@ -385,7 +385,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                 if (fallbackCharsetObj == NULL
                     || *Tcl_GetString(fallbackCharsetObj) == '\0'
                     ) {
-                    fallbackCharsetCompatibilityObj = Tcl_NewStringObj("iso8859-1", 9);
+                    fallbackCharsetCompatibilityObj = NsAtomObj(NS_ATOM_iso8859_DASH_1);
                     fallbackCharsetObj = fallbackCharsetCompatibilityObj;
                 }
                 status = ParseQueryWithFallback(interp, connPtr->poolPtr->servPtr,

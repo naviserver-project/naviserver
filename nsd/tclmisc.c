@@ -2080,7 +2080,7 @@ GetLimitObj(rlim_t value)
     Tcl_Obj *obj;
 
     if (value == RLIM_INFINITY) {
-        obj = Tcl_NewStringObj("unlimited", TCL_INDEX_NONE);
+        obj = NsAtomObj(NS_ATOM_unlimited);
     } else {
         obj = Tcl_NewWideIntObj((Tcl_WideInt)value);
     }

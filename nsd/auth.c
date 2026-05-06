@@ -565,23 +565,23 @@ HandleAuthorizationResult(Tcl_Interp *interp, Ns_ReturnCode status, const char *
 
     switch (status) {
     case NS_OK:
-        resultObj = Tcl_NewStringObj("OK", 2);
+        resultObj = NsAtomObj(NS_ATOM_OK);
         break;
 
     case NS_ERROR:
-        resultObj = Tcl_NewStringObj("ERROR", 5);
+        resultObj = NsAtomObj(NS_ATOM_ERROR);
         break;
 
     case NS_FORBIDDEN:
-        resultObj = Tcl_NewStringObj("FORBIDDEN", 9);
+        resultObj = NsAtomObj(NS_ATOM_FORBIDDEN);
         break;
 
     case NS_UNAUTHORIZED:
-        resultObj = Tcl_NewStringObj("UNAUTHORIZED", 12);
+        resultObj = NsAtomObj(NS_ATOM_UNAUTHORIZED);
         break;
 
     case NS_FILTER_RETURN:
-        resultObj = Tcl_NewStringObj("FILTER_RETURN", 13);
+        resultObj = NsAtomObj(NS_ATOM_FILTER_RETURN);
         break;
 
     case NS_FILTER_BREAK:  NS_FALL_THROUGH; /* fall through */

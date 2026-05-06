@@ -528,7 +528,7 @@ ConnInfo(Ns_Sock *sock)
 
             NsTLSAddClientCertInfo(NULL, sslCtx->ssl, clientcertSummaryObj);
             Tcl_DictObjPut(NULL, resultObj,
-                           Tcl_NewStringObj("clientcert", TCL_INDEX_NONE),
+                           NsAtomObj(NS_ATOM_clientcert),
                            clientcertSummaryObj);
 
         }

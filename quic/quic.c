@@ -8186,7 +8186,7 @@ ConnInfo(Ns_Sock *sock)
         if (qctx->is_h3) {
             Tcl_DictObjPut(NULL, resultObj,
                            NsAtomObj(NS_ATOM_httpversion),
-                           Tcl_NewStringObj("3", 1));
+                           NsAtomObj(NS_ATOM_3));
         }
         if (qctx->ssl != NULL) {
             Tcl_DictObjPut(NULL, resultObj,
@@ -8212,7 +8212,7 @@ ConnInfo(Ns_Sock *sock)
 
                 NsTLSAddClientCertInfo(NULL, qctx->ssl, clientcertSummaryObj);
                 Tcl_DictObjPut(NULL, resultObj,
-                               Tcl_NewStringObj("clientcert", TCL_INDEX_NONE),
+                               NsAtomObj(NS_ATOM_clientcert),
                                clientcertSummaryObj);
 
             }

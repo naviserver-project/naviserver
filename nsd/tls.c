@@ -647,12 +647,12 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
         DStringAppendX509Name(&ds, X509_get_subject_name(cert));
 
         Tcl_DictObjPut(interp, dictObj,
-                       Tcl_NewStringObj("subject", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_subject),
                        Ns_DStringToObj(&ds));
 
         DStringAppendX509Name(&ds, X509_get_issuer_name(cert));
         Tcl_DictObjPut(interp, dictObj,
-                       Tcl_NewStringObj("issuer", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_issuer),
                        Ns_DStringToObj(&ds));
     }
 
@@ -667,7 +667,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
 
             if (hex != NULL) {
                 Tcl_DictObjPut(interp, dictObj,
-                               Tcl_NewStringObj("serial", TCL_INDEX_NONE),
+                               NsAtomObj(NS_ATOM_serial),
                                Tcl_NewStringObj(hex, TCL_INDEX_NONE));
                 OPENSSL_free(hex);
             }
@@ -682,11 +682,11 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
             const ASN1_TIME *notAfter  = X509_get0_notAfter(cert);
 
             Tcl_DictObjPut(interp, dictObj,
-                           Tcl_NewStringObj("notbefore", TCL_INDEX_NONE),
+                           NsAtomObj(NS_ATOM_notbefore),
                            GetAsn1TimeToObj(notBefore));
 
             Tcl_DictObjPut(interp, dictObj,
-                           Tcl_NewStringObj("notafter", TCL_INDEX_NONE),
+                           NsAtomObj(NS_ATOM_notafter),
                            GetAsn1TimeToObj(notAfter));
         }
 
@@ -700,7 +700,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
 
             if (X509_digest(cert, EVP_sha256(), md, &mdLen) == 1) {
                 Tcl_DictObjPut(interp, dictObj,
-                               Tcl_NewStringObj("fingerprint", TCL_INDEX_NONE),
+                               NsAtomObj(NS_ATOM_fingerprint),
                                NsEncodedObj(md, (size_t)mdLen, digestChars, NS_OBJ_ENCODING_HEX));
             }
         }
@@ -717,7 +717,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
 
                 BIO_get_mem_ptr(bio, &mem);
                 Tcl_DictObjPut(interp, dictObj,
-                               Tcl_NewStringObj("pem", TCL_INDEX_NONE),
+                               NsAtomObj(NS_ATOM_pem),
                                Tcl_NewStringObj(mem->data, (TCL_SIZE_T)mem->length));
             }
             BIO_free(bio);
@@ -747,7 +747,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
                         int         len = 0;
                         const char *email = GetAsn1String(gn->d.rfc822Name, &len);
                         DictAppend(interp, sanDict,
-                                   Tcl_NewStringObj("email", TCL_INDEX_NONE),
+                                   NsAtomObj(NS_ATOM_email),
                                    Tcl_NewStringObj(email, (TCL_SIZE_T)len));
                         break;
                     }
@@ -757,7 +757,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
                         const char *dns = GetAsn1String(gn->d.dNSName, &len);
 
                         DictAppend(interp, sanDict,
-                                   Tcl_NewStringObj("dns", TCL_INDEX_NONE),
+                                   NsAtomObj(NS_ATOM_dns),
                                    Tcl_NewStringObj(dns, (TCL_SIZE_T)len));
                         break;
                     }
@@ -767,7 +767,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
                         const char *uri = GetAsn1String(gn->d.uniformResourceIdentifier, &len);
 
                         DictAppend(interp, sanDict,
-                                   Tcl_NewStringObj("uri", TCL_INDEX_NONE),
+                                   NsAtomObj(NS_ATOM_uri),
                                    Tcl_NewStringObj(uri, (TCL_SIZE_T)len));
                         break;
                     }
@@ -786,7 +786,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
                         }
 
                         DictAppend(interp, sanDict,
-                                   Tcl_NewStringObj("ip", TCL_INDEX_NONE),
+                                   NsAtomObj(NS_ATOM_ip),
                                    Tcl_NewStringObj(ipbuf, TCL_INDEX_NONE));
                         break;
                     }
@@ -799,7 +799,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
                     && sanNrEntries > 0
                     ) {
                     Tcl_DictObjPut(interp, dictObj,
-                                   Tcl_NewStringObj("san", TCL_INDEX_NONE),
+                                   NsAtomObj(NS_ATOM_san),
                                    sanDict);
                 }
             }
@@ -872,20 +872,20 @@ NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool mi
 
     if (cert == NULL) {
         Tcl_DictObjPut(interp, dictObj,
-                       Tcl_NewStringObj("present", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_present),
                        Tcl_NewBooleanObj(NS_FALSE));
         Tcl_DictObjPut(interp, dictObj,
-                       Tcl_NewStringObj("verified", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_verified),
                        Tcl_NewBooleanObj(NS_FALSE));
         Tcl_DictObjPut(interp, dictObj,
-                       Tcl_NewStringObj("verifyresult", TCL_INDEX_NONE),
-                       Tcl_NewStringObj("absent", TCL_INDEX_NONE));
+                       NsAtomObj(NS_ATOM_verifyresult),
+                       NsAtomObj(NS_ATOM_absent));
     } else {
         /*
          * present
          */
         Tcl_DictObjPut(interp, dictObj,
-                       Tcl_NewStringObj("present", TCL_INDEX_NONE),
+                       NsAtomObj(NS_ATOM_present),
                        Tcl_NewBooleanObj(NS_TRUE));
 
         /*
@@ -895,11 +895,11 @@ NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool mi
             long verifyResult = SSL_get_verify_result(ssl);
 
             Tcl_DictObjPut(interp, dictObj,
-                           Tcl_NewStringObj("verified", TCL_INDEX_NONE),
+                           NsAtomObj(NS_ATOM_verified),
                            Tcl_NewBooleanObj(verifyResult == X509_V_OK));
 
             Tcl_DictObjPut(interp, dictObj,
-                           Tcl_NewStringObj("verifyresult", TCL_INDEX_NONE),
+                           NsAtomObj(NS_ATOM_verifyresult),
                            Tcl_NewStringObj(X509_verify_cert_error_string(verifyResult),
                                             TCL_INDEX_NONE));
         }
@@ -4261,7 +4261,7 @@ NsCertCtlListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
             rc = ASN1_TIME_diff(&remaining_days, &remaining_seconds, NULL, notAfter);
             if (rc == 1) {
                 Tcl_ListObjAppendElement(interp, listObj,
-                                         Tcl_NewStringObj("remaining_days", 14));
+                                         NsAtomObj(NS_ATOM_remaining_days));
                 Ns_DStringPrintf(&ds, "%5.2f",
                                  remaining_days + (remaining_seconds/(60*60*24.0)));
                 Tcl_ListObjAppendElement(interp, listObj,

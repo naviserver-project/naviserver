@@ -2665,7 +2665,7 @@ StringObj(const char* chars) {
     if (chars != NULL) {
         resultObj = Tcl_NewStringObj(chars, TCL_INDEX_NONE);
     } else {
-        resultObj = Tcl_NewStringObj("", 0);
+        resultObj = Tcl_NewStringObj(NS_EMPTY_STRING, 0);
     }
     return resultObj;
 }
