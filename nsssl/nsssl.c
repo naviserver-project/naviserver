@@ -686,14 +686,6 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, void *arg)
 
     return result;
 }
-#else
-
-NS_EXPORT Ns_ReturnCode
-Ns_ModuleInit(const char *server, const char *module)
-{
-    Ns_Log(Warning, "modules nsssl requires a version of NaviServer built with OpenSSL");
-    return NS_ERROR;
-}
 #endif
 /* End: HAVE_OPENSSL_EVP_H: Big ifdef block that covers most of this file. */
 

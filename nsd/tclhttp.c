@@ -222,12 +222,14 @@ static Ns_ReturnCode HttpWaitForSocketEvent(
     const Ns_Time *timeoutPtr
 );
 
+# ifdef HAVE_OPENSSL_EVP_H
 static void
 HttpAddInfo(
     NsHttpTask *httpPtr,
     Tcl_Obj    *keyObj,
     const char *value
 ) NS_GNUC_NONNULL(1,2,3);
+# endif
 
 static void HttpCheckHeader(
     NsHttpTask *httpPtr
@@ -642,13 +644,14 @@ NewValidationException(const char *validationExceptionString)
      */
     static Ns_ObjvTable acceptedErrorCodes[] = {
         {"*",                       NS_X509_V_ERR_MATCH_ALL},
+#ifdef HAVE_OPENSSL_EVP_H
         {"certificate-expired",     X509_V_ERR_CERT_HAS_EXPIRED},
         {"certificate-untrusted",   X509_V_ERR_CERT_UNTRUSTED},
         {"chain-too-long",          X509_V_ERR_CERT_CHAIN_TOO_LONG},
         {"self-signed-certificate", X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT},
+#endif
         {NULL,                      0u}
     };
-
 
     Ns_Log(Debug, "ParseValidationException '%s'", validationExceptionString);
 
@@ -6002,7 +6005,8 @@ HttpCancel(
     HttpCloseWaitingDataRelease(httpPtr);
 }
 
-
+
+# ifdef HAVE_OPENSSL_EVP_H
 /*
  *----------------------------------------------------------------------
  *
@@ -6041,6 +6045,7 @@ HttpAddInfo(
 
     Tcl_DictObjPut(NULL, httpPtr->infoObj, keyObj, valObj);
 }
+# endif
 
 
 /*

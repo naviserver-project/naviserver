@@ -2255,10 +2255,10 @@ NS_EXTERN int NsTLSGetParameters(NsInterp *itPtr, bool tlsContext, int insecureI
 NS_EXTERN void NsTLSAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
     NS_GNUC_NONNULL(1,2);
 
-NS_EXTERN Ns_ReturnCode NsTLSAddClientCertInfo(Tcl_Interp *interp,  SSL *ssl, Tcl_Obj *dictObj)
+NS_EXTERN Ns_ReturnCode NsTLSAddClientCertInfo(Tcl_Interp *interp, NS_TLS_SSL *ssl, Tcl_Obj *dictObj)
         NS_GNUC_NONNULL(2,3);
 
-NS_EXTERN Ns_ReturnCode NsTLSAddClientCertDetails(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
+NS_EXTERN Ns_ReturnCode NsTLSAddClientCertDetails(Tcl_Interp *interp, NS_TLS_SSL *ssl, Tcl_Obj *dictObj)
         NS_GNUC_NONNULL(2,3);
 
 

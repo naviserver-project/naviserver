@@ -19,12 +19,19 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint ssl [ns_info ssl]
+if {![testConstraint ssl]} {
+    ns_log notice "These tests require OpenSSL, with is not available in this installation"
+    return
+}
+try {set curl [exec curl -V]} on error errorMsg {set curl ""}
+testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
+
+
 if {[ns_info ssl] ne ""} {
     testConstraint serverListen true
 }
 
-try {set curl [exec curl -V]} on error errorMsg {set curl ""}
-testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
 
 #
 # Syntax tests

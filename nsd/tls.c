@@ -934,7 +934,7 @@ NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool mi
  *----------------------------------------------------------------------
  */
 Ns_ReturnCode
-NsTLSAddClientCertInfo(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
+NsTLSAddClientCertInfo(Tcl_Interp *interp, NS_TLS_SSL *ssl, Tcl_Obj *dictObj)
 {
     return NsTLSAddClientCertFields(interp, ssl, dictObj, NS_TRUE);
 }
@@ -963,7 +963,7 @@ NsTLSAddClientCertInfo(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
  *----------------------------------------------------------------------
  */
 Ns_ReturnCode
-NsTLSAddClientCertDetails(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj)
+NsTLSAddClientCertDetails(Tcl_Interp *interp, NS_TLS_SSL *ssl, Tcl_Obj *dictObj)
 {
     return NsTLSAddClientCertFields(interp, ssl, dictObj, NS_FALSE);
 }
@@ -4440,9 +4440,9 @@ void NsInitOpenSSL(void)
  */
 
 int
-Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                  const char *sni_hostname, const char *caFile, const char *caPath,
-                  const Ns_Time *timeoutPtr, NS_TLS_SSL **sslPtr)
+Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNUSED(ctx),
+                  const char *UNUSED(sni_hostname), const char *UNUSED(caFile), const char *UNUSED(caPath),
+                  const Ns_Time *UNUSED(timeoutPtr), NS_TLS_SSL **UNUSED(sslPtr))
 {
     Ns_TclPrintfResult(interp, "SSLCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
@@ -4478,7 +4478,7 @@ Ns_TLS_CtxClientCreateCfg(Tcl_Interp *interp,
                           unsigned int UNUSED(flags),
                           NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
-    ReportError(interp, "CtxClientCreate failed: no support for OpenSSL built in");
+    Ns_TclPrintfResult(interp, "CtxClientCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
 
@@ -4489,19 +4489,21 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                        const char *UNUSED(protocols),
                        NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
-    ReportError(interp, "CtxServerCreate failed: no support for OpenSSL built in");
+    Ns_TclPrintfResult(interp, "CtxServerCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
+
 int
 Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
                           const char *UNUSED(cert), const char *UNUSED(key),
                           const char *UNUSED(caFile), const char *UNUSED(caPath),
-                          bool UNUSED(verify), const char *UNUSED(ciphers), const char *UNUSED(ciphersuites),
+                          Ns_TLSClientCertMode UNUSED(clientCertMode),
+                          const char *UNUSED(ciphers), const char *UNUSED(ciphersuites),
                           const char *UNUSED(protocols), const char *UNUSED(alpn),
                           void *UNUSED(app_data),
-                          NS_TLS_SSL_CTX **UNUSED(ctxPtr))
+                          unsigned int UNUSED(flags), NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
-    ReportError(interp, "CtxServerCreate failed: no support for OpenSSL built in");
+    Ns_TclPrintfResult(interp, "CtxServerCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
 
@@ -4512,9 +4514,9 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
 }
 
 int
-NsTclCertCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+NsTclCertCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
-    ReportError(interp, "ns_certctl failed: no support for OpenSSL built in");
+    Ns_TclPrintfResult(interp, "ns_certctl failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
 
@@ -4527,7 +4529,7 @@ Ns_TLS_CtxServerInit(const char *UNUSED(path), Tcl_Interp *UNUSED(interp),
     return TCL_OK;
 }
 
-#endif
+#endif /* HAVE_OPENSSL_EVP_H */
 
 /*
  *----------------------------------------------------------------------

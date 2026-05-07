@@ -33,12 +33,11 @@ if {$::tcl_version >= 8.6} {
 }
 testConstraint http09 true
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
-tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+testConstraint ssl [ns_info ssl]
 
 # testConstraint binaryMismatch true
 # testConstraint broken true
-
-
 
 
 set devnull     [expr {$::tcl_platform(platform) eq "windows" ? "NUL:" : "/dev/null"}]
@@ -3043,14 +3042,14 @@ test proxy-1.0 {Test forward proxy with via HTTP with HTTP request} -constraints
 } -result {0123456789}
 
 test proxy-1.1 {Test forward proxy with via HTTPS with HTTP request} -constraints {
-    curl serverListen
+    ssl curl serverListen
 } -body {
     #ns_log notice "PROXY [ns_config test tls_listenurl] request [ns_config test listenurl]/10bytes"
     exec curl -g --proxy-insecure -v -x [ns_config test tls_listenurl] -H "Host: test" [ns_config test listenurl]/10bytes  2> $devnull
 } -result {0123456789}
 
 test proxy-1.2 {Test forward proxy with via HTTP with HTTPS request} -constraints {
-    curl serverListen nsf
+    ssl curl serverListen nsf
 } -body {
     #
     # When the request is for an HTTPS URL, curl uses the CONNECT method
@@ -3064,7 +3063,7 @@ test proxy-1.2 {Test forward proxy with via HTTP with HTTPS request} -constraint
 } -returnCodes {error ok} -match glob -result {0123456789}
 
 test proxy-1.3 {Test forward proxy with via HTTPS with HTTPS request} -constraints {
-    curl serverListen nsf
+    ssl curl serverListen nsf
 } -body {
     #
     # When the request is for an HTTPS URL, curl uses the CONNECT method

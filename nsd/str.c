@@ -1200,6 +1200,9 @@ NsSockErrorCodeString(unsigned long errorCode, char *buffer, size_t bufferSize)
         ERR_error_string_n(errorCode, buffer, bufferSize);
         result = buffer;
     }
+#else
+    (void*)buffer;
+    (void*)bufferSize;
 #endif
     if (result == NULL) {
         result = ns_sockstrerror((int)errorCode);

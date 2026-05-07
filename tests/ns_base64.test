@@ -3,8 +3,9 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
-tcltest::testConstraint pre_tcl90 [expr {$::tcl_version < 9.0}]
+testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+testConstraint pre_tcl90 [expr {$::tcl_version < 9.0}]
+testConstraint ssl [ns_info ssl]
 
 ::tcltest::configure {*}$argv
 
@@ -366,7 +367,7 @@ test ns_base64encode-3.0 {
     UTF-8 data, from string or file,
     binary or not,
     convert everything via I/O to bytearray
-} -constraints {nsf} -body {
+} -constraints {nsf ssl} -body {
     set fn testserver/pages/utf-8-chars
     set a "äüö☀"
     set F [open $fn]; fconfigure $F -translation binary; set b [read $F]; close $F

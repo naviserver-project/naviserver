@@ -3,13 +3,15 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
+testConstraint ssl [ns_info ssl]
+testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
+
 if {[ns_config test listenport] ne ""} {
     testConstraint serverListenHTTP true
 }
 if {[ns_info ssl] ne ""} {
     testConstraint serverListenHTTPS true
 }
-tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 
 ::tcltest::configure {*}$argv
 
@@ -269,7 +271,7 @@ test ns_connchan-1.9.0 {connect to listenport with plain http} -constraints serv
     string trimright [lindex [split $result \n] 0] \r
 } -returnCodes {error ok} -result {HTTP/1.0 200 OK}
 
-test ns_connchan-1.9.1 {connect to listenport via TLS} -constraints serverListenHTTPS -body {
+test ns_connchan-1.9.1 {connect to listenport via TLS} -constraints {ssl serverListenHTTPS} -body {
     set conf [ns_parseurl [ns_config test tls_listenurl]]
     set chan [ns_connchan connect -tls [dict get $conf host] [dict get $conf port]]
     ns_connchan write $chan "GET / HTTP/1.0\r\n\r\n"

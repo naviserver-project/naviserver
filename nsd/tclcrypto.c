@@ -10770,7 +10770,7 @@ NsTclCryptoAgreementObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 }
 # endif
 
-#else
+#else /* HAVE_OPENSSL_EVP_H */
 /*======================================================================
  * Compiled without OpenSSL support or too old OpenSSL versions
  *======================================================================
@@ -10811,7 +10811,7 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 }
 
 int
-NsTclCryptoUUIDCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoUUIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
@@ -10832,7 +10832,7 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 }
 
 int
-NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 1.1.1 or newer built into NaviServer");
     return TCL_ERROR;
@@ -10846,17 +10846,24 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 }
 
 int
-NsTclCryptoKeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoAgreementObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 or newer built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
+NsTclCryptoKemObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoAgreementObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                    TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoKeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
-    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 or newer built into NaviServer");
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
@@ -10866,6 +10873,7 @@ NsTclCryptoSignatureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
+
 
 Tcl_Obj *
 Ns_InfoSSLDetailsObj(void)
@@ -10892,7 +10900,7 @@ Ns_InfoSSLDetailsObj(void)
     return resultObj;
 }
 
-#endif
+#endif /* HAVE_OPENSSL_EVP_H */
 
 /*
  * Local Variables:

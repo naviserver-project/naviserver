@@ -5,7 +5,7 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
+testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
 #######################################################################################

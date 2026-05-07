@@ -1384,12 +1384,14 @@ HdrMergeExtra(const Ns_Conn *conn)
     }
     Tcl_DStringFree(&ds);
 
+#ifdef HAVE_OPENSSL_EVP_H
     /*
      * Handle alt-svc only for HTTPS connections via HTTP/1
      */
     if (STREQ(sockPtr->driver->type, "nsssl")) {
         NsTLSAddOutputHeaders(headers, sockPtr);
     }
+#endif
 
     if (servPtr->opts.extraHeaders != NULL) {
         Ns_SetIMerge(headers, servPtr->opts.extraHeaders);

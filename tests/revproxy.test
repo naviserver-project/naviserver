@@ -5,10 +5,7 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-#
-# Most of these tests require the OpenSSL API, some require nsf
-#
-tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 
 test revproxy-1.0 {syntax test} -constraints {nsf} -body {
      revproxy::upstream

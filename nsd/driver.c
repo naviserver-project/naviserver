@@ -5643,6 +5643,7 @@ DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
     return result;
 }
 
+# ifdef HAVE_OPENSSL_EVP_H
 /*
  *----------------------------------------------------------------------
  *
@@ -5816,6 +5817,7 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
 
     return (mapPtr != NULL) ? mapPtr->ctx : NULL;
 }
+# endif /* HAVE_OPENSSL_EVP_H */
 
 /*
  *----------------------------------------------------------------------

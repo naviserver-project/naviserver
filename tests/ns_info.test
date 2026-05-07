@@ -6,6 +6,7 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+testConstraint ssl [ns_info ssl]
 
 #######################################################################################
 #  Syntax tests
@@ -342,7 +343,7 @@ test ns_info-2.30 {ns_info buildinfo keys} -body {
     lsort [dict keys [ns_info buildinfo]]
 } -returnCodes ok -result {assertions compiler system_malloc tcl with_deprecated}
 
-test ns_info-2.31 {ns_info ssl -details: structure and basic invariants} -body {
+test ns_info-2.31 {ns_info ssl -details: structure and basic invariants} -constraints ssl -body {
     set d [ns_info ssl -details]
 
     # Must be a dict

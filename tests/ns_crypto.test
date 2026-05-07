@@ -8,37 +8,37 @@ namespace import -force ::tcltest::*
 #
 # Most of these tests require the OpenSSL API, some require nsf
 #
-tcltest::testConstraint ssl [ns_info ssl]
+testConstraint ssl [ns_info ssl]
 
-if {![tcltest::testConstraint ssl]} {
+if {![testConstraint ssl]} {
     ns_log notice "These tests require OpenSSL, with is not available in this installation"
     return
 }
 
-tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
-tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
+testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 
 set sslDetails   [ns_info ssl -details]
 set sslCaps      [dict get $sslDetails capabilities]
 set sslKeytypes  [dict get $sslDetails keytypes]
 
-tcltest::testConstraint scrypt    [expr {"scrypt" in $sslCaps}]
-tcltest::testConstraint argon2    [expr {"argon2" in $sslCaps}]
+testConstraint scrypt    [expr {"scrypt" in $sslCaps}]
+testConstraint argon2    [expr {"argon2" in $sslCaps}]
 
-tcltest::testConstraint agreement [expr {"agreement" in $sslCaps}]
-tcltest::testConstraint ec        [expr {"ec" in $sslKeytypes}]
-tcltest::testConstraint kem       [expr {"kem" in $sslCaps}]
+testConstraint agreement [expr {"agreement" in $sslCaps}]
+testConstraint ec        [expr {"ec" in $sslKeytypes}]
+testConstraint kem       [expr {"kem" in $sslCaps}]
 
 # Since key generation starts with OpenSSL 3.0 in this interface, use the runtime major.
-tcltest::testConstraint keygen    [expr {[dict get $sslDetails major] >= 3}]
+testConstraint keygen    [expr {[dict get $sslDetails major] >= 3}]
 
-tcltest::testConstraint mldsa     [expr {"ml-dsa" in $sslKeytypes}]
-tcltest::testConstraint signature [expr {"signature" in $sslCaps}]
-tcltest::testConstraint sm2       [expr {"sm2" in $sslKeytypes}]
-tcltest::testConstraint ed25519   [expr {"ed25519" in $sslKeytypes}]
-tcltest::testConstraint x25519    [expr {"x25519" in $sslKeytypes}]
-tcltest::testConstraint ed448     [expr {"ed448" in $sslKeytypes}]
-tcltest::testConstraint secp256k1 [expr {![catch {ns_crypto::key generate -name EC -group secp256k1}]}]
+testConstraint mldsa     [expr {"ml-dsa" in $sslKeytypes}]
+testConstraint signature [expr {"signature" in $sslCaps}]
+testConstraint sm2       [expr {"sm2" in $sslKeytypes}]
+testConstraint ed25519   [expr {"ed25519" in $sslKeytypes}]
+testConstraint x25519    [expr {"x25519" in $sslKeytypes}]
+testConstraint ed448     [expr {"ed448" in $sslKeytypes}]
+testConstraint secp256k1 [expr {![catch {ns_crypto::key generate -name EC -group secp256k1}]}]
 
 if {1 || $::tcl_version >= 8.6} {
     set sslMsg [lmap item {enabled headersVersion runtimeVersion capabilities keytypes digests} {
@@ -48,7 +48,7 @@ if {1 || $::tcl_version >= 8.6} {
 }
 
 #foreach c {crypto nsf tcl86 scrypt argon2 kem mldsa ec signature keygen sm2} {
-#    ns_log notice constraint $c [tcltest::testConstraint $c]
+#    ns_log notice constraint $c [testConstraint $c]
 #}
 
 

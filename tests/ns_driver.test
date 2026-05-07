@@ -2,6 +2,7 @@
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
+testConstraint ssl [ns_info ssl]
 
 ::tcltest::configure {*}$argv
 
@@ -32,17 +33,17 @@ test ns_driver-1.3d {basic syntax: key but too many arguments} -body {
 test ns_driver-1.4a {result of ns_driver info} -body {
     set info [ns_driver info]
     list [llength $info]-[llength [lindex $info 0]]
-} -result "2-24"
+} -result [expr {[ns_info ssl] ? "2-24" : "1-24"}]
 test ns_driver-1.4b {result of ns_driver names} -body {
     set info [lsort [ns_driver names]]
-} -result "nssock nsssl"
+} -result [expr {[ns_info ssl] ? "nssock nsssl" : "nssock"}]
 test ns_driver-1.4c {result of ns_driver threads} -body {
     set info [lsort [ns_driver threads]]
-} -result "nssock:0 nsssl:0"
+} -result [expr {[ns_info ssl] ? "nssock:0 nsssl:0" : "nssock:0"}]
 test ns_driver-1.4d {result of ns_driver stats} -body {
     set info [ns_driver stats]
     list [llength $info]-[llength [lindex $info 0]]
-} -result "2-12"
+} -result [expr {[ns_info ssl] ? "2-12" : "1-12"}]
 
 
 
