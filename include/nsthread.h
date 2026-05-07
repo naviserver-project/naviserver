@@ -560,8 +560,13 @@ typedef int ns_sockerrno_t;
 #   define s6_addr32 __u6_addr.__u6_addr32
 #  endif
 #  define S6_ADDR16(x) ((uint16_t*)(x).s6_addr16)
-#  define NS_INITGROUPS_GID_T int
-#  define NS_MSG_IOVLEN_T int
+#  if defined(__OpenBSD__)
+#   define NS_MSG_IOVLEN_T     unsigned int
+#   define NS_INITGROUPS_GID_T unsigned int
+#  else
+#   define NS_MSG_IOVLEN_T     int
+#   define NS_INITGROUPS_GID_T int
+#  endif
 # else
 #  if defined(__sun)
 #   define S6_ADDR16(x) ((uint16_t*)((char*)&(x).s6_addr))
@@ -1075,6 +1080,8 @@ typedef int bool;
 #endif
 
 #define NS_TIME_FMT "%" PRId64 ".%06ld"
+#define NS_TIME_T_FMT "%" PRIdMAX
+#define NS_TIME_T_ARG(t) ((intmax_t)(t))
 
 /*
  * Older Solaris version (2.8-) have older definitions

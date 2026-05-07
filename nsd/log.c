@@ -2065,7 +2065,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         }
         Ns_DiffTime(stamp, &startTime, &usedTime);
         stamp = &usedTime;
-        Ns_DStringPrintf(dsPtr, "[%ld]", stamp->sec);
+        Ns_DStringPrintf(dsPtr, "[" NS_TIME_T_FMT "]", NS_TIME_T_ARG(stamp->sec));
     }
 
     /*
