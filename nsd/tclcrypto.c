@@ -7737,7 +7737,7 @@ PkeyInfoPutEcDetails(Tcl_Interp *interp, Tcl_Obj *resultObj, EVP_PKEY *pkey,
     if (PkeyInfoPutBnPad(interp, resultObj, NsAtomObj(NS_ATOM_x), x, coordLen, encoding) != TCL_OK) {
         goto done;
     }
-    if (PkeyInfoPutBnPad(interp, resultObj, NsAtomObj(NS_ATOM_Y), y, coordLen, encoding) != TCL_OK) {
+    if (PkeyInfoPutBnPad(interp, resultObj, NsAtomObj(NS_ATOM_y), y, coordLen, encoding) != TCL_OK) {
         goto done;
     }
 
