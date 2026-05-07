@@ -7723,11 +7723,11 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     httpPtr->ssl = NULL;
 
     Ns_Log(Ns_LogTaskDebug, "PersistentConnectionAdd %s persistent connection for host %s:%hu on pos %ld"
-           " sock %d state %s with keepalive " NS_TIME_FMT " expire %ld",
+           " sock %d state %s with keepalive " NS_TIME_FMT " expire " NS_TIME_T_FMT,
            operation, httpPtr->host, httpPtr->port, cwDataPtr->pos,
            cwDataPtr->sock, CloseWaitingDataPrettyState(cwDataPtr),
            (int64_t) httpPtr->keepAliveTimeout.sec, httpPtr->keepAliveTimeout.usec,
-           cwDataPtr->expire.sec);
+           NS_TIME_T_ARG(cwDataPtr->expire.sec));
 
     return NS_TRUE;
 }

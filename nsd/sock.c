@@ -1312,8 +1312,8 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
      * milliseconds. The number of attempts is determined by the timeoutPtr.
      */
     count = (int)Ns_TimeToMilliseconds(timeoutPtr)/ms;
-    Ns_Log(Debug, "Ns_SockTimedConnect2 for [%s]:%hu MS %ld count %d",
-           host, port, Ns_TimeToMilliseconds(timeoutPtr), count);
+    Ns_Log(Debug, "Ns_SockTimedConnect2 for [%s]:%hu MS " NS_TIME_T_FMT " count %d",
+           host, port, NS_TIME_T_ARG(Ns_TimeToMilliseconds(timeoutPtr)), count);
 
     sock = SockConnect(host, port, lhost, lport, NS_TRUE, count, ms, &status);
     if (unlikely(sock == NS_INVALID_SOCKET)) {
@@ -1574,8 +1574,8 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
         Ns_Log(Notice, "nssock(%d): option TCP_FASTOPEN activated", sock);
     }
     (void)secs;
-#else
-# ifdef TCP_DEFER_ACCEPT
+
+#elif defined(TCP_DEFER_ACCEPT)
     if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
                    (const void *)&secs, (socklen_t)sizeof(secs)) == -1) {
         Ns_Log(Error, "deferaccept setsockopt(TCP_DEFER_ACCEPT): %s",
@@ -1583,8 +1583,8 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
     } else {
         Ns_Log(Notice, "deferaccept: socket option DEFER_ACCEPT activated (timeout %ld)", secs);
     }
-# else
-#  ifdef SO_ACCEPTFILTER
+
+#elif defined(SO_ACCEPTFILTER)
     struct accept_filter_arg afa;
     int n;
 
@@ -1599,8 +1599,10 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 
     }
     (void)secs;
-#  endif
-# endif
+#else
+    /* none of the features are available */
+    (void)sock;
+    (void)secs;
 #endif
 }
 
@@ -2279,6 +2281,8 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags, unsi
 #else
     struct msghdr msg;
 
+    assert(nbufs >= 0);
+
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = bufs;
     msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
@@ -2328,6 +2332,8 @@ SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags
     }
 #else
     struct msghdr msg;
+
+    assert(nbufs >= 0);
 
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = (struct iovec *)bufs;
