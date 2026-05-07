@@ -7506,10 +7506,10 @@ Ns_JsonParse(const unsigned char *buf, size_t len,
         status = NS_OK;
 
     } else {
-
         /*
          * dict / triples output.
          */
+        assert(resultObjPtr != NULL);
 
         if (JsonParseValue(&jp, &valueObj, &vt) != NS_OK) {
             goto fail;
