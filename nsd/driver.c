@@ -2903,7 +2903,9 @@ DriverThread(void *arg)
                         }
 
                         if (s != SOCK_ERROR) {
+#ifndef __APPLE__
                             gotRequests = NS_TRUE;
+#endif
                             accepted++;
                         }
 #ifdef __APPLE__
@@ -6907,7 +6909,6 @@ WriterThread(void *arg)
         if (writePtr == NULL) {
             pollTimeout = 30 * 1000;
         } else {
-
             /*
              * If per-pool bandwidth management is requested, compute the base
              * data for the adjustment. If there is no bandwidth management

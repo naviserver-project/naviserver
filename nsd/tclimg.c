@@ -93,13 +93,14 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             result = TCL_ERROR;
 
         } else {
-            const char  *type = "unknown"; /* Just to make compiler silent, we have a complete enumeration of switch values */
+            const char *type;
 
             switch (GetImageType(chan)) {
             case jpeg:    type = "jpeg";    break;
             case png:     type = "png";     break;
             case gif:     type = "gif";     break;
-            case unknown: type = "unknown"; break;
+            case unknown:
+            default:      type = "unknown"; break;
             }
             result = Tcl_Close(interp, chan);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(type, TCL_INDEX_NONE));
@@ -143,13 +144,14 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         if (chan == NULL) {
             result = TCL_ERROR;
         } else {
-            const char  *mime = "image/unknown"; /* Just to make compiler silent, we have a complete enumeration of switch values */
+            const char *mime;
 
             switch (GetImageType(chan)) {
             case jpeg:    mime = "image/jpeg";    break;
             case png:     mime = "image/png";     break;
             case gif:     mime = "image/gif";     break;
-            case unknown: mime = "image/unknown"; break;
+            case unknown:
+            default:      mime = "image/unknown"; break;
             }
 
             result = Tcl_Close(interp, chan);

@@ -43,7 +43,7 @@ static void ReturnAllValues(Tcl_Interp *interp, int all, Ns_DList *dlPtr)
 static int
 GetBoolFromStringOrDefault(Tcl_Interp *interp, const char *value, Tcl_Obj *defObj)
 {
-    int i, result = TCL_OK;
+    int i = 0, result = TCL_OK;
 
     if (value != NULL) {
         if (Tcl_GetBoolean(interp, value, &i) != TCL_OK) {
