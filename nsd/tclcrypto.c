@@ -7503,13 +7503,13 @@ PkeyInfoPutBnPad(Tcl_Interp *interp, Tcl_Obj *resultObj,
 
     buf = ns_malloc((size_t)width);
     if (buf == NULL) {
-        Ns_TclPrintfResult(interp, "could not allocate buffer for %s", name);
+        Ns_TclPrintfResult(interp, "could not allocate buffer for %s", Tcl_GetString(nameObj));
         return TCL_ERROR;
     }
 
     if (BN_bn2binpad(bn, buf, (int)width) != (int)width) {
         ns_free(buf);
-        Ns_TclPrintfResult(interp, "could not convert %s", name);
+        Ns_TclPrintfResult(interp, "could not convert %s", Tcl_GetString(nameObj));
         return TCL_ERROR;
     }
 
