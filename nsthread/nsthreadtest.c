@@ -217,6 +217,12 @@ AtExit(void)
 #define NA 10000
 #define BS (1024*16)
 
+#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__APPLE__)
+# define NsTestRandomUniform(n) ((int)arc4random_uniform((uint32_t)(n)))
+#else
+# define NsTestRandomUniform(n) (rand() % (n))
+#endif
+
 static int nthreads = 10;
 static int memStart = 0;
 static int nrunning = 0;
@@ -237,7 +243,7 @@ MemThread(void *arg)
 
     ptr = NULL;
     for (i = 0; i < NA; ++i) {
-        size_t n = (size_t)rand() % BS;
+        size_t n = (size_t)NsTestRandomUniform(BS);
         if (arg != NULL) {
             ns_free(ptr);
             ptr = ns_malloc(n);
