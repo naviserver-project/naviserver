@@ -2840,15 +2840,22 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
         assert(request != NULL);
     }
 
-    switch (opt) {
-    case CIsConnectedIdx:
+    if (opt == CIsConnectedIdx) {
         /*
          * We report true, when we have a connection and the connection is not
-         * closed.
+         * closed. This is the only case, were connPtr == NULL;
          */
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL)
                                                    ? ((connPtr->flags & NS_CONN_CLOSED) == 0u)
                                                    : NS_FALSE));
+        return TCL_OK;
+    }
+
+    assert(connPtr != NULL);
+
+    switch (opt) {
+    case CIsConnectedIdx:
+        /* handled above */
         break;
 
     case CCurrentAddrIdx:

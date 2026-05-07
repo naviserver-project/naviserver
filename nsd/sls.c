@@ -466,7 +466,7 @@ NsSlsCleanup(Sock *sockPtr)
         retry = 0;
         while (i-- > 0u) {
             if (cleanupProcs[i] != NULL && sockPtr->sls[i] != NULL) {
-                void *arg = arg = sockPtr->sls[i];
+                void *arg = sockPtr->sls[i];
 
                 sockPtr->sls[i] = NULL;
                 (*cleanupProcs[i])(arg);

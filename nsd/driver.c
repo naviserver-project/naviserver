@@ -3036,7 +3036,9 @@ DriverThread(void *arg)
                         }
 
                         if (s != SOCK_ERROR) {
+#ifndef __APPLE__
                             gotRequests = NS_TRUE;
+#endif
                             accepted++;
                         }
 #ifdef __APPLE__
@@ -7428,7 +7430,6 @@ WriterThread(void *arg)
         if (writePtr == NULL) {
             pollTimeout = 30 * 1000;
         } else {
-            pollTimeout = 1000;
             /* 1. adjust rate limits per pool */
             BandwidthAdjustRateLimitsPerPool(writePtr, &pools);
             /* 2. set up writer sockets in poll and get minimal timeout */
