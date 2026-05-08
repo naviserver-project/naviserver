@@ -416,14 +416,6 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(section, "errorminsize", NULL, 514, 0, INT_MAX);
     servPtr->filter.rwlocks = Ns_ConfigBool(section, "filterrwlocks", NS_TRUE);
 
-    servPtr->opts.hdrcase = Preserve;
-    p = Ns_ConfigString(section, "headercase", "preserve");
-    if (STRIEQ(p, "tolower")) {
-        servPtr->opts.hdrcase = ToLower;
-    } else if (STRIEQ(p, "toupper")) {
-        servPtr->opts.hdrcase = ToUpper;
-    }
-
     /*
      * Add server specific extra headers.
      */

@@ -865,6 +865,7 @@ ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
     set = Ns_SetCreate(NS_SET_NAME_MP);
+    set->flags |= NS_SET_OPTION_NOCASE;
 
     /*
      * Trim off the trailing \r\n and null terminate the input.
@@ -899,7 +900,7 @@ ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start
         }
         save = *e;
         *e = '\0';
-        (void) Ns_ParseHeader(set, s, NULL, ToLower, NULL);
+        (void) Ns_ParseHeader(set, s, NULL, NULL);
         *e = save;
     }
 

@@ -1691,7 +1691,6 @@ NsTclParseHeaderObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
 {
     int          result = TCL_OK;
     Ns_Set      *set;
-    Ns_HeaderCaseDisposition disp = Preserve;
     const char  *headerString = NS_EMPTY_STRING;
     char        *dispositionString = NULL,
                 *prefix = NULL;
@@ -1709,30 +1708,13 @@ NsTclParseHeaderObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-
-    } else if (objc < 4) {
-        disp = ToLower;
-    } else if (dispositionString != NULL) {
-        if (STREQ(dispositionString, "toupper")) {
-            disp = ToUpper;
-        } else if (STREQ(dispositionString, "tolower")) {
-            disp = ToLower;
-        } else if (STREQ(dispositionString, "preserve")) {
-            disp = Preserve;
-        } else {
-            Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve",
-                               dispositionString);
-            result = TCL_ERROR;
-        }
-    } else {
-        Ns_Fatal("error in argument parser: dispositionString should never be NULL");
     }
 
     if (result == TCL_OK) {
         size_t fieldNumber;
 
         assert(set != NULL);
-        if (Ns_ParseHeader(set, headerString, prefix, disp, &fieldNumber) != NS_OK) {
+        if (Ns_ParseHeader(set, headerString, prefix, &fieldNumber) != NS_OK) {
             Ns_TclPrintfResult(interp, "invalid header: %s", headerString);
             result = TCL_ERROR;
         } else {
@@ -7404,7 +7386,7 @@ ParseTrailerProc(
             Ns_Set     *headersPtr = httpPtr->responseHeaders;
             const char *trailer = dsPtr->string;
 
-            if (Ns_ParseHeader(headersPtr, trailer, NULL, ToLower, NULL) != NS_OK) {
+            if (Ns_ParseHeader(headersPtr, trailer, NULL, NULL) != NS_OK) {
                 result = TCL_ERROR;
             }
         }

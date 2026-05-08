@@ -330,9 +330,7 @@ You may also modify this ns_set.
 [call [cmd  "ns_conn headers"]]
 
  Returns all HTTP request header fields as an ns_set, where each key
- is a header field name.  The case of the header names depends on the
- [term HeaderCase] configuration parameter (default is [const Preserve]).
-
+ is a header field name. All keys are lower case.
 
 [call [cmd  "ns_conn host"] [opt [arg default]]]
 

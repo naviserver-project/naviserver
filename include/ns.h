@@ -297,16 +297,6 @@ enum {
 typedef int Ns_LogSeverity;
 
 /*
- * The following enum lists the possible HTTP headers
- * conversion options (default: Preserve).
- */
-
-typedef enum {
-    Preserve, ToLower, ToUpper
-} Ns_HeaderCaseDisposition;
-
-
-/*
  * typedefs and enums for JSON parsing
  */
 typedef enum {
@@ -2535,8 +2525,7 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseDisposition disp,
-               size_t *fieldNumberPtr)
+Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, size_t *fieldNumberPtr)
     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN Ns_ReturnCode

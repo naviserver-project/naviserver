@@ -753,8 +753,7 @@ SetUrl(Ns_Request *request, char *url)
  */
 
 Ns_ReturnCode
-Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseDisposition disp,
-               size_t *fieldNumberPtr)
+Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, size_t *fieldNumberPtr)
 {
     Ns_ReturnCode status = NS_OK;
     size_t        idx = 0u;
@@ -821,21 +820,6 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseD
             }
             idx = Ns_SetPutSz(set, line, (TCL_SIZE_T)(sep - line), value, TCL_INDEX_NONE);
             key = Ns_SetKey(set, idx);
-            if (disp == ToLower) {
-                while (*key != '\0') {
-                    if (CHARTYPE(upper, *key) != 0) {
-                        *key = CHARCONV(lower, *key);
-                    }
-                    ++key;
-                }
-            } else if (disp == ToUpper) {
-                while (*key != '\0') {
-                    if (CHARTYPE(lower, *key) != 0) {
-                        *key = CHARCONV(upper, *key);
-                    }
-                    ++key;
-                }
-            }
             *sep = ':';
         }
 
@@ -926,7 +910,7 @@ Ns_HttpMessageParse(
                 //hdrPtr->name = ns_strdup(p);
                 firsthdr = 0;
             }
-            if (len < 2 || Ns_ParseHeader(hdrPtr, p, NULL, ToLower, NULL) != NS_OK) {
+            if (len < 2 || Ns_ParseHeader(hdrPtr, p, NULL, NULL) != NS_OK) {
                 break;
             }
             p = eol;

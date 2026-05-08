@@ -1080,9 +1080,7 @@ Ns_ConnReadHeaders(const Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
                 if (ds.string[0] == '\0') {
                     break;
                 }
-                status = Ns_ParseHeader(set, ds.string, NULL,
-                                        connPtr->poolPtr->servPtr->opts.hdrcase,
-                                        NULL);
+                status = Ns_ParseHeader(set, ds.string, NULL, NULL);
             }
         }
     }

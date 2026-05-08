@@ -16,7 +16,7 @@ This function parses a single HTTP header line into a predefined
 [call [cmd ns_parseheader] \
         [opt [option "-prefix [arg value]"]] \
         [arg set] [arg headerline] \
-        [opt [arg disposition]] ]
+        ]
 
 [para] The [arg headerline] specifies a line containing HTTP
 header fields, where the field name is parsed into a key of the
@@ -26,28 +26,20 @@ header fields, where the field name is parsed into a key of the
 The option [option -prefix] can be used to specify a prefix for the
 key.
 
-[para]
-Optional argument [arg disposition] can be one of the following
-[list_begin itemized]
-    [item] toupper - convert header names to uppercase
-    [item] tolower - convert header names to lowercase
-    [item] preserve - preserve the existing case
-[list_end]
-When no [arg disposition] is provided, it defaults to [term tolower]
-
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
- set reply [lb]ns_set create reply[rb]
+ set reply [lb]ns_set create -nocase reply[rb]
  ns_parseheader $reply "Connection: Upgrade"
  
  #
- # Return the content of the ns_set in form of a dict
+ # Output the content of the ns_set in a human friendly way
  #
- ns_set array $reply
- % connection Upgrade
+ ns_set format $reply
+ ## output:  reply:
+ ## output:    connection: Upgrade
 [example_end]
 
 
