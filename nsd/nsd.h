@@ -836,7 +836,6 @@ typedef struct NsServer {
         const Ns_Set *extraHeaders;
         const char *noticeADP;
         int  errorminsize;
-        Ns_HeaderCaseDisposition hdrcase;
         bool flushcontent;
         bool modsince;
         bool stealthmode;

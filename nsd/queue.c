@@ -2706,17 +2706,6 @@ ConnRun(Conn *connPtr)
     if (connPtr->request.version < 1.0) {
         conn->flags |= NS_CONN_SKIPHDRS;
     }
-    if (servPtr->opts.hdrcase != Preserve) {
-        size_t i;
-
-        for (i = 0u; i < Ns_SetSize(connPtr->headers); ++i) {
-            if (servPtr->opts.hdrcase == ToLower) {
-                Ns_StrToLower(Ns_SetKey(connPtr->headers, i));
-            } else {
-                Ns_StrToUpper(Ns_SetKey(connPtr->headers, i));
-            }
-        }
-    }
     //auth = Ns_SetIGet(connPtr->headers, "authorization");
     auth = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_AUTHORIZATION];
 

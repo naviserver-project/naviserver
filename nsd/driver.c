@@ -5000,7 +5000,7 @@ SockParse(Sock *sockPtr)
                     Ns_Log(Notice, "pre-HTTP/1.0 request <%s>", reqPtr->request.line);
                 }
 
-            } else if (Ns_ParseHeader(reqPtr->headers, s, NULL, Preserve, NULL) != NS_OK) {
+            } else if (Ns_ParseHeader(reqPtr->headers, s, NULL, NULL) != NS_OK) {
                 /*
                  * Invalid header.
                  */

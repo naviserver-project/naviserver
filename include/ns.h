@@ -287,15 +287,6 @@ enum {
 typedef int Ns_LogSeverity;
 
 /*
- * The following enum lists the possible HTTP headers
- * conversion options (default: Preserve).
- */
-
-typedef enum {
-    Preserve, ToLower, ToUpper
-} Ns_HeaderCaseDisposition;
-
-/*
  * Global variables:
  *
  *  LogSeverity, which can be used from modules (e.g. nsssl)
@@ -2474,9 +2465,8 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseDisposition disp,
-               size_t *fieldNumberPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, size_t *fieldNumberPtr)
+    NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN Ns_ReturnCode
 Ns_HttpMessageParse(char *messageString, size_t messageLength, size_t *firstLineLengthPtr,

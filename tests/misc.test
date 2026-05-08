@@ -29,7 +29,7 @@ test ns_rand-1.2 {ns_rand with 0 arg - float} -body {
 #######################################################################################
 test ns_parseheader-1.0 {syntax: ns_parseheader} -body {
     ns_parseheader
-} -returnCodes error -result {wrong # args: should be "ns_parseheader ?-prefix /value/? /set/ /headerline/ ?/disposition/?"}
+} -returnCodes error -result {wrong # args: should be "ns_parseheader ?-prefix /value/? /set/ /headerline/"}
 
 #######################################################################################
 #  test ns_parsemessage

@@ -401,7 +401,7 @@
 [uri ../../naviserver/files/ns_config.html {ns_param}] /key/ /value/
 [uri ../../naviserver/files/ns_parseargs.html {ns_parseargs}] /argspec/ /arg .../
 [uri ../../naviserver/files/ns_parsefieldvalue.html {ns_parsefieldvalue}] ?-lower? ?-single? ?-strict? ?--? /fieldvalue/
-[uri ../../naviserver/files/ns_parseheader.html {ns_parseheader}] ?-prefix /value/? /set/ /headerline/ ?/disposition/?
+[uri ../../naviserver/files/ns_parseheader.html {ns_parseheader}] ?-prefix /value/? /set/ /headerline/
 [uri ../../naviserver/files/ns_parsehostport.html {ns_parsehostport}] ?-strict? ?--? /hostport/
 [uri ../../naviserver/files/textutil-cmds.html {ns_parsehtml}] ?-noangle? ?-onlytags? ?--? /html/
 [uri ../../naviserver/files/ns_parsehttptime.html {ns_parsehttptime}] /httptime/
