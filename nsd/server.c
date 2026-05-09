@@ -240,7 +240,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     Tcl_HashEntry     *hPtr;
     NsServer          *servPtr;
     const ServerInit  *initPtr;
-    const char        *section, *p;
+    const char        *section;
     const Ns_Set      *set = NULL;
     size_t             i;
     int                n;

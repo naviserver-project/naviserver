@@ -812,14 +812,12 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, size_t *fieldN
 
         } else {
             const char *value;
-            char       *key;
 
             *sep = '\0';
             for (value = sep + 1; (*value != '\0') && CHARTYPE(space, *value) != 0; value++) {
                 ;
             }
             idx = Ns_SetPutSz(set, line, (TCL_SIZE_T)(sep - line), value, TCL_INDEX_NONE);
-            key = Ns_SetKey(set, idx);
             *sep = ':';
         }
 
