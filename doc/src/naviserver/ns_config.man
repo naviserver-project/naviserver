@@ -142,8 +142,8 @@ the set represents. The [cmd ns_set] name contains the [arg section].
 
 [call [cmd ns_section] \
       [opt [option -update]] \
-      [opt [option "-set [arg ns_set]"]] \
       [opt [option "-from [arg sectionName]"]] \
+      [opt [option "-set [arg set]"]] \
       [opt --] \
       [arg sectionName] \
       [opt [arg script]]]
