@@ -1582,7 +1582,7 @@ Ns_HttpLocationString(
 /*
  *----------------------------------------------------------------------
  *
- * NsTclParseHeaderObjCmd --
+ * NsTclParseMessageObjCmd --
  *
  *      Implements "ns_parsemessage". Parse an HTTP message with first line,
  *      headers, and body.
@@ -1679,10 +1679,9 @@ NsTclParseHeaderObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
 {
     int          result = TCL_OK;
     Ns_Set      *set;
-    char        *headerString = (char *)NS_EMPTY_STRING,
-                *dispositionString = NULL,
-                *prefix = NULL;
-    Ns_ObjvSpec opts[] = {
+    const char  *headerString = NS_EMPTY_STRING;
+    char        *prefix = NULL;
+    Ns_ObjvSpec  opts[] = {
         {"-prefix",  Ns_ObjvString,  &prefix,  NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1690,7 +1689,6 @@ NsTclParseHeaderObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     Ns_ObjvSpec  args[] = {
         {"set",          Ns_ObjvSet,    &set, NULL},
         {"headerline",   Ns_ObjvString, &headerString, NULL},
-        {"?disposition", Ns_ObjvString, &dispositionString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
