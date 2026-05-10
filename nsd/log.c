@@ -142,9 +142,11 @@ static Tcl_Obj *LogStats(void);
 static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity)
     NS_GNUC_NONNULL(1);
 
-static int ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
-    NS_GNUC_NONNULL(1,2,3,4);
+static int ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultValue, int *idxPtr)
+    NS_GNUC_NONNULL(1,2,3,5);
 
+static const char *ObjvTableGetString(Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+    NS_GNUC_NONNULL(1);
 
 
 /*
@@ -327,9 +329,22 @@ NsInitLog(void)
  *
  *----------------------------------------------------------------------
  */
+static const char *
+ObjvTableGetString(Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+{
+    const char *result = NULL;
+
+    for (int i=0; tablePtr[i].key != NULL; i++) {
+        if (tablePtr[i].value == defaultValue) {
+            result = tablePtr[i].key;
+            break;
+        }
+    }
+    return result;
+}
 
 static int
-ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
+ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultValue, int *idxPtr)
 {
     size_t       len;
     int          result;
@@ -341,7 +356,7 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
     NS_NONNULL_ASSERT(tablePtr != NULL);
     NS_NONNULL_ASSERT(idxPtr != NULL);
 
-    valueString = Ns_ConfigString(path, param, NS_EMPTY_STRING);
+    valueString = Ns_ConfigString(path, param, ObjvTableGetString(tablePtr, defaultValue));
     assert(valueString != NULL);
 
     len = strlen(valueString);
@@ -369,6 +384,7 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
             Tcl_DStringFree(dsPtr);
         }
         Tcl_DecrRefCount(objPtr);
+        //Ns_SetUpdateSz(sectionPtr->set, key, TCL_INDEX_NONE, strBuffer, length);
 
     } else {
         result = TCL_ERROR;
@@ -443,11 +459,11 @@ NsConfigLog(void)
     if ((flags & LOG_COLORIZE) != 0u) {
         int result, idx;
 
-        result = ObjvTableLookup(section, "logprefixcolor", colors, &idx);
+        result = ObjvTableLookup(section, "logprefixcolor", colors, prefixColor, &idx);
         if (likely(result == TCL_OK)) {
             prefixColor = (LogColor)idx;
         }
-        result = ObjvTableLookup(section, "logprefixintensity", intensities, &idx);
+        result = ObjvTableLookup(section, "logprefixintensity", intensities, prefixIntensity, &idx);
         if (likely(result == TCL_OK)) {
             prefixIntensity = (LogColorIntensity)idx;
         }
@@ -455,8 +471,8 @@ NsConfigLog(void)
         /*
          * Just refer to these values to mark these as used.
          */
-        (void) Ns_ConfigString(section, "logprefixcolor", NS_EMPTY_STRING);
-        (void) Ns_ConfigString(section, "logprefixintensity", NS_EMPTY_STRING);
+        (void) Ns_ConfigString(section, "logprefixcolor", ObjvTableGetString(colors, prefixColor));
+        (void) Ns_ConfigString(section, "logprefixintensity", ObjvTableGetString(intensities, prefixIntensity));
     }
 
     maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);
