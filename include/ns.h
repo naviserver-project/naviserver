@@ -1254,6 +1254,11 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
                        Ns_Time *timePtr)
     NS_GNUC_NONNULL(1,2,3,8);
 
+NS_EXTERN int
+Ns_ConfigGetEnumFromObjvTable(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultEnumValue, int *idxPtr)
+    NS_GNUC_NONNULL(1,2,3,5);
+
+
 /*
  * conn.c:
  */
@@ -1989,6 +1994,7 @@ NS_EXTERN Tcl_SetFromAnyProc Ns_TclSetFromAnyError;
 /*
  * tclobjv.c
  */
+#define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof((arr)[0])))
 
 NS_EXTERN Ns_ReturnCode
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
@@ -2040,7 +2046,9 @@ NS_EXTERN char *
 Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
     NS_GNUC_NONNULL(1,2);
 
-#define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof((arr)[0])))
+NS_EXTERN const char *
+Ns_ObjvTableGetString(Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+    NS_GNUC_NONNULL(1);
 
 /*
  * tclthread.c:

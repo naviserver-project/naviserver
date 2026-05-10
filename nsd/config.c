@@ -2165,6 +2165,84 @@ ToBool(const char *value, bool *valuePtr)
 }
 
 /*
+ * Ns_ConfigGetEnumFromObjvTable --
+ *
+ *      Look up a configuration parameter and map its string value to
+ *      an index defined by the provided Ns_ObjvTable. The function reads
+ *      the parameter from the configuration section identified by "section"
+ *      and "param", using the string corresponding to "defaultValue" as
+ *      fallback when the parameter is not defined.
+ *
+ *      The "defaultValue" argument must either be present in "tablePtr" or
+ *      the configuration parameter must be defined. Otherwise, no default
+ *      string is available and the lookup fails.
+ *
+ *      The retrieved string is validated against the keys in the
+ *      Ns_ObjvTable using Ns_ObjvIndex(). On success, the corresponding
+ *      index is stored in *idxPtr.
+ *
+ * Returns:
+ *      TCL_OK if a valid value was found and successfully mapped to an
+ *      index, TCL_ERROR otherwise (e.g., empty value or invalid entry).
+ *
+ * Side Effects:
+ *      On invalid values, a warning is logged listing the allowed keys.
+ *      The value pointed to by idxPtr is updated on success.
+ */
+int
+Ns_ConfigGetEnumFromObjvTable(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultEnumValue, int *idxPtr)
+{
+    int          result;
+    TCL_SIZE_T   pos = 1;
+    const char  *valueString;
+
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(param != NULL);
+    NS_NONNULL_ASSERT(tablePtr != NULL);
+    NS_NONNULL_ASSERT(idxPtr != NULL);
+
+    valueString = Ns_ConfigString(section, param, Ns_ObjvTableGetString(tablePtr, defaultEnumValue));
+    if (valueString == NULL) {
+        result = TCL_ERROR;
+    } else {
+        size_t len = strlen(valueString);
+
+        if (len > 0u) {
+            Ns_ObjvSpec  spec;
+            Tcl_Obj     *objPtr = Tcl_NewStringObj(valueString, (TCL_SIZE_T)len);
+
+            spec.arg  = tablePtr;
+            spec.dest = idxPtr;
+
+            Tcl_IncrRefCount(objPtr);
+            result = Ns_ObjvIndex(&spec, NULL, &pos, &objPtr);
+
+            if (unlikely(result != TCL_OK)) {
+                Tcl_DString ds, *dsPtr = &ds;
+
+                Tcl_DStringInit(dsPtr);
+                while (tablePtr->key != NULL) {
+                    Tcl_DStringAppend(dsPtr, tablePtr->key, TCL_INDEX_NONE);
+                    Tcl_DStringAppend(dsPtr, " ", 1);
+                    tablePtr++;
+                }
+                Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
+                Ns_Log(Warning, "section '%s': ignoring invalid value '%s' for"
+                       " parameter '%s'; possible values are: %s",
+                       section, valueString, param, dsPtr->string);
+                Tcl_DStringFree(dsPtr);
+            }
+            Tcl_DecrRefCount(objPtr);
+
+        } else {
+            result = TCL_ERROR;
+        }
+    }
+
+    return result;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

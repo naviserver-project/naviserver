@@ -142,13 +142,6 @@ static Tcl_Obj *LogStats(void);
 static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity)
     NS_GNUC_NONNULL(1);
 
-static int ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultValue, int *idxPtr)
-    NS_GNUC_NONNULL(1,2,3,5);
-
-static const char *ObjvTableGetString(Ns_ObjvTable *tablePtr, unsigned int defaultValue)
-    NS_GNUC_NONNULL(1);
-
-
 /*
  * Static variables defined in this file
  */
@@ -312,88 +305,6 @@ NsInitLog(void)
 }
 
 
-
-/*
- *----------------------------------------------------------------------
- *
- * ObjvTableLookup --
- *
- *      Lookup a value from an Ns_ObjvTable and return its associated
- *      value in the last parameter, if the lookup was successful.
- *
- * Results:
- *      Tcl return code.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static const char *
-ObjvTableGetString(Ns_ObjvTable *tablePtr, unsigned int defaultValue)
-{
-    const char *result = NULL;
-
-    for (int i=0; tablePtr[i].key != NULL; i++) {
-        if (tablePtr[i].value == defaultValue) {
-            result = tablePtr[i].key;
-            break;
-        }
-    }
-    return result;
-}
-
-static int
-ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultValue, int *idxPtr)
-{
-    size_t       len;
-    int          result;
-    TCL_SIZE_T   pos = 1;
-    const char  *valueString;
-
-    NS_NONNULL_ASSERT(path != NULL);
-    NS_NONNULL_ASSERT(param != NULL);
-    NS_NONNULL_ASSERT(tablePtr != NULL);
-    NS_NONNULL_ASSERT(idxPtr != NULL);
-
-    valueString = Ns_ConfigString(path, param, ObjvTableGetString(tablePtr, defaultValue));
-    assert(valueString != NULL);
-
-    len = strlen(valueString);
-    if (len > 0u) {
-        Ns_ObjvSpec  spec;
-        Tcl_Obj     *objPtr = Tcl_NewStringObj(valueString, (TCL_SIZE_T)len);
-
-        spec.arg  = tablePtr;
-        spec.dest = idxPtr;
-        result = Ns_ObjvIndex(&spec, NULL, &pos, &objPtr);
-
-        if (unlikely(result != TCL_OK)) {
-            Tcl_DString ds, *dsPtr = &ds;
-
-            Tcl_DStringInit(dsPtr);
-            while (tablePtr->key != NULL) {
-                Tcl_DStringAppend(dsPtr, tablePtr->key, TCL_INDEX_NONE);
-                Tcl_DStringAppend(dsPtr, " ", 1);
-                tablePtr++;
-            }
-            Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
-            Ns_Log(Warning, "ignoring invalid value '%s' for parameter '%s'; "
-                   "possible values are: %s",
-                   valueString, param, dsPtr->string);
-            Tcl_DStringFree(dsPtr);
-        }
-        Tcl_DecrRefCount(objPtr);
-        //Ns_SetUpdateSz(sectionPtr->set, key, TCL_INDEX_NONE, strBuffer, length);
-
-    } else {
-        result = TCL_ERROR;
-    }
-
-    return result;
-}
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -459,11 +370,11 @@ NsConfigLog(void)
     if ((flags & LOG_COLORIZE) != 0u) {
         int result, idx;
 
-        result = ObjvTableLookup(section, "logprefixcolor", colors, prefixColor, &idx);
+        result = Ns_ConfigGetEnumFromObjvTable(section, "logprefixcolor", colors, prefixColor, &idx);
         if (likely(result == TCL_OK)) {
             prefixColor = (LogColor)idx;
         }
-        result = ObjvTableLookup(section, "logprefixintensity", intensities, prefixIntensity, &idx);
+        result = Ns_ConfigGetEnumFromObjvTable(section, "logprefixintensity", intensities, prefixIntensity, &idx);
         if (likely(result == TCL_OK)) {
             prefixIntensity = (LogColorIntensity)idx;
         }
@@ -471,8 +382,8 @@ NsConfigLog(void)
         /*
          * Just refer to these values to mark these as used.
          */
-        (void) Ns_ConfigString(section, "logprefixcolor", ObjvTableGetString(colors, prefixColor));
-        (void) Ns_ConfigString(section, "logprefixintensity", ObjvTableGetString(intensities, prefixIntensity));
+        (void) Ns_ConfigString(section, "logprefixcolor", Ns_ObjvTableGetString(colors, prefixColor));
+        (void) Ns_ConfigString(section, "logprefixintensity", Ns_ObjvTableGetString(intensities, prefixIntensity));
     }
 
     maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);

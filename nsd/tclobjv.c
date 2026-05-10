@@ -2734,6 +2734,38 @@ NsEncodedObjScratchSize(Ns_BinaryEncoding encoding, size_t octetLength)
     return 0;
 }
 
+
+/*
+ * Ns_ObjvTableGetString --
+ *
+ *      Return the key string associated with the specified value from
+ *      an Ns_ObjvTable. The function performs a linear search over the
+ *      table entries and returns the first key whose value matches the
+ *      provided argument.
+ *
+ * Returns:
+ *
+ *      Pointer to the key string corresponding to the given value, or
+ *      NULL if no matching entry is found.
+ *
+ * Side Effects:
+ *
+ *      None.
+ */
+const char *
+Ns_ObjvTableGetString(Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+{
+    const char *result = NULL;
+
+    for (int i=0; tablePtr[i].key != NULL; i++) {
+        if (tablePtr[i].value == defaultValue) {
+            result = tablePtr[i].key;
+            break;
+        }
+    }
+    return result;
+}
+
 /*
  * Local Variables:
  * mode: c
