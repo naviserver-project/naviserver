@@ -370,11 +370,11 @@ NsConfigLog(void)
     if ((flags & LOG_COLORIZE) != 0u) {
         int result, idx;
 
-        result = Ns_ConfigGetEnumFromObjvTable(section, "logprefixcolor", colors, prefixColor, &idx);
+        result = Ns_ConfigGetEnum(section, "logprefixcolor", colors, prefixColor, &idx);
         if (likely(result == TCL_OK)) {
             prefixColor = (LogColor)idx;
         }
-        result = Ns_ConfigGetEnumFromObjvTable(section, "logprefixintensity", intensities, prefixIntensity, &idx);
+        result = Ns_ConfigGetEnum(section, "logprefixintensity", intensities, prefixIntensity, &idx);
         if (likely(result == TCL_OK)) {
             prefixIntensity = (LogColorIntensity)idx;
         }

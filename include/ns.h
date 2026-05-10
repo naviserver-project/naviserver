@@ -1255,7 +1255,7 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
     NS_GNUC_NONNULL(1,2,3,8);
 
 NS_EXTERN int
-Ns_ConfigGetEnumFromObjvTable(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultEnumValue, int *idxPtr)
+Ns_ConfigGetEnum(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultEnumValue, int *idxPtr)
     NS_GNUC_NONNULL(1,2,3,5);
 
 

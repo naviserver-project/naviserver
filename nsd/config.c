@@ -2165,7 +2165,7 @@ ToBool(const char *value, bool *valuePtr)
 }
 
 /*
- * Ns_ConfigGetEnumFromObjvTable --
+ * Ns_ConfigGetEnum --
  *
  *      Look up a configuration parameter and map its string value to
  *      an index defined by the provided Ns_ObjvTable. The function reads
@@ -2190,7 +2190,7 @@ ToBool(const char *value, bool *valuePtr)
  *      The value pointed to by idxPtr is updated on success.
  */
 int
-Ns_ConfigGetEnumFromObjvTable(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultEnumValue, int *idxPtr)
+Ns_ConfigGetEnum(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultEnumValue, int *idxPtr)
 {
     int          result;
     TCL_SIZE_T   pos = 1;
