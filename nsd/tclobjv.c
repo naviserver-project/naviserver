@@ -65,9 +65,6 @@ static void AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_
 static char *GetOptEnumeration(Tcl_DString *dsPtr, const Ns_SubCmdSpec *tablePtr)
     NS_GNUC_NONNULL(1,2);
 
-static char *ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
-    NS_GNUC_NONNULL(1, 2);
-
 static Ns_ReturnCode ObjvPreprocess(Ns_ObjvSpec **optSpecPtr, Ns_ObjvSpec *argSpec,
                                     Tcl_Interp *interp,
                                     Tcl_Obj *const* parseObjv, TCL_SIZE_T parseObjc, TCL_SIZE_T parseOffset,
@@ -1292,7 +1289,7 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
 
             Tcl_DStringInit(&errDs);
             Ns_DStringPrintf(&errDs, "bad option \"%s\": must be ", Tcl_GetString(objv[0]));
-            ObjvTablePrintSentence(&errDs, tablePtr);
+            Ns_ObjvTablePrintSentence(&errDs, tablePtr);
             Tcl_DStringResult(interp, &errDs);
         }
     } else {
@@ -2119,7 +2116,7 @@ char *Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
 /*
  *----------------------------------------------------------------------
  *
- * ObjvTablePrintSentence --
+ * Ns_ObjvTablePrintSentence --
  *
  *      Append enumeration strings from Ns_ObjvTable to Tcl_DString
  *      in style of an sentence (i.e., with comma, and "or")
@@ -2132,8 +2129,8 @@ char *Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
  *
  *----------------------------------------------------------------------
  */
-static char *
-ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
+char *
+Ns_ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
 {
     size_t       n = 0u;
     bool         first = NS_TRUE;

@@ -367,24 +367,8 @@ NsConfigLog(void)
     if (Ns_ConfigBool(section, "logcolorize", NS_FALSE) == NS_TRUE) {
         flags |= LOG_COLORIZE;
     }
-    if ((flags & LOG_COLORIZE) != 0u) {
-        int result, idx;
-
-        result = Ns_ConfigGetEnum(section, "logprefixcolor", colors, prefixColor, &idx);
-        if (likely(result == TCL_OK)) {
-            prefixColor = (LogColor)idx;
-        }
-        result = Ns_ConfigGetEnum(section, "logprefixintensity", intensities, prefixIntensity, &idx);
-        if (likely(result == TCL_OK)) {
-            prefixIntensity = (LogColorIntensity)idx;
-        }
-    } else {
-        /*
-         * Just refer to these values to mark these as used.
-         */
-        (void) Ns_ConfigString(section, "logprefixcolor", Ns_ObjvTableGetString(colors, prefixColor));
-        (void) Ns_ConfigString(section, "logprefixintensity", Ns_ObjvTableGetString(intensities, prefixIntensity));
-    }
+    prefixColor     = Ns_ConfigGetEnum(section, "logprefixcolor", colors, prefixColor);
+    prefixIntensity = Ns_ConfigGetEnum(section, "logprefixintensity", intensities, prefixIntensity);
 
     maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);
 

@@ -1254,10 +1254,9 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
                        Ns_Time *timePtr)
     NS_GNUC_NONNULL(1,2,3,8);
 
-NS_EXTERN int
-Ns_ConfigGetEnum(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultEnumValue, int *idxPtr)
-    NS_GNUC_NONNULL(1,2,3,5);
-
+NS_EXTERN unsigned int
+Ns_ConfigGetEnum(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+    NS_GNUC_NONNULL(1,2,3);
 
 /*
  * conn.c:
@@ -2044,6 +2043,10 @@ Ns_SubsubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData,
 
 NS_EXTERN char *
 Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
+    NS_GNUC_NONNULL(1,2);
+
+NS_EXTERN char *
+Ns_ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN const char *
