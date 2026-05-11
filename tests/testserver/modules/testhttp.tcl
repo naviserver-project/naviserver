@@ -235,13 +235,13 @@ namespace eval ::nstest {
         #
         # Return the requested parts of the response.
         #
-ns_log notice "XXXXX http-09 GETHEADERS"
+        #ns_log notice "http-09 GETHEADERS"
         if {[info exists getheaders]} {
             foreach h $getheaders {
                 lappend response [ns_set iget $hdrs $h]
             }
         }
-ns_log notice "XXXXX http-09 GETHEADERS DONE"
+        #ns_log notice "http-09 GETHEADERS DONE"
         if {[info exists getmultiheaders]} {
             foreach h $getmultiheaders {
                 for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
