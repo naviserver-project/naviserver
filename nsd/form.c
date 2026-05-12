@@ -387,6 +387,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     ) {
                     fallbackCharsetCompatibilityObj = NsAtomObj(NS_ATOM_iso8859_DASH_1);
                     fallbackCharsetObj = fallbackCharsetCompatibilityObj;
+                    Tcl_IncrRefCount(fallbackCharsetCompatibilityObj);
                 }
                 status = ParseQueryWithFallback(interp, connPtr->poolPtr->servPtr,
                                                 content, connPtr->query, encoding,
