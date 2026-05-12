@@ -1313,6 +1313,7 @@ NsConfigMimeTypes(void)
     const Ns_Set *set;
     size_t        i;
     static bool   initialized = NS_FALSE;
+    const char   *section = "ns/mimetypes";
 
     if (!initialized) {
         initialized = NS_TRUE;
@@ -1332,21 +1333,20 @@ NsConfigMimeTypes(void)
         }
     }
 
-    set = Ns_ConfigGetSection("ns/mimetypes");
+    /*
+     * Always initialize the global values. Also provide the default values to
+     * the config database.
+     */
+    defaultType = Ns_ConfigString(section, "default", TYPE_DEFAULT);
+    noextType   = Ns_ConfigString(section, "noextension", defaultType);
+
+    /*
+     * Add the keys (extensions with a leading dot) to the hash table.
+     */
+    set = Ns_ConfigGetSection(section);
     if (likely(set != NULL)) {
-
-        defaultType = Ns_SetIGet(set, "default");
-        if (defaultType == NULL) {
-            defaultType = TYPE_DEFAULT;
-        }
-
-        noextType = Ns_SetIGet(set, "noextension");
-        if (noextType == NULL) {
-            noextType = defaultType;
-        }
-
         for (i = 0u; i < Ns_SetSize(set); i++) {
-            AddType(Ns_SetKey(set, i), Ns_SetValue(set, i));
+            AddType( Ns_SetKey(set, i), Ns_SetValue(set, i));
         }
     }
 }
