@@ -135,7 +135,21 @@ Note: "boolean" in NaviServer configuration means value can be one of "true", "f
 [list_end]
 
 [section ALTERNATIVES]
-See the excellent Tcl Standard Library smtp and MIME packages.
+
+Possible alternatives are:
+
+[list_begin itemized]
+[item] 
+  The NaviServer [uri https://github.com/naviserver-project/nssmtpd "nssmtpd module"],
+  which provides SMTP sending/relaying and receiving support, as well as
+  detailed logging and statistics. Sending mail is performed via
+  [cmd "ns_smtpd send"]. This is the preferred mail interface in OpenACS.
+
+[item]
+  The Tcl Standard Library SMTP and MIME packages.
+
+[list_end]
+
 
 [section EXAMPLES]
 [emph "Log current configuration to server log:"]
