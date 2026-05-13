@@ -1973,9 +1973,30 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
  TCLLIBDIR /usr/local/ns/tcl/
 [example_end]
 
- The root directory ([const home]) is determined at compile time, but
- all of these paths can be modified via the configuration file. For
- instance, the default settings are defined as:
+ [para]
+ The root directory of the installation is configured through the
+ [const home] parameter in the [const ns/parameters] section.  This
+ directory is used as the base directory for other relative path names
+ in the global parameter section, such as [const bindir], [const logdir],
+ and [const tcllibrary].
+
+ [para]
+ When [const home] is not specified explicitly, NaviServer tries to
+ derive a suitable value during startup.  In a regular installation, it
+ uses the location of the [cmd nsd] executable.  If [cmd nsd] is found
+ in a [file bin] subdirectory, the parent directory is used as
+ [const home]; otherwise the directory containing the executable is used.
+ When running in configuration-check mode, NaviServer also considers the
+ [const NAVISERVER] environment variable and finally falls back to the
+ compiled installation prefix.
+
+ [para]
+ For custom installations, development trees, test setups, or deployments
+ where [cmd nsd] is not located below the intended installation root, it
+ is recommended to set [const home] explicitly.
+
+ [para]
+ The default layout can be expressed as:
 
 [example_begin]
  ns_section ns/parameters {
@@ -1987,9 +2008,12 @@ server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuratio
 [example_end]
 
  For all paths except [const home], you may specify either absolute or
- relative names. Absolute paths are used as given, whereas relative
- paths in the [const ns/parameters] section are resolved relative to
- the value of [const home].
+ relative names.  Absolute paths are used as given.  Relative paths in
+ the [const ns/parameters] section are resolved relative to the value of
+ [const home].  For example, with [const home] set to
+ [file /usr/local/ns], the value [const logs] for [const logdir] resolves
+ to [file /usr/local/ns/logs], and the value [const bin] for
+ [const bindir] resolves to [file /usr/local/ns/bin].
 
 
 [subsection {Per-Server Directory Structure}]
