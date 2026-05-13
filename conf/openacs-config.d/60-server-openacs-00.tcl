@@ -72,7 +72,7 @@ ns_section ns/server/$server {
     # HTTP response compression
     #------------------------------------------------------------------
     # Enable gzip compression for eligible responses. Individual
-    # handlers can still control this via ns_conn compress.
+    # requests can still control this via "ns_conn compress".
     ns_param compressenable      on        ;# default: off
 
     # ns_param compresslevel     4         ;# default: 4; 1--9; higher = more CPU / better compression
