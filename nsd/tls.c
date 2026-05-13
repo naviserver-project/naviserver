@@ -107,7 +107,7 @@ static Ns_ReturnCode NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_
 static Ns_ReturnCode NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool details)
     NS_GNUC_NONNULL(2,3);
 
-static Ns_TLSClientCertMode NsTLSClientCertModeParse(const char *section)
+static Ns_TLSClientCertMode NsTLSClientCertModeConfig(const char *section)
     NS_GNUC_NONNULL(1);
 
 static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int x509err, int currentDepth, NsServer *servPtr)
@@ -2492,68 +2492,54 @@ DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long
 /*
  *----------------------------------------------------------------------
  *
- * NsTLSClientCertModeParse --
+ * NsTLSClientCertModeConfig --
  *
- *      Parse the configuration parameter "clientcertmode" from the
- *      specified configuration section and map it to the internal
- *      Ns_TLSClientCertMode enumeration.
- *
- *      Supported values are:
- *        - "none"    : do not request a client certificate
- *        - "request" : request a client certificate but do not require it
- *        - "require" : request and require a valid client certificate
- *
- *      If the parameter is not specified, the legacy parameter
- *      "verify" is evaluated for backward compatibility:
- *        - verify = true  -> NS_TLS_CLIENT_CERT_REQUIRE
- *        - verify = false -> NS_TLS_CLIENT_CERT_NONE
- *
- *      If both "clientcertmode" and "verify" are specified, the
- *      explicit "clientcertmode" value takes precedence.
- *
- *      Invalid values for "clientcertmode" are ignored with a warning,
- *      and the mode falls back to NS_TLS_CLIENT_CERT_NONE.
+ *      Read the client certificate mode from the given configuration
+ *      section.  Prefer the explicit "clientcertmode" parameter, but
+ *      retain backward compatibility with the legacy boolean "verify"
+ *      parameter when "clientcertmode" is not specified.
  *
  * Results:
- *      Returns the parsed Ns_TLSClientCertMode value.
+ *      Configured client certificate mode.
  *
  * Side effects:
- *      Writes warnings to the log when deprecated or invalid
- *      configuration values are encountered.
+ *      Logs a warning when the legacy "verify" parameter is used.
  *
  *----------------------------------------------------------------------
  */
-static Ns_TLSClientCertMode
-NsTLSClientCertModeParse(const char *section)
-{
-    Ns_TLSClientCertMode result;
-    const char          *value =  Ns_ConfigGetValue(section, "clientcertmode");
 
-    if (value == NULL) {
-        result = NS_TLS_CLIENT_CERT_NONE;
-        /*
-         * legacy mode.
-         */
-        if (Ns_ConfigBool(section, "verify", NS_FALSE)) {
-            Ns_Log(Warning, "tls: parameter 'verify' is deprecated; use 'clientcertmode require'");
-            result = NS_TLS_CLIENT_CERT_REQUIRE;
-        }
-    } else if (STRIEQ(value, "none")) {
-        result = NS_TLS_CLIENT_CERT_NONE;
-    } else if (STRIEQ(value, "request")) {
-        result = NS_TLS_CLIENT_CERT_REQUEST;
-    } else if (STRIEQ(value, "require")) {
-        result = NS_TLS_CLIENT_CERT_REQUIRE;
+static Ns_TLSClientCertMode
+NsTLSClientCertModeConfig(const char *section)
+{
+    Ns_TLSClientCertMode mode;
+    const char          *value;
+    static Ns_ObjvTable clientcertModes[] = {
+        {"none",    NS_TLS_CLIENT_CERT_NONE},
+        {"request", NS_TLS_CLIENT_CERT_REQUEST},
+        {"require", NS_TLS_CLIENT_CERT_REQUIRE},
+        {NULL,      0u}
+    };
+
+    NS_NONNULL_ASSERT(section != NULL);
+
+    value = Ns_ConfigGetValue(section, "clientcertmode");
+    if (value != NULL) {
+        unsigned int idx = Ns_ConfigGetEnum(section, "clientcertmode",
+                                            clientcertModes,
+                                            (unsigned int)NS_TLS_CLIENT_CERT_NONE);
+        mode = (Ns_TLSClientCertMode)idx;
+
+    } else if (Ns_ConfigBool(section, "verify", NS_FALSE)) {
+        Ns_Log(Warning,
+               "tls: parameter 'verify' is deprecated; use 'clientcertmode require'");
+        mode = NS_TLS_CLIENT_CERT_REQUIRE;
+
     } else {
-        Ns_Log(Warning, "tls: configure parameter 'clientcertmode': ignore invalid parameter value '%s'."
-               " Fallback to 'none'",
-               value);
-        result = NS_TLS_CLIENT_CERT_NONE;
+        mode = NS_TLS_CLIENT_CERT_NONE;
     }
 
-    return result;
+    return mode;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2578,7 +2564,7 @@ NsTLSConfigNew(const char *section)
     static char sni_info_tag[] = "SniCtx";
 
     dc = ns_calloc(1, sizeof(NsTLSConfig));
-    dc->clientCertMode = NsTLSClientCertModeParse(section);
+    dc->clientCertMode = NsTLSClientCertModeConfig(section);
     dc->tlsKeylogFile  = Ns_ConfigGetValue(section, "tlskeylogfile");
     dc->tlsKeyScript   = Ns_ConfigGetValue(section, "tlskeyscript");
     if (dc->tlsKeyScript != NULL) {
@@ -2827,25 +2813,41 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                      NS_TLS_SSL_CTX **ctxPtr)
 {
     int         result;
-    const char *cert;
+    const char *cert, *key;
 
     cert = Ns_ConfigGetValue(section, "certificate");
+    if (cert != NULL) {
+        Tcl_DString certDir;
+
+        Tcl_DStringInit(&certDir);
+        Tcl_DStringAppend(&certDir, nsconf.home, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&certDir, "/certificates", 13);
+
+        cert = Ns_ConfigFilename(section, "certificate", 11,
+                                 certDir.string, "", NS_TRUE, NS_TRUE);
+
+        key  = Ns_ConfigGetValue(section, "key");
+        if (key != NULL && *key == '\0') {
+            key = NULL;
+        }
+        if (key != NULL) {
+            key = Ns_ConfigFilename(section, "key", 3,
+                                     certDir.string, "", NS_TRUE, NS_TRUE);
+        }
+        Tcl_DStringFree(&certDir);
+    }
+
     Ns_Log(Notice, "load certificate '%s' specified in section %s", cert, section);
 
     if (cert == NULL) {
         Ns_Log(Error, "tls: certificate parameter must be specified in the configuration file under %s", section);
         result = TCL_ERROR;
     } else {
-        const char  *key, *ciphers, *ciphersuites, *protocols;
+        const char  *ciphers, *ciphersuites, *protocols;
         const char  *clientcafile = NULL, *clientcapath = NULL, *configValue;
         NsTLSConfig *dc = app_data;
         Ns_DList     dl, *dlPtr = &dl;
         Ns_TLSClientCertMode clientCertMode;
-
-        key  = Ns_ConfigGetValue(section, "key");
-        if (key != NULL && *key == '\0') {
-            key = NULL;
-        }
 
         /*
          * Keep configuration values in an Ns_DList to protect against
@@ -2878,7 +2880,8 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
             /*
              * The nsssl module was not initialized, probably test mode.
              */
-            clientCertMode = NsTLSClientCertModeParse(section);
+            clientCertMode = NsTLSClientCertModeConfig(section);
+
         } else {
             clientCertMode = dc->clientCertMode;
         }
