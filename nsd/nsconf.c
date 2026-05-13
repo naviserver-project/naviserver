@@ -110,11 +110,11 @@ NsConfUpdate(void)
     NsConfigTclHttp();
 
     /*
-     * Set a default stacksize, if specified. Use OS default otherwise.
+     * Set a default stacksize for threads, if specified. Use OS default otherwise.
      */
-
     size = (size_t)Ns_ConfigMemUnitRange(NS_CONFIG_THREADS, "stacksize", NULL, 0, 0, INT_MAX);
     if (size == 0u) {
+        Ns_LogDeprecatedParameter(section, "stacksize", NS_CONFIG_THREADS, "stacksize", NULL);
         size = (size_t)Ns_ConfigMemUnitRange(section, "stacksize", NULL, 0, 0, INT_MAX);
     }
     if (size > 0u) {
