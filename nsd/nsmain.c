@@ -701,7 +701,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         ns_strcopy(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "formfallbackcharset", NULL));
     if (nsconf.formFallbackCharset != NULL
         && *nsconf.formFallbackCharset == '\0') {
-        nsconf.formFallbackCharset  = NULL;
+        nsconf.formFallbackCharset = NULL;
     }
 
     /*
@@ -838,15 +838,16 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     {
         /*
-         * Allow values like "none", or abbreviated to "no"), but be open for
-         * future enhancements like e.g. "cluster".
+         * Use enum instead of boolean to be open for future cachingmodes like
+         * e.g. "cluster".
          */
-        const char *valueString = Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "cachingmode", "full");
-        if (strcmp(valueString, "full") == 0) {
-            nsconf.nocache = NS_FALSE;
-        } else {
-            nsconf.nocache = (strncmp(valueString, "no", 2) == 0);
-        }
+        static Ns_ObjvTable cachingmodes[] = {
+            {"none",     0},
+            {"full",     1},
+            {NULL,       0u}
+        };
+        unsigned int mode = Ns_ConfigGetEnum(NS_GLOBAL_CONFIG_PARAMETERS, "cachingmode", cachingmodes, 1);
+        nsconf.nocache = (mode == 0);
     }
 
     /*
