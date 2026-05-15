@@ -13,12 +13,15 @@ logging, database drivers, module loading, and server-specific
 parameters.
 
 [para]
-
 A configuration may be supplied as a single Tcl file or as a directory
 containing multiple configuration fragments, which are evaluated in
 lexical order.  In both cases, the resulting configuration can define one or
 more server instances, which may run concurrently or be selected via
 command line arguments (see [term admin-maintenance]).
+
+[para]
+For a reference of available configuration sections and parameters, see
+[uri admin-config-params.html].
 
 [section {Configuration Files}]
 
@@ -2244,6 +2247,6 @@ this log file:
         tlskeyScript systemd \
         TLS HTTPS OCSP SNI initcmds letsencrypt redirect CApath CAfile \
         ADP templates reverseproxymode stealthMode noticeDetail]
-[see_also tcl-libraries tcl-overview]
+[see_also admin-config-params tcl-libraries tcl-overview]
 [manpage_end]
 
