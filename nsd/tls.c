@@ -2837,8 +2837,6 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Tcl_DStringFree(&certDir);
     }
 
-    Ns_Log(Notice, "load certificate '%s' specified in section %s", cert, section);
-
     if (cert == NULL) {
         Ns_Log(Error, "tls: certificate parameter must be specified in the configuration file under %s", section);
         result = TCL_ERROR;
@@ -2848,6 +2846,8 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         NsTLSConfig *dc = app_data;
         Ns_DList     dl, *dlPtr = &dl;
         Ns_TLSClientCertMode clientCertMode;
+
+        Ns_Log(Notice, "load certificate '%s' specified in section %s", cert, section);
 
         /*
          * Keep configuration values in an Ns_DList to protect against
