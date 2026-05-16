@@ -428,21 +428,13 @@ ns_section ns/parameters {
     # ns_param dnscachetimeout 60m         ;# default: 60m (1h); time to keep entries in cache
     # ns_param dnscachemaxsize 500KB       ;# max in-memory size of DNS cache; default: 500KB
 
-    #------------------------------------------------------------------
-    # Legacy reverse proxy indicator
-    #------------------------------------------------------------------
-
-    # Running behind a reverse proxy? This setting is used by OpenACS
-    # as well. It is considered legacy and kept for backward
-    # compatibility; prefer configuring the section
-    # "ns/parameters/reverseproxymode" instead (see below).
     ns_param reverseproxymode $reverseproxymode
 }
 
 #
 # When running behind a reverse proxy, use the following parameters
 #
-ns_section ns/parameters/reverseproxymode {
+ns_section ns/reverseproxymode {
     ns_param enabled        $reverseproxymode
     #
     # When defining "trustedservers", the x-forwarded-for header field
@@ -1524,14 +1516,6 @@ ns_section ns/server/$server/module/nslog {
     #------------------------------------------------------------------
     # ns_param formattedtime   true    ;# default: true; formatted timestamps vs unix time
     # ns_param logcombined     true    ;# default: true; NSCA Combined format (referer, user-agent)
-
-    #------------------------------------------------------------------
-    # Reverse proxy handling.
-    #------------------------------------------------------------------
-    # When running behind a reverse proxy, enable detection of
-    # X-Forwarded-For / proxy headers so that the client IP is logged
-    # correctly. Deprecated, replaced by "ns/parameters/reversproxymode"
-    # ns_param checkforproxy    $reverseproxymode  ;# default: false
 
     #------------------------------------------------------------------
     # Address masking (privacy / GDPR)

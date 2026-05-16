@@ -38,14 +38,6 @@ ns_section ns/server/$server/module/nslog {
     # ns_param logcombined     true    ;# default: true; NSCA Combined format (referer, user-agent)
 
     #------------------------------------------------------------------
-    # Reverse proxy handling.
-    #------------------------------------------------------------------
-    # When running behind a reverse proxy, enable detection of
-    # X-Forwarded-For / proxy headers so that the client IP is logged
-    # correctly. Deprecated, replaced by "ns/parameters/reversproxymode"
-    # ns_param checkforproxy    $reverseproxymode  ;# default: false
-
-    #------------------------------------------------------------------
     # Address masking (privacy / GDPR)
     #------------------------------------------------------------------
     # Mask IP addresses in the log file (similar to "anonip" anonymizer).

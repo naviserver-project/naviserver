@@ -185,7 +185,7 @@ ns_section ns/parameters {
 #
 # When running behind a reverse proxy, use the following parameters
 #
-ns_section ns/parameters/reverseproxymode {
+ns_section ns/reverseproxymode {
     #
     # Is the server running behind a reverse proxy server?
     #

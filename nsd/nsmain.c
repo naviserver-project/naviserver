@@ -39,6 +39,10 @@ typedef enum {
     exiting_state    /* == 3 */
 } runState;
 
+#define NS_REVERSE_PROXY_MODE_SECTION        "ns/reverseproxymode"
+#define NS_REVERSE_PROXY_MODE_SECTION_OLD    "ns/parameters/reverseproxymode"
+static const char *configServersSection = "ns/servers";
+
 /*
  * Local functions defined in this file.
  */
@@ -56,9 +60,6 @@ static const char *SetCwd(const char *path) NS_GNUC_NONNULL(1);
 extern void NsthreadsInit();
 extern void NsdInit();
 #endif
-
-static const char *configParametersReverseproxySection = "ns/parameters/reverseproxymode";
-static const char *configServersSection = "ns/servers";
 
 /*
  * Used by other files as well.
@@ -812,21 +813,52 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "rejectalreadyclosedconn", NS_TRUE);
     nsconf.sanitize_logfiles =
         Ns_ConfigIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "sanitizelogfiles", 2, 0, 3);
-    /*
-     * Old-style, backward compatible. Can be overridden by "ns/params/reverseproxy"
-     */
-    nsconf.reverseproxymode.enabled =
-        Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "reverseproxymode", NS_FALSE);
+
 
     /*
-     * New-style reverse proxy server configuration. Use old-style value as default.
+     * Old-style, backward compatible. Can be overridden by "ns/reverseproxymode"
+     */
+    nsconf.reverseproxymode.enabled = NS_FALSE;
+    if (Ns_ConfigParameterProvided(NS_GLOBAL_CONFIG_PARAMETERS, "reverseproxymode")) {
+        Ns_LogDeprecatedParameter(NS_GLOBAL_CONFIG_PARAMETERS, "reverseproxymode",
+                                  NS_REVERSE_PROXY_MODE_SECTION, "enabled", NULL);
+
+        nsconf.reverseproxymode.enabled =
+            Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "reverseproxymode",
+                          nsconf.reverseproxymode.enabled);
+    }
+
+    /*
+     * Compatibility section.  Do not warn yet; planned deprecation warning can be
+     * added for NaviServer 5.2.
      */
     nsconf.reverseproxymode.enabled =
-        Ns_ConfigBool(configParametersReverseproxySection, "enabled", nsconf.reverseproxymode.enabled);
+        Ns_ConfigBool(NS_REVERSE_PROXY_MODE_SECTION_OLD, "enabled",
+                             nsconf.reverseproxymode.enabled);
+
     nsconf.reverseproxymode.skipnonpublic =
-        Ns_ConfigBool(configParametersReverseproxySection, "skipnonpublic", NS_FALSE);
+        Ns_ConfigBool(NS_REVERSE_PROXY_MODE_SECTION_OLD, "skipnonpublic",
+                             NS_FALSE);
+
     nsconf.reverseproxymode.trustedservers =
-        Ns_ConfigGetValue(configParametersReverseproxySection, "trustedservers");
+        Ns_ConfigGetValue(NS_REVERSE_PROXY_MODE_SECTION_OLD, "trustedservers");
+
+
+    /*
+     * Canonical section.  Highest precedence.
+     */
+    nsconf.reverseproxymode.enabled =
+        Ns_ConfigBool(NS_REVERSE_PROXY_MODE_SECTION, "enabled",
+                             nsconf.reverseproxymode.enabled);
+
+    nsconf.reverseproxymode.skipnonpublic =
+        Ns_ConfigBool(NS_REVERSE_PROXY_MODE_SECTION, "skipnonpublic",
+                             nsconf.reverseproxymode.skipnonpublic);
+
+    nsconf.reverseproxymode.trustedservers =
+        Ns_ConfigString(NS_REVERSE_PROXY_MODE_SECTION, "trustedservers",
+                        nsconf.reverseproxymode.trustedservers);
+
 
     if (nsconf.reverseproxymode.trustedservers != NULL) {
         if (*nsconf.reverseproxymode.trustedservers == '\0') {
