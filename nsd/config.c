@@ -550,6 +550,41 @@ Ns_ConfigGetValue(const char *section, const char *key)
     return value;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigParameterProvided --
+ *
+ *      Check whether a configuration parameter was explicitly provided in
+ *      the named configuration section.
+ *
+ *      This function is intended for compatibility and fallback handling
+ *      where the code needs to distinguish between an omitted parameter and
+ *      a parameter that was explicitly configured.  It performs a direct
+ *      lookup in the configuration section and does not retrieve or convert
+ *      the parameter value.
+ *
+ * Results:
+ *      NS_TRUE if the section exists and contains the specified parameter,
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.  In particular, this function does not mark the parameter as
+ *      read and does not affect configuration access statistics such as
+ *      unread/defaulted tracking.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_ConfigParameterProvided(const char *section, const char *key)
+{
+    const Ns_Set *setPtr;
+
+    setPtr = Ns_ConfigGetSection2(section, NS_FALSE);
+    return setPtr != NULL && Ns_SetIFind(setPtr, key) >= 0;
+}
+
+
 
 /*
  *----------------------------------------------------------------------

@@ -1151,6 +1151,9 @@ Ns_InflateEnd(Ns_CompressStream *cStream)
 /*
  * config.c:
  */
+NS_EXTERN bool
+Ns_ConfigParameterProvided(const char *section, const char *key)
+     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN const char *
 Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
