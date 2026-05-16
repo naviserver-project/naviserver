@@ -1098,7 +1098,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Tcl_DString *dest)
                && ((host = Ns_SetIGet(headers, "host")) != NULL)
                && (*host != '\0')) {
         /*
-         * NaviServer "reverseproxymode" is enabled, and host header field is
+         * NaviServer's reverseproxymode is enabled, and host header field is
          * given. The field content is checked against the hash table of valid
          * host header fields. Do not append an extra port (must be included
          * in "host" if necessary).
