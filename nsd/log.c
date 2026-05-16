@@ -333,7 +333,7 @@ NsConfigLog(void)
     {
         bool rollonsignal = NS_TRUE;
 #ifdef NS_WITH_DEPRECATED_5_0
-        if (Ns_ConfigGetValue(section, "logroll") != NULL) {
+        if (Ns_ConfigParameterProvided(section, "logroll")) {
             Ns_LogDeprecatedParameter(section, "logroll", section, "logrollonsignal", NULL);
             rollonsignal = Ns_ConfigBool(section, "logroll", rollonsignal);
         }
@@ -373,7 +373,7 @@ NsConfigLog(void)
     maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "logmaxbackup", 10, 0, 999);
 
 #ifdef NS_WITH_DEPRECATED_5_0
-    if (Ns_ConfigGetValue(section, "serverlog") != NULL) {
+    if (Ns_ConfigParameterProvided(section, "serverlog")) {
         Ns_LogDeprecatedParameter(section, "serverlog", section, "systemlog", NULL);
         if (Ns_ConfigGetValue(section, "systemlog") == NULL) {
             /*

@@ -170,7 +170,7 @@ ConfigServerFastpath(const char *server)
         }
 
 #ifdef NS_WITH_DEPRECATED_5_0
-        if (Ns_ConfigGetValue(section, "serverdir") != NULL) {
+        if (Ns_ConfigParameterProvided(section, "serverdir")) {
             Ns_LogDeprecatedParameter(section, "serverdir",
                                       Ns_ConfigSectionPath(NULL, server, NULL, NS_SENTINEL), "serverdir",
                                       NULL);

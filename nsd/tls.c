@@ -2511,7 +2511,7 @@ DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long
 static Ns_TLSClientCertMode
 NsTLSClientCertModeConfig(const char *section)
 {
-    Ns_TLSClientCertMode mode;
+    Ns_TLSClientCertMode mode = NS_TLS_CLIENT_CERT_NONE;
     const char          *value;
     static Ns_ObjvTable clientcertModes[] = {
         {"none",    NS_TLS_CLIENT_CERT_NONE},
@@ -2529,13 +2529,11 @@ NsTLSClientCertModeConfig(const char *section)
                                             (unsigned int)NS_TLS_CLIENT_CERT_NONE);
         mode = (Ns_TLSClientCertMode)idx;
 
-    } else if (Ns_ConfigBool(section, "verify", NS_FALSE)) {
-        Ns_Log(Warning,
-               "tls: parameter 'verify' is deprecated; use 'clientcertmode require'");
-        mode = NS_TLS_CLIENT_CERT_REQUIRE;
-
-    } else {
-        mode = NS_TLS_CLIENT_CERT_NONE;
+    } else if (Ns_ConfigParameterProvided(section, "verify")) {
+        Ns_Log(Warning, "tls: parameter 'verify' is deprecated; use 'clientcertmode require'");
+        if (Ns_ConfigBool(section, "verify", NS_FALSE)) {
+            mode = NS_TLS_CLIENT_CERT_REQUIRE;
+        }
     }
 
     return mode;

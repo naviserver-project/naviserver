@@ -211,11 +211,13 @@ Ns_ModuleInit(const char *server, const char *module)
         logPtr->flags |= LOG_SUPPRESSQUERY;
     }
 #ifdef NS_WITH_DEPRECATED
-    if (Ns_ConfigBool(section, "checkforproxy", NS_FALSE)) {
+    if (Ns_ConfigParameterProvided(section, "checkforproxy")) {
         Ns_LogDeprecatedParameter(section, "checkforproxy",
                                   "ns/parameter", "reverseproxymode",
                                   NULL);
-        logPtr->flags |= LOG_CHECKFORPROXY;
+        if (Ns_ConfigBool(section, "checkforproxy", NS_FALSE)) {
+            logPtr->flags |= LOG_CHECKFORPROXY;
+        }
     }
 #endif
     logPtr->driverPattern = ns_strcopy(Ns_ConfigString(section, "driver", NULL));
