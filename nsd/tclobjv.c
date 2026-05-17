@@ -2750,7 +2750,7 @@ NsEncodedObjScratchSize(Ns_BinaryEncoding encoding, size_t octetLength)
  *      None.
  */
 const char *
-Ns_ObjvTableGetString(Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+Ns_ObjvTableGetString(const Ns_ObjvTable *tablePtr, unsigned int defaultValue)
 {
     const char *result = NULL;
 

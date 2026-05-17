@@ -1258,7 +1258,7 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
     NS_GNUC_NONNULL(1,2,3,8);
 
 NS_EXTERN unsigned int
-Ns_ConfigGetEnum(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+Ns_ConfigGetEnum(const char *section, const char *param, const Ns_ObjvTable *tablePtr, unsigned int defaultValue)
     NS_GNUC_NONNULL(1,2,3);
 
 /*
@@ -2053,7 +2053,7 @@ Ns_ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN const char *
-Ns_ObjvTableGetString(Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+Ns_ObjvTableGetString(const Ns_ObjvTable *tablePtr, unsigned int defaultValue)
     NS_GNUC_NONNULL(1);
 
 /*

@@ -2204,30 +2204,24 @@ ToBool(const char *value, bool *valuePtr)
  *
  * Ns_ConfigGetEnum --
  *
- *      Retrieve a configuration parameter and map its string value to
- *      the corresponding value defined in the provided Ns_ObjvTable.
- *      The function uses the key associated with "defaultValue" as the
- *      default configuration value when the parameter is not present.
+ *      Return the enum value configured for the specified parameter.
+ *      The parameter value is matched case-insensitively against the
+ *      provided table.  If the parameter is not configured, the supplied
+ *      default value is returned.  If the configured value is invalid, a
+ *      warning is logged and the default value is returned.
  *
- *      If the configured value matches an entry in the table, the
- *      associated table value is returned. Invalid values are ignored,
- *      a warning is logged listing the allowed values, and
- *      "defaultValue" is returned instead.
+ * Results:
+ *      The configured enum value, or the supplied default value when the
+ *      parameter is missing or invalid.
  *
- * Returns:
+ * Side effects:
+ *      Logs a warning when the configured value does not match one of the
+ *      values in the table.
  *
- *      The value associated with the configured key in the provided
- *      Ns_ObjvTable, or "defaultValue" if the parameter is missing or
- *      invalid.
- *
- * Side Effects:
- *
- *      Logs a warning when the configured value is not contained in the
- *      provided Ns_ObjvTable.
  *----------------------------------------------------------------------
  */
 unsigned int
-Ns_ConfigGetEnum(const char *section, const char *param, Ns_ObjvTable *tablePtr, unsigned int defaultValue)
+Ns_ConfigGetEnum(const char *section, const char *param, const Ns_ObjvTable *tablePtr, unsigned int defaultValue)
 {
     unsigned int result = defaultValue;
     const char  *defaultString, *valueString;
@@ -2237,34 +2231,30 @@ Ns_ConfigGetEnum(const char *section, const char *param, Ns_ObjvTable *tablePtr,
     NS_NONNULL_ASSERT(tablePtr != NULL);
 
     defaultString = Ns_ObjvTableGetString(tablePtr, defaultValue);
-    valueString   = Ns_ConfigString(section, param, defaultString);
+    valueString   = Ns_NullIfEmpty(Ns_ConfigString(section, param, defaultString));
 
-    if (valueString != NULL && *valueString != '\0') {
-        Ns_ObjvSpec spec;
-        int         idx;
-        TCL_SIZE_T  pos = 1;
-        Tcl_Obj    *objPtr;
+    if (valueString != NULL) {
+        const Ns_ObjvTable *entryPtr;
+        bool                found = NS_FALSE;
 
-        objPtr = Tcl_NewStringObj(valueString, TCL_INDEX_NONE);
-        Tcl_IncrRefCount(objPtr);
+        for (entryPtr = tablePtr; entryPtr->key != NULL; entryPtr++) {
+            if (STRIEQ(valueString, entryPtr->key)) {
+                result = entryPtr->value;
+                found = NS_TRUE;
+                break;
+            }
+        }
 
-        spec.arg  = tablePtr;
-        spec.dest = &idx;
-
-        if (Ns_ObjvIndex(&spec, NULL, &pos, &objPtr) == TCL_OK) {
-            result = (unsigned int)idx;
-
-        } else {
+        if (!found) {
             Tcl_DString ds, *dsPtr = &ds;
 
             Tcl_DStringInit(dsPtr);
             Ns_ObjvTablePrintSentence(dsPtr, tablePtr);
-            Ns_Log(Warning, "section '%s': ignoring invalid value '%s' for"
-                   " parameter '%s'; possible values are: %s",
+            Ns_Log(Warning, "section '%s': ignoring invalid value '%s' for "
+                   "parameter '%s'; possible values are: %s",
                    section, valueString, param, dsPtr->string);
             Tcl_DStringFree(dsPtr);
         }
-        Tcl_DecrRefCount(objPtr);
     }
 
     return result;
