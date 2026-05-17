@@ -330,7 +330,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     }
 
 #ifdef NS_WITH_DEPRECATED_5_0
-    if (Ns_ConfigGetValue(section, "serverdir") == NULL && servPtr->opts.serverdir != NULL) {
+    if (Ns_ConfigParameterProvided(section, "serverdir") && servPtr->opts.serverdir != NULL) {
         /*
          * We have a "serverdir" from the deprecated location but none in the
          * server section. Be friendly and use the value from the deprecated
