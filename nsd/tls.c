@@ -2495,7 +2495,7 @@ DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long
  * NsTLSClientCertModeConfig --
  *
  *      Read the client certificate mode from the given configuration
- *      section.  Prefer the explicit "clientcertmode" parameter, but
+ *      section.  Prefer the explicit "Ns_NullIfEmptyclientcertmode" parameter, but
  *      retain backward compatibility with the legacy boolean "verify"
  *      parameter when "clientcertmode" is not specified.
  *
@@ -2512,7 +2512,6 @@ static Ns_TLSClientCertMode
 NsTLSClientCertModeConfig(const char *section)
 {
     Ns_TLSClientCertMode mode = NS_TLS_CLIENT_CERT_NONE;
-    const char          *value;
     static Ns_ObjvTable clientcertModes[] = {
         {"none",    NS_TLS_CLIENT_CERT_NONE},
         {"request", NS_TLS_CLIENT_CERT_REQUEST},
@@ -2522,8 +2521,7 @@ NsTLSClientCertModeConfig(const char *section)
 
     NS_NONNULL_ASSERT(section != NULL);
 
-    value = Ns_ConfigGetValue(section, "clientcertmode");
-    if (value != NULL) {
+    if (Ns_ConfigParameterProvided(section, "clientcertmode")) {
         unsigned int idx = Ns_ConfigGetEnum(section, "clientcertmode",
                                             clientcertModes,
                                             (unsigned int)NS_TLS_CLIENT_CERT_NONE);
@@ -2563,22 +2561,15 @@ NsTLSConfigNew(const char *section)
 
     dc = ns_calloc(1, sizeof(NsTLSConfig));
     dc->clientCertMode = NsTLSClientCertModeConfig(section);
-    dc->tlsKeylogFile  = Ns_ConfigGetValue(section, "tlskeylogfile");
-    dc->tlsKeyScript   = Ns_ConfigGetValue(section, "tlskeyscript");
-    if (dc->tlsKeyScript != NULL) {
-        dc->tlsKeyScript = Ns_ConfigFilename(section, "tlskeyscript", 12,
-                                             nsconf.binDir, /* directory to resolve against */
-                                             ""             /* default no script */,
-                                             NS_TRUE /*normalize*/, NS_FALSE /*updateCfg*/);
-    }
+    dc->tlsKeylogFile  = Ns_NullIfEmpty(Ns_ConfigString(section, "tlskeylogfile", ""));
+    dc->tlsKeyScript   = Ns_ConfigFilename(section, "tlskeyscript", 12,
+                                           nsconf.binDir, /* directory to resolve against */
+                                           ""             /* default no script */,
+                                           NS_TRUE /*normalize*/, NS_FALSE /*updateCfg*/);
     dc->sni_idx = SSL_get_ex_new_index(0, sni_info_tag, NULL, NULL, NULL);
 
-    /*
-     * In case "vhostcertificates" was specified in the configuration file,
-     * and it is valid, activate NS_DRIVER_SNI.
-     */
-    dc->vhostcertificates = Ns_ConfigGetValue(section, "vhostcertificates");
-    if (dc->vhostcertificates != NULL && *dc->vhostcertificates != '\0') {
+    dc->vhostcertificates = Ns_NullIfEmpty(Ns_ConfigString(section, "vhostcertificates", ""));
+    if (dc->vhostcertificates != NULL) {
         struct stat st;
 
         if (stat(dc->vhostcertificates, &st) != 0) {
@@ -2824,13 +2815,10 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         cert = Ns_ConfigFilename(section, "certificate", 11,
                                  certDir.string, "", NS_TRUE, NS_TRUE);
 
-        key  = Ns_ConfigGetValue(section, "key");
-        if (key != NULL && *key == '\0') {
-            key = NULL;
-        }
+        key  = Ns_NullIfEmpty(Ns_ConfigString(section, "key", ""));
         if (key != NULL) {
             key = Ns_ConfigFilename(section, "key", 3,
-                                     certDir.string, "", NS_TRUE, NS_TRUE);
+                                    certDir.string, "", NS_TRUE, NS_TRUE);
         }
         Tcl_DStringFree(&certDir);
     }
@@ -2840,7 +2828,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         result = TCL_ERROR;
     } else {
         const char  *ciphers, *ciphersuites, *protocols;
-        const char  *clientcafile = NULL, *clientcapath = NULL, *configValue;
+        const char  *clientcafile = NULL, *clientcapath = NULL;
         NsTLSConfig *dc = app_data;
         Ns_DList     dl, *dlPtr = &dl;
         Ns_TLSClientCertMode clientCertMode;
@@ -2854,24 +2842,22 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Ns_DListInit(dlPtr);
 
         cert         = Ns_DListSaveString(dlPtr, cert);
-        ciphers      = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphers"));
-        ciphersuites = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphersuites"));
-        protocols    = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "protocols"));
+        ciphers      = Ns_DListSaveString(dlPtr, Ns_NullIfEmpty(Ns_ConfigString(section, "ciphers", "")));
+        ciphersuites = Ns_DListSaveString(dlPtr, Ns_NullIfEmpty(Ns_ConfigString(section, "ciphersuites", "")));
+        protocols    = Ns_DListSaveString(dlPtr, Ns_NullIfEmpty(Ns_ConfigString(section, "protocols", "")));
         if (key != NULL) {
             key      = Ns_DListSaveString(dlPtr, key);
         }
 
         Ns_Log(Notice, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app_data %p", (void*)app_data);
 
-        configValue = Ns_ConfigGetValue(section, "clientcafile");
-        if (configValue != NULL) {
+        if (Ns_ConfigParameterProvided(section, "clientcafile")) {
             clientcafile = Ns_ConfigFilename(section, "clientcafile", 12,
-                                             nsconf.home, configValue, NS_TRUE, NS_TRUE);
+                                             nsconf.home, "", NS_TRUE, NS_TRUE);
         }
-        configValue = Ns_ConfigGetValue(section, "clientcapath");
-        if (configValue != NULL) {
+        if (Ns_ConfigParameterProvided(section, "clientcapath")) {
             clientcapath = Ns_ConfigFilename(section, "clientcapath", 12,
-                                             nsconf.home, configValue, NS_TRUE, NS_TRUE);
+                                             nsconf.home, "", NS_TRUE, NS_TRUE);
         }
 
         if (dc == NULL) {

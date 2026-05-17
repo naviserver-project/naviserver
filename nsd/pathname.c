@@ -122,7 +122,7 @@ ConfigServerVhost(const char *server)
         if (Ns_ConfigBool(section, "stripport", NS_TRUE)) {
             servPtr->vhost.opts |= NSD_STRIP_PORT;
         }
-        servPtr->vhost.hostprefix = ns_strcopy(Ns_ConfigString(section, "hostprefix", NULL));
+        servPtr->vhost.hostprefix = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "hostprefix", "")));
         servPtr->vhost.hosthashlevel =
             Ns_ConfigIntRange(section, "hosthashlevel", 0, 0, 5);
 

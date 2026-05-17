@@ -270,7 +270,7 @@ ConfigServerEncodings(const char *server)
                    servPtr->encoding.urlCharset);
         }
         servPtr->encoding.formFallbackCharset =
-            ns_strcopy(Ns_ConfigString(section, "formfallbackcharset", NULL));
+            ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "formfallbackcharset", "")));
         if (servPtr->encoding.formFallbackCharset != NULL
             && *servPtr->encoding.formFallbackCharset == '\0') {
             servPtr->encoding.formFallbackCharset  = NULL;

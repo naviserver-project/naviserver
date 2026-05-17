@@ -315,7 +315,7 @@ ConfigServerTcl(const char *server)
          * Initialize the list of connection headers to log for Tcl errors.
          */
 
-        p = Ns_ConfigGetValue(section, "errorlogheaders");
+        p = Ns_NullIfEmpty(Ns_ConfigString(section, "errorlogheaders", ""));
         if (p != NULL
             && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
             Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);

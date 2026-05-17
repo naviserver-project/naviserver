@@ -1453,7 +1453,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     /*
      * Get the configured "location" value.
      */
-    drvPtr->location = Ns_ConfigGetValue(section, "location");
+    drvPtr->location = Ns_NullIfEmpty(Ns_ConfigString(section, "location", ""));
     if (drvPtr->location != NULL && (strstr(drvPtr->location, "://") != NULL)) {
         ssize_t locationLength = (ssize_t)strlen(drvPtr->location);
         drvPtr->location = ns_strncopy(drvPtr->location, locationLength);
@@ -5682,7 +5682,7 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, Ns_Driver *drvP
          * Try to get from the driver the value of the configuration variable
          * "vhostcertificates".
          */
-        vhostcertificates = Ns_ConfigGetValue(section, "vhostcertificates");
+        vhostcertificates = Ns_NullIfEmpty(Ns_ConfigString(section, "vhostcertificates", ""));
         Ns_Log(Debug, "SSL_serverNameCB %s/vhostcertificates -> '%s'", section, vhostcertificates);
 
         if (vhostcertificates != NULL) {

@@ -366,7 +366,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      *      NS_FALSE to prevent storing the computed absolute path back into
      *      the configuration database.
      */
-    servPtr->opts.logDir = Ns_ConfigGetValue(section, "logdir");
+    servPtr->opts.logDir = Ns_NullIfEmpty(Ns_ConfigString(section, "logdir", ""));
     //Ns_Log(Notice, "??? raw serverlogdir section '%s' <%s>", section, servPtr->opts.logDir);
 
     {
@@ -393,7 +393,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      *      temporary interpreter is deallocated.
      */
     {
-        const char *rootProcString = Ns_ConfigGetValue(section, "serverrootproc");
+        const char *rootProcString = Ns_NullIfEmpty(Ns_ConfigString(section, "serverrootproc", ""));
         if (rootProcString != NULL) {
             Ns_TclCallback *cbPtr;
             Tcl_Obj        *callbackObj = Tcl_NewStringObj(rootProcString, TCL_INDEX_NONE);
@@ -419,7 +419,8 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     /*
      * Add server specific extra headers.
      */
-    servPtr->opts.extraHeaders = Ns_ConfigSet(section, "extraheaders", NULL);
+    servPtr->opts.extraHeaders = Ns_ConfigParameterProvided(section, "extraheaders")
+        ? Ns_ConfigSet(section, "extraheaders", NULL) : NULL;
 
     /*
      * Initialize on-the-fly compression support.
