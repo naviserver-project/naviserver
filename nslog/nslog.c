@@ -189,7 +189,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Get other parameters from configuration file
      */
 
-    logPtr->rollfmt = ns_strcopy(Ns_ConfigGetValue(section, "rollfmt"));
+    logPtr->rollfmt = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "rollfmt", "")));
     logPtr->maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "maxbackup", 100, 1, INT_MAX);
     logPtr->maxlines = Ns_ConfigIntRange(section, "maxbuffer", 0, 0, INT_MAX);
     if (Ns_ConfigBool(section, "formattedtime", NS_TRUE)) {
@@ -220,7 +220,7 @@ Ns_ModuleInit(const char *server, const char *module)
         }
     }
 #endif
-    logPtr->driverPattern = ns_strcopy(Ns_ConfigString(section, "driver", NULL));
+    logPtr->driverPattern = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "driver", "")));
 
     logPtr->ipv4maskPtr = NULL;
 #ifdef HAVE_IPV6
@@ -270,7 +270,7 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Parse extended headers; it is just a list of names
      */
-    (void)ParseExtendedHeaders(logPtr, Ns_ConfigGetValue(section, "extendedheaders"));
+    (void)ParseExtendedHeaders(logPtr, Ns_NullIfEmpty(Ns_ConfigString(section, "extendedheaders", "")));
 
     /*
      *  Open the log and register the trace

@@ -166,15 +166,15 @@ ConfigServerAdp(const char *server)
      * Initialise various ADP options.
      */
 
-    servPtr->adp.errorpage = ns_strcopy(Ns_ConfigString(section, "errorpage", NULL));
-    servPtr->adp.startpage = ns_strcopy(Ns_ConfigString(section, "startpage", NULL));
+    servPtr->adp.errorpage = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "errorpage", "")));
+    servPtr->adp.startpage = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "startpage", "")));
     servPtr->adp.debuginit = ns_strcopy(Ns_ConfigString(section, "debuginit", "ns_adp_debuginit"));
     servPtr->adp.tracesize = Ns_ConfigInt(section, "tracesize", 40);
     servPtr->adp.cachesize = (size_t)Ns_ConfigMemUnitRange(section, "cachesize", "5MB", 5000 * 1024,
                                                            1000 * 1024, INT_MAX);
     servPtr->adp.bufsize   = (size_t)Ns_ConfigMemUnitRange(section, "bufsize",  "1MB",  1024 * 1000,
                                                            100 * 1024, INT_MAX);
-    servPtr->adp.defaultExtension = ns_strcopy(Ns_ConfigString(section, "defaultextension", NULL));
+    servPtr->adp.defaultExtension = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "defaultextension", "")));
 
     servPtr->adp.flags = 0u;
     (void) Ns_ConfigFlag(section, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);
@@ -1066,7 +1066,7 @@ NsAdpLogError(NsInterp *itPtr)
     }
     Tcl_DStringFree(&ds);
     adp = itPtr->servPtr->adp.errorpage;
-    if (adp != NULL && itPtr->adp.errorLevel == 0) {
+    if (adp != NULL && *adp != '\0' && itPtr->adp.errorLevel == 0) {
         Tcl_Obj *objv[2];
 
         ++itPtr->adp.errorLevel;
