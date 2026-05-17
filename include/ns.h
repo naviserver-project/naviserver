@@ -3506,6 +3506,7 @@ NS_EXTERN size_t Ns_Utf8FromCodePoint(uint32_t cp, char *dst)
 NS_EXTERN bool Ns_StrToULongNStrict(const char *s, size_t len, int base, unsigned long *valuePtr)
     NS_GNUC_NONNULL(1,4);
 
+NS_EXTERN const char *Ns_NullIfEmpty(const char *string);
 
 /*
  * tclcallbacks.c:

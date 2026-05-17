@@ -1246,6 +1246,27 @@ NsStringObj(const char* chars) {
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Ns_NullIfEmpty --
+ *
+ *      Return NULL when the provided string is empty.
+ *
+ * Results:
+ *      NULL if the input string is non-NULL and empty, otherwise the
+ *      original string pointer.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_NullIfEmpty(const char *string)
+{
+    return (string != NULL && *string == '\0') ? NULL : string;
+}
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
