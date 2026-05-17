@@ -71,29 +71,14 @@ ns_section ns/parameters {
     # Configure the number of task threads for ns_http
     #
     # ns_param   nshttptaskthreads   2        ;# default: 1; number of task threads for ns_http
-
-    #
-    # Configure SMTP module
-    #
-    ns_param     smtphost            "localhost"
-    ns_param     smtpport            25
-    ns_param     smtptimeout         60
-    ns_param     smtplogmode         false
-    ns_param     smtpmsgid           false
-    ns_param     smtpmsgidhostname   ""
-    ns_param     smtpencodingmode    false
-    ns_param     smtpencoding        "utf-8"
-    ns_param     smtpauthmode        ""
-    ns_param     smtpauthuser        ""
-    ns_param     smtpauthpassword    ""
 }
 
-#
-# When running behind a reverse proxy, use the following parameters
-#
 ns_section ns/reverseproxymode {
     #
-    # Is the server running behind a reverse proxy server?
+    # Enable this mode when NaviServer is running behind trusted
+    # reverse proxies or load balancers. These settings affect the
+    # effective client peer address used by access logs and APIs that
+    # report peer-address information.
     #
     ns_param enabled $reverseproxymode
     #
@@ -112,4 +97,29 @@ ns_section ns/reverseproxymode {
     # analysis.
     #
     #ns_param skipnonpublic  false
+}
+
+ns_section ns/sendmail {
+    #
+    # Configure the legacy ns_sendmail command.
+    #
+    ns_param     smtphost            "localhost"
+    ns_param     smtpport            25
+    ns_param     smtptimeout         60
+    ns_param     smtplogmode         false
+    ns_param     smtpmsgid           false
+    ns_param     smtpmsgidhostname   ""
+    ns_param     smtpencodingmode    false
+    ns_param     smtpencoding        "utf-8"
+    ns_param     smtpauthmode        ""
+    ns_param     smtpauthuser        ""
+    ns_param     smtpauthpassword    ""
+
+    # Optional STARTTLS support, when the external Tcl package "tls" is
+    # installed and loadable.
+    #
+    # ns_param smtpusestarttls false
+    # ns_param smtpcertfile    ""
+    # ns_param smtpcafile      ""
+    # ns_param smtpcadir       ""
 }

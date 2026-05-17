@@ -124,12 +124,8 @@ ns_section ns/parameters {
 
 
     #------------------------------------------------------------------
-    # Mail and background jobs
+    # Background jobs
     #------------------------------------------------------------------
-
-    # Backward compatibility: used as a fallback for smtphost in
-    # ns_sendmail; superseded by nssmtpd module.  ns_param mailhost
-    # localhost
 
     # Background job and scheduler defaults (used by ns_job / ns_schedule_*).
     #
@@ -192,10 +188,13 @@ ns_section ns/parameters {
     ns_param reverseproxymode $reverseproxymode
 }
 
-#
-# When running behind a reverse proxy, use the following parameters
-#
 ns_section ns/reverseproxymode {
+    #
+    # Enable this mode when NaviServer is running behind trusted
+    # reverse proxies or load balancers. These settings affect the
+    # effective client peer address used by access logs and APIs that
+    # report peer-address information.
+    #
     ns_param enabled        $reverseproxymode
     #
     # When defining "trustedservers", the x-forwarded-for header field
@@ -226,7 +225,3 @@ ns_section ns/reverseproxymode {
 if {[file exists /scripts/docker-dict.tcl]} {
     source /scripts/docker-dict.tcl
 }
-
-
-
-

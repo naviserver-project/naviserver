@@ -236,26 +236,26 @@ proc ns_sendmail args {
     # AUTH PLAIN and AUTH LOGIN are supported.
     #
 
-    set authmode [string tolower [ns_config ns/parameters smtpauthmode]]
-    set user [ns_config ns/parameters smtpauthuser]
-    set pass [ns_config ns/parameters smtpauthpassword]
+    set authmode    [string tolower [_ns_sendmail_config_get smtpauthmode ""]]
+    set user        [_ns_sendmail_config_get smtpauthuser ""]
+    set pass        [_ns_sendmail_config_get smtpauthpassword ""]
 
-    set usestarttls [ns_config ns/parameters smtpusestarttls 0]
-    set certfile [ns_config ns/parameters smtpcertfile]
-    set cafile [ns_config ns/parameters smtpcafile]
-    set cadir [ns_config ns/parameters smtpcadir]
+    set usestarttls [_ns_sendmail_config_get smtpusestarttls 0]
+    set certfile    [_ns_sendmail_config_get smtpcertfile ""]
+    set cafile      [_ns_sendmail_config_get smtpcafile ""]
+    set cadir       [_ns_sendmail_config_get smtpcadir ""]
 
-    #
-    # Open the connection to SMTP server
-    #
-
-    set smtphost [ns_config ns/parameters smtphost]
-    set smtpport [ns_config -set ns/parameters smtpport 25]
-    set timeout  [ns_config -set ns/parameters smtptimeout 60]
+    set smtphost    [_ns_sendmail_config_get smtphost ""]
+    set smtpport    [_ns_sendmail_config_get smtpport 25]
+    set timeout     [_ns_sendmail_config_get smtptimeout 60]
 
     if {$smtphost eq ""} {
         set smtphost [ns_config -set ns/parameters mailhost "localhost"]
     }
+
+    #
+    # Open the connection to SMTP server
+    #
 
     lassign [ns_sockopen -timeout $timeout $smtphost $smtpport] rfd wfd
     fconfigure $wfd -translation crlf
@@ -427,24 +427,23 @@ proc ns_sendmail args {
 #
 
 proc ns_sendmail_config {{mode ""}} {
-
-    set myset                                                              \
-        [ns_set create smtpconfiguration                                   \
-             smtphost          [ns_config ns/parameters smtphost]          \
-             smtpport          [ns_config ns/parameters smtpport]          \
-             smtptimeout       [ns_config ns/parameters smtptimeout]       \
-             smtplogmode       [ns_config ns/parameters smtplogmode]       \
-             smtpmsgid         [ns_config ns/parameters smtpmsgid]         \
-             smtpmsgidhostname [ns_config ns/parameters smtpmsgidhostname] \
-             smtpencodingmode  [ns_config ns/parameters smtpencodingmode]  \
-             smtpencoding      [ns_config ns/parameters smtpencoding]      \
-             smtpauthmode      [ns_config ns/parameters smtpauthmode]      \
-             smtpauthuser      [ns_config ns/parameters smtpauthuser]      \
-             smtpauthpassword  [ns_config ns/parameters smtpauthpassword]  \
-             smtpusestarttls   [ns_config ns/parameters smtpusestarttls]   \
-             smtpcertfile      [ns_config ns/parameters smtpcertfile]      \
-             smtpcafile        [ns_config ns/parameters smtpcafile]        \
-             smtpcadir         [ns_config ns/parameters smtpcadir]]
+    set myset \
+        [ns_set create smtpconfiguration \
+             smtphost          [_ns_sendmail_config_get smtphost ""] \
+             smtpport          [_ns_sendmail_config_get smtpport 25] \
+             smtptimeout       [_ns_sendmail_config_get smtptimeout 60] \
+             smtplogmode       [_ns_sendmail_config_get smtplogmode false] \
+             smtpmsgid         [_ns_sendmail_config_get smtpmsgid false] \
+             smtpmsgidhostname [_ns_sendmail_config_get smtpmsgidhostname ""] \
+             smtpencodingmode  [_ns_sendmail_config_get smtpencodingmode false] \
+             smtpencoding      [_ns_sendmail_config_get smtpencoding utf-8] \
+             smtpauthmode      [_ns_sendmail_config_get smtpauthmode ""] \
+             smtpauthuser      [_ns_sendmail_config_get smtpauthuser ""] \
+             smtpauthpassword  [_ns_sendmail_config_get smtpauthpassword ""] \
+             smtpusestarttls   [_ns_sendmail_config_get smtpusestarttls 0] \
+             smtpcertfile      [_ns_sendmail_config_get smtpcertfile ""] \
+             smtpcafile        [_ns_sendmail_config_get smtpcafile ""] \
+             smtpcadir         [_ns_sendmail_config_get smtpcadir ""]]
 
     if {$mode eq {log}} {
         ns_log notice [ns_set print $myset]
@@ -456,6 +455,51 @@ proc ns_sendmail_config {{mode ""}} {
     ns_set free $myset
 
     return $keyval
+}
+
+#
+# _ns_sendmail_config_get --
+#
+#   Return a configuration value for ns_sendmail. Values from the
+#   canonical ns/sendmail section take precedence over the historical
+#   ns/parameters location. The lookup checks whether a parameter is
+#   explicitly provided, so configured empty values are preserved.
+#
+# Result:
+#   The configured value, or the provided default when the parameter is
+#   not configured in either section.
+#
+# Side effects:
+#   Logs a deprecation warning once when a value from the legacy
+#   ns/parameters section is used.
+#
+
+proc _ns_sendmail_config_get {key {default ""}} {
+    #
+    # Prefer the canonical ns/sendmail section.  Use ns_configsection to test
+    # for presence so explicitly configured empty values are preserved.
+    #
+    set set [ns_configsection -- ns/sendmail]
+    if {$set ne "" && [ns_set find $set $key] >= 0} {
+        return [ns_config -set ns/sendmail $key $default]
+    }
+
+    #
+    # Compatibility fallback: historically these parameters lived in
+    # ns/parameters.
+    #
+
+    set set [ns_configsection -- ns/parameters]
+    if {$set ne "" && [ns_set find $set $key] >= 0} {
+        if {![info exists ::_ns_sendmail_warned_legacy_config]} {
+            ns_log warning "deprecated configuration: ns_sendmail SMTP settings in ns/parameters are deprecated; use the ns/sendmail section instead"
+            set ::_ns_sendmail_warned_legacy_config 1
+        }
+
+        return [ns_config -set ns/parameters $key $default]
+    }
+
+    return $default
 }
 
 #
