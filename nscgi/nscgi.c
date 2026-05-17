@@ -251,7 +251,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Configure the various interp and env options.
      */
     Tcl_DStringInit(&ds);
-    subSection = Ns_ConfigGetValue(section, "interps");
+    subSection = Ns_NullIfEmpty(Ns_ConfigString(section, "interps", ""));
     if (subSection != NULL) {
         Ns_DStringVarAppend(&ds, "ns/interps/", subSection, NS_SENTINEL);
         modPtr->interps = Ns_ConfigGetSection(ds.string);
@@ -261,7 +261,7 @@ Ns_ModuleInit(const char *server, const char *module)
         }
         Tcl_DStringSetLength(&ds, 0);
     }
-    subSection = Ns_ConfigGetValue(section, "environment");
+    subSection = Ns_NullIfEmpty(Ns_ConfigString(section, "environment", ""));
     if (subSection != NULL) {
         Ns_DStringVarAppend(&ds, "ns/environment/", subSection, NS_SENTINEL);
         modPtr->mergeEnv = Ns_ConfigGetSection(ds.string);

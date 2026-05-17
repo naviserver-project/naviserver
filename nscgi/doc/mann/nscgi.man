@@ -633,12 +633,14 @@ pass further environment variables some CGI program.
 [enum]
 In case the CGI program or the CGI script interpreter requires additional
 environment variables, one can define this via the module parameter
-[const Environment] and a matching section for the detail definitions.
+[const environment] and a matching section for the detail definitions.
 
     [list_begin itemized]
 
-    [item] Add a definition for the [const Environment] parameter to your CGI
-        configuration section.
+    [item] The [const environment] parameter names an [const {ns/environment/$name}]
+    section. Entries from this section are merged into the environment of CGI
+    processes started by the module. Each parameter name is an environment
+    variable name, and each value is the value passed to the CGI process.
 
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
@@ -647,13 +649,7 @@ environment variables, one can define this via the module parameter
    ns_param interps     cgi
    ns_param environment cgi
  }
-[example_end]
-
-    [item] Then add a section under [const ns/environment] for the chosen
-       name (here [const cgi])
-       containing the required environment variable definitions.
-
-[example_begin]
+ 
  ns_section ns/environment/cgi {
    ns_param FOO BAR     ;# defines environment variable "FOO=BAR"
    ns_param TMP /tmp    ;# defines environment variable "TMP=/tmp"
@@ -664,13 +660,11 @@ environment variables, one can define this via the module parameter
 
 [enum]
 
- [const systemenvironment] is a boolean parameter in the
- [const module/nscgi] section in the configuration file to controls
- whether the CGI will inherit the server process's environment
- variables or not.  Enabling this could potentially leak sensitive
- information from the parent's environment if the CGI displays its
- environment variables which is the behavior of some common
- error-handling code. Default: [const false]
+The [const systemenvironment] parameter controls whether the environment of
+the NaviServer process is also passed to CGI scripts. This is disabled by
+default to avoid exposing unintended process environment variables. Use a
+named [const {ns/environment/$name}] section when CGI scripts need a
+controlled set of additional environment variables
 
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
