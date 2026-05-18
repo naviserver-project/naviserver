@@ -51,8 +51,8 @@ such as certificates, ciphers, and protocols.
    ns_param certificate    ...
    ...
    # Extra parameters specific to HTTP/3
-   #ns_param h3advertise true   ;# default: false  -> advertise Alt-Svc header
-   #ns_param h3persist   false  ;# default: true   -> control 'persist' flag in Alt-Svc
+   #ns_param h3advertise true  ;# default: false  -> advertise Alt-Svc header
+   #ns_param h3persist   true  ;# default: false   -> control 'persist' flag in Alt-Svc
  }
  
  ns_section ns/module/h3 {
@@ -71,7 +71,7 @@ such as certificates, ciphers, and protocols.
 
 [def h3persist]
  Controls the [arg persist] attribute of the generated Alt-Svc header.
- When [const true] (default), the client may continue to use the cached
+ When [const true], the client may continue to use the cached
  HTTP/3 endpoint across browser restarts until the Alt-Svc lifetime
  expires.
 
