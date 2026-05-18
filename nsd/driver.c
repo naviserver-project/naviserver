@@ -1356,13 +1356,13 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->defport        = defport;
     drvPtr->path           = ns_strdup(section);
 
-    drvPtr->bufsize        = (size_t)Ns_ConfigMemUnitRange(section, "bufsize", "16KB", 16384, 1024, INT_MAX);
+    drvPtr->bufsize        = (size_t)Ns_ConfigMemUnitRange(section, "bufsize", "16kB", 16384, 1024, INT_MAX);
     drvPtr->maxinput       = Ns_ConfigMemUnitRange(section, "maxinput", "1MB", 1024*1024, 1024, LLONG_MAX);
     drvPtr->maxupload      = Ns_ConfigMemUnitRange(section, "maxupload", "0MB", 0, 0, (Tcl_WideInt)drvPtr->maxinput);
     drvPtr->readahead      = Ns_ConfigMemUnitRange(section, "readahead", NULL, (Tcl_WideInt)drvPtr->bufsize,
                                                    (Tcl_WideInt)drvPtr->bufsize, drvPtr->maxinput);
 
-    drvPtr->maxline        = (int)Ns_ConfigMemUnitRange(section, "maxline", "8KB", 8192, 512, INT_MAX);
+    drvPtr->maxline        = (int)Ns_ConfigMemUnitRange(section, "maxline", "8kB", 8192, 512, INT_MAX);
     drvPtr->maxheaders     = Ns_ConfigIntRange(section, "maxheaders",    128,   8, INT_MAX);
     drvPtr->maxqueuesize   = Ns_ConfigIntRange(section, "maxqueuesize", 1024,   1, INT_MAX);
 
@@ -1501,7 +1501,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     if (wrPtr->threads > 0) {
         wrPtr->writersize = (size_t)Ns_ConfigMemUnitRange(section, "writersize", "1MB",
                                                           1024*1024, 1024, INT_MAX);
-        wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(section, "writerbufsize", "8KB",
+        wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(section, "writerbufsize", "8kB",
                                                    8192, 512, INT_MAX);
         wrPtr->rateLimit = Ns_ConfigIntRange(section, "writerratelimit", 0, 0, INT_MAX);
         wrPtr->doStream = Ns_ConfigBool(section, "writerstreaming", NS_FALSE)

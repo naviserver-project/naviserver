@@ -639,9 +639,9 @@ CreatePool(NsServer *servPtr, const char *pool)
                            &poolPtr->wqueue.retryafter);
 
     poolPtr->rate.defaultConnectionLimit =
-        Ns_ConfigIntRange(section, "connectionratelimit", -1, -1, INT_MAX);
+        Ns_ConfigIntRange(section, "connectionratelimit", 0, 0, INT_MAX);
     poolPtr->rate.poolLimit =
-        Ns_ConfigIntRange(section, "poolratelimit", -1, -1, INT_MAX);
+        Ns_ConfigIntRange(section, "poolratelimit", 0, 0, INT_MAX);
 
     if (poolPtr->rate.poolLimit != -1) {
         NsWriterBandwidthManagement = NS_TRUE;
