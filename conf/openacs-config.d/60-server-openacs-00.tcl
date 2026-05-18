@@ -80,14 +80,6 @@ ns_section ns/server/$server {
     # ns_param compresspreinit   true      ;# default: false; preallocate compression buffers at startup
 
     #------------------------------------------------------------------
-    # Directory listings
-    #------------------------------------------------------------------
-    # Directory listing mode. In OpenACS, directory listing handling is
-    # typically done via the request processor.
-    #
-    # ns_param directorylisting  fancy     ;# default: "none"; "simple", "fancy" or "none", handled by OpenACS RP
-
-    #------------------------------------------------------------------
     # HTTP response behaviour
     #------------------------------------------------------------------
     # Realm name used for HTTP Basic authentication.
@@ -240,9 +232,10 @@ ns_section ns/server/$server/adp {
     #
 }
 
-ns_section ns/server/$server/adp/parsers {
-    ns_param	fancy		".adp"
-}
+# The following section seems to be legacy
+#ns_section ns/server/$server/adp/parsers {
+#    ns_param	fancy		".adp"
+#}
 
 #---------------------------------------------------------------------
 # Tcl configuration
@@ -276,9 +269,15 @@ ns_section ns/server/$server/fastpath {
     # ns_param directoryfile      "index.adp index.tcl index.html index.htm"
     # ns_param directoryadp       $pageroot/dirlist.adp ;# default: ""
     # ns_param directoryproc      _ns_dirlist           ;# default: "_ns_dirlist"
+    # ns_param hidedotfiles       true  ;# default: false
+    #------------------------------------------------------------------
+    # Directory listings
+    #------------------------------------------------------------------
+    # Directory listing mode. In OpenACS, directory listing handling is
+    # done via the request processor.
+    #
     # ns_param directorylisting   fancy ;# default "simple"; can be "simple",
     #                                   ;# "fancy" or "none"; parameter for _ns_dirlist
-    # ns_param hidedotfiles       true  ;# default: false
 }
 
 

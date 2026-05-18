@@ -11,9 +11,22 @@
 #   postgres -- use nsdbpg (PostgreSQL)
 #---------------------------------------------------------------------
 ns_section ns/db/drivers {
+
     if { $dbms eq "oracle" } {
         set db_driver_name nsoracle
         ns_param $db_driver_name nsoracle
+
+        #
+        # Oracle driver-specific settings
+        #
+        ns_section ns/db/driver/$db_driver_name {
+            # Maximum length of SQL strings to log; -1 means no limit.
+            ns_param maxStringLogLength -1
+
+            # Buffer size for LOB operations.
+            ns_param LobBufferSize      32768
+        }
+
     } else {
         set db_driver_name postgres
         ns_param $db_driver_name nsdbpg
@@ -23,27 +36,17 @@ ns_section ns/db/drivers {
         # setting (only available in the PostgreSQL driver).
         #
         # ns_logctl severity "Debug(sql)" -color blue $verboseSQL
+
+        #
+        # PostgreSQL driver-specific settings
+        #
+        ns_section ns/db/driver/$db_driver_name {
+            # Set this parameter when "psql" is not on your PATH (OpenACS specific).
+            # ns_param pgbin "/usr/lib/postgresql/18/bin/"
+        }
     }
 }
 
-#---------------------------------------------------------------------
-# Driver-specific settings
-#---------------------------------------------------------------------
-
-# Oracle driver-specific settings
-ns_section ns/db/driver/nsoracle {
-    # Maximum length of SQL strings to log; -1 means no limit.
-    ns_param maxStringLogLength -1
-
-    # Buffer size for LOB operations.
-    ns_param LobBufferSize      32768
-}
-
-# PostgreSQL driver-specific settings
-ns_section ns/db/driver/postgres {
-    # Set this parameter when "psql" is not on your PATH (OpenACS specific).
-    # ns_param pgbin "/usr/lib/postgresql/16/bin/"
-}
 
 #---------------------------------------------------------------------
 # Database pools

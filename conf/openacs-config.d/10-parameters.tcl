@@ -10,7 +10,7 @@ ns_section ns/parameters {
     ns_param home     $homedir
     ns_param logdir   $logdir
     ns_param pidfile  nsd.pid
-    ns_param debug    $debug
+    #ns_param debug    $debug   ;# not used anywhere
 
     # Optional directory for temporary files. If not specified, the
     # environment variable TMPDIR is used. If that is not set either,
@@ -168,6 +168,12 @@ ns_section ns/parameters {
     # explicitly here, since otherwise OpenACS may use the charset
     # from [ad_conn charset], which is taken from the database and is
     # by default ISO-8859-1.
+    #
+    # Note: the global parameter "outputcharset" is OpenACS only; it
+    # is used e.g. by acs-templating and acs-tcl. NaviServer has the
+    # settings for outputcharset, urlcharset and formfallbackcharset
+    # in the per-server settings.
+    #
     ns_param OutputCharset utf-8
     # ns_param URLCharset   utf-8
     #

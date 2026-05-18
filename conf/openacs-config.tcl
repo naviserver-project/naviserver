@@ -249,7 +249,7 @@ ns_section ns/parameters {
     ns_param home     $homedir
     ns_param logdir   $logdir
     ns_param pidfile  nsd.pid
-    ns_param debug    $debug
+    #ns_param debug    $debug   ;# not used anywhere
 
     # Optional directory for temporary files. If not specified, the
     # environment variable TMPDIR is used. If that is not set either,
@@ -407,6 +407,12 @@ ns_section ns/parameters {
     # explicitly here, since otherwise OpenACS may use the charset
     # from [ad_conn charset], which is taken from the database and is
     # by default ISO-8859-1.
+    #
+    # Note: the global parameter "outputcharset" is OpenACS only; it
+    # is used e.g. by acs-templating and acs-tcl. NaviServer has the
+    # settings for outputcharset, urlcharset and formfallbackcharset
+    # in the per-server settings.
+    #
     ns_param OutputCharset utf-8
     # ns_param URLCharset   utf-8
     #
@@ -834,9 +840,22 @@ ns_section ns/fastpath {
 #   postgres -- use nsdbpg (PostgreSQL)
 #---------------------------------------------------------------------
 ns_section ns/db/drivers {
+
     if { $dbms eq "oracle" } {
         set db_driver_name nsoracle
         ns_param $db_driver_name nsoracle
+
+        #
+        # Oracle driver-specific settings
+        #
+        ns_section ns/db/driver/$db_driver_name {
+            # Maximum length of SQL strings to log; -1 means no limit.
+            ns_param maxStringLogLength -1
+
+            # Buffer size for LOB operations.
+            ns_param LobBufferSize      32768
+        }
+
     } else {
         set db_driver_name postgres
         ns_param $db_driver_name nsdbpg
@@ -846,27 +865,17 @@ ns_section ns/db/drivers {
         # setting (only available in the PostgreSQL driver).
         #
         # ns_logctl severity "Debug(sql)" -color blue $verboseSQL
+
+        #
+        # PostgreSQL driver-specific settings
+        #
+        ns_section ns/db/driver/$db_driver_name {
+            # Set this parameter when "psql" is not on your PATH (OpenACS specific).
+            # ns_param pgbin "/usr/lib/postgresql/18/bin/"
+        }
     }
 }
 
-#---------------------------------------------------------------------
-# Driver-specific settings
-#---------------------------------------------------------------------
-
-# Oracle driver-specific settings
-ns_section ns/db/driver/nsoracle {
-    # Maximum length of SQL strings to log; -1 means no limit.
-    ns_param maxStringLogLength -1
-
-    # Buffer size for LOB operations.
-    ns_param LobBufferSize      32768
-}
-
-# PostgreSQL driver-specific settings
-ns_section ns/db/driver/postgres {
-    # Set this parameter when "psql" is not on your PATH (OpenACS specific).
-    # ns_param pgbin "/usr/lib/postgresql/16/bin/"
-}
 
 #---------------------------------------------------------------------
 # Database pools
@@ -1070,14 +1079,6 @@ ns_section ns/server/$server {
     # ns_param compresspreinit   true      ;# default: false; preallocate compression buffers at startup
 
     #------------------------------------------------------------------
-    # Directory listings
-    #------------------------------------------------------------------
-    # Directory listing mode. In OpenACS, directory listing handling is
-    # typically done via the request processor.
-    #
-    # ns_param directorylisting  fancy     ;# default: "none"; "simple", "fancy" or "none", handled by OpenACS RP
-
-    #------------------------------------------------------------------
     # HTTP response behaviour
     #------------------------------------------------------------------
     # Realm name used for HTTP Basic authentication.
@@ -1230,16 +1231,17 @@ ns_section ns/server/$server/adp {
     #
 }
 
-ns_section ns/server/$server/adp/parsers {
-    ns_param	fancy		".adp"
-}
+# The following section seems to be legacy
+#ns_section ns/server/$server/adp/parsers {
+#    ns_param	fancy		".adp"
+#}
 
 #---------------------------------------------------------------------
 # Tcl configuration
 #---------------------------------------------------------------------
 ns_section ns/server/$server/tcl {
-    ns_param debug   $debug
-    ns_param library $serverroot/tcl                     ;# default: modules/tcl
+    #ns_param debug   $debug                              ;# apparently not used in modern OpenACS/NaviServer
+    ns_param library $serverroot/tcl                      ;# default: modules/tcl
     # ns_param initfile ${serverroot}/tcl/server-init.tcl ;# default: bin/init.tcl
 
     #------------------------------------------------------------------
@@ -1266,9 +1268,15 @@ ns_section ns/server/$server/fastpath {
     # ns_param directoryfile      "index.adp index.tcl index.html index.htm"
     # ns_param directoryadp       $pageroot/dirlist.adp ;# default: ""
     # ns_param directoryproc      _ns_dirlist           ;# default: "_ns_dirlist"
+    # ns_param hidedotfiles       true  ;# default: false
+    #------------------------------------------------------------------
+    # Directory listings
+    #------------------------------------------------------------------
+    # Directory listing mode. In OpenACS, directory listing handling is
+    # done via the request processor.
+    #
     # ns_param directorylisting   fancy ;# default "simple"; can be "simple",
     #                                   ;# "fancy" or "none"; parameter for _ns_dirlist
-    # ns_param hidedotfiles       true  ;# default: false
 }
 
 
