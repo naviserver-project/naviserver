@@ -29,10 +29,10 @@ typedef struct Mod {
     const char     *module;
     Ns_Set         *interps;
     Ns_Set         *mergeEnv;
+    Ns_Time         maxWait;
     unsigned int    flags;
     int             maxInput;
     int             maxCgi;
-    int             maxWait;
     int             activeCgi;
     Ns_Mutex        lock;
     Ns_Cond         cond;
@@ -242,7 +242,9 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_MutexSetName2(&modPtr->lock, "nscgi", server);
     modPtr->maxInput = (int)Ns_ConfigMemUnitRange(section, "maxinput", "1MB", 1024*1024, 0, LLONG_MAX);
     modPtr->maxCgi = Ns_ConfigInt(section, "limit", 0);
-    modPtr->maxWait = Ns_ConfigInt(section, "maxwait", 30);
+
+    Ns_ConfigTimeUnitRange(section, "maxwait", "30s", 0, 0, INT_MAX, 0,
+                           &modPtr->maxWait);
     if (Ns_ConfigBool(section, "gethostbyaddr", NS_FALSE)) {
         modPtr->flags |= CGI_GETHOST;
     }
@@ -404,7 +406,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
          */
 
         Ns_GetTime(&timeout);
-        Ns_IncrTime(&timeout, modPtr->maxWait, 0);
+        Ns_IncrTime(&timeout, modPtr->maxWait.sec,modPtr->maxWait.usec);
         Ns_MutexLock(&modPtr->lock);
         while (wait == NS_OK && modPtr->activeCgi >= modPtr->maxCgi) {
             wait = Ns_CondTimedWait(&modPtr->cond, &modPtr->lock, &timeout);
