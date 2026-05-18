@@ -1,6 +1,6 @@
 [include version_include.man]
 
-[manpage_begin ns_proxy n [vset version]]
+[manpage_begin nsproxy n [vset version]]
 [moddesc   {NaviServer Module Commands}]
 [titledesc {Execute Tcl scripts in an external process}]
 

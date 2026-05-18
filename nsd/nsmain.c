@@ -699,11 +699,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     nsconf.formFallbackCharset =
-        ns_strcopy(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "formfallbackcharset", NULL));
-    if (nsconf.formFallbackCharset != NULL
-        && *nsconf.formFallbackCharset == '\0') {
-        nsconf.formFallbackCharset = NULL;
-    }
+        ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "formfallbackcharset", "")));
 
     /*
      * If no servers were defined, autocreate server "default"

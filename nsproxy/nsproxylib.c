@@ -2999,11 +2999,9 @@ GetPool(const char *poolName, const InterpData *idataPtr)
             const char *exec, *section;
 
             section = Ns_ConfigSectionPath(NULL, idataPtr->server, idataPtr->module, NS_SENTINEL);
-            exec = Ns_ConfigGetValue(section, "exec");
+            exec = Ns_ConfigString(section, "exec", defexec.string);
             if (exec != NULL) {
                 SetOpt(exec, &poolPtr->exec);
-            } else {
-                SetOpt(Tcl_DStringValue(&defexec), &poolPtr->exec);
             }
             Ns_ConfigTimeUnitRange(section, "gettimeout",
                                    "0ms", 0, 0, INT_MAX, 0,
@@ -3032,7 +3030,11 @@ GetPool(const char *poolName, const InterpData *idataPtr)
             {
                 int max = Ns_ConfigInt(section, "maxworker", -1);
                 if (max == -1) {
-                    max = Ns_ConfigInt(section, "maxslaves", -1);
+                    if (Ns_ConfigParameterProvided(section, "maxslaves")) {
+                        Ns_LogDeprecatedParameter(section, "maxslaves",
+                                                  section, "maxworker", NULL);
+                        max = Ns_ConfigInt(section, "maxslaves", -1);
+                    }
                 }
                 if (max == -1) {
                     max = 8;
