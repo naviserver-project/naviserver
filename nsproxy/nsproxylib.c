@@ -3028,17 +3028,13 @@ GetPool(const char *poolName, const InterpData *idataPtr)
                                    &poolPtr->conf.tidle);
 
             {
-                int max = Ns_ConfigInt(section, "maxworker", -1);
-                if (max == -1) {
-                    if (Ns_ConfigParameterProvided(section, "maxslaves")) {
-                        Ns_LogDeprecatedParameter(section, "maxslaves",
-                                                  section, "maxworker", NULL);
-                        max = Ns_ConfigInt(section, "maxslaves", -1);
-                    }
+                int max;
+                if (Ns_ConfigParameterProvided(section, "maxslaves")) {
+                    Ns_LogDeprecatedParameter(section, "maxslaves",
+                                              section, "maxworker", NULL);
+                    max = Ns_ConfigInt(section, "maxslaves", 8);
                 }
-                if (max == -1) {
-                    max = 8;
-                }
+                max = Ns_ConfigInt(section, "maxworker", 8);
                 poolPtr->maxworker  = max;
             }
 
