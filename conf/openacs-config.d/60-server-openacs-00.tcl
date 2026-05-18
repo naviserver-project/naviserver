@@ -248,8 +248,8 @@ ns_section ns/server/$server/adp/parsers {
 # Tcl configuration
 #---------------------------------------------------------------------
 ns_section ns/server/$server/tcl {
-    ns_param debug   $debug
-    ns_param library $serverroot/tcl                     ;# default: modules/tcl
+    #ns_param debug   $debug                              ;# apparently not used in modern OpenACS/NaviServer
+    ns_param library $serverroot/tcl                      ;# default: modules/tcl
     # ns_param initfile ${serverroot}/tcl/server-init.tcl ;# default: bin/init.tcl
 
     #------------------------------------------------------------------
