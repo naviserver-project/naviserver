@@ -1,0 +1,35 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/db/pools}]
+
+The ns/db/pools section defines global database pool names. Each
+ parameter name is a configuration-defined pool name, and each value is
+ a human-readable description of the pool.
+
+[para]
+ Database pools are process-wide definitions and can be made available
+ to one or more virtual servers through the server-specific
+ ns/server/$server/db section.
+
+
+
+[example_begin]
+ ns_section ns/db/pools {
+     ns_param pool1 "Main database pool"
+     ns_param pool2 "Secondary database pool"
+     ns_param pool3 "Optional third database pool"
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: database pool name"]
+Configuration-defined database pool name whose value is a human-readable pool description; the pool name is used in ns/db/pool/$dbpool sections and in per-server database configuration
+
+[list_begin itemized]
+[item] Value type: [const "string"]
+[item] Role of parameter name: configuration-defined identifier
+[item] Cardinality: multiple entries with different parameter names are expected
+[list_end]
+
+[list_end]

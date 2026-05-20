@@ -1,0 +1,58 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/server/$server/vhost}]
+
+The ns/server/$server/vhost section configures legacy host-based page
+ root mapping within a single virtual server.  The request Host header
+ is normalized and used to select a host-specific subdirectory below
+ the server page root.
+
+[para]
+ This mechanism is less flexible than mass virtual hosting based on
+ serverrootproc, but remains useful for simple legacy virtual-host
+ layouts.
+
+
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "enabled"]"]
+Enable legacy host-based page-root mapping within this server; the request Host header is used to select a host-specific subdirectory below the server page root. This mode requires a relative pagedir and is less flexible than server-root based virtual hosting via serverrootproc
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "hosthashlevel"]"]
+Number of hash-directory levels added before the normalized host name in the generated page-root path; values from 0 to 5 are allowed and can avoid too many host directories in one directory
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "hostprefix"]"]
+Optional directory prefix inserted between the server directory and the normalized host name when building the host-specific page root
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "stripport"]"]
+Strip the port part from the Host header before deriving the host-specific page-root directory
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "stripwww"]"]
+Strip a leading www. from the Host header before deriving the host-specific page-root directory
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[list_end]

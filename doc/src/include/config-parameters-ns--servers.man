@@ -1,0 +1,34 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/servers}]
+
+The ns/servers section defines the virtual servers known to this
+ NaviServer process. Each parameter name is a configuration-defined
+ server name, and each value is a human-readable server description.
+ The server name is used in per-server configuration sections such as
+ ns/server/$server.
+
+
+
+[example_begin]
+ ns_section ns/servers {
+     ns_param default "Default server"
+     ns_param intranet "Intranet server"
+ }
+ 
+ ns_section ns/server/default {
+     ns_param serverdir servers/default
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: server name"]
+Maps a virtual server name to a human-readable server description
+
+[list_begin itemized]
+[item] Value type: [const "string"]
+[item] Role of parameter name: configuration-defined identifier
+[list_end]
+
+[list_end]

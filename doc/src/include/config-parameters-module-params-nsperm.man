@@ -1,0 +1,19 @@
+[list_begin definitions]
+
+[def "Parameter name: [emph "htaccess"]"]
+Activate htaccess mode, which is similar to Apache but more simpler and limited in functionality. It supports only allowing and denying access to a particular directory.
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "passwdfile"]"]
+Absolute path to the passwd file
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "HOME/modules/nsperm/passwd"]
+[list_end]
+
+[list_end]

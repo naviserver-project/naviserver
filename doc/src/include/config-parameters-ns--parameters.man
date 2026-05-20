@@ -1,0 +1,407 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/parameters}]
+
+The ns/parameters section contains global NaviServer settings that are
+ read during startup or used by process-wide subsystems. It includes the
+ installation directory layout, global logging behavior, DNS caching,
+ scheduler and job defaults, startup behavior, and compatibility settings.
+
+
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "asynclogwriter"]"]
+Write error.log and access.log asynchronously using writer threads.
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "autosni"]"]
+Enable SNI
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "bindir"]"]
+Name of the directory used for loading binary libraries or executables such as nsproxy workers; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "bin"]
+[list_end]
+
+[def "Parameter name: [emph "cachingmode"]"]
+Controls ns_cache behavior; full enables normal caching, while none makes ns_cache operations no-ops for conservative cluster deployments
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "full"], [const "none"]
+[item] Default: [const "full"]
+[list_end]
+
+[def "Parameter name: [emph "concurrentinterpcreate"]"]
+Allow Tcl interpreters to be created concurrently; when disabled, interpreter creation is serialized
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "dnscache"]"]
+Enable DNS result caching
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "dnscachemaxsize"]"]
+Max in-memory size of DNS cache
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "500KB"]
+[list_end]
+
+[def "Parameter name: [emph "dnscachetimeout"]"]
+Time to keep entries in cache
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "60m"]
+[list_end]
+
+[def "Parameter name: [emph "dnswaittimeout"]"]
+Timeout for DNS replies
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5s"]
+[list_end]
+
+[def "Parameter name: [emph "formfallbackcharset"]"]
+Charset to be used in HTML forms or query variables as alternative
+                    character set when the conversion of leads to invalid UTF-8
+
+[list_begin itemized]
+[item] Type: [const "charset"]
+[list_end]
+
+[def "Parameter name: [emph "home"]"]
+Root directory of the NaviServer installation; used as the base directory for relative paths in ns/parameters
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "joblogminduration"]"]
+Log only jobs longer than this
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "1s"]
+[list_end]
+
+[def "Parameter name: [emph "jobsperthread"]"]
+Number of ns_jobs processed by a worker thread before it exits
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "jobtimeout"]"]
+Default timeout for ns_job.
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5m"]
+[list_end]
+
+[def "Parameter name: [emph "listenbacklog"]"]
+Backlog for ns_socket
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "32"]
+[list_end]
+
+[def "Parameter name: [emph "logcolorize"]"]
+ANSI-colored log output
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logdebug"]"]
+Debug messages
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logdeduplicate"]"]
+Collapse repeated identical log messages
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logdev"]"]
+Development messages
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logdir"]"]
+Name of the directory used for log files and early startup files such as the pid file; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "logs"]
+[list_end]
+
+[def "Parameter name: [emph "logexpanded"]"]
+Use expanded log formatting by placing the message on an indented separate line and adding a blank line after each entry; useful for manual debugging
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logmaxbackup"]"]
+Number of rotated logs to keep
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "10"]
+[list_end]
+
+[def "Parameter name: [emph "lognotice"]"]
+Informational messages
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "logprefixcolor"]"]
+Color used for log prefixes
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "black"], [const "red"], [const "green"], [const "yellow"], [const "blue"], [const "magenta"], [const "cyan"], [const "gray"], [const "default"]
+[item] Default: [const "green"]
+[list_end]
+
+[def "Parameter name: [emph "logprefixintensity"]"]
+Intensity used for log prefixes
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "bright"], [const "normal"]
+[item] Default: [const "normal"]
+[list_end]
+
+[def "Parameter name: [emph "logrelative"]"]
+Start timestamps from zero
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logrollfmt"]"]
+Suffix appended to logfile name when rolled
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "logrollonsignal"]"]
+Rotate log on SIGHUP
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "logsec"]"]
+Timestamps in seconds
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "logthread"]"]
+Include thread id in log lines
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "logusec"]"]
+Timestamps in microseconds
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logusecdiff"]"]
+Deltas between log entries in microseconds
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "maxconcurrentupdates"]"]
+Maximum number of Tcl interpreters that may concurrently run update scripts after the server Tcl epoch changes
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "1000"]
+[list_end]
+
+[def "Parameter name: [emph "mutexlocktrace"]"]
+Enable tracing of mutex lock operations for debugging locking behavior
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "nshttptaskthreads"]"]
+Number of task threads
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "1"]
+[list_end]
+
+[def "Parameter name: [emph "pidfile"]"]
+Path of the file storing the nsd process id; relative paths are resolved against the log directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "nsd.pid"]
+[list_end]
+
+[def "Parameter name: [emph "progressminsize"]"]
+Minimum upload size for enabling upload progress tracking; useful for clients that display progress bars for large uploads, while avoiding progress bookkeeping overhead for small requests
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "rejectalreadyclosedconn"]"]
+Reject and log attempts by application code to send output on an already closed or detached connection, such as a second ns_return for the same request; prevents undefined behavior and confusing partial output, while false preserves legacy behavior
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "reverseproxymode"]"]
+Legacy switch for enabling reverse-proxy mode; deprecated in favor of the ns/reverseproxymode section, which provides explicit control over trusted proxies and filtering of forwarded client addresses
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[item] Deprecated: Use the ns/reverseproxymode section instead
+[list_end]
+
+[def "Parameter name: [emph "sanitizelogfiles"]"]
+Sanitize log file names; 0 = none, 1 = full, 2 = human-friendly
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "2"]
+[list_end]
+
+[def "Parameter name: [emph "schedlogminduration"]"]
+Log scheduled jobs that run longer than this
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "2s"]
+[list_end]
+
+[def "Parameter name: [emph "schedsperthread"]"]
+Number of scheduled jobs processed by a scheduler thread before it exits
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "shutdowntimeout"]"]
+Maximum time to wait during shutdown for threads and subsystems to terminate cleanly
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "20s"]
+[list_end]
+
+[def "Parameter name: [emph "sockacceptlog"]"]
+Log repeated accepts after this threshold
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "4"]
+[list_end]
+
+[def "Parameter name: [emph "stacksize"]"]
+Legacy location for the default thread stack size; when unset or 0, the operating system default is used
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Deprecated: Use ns/threads stacksize instead
+[list_end]
+
+[def "Parameter name: [emph "systemlog"]"]
+Path of the main server log file; relative paths are resolved against the log directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "nsd.log"]
+[list_end]
+
+[def "Parameter name: [emph "tclinitlock"]"]
+Serialize Tcl interpreter initialization; usually disabled, but useful when debugging rare initialization crashes or when running under tools such as valgrind
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "tcllibrary"]"]
+Directory containing NaviServer Tcl library files; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "tcl"]
+[list_end]
+
+[def "Parameter name: [emph "tmpdir"]"]
+Directory for temporary files; when unset, NaviServer uses the TMPDIR environment variable or the system default temporary directory, with a trailing slash removed
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[list_end]

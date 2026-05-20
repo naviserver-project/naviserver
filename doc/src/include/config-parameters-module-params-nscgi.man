@@ -1,0 +1,72 @@
+[list_begin definitions]
+
+[def "Parameter name: [emph "allowstaticresources"]"]
+Allow CGI requests to serve static resources from the mapped CGI directories; normally disabled so mapped locations are treated as executable CGI resources only
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "environment"]"]
+Name of an ns/environment/$name section whose entries are merged into the environment of CGI scripts
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "gethostbyaddr"]"]
+Resolve the remote client address to a hostname for CGI environment variables; disabled by default to avoid DNS lookup overhead and latency
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "interps"]"]
+Name of an ns/interps/$name section used to map CGI script filename extensions to interpreter commands
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "limit"]"]
+Maximum number of concurrent CGI executions allowed by this module instance; 0 disables the concurrency limit
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "map"]"]
+Maps HTTP methods and URL prefixes to filesystem directories containing CGI scripts
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "maxinput"]"]
+Maximum accepted request body size for CGI requests
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "1MB"]
+[list_end]
+
+[def "Parameter name: [emph "maxwait"]"]
+Maximum time to wait for a CGI process to complete before treating the request as failed
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "30s"]
+[list_end]
+
+[def "Parameter name: [emph "systemenvironment"]"]
+Pass the server process environment to CGI scripts; disabled by default to avoid exposing unintended environment variables
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[list_end]

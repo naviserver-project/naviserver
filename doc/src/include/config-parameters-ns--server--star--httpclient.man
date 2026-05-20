@@ -1,0 +1,125 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/server/$server/httpclient}]
+
+The ns/server/$server/httpclient section defines per-server defaults
+ for outgoing HTTP and HTTPS requests made through ns_http and
+ ns_connchan.  It controls default timeouts, connection reuse, logging,
+ and TLS certificate validation.
+
+
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "cafile"]"]
+CA bundle file containing trusted top-level certificates for outgoing HTTPS requests; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "ca-bundle.crt"]
+[list_end]
+
+[def "Parameter name: [emph "capath"]"]
+Directory containing trusted CA certificates for outgoing HTTPS requests; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "certificates"]
+[list_end]
+
+[def "Parameter name: [emph "defaulttimeout"]"]
+Default timeout for outgoing ns_http requests when neither -timeout nor -expire is specified
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5s"]
+[list_end]
+
+[def "Parameter name: [emph "invalidcertificates"]"]
+Directory where invalid peer certificates from outgoing HTTPS requests are stored for inspection; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "invalid-certificates"]
+[list_end]
+
+[def "Parameter name: [emph "keepalive"]"]
+Default keep-alive timeout for outgoing ns_http requests; 0 disables connection reuse by default
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "0s"]
+[list_end]
+
+[def "Parameter name: [emph "logging"]"]
+Enable logging for outgoing HTTP client requests
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logmaxbackup"]"]
+Maximum number of backup log files
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "100"]
+[list_end]
+
+[def "Parameter name: [emph "logroll"]"]
+Rotate log files automatically
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "logrollfmt"]"]
+Format appended to log filename
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "logrollhour"]"]
+Hour at which to roll the log
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "logrollonsignal"]"]
+Perform log rotation on SIGHUP
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "validatecertificates"]"]
+Validate TLS certificates for outgoing ns_http and ns_connchan HTTPS requests; disabling validation is insecure and increases exposure to man-in-the-middle attacks
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "validationdepth"]"]
+Maximum allowed certificate chain validation depth for outgoing HTTPS requests; 0 accepts only self-signed certificates, 1 accepts self-signed or certificates issued by one CA, and higher values allow longer chains
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "9"]
+[list_end]
+
+[def "Parameter name: [emph "validationexception"]"]
+Whitelist certificate validation exceptions for outgoing HTTPS requests, optionally restricted by client IP or network; useful for controlled exceptions while still collecting invalid certificates for review
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[list_end]

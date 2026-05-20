@@ -1,0 +1,27 @@
+[list_begin definitions]
+
+[def "Parameter name: [emph "backendconnection"]"]
+Default backend connection type used for reverse proxy backends; can be overridden per backend
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "s_http+ns_connchan"], [const "ns_http"], [const "ns_connchan"]
+[item] Default: [const "ns_http+ns_connchan"]
+[list_end]
+
+[def "Parameter name: [emph "register"]"]
+Tcl script evaluated during revproxy initialization; used to register additional handlers or filters for URLs handled by the proxy itself rather than forwarded to a backend
+
+[list_begin itemized]
+[item] Type: [const "script"]
+[list_end]
+
+[def "Parameter name: [emph "verbose"]"]
+Enable verbose logging for reverse proxy operations in the system log
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[list_end]

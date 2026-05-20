@@ -1,0 +1,21 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/threads}]
+
+The ns/threads section defines process-wide defaults for NaviServer
+ threads. Currently, it is used to configure the default stack size for
+ newly created threads.
+
+
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "stacksize"]"]
+Default stack size for newly created threads; when unset or 0, the operating system default is used
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "0kB"]
+[list_end]
+
+[list_end]

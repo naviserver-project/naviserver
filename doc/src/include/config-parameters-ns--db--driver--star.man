@@ -1,0 +1,29 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/db/driver/$dbdriver}]
+
+The ns/db/driver/$dbdriver section contains optional settings for a
+ database driver instance. The final path component is the
+ configuration-defined driver name from ns/db/drivers, not necessarily
+ the implementation name.
+
+[para]
+ For example, a configuration may map the driver name postgres to the
+ nsdbpg implementation and then configure driver-specific settings
+ below ns/db/driver/postgres.
+
+
+
+[example_begin]
+ ns_section ns/db/drivers {
+     ns_param postgres nsdbpg
+ }
+ 
+ ns_section ns/db/driver/postgres {
+     ns_param pgbin /usr/lib/postgresql/18/bin/
+ }
+[example_end]
+
+[list_begin definitions]
+
+[list_end]

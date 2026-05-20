@@ -1,0 +1,35 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nsdb}]
+
+The nsdb module provides NaviServer's database integration for a
+ virtual server. Loading this module enables the server to use database
+ pools defined globally under ns/db/pools and ns/db/pool/$dbpool.
+
+[para]
+ The server-specific ns/server/$server/db section selects which global
+ pools are available to this server and which one is used as the default
+ pool.
+
+
+
+[para]
+  This module is loaded per server through [const {ns/server/$server/modules}].
+
+[example_begin]
+ ns_section ns/server/$server/modules {
+     ns_param nsdb nsdb
+ }
+ 
+ ns_section ns/server/$server/db {
+     ns_param pools       pool1,pool2,pool3
+     ns_param defaultpool pool1
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri ../../nsdb/files/nsdb.html {nsdb}].
+
+[list_begin definitions]
+
+[list_end]

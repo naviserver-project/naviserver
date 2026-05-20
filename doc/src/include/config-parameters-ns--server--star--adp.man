@@ -1,0 +1,192 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/server/$server/adp}]
+
+The ns/server/$server/adp section configures ADP processing for a
+ virtual server, including ADP caching, buffering, error handling,
+ debugging, streaming, and URL mappings for ADP pages.
+
+
+
+[example_begin]
+ ns_section ns/server/$server/adp {
+     # Register ADP pages.
+     ns_param map         /*.adp
+ 
+     # Development/debugging.
+     ns_param enabledebug $debug
+ 
+     # Optional cache and buffer tuning.
+     # ns_param cache     true
+     # ns_param cachesize 10MB
+     # ns_param bufsize   5MB
+ 
+     # Optional common processing and error handling hooks.
+     # ns_param startpage /path/to/startpage.adp
+     # ns_param errorpage /path/to/errorpage.adp
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "autoabort"]"]
+Failure to flush a buffer generates an ADP exception
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "bufsize"]"]
+Size of ADP buffer
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "1MB"]
+[list_end]
+
+[def "Parameter name: [emph "cache"]"]
+Enable ADP caching
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "cachesize"]"]
+Size of ADP cache
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "5MB"]
+[list_end]
+
+[def "Parameter name: [emph "debuginit"]"]
+Procedure to execute on ADP debug initialization
+
+[list_begin itemized]
+[item] Type: [const "proc"]
+[item] Default: [const "ns_adp_debuginit"]
+[list_end]
+
+[def "Parameter name: [emph "defaultextension"]"]
+Optional file extension appended to unresolved ADP page filenames; useful when requests omit the ADP extension, for example resolving a request for page to page.adp
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "detailerror"]"]
+Include connection info in error backtrace
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "displayerror"]"]
+Include error message in output
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "enabledebug"]"]
+URL pattern registered for ADP processing; each map entry registers the ADP handler for GET, HEAD, and POST requests on the specified pattern
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "enableexpire"]"]
+Set Expires: now on all ADPs
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "errorpage"]"]
+Page for returning errors
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "map"]"]
+URL pattern registered for ADP processing; each entry maps the pattern for GET, HEAD, and POST requests
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "safeeval"]"]
+Disable inline scripts
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "singlescript"]"]
+Collapse Tcl blocks to a single Tcl script; in singlescript mode, an error in any part of the combined script
+stops execution of that ADP page
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "startpage"]"]
+File to run for every ADP request
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "stream"]"]
+Enable ADP streaming
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "stricterror"]"]
+Interrupt execution on any error
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "trace"]"]
+Trace execution of ADP scripts
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "tracesize"]"]
+Maximum number of entries in ADP trace
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "40"]
+[list_end]
+
+[def "Parameter name: [emph "trimspace"]"]
+Trim whitespace from output buffer
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[list_end]

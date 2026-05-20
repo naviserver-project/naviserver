@@ -1,0 +1,115 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/sendmail}]
+
+The ns/sendmail section documents configuration parameters used by the
+ legacy ns_sendmail command. The command sends mail through a configured
+ SMTP server and provides only basic SMTP support. STARTTLS is available
+ only when the external Tcl package "tls" is installed and loadable.
+
+[para]
+ For new applications, prefer the external nssmtpd module where appropriate,
+ or Tcl library based mail support with modern TLS-capable SMTP handling.
+
+[para]
+ In earlier NaviServer versions, these parameters were configured directly
+ in ns/parameters. This legacy location is still accepted for compatibility,
+ but new configurations should use ns/sendmail.
+
+
+
+[para]
+For detailed documentation, see [uri https://github.com/naviserver-project/nssmtpd {nssmtpd}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "smtpauthmode"]"]
+SMTP authentication mode used by ns_sendmail; empty value disables SMTP authentication
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "PLAIN"], [const "LOGIN"]
+[item] Default: [const "PLAIN"]
+[list_end]
+
+[def "Parameter name: [emph "smtpauthpassword"]"]
+SMTP authentication password used by ns_sendmail
+
+[list_begin itemized]
+[item] Type: [const "password"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "smtpauthuser"]"]
+SMTP authentication user name used by ns_sendmail
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "smtpencoding"]"]
+Character encoding used by ns_sendmail when SMTP encoding mode is enabled
+
+[list_begin itemized]
+[item] Type: [const "charset"]
+[item] Default: [const "utf-8"]
+[list_end]
+
+[def "Parameter name: [emph "smtpencodingmode"]"]
+Enable message encoding support for ns_sendmail
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "smtphost"]"]
+SMTP server host used by ns_sendmail
+
+[list_begin itemized]
+[item] Type: [const "hostname"]
+[item] Default: [const "localhost"]
+[list_end]
+
+[def "Parameter name: [emph "smtplogmode"]"]
+Enable logging of SMTP dialogue or delivery activity for ns_sendmail
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "smtpmsgid"]"]
+Generate a Message-ID header for messages sent by ns_sendmail
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "smtpmsgidhostname"]"]
+Host name used when generating Message-ID headers for ns_sendmail; when empty, the default host name is used
+
+[list_begin itemized]
+[item] Type: [const "hostname"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "smtpport"]"]
+SMTP server port used by ns_sendmail
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "25"]
+[list_end]
+
+[def "Parameter name: [emph "smtptimeout"]"]
+Timeout for SMTP operations performed by ns_sendmail
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "60"]
+[list_end]
+
+[list_end]

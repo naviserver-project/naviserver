@@ -1,0 +1,153 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nsssl}]
+
+The nsssl module provides the HTTPS network driver. It extends the
+ HTTP driver with TLS support, certificate configuration, client
+ certificate verification, OCSP stapling, and optional HTTP/3 Alt-Svc
+ advertisement.
+
+
+
+[para]
+This module also accepts the parameters documented for [const "nssock"]. The parameters listed below are specific to [const "nsssl"].
+
+[para]
+ This module can be loaded globally hrough [const ns/modules] or per-server through [const {ns/server/$server/modules}].
+
+[example_begin]
+ ns_section ns/modules {
+     ns_param https nsssl
+ }
+ 
+ ns_section ns/module/https {
+     ns_param port        8443
+     ns_param certificate /usr/local/ns/certificates/server.pem
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri ../../nsssl/files/nsssl.html {nsssl}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "certificate"]"]
+Certificate chain file in PEM format; relative paths are resolved against the certificates directory below the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "ciphers"]"]
+OpenSSL cipher list used for TLS connections; controls the allowed cipher suites for protocols where OpenSSL uses the traditional cipher-list syntax
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "ciphersuites"]"]
+OpenSSL TLS 1.3 cipher suite list for this HTTPS driver; use ciphers for TLS 1.2 and older protocol versions
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "clientcafile"]"]
+Trusted CA certificates file for client certificate validation; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "clientcapath"]"]
+Trusted CA certificates directory for client certificate validation; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "clientcertmode"]"]
+Client certificate request mode
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "none"], [const "request"], [const "require"]
+[item] Default: [const "none"]
+[list_end]
+
+[def "Parameter name: [emph "h3advertise"]"]
+Advertise HTTP/3 availability via the Alt-Svc response header when an HTTP/3 driver is active and linked to this TLS driver; no header is added when Alt-Svc is already set
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "h3persist"]"]
+Add the persist flag to the HTTP/3 Alt-Svc advertisement, indicating that clients may keep using the advertised HTTP/3 alternative across network changes
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "key"]"]
+Private key file in PEM format; optional when the private key is included in the certificate file; relative paths are resolved against the certificates directory below the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "ocspcheckinterval"]"]
+OCSP recheck interval
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5m"]
+[list_end]
+
+[def "Parameter name: [emph "ocspstapling"]"]
+Enable OCSP stapling
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "ocspstaplingverbose"]"]
+Enable verbose OCSP stapling logging
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "protocols"]"]
+TLS protocol versions enabled for this driver
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "tlskeylogfile"]"]
+TLS key log file used for writing TLS session secrets for debugging or protocol analysis; when set to a non-empty value, the file is opened in append mode, and when set to an empty value, NaviServer uses the SSLKEYLOGFILE environment variable. The file contains sensitive material that can decrypt captured TLS traffic
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "tlskeyscript"]"]
+Helper script used to obtain the password for the server private key when the key is encrypted in the PEM file
+
+[list_begin itemized]
+[item] Type: [const "script"]
+[list_end]
+
+[def "Parameter name: [emph "vhostcertificates"]"]
+Directory for virtual-host certificates of the default server
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[list_end]

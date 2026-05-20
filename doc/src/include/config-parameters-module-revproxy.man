@@ -1,0 +1,70 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {revproxy}]
+
+The revproxy module provides reverse-proxy support for a virtual
+ server. It forwards selected incoming requests to configured backend
+ servers and returns the backend response to the client.
+
+[para]
+ Backend servers are configured in subsections below the revproxy
+ module configuration. The main module section contains global defaults
+ and initialization hooks, while each backend subsection defines its
+ target URLs, URL mappings, timeouts, optional URL rewriting, backend
+ connection handling, and forwarding constraints.
+
+[para]
+ Backend subsections are documented separately in the following revproxy
+ backends subsection.
+
+
+
+[para]
+  This module is loaded per server through [const {ns/server/$server/modules}].
+
+[example_begin]
+ ns_section ns/server/$server/modules {
+     ns_param revproxy tcl
+ }
+ 
+ ns_section ns/server/$server/module/revproxy {
+     ns_param verbose false
+ }
+ 
+ ns_section ns/server/$server/module/revproxy/backend1 {
+     ns_param target https://backend.example.com/
+     ns_param map    "GET  /api/*"
+     ns_param map    "POST /api/*"
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri ../../revproxy/files/revproxy.html {revproxy}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "backendconnection"]"]
+Default backend connection type used for reverse proxy backends; can be overridden per backend
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "s_http+ns_connchan"], [const "ns_http"], [const "ns_connchan"]
+[item] Default: [const "ns_http+ns_connchan"]
+[list_end]
+
+[def "Parameter name: [emph "register"]"]
+Tcl script evaluated during revproxy initialization; used to register additional handlers or filters for URLs handled by the proxy itself rather than forwarded to a backend
+
+[list_begin itemized]
+[item] Type: [const "script"]
+[list_end]
+
+[def "Parameter name: [emph "verbose"]"]
+Enable verbose logging for reverse proxy operations in the system log
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[list_end]

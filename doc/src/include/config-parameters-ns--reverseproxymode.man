@@ -1,0 +1,42 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/reverseproxymode}]
+
+The ns/reverseproxymode section configures how NaviServer interprets
+ request information when it runs behind trusted reverse proxies or load
+ balancers. These settings affect the effective client peer address used
+ by access logs and APIs that report peer-address information.
+
+[para]
+ This section is about NaviServer being behind a reverse proxy. It is
+ unrelated to the revproxy module, where NaviServer itself forwards
+ requests to backend servers.
+
+
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "enabled"]"]
+Enable reverse-proxy mode for installations behind trusted frontend proxies or load balancers; affects the effective peer address used by access logs and APIs that determine the client peer address
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "skipnonpublic"]"]
+Ignore forwarded client addresses that are not public addresses; useful to avoid recording private or internal proxy-chain addresses as the effective client peer
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "trustedservers"]"]
+Trusted proxy addresses or networks whose forwarded client information may be accepted; only proxies listed here should be allowed to influence the effective peer address used by access logs and peer-address APIs
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[list_end]

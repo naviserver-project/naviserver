@@ -1,0 +1,105 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/db/pool/$dbpool}]
+
+The ns/db/pool/$dbpool section configures a global database connection
+ pool. A pool defines how NaviServer connects to a database, how many
+ handles are maintained, and how idle or stale handles are checked and
+ closed.
+
+[para]
+ Database pools are global and may be used by multiple virtual servers.
+ A server selects the pools it uses in ns/server/$server/db.
+
+
+
+[example_begin]
+ ns_section ns/db/pool/pool1 {
+     ns_param driver         postgres
+     ns_param datasource     localhost::dbname
+     ns_param user           dbuser
+     ns_param password       secret
+     ns_param connections    15
+     ns_param logminduration 10ms
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "checkinterval"]"]
+Interval at which the pool checks for stale database handles
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5m"]
+[list_end]
+
+[def "Parameter name: [emph "connections"]"]
+Number of database connections maintained by this pool
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "2"]
+[list_end]
+
+[def "Parameter name: [emph "datasource"]"]
+Driver-specific datasource string identifying the database connection target
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "driver"]"]
+Database driver used by this pool
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "logminduration"]"]
+When SQL logging is enabled, log only statements whose execution time is at least this duration
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "0ms"]
+[list_end]
+
+[def "Parameter name: [emph "logsqlerrors"]"]
+Log SQL errors reported by this pool
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "maxidle"]"]
+Close database handles that have been idle for at least this interval
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5m"]
+[list_end]
+
+[def "Parameter name: [emph "maxopen"]"]
+Close database handles that have been open longer than this interval
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "60m"]
+[list_end]
+
+[def "Parameter name: [emph "password"]"]
+Database password used when opening connections for this pool
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "user"]"]
+Database user name used when opening connections for this pool
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[list_end]

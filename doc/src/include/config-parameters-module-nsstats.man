@@ -1,0 +1,70 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nsstats}]
+
+The nsstats module provides status and diagnostic pages for a running
+ NaviServer instance. It is configured as a global Tcl module and can
+ display runtime information such as server statistics, locks, threads,
+ loaded modules, and the current configuration database.
+
+[para]
+ This module provides access to potentially sensitive
+ information. Do not deploy it on public-facing
+ websites unless you implement appropriate access
+ controls. For OpenACS installations, it is recommended
+ to place the module main script nsstats.tcl in a
+ secure directory such as acs-subsite/www/admin/,
+ ensuring that only authorized users can access it.
+
+
+
+[para]
+ This module should be loaded globally through [const ns/modules].
+
+[example_begin]
+ ns_section ns/module/nsstats {
+     ns_param enabled  true
+     ns_param user     nsadmin
+     ns_param password ""
+     ns_param bglocks  {oacs:sched_procs}
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri https://github.com/naviserver-project/nsstats {nsstats}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "bglocks"]"]
+List of lock names treated as non-per-request background locks in nsstats lock reporting
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "enabled"]"]
+Enable or disable the nsstats module
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "password"]"]
+Password required for accessing nsstats pages; when empty, access control depends on the surrounding configuration
+
+[list_begin itemized]
+[item] Type: [const "password"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "user"]"]
+User name required for accessing nsstats pages
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[item] Default: [const "nsadmin"]
+[list_end]
+
+[list_end]

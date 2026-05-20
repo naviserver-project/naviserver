@@ -1,0 +1,17 @@
+[list_begin definitions]
+
+[def "Parameter name: [emph "address"]"]
+Local address on which the control port listens; should normally be restricted to a trusted interface such as loopback (e.g. 127.0.0.1)
+
+[list_begin itemized]
+[item] Type: [const "address"]
+[list_end]
+
+[def "Parameter name: [emph "port"]"]
+TCP port on which the control port listens
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[list_end]
+
+[list_end]

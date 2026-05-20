@@ -1,0 +1,58 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/mimetypes}]
+
+The ns/mimetypes section defines MIME type mappings used when
+ NaviServer determines the content type of a file from its filename.
+ These mappings are used when serving static files and by APIs such as
+ ns_guesstype.
+
+[para]
+ NaviServer includes a large built-in MIME type table based on IANA
+ media type registrations. Since lookup is based on filename
+ extensions, real-world usage can still require local overrides when
+ the same extension is used for different content types or when local
+ conventions differ from the built-in defaults.
+
+
+
+[example_begin]
+ ns_section ns/mimetypes {
+     ns_param default     text/plain
+     ns_param noextension text/plain
+ 
+     # Override or add extension-specific mappings.
+     ns_param .md         text/markdown
+     ns_param .log        text/plain
+     ns_param .wasm       application/wasm
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "default"]"]
+MIME type used when no more specific mapping is found for a requested file
+
+[list_begin itemized]
+[item] Type: [const "mime-type"]
+[item] Default: [const "*/*"]
+[list_end]
+
+[def "Parameter name: [emph "noextension"]"]
+MIME type used for requested files whose names do not have a filename extension. Fir not specified it falls back to the value of the default parameter
+
+[list_begin itemized]
+[item] Type: [const "mime-type"]
+[item] Default: [const "*/*"]
+[list_end]
+
+[def "Parameter name: filename extension"]
+Maps a filename extension to a MIME content type, overriding or extending the built-in MIME type table
+
+[list_begin itemized]
+[item] Value type: [const "mime-type"]
+[item] Role of parameter name: mapping key
+[item] Cardinality: multiple entries with different parameter names are expected
+[list_end]
+
+[list_end]

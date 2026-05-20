@@ -1,0 +1,52 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nsoracle}]
+
+The nsoracle module provides the Oracle database driver for the
+ nsdb interface. It is an external NaviServer module and must be
+ compiled and installed separately.
+
+[para]
+ The configured driver name is chosen in ns/db/drivers. A common
+ convention is to use nsoracle as both the driver name and the
+ implementation name
+
+
+
+[example_begin]
+ ns_section ns/db/drivers {
+     ns_param nsoracle nsoracle
+ }
+ 
+ ns_section ns/db/driver/nsoracle {
+     ns_param maxStringLogLength -1
+     ns_param LobBufferSize      32768
+ }
+ 
+ ns_section ns/db/pool/pool1 {
+     ns_param driver nsoracle
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri https://github.com/naviserver-project/nsoracle {nsoracle}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "lobbuffersize"]"]
+Buffer size used for Oracle LOB operations
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "32768"]
+[list_end]
+
+[def "Parameter name: [emph "maxstringloglength"]"]
+Maximum length of SQL strings written to the log; -1 disables this limit
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "-1"]
+[list_end]
+
+[list_end]

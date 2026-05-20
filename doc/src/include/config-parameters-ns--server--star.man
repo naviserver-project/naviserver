@@ -1,0 +1,260 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/server/$server}]
+
+The ns/server/$server section defines core settings for a virtual
+ server.  It controls connection-thread behavior, compression defaults,
+ request-overload handling, system-generated notices, default character
+ sets, and selected compatibility options.
+
+[para]
+ The placeholder $server is the server name defined in ns/servers.
+
+
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "checkmodifiedsince"]"]
+Honour If-Modified-Since for cached files
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "compressenable"]"]
+Enable gzip compression for eligible dynamic responses by default; individual requests can still control compression via ns_conn compress
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "compresslevel"]"]
+Compression level; higher values use more CPU and provide better compression
+
+[list_begin itemized]
+[item] Type: [const "integer 1-9"]
+[item] Default: [const "4"]
+[list_end]
+
+[def "Parameter name: [emph "compressminsize"]"]
+Compress responses larger than this size
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "512"]
+[list_end]
+
+[def "Parameter name: [emph "compresspreinit"]"]
+Preallocate compression buffers at startup
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "connectionratelimit"]"]
+Rate limit per connection; -1 means unlimited
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "connsperthread"]"]
+Number of requests processed by a connection thread before it exits; 0 means unlimited
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "10000"]
+[list_end]
+
+[def "Parameter name: [emph "enablehttpproxy"]"]
+Enable forward HTTP proxy handling for this server; for scalable proxying, the revproxy module should normally be loaded, otherwise a simple fallback implementation is used
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "enabletclpages"]"]
+Enable direct execution of .tcl pages for GET, HEAD, and POST requests by registering /*.tcl as Tcl request handlers
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "errorminsize"]"]
+Pad error replies up to this size
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "514"]
+[list_end]
+
+[def "Parameter name: [emph "extraheaders"]"]
+Additional HTTP response headers added for this server, typically used for server-wide security headers or policy headers
+
+[list_begin itemized]
+[item] Type: [const "ns_set"]
+[list_end]
+
+[def "Parameter name: [emph "filterrwlocks"]"]
+Use read/write locks for managing request filters; this improves concurrency when filters are mostly read during request processing and only changed occasionally
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "formfallbackcharset"]"]
+Fallback character set used when parsing URL-encoded or multipart form data if no explicit charset can be determined from the request
+
+[list_begin itemized]
+[item] Type: [const "charset"]
+[list_end]
+
+[def "Parameter name: [emph "highwatermark"]"]
+Allow concurrent thread creation above this queue fill percentage
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "80"]
+[list_end]
+
+[def "Parameter name: [emph "logdir"]"]
+Directory for per-server log files; relative paths are resolved against the server home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "lowwatermark"]"]
+Create more threads above this queue fill percentage
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "10"]
+[list_end]
+
+[def "Parameter name: [emph "maxconnections"]"]
+Number of allocated connection structures
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "100"]
+[list_end]
+
+[def "Parameter name: [emph "maxthreads"]"]
+Maximum number of connection threads
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "10"]
+[list_end]
+
+[def "Parameter name: [emph "minthreads"]"]
+Minimum number of connection threads
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "1"]
+[list_end]
+
+[def "Parameter name: [emph "noticeadp"]"]
+ADP template used for system-generated HTTP notice responses such as ns_returnnotice; relative paths are resolved against SERVERHOME/conf, an empty value uses a built-in template, and errors in a custom template fall back to a basic built-in template
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "returnnotice.adp"]
+[list_end]
+
+[def "Parameter name: [emph "noticedetail"]"]
+Include server signature
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "outputcharset"]"]
+Default character set for text output from this server; used to determine the Tcl encoding for converting Tcl UTF-8 strings to the response encoding, and can be changed per connection via ns_conn encoding
+
+[list_begin itemized]
+[item] Type: [const "charset"]
+[item] Default: [const "utf-8"]
+[list_end]
+
+[def "Parameter name: [emph "poolratelimit"]"]
+Rate limit per pool; 0 means unlimited
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "realm"]"]
+Default HTTP Basic authentication realm used in WWW-Authenticate responses when no connection-specific realm is set; defaults to $server
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "rejectoverrun"]"]
+Reject requests with 503 Service Unavailable when the connection queue is full instead of accepting more work; useful to apply back-pressure during overload
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "retryafter"]"]
+Value used for the Retry-After header in 503 Service Unavailable responses when rejectoverrun is enabled
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5s"]
+[list_end]
+
+[def "Parameter name: [emph "serverdir"]"]
+Root directory for this virtual server; relative paths are resolved against the NaviServer home directory. This setting is the canonical location for the per-server directory and replaces the deprecated serverdir setting in ns/server/$server/fastpath
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "serverrootproc"]"]
+Tcl procedure used to compute the server root directory dynamically, for example for mass virtual hosting based on the request host
+
+[list_begin itemized]
+[item] Type: [const "proc"]
+[list_end]
+
+[def "Parameter name: [emph "stealthmode"]"]
+Omit Server header
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "threadtimeout"]"]
+Idle timeout for connection threads above minthreads; excess threads exit after being idle for this duration
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "2m"]
+[list_end]
+
+[def "Parameter name: [emph "urlcharset"]"]
+Default character set for decoding URL query strings and form data for this server; initialized as the connection URL encoding, used by form parsing and URL decoding, and can be changed per connection via ns_conn urlencoding
+
+[list_begin itemized]
+[item] Type: [const "charset"]
+[item] Default: [const "utf-8"]
+[list_end]
+
+[list_end]

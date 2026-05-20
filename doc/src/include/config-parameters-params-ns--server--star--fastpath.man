@@ -1,0 +1,51 @@
+[list_begin definitions]
+
+[def "Parameter name: [emph "directoryadp"]"]
+ADP page invoked to generate a directory listing when a request maps to a directory and no directory index file is found; when unset, NaviServer falls back to directoryproc if configured
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "directoryfile"]"]
+List of filenames to try when a request maps to a directory; the first existing file is served as the directory index
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[item] Default: [const "index.adp index.tcl index.html index.htm"]
+[list_end]
+
+[def "Parameter name: [emph "directorylisting"]"]
+Directory listing style
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "simple"], [const "fancy"], [const "none"]
+[list_end]
+
+[def "Parameter name: [emph "directoryproc"]"]
+Tcl procedure used to generate directory listings when no directory index file is found and directory listing is enabled
+
+[list_begin itemized]
+[item] Type: [const "proc"]
+[item] Default: [const "_ns_dirlist"]
+[list_end]
+
+[def "Parameter name: [emph "hidedotfiles"]"]
+Hide files and directories whose names start with a dot from generated directory listings
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "pagedir"]"]
+Root directory for static files and fastpath content for this server; relative paths are resolved against the server home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "pages"]
+[list_end]
+
+[list_end]

@@ -1,0 +1,208 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nssmtpd}]
+
+The nssmtpd module provides an SMTP server for NaviServer. It can be
+ used to receive mail locally, relay messages to another mail server,
+ filter incoming messages, and dispatch SMTP processing to Tcl callback
+ procedures.
+
+[para]
+ The module is an external NaviServer module and must be compiled and
+ installed separately. For new mail-related applications, nssmtpd or
+ Tcl library based mail support is usually preferable to the legacy
+ ns_sendmail command.
+
+[para]
+ The logging parameters documented here apply to SMTP sending operations
+ performed by the module. A graphical viewer for the log file is included
+ in the nsstats module.
+
+
+
+[para]
+ This module should be loaded globally through [const ns/modules].
+
+[example_begin]
+ ns_section ns/server/$server/modules {
+     ns_param nssmtpd nssmtpd
+ }
+ 
+ ns_section ns/server/$server/module/nssmtpd {
+     ns_param port        2525
+     ns_param address     127.0.0.1
+     ns_param relay       localhost:25
+     ns_param spamd       localhost
+ 
+     ns_param initproc    smtpd::init
+     ns_param rcptproc    smtpd::rcpt
+     ns_param dataproc    smtpd::data
+     ns_param errorproc   smtpd::error
+ 
+     ns_param relaydomains "localhost"
+     ns_param localdomains "localhost"
+ 
+     ns_param logging     on
+     ns_param logfile     smtpsend.log
+     ns_param logrollfmt  %Y-%m-%d
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri https://github.com/naviserver-project/nssmtpd {nssmtpd}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "address"]"]
+Local address on which the SMTP server listens
+
+[list_begin itemized]
+[item] Type: [const "address"]
+[list_end]
+
+[def "Parameter name: [emph "cafile"]"]
+CA certificate file used for TLS certificate validation
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "capath"]"]
+Directory containing CA certificates used for TLS certificate validation
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "certificate"]"]
+Certificate chain file used for STARTTLS support
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "ciphers"]"]
+OpenSSL cipher list for TLS 1.2 and older STARTTLS connections
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "dataproc"]"]
+Tcl callback procedure invoked for processing SMTP message data
+
+[list_begin itemized]
+[item] Type: [const "proc"]
+[list_end]
+
+[def "Parameter name: [emph "errorproc"]"]
+Tcl callback procedure invoked for SMTP error handling
+
+[list_begin itemized]
+[item] Type: [const "proc"]
+[list_end]
+
+[def "Parameter name: [emph "initproc"]"]
+Tcl callback procedure invoked during SMTP session initialization
+
+[list_begin itemized]
+[item] Type: [const "proc"]
+[list_end]
+
+[def "Parameter name: [emph "localdomains"]"]
+Domain names treated as local by this SMTP server
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "logfile"]"]
+Log file for SMTP sending operations; relative paths are resolved according to the module's logging rules
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "logging"]"]
+Enable logging for SMTP sending operations performed by the module
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logmaxbackup"]"]
+Maximum number of rotated SMTP sending log files to keep
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "10"]
+[list_end]
+
+[def "Parameter name: [emph "logroll"]"]
+Enable automatic rotation of the SMTP sending log
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "logrollfmt"]"]
+Suffix format used when rotating the SMTP sending log file
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "logrollhour"]"]
+Hour of day at which to rotate the SMTP sending log
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "logrollonsignal"]"]
+Rotate the SMTP sending log when the server receives a SIGHUP signal
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "port"]"]
+TCP port on which the SMTP server listens
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[list_end]
+
+[def "Parameter name: [emph "rcptproc"]"]
+Tcl callback procedure invoked for SMTP recipient handling
+
+[list_begin itemized]
+[item] Type: [const "proc"]
+[list_end]
+
+[def "Parameter name: [emph "relay"]"]
+Upstream SMTP server or mail relay used for forwarding messages
+
+[list_begin itemized]
+[item] Type: [const "address"]
+[list_end]
+
+[def "Parameter name: [emph "relaydomains"]"]
+Domain names for which this SMTP server accepts mail for relaying
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "spamd"]"]
+Spamd or SpamAssassin daemon used for filtering messages
+
+[list_begin itemized]
+[item] Type: [const "address"]
+[list_end]
+
+[list_end]

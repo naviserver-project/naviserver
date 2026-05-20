@@ -1,0 +1,51 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nsperm}]
+
+The nsperm module provides file-based permission checking for a virtual
+ server. It can protect URL spaces using access-control data and optional
+ .htaccess-style files.
+
+[para]
+ This module is mainly useful for simple deployments or compatibility
+ with older configurations. Applications with their own authentication
+ and authorization layer typically use application-level permission
+ checks instead.
+
+
+
+[para]
+  This module is loaded per server through [const {ns/server/$server/modules}].
+
+[example_begin]
+ ns_section ns/server/$server/modules {
+     ns_param nsperm nsperm
+ }
+ 
+ ns_section ns/server/$server/module/nsperm {
+     ns_param htaccess false
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri ../../nsperm/files/nsperm.html {nsperm}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "htaccess"]"]
+Activate htaccess mode, which is similar to Apache but more simpler and limited in functionality. It supports only allowing and denying access to a particular directory.
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "passwdfile"]"]
+Absolute path to the passwd file
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "HOME/modules/nsperm/passwd"]
+[list_end]
+
+[list_end]

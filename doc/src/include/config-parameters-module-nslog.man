@@ -1,0 +1,182 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nslog}]
+
+The nslog module writes HTTP access logs for a virtual server.  It can
+ produce combined access logs, rotate log files, include request timing
+ and thread information, and optionally anonymize logged client
+ addresses.
+
+
+
+[para]
+  This module is loaded per server through [const {ns/server/$server/modules}].
+
+[example_begin]
+ ns_section ns/server/$server/modules {
+     ns_param nslog nslog
+ }
+ 
+ ns_section ns/server/$server/module/nslog {
+     ns_param file        access.log
+     ns_param rolllog     true
+     ns_param maxbackup   10
+     ns_param logcombined true
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri ../../nslog/files/nslog.html {nslog}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "checkforproxy"]"]
+Legacy option for logging the client address from X-Forwarded-For; deprecated in favor of reverse-proxy mode, which centralizes trusted proxy handling for access logs and peer-address APIs
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[item] Deprecated: Use ns/parameters/reverseproxymode instead
+[list_end]
+
+[def "Parameter name: [emph "driver"]"]
+Tcl string-match pattern for selecting network driver instance names to be logged by this nslog instance; when unset, the access log records requests from all drivers
+
+[list_begin itemized]
+[item] Type: [const "pattern"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "extendedheaders"]"]
+Additional header fields to include in access log entries; entries without a prefix are treated as request headers, while request:NAME and response:NAME select request and response headers explicitly
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "file"]"]
+Access log file written by this nslog instance; relative paths are resolved against the server log directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "access.log"]
+[list_end]
+
+[def "Parameter name: [emph "formattedtime"]"]
+Use formatted timestamps instead of Unix time
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "logcombined"]"]
+Use NCSA combined log format including referer and user-agent
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "logpartialtimes"]"]
+Log partial request timing information for selected request processing phases; useful for diagnosing where request time is spent
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logreqtime"]"]
+Include total request processing time in access log entries
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "logthreadname"]"]
+Include the connection thread name in access log entries; useful for debugging thread and pool behavior
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "maskipv4"]"]
+IPv4 address mask for anonymizing logged client addresses
+
+[list_begin itemized]
+[item] Type: [const "ip-mask"]
+[list_end]
+
+[def "Parameter name: [emph "maskipv6"]"]
+IPv6 address mask for anonymizing logged client addresses
+
+[list_begin itemized]
+[item] Type: [const "ip-mask"]
+[list_end]
+
+[def "Parameter name: [emph "masklogaddr"]"]
+Anonymize logged client addresses using maskipv4 and maskipv6 before writing access log entries
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "maxbackup"]"]
+Maximum number of rotated log files
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "100"]
+[list_end]
+
+[def "Parameter name: [emph "maxbuffer"]"]
+Number of log entries buffered
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "rollfmt"]"]
+Suffix format used when rotating the access log file; controls how timestamps are appended to rolled log filenames
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "rollhour"]"]
+Hour of day to roll the log
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "rolllog"]"]
+Rotate logs automatically
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "rollonsignal"]"]
+Rotate log on SIGHUP
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "suppressquery"]"]
+Suppress the query string in logged request URLs; useful for reducing log volume and avoiding accidental logging of sensitive URL parameters
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[list_end]

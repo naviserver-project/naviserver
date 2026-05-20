@@ -1,0 +1,83 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {quic}]
+
+The quic module provides the experimental HTTP/3 network driver based
+ on QUIC. It is part of NaviServer 5.1, but requires OpenSSL 4.0 or newer.
+ The driver is linked to an existing HTTPS driver configuration and
+ reuses its TLS certificate, key, and protocol settings.
+
+[para]
+ HTTP/3 support is disabled by default. The current implementation is
+ functional but still experimental and not yet recommended for
+ production use. More testing, leak checking, load testing, and
+ hardening are still needed.
+
+
+
+[para]
+This module also accepts the parameters documented for [const "nsssl"]. The parameters listed below are specific to [const "quic"].
+
+[para]
+ This module should be loaded globally through [const ns/modules].
+
+[example_begin]
+ ns_section ns/modules {
+     ns_param https nsssl
+     ns_param h3    quic
+ }
+ 
+ ns_section ns/module/https {
+     ns_param port        8443
+     ns_param certificate /usr/local/ns/certificates/server.pem
+ 
+     # Extra parameters specific for HTTP/3
+     # ns_param h3advertise    true
+     # ns_param h3persist      false
+ }
+ ns_section ns/module/h3 {
+     ns_param https       ns/module/https
+     ns_param recvbufsize 8MB
+     ns_param idletimeout 3s
+     ns_param draintimeout 10ms
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri ../../quic/files/quic.html {quic}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "draintimeout"]"]
+Drain timeout used when closing QUIC connections, allowing pending packets or connection-close handling to complete
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "10ms"]
+[list_end]
+
+[def "Parameter name: [emph "https"]"]
+Configuration section of the HTTPS driver to which this HTTP/3 driver is linked; the QUIC driver reuses the TLS configuration from this section
+
+[list_begin itemized]
+[item] Type: [const "section"]
+[item] Default: [const "ns/module/https"]
+[list_end]
+
+[def "Parameter name: [emph "idletimeout"]"]
+Maximum idle time for QUIC connections before they are closed
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "3s"]
+[list_end]
+
+[def "Parameter name: [emph "recvbufsize"]"]
+Size of the UDP receive buffer used by the HTTP/3 driver
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "8MB"]
+[list_end]
+
+[list_end]

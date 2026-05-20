@@ -1,0 +1,40 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/db/drivers}]
+
+The ns/db/drivers section defines database driver instances available
+ to NaviServer's nsdb interface. Each parameter name is a
+ configuration-defined driver name, and each value is the database
+ driver module implementation to load.
+
+[para]
+ Database drivers are external NaviServer modules. They are maintained
+ separately from the core server, usually in separate source repositories,
+ and must be compiled and installed before they can be loaded. Common
+ drivers include nsdbpg for PostgreSQL and nsoracle for Oracle; additional
+ drivers are available for other database systems.
+
+
+
+[example_begin]
+ ns_section ns/db/drivers {
+     ns_param postgres nsdbpg
+     ns_param nsoracle nsoracle
+ }
+[example_end]
+
+[para]
+Available external database drivers include [uri https://github.com/naviserver-project/nsdbpg {nsdbpg}], [uri https://github.com/naviserver-project/nsoracle {nsoracle}], [uri https://github.com/naviserver-project/nsdbmysql {nsdbmysql}], [uri https://github.com/naviserver-project/nsdbsqlite {nsdbsqlite}], [uri https://github.com/naviserver-project/nsdbtds {nsdbtds}], [uri https://github.com/naviserver-project/nsodbc {nsodbc}], and [uri https://github.com/naviserver-project/nsdbbdb {nsdbbdb}].
+
+[list_begin definitions]
+
+[def "Parameter name: database driver name"]
+Configuration-defined database driver name whose value names the installed database driver module implementation; the driver name is used in ns/db/pool/$dbpool via the driver parameter
+
+[list_begin itemized]
+[item] Value type: [const "module"]
+[item] Role of parameter name: configuration-defined identifier
+[item] Cardinality: multiple entries with different parameter names are expected
+[list_end]
+
+[list_end]

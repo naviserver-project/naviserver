@@ -1,0 +1,68 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/server/$server/tcl}]
+
+The ns/server/$server/tcl section configures Tcl interpreter
+ initialization and server-specific Tcl behavior, including the init
+ file, Tcl library location, lazy loading, memoization, and NSV locking
+ settings.
+
+
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "errorlogheaders"]"]
+List of request header field names to include in Tcl error log messages for connection-related errors; matching headers are appended to the logged request method, URL, and peer address
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "initfile"]"]
+Tcl initialization file sourced when initializing interpreters for this server; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "bin/init.tcl"]
+[list_end]
+
+[def "Parameter name: [emph "lazyloader"]"]
+Enable lazy loading of Tcl library procedures, loading definitions on demand instead of during interpreter initialization; note: not supportend for e.g. OpenACS
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "library"]"]
+Directory containing server-specific Tcl library files; relative paths are resolved against the home directory
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "modules/tcl"]
+[list_end]
+
+[def "Parameter name: [emph "memoizecache"]"]
+Size of the Tcl memoization cache used by this server
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[list_end]
+
+[def "Parameter name: [emph "nsvbuckets"]"]
+Number of hash buckets used for NSV storage; increasing the value can reduce lock contention for workloads with many shared variables
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "8"]
+[list_end]
+
+[def "Parameter name: [emph "nsvrwlocks"]"]
+Use read/write locks for NSV access; improves concurrency for read-heavy shared-variable workloads
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[list_end]

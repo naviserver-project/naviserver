@@ -1,0 +1,48 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nscp}]
+
+The nscp module provides the NaviServer control port.  It listens on a
+ configured local address and port and should normally be restricted to
+ trusted interfaces such as loopback.
+
+
+
+[para]
+  This module is loaded per server through [const {ns/server/$server/modules}].
+
+[example_begin]
+ ns_section ns/server/$server/modules {
+     ns_param nscp nscp
+ }
+ 
+ ns_section ns/server/$server/module/nscp {
+     ns_param address 127.0.0.1
+     ns_param port    9999
+ }
+ 
+ ns_section ns/server/$server/module/nscp/users {
+     #ns_param user "username:password:"
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri ../../nscp/files/nscp.html {nscp}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "address"]"]
+Local address on which the control port listens; should normally be restricted to a trusted interface such as loopback (e.g. 127.0.0.1)
+
+[list_begin itemized]
+[item] Type: [const "address"]
+[list_end]
+
+[def "Parameter name: [emph "port"]"]
+TCP port on which the control port listens
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[list_end]
+
+[list_end]

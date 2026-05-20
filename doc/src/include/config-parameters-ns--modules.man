@@ -1,0 +1,33 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/modules}]
+
+The ns/modules section defines global module instances. Each parameter
+ name is a configuration-defined module instance name, and each value is
+ the module implementation to load. For network drivers, the instance
+ name is used as the final path component of the corresponding
+ configuration section, such as ns/module/http.
+
+
+
+[example_begin]
+ ns_section ns/modules {
+     ns_param http  nssock
+ }
+ 
+ ns_section ns/module/http {
+     ns_param port 8080
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: module instance name"]
+Maps a global module instance name to a module implementation name
+
+[list_begin itemized]
+[item] Value type: [const "module"]
+[item] Role of parameter name: configuration-defined identifier
+[list_end]
+
+[list_end]

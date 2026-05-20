@@ -1,0 +1,66 @@
+[list_begin definitions]
+
+[def "Parameter name: [emph "backendconnection"]"]
+Backend connection type for this backend; overrides the revproxy-wide backendconnection setting and can be used to select special forwarding behavior such as preauth
+
+[list_begin itemized]
+[item] Type: [const "enum"]
+[item] Allowed values: [const "s_http+ns_connchan"], [const "ns_http"], [const "ns_connchan"]
+[item] Default: [const "ns_http+ns_connchan"]
+[list_end]
+
+[def "Parameter name: [emph "connecttimeout"]"]
+Maximum time to wait while establishing a connection to the backend server
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "1s"]
+[list_end]
+
+[def "Parameter name: [emph "constraints"]"]
+Context constraint entry; key/value pairs within one entry are combined with AND, while multiple constraints entries are combined with OR
+
+[list_begin itemized]
+[item] Type: [const "context-constraints"]
+[item] Cardinality: multiple entries with the same parameter name are expected
+[list_end]
+
+[def "Parameter name: [emph "map"]"]
+Backend mapping entry; each occurrence maps an HTTP method and URL pattern to this backend, optionally followed by per-map options such as -use_target_host_header or -constraints
+
+[list_begin itemized]
+[item] Type: [const "mapping"]
+[item] Cardinality: multiple entries with the same parameter name are expected
+[list_end]
+
+[def "Parameter name: [emph "receivetimeout"]"]
+Maximum time to wait for receiving data from the backend server
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "10s"]
+[list_end]
+
+[def "Parameter name: [emph "regsubs"]"]
+Regular-expression substitutions applied to the forwarded URL before sending the request to the backend, for example to strip a URL prefix
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "sendtimeout"]"]
+Maximum time to wait while sending request data to the backend server
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "10s"]
+[list_end]
+
+[def "Parameter name: [emph "target"]"]
+Upstream backend URL or list of backend URLs to which matching requests are forwarded
+
+[list_begin itemized]
+[item] Type: [const "URI"]
+[list_end]
+
+[list_end]

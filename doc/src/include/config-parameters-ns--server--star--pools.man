@@ -1,0 +1,38 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/server/$server/pools}]
+
+The ns/server/$server/pools section defines named connection thread
+ pools for a virtual server. Each parameter name is a
+ configuration-defined pool name, and each value is a human-readable
+ description of the pool.
+
+[para]
+ Connection pools can be used to route selected requests to dedicated
+ worker threads, for example for monitoring URLs, fast static requests,
+ slow requests, or bot traffic. Requests not matching any per-pool map
+ entry are handled by the server's default connection pool.
+
+
+
+[example_begin]
+ ns_section ns/server/$server/pools {
+     ns_param monitor "Monitoring and health-check requests"
+     ns_param fast    "Fast static-file requests"
+     ns_param slow    "Slow request pool"
+     ns_param bots    "Crawler and bot traffic"
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: pool name"]
+Configuration-defined connection pool name whose value is a human-readable pool description; the pool name is used in ns/server/$server/pool/$pool sections
+
+[list_begin itemized]
+[item] Value type: [const "string"]
+[item] Role of parameter name: configuration-defined identifier
+[item] Cardinality: multiple entries with different parameter names are expected
+[list_end]
+
+[list_end]

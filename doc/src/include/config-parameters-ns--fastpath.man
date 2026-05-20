@@ -1,0 +1,139 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/fastpath}]
+
+The ns/fastpath section configures global behavior for static-file
+ delivery. These settings control optional in-memory caching,
+ memory-mapped file I/O, and support for pre-compressed gzip or Brotli
+ variants of static files.
+
+[para]
+ Per-server file locations and directory handling are configured
+ separately in the ns/server/$server/fastpath section.
+
+
+
+[example_begin]
+ ns_section ns/fastpath {
+     # Global fastpath delivery settings.
+     ns_param cache false
+     ns_param mmap  false
+ 
+     # Serve existing .gz files when the client accepts gzip content.
+     ns_param gzip_static true
+ 
+     # Refresh stale .gz files by invoking ns_gzipfile.
+     ns_param gzip_refresh true
+     ns_param gzip_cmd     "/usr/bin/gzip -9"
+ 
+     # Serve existing .br files when the client accepts Brotli content.
+     ns_param brotli_static true
+ 
+     # Refresh stale .br files by invoking ns_brotlifile.
+     ns_param brotli_refresh true
+     ns_param brotli_cmd     "/usr/bin/brotli -f -q 11"
+ 
+     # Optional minification before gzip refresh for CSS and JavaScript.
+     # The commands must read from stdin and write to stdout.
+     # ns_param minify_css_cmd "/usr/bin/yui-compressor --type css"
+     # ns_param minify_js_cmd  "/usr/bin/yui-compressor --type js"
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "brotli_cmd"]"]
+Use for re-compressing
+
+[list_begin itemized]
+[item] Type: [const "command"]
+[list_end]
+
+[def "Parameter name: [emph "brotli_refresh"]"]
+Refresh stale .br files
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "brotli_static"]"]
+Check for static brotli files
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "cache"]"]
+Enable the global fastpath file-content cache for small static files; cached entries are validated against file mtime, size, device, and inode, while recently changed files and files larger than cachemaxentry are served directly
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "cachemaxentry"]"]
+Maximum size of an individual static file stored in the fastpath cache; files above this limit are not cached and are served directly from the filesystem or via mmap when enabled
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "8KB"]
+[list_end]
+
+[def "Parameter name: [emph "cachemaxsize"]"]
+Maximum total memory used by the fastpath file-content cache; applies only when the fastpath cache parameter is enabled
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "10MB"]
+[list_end]
+
+[def "Parameter name: [emph "gzip_cmd"]"]
+Use for re-compressing
+
+[list_begin itemized]
+[item] Type: [const "command"]
+[list_end]
+
+[def "Parameter name: [emph "gzip_refresh"]"]
+Refresh stale .gz files
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "gzip_static"]"]
+Check for static gzip file
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "minify_css_cmd"]"]
+Command used to minify CSS files when refreshing stale gzip-compressed static files; the command must read CSS from stdin and write minified CSS to stdout
+
+[list_begin itemized]
+[item] Type: [const "command"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "minify_js_cmd"]"]
+Command used to minify JavaScript files when refreshing stale gzip-compressed static files; the command must read JavaScript from stdin and write minified JavaScript to stdout
+
+[list_begin itemized]
+[item] Type: [const "command"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "mmap"]"]
+Use memory-mapped I/O for serving static files that are not cached; falls back to normal file reading when mmap is unavailable or disabled
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[list_end]

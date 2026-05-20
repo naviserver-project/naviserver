@@ -1,0 +1,38 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/server/$server/db}]
+
+The ns/server/$server/db section selects the database pools available
+ to a virtual server. The pools themselves are defined globally under
+ ns/db/pools and ns/db/pool/$dbpool and may be shared by multiple servers.
+
+[para]
+ The default pool is used when application code requests a database
+ handle without explicitly naming a pool.
+
+
+
+[example_begin]
+ ns_section ns/server/$server/db {
+     ns_param pools       pool1,pool2,pool3
+     ns_param defaultpool pool1
+ }
+[example_end]
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "defaultpool"]"]
+Default database pool used by this server when no explicit pool name is requested
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "pools"]"]
+List of database pool names available to this server; the names must refer to pools defined in ns/db/pools
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[list_end]

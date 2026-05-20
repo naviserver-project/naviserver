@@ -1,0 +1,33 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {ns/parameters/reverseproxymode}]
+
+Deprecated compatibility section for reverse-proxy mode configuration.
+ New configurations should use ns/reverseproxymode.
+
+
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "enabled"]"]
+Compatibility setting for enabling reverse-proxy mode
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[item] Deprecated: Use ns/reverseproxymode enabled instead
+[list_end]
+
+[def "Parameter name: [emph "skipnonpublic"]"]
+Compatibility setting for ignoring non-public forwarded client addresses
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[item] Deprecated: Use ns/reverseproxymode skipnonpublic instead
+[list_end]
+
+[def "Parameter name: [emph "trustedservers"]"]
+No description available.
+
+[list_end]

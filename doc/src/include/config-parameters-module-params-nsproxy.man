@@ -1,0 +1,83 @@
+[list_begin definitions]
+
+[def "Parameter name: [emph "evaltimeout"]"]
+Timeout for evaluating a request in an nsproxy worker; 0 disables this timeout
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "0ms"]
+[list_end]
+
+[def "Parameter name: [emph "exec"]"]
+Worker executable used for nsproxy processes; when unset, NaviServer uses the default nsproxy executable
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "gettimeout"]"]
+Timeout for obtaining an nsproxy worker from the pool; 0 disables this timeout
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "0ms"]
+[list_end]
+
+[def "Parameter name: [emph "idletimeout"]"]
+Maximum idle time for an nsproxy worker before it may be closed
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5m"]
+[list_end]
+
+[def "Parameter name: [emph "logminduration"]"]
+Log nsproxy operations whose duration is at least this threshold
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "1s"]
+[list_end]
+
+[def "Parameter name: [emph "maxslaves"]"]
+Legacy name for maxworker
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "8"]
+[item] Deprecated: Use maxworker instead
+[list_end]
+
+[def "Parameter name: [emph "maxworker"]"]
+Maximum number of nsproxy worker processes in this pool
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "8"]
+[list_end]
+
+[def "Parameter name: [emph "recvtimeout"]"]
+Timeout for receiving data or results from an nsproxy worker
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5s"]
+[list_end]
+
+[def "Parameter name: [emph "sendtimeout"]"]
+Timeout for sending data or commands to an nsproxy worker
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5s"]
+[list_end]
+
+[def "Parameter name: [emph "waittimeout"]"]
+Timeout while waiting for an nsproxy worker process to become ready or complete a control operation
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "1s"]
+[list_end]
+
+[list_end]

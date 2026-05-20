@@ -1,0 +1,290 @@
+[comment {This file is generated. Do not edit manually.}]
+
+[subsection {nssock}]
+
+The nssock module provides the HTTP network driver. It accepts incoming
+ TCP connections, parses HTTP requests, and dispatches them to configured
+ virtual servers.
+
+[para]
+ The parameters documented here are the base network-driver parameters.
+ They control listen addresses and ports, request size limits, socket
+ behavior, keep-alive handling, upload spooling, writer threads, and
+ outgoing bandwidth limits. These base parameters are also accepted by
+ nsssl, which extends nssock with TLS support.
+
+
+
+[para]
+ This module can be loaded globally hrough [const ns/modules] or per-server through [const {ns/server/$server/modules}].
+
+[example_begin]
+ ns_section ns/modules {
+     ns_param http nssock
+ }
+ 
+ ns_section ns/module/http {
+     ns_param port 8080
+ }
+[example_end]
+
+[para]
+For detailed documentation, see [uri ../../nssock/files/nssock.html {nssock}].
+
+[list_begin definitions]
+
+[def "Parameter name: [emph "acceptsize"]"]
+Maximum number of sockets accepted, default to value of backlog
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[list_end]
+
+[def "Parameter name: [emph "address"]"]
+Local IP address or addresses on which the driver listens; when multiple addresses and ports are specified, NaviServer listens on every address/port combination
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "backlog"]"]
+Listen backlog for this driver, defaults to value of listenbacklog
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[list_end]
+
+[def "Parameter name: [emph "bufsize"]"]
+Size of I/O buffer for reading requests
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "16kB"]
+[list_end]
+
+[def "Parameter name: [emph "closewait"]"]
+Timeout when closing the socket
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "2s"]
+[list_end]
+
+[def "Parameter name: [emph "defaultserver"]"]
+Default virtual server used for requests accepted by this driver when no more specific host or SNI based mapping selects another server
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "deferaccept"]"]
+Defer accepting a socket until data arrives where supported by the operating system; can improve performance, but may cause recvwait not to apply while the socket remains in the kernel accept queue
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "driverthreads"]"]
+Number of driver threads; values greater than 1 activate reuseport
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "1"]
+[list_end]
+
+[def "Parameter name: [emph "extraheaders"]"]
+Additional HTTP response headers sent for responses handled by this network driver; useful for setting driver-wide security headers such as X-Frame-Options, X-Content-Type-Options, and Referrer-Policy
+
+[list_begin itemized]
+[item] Type: [const "ns_set"]
+[list_end]
+
+[def "Parameter name: [emph "hostname"]"]
+Hostname associated with this network driver; when address is not specified, NaviServer resolves this hostname, or the system hostname when unset, to determine the listen address; when hostname remains unset, the first configured or derived address is used
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "keepalivemaxdownloadsize"]"]
+Maximum response size for keep-alive; 0 means no limit
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "0MB"]
+[list_end]
+
+[def "Parameter name: [emph "keepalivemaxuploadsize"]"]
+Maximum upload size for keep-alive; 0 means no limit
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "0MB"]
+[list_end]
+
+[def "Parameter name: [emph "keepwait"]"]
+Keep-alive timeout
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "5s"]
+[list_end]
+
+[def "Parameter name: [emph "location"]"]
+Fallback absolute location URL used when the driver cannot determine a location from a configured host-to-server mapping; normally left unset, since NaviServer computes the location from the request host or local socket address when needed
+
+[list_begin itemized]
+[item] Type: [const "url"]
+[list_end]
+
+[def "Parameter name: [emph "maxheaders"]"]
+Maximum number of header lines per request
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "128"]
+[list_end]
+
+[def "Parameter name: [emph "maxinput"]"]
+Maximum size for request bodies
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "1MB"]
+[list_end]
+
+[def "Parameter name: [emph "maxline"]"]
+Maximum size of a single header line
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "8kB"]
+[list_end]
+
+[def "Parameter name: [emph "maxqueuesize"]"]
+Maximum size of the preprocessed request queue
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "1024"]
+[list_end]
+
+[def "Parameter name: [emph "maxupload"]"]
+Spool request bodies larger than this size
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "0MB"]
+[list_end]
+
+[def "Parameter name: [emph "nodelay"]"]
+Enable TCP_NODELAY on accepted sockets, disabling Nagle's algorithm; useful for reducing latency, while false leaves Nagle's algorithm enabled
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "port"]"]
+TCP port or ports on which the driver listens; when multiple addresses and ports are specified, the driver listens on every address/port combination
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[list_end]
+
+[def "Parameter name: [emph "readahead"]"]
+Amount of extra data to read ahead, defaults to value of bufsize
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[list_end]
+
+[def "Parameter name: [emph "recvwait"]"]
+Timeout for receiving the full request
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "30s"]
+[list_end]
+
+[def "Parameter name: [emph "reuseport"]"]
+Enable SO_REUSEPORT explicitly
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "sendwait"]"]
+Timeout for sending responses
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "30s"]
+[list_end]
+
+[def "Parameter name: [emph "sockacceptlog"]"]
+Log repeated socket accept operations after this threshold; overrides the global ns/parameters sockacceptlog setting for this network driver
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "4"]
+[list_end]
+
+[def "Parameter name: [emph "spoolerthreads"]"]
+Number of upload spooler threads
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "uploadpath"]"]
+Directory for temporary upload files; default to value of tmpdir
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "writerbufsize"]"]
+Buffer size for writer threads
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "8kB"]
+[list_end]
+
+[def "Parameter name: [emph "writerratelimit"]"]
+Maximum outgoing bandwidth per connection in kilobytes per second for responses sent through writer threads; 0 disables driver-level rate limiting, while limits set per connection or per connection pool override this value
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "writersize"]"]
+Use writer threads for responses larger than this size
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "1MB"]
+[list_end]
+
+[def "Parameter name: [emph "writerstreaming"]"]
+Use writer threads for streaming output such as ns_write
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "writerthreads"]"]
+Number of writer threads for this network driver; 0 disables writer threads
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[list_end]
