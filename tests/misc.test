@@ -554,6 +554,20 @@ test ns_baseunit-1.0 {syntax: ns_baseunit} -body {
 } -returnCodes error -result {wrong # args: should be "ns_baseunit ?-size /memory-size/? ?-time /time/?"}
 
 #######################################################################################
+#  test ns_gzipfile and ns_brotlifile syntax
+#######################################################################################
+
+test ns_gzipfile-1.0 {syntax: ns_gzipfile} -body {
+    ns_gzipfile ?
+} -returnCodes error -result {wrong # args: should be "ns_gzipfile source target"}
+# ns_gzipfile is a Tcl proc: message should be {wrong # args: should be "ns_gzipfile /source/ /target/"}
+
+test ns_brotlifile-1.0 {syntax: ns_brotlifile} -body {
+    ns_brotlifile ?
+} -returnCodes error -result {wrong # args: should be "ns_brotlifile source target"}
+# ns_brotlifile is a Tcl proc: message should be {wrong # args: should be "ns_brotlifile /source/ /target/"}
+
+#######################################################################################
 #  ns_setprivileges
 #######################################################################################
 
