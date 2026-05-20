@@ -80,7 +80,7 @@
  #
  # Control port -- nscp
  #
- ns_section ns/server/${server}/module/nscp {
+ ns_section ns/server/$server/module/nscp {
    ns_param   port                   9999       ;# Control port listens on port 9999
    ns_param   address                127.0.0.1  ;# For security, use 127.0.0.1 only
    #ns_param  allowLoopbackEmptyUser on         ;# default: off
@@ -89,7 +89,7 @@
 }
  
  # Optional configuration of control port users
- ns_section ns/server/${server}/module/nscp/users {
+ ns_section ns/server/$server/module/nscp/users {
    #
    # The default password for nsadmin is "x". You should change it.
    # For example, type "ns_crypt /newpassword/ /salt/" and put the encrypted string
@@ -98,7 +98,7 @@
    ns_param user "nsadmin:t2GqvvaiIUbF2:" ;# sample user="nsadmin", pw="x".
  }
  
- ns_section ns/server/${server}/modules {
+ ns_section ns/server/$server/modules {
    # ...
    ns_param nscp nscp.so
  }
@@ -240,6 +240,14 @@ Some useful NaviServer commands for nscp are:
 [item] [cmd "ns_info threads"] - Lists the current number of running threads.
 [item] [cmd exit] - Exits the control port session.
 [list_end]
+
+
+[section {Configuration Parameters}]
+
+The following parameters are accepted in the
+[const {ns/server/$server/module/nscp}] section.
+
+[include include/config-parameters-module-params-nscp.man]
 
 [see_also admin-maintenance ns_shutdown ns_info ns_conn]
 [keywords module nscp configuration]

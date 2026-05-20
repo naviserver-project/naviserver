@@ -61,6 +61,7 @@
 [uri ../../naviserver/files/ns_base64.html {ns_base64urldecode}] ?-binary? ?-strict? ?--? /string/
 [uri ../../naviserver/files/ns_base64.html {ns_base64urlencode}] ?-binary? ?--? /string/
 [uri ../../naviserver/files/ns_baseunit.html {ns_baseunit}] ?-size /memory-size/? ?-time /time/?
+[uri ../../naviserver/files/ns_return.html {ns_brotlifile}] /source/ /target/
 [uri ../../nsdb/files/ns_buildsqldate.html {ns_buildsqldate}] /month/ /day/ /year/
 [uri ../../naviserver/files/ns_cache.html {ns_cache_append}] ?-timeout /time/? ?-expires /time/? ?--? /cache/ /key/ /arg .../
 [uri ../../naviserver/files/ns_cache.html {ns_cache_configure}] /cache/ ?-timeout /time/? ?-expires /time/? ?-maxentry /memory-size/? ?-maxsize /memory-size/?
@@ -286,6 +287,7 @@
 [uri ../../naviserver/files/ns_gifsize.html {ns_gifsize}] /filename/
 [uri ../../naviserver/files/ns_gmtime.html {ns_gmtime}]
 [uri ../../naviserver/files/ns_guesstype.html {ns_guesstype}] /filename/
+[uri ../../naviserver/files/ns_return.html {ns_gzipfile}] /source/ /target/
 [uri ../../naviserver/files/ns_hash.html {ns_hash}] /value/
 [uri ../../naviserver/files/ns_hashpath.html {ns_hashpath}] /string/ /levels/
 [uri ../../naviserver/files/ns_write.html {ns_headers}] ?-binary? ?--? /status/ ?/mimetype/? ?/length/?
@@ -463,24 +465,24 @@
 [uri ../../nsperm/files/ns_perm.html {ns_permpasswd}] /user/ /oldpasswd/ /newpasswd/
 [uri ../../nsperm/files/ns_perm.html {ns_permreload}]
 [uri ../../naviserver/files/ns_pngsize.html {ns_pngsize}] /filename/
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy active}] /pool/ ?/proxyId/?
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy cleanup}]
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy clear}] /pool/ ?/proxyId/?
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy configure}] /pool/ ?-env /setId/? ?-evaltimeout /time/? ?-exec /value/? ?-gettimeout /time/? ?-idletimeout /time/? ?-init /value/? ?-logminduration /time/? ?-maxruns /integer/? ?-maxslaves /integer/? ?-maxworkers /integer/? ?-recvtimeout /time/? ?-reinit /value/? ?-sendtimeout /time/? ?-waittimeout /time/?
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy eval}] /proxyId/ /script/ ?/timeout/?
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy free}] /pool/
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy get}] /pool/ ?-handles /integer/? ?-timeout /time/?
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy handles}] ?/pool/?
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy ping}] /proxyId/
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy pools}]
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy put}] /proxyId/
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy recv}] /proxyId/
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy release}] /proxyId/
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy send}] /proxyId/ /script/
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy stats}] /pool/
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy stop}] /pool/ ?/proxyId/?
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy wait}] /proxyId/ ?/timeout/?
-[uri ../../nsproxy/files/ns_proxy.html {ns_proxy workers}] /pool/
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy active}] /pool/ ?/proxyId/?
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy cleanup}]
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy clear}] /pool/ ?/proxyId/?
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy configure}] /pool/ ?-env /setId/? ?-evaltimeout /time/? ?-exec /value/? ?-gettimeout /time/? ?-idletimeout /time/? ?-init /value/? ?-logminduration /time/? ?-maxruns /integer/? ?-maxslaves /integer/? ?-maxworkers /integer/? ?-recvtimeout /time/? ?-reinit /value/? ?-sendtimeout /time/? ?-waittimeout /time/?
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy eval}] /proxyId/ /script/ ?/timeout/?
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy free}] /pool/
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy get}] /pool/ ?-handles /integer/? ?-timeout /time/?
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy handles}] ?/pool/?
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy ping}] /proxyId/
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy pools}]
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy put}] /proxyId/
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy recv}] /proxyId/
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy release}] /proxyId/
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy send}] /proxyId/ /script/
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy stats}] /pool/
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy stop}] /pool/ ?/proxyId/?
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy wait}] /proxyId/ ?/timeout/?
+[uri ../../nsproxy/files/nsproxy.html {ns_proxy workers}] /pool/
 [uri ../../naviserver/files/ns_purgefiles.html {ns_purgefiles}] /path/ /maxbackups/
 [uri ../../naviserver/files/ns_queryexists.html {ns_queryexists}] /key/
 [uri ../../naviserver/files/ns_queryget.html {ns_queryget}] /key/ ?/value/?
@@ -535,7 +537,7 @@
 [uri ../../naviserver/files/ns_schedule.html {ns_schedule_daily}] ?-once? ?-thread? ?--? /hour/ /minute/ /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_schedule.html {ns_schedule_proc}] ?-once? ?-thread? ?--? /interval/ /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_schedule.html {ns_schedule_weekly}] ?-once? ?-thread? ?--? /day/ /hour/ /minute/ /script/ ?/arg .../?
-[uri ../../naviserver/files/ns_config.html {ns_section}] ?-update? ?-set /ns_set/? ?-from /sectionName/? ?--? /sectionName/ ?/script/?
+[uri ../../naviserver/files/ns_config.html {ns_section}] ?-update? ?-from /sectionName/? ?-set /set/? ?--? /sectionName/ ?/script/?
 [uri ../../naviserver/files/ns_sema.html {ns_sema create}] ?/count/?
 [uri ../../naviserver/files/ns_sema.html {ns_sema destroy}] /handle/
 [uri ../../naviserver/files/ns_sema.html {ns_sema release}] /handle/ ?/count/?

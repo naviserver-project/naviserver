@@ -275,52 +275,49 @@ handlers can be as well be registered by the command [cmd ns_register_cgi].
 Loading the CGI module and specifying the CGI script interpreters have
 to be done via the configuration file.
 
-[subsection {Further configuration parameters}]
 
-[list_begin definitions]
+[subsection {Concurrency, Timeouts, and Request Size}]
 
-[def gethostbyaddr] is a boolean parameter to indicate whether to
-resolve the peer IP address to its hostname when setting the
-[const REMOTE_HOST] environment variable.  If [const false], the peer IP
-address will be used instead.  Caution: turning this option on can
-negatively impact performance due to the overhead of having to perform
-a DNS look-up on every CGI request. Default: [const off]
+The [const limit] parameter controls how many CGI requests may run
+concurrently for this module instance. A value of [const 0] disables the
+concurrency limit.
 
-[def limit] is an integer parameter to indicate the maximum
-number of concurrent CGI requests to execute. [const 0] means
-unlimited. Default: [const 0]
+[para]
+When a concurrency limit is active, [const maxwait] controls how long a
+request may wait for an available CGI execution slot. If the wait times out,
+the server returns [const {503 Service Unavailable}].
 
-[def maxinput] is an integer parameter to indicate the
-maximum in bytes to accept in the HTTP request. [const 0] means unlimited.
-Mostly useful to limit the size of [const POST]'ed data.
-Default: [const 1024000]
-      
-[def maxwait] is an integer parameter to indicate the amount of time
- to wait in seconds in the queue when the concurrency limit has been
- reached.  Server will respond with a "503 Service Unavailable" error
- on timeout.  If [const limit] is set to [const 0], this setting will
- have no effect. Default: [const 30]
+[para]
+The [const maxinput] parameter limits the accepted request body size for CGI
+requests and is mainly useful for limiting uploaded or posted data.
 
-[def systemenvironment] is a boolean parameter to specify, if all
- environment variables of the server process should be passed to the
- CGI program. See below for more information about environment
- variables. Default: [const false]
+[subsection {Static Resources}]
 
-[def allowstaticresources]
+The [const allowstaticresources] parameter controls whether static resources
+below mapped CGI directories may be served directly by the [const nscgi]
+module.
 
-  is a boolean parameter to controls
-  whether static resources (e.g. images) can be served directly
-  by the [const nscgi] module.
+[para]
+In general, this option is not needed, since static content should be served
+through fastpath, which provides the usual static-file handling such as
+caching and compressed output. It can be useful for special setups where
+static files are stored below a CGI-controlled directory, for example in some
+legacy application layouts.
 
-  [para] In general, this option is not needed, since static content
-  should be served via [const fastpath], providing all its features
-  (caching, compressed output, etc.). The WordPress example on this
-  page shows a complex setup, where the static resources are delivered
-  from a non-standard location. Notice, that setting this resource
-  might be security relevant, since it can lead to deliver unexpectedly
-  configuration files etc. Default: [const false]
+[para]
+Use this option carefully. Enabling static delivery from CGI directories may
+expose files that were not intended to be served, including configuration
+files or auxiliary application files.
 
-[list_end]
+
+
+[subsection {Configuration Parameters}]
+
+The following parameters are accepted in the
+[const {ns/server/s1/module/nscgi}] section (where [const s1] is a
+placeholder for the chosen server name).
+
+[include include/config-parameters-module-params-nscgi.man]
 
 
 [subsection {Sample Configuration for WordPress}]

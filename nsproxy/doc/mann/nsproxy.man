@@ -483,49 +483,59 @@ Proxy handle is currently busy with the evaluation.
 
 [section CONFIGURATION]
 
-The default settings of the configuration parameters of [cmd ns_proxy]
-can be provided in the configuration file of NaviServer.
+
+The [const nsproxy] module is loaded per server and configured below
+[const {ns/server/$server/module/nsproxy}].  Each module instance configures
+one worker pool, including the worker executable, timeout behavior, maximum
+number of workers, and logging threshold for long-running operations.
+
+[subsection {Example Configuration}]
 
 [example_begin]
  # Loading the nxproxy module in the [term modules] section
  # of the server.
- ns_section	ns/server/${server}/modules {
+ ns_section ns/server/$server/modules {
    # ...
-   ns_param	nsproxy			${homedir}/bin/nsproxy.so
+   ns_param nsproxy nsproxy.so
    # ...
  }
  
- # Configuring the nsproxy module
- [cmd ns_section] ns/server/${server}/module/nsproxy {
+ # Configure the nsproxy worker pool.
+ [cmd ns_section] ns/server/$server/module/nsproxy {
  
-   # Proxy program to start
-   #ns_param	exec			${homedir}/bin/nsproxy-helper
+    # Proxy program to start
+    #ns_param exec ${homedir}/bin/nsproxy-helper
+  
+    # Timeout when obtaining a worker from the pool.
+    ns_param gettimeout 0ms
  
-   # Timeout when evaluating scripts
-   ns_param	evaltimeout		0s
+    # Timeout when evaluating scripts in a worker.
+    ns_param evaltimeout 0ms
  
-   # Timeout when getting proxy handles
-   ns_param	gettimeout		0s
+    # Timeouts for communication with the worker process.
+    ns_param sendtimeout 5s
+    ns_param recvtimeout 5s
  
-   # Timeout to send data
-   ns_param	sendtimeout		5s
+    # Timeout while waiting for workers to terminate.
+    ns_param waittimeout 1s
  
-   # Timeout to receive results
-   ns_param	recvtimeout		5s
+    # Maximum idle time for a worker.
+    ns_param idletimeout 5m
  
-   # Timeout to wait for workers to die
-   ns_param	waittimeout		1s
+    # Log operations longer than this threshold.
+    ns_param logminduration 1s
  
-   # Timeout for a worker to live idle
-   ns_param	idletimeout		5m
- 
-   # log eval operations longer than this to the system log
-   ns_param	logminduration		1s
- 
-   # Max number of allowed workers alive
-   ns_param	maxworkers		8
+    # Maximum number of workers in the pool.
+    ns_param maxworker 8
  }
 [example_end]
+
+[subsection {Configuration Parameters}]
+
+The following parameters are accepted in the
+[const {ns/server/$server/module/nsproxy}] section.
+
+[include include/config-parameters-module-params-nsproxy.man]
 
 
 [section EXAMPLES]

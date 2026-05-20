@@ -163,6 +163,7 @@ after removing the prefix "/shiny" from the URL.
  }
 [example_end]
 
+
 [subsection {Conditional Requests}]
 
 You can make forwarding conditional on headers or client IP using
@@ -186,6 +187,7 @@ parameters are set in a section, these are taken as a disjunction
 (combined with OR). Technically this means, that the pattern is
 registered multiple times, each time with a different constraints value.
 
+
 [para] Example with conjunctive context constraints:
 [example_begin]
  ...
@@ -197,6 +199,7 @@ registered multiple times, each time with a different constraints value.
 [example_end]
 
 [para] Example with disjunctive context constraints:
+
 [example_begin]
   ...
  # OR: either header matches
@@ -219,6 +222,23 @@ keeping other maps unconstrained:
  ns_param map "DELETE /qux/* {-constraints {x-ns-ip 10.0.0.0/8}}"
  ...
 [example_end]
+
+
+[subsection {Module Parameters}]
+
+The following parameters are accepted in the
+[const {ns/server/$server/module/revproxy}] section.
+
+[include include/config-parameters-module-params-revproxy.man]
+
+[subsection {Backend Parameters}]
+
+The following parameters are accepted in backend sections below the revproxy
+module, for example [const {ns/server/$server/module/revproxy/backend1}].
+
+[include include/config-parameters-module-params-revproxy-backends.man]
+
+
 
 
 [subsection {Example: Using the API directly to a Register the Reverse
@@ -748,6 +768,14 @@ traditional WEB server. One could make the default server the reverse proxy,
 and use other servers for other purposes. One could also combine
 [uri ../../manual/files/admin-config.html "mass virtual hosting"] with the reverse proxy
 by defining appropriate mapping rules.
+
+[section {Configuration Parameters}]
+
+The following parameters are accepted in the
+[const {ns/server/$server/module/nsproxy}] section.
+
+[include include/config-parameters-module-params-nsproxy.man]
+
 
 
 [section REQUIREMENTS]

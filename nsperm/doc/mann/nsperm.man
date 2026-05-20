@@ -311,6 +311,13 @@ Now, in the directory where access is wanted, create .htaccess file and add line
  deny steve
 [example_end]
 
+[section {Configuration Parameters}]
+
+The following parameters are accepted in the
+[const {ns/server/$server/module/nsperm}] section.
+
+[include include/config-parameters-module-params-nsperm.man]
+
 [see_also ns_perm ns_permreload ns_permpasswd]
 [keywords module nsperm password "request authentication" "user authentication"]
 
