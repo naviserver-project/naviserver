@@ -178,27 +178,69 @@ variable, but it may not be what you expect.
 
 [section CONFIGURATION]
 
-The body of the response which is returned for a variety of status codes can be
-customized by registering a new resource which should be returned in its place.
-The new resource may be a static, Tcl or ADP page, or a registered procedure
-or ADP. These redirects are used for providing customized (templated)
-error pages.
+The return-status commands use per-server configuration to customize generated
+responses, error pages, authentication challenges, and server disclosure.
+
+[subsection {Custom Status Pages}]
+
+For selected HTTP status codes, NaviServer can return a configured resource
+instead of the built-in status response. This is useful for site-specific
+error pages, maintenance pages, or themed status responses.
+
+[para]
+The configured resource may be a static file, Tcl page, ADP page, registered
+procedure, or registered ADP, depending on the server configuration and URL
+mapping.
 
 [example_begin]
- [cmd ns_section] "ns/server/server1/redirects" {
-   [cmd ns_param]   404    /notfound.adp
-   [cmd ns_param]   503    /busy.html
- }
+ns_section ns/server/$server/redirects {
+    ns_param 404 /notfound.adp
+    ns_param 503 /busy.html
+}
 [example_end]
 
 [para]
-The realm used for HTTP Basic authentication is set server-wide:
+In this example, responses with status code [const 404] are redirected to
+[const /notfound.adp], while [const 503] responses are redirected to
+[const /busy.html].
+
+[subsection {System-Generated Notices}]
+
+When NaviServer generates a notice response directly, such as through
+[cmd ns_returnnotice], the response can be rendered with a configured ADP
+template. The [const noticeadp] parameter in the
+[const {ns/server/$server}] section specifies the ADP template used for these
+responses.
+
+[para]
+The [const noticedetail] parameter controls whether generated notices include
+server details such as version information. The [const stealthmode] parameter
+can be used to reduce server disclosure in generated responses and headers.
 
 [example_begin]
- [cmd ns_section] "ns/server" {
-   [cmd ns_param]   realm  "Example"
- }
+ns_section ns/server/$server {
+    ns_param noticeadp    returnnotice.adp
+    ns_param noticedetail false
+    ns_param stealthmode  true
+}
 [example_end]
+
+[subsection {Authentication Realm}]
+
+The default realm used for HTTP Basic authentication is configured per server
+with the [const realm] parameter in the [const {ns/server/$server}] section.
+It is used when NaviServer returns a [const {401 Unauthorized}] response and no
+connection-specific realm has been set.
+
+[example_begin]
+ns_section ns/server/$server {
+    ns_param realm "Example"
+}
+[example_end]
+
+[para]
+For the complete reference of per-server configuration parameters, see
+[uri ../../manual/files/admin-config-params.html {NaviServer configuration parameter reference}].
 
 
 
@@ -222,7 +264,7 @@ wheels that run the server are on lunch break:
 [example_end]
 
 
-[see_also ns_return ns_internalredirect ns_conn ns_cookie ns_locationproc]
+[see_also admin-config-params ns_return ns_internalredirect ns_conn ns_cookie ns_locationproc]
 [keywords "server built-in" return redirect response status configuration nssock]
 
 [manpage_end]

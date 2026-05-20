@@ -52,16 +52,27 @@ and Apache (with mod_passenger).
 
 [section CONFIGURATION]
 
-To minimize unnecessary overhead for small uploads, progress
-statistics are only maintained for files larger than a configurable
-size. Set the [term progressminsize] parameter to specify the minimum
-file size (e.g., 2kB).
+Upload progress statistics are configured globally with the
+[const progressminsize] parameter in the [const ns/parameters] section.
+
+[para]
+To avoid unnecessary overhead for small uploads, NaviServer maintains upload
+progress statistics only for request bodies larger than this threshold. This
+is useful for applications that display client-side upload progress bars for
+large file uploads.
 
 [example_begin]
  ns_section ns/parameters {
-   ns_param progressminsize 2kB
+    ns_param progressminsize 2kB
  }
 [example_end]
+
+[para]
+A value of [const 0] disables size-based upload progress tracking.
+
+[para]
+For the complete reference of global configuration parameters, see
+[uri ../../manual/files/admin-config-params.html {NaviServer configuration parameter reference}].
 
 [section EXAMPLES]
 
@@ -184,6 +195,6 @@ Server-side support:
 
 
 
-[see_also nsd]
+[see_also nsd admin-config-params]
 [keywords "server built-in" NaviServer upload progress configuration]
 [manpage_end]

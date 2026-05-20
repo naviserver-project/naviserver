@@ -204,24 +204,31 @@ returned.
 
 [section CONFIGURATION]
 
-The default settings of the configuration parameters for the
-scheduling commands can be provided in the global parameters of the
-NaviServer configuration file:
+The scheduling commands use global defaults from the
+[const ns/parameters] section of the NaviServer configuration file. These
+settings control scheduler thread recycling and logging of long-running
+scheduled jobs.
 
 [example_begin]
- [cmd ns_section] ns/parameters {
-   # ...
-   # How many jobs to run in any schedule thread before thread exit.
-   # When set to 0, there is no automatic restart of the thread.
-   # (default: 0)
-   ns_param schedsperthread 1000
-   #
-   # Log the system log when a scheduled job takes longer than
-   # this time period (default: 2s)
-   ns_param schedlogminduration  2s
-   # ...
+ns_section ns/parameters {
+     # Number of scheduled jobs processed by a scheduler thread before
+    # the thread exits and is replaced.  A value of 0 disables automatic
+    # scheduler-thread recycling.
+    ns_param schedsperthread 1000
+ 
+    # Log scheduled jobs that run longer than this duration.
+    ns_param schedlogminduration 2s
  }
 [example_end]
+
+[para]
+These configuration parameters provide the defaults used by the scheduling
+subsystem. Individual scheduled jobs are still controlled by the options
+passed to the scheduling commands.
+
+[para]
+For the complete reference of global configuration parameters, see
+[uri ../../manual/files/admin-config-params.html {NaviServer configuration parameter reference}].
 
 [section {Logging}]
 
@@ -239,7 +246,7 @@ script as returned by the ns_schedule* commands.
 
 
 
-[see_also nsd ns_job ns_log ns_time]
+[see_also admin-config-params nsd ns_job ns_log ns_time]
 [keywords "global built-in" background "scheduled procedures" \
    schedsperthread schedlogminduration]
 

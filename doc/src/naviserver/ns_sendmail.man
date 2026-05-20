@@ -81,58 +81,84 @@ returned as a flat key value list.
 
 [section CONFIGURATION]
 
-[para]
-[emph {Basic configuration options:}]
-
-[list_begin definitions]
-[def "smtphost = mail.domain.tld"]
-	The hostname or IP of the mail server. Default is localhost.
-	Full qualified hostname is a good choice (mail.example.com).
-[def "smtpport = 25"]
-	The port for the connection. Default is 25.
-[def "smtptimeout = 60"]
-	After smtptimeout seconds of inactivity (no answer from server) connection is closed.
-[list_end]
+The legacy [cmd ns_sendmail] command reads its configuration from the
+[const ns/sendmail] section.
 
 [para]
-[emph {Extended configuration options:}]
+In earlier NaviServer versions, these parameters were configured directly in
+[const ns/parameters].  This legacy location is still accepted for
+compatibility, but new configurations should use [const ns/sendmail].
+
 [para]
-Note: "boolean" in NaviServer configuration means value can be one of "true", "false", "on", "off", "0" or "1".
-[list_begin definitions]
-[def "smtplogmode = false (boolean)"]
-	If true no attempt to set up a connection to smtphost:smtpport is made,
-	every part of the connection process is just logged to the server logfile.
-	Default is false.
-[def "smtpmsgid = on (boolean)"]
-	If true ns_sendmail creates a message_id. If a key "message_id" is user
-	defined in the optional "headers"-set the latter is used.
-	Default is false.
-[def "smtpmsgidhostname = host.domain.tld"]
-	This string is used when ns_sendmail tells the server that it wants to use
-	SMTP (HELO host.domain.tld) or ESMTP (EHLO host.domain.tld) communication.
-	Some servers have restrictive rules and expect fully qualified domain names here.
-	It is further used as right part of the message-id. 
-[def "smtpencodingmode = on (boolean)"]
-	Message subject and body are by default sent in the default server encoding.
-	If this is set true 
-	(a) the encoding defined in smtpencoding will be used and
-	(b) Subject and body will be transformed to QUOTED PRINTABLE format.
-	Default is false. 
-[def "smtpencoding = utf-8"]
-	If smtpencodingmode is set true subject and body will be encoded with
-	the encoding defined in smtpencoding, e.g. "iso8859-15".
-[def "smtpauthmode = mode"]
-        Where mode is either PLAIN or LOGIN. If left empty but smtpauthuser and smtpauthpassword defined, PLAIN is assumed as default.
-[def "smtpauthuser = account--0123"]
-	ns_sendmail supports now the simple PLAIN AUTH and LOGIN mechanisms to authenticate
-	against a SMTP server. It should be sufficient to provide
-	a mailbox account or email address ("smtpauthuser") and a password (see "smtpauthpassword").
-	It is possible to give a different authorization identifier (userid) and
-	authentication identifier (authid/realm) by separating them with a nullbyte ("userid\0realm").
-	Default is empty string to not use SMTP authentication.
-[def "smtpauthpassword = mysecret"]
-	The password to use for PLAIN AUTHentication or LOGIN if smtpauthuser is set.
-[list_end]
+The command provides basic SMTP support.  STARTTLS is available only when the
+external Tcl package [const tls] is installed and loadable.  For new
+applications, prefer the external [const nssmtpd] module where appropriate,
+or Tcl library based mail support with modern TLS-capable SMTP handling.
+
+[example_begin]
+ ns_section ns/sendmail {
+    ns_param smtphost          localhost
+    ns_param smtpport          25
+    ns_param smtptimeout       60
+ 
+    ns_param smtplogmode       false
+    ns_param smtpmsgid         false
+    ns_param smtpmsgidhostname ""
+ 
+    ns_param smtpencodingmode  false
+    ns_param smtpencoding      utf-8
+ 
+    ns_param smtpauthmode      ""
+    ns_param smtpauthuser      ""
+    ns_param smtpauthpassword  ""
+ 
+    # Optional STARTTLS support, when the Tcl package "tls" is available.
+    # ns_param smtpusestarttls false
+    # ns_param smtpcertfile    ""
+    # ns_param smtpcafile      ""
+    # ns_param smtpcadir       ""
+ }
+[example_end]
+
+[subsection {SMTP Server and Timeout}]
+
+The [const smtphost], [const smtpport], and [const smtptimeout] parameters
+define the SMTP server used by [cmd ns_sendmail].  If [const smtphost] is not
+configured, the older [const ns/parameters] parameter [const mailhost] is
+used as a compatibility fallback, and finally [const localhost] is used.
+
+[subsection {Message IDs and Encoding}]
+
+The [const smtpmsgid] parameter controls whether [cmd ns_sendmail] generates a
+[const Message-ID] header when none is provided by the caller.  The
+[const smtpmsgidhostname] parameter can be used to control the host name used
+in generated message IDs and in SMTP greeting commands.
+
+[para]
+The [const smtpencodingmode] and [const smtpencoding] parameters control
+legacy quoted-printable encoding of message subjects and bodies.
+
+[subsection {SMTP Authentication}]
+
+The [const smtpauthmode], [const smtpauthuser], and
+[const smtpauthpassword] parameters configure basic SMTP authentication.
+Supported authentication modes are [const PLAIN] and [const LOGIN].  When
+[const smtpauthmode] is empty but both user and password are configured,
+[const PLAIN] is used.
+
+[subsection {STARTTLS}]
+
+When [const smtpusestarttls] is enabled and the external Tcl package
+[const tls] is available, [cmd ns_sendmail] attempts to upgrade the SMTP
+connection using STARTTLS.  The optional [const smtpcertfile],
+[const smtpcafile], and [const smtpcadir] parameters provide certificate and
+CA configuration for the TLS connection.
+
+[subsection {Configuration Parameters}]
+
+The following parameters are accepted in the [const ns/sendmail] section.
+
+[include include/config-parameters-params-ns--sendmail.man]
 
 [section ALTERNATIVES]
 
@@ -231,7 +257,7 @@ Possible alternatives are:
 
 
 
-[see_also nsd]
+[see_also nsd admin-config-params]
 
 [keywords NaviServer sendmail mail SMTP RFC822 configuration]
 

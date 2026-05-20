@@ -147,8 +147,49 @@ response body. No character set conversion will be done.
 
 [list_end]
 
-[list_end]
 
+[call [cmd ns_gzipfile] [arg source] [arg target]]
+
+Compresses the file [arg source] to [arg target] using the gzip command
+configured by the [const gzip_cmd] parameter in the [const ns/fastpath]
+section.
+
+[para]
+This command is called internally by NaviServer when fastpath gzip refresh is
+enabled and a stale [file .gz] variant of a static file has to be refreshed.
+It creates or replaces the compressed file [arg target] in the filesystem;
+the command itself does not return the compressed content to the client.
+
+[para]
+Applications may redefine this command when different gzip or preprocessing
+behavior is required.
+
+[para]
+When [arg source] has the extension [const .css] or [const .js], NaviServer
+checks the optional [const minify_css_cmd] or [const minify_js_cmd]
+configuration parameters. If a matching minifier is configured, the source is
+first passed through the minifier and then through gzip. The minifier command
+must read from standard input and write the minified content to standard
+output.
+
+[call [cmd ns_brotlifile] [arg source] [arg target]]
+
+Compresses the file [arg source] to [arg target] using the Brotli command
+configured by the [const brotli_cmd] parameter in the [const ns/fastpath]
+section.
+
+[para]
+This command is called internally by NaviServer when fastpath Brotli refresh
+is enabled and a stale [file .br] variant of a static file has to be
+refreshed. It creates or replaces the compressed file [arg target] in the
+filesystem; the command itself does not return the compressed content to the
+client.
+
+[para]
+Applications may redefine this command when different Brotli compression
+behavior is required.
+
+[list_end]
 
 
 
@@ -174,215 +215,143 @@ A traditional Albanian greeting, using an explicit charset:
 
 [section CONFIGURATION]
 
-The behavior of the file delivery commands [cmd ns_returnfile] and
-[cmd "ns_respond [option {-file ...}]"], as well as the automatic delivery of static
-files is influenced by the [const fastpath] settings, which define, how
-files are served. The fastpath section of the configuration file for a
-server [const server1] has a global part (general settings for all
-servers) and a per (virtual) server part:
+The behavior of [cmd ns_returnfile],
+[cmd "ns_respond [option {-file ...}]"], and automatic static-file delivery
+is controlled by fastpath configuration. Fastpath has global settings in
+[const ns/fastpath] and per-server settings in
+[const {ns/server/$server/fastpath}].
 
 [example_begin]
- [cmd ns_section] ns/fastpath {
-   # global configuration
-   [cmd ns_param]  ...
-   ...
+ ns_section ns/fastpath {
+    # Global fastpath delivery settings.
+    ns_param cache false
+    ns_param mmap  false
+ 
+    # Serve existing .gz files when the client accepts gzip content.
+    ns_param gzip_static true
+ 
+    # Refresh stale .gz files by invoking ns_gzipfile.
+    ns_param gzip_refresh true
+    ns_param gzip_cmd     "/usr/bin/gzip -9"
+ 
+    # Optional minification before gzip refresh for CSS and JavaScript.
+    # The commands must read from stdin and write to stdout.
+    # ns_param minify_css_cmd "/usr/bin/yui-compressor --type css"
+    # ns_param minify_js_cmd  "/usr/bin/yui-compressor --type js"
  }
  
- [cmd ns_section] ns/server/server1/fastpath {
-   # per-server configuration
-   [cmd ns_param]  ...
-   ...
+ ns_section ns/server/$server/fastpath {
+    # Per-server file location and directory handling.
+    ns_param pagedir          pages
+    ns_param directoryfile    {index.adp index.tcl index.html index.htm}
+    ns_param directorylisting fancy
  }
 [example_end]
 
+[subsection {File Delivery Modes}]
 
-Most prominently, the [emph "global fastpath parameters"] define the delivery
-mode.  In general, fastpath supports three delivery modes for static
-content:
+Fastpath supports several delivery modes for static content.
 
 [list_begin enumerated]
-[enum] Delivering file via chunk reads from the file, where the
-chunk size is typical the [const writersize] of a writer thread.
-This is the same behavior as in
-[cmd "ns_respond [option {-fileid ...}]"] or in
-[cmd "ns_returnfp"]. This delivery mode is activated, when
-both the global fastpath parameter [const cache] and [const mmap]
-are false.
 
-[enum] Delivering from mapped memory, when [const mmap] is defined
-and the operating supports it. In this case the file to be delivered
-is mapped into memory and served from there. The buffer size etc. is
-determined from the operating system. This option is activated, when
-the global fastpath parameter [const mmap] is true and [const cache] is
-false.
+[enum]
+If both [const cache] and [const mmap] are disabled, files are delivered by
+reading from the file descriptor and sending chunks to the client. This is
+similar to [cmd "ns_respond [option {-fileid ...}]"] and [cmd ns_returnfp].
 
-[enum] Delivering the file from the own NaviServer file cache.  This
-option is activated, when the parameter [const cache] is set to true.
-[list_end]
+[enum]
+If [const mmap] is enabled and supported by the operating system, files can be
+mapped into memory and served from the mapped region.
 
-[section "Global fastpath configuration parameters"]
-
-[list_begin definitions]
-
-[def cache]
-Use the NaviServer file cache for file deliveries
-(boolean, defaults to false)
-
-[def cachemaxentry]
-Maximum size of a single entry, when parameter [const cache] is true
-(integer, defaults to 8kB)
-
-[def cachemaxsize]
-Size of the cache, when parameter [const cache] is true;
-(integer, defaults to 10MB)
-
-[def mmap]
-Use mmap for file deliveries (and cache is false)
-(boolean, defaults to false)
-
-[def gzip_static]
-Send the gzip-ed version of the file if available and the client
-accepts gzip-ed content. When a file [const path/foo.ext] is requested,
-and there exists a file  [const path/foo.ext.gz], and the
-timestamp of the gzip-ed file is equal or newer than the
-source file, use the gzip-ed file for delivery.
-(boolean, defaults to false)
-
-[def gzip_refresh]
-Refresh gzip file (i.e. re-gzip source) when the modification time of
-the compressed file is older than the modification time of the source.
-Note that the command is just used for re-gzip-ing outdated .gz-files; it
-does not actively compress files, which were previously not compressed
-(this would be wasteful for e.g. large temporary files, there is not
-cleanup, etc.).  For refreshing gzip files, the Tcl command
-"::ns_gzipfile source target" is used.  This command can be
-potentially redefined by an application.  When this parameter is not
-defined (or the refresh command fails), outdated gzip-ed files are
-ignored, and a warning is written to the system log file (boolean, defaults
-to false)
-
-[def gzip_cmd]
-Command for gzip-ing files, used by [cmd ::ns_gzipfile].
-The value of [term gzip_cmd] is used in [cmd ::ns_gzipfile]
-to locate the gzip command in the OS.  If [term gzip_cmd]
-is not defined, and [cmd ::ns_gzipfile] is called, an error
-is written to the system log file.
-Example setting: "/usr/bin/gzip -9".  (string, defaults to "")
-
-[def brotli_static]
-Send the brotli compressed version of the file if available and the client
-accepts brotli compressed  content. When a file [const path/foo.ext] is requested,
-and there exists a file  [const path/foo.ext.br], and the
-timestamp of the brotli compressed  file is equal or newer than the
-source file, use the brotli compressed file for delivery.
-(boolean, defaults to false)
-
-[def  brotli_refresh]
-Refresh the brotli compressed file (i.e. re compress source) when the modification time of
-the compressed file is older than the modification time of the source.
-Note that the command is just used for recompressing outdated .br-files; it
-does not actively compress files, which were previously not compressed
-(this would be wasteful for e.g. large temporary files, there is not
-cleanup, etc.).  For refreshing gzip files, the Tcl command
-"::ns_brotlifile source target" is used.  This command can be
-potentially redefined by an application.  When this parameter is not
-defined (or the refresh command fails), outdated brotli compressed files are
-ignored, and a warning is written to the system log file. (boolean, defaults
-to false)
-
-[def brotli_cmd]
-Command for producing brotli compressed files, used by [cmd ::ns_brotlifile].
-The value of [term brotli_cmd] is used in [cmd ::ns_brotlifile]
-to locate the brotlicommand in the OS.  If [term brotli_cmd]
-is not defined, and [cmd ::ns_brotlifile] is called, an error
-is written to the system log file.
-Example setting: "/usr/bin/brotli -f -q 11".  (string, defaults to "")
-
-
-[def minify_css_cmd] Command for minifying .css files.  When
-recompressing outdated gzip files (see parameters [term gzip_refresh] and
-[term gzip_cmd]), NaviServer will optionally minify
-css files on the fly, when [term minify_css_cmd] is specified.
-In these cases, the returned file will be minified and compressed.
-The configured command must read css files from stdin and
-to write the minified content to stdout.
-Example setting: "/usr/bin/yui-compressor --type css".  (string, defaults to "")
-
-[def minify_js_cmd] Command for minifying .jsfiles.  When
-recompressing outdated gzip files (see parameters [term gzip_refresh] and
-[term gzip_cmd]), NaviServer will optionally minify
-JavaScript files on the fly, when [term minify_js_cmd] is specified.
-In these cases, the returned file will be minified and compressed.
-The configured command must read JavaScript files from stdin and
-to write the minified content to stdout.
-Example setting: "/usr/bin/yui-compressor --type js".  (string, defaults to "")
+[enum]
+If [const cache] is enabled, eligible files are stored in NaviServer's
+fastpath file cache and served from memory.
 
 [list_end]
 
-[section "Per-server fastpath configuration parameters"]
+[subsection {Pre-Compressed Static Files}]
 
-[subsection "File Locations"]
+Fastpath can serve pre-compressed [const gzip] or [const brotli] versions of
+static files when the client indicates support for the corresponding content
+encoding. For example, if [const path/foo.ext] is requested and
+[const path/foo.ext.gz] or [const path/foo.ext.br] exists and is current,
+NaviServer can deliver the compressed file directly.
 
-The parameter [const pagedir]
-specifies, from which locations in the filesystem
-pages should be served.
+[para]
+The refresh options can be used to regenerate stale compressed files through
+the configured helper commands. These commands are only used for refreshing
+existing compressed files; they do not proactively compress arbitrary files.
 
-[list_begin definitions]
-[def pagedir]
-Defines absolute or relative path for serving content files. Relative
-names are relative to the [const serverdir]
-(string, defaults to [const pages])
-[list_end]
+[subsection {Directory Handling}]
 
-Note: The parameter  [const serverdir] can be specified per server in
-the server-specific root section of the server. For details, see
-[uri ../../manual/files/admin-config.html#section4 "Customizing File Locations"]).
+Per-server fastpath settings control what happens when a request maps to a
+directory. NaviServer first looks for one of the configured
+[const directoryfile] names. If no index file is found, it can use an ADP page
+configured by [const directoryadp], or otherwise call the Tcl procedure named
+by [const directoryproc].
 
-[subsection "Directory Handling"]
+[para]
+The [const directorylisting] and [const hidedotfiles] parameters control the
+behavior of the default directory listing procedure.
 
-The parameters for directory handling specify what should happen, when the requested
-URL points to a directory. In a first step, NaviServer looks for a
-[const directoryfile] in this directory. If there is no such file,
-the server will try to serve a directory listing ADP, or - if no
-[const directoryadp] is configured - it will execute the Tcl proc
-specified by [const directoryproc].
+[subsection {Global Fastpath Settings}]
 
-[list_begin definitions]
+The global [const ns/fastpath] section controls process-wide static-file
+delivery behavior. These settings determine whether eligible files may be
+served from the fastpath cache, through memory-mapped I/O, or directly from
+the filesystem.
 
-[def directoryfile]
-Index files for directory
-(string, defaults to [const "index.adp index.tcl index.html index.htm"])
+[para]
+The same section also controls delivery of pre-compressed static files. When
+[const gzip_static] or [const brotli_static] is enabled, NaviServer checks
+for a corresponding [file .gz] or [file .br] file when the client advertises
+support for the encoding. If the compressed file exists and is current, it is
+served instead of the uncompressed source file.
 
-[def directoryadp]
-Name of an ADP page to use to display directory listings.
-(string, defaults to "")
+[para]
+When [const gzip_refresh] or [const brotli_refresh] is enabled, NaviServer
+can refresh stale compressed files by invoking [cmd ::ns_gzipfile] or
+[cmd ::ns_brotlifile]. These commands are used only for refreshing existing
+compressed files; they do not proactively create compressed variants for
+files that do not already have one.
 
-[def directoryproc]
-Name of Tcl proc to use to display directory listings.
-One can either specify [const directoryproc],
-or [const directoryadp], but not both.
-(string, defaults to [const _ns_dirlist])
+[para]
+For gzip refresh, [cmd ::ns_gzipfile] uses the configured [const gzip_cmd].
+For CSS and JavaScript files, optional [const minify_css_cmd] and
+[const minify_js_cmd] commands can be configured. When present, the minifier
+is run before gzip compression. The minifier command must read the source
+content from standard input and write the minified result to standard
+output.
 
-[def directorylisting]
-Style of directory listings. Can be [const fancy], [const simple], or
-[const none]. This value is a parameter for the directoryproc
-[const _ns_dirlist].
-(string, defaults to [const simple])
-
-[def hidedotfiles]
-Hide files starting with a dot in directory listings.
-This value is a parameter for the directoryproc [const _ns_dirlist].
-(boolean, defaults to [const false]).
-
-[list_end]
-
+[include include/config-parameters-params-ns--fastpath.man]
 
 
-[see_also returnstatus-cmds ns_write ns_guesstype \
+[subsection {Per-Server Fastpath Settings}]
+
+The per-server [const {ns/server/$server/fastpath}] section defines where
+static files are found and how directory requests are handled for a virtual
+server.
+
+[para]
+The [const pagedir] parameter defines the page directory below the server
+directory. It is the root for static-file delivery by fastpath.
+
+[para]
+Directory handling is controlled by parameters such as [const directoryfile],
+[const directoryadp], [const directoryproc], [const directorylisting], and
+[const hidedotfiles]. When a request maps to a directory, NaviServer first
+looks for one of the configured index files. If no index file is found, it can
+use a configured directory-listing ADP or invoke a Tcl directory-listing
+procedure.
+
+[include include/config-parameters-params-ns--server--star--fastpath.man]
+
+
+[see_also admin-config-params returnstatus-cmds ns_write ns_guesstype \
 	ns_register ns_adp_puts ns_conn ns_writer]
 
 [keywords "server built-in" return response status charset encoding configuration \
-	fastpath mmap cache gzip brotli serverdir pagedir writer \
+	fastpath mmap cache gzip brotli minify serverdir pagedir writer \
 	minify]
 [manpage_end]
 

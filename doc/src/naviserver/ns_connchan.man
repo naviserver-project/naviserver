@@ -728,7 +728,7 @@ For configuration details, see the section
 [uri ../../manual/files//admin-config.html#subsection13 "HTTP client security configuration"]
 in the manual.
 
-[see_also ns_conn ns_http ns_chan ns_sockcallback ns_write ns_time nssock nsssl]
+[see_also admin-config-params  ns_conn ns_http ns_chan ns_sockcallback ns_write ns_time nssock nsssl]
 [keywords "server built-in" channels socket driver "network driver" \
         "reverse proxy" websocket CAfile CApath]
 

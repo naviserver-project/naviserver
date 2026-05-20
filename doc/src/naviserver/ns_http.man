@@ -713,12 +713,17 @@ system log, activate temporarily task logging:
 
 [section CONFIGURATION]
 
-The behavior of [cmd ns_http] can be influenced by optional settings
-in the NaviServer configuration file. The behavior can be tailored
+The behavior of [cmd ns_http] can be influenced by optional settings in the
+NaviServer configuration file. Some settings are global, while others are
+configured per virtual server.
+
+[subsection {Global Task Threads}]
+
+The behavior can be tailored
 partially globally (for all servers) and per server
 definition. Globally, the number of threads ns_http threads can be
-configured. These threads are used, when the request is started with
-[cmd "ns_http queue"] or [option "-done_callback"] are used.
+configured.These threads are used when requests are started with
+[cmd {ns_http queue}] or when [option -done_callback] is used.
 
 [example_begin]
  #---------------------------------------------------------------------
@@ -738,14 +743,17 @@ configured. These threads are used, when the request is started with
  }
 [example_end]
 
-On the per-server configuration level, one can specify the default
-keep-alive timeout for outgoing HTTP requests, security default for
-peer server certificate validation, and the logging behavior. When
-logging is activated, the log file will contain information similar to
-the access.log of NaviServer (see [cmd nslog] module), but for HTTP
-client requests.
+[subsection {Per-Server HTTP Client Defaults}]
 
+Outgoing HTTP client defaults are configured in the
+[const {ns/server/$server/httpclient}] section. These settings apply to
+[cmd ns_http] and related outgoing HTTP client operations unless overridden
+by command options such as [option -timeout], [option -expire], or
+per-request TLS options.
 
+When logging is enabled, NaviServer writes HTTP client request information to
+a log file in a format similar to the server access log produced by the
+[const nslog] module, but for outgoing client requests.
 
 [example_begin]
  #---------------------------------------------------------------------
@@ -775,8 +783,14 @@ client requests.
  }
 [example_end]
 
+[subsection {Configuration Parameters}]
 
-[see_also ns_httptime ns_connchan ns_time ns_set ns_urlencode nslog]
+The following parameters are accepted in the
+[const {ns/server/$server/httpclient}] section.
+
+[include include/config-parameters-params-ns--server--star--httpclient.man]
+
+[see_also admin-config-params ns_httptime ns_connchan ns_time ns_set ns_urlencode nslog]
 [keywords "global built-in" HTTP-client HTTP HTTPS nssock \
         logging spooling SNI configuration nslog TLS certificate PEM \
         streaming CApath CAfile]

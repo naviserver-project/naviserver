@@ -128,44 +128,61 @@ Boolean value.
 [list_end]
 
 [section CONFIGURATION]
-      
+
+Writer threads are configured on network driver instances, such as
+[const {ns/module/http}], [const {ns/module/https}], or a per-server driver
+section. They allow selected responses to be sent by dedicated writer threads
+instead of by the connection thread.
+
 [para]
-[emph {Basic configuration options:}]
-      
+Writer threads are an important mitigation against slow-reading clients. When
+a response is handed to a writer thread, the connection thread can return to
+processing other requests instead of blocking on network output. In practice,
+a small number of lightweight writer threads can serve many concurrent slow
+clients, and additional writer threads can be configured per network driver
+when more capacity is needed. Writer threads can mitigate slow-read attacks.
+
 [example_begin]
- ns_section "ns/server/default/module/nssock" {
-    ns_param writerthreads 1
-    ns_param writersize 4kB
+ns_section ns/module/http {
+    ns_param writerthreads   2
+    ns_param writersize      4kB
     ns_param writerstreaming true
- }
+}
 [example_end]
 
 [para]
-[term writerthreads] parameter specified how many writer
-threads will be used, multiple threads will be rotated to spread the
-load across all threads
+The [const writerthreads] parameter specifies the number of writer threads
+for this network driver. When more than one writer thread is configured,
+responses are distributed across the available writer threads.
 
 [para]
-[term writersize] specifies the minimal size of the file to be
-considered for writer thread, this parameter is used by connection
-thread when returning file and if size exceeds configured value, file
-will be returned via writer thread and connection thread will be
-released to handle other requests.
+The [const writersize] parameter specifies the minimum response size for
+using writer threads. When a file or response exceeds this size, NaviServer
+can hand the response to a writer thread and release the connection thread to
+handle other requests.
 
 [para]
-[term writerstreaming] specifies whether or not streaming HTML
-output (e.g. sent via [cmd ns_write]) should be sent via the writer.
-When sending server responses over slow connections, this option
-reduces the blocking time of the connection threads and can therefore
-reduce the damage of slow-read attacks.
+The [const writerstreaming] parameter controls whether streaming output, such
+as output sent with [cmd ns_write], should also be sent through writer
+threads. This extends the same slow-client mitigation to streaming responses.
 
+[para]
+For the complete reference of network driver parameters, see
+[uri ../../manual/files/admin-config-params.html {NaviServer configuration parameter reference}].
+
+read
+
+
+[para]
+For the complete reference of network driver parameters, see
+[uri ../../manual/files/admin-config-params.html {NaviServer configuration parameter reference}].
 [section EXAMPLES]
 
 [example_begin]
  ns_writer submitfile /tmp/biglist.txt
 [example_end]
 
-[see_also ns_returnfile ns_conn ns_write ns_headers]
+[see_also admin-config-params ns_returnfile ns_conn ns_write ns_headers]
 [keywords "server built-in" writer configuration "reverse proxy"]
 
 [manpage_end]

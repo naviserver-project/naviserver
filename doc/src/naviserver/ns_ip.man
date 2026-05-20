@@ -134,7 +134,7 @@
 [section CONFIGURATION]
 
 [example_begin]
- ns_section ns/parameters/reverseproxymode {
+ ns_section ns/reverseproxymode {
     ns_param enabled 1
     #
     # Define some address ranges of cloudflare as trusted sources
@@ -154,7 +154,7 @@
 [keywords "global built-in" IPv4 IPv6 CIDR subnet \
         trustedservers reverseproxymode \
         "behind reverse proxy" "reverse proxy"]
-[see_also ns_conn]
+[see_also admin-config-params ns_conn]
 
 [manpage_end]
 

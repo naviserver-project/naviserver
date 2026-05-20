@@ -56,26 +56,24 @@ the nsf package is installed.
  Specifies the number of digits in the generated one-time password
  (OTP). The default value, as recommended in the RFC, is [const 8].
 
-[opt_def -digits [arg interval]]
+[opt_def -interval [arg interval]]
 
  Specifies the validity period of the OTP in seconds (time step size).
  The default value is [const 30].
 
-[opt_def -digits [arg user_id]]
+[opt_def -user_id [arg user_id]]
 
- Specifies the user identifier for deriving a per-user secret.  The
- secret can be provided explicitly with [arg -key], or indirectly via
- [arg -user_id] in combination with a configured server secret
- ([term serversecret]). For testing, use [arg -key]; for production, use
- [arg -user_id] to ensure each user has a personalized secret, seeded
- via configuration (see configuration section).
+ Specifies the user identifier used to derive a per-user secret.  The secret
+ can be provided explicitly with [option -key], or derived from [arg user_id]
+ and the per-server [const serversecret] configuration value.  For testing,
+ use [option -key].  For production use, prefer [option -user_id] together
+ with a configured [const serversecret].
 
 [opt_def -key [arg key]]
 
- Specifies the secret key used for generating the OTP (the "K" in the
- RFC formula). This is usually a decoded Base32 string.  If [arg -key]
- is not provided, [arg -user_id] together with [term serversecret]
- must be used.
+ Specifies the secret key used for generating the OTP.  If [option -key] is
+ not provided, [option -user_id] must be used together with a configured
+ per-server [const serversecret].
 
 [opt_def -time [arg time]]
 
@@ -136,13 +134,30 @@ authenticator apps.
 
 [section CONFIGURATION]
 
+When [cmd ns_totp] is called with [option -user_id] instead of an explicit
+[option -key], NaviServer derives a per-user secret from the configured
+server secret and the provided user identifier.
+
+[para]
+The server secret is configured per virtual server with the
+[const serversecret] parameter in the [const {ns/server/$server}] section.
+
 [example_begin]
- ns_section "ns/server/server1" {
-   # ...
-   ns_param serversecret "swordfish"
-   # ...
- }
+ns_section ns/server/$server {
+    ns_param serversecret "change-this-secret"
+}
 [example_end]
+
+[para]
+The value should be a site-specific secret and should not be shared between
+unrelated installations. Changing it invalidates TOTP values derived from
+[option -user_id].
+
+[para]
+For testing or one-off use, provide the secret directly with [option -key].
+For production use, prefer [option -user_id] together with a configured
+[const serversecret], so that each user receives a personalized derived
+secret.
 
 
 [see_also nsd ns_hmac ns_hotp ns_md ns_sha1 ns_crypt ns_rand]

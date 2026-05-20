@@ -202,108 +202,100 @@ See [cmd ns_rollfile] for details of log rotation.
 
 [section CONFIGURATION]
 
-The system log is configured globally for the whole server process.
+The system log is configured globally for the NaviServer process in the
+[const ns/parameters] section. These settings control which log severities are
+enabled, how log entries are formatted, and how the system log is rolled.
 
 [example_begin]
- [cmd ns_section] ns/parameters {
-   ...
-   [cmd ns_param] log*
-   ...
- }
+ns_section ns/parameters {
+    # Enable or disable selected severities.
+    ns_param logdebug  false
+    ns_param lognotice true
+    ns_param logdev    false
+ 
+    # Configure timestamp and thread information.
+    ns_param logsec       true
+    ns_param logusec      false
+    ns_param logusecdiff  false
+    ns_param logthread    true
+    ns_param logrelative  false
+ 
+    # Configure log formatting.
+    ns_param logcolorize       false
+    ns_param logprefixcolor    green
+    ns_param logprefixintensity normal
+    ns_param logexpanded       false
+    ns_param logdeduplicate    false
+ 
+    # Configure system log file and log rotation.
+    ns_param systemlog    logs/nsd.log
+    ns_param logmaxbackup 10
+    ns_param logroll      true
+    ns_param logrollfmt   %Y-%m-%d
+}
 [example_end]
 
+[subsection {Severity Control}]
 
-The following are valid configuration parameters:
+The parameters [const logdebug], [const lognotice], and [const logdev]
+control whether messages of the corresponding severities are written to the
+system log. Other severities, such as warnings and errors, are always
+important operational messages and should normally not be suppressed.
 
-[list_begin definitions]
+[subsection {Timestamps and Thread Information}]
 
-[def logcolorize]
-If true, log entries will be colorized using ANSI color codes
-Default: [const false].
+The parameters [const logsec], [const logusec], [const logusecdiff],
+[const logrelative], and [const logthread] control the prefix added to log
+entries. These options are useful when debugging timing issues, comparing
+logs across repeated runs, or identifying which thread produced a log entry.
 
-[def logdebug]
-If true messages of severity [emph Debug] are enabled.
-Default: [const false].
+[para]
+The [const logrelative] option prints timestamps relative to the first log
+entry instead of wall-clock time. This can make logs from repeated test runs
+easier to compare.
 
-[opt logdeduplicate] When set to [const true], consecutive identical
-log messages from the same thread are collapsed into a single
-entry. The first occurrence is written normally; subsequent identical
-lines are suppressed. When a different message is logged, an
-additional summary line is emitted indicating that the previous log
-entry for this thread was repeated [var n] times. The default is
-[const false].
+[para]
+The [const logusecdiff] option adds the time difference since the previous log
+entry from the same process, which can be useful for spotting latency without
+additional instrumentation.
 
-[def logdev]
-If true, messages of severity [emph Dev] are enabled.
-Default: [const false].
+[subsection {Formatting and Deduplication}]
 
-[def logexpanded]
-If true, an extra newline is added to each log entry.
-Default: [const false].
+The parameters [const logcolorize], [const logprefixcolor], and
+[const logprefixintensity] control ANSI color output for log prefixes. These
+settings are useful mainly when logs are viewed directly in a terminal.
 
-[def logmaxbackup]
-The number of old system log files to keep around if log rolling is enabled.
-Default: [const 10].
+[para]
+The [const logexpanded] option formats each log entry with the message on an
+indented separate line and adds a blank line after each entry. This can make
+long or multi-line messages easier to read during debugging, but produces
+larger and less compact log files.
 
-[def lognotice]
-If true, messages of severity [emph Notice] are enabled.
-Default: [const true].
+[para]
+The [const logdeduplicate] option collapses consecutive identical log
+messages from the same thread. The first occurrence is written normally;
+repeated identical messages are suppressed until a different message is
+logged, at which point a summary line reports how often the previous message
+was repeated.
 
-[def logprefixcolor]
-When logcolorize is true, provide a color for the timestamp prefix.
-Possible values are:
-[term "black red green yellow blue magenta cyan gray default"].
-Default: [const green].
+[subsection {Log File and Rotation}]
 
-[def logprefixintensity]
-When logcolorize is true, provide the intensity for the timestamp prefix.
-Possible values are: [term "normal bright"].
-Default: [const normal].
+The [const systemlog] parameter specifies the system log file. If the path is
+relative, it is resolved according to the server's global path rules.
 
-[opt logrelative]
-When set to true, log timestamps are printed as relative offsets starting
-at zero, instead of using the system wall clock time. The first log entry
-always starts with 0. This mode makes logs from different runs
-directly comparable, since they all start counting from zero. The default
-is false, preserving the traditional absolute timestamps.
-The default: [const false].
+[para]
+The parameters [const logroll], [const logrollfmt], and
+[const logmaxbackup] control log rotation and retention. When log rolling is
+enabled, NaviServer can rotate the system log on signal or according to the
+configured rolling behavior. The [const logrollfmt] parameter controls the
+timestamp suffix appended to rotated log file names.
 
-[def logroll]
-If true, the log file will be rolled when the server receives a SIGHUP signal.
-Default: [const true].
+[subsection {Configuration Parameters}]
 
-[def logrollfmt]
-When specified, use a timestamp based logroll format based on the
-specified time format (e.g. %Y-%m-%d). The timestamp is appended
-to the name. When within the granularity two log files are generated
-these are numbered.
-
-[def systemlog]
-Path to system log file. If the path is not fully qualified it is assumed to be
-relative to the server home directory ([lb][cmd ns_info] home[rb]). All the components of
-the path must exist. The server will fail to start if the log file cannot be
-opened.
-Default: [const logs/nsd.log]
-
-[def logsec]
-If true, log entries will have seconds timestamps.
-Default: [const true].
-
-[def logthread]
-If true, log entries will have thread ids included.
-Default: [const true].
-
-[def logusec]
-If true, log entries will have timestamps with microsecond (usec) resolution.
-Default: [const false].
-
-[def logusecdiff]
-If true, show time difference since last log entry with microsecond (usec)
-resolution. This option is useful for determine latencies with minimal effort.
-Default: [const false].
-
-[list_end]
-
+The following system-log-related parameters are accepted in the
+[const ns/parameters] section, starting with the prefix [const log].
+For the complete reference of global configuration parameters, see
+[uri ../../manual/files/admin-config-params.html {NaviServer configuration parameter reference}].
 
 [section EXAMPLES]
 
@@ -444,7 +436,7 @@ Create a new severity.
 [example_end]
 
 
-[see_also ns_accesslog ns_info ns_rollfile ns_purgefiles ns_asynclogfile ns_http ns_connchan]
+[see_also admin-config-params ns_accesslog ns_info ns_rollfile ns_purgefiles ns_asynclogfile ns_http ns_connchan]
 [keywords "global built-in" logging "system log" path error \
    configuration nscgi nsdb nsproxy severity]
 
