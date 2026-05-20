@@ -6,15 +6,28 @@
 
 [description]
 
-This command shuts down the server, optionally waiting [arg timeout]
-seconds to let existing connections and background jobs finish.  When 
-this time limit is exceeded the server shuts down immediately.
+This command shuts down the server, optionally waiting for active
+connections and background jobs to finish.
 
-[para] When [arg timeout] is not specified the default or configured
-[arg timeout] is used (default 20). The default can be changed by the
-parameter [term shutdowntimeout] in the global server parameters
-(section [term ns/parameters] in the configuration file). When [arg timeout]
-it is specified, it must be a value >= 0.
+[para]
+When [arg timeout] is specified, it defines the maximum time to wait before
+the server proceeds with shutdown. The value must be greater than or equal to
+[const 0].
+
+[para]
+When [arg timeout] is omitted, NaviServer uses the configured default from
+the [const shutdowntimeout] parameter in the [const ns/parameters] section.
+The built-in default is [const 20s].
+
+[example_begin]
+ ns_section ns/parameters {
+    ns_param shutdowntimeout 20s
+ }
+[example_end]
+
+[para]
+If the timeout expires before all active work has completed, the server
+continues with immediate shutdown.
 
 [section {COMMANDS}]
 
@@ -25,12 +38,15 @@ it is specified, it must be a value >= 0.
         [opt --] \
 	[opt [arg timeout]]]
 
+This command shuts down the server, optionally waiting [arg timeout] for
+active connections and background jobs to finish. When the timeout expires,
+the server continues with immediate shutdown.
+
 [para]
-[arg timeout]
-Time to wait before shutting down the server.
-The [arg timeout] can be specified in the form
-[arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with a time unit.
+If [arg timeout] is omitted, the default is taken from the
+[const shutdowntimeout] parameter in the [const ns/parameters] section. The
+built-in default is [const 20s]. When specified, [arg timeout] must be greater
+than or equal to [const 0].
 
 [para]
 [option -restart]
@@ -45,7 +61,7 @@ send an interrupt signal to the server, leading to a nonzero exit code.
  ns_shutdown 30s
 [example_end]
 
-[see_also ns_kill ns_time ns_atsignal]
+[see_also admin-config-params  ns_kill ns_time ns_atsignal]
 [keywords "server built-in" restart shutdown signals]
 
 [manpage_end]

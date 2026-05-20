@@ -30,12 +30,16 @@ request.
 
 Returns file path to executable binary
 
-[call [cmd  "ns_info bindir"]]
+[call [cmd "ns_info bindir"]]
 
-Returns the name of the [term bin] directory. The name is specified by the
-"bindir" parameter in the "ns/parameters" section, and defaults to
-"bin". The value is used for loading binary libraries for
-executables like the [term nsproxy] worker.
+Returns the absolute path of the directory used for NaviServer executables and
+helper binaries. The value is configured with the [const bindir] parameter in
+the [const ns/parameters] section and defaults to [const bin]. If configured
+as a relative path, it is resolved against the NaviServer home directory.
+
+[para]
+This directory is used, for example, when locating helper programs such as
+the [const nsproxy] worker executable.
 
 
 [call [cmd "ns_info boottime"]]
@@ -92,15 +96,20 @@ time, max wait time, total lock time, number of read locks, number of write
 locks.
 Not all information is available for all types of locks.
 
-[call [cmd  "ns_info log"]]
+[call [cmd "ns_info log"]]
 
-Returns the name of the system log file. The name is specified by the
-[term "systemlog"] parameter in the [const "ns/parameters"] section.
+Returns the absolute path of the system log file. The value is configured with
+the [const systemlog] parameter in the [const ns/parameters] section. If
+configured as a relative path, it is resolved against the log
+directory.
 
-[call [cmd  "ns_info logdir"]]
 
-Returns the name of the log directory. The name is specified by the
-"logdir" parameter in the "ns/parameters" section, and defaults to "logs".
+[call [cmd "ns_info logdir"]]
+
+Returns the absolute path of the log directory. The value is configured with
+the [const logdir] parameter in the [const ns/parameters] section and defaults
+to [const logs]. If configured as a relative path, it is resolved against the
+NaviServer home directory.
 
 [call [cmd  "ns_info major"]]
 
@@ -345,7 +354,7 @@ number combined with a dot).
 
 [list_end]
 
-[see_also nsd ns_crypto]
+[see_also admin-config-params nsd ns_crypto]
 [keywords "global built-in" introspection nsproxy]
 
 [manpage_end]

@@ -33,78 +33,89 @@
 
 [list_end]
 
-[section EXAMPLES]
+[section CONFIGURATION]
 
- The [const serverrootproc] callback can be defined directly in the
- configuration file or registered via the [cmd ns_serverrootproc]
- command. Defining it in the configuration file has the advantage that
- it can be used (for example, for setting log file paths) before the
- server (here named "default") fully starts.
+The server root can be computed dynamically by configuring a
+[const serverrootproc] callback in the [const {ns/server/$server}] section or
+by registering a callback with the [cmd ns_serverrootproc] command.
+
+[para]
+In NaviServer 5 and newer, the preferred form is to define
+[const serverrootproc] directly in the server configuration. This makes the
+callback available early during startup, which is important when the computed
+server root is used for path-related settings such as per-server log file
+locations.
+
+[subsection {Configuration File Registration}]
+
+The following example computes the per-request server root from the
+[const Host] header. If a directory matching the host name exists below the
+configured [const serverdir], that directory is used. Otherwise, the callback
+falls back to a directory named after the virtual server.
 
 [example_begin]
  ns_section ns/server/default {
-   ns_param serverdir /var/www
-   ns_param serverrootproc {
-     #
-     # Compute the per-request "serverdir":
-     #
-     set rootDir [lb]ns_server serverdir[rb]
-     set host [lb]ns_conn host ""[rb]
-     if {$host ne "" && [lb]file isdirectory $rootDir/$host [rb]} {
-       # Use the directory corresponding to the Host header.
-       set serverDir $rootDir/$host
-     } else {
-       # Fall back to the default server directory.
-       set serverDir $rootDir/[lb]ns_info server[rb]
-       ns_log notice "... $rootDir/$host does not exist, use default '$serverDir'"
-     }
-     return $serverDir
-   }
+    ns_param serverdir /var/www
+ 
+    ns_param serverrootproc {
+        set rootDir [lb]ns_server serverdir[rb]
+        set host    [lb]ns_conn host ""[rb]
+ 
+        if {$host ne "" && [lb]file isdirectory $rootDir/$host[rb]} {
+            return $rootDir/$host
+        }
+ 
+        set serverDir $rootDir/[lb]ns_info server[rb]
+        ns_log notice "... $rootDir/$host does not exist, use default '$serverDir'"
+        return $serverDir
+    }
  }
 [example_end]
 
- Alternatively, you can register the callback via
- [cmd ns_serverrootproc] within the Tcl initialization script of a
- server. This approach was standard in NaviServer 4.99 but is more
- complex since the callback must be registered after the server is
- initialized. One way to do this is by using the [term initcmd]
- parameter in the [term tcl] section of a server configuration:
+[subsection {Runtime Registration}]
+
+Before NaviServer 5, the server root callback had to be registered at runtime
+with the [cmd ns_serverrootproc] command, typically from the server's Tcl
+initialization code. This form is still supported and may be familiar to users
+coming from NaviServer 4.99 configurations, but it is registered later during
+server startup and is therefore less suitable when early path computation is
+needed.
+
+[para]
+One way to register the callback during server initialization is to place the
+registration code in the server's Tcl initialization section.
 
 [example_begin]
  ns_section ns/server/default/tcl {
-   ns_param initcmds {
-     #
-     # Use the Tcl namespace "::default" for the "default" server.
-     #
-     namespace eval ::default {
-       #
-       # Define the callback procedure.
-       #
-       proc serverroot {args} {
-         #
-         # Compute the per-request "serverdir":
-         #
-         set rootDir [lb]ns_server serverdir[rb]
-         set host [lb]ns_conn host ""[rb]
-         if {$host ne "" && [lb]file isdirectory $rootDir/$host [rb]} {
-           set serverDir $rootDir/$host
-         } else {
-           set serverDir $rootDir/[lb]ns_info server[rb]
-           ns_log notice "... $rootDir/$host does not exist, use default '$serverDir'"
-         }
-         return $serverDir
-       }
-       #
-       # Register the callback:
-       #
-       ns_serverrootproc [lb]namespace current[rb]::serverroot
-     }
-   }
+    ns_param initcmds {
+        namespace eval ::default {
+            proc serverroot {args} {
+                set rootDir [lb]ns_server serverdir[rb]
+                set host    [lb]ns_conn host ""[rb]
+ 
+                if {$host ne "" && [lb]file isdirectory $rootDir/$host[rb]} {
+                    return $rootDir/$host
+                }
+ 
+                set serverDir $rootDir/[lb]ns_info server[rb]
+                ns_log notice "... $rootDir/$host does not exist, use default '$serverDir'"
+                return $serverDir
+            }
+ 
+            ns_serverrootproc [lb]namespace current[rb]::serverroot
+        }
+    }
  }
 [example_end]
 
+[para]
+For new configurations, prefer the [const serverrootproc] parameter in
+[const {ns/server/$server}]. Use runtime registration with
+[cmd ns_serverrootproc] mainly for compatibility with older configurations or
+when the callback must be installed programmatically.
 
-[see_also ns_locationproc ns_server ns_conn ns_set]
+
+[see_also admin-config-params ns_locationproc ns_server ns_conn ns_set]
 [keywords serverdir "global built-in" callback "virtual host"]
 [manpage_end]
 

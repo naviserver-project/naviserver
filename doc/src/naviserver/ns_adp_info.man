@@ -21,9 +21,8 @@
 [section EXAMPLES]
 
 [example_begin]
- ns_adp_info
- 
- /usr/local/ns/pages/test.adp 1865 1167237186
+ ns_adp_info 
+ ## output:  /usr/local/ns/pages/test.adp 1865 1167237186
 [example_end]
 
 [see_also nsd]

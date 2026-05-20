@@ -39,7 +39,7 @@ MIME type used when no more specific mapping is found for a requested file
 [list_end]
 
 [def "Parameter name: [emph "noextension"]"]
-MIME type used for requested files whose names do not have a filename extension. Fir not specified it falls back to the value of the default parameter
+MIME type used for requested files whose names do not have a filename extension; when unset, the value of default is used
 
 [list_begin itemized]
 [item] Type: [const "mime-type"]

@@ -43,7 +43,7 @@ Don't forget to delete the directory when not needed anymore
  /tmp/foo-rhaGGx
 [example_end]
 
-[see_also ns_mktemp]
+[see_also admin-config-params ns_mktemp]
 [keywords "global built-in" tmp directory]
 
 [manpage_end]

@@ -353,30 +353,49 @@ You may also modify this ns_set.
 
  Queries or sets the keepalive value for the current connection.
 
-[call [cmd  "ns_conn location"]]
+[call [cmd "ns_conn location"]]
 
- Returns the location string for the virtual server handling the
-   request in the format (":port" is optional):
-   protocol://hostname:port
+ Returns the location string for the virtual server handling the request, in
+ the form:
 
-[para]
-  The location is determined by:
+[example_begin]
+ protocol://hostname:port
+[example_end]
+
+ The [const :port] part is omitted when the port is the default port for the
+ protocol.
+
+ [para]
+ The location is determined from the request, the selected network driver, and
+ the configured virtual-host mappings. NaviServer uses the following sources,
+ in order:
 
 [list_begin enumerated]
-    [enum] If ns_locationproc is configured, its result is returned.
 
-    [enum] If virtual hosting is enabled and a valid "Host:" header is
-    provided, its value is used.
+  [enum] If [cmd ns_locationproc] is configured, its result is used.
 
-    [enum] Otherwise, the virtual hosts mapping table (as defined in
-    the ns/module/nssock/servers or ns/module/nsssl/servers section)
-    is consulted.
+  [enum] If a host-to-server mapping exists for the request host, the location from
+  that mapping is used. These mappings are configured in the network driver's
+  [const servers] subsection, for example
+  [const {ns/module/http/servers}] or [const {ns/module/https/servers}],
+  where [const http] and [const https] are the configured driver instance
+  names.
 
-    [enum] If no match is found and a connection is open, the current
-    socket address is used.
+  [enum] If no matching host mapping exists, the driver's default server mapping is
+  used, when available.
 
-    [enum] If all else fails, the location is derived from the driver's configuration.
+  [enum] If no mapping provides a location, the driver-level [const location]
+  parameter is used, when configured.
+
+  [enum] As a final fallback, NaviServer computes a location string from the request
+  host or from the local socket address and port.
+
 [list_end]
+
+ [para]
+ For explicitly configured locations, prefer host-to-server mappings in the
+ driver's [const servers] subsection. The driver-level [const location]
+ parameter is only a fallback and is normally left unset.
 
 
 [call [cmd  "ns_conn method"]]
@@ -603,7 +622,7 @@ Request where NaviServer is having the role of a forwarding proxy server.
  1234          ;# logical server port from request URL
 [example_end]
 
-[see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget \
+[see_also admin-config-params ns_adp ns_locationproc ns_getform ns_set ns_queryget \
   ns_time ns_getcontent ns_certctl]
 [keywords "server built-in" IPv4 IPv6 gzip certificate connection "reverse proxy" SNI \
   "virtual host"]

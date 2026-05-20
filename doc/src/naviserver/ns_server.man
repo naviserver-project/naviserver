@@ -354,104 +354,95 @@ Examples:
 
 [section EXAMPLES]
 
-The following example shows, how dynamic connection pool mapping can
-be implemented based on the "partialtimes" of a request: When a
-request is taking longer than a certain threshold, the combination of
-HTTP method and request path (the [arg mapspec]) is mapped dynamically
-to a pool named "slow". As a consequence later requests with the same
-HTTP method and path will be served from this connection pool.
+[subsection {Dynamic Connection Pool Mapping}]
+
+The following example shows how connection pool mappings can be added at
+runtime based on the partial timing information of a request.
+
+[para]
+When a request takes longer than a configured threshold, the combination of
+HTTP method and request URL is mapped dynamically to a connection pool named
+[const slow]. Later requests with the same method and URL are then handled by
+that pool.
 
 [example_begin]
  ns_register_trace GET /* {
-    set pt [lb]ns_conn partialtimes[rb]
-    set req [lb]list [lb]ns_conn method[rb] [lb]ns_conn url[rb][rb]
+    set pt  [lb]ns_conn partialtimes[rb]
+    set req [lb]list [lb]ns_conn method] [lb]ns_conn url[rb][rb]
     set ctime [lb]expr {[lb]dict get $pt runtime[rb] + [lb]dict get $pt filtertime[rb]}[rb]
+ 
     if {$ctime > 3.0 && [lb]ns_server mapped $req[rb] eq ""} {
-       ns_server -pool slow map -noinherit $req
+        ns_server -pool slow map -noinherit $req
     }
  }
 [example_end]
 
-The connection thread pools are defined in the configuration file. In
-these sections, also the mapping of requests to the pools can be
-defined with the configuration values
-[term map-inherit] and [term map-noinherit].
-The term [term map] is the short form of [term map-inherit]
-The specification using [term map-noinherit] corresponds
-to the [option "-noinherit"] as described above.
+[para]
+A mapping can be queried at runtime with [cmd "ns_server mapped"]:
 
 [example_begin]
- ns_section "ns/server/$server/pools" {
+% ns_server mapped "GET /images/logo.png"
+fast
+[example_end]
+
+[subsection {Configured Connection Pools}]
+
+Connection thread pools are usually defined in the configuration file. The
+[const {ns/server/$server/pools}] section defines the pool names, and each
+[const {ns/server/$server/pool/$pool}] section configures one pool.
+
+[para]
+The [const map] parameter maps requests to a pool. It is equivalent to an
+inheriting map. The [const map-noinherit] parameter creates a mapping that
+does not inherit to more specific URL paths and corresponds to the
+[option -noinherit] option of [cmd "ns_server map"].
+
+[example_begin]
+ ns_section ns/server/$server/pools {
     ns_param fast "Fast lane pool"
     ns_param slow "Slow lane pool"
     ns_param bots "Bot pool"
  }
  
- ns_section "ns/server/$server/pool/fast" {
-    ns_param minthreads 4
-    ns_param maxthreads 4
+ ns_section ns/server/$server/pool/fast {
+    ns_param minthreads    4
+    ns_param maxthreads    4
     ns_param rejectoverrun true
-
-    ns_param map "GET /*.png"
-    ns_param map "GET /*.jpg"
-    ns_param map "GET /*.pdf"
+ 
+    ns_param map           "GET /*.png"
+    ns_param map           "GET /*.jpg"
+    ns_param map           "GET /*.pdf"
     ns_param map-noinherit "GET /dotlrn/mt"
  }
  
- ns_section "ns/server/$server/pool/slow" {
-    ns_param minthreads 5
-    ns_param maxthreads 15
+ ns_section ns/server/$server/pool/slow {
+    ns_param minthreads     5
+    ns_param maxthreads     15
     ns_param maxconnections 200
-    ns_param rejectoverrun true
+    ns_param rejectoverrun  true
  }
  
- ns_section "ns/server/$server/pool/bots" {
+ ns_section ns/server/$server/pool/bots {
     ns_param map "GET /* {user-agent *bot*}"
     ns_param map "GET /* {user-agent *rawl*}"
     ns_param map "GET /* {user-agent *pider*}"
     ns_param map "GET /* {user-agent *baidu*}"
-    ns_param minthreads 2
-    ns_param maxthreads 2
+ 
+    ns_param minthreads    2
+    ns_param maxthreads    2
     ns_param rejectoverrun true
-    ns_param poolratelimit 1000    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
-}
-[example_end]
-
-You might query a certain mapping at runtime:
-
-[example_begin]
- % ns_server mapped "GET /images/logo.png"
- fast
-[example_end]
-
-Mapping with context constraints can also be
-provided in the configuration file. We extend the example above by
-adding a bot pool. An incoming request is mapped to the bot pool, when
-the [term user-agent] of the incoming request matches one of the
-specified names based on a wild-card match.
-
-[example_begin]
- ns_section "ns/server/$server/pools" {
-    ns_param fast "Fast lane pool"
-    ns_param slow "Slow lane pool"
-    ns_param bots "Bot pool"
+    ns_param poolratelimit 1000
  }
- #
- # ...
- #
- ns_section "ns/server/$server/pool/bots" {
-    ns_param map "GET /* {user-agent *bot*}"
-    ns_param map "GET /* {user-agent *rawl*}"
-    ns_param map "GET /* {user-agent *pider*}"
-    ns_param map "GET /* {user-agent *baidu*}"
-    ns_param minthreads 2
-    ns_param maxthreads 2
-    ns_param rejectoverrun true
-    ns_param poolratelimit 1000    ;# limit rate for pool to this amount (KB/s)
-}
 [example_end]
 
-[see_also ns_conn ns_register ns_urlspace]
+[para]
+The [const bots] pool demonstrates mapping with context constraints. A request
+is assigned to this pool when the HTTP method and URL pattern match and the
+incoming [const User-Agent] header matches one of the configured wildcard
+patterns.
+
+
+[see_also admin-config-params ns_conn ns_register ns_urlspace]
 [keywords \
         "context constraints" \
 	"server built-in" configuration "connection thread pools" \

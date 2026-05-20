@@ -309,8 +309,7 @@ of NaviServer.
 
 The global parameters contain the basic setup information,
 where for example the root of the root of nsd is, where the
-server log is to be written, or whether the server runs behind
-a proxy server or not.
+server log is to be written.
 
 [example_begin]
  ns_section ns/parameters {
@@ -318,16 +317,8 @@ a proxy server or not.
    ns_param tcllibrary       tcl
    ns_param systemlog        nsd.log
    # ...
-   ns_param reverseproxymode true
  }
 [example_end]
-
-When reverse proxy mode is turned on, the server assumes it is running
-behind a reverse proxy server. In this case, commands referring to the
-client IP address will return on default the value as provided by the
-reverse proxy server (i.e. provided via the x-forwarded-for header
-field). This will affect the results of [cmd "ns_conn peeraddr"] and
-various introspection commands.
 
 [para] Below, we address some general design considerations when
 tailoring your one configuration files.  Check for simple or real-live
@@ -1921,45 +1912,89 @@ pa
 [list_end]
 
 
+
+
 [section {Proxy and Gateway Configuration}]
-[subsection {Forward and Reverse Proxy Server Configuration}]
+[subsection {Forward Proxy, Reverse Proxy, and Reverse Proxy Mode}]
 
-NaviServer can be configured additionally as a classical "forward"
-HTTP proxy server, and/or as a reverse proxy server. As described
-above, NaviServer can be configured to run behind a reverse proxy
-server, which has consequences on determining, e.g., the client's peer
-IP address and logging. The configuration for running behind a reverse
-proxy server was described in the section
-[sectref {Server Network Configuration}].
+NaviServer can be used in several proxy-related deployment patterns. These
+patterns are related, but they configure different roles:
 
-[para] A forwarding proxy server handles outbound traffic on behalf of
-clients, shielding the client’s identity or controlling outbound
-traffic.  This is different from a reverse proxy server, which is
-managing traffic towards internal servers. A reverse proxy server
-receives HTTP requests from outside and forwards these requests to
-some internal servers (backend servers), which are typically not
-reachable directly from the clients.
+[list_begin itemized]
+[item] NaviServer can run [emph {behind a reverse proxy}] or load balancer.
+[item] NaviServer can act as a [emph {forward proxy}] for clients.
+[item] NaviServer can act as a [emph {reverse proxy}] for backend servers.
+[list_end]
 
-[para] For the configuration as a forwarding proxy server, the
-parameter [const enablehttpproxy] must be activated. It is also
-recommended to load the [const revproxy] module to since this contains
-a scaling infrastructure for proxy requests. If the module is not
-activated, a simple fallback is used.
+[para]
+When NaviServer runs [emph {behind a frontend reverse proxy}] or load
+balancer, the frontend proxy accepts client connections and forwards requests
+to NaviServer. In this setup, NaviServer has to decide whether forwarded
+client information, such as the original peer address, should be trusted.
+Use the [const {ns/reverseproxymode}] section to configure this behavior.
+
+[para]
+Reverse proxy mode affects the effective peer address used by access logs and
+by APIs that report peer-address information. Only trusted frontend proxies
+should be allowed to influence this information.
 
 [example_begin]
- ns_section ns/server/s1 {
-    ...
-    ns_param enablehttpproxy true
-    ...
- }
- ns_section ns/server/s1/modules {
-   ns_param revproxy tcl
+ ns_section ns/reverseproxymode {
+     ns_param enabled        true
+     ns_param trustedservers {127.0.0.1 ::1}
+     ns_param skipnonpublic  true
  }
 [example_end]
 
-For the activation and configuration of NaviServer as a reverse proxy
-server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuration.
+[para]
+This reverse proxy mode configuration is not the same as the [const revproxy]
+module. The [const {ns/reverseproxymode}] section is used when NaviServer is
+behind a reverse proxy. The [const revproxy] module is used when NaviServer
+itself forwards requests to backend servers.
 
+[para]
+A [emph {forward proxy}] handles outbound requests on behalf of clients. It can
+be used to control, inspect, or mediate client access to external HTTP
+resources. To enable NaviServer as a forward proxy, activate the
+[const enablehttpproxy] parameter in the server configuration. It is
+recommended to load the [const revproxy] module as well, since it provides a
+scalable infrastructure for proxy requests. If the module is not loaded, a
+simple fallback implementation is used.
+
+[example_begin]
+ ns_section ns/server/s1 {
+     ns_param enablehttpproxy true
+ }
+ 
+ ns_section ns/server/s1/modules {
+     ns_param revproxy tcl
+ }
+[example_end]
+
+[para]
+A [emph {reverse proxy}] receives incoming client requests and forwards them to
+one or more backend servers, which are typically not directly reachable by the
+clients. For this role, load and configure the [const revproxy] module.
+
+[example_begin]
+ ns_section ns/server/s1/modules {
+     ns_param revproxy tcl
+ }
+ 
+ ns_section ns/server/s1/module/revproxy {
+     ns_param verbose false
+ }
+ 
+ ns_section ns/server/s1/module/revproxy/backend1 {
+     ns_param target https://backend.example.com/
+     ns_param map    "GET  /api/*"
+     ns_param map    "POST /api/*"
+ }
+[example_end]
+
+[para]
+For the full reverse proxy module documentation, see
+[uri ../../revproxy/files/revproxy.html revproxy].
 
 
 

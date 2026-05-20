@@ -62,7 +62,7 @@ parameter, it behaves like
  /tmp/foo-rhaGGx
 [example_end]
 
-[see_also ns_mkdtemp ns_uuid]
+[see_also admin-config-params ns_mkdtemp ns_uuid]
 [keywords "global built-in" tmp tmpfile]
 
 [manpage_end]

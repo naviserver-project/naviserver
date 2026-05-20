@@ -228,7 +228,7 @@ Idle traces fire, when a connection thread is idle (received no
 requests within the thread's timeout and when [term minthreads]
 is already reached, such that the timeouted thread is kept
 around. The timeout can be configured by the parameter [term threadtimeout]
-in the [term ns/server/\$servername] section of the configuration
+in the [const {ns/server/$servername}] section of the configuration
 file. This callback can be used e.g. for maintenance work on
 connection threads.
 
@@ -243,26 +243,32 @@ interpreter was last initialized.
 
 
 
+[section CONFIGURATION]
 
-
-[section {Configuration}]
-
-The following global configuration parameters can influence the default
-behavior of [cmd ns_ictl]
+The behavior of Tcl interpreter creation and automatic interpreter updates can
+be influenced by global settings in the [const ns/parameters] section.
 
 [example_begin]
- ns_section  ns/server {
-   # Activate/Deactivate concurrent interpreter create commands
-   #ns_param concurrentinterpcreate false ;# default: true
-
-   # Define maximum number of concurrent automatic update commands
-   # when epoch in increased (e.g. on "ns_eval" commands)
-   ns_param maxconcurrentupdates 5 ;# default: 1000
+ ns_section ns/parameters {
+    # Allow Tcl interpreters to be created concurrently.  When disabled,
+    # interpreter creation is serialized, which can be useful for debugging
+    # rare initialization problems.
+    # ns_param concurrentinterpcreate false ;# default: true
+ 
+    # Maximum number of interpreters that may run automatic update scripts
+    # concurrently after the server Tcl epoch changes, for example after
+    # ns_eval.
+    ns_param maxconcurrentupdates 5        ;# default: 1000
  }
 [example_end]
 
+[para]
+These settings affect the interpreter management infrastructure used by
+[cmd ns_ictl] and related Tcl interpreter operations.  They are primarily
+intended for debugging, tuning, or limiting concurrency during interpreter
+updates.
 
-[see_also ns_atclose ns_atexit ns_atprestartup ns_atshutdown \
+[see_also admin-config-params ns_atclose ns_atexit ns_atprestartup ns_atshutdown \
         ns_atsignal ns_atstartup ns_runonce]
 [keywords "server built-in" interpreter trace module ns_eval ns_reinit \
         ns_cleanup callback configuration]
