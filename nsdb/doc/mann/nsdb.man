@@ -1,0 +1,181 @@
+[include version_include.man]
+[manpage_begin {nsdb} n [vset version]]
+[moddesc {NaviServer Database Interface}]
+[titledesc {Database support and connection pool configuration}]
+
+[description]
+
+The [const nsdb] module provides NaviServer's database integration.  It
+connects virtual servers to globally configured database pools and exposes the
+database access API used by Tcl code.
+
+[para]
+Database support is optional.  Installations that use it load the
+[const nsdb] module for a virtual server, register one or more database
+drivers, define global database pools, and select which pools are available to
+each server.
+
+[para]
+For a detailed discussion of NaviServer database configuration, database
+pools, handles, and operational considerations, see
+[uri ../../manual/files/admin-db.html {Database Access and Configuration}].
+
+[section {Overview}]
+
+NaviServer database configuration consists of four parts:
+
+[list_begin itemized]
+[item] The [const nsdb] module is loaded for a virtual server.
+[item] Database drivers are registered in [const {ns/db/drivers}].
+[item] Database pools are defined globally in [const {ns/db/pools}] and
+[const {ns/db/pool/$dbpool}].
+[item] A server selects its available pools in [const {ns/server/$server/db}].
+[list_end]
+
+[para]
+Database pools are global definitions and may be shared by multiple virtual
+servers.  The per-server database section determines which of these global
+pools are available to a server and which pool is used by default.
+
+[section {Loading the nsdb Module}]
+
+Load [const nsdb] as a per-server module:
+
+[example_begin]
+ns_section ns/server/$server/modules {
+    ns_param nsdb nsdb
+}
+[example_end]
+
+[para]
+Then select the database pools available to the server:
+
+[example_begin]
+ns_section ns/server/$server/db {
+    ns_param pools       pool1,pool2,pool3
+    ns_param defaultpool pool1
+}
+[example_end]
+
+[section {Database Drivers}]
+
+Database drivers implement the low-level connection to a specific database
+system.  They are external NaviServer modules and must be compiled and
+installed separately before they can be loaded.
+
+[para]
+The [const {ns/db/drivers}] section maps configuration-defined driver names to
+driver implementations:
+
+[example_begin]
+ns_section ns/db/drivers {
+    ns_param postgres nsdbpg
+    ns_param nsoracle nsoracle
+}
+[example_end]
+
+[para]
+The configured driver name is later used by database pools through the
+[const driver] parameter.  For example, a pool using the PostgreSQL driver
+above would specify [const postgres], not [const nsdbpg].
+
+[example_begin]
+ns_section ns/db/pool/pool1 {
+    ns_param driver postgres
+}
+[example_end]
+
+[para]
+Driver-specific settings, when needed, are configured below
+[const {ns/db/driver/$dbdriver}], where [const {$dbdriver}] is the configured
+driver name from [const {ns/db/drivers}].
+
+[example_begin]
+ns_section ns/db/driver/postgres {
+    ns_param pgbin /usr/lib/postgresql/16/bin/
+}
+[example_end]
+
+[section {Database Pools}]
+
+Database pools define reusable sets of database connections.  Each pool
+specifies the driver, datasource, credentials, connection count, and optional
+handle lifetime settings.
+
+[example_begin]
+ns_section ns/db/pools {
+    ns_param pool1 "Main database pool"
+    ns_param pool2 "Secondary database pool"
+    ns_param pool3 "Optional third database pool"
+}
+
+ns_section ns/db/pool/pool1 {
+    ns_param driver         postgres
+    ns_param datasource     localhost::dbname
+    ns_param user           dbuser
+    ns_param password       secret
+    ns_param connections    15
+    ns_param logminduration 10ms
+}
+[example_end]
+
+[para]
+A pool can be used by multiple virtual servers.  The server-specific
+[const {ns/server/$server/db}] section controls which pools are available to a
+particular server.
+
+[section {Per-Server Database Configuration}]
+
+The [const {ns/server/$server/db}] section selects the database pools
+available to a virtual server.
+
+[example_begin]
+ns_section ns/server/$server/db {
+    ns_param pools       pool1,pool2,pool3
+    ns_param defaultpool pool1
+}
+[example_end]
+
+[para]
+The [const defaultpool] is used when application code requests a database
+handle without naming a specific pool.
+
+[section {Configuration Parameters}]
+
+The following sections provide the generated parameter reference for database
+configuration.
+
+[include include/config-parameters-module-params-nsdb.man]
+
+[include include/config-parameters-ns--server--star--db.man]
+
+[include include/config-parameters-ns--db--drivers.man]
+
+[include include/config-parameters-ns--db--driver--star.man]
+
+[include include/config-parameters-ns--db--pools.man]
+
+[include include/config-parameters-ns--db--pool--star.man]
+
+[section {Command Reference}]
+
+The database API is documented in separate command manpages:
+
+[list_begin itemized]
+
+[item] Command [cmd ns_db]:
+Database access API for obtaining handles, executing SQL, iterating over
+result rows, transaction handling, and related database operations.
+
+[item] Command [cmd ns_buildsqldate]:
+SQL date and time manipulation commands.
+
+[item] Command [cmd ns_dbquotevalues]:
+Quote database names and values for use in SQL statements.
+
+[list_end]
+
+[see_also ns_db ns_buildsqldate ns_dbquotevalues admin-config-params]
+[keywords database db pool driver nsdb ns_db nsdbpg nsoracle]
+[category {NaviServer Database}]
+[manpage_end]
