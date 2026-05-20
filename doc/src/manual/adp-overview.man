@@ -24,7 +24,6 @@ a specific page dynamically. You can reuse code by storing Tcl
 scripts in Tcl libraries and invoking them from within multiple ADPs.
 You can also include files and parse other ADPs from within your ADPs.
 
-
 [para]
 Here are some examples of applications you can use ADPs for:
 
@@ -79,89 +78,10 @@ approach.
 [list_end]
 
 
-
-[section {Configuring ADP Processing}]
-
-Since you will be creating HTML pages that contain Tcl scripts, you
-will need to specify which pages the server will need to parse for Tcl
-commands and process.
+[section {Writing ADP Pages}]
 
 
-[subsection {Required Configuration Parameters}]
-
-
-[list_begin itemized]
-
-[item] Use the Map configuration parameter to determine
- which files are to be processed. For example, you can specify that
- all files with the .adp extension are to be processed by the
- server. Or, you can specify that all files that reside in a
- certain directory (for example, /usr/pages/adp) will be processed.
-
-[list_end]
-
-
-
-[subsection {List of Configuration Parameters}]
-
-
-The following table describes all the parameters that can be set
-within the ADP section of the configuration file:
-
-
-[para]
-
-Section [emph {ns/server/$server/adp}]:
-
-
-[list_begin itemized]
-
-[item] [emph {Cache}] - If set to on, ADP caching is enabled, Default: on
-
-
-[item] [emph {DebugInit}] - The procedure to run when debugging begins,
-         Default: ns_adp_debuginit
-
-[item] [emph {EnableExpire}] - If set to on, the "Expires: now" header is set on all
-         outgoing ADPs, Default: off
-
-[item] [emph {EnableCompress}] - If set to on, extraneous spaces within an HTML page are removed,
-         Default: off
-
-[item] [emph {EnableDebug}] - If set to on, appending "?debug" to a URL will enable TclPro debugging,
-         Default: off
-
-[item] [emph {Map}] - The Map parameter specifies which pages the server will parse. You can
-         specify a file extension (such as /*.adp) or a directory (such as
-         /usr/pages/adp). If no directory is specified, the pages directory is
-         assumed. The wildcards * ? and [] can be included in the Map
-         specification. You can specify multiple Map settings.
-[para]
-
-
-The following example specifies that all files in the pages directory
-with the extensions .adp or .asp will be parsed, and all files in the
-/usr/pages/myadps directory will be parsed.
-
-[example_begin]
- Map "/*.adp"
- Map "/*.asp"
- Map "/usr/pages/myadps"
-[example_end]
-
-
-[item] [emph {StartPage}]  - The file to be run on every connection instead of the requested ADP.
-     It can be used to perform routine initialization. It would then
-     usually include the requested ADP by calling:
-     
-[example_begin]
- ns_adp_include [lb]ns_adp_argv 0[rb]
-[example_end]
-
-[list_end]
-
-[section {Building ADPs}]
-
+[subsection {Building ADPs}]
 
 [list_begin enum]
 
@@ -194,96 +114,299 @@ with the extensions .adp or .asp will be parsed, and all files in the
 [list_end]
 
 
-[section {Debugging ADPs with TclPro}]
-
-To debug your ADPs with TclPro, follow these steps described in
-
-[uri ../../naviserver/files/ns_adp_debug.html "/ns_adp_debug"].
 
 
-[section {ADP Syntax}]
+[subsection {ADP Syntax}]
 
-There are three different syntaxes you can use to embed a Tcl script
-into an HTML page. Not all syntaxes are available with all ADP
-parsers. You must be using the appropriate ADP parser to process a
-specific syntax.
-
+ADP pages are ordinary text files, typically HTML, with embedded Tcl code.
+NaviServer evaluates the Tcl parts on the server and sends the resulting
+output to the client.
 
 [para]
-
-Insert Tcl commands between any of the following markup variants:
-
-[para]
+The most commonly used ADP syntax is based on [const {<% ... %>}] and
+[const {<%= ... %>}] blocks.
 
 [list_begin itemized]
 
-[item] 
-
-[example_begin]
- <script language="tcl" runat="server" stream="on">
- ...
- </script>
-[example_end]
-
-The contents of the script are interpreted using the Tcl
-interpreter. The result is not inserted into the page, however. You
-can use the [cmd ns_adp_puts] Tcl function to put content into the page.
-
-[para]
-The [term language="tcl"] attribute is optional. Future enhancements to ADPs
-will include the capability to embed scripts in other scripting
-languages, and you will be able to configure the default language. If
-the language attribute is set to anything except [term tcl], the script will
-not be processed, and a warning will be written to the log file.
-
-[para]
-The [term runat="server"] attribute is required. If this attribute is missing,
-the script will not be processed. The [term runat="server"] attribute is
-necessary so that client-side scripts are not executed accidentally.
-
-[para]
-The [term stream="on"] attribute is optional. If it is included, all
-output for the rest of the page is streamed out to the browser as soon
-as it is ready. Streaming is useful when your script may take a long
-time to complete (such as a complex database query). Content is output
-to the page gradually (incrementally) as the script is running (this is also called
-"streaming HTML"). One disadvantage of streaming HTML is that the
-server cannot return a [term content-length] header with the
-response, such that persistent connections are not possible.
-
 [item] [example {<% ... %>}]
 
-[para] This syntax is evaluated exactly the same as the first syntax
-above, except that you cannot specify any of the attributes. The
-[term language="tcl"] and [term runat="server"] attributes are
-implied. There is no way to specify HTML streaming for this syntax,
-but when HTML streaming was activated in a previous script, it will be
-honored.  This syntax can also be used inside HTML tags.
+The Tcl script between the tags is evaluated.  The script result is not
+inserted into the page automatically.  Use commands such as
+[cmd ns_adp_puts], [cmd ns_adp_append], or [cmd ns_adp_include] to append
+output explicitly.
+
+[example_begin]
+ <p>The current time is:
+ <%
+     ns_adp_puts [lb]clock format [lb]clock seconds[rb][rb]
+ %>
+ </p>
+[example_end]
 
 [item] [example {<%= ... %>}]
 
-[para] The Tcl commands within these tags are evaluated as the argument to an
-[cmd ns_adp_puts] command, which inserts the results into the page. This syntax
-can also be used inside HTML tags.
+The Tcl script between the tags is evaluated and the script result is appended
+to the ADP output.  This form is useful for inserting simple values into the
+page.
 
+[example_begin]
+ <p>Hello, <%= $user_name %>.</p>
+[example_end]
+
+[para]
+The [const {<%= ... %>}] form is equivalent to evaluating the expression or
+script and appending its result to the page output.
+
+[item]
+
+The older script-tag form can also be used:
+
+[example_begin]
+ <script language="tcl" runat="server">
+     ns_adp_puts "Hello from Tcl"
+ </script>
+[example_end]
+
+The [const runat="server"] attribute is required.  It prevents accidental
+execution of ordinary client-side scripts as server-side Tcl code.  The
+[const language="tcl"] attribute is optional for Tcl code.
 
 [list_end]
 
-[section {Registered ADP Tags}]
+[para]
+The [const {<% ... %>}] and [const {<%= ... %>}] forms can be used inside HTML
+elements and attributes, which makes them convenient for templating.
 
-You can define your own ADP tags with the ns_adp_register* Tcl functions.
+[example_begin]
+ <a href="/users/<%= $user_id %>">Profile</a>
+[example_end]
+
+[para]
+By default, each Tcl block in an ADP page is parsed as an independent Tcl
+script.  Therefore, a Tcl command or control structure should normally be
+complete within one block.  The [const singlescript] option changes this
+behavior by combining the Tcl fragments of an ADP page into a single script,
+which allows Tcl constructs to span multiple ADP blocks.
+
+[example_begin]
+ <% foreach item $items { %>
+     <li><%= $item %></li>
+ <% } %>
+[example_end]
+
+[para]
+This style requires [const singlescript] mode.  Without [const singlescript],
+the opening [cmd foreach] block and the closing brace are parsed as separate
+Tcl scripts.
+
+In [const singlescript] mode, an error in any part of the combined script
+stops execution of that ADP page.
+
+[para]
+The script-tag form also supports a [const stream="on"] attribute, which
+enables streaming output for the remainder of the page.  Streaming behavior is
+described in [sectref {Output Buffering and Streaming}].
+
+
+
+[subsection {Registered ADP Tags}]
+
+ADP pages can use registered tags in addition to ordinary Tcl script blocks.
+Registered tags provide a way to associate markup-like ADP elements with Tcl
+procedures.  They are useful when recurring page fragments or application
+widgets should be written in a form that is convenient for page authors, while
+the implementation remains in Tcl code.
+
+[para]
+Tags are registered with the [cmd ns_adp_register*] commands.  Once
+registered, the tag can be used in ADP pages and is expanded by calling the
+associated Tcl procedure during ADP processing.
+
+[para]
+Registered tags are mostly useful for application frameworks or libraries
+that provide a higher-level page-authoring interface.  For simple pages,
+ordinary ADP script blocks and Tcl procedures are often sufficient.
+
+[subsection {Including and Parsing ADPs}]
+
+ADP pages can include other ADP files or parse ADP fragments dynamically.
+This allows common page fragments, layouts, headers, footers, or reusable
+components to be factored into separate files.
+
+[para]
+The [cmd ns_adp_include] command evaluates another ADP file and appends its
+output to the current ADP output stream.  Arguments can be passed to the
+included ADP and accessed there with [cmd ns_adp_argv].
+
+[para]
+The [cmd ns_adp_parse] command parses and evaluates an ADP string.  This is
+useful when ADP content is generated dynamically or stored outside the file
+system.
+
+[para]
+Included and parsed ADPs are evaluated in their own ADP call frame, similar
+to a Tcl procedure call.  This allows arguments and local variables to be
+handled predictably while still participating in the surrounding ADP output
+stream.
+
+[para]
+Commands such as [cmd ns_adp_abort] can be used to interrupt ADP processing
+and unwind the ADP call stack.
+
+[section {ADP Runtime Behavior}]
+
+ADP processing normally happens in the context of an HTTP request. A URL is
+mapped to an ADP file below the server page root, NaviServer allocates a Tcl
+interpreter, evaluates the ADP, and sends the generated output as the HTTP
+response.
+
+[para] The response MIME type is normally derived from the requested ADP file and
+the configured MIME type mappings. It can be changed for the current ADP with
+[cmd ns_adp_mimetype], or by setting the content type in the ns_set
+obtained via [const {ns_conn outputheaders}].
+
+[subsection {Error Handling}]
+
+By default, errors in ADP script blocks are logged to the server log.  The
+current script block is interrupted, but later text or script blocks may still
+be processed, depending on the configured ADP options.
+
+
+[para]
+This behavior can help produce a partial but still valid response after a
+minor error, but it can also hide errors from the client.  Administrators and
+developers should therefore monitor the server log carefully when developing
+or debugging ADP pages.
+
+[para]
+The default behavior can be adjusted with configuration parameters such as
+[const stricterror], [const displayerror], and [const detailerror], or at
+runtime with [cmd ns_adp_ctl].  An [const errorpage] can be configured to
+handle uncaught ADP errors with a custom ADP page.
+
+
+
+[subsection {Output Buffering and Streaming}]
+
+ADP output is normally buffered while the page is processed.  Buffering allows
+NaviServer to determine the response size before sending the response and to
+apply normal response handling.
+
+[para]
+The size of the ADP output buffer is controlled by the [const bufsize]
+configuration parameter.  The buffer is flushed when it becomes full or when
+ADP code explicitly flushes output.
+
+[para]
+Streaming can be enabled when output should be sent incrementally while the
+ADP page is still running.  This can be useful for long-running pages or
+progress-style output, but it changes response handling because the final
+content length is not known in advance.  Streaming can be configured by
+default or controlled at runtime with [cmd ns_adp_ctl].
+
+
+
+[subsection {Character Encoding}]
+
+ADP source and output pass through NaviServer's character encoding handling.
+ADP source files are converted to Tcl's internal string representation before
+evaluation, and text output is converted to the connection's output encoding
+when sent to the client.
+
+[para]
+The default output encoding is derived from the server configuration, in
+particular the per-server [const outputcharset] setting.  The output encoding
+for an individual connection can be inspected or changed with
+[cmd "ns_conn encoding"].
+
+[para]
+Applications should use UTF-8 where possible.  When non-UTF-8 source files or
+responses are required, make sure that the configured charsets, MIME types,
+and response headers are consistent.
+
+
+[subsection {Debugging ADPs with TclPro}]
+
+ADP debugging support can be enabled for development installations.  When
+enabled, NaviServer can invoke the configured ADP debug initialization
+procedure when debugging is requested.
+
+[para]
+For details, see [uri ../../naviserver/files/ns_adp_debug.html {/ns_adp_debug}].
+
+
+[section {Configuring ADP Processing}]
+
+ADP processing is configured per virtual server in the
+[const {ns/server/$server/adp}] section.  The [const map] parameter registers
+URL patterns that are handled as ADP pages.
+
+[example_begin]
+ ns_section ns/server/$server/adp {
+     ns_param map         /*.adp
+     ns_param enabledebug false
+ 
+     # Optional cache and buffer tuning.
+     # ns_param cache     true
+     # ns_param cachesize 10MB
+     # ns_param bufsize   5MB
+ 
+     # Optional common processing and error handling hooks.
+     # ns_param startpage /path/to/startpage.adp
+     # ns_param errorpage /path/to/errorpage.adp
+ }
+[example_end]
+
+[para]
+For static configuration, each [const map] entry registers the ADP handler for
+[const GET], [const HEAD], and [const POST] requests on the specified URL
+pattern. Applications that need more control, such as method-specific
+registration, expiration times, constraints, or per-registration ADP options,
+can register ADP handlers explicitly with [cmd ns_register_adp] during
+server initialization.
+
+[para]
+The [const startpage] and [const errorpage] parameters provide hooks for
+common processing.  A [const startpage] is run before the requested ADP page
+and can perform common initialization before including the requested page.  An
+[const errorpage] is used when uncaught ADP code raises an error.
+
+[example_begin]
+ ns_section ns/server/$server/adp {
+     ns_param startpage /path/to/startpage.adp
+     ns_param errorpage /path/to/errorpage.adp
+ }
+[example_end]
+
+[para]
+Several parameters control ADP memory use and execution behavior.  For
+example, [const cachesize] controls the per-server ADP page cache,
+[const bufsize] controls the ADP output buffer, and [const tracesize]
+controls how much trace information is written when ADP tracing is enabled.
+
+[para]
+Other parameters set default ADP options such as caching, streaming,
+debugging, safe evaluation, error handling, tracing, and whitespace trimming.
+These defaults can be customized per URL with the [option -options] flag of
+[cmd ns_register_adp], or at run time for an individual page with
+[cmd ns_adp_ctl].
+
+[subsection {Configuration Parameters}]
+
+The following parameters are accepted in the
+[const {ns/server/$server/adp}] section.
+
+[include include/config-parameters-params-ns--server--star--adp.man]
+
+
 
 [section {Example ADPs}]
 
 
 [para]
-
-
 This section contains the following ADP examples:
 
-
 [para]
-
 [list_begin itemized]
 
 [item] Example 1: Return partial HTML page conditionally
