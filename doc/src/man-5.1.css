@@ -264,14 +264,14 @@ hr {
   color: var(--color-h2-text);
   border-bottom: 2px solid var(--color-border);
   padding-bottom: 5px;
-  margin: 20px 20px 10px;
+  margin: 1.4rem 20px 0.55rem 20px;
 }
 
 /* Subsection Headings */
 .doctools_section h3 {
-  font-size: 1.1rem;
+  font-size: 1.22rem;
   color: var(--color-h2-text);
-  margin: 18px 20px 8px;
+  margin: 1.4rem 20px 0.55rem 20px;
 }
 
 /* Content Spacing */
