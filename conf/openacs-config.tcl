@@ -405,8 +405,8 @@ ns_section ns/parameters {
     # NaviServer's default charsets are all UTF-8. Although the
     # default charset is UTF-8, set the parameter "OutputCharset"
     # explicitly here, since otherwise OpenACS may use the charset
-    # from [ad_conn charset], which is taken from the database and is
-    # by default ISO-8859-1.
+    # from [ad_conn charset], which is taken from the database via
+    # "lang::util::charset_for_locale" and is by default ISO-8859-1.
     #
     # Note: the global parameter "outputcharset" is OpenACS only; it
     # is used e.g. by acs-templating and acs-tcl. NaviServer has the
