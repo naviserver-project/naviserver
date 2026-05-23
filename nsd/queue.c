@@ -1460,7 +1460,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     enum {
         SActiveIdx, SAllIdx, SAuthprocsIdx,
-        SConnectionRateLimitIdx, SConnectionsIdx,
+        SCharsetIdx, SConnectionRateLimitIdx, SConnectionsIdx, 
         SFiltersIdx,
         SHostsIdx,
 #ifdef NS_WITH_DEPRECATED
@@ -1482,6 +1482,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         {"active",              (unsigned int)SActiveIdx},
         {"all",                 (unsigned int)SAllIdx},
         {"authprocs",           (unsigned int)SAuthprocsIdx},
+        {"charset",             (unsigned int)SCharsetIdx},
         {"connectionratelimit", (unsigned int)SConnectionRateLimitIdx},
         {"connections",         (unsigned int)SConnectionsIdx},
         {"filters",             (unsigned int)SFiltersIdx},
@@ -1533,6 +1534,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     if ((subcmd == SPoolsIdx
          || subcmd == SAuthprocsIdx
+         || subcmd == SCharsetIdx
          || subcmd == SFiltersIdx
          || subcmd == SHostsIdx
          || subcmd == SLogdirIdx
@@ -1649,6 +1651,56 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             result = TCL_OK;
         }
         break;
+
+    case SCharsetIdx: {
+        enum {
+            CharsetAll = 0u,
+            CharsetOutput,
+            CharsetUrl,
+            CharsetFormFallback
+        };
+        static Ns_ObjvTable charsetKinds[] = {
+            {"output",       CharsetOutput},
+            {"url",          CharsetUrl},
+            {"formfallback", CharsetFormFallback},
+            {NULL,           0u}
+        };
+        unsigned int kind = CharsetAll;
+        Ns_ObjvSpec args[] = {
+            {"?kind", Ns_ObjvIndex, &kind, charsetKinds},
+            {NULL, NULL, NULL, NULL}
+        };
+        if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) == NS_OK) {
+            switch (kind) {
+            case 0: {
+                Tcl_Obj *resultObj = Tcl_NewDictObj();
+                Tcl_DictObjPut(interp, resultObj,
+                               NsAtomObj(NS_ATOM_output),
+                               Tcl_NewStringObj(servPtr->encoding.outputCharset, TCL_INDEX_NONE));
+                Tcl_DictObjPut(interp, resultObj,
+                               NsAtomObj(NS_ATOM_url),
+                               Tcl_NewStringObj(servPtr->encoding.urlCharset, TCL_INDEX_NONE));
+                Tcl_DictObjPut(interp, resultObj,
+                               NsAtomObj(NS_ATOM_formfallback),
+                               Tcl_NewStringObj(servPtr->encoding.formFallbackCharset, TCL_INDEX_NONE));
+                
+                Tcl_SetObjResult(interp, resultObj);
+                break;
+            }
+            case CharsetOutput:
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->encoding.outputCharset, TCL_INDEX_NONE));
+                break;
+            case CharsetUrl:
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->encoding.urlCharset, TCL_INDEX_NONE));
+                break;
+            case CharsetFormFallback:
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->encoding.formFallbackCharset, TCL_INDEX_NONE));
+                break;
+            }
+            result = TCL_OK;
+        }
+        break;
+    }
 
     case SFiltersIdx:
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) == NS_OK) {

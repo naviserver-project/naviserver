@@ -85,8 +85,7 @@ Timeout for DNS replies
 [list_end]
 
 [def "Parameter name: [emph "formfallbackcharset"]"]
-Charset to be used in HTML forms or query variables as alternative
-                    character set when the conversion of leads to invalid UTF-8
+Global default for the per-server formfallbackcharset setting; used when ns/server/$server formfallbackcharset is not configured
 
 [list_begin itemized]
 [item] Type: [const "charset"]
@@ -292,6 +291,15 @@ Number of task threads
 [item] Default: [const "1"]
 [list_end]
 
+[def "Parameter name: [emph "outputcharset"]"]
+Global default for the per-server outputcharset setting to be used in HTML forms or query variables as alternative
+                    character set when the conversion of leads to invalid UTF-8; used when ns/server/$server outputcharset is not configured
+
+[list_begin itemized]
+[item] Type: [const "charset"]
+[item] Default: [const "utf-8"]
+[list_end]
+
 [def "Parameter name: [emph "pidfile"]"]
 Path of the file storing the nsd process id; relative paths are resolved against the log directory
 
@@ -402,6 +410,14 @@ Directory for temporary files; when unset, NaviServer uses the TMPDIR environmen
 
 [list_begin itemized]
 [item] Type: [const "path"]
+[list_end]
+
+[def "Parameter name: [emph "urlcharset"]"]
+Global default for the per-server urlcharset setting; used when ns/server/$server urlcharset is not configured
+
+[list_begin itemized]
+[item] Type: [const "charset"]
+[item] Default: [const "utf-8"]
 [list_end]
 
 [list_end]

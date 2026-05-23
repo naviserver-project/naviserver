@@ -110,7 +110,7 @@ Use read/write locks for managing request filters; this improves concurrency whe
 [list_end]
 
 [def "Parameter name: [emph "formfallbackcharset"]"]
-Fallback character set used when parsing URL-encoded or multipart form data if no explicit charset can be determined from the request
+Fallback character set used when parsing form data if no explicit charset can be determined from the request; defaults to value of formfallbackcharset from ns/parameters
 
 [list_begin itemized]
 [item] Type: [const "charset"]
@@ -180,7 +180,7 @@ Include server signature
 [list_end]
 
 [def "Parameter name: [emph "outputcharset"]"]
-Default character set for text output from this server; used to determine the Tcl encoding for converting Tcl UTF-8 strings to the response encoding, and can be changed per connection via ns_conn encoding
+Default character set for text output from this server; used to determine the Tcl encoding for converting Tcl UTF-8 strings to the response encoding; defaults to value of outputcharset from ns/parameters
 
 [list_begin itemized]
 [item] Type: [const "charset"]
@@ -250,7 +250,7 @@ Idle timeout for connection threads above minthreads; excess threads exit after 
 [list_end]
 
 [def "Parameter name: [emph "urlcharset"]"]
-Default character set for decoding URL query strings and form data for this server; initialized as the connection URL encoding, used by form parsing and URL decoding, and can be changed per connection via ns_conn urlencoding
+Default character set for decoding URL query strings and form data for this server; defaults to value of urlcharset from ns/parameters
 
 [list_begin itemized]
 [item] Type: [const "charset"]

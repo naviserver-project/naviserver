@@ -296,7 +296,7 @@ GetTlsCache(void)
 static void
 InitCoreAtomSpecs(void)
 {
-    atoms[NS_ATOM_EMPTY].name            = "";              atoms[NS_ATOM_EMPTY].len   = 0;
+    atoms[NS_ATOM_EMPTY].name            = "";               atoms[NS_ATOM_EMPTY].len   = 0;
     atoms[NS_ATOM_true].name             = "true";           atoms[NS_ATOM_true].len    = 4;
     atoms[NS_ATOM_false].name            = "false";          atoms[NS_ATOM_false].len   = 5;
     atoms[NS_ATOM_0].name                = "0";              atoms[NS_ATOM_0].len       = 1;
@@ -366,6 +366,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_fingerprint].name      = "fingerprint";    atoms[NS_ATOM_fingerprint].len = 11;
     atoms[NS_ATOM_firstline].name        = "firstline";      atoms[NS_ATOM_firstline].len = 9;
     atoms[NS_ATOM_flags].name            = "flags";          atoms[NS_ATOM_flags].len = 5;
+    atoms[NS_ATOM_formfallback].name     = "formfallback";   atoms[NS_ATOM_formfallback].len = 12;
     atoms[NS_ATOM_fragment].name         = "fragment";       atoms[NS_ATOM_fragment].len = 8;
     atoms[NS_ATOM_fragments].name        = "fragments";      atoms[NS_ATOM_fragments].len = 9;
     atoms[NS_ATOM_frame].name            = "frame";          atoms[NS_ATOM_frame].len = 5;
@@ -405,6 +406,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_nr_static].name        = "nr_static";      atoms[NS_ATOM_nr_static].len = 9;
     atoms[NS_ATOM_okp].name              = "okp";            atoms[NS_ATOM_okp].len = 3;
     atoms[NS_ATOM_opcode].name           = "opcode";         atoms[NS_ATOM_opcode].len = 6;
+    atoms[NS_ATOM_output].name           = "output";         atoms[NS_ATOM_output].len = 6;
     atoms[NS_ATOM_outputchan].name       = "outputchan";     atoms[NS_ATOM_outputchan].len = 10;
     atoms[NS_ATOM_partial].name          = "partial";        atoms[NS_ATOM_partial].len = 7;
     atoms[NS_ATOM_patch].name            = "patch";          atoms[NS_ATOM_patch].len = 5;
@@ -716,8 +718,13 @@ NsAtomObj(NsAtomId id)
     EnsureTlsCapacity(c, nAtoms);
 
     if (c->objs[id] == NULL) {
+        //Ns_Log(Notice, "DEBUG create AtomObj <%s>", atoms[id].name);
         c->objs[id] = Tcl_NewStringObj(atoms[id].name, atoms[id].len);
         Tcl_IncrRefCount(c->objs[id]);  /* permanent per-thread reference */
+    }
+    if (c->objs[id]->refCount != 1) {
+        //Ns_Log(Notice, "DEBUG use AtomObj <%s> refCount %d", atoms[id].name, c->objs[id]->refCount );
+        assert(c->objs[id]->refCount > 0);
     }
 
     return c->objs[id];

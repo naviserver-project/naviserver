@@ -260,7 +260,7 @@ ConfigServerEncodings(const char *server)
         section = Ns_ConfigSectionPath(NULL, server, NULL, NS_SENTINEL);
 
         servPtr->encoding.urlCharset =
-            ns_strcopy(Ns_ConfigString(section, "urlcharset", "utf-8"));
+            ns_strcopy(Ns_ConfigString(section, "urlcharset", nsconf.urlCharset));
 
         servPtr->encoding.urlEncoding =
             Ns_GetCharsetEncoding(servPtr->encoding.urlCharset);
@@ -270,7 +270,7 @@ ConfigServerEncodings(const char *server)
                    servPtr->encoding.urlCharset);
         }
         servPtr->encoding.formFallbackCharset =
-            ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "formfallbackcharset", "")));
+            ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "formfallbackcharset", nsconf.formFallbackCharset)));
         if (servPtr->encoding.formFallbackCharset != NULL
             && *servPtr->encoding.formFallbackCharset == '\0') {
             servPtr->encoding.formFallbackCharset  = NULL;
@@ -281,7 +281,7 @@ ConfigServerEncodings(const char *server)
          */
 
         servPtr->encoding.outputCharset =
-            ns_strcopy(Ns_ConfigString(section, "outputcharset", "utf-8"));
+            ns_strcopy(Ns_ConfigString(section, "outputcharset", nsconf.outputCharset));
 
         servPtr->encoding.outputEncoding =
             Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);

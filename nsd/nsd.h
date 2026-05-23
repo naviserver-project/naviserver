@@ -161,6 +161,8 @@ struct nsconf {
     const char *configFile;
     const char *build;
     const char *formFallbackCharset;
+    const char *outputCharset;
+    const char *urlCharset;
     locale_t    locale;
     pid_t       pid;
     time_t      boot_t;

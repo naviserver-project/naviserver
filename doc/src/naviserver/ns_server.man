@@ -23,6 +23,23 @@ Each element of the list is a tcl dict containing
 [const authority] (the authority label supplied at registration), and
 [const proc] a string describing the C function or Tcl callback.
 
+
+[call [cmd ns_server] \
+	[opt [option "-server [arg server]"]] \
+       	[cmd charset] \
+	[opt output|url|formfallback]]
+
+Returns the effective charset configuration for the selected virtual server.
+When the last argument is omitted, the command returns a dictionary with the keys
+[const output], [const url], and [const formfallback]. When it is
+specified, it must be one of these keys and the command returns the
+corresponding charset value.
+
+[para]
+The returned values are the effective per-server values after applying
+configuration defaults. They may therefore differ from values read directly
+from [const ns/parameters] or [const {ns/server/$server}] with [cmd ns_config].
+
 [call [cmd ns_server] \
 	[opt [option "-server [arg server]"]] \
 	[cmd filters]]

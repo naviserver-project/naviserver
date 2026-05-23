@@ -698,8 +698,18 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     NS_mutexlocktrace = Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
 #endif
 
-    nsconf.formFallbackCharset =
-        ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "formfallbackcharset", "")));
+    {
+        const char *value;
+
+        value = Ns_NullIfEmpty(Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "outputcharset"));
+        nsconf.outputCharset = ns_strcopy(value != NULL ? value : "utf-8");
+
+        value = Ns_NullIfEmpty(Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "urlcharset"));
+        nsconf.urlCharset = ns_strcopy(value != NULL ? value : "utf-8");
+
+        nsconf.formFallbackCharset =
+            ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "formfallbackcharset", "")));
+    }
 
     /*
      * If no servers were defined, autocreate server "default"
