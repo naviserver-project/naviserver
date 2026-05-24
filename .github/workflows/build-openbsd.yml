@@ -17,7 +17,7 @@ jobs:
       - name: Build and test on OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
-          release: "7.8"
+          release: "7.9"
           usesh: true
           mem: 4096
           cpu: 2
