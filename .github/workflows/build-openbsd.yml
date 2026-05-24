@@ -15,7 +15,8 @@ jobs:
           fetch-depth: 0
 
       - name: Build and test on OpenBSD VM
-        uses: vmactions/openbsd-vm@v1
+        #uses: vmactions/openbsd-vm@v1
+        uses: vmactions/openbsd-vm@main
         with:
           release: "7.9"
           usesh: true
