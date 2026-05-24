@@ -3,6 +3,12 @@ name: OpenBSD
 on:
   workflow_dispatch:
 
+#
+# So far, only the main branch contains 7.9.
+# https://github.com/vmactions/openbsd-vm/tree/main/conf
+#
+# We might be able to switch later to vmactions/openbsd-vm@v1 again
+#
 jobs:
   openbsd:
     runs-on: ubuntu-latest
