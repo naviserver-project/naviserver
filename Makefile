@@ -125,7 +125,7 @@ help:
 	@echo '  make gdbtest TESTFLAGS="-verbose start -file cookies.test -match cookie-2.*"'
 	@echo
 
-install: all install-dirs install-include install-tcl install-modules \
+install: all install-dirs install-include install-tcl install-modules install-configdoc \
 	install-config install-certificates install-doc install-examples install-notice
 
 HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
@@ -224,6 +224,9 @@ install-include: $(DESTDIR)$(NAVISERVER)/include
 install-tests: install-dirs
 	$(CP) tests $(INSTSRVPAG)
 
+install-configdoc:
+	$(INSTALL_DATA) doc/tcl/configdoc.tcl $(DESTDIR)$(NAVISERVER)/modules/tcl/
+
 install-doc: $(DESTDIR)$(NAVISERVER)/pages
 	@if [ -d doc/html ]; then \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc ; \
@@ -246,6 +249,107 @@ install-examples: $(DESTDIR)$(NAVISERVER)/pages
 	done
 
 
+CONFIGDOC        ?= doc/tcl/configdoc.tcl
+CONFIGDOC_GEN     = doc/tools/gen-config-params.tcl
+PARAM_DOC_DIR     = doc/src/include
+
+CONFIG_PARAM_INCLUDES = \
+	$(PARAM_DOC_DIR)/config-parameters-ns--parameters.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--parameters--reverseproxymode.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--threads.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--mimetypes.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--fastpath.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--reverseproxymode.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--modules.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--servers.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--servers.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nssock.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nsssl.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-quic.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--pools.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--pool--star.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--adp.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--fastpath.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--httpclient.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--tcl.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--vhost.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nslog.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nsperm.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nsproxy.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nscgi.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nscp.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-revproxy.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-revproxy-backends.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nsdb.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--db.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--db--pools.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--db--pool--star.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--db--drivers.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--db--driver--star.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--db--driver--postgres.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--db--driver--nsoracle.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nsstats.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-nssmtpd.man \
+	$(PARAM_DOC_DIR)/config-parameters-ns--sendmail.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-params-nscgi.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-params-nscp.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-params-nsperm.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-params-nsproxy.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-params-revproxy.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-params-revproxy-backends.man \
+	$(PARAM_DOC_DIR)/config-parameters-module-params-nsdb.man \
+	$(PARAM_DOC_DIR)/config-parameters-params-ns--server--star--adp.man \
+	$(PARAM_DOC_DIR)/config-parameters-params-ns--server--star--httpclient.man \
+	$(PARAM_DOC_DIR)/config-parameters-params-ns--fastpath.man \
+	$(PARAM_DOC_DIR)/config-parameters-params-ns--server--star--fastpath.man \
+	$(PARAM_DOC_DIR)/config-parameters-params-ns--sendmail.man
+
+
+$(PARAM_DOC_DIR)/config-parameters-module-params-%.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+	@mkdir -p $(dir $@)
+	tclsh $(CONFIGDOC_GEN) \
+	    --config $(CONFIGDOC) \
+	    --module "$*" \
+	    --parameters-only \
+	    --output $@
+$(PARAM_DOC_DIR)/config-parameters-module-%.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+	@mkdir -p $(dir $@)
+	tclsh $(CONFIGDOC_GEN) \
+	    --config $(CONFIGDOC) \
+	    --module "$*" \
+	    --title "$*" \
+	    --output $@
+$(PARAM_DOC_DIR)/config-parameters-params-%.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+	@mkdir -p $(dir $@)
+	tclsh $(CONFIGDOC_GEN) \
+	    --config $(CONFIGDOC) \
+	    --section "$(subst star,*,$(subst --,/,$*))" \
+	    --parameters-only \
+	    --output $@
+$(PARAM_DOC_DIR)/config-parameters-%.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+	@mkdir -p $(dir $@)
+	tclsh $(CONFIGDOC_GEN) \
+	    --config $(CONFIGDOC) \
+	    --section "$(subst star,*,$(subst --,/,$*))" \
+	    --output $@
+$(PARAM_DOC_DIR)/config-parameters-module-revproxy-backends.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+	@mkdir -p $(dir $@)
+	tclsh $(CONFIGDOC_GEN) \
+	    --config $(CONFIGDOC) \
+	    --section "ns/server/*/module/revproxy/*" \
+	    --output $@
+$(PARAM_DOC_DIR)/config-parameters-module-params-revproxy-backends.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+	@mkdir -p $(dir $@)
+	tclsh $(CONFIGDOC_GEN) \
+	    --config $(CONFIGDOC) \
+	    --parameters-only \
+	    --section "ns/server/*/module/revproxy/*" \
+	    --output $@
+
+config-param-docs: $(CONFIG_PARAM_INCLUDES)
+
+
 # On some systems you may need a special shell script to control the
 # PATH seen by dtplite, as that influences which versions of tclsh and
 # Tcllib dtplite uses.  I personally found it necessary to use a
@@ -259,7 +363,7 @@ else
   # Do nothing, use the environment variable as is.
 endif
 
-build-doc:
+build-doc: config-param-docs
 	$(RMRF) doc/html doc/man doc/tmp
 	$(MKDIR) doc/html doc/man doc/tmp
 	@for srcdir in nscgi \
@@ -274,42 +378,59 @@ build-doc:
 		       revproxy \
 		       doc/src/manual \
 		       doc/src/naviserver \
+		       doc/src/include \
 		       modules/nsexpat \
 		       modules/nsconfigrw \
 		       modules/nsdbi \
 		       modules/nsloopctl \
 		       modules/nsvfs; do \
 		if [ -d $$srcdir ]; then \
-		   echo $$srcdir; \
+		   echo "cp $$srcdir/*.man to doc/tmp/`basename $$srcdir`"; \
 		   $(MKDIR) doc/tmp/`basename $$srcdir`; \
 		   find $$srcdir -name '*.man' -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
 		fi; \
 	done
+	find doc/tmp -name '*.man'
 	$(CP) doc/images/manual/*.png doc/tmp/manual/
 	$(CP) doc/images/naviserver/*.png doc/tmp/naviserver/
 	$(CP) revproxy/doc/mann/*.png doc/tmp/revproxy/
 	$(CP) doc/commandlist_include.man doc/tmp/
 	@cd doc/tmp; \
-	for srcdir in `ls`; do \
-	    echo $$srcdir; \
-	    if [ -f $$srcdir/version_include.man ]; then \
-	       $(CP) $$srcdir/version_include.man .; \
-	    else \
-	       $(CP) ../../version_include.man .; \
-	    fi; \
-	    for f in $(find "$$srcdir" -name '*.man' | sort); do \
-                echo "checking $$f"; \
-                $(DTPLITE) validate "$$f" || exit 1; \
+	for srcdir in */; do \
+	  srcdir=$${srcdir%/}; \
+	  case "$$srcdir" in \
+	    include) continue ;; \
+	  esac; \
+          echo "$$srcdir"; \
+	  if [ -f "$$srcdir/version_include.man" ]; then \
+	    $(CP) "$$srcdir/version_include.man" .; \
+	  else \
+	    $(CP) ../../version_include.man .; \
+	  fi; \
+	  if [ "$(VALIDATE_DOC)" = "1" ]; then \
+	    for f in $$(find "$$srcdir" -type f  -name '*.man' ! -name '.*' ! -name '*_include.man' | sort); do \
+              echo "validating $$f"; \
+              $(DTPLITE) validate "$$f" || { \
+                echo "ERROR: dtplite validate failed for $$f"; \
+                exit 1; \
+              }; \
             done; \
-	    echo $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
+          fi; \
+	  echo $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
 		       -header ../src/$(HEADER_INC) \
 		       -footer ../src/footer.inc \
-		       -o ../html/ html $$srcdir; \
-	    $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
+		       -o ../html/ html "$$srcdir"; \
+	  $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
 		       -header ../src/$(HEADER_INC) \
 		       -footer ../src/footer.inc \
-		       -o ../html/ html $$srcdir; \
-	    $(DTPLITE) -merge -o ../man/ nroff $$srcdir; \
+		       -o ../html/ html "$$srcdir" || { \
+                    echo "ERROR: dtplite HTML merge failed for $$srcdir"; \
+                    exit 1; \
+               }; \
+	  $(DTPLITE) -merge -o ../man/ nroff "$$srcdir" || { \
+                    echo "ERROR: dtplite nroff merge failed for $$srcdir"; \
+                    exit 1; \
+               }; \
 	done
 	$(RMRF) doc/tmp
 
@@ -663,7 +784,7 @@ frags = $(sort $(wildcard $(1)/*.tcl))
 # Create a concatenated file from a directory
 define GEN_CONFIG_template
 $(patsubst %.d,%.tcl,$(1)): $$(call frags,$(1))
-	@echo "GEN  $$@"
+	@echo "generate  $$@"
 	@if test -z "$$(strip $$(call frags,$(1)))"; then \
 	  echo "ERROR: no fragments found in $(1)/*.tcl" 1>&2; \
 	  exit 1; \
@@ -688,7 +809,7 @@ configs: $(CONFIGS)
 
 
 .PHONY: all install clean distclean \
-	install-dirs install-include install-tcl install-modules configs \
+	install-dirs install-include install-tcl install-modules install-configdoc config-param-docs configs \
 	install-config install-certificates install-doc install-examples install-notice \
 	all-% install-% clean-% test-%
 
