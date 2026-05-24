@@ -347,7 +347,25 @@ $(PARAM_DOC_DIR)/config-parameters-module-params-revproxy-backends.man: $(CONFIG
 	    --section "ns/server/*/module/revproxy/*" \
 	    --output $@
 
+REGEN_CONFIG_PARAM_DOCS ?= 0
+
+ifeq ($(REGEN_CONFIG_PARAM_DOCS),1)
 config-param-docs: $(CONFIG_PARAM_INCLUDES)
+else
+config-param-docs:
+	@missing=0; \
+	for f in $(CONFIG_PARAM_INCLUDES); do \
+	    if test ! -f "$$f"; then \
+	        echo "missing generated config parameter include: $$f"; \
+	        missing=1; \
+	    fi; \
+	done; \
+	if test "$$missing" != 0; then \
+	    echo "run 'make config-param-docs REGEN_CONFIG_PARAM_DOCS=1' in an environment with tclsh"; \
+	    exit 1; \
+	fi
+
+endif
 
 
 # On some systems you may need a special shell script to control the
