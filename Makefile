@@ -306,40 +306,40 @@ CONFIG_PARAM_INCLUDES = \
 	$(PARAM_DOC_DIR)/config-parameters-params-ns--sendmail.man
 
 
-$(PARAM_DOC_DIR)/config-parameters-module-params-%.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+$(PARAM_DOC_DIR)/config-parameters-module-params-%.man: $(CONFIGDOC)
 	@mkdir -p $(dir $@)
 	tclsh $(CONFIGDOC_GEN) \
 	    --config $(CONFIGDOC) \
 	    --module "$*" \
 	    --parameters-only \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-module-%.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+$(PARAM_DOC_DIR)/config-parameters-module-%.man: $(CONFIGDOC)
 	@mkdir -p $(dir $@)
 	tclsh $(CONFIGDOC_GEN) \
 	    --config $(CONFIGDOC) \
 	    --module "$*" \
 	    --title "$*" \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-params-%.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+$(PARAM_DOC_DIR)/config-parameters-params-%.man: $(CONFIGDOC)
 	@mkdir -p $(dir $@)
 	tclsh $(CONFIGDOC_GEN) \
 	    --config $(CONFIGDOC) \
 	    --section "$(subst star,*,$(subst --,/,$*))" \
 	    --parameters-only \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-%.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+$(PARAM_DOC_DIR)/config-parameters-%.man: $(CONFIGDOC)
 	@mkdir -p $(dir $@)
 	tclsh $(CONFIGDOC_GEN) \
 	    --config $(CONFIGDOC) \
 	    --section "$(subst star,*,$(subst --,/,$*))" \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-module-revproxy-backends.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+$(PARAM_DOC_DIR)/config-parameters-module-revproxy-backends.man: $(CONFIGDOC)
 	@mkdir -p $(dir $@)
 	tclsh $(CONFIGDOC_GEN) \
 	    --config $(CONFIGDOC) \
 	    --section "ns/server/*/module/revproxy/*" \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-module-params-revproxy-backends.man: $(CONFIGDOC) $(CONFIGDOC_GEN)
+$(PARAM_DOC_DIR)/config-parameters-module-params-revproxy-backends.man: $(CONFIGDOC)
 	@mkdir -p $(dir $@)
 	tclsh $(CONFIGDOC_GEN) \
 	    --config $(CONFIGDOC) \
