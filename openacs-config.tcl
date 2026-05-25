@@ -1468,12 +1468,17 @@ ns_section ns/server/$server/modules {
     if {$libthread eq ""} {
         set libthread \
             [lindex [lsort [glob -nocomplain \
+                                $homedir/lib/thread*/libtcl9*thread*[info sharedlibextension]]] end]
+    }
+    if {$libthread eq ""} {
+        set libthread \
+            [lindex [lsort [glob -nocomplain \
                                 $homedir/lib/thread*/lib*thread*[info sharedlibextension]]] end]
     }
     if {$libthread eq ""} {
-        ns_log notice "No Tcl thread library installed in $homedir/lib/"
+        ns_log error "OpenACS configuration expects Tcl thread library (libthread), but none was found in $homedir/lib/"
     } else {
-        ns_param	libthread $libthread
+        ns_param libthread $libthread
         ns_log notice "Use Tcl thread library $libthread"
     }
 }
