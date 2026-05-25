@@ -1405,6 +1405,11 @@ ns_section ns/server/$server/modules {
     if {$libthread eq ""} {
         set libthread \
             [lindex [lsort [glob -nocomplain \
+                                $homedir/lib/thread*/libtcl9*thread*[info sharedlibextension]]] end]
+    }
+    if {$libthread eq ""} {
+        set libthread \
+            [lindex [lsort [glob -nocomplain \
                                 $homedir/lib/thread*/lib*thread*[info sharedlibextension]]] end]
     }
     if {$libthread eq ""} {
