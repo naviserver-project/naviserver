@@ -413,7 +413,7 @@ ns_section ns/parameters {
     # settings for outputcharset, urlcharset and formfallbackcharset
     # in the per-server settings.
     #
-    ns_param OutputCharset utf-8
+    #ns_param OutputCharset utf-8
     # ns_param URLCharset   utf-8
     #
     # If UTF-8 parsing fails for form data, retry with the specified

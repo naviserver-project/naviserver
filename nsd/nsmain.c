@@ -701,10 +701,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     {
         const char *value;
 
-        value = Ns_NullIfEmpty(Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "outputcharset"));
+        value = Ns_NullIfEmpty(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "outputcharset", "utf-8"));
         nsconf.outputCharset = ns_strcopy(value != NULL ? value : "utf-8");
 
-        value = Ns_NullIfEmpty(Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "urlcharset"));
+        value = Ns_NullIfEmpty(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "urlcharset", "utf-8"));
         nsconf.urlCharset = ns_strcopy(value != NULL ? value : "utf-8");
 
         nsconf.formFallbackCharset =
