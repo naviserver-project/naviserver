@@ -547,6 +547,7 @@
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? active ?-checkforproxy?
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? all ?-checkforproxy?
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? authprocs
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? charset ?output|url|formfallback?
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? connectionratelimit ?/value/?
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? connections
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? filters
