@@ -8,7 +8,6 @@ The ns/server/$server/httpclient section defines per-server defaults
  and TLS certificate validation.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "cafile"]"]

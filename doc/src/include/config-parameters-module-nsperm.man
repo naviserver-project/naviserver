@@ -13,9 +13,8 @@ The nsperm module provides file-based permission checking for a virtual
  checks instead.
 
 
-
 [para]
-  This module is loaded per server through [const {ns/server/$server/modules}].
+This module is loaded per server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/server/$server/modules {

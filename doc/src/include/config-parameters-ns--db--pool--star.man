@@ -12,7 +12,6 @@ The ns/db/pool/$dbpool section configures a global database connection
  A server selects the pools it uses in ns/server/$server/db.
 
 
-
 [example_begin]
  ns_section ns/db/pool/pool1 {
      ns_param driver         postgres

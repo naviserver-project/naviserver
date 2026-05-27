@@ -19,9 +19,8 @@ The nssmtpd module provides an SMTP server for NaviServer. It can be
  in the nsstats module.
 
 
-
 [para]
- This module should be loaded globally through [const ns/modules].
+This module should be loaded globally through [const ns/modules].
 
 [example_begin]
  ns_section ns/server/$server/modules {

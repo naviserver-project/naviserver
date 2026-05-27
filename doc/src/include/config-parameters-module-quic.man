@@ -14,12 +14,11 @@ The quic module provides the experimental HTTP/3 network driver based
  hardening are still needed.
 
 
-
 [para]
 This module also accepts the parameters documented for [const "nsssl"]. The parameters listed below are specific to [const "quic"].
 
 [para]
- This module should be loaded globally through [const ns/modules].
+This module should be loaded globally through [const ns/modules].
 
 [example_begin]
  ns_section ns/modules {

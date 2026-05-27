@@ -125,7 +125,7 @@ help:
 	@echo '  make gdbtest TESTFLAGS="-verbose start -file cookies.test -match cookie-2.*"'
 	@echo
 
-install: all install-dirs install-include install-tcl install-modules install-configdoc \
+install: all install-dirs install-include install-tcl install-modules install-config-parameters-dict \
 	install-config install-certificates install-doc install-examples install-notice
 
 HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
@@ -224,8 +224,8 @@ install-include: $(DESTDIR)$(NAVISERVER)/include
 install-tests: install-dirs
 	$(CP) tests $(INSTSRVPAG)
 
-install-configdoc:
-	$(INSTALL_DATA) doc/tcl/configdoc.tcl $(DESTDIR)$(NAVISERVER)/modules/tcl/
+install-config-parameters-dict:
+	$(INSTALL_DATA) $(CONFIG_PARAMETERS_DICT) $(DESTDIR)$(NAVISERVER)/modules/tcl/
 
 install-doc: $(DESTDIR)$(NAVISERVER)/pages
 	@if [ -d doc/html ]; then \
@@ -249,124 +249,126 @@ install-examples: $(DESTDIR)$(NAVISERVER)/pages
 	done
 
 
-CONFIGDOC        ?= doc/tcl/configdoc.tcl
-CONFIGDOC_GEN     = doc/tools/gen-config-params.tcl
-PARAM_DOC_DIR     = doc/src/include
+CONFIG_PARAMETERS_DICT ?= doc/tcl/config-parameters.tcl
+CONFIG_PARAMETERS_GEN   = doc/tools/gen-config-parameters.tcl
+CONFIG_PARAMETERS_DIR   = doc/src/include
 
-CONFIG_PARAM_INCLUDES = \
-	$(PARAM_DOC_DIR)/config-parameters-ns--parameters.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--parameters--reverseproxymode.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--threads.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--mimetypes.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--fastpath.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--reverseproxymode.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--modules.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--servers.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--servers.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nssock.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nsssl.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-quic.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--pools.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--pool--star.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--adp.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--fastpath.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--httpclient.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--tcl.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--vhost.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nslog.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nsperm.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nsproxy.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nscgi.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nscp.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-revproxy.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-revproxy-backends.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nsdb.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--server--star--db.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--db--pools.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--db--pool--star.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--db--drivers.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--db--driver--star.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--db--driver--postgres.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--db--driver--nsoracle.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nsstats.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-nssmtpd.man \
-	$(PARAM_DOC_DIR)/config-parameters-ns--sendmail.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-params-nscgi.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-params-nscp.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-params-nsperm.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-params-nsproxy.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-params-revproxy.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-params-revproxy-backends.man \
-	$(PARAM_DOC_DIR)/config-parameters-module-params-nsdb.man \
-	$(PARAM_DOC_DIR)/config-parameters-params-ns--server--star--adp.man \
-	$(PARAM_DOC_DIR)/config-parameters-params-ns--server--star--httpclient.man \
-	$(PARAM_DOC_DIR)/config-parameters-params-ns--fastpath.man \
-	$(PARAM_DOC_DIR)/config-parameters-params-ns--server--star--fastpath.man \
-	$(PARAM_DOC_DIR)/config-parameters-params-ns--sendmail.man
+CONFIG_PARAMETERS_INCLUDES = \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--parameters.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--parameters--reverseproxymode.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--threads.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--mimetypes.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--fastpath.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--reverseproxymode.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--modules.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--servers.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nssock.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nsssl.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-quic.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star--pools.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star--pool--star.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star--adp.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star--fastpath.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star--httpclient.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star--tcl.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star--vhost.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nslog.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nsperm.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nsproxy.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nscgi.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nscp.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-revproxy.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-revproxy-backends.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nsdb.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--server--star--db.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--pools.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--pool--star.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--drivers.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--driver--star.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--driver--postgres.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--driver--nsoracle.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nsstats.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nssmtpd.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--sendmail.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-nscgi.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-nscp.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-nsperm.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-nsproxy.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-revproxy.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-revproxy-backends.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-nsdb.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-params-ns--server--star--adp.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-params-ns--server--star--httpclient.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-params-ns--fastpath.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-params-ns--server--star--fastpath.man \
+	$(CONFIG_PARAMETERS_DIR)/config-parameters-params-ns--sendmail.man
 
 
-$(PARAM_DOC_DIR)/config-parameters-module-params-%.man: $(CONFIGDOC)
+$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-%.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIGDOC_GEN) \
-	    --config $(CONFIGDOC) \
+	tclsh $(CONFIG_PARAMETERS_GEN) \
+	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --module "$*" \
 	    --parameters-only \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-module-%.man: $(CONFIGDOC)
+$(CONFIG_PARAMETERS_DIR)/config-parameters-module-%.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIGDOC_GEN) \
-	    --config $(CONFIGDOC) \
+	tclsh $(CONFIG_PARAMETERS_GEN) \
+	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --module "$*" \
 	    --title "$*" \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-params-%.man: $(CONFIGDOC)
+$(CONFIG_PARAMETERS_DIR)/config-parameters-params-%.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIGDOC_GEN) \
-	    --config $(CONFIGDOC) \
+	tclsh $(CONFIG_PARAMETERS_GEN) \
+	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --section "$(subst star,*,$(subst --,/,$*))" \
 	    --parameters-only \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-%.man: $(CONFIGDOC)
+$(CONFIG_PARAMETERS_DIR)/config-parameters-%.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIGDOC_GEN) \
-	    --config $(CONFIGDOC) \
+	tclsh $(CONFIG_PARAMETERS_GEN) \
+	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --section "$(subst star,*,$(subst --,/,$*))" \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-module-revproxy-backends.man: $(CONFIGDOC)
+$(CONFIG_PARAMETERS_DIR)/config-parameters-module-revproxy-backends.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIGDOC_GEN) \
-	    --config $(CONFIGDOC) \
+	tclsh $(CONFIG_PARAMETERS_GEN) \
+	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --section "ns/server/*/module/revproxy/*" \
 	    --output $@
-$(PARAM_DOC_DIR)/config-parameters-module-params-revproxy-backends.man: $(CONFIGDOC)
+$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-revproxy-backends.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIGDOC_GEN) \
-	    --config $(CONFIGDOC) \
+	tclsh $(CONFIG_PARAMETERS_GEN) \
+	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --parameters-only \
 	    --section "ns/server/*/module/revproxy/*" \
 	    --output $@
 
-REGEN_CONFIG_PARAM_DOCS ?= 0
+REGEN_CONFIG_PARAMETERS ?= 0
 
-ifeq ($(REGEN_CONFIG_PARAM_DOCS),1)
-config-param-docs: $(CONFIG_PARAM_INCLUDES)
+ifeq ($(REGEN_CONFIG_PARAMETERS),1)
+config-parameters-includes: $(CONFIG_PARAMETERS_INCLUDES)
 else
-config-param-docs:
+config-parameters-includes:
 	@missing=0; \
-	for f in $(CONFIG_PARAM_INCLUDES); do \
+	for f in $(CONFIG_PARAMETERS_INCLUDES); do \
 	    if test ! -f "$$f"; then \
 	        echo "missing generated config parameter include: $$f"; \
 	        missing=1; \
 	    fi; \
 	done; \
 	if test "$$missing" != 0; then \
-	    echo "run 'make config-param-docs REGEN_CONFIG_PARAM_DOCS=1' in an environment with tclsh"; \
+	    echo "run 'make config-parameters-includes REGEN_CONFIG_PARAMETERS=1' in an environment with tclsh"; \
 	    exit 1; \
 	fi
 
 endif
 
+
+regen-config-parameters-includes:
+	$(MAKE) config-parameters-includes REGEN_CONFIG_PARAMETERS=1
 
 # On some systems you may need a special shell script to control the
 # PATH seen by dtplite, as that influences which versions of tclsh and
@@ -381,7 +383,7 @@ else
   # Do nothing, use the environment variable as is.
 endif
 
-build-doc: config-param-docs
+build-doc: config-parameters-includes
 	$(RMRF) doc/html doc/man doc/tmp
 	$(MKDIR) doc/html doc/man doc/tmp
 	@for srcdir in nscgi \
@@ -827,7 +829,7 @@ configs: $(CONFIGS)
 
 
 .PHONY: all install clean distclean \
-	install-dirs install-include install-tcl install-modules install-configdoc config-param-docs configs \
+	install-dirs install-include install-tcl install-modules install-config-parameters-dict config-parameters-includes configs \
 	install-config install-certificates install-doc install-examples install-notice \
 	all-% install-% clean-% test-%
 

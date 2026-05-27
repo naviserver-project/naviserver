@@ -7,7 +7,6 @@ The ns/server/$server/adp section configures ADP processing for a
  debugging, streaming, and URL mappings for ADP pages.
 
 
-
 [example_begin]
  ns_section ns/server/$server/adp {
      # Register ADP pages.

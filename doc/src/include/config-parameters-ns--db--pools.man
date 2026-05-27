@@ -12,7 +12,6 @@ The ns/db/pools section defines global database pool names. Each
  ns/server/$server/db section.
 
 
-
 [example_begin]
  ns_section ns/db/pools {
      ns_param pool1 "Main database pool"

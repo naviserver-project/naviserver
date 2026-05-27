@@ -13,7 +13,6 @@ The ns/db/driver/$dbdriver section contains optional settings for a
  below ns/db/driver/postgres.
 
 
-
 [example_begin]
  ns_section ns/db/drivers {
      ns_param postgres nsdbpg

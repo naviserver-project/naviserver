@@ -18,9 +18,8 @@ The revproxy module provides reverse-proxy support for a virtual
  backends subsection.
 
 
-
 [para]
-  This module is loaded per server through [const {ns/server/$server/modules}].
+This module is loaded per server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/server/$server/modules {

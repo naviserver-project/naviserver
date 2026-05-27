@@ -12,7 +12,6 @@ The nsoracle module provides the Oracle database driver for the
  implementation name
 
 
-
 [example_begin]
  ns_section ns/db/drivers {
      ns_param nsoracle nsoracle

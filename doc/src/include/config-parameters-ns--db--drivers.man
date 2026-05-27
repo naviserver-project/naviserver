@@ -15,7 +15,6 @@ The ns/db/drivers section defines database driver instances available
  drivers are available for other database systems.
 
 
-
 [example_begin]
  ns_section ns/db/drivers {
      ns_param postgres nsdbpg

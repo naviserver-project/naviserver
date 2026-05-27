@@ -13,7 +13,6 @@ The ns/server/$server/vhost section configures legacy host-based page
  layouts.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "enabled"]"]

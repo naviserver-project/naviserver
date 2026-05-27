@@ -8,9 +8,8 @@ The nslog module writes HTTP access logs for a virtual server.  It can
  addresses.
 
 
-
 [para]
-  This module is loaded per server through [const {ns/server/$server/modules}].
+This module is loaded per server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/server/$server/modules {

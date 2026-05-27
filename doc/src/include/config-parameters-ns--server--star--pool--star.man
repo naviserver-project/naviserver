@@ -14,7 +14,6 @@ The ns/server/$server/pool/$pool section configures a named connection
  configured pool map are handled by the server's default connection pool.
 
 
-
 [example_begin]
  ns_section ns/server/$server/pool/monitor {
      ns_param minthreads 2

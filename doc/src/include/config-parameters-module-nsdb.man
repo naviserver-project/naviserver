@@ -12,9 +12,8 @@ The nsdb module provides NaviServer's database integration for a
  pool.
 
 
-
 [para]
-  This module is loaded per server through [const {ns/server/$server/modules}].
+This module is loaded per server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/server/$server/modules {

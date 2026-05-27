@@ -14,7 +14,6 @@ The ns/server/$server/pools section defines named connection thread
  entry are handled by the server's default connection pool.
 
 
-
 [example_begin]
  ns_section ns/server/$server/pools {
      ns_param monitor "Monitoring and health-check requests"

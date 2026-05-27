@@ -9,7 +9,6 @@ The ns/servers section defines the virtual servers known to this
  ns/server/$server.
 
 
-
 [example_begin]
  ns_section ns/servers {
      ns_param default "Default server"

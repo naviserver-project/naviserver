@@ -6,7 +6,6 @@ Deprecated compatibility section for reverse-proxy mode configuration.
  New configurations should use ns/reverseproxymode.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "enabled"]"]

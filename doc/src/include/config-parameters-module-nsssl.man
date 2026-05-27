@@ -8,12 +8,11 @@ The nsssl module provides the HTTPS network driver. It extends the
  advertisement.
 
 
-
 [para]
 This module also accepts the parameters documented for [const "nssock"]. The parameters listed below are specific to [const "nsssl"].
 
 [para]
- This module can be loaded globally hrough [const ns/modules] or per-server through [const {ns/server/$server/modules}].
+This module can be loaded globally through [const ns/modules] or per-server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/modules {

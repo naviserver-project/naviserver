@@ -9,7 +9,6 @@ The ns/fastpath section configures global behavior for fast static-file
  listing behavior, are configured separately under ns/server/*/fastpath.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "directoryadp"]"]

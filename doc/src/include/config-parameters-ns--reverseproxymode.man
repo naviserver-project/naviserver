@@ -13,7 +13,6 @@ The ns/reverseproxymode section configures how NaviServer interprets
  requests to backend servers.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "enabled"]"]

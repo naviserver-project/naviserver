@@ -14,9 +14,8 @@ The nscgi module runs external CGI programs for configured URL mappings.
  entries are merged into the CGI process environment.
 
 
-
 [para]
-  This module is loaded per server through [const {ns/server/$server/modules}].
+This module is loaded per server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/server/$server/modules {

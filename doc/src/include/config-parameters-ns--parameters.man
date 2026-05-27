@@ -8,7 +8,6 @@ The ns/parameters section contains global NaviServer settings that are
  scheduler and job defaults, startup behavior, and compatibility settings.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "asynclogwriter"]"]
@@ -292,8 +291,7 @@ Number of task threads
 [list_end]
 
 [def "Parameter name: [emph "outputcharset"]"]
-Global default for the per-server outputcharset setting to be used in HTML forms or query variables as alternative
-                    character set when the conversion of leads to invalid UTF-8; used when ns/server/$server outputcharset is not configured
+Global default for the per-server outputcharset setting; used when ns/server/$server outputcharset is not configured
 
 [list_begin itemized]
 [item] Type: [const "charset"]

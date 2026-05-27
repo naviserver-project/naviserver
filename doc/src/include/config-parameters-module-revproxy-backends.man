@@ -13,7 +13,6 @@ Backend sections below the revproxy module define individual upstream
  URL rewriting, backend connection behavior, and context constraints.
 
 
-
 [example_begin]
  ns_section ns/server/$server/module/revproxy/backend1 {
      ns_param target         https://backend.example.com/

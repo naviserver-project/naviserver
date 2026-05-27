@@ -9,7 +9,6 @@ The ns/modules section defines global module instances. Each parameter
  configuration section, such as ns/module/http.
 
 
-
 [example_begin]
  ns_section ns/modules {
      ns_param http  nssock

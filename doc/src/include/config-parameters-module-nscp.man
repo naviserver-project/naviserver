@@ -7,9 +7,8 @@ The nscp module provides the NaviServer control port.  It listens on a
  trusted interfaces such as loopback.
 
 
-
 [para]
-  This module is loaded per server through [const {ns/server/$server/modules}].
+This module is loaded per server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/server/$server/modules {

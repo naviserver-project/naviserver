@@ -12,7 +12,6 @@ The nsdbpg module provides the PostgreSQL database driver for the
  implementation.
 
 
-
 [example_begin]
  ns_section ns/db/drivers {
      ns_param postgres nsdbpg

@@ -15,7 +15,6 @@ The ns/mimetypes section defines MIME type mappings used when
  conventions differ from the built-in defaults.
 
 
-
 [example_begin]
  ns_section ns/mimetypes {
      ns_param default     text/plain

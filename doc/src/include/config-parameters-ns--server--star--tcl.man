@@ -8,7 +8,6 @@ The ns/server/$server/tcl section configures Tcl interpreter
  settings.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "errorlogheaders"]"]

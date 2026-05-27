@@ -13,9 +13,8 @@ The nsproxy module manages pools of external worker processes used to
  logging threshold for long-running operations.
 
 
-
 [para]
-  This module is loaded per server through [const {ns/server/$server/modules}].
+This module is loaded per server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/server/$server/modules {

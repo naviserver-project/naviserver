@@ -11,7 +11,6 @@ The ns/server/$server/db section selects the database pools available
  handle without explicitly naming a pool.
 
 
-
 [example_begin]
  ns_section ns/server/$server/db {
      ns_param pools       pool1,pool2,pool3

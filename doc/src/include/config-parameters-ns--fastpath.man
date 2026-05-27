@@ -12,7 +12,6 @@ The ns/fastpath section configures global behavior for static-file
  separately in the ns/server/$server/fastpath section.
 
 
-
 [example_begin]
  ns_section ns/fastpath {
      # Global fastpath delivery settings.

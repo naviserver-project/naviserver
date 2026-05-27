@@ -7,7 +7,6 @@ The ns/threads section defines process-wide defaults for NaviServer
  newly created threads.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "stacksize"]"]

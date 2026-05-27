@@ -11,7 +11,6 @@ The ns/server/$server section defines core settings for a virtual
  The placeholder $server is the server name defined in ns/servers.
 
 
-
 [list_begin definitions]
 
 [def "Parameter name: [emph "checkmodifiedsince"]"]

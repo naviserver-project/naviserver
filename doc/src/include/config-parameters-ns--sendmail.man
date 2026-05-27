@@ -17,7 +17,6 @@ The ns/sendmail section documents configuration parameters used by the
  but new configurations should use ns/sendmail.
 
 
-
 [para]
 For detailed documentation, see [uri https://github.com/naviserver-project/nssmtpd {nssmtpd}].
 

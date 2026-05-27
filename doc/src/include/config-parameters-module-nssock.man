@@ -14,9 +14,8 @@ The nssock module provides the HTTP network driver. It accepts incoming
  nsssl, which extends nssock with TLS support.
 
 
-
 [para]
- This module can be loaded globally hrough [const ns/modules] or per-server through [const {ns/server/$server/modules}].
+This module can be loaded globally through [const ns/modules] or per-server through [const {ns/server/$server/modules}].
 
 [example_begin]
  ns_section ns/modules {
