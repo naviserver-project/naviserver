@@ -307,40 +307,40 @@ CONFIG_PARAMETERS_INCLUDES = \
 
 $(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-%.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIG_PARAMETERS_GEN) \
+	$(TCLSH_PROG) $(CONFIG_PARAMETERS_GEN) \
 	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --module "$*" \
 	    --parameters-only \
 	    --output $@
 $(CONFIG_PARAMETERS_DIR)/config-parameters-module-%.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIG_PARAMETERS_GEN) \
+	$(TCLSH_PROG) $(CONFIG_PARAMETERS_GEN) \
 	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --module "$*" \
 	    --title "$*" \
 	    --output $@
 $(CONFIG_PARAMETERS_DIR)/config-parameters-params-%.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIG_PARAMETERS_GEN) \
+	$(TCLSH_PROG) $(CONFIG_PARAMETERS_GEN) \
 	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --section "$(subst star,*,$(subst --,/,$*))" \
 	    --parameters-only \
 	    --output $@
 $(CONFIG_PARAMETERS_DIR)/config-parameters-%.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIG_PARAMETERS_GEN) \
+	$(TCLSH_PROG) $(CONFIG_PARAMETERS_GEN) \
 	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --section "$(subst star,*,$(subst --,/,$*))" \
 	    --output $@
 $(CONFIG_PARAMETERS_DIR)/config-parameters-module-revproxy-backends.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIG_PARAMETERS_GEN) \
+	$(TCLSH_PROG) $(CONFIG_PARAMETERS_GEN) \
 	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --section "ns/server/*/module/revproxy/*" \
 	    --output $@
 $(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-revproxy-backends.man: $(CONFIG_PARAMETERS_DICT)
 	@mkdir -p $(dir $@)
-	tclsh $(CONFIG_PARAMETERS_GEN) \
+	$(TCLSH_PROG) $(CONFIG_PARAMETERS_GEN) \
 	    --config $(CONFIG_PARAMETERS_DICT) \
 	    --parameters-only \
 	    --section "ns/server/*/module/revproxy/*" \
@@ -360,7 +360,7 @@ config-parameters-includes:
 	    fi; \
 	done; \
 	if test "$$missing" != 0; then \
-	    echo "run 'make config-parameters-includes REGEN_CONFIG_PARAMETERS=1' in an environment with tclsh"; \
+	    echo "run 'make config-parameters-includes REGEN_CONFIG_PARAMETERS=1' in an environment with $(TCLSH_PROG)"; \
 	    exit 1; \
 	fi
 
@@ -371,7 +371,7 @@ regen-config-parameters-includes:
 	$(MAKE) config-parameters-includes REGEN_CONFIG_PARAMETERS=1
 
 # On some systems you may need a special shell script to control the
-# PATH seen by dtplite, as that influences which versions of tclsh and
+# PATH seen by dtplite, as that influences which versions of $(TCLSH_PROG) and
 # Tcllib dtplite uses.  I personally found it necessary to use a
 # one-line script like this for the DTPLITE command:
 #   env PATH=/usr/sbin:/usr/bin:/sbin:/bin dtplite "$@"
@@ -776,7 +776,7 @@ dist: config.guess config.sub clean configs
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/tests/testserver/access.log
 	git log --date-order --name-status --date=short  >naviserver-$(NS_PATCH_LEVEL)/ChangeLog
 	if [ -f $(HOME)/scripts/fix-typos.tcl ]; then \
-		(cd naviserver-$(NS_PATCH_LEVEL)/; tclsh $(HOME)/scripts/fix-typos.tcl -name Change\*) \
+		(cd naviserver-$(NS_PATCH_LEVEL)/; $(TCLSH_PROG) $(HOME)/scripts/fix-typos.tcl -name Change\*) \
 	fi;
 	find naviserver-$(NS_PATCH_LEVEL) -type f -name '.[a-zA-Z_]*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*-original' -exec rm \{} \;
