@@ -541,8 +541,8 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
     Tcl_Interp *interp;
     Worker       proc;
     int          max;
-    Tcl_DString  in, out;
-    const char  *dots, *uarg = NULL, *user;
+    Tcl_DString  in, out, scratch;
+    const char  *uarg = NULL, *user;
     char        *group = NULL, *active;
     uint16       major, minor;
     size_t       activeSize;
@@ -719,7 +719,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
     }
 
     if (uarg != NULL) {
-        ns_free(uarg);
+        ns_free_const(uarg);
     }
     Tcl_DStringFree(&in);
     Tcl_DStringFree(&out);
@@ -3026,14 +3026,14 @@ GetPool(const char *poolName, const InterpData *idataPtr)
                                    &poolPtr->conf.tidle);
 
             {
-                int max;
+                int max = 8;
+
                 if (Ns_ConfigParameterProvided(section, "maxslaves")) {
                     Ns_LogDeprecatedParameter(section, "maxslaves",
                                               section, "maxworker", NULL);
-                    max = Ns_ConfigInt(section, "maxslaves", 8);
+                    max = Ns_ConfigInt(section, "maxslaves", max);
                 }
-                max = Ns_ConfigInt(section, "maxworker", 8);
-                poolPtr->maxworker  = max;
+                poolPtr->maxworker = Ns_ConfigInt(section, "maxworker", max);
             }
 
             Ns_ConfigTimeUnitRange(section, "logminduration",

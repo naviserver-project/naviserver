@@ -2512,16 +2512,16 @@ static Ns_TLSClientCertMode
 NsTLSClientCertModeConfig(const char *section)
 {
     Ns_TLSClientCertMode mode = NS_TLS_CLIENT_CERT_NONE;
-    static Ns_ObjvTable clientcertModes[] = {
-        {"none",    NS_TLS_CLIENT_CERT_NONE},
-        {"request", NS_TLS_CLIENT_CERT_REQUEST},
-        {"require", NS_TLS_CLIENT_CERT_REQUIRE},
-        {NULL,      0u}
-    };
 
     NS_NONNULL_ASSERT(section != NULL);
 
     if (Ns_ConfigParameterProvided(section, "clientcertmode")) {
+        static Ns_ObjvTable clientcertModes[] = {
+            {"none",    NS_TLS_CLIENT_CERT_NONE},
+            {"request", NS_TLS_CLIENT_CERT_REQUEST},
+            {"require", NS_TLS_CLIENT_CERT_REQUIRE},
+            {NULL,      0u}
+        };
         unsigned int idx = Ns_ConfigGetEnum(section, "clientcertmode",
                                             clientcertModes,
                                             (unsigned int)NS_TLS_CLIENT_CERT_NONE);
