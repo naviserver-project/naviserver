@@ -385,7 +385,7 @@ GetLine(Stream *sPtr, Tcl_DString *dsPtr)
     Tcl_DStringSetLength(dsPtr, 0);
     do {
         if (sPtr->cnt > 0u) {
-            char *eol = strchr(sPtr->ptr, INTCHAR('\n'));
+            char   *eol = strchr(sPtr->ptr, INTCHAR('\n'));
             size_t  n;
 
             if (eol == NULL) {

@@ -222,7 +222,8 @@ ParseUpTo(const char *chars, char ch)
 static const char *
 ValidateChars(const char *chars, const bool *table, const char *msg, const char** errorMsg)
 {
-    const char *p, *result;
+    const char *p;
+    char *result;
 
     for (p = chars; table[UCHAR(*p)] != 0; p++) {
         ;

@@ -538,12 +538,11 @@ FormatActiveSnippet(char *dst, size_t dstCap,
 int
 Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
 {
-    Tcl_Interp  *interp;
-    Worker        proc;
+    Tcl_Interp *interp;
+    Worker       proc;
     int          max;
-    Tcl_DString  in, out, scratch;
-    const char  *script, *user;
-    char        *uarg = NULL;
+    Tcl_DString  in, out;
+    const char  *dots, *uarg = NULL, *user;
     char        *group = NULL, *active;
     uint16       major, minor;
     size_t       activeSize;
@@ -683,9 +682,8 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
         if (len == 0) {
             Export(NULL, TCL_OK, &out);
         } else {
-            int result;
-
-            script = Tcl_DStringValue(&in) + sizeof(Req);
+            int         result;
+            const char *script = Tcl_DStringValue(&in) + sizeof(Req);
 
             if (active != NULL) {
                 const char *dots;

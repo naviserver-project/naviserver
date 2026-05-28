@@ -1023,10 +1023,9 @@ NsAdpLogError(NsInterp *itPtr)
                 Ns_DStringPrintf(&ds, " {%s}", Tcl_GetString(framePtr->ident));
             }
         } else {
-            const char *dot;
+            const char *dot = NS_EMPTY_STRING;
 
             adp = Tcl_GetStringFromObj(framePtr->objv[0], &len);
-            dot = NS_EMPTY_STRING;
             if (len > 150) {
                 len = 150;
                 dot = "...";
