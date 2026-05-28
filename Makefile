@@ -179,7 +179,7 @@ else
 endif
 
 build-doc:
-	$(RM) doc/html doc/man doc/tmp
+	$(RM) -rf doc/html doc/man doc/tmp
 	$(MKDIR) doc/html doc/man doc/tmp
 	@for srcdir in nscgi \
 		       nslog \
@@ -225,7 +225,7 @@ build-doc:
 		       -o ../html/ html $$srcdir; \
 	    $(DTPLITE) -merge -o ../man/ nroff $$srcdir; \
 	done
-	$(RM) doc/tmp
+	$(RM) -rf doc/tmp
 
 #
 # Local copy of Source Forge Documentation
@@ -405,7 +405,7 @@ ca-bundle.crt:
 	curl -s -fS -k -L -o ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
 
 dist: config.guess config.sub clean
-	$(RM) naviserver-$(NS_PATCH_LEVEL)
+	$(RM) -r naviserver-$(NS_PATCH_LEVEL)
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{config.h,Makefile.global,Makefile.module,stamp-h1}
@@ -422,7 +422,7 @@ dist: config.guess config.sub clean
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.h-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*~' -exec rm \{} \;
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --exclude='*/.*' --no-xattrs --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
-	$(RM) naviserver-$(NS_PATCH_LEVEL)
+	$(RM) -r naviserver-$(NS_PATCH_LEVEL)
 
 
 .PHONY: all install clean distclean \
