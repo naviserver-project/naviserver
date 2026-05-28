@@ -316,6 +316,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
 
         if (contentType != NULL) {
             const char *semi = strchr(contentType, ';');
+
             typeEnd = (semi != NULL) ? semi : (contentType + strlen(contentType));
             charset = NsFindCharset(contentType, &charsetOffset);
 
@@ -330,19 +331,24 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
 
         if (fct != FORM_CONTENT_UNKNOWN) {
             /*
-             * It is unsafe to access the content when the
-             * connection is already closed due to potentially
-             * unmmapped memory.
+             * For recognized form content types, parse only an actual entity body.
+             * An empty entity body represents an empty form and must not be parsed
+             * into synthetic fields or passed to the JSON parser.
              */
-            if ((connPtr->flags & NS_CONN_CLOSED) == 0u) {
-                content = connPtr->reqPtr->content;
-                // Ns_Log(Debug, "content <%s>", content);
-            } else {
+            if (connPtr->reqPtr->length > 0u) {
                 /*
-                 * Formdata is unavailable, but do not fall back to the
-                 * query-as-formdata tradition. We should keep a consistent
-                 * behavior.
+                 * It is unsafe to access the content when the connection is already
+                 * closed due to potentially unmapped memory.
                  */
+                if ((connPtr->flags & NS_CONN_CLOSED) == 0u) {
+                    content = connPtr->reqPtr->content;
+                } else {
+                    /*
+                     * Formdata is unavailable, but do not fall back to the
+                     * query-as-formdata tradition. We should keep a consistent
+                     * behavior.
+                     */
+                }
             }
         } else if (connPtr->request.query != NULL) {
             /*
@@ -364,6 +370,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                 bool         translate;
                 Tcl_Encoding encoding;
                 Tcl_Obj      *fallbackCharsetCompatibilityObj = NULL;
+
 #ifdef _WIN32
                 /*
                  * Keep CRLF
@@ -504,6 +511,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
             }
 
             case FORM_CONTENT_JSON:
+
                 toParse = content;
                 status = ParseJsonContent(interp, content, (TCL_SIZE_T)connPtr->reqPtr->length,
                                           charset, connPtr->query, &errDs);
@@ -519,25 +527,22 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
             }
         }
 
+        if (rcPtr != NULL) {
+            *rcPtr = status;
+        }
         if (status == NS_ERROR) {
-            Ns_Log(Warning, "formdata: could not parse '%s'", toParse);
-            Ns_ConnClearQuery(conn);
-            if (rcPtr != NULL) {
-                *rcPtr = status;
-                if (interp != NULL) {
-                    if (fct == FORM_CONTENT_JSON && toParse != NULL && *toParse != '\0') {
-                        Ns_TclPrintfResult(interp, "%s", errDs.string);
-                        Tcl_SetErrorCode(interp, "NS_INVALID_JSON", NULL);
-                    } else {
-                        Ns_TclPrintfResult(interp,
-                                           "cannot decode '%s'; contains invalid UTF-8",
-                                           toParse);
-                        Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
-                    }
-                }
+            const char *errorInput = (toParse != NULL) ? toParse : "";
+
+            if (fct == FORM_CONTENT_JSON && *errorInput != '\0') {
+                Ns_TclPrintfResult(interp, "%s", errDs.string);
+                Tcl_SetErrorCode(interp, "NS_INVALID_JSON", NULL);
+
+            } else {
+                Ns_TclPrintfResult(interp,
+                                   "cannot decode '%s'; contains invalid UTF-8",
+                                   errorInput);
+                Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
             }
-            Tcl_DStringFree(&errDs);
-            return NULL;
         }
         Tcl_DStringFree(&errDs);
     }

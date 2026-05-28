@@ -178,8 +178,14 @@ proc ns_getform {args}  {
     #
 
     if {![info exists ::_ns_form]} {
+        try {
+            set ::_ns_form [ns_conn form -fallbackcharset $fallbackcharset]
+        } on error {errorMsg errorDict} {
+            ns_log warning "'ns_conn form' raised error: $errorMsg\n[ns_set format [ns_conn headers]]"
+            return -options $errorDict $errorMsg
+        }
+        #set ::_ns_form [ns_conn form -fallbackcharset $fallbackcharset]
 
-        set ::_ns_form [ns_conn form -fallbackcharset $fallbackcharset]
         foreach name [ns_set keys $::_ns_form] {
             if {[string match "*.tmpfile" $name]} {
                 ns_log warning "Someone tries to sneak-in a fake upload file " \
