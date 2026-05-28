@@ -3104,7 +3104,6 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
 static void
 MkSeq(Tcl_DString *dsPtr, const char *key, const char *url)
 {
-    const char *p;
     bool        done;
     size_t      l;
 
@@ -3122,7 +3121,7 @@ MkSeq(Tcl_DString *dsPtr, const char *key, const char *url)
     done = NS_FALSE;
     while (!done && *url != '\0') {
         if (*url != '/') {
-            p = strchr(url, INTCHAR('/'));
+            const char *p = strchr(url, INTCHAR('/'));
             if (p != NULL) {
                 l = (size_t)(p - url);
             } else {

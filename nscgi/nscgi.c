@@ -654,7 +654,7 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     int           fd = NS_INVALID_FD;
     Ns_ReturnCode status;
     size_t        len;
-    const char   *content, *err = NULL;
+    const char   *content;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
@@ -671,6 +671,8 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
             }
         }
     } else {
+        const char *err = NULL;
+
         fd = Ns_GetTemp();
         if (fd == NS_INVALID_FD) {
             Ns_Log(Error, "nscgi: could not allocate temp file.");

@@ -222,7 +222,8 @@ ParseUpTo(const char *chars, char ch)
 static char *
 ValidateChars(char *chars, const bool *table, const char *msg, const char** errorMsg)
 {
-    char *p, *result;
+    const char *p;
+    char *result;
 
     for (p = chars; table[UCHAR(*p)] != 0; p++) {
         ;
@@ -453,7 +454,7 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
          * every non-accepted scheme here (the remainding URL must not have a
          * colon before a slash.
          */
-        char *p;
+        const char *p;
 
         for (p = end; *p != '\0' && *p != '/'; p++) {
             if (*p == ':') {

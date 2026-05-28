@@ -1121,7 +1121,6 @@ static char *
 MakePath(Tcl_DString *dest, va_list *pap)
 {
     char      *s;
-    TCL_SIZE_T len;
 
     NS_NONNULL_ASSERT(dest != NULL);
 
@@ -1139,8 +1138,9 @@ MakePath(Tcl_DString *dest, va_list *pap)
                 ++s;
             }
             if (*s != '\0') {
+                TCL_SIZE_T len = 0;
+
                 Tcl_DStringAppend(dest, "/", 1);
-                len = 0;
                 while (s[len] != '\0' && !ISSLASH(s[len])) {
                     ++len;
                 }

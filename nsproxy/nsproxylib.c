@@ -473,11 +473,11 @@ Ns_ProxyTclInit(Tcl_Interp *interp)
 int
 Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
 {
-    Tcl_Interp  *interp;
-    Worker        proc;
-    int          result, max;
+    Tcl_Interp *interp;
+    Worker       proc;
+    int          max;
     Tcl_DString  in, out;
-    const char  *script, *dots, *uarg = NULL, *user;
+    const char  *dots, *uarg = NULL, *user;
     char        *group = NULL, *active;
     uint16       major, minor;
     size_t       activeSize;
@@ -616,7 +616,9 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
         if (len == 0) {
             Export(NULL, TCL_OK, &out);
         } else {
-            script = Tcl_DStringValue(&in) + sizeof(Req);
+            int         result;
+            const char *script = Tcl_DStringValue(&in) + sizeof(Req);
+
             if (active != NULL) {
                 int n = (int)len;
 

@@ -292,7 +292,7 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
     } else if (addr->sa_family == AF_INET6 && mask->sa_family == AF_INET) {
         const unsigned char *addr4;
         const size_t off4 = offsetof(struct sockaddr_in, sin_addr);
-        uint32_t a, m, o;
+        uint32_t a, m;
 
         /*
          * Treat v4-mapped IPv6 and IPv4 mask as compatible.
@@ -300,6 +300,8 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
          */
 
         if (SockaddrGetMappedV4(addr, &addr4)) {
+            uint32_t o;
+
             memcpy(&a, addr4, 4);
             memcpy(&m, (const uint8_t *)mask + off4, 4);
             o = a & m;

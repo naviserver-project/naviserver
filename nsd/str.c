@@ -750,7 +750,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
     /*NsHexPrint("Valid UTF8?", bytes, (size_t)nrBytes, 32, NS_FALSE);*/
 
     for (;;) {
-        unsigned char byte1, byte2, byte3, byte4;
+        unsigned char byte1, byte2, byte3;
 
         /*
          * First a loop over 7-bit ASCII characters.
@@ -828,7 +828,9 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
             }
 
         } else {
-            size_t startIndex;
+            size_t        startIndex;
+            unsigned char byte4;
+
             /*
              * Four-byte UTF-8.
              */
