@@ -2,7 +2,7 @@
 NaviServer 5.0.5, released 2026-??-??
 =======================================
 
- 53 files changed, 3260 insertions(+), 1820 deletions(-)
+ 56 files changed, 3482 insertions(+), 1853 deletions(-)
 
 Bug Fixes
 ---------
@@ -19,7 +19,8 @@ Bug Fixes
 
  - TLS / nsssl:
    * Added support for explicit client CA configuration via clientcafile
-     and clientcapath.
+     and clientcapath (fixes nsssl configurations with "verify true"
+     in nsssl section)
    * Ensured client CA locations are loaded into OpenSSL verification
      contexts when client certificate verification is enabled.
    * Advertised configured client CA names to clients during TLS handshakes.
