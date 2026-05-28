@@ -1,4 +1,214 @@
 =======================================
+NaviServer 5.0.5, released 2026-??-??
+=======================================
+
+ 53 files changed, 3260 insertions(+), 1820 deletions(-)
+
+Bug Fixes
+---------
+
+ - Networking / IP Address Handling:
+   * Fixed classification of non-public IP address ranges.
+   * Corrected the IPv6 unique-local range from fd00::/8 to fc00::/7.
+   * Corrected the IPv4 link-local range from 69.254.0.0/16 to
+     169.254.0.0/16.
+   * Improved handling of IPv4-mapped IPv6 addresses in address masking,
+     matching, and CIDR parsing.
+   * Made IPv4 and IPv4-mapped IPv6 comparisons behave consistently in
+     ns_ip matching and related internal address operations.
+
+ - TLS / nsssl:
+   * Added support for explicit client CA configuration via clientcafile
+     and clientcapath.
+   * Ensured client CA locations are loaded into OpenSSL verification
+     contexts when client certificate verification is enabled.
+   * Advertised configured client CA names to clients during TLS handshakes.
+   * Applied client CA configuration consistently to dynamically created
+     TLS contexts, including virtual-host certificate contexts.
+   * Improved diagnostics for TLS context creation, certificate loading,
+     OCSP stapling activation, and disabled protocol versions.
+   * Improved client certificate verification handling after completed
+     TLS handshakes.
+   * Fixed send-error accounting in nsssl by preserving OpenSSL error
+     reasons on failed send operations.
+   * Added a Darwin-specific socket workaround for writable poll events
+     where no data can actually be written.
+
+ - ns_set:
+   * Fixed pointer relocation during ns_set growth when the backing
+     Tcl_DString buffer moves.
+   * Corrected value appending and replacement logic to keep field name
+     and value pointers valid after reallocations.
+   * Added Ns_SetClearValues() support to compact set storage and release
+     excess allocation where appropriate.
+   * Improved debug logging and assertions around ns_set resizing and
+     data movement.
+
+ - ADP:
+   * Improved regression coverage for ns_adp_include argument passing.
+   * Adjusted ADP test expectations to tolerate platform- and formatting-
+     dependent output differences.
+   * Added tests for included ADP pages receiving and exposing argv values.
+
+ - HTTP / Request Parsing:
+   * Simplified internal header parsing by removing the obsolete header
+     case-disposition argument from Ns_ParseHeader().
+   * Updated all internal callers to use the simplified Ns_ParseHeader()
+     signature.
+   * Kept parsed header handling aligned with NaviServer 5's default
+     case-insensitive header behavior.
+   * Improved robustness of HTTP limit tests where platforms differ in
+     whether the client receives a normal error response or an early
+     connection failure.
+
+ - Core:
+   * Improved behavior of ns_conn isconnected when connections are already
+     closed or detached.
+   * Added defensive assertions for iovec counts in socket send/receive
+     operations.
+   * Cleaned up unused arguments and platform-specific branches in socket
+     defer-accept handling.
+   * Improved condition-variable timeout diagnostics.
+   * Reduced tracing noise from TclOO internals by excluding the ::oo
+     namespace from nstrace.
+
+ - Crypto:
+   * Adjusted ECDSA signing code to use the expected integer digest length
+     type for OpenSSL compatibility.
+
+
+Compatibility and Platform Fixes
+--------------------------------
+
+ - OpenSSL Build Detection:
+   * Reworked --with-openssl handling in configure logic.
+   * Added support for --with-openssl=DIR and
+     --with-openssl=INCLUDEDIR,LIBDIR.
+   * Preferred absolute OpenSSL library paths when an explicit prefix or
+     library directory is supplied, reducing accidental linkage against
+     unrelated system OpenSSL libraries.
+   * Improved configure failures when explicit OpenSSL paths are invalid
+     or incomplete.
+
+ - Tcl:
+   * Updated CI coverage to Tcl 8.6.18 and Tcl 9.0.3.
+   * Improved OpenACS sample configuration lookup for Tcl 9 thread library
+     names.
+   * Produced clearer configuration errors when the Tcl thread library is
+     not found.
+
+ - BSD / macOS:
+   * Avoided OpenBSD rand() warnings in nsthread tests by using
+     arc4random_uniform() on BSD-derived platforms and macOS.
+   * Kept rand()-based fallback behavior for other platforms.
+
+ - C API:
+   * Removed the obsolete Ns_HeaderCaseDisposition enum.
+   * Simplified Ns_ParseHeader() by dropping the case-conversion argument.
+   * Changed Ns_SockaddrMask() and Ns_SockaddrMaskBits() to return a
+     boolean success value, allowing callers to detect invalid address
+     family combinations.
+
+
+Configuration Updates
+---------------------
+
+ - Sample Configurations:
+   * Added modular network configuration fragments for NaviServer and
+     OpenACS deployments.
+   * Introduced shared ns/driver/common defaults for HTTP and HTTPS
+     driver configuration.
+   * Used ns_section -from and -update to reduce duplication between
+     HTTP and HTTPS driver sections.
+   * Added Docker-aware host:port mapping support for published container
+     ports.
+   * Ignored wildcard "any" addresses when building server host mappings.
+   * Added detailed comments for driver limits, timeouts, backlog,
+     keep-alive behavior, upload spooling, writer threads, and TCP tuning.
+   * Added commented client certificate configuration examples for nsssl.
+
+ - OpenACS Configuration:
+   * Added documented client certificate parameters for HTTPS:
+     verify, clientcafile, and clientcapath.
+   * Improved Tcl thread-library discovery for Tcl 9 installations.
+
+
+Documentation Updates
+---------------------
+
+ - nsssl:
+   * Documented the certificate parameter as required.
+   * Clarified certificate chain ordering and PEM file expectations.
+   * Documented runtime certificate reload via HUP.
+   * Improved documentation for ciphers, TLS 1.3 ciphersuites, and
+     protocol selection.
+   * Added detailed documentation for verify, clientcafile, and
+     clientcapath.
+   * Clarified that client certificate verification currently applies
+     at driver level and is inherited by virtual-host TLS contexts.
+
+ - ns_adp_*:
+   * Improved documentation for ns_adp_argc, ns_adp_argv,
+     ns_adp_bind_args, and ns_adp_include.
+   * Clarified ADP include argument handling and examples.
+
+ - ns_ip:
+   * Updated documentation for IP matching and classification behavior,
+     including IPv4-mapped IPv6 handling.
+
+ - ns_parseheader:
+   * Updated documentation for the simplified ns_parseheader /
+     Ns_ParseHeader interface.
+   * Removed references to obsolete header case-conversion behavior.
+
+ - README:
+   * Clarified Tcl version support for NaviServer 5 and Tcl 9.
+   * Added documentation for --with-openssl forms and behavior.
+   * Clarified GitHub checkout build instructions and documentation
+     generation requirements.
+
+ - NEWS:
+   * Reformatted existing NaviServer 5.0 release notes to use plain
+     ASCII bullets and section headings consistently.
+
+
+Build System
+------------
+
+ - Added install-sf-doc target for installing generated documentation
+   into a local SourceForge documentation tree.
+ - Made common build command variables overridable via ?=, including
+   RM, MKDIR, CP, LN, MV, CAT, CHMOD, CHOWN, and OPENSSL.
+ - Replaced sudo-based log-directory permission checks with su-based
+   checks for better portability.
+ - Updated .gitignore for generated helper binaries, local dump files,
+   and test access logs.
+
+
+Security and Trust Store Updates
+--------------------------------
+
+ - Updated bundled ca-bundle.crt from Mozilla certificate data as of
+   2026-02-11.
+ - Updated CA extraction metadata and source URL.
+ - Removed expired or obsolete root certificates and refreshed the
+   bundled trust material used for HTTP client certificate validation.
+
+
+Tests
+-----
+
+ - Extended ns_ip tests for corrected CIDR handling and IPv4/IPv6
+   matching behavior.
+ - Added regression coverage for IPv4-mapped IPv6 address handling.
+ - Updated ADP include tests for argument propagation and nested include
+   behavior.
+ - Improved HTTP tests for platform-dependent connection failure behavior.
+ - Updated configuration tests to match revised output and defaults.
+ - Adjusted test names and expected results for consistency.
+
+
+=======================================
 NaviServer 5.0.4, released 2026-01-23
 =======================================
 
