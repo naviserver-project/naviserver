@@ -4177,7 +4177,17 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
                 LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
             }
         } else if (statusCode >= 500) {
-            Ns_Log(Warning, "request returns %d (%s): %s", statusCode, errMsg, requestLine);
+            const char *poolName = (sockPtr->poolPtr != NULL)
+                ? sockPtr->poolPtr->pool
+                : NULL;
+
+            if (poolName != NULL && *poolName != '\0') {
+                Ns_Log(Warning, "request returns %d (%s) in connection pool '%s': %s",
+                       statusCode, errMsg, poolName, requestLine);
+            } else {
+                Ns_Log(Warning, "request returns %d (%s): %s",
+                       statusCode, errMsg, requestLine);
+            }
         }
     } else {
         Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
