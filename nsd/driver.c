@@ -4076,41 +4076,6 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
     }
 }
 
-static const char *
-RequestLineWithoutQuery(Tcl_DString *dsPtr, const char *requestLine)
-{
-    const char *uriStart, *uriEnd, *q;
-
-    if (requestLine == NULL || *requestLine == '\0') {
-        return NS_EMPTY_STRING;
-    }
-
-    /*
-     * Expected shape: METHOD SP URI SP VERSION
-     */
-    uriStart = strchr(requestLine, ' ');
-    if (uriStart == NULL) {
-        return requestLine;
-    }
-    uriStart++;
-
-    uriEnd = strchr(uriStart, ' ');
-    if (uriEnd == NULL) {
-        return requestLine;
-    }
-
-    q = memchr(uriStart, '?', (size_t)(uriEnd - uriStart));
-    if (q == NULL) {
-        return requestLine;
-    }
-
-    Tcl_DStringAppend(dsPtr, requestLine, (TCL_SIZE_T)(q - requestLine));
-    Tcl_DStringAppend(dsPtr, "?...", 4);
-    Tcl_DStringAppend(dsPtr, uriEnd, TCL_INDEX_NONE);
-
-    return dsPtr->string;
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -4215,23 +4180,28 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode, const char *er
             const char *poolName = (sockPtr->poolPtr != NULL)
                 ? sockPtr->poolPtr->pool
                 : NULL;
-            const char  *logRequestLine = requestLine;
-            Tcl_DString  dsReqLine;
-
-            Tcl_DStringInit(&dsReqLine);
 
             if (reason == SOCK_QUEUEFULL) {
-                logRequestLine = RequestLineWithoutQuery(&dsReqLine, requestLine);
-            }
-
-            if (poolName != NULL && *poolName != '\0') {
-                Ns_Log(Warning, "request returns %d (%s) in connection pool '%s': %s",
-                       statusCode, errMsg, poolName, logRequestLine);
+                if (poolName != NULL && *poolName != '\0') {
+                    Ns_Log(Warning,
+                           "request returns %d (%s) in connection pool '%s': queue full; see access log for request",
+                           statusCode, errMsg, poolName);
+                } else {
+                    Ns_Log(Warning,
+                           "request returns %d (%s): queue full; see access log for request",
+                           statusCode, errMsg);
+                }
             } else {
-                Ns_Log(Warning, "request returns %d (%s): %s",
-                       statusCode, errMsg, logRequestLine);
+                if (poolName != NULL && *poolName != '\0') {
+                    Ns_Log(Warning,
+                           "request returns %d (%s) in connection pool '%s': %s",
+                           statusCode, errMsg, poolName, requestLine);
+                } else {
+                    Ns_Log(Warning,
+                           "request returns %d (%s): %s",
+                           statusCode, errMsg, requestLine);
+                }
             }
-            Tcl_DStringFree(&dsReqLine);
         }
     } else {
         Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
