@@ -3416,14 +3416,16 @@ RequestFree(Sock *sockPtr)
     reqPtr->savedChar      = '\0';
 
     /*
-     * The headers should be already cleared, except maybe in error cases.
-     * Maybe, this should be moved to the error handling, and the assert
-     * should be established here.
+     * In the normal request path, headers are usually cleared earlier.
+     * For early driver-level terminations, such as queue-full 503 responses
+     * or other pre-connection errors, the parsed request headers may still be
+     * present here. RequestFree() is the final owner-side cleanup point, so
+     * always truncate them before recycling the request object.
      */
     /*assert(reqPtr->headers->size == 0);*/
     if (reqPtr->headers->size > 0) {
 #ifdef NS_SET_DSTRING
-        Ns_Log(Warning, "RequestFree must trunc reqPtr->headers %p->%p: size %lu/%lu "
+        Ns_Log(DriverDebug, "RequestFree must trunc reqPtr->headers %p->%p: size %lu/%lu "
                "buffer %" PRITcl_Size "/%" PRITcl_Size,
                (void*)reqPtr, (void*)reqPtr->headers,
                reqPtr->headers->size, reqPtr->headers->maxSize,
