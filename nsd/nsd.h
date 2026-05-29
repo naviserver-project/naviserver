@@ -781,9 +781,11 @@ typedef struct ConnPool {
 
         Ns_Cond  cond;
         Ns_Mutex lock;
+        Ns_Time  retryafter;
+        Ns_Time  fullNoticeTime;
+        uint64_t fullNoticeSuppressed;
         int      lowwatermark;
         int      highwatermark;
-        Ns_Time  retryafter;
         bool     rejectoverrun;
     } wqueue;
 

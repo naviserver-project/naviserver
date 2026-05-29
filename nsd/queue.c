@@ -18,6 +18,8 @@
 
 #include "nsd.h"
 
+#define NS_POOL_FULL_NOTICE_INTERVAL_SEC 60
+
 /*
  * Local functions defined in this file
  */
@@ -662,18 +664,72 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         create = NS_FALSE;
 
         if ((sockPtr->flags & NS_CONN_SOCK_WAITING) == 0u) {
+            bool     logFullNotice = NS_FALSE;
+            uint64_t suppressed = 0u;
+            int      waiting;
+
             /*
              * The flag NS_CONN_SOCK_WAITING is just used to avoid reporting
              * the same request multiple times as unsuccessful queueing
              * attempts (when rejectoverrun is false).
              */
             sockPtr->flags |= NS_CONN_SOCK_WAITING;
-            Ns_Log(Notice, "[%s pool %s] All available connections are used, waiting %d idle %d current %d",
-                   poolPtr->servPtr->server,
-                   poolPtr->pool,
-                   poolPtr->wqueue.wait.num,
-                   poolPtr->threads.idle,
-                   poolPtr->threads.current);
+
+            Ns_MutexLock(&poolPtr->wqueue.lock);
+            waiting = poolPtr->wqueue.wait.num;
+
+            if (poolPtr->wqueue.fullNoticeTime.sec == 0) {
+                /*
+                 * Always log the first event.
+                 */
+                logFullNotice = NS_TRUE;
+            } else {
+                Ns_Time  diff;
+
+                Ns_DiffTime(nowPtr, &poolPtr->wqueue.fullNoticeTime, &diff);
+                if (diff.sec >= NS_POOL_FULL_NOTICE_INTERVAL_SEC) {
+                    logFullNotice = NS_TRUE;
+                }
+            }
+
+            if (logFullNotice) {
+                logFullNotice = NS_TRUE;
+                suppressed = poolPtr->wqueue.fullNoticeSuppressed;
+                poolPtr->wqueue.fullNoticeSuppressed = 0u;
+                poolPtr->wqueue.fullNoticeTime = *nowPtr;
+            } else {
+                poolPtr->wqueue.fullNoticeSuppressed++;
+            }
+            Ns_MutexUnlock(&poolPtr->wqueue.lock);
+
+            if (logFullNotice) {
+                int idle, current;
+
+                Ns_MutexLock(&poolPtr->threads.lock);
+                idle = poolPtr->threads.idle;
+                current = poolPtr->threads.current;
+                Ns_MutexUnlock(&poolPtr->threads.lock);
+
+                if (suppressed > 0u) {
+                    Ns_Log(Notice,
+                           "[%s pool %s] All available connections are used, waiting %d idle %d current %d"
+                           ", suppressed %" PRIu64 " repeated notices since last notice",
+                           poolPtr->servPtr->server,
+                           poolPtr->pool,
+                           waiting,
+                           idle,
+                           current,
+                           suppressed);
+                } else {
+                    Ns_Log(Notice,
+                           "[%s pool %s] All available connections are used, waiting %d idle %d current %d",
+                           poolPtr->servPtr->server,
+                           poolPtr->pool,
+                           waiting,
+                           idle,
+                           current);
+                }
+            }
 
             if (poolPtr->wqueue.rejectoverrun) {
                 Ns_MutexLock(&poolPtr->threads.lock);
@@ -1460,7 +1516,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     enum {
         SActiveIdx, SAllIdx, SAuthprocsIdx,
-        SCharsetIdx, SConnectionRateLimitIdx, SConnectionsIdx, 
+        SCharsetIdx, SConnectionRateLimitIdx, SConnectionsIdx,
         SFiltersIdx,
         SHostsIdx,
 #ifdef NS_WITH_DEPRECATED
@@ -1683,7 +1739,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
                 Tcl_DictObjPut(interp, resultObj,
                                NsAtomObj(NS_ATOM_formfallback),
                                Tcl_NewStringObj(servPtr->encoding.formFallbackCharset, TCL_INDEX_NONE));
-                
+
                 Tcl_SetObjResult(interp, resultObj);
                 break;
             }
