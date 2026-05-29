@@ -4218,7 +4218,7 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode, const char *er
             const char  *logRequestLine = requestLine;
             Tcl_DString  dsReqLine;
 
-            Tcl_DStringInit(&requestLine);
+            Tcl_DStringInit(&dsReqLine);
 
             if (reason == SOCK_QUEUEFULL) {
                 logRequestLine = RequestLineWithoutQuery(&dsReqLine, requestLine);
