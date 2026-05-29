@@ -275,8 +275,8 @@ static void  SockRelease(Sock *sockPtr, SockState reason, int err)
 
 static void  SockError(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
-static void  SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *headers)
-    NS_GNUC_NONNULL(1,3);
+static void  SockSendResponse(Sock *sockPtr, SockState reason, int statusCode, const char *errMsg, const char *headers)
+    NS_GNUC_NONNULL(1,4);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
     NS_GNUC_NONNULL(1);
@@ -3894,27 +3894,27 @@ SockError(Sock *sockPtr, SockState reason, int err)
 
     case SOCK_BADREQUEST:
         errMsg = "Bad Request";
-        SockSendResponse(sockPtr, 400, errMsg, NULL);
+        SockSendResponse(sockPtr, reason, 400, errMsg, NULL);
         break;
 
     case SOCK_TOOMANYHEADERS:
         errMsg = "Too Many Request Headers";
-        SockSendResponse(sockPtr, 414, errMsg, NULL);
+        SockSendResponse(sockPtr, reason, 414, errMsg, NULL);
         break;
 
     case SOCK_BADHEADER:
         errMsg = "Invalid Request Header";
-        SockSendResponse(sockPtr, 400, errMsg, NULL);
+        SockSendResponse(sockPtr, reason, 400, errMsg, NULL);
         break;
 
     case SOCK_ENTITYTOOLARGE:
         errMsg = "Request Entity Too Large";
-        SockSendResponse(sockPtr, 413, errMsg, NULL);
+        SockSendResponse(sockPtr, reason, 413, errMsg, NULL);
         break;
 
     case SOCK_ERROR:
         errMsg = "Unknown Error";
-        SockSendResponse(sockPtr, 400, errMsg, NULL);
+        SockSendResponse(sockPtr, reason, 400, errMsg, NULL);
         break;
 
     case SOCK_QUEUEFULL:
@@ -3924,9 +3924,9 @@ SockError(Sock *sockPtr, SockState reason, int err)
 
             snprintf(headers, sizeof(headers), "Retry-After: %" PRId64,
                      (int64_t)sockPtr->poolPtr->wqueue.retryafter.sec);
-            SockSendResponse(sockPtr, 503, errMsg, headers);
+            SockSendResponse(sockPtr, reason, 503, errMsg, headers);
         } else {
-            SockSendResponse(sockPtr, 503, errMsg, NULL);
+            SockSendResponse(sockPtr, reason, 503, errMsg, NULL);
         }
         break;
     }
@@ -4076,6 +4076,41 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
     }
 }
 
+static const char *
+RequestLineWithoutQuery(Tcl_DString *dsPtr, const char *requestLine)
+{
+    const char *uriStart, *uriEnd, *q;
+
+    if (requestLine == NULL || *requestLine == '\0') {
+        return NS_EMPTY_STRING;
+    }
+
+    /*
+     * Expected shape: METHOD SP URI SP VERSION
+     */
+    uriStart = strchr(requestLine, ' ');
+    if (uriStart == NULL) {
+        return requestLine;
+    }
+    uriStart++;
+
+    uriEnd = strchr(uriStart, ' ');
+    if (uriEnd == NULL) {
+        return requestLine;
+    }
+
+    q = memchr(uriStart, '?', (size_t)(uriEnd - uriStart));
+    if (q == NULL) {
+        return requestLine;
+    }
+
+    Tcl_DStringAppend(dsPtr, requestLine, (TCL_SIZE_T)(q - requestLine));
+    Tcl_DStringAppend(dsPtr, "?...", 4);
+    Tcl_DStringAppend(dsPtr, uriEnd, TCL_INDEX_NONE);
+
+    return dsPtr->string;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4094,7 +4129,7 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
  *----------------------------------------------------------------------
  */
 static void
-SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *headers)
+SockSendResponse(Sock *sockPtr, SockState reason, int statusCode, const char *errMsg, const char *headers)
 {
     struct iovec iov[5];
     char         firstline[32];
@@ -4180,14 +4215,23 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
             const char *poolName = (sockPtr->poolPtr != NULL)
                 ? sockPtr->poolPtr->pool
                 : NULL;
+            const char  *logRequestLine = requestLine;
+            Tcl_DString  dsReqLine;
+
+            Tcl_DStringInit(&requestLine);
+
+            if (reason == SOCK_QUEUEFULL) {
+                logRequestLine = RequestLineWithoutQuery(&dsReqLine, requestLine);
+            }
 
             if (poolName != NULL && *poolName != '\0') {
                 Ns_Log(Warning, "request returns %d (%s) in connection pool '%s': %s",
-                       statusCode, errMsg, poolName, requestLine);
+                       statusCode, errMsg, poolName, logRequestLine);
             } else {
                 Ns_Log(Warning, "request returns %d (%s): %s",
-                       statusCode, errMsg, requestLine);
+                       statusCode, errMsg, logRequestLine);
             }
+            Tcl_DStringFree(&dsReqLine);
         }
     } else {
         Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
