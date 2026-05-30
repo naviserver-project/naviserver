@@ -910,7 +910,6 @@ set ::ns_configdoc::data {
 
             trustedservers {
                 type list
-u
                 deprecated {Use ns/reverseproxymode trustedservers instead}
                 desc {Compatibility setting for trusted reverse proxy addresses or networks}
             }
