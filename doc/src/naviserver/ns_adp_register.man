@@ -18,12 +18,28 @@
  [uri ../../manual/files/adp-overview.html "ADP Overview"] man page.
 
 
-[para] Registered tags can either be tags with content -- consisting of
- an opening and a closing tag -- or tags defining empty elements, where
+[para]
+ Registered ADP tags use ordinary markup syntax and are recognized by the
+ ADP parser as tags, not as ADP script blocks. The tag name must start with
+ an ASCII letter or digit. The remaining characters may be ASCII letters,
+ digits, colon characters, or underscore characters. Examples of valid tag
+ names are [const foo], [const adp], [const adp_value], and [const h1].
+ Tag names starting with characters such as [const $], [const %], or [const @]
+ are invalid, since such names cannot be recognized as registered tags by the
+ ADP parser.
+
+[para]
+ Registered tags can either be tags with content - consisting of
+ an opening and a closing tag - or tags defining empty elements, where
  no closing tag is defined. When both the [arg tag] and the
  [arg endtag] are specified in the registering command, the tags must have
  content; when the [arg endtag] is omitted in the registering command,
  empty elements are defined.
+
+[para]
+ When an [arg endtag] is specified, it must consist of a slash followed by the
+ same tag name as the opening tag. For example, a start tag [const mytag]
+ must use the corresponding end tag [const /mytag].
 
 
 [section COMMANDS]

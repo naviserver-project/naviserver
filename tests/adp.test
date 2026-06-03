@@ -695,6 +695,38 @@ test ns_adp_registerproc-3.3 {registerproc with proc, attributes, ending tag, ch
     rename  ::reporttags ""
 } -result {CamelCase Hello World X a}
 
+test ns_adp_registerproc-3.4 {reject empty registered ADP tag name} -body {
+    ns_adp_registerproc "" _test_adp_tag_proc
+} -returnCodes error -match glob -result {invalid start tag:*}
+
+test ns_adp_registerproc-3.5 {reject registered ADP tag name starting with dollar} -body {
+    ns_adp_registerproc "\$foo" _test_adp_tag_proc
+} -returnCodes error -match glob -result {invalid start tag:*}
+
+test ns_adp_registerproc-3.6 {reject registered ADP tag name starting with percent} -body {
+    ns_adp_registerproc "%foo" _test_adp_tag_proc
+} -returnCodes error -match glob -result {invalid start tag:*}
+
+test ns_adp_registerproc-3.7 {reject registered ADP tag name starting with at-sign} -body {
+    ns_adp_registerproc "@foo" _test_adp_tag_proc
+} -returnCodes error -match glob -result {invalid start tag:*}
+
+test ns_adp_registerproc-3.8 {reject registered ADP tag name starting with underscore} -body {
+    ns_adp_registerproc "_foo" _test_adp_tag_proc
+} -returnCodes error -match glob -result {invalid start tag:*}
+
+test ns_adp_registerproc-3.9 {reject registered ADP tag name containing hyphen} -body {
+    ns_adp_registerproc "foo-bar" _test_adp_tag_proc
+} -returnCodes error -match glob -result {invalid start tag:*}
+
+test ns_adp_registerproc-3.10 {reject registered ADP tag name containing whitespace} -body {
+    ns_adp_registerproc "foo bar" _test_adp_tag_proc
+} -returnCodes error -match glob -result {invalid start tag:*}
+
+test ns_adp_registerproc-3.11 {reject registered ADP tag name containing greater-than sign} -body {
+    ns_adp_registerproc "foo>bar" _test_adp_tag_proc
+} -returnCodes error -match glob -result {invalid start tag:*}
+
 ############################################################################
 # ns_adp_include
 ############################################################################

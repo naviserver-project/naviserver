@@ -66,6 +66,14 @@ typedef struct Parse {
 /*
  * Local functions defined in this file
  */
+static inline bool TagValidFirstChar(char c)
+    NS_GNUC_PURE;
+
+static inline bool TagValidChar(char c)
+    NS_GNUC_PURE;
+
+static bool TagNameValidate(const char *tag, TCL_SIZE_T len, char *invalidCharPtr)
+    NS_GNUC_NONNULL(1,3);
 
 static void AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int flags)
     NS_GNUC_NONNULL(1,2,3);
@@ -139,14 +147,14 @@ static void report(const char *msg, const char *string, ssize_t len)
  *      Boolean value.
  *
  * Side effects:
- *      Printing to log file.
+ *      None.
  */
-static bool TagValidFirstChar (char c) {
+static inline bool TagValidFirstChar (char c) {
     return (c >= 'a' && c <= 'z')
         || (c >= 'A' && c <= 'Z')
         || (c >= '0' && c <= '9');
 }
-static bool TagValidChar (char c) {
+static inline bool TagValidChar (char c) {
     return (c >= 'a' && c <= 'z')
         || (c >= 'A' && c <= 'Z')
         || (c >= '0' && c <= '9')
@@ -211,6 +219,53 @@ NsTclAdpRegisterAdptagObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE
 #endif
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TagNameValidate --
+ *
+ *      Verify that a registered ADP tag name can be recognized later by
+ *      the ADP parser. The accepted syntax must stay in sync with
+ *      TagValidFirstChar() and TagValidChar().
+ *
+ * Results:
+ *      NS_TRUE when the tag name is valid, NS_FALSE otherwise. When invalid,
+ *      invalidCharPtr, it is set to the offending byte.
+ *
+ * Side effects:
+ *      Store the offending byte via invalidCharPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+TagNameValidate(const char *tag, TCL_SIZE_T len, char *invalidCharPtr)
+{
+    if (len <= 0 || tag[0] == '\0') {
+        *invalidCharPtr = '\0';
+        return NS_FALSE;
+
+    } else if (!TagValidFirstChar(tag[0])) {
+        *invalidCharPtr = tag[0];
+        return NS_FALSE;
+
+    } else {
+        TCL_SIZE_T i;
+
+        for (i = 1; i < len; i++) {
+            if (tag[i] == '\0') {
+                *invalidCharPtr = '\0';
+                return NS_FALSE;
+            }
+
+            if (!TagValidChar(tag[i])) {
+                *invalidCharPtr = tag[i];
+                return NS_FALSE;
+            }
+        }
+    }
+    return NS_TRUE;
+}
+
+/*
  * The actual function doing the hard work.
  */
 static int
@@ -234,6 +289,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
         const char     *end, *tag, *content;
+        char            invalidChar = '\0';
         Tcl_HashEntry  *hPtr;
         int             isNew;
         TCL_SIZE_T      slen, elen, tlen;
@@ -244,11 +300,16 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
          * Get tag and content
          */
         tag = Tcl_GetStringFromObj(objv[1], &tlen);
-        content = strpbrk(tag, "<&> '\"");
-        if (content != NULL) {
-            Ns_TclPrintfResult(interp, "invalid start tag: '%s'"
-                               " (contains invalid character '%c')",
-                               tag, *content);
+
+        if (!TagNameValidate(tag, tlen, &invalidChar)) {
+            if (invalidChar == '\0') {
+                Ns_TclPrintfResult(interp, "invalid start tag: '%s' "
+                                   "(tag name must not be empty)", tag);
+            } else {
+                Ns_TclPrintfResult(interp, "invalid start tag: '%s' "
+                                   "(contains invalid character '%c')",
+                                   tag, invalidChar);
+            }
             return TCL_ERROR;
         }
 
@@ -641,11 +702,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
                 state = TagInlineCode;
                 continue;
             }
-            if (!(
-                  (s[1] >= 'a' && s[1] <= 'z')
-                  || (s[1] >= 'A' && s[1] <= 'Z')
-                  || (s[1] >= '0' && s[1] <= '9')
-                  )) {
+            if (!TagValidFirstChar(s[1])) {
                 //report("state TagNext, invalid begin of tag", s, TCL_INDEX_NONE);
                 adp = s + 1;
                 continue;

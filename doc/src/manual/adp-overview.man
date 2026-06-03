@@ -218,14 +218,32 @@ widgets should be written in a form that is convenient for page authors, while
 the implementation remains in Tcl code.
 
 [para]
-Tags are registered with the [cmd ns_adp_register*] commands.  Once
+Tags are registered with the [cmd ns_adp_register*] commands. Once
 registered, the tag can be used in ADP pages and is expanded by calling the
 associated Tcl procedure during ADP processing.
+
+[para]
+Registered ADP tags use ordinary markup syntax. A registered tag name must
+start with an ASCII letter or digit. The remaining characters may be ASCII
+letters, digits, colon characters, or underscore characters. For example,
+tag names such as [const foo], [const adp], [const adp_value], and
+[const h1] are valid. Tag names starting with characters such as [const $],
+[const %], or [const @] are not recognized as registered ADP tags by the ADP
+parser.
+
+[para]
+Registered tags are distinct from ADP script blocks. In particular,
+[const <%] ... [const %>] is parsed as an ADP Tcl script block and cannot be
+extended by registering a tag whose name starts with [const %] or another
+special character. Custom registered tags should therefore use markup-style
+names such as [const <adp=value>] or [const ], rather than trying to
+introduce new [const <%] ... [const %>] forms.
 
 [para]
 Registered tags are mostly useful for application frameworks or libraries
 that provide a higher-level page-authoring interface.  For simple pages,
 ordinary ADP script blocks and Tcl procedures are often sufficient.
+
 
 [subsection {Including and Parsing ADPs}]
 
