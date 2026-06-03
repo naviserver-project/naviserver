@@ -43,6 +43,20 @@ static char *UrlDecode(Tcl_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char percentScheme, Ns_ReturnCode *resultPtr)
     NS_GNUC_NONNULL(1,2);
 
+static int UrlEncodeQuery(Tcl_Interp *interp, Tcl_DString *dsPtr,
+                          TCL_SIZE_T nargs, Tcl_Obj *const *objv,
+                          Tcl_Encoding encoding, bool upperCase)
+    NS_GNUC_NONNULL(1,2,4);
+
+static void UrlEncodeSegment(Tcl_DString *dsPtr, TCL_SIZE_T nargs,
+                             Tcl_Obj *const *objv,
+                             Tcl_Encoding encoding, bool upperCase)
+    NS_GNUC_NONNULL(1,3);
+
+static void UrlEncodeFullpath(Tcl_DString *dsPtr, const char *path,
+                              Tcl_Encoding encoding, bool upperCase)
+    NS_GNUC_NONNULL(1,2);
+
 static TCL_SIZE_T PercentDecode(char *dest, const char *source, char percentScheme)
     NS_GNUC_NONNULL(1,2);
 
@@ -66,6 +80,27 @@ static Ns_ObjvTable percentSchemes[] = {
     {"oauth1",   UCHAR('o')},
     {NULL,       0u}
 };
+
+typedef enum {
+    URL_PART_QUERY    = 'q',
+    URL_PART_PATH     = 'p',
+    URL_PART_FULLPATH = 'P',
+    URL_PART_FRAGMENT = 'f',
+    URL_PART_cookie   = 'c',
+    URL_PART_oauth1   = 'o'
+
+} UrlPart;
+
+static Ns_ObjvTable urlParts[] = {
+    {"query",    URL_PART_QUERY},
+    {"path",     URL_PART_PATH},
+    {"fullpath", URL_PART_FULLPATH},
+    {"fragment", URL_PART_FRAGMENT},
+    {"cookie",   URL_PART_cookie},
+    {"oauth1",   URL_PART_oauth1},
+    {NULL,       0u}
+};
+
 
 #ifdef RFC1738
 
@@ -633,6 +668,106 @@ static const ByteKey oauth1_scheme[] = {
     /* 0XFC */  {3, "FC"}, {3, "FD"}, {3, "FE"}, {3, "FF"}
 };
 
+/*
+ * The following table is used for encoding and decoding of fragments of
+ * URLs, as defined in RFC 3986.
+ *
+ * Allowed fragment characters are defined as:
+ *
+ *   fragment = *( pchar / "/" / "?" )
+ *   pchar    = unreserved / pct-encoded / sub-delims / ":" / "@"
+ *
+ * It leaves, relative to path segments, the following characters
+ * unescaped
+ *
+ *    / ; = ?
+ *
+ * while still escaping
+ *
+ *    space, ", #, %, <, >, [, \, ], ^, `, {, |, }, DEL, non-ASCII bytes
+ */
+
+static const ByteKey fragment_scheme[] = {
+    /* 0x00 */  {3, "00"}, {3, "01"}, {3, "02"}, {3, "03"},
+    /* 0x04 */  {3, "04"}, {3, "05"}, {3, "06"}, {3, "07"},
+    /* 0x08 */  {3, "08"}, {3, "09"}, {3, "0a"}, {3, "0b"},
+    /* 0x0c */  {3, "0c"}, {3, "0d"}, {3, "0e"}, {3, "0f"},
+    /* 0x10 */  {3, "10"}, {3, "11"}, {3, "12"}, {3, "13"},
+    /* 0x14 */  {3, "14"}, {3, "15"}, {3, "16"}, {3, "17"},
+    /* 0x18 */  {3, "18"}, {3, "19"}, {3, "1a"}, {3, "1b"},
+    /* 0x1c */  {3, "1c"}, {3, "1d"}, {3, "1e"}, {3, "1f"},
+
+    /* 0x20 */  {3, "20"}, {1, NULL}, {3, "22"}, {3, "23"},
+    /* 0x24 */  {1, NULL}, {3, "25"}, {1, NULL}, {1, NULL},
+    /* 0x28 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x2c */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+
+    /* 0x30 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x34 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x38 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x3c */  {3, "3c"}, {1, NULL}, {3, "3e"}, {1, NULL},
+
+    /* 0x40 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x44 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x48 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x4c */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+
+    /* 0x50 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x54 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x58 */  {1, NULL}, {1, NULL}, {1, NULL}, {3, "5b"},
+    /* 0x5c */  {3, "5c"}, {3, "5d"}, {3, "5e"}, {1, NULL},
+
+    /* 0x60 */  {3, "60"}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x64 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x68 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x6c */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+
+    /* 0x70 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x74 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0x78 */  {1, NULL}, {1, NULL}, {1, NULL}, {3, "7b"},
+    /* 0x7c */  {3, "7c"}, {3, "7d"}, {1, NULL}, {3, "7f"},
+
+    /* 0x80 */  {3, "80"}, {3, "81"}, {3, "82"}, {3, "83"},
+    /* 0x84 */  {3, "84"}, {3, "85"}, {3, "86"}, {3, "87"},
+    /* 0x88 */  {3, "88"}, {3, "89"}, {3, "8a"}, {3, "8b"},
+    /* 0x8c */  {3, "8c"}, {3, "8d"}, {3, "8e"}, {3, "8f"},
+
+    /* 0x90 */  {3, "90"}, {3, "91"}, {3, "92"}, {3, "93"},
+    /* 0x94 */  {3, "94"}, {3, "95"}, {3, "96"}, {3, "97"},
+    /* 0x98 */  {3, "98"}, {3, "99"}, {3, "9a"}, {3, "9b"},
+    /* 0x9c */  {3, "9c"}, {3, "9d"}, {3, "9e"}, {3, "9f"},
+
+    /* 0xa0 */  {3, "a0"}, {3, "a1"}, {3, "a2"}, {3, "a3"},
+    /* 0xa4 */  {3, "a4"}, {3, "a5"}, {3, "a6"}, {3, "a7"},
+    /* 0xa8 */  {3, "a8"}, {3, "a9"}, {3, "aa"}, {3, "ab"},
+    /* 0xac */  {3, "ac"}, {3, "ad"}, {3, "ae"}, {3, "af"},
+
+    /* 0xb0 */  {3, "b0"}, {3, "b1"}, {3, "b2"}, {3, "b3"},
+    /* 0xb4 */  {3, "b4"}, {3, "b5"}, {3, "b6"}, {3, "b7"},
+    /* 0xb8 */  {3, "b8"}, {3, "b9"}, {3, "ba"}, {3, "bb"},
+    /* 0xbc */  {3, "bc"}, {3, "bd"}, {3, "be"}, {3, "bf"},
+
+    /* 0xc0 */  {3, "c0"}, {3, "c1"}, {3, "c2"}, {3, "c3"},
+    /* 0xc4 */  {3, "c4"}, {3, "c5"}, {3, "c6"}, {3, "c7"},
+    /* 0xc8 */  {3, "c8"}, {3, "c9"}, {3, "ca"}, {3, "cb"},
+    /* 0xcc */  {3, "cc"}, {3, "cd"}, {3, "ce"}, {3, "cf"},
+
+    /* 0xd0 */  {3, "d0"}, {3, "d1"}, {3, "d2"}, {3, "d3"},
+    /* 0xd4 */  {3, "d4"}, {3, "d5"}, {3, "d6"}, {3, "d7"},
+    /* 0xd8 */  {3, "d8"}, {3, "d9"}, {3, "da"}, {3, "db"},
+    /* 0xdc */  {3, "dc"}, {3, "dd"}, {3, "de"}, {3, "df"},
+
+    /* 0xe0 */  {3, "e0"}, {3, "e1"}, {3, "e2"}, {3, "e3"},
+    /* 0xe4 */  {3, "e4"}, {3, "e5"}, {3, "e6"}, {3, "e7"},
+    /* 0xe8 */  {3, "e8"}, {3, "e9"}, {3, "ea"}, {3, "eb"},
+    /* 0xec */  {3, "ec"}, {3, "ed"}, {3, "ee"}, {3, "ef"},
+
+    /* 0xf0 */  {3, "f0"}, {3, "f1"}, {3, "f2"}, {3, "f3"},
+    /* 0xf4 */  {3, "f4"}, {3, "f5"}, {3, "f6"}, {3, "f7"},
+    /* 0xf8 */  {3, "f8"}, {3, "f9"}, {3, "fa"}, {3, "fb"},
+    /* 0xfc */  {3, "fc"}, {3, "fd"}, {3, "fe"}, {3, "ff"}
+};
+
 
 /*
  *----------------------------------------------------------------------
@@ -1008,7 +1143,138 @@ Ns_DecodeUrlCharset(Tcl_DString *dsPtr, const char *urlSegment,
 }
 #endif
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlEncodeQuery --
+ *
+ *      Encode query data for ns_urlencode -part query.  With a single
+ *      argument, preserve the historical behavior and encode one query
+ *      component.  With multiple arguments, interpret the arguments as
+ *      alternating name/value pairs, encode names and values, and join
+ *      the resulting pairs with ampersands.
+ *
+ * Results:
+ *      TCL_OK on success, TCL_ERROR when the number of arguments is not
+ *      valid for name/value pair encoding.
+ *
+ * Side effects:
+ *      Appends the encoded query data to the provided Tcl_DString.  On
+ *      error, leaves an error message in the Tcl interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+UrlEncodeQuery(Tcl_Interp *interp, Tcl_DString *ds,
+               TCL_SIZE_T nargs, Tcl_Obj *const *objv,
+               Tcl_Encoding encoding, bool upperCase)
+{
+    TCL_SIZE_T i;
+
+    if (nargs == 1) {
+        (void)UrlEncode(ds, Tcl_GetString(objv[0]), encoding, 'q', upperCase);
+        return TCL_OK;
+    }
+
+    if ((nargs % 2) != 0) {
+        Ns_TclPrintfResult(interp, "query encoding with multiple arguments requires name/value pairs");
+        return TCL_ERROR;
+    }
+
+    for (i = 0; i < nargs; i += 2) {
+        if (i > 0) {
+            Tcl_DStringAppend(ds, "&", 1);
+        }
+        (void)UrlEncode(ds, Tcl_GetString(objv[i]), encoding, 'q', upperCase);
+        Tcl_DStringAppend(ds, "=", 1);
+        (void)UrlEncode(ds, Tcl_GetString(objv[i + 1]), encoding, 'q', upperCase);
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlEncodeSegment --
+ *
+ *      Encode one or more URL path components for ns_urlencode -part path.
+ *      For historical compatibility, each argument is treated as one path
+ *      component and multiple arguments are joined with slashes.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends the encoded path components to the provided Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+UrlEncodeSegment(Tcl_DString *ds, TCL_SIZE_T nargs, Tcl_Obj *const *objv,
+                 Tcl_Encoding encoding, bool upperCase)
+{
+    TCL_SIZE_T i;
+
+    for (i = 0; i < nargs; i++) {
+        if (i > 0) {
+            Tcl_DStringAppend(ds, "/", 1);
+        }
+        (void)UrlEncode(ds, Tcl_GetString(objv[i]), encoding, 'p', upperCase);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlEncodeFullpath --
+ *
+ *      Encode a complete URL path while preserving slash separators.
+ *      Each path segment between slashes is encoded using the path
+ *      component encoding rules.  Leading, trailing, and repeated slashes
+ *      are preserved.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends the encoded full path to the provided Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+UrlEncodeFullpath(Tcl_DString *dsPtr, const char *path,
+                  Tcl_Encoding encoding, bool upperCase)
+{
+    const char *start = path;
+    const char *p = path;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
+
+    for (;;) {
+        if (*p == '/' || *p == '\0') {
+            Tcl_DString segment;
+
+            Tcl_DStringInit(&segment);
+            Tcl_DStringAppend(&segment, start, (TCL_SIZE_T)(p - start));
+            (void)UrlEncode(dsPtr, Tcl_DStringValue(&segment),
+                            encoding, 'p', upperCase);
+            Tcl_DStringFree(&segment);
+
+            if (*p == '/') {
+                Tcl_DStringAppend(dsPtr, "/", 1);
+                p++;
+                start = p;
+                continue;
+            }
+            break;
+        }
+
+        p++;
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1032,20 +1298,22 @@ Ns_DecodeUrlCharset(Tcl_DString *dsPtr, const char *urlSegment,
  *
  *----------------------------------------------------------------------
  */
-
-
 int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int          upperCase = 0, result = TCL_OK, percentScheme = INTCHAR('q');
-    TCL_SIZE_T   nargs = 0;
+    int          upperCase = 0, result = TCL_OK, part = URL_PART_QUERY;
+    TCL_SIZE_T   nargs = 0, first;
+    const char  *firstString;
     char        *charset = NULL;
+    Tcl_Encoding encoding = NULL;
+    Tcl_DString  ds;
+
     Ns_ObjvSpec lopts[] = {
-        {"-charset",   Ns_ObjvString, &charset,       NULL},
-        {"-part",      Ns_ObjvIndex,  &percentScheme, percentSchemes},
-        {"-uppercase", Ns_ObjvBool,   &upperCase,     INT2PTR(NS_TRUE)},
-        {"--",         Ns_ObjvBreak,  NULL,           NULL},
+        {"-charset",   Ns_ObjvString, &charset,   NULL},
+        {"-part",      Ns_ObjvIndex,  &part,      urlParts},
+        {"-uppercase", Ns_ObjvBool,   &upperCase, INT2PTR(NS_TRUE)},
+        {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1054,29 +1322,74 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     };
 
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    first = (TCL_SIZE_T)objc - nargs;
+    firstString = Tcl_GetString(objv[first]);
+
+    if (charset != NULL) {
+        encoding = Ns_GetCharsetEncoding(charset);
+    }
+
+    Tcl_DStringInit(&ds);
+
+    if ((part == URL_PART_FRAGMENT
+         || part == URL_PART_FULLPATH
+         || part == URL_PART_cookie
+         || part == URL_PART_oauth1)
+        && nargs != 1) {
+        Ns_TclPrintfResult(interp,
+                           "command 'ns_urlencode -part %s' requires exactly one argument",
+                           Ns_ObjvTableGetString(urlParts, (unsigned)part));
         result = TCL_ERROR;
-    } else {
-        Tcl_DString  ds;
-        Tcl_Encoding encoding = NULL;
-        TCL_SIZE_T   i;
+        goto done;
+    }
 
-        if (charset != NULL) {
-            encoding = Ns_GetCharsetEncoding(charset);
-        }
+    switch (part) {
+    case URL_PART_QUERY:
+        result = UrlEncodeQuery(interp, &ds, nargs, objv + first,
+                                encoding, (upperCase == 1));
+        break;
 
-        Tcl_DStringInit(&ds);
-        for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)objc; ++i) {
-            (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, (char)percentScheme, (upperCase == 1));
+    case URL_PART_PATH:
+        UrlEncodeSegment(&ds, nargs, objv + first,
+                         encoding, (upperCase == 1));
+        break;
 
-            if (i + 1 < (TCL_SIZE_T)objc) {
-                if (percentScheme == 'q') {
-                    Tcl_DStringAppend(&ds, "&", 1);
-                } else {
-                    Tcl_DStringAppend(&ds, "/", 1);
-                }
-            }
-        }
+    case URL_PART_FULLPATH:
+        UrlEncodeFullpath(&ds, firstString, encoding, (upperCase == 1));
+        result = TCL_OK;
+        break;
+
+    case URL_PART_FRAGMENT:
+        (void)UrlEncode(&ds, firstString, encoding, 'f', upperCase);
+        result = TCL_OK;
+        break;
+
+    case URL_PART_cookie:
+        Ns_LogDeprecated(objv, 3, "ns_percentencode -scheme cookie ...", NULL);
+        (void)UrlEncode(&ds, firstString, encoding, (char)part, (upperCase == 1));
+        result = TCL_OK;
+        break;
+
+    case URL_PART_oauth1:
+        Ns_LogDeprecated(objv, 3, "ns_percentencode -scheme oauth1 ...", NULL);
+        (void)UrlEncode(&ds, firstString, encoding, (char)part, (upperCase == 1));
+        result = TCL_OK;
+        break;
+
+    default:
+        Ns_TclPrintfResult(interp, "unknown URL part");
+        result = TCL_ERROR;
+        break;
+    }
+
+ done:
+    if (result == TCL_OK) {
         Tcl_DStringResult(interp, &ds);
+    } else {
+        Tcl_DStringFree(&ds);
     }
 
     return result;
@@ -1205,6 +1518,12 @@ UrlPercentDecode(NsInterp *itPtr, const char *inputStr, char percentScheme, cons
  *      Decode a component of either a URL path or query.  If the percentScheme
  *      is not specified, "query" is assumed.
  *
+ *      For decoding, the URL part primarily determines whether plus
+ *      signs are translated to spaces.  With -part query, "+" decodes
+ *      to a space.  With -path, -fullpath, -fragment, -cookie, and
+ *      -oauth1, "+" is preserved as a literal plus character.  Percent
+ *      escape sequences are decoded in all parts.
+ *
  * Results:
  *      Tcl result.
  *
@@ -1218,14 +1537,14 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     NsInterp    *itPtr = clientData;
-    int          result = TCL_OK, percentScheme = INTCHAR('q');
+    int          result = TCL_OK, part = INTCHAR('q');
     const char  *charset = NULL, *inputStr = NS_EMPTY_STRING;
     Tcl_Obj     *fallbackCharsetObj = NULL;
     Ns_ObjvSpec  lopts[] = {
-        {"-charset", Ns_ObjvString, &charset, NULL},
-        {"-fallbackcharset", Ns_ObjvObj, &fallbackCharsetObj, NULL},
-        {"-part",    Ns_ObjvIndex,  &percentScheme, percentSchemes},
-        {"--",       Ns_ObjvBreak,  NULL,     NULL},
+        {"-charset",         Ns_ObjvString, &charset, NULL},
+        {"-fallbackcharset", Ns_ObjvObj,    &fallbackCharsetObj, NULL},
+        {"-part",            Ns_ObjvIndex,  &part, urlParts},
+        {"--",               Ns_ObjvBreak,  NULL, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
@@ -1236,7 +1555,12 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        result = UrlPercentDecode(itPtr, inputStr, (char)percentScheme, charset, fallbackCharsetObj);
+        if (part == URL_PART_cookie) {
+            Ns_LogDeprecated(objv, 3, "ns_percentdecode -scheme cookie ...", NULL);
+        } else if (part == URL_PART_oauth1) {
+            Ns_LogDeprecated(objv, 3, "ns_percentdecode -scheme oauth1 ...", NULL);
+        }
+        result = UrlPercentDecode(itPtr, inputStr, (char)part, charset, fallbackCharsetObj);
     }
     return result;
 }
@@ -1391,6 +1715,7 @@ UrlEncode(Tcl_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
     switch (percentScheme) {
     case 'q': enc = query_scheme; break;
     case 'p': enc = path_scheme; break;
+    case 'f': enc = fragment_scheme; break;
     case 'c': enc = cookie_scheme; break;
     case 'o': enc = oauth1_scheme; break;
     default:  enc = query_scheme; break;

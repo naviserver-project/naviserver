@@ -12,19 +12,19 @@ set unreservedChars "-.!~*'()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO
 
 test ns_urlencode-1.1.1 {basic syntax} -body {
     ns_urlencode
-} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset /value/? ?-part query|path|cookie|oauth1? ?-uppercase? ?--? /component .../"}
+} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset /value/? ?-part query|path|fullpath|fragment|cookie|oauth1? ?-uppercase? ?--? /component .../"}
 
 test ns_urlencode-1.1.2 {basic syntax} -body {
     ns_urlencode -part x y
-} -returnCodes error -result {bad option "x": must be query, path, cookie, or oauth1}
+} -returnCodes error -result {bad option "x": must be query, path, fullpath, fragment, cookie, or oauth1}
 
 test ns_urlencode-1.2.1 {basic syntax} -body {
     ns_urldecode
-} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset /value/? ?-fallbackcharset /value/? ?-part query|path|cookie|oauth1? ?--? /string/"}
+} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset /value/? ?-fallbackcharset /value/? ?-part query|path|fullpath|fragment|cookie|oauth1? ?--? /string/"}
 
 test ns_urlencode-1.2.2 {basic syntax} -body {
     ns_urldecode -part x y
-} -returnCodes error -result {bad option "x": must be query, path, cookie, or oauth1}
+} -returnCodes error -result {bad option "x": must be query, path, fullpath, fragment, cookie, or oauth1}
 
 
 test ns_urlencode-2.1.1a {basic operation} -body {
@@ -94,14 +94,21 @@ test ns_urlencode-2.4.1 {multiple args} -body {
     ns_urlencode -part path 1 2 3
 } -result {1/2/3}
 
-test ns_urlencode-2.4.2 {multiple args} -body {
+test ns_urlencode-2.4.2a {multiple args - uneven} -body {
     ns_urlencode -part query 1 2 3
-} -result {1&2&3}
+} -returnCodes {error ok} -result {query encoding with multiple arguments requires name/value pairs}
 
-test ns_urlencode-2.4.3 {multiple args} -body {
+test ns_urlencode-2.4.2b {multiple args - even} -body {
+    ns_urlencode -part query a 1 b 2
+} -result {a=1&b=2}
+
+test ns_urlencode-2.4.3a {multiple args - uneven} -body {
     ns_urlencode 1 2 3
-} -result {1&2&3}
+} -returnCodes {error ok} -result {query encoding with multiple arguments requires name/value pairs}
 
+test ns_urlencode-2.4.3b {multiple args - even} -body {
+    ns_urlencode a 1 b 2
+} -result {a=1&b=2}
 
 test ns_urlencode-2.5.1 {spaces and plus signs} -body {
     ns_urlencode -part path +
@@ -284,11 +291,126 @@ test ns_urlencode-2.10.2 {charset encode} -body {
     ns_urlencode -charset iso8859-1 "ú"
 } -result {%fa}
 
+#######################################################################################
+# urlencode -part fragment
+#######################################################################################
+
+test ns_urlencode-2.11.1 {fragment encodes spaces and #} -body {
+    ns_urlencode -part fragment "section 1#details"
+} -result {section%201%23details}
+
+
+test ns_urlencode-2.11.2 {fragment preserves slash and question mark} -body {
+    ns_urlencode -part fragment "chapter/1?view=full"
+} -result {chapter/1?view=full}
+
+
+test ns_urlencode-2.11.3 {fragment encodes non-ASCII via utf-8 by default} -body {
+    ns_urlencode -part fragment "ä ö"
+} -result {%c3%a4%20%c3%b6}
+
+#######################################################################################
+# urlencode -part fullpath
+#######################################################################################
+
+test ns_urlencode-2.12.1 {fullpath preserves slash and encodes spaces} -body {
+    ns_urlencode -part fullpath "/a/b c/d"
+} -result {/a/b%20c/d}
+
+
+test ns_urlencode-2.12.2 {fullpath preserves trailing slash} -body {
+    ns_urlencode -part fullpath "/a/b c/"
+} -result {/a/b%20c/}
+
+
+test ns_urlencode-2.12.3 {fullpath preserves repeated slash separators} -body {
+    ns_urlencode -part fullpath "/a//b c"
+} -result {/a//b%20c}
+
+
+test ns_urlencode-2.12.4 {fullpath with relative path} -body {
+    ns_urlencode -part fullpath "a/b c/d"
+} -result {a/b%20c/d}
+
+test ns_urlencode-2.12.5 {fullpath differs from path component encoding} -body {
+    list \
+        [ns_urlencode -part path "a/b c"] \
+        [ns_urlencode -part fullpath "a/b c"]
+} -result {a%2fb%20c a/b%20c}
+
+test ns_urlencode-2.12.6 {fullpath requires one argument} -body {
+    ns_urlencode -part fullpath /a /b
+} -returnCodes error -result {command 'ns_urlencode -part fullpath' requires exactly one argument}
+
+#######################################################################################
+# urlencode -part query pair extension sanity checks
+#######################################################################################
+
+test ns_urlencode-2.14.1 {query with one argument keeps backward-compatible component encoding} -body {
+    ns_urlencode -part query "Gustaf & NaviServer"
+} -result {Gustaf+%26+NaviServer}
+
+
+test ns_urlencode-2.14.2 {query with multiple arguments encodes name value pairs} -body {
+    ns_urlencode -part query a 1 b "Gustaf & NaviServer"
+} -result {a=1&b=Gustaf+%26+NaviServer}
+
+
+test ns_urlencode-2.14.3 {query with ns_set array preserves repeated keys} -body {
+    set s [ns_set create query]
+    ns_set put $s a 1
+    ns_set put $s a 2
+    ns_set put $s q "Gustaf & NaviServer"
+    ns_urlencode -part query {*}[ns_set array $s]
+} -result {a=1&a=2&q=Gustaf+%26+NaviServer}
+
+
+test ns_urlencode-2.14.4 {query with multiple arguments requires pairs} -body {
+    ns_urlencode -part query a 1 b
+} -returnCodes error -match glob -result {*requires name/value pairs*}
+
+
+#######################################################################################
+# ns_urldecode fullpath and fragment, with round-trip
+#######################################################################################
+
+test ns_urlencode-2.15.1 {urldecode fullpath decodes percent escapes and preserves plus} -body {
+    ns_urldecode -part fullpath "/a/b%20c+d"
+} -result {/a/b c+d}
+
+
+test ns_urlencode-2.15.2 {urldecode fragment decodes percent escapes and preserves plus} -body {
+    ns_urldecode -part fragment "section%201+details%23x"
+} -result {section 1+details#x}
+
+
+test ns_urlencode-2.15.3 {urldecode query decodes plus as space} -body {
+    ns_urldecode -part query "q=Gustaf+%26+NaviServer"
+} -result {q=Gustaf & NaviServer}
+
+test ns_urlencode-2.15.4 {urlencode/urldecode fullpath roundtrip} -body {
+    set s "/a/b c+d"
+    set enc [ns_urlencode -part fullpath $s]
+    set dec [ns_urldecode -part fullpath $enc]
+    string equal $s $dec
+} -result 1
+
+
+test ns_urlencode-2.15.5 {urlencode/urldecode fragment roundtrip} -body {
+    set s "section 1+details#x"
+    set enc [ns_urlencode -part fragment $s]
+    set dec [ns_urldecode -part fragment $enc]
+    string equal $s $dec
+} -result 1
+
+
+#######################################################################################
+# urlencode in requests
+#######################################################################################
 
 if {[ns_config test listenport] ne ""} {
     testConstraint serverListen true
 }
-ns_log warning DONE
 
 test ns_urlencode-3.0 {test request with unencoded path segments} -constraints {serverListen} -setup {
     ns_register_proc GET /foo/* {
@@ -387,7 +509,8 @@ test ns_urlencode-5.0 {encode and unencode character sequence with percent codes
     ns_register_proc GET /encode-decode {
         set s "/%20,'\".=+"
         set sEnc [ns_urlencode -part path $s]
-        ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part path $sEnc] eq $s}]]
+        set sDec [ns_urldecode -part path $sEnc]
+        ns_return 200 text/plain [list $s $sEnc [string equal $sDec $s]]
     }
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /encode-decode
@@ -399,7 +522,8 @@ test ns_urlencode-5.1 {encode and unencode character sequence with percent codes
     ns_register_proc GET /encode-decode {
         set s "/%20,'\".=+"
         set sEnc [ns_urlencode -part query $s]
-        ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part query $sEnc] eq $s}]]
+        set sDec [ns_urldecode -part query $sEnc]
+        ns_return 200 text/plain [list $s $sEnc [string equal $sDec $s]]
     }
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /encode-decode
@@ -410,8 +534,9 @@ test ns_urlencode-5.1 {encode and unencode character sequence with percent codes
 test ns_urlencode-5.2 {encode and unencode character sequence with percent codes - cookie} -constraints {serverListen} -setup {
     ns_register_proc GET /encode-decode {
         set s "/%20,'\".=+"
-        set sEnc [ns_urlencode -part cookie $s]
-        ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part cookie $sEnc] eq $s}]]
+        set sEnc [ns_percentencode -scheme cookie $s]
+        set sDec [ns_percentdecode -scheme cookie $sEnc]
+        ns_return 200 text/plain [list $s $sEnc [string equal $sDec $s]]
     }
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /encode-decode
@@ -421,7 +546,7 @@ test ns_urlencode-5.2 {encode and unencode character sequence with percent codes
 
 test ns_urlencode-5.3.1 {encode and unencode character sequence with oauth1 encoding} -body {
     set string {-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~}
-    set enc [ns_urlencode -part oauth1 $string]
+    set enc [ns_percentencode -scheme oauth1 $string]
     string equal $enc $string
 } -cleanup {
     unset string enc
@@ -429,15 +554,15 @@ test ns_urlencode-5.3.1 {encode and unencode character sequence with oauth1 enco
 
 test ns_urlencode-5.3.2 {encode and unencode character sequence with oauth1 encoding} -body {
     set string {-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~}
-    set enc [ns_urlencode -part oauth1 $string]
-    set dec [ns_urldecode -part oauth1 $enc]
+    set enc [ns_percentencode -scheme oauth1 $string]
+    set dec [ns_percentdecode -scheme oauth1 $enc]
     string equal $enc $dec
 } -cleanup {
     unset string enc dec
 } -result "1"
 
 test ns_urlencode-5.3.3 {encode and unencode character sequence with oauth1 encoding} -body {
-    ns_urldecode -part oauth1 a+b
+    ns_percentdecode -scheme oauth1 a+b
 } -result "a+b"
 
 test ns_urlencode-5.3.4 {encode and unencode character sequence with oauth1 encoding} -body {
@@ -448,7 +573,7 @@ test ns_urlencode-5.3.4 {encode and unencode character sequence with oauth1 enco
         if {[string first $c $unencoded] == -1} {append string $c}
     }
     # The reset must be a multiple of 2 chars, since everything must be encoded.
-    expr {[string length [ns_urlencode -part oauth1 $string]] % 3}
+    expr {[string length [ns_percentencode -scheme oauth1 $string]] % 3}
 } -cleanup {
     unset string i c unencoded
 } -result 0

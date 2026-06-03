@@ -6,12 +6,23 @@
 
 [description]
 
- This group of commands lets you safely encode and decode strings by
- escaping unsafe characters as percent‑escape sequences ("%xx") per
- RFC 3986 (or RFC 1738 when in legacy mode). You can choose from
- several encoding schemes (query, path, cookie, oauth1) to control
- which characters remain unescaped and how spaces are handled. Hex
- digits default to lowercase but can be forced uppercase.
+ This group of commands lets you encode and decode strings by escaping
+ unsafe characters as percent-escape sequences ("%xx").
+
+ [cmd ns_percentencode] and [cmd ns_percentdecode] are the low-level
+ percent-encoding primitives.  They operate on a single string according
+ to a selected encoding [term scheme].  The supported schemes are
+ [const query], [const path], [const cookie], and [const oauth1].
+
+ [cmd ns_urlencode] and [cmd ns_urldecode] are URL-oriented convenience
+ commands.  They use URL [term parts] rather than percent-encoding
+ schemes.  In addition to the historical [const query] and [const path]
+ parts, [cmd ns_urlencode] supports higher-level URL construction helpers
+ such as [const fullpath] and [const fragment].
+
+ Use [cmd ns_percentencode] when you need a primitive percent encoder for
+ one string.  Use [cmd ns_urlencode] when constructing URL query strings,
+ path components, full paths, or fragments from application data.
 
 [section {COMMANDS}]
 
@@ -43,40 +54,108 @@
 
  [call [cmd ns_urlencode] \
      [opt [option "-charset [arg value]"]] \
-     [opt [option "-part query|path|cookie|oauth1"]] \
+     [opt [option "-part query|path|fullpath|fragment|cookie|oauth1"]] \
      [opt [option "-uppercase"]] \
      [opt --] \
      [arg "component ..."]]
 
- Alias for [cmd ns_percentencode], using [option -part] in place of
- [option -scheme].  Accepts multiple components. With the [var query]
- scheme, components are joined by "&", in otherwise by "/".
+ Encodes URL data according to the selected URL [option -part].
 
- [call [cmd ns_urldecode] \
+ With [option "-part query"], a single argument is encoded as one query
+ value, preserving the historical behavior.  With multiple arguments, the
+ arguments are interpreted as alternating name/value pairs.  Names and
+ values are encoded and joined as a query string using "=" and "&".
+ Repeated names are preserved when the argument list contains repeated
+ names, for example when using [cmd ns_set] data via
+ [cmd "ns_set array"].
+
+ With [option "-part path"], each argument is treated as one URL path
+ component and multiple arguments are joined with "/".  This is the
+ historical behavior of [cmd ns_urlencode] for path data.
+
+ With [option "-part fullpath"], the single argument is treated as a full
+ URL path.  Slash characters in the argument are preserved as path
+ separators, and each path segment is encoded individually.
+
+ With [option "-part fragment"], the single argument is encoded as a URL
+ fragment component.
+
+ The [const cookie] and [const oauth1] parts are accepted for backward
+ compatibility, but are deprecated for [cmd ns_urlencode].  Use
+ [cmd ns_percentencode] with [option "-scheme cookie"] or
+ [option "-scheme oauth1"] instead.
+
+
+[call [cmd ns_urldecode] \
      [opt [option "-charset [arg value]"]] \
      [opt [option "-fallbackcharset [arg value]"]] \
-     [opt [option "-part query|path|cookie|oauth1"]] \
+     [opt [option "-part query|path|fullpath|fragment|cookie|oauth1"]] \
      [opt --] \
-     [arg "string"]]
+     [arg string]]
 
- Alias for [cmd ns_percentdecode], using [option -part] in place of
- [option -scheme].
+ Decodes percent-escape sequences in [arg string] according to the
+ selected URL [option -part].  The supported part names match
+ [cmd ns_urlencode].
+
+ For decoding, the selected part primarily controls the treatment of plus
+ signs.  With [option "-part query"], plus signs are decoded as spaces.
+ With [const path], [const fullpath], [const fragment], [const cookie],
+ and [const oauth1], plus signs remain literal plus signs.  Percent escape
+ sequences are decoded in all parts.
+
+ The [const cookie] and [const oauth1] parts are accepted for backward
+ compatibility, but are deprecated for [cmd ns_urldecode].  Use
+ [cmd ns_percentdecode] with [option "-scheme cookie"] or
+ [option "-scheme oauth1"] instead.
 
 [list_end]
 
 
-[section {SCHEMES}]
+[section {PERCENT-ENCODING SCHEMES AND URL PARTS}]
+
+ [para]
+ The URL parts accepted by [cmd ns_urlencode] and [cmd ns_urldecode] are
+ [const query], [const path], [const fullpath], [const fragment],
+ [const cookie], and [const oauth1].  The [const cookie] and [const oauth1]
+ parts are retained for compatibility only and are deprecated in favor of
+ the corresponding [cmd ns_percentencode] and [cmd ns_percentdecode]
+ schemes.
 
 [list_begin itemized]
 
 [item] [var query] (default):
 
-  Encoding scheme for URL query strings and form data
-  ([const application/x-www-form-urlencoded]).
-  Spaces are encoded as "+".  Unsafe characters from query components
-  from RFC 3986 are percent encoded.
+  As a percent-encoding scheme, [const query] encodes URL query values
+  and form data ([const application/x-www-form-urlencoded]).  Spaces are
+  encoded as "+".  Unsafe characters from RFC 3986 query components are
+  percent encoded.
 
-  76 characters remain unescapted:
+  As an [cmd ns_urlencode] URL part, [const query] has two forms.  With
+  one argument, the argument is encoded as one query value.  With multiple
+  arguments, the arguments are interpreted as alternating name/value pairs
+  and encoded as a query string.
+
+[example_begin]
+ % ns_urlencode -part query "Gustaf & NaviServer"
+ Gustaf+%26+NaviServer
+ 
+ % ns_urlencode -part query a 1 b "Gustaf & NaviServer"
+ a=1&b=Gustaf+%26+NaviServer
+[example_end]
+
+  Query pair construction works naturally with [cmd ns_set] values,
+  including repeated keys:
+
+[example_begin]
+ % set s [lb]ns_set create query[rb]
+ % ns_set put $s a 1
+ % ns_set put $s a 2
+ % ns_set put $s q "Gustaf & NaviServer"
+ % ns_urlencode -part query {*}[lb]ns_set array $s[rb]
+ a=1&a=2&q=Gustaf+%26+NaviServer
+[example_end]
+
+  76 characters remain unescaped by the query scheme:
 
 [example_begin]
  ! $ ' ( ) * + - . / 0 1 2 3 4 5 6 7 8 9 : ? @
@@ -84,13 +163,29 @@
  a b c d e f g h i j k l m n o p q r s t u v w x y z ~
 [example_end]
 
+
 [item] [var path]:
 
-  Encoding scheme per RFC 3986 for path‐segment rules.
-  Spaces are encoded as "%20"; slashes embedded in path segments are
-  encoded as "%2F".
+  As a percent-encoding scheme, [const path] encodes one URL path
+  component according to RFC 3986 path-segment rules.  Spaces are encoded
+  as "%20"; slashes embedded in path components are encoded as "%2F".
 
-  76 characters remain unescapted:
+  As an [cmd ns_urlencode] URL part, [const path] preserves the historical
+  behavior: each argument is treated as one path component and multiple
+  arguments are joined with "/".
+
+[example_begin]
+ % ns_urlencode -part path docs "NaviServer ADP"
+ docs/NaviServer%20ADP
+ 
+ % ns_urlencode -part path "docs/NaviServer ADP"
+ docs%2fNaviServer%20ADP
+[example_end]
+
+  Use [const fullpath] when the input is already a complete URL path and
+  slash characters should be preserved as path separators.
+
+  76 characters remain unescaped by the path scheme:
 
 [example_begin]
  ! $ & ' ( ) * + , - . 0 1 2 3 4 5 6 7 8 9 : @
@@ -99,9 +194,50 @@
 [example_end]
 
 
+[item] [var fullpath]:
+
+  URL part for [cmd ns_urlencode].  The input is treated as a complete URL
+  path.  Slash characters are preserved as path separators, and each path
+  segment is encoded individually.  Leading, trailing, and repeated
+  slashes are preserved.
+
+[example_begin]
+ % ns_urlencode -part fullpath "/docs/NaviServer ADP/index"
+ /docs/NaviServer%20ADP/index
+ 
+ % ns_urlencode -part fullpath "/a//b c/"
+ /a//b%20c/
+[example_end]
+
+  [const fullpath] is intentionally different from [const path].  The
+  [const path] part treats each argument as one path component, while
+  [const fullpath] treats its argument as an already structured path.
+
+
+[item] [var fragment]:
+
+  URL part for [cmd ns_urlencode].  The input is encoded as a URL
+  fragment component, i.e. the part after "#".  Spaces are encoded as
+  "%20".  Slash and question mark characters are preserved, as allowed by
+  RFC 3986 fragment syntax.
+
+[example_begin]
+ % ns_urlencode -part fragment "section 1#details"
+ section%201%23details
+ 
+ % ns_urlencode -part fragment "chapter/1?view=full"
+ chapter/1?view=full
+[example_end]
+
+
 [item] [var cookie]:
 
- Encode cookie‐value segments per RFC 6265.
+  Encoding scheme for cookie-value segments per RFC 6265.
+
+  Use this scheme with [cmd ns_percentencode] and [cmd ns_percentdecode].
+  The [cmd ns_urlencode] [option "-part cookie"] form is accepted for
+  backward compatibility, but is deprecated.
+
  89 characters remain unescaped:
 
 [example_begin]
@@ -110,11 +246,18 @@
  a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~
 [example_end]
 
+
 [item] [var oauth1]:
 
   Encoding scheme for OAuth 1.0 signature base strings (RFC 5849 §3.6).
-  Spaces are encoded as "%20"; only unreserved chars per RFC 3986 remain literal.
-  66 characters remain unescaped:
+  Spaces are encoded as "%20"; only unreserved chars per RFC 3986 remain
+  literal.
+
+  Use this scheme with [cmd ns_percentencode] and [cmd ns_percentdecode].
+  The [cmd ns_urlencode] [option "-part oauth1"] form is accepted for
+  backward compatibility, but is deprecated.
+
+ 66 characters remain unescaped:
 
 [example_begin]
  - . 0 1 2 3 4 5 6 7 8 9
@@ -122,33 +265,53 @@
  a b c d e f g h i j k l m n o p q r s t u v w x y z ~
 [example_end]
 
-  This scheme is also used for AWS signature encoding..
+  This scheme is also used for AWS signature encoding.
 
 [list_end]
 
 [section {OPTIONS}]
 [list_begin options]
 
-[opt_def -charset value]
-Specify the input string’s character set for encoding or decoding.
+[opt_def "-scheme query|path|cookie|oauth1"]
+ Select the percent-encoding scheme for [cmd ns_percentencode] or
+ [cmd ns_percentdecode].
+
+[opt_def "-part query|path|fullpath|fragment|cookie|oauth1"]
+ Select the URL part for [cmd ns_urlencode] or [cmd ns_urldecode].
+ For [cmd ns_urlencode], [const query], [const path], [const fullpath],
+ and [const fragment] provide URL-oriented encoding behavior.  For
+ [cmd ns_urldecode], the same part names are accepted; [const query]
+ decoding maps "+" to space, while the other parts preserve literal plus
+ characters.
+
+ The [const cookie] and [const oauth1] parts are deprecated compatibility
+ aliases.  Use [cmd ns_percentencode] or [cmd ns_percentdecode] with
+ [option -scheme] instead.
 
 [opt_def -fallbackcharset value]
-On decode, if the result is invalid UTF‑8 and [option -charset] is not
-given, retry using this charset instead of raising an exception.
+ On decode, if the result is invalid UTF‑8 and [option -charset] is not
+ given, retry using this charset instead of raising an exception.
 
 [opt_def -uppercase]
-Output hex digits A–F in uppercase ("%2F" instead of "%2f").
+ Output hex digits A–F in uppercase ("%2F" instead of "%2f").
 
 [opt_def --]
-Marks the end of options; any following arguments (even starting with "-") are treated as data.
+ Marks the end of options; any following arguments (even starting with "-") are treated as data.
 
 [list_end]
+
+[para]
+[cmd ns_urlencode] encodes unencoded application data into URL parts.  It
+does not preserve existing percent escapes as escapes; a literal "%"
+character is encoded when it is unsafe for the selected part.  Do not pass
+already percent-encoded URL parts to [cmd ns_urlencode] unless double
+encoding is intended.
 
 
 [section {EXAMPLES}]
 
-
-Encode form data as an application/x-www-form-urlencoded POST body
+Encode form data as an application/x-www-form-urlencoded query string
+or POST body:
 ([uri https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4]):
 
 [example_begin]
@@ -157,12 +320,9 @@ Encode form data as an application/x-www-form-urlencoded POST body
    second_name Doe
    data        "Hello World"
  }
- 
- set post_data {}
- foreach {key value} $data {
-     lappend post_data "[lb]ns_urlencode -part query $key[rb]=[lb]ns_urlencode $value[rb]"
- }
- set post_data [lb]join $post_data &[rb]
+  
+ set post_data [lb]ns_urlencode -part query {*}$data[rb]
+ ## output: first_name=John&second_name=Doe&data=Hello+World
 [example_end]
 
 Encode path segments per W3C URI recommendations
@@ -170,59 +330,73 @@ Encode path segments per W3C URI recommendations
 [uri https://www.w3.org/Addressing/URL/4_URI_Recommentations.html "URI Recommendation"]):
 
 [example_begin]
- % set e1 {albert bertram marie-claude}
- % ns_urlencode -part path {*}$e1
- albert/bertram/marie-claude
+ set e1 {albert bertram marie-claude}
+ ns_urlencode -part path {*}$e1
+ ## output: albert/bertram/marie-claude
  
- % set e2 {albert bertram/marie-claude}
- % ns_urlencode -part path {*}$e2
- albert/bertram%2fmarie-claude
+ set e2 {albert bertram/marie-claude}
+ ns_urlencode -part path {*}$e2
+ ## output: albert/bertram%2fmarie-claude
+
+ ns_urlencode -part fullpath "/albert/bertram marie-claude"
+ ## output: /albert/bertram%20marie-claude
 [example_end]
 
+
+Encode a URL fragment:
+
+[example_begin]
+ ns_urlencode -part fragment "section 1#details"
+ ## output: section%201%23details
+[example_end]
 
 By default escapes use lowercase, but you can request uppercase:
 
 [example_begin]
+ % ns_percentencode -scheme path "a/b c"
+ ## output: a%2fb%20c
+
  % ns_percentencode -scheme path -uppercase "a/b c"
- A%2FB%20C
+ ## output: a%2FB%20c
 [example_end]
 
-Use the [term cookie] scheme to percent‑encode only those bytes unsafe in cookie segments:
+Use the [term cookie] scheme to percent‑encode only those bytes
+unsafe in cookie segments:
 
 [example_begin]
- % ns_percentencode -scheme cookie "key=value; path=/"
- key%3Dvalue%3B%20path%3D%2F
+ ns_percentencode -scheme cookie "key=value; path=/"
+ ## output:  key%3dvalue%3b%20path%3d%2f
 [example_end]
 
 Construct an OAuth 1.0 signature base string
 
 [example_begin]
- % ns_percentencode -scheme oauth1 -uppercase "Ladies + Gentlemen"
- Ladies%20%2B%20Gentlemen
+ ns_percentencode -scheme oauth1 -uppercase "Ladies + Gentlemen"
+ ## output: Ladies%20%2B%20Gentlemen
 [example_end]
 
 If your percent‐encoded input isn’t valid UTF‑8, you can retry with a different charset:
 
 [example_begin]
- % ns_percentdecode "%C3%A9t%C3%A9"
- été
+ ns_percentdecode "%C3%A9t%C3%A9"
+ ## output: été
  
- % ns_percentdecode "%E9"
- input string '%E9' cannot be converted to UTF-8
+ ns_percentdecode "%E9"
+ ## output: input string '%E9' cannot be converted to UTF-8
  
- % ns_percentdecode -charset iso8859-1 "%E9"
- é
+ ns_percentdecode -charset iso8859-1 "%E9"
+ ## output: é
 [example_end]
 
  With the fallback charset, a valid UTF-8 string and a latin-1 string
  can be decoded.
 
 [example_begin]
- % ns_percentdecode -fallbackcharset iso8859-1 "%C3%A9t%C3%A9"
- été
+ ns_percentdecode -fallbackcharset iso8859-1 "%C3%A9t%C3%A9"
+ ## output: été
  
- % ns_percentdecode -fallbackcharset iso8859-1 "%E9"
- é
+ ns_percentdecode -fallbackcharset iso8859-1 "%E9"
+ ## output: é
 [example_end]
 
 
