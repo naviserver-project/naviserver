@@ -651,8 +651,8 @@
 [uri ../../naviserver/files/ns_upload_stats.html {ns_upload_stats}] /key/
 [uri ../../naviserver/files/ns_url2file.html {ns_url2file}] /url/
 [uri ../../naviserver/files/ns_urlcharset.html {ns_urlcharset}] /charset/
-[uri ../../naviserver/files/ns_percentencode.html {ns_urldecode}] ?-charset /value/? ?-fallbackcharset /value/? ?-part query|path|cookie|oauth1? ?--? /string/
-[uri ../../naviserver/files/ns_percentencode.html {ns_urlencode}] ?-charset /value/? ?-part query|path|cookie|oauth1? ?-uppercase? ?--? /component .../
+[uri ../../naviserver/files/ns_percentencode.html {ns_urldecode}] ?-charset /value/? ?-fallbackcharset /value/? ?-part query|path|fullpath|fragment|cookie|oauth1? ?--? /string/
+[uri ../../naviserver/files/ns_percentencode.html {ns_urlencode}] ?-charset /value/? ?-part query|path|fullpath|fragment|cookie|oauth1? ?-uppercase? ?--? /component .../
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace get}] ?-context /setId/? ?-exact? ?-id /integer/? ?-key /value/? ?-noinherit? /URL/
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace list}] ?-id /integer/?
 [uri ../../naviserver/files/ns_urlspace.html {ns_urlspace new}]
