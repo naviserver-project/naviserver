@@ -9958,7 +9958,8 @@ CryptoSignatureGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     } else if (KeygenGroupParams(interp, nameString, groupName,
                                  "signature", params, &paramPtr) != TCL_OK) {
-        return TCL_ERROR;   }
+        return TCL_ERROR;
+    }
 
     return GeneratePrivateKeyPem(interp,
                                  nameString,
