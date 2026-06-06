@@ -98,11 +98,11 @@ static char *GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
 static void ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
     NS_GNUC_NONNULL(1,2);
 
-static void AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
+static void AdpParseAdp(NsInterp *itPtr, AdpCode *codePtr, char *adp, unsigned int flags)
     NS_GNUC_NONNULL(1,2,3);
 
-static void AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const char* file)
-    NS_GNUC_NONNULL(1,2);
+static void AdpParseTclFile(NsInterp *itPtr, AdpCode *codePtr, const char *adp, unsigned int flags, const char* file)
+    NS_GNUC_NONNULL(1,2,3);
 
 
 /*
@@ -266,41 +266,105 @@ TagNameValidate(const char *tag, TCL_SIZE_T len, char *invalidCharPtr)
 }
 
 /*
- * The actual function doing the hard work.
+ *----------------------------------------------------------------------
+ *
+ * RegisterObjCmd --
+ *
+ *      Register an ADP tag implementation in the server-wide ADP tag
+ *      table or in a named ADP tag set.
+ *
+ *      This helper implements the common argument handling for
+ *      ns_adp_registeradp, ns_adp_registerproc, and
+ *      ns_adp_registerscript.  The optional -tagset argument selects a
+ *      named tag set; without -tagset, or with -tagset default, the tag is
+ *      registered in the default server ADP tag table.
+ *
+ *      The command accepts a start tag, an optional end tag, and the tag
+ *      implementation payload.  The payload is interpreted according to
+ *      the provided tag type:
+ *
+ *          TAG_ADP     ADP string
+ *          TAG_PROC    Tcl procedure
+ *          TAG_SCRIPT  Tcl script tag procedure
+ *
+ *      Tag names are validated before registration.  If an end tag is
+ *      supplied, it must consist of "/" followed by the exact start tag
+ *      name.  Tags are stored case-insensitively by lowercasing the start
+ *      tag key and the stored content/end tag strings.
+ *
+ * Results:
+ *      TCL_OK when the tag was registered successfully.  TCL_ERROR is
+ *      returned when the command arguments are invalid, the tag name or
+ *      end tag is invalid, or the requested tag set does not exist.
+ *
+ * Side effects:
+ *      Allocates and installs a new Tag structure in the selected tag
+ *      table.  If a tag with the same normalized name already exists in
+ *      that table, the previous Tag structure is freed and replaced.  The
+ *      server ADP tag lock is acquired while updating the tag table.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, int type)
 {
-    int result = TCL_OK;
+    int         result = TCL_OK;
+    const char *firstArgString = objc>1 ? Tcl_GetString(objv[1]) : "";
 
     NS_NONNULL_ASSERT(clientData != NULL);
     NS_NONNULL_ASSERT(interp != NULL);
 
-
-    if (objc != 4 && objc != 3) {
+    if ((*firstArgString != '-' && objc != 4 && objc != 3)
+        || (*firstArgString == '-' && objc != 6 && objc != 5)
+        ) {
         if (type != TAG_ADP) {
-            Tcl_WrongNumArgs(interp, 1, objv, "/tag/ ?/endtag/? /proc/");
+            Tcl_WrongNumArgs(interp, 1, objv, "?-tagset /value/? /tag/ ?/endtag/? /proc/");
         } else {
-            Tcl_WrongNumArgs(interp, 1, objv, "/tag/ ?/endtag/? /adpstring/");
+            Tcl_WrongNumArgs(interp, 1, objv, "?-tagset /value/? /tag/ ?/endtag/? /adpstring/");
         }
         result = TCL_ERROR;
 
     } else {
-        const NsInterp *itPtr = clientData;
+        const char     *firstArgString = Tcl_GetString(objv[1]);
+        NsInterp       *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
-        const char     *end, *tag, *content;
+        const char     *end, *tag, *content, *tagset = NULL;
         char            invalidChar = '\0';
         Tcl_HashEntry  *hPtr;
         int             isNew;
         TCL_SIZE_T      slen, elen, tlen;
         Tcl_DString     tbuf;
         Tag            *tagPtr;
+        bool            tagsetIsDefault = NS_FALSE;
+        AdpTagSet      *tagSetPtr = NULL;
+        Tcl_HashTable  *tagTablePtr = &servPtr->adp.tags;
+
+        if (*firstArgString == '-') {
+            if (!STREQ(firstArgString, "-tagset")) {
+                Ns_TclPrintfResult(interp,
+                                   "unknown option \"%s\": should be -tagset",
+                                   firstArgString);
+                return TCL_ERROR;
+            }
+
+            tagset = Tcl_GetString(objv[2]);
+            if (NsAdpTagSetLookup(itPtr, tagset, &tagSetPtr, &tagsetIsDefault) == NS_ERROR) {
+                return TCL_ERROR;
+            }
+
+            tag = Tcl_GetStringFromObj(objv[3], &tlen);
+            if (!tagsetIsDefault) {
+                tagTablePtr = &tagSetPtr->tags;
+            }
+
+        } else {
+            tag = Tcl_GetStringFromObj(objv[1], &tlen);
+        }
+        Ns_Log(Debug, "RegisterObjCmd tag <%s> objc %d", tag, objc);
 
         /*
-         * Get tag and content
+         * Validate tag name.
          */
-        tag = Tcl_GetStringFromObj(objv[1], &tlen);
-
         if (!TagNameValidate(tag, tlen, &invalidChar)) {
             if (invalidChar == '\0') {
                 Ns_TclPrintfResult(interp, "invalid start tag: '%s' "
@@ -313,9 +377,12 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             return TCL_ERROR;
         }
 
+        /*
+         * Get end tag and content
+         */
         content = Tcl_GetStringFromObj(objv[objc-1], &slen);
         ++slen;
-        if (objc == 3) {
+        if (objc == 3 || objc == 5) {
             /*
              * no end tag
              */
@@ -325,7 +392,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             /*
              * end tag provided.
              */
-            end = Tcl_GetStringFromObj(objv[2], &elen);
+            end = Tcl_GetStringFromObj(objv[objc-2], &elen);
             if (*end != '/' || elen != tlen + 1 || memcmp(tag, end+1,  (size_t)tlen) != 0) {
                 Ns_TclPrintfResult(interp, "invalid end tag: '%s'"
                                    " (must start with a '/' followed by the name of the start tag)",
@@ -335,8 +402,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             ++elen;
         }
         /*fprintf(stderr, "=========== RegisterObjCmd tag '%s', content '%s', end '%s'\n",
-                Tcl_GetString(objv[1]),
-                content, end);*/
+                tag, content, end);*/
 
         /*
          * Allocate piggybacked memory chunk containing
@@ -367,43 +433,54 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         Tcl_DStringInit(&tbuf);
         (void)Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
         Ns_RWLockWrLock(&servPtr->adp.taglock);
-        hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &isNew);
+        hPtr = Tcl_CreateHashEntry(tagTablePtr, tbuf.string, &isNew);
         if (isNew == 0) {
             ns_free(Tcl_GetHashValue(hPtr));
         }
         Tcl_SetHashValue(hPtr, tagPtr);
-        tagPtr->tag = Tcl_GetHashKey(&servPtr->adp.tags, hPtr);
+        tagPtr->tag = Tcl_GetHashKey(tagTablePtr, hPtr);
         Ns_RWLockUnlock(&servPtr->adp.taglock);
         Tcl_DStringFree(&tbuf);
     }
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * NsAdpParse --
+ * AdpParseTclFile --
  *
- *      Parse a string containing Tcl statements. When evaluating a Tcl file,
- *      we just wrap it as Tcl proc and save in ADP block with cache enabled
- *      or just execute the Tcl code in case of cache disabled
+ *      Wrap Tcl-file input as an ADP code object.
+ *
+ *      When an ADP request is evaluated in Tcl-file mode, the input is not
+ *      parsed as ADP markup.  Instead, it is represented as one Tcl script
+ *      block in the generated AdpCode.  With ADP caching disabled, the Tcl
+ *      source is stored directly as the script block.  With ADP caching
+ *      enabled, the Tcl source is wrapped in a generated Tcl procedure and
+ *      the cached ADP code appends a call to that procedure.
+ *
+ *      The NsInterp argument is carried through this path so that generated
+ *      ADP/Tcl code executed later, such as ns_adp_append, continues to use
+ *      the interpreter's current ADP context, including the effective ADP
+ *      tag set.  This function itself does not perform registered-tag
+ *      lookup.
  *
  * Results:
- *      None.
+ *      None.  The supplied AdpCode object is filled with a single Tcl
+ *      script block.
  *
  * Side effects:
- *      The given AdpCode structure is filled in with a copy of the Tcl source
- *      code.
+ *      Appends Tcl source or generated Tcl wrapper code to codePtr->text and
+ *      initializes the block length and line metadata for the AdpCode.
  *
  *----------------------------------------------------------------------
  */
-
 static void
-AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const char* file) {
+AdpParseTclFile(NsInterp *itPtr, AdpCode *codePtr, const char *adp, unsigned int flags, const char* file) {
     int        line = 0;
     TCL_SIZE_T size;
 
+    NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(codePtr != NULL);
     NS_NONNULL_ASSERT(adp != NULL);
 
@@ -560,38 +637,39 @@ NsParseTagEnd(char *str)
     return str;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
  * AdpParseAdp --
  *
- *      Parse a string of ADP text/script.  Parsing is done in a single,
- *      top to bottom pass, looking for the following four types of
- *      embedded script sequences:
+ *      Parse an ADP document into an AdpCode object.
  *
- *      1. <% Tcl script %>
- *      2. <script runat=server language=tcl> Tcl script </script>
- *      3. <registered-tag arg=val arg=val>
- *      4. <registered-start-tag arg=val arg=val> text </registered-end-tag>
+ *      The parser scans the ADP source, separates literal text from Tcl
+ *      script blocks, recognizes server-side script tags, and resolves
+ *      registered ADP tags.  Registered tags are looked up in the
+ *      interpreter's current effective tag table.  If a named tag set is
+ *      effective and has a fallback table, the fallback table is consulted
+ *      when a tag is not found in the named table.  If no named tag set is
+ *      effective, the parser uses the server-wide default ADP tag table.
  *
- *      Nested sequences are handled for each case, for example:
- *
- *      Text <% ns_adp_eval {<% ... %>} %> text ...
+ *      The effective tag table is resolved once before entering the parse
+ *      loop, so registered-tag lookup in the hot path uses direct
+ *      Tcl_HashTable pointers.
  *
  * Results:
- *      None.
+ *      None.  The generated blocks, scripts, lengths, and line numbers are
+ *      appended to the supplied AdpCode object.
  *
  * Side effects:
- *      The given AdpCode structure is filled in with copy
- *      of the parsed ADP code.
+ *      Allocates and appends ADP parse data to the supplied AdpCode object.
+ *      Reads the server ADP tag tables under the server ADP tag lock.
  *
  *----------------------------------------------------------------------
  */
-
 static void
-AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
+AdpParseAdp(NsInterp *itPtr, AdpCode *codePtr, char *adp, unsigned int flags)
 {
+    NsServer            *servPtr;
     int                  level = 0;
     unsigned int         scriptFlags = 0u;
     const char          *script = NS_EMPTY_STRING, *ae = NS_EMPTY_STRING;
@@ -601,11 +679,12 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
     bool                 scriptStreamDone = NS_FALSE;
     Parse                parse;
     TagParseState        state = TagNext;
+    Tcl_HashTable       *tagTablePtr, *fallbackTagTablePtr;
 
     NS_NONNULL_ASSERT(codePtr != NULL);
-    NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(adp != NULL);
 
+    servPtr = itPtr->servPtr;
     /*
      * Initialize the parse structure.
      */
@@ -615,6 +694,18 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
     Tcl_DStringInit(&tag);
     Tcl_DStringInit(&parse.lengths);
     Tcl_DStringInit(&parse.lines);
+
+    /*Ns_Log(Notice, "DEBUG: AdpParseAdp sees itPtr->adp.defaultTagSetPtr %p itPtr->adp.effectiveTagSetPtr %p name %s",
+           (void*)itPtr->adp.defaultTagSetPtr, (void*)itPtr->adp.effectiveTagSetPtr,
+           itPtr->adp.effectiveTagSetPtr == NULL ? "default" :  itPtr->adp.effectiveTagSetPtr->name);*/
+
+    if (itPtr->adp.effectiveTagSetPtr == NULL) {
+        tagTablePtr = &itPtr->servPtr->adp.tags;
+        fallbackTagTablePtr = NULL;
+    } else {
+        tagTablePtr = &itPtr->adp.effectiveTagSetPtr->tags;
+        fallbackTagTablePtr = itPtr->adp.effectiveTagSetPtr->fallbackTagTablePtr;
+    }
 
     /*
      * Parse ADP one tag at a time.
@@ -731,7 +822,10 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
                 } else {
                     const Tcl_HashEntry *hPtr;
 
-                    hPtr = Tcl_FindHashEntry(&servPtr->adp.tags, tag.string);
+                    hPtr = Tcl_FindHashEntry(tagTablePtr, tag.string);
+                    if (hPtr == NULL && fallbackTagTablePtr != NULL) {
+                        hPtr = Tcl_FindHashEntry(fallbackTagTablePtr, tag.string);
+                    }
                     if (hPtr != NULL) {
                         /*
                          * Append text and the registered tag content
@@ -904,7 +998,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 /*
  *----------------------------------------------------------------------
  *
- * AdpParseAdp --
+ * NsAdpParse --
  *
  *      Parse a string containing a Tcl source or an ADP text/script.
  *
@@ -917,13 +1011,11 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
  *
  *----------------------------------------------------------------------
  */
-
 void
-NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
-           unsigned int flags, const char* file)
+NsAdpParse(NsInterp *itPtr, AdpCode *codePtr, char *adp, unsigned int flags,
+           const char* file)
 {
     NS_NONNULL_ASSERT(codePtr != NULL);
-    NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(adp != NULL);
 
     /*
@@ -938,9 +1030,9 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      * just execute the Tcl code in case of cache disabled
      */
     if ((flags & ADP_TCLFILE) != 0u) {
-        AdpParseTclFile(codePtr, adp, flags, file);
+        AdpParseTclFile(itPtr, codePtr, adp, flags, file);
     } else {
-        AdpParseAdp(codePtr, servPtr, adp, flags);
+        AdpParseAdp(itPtr, codePtr, adp, flags);
     }
 }
 

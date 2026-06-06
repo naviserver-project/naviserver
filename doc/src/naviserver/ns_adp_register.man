@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin   ns_adp_register n [vset version]]
+[manpage_begin ns_adp_register n [vset version]]
 [moddesc  {NaviServer Built-in Commands}]
 
 [titledesc {Creating Custom ADP Tags}]
@@ -32,8 +32,8 @@
  Registered tags can either be tags with content - consisting of
  an opening and a closing tag - or tags defining empty elements, where
  no closing tag is defined. When both the [arg tag] and the
- [arg endtag] are specified in the registering command, the tags must have
- content; when the [arg endtag] is omitted in the registering command,
+ [arg endtag] are specified in the registering command, the tags must
+ have content; when the [arg endtag] is omitted in the registering command,
  empty elements are defined.
 
 [para]
@@ -41,12 +41,42 @@
  same tag name as the opening tag. For example, a start tag [const mytag]
  must use the corresponding end tag [const /mytag].
 
+[section {Tag Sets}]
+
+By default, registered ADP tags are stored in the server-wide default
+ADP tag table.  This is the traditional NaviServer behavior.
+
+[para]
+The optional [option -tagset] argument registers the tag in a named ADP
+tag set instead.  Named tag sets are created and inspected with
+[cmd ns_adp_tagset].  They can be selected later by commands such as
+[cmd ns_adp_parse] and [cmd ns_adp_include].
+
+[para]
+The reserved tag-set name [const default] refers to the built-in server-wide
+default tag table.  Therefore,
+
+[example_begin]
+ ns_adp_registerscript -tagset default mytag /mytag ::mytag_handler
+[example_end]
+
+is equivalent to:
+
+[example_begin]
+ ns_adp_registerscript mytag /mytag ::mytag_handler
+[example_end]
+
+[para]
+Named tag sets are useful when different ADP parsing modes must coexist in
+the same server, for example during a gradual migration from one registered
+tag vocabulary to another.
 
 [section COMMANDS]
 
 [list_begin definitions]
 
 [call [cmd ns_adp_registeradp] \
+        [opt [option "-tagset [arg value]"]] \
 	[arg tag]  \
 	[opt [arg endtag]] \
 	[arg adpstring]]
@@ -87,38 +117,34 @@ Usage example in an ADP page:
 
 
 [call [cmd ns_adp_registerproc] \
-	[arg tag] \
-	[opt [arg endtag]] \
-	[arg proc]]
+        [opt [option "-tagset [arg value]"]] \
+        [arg tag] \
+        [opt [arg endtag]] \
+        [arg proc]]
 
- Registers a Tcl procedure to be evaluated when the given [arg tag] is
- encountered in ADP content.
+Registers a Tcl procedure to be called when the given [arg tag] is
+encountered in ADP content.
 
- [para]
- This command is intended for positional and lightweight tag handlers.
- Only the value* of the attributes specified in the tag are passed to
- the procedure [arg proc]; attribute names are discarded. Attribute
- values are passed as positional arguments, in the order in which they
- appear in the tag.
+[para]
+This command uses a simple positional calling convention.  Only the
+attribute values from the start tag are passed to [arg proc]; attribute
+names are discarded.  The values are passed in the order in which the
+attributes occur in the tag.
 
+[para]
+If [arg endtag] is specified, the procedure receives one additional final
+argument containing the literal content between the opening and closing tags.
+The enclosed content is not parsed before it is passed to the procedure.
 
- [para]
- If the optional [arg endtag] is specified, the procedure will receive one
- additional final argument containing the literal content enclosed
- between the opening and closing tags. The enclosed content is not
- evaluated and is passed unchanged as a single text block.
+[para]
+The return value of [arg proc] replaces the tag, and also replaces the
+enclosed content when an end tag is registered.
 
- [para] The procedure [arg proc] will be called
- with a variable number of arguments, one for each attribute value
- provided in the tag. If the [arg endtag] argument is specified, the
- procedure will also receive a final argument containing the content
- enclosed between the tags. No evaluation of the enclosed content is
- performed; it is passed as a single text block.
-
- [para]
- When the procedure is invoked, its return value replaces the tag (and the
- enclosed content, if [arg endtag] is specified) in the output.
-
+[para]
+Use [cmd ns_adp_registerproc] when the tag handler only needs positional
+arguments, or when the attribute names are not relevant.  Use
+[cmd ns_adp_registerscript] when the handler needs structured access to
+attribute names and values via an [cmd ns_set].
 
 [example_begin]
  # Define the tag handler
@@ -150,13 +176,13 @@ Usage example in an ADP page:
 
 
 [para]
- Note:
+ Notes:
 
  [list_begin itemized]
- [item] Only attribute values are passed to the procedure; attribute names are not available.
- [item] Attribute values are passed positionally, in the order they appear in the tag.
- [item] This command is suitable when attribute names are irrelevant
- and a simple positional calling convention is sufficient.
+ [item] Attribute names are not passed to the procedure.
+ [item] Attribute values are passed positionally.
+ [item] The optional body is passed as the final argument when an end tag is registered.
+ [item] This command is suitable for lightweight tags with a positional calling convention.
  [list_end]
 
 [example_begin]
@@ -171,33 +197,45 @@ Usage example in an ADP page:
 
 
 [call [cmd ns_adp_registerscript] \
-	[arg tag] \
-	[opt [arg endtag]] \
-	[arg proc]]
+        [opt [option "-tagset [arg value]"]] \
+        [arg tag] \
+        [opt [arg endtag]] \
+        [arg proc]]
 
- Registers a Tcl procedure [arg proc] to be evaluated when the given
- [arg tag] is encountered in ADP content.
-
- [para]
- This command provides structured access to tag attributes and is
- intended for cases where attribute names and values must be
- distinguished. Attributes are passed to the procedure as an [cmd ns_set]
- containing name/value pairs.
-
- [para]
- If the tag is registered with an [arg endtag], the procedure is invoked
- with two arguments: first, the enclosed content as a string, and second,
- the [cmd ns_set] containing the tag attributes. When registered without
- an end tag, the procedure is called with a single argument (the
- [cmd ns_set] of attributes).
-
- [para]
- Attributes specified without an explicit value (no equals sign) are
- stored in the [cmd ns_set] with their name as the value.
+Registers a Tcl procedure to be called when the given [arg tag] is
+encountered in ADP content.
 
 [para]
-When the tag is parsed, it is replaced by the result of the registered
-[arg proc].
+This command uses a structured calling convention.  Tag attributes are
+parsed into an [cmd ns_set] containing name/value pairs, so the handler can
+inspect attributes by name.  This is usually the preferred form for tags
+whose behavior depends on named options, optional attributes, or flag-like
+attributes.
+
+[para]
+If the tag is registered with an [arg endtag], [arg proc] is called with
+two arguments:
+
+[list_begin enumerated]
+[enum] the literal content between the opening and closing tags
+[enum] the [cmd ns_set] containing the tag attributes
+[list_end]
+
+When the tag is registered without an end tag, [arg proc] is called with
+one argument: the [cmd ns_set] containing the attributes.
+
+[para]
+Attributes without an explicit value are stored in the [cmd ns_set] with
+their name as the value.
+
+[para]
+The return value of [arg proc] replaces the tag, and also replaces the
+enclosed content when an end tag is registered.
+
+[para]
+Use [cmd ns_adp_registerscript] when the handler needs attribute names,
+case-insensitive lookups, optional flags, or structured attribute handling.
+Use [cmd ns_adp_registerproc] for simpler positional handlers.
 
 [para]
 
@@ -213,7 +251,7 @@ When the tag is parsed, it is replaced by the result of the registered
    }
  }
  
- # Register the tag handler with an opening and closing tag #
+ # Register the tag handler with an opening and closing tag
  ns_adp_registerscript onday /onday onday
 [example_end]
 
@@ -232,20 +270,83 @@ Usage example in an ADP page:
 
 
 [para]
-Note:
+Notes:
 
 [list_begin itemized]
 [item] Attribute names and values are available via the [cmd ns_set] passed to the procedure.
-[item] Attribute order is not significant.
-[item] This command should be used when tag behavior depends on
-       specific attribute names or optional flags.
+[item] Attribute values can be accessed by name, for example with [cmd "ns_set get"] or [cmd "ns_set iget"].
+[item] The optional body is passed separately from the attribute set when an end tag is registered.
+[item] This command is suitable for XML-like or HTML-like tags with named attributes.
 [list_end]
 
+[list_end]
+
+[section {Registerproc vs. Registerscript}]
+
+The commands [cmd ns_adp_registerproc] and [cmd ns_adp_registerscript] both register Tcl
+procedures as ADP tag handlers, but they use different calling conventions.
+
+[list_begin definitions]
+
+  [def [cmd ns_adp_registerproc]]
+  Passes only attribute values as positional arguments.  Attribute names are
+  discarded.  When an end tag is registered, the tag body is passed as the
+  final argument.
+
+  [def [cmd ns_adp_registerscript]]
+  Passes attributes as an [cmd ns_set], preserving attribute names and values.
+  When an end tag is registered, the tag body is passed as the first argument
+  and the attribute set as the second argument.
+
+[list_end]
+
+[example_begin]
+ proc positional_tag {args} {
+     return "values: $args"
+ }
+ ns_adp_registerproc positional /positional positional_tag
+ 
+ ns_adp_parse -string {<positional a=1 b=2>body</positional>}
+ # The handler receives: 1 2 body
+ [example_end]
+ 
+ [example_begin]
+ proc structured_tag {body attributes} {
+     set a [lb]ns_set get $attributes a[rb]
+     set b [lb]ns_set get $attributes b[rb]
+     return "a=$a b=$b body=$body"
+ }
+ ns_adp_registerscript structured /structured structured_tag
+ 
+ ns_adp_parse -string {<structured a=1 b=2>body</structured>}
+ # The handler receives the body and an ns_set containing a=1 and b=2.
+[example_end]
+
+
+[section {EXAMPLES}]
+
+The following example creates a named tag set, registers a tag in that tag
+set, and parses ADP using the named tag set.
+
+[example_begin]
+ ns_adp_tagset create -fallback default demo-tags
+ 
+ proc ::demo::hello_tag {body attributes} {
+     return "Hello from demo-tags"
+ }
+ 
+ ns_adp_registerscript -tagset demo-tags hello /hello ::demo::hello_tag
+ 
+ ns_adp_parse -tagset demo-tags -string {
+     Before <hello>ignored body</hello> after
+ }
+[example_end]
+
+Since [const demo-tags] was created with [option "-fallback default"], tags
+not found in [const demo-tags] are looked up in the default tag table.
 
 [para]
 The following is a simple way of handling conditional content in ADPs:
-
-
 
 [example_begin]
  # Store content in a global variable
@@ -313,10 +414,9 @@ result." if there are no rows:
  conditionally based on whether there are rows from the database
  query.
 
-[list_end]
 
-[see_also ns_register ns_adp ns_adp_include ns_set]
-[keywords "server built-in" ADP tag "custom tags"]
+[see_also ns_adp_tagset ns_adp_parse ns_adp_include ns_register ns_adp ns_set]
+[keywords "server built-in" ADP tag "custom tags" tagset]
 
 [manpage_end]
 

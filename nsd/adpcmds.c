@@ -34,6 +34,8 @@ static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1,
 
 static int AdpFlushObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
                           Tcl_Obj *const* objv, bool doStream);
+static AdpTagSet *AdpTagSetLookupNamed(NsServer *servPtr, const char *name)
+    NS_GNUC_NONNULL(1,2);
 
 static TCL_OBJCMDPROC_T AdpCtlBufSizeObjCmd;
 
@@ -365,55 +367,167 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     return result;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * AdpTagSetLookupNamed --
+ *
+ *      Look up a named ADP tag set in the server-wide ADP tag-set table.
+ *      This helper only searches explicitly created tag sets; it does not
+ *      handle the built-in "default" tag set.
+ *
+ * Results:
+ *      Pointer to the named AdpTagSet, or NULL when no such tag set
+ *      exists.
+ *
+ * Side effects:
+ *      Acquires the server ADP tag lock while reading the tag-set table.
+ *
+ *----------------------------------------------------------------------
+ */
+static AdpTagSet *
+AdpTagSetLookupNamed(NsServer *servPtr, const char *name)
+{
+    Tcl_HashEntry  *hPtr;
+    AdpTagSet      *tagsetPtr;
+
+    Ns_RWLockRdLock(&servPtr->adp.taglock);
+    hPtr = Tcl_FindHashEntry(&servPtr->adp.tagsets, name);
+    tagsetPtr = (hPtr != NULL)  ? Tcl_GetHashValue(hPtr) : NULL;
+    Ns_RWLockUnlock(&servPtr->adp.taglock);
+
+    return tagsetPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsAdpTagSetLookup --
+ *
+ *      Resolve an ADP tag-set name for use by ADP parse, include, and tag
+ *      registration commands.
+ *
+ *      The reserved name "default" is handled specially: it does not
+ *      correspond to an AdpTagSet structure, but instead means the
+ *      server-wide default ADP tag table.  For all other names, this
+ *      function looks up an explicitly created named tag set.
+ *
+ * Results:
+ *      NS_OK when the name is valid.  In this case, *isDefault is set to
+ *      true for "default"; otherwise *tagsetPtrPtr receives the named tag
+ *      set and *isDefault is set to false.
+ *
+ *      NS_ERROR is returned when a non-default tag set does not exist.
+ *
+ * Side effects:
+ *      May leave an error message in the Tcl interpreter associated with
+ *      the provided NsInterp.  Acquires the server ADP tag lock while
+ *      looking up named tag sets.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+NsAdpTagSetLookup(ClientData clientData,  const char *name, AdpTagSet **tagsetPtrPtr, bool *isDefault)
+{
+    Ns_ReturnCode result = NS_OK;
+    NsInterp     *itPtr = clientData;
+
+    if (STREQ(name, "default")) {
+        *isDefault = NS_TRUE;
+        *tagsetPtrPtr = NULL;
+    } else {
+        *isDefault = NS_FALSE;
+        *tagsetPtrPtr = AdpTagSetLookupNamed(itPtr->servPtr, name);
+        if (*tagsetPtrPtr == NULL) {
+            Ns_TclPrintfResult(itPtr->interp, "unknown ADP tagset: %s", name);
+            result = NS_ERROR;
+        }
+    }
+
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  *
  * NsTclAdpIncludeObjCmd --
  *
- *      Implements "_ns_adp_include" used internally to evaluate
- *      ADP pages.
+ *      Implements the internal "_ns_adp_include" command used by the Tcl
+ *      wrapper "ns_adp_include".
+ *
+ *      The command includes another ADP or Tcl file, optionally changing
+ *      cache behavior, Tcl-file handling, or the effective ADP tag set for
+ *      this include.  Without "-tagset", the include inherits the current
+ *      effective tag set from the caller.  With "-tagset", the requested
+ *      tag set is applied only for this include and the caller's effective
+ *      tag set is restored afterwards.  The reserved tag set name
+ *      "default" forces use of the server-wide default ADP tag table.
+ *
+ *      In ADP cache-refresh mode for "-nocache" includes, the include
+ *      command is appended to the current output buffer instead of being
+ *      executed immediately.  In that case, an explicitly provided
+ *      "-tagset" option is serialized into the generated include command;
+ *      inherited tag-set state is not serialized.
  *
  * Results:
- *      A standard Tcl result.
+ *      TCL_OK when the include was performed or serialized successfully.
+ *      TCL_ERROR is returned for invalid arguments, unknown tag sets, or
+ *      include/evaluation errors.
  *
  * Side effects:
- *      File evaluated with output going to ADP buffer.
+ *      May temporarily modify itPtr->adp.flags and
+ *      itPtr->adp.effectiveTagSetPtr.  These values are restored before
+ *      returning.  May append generated include code to the ADP output
+ *      buffer in cache-refresh mode.
  *
  *----------------------------------------------------------------------
  */
-
 int
-NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp,
+                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char          *fileName = NULL;
-    int            result, tclScript = 0, nocache = 0;
-    TCL_SIZE_T     nargs = 0;
-    Ns_Time       *ttlPtr = NULL;
+    const char  *fileName = NULL, *tagset = NULL;
+    int          result, tclScript = 0, nocache = 0;
+    TCL_SIZE_T   nargs = 0;
+    Ns_Time     *ttlPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-cache",       Ns_ObjvTime,   &ttlPtr,    NULL},
-        {"-nocache",     Ns_ObjvBool,   &nocache,   INT2PTR(NS_TRUE)},
-        {"-tcl",         Ns_ObjvBool,   &tclScript, INT2PTR(NS_TRUE)},
-        {"--",           Ns_ObjvBreak,  NULL,       NULL},
+        {"-cache",   Ns_ObjvTime,   &ttlPtr,    NULL},
+        {"-nocache", Ns_ObjvBool,   &nocache,   INT2PTR(NS_TRUE)},
+        {"-tagset",  Ns_ObjvString, &tagset,    NULL},
+        {"-tcl",     Ns_ObjvBool,   &tclScript, INT2PTR(NS_TRUE)},
+        {"--",       Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"filename", Ns_ObjvString, &fileName,  NULL},
-        {"?arg",     Ns_ObjvArgs,   &nargs,     NULL},
+        {"filename", Ns_ObjvString, &fileName, NULL},
+        {"?arg",    Ns_ObjvArgs,   &nargs,    NULL},
         {NULL, NULL, NULL, NULL}
     };
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
     } else {
-        NsInterp      *itPtr = clientData;
-        unsigned int   flags;
-        Tcl_DString   *dsPtr;
+        NsInterp    *itPtr = clientData;
+        unsigned int savedFlags;
+        AdpTagSet   *savedTagSetPtr = NULL;
+        AdpTagSet   *tagSetPtr = NULL;
+        bool          tagsetIsDefault = NS_FALSE;
+        bool          restoreTagSet = NS_FALSE;
+        Tcl_DString  *dsPtr = NULL;
 
         objv = objv + (objc - (TCL_SIZE_T)nargs);
         objc = (TCL_SIZE_T)nargs;
 
-        flags = itPtr->adp.flags;
+        savedFlags = itPtr->adp.flags;
+
+        if (tagset != NULL
+            && NsAdpTagSetLookup(itPtr, tagset, &tagSetPtr, &tagsetIsDefault) != NS_OK) {
+            result = TCL_ERROR;
+            goto done;
+        }
+
         if (nocache != 0) {
             itPtr->adp.flags &= ~ADP_CACHE;
         }
@@ -422,10 +536,11 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         }
 
         /*
-         * In cache refresh mode, append include command to the output
-         * buffer. It will be compiled into the cached result.
+         * In cache refresh mode, append the include command to the output
+         * buffer. It will be compiled into the cached result and executed
+         * later. Preserve an explicit -tagset, but do not push/pop here,
+         * since no included ADP is parsed in this branch.
          */
-
         if (nocache != 0 && itPtr->adp.refresh > 0) {
             if (GetOutput(clientData, &dsPtr) != TCL_OK) {
                 result = TCL_ERROR;
@@ -434,54 +549,96 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
                 TCL_SIZE_T i;
 
                 Tcl_DStringAppend(dsPtr, "<% ns_adp_include", TCL_INDEX_NONE);
+
+                if (tagset != NULL) {
+                    Tcl_DStringAppendElement(dsPtr, "-tagset");
+                    Tcl_DStringAppendElement(dsPtr, tagset);
+                }
+
                 if ((itPtr->adp.flags & ADP_TCLFILE) != 0u) {
                     Tcl_DStringAppendElement(dsPtr, "-tcl");
                 }
+
                 for (i = 0; i < objc; ++i) {
                     Tcl_DStringAppendElement(dsPtr, Tcl_GetString(objv[i]));
                 }
+
                 Tcl_DStringAppend(dsPtr, "%>", 2);
                 result = TCL_OK;
             }
+
         } else {
-            result = NsAdpInclude(clientData, objc, objv, fileName, ttlPtr);
-            itPtr->adp.flags = flags;
+            /*
+             * Normal include execution.  An explicit -tagset is a scoped
+             * override.  Without -tagset, inherit the current effective
+             * tagset.
+             */
+            if (tagset != NULL) {
+                savedTagSetPtr = itPtr->adp.effectiveTagSetPtr;
+                itPtr->adp.effectiveTagSetPtr = tagsetIsDefault ? NULL : tagSetPtr;
+                restoreTagSet = NS_TRUE;
+            }
+
+            result = NsAdpInclude(itPtr, objc, objv, fileName, ttlPtr);
+
+            if (restoreTagSet) {
+                itPtr->adp.effectiveTagSetPtr = savedTagSetPtr;
+            }
         }
+
+    done:
+        itPtr->adp.flags = savedFlags;
     }
 
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
  * NsTclAdpParseObjCmd --
  *
- *      Implements "ns_adp_parse". The command evaluates strings or ADP files
- *      at the current call frame level.
+ *      Implement "ns_adp_parse".
+ *
+ *      The command parses and evaluates an ADP string or file, or a Tcl
+ *      script when "-tcl" is specified.  The "-file", "-string", "-safe",
+ *      and "-tcl" options temporarily control ADP parser flags for this
+ *      invocation.
+ *
+ *      The optional "-tagset" argument selects the ADP tag set used while
+ *      parsing this input.  Without "-tagset", the command inherits the
+ *      current effective tag set from the interpreter.  With "-tagset", the
+ *      requested tag set is applied only for this parse and the previous
+ *      effective tag set is restored afterwards.  The reserved tag set name
+ *      "default" forces use of the server-wide default ADP tag table.
  *
  * Results:
- *      A standard Tcl result.
+ *      TCL_OK with the parsed/evaluated ADP result, or TCL_ERROR on invalid
+ *      arguments, unknown tag sets, parse errors, or evaluation errors.
  *
  * Side effects:
- *      ADP string or file output is return as Tcl result.
+ *      Temporarily modifies ADP parser flags, optionally the current ADP
+ *      working directory, and optionally the interpreter's effective ADP
+ *      tag set.  All such interpreter state is restored before returning.
  *
  *----------------------------------------------------------------------
  */
-
 int
 NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         result;
+    NsInterp   *itPtr = clientData;
+    int         result = TCL_OK;
     TCL_SIZE_T  nargs = 0;
     int         asFile = (int)NS_FALSE, safe = (int)NS_FALSE, asString = (int)NS_FALSE, tclScript = (int)NS_FALSE;
-    char       *cwd = NULL;
+    char       *cwd = NULL, *tagset = NULL;
+    bool        tagsetIsDefault = NS_FALSE;
+    AdpTagSet  *tagSetPtr = NULL;
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,       NULL},
         {"-file",        Ns_ObjvBool,   &asFile,    INT2PTR(NS_TRUE)},
         {"-safe",        Ns_ObjvBool,   &safe,      INT2PTR(NS_TRUE)},
         {"-string",      Ns_ObjvBool,   &asString,  INT2PTR(NS_TRUE)},
+        {"-tagset",      Ns_ObjvString, &tagset,    NULL},
         {"-tcl",         Ns_ObjvBool,   &tclScript, INT2PTR(NS_TRUE)},
         {"--",           Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
@@ -493,59 +650,72 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
+    } else if (asString && asFile) {
+        Ns_TclPrintfResult(interp, "specify either '-string' or '-file', but not both.");
+        result = TCL_ERROR;
+
+    } else if (tagset != NULL
+               && NsAdpTagSetLookup(itPtr, tagset, &tagSetPtr, &tagsetIsDefault) == NS_ERROR) {
+        result = TCL_ERROR;
+    }
+
+    if (result == TCL_OK) {
+        unsigned int   savedFlags;
+        const char    *savedCwd = NULL, *resvar = NULL;
+        AdpTagSet     *savedTagSetPtr = NULL;
+
         objv = objv + (objc - (TCL_SIZE_T)nargs);
         objc = (TCL_SIZE_T)nargs;
 
-        if (asString && asFile) {
-            Ns_TclPrintfResult(interp, "specify either '-string' or '-file', but not both.");
-            result = TCL_ERROR;
+        savedFlags = itPtr->adp.flags;
 
+        if (tagset != NULL) {
+            savedTagSetPtr = itPtr->adp.effectiveTagSetPtr;
+            itPtr->adp.effectiveTagSetPtr = (tagsetIsDefault ? NULL : tagSetPtr);
+        }
+
+        /*
+         * We control the following three flags via parameter for this
+         * function, so clear the values first.
+         */
+        itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
+
+        if (asFile == (int)NS_TRUE) {
+            /* file mode */
+            itPtr->adp.flags |= ADP_ADPFILE;
         } else {
-            NsInterp    *itPtr = clientData;
-            unsigned int savedFlags;
-            const char  *savedCwd = NULL, *resvar = NULL;
+            /* string mode */
+        }
+        if (tclScript == (int)NS_TRUE) {
+            /* Tcl script */
+            itPtr->adp.flags |= ADP_TCLFILE;
+        }
+        if (safe == (int)NS_TRUE) {
+            itPtr->adp.flags |= ADP_SAFE;
+        }
 
-            savedFlags = itPtr->adp.flags;
+        /*
+         * Check the ADP field in the nsInterp, and construct any support
+         * Also, set the cwd.
+         */
 
-            /*
-             * We control the following three flags via parameter for this
-             * function, so clear the values first.
-             */
-            itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
+        if (cwd != NULL) {
+            savedCwd = itPtr->adp.cwd;
+            itPtr->adp.cwd = cwd;
+        }
 
-            if (asFile == (int)NS_TRUE) {
-                /* file mode */
-                itPtr->adp.flags |= ADP_ADPFILE;
-            } else {
-                /* string mode */
-            }
-            if (tclScript == (int)NS_TRUE) {
-                /* Tcl script */
-                itPtr->adp.flags |= ADP_TCLFILE;
-            }
-            if (safe == (int)NS_TRUE) {
-                itPtr->adp.flags |= ADP_SAFE;
-            }
+        if (asFile == (int)NS_TRUE) {
+            result = NsAdpSource(clientData, objc, objv, resvar);
+        } else {
+            result = NsAdpEval(clientData, objc, objv, resvar);
+        }
+        if (cwd != NULL) {
+            itPtr->adp.cwd = savedCwd;
+        }
+        itPtr->adp.flags = savedFlags;
 
-            /*
-             * Check the ADP field in the nsInterp, and construct any support
-             * Also, set the cwd.
-             */
-
-            if (cwd != NULL) {
-                savedCwd = itPtr->adp.cwd;
-                itPtr->adp.cwd = cwd;
-            }
-            if (asFile == (int)NS_TRUE) {
-                result = NsAdpSource(clientData, objc, objv, resvar);
-            } else {
-                result = NsAdpEval(clientData, objc, objv, resvar);
-            }
-            if (cwd != NULL) {
-                itPtr->adp.cwd = savedCwd;
-            }
-            itPtr->adp.flags = savedFlags;
+        if (tagset != NULL) {
+            itPtr->adp.effectiveTagSetPtr = savedTagSetPtr;
         }
     }
     return result;
@@ -1345,6 +1515,339 @@ GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr)
     }
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AdpTagSetCreateObjCmd --
+ *
+ *      Implement "ns_adp_tagset create".  Creates a named ADP tag set in
+ *      the server-wide ADP tag-set table.
+ *
+ *      The reserved name "default" cannot be created, since the default
+ *      tag set is represented by the existing server-wide adp.tags table.
+ *      The optional "-fallback default" argument configures the new tag
+ *      set to fall back to the default tag table when a tag is not found
+ *      in the named table.  Without "-fallback", the tag set is isolated.
+ *
+ * Results:
+ *      TCL_OK when the tag set was created.  TCL_ERROR is returned for
+ *      invalid arguments, reserved names, duplicate tag sets, or unsupported
+ *      fallback names.
+ *
+ * Side effects:
+ *      Allocates an AdpTagSet, initializes its tag table, and inserts it
+ *      into the server-wide tag-set registry.  Acquires the server ADP tag
+ *      lock while updating the registry.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AdpTagSetCreateObjCmd(ClientData clientData, Tcl_Interp *interp,
+                              TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const char *nameString, *fallbackString = NULL;
+    int         result = TCL_OK;
+    Ns_ObjvSpec lopts[] = {
+        {"-fallback", Ns_ObjvString,  &fallbackString,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec largs[] = {
+        {"name", Ns_ObjvString, &nameString,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (STREQ(nameString, "default")) {
+        Ns_TclPrintfResult(interp, "reserved tagset name \"%s\"", nameString);
+        result = TCL_ERROR;
+
+    } else if ((*nameString == '\0' || strchr(nameString, '|') != NULL)) {
+        Ns_TclPrintfResult(interp, "invalid ADP tagset name \"%s\"", nameString);
+        result = TCL_ERROR;
+
+    } else if (fallbackString != NULL && !STREQ(fallbackString, "default")) {
+        /*
+         * For the time being, allow only default as fallback
+         */
+        Ns_TclPrintfResult(interp,
+                           "unknown ADP tagset fallback \"%s\"", fallbackString);
+        result = TCL_ERROR;
+
+    } else {
+        int             isNew;
+        Tcl_HashEntry  *hPtr;
+        const NsInterp *itPtr  = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+
+        Ns_RWLockWrLock(&servPtr->adp.taglock);
+
+        hPtr = Tcl_CreateHashEntry(&servPtr->adp.tagsets, nameString, &isNew);
+        if (isNew == 0) {
+            Ns_TclPrintfResult(interp, "ADP tagset \"%s\" already exists", nameString);
+            result = TCL_ERROR;
+
+        } else {
+            AdpTagSet *tagSetPtr = ns_calloc(1u, sizeof(AdpTagSet));
+
+            tagSetPtr->name = ns_strdup(nameString);
+            Tcl_InitHashTable(&tagSetPtr->tags, TCL_STRING_KEYS);
+            tagSetPtr->fallbackTagTablePtr = (fallbackString != NULL)
+                ? &servPtr->adp.tags
+                : NULL;
+            Tcl_SetHashValue(hPtr, tagSetPtr);
+        }
+
+        Ns_RWLockUnlock(&servPtr->adp.taglock);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AdpTagSetExistsObjCmd --
+ *
+ *      Implement "ns_adp_tagset exists".  Checks whether an ADP tag set
+ *      exists.
+ *
+ *      The reserved name "default" always exists and refers to the
+ *      server-wide default ADP tag table.  Other names are looked up in
+ *      the server-wide named tag-set table.
+ *
+ * Results:
+ *      TCL_OK.  The Tcl result is a boolean indicating whether the tag set
+ *      exists.  TCL_ERROR is returned for invalid arguments.
+ *
+ * Side effects:
+ *      Acquires the server ADP tag lock while reading the named tag-set
+ *      table.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AdpTagSetExistsObjCmd(ClientData clientData, Tcl_Interp *interp,
+                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const char *nameString;
+    int         result = TCL_OK;
+    Ns_ObjvSpec largs[] = {
+        {"name", Ns_ObjvString, &nameString,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_HashEntry  *hPtr = (void*)1;
+
+        if (!STREQ(nameString, "default")) {
+            const NsInterp *itPtr  = clientData;
+            NsServer       *servPtr = itPtr->servPtr;
+
+            Ns_RWLockRdLock(&servPtr->adp.taglock);
+            hPtr = Tcl_FindHashEntry(&servPtr->adp.tagsets, nameString);
+            Ns_RWLockUnlock(&servPtr->adp.taglock);
+        }
+
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(hPtr != NULL));
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AdpTagSetNamesObjCmd --
+ *
+ *      Implement "ns_adp_tagset names".  Return the names of available
+ *      ADP tag sets.
+ *
+ *      The result always includes the reserved "default" tag set, followed
+ *      by the names of explicitly created tag sets.
+ *
+ * Results:
+ *      TCL_OK.  The Tcl result is a list of tag-set names.  TCL_ERROR is
+ *      returned for invalid arguments.
+ *
+ * Side effects:
+ *      Acquires the server ADP tag lock while reading the named tag-set
+ *      table.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AdpTagSetNamesObjCmd(ClientData clientData, Tcl_Interp *interp,
+                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_Obj        *resultObj = Tcl_NewListObj(0, NULL);
+        Tcl_HashEntry  *hPtr;
+        Tcl_HashSearch  search;
+        const NsInterp *itPtr  = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("default", 7));
+
+        Ns_RWLockRdLock(&servPtr->adp.taglock);
+        hPtr = Tcl_FirstHashEntry(&servPtr->adp.tagsets, &search);
+        while (hPtr != NULL) {
+            const char *nameString = Tcl_GetHashKey(&servPtr->adp.tagsets, hPtr);
+
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(nameString, TCL_INDEX_NONE));
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Ns_RWLockUnlock(&servPtr->adp.taglock);
+
+        Tcl_SetObjResult(interp, resultObj);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AdpTagSetInfoObjCmd --
+ *
+ *      Implement "ns_adp_tagset info".  Return diagnostic information
+ *      about one ADP tag set.
+ *
+ *      The reserved name "default" refers to the server-wide default ADP
+ *      tag table.  Named tag sets are looked up in the server-wide tag-set
+ *      registry.  The returned dictionary currently contains the number of
+ *      registered tags in the selected table and the configured fallback
+ *      name, if any.
+ *
+ * Results:
+ *      TCL_OK with a Tcl dictionary result.  TCL_ERROR is returned when
+ *      the requested named tag set does not exist or when arguments are
+ *      invalid.
+ *
+ * Side effects:
+ *      Acquires the server ADP tag lock while reading tag-set metadata.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AdpTagSetInfoObjCmd(ClientData clientData, Tcl_Interp *interp,
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const char *nameString;
+    int         result = TCL_OK;
+    Ns_ObjvSpec largs[] = {
+        {"name", Ns_ObjvString, &nameString,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const NsInterp *itPtr  = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        Tcl_HashTable  *tagTablePtr;
+        const char     *fallbackString = NULL;
+        TCL_SIZE_T      tagCount = 0;
+
+        Ns_RWLockRdLock(&servPtr->adp.taglock);
+
+        if (STREQ(nameString, "default")) {
+            tagTablePtr = &itPtr->servPtr->adp.tags;
+
+        } else {
+            Tcl_HashEntry  *hPtr = Tcl_FindHashEntry(&servPtr->adp.tagsets, nameString);
+
+            if (hPtr == NULL) {
+                tagTablePtr = &itPtr->servPtr->adp.tags;
+                Ns_TclPrintfResult(interp, "ADP tagset \"%s\" does not exist", nameString);
+                result = TCL_ERROR;
+
+            } else {
+                AdpTagSet *tagsetPtr = Tcl_GetHashValue(hPtr);
+
+                assert(tagsetPtr != NULL);
+                tagTablePtr = &tagsetPtr->tags;
+                if (tagsetPtr->fallbackTagTablePtr != NULL) {
+                    fallbackString = "default";
+                }
+            }
+        }
+        tagCount = tagTablePtr->numEntries;
+
+        Ns_RWLockUnlock(&servPtr->adp.taglock);
+
+        if (result == TCL_OK) {
+            Tcl_Obj  *dictObj = Tcl_NewDictObj();
+
+            assert(tagTablePtr);
+            (void) Tcl_DictObjPut(interp, dictObj,
+                                  Tcl_NewStringObj("size", 4),
+                                  Tcl_NewIntObj(tagCount));
+
+            (void) Tcl_DictObjPut(interp, dictObj,
+                                  Tcl_NewStringObj("fallback", 8),
+                                  fallbackString != NULL
+                                  ? Tcl_NewStringObj(fallbackString, TCL_INDEX_NONE)
+                                  : NsAtomObj(NS_ATOM_EMPTY)
+                                  );
+
+            Tcl_SetObjResult(interp, dictObj);
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclAdpTagSetObjCmd --
+ *
+ *      Implement the "ns_adp_tagset" command.  This command manages
+ *      server-wide named ADP tag sets used by ADP parsing and tag
+ *      registration.
+ *
+ *      Supported subcommands are:
+ *
+ *          create ?-fallback default? name
+ *          exists name
+ *          names
+ *          info name
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR depending on the selected subcommand.
+ *
+ * Side effects:
+ *      Depends on the selected subcommand.  The "create" subcommand
+ *      modifies the server-wide ADP tag-set registry; the other subcommands
+ *      inspect it.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclAdpTagSetObjCmd(ClientData clientData, Tcl_Interp *interp,
+                          TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"create", AdpTagSetCreateObjCmd},
+        {"exists", AdpTagSetExistsObjCmd},
+        {"names",  AdpTagSetNamesObjCmd},
+        {"info",   AdpTagSetInfoObjCmd},
+        {NULL, NULL}
+    };
+
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
 /*

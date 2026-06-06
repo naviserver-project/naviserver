@@ -6,76 +6,132 @@
 
 [description]
 
-This function processes the specified ADP file or string and returns
-the result as a string. Processing a second ADP from inside an ADP
-is normally best done with ns_adp_include as that command
-resolves relative pathnames passed to it.  Also note that
-ns_adp_parse will ignore any directives to turn on streaming.
-Tcl_Eval is used to evaluate the Tcl commands in the ADP.
+This command processes the specified ADP file or string and returns the
+result as a string.  Processing a second ADP from inside an ADP is normally
+best done with [cmd ns_adp_include], since that command resolves relative
+pathnames passed to it.  Also note that [cmd ns_adp_parse] ignores directives
+to turn on streaming.  Tcl commands embedded in ADP are evaluated with
+[cmd Tcl_Eval].
 
 [para]
-Although the <% ... %> syntax is allowed in the string,
-if you have this embedded in an ADP, you have to be careful in
-constructing the string that you do not prematurely terminate an
-enclosing script.
+Although the [const <%] ... [const %>] syntax is allowed in the string, if
+you construct such a string inside an ADP script block, take care not to
+prematurely terminate the enclosing script block.
+
+[para]
+The optional [option -tagset] argument selects the registered ADP tag set used
+while parsing this input.  Tag sets are managed with [cmd ns_adp_tagset] and
+allow different registered-tag vocabularies to coexist in the same server.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 [call [cmd ns_adp_parse] \
-	[opt [option "-cwd [arg value]"]] \
-	[opt [option {-file}]] \
-	[opt [option {-safe}]] \
-	[opt [option {-string}]] \
-	[opt [option {-tcl}]] \
-        [opt --] \
-	[arg {arg ...}]]
+    [opt [option "-cwd [arg value]"]] \
+    [opt [option {-file}]] \
+    [opt [option {-safe}]] \
+    [opt [option {-string}]] \
+    [opt [option "-tagset [arg name]"]] \
+    [opt [option {-tcl}]] \
+    [opt --] \
+    [arg {arg ...}]]
+
+[list_end]
+
+[section {OPTIONS}]
+
+[list_begin definitions]
+
+[def [option "-cwd [arg value]"]]
+Sets the current working directory for this ADP parse operation.  This affects
+relative pathname resolution during the parse.
+
+[def [option -file]]
+Treats the first argument as the name of an ADP file to parse.  This is
+similar to [cmd ns_adp_include], except that the result is returned by
+[cmd ns_adp_parse] instead of being appended directly to the current ADP
+output stream.
+
+[def [option -safe]]
+Sets the ADP safe flag for this parse operation.
+
+[def [option -string]]
+Treats the first argument as an ADP string.  This option is provided for
+backward compatibility; string mode is the default.
+
+[def [option "-tagset [arg name]"]]
+Selects the ADP tag set used while parsing this input.
+
+[para]
+If [option -tagset] is omitted, the current effective tag set is inherited.
+This means that nested parses normally use the same tag set as their caller.
+
+[para]
+If [option "-tagset default"] is specified, the parse operation uses the
+built-in server-wide default ADP tag table for this operation only.
+
+[para]
+If [option "-tagset [arg name]"] is specified with a named tag set, that tag
+set is used for this parse operation only.  After the parse completes, the
+previous effective tag set is restored.
+
+[para]
+The effective tag set is part of the identity of parsed ADP code.  When ADP
+files are cached, the same file parsed under different named tag sets is cached
+separately.
+
+[def [option -tcl]]
+Treats the first argument as Tcl code or, together with [option -file], as a
+Tcl file.
 
 [list_end]
 
 [para]
-The option [option -cwd] can be used to set the current working directory
-for this ADP parse operation
+Additional arguments can be provided and are passed to the ADP evaluation.
+The arguments can be accessed within the ADP using [cmd ns_adp_argc],
+[cmd ns_adp_argv], and [cmd ns_adp_bind_args].
 
 [para]
-The option  [option -file] can be used to parse ADP contained in
-the given file.  This use is similar to that of
-[cmd ns_adp_include] except the result is returned by the command instead of automatically
-being appended to the output stream.
-
-[para]
-The option [option -safe] can be used to set the ADP safe flag.
-
-[para]
-The option [option -string] is provided for backwards compatibility, but
-does nothing since string mode is the default mode.
-
-[para]
-The option [option -tcl] can be provided to process a Tcl file.
-
-[para] Additional arguments can be provided, which are passed to the
-ADP evaluation.  The arguments can be accessed within the ADP using
-the [cmd ns_adp_argc], [cmd ns_adp_argv], and [cmd ns_adp_bind_args]
-commands.
-
-[para]
-If this call is a nested ADP evaluation (where one ADP calls another), an error will
-be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations.
+If this call is a nested ADP evaluation, an error is thrown if the depth
+exceeds 256, the maximum number of nested ADP evaluations.
 
 [section EXAMPLES]
+
+Parse an ADP string:
 
 [example_begin]
  % ns_adp_parse {2 + 2 = <%= [lb]expr 2 + 2[rb] %> !!!}
  2 + 2 = 4 !!!
 [example_end]
 
+Parse an ADP file and return the generated output:
+
 [example_begin]
- % ns_adp_parse -file foo.tcl
+ % ns_adp_parse -file foo.adp
 [example_end]
 
-[see_also ns_adp ns_adp_argc ns_adp_argv ns_adp_include ns_adp_bind_args]
-[keywords "server built-in" ADP]
+Parse using a named ADP tag set:
+
+[example_begin]
+ % ns_adp_tagset create -fallback default transformed-adp
+ % ns_adp_parse -tagset transformed-adp -string {
+     Before <mytag>content</mytag> after
+   }
+[example_end]
+
+Force the built-in default tag table for a nested parse:
+
+[example_begin]
+ % ns_adp_parse -tagset default -string {
+     <legacytag>content</legacytag>
+   }
+[example_end]
+
+For more background about ADP, see
+[uri ../../manual/files/adp-overview.html "ADP Overview"].
+
+[see_also ns_adp_tagset ns_adp_argc ns_adp_argv ns_adp_include ns_adp_bind_args ns_adp_register ns_register]
+[keywords "server built-in" ADP tagset]
 
 [manpage_end]
-

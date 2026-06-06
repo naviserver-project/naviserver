@@ -155,6 +155,7 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
         Tcl_Obj        *objv[2];
         int             result;
         unsigned int    savedAdpFlags;
+        AdpTagSet      *savedTagSetPtr;
 
         Ns_Log(Debug, "AdpPageRequest for '%s' access ok", fileName);
 
@@ -187,6 +188,8 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
          * Include the ADP with the special start page and null args.
          */
         savedAdpFlags = itPtr->adp.flags;
+        savedTagSetPtr = itPtr->adp.effectiveTagSetPtr;
+
         itPtr->adp.flags |= aflags;
         itPtr->adp.depth = 0;
         itPtr->adp.conn = conn;
@@ -216,6 +219,7 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
             status = NS_OK;
         }
         itPtr->adp.flags = savedAdpFlags;
+        itPtr->adp.effectiveTagSetPtr = savedTagSetPtr;
     }
 
     if (dsPtr != NULL) {

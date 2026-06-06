@@ -84,7 +84,7 @@ typedef struct InterpPage {
  * Local functions defined in this file.
  */
 
-static Page *ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned int flags)
+static Page *ParseFile(NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned int flags)
     NS_GNUC_NONNULL(1,2,3);
 
 static int AdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resvar)
@@ -112,6 +112,9 @@ static void FreeObjs(Objs *objsPtr)
 
 static void AdpTrace(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len)
     NS_GNUC_NONNULL(1,2);
+
+static const char *AdpEffectiveTagSetName(const NsInterp *itPtr)
+    NS_GNUC_NONNULL(1);
 
 static Ns_Callback FreeInterpPage;
 static Ns_ServerInitProc ConfigServerAdp;
@@ -153,6 +156,7 @@ ConfigServerAdp(const char *server)
 
     Tcl_InitHashTable(&servPtr->adp.pages, TCL_STRING_KEYS);
     Tcl_InitHashTable(&servPtr->adp.tags, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->adp.tagsets, TCL_STRING_KEYS);
 
     Ns_CondInit(&servPtr->adp.pagecond);
 
@@ -251,7 +255,7 @@ AdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resv
     if ((itPtr->adp.flags & ADP_ADPFILE) != 0u) {
         result = AdpSource(itPtr, objc, objv, obj0, NULL, &output);
     } else {
-        NsAdpParse(&code, itPtr->servPtr, obj0, itPtr->adp.flags, NULL);
+        NsAdpParse(itPtr, &code, obj0, itPtr->adp.flags, NULL);
         result = AdpExec(itPtr, objc, objv, NULL, &code, NULL, &output, NULL);
         NsAdpFreeCode(&code);
     }
@@ -394,26 +398,65 @@ NsAdpReset(NsInterp *itPtr)
     }
     Tcl_DStringSetLength(&itPtr->adp.output, 0);
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AdpEffectiveTagSetName --
+ *
+ *      Return the name of the ADP tag set currently effective for the
+ *      provided interpreter.
+ *
+ *      A NULL effectiveTagSetPtr means that the interpreter uses the
+ *      server-wide default ADP tag table.  In this case, this helper
+ *      returns the reserved name "default".
+ *
+ * Results:
+ *      Static string "default" or the name stored in the effective
+ *      AdpTagSet.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+AdpEffectiveTagSetName(const NsInterp *itPtr)
+{
+    return itPtr->adp.effectiveTagSetPtr != NULL
+        ? itPtr->adp.effectiveTagSetPtr->name
+        : "default";
+}
+
 /*
  *----------------------------------------------------------------------
  *
  * AdpSource --
  *
- *      Execute ADP code in a file with results returned in given
- *      dstring.
+ *      Source an ADP or Tcl file in the current interpreter ADP context.
+ *
+ *      This function normalizes the file path, locates or creates parsed
+ *      ADP code in the interpreter and server page caches, optionally
+ *      manages ADP result caching for ns_adp_include -cache, and executes
+ *      the selected ADP code.
+ *
+ *      Parsed ADP code depends on the effective ADP tag set, since
+ *      registered tags are resolved while parsing.  When a named tag set is
+ *      effective, the cache key is therefore qualified by the tag-set name.
+ *      When the default tag set is effective, the historical file-name key
+ *      is used unchanged.
  *
  * Results:
- *      TCL_ERROR if the file could not be parsed, result of
- *      AdpExec otherwise.
+ *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *      Page text and ADP code results may be cached up to given time
- *      limit, if any.
+ *      May read and parse the referenced file, update the server-wide ADP
+ *      page cache, update the interpreter-local page cache, create or
+ *      refresh cached ADP output, execute ADP/Tcl code, update ADP debug
+ *      state, and append to the provided output buffer.
  *
  *----------------------------------------------------------------------
  */
-
 static int
 AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file,
           const Ns_Time *expiresPtr, Tcl_DString *outputPtr)
@@ -422,12 +465,12 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
     Tcl_Interp     *interp;
     Tcl_HashEntry  *hPtr;
     struct stat     st;
-    Tcl_DString     tmp, path;
+    Tcl_DString     tmp, path, cacheKey;
     InterpPage     *ipagePtr = NULL;
     Page           *pagePtr = NULL;
     Ns_Time         now;
     int             isNew;
-    const char     *p;
+    const char     *p, *cacheKeyString;
     int             result = TCL_ERROR;   /* assume error until accomplished success */
 
     NS_NONNULL_ASSERT(itPtr != NULL);
@@ -439,6 +482,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
 
     Tcl_DStringInit(&tmp);
     Tcl_DStringInit(&path);
+    Tcl_DStringInit(&cacheKey);
 
     /*
      * Construct the full, normalized path to the ADP file.
@@ -452,6 +496,14 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
         }
     }
     file = Ns_NormalizePath(&path, file);
+
+    if (itPtr->adp.effectiveTagSetPtr == NULL) {
+        cacheKeyString = file;
+    } else {
+        Ns_DStringPrintf(&cacheKey, "%s|%s", AdpEffectiveTagSetName(itPtr), file);
+        cacheKeyString = cacheKey.string;
+    }
+
     Tcl_DStringSetLength(&tmp, 0);
 
     /*
@@ -514,7 +566,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
          * Check for valid code in interp page cache.
          */
 
-        ePtr = Ns_CacheFindEntry(itPtr->adp.cache, file);
+        ePtr = Ns_CacheFindEntry(itPtr->adp.cache, cacheKeyString);
         if (ePtr != NULL) {
             ipagePtr = Ns_CacheGetValue(ePtr);
             if (ipagePtr->pagePtr->mtime != st.st_mtime
@@ -533,7 +585,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
              */
 
             Ns_MutexLock(&servPtr->adp.pagelock);
-            hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, file, &isNew);
+            hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, cacheKeyString, &isNew);
             while (isNew == 0 && (pagePtr = Tcl_GetHashValue(hPtr)) == NULL) {
                 /* NB: Wait for other thread to read/parse page. */
                 Ns_CondWait(&servPtr->adp.pagecond, &servPtr->adp.pagelock);
@@ -572,7 +624,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
                 ipagePtr->cacheGen = 0;
                 ipagePtr->objs = AllocObjs(pagePtr->code.nscripts);
                 ipagePtr->cacheObjs = NULL;
-                ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, file, &isNew);
+                ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, cacheKeyString, &isNew);
                 if (isNew == 0) {
                     Ns_CacheUnsetValue(ePtr);
                 }
@@ -651,7 +703,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
                      * recompiled into same Tcl proc and cached
                      */
 
-                    NsAdpParse(&cachePtr->code, itPtr->servPtr, tmp.string,
+                    NsAdpParse(itPtr, &cachePtr->code, tmp.string,
                                itPtr->adp.flags & ~ADP_TCLFILE, file);
                     Ns_GetTime(&cachePtr->expires);
                     Ns_IncrTime(&cachePtr->expires, expiresPtr->sec, expiresPtr->usec);
@@ -709,6 +761,7 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
 done:
     Tcl_DStringFree(&path);
     Tcl_DStringFree(&tmp);
+    Tcl_DStringFree(&cacheKey);
 
     return result;
 }
@@ -876,7 +929,7 @@ NsTclAdpStatsObjCmd(ClientData clientData, Tcl_Interp *interp,
  */
 
 static Page *
-ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned int flags)
+ParseFile(NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned int flags)
 {
     Tcl_Interp   *interp;
     Tcl_Encoding  encoding;
@@ -964,7 +1017,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
         pagePtr->dev = stPtr->st_dev;
         pagePtr->ino = stPtr->st_ino;
         Ns_Log(Debug, "ParseFile calls NsAdpParse with flags %.8x", flags);
-        NsAdpParse(&pagePtr->code, itPtr->servPtr, page, flags, file);
+        NsAdpParse(itPtr, &pagePtr->code, page, flags, file);
         Tcl_DStringFree(&utf);
     }
 

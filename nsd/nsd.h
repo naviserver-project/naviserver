@@ -308,6 +308,20 @@ typedef struct AdpFrame {
 } AdpFrame;
 
 /*
+ * ADP tag set.
+ *
+ * Named tag sets contain an independent table of registered ADP tags and
+ * may optionally fall back to another tag table.  The built-in "default"
+ * tag set is represented by the existing server-wide adp.tags table and is
+ * therefore not stored as an AdpTagSet instance.
+ */
+typedef struct AdpTagSet {
+    const char       *name;
+    Tcl_HashTable     tags;
+    Tcl_HashTable    *fallbackTagTablePtr;
+} AdpTagSet;
+
+/*
  * The following structure defines blocks of ADP.  The
  * len pointer is an array of ints with positive values
  * indicating text to copy and negative values indicating
@@ -1035,7 +1049,7 @@ typedef struct NsServer {
         Tcl_HashTable pages;
         Ns_RWLock taglock;
         Tcl_HashTable tags;
-
+        Tcl_HashTable tagsets;
     } adp;
 
     struct {
@@ -1172,6 +1186,7 @@ typedef struct NsInterp {
         Tcl_Channel       chan;
         Tcl_DString       output;
         int               depth;
+        AdpTagSet        *effectiveTagSetPtr;
     } adp;
 
     /*
@@ -1368,6 +1383,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclAdpReturnObjCmd,
     NsTclAdpSafeEvalObjCmd,
     NsTclAdpStatsObjCmd,
+    NsTclAdpTagSetObjCmd,
     NsTclAdpTellObjCmd,
     NsTclAdpTruncObjCmd,
     NsTclAfterObjCmd,
@@ -1699,8 +1715,8 @@ NS_EXTERN int NsAdpInclude(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* obj
                            const char *file, const Ns_Time *expiresPtr)
     NS_GNUC_NONNULL(1,4);
 
-NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
-                          unsigned int flags, const char* file)
+NS_EXTERN void NsAdpParse(NsInterp *itPtr, AdpCode *codePtr, char *adp, unsigned int flags,
+                          const char* file)
     NS_GNUC_NONNULL(1,2,3);
 
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr)
@@ -1720,6 +1736,11 @@ NS_EXTERN void NsAdpFree(NsInterp *itPtr)
 
 NS_EXTERN char *NsParseTagEnd(char *str) NS_GNUC_CONST
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_ReturnCode
+NsAdpTagSetLookup(ClientData clientData, const char *name, AdpTagSet **tagsetPtrPtr, bool *isDefault)
+    NS_GNUC_NONNULL(1,2,3,4);
+
 
 /*
  * auth.c

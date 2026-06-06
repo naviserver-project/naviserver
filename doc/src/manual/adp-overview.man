@@ -218,25 +218,66 @@ widgets should be written in a form that is convenient for page authors, while
 the implementation remains in Tcl code.
 
 [para]
-Tags are registered with the [cmd ns_adp_register*] commands. Once
+Tags are registered with the [cmd ns_adp_register*] commands.  Once
 registered, the tag can be used in ADP pages and is expanded by calling the
 associated Tcl procedure during ADP processing.
 
 [para]
-Registered ADP tags use ordinary markup syntax. A registered tag name must
-start with an ASCII letter or digit. The remaining characters may be ASCII
-letters, digits, colon characters, or underscore characters. For example,
+Registered tags are stored in ADP tag sets.  The built-in tag set named
+[const default] is the traditional server-wide ADP tag table.  Without
+further options, [cmd ns_adp_register*] commands register tags in this
+default tag set, and ADP pages are parsed using the default registered tags.
+
+[para]
+Named tag sets can be created with [cmd ns_adp_tagset].  A named tag set
+contains its own registered tags and can optionally fall back to the
+[const default] tag set.  This allows multiple registered-tag vocabularies
+to coexist in the same server.  For example, a framework can continue to
+parse legacy pages with the default tag set while selected pages or included
+fragments are parsed with a different named tag set.
+
+[para]
+A tag can be registered in a named tag set by passing [option -tagset] to
+one of the [cmd ns_adp_register*] commands:
+
+[example_begin]
+ ns_adp_tagset create -fallback default myadp
+ ns_adp_registerscript -tagset myadp widget /widget ::my::widget_tag
+[example_end]
+
+[para]
+A named tag set is selected when parsing or including ADP content, for
+example with [cmd ns_adp_parse] or [cmd ns_adp_include].  If no
+[option -tagset] option is provided, the current effective tag set is
+inherited.  The reserved name [const default] forces the built-in default
+tag table for that parse or include operation only.
+
+[example_begin]
+ ns_adp_parse -tagset transformed-adp -string $adp
+ ns_adp_include -tagset default legacy-fragment.adp
+[example_end]
+
+[para]
+The effective tag set is part of the identity of parsed ADP code.  When ADP
+files are cached, the same file parsed under different named tag sets is
+cached separately, so parsed code from one tag set is not reused under
+another tag set.
+
+[para]
+Registered ADP tags use ordinary markup syntax.  A registered tag name must
+start with an ASCII letter or digit.  The remaining characters may be ASCII
+letters, digits, colon characters, or underscore characters.  For example,
 tag names such as [const foo], [const adp], [const adp_value], and
-[const h1] are valid. Tag names starting with characters such as [const $],
+[const h1] are valid.  Tag names starting with characters such as [const $],
 [const %], or [const @] are not recognized as registered ADP tags by the ADP
 parser.
 
 [para]
-Registered tags are distinct from ADP script blocks. In particular,
+Registered tags are distinct from ADP script blocks.  In particular,
 [const <%] ... [const %>] is parsed as an ADP Tcl script block and cannot be
 extended by registering a tag whose name starts with [const %] or another
-special character. Custom registered tags should therefore use markup-style
-names such as [const <adp=value>] or [const ], rather than trying to
+special character.  Custom registered tags should therefore use markup-style
+names such as [const <foo>] or [const <adp:value>], rather than trying to
 introduce new [const <%] ... [const %>] forms.
 
 [para]
@@ -257,9 +298,24 @@ output to the current ADP output stream.  Arguments can be passed to the
 included ADP and accessed there with [cmd ns_adp_argv].
 
 [para]
-The [cmd ns_adp_parse] command parses and evaluates an ADP string.  This is
-useful when ADP content is generated dynamically or stored outside the file
-system.
+The [cmd ns_adp_parse] command parses and evaluates an ADP string or file
+and returns the generated output.  This is useful when ADP content is
+generated dynamically or stored outside the file system.
+
+[para]
+Both [cmd ns_adp_include] and [cmd ns_adp_parse] can select the ADP tag set
+used for parsing with the [option -tagset] option.  If [option -tagset] is
+omitted, the current effective tag set is inherited.  If
+[option "-tagset default"] is specified, the built-in default tag table is
+used for that operation only.  If a named tag set is specified, it is used
+only for that parse or include operation, and the previous effective tag set
+is restored afterwards.
+
+[para]
+This scoped behavior makes it possible to mix ADP fragments parsed with
+different registered-tag vocabularies.  For example, a page using a legacy
+tag set can include a fragment using a new tag set, or a page using a new tag
+set can include a legacy fragment with [option "-tagset default"].
 
 [para]
 Included and parsed ADPs are evaluated in their own ADP call frame, similar

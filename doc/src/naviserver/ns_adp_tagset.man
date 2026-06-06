@@ -1,0 +1,253 @@
+[include version_include.man]
+[manpage_begin ns_adp_tagset n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Managing ADP Tag Sets}]
+
+[description]
+
+The [cmd ns_adp_tagset] command manages named ADP tag sets.  A tag set is
+a server-wide collection of registered ADP tags used by the ADP parser when
+recognizing markup-like ADP tags such as registered script, procedure, or
+ADP-backed tags.
+
+[para]
+The built-in tag set named [const default] is the ordinary server-wide ADP
+tag table used by NaviServer when no named tag set is selected.  This is
+the traditional behavior of registered ADP tags.
+
+[para]
+Named tag sets are useful when different parts of an application should parse
+ADP pages with different registered-tag definitions.  This is especially
+useful for migrations where legacy pages and newly compiled or transformed
+ADP pages have to coexist in the same NaviServer server.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd "ns_adp_tagset create"] \
+    [opt [option "-fallback default"]] \
+    [arg name]]
+
+Creates a named ADP tag set.
+
+[para]
+The [arg name] must not be [const default], since [const default] is reserved
+for the built-in server-wide ADP tag table.
+
+[para]
+Without [option -fallback], the new tag set is isolated: only tags registered
+explicitly in this tag set are recognized when parsing with this tag set.
+
+[para]
+With [option "-fallback default"], the parser first looks for a tag in the
+named tag set and, if it is not found there, falls back to the built-in
+[const default] tag table. Currently, [const default] is the only
+permitted value for the fallback tagset.
+
+[example_begin]
+ ns_adp_tagset create app-tags
+ ns_adp_tagset create -fallback default app-tags-with-defaults
+[example_end]
+
+
+[call [cmd "ns_adp_tagset exists"] \
+    [arg name]]
+
+Returns a boolean indicating whether the specified tag set exists.
+
+[para]
+The reserved tag set [const default] always exists.
+
+[example_begin]
+ ns_adp_tagset exists default
+ ## output: 1
+ 
+ ns_adp_tagset exists app-tags
+ ## output: 1 or 0
+[example_end]
+
+
+[call [cmd "ns_adp_tagset names"]]
+
+Returns a list of available ADP tag-set names.
+
+[para]
+The result always includes [const default], followed by the names of explicitly
+created tag sets.
+
+[example_begin]
+ ns_adp_tagset names
+ ## output: default app-tags app-tags-with-defaults
+[example_end]
+
+
+[call [cmd "ns_adp_tagset info"] [arg name]]
+
+Returns information about the specified tag set as a dictionary.
+
+[para]
+The dictionary contains at least the following keys:
+
+[list_begin definitions]
+
+  [def [const size]]
+  The number of tags registered directly in this tag set.
+
+  [def [const fallback]]
+  The configured fallback tag set.  Currently this is either [const default] or
+  the empty string.
+
+[list_end]
+
+[example_begin]
+ ns_adp_tagset info default
+ ## output: size 12 fallback {}
+ 
+ ns_adp_tagset info app-tags-with-defaults
+ ## output: size 2 fallback default
+[example_end]
+
+[list_end]
+
+
+[section {Registering Tags in a Tag set}]
+
+The [cmd ns_adp_registeradp], [cmd ns_adp_registerproc], and
+[cmd ns_adp_registerscript] commands accept an optional [option -tagset]
+argument.
+
+[para]
+Without [option -tagset], tags are registered in the built-in [const default]
+tag table.  With [option -tagset], tags are registered in the specified named
+tag set.  The reserved name [const default] is equivalent to omitting
+[option -tagset].
+
+[example_begin]
+ ns_adp_tagset create -fallback default compiled-tags
+ 
+ ns_adp_registerscript -tagset compiled-tags foreach /foreach ::my::foreach_tag
+ ns_adp_registerscript -tagset compiled-tags multiple /multiple ::my::multiple_tag
+[example_end]
+
+
+[section {Using Tag Sets when Parsing}]
+
+Named tag sets are selected when parsing ADP, for example with
+[cmd ns_adp_parse] or [cmd ns_adp_include].
+
+[para]
+If no [option -tagset] is specified, the current effective tag set is inherited.
+This means includes normally use the same tag set as the caller.
+
+[para]
+If [option "-tagset default"] is specified, the parse or include operation uses
+the built-in default tag table for that operation only.
+
+[para]
+If [option "-tagset [arg name]"] is specified, the parse or include operation
+uses the named tag set for that operation only.  After the operation returns,
+the previous effective tag set is restored.
+
+[example_begin]
+ # Parse with a named tag set.
+ ns_adp_parse -tagset compiled-tags -string $adp
+ 
+ # Include a legacy/default fragment from a page parsed with another tag set.
+ ns_adp_include -tagset default legacy-fragment.adp
+ 
+ # Include a fragment with a named tag set.
+ ns_adp_include -tagset compiled-tags fragment.adp
+[example_end]
+
+
+[section {Fallback Behavior}]
+
+A named tag set created without [option -fallback] is isolated.
+
+[example_begin]
+ ns_adp_tagset create strict-tags
+[example_end]
+
+When parsing with [const strict-tags], only tags registered in
+[const strict-tags] are recognized.
+
+[para]
+A named tag set created with [option "-fallback default"] first checks the
+named tag set and then the built-in default tag table.
+
+[example_begin]
+ ns_adp_tagset create -fallback default migration-tags
+[example_end]
+
+This is useful during migrations, where only a few tags have to be overridden
+while all other registered tags should continue to use the traditional default
+definitions.
+
+
+[section {Cache Behavior}]
+
+The effective ADP tag set is part of the identity of parsed ADP code.  When a
+file is parsed under a named tag set, NaviServer keeps the parsed ADP cache
+separate from the same file parsed under the default tag set or under another
+named tag set.
+
+[para]
+This avoids reusing ADP code that was parsed with a different set of registered
+tags.
+
+
+[section {EXAMPLES}]
+
+Create a tag set for transformed ADP pages, falling back to the existing
+server-wide tags:
+
+[example_begin]
+ ns_adp_tagset create -fallback default transformed-adp
+[example_end]
+
+Register a tag only in this tag set:
+
+[example_begin]
+proc ::demo::hello_tag {body attributes} {
+    return "Hello from transformed ADP"
+}
+
+ns_adp_registerscript -tagset transformed-adp hello /hello ::demo::hello_tag
+[example_end]
+
+Parse a string using the named tag set:
+
+[example_begin]
+ ns_adp_parse -tagset transformed-adp -string {
+     Before <hello>ignored body</hello> after
+ }
+[example_end]
+
+Include a fragment using the named tag set:
+
+[example_begin]
+ ns_adp_include -tagset transformed-adp fragment.adp
+[example_end]
+
+Force the default tag table for an include:
+
+[example_begin]
+ ns_adp_include -tagset default legacy-fragment.adp
+[example_end]
+
+
+[section {NOTES}]
+
+Tag sets are server-wide.  Selecting a tag set with [option -tagset] affects
+only the current parse or include operation and is scoped: the previous
+effective tag set is restored afterwards.
+
+[para]
+There is currently no command to delete a tag set or to deregister a single
+registered ADP tag.
+
+[see_also ns_adp_parse ns_adp_include ns_adp_register ns_adp]
+[keywords ADP tagset registered-tags templates migration]
+[manpage_end]

@@ -118,7 +118,7 @@ test ns_adp_info-1.0 {syntax: ns_adp_info} -body {
 
 test ns_adp_registeradp-1.0 {syntax: ns_adp_registeradp} -body {
     ns_adp_registeradp
-} -returnCodes error -result {wrong # args: should be "ns_adp_registeradp /tag/ ?/endtag/? /adpstring/"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_registeradp ?-tagset /value/? /tag/ ?/endtag/? /adpstring/"}
 
 test ns_adp_registeradp-1.1 {syntax: ns_adp_registeradp invalid start tag} -body {
     ns_adp_registeradp "<x>" y {body}
@@ -138,11 +138,11 @@ test ns_adp_registeradp-1.4 {syntax: ns_adp_registeradp invalid end tag (wrong c
 
 test ns_adp_registerproc-1.0 {syntax: ns_adp_registerproc} -body {
     ns_adp_registerproc
-} -returnCodes error -result {wrong # args: should be "ns_adp_registerproc /tag/ ?/endtag/? /proc/"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_registerproc ?-tagset /value/? /tag/ ?/endtag/? /proc/"}
 
 test ns_adp_registerscript-1.0 {syntax: ns_adp_registerscript} -body {
     ns_adp_registerscript
-} -returnCodes error -result {wrong # args: should be "ns_adp_registerscript /tag/ ?/endtag/? /proc/"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_registerscript ?-tagset /value/? /tag/ ?/endtag/? /proc/"}
 
 test ns_adp_return-1.0 {syntax: ns_adp_return} -body {
     ns_adp_return ? ?
@@ -184,7 +184,7 @@ test ns_adp_mimetype-1.0 {syntax: ns_adp_mimetype} -body {
 
 test ns_adp_parse-1.0 {syntax: ns_adp_parse} -body {
     ns_adp_parse
-} -returnCodes error -result {wrong # args: should be "ns_adp_parse ?-cwd /value/? ?-file? ?-safe? ?-string? ?-tcl? ?--? /arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_parse ?-cwd /value/? ?-file? ?-safe? ?-string? ?-tagset /value/? ?-tcl? ?--? /arg .../"}
 
 test ns_adp_puts-1.0 {syntax: ns_adp_puts} -body {
     ns_adp_puts
@@ -732,8 +732,8 @@ test ns_adp_registerproc-3.11 {reject registered ADP tag name containing greater
 ############################################################################
 test ns_adp_include-1.0 {syntax: ns_adp_include} -body {
     ns_adp_include
-} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?"}
-# ns_adp_include is a Tcl proc: message should be {wrong # args: should be "ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /time/? ?-nocache? ?-tagset /value/? ?-tcl? ?--? /filename/ ?/arg .../?"}
+# ns_adp_include is a Tcl proc: message should be {wrong # args: should be "ns_adp_include ?-cache /time/? ?-nocache? ?-tagset /value/? ?-tcl? ?--? /filename/ ?/arg .../?"}
 
 test ns_adp_include-1.1 {adp2 uses ns_adp_include includes b.adp and passes argv to included adp} -constraints {serverListen} -body {
     nstest::http -getbody 1 GET /adp2.adp
@@ -776,7 +776,10 @@ test ns_adp_registeradp-3.1 {registeradp with adp-file} -body {
 
 
 test ns_adp_registeradp-4.0 {whitespace handling between adp tags} -body {
-    proc ::adp_button_handler {string attributes} {ns_log warning HANDLER $string $attributes; return "<button>$string</button>"}
+    proc ::adp_button_handler {string attributes} {
+        #ns_log warning HANDLER $string $attributes;
+        return "<button>$string</button>"
+    }
     ns_adp_registerscript adp:button /adp:button ::adp_button_handler
     set text [ns_trim -delimiter | {
             |  a
@@ -831,6 +834,765 @@ test ns_adp_registeradp-4.1 {whitespace handling between adp tags} -body {
     |  <button>6</button>
     |  text2
 }]
+
+############################################################################
+# ns_adp_tagset creation
+############################################################################
+test ns_adp-tagset-1.0.1 {syntax ns_adp_tagset create} -body {
+    ns_adp_tagset create
+} -returnCodes error -result {wrong # args: should be "ns_adp_tagset create ?-fallback /value/? /name/"}
+
+test ns_adp-tagset-1.0.2 {syntax ns_adp_tagset exists} -body {
+    ns_adp_tagset exists
+} -returnCodes error -result {wrong # args: should be "ns_adp_tagset exists /name/"}
+
+test ns_adp-tagset-1.0.3 {syntax ns_adp_tagset names} -body {
+    ns_adp_tagset names x
+} -returnCodes error -result {wrong # args: should be "ns_adp_tagset names"}
+
+test ns_adp-tagset-1.0.4 {syntax ns_adp_tagset info} -body {
+    ns_adp_tagset info
+} -returnCodes error -result {wrong # args: should be "ns_adp_tagset info /name/"}
+
+
+test ns_adp-tagset-1.1 {default tagset exists} -body {
+    ns_adp_tagset exists default
+} -result 1
+
+test ns_adp-tagset-1.2 {create isolated tagset} -body {
+    ns_adp_tagset create test-isolated
+    ns_adp_tagset exists test-isolated
+} -result 1
+
+test ns_adp-tagset-1.3 {create tagset with fallback} -body {
+    ns_adp_tagset create -fallback default test-fallback
+    dict get [ns_adp_tagset info test-fallback] fallback
+} -result default
+
+test ns_adp-tagset-1.4 {tagset names includes default and created tagsets} -body {
+    set names [ns_adp_tagset names]
+    expr {"default" in $names
+          && "test-isolated" in $names
+          && "test-fallback" in $names}
+} -result 1
+
+test ns_adp-tagset-1.5 {cannot create reserved default tagset} -body {
+    ns_adp_tagset create default
+} -returnCodes error -match glob -result {*reserved*}
+
+test ns_adp-tagset-1.6 {cannot create duplicate tagset} -body {
+    ns_adp_tagset create test-isolated
+} -returnCodes error -match glob -result {*already exists*}
+
+test ns_adp-tagset-1.7 {unknown fallback rejected} -body {
+    ns_adp_tagset create -fallback other test-other
+} -returnCodes error -match glob -result {*unknown ADP tagset fallback*}
+
+############################################################################
+# ns_adp_tagset introspection
+############################################################################
+
+test ns_adp-tagset-1.8 {tagset exists returns false for unknown tagset} -body {
+    ns_adp_tagset exists does-not-exist
+} -result 0
+
+test ns_adp-tagset-1.9 {tagset names includes default} -body {
+    expr {"default" in [ns_adp_tagset names]}
+} -result 1
+
+test ns_adp-tagset-1.10 {tagset names includes newly created tagset} -body {
+    ns_adp_tagset create adp-test-names
+    expr {"adp-test-names" in [ns_adp_tagset names]}
+} -result 1
+
+test ns_adp-tagset-1.11 {tagset info default returns size and empty fallback} -body {
+    set info [ns_adp_tagset info default]
+    list \
+        [dict exists $info size] \
+        [dict get $info fallback]
+} -result {1 {}}
+
+test ns_adp-tagset-1.12 {tagset info isolated tagset returns size zero and empty fallback} -body {
+    ns_adp_tagset create adp-test-info-isolated
+    set info [ns_adp_tagset info adp-test-info-isolated]
+    list \
+        [dict get $info size] \
+        [dict get $info fallback]
+} -result {0 {}}
+
+test ns_adp-tagset-1.13 {tagset info fallback tagset reports default fallback} -body {
+    ns_adp_tagset create -fallback default adp-test-info-fallback
+    set info [ns_adp_tagset info adp-test-info-fallback]
+    list \
+        [dict get $info size] \
+        [dict get $info fallback]
+} -result {0 default}
+
+test ns_adp-tagset-1.14 {tagset info size changes after registering tag} -setup {
+    ns_adp_tagset create adp-test-info-size
+    proc ::ns_adp::__tag_info_size {body set} {
+        return SIZE
+    }
+} -body {
+    set before [dict get [ns_adp_tagset info adp-test-info-size] size]
+    ns_adp_registerscript -tagset adp-test-info-size infosize /infosize ::ns_adp::__tag_info_size
+    set after [dict get [ns_adp_tagset info adp-test-info-size] size]
+    list $before $after
+} -cleanup {
+    rename ::ns_adp::__tag_info_size ""
+} -result {0 1}
+
+test ns_adp-tagset-1.15 {tagset info unknown tagset fails} -body {
+    ns_adp_tagset info does-not-exist
+} -returnCodes error -match glob -result {*ADP tagset*does-not-exist*does not exist*}
+
+############################################################################
+# ns_adp_tagset registration of tags
+############################################################################
+
+test ns_adp-tagset-2.1 {register script tag in named tagset} -setup {
+    ns_adp_tagset create adp-test-tags
+    proc ::ns_adp::__tag_hello {body set} {
+        return "HELLO"
+    }
+} -body {
+    ns_adp_registerscript -tagset adp-test-tags hello /hello ::ns_adp::__tag_hello
+    dict get [ns_adp_tagset info adp-test-tags] size
+} -cleanup {
+    rename ::ns_adp::__tag_hello ""
+} -result 1
+
+test ns_adp-tagset-2.2 {registering same tag in named tagset replaces previous definition} -setup {
+    ns_adp_tagset create adp-test-replace
+    proc ::ns_adp::__tag_one {body set} {
+        return ONE
+    }
+    proc ::ns_adp::__tag_two {body set} {
+        return TWO
+    }
+} -body {
+    ns_adp_registerscript -tagset adp-test-replace x /x ::ns_adp::__tag_one
+    ns_adp_registerscript -tagset adp-test-replace x /x ::ns_adp::__tag_two
+    dict get [ns_adp_tagset info adp-test-replace] size
+} -cleanup {
+    rename ::ns_adp::__tag_one ""
+    rename ::ns_adp::__tag_two ""
+} -result 1
+
+test ns_adp-tagset-2.3 {registering tag in unknown tagset fails} -body {
+    ns_adp_registerscript -tagset does-not-exist x /x ::some_proc
+} -returnCodes error -match glob -result {*ADP tagset*does-not-exist*}
+
+test ns_adp-tagset-2.4 {registering tag in default remains supported} -setup {
+    proc ::ns_adp::__tag_default {body set} {
+        return DEFAULT
+    }
+} -body {
+    ns_adp_registerscript defaulttag /defaulttag ::ns_adp::__tag_default
+    expr {[dict get [ns_adp_tagset info default] size] > 0}
+} -cleanup {
+    rename ::ns_adp::__tag_default ""
+} -result 1
+
+############################################################################
+# ns_adp_tagset parsing with named tagsets
+############################################################################
+test ns_adp-tagset-3.1 {named tagset recognizes its own registered tag} -setup {
+    ns_adp_tagset create adp-test-use
+    proc ::ns_adp::__tag_named {body set} {
+        return "NAMED:[ns_adp_parse -string $body]"
+    }
+    ns_adp_registerscript -tagset adp-test-use named /named ::ns_adp::__tag_named
+} -body {
+    ns_adp_parse -tagset adp-test-use -string {before <named>body</named> after}
+} -cleanup {
+    rename ::ns_adp::__tag_named ""
+} -result {before NAMED:body after}
+
+test ns_adp-tagset-3.2 {tag from isolated named tagset is not visible in default tagset} -setup {
+    ns_adp_tagset create adp-test-isolated
+    proc ::ns_adp::__tag_isolated {body set} {
+        return "ISOLATED"
+    }
+    ns_adp_registerscript -tagset adp-test-isolated isolated /isolated ::ns_adp::__tag_isolated
+} -body {
+    ns_adp_parse -string {before <isolated>body</isolated> after}
+} -cleanup {
+    rename ::ns_adp::__tag_isolated ""
+} -result {before <isolated>body</isolated> after}
+
+test ns_adp-tagset-3.3 {named tagset with fallback sees default tag} -setup {
+    ns_adp_tagset create -fallback default adp-test-fallback-use
+
+    proc ::ns_adp::__tag_fallback_default {body set} {
+        return "DEFAULT:[ns_adp_parse -string $body]"
+    }
+
+    ns_adp_registerscript fallbackdefault /fallbackdefault ::ns_adp::__tag_fallback_default
+} -body {
+    ns_adp_parse -tagset adp-test-fallback-use -string {before <fallbackdefault>body</fallbackdefault> after}
+} -cleanup {
+    rename ::ns_adp::__tag_fallback_default ""
+} -result {before DEFAULT:body after}
+
+
+test ns_adp-tagset-3.4 {named tagset without fallback does not see default tag} -setup {
+    ns_adp_tagset create adp-test-no-fallback
+
+    proc ::ns_adp::__tag_default_only {body set} {
+        return "DEFAULT-ONLY"
+    }
+
+    ns_adp_registerscript defaultonly /defaultonly ::ns_adp::__tag_default_only
+} -body {
+    ns_adp_parse -tagset adp-test-no-fallback -string {before <defaultonly>body</defaultonly> after}
+} -cleanup {
+    rename ::ns_adp::__tag_default_only ""
+} -result {before <defaultonly>body</defaultonly> after}
+
+test ns_adp-tagset-3.5 {named tagset tag overrides fallback default tag} -setup {
+    ns_adp_tagset create -fallback default adp-test-override
+
+    proc ::ns_adp::__tag_default_override {body set} {
+        return DEFAULT
+    }
+    proc ::ns_adp::__tag_named_override {body set} {
+        return NAMED
+    }
+
+    ns_adp_registerscript override /override ::ns_adp::__tag_default_override
+    ns_adp_registerscript -tagset adp-test-override override /override ::ns_adp::__tag_named_override
+} -body {
+    ns_adp_parse -tagset adp-test-override -string {<override>x</override>}
+} -cleanup {
+    rename ::ns_adp::__tag_default_override ""
+    rename ::ns_adp::__tag_named_override ""
+} -result {NAMED}
+
+############################################################################
+# ns_adp_tagset scoped tagset behavior
+############################################################################
+
+test ns_adp-tagset-4.1 {-tagset default forces default tag table} -setup {
+    ns_adp_tagset create adp-test-scope
+
+    proc ::ns_adp::__tag_scope_default {body set} {
+        return DEFAULT
+    }
+    proc ::ns_adp::__tag_scope_named {body set} {
+        return NAMED
+    }
+
+    ns_adp_registerscript scope /scope ::ns_adp::__tag_scope_default
+    ns_adp_registerscript -tagset adp-test-scope scope /scope ::ns_adp::__tag_scope_named
+} -body {
+    list \
+        [ns_adp_parse -tagset adp-test-scope -string {<scope>x</scope>}] \
+        [ns_adp_parse -tagset default -string {<scope>x</scope>}] \
+        [ns_adp_parse -tagset adp-test-scope -string {<scope>x</scope>}]
+} -cleanup {
+    rename ::ns_adp::__tag_scope_default ""
+    rename ::ns_adp::__tag_scope_named ""
+} -result [list NAMED DEFAULT NAMED]
+
+test ns_adp-tagset-4.2 {parsing with unknown tagset fails} -body {
+    ns_adp_parse -tagset does-not-exist -string {hello}
+} -returnCodes error -match glob -result {*unknown ADP tagset*does-not-exist*}
+
+############################################################################
+# ns_adp_tagset request-level test
+############################################################################
+
+test ns_adp-tagset-request-1.1 {include can use explicit tagset override} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-include
+
+    ns_adp_registerscript itag /itag ::ns_adp::__tag_include_default
+    ns_adp_registerscript -tagset adp-test-include itag /itag ::ns_adp::__tag_include_named
+
+    set ::ns_adp_test_fragment [file join [ns_server pagedir] adp-tagset-fragment.adp]
+    set fp [open $::ns_adp_test_fragment w]
+    puts $fp {<itag>x</itag>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-include {
+        proc ::ns_adp::__tag_include_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_include_named {body set} {
+            return NAMED
+        }
+
+        #set direct [ns_adp_parse -tagset adp-test-include -file adp-tagset-fragment.adp]
+        #ns_log notice "DIRECT tagset parse result <$direct>"
+
+        set result [ns_adp_parse -string {
+            <% ns_adp_include -tagset adp-test-include adp-tagset-fragment.adp %>
+        }]
+        rename ::ns_adp::__tag_include_default ""
+        rename ::ns_adp::__tag_include_named ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-include
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-include
+    file delete -force $::ns_adp_test_fragment
+    unset -nocomplain ::ns_adp_test_fragment
+} -result {200 NAMED}
+
+test ns_adp-tagset-request-1.2 {include tagset override does not leak to caller} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-include-scope
+
+    ns_adp_registerscript itag2 /itag2 ::ns_adp::__tag_include_default
+    ns_adp_registerscript -tagset adp-test-include-scope itag2 /itag2 ::ns_adp::__tag_include_named
+
+    set ::ns_adp_test_fragment_scope [file join [ns_server pagedir] adp-tagset-fragment-scope.adp]
+    set fp [open $::ns_adp_test_fragment_scope w]
+    puts $fp {<itag2>x</itag2>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-include-scope {
+        proc ::ns_adp::__tag_include_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_include_named {body set} {
+            return NAMED
+        }
+
+        set result [ns_adp_parse -string [ns_trim -delimiter | {
+            |    before=<itag2>x</itag2>
+            |    include=<% ns_adp_include -tagset adp-test-include-scope adp-tagset-fragment-scope.adp %>
+            |    after=<itag2>x</itag2>
+        }]]
+
+        rename ::ns_adp::__tag_include_default ""
+        rename ::ns_adp::__tag_include_named ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-include-scope
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-include-scope
+    file delete -force $::ns_adp_test_fragment_scope
+    unset -nocomplain ::ns_adp_test_fragment_scope
+} -result {200 {before=DEFAULT
+    include=NAMED
+
+    after=DEFAULT}}
+
+test ns_adp-tagset-request-1.3 {include inherits current effective tagset} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-include-inherit
+
+    ns_adp_registerscript itag3 /itag3 ::ns_adp::__tag_include_default
+    ns_adp_registerscript -tagset adp-test-include-inherit itag3 /itag3 ::ns_adp::__tag_include_named
+
+    set ::ns_adp_test_fragment_inherit [file join [ns_server pagedir] adp-tagset-fragment-inherit.adp]
+    set fp [open $::ns_adp_test_fragment_inherit w]
+    puts $fp {<itag3>x</itag3>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-include-inherit {
+        proc ::ns_adp::__tag_include_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_include_named {body set} {
+            return NAMED
+        }
+
+        set result [ns_adp_parse -tagset adp-test-include-inherit -string [ns_trim -delimiter | {
+            |    before=<itag3>x</itag3>
+            |    include=<% ns_adp_include adp-tagset-fragment-inherit.adp %>
+            |    after=<itag3>x</itag3>
+        }]]
+
+        rename ::ns_adp::__tag_include_default ""
+        rename ::ns_adp::__tag_include_named ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-include-inherit
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-include-inherit
+    file delete -force $::ns_adp_test_fragment_inherit
+    unset -nocomplain ::ns_adp_test_fragment_inherit
+} -result {200 {before=NAMED
+    include=NAMED
+
+    after=NAMED}}
+
+test ns_adp-tagset-request-1.4 {include can force default tagset inside named parse} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-include-default
+
+    ns_adp_registerscript itag4 /itag4 ::ns_adp::__tag_include_default
+    ns_adp_registerscript -tagset adp-test-include-default itag4 /itag4 ::ns_adp::__tag_include_named
+
+    set ::ns_adp_test_fragment_default [file join [ns_server pagedir] adp-tagset-fragment-default.adp]
+    set fp [open $::ns_adp_test_fragment_default w]
+    puts $fp {<itag4>x</itag4>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-include-default {
+        proc ::ns_adp::__tag_include_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_include_named {body set} {
+            return NAMED
+        }
+
+        set result [ns_adp_parse -tagset adp-test-include-default -string [ns_trim -delimiter | {
+            |    before=<itag4>x</itag4>
+            |    include=<% ns_adp_include -tagset default adp-tagset-fragment-default.adp %>
+            |    after=<itag4>x</itag4>
+        }]]
+
+        rename ::ns_adp::__tag_include_default ""
+        rename ::ns_adp::__tag_include_named ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-include-default
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-include-default
+    file delete -force $::ns_adp_test_fragment_default
+    unset -nocomplain ::ns_adp_test_fragment_default
+} -result {200 {before=NAMED
+    include=DEFAULT
+
+    after=NAMED}}
+
+test ns_adp-tagset-request-1.5 {ns_adp_parse tagset override does not leak to subsequent parse} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-parse-scope
+
+    ns_adp_registerscript itag5 /itag5 ::ns_adp::__tag_parse_default
+    ns_adp_registerscript -tagset adp-test-parse-scope itag5 /itag5 ::ns_adp::__tag_parse_named
+
+    ns_register_proc GET /adp-tagset-parse-scope {
+        proc ::ns_adp::__tag_parse_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_parse_named {body set} {
+            return NAMED
+        }
+
+        set result [list \
+            [ns_adp_parse -tagset adp-test-parse-scope -string {<itag5>x</itag5>}] \
+            [ns_adp_parse -string {<itag5>x</itag5>}] \
+            [ns_adp_parse -tagset default -string {<itag5>x</itag5>}]]
+
+        rename ::ns_adp::__tag_parse_default ""
+        rename ::ns_adp::__tag_parse_named ""
+
+        ns_return 200 text/plain $result
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-parse-scope
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-parse-scope
+} -result {200 {NAMED DEFAULT DEFAULT}}
+
+
+test ns_adp-tagset-request-1.6 {cached include distinguishes effective tagset} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-include-cache
+
+    ns_adp_registerscript itag6 /itag6 ::ns_adp::__tag_cache_default
+    ns_adp_registerscript -tagset adp-test-include-cache itag6 /itag6 ::ns_adp::__tag_cache_named
+
+    set ::ns_adp_test_fragment_cache [file join [ns_server pagedir] adp-tagset-fragment-cache.adp]
+    set fp [open $::ns_adp_test_fragment_cache w]
+    puts $fp {<itag6>x</itag6>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-include-cache {
+        proc ::ns_adp::__tag_cache_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_cache_named {body set} {
+            return NAMED
+        }
+
+        set result [list \
+            [string trim [ns_adp_parse -string {
+                <% ns_adp_include -cache 1h -tagset default adp-tagset-fragment-cache.adp %>
+            }]] \
+            [string trim [ns_adp_parse -string {
+                <% ns_adp_include -cache 1h -tagset adp-test-include-cache adp-tagset-fragment-cache.adp %>
+            }]]]
+
+        rename ::ns_adp::__tag_cache_default ""
+        rename ::ns_adp::__tag_cache_named ""
+
+        ns_return 200 text/plain $result
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-include-cache
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-include-cache
+    file delete -force $::ns_adp_test_fragment_cache
+    unset -nocomplain ::ns_adp_test_fragment_cache
+} -result {200 {DEFAULT NAMED}}
+
+test ns_adp-tagset-request-1.7 {cached include distinguishes effective tagset in reverse order} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-include-cache-reverse
+
+    ns_adp_registerscript itag7 /itag7 ::ns_adp::__tag_cache_reverse_default
+    ns_adp_registerscript -tagset adp-test-include-cache-reverse itag7 /itag7 ::ns_adp::__tag_cache_reverse_named
+
+    set ::ns_adp_test_fragment_cache_reverse [file join [ns_server pagedir] adp-tagset-fragment-cache-reverse.adp]
+    set fp [open $::ns_adp_test_fragment_cache_reverse w]
+    puts $fp {<itag7>x</itag7>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-include-cache-reverse {
+        proc ::ns_adp::__tag_cache_reverse_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_cache_reverse_named {body set} {
+            return NAMED
+        }
+
+        set result [list \
+            [string trim [ns_adp_parse -string {
+                <% ns_adp_include -cache 1h -tagset adp-test-include-cache-reverse adp-tagset-fragment-cache-reverse.adp %>
+            }]] \
+            [string trim [ns_adp_parse -string {
+                <% ns_adp_include -cache 1h -tagset default adp-tagset-fragment-cache-reverse.adp %>
+            }]]]
+
+        rename ::ns_adp::__tag_cache_reverse_default ""
+        rename ::ns_adp::__tag_cache_reverse_named ""
+
+        ns_return 200 text/plain $result
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-include-cache-reverse
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-include-cache-reverse
+    file delete -force $::ns_adp_test_fragment_cache_reverse
+    unset -nocomplain ::ns_adp_test_fragment_cache_reverse
+} -result {200 {NAMED DEFAULT}}
+
+test ns_adp-tagset-request-1.8 {include -tagset default inside named parse is scoped} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-include-default-scope
+
+    ns_adp_registerscript itag8 /itag8 ::ns_adp::__tag_include_default
+    ns_adp_registerscript -tagset adp-test-include-default-scope itag8 /itag8 ::ns_adp::__tag_include_named
+
+    set ::ns_adp_test_fragment_default_scope [file join [ns_server pagedir] adp-tagset-fragment-default-scope.adp]
+    set fp [open $::ns_adp_test_fragment_default_scope w]
+    puts $fp {<itag8>x</itag8>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-include-default-scope {
+        proc ::ns_adp::__tag_include_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_include_named {body set} {
+            return NAMED
+        }
+
+        set result [ns_adp_parse -tagset adp-test-include-default-scope -string [ns_trim -delimiter | {
+            |    before=<itag8>x</itag8>
+            |    include=<% ns_adp_include -tagset default adp-tagset-fragment-default-scope.adp %>
+            |    after=<itag8>x</itag8>
+        }]]
+
+        rename ::ns_adp::__tag_include_default ""
+        rename ::ns_adp::__tag_include_named ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-include-default-scope
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-include-default-scope
+    file delete -force $::ns_adp_test_fragment_default_scope
+    unset -nocomplain ::ns_adp_test_fragment_default_scope
+} -result {200 {before=NAMED
+    include=DEFAULT
+
+    after=NAMED}}
+
+
+test ns_adp-tagset-request-1.9 {cached include inherits current effective tagset} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-cache-inherit
+
+    ns_adp_registerscript itag9 /itag9 ::ns_adp::__tag_cache_default
+    ns_adp_registerscript -tagset adp-test-cache-inherit itag9 /itag9 ::ns_adp::__tag_cache_named
+
+    set ::ns_adp_test_fragment_cache_inherit [file join [ns_server pagedir] adp-tagset-fragment-cache-inherit.adp]
+    set fp [open $::ns_adp_test_fragment_cache_inherit w]
+    puts $fp {<itag9>x</itag9>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-cache-inherit {
+        proc ::ns_adp::__tag_cache_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_cache_named {body set} {
+            return NAMED
+        }
+
+        set result [ns_adp_parse -tagset adp-test-cache-inherit -string [ns_trim -delimiter | {
+            |    before=<itag9>x</itag9>
+            |    include=<% ns_adp_include -cache 1h adp-tagset-fragment-cache-inherit.adp %>
+            |    after=<itag9>x</itag9>
+        }]]
+
+        rename ::ns_adp::__tag_cache_default ""
+        rename ::ns_adp::__tag_cache_named ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-cache-inherit
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-cache-inherit
+    file delete -force $::ns_adp_test_fragment_cache_inherit
+    unset -nocomplain ::ns_adp_test_fragment_cache_inherit
+} -result {200 {before=NAMED
+    include=NAMED
+
+    after=NAMED}}
+
+test ns_adp-tagset-request-1.10 {nested ns_adp_parse -tagset default is scoped} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-parse-default-scope
+
+    ns_adp_registerscript itag10 /itag10 ::ns_adp::__tag_parse_default
+    ns_adp_registerscript -tagset adp-test-parse-default-scope itag10 /itag10 ::ns_adp::__tag_parse_named
+
+    ns_register_proc GET /adp-tagset-parse-default-scope {
+        proc ::ns_adp::__tag_parse_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_parse_named {body set} {
+            return NAMED
+        }
+
+        set result [ns_adp_parse -tagset adp-test-parse-default-scope -string [ns_trim -delimiter | {
+            |    before=<itag10>x</itag10>
+            |    nested=<% ns_adp_puts -nonewline [ns_adp_parse -tagset default -string {<itag10>x</itag10>}] %>
+            |    after=<itag10>x</itag10>
+        }]]
+
+        rename ::ns_adp::__tag_parse_default ""
+        rename ::ns_adp::__tag_parse_named ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-parse-default-scope
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-parse-default-scope
+} -result {200 {before=NAMED
+    nested=DEFAULT
+    after=NAMED}}
+
+test ns_adp-tagset-request-1.11 {nested ns_adp_parse inherits current tagset} -constraints {serverListen} -setup {
+    ns_adp_tagset create adp-test-parse-inherit
+
+    ns_adp_registerscript itag11 /itag11 ::ns_adp::__tag_parse_default
+    ns_adp_registerscript -tagset adp-test-parse-inherit itag11 /itag11 ::ns_adp::__tag_parse_named
+
+    ns_register_proc GET /adp-tagset-parse-inherit {
+        proc ::ns_adp::__tag_parse_default {body set} {
+            return DEFAULT
+        }
+        proc ::ns_adp::__tag_parse_named {body set} {
+            return NAMED
+        }
+
+        set result [ns_adp_parse -tagset adp-test-parse-inherit -string [ns_trim -delimiter | {
+            |    before=<itag11>x</itag11>
+            |    nested=<% ns_adp_puts -nonewline [ns_adp_parse -string {<itag11>x</itag11>}] %>
+            |    after=<itag11>x</itag11>
+        }]]
+
+        rename ::ns_adp::__tag_parse_default ""
+        rename ::ns_adp::__tag_parse_named ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-parse-inherit
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-parse-inherit
+} -result {200 {before=NAMED
+    nested=NAMED
+    after=NAMED}}
+
+test ns_adp-tagset-request-1.12 {cached include honors fallback tagset} -constraints {serverListen} -setup {
+    ns_adp_tagset create -fallback default adp-test-cache-fallback
+
+    ns_adp_registerscript itag12 /itag12 ::ns_adp::__tag_fallback_default
+
+    set ::ns_adp_test_fragment_cache_fallback [file join [ns_server pagedir] adp-tagset-fragment-cache-fallback.adp]
+    set fp [open $::ns_adp_test_fragment_cache_fallback w]
+    puts $fp {<itag12>x</itag12>}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-cache-fallback {
+        proc ::ns_adp::__tag_fallback_default {body set} {
+            return DEFAULT
+        }
+
+        set result [ns_adp_parse -tagset adp-test-cache-fallback -string [ns_trim -delimiter | {
+            |    <% ns_adp_include -cache 1h adp-tagset-fragment-cache-fallback.adp %>
+        }]]
+
+        rename ::ns_adp::__tag_fallback_default ""
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-cache-fallback
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-cache-fallback
+    file delete -force $::ns_adp_test_fragment_cache_fallback
+    unset -nocomplain ::ns_adp_test_fragment_cache_fallback
+} -result {200 DEFAULT}
+
+test ns_adp-tagset-request-1.13 {include with unknown tagset fails} -constraints {serverListen} -setup {
+    set ::ns_adp_test_fragment_unknown [file join [ns_server pagedir] adp-tagset-fragment-unknown.adp]
+    set fp [open $::ns_adp_test_fragment_unknown w]
+    puts $fp {plain}
+    close $fp
+
+    ns_register_proc GET /adp-tagset-include-unknown {
+        set result [ns_adp_parse -string [ns_trim -delimiter | {
+            |    <%
+            |        set code [catch {
+            |            ns_adp_include -tagset does-not-exist adp-tagset-fragment-unknown.adp
+            |        } errorMsg]
+            |        ns_adp_puts -nonewline [list $code $errorMsg]
+            |    %>
+        }]]
+
+        ns_return 200 text/plain [string trim $result]
+    }
+} -body {
+    nstest::http -getbody 1 GET /adp-tagset-include-unknown
+} -cleanup {
+    ns_unregister_op GET /adp-tagset-include-unknown
+    file delete -force $::ns_adp_test_fragment_unknown
+    unset -nocomplain ::ns_adp_test_fragment_unknown
+} -match glob -result {200 {1 *unknown ADP tagset*does-not-exist*}}
+
+
+test ns_adp-tagset-2.5 {registering to -tagset default uses default tag table} -setup {
+    proc ::ns_adp::__tag_explicit_default {body set} {
+        return EXPLICIT-DEFAULT
+    }
+} -body {
+    ns_adp_registerscript -tagset default explicitdefault /explicitdefault ::ns_adp::__tag_explicit_default
+    ns_adp_parse -string {<explicitdefault>x</explicitdefault>}
+} -cleanup {
+    rename ::ns_adp::__tag_explicit_default ""
+} -result {EXPLICIT-DEFAULT}
+
 ############################################################################
 # DONE
 ############################################################################

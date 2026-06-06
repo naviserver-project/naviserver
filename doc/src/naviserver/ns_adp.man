@@ -15,8 +15,9 @@ For individual ADP commands, see the corresponding command reference pages,
 such as [cmd ns_adp_ctl], [cmd ns_adp_include], [cmd ns_adp_parse],
 [cmd ns_adp_puts], and related commands.
 
-[see_also adp-overview ns_adp_ctl ns_adp_include ns_adp_parse ns_adp_puts ]
-[see_also ns_adp ns_adp_include ns_adp_puts ns_adp_ctl ns_adp_register ns_adp_parse ns_adp_abort]
+[see_also adp-overview ns_adp_ctl ns_adp_include ns_adp_parse ns_adp_puts \
+    ns_adp_tagset ns_adp_include ns_adp_puts ns_adp_ctl \
+    ns_register ns_adp_register ns_adp_parse ns_adp_abort ]
 
 [keywords ADP gzip ns_conn configuration]
 

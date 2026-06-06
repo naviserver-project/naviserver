@@ -204,6 +204,7 @@ static const Cmd servCmds[] = {
 #endif
     {"ns_adp_return",            NsTclAdpReturnObjCmd},
     {"ns_adp_stats",             NsTclAdpStatsObjCmd},
+    {"ns_adp_tagset",            NsTclAdpTagSetObjCmd},
     {"ns_adp_tell",              NsTclAdpTellObjCmd},
     {"ns_adp_trunc",             NsTclAdpTruncObjCmd},
     {"ns_atclose",               NsTclAtCloseObjCmd},
