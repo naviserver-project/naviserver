@@ -1,0 +1,214 @@
+[include version_include.man]
+[manpage_begin admin-config-params n 5.1]
+[moddesc {NaviServer Manual}]
+
+[titledesc {NaviServer Configuration Parameter Reference}]
+
+[description]
+
+This manual page provides a reference for NaviServer configuration sections
+and parameters.  It is generated from the machine-readable configuration
+documentation used by NaviServer tooling, such as the nsstats module, and
+therefore focuses on the meaning, type, default value, and status of
+individual configuration parameters.
+
+[para]
+The reference is organized by configuration scope.  Global sections describe
+process-wide settings, per-server sections describe settings below
+[const {ns/server/$server}], and module sections describe parameters accepted
+by module implementations such as network drivers or server modules.
+
+[para]
+This page complements [uri admin-config.html], which explains the structure of
+NaviServer configuration files, common configuration patterns, and deployment
+examples.  Use [uri admin-config.html] for conceptual guidance and examples,
+and this page as a parameter reference.
+
+[section {Global Configuration Sections}]
+
+[include include/config-parameters-ns--parameters.man]
+[include include/config-parameters-ns--fastpath.man]
+[include include/config-parameters-ns--mimetypes.man]
+[include include/config-parameters-ns--reverseproxymode.man]
+[include include/config-parameters-ns--threads.man]
+
+
+[include include/config-parameters-ns--modules.man]
+[include include/config-parameters-ns--servers.man]
+
+
+
+[section {Network Driver Configuration}]
+
+[para]
+Network drivers are NaviServer modules that accept incoming client
+connections and dispatch requests to configured virtual servers. They are
+usually loaded globally through the [const {ns/modules}] section. The
+parameter name used in [const {ns/modules}] becomes the module instance name
+and determines the corresponding driver configuration section.
+
+[example_begin]
+ ns_section ns/modules {
+     ns_param http  nssock
+     ns_param https nsssl
+ }
+ 
+ ns_section ns/module/http {
+     ns_param port 8080
+ }
+ 
+ ns_section ns/module/https {
+     ns_param port        8443
+     ns_param certificate /usr/local/ns/certificates/server.pem
+ }
+[example_end]
+
+[para]
+In this example, [const http] and [const https] are configuration-defined
+module instance names. The accepted parameters are determined by the module
+implementation, such as [const nssock] or [const nsssl], not by the instance
+name. Therefore [const {ns/module/http}] accepts [const nssock] parameters,
+while [const {ns/module/https}] accepts [const nsssl] parameters.
+
+[para]
+The accepted parameters are determined by the module implementation, such as
+[const nssock] or [const nsssl], not by the instance name.  For example,
+[const ns/module/http] accepts [const nssock] parameters when the instance
+[const http] is mapped to [const nssock].
+
+[include include/config-parameters-module-nssock.man]
+[include include/config-parameters-module-nsssl.man]
+[include include/config-parameters-module-quic.man]
+
+
+[section {Per-Server Configuration Sections}]
+
+
+[para]
+Per-server sections configure virtual-server behavior.  The placeholder
+[const {$server}] denotes a server name defined in [const ns/servers].
+These sections control request handling, ADP behavior, static-file delivery,
+outgoing HTTP client defaults, Tcl initialization, and legacy host-based
+virtual hosting.
+
+[para]
+Connection pools are configured below the server. The placeholder
+[const {$pool}] denotes a connection pool name defined in
+[const {ns/server/$server/pools}]. Requests that are not explicitly mapped to
+a named connection pool are handled by the server's default connection pool.
+
+[include include/config-parameters-ns--server--star.man]
+[include include/config-parameters-ns--server--star--pools.man]
+[include include/config-parameters-ns--server--star--pool--star.man]
+[include include/config-parameters-ns--server--star--adp.man]
+[include include/config-parameters-ns--server--star--fastpath.man]
+[include include/config-parameters-ns--server--star--httpclient.man]
+[include include/config-parameters-ns--server--star--tcl.man]
+[include include/config-parameters-ns--server--star--vhost.man]
+
+[section {Server Module Configuration}]
+
+[para]
+Server modules extend a virtual server with additional functionality such as
+access logging, CGI execution, control-port access, reverse proxying, or
+other application services.  They are usually loaded through
+[const {ns/server/$server/modules}] and configured below
+[const {ns/server/$server/module/$name}].  The final path component
+[const {$name}] is the configured module instance name; the accepted parameters
+are determined by the module implementation.
+
+[example_begin]
+ ns_section ns/server/$server/modules {
+    ns_param nslog  nslog
+    ns_param nscgi  nscgi
+ }
+ 
+ ns_section ns/server/$server/module/nslog {
+    ns_param file access.log
+ }
+[example_end]
+
+[include include/config-parameters-module-nslog.man]
+[include include/config-parameters-module-nscp.man]
+[include include/config-parameters-module-nsperm.man]
+[include include/config-parameters-module-nsproxy.man]
+[include include/config-parameters-module-nscgi.man]
+[include include/config-parameters-module-revproxy.man]
+[include include/config-parameters-module-revproxy-backends.man]
+
+
+
+[section {Database Configuration}]
+
+[para]
+Database support is optional. Installations that use NaviServer database
+integration load the [const nsdb] module for a virtual server, select the
+server's available database pools in [const {ns/server/$server/db}], and define
+the global database pool configurations under [const ns/db/pools] and
+[const {ns/db/pool/$dbpool}].
+
+[para]
+The placeholder [const {$dbpool}] denotes a database pool name defined in
+[const ns/db/pools]. Database pools are global and may be shared by multiple
+virtual servers.
+
+[para]
+Database drivers are external modules for the nsdb interface. They must be
+compiled and installed separately, then registered in [const ns/db/drivers]
+before database pools can use them. The placeholder [const {$dbdriver}] denotes
+a database driver name defined in [const ns/db/drivers].
+
+[para]
+For a broader introduction to NaviServer database access and administration,
+see [uri admin-db.html {Database Access and Configuration}].
+
+[include include/config-parameters-module-nsdb.man]
+[include include/config-parameters-ns--server--star--db.man]
+[include include/config-parameters-ns--db--pools.man]
+[include include/config-parameters-ns--db--pool--star.man]
+
+[include include/config-parameters-ns--db--drivers.man]
+[include include/config-parameters-ns--db--driver--star.man]
+[include include/config-parameters-ns--db--driver--postgres.man]
+[include include/config-parameters-ns--db--driver--nsoracle.man]
+
+[section {External Modules}]
+
+[para]
+This section documents selected external NaviServer modules that are commonly
+used together with the core server. External modules are maintained outside
+the core NaviServer source tree and may require separate checkout,
+compilation, installation, or loading.
+
+[para]
+The NaviServer project maintains additional external modules. For the full
+list of available repositories, see
+[uri https://github.com/orgs/naviserver-project/repositories {the NaviServer project repositories on GitHub}].
+
+[para]
+Some external modules are documented in more specific sections when their role
+belongs to a larger subsystem. For example, [const nsdbpg] and
+[const nsoracle] are external modules, but are documented under
+[sectref {Database Configuration}] because they implement database drivers for
+the [const nsdb] interface.
+
+
+[include include/config-parameters-module-nssmtpd.man]
+[include include/config-parameters-module-nsstats.man]
+
+
+[section {Legacy Command Configuration}]
+
+[para]
+This section documents compatibility configuration for older command-level
+interfaces. These settings are retained for existing installations but are not
+the preferred interface for new applications.
+
+[include include/config-parameters-ns--sendmail.man]
+[keywords nslog nscp nsperm nsproxy nscgi revproxy nsdb nsdbpg \
+   nsoracle nssmtpd nsstats]
+[keywords pool "connection pool" "database pool"]
+[keywords ADP fastpath httpclient vhost certificate reverseproxymode]
+[see_also admin-config]
+
+[manpage_end]
