@@ -4235,27 +4235,30 @@ NsCertCtlListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         Tcl_DStringInit(&ds);
         Ns_MasterLock();
         hPtr = Tcl_FirstHashEntry(&certTable, &search);
+
         while (hPtr != NULL) {
-            Tcl_Obj         *listObj = Tcl_NewListObj(0, NULL);
-            NS_TLS_SSL_CTX  *ctx = (NS_TLS_SSL_CTX *)Tcl_GetHashKey(&certTable, hPtr);
-            const char      *cert = Tcl_GetHashValue(hPtr);
-            X509            *x509 = SSL_CTX_get0_certificate(ctx);
-            const ASN1_TIME *notAfter = X509_get0_notAfter(x509);
-            int              remaining_days = 0, remaining_seconds = 0, rc;
+            Tcl_Obj              *listObj = Tcl_NewListObj(0, NULL);
+            NS_TLS_SSL_CTX       *ctx = (NS_TLS_SSL_CTX *)Tcl_GetHashKey(&certTable, hPtr);
+            const CertTableEntry *entryPtr = Tcl_GetHashValue(hPtr);
+            X509                 *x509 = SSL_CTX_get0_certificate(ctx);
+            const ASN1_TIME      *notAfter = X509_get0_notAfter(x509);
+            int                   remaining_days = 0, remaining_seconds = 0, rc;
 
-            Tcl_ListObjAppendElement(interp, listObj,
-                                     Tcl_NewStringObj(cert, TCL_INDEX_NONE));
-            rc = ASN1_TIME_diff(&remaining_days, &remaining_seconds, NULL, notAfter);
-            if (rc == 1) {
+            if (entryPtr != NULL && entryPtr->cert != NULL && x509 != NULL) {
                 Tcl_ListObjAppendElement(interp, listObj,
-                                         NsAtomObj(NS_ATOM_remaining_days));
-                Ns_DStringPrintf(&ds, "%5.2f",
-                                 remaining_days + (remaining_seconds/(60*60*24.0)));
-                Tcl_ListObjAppendElement(interp, listObj,
-                                         Tcl_NewStringObj(ds.string, ds.length));
+                                         Tcl_NewStringObj(entryPtr->cert, TCL_INDEX_NONE));
+                rc = ASN1_TIME_diff(&remaining_days, &remaining_seconds, NULL, notAfter);
+                if (rc == 1) {
+                    Tcl_ListObjAppendElement(interp, listObj,
+                                             NsAtomObj(NS_ATOM_remaining_days));
+                    Ns_DStringPrintf(&ds, "%5.2f",
+                                     remaining_days + (remaining_seconds/(60*60*24.0)));
+                    Tcl_ListObjAppendElement(interp, listObj,
+                                             Tcl_NewStringObj(ds.string, ds.length));
 
-                Tcl_ListObjAppendElement(interp, resultListObj, listObj);
-                Tcl_DStringSetLength(&ds, 0);
+                    Tcl_ListObjAppendElement(interp, resultListObj, listObj);
+                    Tcl_DStringSetLength(&ds, 0);
+                }
             }
             hPtr = Tcl_NextHashEntry(&search);
         }
