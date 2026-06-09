@@ -1,8 +1,504 @@
+
 =======================================
-NaviServer 5.0.5, released 2026-??-??
+NaviServer 5.1.0, released 2026-??-??
 =======================================
 
- 56 files changed, 3482 insertions(+), 1853 deletions(-)
+ 305 files changed, 69895 insertions(+), 10256 deletions(-)
+
+New Features:
+-------------
+
+ - Native JSON support:
+   * Added strict RFC 8259 JSON parsing and generation.
+   * Added explicit JSON typing, including support for JSON null, booleans,
+     numbers, strings, arrays, and objects without silent coercions.
+   * Added output modes for Tcl values, lossless triples, and ns_set-style
+     flattened representations.
+   * Added lossless round-trips via canonical triples.
+   * Added configurable JSON null handling.
+   * Added automatic parsing of in-memory JSON request bodies for JSON content
+     types.
+   * Added JSON key sharing and atom sharing to reduce memory usage and
+     allocation overhead.
+   * Added C-level JSON parsing support for internal reuse.
+
+ - JSON Pointer support:
+   * Added JSON Pointer based addressing for accessing and updating values in
+     JSON triples.
+   * Added path- and pointer-based lookup for JSON triples.
+   * Added JSON Pointer based diagnostics for schema-validation errors.
+
+ - JSON schema support:
+   * Added schema derivation from JSON triples.
+   * Added schema merging across multiple example documents.
+   * Added optional required-property inference.
+   * Added structural schema matching for triples values.
+   * Added support for validating triples values against the supported JSON
+     Schema subset.
+
+ - Native JWT support:
+   * Added Tcl-level JWT encode, decode, and verify support.
+   * Added support for compact JWTs using JSON triples for typed payloads.
+   * Added support for asymmetric signatures, HMAC algorithms, and alg=none
+     for testing/debugging.
+   * Added verification support for PEM keys, JWK, and JWKS.
+   * Added optional validation of registered claims such as exp, nbf, iat,
+     iss, sub, and aud.
+
+ - Native CBOR support:
+   * Added a CBOR decoder for RFC 8949 data.
+   * Provides binary typed-data decoding needed by protocols such as COSE and
+     WebAuthn.
+   * Complements the new JSON, JWT, and crypto functionality.
+
+ - Passkey/WebAuthn infrastructure:
+   * Added the NaviServer-side building blocks needed for passkey/WebAuthn
+     support in higher-level frameworks such as OpenACS.
+   * Provides required support for CBOR decoding, COSE key handling, JSON/JWT,
+     and extended crypto operations (see also other bullets)
+   * Enables password-less login implementations without external CBOR/crypto
+     dependencies at the framework level.
+
+ - Extended cryptographic APIs:
+   * Added purpose-oriented public-key APIs based on signing, key agreement,
+     key encapsulation, and generic key inspection.
+   * Added support for modern OpenSSL provider-based key handling.
+   * Added generic key generation, import, inspection, and public/private key
+     extraction.
+   * Added key agreement support for algorithms such as X25519, X448, EC,
+     DH, and DHX, depending on OpenSSL capabilities.
+   * Added KEM support for post-quantum key encapsulation algorithms where
+     provided by OpenSSL.
+   * Added signature support for classical and modern algorithms, including
+     provider-backed post-quantum signature schemes where available.
+   * Added EC public-key construction from explicit coordinates.
+   * Added native UUID generation (v4 and v7).
+
+ - Mutual TLS (mTLS) and certificate introspection:
+   * Added proper mTLS support for server-side TLS.
+   * Added client certificate verification via client CA file/path
+     configuration.
+   * Added runtime access to client certificate details via Tcl.
+   * Added client certificate summaries to connection details.
+   * Added certificate inspection support via ns_certctl.
+   * Added support for SAN entries, including DNS, email, URI, and IP
+     information.
+
+ - TLS certificate/key handling:
+   * Added support for separate server certificate-chain and private-key files.
+   * Retained backward compatibility with combined certificate/key PEM files.
+   * Extended virtual-host certificate handling to support matching private
+     key files.
+   * Extended certificate reload to reload both certificate and key material.
+
+ - HTTP/3 / QUIC:
+   * Added an experimental HTTP/3 driver using QUIC and nghttp3.
+   * Added support for serving HTTP/3 over UDP while keeping existing HTTP/1.x
+     and HTTPS configurations unchanged unless the new module is loaded.
+   * Added QUIC connection and stream handling for multiplexed HTTP/3
+     requests.
+   * Added integration with NaviServer’s driver infrastructure for drivers
+     with their own event loop.
+   * Added HTTP/3 Alt-Svc advertisement support for HTTPS configurations.
+   * Added QUIC-aware TLS context handling.
+   * Requires OpenSSL 4.0 or newer and nghttp3.
+   * Status: experimental, disabled by default, and not yet intended as a
+     production-ready replacement for the mature HTTP/1.x path.
+
+ - Configuration directories:
+   * Added support for using a directory of ordered configuration fragments
+     instead of a single Tcl configuration file.
+     Existing single-file configurations continue to work unchanged.
+   * Added split-up sample OpenACS configuration files.
+   * Added environment-variable driven configuration for optional module
+     activation, especially for containerized deployments.
+   * Added configuration support intended to reduce duplication across larger
+     configurations.
+   * Extended ns_section to support inheritance and ns_set import.
+
+ - Charset configuration:
+   * Added explicit global defaults for per-server charset handling
+     (output charset, URL charset, and form-fallback charset).
+   * Preserved compatibility with historical ns/parameters locations while
+     documenting and warning about deprecated usage.
+
+ - Configuration parameter reference:
+   * Added machine-readable configuration parameter metadata.
+   * Added generated documentation for configuration parameters.
+   * Added generated include files for module and command documentation.
+   * Added configuration-parameter tooltips for nsstats.
+   * Consolidated duplicated configuration documentation across the manual and
+     command reference.
+   * Expanded coverage for core, included, and selected external modules.
+   * Covers 428 configuration parameters.
+
+ - Named ADP tag sets:
+   * Added named ADP tag sets to avoid relying exclusively on one global
+     server-wide ADP tag table.
+   * Added optional fallback to the default tag set.
+   * Added tag-set selection for explicit ADP parsing and inclusion.
+   * Added tag-set aware ADP cache handling.
+   * Preserves existing default ADP tag behavior for applications that do not
+     use named tag sets.
+   * Intended to support gradual migrations and local tag vocabularies for
+     larger applications.
+
+ - Internal infrastructure:
+   * Added and extended atom tables for shared immutable Tcl objects and
+     frequently used dictionary keys with per-thread caches.
+   * Added infrastructure used by JSON atom sharing and Tcl dictionary result
+     construction.
+   * Added driver/thread hooks and header-encoding infrastructure needed by
+     QUIC and future driver extensions.
+   * Added provider/consumer linkage between drivers.
+   * Added additional helper APIs for string/object conversion and empty-string
+     normalization.
+
+
+Bug Fixes:
+----------
+
+ - TLS and certificates:
+   * Fixed previously incomplete client certificate handling by making client
+     CA verification configurable and usable.
+   * Fixed certificate reload handling for separate key material.
+   * Improved TLS diagnostics and reduced unsafe or overly verbose logging.
+
+ - HTTP, driver, and connection handling:
+   * Fixed startup timing of the HTTP client janitor.
+   * Avoided “untrusted location” notices with per-server network drivers.
+   * Improved queue-full warning logs and avoided leaking query strings in
+     diagnostics.
+   * Fixed host-buffer cleanup on parse failures.
+   * Skipped redundant IPv4 binds when already covered by dual-stack IPv6
+     wildcard binds.
+   * Improved connection/driver helper hardening and warning cleanup.
+
+ - Configuration:
+   * Treated empty configuration values as unset in server/TLS initialization.
+   * Aligned memory-unit defaults and documented rate-limit disabling via zero.
+   * Improved detection of explicitly provided configuration parameters.
+
+ - ADP:
+   * Clarified the documented behavior of ns_adp_include argument passing.
+   * Added regression-test coverage for the long-standing behavior that only
+     explicitly supplied include arguments are visible to the included ADP.
+   * Preserved the existing runtime behavior for compatibility.
+
+ - Portability and build correctness:
+   * Added compatibility guards for supported OpenSSL versions.
+   * Fixed OpenSSL header inclusion issues.
+   * Fixed compiler warnings related to const handling, alignment, casting,
+     and format validation.
+   * Improved macOS signal handling in driver/socket code.
+   * Added fallbacks for platform-specific format macros where needed.
+
+
+C API Changes:
+--------------
+
+ - Added public C-level support for native JSON parsing via Ns_JsonParse()
+   and the associated Ns_JsonOptions configuration structure.
+
+ - Extended the network driver API for HTTP/3/QUIC and other drivers with
+   custom event loops:
+   * Added NS_DRIVER_VERSION_6.
+   * Added driver hooks for driver-owned event loops, response-header
+     encoding, and client-certificate introspection.
+
+ - Added public C-level support for mTLS and certificate/key configuration:
+   * Added Ns_TLSClientCertMode.
+   * Added TLS context creation APIs that support separate certificate/key
+     files and client-certificate modes.
+
+ - Added configuration helper APIs for detecting explicitly provided
+   parameters and parsing enum-style configuration values.
+
+ - Added helper APIs used by Tcl command implementations, including nested
+   subcommand dispatch and object/table formatting helpers.
+
+ - Added utility helpers for converting Tcl_DString values to Tcl objects,
+   normalizing empty strings, strict numeric parsing, and UTF-8 code-point
+   conversion.
+
+ - Added or exposed socket/address helpers used by the updated driver and
+   QUIC infrastructure.
+
+ - Tightened const-correctness in several public structures, callback types,
+   and function signatures. This may require source changes in external
+   modules that implement affected callbacks or pass mutable data to APIs now
+   declared as immutable.
+
+
+Compatibility Notes:
+--------------------
+
+ - OpenSSL baseline:
+   * Dropped support for OpenSSL versions older than 1.1.1.
+   * Older OpenSSL versions continue to be supported in the NaviServer 5.0
+     release branch.
+   * NaviServer 5.1 continues to support OpenSSL 1.1.1, while adding and
+     extending code paths for OpenSSL 3.x and later.
+
+ - OpenSSL 3.x / 4.x compatibility:
+   * Added provider-oriented OpenSSL 3.x code paths for selected crypto and
+     TLS functionality.
+   * Reduced reliance on deprecated OpenSSL APIs where possible.
+   * Prepared parts of the TLS and crypto implementation for OpenSSL 4.x.
+
+ - HTTP/3 availability:
+   * HTTP/3 support requires nghttp3 and OpenSSL 4.0 or newer.
+   * OpenSSL 4.0 is required because NaviServer depends on QUIC APIs for
+     retrieving peer-address information from QUIC connections, which is
+     needed for normal server functionality such as access logging.
+   * The HTTP/3 driver is experimental and disabled unless explicitly loaded.
+   * Existing HTTP/1.x and HTTPS configurations remain unchanged when the
+     HTTP/3 module is not used.
+
+ - ns_sendmail configuration:
+   * The canonical configuration section for the legacy ns_sendmail command is
+     now ns/sendmail.
+   * SMTP-related defaults were moved in the sample configurations from
+     ns/parameters to ns/sendmail.
+   * The historical ns/parameters settings for smtp* are still read as a
+     compatibility fallback.
+   * A deprecation warning is logged once when legacy SMTP settings from
+     ns/parameters are used.
+   * The legacy mailhost parameter is retained only as a fallback for
+     smtphost; it is not promoted to the new ns/sendmail section.
+
+ - Configuration parameter moves:
+   * The reverse proxy mode parameter ns/parameters:reverseproxymode is
+     deprecated. Use ns/reverseproxymode:enabled instead.
+   * The historical reverse proxy parameter location remains supported as a
+     compatibility fallback and produces a deprecation warning when used.
+   * Per-server charset settings remain canonical under ns/server/$server;
+     global ns/parameters values for outputcharset, urlcharset, and
+     formfallbackcharset are supported as defaults for compatibility.
+
+ - API deprecations:
+   * No new Tcl commands are currently listed as deprecated in the generated
+     command index for this release.
+   * No new C API deprecations are visible in the public header diff.
+   * Configuration parameter deprecations are listed separately above.
+
+ - Compatibility notes for C extensions:
+   * Extensions implementing network drivers may need updates for
+     NS_DRIVER_VERSION_6 when using the new driver-thread, header-encoding,
+     or client-certificate hooks.
+   * Extensions using changed callback typedefs may need source updates due to
+     const-correctness changes, especially for Ns_LogFilter,
+     Ns_UrlSpecificWalk, Ns_TaskCallback, and Ns_TclGetOpaqueFromObj.
+   * Extensions using process execution APIs may need source updates because
+     argv-style arguments are now declared as const char *const *.
+   * Extensions using Ns_URL should treat URL component pointers as immutable.
+   * Extensions using Ns_InflateBuffer() should check call sites, since the
+     renamed argument now clearly represents an output buffer.
+
+
+Tcl API Changes:
+----------------
+
+ - JSON and CBOR:
+
+   * Added the `ns_json` command family for parsing, generating, inspecting,
+     and updating JSON values:
+       ns_json isnull value
+       ns_json keydecode string
+       ns_json keyencode string
+       ns_json keyinfo key
+       ns_json null
+       ns_json parse ?-output tclvalue|triples|set? ?-scan? ?-top any|container? ?-nullvalue value? ?-validatenumbers? ?-maxdepth integer? ?-maxstring integer? ?-maxcontainer integer? ?--? value
+       ns_json value ?-type auto|string|number|boolean|null|object|array? ?-pretty? ?--? value
+
+   * Added JSON triples subcommands for querying, updating, matching, and
+     deriving schemas from parsed JSON data:
+       ns_json triples gettype ?-path value? ?-pointer value? ?-indices? ?--? triples
+       ns_json triples getvalue ?-path value? ?-pointer value? ?-indices? ?-output json|triples? ?-pretty? ?--? triples
+       ns_json triples match -schema value ?-ignoreunsupported? ?--? triples
+       ns_json triples schema ?-pretty? ?-required? ?--? triples ...
+       ns_json triples setvalue ?-path value? ?-pointer value? ?-type auto|string|number|boolean|null|object|array? ?--? triples value
+
+   * Added `ns_getjson` for accessing parsed JSON request bodies:
+       ns_getjson ?-output json|triples?
+
+   * Added `ns_cbor parse` for parsing CBOR input:
+       ns_cbor parse ?-binary? ?-encoding hex|base64url|base64|binary? ?-scan? ?--? value
+
+ - JWT:
+
+   * Added `ns_jwt` commands for decoding, encoding, and verifying JSON Web Tokens:
+       ns_jwt decode token
+       ns_jwt encode -alg value ?-key value? ?-jwk value? ?-secret value? ?-kid value? ?-typ value? ?-cty value? ?-extraheader value? ?-iss value? ?-sub value? ?-aud value? ?-exp value? ?-nbf value? ?-iat value? ?-jti value? ?extrapayload?
+       ns_jwt verify ?-alg value? ?-key value? ?-jwk value? ?-jwks value? ?-secret value? ?-kid value? ?-requirekid? ?-verifyclaims? ?-aud value? ?-iss value? ?-sub value? ?-clockskew value? ?-now value? token
+
+ - Cryptography:
+
+   * Added generic key-management commands:
+       ns_crypto::key generate -name value ?-group value? ?-outfile value?
+       ns_crypto::key import -name value ?-from public|keypair? -params value ?-format raw|pem? ?-encoding hex|base64url|base64|binary? ?-outfile value?
+       ns_crypto::key info ?-encoding hex|base64url|base64|binary? ?-passphrase value? -pem value
+       ns_crypto::key priv ?-encoding hex|base64url|base64|binary? ?-passphrase value? -pem value
+       ns_crypto::key pub ?-encoding hex|base64url|base64|binary? ?-format raw|pem? ?-passphrase value? ?-outfile value? -pem value
+       ns_crypto::key type ?-passphrase value? -pem value
+
+   * Added key-agreement commands:
+       ns_crypto::agreement generate ?-name value? ?-group value? ?-outfile value?
+       ns_crypto::agreement pub ?-passphrase value? ?-outfile value? -pem value
+       ns_crypto::agreement derive ?-encoding hex|base64url|base64|binary? ?-passphrase value? -pem value -peer value
+
+   * Added key encapsulation mechanism commands:
+       ns_crypto::kem generate ?-name value? ?-group value? ?-outfile value?
+       ns_crypto::kem pub ?-passphrase value? ?-outfile value? -pem value
+       ns_crypto::kem encapsulate ?-encoding hex|base64url|base64|binary? ?-passphrase value? -pem value
+       ns_crypto::kem decapsulate ?-encoding hex|base64url|base64|binary? ?-passphrase value? -pem value -ciphertext value
+
+   * Added signature commands:
+       ns_crypto::signature generate ?-name value? ?-group value? ?-outfile value?
+       ns_crypto::signature pub ?-passphrase value? ?-outfile value? -pem value
+       ns_crypto::signature sign ?-binary? ?-digest value? ?-id value? ?-encoding hex|base64url|base64|binary? ?-passphrase value? -pem value ?--? message
+       ns_crypto::signature verify ?-binary? ?-digest value? ?-id value? ?-passphrase value? -pem value -signature value ?--? message
+
+   * Added UUID v7 generation (RFC 9562):
+       ns_crypto::uuid ?-version v4|v7?
+
+   * Added EC public-key construction from explicit coordinates:
+       ns_crypto::eckey fromcoords ?-binary? -curve value -x value -y value ?-format pem|der? ?-outfile value?
+
+   * Updated several existing `ns_crypto` command signatures to make required
+     cryptographic inputs explicit, including options such as `-key`, `-tag`,
+     `-salt`, `-secret`, `-info`, and `-pem`.
+
+   * Reworked `ns_crypto::eckey` output handling to use explicit `-outfile`
+     and `-format` options where applicable.
+
+ - TLS, certificates, and client authentication:
+    * Added certificate inspection:
+       ns_certctl info cert
+
+   * Added access to the client certificate of the current connection:
+       ns_conn clientcert
+
+   * Added detailed TLS/OpenSSL capability reporting:
+       ns_info ssl ?-details?
+
+   * Added `-key` support to TLS-capable HTTP client commands (use when private key is not included in certificate file)
+       ns_http run ... ?-cert value? ?-key value? ... url
+       ns_http queue ... ?-cert value? ?-key value? ... url
+       ns_connchan open ... ?-cert value? ?-key value? ... url
+       ns_connchan connect ... ?-cert value? ?-key value? ?-tls? host port
+
+ - Configuration and server introspection:
+   * Added ns_server charset for querying the effective charset settings of a
+     server:
+       ns_server ?-server server? charset ?output|url|formfallback?
+
+   * When no charset kind is specified, the command returns all effective
+     charset values as a dictionary.
+
+   * The reported values reflect the fallback from global ns/parameters
+     charset defaults to canonical per-server settings in ns/server/$server.
+
+   * Extended ns_section:
+       ns_section ?-update? ?-from sectionName? ?-set set? ?--? sectionName ?script?
+
+ - HTTP, connection, and content handling:
+   * Added access to the current connection content type:
+        ns_conn contenttype
+
+ - URL encoding:
+   * Extended URL percent-encoding and decoding with `fullpath` and `fragment` modes:
+       ns_urlencode ?-charset value? ?-part query|path|fullpath|fragment|cookie|oauth1? ?-uppercase? ?--? component ...
+       ns_urldecode ?-charset value? ?-fallbackcharset value? ?-part query|path|fullpath|fragment|cookie|oauth1? ?--? string
+
+
+
+Documentation Updates:
+----------------------
+
+ - Added documentation for ns_json, ns_cbor, ns_jwt, ns_crypto extensions,
+   mTLS, client certificates, and certificate inspection.
+ - Added HTTP/3 / QUIC module documentation.
+ - Added documentation for configuration directories and segmented
+   configuration files.
+ - Added generated configuration-parameter reference documentation.
+ - Consolidated configuration sections across command, module, and manual
+   pages.
+ - Added or updated documentation for core modules, included modules, and
+   selected external modules.
+ - Clarified ADP include argument passing behavior.
+ - Added TLS certificate/key examples and mTLS examples.
+ - Added Makefile support for generating and validating configuration-parameter
+   documentation includes before building the manual.
+ - Added optional documentation validation via VALIDATE_DOC=1.
+
+Build System:
+-------------
+
+ - Reworked the Makefile around explicit core/module subdirectory
+   groups and per-directory build targets.
+ - Enabled parallel builds by default when the user did not explicitly request
+   serial execution or provide a -j setting.
+ - Added VERBOSE=1 support for showing recursive build commands.
+ - Added build and install support for the new quic module.
+ - Added generation of consolidated configuration files from ordered
+   configuration fragment directories.
+ - Added build targets for generated configuration-parameter documentation
+   includes.
+ - Updated distribution packaging to include the new conf/ configuration
+   layout, generated configuration files, and configuration fragment
+   directories.
+ - Reworked installation directory handling using explicit directory targets.
+ - Reworked certificate generation:
+   * Added demo CA, server, and client certificate generation.
+   * Added client certificate material for mTLS tests.
+   * Skipped certificate generation gracefully when OpenSSL support is not
+     configured.
+   * Avoided installing private-key, CSR, serial, and extension files as demo
+     certificates.
+ - Improved distclean to work more reliably after generated build files have
+   already been removed and to clean generated certificate material.
+ - Updated static-analysis support to include the quic sources and to write
+   cppcheck output to a dedicated log file.
+ - Added nghttp3 detection for HTTP/3 / QUIC support.
+ - Added support for overriding nghttp3 detection via configure arguments or
+   environment variables.
+ - Raised the minimum supported OpenSSL version to 1.1.1.
+ - Added conditional support for OpenSSL 3.x/4.x functionality.
+ - Added build guards so NaviServer can still be compiled when optional
+   HTTP/3/QUIC dependencies are not available.
+ - Updated configuration examples and split OpenACS configuration fragments.
+
+
+Regression Tests:
+-----------------
+
+ - Extended the number of regression test cases from 2850 to 3560 (+710).
+ - Added regression tests for native JSON parsing, generation, triples, schema
+   derivation, and schema matching.
+ - Added regression tests for JSON request-body handling.
+ - Added regression tests for JWT encode/decode/verify workflows.
+ - Added regression tests for crypto key handling, signatures, KEM, agreement,
+   UUIDs, and OpenSSL capability-dependent behavior.
+ - Added regression tests for mTLS/client-certificate handling.
+ - Added regression tests for ADP include argument handling.
+ - Added HTTP/3 / QUIC tests where supported by the build environment.
+ - Added platform and OpenSSL capability constraints for tests that depend on
+   specific Tcl or OpenSSL features.
+ - Standardized the test environment locale for regression-test runs.
+ - Reworked test certificate generation to provide CA, server, and client
+   certificates for TLS and mTLS tests.
+ - Extended the GitHub regression test suite to include older Ubuntu
+   (20.04, with OpenSSL 1.1.1), FreeBSD and OpenBSD.
+
+
+
+
+=======================================
+NaviServer 5.0.5, released 2026-05-28
+=======================================
+
+ 64 files changed, 3515 insertions(+), 1876 deletions(-)
 
 Bug Fixes
 ---------
