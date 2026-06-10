@@ -162,14 +162,16 @@ NsParseContentTypeParams(const char *typeStart, const char *typeEnd,
         }
         aLen = (TCL_SIZE_T)(aEnd - aStart);
 
-        if (p >= end || *p != '=') {
+        if (aLen == 0 || p >= end || *p != '=') {
             while (p < end && *p != ';') {
                 p++;
             }
             continue;
         }
         p++; /* skip '=' */
-
+        /*
+         * Below this point, aLen > 0 and p has just consumed '='.
+         */
         while (p < end && CHARTYPE(space, *p)) {
             p++;
         }
@@ -2011,7 +2013,7 @@ ConnContentTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
 {
     Tcl_Obj    *dictObj;
     NsInterp   *itPtr = clientData;
-    Conn       *connPtr;
+    const Conn *connPtr;
     const char *raw;
     const char *p, *typeStart, *typeEnd, *end;
     int         result = TCL_OK;
