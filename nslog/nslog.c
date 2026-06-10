@@ -1234,8 +1234,8 @@ LogRoll(void *arg)
 static void
 LogCallbackProc(Ns_LogCallbackProc proc, void *arg, const char *desc)
 {
-    int  status;
-    Log *logPtr = arg;
+    Ns_ReturnCode status;
+    Log          *logPtr = arg;
 
     Ns_MutexLock(&logPtr->lock);
     status =(*proc)(logPtr);

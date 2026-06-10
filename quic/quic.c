@@ -7157,7 +7157,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
 
         Ns_Log(Notice, "H3 set ex_data indices cc_idx %d sc_idx %d", dc->u.h3.cc_idx, dc->u.h3.sc_idx);
 
-        if (result == TCL_OK && (dc->u.h3.cc_idx < 0 || dc->u.h3.sc_idx < 0)) {
+        if (result == NS_OK && (dc->u.h3.cc_idx < 0 || dc->u.h3.sc_idx < 0)) {
             Ns_Log(Error, "quic: Could not allocate SSL ex_data index");
             result = NS_ERROR;
         }

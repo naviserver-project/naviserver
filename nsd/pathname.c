@@ -1090,7 +1090,7 @@ NsTclServerRoot(Tcl_DString *dest, const char *host, const void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
     const char           *result = NULL;
-    Ns_ReturnCode         rc = Ns_TclEvalCallback(NULL, cbPtr, dest, host, NS_SENTINEL);
+    int                   rc = Ns_TclEvalCallback(NULL, cbPtr, dest, host, NS_SENTINEL);
 
     if (rc == TCL_OK || rc == TCL_RETURN) {
         result = dest->string;

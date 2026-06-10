@@ -1636,7 +1636,7 @@ NsTclParseMessageObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 
             Tcl_IncrRefCount(setObj);
             status = Ns_HttpMessageParse(messageString, (size_t)messageLength, &firstLineLength, headers, &bodyString);
-            if (status == TCL_OK) {
+            if (status == NS_OK) {
                 Tcl_Obj *resultObj = Tcl_NewDictObj();
 
                 /*

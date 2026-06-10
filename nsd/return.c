@@ -773,7 +773,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
 
         Tcl_DecrRefCount(fileObj);
 
-        if (result == TCL_OK) {
+        if (result == NS_OK) {
             Tcl_Obj    *resultObj;
             const char *resultString;
             TCL_SIZE_T  resultLen;

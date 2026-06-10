@@ -772,7 +772,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
                 }
             }
         }
-        if (result == TCL_OK) {
+        if (result == NS_OK) {
             (void) Ns_SetPut(set, k, v);
         }
         if (p != NULL) {
