@@ -885,7 +885,6 @@ Ns_HttpMessageParse(
 
     } else {
         char   *p;
-        int     firsthdr = 1;
         size_t  parsed;
 
         p = eol+1;
@@ -902,11 +901,6 @@ Ns_HttpMessageParse(
 
             if (len > 0u && p[len - 1u] == '\r') {
                 p[len - 1u] = '\0';
-            }
-            if (firsthdr != 0) {
-                //ns_free((void *)hdrPtr->name);
-                //hdrPtr->name = ns_strdup(p);
-                firsthdr = 0;
             }
             if (len < 2 || Ns_ParseHeader(hdrPtr, p, NULL, NULL) != NS_OK) {
                 break;
