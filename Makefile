@@ -724,7 +724,7 @@ CPPCHECK_SYS_INCLUDES=-I/usr/include
 #CPPCHECK_SYS_INCLUDES=-I`xcrun --show-sdk-path`/usr/include
 
 cppcheck:
-	$(CPPCHECK) --verbose --inconclusive -j4 --enable=all --check-level=exhaustive \
+	$(CPPCHECK) --verbose --inconclusive -j4 --enable=all --check-level=exhaustive --suppress=missingIncludeSystem \
 		--output-file=cppcheck-output.txt --checkers-report=cppcheck.txt  \
 		nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c nsssl/*.c quic/*.c \
 		-I./include  -I./nsssl -I./quic $(CPPCHECK_SYS_INCLUDES) -D__x86_64__ -DNDEBUG $(DEFS)
