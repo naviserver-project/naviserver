@@ -95,7 +95,7 @@ static void DStringAppendX509Name(Tcl_DString *dsPtr, const X509_NAME *name)
     NS_GNUC_NONNULL(1);
 
 static Tcl_Obj *GetAsn1TimeToObj(const ASN1_TIME *t);
-static const char* GetAsn1String(ASN1_STRING *asn, int *lengthPtr)
+static const char* GetAsn1String(ASN1_STRING *asnString, int *lengthPtr)
     NS_GNUC_NONNULL(1);
 
 static void DictAppend(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Tcl_Obj *valueObj)
@@ -104,7 +104,7 @@ static void DictAppend(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Tc
 static Ns_ReturnCode NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool minimal, bool withPem)
     NS_GNUC_NONNULL(2,3);
 
-static Ns_ReturnCode NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool details)
+static Ns_ReturnCode NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool minimal)
     NS_GNUC_NONNULL(2,3);
 
 static Ns_TLSClientCertMode NsTLSClientCertModeConfig(const char *section)
@@ -388,7 +388,7 @@ SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
         if (doSNI) {
             Tcl_DString     ds;
             NS_TLS_SSL_CTX *ctx;
-            void           *ex = dc->sni_idx >= 0 ? SSL_get_ex_data(ssl, dc->sni_idx) : NULL;
+            const void     *ex = dc->sni_idx >= 0 ? SSL_get_ex_data(ssl, dc->sni_idx) : NULL;
             unsigned short  port = ex != NULL
                 ? (unsigned short)(uintptr_t)ex
                 : (unsigned short)(drvPtr->listenfd[0]);

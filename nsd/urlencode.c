@@ -1165,14 +1165,14 @@ Ns_DecodeUrlCharset(Tcl_DString *dsPtr, const char *urlSegment,
  *----------------------------------------------------------------------
  */
 static int
-UrlEncodeQuery(Tcl_Interp *interp, Tcl_DString *ds,
+UrlEncodeQuery(Tcl_Interp *interp, Tcl_DString *dsPtr,
                TCL_SIZE_T nargs, Tcl_Obj *const *objv,
                Tcl_Encoding encoding, bool upperCase)
 {
     TCL_SIZE_T i;
 
     if (nargs == 1) {
-        (void)UrlEncode(ds, Tcl_GetString(objv[0]), encoding, 'q', upperCase);
+        (void)UrlEncode(dsPtr, Tcl_GetString(objv[0]), encoding, 'q', upperCase);
         return TCL_OK;
     }
 
@@ -1183,11 +1183,11 @@ UrlEncodeQuery(Tcl_Interp *interp, Tcl_DString *ds,
 
     for (i = 0; i < nargs; i += 2) {
         if (i > 0) {
-            Tcl_DStringAppend(ds, "&", 1);
+            Tcl_DStringAppend(dsPtr, "&", 1);
         }
-        (void)UrlEncode(ds, Tcl_GetString(objv[i]), encoding, 'q', upperCase);
-        Tcl_DStringAppend(ds, "=", 1);
-        (void)UrlEncode(ds, Tcl_GetString(objv[i + 1]), encoding, 'q', upperCase);
+        (void)UrlEncode(dsPtr, Tcl_GetString(objv[i]), encoding, 'q', upperCase);
+        Tcl_DStringAppend(dsPtr, "=", 1);
+        (void)UrlEncode(dsPtr, Tcl_GetString(objv[i + 1]), encoding, 'q', upperCase);
     }
 
     return TCL_OK;
@@ -1211,16 +1211,16 @@ UrlEncodeQuery(Tcl_Interp *interp, Tcl_DString *ds,
  *----------------------------------------------------------------------
  */
 static void
-UrlEncodeSegment(Tcl_DString *ds, TCL_SIZE_T nargs, Tcl_Obj *const *objv,
+UrlEncodeSegment(Tcl_DString *dsPtr, TCL_SIZE_T nargs, Tcl_Obj *const *objv,
                  Tcl_Encoding encoding, bool upperCase)
 {
     TCL_SIZE_T i;
 
     for (i = 0; i < nargs; i++) {
         if (i > 0) {
-            Tcl_DStringAppend(ds, "/", 1);
+            Tcl_DStringAppend(dsPtr, "/", 1);
         }
-        (void)UrlEncode(ds, Tcl_GetString(objv[i]), encoding, 'p', upperCase);
+        (void)UrlEncode(dsPtr, Tcl_GetString(objv[i]), encoding, 'p', upperCase);
     }
 }
 
