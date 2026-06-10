@@ -884,8 +884,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             {"full",     1},
             {NULL,       0u}
         };
-        unsigned int mode = Ns_ConfigGetEnum(NS_GLOBAL_CONFIG_PARAMETERS, "cachingmode", cachingmodes, 1);
-        nsconf.nocache = (mode == 0);
+        unsigned int cachingmode = Ns_ConfigGetEnum(NS_GLOBAL_CONFIG_PARAMETERS, "cachingmode", cachingmodes, 1);
+        nsconf.nocache = (cachingmode == 0);
     }
 
     /*
