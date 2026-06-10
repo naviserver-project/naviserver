@@ -374,54 +374,54 @@ test adp-6.4 {adp-parse file with arguments} -body {
 } -match glob -result {*ns_adp_argc: 7*ns_adp_argv: 1 2 3 a A z Z*}
 
 test adp-7.1 {adp-parse string with tag, quoted and unquoted} -body {
-    proc ::test_tag_proc {params} {return [ns_set array $params]}
-    ns_adp_registerscript test71 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test71 ::__test_tag_proc
     ns_adp_parse -string {<test71 a="1" b=2>}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {a 1 b 2}
 
 test adp-7.2a {adp-parse string with tag, with less sign} -body {
-    proc ::test_tag_proc {params} {return [ns_set array $params]}
-    ns_adp_registerscript test72 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test72 ::__test_tag_proc
     ns_adp_parse -string {<test72 a="1" title="<" b=2>}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {a 1 title < b 2}
 
 test adp-7.2b {adp-parse string with tag with greater sign} -body {
-    proc ::test_tag_proc {params} {return [ns_set array $params]}
-    ns_adp_registerscript test72 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test72 ::__test_tag_proc
     ns_adp_parse -string {<test72 a="1" title=">" b=2>}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {a 1 title > b 2}
 
 test adp-7.3 {adp-parse string with tag, with markup in attribute} -body {
-    proc ::test_tag_proc {params} {return [ns_set array $params]}
-    ns_adp_registerscript test73 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test73 ::__test_tag_proc
     ns_adp_parse -string {<test73 a="1" title="<i class='fa fa-link'></i>" b=2>}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {a 1 title {<i class='fa fa-link'></i>} b 2}
 
 #
 # When parsing fails, the result is literally the input
 #
 test adp-7.4a {adp-parse string with tag, attribute quote not terminated} -body {
-    proc ::test_tag_proc {params} {return [ns_set array $params]}
-    ns_adp_registerscript test74 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test74 ::__test_tag_proc
     ns_adp_parse -string {<test74 a="1" b=2}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {<test74 a="1" b=2}
 
 test adp-7.4b {adp-parse string with tag, attribute quote not terminated} -body {
-    proc ::test_tag_proc {params} {return [ns_set array $params]}
-    ns_adp_registerscript test74 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test74 ::__test_tag_proc
     ns_adp_parse -string {<test74 a="1" title=" b=2>}  ;#"
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {a 1 title {" b=2>}} ;#"
 
 test adp-7.5.1 {adp-parse string with non-registered tag, attribute quote not terminated} -body {
@@ -504,19 +504,19 @@ test adp-8.2.2c {adp-parse script javascript case, broken tag inside script, tra
 
 
 test adp-8.2.2d {adp-parse script javascript case, broken tag inside script, trailing registered tag, invalid tag name before} -body {
-    proc ::test_tag_proc {params} {return RESULT}
-    ns_adp_registerscript test822 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test822 ::__test_tag_proc
     ns_adp_parse {begin <script type="text/javascript"> begin <a. ' end</script> <test822> t=foo' end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {begin <script type="text/javascript"> begin <a. ' end</script> RESULT t=foo' end}
 
 test adp-8.2.2e {adp-parse script javascript case, broken tag inside script, trailing registered tag, no attribute} -body {
-    proc ::test_tag_proc {params} {return RESULT}
-    ns_adp_registerscript test822 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test822 ::__test_tag_proc
     ns_adp_parse {begin <script type="text/javascript"> begin <a ' end</script> <test822> t=foo' end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {begin <script type="text/javascript"> begin <a ' end</script> RESULT t=foo' end}
 
 
@@ -549,96 +549,96 @@ test adp-8.2.5b {adp-parse script javascript case, </script> inside script} -bod
 ############################################################################
 
 test ns_adp_registerscript-2.1 {registerscript via proc, no attributes, no ending tag} -body {
-    proc ::test_tag_proc {params} {return "hello world with params '[ns_set array $params]'"}
-    ns_adp_registerscript test21 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return "hello world with params '[ns_set array $params]'"}
+    ns_adp_registerscript test21 ::__test_tag_proc
     ns_adp_parse -string {start <b>x <test21> y</b> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <b>x hello world with params '' y</b> end}
 
 test ns_adp_registerscript-2.2 {registerscript via proc, attributes, no ending tag} -body {
-    proc ::test_tag_proc {params} {return "hello world with params '[ns_set array $params]'"}
-    ns_adp_registerscript test21 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return "hello world with params '[ns_set array $params]'"}
+    ns_adp_registerscript test21 ::__test_tag_proc
     ns_adp_parse -string {start <b>x <test21 x=1> y</b> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <b>x hello world with params 'x 1' y</b> end}
 
 test ns_adp_registerscript-2.3 {registerscript via proc, no attributes, ending tag} -body {
-    proc ::test_tag_proc {content params} {return "hello world with params '[ns_set array $params]' c='$content'"}
-    ns_adp_registerscript test21 /test21 ::test_tag_proc
+    proc ::__test_tag_proc {content params} {return "hello world with params '[ns_set array $params]' c='$content'"}
+    ns_adp_registerscript test21 /test21 ::__test_tag_proc
     ns_adp_parse -string {start <b>x <test21> y </test21> z </b> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <b>x hello world with params '' c=' y ' z </b> end}
 
 test ns_adp_registerscript-2.4 {registerscript via proc, attributes, ending tag} -body {
-    proc ::test_tag_proc {content params} {return "hello world with params '[ns_set array $params]' c='$content'"}
-    ns_adp_registerscript test21 /test21 ::test_tag_proc
+    proc ::__test_tag_proc {content params} {return "hello world with params '[ns_set array $params]' c='$content'"}
+    ns_adp_registerscript test21 /test21 ::__test_tag_proc
     ns_adp_parse -string {start <b>x <test21 a="1"> y </test21> z </b> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <b>x hello world with params 'a 1' c=' y ' z </b> end}
 
 #
 # cases, where substitution happens inside tags
 #
 test ns_adp_registerscript-3.1 {adp-parse string with tag and script, tag inside argument of foo tag} -body {
-    proc ::test_tag_proc {params} {return RESULT}
-    ns_adp_registerscript test831 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test831 ::__test_tag_proc
     ns_adp_parse -string {start <foo arg="<test831>"> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <foo arg="RESULT"> end}
 
 test ns_adp_registerscript-3.2 {adp-parse string with tag and script, tag inside argument of script tag} -body {
-    proc ::test_tag_proc {params} {return RESULT}
-    ns_adp_registerscript test831 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test831 ::__test_tag_proc
     ns_adp_parse -string {start <script arg="<test831>"></script> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <script arg="RESULT"></script> end}
 
 
 test ns_adp_registerscript-3.3 {adp-parse string with tag and script, tag inside argument of foo and script tag} -body {
-    proc ::test_tag_proc {params} {return RESULT}
-    ns_adp_registerscript test831 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test831 ::__test_tag_proc
     ns_adp_parse -string {start <foo arg="<test831>"> <script arg="<test831>"> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <foo arg="RESULT"> <script arg="RESULT"> end}
 
 test ns_adp_registerscript-3.4 {adp-parse string with tag and script, tag inside tagname} -body {
-    proc ::test_tag_proc {params} {return bar}
-    ns_adp_registerscript test832 ::test_tag_proc
+    proc ::__test_tag_proc {params} {return bar}
+    ns_adp_registerscript test832 ::__test_tag_proc
     ns_adp_parse -string {start <foo<test831>> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <foobar> end}
 
 test ns_adp_registerscript-3.12 {accept registered ADP tag name containing hyphen} -body {
-    proc ::ns_adp::__hyphen_tag {body attributes} {
+    proc ::__hyphen_tag {body attributes} {
         return "hyphen:$body"
     }
 
     try {
-        ns_adp_registerscript listfilters-form /listfilters-form ::ns_adp::__hyphen_tag
+        ns_adp_registerscript listfilters-form /listfilters-form __hyphen_tag
         ns_adp_parse -string {<listfilters-form>ok</listfilters-form>}
     } finally {
-        rename ::ns_adp::__hyphen_tag ""
+        rename ::__hyphen_tag ""
     }
 } -result {hyphen:ok}
 
 test ns_adp_registerproc-3.13 {accept registered ADP tag name starting with digit} -body {
-    proc ::ns_adp::__digit_tag {} {
+    proc ::__digit_tag {} {
         return "digit"
     }
 
     try {
-        ns_adp_registerproc 2col ::ns_adp::__digit_tag
+        ns_adp_registerproc 2col ::__digit_tag
         ns_adp_parse -string {<2col>}
     } finally {
-        rename ::ns_adp::__digit_tag ""
+        rename __digit_tag ""
     }
 } -result {digit}
 
@@ -661,37 +661,37 @@ test ns_adp_registerscript-4.0 {registerscript with proc, attributes, ending tag
 ############################################################################
 
 test ns_adp_registerproc-2.1 {registerproc with proc, no attributes, no ending tag} -body {
-    proc ::test_tag_proc {args} {return "hello world with args '$args'"}
-    ns_adp_registerproc test21 ::test_tag_proc
+    proc ::__test_tag_proc {args} {return "hello world with args '$args'"}
+    ns_adp_registerproc test21 ::__test_tag_proc
     ns_adp_parse -string {start <b>x <test21> y</b> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <b>x hello world with args '' y</b> end}
 
 
 test ns_adp_registerproc-2.2 {registerproc with proc, attributes, no ending tag} -body {
-    proc ::test_tag_proc {args} {return "hello world with args '$args'"}
-    ns_adp_registerproc test21 ::test_tag_proc
+    proc ::__test_tag_proc {args} {return "hello world with args '$args'"}
+    ns_adp_registerproc test21 ::__test_tag_proc
     ns_adp_parse -string {start <b>x <test21 x=1 y=2> y</b> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <b>x hello world with args '1 2' y</b> end}
 
 test ns_adp_registerproc-2.3 {registerproc with proc, no attributes, ending tag} -body {
-    proc ::test_tag_proc {args} {return "hello world with args '$args'"}
-    ns_adp_registerproc test21 /test21 ::test_tag_proc
+    proc ::__test_tag_proc {args} {return "hello world with args '$args'"}
+    ns_adp_registerproc test21 /test21 ::__test_tag_proc
     ns_adp_parse -string {start <b>x <test21> y </test21> z </b> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <b>x hello world with args '{ y }' z </b> end}
 
 
 test ns_adp_registerproc-2.4 {registerproc with proc, attributes, ending tag} -body {
-    proc ::test_tag_proc {args} {return "hello world with args '$args'"}
-    ns_adp_registerproc test21 /test21 ::test_tag_proc
+    proc ::__test_tag_proc {args} {return "hello world with args '$args'"}
+    ns_adp_registerproc test21 /test21 ::__test_tag_proc
     ns_adp_parse -string {start <b>x <test21 a="1" b=2> y </test21> z </b> end}
 } -cleanup {
-    rename  ::test_tag_proc ""
+    rename  ::__test_tag_proc ""
 } -result {start <b>x hello world with args '1 2 { y }' z </b> end}
 
 
