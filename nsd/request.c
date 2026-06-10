@@ -888,9 +888,17 @@ Ns_HttpMessageParse(
         size_t  parsed;
 
         p = eol+1;
-        if (*p == '\r') {
-            p++;
-        }
+        /*
+         * Do not skip a following '\r' here.  p should point to the first byte
+         * after the first line.  In messages without headers, this may be the
+         * '\r' of the empty CRLF separator line.
+         *
+         * Older code skipped this byte:
+         *
+         *     if (*p == '\r') {
+         *         p++;
+         *     }
+         */
         *firstLineLengthPtr = (size_t)(p - messageString);
 
         while ((eol = strchr(p, INTCHAR('\n'))) != NULL) {
@@ -910,8 +918,6 @@ Ns_HttpMessageParse(
         parsed = (size_t)(p - messageString);
 
         if (payloadPtr != NULL && (messageLength - parsed) >= 2u) {
-            //fprintf(stderr, "BEFORE BODY 0 <%c> %d pos %ld\n", *p, *p, (p - messageString));
-            //fprintf(stderr, "BEFORE BODY ? <%c> %d pos %ld\n", *(p+1), *(p+1), ((p+1) - messageString));
             /*
              * CRLF means 2 NUL characters, LF alone just one.
              */
@@ -921,9 +927,6 @@ Ns_HttpMessageParse(
             if (*p == '\0') {
                 p++;
             }
-            //fprintf(stderr, "BEFORE BODY 3 <%c> %d pos %ld\n", *p, *p, (p - messageString));
-            //fprintf(stderr, "==== Ns_HttpMessageParse return messageLength %ld current %ld body <%s>\n",
-            //        messageLength, p-messageString, p);
 
             *payloadPtr = p;
         }
