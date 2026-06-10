@@ -23,7 +23,7 @@
 #if defined(HAVE_XLOCALE_H)
 # include <xlocale.h>
 #endif
-#include "locale.h"
+#include <locale.h>
 
 #define NS_TCLHTTP_CALLBACK_AS_STRING 1
 #define USE_ENCODE_HEADERS 1
