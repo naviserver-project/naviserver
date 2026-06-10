@@ -1095,21 +1095,28 @@ PrebindSockets(const char *spec)
          * Example:
          *   0/icmp[/count]
          */
-        if (strncmp(proto, "icmp", 4u) == 0) {
-            long count = 1;
+        if (strncmp(proto, "icmp", 4u) == 0
+            && (proto[4] == '\0' || proto[4] == '/')) {
+            long        count = 1;
+            const char *countStr;
 
             /*
-             * Parse count
+             * Parse optional count.
              */
-            if (str != NULL) {
-                str = strchr(str, INTCHAR('/'));
-                if (str != NULL) {
-                    *(str++) = '\0';
-                    count = strtol(str, NULL, 10);
+            countStr = strchr(proto, INTCHAR('/'));
+            if (countStr != NULL) {
+                char *countEnd;
+
+                count = strtol(countStr + 1, &countEnd, 10);
+                if (countEnd == countStr + 1 || *countEnd != '\0' || count < 1) {
+                    Ns_Log(Warning, "prebind: ignore invalid icmp count: '%s'", countStr + 1);
+                    count = 1;
                 }
             }
-            while (count--) {
+
+            while (count-- > 0) {
                 NS_SOCKET sock = Ns_SockBindRaw(IPPROTO_ICMP);
+
                 if (sock == NS_INVALID_SOCKET) {
                     Ns_Log(Error, "prebind: bind error for icmp: %s", strerror(errno));
                     continue;
