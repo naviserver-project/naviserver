@@ -101,8 +101,8 @@ static void ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DStrin
 static void AdpParseAdp(NsInterp *itPtr, AdpCode *codePtr, char *adp, unsigned int flags)
     NS_GNUC_NONNULL(1,2,3);
 
-static void AdpParseTclFile(NsInterp *itPtr, AdpCode *codePtr, const char *adp, unsigned int flags, const char* file)
-    NS_GNUC_NONNULL(1,2,3);
+static void AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const char* file)
+    NS_GNUC_NONNULL(1,2);
 
 
 /*
@@ -326,10 +326,9 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         result = TCL_ERROR;
 
     } else {
-        const char     *firstArgString = Tcl_GetString(objv[1]);
         NsInterp       *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
-        const char     *end, *tag, *content, *tagset = NULL;
+        const char     *end, *tag, *content;
         char            invalidChar = '\0';
         Tcl_HashEntry  *hPtr;
         int             isNew;
@@ -341,6 +340,8 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         Tcl_HashTable  *tagTablePtr = &servPtr->adp.tags;
 
         if (*firstArgString == '-') {
+            const char *tagset;
+
             if (!STREQ(firstArgString, "-tagset")) {
                 Ns_TclPrintfResult(interp,
                                    "unknown option \"%s\": should be -tagset",
@@ -477,11 +478,10 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
  *----------------------------------------------------------------------
  */
 static void
-AdpParseTclFile(NsInterp *itPtr, AdpCode *codePtr, const char *adp, unsigned int flags, const char* file) {
+AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const char* file) {
     int        line = 0;
     TCL_SIZE_T size;
 
-    NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(codePtr != NULL);
     NS_NONNULL_ASSERT(adp != NULL);
 
@@ -1031,7 +1031,7 @@ NsAdpParse(NsInterp *itPtr, AdpCode *codePtr, char *adp, unsigned int flags,
      * just execute the Tcl code in case of cache disabled
      */
     if ((flags & ADP_TCLFILE) != 0u) {
-        AdpParseTclFile(itPtr, codePtr, adp, flags, file);
+        AdpParseTclFile(codePtr, adp, flags, file);
     } else {
         AdpParseAdp(itPtr, codePtr, adp, flags);
     }

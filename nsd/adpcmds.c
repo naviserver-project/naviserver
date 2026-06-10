@@ -1644,7 +1644,7 @@ AdpTagSetExistsObjCmd(ClientData clientData, Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        Tcl_HashEntry  *hPtr = (void*)1;
+        const Tcl_HashEntry *hPtr = (void*)1;
 
         if (!STREQ(nameString, "default")) {
             const NsInterp *itPtr  = clientData;
