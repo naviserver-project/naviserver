@@ -72,7 +72,9 @@ New Features:
    * Added signature support for classical and modern algorithms, including
      provider-backed post-quantum signature schemes where available.
    * Added EC public-key construction from explicit coordinates.
-   * Added native UUID generation (v4 and v7).
+   * Added native UUID generation via ns_crypto::uuid, supporting UUID v4
+     and UUID v7. The existing ns_uuid command remains available as a
+     backward-compatible wrapper for UUID v4 generation.
 
  - Mutual TLS (mTLS) and certificate introspection:
    * Added proper mTLS support for server-side TLS.
@@ -301,7 +303,7 @@ Tcl API Changes:
 
  - JSON and CBOR:
 
-   * Added the `ns_json` command family for parsing, generating, inspecting,
+   * Added the 'ns_json' command family for parsing, generating, inspecting,
      and updating JSON values:
        ns_json isnull value
        ns_json keydecode string
@@ -319,15 +321,15 @@ Tcl API Changes:
        ns_json triples schema ?-pretty? ?-required? ?--? triples ...
        ns_json triples setvalue ?-path value? ?-pointer value? ?-type auto|string|number|boolean|null|object|array? ?--? triples value
 
-   * Added `ns_getjson` for accessing parsed JSON request bodies:
+   * Added 'ns_getjson' for accessing parsed JSON request bodies:
        ns_getjson ?-output json|triples?
 
-   * Added `ns_cbor parse` for parsing CBOR input:
+   * Added 'ns_cbor parse' for parsing CBOR input:
        ns_cbor parse ?-binary? ?-encoding hex|base64url|base64|binary? ?-scan? ?--? value
 
  - JWT:
 
-   * Added `ns_jwt` commands for decoding, encoding, and verifying JSON Web Tokens:
+   * Added 'ns_jwt' commands for decoding, encoding, and verifying JSON Web Tokens:
        ns_jwt decode token
        ns_jwt encode -alg value ?-key value? ?-jwk value? ?-secret value? ?-kid value? ?-typ value? ?-cty value? ?-extraheader value? ?-iss value? ?-sub value? ?-aud value? ?-exp value? ?-nbf value? ?-iat value? ?-jti value? ?extrapayload?
        ns_jwt verify ?-alg value? ?-key value? ?-jwk value? ?-jwks value? ?-secret value? ?-kid value? ?-requirekid? ?-verifyclaims? ?-aud value? ?-iss value? ?-sub value? ?-clockskew value? ?-now value? token
@@ -362,15 +364,25 @@ Tcl API Changes:
    * Added UUID v7 generation (RFC 9562):
        ns_crypto::uuid ?-version v4|v7?
 
+   * Added native UUID generation (RFC 4122 and RFC 9562):
+       ns_crypto::uuid ?-version v4|v7?
+
+     The default UUID version is v4, so ns_crypto::uuid is equivalent
+     to 'ns_crypto::uuid -version v4'.  The existing ns_uuid command
+     remains fully backward compatible and is implemented on top of
+     ns_crypto::uuid.  New code may call ns_crypto::uuid directly to
+     avoid the Tcl-level compatibility wrapper, while existing code
+     using ns_uuid does not need to be changed.
+
    * Added EC public-key construction from explicit coordinates:
        ns_crypto::eckey fromcoords ?-binary? -curve value -x value -y value ?-format pem|der? ?-outfile value?
 
-   * Updated several existing `ns_crypto` command signatures to make required
-     cryptographic inputs explicit, including options such as `-key`, `-tag`,
-     `-salt`, `-secret`, `-info`, and `-pem`.
+   * Updated several existing 'ns_crypto' command signatures to make required
+     cryptographic inputs explicit, including options such as '-key', '-tag',
+     '-salt', '-secret', '-info', and '-pem'.
 
-   * Reworked `ns_crypto::eckey` output handling to use explicit `-outfile`
-     and `-format` options where applicable.
+   * Reworked 'ns_crypto::eckey' output handling to use explicit '-outfile'
+     and '-format' options where applicable.
 
  - TLS, certificates, and client authentication:
     * Added certificate inspection:
@@ -382,7 +394,7 @@ Tcl API Changes:
    * Added detailed TLS/OpenSSL capability reporting:
        ns_info ssl ?-details?
 
-   * Added `-key` support to TLS-capable HTTP client commands (use when private key is not included in certificate file)
+   * Added '-key' support to TLS-capable HTTP client commands (use when private key is not included in certificate file)
        ns_http run ... ?-cert value? ?-key value? ... url
        ns_http queue ... ?-cert value? ?-key value? ... url
        ns_connchan open ... ?-cert value? ?-key value? ... url
@@ -407,7 +419,7 @@ Tcl API Changes:
         ns_conn contenttype
 
  - URL encoding:
-   * Extended URL percent-encoding and decoding with `fullpath` and `fragment` modes:
+   * Extended URL percent-encoding and decoding with 'fullpath' and 'fragment' modes:
        ns_urlencode ?-charset value? ?-part query|path|fullpath|fragment|cookie|oauth1? ?-uppercase? ?--? component ...
        ns_urldecode ?-charset value? ?-fallbackcharset value? ?-part query|path|fullpath|fragment|cookie|oauth1? ?--? string
 
