@@ -148,6 +148,7 @@ static bool TagValidChar (char c) {
         || (c >= 'A' && c <= 'Z')
         || (c >= '0' && c <= '9')
         || (c == ':')
+        || (c == '-')
         || (c == '_') ;
 }
 
@@ -1022,9 +1023,15 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     }
     t = s;
     /*
-     * The following loop for obtaining the tag name is more liberal than the
-     * HTML specification, allowing just letters and digits. However, we do
-     * NOT want e.g. "html<if" as a tag name, whenparsing "<html<if ...>>"
+     * The following loop obtains a NaviServer ADP tag name.  The accepted
+     * syntax is intentionally close to ordinary markup names, but follows
+     * NaviServer's historic ADP parser rules rather than the stricter HTML
+     * custom-element rules.  In addition to ASCII letters and digits, ADP
+     * tag names may contain colon, underscore, and hyphen characters after
+     * the first character.  This supports custom-element-style names such
+     * as "my-widget" and existing OpenACS tag names such as
+     * "listfilters-form".  However, we do NOT want e.g. "html<if" as a tag
+     * name when parsing "<html<if ...>>".
      */
     while (s < e  && CHARTYPE(space, *s) == 0  && *s != '<') {
         ++s;

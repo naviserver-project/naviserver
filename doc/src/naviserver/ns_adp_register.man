@@ -18,8 +18,24 @@
  [uri ../../manual/files/adp-overview.html "ADP Overview"] man page.
 
 
-[para] Registered tags can either be tags with content -- consisting of
- an opening and a closing tag -- or tags defining empty elements, where
+[para]
+ Registered ADP tags use ordinary markup syntax and are recognized by the
+ ADP parser as tags, not as ADP script blocks.  The first character of a
+ registered ADP tag name must be an ASCII letter or digit.  The remaining
+ characters may be ASCII letters, digits, colons, underscores, or
+ hyphens.  This accepts conventional HTML tag names, NaviServer's
+ historical support for digit-start tag names, custom-element-style names
+ such as [const my-widget], and existing OpenACS tag names such as
+ [const listfilters-form].  A tag name must not start with a hyphen.
+ Examples of valid tag names are [const foo], [const adp],
+ [const adp_value], [const h1], [const 2col], and
+ [const listfilters-form].  Tag names starting with characters such as
+ [const $], [const %], [const @], or [const -] are invalid, since such
+ names cannot be recognized as registered tags by the ADP parser.
+
+[para]
+ Registered tags can either be tags with content - consisting of
+ an opening and a closing tag - or tags defining empty elements, where
  no closing tag is defined. When both the [arg tag] and the
  [arg endtag] are specified in the registering command, the tags must have
  content; when the [arg endtag] is omitted in the registering command,
