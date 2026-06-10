@@ -51,6 +51,13 @@ The value of the reported [arg condition] will be as follows:
 
 [list_end]
 
+[para]
+The [cmd ns_sock*] command family is retained for backward compatibility
+with existing applications.  New applications should use [cmd ns_connchan]
+instead.  In particular, connection-channel handling provides
+[cmd {ns_connchan detach}] for cases where a channel should remain open
+independently of the current connection.
+
 [section EXAMPLES]
 
 [example_begin]
@@ -64,9 +71,6 @@ The value of the reported [arg condition] will be as follows:
  # arrives), "newconn" will be called as:  "newconn $sock r"
  #
  ns_sockcallback $sock newconn r
- 
- # Keep $sock from closing after connection ends
- detach $sock
  
  #
  # Definition of the proc "newconn"
