@@ -155,6 +155,7 @@ Ns_Db1Row(Ns_DbHandle *handle, const char *sql)
         if (nrows != 1) {
             Ns_DbSetException(handle, NS_SQLERRORCODE,
                 "Query did not return a row.");
+            Ns_SetFree(row);
             row = NULL;
         }
     }
