@@ -39,6 +39,8 @@ typedef struct Tmp {
 static Tmp      *firstTmpPtr = NULL;
 static Ns_Mutex  lock = NULL;
 
+static void EnsureFdOpen(int targetFd, int flags);
+
 /*
  * The following constants are defined for this file
  */
@@ -47,8 +49,51 @@ static Ns_Mutex  lock = NULL;
 # define F_CLOEXEC 1
 #endif
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * EnsureFdOpen --
+ *
+ *      Ensure that the specified standard file descriptor is open on
+ *      /dev/null.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Opens /dev/null with the specified flags.  If open() returns the
+ *      requested descriptor, the descriptor is kept open intentionally.
+ *      Otherwise, the temporary descriptor is closed again.
+ *
+ *      This relies on the POSIX rule that open() returns the lowest
+ *      available file descriptor.  Therefore, when targetFd is 0, 1, or 2
+ *      and the corresponding descriptor is currently closed, opening
+ *      /dev/null will fill that slot.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+EnsureFdOpen(int targetFd, int flags)
+{
+    int fd;
 
-
+    fd = ns_open(DEVNULL, flags | O_CLOEXEC, 0);
+    if (fd < 0) {
+        Ns_Log(Error, "could not open %s: %s", DEVNULL, strerror(errno));
+        return;
+    }
+
+    if (fd == targetFd) {
+        /*
+         * Keep this descriptor open intentionally.  It fills the requested
+         * standard fd slot, e.g. stdin/stdout/stderr.
+         */
+        return;
+    }
+
+    (void) ns_close(fd);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -65,34 +110,27 @@ static Ns_Mutex  lock = NULL;
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsInitFd(void)
 {
 #ifndef _WIN32
     struct rlimit  rl;
 #endif
-    int fd, devNull;
+    int devNull;
 
     Ns_MutexInit(&lock);
     Ns_MutexSetName(&lock, "ns:fd");
 
     /*
      * Ensure fd 0, 1, and 2 are open on at least /dev/null.
+     * open() returns the lowest available descriptor.  Therefore, when one of
+     * these calls returns the requested descriptor, the descriptor is kept open
+     * intentionally; otherwise it was only a temporary probe and is closed.
      */
 
-    fd = ns_open(DEVNULL, O_RDONLY | O_CLOEXEC, 0);
-    if (fd > 0) {
-        (void) ns_close(fd);
-    }
-    fd = ns_open(DEVNULL, O_WRONLY | O_CLOEXEC, 0);
-    if (fd > 0 && fd != 1) {
-        (void) ns_close(fd);
-    }
-    fd = ns_open(DEVNULL, O_WRONLY | O_CLOEXEC, 0);
-    if ((fd > 0) && (fd != 2)) {
-        (void) ns_close(fd);
-    }
+    EnsureFdOpen(0, O_RDONLY);
+    EnsureFdOpen(1, O_WRONLY);
+    EnsureFdOpen(2, O_WRONLY);
 
 #ifndef _WIN32
     /*

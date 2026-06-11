@@ -1753,23 +1753,27 @@ LogOpen(void *UNUSED(arg))
         } else {
 
             /*
-             * Route stderr to the file
+             * Route stderr to the file.
              */
             if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
+                Ns_Log(Error, "log: failed to route stderr to file '%s': '%s'",
+                       logfileName, strerror(errno));
                 status = NS_ERROR;
             }
 
             /*
-             * Route stdout to the file
+             * Route stdout to the same file, but only if stderr redirection succeeded.
              */
-            if (ns_dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
+            if (status == NS_OK && ns_dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
                 Ns_Log(Error, "log: failed to route stdout to file: '%s'",
                        strerror(errno));
                 status = NS_ERROR;
             }
 
             /*
-             * Clean up dangling 'open' reference to the fd
+             * Clean up the original open descriptor.  When ns_open() returned
+             * STDERR_FILENO or STDOUT_FILENO, that descriptor is intentionally kept
+             * open as one of the standard streams.
              */
             if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
                 (void) ns_close(fd);

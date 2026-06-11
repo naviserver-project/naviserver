@@ -9662,6 +9662,13 @@ AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
                                fileNameString, Tcl_PosixError(interp));
             result = TCL_ERROR;
         } else {
+            /*
+             * Return the open descriptor to Tcl.  Ownership is transferred to
+             * the caller, which is responsible for closing it via the async
+             * writer/logfile close path.
+             *
+             * @infer-ignore PULSE_RESOURCE_LEAK
+             */
             Tcl_SetObjResult(interp, Tcl_NewIntObj(fd));
         }
     }

@@ -827,12 +827,16 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
 
         } else {
             /*
-             * Overwrite the separator with a null-byte to make the
-             * first part null-terminated.
+             * Get the part before the dot and turn this into an integer.
              */
-            *sep = '\0';
-            result = Tcl_GetInt(interp, str, &intValue);
-            *sep = separator;
+            Tcl_DString ds;
+
+            Tcl_DStringInit(&ds);
+            Tcl_DStringAppend(&ds, str, (TCL_SIZE_T)(sep - str));
+
+            result = Tcl_GetInt(interp, ds.string, &intValue);
+            Tcl_DStringFree(&ds);
+
             if (result != TCL_OK) {
                 result = TCL_ERROR;
             } else {
@@ -852,7 +856,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
             if (separator == '.') {
                 double dblValue;
 
-                if (Tcl_GetDouble(NULL, sep, &dblValue) != TCL_OK) {
+                if (Tcl_GetDouble(interp, sep, &dblValue) != TCL_OK) {
                     char *ptr = NULL;
                     const char *p = sep;
                     long  fraction;

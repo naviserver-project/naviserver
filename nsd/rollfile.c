@@ -89,15 +89,14 @@ Ns_RollFile(const char *fileName, TCL_SIZE_T max)
         err = Exists(fromName);
 
         if (err > 0) {
-            char        *toName;
             unsigned int num = 0;
+            char        *toName = ns_strdup(fromName);
 
-            toName = ns_strdup(fromName);
+            assert(toName != NULL);
 
             /*
              * Find the highest version
              */
-
             do {
                 char *dot = strrchr(toName, INTCHAR('.'));
 
@@ -334,7 +333,9 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
     NsAsyncWriterQueueDisable(NS_FALSE);
 
     /*
-     * Close the logfile.
+     * Temporarily close the logfile via the caller-provided callback before
+     * rolling it.  The matching openProc callback below reopens and retains
+     * the descriptor again.
      */
     status = closeProc(ns_const2voidp(arg));
     if (status == NS_OK) {
@@ -370,7 +371,10 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
     }
 
     /*
-     * Now open the logfile (maybe again).
+     * Re-open the logfile via the caller-provided callback.  The callback
+     * installs and retains the resulting descriptor in the corresponding
+     * logging subsystem; ownership is not returned to this function.  The
+     * descriptor will be released later via the matching closeProc callback.
      */
     status = openProc(ns_const2voidp(arg));
     NsAsyncWriterQueueEnable();
