@@ -2103,6 +2103,7 @@ NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
 
 NS_EXTERN NsServer *NsGetInitServer(void) NS_GNUC_PURE;
 NS_EXTERN NsServer *NsGetServer(const char *server) NS_GNUC_NONNULL(1);
+NS_EXTERN NsServer *NsGetServerRequired(const char *server) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN NsServer *NsGetServerDebug(const char *server, const char *caller);
 NS_EXTERN void NsStartServers(void);
 NS_EXTERN void NsStopServers(const Ns_Time *toPtr) NS_GNUC_NONNULL(1);

@@ -93,6 +93,19 @@ NsGetServer(const char *server)
     return result;
 }
 
+NsServer *
+NsGetServerRequired(const char *server)
+{
+    NsServer *servPtr;
+
+    servPtr = NsGetServer(server);
+    if (servPtr == NULL) {
+        Ns_Fatal("server '%s' is not configured", server);
+    }
+
+    return servPtr;
+}
+
 Ns_Server *
 Ns_GetServer(const char *server)
 {

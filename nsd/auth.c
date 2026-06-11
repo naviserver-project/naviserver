@@ -435,7 +435,7 @@ void *
 Ns_RegisterAuthorizeRequest(const char *server, Ns_AuthorizeRequestProc *proc, void *arg,
                             const char *authority, bool first)
 {
-    NsServer    *servPtr = NsGetServer(server);
+    NsServer    *servPtr = NsGetServerRequired(server);
     RequestAuth *authPtr = ns_malloc(sizeof(RequestAuth));
 
     authPtr->proc      = proc;
@@ -475,7 +475,7 @@ void *
 Ns_RegisterAuthorizeUser(const char *server, Ns_AuthorizeUserProc *proc, void *arg,
                          const char *authority, bool first)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr = NsGetServerRequired(server);
     UserAuth *authPtr = ns_malloc(sizeof(UserAuth));
 
     authPtr->proc      = proc;
