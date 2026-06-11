@@ -72,6 +72,28 @@ void *ns_malloc(size_t size) {
     }
     return result;
 }
+void *
+ns_malloc_nonzero(size_t size)
+{
+    void *result;
+
+    if (unlikely(size == 0u)) {
+        fprintf(stderr, "Fatal: attempt to allocate zero bytes.\n");
+        abort();
+    }
+
+#ifdef NS_VERBOSE_MALLOC
+    fprintf(stderr, "#MEM# malloc %" PRIuz "\n", size);
+#endif
+
+    result = malloc(size);
+    if (unlikely(result == NULL)) {
+        fprintf(stderr, "Fatal: failed to allocate %" PRIuz " bytes.\n", size);
+        abort();
+    }
+
+    return result;
+}
 void ns_free(void *ptr) {
     /*
      * Standard POSIX free() allows NULL pointer.
@@ -107,7 +129,17 @@ ns_malloc(size_t size)
 {
     return ckalloc((unsigned int)size);
 }
+void *
+ns_malloc_nonzero(size_t size)
+{
+    void *result = ckalloc((unsigned int)size);
 
+    if (unlikely(result == NULL)) {
+        fprintf(stderr, "Fatal: failed to allocate %" PRIuz " bytes.\n", size);
+        abort();
+    }
+    return result;
+}
 void
 ns_free(void *ptr)
 {

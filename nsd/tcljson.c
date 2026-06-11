@@ -1829,7 +1829,7 @@ JsonAllocEntryProc(Tcl_HashTable *tablePtr, void *keyPtr)
 
     stored = JsonKeyAlloc(NULL, probe->bytes, probe->len);
 
-    hPtr = ns_malloc(sizeof(Tcl_HashEntry));
+    hPtr = ns_malloc_nonzero(sizeof(Tcl_HashEntry));
     hPtr->tablePtr = tablePtr;
     hPtr->clientData = 0;
     hPtr->key.oneWordValue = (char *)stored;
@@ -5866,7 +5866,7 @@ JsonSchemaCanonicalizeRequired(Tcl_Interp *interp, Tcl_Obj *requiredObj,
     }
 
     nentries = lc / 3;
-    entries = (JsonStringEntry *)ns_malloc((size_t)nentries * sizeof(JsonStringEntry));
+    entries = (JsonStringEntry *)ns_malloc_nonzero((size_t)nentries * sizeof(JsonStringEntry));
 
     for (TCL_SIZE_T i = 0, j = 0; i < lc; i += 3, j++) {
         entries[j].valueObj = lv[i + 2];

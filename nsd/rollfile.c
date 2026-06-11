@@ -83,7 +83,7 @@ Ns_RollFile(const char *fileName, TCL_SIZE_T max)
         int    err;
         size_t n = strlen(fileName);
 
-        first = ns_malloc(n + 5u);
+        first = ns_malloc_nonzero(n + 5u);
         memcpy(first, fileName, n);
         memcpy(first + n, ".000", 5);  /* includes NUL */
         err = Exists(first);

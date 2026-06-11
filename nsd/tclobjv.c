@@ -1686,7 +1686,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 
         if ((key[0] != '-' && defObjPtr != NULL)
             || (i + 1 == numSpecs && STREQ(key, "args"))) {
-            char *rewrittenKey  = ns_malloc((size_t)keyLen + 2u);
+            char *rewrittenKey  = ns_malloc_nonzero((size_t)keyLen + 2u);
 
             *rewrittenKey = '?';
             memcpy(rewrittenKey + 1, key, (size_t)keyLen + 1u);

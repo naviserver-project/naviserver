@@ -824,7 +824,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, Tcl_Obj *scriptObj,
         cbPtr = ns_realloc(connChanPtr->cbPtr, sizeof(Callback) + (size_t)scriptLength);
 
     } else {
-        cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
+        cbPtr = ns_malloc_nonzero(sizeof(Callback) + (size_t)scriptLength);
     }
     memcpy(cbPtr->script, scriptString, (size_t)scriptLength + 1u);
     cbPtr->scriptLength = (size_t)scriptLength;

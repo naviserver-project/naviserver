@@ -3604,7 +3604,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
             goto fail;
         }
 
-        mem = ns_malloc(sizeof(unsigned int) + (size_t)alpnDs.length);
+        mem = ns_malloc_nonzero(sizeof(unsigned int) + (size_t)alpnDs.length);
         *mem = (unsigned int)alpnDs.length;
         memcpy(mem + 1, alpnDs.string, (size_t)alpnDs.length);
         SSL_CTX_set_alpn_select_cb(ctx, ALPNSelectCB, mem + 1);

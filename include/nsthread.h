@@ -1259,6 +1259,7 @@ NS_EXTERN void Ns_MasterUnlock(void);
  */
 
 NS_EXTERN void *ns_malloc(size_t size) NS_GNUC_MALLOC NS_ALLOC_SIZE1(1) NS_GNUC_WARN_UNUSED_RESULT;
+NS_EXTERN void *ns_malloc_nonzero(size_t size) NS_GNUC_MALLOC NS_ALLOC_SIZE1(1) NS_GNUC_WARN_UNUSED_RESULT NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN void *ns_calloc(size_t num, size_t size) NS_GNUC_MALLOC NS_ALLOC_SIZE2(1,2) NS_GNUC_WARN_UNUSED_RESULT;
 NS_EXTERN void ns_free(void *buf);
 NS_EXTERN void *ns_realloc(void *buf, size_t size) NS_ALLOC_SIZE1(2) NS_GNUC_WARN_UNUSED_RESULT;

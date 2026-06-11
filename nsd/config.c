@@ -1486,7 +1486,7 @@ JoinPath2(const char *dir, const char *file)
     const size_t dlen = strlen(dir);
     const size_t flen = strlen(file);
     const bool needSlash = (dlen > 0u && dir[dlen - 1u] != '/');
-    char *p = ns_malloc(dlen + (needSlash ? 1u : 0u) + flen + 1u);
+    char *p = ns_malloc_nonzero(dlen + (needSlash ? 1u : 0u) + flen + 1u);
 
     memcpy(p, dir, dlen);
     if (needSlash) {
