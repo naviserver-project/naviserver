@@ -376,7 +376,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
      * logging subsystem; ownership is not returned to this function.  The
      * descriptor will be released later via the matching closeProc callback.
      */
-    status = openProc(ns_const2voidp(arg));
+    status = openProc(ns_const2voidp(arg)); /* @infer-ignore PULSE_RESOURCE_LEAK */
     NsAsyncWriterQueueEnable();
 
     if (status == NS_OK) {
