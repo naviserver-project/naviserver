@@ -258,7 +258,7 @@ Ns_CreateTaskQueue(const char *name)
     NS_NONNULL_ASSERT(name != NULL);
 
     nameLength = strlen(name);
-    queuePtr = ns_calloc(1u, sizeof(TaskQueue) + nameLength);
+    queuePtr = ns_calloc(1u, sizeof(TaskQueue) + nameLength + 1u);
 
     memcpy(queuePtr->name, name, nameLength + 1u);
     Ns_MutexInit(&queuePtr->lock);
