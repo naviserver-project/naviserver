@@ -114,16 +114,17 @@ ConfigServerProxy(const char *server)
  *
  *----------------------------------------------------------------------
  */
-int Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *method, const char *url,
-                        Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
-                        unsigned int flags, void *contextSpec)
+int
+Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *method, const char *url,
+                    Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
+                    unsigned int flags, void *contextSpec)
 {
     int          result = TCL_OK;
     const char  *errorMsg = NULL;
 
     if (!Ns_PlainUrlPath(url, &errorMsg)) {
         Tcl_DString errorDs;
-        bool raiseError;
+        bool        raiseError;
 
         /*
          * Raising errors is deactivated for the time being to improve
@@ -141,12 +142,22 @@ int Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *meth
             Tcl_DStringFree(&errorDs);
         }
 
+        /*
+         * The request was not registered.  Therefore ownership of arg was
+         * not transferred to the URL-specific data table, and the local
+         * registration attempt has to release it.
+         */
+        if (deleteCallback != NULL && arg != NULL) {
+            (*deleteCallback)(arg);
+        }
+
     } else {
         RegisterRequest(server, method, url, proc, deleteCallback, arg, flags, contextSpec);
     }
 
     return result;
 }
+
 /*
  *----------------------------------------------------------------------
  *
