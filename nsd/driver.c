@@ -1320,6 +1320,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     Ns_MutexSetName2(&drvPtr->writer.lock, "ns:drv:writer", threadName);
 
     if (ns_sockpair(drvPtr->trigger) != 0) {
+        // @infer-ignore MEMORY_LEAK_C
         Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
     }
 

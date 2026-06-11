@@ -286,6 +286,7 @@ ConfigServerEncodings(const char *server)
         servPtr->encoding.outputEncoding =
             Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);
         if (servPtr->encoding.outputEncoding == NULL) {
+            // @infer-ignore MEMORY_LEAK_C
             Ns_Fatal("could not find encoding for default output charset \"%s\"",
                      servPtr->encoding.outputCharset);
         }
