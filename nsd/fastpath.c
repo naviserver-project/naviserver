@@ -543,7 +543,7 @@ CheckStaticCompressedDelivery(
     size_t      encodingLength
 ) {
     const char  *result = NULL;
-    struct stat  gzStat;
+    struct stat  gzStat = {0};
     const char  *compressedFileName;
     Conn        *connPtr;
 

@@ -1837,7 +1837,7 @@ static int
 PidsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, details = 0;
-    char       *pool;
+    char       *pool = NULL;
     Ns_ObjvSpec opts[] = {
         {"-details", Ns_ObjvBool, &details,  INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}

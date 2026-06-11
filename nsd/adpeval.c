@@ -237,7 +237,6 @@ static int
 AdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resvar)
 {
     Tcl_Interp   *interp;
-    AdpCode       code;
     Tcl_DString   output;
     int           result;
     char         *obj0;
@@ -255,6 +254,8 @@ AdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resv
     if ((itPtr->adp.flags & ADP_ADPFILE) != 0u) {
         result = AdpSource(itPtr, objc, objv, obj0, NULL, &output);
     } else {
+        AdpCode code = {0};
+
         NsAdpParse(itPtr, &code, obj0, itPtr->adp.flags, NULL);
         result = AdpExec(itPtr, objc, objv, NULL, &code, NULL, &output, NULL);
         NsAdpFreeCode(&code);
