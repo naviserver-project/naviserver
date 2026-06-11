@@ -1629,7 +1629,7 @@ NsTclParseMessageObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         headers->flags |= NS_SET_OPTION_NOCASE;
         if (Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC) != TCL_OK) {
             Ns_TclPrintfResult(interp, "ns_parsemessage: new header set could not be passed to the interpreter");
-            ns_free(headers);
+            Ns_SetFree(headers);
             result = TCL_ERROR;
 
         } else {
