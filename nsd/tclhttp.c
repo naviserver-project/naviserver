@@ -1635,9 +1635,17 @@ NsTclParseMessageObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         } else {
             Ns_ReturnCode status;
             Tcl_Obj      *setObj = Tcl_GetObjResult(interp);
+            Ns_Set       *enteredHeaders = headers;
+
+            /*
+             * Ns_TclEnterSet(..., NS_TCL_SET_DYNAMIC) transferred ownership of
+             * headers to the interpreter.  enteredHeaders is used only as a borrowed
+             * pointer while parsing the message headers.
+             */
+            headers = NULL;
 
             Tcl_IncrRefCount(setObj);
-            status = Ns_HttpMessageParse(messageString, (size_t)messageLength, &firstLineLength, headers, &bodyString);
+            status = Ns_HttpMessageParse(messageString, (size_t)messageLength, &firstLineLength, enteredHeaders, &bodyString);
             if (status == NS_OK) {
                 Tcl_Obj *resultObj = Tcl_NewDictObj();
 
