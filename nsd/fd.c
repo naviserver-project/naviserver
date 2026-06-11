@@ -116,7 +116,6 @@ NsInitFd(void)
 #ifndef _WIN32
     struct rlimit  rl;
 #endif
-    int devNull;
 
     Ns_MutexInit(&lock);
     Ns_MutexSetName(&lock, "ns:fd");
@@ -180,16 +179,6 @@ NsInitFd(void)
 #endif /* USE_DUPHIGH */
     }
 #endif /* _WIN32 */
-
-    /*
-     * Open a fd on /dev/null which can be later reused.
-     */
-
-    devNull = ns_open(DEVNULL, O_RDWR | O_CLOEXEC, 0);
-    if (devNull < 0) {
-        Ns_Fatal("fd: ns_open(%s) failed: %s", DEVNULL, strerror(errno));
-    }
-    (void) Ns_DupHigh(&devNull);
 }
 
 
