@@ -452,12 +452,12 @@ NsConfigTclHttp(void)
     Tcl_DStringInit(&ds);
 
     for (idx = 0; idx < nq; idx++) {
-        char *qName;
-
         Ns_DStringPrintf(&ds, "tclhttp.%lu", idx);
-        qName = Ns_DStringExport(&ds);
-        nsconf.tclhttptasks.queues[idx] = Ns_CreateTaskQueue(qName);
+        nsconf.tclhttptasks.queues[idx] = Ns_CreateTaskQueue(ds.string);
+        Tcl_DStringSetLength(&ds, 0);
     }
+
+    Tcl_DStringFree(&ds);
 
     return;
 }
@@ -1629,7 +1629,9 @@ NsTclParseMessageObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         headers->flags |= NS_SET_OPTION_NOCASE;
         if (Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC) != TCL_OK) {
             Ns_TclPrintfResult(interp, "ns_parsemessage: new header set could not be passed to the interpreter");
+            ns_free(headers);
             result = TCL_ERROR;
+
         } else {
             Ns_ReturnCode status;
             Tcl_Obj      *setObj = Tcl_GetObjResult(interp);
@@ -1690,7 +1692,7 @@ int
 NsTclParseHeaderObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    Ns_Set      *set;
+    Ns_Set      *set = NULL;
     const char  *headerString = NS_EMPTY_STRING;
     char        *prefix = NULL;
     Ns_ObjvSpec opts[] = {
@@ -1711,7 +1713,6 @@ NsTclParseHeaderObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     if (result == TCL_OK) {
         size_t fieldNumber;
 
-        assert(set != NULL);
         if (Ns_ParseHeader(set, headerString, prefix, &fieldNumber) != NS_OK) {
             Ns_TclPrintfResult(interp, "invalid header: %s", headerString);
             result = TCL_ERROR;

@@ -8490,7 +8490,7 @@ static int
 JsonTriplesMatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                        TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Tcl_Obj      *schemaJsonObj = NULL, *triplesObj, *schemaObj = NULL;
+    Tcl_Obj      *schemaJsonObj = NULL, *triplesObj = NULL, *schemaObj = NULL;
     Tcl_Obj      *rootTypeObj = NULL, *rootValueObj = NULL;
     JsonValueType rootVt;
     Tcl_DString   pathDs;
