@@ -4900,7 +4900,7 @@ JsonTriplesSortObject(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj **sortedO
     }
 
     nentries = lc / 3;
-    entries = (JsonTripleEntry *)ns_malloc((size_t)nentries * sizeof(JsonTripleEntry));
+    entries = (JsonTripleEntry *)ns_malloc_nonzero((size_t)nentries * sizeof(JsonTripleEntry));
 
     for (TCL_SIZE_T i = 0, j = 0; i < lc; i += 3, j++) {
         entries[j].nameObj  = lv[i + 0];

@@ -437,6 +437,7 @@ GetServer(const Ns_Server *servPtr) {
  *      NS_OK           - the user was found and the password matches
  *      NS_FORBIDDEN    - the user was found but the password is incorrect
  *      NS_UNAUTHORIZED - the server context is missing or the user is not found
+ *      NS_ERROR        - invalid server
  *
  * Side Effects:
  *      Acquires the server’s request‐auth rwlock in read mode.
@@ -454,30 +455,34 @@ AuthorizeUserProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *user,
     psrvPtr = GetServer(servPtr);
     /*fprintf(stderr, "NSPERM AuthorizeUserProc servPtr %p psrvPtr %p (user %s pass %s)\n",
       (void*)servPtr, (void*)psrvPtr, user, passwd);*/
-    Ns_RWLockRdLock(&psrvPtr->lock);
-    if (psrvPtr == NULL) {
-        result = NS_UNAUTHORIZED;
-    } else {
-        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
-
-        if (hPtr != NULL) {
-            const User *userPtr;
-
-            /*fprintf(stderr, "NSPERM ... user %s found\n", user);*/
-            userPtr = Tcl_GetHashValue(hPtr);
-
-            if (CheckPassword(passwd, userPtr->pwd, userPtr->flags) != NS_OK) {
-                /*
-                 * Incorrect password
-                 */
-                result = NS_FORBIDDEN;
-            }
-            *continuationPtr = TCL_BREAK;
-        } else {
+    if (psrvPtr != NULL) {
+        Ns_RWLockRdLock(&psrvPtr->lock);
+        if (psrvPtr == NULL) {
             result = NS_UNAUTHORIZED;
+        } else {
+            Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&psrvPtr->users, user);
+
+            if (hPtr != NULL) {
+                const User *userPtr;
+
+                /*fprintf(stderr, "NSPERM ... user %s found\n", user);*/
+                userPtr = Tcl_GetHashValue(hPtr);
+
+                if (CheckPassword(passwd, userPtr->pwd, userPtr->flags) != NS_OK) {
+                    /*
+                     * Incorrect password
+                     */
+                    result = NS_FORBIDDEN;
+                }
+                *continuationPtr = TCL_BREAK;
+            } else {
+                result = NS_UNAUTHORIZED;
+            }
         }
+        Ns_RWLockUnlock(&psrvPtr->lock);
+    } else {
+        result = NS_ERROR;
     }
-    Ns_RWLockUnlock(&psrvPtr->lock);
 
     return result;
 }

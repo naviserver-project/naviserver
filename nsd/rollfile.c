@@ -79,59 +79,102 @@ Ns_RollFile(const char *fileName, TCL_SIZE_T max)
         status = NS_ERROR;
 
     } else {
-        char  *first;
+        char  *fromName;
         int    err;
         size_t n = strlen(fileName);
 
-        first = ns_malloc_nonzero(n + 5u);
-        memcpy(first, fileName, n);
-        memcpy(first + n, ".000", 5);  /* includes NUL */
-        err = Exists(first);
+        fromName = ns_malloc_nonzero(n + 5u);
+        memcpy(fromName, fileName, n);
+        memcpy(fromName + n, ".000", 5);  /* includes NUL */
+        err = Exists(fromName);
 
         if (err > 0) {
-            const char  *next;
+            char        *toName;
             unsigned int num = 0;
 
-            next = ns_strdup(first);
+            toName = ns_strdup(fromName);
 
             /*
              * Find the highest version
              */
 
             do {
-                char *dot = strrchr(next, INTCHAR('.')) + 1;
-                snprintf(dot, 4u, "%03u", MIN(num, 999u) );
-                num ++;
-            } while ((err = Exists(next)) == 1 && num < (unsigned int)max);
+                char *dot = strrchr(toName, INTCHAR('.'));
 
-            num--; /* After this, num holds the max version found */
+                if (unlikely(dot == NULL)) {
+                    Ns_Log(Error, "rollfile: missing version separator in '%s'", toName);
+                    err = NS_ERROR;
+                    break;
+                }
 
-            if (err == 1) {
-                err = Unlink(next); /* The excessive version */
-            }
-
-            /*
-             * Shift *.010 -> *.011, *:009 -> *.010, etc
-             */
-
-            while (err == 0 && num-- > 0) {
-                char *dot = strrchr(first, INTCHAR('.')) + 1;
+                dot++;
                 snprintf(dot, 4u, "%03u", MIN(num, 999u));
-                dot = strrchr(next, INTCHAR('.')) + 1;
-                snprintf(dot, 4u, "%03u", MIN(num + 1u, 999u));
-                err = Rename(first, next);
+                num++;
+            } while ((err = Exists(toName)) == 1 && num < (unsigned int)max);
+
+            if (err >= 0) {
+                num--; /* After this, num holds the max version found */
+
+                if (err == 1) {
+                    err = Unlink(toName); /* The excessive version */
+                }
+
+                /*
+                 * Shift existing versions upward, starting at the highest version found.
+                 *
+                 * "fromName" and "toName" are reusable pathname buffers.  In each iteration,
+                 * only the numeric suffix after the final dot is rewritten:
+                 *
+                 *     fromName = file.NNN
+                 *     toName  = file.NNN+1
+                 *
+                 * Then fromName is renamed to toName, e.g.:
+                 *
+                 *     file.009 -> file.010
+                 *     file.008 -> file.009
+                 *     ...
+                 *     file.000 -> file.001
+                 *
+                 * The loop runs backwards to avoid overwriting lower-numbered versions
+                 * before they have been moved.
+                 */
+                while (err == 0 && num > 0u) {
+                    char *dot;
+
+                    num--;
+
+                    dot = strrchr(fromName, INTCHAR('.'));
+                    if (unlikely(dot == NULL)) {
+                        Ns_Log(Error, "rollfile: missing version separator in '%s'", fromName);
+                        err = NS_ERROR;
+                        break;
+                    }
+                    dot++;
+                    snprintf(dot, 4u, "%03u", MIN(num, 999u));
+
+                    dot = strrchr(toName, INTCHAR('.'));
+                    if (unlikely(dot == NULL)) {
+                        Ns_Log(Error, "rollfile: missing version separator in '%s'", toName);
+                        err = NS_ERROR;
+                        break;
+                    }
+                    dot++;
+                    snprintf(dot, 4u, "%03u", MIN(num + 1u, 999u));
+
+                    err = Rename(fromName, toName);
+                }
             }
-            ns_free_const(next);
+            ns_free_const(toName);
         }
 
         if (err == 0) {
             err = Exists(fileName);
             if (err > 0) {
-                err = Rename(fileName, first);
+                err = Rename(fileName, fromName);
             }
         }
 
-        ns_free(first);
+        ns_free(fromName);
 
         if (err != 0) {
             status = NS_ERROR;
