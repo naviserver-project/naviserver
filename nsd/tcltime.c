@@ -993,7 +993,9 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
          * We should not come here, since the GetTimeFromString() with
          * '.' handles also integers and sets error messages.
          */
-        Ns_TclPrintfResult(interp, "expected time value but got \"%s\"", str);
+        if (interp != NULL) {
+            Ns_TclPrintfResult(interp, "expected time value but got \"%s\"", str);
+        }
         result = TCL_ERROR;
     }
     /* fprintf(stderr, "GetTimeFromString final " NS_TIME_FMT " -- %d\n", tPtr->sec, tPtr->usec, result);*/
