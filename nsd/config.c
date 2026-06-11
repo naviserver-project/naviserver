@@ -312,11 +312,14 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
         update = NS_TRUE;
     }
     if (update) {
-        Section   *sectionPtr = GetSection(section, NS_FALSE);
-        TCL_SIZE_T length;
+        Section *sectionPtr = GetSection(section, NS_FALSE);
 
-        length = (TCL_SIZE_T)snprintf(strBuffer, sizeof(strBuffer), "%d", value);
-        Ns_SetUpdateSz(sectionPtr->set, key, TCL_INDEX_NONE, strBuffer, length);
+        if (sectionPtr != NULL) {
+            TCL_SIZE_T length;
+
+            length = (TCL_SIZE_T)snprintf(strBuffer, sizeof(strBuffer), "%d", value);
+            Ns_SetUpdateSz(sectionPtr->set, key, TCL_INDEX_NONE, strBuffer, length);
+        }
     }
 
     return value;
@@ -979,6 +982,7 @@ Ns_ConfigSectionPath(Ns_Set **setPtr, const char *server, const char *module, ..
     va_list       ap;
     Tcl_DString   ds;
     Section      *sectionPtr;
+    const char   *result;
 
     Tcl_DStringInit(&ds);
     va_start(ap, module);
@@ -988,13 +992,19 @@ Ns_ConfigSectionPath(Ns_Set **setPtr, const char *server, const char *module, ..
     Ns_Log(Dev, "config section: %s", ds.string);
     sectionPtr = GetSection(ds.string, NS_TRUE);
 
+    if (sectionPtr == NULL) {
+        Ns_Log(Warning, "non-existing config section: %s", ds.string);
+        result = "";
+    } else {
+        if (setPtr != NULL) {
+            *setPtr = sectionPtr->set;
+        }
+        Tcl_DStringFree(&ds);
+        result = Ns_SetName(sectionPtr->set);
+    }
     Tcl_DStringFree(&ds);
 
-    if (setPtr != NULL) {
-        *setPtr = sectionPtr->set;
-    }
-
-    return Ns_SetName(sectionPtr->set);
+    return result;
 }
 
 
@@ -1087,7 +1097,9 @@ void NsConfigMarkAsRead(const char *section, size_t i) {
     if (!nsconf.state.started) {
         Section *sectionPtr = GetSection(section, NS_FALSE);
 
-        ConfigMark(sectionPtr, i, value_read);
+        if (sectionPtr != NULL) {
+            ConfigMark(sectionPtr, i, value_read);
+        }
     }
 }
 
@@ -1135,7 +1147,8 @@ Ns_ConfigGetSection2(const char *section, bool markAsRead)
     Section *sectionPtr = GetSection(section, NS_FALSE);
 
     if (markAsRead
-        && sectionPtr != NULL && sectionPtr->set != NULL
+        && sectionPtr != NULL
+        && sectionPtr->set != NULL
         && !nsconf.state.started
         ) {
         size_t i;
@@ -1897,6 +1910,7 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Ob
     char       *sectionName = NULL, *inputSection = NULL;
     Tcl_Obj    *blockObj = NULL;
     Ns_Set     *inputSet = NULL, *fromSectionSet = NULL;
+    Section    *sectionPtr;
     Ns_ObjvSpec opts[] = {
         {"-update", Ns_ObjvBool,   &update,       INT2PTR(NS_TRUE)},
         {"-from",   Ns_ObjvString, &inputSection, NULL},
@@ -1924,11 +1938,14 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Ob
         Ns_TclPrintfResult(interp, "invalid value for -from parameter: must be an existing section");
         result = TCL_ERROR;
 
-    } else {
-        Section *sectionPtr, **passedSectionPtr = (Section **) clientData;
+    } else if ((sectionPtr = GetSection(sectionName, NS_TRUE)) == NULL) {
+            Ns_TclPrintfResult(interp, "non-existing section name: %s", sectionName);
+        result = TCL_ERROR;
 
-        assert(sectionName != NULL);
-        sectionPtr = GetSection(sectionName, NS_TRUE);
+    } else {
+        Section **passedSectionPtr = (Section **) clientData;
+
+        assert(sectionPtr != NULL);
         sectionPtr->update = update;
         *passedSectionPtr = sectionPtr;
 

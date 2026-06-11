@@ -81,7 +81,7 @@ NsInitRequests(void)
 static Ns_ReturnCode
 ConfigServerProxy(const char *server)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr = NsGetServerRequired(server);
 
     Tcl_InitHashTable(&servPtr->request.proxy, TCL_STRING_KEYS);
     Ns_MutexInit(&servPtr->request.plock);
