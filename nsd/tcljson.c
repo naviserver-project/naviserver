@@ -4881,11 +4881,10 @@ JsonArrayPrettySingleLine(TCL_SIZE_T  oc, Tcl_Obj   **ov)
 static Ns_ReturnCode
 JsonTriplesSortObject(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj **sortedObjPtr)
 {
-    Tcl_Obj         **lv;
-    TCL_SIZE_T        lc;
-    Tcl_Obj          *sortedObj;
-    JsonTripleEntry  *entries;
-    TCL_SIZE_T        nentries;
+    TCL_SIZE_T   lc;
+    Tcl_Obj    **lv;
+    Tcl_Obj      *sortedObj;
+    TCL_SIZE_T   nentries;
 
     NS_NONNULL_ASSERT(sortedObjPtr != NULL);
     *sortedObjPtr = NULL;
@@ -4900,26 +4899,31 @@ JsonTriplesSortObject(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj **sortedO
     }
 
     nentries = lc / 3;
-    entries = (JsonTripleEntry *)ns_malloc_nonzero((size_t)nentries * sizeof(JsonTripleEntry));
+    if (nentries == 0) {
+        *sortedObjPtr = Tcl_NewListObj(0, NULL);
 
-    for (TCL_SIZE_T i = 0, j = 0; i < lc; i += 3, j++) {
-        entries[j].nameObj  = lv[i + 0];
-        entries[j].typeObj  = lv[i + 1];
-        entries[j].valueObj = lv[i + 2];
+    } else {
+        JsonTripleEntry  *entries = (JsonTripleEntry *)ns_malloc_nonzero((size_t)nentries * sizeof(JsonTripleEntry));
+
+        for (TCL_SIZE_T i = 0, j = 0; i < lc; i += 3, j++) {
+            entries[j].nameObj  = lv[i + 0];
+            entries[j].typeObj  = lv[i + 1];
+            entries[j].valueObj = lv[i + 2];
+        }
+
+        qsort(entries, (size_t)nentries, sizeof(JsonTripleEntry), JsonTripleEntryNameCmp);
+
+        sortedObj = Tcl_NewListObj(0, NULL);
+        for (TCL_SIZE_T i = 0; i < nentries; i++) {
+            JsonTriplesAppend(sortedObj,
+                              entries[i].nameObj,
+                              entries[i].typeObj,
+                              entries[i].valueObj);
+        }
+
+        ns_free(entries);
+        *sortedObjPtr = sortedObj;
     }
-
-    qsort(entries, (size_t)nentries, sizeof(JsonTripleEntry), JsonTripleEntryNameCmp);
-
-    sortedObj = Tcl_NewListObj(0, NULL);
-    for (TCL_SIZE_T i = 0; i < nentries; i++) {
-        JsonTriplesAppend(sortedObj,
-                          entries[i].nameObj,
-                          entries[i].typeObj,
-                          entries[i].valueObj);
-    }
-
-    ns_free(entries);
-    *sortedObjPtr = sortedObj;
     return NS_OK;
 }
 
@@ -5851,8 +5855,9 @@ JsonSchemaCanonicalizeRequired(Tcl_Interp *interp, Tcl_Obj *requiredObj,
 {
     Tcl_Obj         **lv;
     TCL_SIZE_T        lc, nentries;
-    JsonStringEntry  *entries;
     Tcl_Obj          *outObj;
+
+    NS_NONNULL_ASSERT(canonRequiredObjPtr != NULL);
 
     *canonRequiredObjPtr = NULL;
 
@@ -5866,21 +5871,29 @@ JsonSchemaCanonicalizeRequired(Tcl_Interp *interp, Tcl_Obj *requiredObj,
     }
 
     nentries = lc / 3;
-    entries = (JsonStringEntry *)ns_malloc_nonzero((size_t)nentries * sizeof(JsonStringEntry));
-
-    for (TCL_SIZE_T i = 0, j = 0; i < lc; i += 3, j++) {
-        entries[j].valueObj = lv[i + 2];
-    }
-
-    qsort(entries, (size_t)nentries, sizeof(JsonStringEntry), JsonSchemaStringEntryCmp);
-
     outObj = Tcl_NewListObj(0, NULL);
-    for (TCL_SIZE_T i = 0; i < nentries; i++) {
-        JsonTriplesAppendVt(outObj,
-                            Tcl_NewWideIntObj((Tcl_WideInt)i), JSON_VT_STRING, entries[i].valueObj);
+
+    if (nentries > 0) {
+        JsonStringEntry *entries = (JsonStringEntry *)ns_malloc_nonzero((size_t)nentries
+                                                                        * sizeof(JsonStringEntry));
+
+        for (TCL_SIZE_T i = 0, j = 0; i < lc; i += 3, j++) {
+            entries[j].valueObj = lv[i + 2];
+        }
+
+        qsort(entries, (size_t)nentries, sizeof(JsonStringEntry),
+              JsonSchemaStringEntryCmp);
+
+        for (TCL_SIZE_T i = 0; i < nentries; i++) {
+            JsonTriplesAppendVt(outObj,
+                                Tcl_NewWideIntObj((Tcl_WideInt)i),
+                                JSON_VT_STRING,
+                                entries[i].valueObj);
+        }
+
+        ns_free(entries);
     }
 
-    ns_free(entries);
     *canonRequiredObjPtr = outObj;
     return NS_OK;
 }
