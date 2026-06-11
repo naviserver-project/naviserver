@@ -291,6 +291,11 @@ ConfigServerEncodings(const char *server)
                          outputCharset);
             }
 
+            /*
+             * outputcharset is mandatory.  After the encoding name has been
+             * validated, store a server-owned copy together with the resolved Tcl
+             * encoding.  The copied string is part of the server configuration state.
+             */
             servPtr->encoding.outputCharset = ns_strcopy(outputCharset);
             servPtr->encoding.outputEncoding = outputEncoding;
         }
