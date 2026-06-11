@@ -71,11 +71,12 @@ Ns_TclRequest(Ns_Conn *conn, const char *name)
 {
     Ns_TclCallback cb;
 
-    cb.cbProc = (ns_funcptr_t) NsTclRequestProc;
-    cb.server = Ns_ConnServer(conn);
-    cb.script = name;
-    cb.argc   = 0;
-    cb.argv   = NULL;
+    cb.cbProc  = (ns_funcptr_t) NsTclRequestProc;
+    cb.server  = Ns_ConnServer(conn);
+    cb.script  = name;
+    cb.argc    = 0;
+    cb.argv    = NULL;
+    cb.servPtr = NULL;
 
     return NsTclRequestProc(&cb, conn);
 }
@@ -728,6 +729,7 @@ EvalTclAuthCallback(const Ns_TclCallback *cbPtr, AuthType authType, void *arg,
     if (authType == AUTH_TYPE_USER) {
         conn = NULL;
         interp = arg;
+        assert(interp != NULL);
         /*
          * Append username and password for user-level authorization
          */
