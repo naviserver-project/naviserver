@@ -128,9 +128,9 @@ NsInitFd(void)
      * intentionally; otherwise it was only a temporary probe and is closed.
      */
 
-    EnsureFdOpen(0, O_RDONLY);
-    EnsureFdOpen(1, O_WRONLY);
-    EnsureFdOpen(2, O_WRONLY);
+    EnsureFdOpen(STDIN_FILENO, O_RDONLY);
+    EnsureFdOpen(STDOUT_FILENO, O_WRONLY);
+    EnsureFdOpen(STDERR_FILENO, O_WRONLY);
 
 #ifndef _WIN32
     /*

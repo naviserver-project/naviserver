@@ -1726,7 +1726,6 @@ NsLogOpen(void)
  *
  *----------------------------------------------------------------------
  */
-
 static Ns_ReturnCode
 LogOpen(void *UNUSED(arg))
 {
@@ -1743,6 +1742,7 @@ LogOpen(void *UNUSED(arg))
     if (logfileName == NULL) {
         Ns_Log(Error, "log: undefined system log file");
         status = NS_ERROR;
+
     } else {
         fd = ns_open(logfileName, (int)oflags, 0644);
         if (fd == NS_INVALID_FD) {
@@ -1751,18 +1751,30 @@ LogOpen(void *UNUSED(arg))
             status = NS_ERROR;
 
         } else {
-
             /*
-             * Route stderr to the file.
+             * Route stderr to the file.  If ns_open() returned STDERR_FILENO,
+             * dup2() is effectively a no-op; otherwise STDERR_FILENO receives
+             * a duplicate of fd.
              */
-            if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
+            if (ns_dup2(fd, STDERR_FILENO) == -1) {
                 Ns_Log(Error, "log: failed to route stderr to file '%s': '%s'",
                        logfileName, strerror(errno));
                 status = NS_ERROR;
             }
 
             /*
-             * Route stdout to the same file, but only if stderr redirection succeeded.
+             * Once stderr has been routed successfully, the original descriptor
+             * is no longer needed unless it is stderr itself.  In the special
+             * case where ns_open() returned STDOUT_FILENO, closing it here is
+             * fine: stdout will be recreated from stderr below.
+             */
+            if (status == NS_OK && fd != STDERR_FILENO) {
+                (void) ns_close(fd);
+                fd = NS_INVALID_FD;
+            }
+
+            /*
+             * Route stdout to the same file as stderr.
              */
             if (status == NS_OK && ns_dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
                 Ns_Log(Error, "log: failed to route stdout to file: '%s'",
@@ -1771,15 +1783,17 @@ LogOpen(void *UNUSED(arg))
             }
 
             /*
-             * Clean up the original open descriptor.  When ns_open() returned
-             * STDERR_FILENO or STDOUT_FILENO, that descriptor is intentionally kept
-             * open as one of the standard streams.
+             * If routing stderr failed, fd still belongs to this function and
+             * must be closed unless it is one of the standard descriptors.
              */
-            if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
+            if (status != NS_OK && fd != NS_INVALID_FD
+                && fd != STDERR_FILENO && fd != STDOUT_FILENO) {
                 (void) ns_close(fd);
             }
 
-            Ns_Log(Notice, "log: continue system log via file: %s", logfileName);
+            if (status == NS_OK) {
+                Ns_Log(Notice, "log: continue system log via file: %s", logfileName);
+            }
         }
     }
 
