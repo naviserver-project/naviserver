@@ -279,16 +279,20 @@ ConfigServerEncodings(const char *server)
         /*
          * Configure the encoding used for Tcl/ADP output.
          */
+        {
+            const char   *outputCharset;
+            Tcl_Encoding  outputEncoding;
 
-        servPtr->encoding.outputCharset =
-            ns_strcopy(Ns_ConfigString(section, "outputcharset", nsconf.outputCharset));
+            outputCharset = Ns_ConfigString(section, "outputcharset", nsconf.outputCharset);
+            outputEncoding = Ns_GetCharsetEncoding(outputCharset);
 
-        servPtr->encoding.outputEncoding =
-            Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);
-        if (servPtr->encoding.outputEncoding == NULL) {
-            // @infer-ignore MEMORY_LEAK_C
-            Ns_Fatal("could not find encoding for default output charset \"%s\"",
-                     servPtr->encoding.outputCharset);
+            if (outputEncoding == NULL) {
+                Ns_Fatal("could not find encoding for default output charset \"%s\"",
+                         outputCharset);
+            }
+
+            servPtr->encoding.outputCharset = ns_strcopy(outputCharset);
+            servPtr->encoding.outputEncoding = outputEncoding;
         }
 
         result = NS_OK;
