@@ -357,6 +357,12 @@ RegisterPage(const ClientData clientData,
     }
     adp->flags = aflags;
 
+    /*
+     * Ownership of adp is passed to Ns_RegisterRequest2().  On successful
+     * registration it is released later via ns_free; if registration is rejected
+     * before installation, Ns_RegisterRequest2() releases it immediately.
+     */
+    // @infer-ignore MEMORY_LEAK_C
     return Ns_RegisterRequest2(itPtr->interp, itPtr->servPtr->server, method, url,
                                NsAdpPageProc, ns_free, adp, rflags, contextSpec);
 }
