@@ -109,6 +109,14 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, Ns_TclSetType type)
     itPtr = NsGetInterpData(interp);
     if (unlikely(itPtr == NULL)) {
         Ns_TclPrintfResult(interp, "ns_set requires an interpreter");
+        /*
+         * The set was not entered into the interpreter.  For dynamic sets,
+         * ownership would have been transferred to the interpreter on
+         * success, so release it here on failure.
+         */
+        if (type == NS_TCL_SET_DYNAMIC) {
+            Ns_SetFree(set);
+        }
         result = TCL_ERROR;
     } else {
         Tcl_SetObjResult(interp, EnterSet(itPtr, set, type));
