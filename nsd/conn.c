@@ -3154,7 +3154,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
     }
 
     case CUrlDictIdx: {
-        Ns_URL      u;
+        Ns_URL      u = {0};
         char       *requestLine = ns_strdup(request->line), *urlString;
         const char *errMsg = NULL;
 

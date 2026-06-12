@@ -735,6 +735,7 @@ EvalTclAuthCallback(const Ns_TclCallback *cbPtr, AuthType authType, void *arg,
          */
         Tcl_DStringAppendElement(&ds, username);
         Tcl_DStringAppendElement(&ds, password);
+
     } else if (authType == AUTH_TYPE_REQUEST) {
         conn = arg;
         interp = Ns_GetConnInterp(conn);
@@ -746,6 +747,9 @@ EvalTclAuthCallback(const Ns_TclCallback *cbPtr, AuthType authType, void *arg,
         Tcl_DStringAppendElement(&ds, username);
         Tcl_DStringAppendElement(&ds, password);
         Tcl_DStringAppendElement(&ds, Ns_ConnConfiguredPeerAddr(conn));
+
+    } else {
+        Ns_Fatal("EvalTclAuthCallback: invalid auth type %d", (int)authType);
     }
 
     /*

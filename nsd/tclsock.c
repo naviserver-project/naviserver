@@ -589,7 +589,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     Tcl_Channel           chan;
     struct timeval        tv, *tvPtr;
     Tcl_DString           dsRfd, dsNbuf;
-    Ns_Time               timeout;
+    Ns_Time               timeout = {0, 0};
 
     status = TCL_ERROR;
 
