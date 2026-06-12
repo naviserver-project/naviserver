@@ -2867,7 +2867,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                      NS_TLS_SSL_CTX **ctxPtr)
 {
     int         result;
-    const char *cert, *key;
+    const char *cert, *key = NULL;
 
     cert = Ns_ConfigGetValue(section, "certificate");
     if (cert != NULL) {
@@ -2905,14 +2905,23 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
          * potential changes in the configuration Ns_Set.
          */
         Ns_DListInit(dlPtr);
+        Ns_DListSetFreeProc(dlPtr, ns_free);
 
-        cert         = Ns_DListSaveString(dlPtr, cert);
-        ciphers      = Ns_DListSaveString(dlPtr, Ns_NullIfEmpty(Ns_ConfigString(section, "ciphers", "")));
-        ciphersuites = Ns_DListSaveString(dlPtr, Ns_NullIfEmpty(Ns_ConfigString(section, "ciphersuites", "")));
-        protocols    = Ns_DListSaveString(dlPtr, Ns_NullIfEmpty(Ns_ConfigString(section, "protocols", "")));
-        if (key != NULL) {
-            key      = Ns_DListSaveString(dlPtr, key);
-        }
+        /*
+         * cert and key from Ns_ConfigFilename() are already allocated copies.
+         * Transfer them to the temporary list so they survive until the end of
+         * this block and are freed by Ns_DListFree().
+         */
+        Ns_DListAppend(dlPtr, (void*)cert);
+        Ns_DListAppend(dlPtr, (void*)key);
+
+        ciphers      = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphers", "")));
+        ciphersuites = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphersuites", "")));
+        protocols    = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "protocols", "")));
+
+        Ns_DListAppend(dlPtr, (void *)ciphers);
+        Ns_DListAppend(dlPtr, (void *)ciphersuites);
+        Ns_DListAppend(dlPtr, (void *)protocols);
 
         Ns_Log(Notice, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app_data %p", (void*)app_data);
 
@@ -3092,7 +3101,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
             }
 #endif
         }
-        Ns_DListFreeElements(dlPtr);
+        Ns_DListFree(dlPtr);
     }
     return result;
 }
