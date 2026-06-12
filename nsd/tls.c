@@ -45,13 +45,24 @@ typedef struct {
 static SSLCertStatusArg sslCertStatusArg;
 # endif /* HAVE_OPENSSL_OCSP */
 
+typedef struct {
+    TCL_SIZE_T    length;
+    unsigned char protos[];
+} ALPNProtos;
+
 static FILE *keylog_fp = NULL;
 
 /*
- * For HTTP client requests, use a data index to obtain server
- * information from an SSL_CTX.
+ * SSL_CTX ex-data index used by HTTP client contexts to retain the
+ * NsServer pointer needed during certificate validation.
  */
-static int ClientCtxDataIndex;
+static int ClientCtxServerDataIndex;
+
+/*
+ * SSL_CTX ex-data index used by server contexts to retain the ALPN protocol
+ * list passed to the ALPN selection callback.
+ */
+static int ServerCtxALPNProtosDataIndex;
 
 static TCL_OBJCMDPROC_T NsCertCtlInfoObjCmd;
 static TCL_OBJCMDPROC_T NsCertCtlListObjCmd;
@@ -73,7 +84,8 @@ static int ALPNSelectCB(NS_TLS_SSL *UNUSED(ssl),
 static void KeylogCB(const SSL *ssl, const char *line);
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
 static int CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx);
-
+static void ALPNProtosFreeCB(void *UNUSED(parent), void *ptr, CRYPTO_EX_DATA *UNUSED(ad),
+                             int UNUSED(idx), long UNUSED(argl), void *UNUSED(argp));
 /*
  * Misc helper
  */
@@ -323,6 +335,7 @@ static void LogLocalCert(SSL *ssl, const char *tag) {
     }
 }
 #endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -339,9 +352,6 @@ static void LogLocalCert(SSL *ssl, const char *tag) {
  *      None.
  *
  *----------------------------------------------------------------------
- */
-/*
- * ServerNameCallback for SNI
  */
 static int
 SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
@@ -422,6 +432,34 @@ SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
     }
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ALPNProtosFreeCB --
+ *
+ *      OpenSSL SSL_CTX ex-data cleanup callback for ALPN protocol data.
+ *
+ *      This callback releases the ALPNProtos structure stored as SSL_CTX
+ *      ex-data for server contexts.  The data is allocated when configuring
+ *      the server-side ALPN selection callback and has the same lifetime as
+ *      the SSL_CTX.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Frees the ALPN protocol data associated with the SSL_CTX ex-data
+ *      entry.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ALPNProtosFreeCB(void *UNUSED(parent), void *ptr, CRYPTO_EX_DATA *UNUSED(ad),
+                 int UNUSED(idx), long UNUSED(argl), void *UNUSED(argp))
+{
+    ns_free(ptr);
 }
 
 /*
@@ -1793,6 +1831,7 @@ NsInitOpenSSL(void)
 
     if (!initialized) {
         static char ns_client_info_tag[] = "NaviServer Client Info";
+        static char ns_server_alpn_protos_tag[] = "NaviServer server ALPN protocols";
         /*
          * With the release of OpenSSL 1.1.0 the interface of
          * CRYPTO_set_mem_functions() changed. Before that, we could
@@ -1813,7 +1852,9 @@ NsInitOpenSSL(void)
          */
         OPENSSL_init_ssl(0, NULL);
 
-        ClientCtxDataIndex = SSL_CTX_get_ex_new_index(0, ns_client_info_tag, NULL, NULL, NULL);
+        ClientCtxServerDataIndex = SSL_CTX_get_ex_new_index(0, ns_client_info_tag, NULL, NULL, NULL);
+        ServerCtxALPNProtosDataIndex = SSL_CTX_get_ex_new_index(0, ns_server_alpn_protos_tag,
+                                                                NULL, NULL, ALPNProtosFreeCB);
         initialized = 1;
         /*
          * We do not want to get this message when, e.g., the nsproxy
@@ -1946,7 +1987,7 @@ Ns_TLS_CtxClientCreateCfg(Tcl_Interp *interp,
                  * our own certificate validation callback.
                  */
                 verify_depth = servPtr->httpclient.verify_depth;
-                SSL_CTX_set_ex_data(ctx, ClientCtxDataIndex, servPtr);
+                SSL_CTX_set_ex_data(ctx, ClientCtxServerDataIndex, servPtr);
 
                 if (servPtr->httpclient.validationExceptions.size > 0) {
                     Ns_Log(Debug, "Ns_TLS_CtxClientCreate %ld validation exceptions provided",
@@ -1956,7 +1997,7 @@ Ns_TLS_CtxClientCreateCfg(Tcl_Interp *interp,
             } else {
                 Ns_Log(Warning, "Ns_TLS_CtxClientCreate cannot obtain server information;"
                        " detailed validation settings are ignored");
-                SSL_CTX_set_ex_data(ctx, ClientCtxDataIndex, NULL);
+                SSL_CTX_set_ex_data(ctx, ClientCtxServerDataIndex, NULL);
             }
         }
         SSL_CTX_set_verify_depth(ctx, verify_depth + 1);
@@ -2363,7 +2404,7 @@ ExecuteKeyScript(Tcl_DString *dsPtr, const char *scriptPath, const char *pemPath
  *           filename.  If it returns NS_OK, its output (in ds.string)
  *           is used as the passphrase.
  *
- *        2) Otherwise, derive an environment‐variable name from the
+ *        2) Otherwise, derive an environment variable name from the
  *           PEM path (via FilenameToEnvVar) and look up that variable.
  *           If not set, fall back to the generic TLS_KEY_PASS variable.
  *
@@ -2664,7 +2705,7 @@ BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
  *      OpenSSL ALPN (Application-Layer Protocol Negotiation) selection
  *      callback.  When a TLS client offers a list of supported protocols,
  *      this function picks the first one that the server also supports,
- *      using OpenSSL’s built‐in SSL_select_next_proto() helper.
+ *      using OpenSSL’s builtin SSL_select_next_proto() helper.
  *
  *      The server’s protocol list is passed in via the "arg" pointer,
  *      but we pack the length immediately before the data in memory,
@@ -2677,13 +2718,11 @@ BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
  *                              protocol bytes within serverProtos.
  *      outlen                - On success, set to the length of the
  *                              chosen protocol.
- *      in                    - Wire‐format list of protocols offered by
+ *      in                    - Wire-format list of protocols offered by
  *                              the client (each prefixed by its length).
  *      inlen                 - Total byte length of in.
- *      arg                   - Pointer to the server’s wire‐format
- *                              protocols list; its length is stored
- *                              as an unsigned int immediately before
- *                              the pointer in memory.
+ *      arg                   - Pointer to the server’s wire-format
+ *                              protocols list in ALPNProtos.
  *
  * Returns:
  *      SSL_TLSEXT_ERR_OK     if a common protocol was negotiated
@@ -2700,15 +2739,12 @@ ALPNSelectCB(NS_TLS_SSL *ssl,
              const unsigned char *in, unsigned int inlen,
              void *arg)
 {
-    const unsigned char *serverProtos = arg;
-    unsigned int serverProtosLength, i = 0;
-    int          rc;
-    unsigned char *tmp = NULL;
+    const ALPNProtos *alpnPtr = arg;
+    unsigned char    *tmp = NULL;
+    unsigned int      i = 0u;
+    int               rc;
 
-    /* avoid unaliged access */
-    memcpy(&serverProtosLength,
-           (const char *)arg - sizeof(serverProtosLength),
-           sizeof(serverProtosLength));
+    assert(alpnPtr != NULL);
 
     /*
      * Loop through ALPN list offered by client
@@ -2720,33 +2756,62 @@ ALPNSelectCB(NS_TLS_SSL *ssl,
             // Malformed ALPN list
             return SSL_TLSEXT_ERR_NOACK;
         }
-        if (len < 19) {
+        if (unlikely(Ns_LogSeverityEnabled(Debug)) && len < 19u) {
             unsigned char buffer[20];
-            memcpy(buffer, &in[i + 1], len);
+
+            memcpy(buffer, &in[i + 1u], len);
             buffer[len] = '\0';
-            //Ns_Log(Notice, "ALPNSelectCB client offered '%s'", buffer);
+            Ns_Log(Debug, "ALPNSelectCB client offered '%s'", buffer);
         }
-        i += 1 + len;
+        i += 1u + len;
     }
 
     rc = SSL_select_next_proto(&tmp, outlen,
-                               serverProtos, serverProtosLength,
+                               alpnPtr->protos, (unsigned int)alpnPtr->length,
                                in, inlen);
     *out = (const unsigned char *)tmp;   /* adopt as read-only */
-    if (Ns_LogSeverityEnabled(Debug)) {
-        Tcl_DString ds;
 
-        Tcl_DStringInit(&ds);
-        Tcl_DStringAppend(&ds, (const char *)*out, *outlen);
-        (void)ssl;
-        /*Ns_Log(Notice, "ALPNSelectCB for ssl %p ctx %p returns %d <%s> ln %d",
-               (void*)ssl, (void*)SSL_get_SSL_CTX(ssl),
-               rc, ds.string, *outlen);*/
-        Tcl_DStringFree(&ds);
+    if (Ns_LogSeverityEnabled(Debug)) {
+        if (rc == OPENSSL_NPN_NEGOTIATED) {
+            Tcl_DString ds;
+
+            Tcl_DStringInit(&ds);
+            Tcl_DStringAppend(&ds, (const char *)*out, *outlen);
+            Ns_Log(Debug, "ALPNSelectCB for ssl %p ctx %p selected <%s> len %u",
+                   (void *)ssl, (void *)SSL_get_SSL_CTX(ssl), ds.string, *outlen);
+            Tcl_DStringFree(&ds);
+        } else {
+            Ns_Log(Debug, "ALPNSelectCB for ssl %p ctx %p found no common protocol",
+                   (void *)ssl, (void *)SSL_get_SSL_CTX(ssl));
+        }
     }
     return (rc == OPENSSL_NPN_NEGOTIATED) ? SSL_TLSEXT_ERR_OK : SSL_TLSEXT_ERR_NOACK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * KeylogCB --
+ *
+ *      OpenSSL key log callback used to write TLS session secrets in
+ *      SSLKEYLOGFILE-compatible format.
+ *
+ *      The output file is opened lazily on the first callback invocation.
+ *      The configured per-context key log file is preferred; otherwise the
+ *      SSLKEYLOGFILE environment variable is used.  If neither is set, a
+ *      fallback path is used.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Opens the key log file in append mode, stores the FILE pointer in the
+ *      process-wide keylog_fp variable, writes one key log line, and flushes
+ *      the stream.  If the file cannot be opened, the callback reports the
+ *      error via perror() and skips writing the line.
+ *
+ *----------------------------------------------------------------------
+ */
 static void KeylogCB(const SSL *ssl, const char *line)
 {
     NsTLSConfig *dc;
@@ -3399,11 +3464,11 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
     if (!certificateAccepted && sslPtr != NULL) {
         int       currentDepth = X509_STORE_CTX_get_error_depth(ctx);
         SSL_CTX  *sslCtx       = SSL_get_SSL_CTX(sslPtr);
-        NsServer *servPtr      = SSL_CTX_get_ex_data(sslCtx, ClientCtxDataIndex);
+        NsServer *servPtr      = SSL_CTX_get_ex_data(sslCtx, ClientCtxServerDataIndex);
         NS_SOCKET sock         = SSL_get_fd(sslPtr);
 
         Ns_Log(Debug, "??? CertficateValidationCB got socket %d ctx %p currentDepth %d index %d servPtr %p",
-               sock, (void*)sslCtx, currentDepth, ClientCtxDataIndex, (void*)servPtr);
+               sock, (void*)sslCtx, currentDepth, ClientCtxServerDataIndex, (void*)servPtr);
 
         if (unlikely(servPtr == NULL)) {
             Ns_Log(Warning, "CertficateValidationCB cannot determine server");
@@ -3439,13 +3504,12 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
 }
 
 
-
 /*
  *----------------------------------------------------------------------
  *
  * Ns_TLS_CtxServerCreateCfg --
  *
- *      Create and fully configure an OpenSSL SSL_CTX for server‐side TLS,
+ *      Create and fully configure an OpenSSL SSL_CTX for server-side TLS,
  *      using the given certificate, CA files, cipher settings, protocol
  *      restrictions, and optional application data.
  *
@@ -3486,7 +3550,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
 {
     NS_TLS_SSL_CTX   *ctx;
     const SSL_METHOD *server_method;
-    int rc;
+    int               rc;
 
     NS_NONNULL_ASSERT(ctxPtr != NULL);
 
@@ -3507,7 +3571,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
 
 #if defined(HAVE_OPENSSL_3_5)
     if ((flags & NS_DRIVER_QUIC) != 0) {
-        uint64_t default_flags = 0, current_flags = 0;
+        uint64_t default_flags = 0u, current_flags = 0u;
 
         SSL_CTX_get_domain_flags(ctx, &default_flags);
         // default 0x00000012
@@ -3594,7 +3658,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
 
     {
         Tcl_DString   alpnDs;
-        unsigned int *mem;
+        ALPNProtos   *alpnPtr;
 
         Tcl_DStringInit(&alpnDs);
 
@@ -3604,10 +3668,23 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
             goto fail;
         }
 
-        mem = ns_malloc_nonzero(sizeof(unsigned int) + (size_t)alpnDs.length);
-        *mem = (unsigned int)alpnDs.length;
-        memcpy(mem + 1, alpnDs.string, (size_t)alpnDs.length);
-        SSL_CTX_set_alpn_select_cb(ctx, ALPNSelectCB, mem + 1);
+        if (unlikely((size_t)alpnDs.length > (size_t)UINT_MAX)) {
+            ReportError(interp, "ALPN protocol string too long");
+            Tcl_DStringFree(&alpnDs);
+            goto fail;
+        }
+
+        alpnPtr = ns_malloc_nonzero(sizeof(ALPNProtos) + (size_t)alpnDs.length);
+        alpnPtr->length = alpnDs.length;
+        memcpy(alpnPtr->protos, alpnDs.string, (size_t)alpnDs.length);
+
+        if (SSL_CTX_set_ex_data(ctx, ServerCtxALPNProtosDataIndex, alpnPtr) != 1) {
+            ns_free(alpnPtr);
+            Tcl_DStringFree(&alpnDs);
+            Ns_TclPrintfResult(interp, "could not store ALPN protocol data");
+            goto fail;
+        }
+        SSL_CTX_set_alpn_select_cb(ctx, ALPNSelectCB, alpnPtr);
         Tcl_DStringFree(&alpnDs);
     }
 
