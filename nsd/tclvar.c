@@ -1840,6 +1840,10 @@ UpdateVar(Tcl_HashEntry *hPtr, const char *value, size_t len)
     NS_NONNULL_ASSERT(hPtr != NULL);
     NS_NONNULL_ASSERT(value != NULL);
 
+    /*
+     * The hash entry owns the value string.  Resize the existing allocation
+     * and store the resulting pointer back into the entry.
+     */
     oldString = Tcl_GetHashValue(hPtr);
     newString = ns_realloc(oldString, len + 1u);
     memcpy(newString, value, len + 1u);

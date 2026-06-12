@@ -387,7 +387,7 @@ NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)
         if (newSize < set->size) {
             Ns_SetTrunc(set, newSize);
         }
-        set->maxSize = newSize+1;
+        set->maxSize = newSize + 1;
         set->fields = ns_realloc(set->fields,
                                  sizeof(Ns_SetField) * set->maxSize);
     }

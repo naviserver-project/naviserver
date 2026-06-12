@@ -120,7 +120,6 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
     size_t      i;
 
     NS_NONNULL_ASSERT(localModPtr != NULL);
-    //NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(module != NULL);
 
     Tcl_InitHashTable(&localModPtr->users, TCL_STRING_KEYS);
@@ -143,7 +142,8 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
         }
         passPart = strchr(user, INTCHAR(':'));
         if (passPart == NULL) {
-            Ns_Log(Warning, "nscp[%s]: user entry '%s' contains no colon; ignored.", server,  user);
+            Ns_Log(Warning, "nscp[%s]: user entry '%s' contains no colon; ignored.",
+                   server == NULL ? "global" : server,  user);
             continue;
         }
 

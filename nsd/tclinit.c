@@ -796,6 +796,10 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
         tracePtr->when = when;
         tracePtr->nextPtr = NULL;
 
+        /*
+         * The trace record becomes owned by the server's Tcl trace list and remains
+         * valid for the lifetime of the server.
+         */
         tracePtr->prevPtr = servPtr->tcl.lastTracePtr;
         servPtr->tcl.lastTracePtr = tracePtr;
         if (tracePtr->prevPtr != NULL) {
