@@ -3581,7 +3581,7 @@ Ns_TclDeAllocateInterp(Tcl_Interp *interp)
 
 NS_EXTERN Tcl_Interp *
 Ns_GetConnInterp(Ns_Conn *conn)
-     NS_GNUC_NONNULL(1);
+     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN Ns_Conn *
 Ns_TclGetConn(Tcl_Interp *interp)
