@@ -540,7 +540,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
 {
     Tcl_Interp *interp;
     Worker       proc;
-    int          max;
+    int          max, fd;
     Tcl_DString  in, out, scratch;
     const char  *uarg = NULL, *user;
     char        *group = NULL, *active;
@@ -595,12 +595,22 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
     if (proc.wfd < 0) {
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
     }
-    ns_close(0);
-    if (ns_open("/dev/null", O_RDONLY | O_CLOEXEC, 0) != 0) {
+
+    ns_close(STDIN_FILENO);
+    fd = ns_open(DEVNULL, O_RDONLY | O_CLOEXEC, 0);
+    if (fd != STDIN_FILENO) {
+        if (fd >= 0) {
+            (void)ns_close(fd);
+        }
         Ns_Fatal("nsproxy: open: %s", strerror(errno));
     }
-    ns_close(1);
-    if (ns_dup(2) != 1) {
+
+    ns_close(STDOUT_FILENO);
+    fd = ns_dup(STDERR_FILENO);
+    if (fd != STDOUT_FILENO) {
+        if (fd >= 0) {
+            (void)ns_close(fd);
+        }
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
     }
 
