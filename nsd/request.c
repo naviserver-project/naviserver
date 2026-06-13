@@ -965,7 +965,7 @@ Ns_HttpResponseMessageParse(
     int *statusPtr,
     char **payloadPtr
 ) {
-    Ns_ReturnCode result = NS_OK;
+    Ns_ReturnCode result;
     int           major, minor;
     size_t        firstLineLength = 0u;
 
@@ -982,11 +982,28 @@ Ns_HttpResponseMessageParse(
     /*Ns_Log(Ns_LogTaskDebug, "HttpResponseMessageParse Parse <%s>", messageString);*/
 
     result = Ns_HttpMessageParse(messageString, messageLength, &firstLineLength, hdrPtr, payloadPtr);
-    if (result == NS_OK && firstLineLength > 12) {
-        int items = sscanf(messageString, "HTTP/%2d.%2d %3d", majorPtr, minorPtr, statusPtr);
 
-        if (items != 3) {
-            result = NS_ERROR;
+    if (result == NS_OK && firstLineLength > 12u) {
+        const char *p = messageString;
+
+        result = NS_ERROR;
+
+        if (memcmp(p, "HTTP/", 5u) == 0
+            && CHARTYPE(digit, p[5]) != 0
+            && p[6] == '.'
+            && CHARTYPE(digit, p[7]) != 0
+            && p[8] == ' '
+            && p[9] >= '1' && p[9] <= '9'
+            && CHARTYPE(digit, p[10]) != 0
+            && CHARTYPE(digit, p[11]) != 0) {
+
+            *majorPtr = p[5] - '0';
+            *minorPtr = p[7] - '0';
+            *statusPtr = (p[9]  - '0') * 100
+                + (p[10] - '0') * 10
+                + (p[11] - '0');
+
+            result = NS_OK;
         }
     }
 
