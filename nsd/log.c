@@ -683,11 +683,10 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
     NS_NONNULL_ASSERT(fmt != NULL);
 
     /*
-     * Skip if logging for selected severity is disabled
-     * or if severity level out of range(s).
+     * Skip if logging for the selected severity is disabled or if the
+     * severity level is out of range.
      */
-
-    if (Ns_LogSeverityEnabled(severity)) {
+    if (likely(severity < severityMaxCount) && Ns_LogSeverityEnabled(severity)) {
         size_t    length, offset;
         LogEntry *entryPtr;
         /*
