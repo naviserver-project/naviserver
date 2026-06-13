@@ -5299,6 +5299,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
           ns_crypto::eckey sharedsecret -pem /tmp/prime256v1_key.pem \
               [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
         */
+        assert(pemFileName!= NULL);
 
         Tcl_DStringInit(&importDs);
         pubkeyString = Ns_GetBinaryString(pubkeyObj, isBinary == 1,
@@ -6463,6 +6464,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
              * Decrypt ...
              */
             assert(!encrypt);
+            assert(tagString != NULL);
 
             if ( EVP_DecryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1
                         || !AEAD_Set_ivlen(ctx, (size_t)ivLength)
@@ -6482,8 +6484,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
                 result = TCL_ERROR;
 
             } else if (!AEAD_Set_tag(ctx, (const unsigned char *)tagString, (size_t)tagLength)) {
-                Ns_TclPrintfResult(interp,
-                                   "could not set authentication tag");
+                Ns_TclPrintfResult(interp, "could not set authentication tag");
                 result = TCL_ERROR;
 
             } else {
