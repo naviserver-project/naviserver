@@ -221,35 +221,53 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
             break;
 
         case IGetIdx:
-        case IUnsetIdx:
-            if (objc != 3 && objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? /name/");
+        case IUnsetIdx: {
+            int   nocomplainInt = 0;
+            char *nameString;
+            Ns_ObjvSpec opts[] = {
+                {"-nocomplain", Ns_ObjvBool,  &nocomplainInt, INT2PTR(NS_TRUE)},
+                {"--",          Ns_ObjvBreak, NULL,    NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec args[] = {
+                {"name",       Ns_ObjvString, &nameString, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
                 result = TCL_ERROR;
+            } else {
+                value = getenv(nameString);
 
-            } else if (objc == 4) {
-                const char *arg = Tcl_GetString(objv[2]);
-
-                if (!STREQ(arg, "-nocomplain")) {
-                    Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? /name/");
-                    result = TCL_ERROR;
-                }
-            }
-
-            if (result == TCL_OK) {
-                name = Tcl_GetString(objv[2]);
-                value = getenv(name);
-                if (value == NULL && objc != 4) {
-                    Ns_TclPrintfResult(interp, "no such environment variable: %s", name);
-                    result = TCL_ERROR;
-
-                } else if ((opt == IUnsetIdx) && (PutEnv(interp, name, NULL) != TCL_OK)) {
+                if (value == NULL && nocomplainInt == 0) {
+                    Ns_TclPrintfResult(interp, "no such environment variable: %s", nameString);
                     result = TCL_ERROR;
 
                 } else {
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(value, TCL_INDEX_NONE));
+                    Tcl_Obj *resultObj = NULL;
+
+                    if (opt == IUnsetIdx) {
+                        /*
+                         * getenv() returns storage owned by the environment.
+                         * It may be invalidated by PutEnv()/unsetenv(), you
+                         * cannot rely on the content of "value" below.
+                         */
+                        result = PutEnv(interp, nameString, NULL);
+                        if (result == TCL_OK) {
+                            resultObj =  NsAtomObj(NS_ATOM_EMPTY);
+                        }
+                    } else if (value != NULL) {
+                        /*
+                         * opt == IGetIdx
+                         */
+                        resultObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
+                    }
+                    if (resultObj != NULL) {
+                        Tcl_SetObjResult(interp, resultObj);
+                    }
                 }
             }
             break;
+        }
 
         default:
             /* unexpected value */
@@ -278,7 +296,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
  *
  *----------------------------------------------------------------------
  */
-
+// NOLINTBEGIN(clang-analyzer-unix.Malloc)
 static int
 PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 {
@@ -352,7 +370,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 
     return result;
 }
-
+// NOLINTEND(clang-analyzer-unix.Malloc)
 /*
  * Local Variables:
  * mode: c

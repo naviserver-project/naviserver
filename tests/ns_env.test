@@ -25,7 +25,7 @@ test ns_env-1.4 {syntax: ns_env names} -body {
 
 test ns_env-1.5 {syntax: ns_env get} -body {
      ns_env get
-} -returnCodes error -result {wrong # args: should be "ns_env get ?-nocomplain? /name/"}
+} -returnCodes error -result {wrong # args: should be "ns_env get ?-nocomplain? ?--? /name/"}
 
 test ns_env-1.6 {syntax: ns_env set} -body {
      ns_env set
@@ -33,7 +33,7 @@ test ns_env-1.6 {syntax: ns_env set} -body {
 
 test ns_env-1.7 {syntax: ns_env unset} -body {
      ns_env unset
-} -returnCodes error -result {wrong # args: should be "ns_env unset ?-nocomplain? /name/"}
+} -returnCodes error -result {wrong # args: should be "ns_env unset ?-nocomplain? ?--? /name/"}
 
 
 
