@@ -1343,7 +1343,7 @@ Ns_TclFindHashEntryConst(const Tcl_HashTable *t, const char *key)
 {
     Tcl_HashTable *tw;
     /* bit-copy the pointer; avoids a const-dropping cast and keeps -Wcast-qual happy */
-    memcpy(&tw, &t, sizeof tw);
+    memcpy(&tw, &t, sizeof tw); /* NOLINT(bugprone-sizeof-expression) */
     return (const Tcl_HashEntry *)Tcl_FindHashEntry(tw, key);
 }
 
