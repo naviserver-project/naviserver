@@ -512,7 +512,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     server = Ns_ConnServer(conn);
     modPtr = mapPtr->modPtr;
 
-    memset(cgiPtr, 0, (size_t)((char *)&cgiPtr->ds[0] - (char *)cgiPtr));
+    memset(cgiPtr, 0, offsetof(Cgi, ds));
     cgiPtr->buf[0] = '\0';
     cgiPtr->modPtr = modPtr;
     cgiPtr->pid = NS_INVALID_PID;
