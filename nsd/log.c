@@ -167,6 +167,7 @@ static const unsigned char LOG_COLOREND[]   = { 0x1bu, UCHAR('['), UCHAR('0'), U
 static const unsigned char LOG_COLORSTART[] = { 0x1bu, UCHAR('['), 0u };
 
 typedef enum {
+    COLOR_NONE    = 0u,
     COLOR_BLACK   = 30u,
     COLOR_RED     = 31u,
     COLOR_GREEN   = 32u,
