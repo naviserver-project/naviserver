@@ -135,6 +135,15 @@
  */
 #define NS_NONNULL_ASSERT(assertion) assert((assertion))
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+# define NS_STATIC_ASSERT(expr, msg) _Static_assert((expr), msg)
+#else
+# define NS_STATIC_ASSERT_CONCAT_(a,b) a##b
+# define NS_STATIC_ASSERT_CONCAT(a,b) NS_STATIC_ASSERT_CONCAT_(a,b)
+# define NS_STATIC_ASSERT(expr, msg) \
+    typedef char NS_STATIC_ASSERT_CONCAT(ns_static_assert_, __LINE__)[(expr) ? 1 : -1]
+#endif
+
 #if __GNUC_PREREQ(7, 0)
 # define NS_FALL_THROUGH ;__attribute__((fallthrough))
 #else

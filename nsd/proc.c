@@ -269,6 +269,9 @@ Ns_RegisterProcInfo(ns_funcptr_t procAddr, const char *desc, Ns_ArgProc *argProc
     infoPtr->proc = argProc;
 }
 
+NS_STATIC_ASSERT(sizeof(void*) >= sizeof(ns_funcptr_t),
+                 "function pointer storage must fit into void pointer storage");
+
 /*
  *----------------------------------------------------------------------
  *
@@ -304,9 +307,7 @@ NsGetProcFunction(const char *description)
             Ns_Log(Debug, "... function desc: '%s' => %d",
                    infoPtr->desc, strcmp(infoPtr->desc, description));
 
-            assert(sizeof(void*) >= sizeof(ns_funcptr_t));
             memcpy(&result, &hPtr->key.oneWordValue, sizeof(ns_funcptr_t));
-
             break;
         }
         hPtr = Tcl_NextHashEntry(&search);

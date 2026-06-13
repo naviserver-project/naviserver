@@ -2115,21 +2115,21 @@ GetJobCodeStr(int code)
  *
  *----------------------------------------------------------------------
  */
+static const char *const jobStateArr[] = {
+    "scheduled",        /* 0 */
+    "running",          /* 1 */
+    "done",             /* 2 */
+    "unknown"           /* 3 */
+};
+NS_STATIC_ASSERT(JobStatesMax == Ns_NrElements(jobStateArr) - 1,
+                 "JobStatesMax must match jobStateArr");
 
 static const char*
 GetJobStateStr(JobStates state)
 {
-    static const char *const stateArr[] = {
-        "scheduled",        /* 0 */
-        "running",          /* 1 */
-        "done",             /* 2 */
-        "unknown"           /* 3 */
-    };
-
-    assert((int)JobStatesMax == Ns_NrElements(stateArr) - 1);
     assert((int)JobStatesMax > (int)state);
 
-    return stateArr[state];
+    return jobStateArr[state];
 }
 
 
@@ -2148,19 +2148,22 @@ GetJobStateStr(JobStates state)
  *
  *----------------------------------------------------------------------
  */
+
+static const char *const jobTypeArr[] = {
+    "nondetached",     /* 0 */
+    "detached",        /* 1 */
+    "unknown"          /* 2 */
+};
+NS_STATIC_ASSERT(JobTypesMax == Ns_NrElements(jobTypeArr) - 1,
+                 "JobTypesMax must match jobTypeArr");
+
 static const char*
 GetJobTypeStr(JobTypes type)
 {
-    static const char *const typeArr[] = {
-        "nondetached",     /* 0 */
-        "detached",        /* 1 */
-        "unknown"          /* 2 */
-    };
 
-    assert((int)JobTypesMax == Ns_NrElements(typeArr) - 1);
     assert((int)JobTypesMax > (int)type);
 
-    return typeArr[type];
+    return jobTypeArr[type];
 }
 
 
@@ -2179,19 +2182,21 @@ GetJobTypeStr(JobTypes type)
  *
  *----------------------------------------------------------------------
  */
+
+static const char *const jobReqArr[] = {
+    "none",     /* 0 */
+    "wait",     /* 1 */
+    "unknown"   /* 2 */
+};
+NS_STATIC_ASSERT(JobRequestsMax == Ns_NrElements(jobReqArr) - 1,
+                 "JobRequestsMax must match jobReqArr");
+
 static const char*
 GetJobReqStr(JobRequests req)
 {
-    static const char *const reqArr[] = {
-        "none",     /* 0 */
-        "wait",     /* 1 */
-        "unknown"   /* 2 */
-    };
-
-    assert((int)JobRequestsMax == Ns_NrElements(reqArr) - 1);
     assert((int)JobRequestsMax > (int)req);
 
-    return reqArr[req];
+    return jobReqArr[req];
 }
 
 
@@ -2210,19 +2215,21 @@ GetJobReqStr(JobRequests req)
  *
  *----------------------------------------------------------------------
  */
+
+static const char *const queueReqArr[] = {
+    "none",      /* 0 */
+    "delete",    /* 1 */
+    "unknown"    /* 2 */
+};
+NS_STATIC_ASSERT(QueueRequestsMax == Ns_NrElements(queueReqArr) - 1,
+                 "QueueRequestsMax must match queueReqArr");
+
 static const char*
 GetQueueReqStr(QueueRequests req)
 {
-    static const char *const reqArr[] = {
-        "none",      /* 0 */
-        "delete",    /* 1 */
-        "unknown"    /* 2 */
-    };
-
-    assert((int)QueueRequestsMax == Ns_NrElements(reqArr) - 1);
     assert((int)QueueRequestsMax > (int)req);
 
-    return reqArr[req];
+    return queueReqArr[req];
 }
 
 
@@ -2241,19 +2248,21 @@ GetQueueReqStr(QueueRequests req)
  *
  *----------------------------------------------------------------------
  */
+
+static const char *const tpoolReqArr[] = {
+    "none",      /* 0 */
+    "stop",      /* 1 */
+    "unknown"    /* 2 */
+};
+NS_STATIC_ASSERT(ThreadPoolRequestsMax == Ns_NrElements(tpoolReqArr) - 1,
+                 "ThreadPoolRequestsMax must match tpoolReqArr");
+
 static const char*
 GetTpReqStr(ThreadPoolRequests req)
 {
-    static const char *const reqArr[] = {
-        "none",      /* 0 */
-        "stop",      /* 1 */
-        "unknown"    /* 2 */
-    };
-
-    assert((int)ThreadPoolRequestsMax == Ns_NrElements(reqArr) - 1);
     assert((int)ThreadPoolRequestsMax > (int)req);
 
-    return reqArr[req];
+    return tpoolReqArr[req];
 }
 
 
