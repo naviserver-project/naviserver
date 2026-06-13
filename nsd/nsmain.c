@@ -646,8 +646,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * language operations.
      */
     {
-        char *localeString =  getenv("LC_ALL");
-        const char *source = "environment variable LC_ALL", *response;
+        const char *localeString = getenv("LC_ALL");
+        const char *source       = "environment variable LC_ALL", *response;
+        char       *localeCopy   = NULL;
 
         if (localeString == NULL) {
             source = "environment variable LC_COLLATE";
@@ -660,18 +661,27 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (localeString == NULL) {
             source = "system-wide default locale";
             localeString =  setlocale(LC_COLLATE, NULL);
+            /*
+             * The pointer returned by setlocale(category, NULL) may be
+             * invalidated by a later setlocale() call.  Keep our own copy
+             * before calling setlocale() again below.
+             */
+            if (localeString != NULL) {
+                localeCopy = ns_strdup(localeString);
+                localeString = localeCopy;
+            }
         }
 
 #ifdef _WIN32
-        if (localeString != NULL) {
+        if (localeString != NULL && localeCopy == NULL) {
             /*
-             * Under windows, later calls to setlocale() overwrite the
-             * returned string and the pointer will be invalid.
+             * Under Windows, later calls to setlocale() overwrite the returned
+             * string and the pointer will be invalid.  Keep a private copy.
              */
-            localeString = ns_strdup(localeString);
+            localeCopy = ns_strdup(localeString);
+            localeString = localeCopy;
         }
 #endif
-
         response = setlocale(LC_COLLATE, localeString);
         if (response != NULL) {
 #ifdef _WIN32
@@ -679,6 +689,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #else
             nsconf.locale = newlocale(LC_COLLATE_MASK, localeString, (locale_t)0);
 #endif
+            /*
+             * localeString may point into the environment, libc storage, or localeCopy.
+             * Only localeCopy is owned here.
+             */
         }
         if (nsconf.locale == 0) {
             Ns_Fatal("nsmain: system configuration mismatch.\n"
@@ -687,6 +701,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                                localeString, source);
         }
         Ns_Log(Notice, "initialized locale %s from %s", localeString, source);
+
+        ns_free(localeCopy);
     }
 
     /*
