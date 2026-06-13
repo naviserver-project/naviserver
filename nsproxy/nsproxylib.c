@@ -1588,7 +1588,7 @@ WaitFd(int fd, short events, long ms)
     int n;
 
     pfd.fd = fd;
-    pfd.events = events | POLLPRI | POLLERR;
+    pfd.events = (short)(events | POLLPRI | POLLERR);
     pfd.revents = pfd.events;
     do {
         n = ns_poll(&pfd, 1, ms);

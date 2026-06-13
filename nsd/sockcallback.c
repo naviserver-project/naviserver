@@ -460,7 +460,7 @@ SockCallbackThread(void *UNUSED(arg))
                 for (i = 0; i < Ns_NrElements(when); ++i) {
                     //Ns_Log(Notice, "SockCallback check when[%d]: fd %d %.4x", i, pfds[i].fd, when[i]);
                     if ((cbPtr->when & when[i]) != 0u) {
-                        pfds[nfds].events |= events[i];
+                        pfds[nfds].events = (short)(pfds[nfds].events | events[i]);
                     }
                 }
                 ++nfds;

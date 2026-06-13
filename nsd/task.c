@@ -833,7 +833,7 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, Ns_Time *timeoutPtr)
     taskPtr->events = 0;
     for (idx = 0u; idx < Ns_NrElements(map); idx++) {
         if (when == map[idx].when) {
-            taskPtr->events |= map[idx].event;
+            taskPtr->events = (short)(taskPtr->events | map[idx].event);
         }
     }
 

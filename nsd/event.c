@@ -204,7 +204,7 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
     evPtr->events = 0;
     for (i = 0; i < Ns_NrElements(map); ++i) {
         if (when == map[i].when) {
-            evPtr->events |= map[i].event;
+            evPtr->events = (short)(evPtr->events | map[i].event);
         }
     }
 
