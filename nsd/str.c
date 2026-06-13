@@ -193,27 +193,28 @@ Ns_StrToUpper(char *chars)
     return chars;
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
  * Ns_StrToInt --
  *
- *      Attempt to convert the string value to an integer.
+ *      Parse a NUL-terminated string as an integer value. Decimal input is
+ *      parsed by default; strings starting with the prefix "0x" are parsed
+ *      as hexadecimal values.
  *
  * Results:
- *      NS_OK and *intPtr updated, NS_ERROR if the number cannot be
- *      parsed or overflows.
+ *      NS_OK if the complete input string was parsed successfully and the
+ *      value fits into the range of int. In this case, the parsed value is
+ *      stored in *intPtr. NS_ERROR is returned for an empty string, trailing
+ *      characters, conversion overflow or underflow, or values outside the
+ *      range of int.
  *
  * Side effects:
- *      The string may begin with an arbitrary amount of white space (as
- *      determined by isspace(3)) followed by a single optional `+' or `-'
- *      sign.  If string starts with `0x' prefix, the number will be read in
- *      base 16, otherwise the number will be treated as decimal
+ *      Sets errno to 0 before calling strtol().
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_StrToInt(const char *chars, int *intPtr)
 {
