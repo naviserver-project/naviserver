@@ -262,7 +262,7 @@ NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         Tcl_DString          token, value;
         const unsigned char *p1;
-        const char           listDelimiter = (singleInt == (int)NS_TRUE ? '\0' : ',');
+        const char           listDelimiter = (char)(singleInt == (int)NS_TRUE ? '\0' : ',');
         const char           sublistDelimiter = ';';
         Tcl_Obj             *listObj = NULL, *sublistObj = NULL;
 
