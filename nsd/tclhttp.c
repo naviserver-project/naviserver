@@ -5828,7 +5828,7 @@ HttpClose(
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    assert(CkCheck(httpPtr) != NULL);
+    assert(CkCheck(httpPtr) != NULL); /* NOLINT(cert-dcl03-c) */
 
     Ns_Log(Debug, "HttpClose (context %s): http:%p", context, (void*)httpPtr);
 
@@ -6181,7 +6181,7 @@ HttpProc(
     NS_NONNULL_ASSERT(arg != NULL);
 
     httpPtr = (NsHttpTask *)arg;
-    assert(CkCheck(httpPtr) != NULL);
+    assert(CkCheck(httpPtr) != NULL); /* NOLINT(cert-dcl03-c) */
 
     Ns_Log(Ns_LogTaskDebug, "HttpProc: enter socket state %.2x", why);
 
