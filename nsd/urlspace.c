@@ -748,7 +748,7 @@ static void UrlSpaceContextPrint(const char *caller, const NsUrlSpaceContext *ct
 
     if (ctxPtr->saPtr != NULL) {
         Tcl_DStringSetLength(&ds, NS_IPADDR_SIZE);
-        ns_inet_ntop(ctxPtr->saPtr, ds.string, sizeof(NS_IPADDR_SIZE));
+        ns_inet_ntop(ctxPtr->saPtr, ds.string, NS_IPADDR_SIZE);
         Tcl_DStringAppend(&ds, "\n", 1);
     } else {
         Tcl_DStringAppend(&ds, "no socket address provided\n", TCL_INDEX_NONE);
