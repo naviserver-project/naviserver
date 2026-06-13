@@ -1599,8 +1599,8 @@ NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     void       *specPtr = NULL;   /* use void, since no NsUrlSpaceContextSpec declared */
     Ns_ObjvSpec opts[] = {
         {"-constraints", Ns_ObjvUrlspaceSpec, &specPtr,  NULL},
-        {"-noinherit",     Ns_ObjvBool,        &noinherit,     INT2PTR(NS_OP_NOINHERIT)},
-        {"-matchsegments", Ns_ObjvBool,        &matchsegments, INT2PTR(NS_OP_SEGMENT_MATCH)},
+        {"-noinherit",     Ns_ObjvBool,        &noinherit,     INT2PTR(NS_TRUE)},
+        {"-matchsegments", Ns_ObjvBool,        &matchsegments, INT2PTR(NS_TRUE)},
         {"-path",          Ns_ObjvString,      &path,          NULL},
         {"--",             Ns_ObjvBreak,       NULL,           NULL},
         {NULL, NULL, NULL, NULL}

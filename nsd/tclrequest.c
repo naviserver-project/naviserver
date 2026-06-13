@@ -210,7 +210,7 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
     NsUrlSpaceContextSpec *specPtr = NULL;
     Ns_ObjvSpec opts[] = {
         {"-constraints", Ns_ObjvUrlspaceSpec, &specPtr, NULL},
-        {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_OP_NOINHERIT)},
+        {"-noinherit",     Ns_ObjvBool,        &noinherit,    INT2PTR(NS_TRUE)},
         {"--",             Ns_ObjvBreak,       NULL,          NULL},
         {NULL, NULL, NULL, NULL}
     };
