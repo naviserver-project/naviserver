@@ -240,7 +240,8 @@ Ns_ModuleInit(const char *server, const char *module)
     modPtr->server = server;
     Ns_MutexInit(&modPtr->lock);
     Ns_MutexSetName2(&modPtr->lock, "nscgi", server);
-    modPtr->maxInput = (int)Ns_ConfigMemUnitRange(section, "maxinput", "1MB", 1024*1024, 0, LLONG_MAX);
+    modPtr->maxInput = (int)Ns_ConfigMemUnitRange(section, "maxinput", "1MB",
+                                                  (Tcl_WideInt)1024*1024, 0, LLONG_MAX);
     modPtr->maxCgi = Ns_ConfigInt(section, "limit", 0);
 
     Ns_ConfigTimeUnitRange(section, "maxwait", "30s", 0, 0, INT_MAX, 0,

@@ -174,10 +174,10 @@ ConfigServerAdp(const char *server)
     servPtr->adp.startpage = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "startpage", "")));
     servPtr->adp.debuginit = ns_strcopy(Ns_ConfigString(section, "debuginit", "ns_adp_debuginit"));
     servPtr->adp.tracesize = Ns_ConfigInt(section, "tracesize", 40);
-    servPtr->adp.cachesize = (size_t)Ns_ConfigMemUnitRange(section, "cachesize", "5MB", 5000 * 1024,
-                                                           1000 * 1024, INT_MAX);
-    servPtr->adp.bufsize   = (size_t)Ns_ConfigMemUnitRange(section, "bufsize",  "1MB",  1024 * 1000,
-                                                           100 * 1024, INT_MAX);
+    servPtr->adp.cachesize = (size_t)Ns_ConfigMemUnitRange(section, "cachesize", "5MB", (Tcl_WideInt)5000 * 1024,
+                                                           (Tcl_WideInt)1000 * 1024, INT_MAX);
+    servPtr->adp.bufsize   = (size_t)Ns_ConfigMemUnitRange(section, "bufsize",  "1MB",  (Tcl_WideInt)1024 * 1000,
+                                                           (Tcl_WideInt)100 * 1024, INT_MAX);
     servPtr->adp.defaultExtension = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "defaultextension", "")));
 
     servPtr->adp.flags = 0u;

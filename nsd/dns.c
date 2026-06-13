@@ -91,7 +91,7 @@ NsConfigDNS(void)
     const char *section = NS_GLOBAL_CONFIG_PARAMETERS;
 
     if (Ns_ConfigBool(section, "dnscache", NS_TRUE) == NS_TRUE) {
-        size_t maxSize = (size_t)Ns_ConfigMemUnitRange(section, "dnscachemaxsize", "500KB", 1024 * 500,
+        size_t maxSize = (size_t)Ns_ConfigMemUnitRange(section, "dnscachemaxsize", "500KB", (Tcl_WideInt)1024 * 500,
                                                        0, INT_MAX);
         if (maxSize > 0u) {
             Ns_ConfigTimeUnitRange(section, "dnswaittimeout",
