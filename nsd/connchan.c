@@ -2399,7 +2399,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
 
     finished      = ((data[0] & 0x80u) != 0);
     masked        = ((data[1] & 0x80u) != 0);
-    opcode        = (data[0] & 0x0Fu);
+    opcode        = (data[0] & 0x0F);
     payloadLength = (data[1] & 0x7Fu);
 
     if (payloadLength <= 125) {
