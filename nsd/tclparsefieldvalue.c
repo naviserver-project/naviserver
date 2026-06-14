@@ -262,7 +262,7 @@ NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         Tcl_DString          token, value;
         const unsigned char *p1;
-        const char           listDelimiter = (char)(singleInt == (int)NS_TRUE ? '\0' : ',');
+        const unsigned char  listDelimiter = (singleInt == (int)NS_TRUE ? UCHAR('\0') : UCHAR(','));
         const char           sublistDelimiter = ';';
         Tcl_Obj             *listObj = NULL, *sublistObj = NULL;
 
@@ -310,7 +310,7 @@ NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 /*
                  * Continue with sublist.
                  */
-            } else if (*p1 != '\0' && *p1 == listDelimiter) {
+            } else if (*p1 != UCHAR('\0') && *p1 == listDelimiter) {
                 p1 ++;
                 if (listObj == NULL) {
                     listObj = Tcl_NewListObj(0, NULL);
