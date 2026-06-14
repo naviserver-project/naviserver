@@ -1803,64 +1803,78 @@ Ns_IndexIntInit(Ns_Index *indexPtr, size_t inc) NS_GNUC_NONNULL(1);
  */
 
 NS_EXTERN Ns_List *
-Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr);
+Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
 Ns_ListCons(void *elem, Ns_List *lPtr)
+    NS_GNUC_DEPRECATED
     NS_GNUC_RETURNS_NONNULL
     NS_GNUC_WARN_UNUSED_RESULT;
 
 NS_EXTERN Ns_List *
-Ns_ListNreverse(Ns_List *lPtr);
+Ns_ListNreverse(Ns_List *lPtr)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
 Ns_ListLast(Ns_List *lPtr)
-    NS_GNUC_PURE;
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN void
-Ns_ListFree(Ns_List *lPtr, Ns_ElemVoidProc *freeProc);
+Ns_ListFree(Ns_List *lPtr, Ns_ElemVoidProc *freeProc)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN void
-Ns_IntPrint(int d);
+Ns_IntPrint(int d) NS_GNUC_DEPRECATED;
 
 NS_EXTERN void
 Ns_StringPrint(const char *s)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 NS_EXTERN void
-Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc);
+Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
-Ns_ListCopy(const Ns_List *lPtr);
+Ns_ListCopy(const Ns_List *lPtr)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN int
 Ns_ListLength(const Ns_List *lPtr)
-    NS_GNUC_PURE;
+    NS_GNUC_PURE NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
-Ns_ListWeightSort(Ns_List *wPtr);
+Ns_ListWeightSort(Ns_List *wPtr)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
-Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc);
+Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
-Ns_ListDeleteLowElements(Ns_List *mPtr, float minweight);
+Ns_ListDeleteLowElements(Ns_List *mPtr, float minweight)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
 Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr,
-                      Ns_EqualProc *equalProc);
+                      Ns_EqualProc *equalProc)
+    NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
-Ns_ListDeleteIf(Ns_List *lPtr, Ns_ElemTestProc *testProc);
+Ns_ListDeleteIf(Ns_List *lPtr, Ns_ElemTestProc *testProc)
+        NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
-Ns_ListDeleteDuplicates(Ns_List *lPtr, Ns_EqualProc *equalProc);
+Ns_ListDeleteDuplicates(Ns_List *lPtr, Ns_EqualProc *equalProc)
+        NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
-Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
+Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc)
+            NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_List *
-Ns_ListMapcar(const Ns_List *lPtr, Ns_ElemValProc *valProc);
+Ns_ListMapcar(const Ns_List *lPtr, Ns_ElemValProc *valProc)
+    NS_GNUC_DEPRECATED;
 
 /*
  * see macros above for:
