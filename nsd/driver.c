@@ -27,7 +27,6 @@ NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 /*
  * Constants for SockState return and reason codes.
  */
-
 typedef enum {
     SOCK_READY =               0,
     SOCK_MORE =                1,
@@ -334,8 +333,8 @@ static size_t EndOfHeader(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static  Request *RequestNew(void)
     NS_GNUC_RETURNS_NONNULL;
-static void RequestFree(Sock *sockPtr)
-    NS_GNUC_NONNULL(1);
+static void RequestFree(Sock *sockPtr, const char *caller)
+    NS_GNUC_NONNULL(1,2);
 static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
     NS_GNUC_NONNULL(2,3);
 
@@ -377,6 +376,7 @@ Ns_LogSeverity Ns_LogConnchanDebug;
 Ns_LogSeverity Ns_LogUrlspaceDebug;
 Ns_LogSeverity Ns_LogTimeoutDebug;
 Ns_LogSeverity Ns_LogNsSetDebug;
+Ns_LogSeverity Ns_LogMemoryDebug;
 /* See also Ns_LogAccessDebug defined and exported above. */
 
 bool NsWriterBandwidthManagement = NS_FALSE;
@@ -492,6 +492,7 @@ NsInitDrivers(void)
     Ns_LogAccessDebug = Ns_CreateLogSeverity("Debug(access)");
     Ns_LogTimeoutDebug = Ns_CreateLogSeverity("Debug(timeout)");
     Ns_LogNsSetDebug = Ns_CreateLogSeverity("Debug(nsset)");
+    Ns_LogMemoryDebug = Ns_CreateLogSeverity("Debug(memory)");
     Ns_MutexInit(&reqLock);
     Ns_MutexInit(&writerlock);
     Ns_MutexSetName2(&reqLock, "ns:driver", "requestpool");
@@ -2143,8 +2144,7 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
              */
             if (status != SOCK_READY) {
                 if (sockPtr->reqPtr != NULL) {
-                    Ns_Log(DriverDebug, "NsGetRequest calls RequestFree");
-                    RequestFree(sockPtr);
+                    RequestFree(sockPtr, "NsGetRequest");
                 }
                 reqPtr = NULL;
             }
@@ -2196,8 +2196,7 @@ NsSockClose(Sock *sockPtr, int keep)
      * fill out the request structure).
      */
     if (sockPtr->reqPtr != NULL) {
-        Ns_Log(DriverDebug, "NsSockClose calls RequestFree");
-        RequestFree(sockPtr);
+        RequestFree(sockPtr, "NsSockClose");
     }
 
     Ns_MutexLock(&drvPtr->lock);
@@ -3337,12 +3336,61 @@ NsSockEnsureRequest(Sock *sockPtr) {
  *----------------------------------------------------------------------
  */
 static void
-RequestFree(Sock *sockPtr)
+RequestFree(Sock *sockPtr, const char *caller)
 {
     Request *reqPtr;
     bool     keep;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
+    /*
+     * Cleanup the request info. When (true) pipelining is active, we have to
+     * perform leftover management for some requests which might be (partly)
+     * already read in.
+     */
+    reqPtr = sockPtr->reqPtr;
+    assert(reqPtr != NULL);
+
+    Ns_Log(DriverDebug, "RequestFree called from %s", caller);
+
+    if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
+        const Ns_Set *headers = reqPtr->headers;
+        const size_t  bufferLength = (size_t)reqPtr->buffer.length;
+        const size_t  bufferSpace = (size_t)reqPtr->buffer.spaceAvl;
+        const size_t  headerSize = headers != NULL ? Ns_SetSize(headers) : 0u;
+        const size_t  headerMaxSize = headers != NULL ? headers->maxSize : 0u;
+#ifdef NS_SET_DSTRING
+        const TCL_SIZE_T headerDataLength = headers != NULL ? headers->data.length : 0;
+        const TCL_SIZE_T headerDataSpace = headers != NULL ? headers->data.spaceAvl : 0;
+#endif
+        if (headerMaxSize > 128u
+            || bufferSpace > 64u * 1024u
+#ifdef NS_SET_DSTRING
+            || headerDataSpace > (TCL_SIZE_T)(64u * 1024u)
+#endif
+            ) {
+            Ns_Log(Ns_LogMemoryDebug,
+                   "RequestFree from %s: keep %d "
+                   "buffer length %" PRIuz " spaceAvl %" PRIuz " "
+                   "headers %p size %" PRIuz " maxSize %" PRIuz
+#ifdef NS_SET_DSTRING
+                   " data.length %" PRITcl_Size " data.spaceAvl %" PRITcl_Size
+#endif
+                   ,
+                   caller,
+                   sockPtr->keep,
+                   bufferLength,
+                   bufferSpace,
+                   (const void *)headers,
+                   headerSize,
+                   headerMaxSize
+#ifdef NS_SET_DSTRING
+                   ,
+                   headerDataLength,
+                   headerDataSpace
+#endif
+                   );
+        }
+    }
 
     /*
      * Clear poolPtr assignment, since this is closely related to the request
@@ -3351,13 +3399,6 @@ RequestFree(Sock *sockPtr)
      */
     sockPtr->poolPtr = NULL;
 
-    /*
-     * Cleanup the request info. When (true) pipelining is active, we have to
-     * perform leftover management for some requests which might be (partly)
-     * already read in.
-     */
-    reqPtr = sockPtr->reqPtr;
-    assert(reqPtr != NULL);
 
     Ns_Log(DriverDebug, "=== RequestFree cleans %p (avail %" PRIuz
            " keep %d length %" PRIuz " contentLength %" PRIuz ")",
@@ -3821,8 +3862,7 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     drvPtr->queuesize--;
 
     if (sockPtr->reqPtr != NULL) {
-        Ns_Log(DriverDebug, "SockRelease calls RequestFree");
-        RequestFree(sockPtr);
+        RequestFree(sockPtr, "SockRelease");
     }
 
     Ns_MutexLock(&drvPtr->lock);
