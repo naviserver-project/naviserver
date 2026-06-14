@@ -550,10 +550,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
          */
 
         if (n > 1 && UCHAR(buf[0]) == TN_IAC) {
-            if ( UCHAR(buf[1]) == TN_EOF) {
-                result = NS_FALSE;
-                goto bail;
-            } else if (UCHAR(buf[1]) == TN_IP) {
+            if ((UCHAR(buf[1]) == TN_EOF) || (UCHAR(buf[1]) == TN_IP)) {
                 result = NS_FALSE;
                 goto bail;
             } else if ((UCHAR(buf[1]) == TN_WONT) && (retry < 2)) {
