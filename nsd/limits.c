@@ -341,7 +341,7 @@ FindLimits(const char *limits, int create)
             Ns_MutexInit(&limitsPtr->lock);
             Ns_MutexSetName2(&limitsPtr->lock, "ns:limits", limits);
             limitsPtr->maxrun = limitsPtr->maxwait = 100u;
-            limitsPtr->maxupload = 10u * 1024u * 1000u; /* NB: 10meg limit. */
+            limitsPtr->maxupload = (size_t)10u * 1024u * 1000u; /* NB: 10meg limit. */
             limitsPtr->timeout = 60;
             Tcl_SetHashValue(hPtr, limitsPtr);
         }

@@ -661,11 +661,11 @@ EnsureKeyedListSpace(keylIntObj_t * keylIntPtr, TCL_SIZE_T newNumEntries)
             KEYEDLIST_ARRAY_INCR_SIZE;
         if (keylIntPtr->entries == NULL) {
             keylIntPtr->entries = (keylEntry_t *)
-                ns_malloc((unsigned)newSize * (unsigned)sizeof(keylEntry_t));
+                ns_malloc((size_t)newSize *sizeof(keylEntry_t));
         } else {
             keylIntPtr->entries = (keylEntry_t *)
                 ns_realloc((char *) keylIntPtr->entries,
-                          (unsigned)newSize * sizeof(keylEntry_t));
+                          (size_t)newSize * sizeof(keylEntry_t));
         }
         keylIntPtr->arraySize = newSize;
     }
@@ -839,7 +839,7 @@ DupKeyedListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
     copyIntPtr->arraySize = srcIntPtr->arraySize;
     copyIntPtr->numEntries = srcIntPtr->numEntries;
     copyIntPtr->entries = (keylEntry_t *)
-        ns_malloc((unsigned)copyIntPtr->arraySize * (unsigned)sizeof(keylEntry_t));
+        ns_malloc((size_t)copyIntPtr->arraySize * sizeof(keylEntry_t));
 
     if (unlikely(copyIntPtr->entries == NULL)) {
         Ns_Fatal("nsd keyedList: out of memory");
@@ -1085,7 +1085,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
                 ns_free(keylIntPtr->entries[findIdx].key);
                 Tcl_DecrRefCount(keylIntPtr->entries[findIdx].valuePtr);
             }
-            keylIntPtr->entries[findIdx].key = (char *)ns_malloc((unsigned)keyLen + 1u);
+            keylIntPtr->entries[findIdx].key = (char *)ns_malloc(keyLen + 1u);
             memcpy(keylIntPtr->entries[findIdx].key, key, keyLen);
             keylIntPtr->entries[findIdx].key[keyLen] = '\0';
             keylIntPtr->entries[findIdx].valuePtr = valuePtr;
@@ -1114,7 +1114,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
                 KEYL_REP_ASSERT(keylIntPtr);
 
             } else {
-                Tcl_Obj      *newKeylPtr = TclX_NewKeyedListObj();
+                Tcl_Obj *newKeylPtr = TclX_NewKeyedListObj();
 
                 if (TclX_KeyedListSet(interp, newKeylPtr,
                                       nextSubKey, valuePtr) != TCL_OK) {
@@ -1123,7 +1123,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
                 } else {
                     EnsureKeyedListSpace(keylIntPtr, 1);
                     findIdx = keylIntPtr->numEntries++;
-                    keylIntPtr->entries[findIdx].key = (char *)ns_malloc((unsigned)keyLen + 1u);
+                    keylIntPtr->entries[findIdx].key = (char *)ns_malloc(keyLen + 1u);
                     memcpy(keylIntPtr->entries[findIdx].key, key, keyLen);
                     keylIntPtr->entries[findIdx].key[keyLen] = '\0';
                     keylIntPtr->entries[findIdx].valuePtr = newKeylPtr;

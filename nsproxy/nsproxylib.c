@@ -2999,7 +2999,7 @@ GetPool(const char *poolName, const InterpData *idataPtr)
             poolPtr->conf.tsend.sec = 5;
             poolPtr->conf.trecv.sec = 5;
             poolPtr->conf.twait.sec = 1;
-            poolPtr->conf.tidle.sec = 5 * 60;
+            poolPtr->conf.tidle.sec = (time_t)5 * 60;
             poolPtr->maxworker = 8;
             poolPtr->conf.logminduration.sec = 1;
 

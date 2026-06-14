@@ -119,7 +119,7 @@ NsConfigFastpath(void)
 
     if (Ns_ConfigBool(section, "cache", NS_FALSE)) {
         size_t size = (size_t)Ns_ConfigMemUnitRange(section, "cachemaxsize", "10MB",
-                                                    1024*10000, 1024, INT_MAX);
+                                                    (Tcl_WideInt)1024*10000, 1024, INT_MAX);
         cache = Ns_CacheCreateSz("ns:fastpath", TCL_STRING_KEYS, size, FreeEntry);
         maxentry = (int)Ns_ConfigMemUnitRange(section, "cachemaxentry", "8KB", 8192, 8, INT_MAX);
     }

@@ -394,7 +394,7 @@ NsAdpReset(NsInterp *itPtr)
         itPtr->adp.bufsize = itPtr->servPtr->adp.bufsize;
         itPtr->adp.flags = itPtr->servPtr->adp.flags;
     } else {
-        itPtr->adp.bufsize = 1024u * 1000u;
+        itPtr->adp.bufsize = (size_t)1024u * 1000u;
         itPtr->adp.flags = 0u;
     }
     Tcl_DStringSetLength(&itPtr->adp.output, 0);

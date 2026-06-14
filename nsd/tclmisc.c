@@ -1405,9 +1405,9 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 {
 #if defined(HAVE_64BIT)
-    unsigned i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
+    size_t i = (size_t) ctx->bytes % SHA_BLOCKBYTES;
 #else
-    unsigned i = (unsigned) ctx->bytesLo % SHA_BLOCKBYTES;
+    size_t i = (size_t) ctx->bytesLo % SHA_BLOCKBYTES;
 #endif
     uint8_t *p = (uint8_t *) ctx->key + i;     /* First unused byte */
 
@@ -1446,12 +1446,6 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 #endif
     SHATransform (ctx);
 
-    /*
-     * The following memcpy() does not seem to be correct and is most likely
-     * not needed, since the loop sets all elements of "digetst".
-     */
-    /*memcpy(digest, ctx->iv, sizeof(digest));*/
-
     for (i = 0u; i < SHA_HASHWORDS; i++) {
         uint32_t t = ctx->iv[i];
 
@@ -1486,25 +1480,25 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 char *
 Ns_HexString(const unsigned char *octets, char *outputBuffer, TCL_SIZE_T size, bool isUpper)
 {
-    TCL_SIZE_T i;
     static const char hexCharsUpper[] = "0123456789ABCDEF";
     static const char hexCharsLower[] = "0123456789abcdef";
+    size_t            i, length;
+    const char       *hexChars;
 
     NS_NONNULL_ASSERT(octets != NULL);
     NS_NONNULL_ASSERT(outputBuffer != NULL);
+    assert(size >= 0);
 
-    if (isUpper) {
-        for (i = 0; i < size; ++i) {
-            outputBuffer[i * 2] = hexCharsUpper[octets[i] >> 4];
-            outputBuffer[i * 2 + 1] = hexCharsUpper[octets[i] & 0xFu];
-        }
-    } else {
-        for (i = 0; i < size; ++i) {
-            outputBuffer[i * 2] = hexCharsLower[octets[i] >> 4];
-            outputBuffer[i * 2 + 1] = hexCharsLower[octets[i] & 0xFu];
-        }
+    length = (size_t)size;
+    hexChars = isUpper ? hexCharsUpper : hexCharsLower;
+
+    for (i = 0u; i < length; ++i) {
+        size_t offset = i * 2u;
+
+        outputBuffer[offset     ] = hexChars[octets[i] >> 4];
+        outputBuffer[offset + 1u] = hexChars[octets[i] & 0xFu];
     }
-    outputBuffer[size * 2] = '\0';
+    outputBuffer[length * 2u] = '\0';
 
     return outputBuffer;
 }
