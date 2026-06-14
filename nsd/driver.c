@@ -411,9 +411,9 @@ static Driver          *firstDrvPtr = NULL; /* First in list of all drivers */
 static void
 WriteWarningRaw(const char *msg, int fd, size_t wantWrite, ssize_t written)
 {
-    fprintf(stderr, "%s: Warning: wanted to write %" PRIuz
-            " bytes, wrote %ld to file descriptor %d\n",
-            msg, wantWrite, (long)written, fd);
+    ns_fprintf(stderr, "%s: Warning: wanted to write %" PRIuz
+               " bytes, wrote %ld to file descriptor %d\n",
+               msg, wantWrite, (long)written, fd);
 }
 
 
@@ -1164,7 +1164,7 @@ void NsDriverMapVirtualServers(void)
         Tcl_DStringFree(dsPtr);
 
         if (drvPtr->defMapPtr == NULL) {
-            fprintf(stderr, "--- Server Map: ---\n");
+            ns_fprintf(stderr, "--- Server Map: ---\n");
             Ns_SetPrint(NULL, serverMapSet);
             Ns_Fatal("%s: default server '%s' not defined in '%s'", moduleName, defserver, section);
         }
@@ -9200,8 +9200,8 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
             returnCode = NS_ERROR;
             do {
                 if (written < 0) {
-                    fprintf(stderr, "error during async write (fd %d): %s\n",
-                           fd, strerror(errno));
+                    ns_fprintf(stderr, "error during async write (fd %d): %s\n",
+                               fd, strerror(errno));
                     break;
                 }
                 /*

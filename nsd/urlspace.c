@@ -1718,7 +1718,7 @@ CmpKeyWithUrlSpaceContextSpecs(const void *key, const void *elemPtr)
     keyString = (const char *)key;
     word = (*(const UrlSpaceContextSpec *const*)elemPtr)->patternString;
 
-#if 1 || defined(DEBUG)
+#if defined(DEBUG)
     fprintf(stderr, "CmpKeyWithUrlSpaceContextSpecs '%s' with '%s' -> %d\n",
             keyString, word, NS_strcmp(keyString, word));
 #endif

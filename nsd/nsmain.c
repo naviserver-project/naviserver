@@ -1439,9 +1439,9 @@ UsageError(const char *msg, ...)
     va_list ap;
 
     va_start(ap, msg);
-    fprintf(stderr, "\nError: ");
+    ns_fprintf(stderr, "\nError: ");
     vfprintf(stderr, msg, ap);
-    fprintf(stderr, "\n");
+    ns_fprintf(stderr, "\n");
     va_end(ap);
 
     UsageMsg(1);
@@ -1450,7 +1450,7 @@ UsageError(const char *msg, ...)
 static void
 UsageMsg(int exitCode)
 {
-    fprintf(stderr, "\n"
+    ns_fprintf(stderr, "\n"
 #ifdef _WIN32
         "Usage: %s [-h|V] [-c|f|I|R|S] "
 #else

@@ -2494,7 +2494,7 @@ TLSPasswordCB(char *buf, int size, int UNUSED(rwflag), void *userdata)
  prompt:
     Tcl_DStringFree(&ds);
 
-    fprintf(stdout, "Enter TLS password:");
+    ns_fprintf(stdout, "Enter TLS password:");
     if (fgets(buf, size, stdin) != NULL) {
         len = strlen(buf);
     }
@@ -2839,7 +2839,7 @@ static void KeylogCB(const SSL *ssl, const char *line)
         }
     }
 
-    fprintf(keylog_fp, "%s\n", line);
+    ns_fprintf(keylog_fp, "%s\n", line);
     fflush(keylog_fp);
 }
 

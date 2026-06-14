@@ -3200,7 +3200,7 @@ ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, 
 
     default:
         /* unexpected value */
-        fprintf(stderr, "OPT %d <%s>\n", opt, Tcl_GetString(objv[1]));
+        //fprintf(stderr, "OPT %d <%s>\n", opt, Tcl_GetString(objv[1]));
         assert(opt && 0);
         break;
 

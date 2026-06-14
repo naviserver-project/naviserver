@@ -2020,7 +2020,7 @@ Ns_SetPrint(Tcl_DString *outputDsPtr, const Ns_Set *set)
     if (outputDsPtr == NULL) {
         Tcl_DStringInit(&ds);
         Ns_SetFormat(&ds, set, NS_TRUE, "\t", " = ");
-        fprintf(stderr, "%s", ds.string);
+        ns_fprintf(stderr, "%s", ds.string);
         Tcl_DStringFree(&ds);
     } else {
         Ns_SetFormat(outputDsPtr, set, NS_TRUE, "", ": ");

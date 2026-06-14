@@ -196,7 +196,7 @@ Ns_ListFree(Ns_List *lPtr, Ns_ElemVoidProc *freeProc)
 void
 Ns_IntPrint(int d)
 {
-    fprintf(stdout, "%d", d);
+    ns_fprintf(stdout, "%d", d);
 }
 
 

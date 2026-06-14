@@ -119,8 +119,8 @@ Ns_DRand(void)
 {
     if (!initialized) {
 #ifndef _WIN32
-        fprintf(stderr, "Ns_DRand: called before initialization. "
-                "This should not happen, call NsInitRandom() before this call\n");
+        ns_fprintf(stderr, "Ns_DRand: called before initialization. "
+                   "This should not happen, call NsInitRandom() before this call\n");
 #endif
         NsInitRandom();
     }

@@ -9,6 +9,7 @@
  *
  */
 
+#include "nsd.h"
 
 #ifndef _WIN32
 
@@ -18,7 +19,6 @@
  *  Unix specific routines.
  */
 
-#include "nsd.h"
 #include <pwd.h>
 
 typedef enum {
@@ -1197,9 +1197,7 @@ Abort(int sig)
 }
 
 
-#else
-
-#include "nsd.h"
+#else /* _WIN32 */
 
 char *
 ns_mkdtemp(char *charTemplate)
@@ -1222,7 +1220,7 @@ ns_mkdtemp(char *charTemplate)
     return (err == 0) ? charTemplate : NULL;
 }
 
-#endif
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

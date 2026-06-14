@@ -2270,7 +2270,6 @@ NS_EXTERN void NsTclInitKeylistType(void);
 /*
  * tls.c
  */
-
 NS_EXTERN int NsTLSGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
                                  const char *cert, const char* key,
                                  const char *caFile, const char *caPath,
@@ -2305,7 +2304,6 @@ NS_EXTERN void NsMemUmap(const FileMap *mapPtr)
 NS_EXTERN void NsRestoreSignals(void);
 NS_EXTERN void NsSendSignal(int sig);
 NS_EXTERN void NsUnblockSignal(int signal);
-
 
 /*
  * url.c

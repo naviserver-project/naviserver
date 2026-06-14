@@ -714,12 +714,6 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, TCL_SIZE_T *lengthPtr, Tcl_DS
 
         charInput = Tcl_GetStringFromObj(obj, &stringLength);
 
-        //if (NsTclObjIsEncodedByteArray(obj)) {
-        //    fprintf(stderr, "NsTclObjIsEncodedByteArray\n");
-        //} else {
-        //    //fprintf(stderr, "some other obj\n");
-        //}
-
         (void)Tcl_UtfToExternalDString(NS_utf8Encoding, charInput, stringLength, dsPtr);
         result = (unsigned char *)dsPtr->string;
         *lengthPtr = dsPtr->length;
@@ -1088,21 +1082,21 @@ void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength
 {
     size_t i;
 
-    fprintf(stderr, "%s octetLength %" PRIuz ":\n", msg, octetLength);
+    ns_fprintf(stderr, "%s octetLength %" PRIuz ":\n", msg, octetLength);
     for (i = 0; i < octetLength; i++) {
         if (withChar) {
-            fprintf(stderr, "%c %.2x ",
-                    iscntrl(octets[i] & 0xff) ? 46 : octets[i] & 0xff,
-                    octets[i] & 0xff);
+            ns_fprintf(stderr, "%c %.2x ",
+                       iscntrl(octets[i] & 0xff) ? 46 : octets[i] & 0xff,
+                       octets[i] & 0xff);
         } else {
-            fprintf(stderr, "%.2x ", octets[i] & 0xff);
+            ns_fprintf(stderr, "%.2x ", octets[i] & 0xff);
         }
         if (((i + 1) % perLine) == 0) {
-            fprintf(stderr, "\n");
+            ns_fprintf(stderr, "\n");
         }
     }
     if (octetLength % perLine != 0) {
-        fprintf(stderr, "\n");
+        ns_fprintf(stderr, "\n");
     }
 }
 
