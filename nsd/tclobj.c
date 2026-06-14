@@ -25,6 +25,13 @@
 static Tcl_UpdateStringProc UpdateStringOfAddr;
 static Tcl_SetFromAnyProc   SetAddrFromAny;
 
+static Ns_ReturnCode ScanChar(const char *chars, const char **endPtr, int ch)
+    NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode ScanUintptrHex(const char *chars, const char **endPtr, uintptr_t *valuePtr)
+   NS_GNUC_NONNULL(1,2,3);
+static int CompareTclObjs(const void *a, const void *b)
+    NS_GNUC_NONNULL(1,2);
+
 /*
  * Local variables defined in this file.
  */
@@ -316,7 +323,81 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
     Tcl_InvalidateStringRep(objPtr);
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * ScanUintptrHex --
+ *
+ *      Scan an unsigned hexadecimal integer value from the start of the
+ *      input string and convert it to uintptr_t. The scan stops at the
+ *      first character that is not valid for base 16.
+ *
+ * Results:
+ *      NS_OK if a hexadecimal integer prefix was parsed successfully and
+ *      the value fits into uintptr_t. In this case, the parsed value is
+ *      stored in *valuePtr and *endPtr is set to the first character after
+ *      the parsed number. NS_ERROR is returned when no hexadecimal prefix
+ *      was found, when the conversion overflows, or when the parsed value
+ *      does not fit into uintptr_t.
+ *
+ * Side effects:
+ *      Sets errno to 0 before calling strtoumax().
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ScanUintptrHex(const char *chars, const char **endPtr, uintptr_t *valuePtr)
+{
+    uintmax_t      value;
+    Ns_ReturnCode  result = NS_OK;
+    char          *end = NULL;
+
+    errno = 0;
+    value = strtoumax(chars, &end, 16);
+
+    if (end == chars
+        || (errno == ERANGE && value == UINTMAX_MAX)
+        || value > UINTPTR_MAX) {
+        result = NS_ERROR;
+    } else {
+        *valuePtr = (uintptr_t)value;
+        *endPtr = end;
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ScanChar --
+ *
+ *      Scan one expected character from the start of the input string.
+ *
+ * Results:
+ *      NS_OK if the first character of chars matches ch. In this case,
+ *      *endPtr is set to the character following the match. NS_ERROR is
+ *      returned when the first character does not match.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ScanChar(const char *chars, const char **endPtr, int ch)
+{
+    Ns_ReturnCode result = NS_ERROR;
+
+    if (*chars == ch) {
+        *endPtr = chars + 1;
+        result = NS_OK;
+    }
+
+    return result;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -332,11 +413,10 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_TclGetOpaqueFromObj(Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
 {
-    int result = TCL_OK;
+    int result;
 
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(type != NULL);
@@ -345,18 +425,24 @@ Ns_TclGetOpaqueFromObj(Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
     if (objPtr->typePtr == &addrType
         && objPtr->internalRep.twoPtrValue.ptr1 == (const void *)type) {
         *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
-    } else {
-        char      s[33] = {0};
-        uintptr_t t = 0u, a = 0u;
-        const char *str = Tcl_GetString(objPtr);
+        result = TCL_OK;
 
-        if ((sscanf(str, "t%20" SCNxPTR "-a%20" SCNxPTR "-%32s", &t, &a, s) != 3)
-            || (strcmp(s, type) != 0)
-            || (t != (uintptr_t)type)
-            ) {
+    } else {
+        const char *p = Tcl_GetString(objPtr);
+        uintptr_t   t = 0u, a = 0u;
+
+        if (ScanChar(p, &p, 't') != NS_OK
+            || ScanUintptrHex(p, &p, &t) != NS_OK
+            || ScanChar(p, &p, '-') != NS_OK
+            || ScanChar(p, &p, 'a') != NS_OK
+            || ScanUintptrHex(p, &p, &a) != NS_OK
+            || ScanChar(p, &p, '-') != NS_OK
+            || strcmp(p, type) != 0
+            || t != (uintptr_t)type) {
             result = TCL_ERROR;
         } else {
             *addrPtrPtr = (void *)a;
+            result = TCL_OK;
         }
     }
 
@@ -557,22 +643,30 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static int
 SetAddrFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
-    int   result = TCL_OK;
-    void *type, *addr;
-    char *chars;
+    int         result = TCL_OK;
+    uintptr_t   typeValue = 0u, addrValue = 0u;
+    void       *type, *addr;
+    const char *chars, *p;
 
     chars = Tcl_GetString(objPtr);
-    if ((sscanf(chars, "t%20p-a%20p", &type, &addr) != 2)
-        || (type == NULL)
-        || (addr == NULL)
-        ) {
+    p = chars;
+
+    if (ScanChar(p, &p, 't') != NS_OK
+        || ScanUintptrHex(p, &p, &typeValue) != NS_OK
+        || ScanChar(p, &p, '-') != NS_OK
+        || ScanChar(p, &p, 'a') != NS_OK
+        || ScanUintptrHex(p, &p, &addrValue) != NS_OK
+        || *p != '\0'
+        || typeValue == 0u
+        || addrValue == 0u) {
         Ns_TclPrintfResult(interp, "invalid address \"%s\"", chars);
         result = TCL_ERROR;
     } else {
+        type = (void *)typeValue;
+        addr = (void *)addrValue;
         Ns_TclSetTwoPtrValue(objPtr, &addrType, type, addr);
     }
 
