@@ -34,6 +34,9 @@ typedef bool MallocExtensionGetNumericPropertyProc(const char *name, size_t *val
 static MallocExtension_GetStats_t MallocExtensionGetStats = NULL;
 static MallocExtension_ReleaseFreeMemory_t MallocExtensionReleaseFreeMemory = NULL;
 static MallocExtensionGetNumericPropertyProc *MallocExtensionGetNumericProperty = NULL;
+static void TcmallocDictPutNumeric(Tcl_Obj *dictObj, const char *key, const char *property)
+    NS_GNUC_NONNULL(1,2,3);
+
 static void* preload_library_handle = NULL;
 static const char *preload_library_name = NULL;
 static const char *mallocLibraryVersionString = "unknown";
@@ -623,6 +626,40 @@ NsTcmallocGetNumericProperty(const char *name, size_t *valuePtr)
 /*
  *----------------------------------------------------------------------
  *
+ * TcmallocDictPutNumeric --
+ *
+ *      Add a tcmalloc numeric property to a Tcl dictionary object.
+ *      The property is looked up by name through the tcmalloc numeric
+ *      property interface and, when available, stored in the dictionary
+ *      under the provided key.
+ *
+ * Results:
+ *      None.  If numeric property access is not available, or if tcmalloc
+ *      does not recognize the requested property, the dictionary is left
+ *      unchanged.
+ *
+ * Side effects:
+ *      May modify the dictionary object referenced by dictObjPtr by adding
+ *      one key/value pair.  May allocate Tcl objects for the key and numeric
+ *      value.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TcmallocDictPutNumeric(Tcl_Obj *dictObj, const char *key, const char *property)
+{
+    size_t value;
+
+    if (NsTcmallocGetNumericProperty(property, &value)) {
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj(key, TCL_INDEX_NONE),
+                       Tcl_NewWideIntObj((Tcl_WideInt)value));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsLogMemoryStats --
  *
  *      Log selected tcmalloc numeric memory counters for low-overhead
@@ -1172,6 +1209,14 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         Tcl_DictObjPut(NULL, resultObj,
                        NsAtomObj(NS_ATOM_stats),
                        Tcl_NewStringObj(memStatsBuffer, TCL_INDEX_NONE));
+        TcmallocDictPutNumeric(resultObj, "current_allocated_bytes",   "generic.current_allocated_bytes");
+        TcmallocDictPutNumeric(resultObj, "heap_size",                 "generic.heap_size");
+        TcmallocDictPutNumeric(resultObj, "pageheap_free_bytes",       "tcmalloc.pageheap_free_bytes");
+        TcmallocDictPutNumeric(resultObj, "pageheap_unmapped_bytes",   "tcmalloc.pageheap_unmapped_bytes");
+        TcmallocDictPutNumeric(resultObj, "central_cache_free_bytes",  "tcmalloc.central_cache_free_bytes");
+        TcmallocDictPutNumeric(resultObj, "transfer_cache_free_bytes", "tcmalloc.transfer_cache_free_bytes");
+        TcmallocDictPutNumeric(resultObj, "thread_cache_free_bytes",   "tcmalloc.thread_cache_free_bytes");
+        TcmallocDictPutNumeric(resultObj, "current_total_thread_cache_bytes", "tcmalloc.current_total_thread_cache_bytes");
 #endif
         Tcl_SetObjResult(interp, resultObj);
         break;

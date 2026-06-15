@@ -3352,29 +3352,30 @@ RequestFree(Sock *sockPtr, const char *caller)
 
     Ns_Log(DriverDebug, "RequestFree called from %s", caller);
 
+# ifdef NS_REQUESTFREE_MEMORY_TRACE
     if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
         const Ns_Set *headers = reqPtr->headers;
         const size_t  bufferLength = (size_t)reqPtr->buffer.length;
         const size_t  bufferSpace = (size_t)reqPtr->buffer.spaceAvl;
         const size_t  headerSize = headers != NULL ? Ns_SetSize(headers) : 0u;
         const size_t  headerMaxSize = headers != NULL ? headers->maxSize : 0u;
-#ifdef NS_SET_DSTRING
+#  ifdef NS_SET_DSTRING
         const TCL_SIZE_T headerDataLength = headers != NULL ? headers->data.length : 0;
         const TCL_SIZE_T headerDataSpace = headers != NULL ? headers->data.spaceAvl : 0;
-#endif
+#  endif
         if (headerMaxSize > 128u
             || bufferSpace > 64u * 1024u
-#ifdef NS_SET_DSTRING
+#  ifdef NS_SET_DSTRING
             || headerDataSpace > (TCL_SIZE_T)(64u * 1024u)
-#endif
+#  endif
             ) {
             Ns_Log(Ns_LogMemoryDebug,
                    "RequestFree from %s: keep %d "
                    "buffer length %" PRIuz " spaceAvl %" PRIuz " "
                    "headers %p size %" PRIuz " maxSize %" PRIuz
-#ifdef NS_SET_DSTRING
+#  ifdef NS_SET_DSTRING
                    " data.length %" PRITcl_Size " data.spaceAvl %" PRITcl_Size
-#endif
+#  endif
                    ,
                    caller,
                    sockPtr->keep,
@@ -3383,14 +3384,15 @@ RequestFree(Sock *sockPtr, const char *caller)
                    (const void *)headers,
                    headerSize,
                    headerMaxSize
-#ifdef NS_SET_DSTRING
+#  ifdef NS_SET_DSTRING
                    ,
                    headerDataLength,
                    headerDataSpace
-#endif
+#  endif
                    );
         }
     }
+# endif /* NS_REQUESTFREE_MEMORY_TRACE */
 
     /*
      * Clear poolPtr assignment, since this is closely related to the request
