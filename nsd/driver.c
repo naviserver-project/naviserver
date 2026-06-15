@@ -3541,11 +3541,23 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
         assert(sockPtr->servPtr != NULL || *sockPtr->reqPtr->request.method == 'B');
 
         /*
-         *  Actual queueing. When we receive NS_ERROR or NS_TIMEOUT, the queuing
-         *  did not succeed.
+         * Actual queueing. NS_OK means that ownership was transferred to a
+         * connection thread queue. NS_ERROR means that queueing failed and the
+         * request should be rejected. NS_TIMEOUT means that the socket remains
+         * owned by the driver and will be retried later.
          */
         result = NsQueueConn(sockPtr, timePtr);
+
         if (unlikely(result == NS_ERROR)) {
+            if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
+                static NS_THREAD_LOCAL size_t queueFullCount = 0u;
+
+                if ((++queueFullCount % 1000u) == 0u) {
+                    NsLogMemoryStats("driver queuefull", sockPtr->poolPtr,
+                                     Ns_ThreadId(), NULL);
+                }
+            }
+
             SockRelease(sockPtr, SOCK_QUEUEFULL, 0);
         }
     } else {

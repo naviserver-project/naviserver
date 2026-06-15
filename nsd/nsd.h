@@ -2072,6 +2072,10 @@ NS_EXTERN int NsPoolTotalRate(ConnPool *poolPtr, size_t slot, int rate, int *wri
 NS_EXTERN void NsPoolAddBytesSent(ConnPool *poolPtr, Tcl_WideInt bytesSent)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN void NsLogMemoryStats(const char *context, const ConnPool *poolPtr,
+                                uintptr_t threadId, const char *detail)
+    NS_GNUC_NONNULL(1);
+
 
 /*
  * range.c

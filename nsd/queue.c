@@ -2217,7 +2217,6 @@ NsConnArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uintptr_t connId)
 {
@@ -2226,84 +2225,6 @@ ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uint
 
     Ns_ThreadSetName("-conn:%s:%s:%" PRIuPTR ":%" PRIuPTR "-",
                      server, NsPoolName(pool), threadId, connId);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * LogMemoryStats --
- *
- *      Log selected tcmalloc numeric memory counters for low-overhead
- *      memory diagnostics.  This helper is intended for Debug(memory)
- *      lifecycle tracing, e.g. around connection-thread startup, warmup,
- *      shutdown, and thread joins.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Writes a Debug(memory) log entry when the severity is enabled and
- *      tcmalloc numeric properties are available.
- *
- *----------------------------------------------------------------------
- */
-static void
-LogMemoryStats(const char *context, const ConnPool *poolPtr,
-                  uintptr_t threadId, const char *detail)
-{
-    size_t currentAllocated = 0u;
-    size_t heapSize = 0u;
-    size_t pageheapFree = 0u;
-    size_t pageheapUnmapped = 0u;
-    size_t centralFree = 0u;
-    size_t transferFree = 0u;
-    size_t threadFree = 0u;
-
-    NS_NONNULL_ASSERT(context != NULL);
-
-    if (!Ns_LogSeverityEnabled(Ns_LogMemoryDebug)
-        || !NsTcmallocNumericPropertiesAvailable()) {
-        return;
-    }
-
-    (void)NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
-                                       &currentAllocated);
-    (void)NsTcmallocGetNumericProperty("generic.heap_size",
-                                       &heapSize);
-    (void)NsTcmallocGetNumericProperty("tcmalloc.pageheap_free_bytes",
-                                       &pageheapFree);
-    (void)NsTcmallocGetNumericProperty("tcmalloc.pageheap_unmapped_bytes",
-                                       &pageheapUnmapped);
-    (void)NsTcmallocGetNumericProperty("tcmalloc.central_cache_free_bytes",
-                                       &centralFree);
-    (void)NsTcmallocGetNumericProperty("tcmalloc.transfer_cache_free_bytes",
-                                       &transferFree);
-    (void)NsTcmallocGetNumericProperty("tcmalloc.thread_cache_free_bytes",
-                                       &threadFree);
-
-    Ns_Log(Ns_LogMemoryDebug,
-           "memory %s: pool '%s' thread %" PRIuPTR
-           " connsPerThread %d detail '%s'"
-           " current_allocated %" PRIuz
-           " heap_size %" PRIuz
-           " pageheap_free %" PRIuz
-           " pageheap_unmapped %" PRIuz
-           " central_free %" PRIuz
-           " transfer_free %" PRIuz
-           " thread_free %" PRIuz,
-           context,
-           poolPtr != NULL ? poolPtr->pool : "-",
-           threadId,
-           poolPtr != NULL ? poolPtr->threads.connsperthread : -1,
-           detail != NULL ? detail : "",
-           currentAllocated,
-           heapSize,
-           pageheapFree,
-           pageheapUnmapped,
-           centralFree,
-           transferFree,
-           threadFree);
 }
 
 
@@ -2375,7 +2296,7 @@ NsConnThread(void *arg)
     ncons   = cpt;
     timeout = poolPtr->threads.timeout;
 
-    LogMemoryStats("connthread start", poolPtr, threadId, NULL);
+    NsLogMemoryStats("connthread start", poolPtr, threadId, NULL);
     
     /*
      * Initialize the connection thread with the blueprint to avoid
@@ -2393,7 +2314,7 @@ NsConnThread(void *arg)
                (int64_t)diff.sec, diff.usec);
         Ns_TclDeAllocateInterp(interp);
         argPtr->state = connThread_ready;
-        LogMemoryStats("connthread after warmup", poolPtr, threadId, NULL);
+        NsLogMemoryStats("connthread after warmup", poolPtr, threadId, NULL);
     }
 
     wqueueLockPtr  = &poolPtr->wqueue.lock;
@@ -2746,7 +2667,7 @@ NsConnThread(void *arg)
 
     if (joinThread != NULL) {
         Ns_ThreadJoin(&joinThread, NULL);
-        LogMemoryStats("connthread after join previous",
+        NsLogMemoryStats("connthread after join previous",
                        poolPtr, threadId, NULL);        
     }
 
@@ -2756,7 +2677,7 @@ NsConnThread(void *arg)
     argPtr->state = connThread_free;
     Ns_MutexUnlock(tqueueLockPtr);
     
-    LogMemoryStats("connthread before exit",
+    NsLogMemoryStats("connthread before exit",
                       poolPtr, threadId, exitMsg);
     Ns_ThreadExit(argPtr);
 }
