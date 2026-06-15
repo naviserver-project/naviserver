@@ -721,6 +721,9 @@ NsInitInfo(void)
                 symbol = dlsym(preload_library_handle, "MallocExtension_ReleaseFreeMemory");
                 memcpy(&MallocExtensionReleaseFreeMemory, &symbol, sizeof(ns_funcptr_t));
 
+                symbol = dlsym(preload_library_handle, "MallocExtension_GetNumericProperty");
+                memcpy(&MallocExtensionGetNumericProperty, &symbol, sizeof(ns_funcptr_t));
+
                 if (MallocExtensionGetVersion != NULL) {
                     mallocLibraryVersionString = MallocExtensionGetVersion(NULL, NULL, NULL);
                 }
