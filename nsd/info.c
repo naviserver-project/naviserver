@@ -29,13 +29,16 @@ static Ns_ThreadArgProc ThreadArgProc;
 #ifndef _MSC_VER
 typedef void (*MallocExtension_GetStats_t)(char *, int);
 typedef void (*MallocExtension_ReleaseFreeMemory_t)(void);
+typedef bool MallocExtensionGetNumericPropertyProc(const char *name, size_t *value);
+
 static MallocExtension_GetStats_t MallocExtensionGetStats = NULL;
 static MallocExtension_ReleaseFreeMemory_t MallocExtensionReleaseFreeMemory = NULL;
+static MallocExtensionGetNumericPropertyProc *MallocExtensionGetNumericProperty = NULL;
 static void* preload_library_handle = NULL;
 static const char *preload_library_name = NULL;
 static const char *mallocLibraryVersionString = "unknown";
-
 #endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -547,7 +550,76 @@ SSLInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
     return result;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTcmallocNumericPropertiesAvailable --
+ *
+ *      Check whether the loaded memory allocator provides tcmalloc numeric
+ *      property access.
+ *
+ * Results:
+ *      NS_TRUE when the tcmalloc numeric-property interface is available,
+ *      NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+NsTcmallocNumericPropertiesAvailable(void)
+{
+#ifndef _MSC_VER
+    return preload_library_handle != NULL
+        && MallocExtensionGetNumericProperty != NULL;
+#else
+    return NS_FALSE;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTcmallocGetNumericProperty --
+ *
+ *      Retrieve a numeric property from the loaded tcmalloc allocator.
+ *      The property name is passed through to tcmalloc, e.g.
+ *      "generic.current_allocated_bytes",
+ *      "tcmalloc.pageheap_free_bytes", or
+ *      "tcmalloc.central_cache_free_bytes".
+ *
+ * Results:
+ *      NS_TRUE when the property was retrieved successfully. In this case,
+ *      the value is stored in *valuePtr. NS_FALSE is returned when numeric
+ *      property access is not available or when tcmalloc does not recognize
+ *      the requested property.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+NsTcmallocGetNumericProperty(const char *name, size_t *valuePtr)
+{
+    bool result = NS_FALSE;
+
+    NS_NONNULL_ASSERT(name != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
+
+#ifndef _MSC_VER
+    if (MallocExtensionGetNumericProperty != NULL) {
+        result = MallocExtensionGetNumericProperty(name, valuePtr);
+    }
+#else
+    UNUSED(name);
+    UNUSED(valuePtr);
+#endif
+
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -564,7 +636,6 @@ SSLInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsInitInfo(void)
 {

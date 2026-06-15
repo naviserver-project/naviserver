@@ -1961,6 +1961,12 @@ NS_EXTERN void NsRunSelectedTraces(Ns_Conn *conn, const char *traceProcDescripti
     NS_GNUC_NONNULL(1,2);
 
 /*
+ * info.c
+ */
+bool NsTcmallocGetNumericProperty(const char *name, size_t *valuePtr);
+bool NsTcmallocNumericPropertiesAvailable(void);
+
+/*
  * limits.c
  */
 NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)

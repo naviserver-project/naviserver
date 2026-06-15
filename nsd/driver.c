@@ -3870,7 +3870,6 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     drvPtr->sockPtr  = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
     /*fprintf(stderr, "=== SockRelease drv %p got %p\n", (void*)drvPtr, (void*)sockPtr);*/
-
 }
 
 
