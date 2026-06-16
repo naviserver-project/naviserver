@@ -2270,7 +2270,7 @@ NsConnThread(void *arg)
     argPtr = arg;
     poolPtr = argPtr->poolPtr;
     assert(poolPtr != NULL);
-    
+
     tqueueLockPtr  = &poolPtr->tqueue.lock;
     Ns_TlsSet(&argtls, argPtr);
 
@@ -2296,8 +2296,10 @@ NsConnThread(void *arg)
     ncons   = cpt;
     timeout = poolPtr->threads.timeout;
 
+    assert(cpt >= 0);
+
     NsLogMemoryStats("connthread start", poolPtr, threadId, NULL);
-    
+
     /*
      * Initialize the connection thread with the blueprint to avoid
      * the initialization delay when the first connection comes in.
@@ -2548,7 +2550,7 @@ NsConnThread(void *arg)
         poolPtr->wqueue.freePtr = connPtr;
         Ns_MutexUnlock(wqueueLockPtr);
 
-        if (cpt != 0) {
+        if (cpt > 0) {
             int waiting, idle, lowwater;
 
             --ncons;
@@ -2615,10 +2617,6 @@ NsConnThread(void *arg)
                 exitMsg = "exceeded max connections per thread";
                 break;
             }
-        } else if (ncons <= 0) {
-          /* Served given # of connections in this thread */
-          exitMsg = "exceeded max connections per thread";
-          break;
         }
     }
     argPtr->state = connThread_dead;
@@ -2668,7 +2666,7 @@ NsConnThread(void *arg)
     if (joinThread != NULL) {
         Ns_ThreadJoin(&joinThread, NULL);
         NsLogMemoryStats("connthread after join previous",
-                       poolPtr, threadId, NULL);        
+                       poolPtr, threadId, NULL);
     }
 
     Ns_Log(Notice, "exiting: %s", exitMsg);
@@ -2676,7 +2674,7 @@ NsConnThread(void *arg)
     Ns_MutexLock(tqueueLockPtr);
     argPtr->state = connThread_free;
     Ns_MutexUnlock(tqueueLockPtr);
-    
+
     NsLogMemoryStats("connthread before exit",
                       poolPtr, threadId, exitMsg);
     Ns_ThreadExit(argPtr);
