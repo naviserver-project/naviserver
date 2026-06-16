@@ -2185,6 +2185,8 @@ NsConnThread(void *arg)
     ncons   = cpt;
     timeout = poolPtr->threads.timeout;
 
+    assert(cpt >= 0);
+
     /*
      * Initialize the connection thread with the blueprint to avoid
      * the initialization delay when the first connection comes in.
@@ -2434,7 +2436,7 @@ NsConnThread(void *arg)
         poolPtr->wqueue.freePtr = connPtr;
         Ns_MutexUnlock(wqueueLockPtr);
 
-        if (cpt != 0) {
+        if (cpt > 0) {
             int waiting, idle, lowwater;
 
             --ncons;
@@ -2501,10 +2503,6 @@ NsConnThread(void *arg)
                 exitMsg = "exceeded max connections per thread";
                 break;
             }
-        } else if (ncons <= 0) {
-          /* Served given # of connections in this thread */
-          exitMsg = "exceeded max connections per thread";
-          break;
         }
     }
     argPtr->state = connThread_dead;
