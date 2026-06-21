@@ -191,6 +191,134 @@ test filter-3.2 {return filter_return} -setup {
 } -result {{200 filter_return} filter_return-3.2}
 
 
+test filter-3.3 {return -code break} -setup {
+    ns_register_filter preauth GET /filter-3.3 {
+        nsv_lappend . . filter_break-3.3
+        return -code break
+    }
+    ns_register_filter preauth GET /filter-3.3 {
+        nsv_lappend . . filter_ok-3.3
+        return filter_ok
+    }
+    ns_register_proc GET /filter-3.3 {
+        nsv_lappend . . proc-3.3
+        ns_return 200 text/plain ok
+    }
+} -body {
+    list [nstest::http -getbody 1 GET /filter-3.3] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-3.3
+} -result {{200 ok} {filter_break-3.3 proc-3.3}}
+
+
+test filter-3.4 {return -code continue} -setup {
+    ns_register_filter preauth GET /filter-3.4 {
+        nsv_lappend . . filter_continue-3.4
+        return -code continue
+    }
+    ns_register_filter preauth GET /filter-3.4 {
+        nsv_lappend . . filter_ok-3.4
+        return filter_ok
+    }
+    ns_register_proc GET /filter-3.4 {
+        nsv_lappend . . proc-3.4
+        ns_return 200 text/plain ok
+    }
+} -body {
+    list [nstest::http -getbody 1 GET /filter-3.4] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-3.4
+} -result {{200 ok} {filter_continue-3.4 filter_ok-3.4 proc-3.4}}
+
+
+test filter-3.5 {return -code return} -setup {
+    ns_register_filter preauth GET /filter-3.5 {
+        nsv_lappend . . filter_return-3.5
+        ns_return 200 text/plain filter_return
+        return -code return
+    }
+    ns_register_filter preauth GET /filter-3.5 {
+        nsv_lappend . . filter_ok-3.5
+        return filter_ok
+    }
+    ns_register_proc GET /filter-3.5 {
+        nsv_lappend . . proc-3.5
+        ns_return 200 text/plain ok
+    }
+} -body {
+    list [nstest::http -getbody 1 GET /filter-3.5] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-3.5
+} -result {{200 filter_return} filter_return-3.5}
+
+
+test filter-3.6 {return empty result} -setup {
+    ns_register_filter preauth GET /filter-3.6 {
+        nsv_lappend . . filter_empty-3.6
+        ns_return 200 text/plain filter_return
+        return
+    }
+    ns_register_filter preauth GET /filter-3.6 {
+        nsv_lappend . . filter_ok-3.6
+        return filter_ok
+    }
+    ns_register_proc GET /filter-3.6 {
+        nsv_lappend . . proc-3.6
+        ns_return 200 text/plain ok
+    }
+} -body {
+    list [nstest::http -getbody 1 GET /filter-3.6] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-3.6
+} -result {{200 filter_return} filter_empty-3.6}
+
+
+test filter-3.7 {return empty string} -setup {
+    ns_register_filter preauth GET /filter-3.7 {
+        nsv_lappend . . filter_empty_string-3.7
+        ns_return 200 text/plain filter_return
+        return ""
+    }
+    ns_register_filter preauth GET /filter-3.7 {
+        nsv_lappend . . filter_ok-3.7
+        return filter_ok
+    }
+    ns_register_proc GET /filter-3.7 {
+        nsv_lappend . . proc-3.7
+        ns_return 200 text/plain ok
+    }
+} -body {
+    list [nstest::http -getbody 1 GET /filter-3.7] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-3.7
+} -result {{200 filter_return} filter_empty_string-3.7}
+
+
+test filter-3.8 {invalid filter result} -setup {
+    ns_register_filter preauth GET /filter-3.8 {
+        nsv_lappend . . filter_invalid-3.8
+        return invalid_filter_result
+    }
+    ns_register_filter preauth GET /filter-3.8 {
+        nsv_lappend . . filter_ok-3.8
+        return filter_ok
+    }
+    ns_register_proc GET /filter-3.8 {
+        nsv_lappend . . proc-3.8
+        ns_return 200 text/plain ok
+    }
+} -body {
+    list [lindex [nstest::http -getbody 1 GET /filter-3.8] 0] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-3.8
+} -result {500 filter_invalid-3.8}
+
 
 test filter-4.1 {glob} -setup {
     ns_register_filter preauth GET /filter-4.1/*/literal/* {
@@ -240,7 +368,7 @@ test filter-5.2 {filter -first} -setup {
     nstest::http -getbody 1 GET /filter-5.2
 } -cleanup {
     ns_unregister_op GET /filter-5.2
-} -result {200 {20 100}}
+} -result {200 {32 160}}
 
 
 
