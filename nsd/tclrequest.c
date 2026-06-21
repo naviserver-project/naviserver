@@ -629,7 +629,22 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
 
     Tcl_AllowExceptions(interp);
     rc = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+#ifdef DEBUG_CALLBACK_RESULTS
+    {
+        Tcl_Obj  *optionsObj = Tcl_GetReturnOptions(interp, rc);
+
+        Tcl_IncrRefCount(optionsObj);
+        Ns_Log(Notice,
+               "DEBUG NsTclFilterProc rc %d %s result '%s' options '%s'",
+               rc,
+               Ns_TclReturnCodeString(rc),
+               Tcl_GetStringResult(interp),
+               Tcl_GetString(optionsObj));
+        Tcl_DecrRefCount(optionsObj);
+    }
+#endif
     result = Tcl_GetStringResult(interp);
+    Ns_Log(Notice, "DEBUG NsTclFilterProc returns %d %s string '%s'", rc, Ns_TclReturnCodeString(rc), result);
     Tcl_DStringSetLength(&ds, 0);
 
     if (rc == TCL_ERROR) {
@@ -665,6 +680,20 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
             status = NS_FILTER_BREAK;
 
         } else if (rc == TCL_RETURN   || STREQ(result, "filter_return")) {
+            status = NS_FILTER_RETURN;
+
+        } else if (rc == TCL_OK && result[0] == '\0') {
+            /*
+             * A Tcl proc ending in "return -code return" is indistinguishable
+             * from a plain successful empty return at this level: Tcl consumes
+             * the TCL_RETURN at the procedure boundary and reports TCL_OK with
+             * an empty result.  Treat empty successful results from non-void
+             * filters as NS_FILTER_RETURN so the documented "-code return"
+             * form works for filter procedures as well.
+             *
+             * Note that this also changes formerly invalid empty successful
+             * filter results into NS_FILTER_RETURN.
+             */
             status = NS_FILTER_RETURN;
 
         } else {

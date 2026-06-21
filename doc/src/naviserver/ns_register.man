@@ -36,7 +36,7 @@ distinguished by the following properties:
 
 [item] Response Authorization Chain:
   [list_begin itemized]
-  [item] Registered procs are processed sequentually
+  [item] Registered procs are processed sequentially
   [item] Procs can use [cmd ns_urlspace] based on HTTP method and URL
          path to claim responsibility
   [item] Result of proc determines whether to continue or terminate chain
@@ -59,28 +59,19 @@ distinguished by the following properties:
 
 
 [para]
- The results of the procs in a chain determine, whether the chain
- should be continue, terminated and proceed to the next stage, or
- whether it should terminate the processing of the request completely.
- The return code of these procs is interpreted as follows:
+The result of a callback in a chain determines whether processing
+continues with the next callback in the same chain, whether the
+current chain is terminated and processing proceeds to the next
+request-processing stage, or whether processing of the request is
+terminated completely. The exact interpretation is command-specific
+and is described below for the respective registration commands.
 
-[list_begin itemized]
-
-[item] TCL_ERROR: When the filter procs raises an error.
-
-[item] TCL_OK: When the script is executed successfully
-       and ends with [const {return -code continue}] (filters allow
-       also [const {return filter_ok}]).
-
-[item] TCL_BREAK: When the script is executed successfully
-       and ends with [const {return -code break}]
-       (filters allow also [const {return filter_break}]).
-
-[item] TCL_RETURN: When the script is executed successfully
-       and ends with [const {return -code return}]
-       (filters allow also  [const {return filter_return}]).
-
-[list_end]
+[para]
+In general, a Tcl callback returns both a Tcl completion code and a
+result value. NaviServer interprets these values according to the
+callback type. For filters registered with [cmd ns_register_filter],
+the recognized Tcl completion codes and symbolic result values are
+described in the [cmd ns_register_filter] section.
 
 [para][image naviserver-chains "NaviServer Stages and Continuations"]
 [para] Figure 2: Continuations and Stages
@@ -189,7 +180,7 @@ handler should be executed.
 [example_end]
 
 A slightly more elaborate example is provided in the documentation of the
-[uri https://github.com/naviserver-project/nsldap "nsladp"] module.
+[uri https://github.com/naviserver-project/nsldap "nsldap"] module.
 
 [para]
 Once registered, these callbacks will be invoked
@@ -265,79 +256,135 @@ Once registered, these callbacks will be invoked
 
 [para]
 
+[para]
+ A non-void filter returns both a Tcl completion code and a result
+ value. NaviServer maps these to filter status values as follows:
+
+ [list_begin definitions]
+ 
+ [def [const NS_OK]]
+   The filter succeeded and the current filter chain should continue.
+   This status is produced when the callback completes with the Tcl
+   completion code [const TCL_CONTINUE], or when it completes
+   successfully and returns the symbolic result value
+   [const filter_ok].
+
+ [def [const NS_FILTER_BREAK]]
+  The filter succeeded and the current filter chain should stop, but
+  processing should continue with the next request-processing stage.
+  This status is produced when the callback completes with the Tcl
+  completion code [const TCL_BREAK], or when it completes successfully
+  and returns the symbolic result value [const filter_break].
+
+ [def [const NS_FILTER_RETURN]]
+  The filter succeeded and processing of the request should stop
+  completely. Trace callbacks are still run where applicable. This
+  status is produced when the callback completes with the Tcl completion
+  code [const TCL_RETURN], when it completes successfully and returns
+  the symbolic result value [const filter_return], or when it completes
+  successfully with an empty result.
+
+ [def [const NS_ERROR]]
+  The filter failed. This status is produced when the callback raises a
+  Tcl error, or when it completes successfully with a non-empty result
+  value other than [const filter_ok], [const filter_break], or
+  [const filter_return].
+
+ [list_end]
+
+ [para]
+ The empty-result case is handled as [const NS_FILTER_RETURN] for Tcl
+ procedure filters because Tcl consumes a procedure-local
+ [const {return -code return}] at the procedure boundary. Such a
+ procedure is reported to the filter dispatcher as successful
+ completion with an empty result. Treating this case as
+ [const NS_FILTER_RETURN] makes the documented filter meaning of
+ [const {return -code return}] work for Tcl procedures as well.
+
+ [para]
+ For clarity and portability, filters may return the symbolic result
+ values explicitly:
+
+[example_begin]
+ return filter_ok ;# continue the current filter chain
+ return filter_break ;# stop this chain and proceed to the next stage
+ return filter_return ;# stop processing the request
+[example_end]
 
 [para]
- A filter procedure returns a value along with a Tcl return code. The
- return code is interpreted as follows:
+Alternatively, filters may use Tcl completion codes:
 
-[list_begin itemized]
+[example_begin]
+ return -code continue ;# equivalent to filter_ok
+ return -code break ;# equivalent to filter_break
+ return -code return ;# equivalent to filter_return
+[example_end]
 
-[item] TCL_ERROR: When the filter procs raises an error.
-
-[item] TCL_OK: When the script is executed successfully
-       and ends with [const {return -code continue}] or [const {return filter_ok}].
-
-[item] TCL_BREAK: When the script is executed successfully
-       and ends with [const {return -code break}] or [const {return filter_break}].
-
-[item] TCL_RETURN: When the script is executed successfully
-       and ends with [const {return -code return}] or [const {return filter_return}].
-
-[list_end]
 
  The behavior of filters depends on their type:
 
-[list_begin definitions]
-[def preauth]
+ [list_begin definitions]
+ [def preauth]
 
-  With pre-authorization, the filter is invoked just before
-  authorization. If the filter returns:
+   With pre-authorization, the filter is invoked just before
+   authorization. If the filter returns:
 
-  [list_begin itemized]
-    [item] TCL_OK: The server proceeds to the next pre-authorization
-           filter, or if none remain, continues to authorization.
+   [list_begin itemized]
+   [item] [const NS_OK]: The server proceeds to the next
+   pre-authorization filter, or if none remain, continues to
+   authorization.
 
-    [item] TCL_BREAK: No further pre-authorization filters are
-           processed; the server continues to authorization.
+   [item] [const NS_FILTER_BREAK]: No further pre-authorization
+          filters are processed; the server continues to
+          authorization.
 
-    [item] TCL_RETURN: The server closes the connection without
-           further processing of pre-authorization filters or the main
-           request handler, but trace functions (e.g., logging) will still
-           run.
-  [list_end]
+   [item] [const NS_FILTER_RETURN]: The server stops processing the
+          request without running further pre-authorization filters,
+          authorization, post-authorization filters, or the main
+          request handler. Trace functions, such as logging, still
+          run where applicable. It is assumed that the filter has
+          already sent an appropriate response to the client.
 
-[def postauth]
-
- With post-authorization, the filter is invoked after successful
- authorization. If the filter returns:
-
-  [list_begin itemized]
-    [item] TCL_OK: The server proceeds to the next
-    post-authorization filter, or if none remain, calls the registered
-    request handler.
-
-    [item] TCL_BREAK: No further post-authorization filters are
-    processed; the registered request handler is called.
-
-    [item] TCL_RETURN: The server closes the connection, skipping
-    further post-authorization filters and the request handler, while
-    still running any trace functions. It is assumed that the filter
-    has already sent an appropriate response to the client.
-  [list_end]
+   [list_end]
 
 
-[def trace]
+ [def postauth]
 
-  Trace filters are invoked after the request has been processed, the
-  HTTP response sent, and the connection closed. If a trace filter
-  returns:
+   With post-authorization, the filter is invoked after successful
+   authorization. If the filter returns:
 
-  [list_begin itemized]
-    [item] TCL_OK: The server proceeds to the next trace filter.
-    [item] TCL_BREAK or TCL_RETURN: No further trace filters are executed.
-  [list_end]
+   [list_begin itemized]
+   [item] [const NS_OK]: The server proceeds to the next
+   post-authorization filter, or if none remain, calls the
+   registered request handler.
+
+   [item] [const NS_FILTER_BREAK]: No further post-authorization
+          filters are processed; the registered request handler is
+          called.
+
+   [item] [const NS_FILTER_RETURN]: The server stops processing the
+          request without running further post-authorization filters
+          or the request handler. Trace functions still run where
+          applicable. It is assumed that the filter has already sent
+          an appropriate response to the client.
+
+   [list_end]
+
+
+ [def trace]
+
+   Trace filters are invoked after the request has been processed, the
+   HTTP response sent, and the connection closed. If a trace filter
+   returns:
+
+   [list_begin itemized]
+   [item] [const NS_OK]: The server proceeds to the next trace filter.
+   [item] [const NS_FILTER_BREAK] or [const NS_FILTER_RETURN]: No
+   further trace filters are executed.
+   [list_end]
 
 [list_end]
+
 
  Note: While [cmd ns_register_filter] and [cmd ns_register_proc] both
  register handlers for matching URLs, they differ significantly. With
@@ -345,7 +392,7 @@ Once registered, these callbacks will be invoked
  and all URLs beneath it in the hierarchy; wildcards such as "*" are
  only effective on the final URL component (e.g.,
  `/scripts/*.tcl`). In contrast, filters use standard string-matching
- rules and multiple filters canmatch and be invoked for a single
+ rules and multiple filters can match and be invoked for a single
  request.
 
 
@@ -531,7 +578,7 @@ serve as a model for this forward proxy).
 
 [para]
  A filter registered this way behaves exactly like a filter registered
- via [cmd "ns_register_filter trace"], except that on the for the
+ via [cmd "ns_register_filter trace"], except that for the
  registered command, no reason code is added as the first argument
  when the trace filter is called, and its result is not subject to the
  special result handling.
