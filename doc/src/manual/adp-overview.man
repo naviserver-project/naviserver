@@ -253,7 +253,7 @@ inherited.  The reserved name [const default] forces the built-in default
 tag table for that parse or include operation only.
 
 [example_begin]
- ns_adp_parse -tagset transformed-adp -string $adp
+ ns_adp_parse -tagset myadp -string $adp
  ns_adp_include -tagset default legacy-fragment.adp
 [example_end]
 
