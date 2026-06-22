@@ -101,6 +101,18 @@ typedef enum {
     JSON_ATOM_MAX
 } JsonAtom;
 
+#define JSON_ENUM_ALIGNED(atom_, vt_, label_)                         \
+    NS_STATIC_ASSERT((int)(atom_) == (int)(vt_),                      \
+                     "JSON atom and value type enums must align for " label_)
+
+JSON_ENUM_ALIGNED(JSON_ATOM_UNUSED,   JSON_VT_AUTO,    "AUTO/UNUSED");
+JSON_ENUM_ALIGNED(JSON_ATOM_T_STRING, JSON_VT_STRING,  "STRING");
+JSON_ENUM_ALIGNED(JSON_ATOM_T_NUMBER, JSON_VT_NUMBER,  "NUMBER");
+JSON_ENUM_ALIGNED(JSON_ATOM_T_BOOLEAN, JSON_VT_BOOL,   "BOOLEAN");
+JSON_ENUM_ALIGNED(JSON_ATOM_T_NULL,   JSON_VT_NULL,    "NULL");
+JSON_ENUM_ALIGNED(JSON_ATOM_T_OBJECT, JSON_VT_OBJECT,  "OBJECT");
+JSON_ENUM_ALIGNED(JSON_ATOM_T_ARRAY,  JSON_VT_ARRAY,   "ARRAY");
+
 static const NsAtomSpec jsonAtomSpecs[JSON_ATOM_MAX] = {
     /* Keep indices aligned with JsonAtom enum order */
 
@@ -134,12 +146,12 @@ static const NsAtomSpec jsonAtomSpecs[JSON_ATOM_MAX] = {
 
     {-1, "title",         5},   /* JSON_ATOM_TITLE */
     {-1, "description",  11},   /* JSON_ATOM_DESCRIPTION */
-    {-1, "default",       7},   /* JSON_ATOM_TITLE */
+    {-1, "default",       7},   /* JSON_ATOM_DEFAULT */
     {-1, "examples",      8},   /* JSON_ATOM_EXAMPLES */
     {-1, "bool",          4}    /* JSON_ATOM_BOOL */
 
 };
-static Tcl_Obj *JsonAtomObjs[JSON_ATOM_MAX];
+static NsAtomId JsonAtomIds[JSON_ATOM_MAX];
 
 /*
  * Parser state
@@ -297,6 +309,8 @@ static const Tcl_HashKeyType JsonKeyType = {
  * JSON atom helpers.
  */
 void                 NsAtomJsonInit(void);
+static Tcl_Obj      *JsonNullAtomObj(void);
+static inline Tcl_Obj *JsonAtomObj(JsonAtom atom);
 static bool          JsonObjIsAtom(Tcl_Obj *obj, JsonAtom atom)  NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 /*
  * Null value helpers.
@@ -534,43 +548,101 @@ static int           JsonCheckTrailingDecode(Tcl_Interp *interp, const unsigned 
 /*
  *----------------------------------------------------------------------
  *
- * NsJsonInitAtoms --
+ * JsonNullAtomObj --
  *
- *      Initialize the process-wide atom objects used by the JSON parser and
- *      generator. The atom table provides canonical Tcl_Obj pointers for JSON
- *      value types and frequently used literals (e.g.,
- *      true/false/null/empty), avoiding repeated allocations and string
- *      conversions in hot paths.
+ *      Return the thread-local JSON null object used by the JSON
+ *      implementation for typed null values.  Unlike ordinary JSON atoms,
+ *      this object has the JsonNullObjType internal representation and
+ *      therefore cannot be provided by the generic string atom table.
  *
- *      This function is expected to be called once during module/library
- *      initialization before any JSON parsing or emission uses the atom
- *      pointers.
+ * Results:
+ *      A Tcl_Obj pointer representing the JSON null value for the current
+ *      thread.
+ *
+ * Side effects:
+ *      Lazily creates and permanently references one JsonNullObjType object
+ *      for the lifetime of the thread.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+JsonNullAtomObj(void)
+{
+    static NS_THREAD_LOCAL Tcl_Obj *jsonNullObj = NULL;
+
+    if (jsonNullObj == NULL) {
+        jsonNullObj = JsonNewNullObj(
+            Tcl_NewStringObj(NS_JSON_NULL_STRING, NS_JSON_NULL_STRING_LEN));
+        Tcl_IncrRefCount(jsonNullObj);
+    }
+
+    return jsonNullObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JsonAtomObj --
+ *
+ *      Return the Tcl object for a JSON atom in the current thread.  Most
+ *      JSON atoms are registered in the global atom table and materialized
+ *      as thread-local Tcl_Obj values through NsAtomObj().  The typed JSON
+ *      null atom is handled separately because it requires JsonNullObjType
+ *      rather than a plain string object.
+ *
+ * Results:
+ *      A Tcl_Obj pointer for the requested JSON atom.
+ *
+ * Side effects:
+ *      May lazily create the current thread's Tcl_Obj representation for
+ *      the requested atom.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline Tcl_Obj *
+JsonAtomObj(JsonAtom atom)
+{
+    assert(atom > JSON_ATOM_UNUSED && atom < JSON_ATOM_MAX);
+
+    if (atom == JSON_ATOM_VALUE_NULL_STRING) {
+        return JsonNullAtomObj();
+    }
+    return NsAtomObj(JsonAtomIds[atom]);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsAtomJsonInit --
+ *
+ *      Register the atom names used by the JSON parser and generator.
+ *      The resulting atom ids are stored in the JSON module-local
+ *      JsonAtomIds vector.
+ *
+ *      The Tcl_Obj representations are not created here.  Callers obtain
+ *      them through JsonAtomObj(), which uses NsAtomObj() to materialize
+ *      ordinary atoms lazily as thread-local Tcl objects.  This avoids
+ *      sharing Tcl_Obj pointers across Tcl threads while still providing
+ *      canonical per-thread atom objects for JSON value types and common
+ *      literals.
+ *
+ *      The typed JSON null value is handled separately by JsonNullAtomObj(),
+ *      since it uses JsonNullObjType rather than a plain string atom.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Creates Tcl objects for the atom table entries and increments their
- *      reference counts so they remain valid for the lifetime of the
- *      process/interpreter as intended by the implementation.
+ *      May register JSON-specific names in the process-wide atom registry.
+ *      Does not allocate Tcl_Obj atom values directly.
  *
  *----------------------------------------------------------------------
  */
 void
 NsAtomJsonInit(void)
 {
-    (void) NsAtomsInit(jsonAtomSpecs, JSON_ATOM_MAX, JsonAtomObjs);
-    /*
-     * Replace the default NULL atom with a dedicated JsonNullObjType object.
-     * The singleton is stored in the atom table, so callers can safely use
-     * JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING] for typed null without allocating
-     * fresh objects.
-     */
-    Tcl_DecrRefCount(JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING]);
-    JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING] =
-        JsonNewNullObj(Tcl_NewStringObj(NS_JSON_NULL_STRING, NS_JSON_NULL_STRING_LEN));
-    Tcl_IncrRefCount(JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING]);
-
+    (void) NsAtomsInit(jsonAtomSpecs, JSON_ATOM_MAX, JsonAtomIds);
 }
 
 
@@ -1763,7 +1835,7 @@ JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj 
          * Prefer canonical JSON atoms when available (true/false), otherwise
          * fall back to a boolean object.
          */
-        outObj = JsonAtomObjs[isTrue ? JSON_ATOM_TRUE : JSON_ATOM_FALSE];
+        outObj = JsonAtomObj(isTrue ? JSON_ATOM_TRUE : JSON_ATOM_FALSE);
         break;
 
     }
@@ -1772,7 +1844,7 @@ JsonValidateValue(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *inObj, Tcl_Obj 
         /*
          * Normalize to the canonical JSON null object.
          */
-        outObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING];
+        outObj = JsonAtomObj(JSON_ATOM_VALUE_NULL_STRING);
         break;
 
     case JSON_VT_STRING:
@@ -2051,8 +2123,7 @@ JsonInternKeyObj(JsonParser *jp, const char *bytes, TCL_SIZE_T len)
  *
  *      The function maps the internal JsonValueType enumeration to the
  *      corresponding atomized JSON type name (e.g., "string", "number",
- *      "object").  The returned string is taken from the atom table
- *      (JsonAtomObjs[]) and is therefore stable and shared.
+ *      "object").
  *
  * Results:
  *      Returns a pointer to the constant string representation of the
@@ -2066,7 +2137,7 @@ JsonInternKeyObj(JsonParser *jp, const char *bytes, TCL_SIZE_T len)
 static const char *
 JsonTypeString(JsonValueType vt)
 {
-    return Tcl_GetString(JsonAtomObjs[vt]);
+    return NsAtomName(JsonAtomIds[(JsonAtom)vt], NULL);
 }
 
 /*
@@ -2093,12 +2164,12 @@ static JsonValueType
 JsonTypeObjToVt(Tcl_Obj *typeObj)
 {
     /* Fast path: atom identity checks. */
-    if (typeObj == JsonAtomObjs[JSON_ATOM_T_STRING])   { return JSON_VT_STRING; }
-    if (typeObj == JsonAtomObjs[JSON_ATOM_T_NUMBER])   { return JSON_VT_NUMBER; }
-    if (typeObj == JsonAtomObjs[JSON_ATOM_T_BOOLEAN])  { return JSON_VT_BOOL;   }
-    if (typeObj == JsonAtomObjs[JSON_ATOM_T_NULL])     { return JSON_VT_NULL;   }
-    if (typeObj == JsonAtomObjs[JSON_ATOM_T_OBJECT])   { return JSON_VT_OBJECT; }
-    if (typeObj == JsonAtomObjs[JSON_ATOM_T_ARRAY])    { return JSON_VT_ARRAY;  }
+    if (typeObj == JsonAtomObj(JSON_ATOM_T_STRING))   { return JSON_VT_STRING; }
+    if (typeObj == JsonAtomObj(JSON_ATOM_T_NUMBER))   { return JSON_VT_NUMBER; }
+    if (typeObj == JsonAtomObj(JSON_ATOM_T_BOOLEAN))  { return JSON_VT_BOOL;   }
+    if (typeObj == JsonAtomObj(JSON_ATOM_T_NULL))     { return JSON_VT_NULL;   }
+    if (typeObj == JsonAtomObj(JSON_ATOM_T_OBJECT))   { return JSON_VT_OBJECT; }
+    if (typeObj == JsonAtomObj(JSON_ATOM_T_ARRAY))    { return JSON_VT_ARRAY;  }
 
     {
         TCL_SIZE_T  tlen;
@@ -2146,7 +2217,7 @@ JsonTypeObjToVt(Tcl_Obj *typeObj)
 static inline bool
 JsonObjIsAtom(Tcl_Obj *obj, JsonAtom atom)
 {
-    Tcl_Obj *atomObj = JsonAtomObjs[atom];
+    Tcl_Obj *atomObj = JsonAtomObj(atom);
 
     /* Fast path: pointer identity (most common case). */
     if (atomObj == obj) {
@@ -2492,7 +2563,7 @@ JsonTriplesAppend(Tcl_Obj *triplesObj,
 static inline void
 JsonTriplesAppendVt(Tcl_Obj *triplesObj, Tcl_Obj *nameObj, JsonValueType vt, Tcl_Obj *valueObj)
 {
-    JsonTriplesAppend(triplesObj, nameObj, JsonAtomObjs[vt], valueObj);
+    JsonTriplesAppend(triplesObj, nameObj, JsonAtomObj((JsonAtom)vt), valueObj);
 }
 
 
@@ -3053,7 +3124,7 @@ TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
                         Ns_TclPrintfResult(interp,
                                            "ns_json triples setvalue: replacement wrapper type %s does not match -type %s",
                                            Tcl_GetString(wTypeObj),
-                                           Tcl_GetString(JsonAtomObjs[vt]));
+                                           NsAtomName(JsonAtomIds[(JsonAtom)vt], NULL));
                         return NS_ERROR;
                     }
                     newValueObj = wValueObj;
@@ -3084,15 +3155,19 @@ TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
                 }
             } else {
                 if (vt == JSON_VT_NULL) {
-                    newValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING];
+                    newValueObj = JsonAtomObj(JSON_ATOM_VALUE_NULL_STRING);
                 }
             }
 
-            /*
-             * Replace TYPE and VALUE slots.
-             */
-            (void)Tcl_ListObjReplace(interp, cur, base + 1, 1, 1, &JsonAtomObjs[vt]);
-            (void)Tcl_ListObjReplace(interp, cur, base + 2, 1, 1, &newValueObj);
+            {
+                /*
+                 * Replace TYPE and VALUE slots.
+                 */
+                Tcl_Obj *typeObj = JsonAtomObj((JsonAtom)vt);
+
+                (void)Tcl_ListObjReplace(interp, cur, base + 1, 1, 1, &typeObj);
+                (void)Tcl_ListObjReplace(interp, cur, base + 2, 1, 1, &newValueObj);
+            }
 
             *resultTriplesPtr = out;
             return NS_OK;
@@ -3143,13 +3218,13 @@ JsonParseLiteral(JsonParser *jp, Tcl_Obj **valueObjPtr, JsonValueType *valueType
 
     if (jp->end - p >= 4 && p[0] == 't' && p[1] == 'r' && p[2] == 'u' && p[3] == 'e') {
         jp->p += 4;
-        *valueObjPtr = JsonAtomObjs[JSON_ATOM_TRUE];
+        *valueObjPtr = JsonAtomObj(JSON_ATOM_TRUE);
         *valueTypePtr = JSON_VT_BOOL;
         return NS_OK;
     }
     if (jp->end - p >= 5 && p[0] == 'f' && p[1] == 'a' && p[2] == 'l' && p[3] == 's' && p[4] == 'e') {
         jp->p += 5;
-        *valueObjPtr = JsonAtomObjs[JSON_ATOM_FALSE];
+        *valueObjPtr = JsonAtomObj(JSON_ATOM_FALSE);
         *valueTypePtr = JSON_VT_BOOL;
         return NS_OK;
     }
@@ -4133,7 +4208,7 @@ JsonSetPutType(Ns_Set *set, Tcl_DString *typeKeyDsPtr,
     TCL_SIZE_T len;
 
     JsonKeyPathMakeTypeKey(typeKeyDsPtr, key, keyLen);
-    typeString = Tcl_GetStringFromObj(JsonAtomObjs[vt], &len);
+    typeString = NsAtomName(JsonAtomIds[(JsonAtom)vt], &len);
     JsonSetPutValue(set,
                     typeKeyDsPtr->string,
                     typeKeyDsPtr->length,
@@ -4502,11 +4577,8 @@ JsonTriplesValueToJson(Tcl_Interp *interp, JsonValueType vt, Tcl_Obj *valueObj,
         /*
          * For scalars, reuse JsonEmitValueFromTriple() by providing
          * a typeObj that names the scalar type.
-         *
-         * If we already have cached type atoms/objs (JsonAtomObjs[]),
-         * use them here rather than constructing new objects.
          */
-        Tcl_Obj *typeObj = JsonAtomObjs[vt];
+        Tcl_Obj *typeObj = JsonAtomObj((JsonAtom)vt);
 
         if (JsonEmitValueFromTriple(interp, typeObj, valueObj,
                                     validateNumbers,
@@ -5114,7 +5186,7 @@ JsonSchemaSetField(Tcl_Interp *interp, Tcl_Obj *triplesObj, Tcl_Obj *nameObj,
         Tcl_Obj *repl[3];
 
         repl[0] = nameObj;
-        repl[1] = JsonAtomObjs[vt];
+        repl[1] = JsonAtomObj((JsonAtom)vt);
         repl[2] = valueObj;
 
         return Tcl_ListObjReplace(interp, triplesObj, base, 3, 3, repl) == TCL_OK ? NS_OK : NS_ERROR;
@@ -5154,7 +5226,7 @@ JsonSchemaNewTypeTriple(JsonAtom atom)
 {
     Tcl_Obj* schemaObj = Tcl_NewListObj(0, NULL);
     JsonTriplesAppendVt(schemaObj,
-                      JsonAtomObjs[JSON_ATOM_TYPE], JSON_VT_STRING, JsonAtomObjs[atom]);
+                        JsonAtomObj(JSON_ATOM_TYPE), JSON_VT_STRING, JsonAtomObj(atom));
     return schemaObj;
 }
 
@@ -5268,7 +5340,7 @@ JsonSchemaFromObject(Tcl_Interp *interp, Tcl_Obj *triplesObj,
     requiredObj   = Tcl_NewListObj(0, NULL);
 
     JsonTriplesAppendVt(schemaObj,
-                        JsonAtomObjs[JSON_ATOM_TYPE], JSON_VT_STRING, JsonAtomObjs[JSON_ATOM_T_OBJECT]);
+                        JsonAtomObj(JSON_ATOM_TYPE), JSON_VT_STRING, JsonAtomObj(JSON_ATOM_T_OBJECT));
 
     for (TCL_SIZE_T i = 0; i < lc; i += 3) {
         Tcl_Obj       *nameObj  = lv[i + 0];
@@ -5303,11 +5375,11 @@ JsonSchemaFromObject(Tcl_Interp *interp, Tcl_Obj *triplesObj,
     }
 
     JsonTriplesAppendVt(schemaObj,
-                        JsonAtomObjs[JSON_ATOM_PROPERTIES], JSON_VT_OBJECT, propertiesObj);
+                        JsonAtomObj(JSON_ATOM_PROPERTIES), JSON_VT_OBJECT, propertiesObj);
 
     if (includeRequired) {
         JsonTriplesAppendVt(schemaObj,
-                            JsonAtomObjs[JSON_ATOM_REQUIRED], JSON_VT_ARRAY, requiredObj);
+                            JsonAtomObj(JSON_ATOM_REQUIRED), JSON_VT_ARRAY, requiredObj);
     }
 
     *schemaObjPtr = schemaObj;
@@ -5356,7 +5428,7 @@ JsonSchemaFromArray(Tcl_Interp *interp, Tcl_Obj *triplesObj,
     schemaObj = Tcl_NewListObj(0, NULL);
 
     JsonTriplesAppendVt(schemaObj,
-                        JsonAtomObjs[JSON_ATOM_TYPE], JSON_VT_STRING, JsonAtomObjs[JSON_ATOM_T_ARRAY]);
+                        JsonAtomObj(JSON_ATOM_TYPE), JSON_VT_STRING, JsonAtomObj(JSON_ATOM_T_ARRAY));
 
     for (TCL_SIZE_T i = 0; i < lc; i += 3) {
         Tcl_Obj       *typeObj  = lv[i + 1];
@@ -5395,7 +5467,7 @@ JsonSchemaFromArray(Tcl_Interp *interp, Tcl_Obj *triplesObj,
     }
 
     JsonTriplesAppendVt(schemaObj,
-                        JsonAtomObjs[JSON_ATOM_ITEMS], JSON_VT_OBJECT, itemsObj);
+                        JsonAtomObj(JSON_ATOM_ITEMS), JSON_VT_OBJECT, itemsObj);
 
     *schemaObjPtr = schemaObj;
     return NS_OK;
@@ -5451,9 +5523,9 @@ JsonSchemaMerge(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2Obj,
         }
     }
 
-    if (!JsonSchemaGetField(interp, schema1Obj, JsonAtomObjs[JSON_ATOM_TYPE],
+    if (!JsonSchemaGetField(interp, schema1Obj, JsonAtomObj(JSON_ATOM_TYPE),
                                    NULL, &type1Obj, NULL)
-        || !JsonSchemaGetField(interp, schema2Obj, JsonAtomObjs[JSON_ATOM_TYPE],
+        || !JsonSchemaGetField(interp, schema2Obj, JsonAtomObj(JSON_ATOM_TYPE),
                                       NULL, &type2Obj, NULL)) {
         *mergedObjPtr = JsonSchemaBuildAnyOf2(schema1Obj, schema2Obj);
 
@@ -5509,11 +5581,11 @@ JsonSchemaMergeObject(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2O
     Tcl_Obj   **lv;
     TCL_SIZE_T lc;
 
-    if (!JsonSchemaGetField(interp, mergedObj, JsonAtomObjs[JSON_ATOM_PROPERTIES],
+    if (!JsonSchemaGetField(interp, mergedObj, JsonAtomObj(JSON_ATOM_PROPERTIES),
                                    NULL, &props1Obj, &base)) {
         props1Obj = Tcl_NewListObj(0, NULL);
         if (JsonSchemaSetField(interp, mergedObj,
-                                      JsonAtomObjs[JSON_ATOM_PROPERTIES],
+                               JsonAtomObj(JSON_ATOM_PROPERTIES),
                                       JSON_VT_OBJECT, props1Obj) != NS_OK) {
             return NS_ERROR;
         }
@@ -5529,7 +5601,7 @@ JsonSchemaMergeObject(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2O
         props1Obj = dup;
     }
 
-    if (!JsonSchemaGetField(interp, schema2Obj, JsonAtomObjs[JSON_ATOM_PROPERTIES],
+    if (!JsonSchemaGetField(interp, schema2Obj, JsonAtomObj(JSON_ATOM_PROPERTIES),
                                    NULL, &props2Obj, NULL)) {
         props2Obj = Tcl_NewListObj(0, NULL);
     }
@@ -5561,7 +5633,7 @@ JsonSchemaMergeObject(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2O
             }
 
             repl[0] = nameObj;
-            repl[1] = JsonAtomObjs[JSON_VT_OBJECT];
+            repl[1] = JsonAtomObj((JsonAtom)JSON_VT_OBJECT);
             repl[2] = mergedPropObj;
 
             if (Tcl_ListObjReplace(interp, props1Obj, propBase, 3, 3, repl) != TCL_OK) {
@@ -5575,9 +5647,9 @@ JsonSchemaMergeObject(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2O
      *
      * If one side does not have a required field, treat it as empty.
      */
-    (void)JsonSchemaGetField(interp, schema1Obj, JsonAtomObjs[JSON_ATOM_REQUIRED],
+    (void)JsonSchemaGetField(interp, schema1Obj, JsonAtomObj(JSON_ATOM_REQUIRED),
                                     NULL, &required1Obj, NULL);
-    (void)JsonSchemaGetField(interp, schema2Obj, JsonAtomObjs[JSON_ATOM_REQUIRED],
+    (void)JsonSchemaGetField(interp, schema2Obj, JsonAtomObj(JSON_ATOM_REQUIRED),
                                     NULL, &required2Obj, NULL);
 
     if (required1Obj != NULL || required2Obj != NULL) {
@@ -5587,9 +5659,9 @@ JsonSchemaMergeObject(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2O
         }
 
         if (JsonSchemaSetField(interp, mergedObj,
-                                      JsonAtomObjs[JSON_ATOM_REQUIRED],
-                                      JSON_VT_ARRAY,
-                                      requiredOutObj) != NS_OK) {
+                               JsonAtomObj(JSON_ATOM_REQUIRED),
+                               JSON_VT_ARRAY,
+                               requiredOutObj) != NS_OK) {
             return NS_ERROR;
         }
     }
@@ -5624,11 +5696,11 @@ JsonSchemaMergeArray(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2Ob
     Tcl_Obj *mergedObj = Tcl_DuplicateObj(schema1Obj);
     Tcl_Obj *items1Obj = NULL, *items2Obj = NULL, *mergedItemsObj = NULL;
 
-    if (!JsonSchemaGetField(interp, schema1Obj, JsonAtomObjs[JSON_ATOM_ITEMS],
+    if (!JsonSchemaGetField(interp, schema1Obj, JsonAtomObj(JSON_ATOM_ITEMS),
                                    NULL, &items1Obj, NULL)) {
         items1Obj = Tcl_NewListObj(0, NULL);
     }
-    if (!JsonSchemaGetField(interp, schema2Obj, JsonAtomObjs[JSON_ATOM_ITEMS],
+    if (!JsonSchemaGetField(interp, schema2Obj, JsonAtomObj(JSON_ATOM_ITEMS),
                                    NULL, &items2Obj, NULL)) {
         items2Obj = Tcl_NewListObj(0, NULL);
     }
@@ -5637,7 +5709,7 @@ JsonSchemaMergeArray(Tcl_Interp *interp, Tcl_Obj *schema1Obj, Tcl_Obj *schema2Ob
         return NS_ERROR;
     }
     if (JsonSchemaSetField(interp, mergedObj,
-                                  JsonAtomObjs[JSON_ATOM_ITEMS],
+                           JsonAtomObj(JSON_ATOM_ITEMS),
                                   JSON_VT_OBJECT,
                                   mergedItemsObj) != NS_OK) {
         return NS_ERROR;
@@ -5693,53 +5765,53 @@ JsonSchemaCanonicalize(Tcl_Interp *interp, Tcl_Obj *schemaObj, Tcl_Obj **canonOb
     /*
      * $schema first
      */
-    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObjs[JSON_ATOM_SCHEMA],
-                                  NULL, &schemaDeclObj, NULL)) {
+    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObj(JSON_ATOM_SCHEMA),
+                           NULL, &schemaDeclObj, NULL)) {
         JsonTriplesAppendVt(outObj,
-                            JsonAtomObjs[JSON_ATOM_SCHEMA], JSON_VT_STRING, schemaDeclObj);
+                            JsonAtomObj(JSON_ATOM_SCHEMA), JSON_VT_STRING, schemaDeclObj);
     }
 
     /*
      * type
      */
-    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObjs[JSON_ATOM_TYPE],
+    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObj(JSON_ATOM_TYPE),
                                   &typeTypeObj, &typeValueObj, NULL)) {
         if (JsonSchemaCanonicalizeTypeField(interp, typeTypeObj, typeValueObj,
                                             &canonTypeObj) != NS_OK) {
             return NS_ERROR;
         }
         JsonTriplesAppendVt(outObj,
-                            JsonAtomObjs[JSON_ATOM_TYPE], JsonTypeObjToVt(typeTypeObj), canonTypeObj);
+                            JsonAtomObj(JSON_ATOM_TYPE), JsonTypeObjToVt(typeTypeObj), canonTypeObj);
     }
 
     /*
      * properties
      */
-    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObjs[JSON_ATOM_PROPERTIES],
+    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObj(JSON_ATOM_PROPERTIES),
                                   NULL, &propertiesObj, NULL)) {
         if (JsonSchemaCanonicalizeProperties(interp, propertiesObj, &canonPropsObj) != NS_OK) {
             return NS_ERROR;
         }
         JsonTriplesAppendVt(outObj,
-                            JsonAtomObjs[JSON_ATOM_PROPERTIES], JSON_VT_OBJECT, canonPropsObj);
+                            JsonAtomObj(JSON_ATOM_PROPERTIES), JSON_VT_OBJECT, canonPropsObj);
     }
 
     /*
      * items
      */
-    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObjs[JSON_ATOM_ITEMS],
+    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObj(JSON_ATOM_ITEMS),
                                   NULL, &itemsObj, NULL)) {
         if (JsonSchemaCanonicalize(interp, itemsObj, &canonItemsObj) != NS_OK) {
             return NS_ERROR;
         }
         JsonTriplesAppendVt(outObj,
-                            JsonAtomObjs[JSON_ATOM_ITEMS], JSON_VT_OBJECT, canonItemsObj);
+                            JsonAtomObj(JSON_ATOM_ITEMS), JSON_VT_OBJECT, canonItemsObj);
     }
 
     /*
      * required
      */
-    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObjs[JSON_ATOM_REQUIRED],
+    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObj(JSON_ATOM_REQUIRED),
                                   NULL, &requiredObj, NULL)) {
         TCL_SIZE_T roc;
 
@@ -5751,14 +5823,14 @@ JsonSchemaCanonicalize(Tcl_Interp *interp, Tcl_Obj *schemaObj, Tcl_Obj **canonOb
         }
         if (roc > 0) {
             JsonTriplesAppendVt(outObj,
-                                JsonAtomObjs[JSON_ATOM_REQUIRED], JSON_VT_ARRAY, canonRequiredObj);
+                                JsonAtomObj(JSON_ATOM_REQUIRED), JSON_VT_ARRAY, canonRequiredObj);
         }
     }
 
     /*
      * anyOf
      */
-    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObjs[JSON_ATOM_ANYOF],
+    if (JsonSchemaGetField(interp, schemaObj, JsonAtomObj(JSON_ATOM_ANYOF),
                                   NULL, &anyOfObj, NULL)) {
         Tcl_Obj   **lv;
         TCL_SIZE_T  lc;
@@ -5789,7 +5861,7 @@ JsonSchemaCanonicalize(Tcl_Interp *interp, Tcl_Obj *schemaObj, Tcl_Obj **canonOb
         }
 
         JsonTriplesAppendVt(outObj,
-                            JsonAtomObjs[JSON_ATOM_ANYOF], JSON_VT_ARRAY, canonAnyOfObj);
+                            JsonAtomObj(JSON_ATOM_ANYOF), JSON_VT_ARRAY, canonAnyOfObj);
     }
 
     *canonObjPtr = outObj;
@@ -6172,7 +6244,7 @@ JsonSchemaDictGet(Tcl_Obj *schemaObj, JsonAtom atom)
 
     NS_NONNULL_ASSERT(schemaObj != NULL);
 
-    if (Tcl_DictObjGet(NULL, schemaObj, JsonAtomObjs[atom], &valObj) != TCL_OK) {
+    if (Tcl_DictObjGet(NULL, schemaObj, JsonAtomObj(atom), &valObj) != TCL_OK) {
         return NULL;
     }
     return valObj;
@@ -6752,7 +6824,7 @@ JsonSchemaMismatchAnyOf(Tcl_Interp *interp, Tcl_DString *pathDsPtr,
     const char *actualType;
     const char *path = JsonSchemaMisMatchGetPath(pathDsPtr);
 
-    actualType = Tcl_GetString(JsonAtomObjs[actualVt]);
+    actualType = NsAtomName(JsonAtomIds[(JsonAtom)actualVt], NULL);
     Ns_TclPrintfResult(interp,
                        "ns_json: schema mismatch at %s: no anyOf alternative matched (got %s)",
                        path, actualType);
@@ -6901,7 +6973,7 @@ JsonSchemaIsTypeOnlySchema(Tcl_Interp *interp, Tcl_Obj *schemaObj,
     if (lc != 3) {
         return NS_FALSE;
     }
-    if (!TripleKeyMatches(lv[0], JsonAtomObjs[JSON_ATOM_TYPE])) {
+    if (!TripleKeyMatches(lv[0], JsonAtomObj(JSON_ATOM_TYPE))) {
         return NS_FALSE;
     }
 
@@ -7137,14 +7209,14 @@ JsonSchemaBuildTypeUnion(Tcl_Interp *interp, Tcl_Obj *typesObj, Tcl_Obj **schema
          *   {type string X}
          */
         JsonTriplesAppendVt(schemaObj,
-                            JsonAtomObjs[JSON_ATOM_TYPE], JSON_VT_STRING, lv[2]);
+                            JsonAtomObj(JSON_ATOM_TYPE), JSON_VT_STRING, lv[2]);
     } else {
         /*
          * Keep union form:
          *   {type array {0 string X 1 string Y ...}}
          */
         JsonTriplesAppendVt(schemaObj,
-                            JsonAtomObjs[JSON_ATOM_TYPE], JSON_VT_ARRAY, typesObj);
+                            JsonAtomObj(JSON_ATOM_TYPE), JSON_VT_ARRAY, typesObj);
     }
 
     *schemaObjPtr = schemaObj;
@@ -7182,7 +7254,7 @@ JsonSchemaBuildAnyOf2(Tcl_Obj *schema1Obj, Tcl_Obj *schema2Obj)
      * schemaObj = { anyOf array anyOfObj }
      */
     (void)JsonTriplesAppendVt(schemaObj,
-                              JsonAtomObjs[JSON_ATOM_ANYOF], JSON_VT_ARRAY, anyOfObj);
+                              JsonAtomObj(JSON_ATOM_ANYOF), JSON_VT_ARRAY, anyOfObj);
 
     return schemaObj;
 }
@@ -7538,8 +7610,8 @@ Ns_JsonParse(const unsigned char *buf, size_t len,
          */
         if (opt->output == NS_JSON_OUTPUT_TRIPLES) {
             Tcl_Obj *lv[3];
-            lv[0] = JsonAtomObjs[JSON_ATOM_EMPTY];
-            lv[1] = JsonAtomObjs[vt];
+            lv[0] = JsonAtomObj(JSON_ATOM_EMPTY);
+            lv[1] = JsonAtomObj((JsonAtom)vt);
             lv[2] = valueObj;
             *resultObjPtr = Tcl_NewListObj(3, lv);
         } else {
@@ -7595,7 +7667,7 @@ JsonNullObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Tcl_SetObjResult(interp, JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING]);
+        Tcl_SetObjResult(interp, JsonAtomObj(JSON_ATOM_VALUE_NULL_STRING));
     }
     return result;
 }
@@ -7816,11 +7888,11 @@ JsonKeyInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     dictObj = Tcl_NewDictObj();
 
     Tcl_DictObjPut(interp, dictObj,
-                   JsonAtomObjs[JSON_ATOM_KEY],
+                   JsonAtomObj(JSON_ATOM_KEY),
                    Ns_DStringToObj(&outDs));
 
     Tcl_DictObjPut(interp, dictObj,
-                   JsonAtomObjs[JSON_ATOM_FIELD],
+                   JsonAtomObj(JSON_ATOM_FIELD),
                    Tcl_NewStringObj(field, fieldLen));
 
     Tcl_DStringFree(&segDs);
@@ -7884,7 +7956,7 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     opt.output       = NS_JSON_OUTPUT_TCL_VALUE;
     //opt.utf8         = NS_JSON_UTF8_STRICT;
     opt.top          = NS_JSON_TOP_ANY;
-    opt.nullValueObj = JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING];
+    opt.nullValueObj = JsonAtomObj(JSON_ATOM_VALUE_NULL_STRING);
     opt.maxDepth     = 1000;
     opt.maxString    = 0;     /* 0 == unlimited (for now) */
     opt.maxContainer = 0;     /* 0 == unlimited (for now) */
@@ -7893,7 +7965,7 @@ JsonParseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
         return TCL_ERROR;
     }
 
-    if (opt.nullValueObj != JsonAtomObjs[JSON_ATOM_VALUE_NULL_STRING]) {
+    if (opt.nullValueObj != JsonAtomObj(JSON_ATOM_VALUE_NULL_STRING)) {
         opt.nullValueObj = JsonNewNullObj(opt.nullValueObj);
     }
 
@@ -8437,7 +8509,7 @@ JsonTriplesSchemaObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
 
     JsonTriplesAppendVt(schemaObj,
-                        JsonAtomObjs[JSON_ATOM_SCHEMA], JSON_VT_STRING,
+                        JsonAtomObj(JSON_ATOM_SCHEMA), JSON_VT_STRING,
                         Tcl_NewStringObj("https://json-schema.org/draft/2020-12/schema", 44));
 
     if (JsonSchemaCanonicalize(interp, schemaObj, &canonSchemaObj) != NS_OK) {

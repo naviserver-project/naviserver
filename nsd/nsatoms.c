@@ -883,45 +883,69 @@ done:
  *
  * NsAtomsInit --
  *
- *      Initialize a module-local vector of Tcl_Obj pointers from an
- *      array of NsAtomSpec entries. For each spec entry, either a
- *      reference to an existing global atom object is stored (when
- *      globalId >= 0), or a new Tcl string object is created from the
- *      provided literal (when globalId < 0).
+ *      Initialize a module-local vector of atom ids from an array of
+ *      NsAtomSpec entries. For each spec entry, either an existing global
+ *      atom id is copied (when globalId >= 0), or the provided literal is
+ *      registered in the global atom table and the resulting id is stored
+ *      in the output vector.
  *
- *      For module-owned atoms (globalId < 0), the created Tcl_Obj has
- *      its reference count incremented and must later be released via
- *      NsAtomsFreeOwned() or equivalent manual DecrRefCount handling.
+ *      The resulting ids can be passed to NsAtomObj() to obtain a
+ *      per-thread Tcl_Obj representation. This keeps Tcl_Obj ownership
+ *      local to the calling thread and avoids sharing Tcl objects across
+ *      Tcl interpreters or connection threads.
  *
  * Results:
  *      NS_OK on success, NS_ERROR if a referenced global atom id is
- *      invalid.
+ *      invalid or a module-local atom cannot be registered.
  *
  * Side effects:
- *      May create new Tcl string objects and increment their reference
- *      counts for module-owned atoms.
+ *      May register new atom names in the global atom table. Does not
+ *      create Tcl_Obj values directly; Tcl_Obj instances are created
+ *      lazily by NsAtomObj() in the current thread.
  *
  *----------------------------------------------------------------------
  */
+
 Ns_ReturnCode
-NsAtomsInit(const NsAtomSpec *specs, size_t nSpecs, Tcl_Obj **outAtoms)
+NsAtomsInit(const NsAtomSpec *specs, size_t nSpecs, NsAtomId *outIds)
 {
-    for (size_t i = 0; i < nSpecs; i++) {
+    size_t i;
+
+    NS_NONNULL_ASSERT(specs != NULL);
+    NS_NONNULL_ASSERT(outIds != NULL);
+
+    for (i = 0u; i < nSpecs; i++) {
+        NsAtomId     id;
+        Ns_ReturnCode status;
+
         if (specs[i].globalId >= 0) {
-            outAtoms[i] = NsAtomObj(specs[i].globalId);
-            if (outAtoms[i] == NULL) {
+            id = (NsAtomId)specs[i].globalId;
+
+            if ((unsigned)id >= (unsigned)nAtoms) {
                 return NS_ERROR;
             }
+
         } else {
+            const char *name = specs[i].name;
             TCL_SIZE_T len = specs[i].len;
 
-            if (len < 0) {
-                len = (TCL_SIZE_T)strlen(specs[i].name);
+            if (name == NULL) {
+                return NS_ERROR;
             }
-            outAtoms[i] = Tcl_NewStringObj(specs[i].name, len);
-            Tcl_IncrRefCount(outAtoms[i]); /* module-owned */
+
+            if (len < 0) {
+                len = (TCL_SIZE_T)strlen(name);
+            }
+
+            status = NsAtomRegister(name, len, &id);
+            if (status != NS_OK) {
+                return NS_ERROR;
+            }
         }
+
+        outIds[i] = id;
     }
+
     return NS_OK;
 }
 

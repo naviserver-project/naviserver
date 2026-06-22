@@ -296,7 +296,7 @@ typedef struct NsAtomSpec {
 } NsAtomSpec;
 
 NS_EXTERN Ns_ReturnCode
-NsAtomsInit(const NsAtomSpec *specs, size_t nSpecs, Tcl_Obj **outAtoms)
+NsAtomsInit(const NsAtomSpec *specs, size_t nSpecs, NsAtomId *outIds)
     NS_GNUC_NONNULL(1,3);
 
 NS_EXTERN void
