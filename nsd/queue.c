@@ -2505,16 +2505,24 @@ NsConnThread(void *arg)
                  * Everything is supplied, run the request. ConnRun()
                  * closes finally the connection.
                  */
-                size_t memBefore = 0u;
+                ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, connPtr->id);
+
 
                 if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
+                    Tcl_DString ds;
+                    size_t      memBefore = 0u;
+
                     (void) NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
                                                         &memBefore);
+                    Tcl_DStringInit(&ds);
+                    Tcl_DStringAppend(&ds, connPtr->reqPtr->request.line, TCL_INDEX_NONE);
+                    ConnRun(connPtr);
+                    NsLogMemoryStatsDelta("after request", poolPtr, threadId, ds.string,
+                                          memBefore, 8u * 1024u * 1024u);
+                    Tcl_DStringFree(&ds);
+                } else {
+                    ConnRun(connPtr);
                 }
-                ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, connPtr->id);
-                ConnRun(connPtr);
-                NsLogMemoryStatsDelta("after request", poolPtr, threadId, NULL,
-                                      memBefore, 8u * 1024u * 1024u);
             }
         } else {
             /*
