@@ -2507,15 +2507,17 @@ NsConnThread(void *arg)
                  */
                 ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, connPtr->id);
 
-
                 if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
                     Tcl_DString ds;
                     size_t      memBefore = 0u;
 
+                    Tcl_DStringInit(&ds);
+                    Tcl_DStringAppend(&ds,
+                                      connPtr->reqPtr != NULL 
+                                      ? connPtr->reqPtr->request.line
+                                      : "no request line available", TCL_INDEX_NONE);
                     (void) NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
                                                         &memBefore);
-                    Tcl_DStringInit(&ds);
-                    Tcl_DStringAppend(&ds, connPtr->reqPtr->request.line, TCL_INDEX_NONE);
                     ConnRun(connPtr);
                     NsLogMemoryStatsDelta("after request", poolPtr, threadId, ds.string,
                                           memBefore, 8u * 1024u * 1024u);
