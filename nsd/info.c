@@ -737,6 +737,71 @@ NsLogMemoryStats(const char *context, const ConnPool *poolPtr,
 /*
  *----------------------------------------------------------------------
  *
+ * NsLogMemoryStatsDelta --
+ *
+ *      Log tcmalloc memory statistics when the process-wide number of
+ *      currently allocated bytes changed by at least the requested
+ *      threshold since a caller-provided baseline.
+ *
+ *      The beforeAllocated value is normally sampled by the caller before
+ *      entering a unit of work, such as a request, Tcl callback, or job
+ *      evaluation.  This function samples the current value after the unit
+ *      of work, computes the absolute delta, and emits a Debug(memory)
+ *      entry via NsLogMemoryStats() when the delta is large enough.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      May query tcmalloc numeric properties and may write a Debug(memory)
+ *      log entry.  The reported delta is based on process-wide allocator
+ *      state, so concurrent activity in other threads may contribute to the
+ *      observed change.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsLogMemoryStatsDelta(const char *context, const ConnPool *poolPtr,
+                      uintptr_t threadId, const char *detail,
+                      size_t beforeAllocated, size_t minAbsDelta)
+{
+    size_t      afterAllocated;
+    size_t      delta;
+    const char *sign;
+
+    NS_NONNULL_ASSERT(context != NULL);
+
+    if (!Ns_LogSeverityEnabled(Ns_LogMemoryDebug)
+        || beforeAllocated == 0u
+        || !NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
+                                         &afterAllocated)) {
+        return;
+    }
+
+    if (afterAllocated >= beforeAllocated) {
+        delta = afterAllocated - beforeAllocated;
+        sign = "+";
+    } else {
+        delta = beforeAllocated - afterAllocated;
+        sign = "-";
+    }
+
+    if (delta >= minAbsDelta) {
+        char detailBuffer[256];
+
+        snprintf(detailBuffer, sizeof(detailBuffer),
+                 "%s%sdelta %s%" PRIuz " before %" PRIuz " after %" PRIuz,
+                 detail != NULL && *detail != '\0' ? detail : "",
+                 detail != NULL && *detail != '\0' ? " " : "",
+                 sign, delta, beforeAllocated, afterAllocated);
+
+        NsLogMemoryStats(context, poolPtr, threadId, detailBuffer);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsInitInfo --
  *
  *      Initialize the elements of the nsconf structure which may

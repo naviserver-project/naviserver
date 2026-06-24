@@ -218,8 +218,16 @@ void
 Ns_TclCallbackProc(void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
+    size_t                memBefore = 0u;
 
+    if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
+        (void) NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
+                                            &memBefore);
+    }
     (void) Ns_TclEvalCallback(NULL, cbPtr, (Tcl_DString *)NULL, NS_SENTINEL);
+
+    NsLogMemoryStatsDelta("after Tcl callback", NULL, Ns_ThreadId(), NULL,
+                          memBefore, 4u * 1024u * 1024u);
 }
 
 
@@ -360,6 +368,7 @@ ShutdownProc(const Ns_Time *toPtr, void *arg)
 {
     if (toPtr == NULL) {
         Ns_TclCallbackProc(arg);
+        NsLogMemoryStats("after shutdown callback", NULL, Ns_ThreadId(), NULL);
     }
 }
 

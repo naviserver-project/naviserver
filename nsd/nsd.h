@@ -1963,8 +1963,12 @@ NS_EXTERN void NsRunSelectedTraces(Ns_Conn *conn, const char *traceProcDescripti
 /*
  * info.c
  */
-bool NsTcmallocGetNumericProperty(const char *name, size_t *valuePtr);
-bool NsTcmallocNumericPropertiesAvailable(void);
+NS_EXTERN bool NsTcmallocGetNumericProperty(const char *name, size_t *valuePtr) NS_GNUC_NONNULL(1,2);
+NS_EXTERN bool NsTcmallocNumericPropertiesAvailable(void);
+NS_EXTERN void NsLogMemoryStatsDelta(const char *context, const ConnPool *poolPtr,
+                                     uintptr_t threadId, const char *detail,
+                                     size_t beforeAllocated, size_t minAbsDelta)
+    NS_GNUC_NONNULL(1);
 
 /*
  * limits.c

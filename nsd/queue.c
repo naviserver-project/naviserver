@@ -2505,8 +2505,16 @@ NsConnThread(void *arg)
                  * Everything is supplied, run the request. ConnRun()
                  * closes finally the connection.
                  */
+                size_t memBefore = 0u;
+
+                if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
+                    (void) NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
+                                                        &memBefore);
+                }
                 ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, connPtr->id);
                 ConnRun(connPtr);
+                NsLogMemoryStatsDelta("after request", poolPtr, threadId, NULL,
+                                      memBefore, 8u * 1024u * 1024u);
             }
         } else {
             /*

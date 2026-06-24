@@ -1469,6 +1469,7 @@ JobThread(void *UNUSED(arg))
         Tcl_Interp   *interp;
         int           code;
         Ns_ReturnCode status;
+        size_t        memBefore = 0u;
 
         ++tp.nidle;
         status = NS_OK;
@@ -1495,6 +1496,11 @@ JobThread(void *UNUSED(arg))
             break;
         }
         assert(queue != NULL);
+
+        if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
+            (void) NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
+                                                &memBefore);
+        }
 
         /*
          * Get an interpreter....
@@ -1586,6 +1592,9 @@ JobThread(void *UNUSED(arg))
         }
 
         Ns_TclDeAllocateInterp(interp);
+        
+        NsLogMemoryStatsDelta("after job eval", NULL, Ns_ThreadId(), jobPtr->script.string,
+                              memBefore, 1024u * 1024u);
 
         /*
          * Clean any detached jobs.
@@ -1599,7 +1608,7 @@ JobThread(void *UNUSED(arg))
             }
             FreeJob(jobPtr);
         }
-
+        
         Ns_CondBroadcast(&queue->cond);
         (void)ReleaseQueue(queue, NS_TRUE);
 
