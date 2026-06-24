@@ -217,8 +217,9 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
 void
 Ns_TclCallbackProc(void *arg)
 {
-    const Ns_TclCallback *cbPtr = arg;
-    size_t                memBefore = 0u;
+    const Ns_TclCallback  *cbPtr = arg;
+    size_t                 memBefore = 0u;
+    static NS_THREAD_LOCAL bool inMemoryCallbackTrace = NS_FALSE;
 
     if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
         (void) NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
@@ -226,8 +227,12 @@ Ns_TclCallbackProc(void *arg)
     }
     (void) Ns_TclEvalCallback(NULL, cbPtr, (Tcl_DString *)NULL, NS_SENTINEL);
 
-    NsLogMemoryStatsDelta("after Tcl callback", NULL, Ns_ThreadId(), NULL,
-                          memBefore, 4u * 1024u * 1024u);
+    if (!inMemoryCallbackTrace && Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
+        inMemoryCallbackTrace = NS_TRUE;
+        NsLogMemoryStatsDelta("after Tcl callback", NULL, Ns_ThreadId(), NULL,
+                              memBefore, 4u * 1024u * 1024u);
+        inMemoryCallbackTrace = NS_FALSE;
+    }
 }
 
 
