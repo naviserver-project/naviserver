@@ -645,7 +645,9 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
     }
 #endif
     result = Tcl_GetStringResult(interp);
+#ifdef DEBUG_CALLBACK_RESULTS
     Ns_Log(Notice, "DEBUG NsTclFilterProc returns %d %s string '%s'", rc, Ns_TclReturnCodeString(rc), result);
+#endif
     Tcl_DStringSetLength(&ds, 0);
 
     if (rc == TCL_ERROR) {
