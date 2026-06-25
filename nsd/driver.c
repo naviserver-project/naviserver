@@ -3549,8 +3549,8 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
          * owned by the driver and will be retried later.
          */
         result = NsQueueConn(sockPtr, timePtr);
-
         if (unlikely(result == NS_ERROR)) {
+#ifdef NS_TRACE_QUEUEFULL_MEMORY
             if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
                 static NS_THREAD_LOCAL size_t queueFullCount = 0u;
 
@@ -3559,7 +3559,7 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
                                      Ns_ThreadId(), NULL);
                 }
             }
-
+#endif
             SockRelease(sockPtr, SOCK_QUEUEFULL, 0);
         }
     } else {
@@ -4061,13 +4061,18 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
             /*
              * We need the server to determine the poolPtr. When not already
              * set in the sockPtr, we have to get it via driver and defMapPtr,
-             * since for global servers, drvPtr->servPtr == NULL.
+             * since for global drivers, drvPtr->servPtr == NULL.
              */
             servPtr = sockPtr->servPtr;
             if (servPtr == NULL) {
                 servPtr = sockPtr->drvPtr->defMapPtr->servPtr;
             }
-            conn.poolPtr = servPtr->pools.defaultPtr;
+            if (sockPtr->poolPtr != NULL) {
+                conn.poolPtr = sockPtr->poolPtr;
+            } else {
+                assert(servPtr != NULL);
+                conn.poolPtr = servPtr->pools.defaultPtr;
+            }
 
             Ns_ConnSetPeer((Ns_Conn*)&conn,
                            (struct sockaddr *)&(sockPtr->sa),
@@ -4116,6 +4121,7 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
         isConnConstructed = NS_FALSE;
     }
     if (connPtr != NULL) {
+
         Ns_Log(Debug, "--- non-trace access log entry: constructed %d user '%s' \"%s\" %d %ld",
                isConnConstructed,
                Ns_ConnAuthUser(connPtr),
@@ -4126,7 +4132,19 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
          * Finally call the trace proc LogTrace() with the provided or
          * constructed connection.
          */
-        NsRunSelectedTraces(connPtr, "nslog:conntrace");
+        if (conn.poolPtr != NULL) {
+            Tcl_DString ds;
+            const char *poolName = *conn.poolPtr->pool == '\0' ? "default" : conn.poolPtr->pool;
+
+            Tcl_DStringInit(&ds);
+            Tcl_DStringAppend(&ds,  Ns_ThreadGetName(), TCL_INDEX_NONE);            
+            Ns_ThreadSetName("%s%s-", ds.string, poolName);
+            NsRunSelectedTraces(connPtr, "nslog:conntrace");
+            Ns_ThreadSetName("%s", ds.string);
+            Tcl_DStringFree(&ds);
+        } else {
+            NsRunSelectedTraces(connPtr, "nslog:conntrace");
+        }
     }
 }
 

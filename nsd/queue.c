@@ -658,7 +658,9 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         /*
          * The connection thread pool queue is full.  We can either keep the
          * sockPtr in a waiting state, or we can reject the queue overrun with
-         * a 503 - depending on the configuration.
+         * a 503 - depending on the configuration.  The waiting queue is
+         * implicitly bounded by the pool’s maxconnections/free-Conn list, not
+         * by a separate queue-length variable.
          */
         queued = NS_TIMEOUT;
         create = NS_FALSE;
@@ -2510,12 +2512,14 @@ NsConnThread(void *arg)
                 if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
                     Tcl_DString ds;
                     size_t      memBefore = 0u;
+                    const char *requestLine = "no request line available";
+
+                    if (connPtr->reqPtr != NULL && connPtr->reqPtr->request.line != NULL) {
+                        requestLine = connPtr->reqPtr->request.line;
+                    }
 
                     Tcl_DStringInit(&ds);
-                    Tcl_DStringAppend(&ds,
-                                      connPtr->reqPtr != NULL 
-                                      ? connPtr->reqPtr->request.line
-                                      : "no request line available", TCL_INDEX_NONE);
+                    Tcl_DStringAppend(&ds, requestLine, TCL_INDEX_NONE);
                     (void) NsTcmallocGetNumericProperty("generic.current_allocated_bytes",
                                                         &memBefore);
                     ConnRun(connPtr);
