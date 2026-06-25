@@ -1198,13 +1198,36 @@ WriteFatalSignal(int sig)
     (void)ignored;
 }
 
+static void ReraiseFatalSignal(int sig) NS_GNUC_NORETURN;
+static void
+ReraiseFatalSignal(int sig)
+{
+    struct sigaction sa;
+    sigset_t         set;
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = SIG_DFL;
+    sigemptyset(&sa.sa_mask);
+    (void)sigaction(sig, &sa, NULL);
+
+    sigemptyset(&set);
+    sigaddset(&set, sig);
+    (void)sigprocmask(SIG_UNBLOCK, &set, NULL);
+
+    (void)kill(getpid(), sig);
+    _exit(128 + sig);
+}
+
 static void
 Abort(int sig)
 {
     static volatile sig_atomic_t inAbort = 0;
 
     if (inAbort) {
-        _exit(128 + sig);
+        const char msg[] = "Fatal: recursive fatal signal\n";
+
+        (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+        ReraiseFatalSignal(sig);
     }
     inAbort = 1;
 
@@ -1213,31 +1236,7 @@ Abort(int sig)
     _exit(128 + sig);
 #else
     WriteFatalSignal(sig);
-    
-    /*
-     * Restore the default action and unblock the signal before re-raising
-     * it.  A signal is normally blocked while its handler is running; if we
-     * call raise() and then _exit() while it is still blocked, the kernel
-     * never gets a chance to apply the default core-dumping action.
-     */
-    (void)ns_signal(sig, SIG_DFL);
-
-    {
-        sigset_t set;
-
-        sigemptyset(&set);
-        sigaddset(&set, sig);
-        sigprocmask(SIG_UNBLOCK, &set, NULL);
-    }
-
-    /*
-     * Use kill() rather than raise() in the signal handler path; kill() is
-     * async-signal-safe and is sufficient to trigger the default process
-     * action after the disposition has been restored.
-     */
-    kill(getpid(), sig);
-
-    _exit(128 + sig);
+    ReraiseFatalSignal(sig);
 #endif
 }
 
