@@ -1198,23 +1198,82 @@ WriteFatalSignal(int sig)
     (void)ignored;
 }
 
+#if defined(__linux__)
+# include <sys/syscall.h>
+#endif
+
+#if defined(__linux__) && !defined(SYS_tgkill) && defined(__NR_tgkill)
+# define SYS_tgkill __NR_tgkill
+#endif
+
+#if defined(__linux__) && !defined(SYS_gettid) && defined(__NR_gettid)
+# define SYS_gettid __NR_gettid
+#endif
+
+#if defined(__linux__) && defined(SYS_tgkill) && defined(SYS_gettid)
+# define NS_HAVE_TGKILL 1
+#endif
+
+static void
+WriteSignalText(const char *msg, size_t len)
+{
+    ssize_t ignored;
+
+    ignored = write(STDERR_FILENO, msg, len);
+    (void)ignored;
+}
+
+#define WRITE_SIGNAL_LITERAL(s) WriteSignalText((s), sizeof(s) - 1u)
+
 static void ReraiseFatalSignal(int sig) NS_GNUC_NORETURN;
+
 static void
 ReraiseFatalSignal(int sig)
 {
     struct sigaction sa;
     sigset_t         set;
 
+    WRITE_SIGNAL_LITERAL("Fatal: reraise enter\n");
+
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = SIG_DFL;
     sigemptyset(&sa.sa_mask);
-    (void)sigaction(sig, &sa, NULL);
+
+    if (sigaction(sig, &sa, NULL) != 0) {
+        WRITE_SIGNAL_LITERAL("Fatal: sigaction failed\n");
+    } else {
+        WRITE_SIGNAL_LITERAL("Fatal: sigaction ok\n");
+    }
 
     sigemptyset(&set);
-    sigaddset(&set, sig);
-    (void)sigprocmask(SIG_UNBLOCK, &set, NULL);
+    (void)sigaddset(&set, sig);
 
+    if (sigprocmask(SIG_UNBLOCK, &set, NULL) != 0) {
+        WRITE_SIGNAL_LITERAL("Fatal: sigprocmask failed\n");
+    } else {
+        WRITE_SIGNAL_LITERAL("Fatal: sigprocmask ok\n");
+    }
+
+#if defined(NS_HAVE_TGKILL)
+    {
+        pid_t pid = getpid();
+        pid_t tid = (pid_t)syscall(SYS_gettid);
+
+        WRITE_SIGNAL_LITERAL("Fatal: before tgkill\n");
+        if (tid > 0) {
+            (void)syscall(SYS_tgkill, pid, tid, sig);
+        } else {
+            WRITE_SIGNAL_LITERAL("Fatal: gettid failed\n");
+        }
+        WRITE_SIGNAL_LITERAL("Fatal: tgkill returned\n");
+    }
+#else
+    WRITE_SIGNAL_LITERAL("Fatal: before kill\n");
     (void)kill(getpid(), sig);
+    WRITE_SIGNAL_LITERAL("Fatal: kill returned\n");
+#endif
+
+    WRITE_SIGNAL_LITERAL("Fatal: fallback _exit\n");
     _exit(128 + sig);
 }
 
@@ -1224,9 +1283,7 @@ Abort(int sig)
     static volatile sig_atomic_t inAbort = 0;
 
     if (inAbort) {
-        const char msg[] = "Fatal: recursive fatal signal\n";
-
-        (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+        WRITE_SIGNAL_LITERAL("Fatal: recursive abort\n");
         ReraiseFatalSignal(sig);
     }
     inAbort = 1;
