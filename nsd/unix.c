@@ -45,6 +45,9 @@ static bool GetPwNam(const char *user, PwElement elem, long *longResult, Tcl_DSt
 static bool GetPwUID(uid_t uid, PwElement elem, int *intResult, Tcl_DString *dsPtr, char **freePtr)
     NS_GNUC_NONNULL(5);
 
+static void ReraiseFatalSignal(int sig)
+    NS_GNUC_NORETURN;
+
 /*
  * Static variables defined in this file.
  */
@@ -1149,141 +1152,88 @@ ns_mkdtemp(char *charTemplate)
 }
 #endif
 
-
+
 /*
  *----------------------------------------------------------------------
  *
- * Abort --
+ * ReraiseFatalSignal --
  *
- *      Ensure that we drop core on fatal signals like SIGBUS and
- *      SIGSEGV.
+ *      Restore the default disposition for a fatal signal, unblock this
+ *      signal in the current thread, and raise it again.
+ *
+ *      This helper is used from the fatal signal handler after emitting a
+ *      minimal diagnostic message.  Re-raising the signal with its default
+ *      disposition lets the operating system apply the normal fatal-signal
+ *      behavior, including generation of a core dump when enabled.
  *
  * Results:
- *      None.
+ *      Does not return.
  *
  * Side effects:
- *      A core file will be left wherever the server was running.
+ *      Changes the signal disposition for the specified signal to SIG_DFL,
+ *      unblocks the signal in the current thread, and terminates the process
+ *      by re-raising the signal.  If re-raising unexpectedly returns, the
+ *      process is terminated via _exit().
  *
  *----------------------------------------------------------------------
  */
-static void
-WriteFatalSignal(int sig)
-{
-    char         buf[32];
-    unsigned int n;
-    size_t       i = sizeof(buf);
-    ssize_t      ignored;
-
-    buf[--i] = '\n';
-
-    n = (sig < 0)
-        ? 0u - (unsigned int)sig
-        : (unsigned int)sig;
-
-    do {
-        buf[--i] = (char)('0' + (n % 10u));
-        n /= 10u;
-    } while (n != 0u);
-
-    if (sig < 0) {
-        buf[--i] = '-';
-    }
-
-    ignored = write(STDERR_FILENO,
-                    "Fatal: received signal ",
-                    sizeof("Fatal: received signal ") - 1u);
-    (void)ignored;
-
-    ignored = write(STDERR_FILENO, buf + i, sizeof(buf) - i);
-    (void)ignored;
-}
-
-#if defined(__linux__)
-# include <sys/syscall.h>
-#endif
-
-#if defined(__linux__) && !defined(SYS_tgkill) && defined(__NR_tgkill)
-# define SYS_tgkill __NR_tgkill
-#endif
-
-#if defined(__linux__) && !defined(SYS_gettid) && defined(__NR_gettid)
-# define SYS_gettid __NR_gettid
-#endif
-
-#if defined(__linux__) && defined(SYS_tgkill) && defined(SYS_gettid)
-# define NS_HAVE_TGKILL 1
-#endif
-
-static void
-WriteSignalText(const char *msg, size_t len)
-{
-    ssize_t ignored;
-
-    ignored = write(STDERR_FILENO, msg, len);
-    (void)ignored;
-}
-
-#define WRITE_SIGNAL_LITERAL(s) WriteSignalText((s), sizeof(s) - 1u)
-
-static void ReraiseFatalSignal(int sig) NS_GNUC_NORETURN;
-
 static void
 ReraiseFatalSignal(int sig)
 {
     struct sigaction sa;
     sigset_t         set;
 
-    WRITE_SIGNAL_LITERAL("Fatal: reraise enter\n");
-
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = SIG_DFL;
-    sigemptyset(&sa.sa_mask);
+    (void)sigemptyset(&sa.sa_mask);
+    (void)sigaction(sig, &sa, NULL);
 
-    if (sigaction(sig, &sa, NULL) != 0) {
-        WRITE_SIGNAL_LITERAL("Fatal: sigaction failed\n");
-    } else {
-        WRITE_SIGNAL_LITERAL("Fatal: sigaction ok\n");
-    }
-
-    sigemptyset(&set);
+    (void)sigemptyset(&set);
     (void)sigaddset(&set, sig);
+    (void)sigprocmask(SIG_UNBLOCK, &set, NULL);
 
-    if (sigprocmask(SIG_UNBLOCK, &set, NULL) != 0) {
-        WRITE_SIGNAL_LITERAL("Fatal: sigprocmask failed\n");
-    } else {
-        WRITE_SIGNAL_LITERAL("Fatal: sigprocmask ok\n");
-    }
+    (void)raise(sig);
 
-#if defined(NS_HAVE_TGKILL)
-    {
-        pid_t pid = getpid();
-        pid_t tid = (pid_t)syscall(SYS_gettid);
-
-        WRITE_SIGNAL_LITERAL("Fatal: before tgkill\n");
-        if (tid > 0) {
-            (void)syscall(SYS_tgkill, pid, tid, sig);
-        } else {
-            WRITE_SIGNAL_LITERAL("Fatal: gettid failed\n");
-        }
-        WRITE_SIGNAL_LITERAL("Fatal: tgkill returned\n");
-    }
-#else
-    WRITE_SIGNAL_LITERAL("Fatal: before kill\n");
-    (void)kill(getpid(), sig);
-    WRITE_SIGNAL_LITERAL("Fatal: kill returned\n");
-#endif
-
-    WRITE_SIGNAL_LITERAL("Fatal: fallback _exit\n");
+    /*
+     * If re-raising did not terminate the process, leave without running
+     * any non-async-signal-safe cleanup.
+     */
     _exit(128 + sig);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Abort --
+ *
+ *      Fatal signal handler for signals such as SIGSEGV, SIGBUS, SIGILL,
+ *      SIGTRAP, and SIGFPE.
+ *
+ *      Emit only a minimal async-signal-safe diagnostic and then re-raise
+ *      the signal through ReraiseFatalSignal().  This avoids calling Tcl or
+ *      other non-async-signal-safe cleanup paths from the signal handler,
+ *      while still preserving the operating system's normal fatal-signal
+ *      behavior, including core dump generation when enabled.
+ *
+ * Results:
+ *      Does not return.
+ *
+ * Side effects:
+ *      Writes a short diagnostic message to standard error.  On recursive
+ *      entry, immediately re-raises the signal to avoid repeated handler
+ *      execution.  Otherwise marks the handler active and terminates the
+ *      process by re-raising the fatal signal.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 Abort(int sig)
 {
     static volatile sig_atomic_t inAbort = 0;
+    const char msg[] = "Fatal: received fatal signal\n";
+    ssize_t    ignored;
 
     if (inAbort) {
-        WRITE_SIGNAL_LITERAL("Fatal: recursive abort\n");
         ReraiseFatalSignal(sig);
     }
     inAbort = 1;
@@ -1292,11 +1242,12 @@ Abort(int sig)
     Tcl_Panic("received fatal signal %d", sig);
     _exit(128 + sig);
 #else
-    WriteFatalSignal(sig);
+    ignored = write(STDERR_FILENO, msg, sizeof(msg) - 1u);
+    (void)ignored;
+
     ReraiseFatalSignal(sig);
 #endif
 }
-
 
 #else /* _WIN32 */
 
