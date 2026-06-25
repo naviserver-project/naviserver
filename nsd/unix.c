@@ -1167,6 +1167,38 @@ ns_mkdtemp(char *charTemplate)
  *----------------------------------------------------------------------
  */
 static void
+WriteFatalSignal(int sig)
+{
+    char         buf[32];
+    unsigned int n;
+    size_t       i = sizeof(buf);
+    ssize_t      ignored;
+
+    buf[--i] = '\n';
+
+    n = (sig < 0)
+        ? 0u - (unsigned int)sig
+        : (unsigned int)sig;
+
+    do {
+        buf[--i] = (char)('0' + (n % 10u));
+        n /= 10u;
+    } while (n != 0u);
+
+    if (sig < 0) {
+        buf[--i] = '-';
+    }
+
+    ignored = write(STDERR_FILENO,
+                    "Fatal: received signal ",
+                    sizeof("Fatal: received signal ") - 1u);
+    (void)ignored;
+
+    ignored = write(STDERR_FILENO, buf + i, sizeof(buf) - i);
+    (void)ignored;
+}
+
+static void
 Abort(int sig)
 {
     static volatile sig_atomic_t inAbort = 0;
@@ -1180,14 +1212,8 @@ Abort(int sig)
     Tcl_Panic("received fatal signal %d", sig);
     _exit(128 + sig);
 #else
-    {
-        ssize_t    ignored;
-        const char msg[] = "Fatal: received fatal signal\n";
-
-        ignored = write(STDERR_FILENO, msg, sizeof(msg) - 1);
-        (void)ignored;
-    }
-
+    WriteFatalSignal(sig);
+    
     /*
      * Restore the default action and unblock the signal before re-raising
      * it.  A signal is normally blocked while its handler is running; if we
