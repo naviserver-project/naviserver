@@ -1185,12 +1185,31 @@ Abort(int sig)
         const char msg[] = "Fatal: received fatal signal\n";
 
         ignored = write(STDERR_FILENO, msg, sizeof(msg) - 1);
-        (void)(ignored);
+        (void)ignored;
     }
 
-    /* Restore default action for this signal, then re-raise. */
+    /*
+     * Restore the default action and unblock the signal before re-raising
+     * it.  A signal is normally blocked while its handler is running; if we
+     * call raise() and then _exit() while it is still blocked, the kernel
+     * never gets a chance to apply the default core-dumping action.
+     */
     (void)ns_signal(sig, SIG_DFL);
-    raise(sig);
+
+    {
+        sigset_t set;
+
+        sigemptyset(&set);
+        sigaddset(&set, sig);
+        sigprocmask(SIG_UNBLOCK, &set, NULL);
+    }
+
+    /*
+     * Use kill() rather than raise() in the signal handler path; kill() is
+     * async-signal-safe and is sufficient to trigger the default process
+     * action after the disposition has been restored.
+     */
+    kill(getpid(), sig);
 
     _exit(128 + sig);
 #endif
