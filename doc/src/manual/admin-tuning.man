@@ -230,6 +230,36 @@ Key parameters include:
  Different pools can have distinct parameters, including limiting
  outgoing traffic rates per connection or for the entire pool.
 
+[subsection {Tune Queueing}]
+
+ [para]
+ When tuning overload behavior, distinguish between driver-level queueing and
+ pool-level overrun handling.  A connection pool is limited by its
+ [term maxconnections] setting, which controls how many [type Conn] structures
+ are available for requests assigned to that pool.  These structures are used
+ both for requests currently handled by connection threads and for requests
+ waiting in the pool's internal queue.  When no free [type Conn] structure is
+ available, the selected pool has reached its connection limit.
+
+ [para]
+ If [term rejectoverrun] is disabled for the pool, the socket remains managed by
+ the network driver and NaviServer may retry queueing the request later.  In
+ this mode, overload is absorbed at the driver level, subject to the driver's
+ [term maxqueuesize] setting.  This can be useful for pools that serve very
+ short or important requests, such as static files or [file robots.txt], where a
+ brief delay is preferable to an immediate rejection.
+
+ [para]
+ If [term rejectoverrun] is enabled for the pool, driver-level retry queueing is
+ disabled for this pool-overrun condition.  Requests that arrive while the
+ selected pool has no free connection structure are rejected immediately with
+ [const 503] [const "Service Unavailable"].  When the pool's
+ [term retryafter] interval is configured, NaviServer also sends a
+ [const Retry-After] response header with the configured number of seconds.
+ This mode is useful for applying explicit back-pressure to expensive or
+ low-priority traffic, such as crawler or bot pools, instead of letting such
+ requests accumulate in the driver queue.
+
 
 [subsection {Only Load Modules You Need}]
 
