@@ -102,7 +102,7 @@
  semantics, which can prevent the usual fatal-signal action from taking effect
  after a signal handler restores the default disposition and re-raises the
  signal.  Running the container with an init process, or equivalently using
- [cmd docker run --init], ensures that [cmd nsd] is not PID 1 and can terminate
+ [cmd "docker run --init"], ensures that [cmd nsd] is not PID 1 and can terminate
  normally on fatal signals.
 
  [para]
@@ -127,15 +127,15 @@
  If no core file appears, check the following points:
 
  [list_begin itemized]
- [item] [cmd ulimit -c] inside the container must be [const unlimited]
+ [item] [cmd "ulimit -c"] inside the container must be [const unlimited]
         or large enough.
  [item] The directory from [cmd /proc/sys/kernel/core_pattern] must
         exist inside the container.
  [item] The directory must be writable by the user running NaviServer.
- [item] [cmd core_pattern] must not point to a host-only path that is
+ [item] [cmd "core_pattern"] must not point to a host-only path that is
         absent in the container.
  [item] NaviServer should not run as PID 1; use Docker
-        [const init: true] or [cmd --init].
+        [const "init: true"] or [cmd --init].
  [item] Host crash handlers such as systemd-coredump or apport may
         intercept core dumps when [cmd core_pattern] starts with a pipe
         character.
