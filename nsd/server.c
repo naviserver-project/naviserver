@@ -630,6 +630,13 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->wqueue.rejectoverrun = Ns_ConfigBool(section, "rejectoverrun", NS_FALSE);
     Ns_ConfigTimeUnitRange(section, "retryafter", "5s", 0, 0, INT_MAX, 0,
                            &poolPtr->wqueue.retryafter);
+    if (poolPtr->wqueue.retryafter.sec < 1 && poolPtr->wqueue.retryafter.usec > 0) {
+        /*
+         * Time granularity 1s according RFC. The min value is 1s.
+         */
+        poolPtr->wqueue.retryafter.sec = 1;
+        poolPtr->wqueue.retryafter.usec = 0;
+    }
 
     poolPtr->rate.defaultConnectionLimit =
         Ns_ConfigIntRange(section, "connectionratelimit", 0, 0, INT_MAX);

@@ -485,19 +485,39 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
  *
  * NsQueueConn --
  *
- *      Append a connection to the run queue of a connection pool when
- *      possible (e.g. no shutdown, a free connection thread is available,
- *      ...)
+ *      Assign a parsed socket request to the appropriate connection pool.
+ *
+ *      The function first determines the target connection pool from the
+ *      request method and URL, falling back to the server's default pool when
+ *      no URL-specific pool is configured.  It then tries to obtain a Conn
+ *      structure from the pool's free list.  When a Conn is available, the
+ *      socket state is transferred into it and the request is either assigned
+ *      directly to an idle connection thread or appended to the pool's waiting
+ *      queue.
+ *
+ *      When no free Conn structure is available, the pool has reached its
+ *      maxconnections limit.  If rejectoverrun is enabled for the pool, this
+ *      condition rejects the request and the pool's waiting queue is therefore
+ *      effectively bounded by maxconnections.  If rejectoverrun is disabled,
+ *      the socket remains owned by the driver and queueing is retried later;
+ *      in this case the driver's queue management, including maxqueuesize,
+ *      controls how many requests may wait for another queueing attempt.
  *
  * Results:
- *      NS_OK (queued), NS_ERROR (return error), NS_TIMEOUT (try again)
+ *      NS_OK when ownership of the socket request was transferred to the
+ *      connection pool.  NS_TIMEOUT when the socket remains owned by the
+ *      driver and queueing should be retried later.  NS_ERROR when queueing
+ *      failed and the request should be rejected.
  *
  * Side effects:
- *      Connection will run shortly.
+ *      May set sockPtr->poolPtr, allocate a Conn from the pool free list,
+ *      transfer socket-owned fields into the Conn, append the Conn to the
+ *      pool waiting queue, signal an idle connection thread, create an
+ *      additional connection thread, update pool statistics, and log pool
+ *      overrun notices.
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 {
@@ -658,9 +678,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         /*
          * The connection thread pool queue is full.  We can either keep the
          * sockPtr in a waiting state, or we can reject the queue overrun with
-         * a 503 - depending on the configuration.  The waiting queue is
-         * implicitly bounded by the pool’s maxconnections/free-Conn list, not
-         * by a separate queue-length variable.
+         * a 503 - depending on the configuration.
          */
         queued = NS_TIMEOUT;
         create = NS_FALSE;
@@ -734,6 +752,11 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             }
 
             if (poolPtr->wqueue.rejectoverrun) {
+                /*
+                 * In this case, the waiting queue is implicitly bounded by
+                 * the pool’s maxconnections/free-Conn list, not by a separate
+                 * queue-length variable.
+                 */
                 Ns_MutexLock(&poolPtr->threads.lock);
                 poolPtr->stats.dropped++;
                 Ns_MutexUnlock(&poolPtr->threads.lock);

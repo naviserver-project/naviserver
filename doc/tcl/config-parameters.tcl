@@ -1091,7 +1091,13 @@ set ::ns_configdoc::data {
             maxconnections {
                 type integer
                 default {100}
-                desc {Number of allocated connection structures}
+                desc {Maximum number of connection structures allocated for this connection pool.
+                    These structures cover both requests currently assigned to connection threads and
+                    requests waiting in the pool queue. When all structures are in use, the pool has
+                    reached its connection limit. If rejectoverrun is enabled, additional requests
+                    for this pool are rejected. Otherwise, the socket remains managed by the
+                    driver and may be retried according to the driver's queue handling.
+                }
             }
             maxthreads {
                 type integer
@@ -1130,13 +1136,25 @@ set ::ns_configdoc::data {
             rejectoverrun {
                 type boolean
                 default false
-                desc {Reject requests with 503 Service Unavailable when the connection queue is full instead of accepting more work; useful to apply back-pressure during overload}
+                desc {
+                    Reject requests with 503 Service Unavailable when
+                    the selected connection pool has reached its
+                    maxconnections limit and no connection structure
+                    is available. When enabled, driver-level queueing
+                    and later retry for this pool-overrun condition
+                    are disabled, so overload is reported immediately
+                    to the client. When false, the socket remains
+                    managed by the network driver and may be retried
+                    later for queueing into the selected pool, subject
+                    to the driver's maxqueuesize. Enabling this option
+                    applies back-pressure during overload.
+                }
             }
 
             retryafter {
                 type time
                 default {5s}
-                desc {Value used for the Retry-After header in 503 Service Unavailable responses when rejectoverrun is enabled}
+                desc {Number of seconds used for the Retry-After header on pool-overrun 503 responses (i.e., rejectoverrun is active); 0 disables the header.}
             }
             serverdir {
                 type path
@@ -2188,7 +2206,16 @@ stops execution of that ADP page}
             maxqueuesize {
                 type integer
                 default {1024}
-                desc {Maximum size of the preprocessed request queue}
+                desc {
+                    Maximum number of preprocessed requests that may
+                    remain queued at the network driver level for
+                    later queueing attempts. This limit applies to
+                    requests whose server and connection pool have
+                    typically already been determined, but which could
+                    not currently be queued into the selected pool,
+                    for example because the pool has no free
+                    connection structure and rejectoverrun is disabled.                    
+                }
             }
             maxupload {
                 type size
