@@ -96,7 +96,7 @@
 [example_end]
 
  [para]
- The [const init: true] setting is important.  Without it, the
+ The [const "init: true"] setting is important.  Without it, the
  NaviServer process may run as PID 1 inside the container.  Linux
  gives PID 1 special signal
  semantics, which can prevent the usual fatal-signal action from taking effect
