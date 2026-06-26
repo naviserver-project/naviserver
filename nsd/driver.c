@@ -118,6 +118,24 @@ typedef struct PollData {
 #define PollOut(ppd, i)          (((ppd)->pfds[(i)].revents & POLLOUT) == POLLOUT)
 #define PollHup(ppd, i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
 
+
+
+/*
+ * Queue statistics are diagnostic gauges.  In particular, the aggregate
+ * spooler, writer, and async-writer gauges may be updated from multiple
+ * threads.  Avoid aborting the server or underflowing unsigned counters when
+ * a gauge is observed out of sync.
+ */
+#define QueueStatsDecr(counter, msg)                                      \
+    do {                                                                  \
+        if (likely((counter) > 0u)) {                                     \
+            (counter)--;                                                  \
+        } else {                                                          \
+            Ns_Log(Warning, "queue statistics inconsistency: " msg        \
+                   " counter is already zero");                           \
+        }                                                                 \
+    } while (0)
+
 /*
  * Collected informationof writer threads for per pool rates, necessary for
  * per pool bandwidth management.
@@ -2928,8 +2946,7 @@ DriverThread(void *arg)
             closePtr = NULL;
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                assert(drvPtr->stats.closing > 0u);
-                drvPtr->stats.closing--;
+                QueueStatsDecr(drvPtr->stats.closing, "driver closing");
 
                 if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
                     /*
@@ -2977,8 +2994,7 @@ DriverThread(void *arg)
              * The socket was removed from the driver's read/keepalive wait list.
              * If it is pushed back below, stats.reading will be incremented again.
              */
-            assert(drvPtr->stats.reading > 0);
-            drvPtr->stats.reading--;
+            QueueStatsDecr(drvPtr->stats.reading, "driver reading");
 
             if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
                 /*
@@ -3105,8 +3121,7 @@ DriverThread(void *arg)
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {
                 waitPtr = nextPtr->nextPtr;
-                assert(drvPtr->stats.waiting > 0u);
-                drvPtr->stats.waiting--;
+                QueueStatsDecr(drvPtr->stats.waiting, "driver waiting");
                 Push(nextPtr, sockPtr);
             }
 
@@ -6443,8 +6458,7 @@ SpoolerThread(void *arg)
             nextPtr = sockPtr->nextPtr;
             drvPtr  = sockPtr->drvPtr;
 
-            assert(drvPtr->spooler.stats.reading > 0u);
-            drvPtr->spooler.stats.reading--;
+            QueueStatsDecr(drvPtr->spooler.stats.reading, "spooler reading");
 
             if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
                 /*
@@ -6523,8 +6537,7 @@ SpoolerThread(void *arg)
 
                 waitPtr = nextPtr->nextPtr;
 
-                assert(sockDrvPtr->spooler.stats.waiting > 0u);
-                sockDrvPtr->spooler.stats.waiting--;
+                QueueStatsDecr(sockDrvPtr->spooler.stats.waiting, "spooler waiting");
 
                 Push(nextPtr, sockPtr);
             }
@@ -6562,8 +6575,7 @@ SpoolerThread(void *arg)
                 nextPtr = sockPtr->nextPtr;
                 drvPtr  = sockPtr->drvPtr;
 
-                assert(drvPtr->spooler.stats.queued > 0u);
-                drvPtr->spooler.stats.queued--;
+                QueueStatsDecr(drvPtr->spooler.stats.queued, "spooler queued");
 
                 SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                 Push(sockPtr, readPtr);
@@ -7755,8 +7767,7 @@ WriterThread(void *arg)
             sockPtr = curPtr->sockPtr;
             drvPtr  = sockPtr->drvPtr;
 
-            assert(drvPtr->writer.stats.writing > 0u);
-            drvPtr->writer.stats.writing--;
+            QueueStatsDecr(drvPtr->writer.stats.writing, "writer writing");
 
             err = 0;
 
@@ -7898,8 +7909,7 @@ WriterThread(void *arg)
                     sockPtr = curPtr->sockPtr;
                     drvPtr  = sockPtr->drvPtr;
 
-                    assert(drvPtr->writer.stats.queued > 0u);
-                    drvPtr->writer.stats.queued--;
+                    QueueStatsDecr(drvPtr->writer.stats.queued, "writer queued");
 
                     SockTimeout(sockPtr, &now, &drvPtr->sendwait);
                     Push(curPtr, writePtr);
@@ -9727,8 +9737,7 @@ AsyncWriterThread(void *arg)
             nextPtr = curPtr->nextPtr;
             status = NS_OK;
 
-            assert(asyncWriter->stats.writing > 0u);
-            asyncWriter->stats.writing--;
+            QueueStatsDecr(asyncWriter->stats.writing, "async writer writing");
 
             /*
              * Write the actual data and allow for partial write operations.
@@ -9795,8 +9804,7 @@ AsyncWriterThread(void *arg)
             while (curPtr != NULL) {
                 nextPtr = curPtr->nextPtr;
 
-                assert(asyncWriter->stats.queued > 0u);
-                asyncWriter->stats.queued--;
+                QueueStatsDecr(asyncWriter->stats.queued, "async writer queued");
 
                 Push(curPtr, writePtr);
                 asyncWriter->stats.writing++;
