@@ -12,11 +12,11 @@ namespace import -force ::tcltest::*
 #######################################################################################
 test ns_asynclogfile-1.0 {syntax: ns_asynclogfile} -body {
     ns_asynclogfile
-} -returnCodes error -result {wrong # args: should be "ns_asynclogfile open|write|close ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_asynclogfile open|write|close|stats ?/arg .../"}
 
 test ns_asynclogfile-1.1 {syntax: ns_asynclogfile} -body {
     ns_asynclogfile ?
-} -returnCodes error -result {ns_asynclogfile: bad subcommand "?": must be open, write, or close}
+} -returnCodes error -result {ns_asynclogfile: bad subcommand "?": must be open, write, close, or stats}
 
 test ns_asynclogfile-1.2 {syntax: ns_asynclogfile close} -body {
     ns_asynclogfile close

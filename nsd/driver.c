@@ -188,6 +188,11 @@ typedef struct WriterSock {
 typedef struct AsyncWriter {
     Ns_Mutex      lock;        /* Lock around writer queues */
     SpoolerQueue *firstPtr;    /* List of writer threads */
+
+    struct {
+        size_t queued;         /* Async write jobs queued but not yet active. */
+        size_t writing;        /* Async write jobs currently active in the async writer thread. */
+    } stats;
 } AsyncWriter;
 
 /*
@@ -1879,6 +1884,139 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
             Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_errors));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.errors));
 
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("waiting", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.waiting));
+
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("reading", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.reading));
+
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("closing", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.closing));
+
+            Tcl_ListObjAppendElement(interp, resultObj, listObj);
+        }
+        Tcl_SetObjResult(interp, resultObj);
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DriverQueuesObjCmd --
+ *
+ *      Implements "ns_driver queues".  Return current queue gauges for
+ *      network driver infrastructure.
+ *
+ *      The command reports one class of queue state per invocation.  The
+ *      selected queue class is specified by the required argument "driver",
+ *      "spooler", or "writer":
+ *
+ *        driver   - sockets currently on the driver thread's local retry,
+ *                   read/keepalive, and closewait lists.
+ *
+ *        spooler  - sockets currently queued for upload spooler threads,
+ *                   being read by spooler threads, or waiting in spooler
+ *                   threads for queueing into a connection pool.
+ *
+ *        writer   - writer jobs currently queued for writer threads or
+ *                   actively handled by writer threads.
+ *
+ *      These values are current gauges, not cumulative counters.  They are
+ *      intended for overload diagnostics and complement "ns_driver stats",
+ *      which includes cumulative driver counters as well as selected current
+ *      driver-thread gauges.
+ *
+ * Results:
+ *      Standard Tcl result.  On success, the interpreter result is a list
+ *      containing one dictionary-style list per matching driver.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+DriverQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK, queue = 1u;
+    NsServer   *servPtr = NULL;
+    enum {
+        DriverQueue  = 1u,
+        SpoolerQueue = 2u,
+        WriterQueue  = 3u,
+    };
+    static Ns_ObjvTable queues[] = {
+        {"driver",  DriverQueue},
+        {"spooler", SpoolerQueue},
+        {"writer",  WriterQueue},
+        {NULL, 0u}
+    };
+    Ns_ObjvSpec opts[] = {
+        {"-server", Ns_ObjvServer, &servPtr,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"queue", Ns_ObjvIndex,  &queue,  queues},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const Driver *drvPtr;
+        Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
+
+        /*
+         * Iterate over all drivers and collect results.
+         */
+        for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+            Tcl_Obj *listObj;
+
+            if (servPtr != NULL && !DriverIsRegisterdForServer(drvPtr, servPtr)) {
+                continue;
+            }
+            listObj = Tcl_NewListObj(0, NULL);
+
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_thread));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->threadName, TCL_INDEX_NONE));
+
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_module));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
+
+            switch (queue) {
+            case DriverQueue:
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("waiting", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.waiting));
+
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("reading", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.reading));
+
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("closing", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.closing));
+                break;
+
+            case SpoolerQueue:
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.queued));
+
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("waiting", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.waiting));
+
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("reading", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.reading));
+                break;
+
+            case WriterQueue:
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->writer.stats.queued));
+
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("writing", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->writer.stats.writing));
+            }
+
             Tcl_ListObjAppendElement(interp, resultObj, listObj);
         }
         Tcl_SetObjResult(interp, resultObj);
@@ -2012,8 +2150,9 @@ NsTclDriverObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     const Ns_SubCmdSpec subcmds[] = {
         {"info",       DriverInfoObjCmd},
         {"names",      DriverNamesObjCmd},
-        {"threads",    DriverThreadsObjCmd},
+        {"queues",     DriverQueuesObjCmd},
         {"stats",      DriverStatsObjCmd},
+        {"threads",    DriverThreadsObjCmd},
         {NULL, NULL}
     };
 
@@ -2789,6 +2928,9 @@ DriverThread(void *arg)
             closePtr = NULL;
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
+                assert(drvPtr->stats.closing > 0u);
+                drvPtr->stats.closing--;
+
                 if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
                     /*
                      * Peer has closed the connection
@@ -2805,6 +2947,7 @@ DriverThread(void *arg)
                         SockRelease(sockPtr, SOCK_READERROR, 0);
                     } else {
                         Push(sockPtr, closePtr);
+                        drvPtr->stats.closing++;
                     }
                 } else if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     /* no PollHup, no PollIn, maybe timeout */
@@ -2814,6 +2957,7 @@ DriverThread(void *arg)
                 } else {
                     /* too early, keep waiting */
                     Push(sockPtr, closePtr);
+                    drvPtr->stats.closing++;
                 }
                 sockPtr = nextPtr;
             }
@@ -2828,6 +2972,13 @@ DriverThread(void *arg)
 
         while (likely(sockPtr != NULL)) {
             nextPtr = sockPtr->nextPtr;
+
+            /*
+             * The socket was removed from the driver's read/keepalive wait list.
+             * If it is pushed back below, stats.reading will be incremented again.
+             */
+            assert(drvPtr->stats.reading > 0);
+            drvPtr->stats.reading--;
 
             if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
                 /*
@@ -2846,6 +2997,7 @@ DriverThread(void *arg)
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
                     Push(sockPtr, readPtr);
+                    drvPtr->stats.reading++;
                 }
 
             } else {
@@ -2874,11 +3026,13 @@ DriverThread(void *arg)
                         drvPtr->stats.partial++;
                         SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                         Push(sockPtr, readPtr);
+                        drvPtr->stats.reading++;
                         break;
 
                     case SOCK_READY:
                         if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                             Push(sockPtr, waitPtr);
+                            drvPtr->stats.waiting++;
                         }
                         break;
 
@@ -2934,6 +3088,7 @@ DriverThread(void *arg)
                     } else {
                         if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                             Push(sockPtr, waitPtr);
+                            drvPtr->stats.waiting++;
                         }
                     }
                 }
@@ -2950,6 +3105,8 @@ DriverThread(void *arg)
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {
                 waitPtr = nextPtr->nextPtr;
+                assert(drvPtr->stats.waiting > 0u);
+                drvPtr->stats.waiting--;
                 Push(nextPtr, sockPtr);
             }
 
@@ -2957,6 +3114,7 @@ DriverThread(void *arg)
                 nextPtr = sockPtr->nextPtr;
                 if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                     Push(sockPtr, waitPtr);
+                    drvPtr->stats.waiting++;
                 }
                 sockPtr = nextPtr;
             }
@@ -2999,11 +3157,13 @@ DriverThread(void *arg)
                             drvPtr->stats.partial++;
                             SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                             Push(sockPtr, readPtr);
+                            drvPtr->stats.reading++;
                             break;
 
                         case SOCK_READY:
                             if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                                 Push(sockPtr, waitPtr);
+                                drvPtr->stats.waiting++;
                             }
                             break;
 
@@ -3090,6 +3250,7 @@ DriverThread(void *arg)
 
                 SockTimeout(sockPtr, &now, &drvPtr->keepwait);
                 Push(sockPtr, readPtr);
+                drvPtr->stats.reading++;
             } else {
 
                 /*
@@ -3114,6 +3275,7 @@ DriverThread(void *arg)
                            (int64_t)drvPtr->closewait.sec,  drvPtr->closewait.usec, sockPtr->sock);
                     SockTimeout(sockPtr, &now, &drvPtr->closewait);
                     Push(sockPtr, closePtr);
+                    drvPtr->stats.closing++;
                 }
             }
             sockPtr = nextPtr;
@@ -4137,7 +4299,7 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
             const char *poolName = *conn.poolPtr->pool == '\0' ? "default" : conn.poolPtr->pool;
 
             Tcl_DStringInit(&ds);
-            Tcl_DStringAppend(&ds,  Ns_ThreadGetName(), TCL_INDEX_NONE);            
+            Tcl_DStringAppend(&ds,  Ns_ThreadGetName(), TCL_INDEX_NONE);
             Ns_ThreadSetName("%s%s-", ds.string, poolName);
             NsRunSelectedTraces(connPtr, "nslog:conntrace");
             Ns_ThreadSetName("%s", ds.string);
@@ -6221,7 +6383,7 @@ SpoolerThread(void *arg)
     bool           stopping = NS_FALSE;
     Sock          *sockPtr, *nextPtr, *waitPtr = NULL, *readPtr = NULL;
     Ns_Time        now, diff;
-    const Driver  *drvPtr;
+    Driver        *drvPtr;
     PollData       pdata;
 
     Ns_ThreadSetName("-spooler%d-", queuePtr->id);
@@ -6280,11 +6442,16 @@ SpoolerThread(void *arg)
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             drvPtr  = sockPtr->drvPtr;
+
+            assert(drvPtr->spooler.stats.reading > 0u);
+            drvPtr->spooler.stats.reading--;
+
             if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
                 /*
                  * Peer has closed the connection
                  */
                 SockRelease(sockPtr, SOCK_CLOSE, 0);
+                queuePtr->queuesize--;
 
             } else if (!PollIn(&pdata, sockPtr->pidx)) {
                 /*
@@ -6295,6 +6462,7 @@ SpoolerThread(void *arg)
                     queuePtr->queuesize--;
                 } else {
                     Push(sockPtr, readPtr);
+                    drvPtr->spooler.stats.reading++;
                 }
             } else {
                 /*
@@ -6305,6 +6473,7 @@ SpoolerThread(void *arg)
                 case SOCK_MORE:
                     SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                     Push(sockPtr, readPtr);
+                    drvPtr->spooler.stats.reading++;
                     break;
 
                 case SOCK_READY:
@@ -6312,6 +6481,7 @@ SpoolerThread(void *arg)
                     Ns_Log(DriverDebug, "spooler thread done with request");
                     if (likely(SockSetServer(sockPtr) == NS_OK)) {
                         Push(sockPtr, waitPtr);
+                        drvPtr->spooler.stats.waiting++;
                     } else {
                         SockRelease(sockPtr, SOCK_BADHEADER, 0);
                         queuePtr->queuesize--;
@@ -6349,16 +6519,33 @@ SpoolerThread(void *arg)
         if (waitPtr != NULL) {
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {
+                Driver *sockDrvPtr = nextPtr->drvPtr;
+
                 waitPtr = nextPtr->nextPtr;
+
+                assert(sockDrvPtr->spooler.stats.waiting > 0u);
+                sockDrvPtr->spooler.stats.waiting--;
+
                 Push(nextPtr, sockPtr);
             }
             while (sockPtr != NULL) {
+                Driver        *sockDrvPtr = sockPtr->drvPtr;
+                Ns_ReturnCode  queueStatus;
+
                 nextPtr = sockPtr->nextPtr;
-                if (NsQueueConn(sockPtr, &now) == NS_TIMEOUT) {
+                queueStatus = NsQueueConn(sockPtr, &now);
+
+                if (queueStatus == NS_TIMEOUT) {
                     Push(sockPtr, waitPtr);
+                    sockDrvPtr->spooler.stats.waiting++;
+
                 } else {
+                    if (queueStatus == NS_ERROR) {
+                        SockRelease(sockPtr, SOCK_QUEUEFULL, 0);
+                    }
                     queuePtr->queuesize--;
                 }
+
                 sockPtr = nextPtr;
             }
         }
@@ -6374,8 +6561,14 @@ SpoolerThread(void *arg)
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
                 drvPtr  = sockPtr->drvPtr;
+
+                assert(drvPtr->spooler.stats.queued > 0u);
+                drvPtr->spooler.stats.queued--;
+
                 SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                 Push(sockPtr, readPtr);
+                drvPtr->spooler.stats.reading++;
+
                 queuePtr->queuesize++;
                 sockPtr = nextPtr;
             }
@@ -6515,6 +6708,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
         trigger = NS_TRUE;
     }
     Push(sockPtr, queuePtr->sockPtr);
+    drvPtr->spooler.stats.queued++;
     Ns_MutexUnlock(&queuePtr->lock);
 
     /*
@@ -7497,7 +7691,7 @@ WriterThread(void *arg)
     bool            stopping = NS_FALSE;
     Ns_Time         now;
     Sock           *sockPtr;
-    const Driver   *drvPtr;
+    Driver         *drvPtr;
     WriterSock     *curPtr, *nextPtr, *writePtr = NULL;
     PollData        pdata;
     Tcl_HashTable   pools;     /* used for accumulating bandwidth per pool */
@@ -7559,6 +7753,11 @@ WriterThread(void *arg)
 
             nextPtr = curPtr->nextPtr;
             sockPtr = curPtr->sockPtr;
+            drvPtr  = sockPtr->drvPtr;
+
+            assert(drvPtr->writer.stats.writing > 0u);
+            drvPtr->writer.stats.writing--;
+
             err = 0;
 
             /*
@@ -7662,6 +7861,8 @@ WriterThread(void *arg)
                            "Writer %p continue OK (size %" PRIdz ") => PUSH",
                            (void *)curPtr, curPtr->size);
                     Push(curPtr, writePtr);
+                    drvPtr->writer.stats.writing++;
+
                 } else {
                     Ns_Log(DriverDebug,
                            "Writer %p done OK (size %" PRIdz ") => RELEASE",
@@ -7696,8 +7897,14 @@ WriterThread(void *arg)
                     nextPtr = curPtr->nextPtr;
                     sockPtr = curPtr->sockPtr;
                     drvPtr  = sockPtr->drvPtr;
+
+                    assert(drvPtr->writer.stats.queued > 0u);
+                    drvPtr->writer.stats.queued--;
+
                     SockTimeout(sockPtr, &now, &drvPtr->sendwait);
                     Push(curPtr, writePtr);
+                    drvPtr->writer.stats.writing++;
+
                     queuePtr->queuesize++;
                     curPtr = nextPtr;
                 }
@@ -8057,6 +8264,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     wrSockPtr->sockPtr->timeout.sec = 0;
     wrSockPtr->flags = connPtr->flags;
     wrSockPtr->refCount = 1;
+
     /*
      * Take the rate limit from the connection.
      */
@@ -8287,6 +8495,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     }
 
     Push(wrSockPtr, queuePtr->sockPtr);
+    wrSockPtr->sockPtr->drvPtr->writer.stats.queued++;
     Ns_MutexUnlock(&queuePtr->lock);
 
     /*
@@ -9326,6 +9535,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
             queuePtr->sockPtr = newWdPtr;
             trigger = NS_TRUE;
         }
+        asyncWriter->stats.queued++;
         Ns_MutexUnlock(&queuePtr->lock);
 
         /*
@@ -9378,6 +9588,45 @@ AsyncWriterRelease(AsyncWriteData *wdPtr)
  *
  *----------------------------------------------------------------------
  */
+static void
+AsyncWriterDrainList(AsyncWriteData **listPtr, size_t *counterPtr,
+                     SpoolerQueue *queuePtr, bool activeList,
+                     const char *msg)
+    NS_GNUC_NONNULL(1,2,3,5);
+
+static void
+AsyncWriterDrainList(AsyncWriteData **listPtr, size_t *counterPtr,
+                     SpoolerQueue *queuePtr, bool activeList,
+                     const char *msg)
+{
+    AsyncWriteData *curPtr, *nextPtr;
+
+    curPtr = *listPtr;
+    *listPtr = NULL;
+
+    while (curPtr != NULL) {
+        ssize_t written;
+
+        nextPtr = curPtr->nextPtr;
+
+        assert(*counterPtr > 0u);
+        (*counterPtr)--;
+
+        written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+        if (unlikely(written != (ssize_t)curPtr->bufsize)) {
+            WriteWarningRaw(msg, curPtr->fd, curPtr->bufsize, written);
+        }
+
+        if (activeList) {
+            assert(queuePtr->queuesize > 0);
+            queuePtr->queuesize--;
+        }
+
+        AsyncWriterRelease(curPtr);
+        curPtr = nextPtr;
+    }
+}
+
 static void
 AsyncWriterThread(void *arg)
 {
@@ -9436,28 +9685,30 @@ AsyncWriterThread(void *arg)
                          ns_sockstrerror(ns_sockerrno));
             }
             if (queuePtr->stopped) {
+                AsyncWriteData *queuedPtr;
+
                 /*
-                 * Drain the queue from everything
+                 * Drain active writer jobs. These jobs are on writePtr and are counted
+                 * both in asyncWriter->stats.writing and queuePtr->queuesize.
                  */
-                for (curPtr = writePtr; curPtr != NULL;  curPtr = curPtr->nextPtr) {
-                    ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-                    if (unlikely(written != (ssize_t)curPtr->bufsize)) {
-                        WriteWarningRaw("drain writer", curPtr->fd, curPtr->bufsize, written);
-                    }
-                }
-                writePtr = NULL;
-
-                for (curPtr = queuePtr->sockPtr; curPtr != NULL;  curPtr = curPtr->nextPtr) {
-                    ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-                    if (unlikely(written != (ssize_t)curPtr->bufsize)) {
-                        WriteWarningRaw("drain queue", curPtr->fd, curPtr->bufsize, written);
-                    }
-                }
-                queuePtr->sockPtr = NULL;
+                AsyncWriterDrainList(&writePtr, &asyncWriter->stats.writing,
+                                     queuePtr, NS_TRUE, "drain writer");
 
                 /*
-                 * Notify the caller (normally
-                 * NsAsyncWriterQueueDisable()) that we are done
+                 * Detach queued-but-not-yet-active jobs under the queue lock. These jobs
+                 * are counted in asyncWriter->stats.queued, but not in queuePtr->queuesize.
+                 */
+                Ns_MutexLock(&queuePtr->lock);
+                queuedPtr = queuePtr->sockPtr;
+                queuePtr->sockPtr = NULL;
+                Ns_MutexUnlock(&queuePtr->lock);
+
+                AsyncWriterDrainList(&queuedPtr, &asyncWriter->stats.queued,
+                                     queuePtr, NS_FALSE, "drain queue");
+
+                /*
+                 * Notify the caller, normally NsAsyncWriterQueueDisable(), that the
+                 * async writer queue has been drained.
                  */
                 Ns_CondBroadcast(&queuePtr->cond);
             }
@@ -9475,6 +9726,9 @@ AsyncWriterThread(void *arg)
 
             nextPtr = curPtr->nextPtr;
             status = NS_OK;
+
+            assert(asyncWriter->stats.writing > 0u);
+            asyncWriter->stats.writing--;
 
             /*
              * Write the actual data and allow for partial write operations.
@@ -9503,6 +9757,7 @@ AsyncWriterThread(void *arg)
                  */
                 if (curPtr->size > 0u) {
                     Push(curPtr, writePtr);
+                    asyncWriter->stats.writing++;
                 } else {
                     AsyncWriterRelease(curPtr);
                     queuePtr->queuesize--;
@@ -9539,7 +9794,13 @@ AsyncWriterThread(void *arg)
             queuePtr->sockPtr = NULL;
             while (curPtr != NULL) {
                 nextPtr = curPtr->nextPtr;
+
+                assert(asyncWriter->stats.queued > 0u);
+                asyncWriter->stats.queued--;
+
                 Push(curPtr, writePtr);
+                asyncWriter->stats.writing++;
+
                 queuePtr->queuesize++;
                 curPtr = nextPtr;
             }
@@ -9790,6 +10051,60 @@ AsyncLogfileCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 /*
  *----------------------------------------------------------------------
  *
+ * AsyncLogfileStatsObjCmd --
+ *
+ *      Implements "ns_asynclogfile stats".  Return current gauges for the
+ *      asynchronous logfile writer.
+ *
+ *      The reported values describe the global async writer queue:
+ *
+ *        queued   - async write jobs submitted to the writer queue but not
+ *                   yet adopted by the async writer thread.
+ *
+ *        writing  - async write jobs currently active in the async writer
+ *                   thread.
+ *
+ *      These values are current gauges, not cumulative counters.  If the
+ *      asynchronous logfile writer has not been initialized, the command
+ *      reports zero values.
+ *
+ * Results:
+ *      Standard Tcl result.  On success, the interpreter result is a
+ *      dictionary-style list with the current async writer gauges.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AsyncLogfileStatsObjCmd
+(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int   result = TCL_OK;
+
+    if (unlikely(Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK)) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+        if (asyncWriter != NULL) {
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("writing", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)asyncWriter->stats.writing));
+
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)asyncWriter->stats.queued));
+        }
+        Tcl_SetObjResult(interp, listObj);
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclAsyncLogfileObjCmd -
  *
  *      Wrapper for "ns_asynclogfile open|write|close" commands.
@@ -9809,6 +10124,7 @@ NsTclAsyncLogfileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
         {"open",  AsyncLogfileOpenObjCmd},
         {"write", AsyncLogfileWriteObjCmd},
         {"close", AsyncLogfileCloseObjCmd},
+        {"stats", AsyncLogfileStatsObjCmd},
         {NULL, NULL}
     };
 

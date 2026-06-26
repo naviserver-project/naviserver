@@ -435,6 +435,11 @@ typedef struct {
     SpoolerQueue *firstPtr;             /* Spooler thread queue */
     SpoolerQueue *curPtr;               /* Current spooler thread */
     int threads;                        /* Number of spooler threads to run */
+    struct {
+        size_t queued;   /* Sockets queued for a spooler thread but not yet active. */
+        size_t reading;  /* Sockets currently on spooler read lists. */
+        size_t waiting;  /* Sockets waiting for queueing into a connection pool. */
+    } stats;
 } DrvSpooler;
 
 typedef struct {
@@ -446,6 +451,10 @@ typedef struct {
     int                 threads;        /* Number of writer threads to run */
     int                 rateLimit;      /* Limit transmission rate in KB/s for a writer job */
     NsWriterStreamState doStream;       /* Activate writer for HTML streaming */
+    struct {
+        size_t queued;   /* Writer jobs queued for a writer thread but not yet active. */
+        size_t writing;  /* Writer jobs currently active in writer threads. */
+    } stats;
 } DrvWriter;
 
 /*
@@ -543,6 +552,12 @@ typedef struct Driver {
         Tcl_WideInt partial;            /* Partial operations */
         Tcl_WideInt received;           /* Received requests */
         Tcl_WideInt errors;             /* Dropped requests due to errors */
+        /*
+         * Current driver-thread state. These are gauges, not cumulative counters.
+         */
+        size_t waiting;                 /* Sockets on the driver retry list for queueing into a pool. */
+        size_t reading;                 /* Sockets on the driver's read or keepalive-wait list. */
+        size_t closing;                 /* Sockets on the driver's closewait list. */
     } stats;
     Ns_DList ports;
     const char *libraryVersion;
