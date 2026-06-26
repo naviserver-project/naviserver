@@ -37,6 +37,181 @@
  configuration). This can then be used to diagnose issues in server
  code or extensions running within NaviServer.
 
+
+[section "Managing Core Dumps"]
+
+ [para]
+ Core dump handling is highly platform and runtime dependent.  Even when
+ NaviServer restores the default signal disposition and re-raises a fatal
+ signal, the location and availability of a resulting core file are controlled
+ by the operating system, process limits, crash-reporting services, and, for
+ containers, the surrounding container runtime.  The following
+ subsections are intended to ease system administraton and
+ summarize the platform-specific setup needed to make [cmd ns_crash] and other
+ fatal signals produce useful crash diagnostics in practice.
+
+[subsection "Core Dumps in Linux Containers"]
+
+ [para]
+ When NaviServer runs inside a Linux container, core dump generation depends on
+ both the host kernel settings and the container's runtime environment.  In
+ particular, the kernel's [cmd core_pattern] is evaluated in the crashing
+ process' mount namespace.  Therefore, when [cmd core_pattern] names an absolute
+ path, that path must exist inside the container, not just on the host.
+
+ [para]
+ First, configure the host to write core files to a directory path
+ rather than to a crash-handler pipe:
+
+[example_begin]
+ cat /proc/sys/kernel/core_pattern
+ sudo mkdir -p /var/lib/naviserver/cores
+ sudo chmod 1777 /var/lib/naviserver/cores
+ echo '/var/lib/naviserver/cores/core.%e.%p.%t' | sudo tee /proc/sys/kernel/core_pattern
+[example_end]
+
+ [para]
+ If the server changes user id or runs with elevated privileges, the Linux
+ [cmd suid_dumpable] setting may also be relevant:
+
+[example_begin]
+ cat /proc/sys/fs/suid_dumpable
+ echo 2 | sudo tee /proc/sys/fs/suid_dumpable
+[example_end]
+
+ [para]
+ The same directory must be visible inside the container at the same path.  With
+ Docker Compose, bind-mount the directory and allow unlimited core files:
+
+[example_begin]
+ services:
+   openacs:
+     init: true
+   volumes:
+     - /var/lib/naviserver/cores:/var/lib/naviserver/cores
+   ulimits:
+     core:
+       soft: -1
+       hard: -1
+[example_end]
+
+ [para]
+ The [const init: true] setting is important.  Without it, the
+ NaviServer process may run as PID 1 inside the container.  Linux
+ gives PID 1 special signal
+ semantics, which can prevent the usual fatal-signal action from taking effect
+ after a signal handler restores the default disposition and re-raises the
+ signal.  Running the container with an init process, or equivalently using
+ [cmd docker run --init], ensures that [cmd nsd] is not PID 1 and can terminate
+ normally on fatal signals.
+
+ [para]
+ Inside the container, verify the effective core size limit and that the target
+ directory exists:
+
+[example_begin]
+ ulimit -c
+ ls -ld /var/lib/naviserver/cores
+[example_end]
+
+ [para]
+ When a fatal signal occurs, NaviServer restores the signal's default
+ disposition, unblocks the signal in the current thread, and re-raises it.  If
+ core dumps are enabled, the kernel should then write a file such as:
+
+[example_begin]
+ /var/lib/naviserver/cores/core.nsd.12345.1782400000
+[example_end]
+
+ [para]
+ If no core file appears, check the following points:
+
+ [list_begin itemized]
+ [item] [cmd ulimit -c] inside the container must be [const unlimited]
+        or large enough.
+ [item] The directory from [cmd /proc/sys/kernel/core_pattern] must
+        exist inside the container.
+ [item] The directory must be writable by the user running NaviServer.
+ [item] [cmd core_pattern] must not point to a host-only path that is
+        absent in the container.
+ [item] NaviServer should not run as PID 1; use Docker
+        [const init: true] or [cmd --init].
+ [item] Host crash handlers such as systemd-coredump or apport may
+        intercept core dumps when [cmd core_pattern] starts with a pipe
+        character.
+ [list_end]
+
+ [para]
+ After a core file was written, inspect it from the host or from a
+ suitable debug container with matching binaries and libraries:
+
+[example_begin]
+ gdb /path/to/nsd /var/lib/naviserver/cores/core.nsd.PID.TIME
+ (gdb) thread apply all bt full
+ [example_end]
+
+
+[subsection "Core Dumps on macOS"]
+
+ [para]
+ On macOS, invoking [cmd ns_crash] may terminate the server and produce a
+ CrashReporter report instead of a traditional core file.  In this case, no
+ file is written to the path configured via [cmd sysctl] [const kern.corefile],
+ even when [cmd ulimit] reports that core dumps are enabled.
+
+ [para]
+ The crash report is typically written below:
+
+[example_begin]
+ ~/Library/Logs/DiagnosticReports/
+[example_end]
+
+ [para]
+ For example, after invoking [cmd ns_crash], look for a recent file whose name
+ starts with [file nsd-] and ends in [file .ips]:
+
+[example_begin]
+ ls -ltr ~/Library/Logs/DiagnosticReports/nsd-*.ips
+[example_end]
+
+ [para]
+ These [file .ips] files contain the macOS crash report, including the crashed
+ thread and backtrace information available to the system crash reporter.
+
+ [para]
+ For interactive debugging on macOS, start NaviServer under [cmd lldb] instead
+ of relying on a traditional core file:
+
+[example_begin]
+ lldb -- /usr/local/ns/bin/nsd -f -t /path/to/nsd-config.tcl
+ (lldb) run
+ (lldb) thread backtrace all
+[example_end]
+
+ [para]
+ When stopped at the crash in [cmd lldb], a core-like dump can be written
+ explicitly with:
+
+[example_begin]
+ (lldb) process save-core /tmp/nsd.core
+[example_end]
+
+[para]
+ Before relying on traditional core files on macOS, verify the process limits
+ and kernel settings in the same shell that starts NaviServer:
+
+[example_begin]
+ ulimit -S -c
+ ulimit -H -c
+ sysctl kern.coredump
+ sysctl kern.corefile
+[example_end]
+
+ [para]
+ Even with these settings enabled, recent macOS systems may still prefer
+ CrashReporter [file .ips] reports over writing a traditional core file.
+
+
 [see_also nsd ns_kill ns_shutdown]
 [keywords "global built-in" NaviServer debug crash segmentation-fault]
 [manpage_end]
