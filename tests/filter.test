@@ -300,6 +300,7 @@ test filter-3.7 {return empty string} -setup {
 
 
 test filter-3.8 {invalid filter result} -setup {
+    dict set oldSeverity error [ns_logctl severity error 0]
     ns_register_filter preauth GET /filter-3.8 {
         nsv_lappend . . filter_invalid-3.8
         return invalid_filter_result
@@ -315,7 +316,9 @@ test filter-3.8 {invalid filter result} -setup {
 } -body {
     list [lindex [nstest::http -getbody 1 GET /filter-3.8] 0] [nsv_get . .]
 } -cleanup {
+    foreach {severity level} $oldSeverity { ns_logctl severity $severity $level }
     nsv_unset -nocomplain . .
+    unset -nocomplain oldSeverity
     ns_unregister_op GET /filter-3.8
 } -result {500 filter_invalid-3.8}
 
