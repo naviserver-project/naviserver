@@ -137,7 +137,7 @@
  [item] NaviServer should not run as PID 1; use Docker
         [const "init: true"] or [cmd --init].
  [item] Host crash handlers such as systemd-coredump or apport may
-        intercept core dumps when [cmd core_pattern] starts with a pipe
+        intercept core dumps when [cmd "core_pattern"] starts with a pipe
         character.
  [list_end]
 
