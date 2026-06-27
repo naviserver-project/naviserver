@@ -2148,10 +2148,18 @@ GetSection(const char *section, bool create)
     } else {
         hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &isNew);
         if (isNew != 0) {
+            static const char preserveCasePrefix[] = "ns/environment/";
+            size_t preserveCasePrefixLen = sizeof(preserveCasePrefix) - 1;
+
             sectionPtr = ns_calloc(1u, sizeof(Section));
             sectionPtr->defaults = Ns_SetCreate(section);
             sectionPtr->set = Ns_SetCreate(section);
-            sectionPtr->set->flags |= NS_SET_OPTION_NOCASE;
+
+            if (strncmp(section, preserveCasePrefix, preserveCasePrefixLen) != 0
+                || section[preserveCasePrefixLen] == '\0') {
+                sectionPtr->set->flags |= NS_SET_OPTION_NOCASE;
+                sectionPtr->defaults->flags |= NS_SET_OPTION_NOCASE;
+            }
             Tcl_SetHashValue(hPtr, sectionPtr);
         }
     }
