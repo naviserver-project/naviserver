@@ -394,7 +394,6 @@ test ns_info-2.31 {ns_info ssl -details: structure and basic invariants} -constr
     return ok
 } -result {ok}
 
-
 cleanupTests
 
 # Local variables:
