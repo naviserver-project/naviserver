@@ -622,45 +622,42 @@ content-type, and content-length.
 [list_end]
 
 
+
 [subsection {Extra Environment Variables}]
 
-
-[para] One can configure NaviServer to
-pass further environment variables some CGI program.
+[para] Additional environment variables may be supplied to CGI programs either
+from the server process environment or from a named NaviServer environment
+section.
 
 [list_begin enum]
 
 [enum]
-In case the CGI program or the CGI script interpreter requires additional
-environment variables, one can define this via the module parameter
-[const Environment] and a matching section for the detail definitions.
-
-    [list_begin itemized]
-
-    [item] Add a definition for the [const Environment] parameter to your CGI
-        configuration section.
+[para] An environment section can be referenced via the module parameter
+[const environment]:
 
 [example_begin]
- ns_section ns/server/s1/module/nscgi {
-   ns_param map         "GET /cgi /usr/local/cgi"
-   ns_param map         "POST /*.cgi"
-   ns_param interps     cgi
-   ns_param environment cgi
+ ns_section ns/server/server1/module/nscgi {
+    ns_param environment git-http
+ }
+ 
+ ns_section ns/environment/git-http {
+    ns_param GIT_PROJECT_ROOT /usr/local/src/naviserver
+    ns_param GIT_HTTP_EXPORT_ALL ""
  }
 [example_end]
 
-    [item] Then add a section under [const ns/environment] for the chosen
-       name (here [const cgi])
-       containing the required environment variable definitions.
+[para] The section name after [const ns/environment/] is referenced by the
+[const environment] parameter. Each parameter name in this section is used as
+an environment variable name, and the parameter value is used as the variable
+value.
 
-[example_begin]
- ns_section ns/environment/cgi {
-   ns_param FOO BAR     ;# defines environment variable "FOO=BAR"
-   ns_param TMP /tmp    ;# defines environment variable "TMP=/tmp"
- }
-[example_end]
+[para] Parameter names in [const ns/environment/*] sections are case-preserved.
+This is different from ordinary NaviServer configuration parameters, whose
+lookup is case-insensitive. The spelling matters because environment variable
+names are passed to the CGI process as external data; for example,
+[const GIT_PROJECT_ROOT] is not the same variable name as
+[const git_project_root] on Unix-like systems.
 
-[list_end]
 
 [enum]
 

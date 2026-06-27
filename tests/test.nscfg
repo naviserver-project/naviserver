@@ -339,8 +339,20 @@ ns_section ns/server/test/module/nscgi {
     ns_param    map                 "GET *.cgi"
     ns_param    map                 "POST *.cgi"
     ns_param    interps              CGIinterps
+    ns_param    environment          cgi
     ns_param    allowstaticresources true    ;# default false; serve static resources from cgi directories
     ns_param    systemenvironment    true    ;# default false, provide interpreter environment to script
+}
+ns_section ns/environment/cgi {
+    ns_param FOO BAR     ;# defines environment variable "FOO=BAR"
+    ns_param TMP /tmp    ;# defines environment variable "TMP=/tmp"
+    ns_param CamelCase 1 ;# defines environment variable "CamelCase=1"
+}
+
+# For testing camel case section names
+ns_section ns/Environment/CamelCaseCGI {
+    ns_param MixedCaseVar 42
+    ns_param UPPERCASEVAR 43
 }
 
 ns_section ns/interps/CGIinterps {
