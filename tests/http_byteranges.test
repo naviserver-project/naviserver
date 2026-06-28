@@ -26,7 +26,10 @@ if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
 
-
+# just for debugging
+    ns_logctl severity notice on
+    ns_logctl severity warning on
+    ::tcltest::configure -verbose {pass skip start}
 
 test byteranges-1.1a {Simple range, beginning, no fd, no writer} -constraints serverListen -body {
     nstest::http -getbody 1 -setheaders {range bytes=0-4} \
@@ -496,6 +499,12 @@ test byteranges-7.5b {larger byte ranges, fd, writer} -constraints serverListen 
 
 
 cleanupTests
+
+# just for debugging
+    ns_logctl severity notice off
+    ns_logctl severity warning off
+    ::tcltest::configure -verbose b
+
 
 # Local variables:
 #    mode: tcl
