@@ -186,7 +186,7 @@ to using query variables to pass context information to the CGI script.
 
 [para] Since the URL space handling of NaviServer supports only
 wild cards in the last segment of a URL path, we have to specify
-in suchcases the script name without wildcards.
+in such cases the script name without wildcards.
 
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
@@ -216,7 +216,7 @@ For security and maintenance reasons, web server administrators might want
 more control over, which script interpreters in which versions execute
 the CGI script.
 
-[para] The specification of the script interprets is performed via
+[para] The specification of script interpreters is performed via
 the script extension in a separate section in the configuration file
 under [const ns/interps]. This section name is also specified in the
 module definition. In the following example, the section is named
@@ -240,7 +240,88 @@ via the named executables.
  }
 [example_end]
 
-If no interpreter mapping is provided, the
+[para] The value of an interpreter entry may either be the path of the
+interpreter program, as shown above, or a Tcl list with named options.  The
+list form is useful when the interpreter needs an interpreter-specific
+environment.
+
+[example_begin]
+ ns_section ns/server/s1/module/nscgi {
+   ns_param map     "GET /git/*.cgi"
+   ns_param interps CGIinterps
+ }
+ 
+ ns_section ns/interps/CGIinterps {
+   ns_param .cgi {
+     program     /usr/local/bin/tclsh
+     environment git-http
+   }
+ }
+ 
+ ns_section ns/environment/git-http {
+   ns_param GIT_PROJECT_ROOT /usr/local/src/naviserver
+   ns_param GIT_HTTP_EXPORT_ALL ""
+ }
+[example_end]
+
+[para] The following options are supported in the Tcl-list form:
+
+[list_begin definitions]
+
+[def [const program]]
+The path of the interpreter executable. This option is required when the
+list form is used.
+
+[def [const environment]]
+The name of an [const {ns/environment/$name}] section. The named environment
+section is merged into the environment of scripts executed by this interpreter.
+
+[def [const env]]
+An inline Tcl list of environment variable name/value pairs. This form is
+useful for interpreter-specific variables that do not need a shared named
+environment section.
+
+[list_end]
+
+[example_begin]
+ ns_section ns/interps/CGIinterps {
+   ns_param .cgi {
+     program /usr/local/bin/tclsh
+     env {
+       GIT_PROJECT_ROOT /usr/local/src/naviserver
+       GIT_HTTP_EXPORT_ALL ""
+     }
+   }
+ }
+[example_end]
+
+[para] When both [const environment] and [const env] are specified, the inline
+[const env] values take precedence over values from the named environment
+section with the same variable name.
+
+[para] For compatibility with older configurations, nscgi still accepts the
+legacy form where the environment name is appended to the program name in
+parentheses:
+
+[example_begin]
+ ns_section ns/interps/CGIinterps {
+   ns_param .sh "/bin/sh(shell-env)"
+ }
+[example_end]
+
+[para] This form is deprecated. New configurations should use the Tcl-list
+form instead:
+
+[example_begin]
+ ns_section ns/interps/CGIinterps {
+   ns_param .sh {
+     program     /bin/sh
+     environment shell-env
+   }
+ }
+[example_end]
+
+[para] If no interpreter mapping is provided, the
 called script must have executable permissions.
 
 [subsection {Specify Source Locations}]
@@ -378,7 +459,7 @@ in the directory [const /var/www/joomla].
 [example_end]
 
 
-[section {Environment Variables passed to CGI programs}]
+[section {Environment Variables passed to CGI Programs}]
 
 [para]
 CGI programs receive input via environment variables (and standard
@@ -387,7 +468,7 @@ via standard console output channels. We describe here in detail the
 environment variables, which are passed to the CGI programs.
 
 
-[subsection {Accessing Environment Variables}]
+[subsection {Accessing Environment Variables from CGI Programs}]
 
 Different languages allow you to access environment variables in
 different ways. Here are some examples:
@@ -519,7 +600,7 @@ extra path information:
 
 
 [def PATH_TRANSLATED:]
-This variable translates the CGI program to the spource location in
+This variable translates the CGI program to the source location in
 the filesystem.
 
 [para]
@@ -647,6 +728,10 @@ section.
 [const environment] parameter. Each parameter name in this section is used as
 an environment variable name, and the parameter value is used as the variable
 value.
+
+[para] The same environment sections can also be referenced from interpreter
+definitions via the [const environment] option in the Tcl-list form of
+[const ns/interps] entries.
 
 [para] Parameter names in [const ns/environment/*] sections are case-preserved.
 This is different from ordinary NaviServer configuration parameters, whose
@@ -807,7 +892,7 @@ output.
 
 [item]  How can I debug my nscgi configuration?
 [para]
-  For debugging the nsgci configuration, you one can turn on
+  For debugging the nscgi configuration, one can turn on
   logging for the system log via the command:
 
 [example_begin]

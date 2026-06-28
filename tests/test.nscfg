@@ -338,6 +338,13 @@ ns_section ns/server/test/module/nscgi {
     ns_param    map                 "GET /cgi-dir/*.tclcgi [ns_config test home]/testserver/cgi"
     ns_param    map                 "GET *.cgi"
     ns_param    map                 "POST *.cgi"
+    ns_param    map                 "GET *.nscgi1"
+    ns_param    map                 "GET *.nscgi2"
+    ns_param    map                 "GET *.nscgi3"
+    ns_param    map                 "GET *.nscgi4"
+    ns_param    map                 "GET *.nscgi5"
+    ns_param    map                 "GET *.nscgi6"
+    ns_param    map                 "GET *.nscgi7"
     ns_param    interps              CGIinterps
     ns_param    environment          cgi
     ns_param    allowstaticresources true    ;# default false; serve static resources from cgi directories
@@ -376,7 +383,51 @@ ns_section ns/interps/CGIinterps {
     ns_log notice "Use tclsh for CGI tests <$tclsh>"
     ns_param .cgi                $tclsh
     ns_param .tclcgi             $tclsh
+    ns_param .nscgi1             [list program $tclsh]
+    ns_param .nscgi2             [list program $tclsh environment interp-env]
+    ns_param .nscgi3 [subst {
+        program $tclsh
+        env {
+            InlineEnvVar inline-value
+            MixedInline 123
+            EmptyInline {}
+            SpaceInline {hello world}
+        }
+    }]
+    ns_param .nscgi4 [subst {
+        program     $tclsh
+        environment interp-env-combined
+        env {
+            InlineOnly inline
+            OverrideMe inline
+        }
+    }]
+    ns_param .nscgi5 [append _ $tclsh (legacy-interp-env)]
+    ns_param .nscgi6 [subst {
+        program $tclsh
+        env {
+            EmptyInline {}
+        }
+    }]
+
+    ns_param .nscgi7 [subst {
+        program $tclsh
+        env {
+            SpaceInline {hello world}
+        }
+    }]
+
     ns_param .sh                 "/bin/bash"
+}
+ns_section ns/environment/interp-env {
+    ns_param InterpEnvVar from-section
+}
+ns_section ns/environment/interp-env-combined {
+    ns_param SectionOnly section
+    ns_param OverrideMe section
+}
+ns_section ns/environment/legacy-interp-env {
+    ns_param LegacyEnvVar legacy
 }
 
 ns_section "ns/server/test/modules" {

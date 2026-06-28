@@ -51,6 +51,7 @@ typedef struct Cgi {
     unsigned int    flags;
     pid_t           pid;
     Ns_Set         *env;
+    Ns_Set         *interpEnvInline;
     const char     *name;
     char           *path;
     const char     *pathinfo;
@@ -102,25 +103,33 @@ static const char *NS_EMPTY_STRING = "";
 static Ns_OpProc CgiRequest;
 static Ns_Callback CgiFreeMap;
 
-static Ns_ReturnCode CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
+static Ns_ReturnCode CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     NS_GNUC_NONNULL(1,2,3);
 
-static void          CgiRegister(Mod *modPtr, const char *map)   NS_GNUC_NONNULL(1,2);
-static Tcl_DString  *CgiDs(Cgi *cgiPtr)                          NS_GNUC_NONNULL(1);
-static Ns_ReturnCode CgiFree(Cgi *cgiPtr)                        NS_GNUC_NONNULL(1);
-static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)         NS_GNUC_NONNULL(1,2);
-static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)  NS_GNUC_NONNULL(1,2);
-static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)         NS_GNUC_NONNULL(1,2);
-static ssize_t       CgiRead(Cgi *cgiPtr)                        NS_GNUC_NONNULL(1);
+static void          CgiRegister(Mod *modPtr, const char *map)    NS_GNUC_NONNULL(1,2);
+static Tcl_DString  *CgiDs(Cgi *cgiPtr)                           NS_GNUC_NONNULL(1);
+static Ns_ReturnCode CgiFree(Cgi *cgiPtr)                         NS_GNUC_NONNULL(1);
+static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)          NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)   NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)          NS_GNUC_NONNULL(1,2);
+static ssize_t       CgiRead(Cgi *cgiPtr)                         NS_GNUC_NONNULL(1);
 static ssize_t       CgiReadLine(Cgi *cgiPtr, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1,2);
-static char         *NextWord(char *s)                           NS_GNUC_NONNULL(1);
+static char         *NextWord(char *s)                            NS_GNUC_NONNULL(1);
+static Ns_Set *      GetInterpEnvSection(const char *name)        NS_GNUC_NONNULL(1);
+static bool          ParseLegacyInterpSpec(Cgi *cgiPtr, const char *spec)
+    NS_GNUC_NONNULL(1,2);
+static bool          ParseInterpSpec(Tcl_Interp *interp, Cgi *cgiPtr, const char *spec)
+    NS_GNUC_NONNULL(1,2,3);
+static bool          ParseInlineEnv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *envObj)
+    NS_GNUC_NONNULL(1,2,3);
 static void          SetAppend(Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1,3,4);
 static void          CgiRegisterFastUrl2File(const char *server, const char *url, const char *path)
     NS_GNUC_NONNULL(1,2,3);
 
+
 static TCL_OBJCMDPROC_T NsTclRegisterCGIObjCmd;
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -476,7 +485,343 @@ done:
     return status;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetInterpEnvSection --
+ *
+ *      Return the configuration section containing interpreter-specific
+ *      environment variables.
+ *
+ *      The provided name may either be a full configuration section name
+ *      or a short environment name. For compatibility, the function first
+ *      tries the name as provided. If this lookup fails and the name is not
+ *      already below "ns/environment/", the function tries again with the
+ *      "ns/environment/" prefix prepended.
+ *
+ * Results:
+ *      A pointer to the matching configuration section, or NULL when no
+ *      such section exists.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_Set *
+GetInterpEnvSection(const char *name)
+{
+    static const char prefix[] = "ns/environment/";
+    const size_t prefixLen = sizeof(prefix) - 1u;
+    Ns_Set *setPtr;
+
+    NS_NONNULL_ASSERT(name != NULL);
+
+    /*
+     * First try the name as provided. This keeps compatibility with old
+     * configurations that used a full section name in program(environment).
+     */
+    setPtr = Ns_ConfigGetSection(name);
+    if (setPtr == NULL
+        && strncmp(name, prefix, prefixLen) != 0) {
+        Tcl_DString ds;
+
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, prefix, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&ds, name, TCL_INDEX_NONE);
+
+        setPtr = Ns_ConfigGetSection(Tcl_DStringValue(&ds));
+        if (setPtr == NULL) {
+            Ns_Log(Warning, "nscgi: interpreter environment section "
+                   "'%s' not found", ds.string);
+        }
+        Tcl_DStringFree(&ds);
+    }
+
+    return setPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseLegacyInterpSpec --
+ *
+ *      Parse a legacy nscgi interpreter specification.
+ *
+ *      The legacy form is either a plain interpreter program path or a
+ *      program path followed by an environment name in parentheses, e.g.
+ *
+ *          /bin/sh
+ *          /bin/sh(shell-env)
+ *
+ *      The program path is copied into the request DString and assigned to
+ *      cgiPtr->interp. When the deprecated parenthesized environment form
+ *      is used, the function terminates the copied program string before
+ *      the opening parenthesis, resolves the environment name via
+ *      GetInterpEnvSection(), and stores the resulting section in
+ *      cgiPtr->interpEnv.
+ *
+ *      The parenthesized form is kept for compatibility only and emits a
+ *      deprecation warning.
+ *
+ * Results:
+ *      NS_TRUE when the specification was accepted, NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      Updates cgiPtr->interp and optionally cgiPtr->interpEnv. May write
+ *      deprecation or warning messages to the server log.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+ParseLegacyInterpSpec(Cgi *cgiPtr, const char *spec)
+{
+    char *s, *e;
+
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(spec != NULL);
+
+    cgiPtr->interp = Tcl_DStringAppend(CgiDs(cgiPtr), spec, TCL_INDEX_NONE);
+
+    /*
+     * Legacy form:
+     *
+     *   /bin/sh(MKSenv)
+     *
+     * This modifies the DString copy in-place, as the old code did.
+     */
+    s = strchr(cgiPtr->interp, INTCHAR('('));
+    if (s != NULL) {
+        *s++ = '\0';
+        e = strchr(s, INTCHAR(')'));
+        if (e != NULL) {
+            *e = '\0';
+        }
+
+        Ns_Log(Deprecated,
+               "nscgi: interpreter specification '%s(...)' uses deprecated "
+               "program(environment) syntax; use "
+               "{program %s environment %s} instead",
+               cgiPtr->interp, cgiPtr->interp, s);
+
+        cgiPtr->interpEnv = GetInterpEnvSection(s);
+        if (cgiPtr->interpEnv == NULL) {
+            /*
+             * Depending on existing behavior, maybe keep this as Notice/Warning
+             * rather than Error.
+             */
+            Ns_Log(Warning, "nscgi: interpreter environment section '%s' not found", s);
+        }
+    }
+
+    return NS_TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseInlineEnv --
+ *
+ *      Parse the value of the "env" option in the Tcl-list interpreter
+ *      syntax.
+ *
+ *      The value must be a Tcl list containing environment variable
+ *      name/value pairs:
+ *
+ *          env {
+ *              NAME  value
+ *              NAME2 value2
+ *          }
+ *
+ *      Environment variable names are case-sensitive payload and are
+ *      therefore stored exactly as specified. The resulting variables are
+ *      stored in cgiPtr->interpEnvInline, creating the set on first use.
+ *
+ * Results:
+ *      NS_TRUE if the inline environment list was parsed successfully,
+ *      NS_FALSE if the value is not a valid even-sized Tcl list or contains
+ *      invalid entries.
+ *
+ * Side effects:
+ *      May allocate cgiPtr->interpEnvInline and append variables to it. May
+ *      set an error result in the Tcl interpreter or write log messages,
+ *      depending on the surrounding error handling.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+ParseInlineEnv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *envObj)
+{
+    Tcl_Obj  **envv;
+    TCL_SIZE_T envc;
+
+    if (Tcl_ListObjGetElements(interp, envObj, &envc, &envv) != TCL_OK) {
+        return NS_FALSE;
+    }
+
+    if ((envc % 2) != 0) {
+        Ns_Log(Error, "nscgi: inline env must contain name/value pairs");
+        return NS_FALSE;
+    }
+
+    if (cgiPtr->interpEnvInline == NULL) {
+        cgiPtr->interpEnvInline = Ns_SetCreate("nscgi inline environment");
+
+        /*
+         * Important: do NOT set NS_SET_OPTION_NOCASE here.
+         * Environment variable names must be preserved.
+         */
+    }
+
+    for (TCL_SIZE_T i = 0; i < envc; i += 2) {
+        const char *name = Tcl_GetString(envv[i]);
+        const char *value = Tcl_GetString(envv[i + 1]);
+
+        if (*name == '\0') {
+            Ns_Log(Error, "nscgi: inline env contains empty variable name");
+            return NS_FALSE;
+        }
+        Ns_SetPut(cgiPtr->interpEnvInline, name, value);
+    }
+
+    return NS_TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseInterpSpec --
+ *
+ *      Parse an nscgi interpreter specification from the configured
+ *      ns/interps section.
+ *
+ *      For backward compatibility, a specification consisting of a single
+ *      Tcl word is treated as the traditional interpreter program string
+ *      and is passed to ParseLegacyInterpSpec(). This includes the
+ *      deprecated program(environment) notation.
+ *
+ *      Specifications containing more than one Tcl word are interpreted as
+ *      a Tcl list of option/value pairs. The supported options are:
+ *
+ *          program      Interpreter executable path.
+ *          environment  Name of an ns/environment/$name section, or a full
+ *                       environment section name.
+ *          env          Inline Tcl list of environment variable name/value
+ *                       pairs.
+ *
+ *      The "program" option is required in the option/value form. The
+ *      "environment" option stores a named environment section in
+ *      cgiPtr->interpEnv. The "env" option stores inline environment
+ *      variables in cgiPtr->interpEnvInline.
+ *
+ * Results:
+ *      NS_TRUE when the interpreter specification was parsed successfully,
+ *      NS_FALSE when the specification is malformed or contains unknown
+ *      options.
+ *
+ * Side effects:
+ *      Updates cgiPtr->interp, cgiPtr->interpEnv, and/or
+ *      cgiPtr->interpEnvInline. May write warnings or errors to the server
+ *      log.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+ParseInterpSpec(Tcl_Interp *interp, Cgi *cgiPtr, const char *spec)
+{
+    Tcl_Obj   *objPtr, **objv;
+    TCL_SIZE_T objc;
+    bool       result = NS_TRUE;
+
+    objPtr = Tcl_NewStringObj(spec, TCL_INDEX_NONE);
+    Tcl_IncrRefCount(objPtr);
+
+    if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
+        /*
+         * Not a Tcl list. Treat as legacy plain program string.
+         */
+        result = ParseLegacyInterpSpec(cgiPtr, spec);
+        goto done;
+    }
+
+    if (objc == 0) {
+        Ns_Log(Error, "nscgi: empty interpreter specification");
+        result = NS_FALSE;
+        goto done;
+    }
+
+    if (objc == 1) {
+        /*
+         * Compatible old form:
+         *
+         *   ns_param .pl /usr/bin/perl
+         *   ns_param .sh "/bin/sh(MKSenv)"
+         *
+         * A single Tcl word is interpreted as the traditional program string.
+         */
+        const char *word = Tcl_GetString(objv[0]);
+
+        result = ParseLegacyInterpSpec(cgiPtr, word);
+        goto done;
+    }
+
+    /*
+     * New form. Since the value has more than one Tcl word, interpret it
+     * as an option/value list:
+     *
+     *   program     /bin/sh
+     *   environment MKSenv
+     *   env         {NAME value NAME2 value2}
+     */
+    if ((objc % 2) != 0) {
+        Ns_Log(Error, "nscgi: invalid interpreter specification '%s': "
+               "expected option/value pairs", spec);
+        result = NS_FALSE;
+        goto done;
+    }
+
+    for (TCL_SIZE_T i = 0; i < objc; i += 2) {
+        const char *option = Tcl_GetString(objv[i]);
+        Tcl_Obj    *valueObj = objv[i + 1];
+        const char *value = Tcl_GetString(valueObj);
+
+        if (strcasecmp(option, "program") == 0) {
+            cgiPtr->interp = Tcl_DStringAppend(CgiDs(cgiPtr), value, TCL_INDEX_NONE);
+
+            /*
+             * The legacy "(env)" syntax inside "program" value is not checked.
+             */
+
+        } else if (strcasecmp(option, "environment") == 0) {
+            cgiPtr->interpEnv = GetInterpEnvSection(value);
+
+        } else if (strcasecmp(option, "env") == 0) {
+            if (!ParseInlineEnv(interp, cgiPtr, valueObj)) {
+                Ns_Log(Error, "nscgi: invalid inline env specification "
+                       "in interpreter specification '%s'", spec);
+                result = NS_FALSE;
+                goto done;
+            }
+
+        } else {
+            Ns_Log(Error, "nscgi: invalid interpreter option '%s' "
+                   "in specification '%s'; expected 'program', "
+                   "'environment', or 'env'", option, spec);
+            result = NS_FALSE;
+            goto done;
+        }
+    }
+
+    if (cgiPtr->interp == NULL || *cgiPtr->interp == '\0') {
+        Ns_Log(Error, "nscgi: interpreter specification '%s' has no program", spec);
+        result = NS_FALSE;
+    }
+
+done:
+    Tcl_DecrRefCount(objPtr);
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -495,13 +840,13 @@ done:
  */
 
 static Ns_ReturnCode
-CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
+CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
 {
     Mod                        *modPtr;
     Tcl_DString                *dsPtr;
     TCL_SIZE_T                  i;
     size_t                      ulen;
-    char                       *e, *s;
+    char                       *s;
     const char                 *url, *server, *fileName;
     const Ns_UrlSpaceMatchInfo *matchInfoPtr;
 
@@ -509,7 +854,9 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     NS_NONNULL_ASSERT(mapPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
 
-    url = conn->request.url;
+    Ns_Log(Ns_LogCGIDebug, "CgiInit");
+
+    url    = conn->request.url;
     server = Ns_ConnServer(conn);
     modPtr = mapPtr->modPtr;
 
@@ -605,21 +952,22 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     /*
      * Look for a script interpreter.
      */
+    {
+        const char *ext, *spec;
 
-    if (modPtr->interps != NULL
-        && (s = strrchr(cgiPtr->path, INTCHAR('.'))) != NULL
-        && (cgiPtr->interp = Ns_SetIGet(modPtr->interps, s)) != NULL) {
-        cgiPtr->interp = Tcl_DStringAppend(CgiDs(cgiPtr), cgiPtr->interp, TCL_INDEX_NONE);
-        s = strchr(cgiPtr->interp, INTCHAR('('));
-        if (s != NULL) {
-            *s++ = '\0';
-            e = strchr(s, INTCHAR(')'));
-            if (e != NULL) {
-                *e = '\0';
+        if (modPtr->interps != NULL
+            && (ext = strrchr(cgiPtr->path, INTCHAR('.'))) != NULL
+            && (spec = Ns_SetIGet(modPtr->interps, ext)) != NULL) {
+            Tcl_Interp *interp = Ns_GetConnInterp(conn);
+
+            if (!ParseInterpSpec(interp, cgiPtr, spec)) {
+                Ns_Log(Warning,
+                       "nscgi: invalid interpreter specification for extension '%s': %s",
+                       ext, spec);
             }
-            cgiPtr->interpEnv = Ns_ConfigGetSection(s);
         }
     }
+
     if (cgiPtr->interp != NULL) {
         cgiPtr->exec = cgiPtr->interp;
     } else {
@@ -851,15 +1199,22 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     /*
      * Setup and merge the environment set.
      */
+    if (cgiPtr->interpEnvInline != NULL) {
+        cgiPtr->env = Ns_SetCopy(cgiPtr->interpEnvInline);
 
-    if (cgiPtr->interpEnv != NULL) {
+    } else if (cgiPtr->interpEnv != NULL) {
         cgiPtr->env = Ns_SetCopy(cgiPtr->interpEnv);
     } else {
         cgiPtr->env = Ns_SetCreate(NULL);
     }
+
+    if (cgiPtr->interpEnv != NULL) {
+        Ns_SetMerge(cgiPtr->env, cgiPtr->interpEnv);
+    }
     if (modPtr->mergeEnv != NULL) {
         Ns_SetMerge(cgiPtr->env, modPtr->mergeEnv);
     }
+
     if ((modPtr->flags & CGI_SYSENV) != 0u) {
         char *const*envp = Ns_CopyEnviron(dsPtr);
 

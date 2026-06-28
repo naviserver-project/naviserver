@@ -386,6 +386,119 @@ test nscgi-2.2 {large POST} -constraints {serverListen tclsh} -body {
     nstest::http POST /info.cgi [string repeat "x" [expr {[ns_config "ns/module/nssock" maxupload]+1}]]
 } -result 200
 
+# extended syntax for interps
+proc _nscgiCopyInfoScript {ext} {
+    set pageRoot [ns_config "test" home]/testserver/pages
+    set src [file join $pageRoot info.cgi]
+    set dst [file join $pageRoot info.$ext]
+    #puts stderr "COPY file copy -force $src $dst"
+    file copy -force $src $dst
+    return $dst
+}
+proc _nscgiDeleteInfoScript {ext} {
+    set pageRoot [ns_config "test" home]/testserver/pages
+    file delete -force [file join $pageRoot info.$ext]
+}
+
+test nscgi-1.10.0 {
+    New interpreter syntax with program option
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi1
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi1?var=SCRIPT_NAME] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi1
+} -returnCodes ok -match glob -result "SCRIPT_NAME: <*>"
+
+test nscgi-1.10.1 {
+    New interpreter syntax with program option
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi2
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi2?var=InterpEnvVar] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi2
+} -returnCodes ok -result "InterpEnvVar: <from-section>"
+
+test nscgi-1.10.2 {
+    New interpreter syntax with inline env
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi3
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi3?var=InlineEnvVar] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi3
+} -returnCodes ok -result "InlineEnvVar: <inline-value>"
+
+test nscgi-1.10.3 {
+    New interpreter syntax with inline env preserves mixed-case variable names
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi3
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi3?var=MixedInline] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi3
+} -returnCodes ok -result "MixedInline: <123>"
+
+test nscgi-1.10.4 {
+    New interpreter syntax with named and inline env: named variable
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi4
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi4?var=SectionOnly] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi4
+} -returnCodes ok -result "SectionOnly: <section>"
+
+test nscgi-1.10.5 {
+    New interpreter syntax with named and inline env: inline variable
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi4
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi4?var=InlineOnly] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi4
+} -returnCodes ok -result "InlineOnly: <inline>"
+
+test nscgi-1.10.6 {
+    New interpreter syntax with inline env overriding named env
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi4
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi4?var=OverrideMe] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi4
+} -returnCodes ok -result "OverrideMe: <inline>"
+
+test nscgi-1.10.7 {
+    Legacy interpreter program(environment) syntax still works
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi5
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi5?var=LegacyEnvVar] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi5
+} -returnCodes ok -result "LegacyEnvVar: <legacy>"
+
+test nscgi-1.10.8 {
+    New interpreter syntax with inline env supports empty values
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi6
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi6?var=EmptyInline] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi6
+} -returnCodes ok -result "EmptyInline: <>"
+
+test nscgi-1.10.9 {
+    New interpreter syntax with inline env supports values with spaces
+} -constraints {serverListen tclsh} -setup {
+    _nscgiCopyInfoScript nscgi7
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /info.nscgi7?var=SpaceInline] 1]
+} -cleanup {
+    _nscgiDeleteInfoScript nscgi7
+} -returnCodes ok -result "SpaceInline: <hello world>"
 
 cleanupTests
 
