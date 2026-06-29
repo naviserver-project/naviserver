@@ -4298,10 +4298,12 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
         isConnConstructed = NS_FALSE;
     }
     if (connPtr != NULL) {
+        ConnPool   *poolPtr = ((Conn*)connPtr)->poolPtr;
+        const char *authUser = Ns_ConnAuthUser(connPtr);
 
         Ns_Log(Debug, "--- non-trace access log entry: constructed %d user '%s' \"%s\" %d %ld",
                isConnConstructed,
-               Ns_ConnAuthUser(connPtr),
+               authUser != NULL ? authUser : "-",
                connPtr->request.line,
                Ns_ConnResponseStatus(connPtr),
                Ns_ConnContentSent(connPtr));
@@ -4309,9 +4311,12 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
          * Finally call the trace proc LogTrace() with the provided or
          * constructed connection.
          */
-        if (conn.poolPtr != NULL) {
+        if (poolPtr != NULL) {
             Tcl_DString ds;
-            const char *poolName = *conn.poolPtr->pool == '\0' ? "default" : conn.poolPtr->pool;
+            const char *poolName;
+
+            assert(poolPtr->pool != NULL);
+            poolName = *poolPtr->pool == '\0' ? "default" : poolPtr->pool;
 
             Tcl_DStringInit(&ds);
             Tcl_DStringAppend(&ds,  Ns_ThreadGetName(), TCL_INDEX_NONE);
