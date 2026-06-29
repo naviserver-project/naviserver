@@ -291,6 +291,8 @@ ResetProgress(void *arg)
         pPtr->size = 0u;
         Ns_MutexUnlock(&lock);
     }
+
+    ns_free(pPtr);
 }
 
 /*
