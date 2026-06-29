@@ -141,7 +141,8 @@ NsClsCleanup(Conn *connPtr)
 
         retry = 0;
         i = NS_CONN_MAXCLS;
-        while (i-- > 0u) {
+        while (i > 0u) {
+            i--;
             if (cleanupProcs[i] != NULL && connPtr->cls[i] != NULL) {
                 void *arg = connPtr->cls[i];
 

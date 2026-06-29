@@ -464,7 +464,8 @@ NsSlsCleanup(Sock *sockPtr)
         uintptr_t i = nsconf.nextSlsId;
 
         retry = 0;
-        while (i-- > 0u) {
+        while (i > 0u) {
+            i--;
             if (cleanupProcs[i] != NULL && sockPtr->sls[i] != NULL) {
                 void *arg = sockPtr->sls[i];
 
