@@ -1691,6 +1691,18 @@ Ns_VarUnset(const char *server, const char *array, const char *keyString)
  *-----------------------------------------------------------------------------
  */
 
+static inline unsigned int NS_NO_SANITIZE_UNSIGNED_INTEGER_ARITH
+BucketIndexUpdate(unsigned int idx, unsigned int value)
+{
+    /*
+     * Intentional unsigned modular arithmetic. This preserves the historic
+     * bucket hash recurrence:
+     *
+     *     idx += (idx << 3u) + value;
+     */
+    return idx + (idx << 3u) + value;
+}
+
 static unsigned int
 BucketIndex(const char *arrayName) {
     unsigned int idx = 0u;
@@ -1700,7 +1712,7 @@ BucketIndex(const char *arrayName) {
         if (unlikely(i == 0u)) {
             break;
         }
-        idx += (idx << 3u) + i;
+        idx = BucketIndexUpdate(idx, i);
     }
     return idx;
 }
