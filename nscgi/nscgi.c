@@ -1130,6 +1130,10 @@ CgiFree(Cgi *cgiPtr)
         Ns_SetFree(cgiPtr->env);
     }
 
+    if (cgiPtr->interpEnvInline != NULL) {
+        Ns_SetFree(cgiPtr->interpEnvInline);
+    }
+
     /*
      * Reap the process.
      */
