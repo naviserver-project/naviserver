@@ -1220,7 +1220,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
  *  Note that this corrupts the sha->key area.
  */
 
-static void
+static void NS_NO_SANITIZE_UNSIGNED_INTEGER_ARITH
 SHATransform(Ns_CtxSHA1 *sha)
 {
     register uint32_t A, B, C, D, E;
@@ -1844,7 +1844,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
  * data and converts bytes into longwords for this routine.
  */
 
-static void
+static void NS_NO_SANITIZE_UNSIGNED_INTEGER_ARITH
 MD5Transform(uint32_t buf[4], const unsigned char block[64])
 {
     uint32_t a, b, c, d;
