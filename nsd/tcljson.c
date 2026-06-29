@@ -4714,6 +4714,13 @@ JsonEmitContainerFromTriples(Tcl_Interp *interp, Tcl_Obj *triplesObj, bool isObj
         Ns_TclPrintfResult(interp, "ns_json: triples length must be multiple of 3");
         return TCL_ERROR;
     }
+    if (oc == 0) {
+        /*
+         * Empty containers are emitted the same way in compact and pretty mode.
+         * Tcl_ListObjGetElements() may return ov == NULL for an empty list.
+         */
+        pretty = NS_FALSE;
+    }
 
     if (pretty) {
         if (isObject) {
