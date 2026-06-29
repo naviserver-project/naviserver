@@ -292,7 +292,8 @@ ResetProgress(void *arg)
         Ns_MutexUnlock(&lock);
     }
 
-    ns_free(pPtr);
+    /* there seems to be different ownership models; deacitvate the free until we have fixed this */
+    //ns_free(pPtr);
 }
 
 /*
