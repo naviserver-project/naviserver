@@ -5755,9 +5755,9 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
     } else {
         bool   ipLiteral, stripDot = NS_FALSE;
         size_t hostlen;
-        char  *base =  hostDs->string,
-            *hostStart = base + (hostStartConst - base),
-            *portStart = base + (portStartConst - base);
+        char  *base =  hostDs->string;
+        char  *hostStart = base + (hostStartConst - base);
+        char  *portStart = portStartConst != NULL ? base + (portStartConst - hostDs->string) : NULL;
 
         /*
          * Remove trailing dot of host header field, since RFC 2976 allows fully
