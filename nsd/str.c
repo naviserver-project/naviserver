@@ -130,7 +130,7 @@ Ns_StrTrimRight(char *chars)
  *
  * Ns_StrToLower --
  *
- *      All alphabetic characters in "chars" are changed inplace 
+ *      All alphabetic characters in "chars" are changed inplace
  *      to lowercase.
  *
  * Results:
@@ -897,7 +897,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPt
             byte2 = bytes[idx++];
             /* byte2 must be continuation, plus range constraints for planes 1..16 */
             if ((byte2 & 0xC0u) != 0x80u
-                || (((unsigned)(byte1 << 28) + (byte2 - 0x90u)) >> 30) != 0) {
+                || ((((uint32_t)byte1 << 28) + ((uint32_t)byte2 - 0x90u)) >> 30) != 0) {
                 Ns_Log(Debug, "UTF8 decode '%s': 4-byte 2nd byte must be continuation byte + range", bytes);
                 InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, startIndex, 4, NS_FALSE);
                 return NS_FALSE;
