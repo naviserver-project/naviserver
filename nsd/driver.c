@@ -7243,18 +7243,30 @@ WriterSend(WriterSock *curPtr, int *err) {
             curPtr->c.file.bufoffset = (off_t)n;
 
         } else {
-            if (n < (ssize_t)toWrite) {
+            assert(n >= 0);
+            assert((size_t)n <= toWrite);
+            
+            if ((size_t)n < toWrite) {
                 /*
-                 * We have a partial transmit from the iovec
-                 * structure. We have to compact it to fill content in
-                 * the next round.
+                 * We have a partial transmit from the iovec structure. We have to
+                 * compact it to fill content in the next round.
                  */
-                curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs, curPtr->c.mem.nsbufs, (size_t)n);
+                curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs,
+                                                    curPtr->c.mem.nsbufs,
+                                                    (size_t)n);
                 curPtr->c.mem.nsbufs -= curPtr->c.mem.sbufIdx;
 
-                memmove(curPtr->c.mem.sbufs, curPtr->c.mem.sbufs + curPtr->c.mem.sbufIdx,
-                        /* move the iovecs to the start of the scratch buffers */
+                memmove(curPtr->c.mem.sbufs,
+                        curPtr->c.mem.sbufs + curPtr->c.mem.sbufIdx,
                         sizeof(struct iovec) * (size_t)curPtr->c.mem.nsbufs);
+            } else {
+                /*
+                 * The complete scratch iovec was transmitted. Drop it so the next
+                 * iteration fills the scratch array from the remaining source buffers
+                 * instead of resending the same iovecs.
+                 */
+                curPtr->c.mem.sbufIdx = 0;
+                curPtr->c.mem.nsbufs = 0;
             }
         }
     }
