@@ -208,4 +208,16 @@
 # define NS_THREAD_LOCAL thread_local
 #endif
 
+
+#if defined(__clang__) && defined(__has_attribute)
+# if __has_attribute(no_sanitize)
+#  define NS_NO_SANITIZE_UNSIGNED_INTEGER_ARITH \
+     __attribute__((no_sanitize("unsigned-integer-overflow", "unsigned-shift-base")))
+# endif
+#endif
+
+#ifndef NS_NO_SANITIZE_UNSIGNED_INTEGER_ARITH
+# define NS_NO_SANITIZE_UNSIGNED_INTEGER_ARITH
+#endif
+
 #endif /* NSCHECK_H */
