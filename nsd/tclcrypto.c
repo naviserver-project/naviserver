@@ -9416,10 +9416,11 @@ PkeySignatureSignBytes(Tcl_Interp *interp, EVP_PKEY *pkey,
                        unsigned char **sigPtr, size_t *sigLenPtr)
 {
     int           result = TCL_ERROR;
-    EVP_MD_CTX   *mdctx = NULL;
-    EVP_PKEY_CTX *pctx = NULL;
-    size_t        sigLen = 0u;
+    EVP_MD_CTX    *mdctx = NULL;
+    EVP_PKEY_CTX  *pctx = NULL;
+    size_t         sigLen = 0u;
     unsigned char *sig = NULL;
+    bool           freePctx = NS_FALSE;
 
     *sigPtr = NULL;
     *sigLenPtr = 0u;
@@ -9444,6 +9445,7 @@ PkeySignatureSignBytes(Tcl_Interp *interp, EVP_PKEY *pkey,
                                  NS_TRUE, &pctx) != TCL_OK) {
             goto done;
         }
+        freePctx = NS_TRUE;
     } else
 #endif
     if (EVP_DigestSignInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
@@ -9478,6 +9480,9 @@ done:
     }
     if (mdctx != NULL) {
         EVP_MD_CTX_free(mdctx);
+    }
+    if (freePctx && pctx != NULL) {
+        EVP_PKEY_CTX_free(pctx);
     }
     return result;
 }
@@ -9577,6 +9582,7 @@ PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
     int           rc, result = TCL_ERROR;
     EVP_MD_CTX   *mdctx = NULL;
     EVP_PKEY_CTX *pctx = NULL;
+    bool          freePctx = NS_FALSE;
 
     ERR_clear_error();
 
@@ -9596,6 +9602,7 @@ PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
                                  id, idLength, NS_FALSE, &pctx) != TCL_OK) {
             goto done;
         }
+        freePctx = NS_TRUE;
     } else
 #endif
     if (EVP_DigestVerifyInit(mdctx, &pctx, md, NULL, pkey) <= 0) {
@@ -9619,6 +9626,9 @@ PkeySignatureVerify(Tcl_Interp *interp, EVP_PKEY *pkey,
 done:
     if (mdctx != NULL) {
         EVP_MD_CTX_free(mdctx);
+    }
+    if (freePctx && pctx != NULL) {
+        EVP_PKEY_CTX_free(pctx);
     }
     return result;
 }
