@@ -1167,7 +1167,6 @@ ns_section ns/server/$server/pool/monitor {
 ns_section ns/server/$server/pool/fast {
     ns_param minthreads      2
     ns_param maxthreads      2
-    ns_param   rejectoverrun true
 
     ns_param   map "GET /*.png"
     ns_param   map "GET /*.PNG"
@@ -1177,6 +1176,7 @@ ns_section ns/server/$server/pool/fast {
     ns_param   map "GET /*.mp4"
     ns_param   map "GET /*.ts"
     ns_param   map "GET /*.m3u8"
+    ns_param   map "GET /robots.txt"
 }
 
 ns_section ns/server/$server/pool/slow {
