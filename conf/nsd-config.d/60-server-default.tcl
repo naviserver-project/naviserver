@@ -48,8 +48,12 @@ ns_section ns/server/default/fastpath {
     #ns_param directoryfile     "index.adp index.tcl index.html index.htm"
     #ns_param directoryadp      dir.adp
     #ns_param directoryproc     _ns_dirlist
-    ns_param directorylisting   fancy    ;# default: simple; parameter for _ns_dirlist
-    #ns_param hidedotfiles      true     ;# default: false; parameter for _ns_dirlist
+
+    # Directory listings are disabled by default to avoid potential
+    # information disclosure when no index file is present. Enable this
+    # only for directories that should be browseable.
+    #ns_param directorylisting  fancy    ;# default: none; parameter for _ns_dirlist
+    #ns_param hidedotfiles      true     ;# default: true; parameter for _ns_dirlist
 }
 
 ns_section ns/server/default/vhost {

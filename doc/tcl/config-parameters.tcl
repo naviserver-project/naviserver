@@ -1469,8 +1469,9 @@ stops execution of that ADP page}
             }
             directorylisting {
                 type enum
+                default none
                 values {simple fancy none}
-                desc {Directory listing style}
+                desc {Directory listing style when no index file is present; "none" disables generated listings to avoid potential information disclosure}
             }
             directoryadp {
                 type path

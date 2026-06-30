@@ -252,7 +252,8 @@ ns_section "ns/server/test/pool/emergency" {
 }
 
 ns_section "ns/server/test/fastpath" {
-    ns_param   pagedir         pages
+    ns_param   pagedir          pages
+    ns_param   directorylisting simple
 }
 
 ns_section "ns/server/test/limits" {
@@ -458,7 +459,7 @@ ns_section "ns/server/testvhost" {
 }
 ns_section "ns/server/testvhost/fastpath" {
     #ns_param   serverdir       testserver
-    ns_param   pagedir         pages
+    ns_param   pagedir          pages
 }
 
 ns_section "ns/server/testvhost/redirects" {

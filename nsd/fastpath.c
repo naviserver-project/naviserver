@@ -198,6 +198,13 @@ ConfigServerFastpath(const char *server)
         servPtr->fastpath.dirproc = ns_strcopy(Ns_ConfigString(section, "directoryproc", "_ns_dirlist"));
         servPtr->fastpath.diradp  = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "directoryadp", "")));
 
+        /*
+         * Include directorylisting here so that the default value is displayed
+         * correctly for this parameter in nsstats. There is currently no Tcl
+         * interface to set a default value for a parameter.
+         */
+            (void)Ns_NullIfEmpty(Ns_ConfigString(section, "directorylisting", "none"));
+
         Ns_RegisterRequest2(NULL, server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0u, NULL);
         Ns_RegisterRequest2(NULL, server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0u, NULL);
         Ns_RegisterRequest2(NULL, server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0u, NULL);

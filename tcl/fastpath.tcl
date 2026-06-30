@@ -21,7 +21,7 @@
 
 set section ns/server/[ns_info server]/fastpath
 
-nsv_set _ns_fastpath type      [ns_config -set $section directorylisting   simple]
+nsv_set _ns_fastpath type      [ns_config $section directorylisting none]
 nsv_set _ns_fastpath hidedot   [ns_config -bool -set $section hidedotfiles    1]
 
 #

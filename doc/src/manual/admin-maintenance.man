@@ -333,6 +333,13 @@ To further enhance security, consider the following recommendations:
        trusted root certificates (e.g., [term CAfile]
        [const ca-bundle.crt]) are current.
 
+[item] Check uses of
+       [const {ns/server/$server/fastpath/directorylisting}]. Directory
+       listings should be enabled only when explicitly intended, since
+       generated listings can cause potential information disclosure when
+       index files are missing. Sites relying on this behavior should set the
+       parameter explicitly to [const simple] or [const fancy].
+
 [item] Regularly review your system log for entries especially with severity
        [const Security] and any unusual activity.
 

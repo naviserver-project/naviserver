@@ -278,6 +278,15 @@ Compatibility Notes:
      global ns/parameters values for outputcharset, urlcharset, and
      formfallbackcharset are supported as defaults for compatibility.
 
+ - fastpath directory listings:
+   * The default value of ns/server/$server/fastpath:directorylisting changed
+     from simple to none. This security-hardening change avoids potential
+     information disclosure when no index file is present and NaviServer would
+     otherwise generate a directory listing.
+   * Sites that intentionally rely on generated directory listings must now
+     enable this explicitly by setting ns/server/$server/fastpath:directorylisting
+     to simple or fancy.
+
  - API deprecations:
    * No new Tcl commands are currently listed as deprecated in the generated
      command index for this release.
