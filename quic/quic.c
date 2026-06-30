@@ -5022,14 +5022,22 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
         }
     }
 
+    if (sc->method == NULL || sc->path == NULL) {
+        Ns_Log(Warning, "H3[%lld] on_end_headers: request must contain :method and :path",  (long long)stream_id);
+        return NGHTTP3_ERR_CALLBACK_FAILURE;
+    } else if (STREQ(sc->method, "CONNECT")) {
+        Ns_Log(Warning, "H3[%lld] on_end_headers: CONNECT method is not supported",  (long long)stream_id);
+        return NGHTTP3_ERR_CALLBACK_FAILURE;
+    }
+
     has_body = has_content_length && (reqPtr->contentLength > 0);
     {
         Tcl_DString  line;
 
         Tcl_DStringInit(&line);
-        Tcl_DStringAppend(&line, sc->method ? sc->method : "GET", TCL_INDEX_NONE);
+        Tcl_DStringAppend(&line, sc->method, TCL_INDEX_NONE);
         Tcl_DStringAppend(&line, " ", 1);
-        Tcl_DStringAppend(&line, sc->path ? sc->path : "/", TCL_INDEX_NONE);
+        Tcl_DStringAppend(&line, sc->path, TCL_INDEX_NONE);
         Tcl_DStringAppend(&line, " HTTP/1.1", 9);
 
         Ns_Log(Notice, "H3[%lld] on_end_headers peer %s request line: %s",
