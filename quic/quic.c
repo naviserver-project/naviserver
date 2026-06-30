@@ -97,11 +97,11 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 #if defined(HAVE_NGHTTP3) && defined(HAVE_OPENSSL_EVP_H)
-#if defined(HAVE_OPENSSL_4)
-
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "../nsd/nsopenssl.h"
+
+#if defined(HAVE_OPENSSL_4)
 #include "shared.h"
 #include <nghttp3/nghttp3.h>
 
@@ -5055,6 +5055,15 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
         /* Choose sink: memory for small bodies, temp file for larger/unknown */
         const Driver *drvPtr = sockPtr->drvPtr;
 
+        if (drvPtr->maxinput > 0
+            && reqPtr->contentLength > (size_t)drvPtr->maxinput) {
+            sockPtr->flags |= NS_CONN_ENTITYTOOLARGE;
+            Ns_Log(Warning, "H3: request too large, content-length=%" PRIuz
+                   ", maxinput=%" TCL_LL_MODIFIER "d",
+                   reqPtr->contentLength, drvPtr->maxinput);
+            return NGHTTP3_ERR_CALLBACK_FAILURE; /* or stream-level 413 path */
+        }
+
         sockPtr->tfile = NULL;
         sockPtr->tfd = NS_INVALID_FD;
 
@@ -5118,6 +5127,19 @@ static int on_recv_data(nghttp3_conn *UNUSED(conn), int64_t stream_id,
     sc->h3_sid = stream_id;
 
     if (datalen > 0) {
+        const Driver *drvPtr = sockPtr->drvPtr;
+
+        if (drvPtr->maxinput > 0) {
+            size_t maxinput = (size_t)drvPtr->maxinput;
+
+            if (datalen > maxinput || reqPtr->length > maxinput - datalen) {
+                sockPtr->flags |= NS_CONN_ENTITYTOOLARGE;
+                Ns_Log(Warning, "H3: request body exceeds maxinput=%" TCL_LL_MODIFIER "d",
+                       drvPtr->maxinput);
+                return NGHTTP3_ERR_CALLBACK_FAILURE; /* preferably reject/reset this stream */
+            }
+        }
+
         sc->rx_emitted_in_pass += datalen;
         if (sockPtr->tfd != NS_INVALID_FD) {
             ssize_t wr;
