@@ -27,13 +27,12 @@ typedef struct Progress {
     Tcl_HashEntry *hPtr;      /* Our entry in the URL table. */
 } Progress;
 
-
 /*
  * Static functions defined in this file.
  */
 
 static Ns_Callback ResetProgress;
-
+static Ns_Callback FreeProgress;
 
 /*
  * Static variables defined in this file.
@@ -71,7 +70,7 @@ NsConfigProgress(void)
         Ns_ConfigMemUnitRange(NS_GLOBAL_CONFIG_PARAMETERS, "progressminsize", NULL, 0, 0, INT_MAX);
 
     if (progressMinSize > 0u) {
-        Ns_SlsAlloc(&slot, ResetProgress);
+        Ns_SlsAlloc(&slot, FreeProgress);
         Tcl_InitHashTable(&progressTable, TCL_STRING_KEYS);
         Ns_MutexSetName(&lock, "ns:progress");
         Ns_Log(Notice, "nsmain: enable progress statistics for uploads >= %" PRIdz " bytes",
@@ -260,24 +259,30 @@ NsUpdateProgress(Ns_Sock *sock)
     }
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
  * ResetProgress --
  *
- *      Reset the progress of a connection when the Ns_Sock is
- *      pushed back on the free list.  The Progress struct is reused.
+ *      Remove an active progress entry from the global progress table and
+ *      reset the Progress state.
+ *
+ *      This function does not release the Progress structure itself.  A
+ *      Progress object is stored in socket-local storage and may be reset
+ *      when a progress entry ends while the socket remains alive.  The
+ *      socket-local storage cleanup callback is responsible for freeing the
+ *      Progress structure when the socket is cleaned up.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      None.
+ *      May delete the progress hash entry associated with the Progress
+ *      structure.  Resets the recorded transfer counters.
  *
  *----------------------------------------------------------------------
  */
-
 static void
 ResetProgress(void *arg)
 {
@@ -291,9 +296,43 @@ ResetProgress(void *arg)
         pPtr->size = 0u;
         Ns_MutexUnlock(&lock);
     }
+}
 
-    /* there seems to be different ownership models; deacitvate the free until we have fixed this */
-    //ns_free(pPtr);
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeProgress --
+ *
+ *      Cleanup callback for the socket-local progress slot.
+ *
+ *      NsUpdateProgress() allocates a Progress structure on demand and
+ *      stores it in socket-local storage.  When the socket is cleaned up,
+ *      this callback first removes any active progress entry and resets the
+ *      Progress state via ResetProgress(), then releases the Progress
+ *      structure itself.
+ *
+ *      ResetProgress() is intentionally kept separate from this destructor,
+ *      since it is also used when a progress entry ends before the socket is
+ *      destroyed.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Deletes any remaining progress hash entry for this socket and frees
+ *      the Progress structure.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FreeProgress(void *arg)
+{
+    Progress *pPtr = arg;
+
+    if (pPtr != NULL) {
+        ResetProgress(pPtr);
+        ns_free(pPtr);
+    }
 }
 
 /*
