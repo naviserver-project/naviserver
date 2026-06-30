@@ -4999,10 +4999,30 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
     if (!sc->saw_host_header && sc->authority != NULL) {
         Ns_SetPutSz(hdrs, "host", 4, sc->authority, (TCL_SIZE_T)strlen(sc->authority));
         sc->saw_host_header = NS_TRUE;
+
+    } else if (sc->authority != NULL) {
+        const char *hostHeaderValue  = Ns_SetGetCmp(hdrs, "host", strcmp);
+        if (hostHeaderValue != NULL && !STREQ(hostHeaderValue, sc->authority)) {
+            Ns_Log(Warning, "H3[%lld] host header field '%s' differs from :authority '%s'",
+                   (long long)stream_id, hostHeaderValue, sc->authority);
+        }
     }
 
-    has_content_length = Ns_SetFind(hdrs, "content-length") > -1;
-    has_body           = has_content_length && (reqPtr->contentLength > 0);
+    {
+        Ns_DList dl;
+        size_t   count;
+
+        Ns_DListInit(&dl);
+        count = NsSetGetCmpDListAppend(hdrs, "content-length", NS_TRUE, strcmp, &dl, NS_FALSE);
+        Ns_DListFree(&dl);
+        has_content_length = count > 0;
+        if (count > 1) {
+            Ns_Log(Warning, "H3[%lld] multiple 'content-length' headers encountered",  (long long)stream_id);
+            return NGHTTP3_ERR_CALLBACK_FAILURE;
+        }
+    }
+
+    has_body = has_content_length && (reqPtr->contentLength > 0);
     {
         Tcl_DString  line;
 
