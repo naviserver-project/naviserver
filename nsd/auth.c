@@ -232,11 +232,11 @@ Ns_AuthorizeUser(Ns_Server *server, const char *user, const char *passwd,
         const UserAuth *authPtr = servPtr->request.firstUserAuthPtr;
 
         while (authPtr != NULL && continuation == TCL_OK) {
-            status = (*authPtr->proc)(authPtr->arg, (Ns_Server *)servPtr, user, passwd, &continuation);
-            Ns_Log(Notice, "Ns_AuthorizeUser: authority '%s'"
-                   " for user '%s' passwd '%s' -> %d (%s) continuation %s",
-                   authPtr->authority, user, passwd,
-                   status , Ns_ReturnCodeString(status), Ns_TclReturnCodeString(continuation));
+            status = (*authPtr->proc)(authPtr->arg, (const Ns_Server *)servPtr, user, passwd, &continuation);
+            Ns_Log(Debug, "Ns_AuthorizeUser: authority '%s'"
+                   " for user '%s' passwd '<redacted>' -> %d (%s) continuation %s",
+                   authPtr->authority, user,
+                   status, Ns_ReturnCodeString(status), Ns_TclReturnCodeString(continuation));
             *authorityPtr = authPtr->authority;
             authPtr = authPtr->nextPtr;
         }
