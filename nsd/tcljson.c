@@ -916,11 +916,12 @@ JsonAppendQuotedString(Tcl_DString *dsPtr, const char *s, TCL_SIZE_T len)
  *
  *----------------------------------------------------------------------
  */
+NS_NO_SANITIZE_UNSIGNED_INTEGER_ARITH
 static inline uint64_t
 JsonEqByteMask(uint64_t x, uint64_t y)
 {
     uint64_t v = x ^ y;
-    return (~v & (v - 0x0101010101010101ULL) & 0x8080808080808080ULL);
+    return (~v & (v - (uint64_t)0x0101010101010101ULL) & (uint64_t)0x8080808080808080ULL);
 }
 
 /*
@@ -2046,6 +2047,21 @@ JsonCompareKeysProc(void *keyPtr, Tcl_HashEntry *hPtr)
  *
  *----------------------------------------------------------------------
  */
+static inline unsigned int NS_NO_SANITIZE_UNSIGNED_INTEGER_ARITH
+JsonHashUpdate(unsigned int h, unsigned int value)
+{
+    /*
+     * Intentional unsigned modular arithmetic.
+     *
+     * Equivalent to the original recurrence:
+     *
+     *     h += (h << 3) + value;
+     *
+     * i.e. h = 9*h + value modulo 2^32.
+     */
+    return h + (h << 3) + value;
+}
+
 static TCL_HASH_TYPE
 JsonHashKeyProc(Tcl_HashTable *UNUSED(tablePtr), void *keyPtr)
 {
@@ -2055,7 +2071,7 @@ JsonHashKeyProc(Tcl_HashTable *UNUSED(tablePtr), void *keyPtr)
     unsigned int         hashValue = 0u;
 
     while (cnt-- > 0) {
-        hashValue += (hashValue << 3) + bytes[0];
+        hashValue = JsonHashUpdate(hashValue, bytes[0]);
         bytes++;
     }
     return hashValue;
