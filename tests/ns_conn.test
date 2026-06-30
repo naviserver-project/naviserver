@@ -17,7 +17,7 @@ test ns_conn-1.0 {basic syntax: plain call} -body {
 
 test ns_conn-1.1 {basic syntax: wrong argument} -body {
      ns_conn 123
-} -returnCodes error -result {bad subcommand "123": must be acceptedcompression, auth, authpassword, authuser, channel, clientcert, clientdata, close, compress, content, contentfile, contentlength, contentsentlength, contenttype, copy, currentaddr, currentport, details, driver, encoding, fileheaders, filelength, fileoffset, files, flags, form, fragment, headerlength, headers, host, id, isconnected, keepalive, location, method, outputheaders, partialtimes, peeraddr, peerport, pool, port, protocol, query, ratelimit, request, server, sock, start, status, target, timeout, url, urlc, urldict, urlencoding, urlv, version, or zipaccepted}
+} -returnCodes error -result {bad subcommand "123": must be acceptedcompression, auth, authpassword, authuser, channel, clientcert, clientdata, close, compress, content, contentfile, contentlength, contentsentlength, contenttype, copy, currentaddr, currentport, details, driver, encoding, fileheaders, filelength, fileoffset, files, flags, form, fragment, headerlength, headers, host, id, isconnected, keepalive, location, method, outputheaders, partialtimes, peeraddr, peerport, pool, port, privacy, protocol, query, ratelimit, request, server, sock, start, status, target, timeout, url, urlc, urldict, urlencoding, urlv, version, or zipaccepted}
 
 
 test ns_conn-1.1.1 {syntax: ns_conn acceptedcompression} -body {
@@ -623,6 +623,197 @@ test ns_conn-contenttype-1.8 {contenttype: vendor +json suffix} -setup {
     ns_unregister_op GET /ct
 } -result {200 {raw application/vnd.api+json type application/vnd.api+json suffix json}}
 
+############################################################################
+# Test Cases for "ns_conn privacy"
+############################################################################
+
+test privacy-1.0 {syntax: ns_conn privacy} -body {
+    ns_conn privacy x
+} -errorCode {TCL WRONGARGS} -result {wrong # args: should be "ns_conn privacy"}
+
+test privacy-1.1 {ns_conn privacy without privacy headers} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [ns_conn privacy] }
+} -body {
+    nstest::http -getbody 1 GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 {gpc 0 dnt 0 adpc {present 0}}}
+
+test privacy-1.2 {ns_conn privacy with Sec-GPC 1} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] gpc] }
+} -body {
+    nstest::http -getbody 1 -setheaders {Sec-GPC 1} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -returnCodes {error ok} -result {200 1}
+
+test privacy-1.3 {ns_conn privacy with Sec-GPC 0} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] gpc] }
+} -body {
+    nstest::http -getbody 1 -setheaders {Sec-GPC 0} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 0}
+
+test privacy-1.4 {ns_conn privacy with invalid Sec-GPC value} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] gpc] }
+} -body {
+    nstest::http -getbody 1 -setheaders {Sec-GPC foo} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 0}
+
+test privacy-1.5 {ns_conn privacy with DNT 1} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] dnt] }
+} -body {
+    nstest::http -getbody 1 -setheaders {DNT 1} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 1}
+
+test privacy-1.6 {ns_conn privacy with DNT 0} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] dnt] }
+} -body {
+    nstest::http -getbody 1 -setheaders {DNT 0} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 0}
+
+test privacy-1.7 {ns_conn privacy with invalid DNT value} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] dnt] }
+} -body {
+    nstest::http -getbody 1 -setheaders {DNT foo} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 0}
+
+test privacy-1.8 {ns_conn privacy with lowercase Sec-GPC header name} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] gpc] }
+} -body {
+    nstest::http -getbody 1 -setheaders {sec-gpc 1} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 1}
+
+test privacy-1.9 {ns_conn privacy with lowercase DNT header name} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] dnt] }
+} -body {
+    nstest::http -getbody 1 -setheaders {dnt 1} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 1}
+
+test privacy-1.10 {ns_conn privacy with ADPC header present} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] adpc present] }
+} -body {
+    nstest::http -getbody 1 -setheaders {ADPC {consent="analytics"}} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 1}
+
+test privacy-1.11 {ns_conn privacy with ADPC consent value} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] adpc consent]  }
+} -body {
+    nstest::http -getbody 1 -setheaders {ADPC {consent="analytics"}} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 analytics}
+
+test privacy-1.12 {ns_conn privacy with lowercase ADPC header name} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] adpc present] }
+} -body {
+    nstest::http -getbody 1 -setheaders {adpc {consent="analytics"}} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 1}
+
+test privacy-1.13 {ns_conn privacy with ADPC withdraw raw value} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] adpc raw] }
+} -body {
+    nstest::http -getbody 1 -setheaders {ADPC {withdraw="analytics"; consent="necessary"}} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 {withdraw="analytics"; consent="necessary"}}
+
+test privacy-1.14 {ns_conn privacy with ADPC withdraw all raw value} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] adpc raw] }
+} -body {
+    nstest::http -getbody 1 -setheaders {ADPC {withdraw=*}} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 withdraw=*}
+
+test privacy-1.15 {ns_conn privacy with ADPC withdraw all raw value} -setup {
+    ns_register_proc GET /privacy { ns_return 200 text/plain [dict get [ns_conn privacy] adpc raw] }
+} -body {
+    nstest::http -getbody 1 -setheaders {ADPC {withdraw=*}} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 withdraw=*}
+
+test privacy-1.16 {ns_conn privacy with ADPC withdraw and consent values} -setup {
+    ns_register_proc GET /privacy {
+        set privacy [ns_conn privacy]
+        ns_return 200 text/plain [list \
+            [dict get $privacy adpc withdraw] \
+            [dict get $privacy adpc consent]]
+    }
+} -body {
+    nstest::http -getbody 1 \
+        -setheaders {ADPC {withdraw="analytics"; consent="necessary"}} \
+        GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 {analytics necessary}}
+
+test privacy-1.17 {ns_conn privacy with unknown ADPC directive} -setup {
+    ns_register_proc GET /privacy {
+        ns_return 200 text/plain [dict get [ns_conn privacy] adpc unknown]
+    }
+} -body {
+    nstest::http -getbody 1 \
+        -setheaders {ADPC {foo="bar"; consent="analytics"}} \
+        GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 {foo bar}}
+
+test privacy-1.18 {ns_conn privacy with valid ADPC directive} -setup {
+    ns_register_proc GET /privacy {
+        ns_return 200 text/plain [dict get [ns_conn privacy] adpc valid]
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders {ADPC {consent="analytics"}} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 1}
+
+test privacy-1.19 {ns_conn privacy with lowercase ADPC header name} -setup {
+    ns_register_proc GET /privacy {
+        ns_return 200 text/plain [dict get [ns_conn privacy] adpc present]
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders {adpc {consent="analytics"}} GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 1}
+
+test privacy-1.20 {ns_conn privacy with combined GPC DNT and ADPC headers} -setup {
+    ns_register_proc GET /privacy {
+        set privacy [ns_conn privacy]
+        ns_return 200 text/plain [list \
+            [dict get $privacy gpc] \
+            [dict get $privacy dnt] \
+            [dict get $privacy adpc present] \
+            [dict get $privacy adpc consent]]
+    }
+} -body {
+    nstest::http -getbody 1 \
+        -setheaders {Sec-GPC 1 DNT 1 ADPC {consent="analytics"}} \
+        GET /privacy
+} -cleanup {
+    ns_unregister_op GET /privacy
+} -result {200 {1 1 1 analytics}}
 
 cleanupTests
 

@@ -455,6 +455,84 @@ This represents the port the client believes it is addressing, which
 may differ from the actual local listen port.
 
 
+[call [cmd "ns_conn privacy"]]
+
+ Collects raw privacy-signal information from various request-header
+ sources and privacy standards, and provides this information in a cooked
+ form to the application developer. The command is passive: it does not
+ implement consent management, does not decide whether a purpose is
+ allowed or denied, and does not change logging, cookies, or response
+ generation.
+
+ [para]
+ When no privacy-related request headers were provided, the dictionary
+ contains:
+
+[example_begin]
+ gpc 0 dnt 0 adpc {present 0}
+[example_end]
+
+ The dictionary contains boolean entries for the simple header-based
+ signals [const gpc] and [const dnt].  The [const gpc] entry is true
+ when the request contains [const "Sec-GPC: 1"].  The [const dnt] entry
+ is true when the request contains [const "DNT: 1"].  Other values, or
+ absent headers, are reported as false.
+
+ The dictionary also contains an [const adpc] entry with information
+ derived from the [const ADPC] request header.  When no ADPC header was
+ provided, the nested dictionary contains:
+
+[example_begin]
+ adpc {
+   present 0
+ }
+[example_end]
+
+ When an ADPC header was provided, the nested dictionary contains at
+ least [const present] and [const raw]:
+
+[example_begin]
+ adpc {
+   present 1
+   raw     {consent="analytics"}
+ }
+[example_end]
+
+ If ADPC parsing support is available, the nested dictionary may contain
+ additional syntactic information such as [const valid], [const consent],
+ [const withdraw], [const withdraw_all], [const unknown], and
+ [const errors]:
+
+[example_begin]
+ adpc {
+   present      1
+   valid        1
+   raw          {withdraw="analytics"; consent="necessary"}
+   consent      necessary
+   withdraw     analytics
+   withdraw_all 0
+   unknown      {}
+   errors       {}
+   }
+[example_end]
+
+ The information returned by [cmd "ns_conn privacy"] is restricted to
+ what NaviServer can derive mechanically from the incoming request
+ headers. For ADPC, this means at most detecting whether an ADPC header
+ was present, preserving the raw header value, and optionally exposing a
+ syntactic parse of recognized directives. NaviServer does not interpret
+ ADPC purpose identifiers, does not know whether such purposes are
+ configured by the application, and does not resolve consent semantics or
+ conflicts between directives.
+
+ Higher-level ADPC behavior belongs in an application or ADPC-specific
+ module. Such a module can use [cmd "ns_conn privacy"] as input, but is
+ responsible for publishing consent-request resources, adding discovery
+ headers, mapping ADPC purpose identifiers to application features,
+ deciding whether consent is effective, suppressing or showing consent
+ user interfaces, controlling tracking-related cookies or scripts, and
+ recording consent or withdrawal decisions where appropriate.
+
 [call [cmd  "ns_conn protocol"]]
 
  Returns the protocol used by the current connection.  In (forward)

@@ -2294,7 +2294,7 @@ enum ISubCmdIdx {
     CLocationIdx,
     CMethodIdx,
     COutputHeadersIdx,
-    CPartialTimesIdx, CPeerAddrIdx, CPeerPortIdx, CPoolIdx, CPortIdx, CProtocolIdx,
+    CPartialTimesIdx, CPeerAddrIdx, CPeerPortIdx, CPoolIdx, CPortIdx, CPrivacyIdx, CProtocolIdx,
     CQueryIdx,
     CRatelimitIdx, CRequestIdx,
     CServerIdx, CSockIdx, CStartIdx, CStatusIdx,
@@ -2328,7 +2328,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         "location",
         "method",
         "outputheaders",
-        "partialtimes", "peeraddr", "peerport", "pool", "port", "protocol",
+        "partialtimes", "peeraddr", "peerport", "pool", "port", "privacy", "protocol",
         "query",
         "ratelimit", "request",
         "server", "sock", "start", "status",
@@ -2359,7 +2359,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         /* O */ NS_CONN_REQUIRE_CONFIGURED,
         /* P */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED,
-        /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
+        /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* Q */ NS_CONN_REQUIRE_CONFIGURED,
         /* R */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* S */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED,
@@ -2628,6 +2628,17 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnPeerAddr(conn), TCL_INDEX_NONE));
             } else {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnForwardedPeerAddr(conn), TCL_INDEX_NONE));
+            }
+            break;
+        }
+
+        case CPrivacyIdx: {
+            if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK
+                || NsConnRequire(interp, required_flags[opt], NULL, &result) != NS_OK ) {
+                result = TCL_ERROR;
+            } else {
+                static const char cmd[] = "ns_privacy::signals";
+                result = Tcl_EvalEx(interp, cmd, sizeof(cmd) - 1u, 0);
             }
             break;
         }
