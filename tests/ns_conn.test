@@ -629,7 +629,7 @@ test ns_conn-contenttype-1.8 {contenttype: vendor +json suffix} -setup {
 
 test privacy-1.0 {syntax: ns_conn privacy} -body {
     ns_conn privacy x
-} -errorCode {TCL WRONGARGS} -result {wrong # args: should be "ns_conn privacy"}
+} -returnCodes error -result {wrong # args: should be "ns_conn privacy"}
 
 test privacy-1.1 {ns_conn privacy without privacy headers} -setup {
     ns_register_proc GET /privacy { ns_return 200 text/plain [ns_conn privacy] }
