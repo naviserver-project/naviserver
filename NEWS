@@ -104,8 +104,10 @@ New Features:
    * Added HTTP/3 Alt-Svc advertisement support for HTTPS configurations.
    * Added QUIC-aware TLS context handling.
    * Requires OpenSSL 4.0 or newer and nghttp3.
-   * Status: experimental, disabled by default, and not yet intended as a
-     production-ready replacement for the mature HTTP/1.x path.
+   * Status: experimental, disabled by default, and not yet intended
+     as a production-ready replacement for the mature HTTP/1.x path.
+     Automated release regression tests do not cover HTTP/3 yet due to
+     client and certificate constraints.
 
  - Configuration directories:
    * Added support for using a directory of ordered configuration fragments
