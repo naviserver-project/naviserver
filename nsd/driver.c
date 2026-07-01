@@ -128,11 +128,11 @@ typedef struct PollData {
  */
 #define QueueStatsDecr(counter, msg)                                      \
     do {                                                                  \
-        if (likely((counter) > 0u)) {                                     \
+        if (likely((counter) > 0u)) {                                      \
             (counter)--;                                                  \
         } else {                                                          \
-            Ns_Log(Warning, "queue statistics inconsistency: " msg        \
-                   " counter is already zero");                           \
+            Ns_Log(Warning, "queue statistics inconsistency: %s"           \
+                   " counter is already zero", (msg));                    \
         }                                                                 \
     } while (0)
 
@@ -2775,6 +2775,74 @@ EnsureRunningCB(void *hashValue, const void *UNUSED(ctx))
     return NS_OK;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DriverCloseSockList --
+ *
+ *      Close and release all sockets on a driver-owned socket list.
+ *
+ *      This helper is used during driver-thread shutdown for sockets that
+ *      are still present on local driver lists such as the read, wait, or
+ *      close lists.  These sockets have already been accepted and may carry
+ *      driver-private state in sock->arg.  For example, the SSL driver stores
+ *      an NssslSockCtx there, which owns the OpenSSL SSL object.
+ *
+ *      Therefore, shutdown cleanup must not discard these Sock structures by
+ *      freeing or dropping them directly.  The sockets have to pass through
+ *      the normal SockRelease() close path so that the driver's Close
+ *      callback is invoked and driver-private state is released.
+ *
+ *      The optional counterPtr argument points to the current gauge associated
+ *      with the list being drained.  When provided, it is decremented for each
+ *      socket released.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Closes the socket, releases request/socket resources via SockRelease(),
+ *      invokes driver-specific close handling, and updates the optional queue
+ *      gauge.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DriverCloseSockList(const char *label, Sock *sockPtr, size_t *counterPtr)
+{
+    Ns_Log(Debug, "DriverCloseSockList driver shutdown %s sockPtr %p",
+           label, (const void *)sockPtr);
+
+    while (sockPtr != NULL) {
+        Sock *nextPtr = sockPtr->nextPtr;
+
+        Ns_Log(Debug,
+               "... driver shutdown %s sock %d sockPtr %p arg %p flags %.8x",
+               label,
+               sockPtr->sock,
+               (const void *)sockPtr,
+               sockPtr->arg,
+               sockPtr->flags);
+
+        sockPtr->nextPtr = NULL;
+
+        if (counterPtr != NULL) {
+            QueueStatsDecr(*counterPtr, label);
+        }
+
+        /*
+         * These sockets are still owned by the driver thread at shutdown.
+         * They may carry driver-private state in sock->arg.  In particular,
+         * nsssl stores an NssslSockCtx there, so the driver's Close callback
+         * must be reached before the Sock is discarded.
+         */
+        SockRelease(sockPtr, SOCK_CLOSE, 0);
+
+        sockPtr = nextPtr;
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3307,6 +3375,15 @@ DriverThread(void *arg)
                 ns_sockclose(drvPtr->listenfd[i]);
                 drvPtr->listenfd[i] = NS_INVALID_SOCKET;
             }
+
+            DriverCloseSockList("readPtr", readPtr, &drvPtr->stats.reading);
+            readPtr = NULL;
+
+            DriverCloseSockList("waitPtr", waitPtr, &drvPtr->stats.waiting);
+            waitPtr = NULL;
+
+            DriverCloseSockList("closePtr", closePtr, &drvPtr->stats.closing);
+            closePtr = NULL;
         }
     }
 
@@ -7245,7 +7322,7 @@ WriterSend(WriterSock *curPtr, int *err) {
         } else {
             assert(n >= 0);
             assert((size_t)n <= toWrite);
-            
+
             if ((size_t)n < toWrite) {
                 /*
                  * We have a partial transmit from the iovec structure. We have to
