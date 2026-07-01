@@ -1276,12 +1276,19 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                        Tcl_NewStringObj(memStatsBuffer, TCL_INDEX_NONE));
         TcmallocDictPutNumeric(resultObj, "current_allocated_bytes",   "generic.current_allocated_bytes");
         TcmallocDictPutNumeric(resultObj, "heap_size",                 "generic.heap_size");
+        TcmallocDictPutNumeric(resultObj, "total_physical_bytes",      "generic.total_physical_bytes");
+
+        TcmallocDictPutNumeric(resultObj, "slack_bytes",              "tcmalloc.slack_bytes");
+
         TcmallocDictPutNumeric(resultObj, "pageheap_free_bytes",       "tcmalloc.pageheap_free_bytes");
         TcmallocDictPutNumeric(resultObj, "pageheap_unmapped_bytes",   "tcmalloc.pageheap_unmapped_bytes");
+        TcmallocDictPutNumeric(resultObj, "pageheap_committed_bytes",  "tcmalloc.pageheap_committed_bytes");
+
         TcmallocDictPutNumeric(resultObj, "central_cache_free_bytes",  "tcmalloc.central_cache_free_bytes");
         TcmallocDictPutNumeric(resultObj, "transfer_cache_free_bytes", "tcmalloc.transfer_cache_free_bytes");
         TcmallocDictPutNumeric(resultObj, "thread_cache_free_bytes",   "tcmalloc.thread_cache_free_bytes");
         TcmallocDictPutNumeric(resultObj, "current_total_thread_cache_bytes", "tcmalloc.current_total_thread_cache_bytes");
+        TcmallocDictPutNumeric(resultObj, "max_total_thread_cache_bytes",     "tcmalloc.max_total_thread_cache_bytes");
 #endif
         Tcl_SetObjResult(interp, resultObj);
         break;

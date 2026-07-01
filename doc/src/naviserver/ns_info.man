@@ -115,19 +115,79 @@ NaviServer home directory.
 
 Returns the major version number.
 
-[call [cmd  "ns_info meminfo"] [opt [option -release]]]
 
-Returns memory statistics from tcmalloc when available, i.e., when
-libtcmalloc (from Google perfools) is used and preloaded (we might add
-support for other alternative malloc libraries in the
-future). Otherwise the call is a no-op.
+[call [cmd "ns_info meminfo"] [opt [option -release]]]
 
-[para] When the option [opt -release] is used, the releasable memory
-is released (also libtcmalloc only).
+ Returns memory statistics from tcmalloc when available, i.e., when
+ [const libtcmalloc] from Google gperftools is used.  When tcmalloc is not
+ available, the command returns an empty dictionary.  Support for other
+ alternative malloc libraries may be added in the future.
+
+ [para]
+ The result is a dictionary.  The keys [const preload], [const version], and
+ [const stats] provide general information: the loaded tcmalloc library, the
+ gperftools version string, and the formatted allocator statistics as returned
+ by tcmalloc.  In addition, when supported by the loaded tcmalloc version, the
+ dictionary contains numeric byte counters suitable for monitoring.
+
+ [para]
+ The following numeric keys may be present:
+
+ [list_begin definitions]
+   [def [const current_allocated_bytes]]
+   Bytes currently allocated by the application.
+
+   [def [const heap_size]]
+   Total heap size obtained by tcmalloc from the operating system.
+
+   [def [const total_physical_bytes]]
+   Physical memory currently used by tcmalloc, as reported by
+   [const generic.total_physical_bytes].
+
+   [def [const slack_bytes]]
+   Bytes held by tcmalloc but not currently allocated to the application.
+
+   [def [const pageheap_free_bytes]]
+   Bytes in the tcmalloc page heap freelist.
+
+   [def [const pageheap_unmapped_bytes]]
+   Bytes in the tcmalloc page heap returned or unmapped to the operating system.
+
+   [def [const pageheap_committed_bytes]]
+   Bytes committed in the tcmalloc page heap.
+
+   [def [const central_cache_free_bytes]]
+   Bytes in the tcmalloc central cache freelist.
+
+   [def [const transfer_cache_free_bytes]]
+   Bytes in the tcmalloc transfer cache freelist.
+
+   [def [const thread_cache_free_bytes]]
+   Bytes in tcmalloc thread cache freelists.
+
+   [def [const current_total_thread_cache_bytes]]
+   Total bytes currently held in tcmalloc thread caches.
+
+   [def [const max_total_thread_cache_bytes]]
+   Configured maximum size for tcmalloc thread caches.
+ [list_end]
+
+ [para]
+ Not every tcmalloc version exposes every numeric property.  Therefore,
+ callers should check for the existence of a key before using it.  The
+ formatted [const stats] value may contain additional information which is not
+ available as a numeric property.
+
+ [para]
+ When the option [option -release] is used, NaviServer asks tcmalloc to release
+ releasable memory back to the operating system.  This operation is available
+ only with tcmalloc and has no effect when tcmalloc is not active.
 
 [example_begin]
  % ns_info meminfo
- reload /usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4 version {gperftools 2.7} stats {------------------------------------------------
+ preload /usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4 \
+ version {gperftools 2.7} \
+ stats {------------------------------------------------
  MALLOC:     1015860976 (  968.8 MiB) Bytes in use by application
  MALLOC: +    113090560 (  107.9 MiB) Bytes in page heap freelist
  MALLOC: +    123400496 (  117.7 MiB) Bytes in central cache freelist
@@ -139,7 +199,17 @@ is released (also libtcmalloc only).
  MALLOC: +      1335296 (    1.3 MiB) Bytes released to OS (aka unmapped)
  MALLOC:   ------------
  MALLOC: =   1295589376 ( 1235.6 MiB) Virtual address space used
+ } \
+ current_allocated_bytes 1015860976 \
+ heap_size 1295589376 \
+ total_physical_bytes 1294254080 \
+ pageheap_free_bytes 113090560 \
+ pageheap_unmapped_bytes 1335296 \
+ central_cache_free_bytes 123400496 \
+ transfer_cache_free_bytes 4785408 \
+ thread_cache_free_bytes 29514464
 [example_end]
+
 
 [call [cmd  "ns_info minor"]]
 
