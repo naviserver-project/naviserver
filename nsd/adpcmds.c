@@ -1549,10 +1549,14 @@ static int
 AdpTagSetCreateObjCmd(ClientData clientData, Tcl_Interp *interp,
                               TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const char *nameString, *fallbackString = NULL;
-    int         result = TCL_OK;
+    const char *nameString;
+    int         result = TCL_OK, fallback = 0;
+    static Ns_ObjvTable tagsets[] = {
+        {"default",  1u},
+        {NULL, 0u}
+    };
     Ns_ObjvSpec lopts[] = {
-        {"-fallback", Ns_ObjvString,  &fallbackString,  NULL},
+        {"-fallback", Ns_ObjvIndex,  &fallback, &tagsets},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec largs[] = {
@@ -1569,14 +1573,6 @@ AdpTagSetCreateObjCmd(ClientData clientData, Tcl_Interp *interp,
 
     } else if ((*nameString == '\0' || strchr(nameString, '|') != NULL)) {
         Ns_TclPrintfResult(interp, "invalid ADP tagset name \"%s\"", nameString);
-        result = TCL_ERROR;
-
-    } else if (fallbackString != NULL && !STREQ(fallbackString, "default")) {
-        /*
-         * For the time being, allow only default as fallback
-         */
-        Ns_TclPrintfResult(interp,
-                           "unknown ADP tagset fallback \"%s\"", fallbackString);
         result = TCL_ERROR;
 
     } else {
@@ -1597,7 +1593,7 @@ AdpTagSetCreateObjCmd(ClientData clientData, Tcl_Interp *interp,
 
             tagSetPtr->name = ns_strdup(nameString);
             Tcl_InitHashTable(&tagSetPtr->tags, TCL_STRING_KEYS);
-            tagSetPtr->fallbackTagTablePtr = (fallbackString != NULL)
+            tagSetPtr->fallbackTagTablePtr = fallback
                 ? &servPtr->adp.tags
                 : NULL;
             Tcl_SetHashValue(hPtr, tagSetPtr);

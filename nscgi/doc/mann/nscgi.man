@@ -266,17 +266,17 @@ environment.
 
 [para] The following options are supported in the Tcl-list form:
 
-[list_begin definitions]
+[list_begin itemized]
 
-[def [const program]]
+[item] [const program]:
 The path of the interpreter executable. This option is required when the
 list form is used.
 
-[def [const environment]]
+[item] [const environment]:
 The name of an [const {ns/environment/$name}] section. The named environment
 section is merged into the environment of scripts executed by this interpreter.
 
-[def [const env]]
+[item] [const env]:
 An inline Tcl list of environment variable name/value pairs. This form is
 useful for interpreter-specific variables that do not need a shared named
 environment section.
