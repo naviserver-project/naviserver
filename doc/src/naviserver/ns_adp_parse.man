@@ -32,7 +32,7 @@ allow different registered-tag vocabularies to coexist in the same server.
     [opt [option {-file}]] \
     [opt [option {-safe}]] \
     [opt [option {-string}]] \
-    [opt [option "-tagset [arg name]"]] \
+    [opt [option "-tagset [arg value]"]] \
     [opt [option {-tcl}]] \
     [opt --] \
     [arg {arg ...}]]
@@ -61,7 +61,7 @@ Treats the first argument as an ADP string.  This option is provided for
 backward compatibility; string mode is the default.
 
 [def [option "-tagset [arg name]"]]
-Selects the ADP tag set used while parsing this input.
+Selects the named ADP tag set used while parsing this input.
 
 [para]
 If [option -tagset] is omitted, the current effective tag set is inherited.

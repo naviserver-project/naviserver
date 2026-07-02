@@ -133,42 +133,42 @@ Returns the major version number.
  [para]
  The following numeric keys may be present:
 
- [list_begin definitions]
-   [def [const current_allocated_bytes]]
+ [list_begin itemized]
+   [item] [const current_allocated_bytes]:
    Bytes currently allocated by the application.
 
-   [def [const heap_size]]
+   [item]] [const heap_size]:
    Total heap size obtained by tcmalloc from the operating system.
 
-   [def [const total_physical_bytes]]
+   [item] [const total_physical_bytes]:
    Physical memory currently used by tcmalloc, as reported by
    [const generic.total_physical_bytes].
 
-   [def [const slack_bytes]]
+   [item] [const slack_bytes]:
    Bytes held by tcmalloc but not currently allocated to the application.
 
-   [def [const pageheap_free_bytes]]
+   [item] [const pageheap_free_bytes]:
    Bytes in the tcmalloc page heap freelist.
 
-   [def [const pageheap_unmapped_bytes]]
+   [item] [const pageheap_unmapped_bytes]:
    Bytes in the tcmalloc page heap returned or unmapped to the operating system.
 
-   [def [const pageheap_committed_bytes]]
+   [item] [const pageheap_committed_bytes]:
    Bytes committed in the tcmalloc page heap.
 
-   [def [const central_cache_free_bytes]]
+   [item] [const central_cache_free_bytes]:
    Bytes in the tcmalloc central cache freelist.
 
-   [def [const transfer_cache_free_bytes]]
+   [item] [const transfer_cache_free_bytes]:
    Bytes in the tcmalloc transfer cache freelist.
 
-   [def [const thread_cache_free_bytes]]
+   [item] [const thread_cache_free_bytes]:
    Bytes in tcmalloc thread cache freelists.
 
-   [def [const current_total_thread_cache_bytes]]
+   [item] [const current_total_thread_cache_bytes]:
    Total bytes currently held in tcmalloc thread caches.
 
-   [def [const max_total_thread_cache_bytes]]
+   [item] [const max_total_thread_cache_bytes]:
    Configured maximum size for tcmalloc thread caches.
  [list_end]
 

@@ -31,7 +31,7 @@ to the included ADP and accessed with [cmd ns_adp_argc],
 [call [cmd ns_adp_include] \
     [opt [option "-cache [arg time]"]] \
     [opt [option -nocache]] \
-    [opt [option "-tagset [arg name]"]] \
+    [opt [option "-tagset [arg value]"]] \
     [opt [option -tcl]] \
     [opt --] \
     [arg filename] \
@@ -62,8 +62,8 @@ The options [option -cache] and [option -nocache] can be combined to optimize
 performance for ADPs that mix static or shared content with dynamic or
 personalized content.
 
-[def [option "-tagset [arg name]"]]
-Selects the ADP tag set used while parsing the included ADP.
+[def [option "-tagset [arg value]"]]
+Selects the named ADP tag set used while parsing the included ADP.
 
 [para]
 If [option -tagset] is omitted, the include inherits the current effective
@@ -75,7 +75,7 @@ If [option "-tagset default"] is specified, the include uses the built-in
 server-wide default ADP tag table for this include only.
 
 [para]
-If [option "-tagset [arg name]"] is specified with a named tag set, that tag
+If [option "-tagset [arg value]"] is specified with a named tag set, that tag
 set is used for this include only.  After the include completes, the previous
 effective tag set is restored.
 

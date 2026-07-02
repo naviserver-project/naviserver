@@ -19,11 +19,11 @@ plain Tcl commands for accessing the environment.
 
 [call [cmd "ns_env exists"] [arg name]]
 
-[call [cmd "ns_env get"] [opt [option -nocomplain]] [arg name]]
+[call [cmd "ns_env get"] [opt [option -nocomplain]] -- [arg name]]
 
 [call [cmd "ns_env set"] [arg name] [arg value]]
 
-[call [cmd "ns_env unset"] [opt [option -nocomplain]] [arg name]]
+[call [cmd "ns_env unset"] [opt [option -nocomplain]] -- [arg name]]
 
 [list_end]
 

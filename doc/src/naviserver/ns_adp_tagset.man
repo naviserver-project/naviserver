@@ -90,12 +90,12 @@ Returns information about the specified tag set as a dictionary.
 [para]
 The dictionary contains at least the following keys:
 
-[list_begin definitions]
+[list_begin itemized]
 
-  [def [const size]]
+  [item] [const size]:
   The number of tags registered directly in this tag set.
 
-  [def [const fallback]]
+  [item] [const fallback]:
   The configured fallback tag set.  Currently this is either [const default] or
   the empty string.
 
