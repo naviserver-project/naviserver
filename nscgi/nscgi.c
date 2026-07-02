@@ -268,7 +268,10 @@ Ns_ModuleInit(const char *server, const char *module)
         Ns_DStringVarAppend(&ds, "ns/interps/", subSection, NS_SENTINEL);
         modPtr->interps = Ns_ConfigGetSection(ds.string);
         if (modPtr->interps == NULL) {
-            Ns_Log(Warning, "nscgi: no such interps section: %s",
+            Ns_Log(Warning,
+                   "nscgi: parameter 'interps' references missing section '%s'; "
+                   "CGI files requiring an interpreter will be executed directly "
+                   "unless another interpreter mapping applies",
                    ds.string);
         }
         Tcl_DStringSetLength(&ds, 0);
@@ -278,7 +281,9 @@ Ns_ModuleInit(const char *server, const char *module)
         Ns_DStringVarAppend(&ds, "ns/environment/", subSection, NS_SENTINEL);
         modPtr->mergeEnv = Ns_ConfigGetSection(ds.string);
         if (modPtr->mergeEnv == NULL) {
-            Ns_Log(Warning, "nscgi: no such environment section: %s",
+            Ns_Log(Warning,
+                   "nscgi: parameter 'environment' references missing section '%s'; "
+                   "module-level extra environment variables will not be added",
                    ds.string);
         }
         Tcl_DStringSetLength(&ds, 0);
@@ -955,17 +960,27 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
      * Look for a script interpreter.
      */
     {
-        const char *ext, *spec;
+        const char *ext;
 
         if (modPtr->interps != NULL
-            && (ext = strrchr(cgiPtr->path, INTCHAR('.'))) != NULL
-            && (spec = Ns_SetIGet(modPtr->interps, ext)) != NULL) {
-            Tcl_Interp *interp = Ns_GetConnInterp(conn);
+            && (ext = strrchr(cgiPtr->path, INTCHAR('.'))) != NULL) {
+            const char *spec =  Ns_SetIGet(modPtr->interps, ext);
 
-            if (!ParseInterpSpec(interp, cgiPtr, spec)) {
-                Ns_Log(Warning,
-                       "nscgi: invalid interpreter specification for extension '%s': %s",
-                       ext, spec);
+            if (spec != NULL) {
+                Tcl_Interp *interp = Ns_GetConnInterp(conn);
+
+                if (!ParseInterpSpec(interp, cgiPtr, spec)) {
+                    Ns_Log(Warning,
+                           "nscgi: invalid interpreter specification for extension "
+                           "'%s' in section '%s': %s",
+                           ext, Ns_SetName(modPtr->interps), spec);
+                    goto err;
+                }
+            } else  {
+                Ns_Log(Ns_LogCGIDebug,
+                       "nscgi: no interpreter configured for extension '%s' "
+                       "in section '%s'; executing mapped CGI file '%s' directly",
+                       ext, Ns_SetName(modPtr->interps), cgiPtr->path);
             }
         }
     }
