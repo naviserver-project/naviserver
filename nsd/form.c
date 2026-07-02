@@ -43,14 +43,8 @@ static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Enco
 static bool GetBoundary(Tcl_DString *dsPtr, const char *contentType)
     NS_GNUC_NONNULL(1,2);
 
-#define NS_USE_MEMMEM 1
-#if defined(NS_USE_MEMMEM)
 static char *NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
     NS_GNUC_NONNULL(1,3) NS_GNUC_PURE;
-#else
-static char *NextBoundary(char *content, const char *end, const Tcl_DString *boundaryDsPtr)
-    NS_GNUC_NONNULL(1,2) NS_GNUC_PURE;
-#endif
 
 static bool GetValue(const char *hdr, const char *att, size_t attLength, const char **vsPtr, const char **vePtr, char *uPtr)
     NS_GNUC_NONNULL(1,2,4,5,6);
@@ -416,11 +410,8 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     char        *firstBoundary, *s;
                     Tcl_Encoding valueEncoding = connPtr->urlEncoding;
 
-#if defined(NS_USE_MEMMEM)
                     firstBoundary = NextBoundary(content, connPtr->reqPtr->length, &boundaryDs);
-#else
-                    firstBoundary = NextBoundary(content, formEndPtr, &boundaryDs);
-#endif
+                    
                     /*NsHexPrint("multipart content",
                       (const unsigned char *)content, connPtr->reqPtr->length,
                       20, NS_TRUE);*/
@@ -453,12 +444,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                                 ++s;
                             }
 
-#if defined(NS_USE_MEMMEM)
                             e = NextBoundary(s, (size_t)(formEndPtr - s), &boundaryDs);
-#else
-                            e = NextBoundary(s, formEndPtr, &boundaryDs);
-#endif
-
                             if (e != NULL) {
                                 status = ParseMultipartEntry(connPtr, valueEncoding, s, e);
                                 if (status == NS_ERROR) {
@@ -1052,7 +1038,6 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  *
  *----------------------------------------------------------------------
  */
-#if defined(NS_USE_MEMMEM)
 static char *
 NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
 {
@@ -1088,53 +1073,6 @@ NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsP
 
     return NULL;
 }
-#else
-static char *
-NextBoundary( char *content, const char *end, const Tcl_DString *boundaryDsPtr)
-{
-    char       *p;
-    const char *boundary;
-    size_t      blen;
-
-    NS_NONNULL_ASSERT(boundaryDsPtr != NULL);
-    NS_NONNULL_ASSERT(content != NULL);
-    NS_NONNULL_ASSERT(end != NULL);
-
-    boundary = boundaryDsPtr->string;
-    blen = (size_t)boundaryDsPtr->length;
-    p = content;
-
-    while (p + blen <= end) {
-        char *candidate = p;
-
-        /*
-         * Fast skip to the first boundary byte.
-         */
-        while (candidate + blen <= end && *candidate != *boundary) {
-            ++candidate;
-        }
-        if (candidate + blen > end) {
-            return NULL;
-        }
-
-        if (memcmp(candidate, boundary, blen) == 0
-            && (candidate == content || candidate[-1] == '\n')) {
-            char *after = candidate + blen;
-
-            if (after == end
-                || *after == '\n'
-                || (*after == '\r' && after + 1 < end && after[1] == '\n')
-                || (*after == '-' && after + 1 < end && after[1] == '-')) {
-                return candidate;
-            }
-        }
-
-        p = candidate + 1;
-    }
-
-    return NULL;
-}
-#endif
 
 
 /*
