@@ -1056,6 +1056,16 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         int idx;
 
         s = Ns_SetKey(conn->headers, i);
+        if (STRIEQ(s, "proxy")) {
+            /*
+             * Do not expose an incoming "Proxy" request header as HTTP_PROXY
+             * in the CGI environment. Some CGI applications and HTTP client
+             * libraries interpret HTTP_PROXY as outbound proxy configuration
+             * ("httpoxy"), allowing a client-supplied header to redirect
+             * server-side HTTP requests.
+             */
+            continue;
+        }
         e = Ns_SetValue(conn->headers, i);
         Tcl_DStringAppend(dsPtr, s, TCL_INDEX_NONE);
         s = dsPtr->string + 5;
