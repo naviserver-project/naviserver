@@ -20,6 +20,21 @@
 #include "thread.h"
 
 /*
+ * Tcl TLS cleanup during final shutdown is safe in Tcl 8.6.18 and newer.
+ */
+#if !defined(NS_TCL_VERSION_AT_LEAST)
+# define NS_TCL_VERSION_AT_LEAST(major, minor, serial) \
+    ((TCL_MAJOR_VERSION > (major)) \
+     || (TCL_MAJOR_VERSION == (major) && TCL_MINOR_VERSION > (minor)) \
+     || (TCL_MAJOR_VERSION == (major) && TCL_MINOR_VERSION == (minor) \
+         && TCL_RELEASE_SERIAL >= (serial)))
+#endif
+
+#if !defined(TCL_IS_FIXED) && NS_TCL_VERSION_AT_LEAST(8, 6, 18)
+# define TCL_IS_FIXED 1
+#endif
+
+/*
  * The following global variable specifies the maximum TLS id.  Modifying
  * this value has no effect.
  */
@@ -168,6 +183,7 @@ void
 NsCleanupTls(void **slots)
 {
     NS_NONNULL_ASSERT(slots != NULL);
+    //fprintf(stderr, "====== NsCleanupTls ============================ NS_finalshutdown %d\n", NS_finalshutdown);
 
     if (
 #if defined(TCL_IS_FIXED)
@@ -186,6 +202,8 @@ NsCleanupTls(void **slots)
             retry = NS_FALSE;
             i = NS_THREAD_MAXTLS;
             while (i-- > 0) {
+                //fprintf(stderr, "====== NsCleanupTls slot %d proc %p ============================\n", i, (void*)cleanupProcs[i]);
+
                 if (cleanupProcs[i] != NULL && slots[i] != NULL) {
                     void *arg;
 
