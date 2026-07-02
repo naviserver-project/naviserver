@@ -870,7 +870,7 @@ test ns_adp_registeradp-4.1 {whitespace handling between adp tags} -body {
 ############################################################################
 test ns_adp-tagset-1.0.1 {syntax ns_adp_tagset create} -body {
     ns_adp_tagset create
-} -returnCodes error -result {wrong # args: should be "ns_adp_tagset create ?-fallback /value/? /name/"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_tagset create ?-fallback default? /name/"}
 
 test ns_adp-tagset-1.0.2 {syntax ns_adp_tagset exists} -body {
     ns_adp_tagset exists
@@ -916,7 +916,7 @@ test ns_adp-tagset-1.6 {cannot create duplicate tagset} -body {
 
 test ns_adp-tagset-1.7 {unknown fallback rejected} -body {
     ns_adp_tagset create -fallback other test-other
-} -returnCodes error -match glob -result {*unknown ADP tagset fallback*}
+} -returnCodes error -result {bad option "other": must be default}
 
 ############################################################################
 # ns_adp_tagset introspection
