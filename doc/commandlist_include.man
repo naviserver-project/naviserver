@@ -32,16 +32,20 @@
 [uri ../../naviserver/files/ns_adp_dump.html {ns_adp_dump}]
 [uri ../../naviserver/files/ns_adp_exception.html {ns_adp_exception}] ?/varname/?
 [uri ../../naviserver/files/ns_adp_flush.html {ns_adp_flush}]
-[uri ../../naviserver/files/ns_adp_include.html {ns_adp_include}] ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?
+[uri ../../naviserver/files/ns_adp_include.html {ns_adp_include}] ?-cache /time/? ?-nocache? ?-tagset /value/? ?-tcl? ?--? /filename/ ?/arg .../?
 [uri ../../naviserver/files/ns_adp_info.html {ns_adp_info}]
 [uri ../../naviserver/files/ns_adp_mimetype.html {ns_adp_mimetype}] ?/mimetype/?
-[uri ../../naviserver/files/ns_adp_parse.html {ns_adp_parse}] ?-cwd /value/? ?-file? ?-safe? ?-string? ?-tcl? ?--? /arg .../
+[uri ../../naviserver/files/ns_adp_parse.html {ns_adp_parse}] ?-cwd /value/? ?-file? ?-safe? ?-string? ?-tagset /value/? ?-tcl? ?--? /arg .../
 [uri ../../naviserver/files/ns_adp_puts.html {ns_adp_puts}] ?-nonewline? ?--? /string/
-[uri ../../naviserver/files/ns_adp_register.html {ns_adp_registeradp}] /tag/ ?/endtag/? /adpstring/
-[uri ../../naviserver/files/ns_adp_register.html {ns_adp_registerproc}] /tag/ ?/endtag/? /proc/
-[uri ../../naviserver/files/ns_adp_register.html {ns_adp_registerscript}] /tag/ ?/endtag/? /proc/
+[uri ../../naviserver/files/ns_adp_register.html {ns_adp_registeradp}] ?-tagset /value/? /tag/ ?/endtag/? /adpstring/
+[uri ../../naviserver/files/ns_adp_register.html {ns_adp_registerproc}] ?-tagset /value/? /tag/ ?/endtag/? /proc/
+[uri ../../naviserver/files/ns_adp_register.html {ns_adp_registerscript}] ?-tagset /value/? /tag/ ?/endtag/? /proc/
 [uri ../../naviserver/files/ns_adp_return.html {ns_adp_return}] ?/retval/?
 [uri ../../naviserver/files/ns_adp_stats.html {ns_adp_stats}]
+[uri ../../naviserver/files/ns_adp_tagset.html {ns_adp_tagset create}] ?-fallback default? /name/
+[uri ../../naviserver/files/ns_adp_tagset.html {ns_adp_tagset exists}] /name/
+[uri ../../naviserver/files/ns_adp_tagset.html {ns_adp_tagset info}] /name/
+[uri ../../naviserver/files/ns_adp_tagset.html {ns_adp_tagset names}]
 [uri ../../naviserver/files/ns_adp_tell.html {ns_adp_tell}]
 [uri ../../naviserver/files/ns_adp_trunc.html {ns_adp_trunc}] ?/length/?
 [uri ../../naviserver/files/ns_schedule.html {ns_after}] /interval/ /script/ ?/arg .../?
@@ -141,6 +145,7 @@
 [uri ../../naviserver/files/ns_conn.html {ns_conn peerport}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn pool}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn port}]
+[uri ../../naviserver/files/ns_conn.html {ns_conn privacy}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn protocol}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn query}]
 [uri ../../naviserver/files/ns_conn.html {ns_conn ratelimit}] ?/limit/?
@@ -267,10 +272,8 @@
 [uri ../../naviserver/files/ns_encodingforcharset.html {ns_encodingforcharset}] /charset/
 [uri ../../naviserver/files/ns_encodingfortype.html {ns_encodingfortype}] /mimetype/
 [uri ../../naviserver/files/ns_env.html {ns_env exists}] /name/
-[uri ../../naviserver/files/ns_env.html {ns_env get}] ?-nocomplain? /name/
 [uri ../../naviserver/files/ns_env.html {ns_env names}]
 [uri ../../naviserver/files/ns_env.html {ns_env set}] /name/ /value/
-[uri ../../naviserver/files/ns_env.html {ns_env unset}] ?-nocomplain? /name/
 [uri ../../naviserver/files/ns_ictl.html {ns_eval}] ?-sync? ?-pending? /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_cache.html {ns_fastpath_cache_stats}] ?-contents? ?-reset?
 [uri ../../naviserver/files/ns_filestat.html {ns_filestat}] /filename/ ?/varname/?
@@ -400,7 +403,7 @@
 [uri ../../naviserver/files/ns_kill.html {ns_kill}] ?-nocomplain? /pid/ /signal/
 [uri ../../naviserver/files/ns_library.html {ns_library}] private|shared ?/module/?
 [uri ../../nsdb/files/ns_buildsqldate.html {ns_localsqltimestamp}]
-[uri ../../naviserver/files/ns_localtime.html {ns_localtime}]
+[uri ../../naviserver/files/ns_localtime.html {ns_localtime}] /seconds/
 [uri ../../naviserver/files/ns_locationproc.html {ns_locationproc}] /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_log.html {ns_log}] /severity/ /message .../
 [uri ../../naviserver/files/ns_log.html {ns_logctl count}]
