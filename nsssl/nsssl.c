@@ -223,7 +223,6 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
         int value = 1;
         setsockopt(sock->sock, SOL_SOCKET, SO_SNDLOWAT, &value, sizeof(value));
 #endif
-        //dc->driver = sock->driver;
         (void)Ns_SockSetNonBlocking(sock->sock);
         if (dc->u.h1.nodelay != 0) {
             Ns_SockSetNodelay(sock->sock);
@@ -232,24 +231,38 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
         if (sslCtx == NULL) {
             unsigned short port;
 
-            sslCtx = ns_calloc(1, sizeof(NssslSockCtx));
+            sslCtx = ns_calloc(1u, sizeof(NssslSockCtx));
             sslCtx->ssl = SSL_new(dc->ctx);
             if (sslCtx->ssl == NULL) {
                 char ipString[NS_IPADDR_SIZE];
 
-                Ns_Log(Error, "%d: SSL session init error for %s: [%s]",
+                Ns_Log(Error, "%d: SSL session init error for %s",
                        sock->sock,
-                       ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)),
-                       strerror(errno));
+                       ns_inet_ntop((struct sockaddr *)&(sock->sa),
+                                    ipString, sizeof(ipString)));
+
                 ns_free(sslCtx);
+
+                /*
+                 * Accept() returns NS_DRIVER_ACCEPT_ERROR below.  The
+                 * generic driver does not call the driver's Close()
+                 * callback for this return code, so the freshly accepted
+                 * socket must be closed here.
+                 */
+                ns_sockclose(sock->sock);
+                sock->sock = NS_INVALID_SOCKET;
+                sock->arg = NULL;
+
                 return NS_DRIVER_ACCEPT_ERROR;
             }
+
             sock->arg = sslCtx;
+
             SSL_set_fd(sslCtx->ssl, sock->sock);
             SSL_set_accept_state(sslCtx->ssl);
 
-            port = Ns_SockGetPort(sock);           /* precise local port */
-            if ((unsigned short)(((Driver*)(sock->driver))->listenfd[0]) != port) {
+            port = Ns_SockGetPort(sock); /* precise local port */
+            if ((unsigned short)(((Driver *)(sock->driver))->listenfd[0]) != port) {
                 /*
                  * The default port differs from the actual port. Attach a
                  * per-connection SNI context so callback knows driver+port.
@@ -257,8 +270,10 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
                 SSL_set_ex_data(sslCtx->ssl, dc->sni_idx, (void *)(uintptr_t)port);
             }
         }
+
         return NS_DRIVER_ACCEPT_DATA;
     }
+
     return NS_DRIVER_ACCEPT_ERROR;
 }
 
