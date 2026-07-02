@@ -58,6 +58,24 @@ ReportError(Tcl_Interp *interp, const char *fmt, ...)
         Tcl_DStringFree(&ds);
     }
 }
+/*
+ * Backport from 5.1 to ease merge:
+ *  - Ns_NullIfEmpty
+ *  - Ns_ConfigParameterProvided
+ */
+static const char *
+Ns_NullIfEmpty(const char *string)
+{
+    return (string != NULL && *string == '\0') ? NULL : string;
+}
+static bool
+Ns_ConfigParameterProvided(const char *section, const char *key)
+{
+    const Ns_Set *setPtr;
+
+    setPtr = Ns_ConfigGetSection2(section, NS_FALSE);
+    return setPtr != NULL && Ns_SetIFind(setPtr, key) >= 0;
+}
 
 #ifdef HAVE_OPENSSL_EVP_H
 # include "nsopenssl.h"
@@ -1657,7 +1675,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         result = TCL_ERROR;
     } else {
         const char *ciphers, *ciphersuites, *protocols;
-        const char *clientcafile = NULL, *clientcapath = NULL, *configValue;
+        const char *clientcafile = NULL, *clientcapath = NULL;
         Ns_DList    dl, *dlPtr = &dl;
 
         /*
@@ -1678,14 +1696,12 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Ns_Log(Notice, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app_data %p", (void*)app_data);
 
         if (Ns_ConfigParameterProvided(section, "clientcafile")) {
->>>>>>> 7df684aac (Harden default TLS protocol policy)
             clientcafile = Ns_ConfigFilename(section, "clientcafile", 12,
-                                             nsconf.home, configValue, NS_TRUE, NS_TRUE);
+                                             nsconf.home, "", NS_TRUE, NS_TRUE);
         }
-        configValue = Ns_ConfigGetValue(section, "clientcapath");
-        if (configValue != NULL) {
+        if (Ns_ConfigParameterProvided(section, "clientcapath")) {
             clientcapath = Ns_ConfigFilename(section, "clientcapath", 12,
-                                             nsconf.home, configValue, NS_TRUE, NS_TRUE);
+                                             nsconf.home, "", NS_TRUE, NS_TRUE);
         }
 
         result = Ns_TLS_CtxServerCreate(interp, cert,

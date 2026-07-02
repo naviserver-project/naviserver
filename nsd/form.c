@@ -48,7 +48,7 @@ static bool GetBoundary(Tcl_DString *dsPtr, const char *contentType)
 static char *NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_PURE;
 #else
-static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
+static char *NextBoundary(char *content, const char *end, const Tcl_DString *boundaryDsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 #endif
 
@@ -195,57 +195,67 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                 char        *firstBoundary, *s;
                 Tcl_Encoding valueEncoding = connPtr->urlEncoding;
 
-#if defined(NS_USE_MEMMEM)
                 firstBoundary = NextBoundary(content, connPtr->reqPtr->length, &boundaryDs);
-#else
-                firstBoundary = NextBoundary(&boundaryDs, content, formEndPtr);
-#endif
+                    
                 /*NsHexPrint("multipart content",
-                           (const unsigned char *)content, connPtr->reqPtr->length,
-                           20, NS_TRUE);*/
+                  (const unsigned char *)content, connPtr->reqPtr->length,
+                  20, NS_TRUE);*/
 
                 s = firstBoundary;
+
                 for (;;) {
                     const char *defaultCharset;
 
                     while (s != NULL) {
-                        char  *e;
+                        char *e;
 
-                        s += boundaryDs.length + 1;
-                        if (*s == '\r') {
+                        /*
+                         * s points to the beginning of the boundary marker.
+                         */
+                        s += boundaryDs.length;
+
+                        /*
+                         * Final boundary: "--boundary--"
+                         */
+                        if (s < formEndPtr && s[0] == '-' && s + 1 < formEndPtr && s[1] == '-') {
+                            s = NULL;
+                            break;
+                        }
+
+                        if (s < formEndPtr && *s == '\r') {
                             ++s;
                         }
-                        if (*s == '\n') {
+                        if (s < formEndPtr && *s == '\n') {
                             ++s;
                         }
-#if defined(NS_USE_MEMMEM)
+
                         e = NextBoundary(s, (size_t)(formEndPtr - s), &boundaryDs);
-#else
-                        e = NextBoundary(&boundaryDs, s, formEndPtr);
-#endif
                         if (e != NULL) {
                             status = ParseMultipartEntry(connPtr, valueEncoding, s, e);
                             if (status == NS_ERROR) {
-                                Ns_Log(Debug, "ParseMultipartEntry -> error");
                                 toParse = s;
+
+                                /*
+                                 * Do not break here.  A later multipart field may be _charset_,
+                                 * which can make this first-pass decoding error recoverable.
+                                 */
                             }
                         }
+
                         s = e;
                     }
 
                     /*
-                     * We have now parsed all form fields into
-                     * connPtr->query. According to the HTML5 standard, we
-                     * have to check for a form entry named "_charset_"
-                     * specifying the "default charset".
+                     * Only after all parts were parsed, check whether
+                     * _charset_ requires reparsing from firstBoundary.
+                     * According to the HTML5 standard, we have to check
+                     * for a form entry named "_charset_" specifying the
+                     * "default charset".
                      * https://datatracker.ietf.org/doc/html/rfc7578#section-4.6
                      */
                     defaultCharset = Ns_SetGet(connPtr->query, "_charset_");
+
                     if (defaultCharset != NULL && strcmp(defaultCharset, "utf-8") != 0) {
-                        /*
-                         * We got an explicit charset different from UTF-8. We
-                         * have to reparse the input data.
-                         */
                         Tcl_Encoding defaultEncoding = Ns_GetCharsetEncoding(defaultCharset);
 
                         if (valueEncoding != NULL) {
@@ -256,31 +266,9 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                                 Ns_Log(Debug, "form: retry with default charset %s", defaultCharset);
                                 continue;
                             }
-                        } else {
-                            Ns_Log(Error, "multipart form: invalid charset specified"
-                                   " inside of form '%s'", defaultCharset);
-                            status = NS_ERROR;
-                            break;
                         }
                     }
-                    /*
-                     * In case, we have still an unhandled error, we might
-                     * provide more mechanism in the future, when client could
-                     * not pass a proper fallbackEncoding. For now, just
-                     * provide a warning.
-                     */
-                    if (status == NS_ERROR) {
-                        Ns_ReturnCode rc;
-                        Tcl_Encoding fallbackEncoding = NULL;
 
-                        rc = NsGetFallbackEncoding(interp, connPtr->poolPtr->servPtr,
-                                                   fallbackCharsetObj, NS_TRUE, &fallbackEncoding);
-                        Ns_Log(Warning, "multipart form: error rc %d fallbackCharsetObj '%s'"
-                               " valueEncoding %p"
-                               " fallbackencoding %p",
-                               rc, fallbackCharsetObj == NULL ? "NONE" : Tcl_GetString(fallbackCharsetObj),
-                               (void*)valueEncoding, (void*)fallbackEncoding);
-                    }
                     break;
                 }
             }
@@ -803,7 +791,7 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  * NextBoundary --
  *
  *      Locate the next form boundary. On success, the result points to the
- *      character before the boundary.
+ *      first character of the boundary.
  *
  * Results:
  *      Pointer to start of next input field or NULL on end of fields.
@@ -817,51 +805,83 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
 static char *
 NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
 {
-    char *result;
+    char   *p = content;
+    char   *end = content + contentLength;
+    size_t  blen = (size_t)boundaryDsPtr->length;
 
-    result = ns_memmem(content, contentLength,
-                       boundaryDsPtr->string, (size_t)boundaryDsPtr->length);
-    if (result != NULL) {
-        /*Ns_Log(Notice, "NextBoundary found boundary offset %ld", result-start);*/
-        result--;
+    while (p < end) {
+        char *candidate = ns_memmem(p, (size_t)(end - p),
+                                    boundaryDsPtr->string, blen);
+        if (candidate == NULL) {
+            return NULL;
+        }
+
         /*
-         * We could check, whether the preceding character is an expected
-         * delimiter such as \0x0, 0xa, 0xd. However, previous version did not
-         * test this as well.
+         * A multipart boundary delimiter must start at the beginning of the
+         * body or after a line break, and must be followed by CRLF, LF,
+         * "--", or the end of the buffer.
          */
-        //NsHexPrint("boundary previous", (const unsigned char *)result, 10, 30, NS_TRUE);
+        if ((candidate == content || candidate[-1] == '\n')) {
+            char *after = candidate + blen;
+
+            if (after == end
+                || *after == '\n'
+                || (*after == '\r' && after + 1 < end && after[1] == '\n')
+                || (*after == '-' && after + 1 < end && after[1] == '-')) {
+                return candidate;
+            }
+        }
+
+        p = candidate + 1;
     }
-    return result;
+
+    return NULL;
 }
 #else
 static char *
-NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
+NextBoundary( char *content, const char *end, const Tcl_DString *boundaryDsPtr)
 {
-    char        c, sc;
-    const char *find;
-    size_t      len;
+    char       *p;
+    const char *boundary;
+    size_t      blen;
 
     NS_NONNULL_ASSERT(boundaryDsPtr != NULL);
-    NS_NONNULL_ASSERT(s != NULL);
-    NS_NONNULL_ASSERT(e != NULL);
+    NS_NONNULL_ASSERT(content != NULL);
+    NS_NONNULL_ASSERT(end != NULL);
 
-    find = boundaryDsPtr->string;
-    c = *find++;
-    len = (size_t)(boundaryDsPtr->length - 1);
-    /* Ns_Log(Notice, "search for boundary <%s> (boundary len %lu) firstchar '%c' in <%s>",
-       boundaryDsPtr->string, len, c, s);*/
-    e -= len;
-    do {
-        do {
-            sc = *s++;
-            if (s > e) {
-                return NULL;
+    boundary = boundaryDsPtr->string;
+    blen = (size_t)boundaryDsPtr->length;
+    p = content;
+
+    while (p + blen <= end) {
+        char *candidate = p;
+
+        /*
+         * Fast skip to the first boundary byte.
+         */
+        while (candidate + blen <= end && *candidate != *boundary) {
+            ++candidate;
+        }
+        if (candidate + blen > end) {
+            return NULL;
+        }
+
+        if (memcmp(candidate, boundary, blen) == 0
+            && (candidate == content || candidate[-1] == '\n')) {
+            char *after = candidate + blen;
+
+            if (after == end
+                || *after == '\n'
+                || (*after == '\r' && after + 1 < end && after[1] == '\n')
+                || (*after == '-' && after + 1 < end && after[1] == '-')) {
+                return candidate;
             }
-        } while (sc != c);
-    } while (strncmp(s, find, len) != 0);
-    s--;
+        }
 
-    return s;
+        p = candidate + 1;
+    }
+
+    return NULL;
 }
 #endif
 
@@ -998,9 +1018,9 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
      * string.
      */
     if (buffer != NULL && unescape != '\0') {
-        TCL_SIZE_T j, i, l = (TCL_SIZE_T)len;
+        TCL_SIZE_T j, i, l = dsPtr->length;
 
-        for (i = 0; i<l; i++) {
+        for (i = 0; i + 1 < l; i++) {
             if (buffer[i] == '\\' && buffer[i+1] == unescape) {
                 for (j = i; j < l; j++) {
                     buffer[j] = buffer[j+1];
