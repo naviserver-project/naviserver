@@ -8477,7 +8477,6 @@ JsonTriplesSchemaObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     Tcl_Obj      *rootTypeObj = NULL, *rootValueObj = NULL, *jsonObj = NULL;
     Tcl_Obj      *schemaObj = NULL, *canonSchemaObj = NULL;
-    JsonValueType rootVt;
     TCL_SIZE_T    nargs = 0;
     int           pretty = 0, required = 0, result;
     Ns_ObjvSpec opts[] = {
@@ -8499,6 +8498,7 @@ JsonTriplesSchemaObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     objc = (TCL_SIZE_T)nargs;
 
     for (TCL_SIZE_T i = 0; i < objc; i++) {
+        JsonValueType rootVt;
         Tcl_Obj *triplesObj = objv[i];
         Tcl_Obj *instanceSchemaObj = NULL;
         Tcl_Obj *mergedSchemaObj = NULL;
@@ -8587,7 +8587,6 @@ JsonTriplesMatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     Tcl_Obj      *schemaJsonObj = NULL, *triplesObj = NULL, *schemaObj = NULL;
     Tcl_Obj      *rootTypeObj = NULL, *rootValueObj = NULL;
-    JsonValueType rootVt;
     Tcl_DString   pathDs;
     int           ignoreUnsupported = 0;
     Ns_ObjvSpec   opts[] = {
@@ -8606,6 +8605,7 @@ JsonTriplesMatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     } else {
         Ns_JsonOptions opt;
+        JsonValueType  rootVt;
         Tcl_DString    errDs;
         TCL_SIZE_T     jsonLength;
         const char    *jsonString;

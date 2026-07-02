@@ -4328,9 +4328,11 @@ NsCertCtlListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
             const CertTableEntry *entryPtr = Tcl_GetHashValue(hPtr);
             X509                 *x509 = SSL_CTX_get0_certificate(ctx);
             const ASN1_TIME      *notAfter = X509_get0_notAfter(x509);
-            int                   remaining_days = 0, remaining_seconds = 0, rc;
+            int                   remaining_days = 0, remaining_seconds = 0;
 
             if (entryPtr != NULL && entryPtr->cert != NULL && x509 != NULL) {
+                int rc;
+
                 Tcl_ListObjAppendElement(interp, listObj,
                                          Tcl_NewStringObj(entryPtr->cert, TCL_INDEX_NONE));
                 rc = ASN1_TIME_diff(&remaining_days, &remaining_seconds, NULL, notAfter);

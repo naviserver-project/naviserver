@@ -576,7 +576,7 @@ GetInterpEnvSection(const char *name)
 static bool
 ParseLegacyInterpSpec(Cgi *cgiPtr, const char *spec)
 {
-    char *s, *e;
+    char *s;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(spec != NULL);
@@ -592,6 +592,8 @@ ParseLegacyInterpSpec(Cgi *cgiPtr, const char *spec)
      */
     s = strchr(cgiPtr->interp, INTCHAR('('));
     if (s != NULL) {
+        char  *e;
+
         *s++ = '\0';
         e = strchr(s, INTCHAR(')'));
         if (e != NULL) {

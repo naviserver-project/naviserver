@@ -219,7 +219,6 @@ AdpCtlBufSizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
 {
     int               result = TCL_OK;
     Tcl_WideInt       size = -1;
-    NsInterp         *itPtr = clientData;
     Ns_ObjvValueRange bufsizeRange = {1, SSIZE_MAX};
     Ns_ObjvSpec args[] = {
         {"?size", Ns_ObjvWideInt,  &size, &bufsizeRange},
@@ -229,6 +228,8 @@ AdpCtlBufSizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        NsInterp  *itPtr = clientData;
+
         if (size > -1) {
             itPtr->adp.bufsize = (size_t)size;
         }
@@ -815,13 +816,14 @@ NsTclAdpPutsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 int
 NsTclAdpDirObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
-    int             status = TCL_OK;
+    int  status = TCL_OK;
 
     if (unlikely(objc != 1)) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
         status = TCL_ERROR;
     } else {
+        const NsInterp *itPtr = clientData;
+
         Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->adp.cwd, TCL_INDEX_NONE));
     }
 

@@ -262,7 +262,6 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         code = TCL_ERROR;
 
     } else {
-        const NsInterp *itPtr = clientData;
         Ns_Set         *headers;
         Ns_ReturnCode   status;
         const char     *url;
@@ -279,6 +278,8 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         Tcl_DStringInit(&ds);
         url = Tcl_GetString(objv[1]);
         if (url[1] == '/') {
+            const NsInterp *itPtr = clientData;
+
             status = Ns_FetchPage(&ds, url, itPtr->servPtr->server);
         } else {
             status = Ns_FetchURL(&ds, url, headers);

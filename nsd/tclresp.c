@@ -135,7 +135,6 @@ int
 NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_Conn      *conn = NULL;
-    Tcl_Encoding  encoding = NULL;
     int           result = TCL_OK;
     char         *charset = NULL, *type = NULL;
 
@@ -154,7 +153,8 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
         result = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
-        NsInterp *itPtr = clientData;
+        NsInterp    *itPtr = clientData;
+        Tcl_Encoding encoding = NULL;
 
         Ns_LogDeprecated(objv, 1, "ns_headers ...", NULL);
 

@@ -739,7 +739,6 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
 static int
 UserAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
     int             result = TCL_OK, asDict = 0;
     char           *authuser, *authpasswd;
     Ns_ObjvSpec opts[] = {
@@ -756,8 +755,9 @@ UserAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Ns_ReturnCode status = NS_UNAUTHORIZED;
-        const char   *authority;
+        const NsInterp *itPtr = clientData;
+        const char     *authority;
+        Ns_ReturnCode   status = NS_UNAUTHORIZED;
 
         status = Ns_AuthorizeUser((Ns_Server *)(itPtr->servPtr), authuser, authpasswd, &authority);
         result = HandleAuthorizationResult(interp, status, "ns_auth user",

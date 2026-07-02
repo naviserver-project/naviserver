@@ -159,7 +159,6 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 int
 NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
     Tcl_Obj        *scriptObj;
     char           *method, *protocol;
     TCL_SIZE_T      remain = 0;
@@ -175,6 +174,7 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        const NsInterp *itPtr = clientData;
         Ns_TclCallback *cbPtr;
 
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclRequestProc,

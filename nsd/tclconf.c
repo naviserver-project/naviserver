@@ -192,7 +192,6 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         status = TCL_ERROR;
 
     } else {
-        const char *value;
         char       *keyString;
         TCL_SIZE_T  keyLength;
         Ns_DList    dl, *dlPtr = &dl;
@@ -220,7 +219,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
             /*
              * We got a single value
              */
-            value = dlPtr->data[0];
+            const char *value = dlPtr->data[0];
 
             if (isBool != 0) {
                 status = GetBoolFromStringOrDefault(interp, value, defObj);

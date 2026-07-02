@@ -2310,8 +2310,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     NsInterp            *itPtr = clientData;
     Conn                *connPtr;
     Ns_Conn             *conn;
-    const Ns_Request    *request = NULL;
-    Tcl_Encoding         encoding;
     int                  opt = 0, result = TCL_OK;
 
     static const char *const opts[] = {
@@ -2505,7 +2503,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
             } else {
                 if (encodingString != NULL) {
-                    encoding = Ns_GetCharsetEncoding(encodingString);
+                    Tcl_Encoding encoding  = Ns_GetCharsetEncoding(encodingString);
+
                     if (encoding == NULL) {
                         Ns_TclPrintfResult(interp, "no such encoding: %s", encodingString);
                         result = TCL_ERROR;
@@ -2573,6 +2572,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                 result = TCL_ERROR;
 
             } else {
+                const Ns_Request *request;
+
                 assert(connPtr != NULL);
                 request = &connPtr->request;
                 assert(request != NULL);
@@ -2700,7 +2701,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                 result = TCL_ERROR;
 
             } else if (encodingString != NULL) {
-                encoding = Ns_GetCharsetEncoding(encodingString);
+                Tcl_Encoding  encoding = Ns_GetCharsetEncoding(encodingString);
                 if (encoding == NULL) {
                     Ns_TclPrintfResult(interp, "no such encoding: %s", encodingString);
                     result = TCL_ERROR;
@@ -2739,6 +2740,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                 result = TCL_ERROR;
 
             } else {
+                const Ns_Request *request;
+
                 assert(connPtr != NULL);
                 request = &connPtr->request;
                 assert(request != NULL);
@@ -3284,7 +3287,6 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 int
 NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp   *itPtr = clientData;
     int               result = TCL_OK;
     Tcl_WideInt       toCopy = 0;
     char             *chanName;
@@ -3320,7 +3322,8 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
         result = TCL_ERROR;
 
     } else {
-        const Request *reqPtr = ((Conn *)itPtr->conn)->reqPtr;
+        const NsInterp *itPtr = clientData;
+        const Request  *reqPtr = ((Conn *)itPtr->conn)->reqPtr;
 
         Ns_LogDeprecated(objv, 1, "ns_conn copy ...", NULL);
 

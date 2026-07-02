@@ -425,7 +425,6 @@ int
 NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int        result = TCL_OK;
-    Tcl_Obj   *objPtr;
     NS_SOCKET  sock;
 
     if (objc != 2) {
@@ -436,6 +435,8 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         result = TCL_ERROR;
 
     } else {
+        Tcl_Obj *objPtr;
+
         if (ns_send(sock, NULL, 0, 0) != 0) {
             objPtr = Tcl_NewBooleanObj(0);
         } else {
@@ -804,7 +805,6 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
     Tcl_Obj        *scriptObj;
     Ns_Time        *timeoutPtr = NULL;
     unsigned int    when = 0u;
-    Callback       *cbPtr;
     const NsInterp *itPtr = clientData;
 
     Ns_ObjvSpec args[] = {
@@ -852,6 +852,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
     if (result == TCL_OK) {
         TCL_SIZE_T  scriptLength;
         const char *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
+        Callback   *cbPtr;
 
         if (timeoutPtr != NULL) {
             /*

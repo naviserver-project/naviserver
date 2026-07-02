@@ -172,7 +172,6 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     } else {
         const char  *name, *value;
         char        *const *envp;
-        Tcl_Obj     *resultObj;
 
         result = TCL_OK;
         Ns_MutexLock(&lock);
@@ -191,7 +190,8 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
             if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
                 result = TCL_ERROR;
             } else {
-                int i;
+                Tcl_Obj *resultObj;
+                int      i;
 
                 envp = Ns_GetEnviron();
                 resultObj = Tcl_GetObjResult(interp);

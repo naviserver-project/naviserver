@@ -1536,7 +1536,6 @@ int
 NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    NsInterp    *itPtr = clientData;
     int          result = TCL_OK, part = INTCHAR('q');
     const char  *charset = NULL, *inputStr = NS_EMPTY_STRING;
     Tcl_Obj     *fallbackCharsetObj = NULL;
@@ -1555,6 +1554,8 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        NsInterp  *itPtr = clientData;
+
         if (part == URL_PART_cookie) {
             Ns_LogDeprecated(objv, 3, "ns_percentdecode -scheme cookie ...", NULL);
         } else if (part == URL_PART_oauth1) {
@@ -1650,7 +1651,6 @@ int
 NsTclPercentDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
                          TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    NsInterp    *itPtr = clientData;
     int          result = TCL_OK, percentScheme = INTCHAR('q');
     const char  *charset = NULL, *inputStr = NS_EMPTY_STRING;
     Tcl_Obj     *fallbackCharsetObj = NULL;
@@ -1669,6 +1669,8 @@ NsTclPercentDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        NsInterp *itPtr = clientData;
+
         result = UrlPercentDecode(itPtr, inputStr, (char)percentScheme, charset, fallbackCharsetObj);
     }
     return result;

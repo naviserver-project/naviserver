@@ -916,7 +916,6 @@ NsAtomsInit(const NsAtomSpec *specs, size_t nSpecs, NsAtomId *outIds)
 
     for (i = 0u; i < nSpecs; i++) {
         NsAtomId     id;
-        Ns_ReturnCode status;
 
         if (specs[i].globalId >= 0) {
             id = (NsAtomId)specs[i].globalId;
@@ -926,8 +925,9 @@ NsAtomsInit(const NsAtomSpec *specs, size_t nSpecs, NsAtomId *outIds)
             }
 
         } else {
-            const char *name = specs[i].name;
-            TCL_SIZE_T len = specs[i].len;
+            Ns_ReturnCode status;
+            const char   *name = specs[i].name;
+            TCL_SIZE_T    len = specs[i].len;
 
             if (name == NULL) {
                 return NS_ERROR;
