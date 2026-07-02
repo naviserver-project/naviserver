@@ -1996,6 +1996,28 @@ DriverQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             if (servPtr != NULL && !DriverIsRegisterdForServer(drvPtr, servPtr)) {
                 continue;
             }
+
+            /*
+             * Don't report figures, if the correcponding threads are not
+             * configured.
+             */
+            switch (queue) {
+            case DriverQueue:
+                break;
+
+            case SpoolerQueue:
+                if (drvPtr->spooler.threads == 0u) {
+                    continue;
+                }
+                break;
+
+            case WriterQueue:
+                if (drvPtr->writer.threads == 0u) {
+                    continue;
+                }
+                break;
+            }
+
             listObj = Tcl_NewListObj(0, NULL);
 
             Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_thread));
@@ -2017,22 +2039,26 @@ DriverQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
                 break;
 
             case SpoolerQueue:
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.queued));
+                if (drvPtr->spooler.threads > 0) {
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.queued));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("waiting", TCL_INDEX_NONE));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.waiting));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("waiting", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.waiting));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("reading", TCL_INDEX_NONE));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.reading));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("reading", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.reading));
+                }
                 break;
 
             case WriterQueue:
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->writer.stats.queued));
+                if (drvPtr->writer.threads > 0) {
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->writer.stats.queued));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("writing", TCL_INDEX_NONE));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->writer.stats.writing));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("writing", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->writer.stats.writing));
+                }
             }
 
             Tcl_ListObjAppendElement(interp, resultObj, listObj);

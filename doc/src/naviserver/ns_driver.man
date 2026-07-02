@@ -25,7 +25,8 @@ for detailed configuration options of the network drivers.
 [section {COMMANDS}]
 
 [list_begin definitions]
-[call [cmd "ns_driver info"] [opt [option "-server [arg server]"]]]
+[call [cmd "ns_driver info"]  \
+      [opt [option "-server [arg server]"]]]
 
  Returns a list containing information of all loaded network drivers.
  The option [option "-server"] can be used to return only drivers registered for this server.
@@ -36,28 +37,29 @@ for detailed configuration options of the network drivers.
 
 [list_begin itemized]
 [item] [term module] refers to the name of the driver module, such as
-e.g. "nssock"
+        e.g. "nssock"
 [item] [term type] refers to the type of the driver module, such as
-e.g. "nssock"
+        e.g. "nssock"
 [item] [term server] is the associated server, if this module is
-loaded for a certain server; for global drivers, the value is empty.
+        loaded for a certain server; for global drivers, the value is empty.
 [item] [term location] is the location as derived from the
-configuration data, might be e.g. "http://localhost:8091"
+        configuration data, might be e.g. "http://localhost:8091"
 [item] [term address] is the space separated list of IP addresses
-(IPv4 or IPv6), on which the driver is listening, might be e.g. "0.0.0.0"
+        (IPv4 or IPv6), on which the driver is listening, might be e.g. "0.0.0.0"
 [item] [term port] space separated list of ports, on which the driver listens
 [item] [term defaultport] the default port for this driver
 [item] [term protocol] is the name of the protocol, such as e.g. "http"
 [item] [term sendwait] timeout for send operations.
 [item] [term recvwait] timeout for receive operations.
 [item] [term extraheaders] are the extra response header fields to be returned
-on every request via this driver.
+        on every request via this driver.
 [item] [term libraryversion] version number of the library implemented
-major parts of the communication.
+       major parts of the communication.
 [list_end]
 
 
-[call [cmd "ns_driver names"] [opt [option "-server [arg server]"]] ]
+[call [cmd "ns_driver names"] \
+      [opt [option "-server [arg server]"]] ]
 
  Returns a list of the names of all currently loaded driver modules.
  By default, every driver that has been loaded into the server process
@@ -65,22 +67,114 @@ major parts of the communication.
  restricts the output to drivers that are registered for the given
  [arg server].
 
-[call [cmd "ns_driver threads"] [opt [option "-server [arg server]"]] ]
+[call [cmd "ns_driver queues"] \
+      [opt [option "-server [arg server]"]] \
+      driver|spooler|writer ]
+
+ Returns current queue gauges for driver-owned request handling infrastructure.
+ The [option -server] option restricts the output to drivers that are registered
+ for the given [arg server].  The required subcommand selects the queue class to
+ report and must be one of [const driver], [const spooler], or [const writer].
+
+ [para] The result is a list containing one dictionary-style list per matching driver.
+ Each entry starts with the driver thread name and driver module name.  The
+ remaining fields depend on the selected queue class.
+
+ [para] The subcommand [const driver] reports the driver thread's local socket lists:
+
+ [list_begin itemized]
+ [item] [const waiting]: sockets currently on the driver retry list for later queueing
+         into a connection pool.
+
+ [item] [const reading]: sockets currently on the driver read or keepalive-wait list.
+
+ [item] [const closing]: sockets currently on the driver close-wait list.
+ [list_end]
+
+ Driver queue information is reported for every matching driver.
+
+ [para] The subcommand [const spooler] reports upload spooler state:
+
+ [list_begin itemized]
+ [item] [const queued]: sockets queued for an upload spooler thread but not yet active.
+
+ [item] [const waiting]: sockets handled by a spooler thread that are waiting for
+ queueing into a connection pool.
+
+ [item] [const reading]: sockets currently being read by spooler threads.
+ [list_end]
+
+ Spooler queue information is reported only for drivers that have spooler
+ threads configured.
+
+ [para] The subcommand [const writer] reports writer-thread state:
+
+ [list_begin itemized]
+ [item] [const queued]: writer jobs queued for a writer thread but not yet active.
+
+ [item] [const writing]: writer jobs currently active in writer threads.
+ [list_end]
+
+ Writer queue information is reported only for drivers that have writer threads
+ configured.
+
+ [para] The values returned by [cmd "ns_driver queues"] are current gauges, not
+ cumulative counters.  They are intended for diagnostics of overload,
+ back-pressure, queued uploads, queued writer jobs, and shutdown behavior.  In a
+ busy server, these values may change immediately after they are read.
+
+
+[call [cmd "ns_driver stats"] \
+      [opt [option "-server [arg server]"]] ]
+
+ Returns driver statistics for every loaded driver.  The [option -server] option
+ restricts the output to drivers that are registered for the given
+ [arg server].
+
+ [para] The result is a list containing one dictionary-style list per matching driver.
+ Each entry includes the driver thread name and driver module name, followed by
+ cumulative counters and current driver-thread gauges.
+
+ The cumulative counters are:
+
+ [list_begin itemized]
+ [item] [const received]: the number of accepted connections or requests seen by the
+        driver.
+
+ [item] [const spooled]: the number of requests handed to an upload spooler.
+
+ [item] [const partial]: the number of partial receive operations, typically for
+        requests that required multiple receive operations before enough input was
+        available.
+
+ [item] [const errors]: the number of driver-level errors.
+ [list_end]
+
+ The current gauges are:
+
+ [list_begin itemized]
+ [item] [const waiting]: sockets currently on the driver thread's retry list, waiting
+         for another attempt to queue the request into the selected connection pool.
+
+ [item] [const reading]: sockets currently on the driver thread's read or
+        keepalive-wait list.
+
+ [item] [const closing]: sockets currently on the driver thread's close-wait list.
+ [list_end]
+
+ These gauges describe the current state of the driver thread and are intended
+ for overload and shutdown diagnostics.  They are not cumulative counters.
+
+
+[call [cmd "ns_driver threads"] \
+       [opt [option "-server [arg server]"]] ]
 
  Returns a list of the names of the driver threads. The [option -server] option
  restricts the output to drivers that are registered for the given
  [arg server].
 
-[call [cmd "ns_driver stats"] [opt [option "-server [arg server]"]] ]
 
-Returns driver statistics for every loaded driver.  The [option -server] option
- restricts the output to drivers that are registered for the given
- [arg server].
 
-The result includes the names of the thread and the driver module, the
-number of received requests, the number of spooled requests, the
-partial requests (received via multiple receive operations), and the
-number of errors.
 
 [list_end]
 
