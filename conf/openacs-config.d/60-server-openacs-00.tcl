@@ -269,7 +269,7 @@ ns_section ns/server/$server/fastpath {
     # ns_param directoryfile      "index.adp index.tcl index.html index.htm"
     # ns_param directoryadp       $pageroot/dirlist.adp ;# default: ""
     # ns_param directoryproc      _ns_dirlist           ;# default: "_ns_dirlist"
-    # ns_param hidedotfiles       true  ;# default: false
+    # ns_param hidedotfiles       true                  ;# default: true
     #------------------------------------------------------------------
     # Directory listings
     #------------------------------------------------------------------
