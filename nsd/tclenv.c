@@ -154,7 +154,7 @@ int
 NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                      result, opt;
-    static const char *const opts[] = {
+    static const char *const cmds[] = {
         "exists", "names", "get", "set", "unset", NULL
     };
     enum {
@@ -165,7 +165,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
         Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/arg .../?");
         result = TCL_ERROR;
 
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "subcommand", 0,
                             &opt) != TCL_OK) {
         result = TCL_ERROR;
 

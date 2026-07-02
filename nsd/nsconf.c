@@ -93,7 +93,7 @@ NsInitConf(void)
 void
 NsConfUpdate(void)
 {
-    size_t      size;
+    size_t      size, deprecSize = 0u;
     Tcl_DString ds;
     const char *section = NS_GLOBAL_CONFIG_PARAMETERS;
 
@@ -114,9 +114,12 @@ NsConfUpdate(void)
      */
     if (Ns_ConfigParameterProvided(section, "stacksize")) {
         Ns_LogDeprecatedParameter(section, "stacksize", NS_CONFIG_THREADS, "stacksize", NULL);
-        size = (size_t)Ns_ConfigMemUnitRange(section, "stacksize", "0kB", 0, 0, INT_MAX);
+        deprecSize = (size_t)Ns_ConfigMemUnitRange(section, "stacksize", "0kB", 0, 0, INT_MAX);
     }
     size = (size_t)Ns_ConfigMemUnitRange(NS_CONFIG_THREADS, "stacksize", "0kB", 0, 0, INT_MAX);
+    if (size == 0 && deprecSize > 0) {
+        size = deprecSize;
+    }
     if (size > 0u) {
         (void) Ns_ThreadStackSize((ssize_t)size);
     }

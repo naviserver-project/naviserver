@@ -1329,8 +1329,8 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
                     size_t i;
 
                     for (i = 0u; i < Ns_SetSize(hdrPtr); i++) {
-                        const char *key = Ns_SetKey(hdrPtr, i);
-                        Ns_DStringPrintf(&sockPtr->reqPtr->buffer, "%s: %s\r\n", key, Ns_SetValue(hdrPtr, i));
+                        const char *keyString = Ns_SetKey(hdrPtr, i);
+                        Ns_DStringPrintf(&sockPtr->reqPtr->buffer, "%s: %s\r\n", keyString, Ns_SetValue(hdrPtr, i));
                     }
                 }
 

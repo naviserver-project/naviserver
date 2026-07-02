@@ -115,9 +115,7 @@ Ns_SlsSet(const Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
     void **slotPtr;
 
     slotPtr = GetSlot(slsPtr, sock);
-    if (slotPtr != NULL) {
-        *slotPtr = data;
-    }
+    *slotPtr = data;
 }
 
 
@@ -143,9 +141,8 @@ Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
     void *const* slotPtr, *result = NULL;
 
     slotPtr = GetSlot(slsPtr, sock);
-    if (slotPtr != NULL) {
-        result = *slotPtr;
-    }
+    result = *slotPtr;
+
     return result;
 }
 
