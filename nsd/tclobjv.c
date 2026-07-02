@@ -2148,6 +2148,9 @@ Ns_ObjvTablePrintSentence(Tcl_DString *dsPtr, const Ns_ObjvTable *values)
 
     if (n == 0u) {
         return dsPtr->string;
+    } else if (n == 1u) {
+        Tcl_DStringAppend(dsPtr, values->key, TCL_INDEX_NONE);
+
     } else {
         size_t i;
 
