@@ -52,6 +52,7 @@ typedef struct Cgi {
     pid_t           pid;
     Ns_Set         *env;
     Ns_Set         *interpEnvInline;
+    Tcl_Obj        *interpArgvObj;
     const char     *name;
     char           *path;
     const char     *pathinfo;
@@ -121,6 +122,8 @@ static bool          ParseLegacyInterpSpec(Cgi *cgiPtr, const char *spec)
 static bool          ParseInterpSpec(Tcl_Interp *interp, Cgi *cgiPtr, const char *spec)
     NS_GNUC_NONNULL(1,2,3);
 static bool          ParseInlineEnv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *envObj)
+    NS_GNUC_NONNULL(1,2,3);
+static bool          ParseInterpArgv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *argvObj)
     NS_GNUC_NONNULL(1,2,3);
 static void          SetAppend(Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1,3,4);
@@ -667,7 +670,7 @@ ParseInlineEnv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *envObj)
     }
 
     if ((envc % 2) != 0) {
-        Ns_Log(Error, "nscgi: inline env must contain name/value pairs");
+        Ns_TclPrintfResult(interp, "inline env must contain name/value pairs");
         return NS_FALSE;
     }
 
@@ -685,11 +688,66 @@ ParseInlineEnv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *envObj)
         const char *value = Tcl_GetString(envv[i + 1]);
 
         if (*name == '\0') {
-            Ns_Log(Error, "nscgi: inline env contains empty variable name");
+            Ns_TclPrintfResult(interp, "iinline env contains empty variable name");
             return NS_FALSE;
         }
         Ns_SetPut(cgiPtr->interpEnvInline, name, value);
     }
+
+    return NS_TRUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseInterpArgv --
+ *
+ *      Parse the value of the "argv" option in the Tcl-list interpreter
+ *      syntax.
+ *
+ *      The value must be a Tcl list. Each list element is treated as one
+ *      argument vector element. The value is not evaluated by a shell; no
+ *      shell quoting, globbing, or word splitting is performed.
+ *
+ * Results:
+ *      NS_TRUE if the argv list was parsed successfully, NS_FALSE
+ *      otherwise.
+ *
+ * Side effects:
+ *      Stores a duplicated Tcl list object in cgiPtr->interpArgvObj,
+ *      replacing any previous value.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+ParseInterpArgv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *argvObj)
+{
+    Tcl_Obj   **argvv;
+    TCL_SIZE_T  argvc;
+
+
+    if (Tcl_ListObjGetElements(interp, argvObj, &argvc, &argvv) != TCL_OK) {
+        return NS_FALSE;
+    }
+
+    for (TCL_SIZE_T i = 0; i < argvc; i++) {
+        const char *arg = Tcl_GetString(argvv[i]);
+
+        if (*arg == '\0') {
+            Ns_TclPrintfResult(interp,
+                               "argv option contains an empty argument; "
+                               "empty argv elements cannot be represented by Ns_ExecArgblk()");
+            return NS_FALSE;
+        }
+    }
+
+    if (cgiPtr->interpArgvObj != NULL) {
+        Tcl_DecrRefCount(cgiPtr->interpArgvObj);
+    }
+
+    cgiPtr->interpArgvObj = Tcl_DuplicateObj(argvObj);
+    Tcl_IncrRefCount(cgiPtr->interpArgvObj);
 
     return NS_TRUE;
 }
@@ -711,15 +769,18 @@ ParseInlineEnv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *envObj)
  *      a Tcl list of option/value pairs. The supported options are:
  *
  *          program      Interpreter executable path.
+ *          argv         Optional Tcl list of additional argument vector
+ *                       elements passed to the interpreter program.
  *          environment  Name of an ns/environment/$name section, or a full
  *                       environment section name.
  *          env          Inline Tcl list of environment variable name/value
  *                       pairs.
  *
  *      The "program" option is required in the option/value form. The
- *      "environment" option stores a named environment section in
- *      cgiPtr->interpEnv. The "env" option stores inline environment
- *      variables in cgiPtr->interpEnvInline.
+ *      "argv" option stores additional interpreter arguments in
+ *      cgiPtr->interpArgvObj. The "environment" option stores a named
+ *      environment section in cgiPtr->interpEnv. The "env" option stores
+ *      inline environment variables in cgiPtr->interpEnvInline.
  *
  * Results:
  *      NS_TRUE when the interpreter specification was parsed successfully,
@@ -727,9 +788,9 @@ ParseInlineEnv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *envObj)
  *      options.
  *
  * Side effects:
- *      Updates cgiPtr->interp, cgiPtr->interpEnv, and/or
- *      cgiPtr->interpEnvInline. May write warnings or errors to the server
- *      log.
+ *      Updates cgiPtr->interp, cgiPtr->interpArgvObj, cgiPtr->interpEnv,
+ *      and/or cgiPtr->interpEnvInline. May write warnings or errors to
+ *      the server log.
  *
  *----------------------------------------------------------------------
  */
@@ -777,12 +838,13 @@ ParseInterpSpec(Tcl_Interp *interp, Cgi *cgiPtr, const char *spec)
      * as an option/value list:
      *
      *   program     /bin/sh
+     *   argv        {-c}
      *   environment MKSenv
      *   env         {NAME value NAME2 value2}
      */
     if ((objc % 2) != 0) {
-        Ns_Log(Error, "nscgi: invalid interpreter specification '%s': "
-               "expected option/value pairs", spec);
+        Ns_TclPrintfResult(interp,
+                           "expected option/value pairs in interpreter specification");
         result = NS_FALSE;
         goto done;
     }
@@ -799,28 +861,34 @@ ParseInterpSpec(Tcl_Interp *interp, Cgi *cgiPtr, const char *spec)
              * The legacy "(env)" syntax inside "program" value is not checked.
              */
 
+        } else if (strcasecmp(option, "argv") == 0) {
+            if (!ParseInterpArgv(interp, cgiPtr, valueObj)) {
+                result = NS_FALSE;
+                goto done;
+            }
+
         } else if (strcasecmp(option, "environment") == 0) {
             cgiPtr->interpEnv = GetInterpEnvSection(value);
 
         } else if (strcasecmp(option, "env") == 0) {
             if (!ParseInlineEnv(interp, cgiPtr, valueObj)) {
-                Ns_Log(Error, "nscgi: invalid inline env specification "
-                       "in interpreter specification '%s'", spec);
                 result = NS_FALSE;
                 goto done;
             }
 
         } else {
-            Ns_Log(Error, "nscgi: invalid interpreter option '%s' "
-                   "in specification '%s'; expected 'program', "
-                   "'environment', or 'env'", option, spec);
+            Ns_TclPrintfResult(interp,
+                               "invalid interpreter option '%s': expected 'program', 'argv', "
+                               "'environment', or 'env'",
+                               option);
             result = NS_FALSE;
             goto done;
         }
     }
 
     if (cgiPtr->interp == NULL || *cgiPtr->interp == '\0') {
-        Ns_Log(Error, "nscgi: interpreter specification '%s' has no program", spec);
+        Ns_TclPrintfResult(interp,
+                           "interpreter specification is missing required option 'program'");
         result = NS_FALSE;
     }
 
@@ -876,6 +944,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     for (i = 0; i < NDSTRINGS; ++i) {
         Tcl_DStringInit(&cgiPtr->ds[i]);
     }
+    cgiPtr->interpArgvObj = NULL;
 
     /*
      * Determine the executable or script to run.
@@ -970,10 +1039,17 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
                 Tcl_Interp *interp = Ns_GetConnInterp(conn);
 
                 if (!ParseInterpSpec(interp, cgiPtr, spec)) {
+                    const char *errorMsg = Tcl_GetStringResult(interp);
+
                     Ns_Log(Warning,
-                           "nscgi: invalid interpreter specification for extension "
-                           "'%s' in section '%s': %s",
-                           ext, Ns_SetName(modPtr->interps), spec);
+                           "nscgi: ignoring invalid interpreter specification for extension '%s' "
+                           "in section '%s': %s",
+                           ext, Ns_SetName(modPtr->interps),
+                           *errorMsg != '\0' ? errorMsg : "invalid specification");
+
+                    Ns_Log(Ns_LogCGIDebug,
+                           "nscgi: invalid interpreter specification for extension '%s': <%s>",
+                           ext, spec);
                     goto err;
                 }
             } else  {
@@ -1149,6 +1225,10 @@ CgiFree(Cgi *cgiPtr)
 
     if (cgiPtr->interpEnvInline != NULL) {
         Ns_SetFree(cgiPtr->interpEnvInline);
+    }
+
+    if (cgiPtr->interpArgvObj != NULL) {
+        Tcl_DecrRefCount(cgiPtr->interpArgvObj);
     }
 
     /*
@@ -1471,12 +1551,39 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     Tcl_DStringSetLength(dsPtr, 0);
+
     if (cgiPtr->interp != NULL) {
         Ns_DStringAppendArg(dsPtr, cgiPtr->interp);
+        /*
+         * Append configured interpreter arguments, if any. The "argv" option
+         * is stored as a Tcl list; every list element is appended here as one
+         * argv element.
+         */
+        
+        if (cgiPtr->interpArgvObj != NULL) {
+            Tcl_Obj   **argvv;
+            TCL_SIZE_T  argvc;
+
+            if (Tcl_ListObjGetElements(NULL, cgiPtr->interpArgvObj,
+                                       &argvc, &argvv) == TCL_OK) {
+                for (TCL_SIZE_T i = 0; i < argvc; i++) {
+                    Ns_DStringAppendArg(dsPtr, Tcl_GetString(argvv[i]));
+                    
+                }
+            } else {
+                /*
+                 * Should not happen, since ParseInterpArgv() validates the list.
+                 */
+                Ns_Log(Error, "nscgi: stored argv specification is invalid");
+                status = NS_ERROR;
+            }
+        }
     }
+
     if (cgiPtr->path != NULL) {
         Ns_DStringAppendArg(dsPtr, cgiPtr->path);
     }
+
     s = conn->request.query;
     if (s != NULL) {
         if (strchr(s, INTCHAR('=')) == NULL) {

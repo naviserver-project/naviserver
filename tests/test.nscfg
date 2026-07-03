@@ -335,21 +335,24 @@ ns_section "ns/server/test/module/nscp/users" {
 }
 
 ns_section ns/server/test/module/nscgi {
-    ns_param    map                 "GET /cgi-wc/*"
-    ns_param    map                 "GET /cgi-dir/*.tclcgi [ns_config test home]/testserver/cgi"
-    ns_param    map                 "GET *.cgi"
-    ns_param    map                 "POST *.cgi"
-    ns_param    map                 "GET *.nscgi1"
-    ns_param    map                 "GET *.nscgi2"
-    ns_param    map                 "GET *.nscgi3"
-    ns_param    map                 "GET *.nscgi4"
-    ns_param    map                 "GET *.nscgi5"
-    ns_param    map                 "GET *.nscgi6"
-    ns_param    map                 "GET *.nscgi7"
-    ns_param    interps              CGIinterps
-    ns_param    environment          cgi
-    ns_param    allowstaticresources true    ;# default false; serve static resources from cgi directories
-    ns_param    systemenvironment    true    ;# default false, provide interpreter environment to script
+    ns_param map "GET /cgi-wc/*"
+    ns_param map "GET /cgi-dir/*.tclcgi [ns_config test home]/testserver/cgi"
+    ns_param map "GET *.cgi"
+    ns_param map "POST *.cgi"
+    ns_param map "GET *.nscgi1"
+    ns_param map "GET *.nscgi2"
+    ns_param map "GET *.nscgi3"
+    ns_param map "GET *.nscgi4"
+    ns_param map "GET *.nscgi5"
+    ns_param map "GET *.nscgi6"
+    ns_param map "GET *.nscgi7"
+    ns_param map "GET *.nscgi8"
+    ns_param map "GET *.nscgi9"
+    ns_param map "GET *.nscgi10"
+    ns_param interps              CGIinterps
+    ns_param environment          cgi
+    ns_param allowstaticresources true    ;# default false; serve static resources from cgi directories
+    ns_param systemenvironment    true    ;# default false, provide interpreter environment to script
 }
 ns_section ns/environment/cgi {
     ns_param FOO BAR     ;# defines environment variable "FOO=BAR"
@@ -410,14 +413,24 @@ ns_section ns/interps/CGIinterps {
             EmptyInline {}
         }
     }]
-
     ns_param .nscgi7 [subst {
         program $tclsh
         env {
             SpaceInline {hello world}
         }
     }]
-
+    ns_param .nscgi8 [subst {
+        program [file join [ns_config "test" home]/testserver/pages argv.nscgi8]
+        argv {-one two}
+    }]
+    ns_param .nscgi9 [subst {
+        program [file join [ns_config "test" home]/testserver/pages argv.nscgi9]
+        argv {-Dkey=value {hello world}}
+    }]
+    ns_param .nscgi10 [subst {
+        program [file join [ns_config "test" home]/testserver/pages argv.nscgi10]
+        argv {}
+    }]
     ns_param .sh                 "/bin/bash"
 }
 ns_section ns/environment/interp-env {

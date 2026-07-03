@@ -400,6 +400,37 @@ proc _nscgiDeleteInfoScript {ext} {
     file delete -force [file join $pageRoot info.$ext]
 }
 
+#
+# Write a small executable helper used as an nscgi interpreter program.
+# It reports the argv vector it receives, including the script path appended
+# by nscgi after configured interpreter argv elements.
+#
+proc _nscgiWriteArgvScript {ext} {
+    set pageRoot [ns_config "test" home]/testserver/pages
+    set path [file join $pageRoot argv.$ext]
+
+    set f [open $path w]
+    puts $f [ns_trim -delimiter | {
+        |#!/bin/sh
+        |echo "content-type: text/plain"
+        |echo
+        |i=0
+        |echo "argc: <$#>"
+        |for a in "$@"; do
+        |  echo "argv($i): <$a>"
+        |  i=$((i + 1))
+        |done
+    }]
+    close $f
+    catch {file attributes $path -permissions 0755}
+    return $path
+}
+proc _nscgiDeleteArgvScript {ext} {
+    set pageRoot [ns_config ns/server/test pageroot]
+    file delete -force [file join $pageRoot argv.$ext]
+}
+
+
 test nscgi-1.10.0 {
     New interpreter syntax with program option
 } -constraints {serverListen tclsh} -setup {
@@ -499,6 +530,45 @@ test nscgi-1.10.9 {
 } -cleanup {
     _nscgiDeleteInfoScript nscgi7
 } -returnCodes ok -result "SpaceInline: <hello world>"
+
+
+test nscgi-1.11.0 {
+    New interpreter syntax with argv option
+} -constraints {serverListen} -setup {
+    _nscgiWriteArgvScript nscgi8
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /argv.nscgi8] 1]
+} -cleanup {
+    _nscgiDeleteArgvScript nscgi8
+} -returnCodes ok -match glob -result {argc: <3>
+argv(0): <-one>
+argv(1): <two>
+argv(2): <*argv.nscgi8>}
+
+
+test nscgi-1.11.1 {
+    New interpreter syntax with argv preserves Tcl-list elements
+} -constraints {serverListen} -setup {
+    _nscgiWriteArgvScript nscgi9
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /argv.nscgi9] 1]
+} -cleanup {
+    _nscgiDeleteArgvScript nscgi9
+} -returnCodes ok -match glob -result {argc: <3>
+argv(0): <-Dkey=value>
+argv(1): <hello world>
+argv(2): <*argv.nscgi9>}
+
+test nscgi-1.11.2 {
+    New interpreter syntax with empty argv list
+} -constraints {serverListen} -setup {
+    _nscgiWriteArgvScript nscgi10
+} -body {
+    string trimright [lindex [nstest::http -getbody 1 GET /argv.nscgi10] 1]
+} -cleanup {
+    _nscgiDeleteArgvScript nscgi10
+} -returnCodes ok -match glob -result {argc: <1>
+argv(0): <*argv.nscgi10>}
 
 cleanupTests
 

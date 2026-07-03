@@ -242,27 +242,21 @@ via the named executables.
 
 [para] The value of an interpreter entry may either be the path of the
 interpreter program, as shown above, or a Tcl list with named options.  The
-list form is useful when the interpreter needs an interpreter-specific
-environment.
+list form is useful when the interpreter needs fixed command-line arguments
+or an interpreter-specific environment.
 
 [example_begin]
- ns_section ns/server/s1/module/nscgi {
-   ns_param map     "GET /git/*.cgi"
-   ns_param interps CGIinterps
- }
- 
  ns_section ns/interps/CGIinterps {
-   ns_param .cgi {
-     program     /usr/local/bin/tclsh
-     environment git-http
+   ns_param .php {
+     program /usr/bin/php-cgi
+     argv {-d open_basedir=/srv/www}
+     env {
+       TMPDIR /tmp
+     }
    }
  }
- 
- ns_section ns/environment/git-http {
-   ns_param GIT_PROJECT_ROOT /usr/local/src/naviserver
-   ns_param GIT_HTTP_EXPORT_ALL ""
- }
 [example_end]
+
 
 [para] The following options are supported in the Tcl-list form:
 
@@ -270,11 +264,19 @@ environment.
 
 [item] [const program]:
 The path of the interpreter executable. This option is required when the
-list form is used.
+list form is used. The value is interpreted as a single executable path, not
+as a shell command line.
+
+[item] [const argv]:
+An optional Tcl list of additional argument vector elements passed to the
+interpreter program. Each list element becomes one argument. The list is not
+evaluated by a shell; no shell quoting, globbing, variable substitution, or
+word splitting is performed. Empty argument elements are not supported.
 
 [item] [const environment]:
-The name of an [const {ns/environment/$name}] section. The named environment
-section is merged into the environment of scripts executed by this interpreter.
+The name of an [const ns/environment/$name] section, or a full environment
+section name. The named environment section is merged into the environment
+of scripts executed by this interpreter.
 
 [item] [const env]:
 An inline Tcl list of environment variable name/value pairs. This form is
@@ -283,17 +285,18 @@ environment section.
 
 [list_end]
 
-[example_begin]
+example_begin]
  ns_section ns/interps/CGIinterps {
-   ns_param .cgi {
-     program /usr/local/bin/tclsh
+   ns_param .git {
+     program /usr/lib/git-core/git-http-backend
      env {
-       GIT_PROJECT_ROOT /usr/local/src/naviserver
+       GIT_PROJECT_ROOT /srv/git
        GIT_HTTP_EXPORT_ALL ""
      }
    }
  }
 [example_end]
+
 
 [para] When both [const environment] and [const env] are specified, the inline
 [const env] values take precedence over values from the named environment
@@ -320,6 +323,7 @@ form instead:
    }
  }
 [example_end]
+
 
 [para] If no interpreter mapping is provided, the
 called script must have executable permissions.
@@ -731,7 +735,8 @@ value.
 
 [para] The same environment sections can also be referenced from interpreter
 definitions via the [const environment] option in the Tcl-list form of
-[const ns/interps] entries.
+[const ns/interps] entries. Interpreter definitions may also provide
+interpreter-specific inline variables via the [const env] option.
 
 [para] Parameter names in [const ns/environment/*] sections are case-preserved.
 This is different from ordinary NaviServer configuration parameters, whose
