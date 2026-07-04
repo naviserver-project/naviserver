@@ -2917,8 +2917,8 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 
         ciphers      = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphers", "")));
         ciphersuites = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphersuites", "")));
-        protocols    = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "protocols", "")));
-
+        protocols    = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "protocols",
+                                                                 "!SSLv2,!SSLv3,!TLSv1.0,!TLSv1.1")));
         Ns_DListAppend(dlPtr, (void *)ciphers);
         Ns_DListAppend(dlPtr, (void *)ciphersuites);
         Ns_DListAppend(dlPtr, (void *)protocols);
