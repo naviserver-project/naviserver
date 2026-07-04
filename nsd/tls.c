@@ -1667,12 +1667,18 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Ns_DListInit(dlPtr);
 
         cert         = Ns_DListSaveString(dlPtr, cert);
-        ciphers      = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphers"));
-        ciphersuites = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "ciphersuites"));
-        protocols    = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(section, "protocols"));
+        ciphers      = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphers", "")));
+        ciphersuites = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphersuites", "")));
+        protocols    = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "protocols",
+                                                                 "!SSLv2,!SSLv3,!TLSv1.0,!TLSv1.1")));
+        Ns_DListAppend(dlPtr, (void *)ciphers);
+        Ns_DListAppend(dlPtr, (void *)ciphersuites);
+        Ns_DListAppend(dlPtr, (void *)protocols);
 
-        configValue = Ns_ConfigGetValue(section, "clientcafile");
-        if (configValue != NULL) {
+        Ns_Log(Notice, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app_data %p", (void*)app_data);
+
+        if (Ns_ConfigParameterProvided(section, "clientcafile")) {
+>>>>>>> 7df684aac (Harden default TLS protocol policy)
             clientcafile = Ns_ConfigFilename(section, "clientcafile", 12,
                                              nsconf.home, configValue, NS_TRUE, NS_TRUE);
         }
