@@ -2378,7 +2378,8 @@ stops execution of that ADP page}
             }
             protocols {
                 type list
-                desc {TLS protocol versions enabled for this driver}
+                default {!SSLv2,!SSLv3,!TLSv1.0,!TLSv1.1}
+                desc {TLS protocol versions disabled or enabled for this driver. When omitted, the default disables SSLv2, SSLv3, TLSv1.0, and TLSv1.1. When explicitly set to the empty string, NaviServer applies no protocol restriction and leaves the effective protocol set to OpenSSL and system crypto policy.}
             }
 
             tlskeyscript {
