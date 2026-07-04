@@ -657,13 +657,43 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
             status = Ns_AuthorizeUser((const Ns_Server*)(sessPtr->modPtr->servPtr), user, pass, &authority);
             /*fprintf(stderr, "NSCP LOGIN server '%s' -> %s %d (%s)\n", sessPtr->modPtr->server,
               authority, status, Ns_ReturnCodeString(status));*/
-            Ns_Log(Notice, "nscp login user '%s' -> %s", user,  Ns_ReturnCodeString(status));
+
+            Ns_Log(Notice, "nscp login user '%s' -> %s%s%s",
+                   user,
+                   Ns_ReturnCodeString(status),
+                   authority != NULL ? " authority " : "",
+                   authority != NULL ? authority : "");
+
+            /*
+             * Do not allow a shipped default nsperm administrator credential to
+             * unlock the nscp Tcl command shell. Ns_AuthorizeUser() may authenticate
+             * through a chain of providers; the authority string identifies the
+             * provider that accepted the login. Keep this check local to nscp so
+             * nsperm can continue to warn for general use, while the control-port
+             * command-execution surface fails closed for the reported default
+             * credential.
+             */
             if (status == NS_OK) {
-                ok = NS_TRUE;
-                nscpUserLookup = NS_FALSE;
+                if (authority != NULL
+                    && STREQ(authority, "nsperm")
+                    && STREQ(user, "nsadmin")
+                    && STREQ(pass, "x")) {
+                    Ns_Log(Security,
+                           "nscp: refusing login for user 'nsadmin' with the shipped "
+                           "default nsperm password. The nscp control port provides Tcl "
+                           "command execution in the server process. Change the nsadmin "
+                           "password before using nscp.");
+                    ok = NS_FALSE;
+                    nscpUserLookup = NS_FALSE;
+                } else {
+                    ok = NS_TRUE;
+                    nscpUserLookup = NS_FALSE;
+                }
+
             } else if (status == NS_FORBIDDEN) {
                 ok = NS_FALSE;
                 nscpUserLookup = NS_FALSE;
+
             } else {
                 ok = NS_FALSE;
                 nscpUserLookup = NS_TRUE;
