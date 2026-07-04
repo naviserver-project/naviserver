@@ -147,7 +147,16 @@ ns_runonce {
     if { [ns_config -bool -set $path htaccess 0] } {
         nsv_set nsperm lock [ns_mutex create]
         nsv_set nsperm passwdfile [ns_config -set $path passwdfile [file join [ns_info home] modules nsperm passwd]]
+
+        #
+        # Register the .htaccess loader for every method for which it installs
+        # permissions. The loader creates both GET and POST permission records;
+        # registering it only for GET would allow a first POST after startup or
+        # after a reload to miss the loader and reach the normal no-record path
+        # before the POST permission has been installed.
+        #
         ns_register_filter preauth GET /* ns_perm_filter
+        ns_register_filter preauth POST /* ns_perm_filter
 
         ns_log Notice "nsperm: enabling .htaccess support"
     }
