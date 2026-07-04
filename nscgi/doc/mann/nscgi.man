@@ -274,7 +274,7 @@ evaluated by a shell; no shell quoting, globbing, variable substitution, or
 word splitting is performed. Empty argument elements are not supported.
 
 [item] [const environment]:
-The name of an [const ns/environment/$name] section, or a full environment
+The name of an [const {ns/environment/$name}] section, or a full environment
 section name. The named environment section is merged into the environment
 of scripts executed by this interpreter.
 
@@ -285,7 +285,7 @@ environment section.
 
 [list_end]
 
-example_begin]
+[example_begin]
  ns_section ns/interps/CGIinterps {
    ns_param .git {
      program /usr/lib/git-core/git-http-backend
