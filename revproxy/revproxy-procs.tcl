@@ -212,6 +212,42 @@ namespace eval ::revproxy {
         set requestHeaders [ns_conn headers]
 
         #
+        # RFC 9110 defines "Connection" as a hop-by-hop header. In addition
+        # to the field itself, every header field named by a Connection token
+        # is hop-by-hop as well and must not be forwarded by a proxy.
+        #
+        # Remove these client-selected hop-by-hop fields before deleting the
+        # Connection header itself. This prevents a client from smuggling
+        # frontend-only headers into the backend request, where ns_http will
+        # construct fresh request framing.
+        #
+        set connectionTokens [split [ns_set get $requestHeaders connection ""] ","]
+        foreach token $connectionTokens {
+            set token [string trim $token]
+            if {$token ne ""} {
+                ns_set delkey -nocase $requestHeaders $token
+            }
+        }
+
+        #
+        # Do not forward client-side hop-by-hop or HTTP message-framing
+        # headers to the backend. The reverse proxy constructs a normalized
+        # backend request and lets the selected backend transport generate
+        # exactly one framing scheme for that request body.
+        #
+        foreach field {
+            transfer-encoding
+            trailer
+            trailers
+            te
+            connection
+            keep-alive
+            proxy-connection
+        } {
+            ns_set delkey $requestHeaders $field
+        }
+
+        #
         # For debugging, it might be easier to avoid compressed data.
         #
         #ns_set delkey -nocase $requestHeaders accept-encoding

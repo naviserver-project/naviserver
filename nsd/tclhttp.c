@@ -4686,8 +4686,21 @@ HttpConnect(
         if (keepHostHdr == NS_FALSE) {
             Ns_SetIDeleteKey(hdrPtr, hostHeader);
         }
+
+        /*
+         * Do not forward caller-supplied hop-by-hop or framing headers.
+         * ns_http constructs the outbound request framing itself and may add
+         * a generated Content-Length below.
+         */
         Ns_SetIDeleteKey(hdrPtr, contentLengthHeader);
         Ns_SetIDeleteKey(hdrPtr, connectionHeader);
+        Ns_SetIDeleteKey(hdrPtr, transferEncodingHeader);
+        Ns_SetIDeleteKey(hdrPtr, "trailer");
+        Ns_SetIDeleteKey(hdrPtr, "trailers");
+        Ns_SetIDeleteKey(hdrPtr, "te");
+        Ns_SetIDeleteKey(hdrPtr, "keep-alive");
+        Ns_SetIDeleteKey(hdrPtr, "proxy-connection");
+
         for (ii = 0u; ii < Ns_SetSize(hdrPtr); ii++) {
             const char *key, *val;
 

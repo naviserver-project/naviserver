@@ -5,13 +5,94 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-#
-# Most of these tests require the OpenSSL API, some require nsf
-#
-tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
+}
 
 test revproxy-1.0 {syntax test} -constraints {nsf} -body {
      revproxy::upstream
 } -match glob -returnCodes error -result {required argument 'when' is missing, should be:*revproxy::upstream /when/ -target /value/ ?-backend_reply_callback /value/? ?-backend_response_callback /value/? ?-backendconnection /value/? ?-connecttimeout /value/? ?-exception_callback /value/? ?-insecure? ?-receivetimeout /value/? ?-regsubs /value .../? ?-response_header_callback /value/? ?-sendtimeout /value/? ?-targethost /value/? ?-timeout /value/? ?-url_rewrite_callback /value/? ?-use_target_host_header /boolean/? ?-validation_callback /value/?}
 
 # emulated {wrong # args: should be "revproxy::upstream /when/ -target /value/ ?-backendconnection /value/? ?-insecure? ?-connecttimeout /value/? ?-receivetimeout /value/? ?-sendtimeout /value/? ?-timeout /value/? ?-use_target_host_header true|false? ?-targethost /value/? ?-regsubs /value .../? ?-url_rewrite_callback /value/? ?-response_header_callback /value/? ?-backend_response_callback /value/? ?-exception_callback /value/? ?-validation_callback /value/?"}
+
+
+
+test revproxy-1.1 {
+
+    Reverse proxy must not forward client-side Transfer-Encoding or
+    other hop-by-hop/framing headers when constructing the backend
+    request. The backend should receive a normalized Content-Length
+    only.
+
+} -constraints {serverListen} -setup {
+    nsv_unset -nocomplain revproxy_test
+    nsv_set revproxy_test reached 0
+
+    ns_register_proc PUT /revproxy-backend-echo {
+        set headers [ns_conn headers]
+        set body    [ns_conn content]
+
+        nsv_set revproxy_test reached 1
+        nsv_set revproxy_test backend_headers [ns_set array $headers]
+        nsv_set revproxy_test backend_body $body
+
+        ns_return 200 text/plain ok
+    }
+
+    set conf [ns_parseurl [ns_config test listenurl]]
+    dict unset conf path
+    dict unset conf tail
+    set target [ns_joinurl $conf]
+
+    ns_register_proc PUT /revproxy-te-test \
+        ::revproxy::upstream proc \
+        -target $target \
+        -backendconnection ns_http \
+        -regsubs [list [list {^/revproxy-te-test$} /revproxy-backend-echo]]
+
+} -body {
+    set response [nstest::http-0.9 -http 1.1 -omitcontentlength 1 \
+                      -setheaders {
+                          transfer-encoding chunked
+                          connection {X-Hop, close}
+                          x-hop frontend-only
+                          te trailers
+                          trailer x-trailer
+                      } \
+                      -getbody 1 \
+                      PUT /revproxy-te-test \
+                      "3\r\nabc\r\n0\r\n\r\n"]
+
+    set reached [nsv_get revproxy_test reached]
+
+    if {$reached} {
+        set headers [nsv_get revproxy_test backend_headers]
+        set body    [nsv_get revproxy_test backend_body]
+
+        set connection [expr {
+                              [dict exists $headers connection]
+                              ? [dict get $headers connection]
+                              : ""
+                          }]
+
+        set result [list \
+                        response $response \
+                        reached $reached \
+                        body $body \
+                        has_te [dict exists $headers transfer-encoding] \
+                        has_xhop [dict exists $headers x-hop] \
+                        has_trailer [dict exists $headers trailer] \
+                        has_te_header [dict exists $headers te] \
+                        connection_mentions_xhop [expr {[string first X-Hop $connection] >= 0}] \
+                        content_length [dict get $headers content-length]]
+    } else {
+        set result [list response $response reached $reached]
+    }
+
+    set result
+} -cleanup {
+    ns_unregister_op PUT /revproxy-backend-echo
+    ns_unregister_op PUT /revproxy-te-test
+    nsv_unset -nocomplain revproxy_test
+} -returnCodes {ok error} -result {response {200 ok} reached 1 body abc has_te 0 has_xhop 0 has_trailer 0 has_te_header 0 connection_mentions_xhop 0 content_length 3}
