@@ -351,7 +351,7 @@ static void AsyncWriterRelease(AsyncWriteData *wdPtr)
 
 static void WriteWarningRaw(const char *msg, int fd, size_t wantWrite, ssize_t written)
     NS_GNUC_NONNULL(1);
-static const char *GetSockStateName(SockState sockState) NS_GNUC_PURE;
+static const char *SockStateString(SockState sockState) NS_GNUC_PURE;
 
 
 static Ns_ReturnCode ParseStrictContentLength(const char *s, size_t *lengthPtr)
@@ -456,7 +456,7 @@ WriteWarningRaw(const char *msg, int fd, size_t wantWrite, ssize_t written)
 /*
  *----------------------------------------------------------------------
  *
- * GetSockStateName --
+ * SockStateString --
  *
  *      Return human readable names for StockState values.
  *
@@ -469,7 +469,7 @@ WriteWarningRaw(const char *msg, int fd, size_t wantWrite, ssize_t written)
  *----------------------------------------------------------------------
  */
 static const char *
-GetSockStateName(SockState sockState)
+SockStateString(SockState sockState)
 {
     int sockStateInt = (int)sockState;
     static const char *sockStateStrings[] = {
@@ -3133,7 +3133,7 @@ DriverThread(void *arg)
 
                 if (likely((drvPtr->opts & NS_DRIVER_ASYNC) != 0u)) {
                     SockState s = SockRead(sockPtr, 0, &now);
-                    Ns_Log(DriverDebug, "SockRead on %p returned %s", (void*)sockPtr, GetSockStateName(s));
+                    Ns_Log(DriverDebug, "SockRead on %p returned %s", (void*)sockPtr, SockStateString(s));
 
                     /*
                      * Queue for connection processing if ready.
@@ -3191,7 +3191,7 @@ DriverThread(void *arg)
                             drvPtr->stats.errors++;
                             Ns_Log(Warning,
                                    "sockread returned unexpected result %s (err %s); close socket (%d)",
-                                   GetSockStateName(s),
+                                   SockStateString(s),
                                    ((errno != 0) ? strerror(errno) : NS_EMPTY_STRING),
                                    sockPtr->sock);
                         }
@@ -3314,7 +3314,7 @@ DriverThread(void *arg)
                             /*
                              * These cases should never be returned by SockAccept()
                              */
-                            Ns_Fatal("driver: SockAccept returned: %s", GetSockStateName(s));
+                            Ns_Fatal("driver: SockAccept returned: %s", SockStateString(s));
                         }
 
                         if (s != SOCK_ERROR) {
@@ -4023,7 +4023,7 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
                 sockStatus = SockRead(sockPtr, 0, nowPtr);
                 if ((int)sockStatus < 0) {
                     Ns_Log(DriverDebug, "SockRead returned error %s",
-                           GetSockStateName(sockStatus));
+                           SockStateString(sockStatus));
 
                     SockRelease(sockPtr, sockStatus, errno);
                     sockStatus = SOCK_ERROR;
@@ -4139,7 +4139,7 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
     Ns_Log(DriverDebug, "SockRelease reason %s err %d (sock %d)",
-           GetSockStateName(reason), err, sockPtr->sock);
+           SockStateString(reason), err, sockPtr->sock);
 
     if (reason == SOCK_ERROR) {
         /*
@@ -6047,7 +6047,7 @@ SockParse(Sock *sockPtr)
         size_t    currentContentLength;
 
         chunkState = ChunkedDecode(reqPtr, NS_TRUE);
-        //Ns_Log(Notice, "DEBUG ChunkedDecode returned %s", GetSockStateName(chunkState));
+        //Ns_Log(Notice, "DEBUG ChunkedDecode returned %s", SockStateString(chunkState));
         currentContentLength = reqPtr->chunkWriteOff - reqPtr->coff;
 
         /*
