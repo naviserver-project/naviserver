@@ -69,6 +69,49 @@ proc tcltest::cleanupTestsHook {} {
     }
 }
 
+ns_logctl severity Debug(memory) on
+
+proc tcltest::ns_test_meminfo_pick {dict keys} {
+    set result [dict create]
+    foreach key $keys {
+        if {[dict exists $dict $key]} {
+            dict set result $key [dict get $dict $key]
+        }
+    }
+    return $result
+}
+
+proc tcltest::ns_test_meminfo_snapshot {where} {
+    try {
+        set meminfo [ns_info meminfo]
+    } on error {errorMsg} {
+        ns_log notice "test-meminfo $where: ERROR $errorMsg"
+        return
+    }
+    #puts stderr "DEBUG: $meminfo"
+    if {![dict exists $meminfo stats] || [dict get $meminfo stats] eq ""} {
+        #
+        # No memory statistics available.  The memory statistics
+        # require to run with SYSTEM_MALLOC and tcmalloc loaded with
+        # LD_PREOAD (Linux) or DYLD_INSERT_LIBRARIES (macOS).
+        #
+        return
+    } else {
+        set picked [tcltest::ns_test_meminfo_pick $meminfo {
+            current_allocated_bytes
+            heap_size
+            pageheap_free_bytes
+            pageheap_unmapped_bytes
+            central_cache_free_bytes
+            transfer_cache_free_bytes
+            thread_cache_free_bytes
+            current_total_thread_cache_bytes
+        }]
+
+        ns_log Debug(memory) "test-meminfo $where: $picked"
+    }
+}
+
 #ns_logctl severity Debug(ns:driver) true
 #ns_logctl severity debug on
 
@@ -77,8 +120,11 @@ if {"start" in [configure -verbose]} {
     ns_logctl severity warning on
 }
 
+tcltest::ns_test_meminfo_snapshot "before runAllTests"
+
 runAllTests
 
+tcltest::ns_test_meminfo_snapshot "after runAllTests"
 #
 # The "notice" messages during test shutdown are typically not very
 # interesting, so turn it off to make the output shorter.
@@ -99,6 +145,7 @@ if {$code ne "0"} {
 } else {
     ns_shutdown
 }
+tcltest::ns_test_meminfo_snapshot "shutdown requested"
 
 #
 # Wait until these are finished, ns_shutdown will terminate this script
