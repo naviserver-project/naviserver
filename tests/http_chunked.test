@@ -161,33 +161,36 @@ test http_chunked-2.4.1 {
 
 test http_chunked-2.4.2 {
 
-    PUT request with invalid chunked content. Server receives much
-    less data than announced via chunk lengthw. Server will wait for
-    more data, and runs after some time into a timeout.
+    PUT request with incomplete chunked content. The incomplete body must
+    not be dispatched to the registered application handler.
 
 } -constraints {serverListen http09} -setup {
+    nsv_set http_chunked reached 0
     ns_register_proc PUT /tclchunked {
+        nsv_set http_chunked reached 1
         set content [ns_conn content]
-        #ns_log notice "PUT received <$content>"
         ns_return 200 text/plain $content
     }
 } -body {
-    set result {}
+    set response {}
     set errorMsg {}
+
     try {
-        nstest::http-0.9 -http 1.1 \
+        set response [nstest::http-0.9 -http 1.1 \
             -omitcontentlength 1 \
             -setheaders {transfer-encoding Chunked connection close} \
-            -getheaders {transfer-encoding content-length} \
-            PUT /tclchunked "ffffffff\r\nchunk\r\n0\r\n\r\n"
+            -getheaders {transfer-encoding content-length} -getbody 1 \
+            PUT /tclchunked "a\r\nchunk\r\n"]
     } on error {errorMsg} {
-    } on ok {result} {
+        # No valid response is acceptable here; the request is incomplete.
     }
-    list errorMsg $errorMsg result $result
+
+    list response $response reached [nsv_get http_chunked reached]
 } -cleanup {
     ns_unregister_op PUT /tclchunked
-    unset result errorMsg
-} -result {errorMsg {} result {}}
+    nsv_unset http_chunked reached
+    unset response errorMsg
+} -result {response {} reached 0}
 
 
 test http_chunked-2.4.3 {
@@ -208,7 +211,7 @@ test http_chunked-2.4.3 {
         PUT /tclchunked "1;last\r\nD\r\n0\r\n\r\n"
 } -cleanup {
     ns_unregister_op PUT /tclchunked
-} -returnCodes {ok} -result {200 {} 1 D}
+} -result {200 {} 1 D}
 
 
 
@@ -234,6 +237,284 @@ test http_chunked-3.1 {
     ns_unregister_op PUT /tclchunked
 } -result {200 {} 13 1234567890abc}
 
+test http_chunked-3.2 {
+
+    A complete nonzero chunk is not a complete chunked message. The
+    request is complete only after the terminating zero-size chunk.
+    The incomplete request must not reach the application handler.
+
+} -constraints {serverListen http09} -setup {
+    nsv_set http_chunked reached 0
+    ns_register_proc PUT /tclchunked {
+        nsv_set http_chunked reached 1
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    set result {}
+    set errorMsg {}
+
+    try {
+        set result [nstest::http-0.9 -http 1.1 \
+            -omitcontentlength 1 \
+            -setheaders {transfer-encoding Chunked connection close} \
+            -getheaders {transfer-encoding content-length} -getbody 1 \
+            PUT /tclchunked "4\r\nWiki\r\n"]
+    } on error {errorMsg} {
+        # No valid response is acceptable here; the request is incomplete.
+    }
+
+    list errorMsg $errorMsg result $result reached [nsv_get http_chunked reached]
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+    nsv_unset http_chunked reached
+    unset result errorMsg
+} -match glob -result {errorMsg * result {} reached 0}
+
+test http_chunked-3.3 {
+
+    A chunked request with terminating zero-size chunk is complete and
+    reaches the application.
+
+} -constraints {serverListen http09} -setup {
+    nsv_set http_chunked reached 0
+    ns_register_proc PUT /tclchunked {
+        nsv_set http_chunked reached 1
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    set response [nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {transfer-encoding Chunked} \
+        -getheaders {transfer-encoding content-length} -getbody 1 \
+        PUT /tclchunked "4\r\nWiki\r\n0\r\n\r\n"]
+
+    list response $response reached [nsv_get http_chunked reached]
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+    nsv_unset http_chunked reached
+} -result {response {200 {} 4 Wiki} reached 1}
+
+
+test http_chunked-4.1 {
+
+    Reject CL/TE request-smuggling ambiguity.
+    Requests with both Content-Length and Transfer-Encoding must not
+    be framed by Content-Length.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -setheaders {content-length 4 transfer-encoding chunked} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked "0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.2 {
+
+    Reject CL/TE ambiguity also when Transfer-Encoding uses mixed case.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -setheaders {content-length 4 transfer-encoding cHuNkEd} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked "0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.3 {
+
+    Accept mixed-case Transfer-Encoding: chunked when no Content-Length
+    is present.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {transfer-encoding cHuNkEd} \
+        -getheaders {transfer-encoding content-length} -getbody 1 \
+        PUT /tclchunked "4\r\nWiki\r\n0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {200 {} 4 Wiki}
+
+
+test http_chunked-4.4 {
+
+    Reject Transfer-Encoding parameters on the header field itself.
+    Chunk extensions on chunk-size lines are tested separately and remain
+    valid; this test is about the Transfer-Encoding field value.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {transfer-encoding {chunked;foo=bar}} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked "4\r\nWiki\r\n0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.5 {
+
+    Reject unsupported Transfer-Encoding value.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {transfer-encoding gzip} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked "abcdef"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.6 {
+
+    Reject Transfer-Encoding list with unsupported coding before chunked.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {transfer-encoding {gzip, chunked}} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked "4\r\nWiki\r\n0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.7 {
+
+    Reject Transfer-Encoding list with chunked followed by another coding.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {transfer-encoding {chunked, gzip}} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked "4\r\nWiki\r\n0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.8 {
+
+    Reject obsolete identity Transfer-Encoding.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {transfer-encoding identity} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked "abcdef"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.9 {
+
+    Reject invalid Content-Length.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -setheaders {content-length 1x} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked "x"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.10 {
+
+    Reject negative Content-Length.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -setheaders {content-length -1} \
+        -getheaders {transfer-encoding content-length connection} -getbody 1 \
+        PUT /tclchunked ""
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {} {}}
+
+
+test http_chunked-4.11 {
+
+    Accept explicit zero Content-Length.
+
+} -constraints {serverListen http09} -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -setheaders {content-length 0} \
+        -getheaders {transfer-encoding content-length} -getbody 1 \
+        PUT /tclchunked ""
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {200 {} 0}
 
 cleanupTests
 
