@@ -67,62 +67,6 @@ for detailed configuration options of the network drivers.
  restricts the output to drivers that are registered for the given
  [arg server].
 
-[call [cmd "ns_driver queues"] \
-      [opt [option "-server [arg server]"]] \
-      driver|spooler|writer ]
-
- Returns current queue gauges for driver-owned request handling infrastructure.
- The [option -server] option restricts the output to drivers that are registered
- for the given [arg server].  The required subcommand selects the queue class to
- report and must be one of [const driver], [const spooler], or [const writer].
-
- [para] The result is a list containing one dictionary-style list per matching driver.
- Each entry starts with the driver thread name and driver module name.  The
- remaining fields depend on the selected queue class.
-
- [para] The subcommand [const driver] reports the driver thread's local socket lists:
-
- [list_begin itemized]
- [item] [const waiting]: sockets currently on the driver retry list for later queueing
-         into a connection pool.
-
- [item] [const reading]: sockets currently on the driver read or keepalive-wait list.
-
- [item] [const closing]: sockets currently on the driver close-wait list.
- [list_end]
-
- Driver queue information is reported for every matching driver.
-
- [para] The subcommand [const spooler] reports upload spooler state:
-
- [list_begin itemized]
- [item] [const queued]: sockets queued for an upload spooler thread but not yet active.
-
- [item] [const waiting]: sockets handled by a spooler thread that are waiting for
- queueing into a connection pool.
-
- [item] [const reading]: sockets currently being read by spooler threads.
- [list_end]
-
- Spooler queue information is reported only for drivers that have spooler
- threads configured.
-
- [para] The subcommand [const writer] reports writer-thread state:
-
- [list_begin itemized]
- [item] [const queued]: writer jobs queued for a writer thread but not yet active.
-
- [item] [const writing]: writer jobs currently active in writer threads.
- [list_end]
-
- Writer queue information is reported only for drivers that have writer threads
- configured.
-
- [para] The values returned by [cmd "ns_driver queues"] are current gauges, not
- cumulative counters.  They are intended for diagnostics of overload,
- back-pressure, queued uploads, queued writer jobs, and shutdown behavior.  In a
- busy server, these values may change immediately after they are read.
-
 
 [call [cmd "ns_driver stats"] \
       [opt [option "-server [arg server]"]] ]

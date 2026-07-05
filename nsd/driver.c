@@ -1932,6 +1932,7 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     return result;
 }
 
+#ifdef NS_DRIVER_QUEUES
 /*
  *----------------------------------------------------------------------
  *
@@ -2081,6 +2082,7 @@ DriverQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
     return result;
 }
+#endif /* NS_DRIVER_QUEUES */
 
 
 /*
@@ -2207,7 +2209,9 @@ NsTclDriverObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     const Ns_SubCmdSpec subcmds[] = {
         {"info",       DriverInfoObjCmd},
         {"names",      DriverNamesObjCmd},
+#ifdef NS_DRIVER_QUEUES
         {"queues",     DriverQueuesObjCmd},
+#endif
         {"stats",      DriverStatsObjCmd},
         {"threads",    DriverThreadsObjCmd},
         {NULL, NULL}
