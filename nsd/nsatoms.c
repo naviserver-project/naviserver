@@ -334,6 +334,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_cipher].name           = "cipher";         atoms[NS_ATOM_cipher].len = 6;
     atoms[NS_ATOM_ciphertext].name       = "ciphertext";     atoms[NS_ATOM_ciphertext].len = 10;
     atoms[NS_ATOM_clientcert].name       = "clientcert";     atoms[NS_ATOM_clientcert].len = 10;
+    atoms[NS_ATOM_closing].name          = "closing";        atoms[NS_ATOM_closing].len = 7;
     atoms[NS_ATOM_code].name             = "code";           atoms[NS_ATOM_code].len = 4;
     atoms[NS_ATOM_compiler].name         = "compiler";       atoms[NS_ATOM_compiler].len = 8;
     atoms[NS_ATOM_complete].name         = "complete";       atoms[NS_ATOM_complete].len = 8;
@@ -427,7 +428,9 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_proxied].name          = "proxied";        atoms[NS_ATOM_proxied].len = 7;
     atoms[NS_ATOM_public].name           = "public";         atoms[NS_ATOM_public].len = 6;
     atoms[NS_ATOM_query].name            = "query";          atoms[NS_ATOM_query].len = 5;
+    atoms[NS_ATOM_queued].name           = "queued";         atoms[NS_ATOM_queued].len = 6;
     atoms[NS_ATOM_raw].name              = "raw";            atoms[NS_ATOM_raw].len = 3;
+    atoms[NS_ATOM_reading].name          = "reading";        atoms[NS_ATOM_reading].len = 7;
     atoms[NS_ATOM_received].name         = "received";       atoms[NS_ATOM_received].len = 8;
     atoms[NS_ATOM_recverror].name        = "recverror";      atoms[NS_ATOM_recverror].len = 9;
     atoms[NS_ATOM_recvwait].name         = "recvwait";       atoms[NS_ATOM_recvwait].len = 8;
@@ -491,6 +494,8 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_verified].name         = "verified";       atoms[NS_ATOM_verified].len = 8;
     atoms[NS_ATOM_verifyresult].name     = "verifyresult";   atoms[NS_ATOM_verifyresult].len = 12;
     atoms[NS_ATOM_version].name          = "version";        atoms[NS_ATOM_version].len = 7;
+    atoms[NS_ATOM_waiting].name          = "waiting";        atoms[NS_ATOM_waiting].len = 7;
+    atoms[NS_ATOM_writing].name          = "writing";        atoms[NS_ATOM_writing].len = 7;
     atoms[NS_ATOM_with_deprecated].name  = "with_deprecated"; atoms[NS_ATOM_with_deprecated].len = 15;
     atoms[NS_ATOM_x25519].name           = "x25519";         atoms[NS_ATOM_x25519].len = 6;
     atoms[NS_ATOM_x448].name             = "x448";           atoms[NS_ATOM_x448].len = 4;

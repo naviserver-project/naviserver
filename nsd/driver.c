@@ -1915,13 +1915,13 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
             Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_errors));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.errors));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("waiting", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_waiting));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.waiting));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("reading", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_reading));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.reading));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("closing", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_closing));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.closing));
 
             Tcl_ListObjAppendElement(interp, resultObj, listObj);
@@ -2042,35 +2042,35 @@ DriverQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
             switch (queue) {
             case DriverQueue:
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("waiting", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_waiting));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.waiting));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("reading", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_reading));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.reading));
 
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("closing", TCL_INDEX_NONE));
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_closing));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->stats.closing));
                 break;
 
             case SpoolerQueue:
                 if (drvPtr->spooler.threads > 0) {
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_queued));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.queued));
 
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("waiting", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_waiting));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.waiting));
 
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("reading", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_reading));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->spooler.stats.reading));
                 }
                 break;
 
             case WriterQueue:
                 if (drvPtr->writer.threads > 0) {
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_queued));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->writer.stats.queued));
 
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("writing", TCL_INDEX_NONE));
+                    Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_writing));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)drvPtr->writer.stats.writing));
                 }
             }
@@ -10603,10 +10603,10 @@ AsyncLogfileStatsObjCmd
         Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
         if (asyncWriter != NULL) {
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("writing", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_writing));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)asyncWriter->stats.writing));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("queued", TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_queued));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)asyncWriter->stats.queued));
         }
         Tcl_SetObjResult(interp, listObj);
