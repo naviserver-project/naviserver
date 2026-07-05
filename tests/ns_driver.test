@@ -8,11 +8,11 @@ testConstraint ssl [ns_info ssl]
 
 test ns_driver-1.1 {basic syntax: plain call} -body {
      ns_driver
-} -returnCodes error -result {wrong # args: should be "ns_driver info|names|queues|stats|threads ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_driver info|names|stats|threads ?/arg .../"}
 
 test ns_driver-1.2 {basic syntax: wrong key} -body {
      ns_driver 123
-} -returnCodes error -result {ns_driver: bad subcommand "123": must be info, names, queues, stats, or threads}
+} -returnCodes error -result {ns_driver: bad subcommand "123": must be info, names, stats, or threads}
 
 
 test ns_driver-1.3a {basic syntax: key but too many arguments} -body {
