@@ -2,45 +2,59 @@
 [manpage_begin ns_localtime n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Return current time in local timezone}]
+[titledesc {Return local time as a Tcl list}]
 
 [description]
 
-This command returns a nine-element Tcl list representing the current time in the
-system's current timezone.  The structure of the list corresponds to the Unix struct tm time structure:
-
-[list_begin definitions]
-[call [cmd  ns_localtime] [arg seconds]]
-[def] minutes (0-59)
-[def] hours (0-23)
-[def] dayofmonth (1-31)
-[def] monthofyear (0-11)
-[def] year (year-1900)
-[def] dayofweek (0-6, Sunday=0)
-[def] dayofyear (0-365)
-[def] isdst (>0 if Daylight Savings Time is in effect)
-
-[list_end]
-
-[section {COMMANDS}]
+This command returns the current local time as a Tcl list.  The time is
+computed using the system's current local timezone.  The returned list has the
+same field order as the Unix [type "struct tm"] time structure.
 
 
 [list_begin definitions]
-
 
 [call [cmd ns_localtime]]
 
+ [para]
+ Returns a nine-element Tcl list with the following fields:
+
+ [list_begin itemized]
+ [item] [const seconds]:
+       Seconds after the minute, in the range 0 to 59.
+ [item] [const minutes]:
+       Minutes after the hour, in the range 0 to 59.
+ [item] [const hours]:
+      Hours since midnight, in the range 0 to 23.
+ [item] [const dayofmonth]]
+      Day of the month, in the range 1 to 31.
+ [item] [const monthofyear]:
+      Month of the year, in the range 0 to 11.  January is 0.
+ [item] [const year]]
+      Years since 1900.
+ [item] [const dayofweek]:
+      Day of the week, in the range 0 to 6.  Sunday is 0.
+ [item] [const dayofyear]:
+      Day of the year, in the range 0 to 365.  January 1 is 0.
+ [item] [const isdst]:
+      Daylight saving time flag.  The value is positive when daylight saving time is
+      in effect, zero when it is not in effect, and negative when the information is
+       not available.
+ [list_end]
 
 [list_end]
-
 
 [section EXAMPLES]
 
 [example_begin]
  % ns_localtime
- 33 33 22 11 5 104 5 162 1
+ 1 58 14 5 6 126 0 185 1
 [example_end]
 
+[para]
+The example above represents local time with second 1, minute 58, hour 14,
+day of month 5, month 6, year 126, day of week 0, day of year 185, and
+daylight saving time in effect.  Since the month is zero-based and the year is
+relative to 1900, this corresponds to July 5, 2026.
 
 [keywords "global built-in" time]
 [see_also ns_fmttime ns_gmtime ns_httptime ns_parsehttptime ns_time]
