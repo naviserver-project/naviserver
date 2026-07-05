@@ -151,6 +151,9 @@ CFLAGS_FORMAT     ?= $(CFLAGS_FORMAT_DEFAULT)
 CFLAGS_DEFINITION ?= $(CFLAGS_DEFINITION_DEFAULT)
 CFLAGS_TIDY       ?= $(CFLAGS_TIDY_DEFAULT)
 
+#SANITIZE  -fsanitize=address
+#SANITIZE  -fsanitize=address,undefined,integer,nullability
+
 #CFLAGS_FORTIFY    = -D_FORTIFY_SOURCE=2 -fstack-protector $(SANITIZE)
 #CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE) -fwrapv -ftrapv
 CFLAGS_WARNING   = @CFLAGS_WARNING@

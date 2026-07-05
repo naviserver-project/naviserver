@@ -511,6 +511,13 @@ install-sf-doc:
 #
 NS_TEST_ENV     = LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
+ifneq ($(strip $(DYLD_INSERT_LIBRARIES)),)
+NS_TEST_ENV += DYLD_INSERT_LIBRARIES="$(DYLD_INSERT_LIBRARIES)"
+endif
+ifneq ($(strip $(LD_PRELOAD)),)
+NS_TEST_ENV += DYLD_INSERT_LIBRARIES="$(LD_PRELOAD)"
+endif
+
 ifeq ($(shell id -u),0)
 NS_TEST_CFG	= -u nsadmin -c -d -t $(srcdir)/tests/test.nscfg
 else
@@ -731,13 +738,19 @@ cppcheck:
 	echo "log written to cppcheck-output.txt"
 
 CLANG_TIDY_CHECKS=
-#CLANG_TIDY_CHECKS=-checks=-*,performance-*,portability-*,cert-*,modernize-*
-#CLANG_TIDY_CHECKS=-checks=-*,modernize-*,performance-*,portability-*,cert-*
-#CLANG_TIDY_CHECKS=-checks=-*,bugprone-*
+#CLANG_TIDY_CHECKS=-*,performance-*,portability-*,cert-*,modernize-*
+#CLANG_TIDY_CHECKS=-*,clang-analyzer-core.*,clang-analyzer-unix.*
+#CLANG_TIDY_CHECKS=-*,clang-analyzer-security.*,security-*
+#CLANG_TIDY_CHECKS=-*,bugprone-*,-bugprone-easily-swappable-parameters,-bugprone-reserved-identifier
+#CLANG_TIDY_CHECKS=-*,cert-*,-cert-err33-c,-cert-dcl37-c,-cert-dcl51-cpp
+#CLANG_TIDY_CHECKS=-*,performance-*,portability-*,cert-*,modernize-*
+#CLANG_TIDY_CHECKS=-*,clang-analyzer-core.*,clang-analyzer-unix.*,clang-analyzer-security.*,bugprone-*,cert-*,-performance-no-int-to-ptr,-modernize-*,-cert-dcl37-c,-cert-dcl51-cpp,-cert-err33-c,-bugprone-multi-level-implicit-pointer-conversion,-bugprone-casting-through-void,-bugprone-macro-parentheses,-bugprone-easily-swappable-parameters
+
 clang-tidy:
-	clang-tidy-mp-19 nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
-		$(CLANG_TIDY_CHECKS) -- \
-		-I./include -I/usr/include $(DEFS)
+	clang-tidy-mp-22 nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
+               -checks=-*,$(CLANG_TIDY_CHECKS) -export-fixes=clang-tidy-fixes.yaml -- \
+               -I./include -I/usr/include $(DEFS) \
+               2>&1 | tee clang-tidy-output.txt
 
 
 
