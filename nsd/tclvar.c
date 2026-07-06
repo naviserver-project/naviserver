@@ -170,7 +170,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             const Tcl_HashEntry *hPtr;
             const char          *keyString = Tcl_GetString(objv[2]);
 
-            hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
+            hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
             resultObj = likely(hPtr != NULL) ? Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE) : NULL;
             UnlockArray(arrayPtr);
 
@@ -226,8 +226,7 @@ NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Array *arrayPtr = LockArrayObj(interp, objv[1], NS_FALSE, NS_READ);
 
         if (likely(arrayPtr != NULL)) {
-            if (Tcl_CreateHashEntry(&arrayPtr->vars,
-                                    Tcl_GetString(objv[2]), NULL) != NULL) {
+            if (Tcl_FindHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2])) != NULL) {
                 exists = NS_TRUE;
             }
             UnlockArray(arrayPtr);
@@ -248,7 +247,7 @@ SetResultToOldValue(Tcl_Interp *interp, Array *arrayPtr, const char *key)
     /*
      * Get old value
      */
-    hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
+    hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
     if (likely(hPtr != NULL)) {
         result = NS_TRUE;
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE));
@@ -908,7 +907,7 @@ GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString,
     if (arrayPtr != NULL) {
         const Tcl_HashEntry *hPtr;
 
-        hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
+        hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
         if (unlikely(hPtr == NULL)) {
             Ns_TclPrintfResult(interp, "no such key: %s", keyString);
             Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NS_SENTINEL);
@@ -1307,7 +1306,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 assert(arrayPtr != NULL);
 
                 keyString = Tcl_GetString(keyObj);
-                hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
+                hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
                 if (likely(hPtr != NULL)) {
                     dictObj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE);
                 } else {
@@ -1436,7 +1435,7 @@ Ns_VarGet(const char *server, const char *array, const char *keyString, Tcl_DStr
     if (likely(servPtr != NULL)) {
         Array *arrayPtr = LockArray(servPtr, array, NS_FALSE, NS_READ);
         if (likely(arrayPtr != NULL)) {
-            const Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
+            const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
             if (likely(hPtr != NULL)) {
                 Tcl_DStringAppend(dsPtr, Tcl_GetHashValue(hPtr), TCL_INDEX_NONE);
                 status = NS_OK;
@@ -1479,7 +1478,7 @@ Ns_VarExists(const char *server, const char *array, const char *keyString)
         Array *arrayPtr = LockArray(servPtr, array, NS_FALSE, NS_READ);
 
         if (likely(arrayPtr != NULL)) {
-            if (Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL) != NULL) {
+            if (Tcl_FindHashEntry(&arrayPtr->vars, keyString) != NULL) {
                 exists = NS_TRUE;
             }
             UnlockArray(arrayPtr);
@@ -1746,7 +1745,7 @@ GetArray(Bucket *bucketPtr, const char *arrayName, bool create) {
             Tcl_SetHashValue(hPtr, arrayPtr);
         }
     } else {
-        hPtr = Tcl_CreateHashEntry(&bucketPtr->arrays, arrayName, NULL);
+        hPtr = Tcl_FindHashEntry(&bucketPtr->arrays, arrayName);
         if (unlikely(hPtr == NULL)) {
             if (bucketPtr->servPtr->nsv.rwlocks) {
                 Ns_RWLockUnlock(&bucketPtr->rwlock);
@@ -1957,7 +1956,7 @@ Unset(Array *arrayPtr, const char *keyString)
     NS_NONNULL_ASSERT(arrayPtr != NULL);
 
     if (keyString != NULL) {
-        Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
 
         if (hPtr != NULL) {
             ns_free(Tcl_GetHashValue(hPtr));
