@@ -617,34 +617,34 @@ test ns_adp_registerscript-3.4 {adp-parse string with tag and script, tag inside
 } -result {start <foobar> end}
 
 test ns_adp_registerscript-3.12 {accept registered ADP tag name containing hyphen} -body {
-    proc ::ns_adp::__hyphen_tag {body attributes} {
+    proc ::__hyphen_tag {body attributes} {
         return "hyphen:$body"
     }
 
     try {
-        ns_adp_registerscript listfilters-form /listfilters-form ::ns_adp::__hyphen_tag
+        ns_adp_registerscript listfilters-form /listfilters-form :::__hyphen_tag
         ns_adp_parse -string {<listfilters-form>ok</listfilters-form>}
     } finally {
-        rename ::ns_adp::__hyphen_tag ""
+        rename ::__hyphen_tag ""
     }
 } -result {hyphen:ok}
 
 test ns_adp_registerproc-3.13 {accept registered ADP tag name starting with digit} -body {
-    proc ::ns_adp::__digit_tag {} {
+    proc ::__digit_tag {} {
         return "digit"
     }
 
     try {
-        ns_adp_registerproc 2col ::ns_adp::__digit_tag
+        ns_adp_registerproc 2col ::__digit_tag
         ns_adp_parse -string {<2col>}
     } finally {
-        rename ::ns_adp::__digit_tag ""
+        rename ::__digit_tag ""
     }
 } -result {digit}
 
 test ns_adp_registerproc-3.14 {reject registered ADP tag name starting with hyphen} -body {
     ns_adp_registerproc "-foo" _test_adp_tag_proc
-} -returnCodes error -result {wrong # args: should be "ns_adp_registerproc ?-tagset /value/? /tag/ ?/endtag/? /proc/"}
+} -returnCodes error -result {invalid start tag: '-foo' (contains invalid character '-')}
 
 test ns_adp_registerscript-4.0 {registerscript with proc, attributes, ending tag, check case of attributes} -body {
     proc ::reporttags {attributes} {ns_set array $attributes}

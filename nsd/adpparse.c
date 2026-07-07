@@ -65,6 +65,8 @@ typedef struct Parse {
 /*
  * Local functions defined in this file
  */
+static bool TagNameValidate(const char *tag, TCL_SIZE_T len, char *invalidCharPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 static void AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -209,6 +211,53 @@ NsTclAdpRegisterAdptagObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE
 #endif
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TagNameValidate --
+ *
+ *      Verify that a registered ADP tag name can be recognized later by
+ *      the ADP parser. The accepted syntax must stay in sync with
+ *      TagValidFirstChar() and TagValidChar().
+ *
+ * Results:
+ *      NS_TRUE when the tag name is valid, NS_FALSE otherwise. When invalid,
+ *      invalidCharPtr, it is set to the offending byte.
+ *
+ * Side effects:
+ *      Store the offending byte via invalidCharPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+TagNameValidate(const char *tag, TCL_SIZE_T len, char *invalidCharPtr)
+{
+    if (len <= 0 || tag[0] == '\0') {
+        *invalidCharPtr = '\0';
+        return NS_FALSE;
+
+    } else if (!TagValidFirstChar(tag[0])) {
+        *invalidCharPtr = tag[0];
+        return NS_FALSE;
+
+    } else {
+        TCL_SIZE_T i;
+
+        for (i = 1; i < len; i++) {
+            if (tag[i] == '\0') {
+                *invalidCharPtr = '\0';
+                return NS_FALSE;
+            }
+
+            if (!TagValidChar(tag[i])) {
+                *invalidCharPtr = tag[i];
+                return NS_FALSE;
+            }
+        }
+    }
+    return NS_TRUE;
+}
+
+/*
  * The actual function doing the hard work.
  */
 static int
@@ -232,6 +281,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
         const char     *end, *tag, *content;
+        char            invalidChar = '\0';
         Tcl_HashEntry  *hPtr;
         int             isNew;
         TCL_SIZE_T      slen, elen, tlen;
@@ -242,11 +292,19 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
          * Get tag and content
          */
         tag = Tcl_GetStringFromObj(objv[1], &tlen);
-        content = strpbrk(tag, "<&> '\"");
-        if (content != NULL) {
-            Ns_TclPrintfResult(interp, "invalid start tag: '%s'"
-                               " (contains invalid character '%c')",
-                               tag, *content);
+
+        /*
+         * Validate tag name.
+         */
+        if (!TagNameValidate(tag, tlen, &invalidChar)) {
+            if (invalidChar == '\0') {
+                Ns_TclPrintfResult(interp, "invalid start tag: '%s' "
+                                   "(tag name must not be empty)", tag);
+            } else {
+                Ns_TclPrintfResult(interp, "invalid start tag: '%s' "
+                                   "(contains invalid character '%c')",
+                                   tag, invalidChar);
+            }
             return TCL_ERROR;
         }
 
