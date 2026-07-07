@@ -362,7 +362,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         } else {
             tag = Tcl_GetStringFromObj(objv[1], &tlen);
         }
-        Ns_Log(Debug, "RegisterObjCmd tag <%s> objc %d", tag, objc);
+        Ns_Log(Debug, "RegisterObjCmd tag <%s> objc %" PRITcl_Size, tag, objc);
 
         /*
          * Validate tag name.
