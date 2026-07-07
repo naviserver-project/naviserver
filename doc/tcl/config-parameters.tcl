@@ -2377,9 +2377,9 @@ stops execution of that ADP page}
                 desc {Enable verbose OCSP stapling logging}
             }
             protocols {
-                type list
-                default {!SSLv2,!SSLv3,!TLSv1.0,!TLSv1.1}
-                desc {TLS protocol versions disabled or enabled for this driver. When omitted, the default disables SSLv2, SSLv3, TLSv1.0, and TLSv1.1. When explicitly set to the empty string, NaviServer applies no protocol restriction and leaves the effective protocol set to OpenSSL and system crypto policy.}
+                type string
+                default {!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1}
+                desc {Colon-separated string of TLS/SSL protocol versions to disable for this driver. The traditional nsssl syntax uses exclusions prefixed with "!", for example "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1". When omitted, the default disables SSLv2, SSLv3, TLSv1.0, and TLSv1.1. When explicitly set to the empty string, NaviServer applies no protocol restriction and leaves the effective protocol set to OpenSSL and the system crypto policy.}
             }
 
             tlskeyscript {

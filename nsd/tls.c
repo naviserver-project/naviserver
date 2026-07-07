@@ -2918,7 +2918,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         ciphers      = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphers", "")));
         ciphersuites = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphersuites", "")));
         protocols    = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "protocols",
-                                                                 "!SSLv2,!SSLv3,!TLSv1.0,!TLSv1.1")));
+                                                                 "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1")));
         Ns_DListAppend(dlPtr, (void *)ciphers);
         Ns_DListAppend(dlPtr, (void *)ciphersuites);
         Ns_DListAppend(dlPtr, (void *)protocols);
@@ -3531,7 +3531,8 @@ CertficateValidationCB(int preverify_ok, X509_STORE_CTX *ctx)
  *      verify       - true to require and verify client certificates
  *      ciphers      - OpenSSL cipher list string, or NULL to leave default
  *      ciphersuites - TLS1.3 ciphersuites string, or NULL if unused
- *      protocols    - comma-separated exclusions like "!TLSv1.0,!SSLv3", or NULL
+ *      protocols    - colon-separated protocol exclusions like
+ *                     "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1", or NULL.
  *      app_data     - Opaque pointer stored in CTX via SSL_CTX_set_app_data
  *      ctxPtr       - Address where the new SSL_CTX* will be returned (non-NULL)
  *

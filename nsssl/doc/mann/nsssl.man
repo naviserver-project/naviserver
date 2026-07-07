@@ -73,9 +73,23 @@ plus in addition the following configuration options:
   [uri https://wiki.openssl.org/index.php/TLS1.3]
 
 [def protocols]
-  defines which protocols are enabled; by default all protocols are
-  enabled. It is recommended to deactivate SSLv2 and SSLv3 as shown
-  in the example above.
+  Defines which SSL/TLS protocol versions are disabled for this driver.
+  The value is a colon-separated string of protocol exclusion tokens,
+  using [const !] as prefix. For example, the following value disables
+  SSLv2, SSLv3, TLS 1.0, and TLS 1.1:
+
+[example_begin]
+ ns_param protocols "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
+[example_end]
+
+ When this parameter is omitted, nsssl uses this default exclusion
+ string. When it is explicitly set to the empty string, NaviServer
+ applies no protocol restriction and leaves the effective protocol set
+ to OpenSSL and the system crypto policy.
+
+ [para] Supported exclusion tokens are [const !SSLv2], [const !SSLv3],
+ [const !TLSv1.0], [const !TLSv1.1], [const !TLSv1.2], and, when
+ supported by the OpenSSL library used for the build, [const !TLSv1.3].
 
 [def clientcertmode]
   Specifies how nsssl handles TLS client certificates.
