@@ -224,8 +224,9 @@ install-include: $(DESTDIR)$(NAVISERVER)/include
 install-tests: install-dirs
 	$(CP) tests $(INSTSRVPAG)
 
-install-config-parameters-dict:
-	$(INSTALL_DATA) $(CONFIG_PARAMETERS_DICT) $(DESTDIR)$(NAVISERVER)/modules/tcl/
+install-config-parameters-dict: $(DESTDIR)$(NAVISERVER)/modules/tcl
+	$(INSTALL_DATA) $(CONFIG_PARAMETERS_DICT) \
+	    $(DESTDIR)$(NAVISERVER)/modules/tcl/$(notdir $(CONFIG_PARAMETERS_DICT))
 
 install-doc: $(DESTDIR)$(NAVISERVER)/pages
 	@if [ -d doc/html ]; then \
