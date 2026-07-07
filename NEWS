@@ -1,9 +1,8 @@
-
 =======================================
 NaviServer 5.1.0, released 2026-??-??
 =======================================
 
- 305 files changed, 69895 insertions(+), 10256 deletions(-)
+ 335 files changed, 76139 insertions(+), 11298 deletions(-)
 
 New Features:
 -------------
@@ -99,7 +98,7 @@ New Features:
      and HTTPS configurations unchanged unless the new module is loaded.
    * Added QUIC connection and stream handling for multiplexed HTTP/3
      requests.
-   * Added integration with NaviServer’s driver infrastructure for drivers
+   * Added integration with NaviServer's driver infrastructure for drivers
      with their own event loop.
    * Added HTTP/3 Alt-Svc advertisement support for HTTPS configurations.
    * Added QUIC-aware TLS context handling.
@@ -119,6 +118,31 @@ New Features:
    * Added configuration support intended to reduce duplication across larger
      configurations.
    * Extended ns_section to support inheritance and ns_set import.
+
+ - Request privacy signals:
+   * Added "ns_conn privacy" for exposing passive, header-derived privacy
+     signals to application code.
+   * Reports Global Privacy Control via Sec-GPC, Do Not Track via DNT, and
+     ADPC header presence/details where available.
+   * The command is intentionally passive: it does not implement consent
+     management, does not interpret application policy, and does not modify
+     cookies, logging, or responses.
+
+ - nscgi interpreter configuration:
+   * Added a structured Tcl-list syntax for nscgi interpreter definitions.
+   * Interpreter definitions can now specify program, named environment
+     sections, inline environment variables, and fixed argv elements.
+   * Inline interpreter environment values override values from named
+     ns/environment/$name sections.
+   * The old program(environment) notation is still accepted for
+     compatibility, but now emits a deprecation warning.
+
+ - Runtime diagnostics:
+   * Added "ns_driver info" queues for current read/write/close operations.
+   * Expanded "ns_info meminfo" with optional tcmalloc version, textual stats,
+     and numeric memory counters when tcmalloc support is available.
+   * Added optional Debug(memory) diagnostics for queue-full and request
+     memory-growth analysis, emitting tcmalloc values when available.
 
  - Charset configuration:
    * Added explicit global defaults for per-server charset handling
@@ -159,6 +183,69 @@ New Features:
      normalization.
 
 
+## Security and Hardening:
+--------------------------
+
+ - HTTP request parsing and request-smuggling hardening:
+   * Reject ambiguous HTTP/1.x request framing before dispatching requests to
+     application code.
+   * Reject requests containing both Content-Length and Transfer-Encoding.
+   * Parse Content-Length strictly as a non-negative decimal value.
+   * Accept only a single chunked Transfer-Encoding token for request bodies.
+   * Require properly terminated chunked request bodies, including the final
+     zero-size chunk, while preserving the existing macOS Finder/WebDAV
+     X-Expected-Entity-Length compatibility path.
+   * Tightened chunk-size and CRLF validation and added regression coverage
+     for malformed and ambiguous request bodies.
+
+ - Reverse proxy hardening:
+   * Strip hop-by-hop and message-framing headers before forwarding requests
+     to backend servers.
+   * Do not forward client-supplied Transfer-Encoding, TE, Trailer,
+     Connection, Keep-Alive, Proxy-Connection, or headers named by
+     Connection tokens.
+   * Avoid backend CL/TE ambiguity when the reverse proxy normalizes request
+     bodies and generates a fresh Content-Length.
+
+ - CGI hardening:
+   * Suppress the incoming Proxy request header when constructing CGI
+     environments, avoiding the classic HTTP_PROXY/httpoxy class of issues.
+   * Improved nscgi interpreter/environment diagnostics and error handling.
+
+ - Multipart form parsing:
+   * Hardened multipart/form-data parsing against malformed or adversarial
+     request bodies.
+   * Avoided invalid pointer arithmetic while locating multipart boundaries.
+   * Required candidate multipart boundaries to appear at valid delimiter
+     positions.
+   * Fixed escaped-character handling after external-to-UTF conversion in
+     multipart form fields.
+
+ - nsperm / nscp hardening:
+   * Load nsperm .htaccess permission records for first POST requests as well
+     as GET requests.
+   * Prevented a first-request authorization bypass for POST-capable resources
+     protected by nsperm .htaccess rules.
+   * Rejected nscp logins authenticated via the shipped default nsperm
+     administrator credential.
+   * Reduced authentication log verbosity and stopped logging plaintext
+     passwords.
+
+ - TLS hardening:
+   * Changed the built-in default TLS listener protocol policy to disable
+     SSLv2, SSLv3, TLSv1.0, and TLSv1.1 when the protocols parameter is
+     omitted.
+   * Preserved the special meaning of an explicitly empty protocols value,
+     which leaves protocol selection to OpenSSL and the system crypto policy.
+   * Updated documentation for TLS protocol defaults and omitted-vs-empty
+     configuration behavior.
+
+ - Static-file hardening:
+   * Disabled generated fastpath directory listings by default.
+   * Sites that intentionally provide browseable directories must now enable
+     directory listings explicitly.
+
+
 Bug Fixes:
 ----------
 
@@ -170,7 +257,7 @@ Bug Fixes:
 
  - HTTP, driver, and connection handling:
    * Fixed startup timing of the HTTP client janitor.
-   * Avoided “untrusted location” notices with per-server network drivers.
+   * Avoided "untrusted location" notices with per-server network drivers.
    * Improved queue-full warning logs and avoided leaking query strings in
      diagnostics.
    * Fixed host-buffer cleanup on parse failures.
@@ -196,6 +283,67 @@ Bug Fixes:
      and format validation.
    * Improved macOS signal handling in driver/socket code.
    * Added fallbacks for platform-specific format macros where needed.
+
+ - Tcl 9.1 compatibility:
+   * Fixed NSV read-only hash lookups for Tcl 9.1 by using Tcl_FindHashEntry()
+     instead of Tcl_CreateHashEntry(..., NULL).
+   * Prevents accidental creation of uninitialized hash entries and fixes
+     startup crashes in missing-array lookup paths such as nsv_array exists.
+
+ - nscgi and environment handling:
+   * Preserved case of parameter names in ns/environment/* sections, since
+     these names are used as externally visible CGI environment variable
+     names.
+   * Fixed a NaviServer 5.0 regression where variables such as
+     GIT_PROJECT_ROOT could be lowercased by configuration normalization.
+   * Freed interpreter inline environment sets during nscgi cleanup.
+
+ - ADP:
+   * Allowed hyphens in registered ADP tag names after the first character.
+   * Fixed startup failures for existing hyphenated registered tags such as
+     listfilters-form.
+   * Normalized ADP tagset fallback option parsing and improved related
+     diagnostics and documentation.
+
+ - Tcl filter handling:
+   * Treated empty successful Tcl filter results as filter_return.
+   * Restored the documented behavior of return -code return for Tcl filter
+     procedures, while preserving the existing symbolic filter_ok,
+     filter_break, and filter_return forms.
+
+ - Connection and driver handling:
+   * Honored connsperthread=0 as an unlimited connection-thread lifetime,
+     matching the documented configuration semantics.
+   * Closed accepted sockets when SSL_new fails during accept handling.
+   * Released driver socket lists safely during shutdown.
+   * Fixed per-socket progress-state cleanup.
+
+ - HTTP and content parsing:
+   * Kept HTTP message first-line length calculation precise.
+   * Hardened content-type parameter parsing.
+   * Fixed request-line logging when request structures are not available.
+
+ - Memory-safety and cleanup fixes:
+   * Fixed several leaks and cleanup paths found by static analysis, including
+     invalid request registration, query-row handling, Tcl set transfer,
+     parse-message error handling, task queue names, TLS filename startup
+     handling, and HSM/OpenSSL signing contexts.
+   * Added ns_malloc_nonzero for allocation paths that must reject zero-sized
+     allocations explicitly.
+   * Tightened initialization and NULL checks in server, auth, proxy, Tcl
+     callback, and logging code.
+
+ - Portability and sanitizer fixes:
+   * Removed or isolated intentional unsigned wraparound in NSV
+     bucket hashing, SHA1/MD5 transforms, UTF-8 validation, and CLS/SLS
+     cleanup loops to keep UBSan/static-analysis output meaningful.
+   * Preserved locale strings across setlocale calls.
+   * Fixed use of the system locale.h header.
+   * Corrected poll-event casts, websocket opcode masking, ns_inet_ntop buffer
+     length handling, and several status/return-code type mismatches.
+   * Improved fatal-signal handling by restoring the default disposition,
+     unblocking the signal, and re-raising it to allow normal core-dump
+     generation. This fixes a recursive logging loop in certain error conditions.
 
 
 C API Changes:
@@ -250,6 +398,20 @@ Compatibility Notes:
    * Reduced reliance on deprecated OpenSSL APIs where possible.
    * Prepared parts of the TLS and crypto implementation for OpenSSL 4.x.
 
+ - TLS protocol defaults:
+   * When the TLS listener protocols parameter is omitted, NaviServer now
+     applies a secure built-in default disabling SSLv2, SSLv3, TLSv1.0, and
+     TLSv1.1.
+   * An explicitly empty protocols value retains the previous behavior of
+     leaving protocol selection to OpenSSL and the system crypto policy.
+
+ - HTTP request parsing:
+   * NaviServer now rejects several malformed or ambiguous request-framing
+     combinations that may previously have reached application code.
+   * Requests with both Content-Length and Transfer-Encoding are rejected.
+   * Unsupported or malformed Transfer-Encoding and Content-Length values are
+     rejected fail-closed.
+
  - HTTP/3 availability:
    * HTTP/3 support requires nghttp3 and OpenSSL 4.0 or newer.
    * OpenSSL 4.0 is required because NaviServer depends on QUIC APIs for
@@ -280,6 +442,11 @@ Compatibility Notes:
      global ns/parameters values for outputcharset, urlcharset, and
      formfallbackcharset are supported as defaults for compatibility.
 
+ - ns/environment/* configuration:
+   * Parameter names in ns/environment/* sections are now preserved exactly,
+     since they become CGI environment variable names.
+   * Other configuration sections remain case-insensitive as before.
+
  - fastpath directory listings:
    * The default value of ns/server/$server/fastpath:directorylisting changed
      from simple to none. This security-hardening change avoids potential
@@ -288,6 +455,11 @@ Compatibility Notes:
    * Sites that intentionally rely on generated directory listings must now
      enable this explicitly by setting ns/server/$server/fastpath:directorylisting
      to simple or fancy.
+
+ - nscgi interpreter configuration:
+   * The legacy program(environment) interpreter notation remains accepted,
+     but is deprecated in favor of the new Tcl-list syntax using program,
+     environment, env, and argv fields.
 
  - API deprecations:
    * No new Tcl commands are currently listed as deprecated in the generated
@@ -372,9 +544,6 @@ Tcl API Changes:
        ns_crypto::signature sign ?-binary? ?-digest value? ?-id value? ?-encoding hex|base64url|base64|binary? ?-passphrase value? -pem value ?--? message
        ns_crypto::signature verify ?-binary? ?-digest value? ?-id value? ?-passphrase value? -pem value -signature value ?--? message
 
-   * Added UUID v7 generation (RFC 9562):
-       ns_crypto::uuid ?-version v4|v7?
-
    * Added native UUID generation (RFC 4122 and RFC 9562):
        ns_crypto::uuid ?-version v4|v7?
 
@@ -434,6 +603,18 @@ Tcl API Changes:
        ns_urlencode ?-charset value? ?-part query|path|fullpath|fragment|cookie|oauth1? ?-uppercase? ?--? component ...
        ns_urldecode ?-charset value? ?-fallbackcharset value? ?-part query|path|fullpath|fragment|cookie|oauth1? ?--? string
 
+ - Request privacy:
+   * Added:
+       ns_conn privacy
+
+ - Driver diagnostics:
+   * Added:
+       ns_driver queues ?driver|spooler|writer?
+
+ - Memory diagnostics:
+   * Extended:
+       ns_info meminfo
+     to include optional tcmalloc textual and numeric counters when available.
 
 
 Documentation Updates:
@@ -863,7 +1044,7 @@ Compatibility and Platform Fixes:
   - build(make): Replaced wget with curl for downloading build
     helpers.  Network fetches for config.guess, config.sub, and
     ca-bundle.crt now use curl, which is more portable across
-    platforms and already available in NaviServer’s toolchain
+    platforms and already available in NaviServer's toolchain
     (e.g. for testing). (commit 336c91a)
 
 Notes:
@@ -1520,7 +1701,7 @@ Build System and Tooling
 
   - Optional Deprecation-Free Builds:
     * Introduced build flag NS_NO_DEPRECATED to exclude deprecated functions and
-      APIs, mirroring Tcl’s TCL_NO_DEPRECATED mechanism.
+      APIs, mirroring Tcl's TCL_NO_DEPRECATED mechanism.
 
   - CI/CD Modernization:
     * Upgraded GitHub Actions workflows from version 3 to version 4 for
