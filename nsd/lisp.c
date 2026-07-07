@@ -18,6 +18,21 @@
 
 #include "nsd.h"
 
+/*
+ * Local shorthand used only by the deprecated Lisp-style list
+ * implementation.
+ *
+ * Ns_ListPush used to be a public macro which expanded to Ns_ListCons().
+ * Since the Ns_List* API is deprecated, keeping the macro public would
+ * either expose another deprecated entry point or make internal users of
+ * the deprecated implementation trigger deprecation warnings.  Define the
+ * shorthand locally instead and expand it to the non-deprecated internal
+ * helper.
+ *
+ * This is intentionally not a compatibility interface for external code.
+ */
+#define Ns_ListPush(elem,list)     ((list)=ListCons((elem),(list)))
+
 
 /*
  *----------------------------------------------------------------------
@@ -34,9 +49,8 @@
  *
  *----------------------------------------------------------------------
  */
-
-Ns_List *
-Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
+static Ns_List *
+ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
 {
     Ns_List *lPtr, *result;
 
@@ -50,6 +64,12 @@ Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
         result = l2Ptr;
     }
     return result;
+}
+
+Ns_List *
+Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
+{
+    return ListNconc(l1Ptr, l2Ptr);
 }
 
 
@@ -68,16 +88,22 @@ Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
  *
  *----------------------------------------------------------------------
  */
+static Ns_List *
+ListCons(void *elem, Ns_List *lPtr)
+{
+    Ns_List *newPtr;
+
+    newPtr = ns_malloc(sizeof(Ns_List));
+    newPtr->first = elem;
+    newPtr->rest = lPtr;
+
+    return newPtr;
+}
 
 Ns_List *
 Ns_ListCons(void *elem, Ns_List *lPtr)
 {
-    Ns_List *newlPtr;
-
-    newlPtr = (Ns_List *) ns_malloc(sizeof(Ns_List));
-    newlPtr->first = elem;
-    newlPtr->rest = lPtr;
-    return newlPtr;
+    return ListCons(elem, lPtr);
 }
 
 
@@ -97,8 +123,8 @@ Ns_ListCons(void *elem, Ns_List *lPtr)
  *----------------------------------------------------------------------
  */
 
-Ns_List *
-Ns_ListNreverse(Ns_List *lPtr)
+static Ns_List *
+ListNreverse(Ns_List *lPtr)
 {
     Ns_List *nextPtr, *nextRestPtr;
 
@@ -116,6 +142,11 @@ Ns_ListNreverse(Ns_List *lPtr)
     return lPtr;
 }
 
+Ns_List *
+Ns_ListNreverse(Ns_List *lPtr)
+{
+    return ListNreverse(lPtr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -215,13 +246,18 @@ Ns_IntPrint(int d)
  *
  *----------------------------------------------------------------------
  */
+static void
+StringPrint(const char *s)
+{
+    fputs(s, stdout);
+}
 
 void
 Ns_StringPrint(const char *s)
 {
     NS_NONNULL_ASSERT(s != NULL);
 
-    fputs(s, stdout);
+    StringPrint(s);
 }
 
 
@@ -244,14 +280,14 @@ Ns_StringPrint(const char *s)
 void
 Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc)
 {
-    Ns_StringPrint("(");
+    StringPrint("(");
     for (; lPtr != NULL; lPtr = lPtr->rest) {
         (*printProc) (lPtr->first);
         if (lPtr->rest != NULL) {
-            Ns_StringPrint(" ");
+            StringPrint(" ");
         }
     }
-    Ns_StringPrint(")\n");
+    StringPrint(")\n");
 }
 
 
@@ -279,9 +315,9 @@ Ns_ListCopy(const Ns_List *lPtr)
     if (lPtr != NULL) {
         Ns_List *curPtr, *newPtr = NULL;
 
-        headPtr = curPtr = Ns_ListCons(lPtr->first, NULL);
+        headPtr = curPtr = ListCons(lPtr->first, NULL);
         for (lPtr = lPtr->rest; lPtr != NULL; lPtr = lPtr->rest) {
-            newPtr = Ns_ListCons(lPtr->first, NULL);
+            newPtr = ListCons(lPtr->first, NULL);
             curPtr->rest = newPtr;
             curPtr = newPtr;
         }
@@ -339,8 +375,8 @@ Ns_ListLength(const Ns_List *lPtr)
  *----------------------------------------------------------------------
  */
 
-Ns_List *
-Ns_ListWeightSort(Ns_List *wPtr)
+static Ns_List *
+ListWeightSort(Ns_List *wPtr)
 {
     Ns_List  *result;
 
@@ -382,17 +418,24 @@ Ns_ListWeightSort(Ns_List *wPtr)
          * Sort the list of larger elements and append it to axis
          */
 
-        (void) Ns_ListNconc(axisnodePtr, Ns_ListWeightSort(nPtr));
+        (void) ListNconc(axisnodePtr, ListWeightSort(nPtr));
 
         /*
          * Sort the list of smaller elements and append axis to it.
          */
 
-        result = Ns_ListNconc(Ns_ListWeightSort(mPtr), axisnodePtr);
+        result = ListNconc(ListWeightSort(mPtr), axisnodePtr);
     }
 
     return result;
 }
+
+Ns_List *
+Ns_ListWeightSort(Ns_List *wPtr)
+{
+    return ListWeightSort(wPtr);
+}
+
 
 
 /*
@@ -411,8 +454,8 @@ Ns_ListWeightSort(Ns_List *wPtr)
  *----------------------------------------------------------------------
  */
 
-Ns_List *
-Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
+static Ns_List *
+ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
 {
     Ns_List  *result;
 
@@ -446,11 +489,17 @@ Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
         *lastmPtrPtr = NULL;
         *lastnPtrPtr = NULL;
 
-        (void) Ns_ListNconc(axisnodePtr, Ns_ListSort(nPtr, sortProc));
-        result = Ns_ListNconc(Ns_ListSort(mPtr, sortProc), axisnodePtr);
+        (void) ListNconc(axisnodePtr, ListSort(nPtr, sortProc));
+        result = ListNconc(ListSort(mPtr, sortProc), axisnodePtr);
     }
 
     return result;
+}
+
+Ns_List *
+Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
+{
+    return ListSort(wPtr, sortProc);
 }
 
 

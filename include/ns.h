@@ -232,7 +232,6 @@ typedef enum {
 #define STREQ(a,b)                 (((*(a)) == (*(b))) && (strcmp((a),(b)) == 0))
 #define STRIEQ(a,b)                (strcasecmp((a),(b)) == 0)
 #define Ns_IndexCount(X)           ((X)->n)
-#define Ns_ListPush(elem,list)     ((list)=Ns_ListCons((elem),(list)))
 #define Ns_ListFirst(list)         ((list)->first)
 #define Ns_ListRest(list)          ((list)->rest)
 #define Ns_SetSize(s)              ((s)->size)
