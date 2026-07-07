@@ -558,8 +558,8 @@ Ns_ListDeleteLowElements(Ns_List *mPtr, float minweight)
  *----------------------------------------------------------------------
  */
 
-Ns_List *
-Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr, Ns_EqualProc *equalProc)
+static Ns_List *
+ListDeleteWithTest(void *elem, Ns_List *lPtr, Ns_EqualProc *equalProc)
 {
     Ns_List  *mPtr = lPtr;
     Ns_List **lastPtrPtr = &lPtr;
@@ -576,6 +576,11 @@ Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr, Ns_EqualProc *equalProc)
     }
 
     return lPtr;
+}
+Ns_List *
+Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr, Ns_EqualProc *equalProc)
+{
+    return ListDeleteWithTest(elem, lPtr, equalProc);
 }
 
 
@@ -638,7 +643,7 @@ Ns_ListDeleteDuplicates(Ns_List *lPtr, Ns_EqualProc *equalProc)
     Ns_List *mPtr = lPtr;
 
     for (; lPtr != NULL; lPtr = lPtr->rest) {
-        lPtr->rest = Ns_ListDeleteWithTest(lPtr->first, lPtr->rest, equalProc);
+        lPtr->rest = ListDeleteWithTest(lPtr->first, lPtr->rest, equalProc);
     }
 
     return mPtr;
@@ -699,7 +704,7 @@ Ns_ListMapcar(const Ns_List *lPtr, Ns_ElemValProc *valProc)
         Ns_ListPush((*valProc) (lPtr->first), mPtr);
     }
 
-    return Ns_ListNreverse(mPtr);
+    return ListNreverse(mPtr);
 }
 
 /*
