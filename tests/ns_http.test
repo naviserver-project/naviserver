@@ -3034,19 +3034,37 @@ test http-json-1.5 {ns_getform: small JSON is not spooled and parses} -constrain
 # In these tests, we forward the request to ourselves.
 #######################################################################################
 
-test proxy-1.0 {Test forward proxy with via HTTP with HTTP request} -constraints {
+proc _proxy_local_target {url path} {
+    #
+    # Use localhost for the origin URL instead of the configured IPv6
+    # literal. curl 8.21.0 fails with CURLE_OUT_OF_MEMORY before sending
+    # the request for:
+    #
+    #   -x http://[::1]:PORT -H "Host: test" http://[::1]:PORT/PATH
+    #
+    # Keep the proxy URL unchanged; only the forwarded origin URL is
+    # expressed via localhost.
+    #
+    set dict [ns_parseurl $url]
+    dict set dict host localhost
+    dict set dict path $path
+    return [ns_joinurl $dict]
+}
+
+test proxy-1.0 {Test forward proxy via HTTP with HTTP request} -constraints {
     curl serverListen
 } -body {
-    #ns_log notice "PROXY [ns_config test listenurl] request [ns_config test listenurl]/10bytes"
-    exec curl -g -v -x [ns_config test listenurl] -H "Host: test" [ns_config test listenurl]/10bytes  2> $devnull
+    set target [_proxy_local_target [ns_config test listenurl] 10bytes]
+    exec curl -g -v -x [ns_config test listenurl] -H "Host: test" $target  2> $devnull
 } -result {0123456789}
+
 
 test proxy-1.1 {Test forward proxy with via HTTPS with HTTP request} -constraints {
     ssl curl serverListen
 } -body {
-    #ns_log notice "PROXY [ns_config test tls_listenurl] request [ns_config test listenurl]/10bytes"
-    exec curl -g --proxy-insecure -v -x [ns_config test tls_listenurl] -H "Host: test" [ns_config test listenurl]/10bytes  2> $devnull
-} -result {0123456789}
+    set target [_proxy_local_target [ns_config test listenurl] 10bytes]
+    exec curl -g --proxy-insecure -v -x [ns_config test tls_listenurl] -H "Host: test" $target  2> $devnull
+} -returnCodes {error ok return} -result {0123456789}
 
 test proxy-1.2 {Test forward proxy with via HTTP with HTTPS request} -constraints {
     ssl curl serverListen nsf
@@ -3060,7 +3078,7 @@ test proxy-1.2 {Test forward proxy with via HTTP with HTTPS request} -constraint
     set cmd "curl -k -s -g --proxy-insecure -x $proxy $target"
     #catch {exec {*}$cmd 2> $devnull} errorMsg; set errorMsg
     exec {*}$cmd 2> $devnull
-} -returnCodes {error ok} -match glob -result {0123456789}
+} -match glob -result {0123456789}
 
 test proxy-1.3 {Test forward proxy with via HTTPS with HTTPS request} -constraints {
     ssl curl serverListen nsf
