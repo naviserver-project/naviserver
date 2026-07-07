@@ -31,7 +31,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
     nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
 
     proc ns_proxy_request { args } {
-        ns_log notice "======== ns_proxy_request is called" args <$args> (server [ns_info server])
+        #ns_log notice "======== ns_proxy_request is called" args <$args> (server [ns_info server])
         #
         # Get the full URL from request line
         #
@@ -39,7 +39,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
             ns_log warning "proxy: request line malformed: <[ns_conn request]>"
             ns_return 400 text/plain "invalid proxy request"
         } elseif {[info commands ::revproxy::ns_http::upstream] ne ""} {
-            ns_log notice ::revproxy::ns_http::upstream -url $URL
+            #ns_log notice ::revproxy::ns_http::upstream -url $URL
             return [::revproxy::ns_http::upstream \
                         -url $URL \
                         -request [::revproxy::request] \
@@ -47,7 +47,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
                        ]
         } else {
             # Simple fallback handler
-            ns_log notice ns_http run -method [ns_conn method] -spoolsize 0 $URL
+            #ns_log notice ns_http run -method [ns_conn method] -spoolsize 0 $URL
             set d [ns_http run -method [ns_conn method] -spoolsize 0 $URL]
             #ns_log notice ... $d
             ns_headers [dict get $d status] [ns_set get -nocase [dict get $d headers] content-type]
@@ -56,8 +56,8 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
         }
     }
     proc ns_proxy_connect { args } {
-        ns_log notice "======== ns_proxy_connect is called" args <$args> (server [ns_info server])
-        ns_log notice [ns_set format [ns_conn headers]]
+        #ns_log notice "======== ns_proxy_connect is called" args <$args> (server [ns_info server])
+        #ns_log notice [ns_set format [ns_conn headers]]
         set peeraddr [ns_conn peeraddr -source direct]
         #
         # We could/should add Proxy-Authorization here.  For now, we
@@ -77,8 +77,8 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
                 ns_connchan write $frontendChan "HTTP/1.1 200 Connection Established\r\n\r\n"
 
                 set identifier "CONNECT ${targetHost} ${targetPort}"
-                ns_log notice $identifier frontendChan $frontendChan backendChan $backendChan \
-                    peeraddr $peeraddr public [ns_ip public $peeraddr] trusted [ns_ip trusted $peeraddr]
+                #ns_log notice $identifier frontendChan $frontendChan backendChan $backendChan \
+                #    peeraddr $peeraddr public [ns_ip public $peeraddr] trusted [ns_ip trusted $peeraddr]
                 set timeouts {-sendtimeout 1s -receivetimeout 1s -timeout 1m}
                 set timeoutArgs [list -timeout [dict get $timeouts -timeout] \
                                      -sendtimeout [dict get $timeouts -sendtimeout] \
