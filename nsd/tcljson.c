@@ -419,7 +419,7 @@ static Ns_ReturnCode JsonParseArraySet(JsonParser *jp, Ns_Set *set,
 /*
  * Set population helpers.
  */
-static void          JsonSetPutValue(Ns_Set *set, const char *key, TCL_SIZE_T keyLen, const char *val, TCL_SIZE_T valLen) NS_GNUC_NONNULL(1,2,4);
+static void          JsonSetPutValue(Ns_Set *set, const char *key, TCL_SIZE_T keyLen, const char *val, TCL_SIZE_T valLen) NS_GNUC_NONNULL(1,2);
 static void          JsonSetPutType(Ns_Set *set, Tcl_DString *typeKeyDsPtr, const char *key, TCL_SIZE_T keyLen, JsonValueType vt) NS_GNUC_NONNULL(1,2,3);
 static void          JsonFlattenToSet(Ns_Set *set, const Tcl_DString *pathDsPtr, Tcl_DString *typeKeyDsPtr,
                                       Tcl_Obj *valueObj, const char *valStr, TCL_SIZE_T valLen, JsonValueType vt) NS_GNUC_NONNULL(1,2,3);
@@ -3941,7 +3941,9 @@ JsonParseValueSet(JsonParser *jp, Ns_Set *set,
         if (JsonParseLiteral(jp, &valObj, valueTypePtr) != NS_OK) {
             goto done;
         }
-        Tcl_IncrRefCount(valObj);
+        if (valObj != NULL) {
+            Tcl_IncrRefCount(valObj);
+        }
         JsonFlattenToSet(set, pathDsPtr, typeKeyDsPtr, valObj, NULL, 0, *valueTypePtr);
         rc = NS_OK;
         goto done;
@@ -4181,6 +4183,10 @@ done:
  *      key.  This helper encapsulates the Ns_Set insertion policy used by the
  *      JSON flattener.
  *
+ *      The value string may be NULL.  This is used for JSON null values when
+ *      no custom null value object/string is configured.  Ns_SetPutSz()
+ *      accepts a NULL value pointer; only the key must be non-NULL.
+ *
  * Results:
  *      None.
  *
@@ -4237,7 +4243,10 @@ JsonSetPutType(Ns_Set *set, Tcl_DString *typeKeyDsPtr,
  * JsonFlattenToSet --
  *
  *      Store a parsed JSON value into an Ns_Set using the flattened key-path
- *      representation.
+ *      representation. The key must be  non-NULL.  The value may be NULL,
+ *      in which case Ns_SetPutSz() stores  a NULL value pointer with the
+ *      supplied length.  This is used for JSON null values when no custom
+ *      null value object/string is configured.
  *
  *      The function uses the current key path stored in pathDsPtr and the
  *      corresponding type sidecar key in typeKeyDsPtr.  The JSON value type
@@ -4266,6 +4275,11 @@ JsonFlattenToSet(Ns_Set *set,
     const char *key;
     TCL_SIZE_T  keyLen;
 
+    /*
+     * Exactly one of valueObj and valStr may provide the value string.  Both
+     * may be NULL for JSON null values when the ns_set entry should store a
+     * NULL value pointer.
+     */
     NS_NONNULL_ASSERT(valueObj == NULL || valStr == NULL);
 
     key = pathDsPtr->string;

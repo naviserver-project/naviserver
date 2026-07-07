@@ -512,6 +512,7 @@ Ns_SetFree(Ns_Set *set)
  * Ns_SetPut --
  *
  *      Insert (add) a tuple into an existing set.
+ *      The value string may be NULL.
  *
  * Results:
  *      The index number of the new tuple.
@@ -521,7 +522,6 @@ Ns_SetFree(Ns_Set *set)
  *
  *----------------------------------------------------------------------
  */
-
 size_t
 Ns_SetPutSz(Ns_Set *set,
             const char *keyString, TCL_SIZE_T keyLength,
@@ -543,7 +543,8 @@ Ns_SetPutSz(Ns_Set *set,
                                  sizeof(Ns_SetField) * set->maxSize);
         Ns_Log(Ns_LogNsSetDebug, "Ns_SetPutSz %p '%s': [%lu] realloc from %lu to maxsize %lu"
                " (while adding '%s')",
-               (void *)set, set->name, idx, oldMax, set->maxSize, valueString);
+               (void *)set, set->name, idx, oldMax, set->maxSize,
+               valueString == NULL ? "(null)" : valueString);
 
         memset(&set->fields[idx], 0,
                sizeof(Ns_SetField) * (set->maxSize - idx));
@@ -577,7 +578,9 @@ Ns_SetPutSz(Ns_Set *set,
     set->size++;
 
     Ns_Log(Ns_LogNsSetDebug, "Ns_SetPut %p [%lu] key '%s' value '%s' size %" PRITcl_Size,
-           (void *)set, idx, set->fields[idx].name, set->fields[idx].value, valueLength);
+           (void *)set, idx, set->fields[idx].name,
+           set->fields[idx].value != NULL ? set->fields[idx].value : "(null)",
+           valueLength);
     return idx;
 }
 
