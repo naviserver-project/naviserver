@@ -128,7 +128,7 @@ The first positional argument selects which chain to extend:
 [list_end]
 
 [para] If [option -authority] is provided, its value is recorded as
-the handler’s label (visible e.g. via [const "ns_auth … -dict"]);
+the handler's label (visible e.g. via [const "ns_auth … -dict"]);
 otherwise the command name passed as [arg script] is used. Any
 additional words after [arg script] are passed along as extra
 arguments to the callback when it is invoked.
@@ -508,7 +508,7 @@ Alternatively, filters may use Tcl completion codes:
 Registers a Tcl script as a handler for the specified method/protocol
 combination. By registering this command, NaviServer acts as a plain
 HTTP proxy server (also called a "forward proxy"), which handles
-outbound traffic on behalf of clients, shielding the client’s identity
+outbound traffic on behalf of clients, shielding the client's identity
 or controlling outbound traffic.  This is different from a reverse
 proxy server, which is managing traffic towards internal servers (see
 [uri ../../revproxy/files/revproxy.html "revproxy"]).

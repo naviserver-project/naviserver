@@ -2399,7 +2399,7 @@ ExecuteKeyScript(Tcl_DString *dsPtr, const char *scriptPath, const char *pemPath
  *      OpenSSL callback to obtain the passphrase for an encrypted
  *      private key.  The lookup proceeds in three stages:
  *
- *        1) If the server’s NsTLSConfig has a tlsKeyScript defined,
+ *        1) If the server's NsTLSConfig has a tlsKeyScript defined,
  *           run that helper script (`ExecuteKeyScript`) with the PEM
  *           filename.  If it returns NS_OK, its output (in ds.string)
  *           is used as the passphrase.
@@ -2705,9 +2705,9 @@ BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
  *      OpenSSL ALPN (Application-Layer Protocol Negotiation) selection
  *      callback.  When a TLS client offers a list of supported protocols,
  *      this function picks the first one that the server also supports,
- *      using OpenSSL’s builtin SSL_select_next_proto() helper.
+ *      using OpenSSL's builtin SSL_select_next_proto() helper.
  *
- *      The server’s protocol list is passed in via the "arg" pointer,
+ *      The server's protocol list is passed in via the "arg" pointer,
  *      but we pack the length immediately before the data in memory,
  *      so we reconstruct it by reading the unsigned int stored just
  *      before "arg".
@@ -2721,7 +2721,7 @@ BuildALPNWireFormat(Tcl_DString *dsPtr, const char *alpnStr)
  *      in                    - Wire-format list of protocols offered by
  *                              the client (each prefixed by its length).
  *      inlen                 - Total byte length of in.
- *      arg                   - Pointer to the server’s wire-format
+ *      arg                   - Pointer to the server's wire-format
  *                              protocols list in ALPNProtos.
  *
  * Returns:

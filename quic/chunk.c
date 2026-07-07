@@ -66,7 +66,7 @@
  *
  * Notes
  * -----
- * - Move may exceed the requested byte budget because nodes aren’t split.
+ * - Move may exceed the requested byte budget because nodes aren't split.
  * - Logging is minimal and intended for debugging.
  */
 
@@ -274,7 +274,7 @@ ChunkQueueMove(ChunkQueue *src, ChunkQueue *dst, size_t maxbytes)
  * ChunkQueuePrint --
  *
  *      Debug helper: dump queue contents to logs, prefixed by 'msg'.
- *      Walks from head to tail and prints each chunk’s address and len.
+ *      Walks from head to tail and prints each chunk's address and len.
  *
  * Results:
  *      None.

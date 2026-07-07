@@ -3160,7 +3160,7 @@ TriplesSetValue(Tcl_Interp *interp, Tcl_Obj *pathObj, Tcl_Obj *triplesObj,
                         newValueObj = normObj;
                     } else {
                         if (oldVt == JSON_VT_NUMBER) {
-                            return TCL_ERROR;  /* keep the “invalid number” message */
+                            return TCL_ERROR;  /* keep the "invalid number" message */
                         }
                         Tcl_ResetResult(interp); /* ignore normalization error; fall back below */
                     }

@@ -61,7 +61,7 @@ static TCL_OBJCMDPROC_T UserAuthorizeObjCmd;
  *
  * AuthLock --
  *
- *      Acquire the appropriate read or write lock on the server’s
+ *      Acquire the appropriate read or write lock on the server's
  *      request‐authorization list. Used for request and user authentications.
  *      A NS_READ request obtains a shared read lock, allowing concurrent
  *      readers; NS_WRITE obtains an exclusive write lock, blocking other
@@ -86,7 +86,7 @@ AuthLock(const NsServer *servPtr, NS_RW rw) {
  *
  * AuthUnlock --
  *
- *      Release the previously acquired read or write lock on the server’s
+ *      Release the previously acquired read or write lock on the server's
  *      request‐authorization list. Used for request and user authentications.
  *
  * Side Effects:
@@ -139,7 +139,7 @@ AuthUnlock(const NsServer *servPtr) {
  *        NS_FILTER_RETURN - mapped from Tcl continuation TCL_RETURN
  *
  * Side Effects:
- *      Acquires a read lock on the server’s request authorization list
+ *      Acquires a read lock on the server's request authorization list
  *      and invokes each authorization procedure in turn under that lock.
  *
  *----------------------------------------------------------------------
@@ -207,7 +207,7 @@ Ns_AuthorizeRequest(Ns_Conn *conn, const char **authorityPtr)
  *        NS_ERROR         - Internal error during checks.
  *
  * Side Effects:
- *      Acquires the server’s user authorization list read-lock and invokes each
+ *      Acquires the server's user authorization list read-lock and invokes each
  *      authorization procedure under that lock.
  *
  *----------------------------------------------------------------------
@@ -277,7 +277,7 @@ Ns_AuthorizeUser(const Ns_Server *server, const char *user, const char *passwd,
  *      None.  After this call, dsPtr holds a Tcl list of dict entries as above.
  *
  * Side Effects:
- *      Acquires servPtr’s AuthLock in read mode while walking the lists,
+ *      Acquires servPtr's AuthLock in read mode while walking the lists,
  *      then releases the lock.  Allocates temporary Tcl_Obj and Tcl_DString
  *      structures for formatting each entry.
  *
@@ -350,7 +350,7 @@ NsGetAuthprocs(Tcl_DString *dsPtr, NsServer *servPtr)
  * RegisterAuth --
  *
  *      Generic helper to insert an authentication callback object into a
- *      server’s linked list, either at the head or the tail.
+ *      server's linked list, either at the head or the tail.
  *
  *      This works for both RequestAuth and UserAuth, since they both
  *      begin with a `nextPtr` field of type void *.

@@ -704,7 +704,7 @@ QueueEvent(Event *ePtr)
 
             /*
              * If the job finished before its next nominal start, queue
-             * exactly at scheduled_next. Otherwise we’d overlap: push the
+             * exactly at scheduled_next. Otherwise we'd overlap: push the
              * next run to now + 10ms.
              */
             Ns_GetTime(&now);

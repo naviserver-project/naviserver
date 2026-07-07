@@ -1073,7 +1073,7 @@ HttpClientLogClose(void *arg)
  *
  *      This function generates a log message describing the current state of the
  *      HTTP task, including timing, thread information, request details, and a cause
- *      string. It determines the appropriate log file descriptor based on the server’s
+ *      string. It determines the appropriate log file descriptor based on the server's
  *      configuration. If server root processing is enabled, the log file is dynamically
  *      resolved using the Ns_LogPath() and Ns_ServerLogGetFd() functions; otherwise,
  *      the pre-configured file descriptor in the server's httpclient structure is used.
@@ -3714,7 +3714,7 @@ HttpCheckHeader(
  *      Enforces the maximum allowed response size for an HTTP task.
  *
  *      If the total number of bytes received so far (responseLength) exceeds
- *      the task’s configured maxresponse limit, this function sets an error
+ *      the task's configured maxresponse limit, this function sets an error
  *      message on the task and returns TCL_ERROR to signal that the response
  *      should be aborted. Otherwise, it returns TCL_OK.
  *
@@ -4123,7 +4123,7 @@ HttpWaitForSocketEvent(
  * Results:
  *        TCL_OK on success (including no proxy configured),
  *        TCL_ERROR on failure (invalid dictionary, missing or bad values),
- *        with an error message stored in interp’s result.
+ *        with an error message stored in interp's result.
  *
  * Side effects:
  *        Sets *proxyHost (may be NULL), *proxyPortNr, *httpTunnel,

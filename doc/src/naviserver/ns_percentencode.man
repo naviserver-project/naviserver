@@ -36,7 +36,7 @@
      [arg string]]
 
  Percent‑encodes a single string.
- All characters not in the selected scheme’s unreserved set are
+ All characters not in the selected scheme's unreserved set are
  replaced by "%" and two hex digits.
 
  [call [cmd ns_percentdecode] \
@@ -375,7 +375,7 @@ Construct an OAuth 1.0 signature base string
  ## output: Ladies%20%2B%20Gentlemen
 [example_end]
 
-If your percent‐encoded input isn’t valid UTF‑8, you can retry with a different charset:
+If your percent‐encoded input isn't valid UTF‑8, you can retry with a different charset:
 
 [example_begin]
  ns_percentdecode "%C3%A9t%C3%A9"

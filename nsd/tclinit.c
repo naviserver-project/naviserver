@@ -2548,7 +2548,7 @@ DeleteInterps(void *arg)
  * NsForeachHashValue --
  *
  *      Iterate over every entry in a Tcl_HashTable and invoke a user-supplied
- *      function on each entry’s value.
+ *      function on each entry's value.
  *
  * Parameters:
  *      tablePtr   – pointer to the Tcl_HashTable to traverse.
@@ -2589,7 +2589,7 @@ Ns_ReturnCode NsForeachHashValue(Tcl_HashTable *tablePtr, NsHashValueProc fn, co
  * NsForeachHashKeyValue --
  *
  *      Iterate over every entry in a Tcl_HashTable and invoke a user-supplied
- *      function on each entry’s key and value.
+ *      function on each entry's key and value.
  *
  * Parameters:
  *      tablePtr   – pointer to the Tcl_HashTable to traverse.

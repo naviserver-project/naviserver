@@ -587,7 +587,7 @@ if {[info exists httpport] && $httpport ne ""} {
 
         # Defer accept until data arrives (where supported). This can improve
         # performance but may cause recvwait to be ignored while the socket
-        # is still in the kernel’s accept queue.
+        # is still in the kernel's accept queue.
         # ns_param deferaccept   true  ;# default: false
 
 
@@ -745,7 +745,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
 
         # Defer accept until data arrives (where supported). This can improve
         # performance but may influence how recvwait behaves while the socket
-        # is still in the kernel’s accept queue.
+        # is still in the kernel's accept queue.
         # ns_param deferaccept      true   ;# default: false
 
         # Control TCP_NODELAY (Nagle's algorithm) on accepted sockets.

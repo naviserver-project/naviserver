@@ -1168,7 +1168,7 @@ and tools for inspecting and managing certificates.
 
 HTTPS support in NaviServer requires an X.509 server certificate and
 its corresponding private key. These are used during the TLS handshake
-to establish the server’s identity.
+to establish the server's identity.
 
 [para]
 
@@ -1904,7 +1904,7 @@ pa
 
   [para]
   Alternatively, the bundle can be updated manually, e.g. from
-  [uri https://curl.se/docs/caextract.html "Mozilla’s trusted CA list"].
+  [uri https://curl.se/docs/caextract.html "Mozilla's trusted CA list"].
 
   [para]
   Automated updates can be scheduled via [cmd ns_schedule].
@@ -2058,7 +2058,7 @@ For the full reverse proxy module documentation, see
 
  Beyond the global configuration, you can define server-specific file
  location settings by specifying a [const serverdir] that acts as the
- root for that server’s log and page directories.
+ root for that server's log and page directories.
 
 [para]
 
@@ -2070,7 +2070,7 @@ For the full reverse proxy module documentation, see
 
 [item] [const serverdir]:
 
-       Defines the root directory for a server’s log and page
+       Defines the root directory for a server's log and page
        directories. A relative [const serverdir] is resolved against
        [const home]. By default, [const serverdir] is empty, meaning
        the global [const home] is used.

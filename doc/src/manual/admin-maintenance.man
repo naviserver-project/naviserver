@@ -192,7 +192,7 @@ configuration parameters that affect them.
 
 [def [const /modules/tcl]]
 
-  Default directory for the server’s private Tcl script library.
+  Default directory for the server's private Tcl script library.
   
 [para] Typical files:
 [example_begin]

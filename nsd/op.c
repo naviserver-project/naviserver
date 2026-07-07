@@ -172,7 +172,7 @@ Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *method, 
  * Side Effects:
  *      Allocates a RegisteredProc structure, initializes its fields,
  *      then locks the URL space mutex and calls Ns_UrlSpecificSet2()
- *      to insert the handler into the server’s dispatch table.
+ *      to insert the handler into the server's dispatch table.
  *
  *----------------------------------------------------------------------
  */

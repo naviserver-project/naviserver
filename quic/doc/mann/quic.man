@@ -19,8 +19,8 @@ While [term nsssl] handles encrypted HTTP/1.x and HTTP/2 traffic over TCP/TLS,
 the [term quic] driver provides equivalent functionality for HTTP/3 over QUIC (UDP).
 Both modules share the same TLS configuration (certificates, ciphers, protocols, and OCSP settings)
 so that administrators can manage all HTTPS and HTTP/3 parameters in a unified way.
-The driver uses OpenSSL’s native QUIC implementation introduced in
-OpenSSL 3.1 and integrates it directly into NaviServer’s driver model.
+The driver uses OpenSSL's native QUIC implementation introduced in
+OpenSSL 3.1 and integrates it directly into NaviServer's driver model.
 
 [para]
 
@@ -80,7 +80,7 @@ such as certificates, ciphers, and protocols.
 [subsection {Notes}]
 
  The NaviServer HTTP/3 module works best with publicly
- trusted certificates (e.g., from Let’s Encrypt), especially when the
+ trusted certificates (e.g., from Let's Encrypt), especially when the
  header field Alt-Svc is used to advertise the availability of HTTP/3
  in an HTTP/1.* request.  Browsers will only attempt QUIC connections
  for Alt-Svc endpoints whose certificates chain to a trusted public
@@ -132,7 +132,7 @@ such as certificates, ciphers, and protocols.
 [item]
 
  This limitation is due to browser policy, not a restriction of
- NaviServer’s HTTP/3 implementation.  Policies may change over time;
+ NaviServer's HTTP/3 implementation.  Policies may change over time;
  if you discover reliable workarounds for e self-signed Alt-Svc
  testing, please share them with the community.
 
@@ -210,7 +210,7 @@ such as certificates, ciphers, and protocols.
 [list_begin itemized]
 [item]
 
- HTTP/3 (QUIC) in NaviServer relies on OpenSSL’s QUIC stack, which was
+ HTTP/3 (QUIC) in NaviServer relies on OpenSSL's QUIC stack, which was
  introduced in OpenSSL 3.1 and is still under active development.
  For the QUIC driver to function correctly, NaviServer 5 (or newer) and
  OpenSSL 4 or later are required, as earlier versions do not provide
@@ -227,7 +227,7 @@ such as certificates, ciphers, and protocols.
 [item]
 
  At this stage, the QUIC driver provides full integration of HTTP/3
- within NaviServer’s driver architecture for serving inbound HTTP/3
+ within NaviServer's driver architecture for serving inbound HTTP/3
  requests.  However, as the implementation is still evolving, it may
  produce verbose diagnostic output in the server log and expose
  limitations within the underlying OpenSSL QUIC layer.  In particular,

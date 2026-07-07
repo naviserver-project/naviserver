@@ -384,7 +384,7 @@ if {$::tcl_version < 8.6} {
 #    Parse HTTP request body data from a spool file and populate the
 #    provided ns_set with the extracted form fields.
 #
-#    This procedure mirrors the server’s internal request-content
+#    This procedure mirrors the server's internal request-content
 #    handling for connections where the request body has been written
 #    to a temporary file (spooled content).  It is primarily used by
 #    ns_getform when the connection content is not available in
@@ -401,9 +401,9 @@ if {$::tcl_version < 8.6} {
 #    to the ns_set as name/value pairs.  Uploaded files are
 #    written to separate temporary files; their original
 #    filename is stored under the field name, and the path to
-#    the created temporary file is stored as “name.tmpfile”.
+#    the created temporary file is stored as "name.tmpfile".
 #
-#  * application/json and structured “+json” types
+#  * application/json and structured "+json" types
 #    The JSON body is read into memory, parsed via ns_json,
 #    and flattened into name/value pairs compatible with the
 #    ns_set representation used for form data.
@@ -411,7 +411,7 @@ if {$::tcl_version < 8.6} {
 # Result:
 #    On success, the provided ns_set is populated with parsed
 #    name/value pairs.  For multipart uploads, additional entries
-#    of the form “name.tmpfile” are created to reference the
+#    of the form "name.tmpfile" are created to reference the
 #    generated temporary files.
 #
 # Side effects:

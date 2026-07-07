@@ -236,7 +236,7 @@
  In addition to the glob-based URL space matching, NaviServer supports
  so-called [emph "context constraints"]. These constraints allow you to include additional
  (context) information such as the current IP addresses or current
- header fields in the URL space lookup. They’re applied after the
+ header fields in the URL space lookup. They're applied after the
  constraint-less URL match and
  participate in the usual "most specific wins" resolution (i.e., if
  there are multiple definitions for the same method and URL pattern
@@ -250,7 +250,7 @@
 
 [para] When you attach a context constraints in a connection-pool mapping,
  or via [cmd ns_register_proc], [cmd ns_register_filter] etc., the
- live socket’s headers and peer address are used automatically when
+ live socket's headers and peer address are used automatically when
  deciding, which proc/filter/etc. is to be used. When you specify the
  context constraints in a [cmd "ns_urlspace set"] command, you can pass
  directly a context to a [cmd "ns_urlspace set"] command, by providing

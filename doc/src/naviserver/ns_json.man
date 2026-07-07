@@ -68,7 +68,7 @@ for programmatic processing and re-emission.
 [section RATIONALE]
 
 The [cmd ns_json] command is not only intended as a utility for application
-developers, but is also designed as an integral part of NaviServer’s internal
+developers, but is also designed as an integral part of NaviServer's internal
 request processing infrastructure.
 
 [para]

@@ -78,7 +78,7 @@ by calling directly in the "ns_param register" section the API
 
 [subsection {Loading the Module}]
 
- First, load the revproxy module in your server’s "modules" section:
+ First, load the revproxy module in your server's "modules" section:
 
 [example_begin]
  ns_section "ns/server/$server/modules" {
@@ -110,14 +110,14 @@ by calling directly in the "ns_param register" section the API
 
 [subsection {Defining Backends}]
 
-Each backend requires its own [term ns_section] under the server’s
+Each backend requires its own [term ns_section] under the server's
 revproxy module. The parameters, which can be set per backend are the
 same as those, which can be set via the
 [sectref {General Options} "API Options"].
 
 
 [para] In the first example, "backend1" forwards "/api/*" over HTTPS
-with custom timeouts, and uses the target’s Host header on POST:
+with custom timeouts, and uses the target's Host header on POST:
 
 [example_begin]
  ns_section ns/server/$server/module/revproxy/backend1 {
@@ -411,7 +411,7 @@ handler proc, provide constant "proc" as first argument.
 
 [opt_def -use_target_host_header true|false]
 
- If true, sets the Host header to the backend’s host.
+ If true, sets the Host header to the backend's host.
  By default, the incoming Host header from the client is preserved.
  The option is a shortcut for [option -targethost].
 

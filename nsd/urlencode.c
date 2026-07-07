@@ -1451,7 +1451,7 @@ UrlFallbackDecode(NsInterp *itPtr, Tcl_DString *dsPtr, const char *inputStr,
  * UrlPercentDecode --
  *
  *      Decode a percent‑encoded URL string into UTF‑8 using a primary
- *      charset (if provided) or the server’s default URL encoding. If the
+ *      charset (if provided) or the server's default URL encoding. If the
  *      decode fails due to an invalid encoding and no explicit charset was
  *      given, attempt to retry with a fallback charset.
  *

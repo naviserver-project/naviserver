@@ -1700,7 +1700,7 @@ NsStopSpoolers(void)
  *        1. It is bound directly to that server
  *        2. It specifies this server as its default
  *        3. It is a global driver and the server appears in the
- *           module’s "servers" configuration subsection.
+ *           module's "servers" configuration subsection.
  *
  * Results:
  *      Returns NS_TRUE if the driver applies to the given server,
@@ -2420,7 +2420,7 @@ NsSockClose(Sock *sockPtr, int keep)
  *   Bind all configured (address * port) combinations for a driver and
  *   populate the driver's listener socket array.
  *
- *   The driver’s "address" field is expected to contain a Tcl list of one or
+ *   The driver's "address" field is expected to contain a Tcl list of one or
  *   more local bind addresses (e.g., "127.0.0.1 ::1"). For each address in
  *   that list and each port configured in drvPtr->ports, this function calls
  *   DriverListen(drvPtr, addr, port). Every successful bind/listen returns an
@@ -2527,14 +2527,14 @@ NsDriverBindAddresses(Driver *drvPtr)
  * NsDriverStartSpoolers --
  *
  *      Start the background spooler and writer threads associated with
- *      the given driver. Each queue’s first entry is passed to its
+ *      the given driver. Each queue's first entry is passed to its
  *      corresponding thread function.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Creates and launches the driver’s spooler and writer threads.
+ *      Creates and launches the driver's spooler and writer threads.
  *
  *----------------------------------------------------------------------
  */
@@ -3493,7 +3493,7 @@ PollReset(PollData *pdata)
  *
  * PollSet --
  *
- *      Add a socket to the PollData’s pollfd array, growing the array if
+ *      Add a socket to the PollData's pollfd array, growing the array if
  *      necessary, and update the minimum timeout.
  *
  * Returns:
@@ -7939,21 +7939,21 @@ ConnPoolInfoUpdateCB(const void *hashKey, void *hashValue, const void *UNUSED(ct
  *
  *      For a linked list of writer sockets in this thread, compute and update
  *      per-pool rate information:
- *        1. Reset each pool’s accumulated rate.
- *        2. Walk the writer list, adding each writer’s currentRate to its
+ *        1. Reset each pool's accumulated rate.
+ *        2. Walk the writer list, adding each writer's currentRate to its
  *           ConnPoolInfo.
  *        3. Invoke ConnPoolInfoUpdateCB on every pool so that deltaPercentage
  *           is recomputed based on global pool limits and thread counts.
  *
  * Parameters:
- *      writePtr   – first WriterSock in the thread’s list of active writers.
+ *      writePtr   – first WriterSock in the thread's list of active writers.
  *      pools      – Tcl_HashTable mapping ConnPool* -> ConnPoolInfo*.
  *
  * Results:
  *      None.
  *
  * Side Effects:
- *      Updates the ConnPoolInfo entries in ‘pools’ and emits log messages
+ *      Updates the ConnPoolInfo entries in ‘pools' and emits log messages
  *      at DriverDebug and Notice levels.
  *
  *----------------------------------------------------------------------
@@ -8126,7 +8126,7 @@ BandwidthComputeSleepTimeMs(const WriterSock *w)
  * BandwidthAdjustPollForWriters --
  *
  *      Prepare the poll set for writer sockets and compute the
- *      appropriate timeout based on each writer’s rate-limiting needs.
+ *      appropriate timeout based on each writer's rate-limiting needs.
  *      Iterates through the linked list of WriterSock objects, determines
  *      how long each should sleep (via ComputeSleepTimeMs), and:
  *
@@ -8148,7 +8148,7 @@ BandwidthComputeSleepTimeMs(const WriterSock *w)
  * Side Effects:
  *      Calls ComputeSleepTimeMs for each writer.
  *      May call SockPoll to register sockets for POLLOUT.
- *      Logs debug information about each writer’s send rate and sleep time.
+ *      Logs debug information about each writer's send rate and sleep time.
  *
  *----------------------------------------------------------------------
  */

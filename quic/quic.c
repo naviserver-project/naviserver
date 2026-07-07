@@ -19,8 +19,8 @@
  * Purpose
  * -------
  * Implements the NaviServer "quic" driver to serve HTTP/3 over QUIC,
- * using OpenSSL’s QUIC APIs together with nghttp3. It wires the driver
- * into NaviServer’s I/O pipeline and provides the module entry points.
+ * using OpenSSL's QUIC APIs together with nghttp3. It wires the driver
+ * into NaviServer's I/O pipeline and provides the module entry points.
  *
  * Responsibilities
  * ----------------
@@ -534,7 +534,7 @@ static Ns_DriverClientcertInfoProc ClientcertInfo;
  * ossl_conn_log_close_info --
  *
  *      Retrieve and log diagnostic details about a QUIC or TLS connection
- *      shutdown using OpenSSL’s `SSL_get_conn_close_info()` API.
+ *      shutdown using OpenSSL's `SSL_get_conn_close_info()` API.
  *      Provides insight into transport-level or application-level close
  *      events, including error codes, alert numbers, and textual reasons.
  *
@@ -881,7 +881,7 @@ static const char *ossl_quic_stream_type_str(int ss) {
  *      record-layer content_type value. This includes both
  *      the standard TLS record types defined by SSL3_RT_*
  *      (such as Handshake, Alert, or ApplicationData) and
- *      OpenSSL’s internal "pseudo" types used for debugging
+ *      OpenSSL's internal "pseudo" types used for debugging
  *      and tracing QUIC frames (e.g., QUICPacket, QUICFrameHeader).
  *
  * Results:
@@ -1182,7 +1182,7 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
  *        * Iterates through the pollset to locate and free all
  *          associated streams, disabling read/write interest and
  *          unregistering their StreamCtx mappings
- *        * Finally marks the connection’s own pollset entry as dead
+ *        * Finally marks the connection's own pollset entry as dead
  *          and releases the SSL handle
  *
  * Results:
@@ -1262,7 +1262,7 @@ quic_conn_enter_shutdown(ConnCtx *cc, const char *why)
  *
  *      Check whether a QUIC connection currently has any active
  *      streams that should keep it alive. The function iterates
- *      over all StreamCtx entries registered in the connection’s
+ *      over all StreamCtx entries registered in the connection's
  *      stream hash table and returns NS_TRUE if at least one stream
  *      qualifies as "live" according to quic_stream_keeps_conn_alive().
  *
@@ -1518,7 +1518,7 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
     }
     ossl_conn_maybe_log_first_shutdown(cc, "quic_conn_open_server_uni_streams cstream bound");
 
-    /* Now bind QPACK (server’s local streams) */
+    /* Now bind QPACK (server's local streams) */
     if (nghttp3_conn_bind_qpack_streams(h3conn,
                                         (int64_t)h3ssl->pstream_id,
                                         (int64_t)h3ssl->rstream_id) != 0) {
@@ -1738,7 +1738,7 @@ quic_stream_keeps_conn_alive(StreamCtx *sc)
  * quic_conn_stream_map_empty --
  *
  *      Determine whether a QUIC connection has any active request streams
- *      remaining.  Iterates over all StreamCtx entries in the connection’s
+ *      remaining.  Iterates over all StreamCtx entries in the connection's
  *      stream hash table and checks if any still "keep the connection alive"
  *      (i.e., are not fully closed or cleaned up).
  *
@@ -1871,7 +1871,7 @@ quic_udp_set_rcvbuf(int fd, size_t rcvbuf_bytes)
  *
  * quic_varint_len / quic_varint_decode --
  *
- *      Helpers for decoding QUIC’s variable-length integer format,
+ *      Helpers for decoding QUIC's variable-length integer format,
  *      as defined in RFC 9000 §16.  QUIC encodes integers in 1, 2, 4,
  *      or 8 bytes, with the length indicated by the top two bits of the
  *      first byte:
@@ -1980,7 +1980,7 @@ static SSL *quic_sid_to_stream(ConnCtx *cc, uint64_t sid)
  *
  *      Accept and initialize incoming QUIC connections on a listening
  *      socket. This function is invoked by the UDP driver thread when
- *      OpenSSL’s QUIC server detects new connection attempts. For each
+ *      OpenSSL's QUIC server detects new connection attempts. For each
  *      accepted connection, it performs the following steps:
  *
  *        1. Accepts the QUIC connection via SSL_accept_connection().
@@ -2213,7 +2213,7 @@ static bool quic_conn_handle_e(ConnCtx *cc, SSL *conn, uint64_t revents)
  *      SSL_read_ex() and forwards received frames to nghttp3. If the stream
  *      reaches EOF or a fatal error, it is marked dead in the pollset.
  *
- *      When the write side is closed or encounters EW, the stream’s write
+ *      When the write side is closed or encounters EW, the stream's write
  *      interest is disarmed to avoid redundant polling. If both read and
  *      write sides are no longer active, the stream is marked dead entirely.
  *
@@ -2570,7 +2570,7 @@ h3_conn_write_step(ConnCtx *cc)
 
     Ns_Log(Notice, "[%lld] H3 h3_conn_write_step called", (long long)dc->iter);
 
-    /* Don’t write when we’re closing/closed at our layer */
+    /* Don't write when we're closing/closed at our layer */
     if (cc->connection_state != 0) {
         Ns_Log(Notice, "[%lld] H3 write: cc closing; skip", (long long)dc->iter);
         return NS_FALSE;
@@ -2654,7 +2654,7 @@ h3_conn_write_step(ConnCtx *cc)
         }
     }
 
-    /* Don’t start writes if QUIC conn already in TLS shutdown */
+    /* Don't start writes if QUIC conn already in TLS shutdown */
     ERR_clear_error();
     if (SSL_get_shutdown(cc->h3ssl.conn) != 0) {
         Ns_Log(Notice, "[%lld] H3 write: conn already in shutdown; skip", (long long)dc->iter);
@@ -2737,7 +2737,7 @@ h3_conn_write_step(ConnCtx *cc)
                                 zsc->wants_write = NS_TRUE;
                                 PollsetEnableWrite(dc, zsc->ssl, zsc, "tx fin WANT_*");
                             } else {
-                                /* Don’t crash the stream; mark reset and drop W. */
+                                /* Don't crash the stream; mark reset and drop W. */
                                 Ns_MutexLock(&zsc->lock);
                                 zsc->io_state |= H3_IO_RESET;
                                 Ns_MutexUnlock(&zsc->lock);
@@ -2754,7 +2754,7 @@ h3_conn_write_step(ConnCtx *cc)
                 (void)SSL_handle_events(cc->h3ssl.conn);
                 did_progress = NS_TRUE;
 
-                // IMPORTANT: don’t break; try next stream this tick, this might be a leftover of a former request
+                // IMPORTANT: don't break; try next stream this tick, this might be a leftover of a former request
                 continue;
             }
 
@@ -2808,7 +2808,7 @@ h3_conn_write_step(ConnCtx *cc)
             Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step stream %p => %d",
                    (long long)dc->iter, (void*)stream, SSL_handle_events(stream));
 
-            /* If write-half is closed, don’t keep W armed */
+            /* If write-half is closed, don't keep W armed */
             PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step SSL_STREAM_STATE not OK");
             goto after_sid;
         }
@@ -2861,7 +2861,7 @@ h3_conn_write_step(ConnCtx *cc)
                         Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step WANT stream %p",
                                (long long)dc->iter, (void*)stream);
 
-                        goto after_sid;                        /* don’t advance remaining vecs */
+                        goto after_sid;                        /* don't advance remaining vecs */
                     }
 
                     if (err == SSL_ERROR_SSL) {
@@ -2890,7 +2890,7 @@ h3_conn_write_step(ConnCtx *cc)
                                     }
                                 }
 
-                                /* Don’t advance remaining offsets on this vec. */
+                                /* Don't advance remaining offsets on this vec. */
                                 nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
                                 SharedMarkClosedByApp(&sc->sh);
                                 ERR_clear_error();
@@ -2922,7 +2922,7 @@ h3_conn_write_step(ConnCtx *cc)
 
                             Ns_Log(Error, "[%lld] H3[%lld] SSL_write_ex2: reason=%d (%s)",
                                    (long long)dc->iter, (long long)sid, r, ERR_reason_error_string(e));
-                            /* Don’t advance offsets for the partial vec; let nghttp3 retry/adjust. */
+                            /* Don't advance offsets for the partial vec; let nghttp3 retry/adjust. */
                             return NS_TRUE; /* be conservative: schedule another pass */
                         }
                     }
@@ -2942,7 +2942,7 @@ h3_conn_write_step(ConnCtx *cc)
                 sc->seen_io    = NS_TRUE;
             }
 
-            /* Vec fully written -> now tell nghttp3 it’s consumed */
+            /* Vec fully written -> now tell nghttp3 it's consumed */
             h3_stream_advance_and_trim(sc, sid, vecs[i].base, vecs[i].len);
         }
 
@@ -2966,7 +2966,7 @@ h3_conn_write_step(ConnCtx *cc)
                 } else {
                     const int err = SSL_get_error(stream, ok);
                     if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
-                        /* Don’t set TX_FIN yet; keep EW armed so conclude can complete next tick. */
+                        /* Don't set TX_FIN yet; keep EW armed so conclude can complete next tick. */
                         /* h3_stream_maybe_finalize() will try again when drained. */
                         Ns_Log(Notice, "[%lld] H3 write_step WANT sets sc->wants_write", (long long)dc->iter);
                         sc->wants_write = NS_TRUE; /* one shot */
@@ -2977,7 +2977,7 @@ h3_conn_write_step(ConnCtx *cc)
                     }
                 }
             } else {
-                /* Write side already not-OK: don’t try to conclude again. */
+                /* Write side already not-OK: don't try to conclude again. */
             }
         }
 
@@ -3077,7 +3077,7 @@ h3_conn_write_step(ConnCtx *cc)
  *      The function checks via h3_conn_has_work() whether any streams
  *      still require writing. If none do, it resets cc->wants_write to
  *      NS_FALSE and calls PollsetUpdateConnPollInterest() to drop the
- *      connection’s write interest from the pollset.
+ *      connection's write interest from the pollset.
  *
  * Results:
  *      None.
@@ -3211,7 +3211,7 @@ h3_conn_mark_wants_write(ConnCtx *cc, StreamCtx *sc, const char *why)
  *
  * h3_conn_maybe_raise_client_bidi_credit --
  *
- *      Adjust the QUIC/HTTP3 connection’s advertised limit for the
+ *      Adjust the QUIC/HTTP3 connection's advertised limit for the
  *      number of concurrent client-initiated bidirectional streams if
  *      needed. Each incoming stream ID encodes its ordinal number as
  *      (sid >> 2), and the server must increase its "max streams bidi"
@@ -3268,7 +3268,7 @@ h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid)
  *      value pairs without emitting any textual CRLF output.
  *
  *      Steps performed:
- *        1. Resets the stream’s header store.
+ *        1. Resets the stream's header store.
  *        2. Inserts a mandatory ":status" pseudo-header (remapping 101 -> 200).
  *        3. Appends all regular headers from the merged set, excluding
  *           hop-by-hop fields invalid in HTTP/3.
@@ -3478,7 +3478,7 @@ h3_headers_is_invalid_response_field(const char *name, size_t nlen,
  *
  *      Compute the total encoded size of an HTTP/3 (QPACK) header field
  *      section according to RFC 9114 §4.1.1, which defines the field
- *      section size as the sum of each field’s name length, value length,
+ *      section size as the sum of each field's name length, value length,
  *      and an additional 32 bytes of overhead per field.
  *
  * Results:
@@ -3516,7 +3516,7 @@ h3_headers_field_section_size(const nghttp3_nv *nva, size_t nvlen)
  *        - No pointers into Tcl_DString are stored during construction,
  *          since its memory may move as it grows.
  *        - The caller can later fix up the final base pointers once
- *          the DString’s address becomes stable.
+ *          the DString's address becomes stable.
  *
  * Results:
  *      Returns 0 on success, or NGHTTP3_ERR_NOMEM if allocation fails.
@@ -3557,7 +3557,7 @@ h3_headers_nv_append(Tcl_DString *store, nghttp3_nv **pnva, size_t *pnvlen, size
      *
      * Instead we record only lengths (namelen/valuelen). Because we append each
      * header as two back-to-back segments  -  [name][value], with no separators  -  the
-     * bytes in the DString are densely packed and in a deterministic order. We’ll
+     * bytes in the DString are densely packed and in a deterministic order. We'll
      * compute the final pointers in a single sweep after the last append, when the
      * buffer address is stable.
      *
@@ -3593,7 +3593,7 @@ h3_headers_nv_append(Tcl_DString *store, nghttp3_nv **pnva, size_t *pnvlen, size
  *        - a descriptive label (e.g., "request", "response"),
  *        - the number of fields,
  *        - the estimated total field section size (RFC 9114 semantics),
- *        - the peer’s advertised maximum field section size, and
+ *        - the peer's advertised maximum field section size, and
  *        - the formatted headers themselves.
  *
  * Results:
@@ -3642,7 +3642,7 @@ h3_headers_log_nv(const StreamCtx *sc, const nghttp3_nv *nva, size_t nvlen, cons
  *      Feed any buffered receive data for a given HTTP/3 stream into the
  *      nghttp3 connection for decoding and header/body processing.
  *
- *      The function reads from the stream’s local receive buffer
+ *      The function reads from the stream's local receive buffer
  *      (sc->rx_hold, sc->rx_off … sc->rx_len) and calls
  *      nghttp3_conn_read_stream() repeatedly until all pending data is
  *      consumed or the peer flow control blocks further reading.
@@ -3651,7 +3651,7 @@ h3_headers_log_nv(const StreamCtx *sc, const nghttp3_nv *nva, size_t nvlen, cons
  *      as ignorable, the function simply discards unread data without
  *      passing it to nghttp3.
  *
- *      When the stream’s receive buffer becomes empty and a deferred FIN
+ *      When the stream's receive buffer becomes empty and a deferred FIN
  *      (end of stream) flag is pending, a final zero-length read is issued
  *      with fin=1 to deliver the end-of-stream signal to nghttp3.
  *
@@ -3724,7 +3724,7 @@ h3_stream_feed_pending(StreamCtx *sc, uint64_t sid)
  * h3_stream_read_into_hold --
  *
  *      Attempt to read additional QUIC stream data from OpenSSL into the
- *      stream’s receive staging buffer (sc->rx_hold), but only if that
+ *      stream's receive staging buffer (sc->rx_hold), but only if that
  *      buffer is currently empty.
  *
  *      This function performs a non-blocking read using SSL_read_ex() and
@@ -3797,13 +3797,13 @@ h3_stream_read_into_hold(StreamCtx *sc, SSL *stream)
  *
  * h3_stream_advance_and_trim --
  *
- *      Advance nghttp3’s write offset for a stream after successfully
+ *      Advance nghttp3's write offset for a stream after successfully
  *      transmitting `nbytes` of payload, and trim the corresponding data
- *      from the stream’s shared transmit buffer. This keeps nghttp3’s
- *      internal flow control state synchronized with the application’s
+ *      from the stream's shared transmit buffer. This keeps nghttp3's
+ *      internal flow control state synchronized with the application's
  *      queued output.
  *
- *      The function also checks whether the stream’s transmit queue has
+ *      The function also checks whether the stream's transmit queue has
  *      reached end-of-body (EOF) conditions: if all data has been sent and
  *      the application marked the stream as closed, nghttp3 is explicitly
  *      resumed and the stream is scheduled for a final FIN emission.
@@ -3812,8 +3812,8 @@ h3_stream_read_into_hold(StreamCtx *sc, SSL *stream)
  *      None.
  *
  * Side effects:
- *      - Advances nghttp3’s write offset via nghttp3_conn_add_write_offset().
- *      - Removes `nbytes` from the stream’s pending transmit buffer.
+ *      - Advances nghttp3's write offset via nghttp3_conn_add_write_offset().
+ *      - Removes `nbytes` from the stream's pending transmit buffer.
  *      - If EOF-ready, resumes the nghttp3 stream and schedules a write
  *        pass to emit the FIN.
  *      - Produces detailed diagnostic logs about trimming and flow state.
@@ -3867,16 +3867,16 @@ h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nby
  * h3_stream_skip_write_and_trim --
  *
  *      Advance nghttp3's write offset and optionally trim pending output
- *      data when a stream’s outgoing vectors are skipped or discarded
+ *      data when a stream's outgoing vectors are skipped or discarded
  *      (for example, due to a stream reset, send-only restriction, or
- *      protocol shutdown). This ensures that nghttp3’s flow-control
+ *      protocol shutdown). This ensures that nghttp3's flow-control
  *      accounting remains consistent even if no actual write occurs.
  *
  *      The function computes the total length of all provided nghttp3_vec
  *      entries, advances the corresponding write offset in nghttp3, and,
  *      if a StreamCtx is available, trims the same number of bytes from
  *      its pending transmit buffer. When the `fin` flag is set, it also
- *      notifies nghttp3 that the stream’s write side has been closed.
+ *      notifies nghttp3 that the stream's write side has been closed.
  *
  * Arguments:
  *      cc      - Connection context owning the nghttp3 session.
@@ -3919,13 +3919,13 @@ h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc,
     }
 
     if (total > 0) {
-        /* Advance nghttp3’s write offset by however many bytes we’re discarding. */
+        /* Advance nghttp3's write offset by however many bytes we're discarding. */
         nghttp3_conn_add_write_offset(cc->h3conn, h3_sid, total);
         out |= H3_DISCARD_ADVANCED;
     }
 
     if (sc == NULL) {
-        /* No StreamCtx -> can’t trim pending, but still honour FIN below. */
+        /* No StreamCtx -> can't trim pending, but still honour FIN below. */
         Ns_Log(Warning, "[%lld] H3[%lld] skip/discard without StreamCtx; pending not trimmed",
                (long long)dc->iter, (long long)h3_sid);
         if (fin) {
@@ -3951,7 +3951,7 @@ h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc,
     }
 
     if (fin) {
-        /* Tell nghttp3 that this stream’s write-side is done. */
+        /* Tell nghttp3 that this stream's write-side is done. */
         nghttp3_conn_shutdown_stream_write(cc->h3conn, h3_sid);
     }
 
@@ -3968,7 +3968,7 @@ h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc,
  *      is invoked by nghttp3 when it is ready to send application data for
  *      a stream whose body is produced asynchronously by the server.
  *
- *      The function inspects the stream’s SharedStream queues to determine
+ *      The function inspects the stream's SharedStream queues to determine
  *      if data is available:
  *
  *        - If EOF is already reached (no queued or pending bytes), it
@@ -4212,7 +4212,7 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
  *
  *      Drain readable QUIC stream data into nghttp3, driving HTTP/3
  *      request or control frame processing. This function coordinates
- *      reading from OpenSSL’s QUIC stream (SSL_read_ex) and feeding the
+ *      reading from OpenSSL's QUIC stream (SSL_read_ex) and feeding the
  *      resulting bytes into nghttp3_conn_read_stream(), taking into account
  *      flow control, deferred delivery, and early gating before SETTINGS.
  *
@@ -4226,7 +4226,7 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
  *      For client-initiated unidirectional streams, the function invokes
  *      h3_stream_maybe_note_uni_type() to recognize stream purpose before
  *      decoding data. For bidirectional streams, data feeding can be gated
- *      until the peer’s SETTINGS frame has been processed, to ensure proper
+ *      until the peer's SETTINGS frame has been processed, to ensure proper
  *      synchronization.
  *
  * Results:
@@ -4271,7 +4271,7 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
     StreamCtxRequireRxBuffer(sc);
 
     /*
-     * If bidi & SETTINGS not yet processed, we still stage bytes (so we don’t
+     * If bidi & SETTINGS not yet processed, we still stage bytes (so we don't
      * lose anything) but we never feed them to nghttp3 until control
      * processed.
      */
@@ -4299,10 +4299,10 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
             if (fr == FEED_OK_BLOCKED) return DRAIN_PROGRESS;  /* nghttp3 said rv==0 */
 
             /* FEED_OK_PROGRESS: keep looping to read more or feed more */
-            if (gate_bidi) return DRAIN_PROGRESS; /* shouldn’t happen, but be strict */
+            if (gate_bidi) return DRAIN_PROGRESS; /* shouldn't happen, but be strict */
         }
 
-        /* f we still have bytes staged (e.g., gated bidi), we can’t read again. */
+        /* f we still have bytes staged (e.g., gated bidi), we can't read again. */
         if (sc->rx_off < sc->rx_len) return DRAIN_PROGRESS;
 
         /* Stage more from TLS if window empty */
@@ -4334,7 +4334,7 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
  * Rationale:
  *      - RESET first: If the stream is already in a reset state
  *        (H3_IO_RESET), we immediately drop write interest and, if the RX
- *        side is closed or there’s nothing left to send, mark the stream as
+ *        side is closed or there's nothing left to send, mark the stream as
  *        dead. This avoids lingering EW flags in terminal states.
  *
  *      - Empty FIN emission: When `close_when_drained` is set and there's no
@@ -4349,7 +4349,7 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
  *        considers TX already closed.
  *
  *      - Single arm/disarm decision: The final write-interest decision is
- *        deferred until after any FIN attempt, so we don’t flap W within the
+ *        deferred until after any FIN attempt, so we don't flap W within the
  *        same scheduling tick.
  *
  * Returns:
@@ -4448,7 +4448,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
 
     /* ---- reap using our own flags + buffers ---- */
     if (H3_BOTH_CLOSED(sc) && SharedIsEmpty(&snap)) {
-        /* we’re done with this BIDI stream */
+        /* we're done with this BIDI stream */
         PollsetDisableRead (dc, sc->ssl, sc, "h3_stream_maybe_finalize: both-closed");
         PollsetDisableWrite(dc, sc->ssl, sc, "h3_stream_maybe_finalize: both-closed");
         PollsetMarkDead(cc, sc->ssl, "h3_stream_maybe_finalize: both-closed");
@@ -4466,7 +4466,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
  *
  * h3_stream_can_free --
  *
- *      Determine whether a stream’s resources can be safely freed.
+ *      Determine whether a stream's resources can be safely freed.
  *      A stream becomes eligible for cleanup once both the receive (RX)
  *      and transmit (TX) halves have completed (i.e., FIN observed on
  *      both sides), or if the stream has been reset due to an error or
@@ -4555,9 +4555,9 @@ h3_stream_maybe_note_uni_type(StreamCtx *sc, SSL *stream, uint64_t sid)
  * h3_conn_wake --
  *
  *      Platform-neutral wakeup helper for the HTTP/3 listener loop.
- *      Since OpenSSL’s QUIC poll integration currently lacks support
+ *      Since OpenSSL's QUIC poll integration currently lacks support
  *      for a trigger pipe or eventfd-style wake mechanism, this function
- *      sends a one-byte UDP datagram to the listener’s bound address to
+ *      sends a one-byte UDP datagram to the listener's bound address to
  *      interrupt blocking poll/select calls.
  *
  * Arguments:
@@ -4569,8 +4569,8 @@ h3_stream_maybe_note_uni_type(StreamCtx *sc, SSL *stream, uint64_t sid)
  *
  * Side effects:
  *      - Opens a temporary UDP socket and transmits a single dummy byte
- *        to the listener’s waker address.
- *      - Causes the listener’s poll loop to wake and resume processing.
+ *        to the listener's waker address.
+ *      - Causes the listener's poll loop to wake and resume processing.
  *      - Closes the temporary socket immediately after sending.
  *
  *----------------------------------------------------------------------
@@ -4779,11 +4779,11 @@ static const char *H3StreamKind_str(H3StreamKind kind)
  *
  * h3_malloc_cb, h3_free_cb, h3_calloc_cb, h3_realloc_cb --
  *
- *      Custom memory allocator hooks for nghttp3, wired to NaviServer’s
+ *      Custom memory allocator hooks for nghttp3, wired to NaviServer's
  *      memory management layer. These callbacks allow nghttp3 to use
  *      ns_malloc/ns_free/ns_calloc/ns_realloc internally instead of the
  *      system allocator, ensuring consistent memory tracking and
- *      compatibility with NaviServer’s runtime environment.
+ *      compatibility with NaviServer's runtime environment.
  *
  * Results:
  *      Return allocated or reallocated memory on success, or NULL on failure.
@@ -4818,7 +4818,7 @@ static void *h3_realloc_cb(void *ptr, size_t size, void *UNUSED(user_data)) {
  *
  *      Handler for the nghttp3 callback of type 'nghttp3_recv_settings' (see
  *      https://nghttp2.org/nghttp3/types.html#c.nghttp3_callbacks).  Called
- *      when a peer’s SETTINGS frame is received, updating local connection
+ *      when a peer's SETTINGS frame is received, updating local connection
  *      limits such as max_field_section_size and marking SETTINGS as
  *      processed.
  */
@@ -4849,7 +4849,7 @@ static int on_recv_settings(nghttp3_conn *UNUSED(conn),
  *      (see https://nghttp2.org/nghttp3/types.html#c.nghttp3_callbacks).
  *      Invoked when a new HEADERS frame begins on a stream.  Initializes
  *      or retrieves the corresponding StreamCtx, installs its data reader
- *      callback, and associates the StreamCtx with the stream’s user data
+ *      callback, and associates the StreamCtx with the stream's user data
  *      via nghttp3_conn_set_stream_user_data().
  *
  *----------------------------------------------------------------------
@@ -4900,7 +4900,7 @@ static int on_begin_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id,
  *      Invoked for each name/value pair in a HEADERS frame.  Parses and
  *      stores pseudo-headers (e.g., :method, :path, :authority, :scheme)
  *      into the StreamCtx, and appends regular header fields into the
- *      request’s header set.  Also tracks "Host" and "content-length"
+ *      request's header set.  Also tracks "Host" and "content-length"
  *      for HTTP/3 request handling.
  *
  *----------------------------------------------------------------------
@@ -5131,7 +5131,7 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
  *      Handler for the nghttp3 callback of type 'nghttp3_recv_data'
  *      (see https://nghttp2.org/nghttp3/types.html#c.nghttp3_callbacks).
  *      Called when a DATA frame is received for a stream.  Appends the
- *      received payload either to the request’s in-memory buffer or to
+ *      received payload either to the request's in-memory buffer or to
  *      a temporary file (if spooling is active), and updates the total
  *      body length.  When the declared content-length is fully received,
  *      marks the stream as ready for request dispatch (H3_IO_REQ_READY).
@@ -5305,7 +5305,7 @@ static int on_stream_close(nghttp3_conn *UNUSED(conn),
  *      (see https://nghttp2.org/nghttp3/types.html#c.nghttp3_callbacks).
  *      Called when nghttp3 notifies that previously deferred stream data
  *      has been consumed by the remote peer.  Trims the corresponding
- *      number of bytes from the stream’s pending transmit buffer to
+ *      number of bytes from the stream's pending transmit buffer to
  *      release flow-control credit and maintain accurate accounting.
  *
  *----------------------------------------------------------------------
@@ -5566,7 +5566,7 @@ StreamCtxFromSock(NsTLSConfig *dc, Ns_Sock *sock)
  *
  *      Look up or create a StreamCtx entry in the given hash table by
  *      stream ID.  The QUIC or HTTP/3 stream ID is converted into a
- *      pointer key compatible with Tcl’s one-word hash tables.
+ *      pointer key compatible with Tcl's one-word hash tables.
  *
  * Results:
  *      Returns a pointer to the Tcl_HashEntry corresponding to the
@@ -5593,7 +5593,7 @@ StreamCtxLookup(Tcl_HashTable *ht, int64_t sid, int create) {
  * StreamCtxGet --
  *
  *      Retrieve the StreamCtx associated with a given QUIC or HTTP/3
- *      stream ID from the connection’s stream hash table.  Optionally
+ *      stream ID from the connection's stream hash table.  Optionally
  *      creates and initializes a new StreamCtx if it does not yet exist.
  *
  * Results:
@@ -5603,8 +5603,8 @@ StreamCtxLookup(Tcl_HashTable *ht, int64_t sid, int create) {
  * Side effects:
  *      - When 'create' is nonzero and the entry does not exist, a new
  *        StreamCtx is allocated, initialized (StreamCtxInit), and linked
- *        to the connection’s shared state via SharedStreamInit.
- *      - Inserts the StreamCtx into the connection’s stream hash table.
+ *        to the connection's shared state via SharedStreamInit.
+ *      - Inserts the StreamCtx into the connection's stream hash table.
  *      - Logs an error if called with an invalid (negative) stream ID.
  *
  *----------------------------------------------------------------------
@@ -5642,7 +5642,7 @@ StreamCtxGet(ConnCtx *cc, int64_t sid, int create) {
  *      associate it with its SSL stream, connection context, and type
  *      (control, QPACK, bidi request, etc.).  For bidi request streams,
  *      this function also creates and attaches a new NsSock object via
- *      NsSockAccept() to integrate the stream into NaviServer’s request
+ *      NsSockAccept() to integrate the stream into NaviServer's request
  *      handling pipeline.
  *
  * Results:
@@ -5652,7 +5652,7 @@ StreamCtxGet(ConnCtx *cc, int64_t sid, int create) {
  *      - Allocates and initializes a StreamCtx if it did not exist yet.
  *      - For H3_KIND_BIDI_REQ:
  *          * Creates a new NsSock and associates it with the stream.
- *          * Updates the QUIC connection’s client bidi credit limit.
+ *          * Updates the QUIC connection's client bidi credit limit.
  *      - Updates stream metadata such as SSL pointer, stream kind,
  *        writability flags, and back-references to the connection context.
  *      - Logs acceptance and stream registration details.
@@ -5717,7 +5717,7 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
  *
  * StreamCtxUnregister --
  *
- *      Remove a StreamCtx from its parent connection’s stream hash table
+ *      Remove a StreamCtx from its parent connection's stream hash table
  *      and log the unregistration.  This is typically called when a QUIC
  *      or HTTP/3 stream is closed or reset and its associated resources
  *      should no longer be tracked.
@@ -5726,7 +5726,7 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
  *      None.
  *
  * Side effects:
- *      - Deletes the Tcl_HashEntry for the stream ID from the connection’s
+ *      - Deletes the Tcl_HashEntry for the stream ID from the connection's
  *        stream table, if present.
  *      - Leaves the StreamCtx memory itself intact; freeing is performed
  *        separately by StreamCtxFree().
@@ -5790,7 +5790,7 @@ static void StreamCtxRequireRxBuffer(StreamCtx *sc)
  *      Atomically mark a StreamCtx as having been dispatched for
  *      request handling, preventing duplicate dispatch attempts.
  *      Used to ensure that each HTTP/3 request stream is handed
- *      off to NaviServer’s request processor exactly once.
+ *      off to NaviServer's request processor exactly once.
  *
  * Results:
  *      Returns NS_TRUE if this call successfully marked the stream
@@ -6059,7 +6059,7 @@ static inline uint64_t PollsetDefaultStreamErrors(uint64_t ev) {
  *      or a stream) to the HTTP/3 pollset with a caller-provided event
  *      mask and optional masking function.
  *
- *      This function assigns the SSL’s poll descriptor, applies the
+ *      This function assigns the SSL's poll descriptor, applies the
  *      specified event mask (or calls maskf() to adjust it), and logs
  *      diagnostic details such as stream kind and mask bits if a label
  *      is provided.
@@ -6246,7 +6246,7 @@ PollsetAddStreamRegister(ConnCtx *cc, SSL *s, H3StreamKind kind)
         break;
 
     case H3_KIND_BIDI_REQ:
-        /* Client bidi request: we’ll read request; add W later when we have a response */
+        /* Client bidi request: we'll read request; add W later when we have a response */
         mask |= SSL_POLL_EVENT_R;
         break;
 
@@ -6316,7 +6316,7 @@ PollsetGetSlot(NsTLSConfig *dc, SSL *s, const StreamCtx *sc)
  *
  *      PollsetSetEvents() updates the event mask for the same, allowing
  *      dynamic reconfiguration of what conditions the poll loop monitors.
- *      Both functions use PollsetGetSlot() to locate the stream’s index
+ *      Both functions use PollsetGetSlot() to locate the stream's index
  *      in the pollset, falling back gracefully if not found.
  *
  * Results:
@@ -6444,7 +6444,7 @@ static inline void PollsetDisableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc, c
  * PollsetUpdateConnPollInterest --
  *
  *      Update the pollset event mask for a QUIC connection (as opposed to
- *      individual HTTP/3 streams). This function ensures the connection’s
+ *      individual HTTP/3 streams). This function ensures the connection's
  *      error events are always monitored and dynamically enables or disables
  *      socket-level readiness notifications based on connection state.
  *
@@ -6458,7 +6458,7 @@ static inline void PollsetDisableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc, c
  *      None.
  *
  * Side effects:
- *      Adjusts the connection’s event mask in the pollset via
+ *      Adjusts the connection's event mask in the pollset via
  *      PollsetUpdateEvents().
  *      Keeps error conditions (H3_CONN_ERR_MASK) always active.
  *
@@ -6487,7 +6487,7 @@ PollsetUpdateConnPollInterest(ConnCtx *cc)
  *
  * PollsetHandleListenerEvents --
  *
- *      Drive OpenSSL’s QUIC event loop for all registered listener SSL
+ *      Drive OpenSSL's QUIC event loop for all registered listener SSL
  *      objects. This function should be called once per tick after
  *      processing poll results (so that any I/O-related events like IC,
  *      F, or EL are handled first), and also on poll timeouts to let
@@ -6697,7 +6697,7 @@ PollsetSweep(NsTLSConfig *dc)
         }
 
         /* Resolve the owning connection context for this entry (conn or stream).
-           Listener sockets won’t have one  -  skip those automatically. */
+           Listener sockets won't have one  -  skip those automatically. */
 
         cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
         if (cc == NULL) {
@@ -6750,7 +6750,7 @@ PollsetSweep(NsTLSConfig *dc)
             }
         }
 
-        /* Still keep the "don’t free without IO" rule for freeing. */
+        /* Still keep the "don't free without IO" rule for freeing. */
         if (!sc->seen_io && !H3_TX_CLOSED(sc) && !H3_RX_CLOSED(sc)) {
             /* We've already disabled EW above if nothing to write. */
             Ns_Log(Notice, "[%lld] H3 PollsetSweep: don't sweep stream without io %p"
@@ -6811,7 +6811,7 @@ PollsetSweep(NsTLSConfig *dc)
         }
 
     }
-    /* Now it’s safe to actually free the SSL objects. */
+    /* Now it's safe to actually free the SSL objects. */
     for (size_t k = 0; k < nfree; k++) {
         Ns_Log(Notice, "[%lld] PollsetSweep calls SSL_free %p", (long long)dc->iter, (void*)to_free[k]);
         SSL_free(to_free[k]);
@@ -6925,7 +6925,7 @@ PollsetConsolidate(NsTLSConfig *dc)
  *
  * NsTimeToTimeval --
  *
- *      Convert an Ns_Time structure (NaviServer’s internal time type)
+ *      Convert an Ns_Time structure (NaviServer's internal time type)
  *      into a POSIX-compatible struct timeval for use with system calls
  *      such as select(), poll(), or gettimeofday()-style APIs.
  *
@@ -6973,7 +6973,7 @@ static void NsTimeToTimeval(const Ns_Time *src, struct timeval *dst)
  *
  * Side effects:
  *      May allocate and initialize a Request structure if it does not
- *      already exist for the given StreamCtx’s associated Ns_Sock.
+ *      already exist for the given StreamCtx's associated Ns_Sock.
  *
  *----------------------------------------------------------------------
  */
@@ -7191,7 +7191,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
              * Working config = NSTs + resumption, no 0-RTT.
              */
             //SSL_CTX_set_num_tickets(dc->ctx, 2);              // default in OpenSSL
-            //SSL_CTX_set_max_early_data(dc->ctx, 0);           // don’t advertise 0-RTT
+            //SSL_CTX_set_max_early_data(dc->ctx, 0);           // don't advertise 0-RTT
 
             /*
              * The following deactivates stateless session tickets.
@@ -7251,7 +7251,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
  * Side effects:
  *      - Modifies driver state/flags and broadcasts readiness/stop to listeners.
  *      - Accepts connections/streams; creates and frees ConnCtx/StreamCtx.
- *      - Reads from and writes to UDP sockets through OpenSSL’s QUIC engine.
+ *      - Reads from and writes to UDP sockets through OpenSSL's QUIC engine.
  *      - Updates poll masks, moves items within internal poll arrays, and
  *        frees SSL objects during sweep.
  *      - Emits diagnostic logs for state transitions, errors, and I/O.
@@ -7768,7 +7768,7 @@ QuicThread(void *arg)
  *      The listener SSL object is responsible for accepting incoming
  *      QUIC connections via SSL_poll() events (IC/F/EL/EC/ECD). Its
  *      file descriptor is integrated into the event loop and stored in
- *      the driver’s NsTLSConfig (`dc`) structure.
+ *      the driver's NsTLSConfig (`dc`) structure.
  *
  * Results:
  *      Returns the opened UDP socket descriptor on success, or
@@ -7895,7 +7895,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
  *
  * Side effects:
  *      - Allocates a new QuicSockCtx and attaches it to the Ns_Sock.
- *      - Replaces the socket’s arg pointer (previously SSL*) with the
+ *      - Replaces the socket's arg pointer (previously SSL*) with the
  *        QuicSockCtx.
  *      - Optionally binds the QUIC peer address into the OpenSSL context.
  *      - Logs diagnostic information about the accepted socket.
@@ -7951,10 +7951,10 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
  *
  *      Unlike TCP drivers, QUIC does not deliver application data
  *      directly through recv(); instead, datagrams are processed by
- *      OpenSSL’s internal QUIC engine, which demultiplexes them into
+ *      OpenSSL's internal QUIC engine, which demultiplexes them into
  *      connections and streams. Therefore, this stub currently just
  *      calls PollsetHandleListenerEvents() to advance the QUIC reactor
- *      and will be expanded later to feed stream data into NaviServer’s
+ *      and will be expanded later to feed stream data into NaviServer's
  *      request layer.
  *
  * Results:
@@ -7962,7 +7962,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
  *      or -1 on error or timeout.
  *
  * Side effects:
- *      - Drives OpenSSL’s QUIC event handling for listener sockets.
+ *      - Drives OpenSSL's QUIC event handling for listener sockets.
  *      - Logs diagnostic information about pending QUIC I/O.
  *      - Triggers a controlled crash placeholder to highlight
  *        unimplemented functionality.
@@ -8124,7 +8124,7 @@ Keep(Ns_Sock *UNUSED(sock))
  *      HTTP/3 (QUIC) driver callback invoked by the NaviServer core to
  *      gracefully terminate a request stream. Unlike TCP-based drivers,
  *      this function does not close a physical socket - QUIC connections
- *      are multiplexed over UDP and managed by OpenSSL’s QUIC engine.
+ *      are multiplexed over UDP and managed by OpenSSL's QUIC engine.
  *
  *      Instead, Close() signals that no further application data will be
  *      sent on this stream, disables read interest, and requests a final
@@ -8193,7 +8193,7 @@ Close(Ns_Sock *sock)
         ns_free(sock->arg);    /* QuicSockCtx */
         sock->arg  = NULL;
     }
-    sock->sock = NS_INVALID_SOCKET; /* matches other drivers’ Close() */
+    sock->sock = NS_INVALID_SOCKET; /* matches other drivers' Close() */
 }
 
 /*

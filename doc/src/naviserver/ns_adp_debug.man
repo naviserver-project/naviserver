@@ -121,7 +121,7 @@ Install the Tcl parser from TclPro Debugger:
 [example_end]
 
  Make the remote debugging adapter available to NaviServer by linking
- it into NaviServer’s [const tcl] directory (assuming NaviServer and the
+ it into NaviServer's [const tcl] directory (assuming NaviServer and the
  debugger run on the same machine):
 
 [example_begin]
@@ -163,7 +163,7 @@ NaviServer supports two primary modes for debugging ADP pages:
  }
 [example_end]
 
-   [enum] To debug a page, append a [term debug] query variable to the page’s URL.
+   [enum] To debug a page, append a [term debug] query variable to the page's URL.
      For example:
 [example_begin]
  http://...../foo.adp?debug=*
@@ -191,7 +191,7 @@ NaviServer supports two primary modes for debugging ADP pages:
 
 [list_end]
 
- By default, the [arg host] is derived from the request’s Host header
+ By default, the [arg host] is derived from the request's Host header
  field.  If you need a different host or a nondefault port, specify
  them in the [cmd ns_adp_debug] call or via query parameters.
 

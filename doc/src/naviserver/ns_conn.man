@@ -162,7 +162,7 @@ You may also modify this ns_set.
  Returns the body of the HTTP request.  Optionally, you can specify an
  offset and length to extract a substring.  If the [option -binary] option is
  used, raw binary content is returned; otherwise, the content is
- converted to the connection’s encoding.  Note that the response
+ converted to the connection's encoding.  Note that the response
  content may be delivered either as a string (via ns_conn content) or
  as a file (see [cmd "ns_conn contentfile"]), depending on
  configuration options.
@@ -194,7 +194,7 @@ You may also modify this ns_set.
 
 [call [cmd  "ns_conn copy"] [arg offset] [arg length] [arg channelId]]
 
- Copies a specified number of bytes from the connection’s buffered
+ Copies a specified number of bytes from the connection's buffered
  data to a Tcl channel.  The [arg offset] and [arg length] parameters
  define the starting position and the number of bytes to copy.
 
@@ -441,7 +441,7 @@ Returns the logical server port as indicated by the client.
 [list_begin itemized]
 
 [item] For normal HTTP(S) requests, the value is derived from the HTTP
-  [const Host] header. If no port is specified there, the protocol’s
+  [const Host] header. If no port is specified there, the protocol's
   default port is assumed (80 for HTTP, 443 for HTTPS).
 
 [item] In forward-proxy mode, the value is taken from the request line URL
@@ -693,7 +693,7 @@ Request where NaviServer is having the role of a forwarding proxy server.
  ;# Request line: GET http://www.example.com:1234/path HTTP/1.1
  
  % ns_conn peerport
- 54321         ;# client’s ephemeral port
+ 54321         ;# client's ephemeral port
  % ns_conn currentport
  8080          ;# actual local port of proxy socket
  % ns_conn port

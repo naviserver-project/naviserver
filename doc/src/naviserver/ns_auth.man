@@ -6,7 +6,7 @@
 
 [description]
 
- The [cmd ns_auth] command provides access to NaviServer’s pluggable
+ The [cmd ns_auth] command provides access to NaviServer's pluggable
  authorization framework.  It dispatches calls through the chain of
  registered authorization handlers, allowing user-provided C or Tcl
  callbacks to grant, deny, or challenge requests at both the URL and

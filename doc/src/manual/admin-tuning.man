@@ -27,9 +27,9 @@
  with a relatively small number of lightweight threads.
 
  [para] NaviServer treats sending and receiving data over network
- connections as an I/O-driven process. The server’s event-driven model
+ connections as an I/O-driven process. The server's event-driven model
  triggers actions based on the arrival of incoming data or the
- readiness of the kernel’s send queues. This approach assumes that I/O
+ readiness of the kernel's send queues. This approach assumes that I/O
  operations require relatively little CPU time, allowing a single
  thread to handle many concurrent connections. However, if a thread
  performs CPU-intensive operations or waits on locks, all requests
@@ -158,7 +158,7 @@ Key parameters include:
  and [term maxthreads] need often tuning. Setting these parameters
  carefully based on load is essential.  Frequent starting and stopping
  of threads can be costly if your application initializes large Tcl
- environments. Sometimes it’s best to set
+ environments. Sometimes it's best to set
  [term minthreads] = [term maxthreads] to avoid thread startup overhead.
 
  [para] [term maxconnections] defines the length of the connection
@@ -266,7 +266,7 @@ Key parameters include:
  Loading unnecessary modules can introduce overhead. For instance:
  [list_begin itemized]
  [item] [term nsperm] adds extra checks per request.
- [item] [term nscgi] and [term nscp] are not needed if you don’t run CGI or the control port.
+ [item] [term nscgi] and [term nscp] are not needed if you don't run CGI or the control port.
  [list_end]
 
  The general rule is not to load modules not used by your application to reduce overhead.
@@ -277,7 +277,7 @@ Key parameters include:
 
  Although NaviServer performs DNS caching, DNS lookups can slow down
  request handling, especially for failed lookups. By default, [term nslog]
- performs no DNS lookups, but verify your configuration. If you’re not using
+ performs no DNS lookups, but verify your configuration. If you're not using
  host-based access controls with [term nsperm], disable DNS lookups
  there as well. For [term nscgi], DNS is off by default, but check for
  gethostbyaddr settings. If you must use DNS, tune [term dnscache],
@@ -333,13 +333,13 @@ Key parameters include:
  minimize round-trips and ensure only the required data is
  retrieved. Check the statistics such as sequential tuple scans and
  the like and optimize your database indices. This reduces the
- server’s overhead in assembling [cmd ns_getrow] structures.
+ server's overhead in assembling [cmd ns_getrow] structures.
 
 
 
 [subsection {Collect Metrics and Use Them}]
 
- NaviServer’s built-in statistics system (e.g., via module
+ NaviServer's built-in statistics system (e.g., via module
  [term nsstats]) provides insight into caching behavior, Tcl interpreters,
  thread usage, and more. These metrics are invaluable for informed
  tuning and capacity planning.

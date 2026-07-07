@@ -754,7 +754,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             if (poolPtr->wqueue.rejectoverrun) {
                 /*
                  * In this case, the waiting queue is implicitly bounded by
-                 * the pool’s maxconnections/free-Conn list, not by a separate
+                 * the pool's maxconnections/free-Conn list, not by a separate
                  * queue-length variable.
                  */
                 Ns_MutexLock(&poolPtr->threads.lock);

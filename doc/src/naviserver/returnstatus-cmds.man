@@ -97,13 +97,13 @@ not try again without modifications.
 
 Issues a [const "401 Unauthorized"] response to the client.
 If a [const WWW-Authenticate] header is already present in the
-  connection’s output headers ([const "ns_conn outputheaders"]), it is left
+  connection's output headers ([const "ns_conn outputheaders"]), it is left
   intact.
  Otherwise, the command adds a header of the form
 [const {WWW-Authenticate: Basic realm="<REALM>"}]
 where [const <REALM>] is selected in this order:
 [list_begin itemized]
-  [item] the connection’s local‐storage value under key [const auth:realm], if set
+  [item] the connection's local‐storage value under key [const auth:realm], if set
   [item] otherwise the configured [const realm] parameter from the server section.
 [list_end]
 

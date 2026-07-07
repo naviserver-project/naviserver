@@ -725,7 +725,7 @@ CreatePool(NsServer *servPtr, const char *pool)
  *
  * Ns_ServerLogDir --
  *
- *      Returns the directory path where the server’s log files are stored.
+ *      Returns the directory path where the server's log files are stored.
  *
  *      If the provided NsServer pointer is NULL or its logDir field is not set,
  *      this function returns the default log path obtained from Ns_InfoLogPath().

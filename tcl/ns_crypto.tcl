@@ -416,9 +416,9 @@ nx::Class create ::ns_crypto::JWT {
         #        ("header.payload.signature").
         #
         # @return A Tcl dictionary with the following keys:
-        #         header    — parsed JWT header as Tcl dictionary
-        #         payload   — parsed JWT payload as Tcl dictionary
-        #         signature — raw binary signature (empty for "alg=none")
+        #         header     -  parsed JWT header as Tcl dictionary
+        #         payload    -  parsed JWT payload as Tcl dictionary
+        #         signature  -  raw binary signature (empty for "alg=none")
 
         lassign [:split_token $token] headerB64 payloadB64 sigB64
 
@@ -483,11 +483,11 @@ nx::Class create ::ns_crypto::JWT {
         #        ("header.payload.signature").
         #
         # @return A Tcl dictionary containing:
-        #         valid   — boolean indicating successful verification
-        #         header  — parsed JWT header as Tcl dictionary
-        #         payload — parsed JWT payload as Tcl dictionary
-        #         kid     — resolved key identifier (may be empty)
-        #         alg     — algorithm used for verification
+        #         valid    -  boolean indicating successful verification
+        #         header   -  parsed JWT header as Tcl dictionary
+        #         payload  -  parsed JWT payload as Tcl dictionary
+        #         kid      -  resolved key identifier (may be empty)
+        #         alg      -  algorithm used for verification
         #
 
         lassign [:split_token $token] headerB64 payloadB64 sigB64

@@ -879,7 +879,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, Tcl_Obj *scriptObj,
  *      Returns the total number of bytes successfully written, or -1 on error.
  *
  * Side effects:
- *      May adjust the state of the connection channel’s buffers and
+ *      May adjust the state of the connection channel's buffers and
  *      update send counters.
  *
  *----------------------------------------------------------------------
@@ -1114,7 +1114,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
  * Results:
 
  *      Returns TCL_OK on success (with the detached channel name set
- *      as the interpreter’s result), or TCL_ERROR if the specified
+ *      as the interpreter's result), or TCL_ERROR if the specified
  *      connection channel does not exist or if an error occurs during
  *      detachment.
  *
@@ -2867,7 +2867,7 @@ PrepareSendBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T ms
  *      Compacts the connection channel's send buffer by shifting the unsent data
  *      to the beginning of the buffer. The function copies data from the source
  *      specified by the iovec (iovecPtr->iov_base) to the start of the send buffer,
- *      and then updates the send buffer’s length to reflect the new data size.
+ *      and then updates the send buffer's length to reflect the new data size.
  *
  * Results:
  *      None.

@@ -276,7 +276,7 @@ of [cmd ns_set], including duplicate keys.
 
 This behavior makes [option -set] suitable as a concise shorthand for
 bulk parameter definitions (for example, shared defaults between
-sections), while still fully respecting NaviServer’s multi-map
+sections), while still fully respecting NaviServer's multi-map
 configuration model.
 
 

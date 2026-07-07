@@ -390,7 +390,7 @@ CheckPassword(const char *inputPwd, const char *storedPwd, int flags)
  *
  *      Lookup the PServer instance corresponding to a given Ns_Server
  *      pointer in the serversTable.  This bridges from the opaque
- *      Ns_Server to the module’s private PServer struct.
+ *      Ns_Server to the module's private PServer struct.
  *
  * Parameters:
  *      servPtr    - pointer to an Ns_Server object (as passed by the core)
@@ -440,7 +440,7 @@ GetServer(const Ns_Server *servPtr) {
  *      NS_ERROR        - invalid server
  *
  * Side Effects:
- *      Acquires the server’s request‐auth rwlock in read mode.
+ *      Acquires the server's request‐auth rwlock in read mode.
  *
  *----------------------------------------------------------------------
  */
@@ -558,7 +558,7 @@ AuthorizeUserProc(void *UNUSED(arg), const Ns_Server *servPtr, const char *user,
  *         won't change this)
  *
  * Side effects:
- *      Acquires the server’s request‐auth rwlock in read mode.
+ *      Acquires the server's request‐auth rwlock in read mode.
  *
  *----------------------------------------------------------------------
  */
@@ -818,10 +818,10 @@ AuthorizeRequestProc(void *UNUSED(arg), Ns_Conn *conn, int *continuationPtr)
  *
  * Parameters:
  *      userPtr  - pointer to the User structure containing masks, nets, hosts, and flags.
- *      peer     - NUL-terminated string of the client’s IP address.
+ *      peer     - NUL-terminated string of the client's IP address.
  *
  * Returns:
- *      true  if the peer passes the user’s address/host filters (allowed),
+ *      true  if the peer passes the user's address/host filters (allowed),
  *      false if it fails any check (denied).
  *
  * Side Effects:
