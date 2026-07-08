@@ -2299,17 +2299,16 @@ proc _ns_test_assert_sentinel_not_served {target} {
 
 test directory-traversal-1.0 {
     raw backslash traversal request without leading slash must not be served
-} -constraints {serverListen} -body {
+} -constraints {serverListen tcl86} -body {
     #ns_logctl severity Debug(request) 1
     set response [_ns_test_raw_http_get {..\..\..\..\..\..\..\..\..\..\windows\win.ini}]
     set status [_ns_test_http_status $response]
-
     expr {$status < 200 || $status >= 300}
 } -returnCodes {error return ok} -result 1
 
 test directory-traversal-1.1 {
     sentinel outside pageroot must not be directly reachable
-} -constraints {serverListen}  -setup {
+} -constraints {serverListen tcl86} -setup {
     _ns_test_directory_traversal_setup
 } -body {
     _ns_test_assert_sentinel_not_served {/ns-traversal-sentinel.txt}
@@ -2319,7 +2318,7 @@ test directory-traversal-1.1 {
 
 test directory-traversal-1.2 {
     slash dot-dot traversal must not escape pageroot
-} -constraints {serverListen} -setup {
+} -constraints {serverListen tcl86} -setup {
     _ns_test_directory_traversal_setup
 } -body {
     _ns_test_assert_sentinel_not_served {/../ns-traversal-sentinel.txt}
@@ -2329,7 +2328,7 @@ test directory-traversal-1.2 {
 
 test directory-traversal-1.3 {
     literal backslash traversal must not escape pageroot
-} -constraints {serverListen} -setup {
+} -constraints {serverListen tcl86} -setup {
     _ns_test_directory_traversal_setup
 } -body {
     _ns_test_assert_sentinel_not_served {/..\ns-traversal-sentinel.txt}
@@ -2339,7 +2338,7 @@ test directory-traversal-1.3 {
 
 test directory-traversal-1.4 {
     percent-encoded backslash traversal must not escape pageroot
-} -constraints {serverListen} -setup {
+} -constraints {serverListen tcl86} -setup {
     _ns_test_directory_traversal_setup
 } -body {
     _ns_test_assert_sentinel_not_served {/..%5Cns-traversal-sentinel.txt}
