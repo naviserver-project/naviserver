@@ -328,8 +328,16 @@ static void WriteWarningRaw(const char *msg, int fd, size_t wantWrite, ssize_t w
     NS_GNUC_NONNULL(1);
 static const char *GetSockStateName(SockState sockState);
 
-static size_t EndOfHeader(Sock *sockPtr)
-    NS_GNUC_NONNULL(1);
+static SockState GetSingletonRequestHeader(Sock *sockPtr, const char *name, const char **valuePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static Ns_ReturnCode ParseStrictContentLength(const char *s, size_t *lengthPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_ReturnCode ParseRequestTransferEncoding(const char *s, bool *chunkedPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static bool TransferCodingTokenEqual(const char *start, size_t len, const char *token)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static SockState EndOfHeader(Sock *sockPtr, size_t *contentOffsetPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static  Request *RequestNew(void)
     NS_GNUC_RETURNS_NONNULL;
 static void RequestFree(Sock *sockPtr)
@@ -3826,7 +3834,7 @@ ChunkedDecode(Request *reqPtr, bool update)
 {
     const Tcl_DString *bufPtr;
     const char        *end, *chunkStart;
-    SockState         result = SOCK_MORE;
+    SockState          result = SOCK_MORE;
 
     NS_NONNULL_ASSERT(reqPtr != NULL);
 
@@ -3834,9 +3842,10 @@ ChunkedDecode(Request *reqPtr, bool update)
     end = bufPtr->string + bufPtr->length;
     chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
-    while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
-        char   *p = strstr(chunkStart, "\r\n"), *numberEnd;
-        long    chunkLength;
+    while (reqPtr->chunkStartOff < (size_t)bufPtr->length) {
+        char *p = strstr(chunkStart, "\r\n"), *numberEnd;
+        long  chunkLength;
+        char *dataStart, *dataEnd, *nextChunk;
 
         if (p == NULL) {
             Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
@@ -3845,34 +3854,149 @@ ChunkedDecode(Request *reqPtr, bool update)
         }
 
         *p = '\0';
+        errno = 0;
         chunkLength = strtol(chunkStart, &numberEnd, 16);
         Ns_Log(DriverDebug, "ChunkedDecode: chunkLength %ld, <%s>", chunkLength, chunkStart);
-        *p = '\r';
+
+        if (errno == ERANGE) {
+            Ns_Log(Warning, "ChunkedDecode: chunk length overflow");
+            *p = '\r';
+            result = SOCK_BADREQUEST;
+            break;
+        }
+
         if (chunkLength < 0) {
             Ns_Log(Warning, "ChunkedDecode: negative chunk length");
+            *p = '\r';
             result = SOCK_BADREQUEST;
             break;
         }
+
         if (chunkStart == numberEnd) {
             Ns_Log(Warning, "ChunkedDecode: invalid chunk length");
+            *p = '\r';
             result = SOCK_BADREQUEST;
             break;
         }
-        if (p + 2 + chunkLength > end) {
-            Ns_Log(DriverDebug, "ChunkedDecode: chunk length past end of buffer");
+
+        /*
+         * Allow chunk extensions, but reject other junk after the size.
+         * This must be checked while p is still temporarily NUL.
+         */
+        while (CHARTYPE(space, *numberEnd) != 0) {
+            numberEnd++;
+        }
+        if (*numberEnd != '\0' && *numberEnd != ';') {
+            Ns_Log(Warning, "ChunkedDecode: invalid chunk length suffix");
+            *p = '\r';
+            result = SOCK_BADREQUEST;
+            break;
+        }
+        *p = '\r';
+
+        dataStart = p + 2;
+
+        /*
+         * Nonzero chunk: require the announced data bytes. Do not form
+         * dataStart + chunkLength until we know it stays inside the received
+         * buffer.
+         */
+        if ((uint64_t)chunkLength > (uint64_t)(end - dataStart)) {
+            Ns_Log(DriverDebug, "ChunkedDecode: chunk data incomplete");
             result = SOCK_MORE;
             break;
         }
+        dataEnd = dataStart + chunkLength;
+
+        /*
+         * The terminating zero-size chunk is complete only once the
+         * trailer section has been terminated by an empty line.
+         */
+        if (chunkLength == 0) {
+            const char *trailerStart = dataStart;
+            const char *trailerEnd;
+
+            if (trailerStart + 2 <= end
+                && trailerStart[0] == '\r'
+                && trailerStart[1] == '\n') {
+
+                reqPtr->chunkStartOff = (size_t)((trailerStart + 2) - bufPtr->string);
+                result = SOCK_READY;
+                break;
+            }
+
+            trailerEnd = strstr(trailerStart, "\r\n\r\n");
+            if (trailerEnd == NULL) {
+                Ns_Log(DriverDebug, "ChunkedDecode: incomplete trailer section");
+                result = SOCK_MORE;
+                break;
+            }
+
+            reqPtr->chunkStartOff = (size_t)((trailerEnd + 4) - bufPtr->string);
+            result = SOCK_READY;
+            break;
+        }
+
+        /*
+         * Nonzero chunk: require the announced data bytes. Normally, require
+         * the trailing CRLF as well. Compatibility exception: when
+         * X-Expected-Entity-Length is present, some WebDAV clients stop exactly
+         * after the final announced data bytes, without the trailing chunk CRLF
+         * and without the terminating zero-size chunk.
+         */
+        if ((end - dataEnd) < 2) {
+            size_t currentContentLength =
+                (reqPtr->chunkWriteOff - reqPtr->coff) + (size_t)chunkLength;
+
+            if (reqPtr->expectedLength != 0u
+                && currentContentLength >= reqPtr->expectedLength
+                && dataEnd == end) {
+
+                if (update) {
+                    char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
+
+                    memmove(writeBuffer, dataStart, (size_t)chunkLength);
+                    reqPtr->chunkWriteOff += (size_t)chunkLength;
+                    *(writeBuffer + chunkLength) = '\0';
+                }
+
+                /*
+                 * Do not return SOCK_READY here. This is still not a standard
+                 * complete chunked message. Let SockParse() apply the explicit
+                 * X-Expected-Entity-Length compatibility rule.
+                 */
+                reqPtr->chunkStartOff = (size_t)(dataEnd - bufPtr->string);
+                result = SOCK_MORE;
+                break;
+            }
+
+            Ns_Log(DriverDebug, "ChunkedDecode: trailing CRLF after chunk data incomplete");
+            result = SOCK_MORE;
+            break;
+        }
+
+        if (dataEnd[0] != '\r' || dataEnd[1] != '\n') {
+            Ns_Log(Warning, "ChunkedDecode: missing CRLF after chunk data");
+            result = SOCK_BADREQUEST;
+            break;
+        }
+
         if (update) {
             char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
 
-            memmove(writeBuffer, p + 2, (size_t)chunkLength);
+            memmove(writeBuffer, dataStart, (size_t)chunkLength);
             reqPtr->chunkWriteOff += (size_t)chunkLength;
             *(writeBuffer + chunkLength) = '\0';
         }
-        reqPtr->chunkStartOff += (size_t)(p - chunkStart) + 4u + (size_t)chunkLength;
-        chunkStart = bufPtr->string + reqPtr->chunkStartOff;
-        result = SOCK_READY;
+
+        nextChunk = dataEnd + 2;
+        reqPtr->chunkStartOff = (size_t)(nextChunk - bufPtr->string);
+        chunkStart = nextChunk;
+
+        /*
+         * A nonzero chunk is not the end of the chunked message.
+         */
+        result = SOCK_MORE;
     }
 
     return result;
@@ -4178,6 +4302,258 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSingletonRequestHeader --
+ *
+ *      Return a request header field value only when the named field is
+ *      absent or present exactly once.
+ *
+ *      HTTP request framing fields must not be ambiguous. The 4.99 branch
+ *      does not have the newer extracted singleton-header machinery, so
+ *      check the framing fields locally before using them.
+ *
+ * Results:
+ *      SOCK_READY when the field is absent or unique. SOCK_BADREQUEST when
+ *      multiple instances are present.
+ *
+ * Side effects:
+ *      Sets *valuePtr to the unique value or NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+static SockState
+GetSingletonRequestHeader(Sock *sockPtr, const char *name, const char **valuePtr)
+{
+    const Request *reqPtr;
+    size_t         i, count = 0u;
+
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
+
+    reqPtr = sockPtr->reqPtr;
+    assert(reqPtr != NULL);
+
+    *valuePtr = NULL;
+
+    for (i = 0u; i < Ns_SetSize(reqPtr->headers); i++) {
+        const char *key = Ns_SetKey(reqPtr->headers, i);
+
+        if (key != NULL && strcasecmp(key, name) == 0) {
+            if (count == 0u) {
+                *valuePtr = Ns_SetValue(reqPtr->headers, i);
+            }
+            count++;
+        }
+    }
+
+    if (count > 1u) {
+        Ns_Log(Warning,
+               "ambiguous request framing: multiple %s headers in request \"%s\"",
+               name,
+               reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
+        sockPtr->keep = NS_FALSE;
+        return SOCK_BADREQUEST;
+    }
+
+    return SOCK_READY;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseStrictContentLength --
+ *
+ *      Parse a Content-Length style field value as a strict decimal
+ *      non-negative integer.
+ *
+ *      This helper is intentionally stricter than general-purpose integer
+ *      conversion. It accepts optional surrounding whitespace and decimal
+ *      digits only. It rejects empty values, signs, negative values,
+ *      non-decimal notation, trailing junk, and overflow.
+ *
+ *      The strictness is important for HTTP message framing: accepting
+ *      multiple syntactic variants here could create parser differentials
+ *      between NaviServer and peers such as reverse proxies.
+ *
+ * Results:
+ *      NS_OK on success, with *lengthPtr set to the parsed value.
+ *      NS_ERROR when the value is malformed or exceeds size_t range.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ParseStrictContentLength(const char *s, size_t *lengthPtr)
+{
+    uint64_t    value = 0u;
+    const char *p;
+
+    NS_NONNULL_ASSERT(s != NULL);
+    NS_NONNULL_ASSERT(lengthPtr != NULL);
+
+    /*
+     * Ns_ParseHeader() already trims leading spaces after the colon,
+     * but be defensive here.
+     */
+    while (CHARTYPE(space, *s) != 0) {
+        s++;
+    }
+
+    if (*s == '\0') {
+        return NS_ERROR;
+    }
+
+    /*
+     * RFC-compatible strictness for framing: no sign, no hex,
+     * no decimal suffixes.
+     */
+    for (p = s; CHARTYPE(digit, *p) != 0; p++) {
+        uint64_t digit = (uint64_t)(*p - '0');
+
+        if (value > (UINT64_MAX - digit) / 10u) {
+            return NS_ERROR;
+        }
+        value = value * 10u + digit;
+    }
+
+    /*
+     * Permit trailing whitespace, but nothing else.
+     */
+    while (CHARTYPE(space, *p) != 0) {
+        p++;
+    }
+    if (*p != '\0') {
+        return NS_ERROR;
+    }
+
+    if (value > (uint64_t)SIZE_MAX) {
+        return NS_ERROR;
+    }
+
+    *lengthPtr = (size_t)value;
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TransferCodingTokenEqual --
+ *
+ *      Compare a parsed transfer-coding token with a literal token name.
+ *
+ *      The input token is provided as a start pointer and explicit length,
+ *      so it does not need to be NUL-terminated. The comparison is
+ *      case-insensitive, as required for HTTP field values.
+ *
+ * Results:
+ *      NS_TRUE when the token has the same length and matches the supplied
+ *      token name case-insensitively; NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+TransferCodingTokenEqual(const char *start, size_t len, const char *token)
+{
+    size_t tokenLen;
+
+    NS_NONNULL_ASSERT(start != NULL);
+    NS_NONNULL_ASSERT(token != NULL);
+
+    tokenLen = strlen(token);
+
+    return len == tokenLen && strncasecmp(start, token, len) == 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseRequestTransferEncoding --
+ *
+ *      Validate the Transfer-Encoding field value for an inbound HTTP
+ *      request.
+ *
+ *      NaviServer currently supports only the chunked transfer coding for
+ *      request bodies. Therefore this parser accepts exactly one transfer
+ *      coding token, "chunked", compared case-insensitively and allowing
+ *      optional surrounding whitespace. Unsupported codings, comma-separated
+ *      coding lists, empty values, and parameterized field values are
+ *      rejected.
+ *
+ *      This deliberately fail-closed policy avoids request-smuggling
+ *      parser differentials. In particular, values such as "gzip, chunked",
+ *      "chunked, gzip", "identity", and "chunked;foo=bar" are not accepted,
+ *      since NaviServer does not implement a general transfer-coding stack.
+ *
+ *      This function validates the Transfer-Encoding header field value
+ *      only. Chunk extensions on individual chunk-size lines are handled
+ *      separately by ChunkedDecode().
+ *
+ * Results:
+ *      NS_OK when the value is a supported chunked transfer encoding, with
+ *      *chunkedPtr set to NS_TRUE.
+ *
+ *      NS_ERROR when the value is malformed or unsupported.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ParseRequestTransferEncoding(const char *s, bool *chunkedPtr)
+{
+    const char *p, *start, *end;
+    size_t      len;
+
+    NS_NONNULL_ASSERT(s != NULL);
+    NS_NONNULL_ASSERT(chunkedPtr != NULL);
+
+    *chunkedPtr = NS_FALSE;
+
+    p = s;
+    while (CHARTYPE(space, *p) != 0) {
+        p++;
+    }
+
+    start = p;
+
+    while (*p != '\0' && CHARTYPE(space, *p) == 0) {
+        /*
+         * Reject parameters and coding lists.
+         */
+        if (*p == ';' || *p == ',') {
+            return NS_ERROR;
+        }
+        p++;
+    }
+
+    end = p;
+    len = (size_t)(end - start);
+
+    while (CHARTYPE(space, *p) != 0) {
+        p++;
+    }
+
+    if (*p != '\0' || len == 0u) {
+        return NS_ERROR;
+    }
+
+    if (!TransferCodingTokenEqual(start, len, "chunked")) {
+        return NS_ERROR;
+    }
+
+    *chunkedPtr = NS_TRUE;
+    return NS_OK;
+}
+
 
 /*----------------------------------------------------------------------
  *
@@ -4187,7 +4563,7 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
  *      time, all request header lines were parsed already correctly.
  *
  * Results:
- *      None.
+ *      SOCK_READY on success, error state otherwise.
  *
  * Side effects:
  *      Update various reqPtr fields and signal certain facts and error
@@ -4196,18 +4572,25 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
  *
  *----------------------------------------------------------------------
  */
-static size_t
-EndOfHeader(Sock *sockPtr)
+static SockState
+EndOfHeader(Sock *sockPtr, size_t *contentOffsetPtr)
 {
-    Request      *reqPtr;
-    const char   *s;
+    Request    *reqPtr;
+    const char *s;
+    const char *contentLengthString, *transferEncodingString;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(contentOffsetPtr != NULL);
 
     reqPtr = sockPtr->reqPtr;
     assert(reqPtr != NULL);
 
+    *contentOffsetPtr = reqPtr->roff;
     reqPtr->chunkStartOff = 0u;
+    reqPtr->chunkWriteOff = 0u;
+    reqPtr->expectedLength = 0u;
+    reqPtr->contentLength = 0u;
+    reqPtr->length = 0u;
 
     /*
      * Check for "expect: 100-continue" and clear flag in case we have
@@ -4228,61 +4611,89 @@ EndOfHeader(Sock *sockPtr)
     }
 
     /*
-     * Handle content-length, which might be provided or not.
-     * Clear length specific error flags.
+     * Handle request-body framing. Reject ambiguous or unsupported framing
+     * before application dispatch.
      */
     sockPtr->flags &= ~(NS_CONN_ENTITYTOOLARGE);
-    s = Ns_SetIGet(reqPtr->headers, "content-length");
-    if (s == NULL) {
-        s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
 
-        if (s != NULL) {
-            /* Lower case is in the standard, capitalized by macOS */
-            if (STREQ(s, "chunked") || STREQ(s, "Chunked")) {
-                Tcl_WideInt expected;
-
-                reqPtr->chunkStartOff = reqPtr->roff;
-                reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
-                reqPtr->contentLength = 0u;
-
-                /*
-                 * We need reqPtr->expectedLength for safely terminating read loop.
-                 */
-                s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
-
-                if ((s != NULL)
-                    && (Ns_StrToWideInt(s, &expected) == NS_OK)
-                    && (expected > 0) ) {
-                    reqPtr->expectedLength = (size_t)expected;
-                }
-                s = NULL;
-            }
-        }
+    if (GetSingletonRequestHeader(sockPtr, "content-length", &contentLengthString) != SOCK_READY
+        || GetSingletonRequestHeader(sockPtr, "transfer-encoding", &transferEncodingString) != SOCK_READY) {
+        return SOCK_BADREQUEST;
     }
 
-    /*
-     * In case a valid and meaningful headers determining the content length
-     * was provided, the string with the content length ("s") is not NULL.
-     */
-    if (s != NULL) {
-        Tcl_WideInt length;
+    if (contentLengthString != NULL && transferEncodingString != NULL) {
+        Ns_Log(Warning,
+               "ambiguous request framing: both Content-Length and "
+               "Transfer-Encoding are present in request \"%s\"",
+               reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
+        sockPtr->keep = NS_FALSE;
+        return SOCK_BADREQUEST;
+    }
 
-        if ((Ns_StrToWideInt(s, &length) == NS_OK) && (length > 0)) {
-            reqPtr->length = (size_t)length;
-            /*
-             * Handle too large input requests.
-             */
-            if (reqPtr->length > (size_t)sockPtr->drvPtr->maxinput) {
+    if (transferEncodingString != NULL) {
+        bool chunked = NS_FALSE;
 
-                Ns_Log(Warning, "SockParse: request too large, length=%"
-                       PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
-                       reqPtr->length, sockPtr->drvPtr->maxinput);
+        if (ParseRequestTransferEncoding(transferEncodingString, &chunked) != NS_OK
+            || !chunked) {
+            Ns_Log(Warning,
+                   "invalid or unsupported Transfer-Encoding \"%s\" in request \"%s\"",
+                   transferEncodingString,
+                   reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
+            sockPtr->keep = NS_FALSE;
+            return SOCK_BADREQUEST;
+        }
 
+        reqPtr->chunkStartOff = reqPtr->roff;
+        reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
+        reqPtr->contentLength = 0u;
+        reqPtr->length = 0u;
+
+        /*
+         * Preserve existing x-expected-entity-length support.
+         */
+        s = Ns_SetIGet(reqPtr->headers, "x-expected-entity-length");
+        if (s != NULL) {
+            size_t expected;
+
+            if (ParseStrictContentLength(s, &expected) == NS_OK && expected > 0u) {
+                reqPtr->expectedLength = expected;
+            } else {
+                Ns_Log(Warning,
+                       "invalid x-expected-entity-length \"%s\" in request \"%s\"",
+                       s,
+                       reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
                 sockPtr->keep = NS_FALSE;
-                sockPtr->flags |= NS_CONN_ENTITYTOOLARGE;
-
+                return SOCK_BADREQUEST;
             }
-            reqPtr->contentLength = (size_t)length;
+        }
+
+    } else if (contentLengthString != NULL) {
+        size_t length;
+
+        if (ParseStrictContentLength(contentLengthString, &length) != NS_OK) {
+            Ns_Log(Warning,
+                   "invalid Content-Length \"%s\" in request \"%s\"",
+                   contentLengthString,
+                   reqPtr->request.line != NULL ? reqPtr->request.line : NS_EMPTY_STRING);
+            sockPtr->keep = NS_FALSE;
+            return SOCK_BADREQUEST;
+        }
+
+        reqPtr->length = length;
+        reqPtr->contentLength = length;
+
+        /*
+         * Handle too large input requests. Preserve the existing behavior:
+         * mark it and let the Expect: 100-continue path short-circuit, or
+         * let later request handling generate the application-visible error.
+         */
+        if (reqPtr->length > (size_t)sockPtr->drvPtr->maxinput) {
+            Ns_Log(Warning, "SockParse: request too large, length=%"
+                   PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
+                   reqPtr->length, sockPtr->drvPtr->maxinput);
+
+            sockPtr->keep = NS_FALSE;
+            sockPtr->flags |= NS_CONN_ENTITYTOOLARGE;
         }
     }
 
@@ -4348,17 +4759,7 @@ EndOfHeader(Sock *sockPtr)
         memset(&sockPtr->clientsa, 0, sizeof(struct NS_SOCKADDR_STORAGE));
     }
 
-    /*
-     * Set up request length for spooling and further read operations
-     */
-    if (reqPtr->contentLength != 0u) {
-        /*
-         * Content-Length was provided, use it
-         */
-        reqPtr->length = reqPtr->contentLength;
-    }
-
-    return reqPtr->roff;
+    return SOCK_READY;
 }
 
 
@@ -4471,7 +4872,14 @@ SockParse(Sock *sockPtr)
             /*
              * We are at end of headers.
              */
-            reqPtr->coff = EndOfHeader(sockPtr);
+            {
+                SockState endOfHeaderState;
+
+                endOfHeaderState = EndOfHeader(sockPtr, &reqPtr->coff);
+                if (endOfHeaderState != SOCK_READY) {
+                    return endOfHeaderState;
+                }
+            }
 
             /*
              * In cases the client sent "expect: 100-continue", report back that
@@ -4610,22 +5018,23 @@ SockParse(Sock *sockPtr)
         currentContentLength = reqPtr->chunkWriteOff - reqPtr->coff;
 
         /*
-         * A chunk might be complete, but it might not be the last
-         * chunk from the client. The best thing would be to be able
-         * to read until EOF here. In cases, where the (optional)
-         * "expectedLength" was provided by the client, we terminate
-         * depending on that information
+         * Standard chunked completion requires the zero-size terminating chunk.
+         *
+         * Compatibility exception: macOS Finder/WebDAV can send
+         * X-Expected-Entity-Length and omit the terminating zero chunk. In this
+         * mode, accept once the decoded body length reaches the expected value.
          */
-        if ((chunkState == SOCK_MORE)
-            || (reqPtr->expectedLength != 0u && currentContentLength < reqPtr->expectedLength)) {
-            /*
-             * ChunkedDecode wants more data.
-             */
-            return SOCK_MORE;
-
+        if (chunkState == SOCK_MORE) {
+            if (reqPtr->expectedLength != 0u
+                && currentContentLength >= reqPtr->expectedLength) {
+                chunkState = SOCK_READY;
+            } else {
+                return SOCK_MORE;
+            }
         } else if (chunkState != SOCK_READY) {
             return chunkState;
         }
+
         /*
          * ChunkedDecode has enough data.
          */
