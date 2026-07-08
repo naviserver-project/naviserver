@@ -2200,6 +2200,146 @@ test http-11.2.1 {HTTP/1.0 GET + many reply header fields} -constraints serverLi
     unset -nocomplain i r0 r1
 } -returnCodes {error ok} -result {200 200 2000}
 
+
+################################################################################
+# Directory traversal checks.
+#
+# These tests intentionally use a raw socket.  Higher-level HTTP clients may
+# normalize, quote, or reject backslashes and non-origin-form request targets
+# before the server sees them.
+################################################################################
+
+proc _ns_test_http_status {response} {
+    set firstLine [lindex [split $response "\n"] 0]
+    if {![regexp {^HTTP/[0-9.]+[ \t]+([0-9][0-9][0-9])} $firstLine . status]} {
+        error "could not parse HTTP status from response: $firstLine"
+    }
+    return $status
+}
+
+proc _ns_test_path_is_below {path parent} {
+    set path   [file normalize $path]
+    set parent [file normalize $parent]
+
+    expr {
+        $path ne $parent
+        && [string range $path 0 [string length $parent]] eq "${parent}/"
+    }
+}
+
+proc _ns_test_raw_http_get {target} {
+    set request [join [list \
+        "GET $target HTTP/1.0" \
+        {Host: localhost} \
+        {Connection: close} \
+        {} \
+        {}] "\r\n"]
+
+    set url [ns_config test listenurl]
+
+    if {![regexp {^https?://(\[[^]]+\]|[^:/]+)(?::([0-9]+))?} $url . host port]} {
+        error "could not parse test listenurl: $url"
+    }
+
+    if {[string match {\[*\]} $host]} {
+        set host [string range $host 1 end-1]
+    }
+    if {$port eq ""} {
+        set port 80
+    }
+
+    set s [socket $host $port]
+    fconfigure $s -translation binary -blocking 1
+    puts -nonewline $s $request
+    flush $s
+
+    set response [read $s]
+    close $s
+
+    return $response
+}
+
+proc _ns_test_directory_traversal_sentinel {} {
+    set pageroot [file normalize [ns_config "test" home]/testserver/pages]
+    return [file join [file dirname $pageroot] ns-traversal-sentinel.txt]
+}
+
+proc _ns_test_directory_traversal_setup {} {
+    set pageroot [file normalize [ns_config "test" home]/testserver/pages]
+    set outside  [_ns_test_directory_traversal_sentinel]
+
+    if {[_ns_test_path_is_below $outside $pageroot]} {
+        error "sentinel file is unexpectedly below pageroot: $outside"
+    }
+
+    set fd [open $outside w]
+    puts $fd "NAVISERVER_DIRECTORY_TRAVERSAL_SENTINEL"
+    close $fd
+}
+
+proc _ns_test_directory_traversal_cleanup {} {
+    catch {file delete -- [_ns_test_directory_traversal_sentinel]}
+}
+
+proc _ns_test_assert_sentinel_not_served {target} {
+    set response [_ns_test_raw_http_get $target]
+    set status [_ns_test_http_status $response]
+
+    list [expr {$status < 200 || $status >= 300}] \
+         [expr {[string first "NAVISERVER_DIRECTORY_TRAVERSAL_SENTINEL" $response] < 0}]
+}
+
+test directory-traversal-1.0 {
+    raw backslash traversal request without leading slash must not be served
+} -constraints {serverListen} -body {
+    #ns_logctl severity Debug(request) 1
+    set response [_ns_test_raw_http_get {..\..\..\..\..\..\..\..\..\..\windows\win.ini}]
+    set status [_ns_test_http_status $response]
+
+    expr {$status < 200 || $status >= 300}
+} -returnCodes {error return ok} -result 1
+
+test directory-traversal-1.1 {
+    sentinel outside pageroot must not be directly reachable
+} -constraints {serverListen}  -setup {
+    _ns_test_directory_traversal_setup
+} -body {
+    _ns_test_assert_sentinel_not_served {/ns-traversal-sentinel.txt}
+} -cleanup {
+    _ns_test_directory_traversal_cleanup
+} -result {1 1}
+
+test directory-traversal-1.2 {
+    slash dot-dot traversal must not escape pageroot
+} -constraints {serverListen} -setup {
+    _ns_test_directory_traversal_setup
+} -body {
+    _ns_test_assert_sentinel_not_served {/../ns-traversal-sentinel.txt}
+} -cleanup {
+    _ns_test_directory_traversal_cleanup
+} -result {1 1}
+
+test directory-traversal-1.3 {
+    literal backslash traversal must not escape pageroot
+} -constraints {serverListen} -setup {
+    _ns_test_directory_traversal_setup
+} -body {
+    _ns_test_assert_sentinel_not_served {/..\ns-traversal-sentinel.txt}
+} -cleanup {
+    _ns_test_directory_traversal_cleanup
+} -result {1 1}
+
+test directory-traversal-1.4 {
+    percent-encoded backslash traversal must not escape pageroot
+} -constraints {serverListen} -setup {
+    _ns_test_directory_traversal_setup
+} -body {
+    _ns_test_assert_sentinel_not_served {/..%5Cns-traversal-sentinel.txt}
+} -cleanup {
+    _ns_test_directory_traversal_cleanup
+} -result {1 1}
+
+
 cleanupTests
 
 # Local variables:

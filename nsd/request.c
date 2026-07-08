@@ -59,6 +59,9 @@ static const char *GetEncodingFormat(const char *encodingString,
 static void RequestCleanupMembers(Ns_Request *request)
     NS_GNUC_NONNULL(1);
 
+static bool PlainRequestTargetContainsBackslash(const char *url)
+    NS_GNUC_NONNULL(1);
+
 /*
  *----------------------------------------------------------------------
  *
@@ -147,7 +150,69 @@ Ns_FreeRequest(Ns_Request *request)
     }
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * PlainRequestTargetContainsBackslash --
+ *
+ *      Check whether an origin-form request target contains a raw or
+ *      percent-encoded backslash in the path component.
+ *
+ *      Backslash is not a URL path separator.  However, after URL
+ *      decoding and later filesystem mapping, especially on platforms
+ *      where backslash is accepted as a filesystem separator, it may
+ *      allow requests such as "/..\file" or "/..%5Cfile" to bypass
+ *      normal URL path normalization.  This helper is intentionally
+ *      narrow: it does not validate the full URI grammar and does not
+ *      reject otherwise valid UTF-8 in the request target.
+ *
+ *      A raw backslash is rejected anywhere in the request target.  A
+ *      percent-encoded backslash ("%5c" or "%5C") is rejected only in
+ *      the path component, i.e. before a possible query separator '?'.
+ *
+ * Results:
+ *      True if the request target contains a raw backslash or a
+ *      percent-encoded backslash in the path component, false otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PlainRequestTargetContainsBackslash(const char *url)
+{
+    const char *end, *p;
+
+    /*
+     * Unencoded backslash anywhere in the request target is invalid.
+     */
+    if (strchr(url, INTCHAR('\\')) != NULL) {
+        return NS_TRUE;
+    }
+
+    /*
+     * A percent-encoded backslash is dangerous in the path component
+     * before filesystem mapping. Stop at '?' so query values such as
+     * "?x=%5C" are not rejected here.
+     */
+    end = strchr(url, INTCHAR('?'));
+    if (end == NULL) {
+        end = url + strlen(url);
+    }
+
+    for (p = url; p + 2 < end; ++p) {
+        if (p[0] == '%'
+            && p[1] == '5'
+            && (p[2] == 'c' || p[2] == 'C')) {
+            return NS_TRUE;
+        }
+    }
+
+    return NS_FALSE;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -170,7 +235,6 @@ Ns_FreeRequest(Ns_Request *request)
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 {
@@ -374,6 +438,18 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
         }
     }
 
+    /*
+     * Validate plain origin-form request targets before SetUrl().
+     */
+    if (PlainRequestTargetContainsBackslash(url)) {
+        const char *errorMsg = "invalid request";
+        Ns_Log(Warning, "%s, target string contains invalid path separator; "
+               "path '%s' from line '%s'",
+               errorMsg, url, line);
+        Ns_DStringFree(&ds);
+        goto done;
+    }
+    
     SetUrl(request, url);
     Ns_DStringFree(&ds);
     return NS_OK;
