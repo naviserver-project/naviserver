@@ -210,11 +210,23 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     while (s != NULL) {
                         char  *e;
 
+                        /*
+                         * s points to the beginning of the boundary marker.
+                         */
                         s += boundaryDs.length;
-                        if (*s == '\r') {
+
+                        /*
+                         * Final boundary: "--boundary--"
+                         */
+                        if (s < formEndPtr && s[0] == '-' && s + 1 < formEndPtr && s[1] == '-') {
+                            s = NULL;
+                            break;
+                        }
+
+                        if (s < formEndPtr && *s == '\r') {
                             ++s;
                         }
-                        if (*s == '\n') {
+                        if (s < formEndPtr && *s == '\n') {
                             ++s;
                         }
                         e = NextBoundary(&boundaryDs, s, formEndPtr);
@@ -774,7 +786,8 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  *
  * NextBoundary --
  *
- *      Locate the next form boundary.
+ *      Locate the next form boundary. On success, the result points to the
+ *      first character of the boundary.
  *
  * Results:
  *      Pointer to start of next input field or NULL on end of fields.
@@ -786,31 +799,49 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  */
 
 static char *
-NextBoundary(const Tcl_DString *dsPtr, char *s, const char *e)
+NextBoundary(const Tcl_DString *dsPtr, char *content, const char *end)
 {
-    char c, sc;
-    const char *find;
-    size_t len;
+    char       *p;
+    const char *boundary;
+    size_t      blen;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(s != NULL);
-    NS_NONNULL_ASSERT(e != NULL);
+    NS_NONNULL_ASSERT(content != NULL);
+    NS_NONNULL_ASSERT(end != NULL);
 
-    find = dsPtr->string;
-    c = *find++;
-    len = (size_t)(dsPtr->length - 1);
-    e -= len;
-    do {
-        do {
-            sc = *s++;
-            if (s > e) {
-                return NULL;
+    boundary = dsPtr->string;
+    blen = (size_t)dsPtr->length;
+    p = content;
+
+    while (p + blen <= end) {
+        char *candidate = p;
+
+        /*
+         * Fast skip to the first boundary byte.
+         */
+        while (candidate + blen <= end && *candidate != *boundary) {
+            ++candidate;
+        }
+        if (candidate + blen > end) {
+            return NULL;
+        }
+
+        if (memcmp(candidate, boundary, blen) == 0
+            && (candidate == content || candidate[-1] == '\n')) {
+            char *after = candidate + blen;
+
+            if (after == end
+                || *after == '\n'
+                || (*after == '\r' && after + 1 < end && after[1] == '\n')
+                || (*after == '-' && after + 1 < end && after[1] == '-')) {
+                return candidate;
             }
-        } while (sc != c);
-    } while (strncmp(s, find, len) != 0);
-    s--;
+        }
 
-    return s;
+        p = candidate + 1;
+    }
+
+    return NULL;
 }
 
 
@@ -943,9 +974,9 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
      * string.
      */
     if (buffer != NULL && unescape != '\0') {
-      int i, j, l = (int)len;
+      int i, j, l = dsPtr->length;
 
-      for (i = 0; i<l; i++) {
+      for (i = 0; i + 1 < l; i++) {
         if (buffer[i] == '\\' && buffer[i+1] == unescape) {
           for (j = i; j < l; j++) {
             buffer[j] = buffer[j+1];
