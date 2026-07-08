@@ -2946,11 +2946,11 @@ proc _ns_test_path_is_below {path parent} {
 
 proc _ns_test_raw_http_get {target} {
     set request [join [list \
-        "GET $target HTTP/1.0" \
-        {Host: localhost} \
-        {Connection: close} \
-        {} \
-        {}] "\r\n"]
+                           "GET $target HTTP/1.0" \
+                           {Host: localhost} \
+                           {Connection: close} \
+                           {} \
+                           {}] "\r\n"]
 
     set url [ns_config test listenurl]
 
@@ -2963,6 +2963,14 @@ proc _ns_test_raw_http_get {target} {
     }
     if {$port eq ""} {
         set port 80
+    }
+
+    #
+    # Tcl 8.5 builds may lack IPv6 socket support. The test server is local,
+    # so avoid using an IPv6 literal for the client connection.
+    #
+    if {$::tcl_version < 8.6 && $host eq "::1"} {
+        set host localhost
     }
 
     set s [socket $host $port]
