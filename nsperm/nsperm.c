@@ -1223,7 +1223,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc,
             char              ipString[NS_IPADDR_SIZE];
             User             *userPtr = Tcl_GetHashValue(hPtr);
             Tcl_HashEntry    *mPtr;
-            struct sockaddr  *netPtr;
+            const struct sockaddr  *netPtr;
 
             Ns_DStringPrintf(&ds, "{%s} {%s} {",
                              (const char*)Tcl_GetHashKey(&psrvPtr->users, hPtr),
@@ -1787,10 +1787,10 @@ static void WalkCallback(Tcl_DString *dsPtr, void *arg)
 static int
 CheckPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    PServer *psrvPtr = data;
-    int rc = TCL_ERROR;
-    User *userPtr;
-    char *user, *pwd;
+    PServer       *psrvPtr = data;
+    int            rc = TCL_ERROR;
+    const User    *userPtr;
+    const char    *user, *pwd;
     Tcl_HashEntry *hPtr;
 
     if (objc != 4) {
@@ -1851,7 +1851,7 @@ SetPassObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *con
     int            rc = 0;
     User          *userPtr;
     Tcl_HashEntry *hPtr;
-    char          *user, *pwd, *salt;
+    const char    *user, *pwd, *salt;
     char           buf[NS_ENCRYPT_BUFSIZE];
 
     if (objc < 4) {

@@ -2417,8 +2417,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                 result = TCL_ERROR;
 
             } else {
-                Ns_Sock *sock = Ns_ConnSockPtr(conn);
-                Sock    *sockPtr = (Sock *)sock;
+                Ns_Sock    *sock = Ns_ConnSockPtr(conn);
+                const Sock *sockPtr = (Sock *)sock;
 
                 if (!STREQ(sockPtr->drvPtr->protocol, "https")) {
                     Ns_TclPrintfResult(interp, "connection is not TLS");

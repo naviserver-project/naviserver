@@ -1594,7 +1594,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     } else {
         ListenCallback *lcbPtr;
         TCL_SIZE_T      scriptLength;
-        char           *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
+        const char     *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
         NS_SOCKET       sock;
 
         if (STREQ(addr, "*")) {

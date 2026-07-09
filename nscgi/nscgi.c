@@ -1279,7 +1279,7 @@ CgiFree(Cgi *cgiPtr)
 static Ns_ReturnCode
 CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    int           opipe[2], i;
+    int           opipe[2];
     Ns_ReturnCode status;
     char         *s, *e;
     Tcl_DString  *dsPtr;
@@ -1512,7 +1512,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     Tcl_DStringAppend(dsPtr, "HTTP_", 5);
-    for (i = 0; (size_t)i < Ns_SetSize(conn->headers); ++i) {
+    for (int i = 0; (size_t)i < Ns_SetSize(conn->headers); ++i) {
         int idx;
 
         s = Ns_SetKey(conn->headers, i);

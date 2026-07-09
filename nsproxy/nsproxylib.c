@@ -1794,10 +1794,10 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj 
         result = TCL_ERROR;
 
     } else {
-        Tcl_DString ds, *dsPtr = &ds;
-        Pool       *poolPtr = GetPool(pool, clientData);
-        int         processes = 0;
-        Proxy      *proxyPtr;
+        Tcl_DString  ds, *dsPtr = &ds;
+        Pool        *poolPtr = GetPool(pool, clientData);
+        int          processes = 0;
+        const Proxy *proxyPtr;
 
         Tcl_DStringInit(dsPtr);
         Ns_MutexLock(&plock);
@@ -2384,7 +2384,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 static int
 ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    InterpData *idataPtr = data;
+    const InterpData *idataPtr = data;
     Pool       *poolPtr;
     Proxy      *proxyPtr;
     int         flag = 0, n, result = TCL_OK, reap = 0;

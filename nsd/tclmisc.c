@@ -2164,7 +2164,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
 
         result = Tcl_GetWideIntFromObj(interp, valueObj, &value);
         if (result != TCL_OK) {
-            char *valueString = Tcl_GetString(valueObj);
+            const char *valueString = Tcl_GetString(valueObj);
 
             if (strcmp(valueString, "unlimited") == 0) {
                 value = (Tcl_WideInt)RLIM_INFINITY;

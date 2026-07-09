@@ -644,7 +644,7 @@ NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
             bytesRead = ns_read(fd, buffer, bufferSize);
 
             while (bytesRead > 0) {
-                char *p;
+                const char *p;
 
                 /*
                  * Search within the current buffer

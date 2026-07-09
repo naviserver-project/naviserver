@@ -299,10 +299,10 @@ Ns_DStringVPrintf(Tcl_DString *dsPtr, const char *fmt, va_list apSrc)
 char **
 Ns_DStringAppendArgv(Tcl_DString *dsPtr)
 {
-    char      *s, *base;
-    char     **argv;
-    void      *argv_start;
-    TCL_SIZE_T i, argc, oldLen, pad, vecsz;
+    char       *s, *base;
+    char      **argv;
+    const void *argv_start;
+    TCL_SIZE_T  i, argc, oldLen, pad, vecsz;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 

@@ -473,7 +473,8 @@ Ns_TclAllocateInterp(const char *server)
         result = PopInterp(NULL, NULL)->interp;
 
     } else {
-        NsServer  *servPtr = NsGetServer(server);
+        const NsServer  *servPtr = NsGetServer(server);
+
         if (likely( servPtr != NULL) ) {
             result = PopInterp(servPtr, NULL)->interp;
         }
@@ -1818,8 +1819,8 @@ NsTclInitServer(const char *server)
 int
 NsTclAppInit(Tcl_Interp *interp)
 {
-    NsServer  *servPtr;
-    int        result = TCL_OK;
+    const NsServer *servPtr;
+    int             result = TCL_OK;
 
     servPtr = NsGetServer(nsconf.defaultServer);
     if (servPtr == NULL) {

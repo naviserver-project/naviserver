@@ -492,7 +492,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     } else {
         Ns_Entry                 *entry;
         NsInterp                 *itPtr;
-        Ns_CacheTransactionStack *transactionStackPtr;
+        const Ns_CacheTransactionStack *transactionStackPtr;
         int                       isNew;
 
         assert(clientData != NULL);
@@ -651,7 +651,7 @@ NsTclCacheIncrObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
+        const Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
         Ns_Entry   *entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr, transactionStackPtr);
         int         cur = 0;
 

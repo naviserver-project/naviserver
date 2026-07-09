@@ -1041,9 +1041,9 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
 static char *
 NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
 {
-    char   *p = content;
-    char   *end = content + contentLength;
-    size_t  blen = (size_t)boundaryDsPtr->length;
+    char       *p = content;
+    const char *end = content + contentLength;
+    size_t      blen = (size_t)boundaryDsPtr->length;
 
     while (p < end) {
         char *candidate = ns_memmem(p, (size_t)(end - p),

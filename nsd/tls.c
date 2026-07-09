@@ -369,9 +369,9 @@ SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
     serverName = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
     if (serverName != NULL) {
-        NsTLSConfig *dc = arg;
-        Driver      *drvPtr;
-        bool         doSNI;
+        NsTLSConfig  *dc = arg;
+        const Driver *drvPtr;
+        bool          doSNI;
 
         assert(dc != NULL);
 
@@ -2814,7 +2814,7 @@ ALPNSelectCB(NS_TLS_SSL *ssl,
  */
 static void KeylogCB(const SSL *ssl, const char *line)
 {
-    NsTLSConfig *dc;
+    const NsTLSConfig *dc;
 
     NS_NONNULL_ASSERT(ssl != NULL);
 
@@ -2824,6 +2824,7 @@ static void KeylogCB(const SSL *ssl, const char *line)
     /*Ns_Log(Notice, "KeylogCB called with: %s", line);*/
     if (!keylog_fp) {
         const char *path;
+
         if (dc->tlsKeylogFile != NULL && *dc->tlsKeylogFile != '\0') {
             path = dc->tlsKeylogFile;
         } else {
