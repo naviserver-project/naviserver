@@ -7,6 +7,7 @@ namespace import -force ::tcltest::*
 
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 testConstraint ssl [ns_info ssl]
+set devnull [expr {$::tcl_platform(platform) eq "windows" ? "NUL:" : "/dev/null"}]
 
 #######################################################################################
 #  Syntax tests
@@ -237,7 +238,7 @@ test ns_info-2.7 {basic operation} -body {
 } -result 1
 
 test ns_info-2.8 {basic operation} -setup {
-    set hostname_by_exec [exec hostname]
+    set hostname_by_exec [exec hostname 2> $devnull]
 } -body {
     string match [ns_info hostname] $hostname_by_exec
 } -result 1
