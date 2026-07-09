@@ -46,14 +46,15 @@ The latest development documentation is available online at:
 
 NaviServer uses a **three-digit** version scheme:
 
-- **MAJOR.MINOR.PATCH** (for example, `5.0.1`)
+- **MAJOR.MINOR.PATCH** (for example, `5.1.0`)
 - The **PATCH** level is **strictly for fixes** — no new functionality or behavior changes.
 - New features and API changes appear only in **MINOR** or **MAJOR** releases.
 
 **Active Branches**
 
 - `release/4.99` - legacy maintenance
-- `release/5.0`  - current stable line
+- `release/5.0`  - maintenance
+- `release/5.1`  - current stable line
 - `main`         - active development
 
 **Tagging**
@@ -62,9 +63,9 @@ NaviServer uses a **three-digit** version scheme:
   `naviserver-MAJOR.MINOR.PATCH`, for example:
 
   ```bash
-  git checkout release/5.0
+  git checkout release/5.1
   # ...
-  git tag -a naviserver-5.0.1 -m naviserver-5.0.1
+  git tag -a naviserver-5.1.0 -m naviserver-5.1.0
   git push --follow-tags
   ```
 
@@ -106,8 +107,8 @@ avoid version mismatches) or in a separate location.
 On a Unix-like system, run:
 
 ```bash
-gunzip < tcl8.6.17-src.tar.gz | tar xvf -
-cd tcl8.6.17/unix
+gunzip < tcl8.6.18-src.tar.gz | tar xvf -
+cd tcl8.6.18/unix
 ./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
 make install
 ```
@@ -157,8 +158,8 @@ The two distributions differ in important ways:
 To compile from a SourceForge release tarball, execute:
 
 ```bash
-gunzip < naviserver-5.0.5.tar.gz | tar xvf -
-cd naviserver-5.0.5
+gunzip < naviserver-5.1.0.tar.gz | tar xvf -
+cd naviserver-5.1.0
 ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
 make
 su -c 'make install'
@@ -187,7 +188,7 @@ tag before running `./autogen.sh`:
 ```bash
 git clone https://github.com/naviserver-project/naviserver.git
 cd naviserver
-git checkout naviserver-5.0.5
+git checkout naviserver-5.1.0
 ./autogen.sh --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
 make
 su -c 'make install'
@@ -288,7 +289,7 @@ Sample files are provided:
   [OpenACS](https://openacs.org/)  
   
 Find the documentation for configuring NaviServer in
-[admin-config](https://naviserver.sourceforge.io/5.0/manual/files/admin-config.html).
+[admin-config](https://naviserver.sourceforge.io/5.1/manual/files/admin-config.html).
 
 ### 4e. Run the Server in a Shell
 
@@ -308,7 +309,7 @@ SourceForge. For example, to install a module named `nsfoo`:
 
 
 ```bash
-gunzip < naviserver-5.0.0-modules.tar.gz | tar xvf -
+gunzip < naviserver-5.1.0-modules.tar.gz | tar xvf -
 cd modules/nsfoo
 make install NAVISERVER=/usr/local/ns
 ```
@@ -332,7 +333,7 @@ Download the minimal environment from [https://sourceforge.net/projects/mingw/fi
 3. In the msys shell, run:
 
     ```bash
-    cd /c/naviserver-5.0.0
+    cd /c/naviserver-5.1.0
     ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
     make install
     ```
