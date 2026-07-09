@@ -2,7 +2,7 @@
 NaviServer 5.1.0, released 2026-??-??
 =======================================
 
- 335 files changed, 76139 insertions(+), 11298 deletions(-)
+ 335 files changed, 76584 insertions(+), 11323 deletions(-)
 
 New Features:
 -------------
@@ -244,7 +244,11 @@ New Features:
    * Disabled generated fastpath directory listings by default.
    * Sites that intentionally provide browseable directories must now enable
      directory listings explicitly.
-
+   * Rejected backslash-based traversal in origin-form request targets before
+     URL decoding and filesystem mapping, covering both raw backslashes and
+     traversal-relevant `%5C` sequences such as `/..%5Cfile`.
+   * Preserved existing URL decoding behavior for `%5C` when used as ordinary
+     data inside path segments.
 
 Bug Fixes:
 ----------
@@ -620,16 +624,16 @@ Tcl API Changes:
 Documentation Updates:
 ----------------------
 
- - Added documentation for ns_json, ns_cbor, ns_jwt, ns_crypto extensions,
-   mTLS, client certificates, and certificate inspection.
- - Added HTTP/3 / QUIC module documentation.
- - Added documentation for configuration directories and segmented
-   configuration files.
  - Added generated configuration-parameter reference documentation.
  - Consolidated configuration sections across command, module, and manual
    pages.
  - Added or updated documentation for core modules, included modules, and
    selected external modules.
+ - Added documentation for ns_json, ns_cbor, ns_jwt, ns_crypto extensions,
+   mTLS, client certificates, and certificate inspection.
+ - Added HTTP/3 / QUIC module documentation.
+ - Added documentation for configuration directories and segmented
+   configuration files.
  - Clarified ADP include argument passing behavior.
  - Added TLS certificate/key examples and mTLS examples.
  - Added Makefile support for generating and validating configuration-parameter
@@ -677,7 +681,7 @@ Build System:
 Regression Tests:
 -----------------
 
- - Extended the number of regression test cases from 2850 to 3560 (+710).
+ - Extended the number of regression test cases from 2850 to 3543 (+693).
  - Added regression tests for native JSON parsing, generation, triples, schema
    derivation, and schema matching.
  - Added regression tests for JSON request-body handling.
@@ -693,9 +697,8 @@ Regression Tests:
  - Reworked test certificate generation to provide CA, server, and client
    certificates for TLS and mTLS tests.
  - Extended the GitHub regression test suite to include older Ubuntu
-   (20.04, with OpenSSL 1.1.1), FreeBSD and OpenBSD.
-
-
+   (20.04, with OpenSSL 1.1.1), FreeBSD and OpenBSD, covering Tcl versions
+   from Tcl 8.5 to Tcl 9.1b0.
 
 
 =======================================
