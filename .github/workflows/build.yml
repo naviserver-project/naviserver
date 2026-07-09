@@ -70,6 +70,16 @@ jobs:
             with_deprecated: 0
             tcl_makeflags: "-j1"
 
+          - os: ubuntu-latest
+            compiler: gcc-14
+            tcltag: tcl9.1b0
+            nsf_version: HEAD
+            tcllib_version: "2.0"
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
+            tdom_version: 0.9.6
+            with_deprecated: 0
+            tcl_makeflags: "-j1"
+
     defaults:
       run:
         shell: bash
