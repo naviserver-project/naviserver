@@ -403,7 +403,7 @@
 [uri ../../naviserver/files/ns_kill.html {ns_kill}] ?-nocomplain? /pid/ /signal/
 [uri ../../naviserver/files/ns_library.html {ns_library}] private|shared ?/module/?
 [uri ../../nsdb/files/ns_buildsqldate.html {ns_localsqltimestamp}]
-[uri ../../naviserver/files/ns_localtime.html {ns_localtime}] /seconds/
+[uri ../../naviserver/files/ns_localtime.html {ns_localtime}]
 [uri ../../naviserver/files/ns_locationproc.html {ns_locationproc}] /script/ ?/arg .../?
 [uri ../../naviserver/files/ns_log.html {ns_log}] /severity/ /message .../
 [uri ../../naviserver/files/ns_log.html {ns_logctl count}]

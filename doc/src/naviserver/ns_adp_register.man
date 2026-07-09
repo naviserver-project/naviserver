@@ -279,7 +279,7 @@ Notes:
 
 [list_begin itemized]
 [item] Attribute names and values are available via the [cmd ns_set] passed to the procedure.
-[item] Attribute values can be accessed by name, for example with [cmd "ns_set get"] or [cmd "ns_set iget"].
+[item] Attribute values can be accessed by name, for example with [cmd "ns_set get"].
 [item] The optional body is passed separately from the attribute set when an end tag is registered.
 [item] This command is suitable for XML-like or HTML-like tags with named attributes.
 [list_end]
