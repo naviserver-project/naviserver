@@ -64,12 +64,14 @@ endif
 
 distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
-	config.guess config.sub \
+	config.guess config.sub ca-bundle.crt \
 	README.md NEWS \
-	conf/sample-config.tcl.in conf/simple-config.tcl \
-	conf/nsd-config.tcl conf/nsd-config.d conf/openacs-config.tcl conf/openacs-config.d \
 	index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in install-from-repository.tcl
+
+distconf = conf/sample-config.tcl.in conf/simple-config.tcl \
+	conf/nsd-config.tcl conf/nsd-config.d \
+	conf/openacs-config.tcl conf/openacs-config.d
 
 # Top-level goals
 all:     $(SUBDIRS:%=all-%) configs
@@ -784,7 +786,10 @@ config.sub:
 dist: config.guess config.sub clean configs
 	$(RMRF) naviserver-$(NS_PATCH_LEVEL)
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
+	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)/conf
+	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)/certificates
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
+	$(CP) $(distconf) naviserver-$(NS_PATCH_LEVEL)/conf/
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{config.h,Makefile.global,Makefile.module,stamp-h1}
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/*/*-{debug,gn}
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/tests/testserver/access.log
