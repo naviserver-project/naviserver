@@ -65,8 +65,8 @@ endif
 distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
 	config.guess config.sub ca-bundle.crt \
-	README.md NEWS \
-	index.adp license.terms naviserver.rdf naviserver.rdf.in \
+	index.adp returnnotice.adp \
+	README.md NEWS license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in install-from-repository.tcl
 
 distconf = conf/sample-config.tcl.in conf/simple-config.tcl \
@@ -227,7 +227,7 @@ install-tests: install-dirs
 	$(CP) tests $(INSTSRVPAG)
 
 install-config-parameters-dict: $(DESTDIR)$(NAVISERVER)/modules/tcl
-	$(INSTALL_DATA) $(CONFIG_PARAMETERS_DICT) \
+	@$(INSTALL_DATA) $(CONFIG_PARAMETERS_DICT) \
 	    $(DESTDIR)$(NAVISERVER)/modules/tcl/$(notdir $(CONFIG_PARAMETERS_DICT))
 
 install-doc: $(DESTDIR)$(NAVISERVER)/pages
