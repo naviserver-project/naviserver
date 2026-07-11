@@ -111,7 +111,8 @@ static
 #ifndef NS_TCL_PRE9
  TCL_NORETURN1
 #endif
-Tcl_PanicProc Panic NS_GNUC_PRINTF(1, 0);
+Tcl_PanicProc Panic NS_GNUC_PRINTF(1, 2);
+
 
 static Ns_LogFilter LogToFile;
 static Ns_LogFilter LogToTcl;
