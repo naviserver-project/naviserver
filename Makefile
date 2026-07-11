@@ -791,7 +791,10 @@ dist: config.guess config.sub clean configs
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distconf) naviserver-$(NS_PATCH_LEVEL)/conf/
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{config.h,Makefile.global,Makefile.module,stamp-h1}
-	$(RM) naviserver-$(NS_PATCH_LEVEL)/*/*-{debug,gn}
+	$(RM) naviserver-$(NS_PATCH_LEVEL)/tcl/initdebug.tcl
+	$(RM) naviserver-$(NS_PATCH_LEVEL)/*/*-{debug,gn} naviserver-$(NS_PATCH_LEVEL)/*/*/*-{debug,gn}
+	$(RM) naviserver-$(NS_PATCH_LEVEL)/*/*.pid naviserver-$(NS_PATCH_LEVEL)/*/*/*.pid  naviserver-$(NS_PATCH_LEVEL)/*/*/*/*.pid
+	$(RM) naviserver-$(NS_PATCH_LEVEL)/*/*.diff
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/tests/testserver/access.log
 	git log --date-order --name-status --date=short  >naviserver-$(NS_PATCH_LEVEL)/ChangeLog
 	if [ -f $(HOME)/scripts/fix-typos.tcl ]; then \
