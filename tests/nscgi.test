@@ -426,7 +426,7 @@ proc _nscgiWriteArgvScript {ext} {
     return $path
 }
 proc _nscgiDeleteArgvScript {ext} {
-    set pageRoot [ns_config ns/server/test pageroot]
+    set pageRoot [ns_config "test" home]/testserver/pages
     file delete -force [file join $pageRoot argv.$ext]
 }
 
