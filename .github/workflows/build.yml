@@ -62,7 +62,7 @@ jobs:
 
           - os: ubuntu-latest
             compiler: gcc-14
-            tcltag: 9.0.3
+            tcltag: 9.0.4
             nsf_version: HEAD
             tcllib_version: "2.0"
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
