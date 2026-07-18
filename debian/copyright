@@ -1,0 +1,42 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://github.com/naviserver-project/naviserver
+Upstream-Name: naviserver
+Upstream-Contact: Gustaf Neumann <neumann@wu-wien.ac.at>
+Files:
+ *
+License: MPL-2.0
+Copyright: America Online, Inc. 1999
+       apisano@wu.ac.at: 2022
+       atp@piskorski.com: 2006, 2014, 2017, 2019-2020
+       costashsrc@gmail.com: 2016
+       danb@aol.net: 2002
+       david@qcode.co.uk: 2015, 2017, 2022
+       dossy@panoptic.com: 2001, 2004-2005
+       dvrsn@diphi.com: 2012-2015
+       eathomas93@aol.com: 2003
+       eidenschink@web.de: 2005-2006
+       filip.minic@s.wu.ac.at 2021
+       hanzer@riseup.net 2016
+       itannir@archiware.com: 2005-2007
+       jcollins@phpsource.net: 2002
+       jeffh@activestate.com: 2002
+       jgdavidson@aol.com: 2000-2003
+       jrasmuss@mle.ie: 2003
+       kriston@aol.com: 2000-2001
+       michael@cleverly.com: 2006
+       mooooooo@avenues.org: 2008
+       mpagenva@aol.com: 2002-2004
+       nathan.folkman@gmail.com: 2003
+       neumann@wu-wien.ac.at: 2010-2022
+       petej@clickvision.com: 2003
+       pkhincha@aol.com: 2003
+       pwmoosman@aol.com: 2003
+       rahul032213@aol.com: 2003
+       rcrittenden0569@aol.com: 2004
+       scott@scottg.net: 2000-2003
+       sdeasey@gmail.com: 2005-2009
+       suhti@aol.com: 2004
+       vguerra@gmail.com 2015
+       uid24488@users.sf.net: 2002
+       vseryakov@gmail.com: 2005-2010
+       zv@archiware.com: 2003, 2005-2008, 2010, 2015, 2017-2022

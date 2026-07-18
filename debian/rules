@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+clean:
+	@make clean
+	echo rm -rf $(DESTDIR)
+	./configure --prefix /opt/naviserver
+
+build:
+	@make build-doc
+	@make
+
+binary:
+	make install DESTDIR=$$(pwd)/debian/naviserver
+	dh_gencontrol
+	dh_builddeb

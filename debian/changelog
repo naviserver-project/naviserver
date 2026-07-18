@@ -1,0 +1,4 @@
+naviserver (5.1.0-1) trixie; urgency=medium
+
+  * Initial Debian packaging.
+ -- Georg Lehner <jorge@magma-soft.at>  Sat, 18 Jul 2026 08:56:23 +0100
