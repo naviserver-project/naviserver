@@ -132,13 +132,15 @@ $uptree
     #
     # Visit every file and format display
     #
-
     foreach f [lsort $files] {
-        set tail [file tail $f]
-        if {[file isdirectory $f]} { 
-            append tail "/"
+        set tail     [file tail $f]
+        set hrefTail [ns_urlencode -part path -- $tail]
+
+        if {[file isdirectory $f]} {
+            append tail     "/"
+            append hrefTail "/"
         }
-        set link "<a href=\"${prefix}${tail}\">${tail}</a>"
+        set link [subst {<a href="[ns_quotehtml ${prefix}${hrefTail}]">[ns_quotehtml $tail]</a>}]
         if {$simple} {
             append html $link \n
         } else {
