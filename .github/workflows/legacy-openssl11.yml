@@ -1,95 +1,142 @@
-name: Legacy OpenSSL 1.1.1
+name: openSUSE Build
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build-focal-openssl11:
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:20.04
+  build-opensuse:
+    name: openSUSE Tumbleweed / Tcl ${{ matrix.tcltag }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cc: gcc
+            tcltag: 9.0.4
+            tcllib_version: "2.0"
+            nsf_version: HEAD
+            ns_modules: >-
+              nsdbpg nsdbi nsdbipg nsudp nscoap
+              nssmtpd nsloopctl nsauthpam
+            tdom_version: 0.9.6
+            with_deprecated: 0
+            tcl_makeflags: "-j1"
 
     env:
-      CC: gcc-9
-      TCLTAG: core-8-6-17
-      TCLLIB_VERSION:
-      NSF_VERSION: 2.3.0
-      NS_MODULES:
-      TDOM_VERSION: 0.9.1
-      WITH_DEPRECATED: 1
-      # generic setup
-      DEBIAN_FRONTEND: noninteractive
       TZ: Etc/UTC
-
-    defaults:
-      run:
-        shell: bash
+      CC: ${{ matrix.cc }}
+      TCLTAG: ${{ matrix.tcltag }}
+      TCLLIB_VERSION: ${{ matrix.tcllib_version }}
+      NSF_VERSION: ${{ matrix.nsf_version }}
+      NS_MODULES: ${{ matrix.ns_modules }}
+      TDOM_VERSION: ${{ matrix.tdom_version }}
+      WITH_DEPRECATED: ${{ matrix.with_deprecated }}
+      TCL_MAKEFLAGS: ${{ matrix.tcl_makeflags }}
 
     steps:
-      - name: Intro
-        run: |
-          echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
-          cat /etc/os-release
-
-      - name: Install Linux dependencies
-        run: |
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update
-          apt-get install -y \
-            ca-certificates \
-            curl \
-            git \
-            make \
-            gcc-9 \
-            g++-9 \
-            openssl \
-            libssl-dev \
-            libpam0g-dev \
-            wget
-
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Checkout NaviServer
+        uses: actions/checkout@v6
         with:
-          repository: naviserver-project/naviserver
+          path: naviserver
           fetch-depth: 0
 
-      - name: Show what we have now
-        run: |
-          git clone https://github.com/gustafn/install-ns.git
-          openssl version
-          ${CC} --version
+      - name: Checkout install-ns
+        uses: actions/checkout@v6
+        with:
+          repository: gustafn/install-ns
+          path: install-ns
+          fetch-depth: 1
 
-      - name: Mark workspace as safe for git
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Set up Lima
+        id: lima
+        uses: lima-vm/lima-actions/setup@v1
 
-      #- name: Debug git describe
-      #  run: |
-      #    git rev-parse --is-inside-work-tree
-      #    git describe --abbrev=12 --always --dirty=+ || true
-      #    git tag --list | tail -20 || true
+      - name: Cache Lima images
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/lima
+          key: lima-opensuse-tumbleweed-${{ steps.lima.outputs.version }}
 
-      - name: Set MAKEFLAGS for parallel build
+      - name: Start openSUSE Tumbleweed VM
         run: |
-          CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-          echo "MAKEFLAGS=-j${CORES} -Oline" >> "$GITHUB_ENV"
+          set -eux
+          limactl start \
+            --plain \
+            --name=opensuse \
+            --cpus=4 \
+            --memory=6 \
+            template:experimental/opensuse-tumbleweed
 
-      - name: Compile all
+      - name: Show VM information
         run: |
-          env \
-            version_ns=.. \
-            version_modules=GIT \
-            version_tcl=${TCLTAG} \
-            version_tcllib=${TCLLIB_VERSION} \
-            version_xotcl=${NSF_VERSION} \
-            version_tdom=${TDOM_VERSION} \
-            ns_modules="${NS_MODULES}" \
-            with_ns_deprecated="${WITH_DEPRECATED}" \
-            CC=${CC} \
-            with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
-            bash install-ns.sh build
-        working-directory: install-ns
+          ssh lima-opensuse '
+            set -eux
+            uname -a
+            cat /etc/os-release
+          '
 
-      - name: Regression test
+      - name: Copy sources into VM
         run: |
-          make test
+          set -eux
+
+          rsync -a --delete \
+            -e ssh \
+            naviserver/ \
+            lima-opensuse:/tmp/naviserver/
+
+          rsync -a --delete \
+            -e ssh \
+            install-ns/ \
+            lima-opensuse:/tmp/install-ns/
+
+      - name: Build NaviServer
+        run: |
+          ssh lima-opensuse \
+            "sudo env \
+              CI=1 \
+              GITHUB_ACTIONS=true \
+              TZ='${TZ}' \
+              NS_INSTALL_DEBUG_ENV=1 \
+              CC='${CC}' \
+              version_ns=/tmp/naviserver \
+              version_modules=GIT \
+              version_tcl='${TCLTAG}' \
+              version_xotcl='${NSF_VERSION}' \
+              version_tcllib='${TCLLIB_VERSION}' \
+              version_tdom='${TDOM_VERSION}' \
+              tcl_makeflags='${TCL_MAKEFLAGS}' \
+              with_ns_deprecated='${WITH_DEPRECATED}' \
+              with_postgres=0 \
+              with_postgres_driver=1 \
+              ns_modules='${NS_MODULES}' \
+              bash /tmp/install-ns/install-ns.sh build"
+
+      - name: Run regression tests
+        run: |
+          ssh lima-opensuse \
+            "sudo make -C /tmp/naviserver test"
+
+      - name: Show installation
+        if: always()
+        run: |
+          ssh lima-opensuse 'bash -s' <<'EOF'
+          set +e
+
+          echo "---------------- openSUSE ----------------"
+          cat /etc/os-release
+
+          echo "---------------- Compiler ----------------"
+          gcc --version
+
+          echo "---------------- Tcl ---------------------"
+          printf '%s\n' 'puts [info patchlevel]' |
+            /usr/local/ns/bin/tclsh
+
+          echo "---------------- NaviServer --------------"
+          /usr/local/ns/bin/nsd -V
+          EOF
