@@ -1,0 +1,209 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+#
+# Directory listings are enabled for the test server via:
+#
+# ns_section "ns/server/test/fastpath" {
+#     ns_param pagedir          pages
+#     ns_param directorylisting simple
+# }
+#
+
+testConstraint nonWindows [expr {$::tcl_platform(platform) ne "windows"}]
+if {[ns_config test listenport] ne ""} {
+    testConstraint serverListen true
+}
+
+namespace eval ::_ns_fastpathTest {
+    variable url  /directory-listing-test/
+    variable root [file join [ns_server pagedir] directory-listing-test]
+
+    proc createFile {name content} {
+        variable root
+
+        set f [open [file join $root $name] wb]
+        fconfigure $f -translation binary -encoding binary
+        puts -nonewline $f $content
+        close $f
+    }
+
+    proc setup {} {
+        variable root
+
+        file delete -force -- $root
+        file mkdir $root
+
+        createFile normal.txt "normal content"
+        createFile {name with spaces.txt} "space content"
+        createFile {question?.txt} "question content"
+        createFile {fragment#.txt} "fragment content"
+        createFile {ampersand&quote".txt} "ampersand content"
+        createFile {"><img src=x onerror=alert(1)>.txt} "xss content"
+
+        file mkdir [file join $root {<img src=x onerror=alert(1)>}]
+    }
+
+    proc cleanup {} {
+        variable root
+        file delete -force -- $root
+    }
+
+    proc getListing {} {
+        variable url
+
+        set response [nstest::http -http 1.1 -getbody 1 GET $url]
+        return $response
+    }
+
+    proc getFile {name} {
+        variable url
+
+        set encoded [ns_urlencode -part path -- $name]
+        return [nstest::http -http 1.1 -getbody 1 \
+                    GET "${url}${encoded}"]
+    }
+}
+
+
+test fastpath-directorylisting-1.1 {
+    A directory without an index file produces a simple listing
+} -constraints serverListen -setup {
+    ::_ns_fastpathTest::setup
+} -body {
+    lassign [::_ns_fastpathTest::getListing] status body
+
+    list \
+        $status \
+        [expr {[string first {normal.txt} $body] >= 0}] \
+        [expr {[string first {<a href='..'>..</a>} $body] >= 0}]
+} -cleanup {
+    ::_ns_fastpathTest::cleanup
+} -result {200 1 1}
+
+
+test fastpath-directorylisting-1.2 {
+    Ordinary files listed by fastpath can be retrieved
+} -constraints serverListen -setup {
+    ::_ns_fastpathTest::setup
+} -body {
+    ::_ns_fastpathTest::getFile normal.txt
+} -cleanup {
+    ::_ns_fastpathTest::cleanup
+} -result {200 {normal content}}
+
+
+test fastpath-directorylisting-2.1 {
+    Filename spaces are URL-encoded and the generated link works
+} -constraints serverListen -setup {
+    ::_ns_fastpathTest::setup
+} -body {
+    set name {name with spaces.txt}
+    lassign [::_ns_fastpathTest::getListing] status body
+
+    set encoded [ns_urlencode -part path -- $name]
+    set haveLink [expr {
+        [string first "${encoded}\"" $body] >= 0
+    }]
+
+    lassign [::_ns_fastpathTest::getFile $name] fileStatus content
+
+    list $status $haveLink $fileStatus $content
+} -cleanup {
+    ::_ns_fastpathTest::cleanup
+} -result {200 1 200 {space content}}
+
+
+test fastpath-directorylisting-2.2 {
+    URL-special characters in filenames do not alter URL semantics
+} -constraints serverListen -setup {
+    ::_ns_fastpathTest::setup
+} -body {
+    set result {}
+
+    foreach {name expected} {
+        {question?.txt}          {question content}
+        {fragment#.txt}          {fragment content}
+        {ampersand&quote".txt}   {ampersand content}
+    } {
+        lassign [::_ns_fastpathTest::getFile $name] status content
+        lappend result $status [expr {$content eq $expected}]
+    }
+
+    set result
+} -cleanup {
+    ::_ns_fastpathTest::cleanup
+} -result {200 1 200 1 200 1}
+
+
+test fastpath-directorylisting-3.1 {
+    HTML markup in a filename is escaped in link text and href
+} -constraints {serverListen nonWindows} -setup {
+    ::_ns_fastpathTest::setup
+} -body {
+    set name {"><img src=x onerror=alert(1)>.txt}
+
+    lassign [::_ns_fastpathTest::getListing] status body
+
+    set encodedName [ns_urlencode -part path -- $name]
+    set quotedName  [ns_quotehtml $name]
+
+    list \
+        $status \
+        [expr {[string first $quotedName $body] >= 0}] \
+        [expr {[string first $encodedName $body] >= 0}] \
+        [expr {[string first {<img src=x} $body] < 0}] \
+        [expr {[string first {onerror=alert(1)>} $body] < 0}]
+} -cleanup {
+    ::_ns_fastpathTest::cleanup
+} -result {200 1 1 1 1}
+
+
+test fastpath-directorylisting-3.2 {
+    HTML markup in a directory name is escaped
+} -constraints {serverListen nonWindows} -setup {
+    ::_ns_fastpathTest::setup
+} -body {
+    set name {<img src=x onerror=alert(1)>}
+
+    lassign [::_ns_fastpathTest::getListing] status body
+
+    set encodedName [ns_urlencode -part path -- $name]
+    set quotedName  [ns_quotehtml "${name}/"]
+
+    list \
+        $status \
+        [expr {[string first $quotedName $body] >= 0}] \
+        [expr {[string first "${encodedName}/" $body] >= 0}] \
+        [expr {[string first {<img src=x} $body] < 0}]
+} -cleanup {
+    ::_ns_fastpathTest::cleanup
+} -result {200 1 1 1}
+
+
+test fastpath-directorylisting-3.3 {
+    A filename containing an XSS payload remains retrievable
+} -constraints {serverListen nonWindows} -setup {
+    ::_ns_fastpathTest::setup
+} -body {
+    ::_ns_fastpathTest::getFile \
+        {"><img src=x onerror=alert(1)>.txt}
+} -cleanup {
+    ::_ns_fastpathTest::cleanup
+} -result {200 {xss content}}
+
+
+namespace delete ::_ns_fastpathTest
+
+cleanupTests
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
