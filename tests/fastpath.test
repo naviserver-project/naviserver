@@ -27,7 +27,6 @@ namespace eval ::_ns_fastpathTest {
         variable root
 
         set f [open [file join $root $name] wb]
-        fconfigure $f -translation binary -encoding binary
         puts -nonewline $f $content
         close $f
     }
