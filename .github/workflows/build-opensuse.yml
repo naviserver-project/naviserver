@@ -1,0 +1,123 @@
+name: openSUSE Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-opensuse:
+    name: openSUSE Tumbleweed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout NaviServer
+        uses: actions/checkout@v6
+        with:
+          path: naviserver
+          fetch-depth: 0
+
+      - name: Checkout install-ns
+        uses: actions/checkout@v6
+        with:
+          repository: gustafn/install-ns
+          path: install-ns
+          fetch-depth: 1
+
+      - name: Set up Lima
+        id: lima
+        uses: lima-vm/lima-actions/setup@v1
+
+      - name: Cache Lima images
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/lima
+          key: lima-opensuse-tumbleweed-${{ steps.lima.outputs.version }}
+
+      - name: Start openSUSE Tumbleweed VM
+        run: |
+          set -eux
+          limactl start \
+            --plain \
+            --name=opensuse \
+            --cpus=4 \
+            --memory=6 \
+            template:experimental/opensuse-tumbleweed
+
+      - name: Show VM information
+        run: |
+          ssh lima-opensuse '
+            set -eux
+            uname -a
+            cat /etc/os-release
+          '
+
+      - name: Copy sources into VM
+        run: |
+          set -eux
+      
+          rsync -a --delete \
+            -e ssh \
+            naviserver/ \
+            lima-opensuse:/tmp/naviserver/
+      
+          rsync -a --delete \
+            -e ssh \
+            install-ns/ \
+            lima-opensuse:/tmp/naviserver/install-ns/
+      
+      - name: Build NaviServer
+        run: |
+          ssh lima-opensuse \
+            "cd /tmp/naviserver/install-ns && \
+             sudo env \
+               CI=1 \
+               GITHUB_ACTIONS=true \
+               TZ='${TZ}' \
+               NS_INSTALL_DEBUG_ENV=1 \
+               CC='${CC}' \
+               version_ns=.. \
+               version_modules=GIT \
+               version_tcl='${TCLTAG}' \
+               version_xotcl='${NSF_VERSION}' \
+               version_tcllib='${TCLLIB_VERSION}' \
+               version_tdom='${TDOM_VERSION}' \
+               tcl_makeflags='${TCL_MAKEFLAGS}' \
+               with_ns_deprecated='${WITH_DEPRECATED}' \
+               with_postgres=0 \
+               with_postgres_driver=1 \
+               ns_modules='${NS_MODULES}' \
+               bash ./install-ns.sh build"
+      
+      - name: Run regression tests
+        run: |
+          ssh lima-opensuse 'bash -s' <<'EOF'
+          set -euxo pipefail
+
+          sudo make -C /tmp/naviserver test
+          EOF
+
+      - name: Show installation
+        if: always()
+        run: |
+          ssh lima-opensuse 'bash -s' <<'EOF'
+          set +e
+
+          echo "---------------- openSUSE ----------------"
+          cat /etc/os-release
+
+          echo "---------------- Compiler ----------------"
+          gcc --version
+
+          echo "---------------- Tcl ---------------------"
+          /usr/local/ns/bin/tclsh <<< 'puts [info patchlevel]'
+
+          echo "---------------- NaviServer --------------"
+          /usr/local/ns/bin/nsd -V
+
+          echo "---------------- Installed files ---------"
+          ls -la /usr/local/ns/bin
+          ls -la /usr/local/ns/lib
+          EOF
