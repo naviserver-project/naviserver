@@ -542,8 +542,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
     Worker       proc;
     int          max, fd;
     Tcl_DString  in, out, scratch;
-    const char  *uarg = NULL, *user;
-    char        *group = NULL, *active;
+    char        *uarg = NULL, *user, *group = NULL, *active;
     uint16       major, minor;
     size_t       activeSize;
 
@@ -658,8 +657,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
         user = uarg;
         group = strchr(user, INTCHAR(':'));
         if (group != NULL) {
-            *group = 0;
-            group++;
+            *group++ = '\0';
         }
     }
 
