@@ -362,32 +362,47 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                 logPtr->nrResponseHeaders = 0;
             } else {
                 Tcl_DString requestHeaderFields, responseHeaderFields;
+                static const char requestPrefix[] = "request";
+                static const char responsePrefix[] = "response";
 
                 Tcl_DStringInit(&requestHeaderFields);
                 Tcl_DStringInit(&responseHeaderFields);
 
+
                 for (i = 0; i < argc; i++) {
                     const char *fieldName = argv[i];
-                    char       *suffix = strchr(fieldName, ':');
+                    const char *suffix = strchr(fieldName, INTCHAR(':'));
 
                     if (suffix != NULL) {
-                        *suffix = '\0';
-                        suffix ++;
-                        if (strncmp(fieldName, "request", 3) == 0) {
+                        size_t prefixLength = (size_t)(suffix - fieldName);
+
+                        suffix++;
+
+                        if (prefixLength >= 3u
+                            && prefixLength < sizeof(requestPrefix)
+                            && strncmp(fieldName, "request", prefixLength) == 0) {
                             Tcl_DStringAppendElement(&requestHeaderFields, suffix);
-                        } else if (strncmp(fieldName, "response", 3) == 0) {
+
+                        } else if (prefixLength >= 3u
+                                   && prefixLength < sizeof(responsePrefix)
+                                   && strncmp(fieldName, "response", prefixLength) == 0) {
                             Tcl_DStringAppendElement(&responseHeaderFields, suffix);
+
                         } else {
-                            Ns_Log(Error, "nslog: ignore invalid entry prefix '%s' in extendedHeaders parameter",
-                                   fieldName);
+                            Ns_Log(Error,
+                                   "nslog: ignore invalid entry prefix '%.*s' "
+                                   "in extendedHeaders parameter",
+                                   (int)prefixLength, fieldName);
                         }
+
                     } else {
                         /*
-                         * No prefix, assume request header field
+                         * No prefix, assume request header field.
                          */
-                        Tcl_DStringAppendElement(&requestHeaderFields, suffix);
+                        Tcl_DStringAppendElement(&requestHeaderFields, fieldName);
                     }
                 }
+
                 (void) Tcl_SplitList(NULL, requestHeaderFields.string,
                                      &logPtr->nrRequestHeaders,
                                      &logPtr->requestHeaders);

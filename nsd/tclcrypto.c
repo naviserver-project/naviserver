@@ -10373,6 +10373,7 @@ NsTclCryptoUUIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 
         if (versionInt == 4) {
             hexString = uuid_v4(ds.string);
+            //Ns_Log(Notice, "UUIDV4: len %d <%s>", ds.length, hexString);
         } else {
             hexString = uuid_v7(ds.string);
         }

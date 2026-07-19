@@ -127,7 +127,7 @@ static bool          ParseInterpArgv(Tcl_Interp *interp, Cgi *cgiPtr, Tcl_Obj *a
     NS_GNUC_NONNULL(1,2,3);
 static void          SetAppend(Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1,3,4);
-static void          CgiRegisterFastUrl2File(const char *server, const char *url, const char *path)
+static void          CgiRegisterFastUrl2File(const char *server, char *url, const char *path)
     NS_GNUC_NONNULL(1,2,3);
 
 
@@ -584,12 +584,13 @@ GetInterpEnvSection(const char *name)
 static bool
 ParseLegacyInterpSpec(Cgi *cgiPtr, const char *spec)
 {
-    char *s;
+    char *interp, *s;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(spec != NULL);
 
-    cgiPtr->interp = Tcl_DStringAppend(CgiDs(cgiPtr), spec, TCL_INDEX_NONE);
+    interp = Tcl_DStringAppend(CgiDs(cgiPtr), spec, TCL_INDEX_NONE);
+    cgiPtr->interp = interp;
 
     /*
      * Legacy form:
@@ -598,9 +599,9 @@ ParseLegacyInterpSpec(Cgi *cgiPtr, const char *spec)
      *
      * This modifies the DString copy in-place, as the old code did.
      */
-    s = strchr(cgiPtr->interp, INTCHAR('('));
+    s = strchr(interp, INTCHAR('('));
     if (s != NULL) {
-        char  *e;
+        char *e;
 
         *s++ = '\0';
         e = strchr(s, INTCHAR(')'));
@@ -612,15 +613,13 @@ ParseLegacyInterpSpec(Cgi *cgiPtr, const char *spec)
                "nscgi: interpreter specification '%s(...)' uses deprecated "
                "program(environment) syntax; use "
                "{program %s environment %s} instead",
-               cgiPtr->interp, cgiPtr->interp, s);
+               interp, interp, s);
 
         cgiPtr->interpEnv = GetInterpEnvSection(s);
         if (cgiPtr->interpEnv == NULL) {
-            /*
-             * Depending on existing behavior, maybe keep this as Notice/Warning
-             * rather than Error.
-             */
-            Ns_Log(Warning, "nscgi: interpreter environment section '%s' not found", s);
+            Ns_Log(Warning,
+                   "nscgi: interpreter environment section '%s' not found",
+                   s);
         }
     }
 
@@ -1559,7 +1558,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
          * is stored as a Tcl list; every list element is appended here as one
          * argv element.
          */
-        
+
         if (cgiPtr->interpArgvObj != NULL) {
             Tcl_Obj   **argvv;
             TCL_SIZE_T  argvc;
@@ -1568,7 +1567,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
                                        &argvc, &argvv) == TCL_OK) {
                 for (TCL_SIZE_T i = 0; i < argvc; i++) {
                     Ns_DStringAppendArg(dsPtr, Tcl_GetString(argvv[i]));
-                    
+
                 }
             } else {
                 /*
@@ -1911,7 +1910,7 @@ NextWord(char *s)
  *----------------------------------------------------------------------
  */
 static void
-CgiRegisterFastUrl2File(const char *server, const char *url, const char *path)
+CgiRegisterFastUrl2File(const char *server, char *url, const char *path)
 {
     char *tailSegment;
 
@@ -1921,7 +1920,7 @@ CgiRegisterFastUrl2File(const char *server, const char *url, const char *path)
 
     tailSegment = strrchr(url, INTCHAR('/'));
     /*
-     * When there is a tail segment and it contains a wildchard character,
+     * When there is a tail segment and it contains a wildcard character,
      * strip it away for the mapping. This means, that all files in this
      * folder are mapped.
      */

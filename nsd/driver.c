@@ -4711,7 +4711,8 @@ static SockState
 ChunkedDecode(Request *reqPtr, bool update)
 {
     const Tcl_DString *bufPtr;
-    const char        *end, *chunkStart;
+    const char        *end;
+    char              *chunkStart;
     SockState          result = SOCK_MORE;
 
     NS_NONNULL_ASSERT(reqPtr != NULL);

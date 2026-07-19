@@ -527,10 +527,10 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
  *
  *----------------------------------------------------------------------
  */
-char*
+char *
 NsParseTagEnd(char *str)
 {
-    const char *startTagStr = str;
+    char *startTagStr = str;
     /*
      * Parse tag name
      */
