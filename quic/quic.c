@@ -237,6 +237,7 @@ typedef struct ConnCtx {
     bool            wants_write;
     bool            expecting_send;     // set when request dispatched to app
     bool            conn_closed;
+    Ns_Time         last_activity;  /* for reclaiming peers that vanished without CONNECTION_CLOSE */
     int             last_sd; // intermediate, for debuggung in ossl_conn_maybe_log_first_shutdown
     SharedState     shared;  // stable pointer
 
@@ -499,6 +500,13 @@ static inline void     PollsetUpdateConnPollInterest(ConnCtx *cc) NS_GNUC_NONNUL
 static size_t          PollsetHandleListenerEvents(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
 static void            PollsetMarkDead(ConnCtx *cc, SSL *conn, const char *msg) NS_GNUC_NONNULL(1,2);
 static void            PollsetSweep(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
+
+/*
+ * How long a QUIC connection may sit with no poll activity before we tear it down.
+ * Guards against peers that disappear without a clean shutdown, which would otherwise
+ * keep their streams in the pollset forever. 0 disables reclamation.
+ */
+static Ns_Time h3ConnIdleTimeout = { 60, 0 };
 static void            PollsetConsolidate(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
 
 
@@ -2094,14 +2102,15 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
 
         /* 4) Finally, add it into active-connection list so Recv/Send see it */
         /*
-         * Do not register OSB/OSU here. Per SSL_poll(3) these are stream-creation
-         * flow control READINESS flags -- they are raised whenever flow control
-         * permits creating another stream, i.e. almost always -- so SSL_poll()
-         * returns immediately on every iteration and the driver spins.
-         * OpenSSL's own reference server registers only ISB|ISU on a connection
-         * (demos/quic/poll-server/quic-server-ssl-poll-http.c) and notes that
-         * OSB/OSU "must be monitored once there is a request for outbound stream
-         * created by app". EC/ECD/ER/EW are added by PollsetDefaultConnErrors().
+         * Do NOT register OSB/OSU here. Per SSL_poll(3) these are flow-control
+         * READINESS flags -- "stream creation flow control currently permits at
+         * least one additional stream to be created" -- so they are set almost
+         * always, SSL_poll() returns immediately every iteration, and the driver
+         * spins at 100% CPU. OpenSSL's own reference server
+         * (demos/quic/poll-server/quic-server-ssl-poll-http.c) registers only
+         * ISB|ISU here and notes: "SSL_POLL_EVENT_OSB (or SSL_POLL_EVENT_OSU)
+         * must be monitored once there is a request for outbound stream created
+         * by app." EC/ECD/ER/EW are added by PollsetDefaultConnErrors().
          */
         PollsetAddConnection(dc, conn,
                              SSL_POLL_EVENT_ISB | SSL_POLL_EVENT_ISU);
@@ -5397,6 +5406,7 @@ ConnCtxNew(NsTLSConfig *dc, SSL *conn)
     cc->h3ssl.conn = conn;
     cc->h3ssl.bidi_sid = (uint64_t)-1;
     cc->pidx = (size_t)-1;
+    Ns_GetTime(&cc->last_activity);
 
     return cc;
 }
@@ -6691,6 +6701,16 @@ PollsetSweep(NsTLSConfig *dc)
     enum { MAX_SWEEP_FREES = 256 };
     SSL   *to_free[MAX_SWEEP_FREES];
     size_t i, nfree = 0;
+    /*
+     * Connections whose peer went away without a clean shutdown. Collected here and
+     * torn down after the loop: quic_conn_enter_shutdown() mutates the pollset we are
+     * iterating, so it must not be called from inside this loop.
+     */
+    ConnCtx *to_reap[MAX_SWEEP_FREES];
+    size_t   nreap = 0;
+    Ns_Time  sweepNow;
+
+    Ns_GetTime(&sweepNow);
 
     Ns_Log(Notice, "[%lld] PollsetSweep begin npoll %ld", (long long)dc->iter, PollsetCount(dc));
     for (i = 0; i < PollsetCount(dc); i++) {
@@ -6716,6 +6736,42 @@ PollsetSweep(NsTLSConfig *dc)
 
         /* 1) Connection object? Treat it as conn regardless of stream_type. */
         if (s == cc->h3ssl.conn) {
+            /*
+             * Peer vanished without CONNECTION_CLOSE? Then can_be_freed_postloop()
+             * will never return true (SSL_RECEIVED_SHUTDOWN never arrives) and this
+             * connection would stay in the pollset for the life of the process.
+             * Reclaim it once it has been silent for connidletimeout, unless it still
+             * has requests in flight (a slow download must not be killed).
+             */
+            if ((h3ConnIdleTimeout.sec != 0 || h3ConnIdleTimeout.usec != 0)
+                && cc->handshake_done) {
+                Ns_Time idle, hard;
+                bool    expired;
+
+                /* Elapsed since the peer last did anything (positive interval). */
+                (void)Ns_DiffTime(&sweepNow, &cc->last_activity, &idle);
+
+                /*
+                 * Hard deadline: a connection with no peer activity for this long is
+                 * stuck, not slow, so reclaim it even though it still reports a live
+                 * request. Without this, a wedged request pins the connection -- and
+                 * its streams -- in the pollset forever.
+                 */
+                hard = h3ConnIdleTimeout;
+                hard.sec *= 5;
+
+                expired = (Ns_DiffTime(&idle, &hard, NULL) > 0)
+                    || (Ns_DiffTime(&idle, &h3ConnIdleTimeout, NULL) > 0
+                        && !quic_conn_has_live_requests(cc));
+
+                if (expired && nreap < MAX_SWEEP_FREES) {
+                    Ns_Log(Notice, "[%lld] H3 PollsetSweep: reaping idle conn %p "
+                           "(no peer activity for %ld.%06ld s, peer never sent CONNECTION_CLOSE)",
+                           (long long)dc->iter, (void*)s, (long)idle.sec, (long)idle.usec);
+                    to_reap[nreap++] = cc;
+                    continue;
+                }
+            }
             if (quic_conn_can_be_freed_postloop(s, cc)) {
                 Ns_Log(Notice, "[%lld] H3 PollsetSweep: kill conn %p", (long long)dc->iter, (void*)s);
                 PollsetMarkDead(cc, s, "conn postloop free");
@@ -6824,6 +6880,17 @@ PollsetSweep(NsTLSConfig *dc)
     for (size_t k = 0; k < nfree; k++) {
         Ns_Log(Notice, "[%lld] PollsetSweep calls SSL_free %p", (long long)dc->iter, (void*)to_free[k]);
         SSL_free(to_free[k]);
+    }
+
+    /*
+     * Reap connections whose peer vanished. This MUST come after the to_free[] pass
+     * above: quic_conn_enter_shutdown() frees every stream of the connection, and a
+     * stream could also be sitting in to_free[] -- freeing in the other order double
+     * frees it (observed as SIGBUS/SIGSEGV/SIGABRT under load). Slots freed above are
+     * already NULL in the pollset, so enter_shutdown() skips them.
+     */
+    for (size_t k = 0; k < nreap; k++) {
+        quic_conn_enter_shutdown(to_reap[k], "idle timeout, peer gone");
     }
     Ns_Log(Notice, "[%lld] PollsetSweep DONE", (long long)dc->iter);
 }
@@ -7129,6 +7196,13 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
                            "10ms", 0, 0, LONG_MAX, 0,
                            &timeout);
     NsTimeToTimeval(&timeout, &dc->u.h3.drain_timeout);
+    /*
+     * Reclaim connections whose peer vanished without CONNECTION_CLOSE; without this
+     * their streams stay in the pollset forever and the driver spins over dead entries.
+     */
+    Ns_ConfigTimeUnitRange(section, "connidletimeout",
+                           "60s", 0, 0, LONG_MAX, 0,
+                           &h3ConnIdleTimeout);
 
     Ns_MutexInit(&dc->u.h3.waker_lock);
 
@@ -7455,6 +7529,22 @@ QuicThread(void *arg)
               Tcl_DStringFree(&ds);*/
 
             processed_event = 0;
+
+            /*
+             * Any event on this connection (or one of its streams) means the peer is
+             * still there; refresh the connection's idle deadline.
+             */
+            if (cc != NULL
+                && (revents & ~(uint64_t)(SSL_POLL_EVENT_OSB
+                                          | SSL_POLL_EVENT_OSU
+                                          | SSL_POLL_EVENT_W)) != 0) {
+                /*
+                 * Only peer-driven events count as activity. OSB/OSU/W are
+                 * outgoing-capacity flags that stay set even when the peer is gone,
+                 * so counting them would keep a dead connection alive forever.
+                 */
+                Ns_GetTime(&cc->last_activity);
+            }
 
             {
                 Tcl_DStringInit(&ds);
