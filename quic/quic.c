@@ -2093,8 +2093,17 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
                                                 0 /* application error code on reject */));
 
         /* 4) Finally, add it into active-connection list so Recv/Send see it */
+        /*
+         * Do not register OSB/OSU here. Per SSL_poll(3) these are stream-creation
+         * flow control READINESS flags -- they are raised whenever flow control
+         * permits creating another stream, i.e. almost always -- so SSL_poll()
+         * returns immediately on every iteration and the driver spins.
+         * OpenSSL's own reference server registers only ISB|ISU on a connection
+         * (demos/quic/poll-server/quic-server-ssl-poll-http.c) and notes that
+         * OSB/OSU "must be monitored once there is a request for outbound stream
+         * created by app". EC/ECD/ER/EW are added by PollsetDefaultConnErrors().
+         */
         PollsetAddConnection(dc, conn,
-                             SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU |
                              SSL_POLL_EVENT_ISB | SSL_POLL_EVENT_ISU);
 
         Ns_Log(Notice, "[%lld] H3 accept_connection cc->h3ssl.conn %p ex_data %p",
