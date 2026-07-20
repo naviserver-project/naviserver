@@ -1,4 +1,4 @@
-name: openSUSE Build
+name: openSUSE
 
 on:
   workflow_dispatch:
