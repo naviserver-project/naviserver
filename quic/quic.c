@@ -7286,8 +7286,8 @@ QuicThread(void *arg)
     unsigned int        flags = NS_DRIVER_THREAD_STARTED;
     struct timeval     *polltimeout_ptr;
 
-    Ns_ThreadSetName("-quic:%s-", "h3");
-    Ns_Log(Notice, "H3D QUIC THREAD started");
+    Ns_ThreadSetName("-driver:%s:%s-", drvPtr->type, drvPtr->threadName);
+    Ns_Log(Notice, "starting %s", drvPtr->threadName);
 
     nrBindaddrs = NsDriverBindAddresses(drvPtr);
 
@@ -7297,10 +7297,8 @@ QuicThread(void *arg)
     } else {
         flags |= (NS_DRIVER_THREAD_FAILED | NS_DRIVER_THREAD_SHUTDOWN);
     }
-    fprintf(stderr, "DEBUG: QUIC lock driver %p\n", (void*)drvPtr->lock);
     Ns_MutexLock(&drvPtr->lock);
     drvPtr->flags |= flags;
-    fprintf(stderr, "DEBUG: QUIC BROADCAST flags %.2x\n", flags);
     Ns_CondBroadcast(&drvPtr->cond);
     Ns_MutexUnlock(&drvPtr->lock);
 
