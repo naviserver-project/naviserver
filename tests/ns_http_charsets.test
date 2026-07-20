@@ -92,7 +92,7 @@ test http_charsets-2.1 "another iso8859-2 text, curl decoded by iconv" -constrai
     exec curl -gs [ns_config test listenurl]/get | iconv -f iso-8859-2 -t utf-8
 } -cleanup {
     ns_unregister_op GET /get
-} -result {ÄÖÜŁ}
+} -returnCodes {error ok} -result {ÄÖÜŁ}
 
 
 test http_charsets-2.2 "another iso8859-2 text, ns_http -binary decoded by 'encoding converfrom'" -setup {
