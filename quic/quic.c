@@ -2113,8 +2113,19 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
                                                 0 /* application error code on reject */));
 
         /* 4) Finally, add it into active-connection list so Recv/Send see it */
+        /*
+         * Do not register OSB/OSU unconditionally. These events indicate
+         * readiness to create locally initiated streams and are level-triggered,
+         * so they may remain asserted while stream credit is available and cause
+         * SSL_poll() to return repeatedly.
+         *
+         * OpenSSL's reference poll server enables these events only while the
+         * application has a pending request to create an outbound stream.
+         * NaviServer registers ISB/ISU here; OSB/OSU can be enabled later when
+         * actually required. EC/ECD/ER/EW are added by
+         * PollsetDefaultConnErrors().
+         */
         PollsetAddConnection(dc, conn,
-                             SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU |
                              SSL_POLL_EVENT_ISB | SSL_POLL_EVENT_ISU);
 
         Ns_Log(Notice, "[%lld] H3 accept_connection cc->h3ssl.conn %p ex_data %p",
