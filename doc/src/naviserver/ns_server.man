@@ -179,6 +179,13 @@ Information for a different server can be obtained with:
  set modules [lb]ns_server -server server2 modules[rb]
 [example_end]
 
+ [para] Note:
+ Detailed build metadata for binary modules, such as [const version],
+ [const tag], [const infoversion], and [const abi], requires Tcl 8.6 or
+ newer. Tcl releases before 8.6 do not provide the symbol-lookup interface
+ used to locate the optional [const Ns_ModuleGetInfo] entry point. Basic
+ registration information, including the module name, type, scope, and
+ file, remains available.
 
 [call [cmd ns_server] \
 	[opt [option "-server [arg server]"]] \
