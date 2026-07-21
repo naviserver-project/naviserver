@@ -364,45 +364,45 @@ struct Ns_Conn;
  * Typedefs of functions
  */
 
-typedef int           (Ns_SortProc)(void *left, void *right);
-typedef bool          (Ns_EqualProc)(void *left, void *right);
-typedef void          (Ns_ElemVoidProc)(void *elem);
-typedef void *        (Ns_ElemValProc)(void *elem);
-typedef bool          (Ns_ElemTestProc)(void *elem);
-typedef void          (Ns_Callback) (void *arg);
-typedef Ns_ReturnCode (Ns_LogCallbackProc)(void *arg);
-typedef void          (Ns_FreeProc)(void *arg);
-typedef void          (Ns_ShutdownProc)(const Ns_Time *toPtr, void *arg);
-typedef int           (Ns_TclInterpInitProc)(Tcl_Interp *interp, const void *arg);
-typedef int           (Ns_TclTraceProc)(Tcl_Interp *interp, const void *arg);
-typedef void          (Ns_TclDeferProc)(Tcl_Interp *interp, void *arg);
-typedef bool          (Ns_SockProc)(NS_SOCKET sock, void *arg, unsigned int why);
-typedef void          (Ns_TaskProc)(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
-typedef void          (Ns_EventProc)(Ns_Event *event, NS_SOCKET sock, void *arg,
-                                     Ns_Time *now, Ns_SockState why);
-typedef void          (Ns_SchedProc)(void *arg, int id);
-typedef Ns_ReturnCode (Ns_ServerInitProc)(const char *server);
-typedef Ns_ReturnCode (Ns_ModuleInitProc)(const char *server, const char *module) NS_GNUC_NONNULL(2);
-typedef void          (Ns_ModuleInfoProc)(Ns_ModuleInfo *infoPtr);
-typedef void          (Ns_AdpParserProc)(Tcl_DString *outPtr, char *page);
-typedef Ns_ReturnCode (Ns_AuthorizeRequestProc)(void *arg,
-                                                struct Ns_Conn *conn,
-                                                int *continuationPtr)
+typedef int           Ns_SortProc(void *left, void *right);
+typedef bool          Ns_EqualProc(void *left, void *right);
+typedef void          Ns_ElemVoidProc(void *elem);
+typedef void *        Ns_ElemValProc(void *elem);
+typedef bool          Ns_ElemTestProc(void *elem);
+typedef void          Ns_Callback(void *arg);
+typedef Ns_ReturnCode Ns_LogCallbackProc(void *arg);
+typedef void          Ns_FreeProc(void *arg);
+typedef void          Ns_ShutdownProc(const Ns_Time *toPtr, void *arg);
+typedef int           Ns_TclInterpInitProc(Tcl_Interp *interp, const void *arg);
+typedef int           Ns_TclTraceProc(Tcl_Interp *interp, const void *arg);
+typedef void          Ns_TclDeferProc(Tcl_Interp *interp, void *arg);
+typedef bool          Ns_SockProc(NS_SOCKET sock, void *arg, unsigned int why);
+typedef void          Ns_TaskProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
+typedef void          Ns_EventProc(Ns_Event *event, NS_SOCKET sock, void *arg,
+                                   Ns_Time *now, Ns_SockState why);
+typedef void          Ns_SchedProc(void *arg, int id);
+typedef Ns_ReturnCode Ns_ServerInitProc(const char *server);
+typedef Ns_ReturnCode Ns_ModuleInitProc(const char *server, const char *module) NS_GNUC_NONNULL(2);
+typedef void          Ns_ModuleInfoProc(Ns_ModuleInfo *infoPtr);
+typedef void          Ns_AdpParserProc(Tcl_DString *outPtr, char *page);
+typedef Ns_ReturnCode Ns_AuthorizeRequestProc(void *arg,
+                                              struct Ns_Conn *conn,
+                                              int *continuationPtr)
     NS_GNUC_NONNULL(2,3);
-typedef Ns_ReturnCode (Ns_AuthorizeUserProc)(void *arg, const Ns_Server *servPtr,
-                                             const char *user, const char *passwd,
-                                             int *continuationPtr)
+typedef Ns_ReturnCode Ns_AuthorizeUserProc(void *arg, const Ns_Server *servPtr,
+                                           const char *user, const char *passwd,
+                                           int *continuationPtr)
     NS_GNUC_NONNULL(2,3);
-typedef int           (Ns_ObjvProc)(struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
-                                    TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+typedef int           Ns_ObjvProc(struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
+                                  TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1);
-typedef int           (Ns_IndexCmpProc) (const void *left, const void *right)
+typedef int           Ns_IndexCmpProc(const void *left, const void *right)
     NS_GNUC_NONNULL(1,2);
-typedef int           (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr)
+typedef int           Ns_IndexKeyCmpProc(const void *key, const void *elemPtr)
     NS_GNUC_NONNULL(1,2);
-typedef bool          (Ns_UrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
+typedef bool          Ns_UrlSpaceContextFilterEvalProc(void *contextSpec, void *context);
 
-typedef bool (Ns_HeadersEncodeProc)(
+typedef bool Ns_HeadersEncodeProc(
     struct Ns_Conn     *conn,
     const Ns_Set       *merged,     /* merged, sanitized headers to encode */
     void               *out_obj,    /* backend-defined sink */
@@ -689,49 +689,38 @@ typedef enum {
  * The following typedefs define socket driver callbacks.
  */
 
-typedef NS_SOCKET
-(Ns_DriverListenProc)(Ns_Driver *driver, const char *address, unsigned short port, int backlog, bool reusePort)
-     NS_GNUC_NONNULL(1,2);
+typedef NS_SOCKET Ns_DriverListenProc(Ns_Driver *driver, const char *address, unsigned short port, int backlog, bool reusePort)
+    NS_GNUC_NONNULL(1,2);
 
-typedef NS_DRIVER_ACCEPT_STATUS
-(Ns_DriverAcceptProc)(Ns_Sock *sock, NS_SOCKET listensock,
-                      struct sockaddr *saPtr, socklen_t *socklen)
-     NS_GNUC_NONNULL(1,3,4);
+typedef NS_DRIVER_ACCEPT_STATUS Ns_DriverAcceptProc(Ns_Sock *sock, NS_SOCKET listensock,
+                                                    struct sockaddr *saPtr, socklen_t *socklen)
+    NS_GNUC_NONNULL(1,3,4);
 
-typedef ssize_t
-(Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, unsigned int flags)
-     NS_GNUC_NONNULL(1,2);
+typedef ssize_t Ns_DriverRecvProc(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+                                  Ns_Time *timeoutPtr, unsigned int flags)
+    NS_GNUC_NONNULL(1,2);
 
-typedef ssize_t
-(Ns_DriverSendProc)(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int flags)
-     NS_GNUC_NONNULL(1,2);
+typedef ssize_t Ns_DriverSendProc(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int flags)
+    NS_GNUC_NONNULL(1,2);
 
-typedef ssize_t
-(Ns_DriverSendFileProc)(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs, unsigned int flags)
-     NS_GNUC_NONNULL(1,2);
+typedef ssize_t Ns_DriverSendFileProc(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs, unsigned int flags)
+    NS_GNUC_NONNULL(1,2);
 
-typedef Ns_ReturnCode
-(Ns_DriverRequestProc)(void *arg, Ns_Conn *conn)
-     NS_GNUC_NONNULL(1,2);
+typedef Ns_ReturnCode Ns_DriverRequestProc(void *arg, Ns_Conn *conn)
+    NS_GNUC_NONNULL(1,2);
 
-typedef bool
-(Ns_DriverKeepProc)(Ns_Sock *sock)
-     NS_GNUC_NONNULL(1);
+typedef bool Ns_DriverKeepProc(Ns_Sock *sock)
+    NS_GNUC_NONNULL(1);
 
-typedef void
-(Ns_DriverCloseProc)(Ns_Sock *sock)
-     NS_GNUC_NONNULL(1);
+typedef void Ns_DriverCloseProc(Ns_Sock *sock)
+    NS_GNUC_NONNULL(1);
 
-typedef int
-(Ns_DriverClientInitProc)(Tcl_Interp *interp, Ns_Sock *sock, void* arg)
-     NS_GNUC_NONNULL(1,2,3);
+typedef int Ns_DriverClientInitProc(Tcl_Interp *interp, Ns_Sock *sock, void* arg)
+    NS_GNUC_NONNULL(1,2,3);
 
-typedef Tcl_Obj *
-(Ns_DriverConnInfoProc)(Ns_Sock *sock);
+typedef Tcl_Obj *Ns_DriverConnInfoProc(Ns_Sock *sock);
 
-typedef Tcl_Obj *
-(Ns_DriverClientcertInfoProc)(Ns_Sock *sock);
+typedef Tcl_Obj *Ns_DriverClientcertInfoProc(Ns_Sock *sock);
 
 typedef struct Ns_DriverClientInitArg {
     NS_TLS_SSL_CTX *ctx;
@@ -802,48 +791,33 @@ typedef struct Ns_CtxSHA1 {
  * More typedefs of functions
  */
 
-typedef void (Ns_ArgProc)
-    (Tcl_DString *dsPtr, const void *arg);
+typedef void Ns_ArgProc(Tcl_DString *dsPtr, const void *arg);
 
-typedef void (Ns_WalkProc)
-    (Tcl_DString *dsPtr, void *arg)
+typedef void Ns_WalkProc(Tcl_DString *dsPtr, void *arg)
     NS_GNUC_NONNULL(1,2);
 
-typedef Ns_ReturnCode (Ns_OpProc)
-    (const void *arg, Ns_Conn *conn)
+typedef Ns_ReturnCode Ns_OpProc(const void *arg, Ns_Conn *conn)
     NS_GNUC_NONNULL(2);
 
-typedef void (Ns_TraceProc)
-    (void *arg, Ns_Conn *conn);
+typedef void Ns_TraceProc(void *arg, Ns_Conn *conn);
 
-typedef Ns_ReturnCode (Ns_FilterProc)
-    (const void *arg, Ns_Conn *conn, Ns_FilterType why);
+typedef Ns_ReturnCode Ns_FilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why);
 
-typedef Ns_ReturnCode (Ns_LogFilter)
-    (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
+typedef Ns_ReturnCode Ns_LogFilter(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
     NS_GNUC_NONNULL(1,3,4);
 
-typedef Ns_ReturnCode (Ns_UrlToFileProc)
-    (Tcl_DString *dsPtr, const char *server, const char *url);
+typedef Ns_ReturnCode Ns_UrlToFileProc(Tcl_DString *dsPtr, const char *server, const char *url);
 
-typedef Ns_ReturnCode (Ns_Url2FileProc)
-    (Tcl_DString *dsPtr, const char *url, const void *arg);
+typedef Ns_ReturnCode Ns_Url2FileProc(Tcl_DString *dsPtr, const char *url, const void *arg);
 
-typedef const char* (Ns_ServerRootProc)
-    (Tcl_DString *dest, const char *host, const void *arg);
+typedef const char* Ns_ServerRootProc(Tcl_DString *dest, const char *host, const void *arg);
 
-typedef char* (Ns_ConnLocationProc)
-    (Ns_Conn *conn, Tcl_DString *dest, const Ns_TclCallback *cbPtr);
+typedef char* Ns_ConnLocationProc(Ns_Conn *conn, Tcl_DString *dest, const Ns_TclCallback *cbPtr);
 
 #ifdef NS_WITH_DEPRECATED
-typedef int (Ns_LogProc)               /* Deprecated */
-    (Tcl_DString *dsPtr, Ns_LogSeverity severity, const char *fmt, va_list ap);
-
-typedef int (Ns_LogFlushProc)          /* Deprecated */
-    (const char *msg, size_t len);
-
-typedef char *(Ns_LocationProc)        /* Deprecated */
-    (Ns_Conn *conn);
+typedef int Ns_LogProc(Tcl_DString *dsPtr, Ns_LogSeverity severity, const char *fmt, va_list ap);
+typedef int Ns_LogFlushProc(const char *msg, size_t len);
+typedef char *Ns_LocationProc(Ns_Conn *conn);
 #endif
 
 /*

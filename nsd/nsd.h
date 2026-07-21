@@ -1317,7 +1317,7 @@ typedef struct {
 /*
  * Callback for the Http chunked-encoding parse state machine
  */
-typedef int (NsHttpParseProc)(NsHttpTask*, const char**, size_t*);
+typedef int NsHttpParseProc(NsHttpTask*, const char**, size_t*);
 
 typedef struct _NsHttpChunk {
     size_t             length;           /* Length of the chunk */
