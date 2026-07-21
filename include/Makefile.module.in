@@ -90,13 +90,29 @@ ifdef MOD
     ifeq (.exe,$(EXEEXT))
         MOD := $(shell basename $(MOD) .so)$(LIBEXT)
     endif
+
     BUILD     += $(MOD)
     INSTALL   += install-mod
     CLEAN     += clean-mod
+
     ifeq ($(origin MODOBJS), undefined)
         MODOBJS	= $(OBJS)
     endif
+
     MODOBJS   += $(UNIXOBJS)
+
+    ifdef MODNAME
+        ifndef NS_MODULE_TAG
+        NS_MODULE_TAG := $(shell git describe --abbrev=12 --always \
+			  --dirty=+ 2>/dev/null || echo unknown)
+        endif
+
+        MODULE_INFO_HEADER = .ns-module-info.h
+        MODULE_INFO_FILES  = $(MODULE_INFO_HEADER) $(MODULE_INFO_HEADER).tmp
+        CFLAGS += -include $(MODULE_INFO_HEADER)
+
+        $(MODOBJS): $(MODULE_INFO_HEADER)
+    endif
 endif
 
 ifdef TCL
@@ -140,6 +156,22 @@ ifdef LIBHDRS
 endif
 
 all build: $(BUILD)
+
+ifdef MODULE_INFO_HEADER
+$(MODULE_INFO_HEADER): FORCE_MODULE_INFO
+	@{ \
+	    echo '#define NS_MODULE_NAME "$(MODNAME)"'; \
+	    echo '#define NS_MODULE_TAG "$(NS_MODULE_TAG)"'; \
+	} > $(MODULE_INFO_HEADER).tmp
+	@if test -r $(MODULE_INFO_HEADER) \
+	    && cmp -s $(MODULE_INFO_HEADER).tmp $(MODULE_INFO_HEADER); then \
+	    $(RM) $(MODULE_INFO_HEADER).tmp; \
+	else \
+	    mv $(MODULE_INFO_HEADER).tmp $(MODULE_INFO_HEADER); \
+	fi
+endif
+
+FORCE_MODULE_INFO:
 
 install: $(INSTALL)
 
@@ -192,7 +224,7 @@ install-hdrs: $(LIBHDRS)
 	done
 
 clean-mod:
-	$(RM) $(MOD) $(MODOBJS)
+	$(RM) $(MOD) $(MODOBJS) $(MODULE_INFO_FILES)
 
 clean-lib:
 	$(RM) $(LIBFILE) $(LIBOBJS)
@@ -206,4 +238,4 @@ clean-pgm:
 cppcheck:
 	cppcheck --verbose --force --enable=all $(CFLAGS_INCLUDE) *.c
 
-.PHONY: clean-mod clean-lib clean-alib clean-pgm
+.PHONY: clean-mod clean-lib clean-alib clean-pgm FORCE_MODULE_INFO

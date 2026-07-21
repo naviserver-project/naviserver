@@ -22,6 +22,9 @@ config.log
 config.status
 configure
 
+.ns-module-info.h
+.ns-module-info.h.tmp
+
 nsd/nsd
 nsproxy/nsproxy
 nsproxy/nsproxy-helper
