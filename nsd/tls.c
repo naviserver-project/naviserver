@@ -311,12 +311,13 @@ static void LogLocalCert(SSL *ssl, const char *tag) {
 
                 if (gn->type == GEN_DNS) {
                     const unsigned char *s = ASN1_STRING_get0_data(gn->d.dNSName);
-                    int slen = ASN1_STRING_length(gn->d.dNSName);
+                    int                  slen = ASN1StringLength(gn->d.dNSName);
+
                     Ns_Log(Notice, "%s  SAN DNS:%.*s", tag, slen, (const char *)s);
 
                 } else if (gn->type == GEN_IPADD) {
                     char                 buf[INET6_ADDRSTRLEN] = {0};
-                    int                  len = ASN1_STRING_length(gn->d.iPAddress);
+                    int                  len = ASN1StringLength(gn->d.iPAddress);
                     const unsigned char *ip = ASN1_STRING_get0_data(gn->d.iPAddress);
                     const char          *ipString = NULL;
 
@@ -512,6 +513,37 @@ DStringAppendX509Name(Tcl_DString *dsPtr, const X509_NAME *name)
 /*
  *----------------------------------------------------------------------
  *
+ * ASN1StringLength --
+ *
+ *      Return the length of an ASN.1 string. Use the size_t-based
+ *      ASN1_STRING_length_ex() interface with OpenSSL 4.1 and newer,
+ *      where ASN1_STRING_length() is deprecated, and retain the legacy
+ *      interface for older OpenSSL versions.
+ *
+ * Results:
+ *      The string length as an int, or -1 when the length exceeds
+ *      INT_MAX.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ASN1StringLength(const ASN1_STRING *asnString)
+{
+#ifdef HAVE_OPENSSL_4_1
+    size_t length = ASN1_STRING_length_ex(asnString);
+
+    return (length > INT_MAX) ? -1 : (int)length;
+#else
+    return ASN1_STRING_length(asnString);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetAsn1String --
  *
  *      Return a pointer to the raw data of an ASN1_STRING together with
@@ -534,7 +566,7 @@ static const char*
 GetAsn1String(ASN1_STRING *asnString, int *lengthPtr)
 {
     if (lengthPtr != NULL) {
-        *lengthPtr = ASN1_STRING_length(asnString);
+        *lengthPtr = ASN1StringLength(asnString);
     }
     return (const char*)ASN1_STRING_get0_data(asnString);
 }
@@ -811,7 +843,7 @@ NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_Obj *dictObj, bool mi
                     }
 
                     case GEN_IPADD: {
-                        int                  len = ASN1_STRING_length(gn->d.iPAddress);
+                        int                  len = ASN1StringLength(gn->d.iPAddress);
                         const unsigned char *ip = ASN1_STRING_get0_data(gn->d.iPAddress);
 
                         char ipbuf[NS_IPADDR_SIZE];
@@ -1075,7 +1107,7 @@ static int SSL_cert_has_must_staple(X509 *cert) {
         X509_EXTENSION          *ext = X509_get_ext(cert, ext_index);
         const ASN1_OCTET_STRING *octet = X509_EXTENSION_get_data(ext);
         const unsigned char     *p = ASN1_STRING_get0_data(octet);
-        long                     len = ASN1_STRING_length(octet);
+        long                     len = ASN1StringLength(octet);
         STACK_OF(ASN1_TYPE) *features = d2i_ASN1_SEQUENCE_ANY(NULL, &p, len);
 
         if (!features) {
@@ -1446,7 +1478,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
         const unsigned char *serial_data = NULL;
         int                  serial_len = 0;
 
-        serial_len  = ASN1_STRING_length((const ASN1_STRING *)pserial);
+        serial_len  = ASN1StringLength((const ASN1_STRING *)pserial);
         serial_data = ASN1_STRING_get0_data((const ASN1_STRING *)pserial);
 
         Tcl_DStringInit(&outputBuffer);
