@@ -103,15 +103,12 @@ ifdef MOD
 
     ifdef MODNAME
         ifndef NS_MODULE_TAG
-        NS_MODULE_TAG := $(shell git describe --abbrev=12 --always \
+            NS_MODULE_TAG := $(shell git describe --abbrev=12 --always \
 			  --dirty=+ 2>/dev/null || echo unknown)
         endif
 
         MODULE_INFO_HEADER = .ns-module-info.h
         MODULE_INFO_FILES  = $(MODULE_INFO_HEADER) $(MODULE_INFO_HEADER).tmp
-
-        $(MODOBJS): CFLAGS += -include $(MODULE_INFO_HEADER)
-        $(MODOBJS): $(MODULE_INFO_HEADER)
     endif
 endif
 
@@ -153,6 +150,12 @@ endif
 
 ifdef LIBHDRS
     INSTALL += install-hdrs
+endif
+
+ifdef MODULE_INFO_HEADER
+    CFLAGS += -include $(MODULE_INFO_HEADER)
+
+    $(MODOBJS) $(LIBOBJS) $(PGMOBJS): $(MODULE_INFO_HEADER)
 endif
 
 all build: $(BUILD)
