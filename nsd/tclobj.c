@@ -749,6 +749,87 @@ NsTclListSort(Tcl_Interp *interp, Tcl_Obj *listObj)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * NsTclDictSort --
+ *
+ *      Create a new Tcl dictionary object containing the entries of the
+ *      provided dictionary sorted in lexicographic order by key, based
+ *      on the keys' string representations.
+ *
+ *      The function extracts the dictionary keys, sorts them using
+ *      NsTclListSort(), and builds a new dictionary by inserting each
+ *      key together with its original value in sorted order. The
+ *      original dictionary object remains unchanged.
+ *
+ * Results:
+ *      Returns a newly allocated Tcl dictionary object containing the
+ *      entries in sorted key order, or NULL if the input object is not
+ *      a valid dictionary.
+ *
+ * Side effects:
+ *      Allocates temporary objects and a new Tcl dictionary object.
+ *      May trigger string representation generation for dictionary
+ *      keys. On error, an error message may be left in the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+NsTclDictSort(Tcl_Interp *interp, Tcl_Obj *dictObj)
+{
+    Tcl_DictSearch search;
+    Tcl_Obj       *keyObj, *valueObj;
+    Tcl_Obj       *keysObj, *sortedKeysObj, *resultObj;
+    Tcl_Obj      **keyObjs;
+    TCL_SIZE_T     keyCount, i;
+    int            done;
+
+    Tcl_IncrRefCount(dictObj);
+
+    keysObj = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(keysObj);
+
+    (void) Tcl_DictObjFirst(interp, dictObj, &search,
+                            &keyObj, &valueObj, &done);
+    while (done == 0) {
+        (void) Tcl_ListObjAppendElement(NULL, keysObj, keyObj);
+        Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
+    }
+    Tcl_DictObjDone(&search);
+
+    sortedKeysObj = NsTclListSort(interp, keysObj);
+    Tcl_DecrRefCount(keysObj);
+
+    if (sortedKeysObj == NULL) {
+        Tcl_DecrRefCount(dictObj);
+        return NULL;
+    }
+
+    Tcl_IncrRefCount(sortedKeysObj);
+
+    resultObj = Tcl_NewDictObj();
+
+    if (Tcl_ListObjGetElements(interp, sortedKeysObj,
+                               &keyCount, &keyObjs) == TCL_OK) {
+        for (i = 0; i < keyCount; i++) {
+            valueObj = NULL;
+            (void) Tcl_DictObjGet(interp, dictObj,
+                                  keyObjs[i], &valueObj);
+
+            assert(valueObj != NULL);
+
+            (void) Tcl_DictObjPut(interp, resultObj,
+                                  keyObjs[i], valueObj);
+        }
+    }
+
+    Tcl_DecrRefCount(sortedKeysObj);
+    Tcl_DecrRefCount(dictObj);
+
+    return resultObj;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
