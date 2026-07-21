@@ -93,8 +93,25 @@
 #define NS_ENABLE_THREAD_AFFINITY 1
 #include "thread-affinity.h"
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXTERN const int Ns_ModuleVersion;
+NS_EXPORT const int Ns_ModuleVersion = 1;
+
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+NS_EXPORT Ns_ModuleInfoProc Ns_ModuleGetInfo;
+
+/*
+ * Provide module build and ABI information for runtime introspection.
+ */
+NS_EXPORT void
+Ns_ModuleGetInfo(Ns_ModuleInfo *infoPtr)
+{
+    Ns_ModuleInfoInit(infoPtr, NS_MODULE_INFO_VERSION,
+                      "quic",
+                      PACKAGE_VERSION,
+                      PACKAGE_TAG,
+                      "network-driver",
+                      1u);
+}
 
 #if defined(HAVE_NGHTTP3) && defined(HAVE_OPENSSL_EVP_H)
 #include <openssl/ssl.h>
