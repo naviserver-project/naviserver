@@ -109,8 +109,8 @@ ifdef MOD
 
         MODULE_INFO_HEADER = .ns-module-info.h
         MODULE_INFO_FILES  = $(MODULE_INFO_HEADER) $(MODULE_INFO_HEADER).tmp
-        CFLAGS += -include $(MODULE_INFO_HEADER)
 
+        $(MODOBJS): CFLAGS += -include $(MODULE_INFO_HEADER)
         $(MODOBJS): $(MODULE_INFO_HEADER)
     endif
 endif
