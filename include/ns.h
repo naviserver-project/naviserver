@@ -319,6 +319,25 @@ typedef struct {
     Ns_JsonTop top;
 } Ns_JsonOptions;
 
+/*
+ * Metadata reported by loadable modules for runtime introspection.
+ * The size and infoVersion fields allow the structure to be extended
+ * while preserving compatibility with modules built against older APIs.
+ */
+#define NS_MODULE_INFO_VERSION 1u
+typedef struct Ns_ModuleInfo {
+    size_t        size;
+    unsigned int  infoVersion;
+    unsigned int  moduleVersion;
+    const char   *name;
+    const char   *version;
+    const char   *tag;
+    const char   *type;
+} Ns_ModuleInfo;
+
+#define NS_MODULE_INFO_HAS(infoPtr, field)                            \
+    ((infoPtr)->size >=                                               \
+     offsetof(Ns_ModuleInfo, field) + sizeof((infoPtr)->field))
 
 /*
  * Global variables:
@@ -358,14 +377,13 @@ typedef int           (Ns_TclInterpInitProc)(Tcl_Interp *interp, const void *arg
 typedef int           (Ns_TclTraceProc)(Tcl_Interp *interp, const void *arg);
 typedef void          (Ns_TclDeferProc)(Tcl_Interp *interp, void *arg);
 typedef bool          (Ns_SockProc)(NS_SOCKET sock, void *arg, unsigned int why);
-typedef void          (Ns_TaskProc)(Ns_Task *task, NS_SOCKET sock, void *arg,
-                                    Ns_SockState why);
+typedef void          (Ns_TaskProc)(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
 typedef void          (Ns_EventProc)(Ns_Event *event, NS_SOCKET sock, void *arg,
                                      Ns_Time *now, Ns_SockState why);
 typedef void          (Ns_SchedProc)(void *arg, int id);
 typedef Ns_ReturnCode (Ns_ServerInitProc)(const char *server);
-typedef Ns_ReturnCode (Ns_ModuleInitProc)(const char *server, const char *module)
-    NS_GNUC_NONNULL(2);
+typedef Ns_ReturnCode (Ns_ModuleInitProc)(const char *server, const char *module) NS_GNUC_NONNULL(2);
+typedef void          (Ns_ModuleInfoProc)(Ns_ModuleInfo *infoPtr);
 typedef void          (Ns_AdpParserProc)(Tcl_DString *outPtr, char *page);
 typedef Ns_ReturnCode (Ns_AuthorizeRequestProc)(void *arg,
                                                 struct Ns_Conn *conn,
@@ -382,7 +400,7 @@ typedef int           (Ns_IndexCmpProc) (const void *left, const void *right)
     NS_GNUC_NONNULL(1,2);
 typedef int           (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr)
     NS_GNUC_NONNULL(1,2);
-typedef bool (Ns_UrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
+typedef bool          (Ns_UrlSpaceContextFilterEvalProc) (void *contextSpec, void *context);
 
 typedef bool (Ns_HeadersEncodeProc)(
     struct Ns_Conn     *conn,
@@ -2366,6 +2384,12 @@ NS_EXTERN Ns_ReturnCode
 Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
               const char *init)
     NS_GNUC_NONNULL(3,4,5);
+
+NS_EXTERN void
+Ns_ModuleInfoInit(Ns_ModuleInfo *infoPtr, unsigned int infoVersion,
+                  const char *name, const char *version,
+                  const char *tag, const char *type, unsigned int moduleVersion)
+    NS_GNUC_NONNULL(1,3,4,5,6);
 
 /*
  * nsthread.c:

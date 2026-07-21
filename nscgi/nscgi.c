@@ -88,15 +88,30 @@ typedef struct Map {
 
 static int devNull;
 static Ns_LogSeverity Ns_LogCGIDebug;
+static const char *NS_EMPTY_STRING = "";
 
 NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 
-NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 static Ns_TclTraceProc AddCmds;
 static Ns_ArgProc ArgProc;
 
-static const char *NS_EMPTY_STRING = "";
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+NS_EXPORT Ns_ModuleInfoProc Ns_ModuleGetInfo;
+
+/*
+ * Provide module build and ABI information for runtime introspection.
+ */
+NS_EXPORT void
+Ns_ModuleGetInfo(Ns_ModuleInfo *infoPtr)
+{
+    Ns_ModuleInfoInit(infoPtr, NS_MODULE_INFO_VERSION,
+                      "nscgi",
+                      PACKAGE_VERSION,
+                      PACKAGE_TAG,
+                      "module",
+                      1u);
+}
 
 /*
  * Functions defined in this file.

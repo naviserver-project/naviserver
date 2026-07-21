@@ -2005,6 +2005,7 @@ NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
  * modload.c
  */
 NS_EXTERN void NsInitStaticModules(const char *server);
+NS_EXTERN Tcl_Obj *NsGetLoadedModulesObj(const NsServer *servPtr) NS_GNUC_NONNULL(1);
 
 /*
  * nsconf.c

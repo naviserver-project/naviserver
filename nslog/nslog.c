@@ -75,12 +75,27 @@ static Ns_ArgProc      LogArg;
 static Ns_TclTraceProc AddCmds;
 static TCL_OBJCMDPROC_T  LogObjCmd;
 
-NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
-
 static Ns_ReturnCode LogFlush(Log *logPtr, Tcl_DString *dsPtr);
 static Ns_LogCallbackProc LogOpen;
 static Ns_LogCallbackProc LogClose;
 static Ns_LogCallbackProc LogRoll;
+
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+NS_EXPORT Ns_ModuleInfoProc Ns_ModuleGetInfo;
+
+/*
+ * Provide module build and ABI information for runtime introspection.
+ */
+NS_EXPORT void
+Ns_ModuleGetInfo(Ns_ModuleInfo *infoPtr)
+{
+    Ns_ModuleInfoInit(infoPtr, NS_MODULE_INFO_VERSION,
+                      "nslog",
+                      PACKAGE_VERSION,
+                      PACKAGE_TAG,
+                      "module",
+                      1u);
+}
 
 static Ns_ReturnCode ParseExtendedHeaders(Log *logPtr, const char *str)
     NS_GNUC_NONNULL(1);

@@ -67,6 +67,22 @@ static Ns_TclTraceProc NscpAddCmds;
 static TCL_OBJCMDPROC_T NsTclNscpObjCmd;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+NS_EXPORT Ns_ModuleInfoProc Ns_ModuleGetInfo;
+
+/*
+ * Provide module build and ABI information for runtime introspection.
+ */
+NS_EXPORT void
+Ns_ModuleGetInfo(Ns_ModuleInfo *infoPtr)
+{
+    Ns_ModuleInfoInit(infoPtr, NS_MODULE_INFO_VERSION,
+                      "nscp",
+                      PACKAGE_VERSION,
+                      PACKAGE_TAG,
+                      "module",
+                      1u);
+}
+
 /*
  * The following values are sent to the telnet client to enable
  * and disable password prompt echo.

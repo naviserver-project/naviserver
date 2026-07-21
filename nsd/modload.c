@@ -21,18 +21,76 @@
 /*
  * The following structure is used for static module loading.
  */
-
 typedef struct Module {
     struct Module     *nextPtr;
     const char        *name;
     Ns_ModuleInitProc *proc;
 } Module;
 
+
+/*
+ * Scope of a loaded module. Global modules apply to every virtual
+ * server, server modules to one server, and NSDB modules are database
+ * drivers loaded indirectly by the nsdb module.
+ */
+typedef enum {
+    NS_MODULE_SCOPE_GLOBAL,
+    NS_MODULE_SCOPE_SERVER,
+    NS_MODULE_SCOPE_NSDB
+} ModuleScope;
+
+/*
+ * String representations of module scopes used in Tcl results.
+ */
+static Ns_ObjvTable moduleScopes[] = {
+    {"global",   NS_MODULE_SCOPE_GLOBAL},
+    {"server",   NS_MODULE_SCOPE_SERVER},
+    {"nsdb",     NS_MODULE_SCOPE_NSDB},
+    {NULL,       0u}
+};
+
+/*
+ * Collected information about a successfully loaded native module.
+ * All string values and module metadata stored here are owned by the
+ * registry. servPtr is set only for server-scoped modules.
+ */
+typedef struct LoadedModule {
+    const NsServer       *servPtr;
+    ModuleScope           scope;
+    char                 *module;
+    char                 *driver;
+    char                 *file;
+    Ns_ModuleInfo         info;
+    struct LoadedModule  *nextPtr;
+} LoadedModule;
+
+static Ns_Mutex       loadedModulesLock = NULL;
+static LoadedModule  *firstLoadedModulePtr = NULL;
+static LoadedModule **nextLoadedModulePtrPtr = &firstLoadedModulePtr;
+
 /*
  * Static variables defined in this file.
  */
 
 static Module *firstPtr;           /* List of static modules to be inited. */
+
+/*
+ * Static functions defined in this file.
+ */
+static void ModuleInfoCopy(Ns_ModuleInfo *destPtr, const Ns_ModuleInfo *sourcePtr)
+    NS_GNUC_NONNULL(1);
+
+static bool ModuleInfoValid(const Ns_ModuleInfo *infoPtr);
+
+static void DictPutString(Tcl_Obj *dictObj, const char *key, const char *value)
+    NS_GNUC_NONNULL(1,2);
+
+
+static void
+RegisterLoadedModule(const char *server, const char *module,
+                     const char *file, const char *init,
+                     const Ns_ModuleInfo *infoPtr)
+    NS_GNUC_NONNULL(2,3,4);
 
 
 /*
@@ -70,7 +128,360 @@ Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
     *nextPtrPtr = modPtr;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * ModuleInfoCopy --
+ *
+ *      Copy module metadata into NaviServer-owned storage. Only fields
+ *      present in the source structure, as indicated by its size, are
+ *      accessed. String values are duplicated and owned by the
+ *      destination record.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Initializes the destination structure and allocates copies of
+ *      available string values.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ModuleInfoCopy(Ns_ModuleInfo *destPtr, const Ns_ModuleInfo *sourcePtr)
+{
+    memset(destPtr, 0, sizeof(Ns_ModuleInfo));
+    destPtr->size = sizeof(Ns_ModuleInfo);
+
+    if (sourcePtr == NULL) {
+        return;
+    }
+
+    if (NS_MODULE_INFO_HAS(sourcePtr, infoVersion)) {
+        destPtr->infoVersion = sourcePtr->infoVersion;
+    }
+    if (NS_MODULE_INFO_HAS(sourcePtr, moduleVersion)) {
+        destPtr->moduleVersion = sourcePtr->moduleVersion;
+    }
+    if (NS_MODULE_INFO_HAS(sourcePtr, name)) {
+        destPtr->name = ns_strcopy(sourcePtr->name);
+    }
+    if (NS_MODULE_INFO_HAS(sourcePtr, version)) {
+        destPtr->version = ns_strcopy(sourcePtr->version);
+    }
+    if (NS_MODULE_INFO_HAS(sourcePtr, tag)) {
+        destPtr->tag = ns_strcopy(sourcePtr->tag);
+    }
+    if (NS_MODULE_INFO_HAS(sourcePtr, type) && sourcePtr->type != NULL) {
+        destPtr->type = ns_strcopy(sourcePtr->type);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ModuleInfoValid --
+ *
+ *      Validate module metadata returned by Ns_ModuleGetInfo(). Check
+ *      that the structure contains all required version-1 fields, uses
+ *      the supported information version, and provides the required
+ *      name, version, and tag values.
+ *
+ * Results:
+ *      True when the module information is valid, false otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+ModuleInfoValid(const Ns_ModuleInfo *infoPtr)
+{
+    return infoPtr != NULL
+        && NS_MODULE_INFO_HAS(infoPtr, type)
+        && infoPtr->infoVersion > 0u
+        && infoPtr->infoVersion <= NS_MODULE_INFO_VERSION
+        && infoPtr->name != NULL
+        && infoPtr->version != NULL
+        && infoPtr->tag != NULL
+        && infoPtr->type != NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictPutString --
+ *
+ *      Add a string value to a Tcl dictionary under the specified key.
+ *      When value is NULL, no dictionary entry is added.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Modifies the provided dictionary object and allocates Tcl objects
+ *      for the key and value.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DictPutString(Tcl_Obj *dictObj, const char *key, const char *value)
+{
+    if (value != NULL) {
+        (void) Tcl_DictObjPut(NULL, dictObj,
+                              Tcl_NewStringObj(key, TCL_INDEX_NONE),
+                              Tcl_NewStringObj(value, TCL_INDEX_NONE));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsGetLoadedModulesObj --
+ *
+ *      Build a dictionary describing the modules available to the
+ *      specified server. Initially, modules registered in the server's
+ *      Tcl module list are represented as Tcl modules. Entries for
+ *      loaded native modules then replace or extend these provisional
+ *      entries with build metadata, scope, file, and ABI information.
+ *
+ *      Global and NSDB modules are included for every server, while
+ *      server-scoped modules are included only for their associated
+ *      server. The resulting dictionary is sorted by module name to
+ *      provide stable output.
+ *
+ * Results:
+ *      Returns a newly allocated Tcl dictionary object containing the
+ *      module information.
+ *
+ * Side effects:
+ *      Allocates Tcl objects and temporarily locks the loaded-module
+ *      registry while native module records are inspected.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+NsGetLoadedModulesObj(const NsServer *servPtr)
+{
+    const LoadedModule *loadedPtr;
+    Tcl_Obj             *resultObj, *sortedObj, **moduleObjs;
+    TCL_SIZE_T           moduleCount, i;
+
+    NS_NONNULL_ASSERT(servPtr != NULL);
+
+    resultObj = Tcl_NewDictObj();
+
+    if (Tcl_ListObjGetElements(NULL, servPtr->tcl.modules,
+                               &moduleCount, &moduleObjs) == TCL_OK) {
+        for (i = 0; i < moduleCount; i++) {
+            const char *module  = Tcl_GetString(moduleObjs[i]);
+            Tcl_Obj    *infoObj = Tcl_NewDictObj();
+
+            DictPutString(infoObj, "name", module);
+            DictPutString(infoObj, "type", "tcl-module");
+            DictPutString(infoObj, "scope", "server");
+
+            (void) Tcl_DictObjPut(NULL, resultObj,
+                                  Tcl_NewStringObj(module, TCL_INDEX_NONE),
+                                  infoObj);
+        }
+    }
+
+    Ns_MutexLock(&loadedModulesLock);
+
+    for (loadedPtr = firstLoadedModulePtr;
+         loadedPtr != NULL;
+         loadedPtr = loadedPtr->nextPtr) {
+        Tcl_Obj *infoObj;
+
+        switch (loadedPtr->scope) {
+        case NS_MODULE_SCOPE_GLOBAL:
+        case NS_MODULE_SCOPE_NSDB:
+            /*
+             * Visible for every server.
+             */
+            break;
+
+        case NS_MODULE_SCOPE_SERVER:
+            if (loadedPtr->servPtr != servPtr) {
+                continue;
+            }
+            break;
+        }
+
+        infoObj = Tcl_NewDictObj();
+
+        DictPutString(infoObj, "name",
+                      loadedPtr->info.name != NULL
+                      ? loadedPtr->info.name
+                      : loadedPtr->module);
+
+        DictPutString(infoObj, "type",
+                      loadedPtr->info.type != NULL
+                      ? loadedPtr->info.type
+                      : "module");
+
+        DictPutString(infoObj, "version", loadedPtr->info.version);
+        DictPutString(infoObj, "tag", loadedPtr->info.tag);
+        DictPutString(infoObj, "scope", Ns_ObjvTableGetString(moduleScopes, loadedPtr->scope));
+        DictPutString(infoObj, "file", loadedPtr->file);
+        DictPutString(infoObj, "driver", loadedPtr->driver);
+
+        if (loadedPtr->info.infoVersion != 0u) {
+            (void) Tcl_DictObjPut(
+                NULL, infoObj,
+                Tcl_NewStringObj("infoversion", TCL_INDEX_NONE),
+                Tcl_NewWideIntObj(
+                    (Tcl_WideInt)loadedPtr->info.infoVersion));
+        }
+
+        if (loadedPtr->info.moduleVersion != 0u) {
+            (void) Tcl_DictObjPut(
+                NULL, infoObj,
+                Tcl_NewStringObj("abi", TCL_INDEX_NONE),
+                Tcl_NewWideIntObj(
+                    (Tcl_WideInt)loadedPtr->info.moduleVersion));
+        }
+
+        (void) Tcl_DictObjPut(
+            NULL, resultObj,
+            Tcl_NewStringObj(loadedPtr->module, TCL_INDEX_NONE),
+            infoObj);
+    }
+
+    Ns_MutexUnlock(&loadedModulesLock);
+
+    Tcl_IncrRefCount(resultObj);
+    sortedObj = NsTclDictSort(NULL, resultObj);
+
+    if (sortedObj != NULL) {
+        Tcl_DecrRefCount(resultObj);
+        return sortedObj;
+    }
+
+    Tcl_DecrRefCount(resultObj);
+    return Tcl_NewDictObj();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RegisterLoadedModule --
+ *
+ *      Register a successfully initialized native module in the
+ *      persistent loaded-module registry. Determine its scope from the
+ *      loading context, copy the module name and file path, and copy any
+ *      metadata returned by Ns_ModuleGetInfo().
+ *
+ *      Modules initialized through Ns_DbDriverInit are recorded as NSDB
+ *      drivers, modules loaded without a server as global, and all other
+ *      modules as belonging to the specified server.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Allocates and appends a LoadedModule record and copies the
+ *      supplied strings and metadata. Locks the loaded-module registry
+ *      while linking the new record.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+RegisterLoadedModule(const char *server, const char *module,
+                     const char *file, const char *init,
+                     const Ns_ModuleInfo *infoPtr)
+{
+    LoadedModule *loadedPtr;
+
+    loadedPtr = ns_calloc(1u, sizeof(LoadedModule));
+
+    if (strcmp(init, "Ns_DbDriverInit") == 0) {
+        loadedPtr->scope = NS_MODULE_SCOPE_NSDB;
+        loadedPtr->servPtr = NULL;
+        loadedPtr->driver = ns_strcopy(server);
+    } else if (server == NULL) {
+        loadedPtr->scope = NS_MODULE_SCOPE_GLOBAL;
+        loadedPtr->servPtr = NULL;
+    } else {
+        loadedPtr->scope = NS_MODULE_SCOPE_SERVER;
+        loadedPtr->servPtr = NsGetServer(server);
+    }
+
+    /*
+     * Resolve the supplied value to an actual NaviServer server.
+     *
+     * This deliberately does not retain an unresolved value such as
+     * "postgres", which is passed as the second argument by
+     * NsDbLoadDriver().
+     */
+    loadedPtr->module = ns_strcopy(module);
+    loadedPtr->file = ns_strcopy(file);
+
+    ModuleInfoCopy(&loadedPtr->info, infoPtr);
+
+    Ns_MutexLock(&loadedModulesLock);
+
+    loadedPtr->nextPtr = NULL;
+    *nextLoadedModulePtrPtr = loadedPtr;
+    nextLoadedModulePtrPtr = &loadedPtr->nextPtr;
+
+    Ns_MutexUnlock(&loadedModulesLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ModuleInfoInit --
+ *
+ *      Initialize module metadata returned by Ns_ModuleGetInfo().
+ *      Populate only fields present in the caller-provided structure,
+ *      as indicated by its size, to preserve compatibility between
+ *      different module information versions.
+ *
+ *      The supplied strings are referenced directly and must remain
+ *      valid for the lifetime of the loaded module.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updates the fields available in the provided Ns_ModuleInfo
+ *      structure. Does not allocate or copy string values.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_ModuleInfoInit(
+    Ns_ModuleInfo *infoPtr,
+    unsigned int infoVersion,
+    const char *name,
+    const char *version,
+    const char *tag,
+    const char *type,
+    unsigned int moduleVersion)
+{
+    if (NS_MODULE_INFO_HAS(infoPtr, infoVersion)) {
+        infoPtr->infoVersion = infoVersion;
+    }
+    if (NS_MODULE_INFO_HAS(infoPtr, moduleVersion)) {
+        infoPtr->moduleVersion = moduleVersion;
+    }
+    if (NS_MODULE_INFO_HAS(infoPtr, name)) {
+        infoPtr->name = name;
+    }
+    if (NS_MODULE_INFO_HAS(infoPtr, version)) {
+        infoPtr->version = version;
+    }
+    if (NS_MODULE_INFO_HAS(infoPtr, tag)) {
+        infoPtr->tag = tag;
+    }
+    if (NS_MODULE_INFO_HAS(infoPtr, type)) {
+        infoPtr->type = type;
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -86,7 +497,6 @@ Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
               const char *init)
@@ -181,6 +591,29 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
             status = NS_ERROR;
 
         } else {
+            Ns_ModuleInfoProc *infoProc;
+            bool               hasModuleInfo = NS_FALSE;
+            Ns_ModuleInfo      moduleInfo;
+
+            memset(&moduleInfo, 0, sizeof(moduleInfo));
+            moduleInfo.size = sizeof(moduleInfo);
+
+            infoProc = (Ns_ModuleInfoProc *)(ns_funcptr_t)Tcl_FindSymbol(interp, lh, "Ns_ModuleGetInfo");
+
+            if (infoProc != NULL) {
+                (*infoProc)(&moduleInfo);
+
+                if (ModuleInfoValid(&moduleInfo)) {
+                    hasModuleInfo = NS_TRUE;
+                } else {
+                    Ns_Log(Warning,
+                           "modload: module %s from file %s returned invalid module information",
+                           module, file);
+                }
+            } else {
+                Tcl_ResetResult(interp); /* Tcl_FindSymbol may have set an error */
+            }
+
             if (privateInterp) {
                 Tcl_DeleteInterp(interp);
             }
@@ -200,29 +633,11 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
                  * Calling Ns_ModuleInit()
                  */
                 status = (*initProc)(server, module);
-#if 0
-                /*
-                 * All modules of the NaviServer modules family have
-                 * Ns_ModuleVersion == 1. The way, how AOLserver performed the
-                 * version checking (via casting a function pointer to an
-                 * integer pointer) does not conform with ISO C which forbids
-                 * conversions of function pointers to object pointer
-                 * types. The intention was probably to allow results from the
-                 * initProc != NS_OK for modules with versions < 1.
-                 *
-                 * Since the test is practically useless und unclean, we
-                 * deactivate it here.
-                 */
-                {
-                    const int *versionPtr = (const int *) moduleVersionAddr;
-
-                    if (*versionPtr < 1) {
-                        status = NS_OK;
-                    }
-                }
-#endif
                 if (status != NS_OK) {
                     Ns_Log(Error, "modload: %s: %s returned: %s", file, init, Ns_ReturnCodeString(status));
+                } else {
+                    RegisterLoadedModule(server, module, file, init,
+                                         hasModuleInfo ? &moduleInfo : NULL);
                 }
             }
         }
