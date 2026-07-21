@@ -2004,7 +2004,9 @@ NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
 /*
  * modload.c
  */
+#ifdef NS_WITH_DEPRECATED
 NS_EXTERN void NsInitStaticModules(const char *server);
+#endif
 NS_EXTERN Tcl_Obj *NsGetLoadedModulesObj(const NsServer *servPtr) NS_GNUC_NONNULL(1);
 
 /*

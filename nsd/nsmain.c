@@ -1060,11 +1060,13 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         }
     }
 
+#ifdef NS_WITH_DEPRECATED
     /*
-     * Initialize non-server static modules.
+     * Initialize non-server modules registered through the deprecated
+     * static-module interface. This is normally a no-op.
      */
-
     NsInitStaticModules(NULL);
+#endif
 
     /*
      * Run pre-startup procs

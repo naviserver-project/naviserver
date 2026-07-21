@@ -2375,10 +2375,12 @@ Ns_GetEncoding(const char *name)
 /*
  * modload.c:
  */
-
+#ifdef NS_WITH_DEPRECATED
 NS_EXTERN void
 Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
-     NS_GNUC_NONNULL(1,2);
+    NS_GNUC_NONNULL(1,2)
+    NS_GNUC_DEPRECATED;
+#endif
 
 NS_EXTERN Ns_ReturnCode
 Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,

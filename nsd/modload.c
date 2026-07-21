@@ -18,6 +18,7 @@
 
 #include "nsd.h"
 
+#ifdef NS_WITH_DEPRECATED
 /*
  * The following structure is used for static module loading.
  */
@@ -26,7 +27,7 @@ typedef struct Module {
     const char        *name;
     Ns_ModuleInitProc *proc;
 } Module;
-
+#endif
 
 /*
  * Scope of a loaded module. Global modules apply to every virtual
@@ -71,8 +72,9 @@ static LoadedModule **nextLoadedModulePtrPtr = &firstLoadedModulePtr;
 /*
  * Static variables defined in this file.
  */
-
+#ifdef NS_WITH_DEPRECATED
 static Module *firstPtr;           /* List of static modules to be inited. */
+#endif
 
 /*
  * Static functions defined in this file.
@@ -92,26 +94,29 @@ RegisterLoadedModule(const char *server, const char *module,
                      const Ns_ModuleInfo *infoPtr)
     NS_GNUC_NONNULL(2,3,4);
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
  * Ns_RegisterModule --
  *
- *      Register a static module.  This routine can only be called from
- *      an Ns_ServerInitProc passed to Ns_Main or within the Ns_ModuleInit
- *      proc of a loadable module.  It registers a module callback for
- *      for the currently initializing server.
+ *      Deprecated legacy interface for registering a static module
+ *      initialization callback. This mechanism predates the current
+ *      module-loading infrastructure and has no in-tree callers.
+ *
+ *      It is retained for compatibility with external applications that
+ *      may still register statically linked modules. New code should use
+ *      the current module or server initialization interfaces.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Proc will be called after dynamic modules are loaded.
+ *      Allocates and appends an entry to the legacy static-module
+ *      initialization list consumed by NsInitStaticModules().
  *
  *----------------------------------------------------------------------
  */
-
 void
 Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
 {
@@ -127,6 +132,7 @@ Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
     }
     *nextPtrPtr = modPtr;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -708,25 +714,29 @@ NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     return result;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
  * NsInitStaticModules --
  *
- *      Initialize static modules for given server, or global static
- *      modules if no server given.
+ *      Process callbacks registered through the deprecated
+ *      Ns_RegisterModule() interface. The stock NaviServer build has no
+ *      producers for this list; the function is retained to support
+ *      external users of the legacy static-module API.
+ *
+ *      Since callbacks may register additional callbacks, the lists are
+ *      processed repeatedly until no entries remain.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Static modules may register new static modules, so we loop
- *      until they're all gone.
+ *      Invokes and frees all entries in the legacy static-module list.
+ *      Terminates the process when an initialization callback fails.
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsInitStaticModules(const char *server)
 {
@@ -747,6 +757,7 @@ NsInitStaticModules(const char *server)
         }
     }
 }
+#endif
 
 /*
  * Local Variables:
