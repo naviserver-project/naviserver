@@ -605,9 +605,13 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
             moduleInfo.size = sizeof(moduleInfo);
 
 #ifndef NS_TCL_PRE86
-            infoProc = (Ns_ModuleInfoProc *)(ns_funcptr_t)Tcl_FindSymbol(interp, lh, "Ns_ModuleGetInfo");
+            {
+                void *symbol = Tcl_FindSymbol(interp, lh, "Ns_ModuleGetInfo");
+                if (symbol != NULL) {
+                    memcpy(&infoProc, &symbol, sizeof(infoProc));
+                }
+            }
 #endif
-
             if (infoProc != NULL) {
                 (*infoProc)(&moduleInfo);
 
@@ -620,9 +624,9 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
                 }
             } else {
                 /*
-                 * Tcl_FindSymbol may have set an error, or too old (Tcl 8.5)
+                 * Clear a possible error from the optional symbol lookup.
                  */
-                Tcl_ResetResult(interp); /* Tcl_FindSymbol may have set an error */
+                Tcl_ResetResult(interp);
             }
 
             if (privateInterp) {
