@@ -38,6 +38,9 @@
 #   define HAVE_OPENSSL_4
 #   define HAVE_OPENSSL_4_0
 #  endif
+#  if OPENSSL_VERSION_PREREQ(4,1)
+#   define HAVE_OPENSSL_4_1
+#  endif
 # endif
 
 # ifndef LIBRESSL_VERSION_NUMBER
