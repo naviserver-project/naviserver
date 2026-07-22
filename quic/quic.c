@@ -2594,9 +2594,10 @@ h3_conn_write_step(ConnCtx *cc)
     nghttp3_ssize nvec;
     int64_t       sid = -1;
     int           fin = 0;
-    bool          did_progress = NS_FALSE;  /* any bytes written or FIN concluded */
-    bool          any_keep_w   = NS_FALSE;  /* kept W armed on at least one stream */
-    bool          hit_any_want = NS_FALSE;  /* saw SSL_ERROR_WANT_* on any stream */
+    bool          did_progress     = NS_FALSE;  /* any bytes written or FIN concluded */
+    bool          any_keep_w       = NS_FALSE;  /* kept W armed on at least one stream */
+    bool          hit_any_want     = NS_FALSE;  /* saw SSL_ERROR_WANT_* on any stream */
+    bool          need_local_retry = NS_FALSE;
     NsTLSConfig  *dc = cc->dc;
 
     Ns_Log(Notice, "[%lld] H3 h3_conn_write_step called", (long long)dc->iter);
@@ -3033,6 +3034,34 @@ h3_conn_write_step(ConnCtx *cc)
          * Investigate the reactor wait separately.
          */
         (void)SSL_handle_events(stream);
+
+        {
+            const size_t pending =
+                SharedPendingUnreadBytes(&sc->sh);
+
+            /*
+             * The data-reader callback serves a stream at most once in one
+             * h3_conn_write_step() call. If body data remains in tx_pending,
+             * schedule another local nghttp3 pass. This is not an OpenSSL
+             * write-readiness condition, so do not keep W armed for it.
+             */
+            if (!hit_want
+                && StreamCtxIsBidi(sc)
+                && pending > 0u) {
+
+                SharedRequestResume(&cc->shared, &sc->sh,
+                                    h3_stream_id(sc));
+                need_local_retry = NS_TRUE;
+
+                Ns_Log(Notice,
+                       "[%lld] H3[%lld] scheduling local retry, "
+                       "pending %zu",
+                       (long long)dc->iter,
+                       (long long)sc->quic_sid,
+                       pending);
+            }
+        }
+
         //Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step after_sid stream %p => %d",
         //       (long long)dc->iter, (void*)stream, SSL_handle_events(stream));
 
@@ -3097,9 +3126,10 @@ h3_conn_write_step(ConnCtx *cc)
 
     /*
      * Decide "still wants": keep scheduling if any stream kept W,
-     * or we hit WANT_* on any stream.
+     * we hit WANT_* on any stream, or a local retry was scheduled for
+     * body data remaining after the per-stream service limit.
      */
-    return (any_keep_w || hit_any_want) ? NS_TRUE : NS_FALSE;
+    return (any_keep_w || hit_any_want || need_local_retry);
 }
 
 /*
@@ -7722,23 +7752,34 @@ QuicThread(void *arg)
                 }
             }
 
-            if ((revents & (SSL_POLL_EVENT_W)) != 0) {
-                Ns_Log(Notice, "[%lld] H3[%lld] processing W", (long long)dc->iter, (long long)sc->quic_sid);
+            if ((revents & SSL_POLL_EVENT_W) != 0u) {
+                Ns_Log(Notice,
+                       "[%lld] H3[%lld] processing W",
+                       (long long)dc->iter,
+                       (long long)sc->quic_sid);
+
                 if (StreamCtxIsServerUni(sc)) {
-                    /*
-                     * Idle control/QPACK streams often look writable forever.
-                     * Disarm W to avoid busy looping; the writer will still run
-                     * when cc->wants_write is set.
-                     */
-                    PollsetDisableWrite(dc, s, sc, "Event W, Idle control/QPACK stream");
+                    PollsetDisableWrite(dc, s, sc,
+                                        "Event W, idle control/QPACK stream");
                 } else {
-                    SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
+                    SharedSnapshot snap;
+
+                    /*
+                     * W is level-triggered. Consume it before scheduling the
+                     * corresponding write pass.
+                     */
+                    PollsetDisableWrite(dc, s, sc, "consume Event W");
+
+                    snap = SharedSnapshotInit(&sc->sh);
+
                     if (SharedEOFReady(&snap)) {
-                        h3_stream_maybe_finalize(sc, "event W");
+                        (void)h3_stream_maybe_finalize(sc, "event W");
                     } else {
+                        SharedRequestResume(&cc->shared, &sc->sh, sc->h3_sid);
                         cc->wants_write = NS_TRUE;
                     }
                 }
+
                 processed_event |= SSL_POLL_EVENT_W;
             }
 
