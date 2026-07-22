@@ -2038,6 +2038,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         Ns_Sock         *sockPtr;
         ConnCtx         *cc;
         int              ss, ret;
+        uint64_t         domainFlags = 0u;
         SSL             *conn = SSL_accept_connection(listener_ssl, 0);
         char             buffer[NS_IPADDR_SIZE];
 
@@ -2071,8 +2072,10 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
             break;
         }
 
-        Ns_Log(Notice, "[%lld] H3 SockAccept can associate sock %p with cc %p",
-               (long long)dc->iter, (void*)sockPtr, (void*)cc);
+        SSL_get_domain_flags(conn, &domainFlags);
+        Ns_Log(Notice, "[%lld] H3 SockAccept can associate sock %p with cc %p domain flags 0x%llx",
+               (long long)dc->iter, (void*)sockPtr, (void*)cc, domainFlags);
+
         SSL_set_ex_data(conn, dc->u.h3.cc_idx, cc);
 
         /* 3) Initialize nghttp3 server on that new connection */
@@ -3010,6 +3013,13 @@ h3_conn_write_step(ConnCtx *cc)
         /*
          * IMPORTANT: drive the STREAM once per SID batch to clear its W/R readiness,
          * schedule datagrams, and process acks/timeouts related to this stream.
+         */
+
+        /*
+         * A stalled QUIC thread was observed with this call in
+         * ossl_quic_reactor_tick(). Removing it did not eliminate the stall:
+         * SSL_write_ex2() can enter the same reactor path implicitly.
+         * Investigate the reactor wait separately.
          */
         (void)SSL_handle_events(stream);
         //Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step after_sid stream %p => %d",
@@ -7880,7 +7890,8 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
     sock = Ns_SockListenUdp(address, port, reuseport);
     Ns_Log(Notice, "[%lld] H3 listen <%s> port %hu -> sock %d", (long long)dc->iter, address, port, sock);
     if (sock != NS_INVALID_SOCKET) {
-        size_t idx;
+        uint64_t domainFlags = 0u;
+        size_t   idx;
 
         Ns_Log(Notice, "[%lld] H3 listen has ctx %p", (long long)dc->iter, (void*)dc->ctx);
         if (dc->ctx != NULL) {
@@ -7890,6 +7901,17 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
             listener = SSL_new_listener(dc->ctx, 0);
             if (listener == NULL) {
                 goto fail;
+            }
+            if (SSL_get_domain_flags(listener, &domainFlags) == 1) {
+                Ns_Log(Notice, "H3 listener %p: effective QUIC domain flags "
+                       "0x%llx, blocking mode %d",
+                       (void *)listener,
+                       (unsigned long long)domainFlags,
+                       SSL_get_blocking_mode(listener));
+            } else {
+                Ns_Log(Warning,
+                       "H3 listener %p: SSL_get_domain_flags failed",
+                       (void *)listener);
             }
 
             OSSL_TRY(SSL_set_fd(listener, sock));
