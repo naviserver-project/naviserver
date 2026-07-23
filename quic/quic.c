@@ -6715,37 +6715,6 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
 /*
  *----------------------------------------------------------------------
  *
- * PollsetSweep --
- *
- *      Post-loop sweeper that runs once per event-loop tick, before
- *      PollsetConsolidate(dc). It walks the current pollset and:
- *        - For connection entries: frees those that are fully shut down
- *          and have no live streams (quic_conn_can_be_freed_postloop).
- *        - For stream entries: optionally finalizes idle streams,
- *          drops R/W interest for closed halves, and reaps streams that
- *          are definitively dead (both halves FIN or RESET and queues empty).
- *
- *      To avoid invalidating the iteration state, objects selected for
- *      destruction are first collected into a small local array and are
- *      SSL_free()'d only after the scan completes. Pollset slots are
- *      punched out immediately via PollsetMarkDead(), and StreamCtx
- *      entries are unregistered once deemed dead.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      - Removes dead streams/connections from the pollset and connection
- *        list; updates dc->u.h3.first_dead for reuse.
- *      - May disable per-entry R/W interest based on observed close state.
- *      - Frees SSL* objects for dead streams/connections after the scan.
- *      - Produces diagnostic logs for each action (skip/postpone/kill).
- *
- *----------------------------------------------------------------------
- */
-/*
- *----------------------------------------------------------------------
- *
  * PollsetReapConnStreams --
  *
  *      Remove every pollset entry belonging to a connection, except the
@@ -6777,10 +6746,6 @@ PollsetReapConnStreams(NsTLSConfig *dc, ConnCtx *cc, SSL **to_free,
 {
     size_t i;
 
-    NS_NONNULL_ASSERT(dc != NULL);
-    NS_NONNULL_ASSERT(cc != NULL);
-    NS_NONNULL_ASSERT(to_free != NULL);
-
     for (i = 0; i < PollsetCount(dc); i++) {
         SSL       *s = (SSL *)dc->u.h3.ssl_items.data[i];
         ConnCtx   *owner;
@@ -6809,6 +6774,37 @@ PollsetReapConnStreams(NsTLSConfig *dc, ConnCtx *cc, SSL **to_free,
     return nfree;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * PollsetSweep --
+ *
+ *      Post-loop sweeper that runs once per event-loop tick, before
+ *      PollsetConsolidate(dc). It walks the current pollset and:
+ *        - For connection entries: frees those that are fully shut down
+ *          and have no live streams (quic_conn_can_be_freed_postloop).
+ *        - For stream entries: optionally finalizes idle streams,
+ *          drops R/W interest for closed halves, and reaps streams that
+ *          are definitively dead (both halves FIN or RESET and queues empty).
+ *
+ *      To avoid invalidating the iteration state, objects selected for
+ *      destruction are first collected into a small local array and are
+ *      SSL_free()'d only after the scan completes. Pollset slots are
+ *      punched out immediately via PollsetMarkDead(), and StreamCtx
+ *      entries are unregistered once deemed dead.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      - Removes dead streams/connections from the pollset and connection
+ *        list; updates dc->u.h3.first_dead for reuse.
+ *      - May disable per-entry R/W interest based on observed close state.
+ *      - Frees SSL* objects for dead streams/connections after the scan.
+ *      - Produces diagnostic logs for each action (skip/postpone/kill).
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 PollsetSweep(NsTLSConfig *dc)
 {
