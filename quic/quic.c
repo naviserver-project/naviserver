@@ -502,6 +502,7 @@ static size_t          PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, Poll
 static size_t          PollsetAddConnection(NsTLSConfig *dc, SSL *s, uint64_t events) NS_GNUC_NONNULL(1,2);
 static size_t          PollsetAddStream(NsTLSConfig *dc, SSL *s, uint64_t events, H3StreamKind kind) NS_GNUC_NONNULL(1,2);
 static StreamCtx*      PollsetAddStreamRegister(ConnCtx *cc, SSL *s, H3StreamKind kind) NS_GNUC_NONNULL(1,2);
+static void            PollsetDetachStream(StreamCtx *sc, const char *reason) NS_GNUC_NONNULL(1,2);
 
 static inline size_t   PollsetGetSlot(NsTLSConfig *dc, SSL *s, const StreamCtx *sc) NS_GNUC_NONNULL(1,2);
 static uint64_t        PollsetGetEvents(NsTLSConfig *dc, SSL *s, const StreamCtx *sc) NS_GNUC_NONNULL(1,2);
@@ -1517,17 +1518,25 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
 
     ERR_clear_error();
 
-    csc = PollsetAddStreamRegister(cc, cc->h3ssl.cstream, H3_KIND_CTRL);
-    psc = PollsetAddStreamRegister(cc, cc->h3ssl.pstream, H3_KIND_QPACK_ENCODER);
-    rsc = PollsetAddStreamRegister(cc, cc->h3ssl.rstream, H3_KIND_QPACK_DECODER);
-
-    if (csc == NULL|| psc  == NULL|| rsc== NULL) {
-        Ns_Log(Warning, "H3: quic_conn_open_server_uni_streams: could not setup streams");
+    csc = PollsetAddStreamRegister(cc, h3ssl->cstream, H3_KIND_CTRL);
+    if (csc == NULL) {
+        Ns_Log(Warning, "H3: could not register server control stream");
         goto cleanup_err;
     }
-
     h3ssl->cstream_id = csc->quic_sid;
+
+    psc = PollsetAddStreamRegister(cc, h3ssl->pstream, H3_KIND_QPACK_ENCODER);
+    if (psc == NULL) {
+        Ns_Log(Warning, "H3: could not register server QPACK encoder stream");
+        goto cleanup_err;
+    }
     h3ssl->pstream_id = psc->quic_sid;
+
+    rsc = PollsetAddStreamRegister(cc, h3ssl->rstream, H3_KIND_QPACK_DECODER);
+    if (rsc == NULL) {
+        Ns_Log(Warning, "H3: could not register server QPACK decoder stream");
+        goto cleanup_err;
+    }
     h3ssl->rstream_id = rsc->quic_sid;
 
     /* Bind control first */
@@ -1560,15 +1569,16 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
     return 0;
 
  cleanup_err:
-    if (csc != NULL) {
-        StreamCtxUnregister(csc);
+    if (rsc != NULL) {
+        PollsetDetachStream(rsc, "server QPACK decoder setup failed");
     }
     if (psc != NULL) {
-        StreamCtxUnregister(psc);
+        PollsetDetachStream(psc, "server QPACK encoder setup failed");
     }
-    if (rsc != NULL) {
-        StreamCtxUnregister(rsc);
+    if (csc != NULL) {
+        PollsetDetachStream(csc, "server control stream setup failed");
     }
+
     if (h3ssl->rstream != NULL) {
         SSL_free(h3ssl->rstream);
     }
@@ -6330,6 +6340,42 @@ PollsetAddStreamRegister(ConnCtx *cc, SSL *s, H3StreamKind kind)
     PollsetAddStream(dc, s, mask, kind);
 
     return sc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PollsetDetachStream --
+ *
+ *      Remove a registered stream from the connection stream registry
+ *      and mark its pollset entry as dead. The associated SSL object is
+ *      not freed by this function.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The stream can no longer be found through the connection stream
+ *      registry. Its pollset slot is marked dead and will be reclaimed
+ *      during the next pollset consolidation.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PollsetDetachStream(StreamCtx *sc, const char *reason)
+{
+    ConnCtx *cc;
+    SSL     *stream;
+
+    cc = sc->cc;
+    stream = sc->ssl;
+
+    /*
+     * StreamCtxUnregister() removes the stream from cc->streams, while
+     * PollsetMarkDead() clears its pollset slot and pidx.
+     */
+    StreamCtxUnregister(sc);
+    PollsetMarkDead(cc, stream, reason);
 }
 
 /*
