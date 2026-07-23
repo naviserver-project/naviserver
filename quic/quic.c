@@ -508,7 +508,7 @@ static inline size_t   PollsetGetSlot(NsTLSConfig *dc, SSL *s, const StreamCtx *
 static uint64_t        PollsetGetEvents(NsTLSConfig *dc, SSL *s, const StreamCtx *sc) NS_GNUC_NONNULL(1,2);
 static void            PollsetSetEvents(NsTLSConfig *dc, SSL *s, const StreamCtx *sc, uint64_t events) NS_GNUC_NONNULL(1,2,3) NS_GNUC_UNUSED;
 static inline uint64_t PollsetUpdateEvents(NsTLSConfig *dc, SSL *s, const StreamCtx *sc,
-                                           uint64_t set_bits, uint64_t clear_bits) NS_GNUC_NONNULL(1,2);
+                                           uint64_t set_bits, uint64_t clear_bits, const char *label) NS_GNUC_NONNULL(1,2,6);
 
 static inline void     PollsetEnableRead(NsTLSConfig *dc, SSL *s, StreamCtx *sc) NS_GNUC_NONNULL(1,2) NS_GNUC_UNUSED;
 static inline void     PollsetDisableRead(NsTLSConfig *dc, SSL *s, const StreamCtx *sc, const char *label) NS_GNUC_NONNULL(1,2);
@@ -2310,7 +2310,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     /* Write-side exception or closed write side: stop polling for W. */
     if ((revents & SSL_POLL_EVENT_EW) || SSL_get_stream_write_state(stream) != SSL_STREAM_STATE_OK) {
         if (current_mask & SSL_POLL_EVENT_W) {
-            (void)PollsetUpdateEvents(dc, stream, sc, /*set=*/0, /*clear=*/SSL_POLL_EVENT_W);
+            (void)PollsetUpdateEvents(dc, stream, sc, /*set=*/0, /*clear=*/SSL_POLL_EVENT_W, "quic_stream_handle_e");
         }
         /* Not removed; just disarmed W */
     }
@@ -2686,16 +2686,39 @@ h3_conn_write_step(ConnCtx *cc)
                 }
             }
 
+            if (ssc->pidx == (size_t)-1
+                || ssc->ssl == NULL
+                || ssc->pidx >= PollsetCount(cc->dc)
+                || cc->dc->u.h3.ssl_items.data[ssc->pidx] != ssc->ssl) {
+
+                Ns_Log(Ns_LogQuicDebug,
+                       "[%lld] H3[%lld] dropping resume for detached stream",
+                       (long long)cc->dc->iter,
+                       (long long)sid);
+
+                SharedResumeClear(&ssc->sh);
+                continue;
+            }
+
             /*
              * If this stream uses a data reader (body or zero-length FIN
              * after headers), poke nghttp3 so it will call the read
              * callback.
              */
             if (ssc->hdrs_submitted) {
-                (void)nghttp3_conn_resume_stream(cc->h3conn, sid);
-                /* Ensure we get a POLLOUT tick to push frames */
-                if (ssc->ssl != NULL) {
+                int rv = nghttp3_conn_resume_stream(cc->h3conn, sid);
+                if (rv == 0) {
+                    /*
+                     * Ensure we get a POLLOUT tick to push frames.  We know
+                     * from the check above that ssc->ssl is not NULL.
+                     */
                     PollsetEnableWrite(cc->dc, ssc->ssl, ssc, "resume");
+                } else {
+                    Ns_Log(Ns_LogQuicDebug,
+                           "[%lld] H3[%lld] nghttp3 resume returned %d (%s)",
+                           (long long)cc->dc->iter,
+                           (long long)sid,
+                           rv, nghttp3_strerror(rv));
                 }
             }
             SharedResumeClear(&ssc->sh);
@@ -6546,15 +6569,40 @@ PollsetSetEvents(NsTLSConfig *dc, SSL *s, const StreamCtx *sc, uint64_t events)
  */
 static inline uint64_t
 PollsetUpdateEvents(NsTLSConfig *dc, SSL *s, const StreamCtx *sc,
-                    uint64_t set_bits, uint64_t clear_bits)
+                    uint64_t set_bits, uint64_t clear_bits, const char *label)
 {
     const uint64_t errmask = sc != NULL ? H3_STREAM_ERR_MASK : H3_CONN_ERR_MASK;
     const size_t   idx     = PollsetGetSlot(dc, s, sc);
 
     if (idx == (size_t)-1) {
-        Ns_Log(Warning, "PollsetUpdateEvents: item not found (sc=%p, ssl=%p)",
-               (const void*)sc, (void*)s);
-        return 0;
+        if (set_bits == 0u) {
+            /*
+             * Disabling interest after another cleanup path has already
+             * detached the item is harmless and intentionally idempotent.
+             */
+            Ns_Log(Warning /*Ns_LogQuicDebug*/,
+                   "PollsetUpdateEvents: item already detached while "
+                   "clearing events"
+                   " (sc=%p, ssl=%p, clear=0x%llx, reason='%s')",
+                   (void *)sc, (void *)s,
+                   (unsigned long long)clear_bits,
+                   label);
+        } else {
+            /*
+             * Rearming an item which is no longer in the pollset is a
+             * lifecycle error.
+             */
+            Ns_Log(Warning,
+                   "PollsetUpdateEvents: cannot enable events for "
+                   "detached item"
+                   " (sc=%p, ssl=%p, set=0x%llx, clear=0x%llx,"
+                   " reason='%s')",
+                   (void *)sc, (void *)s,
+                   (unsigned long long)set_bits,
+                   (unsigned long long)clear_bits,
+                   label);
+        }
+        return 0u;
     } else {
         const uint64_t m = dc->u.h3.poll_items[idx].events;
         const uint64_t desired = ((m | errmask | set_bits) & ~clear_bits);
@@ -6594,22 +6642,22 @@ PollsetUpdateEvents(NsTLSConfig *dc, SSL *s, const StreamCtx *sc,
  *----------------------------------------------------------------------
  */
 static inline void PollsetEnableRead(NsTLSConfig *dc, SSL *s, StreamCtx *sc) {
-    (void)PollsetUpdateEvents(dc, s, sc, SSL_POLL_EVENT_R, 0);
+    (void)PollsetUpdateEvents(dc, s, sc, SSL_POLL_EVENT_R, 0, "PollsetEnableRead");
 }
 static inline void PollsetDisableRead(NsTLSConfig *dc, SSL *s, const StreamCtx *sc, const char *label) {
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetDisableRead %p %s %s",
            (long long)dc->iter, (void*)s, sc != NULL?H3StreamKind_str(sc->kind):"other", label);
-    (void)PollsetUpdateEvents(dc, s, sc, 0, SSL_POLL_EVENT_R);
+    (void)PollsetUpdateEvents(dc, s, sc, 0, SSL_POLL_EVENT_R, "PollsetDisableRead");
 }
 static inline void PollsetEnableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc, const char *label) {
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%ld] PollsetEnableWrite %p %s %s",
            (long long)dc->iter, sc != NULL?(long)sc->quic_sid:-1, (void*)s, sc != NULL?H3StreamKind_str(sc->kind):"other", label);
-    (void)PollsetUpdateEvents(dc, s, sc, SSL_POLL_EVENT_W, 0);
+    (void)PollsetUpdateEvents(dc, s, sc, SSL_POLL_EVENT_W, 0, label);
 }
 static inline void PollsetDisableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc, const char *label) {
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%ld] PollsetDisableWrite %p %s %s",
            (long long)dc->iter, sc != NULL?(long)sc->quic_sid:-1, (void*)s, sc != NULL?H3StreamKind_str(sc->kind):"other", label);
-    (void)PollsetUpdateEvents(dc, s, sc, 0, SSL_POLL_EVENT_W);
+    (void)PollsetUpdateEvents(dc, s, sc, 0, SSL_POLL_EVENT_W, label);
 }
 
 /*
@@ -6653,7 +6701,7 @@ PollsetUpdateConnPollInterest(ConnCtx *cc)
         clear_bits |= SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU;
     }
 
-    (void)PollsetUpdateEvents(dc, cc->h3ssl.conn, /*sc=*/NULL, set_bits, clear_bits);
+    (void)PollsetUpdateEvents(dc, cc->h3ssl.conn, /*sc=*/NULL, set_bits, clear_bits, "PollsetUpdateConnPollInterest");
 }
 
 /*
