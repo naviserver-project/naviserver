@@ -580,8 +580,17 @@ static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL *conn)
     if (SSL_get_conn_close_info(conn, &cci, sizeof(cci)) == 1) {
         if (cci.flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) {
             const char *class_str = (cci.error_code >= 0x100) ? "HTTP/3 (app)" : "QUIC transport";
-            uint64_t ec = cci.error_code;
-            if ((ec & 0xFF00u) == 0x0100u) {
+            uint64_t    ec = cci.error_code;
+
+            if (ec == OSSL_QUIC_ERR_NO_ERROR) {
+                Ns_Log(Ns_LogQuicDebug,
+                       "QUIC close: remote=%d class=QUIC transport "
+                       "code=0x%llx reason='%s'",
+                       !(cci.flags & SSL_CONN_CLOSE_FLAG_LOCAL),
+                       (unsigned long long)ec,
+                       cci.reason != NULL ? cci.reason : "");
+
+            } else if ((ec & 0xFF00u) == 0x0100u) {
                 unsigned alert = (unsigned)(ec & 0xFFu); // 303->47
 
                 Ns_Log(Error, "QUIC close: remote=%d class=CRYPTO_ERROR tls_alert=%u"
@@ -3848,30 +3857,75 @@ h3_stream_read_into_hold(StreamCtx *sc, SSL *stream)
     if (sc->rx_len != sc->rx_off) {
         return DRAIN_PROGRESS; /* still have bytes to feed */
     }
-    sc->rx_len = sc->rx_off = 0;
 
-    nread = 0;
+    sc->rx_len = sc->rx_off = 0u;
+
+    nread = 0u;
     ok = SSL_read_ex(stream, sc->rx_hold, sc->rx_cap, &nread);
-    ossl_log_stream_and_conn_states(cc, stream, cc->h3ssl.conn, SSL_STREAM_STATE_OK, "drain after SSL_read");
+
+    ossl_log_stream_and_conn_states(cc, stream, cc->h3ssl.conn,
+                                    SSL_STREAM_STATE_OK,
+                                    "drain after SSL_read");
+
     if (ok != 1) {
         int err = SSL_get_error(stream, ok);
-        if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) return DRAIN_NONE;
+
+        if (err == SSL_ERROR_WANT_READ
+            || err == SSL_ERROR_WANT_WRITE) {
+            return DRAIN_NONE;
+        }
+
         if (ok == 0 && err == SSL_ERROR_ZERO_RETURN) {
-            /* EOF now: if nothing buffered, deliver FIN immediately; otherwise defer FIN */
-            if (sc->rx_len == 0) {
-                (void)nghttp3_conn_read_stream(cc->h3conn, (int64_t)sc->h3_sid, NULL, 0, 1);
+            /*
+             * EOF now: if nothing is buffered, deliver FIN immediately;
+             * otherwise defer FIN until the buffered data is consumed.
+             */
+            if (sc->rx_len == 0u) {
+                (void)nghttp3_conn_read_stream(cc->h3conn,
+                                               (int64_t)sc->h3_sid,
+                                               NULL, 0u, 1);
                 sc->eof_seen = NS_TRUE;
                 return DRAIN_EOF;
             }
+
             sc->rx_fin_pending = NS_TRUE;
             return DRAIN_EOF;
         }
-        ossl_log_error_detail(err, "h3_stream_drain");
+
+        {
+            unsigned long osslErr = ERR_peek_error();
+
+            if (err == SSL_ERROR_SSL
+                && osslErr != 0u
+                && ERR_GET_LIB(osslErr) == ERR_LIB_SSL
+                && ERR_GET_REASON(osslErr)
+                   == SSL_R_PROTOCOL_IS_SHUTDOWN) {
+
+                /*
+                 * This commonly occurs when a stream is examined after
+                 * its owning connection has entered shutdown. Preserve
+                 * the existing DRAIN_ERROR control flow, but do not
+                 * report the expected shutdown condition as an error.
+                 */
+                Ns_Log(Ns_LogQuicDebug,
+                       "H3[%lld] stream drain stopped after "
+                       "connection shutdown",
+                       (long long)sc->quic_sid);
+
+                ERR_clear_error();
+            } else {
+                ossl_log_error_detail(err, "h3_stream_drain");
+            }
+        }
+
         return DRAIN_ERROR;
     }
-    if (nread == 0) return DRAIN_NONE;
 
-    sc->rx_len = nread; /* rx_off stays 0 */
+    if (nread == 0u) {
+        return DRAIN_NONE;
+    }
+
+    sc->rx_len = nread;
     return DRAIN_PROGRESS;
 }
 
@@ -7516,7 +7570,7 @@ QuicThread(void *arg)
     polltimeout_ptr = &dc->u.h3.idle_timeout;
 
     while (!stopping) {
-        int      i, ret;
+        int      i, rc;
         size_t   result_count = SIZE_MAX, numitems;
         uint64_t processed_event = 0;
 
@@ -7535,12 +7589,15 @@ QuicThread(void *arg)
         dc->iter++;
         //if (dc->iter>10000) { char *p=NULL; *p=0; }
 
-        ret = SSL_poll(dc->u.h3.poll_items, numitems, sizeof(SSL_POLL_ITEM), polltimeout_ptr,
+        ERR_clear_error();
+        errno = 0;
+
+        rc = SSL_poll(dc->u.h3.poll_items, numitems, sizeof(SSL_POLL_ITEM), polltimeout_ptr,
                        SSL_POLL_FLAG_NO_HANDLE_EVENTS, &result_count);
 
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3D SSL_poll returns rc %d with %ld items with events"
                " (quic.c from %s %s)",
-               (long long)dc->iter, ret, result_count, __DATE__, __TIME__);
+               (long long)dc->iter, rc, result_count, __DATE__, __TIME__);
 
         for (i = 0; i < (int)numitems; i++) {
             SSL           *s       = dc->u.h3.ssl_items.data[i];
@@ -7576,10 +7633,30 @@ QuicThread(void *arg)
             Tcl_DStringFree(&ds2);
         }
 
-        if (ret == 0) {
-            Ns_Log(Error, "[%lld] H3D SSL_poll failed", (long long)dc->iter);
-            continue;
+        if (rc != 1) {
+            unsigned long osslErr = ERR_peek_error();
+
+            Ns_Log(Error,
+                   "[%lld] H3D SSL_poll failed: result_count=%zu "
+                   "lib=%d reason=%d (%s)",
+                   (long long)dc->iter,
+                   result_count,
+                   osslErr != 0u ? ERR_GET_LIB(osslErr) : 0,
+                   osslErr != 0u ? ERR_GET_REASON(osslErr) : 0,
+                   osslErr != 0u && ERR_reason_error_string(osslErr) != NULL
+                   ? ERR_reason_error_string(osslErr)
+                   : "no OpenSSL error");
+
+            /*
+             * A nonzero result_count may contain SSL_POLL_EVENT_F entries.
+             * Do not discard these results before inspecting the poll items.
+             */
+            if (result_count == 0u) {
+                ERR_clear_error();
+                continue;
+            }
         }
+
         if (result_count == 0) {
             /* Timeout may be something somewhere */
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3D timeout", (long long)dc->iter);
