@@ -1629,6 +1629,7 @@ NS_EXTERN Ns_LogSeverity Ns_LogUrlspaceDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogTimeoutDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogNsSetDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogMemoryDebug;
+NS_EXTERN Ns_LogSeverity Ns_LogQuicDebug;
 NS_EXTERN bool NsWriterBandwidthManagement;
 
 NS_EXTERN const char *nsBuildDate;
