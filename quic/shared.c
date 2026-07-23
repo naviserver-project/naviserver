@@ -84,6 +84,7 @@
 /* ---------- Prototypes ---------- */
 static int resume_grow(SharedState *st) NS_GNUC_NONNULL(1);
 
+NS_EXTERN Ns_LogSeverity Ns_LogQuicDebug;
 
 /*======================================================================
  * Function Implementations: Utilities
@@ -341,7 +342,7 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
     return 0;
   }
 
-  Ns_Log(Notice, "H3[%lld] SharedEnqueueBody: +%zu (queued=%zu)",
+  Ns_Log(Ns_LogQuicDebug, "H3[%lld] SharedEnqueueBody: +%zu (queued=%zu)",
        (long long)ss->sid_hint, len, ss->tx_queued.unread + len);
 
   ch = ChunkInit(buf, len);
@@ -441,13 +442,13 @@ size_t SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes) {
 size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain) {
     size_t n;
 
-    Ns_Log(Notice, "SharedTrimPending (%ld bytes): before ChunkQueueTrim unread %ld", nbytes, ss->tx_pending.unread);
+    Ns_Log(Ns_LogQuicDebug, "SharedTrimPending (%ld bytes): before ChunkQueueTrim unread %ld", nbytes, ss->tx_pending.unread);
 
     Ns_MutexLock(&ss->lock);
     n = ChunkQueueTrim(&ss->tx_pending, nbytes, drain);
     Ns_MutexUnlock(&ss->lock);
 
-    Ns_Log(Notice, "SharedTrimPending (%ld bytes): after ChunkQueueTrim unread %ld", nbytes, ss->tx_pending.unread);
+    Ns_Log(Ns_LogQuicDebug, "SharedTrimPending (%ld bytes): after ChunkQueueTrim unread %ld", nbytes, ss->tx_pending.unread);
 
     return n;
 }
@@ -475,7 +476,7 @@ size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain) {
 size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len) {
     size_t trimmed = 0;
 
-    Ns_Log(Notice, "H3[%lld] SharedTrimPendingFromVec (%ld bytes): before ChunkQueueTrim unread %ld",
+    Ns_Log(Ns_LogQuicDebug, "H3[%lld] SharedTrimPendingFromVec (%ld bytes): before ChunkQueueTrim unread %ld",
             (long long)ss->sid_hint, len, ss->tx_pending.unread);
 
     Ns_MutexLock(&ss->lock);
@@ -522,7 +523,7 @@ size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t le
 
     Ns_MutexUnlock(&ss->lock);
 
-    Ns_Log(Notice, "H3[%lld] SharedTrimPendingFromVec (%ld bytes): after ChunkQueueTrim unread %ld (trimmed %ld)",
+    Ns_Log(Ns_LogQuicDebug, "H3[%lld] SharedTrimPendingFromVec (%ld bytes): after ChunkQueueTrim unread %ld (trimmed %ld)",
             (long long)ss->sid_hint, len, ss->tx_pending.unread, trimmed);
 
     return trimmed;
@@ -589,7 +590,7 @@ size_t SharedBuildVecsFromPending(SharedStream *ss, nghttp3_vec *vecs, size_t ve
 
     Ns_MutexLock(&ss->lock);
     for (Chunk *ch = ss->tx_pending.head; ch && out < veccnt; ch = ch->next) {
-      Ns_Log(Notice, "H3[%lld] SharedBuildVecsFromPending appending chunk len %ld",
+      Ns_Log(Ns_LogQuicDebug, "H3[%lld] SharedBuildVecsFromPending appending chunk len %ld",
              (long long)ss->sid_hint, ch->len);
         vecs[out].base = ch->p;
         vecs[out].len  = ch->len;

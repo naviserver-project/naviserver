@@ -141,7 +141,7 @@ inline void
 ChunkEnqueue(ChunkQueue *q, Chunk *ch, const char *label)
 {
     (void)label;
-    //Ns_Log(Notice, "ChunkEnqueue with %ld bytes (%s)", ch->len, label);
+    //Ns_Log(Ns_LogQuicDebug, "ChunkEnqueue with %ld bytes (%s)", ch->len, label);
     ch->next = NULL;
     if (q->tail != NULL) {
         q->tail->next = ch;

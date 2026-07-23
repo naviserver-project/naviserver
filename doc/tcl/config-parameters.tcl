@@ -2458,6 +2458,12 @@ stops execution of that ADP page}
                 default {10ms}
                 desc {Drain timeout used when closing QUIC connections, allowing pending packets or connection-close handling to complete}
             }
+
+            debug {
+                type boolean
+                default false
+                desc {Enable detailed HTTP/3 and QUIC diagnostic logging}
+            }
         }
 
 

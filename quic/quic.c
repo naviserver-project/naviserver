@@ -113,6 +113,8 @@ Ns_ModuleGetInfo(Ns_ModuleInfo *infoPtr)
                       1u);
 }
 
+Ns_LogSeverity Ns_LogQuicDebug;
+
 #if defined(HAVE_NGHTTP3) && defined(HAVE_OPENSSL_EVP_H)
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -594,10 +596,10 @@ static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL *conn)
                        cci.reason ? cci.reason : "");
             }
         } else {
-            Ns_Log(Notice, "[%lld] conn_close_info: not a transport failure", (long long)dc->iter);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] conn_close_info: not a transport failure", (long long)dc->iter);
         }
     } else {
-        Ns_Log(Notice, "[%lld] can't get conn_close_info", (long long)dc->iter);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] can't get conn_close_info", (long long)dc->iter);
     }
 }
 
@@ -668,10 +670,10 @@ static void ossl_stream_log_state(NsTLSConfig *dc, SSL *stream, const char *labe
     StreamCtx *sc = SSL_get_ex_data(stream, dc->u.h3.sc_idx);
 
     if (!sc || !sc->ssl) {
-        Ns_Log(Notice, "[%lld] %s sid=%llu: (no ctx/ssl)", (long long)dc->iter, label, (long long)sid);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] %s sid=%llu: (no ctx/ssl)", (long long)dc->iter, label, (long long)sid);
         return;
     }
-    Ns_Log(Notice, "[%lld] %s sid=%llu: type=%d rs=%d ws=%d io_state %.2x",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] %s sid=%llu: type=%d rs=%d ws=%d io_state %.2x",
            (long long)dc->iter, label, (long long)sid, SSL_get_stream_type(stream),
            SSL_get_stream_read_state(stream), SSL_get_stream_write_state(stream),
            sc->io_state);
@@ -726,7 +728,7 @@ ossl_log_stream_and_conn_states(ConnCtx *cc, SSL *s, SSL *conn, int st_expect, c
     }
 
     if (sc == NULL) {
-        Ns_Log(Notice,
+        Ns_Log(Ns_LogQuicDebug,
                "[%lld] H3[%lld] %s: NO SC, ssl=%p type=%d (%s) rs=%d (%s) ws=%d (%s) conn.sd=%d",
                (long long)dc->iter, (long long)sid, where, (void*)s,
                st, ossl_quic_stream_type_str(st),
@@ -734,18 +736,18 @@ ossl_log_stream_and_conn_states(ConnCtx *cc, SSL *s, SSL *conn, int st_expect, c
                ws, ossl_quic_stream_state_str(ws),
                sd);
     } else if (check_read && check_write && ( ws != st_expect || rs != st_expect)) {
-        Ns_Log(Notice, "[%lld] H3[%lld] %s: ssl=%p BIDI read %s write %s io_state %.2x",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] %s: ssl=%p BIDI read %s write %s io_state %.2x",
                (long long)dc->iter, (long long)sid, where, (void*)s,
                ossl_quic_stream_state_str(rs),
                ossl_quic_stream_state_str(ws),
                sc->io_state);
     } else if (check_write && ws != st_expect) {
-        Ns_Log(Notice, "[%lld] H3[%lld] %s: ssl=%p write %s io_state %.2x",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] %s: ssl=%p write %s io_state %.2x",
                (long long)dc->iter, (long long)sid, where, (void*)s,
                ossl_quic_stream_state_str(ws),
                sc->io_state);
     } else if (check_read && rs != st_expect) {
-        Ns_Log(Notice, "[%lld] H3[%lld] %s: ssl=%p read %s io_state %.2x",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] %s: ssl=%p read %s io_state %.2x",
                (long long)dc->iter, (long long)sid, where, (void*)s,
                ossl_quic_stream_state_str(rs),
                sc->io_state);
@@ -772,12 +774,12 @@ static void ossl_log_handshake_state(SSL *conn) {
     const unsigned char *alpn;
     unsigned int         len;
 
-    Ns_Log(Notice, "Handshake state: %s (%u)", name, state);
+    Ns_Log(Ns_LogQuicDebug, "Handshake state: %s (%u)", name, state);
 
     // Log ALPN status
     SSL_get0_alpn_selected(conn, &alpn, &len);
     if (len > 0) {
-        Ns_Log(Notice, "Handshake state: Negotiated ALPN: %s", alpn);
+        Ns_Log(Ns_LogQuicDebug, "Handshake state: Negotiated ALPN: %s", alpn);
     }
 }
 
@@ -989,7 +991,7 @@ static void ossl_msg_cb(int write_p, int UNUSED(version), int content_type,
         unsigned htype = p[0];
         const char *dir = write_p ? "Sent" : "Received";
 
-        Ns_Log(Notice, "TLS %s: Handshake type=%u (%s) len=%zu",
+        Ns_Log(Ns_LogQuicDebug, "TLS %s: Handshake type=%u (%s) len=%zu",
                dir, htype, ossl_hs_type_str(htype), len);
 
         // If it *is* NewSessionTicket, dump the first fields to catch malformed encoding
@@ -1003,14 +1005,14 @@ static void ossl_msg_cb(int write_p, int UNUSED(version), int content_type,
                 lifetime = (uint32_t)((q[0]<<24)|(q[1]<<16)|(q[2]<<8)|q[3]); q+=4;
                 age_add  = (uint32_t)((q[0]<<24)|(q[1]<<16)|(q[2]<<8)|q[3]); q+=4;
                 nonce_len = *q++;
-                Ns_Log(Notice, "  NST: lifetime=%u age_add=%u nonce_len=%u",
+                Ns_Log(Ns_LogQuicDebug, "  NST: lifetime=%u age_add=%u nonce_len=%u",
                        lifetime, age_add, nonce_len);
                 if (4+4+1+nonce_len+2 <= len-4) {
                     unsigned ticket_len;
 
                     q += nonce_len;
                     ticket_len = (unsigned)(q[0]<<8)|q[1]; q+=2;
-                    Ns_Log(Notice, "  NST: ticket_len=%u ext_remaining=%zu",
+                    Ns_Log(Ns_LogQuicDebug, "  NST: ticket_len=%u ext_remaining=%zu",
                            ticket_len, (size_t)(len - (size_t)(q - p) - ticket_len));
                 }
             }
@@ -1025,11 +1027,11 @@ static void ossl_msg_cb(int write_p, int UNUSED(version), int content_type,
     } else if(content_type == SSL3_RT_ALERT && len >= 2 ){
         const char *dir = write_p ? "Sent" : "Received";
         unsigned char level = p[0], desc = p[1];
-        Ns_Log(Notice, "TLS %s: ALERT level=%u desc=%u (%s)",
+        Ns_Log(Ns_LogQuicDebug, "TLS %s: ALERT level=%u desc=%u (%s)",
                dir, level, desc, ossl_alert_desc_str(desc));
 
     } else {
-        Ns_Log(Notice, "TLS %p %s: %s (%zu bytes)", (void*)ssl,
+        Ns_Log(Ns_LogQuicDebug, "TLS %p %s: %s (%zu bytes)", (void*)ssl,
                write_p ? "Sent" : "Received",
                ossl_content_type_str(content_type),
                len);
@@ -1065,7 +1067,7 @@ static void ossl_cc_exdata_free(void *parent, void *ptr, CRYPTO_EX_DATA *UNUSED(
                                 int UNUSED(idx), long UNUSED(argl), void *UNUSED(argp)) {
     StreamCtx *sc = ptr;
     if (sc != NULL) {
-        Ns_Log(Notice, "ossl_cc_exdata_free calls StreamCtxFree %p parent %p", (void*)ptr, (void*)parent);
+        Ns_Log(Ns_LogQuicDebug, "ossl_cc_exdata_free calls StreamCtxFree %p parent %p", (void*)ptr, (void*)parent);
         ConnCtxFree(ptr);
     }
 }
@@ -1074,7 +1076,7 @@ static void ossl_sc_exdata_free(void *parent, void *ptr, CRYPTO_EX_DATA *UNUSED(
                                 int UNUSED(idx), long UNUSED(argl), void *UNUSED(argp)) {
     StreamCtx *sc = ptr;
     if (sc != NULL) {
-        Ns_Log(Notice, "ossl_sc_exdata_free calls StreamCtxFree %p parent %p", (void*)ptr, (void*)parent);
+        Ns_Log(Ns_LogQuicDebug, "ossl_sc_exdata_free calls StreamCtxFree %p parent %p", (void*)ptr, (void*)parent);
         StreamCtxFree(ptr);
     }
 }
@@ -1083,14 +1085,14 @@ static void ConnCtxPrintSidTable(ConnCtx *cc) {
     Tcl_HashSearch hs;
     Tcl_HashEntry *e = Tcl_FirstHashEntry(&cc->streams, &hs);
 
-    Ns_Log(Notice, "H3 SidTable for ConnCtx %p h3conn %p h3ssl %p",
+    Ns_Log(Ns_LogQuicDebug, "H3 SidTable for ConnCtx %p h3conn %p h3ssl %p",
            (void*)cc, (void*)cc->h3conn,  (void*)cc->h3ssl.conn);
 
     for (;  e != NULL; e = Tcl_NextHashEntry(&hs)) {
         int64_t    sid = PTR2LONG(Tcl_GetHashKey(&cc->streams, e));
         StreamCtx *sc = Tcl_GetHashValue(e);
 
-        Ns_Log(Notice, "H3 ... sid %lld sc %p h3_sid %lld quic_sid %lld ssl %p nsSock %d",
+        Ns_Log(Ns_LogQuicDebug, "H3 ... sid %lld sc %p h3_sid %lld quic_sid %lld ssl %p nsSock %d",
                (long long)sid, (void*)sc,
                (long long)sc->h3_sid, (long long)sc->quic_sid, (void*)sc->ssl,
                sc->nsSock == NULL ? -1 : sc->nsSock->sock
@@ -1139,7 +1141,7 @@ static void ConnCtxPrintSidTable(ConnCtx *cc) {
 static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
     int ret, err;
 
-    Ns_Log(Notice, "quic_conn_drive_handshake servername <%s>", SSL_get_servername(conn, TLSEXT_NAMETYPE_host_name));
+    Ns_Log(Ns_LogQuicDebug, "quic_conn_drive_handshake servername <%s>", SSL_get_servername(conn, TLSEXT_NAMETYPE_host_name));
     ERR_clear_error();
 
     // Now try to advance the handshake
@@ -1152,7 +1154,7 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
             (ed == SSL_EARLY_DATA_REJECTED) ? "rejected" :
             (ed == SSL_EARLY_DATA_NOT_SENT) ? "not-sent" : "unknown";
 
-        Ns_Log(Notice, "[%lld] Handshake completed for %p (early-data status: %s)",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] Handshake completed for %p (early-data status: %s)",
                (long long)dc->iter, (void*)conn, eds);
         return 1;
     }
@@ -1166,13 +1168,13 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
         /* group: shows if we accidentally negotiated a hybrid */
         long nid = SSL_get_shared_group(conn, 0);   /* first shared group */
         if (nid > 0) {
-            Ns_Log(Notice, "[%lld] TLS group: %s", (long long)dc->iter, OBJ_nid2sn((int)nid));
+            Ns_Log(Ns_LogQuicDebug, "[%lld] TLS group: %s", (long long)dc->iter, OBJ_nid2sn((int)nid));
         }
 
         {
             STACK_OF(X509)* extras = NULL;
             SSL_CTX_get_extra_chain_certs_only(SSL_get_SSL_CTX(conn), &extras);
-            Ns_Log(Notice, "[%lld] TLS quic ctx extra chain count=%d",  (long long)dc->iter, extras ? sk_X509_num(extras) : 0);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] TLS quic ctx extra chain count=%d",  (long long)dc->iter, extras ? sk_X509_num(extras) : 0);
         }
 
         /* QUIC close reason (transport/app) */
@@ -1234,7 +1236,7 @@ quic_conn_enter_shutdown(ConnCtx *cc, const char *why)
     NS_TA_ASSERT_HELD(cc, affinity);
     cc->wants_write = NS_FALSE;
 
-    Ns_Log(Notice, "[%lld] H3D QUIC conn %p enter shutdown: %s",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D QUIC conn %p enter shutdown: %s",
            (long long)dc->iter, (void*)conn, (why ? why : "unspecified"));
 
     /* Try to emit CONNECTION_CLOSE; harmless if already closing */
@@ -1245,7 +1247,7 @@ quic_conn_enter_shutdown(ConnCtx *cc, const char *why)
      * when the severity is disabled.
      */
     (void)SSL_handle_events(conn);
-    Ns_Log(Notice, "[%lld] SSL_handle_events in quic_conn_enter_shutdown conn %p",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in quic_conn_enter_shutdown conn %p",
            (long long)dc->iter, (void*)conn);
 
     /*
@@ -1268,7 +1270,7 @@ quic_conn_enter_shutdown(ConnCtx *cc, const char *why)
 
     /* Finally remove the connection item itself */
     PollsetMarkDead(cc, conn, "conn shutdown (self)");
-    Ns_Log(Notice, "H3 quic_conn_enter_shutdown '%s' FREE conn %p", why, (void*)conn);
+    Ns_Log(Ns_LogQuicDebug, "H3 quic_conn_enter_shutdown '%s' FREE conn %p", why, (void*)conn);
     SSL_free(conn);
 }
 
@@ -1345,7 +1347,7 @@ quic_conn_can_be_freed(SSL *conn, uint64_t revents, ConnCtx *cc)
                     SSL_POLL_EVENT_R|SSL_POLL_EVENT_W)) == 0;
 
     if (both_shutdown && no_actionable && no_open_req) {
-        Ns_Log(Notice, "H3 quic_conn_can_be_freed %p", (void *)conn);
+        Ns_Log(Ns_LogQuicDebug, "H3 quic_conn_can_be_freed %p", (void *)conn);
     }
     return both_shutdown && no_actionable && no_open_req;
 }
@@ -1505,7 +1507,7 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
         int t1 = SSL_get_stream_type(h3ssl->pstream);
         int t2 = SSL_get_stream_type(h3ssl->rstream);
 
-        Ns_Log(Notice, "[%lld] H3 server unis: c=%d, p=%d, r=%d (expect WRITE=%d)",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 server unis: c=%d, p=%d, r=%d (expect WRITE=%d)",
                (long long)dc->iter, t0, t1, t2, SSL_STREAM_TYPE_WRITE);
         assert(t0 == SSL_STREAM_TYPE_WRITE);
         assert(t1 == SSL_STREAM_TYPE_WRITE);
@@ -1546,10 +1548,10 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
 
     h3_conn_write_step(cc);
     SSL_handle_events(conn);
-    Ns_Log(Notice, "[%lld] SSL_handle_events in quic_conn_open_server_uni_streams conn %p => %d",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in quic_conn_open_server_uni_streams conn %p => %d",
            (long long)dc->iter, (void*)cc->h3ssl.conn, SSL_handle_events(conn));
 
-    Ns_Log(Notice, "[%lld] H3 quic_conn_open_server_uni_streams: cstream %llu %p pstream %llu %p rstream %llu %p",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 quic_conn_open_server_uni_streams: cstream %llu %p pstream %llu %p rstream %llu %p",
            (long long)dc->iter,
            (long long)h3ssl->cstream_id, (void*)h3ssl->cstream,
            (long long)h3ssl->pstream_id, (void*)h3ssl->pstream,
@@ -1634,7 +1636,7 @@ static void quic_stream_accepted_null(ConnCtx *cc)
         break;
 
     case SSL_ERROR_ZERO_RETURN:
-        Ns_Log(Notice, "[%lld] H3 accept: QUIC connection closed (no more streams)",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 accept: QUIC connection closed (no more streams)",
                (long long)dc->iter);
         cc->conn_closed = NS_TRUE;
         break;
@@ -1828,7 +1830,7 @@ static bool quic_conn_can_be_freed_postloop(SSL *conn, ConnCtx *cc)
         bool no_open_streams  = quic_conn_stream_map_empty(cc);
 
         if (both_shutdown && no_open_streams) {
-            Ns_Log(Notice, "H3 quic_conn_can_be_freed_postloop conn %p sd=%x entries=%d init=%d",
+            Ns_Log(Ns_LogQuicDebug, "H3 quic_conn_can_be_freed_postloop conn %p sd=%x entries=%d init=%d",
                    (void*)conn, sd, cc->streams.numEntries, SSL_is_init_finished(conn));
         }
         return both_shutdown && no_open_streams;
@@ -1877,7 +1879,7 @@ quic_udp_set_rcvbuf(int fd, size_t rcvbuf_bytes)
                    fd, size, strerror(errno));
         }
         if (getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &got, &glen) == 0) {
-            Ns_Log(Notice, "udp(fd=%d): SO_RCVBUF requested=%ld, actual=%ld",
+            Ns_Log(Ns_LogQuicDebug, "udp(fd=%d): SO_RCVBUF requested=%ld, actual=%ld",
                    fd, size, got);
         }
     }
@@ -2042,7 +2044,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         SSL             *conn = SSL_accept_connection(listener_ssl, 0);
         char             buffer[NS_IPADDR_SIZE];
 
-        Ns_Log(Notice, "[%lld] H3 quic_conn_handle_ic gets conn %p from listener_ssl %p",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 quic_conn_handle_ic gets conn %p from listener_ssl %p",
                (long long)dc->iter, (void*)conn, (void*) listener_ssl);
 
         if (conn == NULL) {
@@ -2058,7 +2060,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         ss = NsSockAccept((Ns_Driver*)drvPtr, SSL_get_fd(listener_ssl), (Ns_Sock**)&sockPtr, &now, conn);
 
         (void)ns_inet_ntop((const struct sockaddr *)&sockPtr->sa, buffer, NS_IPADDR_SIZE);
-        Ns_Log(Notice, "[%lld] H3 CONN accept SockAccept returns sock state %d, sockPtr %p IP %s",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 CONN accept SockAccept returns sock state %d, sockPtr %p IP %s",
                (long long)dc->iter, ss, (void*)sockPtr, buffer);
 
         assert(drvPtr == ((Sock*)sockPtr)->drvPtr);
@@ -2073,7 +2075,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         }
 
         SSL_get_domain_flags(conn, &domainFlags);
-        Ns_Log(Notice, "[%lld] H3 SockAccept can associate sock %p with cc %p domain flags 0x%llx",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 SockAccept can associate sock %p with cc %p domain flags 0x%llx",
                (long long)dc->iter, (void*)sockPtr, (void*)cc, domainFlags);
 
         SSL_set_ex_data(conn, dc->u.h3.cc_idx, cc);
@@ -2084,7 +2086,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         //settings.qpack_max_dtable_capacity = 4096;
         //settings.qpack_blocked_streams = 100;
 
-        Ns_Log(Notice, "[%lld] H3 quic_conn_handle_ic settings"
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 quic_conn_handle_ic settings"
                " qpack_max_dtable_capacity %lu"
                " qpack_blocked_streams %lu"
                " max_field_section_size %llu",
@@ -2128,7 +2130,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         PollsetAddConnection(dc, conn,
                              SSL_POLL_EVENT_ISB | SSL_POLL_EVENT_ISU);
 
-        Ns_Log(Notice, "[%lld] H3 accept_connection cc->h3ssl.conn %p ex_data %p",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 accept_connection cc->h3ssl.conn %p ex_data %p",
                (long long)dc->iter, (void*)cc->h3ssl.conn,
                dc?(void*)SSL_get_ex_data(cc->h3ssl.conn, dc->u.h3.cc_idx):0);
         //log_local_cert(dc, conn, "in quic_conn_handle_ic");
@@ -2141,7 +2143,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
 
         // Start handshake immediately
         ret = SSL_do_handshake(conn);
-        Ns_Log(Notice, "H3 quic_conn_handle_ic conn %p SSL_do_handshake -> %d", (void*)conn, ret);
+        Ns_Log(Ns_LogQuicDebug, "H3 quic_conn_handle_ic conn %p SSL_do_handshake -> %d", (void*)conn, ret);
         if (ret <= 0) {
             int err = SSL_get_error(conn, ret);
             if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
@@ -2214,7 +2216,7 @@ static bool quic_conn_handle_e(ConnCtx *cc, SSL *conn, uint64_t revents)
     if (revents & (SSL_POLL_EVENT_ER | SSL_POLL_EVENT_EW)) {
         /* Drive timers/state; then decide if we can/should tear down */
         SSL_handle_events(conn);
-        Ns_Log(Notice, "[%lld] SSL_handle_events in quic_conn_handle_e conn %p => %d",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in quic_conn_handle_e conn %p => %d",
                (long long)dc->iter, (void*)conn, SSL_handle_events(conn));
 
 
@@ -2296,7 +2298,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
         int rs = SSL_get_stream_read_state(stream);
         int ws = SSL_get_stream_write_state(stream);
         if (rs != SSL_STREAM_STATE_OK && ws != SSL_STREAM_STATE_OK) {
-            Ns_Log(Notice, "[%lld] H3[%llu] ER/EW both sides are closed rs=%s ws=%s io=%u seen_io=%u kind=%s",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW both sides are closed rs=%s ws=%s io=%u seen_io=%u kind=%s",
                    (long long)dc->iter, (long long)sid,
                    ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
                    (unsigned)(sc ? sc->io_state : 0),
@@ -2311,7 +2313,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     if (revents & (SSL_POLL_EVENT_ER | SSL_POLL_EVENT_EW)) {
         int rs = SSL_get_stream_read_state(stream);
         int ws = SSL_get_stream_write_state(stream);
-        Ns_Log(Notice, "[%lld] H3[%llu] ER/EW handled: rs=%s ws=%s io=%u seen_io=%u kind=%s",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW handled: rs=%s ws=%s io=%u seen_io=%u kind=%s",
                (long long)dc->iter, (long long)sid,
                ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
                (unsigned)(sc ? sc->io_state : 0),
@@ -2396,12 +2398,12 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
     {
         H3DrainResultCode dr = h3_stream_drain(cc, stream, (uint64_t)sid, "processing R");
 
-        Ns_Log(Notice, "[%lld] H3[%lld] R h3_stream_drain %p -> %d (%s)",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] R h3_stream_drain %p -> %d (%s)",
                (long long)dc->iter, (long long)sid, (void*)stream, dr, H3DrainResultCode_str(dr));
 
         (void)SSL_handle_events(stream);
 
-        Ns_Log(Notice, "[%lld] H3[%lld] R h3_stream_drain kind %s leads to io_state %.2x",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] R h3_stream_drain kind %s leads to io_state %.2x",
                (long long)dc->iter, (long long)sid, H3StreamKind_str(sc->kind), sc->io_state);
 
         /* If a client BIDI request became ready, dispatch it now. */
@@ -2409,7 +2411,7 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
             && (sc->io_state & H3_IO_REQ_READY)
             && !(sc->io_state & H3_IO_REQ_DISPATCHED)) {
 
-            Ns_Log(Notice, "[%lld] H3[%lld] SSL_handle_events in poll event R -> DISPATCH",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SSL_handle_events in poll event R -> DISPATCH",
                    (long long)dc->iter, (long long)sid);
 
             if (SockDispatchFinishedRequest(sc) == NS_OK) {
@@ -2462,7 +2464,7 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
         return NS_TRUE; /* slot is dead */
     }
 
-    Ns_Log(Notice, "[%lld] H3[%lld] R post-drain io_state %.2x",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] R post-drain io_state %.2x",
            (long long)dc->iter, (long long)sid, sc->io_state);
 
     return NS_FALSE; /* keep slot */
@@ -2600,11 +2602,11 @@ h3_conn_write_step(ConnCtx *cc)
     bool          need_local_retry = NS_FALSE;
     NsTLSConfig  *dc = cc->dc;
 
-    Ns_Log(Notice, "[%lld] H3 h3_conn_write_step called", (long long)dc->iter);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 h3_conn_write_step called", (long long)dc->iter);
 
     /* Don't write when we're closing/closed at our layer */
     if (cc->connection_state != 0) {
-        Ns_Log(Notice, "[%lld] H3 write: cc closing; skip", (long long)dc->iter);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write: cc closing; skip", (long long)dc->iter);
         return NS_FALSE;
     }
 
@@ -2619,7 +2621,7 @@ h3_conn_write_step(ConnCtx *cc)
 
             if (sc != NULL && StreamCtxIsBidi(sc)) {
                 /* clear for all streams */
-                Ns_Log(Notice, "[%lld] H3[%lld] h3_conn_write_step: clear tx_served_this_step",
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_conn_write_step: clear tx_served_this_step",
                        (long long)dc->iter, (long long)sc->quic_sid);
                 sc->tx_served_this_step = NS_FALSE;
                 //sc->rx_emitted_in_pass = 0;
@@ -2634,7 +2636,7 @@ h3_conn_write_step(ConnCtx *cc)
 
         /* Drain "resume" ring and poke nghttp3 */
         nres = SharedDrainResume(&cc->shared, sids, 64);
-        Ns_Log(Notice, "[%lld] H3 drain-resume count=%zu", (long long)cc->dc->iter, nres);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 drain-resume count=%zu", (long long)cc->dc->iter, nres);
 
         for (size_t i = 0; i < nres; ++i) {
             const int64_t sid = sids[i];
@@ -2644,7 +2646,7 @@ h3_conn_write_step(ConnCtx *cc)
                 : StreamCtxGet(cc, sid, /*create*/0);
 
             if (ssc == NULL || !StreamCtxIsBidi(ssc)) {
-                Ns_Log(Notice, "[%lld] H3[%lld] has no BIDI stream context",
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] has no BIDI stream context",
                        (long long)cc->dc->iter, (long long)sids[i]);
                 continue;
             }
@@ -2676,20 +2678,20 @@ h3_conn_write_step(ConnCtx *cc)
             }
             SharedResumeClear(&ssc->sh);
 
-            Ns_Log(Notice, "[%lld] H3[%lld] resume", (long long)cc->dc->iter, (long long)sids[i]);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] resume", (long long)cc->dc->iter, (long long)sids[i]);
         }
 
         if (/*did_submit ||*/ nres > 0) {
-            Ns_Log(Notice, "[%lld] H3 drive conn after resume via SSL_handle_events", (long long)cc->dc->iter);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 drive conn after resume via SSL_handle_events", (long long)cc->dc->iter);
             //SSL_handle_events(cc->h3ssl.conn);
-            //Ns_Log(Notice, "[%lld] H3 drive conn after resume via SSL_handle_events DONE", (long long)cc->dc->iter);
+            //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 drive conn after resume via SSL_handle_events DONE", (long long)cc->dc->iter);
         }
     }
 
     /* Don't start writes if QUIC conn already in TLS shutdown */
     ERR_clear_error();
     if (SSL_get_shutdown(cc->h3ssl.conn) != 0) {
-        Ns_Log(Notice, "[%lld] H3 write: conn already in shutdown; skip", (long long)dc->iter);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write: conn already in shutdown; skip", (long long)dc->iter);
         return NS_FALSE;
     }
 
@@ -2702,13 +2704,13 @@ h3_conn_write_step(ConnCtx *cc)
         sid = -1;
         nvec = nghttp3_conn_writev_stream(cc->h3conn, &sid, &fin, vecs, WRITE_STEP_MAX_VEC);
 
-        Ns_Log(Notice, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d",
                (long long)dc->iter, (long long)sid, (long)nvec,
                nvec > 0 ? "OK" : nvec == 0 ? "NOTHING" : nghttp3_strerror((int)nvec),
                fin);
 
         for (int i=0; i<nvec; i++) {
-            Ns_Log(Notice, "[%lld] H3[%lld] ... vec[%d] len %ld",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] ... vec[%d] len %ld",
                    (long long)dc->iter, (long long)sid, i, vecs[i].len);
         }
 
@@ -2716,7 +2718,7 @@ h3_conn_write_step(ConnCtx *cc)
             if (sid >= 0 && fin) {
 
                 // Zero-length FIN for a stream (often one we already freed at TLS level)
-                Ns_Log(Notice, "[%lld] H3[%lld] writev: ZERO-LEN FIN; calling nghttp3_conn_shutdown_stream_write",
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: ZERO-LEN FIN; calling nghttp3_conn_shutdown_stream_write",
                        (long long)dc->iter, (long long)sid);
 
                 /* Tell nghttp3 the app is done writing on this stream. Harmless if repeated. */
@@ -2727,7 +2729,7 @@ h3_conn_write_step(ConnCtx *cc)
                     if (zsc  != NULL) {
                         int ok = SSL_stream_conclude(zsc->ssl, 0);
 
-                        Ns_Log(Notice, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d -> SSL_stream_conclude -> %d",
+                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d -> SSL_stream_conclude -> %d",
                                (long long)dc->iter, (long long)sid, (long)nvec,
                                nvec > 0 ? "OK" : nvec == 0 ? "NOTHING" : nghttp3_strerror((int)nvec),
                                fin, ok);
@@ -2809,13 +2811,13 @@ h3_conn_write_step(ConnCtx *cc)
 
         sc = SSL_get_ex_data(stream, dc->u.h3.sc_idx);
 
-        //Ns_Log(Notice, "[%lld] H3 write map: nghttp3 sid=%lld -> ssl %p (sid=%llu) kind=%s",
+        //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write map: nghttp3 sid=%lld -> ssl %p (sid=%llu) kind=%s",
         //       (long long)dc->iter, (long long)sid, (void*)stream, (uint64_t)SSL_get_stream_id(stream),
         //       sc ? H3StreamKind_str(sc->kind) : "no-ctx");
 
         /* Re-check connection shutdown just before IO */
         if (SSL_get_shutdown(cc->h3ssl.conn) != 0) {
-            Ns_Log(Notice, "[%lld] H3 write: conn entered shutdown pre-write; stop", (long long)dc->iter);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write: conn entered shutdown pre-write; stop", (long long)dc->iter);
             return NS_FALSE;
         }
 
@@ -2823,7 +2825,7 @@ h3_conn_write_step(ConnCtx *cc)
         if (SSL_get_stream_write_state(stream) != SSL_STREAM_STATE_OK) {
             H3DiscardState ds;
 
-            Ns_Log(Notice, "[%lld] H3[%lld] skip write: ws=%d kind=%s",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] skip write: ws=%d kind=%s",
                    (long long)dc->iter, (long long)sid, SSL_get_stream_write_state(stream),
                    sc ? H3StreamKind_str(sc->kind) : "no-ctx");
 
@@ -2837,7 +2839,7 @@ h3_conn_write_step(ConnCtx *cc)
 
             /* Drive the stream object once to clear readiness */
             (void)SSL_handle_events(stream);
-            Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step stream %p => %d",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step stream %p => %d",
                    (long long)dc->iter, (void*)stream, SSL_handle_events(stream));
 
             /* If write-half is closed, don't keep W armed */
@@ -2861,7 +2863,7 @@ h3_conn_write_step(ConnCtx *cc)
                     size_t         varint2_len = quic_varint_len(bufPtr[varint1_len]);
                     uint64_t       varint2     = quic_varint_decode(bufPtr+varint1_len, vecs[i].len - (off + varint1_len));
 
-                    Ns_Log(Notice, "[%lld] H3[%lld] SANITY CHECK"
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SANITY CHECK"
                            " varint 1: len %ld value %" PRIu64
                            " varint 2: len %ld value %" PRIu64,
                            (long long)dc->iter, (long long)sc->quic_sid,
@@ -2869,7 +2871,7 @@ h3_conn_write_step(ConnCtx *cc)
                            varint2_len, varint2);
                 }
 
-                Ns_Log(Notice, "[%lld] H3[%lld] want to write %ld bytes on %s writable %d"
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] want to write %ld bytes on %s writable %d"
                        " blocking stream %d conn %d",
                        (long long)dc->iter, (long long)sid, vecs[i].len, H3StreamKind_str(sc->kind), sc->writable,
                        SSL_get_blocking_mode(stream), SSL_get_blocking_mode(cc->h3ssl.conn));
@@ -2880,7 +2882,7 @@ h3_conn_write_step(ConnCtx *cc)
                                    flags,
                                    &written);
 
-                Ns_Log(Notice, "[%lld] H3[%lld] SSL_write_ex2 stream %p len %ld flags %04" PRIx64 ": ok %d written %ld",
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SSL_write_ex2 stream %p len %ld flags %04" PRIx64 ": ok %d written %ld",
                        (long long)dc->iter, (long long)sid, (void*)stream, vecs[i].len  - off, flags, ok, written);
 
                 if (ok != 1) {
@@ -2890,7 +2892,7 @@ h3_conn_write_step(ConnCtx *cc)
                         hit_want = NS_TRUE;
                         /* No offsets advanced for partial vec: retry next poll */
                         (void)SSL_handle_events(stream);
-                        Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step WANT stream %p",
+                        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step WANT stream %p",
                                (long long)dc->iter, (void*)stream);
 
                         goto after_sid;                        /* don't advance remaining vecs */
@@ -2908,16 +2910,16 @@ h3_conn_write_step(ConnCtx *cc)
                                 //(void)SSL_handle_events(cc->h3ssl.conn);
 
                                 if (SSL_get_stream_write_error_code(stream, &appw) == 1) {
-                                    Ns_Log(Notice, "[%lld] H3[%lld] peer STOP_SENDING app=0x%llx",
+                                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] peer STOP_SENDING app=0x%llx",
                                            (long long)dc->iter, (long long)sid, (unsigned long long)appw);
                                 } else {
                                     /* Some OpenSSL versions only expose it on the *read* side, or it isn't latched yet */
                                     uint64_t appr = 0;
                                     if (SSL_get_stream_read_error_code(stream, &appr) == 1) {
-                                        Ns_Log(Notice, "[%lld] H3[%lld] peer app error (read side) app=0x%llx",
+                                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] peer app error (read side) app=0x%llx",
                                                (long long)dc->iter, (long long)sid, (unsigned long long)appr);
                                     } else {
-                                        Ns_Log(Notice, "[%lld] H3[%lld] peer reset: no app code available yet",
+                                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] peer reset: no app code available yet",
                                                (long long)dc->iter, (long long)sid);
                                     }
                                 }
@@ -2927,7 +2929,7 @@ h3_conn_write_step(ConnCtx *cc)
                                 SharedMarkClosedByApp(&sc->sh);
                                 ERR_clear_error();
                                 (void)SSL_handle_events(stream);
-                                Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step ERR stream %p",
+                                Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step ERR stream %p",
                                        (long long)dc->iter, (void*)stream);
 
                                 PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step SSL_R_STREAM_RESET");
@@ -2936,7 +2938,7 @@ h3_conn_write_step(ConnCtx *cc)
 
                             if (r == SSL_R_STREAM_SEND_ONLY) {
                                 /* Treat this vec as skipped; advance to keep nghttp3 moving. */
-                                Ns_Log(Notice, "[%lld] H3[%lld] send-only restriction; skip vec",
+                                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] send-only restriction; skip vec",
                                        (long long)dc->iter, (long long)sid);
                                 h3_stream_advance_and_trim(sc, sid, vecs[i].base, vecs[i].len);
                                 did_progress = NS_TRUE;
@@ -2945,7 +2947,7 @@ h3_conn_write_step(ConnCtx *cc)
 
                             if (r == SSL_R_PROTOCOL_IS_SHUTDOWN) {
                                 /* Connection-level teardown - propagate and stop writing. */
-                                Ns_Log(Notice, "[%lld] H3[%lld] protocol is shutdown; marking conn closing",
+                                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] protocol is shutdown; marking conn closing",
                                        (long long)dc->iter, (long long)sid);
                                 cc->connection_state = 1;
                                 ERR_clear_error();
@@ -2993,14 +2995,14 @@ h3_conn_write_step(ConnCtx *cc)
                     sc->io_state |= H3_IO_TX_FIN;
                     did_progress  = NS_TRUE;
 
-                    Ns_Log(Notice, "[%lld] H3 write_step conclude sets sc->wants_write", (long long)dc->iter);
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write_step conclude sets sc->wants_write", (long long)dc->iter);
                     sc->wants_write = NS_TRUE; /* one shot */
                 } else {
                     const int err = SSL_get_error(stream, ok);
                     if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
                         /* Don't set TX_FIN yet; keep EW armed so conclude can complete next tick. */
                         /* h3_stream_maybe_finalize() will try again when drained. */
-                        Ns_Log(Notice, "[%lld] H3 write_step WANT sets sc->wants_write", (long long)dc->iter);
+                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write_step WANT sets sc->wants_write", (long long)dc->iter);
                         sc->wants_write = NS_TRUE; /* one shot */
                     } else {
                         /* Hard failure on conclude: treat as terminal on write side to avoid loops. */
@@ -3017,7 +3019,7 @@ h3_conn_write_step(ConnCtx *cc)
         finalized = StreamCtxIsServerUni(sc) ? NS_FALSE : h3_stream_maybe_finalize(sc, "h3_conn_write_step");
         if (!finalized) {
             (void)SSL_handle_events(stream);
-            //Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step after_sid stream %p",
+            //Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step after_sid stream %p",
             //       (long long)dc->iter, (void*)stream);
         }
 
@@ -3053,7 +3055,7 @@ h3_conn_write_step(ConnCtx *cc)
                                     h3_stream_id(sc));
                 need_local_retry = NS_TRUE;
 
-                Ns_Log(Notice,
+                Ns_Log(Ns_LogQuicDebug,
                        "[%lld] H3[%lld] scheduling local retry, "
                        "pending %zu",
                        (long long)dc->iter,
@@ -3062,7 +3064,7 @@ h3_conn_write_step(ConnCtx *cc)
             }
         }
 
-        //Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step after_sid stream %p => %d",
+        //Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step after_sid stream %p => %d",
         //       (long long)dc->iter, (void*)stream, SSL_handle_events(stream));
 
         /* Per-stream W decision:
@@ -3105,7 +3107,7 @@ h3_conn_write_step(ConnCtx *cc)
 
                 /* Drive the stream once to clear readiness and schedule frames */
                 (void)SSL_handle_events(stream);
-                Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step FIN stream %p",
+                Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step FIN stream %p",
                        (long long)dc->iter, (void*)stream);
 
                 did_progress = NS_TRUE;
@@ -3120,7 +3122,7 @@ h3_conn_write_step(ConnCtx *cc)
      */
     if (did_progress || hit_any_want || any_keep_w) {
         (void)SSL_handle_events(cc->h3ssl.conn);
-        Ns_Log(Notice, "[%lld] SSL_handle_events in h3_conn_write_step final conn %p",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step final conn %p",
                (long long)dc->iter, (void*)cc->h3ssl.conn);
     }
 
@@ -3164,12 +3166,12 @@ h3_conn_clear_wants_write_if_idle(ConnCtx *cc) {
     NS_TA_ASSERT_HELD(cc, affinity);
 
 
-    Ns_Log(Notice, "[%lld] H3 conn: h3_conn_clear_wants_write_if_idle has work %d",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 conn: h3_conn_clear_wants_write_if_idle has work %d",
            (long long)cc->dc->iter, has_work);
 
     if (!has_work) {
         if (cc->wants_write) {
-            Ns_Log(Notice, "[%lld] H3 conn: idle now, clearing wants_write", (long long)cc->dc->iter);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 conn: idle now, clearing wants_write", (long long)cc->dc->iter);
         }
         cc->wants_write = NS_FALSE;
         PollsetUpdateConnPollInterest(cc);   /* drops conn-level EW */
@@ -3312,7 +3314,7 @@ h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid)
     if (ord1 > cc->client_max_bidi_streams) {
         nghttp3_conn_set_max_client_streams_bidi(cc->h3conn, ord1);
         cc->client_max_bidi_streams = ord1;
-        Ns_Log(Notice, "h3 bidi credit -> %llu", (unsigned long long)ord1);
+        Ns_Log(Ns_LogQuicDebug, "h3 bidi credit -> %llu", (unsigned long long)ord1);
     }
 }
 
@@ -3396,7 +3398,7 @@ h3_stream_build_resp_headers(Ns_Conn *conn,
         char s3[3];
 
         if (status == 101) {
-            Ns_Log(Notice, "h3: status code 101 not allowed in HTTP/3; remapping to 200");
+            Ns_Log(Ns_LogQuicDebug, "h3: status code 101 not allowed in HTTP/3; remapping to 200");
             status = 200;
         }
         s3[0] = (char)('0' + (status / 100) % 10);
@@ -3607,7 +3609,7 @@ h3_headers_nv_append(Tcl_DString *store, nghttp3_nv **pnva, size_t *pnvlen, size
         size_t newcap = (nvcap == 0 ? 8 : nvcap * 2);
         nghttp3_nv *nv2 = (nghttp3_nv *)ns_realloc(nva == NULL ? NULL : nva, newcap * sizeof(*nva));
 
-        //Ns_Log(Notice, "h3_headers_nv_append performs REALLOC");
+        //Ns_Log(Ns_LogQuicDebug, "h3_headers_nv_append performs REALLOC");
         if (nv2 == NULL) {
             return NGHTTP3_ERR_NOMEM;
         }
@@ -3686,12 +3688,12 @@ h3_headers_log_nv(const StreamCtx *sc, const nghttp3_nv *nva, size_t nvlen, cons
         Tcl_DStringAppend(&ds, "\n", 1);
     }
 
-    /*Ns_Log(Notice, "H3[%lld] nva section_size=%zu (peer_max_field_section_size=%llu, nv=%zu) header storage %d bytes in %p",
+    /*Ns_Log(Ns_LogQuicDebug, "H3[%lld] nva section_size=%zu (peer_max_field_section_size=%llu, nv=%zu) header storage %d bytes in %p",
       (long long)sc->h3_sid, h3_headers_field_section_size(nva, nvlen),
       cc->peer_max_field_section_size, nvlen,
       sc->resp_nv_store.length, (void*)sc);*/
 
-    Ns_Log(Notice, "[%lld] H3[%lld] NVA %s (%ld header fields, estimated size %ld, peer_max_size %" PRIu64 ")\n%s",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] NVA %s (%ld header fields, estimated size %ld, peer_max_size %" PRIu64 ")\n%s",
            (long long)sc->cc->dc->iter, (long long)sc->quic_sid, label, nvlen,
            h3_headers_field_section_size(nva, nvlen),
            sc->cc->client_max_field_section_size,
@@ -3754,10 +3756,10 @@ h3_stream_feed_pending(StreamCtx *sc, uint64_t sid)
 
         sc->rx_emitted_in_pass = 0;   // reset before each call of nghttp3_conn_read_stream
 
-        Ns_Log(Notice, "[%lld] H3[%llu] h3_stream_feed_pending into nghttp3_conn_read_stream buffer %p len %ld (no fin)",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] h3_stream_feed_pending into nghttp3_conn_read_stream buffer %p len %ld (no fin)",
                (long long)sc->cc->dc->iter, (unsigned long long)sid, (const void*)p, n);
         rv = nghttp3_conn_read_stream(sc->cc->h3conn, (int64_t)sid, p, n, /*fin*/0);
-        Ns_Log(Notice, "[%lld] H3[%llu] h3_stream_feed_pending into nghttp3_conn_read_stream buffer %p len %ld (no fin) -> consumed %ld recv %ld",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] h3_stream_feed_pending into nghttp3_conn_read_stream buffer %p len %ld (no fin) -> consumed %ld recv %ld",
                (long long)sc->cc->dc->iter, (unsigned long long)sid, (const void*)p, n, rv, sc->rx_emitted_in_pass);
 
         if (rv < 0) return FEED_ERR;
@@ -3892,7 +3894,7 @@ static inline void
 h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nbytes)
 {
 
-    Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER bytes %ld",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER bytes %ld",
            (long long)sc->cc->dc->iter, (long long)sc->quic_sid, nbytes);
 
     if (nbytes != 0) {
@@ -3904,16 +3906,16 @@ h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nby
 
         body_trimmed = SharedTrimPendingFromVec(&sc->sh, base, nbytes);
         if (body_trimmed) {
-            Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_advance_and_trim TRIM body %zu (vec len %zu)",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_advance_and_trim TRIM body %zu (vec len %zu)",
                    (long long)cc->dc->iter, (long long)sc->quic_sid, body_trimmed, (size_t)nbytes);
         } else {
-            Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_advance_and_trim SKIP trim (framing/headers) %zu",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_advance_and_trim SKIP trim (framing/headers) %zu",
                    (long long)cc->dc->iter, (long long)sc->quic_sid, (size_t)nbytes);
         }
 
         {
             SharedSnapshot snap0 = SharedSnapshotInit(&sc->sh);
-            Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER after trim queued %ld pending %ld closed:by_app=%d bytes %ld",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER after trim queued %ld pending %ld closed:by_app=%d bytes %ld",
                    (long long)cc->dc->iter, (long long)sc->quic_sid, snap0.queued_bytes, snap0.pending_bytes, snap0.closed_by_app, nbytes);
         }
         SharedSnapshotRead(&sc->sh, &snap);
@@ -3923,7 +3925,7 @@ h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nby
 
             h3_conn_mark_wants_write(cc, sc, "emit FIN");
             PollsetEnableWrite(cc->dc, sc->ssl, sc, "drained->EOF");
-            Ns_Log(Notice, "[%lld] H3[%lld] drained; scheduling EOF FIN",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] drained; scheduling EOF FIN",
                    (long long)cc->dc->iter, (long long)sc->h3_sid);
         }
     }
@@ -3979,7 +3981,7 @@ h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc,
     size_t         total = 0;
     H3DiscardState out   = H3_DISCARD_NONE;
 
-    Ns_Log(Notice, "[%lld] H3[%lld] skip write: %s",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] skip write: %s",
            (long long)dc->iter, (long long)h3_sid, reason);
 
     for (int i = 0; i < nvec; ++i) {
@@ -4089,7 +4091,7 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
 
     assert(sc != NULL);
 
-    Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_read_data_cb ENTER queued %ld pending %ld closed_by_app=%d veccnt %ld",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb ENTER queued %ld pending %ld closed_by_app=%d veccnt %ld",
            (long long)cc->dc->iter, (long long)stream_id, snap.queued_bytes, snap.pending_bytes, snap.closed_by_app,
            veccnt);
 
@@ -4101,11 +4103,11 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
 
         if (SharedEOFReady(&snap)) {
             *flags = NGHTTP3_DATA_FLAG_EOF;
-            Ns_Log(Notice, "H3[%lld] h3_stream_read_data_cb: served earlier; now EOF", (long long)sc->h3_sid);
+            Ns_Log(Ns_LogQuicDebug, "H3[%lld] h3_stream_read_data_cb: served earlier; now EOF", (long long)sc->h3_sid);
             return 0; /* 0 vecs + EOF => FIN */
         }
 
-        Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_read_data_cb: already tx_served_this_step (queued %ld pending %ld closed by app %d)",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: already tx_served_this_step (queued %ld pending %ld closed by app %d)",
                (long long)cc->dc->iter, (long long)sc->quic_sid, snap.queued_bytes, snap.pending_bytes, snap.closed_by_app);
 
         *flags = 0;
@@ -4115,7 +4117,7 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
     /* Fast EOF: producer closed and no bytes left anywhere. */
     if (SharedEOFReady(&snap)) {
         *flags = NGHTTP3_DATA_FLAG_EOF;
-        Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_read_data_cb: EOF (queues empty)", (long long)cc->dc->iter, (long long)stream_id);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: EOF (queues empty)", (long long)cc->dc->iter, (long long)stream_id);
         return 0;
     }
 
@@ -4123,19 +4125,19 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
     if (SharedCanMove(&snap)) {
         size_t moved = SharedSpliceQueuedToPending(ss, SIZE_MAX);
         if (moved > 0) {
-            Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_read_data_cb: moved %zu bytes queued -> pending",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: moved %zu bytes queued -> pending",
                    (long long)cc->dc->iter, (long long)stream_id, moved);
             SharedSnapshotRead(&sc->sh, &snap);
         }
     }
 
-    Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_read_data_cb SharedPendingUnreadBytes %ld",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb SharedPendingUnreadBytes %ld",
            (long long)cc->dc->iter, (long long)stream_id, SharedPendingUnreadBytes(ss) );
 
     /* Nothing to send right now. */
     if (snap.pending_bytes == 0) {
         *flags = 0;
-        Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_read_data_cb: no data, would block", (long long)cc->dc->iter, (long long)stream_id);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: no data, would block", (long long)cc->dc->iter, (long long)stream_id);
         return NGHTTP3_ERR_WOULDBLOCK;
     }
 
@@ -4144,7 +4146,7 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
         size_t out = SharedBuildVecsFromPending(ss, vecs, veccnt);
 
         SharedSnapshotRead(&sc->sh, &snap);
-        Ns_Log(Notice,
+        Ns_Log(Ns_LogQuicDebug,
                "[%lld] H3[%lld] h3_stream_read_data_cb: returning %zu vecs (%zu queued bytes; pending %zu)"
                " closed_by_app %d",
                (long long)cc->dc->iter, (long long)stream_id,
@@ -4154,7 +4156,7 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
                snap.closed_by_app);
 
         sc->tx_served_this_step = NS_TRUE;
-        Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_read_data_cb: mark tx_served_this_step", (long long)cc->dc->iter, (long long)sc->quic_sid);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: mark tx_served_this_step", (long long)cc->dc->iter, (long long)sc->quic_sid);
 
         *flags = 0;
         return (nghttp3_ssize)out;
@@ -4237,7 +4239,7 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
                                       sc->resp_nv,
                                       sc->resp_nvlen,
                                       &sc->data_reader);   /* or NULL for header-only */
-    Ns_Log(Notice, "[%lld] H3[%lld] submit_response nv=%zu -> %s",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] submit_response nv=%zu -> %s",
            (long long)dc->iter, (long long)sc->h3_sid, sc->resp_nvlen, rv == 0 ? "OK" : "ERROR");
 
     if (rv != 0) {
@@ -4319,7 +4321,7 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
     StreamCtx   *sc;
     int          gate_bidi;
 
-    Ns_Log(Notice, "[%lld] H3[%llu] h3_stream_drain (%s)",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] h3_stream_drain (%s)",
            (long long)cc->dc->iter, (unsigned long long)sid, label);
 
 
@@ -4359,7 +4361,7 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
             }
 
             fr = h3_stream_feed_pending(sc, sid);
-            Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_drain h3_stream_feed_pending %s",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_drain h3_stream_feed_pending %s",
                    (long long)cc->dc->iter, (long long)sc->quic_sid, H3FeedResultCode_str(fr));
 
             if (fr == FEED_ERR)   return DRAIN_ERROR;
@@ -4375,7 +4377,7 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
 
         /* Stage more from TLS if window empty */
         dr = h3_stream_read_into_hold(sc, stream);
-        //Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_drain h3_stream_read_into_hold %s",
+        //Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_drain h3_stream_read_into_hold %s",
         //       (long long)cc->dc->iter, (long long)sc->quic_sid, H3DrainResultCode_str(dr));
         if (dr == DRAIN_ERROR || dr == DRAIN_EOF || dr == DRAIN_NONE) {
             return dr;
@@ -4443,7 +4445,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
 
     has_tx = SharedHasData(&snap);
 
-    Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_maybe_finalize called %s (%s)",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_maybe_finalize called %s (%s)",
            (long long)dc->iter, (long long)sc->quic_sid, H3StreamKind_str(sc->kind), label);
 
     /* --- hard terminal? handle RESET first --- */
@@ -4453,7 +4455,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
             PollsetMarkDead(cc, sc->ssl, "h3_stream_maybe_finalize: reset");
             finalized = NS_TRUE;
         }
-        Ns_Log(Notice, "[%lld] h3_stream_maybe_finalize %p %s %s RESET returns %d",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] h3_stream_maybe_finalize %p %s %s RESET returns %d",
                (long long)dc->iter, (void*)sc->ssl, label, H3StreamKind_str(sc->kind), finalized);
         return finalized;
     }
@@ -4461,7 +4463,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
     /* ---- lazy close path: only if we never concluded via nghttp3 ---- */
     if (StreamCtxIsServerUni(sc) && SharedEOFReady(&snap) && !H3_IO_HAS(sc, H3_IO_TX_FIN)) {
         int ok = SSL_stream_conclude(sc->ssl, 0);
-        Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_maybe_finalize %s %s stream_conclude returns %d",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_maybe_finalize %s %s stream_conclude returns %d",
                (long long)dc->iter, (long long)sc->quic_sid, label, H3StreamKind_str(sc->kind), ok);
         if (ok == 1) {
             sc->io_state |= H3_IO_TX_FIN;
@@ -4500,13 +4502,13 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
 
     need_w = has_tx || want_w_prev || (sc->hdrs_submitted && !sc->eof_sent);
 
-    Ns_Log(Notice,
+    Ns_Log(Ns_LogQuicDebug,
            "[%lld] H3[%lld] h3_stream_maybe_finalize reads sc->wants_write %d need_w %d"
            " has_tx %d (queued %zu pending %zu)",
            (long long)dc->iter, (long long)sc->quic_sid, want_w_prev, need_w, has_tx, snap.queued_bytes, snap.pending_bytes);
 
     if (need_w) {
-        Ns_Log(Notice,
+        Ns_Log(Ns_LogQuicDebug,
                "[%lld] H3[%lld] h3_stream_maybe_finalize need W: closed_by_app %d io_state %.2x",
                (long long)dc->iter, (long long)sc->quic_sid, snap.closed_by_app, sc->io_state);
         PollsetEnableWrite(dc, sc->ssl, sc, "h3_stream_maybe_finalize: need W");
@@ -4523,7 +4525,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
         return NS_TRUE;
     }
 
-    Ns_Log(Notice, "[%lld] H3[%lld] h3_stream_maybe_finalize %p %s %s returns %d",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_maybe_finalize %p %s %s returns %d",
            (long long)dc->iter, (long long)sc->quic_sid, (void*)sc->ssl, label, H3StreamKind_str(sc->kind), finalized);
 
     return finalized;
@@ -4653,7 +4655,7 @@ inline void h3_conn_wake(NsTLSConfig *dc) {
         if (fd < 0) {
             return;
         }
-        Ns_Log(Notice, "[%lld] H3: h3_conn_wake", (long long)dc->iter);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3: h3_conn_wake", (long long)dc->iter);
 
         (void)sendto(fd, (const char *)&b, 1, 0, sa, dc->u.h3.waker_addrlen);
         ns_sockclose(fd);
@@ -4899,7 +4901,7 @@ static int on_recv_settings(nghttp3_conn *UNUSED(conn),
     cc->client_max_field_section_size = s->max_field_section_size;
     cc->settings_seen = NS_TRUE;
 
-    Ns_Log(Notice,
+    Ns_Log(Ns_LogQuicDebug,
            "H3 on_recv_settings: max_field_section_size=%llu, "
            "qpack_max_dtable=%llu, qpack_blocked=%u",
            (unsigned long long)s->max_field_section_size,
@@ -4930,7 +4932,7 @@ static int on_begin_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id,
     int        rv;
 
     if (sc == NULL) {
-        Ns_Log(Notice, "H3[%lld] on_begin_headers sc missing", (long long)stream_id);
+        Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_begin_headers sc missing", (long long)stream_id);
         return NGHTTP3_ERR_NOMEM;
     }
 
@@ -4941,13 +4943,13 @@ static int on_begin_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id,
 
     memset(&sc->data_reader, 0, sizeof(sc->data_reader));
     sc->data_reader.read_data = h3_stream_read_data_cb;
-    Ns_Log(Notice, "H3[%lld] on_begin_headers set h3_stream_read_data_cb for stream_ctx %p", (long long)stream_id , (void*)sc);
+    Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_begin_headers set h3_stream_read_data_cb for stream_ctx %p", (long long)stream_id , (void*)sc);
 
     /*
      * Attach the sc to the stream user data
      */
     rv = nghttp3_conn_set_stream_user_data(cc->h3conn, stream_id, sc);
-    //Ns_Log(Notice, "H3 setting stream_user_data for %lld to %p", (long long)stream_id, (void*)sc);
+    //Ns_Log(Ns_LogQuicDebug, "H3 setting stream_user_data for %lld to %p", (long long)stream_id, (void*)sc);
     if (rv != 0) {
         /* cleanup resources */
         StreamCtxUnregister(sc);
@@ -5108,7 +5110,7 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
         Tcl_DStringAppend(&line, sc->path, TCL_INDEX_NONE);
         Tcl_DStringAppend(&line, " HTTP/1.1", 9);
 
-        Ns_Log(Notice, "H3[%lld] on_end_headers peer %s request line: %s",
+        Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_end_headers peer %s request line: %s",
                (long long)stream_id, peer, line.string);
         if (Ns_ParseRequest(&reqPtr->request, line.string, (size_t)line.length) != NS_OK) {
             Tcl_DStringFree(&line);
@@ -5124,7 +5126,7 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
 
     { Tcl_DString ds;
         Tcl_DStringInit(&ds);
-        Ns_Log(Notice, "H3[%lld] on_end_headers fin %d has_content_length %d reqPtr->contentLength %ld has_body %d peer %s %s",
+        Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_end_headers fin %d has_content_length %d reqPtr->contentLength %ld has_body %d peer %s %s",
                (long long)stream_id, fin, has_content_length, reqPtr->contentLength, has_body,
                peer, Ns_SetFormat(&ds, hdrs, NS_TRUE, "", ": "));
         Tcl_DStringFree(&ds);
@@ -5163,7 +5165,7 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
         sockPtr->tfile = NULL;
         sockPtr->tfd = NS_INVALID_FD;
 
-        Ns_Log(Notice, "H3[%lld] on_end_headers request with body size %ld maxupload %ld",
+        Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_end_headers request with body size %ld maxupload %ld",
                (long long)stream_id, reqPtr->contentLength, drvPtr->maxupload);
 
         if (drvPtr->maxupload > 0
@@ -5174,7 +5176,7 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
             sockPtr->tfile = ns_malloc(tfileLength);
             snprintf(sockPtr->tfile, tfileLength, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
             sockPtr->tfd = ns_mkstemp(sockPtr->tfile);
-            Ns_Log(Notice, "H3[%lld] on_end_headers fin %d has_body %d submit via fd %d", (long long)stream_id, fin, has_body, sockPtr->tfd);
+            Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_end_headers fin %d has_body %d submit via fd %d", (long long)stream_id, fin, has_body, sockPtr->tfd);
 
             if (sockPtr->tfd == NS_INVALID_FD) {
                 Ns_Log(Error, "SockRead: cannot create spool file with template '%s': %s",
@@ -5218,7 +5220,7 @@ static int on_recv_data(nghttp3_conn *UNUSED(conn), int64_t stream_id,
     bool       has_content_length;
     int        result = 0;
 
-    Ns_Log(Notice, "[%lld] H3[%lld] on_recv_data datalen %ld  sc %p old sid %lld, new sid %lld (emitted_in_pass %ld)",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_recv_data datalen %ld  sc %p old sid %lld, new sid %lld (emitted_in_pass %ld)",
            (long long)cc->dc->iter, (long long)stream_id, datalen, (void*) sc, (long long)sc->h3_sid, (long long)stream_id, sc->rx_emitted_in_pass);
     sc->h3_sid = stream_id;
 
@@ -5239,13 +5241,13 @@ static int on_recv_data(nghttp3_conn *UNUSED(conn), int64_t stream_id,
         sc->rx_emitted_in_pass += datalen;
         if (sockPtr->tfd != NS_INVALID_FD) {
             ssize_t wr;
-            Ns_Log(Notice, "[%lld] H3[%lld] on_recv_data write to file %ld bytes", (long long)cc->dc->iter, (long long)sc->quic_sid, datalen);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_recv_data write to file %ld bytes", (long long)cc->dc->iter, (long long)sc->quic_sid, datalen);
             wr = ns_write(sockPtr->tfd, data, datalen);
             if (wr < 0 || (size_t)wr != datalen) {
                 return NGHTTP3_ERR_CALLBACK_FAILURE;
             }
         } else {
-            Ns_Log(Notice, "[%lld] H3[%lld] on_recv_data append to buffer %ld bytes", (long long)cc->dc->iter, (long long)sc->quic_sid, datalen);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_recv_data append to buffer %ld bytes", (long long)cc->dc->iter, (long long)sc->quic_sid, datalen);
             Tcl_DStringAppend(&reqPtr->buffer, (const char*)data, (TCL_SIZE_T)datalen);
         }
 
@@ -5255,12 +5257,12 @@ static int on_recv_data(nghttp3_conn *UNUSED(conn), int64_t stream_id,
     has_content_length = Ns_SetFind(hdrs, "content-length") > -1;
 
     if (has_content_length && reqPtr->length >= reqPtr->contentLength) {
-        Ns_Log(Notice, "[%lld] H3[%lld] on_recv_data sets H3_IO_REQ_READY",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_recv_data sets H3_IO_REQ_READY",
                (long long)cc->dc->iter, (long long)stream_id);
         sc->io_state |= H3_IO_REQ_READY;
     }
 
-    Ns_Log(Notice, "[%lld] H3[%lld] on_recv_data received +%zu (total %ld/%ld) -> result %d",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_recv_data received +%zu (total %ld/%ld) -> result %d",
            (long long)cc->dc->iter, (long long)sc->h3_sid, datalen, reqPtr->length, reqPtr->contentLength, result);
 
     return result;
@@ -5285,7 +5287,7 @@ static int on_end_stream(nghttp3_conn *UNUSED(conn), int64_t stream_id,
 {
     StreamCtx *sc = stream_user_data;
 
-    Ns_Log(Notice, "[%lld] H3[%lld] on_end_stream", (long long)sc->cc->dc->iter, (long long)stream_id);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_end_stream", (long long)sc->cc->dc->iter, (long long)stream_id);
     assert(sc != NULL);
 
     /* Protocol-level end of the peer's send side */
@@ -5294,7 +5296,7 @@ static int on_end_stream(nghttp3_conn *UNUSED(conn), int64_t stream_id,
     /* Provide eof_seen as an HTTP-layer "request complete" hint */
     sc->eof_seen = NS_TRUE;
 
-    Ns_Log(Notice, "[%lld] H3[%lld] on_end_stream sets H3_IO_REQ_READY",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_end_stream sets H3_IO_REQ_READY",
            (long long)sc->cc->dc->iter, (long long)stream_id);
 
     sc->io_state |= H3_IO_REQ_READY;
@@ -5324,7 +5326,7 @@ static int on_acked_stream_data(nghttp3_conn *UNUSED(conn),
     ConnCtx   *cc = conn_user_data;
     StreamCtx *sc = stream_user_data;
 
-    Ns_Log(Notice, "H3[%lld] on_acked_stream_data %llu bytes cc %p sc %p",
+    Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_acked_stream_data %llu bytes cc %p sc %p",
            (long long)stream_id, (unsigned long long)datalen,
            (void*) cc, (void*)sc);
 
@@ -5354,7 +5356,7 @@ static int on_stream_close(nghttp3_conn *UNUSED(conn),
 {
     StreamCtx *sc = stream_user_data;
 
-    Ns_Log(Notice, "H3[%lld] on_stream_close (app_error_code=%llu)",
+    Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_stream_close (app_error_code=%llu)",
            (long long)stream_id,
            (unsigned long long)app_error_code);
 
@@ -5387,10 +5389,10 @@ static int on_deferred_consume(nghttp3_conn *UNUSED(conn),
     StreamCtx *sc = stream_user_data;
     size_t     actual_consumed;
 
-    Ns_Log(Notice, "H3[%lld] on_deferred_consume: consumed=%zu sc %p", (long long)stream_id, consumed, (void*)sc);
+    Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_deferred_consume: consumed=%zu sc %p", (long long)stream_id, consumed, (void*)sc);
 
     if (sc == NULL || consumed == 0) {
-        Ns_Log(Notice, "H3[%lld] on_deferred_consume: aborting, no stream context", (long long)stream_id);
+        Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_deferred_consume: aborting, no stream context", (long long)stream_id);
         return 0;
     }
 
@@ -5483,7 +5485,7 @@ ConnCtxNew(NsTLSConfig *dc, SSL *conn)
 static void
 ConnCtxFree(ConnCtx *cc)
 {
-    Ns_Log(Notice, "[%lld] H3 ConnCtxFree for cc %p", (long long)cc->dc->iter, (void*)cc);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 ConnCtxFree for cc %p", (long long)cc->dc->iter, (void*)cc);
 
     Tcl_DeleteHashTable(&cc->streams);
     SharedStateDestroy(&cc->shared);
@@ -5556,7 +5558,7 @@ static void StreamCtxInit(StreamCtx *sc) {
  */
 static void StreamCtxFree(StreamCtx *sc)
 {
-    Ns_Log(Notice, "H3[%lld] StreamCtxFree %p %s hold buffer %p"
+    Ns_Log(Ns_LogQuicDebug, "H3[%lld] StreamCtxFree %p %s hold buffer %p"
            " tx_queued.unread %ld tx_pending.unread %ld"
            " tx_queued.drained %ld tx_pending.drained %ld",
            (long long)sc->quic_sid, (void*)sc, H3StreamKind_str(sc->kind), (void*)sc->rx_hold,
@@ -5572,7 +5574,7 @@ static void StreamCtxFree(StreamCtx *sc)
         sc->resp_nv = NULL;
     }
     if (sc->nsSock != NULL) {
-        Ns_Log(Notice, "[%lld] StreamCtxFree SockRelease missing", (long long)sc->cc->dc->iter);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] StreamCtxFree SockRelease missing", (long long)sc->cc->dc->iter);
     }
     if (sc->rx_hold != NULL) {
         ns_free(sc->rx_hold);
@@ -5610,19 +5612,19 @@ StreamCtxFromSock(NsTLSConfig *dc, Ns_Sock *sock)
     NS_NONNULL_ASSERT(dc != NULL);
     NS_NONNULL_ASSERT(sock != NULL);
 
-    /*Ns_Log(Notice, "StreamCtxFromSock sock %p dc %p arg %p",
+    /*Ns_Log(Ns_LogQuicDebug, "StreamCtxFromSock sock %p dc %p arg %p",
       (void*)sock, (void*)dc, (void*)sock->arg);*/
     if (sock->arg != NULL) {
         QuicSockCtx *qctx = (QuicSockCtx *)sock->arg;
 
-        Ns_Log(Notice, "StreamCtxFromSock sock %p -> qctx %p sc %p",
+        Ns_Log(Ns_LogQuicDebug, "StreamCtxFromSock sock %p -> qctx %p sc %p",
                (void*)sock, (void*)qctx, (void*)qctx->sc);
 
         if (qctx != NULL && qctx->is_h3 && qctx->sc != NULL) {
             return qctx->sc;                   /* O(1) fast path */
         }
     }
-    Ns_Log(Notice, "StreamCtxFromSock sock %p -> sc %p",
+    Ns_Log(Ns_LogQuicDebug, "StreamCtxFromSock sock %p -> sc %p",
            (void*)sock, (void*)NULL);
 
     return NULL;
@@ -5738,7 +5740,7 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
     sc->kind        = kind;
     sc->nsSock      = NULL;
 
-    //Ns_Log(Notice, "H3(%lld) StreamCtxRegister (stream %p cc %p %s) -> sc %p",
+    //Ns_Log(Ns_LogQuicDebug, "H3(%lld) StreamCtxRegister (stream %p cc %p %s) -> sc %p",
     //       sid, (void*)s, (void*)cc, H3StreamKind_str(kind), (void*)sc);
 
     switch (kind) {
@@ -5757,14 +5759,14 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
             NsSockAccept(drvPtr, SSL_get_fd(s), (Ns_Sock**)&sc->nsSock, &now, s);
 
             (void)ns_inet_ntop((const struct sockaddr *)&sc->nsSock->sa, buffer, NS_IPADDR_SIZE);
-            Ns_Log(Notice, "[%lld] H3 STREAM accept SockAccept returns sockPtr %p IP %s",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 STREAM accept SockAccept returns sockPtr %p IP %s",
                    (long long)sc->cc->dc->iter, (void*)sc->nsSock, buffer);
 
             qctx = (QuicSockCtx *)sc->nsSock->arg;
             qctx->sc = sc;
             //qctx->ssl = s;
             h3_conn_maybe_raise_client_bidi_credit(cc, sid);
-            //Ns_Log(Notice, "[%lld] H3 BIDI register can associate sock %p with sc %p", (long long)cc->dc->iter, (void*)sc->nsSock, (void*)sc);
+            //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 BIDI register can associate sock %p with sc %p", (long long)cc->dc->iter, (void*)sc->nsSock, (void*)sc);
             break;
         }
     case H3_KIND_CTRL:
@@ -5812,7 +5814,7 @@ static void StreamCtxUnregister(StreamCtx *sc)
     cc = sc->cc;
     e = StreamCtxLookup(&cc->streams, (int64_t)sc->quic_sid, 0);
 
-    Ns_Log(Notice, "[%lld] StreamCtxUnregister sc %p ssl %p quic_sid %lld h3_sid %lld",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] StreamCtxUnregister sc %p ssl %p quic_sid %lld h3_sid %lld",
            (long long)cc->dc->iter, (void*)sc, (void*)sc->ssl, (long long)sc->quic_sid, (long long)sc->h3_sid);
     /* Unregister and free our per‑stream context */
     if (e != NULL) {
@@ -6075,11 +6077,11 @@ static void
 PollsetPrint(NsTLSConfig *dc, const char *prefix, bool skip)
 {
     bool last_stream_empty = NS_FALSE;
-    Ns_Log(Notice, "Pollset size %ld capacity %ld", dc->u.h3.npoll + 1, dc->u.h3.poll_capacity);
+    Ns_Log(Ns_LogQuicDebug, "Pollset size %ld capacity %ld", dc->u.h3.npoll + 1, dc->u.h3.poll_capacity);
 
     for (size_t idx = 0; idx < dc->u.h3.poll_capacity; idx++) {
         if (!(skip && last_stream_empty)) {
-            Ns_Log(Notice, "   %s poll [%ld] %c s %p", prefix, idx,
+            Ns_Log(Ns_LogQuicDebug, "   %s poll [%ld] %c s %p", prefix, idx,
                    idx <= dc->u.h3.npoll ? '*' : ' ',
                    (void*)(dc->u.h3.ssl_items.data[idx]));
         }
@@ -6168,7 +6170,7 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        Ns_Log(Notice, "[%lld] H3[%lld] %s %p %s mask %s",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] %s %p %s mask %s",
                (long long)dc->iter, (long long)SSL_get_stream_id(s),
                label, (void*)s,
                kind == H3_KIND_UNKNOWN ? "conn" : H3StreamKind_str(kind),
@@ -6209,7 +6211,7 @@ static inline size_t PollsetAddConnection(NsTLSConfig *dc, SSL *conn, uint64_t e
 
     Ns_DListAddUnique(&dc->u.h3.conns, cc);
     cc->pidx = idx;
-    //Ns_Log(Notice, "[%lld] H3 connection added on idx %ld", (long long)dc->iter, idx);
+    //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 connection added on idx %ld", (long long)dc->iter, idx);
     return idx;
 }
 
@@ -6242,7 +6244,7 @@ static inline size_t PollsetAddStream(NsTLSConfig *dc, SSL *stream, uint64_t eve
     size_t     idx = PollsetAdd(dc, stream, events, PollsetDefaultStreamErrors, "PollsetAddStream", kind);
 
     sc->pidx = idx;
-    //Ns_Log(Notice, "[%lld] H3 stream added on idx %ld", (long long)dc->iter, idx);
+    //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 stream added on idx %ld", (long long)dc->iter, idx);
     return idx;
 }
 
@@ -6491,17 +6493,17 @@ static inline void PollsetEnableRead(NsTLSConfig *dc, SSL *s, StreamCtx *sc) {
     (void)PollsetUpdateEvents(dc, s, sc, SSL_POLL_EVENT_R, 0);
 }
 static inline void PollsetDisableRead(NsTLSConfig *dc, SSL *s, const StreamCtx *sc, const char *label) {
-    Ns_Log(Notice, "[%lld] H3 PollsetDisableRead %p %s %s",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetDisableRead %p %s %s",
            (long long)dc->iter, (void*)s, sc != NULL?H3StreamKind_str(sc->kind):"other", label);
     (void)PollsetUpdateEvents(dc, s, sc, 0, SSL_POLL_EVENT_R);
 }
 static inline void PollsetEnableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc, const char *label) {
-    Ns_Log(Notice, "[%lld] H3[%ld] PollsetEnableWrite %p %s %s",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%ld] PollsetEnableWrite %p %s %s",
            (long long)dc->iter, sc != NULL?(long)sc->quic_sid:-1, (void*)s, sc != NULL?H3StreamKind_str(sc->kind):"other", label);
     (void)PollsetUpdateEvents(dc, s, sc, SSL_POLL_EVENT_W, 0);
 }
 static inline void PollsetDisableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc, const char *label) {
-    Ns_Log(Notice, "[%lld] H3[%ld] PollsetDisableWrite %p %s %s",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%ld] PollsetDisableWrite %p %s %s",
            (long long)dc->iter, sc != NULL?(long)sc->quic_sid:-1, (void*)s, sc != NULL?H3StreamKind_str(sc->kind):"other", label);
     (void)PollsetUpdateEvents(dc, s, sc, 0, SSL_POLL_EVENT_W);
 }
@@ -6595,7 +6597,7 @@ PollsetHandleListenerEvents(NsTLSConfig *dc)
 
         rc = SSL_handle_events(ls);   /* nonblocking; may generate egress */
 
-        Ns_Log(Notice, "[%lld] SSL_handle_events in PollsetHandleListenerEvents listener %p => %d",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in PollsetHandleListenerEvents listener %p => %d",
                (long long)dc->iter, (void*)ls, SSL_handle_events(ls));
 
         if (rc < 0) {
@@ -6656,20 +6658,20 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
         && sc->pidx <= dc->u.h3.npoll
         && (SSL *)dc->u.h3.ssl_items.data[sc->pidx] == ssl) {
         idx = sc->pidx;
-        //Ns_Log(Notice, "[%lld] PollsetMarkDead ssl %p: got idx %ld from cc", (long long)dc->iter, (void*)ssl, idx);
+        //Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead ssl %p: got idx %ld from cc", (long long)dc->iter, (void*)ssl, idx);
         sc->pidx = (size_t)-1;
     } else if (ssl == cc->h3ssl.conn
                && cc->pidx != (size_t)-1
                && cc->pidx <= dc->u.h3.npoll
                && (SSL *)dc->u.h3.ssl_items.data[cc->pidx] == ssl) {
         idx = cc->pidx;
-        //Ns_Log(Notice, "[%lld] PollsetMarkDead ssl %p: got idx %ld from cc", (long long)dc->iter, (void*)ssl, idx);
+        //Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead ssl %p: got idx %ld from cc", (long long)dc->iter, (void*)ssl, idx);
         cc->pidx = (size_t)-1;
     }
 
     /* Fallback: scan for entry with the ssl item */
     if (idx == (size_t)-1) {
-        Ns_Log(Notice, "[%lld] PollsetMarkDead ssl %p: scan for idx", (long long)dc->iter, (void*)ssl);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead ssl %p: scan for idx", (long long)dc->iter, (void*)ssl);
         for (size_t i = dc->u.h3.nr_listeners; i < dc->u.h3.npoll; ++i) {
             if ((SSL *)dc->u.h3.ssl_items.data[i] == ssl) {
                 idx = i;
@@ -6677,7 +6679,7 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
             }
         }
         if (idx == (size_t)-1) {
-            Ns_Log(Notice, "[%lld] PollsetMarkDead: ssl %p not found (%s)",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead: ssl %p not found (%s)",
                    (long long)dc->iter, (void*)ssl, msg != NULL ? msg : "");
             return;
         }
@@ -6692,21 +6694,21 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
 
     if (dc->u.h3.ssl_items.data[idx] != NULL) {
         /* Punch the hole and record earliest dead slot */
-        //Ns_Log(Notice, "[%lld] PollsetMarkDead ssl %p: punch hole at idx %ld", (long long)dc->iter, (void*)ssl, idx);
+        //Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead ssl %p: punch hole at idx %ld", (long long)dc->iter, (void*)ssl, idx);
         dc->u.h3.ssl_items.data[idx]    = NULL;
         dc->u.h3.poll_items[idx].events = 0;
         if (dc->u.h3.first_dead == 0 || idx < dc->u.h3.first_dead) {
             dc->u.h3.first_dead = idx;
         }
         if (sc != NULL) {
-            Ns_Log(Notice, "[%lld] H3[%lld] PollsetMarkDead %p %s (at slot [%zu] (%s)",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] PollsetMarkDead %p %s (at slot [%zu] (%s)",
                    (long long)dc->iter, (long long)sc->quic_sid, (void *)ssl, H3StreamKind_str(sc->kind), idx, msg ? msg : "");
         } else {
-            Ns_Log(Notice, "[%lld] PollsetMarkDead %p at slot [%zu] (%s)",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead %p at slot [%zu] (%s)",
                    (long long)dc->iter, (void *)ssl, idx, msg ? msg : "");
         }
     } else {
-        Ns_Log(Notice, "[%lld] PollsetMarkDead %p redundant call (%s)",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead %p redundant call (%s)",
                (long long)dc->iter, (void *)ssl, msg ? msg : "");
     }
     //PollsetPrint(dc, "after del", NS_FALSE);
@@ -6813,7 +6815,7 @@ PollsetSweep(NsTLSConfig *dc)
     SSL   *to_free[MAX_SWEEP_FREES];
     size_t i, nfree = 0;
 
-    Ns_Log(Notice, "[%lld] PollsetSweep begin npoll %ld", (long long)dc->iter, PollsetCount(dc));
+    Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep begin npoll %ld", (long long)dc->iter, PollsetCount(dc));
     for (i = 0; i < PollsetCount(dc); i++) {
         int        stype;
         SSL       *s = dc->u.h3.ssl_items.data[i];
@@ -6838,7 +6840,7 @@ PollsetSweep(NsTLSConfig *dc)
         /* 1) Connection object? Treat it as conn regardless of stream_type. */
         if (s == cc->h3ssl.conn) {
             if (quic_conn_can_be_freed_postloop(s, cc)) {
-                Ns_Log(Notice, "[%lld] H3 PollsetSweep: kill conn %p", (long long)dc->iter, (void*)s);
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: kill conn %p", (long long)dc->iter, (void*)s);
                 /* Take the connection's streams with it, or they are orphaned. */
                 nfree = PollsetReapConnStreams(dc, cc, to_free, nfree, MAX_SWEEP_FREES);
                 PollsetMarkDead(cc, s, "conn postloop free");
@@ -6858,7 +6860,7 @@ PollsetSweep(NsTLSConfig *dc)
         /* 3) Streams without a usable id yet – postpone */
         sid = SSL_get_stream_id(s);
         if (sid == (uint64_t)-1) {  /* UINT64_MAX */
-            Ns_Log(Notice, "[%lld] H3 PollsetSweep: postpone unknown stream %p type %d %s",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: postpone unknown stream %p type %d %s",
                    (long long)dc->iter, (void*)s, stype, ossl_quic_stream_type_str(stype));
             continue;
         }
@@ -6867,7 +6869,7 @@ PollsetSweep(NsTLSConfig *dc)
         sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
 
         if (sc == NULL) {
-            Ns_Log(Notice, "[%lld] H3 PollsetSweep: stream %p sid %llu not registered yet; skip",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: stream %p sid %llu not registered yet; skip",
                    (long long)dc->iter, (void*)s, (long long)sid);
             continue;
         }
@@ -6876,7 +6878,7 @@ PollsetSweep(NsTLSConfig *dc)
             finalized = h3_stream_maybe_finalize(sc, "PollsetSweep");
             if (!finalized && !sc->seen_io && !H3_TX_CLOSED(sc) && !H3_RX_CLOSED(sc)) {
                 /* We've already disabled W inside maybe_finalize if idle. */
-                Ns_Log(Notice, "[%lld] H3 PollsetSweep: stream %p sid %llu already disabled W; skip",
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: stream %p sid %llu already disabled W; skip",
                        (long long)dc->iter, (void*)s, (long long)sid);
                 continue;
             }
@@ -6885,7 +6887,7 @@ PollsetSweep(NsTLSConfig *dc)
         /* Still keep the "don't free without IO" rule for freeing. */
         if (!sc->seen_io && !H3_TX_CLOSED(sc) && !H3_RX_CLOSED(sc)) {
             /* We've already disabled EW above if nothing to write. */
-            Ns_Log(Notice, "[%lld] H3 PollsetSweep: don't sweep stream without io %p"
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: don't sweep stream without io %p"
                    " kind %s tx_queued.unread %ld tx_pending.unread %ld",
                    (long long)dc->iter, (void*)s,
                    H3StreamKind_str(sc->kind),
@@ -6930,7 +6932,7 @@ PollsetSweep(NsTLSConfig *dc)
                  && sc->rx_len == sc->rx_off
                  && sc->tx_queued.unread  == 0
                  && sc->tx_pending.unread == 0 ) {
-                Ns_Log(Notice, "[%lld] H3 PollsetSweep: kill stream %p kind %s "
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: kill stream %p kind %s "
                        "rx.buffered %d tx_queued.unread %ld tx_pending.unread %ld",
                        (long long)dc->iter, (void*)s, H3StreamKind_str(sc->kind),
                        sc->rx_len == sc->rx_off, sc->tx_queued.unread, sc->tx_pending.unread);
@@ -6945,10 +6947,10 @@ PollsetSweep(NsTLSConfig *dc)
     }
     /* Now it's safe to actually free the SSL objects. */
     for (size_t k = 0; k < nfree; k++) {
-        Ns_Log(Notice, "[%lld] PollsetSweep calls SSL_free %p", (long long)dc->iter, (void*)to_free[k]);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep calls SSL_free %p", (long long)dc->iter, (void*)to_free[k]);
         SSL_free(to_free[k]);
     }
-    Ns_Log(Notice, "[%lld] PollsetSweep DONE", (long long)dc->iter);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep DONE", (long long)dc->iter);
 }
 
 /*
@@ -7016,14 +7018,14 @@ PollsetConsolidate(NsTLSConfig *dc)
                             /* we moved a connection */
                             cc->pidx = i;
                         } else {
-                            Ns_Log(Notice, "[%lld] Consolidate: swapped hole %zu no index update for %p",
+                            Ns_Log(Ns_LogQuicDebug, "[%lld] Consolidate: swapped hole %zu no index update for %p",
                                    (long long)dc->iter, i, (void*)s);
                         }
                     } else {
-                        //Ns_Log(Notice, "[%lld] Consolidate: swapped hole %zu with ZERO ssl", (long long)dc->iter, i);
+                        //Ns_Log(Ns_LogQuicDebug, "[%lld] Consolidate: swapped hole %zu with ZERO ssl", (long long)dc->iter, i);
                     }
 
-                    Ns_Log(Notice, "[%lld] Consolidate: swapped hole %zu with slot %zu",
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] Consolidate: swapped hole %zu with slot %zu",
                            (long long)dc->iter, i, last);
                 }
 
@@ -7153,7 +7155,7 @@ SockDispatchFinishedRequest(StreamCtx *sc)
     Ns_ReturnCode result = NS_OK;
     Sock          *sockPtr = (Sock *)sc->nsSock;
 
-    Ns_Log(Notice, "[%lld] H3[%lld] SockDispatchFinishedRequest %.2x",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SockDispatchFinishedRequest %.2x",
            (long long)sc->cc->dc->iter, (long long)sc->quic_sid, sc->io_state);
 
     /* Avoid double dispatch for the same stream */
@@ -7162,15 +7164,15 @@ SockDispatchFinishedRequest(StreamCtx *sc)
 
         if (sockPtr->tfd != NS_INVALID_FD) {
             assert(reqPtr->content == NULL);
-            Ns_Log(Notice, "[%lld] H3[%lld] SockDispatchFinishedRequest tfd %d (content-length %ld)",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SockDispatchFinishedRequest tfd %d (content-length %ld)",
                    (long long)sc->cc->dc->iter, (long long)sc->quic_sid, sockPtr->tfd, reqPtr->contentLength);
         } else {
             Tcl_DStringAppend(&reqPtr->buffer, "", 1);   /* trailing NUL */
             reqPtr->content = reqPtr->buffer.string;     /* body only */
 
-            Ns_Log(Notice, "[%lld] H3[%lld] SockDispatchFinishedRequest buffer %p length %d (content-length %ld)",
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SockDispatchFinishedRequest buffer %p length %d (content-length %ld)",
                    (long long)sc->cc->dc->iter, (long long)sc->quic_sid, (void*) reqPtr->content, reqPtr->buffer.length, reqPtr->contentLength);
-            //Ns_Log(Notice, "[%lld] H3[%lld] SockDispatchFinishedRequest body\n%s",
+            //Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SockDispatchFinishedRequest body\n%s",
             //       (long long)sc->cc->dc->iter, (long long)sc->quic_sid, reqPtr->content);
 
             reqPtr->next    = reqPtr->content;
@@ -7220,6 +7222,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     Ns_Time           timeout;
 
     memset(&init, 0, sizeof(init));
+    Ns_LogQuicDebug = Ns_CreateLogSeverity("Debug(quic)");
 
     section = Ns_ConfigGetPath(server, module, (char *)0);
     httpsSection = Ns_ConfigString(section, "https", "ns/module/https");
@@ -7228,14 +7231,17 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
         Ns_Log(Error, "quic: linkage to httpsSection <%s> failed", httpsSection);
         return NS_ERROR;
     }
-
-    //httpsConfigSet = Ns_ConfigGetSection(httpsSection);
+    Ns_LogQuicDebug = Ns_CreateLogSeverity("Debug(quic)");
+    Ns_LogSeveritySetEnabled(Ns_LogQuicDebug, NS_TRUE);
 
     /*
      * Load parameters from the specified section
      */
+
+    Ns_LogSeveritySetEnabled(Ns_LogQuicDebug, Ns_ConfigBool(section, "debug", NS_FALSE));
+
     dc = NsTLSConfigNew(httpsSection);
-    Ns_Log(Notice, "Ns_ModuleInit <%s> <%s> has dc %p", server, module, (void*)dc);
+    Ns_Log(Ns_LogQuicDebug, "Ns_ModuleInit <%s> <%s> has dc %p", server, module, (void*)dc);
 
     dc->u.h3.npoll        = (size_t)-1;   /* so first PollsetAdd lands at index 0 */
     dc->u.h3.nr_listeners = 0;
@@ -7298,7 +7304,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
         static char stream_ctx_tag[] = "StreamCtx";
         int rc = Ns_TLS_CtxServerInit(httpsSection, NULL, NS_DRIVER_QUIC|NS_DRIVER_SNI,
                                       dc, &dc->ctx);
-        Ns_Log(Notice, "quic: created sslCtx %p for dc %p",
+        Ns_Log(Ns_LogQuicDebug, "quic: created sslCtx %p for dc %p",
                (void*)dc->ctx, (void*)dc);
 
         if (rc != TCL_OK) {
@@ -7309,7 +7315,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
             uint64_t domain_flags = (uint64_t)-1;
 
             SSL_CTX_get_domain_flags(dc->ctx, &domain_flags);
-            Ns_Log(Notice, "quic: created sslCtx %p, num tickets %ld domain_flags %02" PRIx64,
+            Ns_Log(Ns_LogQuicDebug, "quic: created sslCtx %p, num tickets %ld domain_flags %02" PRIx64,
                    (void*)dc->ctx, SSL_CTX_get_num_tickets(dc->ctx), domain_flags);
 
             if (SSL_CTX_set_domain_flags(dc->ctx, SSL_DOMAIN_FLAG_THREAD_ASSISTED) != 1) {
@@ -7337,7 +7343,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
         dc->u.h3.cc_idx = SSL_get_ex_new_index(0, conn_ctx_tag, NULL, NULL, ossl_cc_exdata_free);
         dc->u.h3.sc_idx = SSL_get_ex_new_index(0, stream_ctx_tag, NULL, NULL, ossl_sc_exdata_free);
 
-        Ns_Log(Notice, "H3 set ex_data indices cc_idx %d sc_idx %d", dc->u.h3.cc_idx, dc->u.h3.sc_idx);
+        Ns_Log(Ns_LogQuicDebug, "H3 set ex_data indices cc_idx %d sc_idx %d", dc->u.h3.cc_idx, dc->u.h3.sc_idx);
 
         if (result == NS_OK && (dc->u.h3.cc_idx < 0 || dc->u.h3.sc_idx < 0)) {
             Ns_Log(Error, "quic: Could not allocate SSL ex_data index");
@@ -7458,7 +7464,7 @@ QuicThread(void *arg)
 
         numitems = PollsetCount(dc);
 
-        Ns_Log(Notice, "[%lld] H3D calling SSL_poll with %ld items timeout " NS_TIME_FMT,
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D calling SSL_poll with %ld items timeout " NS_TIME_FMT,
                (long long)dc->iter, numitems,
                (int64_t)polltimeout_ptr->tv_sec, (long)polltimeout_ptr->tv_usec
                );
@@ -7469,7 +7475,7 @@ QuicThread(void *arg)
         ret = SSL_poll(dc->u.h3.poll_items, numitems, sizeof(SSL_POLL_ITEM), polltimeout_ptr,
                        SSL_POLL_FLAG_NO_HANDLE_EVENTS, &result_count);
 
-        Ns_Log(Notice, "[%lld] H3D SSL_poll returns rc %d with %ld items with events"
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D SSL_poll returns rc %d with %ld items with events"
                " (quic.c from %s %s)",
                (long long)dc->iter, ret, result_count, __DATE__, __TIME__);
 
@@ -7492,7 +7498,7 @@ QuicThread(void *arg)
 
             Tcl_DStringInit(&ds1);
             Tcl_DStringInit(&ds2);
-            Ns_Log(Notice, "[%lld] H3D poll item %d: s %p (%s)"
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3D poll item %d: s %p (%s)"
                    " events %04" PRIx64 " %s"
                    " revents %04" PRIx64 " %s",
                    (long long)dc->iter, i,
@@ -7513,7 +7519,7 @@ QuicThread(void *arg)
         }
         if (result_count == 0) {
             /* Timeout may be something somewhere */
-            Ns_Log(Notice, "[%lld] H3D timeout", (long long)dc->iter);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3D timeout", (long long)dc->iter);
             (void)PollsetHandleListenerEvents(dc);
             //continue;
         }
@@ -7537,7 +7543,7 @@ QuicThread(void *arg)
             StreamCtx     *sc;
             Tcl_DString    ds;
 
-            //Ns_Log(Notice, "[%lld] H3D %p item %d: stream %p events %.8llx revents %.8llx",
+            //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D %p item %d: stream %p events %.8llx revents %.8llx",
             //       (long long)dc->iter, (void*)item, i, (void*)s, item->events, revents);
 
             if (s == NULL) {
@@ -7559,7 +7565,7 @@ QuicThread(void *arg)
             }
 
             if (cc == NULL && i > (int)dc->u.h3.nr_listeners - 1 ) {
-                Ns_Log(Notice, "[%lld] H3D item %d: cannot get cc for stream %p",
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: cannot get cc for stream %p",
                        (long long)dc->iter, i, (void*)s);
             }
             if (i > (int)dc->u.h3.nr_listeners - 1) {
@@ -7573,7 +7579,7 @@ QuicThread(void *arg)
             }
 
             /*Tcl_DStringInit(&ds);
-              Ns_Log(Notice, "[%lld] H3D item %d: revents %.8llx %s from stream %p",
+              Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: revents %.8llx %s from stream %p",
               (long long)dc->iter, i, revents, DStringAppendSslPollEventFlags(&ds, revents), (void*)s);
               Tcl_DStringFree(&ds);*/
 
@@ -7581,7 +7587,7 @@ QuicThread(void *arg)
 
             {
                 Tcl_DStringInit(&ds);
-                Ns_Log(Notice, "[%lld] H3D processing poll item %d: s %p (%s)"
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D processing poll item %d: s %p (%s)"
                        " revents %08" PRIx64 " %s",
                        (long long)dc->iter, i,
                        (void*)s,
@@ -7600,10 +7606,10 @@ QuicThread(void *arg)
                 int spins = 0;
                 for (;;) {
 
-                    Ns_Log(Notice, "[%lld] H3D poll item %d: preprocessing event loop, iteration %d", (long long)dc->iter, i, spins);
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D poll item %d: preprocessing event loop, iteration %d", (long long)dc->iter, i, spins);
 
                     (void)SSL_handle_events(cc->h3ssl.conn);
-                    Ns_Log(Notice, "[%lld] H3D poll item %d: preprocessing event loop, itertion %d DONE", (long long)dc->iter, i, spins);
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D poll item %d: preprocessing event loop, itertion %d DONE", (long long)dc->iter, i, spins);
                     spins++;
 
                     /* Stop when OpenSSL wants a future wakeup (non-zero timeout), or after a few spins */
@@ -7618,18 +7624,18 @@ QuicThread(void *arg)
 
             if (revents & SSL_POLL_EVENT_IC) {
                 // incoming connection
-                Ns_Log(Notice, "[%lld] H3D item %d: received POLL_EVENT_IC provided cc %p", (long long)dc->iter, i, (void*)cc);
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: received POLL_EVENT_IC provided cc %p", (long long)dc->iter, i, (void*)cc);
 
                 quic_conn_handle_ic(s, drvPtr);
 
                 cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
-                Ns_Log(Notice, "[%lld] H3D item %d: received POLL_EVENT_IC processed", (long long)dc->iter, i);
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: received POLL_EVENT_IC processed", (long long)dc->iter, i);
                 processed_event |= SSL_POLL_EVENT_IC;
             }
 
             if ((revents & (SSL_POLL_EVENT_OSB|SSL_POLL_EVENT_OSU)) != 0) {
                 if (cc->handshake_done) {
-                    Ns_Log(Notice, "[%lld] H3D item %d: processing OSB|OSU handshake done %d",
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: processing OSB|OSU handshake done %d",
                            (long long)dc->iter, i, cc->handshake_done);
                 }
 
@@ -7644,7 +7650,7 @@ QuicThread(void *arg)
                     int hs_result = quic_conn_drive_handshake(dc, s);
                     //ossl_log_handshake_state(s);
 
-                    Ns_Log(Notice, "[%lld] H3D item %d: processing OSB|OSU drive_hand_shake -> %d",
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: processing OSB|OSU drive_hand_shake -> %d",
                            (long long)dc->iter, i, hs_result);
 
                     if (hs_result == 1) {
@@ -7661,7 +7667,7 @@ QuicThread(void *arg)
                             ossl_log_error_detail(rc, "set_incoming_stream_policy(conn)");
                         }
 
-                        Ns_Log(Notice, "[%lld] H3D item %d: processing OSB|OSU creates server streams",
+                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: processing OSB|OSU creates server streams",
                                (long long)dc->iter, i);
                         if (quic_conn_open_server_uni_streams(cc, &cc->h3ssl) == 0) {
                             ossl_conn_maybe_log_first_shutdown(cc, "OSB|OSU after quic_conn_open_server_uni_streams");
@@ -7689,13 +7695,13 @@ QuicThread(void *arg)
                 }
 
                 if (!cc->handshake_done) {
-                    Ns_Log(Notice, "[%lld] H3D[%d] Deferring ISB|ISU until handshake completes",
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D[%d] Deferring ISB|ISU until handshake completes",
                            (long long)dc->iter, i);
                 } else {
                     unsigned accepted = 0;
                     const unsigned max_accept = 64; /* starvation guard */
 
-                    Ns_Log(Notice, "[%lld] H3D item %d: processing ISB|ISU,"
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: processing ISB|ISU,"
                            " attempting to accept %ld streams %s",
                            (long long)dc->iter, i, SSL_get_accept_stream_queue_len(cc->h3ssl.conn),
                            (revents & SSL_POLL_EVENT_EC) != 0 ? " with EC" : "");
@@ -7704,7 +7710,7 @@ QuicThread(void *arg)
                         SSL *stream;
 
                         if (accepted >= max_accept) {
-                            Ns_Log(Notice, "[%lld] H3D item %d: accepted %u streams (cap), will continue next tick",
+                            Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: accepted %u streams (cap), will continue next tick",
                                    (long long)dc->iter, i, accepted);
                             break;
                         }
@@ -7723,7 +7729,7 @@ QuicThread(void *arg)
                             } else if (st == SSL_STREAM_TYPE_BIDI) {
                                 /* client-initiated request stream */
                                 sc = PollsetAddStreamRegister(cc, stream, H3_KIND_BIDI_REQ);
-                                Ns_Log(Notice, "[%lld] H3D item %d: registered BIDI with cc %p sc %p nsSock %p",
+                                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: registered BIDI with cc %p sc %p nsSock %p",
                                        (long long)dc->iter, i, (void*)cc, (void*)sc, (void*)sc->nsSock);
                                 cc->h3ssl.bidi_sid = sc->quic_sid;
 
@@ -7739,7 +7745,7 @@ QuicThread(void *arg)
             }
 
             if (revents & SSL_POLL_EVENT_R) {
-                //Ns_Log(Notice, "[%lld] H3D[%lld] item %d: processing R", (long long)dc->iter, (long long)sid, i);
+                //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D[%lld] item %d: processing R", (long long)dc->iter, (long long)sid, i);
                 processed_event |= SSL_POLL_EVENT_R;
 
                 if (quic_stream_handle_r(cc, s)) {
@@ -7749,7 +7755,7 @@ QuicThread(void *arg)
             }
 
             if ((revents & SSL_POLL_EVENT_W) != 0u) {
-                Ns_Log(Notice,
+                Ns_Log(Ns_LogQuicDebug,
                        "[%lld] H3[%lld] processing W",
                        (long long)dc->iter,
                        (long long)sc->quic_sid);
@@ -7806,7 +7812,7 @@ QuicThread(void *arg)
             if (revents & SSL_POLL_EVENT_EL) {
                 processed_event |= (revents & ((SSL_POLL_EVENT_EL)));
 
-                Ns_Log(Notice, "[%lld] H3D item %d: Received EL, but not yet processed", (long long)dc->iter, i);
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: Received EL, but not yet processed", (long long)dc->iter, i);
             }
 
 
@@ -7817,7 +7823,7 @@ QuicThread(void *arg)
                 Tcl_DStringInit(&ds1);
                 sid = SSL_get_stream_id(item->desc.value.ssl);
                 Tcl_DStringInit(&ds);
-                Ns_Log(Notice, "[%lld] H3D item %d: s %p sid %lld"
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: s %p sid %lld"
                        " item->re %08" PRIx64
                        " revents %08" PRIx64 " %s != %08" PRIx64 " -> NOT PROCESSED %s",
                        (long long)dc->iter, i, (void*)dc->u.h3.ssl_items.data[i],
@@ -7834,7 +7840,7 @@ QuicThread(void *arg)
              * clear event mask
              */
             item->revents = SSL_POLL_EVENT_NONE;
-            //Ns_Log(Notice, "[%lld] get next event", (long long)dc->iter);
+            //Ns_Log(Ns_LogQuicDebug, "[%lld] get next event", (long long)dc->iter);
         }
 
         /*
@@ -7842,7 +7848,7 @@ QuicThread(void *arg)
          *
          * Write to all connections that reported write demands.
          */
-        //Ns_Log(Notice, "[%lld] all events processed", (long long)dc->iter);
+        //Ns_Log(Ns_LogQuicDebug, "[%lld] all events processed", (long long)dc->iter);
 
         {
             bool expecting_send = NS_FALSE;
@@ -7851,28 +7857,28 @@ QuicThread(void *arg)
                 for (i = 0u; i < (int)dc->u.h3.conns.size; i++) {
                     ConnCtx *cc = dc->u.h3.conns.data[i];
 
-                    Ns_Log(Notice, "[%lld] all events processed conn[%d] cc->expecting_send %d cc->wants_write %d"
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] all events processed conn[%d] cc->expecting_send %d cc->wants_write %d"
                            " has resume pending %d",
                            (long long)dc->iter, i, cc->expecting_send, cc->wants_write,
                            SharedHasResumePending(&cc->shared));
 
                     if (cc->expecting_send) {
-                        Ns_Log(Notice, "[%lld] H3D cc %p expecting send", (long long)dc->iter, (void*)cc);
+                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D cc %p expecting send", (long long)dc->iter, (void*)cc);
                         expecting_send = NS_TRUE;
                         cc->expecting_send = NS_FALSE;
                     }
                     if (cc->wants_write) {
-                        //Ns_Log(Notice, "[%lld] H3D write demand from cc %p", (long long)dc->iter, (void*)cc);
+                        //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D write demand from cc %p", (long long)dc->iter, (void*)cc);
                         cc->wants_write = h3_conn_write_step(cc);
-                        Ns_Log(Notice, "[%lld] H3D after h3_conn_write_step cc %p", (long long)dc->iter, (void*)cc);
+                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D after h3_conn_write_step cc %p", (long long)dc->iter, (void*)cc);
                     }
 
                     /* Decide whether we should run another drain pass without sleeping. */
                     if (cc->wants_write) {
-                        Ns_Log(Notice, "[%lld] H3D cc %p cc->wants_write is still set", (long long)dc->iter, (void*)cc);
+                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D cc %p cc->wants_write is still set", (long long)dc->iter, (void*)cc);
                         expecting_send = NS_TRUE;
                     }
-                    //Ns_Log(Notice, "[%lld] H3D conn loop SSL_handle_events conn %p => %d",
+                    //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D conn loop SSL_handle_events conn %p => %d",
                     //       (long long)dc->iter, (void*)cc->h3ssl.conn, SSL_handle_events(cc->h3ssl.conn));
 
                     PollsetUpdateConnPollInterest(cc);
@@ -7881,7 +7887,7 @@ QuicThread(void *arg)
             }
             PollsetSweep(dc);
             PollsetConsolidate(dc);
-            //Ns_Log(Notice, "[%lld] H3D after consolidate, npoll %ld", (long long)dc->iter, PollsetCount(dc));
+            //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D after consolidate, npoll %ld", (long long)dc->iter, PollsetCount(dc));
         }
     }
 
@@ -7936,22 +7942,22 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
     assert(dc);
 
     sock = Ns_SockListenUdp(address, port, reuseport);
-    Ns_Log(Notice, "[%lld] H3 listen <%s> port %hu -> sock %d", (long long)dc->iter, address, port, sock);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 listen <%s> port %hu -> sock %d", (long long)dc->iter, address, port, sock);
     if (sock != NS_INVALID_SOCKET) {
         uint64_t domainFlags = 0u;
         size_t   idx;
 
-        Ns_Log(Notice, "[%lld] H3 listen has ctx %p", (long long)dc->iter, (void*)dc->ctx);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 listen has ctx %p", (long long)dc->iter, (void*)dc->ctx);
         if (dc->ctx != NULL) {
             dc->driver = driver;
-            Ns_Log(Notice, "[%lld] H3 listen set driver %p in dc %p", (long long)dc->iter, (void*)driver, (void*)dc);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 listen set driver %p in dc %p", (long long)dc->iter, (void*)driver, (void*)dc);
 
             listener = SSL_new_listener(dc->ctx, 0);
             if (listener == NULL) {
                 goto fail;
             }
             if (SSL_get_domain_flags(listener, &domainFlags) == 1) {
-                Ns_Log(Notice, "H3 listener %p: effective QUIC domain flags "
+                Ns_Log(Ns_LogQuicDebug, "H3 listener %p: effective QUIC domain flags "
                        "0x%llx, blocking mode %d",
                        (void *)listener,
                        (unsigned long long)domainFlags,
@@ -8008,7 +8014,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
                          /* kind  */   H3_KIND_UNKNOWN);
 
         dc->u.h3.nr_listeners++;         /* remember how many listeners we pinned at the front */
-        Ns_Log(Notice, "[%lld] PollsetAdd for listener returned %ld, nr_listeners %ld npoll %ld",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetAdd for listener returned %ld, nr_listeners %ld npoll %ld",
                (long long)dc->iter, idx, dc->u.h3.nr_listeners, PollsetCount(dc));
 
         ERR_clear_error();
@@ -8062,7 +8068,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
     QuicSockCtx *qctx;
     NsTLSConfig *dc = ((Sock *)sock)->drvPtr->arg;
 
-    Ns_Log(Notice, "[%lld] H3 Accept sock %d arg %p", (long long)dc->iter, listensock, (void*)sock->arg);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Accept sock %d arg %p", (long long)dc->iter, listensock, (void*)sock->arg);
 
     /*
      * Tag this Ns_Sock as H3 so later code (ns_conn version, etc.)
@@ -8136,14 +8142,14 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     }
 
     // Not implemented yet, let the server crash to see how this was called
-    Ns_Log(Notice, "H3 Recv (sock %d) nbufs %d", sock->sock, nbufs);
+    Ns_Log(Ns_LogQuicDebug, "H3 Recv (sock %d) nbufs %d", sock->sock, nbufs);
     Ns_Log(Error, "H3 Recv (sock %d) %p nbufs %d -> NOT IMPLEMENTED YET", sock->sock, (void*)bufs, nbufs);
     (void)raise(SIGSEGV);
 
     /* Let OpenSSL pull UDP datagrams and dispatch internally */
     (void)PollsetHandleListenerEvents(dc);
 
-    Ns_Log(Notice, "H3 Recv (sock %d) returns %ld bytes", sock->sock, produced_total);
+    Ns_Log(Ns_LogQuicDebug, "H3 Recv (sock %d) returns %ld bytes", sock->sock, produced_total);
     return produced_total;
 }
 
@@ -8186,7 +8192,7 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
     int          start_iov = 0, j;
     bool         need_resume = NS_FALSE;
 
-    Ns_Log(Notice, "[%lld] H3 Send (sock %d) nbufs %d", (long long)dc->iter, sock->sock, niov);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Send (sock %d) nbufs %d", (long long)dc->iter, sock->sock, niov);
 
     sc = StreamCtxFromSock(dc, sock);
     if (sc == NULL) {
@@ -8194,7 +8200,7 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
         assert(sc != NULL);
     }
 
-    Ns_Log(Notice, "[%lld] H3 Send: cc %p sc %p hdrs_submitted %d hdrs_ready %d nva %p",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Send: cc %p sc %p hdrs_submitted %d hdrs_ready %d nva %p",
            (long long)dc->iter, (void*)sc->cc, (void*)sc, sc->hdrs_submitted, sc->hdrs_ready, (void*)sc->resp_nv);
 
     if (!H3_TX_WRITABLE(sc)) {          /* honors H3_IO_TX_FIN/H3_IO_RESET */
@@ -8233,7 +8239,7 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
         PollsetEnableWrite(dc, sc->ssl, sc, "Send: staged/enqueued");  /* per-stream W */
     }
 
-    Ns_Log(Notice, "[%lld] H3 Send nbufs %d -> DONE (consumed %ld)",
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Send nbufs %d -> DONE (consumed %ld)",
            (long long)dc->iter, niov, consumed);
     return consumed;
 }
@@ -8264,7 +8270,7 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
 static bool
 Keep(Ns_Sock *UNUSED(sock))
 {
-    Ns_Log(Notice, "H3 Keep");
+    Ns_Log(Ns_LogQuicDebug, "H3 Keep");
     return NS_FALSE;
 }
 
@@ -8308,13 +8314,13 @@ Close(Ns_Sock *sock)
     }
     dc = sock->driver->arg;
 
-    Ns_Log(Notice, "[%lld] H3 Close", (long long)dc->iter);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Close", (long long)dc->iter);
 
     sc = StreamCtxFromSock(dc, sock);
     if (sc == NULL || sc->ssl == NULL) {
         goto detach_sock;
     }
-    Ns_Log(Notice, "[%lld] H3 Close clearing expecting_send", (long long)dc->iter);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Close clearing expecting_send", (long long)dc->iter);
 
     /* Stop reading request bytes on this stream (ok to do from producer thread). */
     PollsetDisableRead(dc, sc->ssl, sc, "Close");
@@ -8330,7 +8336,7 @@ Close(Ns_Sock *sock)
     {
         SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
 
-        Ns_Log(Notice, "[%lld] H3[%lld] WRITER done: queued %ld pending %ld closed_by_app %d",
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] WRITER done: queued %ld pending %ld closed_by_app %d",
                (long long)dc->iter, (long long)sc->quic_sid, snap.queued_bytes, snap.pending_bytes, snap.closed_by_app);
     }
 
@@ -8342,7 +8348,7 @@ Close(Ns_Sock *sock)
  detach_sock:
     /* Detach per-request sock state; lifetime of H3 objects is owned elsewhere. */
     if (sock->arg != NULL) {
-        Ns_Log(Notice, "[%lld] H3 Close freeing %p", (long long)dc->iter,  (void*)sock->arg);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Close freeing %p", (long long)dc->iter,  (void*)sock->arg);
         ns_free(sock->arg);    /* QuicSockCtx */
         sock->arg  = NULL;
     }
