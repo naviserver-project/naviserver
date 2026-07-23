@@ -5484,6 +5484,35 @@ static void
 ConnCtxFree(ConnCtx *cc)
 {
     Ns_Log(Notice, "[%lld] H3 ConnCtxFree for cc %p", (long long)cc->dc->iter, (void*)cc);
+    /* ^^^ existing ConnCtxFree code (the diagnostic log) is unchanged. */
+
+    /* ===================================================================== *
+     * >>> NEW in this change: defensive pollset removal (reap UAF fix). >>>  *
+     *                                                                        *
+     * Everything from here to the matching "<<< end new" marker is added by  *
+     * this patch; the code above and below it is pre-existing and untouched. *
+     *                                                                        *
+     * Symmetric with the StreamCtxFree() block: guarantees the connection's  *
+     * SSL cannot be left in dc->u.h3.ssl_items[] after SSL_free() on a        *
+     * teardown path that skipped PollsetMarkDead(). No-op on the normal path  *
+     * (quic_conn_enter_shutdown() already marked it dead -> pidx == -1), and  *
+     * the "== cc->h3ssl.conn" check avoids clobbering a slot reused by        *
+     * another SSL.                                                            *
+     * ===================================================================== */
+    if (cc->pidx != (size_t)-1) {
+        NsTLSConfig *dc = cc->dc;
+        if (dc != NULL
+            && cc->pidx <= dc->u.h3.npoll
+            && (SSL *)dc->u.h3.ssl_items.data[cc->pidx] == cc->h3ssl.conn) {
+            dc->u.h3.ssl_items.data[cc->pidx]    = NULL;
+            dc->u.h3.poll_items[cc->pidx].events = 0;
+            if (dc->u.h3.first_dead == 0 || cc->pidx < dc->u.h3.first_dead) {
+                dc->u.h3.first_dead = cc->pidx;
+            }
+        }
+        cc->pidx = (size_t)-1;
+    }
+    /* <<< end new (reap UAF fix). Existing teardown code resumes: <<< */
 
     Tcl_DeleteHashTable(&cc->streams);
     SharedStateDestroy(&cc->shared);
@@ -5562,6 +5591,42 @@ static void StreamCtxFree(StreamCtx *sc)
            (long long)sc->quic_sid, (void*)sc, H3StreamKind_str(sc->kind), (void*)sc->rx_hold,
            sc->tx_queued.unread, sc->tx_pending.unread,
            sc->tx_queued.drained, sc->tx_pending.drained);
+    /* ^^^ existing StreamCtxFree code (the diagnostic log) is unchanged. */
+
+    /* ===================================================================== *
+     * >>> NEW in this change: defensive pollset removal (reap UAF fix). >>>  *
+     *                                                                        *
+     * Everything from here to the matching "<<< end new" marker is added by  *
+     * this patch; the code above and below it is pre-existing and untouched. *
+     *                                                                        *
+     * StreamCtxFree() runs from OpenSSL's ex_data free callback during       *
+     * SSL_free(stream), so it is the ONE place every stream teardown funnels *
+     * through. If some path freed this stream's SSL without first calling    *
+     * PollsetMarkDead() (e.g. the server-uni cleanup_err path SSL_free()s    *
+     * cstream/pstream/rstream directly), the driver pollset                  *
+     * (dc->u.h3.ssl_items[]) would keep a dangling SSL* whose StreamCtx is   *
+     * now freed; the next SSL_poll() result loop then does                   *
+     * sc = SSL_get_ex_data(dead_ssl, sc_idx); cc = sc->cc; -> use-after-free *
+     * (quic.c ~7540), crashing SIGSEGV or SIGILL. Punch the slot NULL here   *
+     * so the loop's "if (s != NULL)" guard skips it. Idempotent:             *
+     * PollsetMarkDead sets pidx = -1, and the "== sc->ssl" check avoids      *
+     * clobbering a slot that was already reused by another SSL.              *
+     * ===================================================================== */
+    if (sc->cc != NULL && sc->pidx != (size_t)-1) {
+        NsTLSConfig *dc = sc->cc->dc;
+        if (dc != NULL
+            && sc->pidx <= dc->u.h3.npoll
+            && (SSL *)dc->u.h3.ssl_items.data[sc->pidx] == sc->ssl) {
+            dc->u.h3.ssl_items.data[sc->pidx]    = NULL;
+            dc->u.h3.poll_items[sc->pidx].events = 0;
+            if (dc->u.h3.first_dead == 0 || sc->pidx < dc->u.h3.first_dead) {
+                dc->u.h3.first_dead = sc->pidx;
+            }
+        }
+        sc->pidx = (size_t)-1;
+    }
+    /* <<< end new (reap UAF fix). Existing resource-free code resumes: <<< */
+
     ns_free_const(sc->method);
     ns_free_const(sc->path);
     ns_free_const(sc->authority);
