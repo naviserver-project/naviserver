@@ -7599,38 +7599,40 @@ QuicThread(void *arg)
                " (quic.c from %s %s)",
                (long long)dc->iter, rc, result_count, __DATE__, __TIME__);
 
-        for (i = 0; i < (int)numitems; i++) {
-            SSL           *s       = dc->u.h3.ssl_items.data[i];
-            SSL_POLL_ITEM *item    = &dc->u.h3.poll_items[i];
-            uint64_t       revents = item->revents;
-            Tcl_DString    ds1, ds2;
-            ConnCtx       *cc = NULL;
-            StreamCtx     *sc = NULL;
+        if (!Ns_LogSeverityEnabled(Ns_LogRequestDebug)) {
+            for (i = 0; i < (int)numitems; i++) {
+                SSL           *s       = dc->u.h3.ssl_items.data[i];
+                SSL_POLL_ITEM *item    = &dc->u.h3.poll_items[i];
+                uint64_t       revents = item->revents;
+                Tcl_DString    ds1, ds2;
+                ConnCtx       *cc = NULL;
+                StreamCtx     *sc = NULL;
 
-            if (s != NULL) {
-                sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
-                if (sc != NULL) {
-                    cc = sc->cc;
-                } else {
-                    cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
+                if (s != NULL) {
+                    sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
+                    if (sc != NULL) {
+                        cc = sc->cc;
+                    } else {
+                        cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
+                    }
                 }
-            }
 
-            Tcl_DStringInit(&ds1);
-            Tcl_DStringInit(&ds2);
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3D poll item %d: s %p (%s)"
-                   " events %04" PRIx64 " %s"
-                   " revents %04" PRIx64 " %s",
-                   (long long)dc->iter, i,
-                   (void*)s,
-                   cc == NULL ? "listener" :
-                   s == cc->h3ssl.conn ? "conn" :
-                   (s != NULL && sc != NULL) ? H3StreamKind_str(sc->kind) : "hole",
-                   item->events, DStringAppendSslPollEventFlags(&ds1, item->events),
-                   revents, DStringAppendSslPollEventFlags(&ds2, revents)
-                   );
-            Tcl_DStringFree(&ds1);
-            Tcl_DStringFree(&ds2);
+                Tcl_DStringInit(&ds1);
+                Tcl_DStringInit(&ds2);
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D poll item %d: s %p (%s)"
+                       " events %04" PRIx64 " %s"
+                       " revents %04" PRIx64 " %s",
+                       (long long)dc->iter, i,
+                       (void*)s,
+                       cc == NULL ? "listener" :
+                       s == cc->h3ssl.conn ? "conn" :
+                       (s != NULL && sc != NULL) ? H3StreamKind_str(sc->kind) : "hole",
+                       item->events, DStringAppendSslPollEventFlags(&ds1, item->events),
+                       revents, DStringAppendSslPollEventFlags(&ds2, revents)
+                       );
+                Tcl_DStringFree(&ds1);
+                Tcl_DStringFree(&ds2);
+            }
         }
 
         if (rc != 1) {
