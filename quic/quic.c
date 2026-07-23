@@ -256,6 +256,7 @@ typedef struct ConnCtx {
     bool            wants_write;
     bool            expecting_send;     // set when request dispatched to app
     bool            conn_closed;
+    Ns_Time         last_activity;  /* for reclaiming peers that vanished without CONNECTION_CLOSE */
     int             last_sd; // intermediate, for debuggung in ossl_conn_maybe_log_first_shutdown
     SharedState     shared;  // stable pointer
 
@@ -524,6 +525,13 @@ static size_t          PollsetReapConnection(NsTLSConfig *dc, ConnCtx *cc, SSL *
 
 /* Upper bound on SSL objects collected in one teardown/sweep pass. */
 #define H3_MAX_REAP 256
+
+/*
+ * How long a QUIC connection may sit with no poll activity before we tear it down.
+ * Guards against peers that disappear without a clean shutdown, which would otherwise
+ * keep their streams in the pollset forever. 0 disables reclamation.
+ */
+static Ns_Time h3ConnIdleTimeout = { 60, 0 };
 static void            PollsetConsolidate(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
 
 
@@ -5471,6 +5479,7 @@ ConnCtxNew(NsTLSConfig *dc, SSL *conn)
     cc->h3ssl.conn = conn;
     cc->h3ssl.bidi_sid = (uint64_t)-1;
     cc->pidx = (size_t)-1;
+    Ns_GetTime(&cc->last_activity);
 
     return cc;
 }
@@ -6876,6 +6885,9 @@ PollsetSweep(NsTLSConfig *dc)
     enum { MAX_SWEEP_FREES = 256 };
     SSL   *to_free[MAX_SWEEP_FREES];
     size_t i, nfree = 0;
+    Ns_Time sweepNow;
+
+    Ns_GetTime(&sweepNow);
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep begin npoll %ld", (long long)dc->iter, PollsetCount(dc));
     for (i = 0; i < PollsetCount(dc); i++) {
@@ -6901,6 +6913,48 @@ PollsetSweep(NsTLSConfig *dc)
 
         /* 1) Connection object? Treat it as conn regardless of stream_type. */
         if (s == cc->h3ssl.conn) {
+            /*
+             * Peer vanished without CONNECTION_CLOSE?  Then
+             * quic_conn_can_be_freed_postloop() never returns true
+             * (SSL_RECEIVED_SHUTDOWN never arrives) and this connection would
+             * stay in the pollset for the life of the process.  Reclaim it once
+             * it has been silent for connidletimeout, unless it still has a
+             * request in flight (a slow download must not be killed).
+             */
+            if ((h3ConnIdleTimeout.sec != 0 || h3ConnIdleTimeout.usec != 0)
+                && cc->handshake_done) {
+                Ns_Time idle, hard;
+                bool    expired;
+
+                /* Elapsed since the peer last did anything (positive interval). */
+                (void)Ns_DiffTime(&sweepNow, &cc->last_activity, &idle);
+
+                /*
+                 * Hard deadline: a connection with no peer activity for 5x the
+                 * timeout is stuck, not slow, so reclaim it even though it still
+                 * reports a live request -- otherwise a wedged request pins the
+                 * connection and its streams in the pollset forever.
+                 */
+                hard = h3ConnIdleTimeout;
+                hard.sec *= 5;
+
+                expired = (Ns_DiffTime(&idle, &hard, NULL) > 0)
+                    || (Ns_DiffTime(&idle, &h3ConnIdleTimeout, NULL) > 0
+                        && !quic_conn_has_live_requests(cc));
+
+                if (expired) {
+                    Ns_Log(Ns_LogQuicDebug,
+                           "[%lld] H3 PollsetSweep: reaping idle conn %p (no peer "
+                           "activity for %ld.%06ld s, peer never sent CONNECTION_CLOSE)",
+                           (long long)dc->iter, (void *)s,
+                           (long)idle.sec, (long)idle.usec);
+                    nfree = PollsetReapConnection(dc, cc,
+                                                  to_free, nfree,
+                                                  MAX_SWEEP_FREES,
+                                                  "idle timeout, peer gone");
+                    continue;
+                }
+            }
             if (quic_conn_can_be_freed_postloop(s, cc)) {
                 Ns_Log(Ns_LogQuicDebug,
                        "[%lld] H3 PollsetSweep: kill conn %p",
@@ -7321,6 +7375,14 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
                            "10ms", 0, 0, LONG_MAX, 0,
                            &timeout);
     NsTimeToTimeval(&timeout, &dc->u.h3.drain_timeout);
+    /*
+     * Reclaim connections whose peer vanished without CONNECTION_CLOSE; without
+     * this their streams stay in the pollset forever and the driver spins over
+     * dead entries.
+     */
+    Ns_ConfigTimeUnitRange(section, "connidletimeout",
+                           "60s", 0, 0, LONG_MAX, 0,
+                           &h3ConnIdleTimeout);
 
     Ns_MutexInit(&dc->u.h3.waker_lock);
 
@@ -7647,6 +7709,20 @@ QuicThread(void *arg)
               Tcl_DStringFree(&ds);*/
 
             processed_event = 0;
+
+            /*
+             * Any event on this connection (or one of its streams) means the
+             * peer is still there; refresh the connection's idle deadline.  Only
+             * peer-driven events count -- OSB/OSU/W are outgoing-capacity flags
+             * that stay set even when the peer is gone, so counting them would
+             * keep a dead connection alive forever.
+             */
+            if (cc != NULL
+                && (revents & ~(uint64_t)(SSL_POLL_EVENT_OSB
+                                          | SSL_POLL_EVENT_OSU
+                                          | SSL_POLL_EVENT_W)) != 0) {
+                Ns_GetTime(&cc->last_activity);
+            }
 
             {
                 Tcl_DStringInit(&ds);
