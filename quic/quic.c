@@ -519,8 +519,8 @@ static inline void     PollsetUpdateConnPollInterest(ConnCtx *cc) NS_GNUC_NONNUL
 static size_t          PollsetHandleListenerEvents(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
 static void            PollsetMarkDead(ConnCtx *cc, SSL *conn, const char *msg) NS_GNUC_NONNULL(1,2);
 static void            PollsetSweep(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
-static size_t          PollsetReapConnStreams(NsTLSConfig *dc, ConnCtx *cc, SSL **to_free,
-                                              size_t nfree, size_t maxfree) NS_GNUC_NONNULL(1,2,3);
+static size_t          PollsetReapConnection(NsTLSConfig *dc, ConnCtx *cc, SSL **to_free,
+                                             size_t nfree, size_t maxfree, const char *reason) NS_GNUC_NONNULL(1,2,3,6);
 
 /* Upper bound on SSL objects collected in one teardown/sweep pass. */
 #define H3_MAX_REAP 256
@@ -1252,27 +1252,30 @@ quic_conn_enter_shutdown(ConnCtx *cc, const char *why)
            (long long)dc->iter, (void*)conn);
 
     /*
-     * Remove all stream items owned by this connection.
+     * Remove all stream items owned by this connection and finally the
+     * connection item itself. PollsetReapConnection() returns streams
+     * before the connection so they are freed in dependency order.
      *
-     * This used to select streams with SSL_get_ex_data(s, cc_idx) == cc, which
-     * never matches - streams do not carry cc_idx (see PollsetAddStreamRegister),
-     * so the connection was torn down while its CTRL/QPACK streams and the peer's
-     * uni streams stayed in the pollset for the life of the process.
+     * Stream ownership is resolved through the StreamCtx back-pointer,
+     * not solely through cc_idx, since registered streams normally do
+     * not carry cc_idx.
      */
     {
-        SSL   *reaped[H3_MAX_REAP];
+        SSL   *reaped[H3_MAX_REAP + 1u];
         size_t nreaped, k;
 
-        nreaped = PollsetReapConnStreams(dc, cc, reaped, 0u, (size_t)H3_MAX_REAP);
-        for (k = 0; k < nreaped; k++) {
+        nreaped = PollsetReapConnection(dc, cc,
+                                        reaped, 0u,
+                                        H3_MAX_REAP + 1u,
+                                        "conn shutdown");
+        Ns_Log(Ns_LogQuicDebug,
+               "H3 quic_conn_enter_shutdown '%s' FREE conn %p",
+               why, (void *)conn);
+
+        for (k = 0u; k < nreaped; k++) {
             SSL_free(reaped[k]);
         }
     }
-
-    /* Finally remove the connection item itself */
-    PollsetMarkDead(cc, conn, "conn shutdown (self)");
-    Ns_Log(Ns_LogQuicDebug, "H3 quic_conn_enter_shutdown '%s' FREE conn %p", why, (void*)conn);
-    SSL_free(conn);
 }
 
 /*
@@ -6347,33 +6350,34 @@ PollsetAddStreamRegister(ConnCtx *cc, SSL *s, H3StreamKind kind)
  *
  * PollsetDetachStream --
  *
- *      Remove a registered stream from the connection stream registry
- *      and mark its pollset entry as dead. The associated SSL object is
- *      not freed by this function.
+ *      Disable poll interest for a registered stream, remove it from
+ *      the connection stream registry, and mark its pollset entry as
+ *      dead. The associated SSL object is not freed by this function.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      The stream can no longer be found through the connection stream
- *      registry. Its pollset slot is marked dead and will be reclaimed
- *      during the next pollset consolidation.
+ *      Read and write polling for the stream is disabled. The stream can
+ *      no longer be found through the connection stream registry, and
+ *      its pollset slot is marked dead for reclamation during the next
+ *      pollset consolidation.
  *
  *----------------------------------------------------------------------
  */
 static void
 PollsetDetachStream(StreamCtx *sc, const char *reason)
 {
-    ConnCtx *cc;
-    SSL     *stream;
+    ConnCtx     *cc;
+    NsTLSConfig *dc;
+    SSL         *stream;
 
-    cc = sc->cc;
+    cc     = sc->cc;
+    dc     = cc->dc;
     stream = sc->ssl;
 
-    /*
-     * StreamCtxUnregister() removes the stream from cc->streams, while
-     * PollsetMarkDead() clears its pollset slot and pidx.
-     */
+    PollsetDisableRead(dc, stream, sc, reason);
+    PollsetDisableWrite(dc, stream, sc, reason);
     StreamCtxUnregister(sc);
     PollsetMarkDead(cc, stream, reason);
 }
@@ -6763,64 +6767,76 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
 /*
  *----------------------------------------------------------------------
  *
- * PollsetReapConnStreams --
+ * PollsetReapConnection --
  *
- *      Remove every pollset entry belonging to a connection, except the
- *      connection entry itself: drop interest, unregister the stream context,
- *      mark the slot dead, and hand the SSL object to the caller's deferred
- *      free list.
- *
- *      The owner is resolved through the StreamCtx back-pointer, NOT through
- *      cc_idx: streams never carry cc_idx, because the SSL_set_ex_data() that
- *      would set it is commented out in PollsetAddStreamRegister(). Matching on
- *      cc_idx alone therefore finds nothing, which is what leaked the streams.
- *      This mirrors how the dispatch loop already resolves ownership.
- *
- *      Bookkeeping only - deliberately no SSL_shutdown()/SSL_handle_events(),
- *      so this can be used on an already-closed connection without re-entering
- *      the QUIC reactor.
+ *      Detach all stream objects owned by the specified connection,
+ *      mark the connection pollset entry as dead, and append the SSL
+ *      objects to the supplied free list as capacity permits. Streams
+ *      are appended before the connection so callers can free them in
+ *      dependency order.
  *
  * Results:
- *      New count of entries in to_free.
+ *      The updated number of entries in the free list.
  *
  * Side effects:
- *      Marks pollset slots dead. Frees nothing itself.
+ *      All pollset entries owned by the connection are marked dead.
+ *      Stream contexts are removed from the connection stream registry.
+ *      No SSL objects are freed by this function.
  *
  *----------------------------------------------------------------------
  */
 static size_t
-PollsetReapConnStreams(NsTLSConfig *dc, ConnCtx *cc, SSL **to_free,
-                       size_t nfree, size_t maxfree)
+PollsetReapConnection(NsTLSConfig *dc, ConnCtx *cc, SSL **to_free,
+                      size_t nfree, size_t maxfree, const char *reason)
 {
+    SSL   *conn = cc->h3ssl.conn;
     size_t i;
 
-    for (i = 0; i < PollsetCount(dc); i++) {
+    for (i = 0u; i < PollsetCount(dc); i++) {
         SSL       *s = (SSL *)dc->u.h3.ssl_items.data[i];
         ConnCtx   *owner;
         StreamCtx *sc;
 
-        if (s == NULL || s == cc->h3ssl.conn) {
+        if (s == NULL || s == conn) {
             continue;
         }
 
-        sc    = SSL_get_ex_data(s, dc->u.h3.sc_idx);
-        owner = (sc != NULL) ? sc->cc : SSL_get_ex_data(s, dc->u.h3.cc_idx);
+        sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
+        owner = (sc != NULL)
+            ? sc->cc
+            : SSL_get_ex_data(s, dc->u.h3.cc_idx);
+
         if (owner != cc) {
             continue;
         }
 
         if (sc != NULL) {
-            PollsetDisableRead(dc, s, sc, "PollsetReapConnStreams");
-            PollsetDisableWrite(dc, s, sc, "PollsetReapConnStreams");
-            StreamCtxUnregister(sc);
+            PollsetDetachStream(sc, reason);
+        } else {
+            /*
+             * Some connection-owned SSL objects may not have a
+             * StreamCtx. They still have to be removed from the
+             * pollset before the connection is freed.
+             */
+            PollsetMarkDead(cc, s, reason);
         }
-        PollsetMarkDead(cc, s, "conn freed: reap stream");
+
         if (nfree < maxfree) {
             to_free[nfree++] = s;
         }
     }
+
+    /*
+     * Append the connection after all of its streams.
+     */
+    PollsetMarkDead(cc, conn, reason);
+    if (nfree < maxfree) {
+        to_free[nfree++] = conn;
+    }
+
     return nfree;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -6886,13 +6902,14 @@ PollsetSweep(NsTLSConfig *dc)
         /* 1) Connection object? Treat it as conn regardless of stream_type. */
         if (s == cc->h3ssl.conn) {
             if (quic_conn_can_be_freed_postloop(s, cc)) {
-                Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: kill conn %p", (long long)dc->iter, (void*)s);
-                /* Take the connection's streams with it, or they are orphaned. */
-                nfree = PollsetReapConnStreams(dc, cc, to_free, nfree, MAX_SWEEP_FREES);
-                PollsetMarkDead(cc, s, "conn postloop free");
-                if (nfree < MAX_SWEEP_FREES) {
-                    to_free[nfree++] = s;
-                }
+                Ns_Log(Ns_LogQuicDebug,
+                       "[%lld] H3 PollsetSweep: kill conn %p",
+                       (long long)dc->iter, (void *)s);
+
+                nfree = PollsetReapConnection(dc, cc,
+                                              to_free, nfree,
+                                              MAX_SWEEP_FREES,
+                                              "conn postloop free");
             }
             continue;
         }
