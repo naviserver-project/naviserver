@@ -2662,19 +2662,51 @@ h3_conn_write_step(ConnCtx *cc)
 
         for (size_t i = 0; i < nres; ++i) {
             const int64_t sid = sids[i];
-            SSL *s            = quic_sid_to_stream(cc, (uint64_t)sids[i]);
-            StreamCtx *ssc    = s
-                ? SSL_get_ex_data(s, cc->dc->u.h3.sc_idx)
-                : StreamCtxGet(cc, sid, /*create*/0);
+            SSL          *s;
+            StreamCtx    *ssc;
 
-            if (ssc == NULL || !StreamCtxIsBidi(ssc)) {
-                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] has no BIDI stream context",
-                       (long long)cc->dc->iter, (long long)sids[i]);
+            s = quic_sid_to_stream(cc, (uint64_t)sid);
+            ssc = s != NULL
+                ? SSL_get_ex_data(s, cc->dc->u.h3.sc_idx)
+                : StreamCtxGet(cc, sid, /*create*/ 0);
+
+            if (ssc == NULL) {
+                Ns_Log(Ns_LogQuicDebug,
+                       "[%lld] H3[%lld] has no stream context",
+                       (long long)cc->dc->iter,
+                       (long long)sid);
                 continue;
             }
 
-            /* Clear the per-stream resume flag once per drain */
-            //SharedResumeClear(&ssc->sh);
+
+            /*
+             * The resume-ring entry has been consumed. Clear the coalescing
+             * flag before processing it so another producer-side event can
+             * enqueue a subsequent resume.
+             */
+            SharedResumeClear(&ssc->sh);
+
+            if (!StreamCtxIsBidi(ssc)) {
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] has no BIDI stream context",
+                       (long long)cc->dc->iter,
+                       (long long)sid);
+                continue;
+            }
+
+            /*
+             * Drop resume requests for streams which have meanwhile been
+             * detached from the pollset.
+             */
+            if (ssc->ssl == NULL
+                || ssc->pidx >= PollsetCount(cc->dc)
+                || cc->dc->u.h3.ssl_items.data[ssc->pidx] != ssc->ssl) {
+
+                Ns_Log(Ns_LogQuicDebug,
+                       "[%lld] H3[%lld] dropping resume for detached stream",
+                       (long long)cc->dc->iter,
+                       (long long)sid);
+                continue;
+            }
 
             /*
              * If headers became ready, submit them now.
@@ -8470,26 +8502,26 @@ Keep(Ns_Sock *UNUSED(sock))
  *
  * Close --
  *
- *      HTTP/3 (QUIC) driver callback invoked by the NaviServer core to
- *      gracefully terminate a request stream. Unlike TCP-based drivers,
- *      this function does not close a physical socket - QUIC connections
- *      are multiplexed over UDP and managed by OpenSSL's QUIC engine.
+ *      HTTP/3 (QUIC) driver callback invoked by the NaviServer core when
+ *      application output for a request stream has completed. Unlike
+ *      TCP-based drivers, this function does not close a physical socket:
+ *      QUIC connections are multiplexed over UDP and managed by OpenSSL's
+ *      QUIC engine.
  *
- *      Instead, Close() signals that no further application data will be
- *      sent on this stream, disables read interest, and requests a final
- *      resume so the writer can emit a FIN frame once all pending data
- *      has been drained from the transmission queues.
+ *      Close() marks the application side of the stream as closed,
+ *      disables further request-read interest, and requests a resume so
+ *      the QUIC thread can drain queued response data and emit FIN. The
+ *      resume consumer verifies that the stream is still attached before
+ *      changing its poll interest.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      - Disables read interest via PollsetDisableRead().
- *      - Marks the shared stream buffer as closed by the application.
- *      - Optionally sets a "close_when_drained" flag under stream lock.
- *      - Triggers a final SharedRequestResume() to flush remaining data.
- *      - Enables write readiness so the event loop can deliver FIN.
- *      - Frees the per-request QuicSockCtx and detaches it from Ns_Sock.
+ *      Disables read interest, marks the shared stream buffer as closed
+ *      by the application, sets close_when_drained under the stream lock,
+ *      and schedules a final resume through SharedRequestResume().
+ *      Frees the per-request QuicSockCtx and detaches it from Ns_Sock.
  *
  *----------------------------------------------------------------------
  */
@@ -8530,10 +8562,14 @@ Close(Ns_Sock *sock)
                (long long)dc->iter, (long long)sc->quic_sid, snap.queued_bytes, snap.pending_bytes, snap.closed_by_app);
     }
 
-    /* Always request a resume once so the reader can emit FIN when queues empty. */
+    /*
+     * Request a resume so the QUIC thread can drain queued data and emit
+     * FIN when the queues become empty. Do not update poll interest here:
+     * the stream may be detached concurrently, and the resume consumer
+     * performs the required attachment check before enabling write
+     * interest.
+     */
     SharedRequestResume(&sc->cc->shared, &sc->sh, sc->h3_sid);
-    PollsetEnableWrite(dc, sc->ssl, sc, "Close: drain/FIN");
-
 
  detach_sock:
     /* Detach per-request sock state; lifetime of H3 objects is owned elsewhere. */
