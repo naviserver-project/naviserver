@@ -3031,6 +3031,32 @@ h3_conn_write_step(ConnCtx *cc)
                                 return NS_TRUE; /* writer should be scheduled to complete shutdown */
                             }
 
+                            if (r == SSL_R_STREAM_FINISHED) {
+                                /*
+                                 * The write side of this stream is already
+                                 * concluded (we sent FIN); OpenSSL correctly
+                                 * refuses further writes with STREAM_FINISHED.
+                                 * Returning NS_TRUE here would reschedule the
+                                 * SAME doomed write and re-fail identically on
+                                 * every poll iteration -- a tight Error-log flood
+                                 * (an "SSL_write_ex2: reason=365" storm) that only
+                                 * stops when the connection is reclaimed.  Treat it
+                                 * as terminal for this stream's write half: stop
+                                 * nghttp3 producing more body, mark FIN done, drop
+                                 * write interest, and move to the next stream.
+                                 */
+                                Ns_Log(Notice, "[%lld] H3[%lld] write on already-finished"
+                                       " stream; dropping write interest",
+                                       (long long)dc->iter, (long long)sid);
+                                nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
+                                sc->io_state |= H3_IO_TX_FIN;
+                                ERR_clear_error();
+                                (void)SSL_handle_events(stream);
+                                PollsetDisableWrite(dc, stream, sc,
+                                       "h3_conn_write_step SSL_R_STREAM_FINISHED");
+                                goto next_sid;
+                            }
+
                             Ns_Log(Error, "[%lld] H3[%lld] SSL_write_ex2: reason=%d (%s)",
                                    (long long)dc->iter, (long long)sid, r, ERR_reason_error_string(e));
                             /* Don't advance offsets for the partial vec; let nghttp3 retry/adjust. */
