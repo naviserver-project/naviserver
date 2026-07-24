@@ -286,8 +286,7 @@ ConfigServerTcl(const char *server)
         Tcl_IncrRefCount(servPtr->tcl.initfile);
         ns_free_const(initFileString);
 
-        servPtr->tcl.modules = Tcl_NewObj();
-        Tcl_IncrRefCount(servPtr->tcl.modules);
+        Tcl_DStringInit(&servPtr->tcl.modules);
 
         Ns_RWLockInit(&servPtr->tcl.lock);
         Ns_RWLockSetName2(&servPtr->tcl.lock, "rw:tcl", server);
@@ -1020,8 +1019,8 @@ Ns_TclInterpServPtr(Tcl_Interp *interp)
 Ns_ReturnCode
 Ns_TclInitModule(const char *server, const char *module)
 {
-    const NsServer *servPtr;
-    Ns_ReturnCode   status;
+    NsServer      *servPtr;
+    Ns_ReturnCode  status;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(module != NULL);
@@ -1030,8 +1029,7 @@ Ns_TclInitModule(const char *server, const char *module)
     if (servPtr == NULL) {
         status = NS_ERROR;
     } else {
-        (void) Tcl_ListObjAppendElement(NULL, servPtr->tcl.modules,
-                                        Tcl_NewStringObj(module, TCL_INDEX_NONE));
+        Tcl_DStringAppendElement(&servPtr->tcl.modules, module);
         status = NS_OK;
     }
     return status;
@@ -1133,11 +1131,11 @@ static int
 ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = (const NsInterp *)clientData;
-    const NsServer *servPtr = itPtr->servPtr;
-    Tcl_Obj        *moduleObj;
-    int             result;
+    NsServer       *servPtr = itPtr->servPtr;
+    char           *moduleString;
+    int             result = TCL_OK;
     Ns_ObjvSpec     args[] = {
-        {"module",     Ns_ObjvObj,  &moduleObj, NULL},
+        {"module",     Ns_ObjvString,  &moduleString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1145,14 +1143,14 @@ ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         result = TCL_ERROR;
 
     } else if (servPtr != NsGetInitServer()) {
-        Ns_TclPrintfResult(interp, "cannot add module '%s' after server startup", Tcl_GetString(moduleObj));
+        Ns_TclPrintfResult(interp, "cannot add module '%s' after server startup", moduleString);
         result = TCL_ERROR;
 
     } else {
-        result = Tcl_ListObjAppendElement(interp, servPtr->tcl.modules, moduleObj);
-        if (result == TCL_OK) {
-            Tcl_SetObjResult(interp, servPtr->tcl.modules);
-        }
+        Tcl_DString *dsPtr = &servPtr->tcl.modules;
+
+        Tcl_DStringAppendElement(dsPtr, moduleString);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
     }
     return result;
 }
@@ -1215,7 +1213,7 @@ static int
 ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = (const NsInterp *)clientData;
-    const NsServer *servPtr = itPtr->servPtr;
+    NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-server", Ns_ObjvServer,  &servPtr, NULL},
@@ -1226,7 +1224,9 @@ ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
         result = TCL_ERROR;
 
     } else {
-        Tcl_SetObjResult(interp, servPtr->tcl.modules);
+        Tcl_DString *dsPtr = &servPtr->tcl.modules;
+
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
     }
     return result;
 }
@@ -1819,8 +1819,8 @@ NsTclInitServer(const char *server)
 int
 NsTclAppInit(Tcl_Interp *interp)
 {
-    const NsServer *servPtr;
-    int             result = TCL_OK;
+    NsServer *servPtr;
+    int       result = TCL_OK;
 
     servPtr = NsGetServer(nsconf.defaultServer);
     if (servPtr == NULL) {
