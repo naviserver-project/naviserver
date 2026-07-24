@@ -2915,9 +2915,11 @@ h3_conn_write_step(ConnCtx *cc)
             }
 
             /* Drive the stream object once to clear readiness */
-            (void)SSL_handle_events(stream);
-            Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step stream %p => %d",
-                   (long long)dc->iter, (void*)stream, SSL_handle_events(stream));
+            {
+                int rv = SSL_handle_events(stream);
+                Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step stream %p => %d",
+                       (long long)dc->iter, (void*)stream, rv);
+            }
 
             /* If write-half is closed, don't keep W armed */
             PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step SSL_STREAM_STATE not OK");
