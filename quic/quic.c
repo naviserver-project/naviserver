@@ -1568,9 +1568,11 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
     ossl_conn_maybe_log_first_shutdown(cc, "quic_conn_open_server_uni_streams qpack bound");
 
     h3_conn_write_step(cc);
-    SSL_handle_events(conn);
-    Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in quic_conn_open_server_uni_streams conn %p => %d",
-           (long long)dc->iter, (void*)cc->h3ssl.conn, SSL_handle_events(conn));
+    {
+        int rv = SSL_handle_events(conn);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in quic_conn_open_server_uni_streams conn %p => %d",
+               (long long)dc->iter, (void*)cc->h3ssl.conn, rv);
+    }
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 quic_conn_open_server_uni_streams: cstream %llu %p pstream %llu %p rstream %llu %p",
            (long long)dc->iter,
@@ -2237,10 +2239,9 @@ static bool quic_conn_handle_e(ConnCtx *cc, SSL *conn, uint64_t revents)
 
     if (revents & (SSL_POLL_EVENT_ER | SSL_POLL_EVENT_EW)) {
         /* Drive timers/state; then decide if we can/should tear down */
-        SSL_handle_events(conn);
+        int rv = SSL_handle_events(conn);
         Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in quic_conn_handle_e conn %p => %d",
-               (long long)dc->iter, (void*)conn, SSL_handle_events(conn));
-
+               (long long)dc->iter, (void*)conn, rv);
 
         /* If OpenSSL reports the connection closed, our heuristic says so, close. */
         if (quic_conn_can_be_freed(conn, revents, cc)) {
@@ -2973,7 +2974,6 @@ h3_conn_write_step(ConnCtx *cc)
                         (void)SSL_handle_events(stream);
                         Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step WANT stream %p",
                                (long long)dc->iter, (void*)stream);
-
                         goto after_sid;                        /* don't advance remaining vecs */
                     }
 
@@ -2986,7 +2986,6 @@ h3_conn_write_step(ConnCtx *cc)
                                 uint64_t appw = 0;
 
                                 (void)SSL_handle_events(stream);
-                                //(void)SSL_handle_events(cc->h3ssl.conn);
 
                                 if (SSL_get_stream_write_error_code(stream, &appw) == 1) {
                                     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] peer STOP_SENDING app=0x%llx",
@@ -3115,7 +3114,6 @@ h3_conn_write_step(ConnCtx *cc)
          * Investigate the reactor wait separately.
          */
         (void)SSL_handle_events(stream);
-
         {
             const size_t pending =
                 SharedPendingUnreadBytes(&sc->sh);
@@ -4610,8 +4608,6 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
         }
     }
 
-    (void)SSL_handle_events(sc->ssl);          /* harmless if nothing pending */
-
     /* --- recompute snapshot after potential FIN attempt --- */
     SharedSnapshotRead(&sc->sh, &snap);
     has_tx = SharedHasData(&snap);
@@ -4622,9 +4618,11 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
     sc->wants_write = NS_FALSE;         /* clear one shot */
     Ns_MutexUnlock(&sc->lock);
 
-    /* Keep W if app still has bytes OR we just asked to write OR a FIN is still pending */
-
-    need_w = has_tx || want_w_prev || (sc->hdrs_submitted && !sc->eof_sent);
+    /*
+     * Keep W only while application data remains or a one-shot write
+     * request was pending. FIN generation is scheduled via the resume ring.
+     */
+    need_w = has_tx || want_w_prev;
 
     Ns_Log(Ns_LogQuicDebug,
            "[%lld] H3[%lld] h3_stream_maybe_finalize reads sc->wants_write %d need_w %d"
@@ -4782,6 +4780,7 @@ inline void h3_conn_wake(NsTLSConfig *dc) {
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3: h3_conn_wake", (long long)dc->iter);
 
         (void)sendto(fd, (const char *)&b, 1, 0, sa, dc->u.h3.waker_addrlen);
+
         ns_sockclose(fd);
     }
 }
@@ -7749,7 +7748,6 @@ QuicThread(void *arg)
         }
 
         /* reset the states */
-        //h3ssl->done     = NS_FALSE;
         dc->u.h3.first_dead   = 0;
 
         /*
@@ -8079,32 +8077,38 @@ QuicThread(void *arg)
 
             if (dc->u.h3.conns.size > 0) {
                 for (i = 0u; i < (int)dc->u.h3.conns.size; i++) {
+                    bool     has_resume;
                     ConnCtx *cc = dc->u.h3.conns.data[i];
 
-                    Ns_Log(Ns_LogQuicDebug, "[%lld] all events processed conn[%d] cc->expecting_send %d cc->wants_write %d"
+                    has_resume = SharedHasResumePending(&cc->shared);
+
+                    Ns_Log(Ns_LogQuicDebug,
+                           "[%lld] all events processed conn[%d]"
+                           " cc->expecting_send %d cc->wants_write %d"
                            " has resume pending %d",
-                           (long long)dc->iter, i, cc->expecting_send, cc->wants_write,
-                           SharedHasResumePending(&cc->shared));
+                           (long long)dc->iter,
+                           i,
+                           cc->expecting_send,
+                           cc->wants_write,
+                           has_resume);
 
                     if (cc->expecting_send) {
                         Ns_Log(Ns_LogQuicDebug, "[%lld] H3D cc %p expecting send", (long long)dc->iter, (void*)cc);
                         expecting_send = NS_TRUE;
                         cc->expecting_send = NS_FALSE;
                     }
-                    if (cc->wants_write) {
+                    if (cc->wants_write || has_resume) {
                         //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D write demand from cc %p", (long long)dc->iter, (void*)cc);
                         cc->wants_write = h3_conn_write_step(cc);
                         Ns_Log(Ns_LogQuicDebug, "[%lld] H3D after h3_conn_write_step cc %p", (long long)dc->iter, (void*)cc);
                     }
 
                     /* Decide whether we should run another drain pass without sleeping. */
-                    if (cc->wants_write) {
+                    if (cc->wants_write
+                        || SharedHasResumePending(&cc->shared)) {
                         Ns_Log(Ns_LogQuicDebug, "[%lld] H3D cc %p cc->wants_write is still set", (long long)dc->iter, (void*)cc);
                         expecting_send = NS_TRUE;
                     }
-                    //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D conn loop SSL_handle_events conn %p => %d",
-                    //       (long long)dc->iter, (void*)cc->h3ssl.conn, SSL_handle_events(cc->h3ssl.conn));
-
                     PollsetUpdateConnPollInterest(cc);
                 }
                 polltimeout_ptr = expecting_send ? &dc->u.h3.drain_timeout : &dc->u.h3.idle_timeout;
