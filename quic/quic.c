@@ -439,7 +439,7 @@ static H3DrainResultCode h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid,
 static bool              h3_stream_maybe_finalize(StreamCtx *sc, const char *label) NS_GNUC_NONNULL(1,2);
 static bool              h3_stream_can_free(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 static void              h3_stream_maybe_note_uni_type(StreamCtx *sc, SSL *stream, uint64_t sid) NS_GNUC_NONNULL(1,2);
-static void              h3_conn_wake(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
+static void              h3_conn_wake(void *arg) NS_GNUC_NONNULL(1);
 static int64_t           h3_stream_id(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 
 /* H3 response body management */
@@ -4767,7 +4767,8 @@ h3_stream_maybe_note_uni_type(StreamCtx *sc, SSL *stream, uint64_t sid)
  *
  *----------------------------------------------------------------------
  */
-inline void h3_conn_wake(NsTLSConfig *dc) {
+inline void h3_conn_wake(void *arg) {
+    NsTLSConfig *dc = arg;
     const struct sockaddr *sa = (const struct sockaddr *)&(dc->u.h3.waker_addr);
 
     if (dc->u.h3.waker_addrlen > 0) {
@@ -5575,7 +5576,7 @@ ConnCtxNew(NsTLSConfig *dc, SSL *conn)
     NS_TA_HANDOFF(cc, affinity, "ConnCtx");
 
     /* initialize shared state for this connection */
-    SharedStateInit(&cc->shared, (SharedWakeFn)h3_conn_wake, dc /* or something else */);
+    SharedStateInit(&cc->shared, h3_conn_wake, dc /* or something else */);
 
     cc->dc = dc;
     cc->h3ssl.conn = conn;
