@@ -329,7 +329,7 @@ try {
         set href [expr {$m in $includedModules
                         ? "$docPrefix/$m/files/$m.html"
                         : "https://github.com/naviserver-project/$m"}]
-        set html [subst {<a href="$href" [expr {$m in $includedModules ? "" : "class=external"}]>$m</a>}]
+        subst {<a href="$href" [expr {$m in $includedModules ? "" : "class=external"}]>$m</a>}
     }]
     set listenURLs {}
     set listenAddresses {}
@@ -373,7 +373,7 @@ try {
     <ul>
       <li>Replace this placeholder page with your custom content by configuring the appropriate directory.</li>
       <li>Review our <a href="doc/toc.html">Documentation</a> for complete setup instructions and feature details.</li>
-       <li><%= [subst $nsstatsText]</li> %>
+       <li><%= [subst $nsstatsText] %></li>
     </ul>
 
     <h2>Current Server Configuration</h2>
