@@ -945,7 +945,7 @@ typedef struct NsServer {
         const char       *script;
         TCL_SIZE_T        length;
         int               epoch;
-        Tcl_Obj          *modules;
+        Tcl_DString       modules;
         Tcl_HashTable     runTable;
         const char      **errorLogHeaders;
         Tcl_HashTable     caches;
