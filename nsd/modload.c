@@ -271,17 +271,17 @@ Tcl_Obj *
 NsGetLoadedModulesObj(const NsServer *servPtr)
 {
     const LoadedModule *loadedPtr;
-    Tcl_Obj             *resultObj, *sortedObj, **moduleObjs;
-    TCL_SIZE_T           moduleCount, i;
+    Tcl_Obj             *resultObj, *sortedObj;
+    const char         **argv;
+    TCL_SIZE_T           argc;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
     resultObj = Tcl_NewDictObj();
 
-    if (Tcl_ListObjGetElements(NULL, servPtr->tcl.modules,
-                               &moduleCount, &moduleObjs) == TCL_OK) {
-        for (i = 0; i < moduleCount; i++) {
-            const char *module  = Tcl_GetString(moduleObjs[i]);
+    if (Tcl_SplitList(NULL, servPtr->tcl.modules.string, &argc, &argv) == TCL_OK) {
+        for (TCL_SIZE_T i = 0; i < argc; i++) {
+            const char *module  = argv[i];
             Tcl_Obj    *infoObj = Tcl_NewDictObj();
 
             DictPutString(infoObj, "name", module);
@@ -292,6 +292,7 @@ NsGetLoadedModulesObj(const NsServer *servPtr)
                                   Tcl_NewStringObj(module, TCL_INDEX_NONE),
                                   infoObj);
         }
+        Tcl_Free((char *)argv);
     }
 
     Ns_MutexLock(&loadedModulesLock);
