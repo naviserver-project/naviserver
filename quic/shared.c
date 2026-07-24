@@ -642,18 +642,45 @@ static void resume_push_unlocked(SharedState *st, int64_t sid) {
  *----------------------------------------------------------------------
  */
 void SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid) {
-    int need_wake = 0;
+    int    need_wake = 0;
+#ifdef SHARED_DEBUG
+    int    was_enqueued;
+    size_t count_before;
+    size_t count_after;
+#endif
 
     Ns_MutexLock(&st->lock);
+
+#ifdef SHARED_DEBUG
+    was_enqueued = ss->resume_enqueued;
+    count_before = st->count;
+#endif
+
     if (!ss->resume_enqueued) {
         ss->resume_enqueued = 1;
         resume_push_unlocked(st, sid);
         need_wake = (st->count == 1); /* edge: ring was empty before push */
     }
+
+#ifdef SHARED_DEBUG
+    count_after = st->count;
+#endif
+
     Ns_MutexUnlock(&st->lock);
 
-    if (need_wake && st->wake_cb) {
-      st->wake_cb(st->wake_arg);   /* wake QUIC thread */
+#ifdef SHARED_DEBUG
+    Ns_Log(Notice,
+           "H3 resume request sid=%lld"
+           " was_enqueued=%d count=%zu->%zu need_wake=%d",
+           (long long)sid,
+           was_enqueued,
+           count_before,
+           count_after,
+           need_wake);
+#endif
+
+    if (need_wake && st->wake_cb != NULL) {
+        st->wake_cb(st->wake_arg); /* wake QUIC thread */
     }
 }
 
