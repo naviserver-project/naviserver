@@ -4804,23 +4804,27 @@ h3_stream_maybe_note_uni_type(StreamCtx *sc, SSL *stream, uint64_t sid)
  *
  *----------------------------------------------------------------------
  */
-inline void h3_conn_wake(void *arg) {
-    NsTLSConfig *dc = arg;
-    const struct sockaddr *sa = (const struct sockaddr *)&(dc->u.h3.waker_addr);
+static inline void
+h3_conn_wake(void *arg)
+{
+    NsTLSConfig            *dc = arg;
+    const struct sockaddr  *sa =
+        (const struct sockaddr *)&dc->u.h3.waker_addr;
+    const unsigned char     b = 0; /* not a QUIC header byte */
 
-    if (dc->u.h3.waker_addrlen > 0) {
-        int                 fd = socket(sa->sa_family, SOCK_DGRAM, 0);
-        const unsigned char b = 0; /* not a QUIC header byte */
-
-        if (fd < 0) {
-            return;
-        }
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3: h3_conn_wake", (long long)dc->iter);
-
-        (void)sendto(fd, (const char *)&b, 1, 0, sa, dc->u.h3.waker_addrlen);
-
-        ns_sockclose(fd);
+    if (dc->u.h3.waker_fd < 0 || dc->u.h3.waker_addrlen == 0) {
+        Ns_Log(Warning,
+               "[%lld] H3: h3_conn_wake not initialized", (long long)dc->iter);
+        return;
     }
+
+    Ns_Log(Ns_LogQuicDebug,
+           "[%lld] H3: h3_conn_wake",
+           (long long)dc->iter);
+
+    (void)sendto(dc->u.h3.waker_fd,
+                 (const char *)&b, 1, 0,
+                 sa, dc->u.h3.waker_addrlen);
 }
 
 /*
@@ -8260,7 +8264,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
 
                     /* Store a copy in out driver/config for later sendto() */
                     memcpy(&dc->u.h3.waker_addr, &sa, slen);
-                    dc->u.h3.waker_addrlen    = slen;
+                    dc->u.h3.waker_addrlen = slen;
                 } else {
                     Ns_Log(Error, "H3 listen: getsockname() failed on fd %d", (int)sock);
                 }
@@ -8271,6 +8275,32 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
                    address, port, sock);
             goto fail;
         }
+
+        /*
+         * Initialize waker fd.
+         *
+         * Currently, the waker_fd is kept open, we have no shutdown function.
+         * it would be:
+         *
+         *   if (dc->u.h3.waker_fd >= 0) {
+         *       ns_sockclose(dc->u.h3.waker_fd);
+         *       dc->u.h3.waker_fd = -1;
+         *    }
+         */
+        dc->u.h3.waker_fd = -1;
+        if (dc->u.h3.waker_addrlen > 0) {
+            const struct sockaddr *sa =
+                (const struct sockaddr *)&dc->u.h3.waker_addr;
+
+            dc->u.h3.waker_fd = socket(sa->sa_family, SOCK_DGRAM, 0);
+            if (dc->u.h3.waker_fd < 0) {
+                Ns_Log(Error,
+                       "H3: could not create wake socket: %s",
+                       ns_sockstrerror(ns_sockerrno));
+                goto fail;
+            }
+        }
+
         (void) Ns_SockSetNonBlocking(sock);
         quic_udp_set_rcvbuf(sock, dc->u.h3.recvbufsize);
 

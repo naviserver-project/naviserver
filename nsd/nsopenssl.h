@@ -84,6 +84,7 @@ typedef struct NsTLSConfig {
             //bool       waker_armed;  /* edge-trigger gate */
             struct sockaddr_storage waker_addr;
             socklen_t   waker_addrlen;
+            int         waker_fd;
 
             SSL_POLL_ITEM *poll_items;    /* contiguous array, matches capacity */
             Ns_DList       ssl_items;     /* parallel to poll_items[] */
