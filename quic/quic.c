@@ -349,7 +349,7 @@ static nghttp3_mem h3_mem;
  * OpenSSL helpers
  *----------------------------------------------------------------------
  */
-static void        ossl_conn_log_close_info(NsTLSConfig *dc, SSL *conn) NS_GNUC_NONNULL(1,2);
+static void        ossl_conn_log_close_info(NsTLSConfig *dc, SSL_CONN_CLOSE_INFO *cciPtr) NS_GNUC_NONNULL(1,2);
 static bool        ossl_conn_maybe_log_first_shutdown(ConnCtx *cc, const char* label) NS_GNUC_NONNULL(1,2);
 static void        ossl_stream_log_state(NsTLSConfig *dc, SSL *stream, const char *label) NS_GNUC_NONNULL(1,2,3);
 static void        ossl_log_stream_and_conn_states(ConnCtx *cc, SSL *s, SSL *conn, int st_expect, const char *where) NS_GNUC_NONNULL(1,2);
@@ -558,58 +558,56 @@ static Ns_DriverClientcertInfoProc ClientcertInfo;
  *
  * ossl_conn_log_close_info --
  *
- *      Retrieve and log diagnostic details about a QUIC or TLS connection
- *      shutdown using OpenSSL's `SSL_get_conn_close_info()` API.
- *      Provides insight into transport-level or application-level close
- *      events, including error codes, alert numbers, and textual reasons.
+ *      Log previously retrieved QUIC connection-close information.
+ *      The caller obtains the details via SSL_get_conn_close_info() and
+ *      passes the resulting SSL_CONN_CLOSE_INFO structure to this helper.
+ *
+ *      Normal transport shutdowns are logged at Debug(quic) level.
+ *      Nonzero QUIC transport errors, HTTP/3 application errors, and
+ *      TLS CRYPTO_ERROR alerts are reported at Error level, including
+ *      the error code, origin, alert number, and textual reason when
+ *      available.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Emits diagnostic log messages via Ns_Log() at either Error or Notice level,
- *      depending on whether the connection was closed due to a transport
- *      failure or other cause.
+ *      Emits diagnostic messages via Ns_Log(). The function does not
+ *      query or modify OpenSSL connection state.
  *
  *----------------------------------------------------------------------
  */
-static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL *conn)
+static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL_CONN_CLOSE_INFO *cciPtr)
 {
-    SSL_CONN_CLOSE_INFO cci;
+    if (cciPtr->flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) {
+        const char *class_str = (cciPtr->error_code >= 0x100) ? "HTTP/3 (app)" : "QUIC transport";
+        uint64_t    ec = cciPtr->error_code;
 
-    if (SSL_get_conn_close_info(conn, &cci, sizeof(cci)) == 1) {
-        if (cci.flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) {
-            const char *class_str = (cci.error_code >= 0x100) ? "HTTP/3 (app)" : "QUIC transport";
-            uint64_t    ec = cci.error_code;
+        if (ec == OSSL_QUIC_ERR_NO_ERROR) {
+            Ns_Log(Ns_LogQuicDebug,
+                   "QUIC close: remote=%d class=QUIC transport "
+                   "code=0x%llx reason='%s'",
+                   !(cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL),
+                   (unsigned long long)ec,
+                   cciPtr->reason != NULL ? cciPtr->reason : "");
 
-            if (ec == OSSL_QUIC_ERR_NO_ERROR) {
-                Ns_Log(Ns_LogQuicDebug,
-                       "QUIC close: remote=%d class=QUIC transport "
-                       "code=0x%llx reason='%s'",
-                       !(cci.flags & SSL_CONN_CLOSE_FLAG_LOCAL),
-                       (unsigned long long)ec,
-                       cci.reason != NULL ? cci.reason : "");
+        } else if ((ec & 0xFF00u) == 0x0100u) {
+            unsigned alert = (unsigned)(ec & 0xFFu); // 303->47
 
-            } else if ((ec & 0xFF00u) == 0x0100u) {
-                unsigned alert = (unsigned)(ec & 0xFFu); // 303->47
-
-                Ns_Log(Error, "QUIC close: remote=%d class=CRYPTO_ERROR tls_alert=%u"
-                       " (illegal_parameter=%d) reason='%s'",
-                       !(cci.flags & SSL_CONN_CLOSE_FLAG_LOCAL), alert, alert==47,
-                       cci.reason?cci.reason:"");
-            } else {
-                Ns_Log(Error,
-                       "QUIC close: remote=%d class=%s code=0x%llx reason='%s'",
-                       !(cci.flags & SSL_CONN_CLOSE_FLAG_LOCAL),
-                       class_str,
-                       (unsigned long long)cci.error_code,
-                       cci.reason ? cci.reason : "");
-            }
+            Ns_Log(Error, "QUIC close: remote=%d class=CRYPTO_ERROR tls_alert=%u"
+                   " (illegal_parameter=%d) reason='%s'",
+                   !(cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL), alert, alert==47,
+                   cciPtr->reason?cciPtr->reason:"");
         } else {
-            Ns_Log(Ns_LogQuicDebug, "[%lld] conn_close_info: not a transport failure", (long long)dc->iter);
+            Ns_Log(Error,
+                   "QUIC close: remote=%d class=%s code=0x%llx reason='%s'",
+                   !(cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL),
+                   class_str,
+                   (unsigned long long)cciPtr->error_code,
+                   cciPtr->reason ? cciPtr->reason : "");
         }
     } else {
-        Ns_Log(Ns_LogQuicDebug, "[%lld] can't get conn_close_info", (long long)dc->iter);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] conn_close_info: not a transport failure", (long long)dc->iter);
     }
 }
 
@@ -637,7 +635,7 @@ static bool ossl_conn_maybe_log_first_shutdown(ConnCtx *cc, const char *label) {
 
         if (SSL_get_conn_close_info(cc->h3ssl.conn, &cci, sizeof(cci)) == 1) {
             if (cci.flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) {
-                ossl_conn_log_close_info(dc, cc->h3ssl.conn);
+                ossl_conn_log_close_info(dc, &cci);
             } else {
                 unsigned long e = ERR_peek_error();
                 Ns_Log(Error, "[%lld] QUIC conn %p entering shutdown %s: state=%d "
@@ -648,12 +646,16 @@ static bool ossl_conn_maybe_log_first_shutdown(ConnCtx *cc, const char *label) {
             }
         }
 
-        // Log per-stream high-level states for the usual suspects:
-        ossl_stream_log_state(dc, cc->h3ssl.cstream, "server-ctrl");
-        ossl_stream_log_state(dc, cc->h3ssl.pstream, "server-qpack-enc");
-        ossl_stream_log_state(dc, cc->h3ssl.rstream, "server-qpack-dec");
-        if (cc->h3ssl.bidi_sid != (uint64_t)-1 && cc->h3ssl.bidi_ssl != NULL) {
-            ossl_stream_log_state(dc, cc->h3ssl.bidi_ssl, "client-req-0");
+        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+            /*
+             * Log per-stream high-level states for the usual suspects.
+             */
+            ossl_stream_log_state(dc, cc->h3ssl.cstream, "server-ctrl");
+            ossl_stream_log_state(dc, cc->h3ssl.pstream, "server-qpack-enc");
+            ossl_stream_log_state(dc, cc->h3ssl.rstream, "server-qpack-dec");
+            if (cc->h3ssl.bidi_sid != (uint64_t)-1 && cc->h3ssl.bidi_ssl != NULL) {
+                ossl_stream_log_state(dc, cc->h3ssl.bidi_ssl, "client-req-0");
+            }
         }
         fired = NS_TRUE;
     }
@@ -1151,21 +1153,26 @@ static void ConnCtxPrintSidTable(ConnCtx *cc) {
 static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
     int ret, err;
 
-    Ns_Log(Ns_LogQuicDebug, "quic_conn_drive_handshake servername <%s>", SSL_get_servername(conn, TLSEXT_NAMETYPE_host_name));
+    if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+        Ns_Log(Ns_LogQuicDebug, "quic_conn_drive_handshake servername <%s>",
+               SSL_get_servername(conn, TLSEXT_NAMETYPE_host_name));
+    }
     ERR_clear_error();
 
     // Now try to advance the handshake
     ret = SSL_do_handshake(conn);
 
     if (ret == 1) {
-        int ed = SSL_get_early_data_status(conn);
-        const char *eds =
-            (ed == SSL_EARLY_DATA_ACCEPTED) ? "accepted" :
-            (ed == SSL_EARLY_DATA_REJECTED) ? "rejected" :
-            (ed == SSL_EARLY_DATA_NOT_SENT) ? "not-sent" : "unknown";
+        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+            int ed = SSL_get_early_data_status(conn);
+            const char *eds =
+                (ed == SSL_EARLY_DATA_ACCEPTED) ? "accepted" :
+                (ed == SSL_EARLY_DATA_REJECTED) ? "rejected" :
+                (ed == SSL_EARLY_DATA_NOT_SENT) ? "not-sent" : "unknown";
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] Handshake completed for %p (early-data status: %s)",
-               (long long)dc->iter, (void*)conn, eds);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] Handshake completed for %p (early-data status: %s)",
+                   (long long)dc->iter, (void*)conn, eds);
+        }
         return 1;
     }
 
@@ -1177,6 +1184,8 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
     {
         /* group: shows if we accidentally negotiated a hybrid */
         long nid = SSL_get_shared_group(conn, 0);   /* first shared group */
+        SSL_CONN_CLOSE_INFO cci;
+
         if (nid > 0) {
             Ns_Log(Ns_LogQuicDebug, "[%lld] TLS group: %s", (long long)dc->iter, OBJ_nid2sn((int)nid));
         }
@@ -1188,7 +1197,11 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
         }
 
         /* QUIC close reason (transport/app) */
-        ossl_conn_log_close_info(dc, conn);
+
+        if (SSL_get_conn_close_info(conn, &cci, sizeof(cci)) == 1) {
+            ossl_conn_log_close_info(dc, &cci);
+        }
+
     }
 
     // Hard failure
@@ -2064,9 +2077,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         Ns_Sock         *sockPtr;
         ConnCtx         *cc;
         int              ss, ret;
-        uint64_t         domainFlags = 0u;
         SSL             *conn = SSL_accept_connection(listener_ssl, 0);
-        char             buffer[NS_IPADDR_SIZE];
 
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3 quic_conn_handle_ic gets conn %p from listener_ssl %p",
                (long long)dc->iter, (void*)conn, (void*) listener_ssl);
@@ -2083,9 +2094,13 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         Ns_GetTime(&now);
         ss = NsSockAccept((Ns_Driver*)drvPtr, SSL_get_fd(listener_ssl), (Ns_Sock**)&sockPtr, &now, conn);
 
-        (void)ns_inet_ntop((const struct sockaddr *)&sockPtr->sa, buffer, NS_IPADDR_SIZE);
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 CONN accept SockAccept returns sock state %d, sockPtr %p IP %s",
-               (long long)dc->iter, ss, (void*)sockPtr, buffer);
+        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+            char buffer[NS_IPADDR_SIZE];
+
+            (void)ns_inet_ntop((const struct sockaddr *)&sockPtr->sa, buffer, NS_IPADDR_SIZE);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 CONN accept SockAccept returns sock state %d, sockPtr %p IP %s",
+                   (long long)dc->iter, ss, (void*)sockPtr, buffer);
+        }
 
         assert(drvPtr == ((Sock*)sockPtr)->drvPtr);
 
@@ -2098,9 +2113,13 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
             break;
         }
 
-        SSL_get_domain_flags(conn, &domainFlags);
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 SockAccept can associate sock %p with cc %p domain flags 0x%llx",
-               (long long)dc->iter, (void*)sockPtr, (void*)cc, domainFlags);
+        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+            uint64_t domain_flags = 0u;
+
+            SSL_get_domain_flags(conn, &domain_flags);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 SockAccept can associate sock %p with cc %p domain flags 0x%llx",
+                   (long long)dc->iter, (void*)sockPtr, (void*)cc, domain_flags);
+        }
 
         SSL_set_ex_data(conn, dc->u.h3.cc_idx, cc);
 
@@ -2297,6 +2316,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     NsTLSConfig *dc = cc->dc;
     StreamCtx   *sc = SSL_get_ex_data(stream, dc->u.h3.sc_idx);
     bool         removed = NS_FALSE;
+    int          rs, ws;
 
     /* Read-side exception: try to drain once. Treat ER similar to R. */
     if (revents & SSL_POLL_EVENT_ER) {
@@ -2307,9 +2327,11 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
             return NS_TRUE;                /* caller should skip further handling */
         }
     }
+    ws = SSL_get_stream_write_state(stream);
+    rs = SSL_get_stream_read_state(stream);
 
     /* Write-side exception or closed write side: stop polling for W. */
-    if ((revents & SSL_POLL_EVENT_EW) || SSL_get_stream_write_state(stream) != SSL_STREAM_STATE_OK) {
+    if ((revents & SSL_POLL_EVENT_EW) || ws != SSL_STREAM_STATE_OK) {
         if (current_mask & SSL_POLL_EVENT_W) {
             (void)PollsetUpdateEvents(dc, stream, sc, /*set=*/0, /*clear=*/SSL_POLL_EVENT_W, "quic_stream_handle_e");
         }
@@ -2317,25 +2339,19 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     }
 
     /* Optional: if both sides are closed, drop the stream even if drain was idle. */
-    {
-        int rs = SSL_get_stream_read_state(stream);
-        int ws = SSL_get_stream_write_state(stream);
-        if (rs != SSL_STREAM_STATE_OK && ws != SSL_STREAM_STATE_OK) {
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW both sides are closed rs=%s ws=%s io=%u seen_io=%u kind=%s",
-                   (long long)dc->iter, (long long)sid,
-                   ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
-                   (unsigned)(sc ? sc->io_state : 0),
-                   (unsigned)(sc ? sc->seen_io  : 0),
-                   (sc ? H3StreamKind_str(sc->kind) : "no-ctx"));
-            PollsetMarkDead(cc, stream, "stream ER|EW, both sides closed");
-            return NS_TRUE;
-        }
+    if (rs != SSL_STREAM_STATE_OK && ws != SSL_STREAM_STATE_OK) {
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW both sides are closed rs=%s ws=%s io=%u seen_io=%u kind=%s",
+               (long long)dc->iter, (long long)sid,
+               ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
+               (unsigned)(sc ? sc->io_state : 0),
+               (unsigned)(sc ? sc->seen_io  : 0),
+               (sc ? H3StreamKind_str(sc->kind) : "no-ctx"));
+        PollsetMarkDead(cc, stream, "stream ER|EW, both sides closed");
+        return NS_TRUE;
     }
 
     /* Optional trace for diagnostics */
     if (revents & (SSL_POLL_EVENT_ER | SSL_POLL_EVENT_EW)) {
-        int rs = SSL_get_stream_read_state(stream);
-        int ws = SSL_get_stream_write_state(stream);
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW handled: rs=%s ws=%s io=%u seen_io=%u kind=%s",
                (long long)dc->iter, (long long)sid,
                ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
@@ -2778,18 +2794,25 @@ h3_conn_write_step(ConnCtx *cc)
         bool       finalized  = NS_FALSE;
         SSL       *stream     = NULL;
         StreamCtx *sc         = NULL;
+        int        write_state;
 
         sid = -1;
         nvec = nghttp3_conn_writev_stream(cc->h3conn, &sid, &fin, vecs, WRITE_STEP_MAX_VEC);
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d",
-               (long long)dc->iter, (long long)sid, (long)nvec,
-               nvec > 0 ? "OK" : nvec == 0 ? "NOTHING" : nghttp3_strerror((int)nvec),
-               fin);
+        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d",
+                   (long long)dc->iter, (long long)sid, (long)nvec,
+                   nvec > 0 ? "OK" : nvec == 0 ? "NOTHING" : nghttp3_strerror((int)nvec),
+                   fin);
 
-        for (int i=0; i<nvec; i++) {
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] ... vec[%d] len %ld",
-                   (long long)dc->iter, (long long)sid, i, vecs[i].len);
+            for (int i = 0; i < nvec; i++) {
+                Ns_Log(Ns_LogQuicDebug,
+                       "[%lld] H3[%lld] ... vec[%d] len %zu",
+                       (long long)dc->iter,
+                       (long long)sid,
+                       i,
+                       vecs[i].len);
+            }
         }
 
         if (nvec <= 0) {
@@ -2900,11 +2923,12 @@ h3_conn_write_step(ConnCtx *cc)
         }
 
         /* Respect per-stream write state */
-        if (SSL_get_stream_write_state(stream) != SSL_STREAM_STATE_OK) {
+        write_state = SSL_get_stream_write_state(stream);
+        if (write_state != SSL_STREAM_STATE_OK) {
             H3DiscardState ds;
 
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] skip write: ws=%d kind=%s",
-                   (long long)dc->iter, (long long)sid, SSL_get_stream_write_state(stream),
+                   (long long)dc->iter, (long long)sid, write_state,
                    sc ? H3StreamKind_str(sc->kind) : "no-ctx");
 
             ds = h3_stream_skip_write_and_trim(cc, sc, h3_stream_id(sc), vecs, (int)nvec, fin, "stream state not OK");
@@ -2936,7 +2960,10 @@ h3_conn_write_step(ConnCtx *cc)
                 uint64_t  flags   = 0;
                 int       ok;
 
-                if (sc->kind == H3_KIND_BIDI_REQ && i == 0) {
+                if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)
+                    && sc->kind == H3_KIND_BIDI_REQ
+                    && i == 0
+                    && off < vecs[i].len) {
                     const uint8_t *bufPtr = vecs[i].base + off;
                     size_t         varint1_len = quic_varint_len(bufPtr[0]);
                     uint64_t       varint1     = quic_varint_decode(bufPtr, vecs[i].len  - off);
@@ -2951,10 +2978,12 @@ h3_conn_write_step(ConnCtx *cc)
                            varint2_len, varint2);
                 }
 
-                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] want to write %ld bytes on %s writable %d"
-                       " blocking stream %d conn %d",
-                       (long long)dc->iter, (long long)sid, vecs[i].len, H3StreamKind_str(sc->kind), sc->writable,
-                       SSL_get_blocking_mode(stream), SSL_get_blocking_mode(cc->h3ssl.conn));
+                if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] want to write %ld bytes on %s writable %d"
+                           " blocking stream %d conn %d",
+                           (long long)dc->iter, (long long)sid, vecs[i].len, H3StreamKind_str(sc->kind), sc->writable,
+                           SSL_get_blocking_mode(stream), SSL_get_blocking_mode(cc->h3ssl.conn));
+                }
 
                 ok = SSL_write_ex2(stream,
                                    vecs[i].base + off,
@@ -3757,6 +3786,10 @@ h3_headers_log_nv(const StreamCtx *sc, const nghttp3_nv *nva, size_t nvlen, cons
 {
     Tcl_DString ds;
 
+    if (!Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+        return;
+    }
+
     Tcl_DStringInit(&ds);
     for (size_t i = 0; i < nvlen; i++) {
         Tcl_DStringAppend(&ds,  (const char*)nva[i].name, (TCL_SIZE_T)nva[i].namelen);
@@ -4035,12 +4068,16 @@ h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nby
                    (long long)cc->dc->iter, (long long)sc->quic_sid, (size_t)nbytes);
         }
 
-        {
-            SharedSnapshot snap0 = SharedSnapshotInit(&sc->sh);
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER after trim queued %ld pending %ld closed:by_app=%d bytes %ld",
-                   (long long)cc->dc->iter, (long long)sc->quic_sid, snap0.queued_bytes, snap0.pending_bytes, snap0.closed_by_app, nbytes);
-        }
         SharedSnapshotRead(&sc->sh, &snap);
+
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER after trim queued %ld pending %ld closed:by_app=%d bytes %ld",
+               (long long)cc->dc->iter,
+               (long long)sc->quic_sid,
+               snap.queued_bytes,
+               snap.pending_bytes,
+               snap.closed_by_app,
+               nbytes);
 
         if (SharedEOFReady(&snap)) {
             nghttp3_conn_resume_stream(cc->h3conn, sid);
@@ -4254,7 +4291,7 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
     }
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb SharedPendingUnreadBytes %ld",
-           (long long)cc->dc->iter, (long long)stream_id, SharedPendingUnreadBytes(ss) );
+           (long long)cc->dc->iter, (long long)stream_id, snap.pending_bytes);
 
     /* Nothing to send right now. */
     if (snap.pending_bytes == 0) {
@@ -5248,7 +5285,9 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
     Ns_Log(Debug, "[%lld] H3 on_end_headers req %p line '%s'",
            (long long)dc->iter, (void*)sockPtr->reqPtr, sockPtr->reqPtr->request.line);
 
-    { Tcl_DString ds;
+    if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+        Tcl_DString ds;
+
         Tcl_DStringInit(&ds);
         Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_end_headers fin %d has_content_length %d reqPtr->contentLength %ld has_body %d peer %s %s",
                (long long)stream_id, fin, has_content_length, reqPtr->contentLength, has_body,
@@ -6201,6 +6240,11 @@ static void
 PollsetPrint(NsTLSConfig *dc, const char *prefix, bool skip)
 {
     bool last_stream_empty = NS_FALSE;
+
+    if (!Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+        return;
+    }
+
     Ns_Log(Ns_LogQuicDebug, "Pollset size %ld capacity %ld", dc->u.h3.npoll + 1, dc->u.h3.poll_capacity);
 
     for (size_t idx = 0; idx < dc->u.h3.poll_capacity; idx++) {
@@ -6290,7 +6334,7 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
     dc->u.h3.poll_items[idx].desc   = SSL_as_poll_descriptor(s);
     dc->u.h3.poll_items[idx].events = maskf ? maskf(events) : events;
 
-    if (label != NULL) {
+    if (Ns_LogSeverityEnabled(Ns_LogQuicDebug) && label != NULL) {
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
@@ -6784,7 +6828,7 @@ PollsetHandleListenerEvents(NsTLSConfig *dc)
         rc = SSL_handle_events(ls);   /* nonblocking; may generate egress */
 
         Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in PollsetHandleListenerEvents listener %p => %d",
-               (long long)dc->iter, (void*)ls, SSL_handle_events(ls));
+               (long long)dc->iter, (void*)ls, rc);
 
         if (rc < 0) {
             int l = ERR_GET_LIB(ERR_peek_error());
@@ -7681,7 +7725,7 @@ QuicThread(void *arg)
                " (quic.c from %s %s)",
                (long long)dc->iter, rc, result_count, __DATE__, __TIME__);
 
-        if (!Ns_LogSeverityEnabled(Ns_LogRequestDebug)) {
+        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
             for (i = 0; i < (int)numitems; i++) {
                 SSL           *s       = dc->u.h3.ssl_items.data[i];
                 SSL_POLL_ITEM *item    = &dc->u.h3.poll_items[i];
@@ -7808,7 +7852,7 @@ QuicThread(void *arg)
 
             processed_event = 0;
 
-            {
+            if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
                 Tcl_DStringInit(&ds);
                 Ns_Log(Ns_LogQuicDebug, "[%lld] H3D processing poll item %d: s %p (%s)"
                        " revents %08" PRIx64 " %s",
@@ -8039,7 +8083,7 @@ QuicThread(void *arg)
             }
 
 
-            if (revents != processed_event) {
+            if (Ns_LogSeverityEnabled(Ns_LogQuicDebug) && revents != processed_event) {
                 uint64_t sid = UINT64_MAX, not_processed = (revents & ~processed_event);
                 Tcl_DString ds1;
 
@@ -8562,11 +8606,15 @@ Close(Ns_Sock *sock)
     sc->close_when_drained = NS_TRUE;          /* optional bookkeeping */
     Ns_MutexUnlock(&sc->lock);
 
-    {
+    if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
         SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
 
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] WRITER done: queued %ld pending %ld closed_by_app %d",
-               (long long)dc->iter, (long long)sc->quic_sid, snap.queued_bytes, snap.pending_bytes, snap.closed_by_app);
+               (long long)dc->iter,
+               (long long)sc->quic_sid,
+               snap.queued_bytes,
+               snap.pending_bytes,
+               snap.closed_by_app);
     }
 
     /*
