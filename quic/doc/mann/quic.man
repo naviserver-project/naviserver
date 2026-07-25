@@ -60,6 +60,7 @@ such as certificates, ciphers, and protocols.
  }
 [example_end]
 
+QUIC-specific Parameters for the [const nsssl] module:
 [list_begin definitions]
 
 [def h3advertise]
@@ -76,6 +77,25 @@ such as certificates, ciphers, and protocols.
  expires.
 
 [list_end]
+
+[para]
+Parameters for the [const quic] module:
+
+[list_begin definitions]
+
+[def https] Point to the base configuation ([const nsssl] module).
+
+[def debug]  Enables detailed HTTP/3 and QUIC diagnostic logging. When enabled, the
+ module reports internal connection and stream state, pollset management,
+ SSL polling events, write scheduling, and cleanup operations using the
+ [const Debug(quic)] log severity.
+
+ The option is disabled by default, since the generated output can be
+ very large and may noticeably affect performance. It can be changed at
+ runtime and should normally be enabled only temporarily for
+ troubleshooting or when collecting diagnostics for a bug report.
+[list_end]
+
 
 [subsection {Notes}]
 

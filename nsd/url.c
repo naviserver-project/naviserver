@@ -26,7 +26,7 @@
  * Local functions defined in this file
  */
 
-static char* ParseUpTo(const char *chars, char ch)
+static char* ParseUpTo(char *chars, char ch)
     NS_GNUC_NONNULL(1);
 
 
@@ -184,13 +184,13 @@ ParseUserInfo(char *chars, const char **userinfo)
  *    Parsed string or NULL.
  *
  * Side effects:
- *    None.
+ *      When the separator is found, it is replaced by a NUL character.
  *
  *----------------------------------------------------------------------
  */
 
 static char *
-ParseUpTo(const char *chars, char ch)
+ParseUpTo(char *chars, char ch)
 {
     char *p = strchr(chars, INTCHAR(ch));
 
@@ -554,15 +554,24 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
         urlPtr->fragment = end + 1;
 
     } else if (*end == '?') {
+        char *query;
+
         /*
          * No path, tail, just a query and maybe a fragment specified.
          */
         *end = '\0';
-        urlPtr->query = end + 1;
-        urlPtr->fragment = ParseUpTo(urlPtr->query, '#');
+        query = end + 1;
+
+        urlPtr->query = query;
+        urlPtr->fragment = ParseUpTo(query, '#');
 
     } else {
+        char *query = NULL;
+        char *fragment = NULL;
+        char *tail = NULL;
+
         if (*end == '/') {
+
             urlPtr->path = NS_EMPTY_STRING;
             urlPtr->tail = NS_EMPTY_STRING;
 
@@ -590,18 +599,18 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
              * Separate the "tail" from the "path", otherwise the string is
              * just "tail".
              */
-            urlPtr->query = ParseUpTo(url, '?');
-            if (urlPtr->query == NULL) {
-                urlPtr->fragment = ParseUpTo(url, '#');
+            query = ParseUpTo(url, '?');
+            if (query == NULL) {
+                fragment = ParseUpTo(url, '#');
             }
 
             end = strrchr(url, INTCHAR('/'));
             if (end == NULL) {
-                urlPtr->tail = url;
+                tail = url;
             } else {
                 *end = '\0';
                 urlPtr->path = url;
-                urlPtr->tail = end + 1;
+                tail = end + 1;
             }
 
         } else {
@@ -609,19 +618,27 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
              * The URL starts with no slash, just set the "tail" and let
              * "path" undefined (legacy NaviServer).
              */
-            urlPtr->tail = end;
+            tail = end;
         }
 
-        if (urlPtr->tail != NULL) {
-            if (urlPtr->query == NULL) {
-                urlPtr->query = ParseUpTo(urlPtr->tail, '?');
+        if (tail != NULL) {
+            if (query == NULL) {
+                query = ParseUpTo(tail, '?');
             }
-            if (urlPtr->query != NULL) {
-                urlPtr->fragment = ParseUpTo(urlPtr->query, '#');
-            } else if (urlPtr->fragment == NULL) {
-                urlPtr->fragment = ParseUpTo(urlPtr->tail, '#');
+            if (query != NULL) {
+                fragment = ParseUpTo(query, '#');
+            } else if (fragment == NULL) {
+                fragment = ParseUpTo(tail, '#');
             }
         }
+
+        /*
+         * Publish read-only views into the now-split mutable URL buffer.
+         */
+        urlPtr->tail = tail;
+        urlPtr->query = query;
+        urlPtr->fragment = fragment;
+
         if (strict) {
             /*
              * Validate content.
@@ -636,7 +653,7 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
             }
             if (urlPtr->tail != NULL) {
                 urlPtr->tail = ValidateChars(urlPtr->tail, path_table,
-                                             "query contains invalid character", errorMsg);
+                                             "tail contains invalid character", errorMsg);
             }
             if (urlPtr->path != NULL) {
                 urlPtr->path = ValidateChars(urlPtr->path, path_table,

@@ -72,6 +72,10 @@ static int ServerMappedObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZ
                               NsServer *servPtr, TCL_SIZE_T nargs)
     NS_GNUC_NONNULL(2,4,5);
 
+static int ServerModulesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
+                              NsServer *servPtr, TCL_SIZE_T nargs)
+    NS_GNUC_NONNULL(2,4,5);
+
 static int ServerUnmapObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                              NsServer *servPtr, TCL_SIZE_T nargs)
     NS_GNUC_NONNULL(2,4,5);
@@ -1306,6 +1310,25 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     return result;
 }
 
+static int
+ServerModulesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv,
+                  NsServer *servPtr, TCL_SIZE_T nargs)
+{
+    int          result = TCL_OK;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objv != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+
+    if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Tcl_SetObjResult(interp, NsGetLoadedModulesObj(servPtr));
+    }
+
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1550,6 +1573,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         SLogdirIdx,
         SMapIdx, SMappedIdx,
         SMaxthreadsIdx, SMinthreadsIdx,
+        SModulesIdx,
         SPagedirIdx, SPoolRateLimitIdx, SPoolsIdx,
         SQueuedIdx,
         SRealmIdx, SRequestprocsIdx,
@@ -1576,6 +1600,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         {"mapped",              (unsigned int)SMappedIdx},
         {"maxthreads",          (unsigned int)SMaxthreadsIdx},
         {"minthreads",          (unsigned int)SMinthreadsIdx},
+        {"modules",             (unsigned int)SModulesIdx},
         {"pagedir",             (unsigned int)SPagedirIdx},
         {"poolratelimit",       (unsigned int)SPoolRateLimitIdx},
         {"pools",               (unsigned int)SPoolsIdx},
@@ -1936,6 +1961,10 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     case SMappedIdx:
         result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr, (TCL_SIZE_T)nargs);
+        break;
+
+    case SModulesIdx:
+        result = ServerModulesObjCmd(clientData, interp, objc, objv, servPtr, (TCL_SIZE_T)nargs);
         break;
 
     case SUnmapIdx:

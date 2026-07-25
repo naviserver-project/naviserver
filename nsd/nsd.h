@@ -1020,7 +1020,7 @@ typedef struct NsServer {
         const char       *script;
         TCL_SIZE_T        length;
         int               epoch;
-        Tcl_Obj          *modules;
+        Tcl_DString       modules;
         Tcl_HashTable     runTable;
         const char      **errorLogHeaders;
         Tcl_HashTable     caches;
@@ -1317,7 +1317,7 @@ typedef struct {
 /*
  * Callback for the Http chunked-encoding parse state machine
  */
-typedef int (NsHttpParseProc)(NsHttpTask*, const char**, size_t*);
+typedef int NsHttpParseProc(NsHttpTask*, const char**, size_t*);
 
 typedef struct _NsHttpChunk {
     size_t             length;           /* Length of the chunk */
@@ -1629,6 +1629,7 @@ NS_EXTERN Ns_LogSeverity Ns_LogUrlspaceDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogTimeoutDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogNsSetDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogMemoryDebug;
+NS_EXTERN Ns_LogSeverity Ns_LogQuicDebug;
 NS_EXTERN bool NsWriterBandwidthManagement;
 
 NS_EXTERN const char *nsBuildDate;
@@ -2004,7 +2005,10 @@ NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
 /*
  * modload.c
  */
+#ifdef NS_WITH_DEPRECATED
 NS_EXTERN void NsInitStaticModules(const char *server);
+#endif
+NS_EXTERN Tcl_Obj *NsGetLoadedModulesObj(const NsServer *servPtr) NS_GNUC_NONNULL(1);
 
 /*
  * nsconf.c
@@ -2263,6 +2267,7 @@ NS_EXTERN void NsTclInitAddrType(void);
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN Tcl_Obj *NsTclListSort(Tcl_Interp *interp, Tcl_Obj *listObj) NS_GNUC_NONNULL(2);
+NS_EXTERN Tcl_Obj *NsTclDictSort(Tcl_Interp *interp, Tcl_Obj *listObj) NS_GNUC_NONNULL(2);
 
 /*
  * tclobjv.c

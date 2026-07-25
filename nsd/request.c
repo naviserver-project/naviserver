@@ -702,8 +702,7 @@ static Ns_ReturnCode
 SetUrl(Ns_Request *request, char *url)
 {
     Tcl_DString   ds1;
-    char         *p;
-    const char   *encodedPath;
+    char         *p, *encodedPath;
     Tcl_Encoding  encoding;
     Ns_ReturnCode status = NS_OK;
 
@@ -872,7 +871,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, size_t *fieldN
             }
         }
     } else {
-        char *sep;
+        const char *sep;
         Tcl_DString ds, *dsPtr = &ds;
 
         if (prefix != NULL) {
@@ -892,12 +891,14 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, size_t *fieldN
         } else {
             const char *value;
 
-            *sep = '\0';
-            for (value = sep + 1; (*value != '\0') && CHARTYPE(space, *value) != 0; value++) {
+            for (value = sep + 1;
+                 (*value != '\0') && CHARTYPE(space, *value) != 0;
+                 value++) {
                 ;
             }
-            idx = Ns_SetPutSz(set, line, (TCL_SIZE_T)(sep - line), value, TCL_INDEX_NONE);
-            *sep = ':';
+
+            idx = Ns_SetPutSz(set, line, (TCL_SIZE_T)(sep - line),
+                              value, TCL_INDEX_NONE);
         }
 
         if (prefix != NULL) {

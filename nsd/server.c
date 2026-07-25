@@ -491,7 +491,9 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     NsInitHttp(servPtr);
     NsTclInitServer(server);
 
+#ifdef NS_WITH_DEPRECATED
     NsInitStaticModules(server);
+#endif
     initServPtr = NULL;
 }
 

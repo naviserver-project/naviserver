@@ -598,7 +598,7 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
                        struct sockaddr *ipPtr, struct sockaddr *maskPtr,
                        unsigned int *nrBitsPtr)
 {
-    char         *slash;
+    const char   *slash;
     int           validIP;
     unsigned int  nrBits = 0u;
     Ns_ReturnCode status = NS_OK;

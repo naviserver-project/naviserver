@@ -748,9 +748,8 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
         result = TCL_ERROR;
 
     } else {
-        char       *s, *e;
-        const char *p;
-        Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
+        char    *s, *e, *p;
+        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
         p = htmlString;
         for (;;) {

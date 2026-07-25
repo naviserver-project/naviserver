@@ -34,7 +34,7 @@ static Ns_ReturnCode ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPt
                                             Tcl_Obj *fallbackCharsetObj)
     NS_GNUC_NONNULL(1,3,4);
 
-static Ns_ReturnCode ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start, char *end)
+static Ns_ReturnCode ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, char *start, char *end)
     NS_GNUC_NONNULL(1,3,4);
 
 static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
@@ -711,8 +711,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     p = form;
 
     while (p != NULL) {
-        char       *v;
-        const char *k;
+        char *v, *k;
 
         k = p;
         p = strchr(p, INTCHAR('&'));
@@ -833,7 +832,7 @@ ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr, char *toParse,
  */
 
 static Ns_ReturnCode
-ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start, char *end)
+ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, char *start, char *end)
 {
     Tcl_Encoding  encoding;
     Tcl_DString   kds, vds;

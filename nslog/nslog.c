@@ -75,12 +75,27 @@ static Ns_ArgProc      LogArg;
 static Ns_TclTraceProc AddCmds;
 static TCL_OBJCMDPROC_T  LogObjCmd;
 
-NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
-
 static Ns_ReturnCode LogFlush(Log *logPtr, Tcl_DString *dsPtr);
 static Ns_LogCallbackProc LogOpen;
 static Ns_LogCallbackProc LogClose;
 static Ns_LogCallbackProc LogRoll;
+
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+NS_EXPORT Ns_ModuleInfoProc Ns_ModuleGetInfo;
+
+/*
+ * Provide module build and ABI information for runtime introspection.
+ */
+NS_EXPORT void
+Ns_ModuleGetInfo(Ns_ModuleInfo *infoPtr)
+{
+    Ns_ModuleInfoInit(infoPtr, NS_MODULE_INFO_VERSION,
+                      "nslog",
+                      PACKAGE_VERSION,
+                      PACKAGE_TAG,
+                      "module",
+                      1u);
+}
 
 static Ns_ReturnCode ParseExtendedHeaders(Log *logPtr, const char *str)
     NS_GNUC_NONNULL(1);
@@ -362,32 +377,47 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                 logPtr->nrResponseHeaders = 0;
             } else {
                 Tcl_DString requestHeaderFields, responseHeaderFields;
+                static const char requestPrefix[] = "request";
+                static const char responsePrefix[] = "response";
 
                 Tcl_DStringInit(&requestHeaderFields);
                 Tcl_DStringInit(&responseHeaderFields);
 
+
                 for (i = 0; i < argc; i++) {
                     const char *fieldName = argv[i];
-                    char       *suffix = strchr(fieldName, ':');
+                    const char *suffix = strchr(fieldName, INTCHAR(':'));
 
                     if (suffix != NULL) {
-                        *suffix = '\0';
-                        suffix ++;
-                        if (strncmp(fieldName, "request", 3) == 0) {
+                        size_t prefixLength = (size_t)(suffix - fieldName);
+
+                        suffix++;
+
+                        if (prefixLength >= 3u
+                            && prefixLength < sizeof(requestPrefix)
+                            && strncmp(fieldName, "request", prefixLength) == 0) {
                             Tcl_DStringAppendElement(&requestHeaderFields, suffix);
-                        } else if (strncmp(fieldName, "response", 3) == 0) {
+
+                        } else if (prefixLength >= 3u
+                                   && prefixLength < sizeof(responsePrefix)
+                                   && strncmp(fieldName, "response", prefixLength) == 0) {
                             Tcl_DStringAppendElement(&responseHeaderFields, suffix);
+
                         } else {
-                            Ns_Log(Error, "nslog: ignore invalid entry prefix '%s' in extendedHeaders parameter",
-                                   fieldName);
+                            Ns_Log(Error,
+                                   "nslog: ignore invalid entry prefix '%.*s' "
+                                   "in extendedHeaders parameter",
+                                   (int)prefixLength, fieldName);
                         }
+
                     } else {
                         /*
-                         * No prefix, assume request header field
+                         * No prefix, assume request header field.
                          */
-                        Tcl_DStringAppendElement(&requestHeaderFields, suffix);
+                        Tcl_DStringAppendElement(&requestHeaderFields, fieldName);
                     }
                 }
+
                 (void) Tcl_SplitList(NULL, requestHeaderFields.string,
                                      &logPtr->nrRequestHeaders,
                                      &logPtr->requestHeaders);

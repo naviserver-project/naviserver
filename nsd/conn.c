@@ -1820,7 +1820,7 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
 const char *
 Ns_ConnTarget(Ns_Conn *conn, Tcl_DString *dsPtr)
 {
-    const char *targetPtr;
+    char *targetPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);

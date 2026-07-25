@@ -21,6 +21,7 @@ NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+NS_EXPORT Ns_ModuleInfoProc Ns_ModuleGetInfo;
 
 
 /*
@@ -61,6 +62,20 @@ Ns_ModuleInit(const char *server, const char *UNUSED(module))
         Ns_RegisterProcInfo((ns_funcptr_t)NsDbReleaseHandles, "nsdb:releasehandles", NULL);
     }
     return status;
+}
+
+/*
+ * Provide module build and ABI information for runtime introspection.
+ */
+NS_EXPORT void
+Ns_ModuleGetInfo(Ns_ModuleInfo *infoPtr)
+{
+    Ns_ModuleInfoInit(infoPtr, NS_MODULE_INFO_VERSION,
+                      "nsdb",
+                      PACKAGE_VERSION,
+                      PACKAGE_TAG,
+                      "module",
+                      1u);
 }
 
 /*
