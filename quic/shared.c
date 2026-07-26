@@ -160,7 +160,6 @@ static int resume_grow(SharedState *st) {
  */
 void SharedStateInit(SharedState *st, SharedWakeFn wake_cb, void *wake_arg) {
     memset(st, 0, sizeof(*st));
-    Ns_MutexInit(&st->lock);
     st->wake_cb  = wake_cb;
     st->wake_arg = wake_arg;
 }
@@ -220,10 +219,9 @@ void SharedStateDestroy(SharedState *st) {
  */
 void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid) {
     memset(ss, 0, sizeof(*ss));
-    Ns_MutexInit(&ss->lock);
     ss->st       = owner;
     ss->sid_hint = sid;
-    /* queues already zeroed */
+    /* queues and mutexes already zeroed */
 }
 
 /*

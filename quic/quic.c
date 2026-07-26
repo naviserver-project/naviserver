@@ -5614,7 +5614,13 @@ ConnCtxNew(NsTLSConfig *dc, SSL *conn)
     }
 
     Tcl_InitHashTable(&cc->streams, TCL_ONE_WORD_KEYS);
-    Ns_MutexInit(&cc->lock);
+
+    /*
+     * Both mutexes are borrowed from the pollset slot after registration.
+     */
+    cc->lock        = NULL;
+    cc->shared.lock = NULL;
+
     NS_TA_INIT(cc, affinity, "ConnCtx");
     NS_TA_HANDOFF(cc, affinity, "ConnCtx");
 
@@ -5653,6 +5659,10 @@ static void
 ConnCtxFree(ConnCtx *cc)
 {
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 ConnCtxFree for cc %p", (long long)cc->dc->iter, (void*)cc);
+    
+    cc->shared.lock = NULL;
+    cc->lock        = NULL;
+    cc->pidx        = (size_t)-1;
 
     Tcl_DeleteHashTable(&cc->streams);
     SharedStateDestroy(&cc->shared);
@@ -5691,7 +5701,8 @@ static void StreamCtxInit(StreamCtx *sc) {
     sc->resp_nvlen    = 0;
     sc->tx_state = TX_IDLE;
     sc->pidx = (size_t)-1;
-    Ns_MutexInit(&sc->lock);
+    sc->lock    = NULL;          /* borrowed later from pollset slot */
+    sc->sh.lock = NULL;          /* borrowed later from pollset slot */
 
     // Initialize queues
     memset(&sc->tx_queued, 0, sizeof(sc->tx_queued));
@@ -6096,6 +6107,34 @@ static inline bool StreamCtxIsBidi(const StreamCtx *sc)
 /*
  *----------------------------------------------------------------------
  *
+ * PollsetMutexFree --
+ *
+ *      Destroy a mutex owned by a pollset mutex list.  The DList free
+ *      callback receives the stored Ns_Mutex handle as its data
+ *      argument, while Ns_MutexDestroy() expects the address of such a
+ *      handle.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Destroys the mutex and removes it from the global mutex registry.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PollsetMutexFree(void *arg)
+{
+    Ns_Mutex mutex = (Ns_Mutex)arg;
+
+    if (mutex != NULL) {
+        Ns_MutexDestroy(&mutex);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * PollsetInit --
  *
  *      Initialize the connection-level pollset data structures for an
@@ -6120,13 +6159,19 @@ PollsetInit(NsTLSConfig *dc)
 
     Ns_DListInit(&dc->u.h3.conns);
     Ns_DListInit(&dc->u.h3.ssl_items);
+    Ns_DListInit(&dc->u.h3.mutex_items);
+    Ns_DListInit(&dc->u.h3.shared_mutex_items);
 
+    Ns_DListSetFreeProc(&dc->u.h3.mutex_items, PollsetMutexFree);
+    Ns_DListSetFreeProc(&dc->u.h3.shared_mutex_items, PollsetMutexFree);
+    
     dc->u.h3.poll_capacity = Ns_DListCapacity(&dc->u.h3.ssl_items);
     dc->u.h3.poll_items = ns_malloc(dc->u.h3.poll_capacity * sizeof(SSL_POLL_ITEM));
 
     /* slot 0 placeholders */
     dc->u.h3.first_dead = 0;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -6158,6 +6203,8 @@ PollsetFree(NsTLSConfig *dc)
     dc->u.h3.poll_capacity = 0;
     Ns_DListFree(&dc->u.h3.ssl_items);
     Ns_DListFree(&dc->u.h3.conns);
+    Ns_DListFree(&dc->u.h3.mutex_items);
+    Ns_DListFree(&dc->u.h3.shared_mutex_items);
 }
 
 /*
@@ -6327,10 +6374,36 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
 
     idx = ++dc->u.h3.npoll;
 
-    if (dc->u.h3.ssl_items.size <= dc->u.h3.npoll) {
+    if (dc->u.h3.ssl_items.size <= idx) {
+        Ns_Mutex mutex       = NULL;
+        Ns_Mutex sharedMutex = NULL;
+        Tcl_DString ds;
+
+        Tcl_DStringInit(&ds);
+        Ns_DStringPrintf(&ds, "h3:pollset:%" PRIuz, idx);
+
+        /*
+         * Add a new logical slot. The mutex belongs to the slot and is
+         * retained when the slot is subsequently reused.
+         */
+        Ns_MutexInit(&mutex);
+        Ns_MutexSetName2(&mutex, ds.string, "item");
+
+        Ns_MutexInit(&sharedMutex);
+        Ns_MutexSetName2(&sharedMutex, ds.string, "shared");
+
+        Tcl_DStringFree(&ds);
+
         /* Append in lockstep */
-        Ns_DListAppend(&dc->u.h3.ssl_items, s); /* may double capacity */
+        Ns_DListAppend(&dc->u.h3.ssl_items, s);
+        Ns_DListAppend(&dc->u.h3.mutex_items, mutex);
+        Ns_DListAppend(&dc->u.h3.shared_mutex_items, sharedMutex);
+
         PollsetEnsurePollCapacity(dc);     /* grow poll_items if needed */
+
+        assert(dc->u.h3.ssl_items.size == dc->u.h3.mutex_items.size);
+        assert(dc->u.h3.ssl_items.size == dc->u.h3.shared_mutex_items.size);
+
     } else {
         dc->u.h3.ssl_items.data[idx] = s;
     }
@@ -6382,7 +6455,13 @@ static inline size_t PollsetAddConnection(NsTLSConfig *dc, SSL *conn, uint64_t e
     size_t   idx = PollsetAdd(dc, conn, events, PollsetDefaultConnErrors, "PollsetAddConnection", H3_KIND_UNKNOWN);
 
     Ns_DListAddUnique(&dc->u.h3.conns, cc);
-    cc->pidx = idx;
+    cc->pidx        = idx;
+    cc->lock        = (Ns_Mutex)dc->u.h3.mutex_items.data[idx];
+    cc->shared.lock = (Ns_Mutex)dc->u.h3.shared_mutex_items.data[idx];
+
+    assert(cc->lock != NULL);
+    assert(cc->shared.lock != NULL);
+
     //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 connection added on idx %ld", (long long)dc->iter, idx);
     return idx;
 }
@@ -6415,7 +6494,11 @@ static inline size_t PollsetAddStream(NsTLSConfig *dc, SSL *stream, uint64_t eve
     StreamCtx *sc = SSL_get_ex_data(stream, dc->u.h3.sc_idx);
     size_t     idx = PollsetAdd(dc, stream, events, PollsetDefaultStreamErrors, "PollsetAddStream", kind);
 
+    assert(sc != NULL);
     sc->pidx = idx;
+    sc->lock = (Ns_Mutex)dc->u.h3.mutex_items.data[idx];
+    sc->sh.lock = (Ns_Mutex)dc->u.h3.shared_mutex_items.data[idx];
+
     //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 stream added on idx %ld", (long long)dc->iter, idx);
     return idx;
 }
@@ -7236,61 +7319,94 @@ PollsetConsolidate(NsTLSConfig *dc)
 {
     NS_NONNULL_ASSERT(dc != NULL);
 
-    if (dc->u.h3.first_dead > 0) {
-        size_t i    = dc->u.h3.first_dead;     /* destination index for the next live slot */
+    if (dc->u.h3.first_dead > 0u) {
+        size_t i    = dc->u.h3.first_dead;
         size_t last = dc->u.h3.npoll;
-
-        //PollsetPrint(dc, "before consolidate", NS_FALSE);
 
         while (i <= last) {
             if (dc->u.h3.ssl_items.data[i] == NULL) {
-                /* Found a hole at position i, move last live entry into i */
+                /*
+                 * Found a hole at position i. Move the current last entry
+                 * into the hole. When the last entry is itself dead, just
+                 * shrink the logical end and inspect i again.
+                 */
                 if (i != last) {
-                    SSL *s;
+                    SSL      *s          = dc->u.h3.ssl_items.data[last];
+                    Ns_Mutex  holeMutex  =
+                        (Ns_Mutex)dc->u.h3.mutex_items.data[i];
+                    Ns_Mutex  movedMutex =
+                        (Ns_Mutex)dc->u.h3.mutex_items.data[last];
+                    Ns_Mutex holeSharedMutex =
+                        (Ns_Mutex)dc->u.h3.shared_mutex_items.data[i];
+                    Ns_Mutex movedSharedMutex =
+                        (Ns_Mutex)dc->u.h3.shared_mutex_items.data[last];
 
                     /*
-                     * swap-with-last: move last live entry down into hole.
+                     * Move the last entry, including its mutex, into the
+                     * hole.
                      */
-                    dc->u.h3.ssl_items.data[i] = dc->u.h3.ssl_items.data[last];
-                    dc->u.h3.poll_items[i]     = dc->u.h3.poll_items[last];
-                    s = dc->u.h3.ssl_items.data[i];
+                    dc->u.h3.ssl_items.data[i]   = s;
+                    dc->u.h3.poll_items[i]       = dc->u.h3.poll_items[last];
+
+                    dc->u.h3.mutex_items.data[i] = movedMutex;
+                    dc->u.h3.mutex_items.data[last] = holeMutex;
+
+                    dc->u.h3.shared_mutex_items.data[i] = movedSharedMutex;
+                    dc->u.h3.shared_mutex_items.data[last] = holeSharedMutex;
+
                     if (s != NULL) {
-                        ConnCtx   *cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
-                        StreamCtx *sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
+                        ConnCtx   *cc =
+                            SSL_get_ex_data(s, dc->u.h3.cc_idx);
+                        StreamCtx *sc =
+                            SSL_get_ex_data(s, dc->u.h3.sc_idx);
 
                         if (sc != NULL) {
-                            /* we moved a stream */
+                            /* We moved a stream. */
                             sc->pidx = i;
-                        } else if (cc != NULL && s == cc->h3ssl.conn) {
-                            /* we moved a connection */
-                            cc->pidx = i;
-                        } else {
-                            Ns_Log(Ns_LogQuicDebug, "[%lld] Consolidate: swapped hole %zu no index update for %p",
-                                   (long long)dc->iter, i, (void*)s);
-                        }
-                    } else {
-                        //Ns_Log(Ns_LogQuicDebug, "[%lld] Consolidate: swapped hole %zu with ZERO ssl", (long long)dc->iter, i);
-                    }
 
-                    Ns_Log(Ns_LogQuicDebug, "[%lld] Consolidate: swapped hole %zu with slot %zu",
-                           (long long)dc->iter, i, last);
+                            assert(sc->lock == (Ns_Mutex) dc->u.h3.mutex_items.data[i]);
+                            assert(sc->sh.lock == (Ns_Mutex) dc->u.h3.shared_mutex_items.data[i]);
+
+                        } else if (cc != NULL && s == cc->h3ssl.conn) {
+                            /* We moved a connection. */
+                            cc->pidx = i;
+
+                            assert(cc->lock == (Ns_Mutex)dc->u.h3.mutex_items.data[i]);
+                            assert(cc->shared.lock == (Ns_Mutex)dc->u.h3.shared_mutex_items.data[i]);
+
+                        } else {
+                            Ns_Log(Ns_LogQuicDebug,
+                                   "[%lld] Consolidate: moved slot %zu "
+                                   "into hole %zu, but no index was "
+                                   "updated for %p",
+                                   (long long)dc->iter,
+                                   last, i, (void *)s);
+                        }
+
+                        Ns_Log(Ns_LogQuicDebug,
+                               "[%lld] Consolidate: moved slot %zu "
+                               "into hole %zu",
+                               (long long)dc->iter, last, i);
+                    }
                 }
 
-                /* Clear the old-last slot, which was moved */
-                dc->u.h3.ssl_items.data[last]    = NULL;
-                dc->u.h3.poll_items[last].events = 0;
+                /*
+                 * Clear the old last slot. Its mutex remains available
+                 * for reuse.
+                 */
+                dc->u.h3.ssl_items.data[last] = NULL;
+                memset(&dc->u.h3.poll_items[last], 0,
+                       sizeof(dc->u.h3.poll_items[last]));
 
-                /* Shrink logical end, continue loop from here. */
                 last--;
                 dc->u.h3.npoll--;
 
             } else {
-                /* no hole here, advance to next */
                 i++;
             }
         }
 
-        dc->u.h3.first_dead = 0;
+        dc->u.h3.first_dead = 0u;
         PollsetPrint(dc, "after consolidate", NS_TRUE);
     }
 }
@@ -7507,6 +7623,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     NsTimeToTimeval(&timeout, &dc->u.h3.drain_timeout);
 
     Ns_MutexInit(&dc->u.h3.waker_lock);
+    Ns_MutexSetName(&dc->u.h3.waker_lock, "waker");
 
     init.version = NS_DRIVER_VERSION_6;
     init.name = "quic";
