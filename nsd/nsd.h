@@ -1930,6 +1930,9 @@ NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 NS_EXTERN int NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
     NS_GNUC_NONNULL(1,3,4);
 
+NS_EXTERN void NsSockRelease(Ns_Sock *sockPtr, bool keep)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN Request *NsSockEnsureRequest(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 
