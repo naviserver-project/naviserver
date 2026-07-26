@@ -1075,12 +1075,17 @@ static void ossl_msg_cb(int write_p, int UNUSED(version), int content_type,
  *----------------------------------------------------------------------
  */
 
-static void ossl_cc_exdata_free(void *parent, void *ptr, CRYPTO_EX_DATA *UNUSED(ad),
-                                int UNUSED(idx), long UNUSED(argl), void *UNUSED(argp)) {
-    StreamCtx *sc = ptr;
-    if (sc != NULL) {
-        Ns_Log(Ns_LogQuicDebug, "ossl_cc_exdata_free calls StreamCtxFree %p parent %p", (void*)ptr, (void*)parent);
-        ConnCtxFree(ptr);
+static void
+ossl_cc_exdata_free(void *parent, void *ptr, CRYPTO_EX_DATA *UNUSED(ad),
+                    int UNUSED(idx), long UNUSED(argl), void *UNUSED(argp))
+{
+    ConnCtx *cc = ptr;
+
+    if (cc != NULL) {
+        Ns_Log(Ns_LogQuicDebug,
+               "ossl_cc_exdata_free calls ConnCtxFree %p parent %p",
+               (void *)cc, parent);
+        ConnCtxFree(cc);
     }
 }
 
@@ -2073,17 +2078,17 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
 
     for (;;) {
         nghttp3_settings settings;
-        Ns_Time          now;
-        Ns_Sock         *sockPtr;
         ConnCtx         *cc;
-        int              ss, ret;
+        int              ret;
         SSL             *conn = SSL_accept_connection(listener_ssl, 0);
 
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3 quic_conn_handle_ic gets conn %p from listener_ssl %p",
                (long long)dc->iter, (void*)conn, (void*) listener_ssl);
 
         if (conn == NULL) {
-            // no more pending connections
+            /*
+             * No more pending connections.
+             */
             break;
         }
 
@@ -2091,39 +2096,29 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
 
         SSL_set_app_data(conn, dc);
 
-        Ns_GetTime(&now);
-        ss = NsSockAccept((Ns_Driver*)drvPtr, SSL_get_fd(listener_ssl), (Ns_Sock**)&sockPtr, &now, conn);
-
-        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
-            char buffer[NS_IPADDR_SIZE];
-
-            (void)ns_inet_ntop((const struct sockaddr *)&sockPtr->sa, buffer, NS_IPADDR_SIZE);
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 CONN accept SockAccept returns sock state %d, sockPtr %p IP %s",
-                   (long long)dc->iter, ss, (void*)sockPtr, buffer);
-        }
-
-        assert(drvPtr == ((Sock*)sockPtr)->drvPtr);
-
-        /* 2) Create ConnCtx and bind it both to the Ns_Sock and the SSL */
+        /*
+         * Create the connection context. Incoming request streams obtain
+         * their own Ns_Sock instances when they are registered.
+         */
         cc = ConnCtxNew(dc, conn);
         if (cc == NULL) {
             Ns_Log(Error, "could no allocate H3 ConnCtx");
-            NsSockClose((Sock*)sockPtr, /*keep=*/0);
             SSL_free(conn);
             break;
         }
+        SSL_set_ex_data(conn, dc->u.h3.cc_idx, cc);
 
         if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
             uint64_t domain_flags = 0u;
 
             SSL_get_domain_flags(conn, &domain_flags);
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 SockAccept can associate sock %p with cc %p domain flags 0x%llx",
-                   (long long)dc->iter, (void*)sockPtr, (void*)cc, domain_flags);
+            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 SockAccept can associate with cc %p domain flags 0x%llx",
+                   (long long)dc->iter, (void*)cc, domain_flags);
         }
 
-        SSL_set_ex_data(conn, dc->u.h3.cc_idx, cc);
-
-        /* 3) Initialize nghttp3 server on that new connection */
+        /*
+         * Initialize nghttp3 server on that new connection.
+         */
         nghttp3_settings_default(&settings);
         settings.max_field_section_size = 16 * 1024;  // 16KB
         //settings.qpack_max_dtable_capacity = 4096;
@@ -5659,13 +5654,15 @@ static void
 ConnCtxFree(ConnCtx *cc)
 {
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 ConnCtxFree for cc %p", (long long)cc->dc->iter, (void*)cc);
-    
+
     cc->shared.lock = NULL;
     cc->lock        = NULL;
     cc->pidx        = (size_t)-1;
 
     Tcl_DeleteHashTable(&cc->streams);
     SharedStateDestroy(&cc->shared);
+
+    ns_free(cc);
 }
 
 /*======================================================================
@@ -5752,7 +5749,15 @@ static void StreamCtxFree(StreamCtx *sc)
         sc->resp_nv = NULL;
     }
     if (sc->nsSock != NULL) {
-        Ns_Log(Ns_LogQuicDebug, "[%lld] StreamCtxFree SockRelease missing", (long long)sc->cc->dc->iter);
+        QuicSockCtx *qctx = (QuicSockCtx *)sc->nsSock->arg;
+
+        if (qctx != NULL) {
+            qctx->sc = NULL;
+        }
+
+        Ns_Log(Notice, "[%lld] StreamCtxFree SockRelease", (long long)sc->cc->dc->iter);
+        NsSockRelease(sc->nsSock, NS_TRUE);
+        sc->nsSock = NULL;
     }
     if (sc->rx_hold != NULL) {
         ns_free(sc->rx_hold);
@@ -6164,7 +6169,7 @@ PollsetInit(NsTLSConfig *dc)
 
     Ns_DListSetFreeProc(&dc->u.h3.mutex_items, PollsetMutexFree);
     Ns_DListSetFreeProc(&dc->u.h3.shared_mutex_items, PollsetMutexFree);
-    
+
     dc->u.h3.poll_capacity = Ns_DListCapacity(&dc->u.h3.ssl_items);
     dc->u.h3.poll_items = ns_malloc(dc->u.h3.poll_capacity * sizeof(SSL_POLL_ITEM));
 

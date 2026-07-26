@@ -293,7 +293,9 @@ static Ns_ReturnCode SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 
 static Sock *SockNew(Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
-static void  SockRelease(Sock *sockPtr, SockState reason, int err)
+static void SockRelease(Sock *sockPtr, SockState reason, int err)
+    NS_GNUC_NONNULL(1);
+static void SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
     NS_GNUC_NONNULL(1);
 
 static void  SockError(Sock *sockPtr, SockState reason, int err)
@@ -4060,6 +4062,7 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
     return sockStatus;
 }
 
+
 int
 NsSockAccept(Ns_Driver *drvPtr, NS_SOCKET sock, Ns_Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
 {
@@ -4118,37 +4121,47 @@ SockNew(Driver *drvPtr)
     return sockPtr;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * SockRelease --
+ * SockReleaseEx --
  *
- *      Close a socket and release the connection structure for
- *      reuse.
+ *      Release a driver socket after request processing has completed.
+ *
+ *      The function records the final socket state, closes the underlying
+ *      socket unless it is to be kept, releases socket-local storage,
+ *      updates the driver's queue accounting, frees any associated request,
+ *      and returns the Sock structure to the driver's free list for reuse.
+ *
+ *      The keep argument controls whether SockClose() keeps the underlying
+ *      socket descriptor open. This is required by transports such as QUIC,
+ *      where multiple logical streams may share the same UDP socket.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      None.
+ *      May close the socket descriptor, invoke registered cleanup callbacks,
+ *      free the associated request, decrement the driver queue size, and
+ *      place the Sock structure on the driver's reusable-socket list.
  *
  *----------------------------------------------------------------------
  */
 static void
-SockRelease(Sock *sockPtr, SockState reason, int err)
+SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
 {
     Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    Ns_Log(DriverDebug, "SockRelease reason %s err %d (sock %d)",
-           SockStateString(reason), err, sockPtr->sock);
+    Ns_Log(DriverDebug,
+           "SockRelease reason %s err %d keep %d (sock %d)",
+           SockStateString(reason), err, keep, sockPtr->sock);
 
     if (reason == SOCK_ERROR) {
         /*
-         * In case of early errors (e.g. SockSendResponse), try to provide a
-         * more specific error code rather than just 400.
+         * In case of early errors, try to provide a more specific
+         * error code rather than just 400.
          */
         Ns_Log(DriverDebug, "... flags %.6x", sockPtr->flags);
         if ((sockPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0) {
@@ -4156,18 +4169,18 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
         }
     }
 
-    /*fprintf(stderr, "=== SockRelease %p\n", (void*)sockPtr);*/
-
     drvPtr = sockPtr->drvPtr;
     assert(drvPtr != NULL);
 
     SockError(sockPtr, reason, err);
 
     if (sockPtr->sock != NS_INVALID_SOCKET) {
-        SockClose(sockPtr, (int)NS_FALSE);
+        SockClose(sockPtr, (int)keep);
     } else {
-        Ns_Log(DriverDebug, "SockRelease bypasses SockClose, since we have an invalid socket");
+        Ns_Log(DriverDebug,
+               "SockRelease bypasses SockClose, since we have an invalid socket");
     }
+
     NsSlsCleanup(sockPtr);
 
     drvPtr->queuesize--;
@@ -4180,10 +4193,70 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     sockPtr->nextPtr = drvPtr->sockPtr;
     drvPtr->sockPtr  = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
-    /*fprintf(stderr, "=== SockRelease drv %p got %p\n", (void*)drvPtr, (void*)sockPtr);*/
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockRelease --
+ *
+ *      Release a driver socket using the normal close semantics.
+ *
+ *      This is the internal convenience wrapper for SockReleaseEx().
+ *      It closes the underlying socket descriptor, performs all associated
+ *      cleanup, and returns the Sock structure to the driver's free list.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      See SockReleaseEx().
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SockRelease(Sock *sockPtr, SockState reason, int err)
+{
+    SockReleaseEx(sockPtr, reason, err, NS_FALSE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsSockRelease --
+ *
+ *      Release a socket obtained through NsSockAccept() and return its
+ *      internal Sock structure to the owning driver's free list.
+ *
+ *      This function provides the module-facing counterpart to
+ *      NsSockAccept(). It performs the complete driver-socket cleanup,
+ *      including request and socket-local-storage cleanup and queue
+ *      accounting.
+ *
+ *      When keep is true, the underlying socket descriptor is preserved.
+ *      This is useful for logical connections or streams which do not own
+ *      the transport socket, such as HTTP/3 streams sharing a QUIC UDP
+ *      socket.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Releases resources associated with the socket and recycles the
+ *      internal Sock structure. The underlying descriptor may be closed
+ *      when keep is false.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsSockRelease(Ns_Sock *sockPtr, bool keep)
+{
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    SockReleaseEx((Sock *)sockPtr, SOCK_CLOSE, 0, keep);
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
