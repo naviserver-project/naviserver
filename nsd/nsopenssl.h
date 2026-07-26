@@ -55,6 +55,7 @@
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 
+
 typedef struct NsTLSConfig {
     Ns_Driver  *driver; /* Default context for driver                   */
     SSL_CTX    *ctx;
@@ -88,6 +89,8 @@ typedef struct NsTLSConfig {
 
             SSL_POLL_ITEM *poll_items;    /* contiguous array, matches capacity */
             Ns_DList       ssl_items;     /* parallel to poll_items[] */
+            Ns_DList       mutex_items;   /* Ns_Mutex *, parallel to poll_items[] */
+            Ns_DList       shared_mutex_items; /* Ns_Mutex *, parallel to poll_items[] */
             Ns_DList       conns;
             size_t         npoll;
             size_t         poll_capacity;
