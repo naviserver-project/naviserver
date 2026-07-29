@@ -27,6 +27,7 @@
 
 #define NS_TCLHTTP_CALLBACK_AS_STRING 1
 #define USE_ENCODE_HEADERS 1
+//#define NS_DRIVER_MEM_STATS 1
 
 /*
  * Constants
@@ -625,6 +626,7 @@ typedef struct Sock {
     bool                keep;             /* Keep alive handling */
     ssize_t             sendRejected;     /* handling of SSL_ERROR_WANT_WRITE */
     void               *sendRejectedBase; /* for retransmitting in case of SSL_ERROR_WANT_WRITE */
+    unsigned int        deliveryRefs;     /* Nr of delivery objects/threads that may invoke sendProc */
     size_t              sendCount;        // debugging
     void               *sls[1];           /* Slots for sls storage */
 
@@ -1938,6 +1940,14 @@ NS_EXTERN Request *NsSockEnsureRequest(Sock *sockPtr)
 
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN unsigned int NsSockDeliveryRefs(const Ns_Sock *sock)
+    NS_GNUC_NONNULL(1);
+
+#ifdef NS_DRIVER_MEM_STATS
+
+NS_EXTERN void NsWriterMemStatsLog(uint64_t iter);
+#endif
 
 NS_EXTERN void NsDriverStartSpoolers(Driver *drvPtr)
     NS_GNUC_NONNULL(1);
