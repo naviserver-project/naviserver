@@ -92,7 +92,7 @@ typedef enum {
 #define NS_CONN_CONFIGURED        0x1000000u /* The connection is fully configured */
 #define NS_CONN_SSL_WANT_WRITE    0x2000000u /* Flag SSL_ERROR_WANT_WRITE */
 #define NS_CONN_DELIVERY_TRACKED  0x4000000u /* Delivery tracking, currently used only by QUIC */
-
+#define NS_CONN_SOCK_RECYCLED     0x8000000u /* Socket is on the driver recycle list */
 /*
  * Cookie creation options.  For NaviServer and the current set of NaviServer
  * modules, these constants would not be needed here. As long we have

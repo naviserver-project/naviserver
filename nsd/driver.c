@@ -4341,10 +4341,12 @@ SockNew(Driver *drvPtr)
     Ns_MutexLock(&drvPtr->lock);
     sockPtr = drvPtr->sockPtr;
     if (likely(sockPtr != NULL)) {
+        assert((sockPtr->flags & NS_CONN_SOCK_RECYCLED) != 0u);
+        sockPtr->flags &= ~NS_CONN_SOCK_RECYCLED;
         drvPtr->sockPtr = sockPtr->nextPtr;
-        sockPtr->keep   = NS_FALSE;
+        sockPtr->nextPtr = NULL;
+        sockPtr->keep = NS_FALSE;
         /*fprintf(stderr, "=== SockNew drv %p got %p set %p\n", (void*)drvPtr, (void*)sockPtr, (void*)drvPtr->sockPtr);*/
-
     }
     Ns_MutexUnlock(&drvPtr->lock);
 
@@ -4451,6 +4453,8 @@ SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
     }
 
     Ns_MutexLock(&drvPtr->lock);
+    assert((sockPtr->flags & NS_CONN_SOCK_RECYCLED) == 0u);
+    sockPtr->flags |= NS_CONN_SOCK_RECYCLED;
     sockPtr->nextPtr = drvPtr->sockPtr;
     drvPtr->sockPtr  = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
