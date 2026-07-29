@@ -91,7 +91,7 @@ typedef enum {
 #define NS_CONN_LINETOOLONG       0x0400000u /* Request header line too long */
 #define NS_CONN_CONFIGURED        0x1000000u /* The connection is fully configured */
 #define NS_CONN_SSL_WANT_WRITE    0x2000000u /* Flag SSL_ERROR_WANT_WRITE */
-
+#define NS_CONN_DELIVERY_TRACKED  0x4000000u /* Delivery tracking, currently used only by QUIC */
 
 /*
  * Cookie creation options.  For NaviServer and the current set of NaviServer

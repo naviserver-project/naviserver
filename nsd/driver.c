@@ -2511,7 +2511,10 @@ NsSockClose(Sock *sockPtr, int keep)
      * point onward it will no longer access the socket or invoke driver
      * operations. Transfer the socket back to the driver close machinery.
      */
-    SockDeliveryRelease(sockPtr);
+    if ((sockPtr->flags & NS_CONN_DELIVERY_TRACKED) != 0u) {
+        assert((sockPtr->drvPtr->opts & NS_DRIVER_QUIC) != 0u);
+        SockDeliveryRelease(sockPtr);
+    }
 
     Ns_MutexLock(&drvPtr->lock);
     if (drvPtr->closePtr == NULL) {
@@ -4008,7 +4011,10 @@ SockDeliveryAcquire(Sock *sock)
 {
     Sock *sockPtr = (Sock *)sock;
 
+    assert((sockPtr->drvPtr->opts & NS_DRIVER_QUIC) != 0u);
+
     NsWriterLock();
+    sockPtr->flags |= NS_CONN_DELIVERY_TRACKED;
     sockPtr->deliveryRefs++;
     NsWriterUnlock();
 }
@@ -4042,6 +4048,9 @@ SockDeliveryRelease(Sock *sockPtr)
     NsWriterLock();
     assert(sockPtr->deliveryRefs > 0u);
     sockPtr->deliveryRefs--;
+    if (sockPtr->deliveryRefs == 0u) {
+        sockPtr->flags &= ~NS_CONN_DELIVERY_TRACKED;
+    }
     NsWriterUnlock();
 }
 
@@ -4387,20 +4396,23 @@ static void
 SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
 {
     Driver *drvPtr;
-    unsigned int deliveryRefs;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    deliveryRefs = NsSockDeliveryRefs((Ns_Sock *)sockPtr);
-    if (deliveryRefs > 0) {
-        Ns_Log(Error,
-               "attempt to release delivery-owned socket %p refs %u "
-               "reason %s keep %d",
-               (void *)sockPtr,
-               deliveryRefs,
-               SockStateString(reason),
-               keep);
-        return;
+    if ((sockPtr->flags & NS_CONN_DELIVERY_TRACKED) != 0u) {
+        unsigned int deliveryRefs;
+
+        deliveryRefs = NsSockDeliveryRefs((Ns_Sock *)sockPtr);
+        if (deliveryRefs > 0u) {
+            Ns_Log(Error,
+                   "attempt to release delivery-owned socket %p refs %u "
+                   "reason %s keep %d",
+                   (void *)sockPtr,
+                   deliveryRefs,
+                   SockStateString(reason),
+                   keep);
+            return;
+        }
     }
 
     Ns_Log(DriverDebug,
@@ -9332,12 +9344,14 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
 
 
     /*
-     * The WriterSock is now fully constructed. Writer processing continues
-     * the delivery ownership established when the request was dispatched to
-     * the connection machinery, which may invoke the driver's send procedure
-     * asynchronously.
+     * For drivers using delivery-lifetime tracking, writer processing
+     * continues the ownership established when the request was dispatched.
+     * Traditional TCP drivers use their existing socket lifecycle and do
+     * not carry a delivery reference.
      */
-    assert(NsSockDeliveryRefs((Ns_Sock *)wrSockPtr->sockPtr) > 0u);
+    if ((wrSockPtr->sockPtr->flags & NS_CONN_DELIVERY_TRACKED) != 0u) {
+        assert(NsSockDeliveryRefs((Ns_Sock *)wrSockPtr->sockPtr) > 0u);
+    }
 
     connPtr->flags |= NS_CONN_SENT_VIA_WRITER;
 

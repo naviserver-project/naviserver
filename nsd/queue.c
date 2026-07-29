@@ -591,6 +591,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
     if (likely(connPtr != NULL)) {
+        const unsigned int deliveryFlag = sockPtr->flags & NS_CONN_DELIVERY_TRACKED;
         /*
          * We have got a free connPtr from the pool. Initialize the
          * connPtr and copy flags from the socket.
@@ -613,7 +614,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
          * driver, no need to strncopy it here.
          */
         connPtr->location             = sockPtr->location;
-        connPtr->flags                = sockPtr->flags;
+        connPtr->flags                = sockPtr->flags & ~NS_CONN_DELIVERY_TRACKED;
         if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0u) {
             connPtr->acceptTime       = *nowPtr;
         } else {
@@ -625,8 +626,14 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
          * Reset members of sockPtr, which have been passed to connPtr.
          */
         sockPtr->acceptTime.sec       = 0;
-        sockPtr->flags                = 0u;
         sockPtr->location             = NULL;
+
+        if ((sockPtr->drvPtr->opts & NS_DRIVER_QUIC) != 0u) {
+            sockPtr->flags = deliveryFlag;
+        } else {
+            assert(deliveryFlag == 0u);
+            sockPtr->flags = 0u;
+        }
 
         /*
          * Try to get an entry from the connection thread queue,
