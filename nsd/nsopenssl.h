@@ -91,7 +91,8 @@ typedef struct NsTLSConfig {
             Ns_DList       ssl_items;     /* parallel to poll_items[] */
             Ns_DList       mutex_items;   /* Ns_Mutex *, parallel to poll_items[] */
             Ns_DList       shared_mutex_items; /* Ns_Mutex *, parallel to poll_items[] */
-            Ns_DList       conns;
+            Ns_DList       dead_items;     /* independent of poll_items[] */
+            Ns_DList       conns;          /* independent of poll_items[] */
             size_t         npoll;
             size_t         poll_capacity;
 

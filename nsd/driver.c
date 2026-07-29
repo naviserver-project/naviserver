@@ -24,6 +24,10 @@ NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 # include "nsopenssl.h"
 #endif
 
+#ifdef NS_DRIVER_MEM_STATS
+# define WRITER_MEM_STATS 1
+#endif
+
 /*
  * Constants for SockState return and reason codes.
  */
@@ -196,6 +200,9 @@ typedef struct WriterSock {
     int                rateLimit;
     int                currentRate;
     ConnPoolInfo      *infoPtr;
+#ifdef WRITER_MEM_STATS
+    int                headerbufs;
+#endif
     bool               keep;
 
 } WriterSock;
@@ -289,6 +296,10 @@ static Ns_ReturnCode SockSetServer(Sock *sockPtr)
 static SockState SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr, void *arg)
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1);
+static void SockDeliveryRelease(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+static void SockDeliveryAcquire(Sock *sock)
     NS_GNUC_NONNULL(1);
 
 static Sock *SockNew(Driver *drvPtr)
@@ -427,6 +438,98 @@ static Request         *firstReqPtr = NULL; /* Allocated request structures kept
 static Driver          *firstDrvPtr = NULL; /* First in list of all drivers */
 
 #define Push(x, xs) ((x)->nextPtr = (xs), (xs) = (x))
+
+#ifdef WRITER_MEM_STATS
+typedef struct WriterMemCounters {
+    uint64_t writersock_new;
+    uint64_t writersock_free;
+
+    uint64_t mem_buf_array_alloc;
+    uint64_t mem_buf_array_free;
+
+    /*
+     * Individually allocated body buffers referenced by c.mem.bufs[].
+     * Headers and mmap-backed body entries are excluded.
+     */
+    uint64_t mem_iov_allocs;
+    uint64_t mem_iov_frees;
+
+    uint64_t mem_iov_bytes_allocated;
+    uint64_t mem_iov_bytes_freed;
+
+    uint64_t header_alloc;
+    uint64_t header_free;
+} WriterMemCounters;
+
+typedef struct WriterMemStats {
+    Ns_Mutex          lock;
+    WriterMemCounters counters;
+} WriterMemStats;
+
+static WriterMemStats writerMemStats;
+
+static void
+WriterMemStatsIncr(uint64_t *counterPtr)
+{
+    Ns_MutexLock(&writerMemStats.lock);
+    (*counterPtr)++;
+    Ns_MutexUnlock(&writerMemStats.lock);
+}
+static void
+WriterMemStatsAdd(uint64_t *counterPtr, size_t incr)
+{
+    Ns_MutexLock(&writerMemStats.lock);
+    (*counterPtr) += incr;
+    Ns_MutexUnlock(&writerMemStats.lock);
+}
+
+void
+NsWriterMemStatsLog(uint64_t iter)
+{
+    WriterMemCounters snapshot;
+
+    Ns_MutexLock(&writerMemStats.lock);
+    snapshot = writerMemStats.counters;
+    Ns_MutexUnlock(&writerMemStats.lock);
+
+Ns_Log(Notice,
+       "[%lld] writer lifecycle:"
+       " writersock %llu/%llu active %lld,"
+       " body iov %llu/%llu active %lld,"
+       " body iov bytes %llu/%llu active %lld,"
+       " iov arrays %llu/%llu active %lld,"
+       " headers %llu/%llu active %lld",
+       (long long)iter,
+
+       (unsigned long long)snapshot.writersock_new,
+       (unsigned long long)snapshot.writersock_free,
+       (long long)snapshot.writersock_new
+           - (long long)snapshot.writersock_free,
+
+       (unsigned long long)snapshot.mem_iov_allocs,
+       (unsigned long long)snapshot.mem_iov_frees,
+       (long long)snapshot.mem_iov_allocs
+           - (long long)snapshot.mem_iov_frees,
+
+       (unsigned long long)snapshot.mem_iov_bytes_allocated,
+       (unsigned long long)snapshot.mem_iov_bytes_freed,
+       (long long)snapshot.mem_iov_bytes_allocated
+           - (long long)snapshot.mem_iov_bytes_freed,
+
+       (unsigned long long)snapshot.mem_buf_array_alloc,
+       (unsigned long long)snapshot.mem_buf_array_free,
+       (long long)snapshot.mem_buf_array_alloc
+           - (long long)snapshot.mem_buf_array_free,
+
+       (unsigned long long)snapshot.header_alloc,
+       (unsigned long long)snapshot.header_free,
+       (long long)snapshot.header_alloc
+           - (long long)snapshot.header_free);
+}
+#else
+# define WriterMemStatsIncr(c)
+# define WriterMemStatsAdd(c,v)
+#endif /* WRITER_MEM_STATS */
 
 
 /*
@@ -2389,8 +2492,10 @@ NsSockClose(Sock *sockPtr, int keep)
     NS_NONNULL_ASSERT(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
 
-    Ns_Log(DriverDebug, "NsSockClose sockPtr %p (%d) keep %d",
-           (void *)sockPtr, ((Ns_Sock*)sockPtr)->sock, keep);
+    /*Ns_Log(Notice,
+           "NsSockClose sockPtr %p (%d) keep %d deliveryRefs %u",
+           (void *)sockPtr, ((Ns_Sock *)sockPtr)->sock, keep,
+           NsSockDeliveryRefs((Ns_Sock *)sockPtr));*/
 
     SockClose(sockPtr, keep);
     /*
@@ -2400,6 +2505,13 @@ NsSockClose(Sock *sockPtr, int keep)
     if (sockPtr->reqPtr != NULL) {
         RequestFree(sockPtr, "NsSockClose");
     }
+
+    /*
+     * The connection or writer delivery context has completed. From this
+     * point onward it will no longer access the socket or invoke driver
+     * operations. Transfer the socket back to the driver close machinery.
+     */
+    SockDeliveryRelease(sockPtr);
 
     Ns_MutexLock(&drvPtr->lock);
     if (drvPtr->closePtr == NULL) {
@@ -3871,33 +3983,145 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsDispatchRequest --
+ * SockDeliveryAcquire --
  *
- *      Perform final validation and dispatch of an accepted request
- *      from the driver to the connection queue for processing.
+ *      Acquire a delivery reference for a socket.
  *
- *      The function first enforces validity of singleton HTTP header fields
- *      (e.g., ensuring no duplicate "Host" headers) and extract these fields
- *      for quick access.
+ *      A delivery reference indicates that the connection delivery
+ *      machinery may still access the socket and invoke its driver
+ *      operations. This includes processing by a connection thread and,
+ *      when output is queued asynchronously, by a writer thread.
  *
- *      Then, the function calls SockQueue, which associates the socket with
- *      the correct virtual server context and queues the request for further
- *      handling by worker threads.
+ *      The reference must be acquired before the socket becomes visible to
+ *      another delivery thread.
  *
  * Results:
- *      NS_OK    - Request passed validation and was queued.
- *      NS_ERROR - Validation or server mapping failed.
+ *      None.
+ *
+ * Side effects:
+ *      Increments the socket's delivery-reference count.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SockDeliveryAcquire(Sock *sock)
+{
+    Sock *sockPtr = (Sock *)sock;
+
+    NsWriterLock();
+    sockPtr->deliveryRefs++;
+    NsWriterUnlock();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockDeliveryRelease --
+ *
+ *      Release a delivery reference previously acquired for a socket.
+ *
+ *      The reference must not be released until the current delivery owner
+ *      can no longer access the socket or invoke its driver operations. When
+ *      delivery is transferred from a connection thread to a writer thread,
+ *      the writer is responsible for releasing the transferred reference
+ *      after asynchronous delivery has finished.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Decrements the socket's delivery-reference count.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SockDeliveryRelease(Sock *sockPtr)
+{
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    NsWriterLock();
+    assert(sockPtr->deliveryRefs > 0u);
+    sockPtr->deliveryRefs--;
+    NsWriterUnlock();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsSockDeliveryRefs --
+ *
+ *      Return the number of outstanding delivery references for a socket.
+ *
+ *      A non-zero value means that a connection or writer thread may still
+ *      access the socket and invoke its driver operations. Driver-specific
+ *      cleanup code can use this value to defer destruction until delivery
+ *      has completed.
+ *
+ * Results:
+ *      The current delivery-reference count.
  *
  * Side effects:
  *      None.
  *
  *----------------------------------------------------------------------
  */
+unsigned int
+NsSockDeliveryRefs(const Ns_Sock *sock)
+{
+    const Sock *sockPtr = (const Sock *)sock;
+    unsigned int result;
+
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    NsWriterLock();
+    result = sockPtr->deliveryRefs;
+    NsWriterUnlock();
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDispatchRequest --
+ *
+ *      Perform final validation and dispatch of an accepted request
+ *      from a driver to the appropriate connection pool.
+ *
+ *      The function validates singleton HTTP header fields, extracts
+ *      selected header values for quick access, and then calls SockQueue()
+ *      to determine the virtual server and queue the request for processing.
+ *
+ *      Before calling SockQueue(), a delivery reference is acquired for the
+ *      socket, since a successful queue operation may make the request
+ *      immediately visible to a connection thread. The connection thread, or
+ *      an optional writer thread, may subsequently invoke driver operations
+ *      on the socket.
+ *
+ *      When SockQueue() does not transfer ownership, the delivery reference
+ *      is released before returning.
+ *
+ * Results:
+ *      NS_OK      - Ownership of the socket request was transferred to a
+ *                   connection pool.
+ *
+ *      NS_TIMEOUT - The socket request remains owned by the driver and
+ *                   queueing should be retried later.
+ *
+ *      NS_ERROR   - Validation, server mapping, or queueing failed. The
+ *                   request must not be retried as a normal queue timeout.
+ *
+ * Side effects:
+ *      On NS_OK, leaves one delivery reference associated with the socket.
+ *      On NS_TIMEOUT or NS_ERROR, no delivery reference acquired here
+ *      remains.
+ *
+ *----------------------------------------------------------------------
+ */
 Ns_ReturnCode
 NsDispatchRequest(Sock *sockPtr)
 {
-    //NsSSLConfig *dc = sockPtr->drvPtr->arg;
-    //Ns_Log(Notice, "[%lld] NsDispatchRequest", dc->iter);
+    Ns_ReturnCode result;
 
     if (CheckSingletonHeaderFields(sockPtr) != NS_OK) {
         Ns_Log(Error, "Invalid host header fields (fields are not singletons)");
@@ -3906,7 +4130,19 @@ NsDispatchRequest(Sock *sockPtr)
     }
     DeterminePeerAddrFromHeaders(sockPtr);
 
-    return SockQueue(sockPtr, NULL);
+    /*
+     * The request is about to be handed to the connection delivery
+     * machinery. Until delivery completes, a connection or writer thread may
+     * invoke driver operations on this socket.
+     */
+    SockDeliveryAcquire(sockPtr);
+
+    result = SockQueue(sockPtr, NULL);
+    if (result != NS_OK) {
+        SockDeliveryRelease(sockPtr);
+    }
+
+    return result;
 }
 
 
@@ -4151,8 +4387,21 @@ static void
 SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
 {
     Driver *drvPtr;
+    unsigned int deliveryRefs;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    deliveryRefs = NsSockDeliveryRefs((Ns_Sock *)sockPtr);
+    if (deliveryRefs > 0) {
+        Ns_Log(Error,
+               "attempt to release delivery-owned socket %p refs %u "
+               "reason %s keep %d",
+               (void *)sockPtr,
+               deliveryRefs,
+               SockStateString(reason),
+               keep);
+        return;
+    }
 
     Ns_Log(DriverDebug,
            "SockRelease reason %s err %d keep %d (sock %d)",
@@ -7372,11 +7621,14 @@ WriterSockFileVecCleanup(const WriterSock *wrSockPtr) {
                 ns_close(wrSockPtr->c.file.bufs[i].fd);
             }
         }
+
         ns_free(wrSockPtr->c.file.bufs);
     }
-    ns_free(wrSockPtr->c.file.buf);
-}
 
+    if (wrSockPtr->c.file.buf != NULL) {
+        ns_free(wrSockPtr->c.file.buf);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -7416,6 +7668,7 @@ WriterSockRequire(const Conn *connPtr) {
 static void
 WriterSockRelease(WriterSock *wrSockPtr) {
     SpoolerQueue *queuePtr;
+    Sock         *sockPtr;
 
     NS_NONNULL_ASSERT(wrSockPtr != NULL);
 
@@ -7427,11 +7680,12 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     if (wrSockPtr->refCount > 0) {
         return;
     }
+    sockPtr = wrSockPtr->sockPtr;
 
     Ns_Log(DriverDebug,
            "Writer: closed sock %d, file fd %d, error %d/%d, "
            "sent=%" TCL_LL_MODIFIER "d, flags=%X",
-           wrSockPtr->sockPtr->sock, wrSockPtr->fd,
+           sockPtr->sock, wrSockPtr->fd,
            wrSockPtr->status, wrSockPtr->err,
            wrSockPtr->nsent, wrSockPtr->flags);
 
@@ -7488,13 +7742,13 @@ WriterSockRelease(WriterSock *wrSockPtr) {
          */
         for (i = 0; i < Ns_NrElements(spoolerStateMap); i++) {
             if (spoolerStateMap[i].spoolerState == wrSockPtr->status) {
-                SockError(wrSockPtr->sockPtr, spoolerStateMap[i].sockState, wrSockPtr->err);
+                SockError(sockPtr, spoolerStateMap[i].sockState, wrSockPtr->err);
                 break;
             }
         }
-        NsSockClose(wrSockPtr->sockPtr, (int)NS_FALSE);
+        NsSockClose(sockPtr, (int)NS_FALSE);
     } else {
-        NsSockClose(wrSockPtr->sockPtr, (int)wrSockPtr->keep);
+        NsSockClose(sockPtr, (int)wrSockPtr->keep);
     }
     ns_free(wrSockPtr->clientData);
 
@@ -7511,14 +7765,33 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         } else {
             int i;
             for (i = 0; i < wrSockPtr->c.mem.nbufs; i++) {
+#ifdef WRITER_MEM_STATS
+                if (i < wrSockPtr->headerbufs) {
+                    WriterMemStatsIncr(
+                                       &writerMemStats.counters.header_free);
+                } else {
+                    WriterMemStatsIncr(
+                                       &writerMemStats.counters.mem_iov_frees);
+                    WriterMemStatsAdd(
+                                      &writerMemStats.counters.mem_iov_bytes_freed,
+                                      wrSockPtr->c.mem.bufs[i].iov_len);
+                }
+#endif
                 ns_free((char *)wrSockPtr->c.mem.bufs[i].iov_base);
             }
         }
         if (wrSockPtr->c.mem.bufs != wrSockPtr->c.mem.preallocated_bufs) {
+            WriterMemStatsIncr(&writerMemStats.counters.mem_buf_array_free);
             ns_free(wrSockPtr->c.mem.bufs);
         }
     }
+
+    if (wrSockPtr->headerString != NULL) {
+        WriterMemStatsIncr(&writerMemStats.counters.header_free);
+    }
     ns_free(wrSockPtr->headerString);
+
+    WriterMemStatsIncr(&writerMemStats.counters.writersock_free);
     ns_free(wrSockPtr);
 }
 
@@ -8825,6 +9098,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
              * for which the client is responsible.
              */
             fbufs = (Ns_FileVec *)ns_calloc((size_t)nfilebufs, sizeof(Ns_FileVec));
+
             nfbufs = nfilebufs;
 
             for (i = 0u; i < (size_t)nfilebufs; i++) {
@@ -8848,6 +9122,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     connPtr->poolPtr->stats.spool++;
 
     wrSockPtr = (WriterSock *)ns_calloc(1u, sizeof(WriterSock));
+    WriterMemStatsIncr(&writerMemStats.counters.writersock_new);
+
     wrSockPtr->sockPtr = connPtr->sockPtr;
     wrSockPtr->poolPtr = connPtr->poolPtr;  /* just for being able to trace back the origin, e.g. list */
     wrSockPtr->sockPtr->timeout.sec = 0;
@@ -8903,6 +9179,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         headerSize = (size_t)ds.length;
         if (headerSize > 0u) {
             wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
+            WriterMemStatsIncr(&writerMemStats.counters.header_alloc);
         }
         Tcl_DStringFree(&ds);
     } else {
@@ -8940,7 +9217,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
             memcpy(wrSockPtr->c.file.buf, wrSockPtr->headerString, headerSize);
             wrSockPtr->c.file.bufsize = headerSize;
             wrSockPtr->c.file.maxsize = wrPtr->bufsize;
+
+            WriterMemStatsIncr( &writerMemStats.counters.header_free);
             ns_free(wrSockPtr->headerString);
+
             wrSockPtr->headerString = NULL;
         } else {
             assert(wrSockPtr->headerString == NULL);
@@ -8953,6 +9233,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     } else if (bufs != NULL) {
         int i, j, headerbufs = (headerSize > 0u ? 1 : 0);
 
+#ifdef WRITER_MEM_STATS
+        wrSockPtr->headerbufs = headerbufs;
+#endif
+
         wrSockPtr->fd = NS_INVALID_FD;
 
         if (nbufs+headerbufs < UIO_SMALLIOV) {
@@ -8960,8 +9244,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         } else {
             Ns_Log(DriverDebug, "NsWriterQueue: alloc %d iovecs", nbufs);
             wrSockPtr->c.mem.bufs = ns_calloc((size_t)nbufs + (size_t)headerbufs, sizeof(struct iovec));
+            WriterMemStatsIncr(&writerMemStats.counters.mem_buf_array_alloc);
         }
-        wrSockPtr->c.mem.nbufs = nbufs+headerbufs;
+        wrSockPtr->c.mem.nbufs = nbufs + headerbufs;
+
         if (headerbufs != 0) {
             wrSockPtr->c.mem.bufs[0].iov_base = wrSockPtr->headerString;
             wrSockPtr->c.mem.bufs[0].iov_len  = headerSize;
@@ -8971,30 +9257,41 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
             Ns_Log(DriverDebug, "NsWriterQueue: deliver fmapped %p", (void *)connPtr->fmap.addr);
             /*
              * Deliver an mmapped file, no need to copy content
+             *
+             * The body iovecs point into the mapping and do not represent
+             * separately allocated memory.
              */
             for (i = 0, j = headerbufs; i < nbufs; i++, j++) {
                 wrSockPtr->c.mem.bufs[j].iov_base = bufs[i].iov_base;
                 wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
             }
             /*
-             * Make a copy of the fmap structure and make clear that
-             * we unmap in the writer thread.
+             * Transfer ownership of the mapping to the writer. The body iovecs
+             * reference data inside the mapping and therefore are not released
+             * individually. The separately allocated header remains owned by
+             * headerString and is freed during WriterSock cleanup.
              */
             wrSockPtr->c.mem.fmap = connPtr->fmap;
             connPtr->fmap.addr = NULL;
-            /* header string will be freed via wrSockPtr->headerString */
 
         } else {
             /*
              * Deliver a content from iovec. The lifetime of the
-             * source is unknown, we have to copy the c.
+             * source is unknown, we have to copy the content.
+             *
+             * In this branch, every c.mem.bufs[] payload is heap-owned and
+             * will be released individually by WriterSockRelease().
              */
             for (i = 0, j = headerbufs; i < nbufs; i++, j++) {
                 wrSockPtr->c.mem.bufs[j].iov_base = ns_malloc(bufs[i].iov_len);
                 wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
+
+                WriterMemStatsIncr(&writerMemStats.counters.mem_iov_allocs);
+                WriterMemStatsAdd(&writerMemStats.counters.mem_iov_bytes_allocated, bufs[i].iov_len);
+
                 memcpy(wrSockPtr->c.mem.bufs[j].iov_base, bufs[i].iov_base, bufs[i].iov_len);
             }
-            /* header string will be freed a buf[0] */
+            /* The header is now owned by c.mem.bufs[0] */
             wrSockPtr->headerString = NULL;
         }
 
@@ -9033,12 +9330,17 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         wrSockPtr->connPtr = connPtr;
     }
 
+
     /*
-     * Tell connection, that writer handles the output (including
-     * closing the connection to the client).
+     * The WriterSock is now fully constructed. Writer processing continues
+     * the delivery ownership established when the request was dispatched to
+     * the connection machinery, which may invoke the driver's send procedure
+     * asynchronously.
      */
+    assert(NsSockDeliveryRefs((Ns_Sock *)wrSockPtr->sockPtr) > 0u);
 
     connPtr->flags |= NS_CONN_SENT_VIA_WRITER;
+
     wrSockPtr->keep = (connPtr->keep > 0);
     wrSockPtr->size = nsend;
     Ns_Log(DriverDebug, "NsWriterQueue NS_CONN_SENT_VIA_WRITER connPtr %p",
