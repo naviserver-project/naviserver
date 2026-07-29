@@ -3258,6 +3258,39 @@ h3_conn_write_step(ConnCtx *cc)
                                 return NS_TRUE; /* writer should be scheduled to complete shutdown */
                             }
 
+                            if (r == SSL_R_STREAM_FINISHED) {
+                                write_state = SSL_get_stream_write_state(stream);
+
+                                /*
+                                 * OpenSSL may reject SSL_write_ex2() with SSL_R_STREAM_FINISHED even
+                                 * though a fresh SSL_get_stream_write_state() still reports
+                                 * SSL_STREAM_STATE_OK. This has been observed with no queued output and
+                                 * commonly before NaviServer has explicitly concluded the local write
+                                 * side.
+                                 *
+                                 * We expect this state inconsistency to be handled by OpenSSL. Until
+                                 * that is resolved upstream, treat the result defensively as terminal
+                                 * for further writes on this stream. Remove its write demand to prevent
+                                 * repeated attempts and a potential log or CPU loop. Do not infer that
+                                 * NaviServer previously sent FIN.
+                                 */
+                                Ns_Log(Warning,
+                                       "[%lld] H3[%lld] write on finished stream; "
+                                       "dropping write interest, write state %d",
+                                       (long long)dc->iter,
+                                       (long long)sid,
+                                       write_state);
+
+                                sc->wants_write = NS_FALSE;
+                                h3_conn_clear_wants_write_if_idle(cc);
+                                PollsetUpdateConnPollInterest(cc);
+
+                                /*
+                                 * Do not enter the generic error path or retry this write.
+                                 */
+                                continue;
+                            }
+
                             Ns_Log(Error, "[%lld] H3[%lld] SSL_write_ex2: reason=%d (%s)",
                                    (long long)dc->iter, (long long)sid, r, ERR_reason_error_string(e));
                             /* Don't advance offsets for the partial vec; let nghttp3 retry/adjust. */
