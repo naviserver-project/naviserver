@@ -6622,7 +6622,20 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
 
     idx = ++dc->u.h3.npoll;
 
-    if (dc->u.h3.ssl_items.size <= idx) {
+    assert(dc->u.h3.ssl_items.size >= idx);
+
+    if (dc->u.h3.ssl_items.size < idx) {
+        Ns_Log(Error,
+               "[%lld] PollsetAdd gap: idx %zu npoll %zu "
+               "ssl size %zu mutex size %zu shared-mutex size %zu",
+               (long long)dc->iter,
+               idx,
+               dc->u.h3.npoll,
+               dc->u.h3.ssl_items.size,
+               dc->u.h3.mutex_items.size,
+               dc->u.h3.shared_mutex_items.size);
+
+    } else if (dc->u.h3.ssl_items.size == idx) {
         Ns_Mutex mutex       = NULL;
         Ns_Mutex sharedMutex = NULL;
         Tcl_DString ds;
@@ -6630,10 +6643,6 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
         Tcl_DStringInit(&ds);
         Ns_DStringPrintf(&ds, "h3:pollset:%" PRIuz, idx);
 
-        /*
-         * Add a new logical slot. The mutex belongs to the slot and is
-         * retained when the slot is subsequently reused.
-         */
         Ns_MutexInit(&mutex);
         Ns_MutexSetName2(&mutex, ds.string, "item");
 
@@ -6647,14 +6656,15 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
         Ns_DListAppend(&dc->u.h3.mutex_items, mutex);
         Ns_DListAppend(&dc->u.h3.shared_mutex_items, sharedMutex);
 
-        PollsetEnsurePollCapacity(dc);     /* grow poll_items if needed */
-
-        assert(dc->u.h3.ssl_items.size == dc->u.h3.mutex_items.size);
-        assert(dc->u.h3.ssl_items.size == dc->u.h3.shared_mutex_items.size);
+        PollsetEnsurePollCapacity(dc);
 
     } else {
         dc->u.h3.ssl_items.data[idx] = s;
     }
+
+    assert(dc->u.h3.mutex_items.size > idx);
+    assert(dc->u.h3.shared_mutex_items.size > idx);
+    assert(dc->u.h3.ssl_items.data[idx] == s);
 
     dc->u.h3.poll_items[idx].desc   = SSL_as_poll_descriptor(s);
     dc->u.h3.poll_items[idx].events = maskf ? maskf(events) : events;
@@ -7310,6 +7320,10 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
             dc->u.h3.first_dead = idx;
         }
 
+        assert(dc->u.h3.ssl_items.data[idx] == NULL);
+        assert(dc->u.h3.first_dead != 0u);
+        assert(dc->u.h3.first_dead <= idx);
+
         if (sc != NULL) {
             Ns_Log(Ns_LogQuicDebug,
                    "[%lld] H3[%lld] PollsetMarkDead %p %s "
@@ -7696,6 +7710,7 @@ PollsetSweep(NsTLSConfig *dc)
 
         Ns_DListSetLength(&dc->u.h3.dead_items, writeIdx);
         Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep compacted dead items from %zu to %zu", (long long)dc->iter, oldLength, writeIdx);
+
         if (writeIdx > 0) {
             size_t i;
 
@@ -7727,7 +7742,19 @@ PollsetSweep(NsTLSConfig *dc)
         }
     }
 
-    Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep DONE", (long long)dc->iter);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep DONE"
+           " ssl %zu"
+           " mutex %zu"
+           " shared_mutex %zu"
+           " dead %zu"
+           " conns %zu",
+           (long long)dc->iter,
+           dc->u.h3.ssl_items.size,
+           dc->u.h3.mutex_items.size,
+           dc->u.h3.shared_mutex_items.size,
+           dc->u.h3.dead_items.size,
+           dc->u.h3.conns.size
+           );
 }
 
 /*
@@ -7735,54 +7762,30 @@ PollsetSweep(NsTLSConfig *dc)
  *
  * PollsetConsolidate --
  *
- *      Compact the pollset by eliminating holes left behind by removed
- *      connections or streams. This function performs an in-place
- *      "swap-with-last" consolidation pass starting from the first known
- *      dead slot (dc->u.h3.first_dead) up to the current logical end
- *      (dc->u.h3.npoll).
+ *      Compact the active SSL pollset after entries have been detached
+ *      with PollsetMarkDead().
  *
- *      For each NULL entry encountered, the last live SSL* in the pollset
- *      is moved into the hole, its corresponding poll descriptor and event
- *      mask are copied, and its back-reference (sc->pidx or cc->pidx) is
- *      updated to reflect the new index.
+ *      PollsetMarkDead() leaves inactive slots in ssl_items and records
+ *      the lowest such index in first_dead. This function fills these
+ *      holes by moving active entries from the logical end of the
+ *      pollset. The SSL pointer, poll item, and associated mutex pointers
+ *      are moved together, and the cached pollset index in the moved
+ *      connection or stream context is updated.
  *
- *      Once the last live entry has been moved, the tail slot is cleared
- *      and dc->u.h3.npoll is decremented. The process continues until all
- *      holes before the end are eliminated, leaving the array contiguous.
+ *      Detached SSL objects are kept independently in dead_items and are
+ *      therefore not involved in compaction.
  *
- * Results:
- *      None.
- *
- * Side effects:
- *      - Mutates dc->u.h3.ssl_items and dc->u.h3.poll_items in place.
- *      - Updates per-stream and per-connection index references.
- *      - Shrinks dc->u.h3.npoll and resets dc->u.h3.first_dead to zero.
- *      - Emits detailed diagnostic logs before and after consolidation.
- *
- *----------------------------------------------------------------------
- */
-
-/*
- *----------------------------------------------------------------------
- *
- * PollsetConsolidate --
- *
- *      Remove inactive entries from the active SSL pollset.
- *
- *      Holes are filled by moving entries from the logical end of the
- *      pollset. The associated poll item and mutex pointers are moved
- *      together, and the cached pollset index in the connection or stream
- *      context is updated accordingly.
- *
- *      Detached SSL objects are retained independently in dead_items and
- *      therefore do not participate in pollset consolidation.
+ *      On return, the active range [0, PollsetCount(dc)) is dense,
+ *      npoll identifies its last valid index, and first_dead is reset.
+ *      The allocated DList storage is retained as high-water storage for
+ *      subsequent reuse.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Compacts the active pollset and updates npoll, first_dead, and the
- *      cached pollset indices of moved connection and stream contexts.
+ *      Reorders active pollset entries, updates cached pollset indices,
+ *      decreases npoll, and resets first_dead.
  *
  *----------------------------------------------------------------------
  */
@@ -8199,6 +8202,41 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     return result;
 }
 
+#if defined(NS_QUIC_POLLSET_DIAGNOSTICS)
+static void
+PollsetValidate(const NsTLSConfig *dc, const char *where)
+{
+    NS_NONNULL_ASSERT(dc != NULL);
+    NS_NONNULL_ASSERT(where != NULL);
+
+    if (dc->u.h3.first_dead != 0u) {
+        Ns_Log(Error,
+               "[%lld] %s: first_dead %zu after consolidation, npoll %zu",
+               (long long)dc->iter,
+               where,
+               dc->u.h3.first_dead,
+               dc->u.h3.npoll);
+        assert(dc->u.h3.first_dead == 0u);
+    }
+
+    for (size_t i = dc->u.h3.nr_listeners;
+         i < PollsetCount(dc);
+         i++) {
+        if (dc->u.h3.ssl_items.data[i] == NULL) {
+            Ns_Log(Error,
+                   "[%lld] %s: hole at slot %zu after consolidation, "
+                   "npoll %zu",
+                   (long long)dc->iter,
+                   where,
+                   i,
+                   dc->u.h3.npoll);
+            assert(dc->u.h3.ssl_items.data[i] != NULL);
+        }
+    }
+}
+#else
+# define PollsetValidate(dc, where) ((void)0)
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -8396,6 +8434,7 @@ QuicThread(void *arg)
                 SSL           *s       = dc->u.h3.ssl_items.data[i];
                 SSL_POLL_ITEM *item    = &dc->u.h3.poll_items[i];
                 uint64_t       revents = item->revents;
+                uint64_t       events  = item->events;
                 Tcl_DString    ds1, ds2;
                 ConnCtx       *cc = NULL;
                 StreamCtx     *sc = NULL;
@@ -8419,7 +8458,7 @@ QuicThread(void *arg)
                        cc == NULL ? "listener" :
                        s == cc->h3ssl.conn ? "conn" :
                        (s != NULL && sc != NULL) ? H3StreamKind_str(sc->kind) : "hole",
-                       item->events, DStringAppendSslPollEventFlags(&ds1, item->events),
+                       events, DStringAppendSslPollEventFlags(&ds1, events),
                        revents, DStringAppendSslPollEventFlags(&ds2, revents)
                        );
                 Tcl_DStringFree(&ds1);
@@ -8458,20 +8497,21 @@ QuicThread(void *arg)
             //continue;
         }
 
-        /* reset the states */
-        dc->u.h3.first_dead   = 0;
-
         /*
          * Process all the items we have polled. We have to be careful, in
          * cases, when items are deleted, since deletion causes a swap with
          * the last element. So we need some mark-for-delete (e.g. just
          * setting conns[i] to NULL) and perform the deletion (swap) in a
          * second step.
+         *
+         * Snapshot the polled values. Processing an event can add streams and
+         * reallocate the pollset arrays, so pointers into these arrays must not
+         * be retained across handler calls.
          */
         for (i = 0; i < (int)numitems; i++) {
             SSL           *s        = dc->u.h3.ssl_items.data[i];
-            SSL_POLL_ITEM *item     = &dc->u.h3.poll_items[i];
-            uint64_t       revents  = item->revents;
+            uint64_t       revents  = dc->u.h3.poll_items[i].revents;
+            uint64_t       events   = dc->u.h3.poll_items[i].events;
             ConnCtx       *cc;
             StreamCtx     *sc;
             Tcl_DString    ds;
@@ -8739,7 +8779,7 @@ QuicThread(void *arg)
 
                 processed_event |= (revents & ((SSL_POLL_EVENT_ER|SSL_POLL_EVENT_EW)));
                 if (sid >= 0) {
-                    quic_stream_handle_e(cc, s, (uint64_t)sid, item->revents, item->events);
+                    quic_stream_handle_e(cc, s, (uint64_t)sid, revents, events);
                     goto skip;
                 }
             }
@@ -8756,25 +8796,29 @@ QuicThread(void *arg)
                 Tcl_DString ds1;
 
                 Tcl_DStringInit(&ds1);
-                sid = SSL_get_stream_id(item->desc.value.ssl);
+                sid = SSL_get_stream_id(s);
                 Tcl_DStringInit(&ds);
-                Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: s %p sid %lld"
-                       " item->re %08" PRIx64
-                       " revents %08" PRIx64 " %s != %08" PRIx64 " -> NOT PROCESSED %s",
-                       (long long)dc->iter, i, (void*)dc->u.h3.ssl_items.data[i],
-                       (long long)sid, item->revents, revents,
-                       DStringAppendSslPollEventFlags(&ds, revents), processed_event,
-                       DStringAppendSslPollEventFlags(&ds1, not_processed)
-                       );
+                Ns_Log(Ns_LogQuicDebug,
+                       "[%lld] H3D item %d: s %p sid %lld"
+                       " revents %08" PRIx64 " %s != %08" PRIx64
+                       " -> NOT PROCESSED %s",
+                       (long long)dc->iter,
+                       i,
+                       (void *)s,
+                       (long long)sid,
+                       revents,
+                       DStringAppendSslPollEventFlags(&ds, revents),
+                       processed_event,
+                       DStringAppendSslPollEventFlags(&ds1, not_processed));
                 Tcl_DStringFree(&ds);
                 Tcl_DStringFree(&ds1);
             }
 
         skip:
             /*
-             * clear event mask
+             * Clear the returned events to avoid reprocessing this poll result.
              */
-            item->revents = SSL_POLL_EVENT_NONE;
+            dc->u.h3.poll_items[i].revents = SSL_POLL_EVENT_NONE;
             //Ns_Log(Ns_LogQuicDebug, "[%lld] get next event", (long long)dc->iter);
         }
 
@@ -8826,8 +8870,11 @@ QuicThread(void *arg)
                 }
                 polltimeout_ptr = expecting_send ? &dc->u.h3.drain_timeout : &dc->u.h3.idle_timeout;
             }
+
             PollsetSweep(dc);
             PollsetConsolidate(dc);
+            PollsetValidate(dc, "after consolidation");
+
             //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D after consolidate, npoll %ld", (long long)dc->iter, PollsetCount(dc));
         }
     }
