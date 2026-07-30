@@ -308,6 +308,10 @@ static void SockRelease(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
 static void SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
     NS_GNUC_NONNULL(1);
+static inline void SockRecyclePush(Driver *drvPtr, Sock *sockPtr)
+    NS_GNUC_NONNULL(1,2);
+static inline Sock * SockRecyclePop(Driver *drvPtr)
+    NS_GNUC_NONNULL(1);
 
 static void  SockError(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
@@ -4203,6 +4207,73 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
     Ns_IncrTime(&sockPtr->timeout, timeout->sec, timeout->usec);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockRecyclePush --
+ *
+ *      Return a socket to the driver's recycle list.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Marks the socket as recycled and inserts it at the head of the
+ *      driver's recycle list.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline void
+SockRecyclePush(Driver *drvPtr, Sock *sockPtr)
+{
+    Ns_MutexLock(&drvPtr->lock);
+
+    assert((sockPtr->flags & NS_CONN_SOCK_RECYCLED) == 0u);
+
+    sockPtr->flags |= NS_CONN_SOCK_RECYCLED;
+    sockPtr->nextPtr = drvPtr->sockPtr;
+    drvPtr->sockPtr = sockPtr;
+
+    Ns_MutexUnlock(&drvPtr->lock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockRecyclePop --
+ *
+ *      Remove and return the first socket from the driver's recycle list.
+ *
+ * Results:
+ *      The recycled socket, or NULL when the list is empty.
+ *
+ * Side effects:
+ *      Removes the socket from the recycle list, clears its recycled marker
+ *      and list linkage.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline Sock *
+SockRecyclePop(Driver *drvPtr)
+{
+    Sock *sockPtr;
+
+    Ns_MutexLock(&drvPtr->lock);
+
+    sockPtr = drvPtr->sockPtr;
+    if (likely(sockPtr != NULL)) {
+        assert((sockPtr->flags & NS_CONN_SOCK_RECYCLED) != 0u);
+
+        drvPtr->sockPtr = sockPtr->nextPtr;
+
+        sockPtr->nextPtr = NULL;
+        sockPtr->flags &= ~NS_CONN_SOCK_RECYCLED;
+    }
+
+    Ns_MutexUnlock(&drvPtr->lock);
+
+    return sockPtr;
+}
 
 
 /*
@@ -4246,16 +4317,10 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
         sockStatus = SOCK_ERROR;
 
         /*
-         * We reach the place frequently, especially on Linux, when we try to
-         * accept multiple connection in one sweep. Usually, the errno is
-         * NS_EAGAIN.
+         * We reach this point frequently, especially on Linux, when attempting
+         * to accept multiple connections in one sweep. Usually errno is EAGAIN.
          */
-
-        Ns_MutexLock(&drvPtr->lock);
-        sockPtr->nextPtr = drvPtr->sockPtr;
-        drvPtr->sockPtr = sockPtr;
-        Ns_MutexUnlock(&drvPtr->lock);
-        /*fprintf(stderr, "=== NS_DRIVER_ACCEPT_ERROR drv %p got %p\n", (void*)drvPtr, (void*)sockPtr);*/
+        SockRecyclePush(drvPtr, sockPtr);
 
         sockPtr = NULL;
 
@@ -4338,17 +4403,7 @@ SockNew(Driver *drvPtr)
 
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-    Ns_MutexLock(&drvPtr->lock);
-    sockPtr = drvPtr->sockPtr;
-    if (likely(sockPtr != NULL)) {
-        assert((sockPtr->flags & NS_CONN_SOCK_RECYCLED) != 0u);
-        sockPtr->flags &= ~NS_CONN_SOCK_RECYCLED;
-        drvPtr->sockPtr = sockPtr->nextPtr;
-        sockPtr->nextPtr = NULL;
-        sockPtr->keep = NS_FALSE;
-        /*fprintf(stderr, "=== SockNew drv %p got %p set %p\n", (void*)drvPtr, (void*)sockPtr, (void*)drvPtr->sockPtr);*/
-    }
-    Ns_MutexUnlock(&drvPtr->lock);
+    sockPtr = SockRecyclePop(drvPtr);
 
     if (sockPtr == NULL) {
         size_t sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
@@ -4452,12 +4507,7 @@ SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
         RequestFree(sockPtr, "SockRelease");
     }
 
-    Ns_MutexLock(&drvPtr->lock);
-    assert((sockPtr->flags & NS_CONN_SOCK_RECYCLED) == 0u);
-    sockPtr->flags |= NS_CONN_SOCK_RECYCLED;
-    sockPtr->nextPtr = drvPtr->sockPtr;
-    drvPtr->sockPtr  = sockPtr;
-    Ns_MutexUnlock(&drvPtr->lock);
+    SockRecyclePush(drvPtr, sockPtr);
 }
 
 /*
