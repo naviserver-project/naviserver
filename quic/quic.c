@@ -620,6 +620,7 @@ static void *            h3_realloc_cb(void *ptr, size_t size, void *UNUSED(user
  */
 static ConnCtx*        ConnCtxNew(NsTLSConfig *dc, SSL *conn) NS_GNUC_NONNULL(1,2);
 static void            ConnCtxFree(ConnCtx *cc) NS_GNUC_NONNULL(1);
+static void            ConnCtxFreeH3(ConnCtx *cc)  NS_GNUC_NONNULL(1);
 static void            ConnCtxPrintSidTable(ConnCtx *cc) NS_GNUC_NONNULL(1) NS_GNUC_UNUSED;
 
 /* Stream context handling */
@@ -5890,7 +5891,13 @@ ConnCtxNew(NsTLSConfig *dc, SSL *conn)
 static void
 ConnCtxFree(ConnCtx *cc)
 {
-    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 ConnCtxFree for cc %p", (long long)cc->dc->iter, (void*)cc);
+    Ns_Log(Ns_LogQuicDebug,
+           "[%lld] H3 ConnCtxFree for cc %p h3conn %p",
+           (long long)cc->dc->iter,
+           (void *)cc,
+           (void *)cc->h3conn);
+
+    assert(cc->h3conn == NULL);
 
     cc->shared.lock = NULL;
     cc->lock        = NULL;
@@ -5902,6 +5909,46 @@ ConnCtxFree(ConnCtx *cc)
     QuicMemStatsIncr(&quicMemStats.counters.connctx_free);
 
     ns_free(cc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnCtxFreeH3 --
+ *
+ *      Destroy the nghttp3 connection state owned by a ConnCtx.
+ *
+ *      This function must be called only after all streams associated
+ *      with the connection have been detached and before SSL_free() of
+ *      the QUIC connection invokes the ConnCtx exdata destructor.
+ *
+ *      The operation is idempotent: when no nghttp3 connection is
+ *      present, no action is taken.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Releases all resources owned by cc->h3conn, clears the pointer,
+ *      and updates the HTTP/3 connection lifecycle counter.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ConnCtxFreeH3(ConnCtx *cc)
+{
+    if (cc->h3conn != NULL) {
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3 deleting nghttp3 connection %p for cc %p",
+               (long long)cc->dc->iter,
+               (void *)cc->h3conn,
+               (void *)cc);
+
+        nghttp3_conn_del(cc->h3conn);
+        cc->h3conn = NULL;
+
+        QuicMemStatsIncr(&quicMemStats.counters.h3conn_free);
+    }
 }
 
 /*======================================================================
@@ -7678,6 +7725,7 @@ PollsetSweep(NsTLSConfig *dc)
                     if (PollsetHasDeferredStreamForConn(dc, cc)) {
                         continue;
                     }
+                    ConnCtxFreeH3(cc);
                     QuicMemStatsIncr(&quicMemStats.counters.ssl_conn_free_call);
                 } else {
                     QuicMemStatsIncr(&quicMemStats.counters.ssl_other_free_call);
