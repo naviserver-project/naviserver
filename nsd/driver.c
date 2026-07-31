@@ -7762,8 +7762,14 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
         NsWriterLock();
         connPtr = wrSockPtr->connPtr;
-        if (connPtr != NULL && connPtr->strWriter != NULL) {
-            connPtr->strWriter = NULL;
+        if (connPtr != NULL) {
+            if (connPtr->strWriter == (NsWriterSock *)wrSockPtr) {
+                connPtr->strWriter = NULL;
+            }
+            if (connPtr->sockPtr == wrSockPtr->sockPtr) {
+                connPtr->sockPtr = NULL;
+                connPtr->flags |= NS_CONN_CLOSED;
+            }
         }
         NsWriterUnlock();
 
