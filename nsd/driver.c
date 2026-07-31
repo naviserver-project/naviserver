@@ -642,6 +642,9 @@ NsInitDrivers(void)
     Ns_MutexInit(&writerlock);
     Ns_MutexSetName2(&reqLock, "ns:driver", "requestpool");
     Ns_MutexSetName2(&writerlock, "ns:writer", "stream");
+#ifdef WRITER_MEM_STATS
+    Ns_MutexInit(&writerMemStats.lock);
+#endif
 }
 
 
