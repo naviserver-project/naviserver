@@ -2989,7 +2989,6 @@ h3_conn_write_step(ConnCtx *cc)
 
     for (;;) {
         bool       hit_want   = NS_FALSE;
-        bool       finalized  = NS_FALSE;
         SSL       *stream     = NULL;
         StreamCtx *sc         = NULL;
         int        write_state;
@@ -3353,27 +3352,22 @@ h3_conn_write_step(ConnCtx *cc)
             }
         }
 
-        /* Finalize once per SID, after conclude attempt. */
-        finalized = StreamCtxIsServerUni(sc) ? NS_FALSE : h3_stream_maybe_finalize(sc, "h3_conn_write_step");
-        if (!finalized) {
-            (void)SSL_handle_events(stream);
-            //Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step after_sid stream %p",
-            //       (long long)dc->iter, (void*)stream);
+        /* Finalize once per SID, after the conclude attempt. */
+        if (!StreamCtxIsServerUni(sc)) {
+            (void)h3_stream_maybe_finalize(sc, "h3_conn_write_step");
         }
+
+        /*
+         * The stream is driven once below at after_sid.
+         */
 
     after_sid:
         /*
-         * IMPORTANT: drive the STREAM once per SID batch to clear its W/R readiness,
-         * schedule datagrams, and process acks/timeouts related to this stream.
+         * Defer QUIC reactor processing until all writable SIDs have been
+         * serviced. The connection-level call below flushes the accumulated
+         * stream work, allowing frames to be coalesced and avoiding redundant
+         * UDP socket probes.
          */
-
-        /*
-         * A stalled QUIC thread was observed with this call in
-         * ossl_quic_reactor_tick(). Removing it did not eliminate the stall:
-         * SSL_write_ex2() can enter the same reactor path implicitly.
-         * Investigate the reactor wait separately.
-         */
-        (void)SSL_handle_events(stream);
         {
             const size_t pending =
                 SharedPendingUnreadBytes(&sc->sh);
@@ -8620,28 +8614,17 @@ QuicThread(void *arg)
                 Tcl_DStringFree(&ds);
             }
 
+            /*
+             * Drive the QUIC reactor once. Additional calls without an
+             * intervening readiness event repeatedly probe the nonblocking
+             * UDP socket and typically terminate with EAGAIN.
+             */
             if (revents & (SSL_POLL_EVENT_ISB
                            | SSL_POLL_EVENT_ISU
                            | SSL_POLL_EVENT_EC
                            | SSL_POLL_EVENT_ECD)) {
-                int spins = 0;
-                for (;;) {
-
-                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D poll item %d: preprocessing event loop, iteration %d", (long long)dc->iter, i, spins);
-
-                    (void)SSL_handle_events(cc->h3ssl.conn);
-                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D poll item %d: preprocessing event loop, itertion %d DONE", (long long)dc->iter, i, spins);
-                    spins++;
-
-                    /* Stop when OpenSSL wants a future wakeup (non-zero timeout), or after a few spins */
-                    //struct timeval tv; int is_inf = 0;
-                    //if (SSL_get_event_timeout(cc->h3ssl.conn, &tv, &is_inf) != 1) break;
-                    //if (!is_inf && (tv.tv_sec > 0 || tv.tv_usec > 0)) break;
-                    if (spins >= 3) break;   /* safety cap to avoid tight spin */
-                }
-                //did_progress = NS_TRUE;
+                (void)SSL_handle_events(cc->h3ssl.conn);
             }
-
 
             if (revents & SSL_POLL_EVENT_IC) {
                 // incoming connection
