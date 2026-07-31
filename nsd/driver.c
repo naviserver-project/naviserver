@@ -7819,6 +7819,9 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     ns_free(wrSockPtr->clientData);
 
     if (wrSockPtr->fd != NS_INVALID_FD) {
+        if ((wrSockPtr->flags & NS_CONN_STREAM) != 0u) {
+            Ns_MutexDestroy(&wrSockPtr->c.file.fdlock);
+        }
         if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
             (void) ns_close(wrSockPtr->fd);
         }
@@ -9258,6 +9261,15 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         wrSockPtr->fd = fd;
         wrSockPtr->c.file.bufs = fbufs;
         wrSockPtr->c.file.nbufs = nfbufs;
+
+        if ((wrSockPtr->flags & NS_CONN_STREAM) != 0u) {
+            char fdString[TCL_INTEGER_SPACE];
+
+            Ns_MutexInit(&wrSockPtr->c.file.fdlock);
+            snprintf(fdString, sizeof(fdString), "%d", fd);
+            Ns_MutexSetName2(&wrSockPtr->c.file.fdlock,
+                             "ns:writerstream", fdString);
+        }
 
         Ns_Log(DriverDebug, "### Writer(%d) tosend %" PRIdz
                " files %" PRITcl_Size
