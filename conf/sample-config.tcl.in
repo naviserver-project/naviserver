@@ -363,7 +363,7 @@ ns_section ns/server/${server} {
 
     # Defines absolute or relative path to server's log directory
     # (relative to serverdir, defaults to global logdir).
-    #ns_param	logdir                  log}
+    #ns_param	logdir                  log
 
     # Server and version information in HTTP responses
     #ns_param     noticeADP    returnnotice.adp ;# ADP file for ns_returnnotice commands (errors, redirects, ...)
