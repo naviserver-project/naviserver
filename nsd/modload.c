@@ -94,6 +94,31 @@ RegisterLoadedModule(const char *server, const char *module,
                      const Ns_ModuleInfo *infoPtr)
     NS_GNUC_NONNULL(2,3,4);
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LoadedModulesInit --
+ *
+ *      Initialize the synchronization resources used by the loaded-module
+ *      registry. This function is called once via NS_INIT_ONCE before the
+ *      registry is accessed.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Initializes and names the loaded-module registry mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+LoadedModulesInit(void)
+{
+    Ns_MutexInit(&loadedModulesLock);
+    Ns_MutexSetName2(&loadedModulesLock, "ns:modload", NULL);
+}
+
 #ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
@@ -428,6 +453,7 @@ RegisterLoadedModule(const char *server, const char *module,
 
     ModuleInfoCopy(&loadedPtr->info, infoPtr);
 
+    NS_INIT_ONCE(LoadedModulesInit);
     Ns_MutexLock(&loadedModulesLock);
 
     loadedPtr->nextPtr = NULL;
