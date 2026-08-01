@@ -2803,10 +2803,10 @@ DStringAppendSslPollEventFlags(Tcl_DString *dsPtr, uint64_t flags)
  *          connection as closing on protocol shutdown conditions.
  *
  * Results:
- *      Returns NS_TRUE if the writer should be scheduled again soon
- *      (because at least one stream kept POLLOUT armed or any stream
- *      returned SSL_ERROR_WANT_*). Returns NS_FALSE if nothing remains
- *      immediately actionable (no WANT_* and no stream asked to keep W).
+ *      Returns NS_TRUE when body data remains after the per-stream
+ *      service limit and another local write pass should be scheduled.
+ *      Returns NS_FALSE otherwise; stream readiness and WANT_* conditions
+ *      are handled through the pollset.
  *
  * Side effects:
  *      - Modifies nghttp3 connection/stream state (offsets, FIN, shutdown).
@@ -2834,8 +2834,6 @@ h3_conn_write_step(ConnCtx *cc)
     int64_t       sid = -1;
     int           fin = 0;
     bool          did_progress     = NS_FALSE;  /* any bytes written or FIN concluded */
-    bool          any_keep_w       = NS_FALSE;  /* kept W armed on at least one stream */
-    bool          hit_any_want     = NS_FALSE;  /* saw SSL_ERROR_WANT_* on any stream */
     bool          need_local_retry = NS_FALSE;
     NsTLSConfig  *dc = cc->dc;
 
@@ -3072,13 +3070,11 @@ h3_conn_write_step(ConnCtx *cc)
                 }
 
                 /*
-                 * Kick the QUIC engine once at the *connection* to enqueue/flush FIN/ACKs.
-                 * We keep per-stream W armed above so the next poll cycle can finish flushing.
+                 * Defer reactor processing until the write batch completes. Setting
+                 * did_progress causes the connection-level reactor call below.
                  */
-                (void)SSL_handle_events(cc->h3ssl.conn);
                 did_progress = NS_TRUE;
 
-                // IMPORTANT: don't break; try next stream this tick, this might be a leftover of a former request
                 continue;
             }
 
@@ -3191,11 +3187,14 @@ h3_conn_write_step(ConnCtx *cc)
 
                     if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
                         hit_want = NS_TRUE;
-                        /* No offsets advanced for partial vec: retry next poll */
-                        (void)SSL_handle_events(stream);
-                        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step WANT stream %p",
-                               (long long)dc->iter, (void*)stream);
-                        goto after_sid;                        /* don't advance remaining vecs */
+                        /*
+                         * Keep the vector offset unchanged and wait for the pollset to
+                         * report that the stream can make progress.
+                         */
+                        Ns_Log(Ns_LogQuicDebug,
+                               "[%lld] H3[%lld] SSL_write_ex2 returned WANT; defer to poll",
+                               (long long)dc->iter, (long long)sid);
+                        goto after_sid;
                     }
 
                     if (err == SSL_ERROR_SSL) {
@@ -3419,14 +3418,10 @@ h3_conn_write_step(ConnCtx *cc)
             /* leave policy as-is for CTRL/QPACK */
         } else if (hit_want || SharedTxReadable(&sc->sh)) {
             PollsetEnableWrite(dc, stream, sc, "after_sid");
-            any_keep_w = NS_TRUE;
         } else {
             PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step per stream W decision");
         }
 
-        if (hit_want) {
-            hit_any_want = NS_TRUE;
-        }
     next_sid:
         /* Continue outer loop to pull next sid/vecs from nghttp3 */
         ;
@@ -3436,18 +3431,19 @@ h3_conn_write_step(ConnCtx *cc)
      * Drive the CONNECTION once if anything happened (bytes written, FIN).
      * This flushes coalesced frames across streams into datagrams.
      */
-    if (did_progress || hit_any_want || any_keep_w) {
+    if (did_progress) {
         (void)SSL_handle_events(cc->h3ssl.conn);
-        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step final conn %p",
-               (long long)dc->iter, (void*)cc->h3ssl.conn);
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] SSL_handle_events in h3_conn_write_step final conn %p",
+               (long long)dc->iter, (void *)cc->h3ssl.conn);
     }
 
     /*
-     * Decide "still wants": keep scheduling if any stream kept W,
-     * we hit WANT_* on any stream, or a local retry was scheduled for
-     * body data remaining after the per-stream service limit.
+     * Request another local drain pass only when body data remains after
+     * the per-stream service limit. Stream readiness, including WANT_*,
+     * is handled by pollset events.
      */
-    return (any_keep_w || hit_any_want || need_local_retry);
+    return need_local_retry;
 }
 
 /*
