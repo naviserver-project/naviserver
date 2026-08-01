@@ -2970,11 +2970,6 @@ h3_conn_write_step(ConnCtx *cc)
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] resume", (long long)cc->dc->iter, (long long)sids[i]);
         }
 
-        if (/*did_submit ||*/ nres > 0) {
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 drive conn after resume via SSL_handle_events", (long long)cc->dc->iter);
-            //SSL_handle_events(cc->h3ssl.conn);
-            //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 drive conn after resume via SSL_handle_events DONE", (long long)cc->dc->iter);
-        }
     }
 
     /* Don't start writes if QUIC conn already in TLS shutdown */
