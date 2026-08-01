@@ -55,6 +55,16 @@
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 
+typedef struct Ns_AtomicUint32 {
+#if defined(_MSC_VER)
+    volatile LONG value;
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    uint32_t value;
+#else
+    uint32_t value;
+    Ns_Mutex lock;
+#endif
+} Ns_AtomicUint32;
 
 typedef struct NsTLSConfig {
     Ns_Driver  *driver; /* Default context for driver                   */
@@ -80,12 +90,14 @@ typedef struct NsTLSConfig {
             int        sc_idx;       /* slot to fetch StreamCtx an SSL*              */
             size_t     first_dead;   /* marker for consolidation of pollset          */
 
-            /* --- TLS/QUIC waker (bypass limitation of SSL_Poll, not supporting trigger pipes --- */
-            Ns_Mutex   waker_lock;   /* protects waker_armed */
-            //bool       waker_armed;  /* edge-trigger gate */
+            /*
+             * TLS/QUIC waker: works around SSL_poll not supporting an
+             * external trigger descriptor.
+             */
+            Ns_AtomicUint32 waker_pending;
             struct sockaddr_storage waker_addr;
-            socklen_t   waker_addrlen;
-            int         waker_fd;
+            socklen_t      waker_addrlen;
+            int            waker_fd;
 
             SSL_POLL_ITEM *poll_items;    /* contiguous array, matches capacity */
             Ns_DList       ssl_items;     /* parallel to poll_items[] */

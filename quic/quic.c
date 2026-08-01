@@ -241,8 +241,7 @@ QuicMemStatsLog(uint64_t iter)
            " ssl_stream_free_call_client_uni %llu"
            " ssl_stream_free_call_unknown %llu"
 
-           ,
-           iter,
+           , iter,
            (unsigned long long)snapshot.connctx_new,
            (unsigned long long)snapshot.connctx_free,
            (long long)(snapshot.connctx_new - snapshot.connctx_free),
@@ -292,7 +291,6 @@ QuicMemStatsLog(uint64_t iter)
            (unsigned long long)snapshot.ssl_stream_free_call_qpack_decoder,
            (unsigned long long)snapshot.ssl_stream_free_call_client_uni,
            (unsigned long long)snapshot.ssl_stream_free_call_unknown
-
            );
 }
 #else
@@ -700,6 +698,141 @@ static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 static Ns_DriverConnInfoProc ConnInfo;
 static Ns_DriverClientcertInfoProc ClientcertInfo;
+
+static void     Ns_AtomicUint32Init(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+static uint32_t Ns_AtomicUint32ExchangeRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+static void     Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)  NS_GNUC_NONNULL(1);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32Init --
+ *
+ *      Initialize an atomic integer with the specified value. This
+ *      function must be called before the object is made accessible to
+ *      other threads. It is not intended to race with exchange, store,
+ *      or other initialization operations on the same object.
+ *
+ *      On platforms without native atomic operations, this also
+ *      initializes the mutex used by the fallback implementation.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Initializes atomicPtr and, when necessary, its fallback
+ *      synchronization state.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Ns_AtomicUint32Init(Ns_AtomicUint32 *atomicPtr, uint32_t value)
+{
+#if defined(_MSC_VER)
+    atomicPtr->value = (LONG)value;
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    __atomic_store_n(&atomicPtr->value, value, __ATOMIC_RELAXED);
+#else
+    Ns_MutexInit(&atomicPtr->lock);
+    Ns_MutexSetName(&atomicPtr->lock, "atomic");
+    atomicPtr->value = value;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32ExchangeRelaxed --
+ *
+ *      Atomically replace the value held by atomicPtr and return its
+ *      previous value. Concurrent exchange and store operations on the
+ *      same object participate in a single atomic modification order.
+ *
+ *      The operation has relaxed memory-ordering semantics: it provides
+ *      atomicity for this object but does not publish, acquire, or order
+ *      accesses to unrelated memory. Callers must use appropriate queue
+ *      locks or other synchronization when the value is associated with
+ *      additional shared state.
+ *
+ *      Some platform implementations, such as MSVC interlocked operations
+ *      or the mutex fallback, may provide stronger ordering than required
+ *      by this interface.
+ *
+ * Results:
+ *      Returns the value held by atomicPtr immediately before the
+ *      exchange.
+ *
+ * Side effects:
+ *      Replaces the value stored in atomicPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+static uint32_t
+Ns_AtomicUint32ExchangeRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
+{
+#if defined(_MSC_VER)
+    return (uint32_t)InterlockedExchange(&atomicPtr->value,
+                                              (LONG)value);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_exchange_n(&atomicPtr->value,
+                               value,
+                               __ATOMIC_RELAXED);
+
+#else
+    uint32_t previous;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    previous = atomicPtr->value;
+    atomicPtr->value = value;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return previous;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32StoreRelaxed --
+ *
+ *      Atomically store the specified value in atomicPtr.
+ *
+ *      The operation has relaxed memory-ordering semantics: it provides
+ *      an indivisible store and participates in the modification order
+ *      of this atomic object, but does not publish or order accesses to
+ *      unrelated memory. Additional shared state requires its own
+ *      synchronization.
+ *
+ *      Some platform implementations may provide stronger ordering than
+ *      the relaxed semantics required by this interface.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Replaces the value stored in atomicPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
+{
+#if defined(_MSC_VER)
+    (void)InterlockedExchange(&atomicPtr->value, (LONG)value);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    __atomic_store_n(&atomicPtr->value,
+                     value,
+                     __ATOMIC_RELAXED);
+
+#else
+    Ns_MutexLock(&atomicPtr->lock);
+    atomicPtr->value = value;
+    Ns_MutexUnlock(&atomicPtr->lock);
+#endif
+}
 
 
 /*======================================================================
@@ -4994,48 +5127,80 @@ h3_stream_maybe_note_uni_type(StreamCtx *sc, SSL *stream, uint64_t sid)
  *
  * h3_conn_wake --
  *
- *      Platform-neutral wakeup helper for the HTTP/3 listener loop.
- *      Since OpenSSL's QUIC poll integration currently lacks support
- *      for a trigger pipe or eventfd-style wake mechanism, this function
- *      sends a one-byte UDP datagram to the listener's bound address to
- *      interrupt blocking poll/select calls.
+ *      Wake the HTTP/3 listener loop after producer-side work has been
+ *      queued. OpenSSL's QUIC poll integration does not provide an
+ *      external trigger pipe or eventfd, so the driver uses its persistent
+ *      waker socket to send a one-byte UDP datagram to the listener's
+ *      bound address.
+ *
+ *      Wakeups are coalesced across all connections handled by this
+ *      driver. The first producer sets waker_pending and sends a datagram;
+ *      subsequent producers only enqueue their work while that notification
+ *      remains pending. The listener clears waker_pending immediately
+ *      before scanning the connection and resume queues.
  *
  * Arguments:
- *      dc - The TLS configuration for the HTTP/3 driver, containing the
- *           waker socket address and length in dc->u.h3.waker_addr.
+ *      arg - NsTLSConfig for the HTTP/3 driver, containing the persistent
+ *            waker socket and listener address.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      - Opens a temporary UDP socket and transmits a single dummy byte
- *        to the listener's waker address.
- *      - Causes the listener's poll loop to wake and resume processing.
- *      - Closes the temporary socket immediately after sending.
+ *      - Atomically updates the driver-wide pending-wakeup state.
+ *      - May send one dummy byte through the persistent waker socket.
+ *      - Causes a blocked listener poll to resume processing queued work.
  *
  *----------------------------------------------------------------------
  */
 static inline void
 h3_conn_wake(void *arg)
 {
-    NsTLSConfig            *dc = arg;
-    const struct sockaddr  *sa =
-        (const struct sockaddr *)&dc->u.h3.waker_addr;
-    const unsigned char     b = 0; /* not a QUIC header byte */
+    NsTLSConfig *dc = arg;
 
     if (dc->u.h3.waker_fd < 0 || dc->u.h3.waker_addrlen == 0) {
         Ns_Log(Warning,
-               "[%lld] H3: h3_conn_wake not initialized", (long long)dc->iter);
-        return;
+               "[%lld] H3: h3_conn_wake not initialized",
+               (long long)dc->iter);
+
+    } else {
+        const bool send_wakeup =
+            Ns_AtomicUint32ExchangeRelaxed(&dc->u.h3.waker_pending, 1u) == 0u;
+
+        if (send_wakeup) {
+            const struct sockaddr *sa =
+                (const struct sockaddr *)&dc->u.h3.waker_addr;
+            const unsigned char b = 0; /* not a QUIC header byte */
+            int                 n;
+
+            /*
+             * This producer changed the driver-wide wake state from idle to
+             * armed. Later producers only enqueue their work until the listener
+             * disarms the waker immediately before its next shared-work scan.
+             */
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3: sending wake datagram",
+                   (long long)dc->iter);
+
+            n = (int)sendto(dc->u.h3.waker_fd,
+                            (const char *)&b, 1, 0,
+                            sa, dc->u.h3.waker_addrlen);
+
+            if (n != 1) {
+                const int error = ns_sockerrno;
+
+                /*
+                 * Allow a subsequent producer to retry the notification.
+                 */
+                Ns_AtomicUint32StoreRelaxed(&dc->u.h3.waker_pending, 0u);
+
+                Ns_Log(Warning,
+                       "[%lld] H3: wake datagram failed: %s",
+                       (long long)dc->iter,
+                       ns_sockstrerror(error));
+            }
+        }
     }
-
-    Ns_Log(Ns_LogQuicDebug,
-           "[%lld] H3: h3_conn_wake",
-           (long long)dc->iter);
-
-    (void)sendto(dc->u.h3.waker_fd,
-                 (const char *)&b, 1, 0,
-                 sa, dc->u.h3.waker_addrlen);
 }
 
 /*
@@ -8110,6 +8275,8 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     dc = NsTLSConfigNew(httpsSection);
     Ns_Log(Ns_LogQuicDebug, "Ns_ModuleInit <%s> <%s> has dc %p", server, module, (void*)dc);
 
+    Ns_AtomicUint32Init(&dc->u.h3.waker_pending, 0u);
+
     dc->u.h3.npoll        = (size_t)-1;   /* so first PollsetAdd lands at index 0 */
     dc->u.h3.nr_listeners = 0;
 
@@ -8125,9 +8292,6 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
                            "10ms", 0, 0, LONG_MAX, 0,
                            &timeout);
     NsTimeToTimeval(&timeout, &dc->u.h3.drain_timeout);
-
-    Ns_MutexInit(&dc->u.h3.waker_lock);
-    Ns_MutexSetName(&dc->u.h3.waker_lock, "waker");
 
 #ifdef QUIC_MEM_STATS
     Ns_MutexInit(&quicMemStats.lock);
@@ -8849,6 +9013,13 @@ QuicThread(void *arg)
         {
             bool expecting_send = NS_FALSE;
 
+            /*
+             * Allow producers to arm the next notification before scanning shared
+             * work. Queue locks synchronize the work itself; this atomic value only
+             * controls wakeup coalescing.
+             */
+            Ns_AtomicUint32StoreRelaxed(&dc->u.h3.waker_pending, 0u);
+
             if (dc->u.h3.conns.size > 0) {
                 for (i = 0u; i < (int)dc->u.h3.conns.size; i++) {
                     bool     has_resume;
@@ -9027,6 +9198,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
                        ns_sockstrerror(ns_sockerrno));
                 goto fail;
             }
+            (void) Ns_SockSetNonBlocking(dc->u.h3.waker_fd);
         }
 
         (void) Ns_SockSetNonBlocking(sock);
