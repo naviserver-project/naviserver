@@ -2942,8 +2942,6 @@ h3_conn_write_step(ConnCtx *cc)
                        "[%lld] H3[%lld] dropping resume for detached stream",
                        (long long)cc->dc->iter,
                        (long long)sid);
-
-                SharedResumeClear(&ssc->sh);
                 continue;
             }
 
@@ -2968,7 +2966,6 @@ h3_conn_write_step(ConnCtx *cc)
                            rv, nghttp3_strerror(rv));
                 }
             }
-            SharedResumeClear(&ssc->sh);
 
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] resume", (long long)cc->dc->iter, (long long)sids[i]);
         }
@@ -3052,7 +3049,7 @@ h3_conn_write_step(ConnCtx *cc)
                              * could make this nudge unnecessary.
                              */
                             zsc->wants_write = NS_TRUE;
-                            PollsetEnableWrite(dc, zsc->ssl, sc, "tx-fin");
+                            PollsetEnableWrite(dc, zsc->ssl, zsc, "tx-fin");
                             {
                                 /* If RX is already finished and queues are empty, reap now. */
                                 SharedSnapshot snap = SharedSnapshotInit(&zsc->sh);
@@ -3153,7 +3150,7 @@ h3_conn_write_step(ConnCtx *cc)
             size_t off = 0;
 
             while (off < vecs[i].len) {
-                size_t    written = 0;
+                size_t    written = 0, remaining;
                 uint64_t  flags   = 0;
                 int       ok;
 
@@ -3182,9 +3179,12 @@ h3_conn_write_step(ConnCtx *cc)
                            SSL_get_blocking_mode(stream), SSL_get_blocking_mode(cc->h3ssl.conn));
                 }
 
+                remaining = vecs[i].len - off;
+                assert((SSL_get_mode(stream) & SSL_MODE_ENABLE_PARTIAL_WRITE) == 0);
+
                 ok = SSL_write_ex2(stream,
                                    vecs[i].base + off,
-                                   vecs[i].len  - off,
+                                   remaining,
                                    flags,
                                    &written);
 
@@ -3241,12 +3241,14 @@ h3_conn_write_step(ConnCtx *cc)
                             }
 
                             if (r == SSL_R_STREAM_SEND_ONLY) {
-                                /* Treat this vec as skipped; advance to keep nghttp3 moving. */
+                                /*
+                                 * Treat this vector as discarded. The common code following
+                                 * the write loop advances nghttp3 exactly once.
+                                 */
                                 Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] send-only restriction; skip vec",
                                        (long long)dc->iter, (long long)sid);
-                                h3_stream_advance_and_trim(sc, sid, vecs[i].base, vecs[i].len);
                                 did_progress = NS_TRUE;
-                                break; /* next vec */
+                                break; /* consume this vector below, then continue with the next */
                             }
 
                             if (r == SSL_R_PROTOCOL_IS_SHUTDOWN) {
@@ -3315,12 +3317,25 @@ h3_conn_write_step(ConnCtx *cc)
                  */
                 //NsHexPrint("write buffer", vecs[i].base, vecs[i].len, 32, NS_FALSE);
 
+                if (written != remaining) {
+                    Ns_Log(Warning,
+                           "[%lld] H3[%lld] SSL_write_ex2 returned unexpected progress "
+                           "%zu of %zu bytes",
+                           (long long)dc->iter, (long long)sid,
+                           written, remaining);
+
+                    goto after_sid;
+                }
+
                 off           += written;
                 did_progress   = NS_TRUE;
                 sc->seen_io    = NS_TRUE;
             }
 
-            /* Vec fully written -> now tell nghttp3 it's consumed */
+            /*
+             * The vector was written or deliberately discarded. Tell nghttp3
+             * that it has been consumed.
+             */
             h3_stream_advance_and_trim(sc, sid, vecs[i].base, vecs[i].len);
         }
 
@@ -3363,10 +3378,6 @@ h3_conn_write_step(ConnCtx *cc)
         if (!StreamCtxIsServerUni(sc)) {
             (void)h3_stream_maybe_finalize(sc, "h3_conn_write_step");
         }
-
-        /*
-         * The stream is driven once below at after_sid.
-         */
 
     after_sid:
         /*
@@ -3424,34 +3435,6 @@ h3_conn_write_step(ConnCtx *cc)
     next_sid:
         /* Continue outer loop to pull next sid/vecs from nghttp3 */
         ;
-    }
-
-
-    /* If nghttp3 reported a zero-length FIN (no vecs), ghttp3 wants a FIN without payload */
-    if (nvec == 0 && sid >= 0 && fin) {
-        SSL *stream = quic_sid_to_stream(cc, (uint64_t)sid);
-
-        if (stream != NULL) {
-            StreamCtx *sc = SSL_get_ex_data(stream, dc->u.h3.sc_idx);
-
-            /* Only for bidi data streams; skip control/uni */
-            if (sc != NULL && StreamCtxIsBidi(sc) && !(sc->io_state & H3_IO_TX_FIN)) {
-                /* If stream write state is OK, conclude; ignore if already done */
-                if (SSL_get_stream_write_state(stream) == SSL_STREAM_STATE_OK) {
-                    (void)SSL_stream_conclude(stream, 0);
-                }
-                nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
-                sc->io_state |= H3_IO_TX_FIN;
-
-                /* Drive the stream once to clear readiness and schedule frames */
-                (void)SSL_handle_events(stream);
-                Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in h3_conn_write_step FIN stream %p",
-                       (long long)dc->iter, (void*)stream);
-
-                did_progress = NS_TRUE;
-                PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step zero-length FIN");
-            }
-        }
     }
 
     /*
