@@ -566,8 +566,8 @@ static char    *DStringAppendSslPollEventFlags(Tcl_DString *dsPtr, uint64_t flag
  *----------------------------------------------------------------------
  */
 static bool     h3_conn_write_step(ConnCtx *cc) NS_GNUC_NONNULL(1);
+static bool     h3_conn_has_pending_work(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_clear_wants_write_if_idle(ConnCtx *cc) NS_GNUC_NONNULL(1);
-static bool     h3_conn_has_work(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_mark_wants_write(ConnCtx *cc, StreamCtx *sc, const char *why) NS_GNUC_NONNULL(1,2);
 static void     h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid) NS_GNUC_NONNULL(1);
 
@@ -3475,108 +3475,113 @@ h3_conn_write_step(ConnCtx *cc)
 /*
  *----------------------------------------------------------------------
  *
- * h3_conn_clear_wants_write_if_idle --
+ * h3_conn_has_pending_work --
  *
- *      Clear the connection-level "wants_write" flag if there is no
- *      remaining pending work (no active streams or queued writes).
- *      This prevents unnecessary POLLOUT wakeups once the HTTP/3
- *      connection is fully idle.
+ *      Determine whether an HTTP/3 connection has pending stream or
+ *      resume work that requires further writer activity.
  *
- *      The function checks via h3_conn_has_work() whether any streams
- *      still require writing. If none do, it resets cc->wants_write to
- *      NS_FALSE and calls PollsetUpdateConnPollInterest() to drop the
- *      connection's write interest from the pollset.
+ *      The check covers queued resume notifications and per-stream work,
+ *      including write requests, response headers ready for submission,
+ *      and queued body data.
+ *
+ *      The connection-level cc->wants_write flag is intentionally not
+ *      considered. This predicate is used by
+ *      h3_conn_clear_wants_write_if_idle() to decide whether that flag can
+ *      be cleared; including it would make a set flag self-sustaining.
  *
  * Results:
- *      None.
+ *      Returns NS_TRUE when pending writer work exists; otherwise
+ *      NS_FALSE.
  *
  * Side effects:
- *      - May clear cc->wants_write.
- *      - Updates pollset interest flags for the connection.
- *      - Emits diagnostic log messages indicating whether work remains.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
-static void
-h3_conn_clear_wants_write_if_idle(ConnCtx *cc) {
-    bool has_work = h3_conn_has_work(cc);
+static bool
+h3_conn_has_pending_work(ConnCtx *cc)
+{
+    Tcl_HashSearch  it;
+    Tcl_HashEntry  *he;
 
-    NS_TA_ASSERT_HELD(cc, affinity);
+    /*
+     * Do not inspect cc->wants_write here. This function is used to
+     * determine whether that scheduling flag can be cleared.
+     */
 
-
-    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 conn: h3_conn_clear_wants_write_if_idle has work %d",
-           (long long)cc->dc->iter, has_work);
-
-    if (!has_work) {
-        if (cc->wants_write) {
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 conn: idle now, clearing wants_write", (long long)cc->dc->iter);
-        }
-        cc->wants_write = NS_FALSE;
-        PollsetUpdateConnPollInterest(cc);   /* drops conn-level EW */
+    if (SharedHasResumePending(&cc->shared)) {
+        return NS_TRUE;
     }
+
+    for (he = Tcl_FirstHashEntry(&cc->streams, &it);
+         he != NULL;
+         he = Tcl_NextHashEntry(&it)) {
+        StreamCtx *sc = Tcl_GetHashValue(he);
+
+        if (sc == NULL) {
+            continue;
+        } else {
+
+            if (sc->wants_write) {
+                return NS_TRUE;
+            }
+            if (StreamCtxIsBidi(sc)
+                && SharedHdrsIsReady(&sc->sh)
+                && !sc->hdrs_submitted) {
+                return NS_TRUE;
+
+            } else {
+                SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
+
+                if (SharedHasData(&snap)) {
+                    return NS_TRUE;
+                }
+            }
+
+            /*
+             * Preserve the remaining existing stream-work checks here.
+             */
+        }
+    }
+
+    return NS_FALSE;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * h3_conn_has_work --
+ * h3_conn_clear_wants_write_if_idle --
  *
- *      Determine whether a given HTTP/3 connection (ConnCtx) still has
- *      pending work that requires writer activity. This includes both
- *      connection-level and per-stream conditions that imply outgoing
- *      data, frames, or control actions are still pending.
+ *      Clear the connection-level write scheduling flag when no pending
+ *      stream or resume work remains.
  *
- *      Specifically, the function returns true if any of the following
- *      hold:
- *        - The connection itself has cc->wants_write set.
- *        - There are streams pending in the shared resume queue
- *          (e.g., ready for header or body submission).
- *        - Any stream still has pending headers, queued body data, or
- *          flagged wants_write=true.
+ *      The pending-work check intentionally excludes cc->wants_write
+ *      itself, since this function determines whether that flag can be
+ *      cleared. Pending response headers, queued body data, per-stream
+ *      write requests, or resume notifications keep the flag armed.
  *
  * Results:
- *      Returns NS_TRUE if the connection or any of its streams still
- *      have pending output or resumable work; otherwise NS_FALSE.
+ *      None.
  *
  * Side effects:
- *      None. This is a pure inspection routine, but is frequently used
- *      to decide whether to clear cc->wants_write or to keep POLLOUT
- *      armed for the connection.
+ *      When the connection has no pending work, clears cc->wants_write
+ *      and updates the connection's poll interest.
  *
  *----------------------------------------------------------------------
  */
-static bool
-h3_conn_has_work(ConnCtx *cc) {
-    Tcl_HashSearch it;
-    Tcl_HashEntry *he;
+static void
+h3_conn_clear_wants_write_if_idle(ConnCtx *cc)
+{
+    bool pending_work;
 
-    /* Connection-wide "something to push soon" */
-    if (cc->wants_write) {
-        return NS_TRUE;
+    NS_TA_ASSERT_HELD(cc, affinity);
+
+    pending_work = h3_conn_has_pending_work(cc);
+
+    if (!pending_work) {
+        cc->wants_write = NS_FALSE;
+        PollsetUpdateConnPollInterest(cc);
     }
-
-    /* Any streams enqueued for resume by producers? */
-    if (SharedHasResumePending(&cc->shared)) {
-        return NS_TRUE;
-    }
-
-    for (he = Tcl_FirstHashEntry(&cc->streams, &it); he != NULL; he = Tcl_NextHashEntry(&it)) {
-        StreamCtx *sc = (StreamCtx *)Tcl_GetHashValue(he);
-        if (sc == NULL) {
-            continue;
-        } else {
-            SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
-
-            if (sc->wants_write)                 return NS_TRUE;
-            if (StreamCtxIsBidi(sc)
-                && SharedHdrsIsReady(&sc->sh)
-                && !sc->hdrs_submitted)             return NS_TRUE;            /* headers ready to submit */
-
-            /* body present now or staged for next pull */
-            if (SharedHasData(&snap)) return NS_TRUE;
-        }
-    }
-    return NS_FALSE;
 }
 
 /*
