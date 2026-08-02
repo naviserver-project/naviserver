@@ -301,6 +301,29 @@ QuicMemStatsLog(uint64_t iter)
  * Local structs and typedefs
  */
 
+#define H3_NO_PROGRESS_LIMIT  100000u
+#define H3_NO_PROGRESS_DUMP_MAX 16u
+
+typedef struct H3NoProgressWatch {
+    uint64_t iterations;
+    bool     reported;
+} H3NoProgressWatch;
+
+static inline void
+QuicNoteProgress(NsTLSConfig *dc)
+{
+    /*
+     * Advance the best-effort diagnostic generation when selected
+     * QUIC-thread operations make observable progress. Instrumentation
+     * is intentionally not exhaustive: an unchanged generation does not
+     * prove that neither OpenSSL nor nghttp3 changed internal state.
+     *
+     * All current call sites are owned by the QUIC driver thread, so this
+     * diagnostic counter does not require atomic operations.
+     */
+    dc->u.h3.progress_epoch++;
+}
+
 /* io_state bits */
 #define H3_IO_RX_FIN         0x01u /* peer finished read side */
 #define H3_IO_TX_FIN         0x02u /* we concluded write side */
@@ -3453,6 +3476,9 @@ h3_conn_write_step(ConnCtx *cc)
 
                     goto after_sid;
                 }
+                if (written > 0u) {
+                    QuicNoteProgress(dc);
+                }
 
                 off           += written;
                 did_progress   = NS_TRUE;
@@ -4358,6 +4384,8 @@ h3_stream_read_into_hold(StreamCtx *sc, SSL *stream)
     }
 
     sc->rx_len = nread;
+    QuicNoteProgress(cc->dc);
+
     return DRAIN_PROGRESS;
 }
 
@@ -8277,8 +8305,9 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
 
     Ns_AtomicUint32Init(&dc->u.h3.waker_pending, 0u);
 
-    dc->u.h3.npoll        = (size_t)-1;   /* so first PollsetAdd lands at index 0 */
-    dc->u.h3.nr_listeners = 0;
+    dc->u.h3.npoll          = (size_t)-1;   /* so first PollsetAdd lands at index 0 */
+    dc->u.h3.nr_listeners   = 0;
+    dc->u.h3.progress_epoch = 0u;
 
     PollsetInit(dc);
 
@@ -8394,6 +8423,122 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * QuicLogNoProgress --
+ *
+ *      Log a bounded diagnostic snapshot when the HTTP/3 poll loop has
+ *      completed many consecutive ready iterations without progress
+ *      recorded at the selected QuicNoteProgress() instrumentation
+ *      points.
+ *
+ *      This is a best-effort diagnostic heuristic, not a protocol
+ *      invariant. OpenSSL or nghttp3 may have made internal progress at
+ *      a location that is not instrumented. A report therefore means
+ *      "no tracked progress", rather than proving that no state changed.
+ *
+ * Arguments:
+ *      dc           - HTTP/3 driver configuration containing the pollset.
+ *      numitems     - Number of valid entries considered by SSL_poll().
+ *      result_count - Number of ready entries reported by SSL_poll().
+ *      iterations   - Consecutive iterations without observed progress.
+ *      timeoutPtr   - Timeout used for the current SSL_poll() call.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Writes a bounded diagnostic snapshot to the server log. It does
+ *      not modify poll interests, connection state, stream state, or the
+ *      contents of the pollset.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
+                  size_t result_count, uint64_t iterations,
+                  const struct timeval *timeoutPtr)
+{
+    size_t shown = 0u;
+    size_t ready = 0u;
+    size_t i;
+
+    Ns_Log(Warning,
+           "[%lld] H3 poll loop recorded no tracked progress for %llu iterations: "
+           "result_count %zu, items %zu, timeout %ld.%06ld",
+           (long long)dc->iter,
+           (unsigned long long)iterations,
+           result_count, numitems,
+           (long)timeoutPtr->tv_sec,
+           (long)timeoutPtr->tv_usec);
+
+    for (i = 0u; i < numitems; i++) {
+        SSL_POLL_ITEM *item = &dc->u.h3.poll_items[i];
+        SSL           *ssl  = dc->u.h3.ssl_items.data[i];
+        StreamCtx     *sc;
+
+        if (item->revents == SSL_POLL_EVENT_NONE) {
+            continue;
+        }
+
+        ready++;
+
+        if (shown >= H3_NO_PROGRESS_DUMP_MAX) {
+            continue;
+        }
+
+        sc = ssl != NULL
+            ? SSL_get_ex_data(ssl, dc->u.h3.sc_idx)
+            : NULL;
+
+        if (sc != NULL) {
+            Ns_Log(Warning,
+                   "[%lld] H3 stalled item %zu: SSL %p H3[%lld] kind %s "
+                   "events 0x%08" PRIx64 " revents 0x%08" PRIx64
+                   " io_state 0x%02x rx %zu/%zu fin_pending %d "
+                   "eof_seen %d wants_write %d",
+                   (long long)dc->iter,
+                   i, (void *)ssl,
+                   (long long)sc->quic_sid,
+                   H3StreamKind_str(sc->kind),
+                   item->events, item->revents,
+                   sc->io_state,
+                   sc->rx_off, sc->rx_len,
+                   sc->rx_fin_pending,
+                   sc->eof_seen,
+                   sc->wants_write);
+        } else {
+            ConnCtx *cc = ssl != NULL
+                ? SSL_get_ex_data(ssl, dc->u.h3.cc_idx)
+                : NULL;
+
+            Ns_Log(Warning,
+                   "[%lld] H3 stalled item %zu: SSL %p type %s "
+                   "events 0x%08" PRIx64 " revents 0x%08" PRIx64
+                   " wants_write %d resume_pending %d",
+                   (long long)dc->iter,
+                   i, (void *)ssl,
+                   cc == NULL ? "listener" : "connection",
+                   item->events, item->revents,
+                   cc != NULL ? cc->wants_write : 0,
+                   cc != NULL
+                       ? SharedHasResumePending(&cc->shared)
+                       : 0);
+        }
+
+        shown++;
+    }
+
+    if (ready > shown) {
+        Ns_Log(Warning,
+               "[%lld] H3 no-progress report omitted %zu additional "
+               "ready poll items",
+               (long long)dc->iter, ready - shown);
+    }
+}
+
+
 #if defined(NS_QUIC_POLLSET_DIAGNOSTICS)
 static void
 PollsetValidate(const NsTLSConfig *dc, const char *where)
@@ -8478,6 +8623,8 @@ QuicThread(void *arg)
     bool                stopping = NS_FALSE;
     unsigned int        flags = NS_DRIVER_THREAD_STARTED;
     struct timeval     *polltimeout_ptr;
+    H3NoProgressWatch  watch = {0u, NS_FALSE};
+    uint64_t           previous_epoch = dc->u.h3.progress_epoch;
 
     Ns_ThreadSetName("-driver:%s:%s-", drvPtr->type, drvPtr->threadName);
     Ns_Log(Notice, "starting %s", drvPtr->threadName);
@@ -8620,6 +8767,15 @@ QuicThread(void *arg)
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3D SSL_poll returns rc %d with %ld items with events"
                " (quic.c from %s %s)",
                (long long)dc->iter, rc, result_count, __DATE__, __TIME__);
+
+        if (rc == 1
+            && result_count > 0u
+            && watch.iterations >= H3_NO_PROGRESS_LIMIT
+            && !watch.reported) {
+            QuicLogNoProgress(dc, numitems, result_count,
+                              watch.iterations, polltimeout_ptr);
+            watch.reported = NS_TRUE;
+        }
 
         if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
             for (i = 0; i < (int)numitems; i++) {
@@ -9062,6 +9218,26 @@ QuicThread(void *arg)
             PollsetSweep(dc);
             PollsetConsolidate(dc);
             PollsetValidate(dc, "after consolidation");
+
+            {
+                const uint64_t current_epoch = dc->u.h3.progress_epoch;
+
+                if (rc != 1
+                    || result_count == 0u
+                    || current_epoch != previous_epoch) {
+                    /*
+                     * Real progress was observed, or SSL_poll genuinely timed out.
+                     * Start a fresh detection episode.
+                     */
+                    watch.iterations = 0u;
+                    watch.reported   = NS_FALSE;
+                } else {
+                    watch.iterations++;
+                }
+
+                previous_epoch = current_epoch;
+            }
+
 
             //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D after consolidate, npoll %ld", (long long)dc->iter, PollsetCount(dc));
         }

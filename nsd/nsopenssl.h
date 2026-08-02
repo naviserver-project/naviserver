@@ -98,6 +98,7 @@ typedef struct NsTLSConfig {
             struct sockaddr_storage waker_addr;
             socklen_t      waker_addrlen;
             int            waker_fd;
+            uint64_t       progress_epoch;
 
             SSL_POLL_ITEM *poll_items;    /* contiguous array, matches capacity */
             Ns_DList       ssl_items;     /* parallel to poll_items[] */
