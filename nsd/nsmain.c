@@ -534,16 +534,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 #ifndef _WIN32
 
-    if (bindargs != NULL || bindfile != NULL) {
-        /*
-         * Pre-bind any sockets now, before a possible setuid from root
-         * or chroot which may hide /etc/resolv.conf required to resolve
-         * name-based addresses.
-         */
-        status = NsPreBind(bindargs, bindfile);
-        if (status != NS_OK) {
-            Ns_Fatal("nsmain: prebind failed");
-        }
+    /*
+     * Adopt sockets supplied by a service manager and process sockets
+     * specified through the command-line bind arguments or bind file.
+     * Perform these operations before a possible setuid or chroot, which
+     * might hide /etc/resolv.conf required to resolve name-based addresses.
+     */
+    status = NsPreBind(bindargs, bindfile);
+    if (status != NS_OK) {
+        Ns_Fatal("nsmain: prebind failed");
     }
 
     /*

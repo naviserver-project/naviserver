@@ -165,6 +165,15 @@ AC_SUBST([NAVISERVER])
 AC_CHECK_HEADERS_ONCE([inttypes.h uio.h sys/uio.h stdint.h netinet/tcp.h sys/sendfile.h xlocale.h])
 AC_CHECK_HEADER([mach-o/dyld.h], AC_DEFINE([USE_DYLD], [1], [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
 AC_CHECK_HEADER([dl.h], AC_DEFINE([USE_DLSHL], [1], [Define to 1 if the <dl.h> header should be used.]),)
+AC_CHECK_HEADER([systemd/sd-daemon.h], [
+    AC_SEARCH_LIBS([sd_listen_fds], [systemd], [
+        AC_DEFINE(
+            [HAVE_SD_LISTEN_FDS],
+            [1],
+            [Define to 1 when sd_listen_fds() is available.]
+        )
+    ])
+])
 
 AC_CHECK_FUNCS([timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop inet_pton])
 

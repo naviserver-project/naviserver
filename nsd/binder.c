@@ -22,6 +22,12 @@
 # include <sys/un.h>
 # include <sys/uio.h>
 
+# if defined(HAVE_SD_LISTEN_FDS)
+#  include <systemd/sd-daemon.h>
+# elif defined( __APPLE__)
+#  include <launch.h>
+# endif
+
 # define REQUEST_SIZE  (sizeof(int) + sizeof(int) + sizeof(int) + NS_IPADDR_SIZE)
 # define RESPONSE_SIZE (sizeof(int))
 
@@ -63,7 +69,28 @@ static bool PrebindGet(const char *proto, struct sockaddr *saPtr, NS_SOCKET *soc
 
 static void PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struct Prebind *pPtr)
     NS_GNUC_NONNULL(1,2,3);
-#endif
+
+static Ns_ReturnCode PrebindFile(const char *file)
+    NS_GNUC_NONNULL(1);
+
+# if defined(HAVE_SD_LISTEN_FDS)
+static Ns_ReturnCode PrebindSystemdSockets(size_t *countPtr);
+# elif defined(__APPLE__)
+static Ns_ReturnCode PrebindLaunchdSockets(size_t *countPtr);
+# endif
+
+static Tcl_HashEntry *PrebindCreateHashEntry(
+    Tcl_HashTable *tablePtr, const struct sockaddr *saPtr, int *isNewPtr)
+    NS_GNUC_NONNULL(1,2,3);
+
+static void PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr, const struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(1,2);
+
+static Ns_ReturnCode   PrebindRegisterSocket(NS_SOCKET sock);
+static struct Prebind *PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock);
+static Ns_ReturnCode   PrebindRegisterInetSocket(const char *proto, NS_SOCKET sock, const struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(1,3);
+#endif /* !_WIN32 */
 
 #ifdef LOGBIND
 static FILE *log_fp = NULL;
@@ -79,6 +106,65 @@ static void log_bind(const char* proto, const char *addr, unsigned short port, c
 
 #ifndef _WIN32
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindSize --
+ *
+ *      Determine the allocation size of a Prebind structure capable of
+ *      holding the requested number of socket descriptors.
+ *
+ * Results:
+ *      Number of bytes required for the allocation.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static size_t
+PrebindSize(size_t count)
+{
+    assert(count > 0u);
+
+    return sizeof(Prebind) + (count - 1u) * sizeof(NS_SOCKET);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindCreateHashEntry --
+ *
+ *      Create a hash-table entry for the supplied Internet socket
+ *      address. Normalize the address before using it as a hash key so
+ *      addresses obtained from different operating-system interfaces
+ *      produce identical keys.
+ *
+ * Results:
+ *      Pointer to the created or existing hash-table entry. The value
+ *      referenced by isNewPtr indicates whether a new entry was created.
+ *
+ * Side effects:
+ *      May add an entry to the supplied hash table.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_HashEntry *
+PrebindCreateHashEntry(Tcl_HashTable *tablePtr,
+                       const struct sockaddr *saPtr,
+                       int *isNewPtr)
+{
+    struct NS_SOCKADDR_STORAGE key;
+
+    PrebindSockaddrKey(&key, saPtr);
+
+    /*
+     * The fixed-size array-key implementation copies the key.
+     */
+    return Tcl_CreateHashEntry(tablePtr, (const char *)&key, isNewPtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -104,7 +190,7 @@ PrebindAlloc(const char *proto, size_t reuses, struct sockaddr *saPtr)
     NS_NONNULL_ASSERT(proto != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    pPtr = ns_malloc(sizeof(Prebind) + sizeof(NS_SOCKET)*reuses-1);
+    pPtr = ns_malloc(PrebindSize(reuses));
     if (pPtr != NULL) {
         bool   reuseport;
         size_t i;
@@ -168,9 +254,10 @@ PrebindAlloc(const char *proto, size_t reuses, struct sockaddr *saPtr)
 static bool
 PrebindGet(const char *proto, struct sockaddr *saPtr, NS_SOCKET *sockPtr)
 {
-    static Tcl_HashTable *tablePtr;
-    Tcl_HashEntry        *hPtr;
-    bool                  foundEntry = NS_FALSE;
+    struct NS_SOCKADDR_STORAGE key;
+    Tcl_HashTable *tablePtr;
+    Tcl_HashEntry *hPtr;
+    bool           foundEntry = NS_FALSE;
 
     NS_NONNULL_ASSERT(proto != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
@@ -182,8 +269,10 @@ PrebindGet(const char *proto, struct sockaddr *saPtr, NS_SOCKET *sockPtr)
         tablePtr = &preboundUdp;
     }
 
+    PrebindSockaddrKey(&key, saPtr);
+
     Ns_MutexLock(&lock);
-    hPtr = Tcl_FindHashEntry(tablePtr, (char *)saPtr);
+    hPtr = Tcl_FindHashEntry(tablePtr, (char *)&key);
     if (hPtr != NULL) {
         struct Prebind *pPtr;
         size_t          i;
@@ -761,59 +850,630 @@ NsInitBinder(void)
     Tcl_InitHashTable(&preboundUnix, TCL_STRING_KEYS);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * NsPreBind --
+ * PrebindFile --
  *
- *      Pre-bind any requested ports (called from Ns_Main at startup).
+ *      Read pre-bind specifications from the specified file and pass
+ *      every non-empty line to PrebindSockets().
+ *
+ * Results:
+ *      NS_OK when the file was read and all specifications were
+ *      processed successfully, otherwise NS_ERROR.
+ *
+ * Side effects:
+ *      Opens and closes the specified file. Sockets may be created and
+ *      added to the pre-bind hash tables.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+PrebindFile(const char *file)
+{
+    Ns_ReturnCode status = NS_OK;
+    Tcl_Channel   chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
+
+    if (chan == NULL) {
+        Ns_Log(Error, "NsPreBind: can't open file '%s': '%s'", file,
+               strerror(Tcl_GetErrno()));
+        status = NS_ERROR;
+    } else {
+        Tcl_DString line;
+
+        Tcl_DStringInit(&line);
+        while (Tcl_Eof(chan) == 0) {
+            Tcl_DStringSetLength(&line, 0);
+            if (Tcl_Gets(chan, &line) > 0) {
+                status = PrebindSockets(Tcl_DStringValue(&line));
+                if (status != NS_OK) {
+                    break;
+                }
+            }
+        }
+        Tcl_DStringFree(&line);
+        Tcl_Close(NULL, chan);
+    }
+    return status;
+}
+
+#if defined(HAVE_SD_LISTEN_FDS)
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindSystemdSockets --
+ *
+ *      Obtain socket descriptors passed through systemd socket
+ *      activation and add supported descriptors to the pre-bind hash
+ *      tables. The value referenced by countPtr is set to the number
+ *      of descriptors adopted successfully.
+ *
+ * Results:
+ *      NS_OK when the socket-activation descriptors were obtained and
+ *      adopted successfully, otherwise NS_ERROR.
+ *
+ * Side effects:
+ *      Calls sd_listen_fds() with environment unsetting enabled.
+ *      Adopted descriptors become managed by the pre-bind subsystem
+ *      and are closed by NsClosePreBound() when not consumed.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+PrebindSystemdSockets(size_t *countPtr)
+{
+    int n;
+
+    NS_NONNULL_ASSERT(countPtr != NULL);
+
+    *countPtr = 0u;
+    n = sd_listen_fds(1);
+
+    if (n < 0) {
+        Ns_Log(Error, "prebind: sd_listen_fds failed: %s",
+               strerror(-n));
+        return NS_ERROR;
+    }
+
+    for (int i = 0; i < n; i++) {
+        if (PrebindRegisterSocket(SD_LISTEN_FDS_START + i) != NS_OK) {
+            return NS_ERROR;
+        }
+        (*countPtr)++;
+    }
+
+    return NS_OK;
+}
+
+#elif defined(__APPLE__)
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindLaunchdSockets --
+ *
+ *      Obtain socket descriptors supplied through launchd socket
+ *      activation under the NaviServerListeners socket name and add
+ *      supported descriptors to the pre-bind hash tables. The value
+ *      referenced by countPtr is set to the number of descriptors
+ *      adopted successfully.
+ *
+ * Results:
+ *      NS_OK when no matching launchd socket entry exists or all
+ *      supplied descriptors were adopted successfully; otherwise
+ *      NS_ERROR.
+ *
+ * Side effects:
+ *      Calls launch_activate_socket(). Adopted descriptors become
+ *      managed by the pre-bind subsystem and are closed by
+ *      NsClosePreBound() when not consumed.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+PrebindLaunchdSockets(size_t *countPtr)
+{
+    Ns_ReturnCode status = NS_OK;
+    int          *fds = NULL;
+    size_t        count = 0u;
+    int           errorCode;
+
+    NS_NONNULL_ASSERT(countPtr != NULL);
+
+    *countPtr = 0u;
+
+    errorCode = launch_activate_socket("NaviServerListeners",
+                                       &fds, &count);
+
+    if (errorCode == ESRCH || errorCode == ENOENT) {
+        /*
+         * The process is not managed by launchd, or the job does not
+         * provide a socket entry with this name.
+         */
+        return NS_OK;
+    }
+
+    if (errorCode != 0) {
+        Ns_Log(Error, "prebind: launch_activate_socket failed: %s",
+               strerror(errorCode));
+        return NS_ERROR;
+    }
+
+    for (size_t i = 0u; i < count; i++) {
+        status = PrebindRegisterSocket(fds[i]);
+        if (status != NS_OK) {
+            break;
+        }
+        (*countPtr)++;
+    }
+
+    free(fds);
+
+    return status;
+}
+#endif /* HAVE_SD_LISTEN_FDS || __APPLE__ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindAppendSocket --
+ *
+ *      Allocate a Prebind structure, or enlarge an existing one, and
+ *      append the specified socket. The pPtr argument may be NULL.
+ *
+ * Results:
+ *      A pointer to the allocated or resized Prebind structure, or NULL
+ *      when the allocation failed.
+ *
+ * Side effects:
+ *      Allocates or reallocates memory. A successful reallocation may
+ *      change the address of the supplied Prebind structure.
+ *
+ *----------------------------------------------------------------------
+ */
+static struct Prebind *
+PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock)
+{
+    struct Prebind *newPtr;
+    size_t          oldCount;
+
+    oldCount = pPtr != NULL ? pPtr->count : 0u;
+
+    if (pPtr == NULL) {
+        newPtr = ns_malloc(PrebindSize(1u));
+    } else {
+        newPtr = ns_realloc(pPtr, PrebindSize(oldCount + 1u));
+    }
+
+    if (newPtr != NULL) {
+        newPtr->sockets[oldCount] = sock;
+        newPtr->count = oldCount + 1u;
+    }
+
+    return newPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindSockaddrKey --
+ *
+ *      Construct a normalized hash key from an Internet socket address.
+ *      Copy only fields relevant for identifying the local endpoint and
+ *      clear all remaining bytes. This ensures that equivalent addresses
+ *      obtained from different operating-system interfaces produce
+ *      identical fixed-size hash keys.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      May pre-bind to one or more ports.
+ *      Stores the normalized address in the storage referenced by
+ *      keyPtr.
  *
  *----------------------------------------------------------------------
  */
+static void
+PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr,
+                   const struct sockaddr *saPtr)
+{
+    NS_NONNULL_ASSERT(keyPtr != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
 
+    memset(keyPtr, 0, sizeof(*keyPtr));
+
+    switch (saPtr->sa_family) {
+    case AF_INET:
+        {
+            struct sockaddr_in src;
+            struct sockaddr_in dst;
+
+            memcpy(&src, saPtr, sizeof(src));
+            memset(&dst, 0, sizeof(dst));
+
+            dst.sin_family = src.sin_family;
+            dst.sin_port = src.sin_port;
+            dst.sin_addr = src.sin_addr;
+
+            memcpy(keyPtr, &dst, sizeof(dst));
+        }
+        break;
+
+    case AF_INET6:
+        {
+            struct sockaddr_in6 src;
+            struct sockaddr_in6 dst;
+
+            memcpy(&src, saPtr, sizeof(src));
+            memset(&dst, 0, sizeof(dst));
+
+            dst.sin6_family = src.sin6_family;
+            dst.sin6_port = src.sin6_port;
+            dst.sin6_addr = src.sin6_addr;
+            dst.sin6_scope_id = src.sin6_scope_id;
+
+            memcpy(keyPtr, &dst, sizeof(dst));
+        }
+        break;
+
+    default:
+        assert(0);
+        break;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindRegisterInetSocket --
+ *
+ *      Add an already-bound Internet socket to the TCP or UDP pre-bind
+ *      table, using its local socket address as the hash key. When an
+ *      entry for the address already exists, append the descriptor to
+ *      that entry.
+ *
+ * Results:
+ *      NS_OK when the socket was added successfully, otherwise NS_ERROR.
+ *
+ * Side effects:
+ *      Allocates or reallocates a Prebind structure and modifies the
+ *      selected pre-bind hash table. On success, the socket becomes
+ *      managed by the pre-bind subsystem.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+PrebindRegisterInetSocket(const char *proto, NS_SOCKET sock,
+                          const struct sockaddr *saPtr)
+{
+    Tcl_HashTable   *tablePtr;
+    Tcl_HashEntry   *hPtr;
+    struct Prebind  *pPtr, *newPtr;
+    int              isNew = 0;
+
+    NS_NONNULL_ASSERT(proto != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
+
+    tablePtr = *proto == 't' ? &preboundTcp : &preboundUdp;
+
+    hPtr = PrebindCreateHashEntry(tablePtr, saPtr, &isNew);
+    pPtr = isNew != 0 ? NULL : Tcl_GetHashValue(hPtr);
+
+    newPtr = PrebindAppendSocket(pPtr, sock);
+    if (newPtr == NULL) {
+        if (isNew != 0) {
+            Tcl_DeleteHashEntry(hPtr);
+        }
+        return NS_ERROR;
+    }
+
+    Tcl_SetHashValue(hPtr, newPtr);
+
+    Ns_LogSockaddr(Notice, "prebind: adopted inherited socket for ",
+                   saPtr);
+    Ns_Log(Notice, "prebind: adopted %s socket fd %d",
+           proto, sock);
+
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindRegisterSocket --
+ *
+ *      Inspect an already-open socket descriptor, validate its address
+ *      family, type, protocol, and listening state, and register it in
+ *      the appropriate pre-bind hash table. Supported descriptors are
+ *      TCP and UDP Internet sockets and pathname-based Unix-domain
+ *      stream sockets.
+ *
+ * Results:
+ *      NS_OK when the descriptor was recognized and adopted, otherwise
+ *      NS_ERROR.
+ *
+ * Side effects:
+ *      Queries socket properties and, on success, modifies a pre-bind
+ *      hash table. The adopted socket becomes managed by the pre-bind
+ *      subsystem.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+PrebindRegisterSocket(NS_SOCKET sock)
+{
+    struct NS_SOCKADDR_STORAGE sa;
+    struct sockaddr           *saPtr = (struct sockaddr *)&sa;
+    socklen_t                  saLen, optLen;
+    int                        type;
+
+    memset(&sa, 0, sizeof(sa));
+    saLen = (socklen_t)sizeof(sa);
+
+    if (getsockname(sock, saPtr, &saLen) != 0) {
+        Ns_Log(Error,
+               "prebind: cannot obtain address of inherited socket %d: %s",
+               sock, strerror(errno));
+        return NS_ERROR;
+    }
+
+    optLen = (socklen_t)sizeof(type);
+    if (getsockopt(sock, SOL_SOCKET, SO_TYPE,
+                   (void *)&type, &optLen) != 0) {
+        Ns_Log(Error,
+               "prebind: cannot obtain type of inherited socket %d: %s",
+               sock, strerror(errno));
+        return NS_ERROR;
+    }
+
+    /*
+     * A stream descriptor supplied with Accept=no must be a listening
+     * socket. A connected descriptor usually indicates Accept=yes.
+     */
+    if (type == SOCK_STREAM) {
+        int accepting = 0;
+
+        optLen = (socklen_t)sizeof(accepting);
+        if (getsockopt(sock, SOL_SOCKET, SO_ACCEPTCONN,
+                       (void *)&accepting, &optLen) == 0) {
+            if (accepting == 0) {
+                Ns_Log(Error,
+                       "prebind: inherited stream socket %d is not listening",
+                       sock);
+                return NS_ERROR;
+            }
+        } else if (errno == ENOPROTOOPT) {
+            /*
+             * SO_ACCEPTCONN is defined but cannot be queried on this
+             * platform. At least reject a connected stream descriptor.
+             */
+            struct NS_SOCKADDR_STORAGE peer;
+            socklen_t                  peerLen;
+
+            memset(&peer, 0, sizeof(peer));
+            peerLen = (socklen_t)sizeof(peer);
+
+            if (getpeername(sock, (struct sockaddr *)&peer, &peerLen) == 0) {
+                Ns_Log(Error,
+                       "prebind: inherited stream socket %d is connected "
+                       "rather than listening",
+                       sock);
+                return NS_ERROR;
+            }
+
+            if (errno != ENOTCONN) {
+                Ns_Log(Error,
+                       "prebind: cannot determine state of inherited "
+                       "stream socket %d: %s",
+                       sock, strerror(errno));
+                return NS_ERROR;
+            }
+
+            /*
+             * ENOTCONN cannot distinguish a listening socket from an
+             * unconnected stream socket. Socket-activation providers are
+             * trusted to supply a passive listener.
+             */
+        } else {
+            Ns_Log(Error,
+                   "prebind: cannot inspect inherited stream socket %d: %s",
+                   sock, strerror(errno));
+            return NS_ERROR;
+        }
+    }
+
+    switch (saPtr->sa_family) {
+    case AF_INET:
+    case AF_INET6:
+        {
+            const char *proto;
+
+            if (type == SOCK_STREAM) {
+                proto = "tcp";
+            } else if (type == SOCK_DGRAM) {
+                proto = "udp";
+            } else {
+                Ns_Log(Error,
+                       "prebind: inherited Internet socket %d has "
+                       "unsupported type %d",
+                       sock, type);
+                return NS_ERROR;
+            }
+
+#ifdef SO_PROTOCOL
+            {
+                int protocol;
+
+                optLen = (socklen_t)sizeof(protocol);
+                if (getsockopt(sock, SOL_SOCKET, SO_PROTOCOL,
+                               (void *)&protocol, &optLen) == 0) {
+                    if ((type == SOCK_STREAM && protocol != IPPROTO_TCP)
+                        || (type == SOCK_DGRAM && protocol != IPPROTO_UDP)) {
+                        Ns_Log(Error,
+                               "prebind: inherited socket %d has "
+                               "unsupported protocol %d",
+                               sock, protocol);
+                        return NS_ERROR;
+                    }
+                } else if (errno != ENOPROTOOPT) {
+                    Ns_Log(Error,
+                           "prebind: cannot obtain protocol of inherited "
+                           "socket %d: %s",
+                           sock, strerror(errno));
+                    return NS_ERROR;
+                }
+            }
+#endif
+
+            return PrebindRegisterInetSocket(proto, sock, saPtr);
+        }
+
+#ifdef AF_UNIX
+    case AF_UNIX:
+        {
+            const struct sockaddr_un *unPtr;
+            Tcl_HashEntry            *hPtr;
+            size_t                    offset, pathBytes, pathLength;
+            const char               *terminator;
+            char                      path[sizeof(((struct sockaddr_un *)0)->sun_path) + 1u];
+            int                       isNew = 0;
+
+            if (type != SOCK_STREAM) {
+                Ns_Log(Error,
+                       "prebind: inherited Unix-domain socket %d has "
+                       "unsupported type %d",
+                       sock, type);
+                return NS_ERROR;
+            }
+
+            unPtr = (const struct sockaddr_un *)saPtr;
+            offset = offsetof(struct sockaddr_un, sun_path);
+
+            if ((size_t)saLen <= offset) {
+                Ns_Log(Error,
+                       "prebind: inherited Unix-domain socket %d "
+                       "has no pathname",
+                       sock);
+                return NS_ERROR;
+            }
+
+            pathBytes = (size_t)saLen - offset;
+            if (pathBytes > sizeof(unPtr->sun_path)) {
+                pathBytes = sizeof(unPtr->sun_path);
+            }
+
+            /*
+             * An initial NUL denotes an abstract Unix-domain socket.
+             * The existing pathname-keyed table cannot represent it.
+             */
+            if (unPtr->sun_path[0] == '\0') {
+                Ns_Log(Error,
+                       "prebind: inherited abstract Unix-domain socket %d "
+                       "is not supported",
+                       sock);
+                return NS_ERROR;
+            }
+
+            terminator = memchr(unPtr->sun_path, '\0', pathBytes);
+            if (terminator != NULL) {
+                pathLength = (size_t)(terminator - unPtr->sun_path);
+            } else {
+                pathLength = pathBytes;
+            }
+
+            memcpy(path, unPtr->sun_path, pathLength);
+            path[pathLength] = '\0';
+
+            if (Ns_PathIsAbsolute(path) != NS_TRUE) {
+                Ns_Log(Error,
+                       "prebind: inherited Unix-domain socket %d has "
+                       "non-absolute pathname '%s'",
+                       sock, path);
+                return NS_ERROR;
+            }
+
+            hPtr = Tcl_CreateHashEntry(&preboundUnix, path, &isNew);
+            if (isNew == 0) {
+                Ns_Log(Error,
+                       "prebind: duplicate inherited Unix-domain socket: %s",
+                       path);
+                return NS_ERROR;
+            }
+
+            Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
+            Ns_Log(Notice,
+                   "prebind: adopted inherited Unix-domain socket: %s = %d",
+                   path, sock);
+
+            return NS_OK;
+        }
+#endif
+
+    default:
+        Ns_Log(Error,
+               "prebind: inherited socket %d has unsupported "
+               "address family %d",
+               sock, (int)saPtr->sa_family);
+        return NS_ERROR;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsPreBind --
+ *
+ *      Adopt sockets supplied by a supported service manager and
+ *      pre-bind sockets specified by the command-line bind arguments
+ *      or bind file. Called by Ns_Main during startup before possible
+ *      privilege or root-directory changes.
+ *
+ * Results:
+ *      NS_OK on success, otherwise NS_ERROR.
+ *
+ * Side effects:
+ *      May open or adopt sockets and store them in the pre-bind tables
+ *      for later use by socket drivers.
+ *
+ *----------------------------------------------------------------------
+ */
 Ns_ReturnCode
 NsPreBind(const char *args, const char *file)
 {
     Ns_ReturnCode status = NS_OK;
 
 #ifndef _WIN32
+    size_t inherited = 0u;
 
-    if (args != NULL) {
-        status = PrebindSockets(args);
+#if defined(HAVE_SD_LISTEN_FDS)
+    status = PrebindSystemdSockets(&inherited);
+#elif defined(__APPLE__)
+    status = PrebindLaunchdSockets(&inherited);
+#endif /* HAVE_SD_LISTEN_FDS || __APPLE__ */
+
+    if (status != NS_OK) {
+        return status;
     }
 
     /*
-     * Check, if the bind options were provided via file. If so, parse
-     * and interpret it.
+     * When inherited sockets are provided, reject traditional prebind
+     * options for now and treat the two mechanisms as alternatives.
      */
-    if (status == NS_OK && file != NULL) {
-        Tcl_Channel chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
+    if (inherited > 0u && (args != NULL || file != NULL)) {
+        Ns_Log(Error,
+               "prebind: socket activation supplied %zu socket%s, but explicit "
+               "prebind options were specified as well",
+               inherited, inherited == 1u ? "" : "s");
+        return NS_ERROR;
+    }
 
-        if (chan == NULL) {
-            Ns_Log(Error, "NsPreBind: can't open file '%s': '%s'", file,
-                   strerror(Tcl_GetErrno()));
-        } else {
-            Tcl_DString line;
+    if (inherited == 0u) {
+        if (args != NULL) {
+            status = PrebindSockets(args);
+        }
 
-            Tcl_DStringInit(&line);
-            while (Tcl_Eof(chan) == 0) {
-                Tcl_DStringSetLength(&line, 0);
-                if (Tcl_Gets(chan, &line) > 0) {
-                    status = PrebindSockets(Tcl_DStringValue(&line));
-                    if (status != NS_OK) {
-                        break;
-                    }
-                }
-            }
-            Tcl_DStringFree(&line);
-            Tcl_Close(NULL, chan);
+        if (status == NS_OK && file != NULL) {
+            status = PrebindFile(file);
         }
     }
 #endif /* _WIN32 */
@@ -1045,7 +1705,8 @@ PrebindSockets(const char *spec)
                 Ns_Log(Error, "prebind: tcp: invalid address: [%s]:%d", addr, port);
                 continue;
             }
-            hPtr = Tcl_CreateHashEntry(&preboundTcp, (char *) &sa, &isNew);
+
+            hPtr = PrebindCreateHashEntry(&preboundTcp, saPtr, &isNew);
             if (isNew == 0) {
                 Ns_Log(Error, "prebind: tcp: duplicate entry: [%s]:%d",
                        addr, port);
@@ -1073,7 +1734,8 @@ PrebindSockets(const char *spec)
                        addr, port);
                 continue;
             }
-            hPtr = Tcl_CreateHashEntry(&preboundUdp, (char *)saPtr, &isNew);
+
+            hPtr = PrebindCreateHashEntry(&preboundUdp, saPtr, &isNew);
             if (isNew == 0) {
                 Ns_Log(Error, "prebind: udp: duplicate entry: [%s]:%d",
                        addr, port);
