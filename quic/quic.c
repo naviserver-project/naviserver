@@ -7337,15 +7337,23 @@ PollsetUpdateConnPollInterest(ConnCtx *cc)
     uint64_t     set_bits   = H3_CONN_ERR_MASK;
     uint64_t     clear_bits = 0u;
 
-    /* Keep OSB/OSU ON while handshake runs or we have pending writes */
-    if (!cc->handshake_done || cc->wants_write) {
+    /*
+     * OSB/OSU are outgoing-stream creation capacity events, not
+     * readiness notifications for writing existing streams. Retain them
+     * only while they are used to advance the initial handshake. Once
+     * the handshake completes, the server control and QPACK streams are
+     * created synchronously and no further local streams are pending.
+     */
+    if (!cc->handshake_done) {
         set_bits |= SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU;
     } else {
-        /* Optional: clear when fully idle */
         clear_bits |= SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU;
     }
 
-    (void)PollsetUpdateEvents(dc, cc->h3ssl.conn, /*sc=*/NULL, set_bits, clear_bits, "PollsetUpdateConnPollInterest");
+    (void)PollsetUpdateEvents(
+        dc, cc->h3ssl.conn, NULL,
+        set_bits, clear_bits,
+        "PollsetUpdateConnPollInterest");
 }
 
 /*
@@ -8494,10 +8502,10 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
 
         if (sc != NULL) {
             Ns_Log(Warning,
-                   "[%lld] H3 stalled item %zu: SSL %p H3[%lld] kind %s "
-                   "events 0x%08" PRIx64 " revents 0x%08" PRIx64
-                   " io_state 0x%02x rx %zu/%zu fin_pending %d "
-                   "eof_seen %d wants_write %d",
+                   "[%lld] H3 stalled item %zu: SSL %p H3[%lld] kind %s"
+                   " events 0x%08" PRIx64 " revents 0x%08" PRIx64
+                   " io_state 0x%02x rx %zu/%zu fin_pending %d"
+                   " eof_seen %d wants_write %d",
                    (long long)dc->iter,
                    i, (void *)ssl,
                    (long long)sc->quic_sid,
@@ -8514,19 +8522,26 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
                 : NULL;
 
             Ns_Log(Warning,
-                   "[%lld] H3 stalled item %zu: SSL %p type %s "
-                   "events 0x%08" PRIx64 " revents 0x%08" PRIx64
-                   " wants_write %d resume_pending %d",
+                   "[%lld] H3 stalled item %zu: SSL %p type %s"
+                   " init_finished %d events 0x%08" PRIx64
+                   " revents 0x%08" PRIx64
+                   " handshake_done %d wants_write %d resume_pending %d"
+                   " conn_closed %d connection_state %d"
+                   " server_streams c/p/r %d/%d/%d",
                    (long long)dc->iter,
                    i, (void *)ssl,
                    cc == NULL ? "listener" : "connection",
+                   cc != NULL ? SSL_is_init_finished(ssl) : -1,
                    item->events, item->revents,
+                   cc != NULL ? cc->handshake_done : -1,
                    cc != NULL ? cc->wants_write : 0,
-                   cc != NULL
-                       ? SharedHasResumePending(&cc->shared)
-                       : 0);
+                   cc != NULL ? SharedHasResumePending(&cc->shared) : 0,
+                   cc != NULL ? cc->conn_closed : -1,
+                   cc != NULL ? cc->connection_state : -1,
+                   cc != NULL ? cc->h3ssl.cstream != NULL : -1,
+                   cc != NULL ? cc->h3ssl.pstream != NULL : -1,
+                   cc != NULL ? cc->h3ssl.rstream != NULL : -1);
         }
-
         shown++;
     }
 
@@ -8981,9 +8996,24 @@ QuicThread(void *arg)
                                (long long)dc->iter, i);
                         if (quic_conn_open_server_uni_streams(cc, &cc->h3ssl) == 0) {
                             ossl_conn_maybe_log_first_shutdown(cc, "OSB|OSU after quic_conn_open_server_uni_streams");
-                            //hassomething++;
+                            /*
+                             * The required local streams now exist. OSB/OSU describe capacity
+                             * for creating additional streams, for which the driver has no
+                             * pending request.
+                             */
+                            PollsetUpdateConnPollInterest(cc);
                         } else {
-                            Ns_Log(Error, "H3: failed to create server uni streams; leaving conn up for now");
+                            /*
+                             * The HTTP/3 connection cannot operate without its local control and
+                             * QPACK streams. There is no deferred creation or retry state.
+                             */
+                            Ns_Log(Error,
+                                   "[%lld] H3: failed to create required server uni streams; "
+                                   "closing connection",
+                                   (long long)dc->iter);
+
+                            PollsetMarkDead(cc, s, "server uni stream creation failed");
+                            goto skip;
                         }
                     } else if (hs_result == -1) {
                         // Hard stream error - remove connection
