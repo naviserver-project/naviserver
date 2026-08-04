@@ -297,6 +297,8 @@ static SockState SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, c
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
+static Ns_ReturnCode SockQueueTry(Sock *sockPtr, const Ns_Time *timePtr, SockState *failurePtr)
+    NS_GNUC_NONNULL(1,3);
 static void SockDeliveryRelease(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void SockDeliveryAcquire(Sock *sock)
@@ -3933,44 +3935,77 @@ RequestFree(Sock *sockPtr, const char *caller)
     }
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
- * SockQueue --
+ * SockQueueTry --
  *
- *      Puts socket into connection queue and handle the NS_ERROR case.
+ *      Attempt to assign a socket to a virtual server and queue its
+ *      request for processing.
+ *
+ *      This function performs no socket cleanup. On NS_OK, ownership is
+ *      transferred to the connection queue. On NS_TIMEOUT, ownership
+ *      remains with the caller so that queueing can be retried. On
+ *      NS_ERROR, ownership also remains with the caller, which must
+ *      perform the appropriate transport-specific cleanup.
+ *
+ *      failurePtr reports the terminal socket state associated with an
+ *      NS_ERROR result. It remains SOCK_READY for NS_OK and NS_TIMEOUT,
+ *      indicating that the socket must not be released by the generic
+ *      queue wrapper.
+ *
+ * Arguments:
+ *      sockPtr    - Socket containing the request to be queued.
+ *      timePtr    - Current time used by the connection-queue logic, or
+ *                   NULL to have the queueing code obtain the time.
+ *      failurePtr - Location receiving the terminal socket state when
+ *                   queueing fails.
  *
  * Results:
- *      Ns_ReturnCode, potential values NS_TRUE, NS_FALSE, NS_TIMEOUT
+ *      NS_OK      - Request ownership was transferred to a connection
+ *                   queue.
+ *      NS_TIMEOUT - The caller retains ownership and may retry later.
+ *      NS_ERROR   - Queueing failed permanently; failurePtr identifies
+ *                   the reason and the caller retains ownership.
  *
  * Side effects:
- *      None.
+ *      May assign the socket to a virtual server and transfer ownership
+ *      of the request to a connection queue. Does not release or recycle
+ *      the socket.
  *
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
+SockQueueTry(Sock *sockPtr, const Ns_Time *timePtr,
+             SockState *failurePtr)
 {
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
-    /*
-     *  Verify the conditions. Request struct must exist already.
-     */
+    NS_NONNULL_ASSERT(failurePtr != NULL);
     assert(sockPtr->reqPtr != NULL);
+
+    /*
+     * SOCK_READY means that no cleanup is required: ownership was either
+     * transferred successfully or retained by the driver for a timed retry.
+     */
+    *failurePtr = SOCK_READY;
 
     result = SockSetServer(sockPtr);
     if (likely(result == NS_OK)) {
-        assert(sockPtr->servPtr != NULL || *sockPtr->reqPtr->request.method == 'B');
+        assert(sockPtr->servPtr != NULL
+               || *sockPtr->reqPtr->request.method == 'B');
 
         /*
-         * Actual queueing. NS_OK means that ownership was transferred to a
-         * connection thread queue. NS_ERROR means that queueing failed and the
-         * request should be rejected. NS_TIMEOUT means that the socket remains
-         * owned by the driver and will be retried later.
+         * NS_OK transfers ownership to a connection queue. NS_TIMEOUT
+         * retains driver ownership for a later retry. NS_ERROR requires
+         * caller-side rejection and cleanup.
          */
         result = NsQueueConn(sockPtr, timePtr);
         if (unlikely(result == NS_ERROR)) {
+            *failurePtr = SOCK_QUEUEFULL;
+
 #ifdef NS_TRACE_QUEUEFULL_MEMORY
             if (Ns_LogSeverityEnabled(Ns_LogMemoryDebug)) {
                 static NS_THREAD_LOCAL size_t queueFullCount = 0u;
@@ -3981,10 +4016,66 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
                 }
             }
 #endif
-            SockRelease(sockPtr, SOCK_QUEUEFULL, 0);
         }
     } else {
-        SockRelease(sockPtr, SOCK_BADHEADER, 0);
+        *failurePtr = SOCK_BADHEADER;
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockQueue --
+ *
+ *      Queue a driver-owned socket using the traditional driver cleanup
+ *      policy.
+ *
+ *      SockQueueTry() performs the queueing attempt. Successful queueing
+ *      transfers ownership to a connection queue. A temporary timeout
+ *      leaves the socket owned by the driver for a later retry. A
+ *      terminal failure releases the socket using the failure state
+ *      reported by SockQueueTry().
+ *
+ *      Drivers requiring transport-specific failure handling, such as
+ *      HTTP/3 streams sharing a connection-level transport, should call
+ *      SockQueueTry() directly.
+ *
+ * Arguments:
+ *      sockPtr - Socket containing the request to be queued.
+ *      timePtr - Current time used by the connection-queue logic, or
+ *                NULL to have the queueing code obtain the time.
+ *
+ * Results:
+ *      NS_OK      - Request ownership was transferred to a connection
+ *                   queue.
+ *      NS_TIMEOUT - The driver retains the socket for a later retry.
+ *      NS_ERROR   - Queueing failed and the socket was released.
+ *
+ * Side effects:
+ *      May transfer request ownership to a connection queue. On a
+ *      terminal queueing failure, closes and recycles the socket through
+ *      SockRelease().
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
+{
+    SockState     failure;
+    Ns_ReturnCode result;
+
+    result = SockQueueTry(sockPtr, timePtr, &failure);
+
+    /*
+     * Traditional driver callers transfer no provisional delivery
+     * reference. Preserve the existing behavior by releasing requests
+     * which failed server mapping or queueing. NS_TIMEOUT leaves failure
+     * as SOCK_READY and the socket remains owned by the driver.
+     */
+    if (failure != SOCK_READY) {
+        SockRelease(sockPtr, failure, 0);
     }
 
     return result;
@@ -4124,8 +4215,9 @@ NsSockDeliveryRefs(const Ns_Sock *sock)
  *      NS_TIMEOUT - The socket request remains owned by the driver and
  *                   queueing should be retried later.
  *
- *      NS_ERROR   - Validation, server mapping, or queueing failed. The
- *                   request must not be retried as a normal queue timeout.
+ *      NS_ERROR   - Validation, server mapping, or queueing failed.
+ *                   Ownership remains with the calling driver, which must
+ *                   perform final socket cleanup.
  *
  * Side effects:
  *      On NS_OK, leaves one delivery reference associated with the socket.
@@ -4138,24 +4230,41 @@ Ns_ReturnCode
 NsDispatchRequest(Sock *sockPtr)
 {
     Ns_ReturnCode result;
+    SockState     failure;
 
     if (CheckSingletonHeaderFields(sockPtr) != NS_OK) {
-        Ns_Log(Error, "Invalid host header fields (fields are not singletons)");
-        SockRelease(sockPtr, SOCK_BADHEADER, 0);
+        Ns_Log(Error,
+               "Invalid host header fields (fields are not singletons)");
+
+        /*
+         * Ownership remains with the originating driver.
+         */
         return NS_ERROR;
     }
+
     DeterminePeerAddrFromHeaders(sockPtr);
 
     /*
-     * The request is about to be handed to the connection delivery
-     * machinery. Until delivery completes, a connection or writer thread may
-     * invoke driver operations on this socket.
+     * Protect the socket before queueing can make it visible to a
+     * connection thread.
      */
     SockDeliveryAcquire(sockPtr);
 
-    result = SockQueue(sockPtr, NULL);
+    result = SockQueueTry(sockPtr, NULL, &failure);
+
     if (result != NS_OK) {
+        /*
+         * Queue ownership was not transferred. Drop only the provisional
+         * delivery reference. The originating driver still owns the socket
+         * and performs final cleanup.
+         */
         SockDeliveryRelease(sockPtr);
+
+        if (failure != SOCK_READY) {
+            Ns_Log(DriverDebug,
+                   "NsDispatchRequest: queueing failed, reason %s",
+                   SockStateString(failure));
+        }
     }
 
     return result;
@@ -4217,18 +4326,37 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
  *
  *      Return a socket to the driver's recycle list.
  *
+ *      In assertion-enabled builds, verify that a QUIC socket has no
+ *      outstanding delivery references. Such references allow connection
+ *      or writer threads to access the socket and therefore must be
+ *      released before the structure can be recycled.
+ *
+ *      Under the driver lock, verify that the socket is not already on
+ *      the recycle list, mark it as recycled, and insert it at the head
+ *      of the list.
+ *
  * Results:
  *      None.
  *
  * Side effects:
- *      Marks the socket as recycled and inserts it at the head of the
- *      driver's recycle list.
+ *      Updates the socket flags and linkage and modifies the driver's
+ *      recycle list. Assertion-enabled builds additionally inspect the
+ *      delivery-reference count of QUIC sockets.
  *
  *----------------------------------------------------------------------
  */
 static inline void
 SockRecyclePush(Driver *drvPtr, Sock *sockPtr)
 {
+#ifndef NDEBUG
+    if ((drvPtr->opts & NS_DRIVER_QUIC) != 0u) {
+        const unsigned int deliveryRefs =
+            NsSockDeliveryRefs((Ns_Sock *)sockPtr);
+
+        assert(deliveryRefs == 0u);
+    }
+#endif
+
     Ns_MutexLock(&drvPtr->lock);
 
     assert((sockPtr->flags & NS_CONN_SOCK_RECYCLED) == 0u);
@@ -4442,13 +4570,19 @@ SockNew(Driver *drvPtr)
  *      socket descriptor open. This is required by transports such as QUIC,
  *      where multiple logical streams may share the same UDP socket.
  *
+ *      QUIC sockets are not released while a delivery reference remains
+ *      outstanding. In that case, the function logs the attempted
+ *      premature release and returns without modifying the socket.
+ *
  * Results:
  *      None.
  *
  * Side effects:
- *      May close the socket descriptor, invoke registered cleanup callbacks,
- *      free the associated request, decrement the driver queue size, and
- *      place the Sock structure on the driver's reusable-socket list.
+ *      For a releasable socket, may close the socket descriptor, invoke
+ *      registered cleanup callbacks, free the associated request,
+ *      decrement the driver queue size, and place the Sock structure on
+ *      the reusable-socket list. A QUIC socket with outstanding delivery
+ *      references is left unchanged and an error is logged.
  *
  *----------------------------------------------------------------------
  */
@@ -4459,10 +4593,13 @@ SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    if ((sockPtr->flags & NS_CONN_DELIVERY_TRACKED) != 0u) {
-        unsigned int deliveryRefs;
+    drvPtr = sockPtr->drvPtr;
+    assert(drvPtr != NULL);
 
-        deliveryRefs = NsSockDeliveryRefs((Ns_Sock *)sockPtr);
+    if ((drvPtr->opts & NS_DRIVER_QUIC) != 0u) {
+        const unsigned int deliveryRefs =
+            NsSockDeliveryRefs((Ns_Sock *)sockPtr);
+
         if (deliveryRefs > 0u) {
             Ns_Log(Error,
                    "attempt to release delivery-owned socket %p refs %u "
@@ -4489,9 +4626,6 @@ SockReleaseEx(Sock *sockPtr, SockState reason, int err, bool keep)
             reason = SOCK_ENTITYTOOLARGE;
         }
     }
-
-    drvPtr = sockPtr->drvPtr;
-    assert(drvPtr != NULL);
 
     SockError(sockPtr, reason, err);
 
