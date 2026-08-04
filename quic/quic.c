@@ -603,7 +603,8 @@ static void     h3_headers_log_nv(const StreamCtx *sc, const nghttp3_nv *nva, si
 /* H3 data flow */
 static H3FeedResultCode  h3_stream_feed_pending(StreamCtx *sc, uint64_t sid) NS_GNUC_NONNULL(1);
 static H3DrainResultCode h3_stream_read_into_hold(StreamCtx *sc, SSL *stream) NS_GNUC_NONNULL(1,2);
-static void              h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nbytes) NS_GNUC_NONNULL(1,3);
+static void              h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nbytes, bool fin_accepted)
+    NS_GNUC_NONNULL(1,3);
 static H3DiscardState    h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc, int64_t h3_sid,
                                                        nghttp3_vec *vecs, int nvec, int fin, const char *reason) NS_GNUC_NONNULL(1);
 static nghttp3_ssize     h3_stream_read_data_cb(nghttp3_conn *UNUSED(conn), int64_t stream_id, nghttp3_vec *vecs,
@@ -620,8 +621,6 @@ static int64_t           h3_stream_id(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 
 /* H3 response body management */
 static bool              h3_response_allows_body(int status, const char *method) NS_GNUC_NONNULL(2);
-static bool              h3_response_has_body_now(StreamCtx *sc) NS_GNUC_NONNULL(1);
-
 
 /* H3 diagnostics / stringifiers */
 static const char *      H3DrainResultCode_str(H3DrainResultCode dr);
@@ -3134,7 +3133,7 @@ h3_conn_write_step(ConnCtx *cc)
     }
 
     for (;;) {
-        bool       hit_want   = NS_FALSE;
+        bool       hit_want   = NS_FALSE, fin_concluded_by_write = NS_FALSE;
         SSL       *stream     = NULL;
         StreamCtx *sc         = NULL;
         int        write_state;
@@ -3160,77 +3159,103 @@ h3_conn_write_step(ConnCtx *cc)
 
         if (nvec <= 0) {
             if (sid >= 0 && fin) {
+                /*
+                 * Zero-length FIN (no payload vectors left)
+                 */
+                StreamCtx *zsc = StreamCtxGet(cc, sid, /*create*/0);
 
-                // Zero-length FIN for a stream (often one we already freed at TLS level)
-                Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: ZERO-LEN FIN; calling nghttp3_conn_shutdown_stream_write",
-                       (long long)dc->iter, (long long)sid);
+                if (zsc != NULL
+                    && zsc->ssl != NULL
+                    && zsc->pidx != (size_t)-1
+                    && zsc->pidx < PollsetCount(dc)
+                    && dc->u.h3.ssl_items.data[zsc->pidx] == zsc->ssl) {
+                    int ok = SSL_stream_conclude(zsc->ssl, 0);
 
-                /* Tell nghttp3 the app is done writing on this stream. Harmless if repeated. */
-                nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d -> SSL_stream_conclude -> %d",
+                           (long long)dc->iter, (long long)sid, (long)nvec,
+                           nvec > 0 ? "OK" : nvec == 0 ? "NOTHING" : nghttp3_strerror((int)nvec),
+                           fin, ok);
 
-                { /* zero-length FIN (no payload vectors left) */
-                    StreamCtx *zsc = StreamCtxGet(cc, sid, /*create*/0);
-                    if (zsc  != NULL) {
-                        int ok = SSL_stream_conclude(zsc->ssl, 0);
+                    if (ok == 1) {
+                        uint8_t io_state;
+                        /*
+                         * Inform nghttp3 that the zero-length final write was
+                         * accepted by the QUIC transport.
+                         */
+                        (void)nghttp3_conn_add_write_offset(cc->h3conn, sid, 0u);
 
-                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d -> SSL_stream_conclude -> %d",
-                               (long long)dc->iter, (long long)sid, (long)nvec,
-                               nvec > 0 ? "OK" : nvec == 0 ? "NOTHING" : nghttp3_strerror((int)nvec),
-                               fin, ok);
+                        Ns_MutexLock(&zsc->lock);
+                        zsc->io_state |= H3_IO_TX_FIN;
+                        zsc->eof_sent  = NS_TRUE;
+                        io_state = zsc->io_state;
+                        Ns_MutexUnlock(&zsc->lock);
 
-                        if (ok == 1) {
-                            uint8_t io_state;
-                            /* Mark TX closed under lock; remember we sent FIN. */
+                        /* SSL_stream_conclude() only queues a QUIC STREAM FIN; it may not produce an
+                         * immediate per-stream kernel event to wake the poll loop. With a long poll
+                         * timeout this can delay the final service pass (and reaping). We therefore set
+                         * zsc->wants_write = NS_TRUE and PollsetEnableWrite() as a one-shot nudge so the
+                         * writer promptly observes TX_FIN and empty queues and either PollsetMarkDead()
+                         * if RX is finished, or disables W and leaves only R armed. This trims tail
+                         * latency without spinning; a future connection-level "kick" or shorter timeout
+                         * could make this nudge unnecessary.
+                         */
+                        zsc->wants_write = NS_TRUE;
+                        PollsetEnableWrite(dc, zsc->ssl, zsc, "tx-fin");
 
-                            Ns_MutexLock(&zsc->lock);
-                            zsc->io_state |= H3_IO_TX_FIN;
-                            zsc->eof_sent  = NS_TRUE;
-                            io_state = zsc->io_state;
-                            Ns_MutexUnlock(&zsc->lock);
+                        /*
+                         * Retain the existing immediate-finalization check here.
+                         */
+                        {
+                            /* If RX is already finished and queues are empty, reap now. */
+                            SharedSnapshot snap = SharedSnapshotInit(&zsc->sh);
+                            bool rx_done = (io_state & H3_IO_RX_FIN) || zsc->eof_seen;
+                            bool tx_done = (io_state & H3_IO_TX_FIN) && SharedIsEmpty(&snap);
 
-                            /* SSL_stream_conclude() only queues a QUIC STREAM FIN; it may not produce an
-                             * immediate per-stream kernel event to wake the poll loop. With a long poll
-                             * timeout this can delay the final service pass (and reaping). We therefore set
-                             * sc->wants_write = NS_TRUE and PollsetEnableWrite() as a one-shot nudge so the
-                             * writer promptly observes TX_FIN and empty queues and either PollsetMarkDead()
-                             * if RX is finished, or disables W and leaves only R armed. This trims tail
-                             * latency without spinning; a future connection-level "kick" or shorter timeout
-                             * could make this nudge unnecessary.
-                             */
-                            zsc->wants_write = NS_TRUE;
-                            PollsetEnableWrite(dc, zsc->ssl, zsc, "tx-fin");
-                            {
-                                /* If RX is already finished and queues are empty, reap now. */
-                                SharedSnapshot snap = SharedSnapshotInit(&zsc->sh);
-                                bool rx_done = (io_state & H3_IO_RX_FIN) || zsc->eof_seen;
-                                bool tx_done = (io_state & H3_IO_TX_FIN) && SharedIsEmpty(&snap);
-
-                                if (rx_done && tx_done) {
-                                    PollsetMarkDead(cc, zsc->ssl, "finalize both-done");
-                                }
-                            }
-                        } else {
-                            int err = SSL_get_error(zsc->ssl, ok);
-                            if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
-                                zsc->wants_write = NS_TRUE;
-                                PollsetEnableWrite(dc, zsc->ssl, zsc, "tx fin WANT_*");
-                            } else {
-                                /* Don't crash the stream; mark reset and drop W. */
-                                Ns_MutexLock(&zsc->lock);
-                                zsc->io_state |= H3_IO_RESET;
-                                Ns_MutexUnlock(&zsc->lock);
-                                PollsetDisableWrite(dc, zsc->ssl, zsc, "tx fin fail->reset");
+                            if (rx_done && tx_done) {
+                                PollsetMarkDead(cc, zsc->ssl, "finalize both-done");
                             }
                         }
+                        did_progress = NS_TRUE;
+                        continue;
+                    }
+
+                    {
+                        int err = SSL_get_error(zsc->ssl, ok);
+                        if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+                            zsc->wants_write = NS_TRUE;
+                            PollsetEnableWrite(dc, zsc->ssl, zsc, "tx fin WANT_*");
+
+                            /*
+                             * Wait for poll readiness. Do not immediately ask
+                             * nghttp3 for the same zero-length FIN again.
+                             */
+                            break;
+
+                        }
+
+                        ERR_clear_error();
+                        /*
+                         * The transport cannot accept the FIN. Prevent nghttp3
+                         * from scheduling this stream again.
+                         */
+                        nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
+
+                        Ns_MutexLock(&zsc->lock);
+                        zsc->io_state |= H3_IO_RESET;
+                        Ns_MutexUnlock(&zsc->lock);
+
+                        PollsetDisableWrite(dc, zsc->ssl, zsc, "tx fin fail->reset");
+                        did_progress = NS_TRUE;
+                        continue;
                     }
                 }
 
                 /*
-                 * Defer reactor processing until the write batch completes. Setting
-                 * did_progress causes the connection-level reactor call below.
+                 * The HTTP/3 stream no longer has a corresponding transport
+                 * stream, so prevent further nghttp3 scheduling.
                  */
+                nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
                 did_progress = NS_TRUE;
-
                 continue;
             }
 
@@ -3328,6 +3353,18 @@ h3_conn_write_step(ConnCtx *cc)
 
                 remaining = vecs[i].len - off;
                 assert((SSL_get_mode(stream) & SSL_MODE_ENABLE_PARTIAL_WRITE) == 0);
+
+                /*
+                 * When nghttp3 marks this batch final, attach FIN to the last
+                 * payload write. This allows OpenSSL to carry the final data
+                 * and stream conclusion in the same QUIC STREAM frame.
+                 */
+                if (fin
+                    && StreamCtxIsBidi(sc)
+                    && i == (int)nvec - 1
+                    && !H3_IO_HAS(sc, H3_IO_TX_FIN)) {
+                    flags |= SSL_WRITE_FLAG_CONCLUDE;
+                }
 
                 ok = SSL_write_ex2(stream,
                                    vecs[i].base + off,
@@ -3476,6 +3513,9 @@ h3_conn_write_step(ConnCtx *cc)
 
                     goto after_sid;
                 }
+                if ((flags & SSL_WRITE_FLAG_CONCLUDE) != 0u) {
+                    fin_concluded_by_write = NS_TRUE;
+                }
                 if (written > 0u) {
                     QuicNoteProgress(dc);
                 }
@@ -3489,41 +3529,77 @@ h3_conn_write_step(ConnCtx *cc)
              * The vector was written or deliberately discarded. Tell nghttp3
              * that it has been consumed.
              */
-            h3_stream_advance_and_trim(sc, sid, vecs[i].base, vecs[i].len);
+            h3_stream_advance_and_trim(sc, sid, vecs[i].base, vecs[i].len,
+                                       (fin_concluded_by_write && i == (int)nvec - 1));
         }
 
-        /* Attach FIN after all vecs (only for bidi data streams). */
-        if (fin && StreamCtxIsBidi(sc) && !H3_IO_HAS(sc, H3_IO_TX_FIN)) {
-            int ok;
+        /*
+         * Complete FIN processing after all vectors. Prefer attaching FIN to the
+         * final payload write; retain SSL_stream_conclude() as the fallback when
+         * no successful payload write concluded the stream.
+         */
+        if (fin
+            && StreamCtxIsBidi(sc)
+            && !H3_IO_HAS(sc, H3_IO_TX_FIN)) {
 
-            /* Stop nghttp3 from generating more body for this stream either way. */
-            nghttp3_conn_shutdown_stream_write(cc->h3conn, h3_stream_id(sc));
+            if (fin_concluded_by_write) {
+                sc->io_state |= H3_IO_TX_FIN;
+                sc->eof_sent  = NS_TRUE;
+                did_progress  = NS_TRUE;
 
-            /* Only attempt conclude if the write side is still OK. */
-            if (SSL_get_stream_write_state(stream) == SSL_STREAM_STATE_OK) {
-                /* Prefer explicit conclude over WRITE_FLAG_CONCLUDE on data writes. */
-                ok = SSL_stream_conclude(stream, 0);   /* or SSL_stream_conclude(stream) if our API has no flags */
-                if (ok == 1) {
-                    sc->io_state |= H3_IO_TX_FIN;
-                    did_progress  = NS_TRUE;
+                Ns_Log(Ns_LogQuicDebug,
+                       "[%lld] H3 write_step final write concluded stream",
+                       (long long)dc->iter);
+            } else {
+                /*
+                 * No payload write concluded the stream. Zero-length FIN is
+                 * normally handled by the nvec == 0 path above; retain this
+                 * explicit conclusion as a defensive fallback.
+                 */
+                if (SSL_get_stream_write_state(stream) == SSL_STREAM_STATE_OK) {
+                    int ok = SSL_stream_conclude(stream, 0);
 
-                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write_step conclude sets sc->wants_write", (long long)dc->iter);
-                    sc->wants_write = NS_TRUE; /* one shot */
-                } else {
-                    const int err = SSL_get_error(stream, ok);
-                    if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
-                        /* Don't set TX_FIN yet; keep EW armed so conclude can complete next tick. */
-                        /* h3_stream_maybe_finalize() will try again when drained. */
-                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write_step WANT sets sc->wants_write", (long long)dc->iter);
-                        sc->wants_write = NS_TRUE; /* one shot */
+                    if (ok == 1) {
+                        sc->io_state |= H3_IO_TX_FIN;
+                        sc->eof_sent  = NS_TRUE;
+                        did_progress  = NS_TRUE;
+
+                        Ns_Log(Ns_LogQuicDebug,
+                               "[%lld] H3 write_step explicitly concluded stream",
+                               (long long)dc->iter);
+
                     } else {
-                        /* Hard failure on conclude: treat as terminal on write side to avoid loops. */
-                        sc->io_state |= H3_IO_RESET;
-                        PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step Hard failure on conclude");
+                        const int err = SSL_get_error(stream, ok);
+
+                        if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+
+                            /*
+                             * Do not set TX_FIN yet. Keep write processing armed
+                             * so that conclusion can be retried later.
+                             */
+                            Ns_Log(Ns_LogQuicDebug,
+                                   "[%lld] H3 write_step conclude WANT "
+                                   "sets sc->wants_write",
+                                   (long long)dc->iter);
+                            hit_want        = NS_TRUE;
+                            sc->wants_write = NS_TRUE;
+
+                        } else {
+                            /*
+                             * The transport cannot accept the FIN. Prevent nghttp3
+                             * from scheduling this stream again.
+                             */
+                            ERR_clear_error();
+                            nghttp3_conn_shutdown_stream_write(
+                                                               cc->h3conn, h3_stream_id(sc));
+
+                            sc->io_state |= H3_IO_RESET;
+                            PollsetDisableWrite(
+                                                dc, stream, sc,
+                                                "h3_conn_write_step hard failure on conclude");
+                        }
                     }
                 }
-            } else {
-                /* Write side already not-OK: don't try to conclude again. */
             }
         }
 
@@ -3533,6 +3609,21 @@ h3_conn_write_step(ConnCtx *cc)
         }
 
     after_sid:
+        /*
+         * Several paths reaching this label can finalize or detach the stream.
+         * A detached stream remains allocated until PollsetSweep(), but its
+         * pollset slot must no longer be inspected or updated.
+         */
+        if (sc == NULL
+            || stream == NULL
+            || sc->ssl != stream
+            || sc->pidx == (size_t)-1
+            || sc->pidx >= PollsetCount(dc)
+            || dc->u.h3.ssl_items.data[sc->pidx] != stream) {
+
+            goto next_sid;
+        }
+
         /*
          * Defer QUIC reactor processing until all writable SIDs have been
          * serviced. The connection-level call below flushes the accumulated
@@ -4400,10 +4491,11 @@ h3_stream_read_into_hold(StreamCtx *sc, SSL *stream)
  *      internal flow control state synchronized with the application's
  *      queued output.
  *
- *      The function also checks whether the stream's transmit queue has
- *      reached end-of-body (EOF) conditions: if all data has been sent and
- *      the application marked the stream as closed, nghttp3 is explicitly
- *      resumed and the stream is scheduled for a final FIN emission.
+ *      The function also checks whether trimming reaches end-of-body.
+ *      When more transport work is required, it resumes the nghttp3
+ *      stream and schedules a separate FIN pass. This resumption is
+ *      suppressed when fin_accepted indicates that the accepted vector
+ *      already concluded the QUIC stream.
  *
  * Results:
  *      None.
@@ -4418,7 +4510,7 @@ h3_stream_read_into_hold(StreamCtx *sc, SSL *stream)
  *----------------------------------------------------------------------
  */
 static inline void
-h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nbytes)
+h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nbytes, bool fin_accepted)
 {
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER bytes %ld",
@@ -4451,7 +4543,7 @@ h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nby
                snap.closed_by_app,
                nbytes);
 
-        if (SharedEOFReady(&snap)) {
+        if (!fin_accepted && SharedEOFReady(&snap)) {
             nghttp3_conn_resume_stream(cc->h3conn, sid);
 
             h3_conn_mark_wants_write(cc, sc, "emit FIN");
@@ -4670,26 +4762,57 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
         *flags = 0;
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: no data, would block", (long long)cc->dc->iter, (long long)stream_id);
         return NGHTTP3_ERR_WOULDBLOCK;
-    }
 
-    {
-        /* Build vecs from pending without mutating queues. */
-        size_t out = SharedBuildVecsFromPending(ss, vecs, veccnt);
+    } else {
+        size_t out;
+        size_t offered = 0u;
+        size_t i;
 
-        SharedSnapshotRead(&sc->sh, &snap);
+        /*
+         * Build vectors from pending without consuming them. The buffers
+         * remain owned by SharedStream until nghttp3 advances the stream.
+         */
+        out = SharedBuildVecsFromPending(ss, vecs, veccnt);
+
+        for (i = 0u; i < out; i++) {
+            offered += vecs[i].len;
+        }
+
+        SharedSnapshotRead(ss, &snap);
+
+        /*
+         * Report EOF together with the final body vectors when the producer
+         * has closed, no additional queued data remains, and this callback
+         * has exposed every unread pending byte. This lets nghttp3 report
+         * FIN with the final payload write instead of requiring a later
+         * zero-vector FIN pass.
+         *
+         * The offered-byte test is important when veccnt is too small to
+         * represent all pending chunks.
+         */
+        if (out > 0u
+            && snap.closed_by_app
+            && snap.queued_bytes == 0u
+            && offered == snap.pending_bytes) {
+            *flags = NGHTTP3_DATA_FLAG_EOF;
+        } else {
+            *flags = 0;
+        }
+
         Ns_Log(Ns_LogQuicDebug,
-               "[%lld] H3[%lld] h3_stream_read_data_cb: returning %zu vecs (%zu queued bytes; pending %zu)"
-               " closed_by_app %d",
-               (long long)cc->dc->iter, (long long)stream_id,
-               out,
+               "[%lld] H3[%lld] h3_stream_read_data_cb:"
+               " returning %zu vecs, %zu bytes"
+               " (queued %zu pending %zu closed_by_app %d EOF %d)",
+               (long long)cc->dc->iter,
+               (long long)stream_id,
+               out, offered,
                snap.queued_bytes,
                snap.pending_bytes,
-               snap.closed_by_app);
+               snap.closed_by_app,
+               (*flags & NGHTTP3_DATA_FLAG_EOF) != 0u);
 
         sc->tx_served_this_step = NS_TRUE;
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: mark tx_served_this_step", (long long)cc->dc->iter, (long long)sc->quic_sid);
 
-        *flags = 0;
         return (nghttp3_ssize)out;
     }
 }
@@ -4760,16 +4883,22 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
     h3_headers_log_nv(sc, sc->resp_nv, sc->resp_nvlen, "submit_response");
 
     /*
-     * IMPORTANT: when a body is to be streamed via nghttp3 data source, we
-     * have to pass &sc->data_reader.  If there is never any DATA (e.g.,
-     * 304/204/HEAD or content-length:0), we can submit without a data source
-     * and follow up by concluding the stream.
+     * Responses for which HTTP semantics prohibit a body, such as HEAD,
+     * 204 and 304 responses, are submitted without a data reader. Responses
+     * which permit a body retain the reader even when no data is currently
+     * queued; the reader reports EOF after the producer has closed and its
+     * queues are empty.
+     *
+     * Do not conclude the QUIC stream here. nghttp3 must emit HEADERS first
+     * and report fin to h3_conn_write_step(), which performs the
+     * transport-level conclusion.
      */
     rv = nghttp3_conn_submit_response(cc->h3conn,
                                       h3_stream_id(sc),
                                       sc->resp_nv,
                                       sc->resp_nvlen,
-                                      &sc->data_reader);   /* or NULL for header-only */
+                                      sc->response_allow_body ? &sc->data_reader : NULL);
+
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] submit_response nv=%zu -> %s",
            (long long)dc->iter, (long long)sc->h3_sid, sc->resp_nvlen, rv == 0 ? "OK" : "ERROR");
 
@@ -4792,13 +4921,13 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
 
     SharedHdrsClear(&sc->sh);
 
-    /* If no body will be sent, conclude immediately with zero-length FIN. */
-    if (!h3_response_has_body_now(sc)) {
-        (void)SSL_stream_conclude(sc->ssl, 0);
-        /* nghttp3 will need a resume tick to flush the FIN */
-    }
+    /*
+     * Do not conclude the QUIC stream here. nghttp3 must emit the HEADERS
+     * frame first and report fin to h3_conn_write_step(), which performs
+     * transport-level conclusion.
+     */
 
-    /* Keep per-stream POLLOUT armed; frames are pending */
+    /* Keep per-stream POLLOUT armed; frames are pending. */
     if (sc->ssl != NULL) {
         PollsetEnableWrite(dc, sc->ssl, sc, "submit_ready_headers");
     }
@@ -5300,53 +5429,6 @@ h3_response_allows_body(int status, const char *method)
     return NS_TRUE;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * h3_response_has_body_now --
- *
- *      Determine whether the current HTTP/3 stream should emit a message
- *      body at this point in time.
- *
- *      This helper inspects both protocol-level and application-level
- *      indicators to decide whether a DATA section is expected:
- *        - If the response type forbids a body (per status or method),
- *          returns false immediately.
- *        - If the application has already queued or is streaming data,
- *          returns NS_TRUE.
- *        - If the response includes a non-zero content-length header,
- *          returns true even if data is not yet queued.
- *        - Otherwise, the response is treated as bodyless (zero-length).
- *
- * Results:
- *      NS_TRUE  if the response currently has (or will have) a body.
- *      NS_FALSE if the response is bodyless or finished.
- *
- *----------------------------------------------------------------------
- */
-static inline bool
-h3_response_has_body_now(StreamCtx *sc)
-{
-    if (!sc->response_allow_body) {
-        return NS_FALSE;
-
-    } else {
-        SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
-
-        // If the app has enqueued or is producing, we have a body.
-        if (SharedHasData(&snap) /* TODO: for streaming: || sc->has_body_producer */) {
-            return NS_TRUE;
-        }
-
-        // If the app explicitly set content-length:
-        if (sc->response_has_non_zero_content_length) {
-            return NS_TRUE;
-        }
-    }
-
-    // No producer and nothing queued -> no body (zero-length).
-    return NS_FALSE;
-}
 
 /*======================================================================
  * Function Implementations: HTTP/3 Diagnostics / Stringifiers
