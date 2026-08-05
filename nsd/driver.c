@@ -4393,6 +4393,16 @@ SockRecyclePop(Driver *drvPtr)
 
     sockPtr = drvPtr->sockPtr;
     if (likely(sockPtr != NULL)) {
+        if (unlikely((sockPtr->flags & NS_CONN_SOCK_RECYCLED) == 0u)) {
+            Ns_Log(Error,
+                   "SockRecyclePop: corrupt recycle head %p flags %.8x next %p "
+                   "deliveryRefs %u queuesize %u",
+                   (void *)sockPtr,
+                   sockPtr->flags,
+                   (void *)sockPtr->nextPtr,
+                   NsSockDeliveryRefs((Ns_Sock *)sockPtr),
+                   drvPtr->queuesize);
+        }
         assert((sockPtr->flags & NS_CONN_SOCK_RECYCLED) != 0u);
 
         drvPtr->sockPtr = sockPtr->nextPtr;
