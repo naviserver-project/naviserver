@@ -655,6 +655,7 @@ static StreamCtx*      StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3St
 static void            StreamCtxUnregister(StreamCtx *sc)  NS_GNUC_NONNULL(1);
 static void            StreamCtxRequireRxBuffer(StreamCtx *sc) NS_GNUC_NONNULL(1);
 static bool            StreamCtxClaimDispatch(StreamCtx *sc) NS_GNUC_NONNULL(1);
+static unsigned int    StreamCtxDeliveryRefs(StreamCtx *sc)  NS_GNUC_NONNULL(1);
 
 static bool            StreamCtxIsServerUni(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 static bool            StreamCtxIsClientUni(const StreamCtx *sc) NS_GNUC_NONNULL(1);
@@ -1947,7 +1948,7 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
     SSL           *conn = h3ssl->conn;
     StreamCtx     *csc = NULL, *psc = NULL, *rsc = NULL;
     const uint64_t stream_flags =  SSL_STREAM_FLAG_UNI | SSL_STREAM_FLAG_ADVANCE;
-    
+
     if (conn == NULL) {
         Ns_Log(Warning, "H3: quic_conn_open_server_uni_streams no connection");
         return -1;
@@ -6563,7 +6564,8 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
             Ns_GetTime(&now);
             sc->writable = NS_TRUE;
             /*
-             * Get a fresh NsSock into sc->nsSock. Release happens via StreamCtxFree().
+             * Get a fresh NsSock into sc->nsSock. Release happens via
+             * StreamCtxFree() unless dispatch ownership was transferred.
              */
             NsSockAccept(drvPtr, SSL_get_fd(s), (Ns_Sock**)&sc->nsSock, &now, s);
 
@@ -6689,6 +6691,43 @@ StreamCtxClaimDispatch(StreamCtx *sc)
     }
     sc->io_state |= H3_IO_REQ_DISPATCHED;
     return NS_TRUE;                      /* we claimed it now */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StreamCtxDeliveryRefs --
+ *
+ *      Return the number of outstanding delivery references associated
+ *      with the NaviServer socket currently attached to a stream.
+ *
+ *      The StreamCtx lock protects the sc->nsSock pointer while it is
+ *      inspected and while the socket's delivery-reference count is
+ *      obtained. This prevents the socket from being detached by the
+ *      connection close path during the lookup.
+ *
+ * Results:
+ *      The current delivery-reference count, or zero when the StreamCtx
+ *      has no attached NaviServer socket.
+ *
+ * Side effects:
+ *      Temporarily acquires sc->lock and the internal lock used by
+ *      NsSockDeliveryRefs(). Does not modify the StreamCtx or socket.
+ *
+ *----------------------------------------------------------------------
+ */
+static unsigned int
+StreamCtxDeliveryRefs(StreamCtx *sc)
+{
+    unsigned int refs = 0u;
+
+    Ns_MutexLock(&sc->lock);
+    if (sc->nsSock != NULL) {
+        refs = NsSockDeliveryRefs(sc->nsSock);
+    }
+    Ns_MutexUnlock(&sc->lock);
+
+    return refs;
 }
 
 /*
@@ -7948,7 +7987,7 @@ PollsetSweep(NsTLSConfig *dc)
             continue;
         }
 
-        if (sc->nsSock != NULL && NsSockDeliveryRefs(sc->nsSock) > 0) {
+        if (StreamCtxDeliveryRefs(sc) > 0u) {
             continue;
         }
 
@@ -8015,8 +8054,7 @@ PollsetSweep(NsTLSConfig *dc)
                 continue;
             }
 
-            if (sc->nsSock != NULL
-                && NsSockDeliveryRefs(sc->nsSock) > 0u) {
+            if (StreamCtxDeliveryRefs(sc) > 0u) {
                 continue;
             }
 
@@ -8094,7 +8132,7 @@ PollsetSweep(NsTLSConfig *dc)
                 StreamCtx *sc  = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
 
                 if (sc != NULL) {
-                    unsigned int deliveryRefs = sc->nsSock != NULL ? NsSockDeliveryRefs(sc->nsSock) : 0u;
+                    const unsigned int deliveryRefs = StreamCtxDeliveryRefs(sc);
 
                     Ns_Log(Notice,
                            "[%lld] PollsetSweep: defer dead stream SSL %p "
@@ -8699,7 +8737,6 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
     }
 }
 
-
 #if defined(NS_QUIC_POLLSET_DIAGNOSTICS)
 static void
 PollsetValidate(const NsTLSConfig *dc, const char *where)
@@ -9000,7 +9037,9 @@ QuicThread(void *arg)
         }
 
         if (result_count == 0) {
-            /* Timeout may be something somewhere */
+            /*
+             * Apparently a timeout in the poll loop.
+             */
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3D timeout", (long long)dc->iter);
             (void)PollsetHandleListenerEvents(dc);
             //continue;
@@ -9868,13 +9907,36 @@ Close(Ns_Sock *sock)
     SharedRequestResume(&sc->cc->shared, &sc->sh, sc->h3_sid);
 
  detach_sock:
-    /* Detach per-request sock state; lifetime of H3 objects is owned elsewhere. */
+    /*
+     * Detach the per-request socket context first. After this point no
+     * driver callback can resolve this StreamCtx through the socket.
+     */
     if (sock->arg != NULL) {
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Close freeing %p", (long long)dc->iter,  (void*)sock->arg);
-        ns_free(sock->arg);    /* QuicSockCtx */
-        sock->arg  = NULL;
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3 Close freeing %p",
+               (long long)dc->iter,
+               (void *)sock->arg);
+        ns_free(sock->arg);
+        sock->arg = NULL;
     }
-    sock->sock = NS_INVALID_SOCKET; /* matches other drivers' Close() */
+
+    sock->sock = NS_INVALID_SOCKET;
+
+    /*
+     * A successfully dispatched socket is now owned by NaviServer's
+     * connection close machinery. Remove the StreamCtx back-reference so
+     * StreamCtxFree() does not release and recycle the same socket again.
+     *
+     * This must be the final access to sc in Close(): after clearing the
+     * pointer, PollsetSweep() may destroy the stream context.
+     */
+    if (sc != NULL) {
+        Ns_MutexLock(&sc->lock);
+        if (sc->nsSock == sock) {
+            sc->nsSock = NULL;
+        }
+        Ns_MutexUnlock(&sc->lock);
+    }
 }
 
 /*
