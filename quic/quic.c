@@ -553,6 +553,8 @@ static void        ossl_sc_exdata_free(void *parent, void *ptr, CRYPTO_EX_DATA *
  *----------------------------------------------------------------------
  */
 static int      quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) NS_GNUC_NONNULL(1);
+static int      quic_conn_finish_handshake(ConnCtx *cc)  NS_GNUC_NONNULL(1);
+
 static void     quic_conn_enter_shutdown(ConnCtx *cc, const char *why) NS_GNUC_NONNULL(1);
 static bool     quic_conn_has_live_requests(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static bool     quic_conn_can_be_freed(SSL *conn, uint64_t revents, ConnCtx *cc) NS_GNUC_NONNULL(1,3);
@@ -1523,6 +1525,72 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * quic_conn_finish_handshake --
+ *
+ *      Complete the one-time HTTP/3 connection setup after OpenSSL has
+ *      finished the QUIC/TLS handshake.
+ *
+ *      If the handshake is complete and has not already been processed,
+ *      the function records its completion, creates and binds the required
+ *      server control and QPACK streams, and updates the connection's
+ *      poll interest. The incoming-stream policy is configured earlier,
+ *      when the connection is accepted.
+ *
+ * Arguments:
+ *      cc - Connection context whose QUIC/TLS handshake state is checked.
+ *
+ * Results:
+ *       1 - The completed handshake was processed successfully.
+ *       0 - The handshake is not complete or was processed previously.
+ *      -1 - Post-handshake HTTP/3 setup failed.
+ *
+ * Side effects:
+ *      May set cc->handshake_done, create and register the server-initiated
+ *      unidirectional streams, bind them to nghttp3, record driver progress,
+ *      update the connection's poll interest, and write diagnostic messages
+ *      to the server log.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+quic_conn_finish_handshake(ConnCtx *cc)
+{
+    NsTLSConfig *dc   = cc->dc;
+    SSL         *conn = cc->h3ssl.conn;
+
+    if (cc->handshake_done) {
+        return 0;
+    }
+
+    if (!SSL_is_init_finished(conn)) {
+        return 0;
+    }
+
+    cc->handshake_done = NS_TRUE;
+    QuicNoteProgress(dc);
+
+    /*
+     * The incoming-stream policy is already installed when the connection
+     * is accepted. Create and bind the required local HTTP/3 streams now.
+     */
+    if (quic_conn_open_server_uni_streams(cc, &cc->h3ssl) != 0) {
+        Ns_Log(Error,
+               "[%lld] H3: failed to create required server uni streams",
+               (long long)dc->iter);
+        return -1;
+    }
+
+    ossl_conn_maybe_log_first_shutdown(
+        cc, "after quic_conn_open_server_uni_streams");
+
+    PollsetUpdateConnPollInterest(cc);
+    return 1;
+}
+
+
 #ifdef QUIC_MEM_STATS
 /*
  *----------------------------------------------------------------------
@@ -1837,7 +1905,9 @@ quic_conn_set_sockaddr(SSL *ssl, struct sockaddr *saPtr, socklen_t *saLen)
  *      QUIC connection, and bind them to the nghttp3 connection.
  *
  *      The function:
- *        - Allocates three uni streams via SSL_new_stream(…, SSL_STREAM_FLAG_UNI).
+ *        - Allocates three unidirectional streams with
+ *          SSL_STREAM_FLAG_ADVANCE, allowing their stream objects to be
+ *          created before peer stream credit becomes available.
  *        - Verifies they are write-only (server-initiated uni streams).
  *        - Registers each stream with the pollset and creates StreamCtx
  *          (PollsetAddStreamRegister), recording their QUIC stream IDs
@@ -1864,26 +1934,29 @@ quic_conn_set_sockaddr(SSL *ssl, struct sockaddr *saPtr, socklen_t *saLen)
  *      pollset/mappings; updates *h3ssl with stream pointers and IDs;
  *      performs nghttp3 control/QPACK binding; may advance QUIC state
  *      via SSL_handle_events().
+ *      Streams created in advance may remain transport-blocked until the
+ *      peer grants sufficient unidirectional-stream credit.
  *
  *----------------------------------------------------------------------
  */
 static int
 quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
 {
-    NsTLSConfig  *dc = cc->dc;
-    nghttp3_conn *h3conn = cc->h3conn;
-    SSL          *conn = h3ssl->conn;
-    StreamCtx    *csc = NULL, *psc = NULL, *rsc = NULL;
-
+    NsTLSConfig   *dc = cc->dc;
+    nghttp3_conn  *h3conn = cc->h3conn;
+    SSL           *conn = h3ssl->conn;
+    StreamCtx     *csc = NULL, *psc = NULL, *rsc = NULL;
+    const uint64_t stream_flags =  SSL_STREAM_FLAG_UNI | SSL_STREAM_FLAG_ADVANCE;
+    
     if (conn == NULL) {
         Ns_Log(Warning, "H3: quic_conn_open_server_uni_streams no connection");
         return -1;
     }
 
     h3ssl->conn    = conn;
-    h3ssl->cstream = SSL_new_stream(conn, SSL_STREAM_FLAG_UNI);
-    h3ssl->pstream = SSL_new_stream(conn, SSL_STREAM_FLAG_UNI);
-    h3ssl->rstream = SSL_new_stream(conn, SSL_STREAM_FLAG_UNI);
+    h3ssl->cstream = SSL_new_stream(conn, stream_flags);
+    h3ssl->pstream = SSL_new_stream(conn, stream_flags);
+    h3ssl->rstream = SSL_new_stream(conn, stream_flags);
 
     if (h3ssl->rstream == NULL|| h3ssl->pstream  == NULL|| h3ssl->cstream == NULL) {
         Ns_Log(Warning, "H3: quic_conn_open_server_uni_streams: could not open uni‑streams");
@@ -2437,7 +2510,6 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
     for (;;) {
         nghttp3_settings settings;
         ConnCtx         *cc;
-        int              ret;
         SSL             *conn = SSL_accept_connection(listener_ssl, 0);
 
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3 quic_conn_handle_ic gets conn %p from listener_ssl %p",
@@ -2519,9 +2591,9 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
          *
          * OpenSSL's reference poll server enables these events only while the
          * application has a pending request to create an outbound stream.
-         * NaviServer registers ISB/ISU here; OSB/OSU can be enabled later when
-         * actually required. EC/ECD/ER/EW are added by
-         * PollsetDefaultConnErrors().
+         * NaviServer registers ISB/ISU here. The required local streams
+         * are created with SSL_STREAM_FLAG_ADVANCE after handshake
+         * completion, so OSB/OSU are never required.
          */
         PollsetAddConnection(dc, conn,
                              SSL_POLL_EVENT_ISB | SSL_POLL_EVENT_ISU);
@@ -2537,14 +2609,25 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
         // Set handshake to manual mode
         OSSL_TRY(SSL_set_mode(conn, SSL_MODE_AUTO_RETRY));
 
-        // Start handshake immediately
-        ret = SSL_do_handshake(conn);
-        Ns_Log(Ns_LogQuicDebug, "H3 quic_conn_handle_ic conn %p SSL_do_handshake -> %d", (void*)conn, ret);
-        if (ret <= 0) {
-            int err = SSL_get_error(conn, ret);
-            if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
-                // Immediate failure
-                ossl_log_error_detail(err, "quic_conn_handle_ic");
+        /*
+         * Start the handshake once. SSL_poll() subsequently drives OpenSSL's
+         * network and timer processing. Handshake completion is detected
+         * independently of outgoing-stream capacity events.
+         */
+        {
+            int hs_result = quic_conn_drive_handshake(dc, conn);
+
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3 initial handshake for conn %p -> %d",
+                   (long long)dc->iter, (void *)conn, hs_result);
+
+            if (hs_result == 1) {
+                if (quic_conn_finish_handshake(cc) < 0) {
+                    PollsetMarkDead(
+                                    cc, conn,
+                                    "post-handshake HTTP/3 setup failed");
+                }
+            } else if (hs_result < 0) {
                 PollsetMarkDead(cc, conn, "IC handshake failed");
             }
         }
@@ -7391,50 +7474,31 @@ static inline void PollsetDisableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc, c
  *
  * PollsetUpdateConnPollInterest --
  *
- *      Update the pollset event mask for a QUIC connection (as opposed to
- *      individual HTTP/3 streams). This function ensures the connection's
- *      error events are always monitored and dynamically enables or disables
- *      socket-level readiness notifications based on connection state.
+ *      Update poll interest for a QUIC connection. OSB and OSU report
+ *      capacity for creating locally initiated streams; they do not
+ *      report network readiness or handshake progress.
  *
- *      Specifically:
- *        - Enables OSB/OSU (OpenSSL BIO read/write readiness) while the
- *          handshake is in progress or when write activity is pending.
- *        - Optionally clears OSB/OSU when the connection is fully idle and
- *          handshake has completed.
+ *      The driver creates its required server-initiated unidirectional
+ *      streams with SSL_STREAM_FLAG_ADVANCE after the handshake completes.
+ *      It therefore has no deferred stream-creation request for which
+ *      OSB or OSU must remain armed.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Adjusts the connection's event mask in the pollset via
- *      PollsetUpdateEvents().
- *      Keeps error conditions (H3_CONN_ERR_MASK) always active.
+ *      Keeps connection error events enabled and removes OSB/OSU from
+ *      the connection's requested event mask.
  *
  *----------------------------------------------------------------------
  */
 static inline void
 PollsetUpdateConnPollInterest(ConnCtx *cc)
 {
-    NsTLSConfig *dc = cc->dc;
-    uint64_t     set_bits   = H3_CONN_ERR_MASK;
-    uint64_t     clear_bits = 0u;
-
-    /*
-     * OSB/OSU are outgoing-stream creation capacity events, not
-     * readiness notifications for writing existing streams. Retain them
-     * only while they are used to advance the initial handshake. Once
-     * the handshake completes, the server control and QPACK streams are
-     * created synchronously and no further local streams are pending.
-     */
-    if (!cc->handshake_done) {
-        set_bits |= SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU;
-    } else {
-        clear_bits |= SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU;
-    }
-
     (void)PollsetUpdateEvents(
-        dc, cc->h3ssl.conn, NULL,
-        set_bits, clear_bits,
+        cc->dc, cc->h3ssl.conn, NULL,
+        H3_CONN_ERR_MASK,
+        SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU,
         "PollsetUpdateConnPollInterest");
 }
 
@@ -9040,69 +9104,20 @@ QuicThread(void *arg)
                 processed_event |= SSL_POLL_EVENT_IC;
             }
 
-            if ((revents & (SSL_POLL_EVENT_OSB|SSL_POLL_EVENT_OSU)) != 0) {
-                if (cc->handshake_done) {
-                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: processing OSB|OSU handshake done %d",
-                           (long long)dc->iter, i, cc->handshake_done);
-                }
+            if ((revents & (SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU)) != 0u) {
+                /*
+                 * OSB/OSU report capacity for creating local streams. They are not
+                 * handshake-progress events and are not used by this driver.
+                 *
+                 * Existing poll items may still report them after an interest-mask
+                 * transition, so record the events as handled and ensure that they
+                 * remain disarmed.
+                 */
+                processed_event |=
+                    revents & (SSL_POLL_EVENT_OSB | SSL_POLL_EVENT_OSU);
 
-                if (revents & SSL_POLL_EVENT_OSB) {
-                    processed_event |= SSL_POLL_EVENT_OSB;
-                }
-                if (revents & SSL_POLL_EVENT_OSU) {
-                    processed_event |= SSL_POLL_EVENT_OSU;
-                }
-
-                if (!cc->handshake_done) {
-                    int hs_result = quic_conn_drive_handshake(dc, s);
-                    //ossl_log_handshake_state(s);
-
-                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: processing OSB|OSU drive_hand_shake -> %d",
-                           (long long)dc->iter, i, hs_result);
-
-                    if (hs_result == 1) {
-                        int rc;
-
-                        cc->handshake_done = NS_TRUE;
-
-                        OSSL_TRY((rc = SSL_set_incoming_stream_policy(cc->h3ssl.conn,
-                                                                      SSL_INCOMING_STREAM_POLICY_ACCEPT,
-                                                                      0)));
-                        ossl_conn_maybe_log_first_shutdown(cc, "OSB|OSU after incoming stream policy set");
-
-                        if (rc != 1) {
-                            ossl_log_error_detail(rc, "set_incoming_stream_policy(conn)");
-                        }
-
-                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: processing OSB|OSU creates server streams",
-                               (long long)dc->iter, i);
-                        if (quic_conn_open_server_uni_streams(cc, &cc->h3ssl) == 0) {
-                            ossl_conn_maybe_log_first_shutdown(cc, "OSB|OSU after quic_conn_open_server_uni_streams");
-                            /*
-                             * The required local streams now exist. OSB/OSU describe capacity
-                             * for creating additional streams, for which the driver has no
-                             * pending request.
-                             */
-                            PollsetUpdateConnPollInterest(cc);
-                        } else {
-                            /*
-                             * The HTTP/3 connection cannot operate without its local control and
-                             * QPACK streams. There is no deferred creation or retry state.
-                             */
-                            Ns_Log(Error,
-                                   "[%lld] H3: failed to create required server uni streams; "
-                                   "closing connection",
-                                   (long long)dc->iter);
-
-                            PollsetMarkDead(cc, s, "server uni stream creation failed");
-                            goto skip;
-                        }
-                    } else if (hs_result == -1) {
-                        // Hard stream error - remove connection
-                        PollsetMarkDead(cc, s, "OSB|OSU handshake failed");
-                        goto skip;
-                    }
-                }
+                assert(cc != NULL);
+                PollsetUpdateConnPollInterest(cc);
             }
 
             if (revents & (SSL_POLL_EVENT_ISB | SSL_POLL_EVENT_ISU)) {
@@ -9292,6 +9307,14 @@ QuicThread(void *arg)
                 for (i = 0u; i < (int)dc->u.h3.conns.size; i++) {
                     bool     has_resume;
                     ConnCtx *cc = dc->u.h3.conns.data[i];
+
+                    if (!cc->handshake_done && SSL_is_init_finished(cc->h3ssl.conn)) {
+                        if (quic_conn_finish_handshake(cc) < 0) {
+                            PollsetMarkDead(cc, cc->h3ssl.conn,
+                                            "post-handshake HTTP/3 setup failed");
+                            continue;
+                        }
+                    }
 
                     has_resume = SharedHasResumePending(&cc->shared);
 
