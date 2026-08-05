@@ -1458,7 +1458,7 @@ UsageMsg(int exitCode)
         "Usage: %s [-h|V] [-c|f|i|w] "
         "[-u <user>] [-g <group>] [-r <path>] [-b <address:port>|-B <file>] "
 #endif
-        "[-s <server>] [-t <file>]\n"
+        "[-s <server>] [-t <file> [-T]]\n"
         "\n"
         "  -h  help (this message)\n"
         "  -V  version and release information\n"
