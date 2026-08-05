@@ -44,12 +44,10 @@
  * -----------------
  * - Per-stream data (queues, hdrs flags, closed_by_app) is protected by
  *   ss->lock.
- * - The global resume ring is protected by st->lock.
- * - The resume_enqueued flag is set under st->lock in the enqueue path,
- *   and cleared under ss->lock by the consumer after the SID is serviced.
- *   This avoids duplicate enqueues while minimizing cross-lock holding.
- * - Callers must not hold ss->lock while performing potentially blocking
- *   I/O; build vecs under the lock, then write, then trim under the lock.
+ * - The resume_enqueued flag is both tested/set and cleared under
+ *   st->lock. Using the same mutex for all accesses keeps the flag
+ *   synchronized with membership in the resume ring and prevents lost
+ *   or duplicate resume requests.
  *
  * Memory & logging
  * ----------------
@@ -96,40 +94,79 @@ NS_EXTERN Ns_LogSeverity Ns_LogQuicDebug;
  *
  * resume_grow --
  *
- *      Double the capacity of the resume ring buffer in SharedState,
- *      reallocating its storage and re-laying out existing entries
- *      into a contiguous linear form if the buffer was wrapped.
+ *      Increase the capacity of a full resume ring, preserving all
+ *      queued stream IDs in FIFO order.
+ *
+ *      The ring is expected to be full on entry (count == cap). For an
+ *      unallocated ring, allocate the initial capacity. If a full
+ *      ring is wrapped, relocate its two occupied portions into a
+ *      contiguous region of the enlarged allocation. If it is already
+ *      linear, advance tail to the first newly available slot.
+ *
+ *      The caller must hold st->lock.
  *
  * Results:
  *      0 on success, -1 on memory allocation failure.
  *
  * Side effects:
- *      Updates st->resume, st->cap, st->head, and st->tail in place.
- *      May move existing elements if the ring buffer was wrapped.
+ *      May reallocate st->resume and relocate queued entries. Updates
+ *      st->cap, st->head, and st->tail while preserving st->count and
+ *      the ring invariant:
+ *
+ *          tail == (head + count) % cap
  *
  *----------------------------------------------------------------------
  */
-static int resume_grow(SharedState *st) {
-    size_t   ncap = st->cap ? st->cap * 2 : 32;
-    int64_t *n = ns_realloc(st->resume, ncap * sizeof(int64_t));
+static int
+resume_grow(SharedState *st)
+{
+    const size_t oldcap = st->cap;
+    const size_t ncap   = oldcap > 0u ? oldcap * 2u : 32u;
+    int64_t     *n      = ns_realloc(st->resume,
+                                    ncap * sizeof(int64_t));
 
     if (n == NULL) {
-      return -1;
+        return -1;
     }
 
-    /* Rebuild as linear head..tail if wrapped */
-    if (st->count && st->head != 0) {
-        /* move [head..cap) to end of new */
-        size_t tail_part = st->cap - st->head;
-        memmove(n + (ncap - tail_part), n + st->head, tail_part * sizeof(int64_t));
-        /* slide [0..tail) to after that */
-        memmove(n + (ncap - tail_part - st->tail), n, st->tail * sizeof(int64_t));
-        st->head = ncap - st->count;
-        st->tail = 0;
+    if (st->count > 0u) {
+        assert(st->count == oldcap);
+        if (st->head != 0u) {            
+            /*
+             * A full wrapped ring has tail == head. Move both portions
+             * to the upper half of the enlarged allocation, preserving
+             * their logical FIFO order.
+             */
+            const size_t upper = oldcap - st->head;
+
+            assert(st->tail == st->head);
+
+            memmove(n + (ncap - upper),
+                    n + st->head,
+                    upper * sizeof(int64_t));
+            memmove(n + (ncap - st->count),
+                    n,
+                    st->tail * sizeof(int64_t));
+
+            st->head = ncap - st->count;
+            st->tail = 0u;
+        } else {
+            /*
+             * The full ring was already linear at the start of the
+             * allocation. Its next free slot is immediately after the
+             * existing entries in the enlarged ring.
+             */
+            st->tail = st->count;
+        }
+    } else {
+        st->head = 0u;
+        st->tail = 0u;
     }
 
     st->resume = n;
     st->cap    = ncap;
+    assert(st->tail == (st->head + st->count) % st->cap);
+
     return 0;
 }
 
@@ -609,13 +646,42 @@ size_t SharedBuildVecsFromPending(SharedStream *ss, nghttp3_vec *vecs, size_t ve
  *      grow (see resume_grow).
  *======================================================================
  */
-static void resume_push_unlocked(SharedState *st, int64_t sid) {
+/*
+ *----------------------------------------------------------------------
+ *
+ * resume_push_unlocked --
+ *
+ *      Append a stream ID to the resume ring. If the ring is full,
+ *      enlarge it before inserting the new entry.
+ *
+ *      The caller must hold st->lock. This function does not inspect or
+ *      modify the per-stream resume_enqueued flag; the caller must set
+ *      that flag only after this function succeeds.
+ *
+ * Results:
+ *      NS_TRUE when the stream ID was inserted successfully.
+ *      NS_FALSE when the ring could not be enlarged and no entry was
+ *      inserted.
+ *
+ * Side effects:
+ *      May grow and rearrange the resume ring. On success, stores sid at
+ *      tail, advances tail with wrap-around, and increments count. On
+ *      failure, leaves the logical ring contents unchanged.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+resume_push_unlocked(SharedState *st, int64_t sid)
+{
     if (st->count == st->cap && resume_grow(st) != 0) {
-        return; /* drop non-fatally */
+        return NS_FALSE;
     }
+
     st->resume[st->tail] = sid;
-    st->tail = (st->tail + 1) % st->cap;
+    st->tail = (st->tail + 1u) % st->cap;
     st->count++;
+
+    return NS_TRUE;
 }
 
 /*
@@ -630,12 +696,16 @@ static void resume_push_unlocked(SharedState *st, int64_t sid) {
  *      None.
  *
  * Side effects:
- *      Under st->lock: if ss->resume_enqueued is false, sets it true
- *      and pushes 'sid' onto the ring; sets need_wake when the ring
- *      was previously empty (edge-triggered nudge). Outside the lock:
- *      calls st->wake_cb(st->wake_arg) if need_wake. May allocate
- *      when the ring grows. The consumer must clear the per-stream
- *      flag when the SID is popped/handled.
+ *      Under st->lock, checks whether ss->resume_enqueued is already
+ *      set. If not, attempts to append sid to the resume ring. Only
+ *      after successful insertion does it set resume_enqueued and
+ *      request a wake when the ring transitioned from empty to
+ *      non-empty.
+ *
+ *      Outside the lock, invokes st->wake_cb(st->wake_arg) when a wake
+ *      is required. Ring growth may allocate memory. If growth fails,
+ *      the SID is not inserted, resume_enqueued remains clear, and no
+ *      wake is issued.
  *
  *----------------------------------------------------------------------
  */
@@ -655,9 +725,13 @@ void SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid) {
 #endif
 
     if (!ss->resume_enqueued) {
-        ss->resume_enqueued = 1;
-        resume_push_unlocked(st, sid);
-        need_wake = (st->count == 1); /* edge: ring was empty before push */
+        const bool was_empty = (st->count == 0u);
+
+        if (resume_push_unlocked(st, sid)) {
+            ss->resume_enqueued = 1;
+            need_wake = was_empty;
+            /* edge: ring was empty before push */
+        }
     }
 
 #ifdef SHARED_DEBUG
@@ -721,21 +795,25 @@ int SharedPopResume(SharedState *st, int64_t *out_sid) {
  * SharedResumeClear --
  *
  *      Clear the per-stream resume_enqueued flag so the stream can be
- *      requeued on the resume ring after handling.
+ *      placed on the resume ring again after its current entry has been
+ *      consumed.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Acquires ss->lock and sets ss->resume_enqueued = 0. Idempotent;
- *      no logging or wake/resume is triggered.
+ *      Acquires the owning SharedState lock and sets
+ *      ss->resume_enqueued to zero. The same lock protects testing and
+ *      setting this flag in SharedRequestResume().
  *
  *----------------------------------------------------------------------
  */
 void SharedResumeClear(SharedStream *ss) {
-    Ns_MutexLock(&ss->lock);
+    SharedState *st = ss->st;
+
+    Ns_MutexLock(&st->lock);
     ss->resume_enqueued = 0;
-    Ns_MutexUnlock(&ss->lock);
+    Ns_MutexUnlock(&st->lock);
 }
 
 /*
