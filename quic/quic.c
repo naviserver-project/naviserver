@@ -8737,6 +8737,241 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
     }
 }
 
+
+#define H3_IDLE_DUMP_MAX 16u
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * QuicLogIdlePollset --
+ *
+ *      Log the state of HTTP/3 request streams which remain registered
+ *      after SSL_poll() completed without reporting a ready item.
+ *
+ *      This diagnostic is intended to identify quiet stalls: active
+ *      streams remain in the pollset, but no readiness event causes the
+ *      driver to advance them. It reports aggregate state counters and a
+ *      bounded sample of request streams, including their poll interests,
+ *      transport state, queued output, application-close state, and socket
+ *      delivery references.
+ *
+ *      The caller invokes this function only when Debug(h3) logging is
+ *      enabled. Output is limited to H3_IDLE_DUMP_MAX stream entries.
+ *
+ * Arguments:
+ *      dc       - HTTP/3 driver configuration containing the pollset.
+ *      numitems - Number of valid pollset entries.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Writes diagnostic messages to the server log. No connection,
+ *      stream, poll-interest, or queue state is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
+{
+    size_t bidi                 = 0u;
+    size_t w_armed              = 0u;
+    size_t wants_write          = 0u;
+    size_t queued               = 0u;
+    size_t pending              = 0u;
+    size_t closed_by_app        = 0u;
+    size_t with_delivery_refs   = 0u;
+    size_t rx_fin               = 0u;
+    size_t tx_fin               = 0u;
+    size_t reset                = 0u;
+    size_t eof_seen             = 0u;
+    size_t eof_sent             = 0u;
+    size_t shown                = 0u;
+    size_t i;
+
+    /*
+     * First produce aggregate counters. These are more useful than a
+     * potentially arbitrary bounded sample when many streams are stranded.
+     */
+    for (i = 0u; i < numitems; i++) {
+        SSL_POLL_ITEM *item = &dc->u.h3.poll_items[i];
+        SSL           *ssl  = dc->u.h3.ssl_items.data[i];
+        StreamCtx     *sc;
+        SharedSnapshot snap;
+        bool           stream_wants_write;
+        unsigned int   delivery_refs;
+
+        if (ssl == NULL) {
+            continue;
+        }
+
+        sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+        if (sc == NULL || !StreamCtxIsBidi(sc)) {
+            continue;
+        }
+
+        snap = SharedSnapshotInit(&sc->sh);
+
+        Ns_MutexLock(&sc->lock);
+        stream_wants_write = sc->wants_write;
+        Ns_MutexUnlock(&sc->lock);
+
+        delivery_refs = StreamCtxDeliveryRefs(sc);
+
+        bidi++;
+
+        if ((item->events & SSL_POLL_EVENT_W) != 0u) {
+            w_armed++;
+        }
+        if (stream_wants_write) {
+            wants_write++;
+        }
+        if (snap.queued_bytes > 0u) {
+            queued++;
+        }
+        if (snap.pending_bytes > 0u) {
+            pending++;
+        }
+        if (snap.closed_by_app) {
+            closed_by_app++;
+        }
+        if (delivery_refs > 0u) {
+            with_delivery_refs++;
+        }
+        if (H3_IO_HAS(sc, H3_IO_RX_FIN)) {
+            rx_fin++;
+        }
+        if (H3_IO_HAS(sc, H3_IO_TX_FIN)) {
+            tx_fin++;
+        }
+        if (H3_IO_HAS(sc, H3_IO_RESET)) {
+            reset++;
+        }
+        if (sc->eof_seen) {
+            eof_seen++;
+        }
+        if (sc->eof_sent) {
+            eof_sent++;
+        }
+    }
+
+    if (bidi == 0u) {
+        return;
+    }
+
+    Ns_Log(Ns_LogQuicDebug,
+           "[%lld] H3 idle poll with %zu bidi streams:"
+           " W %zu wants_write %zu queued %zu pending %zu"
+           " app_closed %zu delivery_refs %zu"
+           " rx_fin %zu tx_fin %zu reset %zu"
+           " eof_seen %zu eof_sent %zu",
+           (long long)dc->iter,
+           bidi,
+           w_armed, wants_write, queued, pending,
+           closed_by_app, with_delivery_refs,
+           rx_fin, tx_fin, reset,
+           eof_seen, eof_sent);
+
+    /*
+     * Log the connection-level interpretation as well. There should normally
+     * be only one connection in the controlled workload, but do not assume
+     * that here.
+     */
+    for (i = 0u; i < numitems; i++) {
+        SSL     *ssl = dc->u.h3.ssl_items.data[i];
+        ConnCtx *cc;
+
+        if (ssl == NULL) {
+            continue;
+        }
+
+        cc = SSL_get_ex_data(ssl, dc->u.h3.cc_idx);
+        if (cc == NULL || ssl != cc->h3ssl.conn) {
+            continue;
+        }
+
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3 idle connection SSL %p:"
+               " handshake_done %d conn_closed %d"
+               " wants_write %d resume_pending %d"
+               " pending_work %d",
+               (long long)dc->iter,
+               (void *)ssl,
+               cc->handshake_done,
+               cc->conn_closed,
+               cc->wants_write,
+               SharedHasResumePending(&cc->shared),
+               h3_conn_has_pending_work(cc));
+    }
+
+    /*
+     * Add a bounded per-stream sample. Unlike QuicLogNoProgress(), this
+     * deliberately includes items with revents == SSL_POLL_EVENT_NONE.
+     */
+    for (i = 0u; i < numitems && shown < H3_IDLE_DUMP_MAX; i++) {
+        SSL_POLL_ITEM *item = &dc->u.h3.poll_items[i];
+        SSL           *ssl  = dc->u.h3.ssl_items.data[i];
+        StreamCtx     *sc;
+        SharedSnapshot snap;
+        bool           stream_wants_write;
+        unsigned int   delivery_refs;
+
+        if (ssl == NULL) {
+            continue;
+        }
+
+        sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+        if (sc == NULL || !StreamCtxIsBidi(sc)) {
+            continue;
+        }
+
+        snap = SharedSnapshotInit(&sc->sh);
+
+        Ns_MutexLock(&sc->lock);
+        stream_wants_write = sc->wants_write;
+        Ns_MutexUnlock(&sc->lock);
+
+        delivery_refs = StreamCtxDeliveryRefs(sc);
+
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3 idle item %zu: SSL %p H3[%lld]"
+               " events 0x%08" PRIx64 " revents 0x%08" PRIx64
+               " io_state 0x%02x wants_write %d"
+               " queued %zu pending %zu app_closed %d"
+               " delivery_refs %u"
+               " rx %zu/%zu fin_pending %d"
+               " close_when_drained %d"
+               " eof_seen/sent %d/%d"
+               " hdrs_ready/submitted %d/%d"
+               " stream_state r/w %d/%d"
+               " shared headers ready %d",
+               (long long)dc->iter,
+               i, (void *)ssl, (long long)sc->quic_sid,
+               item->events, item->revents,
+               sc->io_state, stream_wants_write,
+               snap.queued_bytes, snap.pending_bytes,
+               snap.closed_by_app,
+               delivery_refs,
+               sc->rx_off, sc->rx_len,
+               sc->rx_fin_pending,
+               sc->close_when_drained,
+               sc->eof_seen, sc->eof_sent,
+               sc->hdrs_ready, sc->hdrs_submitted,
+               SSL_get_stream_read_state(ssl),
+               SSL_get_stream_write_state(ssl),
+               SharedHdrsIsReady(&sc->sh)
+               );
+
+        shown++;
+    }
+
+    if (bidi > shown) {
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3 idle poll omitted %zu additional bidi streams",
+               (long long)dc->iter, bidi - shown);
+    }
+}
+
 #if defined(NS_QUIC_POLLSET_DIAGNOSTICS)
 static void
 PollsetValidate(const NsTLSConfig *dc, const char *where)
@@ -9041,8 +9276,12 @@ QuicThread(void *arg)
              * Apparently a timeout in the poll loop.
              */
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3D timeout", (long long)dc->iter);
+
+            if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+                QuicLogIdlePollset(dc, numitems);
+            }
+
             (void)PollsetHandleListenerEvents(dc);
-            //continue;
         }
 
         /*
