@@ -2874,13 +2874,10 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
     {
         H3DrainResultCode dr = h3_stream_drain(cc, stream, (uint64_t)sid, "processing R");
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] R h3_stream_drain %p -> %d (%s)",
-               (long long)dc->iter, (long long)sid, (void*)stream, dr, H3DrainResultCode_str(dr));
-
-        (void)SSL_handle_events(stream);
-
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] R h3_stream_drain kind %s leads to io_state %.2x",
-               (long long)dc->iter, (long long)sid, H3StreamKind_str(sc->kind), sc->io_state);
+        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] R h3_stream_drain kind %s leads to io_state %.2x"
+               " drain result %s",
+               (long long)dc->iter, (long long)sid, H3StreamKind_str(sc->kind),
+               sc->io_state, H3DrainResultCode_str(dr));
 
         /* If a client BIDI request became ready, dispatch it now. */
         if (sc->kind == H3_KIND_BIDI_REQ
@@ -9357,18 +9354,6 @@ QuicThread(void *arg)
                        revents, DStringAppendSslPollEventFlags(&ds, revents)
                        );
                 Tcl_DStringFree(&ds);
-            }
-
-            /*
-             * Drive the QUIC reactor once. Additional calls without an
-             * intervening readiness event repeatedly probe the nonblocking
-             * UDP socket and typically terminate with EAGAIN.
-             */
-            if (revents & (SSL_POLL_EVENT_ISB
-                           | SSL_POLL_EVENT_ISU
-                           | SSL_POLL_EVENT_EC
-                           | SSL_POLL_EVENT_ECD)) {
-                (void)SSL_handle_events(cc->h3ssl.conn);
             }
 
             if (revents & SSL_POLL_EVENT_IC) {
