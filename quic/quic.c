@@ -6822,22 +6822,22 @@ PollsetMutexFree(void *arg)
 static void
 PollsetInit(NsTLSConfig *dc)
 {
-    NS_NONNULL_ASSERT(dc != NULL);
+    NsTLSH3Config *h3 = &dc->u.h3;
 
-    Ns_DListInit(&dc->u.h3.conns);
-    Ns_DListInit(&dc->u.h3.ssl_items);
-    Ns_DListInit(&dc->u.h3.mutex_items);
-    Ns_DListInit(&dc->u.h3.shared_mutex_items);
-    Ns_DListInit(&dc->u.h3.dead_items);
+    Ns_DListInit(&h3->conns);
+    Ns_DListInit(&h3->ssl_items);
+    Ns_DListInit(&h3->mutex_items);
+    Ns_DListInit(&h3->shared_mutex_items);
+    Ns_DListInit(&h3->dead_items);
 
-    Ns_DListSetFreeProc(&dc->u.h3.mutex_items, PollsetMutexFree);
-    Ns_DListSetFreeProc(&dc->u.h3.shared_mutex_items, PollsetMutexFree);
+    Ns_DListSetFreeProc(&h3->mutex_items, PollsetMutexFree);
+    Ns_DListSetFreeProc(&h3->shared_mutex_items, PollsetMutexFree);
 
-    dc->u.h3.poll_capacity = Ns_DListCapacity(&dc->u.h3.ssl_items);
-    dc->u.h3.poll_items = ns_malloc(dc->u.h3.poll_capacity * sizeof(SSL_POLL_ITEM));
+    h3->poll_capacity = Ns_DListCapacity(&h3->ssl_items);
+    h3->poll_items = ns_malloc(h3->poll_capacity * sizeof(SSL_POLL_ITEM));
 
     /* slot 0 placeholders */
-    dc->u.h3.first_dead = 0;
+    h3->first_dead = 0;
 }
 
 
@@ -6864,16 +6864,17 @@ PollsetInit(NsTLSConfig *dc)
 static void
 PollsetFree(NsTLSConfig *dc)
 {
-    if (dc->u.h3.poll_items) {
-        ns_free(dc->u.h3.poll_items);
-        dc->u.h3.poll_items = NULL;
-    }
-    dc->u.h3.poll_capacity = 0;
-    Ns_DListFree(&dc->u.h3.ssl_items);
-    Ns_DListFree(&dc->u.h3.conns);
-    Ns_DListFree(&dc->u.h3.mutex_items);
-    Ns_DListFree(&dc->u.h3.shared_mutex_items);
-    Ns_DListFree(&dc->u.h3.dead_items);
+    NsTLSH3Config *h3 = &dc->u.h3;
+
+    ns_free(h3->poll_items);
+    h3->poll_items = NULL;
+    h3->poll_capacity = 0;
+
+    Ns_DListFree(&h3->ssl_items);
+    Ns_DListFree(&h3->conns);
+    Ns_DListFree(&h3->mutex_items);
+    Ns_DListFree(&h3->shared_mutex_items);
+    Ns_DListFree(&h3->dead_items);
 }
 
 /*
@@ -6900,13 +6901,17 @@ PollsetFree(NsTLSConfig *dc)
 static inline void
 PollsetEnsurePollCapacity(NsTLSConfig *dc)
 {
-    size_t need = Ns_DListCapacity(&dc->u.h3.ssl_items);
-    if (need > dc->u.h3.poll_capacity) {
-        dc->u.h3.poll_items = ns_realloc(dc->u.h3.poll_items, need * sizeof(SSL_POLL_ITEM));
-        /* Zero-initialize the newly added tail, if any */
-        memset(&dc->u.h3.poll_items[dc->u.h3.poll_capacity], 0,
-               (need - dc->u.h3.poll_capacity) * sizeof(SSL_POLL_ITEM));
-        dc->u.h3.poll_capacity = need;
+    NsTLSH3Config *h3   = &dc->u.h3;
+    size_t         need = Ns_DListCapacity(&h3->ssl_items);
+
+    if (need > h3->poll_capacity) {
+        const size_t old_capacity = h3->poll_capacity;
+
+        h3->poll_items = ns_realloc(h3->poll_items, need * sizeof(*h3->poll_items));
+        /* Zero-initialize the newly added tail */
+        memset(&h3->poll_items[old_capacity], 0, (need - old_capacity) * sizeof(*h3->poll_items));
+
+        h3->poll_capacity = need;
     }
 }
 

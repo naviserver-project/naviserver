@@ -66,6 +66,47 @@ typedef struct Ns_AtomicUint32 {
 #endif
 } Ns_AtomicUint32;
 
+#if defined(HAVE_OPENSSL_4)
+typedef struct NsTLSH3Config {
+    size_t      recvbufsize;
+    size_t      nr_listeners;
+    int         cc_idx;
+    int         sc_idx;
+    size_t      first_dead;
+
+    /*
+     * TLS/QUIC waker: works around SSL_poll not supporting an
+     * external trigger descriptor.
+     */
+    Ns_AtomicUint32        waker_pending;
+    struct sockaddr_storage waker_addr;
+    socklen_t               waker_addrlen;
+    int                     waker_fd;
+    uint64_t                progress_epoch;
+
+    /*
+     * Pollset storage. All three arrays have poll_capacity entries.
+     */
+    SSL_POLL_ITEM *poll_items;
+    size_t         npoll;
+    size_t         poll_capacity;
+
+    /*
+     * ssl_items, mutex_items, and shared_mutex_items are parallel to
+     * poll_items. dead_items and conns are independent lists.
+     */
+    Ns_DList ssl_items;
+    Ns_DList mutex_items;
+    Ns_DList shared_mutex_items;
+    Ns_DList dead_items;
+    Ns_DList conns;
+
+    struct timeval idle_timeout;
+    struct timeval drain_timeout;
+} NsTLSH3Config;
+#endif
+
+
 typedef struct NsTLSConfig {
     Ns_Driver  *driver; /* Default context for driver                   */
     SSL_CTX    *ctx;
@@ -83,35 +124,7 @@ typedef struct NsTLSConfig {
             bool   h3persist;         /* add persit flag to h3 advertise when activated    */
         } h1;
 # if defined(HAVE_OPENSSL_4)
-        struct {
-            size_t     recvbufsize;  /* value for setting SO_RCVBUF */
-            size_t     nr_listeners; /* number of listener SSL* at the start of the pollset */
-            int        cc_idx;       /* slot to fetch ConnCtx an SSL*                */
-            int        sc_idx;       /* slot to fetch StreamCtx an SSL*              */
-            size_t     first_dead;   /* marker for consolidation of pollset          */
-
-            /*
-             * TLS/QUIC waker: works around SSL_poll not supporting an
-             * external trigger descriptor.
-             */
-            Ns_AtomicUint32 waker_pending;
-            struct sockaddr_storage waker_addr;
-            socklen_t      waker_addrlen;
-            int            waker_fd;
-            uint64_t       progress_epoch;
-
-            SSL_POLL_ITEM *poll_items;    /* contiguous array, matches capacity */
-            Ns_DList       ssl_items;     /* parallel to poll_items[] */
-            Ns_DList       mutex_items;   /* Ns_Mutex *, parallel to poll_items[] */
-            Ns_DList       shared_mutex_items; /* Ns_Mutex *, parallel to poll_items[] */
-            Ns_DList       dead_items;     /* independent of poll_items[] */
-            Ns_DList       conns;          /* independent of poll_items[] */
-            size_t         npoll;
-            size_t         poll_capacity;
-
-            struct timeval idle_timeout;  /* e.g., {1, 0} */
-            struct timeval drain_timeout; /* e.g., {0, 10*1000} -> 10ms */
-        } h3;
+        NsTLSH3Config h3;
 # endif
     } u;
 } NsTLSConfig;
