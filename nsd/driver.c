@@ -285,6 +285,9 @@ static bool DriverModuleInitialized(const char *module)
     NS_GNUC_NONNULL(1);
 static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
     NS_GNUC_NONNULL(1,3);
+static void DriverHostsFree(Driver *drvPtr)
+    NS_GNUC_NONNULL(1);
+
 
 static size_t PortsParse(Ns_DList *dlPtr, const char *listString, const char *section)
     NS_GNUC_NONNULL(1,3);
@@ -2356,7 +2359,41 @@ NsWakeupDriver(const Driver *drvPtr) {
     SockTrigger(drvPtr->trigger[1]);
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * DriverHostsFree --
+ *
+ *      Release the virtual-host mappings owned by a Driver. The caller
+ *      must ensure that all driver threads have stopped and that no
+ *      request can still perform a host lookup through this Driver,
+ *      either directly or through another driver's provider pointer.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Frees the ServerMap values stored in drvPtr->hosts and deletes
+ *      the hash table.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DriverHostsFree(Driver *drvPtr)
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+
+    hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
+    while (hPtr != NULL) {
+        ns_free(Tcl_GetHashValue(hPtr));
+        Tcl_DeleteHashEntry(hPtr);
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+
+    Tcl_DeleteHashTable(&drvPtr->hosts);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2369,11 +2406,12 @@ NsWakeupDriver(const Driver *drvPtr) {
  *      None.
  *
  * Side effects:
- *      Driver thread is joined and trigger pipe closed.
+ *      Driver threads are joined and trigger pipes are closed. When all
+ *      drivers stop successfully, their virtual-host mappings are freed.
+ *      On shutdown timeout, the mappings are retained until process exit.
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsWaitDriversShutdown(const Ns_Time *toPtr)
 {
@@ -2395,6 +2433,22 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
             Ns_Log(Notice, "[driver:%s]: stopped", drvPtr->threadName);
             Ns_ThreadJoin(&drvPtr->thread, NULL);
             drvPtr->thread = NULL;
+        }
+    }
+
+    /*
+     * Driver host mappings may be shared indirectly through provider.
+     * Destroy them only after every driver has completed its graceful
+     * drain and its thread has been joined.
+     *
+     * On timeout, retain all mappings until process termination because
+     * a driver or an outstanding request may still use them.
+     */
+    if (status == NS_OK) {
+        for (drvPtr = firstDrvPtr;
+             drvPtr != NULL;
+             drvPtr = drvPtr->nextPtr) {
+            DriverHostsFree(drvPtr);
         }
     }
 }
@@ -3557,22 +3611,6 @@ DriverThread(void *arg)
     }
 
     PollFree(&pdata);
-
-    {
-        Tcl_HashSearch search;
-        Tcl_HashEntry  *hPtr;
-
-        hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
-        while (hPtr != NULL) {
-            void *host;
-
-            host = (void*)Tcl_GetHashValue(hPtr);
-            ns_free(host);
-            Tcl_DeleteHashEntry(hPtr);
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        Tcl_DeleteHashTable(&drvPtr->hosts);
-    }
 
     /*fprintf(stderr, "==== driver exit %p closePtr %p waitPtr %p readPtr %p\n",
       (void*)drvPtr, (void*)closePtr, (void*)waitPtr, (void*)readPtr);*/
