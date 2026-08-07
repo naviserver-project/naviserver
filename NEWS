@@ -944,7 +944,7 @@ Bug Fixes
    * Avoided redundant IPv4 binds already covered by dual-stack IPv6
      wildcard binds.
    * Fixed optional ID parsing in "ns_http list" and "ns_http stats"
-     (regression in NaviServer 5.0.0–5.0.3).
+     (regression in NaviServer 5.0.0-5.0.3).
 
  - nscp:
    * Restored proper termination of the nscp command loop via the
@@ -1079,7 +1079,7 @@ Bug Fixes:
    Vasiljevic for identifying and fixing this bug.  (commit ddb4fd6f7)
 
  - nscp: Restored proper loop termination in EvalThread() via the stop
-   variable. In NaviServer 5.0.0–5.0.1, the loop could only be
+   variable. In NaviServer 5.0.0-5.0.1, the loop could only be
    terminated via Ctrl-D; it now exits cleanly when the Tcl exit
    command is issued.  (commit 82708261)
 
@@ -1234,8 +1234,8 @@ Security Enhancements
 
   - Certificate Management
     Added new commands:
-    * ns_certctl list – List loaded certificates.
-    * ns_certctl reload – Reload certificates at runtime.
+    * ns_certctl list - List loaded certificates.
+    * ns_certctl reload - Reload certificates at runtime.
 
   - Pluggable Authorization Framework
     * Introduced flexible, scriptable request- and user-level authorization:
@@ -1243,8 +1243,8 @@ Security Enhancements
     * Handlers can return continuation codes (TCL_OK, TCL_BREAK, TCL_RETURN)
       to control the authorization chain.
     * New Tcl commands:
-      + ns_auth request – Evaluate configured request-level auth handlers.
-      + ns_auth user – Evaluate user-level authorization logic.
+      + ns_auth request - Evaluate configured request-level auth handlers.
+      + ns_auth user - Evaluate user-level authorization logic.
 
   - Improved Reverse Proxy Trust Management
     * Define trusted upstream proxies via CIDR ranges.
@@ -1339,8 +1339,8 @@ Additional Functional Improvements
     * ns_striphtml and ns_unquotehtml now correctly decode multibyte numeric HTML entities.
 
   - New Log Severities
-    * Security – For security-related events.
-    * Deprecated – For usage of deprecated features (e.g., API calls, parameters).
+    * Security - For security-related events.
+    * Deprecated - For usage of deprecated features (e.g., API calls, parameters).
 
   - TclPro Debugger Support
     * Significantly improved integration with the TclPro debugger.

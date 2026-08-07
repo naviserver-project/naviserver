@@ -47,7 +47,7 @@ The latest development documentation is available online at:
 NaviServer uses a **three-digit** version scheme:
 
 - **MAJOR.MINOR.PATCH** (for example, `5.1.0`)
-- The **PATCH** level is **strictly for fixes** — no new functionality or behavior changes.
+- The **PATCH** level is **strictly for fixes**  -  no new functionality or behavior changes.
 - New features and API changes appear only in **MINOR** or **MAJOR** releases.
 
 **Active Branches**
@@ -201,8 +201,8 @@ Building from GitHub sources requires recent versions of `autoconf` and
 > **Tip:** Use `make build-doc` to generate documentation; otherwise,
 > `make install` may complain when generated documentation files are missing.
 
-The automatically generated GitHub source archives, such as “Source code
-(tar.gz)” and “Source code (zip)” on the GitHub release page, are snapshots
+The automatically generated GitHub source archives, such as "Source code
+(tar.gz)" and "Source code (zip)" on the GitHub release page, are snapshots
 of the repository contents. They are not equivalent to the SourceForge
 `make dist` tarballs.
 
@@ -386,7 +386,7 @@ make install
 ## 5. Install NSF/XOTcl
 
 NSF/XOTcl provides essential functions (e.g., cryptographic and
-reverse proxy capabilities) that enhance NaviServer’s
+reverse proxy capabilities) that enhance NaviServer's
 features. Although optional for users of Tcl 8.5, these components are
 recommended for all installations.
 
