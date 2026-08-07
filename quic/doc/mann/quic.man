@@ -85,11 +85,31 @@ Parameters for the [const quic] module:
 
 [def https] Point to the base configuation ([const nsssl] module).
 
-[def debug]  Enables detailed HTTP/3 and QUIC diagnostic logging. When enabled, the
+[def validateclientaddress]
+
+ Controls QUIC client address validation. When enabled, which is the
+ default, clients that do not present a valid address-validation token
+ receive a Retry packet. This validates the client's network address but
+ adds one network round trip to the initial connection. Repeat clients
+ presenting a valid token previously issued in a NEW_TOKEN frame can
+ connect without this additional round trip.
+
+ [para]
+ Disabling validation suppresses Retry packets. This is useful for
+ benchmarks whose client does not retain and reuse NEW_TOKEN tokens:
+ connection times then more closely represent repeat connections made
+ with a valid token. Disabling validation weakens protection against
+ connection floods using spoofed source addresses and is therefore not
+ recommended for normal Internet-facing operation.
+
+[def debug]
+
+ Enables detailed HTTP/3 and QUIC diagnostic logging. When enabled, the
  module reports internal connection and stream state, pollset management,
  SSL polling events, write scheduling, and cleanup operations using the
  [const Debug(quic)] log severity.
 
+ [para]
  The option is disabled by default, since the generated output can be
  very large and may noticeably affect performance. It can be changed at
  runtime and should normally be enabled only temporarily for

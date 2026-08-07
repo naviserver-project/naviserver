@@ -8486,7 +8486,6 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
         return NS_ERROR;
     }
     Ns_LogQuicDebug = Ns_CreateLogSeverity("Debug(quic)");
-    Ns_LogSeveritySetEnabled(Ns_LogQuicDebug, NS_TRUE);
 
     /*
      * Load parameters from the specified section
@@ -8504,7 +8503,12 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     dc->u.h3.progress_epoch = 0u;
 
     PollsetInit(dc);
-
+    dc->u.h3.validate_client_address = Ns_ConfigBool(section, "validateclientaddress", NS_TRUE);
+    if (!dc->u.h3.validate_client_address) {
+        Ns_Log(Notice,
+               "H3: QUIC client address validation disabled; "
+               "address-validation Retry packets will not be sent");
+    }
     dc->u.h3.recvbufsize = (size_t)Ns_ConfigMemUnitRange(section, "recvbufsize", "8MB",
                                                          1024*8000, 0, INT_MAX);
     Ns_ConfigTimeUnitRange(section, "idletimeout",
@@ -9707,7 +9711,9 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
             dc->driver = driver;
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3 listen set driver %p in dc %p", (long long)dc->iter, (void*)driver, (void*)dc);
 
-            listener = SSL_new_listener(dc->ctx, 0);
+            listener = SSL_new_listener(dc->ctx, dc->u.h3.validate_client_address
+                                        ? 0u
+                                        : SSL_LISTENER_FLAG_NO_VALIDATE);
             if (listener == NULL) {
                 goto fail;
             }
