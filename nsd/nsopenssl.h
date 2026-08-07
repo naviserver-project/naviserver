@@ -103,6 +103,7 @@ typedef struct NsTLSH3Config {
 
     struct timeval idle_timeout;
     struct timeval drain_timeout;
+    bool validate_client_address;
 } NsTLSH3Config;
 #endif
 
