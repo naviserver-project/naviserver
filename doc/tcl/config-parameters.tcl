@@ -852,7 +852,7 @@ set ::ns_configdoc::data {
                 type charset
                 desc {Global default for the per-server formfallbackcharset setting; used when ns/server/$server formfallbackcharset is not configured}
             }
-            
+
         }
 
         ns/reverseproxymode {
@@ -1180,7 +1180,7 @@ set ::ns_configdoc::data {
                 type charset
                 default {utf-8}
                 desc {Default character set for text output from this server; used to determine the Tcl encoding for converting Tcl UTF-8 strings to the response encoding; defaults to value of outputcharset from ns/parameters}
-            }            
+            }
             urlcharset {
                 type charset
                 default {utf-8}
@@ -1190,7 +1190,7 @@ set ::ns_configdoc::data {
                 type charset
                 desc {Fallback character set used when parsing form data if no explicit charset can be determined from the request; defaults to value of formfallbackcharset from ns/parameters}
             }
-            
+
         }
 
         ns/server/*/pools {
@@ -2215,7 +2215,7 @@ stops execution of that ADP page}
                     typically already been determined, but which could
                     not currently be queued into the selected pool,
                     for example because the pool has no free
-                    connection structure and rejectoverrun is disabled.                    
+                    connection structure and rejectoverrun is disabled.
                 }
             }
             maxupload {
@@ -2428,17 +2428,22 @@ stops execution of that ADP page}
                     # ns_param h3persist      false
                 }
                 ns_section ns/module/h3 {
-                    ns_param https       ns/module/https
-                    ns_param recvbufsize 8MB
-                    ns_param idletimeout 3s
-                    ns_param draintimeout 10ms
+                    ns_param https                 ns/module/https
+                    ns_param recvbufsize           8MB
+                    ns_param idletimeout           3s
+                    ns_param draintimeout          10ms
+                    ns_param validateclientaddress true
                 }
             }
 
             https {
                 type section
                 default {ns/module/https}
-                desc {Configuration section of the HTTPS driver to which this HTTP/3 driver is linked; the QUIC driver reuses the TLS configuration from this section}
+                desc {
+                    Configuration section of the HTTPS driver to which
+                    this HTTP/3 driver is linked; the QUIC driver
+                    reuses the TLS configuration from this section
+                }
             }
 
             recvbufsize {
@@ -2456,7 +2461,23 @@ stops execution of that ADP page}
             draintimeout {
                 type time
                 default {10ms}
-                desc {Drain timeout used when closing QUIC connections, allowing pending packets or connection-close handling to complete}
+                desc {
+                    Drain timeout used when closing QUIC connections,
+                    allowing pending packets or connection-close
+                    handling to complete
+                }
+            }
+
+            validateclientaddress {
+                type boolean
+                default true
+                desc {
+                    Validate the QUIC client address before accepting a new
+                    connection. Clients without a valid address-validation token
+                    receive a Retry packet, adding one network round trip. Disabling
+                    validation improves first-connection latency but weakens protection
+                    against spoofed-source connection floods.
+                }
             }
 
             debug {
