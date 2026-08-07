@@ -2369,10 +2369,10 @@ quic_udp_set_rcvbuf(int fd, size_t rcvbuf_bytes)
  *      or 8 bytes, with the length indicated by the top two bits of the
  *      first byte:
  *
- *          00xxxxxx – 1 byte
- *          01xxxxxx – 2 bytes
- *          10xxxxxx – 4 bytes
- *          11xxxxxx – 8 bytes
+ *          00xxxxxx - 1 byte
+ *          01xxxxxx - 2 bytes
+ *          10xxxxxx - 4 bytes
+ *          11xxxxxx - 8 bytes
  *
  *      quic_varint_len() determines the encoded length from the first byte.
  *      quic_varint_decode() parses and reconstructs the full integer value
@@ -5218,7 +5218,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
                 unsigned long e = ERR_peek_error();
                 if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
                     ERR_GET_REASON(e) == SSL_R_PROTOCOL_IS_SHUTDOWN) {
-                    /* peer already considers it closed – treat as FIN */
+                    /* peer already considers it closed - treat as FIN */
                     sc->io_state |= H3_IO_TX_FIN;
                     ERR_clear_error();
                 }
@@ -7951,7 +7951,7 @@ PollsetSweep(NsTLSConfig *dc)
             continue;
         }
 
-        /* 3) Streams without a usable id yet – postpone */
+        /* 3) Streams without a usable id yet - postpone */
         sid = SSL_get_stream_id(s);
         if (sid == (uint64_t)-1) {  /* UINT64_MAX */
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: postpone unknown stream %p type %d %s",
