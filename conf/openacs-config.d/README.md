@@ -1,4 +1,4 @@
-# openacs-config.d – configuration fragments
+# openacs-config.d - configuration fragments
 
 This directory contains the fragment-based form of the OpenACS sample
 configuration.  NaviServer can load configuration from either a single
@@ -27,10 +27,10 @@ These modules are always configured/loaded because they are expected for
 typical OpenACS installations.
 
 Examples:
-- `nsdb`   – database driver integration
-- `nslog`  – access logging
-- `nsproxy` – process proxy support
-- `libthread` – Tcl thread library integration
+- `nsdb` - database driver integration
+- `nslog` - access logging
+- `nsproxy` - process proxy support
+- `libthread` - Tcl thread library integration
 
 Note: For `libthread` the configuration attempts to locate an installed
 library under `$homedir/lib`.  If no library is found, an error is
@@ -43,17 +43,17 @@ the minimal required parameters.  This allows simple enable/disable via
 environment variables in containerized deployments.
 
 Examples:
-- `nscp`     – enabled when `nscpport` is non-empty
-- `nssmtpd`  – enabled when `smtpdport` is non-empty
-- `letsencrypt` – enabled when `letsencrypt_domains` is non-empty
-- network drivers – enabled when `httpport` / `httpsport` are configured
+- `nscp` - enabled when `nscpport` is non-empty
+- `nssmtpd` - enabled when `smtpdport` is non-empty
+- `letsencrypt` - enabled when `letsencrypt_domains` is non-empty
+- network drivers - enabled when `httpport` / `httpsport` are configured
 
 ### 3) Opt-in modules (enabled via `servermodules`)
 
 Some modules are optional and are only enabled when explicitly listed in
 the configration variable `servermodules` (a Tcl list) defined in the 
 00-* section.  This is intended for features that do not have a natural 
-“required parameter” trigger, or that are not needed on every site.
+"required parameter" trigger, or that are not needed on every site.
 
 Examples:
 - `nscgi`

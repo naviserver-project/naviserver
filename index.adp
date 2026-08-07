@@ -3,7 +3,7 @@
 <head>
   <meta charset='UTF-8'>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NaviServer <%=[ns_info patchlevel]%> – Welcome</title>
+  <title>NaviServer <%=[ns_info patchlevel]%> - Welcome</title>
   <link rel="stylesheet" href="doc/naviserver/man-5.0.css" type="text/css">
   <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" type="text/css">-->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -362,7 +362,7 @@ try {
     <h1>Welcome to NaviServer <%=[ns_info patchlevel]%></h1>
     <!-- <a href="https://sourceforge.net/projects/naviserver/">NaviServer</a> -->
     <p>
-     Congratulations – your NaviServer instance is up and running on <%=[set . "$::tcl_platform(os) $::tcl_platform(osVersion)"]%>!
+     Congratulations - your NaviServer instance is up and running on <%=[set . "$::tcl_platform(os) $::tcl_platform(osVersion)"]%>!
      This page confirms that your default installation is active.
     </p>
 
