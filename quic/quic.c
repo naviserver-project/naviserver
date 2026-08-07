@@ -9061,9 +9061,10 @@ QuicThread(void *arg)
     SSL_CTX            *h3ctx;
     bool                stopping = NS_FALSE;
     unsigned int        flags = NS_DRIVER_THREAD_STARTED;
-    struct timeval     *polltimeout_ptr;
-    H3NoProgressWatch  watch = {0u, NS_FALSE};
-    uint64_t           previous_epoch = dc->u.h3.progress_epoch;
+    H3NoProgressWatch   watch = {0u, NS_FALSE};
+    uint64_t            previous_epoch = dc->u.h3.progress_epoch;
+    static const struct timeval no_wait = {0, 0};
+    const struct timeval       *polltimeout_ptr;
 
     Ns_ThreadSetName("-driver:%s:%s-", drvPtr->type, drvPtr->threadName);
     Ns_Log(Notice, "starting %s", drvPtr->threadName);
@@ -9567,6 +9568,7 @@ QuicThread(void *arg)
 
         {
             bool expecting_send = NS_FALSE;
+            bool immediate_work = NS_FALSE;
 
             /*
              * Allow producers to arm the next notification before scanning shared
@@ -9605,21 +9607,36 @@ QuicThread(void *arg)
                         expecting_send = NS_TRUE;
                         cc->expecting_send = NS_FALSE;
                     }
+
                     if (cc->wants_write || has_resume) {
-                        //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D write demand from cc %p", (long long)dc->iter, (void*)cc);
                         cc->wants_write = h3_conn_write_step(cc);
                         Ns_Log(Ns_LogQuicDebug, "[%lld] H3D after h3_conn_write_step cc %p", (long long)dc->iter, (void*)cc);
                     }
 
-                    /* Decide whether we should run another drain pass without sleeping. */
-                    if (cc->wants_write
-                        || SharedHasResumePending(&cc->shared)) {
-                        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D cc %p cc->wants_write is still set", (long long)dc->iter, (void*)cc);
+                    /*
+                     * Recheck because h3_conn_write_step() may consume existing
+                     * resume entries or enqueue new local work. Pending resume work
+                     * should be reconsidered without sleeping. wants_write alone may
+                     * instead indicate that OpenSSL is waiting for transport progress.
+                     */
+                    has_resume = SharedHasResumePending(&cc->shared);
+
+                    if (cc->wants_write || has_resume) {
                         expecting_send = NS_TRUE;
+                    }
+                    if (has_resume) {
+                        immediate_work = NS_TRUE;
                     }
                     PollsetUpdateConnPollInterest(cc);
                 }
-                polltimeout_ptr = expecting_send ? &dc->u.h3.drain_timeout : &dc->u.h3.idle_timeout;
+
+                if (immediate_work) {
+                    polltimeout_ptr = &no_wait;
+                } else if (expecting_send) {
+                    polltimeout_ptr = &dc->u.h3.drain_timeout;
+                } else {
+                    polltimeout_ptr = &dc->u.h3.idle_timeout;
+                }
             }
 
             PollsetSweep(dc);
