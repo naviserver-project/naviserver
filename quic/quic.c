@@ -3976,38 +3976,30 @@ h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid)
  *
  * h3_stream_build_resp_headers --
  *
- *      HTTP/3 response header encoder used by the NaviServer driver to
- *      translate a merged Ns_Set of response headers into a contiguous
- *      array of nghttp3_nv name/value pairs stored within the StreamCtx.
+ *      Build the HTTP/3 response header block for the stream associated
+ *      with sock. statusCode is encoded as the :status pseudo-header.
+ *      The supplied header set is expected to contain the merged,
+ *      sanitized response headers.
  *
- *      This function is registered as an Ns_HeaderEncodeFn callback and
- *      is invoked by Ns_FinalizeResponseHeaders(). It performs the H3-
- *      specific mapping from HTTP/1.x-style headers to HPACK-like name/
- *      value pairs without emitting any textual CRLF output.
- *
- *      Steps performed:
- *        1. Resets the stream's header store.
- *        2. Inserts a mandatory ":status" pseudo-header (remapping 101 -> 200).
- *        3. Appends all regular headers from the merged set, excluding
- *           hop-by-hop fields invalid in HTTP/3.
- *        4. Finalizes nghttp3_nv pointers to contiguous storage.
- *        5. Publishes the header array and metadata into the StreamCtx.
+ *      httpVersion is ignored because HTTP/3 does not encode an HTTP
+ *      version in the response header block. out_obj is likewise unused;
+ *      the encoded nghttp3 name/value array is stored in the stream
+ *      context for transmission by the QUIC driver.
  *
  * Results:
- *      Returns NS_TRUE on success, NS_FALSE on error.
- *      Sets *out_len (if provided) to the number of nghttp3_nv entries.
+ *      NS_TRUE when the header block was built successfully; otherwise
+ *      NS_FALSE.
  *
  * Side effects:
- *      - Allocates and populates sc->resp_nv[] and sc->resp_nv_store.
- *      - Frees any previously allocated header arrays.
- *      - Logs each header for diagnostic tracing.
- *      - Updates StreamCtx flags for response body eligibility and
- *        content-length presence.
+ *      Replaces the pending response headers in the stream context and
+ *      updates response-body and content-length state. When out_len is
+ *      non-NULL, stores the number of encoded name/value fields there.
  *
  *----------------------------------------------------------------------
  */
 static bool
 h3_stream_build_resp_headers(Ns_Sock *sock,
+                             double UNUSED(httpVersion),
                              int statusCode,
                              const Ns_Set *merged,
                              void *UNUSED(out_obj),

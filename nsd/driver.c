@@ -257,6 +257,8 @@ static TCL_OBJCMDPROC_T AsyncLogfileWriteObjCmd;
 static TCL_OBJCMDPROC_T AsyncLogfileOpenObjCmd;
 static TCL_OBJCMDPROC_T AsyncLogfileCloseObjCmd;
 
+static Ns_HeadersEncodeProc h1_headersEncodeProc;
+
 static Ns_ReturnCode CheckSingletonHeaderFields(Sock*sockPtr)
     NS_GNUC_NONNULL(1);
 
@@ -358,6 +360,8 @@ static void WriterSockRelease(WriterSock *wrSockPtr)
 static SpoolerState WriterReadFromSpool(WriterSock *curPtr)
     NS_GNUC_NONNULL(1);
 static SpoolerState WriterSend(WriterSock *curPtr, int *err)
+    NS_GNUC_NONNULL(1,2);
+static void HdrSanitizeValue(const char *value, Tcl_DString *out)
     NS_GNUC_NONNULL(1,2);
 
 static Ns_ReturnCode WriterSetupStreamingMode(Conn *connPtr, const struct iovec *bufs, int nbufs, int *fdPtr)
@@ -2933,6 +2937,47 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
     return sent;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverEncodeResponseHeaders --
+ *
+ *      Encode response headers using the encoder registered by the
+ *      socket's driver. When the driver provides no protocol-specific
+ *      encoder, use the default HTTP/1 encoder.
+ *
+ *      The HTTP version and status code are supplied explicitly so this
+ *      function can be used both for normal connection responses and
+ *      for responses generated directly by the driver without an
+ *      Ns_Conn.
+ *
+ * Results:
+ *      NS_TRUE when the response headers were encoded successfully;
+ *      otherwise NS_FALSE.
+ *
+ * Side effects:
+ *      Protocol-dependent. The encoder may append serialized headers to
+ *      out_obj or store an encoded header block in driver-specific
+ *      socket state. When out_len is non-NULL, it is updated by the
+ *      selected encoder.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+NsDriverEncodeResponseHeaders(Sock *sockPtr, double httpVersion, int statusCode,
+                              const Ns_Set *headers,
+                              void *out_obj, size_t *out_len)
+{
+    const Driver         *drvPtr = sockPtr->drvPtr;
+    Ns_HeadersEncodeProc *encodeProc;
+
+    encodeProc = drvPtr->headersEncodeProc != NULL
+        ? drvPtr->headersEncodeProc
+        : h1_headersEncodeProc;
+
+    return encodeProc((Ns_Sock*)sockPtr, httpVersion, statusCode, headers, out_obj, out_len);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -5021,6 +5066,127 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
             NsRunSelectedTraces(connPtr, "nslog:conntrace");
         }
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HdrSanitizeValue --
+ *
+ *      Append a response header value to the supplied Tcl_DString while
+ *      converting every embedded newline into a folded continuation line.
+ *      A tab is inserted after each newline so that subsequent text cannot
+ *      be interpreted as a separate response header field.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends the transformed value to out. Existing contents of out are
+ *      preserved.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+HdrSanitizeValue(const char *value, Tcl_DString *out)
+{
+    const char *p = value, *lb;
+    while ((lb = strchr(p, '\n')) != NULL) {
+        Tcl_DStringAppend(out, p, (TCL_SIZE_T)(lb - p));
+        Tcl_DStringAppend(out, "\n\t", 2);
+        p = lb + 1;
+    }
+    Tcl_DStringAppend(out, p, TCL_INDEX_NONE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * h1_headersEncodeProc --
+ *
+ *      Encode an HTTP/1 response status line and header fields into the
+ *      Tcl_DString supplied as out_obj. httpVersion determines the
+ *      response protocol version and statusCode determines the status
+ *      line. The supplied header set is expected to contain the merged,
+ *      sanitized response headers.
+ *
+ *      This is the default response-header encoder when a driver does
+ *      not provide a protocol-specific Ns_HeadersEncodeProc.
+ *
+ * Results:
+ *      NS_TRUE when the headers were encoded successfully; otherwise
+ *      NS_FALSE.
+ *
+ * Side effects:
+ *      Appends the encoded status line, header fields, and terminating
+ *      empty line to out_obj. When out_len is non-NULL, stores the
+ *      resulting number of encoded bytes there.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+h1_headersEncodeProc(Ns_Sock *sock,
+                     double httpVersion,
+                     int statusCode,
+                     const Ns_Set *merged,
+                     void *out_obj,
+                     size_t *out_len)   /* optional: set to ds.length */
+{
+    Tcl_DString    *dsPtr = (Tcl_DString *)out_obj;
+    const Sock     *sockPtr = (const Sock *)sock;
+    const NsServer *servPtr = sockPtr->servPtr;
+
+    if (dsPtr == NULL) {
+        if (out_len != NULL) {
+            *out_len = 0u;
+        }
+        return NS_FALSE;
+    }
+
+    /* Status line */
+    Ns_DStringPrintf(dsPtr, "HTTP/%.1f %d %s\r\n",
+                     httpVersion,
+                     statusCode,
+                     NsHttpStatusPhrase(statusCode));
+
+    if (servPtr != NULL && servPtr->opts.h3enabled) {
+        const Driver *drvPtr = (const Driver*)(sock->driver);
+
+        Ns_DStringPrintf(dsPtr, "alt-svc: h3=\":%hu\"; ma=86400; persist=1\r\n", drvPtr->port);
+        Ns_Log(Debug, "quic: added <Alt-Svc: h3=\":%hu\"; ma=86400; persist=1>", drvPtr->port);
+    }
+
+    /* Emit merged headers, sanitized */
+    if (merged != NULL) {
+        for (size_t i = 0u; i < Ns_SetSize(merged); ++i) {
+            const char *key   = Ns_SetKey(merged, i);
+            const char *value = Ns_SetValue(merged, i);
+            if (key != NULL && value != NULL) {
+                const char *lineBreak = strchr(value, INTCHAR('\n'));
+
+                if (lineBreak == NULL) {
+                    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NS_SENTINEL);
+                } else {
+                    Tcl_DString sanitize;
+                    /*
+                     * We have to sanititize the header field to avoid
+                     * an HTTP response splitting attack. After each
+                     * newline in the value, we insert a TAB character
+                     * (see Section 4.2 in RFC 2616)
+                     */
+                    Tcl_DStringInit(&sanitize);
+                    HdrSanitizeValue(value, &sanitize);
+                    Ns_DStringVarAppend(dsPtr, key, ": ",
+                                        Tcl_DStringValue(&sanitize), "\r\n", NS_SENTINEL);
+                    Tcl_DStringFree(&sanitize);
+                }
+            }
+        }
+    }
+
+    Ns_Log(Ns_LogRequestDebug, "response headers:\n%s", dsPtr->string);
+    Tcl_DStringAppend(dsPtr, "\r\n", 2);
+    return NS_TRUE;
 }
 
 /*
