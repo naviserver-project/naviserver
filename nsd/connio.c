@@ -37,8 +37,6 @@
 /*
  * Local functions defined in this file
  */
-static Ns_HeadersEncodeProc h1_headersEncodeProc;
-
 static Ns_ReturnCode ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan,
                               FILE *fp, int fd)
     NS_GNUC_NONNULL(1);
@@ -55,9 +53,6 @@ static int CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbuf
 
 static bool HdrEq(const Ns_Set *set, const char *name, const char *value, size_t valueLength)
     NS_GNUC_NONNULL(1,2,3);
-
-static void HdrSanitizeValue(const char *value, Tcl_DString *out)
-    NS_GNUC_NONNULL(1,2);
 
 static const Ns_Set *HdrMergeExtra(const Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
@@ -1454,134 +1449,6 @@ HdrMergeExtra(const Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * HdrSanitizeValue --
- *
- *      Append a response header value to the supplied Tcl_DString while
- *      converting every embedded newline into a folded continuation line.
- *      A tab is inserted after each newline so that subsequent text cannot
- *      be interpreted as a separate response header field.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Appends the transformed value to out. Existing contents of out are
- *      preserved.
- *
- *----------------------------------------------------------------------
- */
-static void
-HdrSanitizeValue(const char *value, Tcl_DString *out)
-{
-    const char *p = value, *lb;
-    while ((lb = strchr(p, '\n')) != NULL) {
-        Tcl_DStringAppend(out, p, (TCL_SIZE_T)(lb - p));
-        Tcl_DStringAppend(out, "\n\t", 2);
-        p = lb + 1;
-    }
-    Tcl_DStringAppend(out, p, TCL_INDEX_NONE);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * h1_headersEncodeProc --
- *
- *      Implementation of Ns_HeadersEncodeProc. Encode a finalized
- *      response header set using HTTP/1 wire format.  The encoder
- *      appends the HTTP status line, an optional Alt-Svc field, and
- *      all merged response fields to the supplied
- *      Tcl_DString. Embedded newlines in field values are converted
- *      into folded continuation lines. A final empty line terminates
- *      the header section.
- *
- * Arguments:
- *      sock       - Driver socket associated with the response.
- *      statusCode - HTTP response status code.
- *      merged     - Final merged response header set.
- *      out_obj    - Initialized Tcl_DString receiving encoded bytes.
- *      out_len    - Optional location receiving the resulting byte length.
- *
- * Results:
- *      NS_TRUE when a Tcl_DString output object was supplied and the headers
- *      were encoded; otherwise NS_FALSE.
- *
- * Side effects:
- *      Appends encoded HTTP/1 response headers to out_obj and may log the
- *      generated headers. Does not modify merged.
- *
- *----------------------------------------------------------------------
- */
-static bool
-h1_headersEncodeProc(Ns_Sock *sock,
-                     int statusCode,
-                     const Ns_Set *merged,
-                     void *out_obj,
-                     size_t *out_len)   /* optional: set to ds.length */
-{
-    Tcl_DString    *dsPtr = (Tcl_DString *)out_obj;
-    const Sock     *sockPtr = (const Sock *)sock;
-    const NsServer *servPtr = sockPtr->servPtr;
-    double          version = sockPtr->reqPtr != NULL
-        ? sockPtr->reqPtr->request.version
-        : 1.0;
-
-    if (dsPtr == NULL) {
-        if (out_len != NULL) {
-            *out_len = 0u;
-        }
-        return NS_FALSE;
-    }
-
-    /* Status line */
-    Ns_DStringPrintf(dsPtr, "HTTP/%.1f %d %s\r\n",
-                     MIN(version, 1.1),
-                     statusCode,
-                     NsHttpStatusPhrase(statusCode));
-
-    if (servPtr != NULL && servPtr->opts.h3enabled) {
-        const Driver *drvPtr = (const Driver*)(sock->driver);
-
-        Ns_DStringPrintf(dsPtr, "alt-svc: h3=\":%hu\"; ma=86400; persist=1\r\n", drvPtr->port);
-        Ns_Log(Debug, "quic: added <Alt-Svc: h3=\":%hu\"; ma=86400; persist=1>", drvPtr->port);
-    }
-
-    /* Emit merged headers, sanitized */
-    if (merged != NULL) {
-        for (size_t i = 0u; i < Ns_SetSize(merged); ++i) {
-            const char *key   = Ns_SetKey(merged, i);
-            const char *value = Ns_SetValue(merged, i);
-            if (key != NULL && value != NULL) {
-                const char *lineBreak = strchr(value, INTCHAR('\n'));
-
-                if (lineBreak == NULL) {
-                    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NS_SENTINEL);
-                } else {
-                    Tcl_DString sanitize;
-                    /*
-                     * We have to sanititize the header field to avoid
-                     * an HTTP response splitting attack. After each
-                     * newline in the value, we insert a TAB character
-                     * (see Section 4.2 in RFC 2616)
-                     */
-                    Tcl_DStringInit(&sanitize);
-                    HdrSanitizeValue(value, &sanitize);
-                    Ns_DStringVarAppend(dsPtr, key, ": ",
-                                        Tcl_DStringValue(&sanitize), "\r\n", NS_SENTINEL);
-                    Tcl_DStringFree(&sanitize);
-                }
-            }
-        }
-    }
-
-    Ns_Log(Ns_LogRequestDebug, "response headers:\n%s", dsPtr->string);
-    Tcl_DStringAppend(dsPtr, "\r\n", 2);
-    return NS_TRUE;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_FinalizeResponseHeaders --
  *
  *      Prepare and encode response headers for the protocol used by the
@@ -1619,8 +1486,6 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
                            void *out_obj,          /* e.g., Tcl_DString* for HTTP/1; NsH3HeaderBlock* for H3 */
                            size_t *out_len)        /* optional: bytes (HTTP/1) or nv count (H3) */
 {
-    Ns_HeadersEncodeProc *encodeProc;
-    const Ns_Set         *merged;
     Ns_Sock              *sockPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
@@ -1633,6 +1498,8 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
         if (out_len) *out_len = 0u;
         return NS_FALSE;
     } else {
+        const Ns_Set *merged;
+        Conn         *connPtr = (Conn *)conn;
 
         /* Decide framing and hop-by-hop semantics for this protocol (here: HTTP/1 rules) */
         HdrPlanFraming(conn, bodyLength, flags);
@@ -1640,16 +1507,13 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
         /* Merge server/driver extra headers into outputheaders (outputheaders keep precedence) */
         merged = HdrMergeExtra(conn);
 
-        /* Dispatch to the active driver's header encoder */
-        {
-            const Driver  *drvPtr  = (Driver*)sockPtr->driver;
-            encodeProc = (drvPtr->headersEncodeProc != NULL)
-                ? drvPtr->headersEncodeProc
-                : h1_headersEncodeProc;
-        }
+        return NsDriverEncodeResponseHeaders((Sock*)sockPtr,
+                                             connPtr->request.version,
+                                             connPtr->responseStatus,
+                                             merged,
+                                             out_obj,
+                                             out_len);
     }
-
-    return encodeProc(sockPtr, ((Conn *)conn)->responseStatus, merged, out_obj, out_len);
 }
 
 

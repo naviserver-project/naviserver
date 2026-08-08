@@ -1856,6 +1856,7 @@ NS_EXTERN int NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, cons
                               TCL_SIZE_T msgLength, ssize_t *bytesSentPtr, unsigned long *errnoPtr)
     NS_GNUC_NONNULL(1,2,3,5,6);
 
+
 /*
  * dlist.c
  */
@@ -1912,6 +1913,12 @@ NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbuf
 
 NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1,2);
+
+NS_EXTERN bool NsDriverEncodeResponseHeaders(Sock *sockPtr,  double httpVersion, int statusCode,
+                                             const Ns_Set *headers,
+                                             void *out_obj, size_t *out_len)
+    NS_GNUC_NONNULL(1,4,5);
+
 
 NS_EXTERN int NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                                  const char *url, const char *httpMethod, const char *version,
