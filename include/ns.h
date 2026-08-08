@@ -402,12 +402,13 @@ typedef int           Ns_IndexKeyCmpProc(const void *key, const void *elemPtr)
     NS_GNUC_NONNULL(1,2);
 typedef bool          Ns_UrlSpaceContextFilterEvalProc(void *contextSpec, void *context);
 
-typedef bool Ns_HeadersEncodeProc(
-    struct Ns_Conn     *conn,
-    const Ns_Set       *merged,     /* merged, sanitized headers to encode */
-    void               *out_obj,    /* backend-defined sink */
-    size_t             *out_len     /* optional: item count or bytes written */
-) NS_GNUC_NONNULL(1,2,3);
+struct Ns_Sock;
+typedef bool Ns_HeadersEncodeProc(struct Ns_Sock *sock,
+                                  int             statusCode,
+                                  const Ns_Set   *merged,     /* merged, sanitized headers to encode */
+                                  void           *out_obj,    /* backend-defined sink */
+                                  size_t         *out_len     /* optional: item count or bytes written */
+                                  ) NS_GNUC_NONNULL(1,3,4);
 
 /*
  * Generic function pointer type, can be used for recasting between different

@@ -4007,7 +4007,8 @@ h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid)
  *----------------------------------------------------------------------
  */
 static bool
-h3_stream_build_resp_headers(Ns_Conn *conn,
+h3_stream_build_resp_headers(Ns_Sock *sock,
+                             int statusCode,
                              const Ns_Set *merged,
                              void *UNUSED(out_obj),
                              size_t *out_len)
@@ -4016,9 +4017,7 @@ h3_stream_build_resp_headers(Ns_Conn *conn,
     StreamCtx   *sc;
     size_t       nvlen = 0, nvcap = 0;
     nghttp3_nv  *nva = NULL;
-    Ns_Sock     *sock = Ns_ConnSockPtr(conn);
     Tcl_DString *store;
-    int          status = ((Conn *)conn)->responseStatus;
     bool         success = NS_TRUE; /* we want to push an empty iovec in successful cases */
 
     if (sock == NULL) {
@@ -4045,13 +4044,13 @@ h3_stream_build_resp_headers(Ns_Conn *conn,
     {
         char s3[3];
 
-        if (status == 101) {
+        if (statusCode == 101) {
             Ns_Log(Ns_LogQuicDebug, "h3: status code 101 not allowed in HTTP/3; remapping to 200");
-            status = 200;
+            statusCode = 200;
         }
-        s3[0] = (char)('0' + (status / 100) % 10);
-        s3[1] = (char)('0' + (status / 10)  % 10);
-        s3[2] = (char)('0' + (status % 10));
+        s3[0] = (char)('0' + (statusCode / 100) % 10);
+        s3[1] = (char)('0' + (statusCode / 10)  % 10);
+        s3[2] = (char)('0' + (statusCode % 10));
         if (h3_headers_nv_append(store, &nva, &nvlen, &nvcap, ":status", 7, s3, 3) != 0) {
             goto fail;
         }
@@ -4106,7 +4105,7 @@ h3_stream_build_resp_headers(Ns_Conn *conn,
 
     h3_headers_log_nv(sc, sc->resp_nv,  sc->resp_nvlen, "h3_stream_build_resp_headers");
 
-    sc->response_allow_body = h3_response_allows_body(status, sc->method);
+    sc->response_allow_body = h3_response_allows_body(statusCode, sc->method);
     {
         const char *contentLength = Ns_SetGetValue(merged, "content-length", NULL);
 

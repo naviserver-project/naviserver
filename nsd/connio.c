@@ -1414,14 +1414,18 @@ HdrSanitizeValue(const char *value, Tcl_DString *out)
 
 /* Default implementation used by HTTP/1 driver */
 static bool
-h1_headersEncodeProc(Ns_Conn *conn,
-                      const Ns_Set *merged,
-                      void *out_obj,
-                      size_t *out_len)   /* optional: set to ds.length */
+h1_headersEncodeProc(Ns_Sock *sock,
+                     int statusCode,
+                     const Ns_Set *merged,
+                     void *out_obj,
+                     size_t *out_len)   /* optional: set to ds.length */
 {
     Tcl_DString    *dsPtr = (Tcl_DString *)out_obj;
-    const Conn     *connPtr = (const Conn *)conn;
-    const NsServer *servPtr = connPtr->poolPtr->servPtr;
+    const Sock     *sockPtr = (const Sock *)sock;
+    const NsServer *servPtr = sockPtr->servPtr;
+    double          version = sockPtr->reqPtr != NULL
+        ? sockPtr->reqPtr->request.version
+        : 1.0;
 
     if (dsPtr == NULL) {
         if (out_len != NULL) {
@@ -1432,13 +1436,13 @@ h1_headersEncodeProc(Ns_Conn *conn,
 
     /* Status line */
     Ns_DStringPrintf(dsPtr, "HTTP/%.1f %d %s\r\n",
-                     MIN(connPtr->request.version, 1.1),
-                     connPtr->responseStatus,
-                     NsHttpStatusPhrase(connPtr->responseStatus));
+                     MIN(version, 1.1),
+                     statusCode,
+                     NsHttpStatusPhrase(statusCode));
 
-    if (servPtr->opts.h3enabled) {
-        const Ns_Sock *sockPtr = Ns_ConnSockPtr(conn);
-        Driver        *drvPtr = (Driver*)(sockPtr->driver);
+    if (servPtr != NULL && servPtr->opts.h3enabled) {
+        const Driver *drvPtr = (const Driver*)(sock->driver);
+
         Ns_DStringPrintf(dsPtr, "alt-svc: h3=\":%hu\"; ma=86400; persist=1\r\n", drvPtr->port);
         Ns_Log(Debug, "quic: added <Alt-Svc: h3=\":%hu\"; ma=86400; persist=1>", drvPtr->port);
     }
@@ -1486,9 +1490,11 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
 {
     Ns_HeadersEncodeProc *encodeProc;
     const Ns_Set         *merged;
+    Ns_Sock              *sockPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
+    sockPtr = Ns_ConnSockPtr(conn);
     if ((conn->flags & NS_CONN_SKIPHDRS) != 0u) {
         if (conn->request.version < 1.0) {
             ((Conn*)conn)->keep = 0;
@@ -1505,7 +1511,6 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
 
         /* Dispatch to the active driver's header encoder */
         {
-            const Ns_Sock *sockPtr = Ns_ConnSockPtr(conn);
             const Driver  *drvPtr  = (Driver*)sockPtr->driver;
             encodeProc = (drvPtr->headersEncodeProc != NULL)
                 ? drvPtr->headersEncodeProc
@@ -1513,7 +1518,7 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
         }
     }
 
-    return encodeProc(conn, merged, out_obj, out_len);
+    return encodeProc(sockPtr, ((Conn *)conn)->responseStatus, merged, out_obj, out_len);
 }
 #endif
 
