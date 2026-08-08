@@ -37,6 +37,7 @@
 /*
  * Local functions defined in this file
  */
+static Ns_HeadersEncodeProc h1_headersEncodeProc;
 
 static Ns_ReturnCode ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan,
                               FILE *fp, int fd)
@@ -54,6 +55,15 @@ static int CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbuf
 
 static bool HdrEq(const Ns_Set *set, const char *name, const char *value, size_t valueLength)
     NS_GNUC_NONNULL(1,2,3);
+
+static void HdrSanitizeValue(const char *value, Tcl_DString *out)
+    NS_GNUC_NONNULL(1,2);
+
+static const Ns_Set *HdrMergeExtra(const Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
+
+static void HdrPlanFraming(Ns_Conn *conn, size_t bodyLength, unsigned int flags)
+    NS_GNUC_NONNULL(1);
 
 
 /*
@@ -298,16 +308,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
         bool pushIOVec;
 
         conn->flags |= NS_CONN_SENTHDRS;
-#if defined(USE_ENCODE_HEADERS)
         pushIOVec = Ns_FinalizeResponseHeaders(conn, bodyLength, flags, &ds, NULL);
-#else
-
-        /* Notice: Ns_CompleteHeaders flags 0040
-            Notice: Ns_CompleteHeaders connPtr->responseLength -1 conn->request.version 1.100000 connPtr->keep -1 no multipart 0
-        */
-
-        pushIOVec = Ns_CompleteHeaders(conn, bodyLength, flags, &ds);
-#endif
 
         if (pushIOVec) {
             toWrite += Ns_SetVec(sbufPtr, sbufIdx++, ds.string, (size_t)ds.length);
@@ -1236,7 +1237,6 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
  *
  *----------------------------------------------------------------------
  */
-
 bool
 Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
                    unsigned int flags, Tcl_DString *dsPtr)
@@ -1312,7 +1312,35 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
     return success;
 }
 
-#if defined(USE_ENCODE_HEADERS)
+/*
+ *----------------------------------------------------------------------
+ *
+ * HdrPlanFraming --
+ *
+ *      Determine response framing and connection-persistence headers before
+ *      the response headers are encoded.
+ *
+ *      Streaming responses are marked with NS_CONN_STREAM and use chunked
+ *      transfer encoding when their length is unknown, HTTP/1.1 is in use,
+ *      the connection can remain persistent, and the response is not a
+ *      multipart byte-range response. For a non-streaming response with an
+ *      unknown response length, bodyLength is installed as the content
+ *      length.
+ *
+ *      The function also recomputes the keep-alive decision and sets the
+ *      Connection and, when required, Transfer-Encoding headers. Protocol
+ *      encoders may subsequently discard hop-by-hop fields that do not
+ *      apply to their protocol.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      May modify the connection flags, keep-alive state, Content-Length,
+ *      Connection, and Transfer-Encoding response headers.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 HdrPlanFraming(Ns_Conn *conn, size_t bodyLength, unsigned int flags)
 {
@@ -1353,6 +1381,29 @@ HdrPlanFraming(Ns_Conn *conn, size_t bodyLength, unsigned int flags)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * HdrMergeExtra --
+ *
+ *      Complete the response header set with automatically generated and
+ *      configured fields. The function updates the Date header, adds the
+ *      Server header unless stealth mode is enabled, adds TLS-specific
+ *      output headers for an HTTP/1 HTTPS driver, and merges server- and
+ *      driver-level extra headers.
+ *
+ *      Explicit response headers take precedence over configured extra
+ *      headers.
+ *
+ * Results:
+ *      A borrowed pointer to conn->outputheaders.
+ *
+ * Side effects:
+ *      Modifies conn->outputheaders in place. Existing Date and Server
+ *      fields may be replaced, while configured extra fields may be added.
+ *
+ *----------------------------------------------------------------------
+ */
 static const Ns_Set *
 HdrMergeExtra(const Ns_Conn *conn)
 {
@@ -1400,6 +1451,25 @@ HdrMergeExtra(const Ns_Conn *conn)
     return headers;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * HdrSanitizeValue --
+ *
+ *      Append a response header value to the supplied Tcl_DString while
+ *      converting every embedded newline into a folded continuation line.
+ *      A tab is inserted after each newline so that subsequent text cannot
+ *      be interpreted as a separate response header field.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends the transformed value to out. Existing contents of out are
+ *      preserved.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 HdrSanitizeValue(const char *value, Tcl_DString *out)
 {
@@ -1412,7 +1482,36 @@ HdrSanitizeValue(const char *value, Tcl_DString *out)
     Tcl_DStringAppend(out, p, TCL_INDEX_NONE);
 }
 
-/* Default implementation used by HTTP/1 driver */
+/*
+ *----------------------------------------------------------------------
+ *
+ * h1_headersEncodeProc --
+ *
+ *      Implementation of Ns_HeadersEncodeProc. Encode a finalized
+ *      response header set using HTTP/1 wire format.  The encoder
+ *      appends the HTTP status line, an optional Alt-Svc field, and
+ *      all merged response fields to the supplied
+ *      Tcl_DString. Embedded newlines in field values are converted
+ *      into folded continuation lines. A final empty line terminates
+ *      the header section.
+ *
+ * Arguments:
+ *      sock       - Driver socket associated with the response.
+ *      statusCode - HTTP response status code.
+ *      merged     - Final merged response header set.
+ *      out_obj    - Initialized Tcl_DString receiving encoded bytes.
+ *      out_len    - Optional location receiving the resulting byte length.
+ *
+ * Results:
+ *      NS_TRUE when a Tcl_DString output object was supplied and the headers
+ *      were encoded; otherwise NS_FALSE.
+ *
+ * Side effects:
+ *      Appends encoded HTTP/1 response headers to out_obj and may log the
+ *      generated headers. Does not modify merged.
+ *
+ *----------------------------------------------------------------------
+ */
 static bool
 h1_headersEncodeProc(Ns_Sock *sock,
                      int statusCode,
@@ -1480,7 +1579,39 @@ h1_headersEncodeProc(Ns_Sock *sock,
     return NS_TRUE;
 }
 
-/* Replacement for Ns_CompleteHeaders */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_FinalizeResponseHeaders --
+ *
+ *      Prepare and encode response headers for the protocol used by the
+ *      active driver.
+ *
+ *      Unless NS_CONN_SKIPHDRS is set, the function determines response
+ *      framing and connection persistence, merges automatically generated
+ *      and configured headers into conn->outputheaders, and invokes either
+ *      the driver's header encoder or the default HTTP/1 encoder.
+ *
+ * Arguments:
+ *      conn       - Connection whose response headers are finalized.
+ *      bodyLength - Length of the response body when known by the caller.
+ *      flags      - Response-writing flags, including NS_CONN_STREAM.
+ *      out_obj    - Protocol-specific encoding destination.
+ *      out_len    - Optional location receiving the encoded byte or item
+ *                   count, as defined by the selected encoder.
+ *
+ * Results:
+ *      NS_TRUE when the selected encoder produced a header representation.
+ *      NS_FALSE when headers must be skipped or the encoder did not produce
+ *      output.
+ *
+ * Side effects:
+ *      May update response framing flags, keep-alive state, and response
+ *      headers. The selected encoder may additionally update protocol-
+ *      specific per-stream state.
+ *
+ *----------------------------------------------------------------------
+ */
 bool
 Ns_FinalizeResponseHeaders(Ns_Conn *conn,
                            size_t bodyLength,
@@ -1520,7 +1651,6 @@ Ns_FinalizeResponseHeaders(Ns_Conn *conn,
 
     return encodeProc(sockPtr, ((Conn *)conn)->responseStatus, merged, out_obj, out_len);
 }
-#endif
 
 
 /*
