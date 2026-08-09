@@ -322,7 +322,8 @@ static inline Sock * SockRecyclePop(Driver *drvPtr)
 
 static void  SockError(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
-static void  SockSendResponse(Sock *sockPtr, SockState reason, int statusCode, const char *errMsg, const char *headers)
+static void SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
+                             const char *errMsg, const Ns_Set *extraHeaders)
     NS_GNUC_NONNULL(1,4);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
@@ -4024,38 +4025,32 @@ RequestFree(Sock *sockPtr, const char *caller)
  *
  * SockQueueTry --
  *
- *      Attempt to assign a socket to a virtual server and queue its
- *      request for processing.
+ *      Select the virtual server and connection pool for a request, when
+ *      not already selected, and attempt to queue the socket for handling
+ *      by a connection thread.
  *
- *      This function performs no socket cleanup. On NS_OK, ownership is
- *      transferred to the connection queue. On NS_TIMEOUT, ownership
- *      remains with the caller so that queueing can be retried. On
- *      NS_ERROR, ownership also remains with the caller, which must
- *      perform the appropriate transport-specific cleanup.
+ *      On the first attempt, SockSetServer() resolves the request host and
+ *      virtual server. NsQueueConn() then selects and records the target
+ *      connection pool, including the default pool. A later attempt after
+ *      NS_TIMEOUT reuses the recorded pool and does not repeat virtual
+ *      server or host resolution.
  *
- *      failurePtr reports the terminal socket state associated with an
- *      NS_ERROR result. It remains SOCK_READY for NS_OK and NS_TIMEOUT,
- *      indicating that the socket must not be released by the generic
- *      queue wrapper.
- *
- * Arguments:
- *      sockPtr    - Socket containing the request to be queued.
- *      timePtr    - Current time used by the connection-queue logic, or
- *                   NULL to have the queueing code obtain the time.
- *      failurePtr - Location receiving the terminal socket state when
- *                   queueing fails.
+ *      The failure reason is initialized to SOCK_READY. It remains
+ *      SOCK_READY when ownership is transferred successfully or retained
+ *      by the originating driver after NS_TIMEOUT. SOCK_QUEUEFULL denotes
+ *      a terminal queue-overrun rejection, while SOCK_BADHEADER denotes
+ *      failure during server or host selection.
  *
  * Results:
- *      NS_OK      - Request ownership was transferred to a connection
- *                   queue.
- *      NS_TIMEOUT - The caller retains ownership and may retry later.
- *      NS_ERROR   - Queueing failed permanently; failurePtr identifies
- *                   the reason and the caller retains ownership.
+ *      NS_OK when ownership was transferred to a connection queue.
+ *      NS_TIMEOUT when the originating driver retains ownership for a
+ *      later retry. NS_ERROR when server selection or terminal queue
+ *      admission fails.
  *
  * Side effects:
- *      May assign the socket to a virtual server and transfer ownership
- *      of the request to a connection queue. Does not release or recycle
- *      the socket.
+ *      May assign the socket's virtual server and connection pool, update
+ *      connection-pool accounting, create or wake connection threads, and
+ *      transfer ownership of the socket to a connection queue.
  *
  *----------------------------------------------------------------------
  */
@@ -4075,7 +4070,17 @@ SockQueueTry(Sock *sockPtr, const Ns_Time *timePtr,
      */
     *failurePtr = SOCK_READY;
 
-    result = SockSetServer(sockPtr);
+    if (sockPtr->poolPtr == NULL) {
+        result = SockSetServer(sockPtr);
+    } else {
+        /*
+         * A previous queue attempt selected the server and connection
+         * pool but returned NS_TIMEOUT. Reuse that selection.
+         */
+        Ns_Log(DriverDebug, "SockQueueTry; sockPtr has already a pool assigned");
+        result = NS_OK;
+    }
+
     if (likely(result == NS_OK)) {
         assert(sockPtr->servPtr != NULL
                || *sockPtr->reqPtr->request.method == 'B');
@@ -4342,6 +4347,10 @@ NsDispatchRequest(Sock *sockPtr)
          * and performs final cleanup.
          */
         SockDeliveryRelease(sockPtr);
+
+        if (result == NS_ERROR && failure == SOCK_QUEUEFULL) {
+            SockError(sockPtr, failure, 0);
+        }
 
         if (failure != SOCK_READY) {
             Ns_Log(DriverDebug,
@@ -4888,12 +4897,17 @@ SockError(Sock *sockPtr, SockState reason, int err)
 
     case SOCK_QUEUEFULL:
         errMsg = "Service Unavailable";
+        Ns_Log(DriverDebug, "rejectoverrun");
         if (sockPtr->poolPtr != NULL && sockPtr->poolPtr->wqueue.retryafter.sec > 0) {
-            char headers[14 + TCL_INTEGER_SPACE];
+            Ns_Set *headers = Ns_SetCreate(NULL);
+            char    value[TCL_INTEGER_SPACE];
 
-            snprintf(headers, sizeof(headers), "Retry-After: %" PRId64,
+            snprintf(value, sizeof(value), "%" PRId64,
                      (int64_t)sockPtr->poolPtr->wqueue.retryafter.sec);
+            Ns_SetPut(headers, "retry-after", value);
+
             SockSendResponse(sockPtr, reason, 503, errMsg, headers);
+            Ns_SetFree(headers);
         } else {
             SockSendResponse(sockPtr, reason, 503, errMsg, NULL);
         }
@@ -5207,40 +5221,62 @@ h1_headersEncodeProc(Ns_Sock *sock,
  *----------------------------------------------------------------------
  */
 static void
-SockSendResponse(Sock *sockPtr, SockState reason, int statusCode, const char *errMsg, const char *headers)
+SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
+                 const char *errMsg, const Ns_Set *extraHeaders)
 {
-    struct iovec iov[5];
-    char         firstline[32];
-    ssize_t      sent, tosend;
-    int          nbufs;
+    Tcl_DString  ds;
+    Ns_Set      *responseHeaders;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(errMsg != NULL);
 
-    Ns_Log(Debug, "SockSendResponse finishes request with status code %d msg <%s> headers <%s>",
-           statusCode, errMsg, headers);
+    responseHeaders = Ns_SetCreate(NULL);
+    Ns_SetPut(responseHeaders, "content-type", "text/plain; charset=utf-8");
 
-    NsAddNslogEntry(sockPtr, statusCode, NULL, headers);
+    if (extraHeaders != NULL) {
+        Ns_SetIMerge(responseHeaders, extraHeaders);
+    }
 
-    snprintf(firstline, sizeof(firstline), "HTTP/1.0 %d ", statusCode);
-    ns_iov_set(&iov[0], firstline,      strlen(firstline));
-    ns_iov_set(&iov[1], errMsg,         strlen(errMsg));
+    Ns_Log(Debug,
+           "SockSendResponse finishes request with status code %d "
+           "msg <%s>",
+           statusCode, errMsg);
 
-    if (headers == NULL) {
-        ns_iov_set(&iov[2], "\r\n\r\n", 4u);
-        nbufs = 3;
+    /*
+     * The headers argument of NsAddNslogEntry() is currently unused.
+     */
+    NsAddNslogEntry(sockPtr, statusCode, NULL, NULL);
+
+    Tcl_DStringInit(&ds);
+
+    if (NsDriverEncodeResponseHeaders(sockPtr, 1.0, statusCode,
+                                      responseHeaders, &ds, NULL)) {
+        struct iovec iov;
+        ssize_t      sent, tosend;
+
+        /*
+         * For HTTP/1, ds contains the serialized headers. For HTTP/3,
+         * the encoder stores the header block in StreamCtx and ds is empty.
+         * The zero-length send still marks the H3 headers as ready.
+         */
+        ns_iov_set(&iov, ds.string, (size_t)ds.length);
+        tosend = (ssize_t)iov.iov_len;
+
+        sent = NsDriverSend(sockPtr, &iov, 1, 0u);
+        if (sent < tosend) {
+            Ns_Log(Warning,
+                   "Driver: partial write while sending response; "
+                   "%" PRIdz " < %" PRIdz,
+                   sent, tosend);
+        }
     } else {
-        ns_iov_set(&iov[2], "\r\n",     2u);
-        ns_iov_set(&iov[3], headers,    strlen(headers));
-        ns_iov_set(&iov[4], "\r\n\r\n", 4u);
-        nbufs = 5;
+        Ns_Log(Warning,
+               "Driver: could not encode response headers for status %d",
+               statusCode);
     }
-    tosend = (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len);
-    sent = NsDriverSend(sockPtr, iov, nbufs, 0u);
-    if (sent < tosend) {
-        Ns_Log(Warning, "Driver: partial write while sending response;"
-               " %" PRIdz " < %" PRIdz, sent, tosend);
-    }
+
+    Tcl_DStringFree(&ds);
+    Ns_SetFree(responseHeaders);
 
     /*
      * In case we have a request structure, complain in the system log about
@@ -5321,7 +5357,6 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode, const char *er
                statusCode, errMsg);
     }
 }
-
 
 /*
  *----------------------------------------------------------------------

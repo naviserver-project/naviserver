@@ -593,6 +593,7 @@ static bool     h3_conn_has_pending_work(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_clear_wants_write_if_idle(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_mark_wants_write(ConnCtx *cc, StreamCtx *sc, const char *why) NS_GNUC_NONNULL(1,2);
 static void     h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid) NS_GNUC_NONNULL(1);
+static bool     h3_conn_dispatch_ready_requests(ConnCtx *cc) NS_GNUC_NONNULL(1);
 
 /* H3 headers */
 static Ns_HeadersEncodeProc h3_stream_build_resp_headers;
@@ -2883,13 +2884,16 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
         if (sc->kind == H3_KIND_BIDI_REQ
             && (sc->io_state & H3_IO_REQ_READY)
             && !(sc->io_state & H3_IO_REQ_DISPATCHED)) {
+            Ns_ReturnCode result;
 
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SSL_handle_events in poll event R -> DISPATCH",
                    (long long)dc->iter, (long long)sid);
+            result = SockDispatchFinishedRequest(sc);
 
-            if (SockDispatchFinishedRequest(sc) == NS_OK) {
+            if (result == NS_OK) {
                 sc->io_state &= (uint8_t)~H3_IO_REQ_READY;
-            } else {
+
+            } else if (result != NS_TIMEOUT) {
                 Ns_Log(Warning, "[%lld] H3[%lld] dispatch failed",
                        (long long)dc->iter, (long long)sid);
             }
@@ -3965,6 +3969,63 @@ h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid)
         Ns_Log(Ns_LogQuicDebug, "h3 bidi credit -> %llu", (unsigned long long)ord1);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * h3_conn_dispatch_ready_requests --
+ *
+ *      Retry dispatching completed HTTP/3 requests that could not
+ *      previously be admitted to a connection pool. Such requests remain
+ *      marked with H3_IO_REQ_READY and retain their socket ownership after
+ *      NsDispatchRequest() returns NS_TIMEOUT.
+ *
+ *      The connection's stream registry is scanned rather than the SSL
+ *      pollset because a request stream may no longer have read interest
+ *      after receiving FIN, while still awaiting connection-pool capacity.
+ *
+ * Results:
+ *      NS_TRUE if at least one request remains deferred after returning
+ *      NS_TIMEOUT; otherwise NS_FALSE. The caller uses this result to
+ *      schedule another pass after the configured drain timeout.
+ *
+ * Side effects:
+ *      Calls SockDispatchFinishedRequest() for eligible bidirectional
+ *      request streams. On successful dispatch, clears H3_IO_REQ_READY
+ *      and transfers socket ownership to the connection queue. Requests
+ *      that remain deferred retain their socket and dispatch-ready state.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+h3_conn_dispatch_ready_requests(ConnCtx *cc)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    bool           deferred = NS_FALSE;
+
+    for (hPtr = Tcl_FirstHashEntry(&cc->streams, &search);
+         hPtr != NULL;
+         hPtr = Tcl_NextHashEntry(&search)) {
+        StreamCtx *sc = Tcl_GetHashValue(hPtr);
+
+        if (sc->kind == H3_KIND_BIDI_REQ
+            && H3_IO_HAS(sc, H3_IO_REQ_READY)
+            && !H3_IO_HAS(sc, H3_IO_REQ_DISPATCHED)
+            && sc->nsSock != NULL) {
+            Ns_ReturnCode result = SockDispatchFinishedRequest(sc);
+
+            if (result == NS_OK) {
+                sc->io_state &= (uint8_t)~H3_IO_REQ_READY;
+            } else if (result == NS_TIMEOUT) {
+                deferred = NS_TRUE;
+            }
+        }
+    }
+
+    return deferred;
+}
+
 
 /*======================================================================
  * Function Implementations: HTTP/3 Header Processing
@@ -5781,6 +5842,8 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
     bool         has_content_length;
     char         peer[NS_IPADDR_SIZE];
 
+    assert(sockPtr != NULL);
+
     Ns_Log(Debug, "H3[%lld] on_end_headers fin %d", (long long)stream_id, fin);
 
     /* Make sure we have an NsRequest + header set */
@@ -5865,13 +5928,43 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
     //sockPtr->keep   = NS_TRUE;    // not sure about this
 
     if (!has_body) {
-        Ns_Log(Debug, "H3[%lld] on_end_headers, no body (sockPtr %p) ip %s",
-               (long long)stream_id, (void*)sockPtr, peer);
-        if (NsDispatchRequest(sockPtr) != NS_OK) {
-            Ns_Log(Warning, "H3 NsDispatchRequest (GET/HEAD fastpath) failed");
+        Ns_ReturnCode result;
+
+        if (unlikely(!StreamCtxClaimDispatch(sc))) {
+            Ns_Log(Warning,
+                   "H3[%lld] request dispatch was already claimed",
+                   (long long)stream_id);
             return NGHTTP3_ERR_CALLBACK_FAILURE;
+        }
+
+        Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_end_headers, no body (sockPtr %p) ip %s",
+               (long long)stream_id, (void*)sockPtr, peer);
+
+        result = NsDispatchRequest(sockPtr);
+
+        if (result == NS_OK) {
+            /* Keep the dispatch claim. */
+
+        } else if (result == NS_ERROR) {
+            /*
+             * Keep the claim: a terminal response such as 503 was staged.
+             */
+            Close((Ns_Sock *)sockPtr);
+            return 0;
+
         } else {
-            sc->io_state |= H3_IO_REQ_DISPATCHED;
+            /*
+             * NS_TIMEOUT: the complete request remains ready for a later
+             * dispatch attempt.
+             */
+            assert(result == NS_TIMEOUT);
+            /*
+             * Ownership was retained by the driver. Undo the provisional claim
+             * and keep the request ready for a later attempt.
+             */
+            sc->io_state &= (uint8_t)~H3_IO_REQ_DISPATCHED;
+            sc->io_state |= H3_IO_REQ_READY;
+            return 0;
         }
 
     } else {
@@ -8369,30 +8462,34 @@ SockEnsureReqHeaders(StreamCtx *sc)
  *
  * SockDispatchFinishedRequest --
  *
- *      Dispatch a fully received HTTP/3 request for processing once its
- *      body (if any) has been completely received. This function ensures
- *      that each StreamCtx is dispatched at most once by claiming its
- *      dispatch flag via StreamCtxClaimDispatch().
+ *      Prepare a completed HTTP/3 request body and attempt to dispatch
+ *      the request through the standard NaviServer connection-pool
+ *      machinery.
  *
- *      Depending on the configured upload mode, the request body is either:
- *        - Backed by a temporary file (sockPtr->tfd != NS_INVALID_FD), or
- *        - Stored in memory using the Tcl_DString buffer in reqPtr->buffer.
+ *      Before calling NsDispatchRequest(), this function claims dispatch
+ *      for the stream to prevent concurrent or repeated dispatch. For an
+ *      in-memory request body, it appends the terminating NUL and sets the
+ *      request content pointers once. File-backed request bodies require
+ *      no additional preparation here.
  *
- *      In the in-memory case, this function finalizes the buffer with a
- *      trailing NUL, updates reqPtr->content and reqPtr->next to point to
- *      the in-memory body, and then calls NsDispatchRequest() to execute
- *      the standard OpenACS/NaviServer request dispatch logic.
+ *      When NsDispatchRequest() returns NS_TIMEOUT, queue ownership was
+ *      not transferred. The dispatch claim is therefore cleared so
+ *      h3_conn_dispatch_ready_requests() can retry the request later.
+ *
+ *      When NsDispatchRequest() returns NS_ERROR, a terminal response,
+ *      such as a 503 response for a queue overrun, has already been
+ *      staged. The dispatch claim is retained, the socket is closed
+ *      through the driver, and the result is normalized to NS_OK.
  *
  * Results:
- *      NS_OK on successful dispatch; otherwise, the result of
- *      NsDispatchRequest().
+ *      NS_TIMEOUT when the request remains deferred for a later dispatch
+ *      attempt. NS_OK when ownership was transferred successfully, a
+ *      terminal response was staged, or the socket was already detached.
  *
  * Side effects:
- *      - Marks the stream as dispatched via StreamCtxClaimDispatch().
- *      - May finalize or prepare request content (file-backed or in-memory).
- *      - Invokes NsDispatchRequest(), which may trigger application-level
- *        request handling and response generation.
- *      - Emits detailed diagnostic logs for tracing request dispatch.
+ *      May finalize the in-memory request body, modify the stream's
+ *      H3_IO_REQ_DISPATCHED state, transfer socket ownership to a
+ *      connection queue, or initiate completion of a terminal response.
  *
  *----------------------------------------------------------------------
  */
@@ -8405,26 +8502,61 @@ SockDispatchFinishedRequest(StreamCtx *sc)
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SockDispatchFinishedRequest %.2x",
            (long long)sc->cc->dc->iter, (long long)sc->quic_sid, sc->io_state);
 
-    /* Avoid double dispatch for the same stream */
-    if (StreamCtxClaimDispatch(sc)) {
+
+    /*
+     * A NULL socket means that the stream has already been handed off
+     * or otherwise completed and detached.
+     */
+    if (sockPtr != NULL && StreamCtxClaimDispatch(sc)) {
         Request *reqPtr = sockPtr->reqPtr;
 
+        /*
+         * Prepare the completed request body. Guard the in-memory case so a
+         * later NS_TIMEOUT retry does not append another trailing NUL.
+         */
         if (sockPtr->tfd != NS_INVALID_FD) {
             assert(reqPtr->content == NULL);
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SockDispatchFinishedRequest tfd %d (content-length %ld)",
-                   (long long)sc->cc->dc->iter, (long long)sc->quic_sid, sockPtr->tfd, reqPtr->contentLength);
-        } else {
-            Tcl_DStringAppend(&reqPtr->buffer, "", 1);   /* trailing NUL */
-            reqPtr->content = reqPtr->buffer.string;     /* body only */
 
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SockDispatchFinishedRequest buffer %p length %d (content-length %ld)",
-                   (long long)sc->cc->dc->iter, (long long)sc->quic_sid, (void*) reqPtr->content, reqPtr->buffer.length, reqPtr->contentLength);
-            reqPtr->next    = reqPtr->content;
+        } else if (reqPtr->content == NULL) {
+            /*
+             * Finalize the in-memory request body once. A dispatch retry after
+             * NS_TIMEOUT must not append another trailing NUL.
+             */
+            Tcl_DStringAppend(&reqPtr->buffer, "", 1);
+            reqPtr->content = reqPtr->buffer.string;
+            reqPtr->next = reqPtr->content;
         }
 
         result = NsDispatchRequest(sockPtr);
 
+        if (result == NS_TIMEOUT) {
+            /*
+             * Ownership was not transferred. Undo the provisional
+             * dispatch claim so PollsetSweep() can retry.
+             */
+            sc->io_state &= (uint8_t)~H3_IO_REQ_DISPATCHED;
+            Ns_Log(Ns_LogQuicDebug,
+                   "H3[%lld] SockDispatchFinishedRequest NS_TIMEOUT:"
+                   " state %.2x sock %p",
+                   (long long)sc->quic_sid,
+                   sc->io_state,
+                   (void *)sc->nsSock);
+
+        } else if (result == NS_ERROR) {
+            /*
+             * The claim remains set. A terminal response was staged.
+             */
+            Close((Ns_Sock *)sockPtr);
+            result = NS_OK;
+
+        }
+
+        /*
+         * On NS_OK, retain H3_IO_REQ_DISPATCHED: ownership was
+         * transferred successfully.
+         */
     }
+
     return result;
 }
 
@@ -9005,6 +9137,7 @@ PollsetValidate(const NsTLSConfig *dc, const char *where)
 # define PollsetValidate(dc, where) ((void)0)
 #endif
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9560,6 +9693,7 @@ QuicThread(void *arg)
         {
             bool expecting_send = NS_FALSE;
             bool immediate_work = NS_FALSE;
+            bool deferredDispatch = NS_FALSE;
 
             /*
              * Allow producers to arm the next notification before scanning shared
@@ -9618,16 +9752,22 @@ QuicThread(void *arg)
                     if (has_resume) {
                         immediate_work = NS_TRUE;
                     }
+
+                    if (h3_conn_dispatch_ready_requests(cc)) {
+                        deferredDispatch = NS_TRUE;
+                    }
+
                     PollsetUpdateConnPollInterest(cc);
                 }
+            }
 
-                if (immediate_work) {
-                    polltimeout_ptr = &no_wait;
-                } else if (expecting_send) {
-                    polltimeout_ptr = &dc->u.h3.drain_timeout;
-                } else {
-                    polltimeout_ptr = &dc->u.h3.idle_timeout;
-                }
+
+            if (immediate_work) {
+                polltimeout_ptr = &no_wait;
+            } else if (expecting_send || deferredDispatch) {
+                polltimeout_ptr = &dc->u.h3.drain_timeout;
+            } else {
+                polltimeout_ptr = &dc->u.h3.idle_timeout;
             }
 
             PollsetSweep(dc);

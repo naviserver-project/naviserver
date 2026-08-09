@@ -570,12 +570,19 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
     } else if (sockPtr->poolPtr != NULL) {
         poolPtr = sockPtr->poolPtr;
-        Ns_Log(Notice , "=== NsQueueConn URL <%s> was already assigned to pool <%s>",
+        Ns_Log(Debug , "NsQueueConn: URL <%s> was already assigned to pool <%s>",
                sockPtr->reqPtr->request.url, poolPtr->pool);
     }
     if (poolPtr == NULL) {
         poolPtr = servPtr->pools.defaultPtr;
     }
+
+    /*
+     * Retain the selected pool across NS_TIMEOUT retries. RequestFree()
+     * clears this request-specific assignment before a persistent socket
+     * is reused for another request.
+     */
+    sockPtr->poolPtr = poolPtr;
 
    /*
     * We know the pool. Try to add connection into the queue of this pool
