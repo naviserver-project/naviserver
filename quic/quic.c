@@ -426,11 +426,12 @@ typedef struct ConnCtx {
     size_t          pidx;
     NS_TA_DECLARE(affinity)   /* owned by the H3/QUIC thread */
 
-    Tcl_HashTable   streams;        /* key = (long)sid */
-    bool            handshake_done; /* handshake completed */
-    bool            settings_seen;
+    Tcl_HashTable   streams;                   /* key = (long)sid */
+    bool            handshake_done;            /* handshake completed */
+    bool            settings_unblock_pending;  /* post-callback request-stream rearming needed */
+    bool            settings_seen;             /* peer SETTINGS frame processed */
     bool            wants_write;
-    bool            expecting_send;     // set when request dispatched to app
+    bool            expecting_send;            /* set when request dispatched to app */
     bool            conn_closed;
     int             last_sd; // intermediate, for debuggung in ossl_conn_maybe_log_first_shutdown
     SharedState     shared;  // stable pointer
@@ -468,7 +469,8 @@ typedef struct StreamCtx {
     uint8_t      io_state;     /* state bitmask, init to 0 */
 
     H3StreamKind kind;
-    bool         writable;     /* quick test for capability, not for readiness */
+    bool         waiting_for_settings; /* read interest parked pending peer SETTINGS */
+    bool         writable;             /* quick test for capability, not for readiness */
     bool         seen_readable;
     bool         seen_io;
     bool         close_when_drained;
@@ -593,6 +595,7 @@ static bool     h3_conn_has_pending_work(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_clear_wants_write_if_idle(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_mark_wants_write(ConnCtx *cc, StreamCtx *sc, const char *why) NS_GNUC_NONNULL(1,2);
 static void     h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid) NS_GNUC_NONNULL(1);
+static bool     h3_conn_unblock_settings_waiters(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static bool     h3_conn_dispatch_ready_requests(ConnCtx *cc) NS_GNUC_NONNULL(1);
 
 /* H3 headers */
@@ -3973,6 +3976,73 @@ h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid)
 /*
  *----------------------------------------------------------------------
  *
+ * h3_conn_unblock_settings_waiters --
+ *
+ *      Re-enable read processing for client-initiated bidirectional
+ *      request streams that became readable before the peer's HTTP/3
+ *      SETTINGS frame was processed.
+ *
+ *      Such streams are parked by h3_stream_drain(): their read interest
+ *      is disabled and waiting_for_settings is set, leaving the request
+ *      bytes buffered in OpenSSL. Once on_recv_settings() has recorded
+ *      the SETTINGS frame, this function scans the connection's stream
+ *      registry and rearms every stream parked for this reason.
+ *
+ *      This function is called from post-event processing rather than
+ *      directly from on_recv_settings(), avoiding recursive stream
+ *      processing from within an nghttp3 callback.
+ *
+ * Results:
+ *      NS_TRUE when at least one request stream was rearmed; otherwise
+ *      NS_FALSE.
+ *
+ * Side effects:
+ *      Consumes the connection's settings-unblock notification, clears
+ *      waiting_for_settings on affected streams, and adds read interest
+ *      for their OpenSSL stream objects. It does not itself consume any
+ *      request-stream data.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+h3_conn_unblock_settings_waiters(ConnCtx *cc)
+{
+    Tcl_HashSearch  search;
+    Tcl_HashEntry  *entry;
+    NsTLSConfig    *dc = cc->dc;
+    bool            unblocked = NS_FALSE;
+
+    if (!cc->settings_unblock_pending || !cc->settings_seen) {
+        return NS_FALSE;
+    }
+
+    cc->settings_unblock_pending = NS_FALSE;
+
+    for (entry = Tcl_FirstHashEntry(&cc->streams, &search);
+         entry != NULL;
+         entry = Tcl_NextHashEntry(&search)) {
+        StreamCtx *sc = Tcl_GetHashValue(entry);
+
+        if (sc == NULL
+            || !sc->waiting_for_settings
+            || sc->ssl == NULL
+            || sc->pidx == (size_t)-1
+            || sc->pidx >= PollsetCount(dc)
+            || dc->u.h3.ssl_items.data[sc->pidx] != sc->ssl) {
+            continue;
+        }
+
+        sc->waiting_for_settings = NS_FALSE;
+        PollsetEnableRead(dc, sc->ssl, sc);
+        unblocked = NS_TRUE;
+    }
+
+    return unblocked;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * h3_conn_dispatch_ready_requests --
  *
  *      Retry dispatching completed HTTP/3 requests that could not
@@ -5131,15 +5201,23 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
     if (!SSL_has_pending(stream) && !sc->seen_readable && sc->rx_len == sc->rx_off) {
         return DRAIN_NONE;
     }
-    StreamCtxRequireRxBuffer(sc);
 
     /*
-     * If bidi & SETTINGS not yet processed, we still stage bytes (so we don't
-     * lose anything) but we never feed them to nghttp3 until control
-     * processed.
+     * Request streams cannot be passed to nghttp3 until the peer SETTINGS
+     * frame has been processed. Leave their input buffered in OpenSSL and
+     * disarm level-triggered read notification. on_recv_settings() schedules
+     * these streams to be rearmed after the current nghttp3 callback returns.
      */
     gate_bidi = (StreamCtxIsBidi(sc) && !cc->settings_seen);
 
+    if (gate_bidi) {
+        sc->waiting_for_settings = NS_TRUE;
+        PollsetDisableRead(cc->dc, stream, sc,
+                           "request stream waiting for SETTINGS");
+        return DRAIN_NONE;
+    }
+
+    StreamCtxRequireRxBuffer(sc);
     sc->rx_emitted_in_pass = 0;
 
     for (;;) {
@@ -5684,6 +5762,7 @@ static int on_recv_settings(nghttp3_conn *UNUSED(conn),
 
     cc->client_max_field_section_size = s->max_field_section_size;
     cc->settings_seen = NS_TRUE;
+    cc->settings_unblock_pending = NS_TRUE;
 
     Ns_Log(Ns_LogQuicDebug,
            "H3 on_recv_settings: max_field_section_size=%llu, "
@@ -9726,6 +9805,10 @@ QuicThread(void *arg)
                            cc->expecting_send,
                            cc->wants_write,
                            has_resume);
+
+                    if (h3_conn_unblock_settings_waiters(cc)) {
+                        immediate_work = NS_TRUE;
+                    }
 
                     if (cc->expecting_send) {
                         Ns_Log(Ns_LogQuicDebug, "[%lld] H3D cc %p expecting send", (long long)dc->iter, (void*)cc);
