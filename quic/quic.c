@@ -458,7 +458,6 @@ typedef struct StreamCtx {
 
     bool         saw_host_header;   /* case-insensitive detection of Host header */
     bool         hdrs_submitted;    /* nghttp3_conn_submit_response() done */
-    bool         eof_sent;
 
     /* receive buffer */
     uint8_t *rx_hold;        /* fixed-capacity wire buffer */
@@ -3231,7 +3230,6 @@ h3_conn_write_step(ConnCtx *cc)
 
                         Ns_MutexLock(&zsc->lock);
                         zsc->io_state |= H3_IO_TX_FIN;
-                        zsc->eof_sent  = NS_TRUE;
                         io_state = zsc->io_state;
                         Ns_MutexUnlock(&zsc->lock);
 
@@ -3589,7 +3587,6 @@ h3_conn_write_step(ConnCtx *cc)
 
             if (fin_concluded_by_write) {
                 sc->io_state |= H3_IO_TX_FIN;
-                sc->eof_sent  = NS_TRUE;
                 did_progress  = NS_TRUE;
 
                 Ns_Log(Ns_LogQuicDebug,
@@ -3606,7 +3603,6 @@ h3_conn_write_step(ConnCtx *cc)
 
                     if (ok == 1) {
                         sc->io_state |= H3_IO_TX_FIN;
-                        sc->eof_sent  = NS_TRUE;
                         did_progress  = NS_TRUE;
 
                         Ns_Log(Ns_LogQuicDebug,
@@ -8931,7 +8927,6 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
     size_t tx_fin               = 0u;
     size_t reset                = 0u;
     size_t eof_seen             = 0u;
-    size_t eof_sent             = 0u;
     size_t shown                = 0u;
     size_t i;
 
@@ -8993,9 +8988,6 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
         if (sc->eof_seen) {
             eof_seen++;
         }
-        if (sc->eof_sent) {
-            eof_sent++;
-        }
     }
 
     if (bidi == 0u) {
@@ -9007,13 +8999,13 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
            " W %zu wants_write %zu queued %zu pending %zu"
            " app_closed %zu delivery_refs %zu"
            " rx_fin %zu tx_fin %zu reset %zu"
-           " eof_seen %zu eof_sent %zu",
+           " eof_seen %zu",
            (long long)dc->iter,
            bidi,
            w_armed, wants_write, queued, pending,
            closed_by_app, with_delivery_refs,
            rx_fin, tx_fin, reset,
-           eof_seen, eof_sent);
+           eof_seen);
 
     /*
      * Log the connection-level interpretation as well. There should normally
@@ -9080,7 +9072,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
                " queued %zu pending %zu app_closed %d"
                " delivery_refs %u"
                " rx %zu/%zu fin_pending %d"
-               " eof_seen/sent %d/%d"
+               " eof_seen %d"
                " hdrs_submitted %d"
                " stream_state r/w %d/%d"
                " shared headers ready %d",
@@ -9093,7 +9085,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
                delivery_refs,
                sc->rx_off, sc->rx_len,
                sc->rx_fin_pending,
-               sc->eof_seen, sc->eof_sent,
+               sc->eof_seen,
                sc->hdrs_submitted,
                SSL_get_stream_read_state(ssl),
                SSL_get_stream_write_state(ssl),
