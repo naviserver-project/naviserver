@@ -4996,33 +4996,43 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
  *
  * h3_stream_submit_ready_headers --
  *
- *      Submit an HTTP/3 response header block for a stream whose headers
- *      have been fully prepared in the shared header buffer. This function
- *      validates readiness, logs the outgoing headers, and calls
- *      nghttp3_conn_submit_response() to enqueue the HEADERS frame (and
- *      optionally attach a data reader for streaming the body).
+ *      Submit a prepared HTTP/3 response header block for the specified
+ *      stream. The function verifies the shared header-ready notification,
+ *      logs the outgoing headers, and calls
+ *      nghttp3_conn_submit_response() to enqueue the HEADERS frame.
  *
- *      The function is typically invoked from h3_conn_write_step() once the
- *      application has produced headers via SharedHdrsMarkReady(). It ensures
- *      that headers are only submitted once per stream, clears the header
- *      staging buffer afterward, and enables POLLOUT on the stream so that
- *      the write loop can send the resulting frames promptly.
+ *      Responses which permit a body are submitted with sc->data_reader.
+ *      Header-only responses, such as responses to HEAD requests and
+ *      responses with status 204 or 304, are submitted without a data
+ *      reader. Stream conclusion is handled later by the regular nghttp3
+ *      write path after it reports the final HEADERS frame.
+ *
+ *      This function is normally called by h3_conn_write_step() after the
+ *      application has prepared the response headers and published them
+ *      through SharedHdrsSetReady(). Headers are submitted at most once
+ *      per stream.
  *
  * Results:
- *      Returns 0 on success, nonzero on error. Errors are logged internally.
+ *      Returns 0 when the headers were submitted successfully or had
+ *      already been submitted. Returns -1 when the published header block
+ *      is incomplete or nghttp3_conn_submit_response() fails. Errors are
+ *      logged internally.
  *
  * Side effects:
- *      - Calls nghttp3_conn_submit_response() with &sc->data_reader for
- *        body streams, or NULL for header-only responses (e.g. 204/304/HEAD).
- *      - Frees sc->resp_nv after submission; backing bytes remain in
- *        sc->resp_nv_store.
- *      - Clears SharedHdrs to reset readiness state.
- *      - For bodyless responses, immediately concludes the QUIC stream
- *        via SSL_stream_conclude().
- *      - Arms POLLOUT on the stream to schedule header transmission.
+ *      - Calls nghttp3_conn_submit_response().
+ *      - Sets sc->hdrs_submitted after successful submission.
+ *      - Frees sc->resp_nv after submission; the copied header bytes remain
+ *        owned by sc->resp_nv_store.
+ *      - Clears the shared header-ready notification.
+ *      - Enables write interest so the QUIC thread can emit the resulting
+ *        HEADERS frame.
  *
  * Synchronization:
- *      - Protects sc->hdrs_submitted and header pointers via sc->lock.
+ *      The producer completes the response-header fields before calling
+ *      SharedHdrsSetReady(). SharedHdrsIsReady() acquires the corresponding
+ *      shared mutex and publishes those fields to the QUIC thread.
+ *      Submission and cleanup of the published header block are owned by
+ *      the QUIC thread.
  *
  *----------------------------------------------------------------------
  */
@@ -5033,18 +5043,22 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
     NsTLSConfig *dc = cc->dc;
     int rv;
 
-    /* Double-check under stream lock to publish/consume pointers safely */
-    Ns_MutexLock(&sc->lock);
-
+    /*
+     * The producer completes the response-header fields before calling
+     * SharedHdrsSetReady(). SharedHdrsIsReady() acquires the corresponding
+     * shared mutex and publishes those fields to the QUIC thread. Header
+     * submission and cleanup are owned by the QUIC thread.
+     */
     if (sc->hdrs_submitted) {
-        Ns_MutexUnlock(&sc->lock);
         SharedHdrsClear(&sc->sh);
-        return 0;   /* already done */
+        return 0;
     }
 
-    if (!SharedHdrsIsReady(&sc->sh) || sc->resp_nv == NULL || sc->resp_nvlen == 0) {
-        Ns_MutexUnlock(&sc->lock);
-        SharedHdrsClear(&sc->sh);   /* defuse spurious edge */
+    if (!SharedHdrsIsReady(&sc->sh)
+        || sc->resp_nv == NULL
+        || sc->resp_nvlen == 0u) {
+
+        SharedHdrsClear(&sc->sh);
         return -1;
     }
 
