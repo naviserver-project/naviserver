@@ -453,7 +453,6 @@ typedef struct StreamCtx {
 
     H3StreamKind kind;
     bool         waiting_for_settings; /* read interest parked pending peer SETTINGS */
-    bool         seen_readable;
     bool         seen_io;
     bool         eof_seen;     /* eof detected from data, prevents re-draining */
     bool         type_consumed;
@@ -2851,8 +2850,6 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
     }
     NS_TA_ASSERT_HELD(cc, affinity);
 
-    sc->seen_readable = NS_TRUE;
-
     /* Drain readable data into hold/buffers and drive nghttp3 */
     {
         H3DrainResultCode dr = h3_stream_drain(cc, stream, (uint64_t)sid, "processing R");
@@ -5172,10 +5169,6 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
     assert(sc->cc == cc);
     assert(sc->ssl == stream);
     assert(sc->quic_sid == sid);
-
-    if (!SSL_has_pending(stream) && !sc->seen_readable && sc->rx_len == sc->rx_off) {
-        return DRAIN_NONE;
-    }
 
     /*
      * Request streams cannot be passed to nghttp3 until the peer SETTINGS
