@@ -337,7 +337,6 @@ QuicNoteProgress(NsTLSConfig *dc)
 #define H3_BOTH_CLOSED(sc)    (H3_IO_HAS(sc, H3_IO_RESET) || (H3_IO_HAS(sc, H3_IO_TX_FIN) && H3_IO_HAS(sc, H3_IO_RX_FIN)))
 #define H3_TX_WRITABLE(sc)    (!H3_TX_CLOSED(sc))
 
-#define MAXSSL_IDS     20
 #define MAXURL        255
 #define MAX_SEND_HDRS  64
 
@@ -394,24 +393,14 @@ typedef struct {
     SSL              *ssl;
 } QuicSockCtx;
 
-struct ssl_id {
-    SSL *s;      /* the stream openssl uses in SSL_read(),  SSL_write etc */
-    uint64_t id; /* the stream identifier the nghttp3 uses */
-    int status;  /* 0 or one the below status and origin */
-};
-
 struct h3ssl {
-    /* the main QUIC+TLS connection */
-    //struct ssl_id ssl_ids[MAXSSL_IDS];
-    SSL   *conn;
+    SSL   *conn;         /* Main QUIC+TLS connection. */
 
-    /* unidirectional HTTP/3 streams: */
-    SSL   *cstream;    // control stream (SETTINGS, HEADERS)
-    SSL   *pstream;    // QPACK encoder stream
-    SSL   *rstream;    // QPACK decoder stream
+    /* Server-initiated unidirectional HTTP/3 streams. */
+    SSL   *cstream;      /* Control stream carrying SETTINGS. */
+    SSL   *pstream;      /* QPACK encoder stream. */
+    SSL   *rstream;      /* QPACK decoder stream. */
 
-    SSL   *bidi_ssl;
-    uint64_t bidi_sid;         /* the bidi stream ID for the request/response */
     uint64_t cstream_id;
     uint64_t pstream_id;
     uint64_t rstream_id;
@@ -437,12 +426,6 @@ typedef struct ConnCtx {
     SharedState     shared;  // stable pointer
 
     int             connection_state;    // 0=active, 1=closing, 2=closed
-
-    // Server-initiated (local) unis for writing
-    int64_t         qpack_enc_sid;   // Stream ID for QPACK encoder
-    int64_t         qpack_dec_sid;   // Stream ID for QPACK decoder
-    SSL            *qpack_enc_ssl;   // SSL stream for QPACK encoder
-    SSL            *qpack_dec_ssl;   // SSL stream for QPACK decoder
 
     // Client-initiated (peer) unis we read from:
     SSL           *client_control_ssl;
@@ -470,10 +453,8 @@ typedef struct StreamCtx {
 
     H3StreamKind kind;
     bool         waiting_for_settings; /* read interest parked pending peer SETTINGS */
-    bool         writable;             /* quick test for capability, not for readiness */
     bool         seen_readable;
     bool         seen_io;
-    bool         close_when_drained;
     bool         eof_seen;     /* eof detected from data, prevents re-draining */
     bool         type_consumed;
     bool         ignore_uni;
@@ -490,8 +471,6 @@ typedef struct StreamCtx {
 
     bool         saw_host_header;   /* case-insensitive detection of Host header */
     bool         hdrs_submitted;    /* nghttp3_conn_submit_response() done */
-    bool         hdrs_ready;        /* headers staged but not submitted yet */
-    bool         response_submitted;
     bool         eof_sent;
 
     /* receive buffer */
@@ -969,9 +948,6 @@ static bool ossl_conn_maybe_log_first_shutdown(ConnCtx *cc, const char *label) {
             ossl_stream_log_state(dc, cc->h3ssl.cstream, "server-ctrl");
             ossl_stream_log_state(dc, cc->h3ssl.pstream, "server-qpack-enc");
             ossl_stream_log_state(dc, cc->h3ssl.rstream, "server-qpack-dec");
-            if (cc->h3ssl.bidi_sid != (uint64_t)-1 && cc->h3ssl.bidi_ssl != NULL) {
-                ossl_stream_log_state(dc, cc->h3ssl.bidi_ssl, "client-req-0");
-            }
         }
         fired = NS_TRUE;
     }
@@ -3433,9 +3409,9 @@ h3_conn_write_step(ConnCtx *cc)
                 }
 
                 if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
-                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] want to write %ld bytes on %s writable %d"
+                    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] want to write %ld bytes on %s"
                            " blocking stream %d conn %d",
-                           (long long)dc->iter, (long long)sid, vecs[i].len, H3StreamKind_str(sc->kind), sc->writable,
+                           (long long)dc->iter, (long long)sid, vecs[i].len, H3StreamKind_str(sc->kind),
                            SSL_get_blocking_mode(stream), SSL_get_blocking_mode(cc->h3ssl.conn));
                 }
 
@@ -5278,12 +5254,10 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
  *        side is closed or there's nothing left to send, mark the stream as
  *        dead. This avoids lingering EW flags in terminal states.
  *
- *      - Empty FIN emission: When `close_when_drained` is set and there's no
- *        pending or queued TX data, we send an empty FIN frame
- *        (`SSL_write_ex2(..., NULL, 0, SSL_WRITE_FLAG_CONCLUDE)`).  FIN is
- *        only sent if TX isn't already concluded, the TX path is still
- *        writable, and the app hasn't locally closed TX.  This ensures that
- *        FINs are only emitted in one place: here.
+ *      - Empty FIN emission: When the application has closed its
+ *        output and no queued or pending body data remains, an empty
+ *        FIN is emitted if the transmit side has not already been
+ *        concluded. This keeps FIN generation in a single place.
  *
  *      - Interest gating: W events are only armed if `H3_TX_WRITABLE(sc)` is
  *        NS_TRUE. This guarantees we never re-arm EW if our local state
@@ -6359,7 +6333,6 @@ ConnCtxNew(NsTLSConfig *dc, SSL *conn)
 
     cc->dc = dc;
     cc->h3ssl.conn = conn;
-    cc->h3ssl.bidi_sid = (uint64_t)-1;
     cc->pidx = (size_t)-1;
 
     QuicMemStatsIncr(&quicMemStats.counters.connctx_new);
@@ -6710,9 +6683,6 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
     sc->kind        = kind;
     sc->nsSock      = NULL;
 
-    //Ns_Log(Ns_LogQuicDebug, "H3(%lld) StreamCtxRegister (stream %p cc %p %s) -> sc %p",
-    //       sid, (void*)s, (void*)cc, H3StreamKind_str(kind), (void*)sc);
-
     switch (kind) {
     case H3_KIND_BIDI_REQ:
         {
@@ -6722,7 +6692,6 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
             char         buffer[NS_IPADDR_SIZE];
 
             Ns_GetTime(&now);
-            sc->writable = NS_TRUE;
             /*
              * Get a fresh NsSock into sc->nsSock. Release happens via
              * StreamCtxFree() unless dispatch ownership was transferred.
@@ -6735,19 +6704,14 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
 
             qctx = (QuicSockCtx *)sc->nsSock->arg;
             qctx->sc = sc;
-            //qctx->ssl = s;
             h3_conn_maybe_raise_client_bidi_credit(cc, sid);
-            //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 BIDI register can associate sock %p with sc %p", (long long)cc->dc->iter, (void*)sc->nsSock, (void*)sc);
             break;
         }
     case H3_KIND_CTRL:
     case H3_KIND_QPACK_ENCODER:
     case H3_KIND_QPACK_DECODER:
-        sc->writable = NS_TRUE;
-        break;
     case H3_KIND_CLIENT_UNI:
     case H3_KIND_UNKNOWN:
-        sc->writable = NS_FALSE; // all client uni + our QPACK decoder
         break;
     }
     return sc;
@@ -9148,9 +9112,8 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
                " queued %zu pending %zu app_closed %d"
                " delivery_refs %u"
                " rx %zu/%zu fin_pending %d"
-               " close_when_drained %d"
                " eof_seen/sent %d/%d"
-               " hdrs_ready/submitted %d/%d"
+               " hdrs_submitted %d"
                " stream_state r/w %d/%d"
                " shared headers ready %d",
                (long long)dc->iter,
@@ -9162,9 +9125,8 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
                delivery_refs,
                sc->rx_off, sc->rx_len,
                sc->rx_fin_pending,
-               sc->close_when_drained,
                sc->eof_seen, sc->eof_sent,
-               sc->hdrs_ready, sc->hdrs_submitted,
+               sc->hdrs_submitted,
                SSL_get_stream_read_state(ssl),
                SSL_get_stream_write_state(ssl),
                SharedHdrsIsReady(&sc->sh)
@@ -9645,7 +9607,6 @@ QuicThread(void *arg)
                                 sc = PollsetAddStreamRegister(cc, stream, H3_KIND_BIDI_REQ);
                                 Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: registered BIDI with cc %p sc %p nsSock %p",
                                        (long long)dc->iter, i, (void*)cc, (void*)sc, (void*)sc->nsSock);
-                                cc->h3ssl.bidi_sid = sc->quic_sid;
                                 QuicMemStatsIncr(&quicMemStats.counters.accept_stream);
 
                             } else {
@@ -10219,8 +10180,8 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
         assert(sc != NULL);
     }
 
-    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Send: cc %p sc %p hdrs_submitted %d hdrs_ready %d nva %p",
-           (long long)dc->iter, (void*)sc->cc, (void*)sc, sc->hdrs_submitted, sc->hdrs_ready, (void*)sc->resp_nv);
+    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Send: cc %p sc %p hdrs_submitted %d nva %p",
+           (long long)dc->iter, (void*)sc->cc, (void*)sc, sc->hdrs_submitted, (void*)sc->resp_nv);
 
     if (!H3_TX_WRITABLE(sc)) {          /* honors H3_IO_TX_FIN/H3_IO_RESET */
         return 0;
@@ -10315,10 +10276,9 @@ Keep(Ns_Sock *UNUSED(sock))
  *      None.
  *
  * Side effects:
- *      Disables read interest, marks the shared stream buffer as closed
- *      by the application, sets close_when_drained under the stream lock,
- *      and schedules a final resume through SharedRequestResume().
- *      Frees the per-request QuicSockCtx and detaches it from Ns_Sock.
+ *      - Disables read interest, marks the shared stream buffer as
+ *        closed by the application, and schedules a final resume through
+ *        SharedRequestResume().
  *
  *----------------------------------------------------------------------
  */
@@ -10346,11 +10306,6 @@ Close(Ns_Sock *sock)
 
     /* Mark "no more body will be enqueued" (EOF once queues drain). */
     SharedMarkClosedByApp(&sc->sh);
-
-    /* Mark producer intent: no more body will be enqueued. */
-    Ns_MutexLock(&sc->lock);
-    sc->close_when_drained = NS_TRUE;          /* optional bookkeeping */
-    Ns_MutexUnlock(&sc->lock);
 
     if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
         SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
