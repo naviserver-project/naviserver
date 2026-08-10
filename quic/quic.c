@@ -467,8 +467,8 @@ typedef struct StreamCtx {
     const char  *authority;
     const char  *scheme;
 
-    bool         saw_host_header;   /* case-insensitive detection of Host header */
-    bool         hdrs_submitted;    /* nghttp3_conn_submit_response() done */
+    bool            saw_host_header; /* case-insensitive detection of Host header */
+    Ns_AtomicUint32 hdrs_submitted;  /* nghttp3_conn_submit_response() done */
 
     /* receive buffer */
     uint8_t *rx_hold;        /* fixed-capacity wire buffer */
@@ -704,7 +704,8 @@ static Ns_DriverClientcertInfoProc ClientcertInfo;
 
 static void     Ns_AtomicUint32Init(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
 static uint32_t Ns_AtomicUint32ExchangeRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
-static void     Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)  NS_GNUC_NONNULL(1);
+static void     Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+static uint32_t Ns_AtomicUint32LoadRelaxed(Ns_AtomicUint32 *atomicPtr) NS_GNUC_NONNULL(1);
 
 /*
  *----------------------------------------------------------------------
@@ -834,6 +835,51 @@ Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
     Ns_MutexLock(&atomicPtr->lock);
     atomicPtr->value = value;
     Ns_MutexUnlock(&atomicPtr->lock);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32LoadRelaxed --
+ *
+ *      Atomically read the current value of the specified atomic integer.
+ *
+ *      The operation has relaxed memory-ordering semantics: it provides
+ *      an indivisible read participating in the modification order of
+ *      this atomic object, but does not acquire, publish, or order accesses
+ *      to unrelated memory. Callers must use queue locks or another
+ *      synchronization mechanism when the value governs additional shared
+ *      state.
+ *
+ *      The object must have been initialized with Ns_AtomicUint32Init()
+ *      before this function is called.
+ *
+ * Results:
+ *      Returns the current value of the atomic integer.
+ *
+ * Side effects:
+ *      None for native atomic implementations. On platforms without native
+ *      atomic operations, temporarily acquires the fallback mutex associated
+ *      with the object.
+ *
+ *----------------------------------------------------------------------
+ */
+static uint32_t
+Ns_AtomicUint32LoadRelaxed(Ns_AtomicUint32 *atomicPtr)
+{
+#if defined(_MSC_VER)
+    return (uint32_t)InterlockedCompareExchange(&atomicPtr->value, 0, 0);
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_load_n(&atomicPtr->value, __ATOMIC_RELAXED);
+#else
+    uint32_t value;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    value = atomicPtr->value;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return value;
 #endif
 }
 
@@ -3093,6 +3139,7 @@ h3_conn_write_step(ConnCtx *cc)
         for (size_t i = 0; i < nres; ++i) {
             const int64_t sid = sids[i];
             StreamCtx    *ssc = StreamCtxGet(cc, sid, /*create*/ 0);
+            bool          hdrs_submitted;
 
             if (ssc == NULL) {
                 Ns_Log(Ns_LogQuicDebug,
@@ -3132,15 +3179,24 @@ h3_conn_write_step(ConnCtx *cc)
             }
 
             /*
-             * If headers became ready, submit them now.
+             * Submit newly published headers or consume a stale header-ready
+             * notification for headers which were submitted concurrently.
              */
-            if (!ssc->hdrs_submitted && SharedHdrsIsReady(&ssc->sh)) {
+            if (SharedHdrsIsReady(&ssc->sh)) {
                 if (h3_stream_submit_ready_headers(ssc) != 0) {
                     /* error already logged inside; continue to next sid */
                     continue;
                 }
             }
 
+            /*
+             * Submission may have changed the state, so load it afterward.
+             */
+            hdrs_submitted = Ns_AtomicUint32LoadRelaxed(&ssc->hdrs_submitted) != 0u;
+
+            /*
+             * Header submission may detach the stream.
+             */
             if (ssc->pidx == (size_t)-1
                 || ssc->ssl == NULL
                 || ssc->pidx >= PollsetCount(cc->dc)
@@ -3158,7 +3214,7 @@ h3_conn_write_step(ConnCtx *cc)
              * after headers), poke nghttp3 so it will call the read
              * callback.
              */
-            if (ssc->hdrs_submitted) {
+            if (hdrs_submitted) {
                 int rv = nghttp3_conn_resume_stream(cc->h3conn, sid);
                 if (rv == 0) {
                     /*
@@ -3803,7 +3859,7 @@ h3_conn_has_pending_work(ConnCtx *cc)
             }
             if (StreamCtxIsBidi(sc)
                 && SharedHdrsIsReady(&sc->sh)
-                && !sc->hdrs_submitted) {
+                && Ns_AtomicUint32LoadRelaxed(&sc->hdrs_submitted) == 0u) {
                 return NS_TRUE;
 
             } else {
@@ -5041,7 +5097,8 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
 {
     ConnCtx     *cc = sc->cc;
     NsTLSConfig *dc = cc->dc;
-    int rv;
+    bool         hdrs_submitted = Ns_AtomicUint32LoadRelaxed(&sc->hdrs_submitted) != 0u;
+    int          rv;
 
     /*
      * The producer completes the response-header fields before calling
@@ -5049,7 +5106,7 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
      * shared mutex and publishes those fields to the QUIC thread. Header
      * submission and cleanup are owned by the QUIC thread.
      */
-    if (sc->hdrs_submitted) {
+    if (hdrs_submitted) {
         SharedHdrsClear(&sc->sh);
         return 0;
     }
@@ -5092,7 +5149,7 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
         return -1;
     }
 
-    sc->hdrs_submitted = NS_TRUE;
+    Ns_AtomicUint32StoreRelaxed(&sc->hdrs_submitted, 1u);
 
     /* We can free the array; backing bytes live in resp_nv_store */
     ns_free(sc->resp_nv);
@@ -6453,6 +6510,7 @@ static void StreamCtxInit(StreamCtx *sc) {
     sc->pidx = (size_t)-1;
     sc->lock    = NULL;          /* borrowed later from pollset slot */
     sc->sh.lock = NULL;          /* borrowed later from pollset slot */
+    Ns_AtomicUint32Init(&sc->hdrs_submitted, 0u);
 }
 
 
@@ -9111,7 +9169,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
                sc->rx_off, sc->rx_len,
                sc->rx_fin_pending,
                sc->eof_seen,
-               sc->hdrs_submitted,
+               Ns_AtomicUint32LoadRelaxed(&sc->hdrs_submitted) != 0u,
                SSL_get_stream_read_state(ssl),
                SSL_get_stream_write_state(ssl),
                SharedHdrsIsReady(&sc->sh)
@@ -10165,15 +10223,19 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
         assert(sc != NULL);
     }
 
-    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Send: cc %p sc %p hdrs_submitted %d nva %p",
-           (long long)dc->iter, (void*)sc->cc, (void*)sc, sc->hdrs_submitted, (void*)sc->resp_nv);
+    Ns_Log(Ns_LogQuicDebug,
+           "[%lld] H3 Send: cc %p sc %p",
+           (long long)dc->iter,
+           (void *)sc->cc,
+           (void *)sc);
 
     if (!H3_TX_WRITABLE(sc)) {          /* honors H3_IO_TX_FIN/H3_IO_RESET */
         return 0;
     }
 
     /* Stage headers once, using the shared bit */
-    if (!sc->hdrs_submitted && !SharedHdrsIsReady(&sc->sh)) {
+    if (Ns_AtomicUint32LoadRelaxed(&sc->hdrs_submitted) == 0u
+        && !SharedHdrsIsReady(&sc->sh)) {
         SharedHdrsSetReady(&sc->sh);
         need_resume = NS_TRUE;
     }
