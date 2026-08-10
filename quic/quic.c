@@ -411,7 +411,6 @@ typedef struct ConnCtx {
     SSL            *listener_ssl;
     struct h3ssl    h3ssl;
     NsTLSConfig    *dc;
-    Ns_Mutex        lock;
     size_t          pidx;
     NS_TA_DECLARE(affinity)   /* owned by the H3/QUIC thread */
 
@@ -6312,9 +6311,8 @@ ConnCtxNew(NsTLSConfig *dc, SSL *conn)
     Tcl_InitHashTable(&cc->streams, TCL_ONE_WORD_KEYS);
 
     /*
-     * Both mutexes are borrowed from the pollset slot after registration.
+     * Mutex is borrowed from the pollset slot after registration.
      */
-    cc->lock        = NULL;
     cc->shared.lock = NULL;
 
     NS_TA_INIT(cc, affinity, "ConnCtx");
@@ -6364,7 +6362,6 @@ ConnCtxFree(ConnCtx *cc)
     assert(cc->h3conn == NULL);
 
     cc->shared.lock = NULL;
-    cc->lock        = NULL;
     cc->pidx        = (size_t)-1;
 
     Tcl_DeleteHashTable(&cc->streams);
@@ -7251,10 +7248,8 @@ static inline size_t PollsetAddConnection(NsTLSConfig *dc, SSL *conn, uint64_t e
 
     Ns_DListAddUnique(&dc->u.h3.conns, cc);
     cc->pidx        = idx;
-    cc->lock        = (Ns_Mutex)dc->u.h3.mutex_items.data[idx];
     cc->shared.lock = (Ns_Mutex)dc->u.h3.shared_mutex_items.data[idx];
 
-    assert(cc->lock != NULL);
     assert(cc->shared.lock != NULL);
 
     //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 connection added on idx %ld", (long long)dc->iter, idx);
@@ -8380,7 +8375,6 @@ PollsetConsolidate(NsTLSConfig *dc)
                              */
                             cc->pidx = i;
 
-                            assert(cc->lock == (Ns_Mutex)dc->u.h3.mutex_items.data[i]);
                             assert(cc->shared.lock == (Ns_Mutex)dc->u.h3.shared_mutex_items.data[i]);
 
                         } else {
