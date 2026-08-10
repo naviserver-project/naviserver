@@ -481,14 +481,12 @@ typedef struct StreamCtx {
     bool     rx_fin_pending; /* deliver FIN when rx_hold is empty */
     size_t   rx_emitted_in_pass;  /* used to avoid double receives via on_recv_data */
 
-    /* body queues for sending to the client: */
+    /* Response body delivery and synchronized producer state. */
     nghttp3_data_reader data_reader;
-    ChunkQueue tx_queued;    // Chunks ready to be sent but not yet presented
-    ChunkQueue tx_pending;        // maintained in the h3 thread
-    SharedStream sh;
+    SharedStream        sh;
 
     bool          flow_blocked;
-    Tcl_DString   resp_nv_store;   // backing store for copied names/values
+    Tcl_DString   resp_nv_store;   /* backing store for copied names/values */
     nghttp3_nv   *resp_nv;         /* array pointing into resp_nv_store */
     size_t        resp_nvlen;      /* number of nv pairs */
     tx_state_t    tx_state;
@@ -2188,19 +2186,24 @@ quic_stream_keeps_conn_alive(StreamCtx *sc)
             return NS_TRUE;
 
         } else {
-            /* Both sides are no longer OK: allow the conn to be freed only when the
-               app/peer closure was observed and there is no buffered I/O left. */
-            const bool queues_empty =
-                (sc->tx_queued.unread == 0 &&
-                 sc->tx_pending.unread == 0);
             SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
-            /* Closure observed when both halves have finished OR app closed explicitly. */
-            const bool closure_observed =
-                ((sc->io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN)) == (H3_IO_RX_FIN | H3_IO_TX_FIN))
+            const bool      reset = H3_IO_HAS(sc, H3_IO_RESET);
+            const bool      rx_empty = sc->rx_len == sc->rx_off;
+            const bool      tx_empty =
+                snap.queued_bytes == 0u
+                && snap.pending_bytes == 0u;
+            const bool      closure_observed =
+                reset
+                || ((sc->io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN))
+                    == (H3_IO_RX_FIN | H3_IO_TX_FIN))
                 || snap.closed_by_app;
 
-            /* If closure happened and nothing is pending, it no longer keeps the conn alive. */
-            return !(queues_empty && closure_observed);
+            /*
+             * A normally closed stream keeps the connection alive until all staged
+             * receive and transmit data has drained. A reset stream cannot deliver
+             * any remaining buffered data, which StreamCtxFree() will discard.
+             */
+            return !((reset || (rx_empty && tx_empty)) && closure_observed);
         }
     }
 }
@@ -4768,7 +4771,8 @@ h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nby
  * Side effects:
  *      - Calls nghttp3_conn_add_write_offset() and possibly
  *        nghttp3_conn_shutdown_stream_write().
- *      - May trim bytes from sc->tx_pending via SharedTrimPending().
+ *      - May trim bytes from the shared pending transmit queue via
+ *        SharedTrimPending().
  *      - Updates sc->io_state and sc->seen_io if applicable.
  *      - Produces detailed diagnostic logs for debugging.
  *
@@ -6433,19 +6437,17 @@ ConnCtxFreeH3(ConnCtx *cc)
  *
  * StreamCtxInit --
  *
- *      Initialize a StreamCtx structure to a clean default state for use
- *      within an HTTP/3 connection.  This prepares mutexes, response
- *      header storage, and transmission queues, ensuring that all fields
- *      are zeroed and ready for stream lifecycle setup.
+ *      Initialize a StreamCtx to its empty state. Initialize response
+ *      header storage, set the transmit state to TX_IDLE, mark the
+ *      pollset index invalid, and clear the borrowed lock references.
+ *      The SharedStream state is initialized separately when the stream
+ *      is registered with its pollset slot.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Clears the entire StreamCtx structure, initializes the internal
- *      Tcl_DString for response header storage, sets the transmission
- *      state to TX_IDLE, and initializes the per-stream mutex and
- *      transmission queues.
+ *      Reinitializes all fields of the supplied StreamCtx.
  *
  *----------------------------------------------------------------------
  */
@@ -6458,10 +6460,6 @@ static void StreamCtxInit(StreamCtx *sc) {
     sc->pidx = (size_t)-1;
     sc->lock    = NULL;          /* borrowed later from pollset slot */
     sc->sh.lock = NULL;          /* borrowed later from pollset slot */
-
-    // Initialize queues
-    memset(&sc->tx_queued, 0, sizeof(sc->tx_queued));
-    memset(&sc->tx_pending, 0, sizeof(sc->tx_pending));
 }
 
 
@@ -6480,23 +6478,23 @@ static void StreamCtxInit(StreamCtx *sc) {
  *
  * Side effects:
  *      - Frees method, path, authority, and scheme strings.
- *      - Frees the response header buffer and nghttp3 name/value arrays.
- *      - Frees any allocated receive-side buffer (rx_hold).
- *      - Clears and frees queued and pending chunk queues.
- *      - Destroys the associated SharedStream state.
- *      - Logs diagnostic information about the teardown.
- *      - The StreamCtx memory (sc) is deallocated at the end.
+ *      - Frees the response header buffer and nghttp3 name/value array.
+ *      - Frees any allocated receive-side buffer.
+ *      - Destroys the associated SharedStream state, including its
+ *        queued and pending transmission chunks.
+ *      - Releases an attached NaviServer socket.
+ *      - Deallocates the StreamCtx.
  *
  *----------------------------------------------------------------------
  */
 static void StreamCtxFree(StreamCtx *sc)
 {
-    Ns_Log(Ns_LogQuicDebug, "H3[%lld] StreamCtxFree %p %s hold buffer %p"
-           " tx_queued.unread %ld tx_pending.unread %ld"
-           " tx_queued.drained %ld tx_pending.drained %ld",
-           (long long)sc->quic_sid, (void*)sc, H3StreamKind_str(sc->kind), (void*)sc->rx_hold,
-           sc->tx_queued.unread, sc->tx_pending.unread,
-           sc->tx_queued.drained, sc->tx_pending.drained);
+    Ns_Log(Ns_LogQuicDebug,
+           "H3[%lld] StreamCtxFree %p %s hold buffer %p",
+           (long long)sc->quic_sid,
+           (void *)sc,
+           H3StreamKind_str(sc->kind),
+           (void *)sc->rx_hold);
     ns_free_const(sc->method);
     ns_free_const(sc->path);
     ns_free_const(sc->authority);
@@ -6521,8 +6519,6 @@ static void StreamCtxFree(StreamCtx *sc)
         ns_free(sc->rx_hold);
     }
 
-    ChunkQueueTrim(&sc->tx_queued, SIZE_MAX, NS_FALSE);
-    ChunkQueueTrim(&sc->tx_pending, SIZE_MAX, NS_FALSE);
     SharedStreamDestroy(&sc->sh);
     QuicMemStatsIncr(&quicMemStats.counters.streamctx_free);
     ns_free(sc);
@@ -8108,11 +8104,11 @@ PollsetSweep(NsTLSConfig *dc)
         /* Still keep the "don't free without IO" rule for freeing. */
         if (!sc->seen_io && !H3_TX_CLOSED(sc) && !H3_RX_CLOSED(sc)) {
             /* We've already disabled EW above if nothing to write. */
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: don't sweep stream without io %p"
-                   " kind %s tx_queued.unread %ld tx_pending.unread %ld",
-                   (long long)dc->iter, (void*)s,
-                   H3StreamKind_str(sc->kind),
-                   sc->tx_queued.unread, sc->tx_pending.unread);
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3 PollsetSweep: don't sweep stream without io %p kind %s",
+                   (long long)dc->iter,
+                   (void *)s,
+                   H3StreamKind_str(sc->kind));
             continue;
         }
 
@@ -8124,8 +8120,13 @@ PollsetSweep(NsTLSConfig *dc)
         mask = PollsetGetEvents(dc, s, sc);
 
         {
-            const bool rx_closed = (sc->io_state & (H3_IO_RX_FIN | H3_IO_RESET)) != 0;
-            const bool tx_closed = (sc->io_state & (H3_IO_TX_FIN | H3_IO_RESET)) != 0;
+            const bool     rx_closed   = (sc->io_state & (H3_IO_RX_FIN | H3_IO_RESET)) != 0;
+            const bool     tx_closed   = (sc->io_state & (H3_IO_TX_FIN | H3_IO_RESET)) != 0;
+            const bool     reset       = H3_IO_HAS(sc, H3_IO_RESET);
+            const bool     both_closed = H3_IO_HAS(sc, H3_IO_RX_FIN) && H3_IO_HAS(sc, H3_IO_TX_FIN);
+            const bool     rx_empty    = sc->rx_len == sc->rx_off;
+            SharedSnapshot snap        = SharedSnapshotInit(&sc->sh);
+            const bool     tx_empty    = snap.queued_bytes == 0u && snap.pending_bytes == 0u;
 
             /*
              * If peer finished our read side (or stream was reset), and we
@@ -8149,18 +8150,22 @@ PollsetSweep(NsTLSConfig *dc)
             }
 
             /*
-             * Definitely-dead streams: either RESET, or both sides FINed,
-             * and all queues are empty (nothing left to deliver or flush).
+             * A reset stream cannot deliver remaining output; its shared queues
+             * are discarded by SharedStreamDestroy(). A normally completed stream
+             * is reaped only after all receive and transmit data has drained.
              */
-            if ( ((sc->io_state & H3_IO_RESET) != 0 ||
-                  ((sc->io_state & H3_IO_RX_FIN) && (sc->io_state & H3_IO_TX_FIN)))
-                 && sc->rx_len == sc->rx_off
-                 && sc->tx_queued.unread  == 0
-                 && sc->tx_pending.unread == 0 ) {
-                Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: kill stream %p kind %s "
-                       "rx.buffered %d tx_queued.unread %ld tx_pending.unread %ld",
-                       (long long)dc->iter, (void*)s, H3StreamKind_str(sc->kind),
-                       sc->rx_len == sc->rx_off, sc->tx_queued.unread, sc->tx_pending.unread);
+            if (rx_empty
+                && (reset || (both_closed && tx_empty))) {
+                Ns_Log(Ns_LogQuicDebug,
+                       "[%lld] H3 PollsetSweep: kill stream %p kind %s"
+                       " rx_empty %d queued %zu pending %zu reset %d",
+                       (long long)dc->iter,
+                       (void *)s,
+                       H3StreamKind_str(sc->kind),
+                       rx_empty,
+                       snap.queued_bytes,
+                       snap.pending_bytes,
+                       reset);
 
                 PollsetMarkDead(cc, s, "sweep: stream definitely dead");
                 StreamCtxUnregister(sc);
