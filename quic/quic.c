@@ -418,7 +418,7 @@ typedef struct ConnCtx {
     bool            handshake_done;            /* handshake completed */
     bool            settings_unblock_pending;  /* post-callback request-stream rearming needed */
     bool            settings_seen;             /* peer SETTINGS frame processed */
-    bool            wants_write;
+    bool            wants_write;               /* owned by the QUIC thread */
     bool            expecting_send;            /* set when request dispatched to app */
     bool            conn_closed;
     int             last_sd; // intermediate, for debuggung in ossl_conn_maybe_log_first_shutdown
@@ -446,8 +446,8 @@ typedef struct StreamCtx {
     int64_t      h3_sid;       /* the stream ID as seen by the HTTP/3 library */
     Ns_Sock     *nsSock;
     size_t       pidx;
-    Ns_Mutex     lock;         /* protects wants_write for this stream */
-    bool         wants_write;  /* QUIC thread clears, others set */
+    Ns_Mutex     lock;         /* protects selected cross-thread StreamCtx state */
+    bool         wants_write;  /* owned by the QUIC thread */
     uint8_t      io_state;     /* state bitmask, init to 0 */
 
     H3StreamKind kind;
@@ -5327,10 +5327,8 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
     has_tx = SharedHasData(&snap);
 
     /* --- final write-interest decision for this tick --- */
-    Ns_MutexLock(&sc->lock);
     want_w_prev     = sc->wants_write;  /* one-shot snapshot */
     sc->wants_write = NS_FALSE;         /* clear one shot */
-    Ns_MutexUnlock(&sc->lock);
 
     /*
      * Keep W only while application data remains or a one-shot write
@@ -8971,10 +8969,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
 
         snap = SharedSnapshotInit(&sc->sh);
 
-        Ns_MutexLock(&sc->lock);
         stream_wants_write = sc->wants_write;
-        Ns_MutexUnlock(&sc->lock);
-
         delivery_refs = StreamCtxDeliveryRefs(sc);
 
         bidi++;
@@ -9086,10 +9081,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
 
         snap = SharedSnapshotInit(&sc->sh);
 
-        Ns_MutexLock(&sc->lock);
         stream_wants_write = sc->wants_write;
-        Ns_MutexUnlock(&sc->lock);
-
         delivery_refs = StreamCtxDeliveryRefs(sc);
 
         Ns_Log(Ns_LogQuicDebug,
