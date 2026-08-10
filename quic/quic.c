@@ -3097,13 +3097,7 @@ h3_conn_write_step(ConnCtx *cc)
 
         for (size_t i = 0; i < nres; ++i) {
             const int64_t sid = sids[i];
-            SSL          *s;
-            StreamCtx    *ssc;
-
-            s = quic_sid_to_stream(cc, (uint64_t)sid);
-            ssc = s != NULL
-                ? SSL_get_ex_data(s, cc->dc->u.h3.sc_idx)
-                : StreamCtxGet(cc, sid, /*create*/ 0);
+            StreamCtx    *ssc = StreamCtxGet(cc, sid, /*create*/ 0);
 
             if (ssc == NULL) {
                 Ns_Log(Ns_LogQuicDebug,
@@ -3112,7 +3106,6 @@ h3_conn_write_step(ConnCtx *cc)
                        (long long)sid);
                 continue;
             }
-
 
             /*
              * The resume-ring entry has been consumed. Clear the coalescing
@@ -5167,17 +5160,19 @@ h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label)
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] h3_stream_drain (%s)",
            (long long)cc->dc->iter, (unsigned long long)sid, label);
 
-
     if (stream == NULL) {
         return DRAIN_CLOSED;
     }
 
-    // TODO: why no SSL_get_ex_data?
-    //sc = SSL_get_ex_data(stream, dc->sc_idx);
-    sc = StreamCtxGet(cc, (int64_t)sid, 0);
+    sc = SSL_get_ex_data(stream, cc->dc->u.h3.sc_idx);
     if (sc == NULL || sc->eof_seen) {
         return DRAIN_CLOSED;
     }
+
+    assert(sc->cc == cc);
+    assert(sc->ssl == stream);
+    assert(sc->quic_sid == sid);
+
     if (!SSL_has_pending(stream) && !sc->seen_readable && sc->rx_len == sc->rx_off) {
         return DRAIN_NONE;
     }
@@ -6662,8 +6657,8 @@ StreamCtxGet(ConnCtx *cc, int64_t sid, int create) {
  *      - For H3_KIND_BIDI_REQ:
  *          * Creates a new NsSock and associates it with the stream.
  *          * Updates the QUIC connection's client bidi credit limit.
- *      - Updates stream metadata such as SSL pointer, stream kind,
- *        writability flags, and back-references to the connection context.
+ *      - Updates stream metadata such as the SSL pointer, stream kind,
+ *        stream identifiers, and back-reference to the connection context.
  *      - Logs acceptance and stream registration details.
  *
  *----------------------------------------------------------------------
