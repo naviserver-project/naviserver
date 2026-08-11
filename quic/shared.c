@@ -80,7 +80,7 @@
 #include "shared.h"
 
 /* ---------- Prototypes ---------- */
-static int resume_grow(SharedState *st) NS_GNUC_NONNULL(1);
+static int  resume_grow(SharedState *st) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_LogSeverity Ns_LogQuicDebug;
 
@@ -197,6 +197,8 @@ resume_grow(SharedState *st)
  */
 void SharedStateInit(SharedState *st, SharedWakeFn wake_cb, void *wake_arg) {
     memset(st, 0, sizeof(*st));
+
+    Ns_AtomicUint32Init(&st->resume_pending, 0u);
     st->wake_cb  = wake_cb;
     st->wake_arg = wake_arg;
 }
@@ -259,6 +261,7 @@ void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid) {
 
     Ns_AtomicUint32Init(&ss->hdrs_ready, 0u);
     Ns_AtomicUint32Init(&ss->resume_enqueued, 0u);
+
     ss->st       = owner;
     ss->sid_hint = sid;
     /* queues and mutexes already zeroed */
@@ -759,7 +762,14 @@ SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid)
         const bool was_empty = (st->count == 0u);
 
         if (resume_push_unlocked(st, sid)) {
-            need_wake = was_empty;
+            if (was_empty) {
+                /*
+                 * Publish the transition from an empty to a nonempty
+                 * resume ring before releasing the ring lock.
+                 */
+                Ns_AtomicUint32StoreRelease(&st->resume_pending, 1u);
+                need_wake = NS_TRUE;
+            }
         } else {
             /*
              * No ring entry was created. Release the claim so a later
@@ -795,17 +805,27 @@ SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid)
  *
  *----------------------------------------------------------------------
  */
-int SharedPopResume(SharedState *st, int64_t *out_sid) {
-    int have = 0;
+int
+SharedPopResume(SharedState *st, int64_t *out_sid)
+{
+    int result = NS_FALSE;
+
     Ns_MutexLock(&st->lock);
-    if (st->count) {
+
+    if (st->count > 0u) {
         *out_sid = st->resume[st->head];
-        st->head = (st->head + 1) % st->cap;
+        st->head = (st->head + 1u) % st->cap;
         st->count--;
-        have = 1;
+        result = NS_TRUE;
+
+        if (st->count == 0u) {
+            Ns_AtomicUint32StoreRelaxed(&st->resume_pending, 0u);
+        }
     }
+
     Ns_MutexUnlock(&st->lock);
-    return have;
+
+    return result;
 }
 #endif
 
@@ -859,21 +879,30 @@ void SharedResumeClear(SharedStream *ss) {
 size_t
 SharedDrainResume(SharedState *st, int64_t *out, size_t cap)
 {
-    size_t n = 0;
+    size_t n = 0u;
 
-    if (out == NULL || cap == 0) {
-        return 0;
+    if (out == NULL || cap == 0u) {
+        return 0u;
     }
 
     Ns_MutexLock(&st->lock);
 
-    while (n < cap && st->count > 0) {
-        out[n++]  = st->resume[st->head];
-        st->head  = (st->head + 1) % st->cap;
+    while (n < cap && st->count > 0u) {
+        out[n++] = st->resume[st->head];
+        st->head = (st->head + 1u) % st->cap;
         st->count--;
     }
 
+    if (n > 0u && st->count == 0u) {
+        /*
+         * The resume ring is now empty. No producer can add another
+         * entry until the ring lock is released.
+         */
+        Ns_AtomicUint32StoreRelaxed(&st->resume_pending, 0u);
+    }
+
     Ns_MutexUnlock(&st->lock);
+
     return n;
 }
 
