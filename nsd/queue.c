@@ -2504,6 +2504,7 @@ NsConnThread(void *arg)
 
             assert(argPtr->state == connThread_idle);
 
+            Ns_MutexLock(tqueueLockPtr);
             if (argPtr->connPtr == NULL) {
                 /*
                  * We were not signaled on purpose, so we have to dequeue
@@ -2511,7 +2512,6 @@ NsConnThread(void *arg)
                  */
                 ConnThreadArg *aPtr, **prevPtr;
 
-                Ns_MutexLock(tqueueLockPtr);
                 for (aPtr = poolPtr->tqueue.nextPtr, prevPtr = &poolPtr->tqueue.nextPtr;
                      aPtr != NULL;
                      prevPtr = &aPtr->nextPtr, aPtr = aPtr->nextPtr) {
@@ -2525,12 +2525,10 @@ NsConnThread(void *arg)
                     }
                 }
                 argPtr->state = connThread_busy;
-                Ns_MutexUnlock(tqueueLockPtr);
             } else {
-                Ns_MutexLock(tqueueLockPtr);
                 argPtr->state = connThread_busy;
-                Ns_MutexUnlock(tqueueLockPtr);
             }
+            Ns_MutexUnlock(tqueueLockPtr);
 
             Ns_MutexLock(threadsLockPtr);
             poolPtr->threads.idle --;
@@ -3043,11 +3041,13 @@ ConnRun(Conn *connPtr)
      *
      */
     {
-        bool wakeup;
+        bool wakeup = NS_FALSE;
 
-        Ns_MutexLock(&sockPtr->drvPtr->lock);
-        wakeup = (sockPtr->keep && (connPtr->reqPtr->leftover > 0u));
-        Ns_MutexUnlock(&sockPtr->drvPtr->lock);
+        if (connPtr->reqPtr->leftover > 0u) {
+            Ns_MutexLock(&sockPtr->drvPtr->lock);
+            wakeup = sockPtr->keep;
+            Ns_MutexUnlock(&sockPtr->drvPtr->lock);
+        }
 
         if (wakeup) {
             NsWakeupDriver(sockPtr->drvPtr);
