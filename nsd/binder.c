@@ -79,6 +79,10 @@ static Ns_ReturnCode PrebindSystemdSockets(size_t *countPtr);
 static Ns_ReturnCode PrebindLaunchdSockets(size_t *countPtr);
 # endif
 
+# if  defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
+static Ns_ReturnCode PrebindRegisterSocket(NS_SOCKET sock);
+# endif
+
 static Tcl_HashEntry *PrebindCreateHashEntry(
     Tcl_HashTable *tablePtr, const struct sockaddr *saPtr, int *isNewPtr)
     NS_GNUC_NONNULL(1,2,3);
@@ -86,7 +90,6 @@ static Tcl_HashEntry *PrebindCreateHashEntry(
 static void PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr, const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(1,2);
 
-static Ns_ReturnCode   PrebindRegisterSocket(NS_SOCKET sock);
 static struct Prebind *PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock);
 static Ns_ReturnCode   PrebindRegisterInetSocket(const char *proto, NS_SOCKET sock, const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(1,3);
