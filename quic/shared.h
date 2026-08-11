@@ -56,6 +56,8 @@ extern "C" {
         size_t       tail;
         size_t       count;
 
+        Ns_AtomicUint32 resume_pending;   /* lock-free mirror of count != 0 */
+
         SharedWakeFn wake_cb;   /* e.g., h3_wake */
         void        *wake_arg;  /* e.g., dc */
     } SharedState;
@@ -124,7 +126,7 @@ extern "C" {
     int    SharedPopResume(SharedState *st, int64_t *out_sid);
     void   SharedResumeClear(SharedStream *ss);
     size_t SharedDrainResume(SharedState *st, int64_t *out, size_t cap)  NS_GNUC_NONNULL(1);
-
+    static bool SharedHasResumePending(SharedState *st) NS_GNUC_NONNULL(1);
 
     /* Fills out with a consistent snapshot. Takes the internal Shared lock. */
     void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out) NS_GNUC_NONNULL(1,2);
@@ -146,12 +148,9 @@ extern "C" {
         return s->closed_by_app && SharedIsEmpty(s);
     }
 
-    static inline bool SharedHasResumePending(SharedState *st) {
-        bool has;
-        Ns_MutexLock(&st->lock);
-        has = (st->count > 0);
-        Ns_MutexUnlock(&st->lock);
-        return has;
+    static inline bool SharedHasResumePending(SharedState *st)
+    {
+        return Ns_AtomicUint32LoadAcquire(&st->resume_pending) != 0u;
     }
 
     static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss)  {
@@ -159,6 +158,7 @@ extern "C" {
         SharedSnapshotRead(ss, &snap);
         return snap;
     }
+
 
 # ifdef __cplusplus
 }

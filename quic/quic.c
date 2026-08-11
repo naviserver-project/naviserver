@@ -2963,11 +2963,18 @@ h3_conn_write_step(ConnCtx *cc)
 
     {
         int64_t sids[64];
-        size_t  nres;
+        size_t  nres = 0u;
 
-        /* Drain "resume" ring and poke nghttp3 */
-        nres = SharedDrainResume(&cc->shared, sids, 64);
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 drain-resume count=%zu", (long long)cc->dc->iter, nres);
+        if (SharedHasResumePending(&cc->shared)) {
+            /*
+             * Drain the resume ring and notify nghttp3 for the returned streams.
+             */
+            nres = SharedDrainResume(&cc->shared, sids, 64u);
+
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3 drain-resume count=%zu",
+                   (long long)cc->dc->iter, nres);
+        }
 
         for (size_t i = 0; i < nres; ++i) {
             const int64_t sid = sids[i];
