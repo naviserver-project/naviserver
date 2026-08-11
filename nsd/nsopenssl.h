@@ -54,17 +54,7 @@
 
 # include <openssl/ssl.h>
 # include <openssl/err.h>
-
-typedef struct Ns_AtomicUint32 {
-#if defined(_MSC_VER)
-    volatile LONG value;
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
-    uint32_t value;
-#else
-    uint32_t value;
-    Ns_Mutex lock;
-#endif
-} Ns_AtomicUint32;
+#include "nsatomic.h"
 
 #if defined(HAVE_OPENSSL_4)
 typedef struct NsTLSH3Config {
