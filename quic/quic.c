@@ -331,11 +331,16 @@ QuicNoteProgress(NsTLSConfig *dc)
 #define H3_IO_REQ_READY      0x10u /* ready to dispatch (set in callbacks) -> maybe -> StreamCtx or h3ssl or some ReqCtxxs */
 #define H3_IO_REQ_DISPATCHED 0x20u /* already dispatched  -> maybe -> StreamCtx or h3ssl or some ReqCtxxs */
 
-#define H3_IO_HAS(sc, m)      (((sc)->io_state & (m)) != 0)
-#define H3_RX_CLOSED(sc)      (H3_IO_HAS(sc, H3_IO_RX_FIN) || H3_IO_HAS(sc, H3_IO_RESET))
-#define H3_TX_CLOSED(sc)      (H3_IO_HAS(sc, H3_IO_TX_FIN) || H3_IO_HAS(sc, H3_IO_RESET))
-#define H3_BOTH_CLOSED(sc)    (H3_IO_HAS(sc, H3_IO_RESET) || (H3_IO_HAS(sc, H3_IO_TX_FIN) && H3_IO_HAS(sc, H3_IO_RX_FIN)))
+#define H3_IO_STATE(sc)       StreamCtxIoState(sc)
+#define H3_IO_HAS(sc, m)      ((H3_IO_STATE(sc) & (m)) != 0u)
+#define H3_IO_SET(sc, m)      StreamCtxIoSet((sc), (m))
+#define H3_IO_CLEAR(sc, m)    StreamCtxIoClear((sc), (m))
+
+#define H3_RX_CLOSED(sc)      H3_IO_HAS((sc), H3_IO_RX_FIN | H3_IO_RESET)
+#define H3_TX_CLOSED(sc)      H3_IO_HAS((sc), H3_IO_TX_FIN | H3_IO_RESET)
+#define H3_BOTH_CLOSED(sc)    StreamCtxBothClosed((sc))
 #define H3_TX_WRITABLE(sc)    (!H3_TX_CLOSED(sc))
+
 
 #define MAXURL        255
 #define MAX_SEND_HDRS  64
@@ -448,7 +453,14 @@ typedef struct StreamCtx {
     size_t       pidx;
     Ns_Mutex     lock;         /* protects selected cross-thread StreamCtx state */
     bool         wants_write;  /* owned by the QUIC thread */
-    uint8_t      io_state;     /* state bitmask, init to 0 */
+
+    /*
+     * Stream lifecycle flags. Mutated by the QUIC thread and inspected by
+     * producer/connection threads; access only through the atomic helpers.
+     * The flags do not publish unrelated stream state. Relaxed ordering is
+     * sufficient.
+     */
+    Ns_AtomicUint32 io_state;
 
     H3StreamKind kind;
     bool         waiting_for_settings; /* read interest parked pending peer SETTINGS */
@@ -635,6 +647,13 @@ static void            StreamCtxRequireRxBuffer(StreamCtx *sc) NS_GNUC_NONNULL(1
 static bool            StreamCtxClaimDispatch(StreamCtx *sc) NS_GNUC_NONNULL(1);
 static unsigned int    StreamCtxDeliveryRefs(StreamCtx *sc)  NS_GNUC_NONNULL(1);
 
+/* Stream state handling */
+static uint32_t        StreamCtxIoState(const StreamCtx *sc) NS_GNUC_NONNULL(1);
+static void            StreamCtxIoSet(StreamCtx *sc, uint32_t bits) NS_GNUC_NONNULL(1);
+static void            StreamCtxIoClear(StreamCtx *sc, uint32_t bits) NS_GNUC_NONNULL(1);
+static bool            StreamCtxBothClosed(const StreamCtx *sc) NS_GNUC_NONNULL(1);
+
+/* Stream properties */
 static bool            StreamCtxIsServerUni(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 static bool            StreamCtxIsClientUni(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 static bool            StreamCtxIsBidi(const StreamCtx *sc) NS_GNUC_NONNULL(1);
@@ -706,6 +725,8 @@ static void     Ns_AtomicUint32Init(Ns_AtomicUint32 *atomicPtr, uint32_t value) 
 static uint32_t Ns_AtomicUint32ExchangeRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
 static void     Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
 static uint32_t Ns_AtomicUint32LoadRelaxed(Ns_AtomicUint32 *atomicPtr) NS_GNUC_NONNULL(1);
+static uint32_t Ns_AtomicUint32FetchOrRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
+static uint32_t Ns_AtomicUint32FetchAndRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
 
 /*
  *----------------------------------------------------------------------
@@ -883,6 +904,95 @@ Ns_AtomicUint32LoadRelaxed(Ns_AtomicUint32 *atomicPtr)
 #endif
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32FetchOrRelaxed --
+ *
+ *      Atomically replace the current value with the bitwise OR of the
+ *      current value and the specified mask.
+ *
+ *      The operation has relaxed memory-ordering semantics. It provides
+ *      atomicity and participates in the modification order of this
+ *      object, but does not publish or order accesses to unrelated
+ *      memory.
+ *
+ * Results:
+ *      Returns the value immediately before the bitwise OR operation.
+ *
+ * Side effects:
+ *      Updates the atomic integer. On platforms without native atomic
+ *      operations, temporarily acquires the object's fallback mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+static uint32_t
+Ns_AtomicUint32FetchOrRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
+{
+#if defined(_MSC_VER)
+    return (uint32_t)InterlockedOr(&atomicPtr->value, (LONG)mask);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_fetch_or(&atomicPtr->value,
+                             mask,
+                             __ATOMIC_RELAXED);
+
+#else
+    uint32_t previous;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    previous = atomicPtr->value;
+    atomicPtr->value |= mask;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return previous;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32FetchAndRelaxed --
+ *
+ *      Atomically replace the current value with the bitwise AND of the
+ *      current value and the specified mask.
+ *
+ *      The operation has relaxed memory-ordering semantics. It provides
+ *      atomicity and participates in the modification order of this
+ *      object, but does not publish or order accesses to unrelated
+ *      memory.
+ *
+ * Results:
+ *      Returns the value immediately before the bitwise AND operation.
+ *
+ * Side effects:
+ *      Updates the atomic integer. On platforms without native atomic
+ *      operations, temporarily acquires the object's fallback mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+static uint32_t
+Ns_AtomicUint32FetchAndRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
+{
+#if defined(_MSC_VER)
+    return (uint32_t)InterlockedAnd(&atomicPtr->value, (LONG)mask);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_fetch_and(&atomicPtr->value,
+                              mask,
+                              __ATOMIC_RELAXED);
+
+#else
+    uint32_t previous;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    previous = atomicPtr->value;
+    atomicPtr->value &= mask;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return previous;
+#endif
+}
 
 /*======================================================================
  * Function Implementations: OpenSSL helpers
@@ -1021,7 +1131,7 @@ static void ossl_stream_log_state(NsTLSConfig *dc, SSL *stream, const char *labe
     Ns_Log(Ns_LogQuicDebug, "[%lld] %s sid=%llu: type=%d rs=%d ws=%d io_state %.2x",
            (long long)dc->iter, label, (long long)sid, SSL_get_stream_type(stream),
            SSL_get_stream_read_state(stream), SSL_get_stream_write_state(stream),
-           sc->io_state);
+           StreamCtxIoState(sc));
 }
 
 /*
@@ -1085,17 +1195,17 @@ ossl_log_stream_and_conn_states(ConnCtx *cc, SSL *s, SSL *conn, int st_expect, c
                (long long)dc->iter, (long long)sid, where, (void*)s,
                ossl_quic_stream_state_str(rs),
                ossl_quic_stream_state_str(ws),
-               sc->io_state);
+               StreamCtxIoState(sc));
     } else if (check_write && ws != st_expect) {
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] %s: ssl=%p write %s io_state %.2x",
                (long long)dc->iter, (long long)sid, where, (void*)s,
                ossl_quic_stream_state_str(ws),
-               sc->io_state);
+               StreamCtxIoState(sc));
     } else if (check_read && rs != st_expect) {
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] %s: ssl=%p read %s io_state %.2x",
                (long long)dc->iter, (long long)sid, where, (void*)s,
                ossl_quic_stream_state_str(rs),
-               sc->io_state);
+               StreamCtxIoState(sc));
     }
 }
 
@@ -2218,11 +2328,11 @@ quic_stream_keeps_conn_alive(StreamCtx *sc)
         return NS_FALSE;
 
     } else {
-
         int rs = SSL_get_stream_read_state(sc->ssl);
         int ws = SSL_get_stream_write_state(sc->ssl);
-        const bool rx_open = ((sc->io_state & H3_IO_RX_FIN) == 0) && (rs == SSL_STREAM_STATE_OK);
-        const bool tx_open = ((sc->io_state & H3_IO_TX_FIN) == 0) && (ws == SSL_STREAM_STATE_OK);
+        const uint32_t io_state = H3_IO_STATE(sc);
+        const bool rx_open = (io_state & H3_IO_RX_FIN) == 0u && rs == SSL_STREAM_STATE_OK;
+        const bool tx_open = (io_state & H3_IO_TX_FIN) == 0u && ws == SSL_STREAM_STATE_OK;
 
         /* If *either* side is still open, the stream keeps the conn alive. */
         if (rx_open || tx_open) {
@@ -2230,17 +2340,11 @@ quic_stream_keeps_conn_alive(StreamCtx *sc)
 
         } else {
             SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
-            const bool      reset = H3_IO_HAS(sc, H3_IO_RESET);
-            const bool      rx_empty = sc->rx_len == sc->rx_off;
-            const bool      tx_empty =
-                snap.queued_bytes == 0u
-                && snap.pending_bytes == 0u;
-            const bool      closure_observed =
-                reset
-                || ((sc->io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN))
-                    == (H3_IO_RX_FIN | H3_IO_TX_FIN))
-                || snap.closed_by_app;
-
+            const bool     reset = (io_state & H3_IO_RESET) != 0u;
+            const bool     both_closed = (io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN)) == (H3_IO_RX_FIN | H3_IO_TX_FIN);
+            const bool     closure_observed = reset || both_closed || snap.closed_by_app;
+            const bool     rx_empty = sc->rx_len == sc->rx_off;
+            const bool     tx_empty = snap.queued_bytes == 0u  && snap.pending_bytes == 0u;
             /*
              * A normally closed stream keeps the connection alive until all staged
              * receive and transmit data has drained. A reset stream cannot deliver
@@ -2806,7 +2910,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW both sides are closed rs=%s ws=%s io=%u seen_io=%u kind=%s",
                (long long)dc->iter, (long long)sid,
                ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
-               (unsigned)(sc ? sc->io_state : 0),
+               (unsigned)(sc ? StreamCtxIoState(sc) : 0),
                (unsigned)(sc ? sc->seen_io  : 0),
                (sc ? H3StreamKind_str(sc->kind) : "no-ctx"));
         PollsetMarkDead(cc, stream, "stream ER|EW, both sides closed");
@@ -2818,7 +2922,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW handled: rs=%s ws=%s io=%u seen_io=%u kind=%s",
                (long long)dc->iter, (long long)sid,
                ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
-               (unsigned)(sc ? sc->io_state : 0),
+               (unsigned)(sc ? StreamCtxIoState(sc) : 0),
                (unsigned)(sc ? sc->seen_io  : 0),
                (sc ? H3StreamKind_str(sc->kind) : "no-ctx"));
     }
@@ -2901,12 +3005,12 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] R h3_stream_drain kind %s leads to io_state %.2x"
                " drain result %s",
                (long long)dc->iter, (long long)sid, H3StreamKind_str(sc->kind),
-               sc->io_state, H3DrainResultCode_str(dr));
+               StreamCtxIoState(sc), H3DrainResultCode_str(dr));
 
         /* If a client BIDI request became ready, dispatch it now. */
         if (sc->kind == H3_KIND_BIDI_REQ
-            && (sc->io_state & H3_IO_REQ_READY)
-            && !(sc->io_state & H3_IO_REQ_DISPATCHED)) {
+            && H3_IO_HAS(sc, H3_IO_REQ_READY)
+            && !(H3_IO_HAS(sc, H3_IO_REQ_DISPATCHED))) {
             Ns_ReturnCode result;
 
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SSL_handle_events in poll event R -> DISPATCH",
@@ -2914,7 +3018,7 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
             result = SockDispatchFinishedRequest(sc);
 
             if (result == NS_OK) {
-                sc->io_state &= (uint8_t)~H3_IO_REQ_READY;
+                H3_IO_CLEAR(sc, H3_IO_REQ_READY);
 
             } else if (result != NS_TIMEOUT) {
                 Ns_Log(Warning, "[%lld] H3[%lld] dispatch failed",
@@ -2931,7 +3035,7 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
 
         case DRAIN_EOF:    /* peer sent FIN on read half */
         case DRAIN_CLOSED: /* treat as read-half closed for our state machine */
-            sc->io_state |= H3_IO_RX_FIN;
+            H3_IO_SET(sc, H3_IO_RX_FIN);
 
             if (sc->kind == H3_KIND_BIDI_REQ) {
                 /* Keep BIDI alive for TX; stop polling R on this stream */
@@ -2947,7 +3051,8 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
             break;
 
         case DRAIN_ERROR:
-            sc->io_state |= H3_IO_RESET;
+            H3_IO_SET(sc, H3_IO_RESET);
+
             StreamCtxUnregister(sc);
             PollsetMarkDead(cc, stream, "stream error");
             return NS_TRUE; /* slot is dead */
@@ -2965,7 +3070,7 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
     }
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] R post-drain io_state %.2x",
-           (long long)dc->iter, (long long)sid, sc->io_state);
+           (long long)dc->iter, (long long)sid, StreamCtxIoState(sc));
 
     return NS_FALSE; /* keep slot */
 }
@@ -3288,17 +3393,16 @@ h3_conn_write_step(ConnCtx *cc)
                            fin, ok);
 
                     if (ok == 1) {
-                        uint8_t io_state;
+                        uint32_t io_state, previous;
+
                         /*
                          * Inform nghttp3 that the zero-length final write was
                          * accepted by the QUIC transport.
                          */
                         (void)nghttp3_conn_add_write_offset(cc->h3conn, sid, 0u);
 
-                        Ns_MutexLock(&zsc->lock);
-                        zsc->io_state |= H3_IO_TX_FIN;
-                        io_state = zsc->io_state;
-                        Ns_MutexUnlock(&zsc->lock);
+                        previous = Ns_AtomicUint32FetchOrRelaxed(&zsc->io_state, H3_IO_TX_FIN);
+                        io_state = previous | H3_IO_TX_FIN;
 
                         /* SSL_stream_conclude() only queues a QUIC STREAM FIN; it may not produce an
                          * immediate per-stream kernel event to wake the poll loop. With a long poll
@@ -3350,9 +3454,7 @@ h3_conn_write_step(ConnCtx *cc)
                          */
                         nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
 
-                        Ns_MutexLock(&zsc->lock);
-                        zsc->io_state |= H3_IO_RESET;
-                        Ns_MutexUnlock(&zsc->lock);
+                        H3_IO_SET(zsc, H3_IO_RESET);
 
                         PollsetDisableWrite(dc, zsc->ssl, zsc, "tx fin fail->reset");
                         did_progress = NS_TRUE;
@@ -3653,7 +3755,7 @@ h3_conn_write_step(ConnCtx *cc)
             && !H3_IO_HAS(sc, H3_IO_TX_FIN)) {
 
             if (fin_concluded_by_write) {
-                sc->io_state |= H3_IO_TX_FIN;
+                H3_IO_SET(sc, H3_IO_TX_FIN);
                 did_progress  = NS_TRUE;
 
                 Ns_Log(Ns_LogQuicDebug,
@@ -3669,7 +3771,7 @@ h3_conn_write_step(ConnCtx *cc)
                     int ok = SSL_stream_conclude(stream, 0);
 
                     if (ok == 1) {
-                        sc->io_state |= H3_IO_TX_FIN;
+                        H3_IO_SET(sc, H3_IO_TX_FIN);
                         did_progress  = NS_TRUE;
 
                         Ns_Log(Ns_LogQuicDebug,
@@ -3700,8 +3802,8 @@ h3_conn_write_step(ConnCtx *cc)
                             ERR_clear_error();
                             nghttp3_conn_shutdown_stream_write(
                                                                cc->h3conn, h3_stream_id(sc));
+                            H3_IO_SET(sc, H3_IO_RESET);
 
-                            sc->io_state |= H3_IO_RESET;
                             PollsetDisableWrite(
                                                 dc, stream, sc,
                                                 "h3_conn_write_step hard failure on conclude");
@@ -4106,7 +4208,7 @@ h3_conn_dispatch_ready_requests(ConnCtx *cc)
             Ns_ReturnCode result = SockDispatchFinishedRequest(sc);
 
             if (result == NS_OK) {
-                sc->io_state &= (uint8_t)~H3_IO_REQ_READY;
+                H3_IO_CLEAR(sc, H3_IO_REQ_READY);
             } else if (result == NS_TIMEOUT) {
                 deferred = NS_TRUE;
             }
@@ -4162,10 +4264,6 @@ h3_stream_build_resp_headers(Ns_Sock *sock,
     nghttp3_nv  *nva = NULL;
     Tcl_DString *store;
     bool         success = NS_TRUE; /* we want to push an empty iovec in successful cases */
-
-    if (sock == NULL) {
-        goto fail;
-    }
 
     dc = sock->driver->arg;
     sc = StreamCtxFromSock(dc, sock);
@@ -4860,10 +4958,15 @@ h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc,
             }
         }
 
-        if (fin && !(sc->io_state & H3_IO_TX_FIN)) {
-            sc->io_state |= H3_IO_TX_FIN;   /* local bookkeeping: we saw a FIN for this write */
-            sc->seen_io   = NS_TRUE;
-            out          |= H3_DISCARD_FIN;
+        if (fin) {
+            uint32_t previous;
+
+            previous = Ns_AtomicUint32FetchOrRelaxed(&sc->io_state, H3_IO_TX_FIN);
+
+            if ((previous & H3_IO_TX_FIN) == 0u) {
+                sc->seen_io = NS_TRUE;
+                out |= H3_DISCARD_FIN;
+            }
         }
     }
 
@@ -5142,7 +5245,6 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
            (long long)dc->iter, (long long)sc->h3_sid, sc->resp_nvlen, rv == 0 ? "OK" : "ERROR");
 
     if (rv != 0) {
-        Ns_MutexUnlock(&sc->lock);
         SharedHdrsClear(&sc->sh);
         Ns_Log(Error, "[%lld] H3[%lld] nghttp3_conn_submit_response failed: %s",
                (long long)dc->iter, (long long)sc->h3_sid, nghttp3_strerror(rv));
@@ -5155,8 +5257,6 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
     ns_free(sc->resp_nv);
     sc->resp_nv = NULL;
     sc->resp_nvlen = 0;
-
-    Ns_MutexUnlock(&sc->lock);
 
     SharedHdrsClear(&sc->sh);
 
@@ -5369,7 +5469,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_maybe_finalize %s %s stream_conclude returns %d",
                (long long)dc->iter, (long long)sc->quic_sid, label, H3StreamKind_str(sc->kind), ok);
         if (ok == 1) {
-            sc->io_state |= H3_IO_TX_FIN;
+            H3_IO_SET(sc, H3_IO_TX_FIN);
 
         } else {
             int err = SSL_get_error(sc->ssl, ok);
@@ -5381,7 +5481,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
                 if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
                     ERR_GET_REASON(e) == SSL_R_PROTOCOL_IS_SHUTDOWN) {
                     /* peer already considers it closed - treat as FIN */
-                    sc->io_state |= H3_IO_TX_FIN;
+                    H3_IO_SET(sc, H3_IO_TX_FIN);
                     ERR_clear_error();
                 }
             }
@@ -5411,7 +5511,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
     if (need_w) {
         Ns_Log(Ns_LogQuicDebug,
                "[%lld] H3[%lld] h3_stream_maybe_finalize need W: closed_by_app %d io_state %.2x",
-               (long long)dc->iter, (long long)sc->quic_sid, snap.closed_by_app, sc->io_state);
+               (long long)dc->iter, (long long)sc->quic_sid, snap.closed_by_app, H3_IO_STATE(sc));
         PollsetEnableWrite(dc, sc->ssl, sc, "h3_stream_maybe_finalize: need W");
     } else if (sc->seen_io) {
         PollsetDisableWrite(dc, sc->ssl, sc, "h3_stream_maybe_finalize: idle");
@@ -5449,8 +5549,9 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
  *----------------------------------------------------------------------
  */
 static inline bool h3_stream_can_free(const StreamCtx *sc) {
-    return ((sc->io_state & (H3_IO_RX_FIN|H3_IO_TX_FIN)) == (H3_IO_RX_FIN|H3_IO_TX_FIN))
-        || (sc->io_state & H3_IO_RESET);
+    uint32_t io_state = H3_IO_STATE(sc);
+    return ((io_state & (H3_IO_RX_FIN|H3_IO_TX_FIN)) == (H3_IO_RX_FIN|H3_IO_TX_FIN))
+        || (io_state & H3_IO_RESET);
 }
 
 /*
@@ -6034,7 +6135,6 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
     reqPtr->avail   = 0;
     reqPtr->content = NULL;
     reqPtr->next    = NULL;
-    //sockPtr->keep   = NS_TRUE;    // not sure about this
 
     if (!has_body) {
         Ns_ReturnCode result;
@@ -6071,8 +6171,9 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
              * Ownership was retained by the driver. Undo the provisional claim
              * and keep the request ready for a later attempt.
              */
-            sc->io_state &= (uint8_t)~H3_IO_REQ_DISPATCHED;
-            sc->io_state |= H3_IO_REQ_READY;
+            H3_IO_CLEAR(sc, H3_IO_REQ_DISPATCHED);
+            H3_IO_SET(sc, H3_IO_REQ_READY);
+
             return 0;
         }
 
@@ -6186,7 +6287,7 @@ static int on_recv_data(nghttp3_conn *UNUSED(conn), int64_t stream_id,
     if (has_content_length && reqPtr->length >= reqPtr->contentLength) {
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_recv_data sets H3_IO_REQ_READY",
                (long long)cc->dc->iter, (long long)stream_id);
-        sc->io_state |= H3_IO_REQ_READY;
+        H3_IO_SET(sc, H3_IO_REQ_READY);
     }
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_recv_data received +%zu (total %ld/%ld) -> result %d",
@@ -6218,7 +6319,7 @@ static int on_end_stream(nghttp3_conn *UNUSED(conn), int64_t stream_id,
     assert(sc != NULL);
 
     /* Protocol-level end of the peer's send side */
-    sc->io_state |= H3_IO_RX_FIN;
+    H3_IO_SET(sc, H3_IO_RX_FIN | H3_IO_REQ_READY);
 
     /* Provide eof_seen as an HTTP-layer "request complete" hint */
     sc->eof_seen = NS_TRUE;
@@ -6226,7 +6327,6 @@ static int on_end_stream(nghttp3_conn *UNUSED(conn), int64_t stream_id,
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] on_end_stream sets H3_IO_REQ_READY",
            (long long)sc->cc->dc->iter, (long long)stream_id);
 
-    sc->io_state |= H3_IO_REQ_READY;
     return 0;
 }
 
@@ -6511,6 +6611,7 @@ static void StreamCtxInit(StreamCtx *sc) {
     sc->lock    = NULL;          /* borrowed later from pollset slot */
     sc->sh.lock = NULL;          /* borrowed later from pollset slot */
     Ns_AtomicUint32Init(&sc->hdrs_submitted, 0u);
+    Ns_AtomicUint32Init(&sc->io_state, 0u);
 }
 
 
@@ -6857,11 +6958,11 @@ static void StreamCtxRequireRxBuffer(StreamCtx *sc)
 static inline bool
 StreamCtxClaimDispatch(StreamCtx *sc)
 {
-    if ((sc->io_state & H3_IO_REQ_DISPATCHED) != 0) {
-        return NS_FALSE;                 /* already dispatched */
-    }
-    sc->io_state |= H3_IO_REQ_DISPATCHED;
-    return NS_TRUE;                      /* we claimed it now */
+    uint32_t previous;
+
+    previous = Ns_AtomicUint32FetchOrRelaxed(&sc->io_state, H3_IO_REQ_DISPATCHED);
+
+    return (previous & H3_IO_REQ_DISPATCHED) == 0u;
 }
 
 /*
@@ -6900,6 +7001,61 @@ StreamCtxDeliveryRefs(StreamCtx *sc)
 
     return refs;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StreamCtx I/O-state helpers --
+ *
+ *      Access and update the atomic StreamCtx I/O-state bitmask.
+ *      StreamCtxIoState() returns a snapshot, StreamCtxIoSet() and
+ *      StreamCtxIoClear() atomically set or clear selected flags, and
+ *      StreamCtxBothClosed() reports whether the stream was reset or
+ *      both its receive and transmit sides have finished.
+ *
+ *      These operations use relaxed ordering. They synchronize only the
+ *      flag word and do not publish or acquire unrelated stream state.
+ *
+ * Results:
+ *      StreamCtxIoState() returns the current flag snapshot.
+ *      StreamCtxBothClosed() returns NS_TRUE when the stream was reset
+ *      or both H3_IO_RX_FIN and H3_IO_TX_FIN are set.
+ *      The set and clear helpers return no value.
+ *
+ * Side effects:
+ *      StreamCtxIoSet() and StreamCtxIoClear() modify the I/O-state
+ *      flags atomically. The other helpers have no side effects.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline uint32_t
+StreamCtxIoState(const StreamCtx *sc)
+{
+    return Ns_AtomicUint32LoadRelaxed((Ns_AtomicUint32 *)&sc->io_state);
+}
+
+static inline void
+StreamCtxIoSet(StreamCtx *sc, uint32_t bits)
+{
+    (void)Ns_AtomicUint32FetchOrRelaxed(&sc->io_state, bits);
+}
+
+static inline void
+StreamCtxIoClear(StreamCtx *sc, uint32_t bits)
+{
+    (void)Ns_AtomicUint32FetchAndRelaxed(&sc->io_state, ~bits);
+}
+
+static inline bool
+StreamCtxBothClosed(const StreamCtx *sc)
+{
+    uint32_t state = StreamCtxIoState(sc);
+
+    return (state & H3_IO_RESET) != 0u
+        || (state & (H3_IO_RX_FIN | H3_IO_TX_FIN))
+           == (H3_IO_RX_FIN | H3_IO_TX_FIN);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -8169,13 +8325,14 @@ PollsetSweep(NsTLSConfig *dc)
         mask = PollsetGetEvents(dc, s, sc);
 
         {
-            const bool     rx_closed   = (sc->io_state & (H3_IO_RX_FIN | H3_IO_RESET)) != 0;
-            const bool     tx_closed   = (sc->io_state & (H3_IO_TX_FIN | H3_IO_RESET)) != 0;
-            const bool     reset       = H3_IO_HAS(sc, H3_IO_RESET);
-            const bool     both_closed = H3_IO_HAS(sc, H3_IO_RX_FIN) && H3_IO_HAS(sc, H3_IO_TX_FIN);
-            const bool     rx_empty    = sc->rx_len == sc->rx_off;
+            const uint32_t io_state = H3_IO_STATE(sc);
+            const bool rx_closed   = (io_state & (H3_IO_RX_FIN | H3_IO_RESET)) != 0u;
+            const bool tx_closed   = (io_state & (H3_IO_TX_FIN | H3_IO_RESET)) != 0u;
+            const bool reset       = (io_state & H3_IO_RESET) != 0u;
+            const bool both_closed = (io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN)) == (H3_IO_RX_FIN | H3_IO_TX_FIN);
             SharedSnapshot snap        = SharedSnapshotInit(&sc->sh);
             const bool     tx_empty    = snap.queued_bytes == 0u && snap.pending_bytes == 0u;
+            const bool     rx_empty    = sc->rx_len == sc->rx_off;
 
             /*
              * If peer finished our read side (or stream was reset), and we
@@ -8596,7 +8753,7 @@ SockDispatchFinishedRequest(StreamCtx *sc)
     Sock          *sockPtr = (Sock *)sc->nsSock;
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] SockDispatchFinishedRequest %.2x",
-           (long long)sc->cc->dc->iter, (long long)sc->quic_sid, sc->io_state);
+           (long long)sc->cc->dc->iter, (long long)sc->quic_sid, StreamCtxIoState(sc));
 
 
     /*
@@ -8630,12 +8787,13 @@ SockDispatchFinishedRequest(StreamCtx *sc)
              * Ownership was not transferred. Undo the provisional
              * dispatch claim so PollsetSweep() can retry.
              */
-            sc->io_state &= (uint8_t)~H3_IO_REQ_DISPATCHED;
+            H3_IO_CLEAR(sc, H3_IO_REQ_DISPATCHED);
+
             Ns_Log(Ns_LogQuicDebug,
                    "H3[%lld] SockDispatchFinishedRequest NS_TIMEOUT:"
                    " state %.2x sock %p",
                    (long long)sc->quic_sid,
-                   sc->io_state,
+                   StreamCtxIoState(sc),
                    (void *)sc->nsSock);
 
         } else if (result == NS_ERROR) {
@@ -8920,7 +9078,7 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
                    (long long)sc->quic_sid,
                    H3StreamKind_str(sc->kind),
                    item->events, item->revents,
-                   sc->io_state,
+                   StreamCtxIoState(sc),
                    sc->rx_off, sc->rx_len,
                    sc->rx_fin_pending,
                    sc->eof_seen,
@@ -9162,7 +9320,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
                (long long)dc->iter,
                i, (void *)ssl, (long long)sc->quic_sid,
                item->events, item->revents,
-               sc->io_state, stream_wants_write,
+               StreamCtxIoState(sc), stream_wants_write,
                snap.queued_bytes, snap.pending_bytes,
                snap.closed_by_app,
                delivery_refs,
