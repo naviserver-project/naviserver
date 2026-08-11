@@ -258,6 +258,7 @@ void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid) {
     memset(ss, 0, sizeof(*ss));
 
     Ns_AtomicUint32Init(&ss->hdrs_ready, 0u);
+    Ns_AtomicUint32Init(&ss->resume_enqueued, 0u);
     ss->st       = owner;
     ss->sid_hint = sid;
     /* queues and mutexes already zeroed */
@@ -738,50 +739,40 @@ resume_push_unlocked(SharedState *st, int64_t sid)
  *
  *----------------------------------------------------------------------
  */
-void SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid) {
-    int    need_wake = 0;
-#ifdef SHARED_DEBUG
-    int    was_enqueued;
-    size_t count_before;
-    size_t count_after;
-#endif
+void
+SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid)
+{
+    bool need_wake = NS_FALSE;
+
+    /*
+     * Claim the per-stream resume notification. If it was already set,
+     * an entry is pending or currently being consumed, so this request
+     * is coalesced with that processing pass.
+     */
+    if (Ns_AtomicUint32ExchangeRelaxed(&ss->resume_enqueued, 1u) != 0u) {
+        return;
+    }
 
     Ns_MutexLock(&st->lock);
 
-#ifdef SHARED_DEBUG
-    was_enqueued = ss->resume_enqueued;
-    count_before = st->count;
-#endif
-
-    if (!ss->resume_enqueued) {
+    {
         const bool was_empty = (st->count == 0u);
 
         if (resume_push_unlocked(st, sid)) {
-            ss->resume_enqueued = 1;
             need_wake = was_empty;
-            /* edge: ring was empty before push */
+        } else {
+            /*
+             * No ring entry was created. Release the claim so a later
+             * request can try again.
+             */
+            Ns_AtomicUint32StoreRelaxed(&ss->resume_enqueued, 0u);
         }
     }
 
-#ifdef SHARED_DEBUG
-    count_after = st->count;
-#endif
-
     Ns_MutexUnlock(&st->lock);
 
-#ifdef SHARED_DEBUG
-    Ns_Log(Notice,
-           "H3 resume request sid=%lld"
-           " was_enqueued=%d count=%zu->%zu need_wake=%d",
-           (long long)sid,
-           was_enqueued,
-           count_before,
-           count_after,
-           need_wake);
-#endif
-
     if (need_wake && st->wake_cb != NULL) {
-        st->wake_cb(st->wake_arg); /* wake QUIC thread */
+        st->wake_cb(st->wake_arg);
     }
 }
 
@@ -823,26 +814,27 @@ int SharedPopResume(SharedState *st, int64_t *out_sid) {
  *
  * SharedResumeClear --
  *
- *      Clear the per-stream resume_enqueued flag so the stream can be
+ *      Clear the per-stream resume-enqueued flag so the stream can be
  *      placed on the resume ring again after its current entry has been
  *      consumed.
+ *
+ *      The flag is cleared before processing the consumed resume entry.
+ *      A concurrent producer either observes the previous set value and
+ *      coalesces its request with the current processing pass, or observes
+ *      zero and enqueues a new resume entry.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Acquires the owning SharedState lock and sets
- *      ss->resume_enqueued to zero. The same lock protects testing and
- *      setting this flag in SharedRequestResume().
+ *      Atomically sets ss->resume_enqueued to zero using relaxed ordering.
+ *      On platforms using the atomic fallback implementation, temporarily
+ *      acquires the atomic object's internal mutex.
  *
  *----------------------------------------------------------------------
  */
 void SharedResumeClear(SharedStream *ss) {
-    SharedState *st = ss->st;
-
-    Ns_MutexLock(&st->lock);
-    ss->resume_enqueued = 0;
-    Ns_MutexUnlock(&st->lock);
+    Ns_AtomicUint32StoreRelaxed(&ss->resume_enqueued, 0u);
 }
 
 /*
