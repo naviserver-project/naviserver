@@ -87,7 +87,7 @@ typedef struct SharedStream {
     Ns_AtomicUint32 hdrs_ready;
 
     /* Resume bookkeeping */
-    int         resume_enqueued;
+    Ns_AtomicUint32 resume_enqueued;
     SharedState *st;           /* owner shared state */
     int64_t     sid_hint;      /* optional debug aid */
 } SharedStream;
