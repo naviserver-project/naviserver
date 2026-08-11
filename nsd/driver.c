@@ -5407,18 +5407,34 @@ SockTrigger(NS_SOCKET sock)
 static void
 SockClose(Sock *sockPtr, int keep)
 {
+    bool finalKeep = NS_FALSE, isQuic;
+
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
+    isQuic = (sockPtr->drvPtr->opts & NS_DRIVER_QUIC) != 0u;
+
     if (keep != 0) {
-        bool driverKeep = DriverKeep(sockPtr);
-        keep = (int)driverKeep;
+        finalKeep = DriverKeep(sockPtr);
     }
-    if (keep == (int)NS_FALSE) {
+
+    if (isQuic && unlikely(finalKeep)) {
+        Ns_Log(Error,
+               "driver %s: QUIC keepProc returned true; ignoring result",
+               sockPtr->drvPtr->threadName);
+        finalKeep = NS_FALSE;
+    }
+
+    if (!finalKeep) {
         DriverClose(sockPtr);
     }
-    Ns_MutexLock(&sockPtr->drvPtr->lock);
-    sockPtr->keep = (bool)keep;
-    Ns_MutexUnlock(&sockPtr->drvPtr->lock);
+
+    if (isQuic) {
+        sockPtr->keep = NS_FALSE;
+    } else {
+        Ns_MutexLock(&sockPtr->drvPtr->lock);
+        sockPtr->keep = finalKeep;
+        Ns_MutexUnlock(&sockPtr->drvPtr->lock);
+    }
 
     /*
      * Unconditionally remove temporary file, connection thread
