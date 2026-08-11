@@ -276,6 +276,110 @@ Ns_AtomicUint32FetchAndRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32LoadAcquire --
+ *
+ *      Atomically read the current value of the specified atomic
+ *      integer with acquire memory-ordering semantics.
+ *
+ *      When this operation observes a value written by a release store
+ *      on the same object, all memory accesses preceding that release
+ *      become visible to the calling thread. This operation is therefore
+ *      suitable for consuming state published through an atomic flag.
+ *
+ *      The object must have been initialized with
+ *      Ns_AtomicUint32Init() before this function is called.
+ *
+ * Results:
+ *      Returns the current value of the atomic integer.
+ *
+ * Side effects:
+ *      None for native atomic implementations. On platforms without
+ *      native atomic operations, temporarily acquires the fallback
+ *      mutex associated with the object.
+ *
+ *----------------------------------------------------------------------
+ */
+uint32_t
+Ns_AtomicUint32LoadAcquire(Ns_AtomicUint32 *atomicPtr)
+{
+#if defined(_MSC_VER)
+    /*
+     * InterlockedCompareExchange provides ordering stronger than the
+     * acquire semantics required by this interface.
+     */
+    return (uint32_t)InterlockedCompareExchange(&atomicPtr->value, 0, 0);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_load_n(&atomicPtr->value, __ATOMIC_ACQUIRE);
+
+#else
+    uint32_t value;
+
+    /*
+     * Lock acquisition and release provide ordering stronger than a
+     * native acquire load.
+     */
+    Ns_MutexLock(&atomicPtr->lock);
+    value = atomicPtr->value;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return value;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32StoreRelease --
+ *
+ *      Atomically store the specified value in the atomic integer with
+ *      release memory-ordering semantics.
+ *
+ *      All memory accesses preceding this operation become visible to
+ *      a thread that subsequently observes the stored value through an
+ *      acquire operation on the same object. This operation is therefore
+ *      suitable for publishing associated shared state through an atomic
+ *      flag.
+ *
+ *      The object must have been initialized with
+ *      Ns_AtomicUint32Init() before this function is called.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Replaces the value stored in atomicPtr. On platforms without
+ *      native atomic operations, temporarily acquires the fallback
+ *      mutex associated with the object.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_AtomicUint32StoreRelease(Ns_AtomicUint32 *atomicPtr, uint32_t value)
+{
+#if defined(_MSC_VER)
+    /*
+     * InterlockedExchange provides ordering stronger than the release
+     * semantics required by this interface.
+     */
+    (void)InterlockedExchange(&atomicPtr->value, (LONG)value);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    __atomic_store_n(&atomicPtr->value, value, __ATOMIC_RELEASE);
+
+#else
+    /*
+     * The mutex provides ordering stronger than a native release store.
+     */
+    Ns_MutexLock(&atomicPtr->lock);
+    atomicPtr->value = value;
+    Ns_MutexUnlock(&atomicPtr->lock);
+#endif
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
