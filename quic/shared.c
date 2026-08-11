@@ -131,7 +131,7 @@ resume_grow(SharedState *st)
 
     if (st->count > 0u) {
         assert(st->count == oldcap);
-        if (st->head != 0u) {            
+        if (st->head != 0u) {
             /*
              * A full wrapped ring has tail == head. Move both portions
              * to the upper half of the enlarged allocation, preserving
@@ -256,6 +256,8 @@ void SharedStateDestroy(SharedState *st) {
  */
 void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid) {
     memset(ss, 0, sizeof(*ss));
+
+    Ns_AtomicUint32Init(&ss->hdrs_ready, 0u);
     ss->st       = owner;
     ss->sid_hint = sid;
     /* queues and mutexes already zeroed */
@@ -290,63 +292,90 @@ void SharedStreamDestroy(SharedStream *ss) {
 
 /*
  *----------------------------------------------------------------------
+ *
  * SharedHdrsIsReady --
  *
- *      Thread-safe read of ss->hdrs_ready.
+ *      Test whether completed response-header fields have been published
+ *      for consumption by the QUIC thread.
+ *
+ *      When the acquire load observes the value stored by
+ *      SharedHdrsSetReady(), the associated response-header fields written
+ *      before that release store are visible to the calling thread.
  *
  * Results:
  *      Nonzero if headers are ready; 0 otherwise.
  *
  * Side effects:
- *      Temporarily acquires ss->lock.
+ *      None for native atomic implementations. On platforms using the
+ *      atomic fallback implementation, temporarily acquires the atomic
+ *      object's internal mutex.
+ *
  *----------------------------------------------------------------------
  */
 int  SharedHdrsIsReady(SharedStream *ss) {
-    int v;
-    Ns_MutexLock(&ss->lock);
-    v = ss->hdrs_ready;
-    Ns_MutexUnlock(&ss->lock);
-    return v;
+    /*
+     * Acquire the response-header fields published by
+     * SharedHdrsSetReady().
+     */
+    return Ns_AtomicUint32LoadAcquire(&ss->hdrs_ready) != 0u;
 }
 
 /*
  *----------------------------------------------------------------------
+ *
  * SharedHdrsSetReady --
  *
- *      Mark headers as ready in a thread-safe manner.
+ *      Publish the completed response-header fields and mark them ready
+ *      for consumption by the QUIC thread.
+ *
+ *      The release store ensures that writes performed by the producer
+ *      before this call become visible to a consumer that observes the
+ *      flag through SharedHdrsIsReady().
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Acquires ss->lock and sets ss->hdrs_ready = 1. Idempotent; no
- *      allocations or logging.
+ *      Atomically sets ss->hdrs_ready to 1 with release ordering. On
+ *      platforms using the atomic fallback implementation, temporarily
+ *      acquires the atomic object's internal mutex. Idempotent; performs
+ *      no I/O or allocation.
+ *
  *----------------------------------------------------------------------
  */
 void SharedHdrsSetReady(SharedStream *ss) {
-    Ns_MutexLock(&ss->lock);
-    ss->hdrs_ready = 1;
-    Ns_MutexUnlock(&ss->lock);
+    /*
+     * Publish the completed response-header fields to the QUIC thread.
+     */
+    Ns_AtomicUint32StoreRelease(&ss->hdrs_ready, 1u);
 }
 
 /*
  *----------------------------------------------------------------------
+ *
  * SharedHdrsClear --
  *
- *      Clear the header-ready flag in a thread-safe manner.
+ *      Clear the atomic header-readiness flag after the staged response
+ *      headers have been consumed or discarded.
+ *
+ *      Relaxed ordering is sufficient because clearing the flag does not
+ *      publish associated shared state.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Acquires ss->lock and sets ss->hdrs_ready = 0. Idempotent; no I/O
- *      or allocations.
+ *      Atomically sets ss->hdrs_ready to 0. On platforms using the atomic
+ *      fallback implementation, temporarily acquires the atomic object's
+ *      internal mutex. Idempotent; performs no I/O or allocation.
+ *
  *----------------------------------------------------------------------
  */
 void SharedHdrsClear(SharedStream *ss) {
-    Ns_MutexLock(&ss->lock);
-    ss->hdrs_ready = 0;
-    Ns_MutexUnlock(&ss->lock);
+    /*
+     * Clearing the notification does not publish associated data.
+     */
+    Ns_AtomicUint32StoreRelaxed(&ss->hdrs_ready, 0u);
 }
 
 /*======================================================================
