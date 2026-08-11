@@ -30,6 +30,8 @@ NS_EXTERN void     Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint3
 NS_EXTERN uint32_t Ns_AtomicUint32LoadRelaxed(Ns_AtomicUint32 *atomicPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN uint32_t Ns_AtomicUint32FetchOrRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
 NS_EXTERN uint32_t Ns_AtomicUint32FetchAndRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32LoadAcquire(Ns_AtomicUint32 *atomicPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void     Ns_AtomicUint32StoreRelease(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
 
 #endif /* NSATOMIC_H */
 
