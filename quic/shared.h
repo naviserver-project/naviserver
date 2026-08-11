@@ -79,8 +79,12 @@ typedef struct SharedStream {
     ChunkQueue  tx_pending;    /* consumer snapshots from queued -> pending */
     int         closed_by_app; /* producer finished; EOF once pending drains */
 
-    /* Cross-thread header readiness bit (header array stays in sc) */
-    int         hdrs_ready;    /* producer set, consumer clears */
+    /*
+     * Cross-thread header publication flag. The producer release-stores
+     * readiness after completing the response-header fields; the QUIC
+     * thread acquire-loads it before accessing those fields.
+     */
+    Ns_AtomicUint32 hdrs_ready;
 
     /* Resume bookkeeping */
     int         resume_enqueued;
