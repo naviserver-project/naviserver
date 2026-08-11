@@ -5157,6 +5157,8 @@ h1_headersEncodeProc(Ns_Sock *sock,
         return NS_FALSE;
     }
 
+    assert(merged != NULL);
+
     /* Status line */
     Ns_DStringPrintf(dsPtr, "HTTP/%.1f %d %s\r\n",
                      httpVersion,
@@ -5170,30 +5172,27 @@ h1_headersEncodeProc(Ns_Sock *sock,
         Ns_Log(Debug, "quic: added <Alt-Svc: h3=\":%hu\"; ma=86400; persist=1>", drvPtr->port);
     }
 
-    /* Emit merged headers, sanitized */
-    if (merged != NULL) {
-        for (size_t i = 0u; i < Ns_SetSize(merged); ++i) {
-            const char *key   = Ns_SetKey(merged, i);
-            const char *value = Ns_SetValue(merged, i);
-            if (key != NULL && value != NULL) {
-                const char *lineBreak = strchr(value, INTCHAR('\n'));
+    for (size_t i = 0u; i < Ns_SetSize(merged); ++i) {
+        const char *key   = Ns_SetKey(merged, i);
+        const char *value = Ns_SetValue(merged, i);
+        if (key != NULL && value != NULL) {
+            const char *lineBreak = strchr(value, INTCHAR('\n'));
 
-                if (lineBreak == NULL) {
-                    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NS_SENTINEL);
-                } else {
-                    Tcl_DString sanitize;
-                    /*
-                     * We have to sanititize the header field to avoid
-                     * an HTTP response splitting attack. After each
-                     * newline in the value, we insert a TAB character
-                     * (see Section 4.2 in RFC 2616)
-                     */
-                    Tcl_DStringInit(&sanitize);
-                    HdrSanitizeValue(value, &sanitize);
-                    Ns_DStringVarAppend(dsPtr, key, ": ",
-                                        Tcl_DStringValue(&sanitize), "\r\n", NS_SENTINEL);
-                    Tcl_DStringFree(&sanitize);
-                }
+            if (lineBreak == NULL) {
+                Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NS_SENTINEL);
+            } else {
+                Tcl_DString sanitize;
+                /*
+                 * We have to sanititize the header field to avoid
+                 * an HTTP response splitting attack. After each
+                 * newline in the value, we insert a TAB character
+                 * (see Section 4.2 in RFC 2616)
+                 */
+                Tcl_DStringInit(&sanitize);
+                HdrSanitizeValue(value, &sanitize);
+                Ns_DStringVarAppend(dsPtr, key, ": ",
+                                    Tcl_DStringValue(&sanitize), "\r\n", NS_SENTINEL);
+                Tcl_DStringFree(&sanitize);
             }
         }
     }
