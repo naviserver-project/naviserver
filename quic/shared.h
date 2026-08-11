@@ -15,7 +15,7 @@
 #ifndef H3_SHARED_H
 # define H3_SHARED_H
 
-#include "../nsd/nsatomic.h"
+# include "../nsd/nsatomic.h"
 
 /* Shared, lock-safe primitives for H3 stream body submission and resume signaling.
  *
@@ -42,122 +42,135 @@
 extern "C" {
 # endif
 
-/* Optional wake callback: called (unlocked) after enqueue/resume push. */
-typedef void (*SharedWakeFn)(void *arg);
-/* ===== Shared state (per-connection) ======================================= */
+    /* Optional wake callback: called (unlocked) after enqueue/resume push. */
+    typedef void (*SharedWakeFn)(void *arg);
+    /* ===== Shared state (per-connection) ======================================= */
 
-typedef struct SharedState {
-    Ns_Mutex     lock;
+    typedef struct SharedState {
+        Ns_Mutex     lock;
 
-    /* ring of stream IDs that need nghttp3_conn_resume_stream() */
-    int64_t     *resume;
-    size_t       cap;
-    size_t       head;
-    size_t       tail;
-    size_t       count;
+        /* ring of stream IDs that need nghttp3_conn_resume_stream() */
+        int64_t     *resume;
+        size_t       cap;
+        size_t       head;
+        size_t       tail;
+        size_t       count;
 
-    SharedWakeFn wake_cb;   /* e.g., h3_wake */
-    void        *wake_arg;  /* e.g., dc */
-} SharedState;
+        SharedWakeFn wake_cb;   /* e.g., h3_wake */
+        void        *wake_arg;  /* e.g., dc */
+    } SharedState;
 
-/* ===== Shared snapshot (per-connection) ======================================= */
+    /* ===== Shared snapshot (per-connection) ======================================= */
 
-typedef struct {
-    size_t queued_bytes;   /* bytes still queued (not handed to reader) */
-    size_t pending_bytes;  /* bytes handed to reader but not yet trimmed */
-    bool   closed_by_app;  /* producer closed (final chunk queued/already consumed) */
-} SharedSnapshot; /* A consistent view of the producer buffers*/
-
-
-/* ===== Shared stream (per H3 request/response stream) ====================== */
-
-typedef struct SharedStream {
-    Ns_Mutex    lock;
-
-    /* Cross-thread body state */
-    ChunkQueue  tx_queued;     /* producer pushes here */
-    ChunkQueue  tx_pending;    /* consumer snapshots from queued -> pending */
-    int         closed_by_app; /* producer finished; EOF once pending drains */
-
-    /*
-     * Cross-thread header publication flag. The producer release-stores
-     * readiness after completing the response-header fields; the QUIC
-     * thread acquire-loads it before accessing those fields.
-     */
-    Ns_AtomicUint32 hdrs_ready;
-
-    /* Resume bookkeeping */
-    Ns_AtomicUint32 resume_enqueued;
-    SharedState *st;           /* owner shared state */
-    int64_t     sid_hint;      /* optional debug aid */
-} SharedStream;
+    typedef struct {
+        size_t queued_bytes;   /* bytes still queued (not handed to reader) */
+        size_t pending_bytes;  /* bytes handed to reader but not yet trimmed */
+        bool   closed_by_app;  /* producer closed (final chunk queued/already consumed) */
+    } SharedSnapshot; /* A consistent view of the producer buffers*/
 
 
-/* ===== SharedState and SharedStream lifecycle ============================= */
+    /* ===== Shared stream (per H3 request/response stream) ====================== */
 
-void SharedStateInit(SharedState *st, SharedWakeFn wake_cb, void *wake_arg);
-void SharedStateDestroy(SharedState *st);
+    typedef struct SharedStream {
+        Ns_Mutex    lock;
 
-void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid);
-void SharedStreamDestroy(SharedStream *ss);
+        /* Cross-thread body state */
+        ChunkQueue  tx_queued;     /* producer pushes here */
+        ChunkQueue  tx_pending;    /* consumer snapshots from queued -> pending */
+        int         closed_by_app; /* producer finished; EOF once pending drains */
 
-/* --- Headers (signal only; header arrays remain in sc) --- */
-int  SharedHdrsIsReady(SharedStream *ss);
-void SharedHdrsSetReady(SharedStream *ss);
-void SharedHdrsClear(SharedStream *ss);
+        /*
+         * Cross-thread header publication flag. The producer release-stores
+         * readiness after completing the response-header fields; the QUIC
+         * thread acquire-loads it before accessing those fields.
+         */
+        Ns_AtomicUint32 hdrs_ready;
 
-/* --- Body enqueue/EOF from producer side --- */
-size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const char *label);
-void   SharedMarkClosedByApp(SharedStream *ss);
-
-/* --- Body helpers used by data_reader / writer --- */
-int    SharedTxReadable(SharedStream *ss);                 /* queued.unread > 0 */
-size_t SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes);
-size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain);
-size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len);
-size_t SharedPendingUnreadBytes(SharedStream *ss);
-size_t SharedQueuedUnreadBytes(SharedStream *ss);
-size_t SharedBuildVecsFromPending(SharedStream *ss, nghttp3_vec *vecs, size_t veccnt);
-
-/* --- Connection-level resume ring --- */
-void   SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid);
-int    SharedPopResume(SharedState *st, int64_t *out_sid);
-void   SharedResumeClear(SharedStream *ss);
-size_t SharedDrainResume(SharedState *st, int64_t *out, size_t cap)  NS_GNUC_NONNULL(1);
+        /* Resume bookkeeping */
+        Ns_AtomicUint32 resume_enqueued;
+        SharedState *st;           /* owner shared state */
+        int64_t     sid_hint;      /* optional debug aid */
+    } SharedStream;
 
 
-/* Fills out with a consistent snapshot. Takes the internal Shared lock. */
-void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out) NS_GNUC_NONNULL(1,2);
-static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss) NS_GNUC_NONNULL(1);
+    /* ===== SharedState and SharedStream lifecycle ============================= */
 
-/* Tiny helpers (header-only / static inline) */
-static inline bool SharedHasData(const SharedSnapshot *s) {
-    return (s->queued_bytes + s->pending_bytes) > 0;
+    void SharedStateInit(SharedState *st, SharedWakeFn wake_cb, void *wake_arg);
+    void SharedStateDestroy(SharedState *st);
+
+    void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid);
+    void SharedStreamDestroy(SharedStream *ss);
+
+    /* --- Headers (signal only; header arrays remain in sc) --- */
+    int  SharedHdrsIsReady(SharedStream *ss);
+    void SharedHdrsSetReady(SharedStream *ss);
+    void SharedHdrsClear(SharedStream *ss);
+
+    /* --- Body enqueue/EOF from producer side --- */
+    size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const char *label);
+    void   SharedMarkClosedByApp(SharedStream *ss);
+
+    /* --- Body helpers used by data_reader / writer --- */
+    int    SharedTxReadable(SharedStream *ss);                 /* queued.unread > 0 */
+    size_t SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes);
+    size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain);
+    size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len);
+    size_t SharedPendingUnreadBytes(SharedStream *ss);
+    size_t SharedQueuedUnreadBytes(SharedStream *ss);
+    size_t SharedBuildVecsFromPending(SharedStream *ss, nghttp3_vec *vecs, size_t veccnt);
+
+    /* --- Connection-level resume ring --- */
+    void   SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid);
+    int    SharedPopResume(SharedState *st, int64_t *out_sid);
+    void   SharedResumeClear(SharedStream *ss);
+    size_t SharedDrainResume(SharedState *st, int64_t *out, size_t cap)  NS_GNUC_NONNULL(1);
+
+
+    /* Fills out with a consistent snapshot. Takes the internal Shared lock. */
+    void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out) NS_GNUC_NONNULL(1,2);
+    static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss) NS_GNUC_NONNULL(1);
+
+    /* Tiny helpers (header-only / static inline) */
+    static inline bool SharedHasData(const SharedSnapshot *s) {
+        return (s->queued_bytes + s->pending_bytes) > 0;
+    }
+    static inline bool SharedIsEmpty(const SharedSnapshot *s) {
+        return (s->queued_bytes + s->pending_bytes) == 0;
+    }
+    static inline bool SharedCanMove(const SharedSnapshot *s) {
+        return s->pending_bytes == 0 && s->queued_bytes > 0;
+    }
+
+    static inline bool SharedEOFReady(const SharedSnapshot *s) {
+        /* nothing left AND app has closed */
+        return s->closed_by_app && SharedIsEmpty(s);
+    }
+
+    static inline bool SharedHasResumePending(SharedState *st) {
+        bool has;
+        Ns_MutexLock(&st->lock);
+        has = (st->count > 0);
+        Ns_MutexUnlock(&st->lock);
+        return has;
+    }
+
+    static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss)  {
+        SharedSnapshot snap;
+        SharedSnapshotRead(ss, &snap);
+        return snap;
+    }
+
+# ifdef __cplusplus
 }
-static inline bool SharedIsEmpty(const SharedSnapshot *s) {
-    return (s->queued_bytes + s->pending_bytes) == 0;
-}
-static inline bool SharedCanMove(const SharedSnapshot *s) {
-    return s->pending_bytes == 0 && s->queued_bytes > 0;
-}
-
-static inline bool SharedEOFReady(const SharedSnapshot *s) {
-    /* nothing left AND app has closed */
-    return s->closed_by_app && SharedIsEmpty(s);
-}
-
-static inline bool SharedHasResumePending(SharedState *st) {
-    bool has;
-    Ns_MutexLock(&st->lock);
-    has = (st->count > 0);
-    Ns_MutexUnlock(&st->lock);
-    return has;
-}
-
-static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss)  {
-  SharedSnapshot snap;
-  SharedSnapshotRead(ss, &snap);
-  return snap;
-}
+# endif
 
 #endif /* H3_SHARED_H */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
