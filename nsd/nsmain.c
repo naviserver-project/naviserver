@@ -266,8 +266,12 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         printf("   Tag:             %s\n", Ns_InfoTag());
         printf("   Version:         %d\n", NS_VERSION_NUM);
         printf("   Built:           %s\n", nsBuildDate);
-        printf("   Tcl version:     %s\n", TCL_PATCH_LEVEL);
         printf("   Platform:        %s\n", Ns_InfoPlatform());
+        printf("   Tcl version:     %s\n", TCL_PATCH_LEVEL);
+#ifdef HAVE_OPENSSL_EVP_H
+        printf("   OpenSSL headers: %s\n", OPENSSL_VERSION_TEXT);
+        printf("   OpenSSL library: %s\n", OpenSSL_version(OPENSSL_VERSION));
+#endif
         return 0;
     }
 
