@@ -3446,6 +3446,20 @@ h3_conn_write_step(ConnCtx *cc)
                     return NS_TRUE;
                 }
 
+                if (unlikely(written == 0u && remaining > 0u)) {
+                    /*
+                     * SSL_write_ex2() reported success without accepting application
+                     * data. Avoid an immediate no-progress retry.
+                     */
+                    Ns_Log(Warning,
+                           "[%lld] H3[%lld] SSL_write_ex2 succeeded without progress; "
+                           "parking stream",
+                           (long long)dc->iter, (long long)sid);
+
+                    hit_want = NS_TRUE;
+                    goto after_sid;
+                }
+
                 /*
                  * Chunk written successfully.
                  */
