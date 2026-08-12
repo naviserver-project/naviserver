@@ -532,8 +532,8 @@ DStringAppendX509Name(Tcl_DString *dsPtr, const X509_NAME *name)
 static int
 ASN1StringLength(const ASN1_STRING *asnString)
 {
-#ifdef HAVE_OPENSSL_4_1
-    size_t length = ASN1_STRING_length_ex(asnString);
+#if defined(HAVE_OPENSSL_4_1)
+    size_t length = ASN1_STRING_get_length(asnString);
 
     return (length > INT_MAX) ? -1 : (int)length;
 #else
