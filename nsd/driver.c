@@ -1661,8 +1661,17 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     if (wrPtr->threads > 0) {
         wrPtr->writersize = (size_t)Ns_ConfigMemUnitRange(section, "writersize", "1MB",
                                                           (Tcl_WideInt)1024*1024, 1024, INT_MAX);
-        wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(section, "writerbufsize", "8kB",
-                                                       (Tcl_WideInt)8192, 512, INT_MAX);
+        if (init->opts & NS_DRIVER_QUIC) {
+            /*
+             * Larger writer chunks allow OpenSSL to batch substantially more
+             * QUIC datagrams into each sendmmsg() call on supporting platforms.
+             */
+            wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(section, "writerbufsize", "32kB",
+                                                           (Tcl_WideInt)32768, 512, INT_MAX);
+        } else {
+            wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(section, "writerbufsize", "8kB",
+                                                           (Tcl_WideInt)8192, 512, INT_MAX);
+        }
         wrPtr->rateLimit = Ns_ConfigIntRange(section, "writerratelimit", 0, 0, INT_MAX);
         wrPtr->doStream = Ns_ConfigBool(section, "writerstreaming", NS_FALSE)
             ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE;
