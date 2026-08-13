@@ -4906,39 +4906,32 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
         size_t out;
         size_t offered = 0u;
         size_t i;
-        SharedSnapshot  snap;
 
-        /*
-         * Build vectors from pending without consuming them. The buffers
-         * remain owned by SharedStream until nghttp3 advances the stream.
-         */
-        out = SharedBuildVecsFromPending(ss, vecs, veccnt);
+       out = SharedBuildVecsFromPending(ss, vecs, veccnt);
 
         for (i = 0u; i < out; i++) {
             offered += vecs[i].len;
         }
 
         /*
-         * Refresh producer-owned queued/closed state before deciding whether
-         * these vectors carry the final body data. A producer notification may
-         * have been coalesced with the current resume pass.
+         * Refresh producer-owned state before deciding whether these vectors
+         * carry the final body data. A producer notification may have been
+         * coalesced with the current resume pass.
+         *
+         * The acquire load observes queued and closed transitions published
+         * through release-ordered tx_state updates. Thread affinity protects
+         * the direct read of tx_pending.
          */
-        SharedSnapshotRead(ss, &snap);
+        status = SharedTxStatusRead(ss);
 
         /*
-         * Report EOF together with the final body vectors when the producer
-         * has closed, no additional queued data remains, and this callback
-         * has exposed every unread pending byte. This lets nghttp3 report
-         * FIN with the final payload write instead of requiring a later
-         * zero-vector FIN pass.
-         *
          * The offered-byte test is important when veccnt is too small to
          * represent all pending chunks.
          */
         if (out > 0u
-            && snap.closed_by_app
-            && snap.queued_bytes == 0u
-            && offered == snap.pending_bytes) {
+            && status.closed_by_app
+            && !status.queued
+            && offered == status.pending_bytes) {
             *flags = NGHTTP3_DATA_FLAG_EOF;
         } else {
             *flags = 0;
@@ -4947,13 +4940,14 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
         Ns_Log(Ns_LogQuicDebug,
                "[%lld] H3[%lld] h3_stream_read_data_cb:"
                " returning %zu vecs, %zu bytes"
-               " (queued %zu pending %zu closed_by_app %d EOF %d)",
+               " (queued %d pending %" PRIuz " closed_by_app %d EOF %d)",
                (long long)cc->dc->iter,
                (long long)stream_id,
-               out, offered,
-               snap.queued_bytes,
-               snap.pending_bytes,
-               snap.closed_by_app,
+               out,
+               offered,
+               status.queued,
+               status.pending_bytes,
+               status.closed_by_app,
                (*flags & NGHTTP3_DATA_FLAG_EOF) != 0u);
 
         sc->tx_served_this_step = NS_TRUE;
