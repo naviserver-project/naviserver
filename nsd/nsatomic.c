@@ -380,6 +380,106 @@ Ns_AtomicUint32StoreRelease(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32FetchOrRelease --
+ *
+ *      Atomically replace the current value with the bitwise OR of the
+ *      current value and the specified mask, returning the previous value.
+ *
+ *      The operation has release memory-ordering semantics. All memory
+ *      accesses preceding this operation become visible to a thread that
+ *      subsequently observes the updated value through an acquire operation
+ *      on the same atomic object.
+ *
+ *      Some platform implementations, such as MSVC interlocked operations
+ *      or the mutex fallback, may provide stronger ordering than required
+ *      by this interface.
+ *
+ * Results:
+ *      Returns the value held by atomicPtr immediately before the bitwise
+ *      OR operation.
+ *
+ * Side effects:
+ *      Updates the atomic integer. On platforms without native atomic
+ *      operations, temporarily acquires the object's fallback mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+uint32_t
+Ns_AtomicUint32FetchOrRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
+{
+#if defined(_MSC_VER)
+    return (uint32_t)InterlockedOr(&atomicPtr->value, (LONG)mask);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_fetch_or(&atomicPtr->value,
+                             mask,
+                             __ATOMIC_RELEASE);
+
+#else
+    uint32_t previous;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    previous = atomicPtr->value;
+    atomicPtr->value |= mask;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return previous;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32FetchAndRelease --
+ *
+ *      Atomically replace the current value with the bitwise AND of the
+ *      current value and the specified mask, returning the previous value.
+ *
+ *      The operation has release memory-ordering semantics. All memory
+ *      accesses preceding this operation become visible to a thread that
+ *      subsequently observes the updated value through an acquire operation
+ *      on the same atomic object.
+ *
+ *      Some platform implementations, such as MSVC interlocked operations
+ *      or the mutex fallback, may provide stronger ordering than required
+ *      by this interface.
+ *
+ * Results:
+ *      Returns the value held by atomicPtr immediately before the bitwise
+ *      AND operation.
+ *
+ * Side effects:
+ *      Updates the atomic integer. On platforms without native atomic
+ *      operations, temporarily acquires the object's fallback mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+uint32_t
+Ns_AtomicUint32FetchAndRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
+{
+#if defined(_MSC_VER)
+    return (uint32_t)InterlockedAnd(&atomicPtr->value, (LONG)mask);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_fetch_and(&atomicPtr->value,
+                              mask,
+                              __ATOMIC_RELEASE);
+
+#else
+    uint32_t previous;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    previous = atomicPtr->value;
+    atomicPtr->value &= mask;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return previous;
+#endif
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
