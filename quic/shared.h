@@ -70,6 +70,11 @@ extern "C" {
         bool   closed_by_app;  /* producer closed (final chunk queued/already consumed) */
     } SharedSnapshot; /* A consistent view of the producer buffers*/
 
+    typedef struct {
+        size_t pending_bytes;
+        bool   queued;
+        bool   closed_by_app;
+    } SharedTxStatus;
 
     /* ===== Shared stream (per H3 request/response stream) ====================== */
 
@@ -213,6 +218,22 @@ extern "C" {
         SharedSnapshot snap;
         SharedSnapshotRead(ss, &snap);
         return snap;
+    }
+
+    static inline SharedTxStatus
+    SharedTxStatusRead(SharedStream *ss)
+    {
+        const uint32_t state =
+            Ns_AtomicUint32LoadAcquire(&ss->tx_state);
+        SharedTxStatus status;
+
+        status.pending_bytes = ss->tx_pending.unread;
+        status.queued =
+            (state & SHARED_TX_QUEUED) != 0u;
+        status.closed_by_app =
+            (state & SHARED_TX_CLOSED) != 0u;
+
+        return status;
     }
 
 
