@@ -643,27 +643,47 @@ SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len)
 
 /*
  *----------------------------------------------------------------------
- * SharedPendingUnreadBytes / SharedQueuedUnreadBytes --
  *
- *      Thread-safe accessors for unread byte counters in the TX queues:
- *      'Pending' reports ss->tx_pending.unread; 'Queued' reports
- *      ss->tx_queued.unread.
+ * SharedPendingUnreadBytes --
+ *
+ *      Return the unread-byte count of the consumer-owned pending TX
+ *      queue.
+ *
+ *      The pending queue is owned exclusively by the H3/QUIC thread.
+ *      The caller must therefore execute with the owning connection's
+ *      thread affinity.
  *
  * Results:
- *      Returns the number of unread bytes for the respective queue.
+ *      Returns ss->tx_pending.unread.
  *
  * Side effects:
- *      Temporarily acquires ss->lock; no allocation or logging.
+ *      None. Does not acquire ss->lock, allocate memory, or trigger a
+ *      wake or resume request.
  *
  *----------------------------------------------------------------------
  */
 size_t SharedPendingUnreadBytes(SharedStream *ss) {
-    size_t n;
-    Ns_MutexLock(&ss->lock);
-    n = ss->tx_pending.unread;
-    Ns_MutexUnlock(&ss->lock);
-    return n;
+    return ss->tx_pending.unread;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SharedQueuedUnreadBytes --
+ *
+ *      Return the unread-byte count of the producer/consumer TX queue.
+ *      The producer may append chunks while the H3/QUIC thread transfers
+ *      them to the pending queue, so the count is read under ss->lock.
+ *
+ * Results:
+ *      Returns a synchronized snapshot of ss->tx_queued.unread.
+ *
+ * Side effects:
+ *      Temporarily acquires ss->lock. Does not modify either queue,
+ *      allocate memory, or trigger a wake or resume request.
+ *
+ *----------------------------------------------------------------------
+ */
 size_t SharedQueuedUnreadBytes(SharedStream *ss) {
     size_t n;
     Ns_MutexLock(&ss->lock);
