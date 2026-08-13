@@ -4738,45 +4738,63 @@ h3_stream_skip_write_and_trim(ConnCtx *cc, StreamCtx *sc,
  *
  * h3_stream_read_data_cb --
  *
- *      nghttp3 data source callback that supplies outbound data to be
- *      framed into HTTP/3 DATA frames for a specific stream. This function
- *      is invoked by nghttp3 when it is ready to send application data for
- *      a stream whose body is produced asynchronously by the server.
+ *      Supply outbound response-body data to nghttp3 for one HTTP/3
+ *      stream. nghttp3 invokes this callback when it is ready to frame
+ *      application data into HTTP/3 DATA frames.
  *
- *      The function inspects the stream's SharedStream queues to determine
- *      if data is available:
+ *      This callback executes on the owning H3/QUIC thread. tx_pending
+ *      is owned exclusively by that thread, while access to producer-owned
+ *      tx_queued and tx_state is synchronized through the SharedStream
+ *      interface.
  *
- *        - If EOF is already reached (no queued or pending bytes), it
- *          returns 0 with NGHTTP3_DATA_FLAG_EOF set.
- *        - If the stream has already been served during this write step
- *          (`tx_served_this_step`), it defers reuse by returning
- *          NGHTTP3_ERR_WOULDBLOCK.
- *        - If queued data is available but not yet pending, it moves bytes
- *          from the queued region into the pending buffer before building
- *          the output vecs.
- *        - When data is ready, it fills the provided nghttp3_vec array with
- *          read-only slices of the pending buffer and returns the count.
+ *      Processing follows these rules:
+ *
+ *        - When the producer has closed the body and both queues are empty,
+ *          return zero vectors with NGHTTP3_DATA_FLAG_EOF.
+ *
+ *        - When the stream has already supplied data during the current
+ *          write step, defer further delivery with NGHTTP3_ERR_WOULDBLOCK.
+ *
+ *        - When tx_pending is empty and tx_queued contains data, transfer
+ *          the queued chunks to the QUIC-thread-owned pending queue.
+ *
+ *        - Build nghttp3 vectors referencing the pending chunks without
+ *          consuming them. The chunks remain valid until nghttp3 reports
+ *          write progress and the QUIC thread trims tx_pending.
+ *
+ *        - Refresh producer-owned state before determining whether the
+ *          returned vectors contain the final body data. A concurrent
+ *          enqueue or close notification may have been coalesced with the
+ *          resume pass currently being processed.
+ *
+ *        - When the returned vectors expose all remaining body data and
+ *          the producer has closed the body, set NGHTTP3_DATA_FLAG_EOF so
+ *          nghttp3 can send the final payload and FIN together.
  *
  * Arguments:
- *      conn              - nghttp3 connection handle (unused here).
+ *      conn              - nghttp3 connection handle (unused).
  *      stream_id         - HTTP/3 stream ID for which data is requested.
- *      vecs              - Output array to describe readable buffers.
- *      veccnt            - Maximum number of entries in `vecs`.
- *      flags             - Output flags; may include NGHTTP3_DATA_FLAG_EOF.
- *      conn_user_data    - Pointer to ConnCtx (set when connection was created).
- *      stream_user_data  - Pointer to StreamCtx (per-stream state).
+ *      vecs              - Output array describing readable buffers.
+ *      veccnt            - Maximum number of entries in vecs.
+ *      flags             - Output flags, possibly including
+ *                          NGHTTP3_DATA_FLAG_EOF.
+ *      conn_user_data    - ConnCtx associated with the connection.
+ *      stream_user_data  - StreamCtx associated with the stream.
  *
  * Results:
  *      Returns:
- *          >0 : number of nghttp3_vec entries filled (data available)
- *           0 : no data, but NGHTTP3_DATA_FLAG_EOF may be set (stream FIN)
- *         NGHTTP3_ERR_WOULDBLOCK : no data this tick, retry later
- *         NGHTTP3_ERR_* : fatal or flow control error (not used here)
+ *
+ *          > 0                       number of vectors produced
+ *            0                       no vectors; EOF may be set
+ *          NGHTTP3_ERR_WOULDBLOCK    retry in a later write pass
+ *
+ *      No other nghttp3 error is currently returned by this callback.
  *
  * Side effects:
- *      - Moves data between shared queues via SharedSpliceQueuedToPending().
- *      - Marks the stream as `tx_served_this_step` to avoid redundant sends.
- *      - Emits detailed diagnostic logs about buffer state and data movement.
+ *      May transfer chunks from tx_queued to tx_pending, marks the stream
+ *      as served during the current write step, writes flags and vecs, and
+ *      emits diagnostic log messages. It does not consume pending data;
+ *      consumption occurs after nghttp3 reports write progress.
  *
  *----------------------------------------------------------------------
  */
@@ -4839,10 +4857,22 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
     /* Prime pending from queued if needed */
     if (SharedCanMove(&snap)) {
         size_t moved = SharedSpliceQueuedToPending(ss, SIZE_MAX);
-        if (moved > 0) {
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: moved %zu bytes queued -> pending",
-                   (long long)cc->dc->iter, (long long)stream_id, moved);
-            SharedSnapshotRead(&sc->sh, &snap);
+
+        if (moved > 0u) {
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3[%lld] h3_stream_read_data_cb:"
+                   " moved %zu bytes queued -> pending",
+                   (long long)cc->dc->iter,
+                   (long long)stream_id,
+                   moved);
+
+            /*
+             * SharedCanMove() established that pending was empty. With
+             * SIZE_MAX, the splice transfers all queued chunks present
+             * while holding ss->lock.
+             */
+            snap.queued_bytes  = 0u;
+            snap.pending_bytes = moved;
         }
     }
 
@@ -4870,6 +4900,11 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
             offered += vecs[i].len;
         }
 
+        /*
+         * Refresh producer-owned queued/closed state before deciding whether
+         * these vectors carry the final body data. A producer notification may
+         * have been coalesced with the current resume pass.
+         */
         SharedSnapshotRead(ss, &snap);
 
         /*
@@ -5253,10 +5288,6 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
             /* IMPORTANT: no "hard failure"/RESET here */
         }
     }
-
-    /* --- recompute snapshot after potential FIN attempt --- */
-    SharedSnapshotRead(&sc->sh, &snap);
-    has_tx = SharedHasData(&snap);
 
     /* --- final write-interest decision for this tick --- */
     want_w_prev     = sc->wants_write;  /* one-shot snapshot */
