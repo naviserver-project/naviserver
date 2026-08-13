@@ -3155,9 +3155,9 @@ h3_conn_write_step(ConnCtx *cc)
                          */
                         {
                             /* If RX is already finished and queues are empty, reap now. */
-                            SharedSnapshot snap = SharedSnapshotInit(&zsc->sh);
+                            SharedTxStatus status = SharedTxStatusRead(&zsc->sh);
                             bool rx_done = (io_state & H3_IO_RX_FIN) || zsc->eof_seen;
-                            bool tx_done = (io_state & H3_IO_TX_FIN) && SharedIsEmpty(&snap);
+                            bool tx_done = (io_state & H3_IO_TX_FIN) && SharedTxStatusIsEmpty(&status);
 
                             if (rx_done && tx_done) {
                                 PollsetMarkDead(cc, zsc->ssl, "finalize both-done");
