@@ -9663,7 +9663,7 @@ QuicThread(void *arg)
                     PollsetDisableWrite(dc, s, sc,
                                         "Event W, idle control/QPACK stream");
                 } else {
-                    SharedSnapshot snap;
+                    SharedTxStatus status;
 
                     /*
                      * W is level-triggered. Consume it before scheduling the
@@ -9671,9 +9671,9 @@ QuicThread(void *arg)
                      */
                     PollsetDisableWrite(dc, s, sc, "consume Event W");
 
-                    snap = SharedSnapshotInit(&sc->sh);
+                    status = SharedTxStatusRead(&sc->sh);
 
-                    if (SharedEOFReady(&snap)) {
+                    if (SharedTxStatusEOFReady(&status)) {
                         (void)h3_stream_maybe_finalize(sc, "event W");
                     } else {
                         SharedRequestResume(&cc->shared, &sc->sh, sc->h3_sid);
