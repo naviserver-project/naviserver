@@ -4593,7 +4593,7 @@ h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nby
            (long long)sc->cc->dc->iter, (long long)sc->quic_sid, nbytes);
 
     if (nbytes != 0u) {
-        SharedSnapshot snap;
+        SharedTxStatus status;
         size_t         body_trimmed;
 
         nghttp3_conn_add_write_offset(cc->h3conn, sid, nbytes);
@@ -4608,18 +4608,20 @@ h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nby
                    (long long)cc->dc->iter, (long long)sc->quic_sid, (size_t)nbytes);
         }
 
-        SharedSnapshotRead(&sc->sh, &snap);
+        status = SharedTxStatusRead(&sc->sh);
 
         Ns_Log(Ns_LogQuicDebug,
-               "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER after trim queued %ld pending %ld closed:by_app=%d bytes %ld",
+               "[%lld] H3[%lld] h3_stream_advance_and_trim:"
+               " after trim queued %d pending %" PRIuz
+               " closed_by_app %d bytes %" PRIuz,
                (long long)cc->dc->iter,
                (long long)sc->quic_sid,
-               snap.queued_bytes,
-               snap.pending_bytes,
-               snap.closed_by_app,
+               status.queued,
+               status.pending_bytes,
+               status.closed_by_app,
                nbytes);
 
-        if (!fin_accepted && SharedEOFReady(&snap)) {
+        if (!fin_accepted && SharedTxStatusEOFReady(&status)) {
             nghttp3_conn_resume_stream(cc->h3conn, sid);
 
             h3_conn_mark_wants_write(cc, sc, "emit FIN");
@@ -4839,9 +4841,7 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
     }
 
     /* EOF is ready once the producer has closed and both queues are empty. */
-    if (status.closed_by_app
-        && !status.queued
-        && status.pending_bytes == 0u) {
+    if (SharedTxStatusEOFReady(&status)) {
         *flags = NGHTTP3_DATA_FLAG_EOF;
 
         Ns_Log(Ns_LogQuicDebug,
