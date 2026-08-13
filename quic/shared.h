@@ -176,10 +176,6 @@ extern "C" {
     static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss) NS_GNUC_NONNULL(1);
 
     /* Tiny helpers (header-only / static inline) */
-    static inline bool SharedCanMove(const SharedSnapshot *s) {
-        return s->pending_bytes == 0 && s->queued_bytes > 0;
-    }
-
     static inline bool SharedHasResumePending(SharedState *st)
     {
         return Ns_AtomicUint32LoadAcquire(&st->resume_pending) != 0u;
