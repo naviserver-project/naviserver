@@ -659,32 +659,6 @@ size_t SharedPendingUnreadBytes(SharedStream *ss) {
 
 /*
  *----------------------------------------------------------------------
- *
- * SharedQueuedUnreadBytes --
- *
- *      Return the unread-byte count of the producer/consumer TX queue.
- *      The producer may append chunks while the H3/QUIC thread transfers
- *      them to the pending queue, so the count is read under ss->lock.
- *
- * Results:
- *      Returns a synchronized snapshot of ss->tx_queued.unread.
- *
- * Side effects:
- *      Temporarily acquires ss->lock. Does not modify either queue,
- *      allocate memory, or trigger a wake or resume request.
- *
- *----------------------------------------------------------------------
- */
-size_t SharedQueuedUnreadBytes(SharedStream *ss) {
-    size_t n;
-    Ns_MutexLock(&ss->lock);
-    n = ss->tx_queued.unread;
-    Ns_MutexUnlock(&ss->lock);
-    return n;
-}
-
-/*
- *----------------------------------------------------------------------
  * SharedBuildVecsFromPending --
  *
  *      Build (not snapshot) an array of nghttp3_vec from the pending TX

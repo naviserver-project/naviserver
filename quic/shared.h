@@ -149,7 +149,6 @@ extern "C" {
     size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain);
     size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base,size_t len) NS_GNUC_NONNULL(1,2);
     size_t SharedPendingUnreadBytes(SharedStream *ss);
-    size_t SharedQueuedUnreadBytes(SharedStream *ss);
     size_t SharedBuildVecsFromPending(SharedStream *ss, nghttp3_vec *vecs, size_t veccnt);
 
     /* --- Connection-level resume ring --- */
