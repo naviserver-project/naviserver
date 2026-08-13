@@ -32,11 +32,11 @@
 # include <nghttp3/nghttp3.h>
 # include "chunk.h"
 
-/* ---- Locking shim (replace with your framework if desired) ---------------- */
-
-# ifndef SHARED_USE_PTHREADS
-#  define SHARED_USE_PTHREADS 1
-# endif
+/*
+ * values for SharedStream->tx_state
+ */
+#define SHARED_TX_QUEUED 0x01u
+#define SHARED_TX_CLOSED 0x02u
 
 # ifdef __cplusplus
 extern "C" {
@@ -78,7 +78,7 @@ extern "C" {
          * Protects producer-to-consumer publication:
          *
          *   - producer appends chunks to tx_queued;
-         *   - producer sets closed_by_app;
+         *   - producer sets SHARED_TX_CLOSED in tx_state;
          *   - QUIC thread removes chunks from tx_queued and transfers their
          *     ownership to tx_pending.
          *
@@ -86,6 +86,17 @@ extern "C" {
          * chunks are owned exclusively by the QUIC thread.
          */
         Ns_Mutex    lock;
+
+        /*
+         * Lock-free predicate state:
+         *
+         * SHARED_TX_QUEUED:
+         *     tx_queued contains data or may require a splice attempt.
+         *
+         * SHARED_TX_CLOSED:
+         *     producer has permanently finished.
+         */
+        Ns_AtomicUint32 tx_state;
 
         /*
          * Producer/consumer queue. The producer appends under lock; the QUIC
@@ -99,12 +110,6 @@ extern "C" {
          * these operations.
          */
         ChunkQueue  tx_pending;
-
-        /*
-         * Set by the producer under lock and read by the QUIC thread under
-         * the same lock. Once set, it never becomes false.
-         */
-        int         closed_by_app;
 
         /*
          * Cross-thread header publication flag. The producer release-stores
@@ -157,7 +162,11 @@ extern "C" {
     size_t SharedDrainResume(SharedState *st, int64_t *out, size_t cap)  NS_GNUC_NONNULL(1);
     static bool SharedHasResumePending(SharedState *st) NS_GNUC_NONNULL(1);
 
-    /* Fills out with a consistent snapshot. Takes the internal Shared lock. */
+    /*
+     * Read a transmit-state snapshot. The caller must execute on the owning
+     * H3/QUIC thread. The mutex synchronizes tx_queued and tx_state; thread
+     * affinity protects tx_pending.
+     */
     void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out) NS_GNUC_NONNULL(1,2);
     static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss) NS_GNUC_NONNULL(1);
 
@@ -180,6 +189,24 @@ extern "C" {
     static inline bool SharedHasResumePending(SharedState *st)
     {
         return Ns_AtomicUint32LoadAcquire(&st->resume_pending) != 0u;
+    }
+
+    static inline void
+    SharedTxStateSetLocked(SharedStream *ss, uint32_t bits)
+    {
+        const uint32_t state =
+            Ns_AtomicUint32LoadRelaxed(&ss->tx_state);
+
+        Ns_AtomicUint32StoreRelease(&ss->tx_state, state | bits);
+    }
+
+    static inline void
+    SharedTxStateClearLocked(SharedStream *ss, uint32_t bits)
+    {
+        const uint32_t state =
+            Ns_AtomicUint32LoadRelaxed(&ss->tx_state);
+
+        Ns_AtomicUint32StoreRelease(&ss->tx_state, state & ~bits);
     }
 
     static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss)  {

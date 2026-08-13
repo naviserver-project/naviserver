@@ -42,10 +42,10 @@
  *
  * Concurrency model
  * -----------------
- * - tx_queued and closed_by_app are shared between the producer and the
+ * - tx_queued and tx_state are shared between the producer and the
  *   QUIC thread and are protected by ss->lock.
  * - tx_pending is owned exclusively by the QUIC thread after transfer
- *   from tx_queued. Operations on tx_pending do not require ss->lock.
+ *   from tx_queued.
  * - The resume_enqueued flag is both tested/set and cleared under
  *   st->lock. Using the same mutex for all accesses keeps the flag
  *   synchronized with membership in the resume ring and prevents lost
@@ -263,6 +263,7 @@ void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid) {
 
     Ns_AtomicUint32Init(&ss->hdrs_ready, 0u);
     Ns_AtomicUint32Init(&ss->resume_enqueued, 0u);
+    Ns_AtomicUint32Init(&ss->tx_state, 0u);
 
     ss->st       = owner;
     ss->sid_hint = sid;
@@ -412,12 +413,15 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
     return 0;
   }
 
-  Ns_Log(Ns_LogQuicDebug, "H3[%lld] SharedEnqueueBody: +%zu (queued=%zu)",
-       (long long)ss->sid_hint, len, ss->tx_queued.unread + len);
+  Ns_Log(Ns_LogQuicDebug,
+         "H3[%lld] SharedEnqueueBody: +%zu",
+         (long long)ss->sid_hint,
+         len);
 
   ch = ChunkInit(buf, len);
   Ns_MutexLock(&ss->lock);
   ChunkEnqueue(&ss->tx_queued, ch, label ? label : "enqueue");
+  SharedTxStateSetLocked(ss, SHARED_TX_QUEUED);
   Ns_MutexUnlock(&ss->lock);
   /* NOTE: we do NOT push resume here; caller should call SharedRequestResume() for this SID */
   return len;
@@ -433,13 +437,14 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
  *      None.
  *
  * Side effects:
- *      Acquires ss->lock and sets ss->closed_by_app = NS_TRUE. Idempotent;
- *      no logging or wake/resume is triggered.
+ *      Acquires ss->lock and sets SHARED_TX_CLOSED in ss->tx_state.
+ *      The operation is idempotent and does not trigger a wake or resume
+ *      request.
  *----------------------------------------------------------------------
  */
 void SharedMarkClosedByApp(SharedStream *ss) {
     Ns_MutexLock(&ss->lock);
-    ss->closed_by_app = NS_TRUE;
+    (void)Ns_AtomicUint32FetchOrRelaxed(&ss->tx_state, SHARED_TX_CLOSED);
     Ns_MutexUnlock(&ss->lock);
 }
 
@@ -486,8 +491,15 @@ int SharedTxReadable(SharedStream *ss) {
  */
 size_t SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes) {
     size_t moved;
+
     Ns_MutexLock(&ss->lock);
     moved = ChunkQueueMove(&ss->tx_queued, &ss->tx_pending, maxbytes);
+    if (ss->tx_queued.unread == 0u) {
+        SharedTxStateClearLocked(ss, SHARED_TX_QUEUED);
+    } else {
+        SharedTxStateSetLocked(ss, SHARED_TX_QUEUED);
+    }
+
     Ns_MutexUnlock(&ss->lock);
     return moved;
 }
@@ -957,26 +969,34 @@ SharedDrainResume(SharedState *st, int64_t *out, size_t cap)
  *
  * SharedSnapshotRead --
  *
- *      Populate 'out' with a consistent snapshot of selected stream state.
- *      The caller must execute on the owning H3/QUIC thread. The mutex
- *      synchronizes access to tx_queued and closed_by_app; the caller's
- *      thread affinity protects the direct read of tx_pending.
+ *      Read the current transmit state into out.
+ *
+ *      The caller must execute on the owning H3/QUIC thread.
+ *      tx_pending is owned exclusively by that thread. The stream mutex
+ *      synchronizes the reads of producer-owned tx_queued and
+ *      closed_by_app.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Acquires ss->lock; writes to *out. No allocation or logging; does
- *      not mutate ss or its queues. Requires 'out' != NULL.
+ *      Acquires ss->lock and writes the snapshot to out. Does not modify
+ *      either transmit queue or trigger a wake or resume request.
  *
  *----------------------------------------------------------------------
  */
 void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out)
 {
+    uint32_t state;
+
     Ns_MutexLock(&ss->lock);
+    state = Ns_AtomicUint32LoadRelaxed(&ss->tx_state);
+
     out->queued_bytes   = ss->tx_queued.unread;
     out->pending_bytes  = ss->tx_pending.unread;
-    out->closed_by_app  = ss->closed_by_app;
+    out->closed_by_app  = (state & SHARED_TX_CLOSED) != 0u;
+
+    assert(((state & SHARED_TX_QUEUED) != 0u) == (ss->tx_queued.unread != 0u));
     Ns_MutexUnlock(&ss->lock);
 }
 #endif
