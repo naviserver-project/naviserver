@@ -4810,7 +4810,7 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
     ConnCtx        *cc = conn_user_data;
     StreamCtx      *sc = stream_user_data;
     SharedStream   *ss;
-    SharedSnapshot  snap;
+    SharedTxStatus   status;
 
     assert(cc != NULL);
     assert(sc != NULL);
@@ -4821,66 +4821,83 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
      */
     NS_TA_ASSERT_HELD(cc, affinity);
 
-    ss   = &sc->sh;
-    snap = SharedSnapshotInit(ss);
+    ss     = &sc->sh;
+    status = SharedTxStatusRead(ss);
 
-    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb ENTER queued %ld pending %ld closed_by_app=%d veccnt %ld",
-           (long long)cc->dc->iter, (long long)stream_id, snap.queued_bytes, snap.pending_bytes, snap.closed_by_app,
+    Ns_Log(Ns_LogQuicDebug,
+           "[%lld] H3[%lld] h3_stream_read_data_cb ENTER"
+           " queued %d pending %" PRIuz " closed_by_app %d veccnt %zu",
+           (long long)cc->dc->iter,
+           (long long)stream_id,
+           status.queued,
+           status.pending_bytes,
+           status.closed_by_app,
            veccnt);
 
     if (vecs == NULL || veccnt == 0) {
         return NGHTTP3_ERR_WOULDBLOCK;
     }
 
-    if (sc->tx_served_this_step) {
+    /* EOF is ready once the producer has closed and both queues are empty. */
+    if (status.closed_by_app
+        && !status.queued
+        && status.pending_bytes == 0u) {
+        *flags = NGHTTP3_DATA_FLAG_EOF;
 
-        if (SharedEOFReady(&snap)) {
-            *flags = NGHTTP3_DATA_FLAG_EOF;
-            Ns_Log(Ns_LogQuicDebug, "H3[%lld] h3_stream_read_data_cb: served earlier; now EOF", (long long)sc->h3_sid);
-            return 0; /* 0 vecs + EOF => FIN */
-        }
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3[%lld] h3_stream_read_data_cb:"
+               " EOF (producer closed, queues empty)",
+               (long long)cc->dc->iter,
+               (long long)stream_id);
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: already tx_served_this_step (queued %ld pending %ld closed by app %d)",
-               (long long)cc->dc->iter, (long long)sc->quic_sid, snap.queued_bytes, snap.pending_bytes, snap.closed_by_app);
-
-        *flags = 0;
-        return NGHTTP3_ERR_WOULDBLOCK;   // don't re-offer in the same write step
+        return 0;                   /* zero vectors plus EOF emits FIN */
     }
 
-    /* Fast EOF: producer closed and no bytes left anywhere. */
-    if (SharedEOFReady(&snap)) {
-        *flags = NGHTTP3_DATA_FLAG_EOF;
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: EOF (queues empty)", (long long)cc->dc->iter, (long long)stream_id);
-        return 0;
+    if (sc->tx_served_this_step) {
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3[%lld] h3_stream_read_data_cb:"
+               " already tx_served_this_step"
+               " (queued %d pending %" PRIuz " closed_by_app %d)",
+               (long long)cc->dc->iter,
+               (long long)sc->quic_sid,
+               status.queued,
+               status.pending_bytes,
+               status.closed_by_app);
+
+        *flags = 0u;
+        return NGHTTP3_ERR_WOULDBLOCK;
     }
 
     /* Prime pending from queued if needed */
-    if (SharedCanMove(&snap)) {
+    if (status.pending_bytes == 0u && status.queued) {
         size_t moved = SharedSpliceQueuedToPending(ss, SIZE_MAX);
 
         if (moved > 0u) {
             Ns_Log(Ns_LogQuicDebug,
                    "[%lld] H3[%lld] h3_stream_read_data_cb:"
-                   " moved %zu bytes queued -> pending",
+                   " moved %" PRIuz " bytes queued -> pending",
                    (long long)cc->dc->iter,
                    (long long)stream_id,
                    moved);
 
             /*
-             * SharedCanMove() established that pending was empty. With
-             * SIZE_MAX, the splice transfers all queued chunks present
-             * while holding ss->lock.
+             * Local post-splice view. A concurrent producer enqueue is
+             * observed by the authoritative refresh before the EOF decision.
              */
-            snap.queued_bytes  = 0u;
-            snap.pending_bytes = moved;
+            status.queued        = NS_FALSE;
+            status.pending_bytes = moved;
         }
     }
 
-    Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb SharedPendingUnreadBytes %ld",
-           (long long)cc->dc->iter, (long long)stream_id, snap.pending_bytes);
+    Ns_Log(Ns_LogQuicDebug,
+           "[%lld] H3[%lld] h3_stream_read_data_cb:"
+           " pending bytes %" PRIuz,
+           (long long)cc->dc->iter,
+           (long long)stream_id,
+           status.pending_bytes);
 
     /* Nothing to send right now. */
-    if (snap.pending_bytes == 0) {
+    if (status.pending_bytes == 0u) {
         *flags = 0;
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb: no data, would block", (long long)cc->dc->iter, (long long)stream_id);
         return NGHTTP3_ERR_WOULDBLOCK;
@@ -4889,6 +4906,7 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
         size_t out;
         size_t offered = 0u;
         size_t i;
+        SharedSnapshot  snap;
 
         /*
          * Build vectors from pending without consuming them. The buffers
