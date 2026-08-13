@@ -236,6 +236,13 @@ extern "C" {
         return status;
     }
 
+    static inline bool
+    SharedTxStatusEOFReady(const SharedTxStatus *status)
+    {
+        return status->closed_by_app
+            && !status->queued
+            && status->pending_bytes == 0u;
+    }
 
 # ifdef __cplusplus
 }
