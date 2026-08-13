@@ -255,6 +255,14 @@ Ns_MutexLock(Ns_Mutex *mutex)
              */
             Ns_GetTime(&endTime);
             delta = Ns_DiffTime(&endTime, &startTime, &diffTime);
+
+            /*
+             * The mutex has now been acquired. Use the acquisition time as the
+             * beginning of the lock-held interval; the preceding interval was
+             * accounted for as waiting time.
+             */
+            startTime = endTime;
+
             if (likely(delta >= 0)) {
                 Ns_IncrTime(&mutexPtr->total_waiting_time, diffTime.sec, diffTime.usec);
 
@@ -352,10 +360,13 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
 
     NsLockUnset(mutexPtr->lock);
 
-    if (NS_mutexlocktrace && (diff.sec > 1 || diff.usec > 100000)) {
+#ifndef NS_NO_MUTEX_TIMING
+    if (NS_mutexlocktrace
+        && (diff.sec > 0 || diff.usec > 100000)) {
         fprintf(stderr, "[%s] Mutex unlock %s: lock duration " NS_TIME_FMT "\n",
                 Ns_ThreadGetName(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
     }
+#endif
 
 #ifdef NS_MUTEX_NAME_DEBUG
     /*
