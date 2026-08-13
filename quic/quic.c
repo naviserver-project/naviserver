@@ -2061,23 +2061,43 @@ quic_stream_keeps_conn_alive(StreamCtx *sc)
         const bool rx_open = (io_state & H3_IO_RX_FIN) == 0u && rs == SSL_STREAM_STATE_OK;
         const bool tx_open = (io_state & H3_IO_TX_FIN) == 0u && ws == SSL_STREAM_STATE_OK;
 
-        /* If *either* side is still open, the stream keeps the conn alive. */
+        NS_TA_ASSERT_HELD(sc->cc, affinity);
+
+        /*
+         * If either side remains open, the stream keeps the connection
+         * alive.
+         */
         if (rx_open || tx_open) {
             return NS_TRUE;
+        }
 
-        } else {
-            SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
-            const bool     reset = (io_state & H3_IO_RESET) != 0u;
-            const bool     both_closed = (io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN)) == (H3_IO_RX_FIN | H3_IO_TX_FIN);
-            const bool     closure_observed = reset || both_closed || snap.closed_by_app;
-            const bool     rx_empty = sc->rx_len == sc->rx_off;
-            const bool     tx_empty = snap.queued_bytes == 0u  && snap.pending_bytes == 0u;
+        /*
+         * A reset stream cannot deliver buffered data. StreamCtxFree()
+         * will discard anything remaining.
+         */
+        if ((io_state & H3_IO_RESET) != 0u) {
+            return NS_FALSE;
+        }
+
+        /*
+         * Unread receive data keeps a normally closed stream alive.
+         * Avoid inspecting transmit state until RX has drained.
+         */
+        if (sc->rx_len != sc->rx_off) {
+            return NS_TRUE;
+        }
+
+        {
+            const SharedTxStatus status =  SharedTxStatusRead(&sc->sh);
+            const bool both_closed = (io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN)) == (H3_IO_RX_FIN | H3_IO_TX_FIN);
+            const bool closure_observed = both_closed || status.closed_by_app;
+
             /*
-             * A normally closed stream keeps the connection alive until all staged
-             * receive and transmit data has drained. A reset stream cannot deliver
-             * any remaining buffered data, which StreamCtxFree() will discard.
+             * A normally closed stream keeps the connection alive until
+             * all staged transmit data has drained and closure has been
+             * observed.
              */
-            return !((reset || (rx_empty && tx_empty)) && closure_observed);
+            return !(SharedTxStatusIsEmpty(&status) && closure_observed);
         }
     }
 }
