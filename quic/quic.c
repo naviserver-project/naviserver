@@ -3644,7 +3644,7 @@ h3_conn_write_step(ConnCtx *cc)
          */
         if (StreamCtxIsServerUni(sc)) {
             /* leave policy as-is for CTRL/QPACK */
-        } else if (hit_want || SharedTxReadable(&sc->sh)) {
+        } else if (hit_want || SharedTxStatusRead(&sc->sh).queued) {
             PollsetEnableWrite(dc, stream, sc, "after_sid");
         } else {
             PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step per stream W decision");
@@ -10374,16 +10374,10 @@ Close(Ns_Sock *sock)
     /* Mark "no more body will be enqueued" (EOF once queues drain). */
     SharedMarkClosedByApp(&sc->sh);
 
-    if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
-        const size_t queued = SharedQueuedUnreadBytes(&sc->sh);
-
-        Ns_Log(Ns_LogQuicDebug,
-               "[%lld] H3[%lld] WRITER done:"
-               " queued %zu closed_by_app 1",
-               (long long)dc->iter,
-               (long long)sc->quic_sid,
-               queued);
-    }
+    Ns_Log(Ns_LogQuicDebug,
+           "[%lld] H3[%lld] WRITER done: closed_by_app 1",
+           (long long)dc->iter,
+           (long long)sc->quic_sid);
 
     /*
      * Request a resume so the QUIC thread can drain queued data and emit
