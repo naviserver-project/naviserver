@@ -176,9 +176,6 @@ extern "C" {
     static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss) NS_GNUC_NONNULL(1);
 
     /* Tiny helpers (header-only / static inline) */
-    static inline bool SharedHasData(const SharedSnapshot *s) {
-        return (s->queued_bytes + s->pending_bytes) > 0;
-    }
     static inline bool SharedCanMove(const SharedSnapshot *s) {
         return s->pending_bytes == 0 && s->queued_bytes > 0;
     }

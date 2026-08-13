@@ -3707,15 +3707,17 @@ h3_conn_has_pending_work(ConnCtx *cc)
             if (sc->wants_write) {
                 return NS_TRUE;
             }
+            NS_TA_ASSERT_HELD(cc, affinity);
+
             if (StreamCtxIsBidi(sc)
                 && SharedHdrsIsReady(&sc->sh)
                 && Ns_AtomicUint32LoadRelaxed(&sc->hdrs_submitted) == 0u) {
                 return NS_TRUE;
 
             } else {
-                SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
+                SharedTxStatus status = SharedTxStatusRead(&sc->sh);
 
-                if (SharedHasData(&snap)) {
+                if (SharedTxStatusHasData(&status)) {
                     return NS_TRUE;
                 }
             }
