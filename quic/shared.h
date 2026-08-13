@@ -179,16 +179,8 @@ extern "C" {
     static inline bool SharedHasData(const SharedSnapshot *s) {
         return (s->queued_bytes + s->pending_bytes) > 0;
     }
-    static inline bool SharedIsEmpty(const SharedSnapshot *s) {
-        return (s->queued_bytes + s->pending_bytes) == 0;
-    }
     static inline bool SharedCanMove(const SharedSnapshot *s) {
         return s->pending_bytes == 0 && s->queued_bytes > 0;
-    }
-
-    static inline bool SharedEOFReady(const SharedSnapshot *s) {
-        /* nothing left AND app has closed */
-        return s->closed_by_app && SharedIsEmpty(s);
     }
 
     static inline bool SharedHasResumePending(SharedState *st)
