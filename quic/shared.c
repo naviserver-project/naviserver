@@ -42,8 +42,10 @@
  *
  * Concurrency model
  * -----------------
- * - Per-stream data (queues, hdrs flags, closed_by_app) is protected by
- *   ss->lock.
+ * - tx_queued and closed_by_app are shared between the producer and the
+ *   QUIC thread and are protected by ss->lock.
+ * - tx_pending is owned exclusively by the QUIC thread after transfer
+ *   from tx_queued. Operations on tx_pending do not require ss->lock.
  * - The resume_enqueued flag is both tested/set and cleared under
  *   st->lock. Using the same mutex for all accesses keeps the flag
  *   synchronized with membership in the resume ring and prevents lost
@@ -523,76 +525,106 @@ size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain) {
 
 /*
  *----------------------------------------------------------------------
+ *
  * SharedTrimPendingFromVec --
  *
- *      Trim body bytes from ss->tx_pending that overlap the span
- *      [base, base+len). Only proceeds when 'base' points inside the
- *      current head chunk; otherwise nothing is removed (assumed to be
- *      framing/headers). Preserves FIFO order while possibly freeing
- *      fully consumed chunks.
+ *      Trim body bytes from the consumer-owned pending queue that overlap
+ *      the span [base, base + len). Trimming proceeds only when base points
+ *      into the current head chunk; otherwise, the span is assumed to
+ *      contain framing or header data and nothing is removed.
+ *
+ *      The pending queue is owned exclusively by the H3/QUIC thread.
+ *      Once chunks have been transferred from tx_queued to tx_pending,
+ *      the producer must neither inspect nor modify them. The caller must
+ *      therefore execute with the owning connection's thread affinity.
  *
  * Results:
- *      Returns the number of payload bytes actually trimmed (<= len).
+ *      Returns the number of payload bytes trimmed, which is at most len.
  *
  * Side effects:
- *      Acquires ss->lock; mutates head chunk pointers (p/len), updates
- *      ss->tx_pending.unread, may free exhausted chunks, and leaves the
- *      queue head/tail consistent. Emits Notice logs before/after with
- *      unread and trimmed counts. No wake/resume is triggered.
+ *      Advances chunk data pointers, updates chunk lengths and the pending
+ *      unread-byte count, and may free fully consumed chunks. Maintains
+ *      consistent queue head and tail pointers. Does not acquire ss->lock
+ *      and does not trigger a wake or resume request.
+ *
  *----------------------------------------------------------------------
  */
-size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len) {
-    size_t trimmed = 0;
+size_t
+SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len)
+{
+    const size_t requested = len;
+    size_t       trimmed   = 0u;
 
-    Ns_Log(Ns_LogQuicDebug, "H3[%lld] SharedTrimPendingFromVec (%ld bytes): before ChunkQueueTrim unread %ld",
-            (long long)ss->sid_hint, len, ss->tx_pending.unread);
+    /*
+     * The caller must execute on the owning H3/QUIC thread. The caller's
+     * ConnCtx affinity assertion enforces this requirement in debug builds.
+     *
+     * No mutex is required: tx_pending is owned by the QUIC thread.
+     */
+    while (len > 0u && ss->tx_pending.head != NULL) {
+        Chunk          *ch = ss->tx_pending.head;
+        const uintptr_t b  = (uintptr_t)base;
+        const uintptr_t p  = (uintptr_t)ch->p;
+        size_t          off;
+        size_t          room;
+        size_t          take;
+        size_t          consumed;
 
-    Ns_MutexLock(&ss->lock);
+        /*
+         * A relational comparison between pointers belonging to different
+         * allocations is undefined in C. Compare their integer
+         * representations and avoid overflow in p + ch->len.
+         */
+        if (b < p || b - p >= ch->len) {
+            break;              /* framing or headers, not body data */
+        }
 
-    while (len && ss->tx_pending.head) {
-        Chunk *ch = ss->tx_pending.head;
+        off      = (size_t)(b - p);
+        room     = ch->len - off;
+        take     = len < room ? len : room;
+        consumed = off + take;
 
-        // Only trim if this vec starts inside the chunk
-        if (base < ch->p || base >= ch->p + ch->len) {
-            break; // not body data (must be framing/headers)
+        ch->p   += consumed;
+        ch->len -= consumed;
+
+        assert(ss->tx_pending.unread >= consumed);
+
+        if (ss->tx_pending.unread >= consumed) {
+            ss->tx_pending.unread -= consumed;
         } else {
-          size_t off  = (size_t)(base - ch->p);
-          size_t room = ch->len - off;
-          size_t take = len < room ? len : room;
+            ss->tx_pending.unread = 0u;
+        }
 
-          // advance inside this chunk
-          ch->p   += off + take;
-          ch->len -= off + take;
+        trimmed += take;
+        len     -= take;
 
-          // keep unread honest
-          if (ss->tx_pending.unread >= off + take) {
-            ss->tx_pending.unread -= (off + take);
-          } else {
-            ss->tx_pending.unread = 0; // defensive
-          }
+        if (ch->len != 0u) {
+            break;              /* write ended inside this chunk */
+        }
 
-          trimmed += take;
-          len     -= take;
+        ss->tx_pending.head = ch->next;
+        if (ss->tx_pending.head == NULL) {
+            ss->tx_pending.tail = NULL;
+        }
+        ns_free(ch);
 
-          // drop exhausted chunk
-          if (ch->len == 0) {
-            ss->tx_pending.head = ch->next;
-            if (!ss->tx_pending.head) ss->tx_pending.tail = NULL;
-            ns_free(ch);
-          } else {
-            // vec ended inside this chunk
-            break;
-          }
-
-          // next loop continues with new head, base already accounted
-          base = ss->tx_pending.head ? ss->tx_pending.head->p : base;
+        /*
+         * Continue at the beginning of the next pending chunk. This
+         * preserves the behavior of the current implementation when the
+         * reported write spans multiple body chunks.
+         */
+        if (ss->tx_pending.head != NULL) {
+            base = ss->tx_pending.head->p;
         }
     }
 
-    Ns_MutexUnlock(&ss->lock);
-
-    Ns_Log(Ns_LogQuicDebug, "H3[%lld] SharedTrimPendingFromVec (%ld bytes): after ChunkQueueTrim unread %ld (trimmed %ld)",
-            (long long)ss->sid_hint, len, ss->tx_pending.unread, trimmed);
+    Ns_Log(Ns_LogQuicDebug,
+           "H3[%lld] SharedTrimPendingFromVec:"
+           " requested %zu, trimmed %zu, pending %zu",
+           (long long)ss->sid_hint,
+           requested,
+           trimmed,
+           ss->tx_pending.unread);
 
     return trimmed;
 }
@@ -641,30 +673,44 @@ size_t SharedQueuedUnreadBytes(SharedStream *ss) {
  *      is 0, or no pending data.
  *
  * Side effects:
- *      Acquires ss->lock; iterates ss->tx_pending; logs each appended
- *      chunk at Notice. No allocations; no wake/resume. Callers must
- *      trim after actual writes (e.g., SharedTrimPendingFromVec or
- *      SharedTrimPending) and ensure the queue is not mutated while the
- *      produced vecs are in use.
+ *      Copies pointers and lengths from the pending queue into vecs.
+ *      Does not modify the queue, acquire ss->lock, allocate memory,
+ *      or trigger a wake or resume request.
+ *
+ * Caller requirements:
+ *      Must execute on the owning H3/QUIC thread. The returned pointers
+ *      remain valid until that thread advances or trims tx_pending.
  *
  *----------------------------------------------------------------------
  */
-size_t SharedBuildVecsFromPending(SharedStream *ss, nghttp3_vec *vecs, size_t veccnt) {
-    size_t out = 0;
+size_t
+SharedBuildVecsFromPending(SharedStream *ss,
+                           nghttp3_vec *vecs,
+                           size_t veccnt)
+{
+    size_t out = 0u;
 
-    if (vecs == NULL || veccnt == 0) {
-        return 0;
+    if (vecs == NULL || veccnt == 0u) {
+        return 0u;
     }
 
-    Ns_MutexLock(&ss->lock);
-    for (Chunk *ch = ss->tx_pending.head; ch && out < veccnt; ch = ch->next) {
-      Ns_Log(Ns_LogQuicDebug, "H3[%lld] SharedBuildVecsFromPending appending chunk len %ld",
-             (long long)ss->sid_hint, ch->len);
+    /*
+     * No mutex is required: tx_pending is owned exclusively by the
+     * H3/QUIC thread. The caller asserts the owning ConnCtx affinity.
+     */
+    for (Chunk *ch = ss->tx_pending.head;
+         ch != NULL && out < veccnt;
+         ch = ch->next) {
+        Ns_Log(Ns_LogQuicDebug,
+               "H3[%lld] SharedBuildVecsFromPending"
+               " appending chunk len %zu",
+               (long long)ss->sid_hint,
+               ch->len);
+
         vecs[out].base = ch->p;
         vecs[out].len  = ch->len;
         out++;
     }
-    Ns_MutexUnlock(&ss->lock);
 
     return out;
 }
@@ -911,9 +957,10 @@ SharedDrainResume(SharedState *st, int64_t *out, size_t cap)
  *
  * SharedSnapshotRead --
  *
- *      Populate 'out' with a consistent snapshot of selected stream
- *      state (queued/pending byte counts and closed_by_app). Uses the
- *      stream mutex to read an atomic view.
+ *      Populate 'out' with a consistent snapshot of selected stream state.
+ *      The caller must execute on the owning H3/QUIC thread. The mutex
+ *      synchronizes access to tx_queued and closed_by_app; the caller's
+ *      thread affinity protects the direct read of tx_pending.
  *
  * Results:
  *      None.

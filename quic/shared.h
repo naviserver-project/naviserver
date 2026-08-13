@@ -74,12 +74,37 @@ extern "C" {
     /* ===== Shared stream (per H3 request/response stream) ====================== */
 
     typedef struct SharedStream {
+        /*
+         * Protects producer-to-consumer publication:
+         *
+         *   - producer appends chunks to tx_queued;
+         *   - producer sets closed_by_app;
+         *   - QUIC thread removes chunks from tx_queued and transfers their
+         *     ownership to tx_pending.
+         *
+         * The lock does not protect tx_pending. Once transferred, pending
+         * chunks are owned exclusively by the QUIC thread.
+         */
         Ns_Mutex    lock;
 
-        /* Cross-thread body state */
-        ChunkQueue  tx_queued;     /* producer pushes here */
-        ChunkQueue  tx_pending;    /* consumer snapshots from queued -> pending */
-        int         closed_by_app; /* producer finished; EOF once pending drains */
+        /*
+         * Producer/consumer queue. The producer appends under lock; the QUIC
+         * thread removes or transfers chunks under the same lock.
+         */
+        ChunkQueue  tx_queued;
+
+        /*
+         * QUIC-thread-owned queue. Only the QUIC thread builds vectors from,
+         * advances, trims, and frees pending chunks. No lock is required for
+         * these operations.
+         */
+        ChunkQueue  tx_pending;
+
+        /*
+         * Set by the producer under lock and read by the QUIC thread under
+         * the same lock. Once set, it never becomes false.
+         */
+        int         closed_by_app;
 
         /*
          * Cross-thread header publication flag. The producer release-stores
@@ -88,10 +113,14 @@ extern "C" {
          */
         Ns_AtomicUint32 hdrs_ready;
 
-        /* Resume bookkeeping */
+        /*
+         * Atomic producer/consumer notification coalescing. A set value means
+         * that a resume request is queued or currently being processed.
+         */
         Ns_AtomicUint32 resume_enqueued;
-        SharedState *st;           /* owner shared state */
-        int64_t     sid_hint;      /* optional debug aid */
+
+        SharedState *st;           /* owning connection-level shared state */
+        int64_t      sid_hint;     /* stream ID used for diagnostics */
     } SharedStream;
 
 
@@ -116,7 +145,7 @@ extern "C" {
     int    SharedTxReadable(SharedStream *ss);                 /* queued.unread > 0 */
     size_t SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes);
     size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain);
-    size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len);
+    size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base,size_t len) NS_GNUC_NONNULL(1,2);
     size_t SharedPendingUnreadBytes(SharedStream *ss);
     size_t SharedQueuedUnreadBytes(SharedStream *ss);
     size_t SharedBuildVecsFromPending(SharedStream *ss, nghttp3_vec *vecs, size_t veccnt);

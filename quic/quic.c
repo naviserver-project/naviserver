@@ -659,7 +659,6 @@ static bool            StreamCtxIsServerUni(const StreamCtx *sc) NS_GNUC_NONNULL
 static bool            StreamCtxIsClientUni(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 static bool            StreamCtxIsBidi(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 
-
 /*
  *----------------------------------------------------------------------
  * Pollset management
@@ -4582,19 +4581,26 @@ h3_stream_read_into_hold(StreamCtx *sc, SSL *stream)
 static inline void
 h3_stream_advance_and_trim(StreamCtx *sc, int64_t sid, uint8_t *base, size_t nbytes, bool fin_accepted)
 {
+    ConnCtx *cc = sc->cc;
+
+    /*
+     * tx_pending and the nghttp3 connection are owned exclusively by
+     * the H3/QUIC thread.
+     */
+    NS_TA_ASSERT_HELD(cc, affinity);
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_advance_and_trim ENTER bytes %ld",
            (long long)sc->cc->dc->iter, (long long)sc->quic_sid, nbytes);
 
-    if (nbytes != 0) {
-        ConnCtx       *cc = sc->cc;
+    if (nbytes != 0u) {
         SharedSnapshot snap;
         size_t         body_trimmed;
 
         nghttp3_conn_add_write_offset(cc->h3conn, sid, nbytes);
 
         body_trimmed = SharedTrimPendingFromVec(&sc->sh, base, nbytes);
-        if (body_trimmed) {
+
+        if (body_trimmed != 0u) {
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_advance_and_trim TRIM body %zu (vec len %zu)",
                    (long long)cc->dc->iter, (long long)sc->quic_sid, body_trimmed, (size_t)nbytes);
         } else {
@@ -4783,12 +4789,22 @@ h3_stream_read_data_cb(nghttp3_conn   *UNUSED(conn),
                        void           *conn_user_data,
                        void           *stream_user_data)
 {
-    ConnCtx       *cc = conn_user_data;
-    StreamCtx     *sc = stream_user_data;
-    SharedStream  *ss = &sc->sh;
-    SharedSnapshot snap = SharedSnapshotInit(ss);
+    ConnCtx        *cc = conn_user_data;
+    StreamCtx      *sc = stream_user_data;
+    SharedStream   *ss;
+    SharedSnapshot  snap;
 
+    assert(cc != NULL);
     assert(sc != NULL);
+
+    /*
+     * tx_pending is owned exclusively by the H3/QUIC thread. This callback
+     * reads it directly when building vectors and obtaining snapshots.
+     */
+    NS_TA_ASSERT_HELD(cc, affinity);
+
+    ss   = &sc->sh;
+    snap = SharedSnapshotInit(ss);
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_read_data_cb ENTER queued %ld pending %ld closed_by_app=%d veccnt %ld",
            (long long)cc->dc->iter, (long long)stream_id, snap.queued_bytes, snap.pending_bytes, snap.closed_by_app,
@@ -10262,14 +10278,14 @@ Close(Ns_Sock *sock)
     SharedMarkClosedByApp(&sc->sh);
 
     if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
-        SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
+        const size_t queued = SharedQueuedUnreadBytes(&sc->sh);
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] WRITER done: queued %ld pending %ld closed_by_app %d",
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3[%lld] WRITER done:"
+               " queued %zu closed_by_app 1",
                (long long)dc->iter,
                (long long)sc->quic_sid,
-               snap.queued_bytes,
-               snap.pending_bytes,
-               snap.closed_by_app);
+               queued);
     }
 
     /*
