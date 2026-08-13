@@ -8150,58 +8150,73 @@ PollsetSweep(NsTLSConfig *dc)
 
         {
             const uint32_t io_state = H3_IO_STATE(sc);
-            const bool rx_closed   = (io_state & (H3_IO_RX_FIN | H3_IO_RESET)) != 0u;
-            const bool tx_closed   = (io_state & (H3_IO_TX_FIN | H3_IO_RESET)) != 0u;
-            const bool reset       = (io_state & H3_IO_RESET) != 0u;
-            const bool both_closed = (io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN)) == (H3_IO_RX_FIN | H3_IO_TX_FIN);
-            SharedSnapshot snap        = SharedSnapshotInit(&sc->sh);
-            const bool     tx_empty    = snap.queued_bytes == 0u && snap.pending_bytes == 0u;
-            const bool     rx_empty    = sc->rx_len == sc->rx_off;
+            const bool rx_closed    = (io_state & (H3_IO_RX_FIN | H3_IO_RESET)) != 0u;
+            const bool tx_closed    = (io_state & (H3_IO_TX_FIN | H3_IO_RESET)) != 0u;
+            const bool reset        = (io_state & H3_IO_RESET) != 0u;
+            const bool both_closed  = (io_state & (H3_IO_RX_FIN | H3_IO_TX_FIN)) == (H3_IO_RX_FIN | H3_IO_TX_FIN);
+            const bool rx_empty      = sc->rx_len == sc->rx_off;
 
             /*
              * If peer finished our read side (or stream was reset), and we
              * have no unread app bytes left, drop R interest.
              */
-            if (rx_closed && (mask & SSL_POLL_EVENT_R) && sc->rx_len == sc->rx_off) {
-                PollsetDisableRead(dc, s, sc, "PollsetSweep: no unread data");
+            if (rx_closed
+                && (mask & SSL_POLL_EVENT_R) != 0u
+                && rx_empty) {
+                PollsetDisableRead(dc, s, sc,
+                                   "PollsetSweep: no unread data");
                 mask &= ~SSL_POLL_EVENT_R;
             }
             /*
-             * If we concluded the write side (or stream was reset), drop W
-             * interest.  We avoid SSL_get_stream_write_state() entirely to
-             * prevent races when the send-part is already torn down inside
-             * libssl.
+             * If we concluded the write side, or the stream was reset, drop
+             * write interest for server-initiated unidirectional streams.
              */
-            if (StreamCtxIsServerUni(sc)) {
-                if (tx_closed && (mask & SSL_POLL_EVENT_W)) {
-                    PollsetDisableWrite(dc, s, sc, "PollsetSweep tx closed");
-                    mask &= ~SSL_POLL_EVENT_W;
-                }
+            if (StreamCtxIsServerUni(sc)
+                && tx_closed
+                && (mask & SSL_POLL_EVENT_W) != 0u) {
+                PollsetDisableWrite(dc, s, sc,
+                                    "PollsetSweep: tx closed");
+                mask &= ~SSL_POLL_EVENT_W;
             }
 
             /*
-             * A reset stream cannot deliver remaining output; its shared queues
-             * are discarded by SharedStreamDestroy(). A normally completed stream
-             * is reaped only after all receive and transmit data has drained.
+             * A reset stream cannot deliver remaining output. For normal
+             * completion, reap only after both sides have closed and all
+             * transmit data has drained.
              */
-            if (rx_empty
-                && (reset || (both_closed && tx_empty))) {
+            if (rx_empty && reset) {
                 Ns_Log(Ns_LogQuicDebug,
-                       "[%lld] H3 PollsetSweep: kill stream %p kind %s"
-                       " rx_empty %d queued %zu pending %zu reset %d",
+                       "[%lld] H3 PollsetSweep: kill reset stream %p"
+                       " kind %s",
                        (long long)dc->iter,
                        (void *)s,
-                       H3StreamKind_str(sc->kind),
-                       rx_empty,
-                       snap.queued_bytes,
-                       snap.pending_bytes,
-                       reset);
+                       H3StreamKind_str(sc->kind));
 
-                PollsetMarkDead(cc, s, "sweep: stream definitely dead");
+                PollsetMarkDead(cc, s, "sweep: reset stream dead");
                 StreamCtxUnregister(sc);
+
+            } else if (rx_empty && both_closed) {
+                SharedTxStatus status = SharedTxStatusRead(&sc->sh);
+
+                if (SharedTxStatusIsEmpty(&status)) {
+                    Ns_Log(Ns_LogQuicDebug,
+                           "[%lld] H3 PollsetSweep: kill stream %p"
+                           " kind %s rx_empty %d queued %d"
+                           " pending %zu reset %d",
+                           (long long)dc->iter,
+                           (void *)s,
+                           H3StreamKind_str(sc->kind),
+                           rx_empty,
+                           status.queued,
+                           status.pending_bytes,
+                           reset);
+
+                    PollsetMarkDead(cc, s,
+                                    "sweep: stream definitely dead");
+                    StreamCtxUnregister(sc);
+                }
             }
         }
-
     }
 
     /* Now it's safe to actually free the SSL objects. */
