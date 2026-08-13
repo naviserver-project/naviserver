@@ -422,6 +422,7 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
   Ns_MutexLock(&ss->lock);
   ChunkEnqueue(&ss->tx_queued, ch, label ? label : "enqueue");
   SharedTxStateSetLocked(ss, SHARED_TX_QUEUED);
+  (void)Ns_AtomicUint32FetchOrRelease(&ss->tx_state, SHARED_TX_QUEUED);
   Ns_MutexUnlock(&ss->lock);
   /* NOTE: we do NOT push resume here; caller should call SharedRequestResume() for this SID */
   return len;
@@ -443,9 +444,7 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
  *----------------------------------------------------------------------
  */
 void SharedMarkClosedByApp(SharedStream *ss) {
-    Ns_MutexLock(&ss->lock);
-    (void)Ns_AtomicUint32FetchOrRelaxed(&ss->tx_state, SHARED_TX_CLOSED);
-    Ns_MutexUnlock(&ss->lock);
+    (void)Ns_AtomicUint32FetchOrRelease(&ss->tx_state, SHARED_TX_CLOSED);
 }
 
 /*======================================================================
@@ -489,18 +488,27 @@ int SharedTxReadable(SharedStream *ss) {
  *      counters. No logging or resume/wake is triggered.
  *----------------------------------------------------------------------
  */
-size_t SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes) {
+size_t
+SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes)
+{
     size_t moved;
 
     Ns_MutexLock(&ss->lock);
-    moved = ChunkQueueMove(&ss->tx_queued, &ss->tx_pending, maxbytes);
+
+    moved = ChunkQueueMove(&ss->tx_queued,
+                           &ss->tx_pending,
+                           maxbytes);
+
     if (ss->tx_queued.unread == 0u) {
-        SharedTxStateClearLocked(ss, SHARED_TX_QUEUED);
-    } else {
-        SharedTxStateSetLocked(ss, SHARED_TX_QUEUED);
+        /*
+         * Clear only the queued bit while preserving a concurrent
+         * SHARED_TX_CLOSED transition.
+         */
+        (void)Ns_AtomicUint32FetchAndRelease(&ss->tx_state, ~SHARED_TX_QUEUED);
     }
 
     Ns_MutexUnlock(&ss->lock);
+
     return moved;
 }
 
