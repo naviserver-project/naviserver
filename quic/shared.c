@@ -419,12 +419,13 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
          len);
 
   ch = ChunkInit(buf, len);
+
   Ns_MutexLock(&ss->lock);
+
   ChunkEnqueue(&ss->tx_queued, ch, label ? label : "enqueue");
-  SharedTxStateSetLocked(ss, SHARED_TX_QUEUED);
   (void)Ns_AtomicUint32FetchOrRelease(&ss->tx_state, SHARED_TX_QUEUED);
   Ns_MutexUnlock(&ss->lock);
-  /* NOTE: we do NOT push resume here; caller should call SharedRequestResume() for this SID */
+
   return len;
 }
 
@@ -451,27 +452,6 @@ void SharedMarkClosedByApp(SharedStream *ss) {
  * Function Implementations: Body helpers for consumer
  *======================================================================
  */
-
-/*
- *----------------------------------------------------------------------
- * SharedTxReadable --
- *
- *      Thread-safe predicate: returns whether TX has unread bytes.
- *
- * Results:
- *      Nonzero if ss->tx_queued.unread > 0; 0 otherwise.
- *
- * Side effects:
- *      Temporarily acquires ss->lock.
- *----------------------------------------------------------------------
- */
-int SharedTxReadable(SharedStream *ss) {
-    int v;
-    Ns_MutexLock(&ss->lock);
-    v = (ss->tx_queued.unread > 0);
-    Ns_MutexUnlock(&ss->lock);
-    return v;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -532,14 +512,17 @@ SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes)
 size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain) {
     size_t n;
 
-    Ns_Log(Ns_LogQuicDebug, "SharedTrimPending (%ld bytes): before ChunkQueueTrim unread %ld", nbytes, ss->tx_pending.unread);
+    Ns_Log(Ns_LogQuicDebug,
+           "SharedTrimPending (%zu bytes): before trim unread %" PRIuz,
+           nbytes,
+           ss->tx_pending.unread);
 
-    Ns_MutexLock(&ss->lock);
     n = ChunkQueueTrim(&ss->tx_pending, nbytes, drain);
-    Ns_MutexUnlock(&ss->lock);
 
-    Ns_Log(Ns_LogQuicDebug, "SharedTrimPending (%ld bytes): after ChunkQueueTrim unread %ld", nbytes, ss->tx_pending.unread);
-
+    Ns_Log(Ns_LogQuicDebug,
+           "SharedTrimPending (%zu bytes): after trim unread %" PRIuz,
+           nbytes,
+           ss->tx_pending.unread);
     return n;
 }
 

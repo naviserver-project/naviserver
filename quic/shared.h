@@ -145,7 +145,6 @@ extern "C" {
     void   SharedMarkClosedByApp(SharedStream *ss);
 
     /* --- Body helpers used by data_reader / writer --- */
-    int    SharedTxReadable(SharedStream *ss);                 /* queued.unread > 0 */
     size_t SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes);
     size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain);
     size_t SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base,size_t len) NS_GNUC_NONNULL(1,2);
@@ -164,15 +163,6 @@ extern "C" {
     static inline bool SharedHasResumePending(SharedState *st)
     {
         return Ns_AtomicUint32LoadAcquire(&st->resume_pending) != 0u;
-    }
-
-    static inline void
-    SharedTxStateSetLocked(SharedStream *ss, uint32_t bits)
-    {
-        const uint32_t state =
-            Ns_AtomicUint32LoadRelaxed(&ss->tx_state);
-
-        Ns_AtomicUint32StoreRelease(&ss->tx_state, state | bits);
     }
 
     static inline void
