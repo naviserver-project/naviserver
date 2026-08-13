@@ -220,6 +220,18 @@ extern "C" {
         return snap;
     }
 
+    static inline bool
+    SharedTxStatusHasData(const SharedTxStatus *status)
+    {
+        return status->queued || status->pending_bytes > 0u;
+    }
+
+    static inline bool
+    SharedTxStatusIsEmpty(const SharedTxStatus *status)
+    {
+        return !status->queued && status->pending_bytes == 0u;
+    }
+
     static inline SharedTxStatus
     SharedTxStatusRead(SharedStream *ss)
     {

@@ -5255,10 +5255,13 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
     ConnCtx        *cc = sc->cc;
     NsTLSConfig    *dc = cc->dc;
     bool            finalized = NS_FALSE;
-    bool            want_w_prev, has_tx, need_w;
-    SharedSnapshot snap = SharedSnapshotInit(&sc->sh);
+    bool           want_w_prev, has_tx, need_w;
+    SharedTxStatus status;
 
-    has_tx = SharedHasData(&snap);
+    NS_TA_ASSERT_HELD(cc, affinity);
+
+    status = SharedTxStatusRead(&sc->sh);
+    has_tx = SharedTxStatusHasData(&status);
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_maybe_finalize called %s (%s)",
            (long long)dc->iter, (long long)sc->quic_sid, H3StreamKind_str(sc->kind), label);
@@ -5276,7 +5279,7 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
     }
 
     /* ---- lazy close path: only if we never concluded via nghttp3 ---- */
-    if (StreamCtxIsServerUni(sc) && SharedEOFReady(&snap) && !H3_IO_HAS(sc, H3_IO_TX_FIN)) {
+    if (StreamCtxIsServerUni(sc) && SharedTxStatusEOFReady(&status) && !H3_IO_HAS(sc, H3_IO_TX_FIN)) {
         int ok = SSL_stream_conclude(sc->ssl, 0);
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_stream_maybe_finalize %s %s stream_conclude returns %d",
                (long long)dc->iter, (long long)sc->quic_sid, label, H3StreamKind_str(sc->kind), ok);
@@ -5312,21 +5315,32 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
     need_w = has_tx || want_w_prev;
 
     Ns_Log(Ns_LogQuicDebug,
-           "[%lld] H3[%lld] h3_stream_maybe_finalize reads sc->wants_write %d need_w %d"
-           " has_tx %d (queued %zu pending %zu)",
-           (long long)dc->iter, (long long)sc->quic_sid, want_w_prev, need_w, has_tx, snap.queued_bytes, snap.pending_bytes);
+           "[%lld] H3[%lld] h3_stream_maybe_finalize"
+           " reads sc->wants_write %d need_w %d"
+           " has_tx %d (queued %d pending %" PRIuz ")",
+           (long long)dc->iter,
+           (long long)sc->quic_sid,
+           want_w_prev,
+           need_w,
+           has_tx,
+           status.queued,
+           status.pending_bytes);
 
     if (need_w) {
         Ns_Log(Ns_LogQuicDebug,
-               "[%lld] H3[%lld] h3_stream_maybe_finalize need W: closed_by_app %d io_state %.2x",
-               (long long)dc->iter, (long long)sc->quic_sid, snap.closed_by_app, H3_IO_STATE(sc));
+               "[%lld] H3[%lld] h3_stream_maybe_finalize:"
+               " need W: closed_by_app %d io_state %.2x",
+               (long long)dc->iter,
+               (long long)sc->quic_sid,
+               status.closed_by_app,
+               H3_IO_STATE(sc));
         PollsetEnableWrite(dc, sc->ssl, sc, "h3_stream_maybe_finalize: need W");
     } else if (sc->seen_io) {
         PollsetDisableWrite(dc, sc->ssl, sc, "h3_stream_maybe_finalize: idle");
     }
 
     /* ---- reap using our own flags + buffers ---- */
-    if (H3_BOTH_CLOSED(sc) && SharedIsEmpty(&snap)) {
+    if (H3_BOTH_CLOSED(sc) && SharedTxStatusIsEmpty(&status)) {
         /* we're done with this BIDI stream */
         PollsetDisableRead (dc, sc->ssl, sc, "h3_stream_maybe_finalize: both-closed");
         PollsetDisableWrite(dc, sc->ssl, sc, "h3_stream_maybe_finalize: both-closed");
