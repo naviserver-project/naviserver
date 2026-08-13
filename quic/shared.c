@@ -992,41 +992,6 @@ SharedDrainResume(SharedState *st, int64_t *out, size_t cap)
     return n;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * SharedSnapshotRead --
- *
- *      Read the current transmit state into out.
- *
- *      The caller must execute on the owning H3/QUIC thread.
- *      tx_pending is owned exclusively by that thread. The stream mutex
- *      synchronizes the reads of producer-owned tx_queued and
- *      closed_by_app.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Acquires ss->lock and writes the snapshot to out. Does not modify
- *      either transmit queue or trigger a wake or resume request.
- *
- *----------------------------------------------------------------------
- */
-void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out)
-{
-    uint32_t state;
-
-    Ns_MutexLock(&ss->lock);
-    state = Ns_AtomicUint32LoadRelaxed(&ss->tx_state);
-
-    out->queued_bytes   = ss->tx_queued.unread;
-    out->pending_bytes  = ss->tx_pending.unread;
-    out->closed_by_app  = (state & SHARED_TX_CLOSED) != 0u;
-
-    assert(((state & SHARED_TX_QUEUED) != 0u) == (ss->tx_queued.unread != 0u));
-    Ns_MutexUnlock(&ss->lock);
-}
 #endif
 
 /*

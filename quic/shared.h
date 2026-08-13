@@ -63,13 +63,6 @@ extern "C" {
     } SharedState;
 
     /* ===== Shared snapshot (per-connection) ======================================= */
-
-    typedef struct {
-        size_t queued_bytes;   /* bytes still queued (not handed to reader) */
-        size_t pending_bytes;  /* bytes handed to reader but not yet trimmed */
-        bool   closed_by_app;  /* producer closed (final chunk queued/already consumed) */
-    } SharedSnapshot; /* A consistent view of the producer buffers*/
-
     typedef struct {
         size_t pending_bytes;
         bool   queued;
@@ -167,14 +160,6 @@ extern "C" {
     size_t SharedDrainResume(SharedState *st, int64_t *out, size_t cap)  NS_GNUC_NONNULL(1);
     static bool SharedHasResumePending(SharedState *st) NS_GNUC_NONNULL(1);
 
-    /*
-     * Read a transmit-state snapshot. The caller must execute on the owning
-     * H3/QUIC thread. The mutex synchronizes tx_queued and tx_state; thread
-     * affinity protects tx_pending.
-     */
-    void SharedSnapshotRead(SharedStream *ss, SharedSnapshot *out) NS_GNUC_NONNULL(1,2);
-    static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss) NS_GNUC_NONNULL(1);
-
     /* Tiny helpers (header-only / static inline) */
     static inline bool SharedHasResumePending(SharedState *st)
     {
@@ -197,12 +182,6 @@ extern "C" {
             Ns_AtomicUint32LoadRelaxed(&ss->tx_state);
 
         Ns_AtomicUint32StoreRelease(&ss->tx_state, state & ~bits);
-    }
-
-    static inline SharedSnapshot SharedSnapshotInit(SharedStream *ss)  {
-        SharedSnapshot snap;
-        SharedSnapshotRead(ss, &snap);
-        return snap;
     }
 
     static inline bool

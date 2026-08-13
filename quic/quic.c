@@ -9027,7 +9027,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
         SSL_POLL_ITEM *item = &dc->u.h3.poll_items[i];
         SSL           *ssl  = dc->u.h3.ssl_items.data[i];
         StreamCtx     *sc;
-        SharedSnapshot snap;
+        SharedTxStatus status;
         bool           stream_wants_write;
         unsigned int   delivery_refs;
 
@@ -9040,7 +9040,8 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
             continue;
         }
 
-        snap = SharedSnapshotInit(&sc->sh);
+        NS_TA_ASSERT_HELD(sc->cc, affinity);
+        status = SharedTxStatusRead(&sc->sh);
 
         stream_wants_write = sc->wants_write;
         delivery_refs = StreamCtxDeliveryRefs(sc);
@@ -9053,13 +9054,13 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
         if (stream_wants_write) {
             wants_write++;
         }
-        if (snap.queued_bytes > 0u) {
+        if (status.queued) {
             queued++;
         }
-        if (snap.pending_bytes > 0u) {
+        if (status.pending_bytes > 0u) {
             pending++;
         }
-        if (snap.closed_by_app) {
+        if (status.closed_by_app) {
             closed_by_app++;
         }
         if (delivery_refs > 0u) {
@@ -9136,7 +9137,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
         SSL_POLL_ITEM *item = &dc->u.h3.poll_items[i];
         SSL           *ssl  = dc->u.h3.ssl_items.data[i];
         StreamCtx     *sc;
-        SharedSnapshot snap;
+        SharedTxStatus status;
         bool           stream_wants_write;
         unsigned int   delivery_refs;
 
@@ -9149,7 +9150,8 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
             continue;
         }
 
-        snap = SharedSnapshotInit(&sc->sh);
+        NS_TA_ASSERT_HELD(sc->cc, affinity);
+        status = SharedTxStatusRead(&sc->sh);
 
         stream_wants_write = sc->wants_write;
         delivery_refs = StreamCtxDeliveryRefs(sc);
@@ -9158,7 +9160,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
                "[%lld] H3 idle item %zu: SSL %p H3[%lld]"
                " events 0x%08" PRIx64 " revents 0x%08" PRIx64
                " io_state 0x%02x wants_write %d"
-               " queued %zu pending %zu app_closed %d"
+               " queued %d pending %zu app_closed %d"
                " delivery_refs %u"
                " rx %zu/%zu fin_pending %d"
                " eof_seen %d"
@@ -9169,8 +9171,9 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
                i, (void *)ssl, (long long)sc->quic_sid,
                item->events, item->revents,
                StreamCtxIoState(sc), stream_wants_write,
-               snap.queued_bytes, snap.pending_bytes,
-               snap.closed_by_app,
+               status.queued,
+               status.pending_bytes,
+               status.closed_by_app,
                delivery_refs,
                sc->rx_off, sc->rx_len,
                sc->rx_fin_pending,
