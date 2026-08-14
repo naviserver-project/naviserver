@@ -3650,6 +3650,15 @@ h3_conn_write_step(ConnCtx *cc)
             PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step per stream W decision");
         }
 
+        /*
+         * nghttp3 retains the unconsumed vector. Continuing this write step
+         * would immediately offer the same blocked stream again.
+         */
+        if (hit_want) {
+            need_local_retry = NS_FALSE;
+            break;
+        }
+
     next_sid:
         /* Continue outer loop to pull next sid/vecs from nghttp3 */
         ;
