@@ -49,6 +49,39 @@ Ns_AtomicUint32Init(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_AtomicUint32Destroy --
+ *
+ *      Release resources associated with an initialized atomic
+ *      unsigned 32-bit integer.
+ *
+ *      The caller must ensure that no thread is accessing atomicPtr and
+ *      that no concurrent atomic operation can begin. The value must
+ *      have been initialized with Ns_AtomicUint32Init().
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Destroys the fallback mutex on platforms without native atomic
+ *      operations. On platforms using MSVC interlocked operations or
+ *      GNU atomic builtins, this function performs no operation. It
+ *      does not free atomicPtr or its enclosing object.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_AtomicUint32Destroy(Ns_AtomicUint32 *atomicPtr)
+{
+#if defined(_MSC_VER) || defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    (void)atomicPtr;
+#else
+    Ns_MutexDestroy(&atomicPtr->lock);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_AtomicUint32ExchangeRelaxed --
  *
  *      Atomically replace the value held by atomicPtr and return its
@@ -473,6 +506,114 @@ Ns_AtomicUint32FetchAndRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
     Ns_MutexLock(&atomicPtr->lock);
     previous = atomicPtr->value;
     atomicPtr->value &= mask;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return previous;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32FetchAddRelaxed --
+ *
+ *      Atomically add value to the unsigned 32-bit integer referenced
+ *      by atomicPtr.
+ *
+ *      This operation uses relaxed memory ordering. It guarantees atomic
+ *      modification of the value but does not establish synchronization
+ *      with other memory accesses.
+ *
+ * Results:
+ *      The value held by atomicPtr before the addition.
+ *
+ * Side effects:
+ *      Updates the value referenced by atomicPtr. Unsigned overflow wraps
+ *      modulo UINT32_MAX + 1.
+ *
+ *----------------------------------------------------------------------
+ */
+uint32_t
+Ns_AtomicUint32FetchAddRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
+{
+#if defined(_MSC_VER)
+    /*
+     * InterlockedExchangeAdd() provides stronger ordering than relaxed,
+     * but MSVC does not provide a portable weaker variant for all
+     * supported targets.
+     */
+    return (uint32_t)InterlockedExchangeAdd(&atomicPtr->value,
+                                            (LONG)value);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_fetch_add(&atomicPtr->value,
+                              value,
+                              __ATOMIC_RELAXED);
+
+#else
+    uint32_t previous;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    previous = atomicPtr->value;
+    atomicPtr->value += value;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return previous;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint32FetchSubAcqRel --
+ *
+ *      Atomically subtract value from the unsigned 32-bit integer
+ *      referenced by atomicPtr.
+ *
+ *      This operation uses acquire-release memory ordering. Prior writes
+ *      by the current thread are published by the release part, while the
+ *      acquire part makes writes published through the same atomic object
+ *      visible to the thread performing this operation.
+ *
+ * Results:
+ *      The value held by atomicPtr before the subtraction.
+ *
+ * Side effects:
+ *      Updates the value referenced by atomicPtr. The caller must prevent
+ *      unintended unsigned underflow.
+ *
+ *----------------------------------------------------------------------
+ */
+
+uint32_t
+Ns_AtomicUint32FetchSubAcqRel(Ns_AtomicUint32 *atomicPtr, uint32_t value)
+{
+#if defined(_MSC_VER)
+    /*
+     * InterlockedExchangeAdd() is a full-barrier operation and therefore
+     * provides at least acquire-release ordering. Form the negative
+     * increment using unsigned arithmetic to avoid signed negation
+     * overflow for LONG_MIN.
+     */
+    const LONG delta = (LONG)(0u - value);
+
+    return (uint32_t)InterlockedExchangeAdd(&atomicPtr->value, delta);
+
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    return __atomic_fetch_sub(&atomicPtr->value,
+                              value,
+                              __ATOMIC_ACQ_REL);
+
+#else
+    uint32_t previous;
+
+    /*
+     * The mutex provides stronger synchronization than acquire-release
+     * ordering.
+     */
+    Ns_MutexLock(&atomicPtr->lock);
+    previous = atomicPtr->value;
+    atomicPtr->value -= value;
     Ns_MutexUnlock(&atomicPtr->lock);
 
     return previous;

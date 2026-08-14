@@ -16,6 +16,7 @@
  */
 
 #include "nsd.h"
+#include "nsatomic.h"
 
 /*
  * The following structure defines a url2file callback including user
@@ -23,7 +24,7 @@
  */
 
 typedef struct {
-    int                    refcnt;
+    Ns_AtomicUint32        refcnt;
     Ns_Url2FileProc       *proc;
     Ns_Callback           *deleteCallback;
     void                  *arg;
@@ -81,7 +82,6 @@ NsInitUrl2File(void)
     uid = Ns_UrlSpecificAlloc();
     Ns_MutexInit(&ulock);
     Ns_MutexSetName(&ulock, "nsd:url2file");
-
     NsRegisterServerInit(ConfigServerUrl2File);
 }
 
@@ -145,7 +145,8 @@ Ns_RegisterUrl2FileProc(const char *server, const char *url,
         u2fPtr->deleteCallback = deleteCallback;
         u2fPtr->arg = arg;
         u2fPtr->flags = flags;
-        u2fPtr->refcnt = 1;
+        Ns_AtomicUint32Init(&u2fPtr->refcnt, 1u);
+
         Ns_MutexLock(&ulock);
         Ns_UrlSpecificSet(server, "x", url, uid, u2fPtr, flags, FreeUrl2File);
         Ns_MutexUnlock(&ulock);
@@ -267,16 +268,15 @@ NsUrlToFile(Tcl_DString *dsPtr, NsServer *servPtr, const char *url)
         u2fPtr = Ns_UrlSpecificGet((Ns_Server*)servPtr, "x", url, uid, 0u,
                                    NS_URLSPACE_DEFAULT, NULL, NULL, NULL);
         if (u2fPtr == NULL) {
+            Ns_MutexUnlock(&ulock);
             Ns_Log(Error, "url2file: no proc found for url: %s", url);
             status = NS_ERROR;
         } else {
-            ++u2fPtr->refcnt;
+            (void)Ns_AtomicUint32FetchAddRelaxed(&u2fPtr->refcnt, 1u);
             Ns_MutexUnlock(&ulock);
             status = (*u2fPtr->proc)(dsPtr, url, u2fPtr->arg);
-            Ns_MutexLock(&ulock);
             FreeUrl2File(u2fPtr);
         }
-        Ns_MutexUnlock(&ulock);
     }
     if (status == NS_OK) {
         while (dsPtr->length > 0 && dsPtr->string[dsPtr->length -1] == '/') {
@@ -744,7 +744,9 @@ FreeMount(void *arg)
  *
  * FreeUrl2File --
  *
- *      Free Url2File data when reference count reaches 0.
+ *      Drop one reference and destroy the mapping when the last reference is
+ *      released. The final release may occur outside ulock when a mapping is
+ *      replaced or unregistered while its callback is executing.
  *
  * Results:
  *      None.
@@ -759,11 +761,16 @@ static void
 FreeUrl2File(void *arg)
 {
     Url2File *u2fPtr = (Url2File *) arg;
+    uint32_t previous;
 
-    if (--u2fPtr->refcnt == 0) {
+    previous = Ns_AtomicUint32FetchSubAcqRel(&u2fPtr->refcnt, 1u);
+    assert(previous > 0u);
+
+    if (previous == 1u) {
         if (u2fPtr->deleteCallback != NULL) {
             (*u2fPtr->deleteCallback)(u2fPtr->arg);
         }
+        Ns_AtomicUint32Destroy(&u2fPtr->refcnt);
         ns_free(u2fPtr);
     }
 }
