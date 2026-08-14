@@ -76,7 +76,7 @@
  */
 
 
-#include "../include/ns.h"
+#include "../nsd/nsd.h"
 
 #if defined(HAVE_NGHTTP3)
 #include "shared.h"
@@ -85,6 +85,65 @@
 static int  resume_grow(SharedState *st) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_LogSeverity Ns_LogQuicDebug;
+
+#ifdef NS_DRIVER_MEM_STATS
+# define SHARED_COUNTER_STATS 1
+#endif
+
+#ifdef SHARED_COUNTER_STATS
+
+NS_EXTERN void NsSharedCounterStatsLog(uint64_t iter);
+
+typedef struct SharedCounters {
+    uint64_t stream_destroy_lock;
+    uint64_t stream_enqueue_lock;
+    uint64_t stream_splice_lock;
+    uint64_t resume_request_lock;
+    uint64_t resume_drain_lock;
+} SharedCounters;
+
+typedef struct SharedCounterStats {
+    Ns_Mutex       lock;
+    SharedCounters counters;
+} SharedCounterStats;
+
+static SharedCounterStats sharedCounterStats;
+
+static void
+SharedCounterStatsIncr(uint64_t *counterPtr)
+{
+    Ns_MutexLock(&sharedCounterStats.lock);
+    (*counterPtr)++;
+    Ns_MutexUnlock(&sharedCounterStats.lock);
+}
+
+void
+NsSharedCounterStatsLog(uint64_t iter)
+{
+    SharedCounters snapshot;
+
+    Ns_MutexLock(&sharedCounterStats.lock);
+    snapshot = sharedCounterStats.counters;
+    Ns_MutexUnlock(&sharedCounterStats.lock);
+
+Ns_Log(Notice,
+       "[%lld] H3 shared locks:"
+       " stream_destroy_lock %llu"
+       " stream_enqueue_lock %llu"
+       " stream_splice_lock %llu"
+       " resume_request_lock %llu"
+       " resume_drain_lock %llu"
+       , iter,
+       (unsigned long long)snapshot.stream_destroy_lock,
+       (unsigned long long)snapshot.stream_enqueue_lock,
+       (unsigned long long)snapshot.stream_splice_lock,
+       (unsigned long long)snapshot.resume_request_lock,
+       (unsigned long long)snapshot.resume_drain_lock
+       );
+}
+#else
+# define SharedCounterStatsIncr(c)
+#endif /* SHARED_COUNTER_STATS */
 
 /*======================================================================
  * Function Implementations: Utilities
@@ -286,6 +345,7 @@ void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid) {
  *----------------------------------------------------------------------
  */
 void SharedStreamDestroy(SharedStream *ss) {
+    SharedCounterStatsIncr(&sharedCounterStats.counters.stream_destroy_lock);
     Ns_MutexLock(&ss->lock);
     ChunkQueueClear(&ss->tx_queued);
     ChunkQueueClear(&ss->tx_pending);
@@ -409,6 +469,7 @@ void SharedHdrsClear(SharedStream *ss) {
  */
 size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const char *label) {
   Chunk *ch;
+
   if (!buf || len == 0) {
     return 0;
   }
@@ -419,6 +480,8 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
          len);
 
   ch = ChunkInit(buf, len);
+
+  SharedCounterStatsIncr(&sharedCounterStats.counters.stream_enqueue_lock);
 
   Ns_MutexLock(&ss->lock);
 
@@ -472,6 +535,8 @@ size_t
 SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes)
 {
     size_t moved;
+
+    SharedCounterStatsIncr(&sharedCounterStats.counters.stream_splice_lock);
 
     Ns_MutexLock(&ss->lock);
 
@@ -798,6 +863,7 @@ SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid)
     if (Ns_AtomicUint32ExchangeRelaxed(&ss->resume_enqueued, 1u) != 0u) {
         return;
     }
+    SharedCounterStatsIncr(&sharedCounterStats.counters.resume_request_lock);
 
     Ns_MutexLock(&st->lock);
 
@@ -828,49 +894,6 @@ SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid)
         st->wake_cb(st->wake_arg);
     }
 }
-
-#if 0
-/*
- *----------------------------------------------------------------------
- *
- * SharedPopResume --
- *
- *      Pop the next SID from the resume ring (circular FIFO), if any.
- *      Thread-safe; preserves FIFO order.
- *
- * Results:
- *      1 on success (stores SID into *out_sid); 0 if the ring is empty
- *      (out_sid is left untouched). Requires out_sid != NULL.
- *
- * Side effects:
- *      Acquires st->lock; advances head with wrap-around and decrements
- *      count. No allocation, no logging.
- *
- *----------------------------------------------------------------------
- */
-int
-SharedPopResume(SharedState *st, int64_t *out_sid)
-{
-    int result = NS_FALSE;
-
-    Ns_MutexLock(&st->lock);
-
-    if (st->count > 0u) {
-        *out_sid = st->resume[st->head];
-        st->head = (st->head + 1u) % st->cap;
-        st->count--;
-        result = NS_TRUE;
-
-        if (st->count == 0u) {
-            Ns_AtomicUint32StoreRelaxed(&st->resume_pending, 0u);
-        }
-    }
-
-    Ns_MutexUnlock(&st->lock);
-
-    return result;
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -927,6 +950,7 @@ SharedDrainResume(SharedState *st, int64_t *out, size_t cap)
     if (out == NULL || cap == 0u) {
         return 0u;
     }
+    SharedCounterStatsIncr(&sharedCounterStats.counters.resume_drain_lock);
 
     Ns_MutexLock(&st->lock);
 
