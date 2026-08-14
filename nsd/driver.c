@@ -932,6 +932,13 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             Ns_SetUpdateSz(set, "driverthreads", 13, "1", 1);
             nrDrivers = 1;
 #endif
+            if ((init->opts & NS_DRIVER_QUIC) != 0u && nrDrivers > 1) {
+                Ns_Log(Warning,
+                       "%s: driverthreads %d is not supported for QUIC drivers; "
+                       "using just 1 driver thread",
+                       module, nrDrivers);
+                nrDrivers = 1;
+            }
         }
 
         /*
