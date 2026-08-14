@@ -200,6 +200,8 @@ typedef struct QuicMemStats {
 } QuicMemStats;
 static QuicMemStats quicMemStats;
 
+NS_EXTERN void NsSharedCounterStatsLog(uint64_t iter);
+
 static void
 QuicMemStatsIncr(uint64_t *counterPtr)
 {
@@ -9371,6 +9373,7 @@ QuicThread(void *arg)
         if (dc->iter % 1000 == 0 || numitems < 2) {
             QuicMemStatsLog(dc->iter);
             NsWriterMemStatsLog(dc->iter);
+            NsSharedCounterStatsLog(dc->iter);
         }
 #endif
 

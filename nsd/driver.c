@@ -473,6 +473,16 @@ typedef struct WriterMemCounters {
 
     uint64_t header_alloc;
     uint64_t header_free;
+
+    uint64_t writer_queue_process_lock;
+    uint64_t writer_queue_adopt_lock;
+    uint64_t writer_queue_submit_lock;
+
+    uint64_t writer_process_keep;
+    uint64_t writer_process_keep_after_write;
+    uint64_t writer_process_keep_without_write;
+    uint64_t writer_process_complete;
+    uint64_t writer_process_error;
 } WriterMemCounters;
 
 typedef struct WriterMemStats {
@@ -512,33 +522,48 @@ Ns_Log(Notice,
        " body iov %llu/%llu active %lld,"
        " body iov bytes %llu/%llu active %lld,"
        " iov arrays %llu/%llu active %lld,"
-       " headers %llu/%llu active %lld",
-       (long long)iter,
+       " headers %llu/%llu active %lld"
+       " writer_queue_process_lock %lld"
+       " writer_queue_adopt_lock %lld"
+       " writer_queue_submit_lock %lld"
+       " writer_process_keep %lld"
+       " writer_process_keep_after_write %lld"
+       " writer_process_keep_without_write %lld"
+       " writer_process_complete %lld"
+       " writer_process_error %lld"
+
+       ,(long long)iter,
 
        (unsigned long long)snapshot.writersock_new,
        (unsigned long long)snapshot.writersock_free,
-       (long long)snapshot.writersock_new
-           - (long long)snapshot.writersock_free,
+       (long long)snapshot.writersock_new - (long long)snapshot.writersock_free,
 
        (unsigned long long)snapshot.mem_iov_allocs,
        (unsigned long long)snapshot.mem_iov_frees,
-       (long long)snapshot.mem_iov_allocs
-           - (long long)snapshot.mem_iov_frees,
+       (long long)snapshot.mem_iov_allocs - (long long)snapshot.mem_iov_frees,
 
        (unsigned long long)snapshot.mem_iov_bytes_allocated,
        (unsigned long long)snapshot.mem_iov_bytes_freed,
-       (long long)snapshot.mem_iov_bytes_allocated
-           - (long long)snapshot.mem_iov_bytes_freed,
+       (long long)snapshot.mem_iov_bytes_allocated - (long long)snapshot.mem_iov_bytes_freed,
 
        (unsigned long long)snapshot.mem_buf_array_alloc,
        (unsigned long long)snapshot.mem_buf_array_free,
-       (long long)snapshot.mem_buf_array_alloc
-           - (long long)snapshot.mem_buf_array_free,
+       (long long)snapshot.mem_buf_array_alloc - (long long)snapshot.mem_buf_array_free,
 
        (unsigned long long)snapshot.header_alloc,
        (unsigned long long)snapshot.header_free,
-       (long long)snapshot.header_alloc
-           - (long long)snapshot.header_free);
+       (long long)snapshot.header_alloc - (long long)snapshot.header_free,
+
+       (unsigned long long)snapshot.writer_queue_process_lock,
+       (unsigned long long)snapshot.writer_queue_adopt_lock,
+       (unsigned long long)snapshot.writer_queue_submit_lock,
+
+       (unsigned long long)snapshot.writer_process_keep,
+       (unsigned long long)snapshot.writer_process_keep_after_write,
+       (unsigned long long)snapshot.writer_process_keep_without_write,
+       (unsigned long long)snapshot.writer_process_complete,
+       (unsigned long long)snapshot.writer_process_error
+       );
 }
 #else
 # define WriterMemStatsIncr(c)
@@ -8252,11 +8277,9 @@ WriterSockRelease(WriterSock *wrSockPtr) {
             for (i = 0; i < wrSockPtr->c.mem.nbufs; i++) {
 #ifdef WRITER_MEM_STATS
                 if (i < wrSockPtr->headerbufs) {
-                    WriterMemStatsIncr(
-                                       &writerMemStats.counters.header_free);
+                    WriterMemStatsIncr(&writerMemStats.counters.header_free);
                 } else {
-                    WriterMemStatsIncr(
-                                       &writerMemStats.counters.mem_iov_frees);
+                    WriterMemStatsIncr(&writerMemStats.counters.mem_iov_frees);
                     WriterMemStatsAdd(
                                       &writerMemStats.counters.mem_iov_bytes_freed,
                                       wrSockPtr->c.mem.bufs[i].iov_len);
@@ -9099,6 +9122,7 @@ WriterThread(void *arg)
         while (curPtr != NULL) {
             NsWriterStreamState doStream;
             SpoolerState        spoolerState = SPOOLER_OK;
+            bool attemptedWrite = NS_FALSE;
 
             nextPtr = curPtr->nextPtr;
             sockPtr = curPtr->sockPtr;
@@ -9123,6 +9147,7 @@ WriterThread(void *arg)
 
 
             } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (doStream == NS_WRITER_STREAM_FINISH)) {
+
                 /*
                  * The socket is writable, we can compute the rate, when
                  * something was sent already and some kind of rate limiting
@@ -9175,6 +9200,7 @@ WriterThread(void *arg)
                     }
 
                     if (spoolerState == SPOOLER_OK) {
+                        attemptedWrite = NS_TRUE;
                         spoolerState = WriterSend(curPtr, &err);
                     }
                 }
@@ -9201,10 +9227,16 @@ WriterThread(void *arg)
              * Check result status and close the socket in case of
              * timeout or completion
              */
-
+            WriterMemStatsIncr(&writerMemStats.counters.writer_queue_process_lock);
             Ns_MutexLock(&queuePtr->lock);
             if (spoolerState == SPOOLER_OK) {
                 if (curPtr->size > 0u || doStream == NS_WRITER_STREAM_ACTIVE) {
+                    WriterMemStatsIncr(&writerMemStats.counters.writer_process_keep);
+                    if (attemptedWrite) {
+                        WriterMemStatsIncr(&writerMemStats.counters.writer_process_keep_after_write);
+                    } else {
+                        WriterMemStatsIncr(&writerMemStats.counters.writer_process_keep_without_write);
+                    }
                     Ns_Log(DriverDebug,
                            "Writer %p continue OK (size %" PRIdz ") => PUSH",
                            (void *)curPtr, curPtr->size);
@@ -9212,6 +9244,8 @@ WriterThread(void *arg)
                     drvPtr->writer.stats.writing++;
 
                 } else {
+                    WriterMemStatsIncr(&writerMemStats.counters.writer_process_complete);
+
                     Ns_Log(DriverDebug,
                            "Writer %p done OK (size %" PRIdz ") => RELEASE",
                            (void *)curPtr, curPtr->size);
@@ -9221,6 +9255,8 @@ WriterThread(void *arg)
                 /*
                  * spoolerState might be SPOOLER_CLOSE or SPOOLER_*TIMEOUT, or SPOOLER_*ERROR
                  */
+                WriterMemStatsIncr(&writerMemStats.counters.writer_process_error);
+
                 Ns_Log(DriverDebug,
                        "Writer %p fd %d release, not OK (status %d) => RELEASE",
                        (void *)curPtr, curPtr->sockPtr->sock, (int)spoolerState);
@@ -9237,6 +9273,7 @@ WriterThread(void *arg)
          */
 
         if (queuePtr->sockPtr != NULL) {
+            WriterMemStatsIncr(&writerMemStats.counters.writer_queue_adopt_lock);
             Ns_MutexLock(&queuePtr->lock);
             if (queuePtr->sockPtr != NULL) {
                 curPtr = queuePtr->sockPtr;
@@ -9872,6 +9909,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
      */
     wrSockPtr->queuePtr = queuePtr;
 
+    WriterMemStatsIncr(&writerMemStats.counters.writer_queue_submit_lock);
     Ns_MutexLock(&queuePtr->lock);
     if (queuePtr->sockPtr == NULL) {
         trigger = NS_TRUE;
