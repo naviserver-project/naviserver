@@ -4481,7 +4481,7 @@ EnsureDriverLinkage(void)
     NsDriversOfType(&h3dl, "quic");
     NsDriversOfType(&h1dl, "nsssl");
 
-    Ns_Log(Notice, "EnsureDriverLinkage h1 %ld h3 %ld", h1dl.size, h3dl.size);
+    Ns_Log(Debug, "EnsureDriverLinkage h1 %ld h3 %ld", h1dl.size, h3dl.size);
 
     for (i = 0; i < h3dl.size; i++) {
         Driver      *h3drvPtr = h3dl.data[i];
@@ -4490,7 +4490,7 @@ EnsureDriverLinkage(void)
         for (j = 0; j < h3dl.size; j++) {
             Driver *h1drvPtr = h1dl.data[j];
             if (STREQ(h3drvPtr->path, section)) {
-                Ns_Log(Notice, "EnsureDriverLinkage common section %s h1 driver %p %s"
+                Ns_Log(Debug, "EnsureDriverLinkage common section %s h1 driver %p %s"
                        " has linked driver %p %s", section,
                        (void*)h1drvPtr, h1drvPtr->moduleName,
                        (void*)h3drvPtr, h3drvPtr->moduleName);
