@@ -45,7 +45,6 @@ set	serverdesc		"Server Name"
 
 # The hostname, address and port for nssock should be set to actual values.
 set	hostname		[ns_info hostname]
-#set	address			[ns_info address]
 set	address			localhost
 set	port			8080
 
@@ -623,7 +622,7 @@ ns_section ns/server/${server}/module/http {
     #ns_param	maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
     #ns_param	writerthreads	1	;# 0, number of writer threads
     #ns_param	writersize	1kB	;# 1MB, use writer threads for files larger than this value
-    #ns_param	writerbufsize	16kB	;# 8kB, buffer (chunk) size for writer threads
+    #ns_param	writerbufsize	16kB	;# 32kB, buffer (chunk) size for writer threads
     #ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (e.g. ns_writer)
     #ns_param	driverthreads	2	;# 1, number of driver threads (requires support of SO_REUSEPORT)
 

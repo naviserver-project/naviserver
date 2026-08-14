@@ -2269,7 +2269,7 @@ stops execution of that ADP page}
             }
             writerbufsize {
                 type size
-                default {8kB}
+                default {32kB}
                 desc {Buffer size for writer threads}
             }
 
