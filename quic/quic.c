@@ -7252,7 +7252,7 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        Ns_DStringPrintf(&ds, "h3:pollset:%" PRIuz, idx);
+        Ns_DStringPrintf(&ds, "%s:pollset:%" PRIuz, dc->driver->threadName, idx);
 
         Ns_MutexInit(&mutex);
         Ns_MutexSetName2(&mutex, ds.string, "item");
