@@ -2756,8 +2756,14 @@ NsDriverBindAddresses(Driver *drvPtr)
  *----------------------------------------------------------------------
  */
 void NsDriverStartSpoolers(Driver *drvPtr) {
-    SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
-    SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
+    if (drvPtr->spooler.firstPtr != NULL) {
+        drvPtr->spooler.firstPtr->threadName = drvPtr->threadName;
+        SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
+    }
+    if (drvPtr->writer.firstPtr != NULL) {
+        drvPtr->writer.firstPtr->threadName = drvPtr->threadName;
+        SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
+    }
 }
 
 
@@ -7716,7 +7722,7 @@ SpoolerThread(void *arg)
     Driver        *drvPtr;
     PollData       pdata;
 
-    Ns_ThreadSetName("-spooler%d-", queuePtr->id);
+    Ns_ThreadSetName("-spooler:%s:%d-", queuePtr->threadName, queuePtr->id);
     queuePtr->threadName = Ns_ThreadGetName();
 
     /*
@@ -9066,7 +9072,7 @@ WriterThread(void *arg)
     PollData        pdata;
     Tcl_HashTable   pools;     /* used for accumulating bandwidth per pool */
 
-    Ns_ThreadSetName("-writer%d-", queuePtr->id);
+    Ns_ThreadSetName("-writer:%s:%d-", queuePtr->threadName, queuePtr->id);
     queuePtr->threadName = Ns_ThreadGetName();
 
     Tcl_InitHashTable(&pools, TCL_ONE_WORD_KEYS);
