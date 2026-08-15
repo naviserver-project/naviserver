@@ -506,6 +506,7 @@ typedef struct StreamCtx {
 
 static nghttp3_callbacks h3_callbacks = {0};
 static nghttp3_mem h3_mem;
+static Ns_Mutex quicDriverInitLock;
 
 /*
  * Local functions defined in this file.
@@ -2423,7 +2424,7 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
 
             SSL_get_domain_flags(conn, &domain_flags);
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3 SockAccept can associate with cc %p domain flags 0x%llx",
-                   (long long)dc->iter, (void*)cc, domain_flags);
+                   (long long)dc->iter, (void*)cc, (long long unsigned int)domain_flags);
         }
 
         /*
@@ -8684,8 +8685,6 @@ SockDispatchFinishedRequest(StreamCtx *sc)
     return result;
 }
 
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -8733,6 +8732,9 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
         return NS_ERROR;
     }
     Ns_LogQuicDebug = Ns_CreateLogSeverity("Debug(quic)");
+
+    Ns_MutexInit(&quicDriverInitLock);
+    Ns_MutexSetName(&quicDriverInitLock, "quic:global");
 
     /*
      * Load parameters from the specified section
@@ -9256,6 +9258,79 @@ PollsetValidate(const NsTLSConfig *dc, const char *where)
 /*
  *----------------------------------------------------------------------
  *
+ * TLSConfigClone --
+ *
+ *      Create a per-driver copy of the supplied TLS configuration.
+ *      Immutable TLS configuration, including the SSL_CTX and its
+ *      callback configuration, remains shared with the source. Mutable
+ *      H3 runtime state is initialized independently for the new driver.
+ *
+ *      Configuration values and OpenSSL ex-data indices stored in
+ *      source->u.h3 are preserved. Pollset storage, connection lists,
+ *      wake state, counters and other thread-owned H3 state are not
+ *      inherited from the source.
+ *
+ *      The source configuration must be fully initialized and must
+ *      remain valid for the lifetime of the returned configuration.
+ *      The caller must install the owning driver before using the clone
+ *      to create listeners, connections or pollset entries.
+ *
+ * Results:
+ *
+ *      A newly allocated per-driver NsTLSConfig.
+ *
+ * Side effects:
+ *
+ *      Allocates memory and initializes the clone's H3 atomics, pollset
+ *      containers and other runtime state. Does not modify the source
+ *      configuration. The shared SSL_CTX reference is not duplicated.
+ *
+ *----------------------------------------------------------------------
+ */
+static NsTLSConfig *
+TLSConfigClone(const NsTLSConfig *source)
+{
+    NsTLSConfig *dc = ns_malloc(sizeof(NsTLSConfig));
+
+    memcpy(dc, source, sizeof(NsTLSConfig));
+
+    /*
+     * Do not inherit mutable QUIC runtime state. Preserve only the
+     * configured values and globally allocated OpenSSL ex-data indices.
+     */
+    {
+        const bool           validate_client_address =
+            source->u.h3.validate_client_address;
+        const size_t         recvbufsize = source->u.h3.recvbufsize;
+        const struct timeval idle_timeout = source->u.h3.idle_timeout;
+        const struct timeval drain_timeout = source->u.h3.drain_timeout;
+        const int            cc_idx = source->u.h3.cc_idx;
+        const int            sc_idx = source->u.h3.sc_idx;
+
+        memset(&dc->u.h3, 0, sizeof(dc->u.h3));
+
+        dc->u.h3.validate_client_address = validate_client_address;
+        dc->u.h3.recvbufsize             = recvbufsize;
+        dc->u.h3.idle_timeout            = idle_timeout;
+        dc->u.h3.drain_timeout           = drain_timeout;
+        dc->u.h3.cc_idx                  = cc_idx;
+        dc->u.h3.sc_idx                  = sc_idx;
+    }
+
+    Ns_AtomicUint32Init(&dc->u.h3.waker_pending, 0u);
+
+    dc->u.h3.npoll          = (size_t)-1;
+    dc->u.h3.nr_listeners   = 0u;
+    dc->u.h3.progress_epoch = 0u;
+
+    PollsetInit(dc);
+
+    return dc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * QuicThread --
  *
  *      Main event-loop thread for the HTTP/3/QUIC driver using the
@@ -9296,17 +9371,36 @@ QuicThread(void *arg)
 {
     Driver             *drvPtr = (Driver*)arg;
     TCL_SIZE_T          nrBindaddrs;
-    NsTLSConfig        *dc = drvPtr->arg;
+    NsTLSConfig        *templateDc = drvPtr->arg, *dc;
     SSL_CTX            *h3ctx;
     bool                stopping = NS_FALSE;
     unsigned int        flags = NS_DRIVER_THREAD_STARTED;
     H3NoProgressWatch   watch = {0u, NS_FALSE};
-    uint64_t            previous_epoch = dc->u.h3.progress_epoch;
+    uint64_t            previous_epoch;
     static const struct timeval no_wait = {0, 0};
     const struct timeval       *polltimeout_ptr;
 
     Ns_ThreadSetName("-driver:%s:%s-", drvPtr->type, drvPtr->threadName);
     Ns_Log(Notice, "starting %s", drvPtr->threadName);
+
+    Ns_MutexLock(&quicDriverInitLock);
+    if (templateDc->driver == NULL) {
+        templateDc->driver = (Ns_Driver *)drvPtr;
+    }
+    Ns_MutexUnlock(&quicDriverInitLock);
+
+    dc = TLSConfigClone(templateDc);
+    assert(dc->driver != NULL);
+
+    drvPtr->arg = dc;
+    previous_epoch = dc->u.h3.progress_epoch;
+
+    Ns_Log(Ns_LogQuicDebug,
+           "H3 driver start: thread %lx drvPtr %p dc %p h3state %p",
+           Ns_ThreadId(),
+           (void *)drvPtr,
+           (void *)dc,
+           (void *)&dc->u.h3);
 
     nrBindaddrs = NsDriverBindAddresses(drvPtr);
 
@@ -9316,6 +9410,7 @@ QuicThread(void *arg)
     } else {
         flags |= (NS_DRIVER_THREAD_FAILED | NS_DRIVER_THREAD_SHUTDOWN);
     }
+
     Ns_MutexLock(&drvPtr->lock);
     drvPtr->flags |= flags;
     Ns_CondBroadcast(&drvPtr->cond);
@@ -10026,6 +10121,13 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
                    address, port, sock);
             goto fail;
         }
+
+        Ns_Log(Ns_LogQuicDebug,
+               "H3 driver %s: drvPtr %p dc %p socket %d",
+               driver->threadName,
+               (void *)driver,
+               (void *)dc,
+               sock);
 
         /*
          * Initialize waker fd.
