@@ -695,9 +695,9 @@ static inline void     PollsetEnableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc
 static inline void     PollsetDisableWrite(NsTLSConfig *dc, SSL *s, StreamCtx *sc, const char *label) NS_GNUC_NONNULL(1,2);
 
 static inline void     PollsetUpdateConnPollInterest(ConnCtx *cc) NS_GNUC_NONNULL(1);
-static size_t          PollsetHandleListenerEvents(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
+static size_t          PollsetHandleListenerEvents(NsTLSConfig *dc, size_t poll_result_count) NS_GNUC_NONNULL(1);
 static void            PollsetMarkDead(ConnCtx *cc, SSL *conn, const char *msg) NS_GNUC_NONNULL(1,2);
-static void            PollsetSweep(NsTLSConfig *dc) NS_GNUC_NONNULL(1);
+static void            PollsetSweep(NsTLSConfig *dc, size_t poll_result_count) NS_GNUC_NONNULL(1);
 static void            PollsetReapConnection(NsTLSConfig *dc, ConnCtx *cc, const char *reason) NS_GNUC_NONNULL(1,2,3);
 static bool            PollsetHasDeferredStreamForConn(const NsTLSConfig *dc, const ConnCtx *cc) NS_GNUC_NONNULL(1,2);
 
@@ -7756,7 +7756,7 @@ PollsetUpdateConnPollInterest(ConnCtx *cc)
  *----------------------------------------------------------------------
  */
 static size_t
-PollsetHandleListenerEvents(NsTLSConfig *dc)
+PollsetHandleListenerEvents(NsTLSConfig *dc, size_t poll_result_count)
 {
     size_t i, nticked = 0;
 
@@ -7772,8 +7772,10 @@ PollsetHandleListenerEvents(NsTLSConfig *dc)
 
         rc = SSL_handle_events(ls);   /* nonblocking; may generate egress */
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in PollsetHandleListenerEvents listener %p => %d",
-               (long long)dc->iter, (void*)ls, rc);
+        if (poll_result_count > 0) {
+            Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in PollsetHandleListenerEvents listener %p => %d",
+                   (long long)dc->iter, (void*)ls, rc);
+        }
 
         if (rc < 0) {
             int l = ERR_GET_LIB(ERR_peek_error());
@@ -8091,12 +8093,17 @@ PollsetHasDeferredStreamForConn(const NsTLSConfig *dc, const ConnCtx *cc)
  *----------------------------------------------------------------------
  */
 static void
-PollsetSweep(NsTLSConfig *dc)
+PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
 {
-    size_t i;
+    size_t i, nrItems = PollsetCount(dc);
 
-    Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep begin npoll %ld", (long long)dc->iter, PollsetCount(dc));
-    for (i = 0; i < PollsetCount(dc); i++) {
+    if (poll_result_count > 0) {
+        /*
+         * Omit debug for timeouts
+         */
+        Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep begin npoll %ld", (long long)dc->iter, nrItems);
+    }
+    for (i = 0; i < nrItems; i++) {
         int        stype;
         SSL       *s = dc->u.h3.ssl_items.data[i];
         ConnCtx   *cc;
@@ -8366,19 +8373,24 @@ PollsetSweep(NsTLSConfig *dc)
         }
     }
 
-    Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep DONE"
-           " ssl %zu"
-           " mutex %zu"
-           " shared_mutex %zu"
-           " dead %zu"
-           " conns %zu",
-           (long long)dc->iter,
-           dc->u.h3.ssl_items.size,
-           dc->u.h3.mutex_items.size,
-           dc->u.h3.shared_mutex_items.size,
-           dc->u.h3.dead_items.size,
-           dc->u.h3.conns.size
-           );
+    if (poll_result_count > 0) {
+        /*
+         * Omit debug for timeouts
+         */
+        Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep DONE"
+               " ssl %zu"
+               " mutex %zu"
+               " shared_mutex %zu"
+               " dead %zu"
+               " conns %zu",
+               (long long)dc->iter,
+               dc->u.h3.ssl_items.size,
+               dc->u.h3.mutex_items.size,
+               dc->u.h3.shared_mutex_items.size,
+               dc->u.h3.dead_items.size,
+               dc->u.h3.conns.size
+               );
+    }
 }
 
 /*
@@ -8888,7 +8900,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
  * Arguments:
  *      dc           - HTTP/3 driver configuration containing the pollset.
  *      numitems     - Number of valid entries considered by SSL_poll().
- *      result_count - Number of ready entries reported by SSL_poll().
+ *      poll_result_count - Number of ready entries reported by SSL_poll().
  *      iterations   - Consecutive iterations without observed progress.
  *      timeoutPtr   - Timeout used for the current SSL_poll() call.
  *
@@ -8904,7 +8916,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
  */
 static void
 QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
-                  size_t result_count, uint64_t iterations,
+                  size_t poll_result_count, uint64_t iterations,
                   const struct timeval *timeoutPtr)
 {
     size_t shown = 0u;
@@ -8913,10 +8925,10 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
 
     Ns_Log(Warning,
            "[%lld] H3 poll loop recorded no tracked progress for %llu iterations: "
-           "result_count %zu, items %zu, timeout %ld.%06ld",
+           "poll_result_count %zu, items %zu, timeout %ld.%06ld",
            (long long)dc->iter,
            (unsigned long long)iterations,
-           result_count, numitems,
+           poll_result_count, numitems,
            (long)timeoutPtr->tv_sec,
            (long)timeoutPtr->tv_usec);
 
@@ -9377,6 +9389,8 @@ QuicThread(void *arg)
     unsigned int        flags = NS_DRIVER_THREAD_STARTED;
     H3NoProgressWatch   watch = {0u, NS_FALSE};
     uint64_t            previous_epoch;
+    Ns_Time             last_progress_time;
+    bool                idle_reported = NS_FALSE;
     static const struct timeval no_wait = {0, 0};
     const struct timeval       *polltimeout_ptr;
 
@@ -9394,6 +9408,7 @@ QuicThread(void *arg)
 
     drvPtr->arg = dc;
     previous_epoch = dc->u.h3.progress_epoch;
+    Ns_GetTime(&last_progress_time);
 
     Ns_Log(Ns_LogQuicDebug,
            "H3 driver start: thread %lx drvPtr %p dc %p h3state %p",
@@ -9447,7 +9462,7 @@ QuicThread(void *arg)
 
     while (!stopping) {
         int      i, rc;
-        size_t   result_count = SIZE_MAX, numitems;
+        size_t   poll_result_count = SIZE_MAX, numitems;
         uint64_t processed_event = 0;
 
         /*
@@ -9457,10 +9472,10 @@ QuicThread(void *arg)
 
         numitems = PollsetCount(dc);
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D calling SSL_poll with %ld items timeout " NS_TIME_FMT,
+        /*Ns_Log(Ns_LogQuicDebug, "[%lld] H3D calling SSL_poll with %ld items timeout " NS_TIME_FMT,
                (long long)dc->iter, numitems,
                (int64_t)polltimeout_ptr->tv_sec, (long)polltimeout_ptr->tv_usec
-               );
+               );*/
 
         dc->iter++;
         //if (dc->iter>10000) { char *p=NULL; *p=0; }
@@ -9475,7 +9490,8 @@ QuicThread(void *arg)
         ERR_clear_error();
         errno = 0;
 
-        {
+        /*
+        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
             size_t nconn = 0u;
             size_t nbidi = 0u;
             size_t ncontrol = 0u;
@@ -9535,24 +9551,24 @@ QuicThread(void *arg)
                    (long long)dc->iter,
                    nconn, nbidi, ncontrol, nqenc, nqdec, nclientuni, nother);
         }
+        */
 
         rc = SSL_poll(dc->u.h3.poll_items, numitems, sizeof(SSL_POLL_ITEM), polltimeout_ptr,
-                       SSL_POLL_FLAG_NO_HANDLE_EVENTS, &result_count);
+                       SSL_POLL_FLAG_NO_HANDLE_EVENTS, &poll_result_count);
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3D SSL_poll returns rc %d with %ld items with events"
-               " (quic.c from %s %s)",
-               (long long)dc->iter, rc, result_count, __DATE__, __TIME__);
+        /*Ns_Log(Ns_LogQuicDebug, "[%lld] H3D SSL_poll returns rc %d with %ld items with events"
+          (long long)dc->iter, rc, poll_result_count);*/
 
         if (rc == 1
-            && result_count > 0u
+            && poll_result_count > 0u
             && watch.iterations >= H3_NO_PROGRESS_LIMIT
             && !watch.reported) {
-            QuicLogNoProgress(dc, numitems, result_count,
+            QuicLogNoProgress(dc, numitems, poll_result_count,
                               watch.iterations, polltimeout_ptr);
             watch.reported = NS_TRUE;
         }
 
-        if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+        if (poll_result_count > 0u && Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
             for (i = 0; i < (int)numitems; i++) {
                 SSL           *s       = dc->u.h3.ssl_items.data[i];
                 SSL_POLL_ITEM *item    = &dc->u.h3.poll_items[i];
@@ -9593,10 +9609,10 @@ QuicThread(void *arg)
             unsigned long osslErr = ERR_peek_error();
 
             Ns_Log(Error,
-                   "[%lld] H3D SSL_poll failed: result_count=%zu "
+                   "[%lld] H3D SSL_poll failed: poll_result_count=%zu "
                    "lib=%d reason=%d (%s)",
                    (long long)dc->iter,
-                   result_count,
+                   poll_result_count,
                    osslErr != 0u ? ERR_GET_LIB(osslErr) : 0,
                    osslErr != 0u ? ERR_GET_REASON(osslErr) : 0,
                    osslErr != 0u && ERR_reason_error_string(osslErr) != NULL
@@ -9604,26 +9620,22 @@ QuicThread(void *arg)
                    : "no OpenSSL error");
 
             /*
-             * A nonzero result_count may contain SSL_POLL_EVENT_F entries.
+             * A nonzero poll_result_count may contain SSL_POLL_EVENT_F entries.
              * Do not discard these results before inspecting the poll items.
              */
-            if (result_count == 0u) {
+            if (poll_result_count == 0u) {
                 ERR_clear_error();
                 continue;
             }
         }
 
-        if (result_count == 0) {
+        if (poll_result_count == 0) {
             /*
              * Apparently a timeout in the poll loop.
              */
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3D timeout", (long long)dc->iter);
+            /*Ns_Log(Ns_LogQuicDebug, "[%lld] H3D timeout", (long long)dc->iter);*/
 
-            if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
-                QuicLogIdlePollset(dc, numitems);
-            }
-
-            (void)PollsetHandleListenerEvents(dc);
+            (void)PollsetHandleListenerEvents(dc, poll_result_count);
         }
 
         /*
@@ -9980,19 +9992,61 @@ QuicThread(void *arg)
                 polltimeout_ptr = &no_wait;
             } else if (expecting_send || deferredDispatch) {
                 polltimeout_ptr = &dc->u.h3.drain_timeout;
+            } else if (dc->u.h3.reuseport) {
+                /*
+                 * A wake datagram sent to a SO_REUSEPORT listener may be delivered
+                 * to another QUIC driver. Bound the idle wait so producer work is
+                 * eventually observed by its owning driver.
+                 */
+                polltimeout_ptr = &dc->u.h3.drain_timeout;
             } else {
                 polltimeout_ptr = &dc->u.h3.idle_timeout;
             }
 
-            PollsetSweep(dc);
+            PollsetSweep(dc, poll_result_count);
             PollsetConsolidate(dc);
             PollsetValidate(dc, "after consolidation");
+
 
             {
                 const uint64_t current_epoch = dc->u.h3.progress_epoch;
 
-                if (rc != 1
-                    || result_count == 0u
+
+                /*
+                 * Idle  bookkeeping
+                 */
+                if (current_epoch != previous_epoch) {
+                    Ns_GetTime(&last_progress_time);
+                    idle_reported = NS_FALSE;
+                }
+
+                if (poll_result_count == 0u
+                    && !idle_reported
+                    && Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+                    Ns_Time now, elapsed, idle_limit;
+
+                    Ns_GetTime(&now);
+                    Ns_DiffTime(&now, &last_progress_time, &elapsed);
+
+                    idle_limit.sec  = dc->u.h3.idle_timeout.tv_sec;
+                    idle_limit.usec = dc->u.h3.idle_timeout.tv_usec;
+
+                    /*
+                     * Ns_DiffTime(t0, t1, ...) returns positive when t1 is later
+                     * than t0.
+                     */
+                    if (Ns_DiffTime(&last_progress_time, &now, &elapsed) >= 0
+                        && Ns_DiffTime(&idle_limit, &elapsed, NULL) >= 0) {
+                        QuicLogIdlePollset(dc, PollsetCount(dc));
+                        idle_reported = NS_TRUE;
+                    }
+                }
+
+                /*
+                 * No progress bookkeeping
+                 */
+               if (rc != 1
+                    || poll_result_count == 0u
                     || current_epoch != previous_epoch) {
                     /*
                      * Real progress was observed, or SSL_poll genuinely timed out.
@@ -10006,7 +10060,6 @@ QuicThread(void *arg)
 
                 previous_epoch = current_epoch;
             }
-
 
             //Ns_Log(Ns_LogQuicDebug, "[%lld] H3D after consolidate, npoll %ld", (long long)dc->iter, PollsetCount(dc));
         }
@@ -10060,7 +10113,8 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
     SSL         *listener = NULL;
     NsTLSConfig *dc = driver->arg;
 
-    assert(dc);
+    assert(dc != NULL);
+    dc->u.h3.reuseport = reuseport;
 
     sock = Ns_SockListenUdp(address, port, reuseport);
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 listen <%s> port %hu -> sock %d", (long long)dc->iter, address, port, sock);
@@ -10304,7 +10358,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     (void)raise(SIGSEGV);
 
     /* Let OpenSSL pull UDP datagrams and dispatch internally */
-    (void)PollsetHandleListenerEvents(dc);
+    (void)PollsetHandleListenerEvents(dc, 1u);
 
     Ns_Log(Ns_LogQuicDebug, "H3 Recv (sock %d) returns %ld bytes", sock->sock, produced_total);
     return produced_total;

@@ -68,10 +68,11 @@ typedef struct NsTLSH3Config {
      * TLS/QUIC waker: works around SSL_poll not supporting an
      * external trigger descriptor.
      */
-    Ns_AtomicUint32        waker_pending;
     struct sockaddr_storage waker_addr;
     socklen_t               waker_addrlen;
-    int                     waker_fd;
+    NS_SOCKET               waker_fd;
+
+    Ns_AtomicUint32         waker_pending;
     uint64_t                progress_epoch;
 
     /*
@@ -94,6 +95,7 @@ typedef struct NsTLSH3Config {
     struct timeval idle_timeout;
     struct timeval drain_timeout;
     bool validate_client_address;
+    bool reuseport;
 } NsTLSH3Config;
 #endif
 
