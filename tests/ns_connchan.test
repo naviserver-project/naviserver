@@ -40,7 +40,7 @@ test ns_connchan-1.1.3 {syntax: ns_connchan close} -body {
 
 test ns_connchan-1.1.4 {syntax: ns_connchan detach} -body {
     ns_connchan detach x
-} -returnCodes error -result {wrong # args: should be "ns_connchan detach"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan detach ?-autoheaders?"}
 
 test ns_connchan-1.1.5 {syntax: ns_connchan exists} -body {
     ns_connchan exists
