@@ -113,6 +113,9 @@ static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     NS_GNUC_NONNULL(1,2,3)
     NS_GNUC_RETURNS_NONNULL;
 
+static int ConnChanFlushHeaders(Tcl_Interp *interp, NsConnChan *connChanPtr)
+    NS_GNUC_NONNULL(1,2);
+
 static void ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
@@ -338,6 +341,9 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     connChanPtr->debugLevel = 0;
     connChanPtr->debugFD = 0;
     connChanPtr->requireStableSendBuffer = STREQ(sockPtr->drvPtr->protocol, "https");
+    connChanPtr->statusCode = 0;
+    connChanPtr->outputHeaders = NULL;
+    connChanPtr->httpVersion = 0.0;
 
     if (peer == NULL) {
         (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), connChanPtr->peer, NS_IPADDR_SIZE);
@@ -455,6 +461,10 @@ ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr) {
         if (connChanPtr->fragmentsBuffer != NULL) {
             Tcl_DStringFree(connChanPtr->fragmentsBuffer);
             ns_free((char *)connChanPtr->fragmentsBuffer);
+        }
+
+        if (connChanPtr->outputHeaders != NULL) {
+            Ns_SetFree(connChanPtr->outputHeaders);
         }
         ns_free((char *)connChanPtr);
     } else {
@@ -1133,9 +1143,14 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 {
     const NsInterp *itPtr = clientData;
     Conn           *connPtr = (Conn *)itPtr->conn;
-    int             result = TCL_OK;
+    int             result = TCL_OK, autoHeaders = 0;
+    Ns_ObjvSpec     opts[] = {
+        {"-autoheaders", Ns_ObjvBool, &autoHeaders, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+
+    if (Ns_ParseObjv(opts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (connPtr == NULL) {
@@ -1143,8 +1158,8 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
         result = TCL_ERROR;
 
     } else {
-        NsServer         *servPtr = itPtr->servPtr;
-        const NsConnChan *connChanPtr;
+        NsServer   *servPtr = itPtr->servPtr;
+        NsConnChan *connChanPtr;
 
         /*
          * Lock the channel table and create a new entry for the
@@ -1161,6 +1176,12 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
         Ns_Log(Ns_LogConnchanDebug, "%s ConnChanDetachObjCmd sock %d",
                connChanPtr->channelName,
                connPtr->sockPtr->sock);
+
+        if (autoHeaders && ((connPtr->flags & NS_CONN_SENTHDRS) == 0u)) {
+            connChanPtr->statusCode     = Ns_ConnResponseStatus((Ns_Conn*)connPtr);
+            connChanPtr->outputHeaders  = Ns_SetCopy(connPtr->outputheaders);
+            connChanPtr->httpVersion    = connPtr->request.version;
+        }
 
         connPtr->sockPtr = NULL;
         /*
@@ -1938,6 +1959,117 @@ ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 /*
  *----------------------------------------------------------------------
  *
+ * ConnChanFlushHeaders --
+ *
+ *      Encode and submit response headers retained by a detached
+ *      connection channel. For byte-oriented drivers, the encoder
+ *      returns a serialized header block in a Tcl_DString. For drivers
+ *      such as HTTP/3, the encoder stores the protocol-specific header
+ *      representation in driver-owned stream state and returns an empty
+ *      Tcl_DString; a zero-length driver send publishes that state.
+ *
+ * Results:
+ *
+ *      TCL_OK when no headers are pending or when the headers were
+ *      submitted successfully; otherwise TCL_ERROR.
+ *
+ * Side effects:
+ *
+ *      On success, frees connChanPtr->outputHeaders and sets it to NULL.
+ *      May write serialized headers or publish driver-specific header
+ *      state.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanFlushHeaders(Tcl_Interp *interp, NsConnChan *connChanPtr)
+{
+    Tcl_DString  ds;
+    struct iovec iov;
+    ssize_t      sent;
+    int          result = TCL_OK;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(connChanPtr != NULL);
+
+    if (connChanPtr->outputHeaders == NULL) {
+        return TCL_OK;
+    }
+
+    Ns_Log(Ns_LogConnchanDebug,
+           "ConnChanFlushHeaders: version %.1f status %d nr of output headers %zu",
+           connChanPtr->httpVersion,
+           connChanPtr->statusCode,
+           Ns_SetSize(connChanPtr->outputHeaders));
+
+    Tcl_DStringInit(&ds);
+
+    if (!NsDriverEncodeResponseHeaders(connChanPtr->sockPtr,
+                                       connChanPtr->httpVersion,
+                                       connChanPtr->statusCode,
+                                       connChanPtr->outputHeaders,
+                                       &ds, NULL)) {
+        Ns_TclPrintfResult(interp,
+                           "channel %s: could not encode response headers",
+                           connChanPtr->channelName);
+        result = TCL_ERROR;
+        goto done;
+    }
+
+    ns_iov_set(&iov, ds.string, (size_t)ds.length);
+
+    if (ds.length > 0) {
+        /*
+         * HTTP/1: send the serialized header block using connchan's
+         * partial-write and timeout handling.
+         */
+        sent = ConnchanDriverSend(interp, connChanPtr, &iov, 1, 0u,
+                                  &connChanPtr->sendTimeout);
+
+        if (sent != (ssize_t)ds.length) {
+            if (sent >= 0) {
+                Ns_TclPrintfResult(interp,
+                                   "channel %s: incomplete response-header write: "
+                                   "%" PRIdz " of %" PRITcl_Size " bytes",
+                                   connChanPtr->channelName, sent, ds.length);
+            }
+            result = TCL_ERROR;
+            goto done;
+        }
+
+        connChanPtr->wBytes += (size_t)sent;
+
+    } else {
+        /*
+         * HTTP/3: the encoder stored the header block in StreamCtx.
+         * The zero-length send publishes it to the QUIC thread.
+         *
+         * Do not use ConnchanDriverSend() here. It interprets a
+         * zero-byte result as would-block, while zero is the expected
+         * result for this header-only notification.
+         */
+        sent = NsDriverSend(connChanPtr->sockPtr, &iov, 1, 0u);
+        if (sent < 0) {
+            Ns_TclPrintfResult(interp,
+                               "channel %s: could not submit response headers",
+                               connChanPtr->channelName);
+            result = TCL_ERROR;
+            goto done;
+        }
+    }
+
+    Ns_SetFree(connChanPtr->outputHeaders);
+    connChanPtr->outputHeaders = NULL;
+
+done:
+    Tcl_DStringFree(&ds);
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ConnChanCloseObjCmd --
  *
  *      Implements the Tcl command "ns_connchan close" to close a
@@ -2000,6 +2132,10 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         }
 
         if (connChanPtr != NULL) {
+            if (ConnChanFlushHeaders(interp, connChanPtr) != TCL_OK) {
+                result = TCL_ERROR;
+            }
+
             connChanPtr->debugLevel = 0;
             ConnChanFree(connChanPtr, servPtr);
         } else {
@@ -3159,6 +3295,7 @@ CompactBuffers(NsConnChan *connChanPtr, const char *msgString, TCL_SIZE_T msgLen
  *
  *----------------------------------------------------------------------
  */
+
 int
 NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString, TCL_SIZE_T msgLength,
                 ssize_t *bytesSentPtr, unsigned long *errnoPtr)
@@ -3188,6 +3325,12 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
         int          nBuffers = 1;
         size_t       toSend;
         int          caseInt = -1;
+
+        if (ConnChanFlushHeaders(interp, connChanPtr) != TCL_OK) {
+            *bytesSentPtr = -1;
+            *errnoPtr = connChanPtr->sockPtr->sendErrno;
+            return TCL_ERROR;
+        }
 
         iovecs[0].iov_len = 0;
         iovecs[1].iov_len = 0;

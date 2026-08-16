@@ -37,11 +37,11 @@
  created. Currently, this command primarily affects send operations,
  although its functionality may be expanded in future releases.
 
-[call [cmd "ns_connchan detach"]]
+[call [cmd "ns_connchan detach"] [opt "-autoheaders"]]
 
   Detaches the current connection channel from the active connection
   thread and stores it under a fresh handle name in a per-virtual-server
-  private table. The command returns the created handle as result.
+  private table. The command returns the created handle as its result.
 
   [para]
   When this command is called from a request handler, NaviServer has
@@ -50,20 +50,53 @@
   [para]
   This command is primarily intended for cases where longer-running
   request processing should be performed in the background without
-  blocking a connection thread. Background processing can be done, for
-  example, via [cmd ns_job].
+  blocking a connection thread. Background processing can be performed,
+  for example, via [cmd ns_job].
 
   [para]
-  It can also be used for spooling data to a client, where the duration
-  of the request depends on the client (e.g., slow readers). When the
-  primary concern is protection against slow-read attacks, the use of
-  writer threads is typically more appropriate.
+  It can also be used for spooling data to a client when the duration of
+  the request depends on the client, such as with slow readers. When the
+  primary concern is protection against slow-read attacks, writer threads
+  are typically more appropriate.
 
   [para]
   After this command has been issued in a connection thread, direct access
-  to the original connection socket via connection-thread commands such as
-  [cmd ns_write] will fail. Further processing of the detached connection
-  must use the returned handle and the [cmd ns_connchan] subcommands.
+  to the original connection socket through connection-thread commands
+  such as [cmd ns_write] will fail. Further processing of the detached
+  connection must use the returned handle and the [cmd ns_connchan]
+  subcommands.
+
+  [para]
+  By default, the detached connection channel retains its traditional raw
+  I/O behavior. Data passed to [cmd "ns_connchan write"] is sent unchanged.
+  An application producing an HTTP response in this mode must therefore
+  provide the complete protocol representation, including the HTTP status
+  line, response headers, header terminator, and any required body framing.
+
+  [para]
+  When [option -autoheaders] is specified and the response headers have
+  not already been sent, NaviServer preserves the current response status,
+  HTTP version, and output header fields when detaching the connection.
+  The preserved response headers are encoded and submitted automatically
+  before the first [cmd "ns_connchan write"]. If the channel is closed
+  without a preceding write, [cmd "ns_connchan close"] submits the
+  preserved headers before closing the channel. Headers are submitted at
+  most once.
+
+  [para]
+  Response metadata can be prepared before detaching with commands such
+  as [cmd ns_headers] or by modifying the connection's output header set.
+  The preserved fields are a snapshot taken when
+  [cmd "ns_connchan detach"] is called.
+
+  [para]
+  The [option -autoheaders] option affects only response-header handling.
+  It does not change the raw semantics of [cmd "ns_connchan write"] and
+  does not add HTTP/1 chunked encoding, compression, character conversion,
+  WebSocket framing, or other body transformations. For an HTTP/1 response,
+  applications should normally provide an accurate Content-Length when
+  using automatic headers. Protocols with native stream framing, such as
+  HTTP/3, perform their framing in the corresponding driver.
 
 
 [call [cmd "ns_connchan close"] \
@@ -503,35 +536,40 @@ multi-segment messages, where later segments have the opcode
 
 [list_end]
 
-
 [section EXAMPLES]
 
   [para]
   The following example demonstrates how to detach an incoming HTTP
-  request from the connection thread and process it asynchronously in
-  the background. The request handler returns immediately after calling
+  request from the connection thread and process it asynchronously in the
+  background. The request handler returns immediately after calling
   [cmd "ns_connchan detach"], while the actual work is performed later
-  (e.g., via [cmd ns_job]). This pattern avoids blocking connection
-  threads for longer-running tasks and allows the application to send
-  the HTTP response at a later time via the detached connection channel.
+  via [cmd ns_job].
 
   [para]
-  After detaching, the application is responsible for sending a complete
-  HTTP response (including status line and headers) and for closing the
-  connection explicitly.
+  The [option -autoheaders] option allows the background job to write only
+  the response body. NaviServer encodes the status and output header fields
+  prepared by [cmd ns_headers] according to the protocol used by the
+  connection. Supplying the body length makes the example suitable for
+  both HTTP/1 and HTTP/3.
 
 [example_begin]
- # Example: detach request and process it in the background
+ # Example: detach a request and produce its response in the background
  
  # Log request details
- set identifier "[lb]ns_conn request[rb] [lb]ns_set format [lb]ns_conn headers[rb][rb]"
+ set identifier "[lb]ns_conn request[rb]"
  ns_log notice "REQUEST START $identifier"
  
  # Ensure a job queue exists
- if {"q1" ni [lb]ns_job queues[rb]} { ns_job create q1 }
+ if {"q1" ni [lb]ns_job queues[rb]} {
+     ns_job create q1
+ }
  
- # Detach the connection channel from the connection thread
- set channel [lb]ns_connchan detach[rb]
+ # Prepare the response metadata before detaching
+ set data "Hello World"
+ ns_headers 200 text/plain [lb]string bytelength $data[rb]
+ 
+ # Detach while preserving the pending response headers
+ set channel [lb]ns_connchan detach -autoheaders[rb]
  
  # Process the request asynchronously
  ns_job queue -detached q1 [lb]subst {
@@ -540,8 +578,8 @@ multi-segment messages, where later segments have the opcode
      # Simulate a long-running task
      ns_sleep 2s
  
-     # Send minimal HTTP response and close connection
-     ns_connchan write $channel "HTTP/1.0 200 OK\r\n\r\n"
+     # The pending headers are submitted before this body data
+     ns_connchan write $channel {$data}
      ns_connchan close $channel
  
      ns_log notice "DONE detached job"
@@ -552,8 +590,8 @@ multi-segment messages, where later segments have the opcode
 
   [para]
   The log output below shows that the request handler completes before
-  the background job starts and finishes, demonstrating that the
-  connection thread is not blocked.
+  the background job starts and finishes. The connection thread is
+  therefore not blocked by the simulated long-running operation.
 
 [example_begin]
  REQUEST START ...
@@ -563,6 +601,36 @@ multi-segment messages, where later segments have the opcode
  DONE detached job
 [example_end]
 
+  [para]
+  Automatic headers also support responses without body data. In the
+  following example, [cmd "ns_connchan close"] submits the pending
+  response headers before closing the detached channel.
+
+[example_begin]
+ ns_headers 204
+ set channel [lb]ns_connchan detach -autoheaders[rb]
+
+ ns_job queue -detached q1 [lb]subst {
+     ns_sleep 2s
+     ns_connchan close $channel
+ }[rb]
+[example_end]
+
+  [para]
+  Without [option -autoheaders], existing raw connection-channel behavior
+  remains unchanged. For example, an application may continue to construct
+  and send a complete HTTP/1 response explicitly:
+
+[example_begin]
+ set channel [lb]ns_connchan detach[rb]
+
+ ns_job queue -detached q1 [lb]subst {
+     ns_sleep 2s
+     ns_connchan write $channel \
+         "HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n"
+     ns_connchan close $channel
+ }[rb]
+[example_end]
 
   [para] The next example shows a two-stage use of
   [cmd "ns_connchan listen"] and [cmd "ns_connchan callback"]. The

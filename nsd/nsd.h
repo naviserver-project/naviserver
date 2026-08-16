@@ -27,6 +27,7 @@
 
 #define NS_TCLHTTP_CALLBACK_AS_STRING 1
 //#define NS_DRIVER_MEM_STATS 1
+//#define NS_ENABLE_THREAD_AFFINITY 1
 
 /*
  * Constants
@@ -376,9 +377,11 @@ typedef struct {
     int              debugLevel;              /* Debug level (1 log statements, > 1 extra log files) */
     bool             frameNeedsData;          /* Indicator, if additional reads are required */
     bool             requireStableSendBuffer; /* Retransmits for OpenSSL are required to have the same base address and length */
+    int              statusCode;              /* Response status; valid while outputHeaders is non-NULL */
+    Ns_Set          *outputHeaders;           /* Owned -autoheaders snapshot; NULL when absent or submitted */
+    double           httpVersion;             /* Version for encoding outputHeaders; ignored when inapplicable */
     NS_SOCKET        debugFD;
 } NsConnChan;
-
 
 
 /*
