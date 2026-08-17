@@ -60,6 +60,8 @@ extern "C" {
 
         SharedWakeFn wake_cb;   /* e.g., h3_wake */
         void        *wake_arg;  /* e.g., dc */
+
+        bool resume_stopped;    /* Protected by lock; no further resume requests accepted. */
     } SharedState;
 
     /* ===== Shared snapshot (per-connection) ======================================= */
@@ -157,6 +159,7 @@ extern "C" {
     void   SharedResumeClear(SharedStream *ss);
     size_t SharedDrainResume(SharedState *st, int64_t *out, size_t cap)  NS_GNUC_NONNULL(1);
     static bool SharedHasResumePending(SharedState *st) NS_GNUC_NONNULL(1);
+    void   SharedResumeStop(SharedState *st) NS_GNUC_NONNULL(1);
 
     /* Tiny helpers (header-only / static inline) */
     static inline bool SharedHasResumePending(SharedState *st)
