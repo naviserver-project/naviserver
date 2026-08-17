@@ -928,24 +928,38 @@ void SharedResumeClear(SharedStream *ss) {
  *
  * SharedDrainResume --
  *
- *      Drain up to 'cap' SIDs from the resume ring (circular FIFO) into
- *      'out' without blocking beyond the mutex. Preserves FIFO order.
+ *      Drain up to 'cap' stream IDs from the connection-level resume
+ *      ring into 'out'. Entries are removed in FIFO order.
+ *
+ *      When the ring becomes empty, clear resume_pending while holding
+ *      the ring lock. This also repairs an inconsistent state in which
+ *      resume_pending is set although the ring was already empty on
+ *      entry.
  *
  * Results:
- *      Returns the number of SIDs written (0..cap). Requires out != NULL
- *      and cap > 0.
+ *
+ *      Returns the number of stream IDs written to 'out', in the range
+ *      0..cap. The arguments 'out' and 'cap' must specify nonempty
+ *      output storage.
  *
  * Side effects:
- *      Acquires st->lock; advances head with wrap-around and decrements
- *      count for each popped entry. No allocation or logging. Per-stream
- *      resume flags must be cleared by the consumer separately.
+ *
+ *      Acquires st->lock, advances the ring head and decrements its
+ *      entry count. When no entries remain, clears resume_pending.
+ *
+ *      If a stale resume_pending flag is detected without draining an
+ *      entry, logs a warning containing the drain capacity, ring
+ *      capacity, head and tail positions. Per-stream resume_enqueued
+ *      flags are not cleared here and must be handled separately by
+ *      the consumer of the returned stream IDs.
  *
  *----------------------------------------------------------------------
  */
 size_t
 SharedDrainResume(SharedState *st, int64_t *out, size_t cap)
 {
-    size_t n = 0u;
+    size_t n = 0u, head = 0u, tail = 0u;
+    bool   stale_pending = NS_FALSE;
 
     if (out == NULL || cap == 0u) {
         return 0u;
@@ -960,15 +974,21 @@ SharedDrainResume(SharedState *st, int64_t *out, size_t cap)
         st->count--;
     }
 
-    if (n > 0u && st->count == 0u) {
-        /*
-         * The resume ring is now empty. No producer can add another
-         * entry until the ring lock is released.
-         */
+    if (st->count == 0u) {
+        head = st->head;
+        tail = st->tail;
+        stale_pending = (n == 0u && Ns_AtomicUint32LoadRelaxed(&st->resume_pending) != 0u);
+
         Ns_AtomicUint32StoreRelaxed(&st->resume_pending, 0u);
     }
-
     Ns_MutexUnlock(&st->lock);
+
+    if (unlikely(stale_pending)) {
+        Ns_Log(Warning,
+               "H3 resume ring: repaired stale pending flag "
+               "(drained %zu, drain capacity %zu, ring capacity %zu, head %zu, tail %zu)",
+               n, cap, st->cap, head, tail);
+    }
 
     return n;
 }
