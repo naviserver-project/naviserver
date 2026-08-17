@@ -2623,7 +2623,6 @@ static bool quic_conn_handle_e(ConnCtx *cc, SSL *conn, uint64_t revents)
  *
  *----------------------------------------------------------------------
  */
-
 static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
                                  uint64_t revents, uint64_t current_mask)
 {
@@ -2631,6 +2630,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     StreamCtx   *sc = SSL_get_ex_data(stream, dc->u.h3.sc_idx);
     bool         removed = NS_FALSE;
     int          rs, ws;
+    const char  *wStateString;
 
     /* Read-side exception: try to drain once. Treat ER similar to R. */
     if (revents & SSL_POLL_EVENT_ER) {
@@ -2643,11 +2643,40 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     }
     ws = SSL_get_stream_write_state(stream);
     rs = SSL_get_stream_read_state(stream);
+    wStateString = ossl_quic_stream_state_str(ws);
+
+    if (ws == SSL_STREAM_STATE_RESET_LOCAL
+        || ws == SSL_STREAM_STATE_RESET_REMOTE) {
+
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3[%llu] retiring stream with write state %s",
+               (long long)dc->iter,
+               (unsigned long long)sid,
+               wStateString);
+
+        if (sc != NULL) {
+            H3_IO_SET(sc, H3_IO_RESET);
+
+            /*
+             * Prevent nghttp3 from offering further response data for a
+             * reset request stream.
+             */
+            if (cc->h3conn != NULL) {
+                nghttp3_conn_shutdown_stream_write(cc->h3conn, (int64_t)sid);
+            }
+        }
+
+        PollsetMarkDead(cc, stream, wStateString);
+        return NS_TRUE;
+    }
 
     /* Write-side exception or closed write side: stop polling for W. */
     if ((revents & SSL_POLL_EVENT_EW) || ws != SSL_STREAM_STATE_OK) {
         if (current_mask & SSL_POLL_EVENT_W) {
-            (void)PollsetUpdateEvents(dc, stream, sc, /*set=*/0, /*clear=*/SSL_POLL_EVENT_W, "quic_stream_handle_e");
+            (void)PollsetUpdateEvents(dc, stream, sc,
+                                      /*set=*/0,
+                                      /*clear=*/SSL_POLL_EVENT_W,
+                                      "quic_stream_handle_e");
         }
         /* Not removed; just disarmed W */
     }
@@ -2656,7 +2685,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     if (rs != SSL_STREAM_STATE_OK && ws != SSL_STREAM_STATE_OK) {
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW both sides are closed rs=%s ws=%s io=%u seen_io=%u kind=%s",
                (long long)dc->iter, (long long)sid,
-               ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
+               ossl_quic_stream_state_str(rs), wStateString,
                (unsigned)(sc ? StreamCtxIoState(sc) : 0),
                (unsigned)(sc ? sc->seen_io  : 0),
                (sc ? H3StreamKind_str(sc->kind) : "no-ctx"));
@@ -2668,7 +2697,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     if (revents & (SSL_POLL_EVENT_ER | SSL_POLL_EVENT_EW)) {
         Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%llu] ER/EW handled: rs=%s ws=%s io=%u seen_io=%u kind=%s",
                (long long)dc->iter, (long long)sid,
-               ossl_quic_stream_state_str(rs), ossl_quic_stream_state_str(ws),
+               ossl_quic_stream_state_str(rs), wStateString,
                (unsigned)(sc ? StreamCtxIoState(sc) : 0),
                (unsigned)(sc ? sc->seen_io  : 0),
                (sc ? H3StreamKind_str(sc->kind) : "no-ctx"));
