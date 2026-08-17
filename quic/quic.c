@@ -9939,15 +9939,17 @@ QuicThread(void *arg)
 
                     has_resume = SharedHasResumePending(&cc->shared);
 
-                    Ns_Log(Ns_LogQuicDebug,
-                           "[%lld] all events processed conn[%d]"
-                           " cc->expecting_send %d cc->wants_write %d"
-                           " has resume pending %d",
-                           (long long)dc->iter,
-                           i,
-                           cc->expecting_send,
-                           cc->wants_write,
-                           has_resume);
+                    if (poll_result_count > 0u) {
+                        Ns_Log(Ns_LogQuicDebug,
+                               "[%lld] all events processed conn[%d]"
+                               " cc->expecting_send %d cc->wants_write %d"
+                               " has resume pending %d",
+                               (long long)dc->iter,
+                               i,
+                               cc->expecting_send,
+                               cc->wants_write,
+                               has_resume);
+                    }
 
                     if (h3_conn_unblock_settings_waiters(cc)) {
                         immediate_work = NS_TRUE;
