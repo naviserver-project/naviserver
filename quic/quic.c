@@ -584,6 +584,7 @@ static bool     h3_conn_write_step(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static bool     h3_conn_has_pending_work(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_clear_wants_write_if_idle(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_mark_wants_write(ConnCtx *cc, StreamCtx *sc, const char *why) NS_GNUC_NONNULL(1,2);
+static void     h3_conn_mark_closing(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_maybe_raise_client_bidi_credit(ConnCtx *cc, uint64_t sid) NS_GNUC_NONNULL(1);
 static bool     h3_conn_unblock_settings_waiters(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static bool     h3_conn_dispatch_ready_requests(ConnCtx *cc) NS_GNUC_NONNULL(1);
@@ -1557,11 +1558,7 @@ quic_conn_enter_shutdown(ConnCtx *cc, const char *why)
         return; /* already freed */
     }
 
-    if (cc->connection_state == 0) {
-        cc->connection_state = 1;            /* mark app-level closing */
-    }
-    NS_TA_ASSERT_HELD(cc, affinity);
-    cc->wants_write = NS_FALSE;
+    h3_conn_mark_closing(cc);
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3D QUIC conn %p enter shutdown: %s",
            (long long)dc->iter, (void*)conn, (why ? why : "unspecified"));
@@ -3408,12 +3405,14 @@ h3_conn_write_step(ConnCtx *cc)
                             }
 
                             if (r == SSL_R_PROTOCOL_IS_SHUTDOWN) {
-                                /* Connection-level teardown - propagate and stop writing. */
+                                /*
+                                 * Connection-level teardown - propagate and stop writing.
+                                 */
                                 Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] protocol is shutdown; marking conn closing",
                                        (long long)dc->iter, (long long)sid);
-                                cc->connection_state = 1;
+                                h3_conn_mark_closing(cc);
                                 ERR_clear_error();
-                                return NS_TRUE; /* writer should be scheduled to complete shutdown */
+                                return NS_FALSE;
                             }
 
                             if (r == SSL_R_STREAM_FINISHED) {
@@ -3835,6 +3834,51 @@ h3_conn_mark_wants_write(ConnCtx *cc, StreamCtx *sc, const char *why)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * h3_conn_mark_closing --
+ *
+ *      Place an HTTP/3 connection in terminal application-level
+ *      shutdown. When the connection is still active, change its state
+ *      to closing. Permanently stop its shared resume queue and clear
+ *      connection-level write scheduling.
+ *
+ *      The function is idempotent and may be called repeatedly while
+ *      shutdown is in progress. The caller must hold the connection's
+ *      thread affinity.
+ *
+ * Results:
+ *
+ *      None.
+ *
+ * Side effects:
+ *
+ *      May change connection_state from active to closing. Calls
+ *      SharedResumeStop(), which discards queued resume requests and
+ *      prevents producers from scheduling new ones. Clears wants_write
+ *      and expecting_send.
+ *
+ *      This function does not call SSL_shutdown(), modify pollset
+ *      membership, or release connection or stream resources. Those
+ *      operations remain the responsibility of the normal connection
+ *      shutdown path.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+h3_conn_mark_closing(ConnCtx *cc)
+{
+    NS_TA_ASSERT_HELD(cc, affinity);
+
+    if (cc->connection_state == 0) {
+        cc->connection_state = 1;
+    }
+    SharedResumeStop(&cc->shared);
+
+    cc->wants_write = NS_FALSE;
+    cc->expecting_send = NS_FALSE;
+}
 /*
  *----------------------------------------------------------------------
  *

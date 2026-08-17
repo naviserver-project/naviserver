@@ -867,7 +867,10 @@ SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid)
 
     Ns_MutexLock(&st->lock);
 
-    {
+    if (st->resume_stopped) {
+        Ns_AtomicUint32StoreRelaxed(&ss->resume_enqueued, 0u);
+
+    } else {
         const bool was_empty = (st->count == 0u);
 
         if (resume_push_unlocked(st, sid)) {
@@ -887,7 +890,6 @@ SharedRequestResume(SharedState *st, SharedStream *ss, int64_t sid)
             Ns_AtomicUint32StoreRelaxed(&ss->resume_enqueued, 0u);
         }
     }
-
     Ns_MutexUnlock(&st->lock);
 
     if (need_wake && st->wake_cb != NULL) {
@@ -993,7 +995,47 @@ SharedDrainResume(SharedState *st, int64_t *out, size_t cap)
     return n;
 }
 
-#endif
+/*
+ *----------------------------------------------------------------------
+ *
+ * SharedResumeStop --
+ *
+ *      Permanently stop resume scheduling for this shared connection
+ *      state. This operation is intended for terminal connection
+ *      shutdown and must not be reversed.
+ *
+ * Results:
+ *
+ *      None.
+ *
+ * Side effects:
+ *
+ *      Acquires st->lock, prevents subsequent resume requests from
+ *      entering the ring, discards all queued stream IDs and clears the
+ *      resume_pending summary flag. The allocated ring storage is
+ *      retained until SharedStateDestroy().
+ *
+ *      Per-stream resume_enqueued flags belonging to entries already in
+ *      the ring are not cleared. They are irrelevant after this terminal
+ *      transition and disappear when the streams are destroyed.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SharedResumeStop(SharedState *st)
+{
+    Ns_MutexLock(&st->lock);
+
+    st->resume_stopped = NS_TRUE;
+    st->head = 0u;
+    st->tail = 0u;
+    st->count = 0u;
+    Ns_AtomicUint32StoreRelaxed(&st->resume_pending, 0u);
+
+    Ns_MutexUnlock(&st->lock);
+}
+
+#endif /* HAVE_NGHTTP3 */
 
 /*
  * Local Variables:
