@@ -175,7 +175,7 @@ Directory for uploads, defaults to the setting of [term "ns/parameter tmpdir"].
 
 [def writerbufsize]
 Buffer size in memory units for writer threads.
-(memory unit, default: 8kB)
+(memory unit, default: 32kB)
 
 [def writerratelimit]
 Limit the rate of the data transferred via writer threads.
