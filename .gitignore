@@ -16,6 +16,10 @@
 *.pid
 *.patch
 
+*-debug
+*-gn
+*-ok
+
 autom4te.cache
 aclocal.m4
 config.log
