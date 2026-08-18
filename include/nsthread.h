@@ -1521,7 +1521,7 @@ NS_EXTERN const char *Ns_ThreadGetName(void)       NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN const char *Ns_ThreadGetParent(void)     NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN ssize_t Ns_ThreadStackSize(ssize_t size);
 NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc) NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_ThreadCputimes(Tcl_DString *dsPtr)  NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_ThreadCpuTimes(Tcl_DString *dsPtr)  NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize)
   NS_GNUC_NONNULL(1,2);
 extern void  *NsThreadResult(void *arg) NS_GNUC_CONST;

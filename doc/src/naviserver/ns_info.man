@@ -388,9 +388,29 @@ Returns 1 if the server is fully started, 0 otherwise.
 
 [call [cmd  "ns_info tag"]]
 
-Returns the most detailed revision info, which might be shipped with
-the tar file or obtained from the source code management system (git
-or mercurial).
+ Returns the most detailed revision info, which might be shipped with
+ the tar file or obtained from the source code management system (git
+ or mercurial).
+
+[call [cmd "ns_info threadcputimes"]]
+
+ Returns a dictionary containing the cumulative CPU time consumed by
+ active NaviServer threads. The dictionary keys are the operating-system
+ thread IDs also reported by [cmd "ns_info threads"]. Each value is a
+ dictionary containing the CPU time spent in user and system mode,
+ expressed in microseconds:
+
+[example_begin]
+ tid {
+     user   /microseconds/
+     system /microseconds/
+ }
+[example_end]
+
+ Threads for which accounting information cannot be obtained are
+ omitted. On platforms without support for per-thread CPU accounting,
+ the command returns an empty dictionary.
+
 
 [call [cmd  "ns_info threads"]]
 

@@ -179,7 +179,7 @@ AC_CHECK_HEADER([systemd/sd-daemon.h], [
 ])
 AC_SUBST([SYSTEMD_LIBS])
 
-AC_CHECK_FUNCS([timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop inet_pton])
+AC_CHECK_FUNCS([timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop inet_pton pthread_threadid_np])
 
 AC_SYS_LARGEFILE
 
