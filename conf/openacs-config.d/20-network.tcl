@@ -144,7 +144,7 @@ if {[info exists httpport] && $httpport ne ""} {
         # Use writer threads for sending large responses.
         # ns_param writerthreads      2      ;# default: 0; number of writer threads (0 = disabled)
         # ns_param writersize         1kB    ;# default: 1MB; use writer threads for responses larger than this size
-        # ns_param writerbufsize    16kB   ;# default: 8kB; buffer size for writer threads
+        # ns_param writerbufsize    16kB   ;# default: 32kB; buffer size for writer threads
 
         # ns_param writerstreaming  true   ;# default: false; enable writer threads for streaming output (ns_write)
         # ns_param spoolerthreads   1      ;# default: 0; number of upload spooler threads
@@ -253,7 +253,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         # Use writer threads for sending larger responses.
         # ns_param writerthreads      2      ;# default: 0; number of writer threads (0 = disabled)
         # ns_param writersize         1kB    ;# default: 1MB; use writer threads for responses larger than this size
-        # ns_param writerbufsize      16kB   ;# default: 8kB; buffer size for writer threads
+        # ns_param writerbufsize      16kB   ;# default: 32kB; buffer size for writer threads
 
         # ns_param writerstreaming  true   ;# default: false; enable writer threads for streaming output (ns_write)
         # ns_param spoolerthreads   1      ;# default: 0; number of upload spooler threads
