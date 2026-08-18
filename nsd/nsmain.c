@@ -761,57 +761,22 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         }
         server = Ns_SetKey(servers, idx);
     }
-
     /*
-     * Verify and change to the home directory.
+     * Resolve and change to the final NaviServer home directory. An
+     * explicitly configured value overrides the bootstrap home returned
+     * by Ns_InfoHomePath().
      */
-    nsconf.home = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "home");
-    if (nsconf.home == NULL && mode != 'c') {
+    {
+        const char *home;
 
-        /*
-         *  We will try to figure out our installation directory from
-         *  executable binary.  Check if nsd is in bin/ subdirectory according
-         *  to our make install, if true make our home one level up, otherwise
-         *  make home directory where executable binary resides.  All custom
-         *  installation will require "home" config parameter to be specified
-         *  in the nsd.tcl
-         */
+        home = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "home");
+        if (home == NULL) {
+            home = Ns_InfoHomePath();
+        }
 
-        nsconf.home = MakePath("");
-        if (nsconf.home == NULL) {
-            Ns_Fatal("nsmain: missing: [%s]home", NS_GLOBAL_CONFIG_PARAMETERS);
-        }
-    } else if (nsconf.home == NULL /* && mode == 'c' */) {
-        /*
-         * Try to get HOME from environment variable NAVISERVER. If
-         * this is not defined, take the value from the path. Using
-         * NAVISERVER makes especially sense when testing or running
-         * nsd from the source directory.
-         */
-        nsconf.home = getenv("NAVISERVER");
-        if (nsconf.home == NULL) {
-            /*
-             * There is no such environment variable. Try, if we can get the
-             * home from the binary. In such cases, we expect to find
-             * "bin/init.tcl" under home.
-             */
-            const char *path = MakePath("bin/init.tcl");
-            if (path != NULL) {
-                /*
-                 * Yep, we found it, use its parent directory.
-                 */
-                nsconf.home =  MakePath("");
-            } else {
-                /*
-                 * Desperate fallback. Use the name of the configured install
-                 * directory.
-                 */
-                nsconf.home = NS_NAVISERVER;
-            }
-        }
-        assert(nsconf.home != NULL);
+        nsconf.home = SetCwd(home);
+        nsconf.homeInitialized = NS_TRUE;
     }
-    nsconf.home = SetCwd(nsconf.home);
 
     /*
      * The value of nsconf.home is set. We can use it now as the base

@@ -272,6 +272,7 @@ ConfigServerTcl(const char *server)
         const char *section, *p, *initFileString;
         TCL_SIZE_T  n;
         Ns_Set     *set = NULL;
+        const char *defaultInitFile = "bin/init.tcl";
 
         Ns_ThreadSetName("-main:%s-", server);
 
@@ -279,10 +280,20 @@ ConfigServerTcl(const char *server)
 
         servPtr->tcl.library = Ns_ConfigFilename(section, "library", 7, nsconf.home, "modules/tcl",
                                                  NS_TRUE, NS_TRUE);
+        if (!Ns_HomePathExists("bin", "init.tcl", NS_SENTINEL)
+            && Ns_HomePathExists("nsd", "init.tcl", NS_SENTINEL)) {
+            /*
+             * Support running an uninstalled nsd directly from the
+             * NaviServer source tree.
+             */
+            defaultInitFile = "nsd/init.tcl";
+        }
 
-        initFileString = Ns_ConfigFilename(section, "initfile", 8, nsconf.home, "bin/init.tcl",
+        initFileString = Ns_ConfigFilename(section, "initfile", 8,
+                                           nsconf.home, defaultInitFile,
                                            NS_TRUE, NS_FALSE);
         servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, TCL_INDEX_NONE);
+
         Tcl_IncrRefCount(servPtr->tcl.initfile);
         ns_free_const(initFileString);
 

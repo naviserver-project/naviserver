@@ -175,6 +175,7 @@ struct nsconf {
     int         sanitize_logfiles;
     bool        reject_already_closed_or_detached_connection;
     bool        nocache;
+    bool        homeInitialized;
 
     /*
      * Slot IDs for socket local storage.
