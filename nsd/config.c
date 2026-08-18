@@ -1388,10 +1388,9 @@ ConfigCreateInterp(int argc, char *const *argv, int optionIndex, Section **secti
     int i;
 
     interp = Ns_TclCreateInterp();
-
-    (void) Tcl_EvalEx(interp,
-                      "source [file normalize [file dirname [ns_info nsd]]/../tcl/init.tcl]",
-                      TCL_INDEX_NONE, 0);
+    (void)Tcl_EvalEx(interp,
+                     "source [file join [ns_info home] tcl init.tcl]",
+                     TCL_INDEX_NONE, 0);
 
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_section", SectionObjCmd, sectionPtrPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_param",   ParamObjCmd,   sectionPtrPtr, NULL);
@@ -1405,7 +1404,6 @@ ConfigCreateInterp(int argc, char *const *argv, int optionIndex, Section **secti
 
     return interp;
 }
-
 
 /*
  *----------------------------------------------------------------------

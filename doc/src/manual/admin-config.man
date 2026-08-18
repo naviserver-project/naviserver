@@ -1997,131 +1997,250 @@ For the full reverse proxy module documentation, see
 [uri ../../revproxy/files/revproxy.html revproxy].
 
 
-
-
 [section {Customizing Directory Structure}]
 
- A typical NaviServer installation follows a basic directory structure
- similar to the example below:
+ A typical NaviServer installation follows this directory structure:
 
 [example_begin]
- HOME      /usr/local/ns/
- BINDIR    /usr/local/ns/bin/
- LOGDIR    /usr/local/ns/logs/
- TCLLIBDIR /usr/local/ns/tcl/
+ HOME      /usr/local/ns
+ BINDIR    /usr/local/ns/bin
+ LOGDIR    /usr/local/ns/logs
+ TCLLIBDIR /usr/local/ns/tcl
 [example_end]
 
- [para]
- The root directory of the installation is configured through the
- [const home] parameter in the [const ns/parameters] section.  This
- directory is used as the base directory for other relative path names
- in the global parameter section, such as [const bindir], [const logdir],
- and [const tcllibrary].
-
- [para]
- When [const home] is not specified explicitly, NaviServer tries to
- derive a suitable value during startup.  In a regular installation, it
- uses the location of the [cmd nsd] executable.  If [cmd nsd] is found
- in a [file bin] subdirectory, the parent directory is used as
- [const home]; otherwise the directory containing the executable is used.
- When running in configuration-check mode, NaviServer also considers the
- [const NAVISERVER] environment variable and finally falls back to the
- compiled installation prefix.
-
- [para]
- For custom installations, development trees, test setups, or deployments
- where [cmd nsd] is not located below the intended installation root, it
- is recommended to set [const home] explicitly.
-
- [para]
- The default layout can be expressed as:
+ The corresponding global configuration is:
 
 [example_begin]
  ns_section ns/parameters {
-   ns_param home        /usr/local/ns/
+   ns_param home        /usr/local/ns
+   ns_param bindir      bin
    ns_param logdir      logs
    ns_param tcllibrary  tcl
-   ns_param bindir      bin
  }
 [example_end]
 
- For all paths except [const home], you may specify either absolute or
- relative names.  Absolute paths are used as given.  Relative paths in
- the [const ns/parameters] section are resolved relative to the value of
- [const home].  For example, with [const home] set to
- [file /usr/local/ns], the value [const logs] for [const logdir] resolves
- to [file /usr/local/ns/logs], and the value [const bin] for
- [const bindir] resolves to [file /usr/local/ns/bin].
+
+[subsection {Bootstrap and Runtime Home Directories}]
+
+ NaviServer resolves its home directory in two stages. During early
+ startup, the configuration file has not yet been evaluated. NaviServer
+ needs a bootstrap home directory at this point to locate and source:
+
+[example_begin]
+ HOME/tcl/init.tcl
+[example_end]
+
+ The bootstrap home is determined as follows:
+
+[list_begin enumerated]
+
+[enum] If the [const NAVISERVER] environment variable is set, its value
+       is used. The value must be an absolute pathname.
+
+[enum] Otherwise, NaviServer derives the home directory from the
+       pathname of the [cmd nsd] executable by taking the parent of the
+       directory containing the executable.
+
+[list_end]
+
+ This derivation supports both the regular installed layout:
+
+[example_begin]
+ /usr/local/ns/bin/nsd  ->  /usr/local/ns
+[example_end]
+
+ and execution directly from a source tree:
+
+[example_begin]
+ /usr/local/src/naviserver/nsd/nsd
+     -> /usr/local/src/naviserver
+[example_end]
+
+ [para]
+ Installations that place [cmd nsd] outside the NaviServer directory
+ tree, for example in [file /usr/sbin], should define
+ [const NAVISERVER] in the service environment. The value should point
+ to the private NaviServer home containing the [file bin] and [file tcl]
+ directories.
+
+ [para]
+ The bootstrap initialization script is sourced before the configuration
+ file is evaluated. Therefore, the [const home] parameter in
+ [const ns/parameters] cannot be used to locate this initial script.
+ Use [const NAVISERVER] when the bootstrap home cannot be derived from
+ the executable location.
+
+ [para]
+ After evaluating the configuration, an explicitly specified
+ [const home] parameter overrides the bootstrap home. NaviServer changes
+ its current working directory to the resulting final home directory.
+ When [const home] is not configured, the bootstrap home remains in use.
+
+ [para]
+ For chroot installations, [const NAVISERVER] must name a path that is
+ valid inside the chroot environment.
+
+
+[subsection {Global Directory Parameters}]
+
+ The final home directory is used as the base for relative pathnames in
+ the [const ns/parameters] section:
+
+[list_begin itemized]
+
+[item] [const bindir]
+
+       Directory containing NaviServer executables, loadable modules,
+       and private helper programs. The default is [const bin] relative
+       to [const home].
+
+[item] [const logdir]
+
+       Directory containing the system log and other global log files.
+       The default is [const logs] relative to [const home].
+
+[item] [const tcllibrary]
+
+       Global, shared Tcl library directory. The default is [const tcl]
+       relative to [const home].
+
+[list_end]
+
+ Absolute values are used directly. Relative values are resolved against
+ the final home directory. For example:
+
+[example_begin]
+ ns_param home    /usr/local/ns
+ ns_param logdir  logs
+[example_end]
+
+ resolves [const logdir] to [file /usr/local/ns/logs].
+
+ [para]
+ The global [const tcllibrary] parameter configures the shared Tcl
+ library used during subsequent server initialization. It should not be
+ confused with the bootstrap script [file HOME/tcl/init.tcl], which must
+ be located before the configuration file can be evaluated.
+
+
+[subsection {Inspecting Resolved Directories}]
+
+ The following commands return fully qualified directory paths and are
+ generally preferable to reconstructing paths in Tcl scripts:
+
+[list_begin itemized]
+
+[item] [cmd "ns_info home"] returns the final NaviServer home directory.
+
+[item] [cmd "ns_info bindir"] returns the global binary directory.
+
+[item] [cmd "ns_info logdir"] returns the global log directory.
+
+[item] [cmd "ns_library shared"] returns the global shared Tcl library.
+
+[item] [cmd "ns_library private"] returns the private Tcl library of the
+       current virtual server.
+
+[item] [cmd "ns_server serverdir"] returns the configured server root.
+       The [option -effective] option includes the result of a
+       [const serverrootproc] callback.
+
+[item] [cmd "ns_server logdir"] returns the server log directory.
+
+[item] [cmd "ns_server pagedir"] returns the server page directory.
+
+[item] [cmd "ns_server tcllib"] returns the server's private Tcl library.
+
+[list_end]
 
 
 [subsection {Per-Server Directory Structure}]
 
- Beyond the global configuration, you can define server-specific file
- location settings by specifying a [const serverdir] that acts as the
- root for that server's log and page directories.
-
-[para]
-
- The key parameters for per-server file locations are:
-
-[para]
+ Server-specific paths are rooted at [const serverdir], configured in
+ the [const ns/server/SERVER] section.
 
 [list_begin itemized]
 
-[item] [const serverdir]:
+[item] [const serverdir]
 
-       Defines the root directory for a server's log and page
-       directories. A relative [const serverdir] is resolved against
-       [const home]. By default, [const serverdir] is empty, meaning
-       the global [const home] is used.
+       Defines the root directory for the server. A relative value is
+       resolved against the global [const home]. The default is empty,
+       which makes the global home directory the server root.
 
-       [para] Alternatively, a [const serverrootproc] callback can
-       dynamically compute the server directory per request (e.g.,
-       based on the "Host:" header).
+       [para]
+       A [const serverrootproc] callback can compute an effective server
+       directory dynamically, for example from the HTTP [const Host]
+       header.
 
+[item] [const logdir]
 
-[item] [const logdir]: Specifies the directory for log files (e.g.,
-       access.log or httpsclient.log). The value can be given as an
-       absolute path or a relative path, in which case it is resolved
-       against [const serverdir].  Note that a log directory specified
-       for a particular server takes precedence over the global
-       configuration.
+       Specifies the server log directory. An absolute value is used
+       directly; a relative value is resolved against [const serverdir].
+       When no server-specific value is provided, the global
+       [const logdir] is used.
 
-[item] [const pagedir]: Specifies the directory from which page
-       requests are served. Like [const logdir], this may be absolute or
-       relative (resolved against [const serverdir]).
+[item] [const pagedir]
+
+       Specifies the page directory used by the fastpath subsystem. An
+       absolute value is used directly; a relative value is resolved
+       against [const serverdir]. The default is [const pages].
 
 [list_end]
 
 [example_begin]
  ns_section ns/server/SERVER1 {
    ns_param serverdir  ""
-   #ns_param serverrootproc ...
+   # ns_param serverrootproc ...
    ns_param logdir     logs
  }
- 
+
  ns_section ns/server/SERVER1/fastpath {
-    ns_param pagedir   pages
+   ns_param pagedir    pages
  }
 [example_end]
 
 
-[subsection {Per-Server Tcl-Source Locations}]
+[subsection {Global and Per-Server Tcl Source Locations}]
 
- You can specify the locations of Tcl source files on a per-server
- basis. In the per-server [const tcl] section, the [const initfile]
- parameter defines the Tcl initialization file to be executed during
- server startup, and the [const library] parameter specifies the
- directory containing additional Tcl scripts to be loaded. Both
- parameters may be given as absolute paths or as relative paths
- (resolved against [const home]).
+ NaviServer distinguishes between the global shared Tcl library and the
+ private Tcl library of each server.
+
+ [para]
+ The global shared library is configured through
+ [const ns/parameters:tcllibrary] and defaults to [file HOME/tcl].
+
+ [para]
+ The per-server [const tcl] section supports:
+
+[list_begin itemized]
+
+[item] [const initfile]
+
+       Initialization file executed when the virtual server is started.
+       Absolute values are used directly, while relative values are
+       resolved against the global home directory. The installed default
+       is [file bin/init.tcl].
+
+       [para]
+       When [file bin/init.tcl] does not exist but
+       [file nsd/init.tcl] exists, NaviServer uses the latter to support
+       execution directly from an uninstalled source tree.
+
+[item] [const library]
+
+       Private Tcl library for this server. Absolute values are used
+       directly, while relative values are resolved against the global
+       home directory. The default is [file modules/tcl].
+
+[list_end]
 
 [example_begin]
  ns_section ns/server/SERVER1/tcl {
-    ns_param initfile  bin/init.tcl
-    ns_param library   modules/tcl/
+   ns_param initfile  bin/init.tcl
+   ns_param library   modules/tcl
  }
 [example_end]
+
 
 [section {Global and Per-Server Logfiles}]
 
@@ -2129,10 +2248,22 @@ For the full reverse proxy module documentation, see
  that aggregates system and application messages via [cmd ns_log]. In
  addition, each server can have its own log files, such as
  [const access.log] (managed by the [const nslog] module) or
- [const httpclient.log] (configured in the [const httpclient] section). All
- per-server log files can be automatically rotated by enabling the
- boolean [const rolllog] parameter in the section where the logfile is
- defined.
+ [const httpclient.log] (configured in the [const httpclient]
+ section).
+
+ [para]
+ Per-server log rotation is configured in the section that owns the
+ logfile. The access log provided by the [const nslog] module uses the
+ parameter [const rolllog], together with rotation parameters such as
+ [const rollhour], [const rollfmt], and [const rollonsignal].
+
+ [para]
+ The HTTP client and [const nssmtpd] use [const logroll]. Their related
+ rotation parameters use the [const logroll] prefix, including
+ [const logrollhour], [const logrollfmt], and
+ [const logrollonsignal]. This naming keeps the logging parameters
+ distinct from other parameters in sections that serve multiple
+ purposes.
 
  [para] For instance, the snippet below defines automated rolling for
  the access log along with the other relevant parameters controlling
@@ -2164,7 +2295,7 @@ For the full reverse proxy module documentation, see
 }
 [example_end]
 
-While the accesslog is activated, when the [const nslog] module is
+While the access log is activated, when the [const nslog] module is
 loaded and the full section is just for configuring this particular
 access log. 
 
@@ -2194,12 +2325,13 @@ this log file:
 }
 [example_end]
 
- [para] For the system log, there is no no dedicated configuration
- parameter to control automatic rotation of the system log. Automated
- log rotation can be achieved via a scheduled procedure, as shown in
- the following snippet, which uses
+ [para]
+ For the system log, there is no dedicated configuration parameter to
+ control automatic rotation. Automated log rotation can be scheduled
+ explicitly, as shown below. The example uses
  [uri ../../naviserver/files/ns_schedule.html "ns_schedule_daily"]
- to call [uri ../../naviserver/files/ns_log.html "ns_log"]
+ to invoke
+ [uri ../../naviserver/files/ns_log.html "ns_logroll"]
  every day at midnight.
 
 [example_begin]
@@ -2223,12 +2355,12 @@ this log file:
  management and reduces backup requirements.
 
 [para]
- The following nipped shows the parameters for customizing the system log.
+ The following snippet shows the parameters for customizing the system log.
 
 [example_begin]
  ns_section ns/parameters {
     # ...
-    # ns_param  logdir          log
+    # ns_param  logdir          logs
     # ns_param  systemlog       nsd.log
     # ns_param  logrollonsignal on       ;# enable log rotation on SIGHUP
     ns_param    logmaxbackup    100      ;# 10 is default

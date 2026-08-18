@@ -42,27 +42,153 @@ static const char *preload_library_name = NULL;
 static const char *mallocLibraryVersionString = "unknown";
 #endif
 
-
+static bool bootstrapBinPathInitialized = NS_FALSE, bootstrapHomePathInitialized = NS_FALSE;
+static Tcl_DString bootstrapBinPath, bootstrapHomePath;
+
+static void ParentPath(Tcl_DString *dsPtr, const char *path, TCL_SIZE_T levels)
+    NS_GNUC_NONNULL(1,2);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParentPath --
+ *
+ *      Append the normalized parent directory of the specified path to
+ *      dsPtr. The number of trailing path components to remove is
+ *      specified by levels.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends to dsPtr. Terminates the process when the path does not
+ *      contain enough components to remove the requested number of
+ *      levels.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ParentPath(Tcl_DString *dsPtr, const char *path, TCL_SIZE_T levels)
+{
+    Tcl_Obj   *pathObj, *partsObj, *parentObj;
+    TCL_SIZE_T count;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
+
+    pathObj = Tcl_NewStringObj(path, TCL_INDEX_NONE);
+    Tcl_IncrRefCount(pathObj);
+
+    partsObj = Tcl_FSSplitPath(pathObj, &count);
+    if (count <= levels) {
+        Ns_Fatal("cannot derive parent directory from path '%s'", path);
+    }
+
+    parentObj = Tcl_FSJoinPath(partsObj, count - levels);
+    Tcl_IncrRefCount(parentObj);
+
+    (void)Ns_NormalizePath(dsPtr, Tcl_GetString(parentObj));
+
+    Tcl_DecrRefCount(parentObj);
+    Tcl_DecrRefCount(partsObj);
+    Tcl_DecrRefCount(pathObj);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_InfoBinPath --
+ *
+ *      Return the NaviServer binary directory. After startup
+ *      configuration has been processed, return the configured bindir.
+ *      During early startup, derive the binary directory from the
+ *      NaviServer home directory returned by Ns_InfoHomePath().
+ *
+ * Results:
+ *      Fully qualified pathname of the NaviServer binary directory.
+ *
+ * Side effects:
+ *      May resolve and cache the binary directory during early startup.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_InfoBinPath(void)
+{
+    if (nsconf.binDir != NULL) {
+        return nsconf.binDir;
+    }
+
+    if (!bootstrapBinPathInitialized) {
+        Tcl_DString path;
+
+        Tcl_DStringInit(&bootstrapBinPath);
+        Tcl_DStringInit(&path);
+
+        (void)Ns_MakePath(&path,
+                          Ns_InfoHomePath(), "bin",
+                          NS_SENTINEL);
+        (void)Ns_NormalizePath(&bootstrapBinPath,
+                               Tcl_DStringValue(&path));
+
+        Tcl_DStringFree(&path);
+        bootstrapBinPathInitialized = NS_TRUE;
+    }
+
+    return Tcl_DStringValue(&bootstrapBinPath);
+}
+
 /*
  *----------------------------------------------------------------------
  *
  * Ns_InfoHomePath --
  *
- *      Returns the home directory.
+ *      Return the NaviServer home directory. After startup
+ *      configuration has been processed, return the configured home
+ *      directory. During early startup, use the NAVISERVER environment
+ *      variable when defined; otherwise derive the home directory from
+ *      the pathname of the nsd executable.
  *
  * Results:
- *      String with the full path.
+ *      Fully qualified pathname of the NaviServer home directory.
  *
  * Side effects:
- *      None.
+ *      May resolve and cache the home directory during early startup.
  *
  *----------------------------------------------------------------------
  */
-
 const char *
 Ns_InfoHomePath(void)
 {
-    return nsconf.home;
+    if (nsconf.homeInitialized) {
+        return nsconf.home;
+    }
+
+    if (!bootstrapHomePathInitialized) {
+        const char *home = getenv("NAVISERVER");
+
+        Tcl_DStringInit(&bootstrapHomePath);
+
+        if (home != NULL && *home != '\0') {
+            if (Ns_PathIsAbsolute(home) == NS_FALSE) {
+                Ns_Fatal("NAVISERVER must be an absolute path: '%s'", home);
+            }
+
+            (void)Ns_NormalizePath(&bootstrapHomePath, home);
+        } else {
+            const char *executable = Tcl_GetNameOfExecutable();
+
+            if (executable == NULL || *executable == '\0') {
+                Ns_Fatal("cannot determine pathname of nsd executable");
+            }
+
+            ParentPath(&bootstrapHomePath, executable, 2);
+        }
+
+        bootstrapHomePathInitialized = NS_TRUE;
+    }
+
+    return Tcl_DStringValue(&bootstrapHomePath);
 }
 
 /*
@@ -1022,7 +1148,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         break;
 
     case IBindirIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.binDir, TCL_INDEX_NONE));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoBinPath(), TCL_INDEX_NONE));
         break;
 
     case IStartedIdx:

@@ -32,15 +32,20 @@ Returns file path to executable binary
 
 [call [cmd "ns_info bindir"]]
 
-Returns the absolute path of the directory used for NaviServer executables and
-helper binaries. The value is configured with the [const bindir] parameter in
-the [const ns/parameters] section and defaults to [const bin]. If configured
-as a relative path, it is resolved against the NaviServer home directory.
+ Returns the fully qualified path of the directory used for NaviServer
+ executables, loadable modules, and helper programs. After configuration
+ processing, the value is obtained from the [const bindir] parameter in
+ the [const ns/parameters] section. The parameter defaults to
+ [const bin] relative to the NaviServer home directory.
 
-[para]
-This directory is used, for example, when locating helper programs such as
-the [const nsproxy] worker executable.
+ [para]
+ During early startup, before configuration parameters are available,
+ the directory is derived as [const bin] below the home directory
+ returned by [cmd "ns_info home"].
 
+ [para]
+ This directory is used, for example, when locating internal helper
+ programs such as [const nsproxy-helper].
 
 [call [cmd "ns_info boottime"]]
 
@@ -74,13 +79,29 @@ Returns all registered startup/exit/shutdown callbacks
 
 Returns the absolute path to the configuration file used to start the server
 
-[call [cmd  "ns_info home"]]
 
-Returns the current working directory of the server
+[call [cmd "ns_info home"]]
+
+ Returns the fully qualified path of the NaviServer home directory.
+ After configuration processing, the value is obtained from the
+ [const home] parameter in the [const ns/parameters] section.
+
+ [para]
+ During early startup, before configuration parameters are available,
+ the home directory is obtained from the [const NAVISERVER] environment
+ variable. The environment variable must contain an absolute pathname.
+ When it is not set, NaviServer derives the home directory from the
+ pathname of the [const nsd] executable.
+
+ [para]
+ An explicitly configured [const home] parameter overrides the
+ early-startup value. NaviServer changes its current working directory
+ to the resulting home directory during startup.
+
 
 [call [cmd  "ns_info hostname"]]
 
-Returns the value of gethostname(), or "localhost" if that fails
+ Returns the value of gethostname(), or "localhost" if that fails.
 
 [call [cmd  "ns_info ipv6"]]
 

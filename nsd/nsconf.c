@@ -66,6 +66,7 @@ NsInitConf(void)
     */
 
     nsconf.home = "/";
+    nsconf.homeInitialized = NS_FALSE;
 
     Tcl_InitHashTable(&nsconf.sections, TCL_STRING_KEYS);
     Tcl_DStringInit(&nsconf.servers);
