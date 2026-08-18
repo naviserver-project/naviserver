@@ -34,7 +34,7 @@ typedef struct Thread {
     Ns_ThreadProc  *proc;            /* Thread startup routine. */
     void           *arg;             /* Argument to startup proc. */
     uintptr_t       tid;             /* Id set by thread for logging. */
-    pid_t           ostid;           /* OS level thread id (if available) */
+    uint64_t        ostid;           /* OS level thread id (if available) */
     unsigned char  *bottomOfStack;   /* for estimating currentStackSize */
     char            name[NS_THREAD_NAMESIZE+1];   /* Thread name. */
     char            parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
@@ -43,7 +43,8 @@ typedef struct Thread {
 static Thread *NewThread(void) NS_GNUC_RETURNS_NONNULL;
 static Thread *GetThread(void) NS_GNUC_RETURNS_NONNULL;
 static void CleanupThread(void *arg);
-static void SetBottomOfStack(void *ptr)  NS_GNUC_NONNULL(1);
+static void SetBottomOfStack(void *ptr) NS_GNUC_NONNULL(1);
+static void SetOsThreadId(Thread *thrPtr) NS_GNUC_NONNULL(1);
 
 /*
  * The pointer firstThreadPtr is the anchor of a linked list of all threads.
@@ -173,6 +174,26 @@ Ns_ThreadStackSize(ssize_t size)
     return prev;
 }
 
+
+static void
+SetOsThreadId(Thread *thrPtr)
+{
+    thrPtr->ostid = 0u;
+#ifdef HAVE_GETTID
+    thrPtr->ostid = (uint64_t)syscall(SYS_gettid);
+#elif defined(HAVE_PTHREAD_THREADID_NP)
+    {
+        uint64_t ostid;
+
+        if (pthread_threadid_np(NULL, &ostid) == 0) {
+            thrPtr->ostid = ostid;
+        }
+    }
+#elif defined(_WIN32)
+    thrPtr->ostid = (uint64_t)GetCurrentThreadId();
+#endif
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -202,10 +223,7 @@ NsThreadMain(void *arg)
     Ns_TlsSet(&key, thrPtr);
     Ns_ThreadSetName("-thread:%" PRIxPTR "-", thrPtr->tid);
     SetBottomOfStack(&thrPtr);
-
-#ifdef HAVE_GETTID
-    thrPtr->ostid = (pid_t)syscall(SYS_gettid);
-#endif
+    SetOsThreadId(thrPtr);
 
     /*
      * Invoke the user-supplied workhorse for this thread.
@@ -359,7 +377,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
                 Tcl_DStringAppend(dsPtr, buf, written);
             }
 
-            written = (TCL_SIZE_T)ns_uint32toa(buf, (uint32_t)thrPtr->ostid);
+            written = (TCL_SIZE_T)ns_uint64toa(buf, thrPtr->ostid);
             Tcl_DStringAppend(dsPtr, buf, written);
 
             Tcl_DStringEndSublist(dsPtr);
@@ -367,6 +385,378 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     }
     Ns_MasterUnlock();
 }
+
+
+static void
+ThreadCputimeAppend(Tcl_DString *dsPtr, uint64_t tid,
+                    uint64_t userUsec, uint64_t systemUsec)
+{
+    char buf[64];
+
+    /*
+     * Append dictionary key.
+     */
+    ns_uint64toa(buf, tid);
+    Tcl_DStringAppendElement(dsPtr, buf);
+
+    /*
+     * Append dictionary value as a nested list:
+     *
+     *     {user 123 system 456}
+     */
+    Tcl_DStringStartSublist(dsPtr);
+
+    Tcl_DStringAppendElement(dsPtr, "user");
+    ns_uint64toa(buf, userUsec);
+    Tcl_DStringAppendElement(dsPtr, buf);
+
+    Tcl_DStringAppendElement(dsPtr, "system");
+    ns_uint64toa(buf, systemUsec);
+    Tcl_DStringAppendElement(dsPtr, buf);
+
+    Tcl_DStringEndSublist(dsPtr);
+}
+
+#if defined(__linux__)
+
+static bool
+ThreadCputimeLinux(uint64_t tid, long ticksPerSecond,
+                   uint64_t *userUsecPtr, uint64_t *systemUsecPtr)
+{
+    char    path[128];
+    char    buffer[4096];
+    char   *p;
+    int     fd;
+    ssize_t nread;
+    uint64_t uticks, sticks;
+
+    *userUsecPtr = 0u;
+    *systemUsecPtr = 0u;
+
+    if (ticksPerSecond <= 0) {
+        return NS_FALSE;
+    }
+
+    snprintf(path, sizeof(path),
+             "/proc/self/task/%" PRIu64 "/stat", tid);
+
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        return NS_FALSE;
+    }
+
+    nread = read(fd, buffer, sizeof(buffer) - 1u);
+    close(fd);
+
+    if (nread <= 0) {
+        return NS_FALSE;
+    }
+    buffer[nread] = '\0';
+
+    /*
+     * The second field is "(comm)" and may contain spaces or closing
+     * parentheses. Start after its final ')'.
+     */
+    p = strrchr(buffer, ')');
+    if (p == NULL || p[1] != ' ') {
+        return NS_FALSE;
+    }
+    p += 2;
+
+    /*
+     * p starts at field 3, "state". Advance to fields 14 and 15.
+     *
+     * A small token parser is preferable to parsing the complete line
+     * with one sscanf().
+     */
+    {
+        unsigned int field;
+        char        *end;
+
+        /*
+         * Skip fields 3 through 13.
+         */
+        for (field = 3u; field <= 13u; field++) {
+            while (*p != '\0' && !CHARTYPE(space, *p)) {
+                p++;
+            }
+            while (CHARTYPE(space, *p)) {
+                p++;
+            }
+        }
+
+        errno = 0;
+        uticks = strtoull(p, &end, 10);
+        if (end == p || errno != 0) {
+            return NS_FALSE;
+        }
+
+        p = end;
+        while (CHARTYPE(space, *p)) {
+            p++;
+        }
+
+        errno = 0;
+        sticks = strtoull(p, &end, 10);
+        if (end == p || errno != 0) {
+            return NS_FALSE;
+        }
+    }
+
+    *userUsecPtr =
+        uticks * UINT64_C(1000000) / (uint64_t)ticksPerSecond;
+    *systemUsecPtr =
+        sticks * UINT64_C(1000000) / (uint64_t)ticksPerSecond;
+
+    return NS_TRUE;
+}
+
+static void
+ThreadCputimesLinux(Tcl_DString *dsPtr,
+                    const uint64_t *tids, size_t count)
+{
+    size_t i;
+    long   ticksPerSecond = sysconf(_SC_CLK_TCK);
+
+    for (i = 0u; i < count; i++) {
+        uint64_t userUsec, systemUsec;
+
+        if (ThreadCputimeLinux(tids[i], ticksPerSecond, &userUsec, &systemUsec)) {
+            ThreadCputimeAppend(dsPtr, tids[i],
+                                userUsec, systemUsec);
+        }
+    }
+}
+
+#elif defined(__APPLE__)
+
+#include <mach/mach.h>
+#include <mach/thread_info.h>
+
+static bool
+ThreadIdWanted(uint64_t tid, const uint64_t *tids, size_t count)
+{
+    size_t i;
+
+    for (i = 0u; i < count; i++) {
+        if (tids[i] == tid) {
+            return NS_TRUE;
+        }
+    }
+    return NS_FALSE;
+}
+
+static void
+ThreadCputimesDarwin(Tcl_DString *dsPtr,
+                     const uint64_t *tids, size_t count)
+{
+    thread_act_array_t     threads = NULL;
+    mach_msg_type_number_t threadCount = 0u;
+    kern_return_t          kr;
+    mach_msg_type_number_t i;
+
+    kr = task_threads(mach_task_self(), &threads, &threadCount);
+    if (kr != KERN_SUCCESS) {
+        return;
+    }
+
+    for (i = 0u; i < threadCount; i++) {
+        thread_identifier_info_data_t identifier;
+        mach_msg_type_number_t identifierCount =
+            THREAD_IDENTIFIER_INFO_COUNT;
+
+        kr = thread_info(threads[i],
+                         THREAD_IDENTIFIER_INFO,
+                         (thread_info_t)&identifier,
+                         &identifierCount);
+
+        if (kr == KERN_SUCCESS
+            && ThreadIdWanted(identifier.thread_id, tids, count)) {
+
+            thread_basic_info_data_t basic;
+            mach_msg_type_number_t basicCount =
+                THREAD_BASIC_INFO_COUNT;
+
+            kr = thread_info(threads[i],
+                             THREAD_BASIC_INFO,
+                             (thread_info_t)&basic,
+                             &basicCount);
+
+            if (kr == KERN_SUCCESS) {
+                uint64_t userUsec =
+                    (uint64_t)basic.user_time.seconds
+                    * UINT64_C(1000000)
+                    + (uint64_t)basic.user_time.microseconds;
+
+                uint64_t systemUsec =
+                    (uint64_t)basic.system_time.seconds
+                    * UINT64_C(1000000)
+                    + (uint64_t)basic.system_time.microseconds;
+
+                ThreadCputimeAppend(dsPtr,
+                                    identifier.thread_id,
+                                    userUsec,
+                                    systemUsec);
+            }
+        }
+    }
+
+    /*
+     * task_threads() returns send rights and allocated array storage.
+     */
+    for (i = 0u; i < threadCount; i++) {
+        (void)mach_port_deallocate(mach_task_self(), threads[i]);
+    }
+
+    if (threads != NULL) {
+        (void)vm_deallocate(
+            mach_task_self(),
+            (vm_address_t)threads,
+            (vm_size_t)(threadCount * sizeof(*threads)));
+    }
+}
+
+#elif defined(_WIN32)
+static uint64_t
+FileTimeToUsec(const FILETIME *timePtr)
+{
+    ULARGE_INTEGER value;
+
+    value.LowPart  = timePtr->dwLowDateTime;
+    value.HighPart = timePtr->dwHighDateTime;
+
+    /*
+     * FILETIME is measured in 100-nanosecond units.
+     */
+    return value.QuadPart / UINT64_C(10);
+}
+
+static void
+ThreadCputimesWindows(Tcl_DString *dsPtr,
+                      const uint64_t *tids, size_t count)
+{
+    size_t i;
+
+    for (i = 0u; i < count; i++) {
+        HANDLE   thread;
+        FILETIME creationTime, exitTime, kernelTime, userTime;
+
+        if (tids[i] > UINT32_MAX) {
+            continue;
+        }
+
+        thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION,
+                            FALSE, (DWORD)tids[i]);
+        if (thread == NULL) {
+            continue;
+        }
+
+        if (GetThreadTimes(thread,
+                           &creationTime, &exitTime,
+                           &kernelTime, &userTime) != 0) {
+            ThreadCputimeAppend(dsPtr,
+                                tids[i],
+                                FileTimeToUsec(&userTime),
+                                FileTimeToUsec(&kernelTime));
+        }
+
+        CloseHandle(thread);
+    }
+}
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ThreadCpuTimes --
+ *
+ *      Append cumulative per-thread CPU times to dsPtr as a Tcl
+ *      dictionary. Dictionary keys are the operating-system thread IDs
+ *      reported by Ns_ThreadList(). Each value is a sub-dictionary with
+ *      user and system CPU time in microseconds:
+ *
+ *          tid {user usec system usec}
+ *
+ *      Threads for which accounting information cannot be obtained are
+ *      omitted. On unsupported platforms, an empty dictionary is
+ *      returned.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Queries operating-system thread accounting information and
+ *      appends Tcl-list elements to dsPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_ThreadCpuTimes(Tcl_DString *dsPtr)
+{
+    Thread   *thrPtr;
+    uint64_t *tids;
+    size_t    count = 0u;
+    size_t    i = 0u;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    /*
+     * Take a stable snapshot of the active NaviServer OS thread IDs.
+     * Do not hold the master lock while performing OS queries.
+     */
+    Ns_MasterLock();
+
+    for (thrPtr = firstThreadPtr;
+         thrPtr != NULL;
+         thrPtr = thrPtr->nextPtr) {
+
+        if ((thrPtr->flags & NS_THREAD_EXITED) == 0u
+            && thrPtr->ostid != 0u) {
+            count++;
+        }
+    }
+
+    tids = count > 0u
+        ? ns_malloc(count * sizeof(uint64_t))
+        : NULL;
+
+    for (thrPtr = firstThreadPtr;
+         thrPtr != NULL;
+         thrPtr = thrPtr->nextPtr) {
+
+        if ((thrPtr->flags & NS_THREAD_EXITED) == 0u
+            && thrPtr->ostid != 0u) {
+            tids[i++] = thrPtr->ostid;
+        }
+    }
+
+    Ns_MasterUnlock();
+
+#if defined(__linux__)
+    ThreadCputimesLinux(dsPtr, tids, count);
+
+#elif defined(__APPLE__)
+    ThreadCputimesDarwin(dsPtr, tids, count);
+
+#elif defined(_WIN32)
+    ThreadCputimesWindows(dsPtr, tids, count);
+
+#else
+    /*
+     * No implementation for this platform yet. Returning an empty
+     * dictionary is intentional.
+     */
+    (void)dsPtr;
+    (void)tids;
+    (void)count;
+#endif
+
+    if (tids != NULL) {
+        ns_free(tids);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -503,9 +893,7 @@ GetThread(void)
         thrPtr->flags = NS_THREAD_DETACHED;
         thrPtr->tid = Ns_ThreadId();
         Ns_TlsSet(&key, thrPtr);
-#ifdef HAVE_GETTID
-        thrPtr->ostid = (pid_t)syscall(SYS_gettid);
-#endif
+        SetOsThreadId(thrPtr);
     }
     return thrPtr;
 }

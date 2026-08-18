@@ -1089,7 +1089,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         "major", "meminfo", "minor", "mimetypes", "name", "nsd",
         "patchlevel", "pid", "pools",
         "scheduled", "server", "servers",
-        "sockcallbacks", "ssl", "tag", "threads", "uptime",
+        "sockcallbacks", "ssl", "tag", "threadcputimes", "threads", "uptime",
         "version",
         "shutdownpending", "started",
 #ifdef NS_WITH_DEPRECATED
@@ -1106,7 +1106,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         IPatchLevelIdx,
         IPidIdx, IPoolsIdx,
         IScheduledIdx, IServerIdx, IServersIdx,
-        ISockCallbacksIdx, ISSLIdx, ITagIdx, IThreadsIdx, IUptimeIdx,
+        ISockCallbacksIdx, ISSLIdx, ITagIdx, IThreadcputimesIdx, IThreadsIdx, IUptimeIdx,
         IVersionIdx,
         IShutdownPendingIdx, IStartedIdx,
 #ifdef NS_WITH_DEPRECATED
@@ -1189,6 +1189,11 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     case ILocksIdx:
         Ns_MutexList(&ds);
         Ns_RWLockList(&ds);
+        Tcl_DStringResult(interp, &ds);
+        break;
+
+    case IThreadcputimesIdx:
+        Ns_ThreadCpuTimes(&ds);
         Tcl_DStringResult(interp, &ds);
         break;
 
