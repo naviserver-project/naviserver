@@ -419,6 +419,10 @@ ThreadCputimeAppend(Tcl_DString *dsPtr, uint64_t tid,
 
 #if defined(__linux__)
 
+# ifndef CHARTYPE
+#   define CHARTYPE(what,c) (is ## what ((int)((unsigned char)(c))))
+# endif
+
 static bool
 ThreadCputimeLinux(uint64_t tid, long ticksPerSecond,
                    uint64_t *userUsecPtr, uint64_t *systemUsecPtr)
