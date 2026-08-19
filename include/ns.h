@@ -2261,6 +2261,9 @@ Ns_StopServer(char *server);
 NS_EXTERN const char *
 Ns_InfoAddress(void) NS_GNUC_CONST;
 
+NS_EXTERN const char *
+Ns_InfoBinPath(void);
+
 NS_EXTERN time_t
 Ns_InfoBootTime(void) NS_GNUC_PURE;
 
@@ -2271,7 +2274,7 @@ NS_EXTERN const char *
 Ns_InfoConfigFile(void) NS_GNUC_PURE;
 
 NS_EXTERN const char *
-Ns_InfoHomePath(void) NS_GNUC_PURE;
+Ns_InfoHomePath(void);
 
 NS_EXTERN const char *
 Ns_InfoLogPath(void) NS_GNUC_PURE;
