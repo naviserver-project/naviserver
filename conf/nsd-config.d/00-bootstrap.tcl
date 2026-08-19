@@ -53,6 +53,7 @@ dict set defaultConfig enablehttpproxy false
 dict set defaultConfig setupfile ""
 dict set defaultConfig max_file_upload_size  20MB
 dict set defaultConfig max_file_upload_duration 5m
+dict set defaultConfig h3 0
 
 #
 # For all potential variables defined by the dict "defaultConfig",
