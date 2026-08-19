@@ -79,7 +79,7 @@ static Ns_ReturnCode PrebindSystemdSockets(size_t *countPtr);
 static Ns_ReturnCode PrebindLaunchdSockets(size_t *countPtr);
 # endif
 
-# if  defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
+# if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 static Ns_ReturnCode PrebindRegisterSocket(NS_SOCKET sock);
 # endif
 
@@ -1179,6 +1179,7 @@ PrebindRegisterInetSocket(const char *proto, NS_SOCKET sock,
     return NS_OK;
 }
 
+# if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 /*
  *----------------------------------------------------------------------
  *
@@ -1419,7 +1420,7 @@ PrebindRegisterSocket(NS_SOCKET sock)
         return NS_ERROR;
     }
 }
-
+# endif /* HAVE_SD_LISTEN_FDS || __APPLE__ */
 
 /*
  *----------------------------------------------------------------------
