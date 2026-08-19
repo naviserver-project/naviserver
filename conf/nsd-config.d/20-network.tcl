@@ -196,6 +196,12 @@ if {[info exists httpsport] && $httpsport ne ""} {
         #ns_param vhostcertificates $home/certificates ;# directory for vhost certificates of the default server
 
         #------------------------------------------------------------------
+        # HTTP/3 advertisement in HTTP/1.x responses
+        #------------------------------------------------------------------
+        # ns_param h3advertise true  ;# default: false; add an Alt-Svc header
+        # ns_param h3persist   true  ;# default: false; add persist=1 to Alt-Svc
+
+        #------------------------------------------------------------------
         # OCSP stapling configuration:
         #------------------------------------------------------------------
         # ns_param OCSPstapling    on         ;# off; activate OCSP stapling
@@ -219,6 +225,24 @@ if {[info exists httpsport] && $httpsport ne ""} {
     ns_section -set $server_set ns/module/https/servers {}
     if {[namespace exists ::docker]} {
         ns_section -set [::docker::map_external_address_to_server $server $httpsport] ns/module/https/servers {}
+    }
+
+    if {[info exists h3] && $h3 == 1} {
+
+        # HTTP/3 driver (quic.so), sharing the HTTPS configuration
+        ns_section ns/modules {
+            ns_param h3 quic.so
+        }
+
+        ns_section ns/module/h3 {
+            ns_param https ns/module/https         ;# linkage to HTTPS configuration
+            # ns_param recvbufsize  2MB            ;# default: 8MB; receive buffer size
+            # ns_param idletimeout  1s             ;# default: 3s; maximum idle poll interval
+            # ns_param draintimeout 2ms            ;# default: 10ms; poll interval while draining
+            # ns_param validateclientaddress false ;# default: true; validate the client address before accept
+                                                   ;# when set to false, weakens flood protection
+            # ns_param debug true                  ;# default: false; enable detailed QUIC diagnostic
+        }
     }
 }
 
