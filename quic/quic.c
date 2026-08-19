@@ -2400,8 +2400,6 @@ static void quic_conn_handle_ic(SSL *listener_ssl, Driver *drvPtr) {
             break;
         }
 
-        //OSSL_TRY(SSL_set_msg_callback(conn, ossl_msg_cb));
-
         SSL_set_app_data(conn, dc);
 
         /*
@@ -3007,7 +3005,6 @@ h3_conn_write_step(ConnCtx *cc)
                 Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] h3_conn_write_step: clear tx_served_this_step",
                        (long long)dc->iter, (long long)sc->quic_sid);
                 sc->tx_served_this_step = NS_FALSE;
-                //sc->rx_emitted_in_pass = 0;
             }
         }
     }
@@ -4176,7 +4173,6 @@ h3_stream_build_resp_headers(Ns_Sock *sock,
         if (h3_headers_is_invalid_response_field(key, klen, val, vlen)) {
             continue;
         }
-        //sanitize_value_h3(val, &vbuf);
 
         if (h3_headers_nv_append(store, &nva, &nvlen, &nvcap,
                                  key, klen,
@@ -5869,7 +5865,6 @@ static int on_begin_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id,
 
     // Initialize only the essential parts here
     sc->h3_sid = stream_id;
-    //sc->rx_emitted_in_pass = 0;
     assert(sc->h3_sid == (int64_t)sc->quic_sid);
 
     memset(&sc->data_reader, 0, sizeof(sc->data_reader));
@@ -8065,7 +8060,6 @@ PollsetReapConnection(NsTLSConfig *dc, ConnCtx *cc, const char *reason)
     SSL           *conn;
     NsTLSH3Config *h3 = &dc->u.h3;
 
-    NS_NONNULL_ASSERT(dc != NULL);
     NS_NONNULL_ASSERT(cc != NULL);
     NS_NONNULL_ASSERT(reason != NULL);
 
@@ -8885,7 +8879,6 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     init.connInfoProc = ConnInfo;
     init.clientcertInfoProc = ClientcertInfo;
     init.closeProc = Close;
-    //init.opts = NS_DRIVER_ASYNC | NS_DRIVER_UDP | NS_DRIVER_QUIC;
     init.opts = NS_DRIVER_UDP | NS_DRIVER_QUIC;
     init.arg = dc;
     init.path = httpsSection;  // used for getting address and port etc.
