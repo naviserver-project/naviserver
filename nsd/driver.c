@@ -1972,7 +1972,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                 Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
 
                 Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_recvwait));
-                Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
+                Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->recvwait));
 
                 Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_extraheaders));
                 if (drvPtr->extraHeaders != NULL) {
