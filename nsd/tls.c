@@ -397,38 +397,41 @@ SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
          * (i.e., when per virtual server certificates were specified.
          */
         if (doSNI) {
-            Tcl_DString     ds;
-            NS_TLS_SSL_CTX *ctx;
             const void     *ex = dc->sni_idx >= 0 ? SSL_get_ex_data(ssl, dc->sni_idx) : NULL;
-            unsigned short  port = ex != NULL
-                ? (unsigned short)(uintptr_t)ex
-                : (unsigned short)(drvPtr->listenfd[0]);
 
-            /*
-             * The virtual host entries are specified canonically, via
-             * host:port. Since the provided "serverName" is specified by the
-             * client, we can't precompute the strings to save a few cycles.
-             */
-            Tcl_DStringInit(&ds);
-            Ns_DStringPrintf(&ds, "%s:%hu", serverName, port);
+            if (ex == NULL) {
+                Ns_Log(Warning, "SSL_serverNameCB: no local port attached to SSL connection");
+            } else {
+                NS_TLS_SSL_CTX *ctx;
+                unsigned short  port = (unsigned short)(uintptr_t)ex;
+                Tcl_DString     ds;
 
-            ctx = NsDriverLookupHostCtx(&ds, serverName, dc->driver);
+                /*
+                 * The virtual host entries are specified canonically, via
+                 * host:port. Since the provided "serverName" is specified by the
+                 * client, we can't precompute the strings to save a few cycles.
+                 */
+                Tcl_DStringInit(&ds);
+                Ns_DStringPrintf(&ds, "%s:%hu", serverName, port);
 
-            Ns_Log(Debug, "SSL_serverNameCB lookup result of <%s> location %s port %hu -> ctx %p",
-                   serverName, ds.string, port, (void*)ctx);
+                ctx = NsDriverLookupHostCtx(&ds, serverName, dc->driver);
 
-            /*
-             * When the lookup succeeds, we have the alternate SSL_CTX
-             * that we will use. Otherwise, do not acknowledge the
-             * servername request.  Return the same value as when not
-             * servername was provided (SSL_TLSEXT_ERR_NOACK).
-             */
-            if (ctx != NULL) {
-                Ns_Log(Debug, "SSL_serverNameCB switches server context to %p", (void*)ctx);
-                SSL_set_SSL_CTX(ssl, ctx);
-                result = SSL_TLSEXT_ERR_OK;
+                Ns_Log(Debug, "SSL_serverNameCB lookup result of <%s> location %s port %hu -> ctx %p",
+                       serverName, ds.string, port, (void*)ctx);
+
+                /*
+                 * When the lookup succeeds, we have the alternate SSL_CTX
+                 * that we will use. Otherwise, do not acknowledge the
+                 * servername request.  Return the same value as when not
+                 * servername was provided (SSL_TLSEXT_ERR_NOACK).
+                 */
+                if (ctx != NULL) {
+                    Ns_Log(Debug, "SSL_serverNameCB switches server context to %p", (void*)ctx);
+                    SSL_set_SSL_CTX(ssl, ctx);
+                    result = SSL_TLSEXT_ERR_OK;
+                }
+                Tcl_DStringFree(&ds);
             }
-            Tcl_DStringFree(&ds);
         }
     }
 

@@ -278,12 +278,9 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
             SSL_set_accept_state(sslCtx->ssl);
 
             port = Ns_SockGetPort(sock); /* precise local port */
-            if ((unsigned short)(((Driver *)(sock->driver))->listenfd[0]) != port) {
-                /*
-                 * The default port differs from the actual port. Attach a
-                 * per-connection SNI context so callback knows driver+port.
-                 */
-                SSL_set_ex_data(sslCtx->ssl, dc->sni_idx, (void *)(uintptr_t)port);
+            if (SSL_set_ex_data(sslCtx->ssl, dc->sni_idx,
+                                (void *)(uintptr_t)port) != 1) {
+                Ns_Log(Error, "nsssl: could not attach local port %hu to SSL connection", port);
             }
         }
 
