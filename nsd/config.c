@@ -1362,22 +1362,25 @@ ConfigEvalEx(Tcl_Interp *interp, const char *config, const char *configFileName)
  * ConfigCreateInterp --
  *
  *      Create and initialize a Tcl interpreter for configuration
- *      evaluation. The interpreter is created with Ns_TclCreateInterp(),
- *      sources the server init script "tcl/init.tcl" relative to
- *      [ns_info nsd], registers the "ns_section" and "ns_param"
- *      object commands (using sectionPtrPtr as clientData), and seeds
- *      the standard command-line variables (argv, argc, optind).
+ *      evaluation. The interpreter is created with Ns_TclCreateInterp()
+ *      and sources the global NaviServer initialization script
+ *      "tcl/init.tcl" relative to the home directory returned by
+ *      [ns_info home]. It then registers the "ns_section" and
+ *      "ns_param" object commands, using sectionPtrPtr as clientData,
+ *      and initializes the standard command-line variables argv, argc,
+ *      and optind.
  *
  * Returns:
- *      Tcl_Interp * - a newly created, initialized interpreter ready to
- *      evaluate configuration scripts. The caller owns the interpreter
- *      and must destroy it with Ns_TclDestroyInterp().
+ *      A newly created interpreter ready to evaluate configuration
+ *      scripts. The caller owns the interpreter and must destroy it
+ *      with Ns_TclDestroyInterp().
  *
  * Side Effects:
- *      Evaluates tcl/init.tcl (return code ignored), registers object
- *      commands, and populates global variables "argv", "argc", and
- *      "optind" in the interpreter. No logging is performed here beyond
- *      what the sourced script may do.
+ *      Evaluates the global tcl/init.tcl script, registers configuration
+ *      commands, and populates the global variables argv, argc, and
+ *      optind. The return code from sourcing tcl/init.tcl is ignored.
+ *      No logging is performed here beyond what the sourced script may
+ *      produce.
  *
  *----------------------------------------------------------------------
  */
