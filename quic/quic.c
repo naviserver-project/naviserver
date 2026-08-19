@@ -6739,7 +6739,8 @@ StreamCtxGet(ConnCtx *cc, int64_t sid, int create) {
  *      handling pipeline.
  *
  * Results:
- *      Returns a pointer to the initialized StreamCtx structure.
+ *      A pointer to the initialized StreamCtx, or NULL when the stream
+ *      context could not be created.
  *
  * Side effects:
  *      - Allocates and initializes a StreamCtx if it did not exist yet.
@@ -6757,42 +6758,44 @@ StreamCtxRegister(ConnCtx *cc, SSL *s, uint64_t sid, H3StreamKind kind)
 {
     StreamCtx *sc = StreamCtxGet(cc, (int64_t)sid, 1 /*create*/);
 
-    sc->ssl         = s;
-    sc->cc          = cc;
-    sc->quic_sid    = sid;
-    sc->kind        = kind;
-    sc->nsSock      = NULL;
+    if (sc != NULL) {
+        sc->ssl         = s;
+        sc->cc          = cc;
+        sc->quic_sid    = sid;
+        sc->kind        = kind;
+        sc->nsSock      = NULL;
 
-    switch (kind) {
-    case H3_KIND_BIDI_REQ:
-        {
-            Ns_Driver   *drvPtr = cc->dc->driver;
-            Ns_Time      now;
-            QuicSockCtx *qctx;
-            char         buffer[NS_IPADDR_SIZE];
+        switch (kind) {
+        case H3_KIND_BIDI_REQ:
+            {
+                Ns_Driver   *drvPtr = cc->dc->driver;
+                Ns_Time      now;
+                QuicSockCtx *qctx;
+                char         buffer[NS_IPADDR_SIZE];
 
-            Ns_GetTime(&now);
-            /*
-             * Get a fresh NsSock into sc->nsSock. Release happens via
-             * StreamCtxFree() unless dispatch ownership was transferred.
-             */
-            NsSockAccept(drvPtr, SSL_get_fd(s), (Ns_Sock**)&sc->nsSock, &now, s);
+                Ns_GetTime(&now);
+                /*
+                 * Get a fresh NsSock into sc->nsSock. Release happens via
+                 * StreamCtxFree() unless dispatch ownership was transferred.
+                 */
+                NsSockAccept(drvPtr, SSL_get_fd(s), (Ns_Sock**)&sc->nsSock, &now, s);
 
-            (void)ns_inet_ntop((const struct sockaddr *)&sc->nsSock->sa, buffer, NS_IPADDR_SIZE);
-            Ns_Log(Ns_LogQuicDebug, "[%lld] H3 STREAM accept SockAccept returns sockPtr %p IP %s",
-                   (long long)sc->cc->dc->iter, (void*)sc->nsSock, buffer);
+                (void)ns_inet_ntop((const struct sockaddr *)&sc->nsSock->sa, buffer, NS_IPADDR_SIZE);
+                Ns_Log(Ns_LogQuicDebug, "[%lld] H3 STREAM accept SockAccept returns sockPtr %p IP %s",
+                       (long long)sc->cc->dc->iter, (void*)sc->nsSock, buffer);
 
-            qctx = (QuicSockCtx *)sc->nsSock->arg;
-            qctx->sc = sc;
-            h3_conn_maybe_raise_client_bidi_credit(cc, sid);
+                qctx = (QuicSockCtx *)sc->nsSock->arg;
+                qctx->sc = sc;
+                h3_conn_maybe_raise_client_bidi_credit(cc, sid);
+                break;
+            }
+        case H3_KIND_CTRL:
+        case H3_KIND_QPACK_ENCODER:
+        case H3_KIND_QPACK_DECODER:
+        case H3_KIND_CLIENT_UNI:
+        case H3_KIND_UNKNOWN:
             break;
         }
-    case H3_KIND_CTRL:
-    case H3_KIND_QPACK_ENCODER:
-    case H3_KIND_QPACK_DECODER:
-    case H3_KIND_CLIENT_UNI:
-    case H3_KIND_UNKNOWN:
-        break;
     }
     return sc;
 }
