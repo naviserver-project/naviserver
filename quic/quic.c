@@ -9753,6 +9753,15 @@ QuicThread(void *arg)
                 continue;
             }
 
+            if (h3->poll_items[i].desc.type == BIO_POLL_DESCRIPTOR_TYPE_NONE) {
+                Ns_Log(Warning,
+                       "[%lld] H3D poll item %d with descriptor type NONE "
+                       "returned revents 0x%llx",
+                       (long long)dc->iter,
+                       i,
+                       (unsigned long long)revents);
+            }
+
             /*
              * First try to get sc from the stream. If we succeed, get cc from
              * sc; otherwise, try to get cc from the stream.
@@ -9937,7 +9946,9 @@ QuicThread(void *arg)
                                                 |SSL_POLL_EVENT_ER
                                                 |SSL_POLL_EVENT_EW)));
                 if (quic_conn_handle_e(cc, s, revents)) {
-                    h3->poll_items[i].revents = 0;  /* avoid reprocessing this (now-dead) slot */
+                   /*
+                    * Avoid reprocessing this (now-dead) slot.
+                    */
                     goto skip;
                 }
             }
