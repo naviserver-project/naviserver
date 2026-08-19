@@ -2950,7 +2950,7 @@ DStringAppendSslPollEventFlags(Tcl_DString *dsPtr, uint64_t flags)
  *
  * Notes:
  *      - Skips work if the connection is already entering shutdown or if
- *        SSL_get_shutdown(conn) is non-zero.
+ *        SSL_get_shutdown(conn) is nonzero.
  *      - Handles zero-length FINs produced by nghttp3 (no payload vectors).
  *      - Uses a conservative policy: on WRITE errors (other than WANT_*),
  *        logs details and schedules another pass or tears down as needed.
@@ -4143,7 +4143,7 @@ h3_stream_build_resp_headers(Ns_Sock *sock,
     }
 
     /* 2) Regular headers from merged set.
-     *    Keys are guaranteed lower-case already.
+     *    Keys are guaranteed lowercase already.
      *    Filter hop-by-hop headers which are illegal/meaningless in H3.
      */
     for (size_t i = 0; i < Ns_SetSize(merged); ++i) {
@@ -4533,7 +4533,7 @@ h3_stream_feed_pending(StreamCtx *sc, uint64_t sid)
  *      stream's receive staging buffer (sc->rx_hold), but only if that
  *      buffer is currently empty.
  *
- *      This function performs a non-blocking read using SSL_read_ex() and
+ *      This function performs a nonblocking read using SSL_read_ex() and
  *      interprets the result according to QUIC and HTTP/3 semantics:
  *
  *        - If data is read successfully, it updates rx_len and returns
@@ -6051,7 +6051,7 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
         Tcl_DStringFree(&ds);
     }
 
-    reqPtr->coff    = 1;   /* "past headers"; any non-zero is OK */
+    reqPtr->coff    = 1;   /* "past headers"; any nonzero is OK */
     reqPtr->length  = 0;
     reqPtr->avail   = 0;
     reqPtr->content = NULL;
