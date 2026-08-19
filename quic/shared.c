@@ -249,7 +249,7 @@ resume_grow(SharedState *st)
  *      None.
  *
  * Side effects:
- *      Initializes st->lock, writes wake_cb and wake_arg, and zeroes:
+ *      Initializes st->lock, writes wake_cb and wake_arg, and zeros:
  *      st->resume, st->cap, st->count, st->head, st->tail. No memory
  *      allocations are performed here. Must be called exactly once
  *      before any concurrent use of *st.
@@ -841,7 +841,7 @@ resume_push_unlocked(SharedState *st, int64_t sid)
  *      set. If not, attempts to append sid to the resume ring. Only
  *      after successful insertion does it set resume_enqueued and
  *      request a wake when the ring transitioned from empty to
- *      non-empty.
+ *      nonempty.
  *
  *      Outside the lock, invokes st->wake_cb(st->wake_arg) when a wake
  *      is required. Ring growth may allocate memory. If growth fails,
