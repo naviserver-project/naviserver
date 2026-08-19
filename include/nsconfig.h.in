@@ -79,6 +79,10 @@
 /* Define to 1 if you have the 'gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
+/* Define when unsigned int is 32 bits and supports lock-free GCC-style atomic
+   operations. */
+#undef HAVE_GNU_ATOMIC_UINT32_BUILTINS
+
 /* Compiler support for module scope symbols */
 #undef HAVE_HIDDEN
 
@@ -157,8 +161,14 @@
 /* Have PTHREAD_PRIO_INHERIT. */
 #undef HAVE_PTHREAD_PRIO_INHERIT
 
+/* Define to 1 if you have the 'pthread_threadid_np' function. */
+#undef HAVE_PTHREAD_THREADID_NP
+
 /* Define to 1 if you have the 'random' function. */
 #undef HAVE_RANDOM
+
+/* Define to 1 when sd_listen_fds() is available. */
+#undef HAVE_SD_LISTEN_FDS
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
