@@ -2973,13 +2973,17 @@ DStringAppendSslPollEventFlags(Tcl_DString *dsPtr, uint64_t flags)
 static bool
 h3_conn_write_step(ConnCtx *cc)
 {
-    nghttp3_vec   vecs[WRITE_STEP_MAX_VEC];
-    nghttp3_ssize nvec;
-    int64_t       sid = -1;
-    int           fin = 0;
-    bool          did_progress     = NS_FALSE;  /* any bytes written or FIN concluded */
-    bool          need_local_retry = NS_FALSE;
-    NsTLSConfig  *dc = cc->dc;
+    nghttp3_vec    vecs[WRITE_STEP_MAX_VEC];
+    nghttp3_ssize  nvec;
+    int64_t        sid = -1;
+    int            fin = 0;
+    bool           did_progress     = NS_FALSE;  /* any bytes written or FIN concluded */
+    bool           need_local_retry = NS_FALSE;
+    NsTLSConfig   *dc = cc->dc;
+    NsTLSH3Config *h3;
+
+    assert(dc != NULL);
+    h3 = &dc->u.h3;
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 h3_conn_write_step called", (long long)dc->iter);
 
@@ -3057,7 +3061,7 @@ h3_conn_write_step(ConnCtx *cc)
              */
             if (ssc->ssl == NULL
                 || ssc->pidx >= PollsetCount(cc->dc)
-                || cc->dc->u.h3.ssl_items.data[ssc->pidx] != ssc->ssl) {
+                || h3->ssl_items.data[ssc->pidx] != ssc->ssl) {
 
                 Ns_Log(Ns_LogQuicDebug,
                        "[%lld] H3[%lld] dropping resume for detached stream",
@@ -3088,7 +3092,7 @@ h3_conn_write_step(ConnCtx *cc)
             if (ssc->pidx == (size_t)-1
                 || ssc->ssl == NULL
                 || ssc->pidx >= PollsetCount(cc->dc)
-                || cc->dc->u.h3.ssl_items.data[ssc->pidx] != ssc->ssl) {
+                || h3->ssl_items.data[ssc->pidx] != ssc->ssl) {
 
                 Ns_Log(Ns_LogQuicDebug,
                        "[%lld] H3[%lld] dropping resume for detached stream",
@@ -3167,7 +3171,7 @@ h3_conn_write_step(ConnCtx *cc)
                     && zsc->ssl != NULL
                     && zsc->pidx != (size_t)-1
                     && zsc->pidx < PollsetCount(dc)
-                    && dc->u.h3.ssl_items.data[zsc->pidx] == zsc->ssl) {
+                    && h3->ssl_items.data[zsc->pidx] == zsc->ssl) {
                     int ok = SSL_stream_conclude(zsc->ssl, 0);
 
                     Ns_Log(Ns_LogQuicDebug, "[%lld] H3[%lld] writev: rv=%ld %s fin=%d -> SSL_stream_conclude -> %d",
@@ -3271,7 +3275,7 @@ h3_conn_write_step(ConnCtx *cc)
             continue;
         }
 
-        sc = SSL_get_ex_data(stream, dc->u.h3.sc_idx);
+        sc = SSL_get_ex_data(stream, h3->sc_idx);
 
         //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write map: nghttp3 sid=%lld -> ssl %p (sid=%llu) kind=%s",
         //       (long long)dc->iter, (long long)sid, (void*)stream, (uint64_t)SSL_get_stream_id(stream),
@@ -3628,7 +3632,7 @@ h3_conn_write_step(ConnCtx *cc)
             || sc->ssl != stream
             || sc->pidx == (size_t)-1
             || sc->pidx >= PollsetCount(dc)
-            || dc->u.h3.ssl_items.data[sc->pidx] != stream) {
+            || h3->ssl_items.data[sc->pidx] != stream) {
 
             goto next_sid;
         }
@@ -5584,20 +5588,24 @@ h3_stream_maybe_note_uni_type(StreamCtx *sc, SSL *stream, uint64_t sid)
 static inline void
 h3_conn_wake(void *arg)
 {
-    NsTLSConfig *dc = arg;
+    NsTLSConfig   *dc = arg;
+    NsTLSH3Config *h3;
 
-    if (dc->u.h3.waker_fd < 0 || dc->u.h3.waker_addrlen == 0) {
+    assert(dc != NULL);
+    h3 = &dc->u.h3;
+
+    if (h3->waker_fd < 0 || h3->waker_addrlen == 0) {
         Ns_Log(Warning,
                "[%lld] H3: h3_conn_wake not initialized",
                (long long)dc->iter);
 
     } else {
         const bool send_wakeup =
-            Ns_AtomicUint32ExchangeRelaxed(&dc->u.h3.waker_pending, 1u) == 0u;
+            Ns_AtomicUint32ExchangeRelaxed(&h3->waker_pending, 1u) == 0u;
 
         if (send_wakeup) {
             const struct sockaddr *sa =
-                (const struct sockaddr *)&dc->u.h3.waker_addr;
+                (const struct sockaddr *)&h3->waker_addr;
             const unsigned char b = 0; /* not a QUIC header byte */
             int                 n;
 
@@ -5610,9 +5618,9 @@ h3_conn_wake(void *arg)
                    "[%lld] H3: sending wake datagram",
                    (long long)dc->iter);
 
-            n = (int)sendto(dc->u.h3.waker_fd,
+            n = (int)sendto(h3->waker_fd,
                             (const char *)&b, 1, 0,
-                            sa, dc->u.h3.waker_addrlen);
+                            sa, h3->waker_addrlen);
 
             if (n != 1) {
                 const int error = ns_sockerrno;
@@ -5620,7 +5628,7 @@ h3_conn_wake(void *arg)
                 /*
                  * Allow a subsequent producer to retry the notification.
                  */
-                Ns_AtomicUint32StoreRelaxed(&dc->u.h3.waker_pending, 0u);
+                Ns_AtomicUint32StoreRelaxed(&h3->waker_pending, 0u);
 
                 Ns_Log(Warning,
                        "[%lld] H3: wake datagram failed: %s",
@@ -7300,27 +7308,29 @@ static inline uint64_t PollsetDefaultStreamErrors(uint64_t ev) {
 static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskProc maskf,
                          const char *label, H3StreamKind kind)
 {
-    size_t idx;
+    size_t          idx;
+    NsTLSH3Config *h3;
 
     NS_NONNULL_ASSERT(dc != NULL);
     NS_NONNULL_ASSERT(s  != NULL);
 
-    idx = ++dc->u.h3.npoll;
+    h3  = &dc->u.h3;
+    idx = ++h3->npoll;
 
-    assert(dc->u.h3.ssl_items.size >= idx);
+    assert(h3->ssl_items.size >= idx);
 
-    if (dc->u.h3.ssl_items.size < idx) {
+    if (h3->ssl_items.size < idx) {
         Ns_Log(Error,
                "[%lld] PollsetAdd gap: idx %zu npoll %zu "
                "ssl size %zu mutex size %zu shared-mutex size %zu",
                (long long)dc->iter,
                idx,
-               dc->u.h3.npoll,
-               dc->u.h3.ssl_items.size,
-               dc->u.h3.mutex_items.size,
-               dc->u.h3.shared_mutex_items.size);
+               h3->npoll,
+               h3->ssl_items.size,
+               h3->mutex_items.size,
+               h3->shared_mutex_items.size);
 
-    } else if (dc->u.h3.ssl_items.size == idx) {
+    } else if (h3->ssl_items.size == idx) {
         Ns_Mutex mutex       = NULL;
         Ns_Mutex sharedMutex = NULL;
         Tcl_DString ds;
@@ -7337,22 +7347,22 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
         Tcl_DStringFree(&ds);
 
         /* Append in lockstep */
-        Ns_DListAppend(&dc->u.h3.ssl_items, s);
-        Ns_DListAppend(&dc->u.h3.mutex_items, mutex);
-        Ns_DListAppend(&dc->u.h3.shared_mutex_items, sharedMutex);
+        Ns_DListAppend(&h3->ssl_items, s);
+        Ns_DListAppend(&h3->mutex_items, mutex);
+        Ns_DListAppend(&h3->shared_mutex_items, sharedMutex);
 
         PollsetEnsurePollCapacity(dc);
 
     } else {
-        dc->u.h3.ssl_items.data[idx] = s;
+        h3->ssl_items.data[idx] = s;
     }
 
-    assert(dc->u.h3.mutex_items.size > idx);
-    assert(dc->u.h3.shared_mutex_items.size > idx);
-    assert(dc->u.h3.ssl_items.data[idx] == s);
+    assert(h3->mutex_items.size > idx);
+    assert(h3->shared_mutex_items.size > idx);
+    assert(h3->ssl_items.data[idx] == s);
 
-    dc->u.h3.poll_items[idx].desc   = SSL_as_poll_descriptor(s);
-    dc->u.h3.poll_items[idx].events = maskf ? maskf(events) : events;
+    h3->poll_items[idx].desc   = SSL_as_poll_descriptor(s);
+    h3->poll_items[idx].events = maskf ? maskf(events) : events;
 
     if (Ns_LogSeverityEnabled(Ns_LogQuicDebug) && label != NULL) {
         Tcl_DString ds;
@@ -7362,7 +7372,7 @@ static size_t PollsetAdd(NsTLSConfig *dc, SSL *s, uint64_t events, PollsetMaskPr
                (long long)dc->iter, (long long)SSL_get_stream_id(s),
                label, (void*)s,
                kind == H3_KIND_UNKNOWN ? "conn" : H3StreamKind_str(kind),
-               DStringAppendSslPollEventFlags(&ds, dc->u.h3.poll_items[idx].events)
+               DStringAppendSslPollEventFlags(&ds, h3->poll_items[idx].events)
                );
         Tcl_DStringFree(&ds);
     }
@@ -7432,13 +7442,14 @@ static inline size_t PollsetAddConnection(NsTLSConfig *dc, SSL *conn, uint64_t e
  */
 
 static inline size_t PollsetAddStream(NsTLSConfig *dc, SSL *stream, uint64_t events, H3StreamKind kind) {
-    StreamCtx *sc = SSL_get_ex_data(stream, dc->u.h3.sc_idx);
-    size_t     idx = PollsetAdd(dc, stream, events, PollsetDefaultStreamErrors, "PollsetAddStream", kind);
+    NsTLSH3Config *h3 = &dc->u.h3;
+    StreamCtx     *sc = SSL_get_ex_data(stream, h3->sc_idx);
+    size_t         idx = PollsetAdd(dc, stream, events, PollsetDefaultStreamErrors, "PollsetAddStream", kind);
 
     assert(sc != NULL);
     sc->pidx = idx;
-    sc->lock = (Ns_Mutex)dc->u.h3.mutex_items.data[idx];
-    sc->sh.lock = (Ns_Mutex)dc->u.h3.shared_mutex_items.data[idx];
+    sc->lock = (Ns_Mutex)h3->mutex_items.data[idx];
+    sc->sh.lock = (Ns_Mutex)h3->shared_mutex_items.data[idx];
     QuicMemStatsIncr(&quicMemStats.counters.add_stream);
 
     //Ns_Log(Ns_LogQuicDebug, "[%lld] H3 stream added on idx %ld", (long long)dc->iter, idx);
@@ -7489,7 +7500,6 @@ PollsetAddStreamRegister(ConnCtx *cc, SSL *s, H3StreamKind kind)
 
     OSSL_TRY(SSL_set_blocking_mode(s, 0));
     SSL_set_app_data(s, dc);
-    //SSL_set_ex_data(s, dc->u.h3.cc_idx, cc);
 
     sc = StreamCtxRegister(cc, s, sid, kind);
     if (sc == NULL) {
@@ -7896,24 +7906,25 @@ PollsetHandleListenerEvents(NsTLSConfig *dc, size_t poll_result_count)
 static void
 PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
 {
-    NsTLSConfig *dc  = cc->dc;
-    StreamCtx   *sc  = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
-    size_t       idx = (size_t)-1;
+    NsTLSConfig   *dc  = cc->dc;
+    NsTLSH3Config *h3  = &dc->u.h3;
+    StreamCtx     *sc  = SSL_get_ex_data(ssl, h3->sc_idx);
+    size_t         idx = (size_t)-1;
 
     //PollsetPrint(dc, "before del", NS_FALSE);
 
     /* Fast path via backrefs */
     if (sc != NULL
         && sc->pidx != (size_t)-1
-        && sc->pidx <= dc->u.h3.npoll
-        && (SSL *)dc->u.h3.ssl_items.data[sc->pidx] == ssl) {
+        && sc->pidx <= h3->npoll
+        && (SSL *)h3->ssl_items.data[sc->pidx] == ssl) {
         idx = sc->pidx;
         //Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead ssl %p: got idx %ld from cc", (long long)dc->iter, (void*)ssl, idx);
         sc->pidx = (size_t)-1;
     } else if (ssl == cc->h3ssl.conn
                && cc->pidx != (size_t)-1
-               && cc->pidx <= dc->u.h3.npoll
-               && (SSL *)dc->u.h3.ssl_items.data[cc->pidx] == ssl) {
+               && cc->pidx <= h3->npoll
+               && (SSL *)h3->ssl_items.data[cc->pidx] == ssl) {
         idx = cc->pidx;
         //Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead ssl %p: got idx %ld from cc", (long long)dc->iter, (void*)ssl, idx);
         cc->pidx = (size_t)-1;
@@ -7922,8 +7933,8 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
     /* Fallback: scan for entry with the ssl item */
     if (idx == (size_t)-1) {
         Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetMarkDead ssl %p: scan for idx", (long long)dc->iter, (void*)ssl);
-        for (size_t i = dc->u.h3.nr_listeners; i < dc->u.h3.npoll; ++i) {
-            if ((SSL *)dc->u.h3.ssl_items.data[i] == ssl) {
+        for (size_t i = h3->nr_listeners; i < h3->npoll; ++i) {
+            if ((SSL *)h3->ssl_items.data[i] == ssl) {
                 idx = i;
                 break;
             }
@@ -7940,7 +7951,7 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
     /* In case, we got a connection, remove it from the list of connections. */
     if (ssl == cc->h3ssl.conn) {
         QuicMemStatsIncr(&quicMemStats.counters.conn_mark_dead);
-        Ns_DListDelete(&dc->u.h3.conns, cc);
+        Ns_DListDelete(&h3->conns, cc);
     } else {
         QuicMemStatsIncr(&quicMemStats.counters.stream_mark_dead);
         if (sc == NULL) {
@@ -7974,8 +7985,8 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
         }
     }
 
-    if (dc->u.h3.ssl_items.data[idx] == ssl) {
-        SSL *detached = dc->u.h3.ssl_items.data[idx];
+    if (h3->ssl_items.data[idx] == ssl) {
+        SSL *detached = h3->ssl_items.data[idx];
 
         /*
          * Remove the SSL object from the active pollset and retain it in the
@@ -7985,18 +7996,18 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
          * an inactive pollset slot. Poll interest is disabled and the earliest
          * inactive slot is recorded for later consolidation.
          */
-        Ns_DListAppend(&dc->u.h3.dead_items, detached);
+        Ns_DListAppend(&h3->dead_items, detached);
 
-        dc->u.h3.ssl_items.data[idx]    = NULL;
-        dc->u.h3.poll_items[idx].events = 0u;
+        h3->ssl_items.data[idx]    = NULL;
+        h3->poll_items[idx].events = 0u;
 
-        if (dc->u.h3.first_dead == 0u || idx < dc->u.h3.first_dead) {
-            dc->u.h3.first_dead = idx;
+        if (h3->first_dead == 0u || idx < h3->first_dead) {
+            h3->first_dead = idx;
         }
 
-        assert(dc->u.h3.ssl_items.data[idx] == NULL);
-        assert(dc->u.h3.first_dead != 0u);
-        assert(dc->u.h3.first_dead <= idx);
+        assert(h3->ssl_items.data[idx] == NULL);
+        assert(h3->first_dead != 0u);
+        assert(h3->first_dead <= idx);
 
         if (sc != NULL) {
             Ns_Log(Ns_LogQuicDebug,
@@ -8050,8 +8061,9 @@ PollsetMarkDead(ConnCtx *cc, SSL *ssl, const char *msg)
 static void
 PollsetReapConnection(NsTLSConfig *dc, ConnCtx *cc, const char *reason)
 {
-    SSL   *conn;
-    size_t i;
+    size_t         i;
+    SSL           *conn;
+    NsTLSH3Config *h3 = &dc->u.h3;
 
     NS_NONNULL_ASSERT(dc != NULL);
     NS_NONNULL_ASSERT(cc != NULL);
@@ -8063,22 +8075,22 @@ PollsetReapConnection(NsTLSConfig *dc, ConnCtx *cc, const char *reason)
      * Mark all streams owned by this connection before marking the
      * connection itself.
      */
-    for (i = dc->u.h3.nr_listeners; i < PollsetCount(dc); i++) {
-        SSL       *ssl = dc->u.h3.ssl_items.data[i];
+    for (i = h3->nr_listeners; i < PollsetCount(dc); i++) {
+        SSL       *ssl = h3->ssl_items.data[i];
         StreamCtx *sc;
 
         if (ssl == NULL || ssl == conn) {
             continue;
         }
 
-        sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+        sc = SSL_get_ex_data(ssl, h3->sc_idx);
 
         if (sc != NULL) {
             if (sc->cc == cc) {
                 PollsetDetachStream(sc, reason);
             }
         } else {
-            ConnCtx *owner = SSL_get_ex_data(ssl, dc->u.h3.cc_idx);
+            ConnCtx *owner = SSL_get_ex_data(ssl, h3->cc_idx);
 
             /*
              * Handle connection-owned SSL objects which do not have a
@@ -8117,13 +8129,14 @@ PollsetReapConnection(NsTLSConfig *dc, ConnCtx *cc, const char *reason)
 static bool
 PollsetHasDeferredStreamForConn(const NsTLSConfig *dc, const ConnCtx *cc)
 {
-    size_t i;
+    size_t               i;
+    const NsTLSH3Config *h3 = &dc->u.h3;
 
-    for (i = 0u; i < dc->u.h3.dead_items.size; i++) {
-        SSL *ssl = dc->u.h3.dead_items.data[i];
+    for (i = 0u; i < h3->dead_items.size; i++) {
+        SSL *ssl = h3->dead_items.data[i];
 
         if (ssl != NULL) {
-            StreamCtx *sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+            StreamCtx *sc = SSL_get_ex_data(ssl, h3->sc_idx);
 
             if (sc != NULL && sc->cc == cc) {
                 return NS_TRUE;
@@ -8168,7 +8181,8 @@ PollsetHasDeferredStreamForConn(const NsTLSConfig *dc, const ConnCtx *cc)
 static void
 PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
 {
-    size_t i, nrItems = PollsetCount(dc);
+    size_t         i, nrItems = PollsetCount(dc);
+    NsTLSH3Config *h3 = &dc->u.h3;
 
     if (poll_result_count > 0) {
         /*
@@ -8178,7 +8192,7 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
     }
     for (i = 0; i < nrItems; i++) {
         int        stype;
-        SSL       *s = dc->u.h3.ssl_items.data[i];
+        SSL       *s = h3->ssl_items.data[i];
         ConnCtx   *cc;
         uint64_t   sid, mask;
         StreamCtx *sc;
@@ -8191,7 +8205,7 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
         /* Resolve the owning connection context for this entry (conn or stream).
            Listener sockets won't have one  -  skip those automatically. */
 
-        cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
+        cc = SSL_get_ex_data(s, h3->cc_idx);
         if (cc == NULL) {
             /* listener or foreign object */
             continue;
@@ -8224,7 +8238,7 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
         }
 
         /* From here on we have only streams with valid sids */
-        sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
+        sc = SSL_get_ex_data(s, h3->sc_idx);
 
         if (sc == NULL) {
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3 PollsetSweep: stream %p sid %llu not registered yet; skip",
@@ -8335,11 +8349,11 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
     /*
      * Free eligible stream SSL objects first.
      */
-    for (i = 0u; i < dc->u.h3.dead_items.size; i++) {
-        SSL *ssl = dc->u.h3.dead_items.data[i];
+    for (i = 0u; i < h3->dead_items.size; i++) {
+        SSL *ssl = h3->dead_items.data[i];
 
         if (ssl != NULL) {
-            StreamCtx *sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+            StreamCtx *sc = SSL_get_ex_data(ssl, h3->sc_idx);
 
             if (sc == NULL) {
                 continue;
@@ -8354,7 +8368,7 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
             QuicMemStatsStreamFreeCall(sc);
 #endif
             StreamCtxUnregister(sc);
-            dc->u.h3.dead_items.data[i] = NULL;
+            h3->dead_items.data[i] = NULL;
             SSL_free(ssl);
         }
     }
@@ -8362,11 +8376,11 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
     /*
      * Free connection and other non-stream SSL objects second.
      */
-    for (i = 0u; i < dc->u.h3.dead_items.size; i++) {
-        SSL *ssl = dc->u.h3.dead_items.data[i];
+    for (i = 0u; i < h3->dead_items.size; i++) {
+        SSL *ssl = h3->dead_items.data[i];
 
         if (ssl != NULL) {
-            StreamCtx *sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+            StreamCtx *sc = SSL_get_ex_data(ssl, h3->sc_idx);
 
             if (sc != NULL) {
                 /*
@@ -8375,7 +8389,7 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
                 continue;
 
             } else {
-                ConnCtx *cc = SSL_get_ex_data(ssl, dc->u.h3.cc_idx);
+                ConnCtx *cc = SSL_get_ex_data(ssl, h3->cc_idx);
 
                 if (cc != NULL && ssl == cc->h3ssl.conn) {
                     if (PollsetHasDeferredStreamForConn(dc, cc)) {
@@ -8388,7 +8402,7 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
                 }
             }
 
-            dc->u.h3.dead_items.data[i] = NULL;
+            h3->dead_items.data[i] = NULL;
             SSL_free(ssl);
         }
     }
@@ -8397,30 +8411,30 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
      * Compact dead_items, retaining only SSL objects whose cleanup is still
      * deferred.
      */
-    if (dc->u.h3.dead_items.size > 0) {
+    if (h3->dead_items.size > 0) {
         size_t readIdx;
         size_t writeIdx = 0u;
-        size_t oldLength = dc->u.h3.dead_items.size;
+        size_t oldLength = h3->dead_items.size;
 
         for (readIdx = 0u;
-             readIdx < dc->u.h3.dead_items.size;
+             readIdx < h3->dead_items.size;
              readIdx++) {
-            void *item = dc->u.h3.dead_items.data[readIdx];
+            void *item = h3->dead_items.data[readIdx];
 
             if (item != NULL) {
-                dc->u.h3.dead_items.data[writeIdx++] = item;
+                h3->dead_items.data[writeIdx++] = item;
             }
         }
 
-        Ns_DListSetLength(&dc->u.h3.dead_items, writeIdx);
+        Ns_DListSetLength(&h3->dead_items, writeIdx);
         Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep compacted dead items from %zu to %zu", (long long)dc->iter, oldLength, writeIdx);
 
         if (writeIdx > 0) {
             size_t i;
 
             for (i = 0u; i < writeIdx; i++) {
-                SSL       *ssl = dc->u.h3.dead_items.data[i];
-                StreamCtx *sc  = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+                SSL       *ssl = h3->dead_items.data[i];
+                StreamCtx *sc  = SSL_get_ex_data(ssl, h3->sc_idx);
 
                 if (sc != NULL) {
                     const unsigned int deliveryRefs = StreamCtxDeliveryRefs(sc);
@@ -8433,7 +8447,7 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
                            (void *)sc,
                            deliveryRefs);
                 } else {
-                    ConnCtx *cc = SSL_get_ex_data(ssl, dc->u.h3.cc_idx);
+                    ConnCtx *cc = SSL_get_ex_data(ssl, h3->cc_idx);
 
                     Ns_Log(Notice,
                            "[%lld] PollsetSweep: defer dead connection SSL %p "
@@ -8457,11 +8471,11 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
                " dead %zu"
                " conns %zu",
                (long long)dc->iter,
-               dc->u.h3.ssl_items.size,
-               dc->u.h3.mutex_items.size,
-               dc->u.h3.shared_mutex_items.size,
-               dc->u.h3.dead_items.size,
-               dc->u.h3.conns.size
+               h3->ssl_items.size,
+               h3->mutex_items.size,
+               h3->shared_mutex_items.size,
+               h3->dead_items.size,
+               h3->conns.size
                );
     }
 }
@@ -8501,42 +8515,42 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
 static void
 PollsetConsolidate(NsTLSConfig *dc)
 {
-    NS_NONNULL_ASSERT(dc != NULL);
+    NsTLSH3Config *h3 = &dc->u.h3;
 
-    if (dc->u.h3.first_dead > 0u) {
-        size_t i    = dc->u.h3.first_dead;
-        size_t last = dc->u.h3.npoll;
+    if (h3->first_dead > 0u) {
+        size_t i    = h3->first_dead;
+        size_t last = h3->npoll;
 
         while (i <= last) {
-            if (dc->u.h3.ssl_items.data[i] == NULL) {
+            if (h3->ssl_items.data[i] == NULL) {
                 /*
                  * Found a hole at position i. Move the current last entry
                  * into the hole. When the last entry is itself inactive,
                  * simply shrink the logical end and inspect i again.
                  */
                 if (i != last) {
-                    SSL       *ssl              = dc->u.h3.ssl_items.data[last];
-                    Ns_Mutex   holeMutex        = (Ns_Mutex)dc->u.h3.mutex_items.data[i];
-                    Ns_Mutex   movedMutex       = (Ns_Mutex)dc->u.h3.mutex_items.data[last];
-                    Ns_Mutex   holeSharedMutex  = (Ns_Mutex)dc->u.h3.shared_mutex_items.data[i];
-                    Ns_Mutex   movedSharedMutex = (Ns_Mutex)dc->u.h3.shared_mutex_items.data[last];
+                    SSL       *ssl              = h3->ssl_items.data[last];
+                    Ns_Mutex   holeMutex        = (Ns_Mutex)h3->mutex_items.data[i];
+                    Ns_Mutex   movedMutex       = (Ns_Mutex)h3->mutex_items.data[last];
+                    Ns_Mutex   holeSharedMutex  = (Ns_Mutex)h3->shared_mutex_items.data[i];
+                    Ns_Mutex   movedSharedMutex = (Ns_Mutex)h3->shared_mutex_items.data[last];
                     /*
                      * Move the last active-pollset entry into the hole.
                      * The mutex objects belonging to the destination hole
                      * are moved to the old tail slot for later reuse.
                      */
-                    dc->u.h3.ssl_items.data[i] = ssl;
-                    dc->u.h3.poll_items[i] = dc->u.h3.poll_items[last];
+                    h3->ssl_items.data[i] = ssl;
+                    h3->poll_items[i] = h3->poll_items[last];
 
-                    dc->u.h3.mutex_items.data[i] = movedMutex;
-                    dc->u.h3.mutex_items.data[last] = holeMutex;
+                    h3->mutex_items.data[i] = movedMutex;
+                    h3->mutex_items.data[last] = holeMutex;
 
-                    dc->u.h3.shared_mutex_items.data[i] = movedSharedMutex;
-                    dc->u.h3.shared_mutex_items.data[last] = holeSharedMutex;
+                    h3->shared_mutex_items.data[i] = movedSharedMutex;
+                    h3->shared_mutex_items.data[last] = holeSharedMutex;
 
                     if (ssl != NULL) {
-                        ConnCtx   *cc = SSL_get_ex_data(ssl, dc->u.h3.cc_idx);
-                        StreamCtx *sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+                        ConnCtx   *cc = SSL_get_ex_data(ssl, h3->cc_idx);
+                        StreamCtx *sc = SSL_get_ex_data(ssl, h3->sc_idx);
 
                         if (sc != NULL) {
                             /*
@@ -8544,8 +8558,8 @@ PollsetConsolidate(NsTLSConfig *dc)
                              */
                             sc->pidx = i;
 
-                            assert(sc->lock == (Ns_Mutex)dc->u.h3.mutex_items.data[i]);
-                            assert(sc->sh.lock == (Ns_Mutex)dc->u.h3.shared_mutex_items.data[i]);
+                            assert(sc->lock == (Ns_Mutex)h3->mutex_items.data[i]);
+                            assert(sc->sh.lock == (Ns_Mutex)h3->shared_mutex_items.data[i]);
 
                         } else if (cc != NULL
                                    && ssl == cc->h3ssl.conn) {
@@ -8554,7 +8568,7 @@ PollsetConsolidate(NsTLSConfig *dc)
                              */
                             cc->pidx = i;
 
-                            assert(cc->shared.lock == (Ns_Mutex)dc->u.h3.shared_mutex_items.data[i]);
+                            assert(cc->shared.lock == (Ns_Mutex)h3->shared_mutex_items.data[i]);
 
                         } else {
                             Ns_Log(Ns_LogQuicDebug,
@@ -8576,11 +8590,11 @@ PollsetConsolidate(NsTLSConfig *dc)
                  * Clear the old tail slot. Its mutex objects remain in the
                  * parallel lists and are available for reuse by PollsetAdd().
                  */
-                dc->u.h3.ssl_items.data[last] = NULL;
-                memset(&dc->u.h3.poll_items[last], 0, sizeof(dc->u.h3.poll_items[last]));
+                h3->ssl_items.data[last] = NULL;
+                memset(&h3->poll_items[last], 0, sizeof(h3->poll_items[last]));
 
                 last--;
-                dc->u.h3.npoll--;
+                h3->npoll--;
 
                 /*
                  * Do not increment i here. If the old tail was inactive,
@@ -8592,7 +8606,7 @@ PollsetConsolidate(NsTLSConfig *dc)
             }
         }
 
-        dc->u.h3.first_dead = 0u;
+        h3->first_dead = 0u;
         PollsetPrint(dc, "after consolidate", NS_TRUE);
     }
 }
@@ -8992,9 +9006,9 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
                   size_t poll_result_count, uint64_t iterations,
                   const struct timeval *timeoutPtr)
 {
-    size_t shown = 0u;
-    size_t ready = 0u;
-    size_t i;
+    size_t         shown = 0u, ready = 0u;
+    size_t         i;
+    NsTLSH3Config *h3 = &dc->u.h3;
 
     Ns_Log(Warning,
            "[%lld] H3 poll loop recorded no tracked progress for %llu iterations: "
@@ -9006,8 +9020,8 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
            (long)timeoutPtr->tv_usec);
 
     for (i = 0u; i < numitems; i++) {
-        SSL_POLL_ITEM *item = &dc->u.h3.poll_items[i];
-        SSL           *ssl  = dc->u.h3.ssl_items.data[i];
+        SSL_POLL_ITEM *item = &h3->poll_items[i];
+        SSL           *ssl  = h3->ssl_items.data[i];
         StreamCtx     *sc;
 
         if (item->revents == SSL_POLL_EVENT_NONE) {
@@ -9021,7 +9035,7 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
         }
 
         sc = ssl != NULL
-            ? SSL_get_ex_data(ssl, dc->u.h3.sc_idx)
+            ? SSL_get_ex_data(ssl, h3->sc_idx)
             : NULL;
 
         if (sc != NULL) {
@@ -9042,7 +9056,7 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
                    sc->wants_write);
         } else {
             ConnCtx *cc = ssl != NULL
-                ? SSL_get_ex_data(ssl, dc->u.h3.cc_idx)
+                ? SSL_get_ex_data(ssl, h3->cc_idx)
                 : NULL;
 
             Ns_Log(Warning,
@@ -9127,14 +9141,15 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
     size_t eof_seen             = 0u;
     size_t shown                = 0u;
     size_t i;
+    NsTLSH3Config *h3 = &dc->u.h3;
 
     /*
      * First produce aggregate counters. These are more useful than a
      * potentially arbitrary bounded sample when many streams are stranded.
      */
     for (i = 0u; i < numitems; i++) {
-        SSL_POLL_ITEM *item = &dc->u.h3.poll_items[i];
-        SSL           *ssl  = dc->u.h3.ssl_items.data[i];
+        SSL_POLL_ITEM *item = &h3->poll_items[i];
+        SSL           *ssl  = h3->ssl_items.data[i];
         StreamCtx     *sc;
         SharedTxStatus status;
         bool           stream_wants_write;
@@ -9144,7 +9159,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
             continue;
         }
 
-        sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+        sc = SSL_get_ex_data(ssl, h3->sc_idx);
         if (sc == NULL || !StreamCtxIsBidi(sc)) {
             continue;
         }
@@ -9212,14 +9227,14 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
      * that here.
      */
     for (i = 0u; i < numitems; i++) {
-        SSL     *ssl = dc->u.h3.ssl_items.data[i];
+        SSL     *ssl = h3->ssl_items.data[i];
         ConnCtx *cc;
 
         if (ssl == NULL) {
             continue;
         }
 
-        cc = SSL_get_ex_data(ssl, dc->u.h3.cc_idx);
+        cc = SSL_get_ex_data(ssl, h3->cc_idx);
         if (cc == NULL || ssl != cc->h3ssl.conn) {
             continue;
         }
@@ -9243,8 +9258,8 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
      * deliberately includes items with revents == SSL_POLL_EVENT_NONE.
      */
     for (i = 0u; i < numitems && shown < H3_IDLE_DUMP_MAX; i++) {
-        SSL_POLL_ITEM *item = &dc->u.h3.poll_items[i];
-        SSL           *ssl  = dc->u.h3.ssl_items.data[i];
+        SSL_POLL_ITEM *item = &h3->poll_items[i];
+        SSL           *ssl  = h3->ssl_items.data[i];
         StreamCtx     *sc;
         SharedTxStatus status;
         bool           stream_wants_write;
@@ -9254,7 +9269,7 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
             continue;
         }
 
-        sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
+        sc = SSL_get_ex_data(ssl, h3->sc_idx);
         if (sc == NULL || !StreamCtxIsBidi(sc)) {
             continue;
         }
@@ -9307,31 +9322,34 @@ QuicLogIdlePollset(NsTLSConfig *dc, size_t numitems)
 static void
 PollsetValidate(const NsTLSConfig *dc, const char *where)
 {
+    NsTLSH3Config *h3;
+
     NS_NONNULL_ASSERT(dc != NULL);
     NS_NONNULL_ASSERT(where != NULL);
+    *h3 = &dc->u.h3;
 
-    if (dc->u.h3.first_dead != 0u) {
+    if (h3->first_dead != 0u) {
         Ns_Log(Error,
                "[%lld] %s: first_dead %zu after consolidation, npoll %zu",
                (long long)dc->iter,
                where,
-               dc->u.h3.first_dead,
-               dc->u.h3.npoll);
-        assert(dc->u.h3.first_dead == 0u);
+               h3->first_dead,
+               h3->npoll);
+        assert(h3->first_dead == 0u);
     }
 
-    for (size_t i = dc->u.h3.nr_listeners;
+    for (size_t i = h3->nr_listeners;
          i < PollsetCount(dc);
          i++) {
-        if (dc->u.h3.ssl_items.data[i] == NULL) {
+        if (h3->ssl_items.data[i] == NULL) {
             Ns_Log(Error,
                    "[%lld] %s: hole at slot %zu after consolidation, "
                    "npoll %zu",
                    (long long)dc->iter,
                    where,
                    i,
-                   dc->u.h3.npoll);
-            assert(dc->u.h3.ssl_items.data[i] != NULL);
+                   h3->npoll);
+            assert(h3->ssl_items.data[i] != NULL);
         }
     }
 }
@@ -9464,6 +9482,7 @@ QuicThread(void *arg)
     uint64_t            previous_epoch;
     Ns_Time             last_progress_time;
     bool                idle_reported = NS_FALSE;
+    NsTLSH3Config      *h3;
     static const struct timeval no_wait = {0, 0};
     const struct timeval       *polltimeout_ptr;
 
@@ -9478,9 +9497,10 @@ QuicThread(void *arg)
 
     dc = TLSConfigClone(templateDc);
     assert(dc->driver != NULL);
+    h3 = &dc->u.h3;
 
     drvPtr->arg = dc;
-    previous_epoch = dc->u.h3.progress_epoch;
+    previous_epoch = h3->progress_epoch;
     Ns_GetTime(&last_progress_time);
 
     Ns_Log(Ns_LogQuicDebug,
@@ -9488,7 +9508,7 @@ QuicThread(void *arg)
            Ns_ThreadId(),
            (void *)drvPtr,
            (void *)dc,
-           (void *)&dc->u.h3);
+           (void *)h3);
 
     nrBindaddrs = NsDriverBindAddresses(drvPtr);
 
@@ -9531,7 +9551,7 @@ QuicThread(void *arg)
     h3_mem.calloc    = h3_calloc_cb;
     h3_mem.realloc   = h3_realloc_cb;
 
-    polltimeout_ptr = &dc->u.h3.idle_timeout;
+    polltimeout_ptr = &h3->idle_timeout;
 
     while (!stopping) {
         int      i, rc;
@@ -9573,10 +9593,10 @@ QuicThread(void *arg)
             size_t nclientuni = 0u;
             size_t nother = 0u;
 
-            for (size_t i = dc->u.h3.nr_listeners;
-                 i < dc->u.h3.ssl_items.size;
+            for (size_t i = h3->nr_listeners;
+                 i < h3->ssl_items.size;
                  i++) {
-                SSL       *ssl = dc->u.h3.ssl_items.data[i];
+                SSL       *ssl = h3->ssl_items.data[i];
                 StreamCtx *sc;
                 ConnCtx   *cc;
 
@@ -9584,8 +9604,8 @@ QuicThread(void *arg)
                     continue;
                 }
 
-                sc = SSL_get_ex_data(ssl, dc->u.h3.sc_idx);
-                cc = SSL_get_ex_data(ssl, dc->u.h3.cc_idx);
+                sc = SSL_get_ex_data(ssl, h3->sc_idx);
+                cc = SSL_get_ex_data(ssl, h3->cc_idx);
 
                 if (sc == NULL) {
                     if (cc != NULL && ssl == cc->h3ssl.conn) {
@@ -9626,7 +9646,7 @@ QuicThread(void *arg)
         }
         */
 
-        rc = SSL_poll(dc->u.h3.poll_items, numitems, sizeof(SSL_POLL_ITEM), polltimeout_ptr,
+        rc = SSL_poll(h3->poll_items, numitems, sizeof(SSL_POLL_ITEM), polltimeout_ptr,
                        SSL_POLL_FLAG_NO_HANDLE_EVENTS, &poll_result_count);
 
         /*Ns_Log(Ns_LogQuicDebug, "[%lld] H3D SSL_poll returns rc %d with %ld items with events"
@@ -9643,8 +9663,8 @@ QuicThread(void *arg)
 
         if (poll_result_count > 0u && Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
             for (i = 0; i < (int)numitems; i++) {
-                SSL           *s       = dc->u.h3.ssl_items.data[i];
-                SSL_POLL_ITEM *item    = &dc->u.h3.poll_items[i];
+                SSL           *s       = h3->ssl_items.data[i];
+                SSL_POLL_ITEM *item    = &h3->poll_items[i];
                 uint64_t       revents = item->revents;
                 uint64_t       events  = item->events;
                 Tcl_DString    ds1, ds2;
@@ -9652,11 +9672,11 @@ QuicThread(void *arg)
                 StreamCtx     *sc = NULL;
 
                 if (s != NULL) {
-                    sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
+                    sc = SSL_get_ex_data(s, h3->sc_idx);
                     if (sc != NULL) {
                         cc = sc->cc;
                     } else {
-                        cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
+                        cc = SSL_get_ex_data(s, h3->cc_idx);
                     }
                 }
 
@@ -9723,9 +9743,9 @@ QuicThread(void *arg)
          * be retained across handler calls.
          */
         for (i = 0; i < (int)numitems; i++) {
-            SSL           *s        = dc->u.h3.ssl_items.data[i];
-            uint64_t       revents  = dc->u.h3.poll_items[i].revents;
-            uint64_t       events   = dc->u.h3.poll_items[i].events;
+            SSL           *s        = h3->ssl_items.data[i];
+            uint64_t       revents  = h3->poll_items[i].revents;
+            uint64_t       events   = h3->poll_items[i].events;
             ConnCtx       *cc;
             StreamCtx     *sc;
             Tcl_DString    ds;
@@ -9744,18 +9764,18 @@ QuicThread(void *arg)
              * First try to get sc from the stream. If we succeed, get cc from
              * sc; otherwise, try to get cc from the stream.
              */
-            sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
+            sc = SSL_get_ex_data(s, h3->sc_idx);
             if (sc != NULL) {
                 cc = sc->cc;
             } else {
-                cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
+                cc = SSL_get_ex_data(s, h3->cc_idx);
             }
 
-            if (cc == NULL && i > (int)dc->u.h3.nr_listeners - 1 ) {
+            if (cc == NULL && i > (int)h3->nr_listeners - 1 ) {
                 Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: cannot get cc for stream %p",
                        (long long)dc->iter, i, (void*)s);
             }
-            if (i > (int)dc->u.h3.nr_listeners - 1) {
+            if (i > (int)h3->nr_listeners - 1) {
                 assert(cc != NULL);
             }
             if (cc != NULL) {
@@ -9792,7 +9812,7 @@ QuicThread(void *arg)
 
                 quic_conn_handle_ic(s, drvPtr);
 
-                cc = SSL_get_ex_data(s, dc->u.h3.cc_idx);
+                cc = SSL_get_ex_data(s, h3->cc_idx);
                 Ns_Log(Ns_LogQuicDebug, "[%lld] H3D item %d: received POLL_EVENT_IC processed", (long long)dc->iter, i);
                 processed_event |= SSL_POLL_EVENT_IC;
             }
@@ -9924,7 +9944,7 @@ QuicThread(void *arg)
                                                 |SSL_POLL_EVENT_ER
                                                 |SSL_POLL_EVENT_EW)));
                 if (quic_conn_handle_e(cc, s, revents)) {
-                    dc->u.h3.poll_items[i].revents = 0;  /* avoid reprocessing this (now-dead) slot */
+                    h3->poll_items[i].revents = 0;  /* avoid reprocessing this (now-dead) slot */
                     goto skip;
                 }
             }
@@ -9974,7 +9994,7 @@ QuicThread(void *arg)
             /*
              * Clear the returned events to avoid reprocessing this poll result.
              */
-            dc->u.h3.poll_items[i].revents = SSL_POLL_EVENT_NONE;
+            h3->poll_items[i].revents = SSL_POLL_EVENT_NONE;
             //Ns_Log(Ns_LogQuicDebug, "[%lld] get next event", (long long)dc->iter);
         }
 
@@ -9995,12 +10015,12 @@ QuicThread(void *arg)
              * work. Queue locks synchronize the work itself; this atomic value only
              * controls wakeup coalescing.
              */
-            Ns_AtomicUint32StoreRelaxed(&dc->u.h3.waker_pending, 0u);
+            Ns_AtomicUint32StoreRelaxed(&h3->waker_pending, 0u);
 
-            if (dc->u.h3.conns.size > 0) {
-                for (i = 0u; i < (int)dc->u.h3.conns.size; i++) {
+            if (h3->conns.size > 0) {
+                for (i = 0u; i < (int)h3->conns.size; i++) {
                     bool     has_resume;
-                    ConnCtx *cc = dc->u.h3.conns.data[i];
+                    ConnCtx *cc = h3->conns.data[i];
 
                     if (!cc->handshake_done && SSL_is_init_finished(cc->h3ssl.conn)) {
                         if (quic_conn_finish_handshake(cc) < 0) {
@@ -10066,16 +10086,16 @@ QuicThread(void *arg)
             if (immediate_work) {
                 polltimeout_ptr = &no_wait;
             } else if (expecting_send || deferredDispatch) {
-                polltimeout_ptr = &dc->u.h3.drain_timeout;
-            } else if (dc->u.h3.reuseport) {
+                polltimeout_ptr = &h3->drain_timeout;
+            } else if (h3->reuseport) {
                 /*
                  * A wake datagram sent to a SO_REUSEPORT listener may be delivered
                  * to another QUIC driver. Bound the idle wait so producer work is
                  * eventually observed by its owning driver.
                  */
-                polltimeout_ptr = &dc->u.h3.drain_timeout;
+                polltimeout_ptr = &h3->drain_timeout;
             } else {
-                polltimeout_ptr = &dc->u.h3.idle_timeout;
+                polltimeout_ptr = &h3->idle_timeout;
             }
 
             PollsetSweep(dc, poll_result_count);
@@ -10084,7 +10104,7 @@ QuicThread(void *arg)
 
 
             {
-                const uint64_t current_epoch = dc->u.h3.progress_epoch;
+                const uint64_t current_epoch = h3->progress_epoch;
 
 
                 /*
@@ -10103,8 +10123,8 @@ QuicThread(void *arg)
                     Ns_GetTime(&now);
                     Ns_DiffTime(&now, &last_progress_time, &elapsed);
 
-                    idle_limit.sec  = dc->u.h3.idle_timeout.tv_sec;
-                    idle_limit.usec = dc->u.h3.idle_timeout.tv_usec;
+                    idle_limit.sec  = h3->idle_timeout.tv_sec;
+                    idle_limit.usec = h3->idle_timeout.tv_usec;
 
                     /*
                      * Ns_DiffTime(t0, t1, ...) returns positive when t1 is later
@@ -10174,9 +10194,9 @@ QuicThread(void *arg)
  *      - Binds and configures a UDP socket for QUIC traffic.
  *      - Creates and initializes a QUIC listener (`SSL *listener`).
  *      - Sets nonblocking mode and receive buffer size.
- *      - Records listener address in `dc->u.h3.waker_addr` for wakeups.
+ *      - Records listener address in `h3->waker_addr` for wakeups.
  *      - Inserts listener into the pollset and increments
- *        `dc->u.h3.nr_listeners`.
+ *        `h3->nr_listeners`.
  *      - Logs detailed initialization and error diagnostics.
  *
  *----------------------------------------------------------------------
@@ -10184,12 +10204,14 @@ QuicThread(void *arg)
 static NS_SOCKET
 Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(backlog), bool reuseport)
 {
-    NS_SOCKET    sock;
-    SSL         *listener = NULL;
-    NsTLSConfig *dc = driver->arg;
+    NS_SOCKET      sock;
+    SSL           *listener = NULL;
+    NsTLSConfig   *dc = driver->arg;
+    NsTLSH3Config *h3;
 
     assert(dc != NULL);
-    dc->u.h3.reuseport = reuseport;
+    h3 = &dc->u.h3;
+    h3->reuseport = reuseport;
 
     sock = Ns_SockListenUdp(address, port, reuseport);
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 listen <%s> port %hu -> sock %d", (long long)dc->iter, address, port, sock);
@@ -10202,7 +10224,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
             dc->driver = driver;
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3 listen set driver %p in dc %p", (long long)dc->iter, (void*)driver, (void*)dc);
 
-            listener = SSL_new_listener(dc->ctx, dc->u.h3.validate_client_address
+            listener = SSL_new_listener(dc->ctx, h3->validate_client_address
                                         ? 0u
                                         : SSL_LISTENER_FLAG_NO_VALIDATE);
             if (listener == NULL) {
@@ -10238,8 +10260,8 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
                     }
 
                     /* Store a copy in out driver/config for later sendto() */
-                    memcpy(&dc->u.h3.waker_addr, &sa, slen);
-                    dc->u.h3.waker_addrlen = slen;
+                    memcpy(&h3->waker_addr, &sa, slen);
+                    h3->waker_addrlen = slen;
                 } else {
                     Ns_Log(Error, "H3 listen: getsockname() failed on fd %d", (int)sock);
                 }
@@ -10264,28 +10286,28 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
          * Currently, the waker_fd is kept open, we have no shutdown function.
          * it would be:
          *
-         *   if (dc->u.h3.waker_fd >= 0) {
-         *       ns_sockclose(dc->u.h3.waker_fd);
-         *       dc->u.h3.waker_fd = -1;
+         *   if (h3->waker_fd >= 0) {
+         *       ns_sockclose(h3->waker_fd);
+         *       h3->waker_fd = -1;
          *    }
          */
-        dc->u.h3.waker_fd = -1;
-        if (dc->u.h3.waker_addrlen > 0) {
+        h3->waker_fd = -1;
+        if (h3->waker_addrlen > 0) {
             const struct sockaddr *sa =
-                (const struct sockaddr *)&dc->u.h3.waker_addr;
+                (const struct sockaddr *)&h3->waker_addr;
 
-            dc->u.h3.waker_fd = socket(sa->sa_family, SOCK_DGRAM, 0);
-            if (dc->u.h3.waker_fd < 0) {
+            h3->waker_fd = socket(sa->sa_family, SOCK_DGRAM, 0);
+            if (h3->waker_fd < 0) {
                 Ns_Log(Error,
                        "H3: could not create wake socket: %s",
                        ns_sockstrerror(ns_sockerrno));
                 goto fail;
             }
-            (void) Ns_SockSetNonBlocking(dc->u.h3.waker_fd);
+            (void) Ns_SockSetNonBlocking(h3->waker_fd);
         }
 
         (void) Ns_SockSetNonBlocking(sock);
-        quic_udp_set_rcvbuf(sock, dc->u.h3.recvbufsize);
+        quic_udp_set_rcvbuf(sock, h3->recvbufsize);
 
         /*
          * Set app data of listener ssl to listen fd
@@ -10299,9 +10321,9 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
                          /* label */   "listener",
                          /* kind  */   H3_KIND_UNKNOWN);
 
-        dc->u.h3.nr_listeners++;         /* remember how many listeners we pinned at the front */
+        h3->nr_listeners++;         /* remember how many listeners we pinned at the front */
         Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetAdd for listener returned %ld, nr_listeners %ld npoll %ld",
-               (long long)dc->iter, idx, dc->u.h3.nr_listeners, PollsetCount(dc));
+               (long long)dc->iter, idx, h3->nr_listeners, PollsetCount(dc));
 
         ERR_clear_error();
     }
