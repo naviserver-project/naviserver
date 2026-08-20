@@ -942,7 +942,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
             sendErrno = sockPtr->sendErrno;
 
             if (sendErrno != 0
-                && sendErrno != ECONNRESET
+                && sendErrno != NS_ECONNRESET
                 && !NsSockRetryCode((int)sendErrno)
                 && (ssize_t)bufs->iov_len != partialResult
                 ) {
