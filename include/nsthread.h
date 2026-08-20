@@ -887,18 +887,23 @@ typedef int bool;
 # define NS_EINPROGRESS              WSAEINPROGRESS
 # define NS_EINTR                    WSAEINTR
 # define NS_ETIMEDOUT                WSAETIMEDOUT
+# define NS_ECONNRESET               WSAECONNRESET
+# define NS_ECONNABORTED             WSAECONNABORTED
 
   /* Get last socket error */
 # define NS_SOCK_ERRNO()             WSAGetLastError()
 # ifndef P_tmpdir
 #  define P_tmpdir "c:/temp"
 # endif
-#else
+
+#else /* ! _WIN32 */
 # define NS_EWOULDBLOCK              EWOULDBLOCK
 # define NS_EINPROGRESS              EINPROGRESS
 # define NS_EINTR                    EINTR
 # define NS_EAGAIN                   EAGAIN
 # define NS_ETIMEDOUT                ETIMEDOUT
+# define NS_ECONNRESET               ECONNRESET
+# define NS_ECONNABORTED             ECONNABORTED
 
 # define NS_SOCK_ERRNO()             (errno)
 #endif
