@@ -1124,6 +1124,7 @@ PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr,
     }
 }
 
+# if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 /*
  *----------------------------------------------------------------------
  *
@@ -1179,7 +1180,6 @@ PrebindRegisterInetSocket(const char *proto, NS_SOCKET sock,
     return NS_OK;
 }
 
-# if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 /*
  *----------------------------------------------------------------------
  *
