@@ -2559,14 +2559,14 @@ NsErrorCodeString(int errorCode)
 #ifdef ECOMM
     case ECOMM: return "ECOMM";
 #endif
-#ifdef ECONNABORTED
-    case ECONNABORTED: return "ECONNABORTED";
+#ifdef NS_ECONNABORTED
+    case NS_ECONNABORTED: return "ECONNABORTED";
 #endif
 #ifdef ECONNREFUSED
     case ECONNREFUSED: return "ECONNREFUSED";
 #endif
-#ifdef ECONNRESET
-    case ECONNRESET: return "ECONNRESET";
+#ifdef NS_ECONNRESET
+    case NS_ECONNRESET: return "ECONNRESET";
 #endif
 #if defined(EDEADLK) && (!defined(EWOULDBLOCK) || (EDEADLK != EWOULDBLOCK))
     case EDEADLK: return "EDEADLK";

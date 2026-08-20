@@ -5298,9 +5298,9 @@ AppendRawBufferConnchan(
          * receiving side, everything is ok, but on the output delivery side,
          * it is not.
          */
-        if (sendErrno == ECONNRESET || sendErrno == EPIPE) {
+        if (sendErrno == NS_ECONNRESET || sendErrno == EPIPE) {
             /*
-             * ECONNRESET means "Connection reset by peer", EPIPE is
+             * NS_ECONNRESET means "Connection reset by peer", EPIPE is
              * "Broken pipe". This is not really an error, but happens
              * frequently, when the peer aborts the connection.
              */
