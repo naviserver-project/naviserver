@@ -397,7 +397,7 @@ SSL_serverNameCB(SSL *ssl, int *UNUSED(al), void *arg)
          * (i.e., when per virtual server certificates were specified.
          */
         if (doSNI) {
-            const void     *ex = dc->sni_idx >= 0 ? SSL_get_ex_data(ssl, dc->sni_idx) : NULL;
+            const void  *ex = dc->sni_idx >= 0 ? SSL_get_ex_data(ssl, dc->sni_idx) : NULL;
 
             if (ex == NULL) {
                 Ns_Log(Warning, "SSL_serverNameCB: no local port attached to SSL connection");
