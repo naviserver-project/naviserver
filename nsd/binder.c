@@ -81,6 +81,9 @@ static Ns_ReturnCode PrebindLaunchdSockets(size_t *countPtr);
 
 # if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 static Ns_ReturnCode PrebindRegisterSocket(NS_SOCKET sock);
+static Ns_ReturnCode PrebindRegisterInetSocket(const char *proto, NS_SOCKET sock, const struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(1,3);
+static struct Prebind *PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock);
 # endif
 
 static Tcl_HashEntry *PrebindCreateHashEntry(
@@ -90,9 +93,6 @@ static Tcl_HashEntry *PrebindCreateHashEntry(
 static void PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr, const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(1,2);
 
-static struct Prebind *PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock);
-static Ns_ReturnCode   PrebindRegisterInetSocket(const char *proto, NS_SOCKET sock, const struct sockaddr *saPtr)
-    NS_GNUC_NONNULL(1,3);
 #endif /* !_WIN32 */
 
 #ifdef LOGBIND
@@ -1055,6 +1055,7 @@ PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock)
     return newPtr;
 }
 
+# if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 /*
  *----------------------------------------------------------------------
  *
@@ -1124,7 +1125,6 @@ PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr,
     }
 }
 
-# if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 /*
  *----------------------------------------------------------------------
  *
