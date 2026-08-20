@@ -10521,8 +10521,24 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
            (void *)sc->cc,
            (void *)sc);
 
-    if (!H3_TX_WRITABLE(sc)) {          /* honors H3_IO_TX_FIN/H3_IO_RESET */
-        return 0;
+    {
+        const uint32_t ioState = H3_IO_STATE(sc);
+
+        if ((ioState & (H3_IO_TX_FIN | H3_IO_RESET)) != 0u) {
+            const unsigned long sendErrno =
+                (ioState & H3_IO_RESET) != 0u ? NS_ECONNRESET : EPIPE;
+
+            Ns_SockSetSendErrno(sock, sendErrno);
+
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3[%lld] Send rejected: terminal TX state 0x%02x, error %lu %s",
+                   (long long)dc->iter,
+                   (long long)sc->quic_sid,
+                   (unsigned int)ioState,
+                   sendErrno,
+                   NsErrorCodeString((int)sendErrno));
+            return -1;
+        }
     }
 
     /* Stage headers once, using the shared bit */
