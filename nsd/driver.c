@@ -50,6 +50,13 @@ typedef enum {
     SOCK_QUEUEFULL =          -13
 } SockState;
 
+typedef enum {
+    DRIVER_ACCEPT_OUTCOME_ACCEPTED,
+    DRIVER_ACCEPT_OUTCOME_RETRY,
+    DRIVER_ACCEPT_OUTCOME_DRAINED,
+    DRIVER_ACCEPT_OUTCOME_STOP
+} DriverAcceptOutcome;
+
 /*
  * Subset for spooler states
  */
@@ -289,7 +296,10 @@ static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Ns_Request *reques
     NS_GNUC_NONNULL(1,3);
 static void DriverHostsFree(Driver *drvPtr)
     NS_GNUC_NONNULL(1);
-
+static DriverAcceptOutcome DriverAcceptReadySocket(Driver *drvPtr, NS_SOCKET listenSock,
+                                                   Sock **readPtrPtr, Sock **waitPtrPtr,
+                                                   const Ns_Time *nowPtr)
+    NS_GNUC_NONNULL(1,3,4,5);
 
 static size_t PortsParse(Ns_DList *dlPtr, const char *listString, const char *section)
     NS_GNUC_NONNULL(1,3);
@@ -3146,6 +3156,125 @@ DriverCloseSockList(const char *label, Sock *sockPtr, size_t *counterPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * DriverAcceptReadySocket --
+ *
+ *      Accept and process one connection from a listening socket that
+ *      was reported ready.  Depending on the result of the initial
+ *      socket read, queue the connection for request processing,
+ *      spooling, additional reading, or waiting for a connection
+ *      thread.
+ *
+ * Results:
+ *      DRIVER_ACCEPT_OUTCOME_ACCEPTED when a connection was accepted
+ *      and dispatched successfully.
+ *
+ *      DRIVER_ACCEPT_OUTCOME_RETRY when accept should be attempted
+ *      again, for example after EINTR or a connection-specific reset
+ *      or abort.
+ *
+ *      DRIVER_ACCEPT_OUTCOME_DRAINED when accept returned
+ *      EAGAIN/EWOULDBLOCK and the listener should be polled again.
+ *
+ *      DRIVER_ACCEPT_OUTCOME_STOP for a listener or resource error for
+ *      which the current accept sweep should be terminated.
+ *
+ * Side effects:
+ *      May update driver statistics and queues, append a socket to
+ *      *readPtrPtr or *waitPtrPtr, queue a request for connection-thread
+ *      processing, or pass a socket to the spooler.  May log accept
+ *      errors.
+ *
+ *----------------------------------------------------------------------
+ */
+static DriverAcceptOutcome
+DriverAcceptReadySocket(Driver *drvPtr, NS_SOCKET listenSock,
+                  Sock **readPtrPtr, Sock **waitPtrPtr,
+                  const Ns_Time *nowPtr)
+{
+    Sock      *sockPtr = NULL;
+    SockState  state;
+
+    state = SockAccept(drvPtr, listenSock, &sockPtr, nowPtr, NULL);
+
+    switch (state) {
+    case SOCK_SPOOL:
+        drvPtr->stats.spooled++;
+        SockSpoolerQueue(drvPtr, sockPtr);
+        break;
+
+    case SOCK_MORE:
+        drvPtr->stats.partial++;
+        SockTimeout(sockPtr, nowPtr, &drvPtr->recvwait);
+        Push(sockPtr, *readPtrPtr);
+        drvPtr->stats.reading++;
+        break;
+
+    case SOCK_READY:
+        if (SockQueue(sockPtr, nowPtr) == NS_TIMEOUT) {
+            Push(sockPtr, *waitPtrPtr);
+            drvPtr->stats.waiting++;
+        }
+        break;
+
+    case SOCK_ERROR: {
+        int sockerrno = ns_sockerrno;
+
+        if (NS_ERRNO_WOULDBLOCK(sockerrno)) {
+            /*
+             * The pending accept queue has been drained.
+             */
+            return DRIVER_ACCEPT_OUTCOME_DRAINED;
+        }
+
+        if (sockerrno == NS_EINTR
+            || sockerrno == NS_ECONNRESET
+            || sockerrno == NS_ECONNABORTED) {
+            /*
+             * Retry accept(), subject to the caller's attempts limit.
+             */
+            return DRIVER_ACCEPT_OUTCOME_RETRY;
+        }
+
+        /*
+         * Avoid spinning on resource or listener errors.
+         */
+        if (sockerrno != 0) {
+            Ns_Log(Warning,
+                   "sockAccept on fd %d returned error: %s",
+                   listenSock, ns_sockstrerror(sockerrno));
+        } else {
+            Ns_Log(Warning,
+                   "sockAccept on fd %d returned an unspecified error",
+                   listenSock);
+        }
+
+        return DRIVER_ACCEPT_OUTCOME_STOP;
+    }
+
+    case SOCK_BADHEADER:      NS_FALL_THROUGH;
+    case SOCK_BADREQUEST:     NS_FALL_THROUGH;
+    case SOCK_CLOSE:          NS_FALL_THROUGH;
+    case SOCK_CLOSETIMEOUT:   NS_FALL_THROUGH;
+    case SOCK_ENTITYTOOLARGE: NS_FALL_THROUGH;
+    case SOCK_READERROR:      NS_FALL_THROUGH;
+    case SOCK_READTIMEOUT:    NS_FALL_THROUGH;
+    case SOCK_SHUTERROR:      NS_FALL_THROUGH;
+    case SOCK_TOOMANYHEADERS: NS_FALL_THROUGH;
+    case SOCK_WRITEERROR:     NS_FALL_THROUGH;
+    case SOCK_QUEUEFULL:      NS_FALL_THROUGH;
+    case SOCK_WRITETIMEOUT:
+        Ns_Fatal("driver: SockAccept returned: %s",
+                 SockStateString(state));
+    }
+
+    return DRIVER_ACCEPT_OUTCOME_ACCEPTED;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DriverThread --
  *
  *      Main listening socket driver thread.
@@ -3167,7 +3296,7 @@ DriverThread(void *arg)
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        now, diff;
     char           charBuffer[1], drain[1024];
-    int            pollTimeout, accepted;
+    int            pollTimeout;
     TCL_SIZE_T     nrBindaddrs = 0;
     bool           stopping;
     unsigned int   flags;
@@ -3503,103 +3632,79 @@ DriverThread(void *arg)
             }
         }
 
-        /*
-         * If no connections are waiting, attempt to accept more.
-         */
-        /* was peviously restricted to (waitPtr == NULL) */
         {
             /*
              * If configured, try to accept more than one request, under heavy load
              * this helps to process more requests
              */
-            bool acceptMore = NS_TRUE;
+            unsigned int accepted = 0u;
+            unsigned int attempted = 0u;
+            bool         acceptMore = NS_TRUE;
 
-            accepted = 0;
             while (acceptMore
-                   && accepted < drvPtr->acceptsize
-                   && drvPtr->queuesize < drvPtr->maxqueuesize ) {
-                bool gotRequests = NS_FALSE;
-                TCL_SIZE_T i;
+                   && attempted < (unsigned int)drvPtr->acceptsize
+                   && drvPtr->queuesize < drvPtr->maxqueuesize) {
+                bool retryRound = NS_FALSE;
+                bool stopAccepting = NS_FALSE;
 
-                /*
-                 * Check for input data on all bind addresses. Stop checking,
-                 * when one round of checking on all addresses fails.
-                 */
+                for (TCL_SIZE_T i = 0; i < nrBindaddrs; i++) {
+                    DriverAcceptOutcome outcome;
 
-                for (i = 0; i < nrBindaddrs; i++) {
-                    if (PollIn(&pdata, drvPtr->pidx[i])) {
-                        SockState s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[i]].fd, &sockPtr, &now, NULL);
-
-                        switch (s) {
-                        case SOCK_SPOOL:
-                            drvPtr->stats.spooled++;
-                            SockSpoolerQueue(drvPtr, sockPtr);
-                            break;
-
-                        case SOCK_MORE:
-                            drvPtr->stats.partial++;
-                            SockTimeout(sockPtr, &now, &drvPtr->recvwait);
-                            Push(sockPtr, readPtr);
-                            drvPtr->stats.reading++;
-                            break;
-
-                        case SOCK_READY:
-                            if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-                                Push(sockPtr, waitPtr);
-                                drvPtr->stats.waiting++;
-                            }
-                            break;
-
-                        case SOCK_ERROR: {
-                            int sockerrno = ns_sockerrno;
-
-                            if (sockerrno != 0 && !NS_ERRNO_SHOULD_RETRY(sockerrno)) {
-                                Ns_Log(Warning, "sockAccept on fd %d returned error: %s",
-                                       drvPtr->listenfd[i], ns_sockstrerror(sockerrno));
-                            }
-                            break;
-                        }
-
-                        case SOCK_BADHEADER:      NS_FALL_THROUGH; /* fall through */
-                        case SOCK_BADREQUEST:     NS_FALL_THROUGH; /* fall through */
-                        case SOCK_CLOSE:          NS_FALL_THROUGH; /* fall through */
-                        case SOCK_CLOSETIMEOUT:   NS_FALL_THROUGH; /* fall through */
-                        case SOCK_ENTITYTOOLARGE: NS_FALL_THROUGH; /* fall through */
-                        case SOCK_READERROR:      NS_FALL_THROUGH; /* fall through */
-                        case SOCK_READTIMEOUT:    NS_FALL_THROUGH; /* fall through */
-                        case SOCK_SHUTERROR:      NS_FALL_THROUGH; /* fall through */
-                        case SOCK_TOOMANYHEADERS: NS_FALL_THROUGH; /* fall through */
-                        case SOCK_WRITEERROR:     NS_FALL_THROUGH; /* fall through */
-                        case SOCK_QUEUEFULL:      NS_FALL_THROUGH; /* fall through */
-                        case SOCK_WRITETIMEOUT:
-                            /*
-                             * These cases should never be returned by SockAccept()
-                             */
-                            Ns_Fatal("driver: SockAccept returned: %s", SockStateString(s));
-                        }
-
-                        if (s != SOCK_ERROR) {
-#ifndef __APPLE__
-                            gotRequests = NS_TRUE;
-#endif
-                            accepted++;
-                        }
-#ifdef __APPLE__
-                        /*
-                         * On Darwin, the first accept() succeeds typically, but it is
-                         * useless to try, since this leads always to an NS_EAGAIN
-                         */
-                        acceptMore = NS_FALSE;
+                    /*
+                     * Keep both limits strict across multiple bind addresses.
+                     */
+                    if (attempted >= (unsigned int)drvPtr->acceptsize
+                        || drvPtr->queuesize >= drvPtr->maxqueuesize) {
                         break;
+                    }
+
+                    if (!PollIn(&pdata, drvPtr->pidx[i])) {
+                        continue;
+                    }
+
+                    attempted++;
+
+                    outcome = DriverAcceptReadySocket(drvPtr, pdata.pfds[drvPtr->pidx[i]].fd,
+                                                      &readPtr, &waitPtr, &now);
+                    switch (outcome) {
+                    case DRIVER_ACCEPT_OUTCOME_ACCEPTED:
+                        accepted++;
+                        retryRound = NS_TRUE;
+                        break;
+
+                    case DRIVER_ACCEPT_OUTCOME_RETRY:
+                        retryRound = NS_TRUE;
+                        break;
+
+                    case DRIVER_ACCEPT_OUTCOME_DRAINED:
+                        break;
+
+                    case DRIVER_ACCEPT_OUTCOME_STOP:
+                        stopAccepting = NS_TRUE;
+                        break;
+                    }
+
+                    if (stopAccepting) {
+                        break;
+                    }
+
+#ifdef __APPLE__
+                    /*
+                     * On Darwin, perform at most one accept attempt before
+                     * polling the listener again.
+                     */
+                    acceptMore = NS_FALSE;
+                    break;
 #endif
-                    }
-                    if (!gotRequests) {
-                        acceptMore = NS_FALSE;
-                    }
+                }
+
+                if (stopAccepting || !retryRound) {
+                    acceptMore = NS_FALSE;
                 }
             }
-            if (accepted >= drvPtr->sockacceptlog ) {
-                Ns_Log(Notice, "... sockAccept accepted %d connections", accepted);
+
+            if (accepted >= (unsigned int)drvPtr->sockacceptlog ) {
+                Ns_Log(Notice, "... sockAccept accepted %u connections", accepted);
             }
         }
 
