@@ -1055,7 +1055,6 @@ PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock)
     return newPtr;
 }
 
-# if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 /*
  *----------------------------------------------------------------------
  *
@@ -1063,9 +1062,10 @@ PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock)
  *
  *      Construct a normalized hash key from an Internet socket address.
  *      Copy only fields relevant for identifying the local endpoint and
- *      clear all remaining bytes. This ensures that equivalent addresses
- *      obtained from different operating-system interfaces produce
- *      identical fixed-size hash keys.
+ *      clear all remaining bytes. This ensures that equivalent
+ *      addresses obtained from different operating-system interfaces
+ *      produce identical fixed-size hash keys. Needed with and without
+ *      the externally prebound sockets.
  *
  * Results:
  *      None.
@@ -1125,6 +1125,7 @@ PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr,
     }
 }
 
+# if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
 /*
  *----------------------------------------------------------------------
  *
