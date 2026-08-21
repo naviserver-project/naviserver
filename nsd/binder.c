@@ -1013,7 +1013,6 @@ PrebindLaunchdSockets(size_t *countPtr)
 
     return status;
 }
-#endif /* HAVE_SD_LISTEN_FDS || __APPLE__ */
 
 /*
  *----------------------------------------------------------------------
@@ -1054,6 +1053,7 @@ PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock)
 
     return newPtr;
 }
+#endif /* HAVE_SD_LISTEN_FDS || __APPLE__ */
 
 /*
  *----------------------------------------------------------------------
