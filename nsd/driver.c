@@ -275,7 +275,9 @@ static char *PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
 
 static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static SockState SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr)
+static SockState SockAccept(Driver *drvPtr, NS_SOCKET sock,
+                            Sock **sockPtrPtr, const Ns_Time *nowPtr,
+                            unsigned long *errorCodePtr)
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
@@ -2336,10 +2338,12 @@ DriverAcceptReadySocket(Driver *drvPtr, NS_SOCKET listenSock,
                   Sock **readPtrPtr, Sock **waitPtrPtr,
                   const Ns_Time *nowPtr)
 {
-    Sock      *sockPtr = NULL;
-    SockState  state;
+    SockState     state;
+    unsigned long errorCode = 0u;
+    Sock         *sockPtr = NULL;
 
-    state = SockAccept(drvPtr, listenSock, &sockPtr, nowPtr);
+    state = SockAccept(drvPtr, listenSock, &sockPtr, nowPtr, NULL,
+                       &errorCode);
 
     switch (state) {
     case SOCK_SPOOL:
@@ -2361,36 +2365,36 @@ DriverAcceptReadySocket(Driver *drvPtr, NS_SOCKET listenSock,
         break;
 
     case SOCK_ERROR: {
-        int sockerrno = ns_sockerrno;
+        char errorBuffer[256];
+        int  sockerrno;
 
-        if (NS_ERRNO_WOULDBLOCK(sockerrno)) {
-            /*
-             * The pending accept queue has been drained.
-             */
-            return DRIVER_ACCEPT_OUTCOME_DRAINED;
+        if (errorCode == 0u) {
+            Ns_Log(Warning,
+                   "sockAccept on fd %d returned an unspecified error",
+                   listenSock);
+            return DRIVER_ACCEPT_OUTCOME_STOP;
         }
-
-        if (sockerrno == NS_EINTR
-            || sockerrno == NS_ECONNRESET
-            || sockerrno == NS_ECONNABORTED) {
+        if (Ns_ErrorCodeGetErrno(errorCode, &sockerrno)) {
+            if (NS_ERRNO_WOULDBLOCK(sockerrno)) {
+                return DRIVER_ACCEPT_OUTCOME_DRAINED;
+            }
+            if (sockerrno == NS_EINTR
+                || sockerrno == NS_ECONNRESET
+                || sockerrno == NS_ECONNABORTED) {
+                return DRIVER_ACCEPT_OUTCOME_RETRY;
+            }
+        } else {
             /*
-             * Retry accept(), subject to the caller's attempts limit.
+             * A non-system TLS error occurred after the TCP connection
+             * had been accepted. Discard that connection and continue
+             * draining the listener.
              */
             return DRIVER_ACCEPT_OUTCOME_RETRY;
         }
 
-        /*
-         * Avoid spinning on resource or listener errors.
-         */
-        if (sockerrno != 0) {
-            Ns_Log(Warning,
-                   "sockAccept on fd %d returned error: %s",
-                   listenSock, ns_sockstrerror(sockerrno));
-        } else {
-            Ns_Log(Warning,
-                   "sockAccept on fd %d returned an unspecified error",
-                   listenSock);
-        }
+        Ns_Log(Warning, "sockAccept on fd %d returned error: %s",
+               listenSock,
+               Ns_ErrorString(errorCode, errorBuffer, sizeof(errorBuffer)));
 
         return DRIVER_ACCEPT_OUTCOME_STOP;
     }
@@ -2713,6 +2717,7 @@ DriverThread(void *arg)
 
                 if (likely((drvPtr->opts & NS_DRIVER_ASYNC) != 0u)) {
                     SockState s = SockRead(sockPtr, 0, &now);
+
                     Ns_Log(DriverDebug, "SockRead on %p returned %s", (void*)sockPtr, GetSockStateName(s));
 
                     /*
@@ -3389,13 +3394,18 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
  */
 
 static SockState
-SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr)
+SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr,
+           const Ns_Time *nowPtr, unsigned long *errorCodePtr)
 {
     Sock    *sockPtr;
     SockState sockStatus;
     NS_DRIVER_ACCEPT_STATUS status;
 
     NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    if (errorCodePtr != NULL) {
+        *errorCodePtr = 0u;
+    }
 
     sockPtr = SockNew(drvPtr);
 
@@ -3408,6 +3418,9 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
     if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)) {
         sockStatus = SOCK_ERROR;
 
+        if (errorCodePtr != NULL) {
+            *errorCodePtr = sockPtr->recvErrno;
+        }
         /*
          * We reach the place frequently, especially on Linux, when we try to
          * accept multiple connection in one sweep. Usually, the errno is
@@ -3435,16 +3448,23 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
 
             if ((drvPtr->opts & NS_DRIVER_ASYNC) != 0u) {
                 sockStatus = SockRead(sockPtr, 0, nowPtr);
+                if (errorCodePtr != NULL) {
+                    *errorCodePtr = sockPtr->recvErrno;
+                }
                 if ((int)sockStatus < 0) {
-                    Ns_Log(DriverDebug, "SockRead returned error %s",
+                    int sockerrno = 0;
+
+                    Ns_Log(DriverDebug, "SockRead returned status %s",
                            GetSockStateName(sockStatus));
 
-                    SockRelease(sockPtr, sockStatus, errno);
+                    (void)Ns_ErrorCodeGetErrno(sockPtr->recvErrno, &sockerrno);
+                    SockRelease(sockPtr, sockStatus, sockerrno);
+
                     sockStatus = SOCK_ERROR;
                     sockPtr = NULL;
                 }
-            } else {
 
+            } else {
                 /*
                  * Queue this socket without reading, NsGetRequest() in the
                  * connection thread will perform actual reading of the
