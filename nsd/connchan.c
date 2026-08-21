@@ -1864,14 +1864,14 @@ ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("fragments", 9),
                            Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
-
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("senderror", 9),
-                           Tcl_NewStringObj(NsErrorCodeString((int)connChanPtr->sockPtr->sendErrno), TCL_INDEX_NONE));
+                           Tcl_NewStringObj(NsPosixErrorCodeName((int)connChanPtr->sockPtr->sendErrno),
+                                            TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("recverror", 9),
-                           Tcl_NewStringObj(NsErrorCodeString((int)connChanPtr->sockPtr->recvErrno), TCL_INDEX_NONE));
-
+                           Tcl_NewStringObj(NsPosixErrorCodeName((int)connChanPtr->sockPtr->recvErrno),
+                                            TCL_INDEX_NONE));
 
             if (connChanPtr->cbPtr != NULL) {
                 char whenBuffer[6] = {0};

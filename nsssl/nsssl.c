@@ -248,10 +248,13 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
 static NS_DRIVER_ACCEPT_STATUS
 Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
-    NsSSLConfig *drvCfgPtr = sock->driver->arg;
-    SSLContext  *sslCtx = sock->arg;
+    NsSSLConfig  *drvCfgPtr = sock->driver->arg;
+    SSLContext   *sslCtx = sock->arg;
+    unsigned long errorCode = 0u;
 
-    sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
+    sock->sock = Ns_SockAccept2(listensock, sockaddrPtr,
+                                socklenPtr, &errorCode);
+    Ns_SockSetRecvErrno(sock, errorCode);
 
     if (sock->sock != NS_INVALID_SOCKET) {
 #ifdef __APPLE__
