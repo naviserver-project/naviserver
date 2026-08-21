@@ -18,6 +18,10 @@
 
 #include "nsd.h"
 
+#ifdef HAVE_OPENSSL_EVP_H
+# include <openssl/err.h>
+#endif
+
 /*
  * TCP_FASTOPEN was introduced in Linux 3.7.0. At the time of this
  * writing, TCP_FASTOPEN is just defined in linux/tcp.h, which we
@@ -239,13 +243,11 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState, unsigned long recv
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockSetSendErrno --
+ * Ns_SockSetSendErrno, Ns_SockSetRecvErrno --
  *
- *      Set the error code (POSIX or the masked OpenSSL error code) for the
- *      send operation in the Sock structure.  This error code may represent a
- *      standard POSIX error or a masked OpenSSL error (as returned by
- *      ERR_get_error()), and is stored in the 'sendErrno' member of the Sock
- *      structure.
+ *      Set the error code for the last send or receive operation.
+ *      The value may represent a platform error or an OpenSSL error
+ *      and is stored in the corresponding Sock structure member.
  *
  * Results:
  *      None.
@@ -261,12 +263,18 @@ Ns_SockSetSendErrno(Ns_Sock *sock, unsigned long sendErrno)
     ((Sock *)sock)->sendErrno = sendErrno;
 }
 
+void
+Ns_SockSetRecvErrno(Ns_Sock *sock, unsigned long recvErrno)
+{
+    ((Sock *)sock)->recvErrno = recvErrno;
+}
+
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockGetSendErrno, Ns_SockGetSendRejected, Ns_SockGetSendCount --
+ * Ns_SockGetSendErrno, Ns_SockGetRecvErrno, Ns_SockGetSendRejected, Ns_SockGetSendCount --
  *
- *      Accessor functions for sendErrno, sendRejected and sendCount
+ *      Accessor functions for sendErrno, recvErrno, sendRejected and sendCount
  *
  * Results:
  *      Values of these fields.
@@ -282,6 +290,11 @@ Ns_SockGetSendErrno(Ns_Sock *sock)
     return ((Sock *)sock)->sendErrno;
 }
 
+unsigned long
+Ns_SockGetRecvErrno(Ns_Sock *sock)
+{
+    return ((Sock *)sock)->recvErrno;
+}
 
 ssize_t
 Ns_SockGetSendRejected(Ns_Sock *sock)
@@ -991,12 +1004,16 @@ Ns_SockListen(const char *address, unsigned short port)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockAccept --
+ * Ns_SockAccept, Ns_SockAccept2 --
  *
- *      Accept a TCP socket, setting close on exec.
+ *      Accept a TCP socket and set close-on-exec. Ns_SockAccept2()
+ *      additionally returns the error captured immediately after a
+ *      failed accept() operation.
  *
  * Results:
- *      A socket or NS_INVALID_SOCKET on error.
+ *      A socket or NS_INVALID_SOCKET on error. When errorCodePtr is
+ *      provided, it is set to zero on success and to the platform
+ *      socket error on failure.
  *
  * Side effects:
  *      None.
@@ -1005,12 +1022,16 @@ Ns_SockListen(const char *address, unsigned short port)
  */
 
 NS_SOCKET
-Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
+Ns_SockAccept2(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr, unsigned long *errorCodePtr)
 {
     int sockerrno;
 
     sock = accept(sock, saPtr, lenPtr);
     sockerrno = ns_sockerrno;
+
+    if (errorCodePtr != NULL) {
+        *errorCodePtr = (sock == NS_INVALID_SOCKET) ? (unsigned long)sockerrno : 0u;
+    }
 
     Ns_Log(Debug, "Ns_SockAccept returns sock %d, err %s", sock,
            (sockerrno == 0) ? "NONE" : ns_sockstrerror(sockerrno));
@@ -1022,6 +1043,12 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
     }
 
     return sock;
+}
+
+NS_SOCKET
+Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
+{
+    return Ns_SockAccept2(sock, saPtr, lenPtr, NULL);
 }
 
 #ifdef NS_WITH_DEPRECATED
@@ -2431,7 +2458,7 @@ Ns_PosixSetErrorCode(Tcl_Interp *interp, int errorNum) {
 
     errorMsg = Tcl_ErrnoMsg(errorNum);
     Tcl_SetErrorCode(interp, "POSIX",
-                     NsErrorCodeString(errorNum),
+                     NsPosixErrorCodeName(errorNum),
                      Tcl_ErrnoMsg(errorNum),
                      NS_SENTINEL);
     return errorMsg;
@@ -2462,6 +2489,7 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
 
 #ifdef HAVE_OPENSSL_EVP_H
     if (STREQ(sockPtr->drvPtr->protocol, "https")) {
+        /* this holds for HTTPS and QUIC */
         return Ns_SSLSetErrorCode(interp, sockPtr->recvErrno);
     }
 #endif
@@ -2471,7 +2499,88 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
 /*
  *----------------------------------------------------------------------
  *
- * NsErrorCodeString --
+ * Ns_ErrorString --
+ *
+ *      Convert an error code into a human-readable error message.
+ *
+ *      The error code may be either a platform socket error value
+ *      (a POSIX errno or Winsock error code) or an OpenSSL error value.
+ *      OpenSSL system errors and native OpenSSL errors are decoded
+ *      accordingly.
+ *
+ *      The resulting message is written to the caller-provided buffer.
+ *      The buffer size must be greater than zero.  The result is
+ *      truncated when necessary.
+ *
+ * Results:
+ *      Pointer to buffer.
+ *
+ * Side effects:
+ *      Writes a null-terminated string to errorBuffer.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_ErrorString(unsigned long errorCode, char *buffer, size_t bufferSize)
+{
+#ifdef HAVE_OPENSSL_EVP_H
+    if (ERR_GET_LIB(errorCode) != 0) {
+        return Ns_SSLErrorString(errorCode, buffer, bufferSize);
+    }
+#endif
+    snprintf(buffer, bufferSize, "%s", ns_sockstrerror((int)errorCode));
+    return buffer;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ErrorCodeGetErrno --
+ *
+ *      Determine whether an error code represents a platform socket
+ *      error and, if so, obtain its error number.
+ *
+ *      Raw POSIX errno and Winsock values are returned directly.
+ *      For an OpenSSL system error, the embedded system error number
+ *      is extracted.  Native OpenSSL errors do not have a corresponding
+ *      platform error number.
+ *
+ * Results:
+ *      NS_TRUE when errorCode represents a platform socket error; in
+ *      this case, *errnoPtr is set to the extracted error number.
+ *
+ *      NS_FALSE when errorCode represents a native OpenSSL error; in
+ *      this case, *errnoPtr is set to zero.
+ *
+ * Side effects:
+ *      Updates *errnoPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_ErrorCodeGetErrno(unsigned long errorCode, int *errnoPtr)
+{
+#ifdef HAVE_OPENSSL_EVP_H
+    const int library = ERR_GET_LIB(errorCode);
+
+    if (library == ERR_LIB_SYS) {
+        *errnoPtr = ERR_GET_REASON(errorCode);
+        return NS_TRUE;
+    }
+    if (library != 0) {
+        *errnoPtr = 0;
+        return NS_FALSE;
+    }
+#endif
+
+    *errnoPtr = (int)errorCode;
+    return NS_TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsPosixErrorCodeName --
  *
  *      Map errorCode integer to a language independent string.  This
  *      function is practically a copy of the Tcl implementation, except
@@ -2487,7 +2596,7 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
  *----------------------------------------------------------------------
  */
 const char *
-NsErrorCodeString(int errorCode)
+NsPosixErrorCodeName(int errorCode)
 {
     switch (errorCode) {
 #if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
