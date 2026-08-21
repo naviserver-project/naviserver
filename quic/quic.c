@@ -10536,7 +10536,7 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
                    (long long)sc->quic_sid,
                    (unsigned int)ioState,
                    sendErrno,
-                   NsErrorCodeString((int)sendErrno));
+                   NsPosixErrorCodeName((int)sendErrno));
             return -1;
         }
     }

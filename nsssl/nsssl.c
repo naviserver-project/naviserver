@@ -226,8 +226,10 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
 {
     NsTLSConfig  *dc = sock->driver->arg;
     NssslSockCtx *sslCtx = sock->arg;
+    unsigned long errorCode = 0u;
 
-    sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
+    sock->sock = Ns_SockAccept2(listensock, sockaddrPtr, socklenPtr, &errorCode);
+    Ns_SockSetRecvErrno(sock, errorCode);
 
     if (sock->sock != NS_INVALID_SOCKET) {
 #ifdef __APPLE__

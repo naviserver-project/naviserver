@@ -3174,6 +3174,14 @@ NS_EXTERN unsigned long
 Ns_SockGetSendErrno(Ns_Sock *sock) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN void
+Ns_SockSetRecvErrno(Ns_Sock *sock, unsigned long recvErrno)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN unsigned long
+Ns_SockGetRecvErrno(Ns_Sock *sock) NS_GNUC_PURE
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN ssize_t
 Ns_SockGetSendRejected(Ns_Sock *sock) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
@@ -3193,6 +3201,15 @@ Ns_SockFlagClear(Ns_Sock *sock, unsigned int flag) NS_GNUC_PURE
 NS_EXTERN bool
 Ns_SockInErrorState(const Ns_Sock *sock) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN const char *
+Ns_ErrorString(unsigned long errorCode,
+               char *buffer, size_t bufferSize)
+    NS_GNUC_NONNULL(2);
+
+NS_EXTERN bool
+Ns_ErrorCodeGetErrno(unsigned long errorCode, int *errnoPtr)
+    NS_GNUC_NONNULL(2);
 
 unsigned short
 Ns_SockGetPort(const Ns_Sock *sock)
@@ -3242,6 +3259,10 @@ Ns_SockListen(const char *address, unsigned short port);
 
 NS_EXTERN NS_SOCKET
 Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr);
+
+NS_EXTERN NS_SOCKET
+Ns_SockAccept2(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr,
+               unsigned long *errorCodePtr);
 
 NS_EXTERN NS_SOCKET
 Ns_SockConnect(const char *host, unsigned short port)
@@ -4129,7 +4150,7 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock,
                  NS_TLS_SSL_CTX *ctx, NS_TLS_SSL **sslPtr)
     NS_GNUC_NONNULL(1,3,4);
 
-#ifdef HAVE_OPENSSL_EVP_H
+# ifdef HAVE_OPENSSL_EVP_H
 NS_EXTERN ssize_t
 Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs), Ns_SockState *sockStatePtr, unsigned long *errnoPtr)
     NS_GNUC_NONNULL(1,2,4,5);
@@ -4141,7 +4162,15 @@ Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
 NS_EXTERN const char *
 Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
     NS_GNUC_NONNULL(1);
-#endif
+
+NS_EXTERN const char *
+Ns_SSLErrorString(unsigned long errorCode,
+                  char *buffer, size_t bufferSize)
+    NS_GNUC_NONNULL(2);
+
+# endif /* HAVE_OPENSSL_EVP_H */
+
+
 
 /*
  * tclcrypto.c:

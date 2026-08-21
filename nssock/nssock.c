@@ -182,8 +182,11 @@ SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
 {
     const Config *drvCfgPtr = sock->driver->arg;
     NS_DRIVER_ACCEPT_STATUS status = NS_DRIVER_ACCEPT_ERROR;
+    unsigned long           errorCode = 0u;
 
-    sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
+    sock->sock = Ns_SockAccept2(listensock, sockaddrPtr, socklenPtr, &errorCode);
+    Ns_SockSetRecvErrno(sock, errorCode);
+
     if (sock->sock != NS_INVALID_SOCKET) {
 
 #ifdef __APPLE__

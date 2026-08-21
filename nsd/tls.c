@@ -4244,6 +4244,43 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
     return errorMsg;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SSLErrorString --
+ *
+ *      Convert an OpenSSL error code into a human-readable error
+ *      message.
+ *
+ *      OpenSSL system errors are converted using their embedded
+ *      platform error number. Native OpenSSL errors are formatted
+ *      using the OpenSSL error-string interface.
+ *
+ *      The resulting message is written to the caller-provided buffer.
+ *      The buffer size must be greater than zero. The result is
+ *      truncated when necessary.
+ *
+ * Results:
+ *      Pointer to buffer.
+ *
+ * Side effects:
+ *      Writes a null-terminated string to buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_SSLErrorString(unsigned long errorCode,
+                  char *buffer, size_t bufferSize)
+{
+    if (ERR_GET_LIB(errorCode) == ERR_LIB_SYS) {
+        snprintf(buffer, bufferSize, "%s",
+                 ns_sockstrerror(ERR_GET_REASON(errorCode)));
+    } else {
+        ERR_error_string_n(errorCode, buffer, bufferSize);
+    }
+
+    return buffer;
+}
 
 /*
  *----------------------------------------------------------------------

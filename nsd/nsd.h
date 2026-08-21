@@ -2194,7 +2194,7 @@ NS_EXTERN void NsSlsCleanup(Sock *sockPtr) NS_GNUC_NONNULL(1);
 /*
  * sock.c
  */
-NS_EXTERN const char *NsErrorCodeString(int errorCode) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN const char *NsPosixErrorCodeName(int errorCode) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN const char *NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp)
     NS_GNUC_NONNULL(1,2);
 NS_EXTERN bool NsSockRetryCode(int errorCode) NS_GNUC_CONST;
