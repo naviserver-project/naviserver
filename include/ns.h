@@ -675,14 +675,12 @@ typedef enum {
  * The following typedefs define socket driver callbacks.
  */
 
-typedef NS_SOCKET
-(Ns_DriverListenProc)(Ns_Driver *driver, const char *address, unsigned short port, int backlog, bool reusePort)
-     NS_GNUC_NONNULL(1,2);
+typedef NS_SOCKET Ns_DriverListenProc(Ns_Driver *driver, const char *address, unsigned short port, int backlog, bool reuseport)
+    NS_GNUC_NONNULL(1,2);
 
-typedef NS_DRIVER_ACCEPT_STATUS
-(Ns_DriverAcceptProc)(Ns_Sock *sock, NS_SOCKET listensock,
-                      struct sockaddr *saPtr, socklen_t *socklen)
-     NS_GNUC_NONNULL(1,3,4);
+typedef NS_DRIVER_ACCEPT_STATUS Ns_DriverAcceptProc(Ns_Sock *sock, NS_SOCKET listensock,
+                                                    struct sockaddr *saPtr, socklen_t *socklenPtr)
+    NS_GNUC_NONNULL(1,3,4);
 
 typedef ssize_t
 (Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs,
