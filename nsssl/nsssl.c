@@ -222,13 +222,13 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
  */
 
 static NS_DRIVER_ACCEPT_STATUS
-Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
+Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *saPtr, socklen_t *socklenPtr)
 {
     NsTLSConfig  *dc = sock->driver->arg;
     NssslSockCtx *sslCtx = sock->arg;
     unsigned long errorCode = 0u;
 
-    sock->sock = Ns_SockAccept2(listensock, sockaddrPtr, socklenPtr, &errorCode);
+    sock->sock = Ns_SockAccept2(listensock, saPtr, socklenPtr, &errorCode);
     Ns_SockSetRecvErrno(sock, errorCode);
 
     if (sock->sock != NS_INVALID_SOCKET) {
@@ -688,13 +688,13 @@ Close(Ns_Sock *sock)
  *----------------------------------------------------------------------
  */
 static int
-ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, void *arg)
+ClientInit(Tcl_Interp *interp, Ns_Sock *sock, void *arg)
 {
     SSL                    *ssl;
     Ns_DriverClientInitArg *params= (Ns_DriverClientInitArg *)arg;
     int                     result;
 
-    if (Ns_TLS_SSLConnect(interp, sockPtr->sock,
+    if (Ns_TLS_SSLConnect(interp, sock->sock,
                           params->ctx,
                           params->sniHostname,
                           params->caFile,
@@ -704,7 +704,7 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, void *arg)
         NssslSockCtx *sslCtx = ns_calloc(1, sizeof(NssslSockCtx));
 
         sslCtx->ssl = ssl;
-        sockPtr->arg = sslCtx;
+        sock->arg = sslCtx;
         result = TCL_OK;
     } else {
         if (ssl != NULL) {
