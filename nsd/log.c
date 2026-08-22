@@ -95,8 +95,8 @@ typedef struct LogCache {
     Tcl_DString buffer;       /* The log entries cache text-cache */
 } LogCache;
 
-static LogEntry *LogEntryGet(LogCache *cachePtr) NS_GNUC_NONNULL(1);
-static void LogEntryFree(LogCache *cachePtr, LogEntry *logEntryPtr)  NS_GNUC_NONNULL(1,2);
+static LogEntry *LogEntryGet(const LogCache *cachePtr) NS_GNUC_NONNULL(1);
+static void LogEntryFree(const LogCache *cachePtr, LogEntry *logEntryPtr)  NS_GNUC_NONNULL(1,2);
 
 #if !defined(NS_THREAD_LOCAL)
 static void LogEntriesFree(void *arg);
@@ -1245,7 +1245,7 @@ StripColorCodes(char *line, ssize_t len, TCL_SIZE_T *resultLen)
 
     startEsc = strchr(line, 27);
     while (startEsc != NULL && *(startEsc + 1) == INTCHAR('[')) {
-        char *p;
+        const char *p;
         /*
          * In escape mode, strip everything up to the next 'm';
          */
@@ -1404,9 +1404,8 @@ LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
 int
 NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int             result = TCL_OK, opt, i;
+    int             result = TCL_OK, opt;
     Tcl_DString     ds;
-    Tcl_Obj        *objPtr;
     LogCache       *cachePtr = GetCache();
     LogFilter       filter, *filterPtr = &filter;
     void           *addr;
@@ -1454,12 +1453,11 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     } else if (cachePtr->finalizing) {
         /*
-         * Silent Fail.
+         * Silent Ignore.
          */
-        return TCL_OK;
+        result = TCL_OK;
 
     } else {
-
         switch (opt) {
 
         case CRegisterIdx:
@@ -1563,8 +1561,9 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
                 /*
                  * Return all registered severities in a list
                  */
-                objPtr = Tcl_GetObjResult(interp);
-                for (i = 0; i < severityIdx; i++) {
+                Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+
+                for (int i = 0; i < severityIdx; i++) {
                     if (Tcl_ListObjAppendElement(interp, objPtr,
                                                  Tcl_NewStringObj(severityConfig[i].label, TCL_INDEX_NONE))
                         != TCL_OK) {
@@ -2187,7 +2186,7 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     Tcl_DStringInit(&ds);
 
     (void) LogToDString(&ds, severity, stamp, msg, len);
-    (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
+    (void) NsAsyncWrite(fd, ds.string, (size_t)ds.length);
 
     Tcl_DStringFree(&ds);
 #endif
@@ -2239,10 +2238,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         status = NS_OK;
 
     } else {
-        int                   ret;
-        TCL_SIZE_T            ii;
         void                 *logfile = INT2PTR(STDERR_FILENO);
-        Tcl_Obj              *stampObj;
         Tcl_DString           ds, ds2;
         Tcl_Interp           *interp;
         const Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
@@ -2256,9 +2252,10 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
                             "LogToTcl: can't get interpreter", 31u);
             status = NS_ERROR;
         } else {
+            int      ret;
+            Tcl_Obj *stampObj = Tcl_NewObj();
 
             Tcl_DStringInit(&ds);
-            stampObj = Tcl_NewObj();
             Ns_TclSetTimeObj(stampObj, stamp);
 
             /*
@@ -2284,7 +2281,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             Tcl_DStringAppendElement(&ds, ds2.string);
             Tcl_DStringFree(&ds2);
 
-            for (ii = 0; ii < cbPtr->argc; ii++) {
+            for (TCL_SIZE_T ii = 0; ii < cbPtr->argc; ii++) {
                 Tcl_DStringAppendElement(&ds, cbPtr->argv[ii]);
             }
             ret = Tcl_EvalEx(interp, ds.string, ds.length, 0);
@@ -2351,14 +2348,12 @@ GetCache(void)
 #if !defined(NS_THREAD_LOCAL)
 static void LogEntriesFree(void *arg)
 {
-    LogEntry *logEntry = (LogEntry *)arg;
-    fprintf(stderr, "LOGENTRY: free list %p\n", (void*)logEntry);
-    ns_free(logEntry);
+    ns_free(arg);
 }
 #endif
 
 static LogEntry *
-LogEntryGet(LogCache *cachePtr)
+LogEntryGet(const LogCache *cachePtr)
 {
     LogEntry *entryPtr;
 
@@ -2369,17 +2364,10 @@ LogEntryGet(LogCache *cachePtr)
         static NS_THREAD_LOCAL LogEntry logEntry = {0};
         entryPtr = &logEntry;
 #else
-        LogCache *logEntryList;
-
-        logEntryList = Ns_TlsGet(&tlsEntry);
-        if (logEntryList == NULL) {
-            logEntryList = ns_calloc(1u, sizeof(LogEntry));
-            entryPtr = logEntryList;
-            Ns_TlsSet(&tlsEntry, logEntryList);
-        } else {
-            entryPtr = logEntryList;
-            logEntryList = entryPtr->nextPtr;
-            entryPtr->nextPtr = NULL;
+        entryPtr = Ns_TlsGet(&tlsEntry);
+        if (entryPtr == NULL) {
+            entryPtr = ns_calloc(1u, sizeof(LogEntry));
+            Ns_TlsSet(&tlsEntry, entryPtr);
         }
 #endif
     }
@@ -2387,21 +2375,16 @@ LogEntryGet(LogCache *cachePtr)
 }
 
 static void
-LogEntryFree(LogCache *cachePtr, LogEntry *logEntryPtr)
+LogEntryFree(const LogCache *cachePtr, LogEntry *logEntryPtr)
 {
     if (cachePtr->hold) {
         memset(logEntryPtr, 0, sizeof(LogEntry));
         ns_free(logEntryPtr);
     } else {
-#if defined(NS_THREAD_LOCAL)
-#else
-        logEntryList = Ns_TlsGet(&tlsEntry);
-        logEntryPtr->nextPtr = logEntryList;
-        if (logEntryList != NULL) {
-            logEntryList->nextPtr = logEntryPtr;
-        }
-#endif
-        /*fprintf(stderr, "LOGENTRY: pushed\n");*/
+        /*
+         * The entry remains associated with the current thread and is
+         * released by LogEntriesFree() when the thread terminates.
+         */
     }
 }
 
