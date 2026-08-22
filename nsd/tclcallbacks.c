@@ -371,9 +371,9 @@ NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 }
 
 static void
-ShutdownProc(const Ns_Time *toPtr, void *arg)
+ShutdownProc(const Ns_Time *timeoutPtr, void *arg)
 {
-    if (toPtr == NULL) {
+    if (timeoutPtr == NULL) {
         Ns_TclCallbackProc(arg);
         NsLogMemoryStats("after shutdown callback", NULL, Ns_ThreadId(), NULL);
     }

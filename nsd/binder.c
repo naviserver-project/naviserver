@@ -1456,10 +1456,10 @@ NsPreBind(const char *args, const char *file)
     status = PrebindLaunchdSockets(&inherited);
 #endif /* HAVE_SD_LISTEN_FDS || __APPLE__ */
 
+#if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
     if (status != NS_OK) {
         return status;
     }
-
     /*
      * When inherited sockets are provided, reject traditional prebind
      * options for now and treat the two mechanisms as alternatives.
@@ -1471,6 +1471,7 @@ NsPreBind(const char *args, const char *file)
                inherited, inherited == 1u ? "" : "s");
         return NS_ERROR;
     }
+#endif
 
     if (inherited == 0u) {
         if (args != NULL) {

@@ -372,7 +372,7 @@ typedef bool          Ns_ElemTestProc(void *elem);
 typedef void          Ns_Callback(void *arg);
 typedef Ns_ReturnCode Ns_LogCallbackProc(void *arg);
 typedef void          Ns_FreeProc(void *arg);
-typedef void          Ns_ShutdownProc(const Ns_Time *toPtr, void *arg);
+typedef void          Ns_ShutdownProc(const Ns_Time *timeoutPtr, void *arg);
 typedef int           Ns_TclInterpInitProc(Tcl_Interp *interp, const void *arg);
 typedef int           Ns_TclTraceProc(Tcl_Interp *interp, const void *arg);
 typedef void          Ns_TclDeferProc(Tcl_Interp *interp, void *arg);

@@ -566,9 +566,8 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
         urlPtr->fragment = ParseUpTo(query, '#');
 
     } else {
-        char *query = NULL;
-        char *fragment = NULL;
-        char *tail = NULL;
+        char       *query = NULL, *tail = NULL;
+        const char *fragment = NULL;
 
         if (*end == '/') {
 
