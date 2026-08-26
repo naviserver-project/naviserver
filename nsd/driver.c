@@ -3413,10 +3413,14 @@ DriverThread(void *arg)
             Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
         }
         /*
-         * Check whether we should re-animate some connection threads,
-         * when e.g. the number of current threads dropped below the
-         * minimal value.  Perform this test on timeouts (n == 0;
-         * just for safety reasons) or on explicit wakeup calls.
+         * Perform driver maintenance after an explicit wakeup or a poll
+         * timeout. Ensure that the configured minimum number of connection
+         * threads is running and, later in this loop, retry sockets retained
+         * by the driver after a previous NS_TIMEOUT from NsQueueConn().
+         *
+         * Retrying on timeout is important when connection capacity was
+         * released by work from another driver, since that event does not
+         * necessarily trigger this driver explicitly.
          */
         if ((nrWaiting == 0) || reanimation) {
             const NsServer *servPtr = drvPtr->servPtr;
@@ -3615,10 +3619,13 @@ DriverThread(void *arg)
         }
 
         /*
-         * Attempt to queue any pending connection after reversing the
-         * list to ensure oldest connections are tried first.
+         * Retry ready sockets retained after a previous queueing timeout.
+         * An explicit wakeup normally indicates newly available capacity;
+         * the poll-timeout case prevents an inactive driver from retaining
+         * such sockets indefinitely. Reverse the list so that the oldest
+         * sockets are retried first.
          */
-        if (reanimation && waitPtr != NULL) {
+        if ((reanimation || nrWaiting == 0) && waitPtr != NULL) {
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {
                 waitPtr = nextPtr->nextPtr;
