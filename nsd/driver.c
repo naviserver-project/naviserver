@@ -1714,6 +1714,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
             Ns_CondInit(&queuePtr->cond);
             queuePtr->id = i;
+            queuePtr->threadName = threadName;
             Push(queuePtr, wrPtr->firstPtr);
         }
     } else {
@@ -2761,11 +2762,9 @@ NsDriverBindAddresses(Driver *drvPtr)
  */
 void NsDriverStartSpoolers(Driver *drvPtr) {
     if (drvPtr->spooler.firstPtr != NULL) {
-        drvPtr->spooler.firstPtr->threadName = drvPtr->threadName;
         SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
     }
     if (drvPtr->writer.firstPtr != NULL) {
-        drvPtr->writer.firstPtr->threadName = drvPtr->threadName;
         SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
     }
 }
