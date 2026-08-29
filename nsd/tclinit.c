@@ -350,7 +350,9 @@ ConfigServerTcl(const char *server)
         Tcl_InitHashTable(&servPtr->hosts, TCL_STRING_KEYS);
 
         result = NS_OK;
+        Ns_ThreadSetName("-main-");
     }
+
     return result;
 }
 
@@ -1806,7 +1808,6 @@ NsTclInitServer(const char *server)
         }
         Ns_TclDeAllocateInterp(interp);
     }
-    Ns_ThreadSetName("-main:%s-", server);
 }
 
 /*
