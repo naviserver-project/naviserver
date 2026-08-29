@@ -1,0 +1,13 @@
+Source: naviserver
+Section: httpd
+Priority: optional
+Maintainer: Georg Lehner <jorge@magma-soft.at>
+Build-Depends: debhelper (>= 9), tcl-dev (>= 8.6), libssl-dev (>=3.5), zlib1g-dev, tcllib (>=2)
+
+Package: naviserver
+Architecture: any
+Depends: openssl (>=3.5), tcl
+Description: NaviServer is a high performance web server written in C and Tcl
+ NaviServer is a high performance web server written in C and Tcl.  
+ It can be easily extended in either language to create interesting 
+ web sites and services.
