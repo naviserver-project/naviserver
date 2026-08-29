@@ -1948,6 +1948,120 @@ websocket
   - Improved documentation
   - More detailed timeout handling
 
+=======================================
+NaviServer 4.99.33, released 2025-10-22
+=======================================
+
+ 12 files changed, 143 insertions(+), 42 deletions(-)
+
+Bug Fixes:
+----------
+
+ - ns_fseekchars: Fixed an overlap-accounting bug that could produce
+   incorrect results when searching across read-buffer boundaries.
+   Earlier versions could fail on both very short and large files,
+   depending on buffer size interaction.  (commit 0fee6574 )
+
+ - ns_crypto::scrypt: Fixed argument-order inversion for -r and -p
+   options in the Tcl command interface.  Versions between 4.99.20 (Jun
+   2020) and 4.99.31 produced incorrect, non-RFC-compliant scrypt hashes.
+   NaviServer 5 is unaffected.  (commit d204e225 )
+
+ - ns_internalredirect: Fixed a bug a few years old, wherethe
+   connection requirement check used the wrong condition, preventing
+   redirects from being executed.  The issue was introduced in
+   November 2023 (shortly after 4.99.19) and is now corrected.  Many
+   thanks to Zoran Vasiljevic for identifying and fixing this bug.
+   (commit bffb05b0 )
+
+Documentation Updates:
+----------------------
+
+ - Clarified the behavior of optional timeout handling in ns_cond
+   wait: explicitly documents that a zero timeout now behaves as an
+   indefinite wait, preserving full backward compatibility.  (Manpage
+   updated in [naviserver/ns_cond.man])
+
+Tests:
+------
+
+ Added new regression tests for:
+  * ns_internalredirect (functional coverage for redirect behavior) (commit b8b9d107)
+  * ns_crypto::scrypt argument correctness and hash output validation (commit eb8f1ac7)
+
+Notes:
+------
+
+  This is a stability and correctness release focusing exclusively on
+  bug fixes and improved regression coverage.
+
+  No configuration changes are required.
+
+
+=======================================
+NaviServer 4.99.32, released 2025-09-23
+=======================================
+
+ 7 files changed, 80 insertions(+), 17 deletions(-)
+
+Bug Fixes:
+----------
+
+  - Fixed multipart/form-data parsing in 'ns_parseformfile': correct
+    boundary/end calculations and copied byte count to prevent
+    truncated or misaligned part reads under spooling.
+
+  - Adjust OpenACS sample configuration file: set
+    'nslog.checkforproxy' based on '$reverseproxymode' (was
+    '$proxy_mode') to match revised reverse proxy naming. This bug
+    affected mostly users which were using the example configution
+    file without local adaptions.
+
+  - Return correct Tcl error code in TLS context setup:
+    Ns_TLS_CtxServerInit() now returns TCL_ERROR when the certificate
+    parameter is missing (was NS_ERROR), aligning with Tcl
+    conventions.
+
+  - Make driver poll timeout robust: handle "no deadline" (TIME_T_MAX)
+    with a safe default, round up sub-millisecond waits, and assert
+    against negative timeouts to avoid indefinite waits.
+
+
+Documentation Updates:
+----------------------
+
+  - Refresh README build instructions and man pages to reflect actual
+    version numbers
+
+  - Clarify 'ns_return' manpage: document that the headers argument
+    accepts a setid and defaults to 'ns_conn outputheaders' when
+    omitted.
+
+  - Correct 'ns_set' examples to use 'ns_set create' (was 'ns_set new').
+
+  - Revise 'ns_issmallint' description to reflect unsigned 16-bit range
+    semantics instead of digit-count based description.
+
+Tests:
+------
+
+  - Add multipart upload tests validating spooling behavior and file
+    part sizes for small (2 KB) and larger (~16 KB) uploads.
+
+  - Make 'ns_http.test' portable across platforms by introducing
+    '$devnull' and '$contentfile' helpers.
+
+  - Relax 'ns_strcoll' expectations (glob match) to accommodate macOS
+    Sequoia 15.4 collation order changes, while preserving
+    deterministic sorting under specified locales.
+
+Notes:
+------
+
+  This is a bug-fix release for the 4.99 line (no new features) and
+  includes select backports from 5.0 that improve robustness,
+  documentation accuracy, and test portability. For Tcl9 compatibility
+  please use NaviServer 5.*.
 
 
 =======================================
