@@ -10666,6 +10666,16 @@ Ns_InfoSSLDetailsObj(void)
     Tcl_ListObjAppendElement(NULL, capabilitiesObj,
                              NsAtomObj(NS_ATOM_scrypt));
 # endif
+    /*
+     * QUIC support
+     */
+# if defined(HAVE_OPENSSL_4_0_2)
+    if (runtimeVersion >= 0x40000020L) {
+        Tcl_ListObjAppendElement(NULL, capabilitiesObj,
+                                 NsAtomObj(NS_ATOM_quic));
+    }
+# endif
+
 
     /*
      * Key-type / algorithm-family probes.

@@ -38,6 +38,9 @@
 #   define HAVE_OPENSSL_4
 #   define HAVE_OPENSSL_4_0
 #  endif
+#  if OPENSSL_VERSION_PREREQ(4,1) || (OPENSSL_VERSION_MAJOR == 4 && OPENSSL_VERSION_MINOR == 0 && OPENSSL_VERSION_PATCH >= 2)
+#   define HAVE_OPENSSL_4_0_2
+#  endif
 #  if OPENSSL_VERSION_PREREQ(4,1)
 #   define HAVE_OPENSSL_4_1
 #  endif

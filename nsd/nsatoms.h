@@ -177,6 +177,7 @@ typedef enum {
     NS_ATOM_public,
     NS_ATOM_query,
     NS_ATOM_queued,
+    NS_ATOM_quic,
     NS_ATOM_raw,
     NS_ATOM_reading,
     NS_ATOM_received,
