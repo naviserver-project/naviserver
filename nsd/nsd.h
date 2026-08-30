@@ -566,6 +566,7 @@ typedef struct Driver {
     Ns_DList ports;
     const char *libraryVersion;
     unsigned short port;                /* Port in location */
+    unsigned short port_ext;            /* Externally reachable/advertised port */
     unsigned short defport;             /* Default port */
     bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */
 

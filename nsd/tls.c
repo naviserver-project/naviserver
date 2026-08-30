@@ -4521,21 +4521,26 @@ EnsureDriverLinkage(void)
     NsDriversOfType(&h3dl, "quic");
     NsDriversOfType(&h1dl, "nsssl");
 
-    Ns_Log(Debug, "EnsureDriverLinkage h1 %ld h3 %ld", h1dl.size, h3dl.size);
+    Ns_Log(Debug, "EnsureDriverLinkage h1 %zu h3 %zu", h1dl.size, h3dl.size);
 
     for (i = 0; i < h3dl.size; i++) {
         Driver      *h3drvPtr = h3dl.data[i];
         const char  *section = h3drvPtr->path;
 
-        for (j = 0; j < h3dl.size; j++) {
+        for (j = 0; j < h1dl.size; j++) {
             Driver *h1drvPtr = h1dl.data[j];
-            if (STREQ(h3drvPtr->path, section)) {
-                Ns_Log(Debug, "EnsureDriverLinkage common section %s h1 driver %p %s"
+            
+            if (STREQ(h1drvPtr->path, section)) {
+                Ns_Log(Notice, "EnsureDriverLinkage common section %s h1 driver %p %s"
                        " has linked driver %p %s", section,
                        (void*)h1drvPtr, h1drvPtr->moduleName,
                        (void*)h3drvPtr, h3drvPtr->moduleName);
-                h1drvPtr->consumer = h3drvPtr;
-                h3drvPtr->provider = h1drvPtr;
+                if (h1drvPtr->consumer == NULL) {
+                    h1drvPtr->consumer = h3drvPtr;
+                }
+                if (h3drvPtr->provider == NULL) {
+                    h3drvPtr->provider = h1drvPtr;
+                }
             }
         }
     }
@@ -4569,7 +4574,7 @@ void NsTLSAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
 
         Tcl_DStringInit(&ds);
         Ns_DStringPrintf(&ds, "h3=\":%hu\"; ma=86400%s",
-                         drvPtr->port,
+                         drvPtr->port_ext,
                          dc->u.h1.h3persist ? "; persist=1" : "");
         Ns_Log(Notice, "quic: added header field: alt-svc: %s", ds.string);
         Ns_SetPutSz(outputHeaders,
