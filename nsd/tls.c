@@ -4576,7 +4576,7 @@ void NsTLSAddOutputHeaders(Ns_Set *outputHeaders, const Ns_Sock *sockPtr)
         Ns_DStringPrintf(&ds, "h3=\":%hu\"; ma=86400%s",
                          drvPtr->port_ext,
                          dc->u.h1.h3persist ? "; persist=1" : "");
-        Ns_Log(Notice, "quic: added header field: alt-svc: %s", ds.string);
+        Ns_Log(Debug, "quic: added header field: alt-svc: %s", ds.string);
         Ns_SetPutSz(outputHeaders,
                     "alt-svc", 7,
                     ds.string, ds.length);
