@@ -1647,6 +1647,15 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->port = DriverGetPort(drvPtr, 0);
 
     /*
+     * The externally visible port can differ from the listening port,
+     * for example when the driver runs behind container port mapping or
+     * network address translation. By default, advertise the local port.
+     */
+    drvPtr->port_ext =
+        (unsigned short)Ns_ConfigIntRange(section,"port_ext",
+                                          (int)drvPtr->port, 1, UINT16_MAX);
+
+    /*
      * Get the configured "location" value.
      */
     drvPtr->location = Ns_NullIfEmpty(Ns_ConfigString(section, "location", ""));
@@ -4728,13 +4737,13 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
                 }
                 if ((int)sockStatus < 0) {
                     int sockerrno = 0;
-                    
+
                     Ns_Log(DriverDebug, "SockRead returned status %s",
                            SockStateString(sockStatus));
-                    
+
                     (void)Ns_ErrorCodeGetErrno(sockPtr->recvErrno, &sockerrno);
                     SockRelease(sockPtr, sockStatus, sockerrno);
-                    
+
                     sockStatus = SOCK_ERROR;
                     sockPtr = NULL;
                 }
