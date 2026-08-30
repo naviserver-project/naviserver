@@ -366,6 +366,10 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param https nsssl
     }
 
+    set sslInfo     [ns_info ssl -details]
+    set quicFile    [file join [ns_info bindir] quic.so]
+    set h3Available [expr {[file readable $quicFile] && "quic" in [dict get $sslInfo capabilities]}]
+
     ns_section -update \
         -from ns/driver/common \
         ns/module/https {
@@ -373,6 +377,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         # ns_param address       $ipaddress
         # ns_param hostname      [lindex $hostname 0]
         ns_param port            $httpsport
+        catch {ns_param port_ext [::docker::external_port $httpsport udp]}
 
         # ns_param backlog       1024         ;# default: 256; backlog for listen operations
         # ns_param acceptsize    10           ;# default: value of "backlog"; max number of accepted (but unqueued) requests
@@ -420,8 +425,10 @@ if {[info exists httpsport] && $httpsport ne ""} {
         #------------------------------------------------------------------
         # HTTP/3 advertisement in HTTP/1.x responses
         #------------------------------------------------------------------
-        # ns_param h3advertise true  ;# default: false; add an Alt-Svc header
-        # ns_param h3persist   true  ;# default: false; add persist=1 to Alt-Svc
+        if {$h3Available} {
+            ns_param h3advertise true  ;# default: false; add an Alt-Svc header
+            # ns_param h3persist   true  ;# default: false; add persist=1 to Alt-Svc
+        }
 
         #------------------------------------------------------------------
         # OCSP stapling configuration:
@@ -450,10 +457,15 @@ if {[info exists httpsport] && $httpsport ne ""} {
     }
 
     if {[info exists h3] && $h3 == 1} {
-
+        #
         # HTTP/3 driver (quic.so), sharing the HTTPS configuration
+        #
         ns_section ns/modules {
-            ns_param h3 quic.so
+            if {$h3Available} {
+                ns_param h3 quic.so
+            } {
+                ns_log warning "cannot load quic driver: NaviServer was compiled with OpenSSL older than 4.0.2"
+            }
         }
 
         ns_section ns/module/h3 {
