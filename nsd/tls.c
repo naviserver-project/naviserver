@@ -4531,7 +4531,7 @@ EnsureDriverLinkage(void)
             Driver *h1drvPtr = h1dl.data[j];
             
             if (STREQ(h1drvPtr->path, section)) {
-                Ns_Log(Notice, "EnsureDriverLinkage common section %s h1 driver %p %s"
+                Ns_Log(Debug, "EnsureDriverLinkage common section %s h1 driver %p %s"
                        " has linked driver %p %s", section,
                        (void*)h1drvPtr, h1drvPtr->moduleName,
                        (void*)h3drvPtr, h3drvPtr->moduleName);
