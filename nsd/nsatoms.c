@@ -429,6 +429,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_public].name           = "public";         atoms[NS_ATOM_public].len = 6;
     atoms[NS_ATOM_query].name            = "query";          atoms[NS_ATOM_query].len = 5;
     atoms[NS_ATOM_queued].name           = "queued";         atoms[NS_ATOM_queued].len = 6;
+    atoms[NS_ATOM_quic].name             = "quic";           atoms[NS_ATOM_quic].len = 4;
     atoms[NS_ATOM_raw].name              = "raw";            atoms[NS_ATOM_raw].len = 3;
     atoms[NS_ATOM_reading].name          = "reading";        atoms[NS_ATOM_reading].len = 7;
     atoms[NS_ATOM_received].name         = "received";       atoms[NS_ATOM_received].len = 8;
