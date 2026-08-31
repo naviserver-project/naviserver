@@ -69,14 +69,6 @@
 # define NS_GNUC_USED
 #endif
 
-
-#if __GNUC_PREREQ(2,8)
-# define NS_GNUC_FORMAT(m) __attribute__((__format_arg__ (m)))
-#else
-# define NS_GNUC_FORMAT(m)
-#endif
-
-
 #if __GNUC_PREREQ(2,7)
 # define NS_GNUC_UNUSED __attribute__((unused))
 # define NS_GNUC_NORETURN __attribute__((__noreturn__))
