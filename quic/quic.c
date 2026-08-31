@@ -111,21 +111,23 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 Ns_LogSeverity Ns_LogQuicDebug;
 
 #if defined(HAVE_NGHTTP3) && defined(HAVE_OPENSSL_EVP_H)
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include "../nsd/nsopenssl.h"
-
-#if defined(HAVE_OPENSSL_4)
-#include "shared.h"
-#include <nghttp3/nghttp3.h>
-
-#if NGHTTP3_VERSION_NUM < 0x010800
-# error "nghttp3 version 1.8.0 or newer are required for the used HTTP/3 APIs"
+# include <openssl/ssl.h>
+# include <openssl/err.h>
+# include "../nsd/nsopenssl.h"
 #endif
 
-#define WRITE_STEP_MAX_VEC 8
+#if defined(HAVE_NGHTTP3) && defined(HAVE_OPENSSL_EVP_H) && defined(HAVE_OPENSSL_4_0_2)
 
-#define OSSL_TRY(call)                                          \
+# include "shared.h"
+# include <nghttp3/nghttp3.h>
+
+# if NGHTTP3_VERSION_NUM < 0x010800
+#  error "nghttp3 version 1.8.0 or newer are required for the used HTTP/3 APIs"
+# endif
+
+# define WRITE_STEP_MAX_VEC 8
+
+# define OSSL_TRY(call)                                          \
     do {                                                        \
         unsigned long _e; ERR_clear_error();                    \
         (void)(call);                                           \
@@ -137,9 +139,9 @@ Ns_LogSeverity Ns_LogQuicDebug;
         }                                                       \
     } while (0)
 
-#define ERRNO_WOULDBLOCK(e) ((e) == EAGAIN || (EAGAIN != EWOULDBLOCK && (e) == EWOULDBLOCK))
+# define ERRNO_WOULDBLOCK(e) ((e) == EAGAIN || (EAGAIN != EWOULDBLOCK && (e) == EWOULDBLOCK))
 
-#ifdef QUIC_MEM_STATS
+# ifdef QUIC_MEM_STATS
 typedef struct QuicMemCounters {
     uint64_t ssl_conn_new;
     uint64_t ssl_conn_free;
@@ -285,16 +287,16 @@ QuicMemStatsLog(uint64_t iter)
            (unsigned long long)snapshot.ssl_stream_free_call_unknown
            );
 }
-#else
-# define QuicMemStatsIncr(c)
-#endif
+# else
+#  define QuicMemStatsIncr(c)
+# endif
 
 /*
  * Local structs and typedefs
  */
 
-#define H3_NO_PROGRESS_LIMIT  100000u
-#define H3_NO_PROGRESS_DUMP_MAX 16u
+# define H3_NO_PROGRESS_LIMIT  100000u
+# define H3_NO_PROGRESS_DUMP_MAX 16u
 
 typedef struct H3NoProgressWatch {
     uint64_t iterations;
@@ -10811,13 +10813,11 @@ ClientcertInfo(Ns_Sock *sock)
 
 #else
 NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *UNUSED(server), const char *module) {
-    Ns_Log(Warning, "OpenSSL 4+ and nghttp3 are needed to load module '%s'", module);
+    Ns_Log(Warning, "OpenSSL 4.0.2 and nghttp3 are needed to load module '%s'", module);
     return NS_ERROR;
 }
 
-#endif /* HAVE_OPENSSL_4 */
-#endif
-/* End: HAVE_OPENSSL_EVP_H: Big ifdef block that covers most of this file. */
+#endif /* NGHTTP3 && HAVE_OPENSSL_4_0_2 */
 
 /*
  * Local Variables:
