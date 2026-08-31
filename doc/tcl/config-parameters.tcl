@@ -2158,7 +2158,10 @@ stops execution of that ADP page}
             driverthreads {
                 type integer
                 default 1
-                desc {Number of driver threads; values greater than 1 activate reuseport}
+                desc {Number of driver threads; values greater than 1 activate reuseport
+                    Every driver thread has its own socket queue and its own maxqueuesize limit.
+                    Increasing driverthreads therefore also increases the aggregate driver queue capacity.
+                }
             }
             extraheaders {
                 type ns_set
@@ -2208,14 +2211,16 @@ stops execution of that ADP page}
                 type integer
                 default {1024}
                 desc {
-                    Maximum number of preprocessed requests that may
-                    remain queued at the network driver level for
-                    later queueing attempts. This limit applies to
-                    requests whose server and connection pool have
-                    typically already been determined, but which could
-                    not currently be queued into the selected pool,
-                    for example because the pool has no free
-                    connection structure and rejectoverrun is disabled.
+
+                    Maximum number of accepted sockets retained
+                    concurrently by each driver thread instance. When
+                    this limit is reached, the driver instance stops
+                    accepting additional sockets until previously
+                    accepted sockets are released. The limit applies
+                    independently to every instance created by
+                    driverthreads; for example, driverthreads 4 and
+                    maxqueuesize 1024 provide a nominal aggregate limit
+                    of 4096 accepted sockets.
                 }
             }
             maxupload {
@@ -2954,7 +2959,16 @@ stops execution of that ADP page}
                 type integer
                 desc {TCP port on which the SMTP server listens}
             }
-
+            port_ext {
+                type integer
+                desc {
+                    Externally visible port advertised by the driver
+                    when it differs from the listening port, for
+                    example because of container port mapping or
+                    network address translation; defaults to the first
+                    configured listening port.
+                }
+            }
             relay {
                 type address
                 desc {Upstream SMTP server or mail relay used for forwarding messages}

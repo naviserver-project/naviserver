@@ -145,10 +145,18 @@ TCP Performance option; use TCP_NODELAY to disable Nagle algorithm
 (boolean, default: true)
 
 [def port] Space separated list of one or more ports on which the
-server should listen.  When the port is specified as 0, the module
+server should listen. When the port is specified as 0, the module
 with its defined commands (such as [cmd ns_http]) is loaded, but the
-driver will not be listening on any port.  (16-bit positive integer,
+driver will not listen on any port. (16-bit non-negative integer,
 default: 80)
+
+[def port_ext] Externally visible port associated with this driver.
+This can be used when the externally reachable port differs from the
+local listening port, for example because of container port mapping
+or network address translation. The parameter does not change the
+port on which the driver listens. When omitted, it defaults to the
+first configured listening port. (16-bit positive integer, default:
+first value of [term port])
 
 [def readahead]
 Maximum size in memory units for asynchronous read ahead operations.

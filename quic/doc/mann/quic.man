@@ -186,6 +186,14 @@ Parameters for the [const quic] module:
  Clients that support HTTP/3 will transparently upgrade after the first
  request.
 
+ [para]
+ When [const h3advertise] is enabled, the generated [const Alt-Svc]
+ header uses [const port_ext]. This is useful when the HTTPS and QUIC
+ drivers listen on an internal container port that is published under
+ a different external port. [const port_ext] defaults to the first
+ configured [const port].
+
+ [para]
  To enable HTTP/3 selectively (for example, only for specific client
  IPs or address ranges), configure [const h3advertise] with
  [const false] and dynamically add an Alt-Svc header via a Tcl
