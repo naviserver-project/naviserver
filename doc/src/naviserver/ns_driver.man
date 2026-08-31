@@ -82,28 +82,42 @@ for detailed configuration options of the network drivers.
  The cumulative counters are:
 
  [list_begin itemized]
- [item] [const received]: the number of accepted connections or requests seen by the
-        driver.
+ [item] [const received]:
+       the number of attempts by the driver to submit a parsed request
+       to a connection pool. Normally this is incremented once per
+       request. A request retained on the driver's [const waiting] list
+       can cause additional increments when assignment is retried.
 
- [item] [const spooled]: the number of requests handed to an upload spooler.
+ [item] [const spooled]:
+       the number of requests handed to an upload spooler.
 
- [item] [const partial]: the number of partial receive operations, typically for
-        requests that required multiple receive operations before enough input was
-        available.
+ [item] [const partial]:
+       the number of receive attempts that did not yet provide enough
+       input to complete the request. Such a result retains the socket
+       on the driver's [const reading] list. This counter can be
+       incremented multiple times for one request.
 
- [item] [const errors]: the number of driver-level errors.
+ [item] [const errors]:
+       the number of driver-level errors.
  [list_end]
 
  The current gauges are:
 
  [list_begin itemized]
- [item] [const waiting]: sockets currently on the driver thread's retry list, waiting
-         for another attempt to queue the request into the selected connection pool.
+ [item] [const waiting]:
+       parsed requests retained by the driver because they could not
+       yet be assigned an [const Ns_Conn] structure in the selected
+       connection pool. The driver retries the assignment later.
 
- [item] [const reading]: sockets currently on the driver thread's read or
-        keepalive-wait list.
+ [item] [const reading]:
+       sockets retained on the driver's read/keep-alive wait list.
+       These are either incomplete requests waiting for more input or
+       keep-alive connections waiting for the next request.
 
- [item] [const closing]: sockets currently on the driver thread's close-wait list.
+ [item] [const closing]:
+       sockets retained temporarily for graceful connection shutdown,
+       normally until the peer closes or the configured close-wait
+       timeout expires.
  [list_end]
 
  These gauges describe the current state of the driver thread and are intended
