@@ -18,7 +18,7 @@ test ns_config-1.1 {syntax: ns_config} -body {
 
 test ns_configsection-1.0 {syntax: ns_configsection} -body {
     ns_configsection
-} -returnCodes error -result {wrong # args: should be "ns_configsection ?-filter unread|defaulted|defaults? ?--? /section/"}
+} -returnCodes error -result {wrong # args: should be "ns_configsection ?-filter unread|defaulted|defaults|inherited? ?--? /section/"}
 
 test ns_configsections-1.0 {syntax: ns_configsections} -body {
     ns_configsections ?
@@ -211,7 +211,7 @@ test ns_config-7.3 {section missing} -body {
 
 test ns_config-7.4.0 {section} -body {
     ns_set array [ns_configsection -filter "" ns/testconfig]
-} -returnCodes {error ok} -result {bad option "": must be unread, defaulted, or defaults}
+} -returnCodes {error ok} -result {bad option "": must be unread, defaulted, defaults, or inherited}
 
 test ns_config-7.4.1 {section} -body {
     ns_set array [ns_configsection -filter "unread" ns/testconfig]

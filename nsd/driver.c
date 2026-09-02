@@ -845,6 +845,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 
     if (!alreadyInitialized && status == NS_OK) {
         const char *section, *host, *address, *defserver;
+        Ns_ConfigView configView;
         bool        noHostNameGiven;
         int         nrDrivers, result;
         TCL_SIZE_T  nrBindaddrs = 0;
@@ -859,12 +860,14 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             section = Ns_ConfigSectionPath(&set, server, module, NS_SENTINEL);
         }
         assert(section != NULL);
+        configView.primary = section;
+        configView.fallback = init->version >= NS_DRIVER_VERSION_7 ? init->fallbackPath : NULL;
 
         /*
          * Determine the "defaultserver" the "hostname" / "address" for
          * binding to and/or the HTTP location string.
          */
-        defserver = Ns_ConfigGetValue(section, "defaultserver");
+        defserver = Ns_ConfigViewGetValue(&configView, "defaultserver");
         if (defserver == NULL) {
             TCL_SIZE_T    argc = 0;
             const char  **argv = NULL;
@@ -881,8 +884,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 
         }
 
-        address = Ns_ConfigString(section, "address", NULL);
-        host = Ns_ConfigString(section, "hostname", NULL);
+        address = Ns_ConfigViewString(&configView, "address", NULL);
+        host = Ns_ConfigViewString(&configView, "hostname", NULL);
         noHostNameGiven = (host == NULL);
 
         /*
@@ -937,7 +940,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         /*
          * Get configured number of driver threads.
          */
-        nrDrivers = Ns_ConfigIntRange(section, "driverthreads", 1, 1, 64);
+        nrDrivers = Ns_ConfigViewIntRange(&configView, "driverthreads", 1, 1, 64);
         if (nrDrivers > 1) {
 #if !defined(SO_REUSEPORT)
             Ns_Log(Warning,
@@ -1482,6 +1485,10 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     DrvSpooler     *spPtr;
     int             i;
     unsigned short  defport;
+    const Ns_ConfigView configView = {
+        .primary = section,
+        .fallback = init->version >= NS_DRIVER_VERSION_7 ? init->fallbackPath : NULL
+    };
 
     NS_NONNULL_ASSERT(threadName != NULL);
     NS_NONNULL_ASSERT(init != NULL);
@@ -1558,35 +1565,36 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->servPtr        = servPtr;
     drvPtr->defport        = defport;
     drvPtr->path           = ns_strdup(section);
+    drvPtr->fallbackPath   = configView.fallback != NULL ? ns_strdup(configView.fallback) : NULL;
 
-    drvPtr->bufsize        = (size_t)Ns_ConfigMemUnitRange(section, "bufsize", "16kB", (Tcl_WideInt)16384, 1024, INT_MAX);
-    drvPtr->maxinput       = Ns_ConfigMemUnitRange(section, "maxinput", "1MB", (Tcl_WideInt)1024*1024, 1024, LLONG_MAX);
-    drvPtr->maxupload      = Ns_ConfigMemUnitRange(section, "maxupload", "0MB", 0, 0, (Tcl_WideInt)drvPtr->maxinput);
-    drvPtr->readahead      = Ns_ConfigMemUnitRange(section, "readahead", NULL, (Tcl_WideInt)drvPtr->bufsize,
+    drvPtr->bufsize        = (size_t)Ns_ConfigViewMemUnitRange(&configView, "bufsize", "16kB", (Tcl_WideInt)16384, 1024, INT_MAX);
+    drvPtr->maxinput       = Ns_ConfigViewMemUnitRange(&configView, "maxinput", "1MB", (Tcl_WideInt)1024*1024, 1024, LLONG_MAX);
+    drvPtr->maxupload      = Ns_ConfigViewMemUnitRange(&configView, "maxupload", "0MB", 0, 0, (Tcl_WideInt)drvPtr->maxinput);
+    drvPtr->readahead      = Ns_ConfigViewMemUnitRange(&configView, "readahead", NULL, (Tcl_WideInt)drvPtr->bufsize,
                                                    (Tcl_WideInt)drvPtr->bufsize, drvPtr->maxinput);
 
-    drvPtr->maxline        = (int)Ns_ConfigMemUnitRange(section, "maxline", "8kB", (Tcl_WideInt)8192, 512, INT_MAX);
-    drvPtr->maxheaders     = Ns_ConfigIntRange(section, "maxheaders",    128,   8, INT_MAX);
-    drvPtr->maxqueuesize   = Ns_ConfigIntRange(section, "maxqueuesize", 1024,   1, INT_MAX);
+    drvPtr->maxline        = (int)Ns_ConfigViewMemUnitRange(&configView, "maxline", "8kB", (Tcl_WideInt)8192, 512, INT_MAX);
+    drvPtr->maxheaders     = Ns_ConfigViewIntRange(&configView, "maxheaders",    128,   8, INT_MAX);
+    drvPtr->maxqueuesize   = Ns_ConfigViewIntRange(&configView, "maxqueuesize", 1024,   1, INT_MAX);
 
-    Ns_ConfigTimeUnitRange(section, "sendwait",
+    Ns_ConfigViewTimeUnitRange(&configView, "sendwait",
                            "30s", 1, 0, INT_MAX, 0, &drvPtr->sendwait);
-    Ns_ConfigTimeUnitRange(section, "recvwait",
+    Ns_ConfigViewTimeUnitRange(&configView, "recvwait",
                            "30s", 1, 0, INT_MAX, 0, &drvPtr->recvwait);
-    Ns_ConfigTimeUnitRange(section, "closewait",
+    Ns_ConfigViewTimeUnitRange(&configView, "closewait",
                            "2s", 0, 0, INT_MAX, 0, &drvPtr->closewait);
-    Ns_ConfigTimeUnitRange(section, "keepwait",
+    Ns_ConfigViewTimeUnitRange(&configView, "keepwait",
                            "5s", 0, 0, INT_MAX, 0, &drvPtr->keepwait);
 
-    drvPtr->backlog        = Ns_ConfigIntRange(section, "backlog",         nsconf.listenbacklog, 1, INT_MAX);
-    drvPtr->driverthreads  = Ns_ConfigIntRange(section, "driverthreads",   1,   1, 32);
-    drvPtr->reuseport      = Ns_ConfigBool(section,     "reuseport",       NS_FALSE);
-    drvPtr->acceptsize     = Ns_ConfigIntRange(section, "acceptsize",      drvPtr->backlog, 1, INT_MAX);
-    drvPtr->sockacceptlog  = Ns_ConfigIntRange(section, "sockacceptlog",   nsconf.sockacceptlog, 2, drvPtr->backlog);
+    drvPtr->backlog        = Ns_ConfigViewIntRange(&configView, "backlog",         nsconf.listenbacklog, 1, INT_MAX);
+    drvPtr->driverthreads  = Ns_ConfigViewIntRange(&configView, "driverthreads",   1,   1, 32);
+    drvPtr->reuseport      = Ns_ConfigViewBool(&configView,     "reuseport",       NS_FALSE);
+    drvPtr->acceptsize     = Ns_ConfigViewIntRange(&configView, "acceptsize",      drvPtr->backlog, 1, INT_MAX);
+    drvPtr->sockacceptlog  = Ns_ConfigViewIntRange(&configView, "sockacceptlog",   nsconf.sockacceptlog, 2, drvPtr->backlog);
 
-    drvPtr->keepmaxuploadsize   = (size_t)Ns_ConfigMemUnitRange(section, "keepalivemaxuploadsize",
+    drvPtr->keepmaxuploadsize   = (size_t)Ns_ConfigViewMemUnitRange(&configView, "keepalivemaxuploadsize",
                                                                 "0MB", (Tcl_WideInt)0, 0, INT_MAX);
-    drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigMemUnitRange(section, "keepalivemaxdownloadsize",
+    drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigViewMemUnitRange(&configView, "keepalivemaxdownloadsize",
                                                                 "0MB", (Tcl_WideInt)0, 0, INT_MAX);
     drvPtr->recvTimeout = drvPtr->recvwait;
 
@@ -1619,7 +1627,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 #endif
     }
 
-    drvPtr->uploadpath = ns_strcopy(Ns_ConfigString(section, "uploadpath", nsconf.tmpDir));
+    drvPtr->uploadpath = ns_strcopy(Ns_ConfigViewString(&configView, "uploadpath", nsconf.tmpDir));
 
     /*
      * If activated, "maxupload" has to be at least "readahead" bytes. Tell
@@ -1647,7 +1655,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      * Get list of ports and keep the first port extra in drvPtr->port for the
      * time being.
      */
-    i = (int)PortsParse(&drvPtr->ports, Ns_ConfigGetValue(section, "port"), section);
+    i = (int)PortsParse(&drvPtr->ports, Ns_ConfigViewGetValue(&configView, "port"), section);
     if (i == 0) {
         Ns_DListAppend(&drvPtr->ports, INT2PTR(defport));
     }
@@ -1659,13 +1667,13 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      * network address translation. By default, advertise the local port.
      */
     drvPtr->port_ext =
-        (unsigned short)Ns_ConfigIntRange(section,"port_ext",
+        (unsigned short)Ns_ConfigViewIntRange(&configView,"port_ext",
                                           (int)drvPtr->port, 1, UINT16_MAX);
 
     /*
      * Get the configured "location" value.
      */
-    drvPtr->location = Ns_NullIfEmpty(Ns_ConfigString(section, "location", ""));
+    drvPtr->location = Ns_NullIfEmpty(Ns_ConfigViewString(&configView, "location", ""));
     if (drvPtr->location != NULL && (strstr(drvPtr->location, "://") != NULL)) {
         ssize_t locationLength = (ssize_t)strlen(drvPtr->location);
         drvPtr->location = ns_strncopy(drvPtr->location, locationLength);
@@ -1675,13 +1683,13 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     /*
      * Add driver specific extra headers.
      */
-    drvPtr->extraHeaders = Ns_ConfigSet(section, "extraheaders", NULL);
+    drvPtr->extraHeaders = Ns_ConfigViewSet(&configView, "extraheaders", NULL);
 
     /*
      * Check if upload spooler threads are enabled.
      */
     spPtr = &drvPtr->spooler;
-    spPtr->threads = Ns_ConfigIntRange(section, "spoolerthreads", 0, 0, 32);
+    spPtr->threads = Ns_ConfigViewIntRange(&configView, "spoolerthreads", 0, 0, 32);
 
     if (spPtr->threads > 0) {
         Ns_Log(Notice, "%s: enable %d spooler thread(s) "
@@ -1708,15 +1716,15 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      */
 
     wrPtr = &drvPtr->writer;
-    wrPtr->threads = Ns_ConfigIntRange(section, "writerthreads", 0, 0, 32);
+    wrPtr->threads = Ns_ConfigViewIntRange(&configView, "writerthreads", 0, 0, 32);
 
     if (wrPtr->threads > 0) {
-        wrPtr->writersize = (size_t)Ns_ConfigMemUnitRange(section, "writersize", "1MB",
+        wrPtr->writersize = (size_t)Ns_ConfigViewMemUnitRange(&configView, "writersize", "1MB",
                                                           (Tcl_WideInt)1024*1024, 1024, INT_MAX);
-        wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(section, "writerbufsize", "32kB",
+        wrPtr->bufsize = (size_t)Ns_ConfigViewMemUnitRange(&configView, "writerbufsize", "32kB",
                                                        (Tcl_WideInt)32768, 512, INT_MAX);
-        wrPtr->rateLimit = Ns_ConfigIntRange(section, "writerratelimit", 0, 0, INT_MAX);
-        wrPtr->doStream = Ns_ConfigBool(section, "writerstreaming", NS_FALSE)
+        wrPtr->rateLimit = Ns_ConfigViewIntRange(&configView, "writerratelimit", 0, 0, INT_MAX);
+        wrPtr->doStream = Ns_ConfigViewBool(&configView, "writerstreaming", NS_FALSE)
             ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE;
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
                "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",

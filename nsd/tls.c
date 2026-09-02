@@ -119,7 +119,7 @@ static Ns_ReturnCode NsTLSAddX509CertFields(Tcl_Interp *interp, X509 *cert, Tcl_
 static Ns_ReturnCode NsTLSAddClientCertFields(Tcl_Interp *interp, SSL *ssl, Tcl_Obj *dictObj, bool minimal)
     NS_GNUC_NONNULL(2,3);
 
-static Ns_TLSClientCertMode NsTLSClientCertModeConfig(const char *section)
+static Ns_TLSClientCertMode NsTLSClientCertModeConfigView(const Ns_ConfigView *view)
     NS_GNUC_NONNULL(1);
 
 static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int x509err, int currentDepth, NsServer *servPtr)
@@ -2585,27 +2585,30 @@ DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long
  */
 
 static Ns_TLSClientCertMode
-NsTLSClientCertModeConfig(const char *section)
+NsTLSClientCertModeConfigView(const Ns_ConfigView *view)
 {
     Ns_TLSClientCertMode mode = NS_TLS_CLIENT_CERT_NONE;
+    const char          *section = view->primary;
 
     NS_NONNULL_ASSERT(section != NULL);
 
-    if (Ns_ConfigParameterProvided(section, "clientcertmode")) {
+    if (Ns_ConfigViewParameterProvided(view, "clientcertmode")) {
         static Ns_ObjvTable clientcertModes[] = {
             {"none",    NS_TLS_CLIENT_CERT_NONE},
             {"request", NS_TLS_CLIENT_CERT_REQUEST},
             {"require", NS_TLS_CLIENT_CERT_REQUIRE},
             {NULL,      0u}
         };
-        unsigned int idx = Ns_ConfigGetEnum(section, "clientcertmode",
-                                            clientcertModes,
-                                            (unsigned int)NS_TLS_CLIENT_CERT_NONE);
+        unsigned int idx;
+
+        (void)Ns_ConfigViewGetValue(view, "clientcertmode");
+        idx = Ns_ConfigGetEnum(section, "clientcertmode", clientcertModes,
+                               (unsigned int)NS_TLS_CLIENT_CERT_NONE);
         mode = (Ns_TLSClientCertMode)idx;
 
-    } else if (Ns_ConfigParameterProvided(section, "verify")) {
+    } else if (Ns_ConfigViewParameterProvided(view, "verify")) {
         Ns_Log(Warning, "tls: parameter 'verify' is deprecated; use 'clientcertmode require'");
-        if (Ns_ConfigBool(section, "verify", NS_FALSE)) {
+        if (Ns_ConfigViewBool(view, "verify", NS_FALSE)) {
             mode = NS_TLS_CLIENT_CERT_REQUIRE;
         }
     }
@@ -2632,19 +2635,25 @@ NsTLSClientCertModeConfig(const char *section)
 NsTLSConfig *
 NsTLSConfigNew(const char *section)
 {
+    return NsTLSConfigNewView(&(Ns_ConfigView){section, NULL});
+}
+
+NsTLSConfig *
+NsTLSConfigNewView(const Ns_ConfigView *view)
+{
     NsTLSConfig *dc;
     static char sni_info_tag[] = "SniCtx";
 
     dc = ns_calloc(1, sizeof(NsTLSConfig));
-    dc->clientCertMode = NsTLSClientCertModeConfig(section);
-    dc->tlsKeylogFile  = Ns_NullIfEmpty(Ns_ConfigString(section, "tlskeylogfile", ""));
-    dc->tlsKeyScript   = Ns_ConfigFilename(section, "tlskeyscript", 12,
+    dc->clientCertMode = NsTLSClientCertModeConfigView(view);
+    dc->tlsKeylogFile  = Ns_NullIfEmpty(Ns_ConfigViewString(view, "tlskeylogfile", ""));
+    dc->tlsKeyScript   = Ns_ConfigViewFilename(view, "tlskeyscript", 12,
                                            nsconf.binDir, /* directory to resolve against */
                                            ""             /* default no script */,
                                            NS_TRUE /*normalize*/, NS_FALSE /*updateCfg*/);
     dc->sni_idx = SSL_get_ex_new_index(0, sni_info_tag, NULL, NULL, NULL);
 
-    dc->vhostcertificates = Ns_NullIfEmpty(Ns_ConfigString(section, "vhostcertificates", ""));
+    dc->vhostcertificates = Ns_NullIfEmpty(Ns_ConfigViewString(view, "vhostcertificates", ""));
     if (dc->vhostcertificates != NULL) {
         struct stat st;
 
@@ -2902,10 +2911,21 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                      void *app_data,
                      NS_TLS_SSL_CTX **ctxPtr)
 {
+    return Ns_TLS_CtxServerInitView(&(Ns_ConfigView){section, NULL}, interp,
+                                    flags, app_data, ctxPtr);
+}
+
+int
+Ns_TLS_CtxServerInitView(const Ns_ConfigView *view, Tcl_Interp *interp,
+                         unsigned int flags,
+                         void *app_data,
+                         NS_TLS_SSL_CTX **ctxPtr)
+{
     int         result;
     const char *cert, *key = NULL;
+    const char *section = view->primary;
 
-    cert = Ns_ConfigGetValue(section, "certificate");
+    cert = Ns_ConfigViewGetValue(view, "certificate");
     if (cert != NULL) {
         Tcl_DString certDir;
 
@@ -2913,12 +2933,12 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Tcl_DStringAppend(&certDir, nsconf.home, TCL_INDEX_NONE);
         Tcl_DStringAppend(&certDir, "/certificates", 13);
 
-        cert = Ns_ConfigFilename(section, "certificate", 11,
+        cert = Ns_ConfigViewFilename(view, "certificate", 11,
                                  certDir.string, "", NS_TRUE, NS_TRUE);
 
-        key  = Ns_NullIfEmpty(Ns_ConfigString(section, "key", ""));
+        key  = Ns_NullIfEmpty(Ns_ConfigViewString(view, "key", ""));
         if (key != NULL) {
-            key = Ns_ConfigFilename(section, "key", 3,
+            key = Ns_ConfigViewFilename(view, "key", 3,
                                     certDir.string, "", NS_TRUE, NS_TRUE);
         }
         Tcl_DStringFree(&certDir);
@@ -2951,9 +2971,9 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
         Ns_DListAppend(dlPtr, (void*)cert);
         Ns_DListAppend(dlPtr, (void*)key);
 
-        ciphers      = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphers", "")));
-        ciphersuites = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "ciphersuites", "")));
-        protocols    = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "protocols",
+        ciphers      = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigViewString(view, "ciphers", "")));
+        ciphersuites = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigViewString(view, "ciphersuites", "")));
+        protocols    = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigViewString(view, "protocols",
                                                                  "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1")));
         Ns_DListAppend(dlPtr, (void *)ciphers);
         Ns_DListAppend(dlPtr, (void *)ciphersuites);
@@ -2961,12 +2981,12 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
 
         Ns_Log(Notice, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app_data %p", (void*)app_data);
 
-        if (Ns_ConfigParameterProvided(section, "clientcafile")) {
-            clientcafile = Ns_ConfigFilename(section, "clientcafile", 12,
+        if (Ns_ConfigViewParameterProvided(view, "clientcafile")) {
+            clientcafile = Ns_ConfigViewFilename(view, "clientcafile", 12,
                                              nsconf.home, "", NS_TRUE, NS_TRUE);
         }
-        if (Ns_ConfigParameterProvided(section, "clientcapath")) {
-            clientcapath = Ns_ConfigFilename(section, "clientcapath", 12,
+        if (Ns_ConfigViewParameterProvided(view, "clientcapath")) {
+            clientcapath = Ns_ConfigViewFilename(view, "clientcapath", 12,
                                              nsconf.home, "", NS_TRUE, NS_TRUE);
         }
 
@@ -2974,7 +2994,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
             /*
              * The nsssl module was not initialized, probably test mode.
              */
-            clientCertMode = NsTLSClientCertModeConfig(section);
+            clientCertMode = NsTLSClientCertModeConfigView(view);
 
         } else {
             clientCertMode = dc->clientCertMode;
@@ -3012,7 +3032,7 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                  * while the app_data of an SSL connection is the
                  * sockPtr (Ns_Sock*).
                  */
-                dc = NsTLSConfigNew(section);
+                dc = NsTLSConfigNewView(view);
                 dc->ctx = *ctxPtr;
 
                 Ns_Log(Debug, "Ns_TLS_CtxServerInit created new app data %p for cert <%s> ctx %p",
@@ -3096,13 +3116,13 @@ Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp,
                 Ns_Log(Debug, "tls:X509_STORE_load_locations %d", rc);
             }
 #ifdef HAVE_OPENSSL_OCSP
-            if (Ns_ConfigBool(section, "ocspstapling", NS_FALSE)) {
+            if (Ns_ConfigViewBool(view, "ocspstapling", NS_FALSE)) {
                 Ns_Log(Notice, "tls: activate OCSP stapling for %s", section);
 
                 memset(&sslCertStatusArg, 0, sizeof(sslCertStatusArg));
                 sslCertStatusArg.timeout = -1;
-                sslCertStatusArg.verbose = Ns_ConfigBool(section, "ocspstaplingverbose", NS_FALSE);
-                Ns_ConfigTimeUnitRange(section, "ocspcheckinterval",
+                sslCertStatusArg.verbose = Ns_ConfigViewBool(view, "ocspstaplingverbose", NS_FALSE);
+                Ns_ConfigViewTimeUnitRange(view, "ocspcheckinterval",
                                        "5m", 1, 0, LONG_MAX, 0,
                                        &sslCertStatusArg.OCSPcheckInterval);
 
@@ -4525,7 +4545,8 @@ EnsureDriverLinkage(void)
 
     for (i = 0; i < h3dl.size; i++) {
         Driver      *h3drvPtr = h3dl.data[i];
-        const char  *section = h3drvPtr->path;
+        const char  *section = h3drvPtr->fallbackPath != NULL
+            ? h3drvPtr->fallbackPath : h3drvPtr->path;
 
         for (j = 0; j < h1dl.size; j++) {
             Driver *h1drvPtr = h1dl.data[j];
@@ -4682,6 +4703,15 @@ Ns_TLS_CtxServerInit(const char *UNUSED(path), Tcl_Interp *UNUSED(interp),
                      unsigned int UNUSED(flags),
                      void *UNUSED(app_data),
                      NS_TLS_SSL_CTX **UNUSED(ctxPtr))
+{
+    return TCL_OK;
+}
+
+int
+Ns_TLS_CtxServerInitView(const Ns_ConfigView *UNUSED(view), Tcl_Interp *UNUSED(interp),
+                         unsigned int UNUSED(flags),
+                         void *UNUSED(app_data),
+                         NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
     return TCL_OK;
 }

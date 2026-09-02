@@ -8,17 +8,21 @@
 
 The driver module [term quic] provides support for the [emph HTTP/3]
 protocol over [emph QUIC] (UDP-based, encrypted transport).
-It integrates closely with [term nsssl] to share TLS configuration
-parameters and certificate handling, as QUIC relies on TLS 1.3 for
-encryption and authentication.
+It integrates closely with [term nsssl]. The HTTP/3 section uses the
+referenced HTTPS section as a fallback for shared driver and TLS
+configuration, while values specified in the HTTP/3 section override the
+corresponding HTTPS values.
 
 [para]
 
 The [term quic] driver is the HTTP/3 counterpart of [term nsssl].
 While [term nsssl] handles encrypted HTTP/1.x and HTTP/2 traffic over TCP/TLS,
 the [term quic] driver provides equivalent functionality for HTTP/3 over QUIC (UDP).
-Both modules share the same TLS configuration (certificates, ciphers, protocols, and OCSP settings)
-so that administrators can manage all HTTPS and HTTP/3 parameters in a unified way.
+By default, both modules use the same TLS configuration (certificates,
+ciphers, protocols, and OCSP settings). Shared network-driver parameters
+are inherited as well. Administrators can override any such parameter in
+the HTTP/3 section when TCP and UDP transports require different settings,
+for example different driver or writer thread counts.
 The driver uses OpenSSL's native QUIC implementation introduced in
 OpenSSL 3.1 and integrates it directly into NaviServer's driver model.
 
@@ -56,7 +60,15 @@ such as certificates, ciphers, and protocols.
  }
  
  ns_section ns/module/h3 {
-    ns_param https ns/module/https
+    ns_param https        ns/module/https
+
+    # Optional HTTP/3 overrides of inherited driver or TLS parameters
+    ns_param driverthreads 1
+    ns_param writerthreads 0
+
+    # QUIC-specific parameters
+    ns_param recvbufsize   8MB
+    ns_param sendqueuesize 256kB
  }
 [example_end]
 
@@ -83,7 +95,18 @@ Parameters for the [const quic] module:
 
 [list_begin definitions]
 
-[def https] Point to the base configuation ([const nsssl] module).
+[def https]
+ Names the fallback configuration section, normally [const ns/module/https].
+ Parameters explicitly specified in [const ns/module/h3] take precedence;
+ otherwise shared driver and TLS parameters are read from this section.
+
+[para]
+ Inherited values used by the HTTP/3 driver are materialized in
+ [const ns/module/h3] for configuration introspection. They are marked as
+ read, not defaulted, and can be inspected with
+ [cmd "ns_configsection -filter inherited ns/module/h3"]. Misspelled or
+ otherwise unused parameters remain visible through the [const unread]
+ filter.
 
 [def validateclientaddress]
 
@@ -266,11 +289,13 @@ Parameters for the [const quic] module:
 
 [item]
 
- All TLS-related configuration parameters - such as certificates,
- ciphers, protocols, and OCSP stapling - are inherited directly from
- the referenced [term https] module.  The parameter denotes a relation
- (link) to the other section. No separate TLS directives are
- required in the [const ns/module/h3] section.
+ Shared driver and TLS configuration parameters - such as addresses,
+ ports, thread counts, certificates, ciphers, protocols, and OCSP stapling
+ - fall back to the referenced [term https] section. No separate TLS
+ directives are required in [const ns/module/h3]. When a parameter is
+ present in both sections, the value in [const ns/module/h3] is used. This
+ permits TCP-based HTTPS and UDP-based HTTP/3 drivers to use different
+ transport and concurrency settings while retaining common defaults.
 
 [item]
 
