@@ -93,7 +93,7 @@ the default is later retrievable via [cmd ns_config].
 
 
 [call [cmd ns_configsection] \
-      [opt [option "-filter unread|defaulted|defaults"] ] \
+      [opt [option "-filter unread|defaulted|defaults|inherited"] ] \
       [opt --] \
       [arg section] ]
 
@@ -117,6 +117,12 @@ the default values were read (i.e., which were not explicitly set)
 [opt_def -filter [term defaults]] return the defaults of the
 parameter. This is useful for contrasting the actual values with the
 default values, e.g. in a web based interface.
+
+[opt_def -filter [term inherited]] return effective parameters copied from
+a fallback configuration section into the requested section. Inherited
+parameters are marked as read, but not as defaulted. This allows inspection
+of layered driver configurations such as [const ns/module/h3], which can
+inherit shared driver and TLS parameters from [const ns/module/https].
 
 [list_end]
 

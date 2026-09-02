@@ -4,8 +4,10 @@
 
 The quic module provides the experimental HTTP/3 network driver based
  on QUIC. It is part of NaviServer 5.1, but requires OpenSSL 4.0 or newer.
- The driver is linked to an existing HTTPS driver configuration and
- reuses its TLS certificate, key, and protocol settings.
+ The driver uses an existing HTTPS driver configuration as a fallback
+ for shared network-driver and TLS settings. Values specified in the
+ HTTP/3 section override the corresponding HTTPS values, allowing TCP
+ and UDP drivers to use different transport and thread settings.
 
 [para]
  HTTP/3 support is disabled by default. The current implementation is
@@ -25,20 +27,24 @@ This module should be loaded globally through [const ns/modules].
      ns_param https nsssl
      ns_param h3    quic
  }
- 
+
  ns_section ns/module/https {
      ns_param port        8443
      ns_param certificate /usr/local/ns/certificates/server.pem
- 
+
      # Extra parameters specific for HTTP/3
      # ns_param h3advertise    true
      # ns_param h3persist      false
  }
  ns_section ns/module/h3 {
-     ns_param https       ns/module/https
-     ns_param recvbufsize 8MB
-     ns_param idletimeout 3s
-     ns_param draintimeout 10ms
+     ns_param https                 ns/module/https
+     # ns_param driverthreads       1
+     # ns_param writerthreads       0
+     ns_param recvbufsize           8MB
+     ns_param sendqueuesize         256kB
+     ns_param idletimeout           3s
+     ns_param draintimeout          10ms
+     ns_param validateclientaddress true
  }
 [example_end]
 
@@ -47,8 +53,20 @@ For detailed documentation, see [uri ../../quic/files/quic.html {quic}].
 
 [list_begin definitions]
 
+[def "Parameter name: [emph "debug"]"]
+Enable detailed HTTP/3 and QUIC diagnostic logging
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
 [def "Parameter name: [emph "draintimeout"]"]
-Drain timeout used when closing QUIC connections, allowing pending packets or connection-close handling to complete
+
+                    Drain timeout used when closing QUIC connections,
+                    allowing pending packets or connection-close
+                    handling to complete
+
 
 [list_begin itemized]
 [item] Type: [const "time"]
@@ -56,7 +74,12 @@ Drain timeout used when closing QUIC connections, allowing pending packets or co
 [list_end]
 
 [def "Parameter name: [emph "https"]"]
-Configuration section of the HTTPS driver to which this HTTP/3 driver is linked; the QUIC driver reuses the TLS configuration from this section
+
+                    Configuration section of the HTTPS driver to which
+                    this HTTP/3 driver is linked. Shared driver and TLS
+                    parameters fall back to values from this section;
+                    parameters specified in ns/module/h3 override them
+
 
 [list_begin itemized]
 [item] Type: [const "section"]
@@ -71,12 +94,47 @@ Maximum idle time for QUIC connections before they are closed
 [item] Default: [const "3s"]
 [list_end]
 
+[def "Parameter name: [emph "port"]"]
+UDP port or ports on which the HTTP/3 driver listens
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "443"]
+[list_end]
+
 [def "Parameter name: [emph "recvbufsize"]"]
 Size of the UDP receive buffer used by the HTTP/3 driver
 
 [list_begin itemized]
 [item] Type: [const "size"]
 [item] Default: [const "8MB"]
+[list_end]
+
+[def "Parameter name: [emph "sendqueuesize"]"]
+
+                    Maximum response-body data retained in the HTTP/3
+                    stream send queue. When this limit is reached, writer
+                    delivery pauses until the queue drains to half the
+                    configured size.
+
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "256kB"]
+[list_end]
+
+[def "Parameter name: [emph "validateclientaddress"]"]
+
+                    Validate the QUIC client address before accepting a new
+                    connection. Clients without a valid address-validation token
+                    receive a Retry packet, adding one network round trip. Disabling
+                    validation improves first-connection latency but weakens protection
+                    against spoofed-source connection floods.
+
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
 [list_end]
 
 [list_end]
