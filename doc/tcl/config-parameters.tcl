@@ -2435,6 +2435,7 @@ stops execution of that ADP page}
                 ns_section ns/module/h3 {
                     ns_param https                 ns/module/https
                     ns_param recvbufsize           8MB
+                    ns_param sendqueuesize         256kB
                     ns_param idletimeout           3s
                     ns_param draintimeout          10ms
                     ns_param validateclientaddress true
@@ -2455,6 +2456,17 @@ stops execution of that ADP page}
                 type size
                 default {8MB}
                 desc {Size of the UDP receive buffer used by the HTTP/3 driver}
+            }
+
+            sendqueuesize {
+                type size
+                default {256kB}
+                desc {
+                    Maximum response-body data retained in the HTTP/3
+                    stream send queue. When this limit is reached, writer
+                    delivery pauses until the queue drains to half the
+                    configured size.
+                }
             }
 
             idletimeout {

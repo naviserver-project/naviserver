@@ -35,8 +35,9 @@
 /*
  * values for SharedStream->tx_state
  */
-#define SHARED_TX_QUEUED 0x01u
-#define SHARED_TX_CLOSED 0x02u
+#define SHARED_TX_QUEUED          0x01u
+#define SHARED_TX_CLOSED          0x02u
+#define SHARED_TX_ABORT_REQUESTED 0x04u
 
 # ifdef __cplusplus
 extern "C" {
@@ -69,6 +70,7 @@ extern "C" {
         size_t pending_bytes;
         bool   queued;
         bool   closed_by_app;
+        bool   abort_requested;
     } SharedTxStatus;
 
     /* ===== Shared stream (per H3 request/response stream) ====================== */
@@ -112,6 +114,19 @@ extern "C" {
         ChunkQueue  tx_pending;
 
         /*
+         * Total application payload retained across tx_queued and
+         * tx_pending.  Unlike tx_pending itself, this counter is protected
+         * by lock and may be inspected by producer threads.
+         */
+        size_t      tx_buffered;
+        size_t      send_queue_size;
+        size_t      send_resume_size;
+
+        /* One-shot logical-writability notification, protected by lock. */
+        Ns_DriverSendWakeProc *send_wake_proc;
+        void                  *send_wake_arg;
+
+        /*
          * Cross-thread header publication flag. The producer release-stores
          * readiness after completing the response-header fields; the QUIC
          * thread acquire-loads it before accessing those fields.
@@ -134,7 +149,8 @@ extern "C" {
     void SharedStateInit(SharedState *st, SharedWakeFn wake_cb, void *wake_arg);
     void SharedStateDestroy(SharedState *st);
 
-    void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid);
+    void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid,
+                          size_t send_queue_size);
     void SharedStreamDestroy(SharedStream *ss);
 
     /* --- Headers (signal only; header arrays remain in sc) --- */
@@ -145,6 +161,12 @@ extern "C" {
     /* --- Body enqueue/EOF from producer side --- */
     size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const char *label);
     void   SharedMarkClosedByApp(SharedStream *ss);
+    void   SharedMarkAbortRequested(SharedStream *ss)  NS_GNUC_NONNULL(1);
+    bool   SharedSendReady(SharedStream *ss, Ns_DriverSendWakeProc *wakeProc,
+                           void *wakeArg);
+    void   SharedSendCancel(SharedStream *ss, void *wakeArg);
+    void   SharedSendWakeBlocked(SharedStream *ss);
+    size_t SharedBufferedBytes(SharedStream *ss);
 
     /* --- Body helpers used by data_reader / writer --- */
     size_t SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes);
@@ -200,6 +222,8 @@ extern "C" {
             (state & SHARED_TX_QUEUED) != 0u;
         status.closed_by_app =
             (state & SHARED_TX_CLOSED) != 0u;
+        status.abort_requested =
+            (state & SHARED_TX_ABORT_REQUESTED) != 0u;
 
         return status;
     }
@@ -208,8 +232,8 @@ extern "C" {
     SharedTxStatusEOFReady(const SharedTxStatus *status)
     {
         return status->closed_by_app
-            && !status->queued
-            && status->pending_bytes == 0u;
+            && !status->abort_requested
+            && SharedTxStatusIsEmpty(status);
     }
 
 # ifdef __cplusplus

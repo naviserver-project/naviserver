@@ -249,6 +249,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_section ns/module/h3 {
             ns_param https ns/module/https         ;# linkage to HTTPS configuration
             # ns_param recvbufsize  2MB            ;# default: 8MB; receive buffer size
+            # ns_param sendqueuesize 256kB         ;# default: 256kB; maximum queued response body per H3 stream
             # ns_param idletimeout  1s             ;# default: 3s; maximum idle poll interval
             # ns_param draintimeout 2ms            ;# default: 10ms; poll interval while draining
             # ns_param validateclientaddress false ;# default: true; validate the client address before accept
