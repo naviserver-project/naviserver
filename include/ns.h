@@ -193,6 +193,11 @@ typedef enum {
 #define NS_DRIVER_VERSION_6        6    /* driverThreadProc, headersEncodeProc */
 #define NS_DRIVER_VERSION_7        7    /* Logical send readiness notifications */
 
+typedef struct Ns_ConfigView {
+    const char *primary;
+    const char *fallback;
+} Ns_ConfigView;
+
 /*
  * The following are valid Tcl interp traces types.
  */
@@ -777,6 +782,7 @@ typedef struct Ns_DriverInitData {
     Ns_DriverClientcertInfoProc *clientcertInfoProc; /* NS_DRIVER_VERSION_6: Obtain client certificate */
     Ns_DriverSendReadyProc  *sendReadyProc;     /* NS_DRIVER_VERSION_7: logical stream writability */
     Ns_DriverSendCancelProc *sendCancelProc;    /* NS_DRIVER_VERSION_7: cancel logical wakeup */
+    const char              *fallbackPath;      /* NS_DRIVER_VERSION_7: fallback configuration section */
 } Ns_DriverInitData;
 
 
@@ -1166,13 +1172,22 @@ Ns_InflateEnd(Ns_CompressStream *cStream)
 NS_EXTERN bool
 Ns_ConfigParameterProvided(const char *section, const char *key)
      NS_GNUC_NONNULL(1,2);
+NS_EXTERN bool
+Ns_ConfigViewParameterProvided(const Ns_ConfigView *view, const char *key)
+     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN const char *
 Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
      NS_GNUC_NONNULL(1,2);
+NS_EXTERN const char *
+Ns_ConfigViewString(const Ns_ConfigView *view, const char *key, const char *defaultValue)
+     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN bool
 Ns_ConfigBool(const char *section, const char *key, bool defaultValue)
+     NS_GNUC_NONNULL(1,2);
+NS_EXTERN bool
+Ns_ConfigViewBool(const Ns_ConfigView *view, const char *key, bool defaultValue)
      NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN bool
@@ -1187,6 +1202,10 @@ Ns_ConfigInt(const char *section, const char *key, int defaultValue)
 NS_EXTERN int
 Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
                   int minValue, int maxValue)
+     NS_GNUC_NONNULL(1,2);
+NS_EXTERN int
+Ns_ConfigViewIntRange(const Ns_ConfigView *view, const char *key, int defaultValue,
+                      int minValue, int maxValue)
      NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN Tcl_WideInt
@@ -1204,9 +1223,17 @@ Ns_ConfigMemUnitRange(const char *section, const char *key,
                       const char *defaultString, Tcl_WideInt defaultValue,
                       Tcl_WideInt minValue, Tcl_WideInt maxValue)
      NS_GNUC_NONNULL(1,2);
+NS_EXTERN Tcl_WideInt
+Ns_ConfigViewMemUnitRange(const Ns_ConfigView *view, const char *key,
+                          const char *defaultString, Tcl_WideInt defaultValue,
+                          Tcl_WideInt minValue, Tcl_WideInt maxValue)
+     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN const char *
 Ns_ConfigGetValue(const char *section, const char *key)
+     NS_GNUC_NONNULL(1,2);
+NS_EXTERN const char *
+Ns_ConfigViewGetValue(const Ns_ConfigView *view, const char *key)
      NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN const char *
@@ -1229,6 +1256,11 @@ NS_EXTERN const char *
 Ns_ConfigFilename(const char *section, const char* key, TCL_SIZE_T keyLength,
                   const char *directory, const char* defaultValue,
                   bool normalizePath, bool update)
+     NS_GNUC_NONNULL(1,2,4,5);
+NS_EXTERN const char *
+Ns_ConfigViewFilename(const Ns_ConfigView *view, const char* key, TCL_SIZE_T keyLength,
+                      const char *directory, const char* defaultValue,
+                      bool normalizePath, bool update)
      NS_GNUC_NONNULL(1,2,4,5);
 
 NS_EXTERN const char *
@@ -1260,6 +1292,9 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type);
 NS_EXTERN const Ns_Set *
 Ns_ConfigSet(const char *section, const char *key, const char *name)
     NS_GNUC_NONNULL(1,2);
+NS_EXTERN const Ns_Set *
+Ns_ConfigViewSet(const Ns_ConfigView *view, const char *key, const char *name)
+    NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN void
 Ns_ConfigTimeUnitRange(const char *section, const char *key,
@@ -1267,6 +1302,13 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
                        long minSec, long minUsec,
                        long maxSec, long maxUsec,
                        Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1,2,3,8);
+NS_EXTERN void
+Ns_ConfigViewTimeUnitRange(const Ns_ConfigView *view, const char *key,
+                           const char *defaultString,
+                           long minSec, long minUsec,
+                           long maxSec, long maxUsec,
+                           Ns_Time *timePtr)
     NS_GNUC_NONNULL(1,2,3,8);
 
 NS_EXTERN unsigned int
@@ -4152,6 +4194,11 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
 NS_EXTERN int
 Ns_TLS_CtxServerInit(const char *section, Tcl_Interp *interp, unsigned int flags, void* app_data,
                      NS_TLS_SSL_CTX **ctxPtr)
+    NS_GNUC_NONNULL(1,5);
+NS_EXTERN int
+Ns_TLS_CtxServerInitView(const Ns_ConfigView *view, Tcl_Interp *interp,
+                         unsigned int flags, void* app_data,
+                         NS_TLS_SSL_CTX **ctxPtr)
     NS_GNUC_NONNULL(1,5);
 
 NS_EXTERN void

@@ -136,6 +136,26 @@ namespace eval ::ns_configdoc {
         return ""
     }
 
+    proc ::ns_configdoc::normalizeModuleImplementation {implementation} {
+        variable data
+
+        if {[dict exists $data modules $implementation]} {
+            return $implementation
+        }
+
+        #
+        # Module registry entries may name a loadable file ("quic.so") or
+        # an absolute library path, while the documentation registry uses
+        # the implementation name ("quic").
+        #
+        set normalized [file rootname [file tail $implementation]]
+        if {[dict exists $data modules $normalized]} {
+            return $normalized
+        }
+
+        return $implementation
+    }
+
     proc ::ns_configdoc::moduleImplementation {sectionName} {
         variable data
 
@@ -153,7 +173,7 @@ namespace eval ::ns_configdoc {
         if {[regexp {^ns/module/([^/]+)$} $sectionName . moduleName]} {
             set implementation [ns_config ns/modules $moduleName ""]
             if {$implementation ne ""} {
-                return $implementation
+                return [normalizeModuleImplementation $implementation]
             }
 
             #
@@ -181,7 +201,7 @@ namespace eval ::ns_configdoc {
         if {[regexp {^ns/server/([^/]+)/module/([^/]+)$} $sectionName . server moduleName]} {
             set implementation [ns_config ns/server/$server/modules $moduleName ""]
             if {$implementation ne ""} {
-                return $implementation
+                return [normalizeModuleImplementation $implementation]
             }
 
             #
@@ -2238,6 +2258,16 @@ stops execution of that ADP page}
                 type list
                 desc {TCP port or ports on which the driver listens; when multiple addresses and ports are specified, the driver listens on every address/port combination}
             }
+            port_ext {
+                type integer
+                desc {
+                    Externally visible port advertised by the driver
+                    when it differs from the listening port, for
+                    example because of container port mapping or
+                    network address translation; defaults to the first
+                    configured listening port.
+                }
+            }
 
             readahead {
                 type size
@@ -2336,7 +2366,7 @@ stops execution of that ADP page}
             }
             ciphersuites {
                 type string
-                desc {OpenSSL TLS 1.3 cipher suite list for this HTTPS driver; use ciphers for TLS 1.2 and older protocol versions}
+                desc {OpenSSL TLS 1.3 cipher suite list for this TLS-enabled driver; use ciphers for TLS 1.2 and older protocol versions}
             }
             clientcafile {
                 type path
@@ -2408,8 +2438,10 @@ stops execution of that ADP page}
             :desc {
                 The quic module provides the experimental HTTP/3 network driver based
                 on QUIC. It is part of NaviServer 5.1, but requires OpenSSL 4.0 or newer.
-                The driver is linked to an existing HTTPS driver configuration and
-                reuses its TLS certificate, key, and protocol settings.
+                The driver uses an existing HTTPS driver configuration as a fallback
+                for shared network-driver and TLS settings. Values specified in the
+                HTTP/3 section override the corresponding HTTPS values, allowing TCP
+                and UDP drivers to use different transport and thread settings.
 
                 HTTP/3 support is disabled by default. The current implementation is
                 functional but still experimental and not yet recommended for
@@ -2434,6 +2466,8 @@ stops execution of that ADP page}
                 }
                 ns_section ns/module/h3 {
                     ns_param https                 ns/module/https
+                    # ns_param driverthreads       2
+                    ns_param writerthreads         1
                     ns_param recvbufsize           8MB
                     ns_param sendqueuesize         256kB
                     ns_param idletimeout           3s
@@ -2447,9 +2481,16 @@ stops execution of that ADP page}
                 default {ns/module/https}
                 desc {
                     Configuration section of the HTTPS driver to which
-                    this HTTP/3 driver is linked; the QUIC driver
-                    reuses the TLS configuration from this section
+                    this HTTP/3 driver is linked. Shared driver and TLS
+                    parameters fall back to values from this section;
+                    parameters specified in ns/module/h3 override them
                 }
+            }
+
+            port {
+                type integer
+                default 443
+                desc {UDP port or ports on which the HTTP/3 driver listens}
             }
 
             recvbufsize {
@@ -2970,16 +3011,6 @@ stops execution of that ADP page}
             port {
                 type integer
                 desc {TCP port on which the SMTP server listens}
-            }
-            port_ext {
-                type integer
-                desc {
-                    Externally visible port advertised by the driver
-                    when it differs from the listening port, for
-                    example because of container port mapping or
-                    network address translation; defaults to the first
-                    configured listening port.
-                }
             }
             relay {
                 type address

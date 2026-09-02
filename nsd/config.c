@@ -24,12 +24,14 @@ typedef struct Section {
     Ns_Set   *defaults;
     uintmax_t readArray[4];
     uintmax_t defaultArray[4];
+    uintmax_t inheritedArray[4];
     bool      update;
 } Section;
 
 typedef enum {
     value_set,
     value_defaulted,
+    value_inherited,
     value_read
 
 } ValueOperation;
@@ -61,19 +63,21 @@ static TCL_OBJCMDPROC_T ParamObjCmd;
 
 static void ConfigMark(Section *sectionPtr, size_t i, ValueOperation op)
     NS_GNUC_NONNULL(1);
+static bool ConfigParameterExplicit(const Section *sectionPtr, const char *key)
+    NS_GNUC_NONNULL(1,2);
 
 static Section* GetSection(const char *section, bool create)
     NS_GNUC_NONNULL(1);
 static void PathAppend(Tcl_DString *dsPtr, const char *server, const char *module, va_list ap)
     NS_GNUC_NONNULL(1);
 
-static const char* ConfigGet(const char *section, const char *key, bool exact, const char *defaultString)
+static const char* ConfigGet(const Ns_ConfigView *view, const char *key, bool exact, const char *defaultString)
     NS_GNUC_NONNULL(1,2);
 
 static bool ToBool(const char *value, bool *valuePtr)
     NS_GNUC_NONNULL(1,2);
 
-static Tcl_WideInt ConfigWideIntRange(const char *section, const char *key,
+static Tcl_WideInt ConfigWideIntRange(const Ns_ConfigView *view, const char *key,
                                       const char *defaultString, Tcl_WideInt defaultValue,
                                       Tcl_WideInt minValue, Tcl_WideInt maxValue,
                                       Ns_ReturnCode (converter)(const char *chars, Tcl_WideInt *intPtr),
@@ -112,12 +116,19 @@ static void AddSetToSection(Section *sectionPtr, Ns_Set *inputSet)
 const char *
 Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
 {
+    return Ns_ConfigViewString(&(Ns_ConfigView){section, NULL}, key, defaultValue);
+}
+
+const char *
+Ns_ConfigViewString(const Ns_ConfigView *view, const char *key, const char *defaultValue)
+{
     const char *value;
+    const char *section = view->primary;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    value = ConfigGet(section, key, NS_FALSE, defaultValue);
+    value = ConfigGet(view, key, NS_FALSE, defaultValue);
     Ns_Log(Dev, "config: %s:%s value=\"%s\" default=\"%s\" (string)",
            section, key,
            (value != NULL) ? value : NS_EMPTY_STRING,
@@ -146,13 +157,20 @@ Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
 const Ns_Set *
 Ns_ConfigSet(const char *section, const char *key, const char *name)
 {
+    return Ns_ConfigViewSet(&(Ns_ConfigView){section, NULL}, key, name);
+}
+
+const Ns_Set *
+Ns_ConfigViewSet(const Ns_ConfigView *view, const char *key, const char *name)
+{
     const char *value;
+    const char *section = view->primary;
     Ns_Set     *setPtr;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    value = ConfigGet(section, key, NS_FALSE, NULL);
+    value = ConfigGet(view, key, NS_FALSE, NULL);
     Ns_Log(Dev, "config: %s:%s value=\"%s\" default=\"%s\" (string)",
            section, key,
            (value != NULL) ? value : NS_EMPTY_STRING,
@@ -191,13 +209,20 @@ Ns_ConfigSet(const char *section, const char *key, const char *name)
 bool
 Ns_ConfigBool(const char *section, const char *key, bool defaultValue)
 {
+    return Ns_ConfigViewBool(&(Ns_ConfigView){section, NULL}, key, defaultValue);
+}
+
+bool
+Ns_ConfigViewBool(const Ns_ConfigView *view, const char *key, bool defaultValue)
+{
     const char *s;
+    const char *section = view->primary;
     bool value = NS_FALSE, found = NS_FALSE;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    s = ConfigGet(section, key, NS_FALSE, defaultValue ? "true" : "false");
+    s = ConfigGet(view, key, NS_FALSE, defaultValue ? "true" : "false");
     if (s != NULL && ToBool(s, &value)) {
         found = NS_TRUE;
     }
@@ -237,7 +262,7 @@ Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int defau
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    s = ConfigGet(section, key, NS_FALSE, (defaultValue != 0) ? "true" : "false");
+    s = ConfigGet(&(Ns_ConfigView){section, NULL}, key, NS_FALSE, (defaultValue != 0) ? "true" : "false");
     if (s != NULL && ToBool(s, &value)) {
         found = NS_TRUE;
     }
@@ -281,7 +306,16 @@ int
 Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
                   int minValue, int maxValue)
 {
+    return Ns_ConfigViewIntRange(&(Ns_ConfigView){section, NULL}, key,
+                                 defaultValue, minValue, maxValue);
+}
+
+int
+Ns_ConfigViewIntRange(const Ns_ConfigView *view, const char *key, int defaultValue,
+                      int minValue, int maxValue)
+{
     const char *s;
+    const char *section = view->primary;
     char        strBuffer[TCL_INTEGER_SPACE];
     int         value;
     bool        update = NS_FALSE;
@@ -290,7 +324,7 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
     NS_NONNULL_ASSERT(key != NULL);
 
     snprintf(strBuffer, sizeof(strBuffer), "%d", defaultValue);
-    s = ConfigGet(section, key, NS_FALSE, strBuffer);
+    s = ConfigGet(view, key, NS_FALSE, strBuffer);
     if (s != NULL && Ns_StrToInt(s, &value) == NS_OK) {
         Ns_Log(Dev, "config: %s:%s value=%d min=%d max=%d default=%d (int)",
                section, key, value, minValue, maxValue, defaultValue);
@@ -312,7 +346,20 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
         update = NS_TRUE;
     }
     if (update) {
-        Section *sectionPtr = GetSection(section, NS_FALSE);
+        const char *updateSection = section;
+        Section    *sectionPtr;
+
+        if (view->fallback != NULL) {
+            const Section *primaryPtr = GetSection(section, NS_FALSE);
+            const Section *fallbackPtr = GetSection(view->fallback, NS_FALSE);
+
+            if (primaryPtr != NULL && fallbackPtr != NULL
+                && !ConfigParameterExplicit(primaryPtr, key)
+                && ConfigParameterExplicit(fallbackPtr, key)) {
+                updateSection = view->fallback;
+            }
+        }
+        sectionPtr = GetSection(updateSection, NS_FALSE);
 
         if (sectionPtr != NULL) {
             TCL_SIZE_T length;
@@ -353,7 +400,8 @@ Ns_ConfigWideIntRange(const char *section, const char *key,
                       Tcl_WideInt defaultValue,
                       Tcl_WideInt minValue, Tcl_WideInt maxValue)
 {
-    return ConfigWideIntRange(section, key, NULL, defaultValue, minValue, maxValue, Ns_StrToWideInt, "integer");
+    return ConfigWideIntRange(&(Ns_ConfigView){section, NULL}, key, NULL, defaultValue,
+                              minValue, maxValue, Ns_StrToWideInt, "integer");
 }
 
 Tcl_WideInt
@@ -361,22 +409,33 @@ Ns_ConfigMemUnitRange(const char *section, const char *key,
                       const char *defaultString, Tcl_WideInt defaultValue,
                       Tcl_WideInt minValue, Tcl_WideInt maxValue)
 {
-    return ConfigWideIntRange(section, key, defaultString, defaultValue,
+    return ConfigWideIntRange(&(Ns_ConfigView){section, NULL}, key, defaultString, defaultValue,
+                              minValue, maxValue, Ns_StrToMemUnit, "memory unit");
+}
+
+Tcl_WideInt
+Ns_ConfigViewMemUnitRange(const Ns_ConfigView *view, const char *key,
+                          const char *defaultString, Tcl_WideInt defaultValue,
+                          Tcl_WideInt minValue, Tcl_WideInt maxValue)
+{
+    return ConfigWideIntRange(view, key, defaultString, defaultValue,
                               minValue, maxValue, Ns_StrToMemUnit, "memory unit");
 }
 
 static Tcl_WideInt
-ConfigWideIntRange(const char *section, const char *key,
+ConfigWideIntRange(const Ns_ConfigView *view, const char *key,
                    const char *defaultString, Tcl_WideInt defaultValue,
                    Tcl_WideInt minValue, Tcl_WideInt maxValue,
                    Ns_ReturnCode (converter)(const char *chars, Tcl_WideInt *intPtr),
                    const char *kind)
 {
     const char *s, *defstrPtr;
+    const char *section = view->primary;
     char        defstr[TCL_INTEGER_SPACE];
     Tcl_WideInt value;
 
-    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(view != NULL);
+    NS_NONNULL_ASSERT(view->primary != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
     if (defaultString != NULL && *defaultString != '\0') {
@@ -389,7 +448,7 @@ ConfigWideIntRange(const char *section, const char *key,
         defstrPtr = defstr;
         snprintf(defstr, sizeof(defstr), "%" TCL_LL_MODIFIER "d", defaultValue);
     }
-    s = ConfigGet(section, key, NS_FALSE, defstrPtr);
+    s = ConfigGet(view, key, NS_FALSE, defstrPtr);
     if (s != NULL && converter(s, &value) == NS_OK) {
         /*
          * Found and parsed parameter.
@@ -454,7 +513,19 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
                        long maxSec, long maxUsec,
                        Ns_Time *timePtr)
 {
+    Ns_ConfigViewTimeUnitRange(&(Ns_ConfigView){section, NULL}, key, defaultString,
+                               minSec, minUsec, maxSec, maxUsec, timePtr);
+}
+
+void
+Ns_ConfigViewTimeUnitRange(const Ns_ConfigView *view, const char *key,
+                           const char *defaultString,
+                           long minSec, long minUsec,
+                           long maxSec, long maxUsec,
+                           Ns_Time *timePtr)
+{
     const char *s;
+    const char *section = view->primary;
     Ns_Time     minTime, maxTime;
 
     NS_NONNULL_ASSERT(section != NULL);
@@ -467,7 +538,7 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
     maxTime.sec  = maxSec;
     maxTime.usec = maxUsec;
 
-    s = ConfigGet(section, key, NS_FALSE, defaultString);
+    s = ConfigGet(view, key, NS_FALSE, defaultString);
     if (s != NULL && Ns_GetTimeFromString(NULL, s, timePtr) == TCL_OK) {
         /*
          * Found and parsed parameter.
@@ -541,12 +612,19 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
 const char *
 Ns_ConfigGetValue(const char *section, const char *key)
 {
+    return Ns_ConfigViewGetValue(&(Ns_ConfigView){section, NULL}, key);
+}
+
+const char *
+Ns_ConfigViewGetValue(const Ns_ConfigView *view, const char *key)
+{
     const char *value;
+    const char *section = view->primary;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    value = ConfigGet(section, key, NS_FALSE, NULL);
+    value = ConfigGet(view, key, NS_FALSE, NULL);
     Ns_Log(Dev, "config: %s:%s value=%s (string)",
            section, key, (value != NULL) ? value : NS_EMPTY_STRING);
 
@@ -587,6 +665,24 @@ Ns_ConfigParameterProvided(const char *section, const char *key)
     return setPtr != NULL && Ns_SetIFind(setPtr, key) >= 0;
 }
 
+bool
+Ns_ConfigViewParameterProvided(const Ns_ConfigView *view, const char *key)
+{
+    const Section *sectionPtr;
+
+    NS_NONNULL_ASSERT(view != NULL);
+    NS_NONNULL_ASSERT(view->primary != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+
+    sectionPtr = GetSection(view->primary, NS_FALSE);
+    if (sectionPtr != NULL && ConfigParameterExplicit(sectionPtr, key)) {
+        return NS_TRUE;
+    }
+    sectionPtr = view->fallback != NULL
+        ? GetSection(view->fallback, NS_FALSE) : NULL;
+    return sectionPtr != NULL && ConfigParameterExplicit(sectionPtr, key);
+}
+
 
 
 /*
@@ -613,7 +709,7 @@ Ns_ConfigGetValueExact(const char *section, const char *key)
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    value = ConfigGet(section, key, NS_TRUE, NULL);
+    value = ConfigGet(&(Ns_ConfigView){section, NULL}, key, NS_TRUE, NULL);
     Ns_Log(Dev, "config: %s:%s value=%s (string, exact match)",
            section, key,
            (value != NULL) ? value : NS_EMPTY_STRING);
@@ -649,7 +745,7 @@ Ns_ConfigGetInt(const char *section, const char *key, int *valuePtr)
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(valuePtr != NULL);
 
-    s = ConfigGet(section, key, NS_FALSE, NULL);
+    s = ConfigGet(&(Ns_ConfigView){section, NULL}, key, NS_FALSE, NULL);
     if (s != NULL && Ns_StrToInt(s, valuePtr) == NS_OK) {
         Ns_Log(Dev, "config: %s:%s value=%d min=%d max=%d (int)",
                section, key, *valuePtr, INT_MIN, INT_MAX);
@@ -737,7 +833,7 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(valuePtr != NULL);
 
-    s = ConfigGet(section, key, NS_FALSE, NULL);
+    s = ConfigGet(&(Ns_ConfigView){section, NULL}, key, NS_FALSE, NULL);
     if (s != NULL && ToBool(s, valuePtr)) {
         found = NS_TRUE;
     }
@@ -817,7 +913,17 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength,
                   const char *directory, const char* defaultValue,
                   bool normalizePath, bool update)
 {
+    return Ns_ConfigViewFilename(&(Ns_ConfigView){section, NULL}, key, keyLength,
+                                 directory, defaultValue, normalizePath, update);
+}
+
+const char *
+Ns_ConfigViewFilename(const Ns_ConfigView *view, const char *key, TCL_SIZE_T keyLength,
+                      const char *directory, const char* defaultValue,
+                      bool normalizePath, bool update)
+{
     const char *value, *result;
+    const char *section = view->primary;
     TCL_SIZE_T  pathLength = 0;
 
     NS_NONNULL_ASSERT(section != NULL);
@@ -825,7 +931,7 @@ Ns_ConfigFilename(const char *section, const char *key, TCL_SIZE_T keyLength,
     NS_NONNULL_ASSERT(directory != NULL);
     NS_NONNULL_ASSERT(defaultValue != NULL);
 
-    value = Ns_ConfigString(section, key, defaultValue);
+    value = Ns_ConfigViewString(view, key, defaultValue);
 
     if (Ns_PathIsAbsolute(value)) {
         /*fprintf(stderr, "=== %s %s RAWABS '%s'\n", section, key, value);*/
@@ -1079,9 +1185,15 @@ static void ConfigMark(Section *sectionPtr, size_t i, ValueOperation op)
         switch (op) {
         case value_set:
             sectionPtr->defaultArray[idx] &= ~((uintmax_t)1u << shift);
+            sectionPtr->inheritedArray[idx] &= ~((uintmax_t)1u << shift);
             break;
         case value_defaulted:
             sectionPtr->defaultArray[idx] |= ((uintmax_t)1u << shift);
+            sectionPtr->inheritedArray[idx] &= ~((uintmax_t)1u << shift);
+            break;
+        case value_inherited:
+            sectionPtr->defaultArray[idx] &= ~((uintmax_t)1u << shift);
+            sectionPtr->inheritedArray[idx] |= ((uintmax_t)1u << shift);
             break;
         case value_read:
             sectionPtr->readArray[idx] |= ((uintmax_t)1u << shift);
@@ -1090,6 +1202,22 @@ static void ConfigMark(Section *sectionPtr, size_t i, ValueOperation op)
     } else {
         Ns_Log(Notice, "Cannot mark in set %s pos %lu", sectionPtr->set->name, i);
     }
+}
+
+static bool
+ConfigParameterExplicit(const Section *sectionPtr, const char *key)
+{
+    const int idx = Ns_SetIFind(sectionPtr->set, key);
+    bool      explicit = idx >= 0;
+
+    if (explicit && (unsigned int)idx < maxBitElements) {
+        const int       word = idx / (int)bitElements;
+        const int       shift = idx % (int)bitElements;
+        const uintmax_t mask = (uintmax_t)1u << shift;
+
+        explicit = (sectionPtr->defaultArray[word] & mask) == 0u;
+    }
+    return explicit;
 }
 
 void NsConfigMarkAsRead(const char *section, size_t i) {
@@ -1982,15 +2110,31 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Ob
  */
 
 static const char *
-ConfigGet(const char *section, const char *key, bool exact, const char *defaultString)
+ConfigGet(const Ns_ConfigView *view, const char *key, bool exact, const char *defaultString)
 {
     const char *s = NULL;
-    Section    *sectionPtr;
+    Section    *primaryPtr, *sectionPtr;
+    const char *section;
 
-    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(view != NULL);
+    NS_NONNULL_ASSERT(view->primary != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    sectionPtr = GetSection(section, NS_FALSE);
+    section = view->primary;
+    primaryPtr = GetSection(section, NS_FALSE);
+    sectionPtr = primaryPtr;
+
+    if (sectionPtr != NULL && sectionPtr->set != NULL
+        && !ConfigParameterExplicit(sectionPtr, key)
+        && view->fallback != NULL) {
+        Section *fallbackPtr = GetSection(view->fallback, NS_FALSE);
+
+        if (fallbackPtr != NULL && fallbackPtr->set != NULL
+            && ConfigParameterExplicit(fallbackPtr, key)) {
+            section = view->fallback;
+            sectionPtr = fallbackPtr;
+        }
+    }
 
     if (sectionPtr != NULL && sectionPtr->set != NULL) {
         TCL_SIZE_T keyLength = (TCL_SIZE_T)strlen(key);
@@ -2009,6 +2153,27 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
             if (count > 1) {
                 Ns_Log(Warning, "config values returns the first of %ld values (section '%s' key '%s')",
                        count, section, key);
+            }
+            if (!nsconf.state.started && sectionPtr != primaryPtr
+                && primaryPtr != NULL) {
+                const int sourceIdx = idx;
+                int       primaryIdx;
+
+                ConfigMark(sectionPtr, (size_t)sourceIdx, value_read);
+                primaryIdx = Ns_SetIFind(primaryPtr->set, key);
+                if (primaryIdx >= 0) {
+                    Ns_SetUpdateSz(primaryPtr->set, key, keyLength,
+                                   s, TCL_INDEX_NONE);
+                    idx = primaryIdx;
+                } else {
+                    idx = (int)Ns_SetPutSz(primaryPtr->set, key, keyLength,
+                                           s, TCL_INDEX_NONE);
+                }
+                ConfigMark(primaryPtr, (size_t)idx, value_set);
+                ConfigMark(primaryPtr, (size_t)idx, value_inherited);
+                section = view->primary;
+                sectionPtr = primaryPtr;
+                s = Ns_SetValue(sectionPtr->set, idx);
             }
         } else if (!nsconf.state.started /*&& defaultString != NULL && *defaultString != '\0'*/) {
             /*
@@ -2029,8 +2194,8 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
 
         if (!nsconf.state.started && idx >= 0) {
             ConfigMark(sectionPtr, (size_t)idx, value_read);
-            if (defaultString != NULL) {
-                (void)Ns_SetPutSz(sectionPtr->defaults, key, keyLength,
+            if (defaultString != NULL && primaryPtr != NULL) {
+                (void)Ns_SetPutSz(primaryPtr->defaults, key, keyLength,
                                   defaultString, TCL_INDEX_NONE);
             }
         }
@@ -2074,6 +2239,10 @@ NsConfigSectionGetFiltered(const char *section, char filter)
                         /*fprintf(stderr, "defaulted parameter: %s/%s (%lu) defaults %p mask %p\n",
                           section, set->fields[i].name, i,
                           (void*)sectionPtr->defaultArray[0], (void*)mask);*/
+                        Ns_SetPutSz(result,
+                                    set->fields[i].name, (TCL_SIZE_T)strlen(set->fields[i].name),
+                                    set->fields[i].value, TCL_INDEX_NONE);
+                    } else if (filter == 'i' && (sectionPtr->inheritedArray[idx] & mask) != 0u) {
                         Ns_SetPutSz(result,
                                     set->fields[i].name, (TCL_SIZE_T)strlen(set->fields[i].name),
                                     set->fields[i].value, TCL_INDEX_NONE);

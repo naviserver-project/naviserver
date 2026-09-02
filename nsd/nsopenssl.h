@@ -128,6 +128,8 @@ typedef struct NsTLSConfig {
 
 NS_EXTERN NsTLSConfig *NsTLSConfigNew(const char *section)
    NS_GNUC_NONNULL(1);
+NS_EXTERN NsTLSConfig *NsTLSConfigNewView(const Ns_ConfigView *view)
+   NS_GNUC_NONNULL(1);
 
 #endif
 

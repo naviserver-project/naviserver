@@ -317,6 +317,7 @@ NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
         {"unread",    UCHAR('u')},
         {"defaulted", UCHAR('d')},
         {"defaults",  UCHAR('s')},
+        {"inherited", UCHAR('i')},
         {NULL,        0u}
     };
     Ns_ObjvSpec opts[] = {

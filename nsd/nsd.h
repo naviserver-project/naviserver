@@ -513,6 +513,7 @@ typedef struct Driver {
 
     ssize_t                              locationLength;
     const char *path;                   /* Path in the configuration namespace */
+    const char *fallbackPath;           /* Optional fallback configuration section */
     const char *defserver;              /* default server, might be NULL */
     Tcl_HashTable hosts;                /* Virtual hosts mapping to server */
     const struct ServerMap *defMapPtr;  /* Default for virtual host entry */

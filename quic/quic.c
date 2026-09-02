@@ -8983,12 +8983,15 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     NsTLSConfig      *dc;
     Ns_DriverInitData init;
     Ns_Time           timeout;
+    Ns_ConfigView     configView;
 
     memset(&init, 0, sizeof(init));
     Ns_LogQuicDebug = Ns_CreateLogSeverity("Debug(quic)");
 
     section = Ns_ConfigGetPath(server, module, (char *)0);
     httpsSection = Ns_ConfigString(section, "https", "ns/module/https");
+    configView.primary = section;
+    configView.fallback = httpsSection;
 
     if (Ns_ConfigGetSection2(httpsSection, NS_FALSE) == NULL) {
         Ns_Log(Error, "quic: linkage to httpsSection <%s> failed", httpsSection);
@@ -9005,7 +9008,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
 
     Ns_LogSeveritySetEnabled(Ns_LogQuicDebug, Ns_ConfigBool(section, "debug", NS_FALSE));
 
-    dc = NsTLSConfigNew(httpsSection);
+    dc = NsTLSConfigNewView(&configView);
     Ns_Log(Ns_LogQuicDebug, "Ns_ModuleInit <%s> <%s> has dc %p", server, module, (void*)dc);
 
     Ns_AtomicUint32Init(&dc->u.h3.waker_pending, 0u);
@@ -9056,7 +9059,8 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     init.closeProc = Close;
     init.opts = NS_DRIVER_UDP | NS_DRIVER_QUIC;
     init.arg = dc;
-    init.path = httpsSection;  // used for getting address and port etc.
+    init.path = section;
+    init.fallbackPath = httpsSection;
     init.protocol = "https";
     init.defaultPort = 443;
     init.driverThreadProc  = QuicThread;
@@ -9082,8 +9086,8 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
          */
         static char conn_ctx_tag[] = "ConnCtx";
         static char stream_ctx_tag[] = "StreamCtx";
-        int rc = Ns_TLS_CtxServerInit(httpsSection, NULL, NS_DRIVER_QUIC|NS_DRIVER_SNI,
-                                      dc, &dc->ctx);
+        int rc = Ns_TLS_CtxServerInitView(&configView, NULL, NS_DRIVER_QUIC|NS_DRIVER_SNI,
+                                          dc, &dc->ctx);
         Ns_Log(Ns_LogQuicDebug, "quic: created sslCtx %p for dc %p",
                (void*)dc->ctx, (void*)dc);
 
