@@ -1042,6 +1042,7 @@ Ns_SockAccept2(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr, unsign
         Ns_Log(Warning, "accept() fails, reason: %s", ns_sockstrerror(sockerrno));
     }
 
+    Ns_SetSockErrno(sockerrno);
     return sock;
 }
 

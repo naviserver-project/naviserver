@@ -212,7 +212,7 @@ typedef struct WriterSock {
 #endif
     bool               keep;
     bool               sendReady;       /* Logical driver readiness for this poll pass. */
-    bool               pollRegistered;    
+    bool               pollRegistered;
 } WriterSock;
 
 /*
@@ -4699,9 +4699,10 @@ static SockState
 SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr,
            void *arg, unsigned long *errorCodePtr)
 {
-    Sock    *sockPtr;
-    SockState sockStatus;
+    Sock                   *sockPtr;
+    SockState               sockStatus;
     NS_DRIVER_ACCEPT_STATUS status;
+    int                     acceptErrno;
 
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
@@ -4718,14 +4719,19 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
     /*
      * Accept the new connection.
      */
-
+    Ns_SetSockErrno(0);
     status = DriverAccept(sockPtr, sock);
+    acceptErrno = ns_sockerrno;
 
     if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)) {
         sockStatus = SOCK_ERROR;
 
         if (errorCodePtr != NULL) {
             *errorCodePtr = sockPtr->recvErrno;
+
+            if (*errorCodePtr == 0u && acceptErrno != 0) {
+                *errorCodePtr = (unsigned long)acceptErrno;
+            }
         }
         /*
          * We reach this point frequently, especially on Linux, when attempting
