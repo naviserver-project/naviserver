@@ -211,7 +211,8 @@ typedef struct WriterSock {
     int                headerbufs;
 #endif
     bool               keep;
-
+    bool               sendReady;       /* Logical driver readiness for this poll pass. */
+    bool               pollRegistered;    
 } WriterSock;
 
 /*
@@ -373,6 +374,8 @@ static SpoolerState WriterReadFromSpool(WriterSock *curPtr)
     NS_GNUC_NONNULL(1);
 static SpoolerState WriterSend(WriterSock *curPtr, int *err)
     NS_GNUC_NONNULL(1,2);
+static void WriterSendWake(void *arg)
+    NS_GNUC_NONNULL(1);
 static void HdrSanitizeValue(const char *value, Tcl_DString *out)
     NS_GNUC_NONNULL(1,2);
 
@@ -1546,6 +1549,10 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
         drvPtr->driverThreadProc   = init->driverThreadProc;
         drvPtr->headersEncodeProc  = init->headersEncodeProc;
         drvPtr->clientcertInfoProc = init->clientcertInfoProc;
+    }
+    if (init->version >= NS_DRIVER_VERSION_7) {
+        drvPtr->sendReadyProc  = init->sendReadyProc;
+        drvPtr->sendCancelProc = init->sendCancelProc;
     }
 
     drvPtr->servPtr        = servPtr;
@@ -8318,6 +8325,16 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     }
     sockPtr = wrSockPtr->sockPtr;
 
+    /*
+     * A multiplexed driver may have a one-shot logical writability wakeup
+     * armed for this writer queue.  Remove it before the writer job and its
+     * wake argument cease to be valid.
+     */
+    if (sockPtr->drvPtr->sendCancelProc != NULL) {
+        (*sockPtr->drvPtr->sendCancelProc)((Ns_Sock *)sockPtr,
+                                           wrSockPtr->queuePtr);
+    }
+
     Ns_Log(DriverDebug,
            "Writer: closed sock %d, file fd %d, error %d/%d, "
            "sent=%" TCL_LL_MODIFIER "d, flags=%X",
@@ -8708,7 +8725,9 @@ WriterSend(WriterSock *curPtr, int *err) {
             curPtr->size -= (size_t)n;
         }
         curPtr->nsent += n;
-        curPtr->sockPtr->timeout.sec = 0;
+        if (n > 0) {
+            curPtr->sockPtr->timeout.sec = 0;
+        }
 
         if (curPtr->fd != NS_INVALID_FD) {
             /*
@@ -9151,6 +9170,9 @@ BandwidthAdjustPollForWriters(WriterSock *writers, PollData *pdata)
     for (cur = writers; cur != NULL; cur = cur->nextPtr) {
         int sleepMs = BandwidthComputeSleepTimeMs(cur);
 
+        cur->sendReady      = NS_FALSE;
+        cur->pollRegistered = NS_FALSE;
+
         Ns_Log(DriverDebug,
                "Writer(%p) sent=%" TCL_LL_MODIFIER "d curRate=%d limit=%d sleep=%d",
                (void*)cur,
@@ -9161,8 +9183,27 @@ BandwidthAdjustPollForWriters(WriterSock *writers, PollData *pdata)
 
         if (cur->size > 0) {
             if (sleepMs <= 0) {
-                SockPoll(cur->sockPtr, POLLOUT, pdata);
-                timeout = -1;
+                const Driver *drvPtr = cur->sockPtr->drvPtr;
+
+                if (drvPtr->sendReadyProc != NULL) {
+                    /*
+                     * The callback atomically checks logical stream
+                     * readiness and, when blocked, arms a one-shot wakeup
+                     * for this writer queue.  Do not poll the transport fd:
+                     * it may be shared by many logical streams.
+                     */
+                    cur->sendReady =
+                        (*drvPtr->sendReadyProc)((Ns_Sock *)cur->sockPtr,
+                                                 WriterSendWake,
+                                                 cur->queuePtr);
+                    if (cur->sendReady) {
+                        timeout = 0;
+                    }
+                } else {
+                    SockPoll(cur->sockPtr, POLLOUT, pdata);
+                    cur->pollRegistered = NS_TRUE;
+                    timeout = -1;
+                }
             } else {
                 timeout = MIN(sleepMs, timeout);
             }
@@ -9172,6 +9213,33 @@ BandwidthAdjustPollForWriters(WriterSock *writers, PollData *pdata)
     }
 
     return timeout;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterSendWake --
+ *
+ *      Wake a writer or spooler thread waiting on its queue trigger.
+ *      This function implements an Ns_DriverSendWakeProc callback passed
+ *      to the logical-send readiness callbacks of network drivers using
+ *      NS_DRIVER_VERSION_7 or newer.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Signals the write end of the queue's trigger pipe, causing the
+ *      polling writer or spooler thread to wake.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+WriterSendWake(void *arg)
+{
+    SpoolerQueue *queuePtr = arg;
+
+    SockTrigger(queuePtr->pipe[1]);
 }
 
 /*
@@ -9258,6 +9326,7 @@ WriterThread(void *arg)
             NsWriterStreamState doStream;
             SpoolerState        spoolerState = SPOOLER_OK;
             bool attemptedWrite = NS_FALSE;
+            bool logicalSendReady;
 
             nextPtr = curPtr->nextPtr;
             sockPtr = curPtr->sockPtr;
@@ -9272,8 +9341,10 @@ WriterThread(void *arg)
              * concurrency.
              */
             doStream = curPtr->doStream;
+            logicalSendReady = (drvPtr->sendReadyProc != NULL);
 
-            if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
+            if (curPtr->pollRegistered
+                && unlikely(PollHup(&pdata, sockPtr->pidx))) {
                 Ns_Log(DriverDebug, "### Writer %p reached POLLHUP fd %d", (void *)curPtr, sockPtr->sock);
                 spoolerState = SPOOLER_CLOSE;
                 err = 0;
@@ -9281,7 +9352,11 @@ WriterThread(void *arg)
                 curPtr->infoPtr->currentPoolRate += curPtr->currentRate;
 
 
-            } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (doStream == NS_WRITER_STREAM_FINISH)) {
+            } else if ((logicalSendReady && curPtr->sendReady)
+                       || (curPtr->pollRegistered
+                           && likely(PollOut(&pdata, sockPtr->pidx)))
+                       || (doStream == NS_WRITER_STREAM_FINISH
+                           && curPtr->size < 1u)) {
 
                 /*
                  * The socket is writable, we can compute the rate, when
@@ -9352,8 +9427,17 @@ WriterThread(void *arg)
                            curPtr->sockPtr->drvPtr->sendwait.usec);
                     SockTimeout(sockPtr, &now, &curPtr->sockPtr->drvPtr->sendwait);
                 } else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
-                    Ns_Log(DriverDebug, "Writer %p fd %d timeout", (void *)curPtr, sockPtr->sock);
-                    err          = NS_ETIMEDOUT;
+                    //Ns_Log(DriverDebug, "Writer %p fd %d timeout", (void *)curPtr, sockPtr->sock);
+                    Ns_Log(Warning,
+                           "Writer %p fd %d timed out: sent %" TCL_LL_MODIFIER
+                           "d, remaining %zu, logical driver %d",
+                           (void *)curPtr,
+                           sockPtr->sock,
+                           curPtr->nsent,
+                           curPtr->size,
+                           drvPtr->sendReadyProc != NULL);
+                    err = NS_ETIMEDOUT;
+                    Ns_SockSetSendErrno((Ns_Sock *)sockPtr, (unsigned long)err);
                     spoolerState = SPOOLER_CLOSETIMEOUT;
                 }
             }

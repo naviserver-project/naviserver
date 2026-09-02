@@ -460,6 +460,14 @@ typedef struct StreamCtx {
     bool         wants_write;  /* owned by the QUIC thread */
 
     /*
+     * Last rejected application write. Owned by the QUIC thread and used
+     * only for no-progress diagnostics.
+     */
+    size_t       write_want_remaining;
+    uint64_t     write_want_count;
+    bool         transport_blocked; /* owned by the QUIC thread */
+
+    /*
      * Stream lifecycle flags. Mutated by the QUIC thread and inspected by
      * producer/connection threads; access only through the atomic helpers.
      * The flags do not publish unrelated stream state. Relaxed ordering is
@@ -658,6 +666,7 @@ static unsigned int    StreamCtxDeliveryRefs(StreamCtx *sc)  NS_GNUC_NONNULL(1);
 static uint32_t        StreamCtxIoState(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 static void            StreamCtxIoSet(StreamCtx *sc, uint32_t bits) NS_GNUC_NONNULL(1);
 static void            StreamCtxIoClear(StreamCtx *sc, uint32_t bits) NS_GNUC_NONNULL(1);
+static void            StreamCtxIoReset(StreamCtx *sc) NS_GNUC_NONNULL(1);
 static bool            StreamCtxBothClosed(const StreamCtx *sc) NS_GNUC_NONNULL(1);
 
 /* Stream properties */
@@ -722,6 +731,8 @@ static Ns_DriverListenProc Listen;
 static Ns_DriverAcceptProc Accept;
 static Ns_DriverRecvProc Recv;
 static Ns_DriverSendProc Send;
+static Ns_DriverSendReadyProc SendReady;
+static Ns_DriverSendCancelProc SendCancel;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 static Ns_DriverConnInfoProc ConnInfo;
@@ -758,11 +769,17 @@ static Ns_DriverClientcertInfoProc ClientcertInfo;
  */
 static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL_CONN_CLOSE_INFO *cciPtr)
 {
-    if (cciPtr->flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) {
-        const char *class_str = (cciPtr->error_code >= 0x100) ? "HTTP/3 (app)" : "QUIC transport";
+    if ((cciPtr->flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) != 0u) {
         uint64_t    ec = cciPtr->error_code;
 
-        if (ec == OSSL_QUIC_ERR_NO_ERROR) {
+        if (ec == OSSL_QUIC_LOCAL_ERR_IDLE_TIMEOUT) {
+            Ns_Log(Ns_LogQuicDebug,
+                   "QUIC close: remote=%d class=QUIC transport "
+                   "code=local-idle-timeout reason='%s'",
+                   (cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL) == 0u,
+                   cciPtr->reason != NULL ? cciPtr->reason : "");
+
+        } else if (ec == OSSL_QUIC_ERR_NO_ERROR) {
             Ns_Log(Ns_LogQuicDebug,
                    "QUIC close: remote=%d class=QUIC transport "
                    "code=0x%llx reason='%s'",
@@ -770,7 +787,8 @@ static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL_CONN_CLOSE_INFO *cciPt
                    (unsigned long long)ec,
                    cciPtr->reason != NULL ? cciPtr->reason : "");
 
-        } else if ((ec & 0xFF00u) == 0x0100u) {
+        } else if (ec >= OSSL_QUIC_ERR_CRYPTO_ERR_BEGIN
+                   && ec <= OSSL_QUIC_ERR_CRYPTO_ERR_END) {
             unsigned alert = (unsigned)(ec & 0xFFu); // 303->47
 
             Ns_Log(Error, "QUIC close: remote=%d class=CRYPTO_ERROR tls_alert=%u"
@@ -779,9 +797,8 @@ static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL_CONN_CLOSE_INFO *cciPt
                    cciPtr->reason?cciPtr->reason:"");
         } else {
             Ns_Log(Error,
-                   "QUIC close: remote=%d class=%s code=0x%llx reason='%s'",
+                   "QUIC close: remote=%d QUIC transportcode=0x%llx reason='%s'",
                    !(cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL),
-                   class_str,
                    (unsigned long long)cciPtr->error_code,
                    cciPtr->reason ? cciPtr->reason : "");
         }
@@ -1332,7 +1349,9 @@ static void ConnCtxPrintSidTable(ConnCtx *cc) {
  */
 
 static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
-    int ret, err;
+    int           ret, err;
+    unsigned long osslerr;
+    bool          protocol_shutdown;
 
     if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
         Ns_Log(Ns_LogQuicDebug, "quic_conn_drive_handshake servername <%s>",
@@ -1362,9 +1381,16 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
         return 0;  // needs more network I/O
     }
 
+    osslerr = ERR_peek_error();
+    protocol_shutdown =
+        err == SSL_ERROR_SSL
+        && osslerr != 0u
+        && ERR_GET_LIB(osslerr) == ERR_LIB_SSL
+        && ERR_GET_REASON(osslerr) == SSL_R_PROTOCOL_IS_SHUTDOWN;
+
     {
         /* group: shows if we accidentally negotiated a hybrid */
-        long nid = SSL_get_shared_group(conn, 0);   /* first shared group */
+        long                nid = SSL_get_shared_group(conn, 0);  /* first shared group */
         SSL_CONN_CLOSE_INFO cci;
 
         if (nid > 0) {
@@ -1372,21 +1398,30 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
         }
 
         {
-            STACK_OF(X509)* extras = NULL;
-            SSL_CTX_get_extra_chain_certs_only(SSL_get_SSL_CTX(conn), &extras);
-            Ns_Log(Ns_LogQuicDebug, "[%lld] TLS quic ctx extra chain count=%d",  (long long)dc->iter, extras ? sk_X509_num(extras) : 0);
-        }
+            STACK_OF(X509) *extras = NULL;
 
-        /* QUIC close reason (transport/app) */
+            SSL_CTX_get_extra_chain_certs_only(SSL_get_SSL_CTX(conn), &extras);
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] TLS quic ctx extra chain count=%d",
+                   (long long)dc->iter,
+                   extras != NULL ? sk_X509_num(extras) : 0);
+        }
 
         if (SSL_get_conn_close_info(conn, &cci, sizeof(cci)) == 1) {
             ossl_conn_log_close_info(dc, &cci);
         }
-
     }
 
-    // Hard failure
-    ossl_log_error_detail(err, "quic_conn_drive_handshake");
+    if (protocol_shutdown) {
+        /*
+         * Connection-close information already described the cause.
+         * SSL_R_PROTOCOL_IS_SHUTDOWN only describes the resulting state.
+         */
+        ERR_clear_error();
+    } else {
+        ossl_log_error_detail(err, "quic_conn_drive_handshake");
+    }
+
     return -1;
 }
 
@@ -2636,9 +2671,32 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
     if (revents & SSL_POLL_EVENT_ER) {
         H3DrainResultCode dr = h3_stream_drain(cc, stream, sid, "handle E flags");   /* does SSL_read_ex(), feeds nghttp3 */
 
-        if (dr == DRAIN_EOF || dr == DRAIN_ERROR) {
+        if (dr == DRAIN_ERROR) {
+            if (sc != NULL) {
+                StreamCtxIoReset(sc);
+            }
             PollsetMarkDead(cc, stream, "stream ER");
             return NS_TRUE;                /* caller should skip further handling */
+
+        } else if (dr == DRAIN_EOF) {
+            if (sc != NULL && sc->kind == H3_KIND_BIDI_REQ) {
+                /*
+                 * EOF closes only the request/read half of a bidirectional
+                 * stream. Keep the response/write half registered and alive.
+                 */
+                H3_IO_SET(sc, H3_IO_RX_FIN);
+                PollsetDisableRead(dc, stream, sc, "event ER, EOF");
+                cc->wants_write = NS_TRUE;
+                if (h3_stream_maybe_finalize(sc, "ER: EOF")) {
+                    return NS_TRUE;
+                }
+            } else {
+                if (sc != NULL) {
+                    StreamCtxUnregister(sc);
+                }
+                PollsetMarkDead(cc, stream, "stream ER EOF");
+                return NS_TRUE;
+            }
         }
     }
     ws = SSL_get_stream_write_state(stream);
@@ -2655,7 +2713,7 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
                wStateString);
 
         if (sc != NULL) {
-            H3_IO_SET(sc, H3_IO_RESET);
+            StreamCtxIoReset(sc);
 
             /*
              * Prevent nghttp3 from offering further response data for a
@@ -2689,6 +2747,10 @@ static bool quic_stream_handle_e(ConnCtx *cc, SSL *stream, uint64_t sid,
                (unsigned)(sc ? StreamCtxIoState(sc) : 0),
                (unsigned)(sc ? sc->seen_io  : 0),
                (sc ? H3StreamKind_str(sc->kind) : "no-ctx"));
+        if (sc != NULL) {
+            StreamCtxIoSet(sc, H3_IO_TX_FIN);
+            SharedSendWakeBlocked(&sc->sh);
+        }
         PollsetMarkDead(cc, stream, "stream ER|EW, both sides closed");
         return NS_TRUE;
     }
@@ -2827,7 +2889,7 @@ quic_stream_handle_r(ConnCtx *cc, SSL *stream)
             break;
 
         case DRAIN_ERROR:
-            H3_IO_SET(sc, H3_IO_RESET);
+            StreamCtxIoReset(sc);
 
             StreamCtxUnregister(sc);
             PollsetMarkDead(cc, stream, "stream error");
@@ -3070,6 +3132,60 @@ h3_conn_write_step(ConnCtx *cc)
             }
 
             /*
+             * Process an abnormal producer termination before allowing nghttp3
+             * to submit or resume response data.
+             */
+            {
+                const SharedTxStatus status = SharedTxStatusRead(&ssc->sh);
+
+                if (status.abort_requested) {
+                    SSL_STREAM_RESET_ARGS resetArgs = {
+                        .quic_error_code = NGHTTP3_H3_REQUEST_CANCELLED
+                    };
+                    int ok;
+
+                    /*
+                     * Permanently prevent nghttp3 from scheduling further response
+                     * data for this stream.
+                     */
+                    nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
+                    ssc->transport_blocked = NS_FALSE;
+
+                    ERR_clear_error();
+                    ok = SSL_stream_reset(ssc->ssl,
+                                          &resetArgs, sizeof(resetArgs));
+                    if (ok != 1) {
+                        const unsigned long sslErr = ERR_peek_error();
+
+                        Ns_Log(Error,
+                               "[%lld] H3[%lld] SSL_stream_reset failed: "
+                               "lib=%d reason=%d (%s)",
+                               (long long)dc->iter,
+                               (long long)sid,
+                               sslErr != 0u ? ERR_GET_LIB(sslErr) : 0,
+                               sslErr != 0u ? ERR_GET_REASON(sslErr) : 0,
+                               sslErr != 0u && ERR_reason_error_string(sslErr) != NULL
+                               ? ERR_reason_error_string(sslErr)
+                               : "no OpenSSL error");
+                        ERR_clear_error();
+                    }
+
+                    /*
+                     * Record the processed terminal state only after attempting the
+                     * transport reset.
+                     */
+                    StreamCtxIoReset(ssc);
+                    did_progress = NS_TRUE;
+
+                    /*
+                     * Existing reset handling disables W and schedules cleanup.
+                     */
+                    (void)h3_stream_maybe_finalize(ssc, "writer abort");
+                    continue;
+                }
+            }
+
+            /*
              * Submit newly published headers or consume a stale header-ready
              * notification for headers which were submitted concurrently.
              */
@@ -3107,13 +3223,8 @@ h3_conn_write_step(ConnCtx *cc)
              */
             if (hdrs_submitted) {
                 int rv = nghttp3_conn_resume_stream(cc->h3conn, sid);
-                if (rv == 0) {
-                    /*
-                     * Ensure we get a POLLOUT tick to push frames.  We know
-                     * from the check above that ssc->ssl is not NULL.
-                     */
-                    PollsetEnableWrite(cc->dc, ssc->ssl, ssc, "resume");
-                } else {
+
+                if (rv != 0) {
                     Ns_Log(Ns_LogQuicDebug,
                            "[%lld] H3[%lld] nghttp3 resume returned %d (%s)",
                            (long long)cc->dc->iter,
@@ -3202,9 +3313,6 @@ h3_conn_write_step(ConnCtx *cc)
                         zsc->wants_write = NS_TRUE;
                         PollsetEnableWrite(dc, zsc->ssl, zsc, "tx-fin");
 
-                        /*
-                         * Retain the existing immediate-finalization check here.
-                         */
                         {
                             /* If RX is already finished and queues are empty, reap now. */
                             SharedTxStatus status = SharedTxStatusRead(&zsc->sh);
@@ -3240,7 +3348,7 @@ h3_conn_write_step(ConnCtx *cc)
                          */
                         nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
 
-                        H3_IO_SET(zsc, H3_IO_RESET);
+                        StreamCtxIoReset(zsc);
 
                         PollsetDisableWrite(dc, zsc->ssl, zsc, "tx fin fail->reset");
                         did_progress = NS_TRUE;
@@ -3377,14 +3485,26 @@ h3_conn_write_step(ConnCtx *cc)
                     int err = SSL_get_error(stream, ok);
 
                     if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                        sc->write_want_remaining = remaining;
+                        sc->write_want_count++;
+
+                        if (!sc->transport_blocked) {
+                            nghttp3_conn_block_stream(cc->h3conn, sid);
+                            sc->transport_blocked = NS_TRUE;
+                        }
+
                         hit_want = NS_TRUE;
                         /*
                          * Keep the vector offset unchanged and wait for the pollset to
                          * report that the stream can make progress.
                          */
                         Ns_Log(Ns_LogQuicDebug,
-                               "[%lld] H3[%lld] SSL_write_ex2 returned WANT; defer to poll",
-                               (long long)dc->iter, (long long)sid);
+                               "[%lld] H3[%lld] SSL_write_ex2 returned WANT; "
+                               "remaining %zu, count %" PRIu64,
+                               (long long)dc->iter,
+                               (long long)sid,
+                               remaining,
+                               sc->write_want_count);
                         goto after_sid;
                     }
 
@@ -3396,6 +3516,7 @@ h3_conn_write_step(ConnCtx *cc)
                             if (r == SSL_R_STREAM_RESET) {
                                 uint64_t appw = 0;
 
+                                StreamCtxIoReset(sc);
                                 (void)SSL_handle_events(stream);
 
                                 if (SSL_get_stream_write_error_code(stream, &appw) == 1) {
@@ -3501,16 +3622,22 @@ h3_conn_write_step(ConnCtx *cc)
 
                 if (unlikely(written == 0u && remaining > 0u)) {
                     /*
-                     * SSL_write_ex2() reported success without accepting application
-                     * data. Avoid an immediate no-progress retry.
+                     * For a nonempty write, SSL_write_ex2() may report success only
+                     * after accepting application data. A successful zero-length result
+                     * therefore violates the OpenSSL API contract. Retrying on W could
+                     * produce an immediate no-progress loop, so terminate the affected
+                     * connection.
                      */
-                    Ns_Log(Warning,
-                           "[%lld] H3[%lld] SSL_write_ex2 succeeded without progress; "
-                           "parking stream",
-                           (long long)dc->iter, (long long)sid);
+                    Ns_Log(Error,
+                           "[%lld] H3[%lld] SSL_write_ex2 succeeded without progress: "
+                           "remaining %zu; closing connection",
+                           (long long)dc->iter,
+                           (long long)sid,
+                           remaining);
 
-                    hit_want = NS_TRUE;
-                    goto after_sid;
+                    quic_conn_enter_shutdown(
+                                             cc, "SSL_write_ex2 succeeded without progress");
+                    return NS_FALSE;
                 }
 
                 /*
@@ -3531,6 +3658,7 @@ h3_conn_write_step(ConnCtx *cc)
                     fin_concluded_by_write = NS_TRUE;
                 }
                 if (written > 0u) {
+                    sc->write_want_remaining = 0u;
                     QuicNoteProgress(dc);
                 }
 
@@ -3604,7 +3732,7 @@ h3_conn_write_step(ConnCtx *cc)
                             ERR_clear_error();
                             nghttp3_conn_shutdown_stream_write(
                                                                cc->h3conn, h3_stream_id(sc));
-                            H3_IO_SET(sc, H3_IO_RESET);
+                            StreamCtxIoReset(sc);
 
                             PollsetDisableWrite(
                                                 dc, stream, sc,
@@ -3678,19 +3806,23 @@ h3_conn_write_step(ConnCtx *cc)
          */
         if (StreamCtxIsServerUni(sc)) {
             /* leave policy as-is for CTRL/QPACK */
-        } else if (hit_want || SharedTxStatusRead(&sc->sh).queued) {
-            PollsetEnableWrite(dc, stream, sc, "after_sid");
+        } else if (sc->transport_blocked) {
+            PollsetEnableWrite(dc, stream, sc, "after_sid, transport blocked");
         } else {
-            PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step per stream W decision");
+            PollsetDisableWrite(dc, stream, sc, "h3_conn_write_step transport writable");
         }
 
         /*
          * nghttp3 retains the unconsumed vector. Continuing this write step
          * would immediately offer the same blocked stream again.
          */
+
         if (hit_want) {
-            need_local_retry = NS_FALSE;
-            break;
+            /*
+             * nghttp3 now knows that this stream is transport-blocked and can
+             * select another writable stream.
+             */
+            continue;
         }
 
     next_sid:
@@ -5377,6 +5509,8 @@ h3_stream_maybe_finalize(StreamCtx *sc, const char *label)
 
     /* --- hard terminal? handle RESET first --- */
     if (H3_IO_HAS(sc, H3_IO_RESET)) {
+        /* A writer parked on logical stream writability must observe reset. */
+        SharedSendWakeBlocked(&sc->sh);
         PollsetDisableWrite(dc, sc->ssl, sc, "h3_stream_maybe_finalize: reset");
         if (H3_RX_CLOSED(sc) || !has_tx) {
             PollsetMarkDead(cc, sc->ssl, "h3_stream_maybe_finalize: reset");
@@ -6321,6 +6455,10 @@ static int on_stream_close(nghttp3_conn *UNUSED(conn),
            (long long)stream_id,
            (unsigned long long)app_error_code);
 
+    /* nghttp3 has declared the stream terminal, irrespective of its code. */
+    StreamCtxIoSet(sc, H3_IO_TX_FIN);
+    SharedSendWakeBlocked(&sc->sh);
+
     /* Unregister and free our per‑stream context */
     StreamCtxUnregister(sc);
 
@@ -6719,7 +6857,8 @@ StreamCtxGet(ConnCtx *cc, int64_t sid, int create) {
                 if (sc != NULL) {
                     QuicMemStatsIncr(&quicMemStats.counters.streamctx_new);
                     StreamCtxInit(sc);
-                    SharedStreamInit(&sc->sh, &cc->shared, sid);
+                    SharedStreamInit(&sc->sh, &cc->shared, sid,
+                                     cc->dc->u.h3.sendqueuesize);
                     Tcl_SetHashValue(e, sc);
                 }
             }
@@ -6993,6 +7132,31 @@ StreamCtxBothClosed(const StreamCtx *sc)
            == (H3_IO_RX_FIN | H3_IO_TX_FIN);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * StreamCtxIoReset --
+ *
+ *      Mark a stream as reset and wake any writer parked on its logical
+ *      send readiness. The terminal state is published before the wakeup
+ *      so that the writer observes the reset on its next readiness or
+ *      send operation and terminates without rearming the stream.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Atomically adds H3_IO_RESET to the stream I/O state and may signal
+ *      the writer associated with the shared stream.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline void
+StreamCtxIoReset(StreamCtx *sc)
+{
+    StreamCtxIoSet(sc, H3_IO_RESET);
+    SharedSendWakeBlocked(&sc->sh);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -7570,6 +7734,7 @@ PollsetDetachStream(StreamCtx *sc, const char *reason)
     dc     = cc->dc;
     stream = sc->ssl;
 
+    StreamCtxIoReset(sc);
     PollsetDisableRead(dc, stream, sc, reason);
     PollsetDisableWrite(dc, stream, sc, reason);
     StreamCtxUnregister(sc);
@@ -8858,6 +9023,9 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     }
     dc->u.h3.recvbufsize = (size_t)Ns_ConfigMemUnitRange(section, "recvbufsize", "8MB",
                                                          1024*8000, 0, INT_MAX);
+    dc->u.h3.sendqueuesize =
+        (size_t)Ns_ConfigMemUnitRange(section, "sendqueuesize", "256kB",
+                                      256 * 1024, 1024, INT_MAX);
     Ns_ConfigTimeUnitRange(section, "idletimeout",
                            "3s", 0, 0, LONG_MAX, 0,
                            &timeout);
@@ -8872,7 +9040,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     Ns_MutexSetName2(&quicMemStats.lock, "h3", "memstats");
 #endif
 
-    init.version = NS_DRIVER_VERSION_6;
+    init.version = NS_DRIVER_VERSION_7;
     init.name = "quic";
     init.listenProc = Listen;
     init.acceptProc = Accept;
@@ -8880,6 +9048,8 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     init.requestProc = NULL;
     init.sendProc = Send;
     init.sendFileProc = NULL;
+    init.sendReadyProc = SendReady;
+    init.sendCancelProc = SendCancel;
     init.keepProc = Keep;
     init.connInfoProc = ConnInfo;
     init.clientcertInfoProc = ClientcertInfo;
@@ -9017,6 +9187,8 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
            (long)timeoutPtr->tv_sec,
            (long)timeoutPtr->tv_usec);
 
+
+
     for (i = 0u; i < numitems; i++) {
         SSL_POLL_ITEM *item = &h3->poll_items[i];
         SSL           *ssl  = h3->ssl_items.data[i];
@@ -9052,6 +9224,40 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
                    sc->rx_fin_pending,
                    sc->eof_seen,
                    sc->wants_write);
+
+            {
+                uint64_t size = 0u, used = 0u, avail = 0u;
+                SharedTxStatus status;
+
+                (void)SSL_get_stream_write_buf_size(ssl, &size);
+                (void)SSL_get_stream_write_buf_used(ssl, &used);
+                (void)SSL_get_stream_write_buf_avail(ssl, &avail);
+
+                Ns_Log(Warning,
+                       "[%lld] H3[%lld] last write WANT:"
+                       " remaining %zu, count %" PRIu64 ","
+                       " write buffer size %" PRIu64
+                       " used %" PRIu64 " available %" PRIu64,
+                       (long long)dc->iter,
+                       (long long)sc->quic_sid,
+                       sc->write_want_remaining,
+                       sc->write_want_count,
+                       size, used, avail);
+                status = SharedTxStatusRead(&sc->sh);
+
+                Ns_Log(Warning,
+                       "[%lld] H3[%lld] shared TX:"
+                       " queued %d pending %zu closed_by_app %d"
+                       " buffered %zu resume_enqueued %u",
+                       (long long)dc->iter,
+                       (long long)sc->quic_sid,
+                       status.queued,
+                       status.pending_bytes,
+                       status.closed_by_app,
+                       SharedBufferedBytes(&sc->sh),
+                       Ns_AtomicUint32LoadRelaxed(&sc->sh.resume_enqueued));
+            }
+
         } else {
             ConnCtx *cc = ssl != NULL
                 ? SSL_get_ex_data(ssl, h3->cc_idx)
@@ -9077,6 +9283,7 @@ QuicLogNoProgress(NsTLSConfig *dc, size_t numitems,
                    cc != NULL ? cc->h3ssl.cstream != NULL : -1,
                    cc != NULL ? cc->h3ssl.pstream != NULL : -1,
                    cc != NULL ? cc->h3ssl.rstream != NULL : -1);
+
         }
         shown++;
     }
@@ -9402,8 +9609,9 @@ TLSConfigClone(const NsTLSConfig *source)
     {
         const bool           validate_client_address =
             source->u.h3.validate_client_address;
-        const size_t         recvbufsize = source->u.h3.recvbufsize;
-        const struct timeval idle_timeout = source->u.h3.idle_timeout;
+        const size_t         recvbufsize   = source->u.h3.recvbufsize;
+        const size_t         sendqueuesize = source->u.h3.sendqueuesize;
+        const struct timeval idle_timeout  = source->u.h3.idle_timeout;
         const struct timeval drain_timeout = source->u.h3.drain_timeout;
         const int            cc_idx = source->u.h3.cc_idx;
         const int            sc_idx = source->u.h3.sc_idx;
@@ -9412,6 +9620,7 @@ TLSConfigClone(const NsTLSConfig *source)
 
         dc->u.h3.validate_client_address = validate_client_address;
         dc->u.h3.recvbufsize             = recvbufsize;
+        dc->u.h3.sendqueuesize           = sendqueuesize;
         dc->u.h3.idle_timeout            = idle_timeout;
         dc->u.h3.drain_timeout           = drain_timeout;
         dc->u.h3.cc_idx                  = cc_idx;
@@ -9918,19 +10127,46 @@ QuicThread(void *arg)
                        (long long)dc->iter,
                        (long long)sc->quic_sid);
 
-                if (StreamCtxIsServerUni(sc)) {
-                    PollsetDisableWrite(dc, s, sc,
-                                        "Event W, idle control/QPACK stream");
-                } else {
-                    SharedTxStatus status;
+                /*
+                 * W is level-triggered. Consume it before acting on the event.
+                 */
+                PollsetDisableWrite(dc, s, sc, "consume Event W");
+
+                if (sc->transport_blocked) {
+                    int rv;
 
                     /*
-                     * W is level-triggered. Consume it before scheduling the
-                     * corresponding write pass.
+                     * Transport writability applies to request, control and QPACK
+                     * streams alike.
                      */
-                    PollsetDisableWrite(dc, s, sc, "consume Event W");
+                    rv = nghttp3_conn_unblock_stream(cc->h3conn, sc->h3_sid);
 
-                    status = SharedTxStatusRead(&sc->sh);
+                    if (rv != 0) {
+                        Ns_Log(Error,
+                               "[%lld] H3[%lld] nghttp3_conn_unblock_stream failed: "
+                               "%s; closing connection",
+                               (long long)dc->iter,
+                               (long long)sc->h3_sid,
+                               nghttp3_strerror(rv));
+
+                        /*
+                         * The only documented failure is NGHTTP3_ERR_NOMEM. Connection
+                         * processing cannot be resumed reliably. Shutdown also resets and
+                         * wakes writers for the connection's streams through pollset reaping.
+                         */
+                        quic_conn_enter_shutdown(cc, "nghttp3_conn_unblock_stream failed");
+
+                        processed_event |= SSL_POLL_EVENT_W;
+                        goto skip;
+                    }
+                    sc->transport_blocked = NS_FALSE;
+                    cc->wants_write = NS_TRUE;
+
+                } else if (!StreamCtxIsServerUni(sc)) {
+                    /*
+                     * Logical application-data notification for a request stream.
+                     */
+                    SharedTxStatus status = SharedTxStatusRead(&sc->sh);
 
                     if (SharedTxStatusEOFReady(&status)) {
                         (void)h3_stream_maybe_finalize(sc, "event W");
@@ -9940,6 +10176,10 @@ QuicThread(void *arg)
                     }
                 }
 
+                /*
+                 * An unblocked server-uni stream requires no additional handling.
+                 * Its idle W interest has already been removed above.
+                 */
                 processed_event |= SSL_POLL_EVENT_W;
             }
 
@@ -10514,7 +10754,9 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
     sc = StreamCtxFromSock(dc, sock);
     if (sc == NULL) {
         Ns_Log(Error, "h3: cannot determine H3 stream context from Ns_Sock structure");
-        assert(sc != NULL);
+        Ns_SetSockErrno(EPIPE);
+        Ns_SockSetSendErrno(sock, EPIPE);
+        return -1;
     }
 
     Ns_Log(Ns_LogQuicDebug,
@@ -10553,9 +10795,17 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
     /* ----- Enqueue remaining body iovecs (or all if no headers were present) */
     for (j = start_iov; j < niov; ++j) {
         if (iov[j].iov_len > 0) {
-            (void)SharedEnqueueBody(&sc->sh, iov[j].iov_base, iov[j].iov_len, "send:body");
-            consumed    += (ssize_t)iov[j].iov_len;
-            need_resume  = NS_TRUE;
+            const size_t accepted =
+                SharedEnqueueBody(&sc->sh, iov[j].iov_base,
+                                  iov[j].iov_len, "send:body");
+
+            consumed += (ssize_t)accepted;
+            if (accepted > 0u) {
+                need_resume = NS_TRUE;
+            }
+            if (accepted < iov[j].iov_len) {
+                break;
+            }
         }
     }
 
@@ -10579,6 +10829,102 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Send nbufs %d -> DONE (consumed %ld)",
            (long long)dc->iter, niov, consumed);
     return consumed;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendReady --
+ *
+ *      Determine the logical send readiness of an HTTP/3 stream for the
+ *      generic writer. This function implements an
+ *      Ns_DriverSendReadyProc callback registered by network drivers
+ *      using NS_DRIVER_VERSION_7 or newer.
+ *
+ *      Readiness is based on the bounded per-stream response queue rather
+ *      than on POLLOUT of the shared UDP socket. If the queue has reached
+ *      its high-water mark, SharedSendReady() registers the supplied
+ *      one-shot Ns_DriverSendWakeProc before reporting that the writer
+ *      should park.
+ *
+ *      Missing or terminal streams are reported as ready so the writer
+ *      enters Send(), observes the terminal condition, and terminates.
+ *      Since the stream terminal state is maintained separately from the
+ *      shared queue lock, the state is checked again after registering a
+ *      wakeup. This prevents a reset or transmit completion immediately
+ *      preceding registration from leaving the writer parked without a
+ *      corresponding wakeup.
+ *
+ * Results:
+ *      NS_TRUE when the stream can accept response data or is terminal;
+ *      otherwise NS_FALSE, indicating that the writer should park.
+ *
+ * Side effects:
+ *      May register or cancel a logical-send wakeup in the shared stream
+ *      state.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+SendReady(Ns_Sock *sock, Ns_DriverSendWakeProc *wakeProc, void *wakeArg)
+{
+    NsTLSConfig *dc = sock->driver->arg;
+    StreamCtx   *sc = StreamCtxFromSock(dc, sock);
+    const uint32_t terminal = H3_IO_TX_FIN | H3_IO_RESET;
+
+    if (sc == NULL
+        || (H3_IO_STATE(sc) & (H3_IO_TX_FIN | H3_IO_RESET)) != 0u) {
+        return NS_TRUE;
+    }
+
+    if (SharedSendReady(&sc->sh, wakeProc, wakeArg)) {
+        return NS_TRUE;
+    }
+
+    /*
+     * If termination preceded callback registration, no terminal wakeup
+     * remains pending. Cancel the registration and let Send() report it.
+     */
+    if ((H3_IO_STATE(sc) & terminal) != 0u) {
+        SharedSendCancel(&sc->sh, wakeArg);
+        return NS_TRUE;
+    }
+
+    return NS_FALSE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendCancel --
+ *
+ *      Cancel a previously registered logical-send wakeup for an HTTP/3
+ *      stream. This function implements an Ns_DriverSendCancelProc
+ *      callback registered by network drivers using NS_DRIVER_VERSION_7
+ *      or newer.
+ *
+ *      The callback is invoked when the generic writer no longer waits
+ *      on the stream and its wake callback argument must no longer be
+ *      retained.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      May clear the matching writer wake registration from the shared
+ *      stream state.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SendCancel(Ns_Sock *sock, void *wakeArg)
+{
+    NsTLSConfig *dc = sock->driver->arg;
+    StreamCtx   *sc = StreamCtxFromSock(dc, sock);
+
+    if (sc != NULL) {
+        SharedSendCancel(&sc->sh, wakeArg);
+    }
 }
 
 /*
@@ -10617,33 +10963,38 @@ Keep(Ns_Sock *UNUSED(sock))
  *
  * Close --
  *
- *      HTTP/3 (QUIC) driver callback invoked by the NaviServer core when
- *      application output for a request stream has completed. Unlike
- *      TCP-based drivers, this function does not close a physical socket:
- *      QUIC connections are multiplexed over UDP and managed by OpenSSL's
- *      QUIC engine.
+ *      Handle completion of an HTTP/3 request socket by the NaviServer
+ *      driver framework. HTTP/3 streams are multiplexed over a shared UDP
+ *      socket, so this function does not close the underlying transport
+ *      socket or modify the QUIC pollset.
  *
- *      Close() marks the application side of the stream as closed,
- *      disables further request-read interest, and requests a resume so
- *      the QUIC thread can drain queued response data and emit FIN. The
- *      resume consumer verifies that the stream is still attached before
- *      changing its poll interest.
+ *      A close without a stored send error marks normal producer
+ *      completion, allowing the QUIC thread to drain the remaining body
+ *      data and emit the stream FIN. A close carrying a send error, such
+ *      as a generic-writer timeout, publishes an abort request so the
+ *      QUIC thread shuts down nghttp3 response production and resets the
+ *      affected stream.
+ *
+ *      In both cases a resume request is queued for processing by the
+ *      QUIC thread. Poll-interest changes and stream teardown remain
+ *      confined to that thread.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      - Disables read interest, marks the shared stream buffer as
- *        closed by the application, and schedules a final resume through
- *        SharedRequestResume().
+ *      Marks the shared stream normally closed or abort-requested, wakes
+ *      the QUIC thread through the resume queue, and detaches the
+ *      per-request socket context.
  *
  *----------------------------------------------------------------------
  */
 static void
 Close(Ns_Sock *sock)
 {
-    NsTLSConfig *dc;
-    StreamCtx   *sc;
+    NsTLSConfig        *dc;
+    StreamCtx          *sc;
+    const unsigned long sendErrno = Ns_SockGetSendErrno(sock);
 
     if (sock->driver == NULL) {
         return;
@@ -10656,13 +11007,26 @@ Close(Ns_Sock *sock)
     if (sc == NULL || sc->ssl == NULL) {
         goto detach_sock;
     }
+
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Close clearing expecting_send", (long long)dc->iter);
 
-    /* Stop reading request bytes on this stream (ok to do from producer thread). */
-    PollsetDisableRead(dc, sc->ssl, sc, "Close");
+    /*
+     * Do not modify the QUIC pollset from the producer/writer thread.
+     * Abort/resume processing in the QUIC thread disables events and
+     * detaches the stream.
+     */
+    /* PollsetDisableRead(dc, sc->ssl, sc, "Close"); */
 
-    /* Mark "no more body will be enqueued" (EOF once queues drain). */
-    SharedMarkClosedByApp(&sc->sh);
+    if (sendErrno == 0u) {
+        /*
+         * Mark "no more body data will be enqueued" (EOF once queues drain).
+         */
+        SharedMarkClosedByApp(&sc->sh);
+    } else {
+        SharedMarkAbortRequested(&sc->sh);
+    }
+
+    SharedRequestResume(&sc->cc->shared, &sc->sh, sc->h3_sid);
 
     Ns_Log(Ns_LogQuicDebug,
            "[%lld] H3[%lld] WRITER done: closed_by_app 1",

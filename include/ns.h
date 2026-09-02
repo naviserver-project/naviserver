@@ -191,6 +191,7 @@ typedef enum {
 #define NS_DRIVER_VERSION_4        4    /* Client support, current version */
 #define NS_DRIVER_VERSION_5        5    /* Library info, current connection info */
 #define NS_DRIVER_VERSION_6        6    /* driverThreadProc, headersEncodeProc */
+#define NS_DRIVER_VERSION_7        7    /* Logical send readiness notifications */
 
 /*
  * The following are valid Tcl interp traces types.
@@ -708,6 +709,22 @@ typedef ssize_t Ns_DriverSendProc(Ns_Sock *sock, const struct iovec *bufs, int n
 typedef ssize_t Ns_DriverSendFileProc(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1,2);
 
+/*
+ * Optional logical send-readiness support for multiplexed transports.  The
+ * readiness callback must atomically either report writable or register the
+ * supplied one-shot wake callback.  The cancel callback removes a wakeup
+ * registered with the same wakeArg.
+ */
+typedef void Ns_DriverSendWakeProc(void *arg);
+
+typedef bool Ns_DriverSendReadyProc(Ns_Sock *sock,
+                                    Ns_DriverSendWakeProc *wakeProc,
+                                    void *wakeArg)
+    NS_GNUC_NONNULL(1,2,3);
+
+typedef void Ns_DriverSendCancelProc(Ns_Sock *sock, void *wakeArg)
+    NS_GNUC_NONNULL(1,2);
+
 typedef Ns_ReturnCode Ns_DriverRequestProc(void *arg, Ns_Conn *conn)
     NS_GNUC_NONNULL(1,2);
 
@@ -758,6 +775,8 @@ typedef struct Ns_DriverInitData {
     Ns_ThreadProc           *driverThreadProc; /* NS_DRIVER_VERSION_6: event loop */
     Ns_HeadersEncodeProc    *headersEncodeProc; /* NS_DRIVER_VERSION_6: encode headers from Ns_Set */
     Ns_DriverClientcertInfoProc *clientcertInfoProc; /* NS_DRIVER_VERSION_6: Obtain client certificate */
+    Ns_DriverSendReadyProc  *sendReadyProc;     /* NS_DRIVER_VERSION_7: logical stream writability */
+    Ns_DriverSendCancelProc *sendCancelProc;    /* NS_DRIVER_VERSION_7: cancel logical wakeup */
 } Ns_DriverInitData;
 
 

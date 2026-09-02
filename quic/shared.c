@@ -83,6 +83,8 @@
 
 /* ---------- Prototypes ---------- */
 static int  resume_grow(SharedState *st) NS_GNUC_NONNULL(1);
+static void SharedAccountTrim(SharedStream *ss, size_t nbytes)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_LogSeverity Ns_LogQuicDebug;
 
@@ -311,13 +313,18 @@ void SharedStateDestroy(SharedState *st) {
  * Side effects:
  *      Initializes ss->lock; writes ss->st and ss->sid_hint; leaves the
  *      tx_queued/tx_pending chunk queues zeroed (no allocations here).
+ *      The configured send-queue limit remains inactive until a generic
+ *      writer attaches through SharedSendReady().
  *      Must be called exactly once before any concurrent use of *ss*.
  *      The caller must ensure that *owner* outlives *ss* or otherwise
  *      coordinates teardown.
  *
  *----------------------------------------------------------------------
  */
-void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid) {
+void
+SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid,
+                 size_t send_queue_size)
+{
     memset(ss, 0, sizeof(*ss));
 
     Ns_AtomicUint32Init(&ss->hdrs_ready, 0u);
@@ -326,6 +333,8 @@ void SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid) {
 
     ss->st       = owner;
     ss->sid_hint = sid;
+    ss->send_queue_size  = send_queue_size;
+    ss->send_resume_size = send_queue_size / 2u;
     /* queues and mutexes already zeroed */
 }
 
@@ -349,6 +358,9 @@ void SharedStreamDestroy(SharedStream *ss) {
     Ns_MutexLock(&ss->lock);
     ChunkQueueClear(&ss->tx_queued);
     ChunkQueueClear(&ss->tx_pending);
+    ss->tx_buffered = 0u;
+    ss->send_wake_proc = NULL;
+    ss->send_wake_arg  = NULL;
     Ns_MutexUnlock(&ss->lock);
 }
 
@@ -458,38 +470,284 @@ void SharedHdrsClear(SharedStream *ss) {
  *      not issue a resume tick.
  *
  * Results:
- *      Returns len on success; 0 if buf is NULL or len == 0.
+ *      Returns the number of bytes accepted. For writer-fed streams this may
+ *      be less than len when the configured stream send queue is full.
+ *      Non-writer sends remain uncapped. Returns 0 when no data can currently
+ *      be accepted or when buf is NULL or len is zero.
  *
  * Side effects:
- *      Allocates a Chunk from (buf,len); acquires ss->lock; appends to
- *      ss->tx_queued with label (default "enqueue"); logs at Notice with
- *      ss->sid_hint and projected queued bytes. Caller must trigger
+ *      Acquires ss->lock, allocates a bounded Chunk, appends it to
+ *      ss->tx_queued, and updates tx_buffered. Caller must trigger
  *      SharedRequestResume() for this SID if needed.
  *----------------------------------------------------------------------
  */
 size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const char *label) {
-  Chunk *ch;
+  Chunk  *ch;
+  size_t  accepted;
+  bool    writer_attached;
 
   if (!buf || len == 0) {
     return 0;
   }
 
-  Ns_Log(Ns_LogQuicDebug,
-         "H3[%lld] SharedEnqueueBody: +%zu",
-         (long long)ss->sid_hint,
-         len);
-
-  ch = ChunkInit(buf, len);
-
   SharedCounterStatsIncr(&sharedCounterStats.counters.stream_enqueue_lock);
 
   Ns_MutexLock(&ss->lock);
 
+  /*
+   * SharedSendReady() retains the writer's wake argument for the lifetime of
+   * the attachment.  This lets ordinary connection-thread responses keep
+   * their historical uncapped behavior while bounding writer-fed streams.
+   */
+  writer_attached = ss->send_wake_arg != NULL;
+  if (writer_attached) {
+      assert(ss->tx_buffered <= ss->send_queue_size);
+      accepted = ss->send_queue_size - ss->tx_buffered;
+      if (accepted > len) {
+          accepted = len;
+      }
+  } else {
+      accepted = len;
+  }
+
+  if (accepted == 0u) {
+      Ns_MutexUnlock(&ss->lock);
+      return 0u;
+  }
+
+  /*
+   * Keep capacity calculation, allocation and publication in one critical
+   * section.  This makes the bound strict even if multiple producers call
+   * into the same stream concurrently.
+   */
+  ch = ChunkInit(buf, accepted);
+
   ChunkEnqueue(&ss->tx_queued, ch, label ? label : "enqueue");
+  ss->tx_buffered += accepted;
   (void)Ns_AtomicUint32FetchOrRelease(&ss->tx_state, SHARED_TX_QUEUED);
   Ns_MutexUnlock(&ss->lock);
 
-  return len;
+  Ns_Log(Ns_LogQuicDebug,
+         "H3[%lld] SharedEnqueueBody: accepted %zu/%zu, buffered %zu,"
+         " writer limit %zu (%s)",
+         (long long)ss->sid_hint,
+         accepted,
+         len,
+         SharedBufferedBytes(ss),
+         ss->send_queue_size,
+         writer_attached ? "active" : "inactive");
+
+  return accepted;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SharedSendReady --
+ *
+ *      Determine whether the stream's bounded send queue can accept more
+ *      data from a generic writer. When the buffered byte count has
+ *      reached the configured high-water mark, register the supplied
+ *      Ns_DriverSendWakeProc and its argument before reporting that the
+ *      writer must park.
+ *
+ *      The registration and readiness check form an atomic handshake
+ *      with SharedSendWakeBlocked(), preventing a queue-drain event from
+ *      being lost while the writer is preparing to sleep.
+ *
+ * Results:
+ *      NS_TRUE when flow control is disabled or the stream can currently
+ *      accept more data; otherwise NS_FALSE.
+ *
+ * Side effects:
+ *      May install or replace the blocked-writer wake registration in
+ *      the shared stream state.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+SharedSendReady(SharedStream *ss, Ns_DriverSendWakeProc *wakeProc,
+                void *wakeArg)
+{
+    bool ready;
+
+    NS_NONNULL_ASSERT(wakeProc != NULL);
+    NS_NONNULL_ASSERT(wakeArg != NULL);
+
+    Ns_MutexLock(&ss->lock);
+    assert(ss->send_wake_arg == NULL || ss->send_wake_arg == wakeArg);
+    ss->send_wake_arg = wakeArg;
+
+    ready = ss->tx_buffered < ss->send_queue_size;
+    if (ready) {
+        ss->send_wake_proc = NULL;
+    } else {
+        assert(ss->send_wake_proc == NULL
+               || (ss->send_wake_proc == wakeProc
+                   && ss->send_wake_arg == wakeArg));
+        ss->send_wake_proc = wakeProc;
+        ss->send_wake_arg  = wakeArg;
+    }
+    Ns_MutexUnlock(&ss->lock);
+
+    return ready;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SharedSendCancel --
+ *
+ *      Cancel a logical-send wake registration previously installed by
+ *      SharedSendReady(). The registration is cleared only when it still
+ *      belongs to the supplied callback argument, so cancellation by an
+ *      earlier writer cannot remove a newer writer's registration.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      May clear the registered wake callback and argument. The callback
+ *      is not invoked.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SharedSendCancel(SharedStream *ss, void *wakeArg)
+{
+    Ns_MutexLock(&ss->lock);
+    if (ss->send_wake_arg == wakeArg) {
+        ss->send_wake_proc = NULL;
+        ss->send_wake_arg  = NULL;
+    }
+    Ns_MutexUnlock(&ss->lock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SharedSendWakeBlocked --
+ *
+ *      Release a generic writer parked on the stream's logical send
+ *      readiness after the stream has entered a terminal state. Atomically
+ *      claim and remove the registered one-shot wake callback before
+ *      invoking it, ensuring that each registration is consumed at most
+ *      once.
+ *
+ *      This function also clears the retained wake argument, thereby
+ *      removing the writer attachment from the shared stream. Normal
+ *      low-water wakeups are handled separately by SharedAccountTrim(),
+ *      which consumes the callback but retains the wake argument while
+ *      the writer remains attached.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Clears the blocked-writer wake registration and attachment marker.
+ *      When a callback was registered, invokes the corresponding
+ *      Ns_DriverSendWakeProc after releasing the shared-stream mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SharedSendWakeBlocked(SharedStream *ss)
+{
+    Ns_DriverSendWakeProc *wakeProc;
+    void                  *wakeArg;
+
+    Ns_MutexLock(&ss->lock);
+    wakeProc = ss->send_wake_proc;
+    wakeArg  = ss->send_wake_arg;
+    ss->send_wake_proc = NULL;
+    ss->send_wake_arg  = NULL;
+    Ns_MutexUnlock(&ss->lock);
+
+    if (wakeProc != NULL) {
+        (*wakeProc)(wakeArg);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SharedBufferedBytes --
+ *
+ *      Return the number of response-body bytes currently retained for
+ *      the stream, including data queued by the producer and data pending
+ *      consumption by the QUIC transport.
+ *
+ *       The value is read while holding the shared-stream mutex and is used
+ *       for high- and low-water flow-control decisions.
+ *
+ * Results:
+ *      The current number of buffered response-body bytes.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+size_t
+SharedBufferedBytes(SharedStream *ss)
+{
+    size_t result;
+
+    Ns_MutexLock(&ss->lock);
+    result = ss->tx_buffered;
+    Ns_MutexUnlock(&ss->lock);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SharedAccountTrim --
+ *
+ *      Account for response-body bytes permanently removed from the
+ *      pending send queue after they have been accepted by the QUIC
+ *      transport. Decrease the shared buffered-byte count by the number
+ *      of trimmed bytes.
+ *
+ *      If the resulting buffered byte count is at or below the configured
+ *      low-water mark, release a writer previously parked at the
+ *      high-water mark.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updates the mutex-protected buffered-byte accounting and may invoke
+ *      the registered writer wake callback after releasing the mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SharedAccountTrim(SharedStream *ss, size_t nbytes)
+{
+    Ns_DriverSendWakeProc *wakeProc = NULL;
+    void                  *wakeArg  = NULL;
+
+    if (nbytes == 0u) {
+        return;
+    }
+
+    Ns_MutexLock(&ss->lock);
+    assert(nbytes <= ss->tx_buffered);
+    ss->tx_buffered -= nbytes;
+
+    if (ss->send_wake_proc != NULL
+        && ss->tx_buffered <= ss->send_resume_size) {
+        wakeProc = ss->send_wake_proc;
+        wakeArg  = ss->send_wake_arg;
+        ss->send_wake_proc = NULL;
+    }
+    Ns_MutexUnlock(&ss->lock);
+
+    if (wakeProc != NULL) {
+        (*wakeProc)(wakeArg);
+    }
 }
 
 /*
@@ -509,6 +767,30 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
  */
 void SharedMarkClosedByApp(SharedStream *ss) {
     (void)Ns_AtomicUint32FetchOrRelease(&ss->tx_state, SHARED_TX_CLOSED);
+}
+
+/*
+ *----------------------------------------------------------------------
+ * SharedMarkAbortRequested --
+ *
+ *      Publish that the producer terminated response transmission
+ *      abnormally. The QUIC thread consumes this state and resets the
+ *      HTTP/3 stream.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Atomically sets SHARED_TX_ABORT_REQUESTED in ss->tx_state.
+ *      The operation is idempotent and does not itself request a resume.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SharedMarkAbortRequested(SharedStream *ss)
+{
+    (void)Ns_AtomicUint32FetchOrRelease(
+        &ss->tx_state, SHARED_TX_ABORT_REQUESTED);
 }
 
 /*======================================================================
@@ -561,17 +843,20 @@ SharedSpliceQueuedToPending(SharedStream *ss, size_t maxbytes)
  *----------------------------------------------------------------------
  * SharedTrimPending --
  *
- *      Consume up to nbytes from the pending TX queue (thread-safe),
- *      delegating to ChunkQueueTrim(); when drain is true, it may drop
- *      fully consumed chunks per ChunkQueueTrim semantics.
+ *      Consume up to nbytes from the consumer-owned pending TX queue,
+ *      delegating to ChunkQueueTrim(); when drain is true, it may drop fully
+ *      consumed chunks per ChunkQueueTrim semantics. The caller must execute
+ *      with the owning connection's thread affinity.
  *
  * Results:
  *      Number of bytes actually trimmed (<= nbytes).
  *
  * Side effects:
- *      Acquires ss->lock; mutates ss->tx_pending counters/links.
+ *      Mutates ss->tx_pending counters/links without holding ss->lock, then
+ *      acquires ss->lock to update the cross-thread buffered-byte accounting.
  *      Emits Notice logs with before/after unread byte counts.
- *      Does not trigger wake/resume.
+ *      May issue a one-shot producer wakeup after the buffered amount falls
+ *      to the stream resume threshold.
  *----------------------------------------------------------------------
  */
 size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain) {
@@ -583,6 +868,7 @@ size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain) {
            ss->tx_pending.unread);
 
     n = ChunkQueueTrim(&ss->tx_pending, nbytes, drain);
+    SharedAccountTrim(ss, n);
 
     Ns_Log(Ns_LogQuicDebug,
            "SharedTrimPending (%zu bytes): after trim unread %" PRIuz,
@@ -613,7 +899,8 @@ size_t SharedTrimPending(SharedStream *ss, size_t nbytes, bool drain) {
  *      Advances chunk data pointers, updates chunk lengths and the pending
  *      unread-byte count, and may free fully consumed chunks. Maintains
  *      consistent queue head and tail pointers. Does not acquire ss->lock
- *      and does not trigger a wake or resume request.
+ *      and may trigger a registered producer wake after accounting is
+ *      updated.
  *
  *----------------------------------------------------------------------
  */
@@ -622,6 +909,7 @@ SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len)
 {
     const size_t requested = len;
     size_t       trimmed   = 0u;
+    size_t       accounted = 0u;
 
     /*
      * The caller must execute on the owning H3/QUIC thread. The caller's
@@ -664,6 +952,7 @@ SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len)
         }
 
         trimmed += take;
+        accounted += consumed;
         len     -= take;
 
         if (ch->len != 0u) {
@@ -693,6 +982,8 @@ SharedTrimPendingFromVec(SharedStream *ss, const uint8_t *base, size_t len)
            requested,
            trimmed,
            ss->tx_pending.unread);
+
+    SharedAccountTrim(ss, accounted);
 
     return trimmed;
 }

@@ -508,6 +508,8 @@ typedef struct Driver {
     Ns_DriverClientInitProc *clientInitProc;   /* Optional - initialization of client connections */
     Ns_ThreadProc           *driverThreadProc; /* Optional - use alternate driver thread proc */
     Ns_HeadersEncodeProc    *headersEncodeProc;/* Optional - use alternate header encode proc */
+    Ns_DriverSendReadyProc  *sendReadyProc;    /* Optional logical stream send readiness. */
+    Ns_DriverSendCancelProc *sendCancelProc;   /* Optional cancellation of readiness wakeup. */
 
     ssize_t                              locationLength;
     const char *path;                   /* Path in the configuration namespace */
