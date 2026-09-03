@@ -3288,7 +3288,6 @@ DriverAcceptReadySocket(Driver *drvPtr, NS_SOCKET listenSock,
 
         return DRIVER_ACCEPT_OUTCOME_STOP;
     }
-
     case SOCK_BADHEADER:      NS_FALL_THROUGH;
     case SOCK_BADREQUEST:     NS_FALL_THROUGH;
     case SOCK_CLOSE:          NS_FALL_THROUGH;
@@ -3592,6 +3591,32 @@ DriverThread(void *arg)
                         }
                         break;
 
+                    case SOCK_READERROR: {
+                        int sockerrno = 0;
+
+                        /*
+                         * Use the error recorded by the receive operation. Ambient errno
+                         * may belong to an earlier accept(), poll(), or other system call.
+                         */
+                        if (Ns_ErrorCodeGetErrno(sockPtr->recvErrno, &sockerrno)
+                            && sockerrno != 0) {
+                            drvPtr->stats.errors++;
+
+                            Ns_Log(Warning,
+                                   "sockread returned unexpected result %s (err %s); "
+                                   "close socket (%d)",
+                                   SockStateString(s),
+                                   strerror(sockerrno),
+                                   sockPtr->sock);
+                        }
+
+                        /*
+                         * A non-system TLS error is already reported by the TLS receive
+                         * implementation with its OpenSSL error code.
+                         */
+                        SockRelease(sockPtr, s, sockerrno);
+                        break;
+                    }
                         /*
                          * Already handled or normal cases
                          */
@@ -3607,7 +3632,6 @@ DriverThread(void *arg)
                         /*
                          * Exceptions
                          */
-                    case SOCK_READERROR:    NS_FALL_THROUGH; /* fall through */
                     case SOCK_CLOSETIMEOUT: NS_FALL_THROUGH; /* fall through */
                     case SOCK_ERROR:        NS_FALL_THROUGH; /* fall through */
                     case SOCK_READTIMEOUT:  NS_FALL_THROUGH; /* fall through */
