@@ -4145,9 +4145,10 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
          * "notices" in the system log file.
          */
         if (sslERRcode != 0u) {
-            Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d",
-                   sock, n, got, err);
-            DrainErrorStack(Notice, "... SSL_read error", sslERRcode);
+            char errorContext[64];
+
+            snprintf(errorContext, sizeof(errorContext), "SSL_read(%d)", sock);
+            DrainErrorStack(Notice, errorContext, sslERRcode);
         }
 
         SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
