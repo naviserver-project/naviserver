@@ -4723,15 +4723,16 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
     status = DriverAccept(sockPtr, sock);
     acceptErrno = ns_sockerrno;
 
-    if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)) {
+    if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)
+        && sockPtr->recvErrno == 0u
+        && acceptErrno == 0) {
         Ns_Log(Warning,
-               "DEBUG DriverAccept error diagnostic: driver %s, "
-               "recvErrno %lu, acceptErrno %d, socket %d",
-               drvPtr->threadName,
-               sockPtr->recvErrno,
-               acceptErrno,
-               sockPtr->sock);
+               "DEBUG DriverAccept returned an error without an error code: "
+               "driver %s, socket %d",
+               drvPtr->name, sockPtr->sock);
+    }
 
+    if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)) {
         sockStatus = SOCK_ERROR;
 
         if (errorCodePtr != NULL) {
