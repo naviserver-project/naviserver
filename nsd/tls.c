@@ -2070,10 +2070,8 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
          * "notices" in the system log file.
          */
         while (sslERRcode != 0u) {
-            Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d,"
-                   " get_error:%lu, %s", sock, n, got, err, sslERRcode,
-                   ERR_error_string(sslERRcode, errorBuffer));
-
+            Ns_Log(Notice, "SSL_read(%d): %s",
+                   sock, ERR_error_string(sslERRcode, errorBuffer));
             sslERRcode = ERR_get_error();
         }
 
