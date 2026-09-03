@@ -229,6 +229,13 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *saPtr, socklen_t *s
     unsigned long errorCode = 0u;
 
     sock->sock = Ns_SockAccept2(listensock, saPtr, socklenPtr, &errorCode);
+
+
+    if (sock->sock == NS_INVALID_SOCKET && errorCode == 0u) {
+        Ns_Log(Warning,
+               "DEBUG Ns_SockAccept2 returned an invalid socket without an error code");
+    }
+
     Ns_SockSetRecvErrno(sock, errorCode);
 
     if (sock->sock != NS_INVALID_SOCKET) {
