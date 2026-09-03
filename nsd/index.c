@@ -37,7 +37,7 @@ static Ns_IndexKeyCmpProc CmpKeyWithInt;
 static void *
 NsBsearch (register const void *key, register const void *base,
            register size_t nmemb, register size_t size,
-           int (*compar)(const void *left, const void *right));
+           int (*compar)(const void *leftPtr, const void *rightPtr));
 #endif
 
 
@@ -59,8 +59,8 @@ NsBsearch (register const void *key, register const void *base,
 
 void
 Ns_IndexInit(Ns_Index *indexPtr, size_t inc,
-             int (*CmpEls) (const void *left, const void *right),
-             int (*CmpKeyWithEl) (const void *left, const void *right))
+             int (*CmpEls) (const void *leftPtr, const void *rightPtr),
+             int (*CmpKeyWithEl) (const void *leftPtr, const void *rightPtr))
 {
 
     NS_NONNULL_ASSERT(indexPtr != NULL);

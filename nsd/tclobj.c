@@ -781,7 +781,7 @@ NsTclDictSort(Tcl_Interp *interp, Tcl_Obj *dictObj)
     Tcl_Obj       *keyObj, *valueObj;
     Tcl_Obj       *keysObj, *sortedKeysObj, *resultObj;
     Tcl_Obj      **keyObjs;
-    TCL_SIZE_T     keyCount, i;
+    TCL_SIZE_T     keyCount;
     int            done;
 
     Tcl_IncrRefCount(dictObj);
@@ -811,7 +811,7 @@ NsTclDictSort(Tcl_Interp *interp, Tcl_Obj *dictObj)
 
     if (Tcl_ListObjGetElements(interp, sortedKeysObj,
                                &keyCount, &keyObjs) == TCL_OK) {
-        for (i = 0; i < keyCount; i++) {
+        for (TCL_SIZE_T i = 0; i < keyCount; i++) {
             valueObj = NULL;
             (void) Tcl_DictObjGet(interp, dictObj,
                                   keyObjs[i], &valueObj);

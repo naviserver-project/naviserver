@@ -1490,15 +1490,15 @@ static void ContextFilterDestroy(const Ns_Index* indexPtr)
  */
 
 static int
-CmpBranches(const void *leftPtrPtr, const void *rightPtrPtr)
+CmpBranches(const void *leftPtr, const void *rightPtr)
 {
     const char *wordLeft, *wordRight;
 
-    NS_NONNULL_ASSERT(leftPtrPtr != NULL);
-    NS_NONNULL_ASSERT(rightPtrPtr != NULL);
+    NS_NONNULL_ASSERT(leftPtr != NULL);
+    NS_NONNULL_ASSERT(rightPtr != NULL);
 
-    wordLeft  = (*(const Branch *const*)leftPtrPtr)->word;
-    wordRight = (*(const Branch *const*)rightPtrPtr)->word;
+    wordLeft  = (*(const Branch *const*)leftPtr)->word;
+    wordRight = (*(const Branch *const*)rightPtr)->word;
 #ifdef DEBUG
     fprintf(stderr, "CmpBranches '%s' with '%s' -> %d\n", wordLeft, wordRight,
             NS_strcmp(wordLeft, wordRight));
@@ -1536,8 +1536,8 @@ CmpBranches(const void *leftPtrPtr, const void *rightPtrPtr)
  *             d. Otherwise, the spec without a wildcard (more specific)
  *                sorts before the one with a wildcard. *
  * Parameters:
- *      leftPtrPtr   - Pointer to a pointer to the first UrlSpaceContextSpec.
- *      rightPtrPtr  - Pointer to a pointer to the second UrlSpaceContextSpec.
+ *      leftPtr   - Pointer to a pointer to the first UrlSpaceContextSpec.
+ *      rightPtr  - Pointer to a pointer to the second UrlSpaceContextSpec.
  *
  * Results:
  *      An integer less than, equal to, or greater than zero if the first
@@ -1549,13 +1549,13 @@ CmpBranches(const void *leftPtrPtr, const void *rightPtrPtr)
  *----------------------------------------------------------------------
  */
 static int
-CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
+CmpUrlSpaceContextSpecs(const void *leftPtr, const void *rightPtr)
 {
     const UrlSpaceContextSpec *ctxLeft, *ctxRight;
     int result = 0;
 
-    ctxLeft  = *(UrlSpaceContextSpec *const*)leftPtrPtr;
-    ctxRight = *(UrlSpaceContextSpec *const*)rightPtrPtr;
+    ctxLeft  = *(UrlSpaceContextSpec *const*)leftPtr;
+    ctxRight = *(UrlSpaceContextSpec *const*)rightPtr;
 
     if (ctxLeft->type != ctxRight->type) {
         //static const char *order = "&64h";
@@ -2355,17 +2355,17 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
  */
 
 static int
-CmpChannels(const void *leftPtrPtr, const void *rightPtrPtr)
+CmpChannels(const void *leftPtr, const void *rightPtr)
 {
     const char *filterLeft, *filterRight;
     bool       lcontainsr, rcontainsl;
     int        result;
 
-    NS_NONNULL_ASSERT(leftPtrPtr != NULL);
-    NS_NONNULL_ASSERT(rightPtrPtr != NULL);
+    NS_NONNULL_ASSERT(leftPtr != NULL);
+    NS_NONNULL_ASSERT(rightPtr != NULL);
 
-    filterLeft  = (*(const Channel *const*)leftPtrPtr)->filter;
-    filterRight = (*(const Channel *const*)rightPtrPtr)->filter;
+    filterLeft  = (*(const Channel *const*)leftPtr)->filter;
+    filterRight = (*(const Channel *const*)rightPtr)->filter;
 
     lcontainsr = NS_Tcl_StringMatch(filterRight, filterLeft);
     rcontainsl = NS_Tcl_StringMatch(filterLeft, filterRight);
@@ -2454,15 +2454,15 @@ CmpKeyWithChannel(const void *key, const void *elemPtr)
  */
 
 static int
-CmpChannelsAsStrings(const void *leftPtrPtr, const  void *rightPtrPtr)
+CmpChannelsAsStrings(const void *leftPtr, const  void *rightPtr)
 {
     const char *filterLeft, *filterRight;
 
-    NS_NONNULL_ASSERT(leftPtrPtr != NULL);
-    NS_NONNULL_ASSERT(rightPtrPtr != NULL);
+    NS_NONNULL_ASSERT(leftPtr != NULL);
+    NS_NONNULL_ASSERT(rightPtr != NULL);
 
-    filterLeft  = (*(const Channel *const*)leftPtrPtr)->filter;
-    filterRight = (*(const Channel *const*)rightPtrPtr)->filter;
+    filterLeft  = (*(const Channel *const*)leftPtr)->filter;
+    filterRight = (*(const Channel *const*)rightPtr)->filter;
 
 #ifdef DEBUG
     fprintf(stderr, "CmpChannelsAsStrings '%s' with '%s' -> %d\n",
