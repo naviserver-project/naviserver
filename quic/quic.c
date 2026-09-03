@@ -592,6 +592,7 @@ static char    *DStringAppendSslPollEventFlags(Tcl_DString *dsPtr, uint64_t flag
  */
 static bool     h3_conn_write_step(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static bool     h3_conn_has_pending_work(ConnCtx *cc) NS_GNUC_NONNULL(1);
+static bool     h3_conn_has_active_producer(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_clear_wants_write_if_idle(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static void     h3_conn_mark_wants_write(ConnCtx *cc, StreamCtx *sc, const char *why) NS_GNUC_NONNULL(1,2);
 static void     h3_conn_mark_closing(ConnCtx *cc) NS_GNUC_NONNULL(1);
@@ -3920,6 +3921,57 @@ h3_conn_has_pending_work(ConnCtx *cc)
             /*
              * Preserve the remaining existing stream-work checks here.
              */
+        }
+    }
+
+    return NS_FALSE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * h3_conn_has_active_producer --
+ *
+ *      Determine whether a request belonging to this HTTP/3 connection
+ *      has been dispatched to a connection thread but its response has
+ *      not yet reached a terminal state.
+ *
+ *      While such a stream exists, a connection or writer thread may
+ *      publish response data asynchronously. With SO_REUSEPORT, the
+ *      resulting wake datagram is not guaranteed to reach the QUIC
+ *      driver thread owning this connection, so that thread must use a
+ *      bounded poll timeout.
+ *
+ * Results:
+ *      NS_TRUE when at least one dispatched request may still publish
+ *      response work; otherwise NS_FALSE.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+h3_conn_has_active_producer(ConnCtx *cc)
+{
+    Tcl_HashSearch  search;
+    Tcl_HashEntry  *hPtr;
+
+    for (hPtr = Tcl_FirstHashEntry(&cc->streams, &search);
+         hPtr != NULL;
+         hPtr = Tcl_NextHashEntry(&search)) {
+        const StreamCtx *sc = Tcl_GetHashValue(hPtr);
+        uint32_t         io_state;
+
+        if (sc == NULL || !StreamCtxIsBidi(sc)) {
+            continue;
+        }
+
+        io_state = H3_IO_STATE(sc);
+
+        if ((io_state & H3_IO_REQ_DISPATCHED) != 0u
+            && (io_state & (H3_IO_TX_FIN | H3_IO_RESET)) == 0u) {
+            return NS_TRUE;
         }
     }
 
@@ -10259,9 +10311,10 @@ QuicThread(void *arg)
         //Ns_Log(Ns_LogQuicDebug, "[%lld] all events processed", (long long)dc->iter);
 
         {
-            bool expecting_send = NS_FALSE;
-            bool immediate_work = NS_FALSE;
+            bool expecting_send   = NS_FALSE;
+            bool immediate_work   = NS_FALSE;
             bool deferredDispatch = NS_FALSE;
+            bool activeProducer   = NS_FALSE;
 
             /*
              * Allow producers to arm the next notification before scanning shared
@@ -10330,6 +10383,19 @@ QuicThread(void *arg)
                     if (h3_conn_dispatch_ready_requests(cc)) {
                         deferredDispatch = NS_TRUE;
                     }
+                    /*
+                     * Processing may have transferred a request to a
+                     * connection thread and established a new asynchronous
+                     * response producer.
+                     *
+                     * Once activeProducer becomes true, no further connection scans are
+                     * needed for timeout selection during this iteration.
+                     */
+                    if (h3->reuseport
+                        && !activeProducer
+                        && h3_conn_has_active_producer(cc)) {
+                        activeProducer = NS_TRUE;
+                    }
 
                     PollsetUpdateConnPollInterest(cc);
                 }
@@ -10340,11 +10406,11 @@ QuicThread(void *arg)
                 polltimeout_ptr = &no_wait;
             } else if (expecting_send || deferredDispatch) {
                 polltimeout_ptr = &h3->drain_timeout;
-            } else if (h3->reuseport) {
+            } else if (activeProducer) {
                 /*
-                 * A wake datagram sent to a SO_REUSEPORT listener may be delivered
-                 * to another QUIC driver. Bound the idle wait so producer work is
-                 * eventually observed by its owning driver.
+                 * A response producer may enqueue work from another thread. Its wake
+                 * datagram may reach a different SO_REUSEPORT listener, so periodically
+                 * inspect this driver's shared queues.
                  */
                 polltimeout_ptr = &h3->drain_timeout;
             } else {
