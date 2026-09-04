@@ -400,7 +400,7 @@ typedef bool (Ns_HeadersEncodeProc)(
     size_t         *out_len     /* optional: item count or bytes written */
 ) NS_GNUC_NONNULL(1,4,5);
 
-                                   
+
 /*
  * Generic function pointer type, can be used for recasting between different
  * function types.

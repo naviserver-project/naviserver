@@ -57,17 +57,17 @@ jobs:
       - name: Copy sources into VM
         run: |
           set -eux
-      
+
           rsync -a --delete \
             -e ssh \
             naviserver/ \
             lima-opensuse:/tmp/naviserver/
-      
+
           rsync -a --delete \
             -e ssh \
             install-ns/ \
             lima-opensuse:/tmp/naviserver/install-ns/
-      
+
       - name: Build NaviServer
         run: |
           ssh lima-opensuse \
@@ -90,7 +90,7 @@ jobs:
                with_postgres_driver=1 \
                ns_modules='${NS_MODULES}' \
                bash ./install-ns.sh build"
-      
+
       - name: Run regression tests
         run: |
           ssh lima-opensuse 'bash -s' <<'EOF'
