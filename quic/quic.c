@@ -94,18 +94,9 @@
 #define NS_ENABLE_THREAD_AFFINITY 1
 #include "thread-affinity.h"
 
-<<<<<<< HEAD
-NS_EXPORT int Ns_ModuleVersion = 1;
-=======
-#ifdef NS_DRIVER_MEM_STATS
-# define QUIC_MEM_STATS 1
-#endif
-
-
 NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 
->>>>>>> 465a555b1 (fix(quic): QUIC stream cleanup and socket delivery lifetime)
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 Ns_LogSeverity Ns_LogQuicDebug;
