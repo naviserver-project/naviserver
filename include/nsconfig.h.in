@@ -167,9 +167,6 @@
 /* Define to 1 if you have the 'random' function. */
 #undef HAVE_RANDOM
 
-/* Define to 1 when sd_listen_fds() is available. */
-#undef HAVE_SD_LISTEN_FDS
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
