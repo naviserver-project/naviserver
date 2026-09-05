@@ -2342,7 +2342,7 @@ DriverAcceptReadySocket(Driver *drvPtr, NS_SOCKET listenSock,
     Sock         *sockPtr = NULL;
     bool          accepted = NS_FALSE;
 
-    state = SockAccept(drvPtr, listenSock, &sockPtr, nowPtr, NULL,
+    state = SockAccept(drvPtr, listenSock, &sockPtr, nowPtr,
                        &errorCode, &accepted);
 
     switch (state) {
@@ -2771,7 +2771,7 @@ DriverThread(void *arg)
                             Ns_Log(Warning,
                                    "sockread returned unexpected result %s (err %s); "
                                    "close socket (%d)",
-                                   SockStateString(s),
+                                   GetSockStateName(s),
                                    strerror(sockerrno),
                                    sockPtr->sock);
                         }
@@ -2849,7 +2849,7 @@ DriverThread(void *arg)
          * such sockets indefinitely. Reverse the list so that the oldest
          * sockets are retried first.
          */
-        if ((reanimation || nrWaiting == 0) && waitPtr != NULL) {
+        if ((reanimation || n == 0) && waitPtr != NULL) {
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {
                 waitPtr = nextPtr->nextPtr;

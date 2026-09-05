@@ -260,7 +260,7 @@ Ns_SockSetRecvErrno(Ns_Sock *sock, unsigned long recvErrno)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockGetSendErrno, Ns_SockGetRecvErrno, Ns_SockGetSendRejected, Ns_SockGetSendCount --
+ * Ns_SockGetRecvErrno --
  *
  *      Accessor functions for sendErrno, recvErrno, sendRejected and sendCount
  *
@@ -272,28 +272,11 @@ Ns_SockSetRecvErrno(Ns_Sock *sock, unsigned long recvErrno)
  *
  *----------------------------------------------------------------------
  */
-unsigned long
-Ns_SockGetSendErrno(Ns_Sock *sock)
-{
-    return ((Sock *)sock)->sendErrno;
-}
 
 unsigned long
 Ns_SockGetRecvErrno(Ns_Sock *sock)
 {
     return ((Sock *)sock)->recvErrno;
-}
-
-ssize_t
-Ns_SockGetSendRejected(Ns_Sock *sock)
-{
-    return ((Sock *)sock)->sendRejected;
-}
-
-size_t
-Ns_SockGetSendCount(Ns_Sock *sock)
-{
-    return ((Sock *)sock)->sendCount;
 }
 
 /*
@@ -2356,7 +2339,7 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
  *----------------------------------------------------------------------
  */
 const char *
-ErrorCodeString(unsigned long errorCode, char *buffer, size_t bufferSize)
+Ns_ErrorString(unsigned long errorCode, char *buffer, size_t bufferSize)
 {
 #ifdef HAVE_OPENSSL_EVP_H
     if (ERR_GET_LIB(errorCode) != 0) {
