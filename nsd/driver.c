@@ -2977,7 +2977,7 @@ DriverThread(void *arg)
                             Ns_Log(Warning,
                                    "sockread returned unexpected result %s (err %s); "
                                    "close socket (%d)",
-                                   SockStateString(s),
+                                   GetSockStateName(s),
                                    strerror(sockerrno),
                                    sockPtr->sock);
                         }

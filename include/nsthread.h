@@ -834,6 +834,12 @@ typedef int bool;
 # define NS_SOCK_ERRNO()             (errno)
 #endif
 
+#define NS_ERRNO_WOULDBLOCK(e) \
+    ((e) == NS_EAGAIN || ((NS_EAGAIN != NS_EWOULDBLOCK) && (e) == NS_EWOULDBLOCK))
+
+#define NS_ERRNO_SHOULD_RETRY(e) \
+    ((e) == NS_EINTR || NS_ERRNO_WOULDBLOCK(e))
+
 #ifndef S_ISREG
 # define S_ISREG(m)                 ((m) & _S_IFREG)
 #endif
