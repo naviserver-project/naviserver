@@ -88,6 +88,14 @@
 #  define HAVE_OPENSSL_OCSP
 # endif
 
+#  if OPENSSL_VERSION_PREREQ(4,0)
+#   define HAVE_OPENSSL_4
+#   define HAVE_OPENSSL_4_0
+#  endif
+#  if OPENSSL_VERSION_PREREQ(4,1)
+#   define HAVE_OPENSSL_4_1
+#  endif
+
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 

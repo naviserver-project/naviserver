@@ -401,6 +401,34 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
 /*
  *----------------------------------------------------------------------
  *
+ * ASN1StringLength --
+ *
+ *      Return the length of an ASN.1 string using the public OpenSSL
+ *      interface appropriate for the configured OpenSSL version.
+ *
+ * Results:
+ *      The string length as an int, or -1 when the value exceeds INT_MAX.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ASN1StringLength(const ASN1_STRING *asnString)
+{
+#if defined(HAVE_OPENSSL_4_1)
+    size_t length = ASN1_STRING_get_length(asnString);
+
+    return (length > INT_MAX) ? -1 : (int)length;
+#else
+    return ASN1_STRING_length(asnString);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SSL_cert_has_must_staple --
  *
  *      Check whether an X.509 certificate has the “must-staple” TLS
@@ -439,10 +467,10 @@ static int SSL_cert_has_must_staple(X509 *cert) {
          */
         return 0;
     } else {
-        X509_EXTENSION      *ext = X509_get_ext(cert, ext_index);
-        ASN1_OCTET_STRING   *octet = X509_EXTENSION_get_data(ext);
-        const unsigned char *p = ASN1_STRING_get0_data(octet);
-        long                 len = ASN1_STRING_length(octet);
+        const X509_EXTENSION    *ext = X509_get_ext(cert, ext_index);
+        const ASN1_OCTET_STRING *octet = X509_EXTENSION_get_data(ext);
+        const unsigned char     *p = ASN1_STRING_get0_data(octet);
+        long                     len = ASN1StringLength(octet);
         STACK_OF(ASN1_TYPE) *features = d2i_ASN1_SEQUENCE_ANY(NULL, &p, len);
 
         if (!features) {
@@ -828,15 +856,20 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
     NS_NONNULL_ASSERT(resp != NULL);
 
     if (OCSP_id_get0_info(NULL, NULL, NULL, &pserial, id) != 0) {
-        Tcl_DString outputBuffer;
-        struct stat fileInfo;
-        const char *fileName;
+        Tcl_DString           outputBuffer;
+        struct stat           fileInfo;
+        const char           *fileName;
+        const unsigned char *serialData;
+        int                  serialLength;
+
+        serialLength = ASN1StringLength((const ASN1_STRING *)pserial);
+        serialData = ASN1_STRING_get0_data((const ASN1_STRING *)pserial);
 
         Tcl_DStringInit(&outputBuffer);
-        Tcl_DStringSetLength(&outputBuffer, (TCL_SIZE_T)(pserial->length*2 + 1));
-
-        Ns_HexString(pserial->data, outputBuffer.string, (TCL_SIZE_T)pserial->length, NS_TRUE);
-
+        Tcl_DStringSetLength(&outputBuffer,
+                             (TCL_SIZE_T)(serialLength * 2 + 1));
+        Ns_HexString(serialData, outputBuffer.string,
+                     (TCL_SIZE_T)serialLength, NS_TRUE);
         /*
          * A result of TCL_CONTINUE or TCL_OK implies a computed filename
          * of the cache file in dsPtr;
