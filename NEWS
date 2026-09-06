@@ -2,7 +2,7 @@
 NaviServer 4.99.34, released 2026-09-XX
 =======================================
 
- XX files changed, XXX insertions(+), XXX deletions(-)
+ 19 files changed, 1707 insertions(+), 247 deletions(-)
 
 Security Fixes:
 ---------------
@@ -138,7 +138,7 @@ Bug Fixes:
    2020) and 4.99.31 produced incorrect, non-RFC-compliant scrypt hashes.
    NaviServer 5 is unaffected.  (commit d204e225 )
 
- - ns_internalredirect: Fixed a bug a few years old, wherethe
+ - ns_internalredirect: Fixed a bug a few years old, where the
    connection requirement check used the wrong condition, preventing
    redirects from being executed.  The issue was introduced in
    November 2023 (shortly after 4.99.19) and is now corrected.  Many
