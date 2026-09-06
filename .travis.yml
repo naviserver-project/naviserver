@@ -1,8 +1,0 @@
-language: c
-matrix:
-  include:
-   # ----------------------------
-    - os: linux
-      dist: xenial
-      compiler: clang
-
