@@ -402,7 +402,7 @@ typedef Ns_ReturnCode Ns_AuthorizeUserProc(void *arg, const Ns_Server *servPtr,
 typedef int           Ns_ObjvProc(struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                                   TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1);
-typedef int           Ns_IndexCmpProc(const void *left, const void *right)
+typedef int           Ns_IndexCmpProc(const void *leftPtr, const void *rightPtr)
     NS_GNUC_NONNULL(1,2);
 typedef int           Ns_IndexKeyCmpProc(const void *key, const void *elemPtr)
     NS_GNUC_NONNULL(1,2);
