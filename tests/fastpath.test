@@ -75,11 +75,10 @@ test fastpath-directorylisting-1.1 {
     ::_ns_fastpathTest::setup
 } -body {
     lassign [::_ns_fastpathTest::getListing] status body
-
     list \
         $status \
         [expr {[string first {normal.txt} $body] >= 0}] \
-        [expr {[string first {<a href='..'>..</a>} $body] >= 0}]
+        [expr {[string first {<a href=..>..</a>} $body] >= 0}]
 } -cleanup {
     ::_ns_fastpathTest::cleanup
 } -result {200 1 1}
