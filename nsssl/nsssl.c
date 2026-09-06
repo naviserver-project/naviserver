@@ -231,9 +231,6 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
                                 socklenPtr, &errorCode);
     Ns_SockSetRecvErrno(sock, errorCode);
 
-    sock->sock = Ns_SockAccept2(listensock, sockaddrPtr, socklenPtr, &errorCode);
-    Ns_SockSetRecvErrno(sock, errorCode);
-
     if (sock->sock != NS_INVALID_SOCKET) {
 #ifdef __APPLE__
       /*
