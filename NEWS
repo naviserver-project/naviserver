@@ -2,7 +2,7 @@
 NaviServer 4.99.34, released 2026-09-XX
 =======================================
 
- 19 files changed, 1707 insertions(+), 247 deletions(-)
+ 28 files changed, 1771 insertions(+), 307 deletions(-)
 
 Security Fixes:
 ---------------
