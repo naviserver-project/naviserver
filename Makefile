@@ -24,9 +24,9 @@ ifeq (,$(findstring MINGW,$(uname)))
 endif
 
 distfiles = $(dirs) doc tcl contrib include tests win win32 configure m4 \
-	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
-	config.guess config.sub \
-	README.md NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
+	Makefile Makefile.win32 autogen.sh install-sh missing aclocal.m4 configure.ac \
+	config.guess config.sub returnnotice.adp ca-bundle.crt \
+	README.md NEWS LICENSE sample-config.tcl.in simple-config.tcl openacs-config.tcl \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in install-from-repository.tcl
 
