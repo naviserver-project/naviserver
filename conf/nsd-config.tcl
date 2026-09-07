@@ -392,6 +392,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
 
         # ns_param maxinput      $max_file_upload_size      ;# Maximum file size for uploads
         # ns_param recvwait      $max_file_upload_duration  ;# 30s, timeout for receive operations
+        # ns_param sendwait      10s                        ;# 20s, timeout for sendoperations
         # ns_param keepalivemaxuploadsize   0.5MB           ;# 0, don't allow keep-alive for upload content larger than this
         # ns_param keepalivemaxdownloadsize 1MB             ;# 0, don't allow keep-alive for download content larger than this
 
@@ -471,11 +472,14 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_section ns/module/h3 {
             ns_param https ns/module/https         ;# linkage to HTTPS configuration
             # ns_param recvbufsize  2MB            ;# default: 8MB; receive buffer size
+            # ns_param sendqueuesize 256kB         ;# default: 256kB; maximum queued response body per H3 stream
             # ns_param idletimeout  1s             ;# default: 3s; maximum idle poll interval
             # ns_param draintimeout 2ms            ;# default: 10ms; poll interval while draining
             # ns_param validateclientaddress false ;# default: true; validate the client address before accept
                                                    ;# when set to false, weakens flood protection
             # ns_param debug true                  ;# default: false; enable detailed QUIC diagnostic
+            ns_param sendwait      10s
+            ns_param writerthreads 2
         }
     }
 }
@@ -539,9 +543,9 @@ ns_section ns/server/default {
     ns_param enabletclpages      true  ;# default: false
     #ns_param filterrwlocks      false ;# default: true
     ns_param checkmodifiedsince  false ;# default: true, check modified-since before returning files from cache. Disable for speedup
-    ns_param connsperthread      1000  ;# default: 0; number of connections (requests) handled per thread
-    ns_param minthreads          5     ;# default: 1; minimal number of connection threads
-    ns_param maxthreads          100   ;# default: 10; maximal number of connection threads
+    ns_param connsperthread      10000  ;# default: 0; number of connections (requests) handled per thread
+    ns_param minthreads          10     ;# default: 1; minimal number of connection threads
+    ns_param maxthreads          10    ;# default: 10; maximal number of connection threads
     #ns_param maxconnections     100   ;# default: 100; number of allocated connection structures
     ns_param rejectoverrun       true  ;# default: false; send 503 when thread pool queue overruns
     #ns_param threadtimeout      2m    ;# default: 2m; timeout for idle connection threads
@@ -756,4 +760,3 @@ ns_section ns/server/default/module/revproxy {
 #ns_logctl severity Debug(task) on
 #ns_logctl severity Debug(sql) on
 #ns_logctl severity Debug(nsset) on
-
