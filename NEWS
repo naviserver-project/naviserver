@@ -2,7 +2,7 @@
 NaviServer 5.0.6, released 2026-09-XX
 =======================================
 
- XX files changed, XXXX insertions(+), XXXX deletions(-)
+ 46 files changed, 2931 insertions(+), 634 deletions(-)
 
 Security Fixes
 --------------
@@ -70,6 +70,15 @@ Compatibility and Platform Fixes
      OpenSSL 4.1.
    * Replaced direct ASN.1 structure access with public OpenSSL data and
      length accessors.
+   * TLS: Adapted X.509 extension access to the const-correct OpenSSL 4.1
+     API while retaining the pointer types required by OpenSSL 3.x.  This
+     allows warning-free compilation with both API generations.
+     (commit e0452093)
+
+ - Installation: Made the post-installation nsadmin permission check
+   portable to macOS.  The check now avoids unsupported su options and
+   interactive password prompts after a successful installation.
+   (commit ca90247a)
 
  - C API:
    * Corrected printf-format attribute argument positions for the
