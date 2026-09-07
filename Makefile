@@ -77,7 +77,16 @@ install-notice:
 		echo "  useradd nsadmin"; \
 		echo ""; \
 	    else \
-		if ! su -s /bin/sh nsadmin -c "test -w $(NAVISERVER)/logs"; then \
+		if [ "`uname -s`" = "Darwin" ]; then \
+		    /usr/bin/sudo -u nsadmin -- \
+		        test -w "$(NAVISERVER)/logs"; \
+		    writable=$$?; \
+		else \
+		    su -s /bin/sh nsadmin \
+		        -c "test -w '$(NAVISERVER)/logs'"; \
+		    writable=$$?; \
+		fi; \
+		if [ $$writable -ne 0 ]; then \
 		    echo "The permissions for log directory have to be set up:"; \
 		    echo ""; \
 		    echo "  chown -R nsadmin:nsadmin $(NAVISERVER)/logs"; \
