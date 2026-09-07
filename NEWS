@@ -1,4 +1,213 @@
 =======================================
+NaviServer 5.0.6, released 2026-09-XX
+=======================================
+
+ XX files changed, XXXX insertions(+), XXXX deletions(-)
+
+Security Fixes
+--------------
+
+ - Fastpath:
+   * Prevented cross-site scripting through filenames displayed in
+     automatically generated directory listings.
+   * Added regression tests covering HTML-sensitive filenames.
+
+ - nsdbpg:
+   * Prevented SQL injection through identifiers supplied to the legacy
+     PostgreSQL BLOB commands.
+   * Replaced fixed-size query buffers in the affected BLOB operations.
+   * This fix is maintained in the separate nsdbpg repository and
+     requires nsdbpg commit 969ba18b57148e500ac77f617d4f184478041b35
+     or newer.
+
+ - nsconf:
+   * Prevented reflected cross-site scripting in the web-based
+     configuration editor by applying context-appropriate HTML and URL
+     encoding.
+   * This fix is maintained in the separate nsconf repository and
+     requires nsconf commit cca221e30f8e6f1bf0056aad60e054b88500a2a6
+     or newer.
+
+
+Bug Fixes
+---------
+
+ - Network Drivers:
+   * Continued listener accept sweeps after transient interrupted,
+     reset, or aborted connection attempts.
+   * Distinguished a drained listener from transient and fatal accept
+     errors.
+   * Preserved socket errors across driver accept callbacks instead of
+     relying on a potentially overwritten thread-local errno value.
+   * Distinguished failures of accept() from read-ahead errors occurring
+     after a transport connection was accepted.
+   * Retried pending sockets after poll timeouts.
+   * Used the recorded receive error when handling asynchronous socket
+     read failures.
+   * Deferred host-map cleanup until all associated driver threads have
+     stopped.
+
+ - Streaming Writer:
+   * Properly initialized the streaming-writer spool mutex.
+   * Detached recycled streaming sockets from their former connections.
+   * Initialized the writer memory-statistics mutex when writer memory
+     statistics are enabled.
+
+ - Tcl:
+   * Avoided sharing loaded-module Tcl objects between interpreter
+     threads.
+
+ - TLS:
+   * Improved SSL_read error context and removed redundant low-level
+     error messages.
+
+
+Compatibility and Platform Fixes
+--------------------------------
+
+ - OpenSSL:
+   * Added support for the opaque ASN.1 string representation used by
+     OpenSSL 4.1.
+   * Replaced direct ASN.1 structure access with public OpenSSL data and
+     length accessors.
+
+ - C API:
+   * Corrected printf-format attribute argument positions for the
+     internal panic logging function.
+
+
+Notes:
+------
+
+   * NaviServer modules are released independently of the core server.
+     Deployments using nsdbpg or nsconf should install the modules tar
+     file accompanying this NaviServer release, or update the affected
+     modules individually to the revisions listed above.
+
+=======================================
+NaviServer 4.99.34, released 2026-09-07
+=======================================
+
+ 28 files changed, 1771 insertions(+), 307 deletions(-)
+
+Security Fixes:
+---------------
+
+ - HTTP request-target parsing: Reject backslash path separators in
+   plain request targets.  This prevents backslash-based traversal
+   attempts from being interpreted inconsistently by downstream
+   components.  Regression tests cover the affected request forms.
+   (commits 7e3f9f40, df9ae9190)
+
+ - HTTP/1.x request framing: Harden request-body framing and reject
+   ambiguous or otherwise invalid combinations of framing headers.
+   This reduces the risk of request-smuggling behavior caused by
+   inconsistent request interpretation.  (commit 840653dc)
+
+ - Multipart forms: Harden multipart/form-data parsing and validation
+   against malformed input.  (commit 1151b5e5)
+
+ - Fastpath directory listings: Escape displayed filenames and encode
+   filename components used in links.  This prevents cross-site
+   scripting through specially crafted file or directory names.
+   (commits f0cc5f54, 1f7a07ef)
+
+ - nscgi: Suppress the incoming Proxy request header when constructing
+   the CGI environment.  This prevents creation of the potentially
+   unsafe HTTP_PROXY environment variable.  (commit 4aebbb9c)
+
+ - nsperm: Ensure that .htaccess permissions are loaded before
+   processing the first POST request to a protected location.
+   (commit 0d19fea3)
+
+ - The accompanying NaviServer modules archive contains two additional
+   module security fixes:
+
+     * nsdbpg prevents SQL injection in the legacy PostgreSQL BLOB
+       commands and replaces fixed-size query buffers.
+       (naviserver-project/nsdbpg commit
+       969ba18b57148e500ac77f617d4f184478041b35)
+
+     * nsconf prevents reflected cross-site scripting in the
+       configuration editor.
+       (naviserver-project/nsconf commit
+       cca221e30f8e6f1bf0056aad60e054b88500a2a6)
+
+   Users should install the modules from the accompanying modules
+   archive.  When modules are maintained separately, update nsdbpg and
+   nsconf to the listed commits or newer versions.
+
+
+Bug Fixes:
+----------
+
+ - Corrected the overlapping NS_CONN_SOCK_WAITING connection-state
+   bitmask.  (commit 3f9c9ad4)
+
+ - Avoid sharing the server module-list Tcl object between interpreter
+   threads.  The module registry now uses thread-independent storage,
+   preventing unsafe Tcl object access across threads.
+   (commit 0bbdfdc6)
+
+ - Improved socket-accept processing under load.  The driver now
+   preserves accept errors, recognizes retryable failures, continues
+   accept sweeps after transient connection errors, and retries sockets
+   retained after connection-queue timeouts.  This also prevents benign
+   EAGAIN/EWOULDBLOCK readiness races from being reported as
+   unspecified accept errors.
+   (commits ca759062, c3e09a39, 2b64a4ac, e8ca7054,
+   1e3c74ef, ef0d05f9)
+
+ - Correctly distinguish failures of accept() from errors encountered
+   during immediate read-ahead of an already accepted connection.
+
+ - TLS diagnostics now provide the socket context with OpenSSL errors
+   while avoiding redundant and difficult-to-read SSL_read messages.
+   (commit dc36fe8a)
+
+
+Compatibility and Portability:
+------------------------------
+
+ - Added portable socket-error aliases for connection reset,
+   connection aborted, timeout, and nonblocking retry conditions.
+   Driver error handling now uses these aliases consistently on Unix
+   and Windows.  (commits 143e24b9, d5debae9)
+
+ - Adjusted raw HTTP regression tests for Tcl 8.5, where the IPv6 test
+   setup and newer test constraints are not available.
+   (commits 8408c80a, 19c16d3)
+
+
+Tests:
+------
+
+ - Added regression coverage for backslash request-target traversal,
+   malformed HTTP request framing, multipart form parsing, and
+   fastpath directory-listing escaping.
+
+ - Made the fastpath directory-listing tests compatible with Tcl 9 and
+   with the legacy 4.99 parent-directory link formatting.
+
+
+Notes:
+------
+
+  This is a security, stability, and portability release for the
+  NaviServer 4.99 series.  No new features are introduced.
+
+  The accompanying NaviServer modules archive is a snapshot of the
+  module versions current at the time of this release and includes the
+  nsdbpg and nsconf security fixes listed above.  Users of separately
+  maintained module installations should update these modules
+  explicitly.
+
+  No configuration changes are required.
+
+
+
+
+=======================================
 NaviServer 5.0.5, released 2026-05-28
 =======================================
 
