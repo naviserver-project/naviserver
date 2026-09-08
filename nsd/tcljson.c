@@ -3918,7 +3918,7 @@ JsonParseValueSet(JsonParser *jp, Ns_Set *set,
     const char   *s;
     TCL_SIZE_T    len;
     int           c;
-    bool          empty = NS_FALSE;
+    bool          empty = NS_FALSE, isContainer;
 
     JsonSkipWs(jp);
     c = JsonPeek(jp);
@@ -3928,6 +3928,18 @@ JsonParseValueSet(JsonParser *jp, Ns_Set *set,
                          "ns_json: parse error at byte %lu: unexpected end of input",
                          (unsigned long)(jp->p - jp->start));
         return NS_ERROR;
+    }
+
+    /* Count containers only, matching the tclvalue and triples parsers. */
+    isContainer = (c == '{' || c == '[');
+    if (isContainer) {
+        if (jp->depth >= jp->opt->maxDepth) {
+            Ns_DStringPrintf(jp->errDsPtr,
+                             "ns_json: parse error at byte %lu: max depth exceeded",
+                             (unsigned long)(jp->p - jp->start));
+            return NS_ERROR;
+        }
+        jp->depth++;
     }
 
     switch (c) {
@@ -3987,6 +3999,9 @@ JsonParseValueSet(JsonParser *jp, Ns_Set *set,
     }
 
  done:
+    if (isContainer) {
+        jp->depth--;
+    }
     if (valObj != NULL) {
         /*
          * Only decref if we incref'd. In this pattern we incref
