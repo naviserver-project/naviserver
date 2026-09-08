@@ -513,6 +513,36 @@ test ns_json-strings-1.0 {string: rejects unescaped control char} -body {
     ns_json parse "\"a\nb\""
 } -returnCodes error -match glob -result {*control*}
 
+foreach output {tclvalue triples set} {
+    test ns_json-strings-1.0a-$output {string: rejects literal NUL in values and keys} -body {
+        set failures {}
+        foreach length {0 1 7 8 31 32 63 64} {
+            foreach escape {{} {\n}} {
+                set prefix [string repeat a $length]$escape
+                foreach template {{["%s%c"]} {{"%s%c":1}}} {
+                    set input [format $template $prefix 0]
+                    set code [catch {ns_json parse -output $output -- $input} result]
+                    set offset [expr {2 + [string length $prefix]}]
+                    if {!$code || $result ne "ns_json: parse error at byte $offset: unescaped control character in string"} {
+                        lappend failures [list $length $escape $template $code $result]
+                    }
+                    if {!$code && $output eq "set"} {ns_set free $result}
+                }
+            }
+        }
+        set failures
+    } -result {}
+
+    test ns_json-strings-1.0b-$output {string: accepts escaped NUL in values and keys} -body {
+        set result [ns_json parse -output $output -- {{"a\u0000b":"c\u0000d"}}]
+        if {$output eq "set"} {ns_set free $result}
+        set code [catch {ns_json parse -output $output -- {["\u0000"]}} result]
+        if {!$code && $output eq "set"} {ns_set free $result}
+        set code
+    } -result 0
+}
+unset output
+
 test ns_json-strings-1.1 {string: invalid escape} -body {
     ns_json parse "\"\\q\""
 } -returnCodes error -match glob -result {*invalid escape*}
