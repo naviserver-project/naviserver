@@ -1143,6 +1143,27 @@ static inline Ns_ReturnCode
 JsonCheckNoCtlInString(JsonParser *jp, const unsigned char *p, const unsigned char *end)
 {
     const unsigned char *bad = JsonFindCtlLt0x20(p, end);
+    const unsigned char *cur = p;
+    const unsigned char *limit = (bad != NULL) ? bad : end;
+
+    /*
+     * Tcl strings encode U+0000 as modified UTF-8 (C0 80).  It is still an
+     * unescaped control character in the input, even though neither byte
+     * is below 0x20.  Check only raw spans, not decoded JSON escapes, so
+     * the valid JSON escape \u0000 remains permitted.
+     */
+    while (cur < limit) {
+        cur = memchr(cur, 0xC0, (size_t)(limit - cur));
+        if (cur == NULL) {
+            break;
+        }
+        if (end - cur > 1 && cur[1] == 0x80u) {
+            bad = cur;
+            break;
+        }
+        cur++;
+    }
+
     if (unlikely(bad != NULL)) {
         Ns_DStringPrintf(jp->errDsPtr,
                          "ns_json: parse error at byte %lu: unescaped control character in string",
