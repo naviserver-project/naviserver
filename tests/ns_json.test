@@ -184,6 +184,53 @@ test ns_json-4.2 {number preserves lexemes} -body {
 #  test ns_json basic parse errors
 #######################################################################################
 
+foreach output {tclvalue triples set} {
+    test ns_json-depth-1.0-$output {maxdepth: reject nested arrays, objects and mixed containers} -body {
+        set failures {}
+        foreach {limit input offset} {
+            1 {[[1]]} 1
+            1 {{"a":{}}} 5
+            1 {[[]]} 1
+            2 {[{"a":[]}]} 6
+            2 {{"a":[{}]}} 6
+        } {
+            set code [catch {ns_json parse -output $output -maxdepth $limit -- $input} result]
+            if {!$code || $result ne "ns_json: parse error at byte $offset: max depth exceeded"} {
+                lappend failures [list $input $code $result]
+            }
+            if {!$code && $output eq "set"} {ns_set free $result}
+        }
+        set failures
+    } -result {}
+
+    test ns_json-depth-1.1-$output {maxdepth: accept boundary depth and restore depth between siblings} -body {
+        foreach {limit input} {
+            1 {1}
+            1 {[]}
+            1 {{}}
+            1 {[1,2]}
+            2 {[[],{},[1],{"a":1}]}
+            2 {{"a":{},"b":[],"c":{"d":1}}}
+        } {
+            set result [ns_json parse -output $output -maxdepth $limit -- $input]
+            if {$output eq "set"} {ns_set free $result}
+        }
+    } -result {}
+
+    test ns_json-depth-1.2-$output {default maxdepth: reject excessive array nesting before exhausting stack} -body {
+        ns_json parse -output $output -- [string repeat {[} 100000]
+    } -returnCodes error -result {ns_json: parse error at byte 1000: max depth exceeded}
+
+    test ns_json-depth-1.3-$output {default maxdepth: reject excessive mixed nesting before exhausting stack} -body {
+        ns_json parse -output $output -- [string repeat [format %c%c%c%c%c 91 123 34 34 58] 50000]
+    } -returnCodes error -result {ns_json: parse error at byte 2500: max depth exceeded}
+
+    test ns_json-depth-1.4-$output {maxdepth: reject a complete nested document} -body {
+        ns_json parse -output $output -maxdepth 2 -- {[[[]]]}
+    } -returnCodes error -result {ns_json: parse error at byte 2: max depth exceeded}
+}
+unset output
+
 test ns_json-5.0 {parse error: unterminated string} -body {
     ns_json parse {"abc} ;# "
 } -returnCodes error -result {ns_json: parse error at byte 4: unterminated string}
@@ -400,7 +447,7 @@ test ns_json-value-3.4a {ns_json value testing null values from string} -body {
         [ns_json value "XXX"] \
         [ns_json value null] \
         [ns_json value __NS_JSON_NULL__] \
-        [ns_json value [ns_json null]]    
+        [ns_json value [ns_json null]]
 } -returnCodes {ok} -result {null null {""} {"x"} {"XXX"} {"null"} {"__NS_JSON_NULL__"} null}
 
 test ns_json-value-3.4b {ns_json value testing null values with "-type null" - string rep does not matter} -body {
