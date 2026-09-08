@@ -2485,17 +2485,27 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
     Driver       *drvPtr;
     Ns_ReturnCode status = NS_OK;
 
-    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+    for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
+        Ns_ReturnCode driverStatus = NS_OK;
+
         if ((drvPtr->flags & NS_DRIVER_THREAD_STARTED) == 0u) {
             continue;
         }
+
         Ns_MutexLock(&drvPtr->lock);
-        while ((drvPtr->flags & NS_DRIVER_THREAD_STOPPED) == 0u && status == NS_OK) {
-            status = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
+        while ((drvPtr->flags & NS_DRIVER_THREAD_STOPPED) == 0u
+               && driverStatus == NS_OK) {
+            driverStatus = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
         }
         Ns_MutexUnlock(&drvPtr->lock);
-        if (status != NS_OK) {
-            Ns_Log(Warning, "[driver:%s]: shutdown timeout", drvPtr->threadName);
+
+        if (driverStatus != NS_OK) {
+            Ns_Log(Warning, "[driver:%s]: %s",
+                   drvPtr->threadName,
+                   driverStatus == NS_TIMEOUT
+                   ? "shutdown timeout"
+                   : "shutdown wait failed");
+            status = NS_ERROR;
         } else {
             Ns_Log(Notice, "[driver:%s]: stopped", drvPtr->threadName);
             Ns_ThreadJoin(&drvPtr->thread, NULL);
