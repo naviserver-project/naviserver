@@ -136,8 +136,14 @@
     typedef char NS_STATIC_ASSERT_CONCAT(ns_static_assert_, __LINE__)[(expr) ? 1 : -1]
 #endif
 
-#if __GNUC_PREREQ(7, 0)
-# define NS_FALL_THROUGH ;__attribute__((fallthrough))
+#if defined(__clang__)
+# if __has_attribute(fallthrough)
+#  define NS_FALL_THROUGH __attribute__((fallthrough))
+# else
+#  define NS_FALL_THROUGH ((void)0)
+# endif
+#elif __GNUC_PREREQ(7, 0)
+# define NS_FALL_THROUGH __attribute__((fallthrough))
 #else
 # define NS_FALL_THROUGH ((void)0)
 #endif
