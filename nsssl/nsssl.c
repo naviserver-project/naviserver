@@ -343,7 +343,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
         && sslCtx->verified == 0
         ) {
         Ns_ReturnCode status = NS_OK;
-        const char   *errorMsg;
+        const char   *errorMsg = "client certificate verification failed";
 #ifdef HAVE_OPENSSL_3
         X509 *peer = SSL_get0_peer_certificate(sslCtx->ssl);
 #else

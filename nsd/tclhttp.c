@@ -2936,7 +2936,7 @@ HttpQueue(
                *connectTimeoutPtr = NULL;
     Tcl_Channel bodyChan = NULL, spoolChan = NULL;
     Ns_URL            u;
-    unsigned short    portNr;
+    unsigned short    portNr = 0u;
     Ns_ObjvValueRange sizeRange = {0, LLONG_MAX};
 
     Ns_ObjvSpec opts[] = {
@@ -7668,7 +7668,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
 {
     CloseWaitingData *cwDataPtr = NULL;
     int               errorCode;
-    const char       *operation;
+    const char       *operation = "unknown";
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(reasonPtr != NULL);

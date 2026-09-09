@@ -196,8 +196,10 @@ Ns_AdjTime(Ns_Time *timePtr)
 long
 Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
 {
-    Ns_Time diff, t0p, t1p, *t0Ptr, *t1Ptr;
-    bool    t0pos, t1pos, subtract, isNegative;
+    Ns_Time        diff, t0p, t1p;
+    const Ns_Time *t0Ptr = &t0p;
+    const Ns_Time *t1Ptr = &t1p;
+    bool           t0pos, t1pos, subtract, isNegative;
 
     NS_NONNULL_ASSERT(t0 != NULL);
     NS_NONNULL_ASSERT(t1 != NULL);

@@ -911,7 +911,7 @@ ossl_log_stream_and_conn_states(ConnCtx *cc, SSL *s, SSL *conn, int st_expect, c
     int          ws = SSL_get_stream_write_state(s);
     int          sd = conn ? SSL_get_shutdown(conn) : -1;
     StreamCtx   *sc = SSL_get_ex_data(s, dc->u.h3.sc_idx);
-    bool         check_read, check_write;
+    bool         check_read = NS_FALSE, check_write = NS_FALSE;
 
     if (sc != NULL) {
         switch (sc->kind) {
