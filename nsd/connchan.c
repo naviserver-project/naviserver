@@ -1268,7 +1268,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
         if (likely(result == TCL_OK)) {
 
             if (STREQ(sockPtr->drvPtr->protocol, "https")) {
-                NS_TLS_SSL_CTX *ctx;
+                NS_TLS_SSL_CTX *ctx = NULL;
                 bool            verifyCert = NS_TRUE;
 
                 if (insecureInt != 0) {

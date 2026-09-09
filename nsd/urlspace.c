@@ -2787,7 +2787,7 @@ JunctionFind(const Junction *juncPtr, char *seq,
 
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0u; i < l; i++) {
-        bool    match, noFilter, candidateIsSegmentMatch;
+        bool    match, noFilter, candidateIsSegmentMatch = NS_FALSE;
         void   *candidateData = NULL;
         int     candidateDepth = 0;
         ssize_t candidateOffset = 0;
@@ -2796,7 +2796,7 @@ JunctionFind(const Junction *juncPtr, char *seq,
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     for (i = l; i > 0u; i--) {
-        bool    match, noFilter, candidateIsSegmentMatch;
+        bool    match, noFilter, candidateIsSegmentMatch= NS_FALSE;
         void   *candidateData = NULL;
         int     candidateDepth = 0;
         ssize_t candidateOffset = 0;

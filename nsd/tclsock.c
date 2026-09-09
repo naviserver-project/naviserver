@@ -268,7 +268,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         result = TCL_ERROR;
 
     } else {
-        unsigned long nread;
+        unsigned long nread = 0u;
         NS_SOCKET     sock;
         Tcl_Channel   chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
 
@@ -800,7 +800,7 @@ int
 NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const char     *sockId, *whenString = NS_EMPTY_STRING;
-    NS_SOCKET       sock;
+    NS_SOCKET       sock = NS_INVALID_SOCKET;
     int             result = TCL_OK;
     Tcl_Obj        *scriptObj;
     Ns_Time        *timeoutPtr = NULL;
@@ -872,20 +872,26 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
          */
 
         sock = ns_sockdup(sock);
-
-        cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
-        cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
-        cbPtr->chan = NULL;
-        cbPtr->when = when;
-        memcpy(cbPtr->script, scriptString, (size_t)scriptLength + 1u);
-
-        if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
-                              when | (unsigned int)NS_SOCK_EXIT,
-                              timeoutPtr, NULL) != NS_OK) {
-            Ns_TclPrintfResult(interp, "could not register callback");
-            ns_sockclose(sock);
-            ns_free(cbPtr);
+        if (sock == NS_INVALID_SOCKET) {
+            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                                   "could not duplicate socket: ",
+                                   Tcl_PosixError(interp), NS_SENTINEL);
             result = TCL_ERROR;
+        } else {
+            cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
+            cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
+            cbPtr->chan = NULL;
+            cbPtr->when = when;
+            memcpy(cbPtr->script, scriptString, (size_t)scriptLength + 1u);
+
+            if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
+                                  when | (unsigned int)NS_SOCK_EXIT,
+                                  timeoutPtr, NULL) != NS_OK) {
+                Ns_TclPrintfResult(interp, "could not register callback");
+                ns_sockclose(sock);
+                ns_free(cbPtr);
+                result = TCL_ERROR;
+            }
         }
     }
 
