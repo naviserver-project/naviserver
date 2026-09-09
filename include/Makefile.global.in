@@ -211,7 +211,9 @@ ifeq ($(IS_CLANG),1)
 CFLAGS_COMPILER += \
   $(call cc-supports,-Wshorten-64-to-32) \
   $(call cc-supports,-Wcomma) \
-  $(call cc-supports,-Wnewline-eof)
+  $(call cc-supports,-Wnewline-eof) \
+  $(call cc-supports,-Wconditional-uninitialized) \
+  $(call cc-supports,-Wimplicit-fallthrough)
 endif
 
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE) $(CFLAGS_WARNING) $(CFLAGS_COMPILER) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) $(PTHREAD_CFLAGS) @CPPFLAGS@ $(DEFS)
