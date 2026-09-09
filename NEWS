@@ -1,3 +1,626 @@
+==================================
+NaviServer 5.1.1, not yet released
+==================================
+
+ Changes relative to NaviServer 5.1.0:
+ 85 files changed, 11198 insertions(+), 3103 deletions(-)
+
+New Features:
+-------------
+
+ - HTTP/3 / QUIC:
+
+   * Added support for multiple QUIC driver threads on the same UDP port
+     when SO_REUSEPORT is available.
+   * Added the "port_ext" parameter for advertising an external HTTP/3
+     port that differs from the internally bound UDP port, as required
+     by common Docker port mappings.
+   * Added the "sendqueuesize" parameter for bounding writer-fed HTTP/3
+     response queues. The default high-water mark is 256 KiB per stream.
+   * Added configurable QUIC client-address validation.
+   * Added support for HTTP/3-specific configuration values overriding
+     values inherited from the associated HTTPS driver section.
+   * Added optional HTTP/3 and QUIC diagnostic logging.
+
+ - Runtime Diagnostics:
+
+   * Added "ns_info threadcputimes", returning cumulative user and system
+     CPU times for active threads, keyed by operating-system thread ID.
+     Implementations are provided for Linux, macOS, and Windows.
+   * Added OpenSSL build-time and runtime version information to
+     "nsd -V".
+   * Improved driver, writer, spooler, and main-thread names used in
+     diagnostics and statistics.
+   * Added writer and HTTP/3 shared-lock statistics counters.
+     (commit ec8e9087)
+
+Security and Hardening:
+-----------------------
+
+ - Fastpath Directory Listings:
+
+   * Prevented cross-site scripting through filenames displayed in
+     automatically generated directory listings.
+   * Added regression tests covering the corrected escaping behavior.
+
+ - JSON parsing: Enforced the configured nesting-depth limit for
+   "ns_json parse -output set", preventing excessive nesting from
+   exhausting the stack.  Added regression coverage across all output
+   formats.  (commit ccb7aeec3)
+
+ - nsdbpg:
+
+   * Prevented SQL injection through caller-supplied BLOB identifiers in
+     the legacy ns_pg blob_get, blob_put, blob_dml_file, blob_write, and
+     blob_select_file commands.
+   * Required BLOB identifiers to be positive integers before including
+     them in PostgreSQL statements.
+   * Replaced fixed-size query buffers in the BLOB retrieval path with
+     dynamically sized strings, also eliminating a potential stack
+     buffer overflow.
+   * Added regression tests covering the affected BLOB commands and SQL
+     injection probes.
+   * This correction is provided by nsdbpg commit 969ba18b or newer.
+
+ - nsconf:
+
+   * Prevented reflected cross-site scripting in the web-based
+     configuration editor.
+   * Applied context-appropriate encoding to section names,
+     configuration keys and values, help text, generated links, form
+     fields, and select options.
+   * URL-encoded generated query parameters and avoided inserting
+     configuration keys into inline JavaScript.
+   * This correction is provided by nsconf commit cca221e3 or newer.
+
+
+Bug Fixes:
+----------
+
+ - HTTP/3 / QUIC:
+
+   * Fixed high-load hangs and persistent driver CPU usage caused by
+     incorrect stream write polling and retry handling.
+   * Deferred transport-dependent write retries until poll readiness.
+   * Prevented permanent polling of unused outgoing stream capacity.
+   * Avoided redundant OpenSSL event handling and QUIC reactor passes.
+   * Corrected handling of OpenSSL WANT conditions, zero-progress writes,
+     completed streams, stream resets, and final writes containing
+     response data.
+   * Stopped scheduling stream resumes after connections begin closing.
+   * Avoided read spinning while request streams wait for the peer's
+     HTTP/3 SETTINGS frame.
+   * Limited short poll intervals to connections with active asynchronous
+     producers. This eliminates idle CPU usage previously observed with
+     multiple SO_REUSEPORT QUIC driver threads.
+   * Applied the configured connection-pool overrun policy to HTTP/3
+     requests.
+   * Retried completed requests when dispatch was temporarily deferred by
+     unavailable connection-pool capacity.
+   * Corrected response-header encoding and submission for multiplexed
+     transports.
+   * Corrected stream and connection cleanup during normal completion,
+     resets, aborted transfers, and connection shutdown.
+   * Fixed partially registered and detached stream cleanup.
+   * Prevented stale poll-item pointers after pollset growth.
+   * Preserved pending stream resumes while resume rings grow.
+   * Corrected socket delivery, ownership, and recycle-list handling.
+   * Released nghttp3 connection state during teardown.
+   * Deferred stream destruction while sockets are still referenced by
+     request delivery or writer threads.
+   * Added defensive handling for failed stream-context creation and
+     events returned for inactive poll items.
+   * Isolated HTTP/3 runtime and wakeup state for every QUIC driver
+     thread.
+   * Reduced locking in shared HTTP/3 transmit queues and resume handling.
+   * Made HTTP/3 header and stream I/O state publication thread-safe.
+   * Corrected stale resume-pending state while draining connections.
+   * Prevented sends to concluded or reset HTTP/3 streams.
+
+ - HTTP/3 Writer Backpressure:
+
+   * Bounded application payload retained by writer-fed HTTP/3 response
+     queues.
+   * Parked writer threads when their stream queues reach the configured
+     high-water mark.
+   * Resumed parked writers after sufficient queue space becomes
+     available.
+   * Propagated writer timeouts and abnormal producer termination to the
+     corresponding HTTP/3 stream.
+   * Ensured that resets, aborts, write errors, and connection teardown
+     wake parked writers and release their resources.
+   * Prevented terminal HTTP/3 sends from repeatedly retrying on the
+     writable UDP listener.
+
+ - Network Drivers:
+
+   * Corrected propagation and classification of errors returned while
+     accepting connections.
+   * Treated EAGAIN and EWOULDBLOCK after listener readiness as normal
+     listener-drain conditions.
+   * Retried appropriate transient connection errors.
+   * Distinguished connections accepted and discarded during immediate
+     read-ahead from failures of accept().
+   * Preserved system and TLS error details for unexpected accept
+     failures.
+   * Avoided flooding logs with misleading "unspecified error" warnings
+     under SO_REUSEPORT and high connection load.
+   * Improved TLS read-error context while reducing log noise from
+     routine client-side TLS failures.
+   * Deferred host-map cleanup until all associated driver threads have
+     stopped.
+   * Corrected reporting of the configured "recvwait" value in driver
+     information.
+   * Retried sockets retained after connection-queue timeouts when
+     polling times out, preventing them from remaining pending
+     indefinitely.  (commit 7d85b3ee)
+   * Driver shutdown: Tracked each driver's shutdown wait independently.
+     A timeout in one driver no longer causes subsequent drivers to
+     skip their waits and report misleading timeout warnings.
+     (commit b5b4b3d1)
+
+ - Streaming Writers:
+
+   * Corrected initialization and lifetime handling for streaming
+     writers.
+   * Prevented recycled streaming sockets from retaining stale
+     connection references.
+   * Corrected writer and memory-statistics mutex initialization.
+
+ - TLS:
+
+   * Corrected handling of missing TLS SNI local-port metadata.
+   * Reduced unnecessary driver-linkage logging.
+
+ - JSON parsing:
+
+   * Rejected unescaped NUL characters in Tcl string input,
+     including object keys, while continuing to accept valid JSON
+     \u0000 escapes.  (commit 53b733be)
+
+ - Core:
+
+   * Avoided sharing mutable module-list Tcl objects between threads.
+   * Corrected a printf attribute declaration used by panic-reporting
+     functions.
+   * Improved mutex timing measurements by measuring hold time from
+     successful acquisition.
+   * Added the missing "-T" option to the command-line usage message.
+   * Corrected initialization of spooler queue thread names.
+   * Fixed uninitialized read/write diagnostic flags in the QUIC driver
+     and added error handling for failed socket duplication when
+     registering socket callbacks.  (commit 56fac70e)
+
+
+
+C API Changes:
+--------------
+
+ - Added optional logical send-readiness callbacks for multiplexed
+   transports in network driver interface version 7.
+ - Added callbacks for atomically testing logical send readiness,
+   registering a one-shot writer wakeup, and cancelling a registered
+   wakeup.
+ - Added portable socket error aliases for connection reset and
+   connection abort conditions.
+ - Added atomic uint32 operations required by the HTTP/3 shared-state
+   implementation.
+ - Added Ns_InfoBinPath() for locating the executable directory in
+   split installation layouts.  Relaxed the nonnull annotations on
+   Ns_InfoHomePath().  (commit 880cec5a)
+
+
+Compatibility and Platform Fixes:
+---------------------------------
+
+ - OpenSSL:
+
+   * Qualified HTTP/3 operation with stock OpenSSL 4.0.2 and nghttp3.
+   * Tightened HTTP/3 build and configuration checks to require the
+     necessary OpenSSL 4.0.2 and nghttp3 capabilities.
+   * Updated ASN.1 string handling for OpenSSL 4.1 compatibility.
+
+ - Installation Layouts:
+
+   * Supported split installation layouts in which the NaviServer
+     executable, private binaries, Tcl library, and server home reside
+     in different directories.
+   * Preserved execution from uninstalled source trees.
+
+ - Compiler and Platform Support:
+
+   * Improved const correctness for newer C compilers.
+   * Fixed per-thread CPU accounting builds on Linux.
+   * Updated affected tests for Tcl 9 compatibility.
+   * Improved Clang warning coverage and enabled explicit fallthrough
+     annotations with Clang.  Initialized local variables to make
+     conditional initialization explicit to the compiler.
+
+
+Configuration Updates:
+----------------------
+
+ - HTTP/3:
+
+   * Added sample configuration and generated parameter documentation
+     for "sendqueuesize", "port_ext", and client-address validation.
+   * Added optional HTTP/3 module wiring to the sample configuration.
+   * Allowed HTTP/3 settings to inherit values from the associated HTTPS
+     section while retaining HTTP/3-specific overrides.
+
+ - Writers:
+
+   * Increased the default "writerbufsize" value to 32 KiB.
+   * Updated sample configurations and documentation to reflect the new
+     default.
+
+
+Documentation Updates:
+----------------------
+
+ - Documented the HTTP/3 external-port advertisement parameter.
+ - Documented HTTP/3 configuration inheritance and overrides.
+ - Clarified network-driver counter and gauge semantics.
+ - Updated HTTP/3 and QUIC comments and diagnostics.
+ - Updated installation-path documentation for split distribution
+   layouts.
+ - Updated the "ns_info" documentation for per-thread CPU accounting.
+
+
+Build System:
+-------------
+
+ - Included required configuration files and test certificates in source
+   distribution layouts.
+ - Removed build-time debug artifacts and runtime files from distribution
+   archives.
+ - Improved feature detection for atomics, operating-system thread IDs,
+   OpenSSL, and nghttp3.
+ - Updated continuous-integration coverage for current Tcl versions and
+   openSUSE.
+
+
+Tests:
+------
+
+ - Added and extended tests for HTTP/3 stream completion, slow and
+   aborted writers, queue backpressure, connection-pool admission, poll
+   readiness, and teardown behavior.
+ - Added tests for per-thread CPU accounting.
+ - Updated fastpath directory-listing tests for the XSS correction and
+   Tcl 9 compatibility.
+ - Improved HTTP character-set test portability.
+ - Updated build and regression coverage for Linux, macOS, Windows,
+   OpenBSD, FreeBSD, OpenSSL, and current Tcl versions.
+
+
+Notes:
+------
+
+ This is a bug-fix and stability release with a strong focus on the
+ HTTP/3 implementation. It improves behavior under high concurrency,
+ slow-client conditions, aborted transfers, writer timeouts, and
+ multiple SO_REUSEPORT driver threads.
+
+ With this release, NaviServer's HTTP/3 implementation is no longer
+ considered experimental and is ready for use on public Internet
+ sites. HTTP/3 remains opt-in and is enabled only when the QUIC module
+ is built, configured, and loaded.
+
+ The minimum OpenSSL requirement for HTTP/3 has changed from OpenSSL
+ 4.0 to OpenSSL 4.0.2. HTTP/3 requires stock OpenSSL 4.0.2 or newer
+ together with nghttp3.
+
+ Existing network drivers remain compatible with older driver
+ interface versions. The logical send-readiness callbacks are
+ available to drivers using network driver interface version 7 or
+ newer.
+
+ The nsdbpg and nsconf security corrections are maintained in their
+ respective module repositories and are not contained in the
+ NaviServer core source tree. Installations using these modules should
+ update them together with NaviServer 5.1.1.
+
+
+=======================================
+NaviServer 5.0.6, released 2026-09-08
+=======================================
+
+ Changes relative to NaviServer 5.0.5:
+ 56 files changed, 3018 insertions(+), 1935 deletions(-)
+
+Security Fixes
+--------------
+
+ - HTTP/1.x request framing:
+   * Rejected requests containing both Content-Length and
+     Transfer-Encoding instead of choosing one framing interpretation.
+   * Parsed Content-Length strictly as a non-negative decimal value.
+   * Accepted only a single, case-insensitive "chunked"
+     Transfer-Encoding token for request bodies.
+   * Tightened chunked-message termination, chunk-size, extension, and
+     CRLF validation while preserving the macOS Finder/WebDAV
+     X-Expected-Entity-Length compatibility path.
+   * Added regression coverage for ambiguous and malformed request
+     framing.  This prevents request-smuggling differentials between
+     NaviServer and proxies or other HTTP parsers.
+     (commit 7caabb1f)
+
+ - HTTP request targets:
+   * Rejected backslash path separators in plain request targets,
+     preventing inconsistent path and traversal interpretation.
+   * Added regression tests for the affected request forms.
+     (commits f686b439, 3c863824)
+
+ - Reverse proxies:
+   * Hardened forwarding of inbound request headers by reverse-proxy
+     code.  (commit 3674b63f)
+
+ - Fastpath:
+   * Prevented cross-site scripting through filenames displayed in
+     automatically generated directory listings.
+   * Added regression tests covering HTML-sensitive filenames.
+     (commits 56b3f93f, 61e79a1d)
+
+ - Multipart forms:
+   * Hardened multipart/form-data parsing and validation against
+     malformed input.  (commit 8c6db2aa)
+
+ - nscgi:
+   * Suppressed the incoming Proxy request header when constructing the
+     CGI environment, preventing creation of an unsafe HTTP_PROXY
+     environment variable.  (commit fd6c0980)
+
+ - nsperm and nscp:
+   * Ensured that .htaccess permissions are loaded before processing
+     the first POST request to a protected location.
+     (commit c44382f2)
+   * Rejected the default nsperm administrator password for nscp
+     logins.  Administrators must configure a non-default password
+     before the account can be used.  (commit d2895724)
+   * Redacted passwords and lowered the verbosity of authentication
+     logging.  (commit 9e707bb0)
+
+ - TLS:
+   * Hardened the default TLS protocol policy.  (commit b7c857b7)
+
+     The accompanying NaviServer modules archive is a snapshot of all
+     module versions current at the time of this release. It includes
+     the nsdbpg and nsconf security corrections described above, which
+     are maintained in separate repositories and are not contained in
+     the NaviServer core source tree.
+
+     Installations using these modules should install the versions from
+     the accompanying modules archive, or update the affected modules
+     individually to revisions containing these fixes.
+
+     * nsdbpg prevents SQL injection through identifiers supplied to
+       the legacy PostgreSQL BLOB commands and replaces fixed-size
+       query buffers.  (naviserver-project/nsdbpg commit
+       969ba18b57148e500ac77f617d4f184478041b35)
+
+     * nsconf prevents reflected cross-site scripting in the web-based
+       configuration editor.  (naviserver-project/nsconf commit
+       cca221e30f8e6f1bf0056aad60e054b88500a2a6)
+
+
+Bug Fixes
+---------
+
+ - Network Drivers:
+   * Continued listener accept sweeps after interrupted, reset, or
+     aborted connection attempts.
+   * Distinguished drained listeners from transient and fatal accept
+     errors.
+   * Preserved socket errors across driver accept callbacks instead of
+     relying on a potentially overwritten thread-local errno value.
+   * Distinguished accept() failures from read-ahead errors occurring
+     after a transport connection was accepted.
+   * Retried pending sockets after poll timeouts.
+   * Used the recorded receive error when handling asynchronous socket
+     read failures.
+   * Deferred host-map cleanup until all associated driver threads had
+     stopped.
+
+ - Streaming Writer:
+   * Properly initialized the streaming-writer spool mutex.
+   * Detached recycled streaming sockets from their former connections.
+   * Initialized the writer memory-statistics mutex when enabled.
+
+ - Tcl:
+   * Avoided sharing loaded-module Tcl objects between interpreter
+     threads.
+   * Corrected non-creating Tcl hash-table lookups for Tcl 9.1.
+   * Preserved environment-variable names in ns/environment/*
+     configuration sections.
+   * Treated an empty Tcl filter result as filter_return.
+   * Honored the documented unlimited connection-thread lifetime.
+
+ - ADP:
+   * Allowed hyphens in registered ADP tag names.
+
+ - Time parsing:
+   * Returned an error for unparseable time strings and guarded
+     interpreter access while reporting parsing errors.
+
+ - TLS:
+   * Improved SSL_read error context and removed redundant low-level
+     error messages.
+
+
+Compatibility and Platform Fixes
+--------------------------------
+
+ - OpenSSL:
+   * Added support for the opaque ASN.1 string representation and
+     const-correct X.509 extension accessors used by OpenSSL 4.1.
+   * Retained compatible accessor types for OpenSSL 3.x, allowing clean
+     compilation with both API generations.
+     (commits 4f8e18a4, e0452093)
+
+ - Socket handling:
+   * Added portable aliases for timeout, connection-reset,
+     connection-aborted, and nonblocking retry errors.
+   * Used these aliases consistently on Unix and Windows.
+
+ - Installation:
+   * Made the post-installation nsadmin permission check portable to
+     macOS, avoiding unsupported su options and interactive password
+     prompts.  (commit ca90247a)
+
+ - Distribution:
+   * Included the Windows makefile, certificate bundle, and LICENSE in
+     the source distribution.  (commit 20839b08)
+
+ - C API:
+   * Corrected printf-format attribute argument positions for the
+     internal panic logging function.
+
+ - Tests:
+   * Adjusted raw HTTP tests for Tcl 8.5 and a curl IPv6-literal proxy
+     regression.
+
+
+Documentation Updates
+---------------------
+
+ - Clarified the fields and semantics returned by ns_localtime.
+
+
+Notes:
+------
+
+  NaviServer modules are released independently of the core server.
+  Deployments using nsdbpg or nsconf should install the modules tar
+  file accompanying this NaviServer release, or update the affected
+  modules individually to the revisions listed above.
+
+  This is a security, stability, and portability release.  No
+  configuration changes are required.
+
+
+=======================================
+NaviServer 4.99.34, released 2026-09-07
+=======================================
+
+ 28 files changed, 1771 insertions(+), 307 deletions(-)
+
+Security Fixes:
+---------------
+
+ - HTTP request-target parsing: Reject backslash path separators in
+   plain request targets.  This prevents backslash-based traversal
+   attempts from being interpreted inconsistently by downstream
+   components.  Regression tests cover the affected request forms.
+   (commits 7e3f9f40, df9ae9190)
+
+ - HTTP/1.x request framing: Harden request-body framing and reject
+   ambiguous or otherwise invalid combinations of framing headers.
+   This reduces the risk of request-smuggling behavior caused by
+   inconsistent request interpretation.  (commit 840653dc)
+
+ - Multipart forms: Harden multipart/form-data parsing and validation
+   against malformed input.  (commit 1151b5e5)
+
+ - Fastpath directory listings: Escape displayed filenames and encode
+   filename components used in links.  This prevents cross-site
+   scripting through specially crafted file or directory names.
+   (commits f0cc5f54, 1f7a07ef)
+
+ - nscgi: Suppress the incoming Proxy request header when constructing
+   the CGI environment.  This prevents creation of the potentially
+   unsafe HTTP_PROXY environment variable.  (commit 4aebbb9c)
+
+ - nsperm: Ensure that .htaccess permissions are loaded before
+   processing the first POST request to a protected location.
+   (commit 0d19fea3)
+
+ - The accompanying NaviServer modules archive contains two additional
+   module security fixes:
+
+     * nsdbpg prevents SQL injection in the legacy PostgreSQL BLOB
+       commands and replaces fixed-size query buffers.
+       (naviserver-project/nsdbpg commit
+       969ba18b57148e500ac77f617d4f184478041b35)
+
+     * nsconf prevents reflected cross-site scripting in the
+       configuration editor.
+       (naviserver-project/nsconf commit
+       cca221e30f8e6f1bf0056aad60e054b88500a2a6)
+
+   Users should install the modules from the accompanying modules
+   archive.  When modules are maintained separately, update nsdbpg and
+   nsconf to the listed commits or newer versions.
+
+
+Bug Fixes:
+----------
+
+ - Corrected the overlapping NS_CONN_SOCK_WAITING connection-state
+   bitmask.  (commit 3f9c9ad4)
+
+ - Avoid sharing the server module-list Tcl object between interpreter
+   threads.  The module registry now uses thread-independent storage,
+   preventing unsafe Tcl object access across threads.
+   (commit 0bbdfdc6)
+
+ - Improved socket-accept processing under load.  The driver now
+   preserves accept errors, recognizes retryable failures, continues
+   accept sweeps after transient connection errors, and retries sockets
+   retained after connection-queue timeouts.  This also prevents benign
+   EAGAIN/EWOULDBLOCK readiness races from being reported as
+   unspecified accept errors.
+   (commits ca759062, c3e09a39, 2b64a4ac, e8ca7054,
+   1e3c74ef, ef0d05f9)
+
+ - Correctly distinguish failures of accept() from errors encountered
+   during immediate read-ahead of an already accepted connection.
+
+ - TLS diagnostics now provide the socket context with OpenSSL errors
+   while avoiding redundant and difficult-to-read SSL_read messages.
+   (commit dc36fe8a)
+
+
+Compatibility and Portability:
+------------------------------
+
+ - Added portable socket-error aliases for connection reset,
+   connection aborted, timeout, and nonblocking retry conditions.
+   Driver error handling now uses these aliases consistently on Unix
+   and Windows.  (commits 143e24b9, d5debae9)
+
+ - Adjusted raw HTTP regression tests for Tcl 8.5, where the IPv6 test
+   setup and newer test constraints are not available.
+   (commits 8408c80a, 19c16d3)
+
+
+Tests:
+------
+
+ - Added regression coverage for backslash request-target traversal,
+   malformed HTTP request framing, multipart form parsing, and
+   fastpath directory-listing escaping.
+
+ - Made the fastpath directory-listing tests compatible with Tcl 9 and
+   with the legacy 4.99 parent-directory link formatting.
+
+
+Notes:
+------
+
+  This is a security, stability, and portability release for the
+  NaviServer 4.99 series.  No new features are introduced.
+
+  The accompanying NaviServer modules archive is a snapshot of the
+  module versions current at the time of this release and includes the
+  nsdbpg and nsconf security fixes listed above.  Users of separately
+  maintained module installations should update these modules
+  explicitly.
+
+  No configuration changes are required.
+
+
+
 =======================================
 NaviServer 5.1.0, released 2026-07-09
 =======================================
@@ -183,8 +806,8 @@ New Features:
      normalization.
 
 
-## Security and Hardening:
---------------------------
+Security and Hardening:
+-----------------------
 
  - HTTP request parsing and request-smuggling hardening:
    * Reject ambiguous HTTP/1.x request framing before dispatching requests to
@@ -8008,10 +8631,9 @@ C API Changes:
       more clear and added a parameter to control lower and uppercase
 
 
-
 Configuration Changes:
-  * New configure flag --disable-ipv6 to build NaviServer just with IPv4 support,
-    even when IPv6 support is available.
+  * New configure flag --disable-ipv6 to build NaviServer just with IPv4
+    support, even when IPv6 support is available.
   * Updated sample config files for IPv6
   * Added makefile target: "lldb-sample" lets one running nsd with
     the sample config file "nsd-config.tcl" under lldb
