@@ -63,10 +63,10 @@ else
 endif
 
 distfiles = $(SUBDIRS) doc tcl contrib include tests win win32 configure m4 \
-	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
+	Makefile Makefile.win32 autogen.sh install-sh missing aclocal.m4 configure.ac \
 	config.guess config.sub ca-bundle.crt \
 	index.adp returnnotice.adp \
-	README.md NEWS license.terms naviserver.rdf naviserver.rdf.in \
+	README.md NEWS LICENSE naviserver.rdf naviserver.rdf.in \
 	version_include.man.in install-from-repository.tcl
 
 distconf = conf/sample-config.tcl.in conf/simple-config.tcl \
