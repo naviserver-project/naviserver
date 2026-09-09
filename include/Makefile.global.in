@@ -213,7 +213,8 @@ CFLAGS_COMPILER += \
   $(call cc-supports,-Wcomma) \
   $(call cc-supports,-Wnewline-eof) \
   $(call cc-supports,-Wconditional-uninitialized) \
-  $(call cc-supports,-Wimplicit-fallthrough)
+  $(call cc-supports,-Wimplicit-fallthrough) \
+  $(call cc-supports,-Wswitch-enum)
 endif
 
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE) $(CFLAGS_WARNING) $(CFLAGS_COMPILER) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) $(PTHREAD_CFLAGS) @CPPFLAGS@ $(DEFS)
