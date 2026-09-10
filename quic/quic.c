@@ -1322,46 +1322,41 @@ static void ConnCtxPrintSidTable(ConnCtx *cc) {
  *
  * quic_conn_drive_handshake --
  *
- *      Advance the QUIC/TLS handshake state for a given connection.
- *      This helper drives the OpenSSL handshake engine via
- *      SSL_do_handshake() and reports its progress or failure.
- *
- *      On success, it logs the handshake completion and the status
- *      of any early-data negotiation (accepted, rejected, or not sent).
- *      On partial progress (SSL_ERROR_WANT_READ / WANT_WRITE),
- *      it signals that further network I/O is required.
- *
- *      In case of failure, the function logs diagnostic details:
- *        * negotiated TLS group (if any)
- *        * number of configured extra chain certificates
- *        * connection close information (if QUIC transport error)
- *        * OpenSSL error detail via ossl_log_error_detail()
+ *      Advance the TLS handshake on a QUIC connection. On failure,
+ *      collect peer and connection-close information and drain the
+ *      OpenSSL error stack into a single log entry. Select the log
+ *      severity according to the available failure information.
  *
  * Results:
- *      Returns 1 when the handshake completes successfully,
- *      0 when additional I/O is needed,
- *     -1 on hard failure.
+ *      1  - Handshake completed.
+ *      0  - Handshake requires further network I/O.
+ *     -1  - Handshake failed or the connection is shutting down.
  *
  * Side effects:
- *      Logs handshake and error information through Ns_Log().
- *      Clears and reads the OpenSSL error stack.
+ *      Advances the connection's handshake state, consumes the current
+ *      thread's OpenSSL error queue, and may emit diagnostic messages.
  *
  *----------------------------------------------------------------------
  */
-
-static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
-    int           ret, err;
+static int
+quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn)
+{
+    int           ret, err, savedErrno;
     unsigned long osslerr;
-    bool          protocol_shutdown;
 
     if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
-        Ns_Log(Ns_LogQuicDebug, "quic_conn_drive_handshake servername <%s>",
-               SSL_get_servername(conn, TLSEXT_NAMETYPE_host_name));
+        const char *servername =
+            SSL_get_servername(conn, TLSEXT_NAMETYPE_host_name);
+
+        Ns_Log(Ns_LogQuicDebug,
+               "quic_conn_drive_handshake servername <%s>",
+               servername != NULL ? servername : "");
     }
+
     ERR_clear_error();
 
-    // Now try to advance the handshake
     ret = SSL_do_handshake(conn);
+    savedErrno = ns_sockerrno;
 
     if (ret == 1) {
         if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
@@ -1371,56 +1366,138 @@ static int quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn) {
                 (ed == SSL_EARLY_DATA_REJECTED) ? "rejected" :
                 (ed == SSL_EARLY_DATA_NOT_SENT) ? "not-sent" : "unknown";
 
-            Ns_Log(Ns_LogQuicDebug, "[%lld] Handshake completed for %p (early-data status: %s)",
-                   (long long)dc->iter, (void*)conn, eds);
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] Handshake completed for %p "
+                   "(early-data status: %s)",
+                   (long long)dc->iter, (void *)conn, eds);
         }
         return 1;
     }
 
     err = SSL_get_error(conn, ret);
     if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
-        return 0;  // needs more network I/O
+        return 0;
     }
 
     osslerr = ERR_peek_error();
-    protocol_shutdown =
-        err == SSL_ERROR_SSL
-        && osslerr != 0u
-        && ERR_GET_LIB(osslerr) == ERR_LIB_SSL
-        && ERR_GET_REASON(osslerr) == SSL_R_PROTOCOL_IS_SHUTDOWN;
 
     {
-        /* group: shows if we accidentally negotiated a hybrid */
-        long                nid = SSL_get_shared_group(conn, 0);  /* first shared group */
-        SSL_CONN_CLOSE_INFO cci;
+        struct NS_SOCKADDR_STORAGE sa;
+        socklen_t                  saLen = (socklen_t)sizeof(sa);
+        SSL_CONN_CLOSE_INFO        cci;
+        Tcl_DString                errorContext;
+        char                       ipString[NS_IPADDR_SIZE];
+        const char                *peer = "unknown";
+        Ns_LogSeverity             severity = Warning;
+        bool                       protocolShutdown;
+        int                        marked;
 
-        if (nid > 0) {
-            Ns_Log(Ns_LogQuicDebug, "[%lld] TLS group: %s", (long long)dc->iter, OBJ_nid2sn((int)nid));
+        protocolShutdown =
+            err == SSL_ERROR_SSL
+            && osslerr != 0u
+            && ERR_GET_LIB(osslerr) == ERR_LIB_SSL
+            && ERR_GET_REASON(osslerr) == SSL_R_PROTOCOL_IS_SHUTDOWN;
+
+        /*
+         * Preserve the handshake error queue while obtaining diagnostic
+         * metadata. Discard any errors added by these lookups.
+         */
+        marked = ERR_set_mark();
+
+        if (quic_conn_set_sockaddr(conn, (struct sockaddr *)&sa, &saLen)) {
+            const char *address =
+                ns_inet_ntop((struct sockaddr *)&sa,
+                             ipString, sizeof(ipString));
+
+            if (address != NULL) {
+                peer = address;
+            }
         }
 
-        {
-            STACK_OF(X509) *extras = NULL;
+        Tcl_DStringInit(&errorContext);
+        Ns_DStringPrintf(&errorContext,
+                         "QUIC transport peer %s conn %p: "
+                         "handshake failed; SSL_get_error=%d",
+                         peer, (void *)conn, err);
 
-            SSL_CTX_get_extra_chain_certs_only(SSL_get_SSL_CTX(conn), &extras);
-            Ns_Log(Ns_LogQuicDebug,
-                   "[%lld] TLS quic ctx extra chain count=%d",
-                   (long long)dc->iter,
-                   extras != NULL ? sk_X509_num(extras) : 0);
+        if (err == SSL_ERROR_SYSCALL && savedErrno != 0) {
+            Ns_DStringPrintf(&errorContext, "; socket error %d (%s)",
+                             savedErrno, ns_sockstrerror(savedErrno));
         }
 
         if (SSL_get_conn_close_info(conn, &cci, sizeof(cci)) == 1) {
-            ossl_conn_log_close_info(dc, &cci);
-        }
-    }
+            const char *origin =
+                (cci.flags & SSL_CONN_CLOSE_FLAG_LOCAL) != 0u
+                ? "local" : "remote";
 
-    if (protocol_shutdown) {
+            if ((cci.flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) != 0u) {
+                uint64_t ec = cci.error_code;
+
+                if (ec >= OSSL_QUIC_ERR_CRYPTO_ERR_BEGIN
+                    && ec <= OSSL_QUIC_ERR_CRYPTO_ERR_END) {
+                    severity = Notice;
+                    Ns_DStringPrintf(&errorContext,
+                                     "; close origin=%s class=CRYPTO_ERROR "
+                                     "tls_alert=%u",
+                                     origin,
+                                     (unsigned)(ec
+                                                - OSSL_QUIC_ERR_CRYPTO_ERR_BEGIN));
+                } else {
+                    if (protocolShutdown
+                        && (ec == OSSL_QUIC_ERR_NO_ERROR
+                            || ec == OSSL_QUIC_LOCAL_ERR_IDLE_TIMEOUT)) {
+                        severity = Ns_LogQuicDebug;
+                    }
+
+                    Ns_DStringPrintf(&errorContext,
+                                     "; close origin=%s class=transport "
+                                     "code=0x%llx",
+                                     origin, (unsigned long long)ec);
+                }
+            } else {
+                severity = cci.error_code == 0u && protocolShutdown
+                    ? Ns_LogQuicDebug : Notice;
+
+                Ns_DStringPrintf(&errorContext,
+                                 "; close origin=%s class=application "
+                                 "code=0x%llx",
+                                 origin,
+                                 (unsigned long long)cci.error_code);
+            }
+
+            if (cci.reason != NULL && *cci.reason != '\0') {
+                Ns_DStringPrintf(&errorContext, "; reason='%s'", cci.reason);
+            }
+        }
+
         /*
-         * Connection-close information already described the cause.
-         * SSL_R_PROTOCOL_IS_SHUTDOWN only describes the resulting state.
+         * Known internal failures remain errors even when accompanied
+         * by a TLS connection-close alert.
          */
-        ERR_clear_error();
-    } else {
-        ossl_log_error_detail(err, "quic_conn_drive_handshake");
+        if (osslerr != 0u
+            && (ERR_GET_REASON(osslerr) == ERR_R_INTERNAL_ERROR
+                || ERR_GET_REASON(osslerr) == ERR_R_MALLOC_FAILURE)) {
+            severity = Error;
+        }
+
+        if (marked != 0) {
+            (void)ERR_pop_to_mark();
+        } else {
+            ERR_clear_error();
+        }
+
+        /*
+         * Remove the first error exactly once, then let the shared
+         * helper report it together with the remaining stack.
+         */
+        osslerr = ERR_get_error();
+        if (osslerr != 0u) {
+            NsTLSDrainErrorStack(severity, errorContext.string, osslerr);
+        } else {
+            Ns_Log(severity, "%s", errorContext.string);
+        }
+
+        Tcl_DStringFree(&errorContext);
     }
 
     return -1;
