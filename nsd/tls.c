@@ -2287,35 +2287,69 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
                sslErr, sslErr == SSL_ERROR_SSL);*/
 
         if (result == NS_OK && !SSL_is_init_finished(ssl)) {
-            long  x509err = X509_V_OK;
+            unsigned long  sslERRcode = ERR_get_error();
+            long           x509err = X509_V_OK;
+            char           errorBuffer[256];
+            Tcl_DString    errorContext;
+            Ns_LogSeverity severity = Warning;
 
-            Ns_Log(Debug, "CONNECT ERROR %d (is SSL_ERROR_SSL %d)",  sslErr, sslErr == SSL_ERROR_SSL);
+            if (sslERRcode != 0u) {
+                ERR_error_string_n(sslERRcode, errorBuffer,
+                                   sizeof(errorBuffer));
+            } else {
+                snprintf(errorBuffer, sizeof(errorBuffer),
+                         "TLS handshake incomplete "
+                         "(SSL_get_error=%d; no OpenSSL error queued)",
+                         sslErr);
+            }
+
+            Tcl_DStringInit(&errorContext);
+            Ns_DStringPrintf(&errorContext, "ssl connect(%d) failed", sock);
 
             if (sslErr == SSL_ERROR_SSL) {
-                Ns_Log(Debug, "CONNECT SSL_ERROR_SSL: A failure in the SSL library occurred: %s", ERR_error_string(ERR_get_error(), NULL));
                 x509err = SSL_get_verify_result(ssl);
                 if (x509err != X509_V_OK) {
                     /*
-                     * We have a specific error code for the certificate validation failure.
+                     * Include certificate-validation context in the
+                     * same log entry as the OpenSSL error stack.
                      */
-                    Ns_TclPrintfResult(interp, "ssl connect failed: %s (reason %ld: %s)",
-                                       ERR_error_string(ERR_get_error(), NULL),
-                                       x509err,  X509_verify_cert_error_string(x509err));
-                    Ns_Log(Notice, "certificate validation error: %s\nCAfile: %s\nCApath: %s",
-                           X509_verify_cert_error_string(x509err),
-                           caFile, caPath);
+                    severity = Notice;
+                    Ns_DStringPrintf(&errorContext,
+                                     ": certificate validation error: %s"
+                                     " (reason %ld); CAfile: %s; CApath: %s",
+                                     X509_verify_cert_error_string(x509err),
+                                     x509err,
+                                     caFile != NULL ? caFile : "(not specified)",
+                                     caPath != NULL ? caPath : "(not specified)");
                     //X509_NAME_oneline(X509_get_issuer_name(err_cert), errorbuf, sizeof(errorbuf));
                 }
             }
-            if (x509err == X509_V_OK) {
-                Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
+
+            /*
+             * Drain before setting the Tcl result. The first error
+             * has already been captured and is passed to the helper.
+             */
+            if (sslERRcode != 0u) {
+                DrainErrorStack(severity, errorContext.string, sslERRcode);
+            } else {
+                Ns_Log(severity, "%s: %s", errorContext.string, errorBuffer);
             }
-            DrainErrorStack(Warning, "ssl connect", ERR_get_error());
+            Tcl_DStringFree(&errorContext);
+
+            if (x509err != X509_V_OK) {
+                Ns_TclPrintfResult(interp,
+                                   "ssl connect failed: %s (reason %ld: %s)",
+                                   errorBuffer, x509err,
+                                   X509_verify_cert_error_string(x509err));
+            } else {
+                Ns_TclPrintfResult(interp, "ssl connect failed: %s",
+                                   errorBuffer);
+            }
 
             result = NS_ERROR;
-        } else {
+            /* } else {
             //const char *verifyString = X509_verify_cert_error_string(SSL_get_verify_result(ssl));
-            //fprintf(stderr, "### SSL certificate verify: %s\n", verifyString);
+            //fprintf(stderr, "### SSL certificate verify: %s\n", verifyString); */
         }
     }
 
@@ -2552,16 +2586,33 @@ TLSPasswordCB(char *buf, int size, int UNUSED(rwflag), void *userdata)
  *
  *----------------------------------------------------------------------
  */
+/*
+ * Report the supplied first error and remaining OpenSSL error-stack
+ * entries in one log entry. Drain the stack before invoking Ns_Log().
+ */
 static void
-DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long sslERRcode)
+DrainErrorStack(Ns_LogSeverity severity, const char *errorContext,
+                unsigned long sslERRcode)
 {
-    char errorBuffer[256];
+    if (sslERRcode != 0u) {
 
-    while (sslERRcode != 0u) {
-        Ns_Log(severity, "%s: OpenSSL errorCode:%lu errorString: %s",
-               errorContext, sslERRcode, ERR_error_string(sslERRcode, errorBuffer));
+        Tcl_DString ds;
+        char        errorBuffer[256];
+        const char *separator = ": ";
 
-        sslERRcode = ERR_get_error();
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, errorContext, TCL_INDEX_NONE);
+
+        do {
+            ERR_error_string_n(sslERRcode, errorBuffer, sizeof(errorBuffer));
+            Ns_DStringPrintf(&ds, "%sOpenSSL errorCode:%lu errorString: %s",
+                             separator, sslERRcode, errorBuffer);
+            separator = "; ";
+            sslERRcode = ERR_get_error();
+        } while (sslERRcode != 0u);
+
+        Ns_Log(severity, "%s", ds.string);
+        Tcl_DStringFree(&ds);
     }
 }
 
@@ -4126,29 +4177,41 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                 sockState = NS_SOCK_AGAIN;
                 break;
             }
-            if (reasonCode == SSL_R_UNSUPPORTED_PROTOCOL) {
-                struct NS_SOCKADDR_STORAGE sa;
-                socklen_t socklen = (socklen_t)sizeof(sa);
-                char      ipString[NS_IPADDR_SIZE];
-
-                if ( getpeername(sock, (struct sockaddr *)&sa, &socklen) == 0) {
-                    ns_inet_ntop((struct sockaddr *)&sa, ipString, sizeof(ipString));
-                } else {
-                    ipString[0] = '\0';
-                }
-                Ns_Log(Notice, "SSL_read(%d) client requested unsupported protocol: %s from peer %s",
-                       sock, SSL_get_version(sslPtr), ipString);
-            }
         }
         /*
          * Report all sslERRcodes from the OpenSSL error stack as
          * "notices" in the system log file.
          */
-        if (sslERRcode != 0u) {
-            char errorContext[64];
+         if (sslERRcode != 0u) {
+            struct NS_SOCKADDR_STORAGE sa;
+            socklen_t                  socklen = (socklen_t)sizeof(sa);
+            char                       ipString[NS_IPADDR_SIZE];
+            const char                *peer = "unknown";
+            Tcl_DString                errorContext;
 
-            snprintf(errorContext, sizeof(errorContext), "SSL_read(%d)", sock);
-            DrainErrorStack(Notice, errorContext, sslERRcode);
+            if (getpeername(sock, (struct sockaddr *)&sa, &socklen) == 0) {
+                const char *address;
+
+                address = ns_inet_ntop((struct sockaddr *)&sa,
+                                      ipString, sizeof(ipString));
+                if (address != NULL) {
+                    peer = address;
+                }
+            }
+
+            Tcl_DStringInit(&errorContext);
+            Ns_DStringPrintf(&errorContext, "TLS peer %s: SSL_read(%d)",
+                             peer, sock);
+
+            if (ERR_GET_LIB(sslERRcode) == ERR_LIB_SSL
+                && ERR_GET_REASON(sslERRcode) == SSL_R_UNSUPPORTED_PROTOCOL) {
+                Ns_DStringPrintf(&errorContext,
+                                 " client requested unsupported protocol: %s",
+                                 SSL_get_version(sslPtr));
+            }
+
+            DrainErrorStack(Notice, errorContext.string, sslERRcode);
+            Tcl_DStringFree(&errorContext);
         }
 
         SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
@@ -4551,7 +4614,7 @@ EnsureDriverLinkage(void)
 
         for (j = 0; j < h1dl.size; j++) {
             Driver *h1drvPtr = h1dl.data[j];
-            
+
             if (STREQ(h1drvPtr->path, section)) {
                 Ns_Log(Debug, "EnsureDriverLinkage common section %s h1 driver %p %s"
                        " has linked driver %p %s", section,
