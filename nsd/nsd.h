@@ -2340,6 +2340,8 @@ NS_EXTERN Ns_ReturnCode NsTLSAddClientCertInfo(Tcl_Interp *interp, NS_TLS_SSL *s
 NS_EXTERN Ns_ReturnCode NsTLSAddClientCertDetails(Tcl_Interp *interp, NS_TLS_SSL *ssl, Tcl_Obj *dictObj)
         NS_GNUC_NONNULL(2,3);
 
+NS_EXTERN void NsTLSDrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long sslERRcode)
+    NS_GNUC_NONNULL(2);
 
 
 /*
