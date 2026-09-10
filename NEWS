@@ -191,6 +191,9 @@ Bug Fixes:
      and added error handling for failed socket duplication when
      registering socket callbacks.  (commit 56fac70e)
 
+ - nsdbmysql: Fixed an incorrectly converted Tcl_DStringAppend call
+   that prevented compilation. Thanks to John Buckman for the fix
+   and build verification.
 
 
 C API Changes:
