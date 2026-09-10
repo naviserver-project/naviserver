@@ -3,7 +3,8 @@ NaviServer 5.1.1, not yet released
 ==================================
 
  Changes relative to NaviServer 5.1.0:
- 85 files changed, 11198 insertions(+), 3103 deletions(-)
+ 94 files changed, 12233 insertions(+), 3402 deletions(-)
+
 
 New Features:
 -------------
@@ -33,6 +34,7 @@ New Features:
      diagnostics and statistics.
    * Added writer and HTTP/3 shared-lock statistics counters.
      (commit ec8e9087)
+
 
 Security and Hardening:
 -----------------------
@@ -190,7 +192,6 @@ Bug Fixes:
    * Fixed uninitialized read/write diagnostic flags in the QUIC driver
      and added error handling for failed socket duplication when
      registering socket callbacks.  (commit 56fac70e)
-
 
 
 C API Changes:
