@@ -411,6 +411,7 @@ typedef struct ConnCtx {
     bool            wants_write;               /* owned by the QUIC thread */
     bool            expecting_send;            /* set when request dispatched to app */
     bool            conn_closed;
+    bool            shutdownReported;          /* Shutdown diagnostic already emitted. */
     int             last_sd; // intermediate, for debuggung in ossl_conn_maybe_log_first_shutdown
     SharedState     shared;  // stable pointer
 
@@ -730,21 +731,22 @@ static Ns_DriverClientcertInfoProc ClientcertInfo;
  * ossl_conn_log_close_info --
  *
  *      Log previously retrieved QUIC connection-close information.
- *      The caller obtains the details via SSL_get_conn_close_info() and
- *      passes the resulting SSL_CONN_CLOSE_INFO structure to this helper.
+ *      The caller obtains the details via SSL_get_conn_close_info().
  *
- *      Normal transport shutdowns are logged at Debug(quic) level.
- *      Nonzero QUIC transport errors, HTTP/3 application errors, and
- *      TLS CRYPTO_ERROR alerts are reported at Error level, including
- *      the error code, origin, alert number, and textual reason when
- *      available.
+ *      Normal transport closes and idle timeouts are logged at
+ *      Ns_LogQuicDebug severity, TLS CRYPTO_ERROR alerts at Notice,
+ *      and other transport errors at Warning. Messages include the
+ *      close origin, error code or TLS alert, and available reason.
+ *
+ *      Application closes produce only a debug message here; their
+ *      details are reported by the caller.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Emits diagnostic messages via Ns_Log(). The function does not
- *      query or modify OpenSSL connection state.
+ *      May emit a diagnostic message. Does not query or modify
+ *      OpenSSL connection state or consume the OpenSSL error queue.
  *
  *----------------------------------------------------------------------
  */
@@ -770,12 +772,14 @@ static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL_CONN_CLOSE_INFO *cciPt
 
         } else if (ec >= OSSL_QUIC_ERR_CRYPTO_ERR_BEGIN
                    && ec <= OSSL_QUIC_ERR_CRYPTO_ERR_END) {
-            unsigned alert = (unsigned)(ec & 0xFFu); // 303->47
+            unsigned alert = (unsigned)(ec - OSSL_QUIC_ERR_CRYPTO_ERR_BEGIN);
 
-            Ns_Log(Error, "QUIC close: remote=%d class=CRYPTO_ERROR tls_alert=%u"
-                   " (illegal_parameter=%d) reason='%s'",
-                   !(cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL), alert, alert==47,
-                   cciPtr->reason?cciPtr->reason:"");
+            Ns_Log(Notice,
+                   "QUIC close: remote=%d class=CRYPTO_ERROR "
+                   "tls_alert=%u reason='%s'",
+                   (cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL) == 0u,
+                   alert,
+                   cciPtr->reason != NULL ? cciPtr->reason : "");
         } else {
             Ns_Log(Error,
                    "QUIC close: remote=%d QUIC transportcode=0x%llx reason='%s'",
@@ -802,31 +806,43 @@ static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL_CONN_CLOSE_INFO *cciPt
  *
  *----------------------------------------------------------------------
  */
-static bool ossl_conn_maybe_log_first_shutdown(ConnCtx *cc, const char *label) {
-    NsTLSConfig *dc    = cc->dc;
+static bool
+ossl_conn_maybe_log_first_shutdown(ConnCtx *cc, const char *label)
+{
+    NsTLSConfig *dc = cc->dc;
     bool         fired = NS_FALSE;
-    int          sd    = SSL_get_shutdown(cc->h3ssl.conn);
+    int          sd = SSL_get_shutdown(cc->h3ssl.conn);
 
     if (sd != 0 && cc->last_sd == 0) {
-        SSL_CONN_CLOSE_INFO cci;
+        if (!cc->shutdownReported) {
+            SSL_CONN_CLOSE_INFO cci;
 
-        if (SSL_get_conn_close_info(cc->h3ssl.conn, &cci, sizeof(cci)) == 1) {
-            if (cci.flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) {
-                ossl_conn_log_close_info(dc, &cci);
+            if (SSL_get_conn_close_info(cc->h3ssl.conn,
+                                       &cci, sizeof(cci)) == 1) {
+                if ((cci.flags & SSL_CONN_CLOSE_FLAG_TRANSPORT) != 0u) {
+                    ossl_conn_log_close_info(dc, &cci);
+                } else {
+                    Ns_Log(Notice,
+                           "[%lld] QUIC conn %p entering shutdown (%s): "
+                           "state=%d close origin=%s class=application "
+                           "code=0x%llx reason='%s'",
+                           (long long)dc->iter,
+                           (void *)cc->h3ssl.conn, label, sd,
+                           (cci.flags & SSL_CONN_CLOSE_FLAG_LOCAL) != 0u
+                           ? "local" : "remote",
+                           (unsigned long long)cci.error_code,
+                           cci.reason != NULL ? cci.reason : "");
+                }
             } else {
-                unsigned long e = ERR_peek_error();
-                Ns_Log(Error, "[%lld] QUIC conn %p entering shutdown %s: state=%d "
-                       "last_err_lib=%d reason=%d (%s)",
-                       (long long)dc->iter, (void*)cc->h3ssl.conn, label, sd,
-                       (int)ERR_GET_LIB(e), (int)ERR_GET_REASON(e),
-                       ERR_reason_error_string(e));
+                Ns_Log(Notice,
+                       "[%lld] QUIC conn %p entering shutdown (%s): "
+                       "state=%d close information unavailable",
+                       (long long)dc->iter,
+                       (void *)cc->h3ssl.conn, label, sd);
             }
         }
 
         if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
-            /*
-             * Log per-stream high-level states for the usual suspects.
-             */
             ossl_stream_log_state(dc, cc->h3ssl.cstream, "server-ctrl");
             ossl_stream_log_state(dc, cc->h3ssl.pstream, "server-qpack-enc");
             ossl_stream_log_state(dc, cc->h3ssl.rstream, "server-qpack-dec");
@@ -1340,7 +1356,8 @@ quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn)
 
     if (ret == 1) {
         if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
-            int ed = SSL_get_early_data_status(conn);
+            ConnCtx    *cc = SSL_get_ex_data(conn, dc->u.h3.cc_idx);
+            int         ed = SSL_get_early_data_status(conn);
             const char *eds =
                 (ed == SSL_EARLY_DATA_ACCEPTED) ? "accepted" :
                 (ed == SSL_EARLY_DATA_REJECTED) ? "rejected" :
@@ -1350,6 +1367,9 @@ quic_conn_drive_handshake(NsTLSConfig *dc, SSL *conn)
                    "[%lld] Handshake completed for %p "
                    "(early-data status: %s)",
                    (long long)dc->iter, (void *)conn, eds);
+            if (cc != NULL) {
+                cc->shutdownReported = NS_TRUE;
+            }
         }
         return 1;
     }
@@ -1541,8 +1561,7 @@ quic_conn_finish_handshake(ConnCtx *cc)
         return -1;
     }
 
-    ossl_conn_maybe_log_first_shutdown(
-        cc, "after quic_conn_open_server_uni_streams");
+    ossl_conn_maybe_log_first_shutdown(cc, "after quic_conn_open_server_uni_streams");
 
     PollsetUpdateConnPollInterest(cc);
     return 1;
