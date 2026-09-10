@@ -20,6 +20,10 @@
 
 #define NS_POOL_FULL_NOTICE_INTERVAL_SEC 60
 
+#define CONN_CREATE_BELOW_MINIMUM           0x01u
+#define CONN_CREATE_ABOVE_LOW_WATERMARK     0x02u
+#define CONN_CREATE_OVERLAP_HIGH_WATERMARK  0x04u
+
 /*
  * Local functions defined in this file
  */
@@ -35,8 +39,12 @@ static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *stat
 static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state, bool checkforproxy)
     NS_GNUC_NONNULL(1,3);
 
-static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr)
-    NS_GNUC_NONNULL(1);
+static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr, unsigned int *reasonPtr)
+    NS_GNUC_NONNULL(1,2);
+
+static void LogConnThreadCreate(const ConnPool *poolPtr, const char *caller, const char *dispatch,
+                                unsigned int reason, int current, int waiting)
+    NS_GNUC_NONNULL(1,2,3);
 
 static void WakeupConnThreads(ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
@@ -348,77 +356,138 @@ NsPoolAddBytesSent(ConnPool *poolPtr, Tcl_WideInt bytesSent)
     Ns_MutexUnlock(&poolPtr->rate.lock);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogConnThreadCreate --
+ *
+ *      Log a connection-thread creation decision at Notice severity.
+ *      Identifies the server, pool, caller, dispatch context, creation
+ *      triggers, and whether overlapping creation was permitted by the
+ *      high watermark.
+ *
+ *      The current and waiting arguments are snapshots captured under
+ *      the pool's wqueue.lock and threads.lock at the decision point,
+ *      before reserving the additional thread. They need not describe
+ *      the pool state at the time the message is emitted.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Emits a diagnostic when Notice logging is enabled. Does not
+ *      acquire pool locks or modify pool state. The caller should
+ *      release the decision locks before calling this function.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+LogConnThreadCreate(const ConnPool *poolPtr, const char *caller,
+                    const char *dispatch, unsigned int reason,
+                    int current, int waiting)
+{
+    const bool belowMinimum      = (reason & CONN_CREATE_BELOW_MINIMUM) != 0u;
+    const bool aboveLowWatermark = (reason & CONN_CREATE_ABOVE_LOW_WATERMARK) != 0u;
+    const bool overlapping       = (reason & CONN_CREATE_OVERLAP_HIGH_WATERMARK) != 0u;
+    const char *cause;
 
-
+    if (belowMinimum && aboveLowWatermark) {
+        cause = "below minimum and queued requests";
+    } else if (belowMinimum) {
+        cause = "below minimum";
+    } else {
+        cause = "queued requests";
+    }
+
+    Ns_Log(Notice,
+           "[server %s pool %s] creating connection thread: %s "
+           "(current %d, waiting %d)%s%s [%s]",
+           poolPtr->servPtr->server,
+           *poolPtr->pool != '\0' ? poolPtr->pool : "default",
+           cause,
+           current,
+           waiting,
+           overlapping ? "; another thread is still starting" : "",
+           STREQ(dispatch, "idle-thread") ? "; request assigned to idle thread" : "",
+           caller);
+}
+
 /*
  *----------------------------------------------------------------------
  *
  * neededAdditionalConnectionThreads --
  *
- *      Compute the number additional connection threads we should
- *      create. This function has to be called under a lock for the
- *      provided queue (such as &poolPtr->wqueue.lock).
+ *      Determine whether the pool should create an additional connection
+ *      thread. Creation is requested when the current thread count is
+ *      below the minimum or the waiting queue exceeds the low watermark,
+ *      provided the maximum has not been reached and shutdown has not
+ *      started.
+ *
+ *      Thread creation is normally serialized within the pool. When the
+ *      waiting queue exceeds the high watermark, another creation may
+ *      proceed while a previous creation is still in progress.
+ *
+ *      The caller must hold both wqueue.lock and threads.lock.
  *
  * Results:
- *      Number of needed additional connection threads.
+ *      NS_TRUE if creation is requested; otherwise NS_FALSE.
+ *      Sets *reasonPtr to the applicable CONN_CREATE_* flags on NS_TRUE,
+ *      or zero on NS_FALSE. Multiple flags may be set.
  *
  * Side effects:
- *      None
+ *      Writes *reasonPtr and briefly acquires the server's pools.lock
+ *      to check shutdown state. Does not reserve or create a thread,
+ *      or modify pool counters.
  *
  *----------------------------------------------------------------------
  */
 static bool
-neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
-    bool wantCreate;
+neededAdditionalConnectionThreads(const ConnPool *poolPtr,
+                                  unsigned int *reasonPtr)
+{
+    bool wantCreate = NS_FALSE;
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
+    NS_NONNULL_ASSERT(reasonPtr != NULL);
+
+    *reasonPtr = 0u;
 
     /*
-     * Create new connection threads, if
+     * Create an additional connection thread when:
      *
-     * - there is currently no connection thread being created, or
-     *   parallel creates are allowed and there are more than
-     *   highwatermark requests queued,
+     * - the current thread count is below the minimum, or the waiting
+     *   request count exceeds the low watermark;
      *
-     * - AND there are less idle-threads than min threads (the server
-     *   tries to keep min-threads idle to be ready for short peaks),
+     * - AND no thread creation is in progress for this pool, unless
+     *   the waiting request count exceeds the high watermark;
      *
-     * - AND there are not yet max-threads running.
+     * - AND the current thread count is below the maximum;
      *
+     * - AND the server's pools are not shutting down.
+     *
+     * The caller holds wqueue.lock and threads.lock.
      */
-    if ( (poolPtr->threads.creating == 0
-          || poolPtr->wqueue.wait.num > poolPtr->wqueue.highwatermark
-          )
-         && (poolPtr->threads.current < poolPtr->threads.min
-             || (poolPtr->wqueue.wait.num > poolPtr->wqueue.lowwatermark)
-             )
-         && poolPtr->threads.current < poolPtr->threads.max
-         ) {
+    if ((poolPtr->threads.creating == 0
+         || poolPtr->wqueue.wait.num > poolPtr->wqueue.highwatermark)
+        && (poolPtr->threads.current < poolPtr->threads.min
+            || poolPtr->wqueue.wait.num > poolPtr->wqueue.lowwatermark)
+        && poolPtr->threads.current < poolPtr->threads.max) {
 
         Ns_MutexLock(&poolPtr->servPtr->pools.lock);
-        wantCreate = (!poolPtr->servPtr->pools.shutdown);
+        wantCreate = !poolPtr->servPtr->pools.shutdown;
         Ns_MutexUnlock(&poolPtr->servPtr->pools.lock);
 
-        /*Ns_Log(Notice, "[%s] wantCreate %d (creating %d current %d idle %d waiting %d)",
-             poolPtr->servPtr->server,
-             wantCreate,
-             poolPtr->threads.creating,
-             poolPtr->threads.current,
-             poolPtr->threads.idle,
-             poolPtr->wqueue.wait.num
-             );*/
-    } else {
-        wantCreate = NS_FALSE;
-
-        /*Ns_Log(Notice, "[%s] do not wantCreate creating %d, idle %d < min %d, current %d < max %d, waiting %d)",
-               poolPtr->servPtr->server,
-               poolPtr->threads.creating,
-               poolPtr->threads.idle,
-               poolPtr->threads.min,
-               poolPtr->threads.current,
-               poolPtr->threads.max,
-               poolPtr->wqueue.wait.num);*/
-
+        if (wantCreate) {
+            if (poolPtr->threads.current < poolPtr->threads.min) {
+                *reasonPtr |= CONN_CREATE_BELOW_MINIMUM;
+            }
+            if (poolPtr->wqueue.wait.num > poolPtr->wqueue.lowwatermark) {
+                *reasonPtr |= CONN_CREATE_ABOVE_LOW_WATERMARK;
+            }
+            if (poolPtr->threads.creating != 0) {
+                *reasonPtr |= CONN_CREATE_OVERLAP_HIGH_WATERMARK;
+            }
+        }
     }
 
     return wantCreate;
@@ -447,8 +516,9 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
 
 void
 NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
-    bool create;
-    int  waitnum;
+    bool         create;
+    int          createCurrent = 0, createWaiting = 0;
+    unsigned int createReason;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
@@ -462,23 +532,21 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
 
     Ns_MutexLock(&poolPtr->wqueue.lock);
     Ns_MutexLock(&poolPtr->threads.lock);
-    create = neededAdditionalConnectionThreads(poolPtr);
+    create = neededAdditionalConnectionThreads(poolPtr, &createReason);
 
     if (create) {
-        poolPtr->threads.current ++;
-        poolPtr->threads.creating ++;
+        createCurrent = poolPtr->threads.current++;
+        createWaiting = poolPtr->wqueue.wait.num;
+        poolPtr->threads.creating++;
     }
-    waitnum = poolPtr->wqueue.wait.num;
 
     Ns_MutexUnlock(&poolPtr->threads.lock);
     Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
     if (create) {
-        Ns_Log(Notice, "NsEnsureRunningConnectionThreads wantCreate %d waiting %d idle %d current %d",
-               (int)create,
-               waitnum,
-               poolPtr->threads.idle,
-               poolPtr->threads.current);
+        LogConnThreadCreate(poolPtr, "NsEnsureRunningConnectionThreads",
+                            "pool-check",
+                            createReason, createCurrent, createWaiting);
         CreateConnThread(poolPtr);
     }
 }
@@ -531,6 +599,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     Conn          *connPtr = NULL;
     bool           create = NS_FALSE;
     int            queued = NS_OK;
+    unsigned int   createReason = 0;
     Ns_Time        now;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
@@ -667,7 +736,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
             Ns_MutexLock(&poolPtr->wqueue.lock);
             Ns_MutexLock(&poolPtr->threads.lock);
-            create = neededAdditionalConnectionThreads(poolPtr);
+            create = neededAdditionalConnectionThreads(poolPtr, &createReason);
             Ns_MutexUnlock(&poolPtr->threads.lock);
             Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
@@ -686,7 +755,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             poolPtr->wqueue.wait.num ++;
             Ns_MutexLock(&poolPtr->threads.lock);
             poolPtr->stats.queued++;
-            create = neededAdditionalConnectionThreads(poolPtr);
+            create = neededAdditionalConnectionThreads(poolPtr, &createReason);
             Ns_MutexUnlock(&poolPtr->threads.lock);
             Ns_MutexUnlock(&poolPtr->wqueue.lock);
         }
@@ -814,20 +883,17 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     }
 
     if (create) {
-        int idle, current;
+        int createCurrent, createWaiting;
 
         Ns_MutexLock(&poolPtr->threads.lock);
-        idle = poolPtr->threads.idle;
-        current = poolPtr->threads.current;
-        poolPtr->threads.current ++;
+        createCurrent = poolPtr->threads.current ++;
+        createWaiting = poolPtr->wqueue.wait.num;
         poolPtr->threads.creating ++;
         Ns_MutexUnlock(&poolPtr->threads.lock);
 
-        Ns_Log(Notice, "NsQueueConn wantCreate %d waiting %d idle %d current %d",
-               (int)create,
-               poolPtr->wqueue.wait.num,
-               idle,
-               current);
+        LogConnThreadCreate(poolPtr, "NsQueueConn",
+                            argPtr != NULL ? "idle-thread" : "waiting-queue",
+                            createReason, createCurrent,  createWaiting);
 
         CreateConnThread(poolPtr);
     }
