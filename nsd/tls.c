@@ -127,9 +127,6 @@ static Ns_ReturnCode StoreInvalidCertificate(X509 *cert, int x509err, int curren
 static bool ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *validationExceptionsPtr, struct sockaddr *saPtr)
      NS_GNUC_NONNULL(3,4);
 
-static void DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long sslERRcode)
-    NS_GNUC_NONNULL(2);
-
 static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, const Ns_Time *timeoutPtr);
 
 static void CertTableInit(void);
@@ -2330,7 +2327,7 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
              * has already been captured and is passed to the helper.
              */
             if (sslERRcode != 0u) {
-                DrainErrorStack(severity, errorContext.string, sslERRcode);
+                NsTLSDrainErrorStack(severity, errorContext.string, sslERRcode);
             } else {
                 Ns_Log(severity, "%s: %s", errorContext.string, errorBuffer);
             }
@@ -2573,10 +2570,10 @@ TLSPasswordCB(char *buf, int size, int UNUSED(rwflag), void *userdata)
 /*
  *----------------------------------------------------------------------
  *
- * DrainErrorStack --
+ * NsTLSDrainErrorStack --
  *
- *      Report 0 to n errors from the OpenSSL error stack. This
- *      function reports the errors and clears it as well.
+ *      Report the supplied first error and remaining OpenSSL error-stack
+ *      entries in one log entry. Drain the stack before invoking Ns_Log().
  *
  * Results:
  *      None.
@@ -2587,11 +2584,9 @@ TLSPasswordCB(char *buf, int size, int UNUSED(rwflag), void *userdata)
  *----------------------------------------------------------------------
  */
 /*
- * Report the supplied first error and remaining OpenSSL error-stack
- * entries in one log entry. Drain the stack before invoking Ns_Log().
  */
-static void
-DrainErrorStack(Ns_LogSeverity severity, const char *errorContext,
+void
+NsTLSDrainErrorStack(Ns_LogSeverity severity, const char *errorContext,
                 unsigned long sslERRcode)
 {
     if (sslERRcode != 0u) {
@@ -3387,6 +3382,7 @@ ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *validationExcep
     if (getpeername(sock, saPtr, &socklen) != 0) {
         memset(saPtr, 0, sizeof(socklen));
     }
+
     Ns_Log(Debug, "??? ValidationExcpetionExists nr validation exceptions %ld", validationExceptionsPtr->size);
 
     /*
@@ -3867,7 +3863,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
     SSL_CTX_set_default_passwd_cb(ctx, TLSPasswordCB);
     SSL_CTX_set_default_passwd_cb_userdata(ctx, ns_const2voidp(cert));
 
-    DrainErrorStack(Warning, "Ns_TLS_CtxServerCreate", ERR_get_error());
+    NsTLSDrainErrorStack(Warning, "Ns_TLS_CtxServerCreate", ERR_get_error());
 
     if (cert != NULL) {
         const char *keyFile = (key != NULL) ? key : cert;
@@ -4194,6 +4190,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
             char                       ipString[NS_IPADDR_SIZE];
             const char                *peer = "unknown";
             Tcl_DString                errorContext;
+            int                        peerError = 0;
 
             if (getpeername(sock, (struct sockaddr *)&sa, &socklen) == 0) {
                 const char *address;
@@ -4203,10 +4200,12 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                 if (address != NULL) {
                     peer = address;
                 }
+            } else {
+                peerError = ns_sockerrno;
             }
 
             Tcl_DStringInit(&errorContext);
-            Ns_DStringPrintf(&errorContext, "TLS peer %s: SSL_read(%d)",
+            Ns_DStringPrintf(&errorContext, "TLS socket peer %s: SSL_read(%d)",
                              peer, sock);
 
             if (ERR_GET_LIB(sslERRcode) == ERR_LIB_SSL
@@ -4215,8 +4214,13 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                                  " client requested unsupported protocol: %s",
                                  SSL_get_version(sslPtr));
             }
+            if (peerError != 0) {
+                Ns_DStringPrintf(&errorContext,
+                                 " [getpeername failed: %d (%s)]",
+                                 peerError, ns_sockstrerror(peerError));
+            }
 
-            DrainErrorStack(Notice, errorContext.string, sslERRcode);
+            NsTLSDrainErrorStack(Notice, errorContext.string, sslERRcode);
             Tcl_DStringFree(&errorContext);
         }
 
