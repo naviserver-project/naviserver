@@ -2817,7 +2817,7 @@ ConnRun(Conn *connPtr)
     Ns_Conn        *conn;
     NsServer       *servPtr;
     Ns_ReturnCode   status;
-    const char     *auth;
+    const char     *auth, *processingStage;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
 
@@ -2923,6 +2923,7 @@ ConnRun(Conn *connPtr)
          * Run the driver's private handler
          */
         Ns_GetTime(&connPtr->filterDoneTime);
+        processingStage = "driver request handler";
         status = (*sockPtr->drvPtr->requestProc)(sockPtr->drvPtr->arg, conn);
 
     } else if (connPtr->request.requestType == NS_REQUEST_TYPE_PROXY
@@ -2932,14 +2933,16 @@ ConnRun(Conn *connPtr)
          * Run proxy request
          */
         Ns_GetTime(&connPtr->filterDoneTime);
+        processingStage = "proxy request handler";
         status = NsConnRunProxyRequest((Ns_Conn *) connPtr);
 
     } else {
         /*
          * Run classical HTTP requests
          */
-
+        processingStage = "pre-auth filters";
         status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
+
         Ns_GetTime(&connPtr->filterDoneTime);
 
         if (connPtr->sockPtr == NULL) {
@@ -2954,16 +2957,23 @@ ConnRun(Conn *connPtr)
 
         if (status == NS_OK) {
             const char *authority = NULL;
+
+            processingStage = "authorization";
             status = Ns_AuthorizeRequest(conn, &authority);
+
             switch (status) {
             case NS_OK:            NS_FALL_THROUGH; /* fall through */
             case NS_FILTER_BREAK:
+
+                processingStage = "post-auth filters";
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
+
                 Ns_GetTime(&connPtr->filterDoneTime);
                 if (status == NS_OK && (connPtr->sockPtr != NULL)) {
                     /*
                      * Run the actual request
                      */
+                    processingStage = "request handler";
                     status = Ns_ConnRunRequest(conn);
                 }
                 break;
@@ -3020,8 +3030,14 @@ ConnRun(Conn *connPtr)
     } else {
         NsAddNslogEntry(sockPtr, connPtr->responseStatus, conn, NULL);
 
-        Ns_Log(Notice, "not running NS_FILTER_TRACE status %s http status code %d: %s",
-               Ns_ReturnCodeString(status), connPtr->responseStatus, connPtr->request.url);
+        Ns_Log(Notice,
+               "skipping NS_FILTER_TRACE: %s returned %s; "
+               "HTTP status %d; connection %s; URL %s",
+               processingStage,
+               Ns_ReturnCodeString(status),
+               connPtr->responseStatus,
+               connPtr->idstr,
+               connPtr->request.url);
     }
 
     /*
