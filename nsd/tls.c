@@ -4097,7 +4097,6 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
         break;
 
     case SSL_ERROR_ZERO_RETURN:
-
         Ns_Log(Debug, "SSL_read(%d) ERROR_ZERO_RETURN got:%d", sock, got);
 
         nRead = got;
@@ -4113,7 +4112,6 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
         break;
 
     case SSL_ERROR_SYSCALL:
-
         sslERRcode = ERR_get_error();
         Ns_Log(Debug, "SSL_read(%d) SSL_ERROR_SYSCALL got:%d sslERRcode %lu: %s", sock, got,
                sslERRcode, ERR_error_string(sslERRcode, errorBuffer));
@@ -4132,10 +4130,18 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
         NS_FALL_THROUGH; /* fall through */
 
     default:
-        sslERRcode = ERR_get_error();
+        /*
+         * SSL_ERROR_SYSCALL falls through with the first OpenSSL
+         * error already removed from the queue. Preserve it for
+         * logging and for the caller.
+         */
+        if (err != SSL_ERROR_SYSCALL) {
+            sslERRcode = ERR_get_error();
 
-        Ns_Log(Debug, "SSL_read(%d) error handler err %d sslERRcode %lu",
+            Ns_Log(Debug, "SSL_read(%d) error handler err %d sslERRcode %lu",
                sock, err, sslERRcode);
+        }
+
         /*
          * Starting with the commit in OpenSSL 1.1.1 branch
          * OpenSSL_1_1_1-stable below, at least HTTPS client requests
