@@ -33,6 +33,10 @@ jobs:
 
       - name: Install Linux dependencies
         run: |
+          printf '%s\n' \
+            'APT::Install-Recommends "false";' \
+            'Acquire::Retries "5";' \
+            > /etc/apt/apt.conf.d/80-ci
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
           apt-get install -y \
