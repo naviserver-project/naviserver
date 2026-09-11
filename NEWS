@@ -1,10 +1,9 @@
-==================================
-NaviServer 5.1.1, not yet released
-==================================
+=====================================
+NaviServer 5.1.1, released 2026-09-11
+=====================================
 
  Changes relative to NaviServer 5.1.0:
- 94 files changed, 12282 insertions(+), 3406 deletions(-)
-
+ 95 files changed, 12476 insertions(+), 3407 deletions(-)
 
 New Features:
 -------------
@@ -50,6 +49,18 @@ New Features:
      processing stage, return code, HTTP status, connection ID, and URL.
      This helps distinguish failures in different request-processing
      paths.
+
+ - nsstats (separate module):
+
+   * Added a utilization page covering operating-system limits,
+     driver and networking limits, and request-processing limits
+     per connection pool, helping identify capacity bottlenecks.
+   * Extended the threads page with per-thread user CPU time (utime)
+     and system CPU time (stime), using "ns_info threadcputimes".
+     Per-thread CPU accounting is now also supported on macOS.
+   * These improvements are provided by the accompanying modules
+     archive and require an updated nsstats installation.
+
 
 Security and Hardening:
 -----------------------
@@ -238,9 +249,11 @@ Compatibility and Platform Fixes:
 
  - Installation Layouts:
 
-   * Supported split installation layouts in which the NaviServer
-     executable, private binaries, Tcl library, and server home reside
-     in different directories.
+   * Added support for the NAVISERVER environment variable to specify
+     the NaviServer home directory.
+   * Supported split installation layouts in which the executable,
+     private binaries, Tcl library, and server home reside in different
+     directories (important for distros such as Debian).
    * Preserved execution from uninstalled source trees.
 
  - Compiler and Platform Support:
