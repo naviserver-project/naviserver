@@ -202,6 +202,10 @@ test ns_info-1.44 {syntax: ns_info logdir} -body {
     ns_info logdir x
 } -returnCodes error -result {wrong # args: should be "ns_info logdir"}
 
+test ns_info-1.45 {syntax: ns_info threadcputimes} -body {
+    ns_info threadcputimes x
+} -returnCodes error -result {wrong # args: should be "ns_info threadcputimes"}
+
 
 #######################################################################################
 #  Functional tests
