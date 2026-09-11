@@ -40,6 +40,8 @@ jobs:
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
           apt-get install -y \
+            autoconf \
+            automake \
             ca-certificates \
             curl \
             git \
