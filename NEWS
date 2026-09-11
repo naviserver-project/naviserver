@@ -10,6 +10,7 @@ New Features:
 
  - HTTP/3 / QUIC:
 
+   * HTTP/3 server support changed from expermiental to ready-for-use
    * Added support for multiple QUIC driver threads on the same UDP port
      when SO_REUSEPORT is available.
    * Added the "port_ext" parameter for advertising an external HTTP/3
