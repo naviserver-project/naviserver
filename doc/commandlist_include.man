@@ -101,7 +101,7 @@
 [uri ../../naviserver/files/ns_cond.html {ns_cond signal}] /condId/
 [uri ../../naviserver/files/ns_cond.html {ns_cond wait}] /condId/ /mutexId/ ?/timeout/?
 [uri ../../naviserver/files/ns_config.html {ns_config}] ?-all? ?-bool? ?-int? ?-min /integer/? ?-max /integer/? ?-exact? ?-set? ?--? /section/ /key/ ?/default/?
-[uri ../../naviserver/files/ns_config.html {ns_configsection}] ?-filter unread|defaulted|defaults? ?--? /section/
+[uri ../../naviserver/files/ns_config.html {ns_configsection}] ?-filter unread|defaulted|defaults|inherited? ?--? /section/
 [uri ../../naviserver/files/ns_config.html {ns_configsections}]
 [uri ../../naviserver/files/ns_config.html {ns_configure_variables}] ?-configRoot /directory/? ?-silent /boolean/? ?--? /prefix/ /defaultConfig/
 [uri ../../naviserver/files/ns_conn.html {ns_conn acceptedcompression}]
@@ -358,6 +358,7 @@
 [uri ../../naviserver/files/ns_info.html {ns_info ssl}] ?-details?
 [uri ../../naviserver/files/ns_info.html {ns_info started}]
 [uri ../../naviserver/files/ns_info.html {ns_info tag}]
+[uri ../../naviserver/files/ns_info.html {ns_info threadcputimes}]
 [uri ../../naviserver/files/ns_info.html {ns_info threads}]
 [uri ../../naviserver/files/ns_info.html {ns_info uptime}]
 [uri ../../naviserver/files/ns_info.html {ns_info version}]
