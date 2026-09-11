@@ -4191,6 +4191,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
             const char                *peer = "unknown";
             Tcl_DString                errorContext;
             int                        peerError = 0;
+            const char                *sniHostname = SSL_get_servername(sslPtr, TLSEXT_NAMETYPE_host_name);
 
             if (getpeername(sock, (struct sockaddr *)&sa, &socklen) == 0) {
                 const char *address;
@@ -4205,8 +4206,26 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
             }
 
             Tcl_DStringInit(&errorContext);
-            Ns_DStringPrintf(&errorContext, "TLS socket peer %s: SSL_read(%d)",
-                             peer, sock);
+            Ns_DStringPrintf(&errorContext, "TLS socket peer %s SNI ", peer);
+
+            if (sniHostname == NULL) {
+                Tcl_DStringAppend(&errorContext, "<none>", TCL_INDEX_NONE);
+            } else {
+                const unsigned char *p;
+
+                Tcl_DStringAppend(&errorContext, "\"", 1);
+                for (p = (const unsigned char *)sniHostname; *p != '\0'; ++p) {
+                    if (*p >= 0x20u && *p <= 0x7eu
+                        && *p != '"' && *p != '\\') {
+                        Tcl_DStringAppend(&errorContext, (const char *)p, 1);
+                    } else {
+                        Ns_DStringPrintf(&errorContext, "\\x%02x", (unsigned int)*p);
+                    }
+                }
+                Tcl_DStringAppend(&errorContext, "\"", 1);
+            }
+
+            Ns_DStringPrintf(&errorContext, ": SSL_read(%d)", sock);
 
             if (ERR_GET_LIB(sslERRcode) == ERR_LIB_SSL
                 && ERR_GET_REASON(sslERRcode) == SSL_R_UNSUPPORTED_PROTOCOL) {
