@@ -801,11 +801,13 @@ static void ossl_conn_log_close_info(NsTLSConfig *dc, SSL_CONN_CLOSE_INFO *cciPt
                    alert,
                    cciPtr->reason != NULL ? cciPtr->reason : "");
         } else {
-            Ns_Log(Error,
-                   "QUIC close: remote=%d QUIC transportcode=0x%llx reason='%s'",
-                   !(cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL),
+            const bool local = (cciPtr->flags & SSL_CONN_CLOSE_FLAG_LOCAL) != 0u;
+
+            Ns_Log(local ? Warning : Notice,
+                   "QUIC close: origin=%s class=transport code=0x%llx reason='%s'",
+                   local ? "local" : "remote",
                    (unsigned long long)cciPtr->error_code,
-                   cciPtr->reason ? cciPtr->reason : "");
+                   cciPtr->reason != NULL ? cciPtr->reason : "");
         }
     } else {
         Ns_Log(Ns_LogQuicDebug, "[%lld] conn_close_info: not a transport failure", (long long)dc->iter);
