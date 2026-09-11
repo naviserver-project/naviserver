@@ -404,8 +404,10 @@ LogConnThreadCreate(const ConnPool *poolPtr,
         cause = "below minimum and queued requests";
     } else if (belowMinimum) {
         cause = "below minimum";
-    } else {
+    } else if (aboveLowWatermark) {
         cause = "queued requests";
+    } else {
+        cause = "unspecified reason";
     }
 
     Ns_Log(Notice,
@@ -527,7 +529,6 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr,
 void
 NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     bool         create;
-    unsigned int createReason;
     ConnThreadCreateLog createLog = {
         .caller = "NsEnsureRunningConnectionThreads",
         .dispatch = "pool-check"
@@ -545,7 +546,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
 
     Ns_MutexLock(&poolPtr->wqueue.lock);
     Ns_MutexLock(&poolPtr->threads.lock);
-    create = neededAdditionalConnectionThreads(poolPtr, &createReason);
+    create = neededAdditionalConnectionThreads(poolPtr, &createLog.reason);
 
     if (create) {
         createLog.current = poolPtr->threads.current++;
@@ -609,7 +610,6 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     Conn          *connPtr = NULL;
     bool           create = NS_FALSE;
     int            queued = NS_OK;
-    unsigned int   createReason = 0;
     Ns_Time        now;
     ConnThreadCreateLog createLog = {
         .caller = "NsQueueConn"
@@ -749,7 +749,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
             Ns_MutexLock(&poolPtr->wqueue.lock);
             Ns_MutexLock(&poolPtr->threads.lock);
-            create = neededAdditionalConnectionThreads(poolPtr, &createReason);
+            create = neededAdditionalConnectionThreads(poolPtr, &createLog.reason);
             if (create) {
                 createLog.current = poolPtr->threads.current;
                 createLog.waiting = poolPtr->wqueue.wait.num;
@@ -772,7 +772,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             poolPtr->wqueue.wait.num ++;
             Ns_MutexLock(&poolPtr->threads.lock);
             poolPtr->stats.queued++;
-            create = neededAdditionalConnectionThreads(poolPtr, &createReason);
+            create = neededAdditionalConnectionThreads(poolPtr, &createLog.reason);
             if (create) {
                 createLog.current = poolPtr->threads.current;
                 createLog.waiting = poolPtr->wqueue.wait.num;
