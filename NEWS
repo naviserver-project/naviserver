@@ -1,15 +1,16 @@
-==================================
-NaviServer 5.1.1, not yet released
-==================================
+=====================================
+NaviServer 5.1.1, released 2026-09-11
+=====================================
 
  Changes relative to NaviServer 5.1.0:
- 85 files changed, 11198 insertions(+), 3103 deletions(-)
+ 95 files changed, 12476 insertions(+), 3407 deletions(-)
 
 New Features:
 -------------
 
  - HTTP/3 / QUIC:
 
+   * HTTP/3 server support changed from expermiental to ready-for-use
    * Added support for multiple QUIC driver threads on the same UDP port
      when SO_REUSEPORT is available.
    * Added the "port_ext" parameter for advertising an external HTTP/3
@@ -33,6 +34,34 @@ New Features:
      diagnostics and statistics.
    * Added writer and HTTP/3 shared-lock statistics counters.
      (commit ec8e9087)
+   * Connection-thread diagnostics: Log creation only after a free thread
+     slot has been claimed, avoiding misleading messages and reducing
+     system-log noise. Include the server, pool, creation reason, and
+     thread and queue counts captured at the decision point.
+   * Consolidated each OpenSSL error stack into a single log entry and
+     preserved the first error across TLS read-error handling.
+   * TLS diagnostics: Include the requested SNI hostname, safely escaped,
+     in TLS read-error messages. This helps identify certificate failures
+     associated with obsolete or unexpected hostnames.
+   * QUIC diagnostics: Clarified transport-close messages and their
+     origin. Generic remote transport closures are reported at Notice
+     severity and local transport failures at Warning severity.
+   * Improved messages for skipped trace filters to identify the
+     processing stage, return code, HTTP status, connection ID, and URL.
+     This helps distinguish failures in different request-processing
+     paths.
+
+ - nsstats (separate module):
+
+   * Added a utilization page covering operating-system limits,
+     driver and networking limits, and request-processing limits
+     per connection pool, helping identify capacity bottlenecks.
+   * Extended the threads page with per-thread user CPU time (utime)
+     and system CPU time (stime), using "ns_info threadcputimes".
+     Per-thread CPU accounting is now also supported on macOS.
+   * These improvements are provided by the accompanying modules
+     archive and require an updated nsstats installation.
+
 
 Security and Hardening:
 -----------------------
@@ -191,10 +220,6 @@ Bug Fixes:
      and added error handling for failed socket duplication when
      registering socket callbacks.  (commit 56fac70e)
 
- - nsdbmysql: Fixed an incorrectly converted Tcl_DStringAppend call
-   that prevented compilation. Thanks to John Buckman for the fix
-   and build verification.
-
 
 C API Changes:
 --------------
@@ -225,9 +250,11 @@ Compatibility and Platform Fixes:
 
  - Installation Layouts:
 
-   * Supported split installation layouts in which the NaviServer
-     executable, private binaries, Tcl library, and server home reside
-     in different directories.
+   * Added support for the NAVISERVER environment variable to specify
+     the NaviServer home directory.
+   * Supported split installation layouts in which the executable,
+     private binaries, Tcl library, and server home reside in different
+     directories (important for distros such as Debian).
    * Preserved execution from uninstalled source trees.
 
  - Compiler and Platform Support:
@@ -293,8 +320,9 @@ Tests:
  - Updated fastpath directory-listing tests for the XSS correction and
    Tcl 9 compatibility.
  - Improved HTTP character-set test portability.
- - Updated build and regression coverage for Linux, macOS, Windows,
-   OpenBSD, FreeBSD, OpenSSL, and current Tcl versions.
+ - Extended the GitHub regression test suite to include OpenSUSE
+   in addition to older Ubuntu (20.04, with OpenSSL 1.1.1), FreeBSD
+   and OpenBSD, covering Tcl versions from Tcl 8.5 to Tcl 9.1b0.
 
 
 Notes:
@@ -500,6 +528,178 @@ Notes:
 
   This is a security, stability, and portability release.  No
   configuration changes are required.
+
+
+
+=======================================
+NaviServer 5.0.6, released 2026-09-08
+=======================================
+
+ Changes relative to NaviServer 5.0.5:
+ 56 files changed, 3018 insertions(+), 1935 deletions(-)
+
+Security Fixes
+--------------
+
+ - HTTP/1.x request framing:
+   * Rejected requests containing both Content-Length and
+     Transfer-Encoding instead of choosing one framing interpretation.
+   * Parsed Content-Length strictly as a non-negative decimal value.
+   * Accepted only a single, case-insensitive "chunked"
+     Transfer-Encoding token for request bodies.
+   * Tightened chunked-message termination, chunk-size, extension, and
+     CRLF validation while preserving the macOS Finder/WebDAV
+     X-Expected-Entity-Length compatibility path.
+   * Added regression coverage for ambiguous and malformed request
+     framing.  This prevents request-smuggling differentials between
+     NaviServer and proxies or other HTTP parsers.
+     (commit 7caabb1f)
+
+ - HTTP request targets:
+   * Rejected backslash path separators in plain request targets,
+     preventing inconsistent path and traversal interpretation.
+   * Added regression tests for the affected request forms.
+     (commits f686b439, 3c863824)
+
+ - Reverse proxies:
+   * Hardened forwarding of inbound request headers by reverse-proxy
+     code.  (commit 3674b63f)
+
+ - Fastpath:
+   * Prevented cross-site scripting through filenames displayed in
+     automatically generated directory listings.
+   * Added regression tests covering HTML-sensitive filenames.
+     (commits 56b3f93f, 61e79a1d)
+
+ - Multipart forms:
+   * Hardened multipart/form-data parsing and validation against
+     malformed input.  (commit 8c6db2aa)
+
+ - nscgi:
+   * Suppressed the incoming Proxy request header when constructing the
+     CGI environment, preventing creation of an unsafe HTTP_PROXY
+     environment variable.  (commit fd6c0980)
+
+ - nsperm and nscp:
+   * Ensured that .htaccess permissions are loaded before processing
+     the first POST request to a protected location.
+     (commit c44382f2)
+   * Rejected the default nsperm administrator password for nscp
+     logins.  Administrators must configure a non-default password
+     before the account can be used.  (commit d2895724)
+   * Redacted passwords and lowered the verbosity of authentication
+     logging.  (commit 9e707bb0)
+
+ - TLS:
+   * Hardened the default TLS protocol policy.  (commit b7c857b7)
+
+ - The accompanying NaviServer modules archive contains two additional
+   security fixes:
+
+     * nsdbpg prevents SQL injection through identifiers supplied to
+       the legacy PostgreSQL BLOB commands and replaces fixed-size
+       query buffers.  (naviserver-project/nsdbpg commit
+       969ba18b57148e500ac77f617d4f184478041b35)
+
+     * nsconf prevents reflected cross-site scripting in the web-based
+       configuration editor.  (naviserver-project/nsconf commit
+       cca221e30f8e6f1bf0056aad60e054b88500a2a6)
+
+
+Bug Fixes
+---------
+
+ - Network Drivers:
+   * Continued listener accept sweeps after interrupted, reset, or
+     aborted connection attempts.
+   * Distinguished drained listeners from transient and fatal accept
+     errors.
+   * Preserved socket errors across driver accept callbacks instead of
+     relying on a potentially overwritten thread-local errno value.
+   * Distinguished accept() failures from read-ahead errors occurring
+     after a transport connection was accepted.
+   * Retried pending sockets after poll timeouts.
+   * Used the recorded receive error when handling asynchronous socket
+     read failures.
+   * Deferred host-map cleanup until all associated driver threads had
+     stopped.
+
+ - Streaming Writer:
+   * Properly initialized the streaming-writer spool mutex.
+   * Detached recycled streaming sockets from their former connections.
+   * Initialized the writer memory-statistics mutex when enabled.
+
+ - Tcl:
+   * Avoided sharing loaded-module Tcl objects between interpreter
+     threads.
+   * Corrected non-creating Tcl hash-table lookups for Tcl 9.1.
+   * Preserved environment-variable names in ns/environment/*
+     configuration sections.
+   * Treated an empty Tcl filter result as filter_return.
+   * Honored the documented unlimited connection-thread lifetime.
+
+ - ADP:
+   * Allowed hyphens in registered ADP tag names.
+
+ - Time parsing:
+   * Returned an error for unparseable time strings and guarded
+     interpreter access while reporting parsing errors.
+
+ - TLS:
+   * Improved SSL_read error context and removed redundant low-level
+     error messages.
+
+
+Compatibility and Platform Fixes
+--------------------------------
+
+ - OpenSSL:
+   * Added support for the opaque ASN.1 string representation and
+     const-correct X.509 extension accessors used by OpenSSL 4.1.
+   * Retained compatible accessor types for OpenSSL 3.x, allowing clean
+     compilation with both API generations.
+     (commits 4f8e18a4, e0452093)
+
+ - Socket handling:
+   * Added portable aliases for timeout, connection-reset,
+     connection-aborted, and nonblocking retry errors.
+   * Used these aliases consistently on Unix and Windows.
+
+ - Installation:
+   * Made the post-installation nsadmin permission check portable to
+     macOS, avoiding unsupported su options and interactive password
+     prompts.  (commit ca90247a)
+
+ - Distribution:
+   * Included the Windows makefile, certificate bundle, and LICENSE in
+     the source distribution.  (commit 20839b08)
+
+ - C API:
+   * Corrected printf-format attribute argument positions for the
+     internal panic logging function.
+
+ - Tests:
+   * Adjusted raw HTTP tests for Tcl 8.5 and a curl IPv6-literal proxy
+     regression.
+
+
+Documentation Updates
+---------------------
+
+ - Clarified the fields and semantics returned by ns_localtime.
+
+
+Notes:
+------
+
+  NaviServer modules are released independently of the core server.
+  Deployments using nsdbpg or nsconf should install the modules tar
+  file accompanying this NaviServer release, or update the affected
+  modules individually to the revisions listed above.
+
+  This is a security, stability, and portability release.  No
+  configuration changes are required.
+
 
 
 =======================================
