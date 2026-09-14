@@ -1582,6 +1582,22 @@ quic_conn_finish_handshake(ConnCtx *cc)
         return -1;
     }
 
+# if defined(HAVE_OPENSSL_4_1)
+    if (Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+        uint64_t peer_max_udp_payload = 0u;
+
+        if (SSL_get_feature_peer_request_uint(conn, SSL_VALUE_QUIC_UDP_PAYLOAD_SIZE_MAX,&peer_max_udp_payload) == 0) {
+            Ns_Log(Warning,
+                   "[%lld] H3 conn: failed to obtain max UDP payload",
+                   (long long)dc->iter);
+        } else {
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3 conn: peer maximum UDP receive payload: %llu",
+                   (long long)dc->iter, peer_max_udp_payload);
+        }
+    }
+# endif
+
     ossl_conn_maybe_log_first_shutdown(cc, "after quic_conn_open_server_uni_streams");
 
     PollsetUpdateConnPollInterest(cc);
@@ -9178,6 +9194,15 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     dc->u.h3.sendqueuesize =
         (size_t)Ns_ConfigMemUnitRange(section, "sendqueuesize", "256kB",
                                       256 * 1024, 1024, INT_MAX);
+    dc->u.h3.max_udp_payload_size = (size_t)Ns_ConfigMemUnitRange(section, "maxudppayloadsize", "1200",
+                                                                  1200, 1200, 65527);
+    Ns_Log(Ns_LogQuicDebug, "H3: configured maximum UDP receive payload: %zu", dc->u.h3.max_udp_payload_size);
+#if !defined(HAVE_OPENSSL_4_1)
+    if (dc->u.h3.max_udp_payload_size != 1200) {
+        Ns_Log(Warning, "parameter 'maxudppayloadsize' requires OpenSSL 4.1 or newer");
+    }
+#endif
+
     Ns_ConfigTimeUnitRange(section, "idletimeout",
                            "3s", 0, 0, LONG_MAX, 0,
                            &timeout);
@@ -9764,6 +9789,7 @@ TLSConfigClone(const NsTLSConfig *source)
             source->u.h3.validate_client_address;
         const size_t         recvbufsize   = source->u.h3.recvbufsize;
         const size_t         sendqueuesize = source->u.h3.sendqueuesize;
+        const size_t         max_udp_payload_size = source->u.h3.max_udp_payload_size;
         const struct timeval idle_timeout  = source->u.h3.idle_timeout;
         const struct timeval drain_timeout = source->u.h3.drain_timeout;
         const int            cc_idx = source->u.h3.cc_idx;
@@ -9774,6 +9800,7 @@ TLSConfigClone(const NsTLSConfig *source)
         dc->u.h3.validate_client_address = validate_client_address;
         dc->u.h3.recvbufsize             = recvbufsize;
         dc->u.h3.sendqueuesize           = sendqueuesize;
+        dc->u.h3.max_udp_payload_size    = max_udp_payload_size;
         dc->u.h3.idle_timeout            = idle_timeout;
         dc->u.h3.drain_timeout           = drain_timeout;
         dc->u.h3.cc_idx                  = cc_idx;
@@ -10646,6 +10673,19 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
             if (listener == NULL) {
                 goto fail;
             }
+
+#if defined(HAVE_OPENSSL_4_1)
+            if (!SSL_set_feature_request_uint(listener,
+                                              SSL_VALUE_QUIC_UDP_PAYLOAD_SIZE_MAX,
+                                              dc->u.h3.max_udp_payload_size)) {
+                Ns_Log(Warning,
+                       "H3 listener %p: SSL_set_feature_request_uint failed, cannot set max UDP payload size to %zu",
+                       (void *)listener, dc->u.h3.max_udp_payload_size);
+            }
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3 listener: local maximum UDP receive payload: %zu",
+                   (long long)dc->iter, dc->u.h3.max_udp_payload_size);
+#endif
             if (SSL_get_domain_flags(listener, &domainFlags) == 1) {
                 Ns_Log(Ns_LogQuicDebug, "H3 listener %p: effective QUIC domain flags "
                        "0x%llx, blocking mode %d",

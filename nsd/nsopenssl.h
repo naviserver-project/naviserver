@@ -63,6 +63,7 @@
 typedef struct NsTLSH3Config {
     size_t      recvbufsize;
     size_t      sendqueuesize;
+    size_t      max_udp_payload_size;
     size_t      nr_listeners;
     int         cc_idx;
     int         sc_idx;

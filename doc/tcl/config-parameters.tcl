@@ -2510,6 +2510,22 @@ stops execution of that ADP page}
                 }
             }
 
+            maxudppayloadsize {
+                type size
+                default 1200
+                desc {
+                    Maximum UDP payload size advertised to the peer as the
+                    QUIC max_udp_payload_size transport parameter. Valid
+                    values range from 1200 to 65527 bytes. This parameter
+                    requires OpenSSL 4.1 or newer.
+
+                    Currently, the setting only changes the advertised
+                    transport parameter. OpenSSL neither uses it to increase
+                    outgoing QUIC packet sizes nor enforces it as a receive
+                    limit, so it currently has no direct operational effect.
+                }
+            }
+
             idletimeout {
                 type time
                 default {3s}
