@@ -7023,7 +7023,7 @@ StreamCtxGet(ConnCtx *cc, int64_t sid, int create) {
                     QuicMemStatsIncr(&quicMemStats.counters.streamctx_new);
                     StreamCtxInit(sc);
                     SharedStreamInit(&sc->sh, &cc->shared, sid,
-                                     cc->dc->u.h3.sendqueuesize);
+                                     cc->dc->u.h3.settings.sendqueuesize);
                     Tcl_SetHashValue(e, sc);
                 }
             }
@@ -9183,22 +9183,22 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     dc->u.h3.progress_epoch = 0u;
 
     PollsetInit(dc);
-    dc->u.h3.validate_client_address = Ns_ConfigBool(section, "validateclientaddress", NS_TRUE);
-    if (!dc->u.h3.validate_client_address) {
+    dc->u.h3.settings.validate_client_address = Ns_ConfigBool(section, "validateclientaddress", NS_TRUE);
+    if (!dc->u.h3.settings.validate_client_address) {
         Ns_Log(Notice,
                "H3: QUIC client address validation disabled; "
                "address-validation Retry packets will not be sent");
     }
-    dc->u.h3.recvbufsize = (size_t)Ns_ConfigMemUnitRange(section, "recvbufsize", "8MB",
+    dc->u.h3.settings.recvbufsize = (size_t)Ns_ConfigMemUnitRange(section, "recvbufsize", "8MB",
                                                          1024*8000, 0, INT_MAX);
-    dc->u.h3.sendqueuesize =
+    dc->u.h3.settings.sendqueuesize =
         (size_t)Ns_ConfigMemUnitRange(section, "sendqueuesize", "256kB",
                                       256 * 1024, 1024, INT_MAX);
-    dc->u.h3.max_udp_payload_size = (size_t)Ns_ConfigMemUnitRange(section, "maxudppayloadsize", "1200",
+    dc->u.h3.settings.max_udp_payload_size = (size_t)Ns_ConfigMemUnitRange(section, "maxudppayloadsize", "1200",
                                                                   1200, 1200, 65527);
-    Ns_Log(Ns_LogQuicDebug, "H3: configured maximum UDP receive payload: %zu", dc->u.h3.max_udp_payload_size);
+    Ns_Log(Ns_LogQuicDebug, "H3: configured maximum UDP receive payload: %zu", dc->u.h3.settings.max_udp_payload_size);
 #if !defined(HAVE_OPENSSL_4_1)
-    if (dc->u.h3.max_udp_payload_size != 1200) {
+    if (dc->u.h3.settings.max_udp_payload_size != 1200u) {
         Ns_Log(Warning, "parameter 'maxudppayloadsize' requires OpenSSL 4.1 or newer");
     }
 #endif
@@ -9206,11 +9206,11 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     Ns_ConfigTimeUnitRange(section, "idletimeout",
                            "3s", 0, 0, LONG_MAX, 0,
                            &timeout);
-    NsTimeToTimeval(&timeout, &dc->u.h3.idle_timeout);
+    NsTimeToTimeval(&timeout, &dc->u.h3.settings.idle_timeout);
     Ns_ConfigTimeUnitRange(section, "draintimeout",
                            "10ms", 0, 0, LONG_MAX, 0,
                            &timeout);
-    NsTimeToTimeval(&timeout, &dc->u.h3.drain_timeout);
+    NsTimeToTimeval(&timeout, &dc->u.h3.settings.drain_timeout);
 
 #ifdef QUIC_MEM_STATS
     Ns_MutexInit(&quicMemStats.lock);
@@ -9779,33 +9779,15 @@ TLSConfigClone(const NsTLSConfig *source)
     NsTLSConfig *dc = ns_malloc(sizeof(NsTLSConfig));
 
     memcpy(dc, source, sizeof(NsTLSConfig));
+    memset(&dc->u.h3, 0, sizeof(dc->u.h3));
 
     /*
      * Do not inherit mutable QUIC runtime state. Preserve only the
      * configured values and globally allocated OpenSSL ex-data indices.
      */
-    {
-        const bool           validate_client_address =
-            source->u.h3.validate_client_address;
-        const size_t         recvbufsize   = source->u.h3.recvbufsize;
-        const size_t         sendqueuesize = source->u.h3.sendqueuesize;
-        const size_t         max_udp_payload_size = source->u.h3.max_udp_payload_size;
-        const struct timeval idle_timeout  = source->u.h3.idle_timeout;
-        const struct timeval drain_timeout = source->u.h3.drain_timeout;
-        const int            cc_idx = source->u.h3.cc_idx;
-        const int            sc_idx = source->u.h3.sc_idx;
-
-        memset(&dc->u.h3, 0, sizeof(dc->u.h3));
-
-        dc->u.h3.validate_client_address = validate_client_address;
-        dc->u.h3.recvbufsize             = recvbufsize;
-        dc->u.h3.sendqueuesize           = sendqueuesize;
-        dc->u.h3.max_udp_payload_size    = max_udp_payload_size;
-        dc->u.h3.idle_timeout            = idle_timeout;
-        dc->u.h3.drain_timeout           = drain_timeout;
-        dc->u.h3.cc_idx                  = cc_idx;
-        dc->u.h3.sc_idx                  = sc_idx;
-    }
+    dc->u.h3.settings = source->u.h3.settings;
+    dc->u.h3.cc_idx   = source->u.h3.cc_idx;
+    dc->u.h3.sc_idx   = source->u.h3.sc_idx;
 
     Ns_AtomicUint32Init(&dc->u.h3.waker_pending, 0u);
 
@@ -9938,7 +9920,7 @@ QuicThread(void *arg)
     h3_mem.calloc    = h3_calloc_cb;
     h3_mem.realloc   = h3_realloc_cb;
 
-    polltimeout_ptr = &h3->idle_timeout;
+    polltimeout_ptr = &h3->settings.idle_timeout;
 
     while (!stopping) {
         int      i, rc;
@@ -10529,16 +10511,16 @@ QuicThread(void *arg)
             if (immediate_work) {
                 polltimeout_ptr = &no_wait;
             } else if (expecting_send || deferredDispatch) {
-                polltimeout_ptr = &h3->drain_timeout;
+                polltimeout_ptr = &h3->settings.drain_timeout;
             } else if (activeProducer) {
                 /*
                  * A response producer may enqueue work from another thread. Its wake
                  * datagram may reach a different SO_REUSEPORT listener, so periodically
                  * inspect this driver's shared queues.
                  */
-                polltimeout_ptr = &h3->drain_timeout;
+                polltimeout_ptr = &h3->settings.drain_timeout;
             } else {
-                polltimeout_ptr = &h3->idle_timeout;
+                polltimeout_ptr = &h3->settings.idle_timeout;
             }
 
             PollsetSweep(dc, poll_result_count);
@@ -10566,8 +10548,8 @@ QuicThread(void *arg)
                     Ns_GetTime(&now);
                     Ns_DiffTime(&now, &last_progress_time, &elapsed);
 
-                    idle_limit.sec  = h3->idle_timeout.tv_sec;
-                    idle_limit.usec = h3->idle_timeout.tv_usec;
+                    idle_limit.sec  = h3->settings.idle_timeout.tv_sec;
+                    idle_limit.usec = h3->settings.idle_timeout.tv_usec;
 
                     /*
                      * Ns_DiffTime(t0, t1, ...) returns positive when t1 is later
@@ -10667,7 +10649,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
             dc->driver = driver;
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3 listen set driver %p in dc %p", (long long)dc->iter, (void*)driver, (void*)dc);
 
-            listener = SSL_new_listener(dc->ctx, h3->validate_client_address
+            listener = SSL_new_listener(dc->ctx, h3->settings.validate_client_address
                                         ? 0u
                                         : SSL_LISTENER_FLAG_NO_VALIDATE);
             if (listener == NULL) {
@@ -10677,14 +10659,14 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
 #if defined(HAVE_OPENSSL_4_1)
             if (!SSL_set_feature_request_uint(listener,
                                               SSL_VALUE_QUIC_UDP_PAYLOAD_SIZE_MAX,
-                                              dc->u.h3.max_udp_payload_size)) {
+                                              dc->u.h3.settings.max_udp_payload_size)) {
                 Ns_Log(Warning,
                        "H3 listener %p: SSL_set_feature_request_uint failed, cannot set max UDP payload size to %zu",
-                       (void *)listener, dc->u.h3.max_udp_payload_size);
+                       (void *)listener, dc->u.h3.settings.max_udp_payload_size);
             }
             Ns_Log(Ns_LogQuicDebug,
                    "[%lld] H3 listener: local maximum UDP receive payload: %zu",
-                   (long long)dc->iter, dc->u.h3.max_udp_payload_size);
+                   (long long)dc->iter, dc->u.h3.settings.max_udp_payload_size);
 #endif
             if (SSL_get_domain_flags(listener, &domainFlags) == 1) {
                 Ns_Log(Ns_LogQuicDebug, "H3 listener %p: effective QUIC domain flags "
@@ -10763,7 +10745,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
         }
 
         (void) Ns_SockSetNonBlocking(sock);
-        quic_udp_set_rcvbuf(sock, h3->recvbufsize);
+        quic_udp_set_rcvbuf(sock, h3->settings.recvbufsize);
 
         /*
          * Set app data of listener ssl to listen fd

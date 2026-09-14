@@ -60,13 +60,28 @@
 #include "nsatomic.h"
 
 #if defined(HAVE_OPENSSL_4)
+typedef struct NsTLSH3Settings {
+    size_t         recvbufsize;
+    size_t         sendqueuesize;
+    size_t         max_udp_payload_size;
+    struct timeval idle_timeout;
+    struct timeval drain_timeout;
+    bool           validate_client_address;
+} NsTLSH3Settings;
+
 typedef struct NsTLSH3Config {
-    size_t      recvbufsize;
-    size_t      sendqueuesize;
-    size_t      max_udp_payload_size;
-    size_t      nr_listeners;
+    NsTLSH3Settings settings;
+
+    /*
+     * Globally allocated OpenSSL ex-data indices, preserved in clones.
+     */
     int         cc_idx;
     int         sc_idx;
+
+    /*
+     * Per-driver runtime state follows.
+     */
+    size_t      nr_listeners;
     size_t      first_dead;
 
     /*
@@ -97,9 +112,6 @@ typedef struct NsTLSH3Config {
     Ns_DList dead_items;
     Ns_DList conns;
 
-    struct timeval idle_timeout;
-    struct timeval drain_timeout;
-    bool validate_client_address;
     bool reuseport;
 } NsTLSH3Config;
 #endif
