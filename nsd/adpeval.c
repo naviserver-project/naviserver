@@ -1243,7 +1243,6 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
             /*
              * Propagate NS_TIMEOUT errors from Tcl code.
              */
-
             if (result == TCL_ERROR) {
                 if (NsTclTimeoutException(interp) == NS_TRUE) {
                     itPtr->adp.exception = ADP_TIMEOUT;
@@ -1256,7 +1255,6 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
          * call frame unless the error was generated to signal
          * and ADP exception.
          */
-
         if (result != TCL_OK && itPtr->adp.exception == ADP_OK) {
             if ((itPtr->adp.flags & ADP_ERRLOGGED) == 0u) {
                 NsAdpLogError(itPtr);
