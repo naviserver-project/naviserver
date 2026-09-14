@@ -19,6 +19,7 @@
  */
 #include "../include/ns.h"
 #include "nsatoms.h"
+#include "nsatomic.h"
 
 #if defined(HAVE_XLOCALE_H)
 # include <xlocale.h>
@@ -46,6 +47,16 @@ NS_EXTERN const char *NS_EMPTY_STRING;
 #define NS_DRIVER_THREAD_STOPPED        0x04u
 #define NS_DRIVER_THREAD_SHUTDOWN       0x08u
 #define NS_DRIVER_THREAD_FAILED         0x10u
+
+/*
+ * Request lifecycle state for connection introspection.
+ */
+typedef enum {
+    NS_CONN_STATE_QUEUED,
+    NS_CONN_STATE_PREPARING,
+    NS_CONN_STATE_RUNNING,
+    NS_CONN_STATE_FINISHING
+} NsConnState;
 
 /*
  * Various ADP option bits.
@@ -757,6 +768,8 @@ typedef struct Conn {
     Ns_CompressStream cStream;
     int requestCompress;
     int compress;
+
+    Ns_AtomicUint32 state;  /* Request lifecycle state */
 
     Ns_Set *query;
     Ns_Set *formData;

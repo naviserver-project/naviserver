@@ -16,7 +16,6 @@
  */
 
 #include "nsd.h"
-#include "nsatomic.h"
 
 /*
  * The following structure defines a url2file callback including user

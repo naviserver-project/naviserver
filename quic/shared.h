@@ -15,8 +15,6 @@
 #ifndef H3_SHARED_H
 # define H3_SHARED_H
 
-# include "../nsd/nsatomic.h"
-
 /* Shared, lock-safe primitives for H3 stream body submission and resume signaling.
  *
  * - Producers (writer/conn threads) call:

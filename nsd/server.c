@@ -555,7 +555,7 @@ static void
 CreatePool(NsServer *servPtr, const char *pool)
 {
     ConnPool   *poolPtr;
-    Conn       *connBufPtr, *connPtr;
+    Conn       *connBufPtr;
     int         n, maxconns, lowwatermark, highwatermark, queueLength;
     const char *section;
 
@@ -648,9 +648,13 @@ CreatePool(NsServer *servPtr, const char *pool)
     if (poolPtr->rate.poolLimit != -1) {
         NsWriterBandwidthManagement = NS_TRUE;
     }
-    for (n = 0; n < maxconns - 1; ++n) {
-        connPtr = &connBufPtr[n];
-        connPtr->nextPtr = &connBufPtr[n+1];
+    for (n = 0; n < maxconns; ++n) {
+        Conn *connPtr = &connBufPtr[n];
+
+        connPtr->nextPtr = (n + 1 < maxconns) ? &connBufPtr[n + 1] : NULL;
+
+        Ns_AtomicUint32Init(&connPtr->state, (uint32_t)NS_CONN_STATE_PREPARING);
+
         if (servPtr->compress.enable
             && servPtr->compress.preinit) {
             (void) Ns_CompressInit(&connPtr->cStream);

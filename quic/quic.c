@@ -89,7 +89,6 @@
 
 #include "../include/ns.h"
 #include "../nsd/nsd.h"
-#include "../nsd/nsatomic.h"
 
 #define NS_ENABLE_THREAD_AFFINITY 1
 #include "thread-affinity.h"

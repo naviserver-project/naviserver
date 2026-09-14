@@ -46,10 +46,10 @@ static void ConnRun(Conn *connPtr)
 static void CreateConnThread(ConnPool *poolPtr, const ConnThreadCreateLog *logPtr)
     NS_GNUC_NONNULL(1);
 
-static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool checkforproxy)
-    NS_GNUC_NONNULL(1,3);
-static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state, bool checkforproxy)
-    NS_GNUC_NONNULL(1,3);
+static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, NsConnState state, bool checkforproxy)
+    NS_GNUC_NONNULL(1);
+static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, NsConnState state, bool checkforproxy)
+    NS_GNUC_NONNULL(1);
 
 static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr, unsigned int *reasonPtr)
     NS_GNUC_NONNULL(1,2);
@@ -707,7 +707,9 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
          * driver, no need to strncopy it here.
          */
         connPtr->location             = sockPtr->location;
-        connPtr->flags                = sockPtr->flags & ~NS_CONN_DELIVERY_TRACKED;
+        connPtr->flags                = (sockPtr->flags & ~NS_CONN_DELIVERY_TRACKED);
+        Ns_AtomicUint32StoreRelaxed(&connPtr->state, (uint32_t)NS_CONN_STATE_PREPARING);
+
         if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0u) {
             connPtr->acceptTime       = *nowPtr;
         } else {
@@ -749,7 +751,10 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
              */
 
             assert(argPtr->state == connThread_idle);
+
+            Ns_MutexLock(&poolPtr->tqueue.lock);
             argPtr->connPtr = connPtr;
+            Ns_MutexUnlock(&poolPtr->tqueue.lock);
 
             Ns_MutexLock(&poolPtr->wqueue.lock);
             Ns_MutexLock(&poolPtr->threads.lock);
@@ -766,6 +771,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
              * There is no connection thread ready, so we add the
              * connection to the waiting queue.
              */
+            Ns_AtomicUint32StoreRelease(&connPtr->state, (uint32_t)NS_CONN_STATE_QUEUED);
             Ns_MutexLock(&poolPtr->wqueue.lock);
             if (poolPtr->wqueue.wait.firstPtr == NULL) {
                 poolPtr->wqueue.wait.firstPtr = connPtr;
@@ -1527,10 +1533,17 @@ ServerListActive(Tcl_DString *dsPtr, ConnPool *poolPtr, bool checkforproxy)
 
     Ns_MutexLock(&poolPtr->tqueue.lock);
     for (i = 0; i < poolPtr->threads.max; i++) {
-        const ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
+        Conn *connPtr = poolPtr->tqueue.args[i].connPtr;
+        /*
+         * Include only connections whose initialization is complete and
+         * whose request data has not yet been released.
+         */
+        if (connPtr != NULL) {
+            uint32_t stateValue = Ns_AtomicUint32LoadAcquire(&connPtr->state);
 
-        if (argPtr->connPtr != NULL) {
-            AppendConnList(dsPtr, argPtr->connPtr, "running", checkforproxy);
+            if ((NsConnState)stateValue == NS_CONN_STATE_RUNNING) {
+                AppendConnList(dsPtr, connPtr, NS_CONN_STATE_RUNNING, checkforproxy);
+            }
         }
     }
     Ns_MutexUnlock(&poolPtr->tqueue.lock);
@@ -1543,7 +1556,7 @@ ServerListQueued(Tcl_DString *dsPtr, ConnPool *poolPtr)
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
     Ns_MutexLock(&poolPtr->wqueue.lock);
-    AppendConnList(dsPtr, poolPtr->wqueue.wait.firstPtr, "queued", NS_FALSE);
+    AppendConnList(dsPtr, poolPtr->wqueue.wait.firstPtr, NS_CONN_STATE_QUEUED, NS_FALSE);
     Ns_MutexUnlock(&poolPtr->wqueue.lock);
 }
 
@@ -2344,10 +2357,20 @@ NsConnArgProc(Tcl_DString *dsPtr, const void *arg)
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     if (arg != NULL) {
-        ConnPool     *poolPtr = argPtr->poolPtr;
+        ConnPool *poolPtr = argPtr->poolPtr;
 
         Ns_MutexLock(&poolPtr->tqueue.lock);
-        AppendConn(dsPtr, argPtr->connPtr, "running", NS_FALSE);
+        {
+            Conn *connPtr = argPtr->connPtr;
+
+            if (argPtr->connPtr != NULL) {
+                uint32_t stateValue = Ns_AtomicUint32LoadAcquire(&connPtr->state);
+
+                AppendConn(dsPtr, connPtr, (NsConnState)stateValue, NS_FALSE);
+            } else {
+                Tcl_DStringAppendElement(dsPtr, NS_EMPTY_STRING);
+            }
+        }
         Ns_MutexUnlock(&poolPtr->tqueue.lock);
     } else {
         Tcl_DStringAppendElement(dsPtr, NS_EMPTY_STRING);
@@ -2508,7 +2531,12 @@ NsConnThread(void *arg)
             }
             Ns_MutexUnlock(wqueueLockPtr);
 
+            Ns_AtomicUint32StoreRelaxed(&connPtr->state, (uint32_t)NS_CONN_STATE_PREPARING);
+
+            Ns_MutexLock(tqueueLockPtr);
             argPtr->connPtr = connPtr;
+            Ns_MutexUnlock(tqueueLockPtr);
+
             fromQueue = NS_TRUE;
         } else {
             fromQueue = NS_FALSE;
@@ -2665,6 +2693,8 @@ NsConnThread(void *arg)
                     size_t      memBefore = 0u;
                     const char *requestLine = "no request line available";
 
+                    /* CHECK isn't connPtr->reqPtr != NULL here always != NULL ??? */
+
                     if (connPtr->reqPtr != NULL && connPtr->reqPtr->request.line != NULL) {
                         requestLine = connPtr->reqPtr->request.line;
                     }
@@ -2696,20 +2726,14 @@ NsConnThread(void *arg)
          */
         Ns_MutexLock(tqueueLockPtr);
         connPtr->flags &= ~NS_CONN_CONFIGURED;
-
-        /*
-         * We are done with the headers, reset these for further reuse.
-         */
         Ns_SetTrunc(connPtr->headers, 0);
-
         argPtr->state = connThread_ready;
+        argPtr->connPtr = NULL;
         Ns_MutexUnlock(tqueueLockPtr);
 
         /*
          * Push connection to the free list.
          */
-        argPtr->connPtr = NULL;
-
         if (connPtr->prevPtr != NULL) {
             connPtr->prevPtr->nextPtr = connPtr->nextPtr;
         }
@@ -3005,6 +3029,12 @@ ConnRun(Conn *connPtr)
         conn->flags |= NS_CONN_SKIPBODY;
     }
 
+    /*
+     * Connection initialization is complete. Publish this transition
+     * before invoking request-processing callbacks.
+     */
+    Ns_AtomicUint32StoreRelease(&connPtr->state, (uint32_t)NS_CONN_STATE_RUNNING);
+
     if (sockPtr->drvPtr->requestProc != NULL) {
         /*
          * Run the driver's private handler
@@ -3126,6 +3156,10 @@ ConnRun(Conn *connPtr)
                connPtr->idstr,
                connPtr->request.url);
     }
+
+    Ns_MutexLock(&connPtr->poolPtr->tqueue.lock);
+    Ns_AtomicUint32StoreRelease(&connPtr->state, (uint32_t)NS_CONN_STATE_FINISHING);
+    Ns_MutexUnlock(&connPtr->poolPtr->tqueue.lock);
 
     /*
      * Perform various garbage collection tasks.  Note
@@ -3318,25 +3352,30 @@ CreateConnThread(ConnPool *poolPtr, const ConnThreadCreateLog *logPtr)
  */
 
 static void
-AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool checkforproxy)
+AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, NsConnState state, bool checkforproxy)
 {
     Ns_Time now, diff;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(state != NULL);
 
     /*
-     * An annoying race condition can be lethal here.
-     *
-     * In the state "waiting", we have never a connPtr->reqPtr, therefore, we
-     * can't even determine the peer address, nor the request method or the
-     * request URL. Furthermore, there is no way to honor the "checkforproxy"
-     * flag.
+     * The caller protects connection lifetime with the appropriate queue lock.
+     * Request metadata is inspected only in RUNNING, after initialization has
+     * been published. The FINISHING transition takes tqueue.lock before cleanup,
+     * allowing existing readers to complete before metadata is released.
+     * Other states retain the same record layout using placeholders.
      */
     if (connPtr != NULL) {
+        const char *stateString =
+            state == NS_CONN_STATE_QUEUED ? "queued"
+            : state == NS_CONN_STATE_PREPARING ? "preparing"
+            : state == NS_CONN_STATE_RUNNING ? "running"
+            : state == NS_CONN_STATE_FINISHING ? "finishing"
+            : "unknown";
+
         Tcl_DStringStartSublist(dsPtr);
 
-        if (connPtr->reqPtr != NULL) {
+        if (state == NS_CONN_STATE_RUNNING) {
             const char *p;
 
             Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
@@ -3352,22 +3391,14 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
             }
             Tcl_DStringAppendElement(dsPtr, p);
         } else {
-            /*
-             * connPtr->reqPtr == NULL. Having no connPtr->reqPtr is normal
-             * for "queued" requests but not for "running" requests. Report
-             * this in the system log.
-             */
-            Tcl_DStringAppendElement(dsPtr, "unknown");
-            if (*state == 'r') {
-                Ns_Log(Notice,
-                       "AppendConn state '%s': request not available, can't determine peer address",
-                       state);
-            }
+            Tcl_DStringAppendElement(dsPtr, "unknown");  /* id */
+            Tcl_DStringAppendElement(dsPtr, "unknown");  /* peer */
         }
 
-        Tcl_DStringAppendElement(dsPtr, state);
+        Tcl_DStringAppendElement(dsPtr, stateString);
 
-        if (connPtr->request.line != NULL) {
+        if (state == NS_CONN_STATE_RUNNING
+            && connPtr->request.line != NULL) {
             Tcl_DStringAppendElement(dsPtr, (connPtr->request.method != NULL) ? connPtr->request.method : "?");
             Tcl_DStringAppendElement(dsPtr, (connPtr->request.url    != NULL) ? connPtr->request.url : "?");
         } else {
@@ -3405,10 +3436,9 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
  */
 
 static void
-AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state, bool checkforproxy)
+AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, NsConnState state, bool checkforproxy)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(state != NULL);
 
     while (firstPtr != NULL) {
         AppendConn(dsPtr, firstPtr, state, checkforproxy);
