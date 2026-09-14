@@ -508,6 +508,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
     TCL_SIZE_T     len;
     unsigned int   flags;
     char          *buf;
+    bool           connectionFlushError = NS_FALSE;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 
@@ -605,8 +606,8 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
                 if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1,
                                        (doStream ? NS_CONN_STREAM : 0u)) == NS_OK) {
                     result = TCL_OK;
-                }
-                if (result != TCL_OK) {
+                } else {
+                    connectionFlushError = NS_TRUE;
                     Ns_TclPrintfResult(interp, "adp flush failed: connection flush error");
                 }
             }
@@ -619,8 +620,14 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
 
         if (result != TCL_OK && (flags & ADP_AUTOABORT) != 0u) {
             Tcl_AddErrorInfo(interp, "\n    abort exception raised");
-            NsAdpLogError(itPtr);
-            itPtr->adp.exception = ADP_ABORT;
+
+            if (connectionFlushError) {
+                Ns_Log(Ns_LogRequestDebug,
+                       "%s: ADP output aborted after connection flush failure",
+                       NsConnIdStr(conn));
+            } else {
+                NsAdpLogError(itPtr);
+            }            itPtr->adp.exception = ADP_ABORT;
         }
     }
     Tcl_DStringSetLength(&itPtr->adp.output, 0);

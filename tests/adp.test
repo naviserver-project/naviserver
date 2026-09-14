@@ -291,6 +291,121 @@ test adp-2.8 {Deeply nested ADP tags} -body {
 } -result {200 {deep
 }}
 
+############################################################################
+# ns_adp_flush
+############################################################################
+
+proc _adptest_waitForNsv {bucket key {timeout 5000}} {
+    set deadline [expr {[clock milliseconds] + $timeout}]
+
+    while {[clock milliseconds] < $deadline} {
+        if {[nsv_exists $bucket $key] && [nsv_get $bucket $key]} {
+            return
+        }
+        ns_sleep 1ms
+    }
+
+    error "timeout waiting for nsv value $bucket/$key"
+}
+
+test adp-flush-1.0 {
+    client disconnect during an implicit ADP flush
+} -constraints serverListen -setup {
+
+    set conf   [ns_parseurl [ns_config test listenurl]]
+    set bucket "adp-flush-[pid]-[clock clicks]"
+    set rfd    ""
+    set wfd    ""
+
+    nsv_unset -nocomplain $bucket
+} -body {
+    #ns_logctl severity Debug on
+    lassign [ns_sockopen [dict get $conf host] [dict get $conf port]] rfd wfd
+    fconfigure $wfd -translation binary -buffering none
+
+    set request "GET /adp-autoflush.adp?bucket=$bucket HTTP/1.1\r\n"
+    append request "Host: test:[dict get $conf port]\r\n"
+    append request "Connection: close\r\n\r\n"
+
+    puts -nonewline $wfd $request
+    flush $wfd
+
+    set deadline [expr {[clock milliseconds] + 5000}]
+    while {![nsv_exists $bucket entered]
+           && [clock milliseconds] < $deadline} {
+        ns_sleep 1ms
+    }
+
+    if {![nsv_exists $bucket entered]} {
+        error "ADP fixture was not executed; possible 404 or mapping failure"
+    }
+
+    set effectiveBufsize [nsv_get $bucket effective_bufsize]
+    if {$effectiveBufsize != 4 * 1024} {
+        error "effective ADP bufsize is $effectiveBufsize, expected 4096"
+    }
+
+    nsv_set $bucket start 1
+
+    set deadline [expr {[clock milliseconds] + 5000}]
+    while {![nsv_exists $bucket first_flush_done]
+           && [clock milliseconds] < $deadline} {
+        ns_sleep 1ms
+    }
+
+    if {![nsv_exists $bucket first_flush_done]} {
+        error "initial implicit ADP flush started but did not complete"
+    }
+
+    #
+    # Close the connection without reading the response.
+    #
+    catch {close $rfd}
+    catch {close $wfd}
+    set rfd ""
+    set wfd ""
+
+    nsv_set $bucket client_closed 1
+
+    set deadline [expr {[clock milliseconds] + 5000}]
+    while {![nsv_exists $bucket done]
+           && [clock milliseconds] < $deadline} {
+        ns_sleep 1ms
+    }
+
+    if {![nsv_exists $bucket done]} {
+        error "timeout waiting for ADP request cleanup"
+    }
+
+    set captured [nsv_get $bucket captured_log]
+    set errorPos [string first " Error: " $captured]
+    set flushPos [string first "adp flush failed: connection flush error" $captured]
+    #ns_log notice "captured: <$captured>"
+
+    set errorLogged [expr { $errorPos >= 0 && $flushPos > $errorPos }]
+
+    list \
+        [nsv_exists $bucket failing_flush_started] \
+        [nsv_exists $bucket continued] \
+        [nsv_exists $bucket done] \
+        $errorLogged
+} -cleanup {
+    if {$rfd ne ""} {
+        catch {close $rfd}
+    }
+    if {$wfd ne ""} {
+        catch {close $wfd}
+    }
+
+    if {[nsv_array exists $bucket]} {
+        nsv_set $bucket client_closed 1
+        ns_sleep 10ms
+        nsv_unset -nocomplain $bucket
+    }
+    unset -nocomplain conf bucket rfd wfd
+
+} -returnCodes {ok error} -result {1 0 1 0}
+
 
 ############################################################################
 # ns_adp_append
@@ -349,7 +464,6 @@ test adp-3.2 {ns_adp_ctl bufsize} -body {
 } -cleanup {
     unset -nocomplain orig
 } -result {1666}
-
 
 
 ############################################################################
@@ -1622,6 +1736,8 @@ test ns_adp-tagset-2.5 {registering to -tagset default uses default tag table} -
 } -cleanup {
     rename ::__adp_tag_explicit_default ""
 } -result {EXPLICIT-DEFAULT}
+
+
 
 ############################################################################
 # DONE
