@@ -93,6 +93,7 @@ QUIC-specific Parameters for the [const nsssl] module:
 [para]
 Parameters for the [const quic] module:
 
+
 [list_begin definitions]
 
 [def https]
@@ -139,6 +140,8 @@ Parameters for the [const quic] module:
  troubleshooting or when collecting diagnostics for a bug report.
 [list_end]
 
+For documentation of all parameters of the modules,
+see [uri ../../manual/files/admin-config-params.html#subsection10 {quic parameters}].
 
 [subsection {Notes}]
 
