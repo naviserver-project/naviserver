@@ -2725,9 +2725,10 @@ NsConnThread(void *arg)
          * since we are deallocating its content. This is especially important
          * for e.g. "ns_server active" since it accesses the header fields.
          */
-        Ns_MutexLock(tqueueLockPtr);
         connPtr->flags &= ~NS_CONN_CONFIGURED;
         Ns_SetTrunc(connPtr->headers, 0);
+
+        Ns_MutexLock(tqueueLockPtr);
         argPtr->state = connThread_ready;
         argPtr->connPtr = NULL;
         Ns_MutexUnlock(tqueueLockPtr);
@@ -3200,9 +3201,7 @@ ConnRun(Conn *connPtr)
 
     (void) Ns_ConnClose(conn);
 
-    Ns_MutexLock(&connPtr->poolPtr->tqueue.lock);
     connPtr->reqPtr = NULL;
-    Ns_MutexUnlock(&connPtr->poolPtr->tqueue.lock);
 
     /*
      * Deactivate stream writer, if defined
