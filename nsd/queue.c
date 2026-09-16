@@ -2528,16 +2528,19 @@ NsConnThread(void *arg)
                 }
                 connPtr->nextPtr = NULL;
                 poolPtr->wqueue.wait.num --;
+
+                Ns_AtomicUint32StoreRelaxed(&connPtr->state,
+                                            (uint32_t)NS_CONN_STATE_PREPARING);
             }
             Ns_MutexUnlock(wqueueLockPtr);
 
-            Ns_AtomicUint32StoreRelaxed(&connPtr->state, (uint32_t)NS_CONN_STATE_PREPARING);
+            if (connPtr != NULL) {
+                Ns_MutexLock(tqueueLockPtr);
+                argPtr->connPtr = connPtr;
+                Ns_MutexUnlock(tqueueLockPtr);
+            }
 
-            Ns_MutexLock(tqueueLockPtr);
-            argPtr->connPtr = connPtr;
-            Ns_MutexUnlock(tqueueLockPtr);
-
-            fromQueue = NS_TRUE;
+            fromQueue = (connPtr != NULL);
         } else {
             fromQueue = NS_FALSE;
         }
