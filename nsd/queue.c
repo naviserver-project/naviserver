@@ -731,31 +731,29 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         }
 
         /*
-         * Try to get an entry from the connection thread queue,
-         * and dequeue it when possible.
+         * Obtain an idle connection thread and publish the connection while
+         * holding tqueue.lock.
          */
-        if (poolPtr->tqueue.nextPtr != NULL) {
-            Ns_MutexLock(&poolPtr->tqueue.lock);
-            if (poolPtr->tqueue.nextPtr != NULL) {
-                argPtr = poolPtr->tqueue.nextPtr;
-                poolPtr->tqueue.nextPtr = argPtr->nextPtr;
-            }
-            Ns_MutexUnlock(&poolPtr->tqueue.lock);
+        Ns_MutexLock(&poolPtr->tqueue.lock);
+
+        argPtr = poolPtr->tqueue.nextPtr;
+        if (argPtr != NULL) {
+            assert(argPtr->state == connThread_idle);
+            assert(argPtr->connPtr == NULL);
+
+            poolPtr->tqueue.nextPtr = argPtr->nextPtr;
+            argPtr->nextPtr = NULL;
+            argPtr->connPtr = connPtr;
         }
+
+        Ns_MutexUnlock(&poolPtr->tqueue.lock);
 
         if (argPtr != NULL) {
             /*
-             * We could obtain an idle thread. Dequeue the entry,
-             * such that no one else might grab it, and fill in the
-             * connPtr that should be run by this thread.
+             * An idle thread was selected and its connection was published
+             * under tqueue.lock. Check whether the pool should nevertheless
+             * create an additional connection thread.
              */
-
-            assert(argPtr->state == connThread_idle);
-
-            Ns_MutexLock(&poolPtr->tqueue.lock);
-            argPtr->connPtr = connPtr;
-            Ns_MutexUnlock(&poolPtr->tqueue.lock);
-
             Ns_MutexLock(&poolPtr->wqueue.lock);
             Ns_MutexLock(&poolPtr->threads.lock);
             create = neededAdditionalConnectionThreads(poolPtr, &createLog.reason);
