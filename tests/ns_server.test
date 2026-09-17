@@ -40,7 +40,7 @@ test ns_server-1.2.2 {syntax: ns_server all} -body {
 
 test ns_server-1.2.3 {syntax: ns_server connectionratelimit} -body {
     ns_server connectionratelimit 1 -
-} -returnCodes error -result {wrong # args: should be "ns_server connectionratelimit ?/value[-1,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_server connectionratelimit ?/value[0,MAX]/?"}
 # leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? connectionratelimit ?/value[-1,MAX]/?"}
 
 test ns_server-1.2.4 {syntax: ns_server connections} -body {
@@ -89,7 +89,7 @@ test ns_server-1.2.12 {syntax: ns_server pagedir} -body {
 
 test ns_server-1.2.13 {syntax: ns_server poolratelimit} -body {
     ns_server poolratelimit 1000 -
-} -returnCodes error -result {wrong # args: should be "ns_server poolratelimit ?/value[-1,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_server poolratelimit ?/value[0,MAX]/?"}
 # leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /value/? poolratelimit ?/value[-1,MAX]/?"}
 
 test ns_server-1.2.14 {syntax: ns_server pools} -body {
