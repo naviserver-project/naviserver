@@ -19,4 +19,3 @@ include ../include/Makefile.build
 MODLIBS  += -L../nsd $(NGHTTP3_LIBS)
 CFLAGS   += $(NGHTTP3_CFLAGS)
 
-quic.o: ../nsd/nsopenssl.h ../nsd/nsd.h ../nsd/nsatomic.h
