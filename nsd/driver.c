@@ -2958,13 +2958,38 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
                 socklen_t len = (socklen_t)sizeof(sockErr);
 
                 if (getsockopt(sockPtr->sock, SOL_SOCKET, SO_ERROR, (void *)&sockErr, &len) != -1) {
-                    Ns_Log(Notice, "... NsDriverSend: sock(%d) getsockopt returns errno %d for driver %s",
+                    Ns_Log(Warning, "NsDriverSend: sock(%d) getsockopt returns errno %d for driver %s",
                            sockPtr->sock, sockErr, drvPtr->threadName);
                     sockPtr->sendErrno = (unsigned long)sockErr;
                 }
             } else {
-                Ns_Log(Notice, "... NsDriverSend: sock %d got error code via sendErrno %.8lx for driver %s",
-                       sockPtr->sock, sockPtr->sendErrno, drvPtr->threadName);
+                char           errorBuffer[256];
+                int            sockErrno = 0;
+                unsigned long  errorCode = sockPtr->sendErrno;
+
+                if (Ns_ErrorCodeGetErrno(errorCode, &sockErrno)) {
+                    const bool peerAbort =
+                        sockErrno == NS_ECONNRESET
+                        || sockErrno == NS_ECONNABORTED
+                        || sockErrno == EPIPE;
+
+                    Ns_Log(peerAbort ? Ns_LogRequestDebug : Warning,
+                           "NsDriverSend: send on socket %d via driver %s failed: "
+                           "%s (%s; error 0x%.8lx)",
+                           sockPtr->sock,
+                           drvPtr->threadName,
+                           NsPosixErrorCodeName(sockErrno),
+                           Ns_ErrorString(errorCode, errorBuffer, sizeof(errorBuffer)),
+                           errorCode);
+                } else {
+                    Ns_Log(Warning,
+                           "NsDriverSend: send on socket %d via driver %s failed: "
+                           "%s (OpenSSL error 0x%.8lx)",
+                           sockPtr->sock,
+                           drvPtr->threadName,
+                           Ns_ErrorString(errorCode, errorBuffer, sizeof(errorBuffer)),
+                           errorCode);
+                }
             }
         }
     } else {
