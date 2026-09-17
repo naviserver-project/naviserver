@@ -29,9 +29,9 @@ OpenSSL 3.1 and integrates it directly into NaviServer's driver model.
 [para]
 
 This module requires NaviServer to be built with
-[const --with-openssl] and OpenSSL 4.0 or newer, as HTTP/3 support is
+[const --with-openssl] and OpenSSL 4.0.2 or newer, as HTTP/3 support is
 based on the OpenSSL QUIC API introduced in OpenSSL 3.1+, and which is
-feature complete for this server in OpenSSL 4.0+.
+feature complete for this server in OpenSSL 4.0.2+.
 
 [section CONFIGURATION]
 
@@ -279,6 +279,55 @@ see [uri ../../manual/files/admin-config-params.html#subsection10 {quic paramete
  displayed at the end of the configuration phase.
 
 
+[subsection {UDP Socket Buffers on Linux}]
+
+ NaviServer creates the UDP socket used for HTTP/3 and configures its
+ receive buffer from the [const recvbufsize] parameter. OpenSSL's native
+ QUIC implementation performs QUIC packetization and the actual UDP send
+ operations on this socket.
+
+ [para]
+ The current QUIC driver does not set [const SO_SNDBUF]. The socket
+ therefore inherits the operating system's default UDP send-buffer size
+ when it is created. Many Linux installations use a comparatively small
+ default of 212992 bytes, or 208 KiB. This can be insufficient for
+ bursty or high-throughput HTTP/3 workloads and can result in increasing
+ [const UdpSndbufErrors] counters.
+
+ [para]
+ The following values provide a reasonable starting point for a Linux
+ HTTP/3 server:
+
+[example_begin]
+ net.core.rmem_max     = 8388608
+ net.core.wmem_max     = 8388608
+ net.core.wmem_default = 8388608
+[example_end]
+
+ These settings can be stored, for example, in
+ [const /etc/sysctl.d/99-quic-buffers.conf] and applied with:
+
+[example_begin]
+ sysctl --system
+[example_end]
+
+ The settings are host-wide defaults and limits and should be adjusted
+ according to the available memory and expected workload. Increasing
+ [const wmem_default] or the maximum values does not resize an existing
+ socket. NaviServer must be restarted after changing these values so
+ that the HTTP/3 UDP socket is recreated with the new send-buffer
+ default.
+
+ [para]
+ On Linux, send- and receive-buffer failures can be monitored with:
+
+[example_begin]
+ nstat -az | grep -E 'Udp(Sndbuf|Rcvbuf)Errors'
+[example_end]
+
+ Compare counter values over the measurement interval rather than
+ interpreting the cumulative totals alone.
+
 [section NOTES]
 
 [list_begin itemized]
@@ -287,8 +336,8 @@ see [uri ../../manual/files/admin-config-params.html#subsection10 {quic paramete
  HTTP/3 (QUIC) in NaviServer relies on OpenSSL's QUIC stack, which was
  introduced in OpenSSL 3.1 and is still under active development.
  For the QUIC driver to function correctly, NaviServer 5 (or newer) and
- OpenSSL 4 or later are required, as earlier versions do not provide
- the necessary QUIC APIs.
+ OpenSSL 4.0.2 or later are required, as earlier versions do not provide
+ the necessary QUIC APIs or had concurrency issues.
 
 [item]
 
