@@ -21,6 +21,17 @@ typedef struct Ns_AtomicUint32 {
 # endif
 } Ns_AtomicUint32;
 
+typedef struct Ns_AtomicUint64 {
+# if defined(_MSC_VER)
+    __declspec(align(8)) volatile LONG64 value;
+# elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+    uint64_t value;
+# else
+    uint64_t value;
+    Ns_Mutex lock;
+# endif
+} Ns_AtomicUint64;
+
 /*
  * Atomic accessors.
  */
@@ -37,6 +48,11 @@ NS_EXTERN uint32_t Ns_AtomicUint32FetchOrRelease(Ns_AtomicUint32 *atomicPtr, uin
 NS_EXTERN uint32_t Ns_AtomicUint32FetchAndRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
 NS_EXTERN uint32_t Ns_AtomicUint32FetchAddRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
 NS_EXTERN uint32_t Ns_AtomicUint32FetchSubAcqRel(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+
+NS_EXTERN void     Ns_AtomicUint64Init(Ns_AtomicUint64 *atomicPtr, uint64_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN void     Ns_AtomicUint64Destroy(Ns_AtomicUint64 *atomicPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN uint64_t Ns_AtomicUint64FetchAddRelaxed(Ns_AtomicUint64 *atomicPtr, uint64_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN uint64_t Ns_AtomicUint64LoadRelaxed(Ns_AtomicUint64 *atomicPtr) NS_GNUC_NONNULL(1);
 #endif /* NSATOMIC_H */
 
 /*

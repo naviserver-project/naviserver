@@ -896,7 +896,7 @@ typedef struct ConnPool {
         int defaultConnectionLimit;  /* default rate limit for single connections */
         int poolLimit;               /* rate limit for pool */
         int currentRate;             /* actual rate tor pool */
-        Tcl_WideInt bytesSent;
+        Ns_AtomicUint64 bytesSent;
         Ns_Mutex lock;
         Ns_DList writerRates;
     } rate;

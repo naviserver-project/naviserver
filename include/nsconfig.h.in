@@ -83,6 +83,9 @@
    operations. */
 #undef HAVE_GNU_ATOMIC_UINT32_BUILTINS
 
+/* Define when uint64_t supports lock-free GCC-style atomic operations. */
+#undef HAVE_GNU_ATOMIC_UINT64_BUILTINS
+
 /* Compiler support for module scope symbols */
 #undef HAVE_HIDDEN
 

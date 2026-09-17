@@ -621,6 +621,132 @@ Ns_AtomicUint32FetchSubAcqRel(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint64Init --
+ *
+ *      Initialize before publishing the object to other threads. On platforms
+ *      without native 64-bit atomics, also initialize the fallback mutex.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Initializes the value and fallback synchronization state.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_AtomicUint64Init(Ns_AtomicUint64 *atomicPtr, uint64_t value)
+{
+#if defined(_MSC_VER)
+    atomicPtr->value = (LONG64)value;
+#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+    __atomic_store_n(&atomicPtr->value, value, __ATOMIC_RELAXED);
+#else
+    Ns_MutexInit(&atomicPtr->lock);
+    Ns_MutexSetName(&atomicPtr->lock, "atomic64");
+    atomicPtr->value = value;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint64Destroy --
+ *
+ *      Release fallback resources after all access to the object has ceased.
+ *      The object must have been initialized with Ns_AtomicUint64Init().
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Destroys the fallback mutex; no operation for native implementations.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_AtomicUint64Destroy(Ns_AtomicUint64 *atomicPtr)
+{
+#if defined(_MSC_VER) || defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+    (void)atomicPtr;
+#else
+    Ns_MutexDestroy(&atomicPtr->lock);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint64FetchAddRelaxed --
+ *
+ *      Atomically add value, with unsigned wraparound modulo 2^64. Relaxed
+ *      ordering does not synchronize accesses to unrelated memory. MSVC and
+ *      mutex implementations may provide stronger ordering.
+ *
+ * Results:
+ *      The value immediately before the addition.
+ *
+ * Side effects:
+ *      Updates the initialized atomic integer.
+ *
+ *----------------------------------------------------------------------
+ */
+uint64_t
+Ns_AtomicUint64FetchAddRelaxed(Ns_AtomicUint64 *atomicPtr, uint64_t value)
+{
+#if defined(_MSC_VER)
+    return (uint64_t)InterlockedExchangeAdd64(&atomicPtr->value, (LONG64)value);
+#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+    return __atomic_fetch_add(&atomicPtr->value, value, __ATOMIC_RELAXED);
+#else
+    uint64_t previous;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    previous = atomicPtr->value;
+    atomicPtr->value += value;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return previous;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AtomicUint64LoadRelaxed --
+ *
+ *      Read an initialized atomic integer without synchronizing unrelated
+ *      memory. MSVC and mutex implementations may provide stronger ordering.
+ *
+ * Results:
+ *      The current value.
+ *
+ * Side effects:
+ *      Temporarily acquires the fallback mutex where needed.
+ *
+ *----------------------------------------------------------------------
+ */
+uint64_t
+Ns_AtomicUint64LoadRelaxed(Ns_AtomicUint64 *atomicPtr)
+{
+#if defined(_MSC_VER)
+    return (uint64_t)InterlockedCompareExchange64(&atomicPtr->value, 0, 0);
+#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+    return __atomic_load_n(&atomicPtr->value, __ATOMIC_RELAXED);
+#else
+    uint64_t value;
+
+    Ns_MutexLock(&atomicPtr->lock);
+    value = atomicPtr->value;
+    Ns_MutexUnlock(&atomicPtr->lock);
+
+    return value;
+#endif
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

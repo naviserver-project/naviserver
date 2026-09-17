@@ -362,9 +362,11 @@ NsPoolTotalRate(ConnPool *poolPtr, size_t slot, int rate, int *writerThreadCount
 void
 NsPoolAddBytesSent(ConnPool *poolPtr, Tcl_WideInt bytesSent)
 {
-    Ns_MutexLock(&poolPtr->rate.lock);
-    poolPtr->rate.bytesSent += bytesSent;
-    Ns_MutexUnlock(&poolPtr->rate.lock);
+    assert(bytesSent >= 0);
+
+    if (likely(bytesSent > 0)) {
+        (void)Ns_AtomicUint64FetchAddRelaxed(&poolPtr->rate.bytesSent, (uint64_t)bytesSent);
+    }
 }
 
 /*
@@ -2127,7 +2129,8 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             Ns_DStringPrintf(dsPtr, "spools %lu ", poolPtr->stats.spool);
             Ns_DStringPrintf(dsPtr, "queued %lu ", poolPtr->stats.queued);
             Ns_DStringPrintf(dsPtr, "dropped %lu ", poolPtr->stats.dropped);
-            Ns_DStringPrintf(dsPtr, "sent %" TCL_LL_MODIFIER "d ", poolPtr->rate.bytesSent);
+            Ns_DStringPrintf(dsPtr, "sent %" PRIu64 " ",
+                             Ns_AtomicUint64LoadRelaxed(&poolPtr->rate.bytesSent));
             Ns_DStringPrintf(dsPtr, "connthreads %lu", poolPtr->stats.connthreads);
 
             Tcl_DStringAppend(dsPtr, " accepttime ", 12);

@@ -720,6 +720,7 @@ CreatePool(NsServer *servPtr, const char *pool)
         Ns_MutexInit(&poolPtr->threads.lock);
         Ns_MutexSetName2(&poolPtr->threads.lock, ds.string, "threads");
 
+        Ns_AtomicUint64Init(&poolPtr->rate.bytesSent, 0u);
         Ns_MutexInit(&poolPtr->rate.lock);
         Ns_MutexSetName2(&poolPtr->rate.lock, ds.string, "ratelimit");
 
