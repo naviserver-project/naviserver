@@ -708,6 +708,7 @@ CreatePool(NsServer *servPtr, const char *pool)
             Ns_MutexInit(&poolPtr->tqueue.args[j].lock);
             Ns_MutexSetName2(&poolPtr->tqueue.args[j].lock, ds.string, suffix);
             Ns_CondInit(&poolPtr->tqueue.args[j].cond);
+            Ns_AtomicUint32Init(&poolPtr->tqueue.args[j].state, (uint32_t)connThread_free);
         }
         Ns_MutexInit(&poolPtr->tqueue.lock);
         Ns_MutexSetName2(&poolPtr->tqueue.lock, ds.string, "tqueue");

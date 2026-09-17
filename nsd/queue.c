@@ -142,7 +142,7 @@ static void ConnThreadQueuePrint(ConnPool *poolPtr, char *key) {
     fprintf(stderr, "%s: thread queue (idle %d): ", key, poolPtr->threads.idle);
     Ns_MutexLock(&poolPtr->tqueue.lock);
     for (aPtr = poolPtr->tqueue.nextPtr; aPtr; aPtr = aPtr->nextPtr) {
-        fprintf(stderr, "[%d] state %d, ", ThreadNr(poolPtr, aPtr), aPtr->state);
+        fprintf(stderr, "[%d] state %d, ", ThreadNr(poolPtr, aPtr), Ns_AtomicUint32LoadRelaxed(&aPtr->state));
     }
     Ns_MutexUnlock(&poolPtr->tqueue.lock);
     fprintf(stderr, "\n");
@@ -738,12 +738,14 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
         argPtr = poolPtr->tqueue.nextPtr;
         if (argPtr != NULL) {
-            assert(argPtr->state == connThread_idle);
+
+            assert(Ns_AtomicUint32LoadRelaxed(&argPtr->state)== connThread_idle);
             assert(argPtr->connPtr == NULL);
 
             poolPtr->tqueue.nextPtr = argPtr->nextPtr;
             argPtr->nextPtr = NULL;
             argPtr->connPtr = connPtr;
+            Ns_AtomicUint32StoreRelease(&argPtr->state, (uint32_t)connThread_assigned);
         }
 
         Ns_MutexUnlock(&poolPtr->tqueue.lock);
@@ -894,7 +896,8 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             Ns_MutexUnlock(&poolPtr->threads.lock);
 
             Ns_Log(Debug, "[%d] dequeue thread connPtr %p idle %d state %d create %d",
-                   ThreadNr(poolPtr, argPtr), (void *)connPtr, idle, argPtr->state, (int)create);
+                   ThreadNr(poolPtr, argPtr), (void *)connPtr, idle,
+                   Ns_AtomicUint32LoadRelaxed(&argPtr->state), (int)create);
         }
 
         /*
@@ -2252,7 +2255,7 @@ WakeupConnThreads(ConnPool *poolPtr) {
     for (i = 0; i < poolPtr->threads.max; i++) {
         ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
 
-        if (argPtr->state == connThread_idle) {
+        if (Ns_AtomicUint32LoadRelaxed(&argPtr->state) == connThread_idle) {
             assert(argPtr->connPtr == NULL);
             Ns_MutexLock(&argPtr->lock);
             Ns_CondSignal(&argPtr->cond);
@@ -2450,9 +2453,7 @@ NsConnThread(void *arg)
     tqueueLockPtr  = &poolPtr->tqueue.lock;
     Ns_TlsSet(&argtls, argPtr);
 
-    Ns_MutexLock(tqueueLockPtr);
-    argPtr->state = connThread_warmup;
-    Ns_MutexUnlock(tqueueLockPtr);
+    Ns_AtomicUint32StoreRelease(&argPtr->state, (uint32_t)connThread_warmup);
 
     threadsLockPtr = &poolPtr->threads.lock;
 
@@ -2467,7 +2468,6 @@ NsConnThread(void *arg)
     ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, 0);
 
     Ns_ThreadSelf(&joinThread);
-
     cpt     = poolPtr->threads.connsperthread;
     ncons   = cpt;
     timeout = poolPtr->threads.timeout;
@@ -2491,7 +2491,7 @@ NsConnThread(void *arg)
         Ns_Log(Notice, "thread initialized (" NS_TIME_FMT " secs)",
                (int64_t)diff.sec, diff.usec);
         Ns_TclDeAllocateInterp(interp);
-        argPtr->state = connThread_ready;
+        Ns_AtomicUint32StoreRelaxed(&argPtr->state, connThread_ready);
         NsLogMemoryStats("connthread after warmup", poolPtr, threadId, NULL);
     }
 
@@ -2509,7 +2509,7 @@ NsConnThread(void *arg)
          * yourself to the conn thread queue.
          */
         assert(argPtr->connPtr == NULL);
-        assert(argPtr->state == connThread_ready);
+        assert(Ns_AtomicUint32LoadRelaxed(&argPtr->state) == (uint32_t)connThread_ready);
 
         if (poolPtr->wqueue.wait.firstPtr != NULL) {
             connPtr = NULL;
@@ -2535,6 +2535,8 @@ NsConnThread(void *arg)
             if (connPtr != NULL) {
                 Ns_MutexLock(tqueueLockPtr);
                 argPtr->connPtr = connPtr;
+                Ns_AtomicUint32StoreRelease(&argPtr->state,
+                                            (uint32_t)connThread_busy);
                 Ns_MutexUnlock(tqueueLockPtr);
             }
 
@@ -2549,22 +2551,30 @@ NsConnThread(void *arg)
              * conn thread queue.
              */
             Ns_MutexLock(threadsLockPtr);
-            poolPtr->threads.idle ++;
+            poolPtr->threads.idle++;
             Ns_MutexUnlock(threadsLockPtr);
 
-            Ns_MutexLock(tqueueLockPtr);
-            argPtr->state = connThread_idle;
             /*
-             * We put an entry into the thread queue. However, we must
-             * take care, that signals are not sent, before this thread
-             * is waiting for it. Therefore, we lock the connection
-             * thread specific lock right here, also the signal sending
-             * code uses the same lock.
+             * Serialize insertion into the idle-thread queue.
+             */
+            Ns_MutexLock(tqueueLockPtr);
+
+            /*
+             * Obtain the condition-variable mutex before making this thread
+             * available to dispatchers. A dispatcher that selects this thread
+             * will block on argPtr->lock until the worker enters the condition
+             * wait, preventing a lost wakeup.
              */
             Ns_MutexLock(&argPtr->lock);
-
             argPtr->nextPtr = poolPtr->tqueue.nextPtr;
             poolPtr->tqueue.nextPtr = argPtr;
+
+            /*
+             * Publish the completed transition to the idle state. In particular,
+             * connPtr has already been cleared before this point.
+             */
+            Ns_AtomicUint32StoreRelease(&argPtr->state,
+                                        (uint32_t)connThread_idle);
             Ns_MutexUnlock(tqueueLockPtr);
 
             while (!servPtr->pools.shutdown) {
@@ -2618,33 +2628,64 @@ NsConnThread(void *arg)
 
             Ns_MutexUnlock(&argPtr->lock);
 
-            assert(argPtr->state == connThread_idle);
+            {
+                uint32_t state;
 
-            Ns_MutexLock(tqueueLockPtr);
-            if (argPtr->connPtr == NULL) {
-                /*
-                 * We were not signaled on purpose, so we have to dequeue
-                 * the current thread.
-                 */
-                ConnThreadArg *aPtr, **prevPtr;
+                state = Ns_AtomicUint32LoadAcquire(&argPtr->state);
 
-                for (aPtr = poolPtr->tqueue.nextPtr, prevPtr = &poolPtr->tqueue.nextPtr;
-                     aPtr != NULL;
-                     prevPtr = &aPtr->nextPtr, aPtr = aPtr->nextPtr) {
-                    if (aPtr == argPtr) {
+                if (state == (uint32_t)connThread_assigned) {
+                    /*
+                     * The acquire load makes the dispatcher's connPtr assignment
+                     * visible. The dispatcher has already removed us from tqueue.
+                     */
+                    connPtr = argPtr->connPtr;
+
+                    Ns_AtomicUint32StoreRelease(&argPtr->state,
+                                                (uint32_t)connThread_busy);
+
+                } else {
+                    /*
+                     * Possible timeout or spurious wakeup. Serialize with a concurrent
+                     * dispatcher and recheck the state.
+                     */
+                    Ns_MutexLock(tqueueLockPtr);
+
+                    state = Ns_AtomicUint32LoadAcquire(&argPtr->state);
+
+                    if (state == (uint32_t)connThread_idle) {
                         /*
-                         * This request is for us.
+                         * Still idle and still linked: remove this thread from tqueue.
                          */
-                        *prevPtr = aPtr->nextPtr;
-                        argPtr->nextPtr = NULL;
-                        break;
+                        /*
+                         * We were not signaled on purpose, so we have to dequeue
+                         * the current thread.
+                         */
+                        ConnThreadArg *aPtr, **prevPtr;
+
+                        for (aPtr = poolPtr->tqueue.nextPtr, prevPtr = &poolPtr->tqueue.nextPtr;
+                             aPtr != NULL;
+                             prevPtr = &aPtr->nextPtr, aPtr = aPtr->nextPtr) {
+                            if (aPtr == argPtr) {
+                                /*
+                                 * This request is for us.
+                                 */
+                                *prevPtr = aPtr->nextPtr;
+                                argPtr->nextPtr = NULL;
+                                break;
+                            }
+                        }
+                        connPtr = NULL;
+                    } else {
+                        assert(state == (uint32_t)connThread_assigned);
+                        connPtr = argPtr->connPtr;
                     }
+
+                    Ns_AtomicUint32StoreRelease(&argPtr->state,
+                                                (uint32_t)connThread_busy);
+
+                    Ns_MutexUnlock(tqueueLockPtr);
                 }
-                argPtr->state = connThread_busy;
-            } else {
-                argPtr->state = connThread_busy;
             }
-            Ns_MutexUnlock(tqueueLockPtr);
 
             Ns_MutexLock(threadsLockPtr);
             poolPtr->threads.idle --;
@@ -2729,8 +2770,8 @@ NsConnThread(void *arg)
         Ns_SetTrunc(connPtr->headers, 0);
 
         Ns_MutexLock(tqueueLockPtr);
-        argPtr->state = connThread_ready;
         argPtr->connPtr = NULL;
+        Ns_AtomicUint32StoreRelease(&argPtr->state, connThread_ready);
         Ns_MutexUnlock(tqueueLockPtr);
 
         /*
@@ -2818,7 +2859,7 @@ NsConnThread(void *arg)
             }
         }
     }
-    argPtr->state = connThread_dead;
+    Ns_AtomicUint32StoreRelaxed(&argPtr->state, connThread_dead);
 
     Ns_MutexLock(&servPtr->pools.lock);
     duringShutdown = servPtr->pools.shutdown;
@@ -2870,9 +2911,7 @@ NsConnThread(void *arg)
 
     Ns_Log(Notice, "exiting: %s", exitMsg);
 
-    Ns_MutexLock(tqueueLockPtr);
-    argPtr->state = connThread_free;
-    Ns_MutexUnlock(tqueueLockPtr);
+    Ns_AtomicUint32StoreRelease(&argPtr->state, connThread_free);
 
     NsLogMemoryStats("connthread before exit",
                       poolPtr, threadId, exitMsg);
@@ -3301,13 +3340,13 @@ CreateConnThread(ConnPool *poolPtr, const ConnThreadCreateLog *logPtr)
      */
     Ns_MutexLock(&poolPtr->tqueue.lock);
     for (i = 0; likely(i < poolPtr->threads.max); i++) {
-      if (poolPtr->tqueue.args[i].state == connThread_free) {
-        argPtr = &(poolPtr->tqueue.args[i]);
-        break;
-      }
+        if (Ns_AtomicUint32LoadAcquire(&poolPtr->tqueue.args[i].state) == connThread_free) {
+            argPtr = &(poolPtr->tqueue.args[i]);
+            break;
+        }
     }
     if (likely(argPtr != NULL)) {
-        argPtr->state = connThread_initial;
+        Ns_AtomicUint32StoreRelaxed(&argPtr->state, connThread_initial);
         poolPtr->stats.connthreads++;
         Ns_MutexUnlock(&poolPtr->tqueue.lock);
 

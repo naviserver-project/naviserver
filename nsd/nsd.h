@@ -791,6 +791,7 @@ typedef enum {
     connThread_initial,
     connThread_warmup,
     connThread_ready,
+    connThread_assigned,
     connThread_idle,
     connThread_busy,
     connThread_dead
@@ -802,7 +803,7 @@ typedef struct ConnThreadArg {
     Ns_Cond               cond;        /* Cond for signaling this conn thread */
     Ns_Mutex              lock;
     struct ConnThreadArg *nextPtr;     /* used for the conn thread queue */
-    ConnThreadState       state;
+    Ns_AtomicUint32       state;
 } ConnThreadArg;
 
 /*
