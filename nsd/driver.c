@@ -457,7 +457,7 @@ Ns_LogSeverity Ns_LogNsSetDebug;
 Ns_LogSeverity Ns_LogMemoryDebug;
 /* See also Ns_LogAccessDebug defined and exported above. */
 
-bool NsWriterBandwidthManagement = NS_FALSE;
+Ns_AtomicUint32 NsWriterBandwidthManagement;
 
 static Ns_LogSeverity   WriterDebug;        /* Severity at which to log verbose debugging. */
 static Ns_LogSeverity   DriverDebug;        /* Severity at which to log verbose debugging. */
@@ -692,6 +692,7 @@ NsInitDrivers(void)
     Ns_MutexInit(&writerlock);
     Ns_MutexSetName2(&reqLock, "ns:driver", "requestpool");
     Ns_MutexSetName2(&writerlock, "ns:writer", "stream");
+    Ns_AtomicUint32Init(&NsWriterBandwidthManagement, (uint32_t)NS_FALSE);
 #ifdef WRITER_MEM_STATS
     Ns_MutexInit(&writerMemStats.lock);
 #endif
@@ -9122,7 +9123,7 @@ BandwidthAdjustRateLimitsPerPool(WriterSock *writers, Tcl_HashTable *pools)
 {
     WriterSock *cur;
 
-    if (!NsWriterBandwidthManagement) {
+    if (Ns_AtomicUint32LoadAcquire(&NsWriterBandwidthManagement) == NS_FALSE) {
         return;
     }
 

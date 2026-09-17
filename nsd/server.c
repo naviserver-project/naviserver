@@ -645,8 +645,8 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->rate.poolLimit =
         Ns_ConfigIntRange(section, "poolratelimit", 0, 0, INT_MAX);
 
-    if (poolPtr->rate.poolLimit != -1) {
-        NsWriterBandwidthManagement = NS_TRUE;
+    if (poolPtr->rate.poolLimit > 0) {
+        Ns_AtomicUint32StoreRelaxed(&NsWriterBandwidthManagement, (uint32_t)NS_TRUE);
     }
     for (n = 0; n < maxconns; ++n) {
         Conn *connPtr = &connBufPtr[n];

@@ -1072,7 +1072,7 @@ ServerPoolRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
                        ConnPool *poolPtr, TCL_SIZE_T nargs)
 {
     int               result = TCL_OK, value = 0;
-    Ns_ObjvValueRange range = {-1, INT_MAX};
+    Ns_ObjvValueRange range = {0, INT_MAX};
     Ns_ObjvSpec       args[] = {
         {"?value", Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
@@ -1085,7 +1085,17 @@ ServerPoolRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        result = SetPoolAttribute(interp, nargs, poolPtr, &poolPtr->rate.poolLimit, value);
+        if (nargs == 1) {
+            Ns_MutexLock(&poolPtr->threads.lock);
+            poolPtr->rate.poolLimit = value;
+            Ns_MutexUnlock(&poolPtr->threads.lock);
+
+            if (value > 0) {
+                Ns_AtomicUint32StoreRelease(&NsWriterBandwidthManagement, 1u);
+            }
+        }
+
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->rate.poolLimit));
     }
     return result;
 }
@@ -1094,7 +1104,7 @@ ServerConnectionRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *inter
                                 ConnPool *poolPtr, TCL_SIZE_T nargs)
 {
     int               result = TCL_OK, value = 0;
-    Ns_ObjvValueRange range = {-1, INT_MAX};
+    Ns_ObjvValueRange range = {0, INT_MAX};
     Ns_ObjvSpec       args[] = {
         {"?value", Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
