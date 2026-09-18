@@ -1019,7 +1019,7 @@ NS_EXTERN int
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
                         const Ns_Time *timeoutPtr, int cost, size_t maxSize,
                         uintptr_t transactionEpoch)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN void
 Ns_CacheUnsetValue(Ns_Entry *entry)

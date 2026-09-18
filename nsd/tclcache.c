@@ -529,10 +529,8 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 
             if (isNew == 0 && force == (int)NS_TRUE) {
                 /*
-                 * When called with the "-force" flag, make the overall logic
-                 * more similar to the situation, where an entry is
-                 * unset. There are several places already, which treat
-                 * (entryPtr->value == NULL) specially during deletion etc.
+                 * Mark the existing entry as being updated. Other callers for this
+                 * cache/key will wait until the replacement value is published.
                  */
                 Ns_CacheUnsetValue(entry);
                 Ns_Log(Debug, "Force unset");
