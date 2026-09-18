@@ -747,6 +747,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             poolPtr->tqueue.nextPtr = argPtr->nextPtr;
             argPtr->nextPtr = NULL;
             argPtr->connPtr = connPtr;
+            Ns_DListAppend(&connPtr->poolPtr->inuse, connPtr);
             Ns_AtomicUint32StoreRelease(&argPtr->state, (uint32_t)connThread_assigned);
         }
 
@@ -1539,24 +1540,18 @@ ServerUnmapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
 static void
 ServerListActive(Tcl_DString *dsPtr, ConnPool *poolPtr, bool checkforproxy)
 {
-    int i;
+    size_t i;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
     Ns_MutexLock(&poolPtr->tqueue.lock);
-    for (i = 0; i < poolPtr->threads.max; i++) {
-        Conn *connPtr = poolPtr->tqueue.args[i].connPtr;
-        /*
-         * Include only connections whose initialization is complete and
-         * whose request data has not yet been released.
-         */
-        if (connPtr != NULL) {
-            uint32_t stateValue = Ns_AtomicUint32LoadAcquire(&connPtr->state);
-
-            if ((NsConnState)stateValue == NS_CONN_STATE_RUNNING) {
-                AppendConnList(dsPtr, connPtr, NS_CONN_STATE_RUNNING, checkforproxy);
-            }
+    for (i = 0u; i < poolPtr->inuse.size; i++) {
+        Conn *connPtr = poolPtr->inuse.data[i];
+        uint32_t stateValue = Ns_AtomicUint32LoadAcquire(&connPtr->state);
+        if ((NsConnState)stateValue == NS_CONN_STATE_RUNNING) {
+            AppendConnList(dsPtr, connPtr, NS_CONN_STATE_RUNNING,
+                           checkforproxy);
         }
     }
     Ns_MutexUnlock(&poolPtr->tqueue.lock);
@@ -2548,6 +2543,7 @@ NsConnThread(void *arg)
             if (connPtr != NULL) {
                 Ns_MutexLock(tqueueLockPtr);
                 argPtr->connPtr = connPtr;
+                Ns_DListAppend(&connPtr->poolPtr->inuse, connPtr);
                 Ns_AtomicUint32StoreRelease(&argPtr->state,
                                             (uint32_t)connThread_busy);
                 Ns_MutexUnlock(tqueueLockPtr);
@@ -3084,8 +3080,8 @@ ConnRun(Conn *connPtr)
     }
 
     /*
-     * Connection initialization is complete. Publish this transition
-     * before invoking request-processing callbacks.
+     * Connection initialization is complete. Publish this transition.  before
+     * invoking request-processing callbacks.
      */
     Ns_AtomicUint32StoreRelease(&connPtr->state, (uint32_t)NS_CONN_STATE_RUNNING);
 
@@ -3212,6 +3208,7 @@ ConnRun(Conn *connPtr)
     }
 
     Ns_MutexLock(&connPtr->poolPtr->tqueue.lock);
+    (void) Ns_DListDelete(&connPtr->poolPtr->inuse, connPtr);
     Ns_AtomicUint32StoreRelease(&connPtr->state, (uint32_t)NS_CONN_STATE_FINISHING);
     Ns_MutexUnlock(&connPtr->poolPtr->tqueue.lock);
 

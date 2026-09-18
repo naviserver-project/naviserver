@@ -684,6 +684,7 @@ CreatePool(NsServer *servPtr, const char *pool)
      */
     poolPtr->tqueue.args = ns_calloc((size_t)maxconns, sizeof(ConnThreadArg));
 
+    Ns_DListInit(&poolPtr->inuse);
     Ns_DListInit(&(poolPtr->rate.writerRates));
 
     /*

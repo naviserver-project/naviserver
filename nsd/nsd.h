@@ -814,6 +814,7 @@ typedef struct ConnPool {
     const char *pool;
     struct ConnPool *nextPtr;
     struct NsServer *servPtr;
+    Ns_DList         inuse; /* Connections assigned to threads, protected by tqueue.lock.  */
 
     /*
      * The following struct maintains the active and waiting connection
