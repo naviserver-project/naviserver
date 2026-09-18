@@ -82,9 +82,10 @@ main(void)
 #endif
 
 /* Reject targets which would require an out-of-line atomic library. */
-typedef char ns_atomic_uint64_lock_free_check[
-    __atomic_always_lock_free(sizeof(uint64_t), 0) ? 1 : -1
-];
+_Static_assert(
+    __atomic_always_lock_free(sizeof(uint64_t), 0),
+    "atomic operations on uint64_t are not always lock-free"
+);
 
 static uint64_t ns_atomic_value;
 
