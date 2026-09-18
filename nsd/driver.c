@@ -11065,8 +11065,7 @@ NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
-/*
- *======================================================================
+/*======================================================================
  *  Async (log) writer: Write asynchronously to a disk
  *======================================================================
  */
@@ -11532,14 +11531,18 @@ AsyncWriterThread(void *arg)
             }
         } else {
             /*
-             * Add fresh jobs to the writer queue. This means actually to
-             * move jobs from queuePtr->sockPtr (kept name for being able
-             * to use the same queue as above) to the currently active
-             * jobs in queuePtr->curPtr.
+             * Add freshly submitted jobs to the active writer list.
+             * Detach the complete list from queuePtr->sockPtr while
+             * holding the queue lock, then process the detached list
+             * after releasing the lock.  The detached list is private
+             * to this writer thread, keeping the producer-side critical
+             * section short.
              */
             Ns_MutexLock(&queuePtr->lock);
             curPtr = queuePtr->sockPtr;
             queuePtr->sockPtr = NULL;
+            Ns_MutexUnlock(&queuePtr->lock);
+
             while (curPtr != NULL) {
                 nextPtr = curPtr->nextPtr;
 
@@ -11552,7 +11555,6 @@ AsyncWriterThread(void *arg)
                 curPtr = nextPtr;
             }
             queuePtr->curPtr = writePtr;
-            Ns_MutexUnlock(&queuePtr->lock);
         }
 
     }
