@@ -549,40 +549,13 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
             (void)Ns_DiffTime(&end, &start, &diff);
 
             Ns_CacheLock(cPtr->cache);
-            {
-                /*
-                 * This is just a sanity check, hopefully transitional code.
-                 */
-                Ns_Entry *entry2;
-                int isNew2 = 0;
 
-                entry2 = Ns_CacheCreateEntry(cPtr->cache, key, &isNew2);
-                if (isNew2 != 0) {
-                    Ns_Log(Warning, "==== cache %s key %s old entry %p"
-                           " different from re-fetched entry %p",
-                           Ns_CacheName(cPtr->cache),
-                           key, (void*)entry, (void*)entry2);
-                }
-            }
-
-            if (unlikely((status != TCL_OK && status != TCL_RETURN))) {
+            if (unlikely(status != TCL_OK)) {
 
                 /*
-                 * Don't cache anything, if the status code is not TCL_OK
-                 * or TCL_RETURN.
-                 *
-                 * The remaining status codes are TCL_BREAK, TCL_CONTINUE
-                 * and TCL_ERROR. Regarding TCL_BREAK and TCL_CONTINUE as
-                 * signals for not caching is used e.g. in
-                 * OpenACS. Therefore, we want to return TCL_BREAK or
-                 * TCL_CONTINUE as well.
-                 *
-                 * Certainly, we could map unknown error codes to TCL_ERROR
-                 * as it was done in earlier versions of NaviServer.
-                 *
-                 * if (status != TCL_BREAK && status != TCL_CONTINUE) {
-                 *     status = TCL_ERROR;
-                 * }
+                 * CacheEval() maps TCL_RETURN to TCL_OK. Do not cache results for
+                 * any other return code. TCL_BREAK and TCL_CONTINUE are intentionally
+                 * propagated, as required by OpenACS.
                  */
                 /*Ns_Log(Notice, "cache eval if %s returns %d - don't cache the data",
                        nargs == 1
@@ -594,7 +567,6 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
             } else {
                 Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
 
-                status = TCL_OK;
                 SetEntry(itPtr, cPtr, entry, resultObj, expPtr,
                          (int)(diff.sec * 1000000 + diff.usec));
             }

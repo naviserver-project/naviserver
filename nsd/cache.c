@@ -370,7 +370,10 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
                        (int64_t)relTimePtr->sec, relTimePtr->usec);
             }
             status = Ns_CacheTimedWait(cache, timeoutPtr);
-
+            if (status != NS_OK) {
+                entry = NULL;
+                break;
+            }
             entry = Ns_CacheCreateEntry(cache, key, &isNew);
         } while (status == NS_OK
                  && isNew == 0
