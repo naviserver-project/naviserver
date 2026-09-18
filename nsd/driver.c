@@ -11532,15 +11532,16 @@ AsyncWriterThread(void *arg)
         } else {
             /*
              * Add freshly submitted jobs to the active writer list.
-             * Detach the complete list from queuePtr->sockPtr while
-             * holding the queue lock, then process the detached list
-             * after releasing the lock.  The detached list is private
-             * to this writer thread, keeping the producer-side critical
-             * section short.
+             * Detach the complete list and update the queued-job gauge
+             * while holding the queue lock, then process the detached
+             * list after releasing the lock.  The detached list is
+             * private to this writer thread, keeping the producer-side
+             * critical section short.
              */
             Ns_MutexLock(&queuePtr->lock);
             curPtr = queuePtr->sockPtr;
             queuePtr->sockPtr = NULL;
+            asyncWriter->stats.queued = 0u;
             Ns_MutexUnlock(&queuePtr->lock);
 
             while (curPtr != NULL) {
