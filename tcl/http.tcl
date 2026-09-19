@@ -41,6 +41,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
         } elseif {[info commands ::revproxy::ns_http::upstream] ne ""} {
             #ns_log notice ::revproxy::ns_http::upstream -url $URL
             return [::revproxy::ns_http::upstream \
+                        -use_target_host_header true \
                         -url $URL \
                         -request [::revproxy::request] \
                         -spoolresponse true \
