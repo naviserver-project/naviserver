@@ -656,7 +656,11 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     }
     Ns_MutexUnlock(&servPtr->request.plock);
     if (regPtr == NULL) {
-        status = Ns_ConnReturnNotFound(conn);
+        static const char message[] = "Not Found\n";
+
+        status = Ns_ConnReturnData(conn, 404, message,
+                                   (ssize_t)(sizeof(message) - 1u),
+                                   "text/plain");
     } else {
         status = (*regPtr->proc) (regPtr->arg, conn);
         Ns_MutexLock(&servPtr->request.plock);
