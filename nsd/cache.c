@@ -70,13 +70,16 @@ typedef struct Cache {
     uintptr_t      transactionEpoch;
     Tcl_HashTable  uncommittedTable;
     struct {
-        unsigned long   nhit;      /* Successful gets. */
-        unsigned long   nmiss;     /* Unsuccessful gets. */
-        unsigned long   nexpired;  /* Unsuccessful gets due to entry expiry. */
-        unsigned long   nflushed;  /* Explicit flushes by user code. */
-        unsigned long   npruned;   /* Evictions due to size constraint. */
-        unsigned long   ncommit;   /* number of commits. */
-        unsigned long   nrollback; /* number of rollback operations. */
+        unsigned long   nhit;       /* Successful gets. */
+        unsigned long   nmiss;      /* Unsuccessful gets. */
+        unsigned long   nexpired;   /* Unsuccessful gets due to entry expiry. */
+        unsigned long   nflushed;   /* Explicit flushes by user code. */
+        unsigned long   npruned;    /* Evictions due to size constraint. */
+        unsigned long   ncommit;    /* number of commits. */
+        unsigned long   nrollback;  /* number of rollback operations. */
+        unsigned long   ncollision; /* Acquisitions that had to wait. */
+        unsigned long   nwait;      /* Condition-variable wait calls. */
+        unsigned long   ntimeout;   /* Acquisitions ending in timeout. */
     } stats;
 
     char name[1];
@@ -322,13 +325,8 @@ Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_FreeProc *freePr
     cachePtr->maxSize         = maxSize;
     cachePtr->currentSize     = 0u;
     cachePtr->keys            = keys;
-    cachePtr->stats.nhit      = 0u;
-    cachePtr->stats.nmiss     = 0u;
-    cachePtr->stats.nexpired  = 0u;
-    cachePtr->stats.nflushed  = 0u;
-    cachePtr->stats.npruned   = 0u;
-    cachePtr->stats.ncommit   = 0u;
-    cachePtr->stats.nrollback = 0u;
+
+    /* Statistics counters are initialized by ns_calloc(). */
 
     Ns_MutexInit(&cachePtr->lock);
     Ns_MutexSetName2(&cachePtr->lock, "ns:cache", name);
@@ -672,7 +670,9 @@ Ns_CacheWaitCreateEntryT(
     Cache              *cachePtr = (Cache *)cache;
     CacheAcquireResult  acquireResult;
     Entry              *ePtr;
-    bool                collisionLogged = NS_FALSE;
+    Ns_ReturnCode        waitStatus = NS_OK;
+    bool                 collisionLogged = NS_FALSE;
+    unsigned int         waits = 0u;
 
     NS_NONNULL_ASSERT(cache != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -720,13 +720,23 @@ Ns_CacheWaitCreateEntryT(
             collisionLogged = NS_TRUE;
         }
 
-        if (Ns_CacheTimedWait(cache, timeoutPtr) != NS_OK) {
+        ++waits;
+        waitStatus = Ns_CacheTimedWait(cache, timeoutPtr);
+        if (waitStatus != NS_OK) {
             /*
-             * Do not attempt another acquisition after a failed wait.  Such an
-             * acquisition could create an updating entry without a producer.
+             * Do not attempt another acquisition after a failed wait.
              */
             ePtr = NULL;
             break;
+        }
+    }
+
+    if (waits != 0u) {
+        ++cachePtr->stats.ncollision;
+        cachePtr->stats.nwait += waits;
+
+        if (waitStatus == NS_TIMEOUT) {
+            ++cachePtr->stats.ntimeout;
         }
     }
 
@@ -1752,7 +1762,7 @@ char *
 Ns_CacheStats(Ns_Cache *cache, Tcl_DString *dest)
 {
     const Cache    *cachePtr;
-    unsigned long   count;
+    unsigned long   count, nrewait;
     const Entry    *ePtr;
     Ns_CacheSearch  search;
     double          savedCost = 0.0, hitrate;
@@ -1763,6 +1773,7 @@ Ns_CacheStats(Ns_Cache *cache, Tcl_DString *dest)
     cachePtr = (Cache *)cache;
     count = cachePtr->stats.nhit + cachePtr->stats.nmiss;
     hitrate = ((count != 0u) ? ((double)cachePtr->stats.nhit * 100.0) / (double)count : 0.0);
+    nrewait = cachePtr->stats.nwait - cachePtr->stats.ncollision;
 
     ePtr = (Entry *)Ns_CacheFirstEntry(cache, &search);
     while (ePtr != NULL) {
@@ -1770,16 +1781,27 @@ Ns_CacheStats(Ns_Cache *cache, Tcl_DString *dest)
         ePtr = (Entry *)Ns_CacheNextEntry(&search);
     }
 
+
     return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %" PRITcl_Size
-               " flushed %lu hits %lu missed %lu hitrate %.2f"
-               " expired %lu pruned %lu commit %lu rollback %lu saved %.6f",
-               (unsigned long) cachePtr->maxSize,
-               (unsigned long) cachePtr->currentSize,
-               cachePtr->entriesTable.numEntries, cachePtr->stats.nflushed,
-               cachePtr->stats.nhit, cachePtr->stats.nmiss, hitrate,
-                            cachePtr->stats.nexpired, cachePtr->stats.npruned,
-                            cachePtr->stats.ncommit, cachePtr->stats.nrollback,
-                            savedCost);
+                            " flushed %lu hits %lu missed %lu hitrate %.2f"
+                            " expired %lu pruned %lu commit %lu rollback %lu saved %.6f"
+                            " collisions %lu waits %lu rewaits %lu timeouts %lu",
+                            (unsigned long)cachePtr->maxSize,
+                            (unsigned long)cachePtr->currentSize,
+                            cachePtr->entriesTable.numEntries,
+                            cachePtr->stats.nflushed,
+                            cachePtr->stats.nhit,
+                            cachePtr->stats.nmiss,
+                            hitrate,
+                            cachePtr->stats.nexpired,
+                            cachePtr->stats.npruned,
+                            cachePtr->stats.ncommit,
+                            cachePtr->stats.nrollback,
+                            savedCost,
+                            cachePtr->stats.ncollision,
+                            cachePtr->stats.nwait,
+                            nrewait,
+                            cachePtr->stats.ntimeout);
 }
 
 

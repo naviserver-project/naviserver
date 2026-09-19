@@ -509,7 +509,7 @@ test cache-7.1 {cache stats entries} -body {
     lsort [dict keys [ns_cache_stats c1]]
 } -cleanup {
     unset -nocomplain stats
-} -result {commit entries expired flushed hitrate hits maxsize missed pruned rollback saved size}
+} -result {collisions commit entries expired flushed hitrate hits maxsize missed pruned rewaits rollback saved size timeouts waits}
 
 test cache-7.2 {cache stats contents} -body {
     ns_cache_eval c1 k1 {return a}

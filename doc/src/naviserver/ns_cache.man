@@ -250,36 +250,58 @@ The cache statistics track the following items:
 
 [list_begin definitions]
 
-[def maxsize]
-The maximum size in bytes this cache can grow to, as specified by the
-[option -size] option to [cmd ns_cache_create].
+  [def collisions]
+  Number of cache acquisition operations that found an entry being updated, or
+  an uncommitted value not visible to the current transaction, and therefore
+  had to wait at least once.
 
-[def size]
-The current size of the cache, in bytes.
+  [def entries]
+  The current number of entries the cache contains.
 
-[def entries]
-The current number of entries the cache contains.
+  [def expired]
+  Number of times an entry was found to be present but expired when
+  requested and so not returned.
 
-[def flushed]
-Number of entries which were explicitly flushed by the [cmd ns_cache_flush]
-command.
+ [def flushed]
+  Number of entries which were explicitly flushed by the [cmd ns_cache_flush]
+  command.
 
-[def hits]
-Number of times cache was queried and entry was present and valid.
+  [def hitrate]
+  The successful hit rate expressed as a percentage of total
+  hits. Higher is better.
 
-[def missed]
-Number of times cache was queried and entry was not present or valid.
+  [def hits]
+  Number of times cache was queried and entry was present and valid.
 
-[def hitrate]
-The successful hit rate expressed as a percentage of total hits. Higher is better.
+  [def maxsize]
+  The maximum size in bytes this cache can grow to, as specified by the
+  [option -size] option to [cmd ns_cache_create].
 
-[def expired]
-Number of times an entry was found to be present but expired when requested and
-so not returned.
+  [def missed]
+  Number of times cache was queried and entry was not present or valid.
 
-[def pruned]
-Number of times an entry reached the end of the LRU list and was removed to make
-way for a new entry.
+  [def pruned]
+  Number of times an entry reached the end of the LRU list and was
+  removed to make way for a new entry.
+
+
+  [def rewaits]
+  Number of additional wait operations after the first wait for a cache
+  collision. This value is calculated as [term waits] minus
+  [term collisions].
+
+  [def size]
+  The current size of the cache, in bytes.
+
+  [def timeouts]
+  Number of cache acquisition operations which ended because the configured
+  wait timeout was reached.
+
+  [def waits]
+  Total number of condition-variable wait operations caused by cache
+  collisions. This number can exceed [term collisions] when a thread wakes
+  while the requested entry is still unavailable and has to wait
+  again.
 
 [list_end]
 
