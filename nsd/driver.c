@@ -11547,8 +11547,6 @@ AsyncWriterThread(void *arg)
             while (curPtr != NULL) {
                 nextPtr = curPtr->nextPtr;
 
-                QueueStatsDecr(asyncWriter->stats.queued, "async writer queued");
-
                 Push(curPtr, writePtr);
                 asyncWriter->stats.writing++;
 
