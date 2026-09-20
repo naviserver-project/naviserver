@@ -80,6 +80,7 @@ typedef struct Cache {
         unsigned long   ncollision; /* Acquisitions that had to wait. */
         unsigned long   nwait;      /* Condition-variable wait calls. */
         unsigned long   ntimeout;   /* Acquisitions ending in timeout. */
+        uint64_t        savedUsec;
     } stats;
 
     char name[1];
@@ -285,6 +286,10 @@ Touch(Entry *ePtr)
     cachePtr = ePtr->cachePtr;
 
     ++ePtr->count;
+
+    if (ePtr->cost > 0) {
+        cachePtr->stats.savedUsec += (uint64_t)ePtr->cost;
+    }
 
     /*
      * Avoid unlinking and relinking an entry which is already the most
@@ -1796,23 +1801,16 @@ Ns_CacheStats(Ns_Cache *cache, Tcl_DString *dest)
 {
     const Cache    *cachePtr;
     unsigned long   count, nrewait;
-    const Entry    *ePtr;
-    Ns_CacheSearch  search;
-    double          savedCost = 0.0, hitrate;
+    double          savedCost, hitrate;
 
     NS_NONNULL_ASSERT(cache != NULL);
     NS_NONNULL_ASSERT(dest != NULL);
 
-    cachePtr = (Cache *)cache;
-    count = cachePtr->stats.nhit + cachePtr->stats.nmiss;
-    hitrate = ((count != 0u) ? ((double)cachePtr->stats.nhit * 100.0) / (double)count : 0.0);
-    nrewait = cachePtr->stats.nwait - cachePtr->stats.ncollision;
-
-    ePtr = (Entry *)Ns_CacheFirstEntry(cache, &search);
-    while (ePtr != NULL) {
-        savedCost += ((double)ePtr->count * (double)ePtr->cost) / 1000000.0;
-        ePtr = (Entry *)Ns_CacheNextEntry(&search);
-    }
+    cachePtr  = (Cache *)cache;
+    count     = cachePtr->stats.nhit + cachePtr->stats.nmiss;
+    hitrate   = ((count != 0u) ? ((double)cachePtr->stats.nhit * 100.0) / (double)count : 0.0);
+    nrewait   = cachePtr->stats.nwait - cachePtr->stats.ncollision;
+    savedCost = (double)cachePtr->stats.savedUsec / 1000000.0;
 
     return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %" PRITcl_Size
                             " flushed %lu hits %lu missed %lu hitrate %.2f"
