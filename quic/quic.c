@@ -8758,18 +8758,17 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
         Ns_DListSetLength(&h3->dead_items, writeIdx);
         Ns_Log(Ns_LogQuicDebug, "[%lld] PollsetSweep compacted dead items from %zu to %zu", (long long)dc->iter, oldLength, writeIdx);
 
-        if (writeIdx > 0) {
-            size_t i;
-
-            for (i = 0u; i < writeIdx; i++) {
+        if (writeIdx > 0
+            && Ns_LogSeverityEnabled(Ns_LogQuicDebug)) {
+            for (size_t i = 0u; i < writeIdx; i++) {
                 SSL       *ssl = h3->dead_items.data[i];
                 StreamCtx *sc  = SSL_get_ex_data(ssl, h3->sc_idx);
 
                 if (sc != NULL) {
                     const unsigned int deliveryRefs = StreamCtxDeliveryRefs(sc);
 
-                    Ns_Log(Notice,
-                           "[%lld] PollsetSweep: defer dead stream SSL %p "
+                    Ns_Log(Ns_LogQuicDebug,
+                           "[%lld] PollsetSweep: retain detached stream SSL %p "
                            "sc %p deliveryRefs %u",
                            (long long)dc->iter,
                            (void *)ssl,
@@ -8778,8 +8777,8 @@ PollsetSweep(NsTLSConfig *dc, size_t poll_result_count)
                 } else {
                     ConnCtx *cc = SSL_get_ex_data(ssl, h3->cc_idx);
 
-                    Ns_Log(Notice,
-                           "[%lld] PollsetSweep: defer dead connection SSL %p "
+                    Ns_Log(Ns_LogQuicDebug,
+                           "[%lld] PollsetSweep: retain detached connection SSL %p "
                            "cc %p",
                            (long long)dc->iter,
                            (void *)ssl,
