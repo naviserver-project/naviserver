@@ -278,7 +278,25 @@ AssertEntryState(const Entry *ePtr)
 static inline void
 Touch(Entry *ePtr)
 {
-    if (ePtr->cachePtr->firstEntryPtr != ePtr) {
+    Cache *cachePtr;
+
+    NS_NONNULL_ASSERT(ePtr != NULL);
+
+    cachePtr = ePtr->cachePtr;
+
+    ++ePtr->count;
+
+    /*
+     * Avoid unlinking and relinking an entry which is already the most
+     * recently used entry.
+     */
+    if (cachePtr->firstEntryPtr != ePtr) {
+        /*
+         * Every linked entry other than the first one must have a
+         * predecessor.
+         */
+        assert(ePtr->prevPtr != NULL);
+
         Remove(ePtr);
         Push(ePtr);
     }
