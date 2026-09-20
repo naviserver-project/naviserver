@@ -671,7 +671,6 @@ Ns_CacheWaitCreateEntryT(
     CacheAcquireResult  acquireResult;
     Entry              *ePtr;
     Ns_ReturnCode        waitStatus = NS_OK;
-    bool                 collisionLogged = NS_FALSE;
     unsigned int         waits = 0u;
 
     NS_NONNULL_ASSERT(cache != NULL);
@@ -697,32 +696,48 @@ Ns_CacheWaitCreateEntryT(
         /*
          * CACHE_ACQUIRE_WAIT:
          *
-         * The entry is either being updated or contains an uncommitted
-         * value that is not visible to this transaction.
+         * The entry is either being updated or contains an uncommitted value
+         * that is not visible to this transaction.
+         *
+         * Log at most once for this acquisition attempt.
          */
-        if (!collisionLogged) {
+        if (waits == 0u) {
             if (timeoutPtr == NULL) {
-                Ns_Log(Notice,
-                       "ns_cache create entry collision cache %s "
-                       "key '%s', no timeout",
+                /*
+                 * An abandoned producer can leave every colliding request
+                 * blocked indefinitely.
+                 */
+                Ns_Log(Warning,
+                       "ns_cache unbounded create-entry wait cache %s key '%s'",
                        cachePtr->name, key);
-            } else {
+
+            } else if (Ns_LogSeverityEnabled(Debug)) {
                 Ns_Time        relTime;
                 const Ns_Time *relTimePtr;
 
                 relTimePtr = Ns_RelativeTime(&relTime, timeoutPtr);
-                Ns_Log(Notice,
-                       "ns_cache create entry collision cache %s "
+                Ns_Log(Debug,
+                       "ns_cache create-entry collision cache %s "
                        "key '%s', timeout " NS_TIME_FMT,
                        cachePtr->name, key,
                        (int64_t)relTimePtr->sec, relTimePtr->usec);
             }
-            collisionLogged = NS_TRUE;
         }
 
         ++waits;
         waitStatus = Ns_CacheTimedWait(cache, timeoutPtr);
         if (waitStatus != NS_OK) {
+            if (waitStatus == NS_TIMEOUT) {
+                Ns_Log(Warning,
+                       "ns_cache create-entry wait timed out cache %s "
+                       "key '%s' after %u condition wait%s",
+                       cachePtr->name, key, waits,
+                       waits == 1u ? "" : "s");
+            } else {
+                Ns_Log(Error,
+                       "ns_cache create-entry wait failed cache %s key '%s'",
+                       cachePtr->name, key);
+            }
             /*
              * Do not attempt another acquisition after a failed wait.
              */
@@ -1780,7 +1795,6 @@ Ns_CacheStats(Ns_Cache *cache, Tcl_DString *dest)
         savedCost += ((double)ePtr->count * (double)ePtr->cost) / 1000000.0;
         ePtr = (Entry *)Ns_CacheNextEntry(&search);
     }
-
 
     return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %" PRITcl_Size
                             " flushed %lu hits %lu missed %lu hitrate %.2f"
