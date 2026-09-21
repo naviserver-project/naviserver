@@ -18,6 +18,8 @@
 
 #define Ns_LogAccessDebug_DEFINED_ALREADY
 #include "nsd.h"
+#include "asyncwriter.h"
+
 NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 
 #ifdef HAVE_OPENSSL_EVP_H
@@ -394,9 +396,7 @@ static int WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Ob
                                     const Ns_ObjvValueRange *rangePtr, Tcl_WideInt *valuePtr)
     NS_GNUC_NONNULL(1,2,3,5);
 
-static AsyncWriteData *AsyncWriteDataCreate(int fd, const char *buffer, size_t nbyte)
-    NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
-static bool AsyncWriteEnqueue(int fd, const char *buffer, size_t nbyte)
+static Ns_ReturnCode AsyncWriteSynchronous(int fd, const char *buffer, size_t nbyte)
     NS_GNUC_NONNULL(2);
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
@@ -11266,107 +11266,243 @@ NsAsyncWriterQueueDisable(bool shutdown)
     }
 }
 
-
-
 /*
  *----------------------------------------------------------------------
  *
- * AsyncWriteDataCreate --
+ * AsyncWriteSynchronous --
  *
- *      Allocate and initialize an asynchronous write request. The supplied
- *      buffer is copied so that the caller may release or reuse it after
- *      this function returns.
+ *      Write the complete supplied buffer synchronously. Partial writes
+ *      are retried, subject to a finite retry limit to avoid looping
+ *      indefinitely when repeated write operations make no progress.
+ *
+ *      Write errors are reported directly to stderr. Using the normal
+ *      logging facility here could recurse through the asynchronous log
+ *      writer.
  *
  * Results:
- *      Pointer to a newly allocated AsyncWriteData structure. Ownership is
- *      transferred to the caller.
+ *      NS_OK when all requested bytes were written, otherwise NS_ERROR.
  *
  * Side effects:
- *      Allocates memory.
+ *      Writes to the supplied file descriptor and may write a diagnostic
+ *      message to stderr.
  *
  *----------------------------------------------------------------------
  */
-static AsyncWriteData *
-AsyncWriteDataCreate(int fd, const char *buffer, size_t nbyte)
+static Ns_ReturnCode
+AsyncWriteSynchronous(int fd, const char *buffer, size_t nbyte)
 {
-    AsyncWriteData *newPtr;
+    Ns_ReturnCode status = NS_OK;
+    ssize_t       written;
 
-    /*
-     * Allocate a writer cmd and initialize it. In order to provide an
-     * interface compatible to ns_write(), we copy the provided data,
-     * such it can be freed by the caller. When we would give up the
-     * interface, we could free the memory block after writing, and
-     * save a malloc/free operation on the data.
-     */
-    newPtr = ns_calloc(1u, sizeof(AsyncWriteData));
-    newPtr->fd = fd;
-    newPtr->bufsize = nbyte;
-    newPtr->data = ns_malloc(nbyte + 1u);
-    memcpy(newPtr->data, buffer, newPtr->bufsize);
-    newPtr->buf  = newPtr->data;
-    newPtr->size = newPtr->bufsize;
+    written = ns_write(fd, buffer, nbyte);
+    if (unlikely(written != (ssize_t)nbyte)) {
+        int retries = 100;
 
-    return newPtr;
+        /*
+         * Don't go into an infinite loop when multiple subsequent disk
+         * write operations return 0 (maybe disk full).
+         */
+        status = NS_ERROR;
+        do {
+            if (written < 0) {
+                ns_fprintf(stderr, "error during async write (fd %d): %s\n",
+                           fd, strerror(errno));
+                break;
+            }
+            /*
+             * All partial writes (written >= 0)
+             */
+            WriteWarningRaw("partial write", fd, nbyte, written);
+            nbyte -= (size_t)written;
+            buffer += written;
+            written = ns_write(fd, buffer, nbyte);
+            if (written == (ssize_t)nbyte) {
+                status = NS_OK;
+                break;
+            }
+        } while (retries-- > 0);
+    }
+
+    return status;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * AsyncWriteEnqueue --
+ * NsAsyncWritePrepare --
  *
- *      Attempt to enqueue an asynchronous write request. Testing whether
- *      the writer is stopped and inserting the request are performed while
- *      holding the queue lock. On success, ownership of the request and its
- *      copied buffer is transferred to the writer queue.
+ *      Allocate and initialize an asynchronous write request. The supplied
+ *      data is copied into private storage so that the caller may release or
+ *      reuse the original buffer immediately.
+ *
+ *      This function does not assign a file descriptor, inspect the writer
+ *      state, enqueue the request, trigger the writer, or perform I/O.
  *
  * Results:
- *      NS_TRUE when the request was accepted by the writer queue, otherwise
- *      NS_FALSE. No data is written when the request is not accepted.
+ *      Opaque pointer to a prepared asynchronous write request. The caller
+ *      must transfer ownership to NsAsyncWriteSubmit().
  *
  * Side effects:
- *      Allocates and copies the write request, updates the queue, and may
- *      wake the asynchronous writer thread. An unaccepted request is freed
- *      before returning.
+ *      Allocates memory and copies nbyte bytes from buffer.
  *
  *----------------------------------------------------------------------
  */
-static bool
-AsyncWriteEnqueue(int fd, const char *buffer, size_t nbyte)
+void *
+NsAsyncWritePrepare(const char *buffer, size_t nbyte)
 {
-    AsyncWriteData *newPtr;
-    SpoolerQueue   *queuePtr;
-    bool            queued = NS_FALSE;
-    bool            trigger = NS_FALSE;
+    AsyncWriteData *writePtr;
 
-    if (asyncWriter == NULL) {
-        return NS_FALSE;
+    NS_NONNULL_ASSERT(buffer != NULL);
+
+    writePtr = ns_calloc(1u, sizeof(AsyncWriteData));
+    writePtr->data = ns_malloc(nbyte + 1u);
+
+    memcpy(writePtr->data, buffer, nbyte);
+    writePtr->data[nbyte] = '\0';
+
+    writePtr->fd      = NS_INVALID_FD;
+    writePtr->buf     = writePtr->data;
+    writePtr->size    = nbyte;
+    writePtr->bufsize = nbyte;
+
+    return writePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsAsyncWriteSubmit --
+ *
+ *      Assign a file descriptor to a prepared asynchronous write request
+ *      and submit it to the writer queue.
+ *
+ *      Testing the stopped state and inserting the request are performed
+ *      atomically under the queue lock. When the asynchronous writer is
+ *      unavailable or stopped, the write is performed synchronously.
+ *
+ *      Ownership of preparedPtr is consumed on every return path. On a
+ *      successful enqueue, ownership passes to the writer. Otherwise, the
+ *      request is released after the synchronous write or error handling.
+ *
+ * Results:
+ *      NS_OK when the request was queued or written synchronously.
+ *      NS_ERROR when the descriptor is invalid or the synchronous write
+ *      could not write all data.
+ *
+ * Side effects:
+ *      May enqueue data or perform synchronous I/O. When the writer must be
+ *      awakened, *wakeTokenPtr receives an opaque token for a subsequent
+ *      call to NsAsyncWriteWake().
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+NsAsyncWriteSubmit(int fd, void *preparedPtr, void **wakeTokenPtr)
+{
+    AsyncWriteData *writePtr = preparedPtr;
+    Ns_ReturnCode   status;
+
+    NS_NONNULL_ASSERT(preparedPtr != NULL);
+    NS_NONNULL_ASSERT(wakeTokenPtr != NULL);
+
+    *wakeTokenPtr = NULL;
+
+    if (fd < 0) {
+        AsyncWriterRelease(writePtr);
+        status  = NS_ERROR;
+
+    } else {
+        AsyncWriter  *writerPtr;
+
+        writerPtr = asyncWriter;
+        /*
+         * asyncWriter and its first queue have process lifetime once published.
+         */
+        if (writerPtr != NULL) {
+            SpoolerQueue *queuePtr;
+            bool          trigger;
+
+            writePtr->fd = fd;
+            queuePtr = writerPtr->firstPtr;
+            assert(queuePtr != NULL);
+
+            Ns_MutexLock(&queuePtr->lock);
+
+            if (!queuePtr->stopped) {
+                trigger = queuePtr->sockPtr == NULL;
+
+                writePtr->nextPtr = queuePtr->sockPtr;
+                queuePtr->sockPtr = writePtr;
+                writerPtr->stats.queued++;
+
+                if (trigger) {
+                    /*
+                     * queuePtr has process lifetime and can therefore serve as
+                     * an opaque wake token.
+                     */
+                    *wakeTokenPtr = queuePtr;
+                }
+
+                Ns_MutexUnlock(&queuePtr->lock);
+                return NS_OK;
+            }
+
+            Ns_MutexUnlock(&queuePtr->lock);
+        }
+
+        /*
+         * The writer is unavailable or stopped. The caller still holds any
+         * lock needed to protect fd against closing or log rolling.
+         */
+        status = AsyncWriteSynchronous(fd, writePtr->data, writePtr->bufsize);
+        AsyncWriterRelease(writePtr);
     }
+    return status;
+}
 
-    newPtr = AsyncWriteDataCreate(fd, buffer, nbyte);
-    queuePtr = asyncWriter->firstPtr;
-    assert(queuePtr != NULL);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsAsyncWriteWake --
+ *
+ *      Wake the asynchronous writer after a prepared request changed an
+ *      empty queue into a nonempty queue. The opaque token must have been
+ *      returned by NsAsyncWriteSubmit().
+ *
+ *      The queue state is checked again under its lock because the writer
+ *      may have collected the request, or queue shutdown may have started,
+ *      between submission and this call. The shutdown path performs its
+ *      own wakeup.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Acquires the writer queue lock and may signal the writer's trigger
+ *      pipe.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsAsyncWriteWake(void *wakeTokenPtr)
+{
+    SpoolerQueue *queuePtr = wakeTokenPtr;
+
+    NS_NONNULL_ASSERT(wakeTokenPtr != NULL);
 
     Ns_MutexLock(&queuePtr->lock);
 
-    if (!queuePtr->stopped) {
-        trigger = queuePtr->sockPtr == NULL;
-        newPtr->nextPtr = queuePtr->sockPtr;
-        queuePtr->sockPtr = newPtr;
-        asyncWriter->stats.queued++;
-        queued = NS_TRUE;
+    /*
+     * When shutdown intervened after submission, the shutdown path has
+     * already triggered the writer. If the worker has meanwhile collected
+     * the request, another trigger is unnecessary.
+     */
+    if (!queuePtr->stopped && queuePtr->sockPtr != NULL) {
+        SockTrigger(queuePtr->pipe[1]);
     }
 
     Ns_MutexUnlock(&queuePtr->lock);
-
-    if (queued) {
-        if (trigger) {
-            SockTrigger(queuePtr->pipe[1]);
-        }
-    } else {
-        AsyncWriterRelease(newPtr);
-    }
-
-    return queued;
 }
 
 /*
@@ -11396,49 +11532,32 @@ AsyncWriteEnqueue(int fd, const char *buffer, size_t nbyte)
 Ns_ReturnCode
 NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 {
-    Ns_ReturnCode returnCode = NS_OK;
+    Ns_ReturnCode status;
+    void         *preparedPtr;
+    void         *wakeToken = NULL;
 
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    if (!AsyncWriteEnqueue(fd, buffer, nbyte)) {
-        /*
-         * The asynchronous writer is unavailable or temporarily stopped.
-         * Perform the write synchronously. If this fails, report the error
-         * directly to stderr, since using Ns_Log() could recurse into this
-         * function and result in an infinite loop.
-         */
-        ssize_t written = ns_write(fd, buffer, nbyte);
-
-        if (unlikely(written != (ssize_t)nbyte)) {
-            int retries = 100;
-
-            /*
-             * Don't go into an infinite loop when multiple subsequent disk
-             * write operations return 0 (maybe disk full).
-             */
-            returnCode = NS_ERROR;
-            do {
-                if (written < 0) {
-                    ns_fprintf(stderr, "error during async write (fd %d): %s\n",
-                               fd, strerror(errno));
-                    break;
-                }
-                /*
-                 * All partial writes (written >= 0)
-                 */
-                WriteWarningRaw("partial write", fd, nbyte, written);
-                nbyte -= (size_t)written;
-                buffer += written;
-                written = ns_write(fd, buffer, nbyte);
-                if (written == (ssize_t)nbyte) {
-                    returnCode = NS_OK;
-                    break;
-                }
-            } while (retries-- > 0);
-        }
+    if (fd < 0) {
+        return NS_ERROR;
     }
 
-    return returnCode;
+    /*
+     * Avoid allocation and copying when no asynchronous writer was
+     * configured. Once published, asyncWriter has process lifetime.
+     */
+    if (asyncWriter == NULL) {
+        return AsyncWriteSynchronous(fd, buffer, nbyte);
+    }
+
+    preparedPtr = NsAsyncWritePrepare(buffer, nbyte);
+    status = NsAsyncWriteSubmit(fd, preparedPtr, &wakeToken);
+
+    if (wakeToken != NULL) {
+        NsAsyncWriteWake(wakeToken);
+    }
+
+    return status;
 }
 
 /*

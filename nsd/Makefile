@@ -43,6 +43,7 @@ include ../include/Makefile.build
 
 tls.o: nsopenssl.h
 nsatomic.o: nsatomic.h
+driver.o: asyncwriter.h
 
 install-init:
 	$(INSTALL_DATA) init.tcl $(DESTDIR)$(INSTBIN)

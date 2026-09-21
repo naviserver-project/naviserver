@@ -17,6 +17,7 @@
 
 #include "ns.h"
 #include <ctype.h>  /* isspace */
+#include "../nsd/asyncwriter.h"
 
 #define LOG_COMBINED      0x01u
 #define LOG_FMTTIME       0x02u
@@ -796,7 +797,6 @@ AppendExtHeaders(Tcl_DString *dsPtr, const char **argv, const Ns_Set *set)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 LogTrace(void *arg, Ns_Conn *conn)
 {
@@ -1034,13 +1034,16 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_Log(Ns_LogAccessDebug, "%s", dsPtr->string);
 
     /*
-     * Append the trailing newline and optionally
-     * flush the buffer
+     * Append the trailing newline.  The record is now complete and dsPtr is
+     * thread-local.
      */
     Tcl_DStringAppend(dsPtr, "\n", 1);
 
     {
-        Tcl_DString *writeDsPtr, pathDs, *pathDsPtr = NULL;
+        Tcl_DString *writeDsPtr = NULL, pathDs, *pathDsPtr = NULL;
+        void  *preparedWrite = NULL;
+        void  *wakeToken     = NULL;
+        size_t preparedSize  = 0u;
 
         if (logPtr->serverRootProcEnabled) {
             const char *section  = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
@@ -1051,8 +1054,22 @@ LogTrace(void *arg, Ns_Conn *conn)
             fullFilename = Ns_LogPath(pathDsPtr, server, filename);
         }
 
+        /*
+         * maxlines is configuration state and does not change after module
+         * initialization. In the unbuffered case, dsPtr already contains the
+         * complete record, so allocation and copying can happen without holding
+         * the nslog mutex.
+         */
+        if (logPtr->maxlines == 0 && logPtr->asyncWriterConfigured) {
+            preparedSize = (size_t)dsPtr->length;
+            preparedWrite = NsAsyncWritePrepare(dsPtr->string, preparedSize);
+        }
+
         Ns_MutexLock(&logPtr->lock);
 
+        /*
+         * Select fd while protected against log rolling.
+         */
         if (logPtr->serverRootProcEnabled && fullFilename != NULL) {
             fd = Ns_ServerLogGetFd(server, logType, fullFilename);
         } else {
@@ -1063,7 +1080,6 @@ LogTrace(void *arg, Ns_Conn *conn)
             writeDsPtr = dsPtr;
 
         } else {
-            writeDsPtr = NULL;
             Tcl_DStringAppend(&logPtr->buffer,
                               dsPtr->string, dsPtr->length);
 
@@ -1079,12 +1095,25 @@ LogTrace(void *arg, Ns_Conn *conn)
         } else {
             bufferSize = (size_t)writeDsPtr->length;
 
-            if (logPtr->asyncWriterConfigured) {
+            if (preparedWrite != NULL) {
                 /*
-                 * Transfer the write to the asynchronous writer while the log lock
-                 * still protects the descriptor against rolling. NsAsyncWrite()
-                 * copies the data before returning or completes its synchronous
-                 * fallback when the writer is temporarily stopped.
+                 * This can only be the unbuffered dsPtr case. Allocation and copying
+                 * have already happened outside logPtr->lock.
+                 */
+                assert(writeDsPtr == dsPtr);
+                assert(bufferSize == preparedSize);
+
+                /*
+                 * NsAsyncWriteSubmit() consumes preparedWrite on every return
+                 * path, including an invalid descriptor or synchronous fallback.
+                 */
+                status = NsAsyncWriteSubmit(fd, preparedWrite, &wakeToken);
+                preparedWrite = NULL;
+
+            } else if (logPtr->asyncWriterConfigured) {
+                /*
+                 * Buffered asynchronous case. The shared buffer cannot be prepared
+                 * outside logPtr->lock.
                  */
                 if (fd >= 0) {
                     status = NsAsyncWrite(fd, writeDsPtr->string, bufferSize);
@@ -1093,8 +1122,8 @@ LogTrace(void *arg, Ns_Conn *conn)
                 }
 
                 /*
-                 * The per-request string is freed below. The shared buffer must be
-                 * made available to subsequent requests explicitly.
+                 * NsAsyncWrite() has either copied or synchronously consumed the
+                 * contents.
                  */
                 if (writeDsPtr == &logPtr->buffer) {
                     Tcl_DStringSetLength(writeDsPtr, 0);
@@ -1102,30 +1131,32 @@ LogTrace(void *arg, Ns_Conn *conn)
 
             } else if (bufferSize < PIPE_BUF) {
                 /*
-                 * No asynchronous writer is configured. Defer the potentially
-                 * blocking synchronous write until after releasing the log lock.
+                 * Defer the small synchronous write until after releasing the
+                 * nslog lock.
                  */
-                if (writeDsPtr == dsPtr) {
-                    bufferPtr = dsPtr->string;
-                } else {
-                    /*
-                     * The shared buffer cannot be referenced after unlocking.
-                     */
+                if (writeDsPtr == &logPtr->buffer) {
                     memcpy(buffer, writeDsPtr->string, bufferSize);
                     bufferPtr = buffer;
                     Tcl_DStringSetLength(writeDsPtr, 0);
+                } else {
+                    bufferPtr = writeDsPtr->string;
                 }
                 status = NS_OK;
 
             } else {
                 /*
-                 * Preserve serialization of large synchronous writes.
+                 * LogFlush() performs the serialized synchronous write and retains
+                 * its existing responsibility for resetting the supplied buffer.
                  */
                 status = LogFlush(logPtr, writeDsPtr);
             }
         }
 
         Ns_MutexUnlock(&logPtr->lock);
+
+        if (wakeToken != NULL) {
+            NsAsyncWriteWake(wakeToken);
+        }
 
         if (pathDsPtr != NULL) {
             Tcl_DStringFree(pathDsPtr);

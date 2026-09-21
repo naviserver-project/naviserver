@@ -13,3 +13,5 @@
 MOD      =  nslog.so
 MODOBJS  =  nslog.o
 include  ../include/Makefile.build
+
+nslog.o: ../nsd/asyncwriter.h
