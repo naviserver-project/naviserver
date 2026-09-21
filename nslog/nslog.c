@@ -62,6 +62,7 @@ typedef struct {
 #endif
     Tcl_DString   buffer;
     bool serverRootProcEnabled;
+    bool asyncWriterConfigured;
 } Log;
 
 /*
@@ -162,6 +163,8 @@ Ns_ModuleInit(const char *server, const char *module)
     logPtr->server = server;
     logPtr->fd = NS_INVALID_FD;
     logPtr->serverRootProcEnabled = Ns_ServerRootProcEnabled(server);
+    logPtr->asyncWriterConfigured = Ns_ConfigBool("ns/parameters", "asynclogwriter", NS_FALSE);
+
     Ns_MutexInit(&logPtr->lock);
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Tcl_DStringInit(&logPtr->buffer);
@@ -771,7 +774,6 @@ AppendExtHeaders(Tcl_DString *dsPtr, const char **argv, const Ns_Set *set)
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -793,14 +795,13 @@ static void
 LogTrace(void *arg, Ns_Conn *conn)
 {
     Log          *logPtr = arg;
-    const char   *user, *p, *driverName;
-    char          buffer[PIPE_BUF], *bufferPtr = NULL;
+    const char   *user, *p, *driverName, *server, *fullFilename = NULL;
     int           n, fd;
     Ns_ReturnCode status;
+    Tcl_DString   ds, *dsPtr = &ds, *writeDsPtr = NULL;
+    char          ipString[NS_IPADDR_SIZE], buffer[PIPE_BUF], *bufferPtr = NULL;
     size_t        bufferSize = 0u;
-    Tcl_DString   ds, *dsPtr = &ds;
-    char          ipString[NS_IPADDR_SIZE];
-    const char   *server;
+    unsigned int  flags;
     struct NS_SOCKADDR_STORAGE  ipStruct, maskedStruct;
     struct sockaddr            *maskPtr = NULL,
         *ipPtr     = (struct sockaddr *)&ipStruct,
@@ -821,26 +822,28 @@ LogTrace(void *arg, Ns_Conn *conn)
     server = Ns_ConnServer(conn);
 
     Tcl_DStringInit(dsPtr);
-
     if (logPtr->serverRootProcEnabled) {
-        const char *section = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
-        const char *filename = Ns_ConfigString(section, "file", "access.log"), *fullFilename;
+        const char *section  = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
+        const char *filename = Ns_ConfigString(section, "file", "access.log");
 
         fullFilename = Ns_LogPath(dsPtr, server, filename);
-        fprintf(stderr, "LogTrace: server %s filename '%s' -> fullFilename '%s'\n", server, filename, fullFilename);
+    }
+
+    Ns_MutexLock(&logPtr->lock);
+    flags = logPtr->flags;
+
+    if (logPtr->serverRootProcEnabled && fullFilename != NULL) {
         fd = Ns_ServerLogGetFd(server, logType, fullFilename);
         Tcl_DStringSetLength(dsPtr, 0);
     } else {
         fd = logPtr->fd;
     }
 
-    Ns_MutexLock(&logPtr->lock);
-
     /*
      * Append the peer address.
      */
 #ifdef NS_WITH_DEPRECATED
-    if ((logPtr->flags & LOG_CHECKFORPROXY) != 0u) {
+    if ((flags & LOG_CHECKFORPROXY) != 0u) {
         /*
          * This branch is deprecated and kept only for backward
          * compatibility (added Dec 2020).
@@ -859,7 +862,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Check if the actual IP address can be converted to internal format (this
      * should be always possible).
      */
-    if ((logPtr->flags |= LOG_MASKIP)
+    if (((flags & LOG_MASKIP) != 0u)
         && (ns_inet_pton(ipPtr, p) == 1)
         ) {
 
@@ -891,7 +894,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * This eases to link access log with system log entries.
      */
     Tcl_DStringAppend(dsPtr, " ", 1);
-    if ((logPtr->flags & LOG_THREADNAME) != 0) {
+    if ((flags & LOG_THREADNAME) != 0) {
         Tcl_DStringAppend(dsPtr, Ns_ThreadGetName(), TCL_INDEX_NONE);
         Tcl_DStringAppend(dsPtr, " ", 1);
     } else {
@@ -926,7 +929,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Append a common log format timestamp including GMT offset
      */
 
-    if (!(logPtr->flags & LOG_FMTTIME)) {
+    if (!(flags & LOG_FMTTIME)) {
         Ns_DStringPrintf(dsPtr, "[%" PRId64 "]", (int64_t) time(NULL));
     } else {
         char buf[41]; /* Big enough for Ns_LogTime(). */
@@ -940,7 +943,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if (likely(conn->request.line != NULL)) {
-        const char *string = (logPtr->flags & LOG_SUPPRESSQUERY) ?
+        const char *string = (flags & LOG_SUPPRESSQUERY) ?
             conn->request.url :
             conn->request.line;
 
@@ -966,7 +969,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * user-agent headers (if any)
      */
 
-    if ((logPtr->flags & LOG_COMBINED)) {
+    if ((flags & LOG_COMBINED)) {
 
         Tcl_DStringAppend(dsPtr, " \"", 2);
         p = Ns_SetIGet(conn->headers, "referer");
@@ -985,7 +988,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Append the request's elapsed time and queue time (if enabled)
      */
 
-    if ((logPtr->flags & LOG_REQTIME) != 0u) {
+    if ((flags & LOG_REQTIME) != 0u) {
         Ns_Time reqTime, now;
         Ns_GetTime(&now);
         Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
@@ -994,7 +997,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     }
 
-    if ((logPtr->flags & LOG_PARTIALTIMES) != 0u) {
+    if ((flags & LOG_PARTIALTIMES) != 0u) {
         Ns_Time  acceptTime, queueTime, filterTime, runTime;
         Ns_Time *startTimePtr =  Ns_ConnStartTime(conn);
 
@@ -1020,8 +1023,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     AppendExtHeaders(dsPtr, logPtr->responseHeaders, conn->outputheaders);
 
     {
-        TCL_SIZE_T l;
-        for (l = 0; l < dsPtr->length; l++) {
+        for (TCL_SIZE_T l = 0; l < dsPtr->length; l++) {
             /*
              * Quick fix to disallow terminal escape characters in the log
              * file. See e.g. http://www.securityfocus.com/bid/37712/info
@@ -1038,45 +1040,85 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Append the trailing newline and optionally
      * flush the buffer
      */
-
     Tcl_DStringAppend(dsPtr, "\n", 1);
 
     if (logPtr->maxlines == 0) {
-        bufferSize = (size_t)dsPtr->length;
-        if (bufferSize < PIPE_BUF) {
-          /*
-           * Only ns_write() operations < PIPE_BUF are guaranteed to be atomic
-           */
-            bufferPtr = dsPtr->string;
-            status = NS_OK;
-        } else {
-            status = LogFlush(logPtr, dsPtr);
-        }
+        writeDsPtr = dsPtr;
+
     } else {
-        Tcl_DStringAppend(&logPtr->buffer, dsPtr->string, dsPtr->length);
+        Tcl_DStringAppend(&logPtr->buffer,
+                          dsPtr->string, dsPtr->length);
+
         if (++logPtr->curlines > logPtr->maxlines) {
-            bufferSize = (size_t)logPtr->buffer.length;
-            if (bufferSize < PIPE_BUF) {
-                /*
-                 * Only ns_write() operations < PIPE_BUF are guaranteed to be
-                 * atomic.  In most cases, the other branch is used.
-                 */
-              memcpy(buffer, logPtr->buffer.string, bufferSize);
-              bufferPtr = buffer;
-              Tcl_DStringSetLength(&logPtr->buffer, 0);
-              status = NS_OK;
-            } else {
-              status = LogFlush(logPtr, &logPtr->buffer);
-            }
+            writeDsPtr = &logPtr->buffer;
             logPtr->curlines = 0;
-        } else {
-            status = NS_OK;
         }
     }
-    Ns_MutexUnlock(&logPtr->lock);
-    (void)(status); /* ignore status */
 
-    if (likely(bufferPtr != NULL) && likely(fd >= 0) && likely(bufferSize > 0)) {
+    if (writeDsPtr == NULL) {
+        status = NS_OK;
+
+    } else {
+        bufferSize = (size_t)writeDsPtr->length;
+
+        if (logPtr->asyncWriterConfigured) {
+            /*
+             * Transfer the write to the asynchronous writer while the log lock
+             * still protects the descriptor against rolling. NsAsyncWrite()
+             * copies the data before returning or completes its synchronous
+             * fallback when the writer is temporarily stopped.
+             */
+            if (fd >= 0) {
+                status = NsAsyncWrite(fd, writeDsPtr->string, bufferSize);
+            } else {
+                status = NS_ERROR;
+            }
+
+            /*
+             * The per-request string is freed below. The shared buffer must be
+             * made available to subsequent requests explicitly.
+             */
+            if (writeDsPtr == &logPtr->buffer) {
+                Tcl_DStringSetLength(writeDsPtr, 0);
+            }
+
+        } else if (bufferSize < PIPE_BUF) {
+            /*
+             * No asynchronous writer is configured. Defer the potentially
+             * blocking synchronous write until after releasing the log lock.
+             */
+            if (writeDsPtr == dsPtr) {
+                bufferPtr = dsPtr->string;
+            } else {
+                /*
+                 * The shared buffer cannot be referenced after unlocking.
+                 */
+                memcpy(buffer, writeDsPtr->string, bufferSize);
+                bufferPtr = buffer;
+                Tcl_DStringSetLength(writeDsPtr, 0);
+            }
+            status = NS_OK;
+
+        } else {
+            /*
+             * Preserve serialization of large synchronous writes.
+             */
+            status = LogFlush(logPtr, writeDsPtr);
+        }
+    }
+
+    Ns_MutexUnlock(&logPtr->lock);
+    (void)status;
+
+    /*
+     * A non-NULL bufferPtr denotes a small synchronous write deliberately
+     * deferred until after releasing the nslog lock. Since no asynchronous
+     * writer is configured on this path, NsAsyncWrite() performs its synchronous
+     * fallback, including partial-write handling and direct error reporting.
+     * Keeping the call outside the lock prevents blocked file I/O from delaying
+     * other access-log producers.
+     */
+    if (bufferPtr != NULL && fd >= 0 && bufferSize > 0u) {
         (void)NsAsyncWrite(fd, bufferPtr, bufferSize);
     }
 
