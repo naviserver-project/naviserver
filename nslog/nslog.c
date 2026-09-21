@@ -38,7 +38,8 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 static const char *logType = "ACCESSLOG";
 
 typedef struct {
-    Ns_Mutex     lock;
+    Ns_Mutex     lock;         /* Protects file, roll, and buffering state. */
+    Ns_RWLock    formatLock;   /* Protects flags and extended-header configuration. */
     const char  *module;
     const char  *server;
     const char  *filename;
@@ -167,6 +168,9 @@ Ns_ModuleInit(const char *server, const char *module)
 
     Ns_MutexInit(&logPtr->lock);
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
+    Ns_RWLockInit(&logPtr->formatLock);
+    Ns_RWLockSetName2(&logPtr->formatLock, "nslog:format", server);
+
     Tcl_DStringInit(&logPtr->buffer);
 
     section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
@@ -182,6 +186,10 @@ Ns_ModuleInit(const char *server, const char *module)
         Tcl_DStringSetLength(&ds, 0);
     }
 
+    /*
+     * Get parameters from the configuration file. No locking is needed
+     * during module initialization; runtime commands are registered below.
+     */
     {
         /*
          * Determine the name of the log directory and the absolute filename.
@@ -202,10 +210,6 @@ Ns_ModuleInit(const char *server, const char *module)
             }
         }
     }
-
-    /*
-     * Get other parameters from configuration file
-     */
 
     logPtr->rollfmt = ns_strcopy(Ns_NullIfEmpty(Ns_ConfigString(section, "rollfmt", "")));
     logPtr->maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(section, "maxbackup", 100, 1, INT_MAX);
@@ -499,10 +503,10 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
                 logPtr->rollfmt = ns_strdup(fmt);
             }
             fmt = logPtr->rollfmt;
-            Ns_MutexUnlock(&logPtr->lock);
             if (fmt != NULL) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(fmt, TCL_INDEX_NONE));
             }
+            Ns_MutexUnlock(&logPtr->lock);
         }
         break;
     }
@@ -567,7 +571,8 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             result = TCL_ERROR;
 
         } else {
-            Ns_MutexLock(&logPtr->lock);
+
+            Ns_RWLockWrLock(&logPtr->formatLock);
             if (headers != NULL) {
                 if (ParseExtendedHeaders(logPtr, headers) != NS_OK) {
                     Ns_TclPrintfResult(interp, "invalid header specification: '%s'", headers);
@@ -576,7 +581,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             if (result == TCL_OK) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->extendedHeaders, TCL_INDEX_NONE));
             }
-            Ns_MutexUnlock(&logPtr->lock);
+            Ns_RWLockUnlock(&logPtr->formatLock);
         }
         break;
     }
@@ -621,13 +626,14 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
                 }
                 Tcl_DStringSetLength(&ds, 0);
 
-                Ns_MutexLock(&logPtr->lock);
+                Ns_RWLockWrLock(&logPtr->formatLock);
                 logPtr->flags = flags;
-                Ns_MutexUnlock(&logPtr->lock);
+                Ns_RWLockUnlock(&logPtr->formatLock);
+
             } else {
-                Ns_MutexLock(&logPtr->lock);
+                Ns_RWLockRdLock(&logPtr->formatLock);
                 flags = logPtr->flags;
-                Ns_MutexUnlock(&logPtr->lock);
+                Ns_RWLockUnlock(&logPtr->formatLock);
             }
 
             if ((flags & LOG_COMBINED)) {
@@ -795,10 +801,10 @@ static void
 LogTrace(void *arg, Ns_Conn *conn)
 {
     Log          *logPtr = arg;
-    const char   *user, *p, *driverName, *server, *fullFilename = NULL;
+    const char   *user, *peerAddr, *driverName, *server, *fullFilename = NULL;
     int           n, fd;
     Ns_ReturnCode status;
-    Tcl_DString   ds, *dsPtr = &ds, *writeDsPtr = NULL;
+    Tcl_DString   ds, *dsPtr = &ds;
     char          ipString[NS_IPADDR_SIZE], buffer[PIPE_BUF], *bufferPtr = NULL;
     size_t        bufferSize = 0u;
     unsigned int  flags;
@@ -820,24 +826,17 @@ LogTrace(void *arg, Ns_Conn *conn)
         return;
     }
     server = Ns_ConnServer(conn);
+    peerAddr = Ns_ConnConfiguredPeerAddr(conn);
 
     Tcl_DStringInit(dsPtr);
-    if (logPtr->serverRootProcEnabled) {
-        const char *section  = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
-        const char *filename = Ns_ConfigString(section, "file", "access.log");
 
-        fullFilename = Ns_LogPath(dsPtr, server, filename);
-    }
+    /*
+     * Formatting configuration is read-only for almost every request.
+     * Multiple request threads can therefore format concurrently.
+     */
+    Ns_RWLockRdLock(&logPtr->formatLock);
 
-    Ns_MutexLock(&logPtr->lock);
     flags = logPtr->flags;
-
-    if (logPtr->serverRootProcEnabled && fullFilename != NULL) {
-        fd = Ns_ServerLogGetFd(server, logType, fullFilename);
-        Tcl_DStringSetLength(dsPtr, 0);
-    } else {
-        fd = logPtr->fd;
-    }
 
     /*
      * Append the peer address.
@@ -848,22 +847,19 @@ LogTrace(void *arg, Ns_Conn *conn)
          * This branch is deprecated and kept only for backward
          * compatibility (added Dec 2020).
          */
-        p = Ns_ConnForwardedPeerAddr(conn);
-        if (*p == '\0') {
-            p = Ns_ConnPeerAddr(conn);
+        peerAddr = Ns_ConnForwardedPeerAddr(conn);
+        if (*peerAddr == '\0') {
+            peerAddr = Ns_ConnPeerAddr(conn);
         }
-    } else
-#endif
-    {
-        p = Ns_ConnConfiguredPeerAddr(conn);
     }
+#endif
 
     /*
      * Check if the actual IP address can be converted to internal format (this
      * should be always possible).
      */
     if (((flags & LOG_MASKIP) != 0u)
-        && (ns_inet_pton(ipPtr, p) == 1)
+        && (ns_inet_pton(ipPtr, peerAddr) == 1)
         ) {
 
         /*
@@ -883,11 +879,11 @@ LogTrace(void *arg, Ns_Conn *conn)
         if (maskPtr != NULL) {
             Ns_SockaddrMask(ipPtr, maskPtr, maskedPtr);
             ns_inet_ntop(maskedPtr, ipString, NS_IPADDR_SIZE);
-            p = ipString;
+            peerAddr = ipString;
         }
     }
 
-    Tcl_DStringAppend(dsPtr, p, TCL_INDEX_NONE);
+    Tcl_DStringAppend(dsPtr, peerAddr, TCL_INDEX_NONE);
 
     /*
      * Append the thread name, if requested.
@@ -912,7 +908,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     } else {
         int quote = 0;
 
-        for (p = user; *p && !quote; p++) {
+        for (const char *p = user; *p && !quote; p++) {
             quote = (CHARTYPE(space, *p) != 0);
         }
         if (quote != 0) {
@@ -970,16 +966,17 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((flags & LOG_COMBINED)) {
+        const char *headerValue;
 
         Tcl_DStringAppend(dsPtr, " \"", 2);
-        p = Ns_SetIGet(conn->headers, "referer");
-        if (p != NULL) {
-            Ns_DStringAppendEscaped(dsPtr, p);
+        headerValue = Ns_SetIGet(conn->headers, "referer");
+        if (headerValue != NULL) {
+            Ns_DStringAppendEscaped(dsPtr, headerValue);
         }
         Tcl_DStringAppend(dsPtr, "\" \"", 3);
-        p = Ns_SetIGet(conn->headers, "user-agent");
-        if (p != NULL) {
-            Ns_DStringAppendEscaped(dsPtr, p);
+        headerValue = Ns_SetIGet(conn->headers, "user-agent");
+        if (headerValue != NULL) {
+            Ns_DStringAppendEscaped(dsPtr, headerValue);
         }
         Tcl_DStringAppend(dsPtr, "\"", 1);
     }
@@ -1022,15 +1019,15 @@ LogTrace(void *arg, Ns_Conn *conn)
     AppendExtHeaders(dsPtr, logPtr->requestHeaders, conn->headers);
     AppendExtHeaders(dsPtr, logPtr->responseHeaders, conn->outputheaders);
 
-    {
-        for (TCL_SIZE_T l = 0; l < dsPtr->length; l++) {
-            /*
-             * Quick fix to disallow terminal escape characters in the log
-             * file. See e.g. http://www.securityfocus.com/bid/37712/info
-             */
-            if (unlikely(dsPtr->string[l] == 0x1b)) {
-                dsPtr->string[l] = 7; /* bell */
-            }
+    Ns_RWLockUnlock(&logPtr->formatLock);
+
+    for (TCL_SIZE_T l = 0; l < dsPtr->length; l++) {
+        /*
+         * Quick fix to disallow terminal escape characters in the log
+         * file. See e.g. http://www.securityfocus.com/bid/37712/info
+         */
+        if (unlikely(dsPtr->string[l] == 0x1b)) {
+            dsPtr->string[l] = 7; /* bell */
         }
     }
 
@@ -1042,72 +1039,98 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
     Tcl_DStringAppend(dsPtr, "\n", 1);
 
-    if (logPtr->maxlines == 0) {
-        writeDsPtr = dsPtr;
+    {
+        Tcl_DString *writeDsPtr, pathDs, *pathDsPtr = NULL;
 
-    } else {
-        Tcl_DStringAppend(&logPtr->buffer,
-                          dsPtr->string, dsPtr->length);
+        if (logPtr->serverRootProcEnabled) {
+            const char *section  = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
+            const char *filename = Ns_ConfigString(section, "file", "access.log");
 
-        if (++logPtr->curlines > logPtr->maxlines) {
-            writeDsPtr = &logPtr->buffer;
-            logPtr->curlines = 0;
+            pathDsPtr = &pathDs;
+            Tcl_DStringInit(pathDsPtr);
+            fullFilename = Ns_LogPath(pathDsPtr, server, filename);
         }
-    }
 
-    if (writeDsPtr == NULL) {
-        status = NS_OK;
+        Ns_MutexLock(&logPtr->lock);
 
-    } else {
-        bufferSize = (size_t)writeDsPtr->length;
+        if (logPtr->serverRootProcEnabled && fullFilename != NULL) {
+            fd = Ns_ServerLogGetFd(server, logType, fullFilename);
+        } else {
+            fd = logPtr->fd;
+        }
 
-        if (logPtr->asyncWriterConfigured) {
-            /*
-             * Transfer the write to the asynchronous writer while the log lock
-             * still protects the descriptor against rolling. NsAsyncWrite()
-             * copies the data before returning or completes its synchronous
-             * fallback when the writer is temporarily stopped.
-             */
-            if (fd >= 0) {
-                status = NsAsyncWrite(fd, writeDsPtr->string, bufferSize);
-            } else {
-                status = NS_ERROR;
+        if (logPtr->maxlines == 0) {
+            writeDsPtr = dsPtr;
+
+        } else {
+            writeDsPtr = NULL;
+            Tcl_DStringAppend(&logPtr->buffer,
+                              dsPtr->string, dsPtr->length);
+
+            if (++logPtr->curlines > logPtr->maxlines) {
+                writeDsPtr = &logPtr->buffer;
+                logPtr->curlines = 0;
             }
+        }
 
-            /*
-             * The per-request string is freed below. The shared buffer must be
-             * made available to subsequent requests explicitly.
-             */
-            if (writeDsPtr == &logPtr->buffer) {
-                Tcl_DStringSetLength(writeDsPtr, 0);
-            }
-
-        } else if (bufferSize < PIPE_BUF) {
-            /*
-             * No asynchronous writer is configured. Defer the potentially
-             * blocking synchronous write until after releasing the log lock.
-             */
-            if (writeDsPtr == dsPtr) {
-                bufferPtr = dsPtr->string;
-            } else {
-                /*
-                 * The shared buffer cannot be referenced after unlocking.
-                 */
-                memcpy(buffer, writeDsPtr->string, bufferSize);
-                bufferPtr = buffer;
-                Tcl_DStringSetLength(writeDsPtr, 0);
-            }
+        if (writeDsPtr == NULL) {
             status = NS_OK;
 
         } else {
-            /*
-             * Preserve serialization of large synchronous writes.
-             */
-            status = LogFlush(logPtr, writeDsPtr);
+            bufferSize = (size_t)writeDsPtr->length;
+
+            if (logPtr->asyncWriterConfigured) {
+                /*
+                 * Transfer the write to the asynchronous writer while the log lock
+                 * still protects the descriptor against rolling. NsAsyncWrite()
+                 * copies the data before returning or completes its synchronous
+                 * fallback when the writer is temporarily stopped.
+                 */
+                if (fd >= 0) {
+                    status = NsAsyncWrite(fd, writeDsPtr->string, bufferSize);
+                } else {
+                    status = NS_ERROR;
+                }
+
+                /*
+                 * The per-request string is freed below. The shared buffer must be
+                 * made available to subsequent requests explicitly.
+                 */
+                if (writeDsPtr == &logPtr->buffer) {
+                    Tcl_DStringSetLength(writeDsPtr, 0);
+                }
+
+            } else if (bufferSize < PIPE_BUF) {
+                /*
+                 * No asynchronous writer is configured. Defer the potentially
+                 * blocking synchronous write until after releasing the log lock.
+                 */
+                if (writeDsPtr == dsPtr) {
+                    bufferPtr = dsPtr->string;
+                } else {
+                    /*
+                     * The shared buffer cannot be referenced after unlocking.
+                     */
+                    memcpy(buffer, writeDsPtr->string, bufferSize);
+                    bufferPtr = buffer;
+                    Tcl_DStringSetLength(writeDsPtr, 0);
+                }
+                status = NS_OK;
+
+            } else {
+                /*
+                 * Preserve serialization of large synchronous writes.
+                 */
+                status = LogFlush(logPtr, writeDsPtr);
+            }
+        }
+
+        Ns_MutexUnlock(&logPtr->lock);
+
+        if (pathDsPtr != NULL) {
+            Tcl_DStringFree(pathDsPtr);
         }
     }
-
-    Ns_MutexUnlock(&logPtr->lock);
     (void)status;
 
     /*
