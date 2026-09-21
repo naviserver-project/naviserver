@@ -9236,6 +9236,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     init.fallbackPath = httpsSection;
     init.protocol = "https";
     init.defaultPort = 443;
+    init.libraryVersion = OPENSSL_VERSION_TEXT;
     init.driverThreadProc  = QuicThread;
     init.headersEncodeProc = h3_stream_build_resp_headers;
 
