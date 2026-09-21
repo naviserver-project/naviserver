@@ -33,7 +33,7 @@ test ns_driver-1.3d {basic syntax: key but too many arguments} -body {
 test ns_driver-1.4a {result of ns_driver info} -body {
     set info [ns_driver info]
     list [llength $info]-[llength [lindex $info 0]]
-} -result [expr {[ns_info ssl] ? "2-24" : "1-24"}]
+} -result [expr {[ns_info ssl] ? "2-28" : "1-28"}]
 test ns_driver-1.4b {result of ns_driver names} -body {
     set info [lsort [ns_driver names]]
 } -result [expr {[ns_info ssl] ? "nssock nsssl" : "nssock"}]

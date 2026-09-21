@@ -433,6 +433,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_raw].name              = "raw";            atoms[NS_ATOM_raw].len = 3;
     atoms[NS_ATOM_reading].name          = "reading";        atoms[NS_ATOM_reading].len = 7;
     atoms[NS_ATOM_received].name         = "received";       atoms[NS_ATOM_received].len = 8;
+    atoms[NS_ATOM_recvbufsize].name      = "recvbufsize";    atoms[NS_ATOM_recvbufsize].len = 11;
     atoms[NS_ATOM_recverror].name        = "recverror";      atoms[NS_ATOM_recverror].len = 9;
     atoms[NS_ATOM_recvwait].name         = "recvwait";       atoms[NS_ATOM_recvwait].len = 8;
     atoms[NS_ATOM_remaining_days].name   = "remaining_days"; atoms[NS_ATOM_remaining_days].len = 14;
@@ -454,6 +455,7 @@ InitCoreAtomSpecs(void)
     atoms[NS_ATOM_securityCategory].name = "securityCategory"; atoms[NS_ATOM_securityCategory].len = 16;
     atoms[NS_ATOM_sendbodysize].name     = "sendbodysize";   atoms[NS_ATOM_sendbodysize].len = 12;
     atoms[NS_ATOM_sendbuffer].name       = "sendbuffer";     atoms[NS_ATOM_sendbuffer].len = 10;
+    atoms[NS_ATOM_sendbufsize].name      = "sendbufsize";    atoms[NS_ATOM_sendbufsize].len = 11;
     atoms[NS_ATOM_senderror].name        = "senderror";      atoms[NS_ATOM_senderror].len = 9;
     atoms[NS_ATOM_sendwait].name         = "sendwait";       atoms[NS_ATOM_sendwait].len = 8;
     atoms[NS_ATOM_sent].name             = "sent";           atoms[NS_ATOM_sent].len = 4;

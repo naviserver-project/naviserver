@@ -326,6 +326,7 @@ static void SockDeliveryRelease(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void SockDeliveryAcquire(Sock *sock)
     NS_GNUC_NONNULL(1);
+static int SocketBufferSize(NS_SOCKET sock, int option);
 
 static Sock *SockNew(Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
@@ -1607,6 +1608,8 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigViewMemUnitRange(&configView, "keepalivemaxdownloadsize",
                                                                 "0MB", (Tcl_WideInt)0, 0, INT_MAX);
     drvPtr->recvTimeout = drvPtr->recvwait;
+    drvPtr->sockRcvBufSize = -1;
+    drvPtr->sockSndBufSize = -1;
 
     drvPtr->nextPtr = firstDrvPtr;
     firstDrvPtr = drvPtr;
@@ -2019,6 +2022,12 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
 
                 Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_recvwait));
                 Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->recvwait));
+
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_recvbufsize));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj(drvPtr->sockRcvBufSize));
+
+                Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_sendbufsize));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj(drvPtr->sockSndBufSize));
 
                 Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_extraheaders));
                 if (drvPtr->extraHeaders != NULL) {
@@ -2681,6 +2690,34 @@ NsSockClose(Sock *sockPtr, int keep)
 /*
  *----------------------------------------------------------------------
  *
+ * SocketBufferSize --
+ *
+ *      Return the effective send or receive buffer size of the specified
+ *      socket.
+ *
+ * Results:
+ *      The value reported by getsockopt(), or -1 on error.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SocketBufferSize(NS_SOCKET sock, int option)
+{
+    int       value = -1;
+    socklen_t length = (socklen_t)sizeof(value);
+
+    if (getsockopt(sock, SOL_SOCKET, option,
+                   (void *)&value, &length) != 0) {
+        value = -1;
+    }
+    return value;
+}
+/*
+ *----------------------------------------------------------------------
+ *
  * NsDriverBindAddresses --
  *
  *   Bind all configured (address * port) combinations for a driver and
@@ -2755,6 +2792,10 @@ NsDriverBindAddresses(Driver *drvPtr)
                 s = DriverListen(drvPtr, addr, port);
 
                 if (likely(s != NS_INVALID_SOCKET)) {
+                    if (nAddrs == 0) {
+                        drvPtr->sockRcvBufSize = SocketBufferSize(s, SO_RCVBUF);
+                        drvPtr->sockSndBufSize = SocketBufferSize(s, SO_SNDBUF);
+                    }
                     drvPtr->listenfd[nAddrs++] = s;
                     nOk++;
                 } else if (ns_sockerrno == EALREADY) {
@@ -11358,7 +11399,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     Ns_ReturnCode returnCode = NS_OK;
 
     NS_NONNULL_ASSERT(buffer != NULL);
-    
+
     if (!AsyncWriteEnqueue(fd, buffer, nbyte)) {
         /*
          * The asynchronous writer is unavailable or temporarily stopped.

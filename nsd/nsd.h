@@ -579,6 +579,8 @@ typedef struct Driver {
     } stats;
     Ns_DList ports;
     const char *libraryVersion;
+    int sockRcvBufSize;                 /* Effective SO_RCVBUF of the first listener. */
+    int sockSndBufSize;                 /* Effective SO_SNDBUF of the first listener. */
     unsigned short port;                /* Port in location */
     unsigned short port_ext;            /* Externally reachable/advertised port */
     unsigned short defport;             /* Default port */
