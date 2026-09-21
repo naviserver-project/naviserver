@@ -35,6 +35,7 @@ nsproxy/nsproxy
 nsproxy/nsproxy-helper
 nsthread/nsthreadtest
 infer-out
+cppcheck-output.txt
 
 sample-config.tcl
 naviserver.rdf
@@ -54,3 +55,4 @@ include/stamp-h1
 dump500.tcl
 
 tests/testserver/access.log
+tests/testserver/certificates/*
