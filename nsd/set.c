@@ -577,8 +577,9 @@ Ns_SetPutSz(Ns_Set *set,
 
     set->size++;
 
-    Ns_Log(Ns_LogNsSetDebug, "Ns_SetPut %p [%lu] key '%s' value '%s' size %" PRITcl_Size,
-           (void *)set, idx, set->fields[idx].name,
+    Ns_Log(Ns_LogNsSetDebug, "Ns_SetPut %p %s [%lu] key '%s' value '%s' size %" PRITcl_Size,
+           (void *)set, set->name != NULL ? set->name : "(none)",
+           idx, set->fields[idx].name,
            set->fields[idx].value != NULL ? set->fields[idx].value : "(null)",
            valueLength);
     return idx;

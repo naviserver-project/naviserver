@@ -2320,10 +2320,17 @@ GetSection(const char *section, bool create)
         if (isNew != 0) {
             static const char preserveCasePrefix[] = "ns/environment/";
             size_t preserveCasePrefixLen = sizeof(preserveCasePrefix) - 1;
+            Tcl_DString ds;
+
+            Tcl_DStringInit(&ds);
+            Tcl_DStringAppend(&ds, section, TCL_INDEX_NONE);
+            Tcl_DStringAppend(&ds, ":defaults", 9);
 
             sectionPtr = ns_calloc(1u, sizeof(Section));
-            sectionPtr->defaults = Ns_SetCreate(section);
             sectionPtr->set = Ns_SetCreate(section);
+            sectionPtr->defaults = Ns_SetCreate(ds.string);
+
+            Tcl_DStringFree(&ds);
 
             if (strncmp(section, preserveCasePrefix, preserveCasePrefixLen) != 0
                 || section[preserveCasePrefixLen] == '\0') {
