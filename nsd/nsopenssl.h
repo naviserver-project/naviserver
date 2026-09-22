@@ -62,6 +62,7 @@
 #if defined(HAVE_OPENSSL_4)
 typedef struct NsTLSH3Settings {
     size_t         recvbufsize;
+    size_t         sendbufsize;
     size_t         sendqueuesize;
     size_t         max_udp_payload_size;
     struct timeval idle_timeout;

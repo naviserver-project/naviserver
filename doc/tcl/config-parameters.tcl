@@ -2467,8 +2467,9 @@ stops execution of that ADP page}
                 ns_section ns/module/h3 {
                     ns_param https                 ns/module/https
                     # ns_param driverthreads       2
-                    ns_param writerthreads         1
-                    ns_param recvbufsize           8MB
+                    # ns_param writerthreads       1
+                    # ns_param recvbufsize         8MB
+                    # ns_param sendbufsize         8MB
                     ns_param sendqueuesize         256kB
                     ns_param idletimeout           3s
                     ns_param draintimeout          10ms
@@ -2497,6 +2498,16 @@ stops execution of that ADP page}
                 type size
                 default {8MB}
                 desc {Size of the UDP receive buffer used by the HTTP/3 driver}
+            }
+
+            sendbufsize {
+                type size
+                default {8MB}
+                desc {
+                    A value of 0 leaves the operating-system default
+                    unchanged. The effective size is subject to
+                    operating-system limits.
+                }
             }
 
             sendqueuesize {

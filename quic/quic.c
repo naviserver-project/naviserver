@@ -570,6 +570,7 @@ static bool     quic_conn_can_be_freed_postloop(SSL *conn, ConnCtx *cc) NS_GNUC_
 
 /* QUIC Utilities */
 static void     quic_udp_set_rcvbuf(int fd, size_t rcvbuf_bytes);
+static void     quic_udp_set_sndbuf(int fd, size_t sndbuf_bytes);
 static size_t   quic_varint_len(uint8_t b0);
 static uint64_t quic_varint_decode(const uint8_t *p, size_t n) NS_GNUC_NONNULL(1);
 static SSL*     quic_sid_to_stream(ConnCtx *cc, uint64_t sid) NS_GNUC_NONNULL(1);
@@ -2382,6 +2383,55 @@ quic_udp_set_rcvbuf(int fd, size_t rcvbuf_bytes)
         }
         if (getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &got, &glen) == 0) {
             Ns_Log(Ns_LogQuicDebug, "udp(fd=%d): SO_RCVBUF requested=%ld, actual=%ld",
+                   fd, size, got);
+        }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * quic_udp_set_sndbuf --
+ *
+ *      Configure the send buffer size (SO_SNDBUF) for a UDP socket
+ *      used by the QUIC listener or transport thread. This helps tune
+ *      performance for high-throughput or high-concurrency QUIC traffic.
+ *
+ *      The function sets the kernel send buffer size to the requested
+ *      value and then queries it back via getsockopt() to report the
+ *      effective value (some platforms may double or clamp it).
+ *
+ * Arguments:
+ *      fd            - File descriptor of the UDP socket.
+ *      sndbuf_bytes  - Desired SO_SNDBUF size in bytes; if 0, the kernel
+ *                      default is left unchanged.
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      May adjust the kernel send buffer size for the socket.
+ *      Logs both the requested and actual buffer sizes for diagnostics.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+quic_udp_set_sndbuf(int fd, size_t sndbuf_bytes)
+{
+    /* sndbuf_bytes == 0 means: leave kernel default */
+    if (sndbuf_bytes > 0) {
+        int       size = (int)sndbuf_bytes, got = 0;
+        socklen_t glen = (socklen_t)sizeof(got);
+
+        if (getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &got, &glen) != 0) {
+            Ns_Log(Warning, "udp(fd=%d): getsockopt(SO_SNDBUF) failed: %s",
+                   fd, strerror(errno));
+
+        } else if (got < size) {
+            Ns_Log(Warning, "udp(fd=%d): SO_SNDBUF requested=%d, effective=%d",
+                   fd, size, got);
+
+        } else {
+            Ns_Log(Ns_LogQuicDebug,"udp(fd=%d): SO_SNDBUF requested=%d, effective=%d",
                    fd, size, got);
         }
     }
@@ -9189,7 +9239,9 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
                "address-validation Retry packets will not be sent");
     }
     dc->u.h3.settings.recvbufsize = (size_t)Ns_ConfigMemUnitRange(section, "recvbufsize", "8MB",
-                                                         1024*8000, 0, INT_MAX);
+                                                                  8 * 1024 * 1024, 0, INT_MAX);
+    dc->u.h3.settings.sendbufsize = (size_t)Ns_ConfigMemUnitRange(section, "sendbufsize", "8MB",
+                                                                  8 * 1024 * 1024, 0, INT_MAX);
     dc->u.h3.settings.sendqueuesize =
         (size_t)Ns_ConfigMemUnitRange(section, "sendqueuesize", "256kB",
                                       256 * 1024, 1024, INT_MAX);
@@ -10746,6 +10798,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int UNUSED(b
 
         (void) Ns_SockSetNonBlocking(sock);
         quic_udp_set_rcvbuf(sock, h3->settings.recvbufsize);
+        quic_udp_set_sndbuf(sock, h3->settings.sendbufsize);
 
         /*
          * Set app data of listener ssl to listen fd
