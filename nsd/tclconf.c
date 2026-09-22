@@ -196,7 +196,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         TCL_SIZE_T  keyLength;
         Ns_DList    dl, *dlPtr = &dl;
         size_t      count;
-        Ns_Set     *set = Ns_ConfigGetSection(section);
+        Ns_Set     *set = Ns_ConfigGetSection2(section, NS_FALSE);
 
         if (minValue > LLONG_MIN || maxValue < LLONG_MAX) {
             isInt = 1;
@@ -213,8 +213,23 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
          * variable names.
          */
         count = likely(set != NULL)
-            ? NsSetGetCmpDListAppend(set, keyString, NS_TRUE, exact != 0 ? strcmp : strcasecmp, dlPtr, NS_FALSE)
+            ? NsSetGetCmpDListAppend(set, keyString, NS_TRUE, exact != 0 ? strcmp : strcasecmp, dlPtr, NS_TRUE)
             : 0u;
+
+        /*
+         * The match operation above returns field indexes so that only
+         * values exposed by ns_config are marked as read. Convert the
+         * indexes in place to the value pointers expected below.
+         */
+        for (size_t i = 0u; i < count; i++) {
+            const int idx = PTR2INT(dlPtr->data[i]);
+
+            if (all != 0 || i == 0u) {
+                NsConfigMarkAsRead(section, (size_t)idx);
+            }
+            dlPtr->data[i] = (void *)Ns_SetValue(set, idx);
+        }
+
         if (count == 1) {
             /*
              * We got a single value
