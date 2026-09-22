@@ -613,7 +613,7 @@ set ::ns_configdoc::data {
 
             asynclogwriter {
                 type boolean
-                default false
+                default true
                 desc {Write error.log and access.log asynchronously using writer threads.}
             }
             autosni {

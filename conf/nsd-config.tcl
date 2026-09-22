@@ -128,7 +128,12 @@ ns_section ns/parameters {
     #
     #ns_param    tclinitlock         true     ;# default: false
     #ns_param    concurrentinterpcreate false ;# default: true
-    #ns_param    mutexlocktrace      true     ;# default false; print durations of long mutex calls to stderr
+
+    #
+    # Log writer and mutex diagnostics
+    #
+    #ns_param    asynclogwriter     false    ;# default: true; offload log-file writes to the asynchronous writer
+    #ns_param    mutexlocktrace     true     ;# default: false; report mutex waits above 100ms to stderr
 
     #
     # Log settings (systemlog aka nsd.log, former error.log)
@@ -152,7 +157,7 @@ ns_section ns/parameters {
     ns_param     formfallbackcharset iso8859-1 ;# retry with this charset in case of failures
 
     #
-    # Jobs setting
+    # Jobs settings
     #
     ns_param     jobsperthread       1000     ;# default: 0
     #ns_param    jobtimeout          0s       ;# default: 5m

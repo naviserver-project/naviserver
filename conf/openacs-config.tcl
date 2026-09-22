@@ -354,14 +354,6 @@ ns_section ns/parameters {
     # ns_param logdeduplicate    true       ;# default: false; collapse repeated identical
     # log lines per thread
 
-    # Write asynchronously to log files (access log, httpclient log,
-    # and system log).
-    ns_param asynclogwriter true          ;# default: false
-
-    # Print durations of long mutex calls to stderr for debugging.
-    # ns_param mutexlocktrace  true         ;# default: false
-
-
     #------------------------------------------------------------------
     # Background jobs
     #------------------------------------------------------------------
@@ -397,6 +389,13 @@ ns_section ns/parameters {
     # debugging with tools like valgrind.
     #
     # ns_param tclinitlock true             ;# default: false
+
+    #------------------------------------------------------------------
+    # Log writer and mutex diagnostics
+    #------------------------------------------------------------------
+
+    #ns_param    asynclogwriter     false    ;# default: true; offload log-file writes to the asynchronous writer
+    #ns_param    mutexlocktrace     true     ;# default: false; report mutex waits above 100ms to stderr
 
     #------------------------------------------------------------------
     # Encoding settings

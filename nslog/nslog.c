@@ -165,7 +165,7 @@ Ns_ModuleInit(const char *server, const char *module)
     logPtr->server = server;
     logPtr->fd = NS_INVALID_FD;
     logPtr->serverRootProcEnabled = Ns_ServerRootProcEnabled(server);
-    logPtr->asyncWriterConfigured = Ns_ConfigBool("ns/parameters", "asynclogwriter", NS_FALSE);
+    logPtr->asyncWriterConfigured = Ns_ConfigBool("ns/parameters", "asynclogwriter", NS_TRUE);
 
     Ns_MutexInit(&logPtr->lock);
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
