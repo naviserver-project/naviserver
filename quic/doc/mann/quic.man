@@ -68,6 +68,7 @@ such as certificates, ciphers, and protocols.
 
     # QUIC-specific parameters
     ns_param recvbufsize   8MB
+    ns_param sendbufsize   8MB
     ns_param sendqueuesize 256kB
  }
 [example_end]
@@ -275,6 +276,60 @@ Parameters for the [const quic] module:
  Otherwise, the driver will be skipped, and a summary message will be
  displayed at the end of the configuration phase.
 
+
+[subsection {UDP Socket Buffers on Linux}]
+
+ NaviServer creates the UDP socket used for HTTP/3 and configures its
+ receive and send buffers from the [const recvbufsize] and
+ [const sendbufsize] parameters, respectively. Both default to [const 8MB];
+ a value of [const 0] leaves the corresponding operating system default
+ unchanged. The driver applies [const sendbufsize] with [const SO_SNDBUF]
+ and logs the requested and effective sizes when QUIC debugging is enabled.
+ OpenSSL's native QUIC implementation performs QUIC packetization and the
+ actual UDP send operations on this socket.
+
+ [para]
+ With [const sendbufsize] set to [const 0], the socket inherits the
+ operating system's default UDP send-buffer size. Many Linux installations
+ use a comparatively small default of 212992 bytes, or 208 KiB. This can
+ be insufficient for bursty or high-throughput HTTP/3 workloads and can
+ result in increasing
+ [const UdpSndbufErrors] counters.
+
+ [para]
+ The following values provide a reasonable starting point for a Linux
+ HTTP/3 server:
+
+[example_begin]
+ net.core.rmem_max     = 8388608
+ net.core.wmem_max     = 8388608
+[example_end]
+
+ These settings can be stored, for example, in
+ [const /etc/sysctl.d/99-quic-buffers.conf] and applied with:
+
+[example_begin]
+ sysctl --system
+[example_end]
+
+ These settings are host-wide limits and should be adjusted according to
+ the available memory and expected workload. The kernel may clamp the
+ buffer sizes requested by [const recvbufsize] and [const sendbufsize] to
+ these limits. Increasing the limits does not resize an existing socket.
+ Restart NaviServer after changing the limits or driver buffer parameters
+ so that the HTTP/3 UDP socket is recreated with the configured sizes.
+ When [const sendbufsize] is [const 0], [const net.core.wmem_default]
+ determines the initial send-buffer size instead.
+
+ [para]
+ On Linux, send- and receive-buffer failures can be monitored with:
+
+[example_begin]
+ nstat -az | grep -E 'Udp(Sndbuf|Rcvbuf)Errors'
+[example_end]
+
+ Compare counter values over the measurement interval rather than
+ interpreting the cumulative totals alone.
 
 [section NOTES]
 

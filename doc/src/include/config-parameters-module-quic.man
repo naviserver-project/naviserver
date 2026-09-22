@@ -38,9 +38,10 @@ This module should be loaded globally through [const ns/modules].
  }
  ns_section ns/module/h3 {
      ns_param https                 ns/module/https
-     # ns_param driverthreads       1
-     # ns_param writerthreads       0
+     # ns_param driverthreads       2
+     ns_param writerthreads         1
      ns_param recvbufsize           8MB
+     ns_param sendbufsize           8MB
      ns_param sendqueuesize         256kB
      ns_param idletimeout           3s
      ns_param draintimeout          10ms
@@ -94,6 +95,24 @@ Maximum idle time for QUIC connections before they are closed
 [item] Default: [const "3s"]
 [list_end]
 
+[def "Parameter name: [emph "maxudppayloadsize"]"]
+
+                    Maximum UDP payload size advertised to the peer as the
+                    QUIC max_udp_payload_size transport parameter. Valid
+                    values range from 1200 to 65527 bytes. This parameter
+                    requires OpenSSL 4.1 or newer.
+
+                    Currently, the setting only changes the advertised
+                    transport parameter. OpenSSL neither uses it to increase
+                    outgoing QUIC packet sizes nor enforces it as a receive
+                    limit, so it currently has no direct operational effect.
+
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "1200"]
+[list_end]
+
 [def "Parameter name: [emph "port"]"]
 UDP port or ports on which the HTTP/3 driver listens
 
@@ -104,6 +123,14 @@ UDP port or ports on which the HTTP/3 driver listens
 
 [def "Parameter name: [emph "recvbufsize"]"]
 Size of the UDP receive buffer used by the HTTP/3 driver
+
+[list_begin itemized]
+[item] Type: [const "size"]
+[item] Default: [const "8MB"]
+[list_end]
+
+[def "Parameter name: [emph "sendbufsize"]"]
+Size of the UDP send buffer used by the HTTP/3 driver (SO_SNDBUF). A value of 0 leaves the operating system default unchanged. The effective size is subject to operating system limits
 
 [list_begin itemized]
 [item] Type: [const "size"]

@@ -74,6 +74,7 @@
 #if defined(HAVE_OPENSSL_4)
 typedef struct NsTLSH3Config {
     size_t      recvbufsize;
+    size_t      sendbufsize;
     size_t      sendqueuesize;
     size_t      nr_listeners;
     int         cc_idx;
