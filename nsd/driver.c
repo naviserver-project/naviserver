@@ -11210,6 +11210,12 @@ NsAsyncWriterQueueEnable(void)
  *      requests therefore encounter a stopped queue and use the synchronous
  *      fallback safely.
  *
+ *      Do not free asyncWriter or queuePtr, or close the queue's trigger
+ *      descriptors here. Producers may already hold the queue pointer as a
+ *      wake token. The writer context and trigger socket pair therefore have
+ *      process lifetime. Late writes encounter a stopped queue and use the
+ *      synchronous fallback; delayed wake operations remain harmless.
+ *
  * Results:
  *      None.
  *
@@ -11466,21 +11472,18 @@ NsAsyncWriteSubmit(int fd, void *preparedPtr, void **wakeTokenPtr)
  *
  * NsAsyncWriteWake --
  *
- *      Wake the asynchronous writer after a prepared request changed an
- *      empty queue into a nonempty queue. The opaque token must have been
- *      returned by NsAsyncWriteSubmit().
+ *      Wake the asynchronous writer after a request changed the queue
+ *      from empty to nonempty. The wake token identifies the writer queue.
  *
- *      The queue state is checked again under its lock because the writer
- *      may have collected the request, or queue shutdown may have started,
- *      between submission and this call. The shutdown path performs its
- *      own wakeup.
+ *      The queue and its trigger descriptors have process lifetime once
+ *      published. A delayed wake racing with queue shutdown is therefore
+ *      safe and may only cause a redundant trigger.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Acquires the writer queue lock and may signal the writer's trigger
- *      pipe.
+ *      Writes to the asynchronous writer's trigger socket.
  *
  *----------------------------------------------------------------------
  */
@@ -11491,19 +11494,10 @@ NsAsyncWriteWake(void *wakeTokenPtr)
 
     NS_NONNULL_ASSERT(wakeTokenPtr != NULL);
 
-    Ns_MutexLock(&queuePtr->lock);
-
-    /*
-     * When shutdown intervened after submission, the shutdown path has
-     * already triggered the writer. If the worker has meanwhile collected
-     * the request, another trigger is unnecessary.
-     */
-    if (!queuePtr->stopped && queuePtr->sockPtr != NULL) {
-        SockTrigger(queuePtr->pipe[1]);
-    }
-
-    Ns_MutexUnlock(&queuePtr->lock);
+    SockTrigger(queuePtr->pipe[1]);
 }
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -11823,7 +11817,10 @@ AsyncWriterThread(void *arg)
 
     PollFree(&pdata);
 
+    Ns_MutexLock(&queuePtr->lock);
     queuePtr->stopped = NS_TRUE;
+    Ns_MutexUnlock(&queuePtr->lock);
+
     Ns_Log(Notice, "exiting");
 
 }
