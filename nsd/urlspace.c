@@ -381,7 +381,10 @@ static void  TrieDestroy(Trie *triePtr)
  * Junction functions
  */
 
-static Junction *JunctionGet(NsServer *servPtr, int id)
+static const Junction *JunctionGet(const NsServer *servPtr, int id)
+    NS_GNUC_NONNULL(1);
+
+static Junction *JunctionGetOrCreate(NsServer *servPtr, int id)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
@@ -1065,7 +1068,7 @@ Ns_UrlSpecificSet2(const char *server, const char *key, const char *url, int id,
         PrintSeq(ds.string);
 #endif
 
-        JunctionAdd(JunctionGet(servPtr, id), ds.string, data, flags, freeProc, contextSpec);
+        JunctionAdd(JunctionGetOrCreate(servPtr, id), ds.string, data, flags, freeProc, contextSpec);
         Tcl_DStringFree(&ds);
     }
 }
@@ -1155,8 +1158,7 @@ Ns_UrlSpecificGet(Ns_Server *server, const char *key, const char *url, int id,
                  Ns_UrlSpaceContextFilterEvalProc proc, void *context)
 {
     NsServer       *servPtr;
-    Tcl_DString     ds, *dsPtr = &ds;
-    void           *data = NULL; /* Just to make compiler silent, we have a complete enumeration of switch values */
+    void           *data = NULL;
     const Junction *junction;
 
     NS_NONNULL_ASSERT(server != NULL);
@@ -1166,34 +1168,38 @@ Ns_UrlSpecificGet(Ns_Server *server, const char *key, const char *url, int id,
     servPtr = (NsServer *)server;
     junction = JunctionGet(servPtr, id);
 
-    Tcl_DStringInit(dsPtr);
-    MkSeq(dsPtr, key, url);
+    if (junction != NULL) {
+        Tcl_DString ds, *dsPtr = &ds;
+
+        Tcl_DStringInit(dsPtr);
+        MkSeq(dsPtr, key, url);
 
 #ifdef DEBUG
-    fprintf(stderr, "Ns_UrlSpecificGet %s %s op %d\n", key, url, op);
-    PrintSeq(dsPtr->string);
+        fprintf(stderr, "Ns_UrlSpecificGet %s %s op %d\n", key, url, op);
+        PrintSeq(dsPtr->string);
 #endif
 
-    switch (op) {
+        switch (op) {
 
-    case NS_URLSPACE_DEFAULT:
-        data = JunctionFind(junction, dsPtr->string, matchInfoPtr, proc, context);
-        break;
+        case NS_URLSPACE_DEFAULT:
+            data = JunctionFind(junction, dsPtr->string, matchInfoPtr, proc, context);
+            break;
 
-    case NS_URLSPACE_EXACT:
-        data = JunctionFindExact(junction, dsPtr->string, flags);
-        break;
+        case NS_URLSPACE_EXACT:
+            data = JunctionFindExact(junction, dsPtr->string, flags);
+            break;
 
-    case NS_URLSPACE_FAST:
-        /*
-         * Deprecated branch.
-         */
-        data = JunctionFind(junction, dsPtr->string, matchInfoPtr, proc, context);
-        break;
+        case NS_URLSPACE_FAST:
+            /*
+             * Deprecated branch.
+             */
+            data = JunctionFind(junction, dsPtr->string, matchInfoPtr, proc, context);
+            break;
 
+        }
+
+        Tcl_DStringFree(dsPtr);
     }
-
-    Tcl_DStringFree(dsPtr);
 
     return data;
 }
@@ -1231,18 +1237,22 @@ Ns_UrlSpecificDestroy(const char *server, const char *key, const char *url,
     servPtr = NsGetServer(server);
 
     if (likely(servPtr != NULL)) {
-        Tcl_DString ds;
+        const Junction *junction = JunctionGet(servPtr, id);
 
-        Tcl_DStringInit(&ds);
-        MkSeq(&ds, key, url);
-        if ((flags & NS_OP_RECURSE) != 0u) {
-            //Ns_Log(Ns_LogUrlspaceDebug, "JunctionTruncBranch %s 0x%.6x", url, flags);
-            JunctionTruncBranch(JunctionGet(servPtr, id), ds.string);
-        } else {
-            //Ns_Log(Ns_LogUrlspaceDebug, "JunctionDeleteNode %s 0x%.6x", url, flags);
-            data = JunctionDeleteNode(JunctionGet(servPtr, id), ds.string, flags);
+        if (junction != NULL) {
+            Tcl_DString ds;
+
+            Tcl_DStringInit(&ds);
+            MkSeq(&ds, key, url);
+            if ((flags & NS_OP_RECURSE) != 0u) {
+                //Ns_Log(Ns_LogUrlspaceDebug, "JunctionTruncBranch %s 0x%.6x", url, flags);
+                JunctionTruncBranch(junction, ds.string);
+            } else {
+                //Ns_Log(Ns_LogUrlspaceDebug, "JunctionDeleteNode %s 0x%.6x", url, flags);
+                data = JunctionDeleteNode(junction, ds.string, flags);
+            }
+            Tcl_DStringFree(&ds);
         }
-        Tcl_DStringFree(&ds);
     }
 
     return data;
@@ -1279,20 +1289,22 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_WalkProc func, Tcl_DString *ds
         size_t          n, i;
         char           *stack[STACK_SIZE];
         const Channel  *channelPtr;
-        const Junction *juncPtr = JunctionGet(servPtr, id);
+        const Junction *junction = JunctionGet(servPtr, id);
 
-        memset(stack, 0, sizeof(stack));
+        if (junction != NULL) {
+            memset(stack, 0, sizeof(stack));
 
 #ifndef __URLSPACE_OPTIMIZE__
-        n = Ns_IndexCount(&juncPtr->byuse);
-        for (i = 0u; i < n; i++) {
-            channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
+            n = Ns_IndexCount(&junction->byuse);
+            for (i = 0u; i < n; i++) {
+                channelPtr = Ns_IndexEl(&junction->byuse, i);
 #else
-        n = Ns_IndexCount(&juncPtr->byname);
-        for (i = n; i > 0u; i--) {
-            channelPtr = Ns_IndexEl(&juncPtr->byname, i - 1u);
+            n = Ns_IndexCount(&juncPtr->byname);
+            for (i = n; i > 0u; i--) {
+                channelPtr = Ns_IndexEl(&junction->byname, i - 1u);
 #endif
-            WalkTrie(&channelPtr->trie, func, dsPtr, stack, channelPtr->filter);
+                WalkTrie(&channelPtr->trie, func, dsPtr, stack, channelPtr->filter);
+            }
         }
     }
 }
@@ -2507,30 +2519,54 @@ CmpKeyWithChannelAsStrings(const void *key, const void *elemPtr)
     return NS_strcmp(key, filter);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * GetJunction --
+ * JunctionGet --
  *
- *      Get the junction corresponding to the given server and id.
- *      Ns_UrlSpecificAlloc() must have already been called.
+ *      Return the existing junction for the specified server and URL-space
+ *      ID.
  *
  * Results:
- *      Pointer to junction.
+ *      Pointer to the junction, or NULL when it has not been created.
  *
  * Side effects:
- *      Will initialize the junction on first access.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
+static const Junction *
+JunctionGet(const NsServer *servPtr, int id)
+{
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    assert(id >= 0 && id < MAX_URLSPACES);
 
+    return servPtr->urlspace.junction[id];
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JunctionGetOrCreate --
+ *
+ *      Return the junction for the specified server and URL-space ID,
+ *      creating and initializing it when necessary.
+ *
+ * Results:
+ *      Pointer to the junction.
+ *
+ * Side effects:
+ *      May allocate and initialize a junction.
+ *
+ *----------------------------------------------------------------------
+ */
 static Junction *
-JunctionGet(NsServer *servPtr, int id)
+JunctionGetOrCreate(NsServer *servPtr, int id)
 {
     Junction *juncPtr;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
+    assert(id >= 0 && id < MAX_URLSPACES);
 
     juncPtr = servPtr->urlspace.junction[id];
     if (juncPtr == NULL) {
