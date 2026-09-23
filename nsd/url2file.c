@@ -55,7 +55,7 @@ static Ns_ServerInitProc ConfigServerUrl2File;
  * Static variables defined in this file.
  */
 
-static Ns_Mutex   ulock = NULL;
+static Ns_RWLock  ulock = NULL;
 static int        uid;
 
 
@@ -79,8 +79,8 @@ void
 NsInitUrl2File(void)
 {
     uid = Ns_UrlSpecificAlloc();
-    Ns_MutexInit(&ulock);
-    Ns_MutexSetName(&ulock, "nsd:url2file");
+    Ns_RWLockInit(&ulock);
+    Ns_RWLockSetName2(&ulock, "nsd:url2file", NULL);
     NsRegisterServerInit(ConfigServerUrl2File);
 }
 
@@ -146,9 +146,9 @@ Ns_RegisterUrl2FileProc(const char *server, const char *url,
         u2fPtr->flags = flags;
         Ns_AtomicUint32Init(&u2fPtr->refcnt, 1u);
 
-        Ns_MutexLock(&ulock);
+        Ns_RWLockWrLock(&ulock);
         Ns_UrlSpecificSet(server, "x", url, uid, u2fPtr, flags, FreeUrl2File);
-        Ns_MutexUnlock(&ulock);
+        Ns_RWLockUnlock(&ulock);
     }
 }
 
@@ -172,9 +172,9 @@ Ns_RegisterUrl2FileProc(const char *server, const char *url,
 void
 Ns_UnRegisterUrl2FileProc(const char *server, const char *url, unsigned int flags)
 {
-    Ns_MutexLock(&ulock);
+    Ns_RWLockWrLock(&ulock);
     (void) Ns_UrlSpecificDestroy(server, "x", url, uid, flags);
-    Ns_MutexUnlock(&ulock);
+    Ns_RWLockUnlock(&ulock);
 }
 
 
@@ -263,16 +263,16 @@ NsUrlToFile(Tcl_DString *dsPtr, NsServer *servPtr, const char *url)
 
         Ns_Log(Debug, "url2file: url '%s' use Ns_UrlSpecificGet to determine filename", url);
 
-        Ns_MutexLock(&ulock);
+        Ns_RWLockRdLock(&ulock);
         u2fPtr = Ns_UrlSpecificGet((Ns_Server*)servPtr, "x", url, uid, 0u,
                                    NS_URLSPACE_DEFAULT, NULL, NULL, NULL);
         if (u2fPtr == NULL) {
-            Ns_MutexUnlock(&ulock);
+            Ns_RWLockUnlock(&ulock);
             Ns_Log(Error, "url2file: no proc found for url: %s", url);
             status = NS_ERROR;
         } else {
             (void)Ns_AtomicUint32FetchAddRelaxed(&u2fPtr->refcnt, 1u);
-            Ns_MutexUnlock(&ulock);
+            Ns_RWLockUnlock(&ulock);
             status = (*u2fPtr->proc)(dsPtr, url, u2fPtr->arg);
             FreeUrl2File(u2fPtr);
         }
@@ -697,9 +697,9 @@ NsGetUrl2FileProcs(Tcl_DString *dsPtr, const char *server)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
 
-    Ns_MutexLock(&ulock);
+    Ns_RWLockRdLock(&ulock);
     Ns_UrlSpecificWalk(uid, server, WalkCallback, dsPtr);
-    Ns_MutexUnlock(&ulock);
+    Ns_RWLockUnlock(&ulock);
 }
 
 static void
