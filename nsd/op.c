@@ -24,7 +24,7 @@
  */
 
 typedef struct {
-    int             refcnt;
+    Ns_AtomicUint32 refcnt;
     Ns_OpProc      *proc;
     Ns_Callback    *deleteCallback;
     void           *arg;
@@ -39,6 +39,7 @@ static Ns_ServerInitProc ConfigServerProxy;
 static Ns_WalkProc WalkCallback;
 
 static void RegisteredProcDecrRef(void *arg) NS_GNUC_NONNULL(1);
+static void RegisteredProcIncrRef(RegisteredProc *regPtr) NS_GNUC_NONNULL(1);
 static void RegisterRequest(const char *server, const char *method, const char *url,
                             Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
                             unsigned int flags, void *contextSpec)
@@ -48,8 +49,8 @@ static void RegisterRequest(const char *server, const char *method, const char *
  * Static variables defined in this file.
  */
 
-static Ns_Mutex       ulock = NULL;
-static int            uid = 0;
+static Ns_RWLock ulock = NULL;
+static int       uid = 0;
 
 
 /*
@@ -72,8 +73,8 @@ void
 NsInitRequests(void)
 {
     uid = Ns_UrlSpecificAlloc();
-    Ns_MutexInit(&ulock);
-    Ns_MutexSetName(&ulock, "nsd:requests");
+    Ns_RWLockInit(&ulock);
+    Ns_RWLockSetName2(&ulock, "nsd:requests", NULL);
 
     NsRegisterServerInit(ConfigServerProxy);
 }
@@ -90,7 +91,7 @@ ConfigServerProxy(const char *server)
     return NS_OK;
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -163,16 +164,18 @@ Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *method, 
  *
  * RegisterRequest --
  *
- *      Internal helper to allocate and register a request handler
- *      in the URL dispatch trie for a given server, method, and URL.
+ *      Allocate and register a request handler for the specified server,
+ *      method, and URL. The new registration receives an initial reference
+ *      owned by the URL-space entry.
  *
  * Results:
  *      None.
  *
- * Side Effects:
- *      Allocates a RegisteredProc structure, initializes its fields,
- *      then locks the URL space mutex and calls Ns_UrlSpecificSet2()
- *      to insert the handler into the server's dispatch table.
+ * Side effects:
+ *      Allocates and initializes a RegisteredProc and inserts it into the
+ *      request URL space while holding the URL-space write lock. Replacing
+ *      an existing registration may release its URL-space reference and
+ *      invoke its deletion callback.
  *
  *----------------------------------------------------------------------
  */
@@ -193,11 +196,12 @@ RegisterRequest(const char *server, const char *method, const char *url,
     regPtr->deleteCallback = deleteCallback;
     regPtr->arg = arg;
     regPtr->flags = flags;
-    regPtr->refcnt = 1;
-    Ns_MutexLock(&ulock);
+    Ns_AtomicUint32Init(&regPtr->refcnt, 1u);
+
+    Ns_RWLockWrLock(&ulock);
     Ns_UrlSpecificSet2(server, method, url, uid, regPtr, flags,
                        RegisteredProcDecrRef, contextSpec);
-    Ns_MutexUnlock(&ulock);
+    Ns_RWLockUnlock(&ulock);
 }
 
 
@@ -263,7 +267,7 @@ NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
     NS_NONNULL_ASSERT(argPtr != NULL);
     NS_NONNULL_ASSERT(flagsPtr != NULL);
 
-    Ns_MutexLock(&ulock);
+    Ns_RWLockRdLock(&ulock);
     regPtr = Ns_UrlSpecificGet((Ns_Server*)servPtr, method, url,
                                uid, flags, op, &matchInfo, proc, context);
     Ns_Log(Debug, "NsGetRequest2 %s %s -> %p",  method, url, (const void*)regPtr);
@@ -279,7 +283,7 @@ NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
         *argPtr = NULL;
         *flagsPtr = 0u;
     }
-    Ns_MutexUnlock(&ulock);
+    Ns_RWLockUnlock(&ulock);
 }
 
 
@@ -357,9 +361,9 @@ Ns_UnRegisterRequestEx(const char *server, const char *method, const char *url,
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    Ns_MutexLock(&ulock);
+    Ns_RWLockWrLock(&ulock);
     (void)Ns_UrlSpecificDestroy(server, method, url, uid, flags);
-    Ns_MutexUnlock(&ulock);
+    Ns_RWLockUnlock(&ulock);
 }
 
 
@@ -418,7 +422,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
 
             NsUrlSpaceContextInit(&ctx, connPtr->sockPtr, connPtr->headers);
 
-            Ns_MutexLock(&ulock);
+            Ns_RWLockRdLock(&ulock);
             regPtr = Ns_UrlSpecificGet((Ns_Server *)(connPtr->poolPtr->servPtr),
                                        conn->request.method, conn->request.url, uid,
                                        0u, NS_URLSPACE_DEFAULT, &matchInfo,
@@ -428,21 +432,19 @@ Ns_ConnRunRequest(Ns_Conn *conn)
                    matchInfo.isSegmentMatch, matchInfo.offset);*/
 
             if (regPtr == NULL) {
-                Ns_MutexUnlock(&ulock);
+                Ns_RWLockUnlock(&ulock);
                 if (STREQ(conn->request.method, "BAD")) {
                     status = Ns_ConnReturnBadRequest(conn, NULL);
                 } else {
                     status = Ns_ConnReturnInvalidMethod(conn);
                 }
             } else {
-                ++regPtr->refcnt;
-                Ns_MutexUnlock(&ulock);
+                RegisteredProcIncrRef(regPtr);
+                Ns_RWLockUnlock(&ulock);
                 connPtr->matchInfo = matchInfo;
                 status = (*regPtr->proc) (regPtr->arg, conn);
 
-                Ns_MutexLock(&ulock);
                 RegisteredProcDecrRef(regPtr);
-                Ns_MutexUnlock(&ulock);
             }
         }
     }
@@ -553,7 +555,7 @@ Ns_RegisterProxyRequest(const char *server, const char *method, const char *prot
         Tcl_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, method, protocol, NS_SENTINEL);
         regPtr = ns_malloc(sizeof(RegisteredProc));
-        regPtr->refcnt = 1;
+        Ns_AtomicUint32Init(&regPtr->refcnt, 1u);
         regPtr->proc = proc;
         regPtr->deleteCallback = deleteCallback;
         regPtr->arg = arg;
@@ -652,7 +654,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
     if (hPtr != NULL) {
         regPtr = Tcl_GetHashValue(hPtr);
-        ++regPtr->refcnt;
+        RegisteredProcIncrRef(regPtr);
     }
     Ns_MutexUnlock(&servPtr->request.plock);
     if (regPtr == NULL) {
@@ -663,9 +665,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
                                    "text/plain");
     } else {
         status = (*regPtr->proc) (regPtr->arg, conn);
-        Ns_MutexLock(&servPtr->request.plock);
         RegisteredProcDecrRef(regPtr);
-        Ns_MutexUnlock(&servPtr->request.plock);
     }
     Tcl_DStringFree(&ds);
 
@@ -699,9 +699,9 @@ NsGetRequestProcs(Tcl_DString *dsPtr, const char *server)
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
-        Ns_MutexLock(&ulock);
+        Ns_RWLockRdLock(&ulock);
         Ns_UrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
-        Ns_MutexUnlock(&ulock);
+        Ns_RWLockUnlock(&ulock);
     }
 }
 
@@ -717,7 +717,36 @@ WalkCallback(Tcl_DString *dsPtr, void *arg)
      Ns_GetProcInfo(dsPtr, (ns_funcptr_t)regPtr->proc, regPtr->arg);
 }
 
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RegisteredProcIncrRef --
+ *
+ *      Atomically increment the reference count of a registered
+ *      procedure. The caller must already hold a valid reference or
+ *      protect the registry lookup with the appropriate lock.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Increments the reference count.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+RegisteredProcIncrRef(RegisteredProc *regPtr)
+{
+    uint32_t previous;
+
+    NS_NONNULL_ASSERT(regPtr != NULL);
+
+    previous = Ns_AtomicUint32FetchAddRelaxed(&regPtr->refcnt, 1u);
+    assert(previous > 0u);
+    assert(previous < UINT32_MAX);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -733,17 +762,22 @@ WalkCallback(Tcl_DString *dsPtr, void *arg)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 RegisteredProcDecrRef(void *arg)
 {
-    RegisteredProc *regPtr = (RegisteredProc *) arg;
+    RegisteredProc *regPtr = arg;
+    uint32_t        previous;
 
-    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(regPtr != NULL);
 
-    if (--regPtr->refcnt == 0) {
+    previous = Ns_AtomicUint32FetchSubAcqRel(&regPtr->refcnt, 1u);
+    assert(previous > 0u);
+
+    if (previous == 1u) {
+        Ns_AtomicUint32Destroy(&regPtr->refcnt);
+
         if (regPtr->deleteCallback != NULL) {
-            (*regPtr->deleteCallback) (regPtr->arg);
+            (*regPtr->deleteCallback)(regPtr->arg);
         }
         ns_free(regPtr);
     }
