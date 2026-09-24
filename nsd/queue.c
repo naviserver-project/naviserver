@@ -2438,10 +2438,11 @@ NsConnThread(void *arg)
     ConnPool      *poolPtr;
     NsServer      *servPtr;
     Conn          *connPtr = NULL;
+    Driver        *lastDrvPtr = NULL;
     Ns_Time        wait, *timePtr = &wait;
     uintptr_t      threadId;
     bool           duringShutdown, fromQueue;
-    int            cpt, ncons, current;
+    int            cpt, ncons;
     Ns_ReturnCode  status = NS_OK;
     Ns_Time        timeout;
     const char    *exitMsg;
@@ -2510,6 +2511,9 @@ NsConnThread(void *arg)
      */
 
     for (;;) {
+        bool     debug;
+        Ns_Time  acceptTimestamp, queueTimestamp, dequeueTimestamp, filterDoneTimestamp;
+        int      waiting = 0, idle = 0, current = 0, lowwater = 0;
 
         /*
          * We are ready to process requests. Pick it either a request
@@ -2783,6 +2787,16 @@ NsConnThread(void *arg)
         Ns_AtomicUint32StoreRelease(&argPtr->state, connThread_ready);
         Ns_MutexUnlock(tqueueLockPtr);
 
+        debug = (cpt > 0) && Ns_LogSeverityEnabled(Debug);
+
+        if (debug) {
+            acceptTimestamp     = connPtr->acceptTime;
+            queueTimestamp      = connPtr->requestQueueTime;
+            dequeueTimestamp    = connPtr->requestDequeueTime;
+            filterDoneTimestamp = connPtr->filterDoneTime;
+        }
+        lastDrvPtr = connPtr->drvPtr;
+
         /*
          * Push connection to the free list.
          */
@@ -2794,41 +2808,45 @@ NsConnThread(void *arg)
         }
         connPtr->prevPtr = NULL;
 
+        if (cpt > 0) {
+            --ncons;
+        }
+
         Ns_MutexLock(wqueueLockPtr);
         connPtr->nextPtr = poolPtr->wqueue.freePtr;
         poolPtr->wqueue.freePtr = connPtr;
+
+        /*
+         * Get a consistent snapshot of the controlling variables.
+         */
+        if (cpt > 0) {
+            waiting  = poolPtr->wqueue.wait.num;
+            lowwater = poolPtr->wqueue.lowwatermark;
+
+            Ns_MutexLock(threadsLockPtr);
+            idle    = poolPtr->threads.idle;
+            current = poolPtr->threads.current;
+            Ns_MutexUnlock(threadsLockPtr);
+        }
+
         Ns_MutexUnlock(wqueueLockPtr);
 
         if (cpt > 0) {
-            int waiting, idle, lowwater;
+            if (debug) {
+                Ns_Time now, acceptTime, queueTime;
+                Ns_Time filterTime, netRunTime, runTime, fullTime;
 
-            --ncons;
-
-            /*
-             * Get a consistent snapshot of the controlling variables.
-             */
-            Ns_MutexLock(wqueueLockPtr);
-            Ns_MutexLock(threadsLockPtr);
-            waiting  = poolPtr->wqueue.wait.num;
-            lowwater = poolPtr->wqueue.lowwatermark;
-            idle     = poolPtr->threads.idle;
-            current  = poolPtr->threads.current;
-            Ns_MutexUnlock(threadsLockPtr);
-            Ns_MutexUnlock(wqueueLockPtr);
-
-            if (Ns_LogSeverityEnabled(Debug)) {
-                Ns_Time now, acceptTime, queueTime, filterTime, netRunTime, runTime, fullTime;
-
-                Ns_DiffTime(&connPtr->requestQueueTime, &connPtr->acceptTime, &acceptTime);
-                Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime, &queueTime);
-                Ns_DiffTime(&connPtr->filterDoneTime, &connPtr->requestDequeueTime, &filterTime);
+                Ns_DiffTime(&queueTimestamp, &acceptTimestamp, &acceptTime);
+                Ns_DiffTime(&dequeueTimestamp, &queueTimestamp, &queueTime);
+                Ns_DiffTime(&filterDoneTimestamp, &dequeueTimestamp, &filterTime);
 
                 Ns_GetTime(&now);
-                Ns_DiffTime(&now, &connPtr->requestDequeueTime, &runTime);
-                Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
-                Ns_DiffTime(&now, &connPtr->requestQueueTime,   &fullTime);
+                Ns_DiffTime(&now, &dequeueTimestamp, &runTime);
+                Ns_DiffTime(&now, &filterDoneTimestamp, &netRunTime);
+                Ns_DiffTime(&now, &queueTimestamp, &fullTime);
 
-                Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
+                Ns_Log(Debug,
+                       "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
                        " start " NS_TIME_FMT
                        " " NS_TIME_FMT
                        " accept " NS_TIME_FMT
@@ -2838,16 +2856,15 @@ NsConnThread(void *arg)
                        " netrun " NS_TIME_FMT
                        " total " NS_TIME_FMT,
                        ThreadNr(poolPtr, argPtr),
-                       waiting, poolPtr->threads.current, idle, ncons, fromQueue ? 1 : 0,
-                       (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
-                       (int64_t) connPtr->requestQueueTime.sec, connPtr->requestQueueTime.usec,
-                       (int64_t) acceptTime.sec, acceptTime.usec,
-                       (int64_t) queueTime.sec, queueTime.usec,
-                       (int64_t) filterTime.sec, filterTime.usec,
-                       (int64_t) runTime.sec, runTime.usec,
-                       (int64_t) netRunTime.sec, netRunTime.usec,
-                       (int64_t) fullTime.sec, fullTime.usec
-                       );
+                       waiting, current, idle, ncons, fromQueue ? 1 : 0,
+                       (int64_t)acceptTimestamp.sec, acceptTimestamp.usec,
+                       (int64_t)queueTimestamp.sec, queueTimestamp.usec,
+                       (int64_t)acceptTime.sec, acceptTime.usec,
+                       (int64_t)queueTime.sec, queueTime.usec,
+                       (int64_t)filterTime.sec, filterTime.usec,
+                       (int64_t)runTime.sec, runTime.usec,
+                       (int64_t)netRunTime.sec, netRunTime.usec,
+                       (int64_t)fullTime.sec, fullTime.usec);
             }
 
             if (waiting > 0) {
@@ -2874,7 +2891,6 @@ NsConnThread(void *arg)
     duringShutdown = servPtr->pools.shutdown;
     Ns_MutexUnlock(&servPtr->pools.lock);
 
-
     {
         bool wakeup;
         /*
@@ -2892,9 +2908,8 @@ NsConnThread(void *arg)
          * During shutdown, we do not want to restart connection
          * threads. The driver pointer might be already invalid.
          */
-        if (wakeup && connPtr != NULL && !duringShutdown) {
-            assert(connPtr->drvPtr != NULL);
-            NsWakeupDriver(connPtr->drvPtr);
+        if (wakeup && lastDrvPtr != NULL && !duringShutdown) {
+            NsWakeupDriver(lastDrvPtr);
         }
     }
 
