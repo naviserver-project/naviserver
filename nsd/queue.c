@@ -51,8 +51,8 @@ static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, NsConnState stat
 static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, NsConnState state, bool checkforproxy)
     NS_GNUC_NONNULL(1);
 
-static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr, unsigned int *reasonPtr)
-    NS_GNUC_NONNULL(1,2);
+static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr, int waiting, unsigned int *reasonPtr)
+    NS_GNUC_NONNULL(1,3);
 
 static void LogConnThreadCreate(const ConnPool *poolPtr, const ConnThreadCreateLog *logPtr)
     NS_GNUC_NONNULL(1,2);
@@ -445,7 +445,8 @@ LogConnThreadCreate(const ConnPool *poolPtr,
  *      waiting queue exceeds the high watermark, another creation may
  *      proceed while a previous creation is still in progress.
  *
- *      The caller must hold both wqueue.lock and threads.lock.
+ *      The caller must hold threads.lock. The supplied waiting count is a
+ *      snapshot. The watermarks are immutable after pool creation.
  *
  * Results:
  *      NS_TRUE if creation is requested; otherwise NS_FALSE.
@@ -460,7 +461,7 @@ LogConnThreadCreate(const ConnPool *poolPtr,
  *----------------------------------------------------------------------
  */
 static bool
-neededAdditionalConnectionThreads(const ConnPool *poolPtr,
+neededAdditionalConnectionThreads(const ConnPool *poolPtr, int waiting,
                                   unsigned int *reasonPtr)
 {
     bool wantCreate = NS_FALSE;
@@ -486,9 +487,9 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr,
      * The caller holds wqueue.lock and threads.lock.
      */
     if ((poolPtr->threads.creating == 0
-         || poolPtr->wqueue.wait.num > poolPtr->wqueue.highwatermark)
+         || waiting > poolPtr->wqueue.highwatermark)
         && (poolPtr->threads.current < poolPtr->threads.min
-            || poolPtr->wqueue.wait.num > poolPtr->wqueue.lowwatermark)
+            || waiting > poolPtr->wqueue.lowwatermark)
         && poolPtr->threads.current < poolPtr->threads.max) {
 
         Ns_MutexLock(&poolPtr->servPtr->pools.lock);
@@ -499,7 +500,7 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr,
             if (poolPtr->threads.current < poolPtr->threads.min) {
                 *reasonPtr |= CONN_CREATE_BELOW_MINIMUM;
             }
-            if (poolPtr->wqueue.wait.num > poolPtr->wqueue.lowwatermark) {
+            if (waiting > poolPtr->wqueue.lowwatermark) {
                 *reasonPtr |= CONN_CREATE_ABOVE_LOW_WATERMARK;
             }
             if (poolPtr->threads.creating != 0) {
@@ -534,7 +535,8 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr,
 
 void
 NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
-    bool         create;
+    int                 waiting;
+    bool                create;
     ConnThreadCreateLog createLog = {
         .caller = "NsEnsureRunningConnectionThreads",
         .dispatch = "pool-check"
@@ -552,11 +554,12 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
 
     Ns_MutexLock(&poolPtr->wqueue.lock);
     Ns_MutexLock(&poolPtr->threads.lock);
-    create = neededAdditionalConnectionThreads(poolPtr, &createLog.reason);
+    waiting = (int)Ns_AtomicUint32LoadRelaxed(&poolPtr->wqueue.wait.num);
+    create = neededAdditionalConnectionThreads(poolPtr, waiting, &createLog.reason);
 
     if (create) {
         createLog.current = poolPtr->threads.current++;
-        createLog.waiting = poolPtr->wqueue.wait.num;
+        createLog.waiting = waiting;
         poolPtr->threads.creating++;
     }
 
@@ -687,6 +690,8 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
     if (likely(connPtr != NULL)) {
         const unsigned int deliveryFlag = sockPtr->flags & NS_CONN_DELIVERY_TRACKED;
+        int                waiting;
+
         /*
          * We have got a free connPtr from the pool. Initialize the
          * connPtr and copy flags from the socket.
@@ -759,15 +764,14 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
              * under tqueue.lock. Check whether the pool should nevertheless
              * create an additional connection thread.
              */
-            Ns_MutexLock(&poolPtr->wqueue.lock);
             Ns_MutexLock(&poolPtr->threads.lock);
-            create = neededAdditionalConnectionThreads(poolPtr, &createLog.reason);
+            waiting = (int)Ns_AtomicUint32LoadRelaxed(&poolPtr->wqueue.wait.num);
+            create = neededAdditionalConnectionThreads(poolPtr, waiting, &createLog.reason);
             if (create) {
                 createLog.current = poolPtr->threads.current;
-                createLog.waiting = poolPtr->wqueue.wait.num;
+                createLog.waiting = waiting;
             }
             Ns_MutexUnlock(&poolPtr->threads.lock);
-            Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
         } else {
             /*
@@ -782,13 +786,13 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
                 poolPtr->wqueue.wait.lastPtr->nextPtr = connPtr;
             }
             poolPtr->wqueue.wait.lastPtr = connPtr;
-            poolPtr->wqueue.wait.num ++;
+            waiting = (int)Ns_AtomicUint32FetchAddRelaxed(&poolPtr->wqueue.wait.num, 1u) + 1;
             Ns_MutexLock(&poolPtr->threads.lock);
             poolPtr->stats.queued++;
-            create = neededAdditionalConnectionThreads(poolPtr, &createLog.reason);
+            create = neededAdditionalConnectionThreads(poolPtr, waiting, &createLog.reason);
             if (create) {
                 createLog.current = poolPtr->threads.current;
-                createLog.waiting = poolPtr->wqueue.wait.num;
+                createLog.waiting = waiting;
             }
             Ns_MutexUnlock(&poolPtr->threads.lock);
             Ns_MutexUnlock(&poolPtr->wqueue.lock);
@@ -817,7 +821,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             sockPtr->flags |= NS_CONN_SOCK_WAITING;
 
             Ns_MutexLock(&poolPtr->wqueue.lock);
-            waiting = poolPtr->wqueue.wait.num;
+            waiting = (int)Ns_AtomicUint32LoadRelaxed(&poolPtr->wqueue.wait.num);
 
             if (poolPtr->wqueue.fullNoticeTime.sec == 0) {
                 /*
@@ -913,7 +917,9 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     } else {
         if (Ns_LogSeverityEnabled(Debug)) {
             Ns_Log(Debug, "add waiting connPtr %p => waiting %d create %d",
-                   (void *)connPtr, poolPtr->wqueue.wait.num, (int)create);
+                   (void *)connPtr,
+                   (int)Ns_AtomicUint32LoadRelaxed(&poolPtr->wqueue.wait.num),
+                   (int)create);
         }
     }
 
@@ -2062,7 +2068,8 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     case SWaitingIdx:
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) == NS_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->wqueue.wait.num));
+            Tcl_SetObjResult(interp,
+                             Tcl_NewIntObj((int)Ns_AtomicUint32LoadRelaxed(&poolPtr->wqueue.wait.num)));
             result = TCL_OK;
         }
         break;
@@ -2537,7 +2544,7 @@ NsConnThread(void *arg)
                     poolPtr->wqueue.wait.lastPtr = NULL;
                 }
                 connPtr->nextPtr = NULL;
-                poolPtr->wqueue.wait.num --;
+                (void)Ns_AtomicUint32FetchSubAcqRel(&poolPtr->wqueue.wait.num, 1u);
 
                 Ns_AtomicUint32StoreRelaxed(&connPtr->state,
                                             (uint32_t)NS_CONN_STATE_PREPARING);
@@ -2820,7 +2827,7 @@ NsConnThread(void *arg)
          * Get a consistent snapshot of the controlling variables.
          */
         if (cpt > 0) {
-            waiting  = poolPtr->wqueue.wait.num;
+            waiting  = (int)Ns_AtomicUint32LoadRelaxed(&poolPtr->wqueue.wait.num);
             lowwater = poolPtr->wqueue.lowwatermark;
 
             Ns_MutexLock(threadsLockPtr);

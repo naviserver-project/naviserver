@@ -829,9 +829,9 @@ typedef struct ConnPool {
         int maxconns;
 
         struct {
-            Conn *firstPtr;
-            Conn *lastPtr;
-            int   num;
+            Conn           *firstPtr;
+            Conn           *lastPtr;
+            Ns_AtomicUint32 num;
         } wait;
 
         Ns_Cond  cond;

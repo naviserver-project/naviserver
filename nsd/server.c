@@ -593,6 +593,8 @@ CreatePool(NsServer *servPtr, const char *pool)
         }
     }
 
+    Ns_AtomicUint32Init(&poolPtr->wqueue.wait.num, 0u);
+
     poolPtr->nextPtr = servPtr->pools.firstPtr;
     servPtr->pools.firstPtr = poolPtr;
 
