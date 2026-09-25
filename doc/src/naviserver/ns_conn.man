@@ -604,10 +604,18 @@ may differ from the actual local listen port.
 
 [call [cmd  "ns_conn url"]]
 
- Returns the URL of the HTTP request. This is the portion of the URL
- following the hostname (e.g., "/index.adp").
+ Returns the URL path of the current request, excluding the query string.
 
 [example_begin]
+ # Request: https://example.org/page/list.adp?sort=date&page=2
+ 
+ ns_conn url
+ # Returns: /page/list.adp
+ 
+ ns_conn query
+ # Returns: sort=date&page=2
+
+ # Path matching ignores query parameters:
  if { [lb]string match /page/* [lb]ns_conn url[rb][rb] } {
   ns_returnnotfound
  }
