@@ -1231,10 +1231,10 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T size)
         if (size == TCL_INDEX_NONE) {
             size = (TCL_SIZE_T)strlen(value);
         }
-#ifdef NS_SET_DEBUG
+# ifdef NS_SET_DEBUG
         Ns_Log(Notice, "Ns_SetPutValue %p [%lu] key '%s' value '%s' size %ld",
                (void*)set, index, set->fields[index].name, value, size);
-#endif
+# endif
 
         if (set->size > 0) {
             size_t  oldSize = 0u;
@@ -1277,7 +1277,7 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T size)
             Ns_Log(Debug, "Ns_SetPutValueSz %p: old value is the same as the new value: '%s'",
                    (void*)set, value);
         }
-#endif
+#endif /* NS_SET_DSTRING */
     }
 }
 
