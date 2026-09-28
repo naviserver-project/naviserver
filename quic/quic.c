@@ -3552,6 +3552,21 @@ h3_conn_write_step(ConnCtx *cc)
         //       (long long)dc->iter, (long long)sid, (void*)stream, (uint64_t)SSL_get_stream_id(stream),
         //       sc ? H3StreamKind_str(sc->kind) : "no-ctx");
 
+        if (sc != NULL && sc->transport_blocked) {
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3[%lld] nghttp3 selected transport-blocked stream:"
+                   " conn %p stream %p nvec %ld fin %d"
+                   " remaining %zu want-count %" PRIu64,
+                   (long long)dc->iter,
+                   (long long)sid,
+                   (void *)cc->h3ssl.conn,
+                   (void *)stream,
+                   (long)nvec,
+                   fin,
+                   sc->write_want_remaining,
+                   sc->write_want_count);
+        }
+
         /* Re-check connection shutdown just before IO */
         if (SSL_get_shutdown(cc->h3ssl.conn) != 0) {
             Ns_Log(Ns_LogQuicDebug, "[%lld] H3 write: conn entered shutdown pre-write; stop", (long long)dc->iter);
@@ -3982,11 +3997,19 @@ h3_conn_write_step(ConnCtx *cc)
          */
 
         if (hit_want) {
+            Ns_Log(Ns_LogQuicDebug,
+                   "[%lld] H3[%lld] ending write pass after WANT:"
+                   " progress %d local-retry %d",
+                   (long long)dc->iter,
+                   (long long)sid,
+                   (int)did_progress,
+                   (int)need_local_retry);
+
             /*
-             * nghttp3 now knows that this stream is transport-blocked and can
-             * select another writable stream.
+             * Yield to driver event processing rather than immediately
+             * selecting the same unconsumed vector again.
              */
-            continue;
+            break;
         }
 
     next_sid:
