@@ -727,7 +727,7 @@ NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, const NsUrlSpaceContextSpec *spe
  * UrlSpaceContextPrint --
  *
  *      Debug helper that logs the resolved client IP address and
- *      HTTP headers from a given URL–space context.
+ *      HTTP headers from a given URL-space context.
  *
  * Parameters:
  *      caller  - a prefix string

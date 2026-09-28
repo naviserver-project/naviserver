@@ -1970,7 +1970,7 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
     h3ssl->rstream = SSL_new_stream(conn, stream_flags);
 
     if (h3ssl->rstream == NULL|| h3ssl->pstream  == NULL|| h3ssl->cstream == NULL) {
-        Ns_Log(Warning, "H3: quic_conn_open_server_uni_streams: could not open uni‑streams");
+        Ns_Log(Warning, "H3: quic_conn_open_server_uni_streams: could not open uni-streams");
         goto cleanup_err;
     }
 
@@ -6697,7 +6697,7 @@ static int on_stream_close(nghttp3_conn *UNUSED(conn),
     StreamCtxIoSet(sc, H3_IO_TX_FIN);
     SharedSendWakeBlocked(&sc->sh);
 
-    /* Unregister and free our per‑stream context */
+    /* Unregister and free our per-stream context */
     StreamCtxUnregister(sc);
 
     return 0;
@@ -7213,7 +7213,7 @@ static void StreamCtxUnregister(StreamCtx *sc)
 
     Ns_Log(Ns_LogQuicDebug, "[%lld] StreamCtxUnregister sc %p ssl %p quic_sid %lld h3_sid %lld",
            (long long)cc->dc->iter, (void*)sc, (void*)sc->ssl, (long long)sc->quic_sid, (long long)sc->h3_sid);
-    /* Unregister and free our per‑stream context */
+    /* Unregister and free our per-stream context */
     if (e != NULL) {
         Tcl_DeleteHashEntry(e);
     }

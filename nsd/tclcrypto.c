@@ -7625,7 +7625,7 @@ DictAddEcParams(Tcl_Interp *interp, EVP_PKEY *pkey,
         return SetResultFromOsslError(interp, "could not obtain group name");
 
     } else if (EcGroupCoordinateLength(group_name, &coord_len) != TCL_OK) {
-        /* Unsupported curve – skip coordinates */
+        /* Unsupported curve - skip coordinates */
         return TCL_OK;
 
     } else {

@@ -2564,9 +2564,9 @@ DeleteInterps(void *arg)
  *      function on each entry's value.
  *
  * Parameters:
- *      tablePtr   – pointer to the Tcl_HashTable to traverse.
- *      fn         – callback of type NsHashValueProc, called as fn(value, ctx).
- *      ctx        – user-provided context passed through to fn.
+ *      tablePtr   - pointer to the Tcl_HashTable to traverse.
+ *      fn         - callback of type NsHashValueProc, called as fn(value, ctx).
+ *      ctx        - user-provided context passed through to fn.
  *
  * Results:
  *      Returns NS_OK if all invocations of fn returned NS_OK. If fn returns
@@ -2605,10 +2605,10 @@ Ns_ReturnCode NsForeachHashValue(Tcl_HashTable *tablePtr, NsHashValueProc fn, co
  *      function on each entry's key and value.
  *
  * Parameters:
- *      tablePtr   – pointer to the Tcl_HashTable to traverse.
- *      fn         – callback of type NsHashKeyValueProc, called as
+ *      tablePtr   - pointer to the Tcl_HashTable to traverse.
+ *      fn         - callback of type NsHashKeyValueProc, called as
  *                   fn(key, value, ctx).
- *      ctx        – user-provided context passed through to fn.
+ *      ctx        - user-provided context passed through to fn.
  *
  * Results:
  *      Returns NS_OK if all invocations of fn returned NS_OK. If fn returns

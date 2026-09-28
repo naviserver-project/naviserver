@@ -219,8 +219,8 @@ NsParseContentTypeParams(const char *typeStart, const char *typeEnd,
  *      of flag names separated by '|' and append it to a Tcl_DString.
  *
  * Parameters:
- *      dsPtr – pointer to an initialized Tcl_DString to append to (must not be NULL)
- *      flags – bitmask of NS_CONN_* flags to decode
+ *      dsPtr - pointer to an initialized Tcl_DString to append to (must not be NULL)
+ *      flags - bitmask of NS_CONN_* flags to decode
  *
  * Returns:
  *      A pointer to the internal string buffer of dsPtr (i.e., dsPtr->string),

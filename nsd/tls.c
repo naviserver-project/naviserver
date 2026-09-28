@@ -2478,10 +2478,10 @@ ExecuteKeyScript(Tcl_DString *dsPtr, const char *scriptPath, const char *pemPath
  *           "Enter TLS password:" and read from the console.
  *
  * Parameters:
- *      buf    – buffer in which to store the passphrase
- *      size   – size of buf (including space for terminating NUL)
- *      rwflag – read/write flag (unused in this implementation)
- *      userdata – pointer to the NUL-terminated PEM file path string
+ *      buf    - buffer in which to store the passphrase
+ *      size   - size of buf (including space for terminating NUL)
+ *      rwflag - read/write flag (unused in this implementation)
+ *      userdata - pointer to the NUL-terminated PEM file path string
  *
  * Returns:
  *      The number of bytes copied into buf (excluding the NUL), or 0

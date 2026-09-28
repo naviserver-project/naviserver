@@ -9027,9 +9027,9 @@ ConnPoolInfoResetRateCB(void *hashValue, const void *UNUSED(ctx))
  *      to use in this pool.
  *
  * Parameters:
- *      hashKey    – pointer to the ConnPool being updated.
- *      hashValue  – pointer to the ConnPoolInfo holding per-thread state.
- *      ctx        – unused.
+ *      hashKey    - pointer to the ConnPool being updated.
+ *      hashValue  - pointer to the ConnPoolInfo holding per-thread state.
+ *      ctx        - unused.
  *
  * Results:
  *      Always returns NS_OK.
@@ -9038,7 +9038,7 @@ ConnPoolInfoResetRateCB(void *hashValue, const void *UNUSED(ctx))
  *      - Computes totalPoolRate across all writer threads for this pool.
  *      - Determines threadDeltaRate (evenly splitting remaining capacity).
  *      - Sets infoPtr->deltaPercentage to one-tenth of that delta,
- *        clamped to not go below –50%.
+ *        clamped to not go below -50%.
  *      - Logs a Notice message if the pool is active.
  *
  *----------------------------------------------------------------------
@@ -9113,8 +9113,8 @@ ConnPoolInfoUpdateCB(const void *hashKey, void *hashValue, const void *UNUSED(ct
  *           is recomputed based on global pool limits and thread counts.
  *
  * Parameters:
- *      writePtr   – first WriterSock in the thread's list of active writers.
- *      pools      – Tcl_HashTable mapping ConnPool* -> ConnPoolInfo*.
+ *      writePtr   - first WriterSock in the thread's list of active writers.
+ *      pools      - Tcl_HashTable mapping ConnPool* -> ConnPoolInfo*.
  *
  * Results:
  *      None.
@@ -9260,10 +9260,10 @@ BandwidthAdjustRateLimitsPerPool(WriterSock *writers, Tcl_HashTable *pools)
  *      (at least 1 ms) to throttle; otherwise returns 0.
  *
  * Parameters:
- *      w  – pointer to a WriterSock structure with fields:
- *             nsent       – total bytes sent so far
- *             currentRate – measured throughput (bytes per millisecond)
- *             rateLimit   – desired throughput limit (bytes per millisecond)
+ *      w  - pointer to a WriterSock structure with fields:
+ *             nsent       - total bytes sent so far
+ *             currentRate - measured throughput (bytes per millisecond)
+ *             rateLimit   - desired throughput limit (bytes per millisecond)
  *
  * Returns:
  *      The number of milliseconds the writer should pause before sending

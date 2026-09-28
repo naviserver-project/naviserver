@@ -264,14 +264,14 @@ Ns_AuthorizeUser(const Ns_Server *server, const char *user, const char *passwd,
  *
  *      Each entry appended to provide Tcl_DString
  *      is itself a Tcl list containing key/value pairs:
- *          type      – "user" or "request"
- *          authority – the authority label supplied at registration
- *          proc      – a string describing the C function or Tcl callback
+ *          type      - "user" or "request"
+ *          authority - the authority label supplied at registration
+ *          proc      - a string describing the C function or Tcl callback
  *
  * Parameters:
- *      dsPtr   – initialized Tcl_DString; on return it will contain a Tcl list
+ *      dsPtr   - initialized Tcl_DString; on return it will contain a Tcl list
  *                of dict entries, one per registered auth proc.
- *      servPtr – the NsServer whose authorization callback chains are inspected.
+ *      servPtr - the NsServer whose authorization callback chains are inspected.
  *
  * Results:
  *      None.  After this call, dsPtr holds a Tcl list of dict entries as above.

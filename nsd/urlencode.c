@@ -1410,7 +1410,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *      fail or if no valid fallback encoding is found.
  *
  * Side effects:
- *      May free and re‑initialize dsPtr during the fallback attempt.
+ *      May free and re-initialize dsPtr during the fallback attempt.
  *
  *----------------------------------------------------------------------
  */
@@ -1450,13 +1450,13 @@ UrlFallbackDecode(NsInterp *itPtr, Tcl_DString *dsPtr, const char *inputStr,
  *
  * UrlPercentDecode --
  *
- *      Decode a percent‑encoded URL string into UTF‑8 using a primary
+ *      Decode a percent-encoded URL string into UTF-8 using a primary
  *      charset (if provided) or the server's default URL encoding. If the
  *      decode fails due to an invalid encoding and no explicit charset was
  *      given, attempt to retry with a fallback charset.
  *
  * Results:
- *      Returns TCL_OK and sets the Tcl result to the decoded UTF‑8 string
+ *      Returns TCL_OK and sets the Tcl result to the decoded UTF-8 string
  *      if successful. On failure, returns TCL_ERROR, sets an error message
  *      and error code "NS_INVALID_UTF8" in the interpreter.
  *
@@ -1573,15 +1573,15 @@ NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
  *
  *      Implements the "ns_percentencode" Tcl command.
  *
- *      Percent‑encodes the given input string and returns the result.
- *      By default, the query‑style encoding scheme is used:
+ *      Percent-encodes the given input string and returns the result.
+ *      By default, the query-style encoding scheme is used:
  *          - Spaces become '+'.
  *          - Unsafe characters are replaced with "%xx" escapes.
  *
  *      Options:
  *        -charset <name>    : interpret the input string using the named
- *                             character set before encoding (defaults to UTF‑8)
- *        -scheme  <char>    : choose the percent‑encoding scheme
+ *                             character set before encoding (defaults to UTF-8)
+ *        -scheme  <char>    : choose the percent-encoding scheme
  *                             ('q' for query, 'p' for path, etc.)
  *        -uppercase         : emit hexadecimal digits in uppercase (e.g. "%2F" instead of "%2f")
  *

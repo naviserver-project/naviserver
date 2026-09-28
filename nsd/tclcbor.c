@@ -231,7 +231,7 @@ CborReadBE64(Tcl_Interp *interp, const uint8_t **pPtr, const uint8_t *end, uint6
  *
  *      Parse the CBOR "additional information" (ai) field of an initial byte
  *      and return the associated numeric argument in *argPtr.  Supports ai
- *      values 0..27 (direct/immediate and 1/2/4/8‑byte integers); rejects ai
+ *      values 0..27 (direct/immediate and 1/2/4/8-byte integers); rejects ai
  *      == 31 (indefinite length) in this minimal decoder.
  *
  * Parameters:
@@ -372,13 +372,13 @@ CborMakeBstrObj(const uint8_t *bytes, uint64_t len,
  *      0 (unsigned), 1 (negative), 2 (byte string), 3 (text string), 4
  *      (array; fixed length), 5 (map; fixed length), and selected simple
  *      values in major type 7 (false, true, null, undefined). Tags and
- *      floating‑point/simple values other than the listed booleans/null/
+ *      floating-point/simple values other than the listed booleans/null/
  *      undefined are rejected. Indefinite lengths are not supported.
  *
  * Parameters:
  *      interp       - Tcl interpreter for error reporting; must not be NULL.
  *      pPtr         - Address of the current read cursor; advanced on success.
- *      end          - One‑past‑the‑end pointer of the input buffer.
+ *      end          - One-past-the-end pointer of the input buffer.
  *      depth        - Current nesting depth; used to enforce CBOR_MAX_DEPTH.
  *      encoding     - Binary/text encoding used for CBOR byte strings (major 2).
  *      scratchDsPtr - Scratch DString used when producing encoded text for
@@ -536,9 +536,9 @@ CborDecodeAny(Tcl_Interp *interp, const uint8_t **pPtr, const uint8_t *end,
  *
  *      Implements both "ns_cbor decode" and "ns_cbor scan". Parses options,
  *      decodes a single CBOR item from the input object, and returns either
- *      the decoded value (decode) or a two‑element list {value
+ *      the decoded value (decode) or a two-element list {value
  *      bytes_consumed} (scan). Byte strings (major type 2) are produced as a
- *      bytearray or as a text‑encoded object depending on the selected
+ *      bytearray or as a text-encoded object depending on the selected
  *      Ns_BinaryEncoding.
  *
  * Parameters:
@@ -566,7 +566,7 @@ CborDecodeAny(Tcl_Interp *interp, const uint8_t **pPtr, const uint8_t *end,
  *      - Calls CborDecodeAny() to perform the actual parsing; advances an internal
  *        cursor over the consumed bytes and, for "scan", reports the number of bytes
  *        consumed relative to the start of the buffer.
- *      - Uses a scratch Tcl_DString as temporary storage when producing text‑encoded
+ *      - Uses a scratch Tcl_DString as temporary storage when producing text-encoded
  *        representations of CBOR byte strings.
  *
  *----------------------------------------------------------------------
