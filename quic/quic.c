@@ -6401,7 +6401,29 @@ static int on_recv_header(nghttp3_conn *UNUSED(conn), int64_t UNUSED(stream_id),
             }
         }
 
-        Ns_SetPutSz(hdrs, (const char*)n.base, (TCL_SIZE_T)n.len, (const char*)v.base, (TCL_SIZE_T)v.len);
+        /*
+         * RFC 9114, Section 4.2.1: concatenate split Cookie fields
+         * with "; " before passing them to the application.
+         */
+        if (n.len == 6 && memcmp(n.base, "cookie", 6) == 0) {
+            int idx = Ns_SetFind(hdrs, "cookie");
+
+            if (idx >= 0) {
+                Tcl_DString ds;
+
+                Tcl_DStringInit(&ds);
+                Tcl_DStringAppend(&ds, Ns_SetValue(hdrs, (size_t)idx),
+                                  TCL_INDEX_NONE);
+                Tcl_DStringAppend(&ds, "; ", 2);
+                Tcl_DStringAppend(&ds, (const char *)v.base, (TCL_SIZE_T)v.len);
+                Ns_SetPutValueSz(hdrs, (size_t)idx, ds.string, ds.length);
+                Tcl_DStringFree(&ds);
+
+                return 0;
+            }
+        }
+        Ns_SetPutSz(hdrs, (const char*)n.base, (TCL_SIZE_T)n.len,
+                    (const char*)v.base, (TCL_SIZE_T)v.len);
     }
     return 0;
 }
