@@ -607,6 +607,58 @@ Ns_DStringAppendSockState(Tcl_DString *dsPtr, Ns_SockState state)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_DStringAppendTLSErrorStack --
+ *
+ *      Append the supplied OpenSSL error and all remaining errors from
+ *      the calling thread's OpenSSL error queue to a Tcl_DString.
+ *      Prefix the first error with ": " and separate subsequent errors
+ *      with "; ". Each entry includes the numeric code and error text.
+ *
+ *      The caller supplies the first error, typically already removed
+ *      from the queue by ERR_get_error(). If sslERRcode is zero, nothing
+ *      is appended and the error queue is left untouched.
+ *
+ * Results:
+ *      A pointer to the resulting DString contents, valid until the
+ *      DString is modified or freed.
+ *
+ * Side effects:
+ *      May grow the DString. When sslERRcode is nonzero, drains the
+ *      calling thread's remaining OpenSSL error queue. Does not log.
+ *
+ *----------------------------------------------------------------------
+ */
+#if defined(HAVE_OPENSSL_EVP_H)
+# include <openssl/err.h>
+const char *
+Ns_DStringAppendTLSErrorStack(Tcl_DString *dsPtr, unsigned long sslERRcode)
+{
+    if (sslERRcode != 0u) {
+        char        errorBuffer[256];
+        const char *separator = ": ";
+
+        do {
+            ERR_error_string_n(sslERRcode, errorBuffer, sizeof(errorBuffer));
+            Ns_DStringPrintf(dsPtr, "%sOpenSSL errorCode:%lu errorString: %s",
+                             separator, sslERRcode, errorBuffer);
+            separator = "; ";
+            sslERRcode = ERR_get_error();
+        } while (sslERRcode != 0u);
+    }
+
+    return dsPtr->string;
+}
+#else
+const char *
+Ns_DStringAppendTLSErrorStack(Tcl_DString *dsPtr, unsigned long UNUSED(sslERRcode))
+{
+    return dsPtr->string;
+}
+#endif /* #if defined(HAVE_OPENSSL_EVP_H */
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_DStringToObj --
  *
  *      This function moves a dynamic string's contents to a new Tcl_Obj. Be

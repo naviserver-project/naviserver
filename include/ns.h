@@ -1617,6 +1617,10 @@ NS_EXTERN const char *
 Ns_DStringAppendSockState(Tcl_DString *dsPtr, Ns_SockState state)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN const char *
+Ns_DStringAppendTLSErrorStack(Tcl_DString *dsPtr, unsigned long sslERRcode)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN Tcl_Obj *
 Ns_DStringToObj(Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1);

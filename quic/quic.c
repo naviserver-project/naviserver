@@ -561,8 +561,7 @@ static void     quic_conn_enter_shutdown(ConnCtx *cc, const char *why) NS_GNUC_N
 static bool     quic_conn_has_live_requests(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static bool     quic_conn_can_be_freed(SSL *conn, uint64_t revents, ConnCtx *cc) NS_GNUC_NONNULL(1,3);
 static bool     quic_conn_set_sockaddr(SSL *ssl, struct sockaddr *saPtr, socklen_t *saLen) NS_GNUC_NONNULL(1,2,3);
-static int      quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl) NS_GNUC_NONNULL(1,2);
-
+static int      quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl, char **errorPtr) NS_GNUC_NONNULL(1,2,3);
 static void     quic_stream_accepted_null(ConnCtx *cc) NS_GNUC_NONNULL(1);
 static bool     quic_stream_keeps_conn_alive(StreamCtx *sc) NS_GNUC_NONNULL(1);
 static bool     quic_conn_stream_map_empty(ConnCtx *cc);
@@ -1576,11 +1575,18 @@ quic_conn_finish_handshake(ConnCtx *cc)
      * The incoming-stream policy is already installed when the connection
      * is accepted. Create and bind the required local HTTP/3 streams now.
      */
-    if (quic_conn_open_server_uni_streams(cc, &cc->h3ssl) != 0) {
-        Ns_Log(Error,
-               "[%lld] H3: failed to create required server uni streams",
-               (long long)dc->iter);
-        return -1;
+    {
+        char *errorMsg = NULL;
+
+        if (quic_conn_open_server_uni_streams(cc, &cc->h3ssl, &errorMsg) != 0) {
+            Ns_Log(Error,
+                   "[%lld] H3 conn %p: server uni-stream setup failed: %s",
+                   (long long)dc->iter,
+                   (void *)conn,
+                   errorMsg != NULL ? errorMsg : "unspecified failure");
+            ns_free(errorMsg);
+            return -1;
+        }
     }
 
 # if defined(HAVE_OPENSSL_4_1)
@@ -1911,138 +1917,209 @@ quic_conn_set_sockaddr(SSL *ssl, struct sockaddr *saPtr, socklen_t *saLen)
  *
  * quic_conn_open_server_uni_streams --
  *
- *      Create and register the HTTP/3 server-initiated unidirectional
- *      streams (control, QPACK encoder, QPACK decoder) on an existing
- *      QUIC connection, and bind them to the nghttp3 connection.
+ *      Create and register the server's HTTP/3 control, QPACK encoder,
+ *      and QPACK decoder streams, then bind them to nghttp3.
+ *      SSL_STREAM_FLAG_ADVANCE permits stream creation before the peer
+ *      grants sufficient unidirectional-stream credit.
  *
- *      The function:
- *        - Allocates three unidirectional streams with
- *          SSL_STREAM_FLAG_ADVANCE, allowing their stream objects to be
- *          created before peer stream credit becomes available.
- *        - Verifies they are write-only (server-initiated uni streams).
- *        - Registers each stream with the pollset and creates StreamCtx
- *          (PollsetAddStreamRegister), recording their QUIC stream IDs
- *          into *h3ssl.
- *        - Binds the control stream with nghttp3_conn_bind_control_stream().
- *        - Binds the QPACK encoder/decoder streams with
- *          nghttp3_conn_bind_qpack_streams().
- *        - Kicks the I/O state machine (h3_conn_write_step, SSL_handle_events)
- *          to flush any pending frames.
- *
- * Arguments:
- *      cc     - Connection context holding OpenSSL and HTTP/3 state.
- *      h3ssl  - Per-connection HTTP/3/SSL bundle where the new streams
- *               and their IDs are stored.
- *      cc->h3conn (nghttp3_conn*) and h3ssl->conn (SSL*) must be valid.
+ *      Called once during HTTP/3 setup, with the server stream pointers
+ *      initially NULL. On failure, capture the failing operation and
+ *      available OpenSSL or nghttp3 error details before cleanup.
+ *      The caller is responsible for logging the returned explanation.
  *
  * Results:
- *      Returns 0 on success. On failure, logs a warning/error, unregisters
- *      any partially created StreamCtx, frees any created SSL streams,
- *      resets the stored stream pointers/IDs in *h3ssl, and returns -1.
+ *      Returns 0 on success and leaves *errorPtr NULL.
+ *      Returns -1 on failure and sets *errorPtr to an allocated error
+ *      description, which the caller must release with ns_free().
  *
  * Side effects:
- *      Allocates OpenSSL stream objects; registers them with internal
- *      pollset/mappings; updates *h3ssl with stream pointers and IDs;
- *      performs nghttp3 control/QPACK binding; may advance QUIC state
- *      via SSL_handle_events().
- *      Streams created in advance may remain transport-blocked until the
- *      peer grants sufficient unidirectional-stream credit.
+ *      Allocates stream objects, registers their contexts and poll
+ *      interest, and updates the stream pointers and IDs in *h3ssl.
+ *      Binds the streams to nghttp3 and initiates HTTP/3 output and
+ *      QUIC event processing.
+ *
+ *      On failure, detaches registered stream contexts, frees created
+ *      stream objects, and resets their stored pointers and IDs.
+ *      Capturing an OpenSSL failure drains the calling thread's error
+ *      queue. Diagnostic storage is allocated only on failure.
+ *
+ *      Does not log setup failures directly; existing debug and
+ *      connection-shutdown diagnostics remain enabled.
  *
  *----------------------------------------------------------------------
  */
 static int
-quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
+quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl,
+                                  char **errorPtr)
 {
     NsTLSConfig   *dc = cc->dc;
     nghttp3_conn  *h3conn = cc->h3conn;
     SSL           *conn = h3ssl->conn;
     StreamCtx     *csc = NULL, *psc = NULL, *rsc = NULL;
-    const uint64_t stream_flags =  SSL_STREAM_FLAG_UNI | SSL_STREAM_FLAG_ADVANCE;
+    const uint64_t stream_flags =
+        SSL_STREAM_FLAG_UNI | SSL_STREAM_FLAG_ADVANCE;
+    const char    *failedOperation = NULL;
+    int            bindResult = 0;
+
+    NS_NONNULL_ASSERT(errorPtr != NULL);
+    *errorPtr = NULL;
 
     if (conn == NULL) {
-        Ns_Log(Warning, "H3: quic_conn_open_server_uni_streams no connection");
+        *errorPtr = ns_strdup("no QUIC connection");
         return -1;
     }
 
-    h3ssl->conn    = conn;
+    /*
+     * Check each creation immediately, preserving its error stack
+     * before another OpenSSL operation can change it.
+     */
+    ERR_clear_error();
     h3ssl->cstream = SSL_new_stream(conn, stream_flags);
-    h3ssl->pstream = SSL_new_stream(conn, stream_flags);
-    h3ssl->rstream = SSL_new_stream(conn, stream_flags);
-
-    if (h3ssl->rstream == NULL|| h3ssl->pstream  == NULL|| h3ssl->cstream == NULL) {
-        Ns_Log(Warning, "H3: quic_conn_open_server_uni_streams: could not open uni-streams");
-        goto cleanup_err;
+    if (h3ssl->cstream == NULL) {
+        failedOperation = "creating server control stream";
+        goto openssl_err;
     }
 
+    ERR_clear_error();
+    h3ssl->pstream = SSL_new_stream(conn, stream_flags);
+    if (h3ssl->pstream == NULL) {
+        failedOperation = "creating server QPACK encoder stream";
+        goto openssl_err;
+    }
 
-    {  // sanity test
+    ERR_clear_error();
+    h3ssl->rstream = SSL_new_stream(conn, stream_flags);
+    if (h3ssl->rstream == NULL) {
+        failedOperation = "creating server QPACK decoder stream";
+        goto openssl_err;
+    }
+
+    {
         int t0 = SSL_get_stream_type(h3ssl->cstream);
         int t1 = SSL_get_stream_type(h3ssl->pstream);
         int t2 = SSL_get_stream_type(h3ssl->rstream);
 
-        Ns_Log(Ns_LogQuicDebug, "[%lld] H3 server unis: c=%d, p=%d, r=%d (expect WRITE=%d)",
-               (long long)dc->iter, t0, t1, t2, SSL_STREAM_TYPE_WRITE);
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] H3 server unis: c=%d, p=%d, r=%d (expect WRITE=%d)",
+               (long long)dc->iter, t0, t1, t2,
+               SSL_STREAM_TYPE_WRITE);
+
         assert(t0 == SSL_STREAM_TYPE_WRITE);
         assert(t1 == SSL_STREAM_TYPE_WRITE);
         assert(t2 == SSL_STREAM_TYPE_WRITE);
     }
-    ossl_conn_maybe_log_first_shutdown(cc, "quic_conn_open_server_uni_streams streams created");
+
+    ossl_conn_maybe_log_first_shutdown(
+        cc, "quic_conn_open_server_uni_streams streams created");
 
     ERR_clear_error();
 
     csc = PollsetAddStreamRegister(cc, h3ssl->cstream, H3_KIND_CTRL);
     if (csc == NULL) {
-        Ns_Log(Warning, "H3: could not register server control stream");
+        *errorPtr = ns_strdup("registering server control stream failed");
         goto cleanup_err;
     }
     h3ssl->cstream_id = csc->quic_sid;
 
-    psc = PollsetAddStreamRegister(cc, h3ssl->pstream, H3_KIND_QPACK_ENCODER);
+    psc = PollsetAddStreamRegister(cc, h3ssl->pstream,
+                                  H3_KIND_QPACK_ENCODER);
     if (psc == NULL) {
-        Ns_Log(Warning, "H3: could not register server QPACK encoder stream");
+        *errorPtr = ns_strdup("registering server QPACK encoder stream failed");
         goto cleanup_err;
     }
     h3ssl->pstream_id = psc->quic_sid;
 
-    rsc = PollsetAddStreamRegister(cc, h3ssl->rstream, H3_KIND_QPACK_DECODER);
+    rsc = PollsetAddStreamRegister(cc, h3ssl->rstream,
+                                  H3_KIND_QPACK_DECODER);
     if (rsc == NULL) {
-        Ns_Log(Warning, "H3: could not register server QPACK decoder stream");
+        *errorPtr = ns_strdup("registering server QPACK decoder stream failed");
         goto cleanup_err;
     }
     h3ssl->rstream_id = rsc->quic_sid;
 
-    /* Bind control first */
-    if (nghttp3_conn_bind_control_stream(h3conn, (int64_t)h3ssl->cstream_id) != 0) {
-        Ns_Log(Error, "H3: Failed to bind control stream");
-        goto cleanup_err;
+    /*
+     * Bind the control stream, followed by the local QPACK streams.
+     */
+    bindResult = nghttp3_conn_bind_control_stream(
+        h3conn, (int64_t)h3ssl->cstream_id);
+    if (bindResult != 0) {
+        failedOperation = "binding server control stream";
+        goto nghttp3_err;
     }
-    ossl_conn_maybe_log_first_shutdown(cc, "quic_conn_open_server_uni_streams cstream bound");
 
-    /* Now bind QPACK (server's local streams) */
-    if (nghttp3_conn_bind_qpack_streams(h3conn,
-                                        (int64_t)h3ssl->pstream_id,
-                                        (int64_t)h3ssl->rstream_id) != 0) {
-        Ns_Log(Warning, "H3 quic_conn_open_server_uni_streams: nghttp3_conn_bind_qpack_streams failed");
-        goto cleanup_err;
+    ossl_conn_maybe_log_first_shutdown(
+        cc, "quic_conn_open_server_uni_streams cstream bound");
+
+    bindResult = nghttp3_conn_bind_qpack_streams(
+        h3conn,
+        (int64_t)h3ssl->pstream_id,
+        (int64_t)h3ssl->rstream_id);
+    if (bindResult != 0) {
+        failedOperation = "binding server QPACK streams";
+        goto nghttp3_err;
     }
-    ossl_conn_maybe_log_first_shutdown(cc, "quic_conn_open_server_uni_streams qpack bound");
 
-    h3_conn_write_step(cc);
+    ossl_conn_maybe_log_first_shutdown(
+        cc, "quic_conn_open_server_uni_streams qpack bound");
+
+    (void)h3_conn_write_step(cc);
     {
         int rv = SSL_handle_events(conn);
-        Ns_Log(Ns_LogQuicDebug, "[%lld] SSL_handle_events in quic_conn_open_server_uni_streams conn %p => %d",
-               (long long)dc->iter, (void*)cc->h3ssl.conn, rv);
+
+        Ns_Log(Ns_LogQuicDebug,
+               "[%lld] SSL_handle_events in "
+               "quic_conn_open_server_uni_streams conn %p => %d",
+               (long long)dc->iter, (void *)conn, rv);
     }
 
-    Ns_Log(Ns_LogQuicDebug, "[%lld] H3 quic_conn_open_server_uni_streams: cstream %llu %p pstream %llu %p rstream %llu %p",
+    Ns_Log(Ns_LogQuicDebug,
+           "[%lld] H3 quic_conn_open_server_uni_streams:"
+           " cstream %" PRIu64 " %p"
+           " pstream %" PRIu64 " %p"
+           " rstream %" PRIu64 " %p",
            (long long)dc->iter,
-           (long long)h3ssl->cstream_id, (void*)h3ssl->cstream,
-           (long long)h3ssl->pstream_id, (void*)h3ssl->pstream,
-           (long long)h3ssl->rstream_id, (void*)h3ssl->rstream
-           );
+           h3ssl->cstream_id, (void *)h3ssl->cstream,
+           h3ssl->pstream_id, (void *)h3ssl->pstream,
+           h3ssl->rstream_id, (void *)h3ssl->rstream);
     return 0;
 
- cleanup_err:
+nghttp3_err:
+    {
+        Tcl_DString ds;
+        char        codeBuffer[32];
+
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, failedOperation, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&ds, " failed: ", 9);
+        Tcl_DStringAppend(&ds, nghttp3_strerror(bindResult), TCL_INDEX_NONE);
+
+        snprintf(codeBuffer, sizeof(codeBuffer), " (%d)", bindResult);
+        Tcl_DStringAppend(&ds, codeBuffer, TCL_INDEX_NONE);
+
+        *errorPtr = Ns_DStringExport(&ds);
+    }
+    goto cleanup_err;
+
+openssl_err:
+    {
+        Tcl_DString   ds;
+        unsigned long errorCode = ERR_get_error();
+
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, failedOperation, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&ds, " failed", 7);
+
+        if (errorCode != 0u) {
+            Ns_DStringAppendTLSErrorStack(&ds, errorCode);
+        } else {
+            Tcl_DStringAppend(&ds, ": OpenSSL error stack empty",
+                              TCL_INDEX_NONE);
+        }
+
+        *errorPtr = Ns_DStringExport(&ds);
+    }
+
+cleanup_err:
     if (rsc != NULL) {
         PollsetDetachStream(rsc, "server QPACK decoder setup failed");
     }
@@ -2062,8 +2139,10 @@ quic_conn_open_server_uni_streams(ConnCtx *cc, struct h3ssl *h3ssl)
     if (h3ssl->cstream != NULL) {
         SSL_free(h3ssl->cstream);
     }
-    h3ssl->rstream    = h3ssl->pstream    = h3ssl->cstream = NULL;
-    h3ssl->rstream_id = h3ssl->pstream_id = h3ssl->cstream_id = (uint64_t)-1;
+
+    h3ssl->rstream = h3ssl->pstream = h3ssl->cstream = NULL;
+    h3ssl->rstream_id = h3ssl->pstream_id =
+        h3ssl->cstream_id = (uint64_t)-1;
 
     return -1;
 }

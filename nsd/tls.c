@@ -2583,28 +2583,17 @@ TLSPasswordCB(char *buf, int size, int UNUSED(rwflag), void *userdata)
  *
  *----------------------------------------------------------------------
  */
-/*
- */
+
 void
 NsTLSDrainErrorStack(Ns_LogSeverity severity, const char *errorContext,
                 unsigned long sslERRcode)
 {
     if (sslERRcode != 0u) {
-
         Tcl_DString ds;
-        char        errorBuffer[256];
-        const char *separator = ": ";
 
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, errorContext, TCL_INDEX_NONE);
-
-        do {
-            ERR_error_string_n(sslERRcode, errorBuffer, sizeof(errorBuffer));
-            Ns_DStringPrintf(&ds, "%sOpenSSL errorCode:%lu errorString: %s",
-                             separator, sslERRcode, errorBuffer);
-            separator = "; ";
-            sslERRcode = ERR_get_error();
-        } while (sslERRcode != 0u);
+        Ns_DStringAppendTLSErrorStack(&ds, sslERRcode);
 
         Ns_Log(severity, "%s", ds.string);
         Tcl_DStringFree(&ds);
