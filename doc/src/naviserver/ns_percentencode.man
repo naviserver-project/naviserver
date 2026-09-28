@@ -35,7 +35,7 @@
      [opt --] \
      [arg string]]
 
- Percent‑encodes a single string.
+ Percent-encodes a single string.
  All characters not in the selected scheme's unreserved set are
  replaced by "%" and two hex digits.
 
@@ -47,8 +47,8 @@
      [arg string]]
 
 
- Reverses the percent‑encoding in a string.  Under [var query] scheme
- only, "+" is converted back to space.  If decoding to UTF‑8 fails and
+ Reverses the percent-encoding in a string.  Under [var query] scheme
+ only, "+" is converted back to space.  If decoding to UTF-8 fails and
  [option -fallbackcharset] is given (and [option -charset] is not), a second
  decode attempt uses the fallback charset instead of raising an exception.
 
@@ -289,11 +289,11 @@
  [option -scheme] instead.
 
 [opt_def -fallbackcharset value]
- On decode, if the result is invalid UTF‑8 and [option -charset] is not
+ On decode, if the result is invalid UTF-8 and [option -charset] is not
  given, retry using this charset instead of raising an exception.
 
 [opt_def -uppercase]
- Output hex digits A–F in uppercase ("%2F" instead of "%2f").
+ Output hex digits A-F in uppercase ("%2F" instead of "%2f").
 
 [opt_def --]
  Marks the end of options; any following arguments (even starting with "-") are treated as data.
@@ -360,7 +360,7 @@ By default escapes use lowercase, but you can request uppercase:
  ## output: a%2FB%20c
 [example_end]
 
-Use the [term cookie] scheme to percent‑encode only those bytes
+Use the [term cookie] scheme to percent-encode only those bytes
 unsafe in cookie segments:
 
 [example_begin]
@@ -375,7 +375,7 @@ Construct an OAuth 1.0 signature base string
  ## output: Ladies%20%2B%20Gentlemen
 [example_end]
 
-If your percent‐encoded input isn't valid UTF‑8, you can retry with a different charset:
+If your percent‐encoded input isn't valid UTF-8, you can retry with a different charset:
 
 [example_begin]
  ns_percentdecode "%C3%A9t%C3%A9"
