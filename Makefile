@@ -10,8 +10,8 @@
 #
 #
 #
-MAN_CSS=man-5.1.css
-HEADER_INC=header-5.1.inc
+MAN_CSS=man-5.2.css
+HEADER_INC=header-5.2.inc
 
 NSBUILD=1
 

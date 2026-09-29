@@ -1,0 +1,587 @@
+/* CSS Variables */
+:root {
+  /* Base Colors */
+  --color-body-bg: #f9f9f9;
+  --color-body-text: #333;
+  --color-anchor: #004080;
+  --color-primary-blue: #004080;
+  --color-white: #fff;
+  --color-accent-yellow: #ffc107;
+
+  /* Additional Colors */
+  --color-anchor-hover-text: #0059b3;
+  --color-border: #ccc;
+  --color-footer-bg: #eee;
+  --color-footer-link: #333;
+  --color-footer-text: black;
+  --color-h2-text: var(--color-primary-blue);
+  --color-header-bg: var(--color-primary-blue);
+  --color-header-text: var(--color-white);
+  --color-header-strong-text: var(--color-white);
+  --color-info-bg: #f1f1f1;
+  --color-pre-bg: #eeeeee;
+  --color-sample-bg: #f9f6f6;
+  --color-secondary-text: #666;
+  --color-table-cell-bg: #eaeaea;
+  --color-table-header-bg: #999;
+  --color-table-header-text: #fff;
+  --color-tip: #777;
+  --color-tooltip-bg: #999;
+  --color-tooltip-text: var(--color-white);
+}
+
+/* Dark Mode Variables: Blueish Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-body-bg: #0d1b2a; /* dark blueish background */
+    --color-body-text: #e0e0e0;
+    --color-anchor: #8ea8c3; /* was #8CA6C0, #6B8CAD and #527394; */
+    --color-primary-blue: #1e3a5f;
+    --color-white: #fff;
+    --color-accent-yellow: #ffc107;
+
+    --color-anchor-hover-text: #98B3CD;
+    --color-border: #444;
+    --color-footer-bg: #102a43;
+    --color-footer-link: #a0c4ff;
+    --color-footer-text: #e0e0e0;
+    --color-h2-text: var(--color-body-text);
+    --color-header-bg: #00264D;
+    --color-header-strong-text: #9CB3C9; /* var(--color-anchor), #B0CFE0; */
+    --color-header-text: var(--color-white);
+    --color-info-bg: #1e293b;
+    --color-pre-bg: #102a43;
+    --color-sample-bg: #102a43;
+    --color-secondary-text: #bbb;
+    --color-table-cell-bg: #1c2833;
+    --color-table-header-bg: #334;
+    --color-table-header-text: #fff;
+    --color-tip: #aaa;
+    --color-tooltip-bg: #334;
+    --color-tooltip-text: var(--color-white);
+  }
+}
+
+
+/* Global Styles */
+html {
+    font-family: Arial, sans-serif;
+}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: var(--color-body-bg);
+  color: var(--color-body-text);
+  line-height: 1.5;
+  padding: 0 2em;
+}
+body > a {
+    font-size: smaller;
+}
+body {
+    color: #777;
+}
+body .doctools {
+    color: var(--color-body-text);
+}
+ul li::marker {
+    color: #999;
+}
+hr {
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Other Elements */
+p, dl dd {
+   /*min-width: 15em;*/
+   max-width: 50em;
+}
+
+dt strong, dt i.arg, table tr td strong {
+   font-weight: normal;
+}
+.doctools_definitions {
+  margin: 0.6rem 40px 1.2rem 40px;
+}
+.doctools_definitions dt em {
+    font-weight: 500;
+    font-style: normal;
+    color: #004080;
+}
+
+/* Toc Page Styles */
+table.doctools_toc td {
+    color: var(--color-body-text);
+}
+@media (prefers-color-scheme: dark) {
+    table.doctools_toc td {
+        background-color: var(--color-body-bg);
+    }
+}
+
+strong.toc {
+    font-weight: bold;
+    font-size: larger;
+}
+dl.toc dd {
+    margin-left: 1em;
+}
+
+/* Header Container */
+.man-header {
+  background-color: var(--color-header-bg);
+  color: var(--color-header-text);
+  margin: 0 -2em;
+}
+.man-header a {
+  color: var(--color-header-strong-text);
+  font-size: 1.5em;
+  text-decoration: none;
+}
+.man-header a:hover {
+    color: var(--color-header-strong-text);
+}
+
+/* Main Header */
+.header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+}
+.header-left {
+  display: flex;
+  align-items: baseline;
+}
+.logo {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  background: url('logo.svg') no-repeat center;
+  background-size: contain;
+  margin-right: 10px;
+}
+header span.tagline {
+    font-size: 1em;
+    margin-left: 10px;
+}
+
+/* Version Switcher */
+.version-switcher {
+  display: flex;
+  gap: 10px;
+}
+.version-switcher a {
+  text-decoration: none;
+  color: var(--color-accent-yellow);
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+.version-switcher a:hover {
+  background-color: rgba(255, 193, 7, 0.2);
+}
+.version-switcher a.active {
+  background-color: var(--color-accent-yellow);
+  color: var(--color-primary-blue);
+  border-color: var(--color-accent-yellow);
+}
+
+/* Info Bar */
+.man-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  background-color: var(--color-info-bg);
+  color: var(--color-secondary-text); /* var(--color-anchor);*/ /*var(--color-primary-blue);*/
+  padding: 8px 20px;
+  border-top: 1px solid var(--color-border);
+}
+.man-info .man-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: bold;
+}
+.man-info .man-details {
+  margin: 0;
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--color-secondary-text);
+}
+
+@media (max-width: 905px) {
+    .man-info .man-details {
+        font-size: smaller;
+    }
+    .man-info .man-title {
+        margin: 0 10px 0 0;
+        font-size: 1.0rem;
+    }
+    header span.tagline {
+        font-size: 0.7em;
+    }
+    .man-header {
+        margin: 0 -1em;
+    }
+    .man-header a {
+        font-size: 1.2em;
+    }
+    .version-switcher a {
+        padding: 2px 4px;
+        font-size: 0.8rem;
+    }
+    body {
+        padding: 0 1em;
+    }
+    body > a {
+        font-size: 0.8rem;
+    }
+    div.doctools {
+        margin: 0 -1em;
+    }
+}
+
+/* Horizontal Rules */
+hr {
+  margin: 10px 0;
+}
+
+/* Page Title */
+.doctools_title {
+  font-size: 1.8rem;
+  color: var(--color-primary-blue);
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Section Headings */
+.doctools_section h2 {
+  font-size: 1.4rem;
+  color: var(--color-h2-text);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 5px;
+  margin: 1.4rem 20px 0.55rem 20px;
+}
+
+/* Subsection Headings */
+.doctools_section h3 {
+  font-size: 1.22rem;
+  color: var(--color-h2-text);
+  margin: 1.4rem 20px 0.55rem 20px;
+}
+
+/* Content Spacing */
+.doctools_section p,
+.doctools_section ul,
+.doctools_section dl {
+  margin: 10px 20px;
+}
+
+/* Table Styling */
+table {
+  width: 90%;
+  margin: 20px auto;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+table th,
+table td {
+  border: 1px solid var(--color-border);
+  padding: 8px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+table th {
+  background-color: var(--color-table-header-bg);
+  color: var(--color-table-header-text);
+}
+table td:first-child {
+  width: 153px;
+  background-color: var(--color-table-cell-bg);
+  font-weight: bold;
+  overflow-wrap: break-word;
+}
+col.doctools_idxleft {
+  width: 200px;
+}
+col.doctools_idxright {
+  width: auto;
+}
+tr.doctools_idxheader th[colspan="2"] {
+    text-align: left;
+}
+tr.doctools_idxheader a {
+    color: var(--color-white);
+}
+
+@media (max-width: 905px) {
+    col.doctools_idxleft {
+        width: 120px;
+    }
+    table td.doctools_idxleft {
+        font-size: 13px;
+    }
+    table td:first-child {
+        width: 123px;
+        font-size: 13px;
+    }
+}
+
+/* Links */
+a {
+    color: var(--color-anchor);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+  color: var(--color-anchor-hover-text);
+}
+
+/* Tooltip Styling */
+.tooltip {
+  position: relative;
+  cursor: help;
+}
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: var(--color-tooltip-bg);
+  color: var(--color-tooltip-text);
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 5px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--color-tooltip-bg) transparent transparent transparent;
+}
+
+/* Tip Marker */
+.tip::after {
+  content: " ⓘ";
+  font-size: 0.9em;
+  color: var(--color-tip);
+  margin-left: 4px;
+}
+
+/* Doctools Headings */
+.doctools h1 {
+   font-size: 1.3em;
+}
+
+/* Table Adjustments */
+table {
+   width: 100% !important;
+   background-color: var(--color-white);
+   border: 0;
+   border-collapse: collapse;
+}
+table tr td {
+   background-color: var(--color-white);
+   padding-bottom: 0.3em;
+}
+@media (prefers-color-scheme: dark) {
+    table tr td {
+        background-color: var(--color-body-bg);
+    }
+}
+
+
+table tr td a {
+   text-decoration: none;
+}
+table table tr td a {
+   color: black;
+}
+table tr td a:hover {
+    color: var(--color-anchor-hover-text);
+}
+
+/* Definition Lists */
+dl dt {
+   margin: 0.5em 0;
+   margin-left: 5em;
+   text-indent: -5em;
+   max-width: 50em;
+}
+dd > dl.doctools_options,
+dd > dl.doctools_arguments {
+    margin-left: 2em;
+}
+.sample {
+   background-color: var(--color-sample-bg);
+   margin-left: 0;
+   padding: 1em 1em 1em 2em;
+}
+
+@media (max-width: 905px) {
+    dl dt {
+        margin-left: 3em;
+        text-indent: -3em;
+    }
+    dl dd {
+        margin-left: 0;
+    }
+}
+
+/* Footer */
+#man-footer {
+   background-color: var(--color-footer-bg);
+   color: var(--color-footer-text);
+   border-top: 2px solid var(--color-border);
+   margin: 3em -2em -1em -2em;
+   padding-bottom: 1em;
+}
+#man-footer ul {
+   color: var(--color-body-text);
+   list-style-type: circle;
+}
+#man-footer a {
+   color: var(--color-footer-link);
+   text-decoration: none;
+   font-size: 0.8em;
+}
+#man-footer a:hover {
+    color: var(--color-anchor-hover-text);
+    text-decoration: underline;
+}
+#f-poweredbyico {
+   float: right;
+   margin: 1em;
+}
+
+/* Inline Code */
+b.const {
+    font-family: "Courier New", Courier, monospace;
+    font-weight: normal;
+}
+ul.doctools_syntax li a span.opt b {
+    font-weight: normal;
+}
+
+/* Syntax Lists */
+ul.doctools_syntax li {
+    margin-bottom: 6px;
+}
+
+/* Code Examples */
+pre.doctools_example {
+    background-color: var(--color-pre-bg);
+    padding: 10px;
+    margin: 0 2em;
+    overflow: auto;
+}
+
+/* Section Spacing Adjustments */
+div.doctools_section p {
+    margin-left: 2em;
+}
+
+/* Lists */
+div.doctools_section ul.doctools_itemized,
+div.doctools_section ol.doctools_enumerated {
+    padding-left: 3em;
+}
+
+div.doctools_section ul.doctools_itemized ul,
+div.doctools_section ol.doctools_enumerated ul,
+div.doctools_section ul.doctools_itemized ol,
+div.doctools_section ol.doctools_enumerated ol {
+    padding-left: 1.5em;
+}
+
+div.doctools_section ul.doctools_itemized li p,
+div.doctools_section ol.doctools_enumerated li p,
+div.doctools_section ol.doctools_enumerated li pre {
+    margin-left: 0;
+}
+
+/* Definition lists, e.g. generated configuration parameter references */
+div.doctools_section dl.doctools_definitions {
+  margin: 0.6rem 2em 1.2rem 2em;
+}
+
+div.doctools_section dl.doctools_definitions > dt {
+  margin: 1rem 0 0 0;
+  margin-left: 0;
+  text-indent: 0;
+  max-width: none;
+  font-weight: normal;
+}
+
+div.doctools_section dl.doctools_definitions > dd {
+  margin-left: 2em;
+  margin-bottom: 0.7rem;
+}
+
+div.doctools_section dl.doctools_definitions > dd p {
+  margin-left: 0;
+  margin-top: 0.25rem;
+}
+
+div.doctools_section dl.doctools_definitions > dt em {
+  font-weight: 600;
+  font-style: normal;
+  color: #004080;
+}
+
+/* Compact attribute lists inside definition entries */
+div.doctools_section dl.doctools_definitions > dd ul.doctools_itemized {
+  margin-top: 0.15rem;
+  margin-bottom: 0.55rem;
+  padding-left: 1.8em;
+}
+
+div.doctools_section dl.doctools_definitions > dd ul.doctools_itemized li {
+  margin-top: 0.05rem;
+  margin-bottom: 0.05rem;
+}
+
+div.doctools_section dl.doctools_definitions > dd ul.doctools_itemized li p {
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 0;
+}
+
+div.doctools_section dl.doctools_definitions > dt {
+  margin: 0.9rem 0 0.2rem 0;
+  text-indent: 0;
+  max-width: none;
+  font-weight: normal;
+}
+
+div.doctools_section dl.doctools_definitions > dd {
+  margin-left: 2em;
+  margin-bottom: 0.75rem;
+}
+
+div.doctools_section dl.doctools_definitions > dd > p:first-child {
+  margin-top: 0;
+}
+
+
+div.doctools_section dl.doctools_definitions > dd > p {
+  margin-bottom: 0.25rem;
+}
