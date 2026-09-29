@@ -2059,7 +2059,17 @@ stops execution of that ADP page}
                     {POSTGRES, MDY} {POSTGRES, DMY}
                     {GERMAN, DMY}
                 }
-                desc {PostgreSQL DateStyle setting applied to database sessions opened by this driver; explicit values such as ISO, DMY or ISO, MDY are recommended to define both output style and ambiguous date input ordering. The historical values ISO, SQL, POSTGRES, GERMAN, NONEURO, and EURO remain accepted for compatibility. When unset, PGDATESTYLE or the PostgreSQL server default applies}
+                desc {                    
+                    PostgreSQL DateStyle setting applied to database
+                    sessions opened by this driver; explicit values
+                    such as ISO, DMY or ISO, MDY are recommended to
+                    define both output style and ambiguous date input
+                    ordering. The historical values ISO, SQL,
+                    POSTGRES, GERMAN, NONEURO, and EURO remain
+                    accepted for compatibility. When unset,
+                    PGDATESTYLE or the PostgreSQL server default
+                    applies
+                }
             }
             pgbin {
                 type path
@@ -2986,12 +2996,25 @@ stops execution of that ADP page}
         }
 
         nssmtpd {
-            :scope global
+            :title {nssmtpd}
+            :scope server
             :desc {
                 The nssmtpd module provides an SMTP server for NaviServer. It can be
                 used to receive mail locally, relay messages to another mail server,
                 filter incoming messages, and dispatch SMTP processing to Tcl callback
                 procedures.
+
+                Optional Tcl command prefixes provide envelope alias resolution and
+                recipient validation for untrusted incoming SMTP peers. Both are
+                disabled by default. The supplied file callbacks support classical
+                aliases and Postfix virtual address-forwarding maps without requiring
+                a database. Message headers and envelope senders are not rewritten.
+
+                Alias resolution does not add a persistent delivery queue or direct
+                MX delivery. Retain an upstream MTA for these functions. In the
+                streaming relay path, forwarding precedes the message-data callback
+                and spam checks; these checks cannot prevent delivery already made
+                to the relay.
 
                 The module is an external NaviServer module and must be compiled and
                 installed separately. For new mail-related applications, nssmtpd or
@@ -3027,6 +3050,15 @@ stops execution of that ADP page}
                     ns_param logging     on
                     ns_param logfile     smtpsend.log
                     ns_param logrollfmt  %Y-%m-%d
+
+                    # Optional alias-only reception for example.org. Keep these
+                    # commented to retain the default passthrough behavior.
+                    # ns_param relaydomains {localhost example.org}
+                    # ns_param aliasproc {smtpd::filealiases virtual /var/www/openacs/etc/mail/virtual {example.org}}
+                    # ns_param recipientcheckproc {smtpd::filealiasexists virtual /var/www/openacs/etc/mail/virtual {example.org}}
+                    
+                    # Public reception also requires a reachable listener address
+                    # and port; the loopback listener above is for local submission.
                 }
             }
 
@@ -3037,6 +3069,7 @@ stops execution of that ADP page}
 
             port {
                 type integer
+                default {25}
                 desc {TCP port on which the SMTP server listens}
             }
             relay {
@@ -3051,32 +3084,149 @@ stops execution of that ADP page}
 
             initproc {
                 type proc
-                desc {Tcl callback procedure invoked during SMTP session initialization}
+                default {smtpd::init}
+                desc {Tcl initialization procedure invoked at server startup; the supplied procedure populates relay and trusted-peer rules from relaydomains and localdomains}
+            }
+
+            heloproc {
+                type proc
+                default {}
+                desc {Optional Tcl callback procedure for HELO/EHLO handling; receives the SMTP session ID}
+            }
+
+            mailproc {
+                type proc
+                default {}
+                desc {Optional Tcl callback procedure for MAIL FROM handling; receives the SMTP session ID}
             }
 
             rcptproc {
                 type proc
-                desc {Tcl callback procedure invoked for SMTP recipient handling}
+                default {smtpd::rcpt}
+                desc {                    
+                    Tcl callback procedure for recipient handling
+                    after relay authorization and before alias
+                    expansion; receives the SMTP session ID. The
+                    supplied smtpd::rcpt invokes the optional
+                    recipientcheckproc policy. Custom callbacks must
+                    explicitly call smtpd::checkrecipient to adopt
+                    that policy.
+                }
+            }
+
+            aliasproc {
+                type list
+                default {}
+                desc {
+                    Tcl command prefix called with one envelope recipient, returning
+                    a Tcl list of final envelope destinations. Used by incoming SMTP,
+                    ns_smtpd send and ns_smtpd resolve. Unset or empty disables alias
+                    handling and preserves legacy behavior. Return the original address
+                    for passthrough, an empty list for unknown recipient, or raise an
+                    error for lookup failure. Incoming failures produce 550 for unknown
+                    recipients, 452 for recipient-limit overflow, and 451 for other
+                    resolution failures. Expansion follows the original recipient's
+                    authorization and rcptproc checks and inherits its flags and data.
+                    Duplicate destinations are removed within an expansion and maxrcpt
+                    bounds the resulting recipient count.
+
+                    The supplied prefix {smtpd::filealiases format filename domains}
+                    supports aliases or virtual text files. It resolves bounded alias
+                    chains, detects cycles and supports virtual catch-alls. Unmapped
+                    addresses pass through. Use recipientcheckproc separately to reject
+                    unknown original recipients from untrusted peers. No file is read
+                    unless a file callback is explicitly configured.
+                }
+            }
+
+            recipientcheckproc {
+                type list
+                default {}
+                desc {
+                    Optional Tcl command prefix used by smtpd::checkrecipient, called
+                    by the supplied smtpd::rcpt. Receives one original envelope recipient
+                    and returns a Tcl boolean: true continues processing, false rejects
+                    with 550 Unknown recipient. Errors or nonboolean results cause 451
+                    Recipient lookup failed. Only the current recipient is removed on
+                    rejection; earlier accepted recipients remain.
+
+                    Unset or empty preserves existing behavior. Trusted SMTP peers
+                    identified by localdomains bypass this check. Trust is based on the
+                    connection peer, never the envelope sender. Direct ns_smtpd send
+                    and ns_smtpd resolve do not invoke this policy. Existing custom
+                    rcptproc callbacks are unchanged unless they explicitly call
+                    smtpd::checkrecipient and stop processing when it returns false.
+
+                    The supplied prefix {smtpd::filealiasexists format filename domains}
+                    shares parsing and matching with smtpd::filealiases. Exact entries,
+                    identity mappings and virtual catch-alls declare known recipients;
+                    unknown original recipients in domains return false. Other domains
+                    return true, without overriding the existing relay authorization.
+                    Use the same map and domains for both callbacks. Validation and
+                    expansion read separate snapshots of the file. Custom callbacks
+                    may use other backends and must not modify the SMTP session or send
+                    messages.
+                }
             }
 
             dataproc {
                 type proc
+                default {smtpd::data}
                 desc {Tcl callback procedure invoked for processing SMTP message data}
             }
 
             errorproc {
                 type proc
+                default {smtpd::error}
                 desc {Tcl callback procedure invoked for SMTP error handling}
             }
 
             relaydomains {
                 type list
-                desc {Domain names for which this SMTP server accepts mail for relaying}
+                default {localhost}
+                desc {Recipient-domain relay rules loaded by smtpd::init. Permit untrusted peers to address these domains; this does not establish that an individual recipient exists. Configure recipientcheckproc for alias-only domains}
             }
 
             localdomains {
                 type list
-                desc {Domain names treated as local by this SMTP server}
+                default {localhost}
+                desc {Trusted sending-peer addresses, networks or hostnames loaded by smtpd::init. Matching connections receive the LOCAL flag and may relay to arbitrary recipient domains; they also bypass recipientcheckproc. This is not a list of local recipient domains. Restrict it to trusted submitting peers}
+            }
+
+            readtimeout {
+                type integer
+                default {60}
+                desc {Receive timeout in seconds. The local receive implementation shares a deadline across readiness retries for one buffer refill, not across an entire SMTP line or transaction}
+            }
+
+            writetimeout {
+                type integer
+                default {60}
+                desc {Timeout in seconds used for outbound SMTP and spamd connection establishment. The current local send implementation uses separate retry waits; this setting is not an overall write or SMTP transaction deadline}
+            }
+
+            bufsize {
+                type integer
+                default {4096}
+                desc {Size of the SMTP receive buffer in bytes}
+            }
+
+            maxrcpt {
+                type integer
+                default {100}
+                desc {Maximum number of recipients; alias expansion also enforces this limit, accounting for recipients already accepted in an incoming transaction}
+            }
+
+            maxline {
+                type integer
+                default {4096}
+                desc {SMTP input-line length limit in bytes}
+            }
+
+            maxdata {
+                type integer
+                default {10485760}
+                desc {Maximum SMTP message data size in bytes}
             }
 
             logging {
@@ -3092,7 +3242,7 @@ stops execution of that ADP page}
 
             logmaxbackup {
                 type integer
-                default {10}
+                default {100}
                 desc {Maximum number of rotated SMTP sending log files to keep}
             }
 
