@@ -28,6 +28,8 @@ The ns/server/$server/pools section defines named connection thread
 [def "Parameter name: pool name"]
 Configuration-defined connection pool name whose value is a human-readable pool description; the pool name is used in ns/server/$server/pool/$pool sections
 
+
+
 [list_begin itemized]
 [item] Value type: [const "string"]
 [item] Role of parameter name: configuration-defined identifier

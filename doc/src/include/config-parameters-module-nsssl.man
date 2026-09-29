@@ -33,6 +33,8 @@ For detailed documentation, see [uri ../../nsssl/files/nsssl.html {nsssl}].
 [def "Parameter name: [emph "certificate"]"]
 Certificate chain file in PEM format; relative paths are resolved against the certificates directory below the home directory
 
+
+
 [list_begin itemized]
 [item] Type: [const "path"]
 [list_end]
@@ -40,12 +42,16 @@ Certificate chain file in PEM format; relative paths are resolved against the ce
 [def "Parameter name: [emph "ciphers"]"]
 OpenSSL cipher list used for TLS connections; controls the allowed cipher suites for protocols where OpenSSL uses the traditional cipher-list syntax
 
+
+
 [list_begin itemized]
 [item] Type: [const "string"]
 [list_end]
 
 [def "Parameter name: [emph "ciphersuites"]"]
-OpenSSL TLS 1.3 cipher suite list for this HTTPS driver; use ciphers for TLS 1.2 and older protocol versions
+OpenSSL TLS 1.3 cipher suite list for this TLS-enabled driver; use ciphers for TLS 1.2 and older protocol versions
+
+
 
 [list_begin itemized]
 [item] Type: [const "string"]
@@ -54,6 +60,8 @@ OpenSSL TLS 1.3 cipher suite list for this HTTPS driver; use ciphers for TLS 1.2
 [def "Parameter name: [emph "clientcafile"]"]
 Trusted CA certificates file for client certificate validation; relative paths are resolved against the home directory
 
+
+
 [list_begin itemized]
 [item] Type: [const "path"]
 [list_end]
@@ -61,12 +69,16 @@ Trusted CA certificates file for client certificate validation; relative paths a
 [def "Parameter name: [emph "clientcapath"]"]
 Trusted CA certificates directory for client certificate validation; relative paths are resolved against the home directory
 
+
+
 [list_begin itemized]
 [item] Type: [const "path"]
 [list_end]
 
 [def "Parameter name: [emph "clientcertmode"]"]
 Client certificate request mode
+
+
 
 [list_begin itemized]
 [item] Type: [const "enum"]
@@ -77,6 +89,8 @@ Client certificate request mode
 [def "Parameter name: [emph "h3advertise"]"]
 Advertise HTTP/3 availability via the Alt-Svc response header when an HTTP/3 driver is active and linked to this TLS driver; no header is added when Alt-Svc is already set
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -84,6 +98,8 @@ Advertise HTTP/3 availability via the Alt-Svc response header when an HTTP/3 dri
 
 [def "Parameter name: [emph "h3persist"]"]
 Add the persist flag to the HTTP/3 Alt-Svc advertisement, indicating that clients may keep using the advertised HTTP/3 alternative across network changes
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -93,12 +109,16 @@ Add the persist flag to the HTTP/3 Alt-Svc advertisement, indicating that client
 [def "Parameter name: [emph "key"]"]
 Private key file in PEM format; optional when the private key is included in the certificate file; relative paths are resolved against the certificates directory below the home directory
 
+
+
 [list_begin itemized]
 [item] Type: [const "path"]
 [list_end]
 
 [def "Parameter name: [emph "ocspcheckinterval"]"]
 OCSP recheck interval
+
+
 
 [list_begin itemized]
 [item] Type: [const "time"]
@@ -108,6 +128,8 @@ OCSP recheck interval
 [def "Parameter name: [emph "ocspstapling"]"]
 Enable OCSP stapling
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -116,20 +138,27 @@ Enable OCSP stapling
 [def "Parameter name: [emph "ocspstaplingverbose"]"]
 Enable verbose OCSP stapling logging
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
 [list_end]
 
 [def "Parameter name: [emph "protocols"]"]
-TLS protocol versions enabled for this driver
+Colon-separated string of TLS/SSL protocol versions to disable for this driver. The traditional nsssl syntax uses exclusions prefixed with "!", for example "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1". When omitted, the default disables SSLv2, SSLv3, TLSv1.0, and TLSv1.1. When explicitly set to the empty string, NaviServer applies no protocol restriction and leaves the effective protocol set to OpenSSL and the system crypto policy.
+
+
 
 [list_begin itemized]
-[item] Type: [const "list"]
+[item] Type: [const "string"]
+[item] Default: [const "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"]
 [list_end]
 
 [def "Parameter name: [emph "tlskeylogfile"]"]
 TLS key log file used for writing TLS session secrets for debugging or protocol analysis; when set to a non-empty value, the file is opened in append mode, and when set to an empty value, NaviServer uses the SSLKEYLOGFILE environment variable. The file contains sensitive material that can decrypt captured TLS traffic
+
+
 
 [list_begin itemized]
 [item] Type: [const "path"]
@@ -138,12 +167,16 @@ TLS key log file used for writing TLS session secrets for debugging or protocol 
 [def "Parameter name: [emph "tlskeyscript"]"]
 Helper script used to obtain the password for the server private key when the key is encrypted in the PEM file
 
+
+
 [list_begin itemized]
 [item] Type: [const "script"]
 [list_end]
 
 [def "Parameter name: [emph "vhostcertificates"]"]
 Directory for virtual-host certificates of the default server
+
+
 
 [list_begin itemized]
 [item] Type: [const "path"]

@@ -34,6 +34,8 @@ For detailed documentation, see [uri ../../nsperm/files/nsperm.html {nsperm}].
 [def "Parameter name: [emph "htaccess"]"]
 Activate htaccess mode, which is similar to Apache but more simpler and limited in functionality. It supports only allowing and denying access to a particular directory.
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -41,6 +43,8 @@ Activate htaccess mode, which is similar to Apache but more simpler and limited 
 
 [def "Parameter name: [emph "passwdfile"]"]
 Absolute path to the passwd file
+
+
 
 [list_begin itemized]
 [item] Type: [const "path"]

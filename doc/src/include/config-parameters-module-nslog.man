@@ -32,6 +32,8 @@ For detailed documentation, see [uri ../../nslog/files/nslog.html {nslog}].
 [def "Parameter name: [emph "checkforproxy"]"]
 Legacy option for logging the client address from X-Forwarded-For; deprecated in favor of reverse-proxy mode, which centralizes trusted proxy handling for access logs and peer-address APIs
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -41,6 +43,8 @@ Legacy option for logging the client address from X-Forwarded-For; deprecated in
 [def "Parameter name: [emph "driver"]"]
 Tcl string-match pattern for selecting network driver instance names to be logged by this nslog instance; when unset, the access log records requests from all drivers
 
+
+
 [list_begin itemized]
 [item] Type: [const "pattern"]
 [item] Default: [const ""]
@@ -49,12 +53,16 @@ Tcl string-match pattern for selecting network driver instance names to be logge
 [def "Parameter name: [emph "extendedheaders"]"]
 Additional header fields to include in access log entries; entries without a prefix are treated as request headers, while request:NAME and response:NAME select request and response headers explicitly
 
+
+
 [list_begin itemized]
 [item] Type: [const "list"]
 [list_end]
 
 [def "Parameter name: [emph "file"]"]
 Access log file written by this nslog instance; relative paths are resolved against the server log directory
+
+
 
 [list_begin itemized]
 [item] Type: [const "path"]
@@ -64,6 +72,8 @@ Access log file written by this nslog instance; relative paths are resolved agai
 [def "Parameter name: [emph "formattedtime"]"]
 Use formatted timestamps instead of Unix time
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "true"]
@@ -71,6 +81,8 @@ Use formatted timestamps instead of Unix time
 
 [def "Parameter name: [emph "logcombined"]"]
 Use NCSA combined log format including referer and user-agent
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -80,6 +92,8 @@ Use NCSA combined log format including referer and user-agent
 [def "Parameter name: [emph "logpartialtimes"]"]
 Log partial request timing information for selected request processing phases; useful for diagnosing where request time is spent
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -87,6 +101,8 @@ Log partial request timing information for selected request processing phases; u
 
 [def "Parameter name: [emph "logreqtime"]"]
 Include total request processing time in access log entries
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -96,6 +112,8 @@ Include total request processing time in access log entries
 [def "Parameter name: [emph "logthreadname"]"]
 Include the connection thread name in access log entries; useful for debugging thread and pool behavior
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -104,6 +122,8 @@ Include the connection thread name in access log entries; useful for debugging t
 [def "Parameter name: [emph "maskipv4"]"]
 IPv4 address mask for anonymizing logged client addresses
 
+
+
 [list_begin itemized]
 [item] Type: [const "ip-mask"]
 [list_end]
@@ -111,12 +131,16 @@ IPv4 address mask for anonymizing logged client addresses
 [def "Parameter name: [emph "maskipv6"]"]
 IPv6 address mask for anonymizing logged client addresses
 
+
+
 [list_begin itemized]
 [item] Type: [const "ip-mask"]
 [list_end]
 
 [def "Parameter name: [emph "masklogaddr"]"]
 Anonymize logged client addresses using maskipv4 and maskipv6 before writing access log entries
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -126,6 +150,8 @@ Anonymize logged client addresses using maskipv4 and maskipv6 before writing acc
 [def "Parameter name: [emph "maxbackup"]"]
 Maximum number of rotated log files
 
+
+
 [list_begin itemized]
 [item] Type: [const "integer"]
 [item] Default: [const "100"]
@@ -133,6 +159,8 @@ Maximum number of rotated log files
 
 [def "Parameter name: [emph "maxbuffer"]"]
 Number of log entries buffered
+
+
 
 [list_begin itemized]
 [item] Type: [const "integer"]
@@ -142,12 +170,16 @@ Number of log entries buffered
 [def "Parameter name: [emph "rollfmt"]"]
 Suffix format used when rotating the access log file; controls how timestamps are appended to rolled log filenames
 
+
+
 [list_begin itemized]
 [item] Type: [const "string"]
 [list_end]
 
 [def "Parameter name: [emph "rollhour"]"]
 Hour of day to roll the log
+
+
 
 [list_begin itemized]
 [item] Type: [const "integer"]
@@ -157,6 +189,8 @@ Hour of day to roll the log
 [def "Parameter name: [emph "rolllog"]"]
 Rotate logs automatically
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "true"]
@@ -165,6 +199,8 @@ Rotate logs automatically
 [def "Parameter name: [emph "rollonsignal"]"]
 Rotate log on SIGHUP
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -172,6 +208,8 @@ Rotate log on SIGHUP
 
 [def "Parameter name: [emph "suppressquery"]"]
 Suppress the query string in logged request URLs; useful for reducing log volume and avoiding accidental logging of sensitive URL parameters
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]

@@ -25,6 +25,8 @@ The ns/db/pools section defines global database pool names. Each
 [def "Parameter name: database pool name"]
 Configuration-defined database pool name whose value is a human-readable pool description; the pool name is used in ns/db/pool/$dbpool sections and in per-server database configuration
 
+
+
 [list_begin itemized]
 [item] Value type: [const "string"]
 [item] Role of parameter name: configuration-defined identifier

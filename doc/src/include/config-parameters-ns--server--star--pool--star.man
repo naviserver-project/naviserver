@@ -41,12 +41,16 @@ The ns/server/$server/pool/$pool section configures a named connection
 [def "Parameter name: [emph "connectionratelimit"]"]
 Outgoing bandwidth limit in kilobytes per second for individual connections in this pool; 0 means unlimited
 
+
+
 [list_begin itemized]
 [item] Type: [const "integer"]
 [list_end]
 
 [def "Parameter name: [emph "connsperthread"]"]
 Number of requests processed by a connection thread in this pool before it exits
+
+
 
 [list_begin itemized]
 [item] Type: [const "integer"]
@@ -55,6 +59,8 @@ Number of requests processed by a connection thread in this pool before it exits
 [def "Parameter name: [emph "highwatermark"]"]
 Queue fill percentage above which connection threads for this pool may be created in parallel
 
+
+
 [list_begin itemized]
 [item] Type: [const "integer"]
 [list_end]
@@ -62,12 +68,16 @@ Queue fill percentage above which connection threads for this pool may be create
 [def "Parameter name: [emph "lowwatermark"]"]
 Queue fill percentage above which an additional connection thread for this pool may be created
 
+
+
 [list_begin itemized]
 [item] Type: [const "integer"]
 [list_end]
 
 [def "Parameter name: [emph "map"]"]
 Pool mapping entry; each occurrence maps an HTTP method and URL pattern to this connection pool, optionally followed by context constraints such as user-agent patterns
+
+
 
 [list_begin itemized]
 [item] Type: [const "mapping"]
@@ -77,12 +87,16 @@ Pool mapping entry; each occurrence maps an HTTP method and URL pattern to this 
 [def "Parameter name: [emph "maxconnections"]"]
 Maximum number of allocated connection structures for this pool
 
+
+
 [list_begin itemized]
 [item] Type: [const "integer"]
 [list_end]
 
 [def "Parameter name: [emph "maxthreads"]"]
 Maximum number of connection threads for this pool
+
+
 
 [list_begin itemized]
 [item] Type: [const "integer"]
@@ -91,12 +105,16 @@ Maximum number of connection threads for this pool
 [def "Parameter name: [emph "minthreads"]"]
 Minimum number of connection threads kept for this pool
 
+
+
 [list_begin itemized]
 [item] Type: [const "integer"]
 [list_end]
 
 [def "Parameter name: [emph "poolratelimit"]"]
 Default outgoing bandwidth limit in kilobytes per second for each connection in this pool; 0 means unlimited and per-connection limits take precedence
+
+
 
 [list_begin itemized]
 [item] Type: [const "integer"]
@@ -105,6 +123,8 @@ Default outgoing bandwidth limit in kilobytes per second for each connection in 
 [def "Parameter name: [emph "rejectoverrun"]"]
 Reject requests assigned to this pool with 503 Service Unavailable when the pool queue is full
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [list_end]
@@ -112,12 +132,16 @@ Reject requests assigned to this pool with 503 Service Unavailable when the pool
 [def "Parameter name: [emph "retryafter"]"]
 Value used for the Retry-After header in 503 Service Unavailable responses from this pool when rejectoverrun is enabled
 
+
+
 [list_begin itemized]
 [item] Type: [const "time"]
 [list_end]
 
 [def "Parameter name: [emph "threadtimeout"]"]
 Idle timeout for connection threads in this pool above minthreads
+
+
 
 [list_begin itemized]
 [item] Type: [const "time"]

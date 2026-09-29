@@ -31,6 +31,8 @@ The ns/server/$server/adp section configures ADP processing for a
 [def "Parameter name: [emph "autoabort"]"]
 Failure to flush a buffer generates an ADP exception
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "true"]
@@ -38,6 +40,8 @@ Failure to flush a buffer generates an ADP exception
 
 [def "Parameter name: [emph "bufsize"]"]
 Size of ADP buffer
+
+
 
 [list_begin itemized]
 [item] Type: [const "size"]
@@ -47,6 +51,8 @@ Size of ADP buffer
 [def "Parameter name: [emph "cache"]"]
 Enable ADP caching
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -54,6 +60,8 @@ Enable ADP caching
 
 [def "Parameter name: [emph "cachesize"]"]
 Size of ADP cache
+
+
 
 [list_begin itemized]
 [item] Type: [const "size"]
@@ -63,6 +71,8 @@ Size of ADP cache
 [def "Parameter name: [emph "debuginit"]"]
 Procedure to execute on ADP debug initialization
 
+
+
 [list_begin itemized]
 [item] Type: [const "proc"]
 [item] Default: [const "ns_adp_debuginit"]
@@ -70,6 +80,8 @@ Procedure to execute on ADP debug initialization
 
 [def "Parameter name: [emph "defaultextension"]"]
 Optional file extension appended to unresolved ADP page filenames; useful when requests omit the ADP extension, for example resolving a request for page to page.adp
+
+
 
 [list_begin itemized]
 [item] Type: [const "string"]
@@ -79,6 +91,8 @@ Optional file extension appended to unresolved ADP page filenames; useful when r
 [def "Parameter name: [emph "detailerror"]"]
 Include connection info in error backtrace
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "true"]
@@ -86,6 +100,8 @@ Include connection info in error backtrace
 
 [def "Parameter name: [emph "displayerror"]"]
 Include error message in output
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -95,6 +111,8 @@ Include error message in output
 [def "Parameter name: [emph "enabledebug"]"]
 URL pattern registered for ADP processing; each map entry registers the ADP handler for GET, HEAD, and POST requests on the specified pattern
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -102,6 +120,8 @@ URL pattern registered for ADP processing; each map entry registers the ADP hand
 
 [def "Parameter name: [emph "enableexpire"]"]
 Set Expires: now on all ADPs
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -111,6 +131,8 @@ Set Expires: now on all ADPs
 [def "Parameter name: [emph "errorpage"]"]
 Page for returning errors
 
+
+
 [list_begin itemized]
 [item] Type: [const "path"]
 [item] Default: [const ""]
@@ -119,12 +141,16 @@ Page for returning errors
 [def "Parameter name: [emph "map"]"]
 URL pattern registered for ADP processing; each entry maps the pattern for GET, HEAD, and POST requests
 
+
+
 [list_begin itemized]
 [item] Type: [const "list"]
 [list_end]
 
 [def "Parameter name: [emph "safeeval"]"]
 Disable inline scripts
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -135,6 +161,8 @@ Disable inline scripts
 Collapse Tcl blocks to a single Tcl script; in singlescript mode, an error in any part of the combined script
 stops execution of that ADP page
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -142,6 +170,8 @@ stops execution of that ADP page
 
 [def "Parameter name: [emph "startpage"]"]
 File to run for every ADP request
+
+
 
 [list_begin itemized]
 [item] Type: [const "path"]
@@ -151,6 +181,8 @@ File to run for every ADP request
 [def "Parameter name: [emph "stream"]"]
 Enable ADP streaming
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -158,6 +190,8 @@ Enable ADP streaming
 
 [def "Parameter name: [emph "stricterror"]"]
 Interrupt execution on any error
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -167,6 +201,8 @@ Interrupt execution on any error
 [def "Parameter name: [emph "trace"]"]
 Trace execution of ADP scripts
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -175,6 +211,8 @@ Trace execution of ADP scripts
 [def "Parameter name: [emph "tracesize"]"]
 Maximum number of entries in ADP trace
 
+
+
 [list_begin itemized]
 [item] Type: [const "integer"]
 [item] Default: [const "40"]
@@ -182,6 +220,8 @@ Maximum number of entries in ADP trace
 
 [def "Parameter name: [emph "trimspace"]"]
 Trim whitespace from output buffer
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]

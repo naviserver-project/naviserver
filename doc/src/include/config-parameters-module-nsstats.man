@@ -37,6 +37,8 @@ For detailed documentation, see [uri https://github.com/naviserver-project/nssta
 [def "Parameter name: [emph "bglocks"]"]
 List of lock names treated as non-per-request background locks in nsstats lock reporting
 
+
+
 [list_begin itemized]
 [item] Type: [const "list"]
 [item] Default: [const ""]
@@ -44,6 +46,8 @@ List of lock names treated as non-per-request background locks in nsstats lock r
 
 [def "Parameter name: [emph "enabled"]"]
 Enable or disable the nsstats module
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -53,6 +57,8 @@ Enable or disable the nsstats module
 [def "Parameter name: [emph "password"]"]
 Password required for accessing nsstats pages; when empty, access control depends on the surrounding configuration
 
+
+
 [list_begin itemized]
 [item] Type: [const "password"]
 [item] Default: [const ""]
@@ -60,6 +66,8 @@ Password required for accessing nsstats pages; when empty, access control depend
 
 [def "Parameter name: [emph "user"]"]
 User name required for accessing nsstats pages
+
+
 
 [list_begin itemized]
 [item] Type: [const "string"]

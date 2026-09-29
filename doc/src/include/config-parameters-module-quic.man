@@ -27,11 +27,11 @@ This module should be loaded globally through [const ns/modules].
      ns_param https nsssl
      ns_param h3    quic
  }
-
+ 
  ns_section ns/module/https {
      ns_param port        8443
      ns_param certificate /usr/local/ns/certificates/server.pem
-
+ 
      # Extra parameters specific for HTTP/3
      # ns_param h3advertise    true
      # ns_param h3persist      false
@@ -39,9 +39,9 @@ This module should be loaded globally through [const ns/modules].
  ns_section ns/module/h3 {
      ns_param https                 ns/module/https
      # ns_param driverthreads       2
-     ns_param writerthreads         1
-     ns_param recvbufsize           8MB
-     ns_param sendbufsize           8MB
+     # ns_param writerthreads       1
+     # ns_param recvbufsize         8MB
+     # ns_param sendbufsize         8MB
      ns_param sendqueuesize         256kB
      ns_param idletimeout           3s
      ns_param draintimeout          10ms
@@ -57,16 +57,18 @@ For detailed documentation, see [uri ../../quic/files/quic.html {quic}].
 [def "Parameter name: [emph "debug"]"]
 Enable detailed HTTP/3 and QUIC diagnostic logging
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
 [list_end]
 
 [def "Parameter name: [emph "draintimeout"]"]
+Drain timeout used when closing QUIC connections,
+ allowing pending packets or connection-close
+ handling to complete
 
-                    Drain timeout used when closing QUIC connections,
-                    allowing pending packets or connection-close
-                    handling to complete
 
 
 [list_begin itemized]
@@ -75,11 +77,11 @@ Enable detailed HTTP/3 and QUIC diagnostic logging
 [list_end]
 
 [def "Parameter name: [emph "https"]"]
+Configuration section of the HTTPS driver to which
+ this HTTP/3 driver is linked. Shared driver and TLS
+ parameters fall back to values from this section;
+ parameters specified in ns/module/h3 override them
 
-                    Configuration section of the HTTPS driver to which
-                    this HTTP/3 driver is linked. Shared driver and TLS
-                    parameters fall back to values from this section;
-                    parameters specified in ns/module/h3 override them
 
 
 [list_begin itemized]
@@ -90,22 +92,25 @@ Enable detailed HTTP/3 and QUIC diagnostic logging
 [def "Parameter name: [emph "idletimeout"]"]
 Maximum idle time for QUIC connections before they are closed
 
+
+
 [list_begin itemized]
 [item] Type: [const "time"]
 [item] Default: [const "3s"]
 [list_end]
 
 [def "Parameter name: [emph "maxudppayloadsize"]"]
+Maximum UDP payload size advertised to the peer as the
+ QUIC max_udp_payload_size transport parameter. Valid
+ values range from 1200 to 65527 bytes. This parameter
+ requires OpenSSL 4.1 or newer.
 
-                    Maximum UDP payload size advertised to the peer as the
-                    QUIC max_udp_payload_size transport parameter. Valid
-                    values range from 1200 to 65527 bytes. This parameter
-                    requires OpenSSL 4.1 or newer.
+[para]
+ Currently, the setting only changes the advertised
+ transport parameter. OpenSSL neither uses it to increase
+ outgoing QUIC packet sizes nor enforces it as a receive
+ limit, so it currently has no direct operational effect.
 
-                    Currently, the setting only changes the advertised
-                    transport parameter. OpenSSL neither uses it to increase
-                    outgoing QUIC packet sizes nor enforces it as a receive
-                    limit, so it currently has no direct operational effect.
 
 
 [list_begin itemized]
@@ -116,6 +121,8 @@ Maximum idle time for QUIC connections before they are closed
 [def "Parameter name: [emph "port"]"]
 UDP port or ports on which the HTTP/3 driver listens
 
+
+
 [list_begin itemized]
 [item] Type: [const "integer"]
 [item] Default: [const "443"]
@@ -124,13 +131,19 @@ UDP port or ports on which the HTTP/3 driver listens
 [def "Parameter name: [emph "recvbufsize"]"]
 Size of the UDP receive buffer used by the HTTP/3 driver
 
+
+
 [list_begin itemized]
 [item] Type: [const "size"]
 [item] Default: [const "8MB"]
 [list_end]
 
 [def "Parameter name: [emph "sendbufsize"]"]
-Size of the UDP send buffer used by the HTTP/3 driver (SO_SNDBUF). A value of 0 leaves the operating system default unchanged. The effective size is subject to operating system limits
+A value of 0 leaves the operating-system default
+ unchanged. The effective size is subject to
+ operating-system limits.
+
+
 
 [list_begin itemized]
 [item] Type: [const "size"]
@@ -138,11 +151,11 @@ Size of the UDP send buffer used by the HTTP/3 driver (SO_SNDBUF). A value of 0 
 [list_end]
 
 [def "Parameter name: [emph "sendqueuesize"]"]
+Maximum response-body data retained in the HTTP/3
+ stream send queue. When this limit is reached, writer
+ delivery pauses until the queue drains to half the
+ configured size.
 
-                    Maximum response-body data retained in the HTTP/3
-                    stream send queue. When this limit is reached, writer
-                    delivery pauses until the queue drains to half the
-                    configured size.
 
 
 [list_begin itemized]
@@ -151,12 +164,12 @@ Size of the UDP send buffer used by the HTTP/3 driver (SO_SNDBUF). A value of 0 
 [list_end]
 
 [def "Parameter name: [emph "validateclientaddress"]"]
+Validate the QUIC client address before accepting a new
+ connection. Clients without a valid address-validation token
+ receive a Retry packet, adding one network round trip. Disabling
+ validation improves first-connection latency but weakens protection
+ against spoofed-source connection floods.
 
-                    Validate the QUIC client address before accepting a new
-                    connection. Clients without a valid address-validation token
-                    receive a Retry packet, adding one network round trip. Disabling
-                    validation improves first-connection latency but weakens protection
-                    against spoofed-source connection floods.
 
 
 [list_begin itemized]

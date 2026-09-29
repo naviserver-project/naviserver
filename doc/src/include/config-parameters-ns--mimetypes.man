@@ -32,6 +32,8 @@ The ns/mimetypes section defines MIME type mappings used when
 [def "Parameter name: [emph "default"]"]
 MIME type used when no more specific mapping is found for a requested file
 
+
+
 [list_begin itemized]
 [item] Type: [const "mime-type"]
 [item] Default: [const "*/*"]
@@ -40,6 +42,8 @@ MIME type used when no more specific mapping is found for a requested file
 [def "Parameter name: [emph "noextension"]"]
 MIME type used for requested files whose names do not have a filename extension; when unset, the value of default is used
 
+
+
 [list_begin itemized]
 [item] Type: [const "mime-type"]
 [item] Default: [const "*/*"]
@@ -47,6 +51,8 @@ MIME type used for requested files whose names do not have a filename extension;
 
 [def "Parameter name: filename extension"]
 Maps a filename extension to a MIME content type, overriding or extending the built-in MIME type table
+
+
 
 [list_begin itemized]
 [item] Value type: [const "mime-type"]

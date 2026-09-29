@@ -16,13 +16,13 @@ The ns/server/$server/vhost section configures legacy host-based page
 [list_begin definitions]
 
 [def "Parameter name: [emph "enabled"]"]
+Enable legacy host-based page-root mapping within this server;
+ the request Host header is used to select a host-specific subdirectory
+ below the server page root. This mode requires a relative pagedir and is
+ less flexible than server-root based virtual hosting
+ via serverrootproc
 
-                    Enable legacy host-based page-root mapping within this server;
-                    the request Host header is used to select a host-specific subdirectory
-                    below the server page root. This mode requires a relative pagedir and is
-                    less flexible than server-root based virtual hosting
-                    via serverrootproc
-                
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]
@@ -30,11 +30,11 @@ The ns/server/$server/vhost section configures legacy host-based page
 [list_end]
 
 [def "Parameter name: [emph "hosthashlevel"]"]
+Number of hash-directory levels added before the normalized host name in
+ the generated page-root path; values from 0 to 5 are allowed and can avoid
+ too many host directories in one directory
 
-                    Number of hash-directory levels added before the normalized host name in
-                    the generated page-root path; values from 0 to 5 are allowed and can avoid
-                    too many host directories in one directory
-                
+
 
 [list_begin itemized]
 [item] Type: [const "integer"]
@@ -44,7 +44,8 @@ The ns/server/$server/vhost section configures legacy host-based page
 [def "Parameter name: [emph "hostprefix"]"]
 Optional directory prefix inserted between the server directory and the
                     normalized host name when building the host-specific page root
-                
+
+
 
 [list_begin itemized]
 [item] Type: [const "path"]
@@ -53,6 +54,8 @@ Optional directory prefix inserted between the server directory and the
 [def "Parameter name: [emph "stripport"]"]
 Strip the port part from the Host header before deriving the host-specific page-root directory
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "true"]
@@ -60,6 +63,8 @@ Strip the port part from the Host header before deriving the host-specific page-
 
 [def "Parameter name: [emph "stripwww"]"]
 Strip a leading www. from the Host header before deriving the host-specific page-root directory
+
+
 
 [list_begin itemized]
 [item] Type: [const "boolean"]

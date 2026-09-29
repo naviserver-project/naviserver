@@ -23,12 +23,16 @@ The ns/server/$server/db section selects the database pools available
 [def "Parameter name: [emph "defaultpool"]"]
 Default database pool used by this server when no explicit pool name is requested
 
+
+
 [list_begin itemized]
 [item] Type: [const "string"]
 [list_end]
 
 [def "Parameter name: [emph "pools"]"]
 List of database pool names available to this server; the names must refer to pools defined in ns/db/pools
+
+
 
 [list_begin itemized]
 [item] Type: [const "list"]

@@ -24,6 +24,8 @@ The ns/modules section defines global module instances. Each parameter
 [def "Parameter name: module instance name"]
 Maps a global module instance name to a module implementation name
 
+
+
 [list_begin itemized]
 [item] Value type: [const "module"]
 [item] Role of parameter name: configuration-defined identifier

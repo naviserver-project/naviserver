@@ -30,6 +30,8 @@ Available external database drivers include [uri https://github.com/naviserver-p
 [def "Parameter name: database driver name"]
 Configuration-defined database driver name whose value names the installed database driver module implementation; the driver name is used in ns/db/pool/$dbpool via the driver parameter
 
+
+
 [list_begin itemized]
 [item] Value type: [const "module"]
 [item] Role of parameter name: configuration-defined identifier

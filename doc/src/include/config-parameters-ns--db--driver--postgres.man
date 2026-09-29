@@ -32,7 +32,17 @@ For detailed documentation, see [uri https://github.com/naviserver-project/nsdbp
 [list_begin definitions]
 
 [def "Parameter name: [emph "datestyle"]"]
-PostgreSQL DateStyle setting applied to database sessions opened by this driver; explicit values such as ISO, DMY or ISO, MDY are recommended to define both output style and ambiguous date input ordering. The historical values ISO, SQL, POSTGRES, GERMAN, NONEURO, and EURO remain accepted for compatibility. When unset, PGDATESTYLE or the PostgreSQL server default applies
+PostgreSQL DateStyle setting applied to database
+ sessions opened by this driver; explicit values
+ such as ISO, DMY or ISO, MDY are recommended to
+ define both output style and ambiguous date input
+ ordering. The historical values ISO, SQL,
+ POSTGRES, GERMAN, NONEURO, and EURO remain
+ accepted for compatibility. When unset,
+ PGDATESTYLE or the PostgreSQL server default
+ applies
+
+
 
 [list_begin itemized]
 [item] Type: [const "enum"]
@@ -41,6 +51,8 @@ PostgreSQL DateStyle setting applied to database sessions opened by this driver;
 
 [def "Parameter name: [emph "pgbin"]"]
 Directory containing PostgreSQL client tools such as psql; used when these tools are not available on PATH
+
+
 
 [list_begin itemized]
 [item] Type: [const "path"]

@@ -11,6 +11,8 @@ Deprecated compatibility section for reverse-proxy mode configuration.
 [def "Parameter name: [emph "enabled"]"]
 Compatibility setting for enabling reverse-proxy mode
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -20,6 +22,8 @@ Compatibility setting for enabling reverse-proxy mode
 [def "Parameter name: [emph "skipnonpublic"]"]
 Compatibility setting for ignoring non-public forwarded client addresses
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -27,6 +31,13 @@ Compatibility setting for ignoring non-public forwarded client addresses
 [list_end]
 
 [def "Parameter name: [emph "trustedservers"]"]
-No description available.
+Compatibility setting for trusted reverse proxy addresses or networks
+
+
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[item] Deprecated: Use ns/reverseproxymode trustedservers instead
+[list_end]
 
 [list_end]

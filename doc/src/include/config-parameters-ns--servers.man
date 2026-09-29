@@ -25,6 +25,8 @@ The ns/servers section defines the virtual servers known to this
 [def "Parameter name: server name"]
 Maps a virtual server name to a human-readable server description
 
+
+
 [list_begin itemized]
 [item] Value type: [const "string"]
 [item] Role of parameter name: configuration-defined identifier

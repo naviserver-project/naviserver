@@ -28,6 +28,8 @@ The ns/db/pool/$dbpool section configures a global database connection
 [def "Parameter name: [emph "checkinterval"]"]
 Interval at which the pool checks for stale database handles
 
+
+
 [list_begin itemized]
 [item] Type: [const "time"]
 [item] Default: [const "5m"]
@@ -35,6 +37,8 @@ Interval at which the pool checks for stale database handles
 
 [def "Parameter name: [emph "connections"]"]
 Number of database connections maintained by this pool
+
+
 
 [list_begin itemized]
 [item] Type: [const "integer"]
@@ -44,6 +48,8 @@ Number of database connections maintained by this pool
 [def "Parameter name: [emph "datasource"]"]
 Driver-specific datasource string identifying the database connection target
 
+
+
 [list_begin itemized]
 [item] Type: [const "string"]
 [list_end]
@@ -51,12 +57,16 @@ Driver-specific datasource string identifying the database connection target
 [def "Parameter name: [emph "driver"]"]
 Database driver used by this pool
 
+
+
 [list_begin itemized]
 [item] Type: [const "string"]
 [list_end]
 
 [def "Parameter name: [emph "logminduration"]"]
 When SQL logging is enabled, log only statements whose execution time is at least this duration
+
+
 
 [list_begin itemized]
 [item] Type: [const "time"]
@@ -66,6 +76,8 @@ When SQL logging is enabled, log only statements whose execution time is at leas
 [def "Parameter name: [emph "logsqlerrors"]"]
 Log SQL errors reported by this pool
 
+
+
 [list_begin itemized]
 [item] Type: [const "boolean"]
 [item] Default: [const "false"]
@@ -73,6 +85,8 @@ Log SQL errors reported by this pool
 
 [def "Parameter name: [emph "maxidle"]"]
 Close database handles that have been idle for at least this interval
+
+
 
 [list_begin itemized]
 [item] Type: [const "time"]
@@ -82,6 +96,8 @@ Close database handles that have been idle for at least this interval
 [def "Parameter name: [emph "maxopen"]"]
 Close database handles that have been open longer than this interval
 
+
+
 [list_begin itemized]
 [item] Type: [const "time"]
 [item] Default: [const "60m"]
@@ -90,12 +106,16 @@ Close database handles that have been open longer than this interval
 [def "Parameter name: [emph "password"]"]
 Database password used when opening connections for this pool
 
+
+
 [list_begin itemized]
 [item] Type: [const "string"]
 [list_end]
 
 [def "Parameter name: [emph "user"]"]
 Database user name used when opening connections for this pool
+
+
 
 [list_begin itemized]
 [item] Type: [const "string"]

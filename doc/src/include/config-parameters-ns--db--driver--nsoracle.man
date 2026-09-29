@@ -35,6 +35,8 @@ For detailed documentation, see [uri https://github.com/naviserver-project/nsora
 [def "Parameter name: [emph "lobbuffersize"]"]
 Buffer size used for Oracle LOB operations
 
+
+
 [list_begin itemized]
 [item] Type: [const "size"]
 [item] Default: [const "32768"]
@@ -42,6 +44,8 @@ Buffer size used for Oracle LOB operations
 
 [def "Parameter name: [emph "maxstringloglength"]"]
 Maximum length of SQL strings written to the log; -1 disables this limit
+
+
 
 [list_begin itemized]
 [item] Type: [const "integer"]
