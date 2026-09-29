@@ -3340,6 +3340,47 @@ stops execution of that ADP page}
                 desc {Enable logging for SMTP sending operations performed by the module}
             }
 
+            eventlogging {
+                type boolean
+                default {false}
+                desc {Enable a separate structured SMTP event log for incoming recipient decisions, applied alias expansions, greylisting outcomes and custom Tcl policy events. Does not change mail policy or the existing SMTP send log. The nsstats SMTP Events page displays charts and a filterable event table. Records contain envelope addresses but no message bodies or subjects; recipient acceptance does not establish final delivery}
+            }
+
+            eventlogfile {
+                type path
+                default {smtpevents-${server}.log}
+                desc {SMTP event log filename. Relative paths use the server log directory on NaviServer 5, or the home logs directory on older versions. The resolved path is available in the configuration database. Records are versioned, single-line Tcl dictionaries; parse them as data, never evaluate them. This first version covers incoming SMTP callbacks rather than direct ns_smtpd send operations}
+            }
+
+            eventlogmaxbackup {
+                type integer
+                default {100}
+                desc {Maximum number of rotated SMTP event log files to retain}
+            }
+
+            eventlogroll {
+                type boolean
+                default {true}
+                desc {Enable daily rotation of the SMTP event log when eventlogging is enabled}
+            }
+
+            eventlogrollfmt {
+                type string
+                desc {Optional strftime suffix format for SMTP event log rotation; without a format, use numbered backups}
+            }
+
+            eventlogrollhour {
+                type integer
+                default {0}
+                desc {Hour of day, from 0 through 23, for daily SMTP event log rotation}
+            }
+
+            eventlogrollonsignal {
+                type boolean
+                default {false}
+                desc {Rotate the SMTP event log on SIGHUP when eventlogging is enabled}
+            }
+
             logfile {
                 type path
                 desc {Log file for SMTP sending operations; relative paths are resolved according to the module's logging rules}

@@ -1270,7 +1270,14 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
                          "multipart/byteranges", 20 )
                    );
 
+            /*
+             * HTTP/3 provides its own message framing. Its synthetic request
+             * line uses HTTP/1.1, so the request version alone cannot determine
+             * whether chunked transfer encoding is applicable.
+             */
+
             if ((connPtr->responseLength < 0)
+                && ((connPtr->drvPtr->opts & NS_DRIVER_QUIC) == 0u)
                 && (conn->request.version > 1.0)
                 && (connPtr->keep != 0)
                 && (HdrEq(connPtr->outputheaders, "content-type",
@@ -1352,12 +1359,17 @@ HdrPlanFraming(Ns_Conn *conn, size_t bodyLength, unsigned int flags)
                HdrEq(connPtr->outputheaders, "content-type",
                      "multipart/byteranges", 20 )
                );
-
+        /*
+         * HTTP/3 provides its own message framing. Its synthetic request
+         * line uses HTTP/1.1, so the request version alone cannot determine
+         * whether chunked transfer encoding is applicable.
+         */
         if ((connPtr->responseLength < 0)
-         && (conn->request.version > 1.0)
-         && (connPtr->keep != 0)
-         && (HdrEq(connPtr->outputheaders, "content-type",
-                   "multipart/byteranges", 20) == NS_FALSE)) {
+            && ((connPtr->drvPtr->opts & NS_DRIVER_QUIC) == 0u)
+            && (conn->request.version > 1.0)
+            && (connPtr->keep != 0)
+            && (HdrEq(connPtr->outputheaders, "content-type",
+                      "multipart/byteranges", 20) == NS_FALSE)) {
             conn->flags |= NS_CONN_CHUNK;
         }
     } else if (connPtr->responseLength < 0) {
