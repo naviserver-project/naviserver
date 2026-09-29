@@ -249,7 +249,8 @@ nx::Class create ::ns_configdoc::ConfigParamGenerator {
         append out "\n\[def $entry]\n"
 
         if {[dict exists $spec desc] && [dict get $spec desc] ne ""} {
-            append out [:fmtInline [dict get $spec desc]] "\n"
+            #append out [:fmtInline [dict get $spec desc]] "\n"
+            append out [:fmtDocBlock [dict get $spec desc]] "\n"
         } else {
             append out "No description available.\n"
         }
