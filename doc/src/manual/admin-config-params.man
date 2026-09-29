@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin admin-config-params n 5.1]
+[manpage_begin admin-config-params n [vset version]]
 [moddesc {NaviServer Manual}]
 
 [titledesc {NaviServer Configuration Parameter Reference}]
