@@ -5005,6 +5005,8 @@ h3_stream_feed_pending(StreamCtx *sc, uint64_t sid)
  *        - If SSL signals EOF (SSL_ERROR_ZERO_RETURN), it marks either an
  *          immediate or deferred FIN depending on whether data was already
  *          buffered, and returns DRAIN_EOF.
+ *        - Stream resets and connection-shutdown errors are logged at
+ *          Ns_LogQuicDebug and reported as DRAIN_ERROR.
  *        - Any other error is logged via ossl_log_error_detail() and
  *          reported as DRAIN_ERROR.
  *
@@ -5069,24 +5071,27 @@ h3_stream_read_into_hold(StreamCtx *sc, SSL *stream)
         }
 
         {
-            unsigned long osslErr = ERR_peek_error();
+            const unsigned long osslErr = ERR_peek_error();
+            const int           reason = ERR_GET_REASON(osslErr);
 
             if (err == SSL_ERROR_SSL
                 && osslErr != 0u
                 && ERR_GET_LIB(osslErr) == ERR_LIB_SSL
-                && ERR_GET_REASON(osslErr)
-                   == SSL_R_PROTOCOL_IS_SHUTDOWN) {
+                && (reason == SSL_R_PROTOCOL_IS_SHUTDOWN
+                    || reason == SSL_R_STREAM_RESET)) {
 
                 /*
-                 * This commonly occurs when a stream is examined after
-                 * its owning connection has entered shutdown. Preserve
-                 * the existing DRAIN_ERROR control flow, but do not
-                 * report the expected shutdown condition as an error.
+                 * Stream resets and reads after connection shutdown
+                 * are expected terminal conditions. Preserve the
+                 * DRAIN_ERROR control flow for stream cleanup, but
+                 * report these conditions only at debug severity.
                  */
                 Ns_Log(Ns_LogQuicDebug,
-                       "H3[%lld] stream drain stopped after "
-                       "connection shutdown",
-                       (long long)sc->quic_sid);
+                       "H3[%lld] stream drain stopped: %s",
+                       (long long)sc->quic_sid,
+                       reason == SSL_R_STREAM_RESET
+                       ? "stream reset"
+                       : "connection shutdown");
 
                 ERR_clear_error();
             } else {
