@@ -869,7 +869,7 @@ NsInitHttp(NsServer *servPtr)
          * need the relative path for mass virtual hosting.
          */
         servPtr->httpclient.logFileName = Ns_ConfigFilename(section, "logfile", 7, serverLogDir,
-                                                            defaultFilename, NS_FALSE, NS_FALSE);
+                                                            defaultFilename, NS_FALSE, NS_TRUE);
         // Tcl_DStringFree(&defaultLogFileName);
 
         servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(section, "logrollfmt"));
