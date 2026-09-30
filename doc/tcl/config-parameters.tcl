@@ -3349,7 +3349,7 @@ stops execution of that ADP page}
             eventlogfile {
                 type path
                 default {smtpevents-${server}.log}
-                desc {SMTP event log filename. Relative paths use the server log directory on NaviServer 5, or the home logs directory on older versions. The resolved path is available in the configuration database. Records are versioned, single-line Tcl dictionaries; parse them as data, never evaluate them. This first version covers incoming SMTP callbacks rather than direct ns_smtpd send operations}
+                desc {SMTP event log filename. Relative paths use the server log directory on NaviServer 5, or the home logs directory on older versions. The resolved path is available in the configuration database. Single-line records use access-log-style positional fields with the same timestamp convention as the SMTP send log, fixed recipient, action, reason and comma-separated targets fields; custom metadata uses trailing key=value tokens. Empty fields use a dash. Spaces, backslashes and control bytes within fields are escaped as \xHH, allowing readers to split on spaces. This log covers incoming SMTP callbacks rather than direct ns_smtpd send operations}
             }
 
             eventlogmaxbackup {
