@@ -130,6 +130,7 @@ static bool ValidationExcpetionExists(int x509err, NS_SOCKET sock, Ns_DList *val
 static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, const Ns_Time *timeoutPtr);
 
 static void CertTableInit(void);
+static void CertTableDelete(const NS_TLS_SSL_CTX *ctx);
 static void CertTableReload(void *UNUSED(arg));
 static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert, const char *key)
     NS_GNUC_NONNULL(1,2);
@@ -2138,6 +2139,7 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
 {
     NS_NONNULL_ASSERT(ctx != NULL);
 
+    CertTableDelete(ctx);
     SSL_CTX_free(ctx);
 }
 
@@ -3200,7 +3202,7 @@ Ns_TLS_CtxServerInitView(const Ns_ConfigView *view, Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * CertTableInit, CertTableAdd, CertTableReload --
+ * CertTableInit, CertTableAdd, CertTableDelete, CertTableReload --
  *
  *      Static API for reloading certificates upon SIGHUP.
  *
@@ -3249,6 +3251,7 @@ static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert, const char
     }
     Ns_MasterUnlock();
 }
+
 
 static void CertTableInit(void)
 {
@@ -3336,6 +3339,25 @@ static NS_TLS_SSL_CTX *CertTableGetCtx(const char *cert)
     return result;
 }
 
+static void CertTableDelete(const NS_TLS_SSL_CTX *ctx)
+{
+    Tcl_HashEntry *hPtr;
+
+    /*
+     * Remove the reload reference before releasing a registered context. The
+     * master lock also excludes an in-progress reload of this context.
+     */
+    Ns_MasterLock();
+    hPtr = Tcl_FindHashEntry(&certTable, (const char *)ctx);
+    if (hPtr != NULL) {
+        CertTableEntry *entryPtr = Tcl_GetHashValue(hPtr);
+        ns_free(entryPtr->cert);
+        ns_free(entryPtr->key);
+        ns_free(entryPtr);
+        Tcl_DeleteHashEntry(hPtr);
+    }
+    Ns_MasterUnlock();
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3758,7 +3780,7 @@ Ns_TLS_CtxServerCreateCfg(Tcl_Interp *interp,
         SSL_CTX_set_options(ctx, n);
     }
 
-    {
+    if (*alpn != '\0') {
         Tcl_DString   alpnDs;
         ALPNProtos   *alpnPtr;
 

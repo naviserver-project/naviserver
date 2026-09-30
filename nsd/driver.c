@@ -99,6 +99,8 @@ const struct {
 /*
  * ServerMap maintains Host header to server mappings.
  */
+static Ns_Mutex contextLock;
+
 typedef struct ServerMap {
     NsServer        *servPtr;
     NS_TLS_SSL_CTX  *ctx;
@@ -697,6 +699,8 @@ NsInitDrivers(void)
     Ns_LogTimeoutDebug = Ns_CreateLogSeverity("Debug(timeout)");
     Ns_LogNsSetDebug = Ns_CreateLogSeverity("Debug(nsset)");
     Ns_LogMemoryDebug = Ns_CreateLogSeverity("Debug(memory)");
+    Ns_MutexInit(&contextLock);
+    Ns_MutexSetName(&contextLock, "ns:driver:tls-context");
     Ns_MutexInit(&reqLock);
     Ns_MutexInit(&writerlock);
     Ns_MutexSetName2(&reqLock, "ns:driver", "requestpool");
@@ -7534,6 +7538,82 @@ DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
             }
         }
     }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DriverGetServerCtx --
+ *
+ *      Return a shared TLS context for a mapped server of a plaintext/STARTTLS
+ *      driver. Initialize the context on first use and publish it to all host
+ *      aliases of the server, without assuming driver->arg is an NsTLSConfig.
+ *      The returned context is borrowed and remains valid for the process
+ *      lifetime; callers must not free or mutate it.
+ *
+ * Results:
+ *      TCL_OK with the context in *ctxPtr, or TCL_ERROR with a diagnostic in
+ *      interp and *ctxPtr set to NULL.
+ *
+ * Side effects:
+ *      Invokes initProc under the context-cache lock on first use. Successful
+ *      initialization transfers ownership of the context to the driver and
+ *      updates its host mappings. Failed initialization is not cached.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_DriverGetServerCtx(Ns_Driver *driver, const char *server, Tcl_Interp *interp,
+                     Ns_DriverServerCtxInitProc *initProc, void *arg,
+                     NS_TLS_SSL_CTX **ctxPtr)
+{
+    Driver *drvPtr = (Driver *)driver;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    ServerMap *selected = NULL;
+    int result = TCL_ERROR;
+
+    *ctxPtr = NULL;
+    /* Implicit TLS has separate SNI and dynamic-host initialization paths. */
+    if ((drvPtr->opts & NS_DRIVER_SSL) != 0u) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver context API requires a plaintext/STARTTLS driver", -1));
+        return TCL_ERROR;
+    }
+    Ns_MutexLock(&contextLock);
+    for (hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search); hPtr != NULL;
+         hPtr = Tcl_NextHashEntry(&search)) {
+        ServerMap *mapPtr = Tcl_GetHashValue(hPtr);
+        if (STREQ(mapPtr->servPtr->server, server)) {
+            selected = mapPtr;
+            break;
+        }
+    }
+    if (selected == NULL) {
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf("server '%s' is not mapped by driver '%s'", server, driver->moduleName));
+    } else if (selected->ctx != NULL) {
+        *ctxPtr = selected->ctx;
+        result = TCL_OK;
+    } else {
+        NS_TLS_SSL_CTX *ctx = NULL;
+        result = initProc(interp, arg, &ctx);
+        if (result == TCL_OK && ctx == NULL) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("TLS context initializer returned no context", -1));
+            result = TCL_ERROR;
+        }
+        if (result == TCL_OK) {
+            for (hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search); hPtr != NULL;
+                 hPtr = Tcl_NextHashEntry(&search)) {
+                ServerMap *mapPtr = Tcl_GetHashValue(hPtr);
+                if (mapPtr->servPtr == selected->servPtr) {
+                    mapPtr->ctx = ctx;
+                }
+            }
+            *ctxPtr = ctx;
+        }
+    }
+    Ns_MutexUnlock(&contextLock);
     return result;
 }
 

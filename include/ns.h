@@ -417,6 +417,15 @@ typedef bool Ns_HeadersEncodeProc(struct Ns_Sock *sock,
                                   void           *out_obj,    /* backend-defined sink */
                                   size_t         *out_len     /* optional: item count or bytes written */
                                   ) NS_GNUC_NONNULL(1,4,5);
+/*
+ * STARTTLS drivers borrow one process-lifetime context per mapped server.
+ * Borrowers must not free or mutate the returned context. The function is for
+ * drivers that upgrade connections to TLS via STARTTLS.  Drivers with
+ * NS_DRIVER_SSL set use their existing TLS context management and are not
+ * supported by this function.
+ */
+typedef int Ns_DriverServerCtxInitProc(Tcl_Interp *interp, void *arg, NS_TLS_SSL_CTX **ctxPtr)
+    NS_GNUC_NONNULL(1,2,3);
 
 /*
  * Generic function pointer type, can be used for recasting between different
@@ -1571,6 +1580,12 @@ NsAsyncWriterQueueDisable(bool shutdown);
 
 NS_EXTERN void
 NsAsyncWriterQueueEnable(void);
+
+NS_EXTERN int
+Ns_DriverGetServerCtx(Ns_Driver *driver, const char *server, Tcl_Interp *interp,
+                     Ns_DriverServerCtxInitProc *initProc, void *arg,
+                     NS_TLS_SSL_CTX **ctxPtr)
+    NS_GNUC_NONNULL(1,2,3,4,6);
 
 
 /*
@@ -4155,7 +4170,6 @@ Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding encoding)
 /*
  * tls.c:
  */
-
 NS_EXTERN int
 Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
                        const char *cert, const char *caFile, const char *caPath, bool verify,
