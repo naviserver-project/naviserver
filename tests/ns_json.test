@@ -1138,6 +1138,33 @@ test ns_getjson-1.8 {
 } -result {0 0 {}}
 
 
+test ns_getjson-1.9 {
+    GET with JSON content type and no body exposes URL query parameters
+} -constraints {curl serverListen} -setup {
+    ns_register_proc GET /json-empty-get-query {
+        set form [ns_conn form]
+        set getform [ns_getform]
+        set json [ns_getjson]
+
+        ns_return 200 text/plain [list \
+            [ns_set size $form] \
+            [ns_set get $form view] \
+            [ns_set get $form limit] \
+            [ns_set get $getform view] \
+            [ns_queryget limit] \
+            [info exists ::_ns_json_body] \
+            $json]
+    }
+} -body {
+    exec curl -g -s --fail \
+        -H "content-type: application/json" \
+        "[ns_config test listenurl]/json-empty-get-query?view=full&limit=10" \
+        2> $devnull
+} -cleanup {
+    ns_unregister_op GET /json-empty-get-query
+} -result {2 full 10 full 10 0 {}}
+
+
 test ns_getform-1.1 {
     POST with application/x-www-form-urlencoded and empty body does not fall back to query string
 } -constraints {curl serverListen} -setup {

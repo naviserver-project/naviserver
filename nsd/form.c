@@ -319,6 +319,19 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                 fct = FORM_CONTENT_MULTIPART;
             } else if (IsJsonContentType(contentType, typeEnd)) {
                 fct = FORM_CONTENT_JSON;
+                if (connPtr->reqPtr->length == 0u) {
+                    /*
+                     * Some API clients send a JSON content type on every request,
+                     * including requests without a body. Preserve the pre-JSON-support
+                     * behavior of exposing URL query parameters in this case.
+                     *
+                     * This exception applies only to zero-length JSON bodies,
+                     * regardless of the request method. Nonempty bodies, including
+                     * empty JSON containers or invalid JSON, retain body-only parsing.
+                     * URL-encoded and multipart form handling remains unchanged.
+                     */
+                    fct = FORM_CONTENT_UNKNOWN;
+                }
             }
         }
 
@@ -411,7 +424,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     Tcl_Encoding valueEncoding = connPtr->urlEncoding;
 
                     firstBoundary = NextBoundary(content, connPtr->reqPtr->length, &boundaryDs);
-                    
+
                     /*NsHexPrint("multipart content",
                       (const unsigned char *)content, connPtr->reqPtr->length,
                       20, NS_TRUE);*/

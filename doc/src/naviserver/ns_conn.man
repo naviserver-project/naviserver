@@ -313,6 +313,33 @@ You may also modify this ns_set.
  globally via the [term formfallbackcharset] configuration parameter.)
  For multipart form data file uploads, use [cmd "ns_getform"] instead.
 
+ [para]
+ Form parsing selects either the request body or the URL query; it does
+ not merge the two. Recognized body content types include URL-encoded
+ forms, multipart forms, and JSON.
+
+ [para]
+ For a JSON content type with a zero-length body, the URL query is parsed
+ instead, regardless of the request method. This preserves compatibility
+ with clients that send a JSON content type even when no body is supplied.
+ Zero bytes do not constitute a JSON document. Nonempty bodies, including
+ empty JSON objects or arrays, are handled as JSON; invalid JSON does not
+ cause fallback to the URL query. Empty URL-encoded and multipart bodies
+ retain their existing empty-form behavior.
+
+ [para]
+ To read URL query parameters independently of the request content type
+ and body, use:
+
+[example_begin]
+ set query [lb]ns_parsequery [lb]ns_conn query[rb][rb]
+[example_end]
+
+ This also works when a request supplies both URL query parameters and
+ a body. The returned set contains only URL query parameters; body data
+ remains separate.
+
+
 [call [cmd  "ns_conn fragment"]]
 
  Returns the fragment identifier of the request URL (the portion
