@@ -38,7 +38,7 @@ jobs:
           - os: ubuntu-latest
             compiler: gcc-12
             tcltag: core-8-7-a5
-            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsauthpam
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsauthpam nsdns
             nsf_version: 2.5.0
             tdom_version: 0.9.5
             with_deprecated: 1
@@ -56,7 +56,7 @@ jobs:
             tcltag: core-8-5-branch
             nsf_version: HEAD
             tcllib_version: "2.0"
-            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam nsdns
             tdom_version: 0.9.5
             with_deprecated: 1
 
@@ -65,7 +65,7 @@ jobs:
             tcltag: 9.0.4
             nsf_version: HEAD
             tcllib_version: "2.0"
-            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam nsdns
             tdom_version: 0.9.6
             with_deprecated: 0
             tcl_makeflags: "-j1"
@@ -75,7 +75,7 @@ jobs:
             tcltag: 9.1b0
             nsf_version: HEAD
             tcllib_version: "2.0"
-            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam nsdns
             tdom_version: 0.9.6
             with_deprecated: 0
             tcl_makeflags: "-j1"
