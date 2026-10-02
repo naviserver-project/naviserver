@@ -3224,7 +3224,7 @@ stops execution of that ADP page}
                     peers bypass it, as do direct ns_smtpd send and ns_smtpd resolve operations.
 
                     Receives a dictionary with id (SMTP session ID), peeraddr (socket
-                    peer IP), sender (envelope sender, empty for a null sender), and
+                    peer IP), helo (client HELO/EHLO identity), sender (envelope sender, empty for a null sender), and
                     recipient (original envelope recipient). Returns a dictionary with
                     action accept, defer (451 4.7.1), or reject (550 5.7.1). An optional
                     message for defer/reject must contain 1 to 400 printable ASCII
@@ -3250,7 +3250,20 @@ stops execution of that ADP page}
                 }
             }
 
+            spfproc {
+                type list
+                default {}
+                desc {Optional SPF evaluator command prefix used by smtpd::checkspf. The SPF Tcl interface requires NaviServer 5.0 or newer for ns_ip valid; disabled SPF introduces no such dependency. Receives -ip (actual socket peer), -sender (envelope sender, empty for null sender), and -helo (client SMTP identity). Returns pass, fail, softfail, neutral, none, temperror, or permerror. Empty disables evaluation. The external smtpd::spfquery backend defaults to the spfquery executable in the helper directory returned by ns_info bindir, using the stable link created by install-ns. Override it with -command /absolute/path. Other optional arguments are -timeout seconds (default 10) and -pool name (default smtpd-spf). It requires the libspf2 command-line utility and the nsproxy module, but no native SPF build support or external timeout program. ns_proxy eval bounds the evaluation wait; the same timeout applies separately when obtaining a proxy handle. Handles are released on success and failure. Use /usr/bin/spfquery.libspf2 from Debian package spfquery or /usr/bin/spfquery from Alpine package libspf2-tools; the Perl utility is incompatible. Queries occupy an SMTP worker until completion or the deadline. Execution failures raise errors and retain normal greylisting. The optional smtpd::libspf2 backend requires building nssmtpd with WITH_SPF2=1 and a maintained libspf2 installation. Its DNS resolution is synchronous and uses system resolver timeouts; custom evaluators can implement their own DNS caching and time limits. SPF evaluates sending authorization, not message content or DKIM/DMARC alignment}
+            }
+
+            greylistspfexceptions {
+                type list
+                default {}
+                desc {Optional list of exact case-sensitive envelope-sender/original-recipient pairs eligible for an SPF-verified greylist exception. Null senders are not eligible: their HELO identity would need a separate constraint. For example: {{noreply-dmarc-support@google.com webmaster@openacs.org}}. Used only by smtpd::greylist. A matching pair bypasses greylisting only when smtpd::checkspf returns pass; other results and evaluator errors fall back to ordinary greylisting. Unmatched pairs cause no SPF lookup. Requires spfproc. An accepted exception is logged with reason verified-report-sender. This does not bypass relay authorization, alias validation or later checks and does not authenticate a report's contents}
+            }
+
             greylistdelay {
+
                 type integer
                 default {300}
                 desc {Positive minimum number of seconds from first attempt to an accepted greylist retry. Early retries do not reset the first-attempt time. Used by smtpd::greylist when explicitly enabled via recipientpolicyproc}
