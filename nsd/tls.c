@@ -3994,25 +3994,37 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(sslPtr != NULL);
 
+    ERR_clear_error();
     ssl = SSL_new(ctx);
     *sslPtr = ssl;
     if (ssl == NULL) {
-        char *errMsg, errorBuffer[256];
+        unsigned long errorCode = ERR_get_error();
+        char          errorBuffer[256];
+        const char   *errMsg = "SSL_new failed (no OpenSSL error queued)";
 
-        errMsg = ERR_error_string(ERR_get_error(), errorBuffer);
+        if (errorCode != 0u) {
+            ERR_error_string_n(errorCode, errorBuffer, sizeof(errorBuffer));
+            errMsg = errorBuffer;
+        }
         Ns_TclPrintfResult(interp, "SSLAccept failed: %s", errMsg);
         Ns_Log(Debug, "SSLAccept failed: %s", errMsg);
         result = TCL_ERROR;
 
     } else {
+        int rc, err, socketError;
 
         SSL_set_fd(ssl, sock);
         SSL_set_accept_state(ssl);
 
         for (;;) {
-            int rc, err;
-
+            ERR_clear_error();
+#ifdef _WIN32
+            SetLastError(0);
+#else
+            errno = 0;
+#endif
             rc = SSL_do_handshake(ssl);
+            socketError = ns_sockerrno;
             err = SSL_get_error(ssl, rc);
 
             if (err == SSL_ERROR_WANT_READ) {
@@ -4027,9 +4039,27 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         }
 
         if (!SSL_is_init_finished(ssl)) {
-            char *errMsg, errorBuffer[256];
+            unsigned long errorCode = ERR_get_error();
+            char          errorBuffer[256];
+            const char   *errMsg = errorBuffer;
 
-            errMsg = ERR_error_string(ERR_get_error(), errorBuffer);
+            if (errorCode != 0u) {
+                ERR_error_string_n(errorCode, errorBuffer, sizeof(errorBuffer));
+            } else if (err == SSL_ERROR_ZERO_RETURN) {
+                snprintf(errorBuffer, sizeof(errorBuffer),
+                         "peer closed TLS connection during handshake (SSL_ERROR_ZERO_RETURN)");
+            } else if (err == SSL_ERROR_SYSCALL && socketError != 0) {
+                snprintf(errorBuffer, sizeof(errorBuffer),
+                         "socket error during TLS handshake: %s (SSL_ERROR_SYSCALL)",
+                         ns_sockstrerror(socketError));
+            } else if (err == SSL_ERROR_SYSCALL && rc == 0) {
+                snprintf(errorBuffer, sizeof(errorBuffer),
+                         "peer closed connection during TLS handshake (unexpected EOF)");
+            } else {
+                snprintf(errorBuffer, sizeof(errorBuffer),
+                         "TLS handshake incomplete (SSL_get_error=%d, return=%d; no OpenSSL error queued)",
+                         err, rc);
+            }
             Ns_TclPrintfResult(interp, "ssl accept failed: %s", errMsg);
             Ns_Log(Debug, "SSLAccept failed: %s", errMsg);
 
