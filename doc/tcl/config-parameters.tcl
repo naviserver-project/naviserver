@@ -2995,6 +2995,145 @@ stops execution of that ADP page}
             }
         }
 
+        nsdns {
+            :title {nsdns}
+            :scope server
+            :desc {
+                The external nsdns module provides DNS lookup commands and an optional
+                UDP/TCP DNS server and caching proxy. Install the module separately.
+                For resolver-only use, set port to 0 and configure nameserver, then use
+                ns_dns lookup openacs.org TXT. nameserverport defaults to 53 and need
+                not be configured for a standard DNS upstream. System resolver settings
+                from /etc/resolv.conf are not imported.
+
+                To serve records added with ns_dns add, configure a nonzero port and
+                an address. proxyhost optionally forwards unanswered incoming requests;
+                it is separate from the nameserver used by ns_dns lookup. IPv4 and IPv6
+                transports are supported. The module is not a full recursive resolver
+                or a zone-transfer server.
+            }
+            :see {
+                {uri https://github.com/naviserver-project/nsdns nsdns}
+            }
+            :example {
+                #---------------------------------------------------------------------
+                # nsdns nameserver support -- extra module "nsdns"
+                #---------------------------------------------------------------------
+                ns_section ns/server/$server/modules {
+                    ns_param nsdns nsdns
+                }
+                ns_section ns/server/$server/module/nsdns {
+                    ns_param port       0        ;# Disable the local UDP/TCP listener
+                    ns_param nameserver 1.1.1.1  ;# Upstream for ns_dns lookup
+                    #ns_param nameserverport 53  ;# Default upstream port; optional
+                }
+            }
+
+            port {
+                type integer
+                default {5353}
+                desc {Local UDP/TCP listening port (0..65535). Set to 0 for resolver-only use; ns_dns lookup and ns_dns resolve do not use this listener.}
+            }
+
+            address {
+                type address
+                desc {Local listening address. Set an explicit IPv4 or IPv6 address, e.g. 127.0.0.1 or ::1 for loopback. When omitted, the socket API uses a wildcard address; wildcard dual-stack behavior depends on the platform. Ignored when port is 0.}
+            }
+
+            nameserver {
+                type string
+                desc {Comma-separated upstream IPv4 or IPv6 addresses used by ns_dns lookup. No servers are configured by default; the module does not read /etc/resolv.conf. ns_dns resolve instead accepts an explicit -server argument.}
+            }
+
+            nameserverport {
+                type integer
+                default {53}
+                desc {Upstream destination port (1..65535) used by ns_dns lookup. Only needed when the upstream listens on a nonstandard port. Independent of the local port and proxyport.}
+            }
+
+            proxyhost {
+                type address
+                desc {Upstream IPv4 or IPv6 DNS server for incoming requests that cannot be answered locally. Omit to disable forwarding. Independent of nameserver; requires a nonzero local port.}
+            }
+
+            proxyport {
+                type integer
+                default {53}
+                desc {Destination port of proxyhost. Applies to forwarding incoming DNS requests, not ns_dns lookup.}
+            }
+
+            proxytimeout {
+                type integer
+                default {3}
+                desc {Proxy reply timeout in seconds; also used for a TCP retry after a truncated upstream response.}
+            }
+
+            proxyretries {
+                type integer
+                default {2}
+                desc {Maximum number of UDP proxy transmission attempts, including the initial request.}
+            }
+
+            ttl {
+                type integer
+                default {86400}
+                desc {Default record TTL in seconds. A positive value overrides the default; ns_dns add can supply a per-record TTL.}
+            }
+
+            cachettl {
+                type integer
+                default {0}
+                desc {Minimum nonzero TTL in seconds for records inserted into the cache. Positive values raise shorter nonzero TTLs; 0 leaves them unchanged.}
+            }
+
+            negativettl {
+                type integer
+                default {3600}
+                desc {Legacy negative-response TTL setting in seconds. Currently read by the module but not used; setting it does not enable negative caching.}
+            }
+
+            readtimeout {
+                type integer
+                default {30}
+                desc {TCP client read timeout in seconds.}
+            }
+
+            writetimeout {
+                type integer
+                default {30}
+                desc {TCP client write timeout in seconds.}
+            }
+
+            threads {
+                type integer
+                default {1}
+                desc {Number of DNS request worker queues and threads (1..16). Used when the local listener is enabled.}
+            }
+
+            rcvbuf {
+                type integer
+                default {0}
+                desc {Local UDP socket receive and send buffer size in bytes. Despite the name, sets both SO_RCVBUF and SO_SNDBUF. 0 preserves operating-system defaults.}
+            }
+
+            defaulthost {
+                type address
+                desc {Fallback numeric address for unanswered A or AAAA queries when proxyhost is unset. Must match the requested address family. Omit to disable; does not synthesize TXT records.}
+            }
+
+            debug {
+                type integer
+                default {0}
+                desc {DNS diagnostic verbosity. Higher values produce more detail; explicitly configuring this parameter also enables the Debug(dnsd) log severity.}
+            }
+
+            flags {
+                type integer
+                default {0}
+                desc {Legacy behavior bit mask. Bit 4 (DNS_NAPTR_REGEXP) enables NAPTR regexp processing. Leave at 0 for ordinary DNS/TXT use.}
+            }
+        }
+
         nssmtpd {
             :title {nssmtpd}
             :scope server
@@ -3159,8 +3298,9 @@ stops execution of that ADP page}
                     Duplicate targets within an expansion are removed; maxrcpt bounds it.
 
                     The supplied smtpd::resolvefilealiases resolver uses aliasformat,
-                    aliasfile, aliasdomains and rejectunknownrecipients. Explicit -format, -file,
-                    -domains and -rejectunknown options override these settings. Arguments
+                    aliasfile, aliasdomains, bouncevalidproc, bouncetarget and rejectunknownrecipients.
+                    Explicit -format, -file, -domains, -bouncevalidproc, -bouncetarget and
+                    -rejectunknown options override these settings. Arguments
                     are parsed by ns_parseargs. aliasformat defaults to virtual and
                     rejectunknownrecipients to false. File and domains must each be
                     supplied by an option or module setting. The file resolver supports
@@ -3194,6 +3334,41 @@ stops execution of that ADP page}
                     A direct Tcl call to smtpd::resolvefilealiases uses this configured
                     default unless -rejectunknown is explicitly supplied; this differs
                     from ns_smtpd resolve, which always supplies -rejectunknown false.
+                }
+            }
+
+            bouncevalidproc {
+                type list
+                default {}
+                desc {
+                    Optional command prefix used by smtpd::resolvefilealiases for an
+                    original recipient within aliasdomains with no matching file alias.
+                    Exact aliases and virtual catch-alls take precedence. Receives
+                    the recipient as a positional argument. Return a boolean: true
+                    forwards to bouncetarget; false retains the usual unknown-recipient
+                    rejection or passthrough behaviour. Errors or non-boolean results
+                    cause temporary SMTP failure (451). The destination undergoes
+                    normal file alias expansion, cycle checks and recipient limits.
+                    The callback also runs when -rejectunknown is false, including
+                    ns_smtpd resolve and local submissions. It must not send mail or
+                    modify SMTP sessions. Recipient policy still applies. An explicit
+                    -bouncevalidproc option overrides this setting; unset or empty disables
+                    the fallback. This setting alone does not enable aliasproc.
+                    OpenACS installations can use acs_mail_lite::bounce_address_valid_p.
+                    This forwards validated bounces; it does not update bounce counters.
+                }
+            }
+
+            bouncetarget {
+                type string
+                default {}
+                desc {
+                    Bare envelope address to receive validated bounces, for example
+                    webmaster@openacs.org. It can itself be a file alias. Required when
+                    bouncevalidproc is configured; a missing or malformed target causes
+                    a configuration error when the resolver is called. An explicit
+                    -bouncetarget option overrides this setting. Without bouncevalidproc
+                    this setting has no effect. Normal alias expansion and limits apply.
                 }
             }
 
@@ -3253,7 +3428,7 @@ stops execution of that ADP page}
             spfproc {
                 type list
                 default {}
-                desc {Optional SPF evaluator command prefix used by smtpd::checkspf. The SPF Tcl interface requires NaviServer 5.0 or newer for ns_ip valid; disabled SPF introduces no such dependency. Receives -ip (actual socket peer), -sender (envelope sender, empty for null sender), and -helo (client SMTP identity). Returns pass, fail, softfail, neutral, none, temperror, or permerror. Empty disables evaluation. The external smtpd::spfquery backend defaults to the spfquery executable in the helper directory returned by ns_info bindir, using the stable link created by install-ns. Override it with -command /absolute/path. Other optional arguments are -timeout seconds (default 10) and -pool name (default smtpd-spf). It requires the libspf2 command-line utility and the nsproxy module, but no native SPF build support or external timeout program. ns_proxy eval bounds the evaluation wait; the same timeout applies separately when obtaining a proxy handle. Handles are released on success and failure. Use /usr/bin/spfquery.libspf2 from Debian package spfquery or /usr/bin/spfquery from Alpine package libspf2-tools; the Perl utility is incompatible. Queries occupy an SMTP worker until completion or the deadline. Execution failures raise errors and retain normal greylisting. The optional smtpd::libspf2 backend requires building nssmtpd with WITH_SPF2=1 and a maintained libspf2 installation. Its DNS resolution is synchronous and uses system resolver timeouts; custom evaluators can implement their own DNS caching and time limits. SPF evaluates sending authorization, not message content or DKIM/DMARC alignment}
+                desc {Optional SPF evaluator command prefix used by smtpd::checkspf. The SPF Tcl interface requires NaviServer 5.0 or newer for ns_ip valid; disabled SPF introduces no such dependency. Receives -ip (actual socket peer), -sender (envelope sender, empty for null sender), and -helo (client SMTP identity). Returns pass, fail, softfail, neutral, none, temperror, or permerror. Empty disables evaluation. The optional Tcl backend smtpd::spf requires nsdns with lookup -details -jointxt -timeout (October 2026 interface update), without an external program. It supports IPv4/IPv6, SPF mechanisms, redirect and domain macros; exp text is not fetched because this interface returns only a result. Its -timeout option defaults to 20 seconds (maximum 120). DNS responses alone are shared through ns_memoize, respecting DNS TTLs with a five-minute cap; negative caching requires an SOA, transient errors are not cached, and per-evaluation lookup limits also apply to cache hits. The external smtpd::spfquery backend defaults to the spfquery executable in the helper directory returned by ns_info bindir, using the stable link created by install-ns. Override it with -command /absolute/path. Other optional arguments are -timeout seconds (default 10) and -pool name (default smtpd-spf). It requires the libspf2 command-line utility and the nsproxy module, but no native SPF build support or external timeout program. ns_proxy eval bounds the evaluation wait; the same timeout applies separately when obtaining a proxy handle. Handles are released on success and failure. Use /usr/bin/spfquery.libspf2 from Debian package spfquery or /usr/bin/spfquery from Alpine package libspf2-tools; the Perl utility is incompatible. Queries occupy an SMTP worker until completion or the deadline. Execution failures raise errors and retain normal greylisting. The optional smtpd::libspf2 backend requires building nssmtpd with WITH_SPF2=1 and a maintained libspf2 installation. Its DNS resolution is synchronous and uses system resolver timeouts; custom evaluators can implement their own DNS caching and time limits. SPF evaluates sending authorization, not message content or DKIM/DMARC alignment}
             }
 
             greylistspfexceptions {
@@ -3356,7 +3531,7 @@ stops execution of that ADP page}
             eventlogging {
                 type boolean
                 default {false}
-                desc {Enable a separate structured SMTP event log for incoming recipient decisions, applied alias expansions, greylisting outcomes and custom Tcl policy events. Does not change mail policy or the existing SMTP send log. The nsstats SMTP Events page displays charts and a filterable event table. Records contain envelope addresses but no message bodies or subjects; recipient acceptance does not establish final delivery}
+                desc {Enable a separate structured SMTP event log for incoming recipient decisions, applied alias expansions, greylisting outcomes, transaction outcomes and custom Tcl policy events. Transaction-end records are folded into matching nsstats Details and include the last command, DATA byte count and available relay reply; relay acceptance does not establish mailbox delivery. Does not change mail policy or the existing SMTP send log. The nsstats SMTP Events page displays charts and a filterable event table. Records contain envelope addresses but no message bodies or subjects; recipient acceptance does not establish final delivery}
             }
 
             eventlogfile {
@@ -3368,30 +3543,30 @@ stops execution of that ADP page}
             eventlogmaxbackup {
                 type integer
                 default {100}
-                desc {Maximum number of rotated SMTP event log files to retain}
+                desc {Maximum number of rotated SMTP event log files to retain. Inherits logmaxbackup when omitted, even when send logging is disabled; the fallback is 100}
             }
 
             eventlogroll {
                 type boolean
                 default {true}
-                desc {Enable daily rotation of the SMTP event log when eventlogging is enabled}
+                desc {Enable daily rotation of the SMTP event log when eventlogging is enabled. Inherits logroll when omitted, even when send logging is disabled; the fallback is true}
             }
 
             eventlogrollfmt {
                 type string
-                desc {Optional strftime suffix format for SMTP event log rotation; without a format, use numbered backups}
+                desc {Optional strftime suffix format overriding logrollfmt for SMTP event log rotation. When omitted, inherit logrollfmt even if SMTP send logging is disabled; when neither format is configured, use numbered backups}
             }
 
             eventlogrollhour {
                 type integer
                 default {0}
-                desc {Hour of day, from 0 through 23, for daily SMTP event log rotation}
+                desc {Hour of day, from 0 through 23, for daily SMTP event log rotation. Inherits logrollhour when omitted, even when send logging is disabled; the fallback is 0}
             }
 
             eventlogrollonsignal {
                 type boolean
                 default {false}
-                desc {Rotate the SMTP event log on SIGHUP when eventlogging is enabled}
+                desc {Rotate the SMTP event log on SIGHUP when eventlogging is enabled. Inherits logrollonsignal when omitted, even when send logging is disabled; the fallback is false}
             }
 
             logfile {
@@ -3413,7 +3588,7 @@ stops execution of that ADP page}
 
             logrollfmt {
                 type string
-                desc {Suffix format used when rotating the SMTP sending log file}
+                desc {Optional strftime suffix format used when rotating SMTP send and event logs. The event log inherits this setting unless eventlogrollfmt is configured. Without a format, use numbered backups}
             }
 
             logrollhour {
