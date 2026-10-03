@@ -2798,7 +2798,7 @@ IpValidObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc
         bool valid = (ns_inet_pton(ipPtr, ipString) == 1);
         if (valid && addressType != 0) {
             valid = (   ((addressType == 4) && (ipPtr->sa_family == AF_INET))
-                     || ((addressType == 5) && (ipPtr->sa_family == AF_INET6))
+                     || ((addressType == 6) && (ipPtr->sa_family == AF_INET6))
                      );
         }
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valid));
