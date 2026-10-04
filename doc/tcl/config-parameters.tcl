@@ -3425,6 +3425,29 @@ stops execution of that ADP page}
                 }
             }
 
+            authdetailsproc {
+                type list
+                default {}
+                desc {
+                    Optional informational callback after DATA headers have been parsed,
+                    before dataproc. Receives the SMTP session ID. Empty disables it.
+                    Callback errors are logged without rejecting mail; callbacks must
+                    not change recipients, flags or SMTP replies. Relay acceptance may
+                    already have occurred, so this is not a rejection policy hook.
+                    Use smtpd::authdetails with eventlogging true to record SPF results
+                    via spfproc and DKIM signature key availability via ns_dns. Requires
+                    the updated nsdns lookup -details -jointxt -timeout interface for
+                    DNS diagnostics. nsstats joins authentication events into transaction
+                    Details without extra rows. Local peers are marked not checked.
+                    SPF uses the actual socket peer, never a supplied Received header.
+                    Key checks cover at most eight signatures with a shared five-second
+                    DNS deadline. SPF uses the configured evaluator's timeout separately.
+                    DKIM cryptographic verification and DMARC policy evaluation are not
+                    performed. A present key does not imply a valid signature. No DNS
+                    diagnostics run when eventlogging is disabled.
+                }
+            }
+
             spfproc {
                 type list
                 default {}
