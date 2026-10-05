@@ -1014,45 +1014,6 @@ PrebindLaunchdSockets(size_t *countPtr)
     return status;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * PrebindAppendSocket --
- *
- *      Allocate a Prebind structure, or enlarge an existing one, and
- *      append the specified socket. The pPtr argument may be NULL.
- *
- * Results:
- *      A pointer to the allocated or resized Prebind structure, or NULL
- *      when the allocation failed.
- *
- * Side effects:
- *      Allocates or reallocates memory. A successful reallocation may
- *      change the address of the supplied Prebind structure.
- *
- *----------------------------------------------------------------------
- */
-static struct Prebind *
-PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock)
-{
-    struct Prebind *newPtr;
-    size_t          oldCount;
-
-    oldCount = pPtr != NULL ? pPtr->count : 0u;
-
-    if (pPtr == NULL) {
-        newPtr = ns_malloc(PrebindSize(1u));
-    } else {
-        newPtr = ns_realloc(pPtr, PrebindSize(oldCount + 1u));
-    }
-
-    if (newPtr != NULL) {
-        newPtr->sockets[oldCount] = sock;
-        newPtr->count = oldCount + 1u;
-    }
-
-    return newPtr;
-}
 #endif /* HAVE_SD_LISTEN_FDS || __APPLE__ */
 
 /*
@@ -1126,6 +1087,48 @@ PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr,
 }
 
 # if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindAppendSocket --
+ *
+ *      Allocate a Prebind structure, or enlarge an existing one, and
+ *      append the specified socket. The pPtr argument may be NULL.
+ *
+ * Results:
+ *      A pointer to the allocated or resized Prebind structure, or NULL
+ *      when the allocation failed.
+ *
+ * Side effects:
+ *      Allocates or reallocates memory. A successful reallocation may
+ *      change the address of the supplied Prebind structure.
+ *
+ *----------------------------------------------------------------------
+ */
+static struct Prebind *
+PrebindAppendSocket(struct Prebind *pPtr, NS_SOCKET sock)
+{
+    struct Prebind *newPtr;
+    size_t          oldCount;
+
+    oldCount = pPtr != NULL ? pPtr->count : 0u;
+
+    if (pPtr == NULL) {
+        newPtr = ns_malloc(PrebindSize(1u));
+    } else {
+        newPtr = ns_realloc(pPtr, PrebindSize(oldCount + 1u));
+    }
+
+    if (newPtr != NULL) {
+        newPtr->sockets[oldCount] = sock;
+        newPtr->count = oldCount + 1u;
+    }
+
+    return newPtr;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
