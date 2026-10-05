@@ -18,10 +18,15 @@
 
 #include "nsd.h"
 
+#ifdef HAVE_OPENSSL_EVP_H
+# include <openssl/rand.h>
+#endif
+
 /*
  * Local functions defined in this file
  */
 
+#ifndef HAVE_ARC4RANDOM
 static Ns_ThreadProc CounterThread;
 static unsigned long TrueRand(void);
 static unsigned long Roulette(void);
@@ -41,13 +46,15 @@ static Ns_Sema       sema = NULL;            /* Semaphore that controls counting
  */
 
 static Ns_Cs lock = NULL;
-static volatile bool initialized = NS_FALSE;
 
 /*
  * Static functions defined in this file.
  */
 
 static void GenSeeds(unsigned long seeds[], int nseeds);
+#endif /* !HAVE_ARC4RANDOM */
+
+static volatile bool initialized = NS_FALSE;
 
 
 /*
@@ -109,7 +116,7 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
  *      Random double.
  *
  * Side effects:
- *      Will generate random seed on first call.
+ *      Initializes the fallback generator on first call when necessary.
  *
  *----------------------------------------------------------------------
  */
@@ -124,17 +131,41 @@ Ns_DRand(void)
 #endif
         NsInitRandom();
     }
+#ifdef HAVE_OPENSSL_EVP_H
+    {
+        uint64_t bits;
+
+        if (RAND_bytes((unsigned char *)&bits, (int)sizeof(bits)) == 1) {
+            /* Exactly representable 53-bit fraction; never round up to 1.0. */
+            return (double)(bits >> 11) * 0x1.0p-53;
+        }
+        Ns_Log(Error, "Ns_DRand: OpenSSL random generation failed; using platform fallback");
+    }
+#endif
 #if defined(HAVE_ARC4RANDOM)
-    return ((double)(arc4random() % (unsigned)RAND_MAX) / ((double)RAND_MAX + 1.0));
+    {
+        uint32_t value = arc4random();
+
+        return (double)value * 0x1.0p-32;
+    }
 #elif defined(HAVE_DRAND48)
     return drand48();
 #elif defined(HAVE_RANDOM)
-    return ((double) random() / ((double)LONG_MAX + 1.0));
+    {
+        long value = random();
+
+        return (double)value * 0x1.0p-31;
+    }
 #else
-    return ((double) rand() / ((double)RAND_MAX + 1.0));
+    {
+        int value = rand();
+
+        return (double)value / ((double)RAND_MAX + 1.0);
+    }
 #endif
 }
 
+#ifndef HAVE_ARC4RANDOM
 
 /*
  *----------------------------------------------------------------------
@@ -267,11 +298,13 @@ Roulette(void)
     return randbuf;
 }
 
+#endif /* !HAVE_ARC4RANDOM */
+
 /*----------------------------------------------------------------------
  *
  * NsInitRandom --
  *
- *      Initialize once the critical section and the seeds.
+ *      Initialize the fallback generator. arc4random() seeds itself.
  *
  * Results:
  *      None.
@@ -282,9 +315,9 @@ Roulette(void)
  *----------------------------------------------------------------------
  */
 void NsInitRandom(void) {
+#ifndef HAVE_ARC4RANDOM
     unsigned long seed[1];
 
-    //fprintf(stderr, "==== NsInitRandom =====================================\n");
     Ns_CsInit(&lock);
     GenSeeds(seed, 1);
 #if defined(HAVE_DRAND48)
@@ -294,6 +327,7 @@ void NsInitRandom(void) {
 #else
     srand((unsigned int) seed[0]);
 #endif
+#endif /* !HAVE_ARC4RANDOM */
     initialized = NS_TRUE;
 }
 

@@ -25,6 +25,29 @@ test ns_rand-1.2 {ns_rand with 0 arg - float} -body {
     return [list [expr {$rand < 1}] [string is double -strict $rand] ]
 } -result {1 1}
 
+foreach maximum {1 2 65536 2147483647} {
+    test ns_rand-range-$maximum {integer bounds include DNS IDs and the maximum supported range} -body {
+        set valid 1
+        for {set i 0} {$i < 1000} {incr i} {
+            set value [ns_rand $maximum]
+            if {![string is integer -strict $value] || $value < 0 || $value >= $maximum} {
+                set valid 0
+                break
+            }
+        }
+        set valid
+    } -result 1
+}
+
+test ns_rand-range-float {floating values stay in the half-open unit interval} -body {
+    set valid 1
+    for {set i 0} {$i < 1000} {incr i} {
+        set value [ns_rand]
+        if {$value < 0.0 || $value >= 1.0} {set valid 0; break}
+    }
+    set valid
+} -result 1
+
 #######################################################################################
 #  test ns_parseheader
 #######################################################################################
