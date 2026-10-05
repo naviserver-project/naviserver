@@ -3011,6 +3011,12 @@ stops execution of that ADP page}
                 it is separate from the nameserver used by ns_dns lookup. IPv4 and IPv6
                 transports are supported. The module is not a full recursive resolver
                 or a zone-transfer server.
+
+                Integer parameters use Ns_ConfigIntRange: missing or malformed values
+                use the default, and out-of-range values are clamped with a warning.
+                The local port permits 0..65535, upstream ports 1..65535, threads
+                1..16, ttl 1..2147483647, and proxyretries 0..65535. Other integer parameters permit
+                0..2147483647.
             }
             :see {
                 {uri https://github.com/naviserver-project/nsdns nsdns}
@@ -3063,9 +3069,9 @@ stops execution of that ADP page}
             }
 
             proxytimeout {
-                type integer
-                default {3}
-                desc {Proxy reply timeout in seconds; also used for a TCP retry after a truncated upstream response.}
+                type time
+                default {3s}
+                desc {Proxy reply timeout (0..2147483647 seconds; accepts units such as 250ms); also used for a TCP retry after a truncated upstream response.}
             }
 
             proxyretries {
@@ -3093,15 +3099,15 @@ stops execution of that ADP page}
             }
 
             readtimeout {
-                type integer
-                default {30}
-                desc {TCP client read timeout in seconds.}
+                type time
+                default {30s}
+                desc {TCP client read timeout (0..2147483647 seconds; accepts units such as 1500ms).}
             }
 
             writetimeout {
-                type integer
-                default {30}
-                desc {TCP client write timeout in seconds.}
+                type time
+                default {30s}
+                desc {TCP client write timeout (0..2147483647 seconds; accepts units such as 1.5s).}
             }
 
             threads {
