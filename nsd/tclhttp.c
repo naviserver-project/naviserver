@@ -4787,7 +4787,7 @@ HttpConnect(
         (void)Ns_DStringVarAppend(dsPtr, hostHeader, ": ", NS_SENTINEL);
         (void)Ns_HttpLocationString(dsPtr, NULL, urlPtr->host, portNr,
                                     STREQ("http", urlPtr->protocol) ? 80u
-                                    : STREQ("http", urlPtr->protocol) ? 443u : 0);
+                                    : STREQ("https", urlPtr->protocol) ? 443u : 0);
         Tcl_DStringAppend(dsPtr, "\r\n", 2);
     }
 
