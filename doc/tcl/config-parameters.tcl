@@ -3438,13 +3438,41 @@ stops execution of that ADP page}
                     via spfproc and DKIM signature key availability via ns_dns. Requires
                     the updated nsdns lookup -details -jointxt -timeout interface for
                     DNS diagnostics. nsstats joins authentication events into transaction
-                    Details without extra rows. Local peers are marked not checked.
+                    Details without extra rows. Local peers skip SPF and DKIM checks.
+                    Also inspects HTML links for hostname-label mismatches and embedded
+                    cross-host redirect URLs, using Tcllib mime and NaviServer HTML/URL
+                    parsers. No URLs are fetched; only hostname evidence is logged.
+                    Messages over 256 KiB are skipped; traversal is limited to 64 MIME
+                    parts and 100 anchors per HTML part. Missing dependencies, parse
+                    errors and inspection limits are recorded. Link findings are
+                    informational and may also occur in legitimate mail.
                     SPF uses the actual socket peer, never a supplied Received header.
                     Key checks cover at most eight signatures with a shared five-second
                     DNS deadline. SPF uses the configured evaluator's timeout separately.
                     DKIM cryptographic verification and DMARC policy evaluation are not
                     performed. A present key does not imply a valid signature. No DNS
-                    diagnostics run when eventlogging is disabled.
+                    diagnostics run when both eventlogging and authdetailheaders are disabled.
+                }
+            }
+
+            authdetailheaders {
+                type boolean
+                default false
+                desc {
+                    Buffer built-in relay DATA up to maxdata. Use the dynamic ns_set
+                    returned by authdetailsproc to prepend informational link headers.
+                    Use smtpd::authdetails. Adds memory use and diagnostic latency; overrides
+                    fast-proxy buffer omission. The default streaming path is unchanged.
+                    Only Nssmtpd-Link-Findings, Nssmtpd-Link-Host-Mismatch and
+                    Nssmtpd-Link-Embedded-Redirect with bounded ASCII values are accepted.
+                    The original wire DATA is preserved. Callback errors omit additions
+                    without rejecting mail. smtpd::authdetails skips existing names and names
+                    listed in any DKIM/ARC message signature h= tag, including oversigned
+                    fields; malformed signatures suppress all additions. Custom callbacks
+                    must provide equivalent protection. Ownership of a returned set transfers
+                    to nssmtpd, which frees it; an empty string means no additions.
+                    Received diagnostic fields remain untrusted. No Subject/body rewriting or cryptographic verification.
+                    Applies only to the built-in relay, not custom delivery callbacks.
                 }
             }
 
@@ -3510,15 +3538,21 @@ stops execution of that ADP page}
             }
 
             readtimeout {
-                type integer
-                default {60}
-                desc {Receive timeout in seconds. The local receive implementation shares a deadline across readiness retries for one buffer refill, not across an entire SMTP line or transaction}
+                type time
+                default {60s}
+                desc {Receive timeout, accepting time units and fractional seconds. Unitless values are seconds. The local receive implementation shares a deadline across readiness retries for one buffer refill, not across an entire SMTP line or transaction}
             }
 
             writetimeout {
-                type integer
-                default {60}
-                desc {Timeout in seconds used for outbound SMTP and spamd connection establishment. The current local send implementation uses separate retry waits; this setting is not an overall write or SMTP transaction deadline}
+                type time
+                default {60s}
+                desc {Timeout for outbound SMTP and spamd connection establishment and for each local send operation, including readiness and TLS retries. Accepts time units and fractional seconds; unitless values are seconds. This is not an overall SMTP transaction deadline}
+            }
+
+            segvtimeout {
+                type time
+                default {-1}
+                desc {Delay before terminating after a trapped SEGV or panic when SEGV handling is enabled. Accepts time units and fractional seconds; unitless values are seconds. The default -1 terminates without waiting}
             }
 
             bufsize {
