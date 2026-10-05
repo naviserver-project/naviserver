@@ -3016,7 +3016,8 @@ stops execution of that ADP page}
                 use the default, and out-of-range values are clamped with a warning.
                 The local port permits 0..65535, upstream ports 1..65535, threads
                 1..16, ttl 1..2147483647, and proxyretries 0..65535. Other integer parameters permit
-                0..2147483647.
+                0..2147483647, except connection, queue and pending-request limits, which
+                require at least 1.
             }
             :see {
                 {uri https://github.com/naviserver-project/nsdns nsdns}
@@ -3101,19 +3102,55 @@ stops execution of that ADP page}
             readtimeout {
                 type time
                 default {30s}
-                desc {TCP client read timeout (0..2147483647 seconds; accepts units such as 1500ms).}
+                desc {Total TCP read deadline from acceptance, shared by the length prefix and payload (0..2147483647 seconds; accepts units such as 1500ms). Incoming bytes do not restart it. Zero polls without waiting.}
             }
 
             writetimeout {
                 type time
                 default {30s}
-                desc {TCP client write timeout (0..2147483647 seconds; accepts units such as 1.5s).}
+                desc {Total deadline for writing a TCP response (0..2147483647 seconds; accepts units such as 1.5s). Partial writes do not restart it. Zero polls without waiting.}
             }
 
             threads {
                 type integer
                 default {1}
                 desc {Number of DNS request worker queues and threads (1..16). Used when the local listener is enabled.}
+            }
+
+            maxtcpconnections {
+                type integer
+                default {64}
+                desc {Maximum accepted TCP connections, including sockets awaiting proxy replies (1..2147483647). Excess connections are closed before creating a worker thread.}
+            }
+
+            maxqueuesize {
+                type integer
+                default {128}
+                desc {Maximum queued UDP requests per worker (1..2147483647); excess datagrams are dropped before allocation. One additional request can be executing in each worker.}
+            }
+
+            maxfreelist {
+                type integer
+                default {16}
+                desc {Maximum idle request objects retained per UDP worker (0..2147483647). Set to 0 to free completed objects immediately. Each object contains a 64 KiB packet buffer.}
+            }
+
+            maxpending {
+                type integer
+                default {256}
+                desc {Maximum queued proxy requests, shared by UDP and TCP (1..2147483647). Excess requests receive SERVFAIL. One additional proxy reply can be in processing.}
+            }
+
+            maxcacherecords {
+                type integer
+                default {10000}
+                desc {Maximum network-learned resource records per client cache, including the default cache (0..2147483647). Locally added records are exempt. Set to 0 to disable learned caching.}
+            }
+
+            maxcachebytes {
+                type integer
+                default {16777216}
+                desc {Maximum charged bytes of network-learned records per client cache (0..2147483647), including conservative RDATA, hash and allocation overhead. Set to 0 to disable learned caching. When either cache limit is reached, answers are forwarded without retaining new records; expired learned records are swept every second.}
             }
 
             rcvbuf {
@@ -3417,8 +3454,8 @@ stops execution of that ADP page}
                     The supplied smtpd::greylist callback uses a mutex-protected shared
                     table of exact peer-IP, sender and original-recipient tuples. A
                     mature retry grants a sliding allowance for that tuple. State is
-                    bounded and in memory only: restarting the server clears it and
-                    may delay subsequent deliveries again. No database is required.
+                    bounded and persisted via greylistfile across orderly restarts.
+                    No database is required.
                     At capacity, new tuples pass without being stored; existing entries
                     remain. Notice logs record deferrals, rejections and new/retry/
                     expired/capacity greylist decisions. Legitimate delivery is delayed,
@@ -3427,7 +3464,7 @@ stops execution of that ADP page}
 
                     smtpd::init initializes greylisting when a recipient policy is
                     configured. Custom initproc callbacks using greylisting must call
-                    smtpd::greylistinit once at startup; this clears its state.
+                    smtpd::greylistinit once at startup; repeated initialization preserves state.
                 }
             }
 
@@ -3511,6 +3548,12 @@ stops execution of that ADP page}
                 type integer
                 default {604800}
                 desc {Positive lifetime in seconds of a passed greylist tuple, refreshed on each accepted attempt. Different peers, senders or recipients use separate tuples}
+            }
+
+            greylistfile {
+                type string
+                default {smtpgreylist-${server}.state}
+                desc {Greylist snapshot file, defaulting to smtpgreylist-${server}.state in the server log directory. Relative names use that directory; absolute paths override it. Empty selects the default. The directory must exist and be writable; use persistent storage. Restored before startup and atomically replaced on orderly shutdown. Preserves pending delays and passed lifetimes; expired and future-dated entries are discarded, and greylistmaxentries bounds reloads. Missing files start empty; read/write failures are logged. Use a separate file per server instance; abrupt termination loses changes since the last shutdown}
             }
 
             greylistmaxentries {
