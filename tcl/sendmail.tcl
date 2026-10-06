@@ -79,9 +79,9 @@ proc ns_sendmail args {
     #
     # Prepare To: address list
     #
-
     set tolist [list]
     foreach addr [string trim [split [string map {\n "" \r ""} $to] ","]] {
+        set addr [string trim $addr]
         if {$addr ne ""} {
             lappend tolist $addr
         }
@@ -90,9 +90,9 @@ proc ns_sendmail args {
     #
     # Prepare Cc: address list
     #
-
     set cclist [list]
     foreach addr [string trim [split [string map {\n "" \r ""} $cc] ","]] {
+        set addr [string trim $addr]
         if {$addr ne ""} {
             lappend cclist $addr
         }
@@ -101,9 +101,9 @@ proc ns_sendmail args {
     #
     # Prepare Bcc: address list
     #
-
     set bcclist [list]
     foreach addr [string trim [split [string map {\n "" \r ""} $bcc] ","]] {
+        set addr [string trim $addr]
         if {$addr ne ""} {
             lappend bcclist $addr
         }
@@ -112,7 +112,6 @@ proc ns_sendmail args {
     #
     # Apply encoding on subject, body, if configured
     #
-
     if {[ns_config -set ns/parameters smtpencodingmode false]} {
         set encoding [ns_config -set ns/parameters smtpencoding "utf-8"]
         set quotemsg 0
