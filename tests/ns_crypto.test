@@ -1073,6 +1073,26 @@ test ns_crypto::key-3.10 {info: non-signature key has no requiresdigest field} -
 } -result {0 1 0}
 
 
+# Scalar one verifies fixed-width private export, including leading zeros.
+test ns_crypto::eckey-libressl-1.1 {private scalar is padded to curve order width} -constraints {ec} -body {
+    set pem {-----BEGIN EC PRIVATE KEY-----
+MDECAQEEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoAoGCCqGSM49AwEH
+-----END EC PRIVATE KEY-----}
+    ns_crypto::eckey priv -pem $pem -encoding hex
+} -result {0000000000000000000000000000000000000000000000000000000000000001}
+
+test ns_crypto::eckey-libressl-1.2 {public point import roundtrip} -constraints {ec} -body {
+    set pem [ns_crypto::eckey generate -name prime256v1]
+    set point [ns_crypto::eckey pub -pem $pem -encoding binary]
+    string equal [ns_crypto::eckey import -binary -string $point -encoding hex] \
+        [ns_crypto::eckey pub -pem $pem -encoding hex]
+} -result 1
+
+test ns_crypto::eckey-libressl-1.3 {invalid public point import fails} -constraints {ec} -body {
+    list [catch {ns_crypto::eckey import -binary -string {}}] \
+         [catch {ns_crypto::eckey import -binary -string [binary format H* 04]}]
+} -result {1 1}
+
 test ns_crypto::key-4.1 {pub: EC public key raw hex matches eckey pub} -constraints {ec} -body {
     set pem [ns_crypto::eckey generate -name prime256v1]
     set r1 [ns_crypto::eckey pub -pem $pem]

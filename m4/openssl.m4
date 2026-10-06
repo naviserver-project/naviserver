@@ -137,6 +137,21 @@ dnl ------------------------------------------------------------
 
   AC_CHECK_HEADERS([openssl/evp.h])
 
+  AC_MSG_CHECKING([for OpenSSL >= 1.1.1 or LibreSSL >= 4.1.0])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <openssl/opensslv.h>
+#if defined(LIBRESSL_VERSION_NUMBER)
+# if LIBRESSL_VERSION_NUMBER < 0x4010000fL
+#  error LibreSSL 4.1.0 or newer is required
+# endif
+#elif OPENSSL_VERSION_NUMBER < 0x10101000L
+# error OpenSSL 1.1.1 or newer is required
+#endif
+  ]], [[]])], [AC_MSG_RESULT([yes])], [
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([NaviServer requires OpenSSL 1.1.1 or newer, or LibreSSL 4.1.0 or newer])
+  ])
+
   FOUND_SSL_LIB="no"
   AC_CHECK_LIB([ssl], [OPENSSL_init_ssl], [FOUND_SSL_LIB="yes"])
   AC_CHECK_LIB([crypto], [OPENSSL_init_crypto])

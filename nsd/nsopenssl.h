@@ -16,15 +16,13 @@
  * Common definitions of handling versions of openssl/libressl
  */
 
-#if defined(LIBRESSL_VERSION_NUMBER) || OPENSSL_VERSION_NUMBER < 0x10101000L
+#if defined(LIBRESSL_VERSION_NUMBER)
+# if LIBRESSL_VERSION_NUMBER < 0x4010000fL
+#  error "NaviServer requires LibreSSL 4.1.0 or newer"
+# endif
+#elif OPENSSL_VERSION_NUMBER < 0x10101000L
 # define HAVE_OPENSSL_PRE_1_1_1
 #endif
-
-# if defined(LIBRESSL_VERSION_NUMBER)
-#  if LIBRESSL_VERSION_NUMBER >= 0x2060300fL && LIBRESSL_VERSION_NUMBER < 0x20700000L
-#   define LIBRESSL_1_0_2
-#  endif
-# endif
 
 # if defined(OPENSSL_VERSION_MAJOR) && OPENSSL_VERSION_MAJOR >= 3
 #  define HAVE_OPENSSL_3
@@ -46,10 +44,8 @@
 #  endif
 # endif
 
-# ifndef LIBRESSL_VERSION_NUMBER
-#  define HAVE_OPENSSL_HKDF
-#  define HAVE_OPENSSL_EC_PRIV2OCT
-# endif
+# define HAVE_OPENSSL_HKDF
+# define HAVE_OPENSSL_EC_PRIV2OCT
 
 # if defined(HAVE_OPENSSL_3)
 #  define HAVE_OPENSSL_OCSP

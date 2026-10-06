@@ -18,7 +18,7 @@
  *      HMAC/KDFs, key management, signatures, key agreement, and
  *      key encapsulation mechanisms.
  *
- *      The implementation supports both legacy OpenSSL (1.1.1) and
+ *      The implementation supports OpenSSL 1.1.1, LibreSSL 4.1.0, and
  *      provider-based APIs (OpenSSL 3.x and newer), performing
  *      capability detection at runtime and adapting behavior
  *      accordingly.  It handles encoding/decoding, PEM and raw key
@@ -42,8 +42,7 @@
 #endif
 
 /*
- * We need OpenSSL least in version 1.1.1 or newer for the crypto
- * functions.
+ * The crypto functions require OpenSSL 1.1.1 or LibreSSL 4.1.0 or newer.
  */
 #if defined(HAVE_OPENSSL_EVP_H) && !defined(HAVE_OPENSSL_PRE_1_1_1)
 
@@ -63,6 +62,62 @@
 #  include <openssl/bn.h>
 #  include <openssl/rsa.h>
 # endif
+
+# ifndef OPENSSL_NO_EC
+#  ifdef LIBRESSL_VERSION_NUMBER
+/* LibreSSL lacks these two OpenSSL EC serialization helpers. */
+static size_t
+NsECKeyPriv2Oct(const EC_KEY *key, unsigned char *buf, size_t len)
+{
+    const EC_GROUP *group = EC_KEY_get0_group(key);
+    const BIGNUM   *priv = EC_KEY_get0_private_key(key);
+    int            bits, bytes;
+
+    if (group == NULL || priv == NULL) {
+        return 0;
+    }
+    bits = EC_GROUP_order_bits(group);
+    if (bits <= 0) {
+        return 0;
+    }
+    bytes = (bits + 7) / 8;
+    if (buf == NULL) {
+        return (size_t)bytes;
+    }
+    if (len < (size_t)bytes || BN_bn2binpad(priv, buf, bytes) != bytes) {
+        return 0;
+    }
+    return (size_t)bytes;
+}
+
+static int
+NsECKeyOct2Key(EC_KEY *key, const unsigned char *buf, size_t len, BN_CTX *ctx)
+{
+    const EC_GROUP *group = EC_KEY_get0_group(key);
+    EC_POINT      *point;
+    int            result = 0;
+
+    if (group == NULL || buf == NULL || len == 0) {
+        return 0;
+    }
+    point = EC_POINT_new(group);
+    if (point != NULL) {
+        if (EC_POINT_oct2point(group, point, buf, len, ctx) == 1) {
+            result = EC_KEY_set_public_key(key, point);
+            if (result == 1) {
+                EC_KEY_set_conv_form(key, (point_conversion_form_t)(buf[0] & ~1));
+            }
+        }
+        EC_POINT_free(point);
+    }
+    return result;
+}
+#  else
+#   define NsECKeyPriv2Oct EC_KEY_priv2oct
+#   define NsECKeyOct2Key EC_KEY_oct2key
+#  endif
+# endif
+
 
 /*
  * Data structure local to this file.
@@ -4410,12 +4465,12 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 return SetResultFromOsslError(interp, "no valid EC key in specified pem file");
             }
 
-            octLength = EC_KEY_priv2oct(eckey, NULL, 0);
+            octLength = NsECKeyPriv2Oct(eckey, NULL, 0);
 
             Tcl_DStringInit(&ds);
             Tcl_DStringSetLength(&ds, (TCL_SIZE_T)octLength);
 
-            octLength = EC_KEY_priv2oct(eckey, (unsigned char *)ds.string, octLength);
+            octLength = NsECKeyPriv2Oct(eckey, (unsigned char *)ds.string, octLength);
             Tcl_SetObjResult(interp,
                              NsEncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
 
@@ -5013,7 +5068,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 goto done111;
             }
 
-            if (EC_KEY_oct2key(eckey, rawKeyString, (size_t)rawKeyLength, NULL) != 1) {
+            if (NsECKeyOct2Key(eckey, rawKeyString, (size_t)rawKeyLength, NULL) != 1) {
                 Ns_TclPrintfResult(interp, "could not import string to ec key");
                 result = TCL_ERROR;
             } else {

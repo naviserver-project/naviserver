@@ -162,11 +162,9 @@ static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int re
     NS_GNUC_NONNULL(1);
 # endif /* HAVE_OPENSSL_OCSP */
 
-# if !defined(LIBRESSL_VERSION_NUMBER)
 static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line)) NS_GNUC_MALLOC NS_ALLOC_SIZE1(1) NS_GNUC_RETURNS_NONNULL;
 static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file), int UNUSED(line)) NS_ALLOC_SIZE1(2);
 static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line));
-# endif
 
 /*
  *----------------------------------------------------------------------
@@ -1821,7 +1819,6 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
 
 #endif /* HAVE_OPENSSL_OCSP */
 
-# if !defined(LIBRESSL_VERSION_NUMBER)
 static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line))
 {
     return ns_malloc(num);
@@ -1834,7 +1831,6 @@ static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line
 {
     ns_free(addr);
 }
-# endif
 
 
 
@@ -1874,11 +1870,7 @@ NsInitOpenSSL(void)
          * function prototypes were introduced CRYPTO_malloc_fn,
          * CRYPTO_realloc_fn and CRYPTO_free_fn.
          */
-#  if defined(LIBRESSL_VERSION_NUMBER)
-        CRYPTO_set_mem_functions(ns_malloc, ns_realloc, ns_free);
-#  else
         CRYPTO_set_mem_functions(NS_CRYPTO_malloc, NS_CRYPTO_realloc, NS_CRYPTO_free);
-#  endif
         /*
          * OpenSSL 1.1.1 and newer initialize automatically.  Call
          * OPENSSL_init_ssl() explicitly to ensure the SSL library is ready.
@@ -2008,7 +2000,7 @@ Ns_TLS_CtxClientCreateCfg(Tcl_Interp *interp,
     if (verify) {
         int verify_depth = 9;
         NsInterp *itPtr = NsGetInterpData(interp);
-        SSL_verify_cb verifyCB = NULL;
+        int (*verifyCB)(int, X509_STORE_CTX *) = NULL;
 
         if (itPtr != NULL) {
             NsServer *servPtr = itPtr->servPtr;

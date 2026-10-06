@@ -226,7 +226,12 @@ SourceForge release tarball or `./autogen.sh` from GitHub sources:
   If you compile Tcl yourself, use the same `--prefix` location for Tcl.
 
 * `--with-openssl[=DIR|INCLUDEDIR,LIBDIR]`
+
   Enable OpenSSL support and specify how to locate headers and libraries.
+  Requires OpenSSL 1.1.1 or newer, or LibreSSL 4.1.0 or newer.
+  Provider-based crypto features require OpenSSL 3.0 or newer;
+  individual features may require later versions. HTTP/3 requires
+  OpenSSL 4.0.2 or newer and a compatible nghttp3 library.
 
   The option supports three forms:
 
