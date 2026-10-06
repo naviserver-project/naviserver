@@ -22,6 +22,14 @@
 # include <sys/syscall.h>
 #endif
 
+#if defined(__OpenBSD__) || defined(__FreeBSD__)
+# include <sys/sysctl.h>
+# if defined(__FreeBSD__)
+#  include <sys/thr.h>
+#  include <sys/user.h>
+# endif
+#endif
+
 /*
  * The following structure maintains all state for a thread
  * including thread local storage slots.
@@ -187,6 +195,16 @@ SetOsThreadId(Thread *thrPtr)
 
         if (pthread_threadid_np(NULL, &ostid) == 0) {
             thrPtr->ostid = ostid;
+        }
+    }
+#elif defined(__OpenBSD__)
+    thrPtr->ostid = (uint64_t)getthrid();
+#elif defined(__FreeBSD__)
+    {
+        long ostid;
+
+        if (thr_self(&ostid) == 0 && ostid > 0) {
+            thrPtr->ostid = (uint64_t)ostid;
         }
     }
 #elif defined(_WIN32)
@@ -387,6 +405,9 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
 }
 
 
+#if defined(__linux__) || defined(__APPLE__) || defined(_WIN32) \
+    || defined(__OpenBSD__) || defined(__FreeBSD__)
+
 static void
 ThreadCputimeAppend(Tcl_DString *dsPtr, uint64_t tid,
                     uint64_t userUsec, uint64_t systemUsec)
@@ -416,6 +437,22 @@ ThreadCputimeAppend(Tcl_DString *dsPtr, uint64_t tid,
 
     Tcl_DStringEndSublist(dsPtr);
 }
+#endif
+
+#if defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__)
+static bool
+ThreadIdWanted(uint64_t tid, const uint64_t *tids, size_t count)
+{
+    size_t i;
+
+    for (i = 0u; i < count; i++) {
+        if (tids[i] == tid) {
+            return NS_TRUE;
+        }
+    }
+    return NS_FALSE;
+}
+#endif
 
 #if defined(__linux__)
 
@@ -537,19 +574,6 @@ ThreadCputimesLinux(Tcl_DString *dsPtr,
 #include <mach/mach.h>
 #include <mach/thread_info.h>
 
-static bool
-ThreadIdWanted(uint64_t tid, const uint64_t *tids, size_t count)
-{
-    size_t i;
-
-    for (i = 0u; i < count; i++) {
-        if (tids[i] == tid) {
-            return NS_TRUE;
-        }
-    }
-    return NS_FALSE;
-}
-
 static void
 ThreadCputimesDarwin(Tcl_DString *dsPtr,
                      const uint64_t *tids, size_t count)
@@ -617,6 +641,101 @@ ThreadCputimesDarwin(Tcl_DString *dsPtr,
             mach_task_self(),
             (vm_address_t)threads,
             (vm_size_t)(threadCount * sizeof(*threads)));
+    }
+}
+
+#elif defined(__OpenBSD__) || defined(__FreeBSD__)
+
+static void
+ThreadCputimesBSD(Tcl_DString *dsPtr, const uint64_t *tids, size_t count)
+{
+# if defined(__OpenBSD__)
+    int mib[] = {CTL_KERN, KERN_PROC, KERN_PROC_PID | KERN_PROC_SHOW_THREADS,
+                 (int)getpid(), (int)sizeof(struct kinfo_proc), 0};
+# else
+    int mib[] = {CTL_KERN, KERN_PROC, KERN_PROC_PID | KERN_PROC_INC_THREAD,
+                 (int)getpid()};
+# endif
+    unsigned int attempt;
+
+    if (count == 0u) {
+        return;
+    }
+
+    /*
+     * Query only this process, including per-thread accounting. A thread
+     * can start between the size and data queries, so retry ENOMEM with
+     * a fresh size. Bound retries to avoid spinning during thread churn.
+     */
+    for (attempt = 0u; attempt < 3u; attempt++) {
+        struct kinfo_proc *threads;
+        size_t             length = 0u;
+        size_t             i;
+
+# if defined(__OpenBSD__)
+        mib[5] = 0;
+# endif
+        if (sysctl(mib, sizeof(mib) / sizeof(mib[0]),
+                   NULL, &length, NULL, 0) != 0 || length == 0u) {
+            return;
+        }
+# if defined(__OpenBSD__)
+        /* OpenBSD uses int for both its buffer size and element count. */
+        if (length > (size_t)INT_MAX) {
+            return;
+        }
+        mib[5] = (int)(length / sizeof(*threads));
+# endif
+        threads = ns_malloc(length);
+        if (sysctl(mib, sizeof(mib) / sizeof(mib[0]),
+                   threads, &length, NULL, 0) != 0) {
+            int error = errno;
+
+            ns_free(threads);
+            if (error == ENOMEM) {
+                continue;
+            }
+            return;
+        }
+
+        for (i = 0u; i < length / sizeof(*threads); i++) {
+            const struct kinfo_proc *info = &threads[i];
+            uint64_t                tid, userUsec, systemUsec;
+
+# if defined(__OpenBSD__)
+            /* The process aggregate has p_tid == -1; skip it. */
+            if (info->p_tid <= 0) {
+                continue;
+            }
+            tid = (uint64_t)info->p_tid;
+# else
+            if (info->ki_tid <= 0) {
+                continue;
+            }
+            tid = (uint64_t)info->ki_tid;
+# endif
+            if (!ThreadIdWanted(tid, tids, count)) {
+                continue;
+            }
+
+# if defined(__OpenBSD__)
+            userUsec = (uint64_t)info->p_uutime_sec * UINT64_C(1000000)
+                + (uint64_t)info->p_uutime_usec;
+            systemUsec = (uint64_t)info->p_ustime_sec * UINT64_C(1000000)
+                + (uint64_t)info->p_ustime_usec;
+# else
+            userUsec = (uint64_t)info->ki_rusage.ru_utime.tv_sec
+                * UINT64_C(1000000)
+                + (uint64_t)info->ki_rusage.ru_utime.tv_usec;
+            systemUsec = (uint64_t)info->ki_rusage.ru_stime.tv_sec
+                * UINT64_C(1000000)
+                + (uint64_t)info->ki_rusage.ru_stime.tv_usec;
+# endif
+            ThreadCputimeAppend(dsPtr, tid, userUsec, systemUsec);
+        }
+
+        ns_free(threads);
+        return;
     }
 }
 
@@ -742,6 +861,9 @@ Ns_ThreadCpuTimes(Tcl_DString *dsPtr)
 
 #elif defined(__APPLE__)
     ThreadCputimesDarwin(dsPtr, tids, count);
+
+#elif defined(__OpenBSD__) || defined(__FreeBSD__)
+    ThreadCputimesBSD(dsPtr, tids, count);
 
 #elif defined(_WIN32)
     ThreadCputimesWindows(dsPtr, tids, count);
