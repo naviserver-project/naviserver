@@ -1721,6 +1721,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
             Ns_CondInit(&queuePtr->cond);
             queuePtr->id = i;
+            queuePtr->threadName = drvPtr->threadName;
             Push(queuePtr, spPtr->firstPtr);
         }
     } else {
@@ -1755,7 +1756,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
             Ns_CondInit(&queuePtr->cond);
             queuePtr->id = i;
-            queuePtr->threadName = threadName;
+            queuePtr->threadName = drvPtr->threadName;
             Push(queuePtr, wrPtr->firstPtr);
         }
     } else {
