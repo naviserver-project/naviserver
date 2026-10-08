@@ -1087,7 +1087,6 @@ PrebindSockaddrKey(struct NS_SOCKADDR_STORAGE *keyPtr,
 }
 
 # if defined(HAVE_SD_LISTEN_FDS) || defined(__APPLE__)
-
 /*
  *----------------------------------------------------------------------
  *
