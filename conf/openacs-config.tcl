@@ -947,6 +947,36 @@ ns_section ns/db/pool/pool3 {
 }
 
 #---------------------------------------------------------------------
+# Adding SQLite for testing
+#---------------------------------------------------------------------
+ns_section ns/db/drivers {
+    ns_param sqlite nsdbsqlite.so
+}
+ns_section ns/db/pools {
+    ns_param smtp_sqlite "SMTP SQLite"
+}
+
+ns_section ns/db/pool/smtp_sqlite {
+    ns_param driver      sqlite
+    ns_param datasource  mail.db   ;# will be created per default under HOME/data/sqlite/
+    ns_param connections 1
+    ns_param logsqlerrors $debug
+}
+
+# Pools available through NaviServer's ns_db API.
+ns_section ns/server/${server}/db {
+    ns_param   pools              pool1,pool2,pool3
+    #ns_param   pools              pool1,pool2,pool3,smtp_sqlite
+    ns_param   defaultpool        pool1
+}
+
+# Pools used by OpenACS's db_* API.
+ns_section ns/server/${server}/acs/database {
+    ns_param database_names {main}
+    ns_param pools_main     {pool1 pool2 pool3}
+}
+
+#---------------------------------------------------------------------
 # Experimental alternative DB driver -- extra module "nsdbipg"
 #---------------------------------------------------------------------
 if {"nsdbipg" in $extramodules} {
