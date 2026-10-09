@@ -206,6 +206,43 @@ Rotate log on SIGHUP
 [item] Default: [const "false"]
 [list_end]
 
+[def "Parameter name: [emph "slowlogconntime"]"]
+Filter time plus runtime threshold, excluding accept and queue time; omitted disables this criterion, zero is valid, and exceeding any configured threshold selects the request for slowlogfile
+
+
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[list_end]
+
+[def "Parameter name: [emph "slowlogfile"]"]
+Additional filtered access log bringing OpenACS long-call monitoring to plain NaviServer; enabled by a nonempty filename, using the main log format and rotation settings
+
+
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "slowlogfiltertime"]"]
+Filter-time threshold; omitted disables this criterion, zero is valid, and exceeding any configured threshold selects the request for slowlogfile
+
+
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[list_end]
+
+[def "Parameter name: [emph "slowlogqueuetime"]"]
+Queue-time threshold; omitted disables this criterion, zero is valid, and exceeding any configured threshold selects the request for slowlogfile
+
+
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[list_end]
+
 [def "Parameter name: [emph "suppressquery"]"]
 Suppress the query string in logged request URLs; useful for reducing log volume and avoiding accidental logging of sensitive URL parameters
 

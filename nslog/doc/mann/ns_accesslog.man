@@ -113,7 +113,13 @@ The nslog module is loaded per-server.
    ns_param   nslog   nslog.so
  }
  ns_section "ns/server/server1/module/nslog" {
-   ns_param   ...
+   ns_param file              access.log
+   ns_param logthreadname     true
+   ns_param logpartialtimes   true
+   ns_param slowlogfile       slow-requests.log
+   ns_param slowlogconntime   3s
+   ns_param slowlogfiltertime 1s
+   ns_param slowlogqueuetime  500ms
  }
 [example_end]
 
@@ -202,6 +208,35 @@ Default: 0 (midnight).
 [def rollonsignal]
 If true then the log file will be rolled when the serve receives a SIGHUP
 signal. Default: false.
+
+[def slowlogfile]
+Optional additional access log for slow requests. Relative paths are resolved
+against the server log directory, as for [const file]. Setting a nonempty
+filename enables this log. It must differ from the main access-log filename.
+The same formatted record is written to both logs, including all configured
+formatting, masking, header, thread-name, and timing options. The slow log is
+written without the main log's [const maxbuffer] delay. Both logs rotate on
+the same schedule, signal, or [cmd {ns_accesslog roll}], using the same
+[const rollfmt] and [const maxbackup]. Default: disabled.
+
+[para]
+This brings the long-call monitoring practice from OpenACS to plain NaviServer.
+A request is selected when any configured threshold below is exceeded.
+Omitted thresholds are disabled; zero is a valid threshold. Selection does
+not require [const logpartialtimes]. For analysis and request correlation,
+enable [const logpartialtimes] and [const logthreadname]; the connection
+thread name includes the pool and request identifier.
+
+[def slowlogconntime]
+Time spent in the connection thread: filter time plus runtime, excluding
+accept and queue time. Accepts NaviServer time values such as [const 3s].
+Default: disabled.
+
+[def slowlogfiltertime]
+Filter-time threshold, for example [const 1s]. Default: disabled.
+
+[def slowlogqueuetime]
+Queue-time threshold, for example [const 500ms]. Default: disabled.
 
 [def suppressquery]
 If true then the query (everything after the ? in the URL) is not logged.

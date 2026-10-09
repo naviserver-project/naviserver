@@ -2763,6 +2763,27 @@ stops execution of that ADP page}
                 desc {Access log file written by this nslog instance; relative paths are resolved against the server log directory}
             }
 
+            slowlogfile {
+                type path
+                default {}
+                desc {Additional filtered access log bringing OpenACS long-call monitoring to plain NaviServer; enabled by a nonempty filename, using the main log format and rotation settings}
+            }
+
+            slowlogconntime {
+                type time
+                desc {Filter time plus runtime threshold, excluding accept and queue time; omitted disables this criterion, zero is valid, and exceeding any configured threshold selects the request for slowlogfile}
+            }
+
+            slowlogfiltertime {
+                type time
+                desc {Filter-time threshold; omitted disables this criterion, zero is valid, and exceeding any configured threshold selects the request for slowlogfile}
+            }
+
+            slowlogqueuetime {
+                type time
+                desc {Queue-time threshold; omitted disables this criterion, zero is valid, and exceeding any configured threshold selects the request for slowlogfile}
+            }
+
             formattedtime {
                 type boolean
                 default true

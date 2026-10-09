@@ -839,6 +839,8 @@ ns_section ns/fastpath {
 # Supported values for $dbms in this template:
 #   oracle  -- use the nsoracle driver
 #   postgres -- use nsdbpg (PostgreSQL)
+#
+# This is the list of drivers known to NaviServer
 #---------------------------------------------------------------------
 ns_section ns/db/drivers {
 
@@ -875,6 +877,9 @@ ns_section ns/db/drivers {
             # ns_param pgbin "/usr/lib/postgresql/18/bin/"
         }
     }
+
+    # Add optionally further db drivers here
+    # ns_param sqlite nsdbsqlite.so
 }
 
 
@@ -946,34 +951,17 @@ ns_section ns/db/pool/pool3 {
     ns_param driver          $db_driver_name
 }
 
-#---------------------------------------------------------------------
-# Adding SQLite for testing
-#---------------------------------------------------------------------
-ns_section ns/db/drivers {
-    ns_param sqlite nsdbsqlite.so
-}
+#
+# Optional pool for sqlite
+#
 ns_section ns/db/pools {
     ns_param smtp_sqlite "SMTP SQLite"
 }
-
 ns_section ns/db/pool/smtp_sqlite {
     ns_param driver      sqlite
-    ns_param datasource  mail.db   ;# will be created per default under HOME/data/sqlite/
+    ns_param datasource  mail.db   ;# DB will be created per default under HOME/data/sqlite/
     ns_param connections 1
     ns_param logsqlerrors $debug
-}
-
-# Pools available through NaviServer's ns_db API.
-ns_section ns/server/${server}/db {
-    ns_param   pools              pool1,pool2,pool3
-    #ns_param   pools              pool1,pool2,pool3,smtp_sqlite
-    ns_param   defaultpool        pool1
-}
-
-# Pools used by OpenACS's db_* API.
-ns_section ns/server/${server}/acs/database {
-    ns_param database_names {main}
-    ns_param pools_main     {pool1 pool2 pool3}
 }
 
 #---------------------------------------------------------------------
@@ -1511,9 +1499,18 @@ if {$nscpport ne ""} {
 ns_section ns/server/$server/modules {
     ns_param nsdb    nsdb
 }
+
+# Pools available through NaviServer's ns_db API.
 ns_section ns/server/$server/db {
     ns_param pools       pool1,pool2,pool3
+    # ns_param pools     pool1,pool2,pool3,smtp_sqlite
     ns_param defaultpool pool1
+}
+
+# Pools used by OpenACS's db_* API.
+ns_section ns/server/${server}/acs/database {
+    ns_param database_names {main}
+    ns_param pools_main     {pool1 pool2 pool3}
 }
 
 # source: openacs-config.d/60-server-openacs-module-nslog.tcl

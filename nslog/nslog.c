@@ -37,8 +37,12 @@
 NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 static const char *logType = "ACCESSLOG";
+static const char *slowLogType = "SLOWACCESSLOG";
 
-typedef struct {
+typedef struct Log {
+    struct Log  *slowLog;      /* Optional filtered access-log destination. */
+    Ns_Time      slowThresholds[3]; /* Connection, filter, and queue time. */
+    bool         slowEnabled[3];
     Ns_Mutex     lock;         /* Protects file, roll, and buffering state. */
     Ns_RWLock    formatLock;   /* Protects flags and extended-header configuration. */
     const char  *module;
@@ -82,6 +86,7 @@ static Ns_ReturnCode LogFlush(Log *logPtr, Tcl_DString *dsPtr);
 static Ns_LogCallbackProc LogOpen;
 static Ns_LogCallbackProc LogClose;
 static Ns_LogCallbackProc LogRoll;
+static Ns_LogCallbackProc SlowLogRoll;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 NS_EXPORT Ns_ModuleInfoProc Ns_ModuleGetInfo;
@@ -161,7 +166,8 @@ Ns_ModuleInit(const char *server, const char *module)
     Tcl_DStringInit(&ds);
 
     logPtr = ns_calloc(1u, sizeof(Log));
-    logPtr->module = module;
+    /* The loader may pass a temporary Tcl string; retain the module name. */
+    logPtr->module = ns_strdup(module);
     logPtr->server = server;
     logPtr->fd = NS_INVALID_FD;
     logPtr->serverRootProcEnabled = Ns_ServerRootProcEnabled(server);
@@ -208,6 +214,30 @@ Ns_ModuleInit(const char *server, const char *module)
         if (!logPtr->serverRootProcEnabled) {
             if (Ns_RequireDirectory(serverLogDir) != NS_OK) {
                 Ns_Fatal("nslog: log directory '%s' could not be created", serverLogDir);
+            }
+        }
+    }
+
+    if (Ns_NullIfEmpty(Ns_ConfigString(section, "slowlogfile", "")) != NULL) {
+        static const char *keys[] = {
+            "slowlogconntime", "slowlogfiltertime", "slowlogqueuetime"
+        };
+        Log *slowPtr = ns_calloc(1u, sizeof(Log));
+
+        slowPtr->fd = NS_INVALID_FD;
+        Tcl_DStringInit(&slowPtr->buffer);
+        slowPtr->filename = Ns_ConfigFilename(section, "slowlogfile", 11,
+                                              Ns_ServerLogDir(server), "",
+                                              NS_FALSE, NS_FALSE);
+        if (strcmp(slowPtr->filename, logPtr->filename) == 0) {
+            Ns_Fatal("nslog: slowlogfile must differ from file");
+        }
+        logPtr->slowLog = slowPtr;
+        for (size_t i = 0u; i < 3u; i++) {
+            logPtr->slowEnabled[i] = Ns_ConfigParameterProvided(section, keys[i]);
+            if (logPtr->slowEnabled[i]) {
+                Ns_ConfigTimeUnitRange(section, keys[i], "0s", 0, 0, LONG_MAX, 0,
+                                       &logPtr->slowThresholds[i]);
             }
         }
     }
@@ -728,6 +758,9 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
                     }
                 }
             }
+            if (filepath != NULL && status == NS_OK && SlowLogRoll(logPtr) != NS_OK) {
+                status = NS_ERROR;
+            }
             if (status != NS_OK) {
                 Ns_TclPrintfResult(interp, "could not roll \"%s\": %s",
                                    logPtr->filename, Tcl_PosixError(interp));
@@ -808,6 +841,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     char          ipString[NS_IPADDR_SIZE], buffer[PIPE_BUF], *bufferPtr = NULL;
     size_t        bufferSize = 0u;
     unsigned int  flags;
+    bool          selected = NS_FALSE;
     struct NS_SOCKADDR_STORAGE  ipStruct, maskedStruct;
     struct sockaddr            *maskPtr = NULL,
         *ipPtr     = (struct sockaddr *)&ipStruct,
@@ -824,6 +858,27 @@ LogTrace(void *arg, Ns_Conn *conn)
          * This is not for us.
          */
         return;
+    }
+    if (logPtr->slowLog != NULL) {
+        Ns_Time acceptTime, queueTime, filterTime, runTime, connTime;
+        const Ns_Time *times[3];
+
+        Ns_ConnTimeSpans(conn, &acceptTime, &queueTime, &filterTime, &runTime);
+        connTime.sec = filterTime.sec + runTime.sec;
+        connTime.usec = filterTime.usec + runTime.usec;
+        if (connTime.usec >= 1000000) {
+            connTime.sec++;
+            connTime.usec -= 1000000;
+        }
+        times[0] = &connTime;
+        times[1] = &filterTime;
+        times[2] = &queueTime;
+        for (size_t i = 0u; i < 3u; i++) {
+            if (logPtr->slowEnabled[i]
+                && Ns_DiffTime(times[i], &logPtr->slowThresholds[i], NULL) > 0) {
+                selected = NS_TRUE;
+            }
+        }
     }
     server = Ns_ConnServer(conn);
     peerAddr = Ns_ConnConfiguredPeerAddr(conn);
@@ -1040,7 +1095,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     Tcl_DStringAppend(dsPtr, "\n", 1);
 
     {
-        Tcl_DString *writeDsPtr = NULL, pathDs, *pathDsPtr = NULL;
+        Tcl_DString *writeDsPtr = NULL, pathDs, slowRecord, *pathDsPtr = NULL;
         void  *preparedWrite = NULL;
         void  *wakeToken     = NULL;
         size_t preparedSize  = 0u;
@@ -1065,6 +1120,10 @@ LogTrace(void *arg, Ns_Conn *conn)
             preparedWrite = NsAsyncWritePrepare(dsPtr->string, preparedSize);
         }
 
+        Tcl_DStringInit(&slowRecord);
+        if (selected) {
+            Tcl_DStringAppend(&slowRecord, dsPtr->string, dsPtr->length);
+        }
         Ns_MutexLock(&logPtr->lock);
 
         /*
@@ -1152,8 +1211,32 @@ LogTrace(void *arg, Ns_Conn *conn)
             }
         }
 
+        /*
+         * Bring OpenACS style long-call monitoring to plain NaviServer: select on
+         * any configured threshold, but reuse the exact access-log record.
+         * Serialize descriptor selection and submission with both log rolls.
+         */
+        if (selected) {
+            int         slowFd = logPtr->slowLog->fd;
+            Tcl_DString slowPath;
+
+            Tcl_DStringInit(&slowPath);
+            if (logPtr->serverRootProcEnabled) {
+                const char *section = Ns_ConfigSectionPath(NULL, server, logPtr->module, NS_SENTINEL);
+                const char *name    = Ns_ConfigString(section, "slowlogfile", "");
+                const char *path    = Ns_LogPath(&slowPath, server, name);
+
+                slowFd = Ns_ServerLogGetFd(server, slowLogType, path);
+            }
+            if (slowFd >= 0) {
+                (void)NsAsyncWrite(slowFd, slowRecord.string, (size_t)slowRecord.length);
+            }
+            Tcl_DStringFree(&slowPath);
+        }
+
         Ns_MutexUnlock(&logPtr->lock);
 
+        Tcl_DStringFree(&slowRecord);
         if (wakeToken != NULL) {
             NsAsyncWriteWake(wakeToken);
         }
@@ -1219,6 +1302,9 @@ LogOpen(void *arg)
         Ns_Log(Notice, "nslog: opened '%s'", logPtr->filename);
     }
 
+    if (status == NS_OK && logPtr->slowLog != NULL) {
+        status = LogOpen(logPtr->slowLog);
+    }
     return status;
 }
 
@@ -1246,8 +1332,17 @@ LogClose(void *arg)
     Ns_ReturnCode status = NS_OK;
     Log          *logPtr = arg;
 
+    if (logPtr->slowLog != NULL) {
+        if (logPtr->serverRootProcEnabled) {
+            status = Ns_ServerLogCloseAll(logPtr->server, slowLogType);
+        } else {
+            status = LogClose(logPtr->slowLog);
+        }
+    }
     if (logPtr->serverRootProcEnabled) {
-        status = Ns_ServerLogCloseAll(logPtr->server, logType);
+        if (Ns_ServerLogCloseAll(logPtr->server, logType) != NS_OK) {
+            status = NS_ERROR;
+        }
     }
 
     if (logPtr->fd >= 0) {
@@ -1298,6 +1393,32 @@ LogFlush(Log *logPtr, Tcl_DString *dsPtr)
     return (logPtr->fd == NS_INVALID_FD) ? NS_ERROR : NS_OK;
 }
 
+/* Roll the optional destination with the main log's policy and mutex. */
+static Ns_ReturnCode
+SlowLogRoll(void *arg)
+{
+    Log *logPtr = arg;
+    Ns_ReturnCode status = NS_OK;
+
+    if (logPtr->slowLog != NULL) {
+        Ns_ReturnCode slowStatus;
+
+        if (logPtr->serverRootProcEnabled) {
+            slowStatus = Ns_ServerLogRollAll(logPtr->server, slowLogType,
+                                             logPtr->rollfmt, logPtr->maxbackup);
+        } else {
+            slowStatus = Ns_RollFileCondFmt(LogOpen, LogClose, logPtr->slowLog,
+                                            logPtr->slowLog->filename,
+                                            logPtr->rollfmt, logPtr->maxbackup);
+        }
+        if (slowStatus != NS_OK) {
+            status = NS_ERROR;
+        }
+    }
+
+    return status;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1335,6 +1456,10 @@ LogRoll(void *arg)
                                     logPtr->filename,
                                     logPtr->rollfmt,
                                     logPtr->maxbackup);
+    }
+
+    if (SlowLogRoll(logPtr) != NS_OK) {
+        status = NS_ERROR;
     }
 
     return status;
