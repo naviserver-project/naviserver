@@ -1279,7 +1279,7 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
 
     if (likely(*objcPtr > 0)) {
         result = Tcl_GetIndexFromObjStruct(interp, objv[0], tablePtr,
-                                           sizeof(Ns_ObjvTable), "optioXXXXXXXXn",
+                                           sizeof(Ns_ObjvTable), "option",
                                            TCL_EXACT, &tableIdx);
         if (result == TCL_OK) {
             *dest = (int)tablePtr[tableIdx].value;

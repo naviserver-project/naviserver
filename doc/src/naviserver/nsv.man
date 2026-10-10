@@ -18,6 +18,34 @@ facility.
 [list_begin definitions]
 
 
+[call [cmd "nsv_array create"] [opt [option "-scope server|process"]] [arg array]]
+
+ Explicitly creates an array. The default [const server] scope is local to the
+ current virtual server; [const process] scope makes the array visible by name
+ in every virtual server of this process. Ordinary nsv commands need no scope
+ option. Implicit creation continues to use server scope. The command
+ is the only way to create [const process] scoped nsv arrays.
+
+ [para] Repeated creation with the same scope is harmless. Scope is fixed while the
+ array exists. A process declaration fails if any virtual server already has a
+ local array of that name; an explicit server declaration fails if the name is
+ process-scoped. Deleting the whole array with [cmd nsv_unset] releases the name.
+ Process scope is intended for trusted cooperating applications; virtual servers
+ can read, modify and delete these arrays.
+
+[call [cmd "nsv_array scope"] [arg array]]
+ Returns [const server] or [const process]; a missing array is an error.
+
+ [call [cmd "nsv_array eval"] [arg array] [arg script]]
+
+ Evaluates the script in the caller's context under a recursive coordination lock
+ belonging to the existing array. Concurrent eval calls for that array serialize;
+ ordinary nsv operations remain available inside the script and do not acquire
+ this coordination lock. All participants in a multi-command update must use
+ eval for mutual exclusion. Returns and errors propagate, with the lock released
+ in every case. The array cannot be deleted while an eval is active or waiting.
+ Avoid nesting eval on different arrays in inconsistent orders.
+
 [call [cmd "nsv_array get"] [arg array] [opt [arg pattern]]]
 
 [call [cmd "nsv_array set"] [arg array] [arg list]]
@@ -60,7 +88,7 @@ ordinary variables.
 [call [cmd nsv_bucket] [opt [arg bucket-number]]]
 
 Return a list of all the array names with lock counts from the specified
-bucket. If no [arg bucket-number] is specified, return a list of all arrays from
+bucket (virtual-server arrays only). If no [arg bucket-number] is specified, return a list of all arrays from
 all buckets.  This command is mainly for performance tuning. When e.g.
 the number of locks for a certain bucket is high one can use this
 command to determine the arrays with their usages from this bucket.

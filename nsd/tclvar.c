@@ -39,13 +39,25 @@ typedef struct Array {
     Bucket        *bucketPtr; /* Array bucket. */
     Tcl_HashEntry *entryPtr;  /* Entry in bucket array table. */
     Tcl_HashTable  vars;      /* Table of variables. */
+    Ns_Cs          evalLock; /* Cooperative multi-command updates. */
+    unsigned int   evaluations; /* Pins the array during eval. */
     long           locks;     /* Number of array locks */
 } Array;
 
 
+/* Process arrays reuse the ordinary Bucket/Array implementation. The scope
+ * lock protects routing and declarations; it is released before operations on
+ * values. Lock order is scope lock, then bucket lock. */
+static Ns_RWLock scopeLock;
+static Bucket processBucket;
+static bool processInitialized;
+
 /*
  * Local functions defined in this file.
  */
+
+static int DeclareArray(Tcl_Interp *interp, const NsServer *servPtr, const char *name, bool process)
+    NS_GNUC_NONNULL(1,2,3);
 
 static void SetVar(Array *arrayPtr, const char *keyString, const char *value, size_t len)
     NS_GNUC_NONNULL(1,2,3);
@@ -61,6 +73,9 @@ static Ns_ReturnCode Unset(Array *arrayPtr, const char *keyString)
 
 static void Flush(Array *arrayPtr)
     NS_GNUC_NONNULL(1);
+
+static Array *LockArrayScoped(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw, Bucket *cachedBucket)
+    NS_GNUC_NONNULL(1,2);
 
 static Array *LockArray(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw)
     NS_GNUC_NONNULL(1,2);
@@ -87,7 +102,8 @@ static int GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *key
  *
  * NsTclCreateBuckets --
  *
- *      Create a new array of buckets for a server.
+ *      Create a new array of buckets for a server. On the first call,
+ *      initialize the process bucket and scope lock as well.
  *
  * Results:
  *      Pointer to bucket array.
@@ -105,6 +121,21 @@ NsTclCreateBuckets(const NsServer *servPtr, int nbuckets)
     Bucket *buckets;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
+
+    /*
+     * Virtual-server buckets are initialized serially during startup, before
+     * request or scheduler threads can use nsv. Initialize process routing
+     * and its ordinary bucket at the same point.
+     */
+    if (!processInitialized) {
+        Ns_RWLockInit(&scopeLock);
+        Ns_RWLockSetName2(&scopeLock, "nsv", "scope");
+        Ns_MutexInit(&processBucket.mlock);
+        Ns_MutexSetName(&processBucket.mlock, "nsv:process");
+        Tcl_InitHashTable(&processBucket.arrays, TCL_STRING_KEYS);
+        processBucket.servPtr = NULL;
+        processInitialized = NS_TRUE;
+    }
 
     buckets = ns_malloc(sizeof(Bucket) * (size_t)nbuckets);
     if (unlikely(buckets == NULL)) {
@@ -602,16 +633,24 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        Array *arrayPtr = LockArrayObj(interp, arrayObj, NS_FALSE, NS_WRITE);
+        Array *arrayPtr;
+
+        Ns_RWLockWrLock(&scopeLock);
+        arrayPtr = LockArrayScoped(NsGetInterpData(interp)->servPtr, Tcl_GetString(arrayObj), NS_FALSE, NS_WRITE, NULL);
 
         if (unlikely(arrayPtr == NULL)) {
+            Ns_TclPrintfResult(interp, "no such array: %s", Tcl_GetString(arrayObj));
+            Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "ARRAY", Tcl_GetString(arrayObj), NS_SENTINEL);
             result = TCL_ERROR;
 
         } else {
 
             assert(arrayPtr != NULL);
 
-            if (Unset(arrayPtr, keyString) != NS_OK && keyString != NULL) {
+            if (keyString == NULL && arrayPtr->evaluations != 0) {
+                Ns_TclPrintfResult(interp, "cannot delete array during nsv_array eval");
+                result = TCL_ERROR;
+            } else if (Unset(arrayPtr, keyString) != NS_OK && keyString != NULL) {
                 Ns_TclPrintfResult(interp, "no such key: %s", keyString);
                 Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NS_SENTINEL);
                 result = TCL_ERROR;
@@ -636,10 +675,14 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                  * Free the actual array data structure and invalidate the
                  * Tcl_Obj.
                  */
+                if (arrayPtr->evalLock != NULL) {
+                    Ns_CsDestroy(&arrayPtr->evalLock);
+                }
                 ns_free(arrayPtr);
                 Ns_TclSetTwoPtrValue(arrayObj, NULL, NULL, NULL);
             }
         }
+        Ns_RWLockUnlock(&scopeLock);
     }
 
     if (nocomplain != 0) {
@@ -690,12 +733,18 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
          */
 
         resultObj = Tcl_GetObjResult(interp);
-        for (i = 0; i < servPtr->nsv.nbuckets; i++) {
+        for (i = -1; i < servPtr->nsv.nbuckets; i++) {
             const Tcl_HashEntry *hPtr;
             Tcl_HashSearch       search;
-            Bucket              *bucketPtr = &servPtr->nsv.buckets[i];
+            Bucket              *bucketPtr = i < 0 ? &processBucket : &servPtr->nsv.buckets[i];
 
-            if (servPtr->nsv.rwlocks) {
+            Ns_RWLockRdLock(&scopeLock);
+            if (i < 0 && !processInitialized) {
+                Ns_RWLockUnlock(&scopeLock);
+                continue;
+            }
+
+            if (bucketPtr->servPtr != NULL && bucketPtr->servPtr->nsv.rwlocks) {
                 Ns_RWLockRdLock(&bucketPtr->rwlock);
             } else {
                 Ns_MutexLock(&bucketPtr->mlock);
@@ -713,12 +762,13 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
                 }
                 hPtr = Tcl_NextHashEntry(&search);
             }
-            if (servPtr->nsv.rwlocks) {
+            if (bucketPtr->servPtr != NULL && bucketPtr->servPtr->nsv.rwlocks) {
                 Ns_RWLockUnlock(&bucketPtr->rwlock);
             } else {
                 Ns_MutexUnlock(&bucketPtr->mlock);
             }
 
+            Ns_RWLockUnlock(&scopeLock);
             if (unlikely(result != TCL_OK)) {
                 break;
             }
@@ -750,10 +800,10 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     int                      opt, result = TCL_OK;
     static const char *const opts[] = {
-        "set", "reset", "get", "names", "size", "exists", NULL
+        "set", "reset", "get", "names", "size", "exists", "create", "scope", "eval", NULL
     };
     enum ISubCmdIdx {
-        CSetIdx, CResetIdx, CGetIdx, CNamesIdx, CSizeIdx, CExistsIdx
+        CSetIdx, CResetIdx, CGetIdx, CNamesIdx, CSizeIdx, CExistsIdx, CCreateIdx, CScopeIdx, CEvalIdx
     };
 
     if (objc < 2) {
@@ -770,6 +820,85 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Tcl_Obj  **lobjv;
 
         switch (opt) {
+        case CCreateIdx: {
+            enum {ServerScope, ProcessScope};
+            static Ns_ObjvTable scopes[] = {
+                {"server",  ServerScope},
+                {"process", ProcessScope},
+                {NULL, 0u}
+            };
+            int          scope = ServerScope;
+            Tcl_Obj     *nameObj = NULL;
+            Ns_ObjvSpec opts[] = {
+                {"-scope", Ns_ObjvIndex, &scope, scopes},
+                {"--",     Ns_ObjvBreak, NULL, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec args[] = {
+                {"array", Ns_ObjvObj, &nameObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+
+            if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+                result = TCL_ERROR;
+            } else {
+                result = DeclareArray(interp, NsGetInterpData(interp)->servPtr,
+                                      Tcl_GetString(nameObj), scope == ProcessScope);
+            }
+            break;
+        }
+        case CScopeIdx: {
+            Tcl_Obj    *nameObj = NULL;
+            Ns_ObjvSpec args[] = {
+                {"array", Ns_ObjvObj, &nameObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                result = TCL_ERROR;
+            } else {
+                arrayPtr = LockArrayObj(interp, nameObj, NS_FALSE, NS_READ);
+                if (arrayPtr == NULL) {
+                    result = TCL_ERROR;
+                } else {
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(arrayPtr->bucketPtr->servPtr == NULL ? "process" : "server", TCL_INDEX_NONE));
+                    UnlockArray(arrayPtr);
+                }
+            }
+            break;
+        }
+        case CEvalIdx:
+            if (objc != 4) {
+                Tcl_WrongNumArgs(interp, 2, objv, "array script"); result = TCL_ERROR;
+            } else {
+                arrayPtr = LockArrayObj(interp, objv[2], NS_FALSE, NS_WRITE);
+                if (arrayPtr == NULL) {
+                    result = TCL_ERROR;
+                } else {
+                    /*
+                     * Pin before releasing the bucket. Only eval peers use the
+                     * recursive coordination lock; ordinary nsv calls remain
+                     * available inside the script. Unset rejects a pinned array.
+                     */
+                    if (arrayPtr->evalLock == NULL) {
+                        Ns_CsInit(&arrayPtr->evalLock);
+                    }
+                    arrayPtr->evaluations++;
+                    UnlockArray(arrayPtr);
+                    Ns_CsEnter(&arrayPtr->evalLock);
+                    result = Tcl_EvalObjEx(interp, objv[3], 0);
+                    Ns_CsLeave(&arrayPtr->evalLock);
+                    {
+                        Array *pinned = LockArrayObj(interp, objv[2], NS_FALSE, NS_WRITE);
+
+                        assert(pinned == arrayPtr);
+                        pinned->evaluations--;
+                        UnlockArray(pinned);
+                    }
+                }
+            }
+            break;
+
         case CSetIdx:   NS_FALL_THROUGH; /* fall through */
         case CResetIdx:
             if (objc != 4) {
@@ -901,9 +1030,8 @@ GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString,
 {
     int      result = TCL_OK;
     Tcl_Obj *obj = NULL;
-    Array   *arrayPtr;
+    Array   *arrayPtr = LockArrayObj(interp, arrayObj, NS_FALSE, rw);
 
-    arrayPtr = LockArrayObj(interp, arrayObj, NS_FALSE, rw);
     if (arrayPtr != NULL) {
         const Tcl_HashEntry *hPtr;
 
@@ -1434,8 +1562,10 @@ Ns_VarGet(const char *server, const char *array, const char *keyString, Tcl_DStr
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
         Array *arrayPtr = LockArray(servPtr, array, NS_FALSE, NS_READ);
+
         if (likely(arrayPtr != NULL)) {
             const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
+
             if (likely(hPtr != NULL)) {
                 Tcl_DStringAppend(dsPtr, Tcl_GetHashValue(hPtr), TCL_INDEX_NONE);
                 status = NS_OK;
@@ -1650,24 +1780,29 @@ Ns_VarUnset(const char *server, const char *array, const char *keyString)
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(array != NULL);
-    NS_NONNULL_ASSERT(array != NULL);
-
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
-        Array  *arrayPtr = LockArray(servPtr, array, NS_FALSE, NS_WRITE);
-        if (unlikely(arrayPtr == NULL)) {
-            /* Error */
-        } else {
-            status = Unset(arrayPtr, keyString);
-            if (status != NS_OK && keyString != NULL) {
-                /* Error, no such key. */
-            } else if (status == NS_OK && keyString == NULL) {
-                /* Finish deleting the entire array, same as in NsTclNsvUnsetObjCmd(). */
-                Tcl_DeleteHashTable(&arrayPtr->vars);
-                Tcl_DeleteHashEntry(arrayPtr->entryPtr);
+        Array *arrayPtr;
+
+        Ns_RWLockWrLock(&scopeLock);
+        arrayPtr = LockArrayScoped(servPtr, array, NS_FALSE, NS_WRITE, NULL);
+        if (arrayPtr != NULL) {
+            if (keyString != NULL || arrayPtr->evaluations == 0) {
+                status = Unset(arrayPtr, keyString);
+                if (status == NS_OK && keyString == NULL) {
+                    Tcl_DeleteHashTable(&arrayPtr->vars);
+                    Tcl_DeleteHashEntry(arrayPtr->entryPtr);
+                }
             }
             UnlockArray(arrayPtr);
+            if (status == NS_OK && keyString == NULL) {
+                if (arrayPtr->evalLock != NULL) {
+                    Ns_CsDestroy(&arrayPtr->evalLock);
+                }
+                ns_free(arrayPtr);
+            }
         }
+        Ns_RWLockUnlock(&scopeLock);
     }
     return status;
 }
@@ -1676,16 +1811,21 @@ Ns_VarUnset(const char *server, const char *array, const char *keyString)
 /*
  *-----------------------------------------------------------------------------
  *
- * LockArray, UnlockArray --
+ * BucketIndexUpdate, BucketIndex --
  *
- *      Lock the array of the given name.
- *      Array structure must be later unlocked with UnlockArray.
+ *      Compute the hash used to select an array's bucket. BucketIndexUpdate
+ *      advances the hash by one unsigned byte using intentional unsigned
+ *      modular arithmetic (idx * 9 + value). BucketIndex applies this update
+ *      to each byte of the NUL-terminated array name, starting from zero.
+ *      The caller reduces the hash modulo the number of buckets.
  *
  * Results:
- *      Pointer to Array or NULL.
  *
- * Side effects;
- *      Array is created if 'create' is 1.
+ *      Updated hash value, or the hash of the complete array name.
+ *
+ * Side effects:
+ *
+ *      None.
  *
  *-----------------------------------------------------------------------------
  */
@@ -1751,6 +1891,8 @@ GetArray(Bucket *bucketPtr, const char *arrayName, bool create) {
         } else {
             arrayPtr = ns_malloc(sizeof(Array));
             arrayPtr->locks = 0;
+            arrayPtr->evaluations = 0;
+            arrayPtr->evalLock = NULL;
             arrayPtr->bucketPtr = bucketPtr;
             arrayPtr->entryPtr = hPtr;
             Tcl_InitHashTable(&arrayPtr->vars, TCL_STRING_KEYS);
@@ -1759,7 +1901,7 @@ GetArray(Bucket *bucketPtr, const char *arrayName, bool create) {
     } else {
         hPtr = Tcl_FindHashEntry(&bucketPtr->arrays, arrayName);
         if (unlikely(hPtr == NULL)) {
-            if (bucketPtr->servPtr->nsv.rwlocks) {
+            if (bucketPtr->servPtr != NULL && bucketPtr->servPtr->nsv.rwlocks) {
                 Ns_RWLockUnlock(&bucketPtr->rwlock);
             } else {
                 Ns_MutexUnlock(&bucketPtr->mlock);
@@ -1777,21 +1919,29 @@ GetArray(Bucket *bucketPtr, const char *arrayName, bool create) {
 /*
  *-----------------------------------------------------------------------------
  *
- * LockArray, UnlockArray --
+ * LockArrayScoped --
  *
- *      Lock the array of the given name.
- *      Array structure must be later unlocked with UnlockArray.
+ *      Resolve an array name to the process bucket or a virtual-server
+ *      bucket and lock it for the requested operation. A cached local
+ *      bucket avoids recalculating the bucket index; scope is still checked.
+ *      The caller must hold scopeLock for reading or writing.
  *
  * Results:
- *      Pointer to Array or NULL.
  *
- * Side effects;
- *      Array is created if 'create' is 1.
+ *      Pointer to the locked array, or NULL when the array does not exist
+ *      and creation was not requested.
+ *
+ * Side effects:
+ *
+ *      May create a server-scoped array. On success the bucket remains
+ *      locked; the caller must call UnlockArray(). On failure no bucket
+ *      lock is retained.
  *
  *-----------------------------------------------------------------------------
  */
+
 static Array *
-LockArray(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw)
+LockArrayScoped(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw, Bucket *cachedBucket)
 {
     Bucket        *bucketPtr;
     unsigned int   idx;
@@ -1799,9 +1949,18 @@ LockArray(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw)
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(arrayName != NULL);
 
-    idx = BucketIndex(arrayName);
-    bucketPtr = &servPtr->nsv.buckets[idx % (unsigned int)servPtr->nsv.nbuckets];
-    if (servPtr->nsv.rwlocks) {
+    if (processInitialized && Tcl_FindHashEntry(&processBucket.arrays, arrayName) != NULL) {
+        Ns_MutexLock(&processBucket.mlock);
+        return GetArray(&processBucket, arrayName, create);
+    } else {
+        if (cachedBucket != NULL && cachedBucket->servPtr == servPtr) {
+            bucketPtr = cachedBucket;
+        } else {
+            idx = BucketIndex(arrayName);
+            bucketPtr = &servPtr->nsv.buckets[idx % (unsigned int)servPtr->nsv.nbuckets];
+        }
+    }
+    if (bucketPtr->servPtr != NULL && bucketPtr->servPtr->nsv.rwlocks) {
         if (rw == NS_READ) {
             Ns_RWLockRdLock(&bucketPtr->rwlock);
         } else {
@@ -1810,23 +1969,70 @@ LockArray(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw)
     } else {
         Ns_MutexLock(&bucketPtr->mlock);
     }
-
     return GetArray(bucketPtr, arrayName, create);
 }
 
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * LockArray --
+ *
+ *      Resolve and lock an array while protecting scope selection from
+ *      concurrent declarations and deletions. Releases scopeLock before
+ *      returning, retaining only the array bucket lock.
+ *
+ * Results:
+ *
+ *      Pointer to the locked array, or NULL if absent and not created.
+ *
+ * Side effects:
+ *
+ *      May create a server-scoped array. A successful lookup must be
+ *      paired with UnlockArray().
+ *
+ *-----------------------------------------------------------------------------
+ */
+static Array *
+LockArray(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw)
+{
+    Array *array;
+
+    Ns_RWLockRdLock(&scopeLock);
+    array = LockArrayScoped(servPtr, arrayName, create, rw, NULL);
+    Ns_RWLockUnlock(&scopeLock);
+    return array;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * UnlockArray --
+ *
+ *      Release the bucket lock acquired for an array. Process buckets
+ *      use a mutex; virtual-server buckets use their configured lock type.
+ *
+ * Results:
+ *
+ *      None.
+ *
+ * Side effects:
+ *
+ *      Releases the array bucket lock.
+ *
+ *-----------------------------------------------------------------------------
+ */
 static void
 UnlockArray(const Array *arrayPtr)
 {
     NS_NONNULL_ASSERT(arrayPtr != NULL);
 
-    if (arrayPtr->bucketPtr->servPtr->nsv.rwlocks) {
+    if (arrayPtr->bucketPtr->servPtr != NULL && arrayPtr->bucketPtr->servPtr->nsv.rwlocks) {
         Ns_RWLockUnlock(&((arrayPtr)->bucketPtr->rwlock));
     } else {
         Ns_MutexUnlock(&((arrayPtr)->bucketPtr->mlock));
     }
 }
 
-
 /*
  *-----------------------------------------------------------------------------
  *
@@ -2024,52 +2230,135 @@ Flush(Array *arrayPtr)
 /*
  *-----------------------------------------------------------------------------
  *
- * LockArrayObj --
+ * DeclareArray --
  *
- *      Lock the array of the given name.
- *      Array structure must be later unlocked with UnlockArray.
+ *      Explicitly create an array with server or process scope. Repeated
+ *      declarations with the same scope are harmless. Process declarations
+ *      check all initialized virtual servers for conflicting local arrays;
+ *      server declarations reject existing process-scoped arrays.
  *
  * Results:
- *      Pointer to locked array or NULL.
  *
- * Side effects;
- *      Array is created if it does not exists and 'create' is true.
+ *      TCL_OK on success, or TCL_ERROR with a scope-conflict message in
+ *      the interpreter result.
+ *
+ * Side effects:
+ *
+ *      May allocate an array. Holds scopeLock for writing while checking
+ *      for conflicts and creating the array, then releases all locks.
  *
  *-----------------------------------------------------------------------------
  */
+static int
+DeclareArray(Tcl_Interp *interp, const NsServer *servPtr, const char *name, bool process)
+{
+    int            result = TCL_OK;
+    Tcl_HashEntry *hPtr;
 
+    Ns_RWLockWrLock(&scopeLock);
+    hPtr = Tcl_FindHashEntry(&processBucket.arrays, name);
+    if (hPtr != NULL) {
+        if (!process) {
+            result = TCL_ERROR;
+        }
+    } else if (process) {
+        Tcl_HashSearch search;
+        const Tcl_HashEntry *serverEntry;
+
+        for (serverEntry = Tcl_FirstHashEntry(&nsconf.servertable, &search);
+             serverEntry != NULL; serverEntry = Tcl_NextHashEntry(&search)) {
+            const NsServer *server = Tcl_GetHashValue(serverEntry);
+            unsigned int    idx = BucketIndex(name);
+            Bucket         *bucket;
+            bool            exists;
+
+            if (server->nsv.buckets == NULL) {
+                continue;
+            }
+            bucket = &server->nsv.buckets[idx % (unsigned int)server->nsv.nbuckets];
+            if (server->nsv.rwlocks) {
+                Ns_RWLockRdLock(&bucket->rwlock);
+            } else {
+                Ns_MutexLock(&bucket->mlock);
+            }
+            exists = Tcl_FindHashEntry(&bucket->arrays, name) != NULL;
+            if (server->nsv.rwlocks) {
+                Ns_RWLockUnlock(&bucket->rwlock);
+            } else {
+                Ns_MutexUnlock(&bucket->mlock);
+            }
+            if (exists) {
+                result = TCL_ERROR;
+                break;
+            }
+        }
+        if (result == TCL_OK) {
+            Array *array;
+
+            Ns_MutexLock(&processBucket.mlock);
+            array = GetArray(&processBucket, name, NS_TRUE);
+            UnlockArray(array);
+        }
+    } else {
+        unsigned int idx = BucketIndex(name);
+        Bucket      *bucket = &servPtr->nsv.buckets[idx % (unsigned int)servPtr->nsv.nbuckets];
+        Array       *array;
+
+        if (servPtr->nsv.rwlocks) {
+            Ns_RWLockWrLock(&bucket->rwlock);
+        } else {
+            Ns_MutexLock(&bucket->mlock);
+        }
+        array = GetArray(bucket, name, NS_TRUE);
+        UnlockArray(array);
+    }
+    Ns_RWLockUnlock(&scopeLock);
+    if (result != TCL_OK) {
+        Ns_TclPrintfResult(interp, "array '%s' already exists with a conflicting scope", name);
+    }
+    return result;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * LockArrayObj --
+ *
+ *      Resolve and lock an array identified by a Tcl object. Reuse cached
+ *      local bucket selection, but recheck scope so deletion and recreation
+ *      with a different scope cannot leave a stale lookup.
+ *
+ * Results:
+ *
+ *      Pointer to the locked array, or NULL if absent and not created.
+ *      A missing array sets the interpreter result and error code.
+ *
+ * Side effects:
+ *
+ *      May create a server-scoped array and cache its bucket in the Tcl
+ *      object. On success the caller must call UnlockArray().
+ *
+ *-----------------------------------------------------------------------------
+ */
 static Array *
 LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create, NS_RW rw)
 {
-    Array              *arrayPtr;
-    Bucket             *bucketPtr;
-    static const char  *const arrayType = "nsv:array";
-    const char         *arrayName;
+    Array *arrayPtr;
+    Bucket *cachedBucket = NULL;
+    static const char *const arrayType = "nsv:array";
+    const char     *arrayName = Tcl_GetString(arrayObj);
+    const NsInterp *itPtr = NsGetInterpData(interp);
 
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(arrayObj != NULL);
-
-    arrayName = Tcl_GetString(arrayObj);
-
-    if (likely(Ns_TclGetOpaqueFromObj(arrayObj, arrayType, (void **) &bucketPtr) == TCL_OK)
-        && bucketPtr != NULL) {
-        if (bucketPtr->servPtr->nsv.rwlocks) {
-            if (rw == NS_READ) {
-                Ns_RWLockRdLock(&bucketPtr->rwlock);
-            } else {
-                Ns_RWLockWrLock(&bucketPtr->rwlock);
-            }
-        } else {
-            Ns_MutexLock(&bucketPtr->mlock);
-        }
-        arrayPtr = GetArray(bucketPtr, arrayName, create);
-    } else {
-        const NsInterp *itPtr = NsGetInterpData(interp);
-
-        arrayPtr = LockArray(itPtr->servPtr, arrayName, create, rw);
-        if (arrayPtr != NULL) {
-            Ns_TclSetOpaqueObj(arrayObj, arrayType, arrayPtr->bucketPtr);
-        }
+    /*
+     * Keep cached local bucket selection, but resolve scope on every use:
+     * deletion and recreation may change where this name belongs.
+     */
+    (void)Ns_TclGetOpaqueFromObj(arrayObj, arrayType, (void **)&cachedBucket);
+    Ns_RWLockRdLock(&scopeLock);
+    arrayPtr = LockArrayScoped(itPtr->servPtr, arrayName, create, rw, cachedBucket);
+    Ns_RWLockUnlock(&scopeLock);
+    if (arrayPtr != NULL) {
+        Ns_TclSetOpaqueObj(arrayObj, arrayType, arrayPtr->bucketPtr);
     }
 
     /*
@@ -2131,9 +2420,9 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
         resultObj = Tcl_GetObjResult(interp);
         for (i = 0; i < servPtr->nsv.nbuckets; i++) {
             const Tcl_HashEntry *hPtr;
-            Tcl_Obj             *listObj;
-            Tcl_HashSearch       search;
-            Bucket              *bucketPtr;
+            Tcl_Obj        *listObj;
+            Tcl_HashSearch  search;
+            Bucket         *bucketPtr;
 
             if (bucketNr > -1 && i != bucketNr) {
                 continue;

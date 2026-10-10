@@ -40,11 +40,11 @@ test ns_nsv-1.8 {basic syntax nsv_array} -body {
 # nsv_array subcommands
 test ns_nsv-1.9 {basic syntax nsv_array} -body {
     nsv_array ?
-} -returnCodes error -result {bad subcommand "?": must be set, reset, get, names, size, or exists}
+} -returnCodes error -result {bad subcommand "?": must be set, reset, get, names, size, exists, create, scope, or eval}
 
 test ns_nsv-1.9.0 {basic syntax nsv_array} -body {
     nsv_array x
-} -returnCodes error -result {bad subcommand "x": must be set, reset, get, names, size, or exists}
+} -returnCodes error -result {bad subcommand "x": must be set, reset, get, names, size, exists, create, scope, or eval}
 
 test ns_nsv-1.9.1 {syntax nsv_array exists} -body {
     nsv_array exists
@@ -926,6 +926,40 @@ test nsv-dict-keys.2 {nsv_dict size} -body {
     nsv_unset -nocomplain a1
 } -result {xx bb}
 
+
+
+test nsv-scope-1.1 {explicit creation defaults to server scope and validates scope} -body {
+    nsv_array create scope_local
+    list [nsv_array scope scope_local] [nsv_array create scope_local] [catch {nsv_array create -scope wrong scope_invalid}] [nsv_array exists scope_invalid]
+} -cleanup {nsv_unset scope_local} -result {server {} 1 0}
+
+test nsv-scope-1.2 {process arrays use ordinary array and scalar operations} -body {
+    nsv_array create -scope process scope_process
+    nsv_array create -scope process scope_process
+    nsv_array set scope_process {a 1 b 2}
+    nsv_append scope_process text hello
+    nsv_lappend scope_process list one two
+    nsv_incr scope_process a 3
+    set before [list [nsv_get scope_process a] [nsv_get scope_process text] [nsv_get scope_process list] [nsv_array size scope_process] [nsv_array scope scope_process]]
+    nsv_array reset scope_process {x 7}
+    nsv_unset scope_process x
+    list $before [nsv_array size scope_process] [nsv_names scope_process]
+} -cleanup {nsv_unset scope_process} -result {{4 hello {one two} 4 process} 0 scope_process}
+
+test nsv-scope-1.3 {conflicting scope does not alter existing values} -body {
+    nsv_set scope_collision value retained
+    set failed [catch {nsv_array create -scope process scope_collision}]
+    list $failed [nsv_array scope scope_collision] [nsv_get scope_collision value]
+} -cleanup {nsv_unset scope_collision} -result {1 server retained}
+
+test nsv-scope-1.4 {eval preserves caller context and releases on error and return} -body {
+    nsv_array create -scope process scope_eval
+    set local 10
+    set first [nsv_array eval scope_eval {incr local}]
+    catch {nsv_array eval scope_eval {error deliberate}} message
+    set code [catch {nsv_array eval scope_eval {return value}} value]
+    list $first $local $message $code $value [nsv_array eval scope_eval {set local}]
+} -cleanup {nsv_unset scope_eval} -result {11 11 deliberate 2 value 11}
 
 cleanupTests
 
