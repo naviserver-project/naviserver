@@ -1,0 +1,425 @@
+# -*- Tcl -*-
+# ns_stats regression tests, run by the standard tests/all.tcl harness.
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+testConstraint ns_stats [expr {[info commands ::nx::Class] ne ""}]
+testConstraint ns_stats_sqlite [expr {[testConstraint ns_stats] && [info commands ns_db] ne "" && "ns_stats_test" in [ns_db pools]}]
+testConstraint ns_stats_http [expr {[testConstraint ns_stats] && [ns_config test listenport 0] != 0}]
+
+namespace eval ::ns_stats_test {
+    variable pool ns_stats_test
+    variable source [file join [ns_config test home] .. tcl ns_stats.tcl]
+
+    proc samples {} {
+        ns_stats sampling stop
+        ns_stats sampling start -interval 3600
+        ::ns_stats sampling tick
+        ns_sleep 0.01
+        ::ns_stats sampling tick
+    }
+
+    proc history {} {
+        variable pool
+        ns_stats history disable
+        ns_stats history configure -pool $pool -retention 60 -maxBytes 4194304
+        set db [ns_db gethandle $pool]
+        try {
+            # Initialize a fresh fixture even when this case is run alone
+            # through TESTFLAGS="-file ns_stats.test -match ...".
+            foreach table {ns_stats_samples ns_stats_events ns_stats_topology} {
+                ::ns::stats::sql $db "DELETE FROM $table"
+            }
+            ::ns::stats::sql $db {DELETE FROM ns_stats_meta WHERE key='droppedThrough'}
+        } finally {
+            ns_db releasehandle $db
+        }
+        samples
+        ::ns_stats history save
+    }
+
+    proc stop {} {
+        ns_stats history disable
+        ns_stats sampling stop
+    }
+
+    proc remote {path {queued false}} {
+        set headers [ns_set create Host testvhost]
+        try {
+            set command [expr {$queued ? "queue" : "run"}]
+            set result [ns_http $command -timeout 5 -headers $headers -keep_host_header [ns_config test listenurl]/ns-stats-test/$path]
+            if {$queued} {return $result}
+            if {[dict get $result status] != 200} {error "testvhost returned [dict get $result status]: [dict get $result body]"}
+            return [dict get $result body]
+        } finally {
+            ns_set free $headers
+        }
+    }
+
+    proc scope {} {
+        nsv_array create -scope process ns_stats_test_scope
+        nsv_array reset ns_stats_test_scope {value main count 0}
+    }
+
+    proc scopeCleanup {} {
+        nsv_unset -nocomplain ns_stats_test_scope
+        nsv_unset -nocomplain ns_stats_test_local
+        nsv_unset -nocomplain ns_stats_test_recreate
+        remote scope?action=cleanup
+    }
+
+    proc failWrite {} {
+        variable pool
+        set config [nsv_get ns_stats history]
+        dict set config pool does-not-exist
+        dict set config lastSaved {}
+        nsv_set ns_stats history $config
+        try {
+            ::ns_stats history save
+        } finally {
+            set config [nsv_get ns_stats history]
+            dict set config pool $pool
+            nsv_set ns_stats history $config
+        }
+    }
+
+    proc insertSample {db sample stamp instance topology {ready true}} {
+        dict set sample timestamp $stamp
+        dict set sample instance $instance
+        dict set sample sampling to [expr {$stamp/1000000.0}]
+        dict set sample sampling intervalSeconds 10
+        dict set sample sampling ready $ready
+        set payload [::ns::stats::quote [::ns::stats::pack $sample]]
+        ::ns::stats::sql $db "INSERT INTO ns_stats_samples VALUES($stamp,[::ns::stats::quote $instance],[::ns::stats::quote $topology],$payload)"
+    }
+}
+
+# Save the blueprint object's state so this file can run with other suites.
+if {[testConstraint ns_stats]} {
+    set statsSavedMixins [::ns_stats info object mixins]
+    set statsSavedState [nsv_array get ns_stats]
+}
+
+try {
+    test stats-no-nx {library initialization tolerates NaviServer without NX} -body {
+        set child [interp create]
+        interp alias $child ns_log {} ns_log
+        try {
+            interp eval $child [list source $::ns_stats_test::source]
+            interp eval $child {info commands ns_stats}
+        } finally {
+            interp delete $child
+        }
+    } -result {}
+
+    test stats-command-object {the public command is an NX object} -constraints ns_stats -body {
+        list [nsf::object::exists ::ns_stats] [::ns_stats info class] [info procs ::ns_stats]
+    } -result {1 ::ns::ns_stats {}}
+
+    test stats-typed-options {NX validates required, typed and unexpected options} -constraints ns_stats -body {
+        list \
+            [catch {ns_stats sampling start -interval invalid}] \
+            [catch {ns_stats sampling start -interval 0}] \
+            [catch {ns_stats sampling status unexpected}] \
+            [catch {ns_stats history configure}] \
+            [catch {ns_stats history configure -pool diagnostics -retention invalid}] \
+            [catch {ns_stats history configure -pool diagnostics -maxBytes invalid}] \
+            [catch {ns_stats history query -from 0}] \
+            [catch {ns_stats history query -from invalid -to 1}] \
+            [catch {ns_stats sample -server does-not-exist}]
+    } -result {1 1 1 1 1 1 1 1 1}
+
+    test stats-off {sampling is opt-in} -constraints ns_stats -body {
+        list [nsf::object::exists ::ns_stats] [dict get [ns_stats sampling status] running] [dict get [ns_stats sample] sampling ready]
+    } -result {1 false false}
+
+    test stats-snapshot {snapshot collects configured servers without starting sampling} -constraints ns_stats -body {
+        set s [ns_stats snapshot]
+        list [expr {[lsort [dict keys [dict get $s servers]]] eq [lsort [ns_info servers]]}] [dict exists $s servers test pools default counters requests] [dict get [ns_stats sampling status] running]
+    } -result {1 1 false}
+
+    test stats-describe {topology identifies pools and process scope} -constraints ns_stats -body {
+        set d [ns_stats describe -server test]
+        list [dict keys [dict get $d servers]] [dict get $d scope] [dict exists $d servers test pools default]
+    } -result {test process 1}
+
+    test stats-idempotent {start reuses sampler and rejects a conflicting interval} -constraints ns_stats -body {
+        set a [ns_stats sampling start -interval 3600]
+        set b [ns_stats sampling start -interval 3600]
+        list [expr {[dict get $a scheduler] eq [dict get $b scheduler]}] [catch {ns_stats sampling start -interval 2}]
+    } -cleanup {::ns_stats_test::stop} -result {1 1}
+
+    test stats-sample {two samples produce interval rates with measured elapsed time} -constraints ns_stats -setup {
+        ::ns_stats_test::samples
+    } -body {
+        set s [ns_stats sample -server test]
+        list [dict get $s sampling ready] [expr {[dict get $s sampling elapsedSeconds]>0}] [expr {[dict get $s servers test pools default deltas requests]>=0}] [dict exists $s raw]
+    } -cleanup {::ns_stats_test::stop} -result {true 1 1 0}
+
+    test stats-reset {counter decreases invalidate the affected delta} -constraints ns_stats -body {
+        set old [ns_stats snapshot]
+        set new $old
+        dict incr new timestamp 1000000
+        dict set old servers test pools default counters requests 10
+        dict set new servers test pools default counters requests 1
+        set result [::ns_stats calculate $new $old 10 synthetic]
+        list [dict get $result servers test pools default deltas requests] [dict get $result servers test pools default resetCounters]
+    } -result {{} requests}
+
+    test stats-scheduled-sampling {the NX ensemble callback is available in scheduler interpreters} -constraints ns_stats -body {
+        ns_stats sampling stop
+        ns_stats sampling start -interval 1
+        set deadline [expr {[clock milliseconds] + 5000}]
+        while {![dict get [ns_stats sampling status] ready] && [clock milliseconds] < $deadline} {
+            ns_sleep 0.05
+        }
+        set status [ns_stats sampling status]
+        list [dict get $status ready] [dict get $status errors]
+    } -cleanup {::ns_stats_test::stop} -result {1 0}
+
+    test stats-history-variant {custom history ensemble overrides are preserved} -constraints ns_stats -body {
+        ::nx::Class create ::ns::stats::TestHistory -superclass ::ns::stats::SQLiteHistory {
+            :public method "history status" {} {
+                return variant
+            }
+        }
+        set originalMixins [::ns_stats info object mixins]
+        ::ns_stats object mixins set ::ns::stats::TestHistory
+        try {
+            list [ns_stats history status] [::ns_stats info object mixins]
+        } finally {
+            ::ns_stats object mixins set $originalMixins
+            ::ns::stats::TestHistory destroy
+        }
+    } -result {variant ::ns::stats::TestHistory}
+
+    test stats-history-config {history uses a dedicated native SQLite pool} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set s [ns_stats history status]
+        list [dict get $s enabled] [expr {"::ns::stats::SQLiteHistory" in [::ns_stats info object mixins]}] [file exists [ns_config ns/db/pool/ns_stats_test datasource]]
+    } -cleanup {::ns_stats_test::stop} -result {true 1 1}
+
+    test stats-history-config-idempotent {ensemble configuration reuses matching settings and rejects conflicts} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set before [ns_stats history status]
+        set after [ns_stats history configure -pool ns_stats_test -retention 60 -maxBytes 4194304]
+        list [expr {[dict get $before scheduler] eq [dict get $after scheduler]}] \
+            [catch {ns_stats history configure -pool ns_stats_test -retention 120 -maxBytes 4194304}]
+    } -cleanup {::ns_stats_test::stop} -result {1 1}
+
+    test stats-scheduled-history {the persistence ensemble callback restores its mixins and writes a sample} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set config [nsv_get ns_stats history]
+        set stamp [dict get [ns_stats sample] timestamp]
+        dict set config lastSaved {}
+        nsv_set ns_stats history $config
+        set deadline [expr {[clock milliseconds] + 5000}]
+        while {[dict get [ns_stats history status] lastSaved] ne $stamp && [clock milliseconds] < $deadline} {
+            ns_sleep 0.05
+        }
+        set status [ns_stats history status]
+        list [expr {[dict get $status lastSaved] eq $stamp}] [dict get $status failures]
+    } -cleanup {::ns_stats_test::stop} -result {1 0}
+
+    test stats-history-idempotent {a timestamp is persisted once without duplicate raw snapshots} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        ::ns_stats history save
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            set n [::ns::stats::scalar $db {SELECT count(*) FROM ns_stats_samples}]
+            set record [::ns::stats::unpack [::ns::stats::scalar $db {SELECT payload FROM ns_stats_samples}]]
+            list $n [dict exists $record raw] [dict exists $record cpu] [dict exists $record topologyId]
+        } finally {ns_db releasehandle $db}
+    } -cleanup {::ns_stats_test::stop} -result {1 0 0 1}
+
+    test stats-history-read {query returns bounded records with coverage and topology} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set q [ns_stats history query -from [expr {[clock seconds]-60}] -to [clock seconds] -server test]
+        list [expr {[llength [dict get $q records]]<=1}] [dict exists $q coverage complete] [dict get $q more]
+    } -cleanup {::ns_stats_test::stop} -result {1 1 0}
+
+    test stats-cross-server {virtual servers share one sampler and select their own pools} -constraints ns_stats_http -setup {
+        ::ns_stats_test::samples
+    } -body {
+        set body [::ns_stats_test::remote sample]
+        set own [ns_stats sampling status]
+        list [expr {[dict get $body status scheduler] eq [dict get $own scheduler]}] [dict keys [dict get $body sample servers]]
+    } -cleanup {::ns_stats_test::stop} -result {1 testvhost}
+
+    test stats-history-failure {sink failure preserves live publication and reports failure} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set before [dict get [ns_stats sample] timestamp]
+        ::ns_stats_test::failWrite
+        set state [ns_stats history status]
+        list [dict get $state failures] [expr {[dict get [ns_stats sample] timestamp]==$before}] [dict get [ns_stats sampling status] running]
+    } -cleanup {::ns_stats_test::stop} -result {1 1 true}
+
+    test stats-history-failure-event {successful persistence records a preceding write failure} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        ::ns_stats_test::failWrite
+        ::ns_stats history save
+        set db [ns_db gethandle ns_stats_test]
+        try {::ns::stats::scalar $db {SELECT count(*) FROM ns_stats_events WHERE reason='write-failure'}} finally {ns_db releasehandle $db}
+    } -cleanup {::ns_stats_test::stop} -result 1
+
+    test stats-history-boundary-gaps {an empty window inside a gap is incomplete} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set db [ns_db gethandle ns_stats_test]
+        set now [clock seconds]
+        try {
+            set topology [::ns::stats::scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
+            set sample [ns_stats sample]
+            ::ns_stats_test::insertSample $db $sample [expr {($now-200)*1000000}] gap-test $topology
+            ::ns_stats_test::insertSample $db $sample [expr {($now-100)*1000000}] gap-test $topology
+        } finally {ns_db releasehandle $db}
+        set q [ns_stats history query -from [expr {$now-170}] -to [expr {$now-130}]]
+        list [llength [dict get $q records]] [dict get $q coverage complete] [llength [dict get $q coverage gaps]]
+    } -cleanup {::ns_stats_test::stop} -result {0 0 1}
+
+    test stats-history-restarts {process identities mark restart boundaries and reset samples} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set db [ns_db gethandle ns_stats_test]
+        set now [clock seconds]
+        set sample [ns_stats sample]
+        try {
+            set topology [::ns::stats::scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
+            ::ns_stats_test::insertSample $db $sample [expr {($now-50)*1000000}] [dict get $sample instance] $topology
+            ::ns_stats_test::insertSample $db $sample [expr {($now-40)*1000000}] new-process $topology false
+        } finally {ns_db releasehandle $db}
+        set q [ns_stats history query -from [expr {$now-55}] -to [expr {$now-30}]]
+        list [llength [dict get $q coverage restartBoundaries]] [dict get $q coverage resetSamples] [dict get $q coverage complete]
+    } -cleanup {::ns_stats_test::stop} -result {1 1 0}
+
+    test stats-history-retention {old samples are evicted with a high-water mark} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            set topology [::ns::stats::scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
+            set sample [ns_stats sample]
+            ::ns_stats_test::insertSample $db $sample [expr {([clock seconds]-120)*1000000}] old-process $topology
+        } finally {ns_db releasehandle $db}
+        set config [nsv_get ns_stats history]
+        dict set config lastSaved {}
+        nsv_set ns_stats history $config
+        ::ns_stats history save
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            list [::ns::stats::scalar $db {SELECT count(*) FROM ns_stats_samples WHERE at < (strftime('%s','now')-60)*1000000}] [expr {[::ns::stats::scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}] ne ""}]
+        } finally {ns_db releasehandle $db}
+    } -cleanup {::ns_stats_test::stop} -result {0 1}
+
+    test stats-stop {stopping retains the published sample and disables collection} -constraints ns_stats -setup {
+        ::ns_stats_test::samples
+    } -body {
+        ::ns_stats_test::stop
+        list [dict get [ns_stats sampling status] running] [dict get [ns_stats sample] sampling ready] [dict get [ns_stats history status] enabled]
+    } -result {false true false}
+
+    test nsv-scope-global {process arrays are shared through ordinary commands} -constraints ns_stats_http -setup {
+        ::ns_stats_test::scope
+    } -body {
+        list [::ns_stats_test::remote scope?action=share] [nsv_dict get ns_stats_test_scope dict remote] [nsv_array scope ns_stats_test_scope]
+    } -cleanup {::ns_stats_test::scopeCleanup} -result {{main process ns_stats_test_scope 1} yes process}
+
+    test nsv-scope-local {local names remain isolated and prevent conflicting process scope} -constraints ns_stats_http -body {
+        nsv_set ns_stats_test_local value main
+        ::ns_stats_test::remote scope?action=conflict
+        list [::ns_stats_test::remote scope?action=local] [catch {nsv_array create -scope process ns_stats_test_conflict}] [nsv_array exists ns_stats_test_conflict] [nsv_array scope ns_stats_test_local]
+    } -cleanup {::ns_stats_test::scopeCleanup} -result {0 1 0 server}
+
+    test nsv-scope-recreate {cached names follow scope changes after deletion} -body {
+        set name ns_stats_test_recreate
+        nsv_set $name value local
+        nsv_unset $name
+        nsv_array create -scope process $name
+        nsv_set $name value global
+        set a [list [nsv_get $name value] [nsv_array scope $name]]
+        nsv_unset $name
+        nsv_set $name value local_again
+        list $a [nsv_array scope $name] [nsv_get $name value]
+    } -cleanup {nsv_unset -nocomplain ns_stats_test_recreate} -result {{global process} server local_again}
+
+    test nsv-scope-eval {eval is recursive, releases on error and pins the array} -setup {
+        ::ns_stats_test::scope
+    } -body {
+        set failed [catch {nsv_array eval ns_stats_test_scope {error deliberate}} message]
+        list $failed $message [nsv_array eval ns_stats_test_scope {nsv_array eval ns_stats_test_scope {nsv_incr ns_stats_test_scope count 0}}] [nsv_array eval ns_stats_test_scope {catch {nsv_unset ns_stats_test_scope}}]
+    } -cleanup {nsv_unset -nocomplain ns_stats_test_scope} -result {1 deliberate 0 1}
+
+    test nsv-scope-concurrency {eval updates serialize across virtual servers} -constraints ns_stats_http -setup {
+        ::ns_stats_test::scope
+    } -body {
+        set remote [::ns_stats_test::remote scope?action=eval true]
+        for {set i 0} {$i < 100} {incr i} {
+            nsv_array eval ns_stats_test_scope {
+                set value [nsv_get ns_stats_test_scope count]
+                ns_sleep 0.0001
+                nsv_set ns_stats_test_scope count [expr {$value+1}]
+            }
+        }
+        ns_http wait $remote
+        nsv_get ns_stats_test_scope count
+    } -cleanup {::ns_stats_test::scopeCleanup} -result 200
+
+    test stats-history-fresh-process {stored history survives a new process without connecting baselines} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set cfg [makeFile {} ns-stats-restart.nscfg]
+                set channel [open $cfg w]
+        try {
+            puts $channel [list ns_section ns/parameters]
+            foreach {key value} [list home [ns_info home] tcllibrary [ns_config ns/parameters tcllibrary] pidfile $cfg.pid systemlog $cfg.log] {
+                puts $channel [list ns_param $key $value]
+            }
+            puts $channel [list ns_section ns/servers]
+            puts $channel [list ns_param primary primary]
+            puts $channel [list ns_section ns/server/primary/tcl]
+            puts $channel [list ns_param initfile [file join [ns_config test home] .. nsd init.tcl]]
+            puts $channel [list ns_section ns/server/primary/modules]
+            puts $channel [list ns_param nsdb [ns_config ns/server/test/modules nsdb]]
+            puts $channel [list ns_section ns/server/primary/db]
+            puts $channel [list ns_param pools diagnostics]
+            puts $channel [list ns_section ns/db/drivers]
+            puts $channel [list ns_param sqlite [ns_config ns/db/drivers ns_stats_sqlite]]
+            puts $channel [list ns_section ns/db/pools]
+            puts $channel [list ns_param diagnostics diagnostics]
+            puts $channel [list ns_section ns/db/pool/diagnostics]
+            puts $channel [list ns_param driver sqlite]
+            puts $channel [list ns_param connections 1]
+            puts $channel [list ns_param datasource [ns_config ns/db/pool/ns_stats_test datasource]]
+        } finally {close $channel}
+        set script [file join [ns_config test home] ns-stats-restart.tcl]
+        set output [exec -- [ns_info nsd] -c -d -t $cfg $script 2>@1]
+        regexp {Total\s+2\s+Passed\s+2\s+Skipped\s+0\s+Failed\s+0} $output
+    } -cleanup {
+        ::ns_stats_test::stop
+        foreach suffix {{} .pid .log} {removeFile ns-stats-restart.nscfg$suffix}
+    } -result 1
+} finally {
+    if {[testConstraint ns_stats]} {
+        ::ns_stats_test::stop
+        ::ns_stats object mixins set $statsSavedMixins
+        nsv_array reset ns_stats $statsSavedState
+        unset statsSavedMixins statsSavedState
+    }
+    if {[testConstraint ns_stats_sqlite]} {
+        ns_db bouncepool ns_stats_test
+        set path [ns_config ns/db/pool/ns_stats_test datasource]
+        foreach suffix {{} -journal -wal -shm} {
+            file delete -force $path$suffix
+        }
+        unset path
+    }
+    namespace delete ::ns_stats_test
+}
+cleanupTests

@@ -574,6 +574,32 @@ ns_section "ns/db/pool/b" {
     ns_param   maxidle         1
     ns_param   maxopen         1
 }
+#
+# Optional ns_stats history tests use the installed native SQLite driver.
+# NAVISERVER is the installation prefix already selected by make. Without
+# this external module, tcltest skips only the SQLite-dependent cases.
+#
+if {[info exists ::env(NAVISERVER)]} {
+    set statsSqlite [file join $::env(NAVISERVER) bin nsdbsqlite[sharedlibextension]]
+    if {[file readable $statsSqlite]} {
+        ns_section ns/db/drivers {
+            ns_param ns_stats_sqlite $statsSqlite
+        }
+        ns_section ns/db/pools {
+            ns_param ns_stats_test {Diagnostics history regression tests}
+        }
+        ns_section ns/db/pool/ns_stats_test {
+            ns_param driver ns_stats_sqlite
+            ns_param connections 1
+            ns_param datasource [file join [ns_config test home] ns-stats-[pid].db]
+        }
+        ns_section ns/server/test/db {
+            ns_set update [ns_configsection ns/server/test/db] pools a,b,ns_stats_test
+        }
+    }
+    unset statsSqlite
+}
+
 ns_logctl severity notice off
 ns_logctl severity warning off
 #puts stderr "================================== test config file loaded"

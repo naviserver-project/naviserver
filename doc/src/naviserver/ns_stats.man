@@ -1,0 +1,184 @@
+[include version_include.man]
+[manpage_begin ns_stats n [vset version]]
+[moddesc {NaviServer Tcl Library}]
+[titledesc {NX diagnostics, shared sampling and optional SQLite history}]
+[description]
+
+[cmd ns_stats] is an optional NSF/NX application in the standard Tcl library.
+It is available when NX is loaded at server initialization. Sampling and history
+are off by default. The interface requires the NaviServer 5.2 process-scoped nsv array
+support; copying this Tcl file into an older server does not enable the command.
+The command registers no HTTP endpoint and makes no authorization decisions.
+Consumers such as nsstats and MCP apply their own access and presentation policy.
+
+[section COMMANDS]
+[list_begin definitions]
+[call [cmd "ns_stats describe"] [opt [option "-server server"]]]
+Returns a Tcl dictionary with schemaVersion, process identity/version/build,
+platform, drivers, virtual servers, pool limits, module metadata and database-pool
+associations. Driver bindings include the available host-mapping configuration.
+Only selected configuration fields are returned; callback scripts and credentials
+are not collected. Unsupported optional facilities have availability flags.
+
+[call [cmd "ns_stats snapshot"] [opt [option "-server server"]]]
+Collects current gauges and cumulative counters without advancing the shared
+sampling baseline. The result includes collection duration and a microsecond epoch
+timestamp. Servers/pools expose counters, threads, active and waiting requests.
+Drivers expose counters and socket states; queues include driver/writer/spooler
+information when supported. CPU counters are microseconds, matched by OS thread ID
+and creation time. Numeric allocator properties are bytes; they are not process RSS.
+No active-request URLs, peer addresses or thread callback arguments are retained.
+
+[call [cmd "ns_stats sample"] [opt [option "-server server"]]]
+Reads the latest published record without collecting or modifying it. sampling
+contains ready, from/to epoch seconds, measured elapsedSeconds, ageSeconds, reset,
+intervalSeconds and running. Without a baseline, ready is false and interval
+values are empty. Published records add per-pool and per-driver deltas/rates,
+per-pool timingAverageSeconds and process-scoped cpuPercent. CPU 100 percent means
+one CPU core. cpuPercent reports observed/matched thread counts; group totals only
+include threads with a valid baseline. Counter decreases invalidate the affected
+metric and list it in resetCounters. New threads do not inherit old CPU baselines.
+Unavailable values are empty Tcl values with availability/readiness information;
+JSON consumers should represent these as null, never as zero.
+
+[para]
+-server filters server/pool data. Drivers, CPU and allocator data remain explicitly
+process-scoped and must not be attributed to the selected virtual server.
+Snapshots are observations collected over a short interval, not an atomic freeze
+of the whole system. Capacity estimates and status thresholds belong to consumers.
+
+[call [cmd "ns_stats sampling start"] [opt [option "-interval seconds"]]]
+Starts one process-wide sampler, defaulting to 10 seconds (range 1..3600).
+Definitions and configured interface objects are in the blueprint. Calling start
+again with the same interval reuses the scheduler; a different interval is rejected.
+The scheduler uses the activating server's interpreters. Its live state is held
+in the process-scoped [const ns_stats] nsv array; coordinated updates use
+[cmd {nsv_array eval}]. SQLite work occurs outside that coordination lock. The first sample has no interval baseline. Restarting
+a stopped sampler also discards its baseline rather than counting the stopped period.
+
+[call [cmd "ns_stats sampling status"]]
+Returns running, interval, scheduler, process instance, readiness, sample age,
+latest publication and collection failure counters. A sample's age is not a
+measurement of traffic latency.
+
+[call [cmd "ns_stats sampling stop"]]
+Stops scheduled collection and retains the last sample, which remains readable
+with running false and increasing age.
+
+[call [cmd "ns_stats history configure"] [option "-pool pool"] \
+    [opt [option "-retention seconds"]] [opt [option "-maxBytes bytes"]]]
+Enables the optional SQLiteHistory mixin using a configured native nsdbsqlite pool.
+No Tcl sqlite3 package is required. Use a dedicated persistent database; other
+application tables are rejected. Defaults: retention 86400 seconds, maxBytes
+67108864 bytes. Retention range is 60..604800 seconds; minimum budget is 4 MiB.
+Sampling must be activated separately. Identical configuration is idempotent;
+disable history before changing its settings. The configuring virtual server must
+have access to the pool. Pool handles are operation-local and never enter a blueprint.
+
+[para]
+Persistence runs on a separate scheduled callback, checking once per second for
+an unpublished timestamp. Database work never holds the live publication mutex.
+Samples are committed atomically, deduplicated by timestamp, compressed with zlib
+and stored as hex text. Repeated topology is stored separately. Age and byte pressure
+evict old samples. SQLite main-file pages are limited to 45 percent of maxBytes,
+reserving space for DELETE-mode rollback journaling and overhead. Freed pages are
+reused; actual retained duration can be shorter than the configured maximum.
+The file is private (0600); provision its writable parent directory separately.
+
+[para]
+Write failures keep live sampling available, increment status counters and report
+warnings (repeated identical failures are throttled to once per minute). A later
+successful write records the failed interval. After a crash while the database is
+unavailable, precise failure counts may be lost, but missing sample intervals and
+new process identities remain visible in history coverage.
+
+[call [cmd "ns_stats history status"]]
+Reports enabled, owner server, pool, retention/budget, latest saved timestamp,
+failure count and last failure. This reads shared state without opening the database.
+
+[call [cmd "ns_stats history disable"]]
+Stops future history callbacks without stopping live sampling or deleting rows.
+An already running write can complete. Disabled configured history remains queryable.
+
+[call [cmd "ns_stats history query"] [option "-from epochSeconds"] [option "-to epochSeconds"] \
+    [opt [option "-server server"]] [opt [option "-limit count"]] [opt [option "-cursor microseconds"]]]
+Returns historical records, referenced topologies and coverage. Query from the
+history owner server; the selected historical server need not still be configured.
+Windows are inclusive at from and exclusive at to, at most 24 hours, ending no
+later than now. Limit is 1..1000, default 1000. nextCursor is an opaque-to-the-consumer
+microsecond timestamp; pass it unchanged to retrieve the next page. more identifies
+pagination. Querying never rewinds sampling or writes new samples.
+
+[para]
+Coverage includes retained bounds, gaps, process restart boundaries, reset samples,
+eviction/failure events and the cumulative eviction high-water mark. Each process
+gets a new instance identity; interval rates are never calculated across restarts.
+Gaps are detected using recorded sampling cadence, including gaps spanning an empty
+query window. Events are bounded to the latest 64; cumulative droppedThrough retains
+conservative eviction coverage. complete is conservative and requires examination
+of the whole window in one page (windowExamined), retained endpoint coverage and no
+observed gaps, resets or overlapping eviction/failure information.
+[list_end]
+
+[section EXAMPLES]
+[example_begin]
+ ns_stats describe -server openacs.org
+ ns_stats snapshot -server openacs.org
+ ns_stats sampling start -interval 10
+ ns_stats sample -server openacs.org
+ ns_stats history configure -pool diagnostics -retention 86400 -maxBytes 67108864
+ ns_stats history query -from [lb]expr {[lb]clock seconds[rb]-3600}[rb] -to [lb]clock seconds[rb]
+ ns_stats history disable
+ ns_stats sampling stop
+[example_end]
+
+[section CONFIGURATION]
+[example_begin]
+ # Load nsdb as a server module and configure nsdbsqlite normally.
+ ns_section ns/db/pools {
+     ns_param diagnostics {NaviServer diagnostics history}
+ }
+ ns_section ns/db/pool/diagnostics {
+     ns_param driver sqlite
+     ns_param connections 1
+     ns_param datasource ns_stats.db
+ }
+ # Include diagnostics in the owner's existing allowed pool list.
+ # Activate from startup Tcl code after libraries and modules are initialized:
+ ns_stats sampling start -interval 10
+ ns_stats history configure -pool diagnostics
+[example_end]
+
+[section EXTENSION]
+::ns::stats::Collector and ::ns::stats::Sampler supply the measurements and sampling
+lifecycle. The configured interface is the object ::ns_stats, an instance of ::ns::ns_stats. ::ns::stats::SQLiteHistory is
+an optional object mixin: consumers can subclass it or override collection/history
+methods. Load variants into the blueprint. The persistence callback restores the
+configured mixin list in its interpreter; no database handle or transient object is
+serialized. NX ensemble methods provide the command interface and typed option parsing.
+The interface class is explicitly exported to the NX serializer, whose default
+policy excludes classes directly in the ::ns namespace. Scheduled sampling and
+persistence callbacks invoke the corresponding methods on ::ns_stats.
+
+[section TESTING]
+The regression tests are part of the standard NaviServer test suite:
+[example_begin]
+ make test TESTFLAGS="-file ns_stats.test"
+ make test TESTFLAGS="-file ns_stats.test -match stats-history-failure-event"
+[example_end]
+The normal make test environment supplies library paths, locale and the
+NAVISERVER installation prefix. No NS_STATS-specific environment variables
+are needed. Collection and sampling cases require NX; persistence cases also
+require the native nsdbsqlite driver under NAVISERVER/bin. Missing optional
+components are reported as tcltest constraint skips.
+
+[para]
+The tests reuse the standard test servers and listener, configure an isolated
+SQLite pool when available, restore shared sampler state and remove temporary
+history files. A fresh child process verifies that persisted history survives
+restart without using a previous process's counter baseline. Individual cases
+have their own fixtures and can be selected with the usual -match option.
+
+[see_also ns_info ns_driver ns_server ns_db]
+[keywords diagnostics NX NSF statistics sampling SQLite history utilization]
+[manpage_end]
