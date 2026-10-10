@@ -19,6 +19,23 @@
 
 [list_begin definitions]
 
+[call [cmd "ns_ip anonymize"] [opt [option "-ipv4mask mask"]] [opt [option "-ipv6mask mask"]] [opt --] [arg ipaddr]]
+
+ Returns the address after bitwise masking, using the same operation as nslog's
+ [const masklogaddr] option. The defaults are [const 255.255.255.0] for IPv4
+ and [const ff:ff:ff:ff::] for IPv6. Masks must be addresses of the matching
+ family. The IPv6 default is a non-contiguous bit mask, not a /64 prefix;
+ use [const ffff:ffff:ffff:ffff::] for /64 masking. IPv4-mapped IPv6 addresses use the IPv6 mask, as in nslog.
+ This groups addresses into networks and does not preserve unique peer identity.
+ The command does not read any server's nslog configuration.
+
+[example_begin]
+ ns_ip anonymize 192.0.2.123
+ # 192.0.2.0
+ ns_ip anonymize -ipv4mask 255.255.0.0 192.0.2.123
+ # 192.0.0.0
+[example_end]
+
 [call [cmd "ns_ip inany"] [arg ipaddr]]
 
  Determines whether the provided IP address is an "any" (unspecified)

@@ -22,6 +22,7 @@
  * Local functions defined in this file
  */
 
+static TCL_OBJCMDPROC_T   IpAnonymizeObjCmd;
 static TCL_OBJCMDPROC_T   IpMatchObjCmd;
 static TCL_OBJCMDPROC_T   IpPropertiesObjCmd;
 static TCL_OBJCMDPROC_T   IpPublicObjCmd;
@@ -2510,6 +2511,52 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
 
 /*
+ * Anonymize an address with the same bitwise masking used by nslog.
+ * Defaults match nslog's maskipv4/maskipv6 defaults. This operation groups
+ * addresses into networks; it does not provide unique client identities.
+ */
+static int
+IpAnonymizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const char *ipv4mask = "255.255.255.0", *ipv6mask = "ff:ff:ff:ff::";
+    char *address;
+    struct NS_SOCKADDR_STORAGE ip = {0}, mask = {0}, masked = {0};
+    struct sockaddr *ipPtr = (struct sockaddr *)&ip;
+    struct sockaddr *maskPtr = (struct sockaddr *)&mask;
+    char buffer[NS_IPADDR_SIZE];
+    Ns_ObjvSpec opts[] = {
+        {"-ipv4mask", Ns_ObjvString, &ipv4mask, NULL},
+        {"-ipv6mask", Ns_ObjvString, &ipv6mask, NULL},
+        {"--", Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"ipaddr", Ns_ObjvString, &address, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    if (ns_inet_pton(ipPtr, address) != 1) {
+        Ns_TclPrintfResult(interp, "'%s' is not a valid IPv4 or IPv6 address", address);
+        return TCL_ERROR;
+    }
+    if (ns_inet_pton(maskPtr, ipPtr->sa_family == AF_INET ? ipv4mask : ipv6mask) != 1
+        || maskPtr->sa_family != ipPtr->sa_family) {
+        Ns_TclPrintfResult(interp, "mask must be a valid address of the same family as '%s'", address);
+        return TCL_ERROR;
+    }
+    if (!Ns_SockaddrMask(ipPtr, maskPtr, (struct sockaddr *)&masked)) {
+        return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(ns_inet_ntop((struct sockaddr *)&masked,
+                                                        buffer, sizeof(buffer)), TCL_INDEX_NONE));
+    return TCL_OK;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * IpMatchObjCmd --
@@ -2829,6 +2876,7 @@ int
 NsTclIpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
+        {"anonymize",  IpAnonymizeObjCmd},
         {"inany",      IpInAnyObjCmd},
         {"match",      IpMatchObjCmd},
         {"properties", IpPropertiesObjCmd},

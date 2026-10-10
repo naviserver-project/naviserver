@@ -368,11 +368,11 @@ test ns_valid_utf8-8.3 {invalid utf8, overlong encoding in the middle} -body {
 
 test ns_ip-1.0.1 {syntax: ns_ip} -body {
     ns_ip
-} -returnCodes error -result {wrong # args: should be "ns_ip inany|match|properties|public|trusted|valid ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_ip anonymize|inany|match|properties|public|trusted|valid ?/arg .../"}
 
 test ns_ip-1.0.2 {syntax: ns_ip subcommand} -body {
     ns_ip x
-} -returnCodes error -result {ns_ip: bad subcommand "x": must be inany, match, properties, public, trusted, or valid}
+} -returnCodes error -result {ns_ip: bad subcommand "x": must be anonymize, inany, match, properties, public, trusted, or valid}
 
 test ns_ip-1.1.0 {syntax: ns_ip match} -body {
     ns_ip match
@@ -978,6 +978,23 @@ test ns_cbor-4.2 {truncated: map claims 1 pair but value missing} -body {
     ns_cbor parse -binary -encoding binary $bin
 } -returnCodes {ok error} -result {CBOR truncated input}
 
+
+# nslog-compatible anonymization of logged peers.
+test ns_ip-anonymize-1 {default IPv4 mask} -body {
+    ns_ip anonymize 192.0.2.123
+} -result 192.0.2.0
+
+test ns_ip-anonymize-2 {default IPv6 mask} -body {
+    ns_ip anonymize 2001:db8:abcd:1234:5678:9abc:def0:1234
+} -result 1:b8:cd:34::
+
+test ns_ip-anonymize-3 {custom masks} -body {
+    list [ns_ip anonymize -ipv4mask 255.255.0.0 192.0.2.123] [ns_ip anonymize -ipv6mask ffff:ffff:ffff:ffff:: 2001:db8:abcd:1234::1]
+} -result {192.0.0.0 2001:db8:abcd:1234::}
+
+test ns_ip-anonymize-4 {invalid address or wrong mask family} -body {
+    list [catch {ns_ip anonymize nope}] [catch {ns_ip anonymize -ipv4mask :: 192.0.2.1}] [catch {ns_ip anonymize -ipv6mask nope ::1}]
+} -result {1 1 1}
 
 cleanupTests
 
