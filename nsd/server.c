@@ -664,7 +664,6 @@ CreatePool(NsServer *servPtr, const char *pool)
         connPtr->rateLimit = poolPtr->rate.defaultConnectionLimit;
     }
 
-    connBufPtr[n].nextPtr = NULL;
     poolPtr->wqueue.freePtr = &connBufPtr[0];
 
     queueLength = maxconns - poolPtr->threads.max;
