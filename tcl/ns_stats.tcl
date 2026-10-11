@@ -7,9 +7,15 @@
 namespace eval ::ns {}
 
 if {[info commands ::nx::Class] eq ""} {
-    ns_log warning "NSF is not installed. The commands ::ns_stats* are not available"
+    ns_log warning "NSF is not installed. The commands ::ns_stats is not available"
     return
 }
+if {$::tcl_version < 8.6} {
+    # We need at least the "zlib" command.
+    ns_log warning "The command ::ns_stats requires Tcl 8.6 or newer"
+    return
+}
+
 
 # create namespace and global nsv
 namespace eval ::ns::stats {
@@ -1053,7 +1059,11 @@ nx::Class create ::ns::stats::SQLiteHistory {
             set first [dict get $bounds first]
             set last [dict get $bounds last]
             set overlap false
-            foreach event $events {if {[dict get $event first]<$high && [dict get $event last]>=$low} {set overlap true}}
+            foreach event $events {
+                if {[dict get $event first] < $high && [dict get $event last] >= $low} {
+                    set overlap true
+                }
+            }
             set through [::ns::stats::scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}]
             if {$through ne "" && $through >= $low} {
                 set overlap true
