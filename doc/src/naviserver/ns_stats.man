@@ -24,8 +24,14 @@ are not collected. Unsupported optional facilities have availability flags.
 Collects current gauges and cumulative counters without advancing the shared
 sampling baseline. The result includes collection duration and a microsecond epoch
 timestamp. Servers/pools expose counters, threads, active and waiting requests.
-Drivers expose counters and socket states; queues include driver/writer/spooler
-information when supported. CPU counters are microseconds, matched by OS thread ID
+Pool gauges contain activeRequests, waitingRequests and threads; pool counters
+include requests, queued, spooled and dropped. queued counts cumulative queueing
+events, not current queue depth.
+Drivers expose cumulative counters (received, partial, spooled, errors) and current
+socketStates (reading, waitingForConnection, closing). waitingForConnection means
+parsed requests awaiting an available connection structure; pool waitingRequests
+await connection threads. Writer and spooler queue statistics
+are not collected. CPU counters are microseconds, matched by OS thread ID
 and creation time. Numeric allocator properties are bytes; they are not process RSS.
 No active-request URLs, peer addresses or thread callback arguments are retained.
 

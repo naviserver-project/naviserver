@@ -163,28 +163,28 @@ nx::Class create ::ns::stats::Collector {
                         scope process \
                         process [dict create pid [pid] bootTime [ns_info boottime]] \
                         drivers {} \
-                        queues {} \
                         servers {} \
                         cpu {} \
                         availability {} \
                         units {time seconds cpuCounter microseconds cpuPercent percentOfOneCore}]
         if {![catch {ns_driver stats} stats]} {
             foreach entry $stats {
-                dict set result drivers [dict get $entry thread] $entry
+                set counters {}
+                foreach key {received partial spooled errors} {
+                    dict set counters $key [dict get $entry $key]
+                }
+                set socketStates [dict create \
+                                      reading [dict get $entry reading] \
+                                      waitingForConnection [dict get $entry waiting] \
+                                      closing [dict get $entry closing]]
+                dict set result drivers [dict get $entry thread] \
+                    [dict create thread [dict get $entry thread] \
+                         module [dict get $entry module] \
+                         counters $counters socketStates $socketStates]
             }
             dict set result availability drivers true
         } else {
             dict set result availability drivers false
-        }
-        foreach kind {driver writer spooler} {
-            if {![catch {ns_driver queues $kind} entries]} {
-                foreach entry $entries {
-                    dict set result queues $kind [dict get $entry thread] $entry
-                }
-                dict set result availability $kind true
-            } else {
-                dict set result availability $kind false
-            }
         }
         foreach s [ns_info servers] {
             foreach p [ns_server -server $s pools] {
@@ -478,8 +478,8 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
             set invalid {}
             foreach k {received partial spooled errors} {
                 set d {}
-                if {$ready && [dict exists $entry $k] && [dict exists $previous drivers $thread $k]} {
-                    set d [:delta [dict get $entry $k] [dict get $previous drivers $thread $k]]
+                if {$ready && [dict exists $entry counters $k] && [dict exists $previous drivers $thread counters $k]} {
+                    set d [:delta [dict get $entry counters $k] [dict get $previous drivers $thread counters $k]]
                     if {$d eq ""} {
                         lappend invalid $k
                     }

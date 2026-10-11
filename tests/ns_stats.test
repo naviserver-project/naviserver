@@ -169,6 +169,22 @@ set statsTestCode [catch {
         list [expr {[lsort [dict keys [dict get $s servers]]] eq [lsort [ns_info servers]]}] [dict exists $s servers test pools default counters requests] [dict get [ns_stats sampling status] running]
     } -result {1 1 false}
 
+    test stats-driver-fields {driver socket states are separate from counters and rates} -returnCodes {ok error} -constraints ns_stats -body {
+        set old [ns_stats snapshot]
+        dict set old drivers synthetic [dict create thread synthetic module test \
+            counters {received 10 partial 20 spooled 0 errors 0} \
+            socketStates {reading 3 waitingForConnection 2 closing 1}]
+        set new $old
+        dict incr new timestamp 1000000
+        dict set new drivers synthetic counters received 15
+        dict set new drivers synthetic socketStates waitingForConnection 0
+        set result [ns_stats calculate $new $old 10 synthetic]
+        list [dict get $result drivers synthetic deltas received] \
+            [dict get $result drivers synthetic rates received] \
+            [dict get $result drivers synthetic socketStates waitingForConnection] \
+            [dict exists $result drivers synthetic rates waitingForConnection]
+    } -result {5 5.0 0 0}
+
     test stats-describe {topology identifies pools and process scope} -returnCodes {ok error} -constraints ns_stats -body {
         set d [ns_stats describe -server test]
         list [dict keys [dict get $d servers]] [dict get $d scope] [dict exists $d servers test pools default]
