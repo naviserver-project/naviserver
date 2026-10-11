@@ -129,6 +129,23 @@ try {
             [catch {ns_stats sample -server does-not-exist}]
     } -result {1 1 1 1 1 1 1 1 1}
 
+    test stats-sampling-units {fractional intervals compare after normalization} -constraints ns_stats -body {
+        ns_stats sampling stop
+        set first [ns_stats sampling start -interval 1500ms]
+        set second [ns_stats sampling start -interval 1.5s]
+        list [expr {[dict get $first interval] == 1.5}] \
+            [expr {[dict get $first scheduler] eq [dict get $second scheduler]}]
+    } -cleanup {::ns_stats_test::stop} -result {1 1}
+
+    test stats-history-units {native retention and byte units normalize before comparison} -constraints ns_stats_sqlite -body {
+        ns_stats history disable
+        set first [ns_stats history configure -pool ns_stats_test -retention 60500ms -maxBytes 4MiB]
+        set second [ns_stats history configure -pool ns_stats_test -retention 60.5s -maxBytes 4194304]
+        list [expr {[dict get $first retention] == 60.5}] \
+            [dict get $first maxBytes] \
+            [expr {[dict get $first scheduler] eq [dict get $second scheduler]}]
+    } -cleanup {::ns_stats_test::stop} -result {1 4194304 1}
+
     test stats-off {sampling is opt-in} -constraints ns_stats -body {
         list [nsf::object::exists ::ns_stats] [dict get [ns_stats sampling status] running] [dict get [ns_stats sample] sampling ready]
     } -result {1 false false}

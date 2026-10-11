@@ -311,9 +311,10 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         return $result
     }
 
-    :public method "sampling start" {{-interval:integer 10}} {
+    :public method "sampling start" {{-interval 10}} {
         #   Start the process-wide sampling callback at the requested interval
-        #   in seconds (default 10, range 1..3600). Repeated calls with the
+        #   in seconds (default 10, range 1..3600). Time units and fractional
+        #   seconds are normalized with ns_baseunit. Repeated calls with the
         #   same running interval reuse the scheduler; a different interval
         #   requires stopping the sampler first.
         #
@@ -321,6 +322,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         #   sampler. Returns the resulting status dictionary. Persistence
         #   must be enabled separately.
 
+        set interval [ns_baseunit -time $interval]
         if {$interval < 1 || $interval > 3600} {
             error "interval must be 1..3600 seconds"
         }
@@ -715,8 +717,8 @@ nx::Class create ::ns::stats::SQLiteHistory {
 
     :public method "history configure" {
         -pool:required
-        {-retention:integer 86400}
-        {-maxBytes:integer 67108864}
+        {-retention 86400}
+        {-maxBytes 67108864}
     } {
         #
         #   Validate the database pool and retention limits, initialize the
@@ -724,7 +726,11 @@ nx::Class create ::ns::stats::SQLiteHistory {
         #   configuration with identical settings is harmless; changing
         #   active settings requires disabling persistence first.
         #   Return the resulting history status. Does not start sampling.
+        #   Normalize retention to fractional seconds and maxBytes to bytes
+        #   with ns_baseunit before validating the bounds.
         #
+        set retention [ns_baseunit -time $retention]
+        set maxBytes [ns_baseunit -size $maxBytes]
         if {$retention < 60 || $retention > 604800 || $maxBytes < 4194304} {
             error "retention must be 60..604800 seconds and maxBytes at least 4 MiB"
         }

@@ -48,6 +48,9 @@ Snapshots are observations collected over a short interval, not an atomic freeze
 of the whole system. Capacity estimates and status thresholds belong to consumers.
 
 [call [cmd "ns_stats sampling start"] [opt [option "-interval seconds"]]]
+
+[para] Time arguments accept NaviServer units and fractional seconds, for
+example 1500ms. They are normalized to seconds with [cmd ns_baseunit].
 Starts one process-wide sampler, defaulting to 10 seconds (range 1..3600).
 Definitions and configured interface objects are in the blueprint. Calling start
 again with the same interval reuses the scheduler; a different interval is rejected.
@@ -69,7 +72,9 @@ with running false and increasing age.
     [opt [option "-retention seconds"]] [opt [option "-maxBytes bytes"]]]
 Enables the optional SQLiteHistory mixin using a configured native nsdbsqlite pool.
 No Tcl sqlite3 package is required. Use a dedicated persistent database; other
-application tables are rejected. Defaults: retention 86400 seconds, maxBytes
+application tables are rejected. Retention accepts time units and fractional seconds; maxBytes accepts
+memory-size units (for example 64MiB). Values are normalized with [cmd ns_baseunit].
+Defaults: retention 86400 seconds, maxBytes
 67108864 bytes. Retention range is 60..604800 seconds; minimum budget is 4 MiB.
 Sampling must be activated separately. Identical configuration is idempotent;
 disable history before changing its settings. The configuring virtual server must
