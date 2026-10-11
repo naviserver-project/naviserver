@@ -193,5 +193,21 @@ jobs:
         run: |
           make test
 
+      - name: Show restart-test diagnostics
+        if: always()
+        run: |
+          if [ -f tests/ns-stats-restart-diagnostics.txt ]; then
+            cat tests/ns-stats-restart-diagnostics.txt
+          fi
+
+      - name: Upload restart-test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: restart-diagnostics-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.tcltag }}
+          path: tests/ns-stats-restart-diagnostics.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
 # Reference of the GitHub runner images with the supported packages and versions
 # https://github.com/actions/runner-images

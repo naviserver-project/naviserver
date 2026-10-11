@@ -12,6 +12,17 @@ namespace eval ::ns_stats_test {
     variable pool ns_stats_test
     variable source [file join [ns_config test home] .. tcl ns_stats.tcl]
 
+    proc diagnostics {output} {
+        set path [file join [ns_config test home] ns-stats-restart-diagnostics.txt]
+        set channel [open $path w]
+        try {
+            puts $channel $output
+        } finally {
+            close $channel
+        }
+        return $path
+    }
+
     proc samples {} {
         ns_stats sampling stop
         ns_stats sampling start -interval 3600
@@ -391,6 +402,19 @@ set statsTestCode [catch {
         nsv_get ns_stats_test_scope count
     } -cleanup {::ns_stats_test::scopeCleanup} -result 200
 
+    test stats-diagnostics-file {long diagnostic output is preserved without elision} -returnCodes {ok error} -constraints ns_stats_tcl86 -body {
+        set text [string repeat "frame detail\n" 2000]
+        set path [::ns_stats_test::diagnostics $text]
+        set channel [open $path r]
+        try {
+            expr {[read $channel] eq "$text\n"}
+        } finally {
+            close $channel
+        }
+    } -cleanup {
+        file delete -force [file join [ns_config test home] ns-stats-restart-diagnostics.txt]
+    } -result 1
+
     test stats-history-fresh-process {stored history survives a new process without connecting baselines} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
         ::ns_stats_test::history
     } -body {
@@ -433,13 +457,14 @@ set statsTestCode [catch {
                     --args {*}$command 2>@1} trace
                 append output "\nFresh-process debugger output:\n$trace"
             }
-            return -options $options $output
+            set path [::ns_stats_test::diagnostics $output]
+            return -options $options "Fresh-process test failed: $errorCode. Full diagnostics: $path"
         }
         if {[regexp {Total\s+2\s+Passed\s+2\s+Skipped\s+0\s+Failed\s+0} $output]} {
             set result 1
         } else {
-            # Keep the child diagnostics instead of reducing failure to zero.
-            set result "Unexpected fresh-process test output:\n$output"
+            set path [::ns_stats_test::diagnostics $output]
+            set result "Unexpected fresh-process test summary. Full diagnostics: $path"
         }
     } -cleanup {
         ::ns_stats_test::stop
