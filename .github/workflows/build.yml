@@ -93,7 +93,8 @@ jobs:
         run: |
           #sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install -y ${CC} libpam0g-dev ccache
+          sudo apt-get install -y ${CC} libpam0g-dev ccache gdb
+          gdb --version
 
       - name: Checkout
         uses: actions/checkout@v5

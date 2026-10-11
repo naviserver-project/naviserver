@@ -419,7 +419,22 @@ set statsTestCode [catch {
             puts $channel [list ns_param datasource [ns_config ns/db/pool/ns_stats_test datasource]]
         } finally {close $channel}
         set script [file join [ns_config test home] ns-stats-restart.tcl]
-        set output [exec -- [ns_info nsd] -c -d -t $cfg $script 2>@1]
+        set command [list [ns_info nsd] -c -d -t $cfg $script]
+        if {[catch {exec -- {*}$command 2>@1} output options]} {
+            # On a native abort, retain the original diagnostics and collect a
+            # backtrace when gdb is available. The test remains a failure.
+            set errorCode [dict get $options -errorcode]
+            set debugger [auto_execok gdb]
+            if {[lindex $errorCode 0] eq "CHILDKILLED"
+                && [lindex $errorCode 2] eq "SIGABRT"
+                && $debugger ne ""} {
+                catch {exec -- {*}$debugger -nx -batch \
+                    -ex {set pagination off} -ex run -ex {bt full} \
+                    --args {*}$command 2>@1} trace
+                append output "\nFresh-process debugger output:\n$trace"
+            }
+            return -options $options $output
+        }
         if {[regexp {Total\s+2\s+Passed\s+2\s+Skipped\s+0\s+Failed\s+0} $output]} {
             set result 1
         } else {
