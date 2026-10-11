@@ -2,7 +2,7 @@
 [manpage_begin ns_baseunit n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Check whether the provided byte-array contains a valid UTF-8 byte sequence}]
+[titledesc {Convert time and memory-size units to seconds and bytes}]
 
 [description]
 
@@ -14,14 +14,10 @@
         [opt [option "-size [arg memory-size]"]] \
         [opt [option "-time [arg time]"]] ]
 
-[para] Convert from memory units or from time units to its
-  base value using the NaviServer internal converters,
-  which are used the same way for various commands.
-  The base unit for a memory size is a byte,
-  for a time value a second). This command os necessary to
-  provide Tcl-level commands calculating with these
-  units to support uniform interfaces (e.g. calculating
-  cache partition sizes base on values such as 2MB).
+[para] Convert a memory size to bytes or a time value to seconds, using
+  the same NaviServer converters used by other commands. Fractional seconds
+  are preserved. This lets Tcl commands accept uniform unit-bearing arguments,
+  for example when calculating cache partition sizes from values such as 2MB.
 
 [para] Either [option "-size [arg memory-size]"] or
   [option "-time [arg time]"] has to be specified.
@@ -33,11 +29,14 @@
 [section EXAMPLES]
 
 [example_begin]
- % ns_baseunit -size 10KB
+ % ns_baseunit -size 10KiB
  10240
  
- ns_baseunit -time 2.5h
+ % ns_baseunit -time 2.5h
  9000
+
+ % ns_baseunit -time 1500ms
+ 1.5
 [example_end]
 
 
