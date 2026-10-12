@@ -587,39 +587,6 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
     }
 }
 
-# Small nsdb adapter. All SQL is fixed; values are quoted separately. Only
-# non-null selected columns are fetched (including aggregate coalesce), since
-# older nsdbsqlite drivers cannot return SQL NULL safely.
-proc ::ns::stats::quote {value} {
-    if {[string first \x00 $value] >= 0} {
-        return "CAST(X'[binary encode hex [encoding convertto utf-8 $value]]' AS TEXT)"
-    }
-    return "'[string map [list ' ''] $value]'"
-}
-proc ::ns::stats::sql {db query} {
-    if {[ns_db exec $db $query] ne "NS_ROWS"} {
-        return {}
-    }
-    set row [ns_db bindrow $db]
-    set rows {}
-    try {
-        while {[ns_db getrow $db $row]} {
-            set result {}
-            for {set i 0} {$i<[ns_set size $row]} {incr i} {
-                dict set result [ns_set key $row $i] [ns_set value $row $i]
-            }
-            lappend rows $result
-        }
-    } finally {
-        ns_db flush $db
-        ns_set free $row
-    }
-    return $rows
-}
-proc ::ns::stats::pack {value} {binary encode hex [zlib compress [encoding convertto utf-8 $value] 1]}
-proc ::ns::stats::unpack {value} {encoding convertfrom utf-8 [zlib decompress [binary decode hex $value]]}
-proc ::ns::stats::scalar {db query} {lindex [dict values [lindex [::ns::stats::sql $db $query] 0]] 0}
-
 nx::Class create ::ns::stats::SQLiteHistory {
     #
     #   Provide optional persistence for Sampler as an object mixin. Store
@@ -650,6 +617,50 @@ nx::Class create ::ns::stats::SQLiteHistory {
     #   process-scoped ns_stats nsv array. Sampling and persistence must
     #   each be enabled explicitly.
     #
+    :method pack {value} {
+        # Keep the stored tcl-zlib-hex-v1 representation unchanged.
+        return [binary encode hex [zlib compress [encoding convertto utf-8 $value] 1]]
+    }
+
+    :method unpack {value} {
+        # Decode stored text without losing Unicode or embedded NULs.
+        return [encoding convertfrom utf-8 [zlib decompress [binary decode hex $value]]]
+    }
+
+    :method quote {value} {
+        # Payloads are hex-encoded by pack; other values use standard nsdb quoting.
+        return [ns_dbquotevalue $value]
+    }
+
+    # Fixed SQL statements use quote for values. Fetch only non-null columns
+    # (including aggregate coalesce), since older nsdbsqlite drivers cannot
+    # return SQL NULL safely. Flush pending rows and release the row set.
+    :method sql {db query} {
+        if {[ns_db exec $db $query] ne "NS_ROWS"} {
+            return {}
+        }
+        set row [ns_db bindrow $db]
+        set rows {}
+        try {
+            while {[ns_db getrow $db $row]} {
+                set result {}
+                for {set i 0} {$i<[ns_set size $row]} {incr i} {
+                    dict set result [ns_set key $row $i] [ns_set value $row $i]
+                }
+                lappend rows $result
+            }
+        } finally {
+            ns_db flush $db
+            ns_set free $row
+        }
+        return $rows
+    }
+
+    :method scalar {db query} {
+        # Return the first column of the first row, or empty for no rows.
+        return [lindex [dict values [lindex [:sql $db $query] 0]] 0]
+    }
+
     :method historyConnect {config} {
         set db [ns_db gethandle -timeout 1 [dict get $config pool]]
         if {$db eq ""} {
@@ -665,7 +676,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
             }
             file attributes $path -permissions 0600
             # A dedicated database avoids altering another application's budget.
-            if {[::ns::stats::scalar $db {
+            if {[:scalar $db {
                 SELECT count(*) FROM sqlite_master WHERE type='table' AND name NOT GLOB 'ns_stats_*' AND name NOT GLOB 'sqlite_*'}]
             } {
                 error "history requires a dedicated database"
@@ -676,15 +687,15 @@ nx::Class create ::ns::stats::SQLiteHistory {
                 {PRAGMA synchronous=FULL}
                 {PRAGMA temp_store=MEMORY}
             } {
-                ::ns::stats::sql $db $query
+                :sql $db $query
             }
-            set page [::ns::stats::scalar $db {PRAGMA page_size}]
+            set page [:scalar $db {PRAGMA page_size}]
             set maximum [expr {int([dict get $config maxBytes]*0.45)/$page}]
 
-            if {[::ns::stats::scalar $db {PRAGMA page_count}]>$maximum} {
+            if {[:scalar $db {PRAGMA page_count}]>$maximum} {
                 error "existing history database exceeds byte budget"
             }
-            ::ns::stats::sql $db "PRAGMA max_page_count=$maximum"
+            :sql $db "PRAGMA max_page_count=$maximum"
             return $db
         } on error {message options} {
             ns_db releasehandle $db
@@ -699,20 +710,20 @@ nx::Class create ::ns::stats::SQLiteHistory {
             {CREATE TABLE IF NOT EXISTS ns_stats_samples (at INTEGER PRIMARY KEY,instance TEXT NOT NULL,topology TEXT NOT NULL,payload TEXT NOT NULL)}
             {CREATE TABLE IF NOT EXISTS ns_stats_events (id INTEGER PRIMARY KEY,at INTEGER NOT NULL,first INTEGER NOT NULL,last INTEGER NOT NULL,n INTEGER NOT NULL,reason TEXT NOT NULL)}
         } {
-            ::ns::stats::sql $db $query
+            :sql $db $query
         }
-        set version [::ns::stats::scalar $db {SELECT value FROM ns_stats_meta WHERE key='schemaVersion'}]
+        set version [:scalar $db {SELECT value FROM ns_stats_meta WHERE key='schemaVersion'}]
         if {$version ne "" && $version ne "1"} {
             error "unsupported diagnostics history schema"
         }
-        set source [::ns::stats::quote [list [ns_info hostname] [ns_info home]]]
-        set stored [::ns::stats::scalar $db {SELECT value FROM ns_stats_meta WHERE key='source'}]
-        if {$stored ne "" && [::ns::stats::quote $stored] ne $source} {
+        set source [:quote [list [ns_info hostname] [ns_info home]]]
+        set stored [:scalar $db {SELECT value FROM ns_stats_meta WHERE key='source'}]
+        if {$stored ne "" && [:quote $stored] ne $source} {
             error "history database belongs to another process installation"
         }
-        ::ns::stats::sql $db {INSERT OR IGNORE INTO ns_stats_meta VALUES('schemaVersion','1')}
-        ::ns::stats::sql $db {INSERT OR IGNORE INTO ns_stats_meta VALUES('encoding','tcl-zlib-hex-v1')}
-        ::ns::stats::sql $db "INSERT OR IGNORE INTO ns_stats_meta VALUES('source',$source)"
+        :sql $db {INSERT OR IGNORE INTO ns_stats_meta VALUES('schemaVersion','1')}
+        :sql $db {INSERT OR IGNORE INTO ns_stats_meta VALUES('encoding','tcl-zlib-hex-v1')}
+        :sql $db "INSERT OR IGNORE INTO ns_stats_meta VALUES('source',$source)"
     }
 
     :public method "history configure" {
@@ -806,7 +817,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
         return $config
     }
     :method historyDrop {db where reason} {
-        set stats [lindex [::ns::stats::sql $db \
+        set stats [lindex [:sql $db \
                                "SELECT count(*) AS n,coalesce(min(at),0) AS first,coalesce(max(at),0) AS last FROM ns_stats_samples WHERE $where"] 0]
         set n [dict get $stats n]
         if {!$n} {
@@ -815,12 +826,12 @@ nx::Class create ::ns::stats::SQLiteHistory {
         set first [dict get $stats first]
         set last [dict get $stats last]
         set now [clock microseconds]
-        ::ns::stats::sql $db "DELETE FROM ns_stats_samples WHERE $where"
-        ::ns::stats::sql $db {DELETE FROM ns_stats_topology WHERE id NOT IN (SELECT DISTINCT topology FROM ns_stats_samples)}
-        ::ns::stats::sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($now,$first,$last,$n,[::ns::stats::quote $reason])"
-        set prior [::ns::stats::scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}]
+        :sql $db "DELETE FROM ns_stats_samples WHERE $where"
+        :sql $db {DELETE FROM ns_stats_topology WHERE id NOT IN (SELECT DISTINCT topology FROM ns_stats_samples)}
+        :sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($now,$first,$last,$n,[:quote $reason])"
+        set prior [:scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}]
         set through [expr {$prior eq "" ? $last : max($last,$prior)}]
-        ::ns::stats::sql $db "INSERT OR REPLACE INTO ns_stats_meta VALUES('droppedThrough','$through')"
+        :sql $db "INSERT OR REPLACE INTO ns_stats_meta VALUES('droppedThrough','$through')"
     }
 
     :public method "history save" {} {
@@ -889,47 +900,47 @@ nx::Class create ::ns::stats::SQLiteHistory {
             if {$rawSize > 1048576} {
                 error "history sample exceeds 1 MiB"
             }
-            set packed [::ns::stats::pack $record]
-            set packedTopology [::ns::stats::pack $topology]
+            set packed [:pack $record]
+            set packedTopology [:pack $topology]
             set size [expr {[string length $packed]+[string length $packedTopology]}]
             set db [:historyConnect $config]
             :historySchema $db
-            ::ns::stats::sql $db {BEGIN IMMEDIATE}
+            :sql $db {BEGIN IMMEDIATE}
             set transaction true
             set cutoff [expr {([clock seconds]-[dict get $config retention])*1000000}]
             :historyDrop $db "at < $cutoff" age
-            set page [::ns::stats::scalar $db {PRAGMA page_size}]
-            set max [::ns::stats::scalar $db {PRAGMA max_page_count}]
+            set page [:scalar $db {PRAGMA page_size}]
+            set max [:scalar $db {PRAGMA max_page_count}]
             while {1} {
-                set used [expr {([::ns::stats::scalar $db {PRAGMA page_count}] - [::ns::stats::scalar $db {PRAGMA freelist_count}]) * $page}]
+                set used [expr {([:scalar $db {PRAGMA page_count}] - [:scalar $db {PRAGMA freelist_count}]) * $page}]
                 if {$used+3*$size < $max*$page*0.8} {
                     break
                 }
-                if {![::ns::stats::scalar $db {SELECT count(*) FROM ns_stats_samples}]} {
+                if {![:scalar $db {SELECT count(*) FROM ns_stats_samples}]} {
                     error "history metadata or sample exceeds storage budget"
                 }
                 :historyDrop $db {at IN (SELECT at FROM ns_stats_samples ORDER BY at LIMIT 100)} size
             }
-            set stored [::ns::stats::scalar $db "SELECT payload FROM ns_stats_topology WHERE id=[::ns::stats::quote $topologyId]"]
-            if {$stored ne "" && [::ns::stats::unpack $stored] ne $topology} {
+            set stored [:scalar $db "SELECT payload FROM ns_stats_topology WHERE id=[:quote $topologyId]"]
+            if {$stored ne "" && [:unpack $stored] ne $topology} {
                 error "history topology fingerprint collision"
             }
-            ::ns::stats::sql $db "INSERT OR IGNORE INTO ns_stats_topology VALUES([::ns::stats::quote $topologyId],[::ns::stats::quote $packedTopology])"
-            ::ns::stats::sql $db "INSERT OR IGNORE INTO ns_stats_samples VALUES($stamp,[::ns::stats::quote [dict get $record instance]],[::ns::stats::quote $topologyId],[::ns::stats::quote $packed])"
+            :sql $db "INSERT OR IGNORE INTO ns_stats_topology VALUES([:quote $topologyId],[:quote $packedTopology])"
+            :sql $db "INSERT OR IGNORE INTO ns_stats_samples VALUES($stamp,[:quote [dict get $record instance]],[:quote $topologyId],[:quote $packed])"
             foreach gap [dict get $config gaps] {
                 lassign $gap first last n
-                ::ns::stats::sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($stamp,$first,$last,$n,'write-failure')"
+                :sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($stamp,$first,$last,$n,'write-failure')"
             }
-            ::ns::stats::sql $db {DELETE FROM ns_stats_events WHERE id NOT IN (SELECT id FROM ns_stats_events ORDER BY id DESC LIMIT 64)}
-            ::ns::stats::sql $db {DELETE FROM ns_stats_topology WHERE id NOT IN (SELECT DISTINCT topology FROM ns_stats_samples)}
-            ::ns::stats::sql $db {COMMIT}
+            :sql $db {DELETE FROM ns_stats_events WHERE id NOT IN (SELECT id FROM ns_stats_events ORDER BY id DESC LIMIT 64)}
+            :sql $db {DELETE FROM ns_stats_topology WHERE id NOT IN (SELECT DISTINCT topology FROM ns_stats_samples)}
+            :sql $db {COMMIT}
             set transaction false
             set ok true
 
         } on error {message options} {
             set errorMessage $message
             if {$transaction} {
-                catch {::ns::stats::sql $db {ROLLBACK}}
+                catch {:sql $db {ROLLBACK}}
             }
             if {$message ne [dict get $config lastFailure] || [clock seconds]-[dict get $config lastLoggedAt] >= 60} {
                 ns_log warning "ns_stats: history write failed: $message"
@@ -1004,12 +1015,12 @@ nx::Class create ::ns::stats::SQLiteHistory {
         set db [:historyConnect $config]
         set transaction false
         try {
-            ::ns::stats::sql $db {BEGIN}
+            :sql $db {BEGIN}
             set transaction true
             set low [expr {$from * 1000000}]
             set high [expr {$to * 1000000}]
             set count [expr {$limit + 1}]
-            set rows [::ns::stats::sql $db "SELECT at,topology,payload FROM ns_stats_samples WHERE at >= $low AND at < $high AND at > $cursor ORDER BY at LIMIT $count"]
+            set rows [:sql $db "SELECT at,topology,payload FROM ns_stats_samples WHERE at >= $low AND at < $high AND at > $cursor ORDER BY at LIMIT $count"]
             set more [expr {[llength $rows]>$limit}]
             set rows [lrange $rows 0 [expr {$limit - 1}]]
             set records {}
@@ -1020,13 +1031,13 @@ nx::Class create ::ns::stats::SQLiteHistory {
             set resets 0
             set boundary [expr {max($low,$cursor)}]
             set operator [expr {$cursor >= $low ? "<=" : "<"}]
-            set prior [::ns::stats::scalar $db "SELECT payload FROM ns_stats_samples WHERE at $operator $boundary ORDER BY at DESC LIMIT 1"]
+            set prior [:scalar $db "SELECT payload FROM ns_stats_samples WHERE at $operator $boundary ORDER BY at DESC LIMIT 1"]
 
             if {$prior ne ""} {
-                set previous [::ns::stats::unpack $prior]
+                set previous [:unpack $prior]
             }
             foreach row $rows {
-                set record [::ns::stats::unpack [dict get $row payload]]
+                set record [:unpack [dict get $row payload]]
                 if {![dict get $record sampling ready]} {
                     incr resets
                 }
@@ -1044,24 +1055,24 @@ nx::Class create ::ns::stats::SQLiteHistory {
                 dict set record topologyId $id
                 if {![dict exists $topology $id]} {
                     dict set topology $id [:selectServer \
-                                               [::ns::stats::unpack [::ns::stats::scalar $db "SELECT payload FROM ns_stats_topology WHERE id=[::ns::stats::quote $id]"]] \
+                                               [:unpack [:scalar $db "SELECT payload FROM ns_stats_topology WHERE id=[:quote $id]"]] \
                                                $server false]
                 }
                 lappend records [:selectServer $record $server false]
             }
 
             if {!$more && $previous ne ""} {
-                set following [::ns::stats::scalar $db "SELECT payload FROM ns_stats_samples WHERE at >= $high ORDER BY at LIMIT 1"]
+                set following [:scalar $db "SELECT payload FROM ns_stats_samples WHERE at >= $high ORDER BY at LIMIT 1"]
                 if {$following ne ""} {
-                    set nextRecord [::ns::stats::unpack $following]
+                    set nextRecord [:unpack $following]
                     set delta [expr {([dict get $nextRecord timestamp]-[dict get $previous timestamp])/1000000.0}]
                     if {$delta > 1.5 * max([dict get $previous sampling intervalSeconds],[dict get $nextRecord sampling intervalSeconds])} {
                         lappend gaps [dict create from [dict get $previous sampling to] to [dict get $nextRecord sampling to]]
                     }
                 }
             }
-            set bounds [lindex [::ns::stats::sql $db {SELECT coalesce(min(at),0) AS first,coalesce(max(at),0) AS last FROM ns_stats_samples}] 0]
-            set events [::ns::stats::sql $db {SELECT at,first,last,n,reason FROM ns_stats_events ORDER BY id DESC}]
+            set bounds [lindex [:sql $db {SELECT coalesce(min(at),0) AS first,coalesce(max(at),0) AS last FROM ns_stats_samples}] 0]
+            set events [:sql $db {SELECT at,first,last,n,reason FROM ns_stats_events ORDER BY id DESC}]
             set first [dict get $bounds first]
             set last [dict get $bounds last]
             set overlap false
@@ -1070,7 +1081,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
                     set overlap true
                 }
             }
-            set through [::ns::stats::scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}]
+            set through [:scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}]
             if {$through ne "" && $through >= $low} {
                 set overlap true
             }
@@ -1095,12 +1106,12 @@ nx::Class create ::ns::stats::SQLiteHistory {
                                           evictionOrFailureOverlap $overlap \
                                           droppedThrough $through \
                                           writeFailuresSinceStart [dict get $config failures]]]
-            ::ns::stats::sql $db {COMMIT}
+            :sql $db {COMMIT}
             set transaction false
             return $result
         } finally {
             if {$transaction} {
-                catch {::ns::stats::sql $db {ROLLBACK}}
+                catch {:sql $db {ROLLBACK}}
             }
             ns_db releasehandle $db
         }

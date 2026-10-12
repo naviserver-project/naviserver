@@ -40,9 +40,9 @@ namespace eval ::ns_stats_test {
             # Initialize a fresh fixture even when this case is run alone
             # through TESTFLAGS="-file ns_stats.test -match ...".
             foreach table {ns_stats_samples ns_stats_events ns_stats_topology} {
-                ::ns::stats::sql $db "DELETE FROM $table"
+                ::nsf::dispatch ::ns_stats sql $db "DELETE FROM $table"
             }
-            ::ns::stats::sql $db {DELETE FROM ns_stats_meta WHERE key='droppedThrough'}
+            ::nsf::dispatch ::ns_stats sql $db {DELETE FROM ns_stats_meta WHERE key='droppedThrough'}
         } finally {
             ns_db releasehandle $db
         }
@@ -101,8 +101,8 @@ namespace eval ::ns_stats_test {
         dict set sample sampling to [expr {$stamp/1000000.0}]
         dict set sample sampling intervalSeconds 10
         dict set sample sampling ready $ready
-        set payload [::ns::stats::quote [::ns::stats::pack $sample]]
-        ::ns::stats::sql $db "INSERT INTO ns_stats_samples VALUES($stamp,[::ns::stats::quote $instance],[::ns::stats::quote $topology],$payload)"
+        set payload [::nsf::dispatch ::ns_stats quote [::nsf::dispatch ::ns_stats pack $sample]]
+        ::nsf::dispatch ::ns_stats sql $db "INSERT INTO ns_stats_samples VALUES($stamp,[::nsf::dispatch ::ns_stats quote $instance],[::nsf::dispatch ::ns_stats quote $topology],$payload)"
     }
 }
 
@@ -240,6 +240,20 @@ set statsTestCode [catch {
         }
     } -result {variant ::ns::stats::TestHistory}
 
+    test stats-history-quote {SQL support delegates ordinary value quoting to nsdb} -returnCodes {ok error} -constraints ns_stats_sqlite -body {
+        list [::nsf::dispatch ::ns_stats quote {O'Brien}] \
+            [::nsf::dispatch ::ns_stats quote ""]
+    } -result {'O''Brien' NULL}
+
+    test stats-history-codec {SQL mixin codecs round-trip empty, Unicode and NUL text} -returnCodes {ok error} -constraints ns_stats -body {
+        set results {}
+        foreach value [list "" "héllo" "a\x00b" [dict create payload "é\x00'\n"]] {
+            set packed [::nsf::dispatch ::ns_stats pack $value]
+            lappend results [expr {[::nsf::dispatch ::ns_stats unpack $packed] eq $value}]
+        }
+        set results
+    } -result {1 1 1 1}
+
     test stats-history-config {history uses a dedicated native SQLite pool} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
         ::ns_stats_test::history
     } -body {
@@ -277,8 +291,8 @@ set statsTestCode [catch {
         ::ns_stats history save
         set db [ns_db gethandle ns_stats_test]
         try {
-            set n [::ns::stats::scalar $db {SELECT count(*) FROM ns_stats_samples}]
-            set record [::ns::stats::unpack [::ns::stats::scalar $db {SELECT payload FROM ns_stats_samples}]]
+            set n [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_samples}]
+            set record [::nsf::dispatch ::ns_stats unpack [::nsf::dispatch ::ns_stats scalar $db {SELECT payload FROM ns_stats_samples}]]
             list $n [dict exists $record raw] [dict exists $record cpu] [dict exists $record topologyId]
         } finally {ns_db releasehandle $db}
     } -cleanup {::ns_stats_test::stop} -result {1 0 0 1}
@@ -313,7 +327,7 @@ set statsTestCode [catch {
         ::ns_stats_test::failWrite
         ::ns_stats history save
         set db [ns_db gethandle ns_stats_test]
-        try {::ns::stats::scalar $db {SELECT count(*) FROM ns_stats_events WHERE reason='write-failure'}} finally {ns_db releasehandle $db}
+        try {::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_events WHERE reason='write-failure'}} finally {ns_db releasehandle $db}
     } -cleanup {::ns_stats_test::stop} -result 1
 
     test stats-history-boundary-gaps {an empty window inside a gap is incomplete} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
@@ -322,7 +336,7 @@ set statsTestCode [catch {
         set db [ns_db gethandle ns_stats_test]
         set now [clock seconds]
         try {
-            set topology [::ns::stats::scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
+            set topology [::nsf::dispatch ::ns_stats scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
             set sample [ns_stats sample]
             ::ns_stats_test::insertSample $db $sample [expr {($now-200)*1000000}] gap-test $topology
             ::ns_stats_test::insertSample $db $sample [expr {($now-100)*1000000}] gap-test $topology
@@ -338,7 +352,7 @@ set statsTestCode [catch {
         set now [clock seconds]
         set sample [ns_stats sample]
         try {
-            set topology [::ns::stats::scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
+            set topology [::nsf::dispatch ::ns_stats scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
             ::ns_stats_test::insertSample $db $sample [expr {($now-50)*1000000}] [dict get $sample instance] $topology
             ::ns_stats_test::insertSample $db $sample [expr {($now-40)*1000000}] new-process $topology false
         } finally {ns_db releasehandle $db}
@@ -351,7 +365,7 @@ set statsTestCode [catch {
     } -body {
         set db [ns_db gethandle ns_stats_test]
         try {
-            set topology [::ns::stats::scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
+            set topology [::nsf::dispatch ::ns_stats scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
             set sample [ns_stats sample]
             ::ns_stats_test::insertSample $db $sample [expr {([clock seconds]-120)*1000000}] old-process $topology
         } finally {ns_db releasehandle $db}
@@ -361,7 +375,7 @@ set statsTestCode [catch {
         ::ns_stats history save
         set db [ns_db gethandle ns_stats_test]
         try {
-            list [::ns::stats::scalar $db {SELECT count(*) FROM ns_stats_samples WHERE at < (strftime('%s','now')-60)*1000000}] [expr {[::ns::stats::scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}] ne ""}]
+            list [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_samples WHERE at < (strftime('%s','now')-60)*1000000}] [expr {[::nsf::dispatch ::ns_stats scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}] ne ""}]
         } finally {ns_db releasehandle $db}
     } -cleanup {::ns_stats_test::stop} -result {0 1}
 

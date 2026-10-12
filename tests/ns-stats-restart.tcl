@@ -2,7 +2,7 @@ package require tcltest
 namespace import ::tcltest::*
 ns_stats history configure -pool diagnostics -retention 86400 -maxBytes 4194304
 set db [ns_db gethandle diagnostics]
-set oldInstances [::ns::stats::sql $db {SELECT DISTINCT instance FROM ns_stats_samples}]
+set oldInstances [::nsf::dispatch ::ns_stats sql $db {SELECT DISTINCT instance FROM ns_stats_samples}]
 ns_db releasehandle $db
 test stats-history-survives {previous process samples remain readable after restart} -returnCodes {ok error} -body {expr {[llength $oldInstances]>0}} -result 1
 ns_stats sampling start -interval 3600
