@@ -1529,6 +1529,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclMD5ObjCmd,
     NsTclMkTempObjCmd,
     NsTclMkdTempObjCmd,
+    NsTclModuleInfoObjCmd,
     NsTclModuleLoadObjCmd,
     NsTclModulePathObjCmd,
     NsTclMutexObjCmd,

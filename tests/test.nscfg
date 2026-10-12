@@ -445,6 +445,7 @@ ns_section ns/environment/legacy-interp-env {
 }
 
 ns_section "ns/server/test/modules" {
+    ns_param module-metadata tcl
     ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlibextension]
     ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb[sharedlibextension]
     if {$tcl_platform(platform) ne "windows"} {
@@ -483,6 +484,7 @@ ns_section "ns/server/testvhost/redirects" {
     ns_param   405    /405.tcl
 }
 ns_section "ns/server/testvhost/modules" {
+    ns_param module-metadata tcl
     ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlibextension]
     ns_param   revproxy        tcl
 }

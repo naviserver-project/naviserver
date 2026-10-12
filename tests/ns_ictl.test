@@ -15,16 +15,16 @@ test ns_ictl-1.0  {syntax: ns_ictl} -body {
     ns_ictl
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]
-                   ? {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|oncleanup|oncreate|ondelete|oninit|runtraces|save|trace|update ?/arg .../"}
-                   : {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|runtraces|save|trace|update ?/arg .../"}
+                   ? {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|moduleinfo|oncleanup|oncreate|ondelete|oninit|runtraces|save|trace|update ?/arg .../"}
+                   : {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|moduleinfo|runtraces|save|trace|update ?/arg .../"}
                }]
 
 test ns_ictl-1.1  {syntax: ns_ictl subcommands} -body {
     ns_ictl ?
 } -returnCodes error \
     -result [expr {[testConstraint with_deprecated]
-                   ? {ns_ictl: bad subcommand "?": must be addmodule, cleanup, epoch, get, getmodules, gettraces, markfordelete, maxconcurrentupdates, oncleanup, oncreate, ondelete, oninit, runtraces, save, trace, or update}
-                   : {ns_ictl: bad subcommand "?": must be addmodule, cleanup, epoch, get, getmodules, gettraces, markfordelete, maxconcurrentupdates, runtraces, save, trace, or update}
+                   ? {ns_ictl: bad subcommand "?": must be addmodule, cleanup, epoch, get, getmodules, gettraces, markfordelete, maxconcurrentupdates, moduleinfo, oncleanup, oncreate, ondelete, oninit, runtraces, save, trace, or update}
+                   : {ns_ictl: bad subcommand "?": must be addmodule, cleanup, epoch, get, getmodules, gettraces, markfordelete, maxconcurrentupdates, moduleinfo, runtraces, save, trace, or update}
                }]
 
 test ns_ictl-1.2 {syntax: ns_ictl addmodule} -body {

@@ -1668,6 +1668,7 @@ NsTclICtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         {"gettraces",            ICtlGetTracesObjCmd},
         {"markfordelete",        ICtlMarkForDeleteObjCmd},
         {"maxconcurrentupdates", ICtlMaxconcurrentupdatesObjCmd},
+        {"moduleinfo",           NsTclModuleInfoObjCmd},
 #ifdef NS_WITH_DEPRECATED
         {"oncleanup",            ICtlOnCleanupObjCmd},
         {"oncreate",             ICtlOnCreateObjCmd},

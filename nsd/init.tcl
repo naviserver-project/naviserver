@@ -290,7 +290,12 @@ proc ns_reinit {} {
 #   module (useful only from within startup files).
 #
 
-proc ns_module {key {val ""}} {
+proc ns_module {key args} {
+
+    if {[llength $args] > 1} {
+        error {wrong # args: should be "ns_module key ?value?"}
+    }
+    set val [lindex $args 0]
 
     global _module
 
@@ -307,6 +312,20 @@ proc ns_module {key {val ""}} {
             }
             if {[info exists _module($key)]} {
                 set val $_module($key)
+            }
+        }
+        version -
+        tag {
+            if {![info exists _module(name)] || $_module(name) eq ""} {
+                error "ns_module: no module is being initialized"
+            }
+            if {[llength $args] == 1} {
+                set val [ns_ictl moduleinfo $_module(name) $key $val]
+            } else {
+                set modules [ns_server modules]
+                if {[dict exists $modules $_module(name) $key]} {
+                    set val [dict get $modules $_module(name) $key]
+                }
             }
         }
         clear {

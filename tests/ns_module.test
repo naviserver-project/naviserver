@@ -1,0 +1,35 @@
+# -*- Tcl -*-
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure {*}$argv
+
+test ns_module-metadata-1 {Tcl module metadata survives startup} -body {
+    set info [dict get [ns_server modules] module-metadata]
+    list [dict get $info type] [dict get $info version] [dict get $info tag] [dict get $info scope]
+} -returnCodes {ok error} -result {tcl-module 1.2.3 test-test server}
+
+test ns_module-metadata-2 {module metadata is scoped to its virtual server} -body {
+    dict get [ns_server -server testvhost modules] module-metadata tag
+} -returnCodes {ok error} -result test-testvhost
+
+test ns_module-metadata-3 {identical redefinitions fail during startup} -body {
+    nsv_get module-metadata redefinition
+} -returnCodes {ok error} -result {1 {module 'module-metadata' version is already defined} 1 {module 'module-metadata' tag is already defined}}
+
+test ns_module-metadata-4 {empty values are rejected} -body {
+    nsv_get module-metadata empty
+} -returnCodes {ok error} -result 1
+
+test ns_module-metadata-5 {native callback fields cannot be redefined} -body {
+    nsv_get module-metadata native
+} -returnCodes {ok error} -result {1 {module 'nslog' version is already defined} 1 {module 'nslog' tag is already defined}}
+
+test ns_module-metadata-6 {metadata cannot be registered after startup} -body {
+    ns_ictl moduleinfo module-metadata tag late
+} -returnCodes {ok error} -result {cannot set module metadata after server startup}
+
+test ns_module-metadata-7 {module context is required} -body {
+    ns_module version 2.0
+} -returnCodes {ok error} -result {ns_module: no module is being initialized}
+
+cleanupTests

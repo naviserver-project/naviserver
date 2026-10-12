@@ -21,6 +21,10 @@
 #     MOD         File name of binary loadable module
 #     MODOBJS     List of module object files (required with MOD)
 #     TCL         List of module shared Tcl files
+#     TCL_INIT    Optional init.tcl template (@NS_MODULE_VERSION@, @NS_MODULE_TAG@)
+#     TCL_INIT_FILE  Generated entry point (default init.tcl)
+#     NS_MODULE_VERSION  Release version for a Tcl entry point
+#     NS_MODULE_TAG  Build tag (default git describe; archives retain recorded tag)
 #     LIBNM       Root name of dynamic library (without lib prefix or extension)
 #     LIBOBJS     List of library object files (required with LIBNM)
 #     LIBHDRS     List of public header files to install (required with module LIBNM)
@@ -34,7 +38,7 @@
 #     CLEAN       Extra clean directive(s)
 #     DESTDIR     Root directory for install
 #
-#     At least one of PGM, MOD, or LIBNM must be defined.  For backwards compatibility,
+#     At least one of PGM, MOD, LIBNM, TCL, or TCL_INIT must be defined.  For backwards compatibility,
 #     MODOBJS will default to OBJS and MODINST can be used for module install.
 #
 #     For static builds (use configure --disable-shared) the LIBNM variable is
@@ -83,6 +87,24 @@ ifdef INCLUDED_IN_NAVISERVER
 	ALIB=
 	PGM=
 	LIBHDRS=
+    endif
+endif
+
+# Tcl modules may generate their entry point from a template. Mixed modules
+# retain metadata from Ns_ModuleGetInfo() and need no Tcl declarations.
+ifdef TCL_INIT
+    ifndef NS_MODULE_VERSION
+        $(error NS_MODULE_VERSION not specified for TCL_INIT)
+    endif
+    TCL_INIT_FILE ?= init.tcl
+    TCL += $(TCL_INIT_FILE)
+    BUILD += $(TCL_INIT_FILE)
+    ifndef NS_MODULE_TAG
+        NS_MODULE_TAG := $(shell git describe --abbrev=12 --always --dirty=+ 2>/dev/null \
+            || sed -n 's/^ns_module tag {\(.*\)}$$/\1/p' $(TCL_INIT_FILE) 2>/dev/null)
+        ifeq ($(strip $(NS_MODULE_TAG)),)
+            NS_MODULE_TAG = unknown
+        endif
     endif
 endif
 
@@ -159,6 +181,19 @@ ifdef MODULE_INFO_HEADER
 endif
 
 all build: $(BUILD)
+
+ifdef TCL_INIT
+$(TCL_INIT_FILE): $(TCL_INIT) FORCE_MODULE_INFO
+	@sed -e 's|@NS_MODULE_VERSION@|$(NS_MODULE_VERSION)|g' \
+	     -e 's|@NS_MODULE_TAG@|$(NS_MODULE_TAG)|g' $(TCL_INIT) > $@.tmp
+	@if test -r $@ && cmp -s $@.tmp $@; then \
+	    $(RM) $@.tmp; \
+	else \
+	    mv $@.tmp $@; \
+	fi
+
+install-tcl: $(TCL_INIT_FILE)
+endif
 
 ifdef MODULE_INFO_HEADER
 $(MODULE_INFO_HEADER): FORCE_MODULE_INFO
