@@ -3,6 +3,10 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
+# Native metadata callbacks require Tcl_FindSymbol, available since Tcl 8.6.
+# Tcl module metadata registration is also supported on Tcl 8.5.
+testConstraint nativeModuleMetadata [expr {[package vcompare [info patchlevel] 8.6] >= 0}]
+
 test ns_module-metadata-1 {Tcl module metadata survives startup} -body {
     set info [dict get [ns_server modules] module-metadata]
     list [dict get $info type] [dict get $info version] [dict get $info tag] [dict get $info scope]
@@ -20,7 +24,7 @@ test ns_module-metadata-4 {empty values are rejected} -body {
     nsv_get module-metadata empty
 } -returnCodes {ok error} -result 1
 
-test ns_module-metadata-5 {native callback fields cannot be redefined} -body {
+test ns_module-metadata-5 {native callback fields cannot be redefined} -constraints nativeModuleMetadata -body {
     nsv_get module-metadata native
 } -returnCodes {ok error} -result {1 {module 'nslog' version is already defined} 1 {module 'nslog' tag is already defined}}
 
