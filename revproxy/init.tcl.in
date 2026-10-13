@@ -1,3 +1,0 @@
-# Generated from init.tcl.in by Makefile.module.
-ns_module version {@NS_MODULE_VERSION@}
-ns_module tag {@NS_MODULE_TAG@}
