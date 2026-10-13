@@ -272,7 +272,11 @@ ns_section "ns/server/test/tcl" {
         # defined by these files.
         #
         foreach module {nsdb nsperm revproxy} {
-            foreach file [glob [ns_config "test" home]/../$module/*.tcl] {
+            foreach file [lsort [glob [ns_config "test" home]/../$module/*.tcl]] {
+                # init.tcl is a module-loader entry point, not a definitions file.
+                if {[file tail $file] eq "init.tcl"} {
+                    continue
+                }
                 source $file
             }
         }
