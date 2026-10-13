@@ -277,8 +277,15 @@ test adp-2.5 {ADP page with timed out ns_http request followed by simple ADP pag
 } -returnCodes {ok return error} -result {200 {Hello World!}}
 
 
-test adp-2.6 {ADP page with timed out ns_http request followed by simple ADP page} -body {
+test adp-2.6 {ADP page propagates an inner HTTP timeout as service unavailable} -setup {
+    ns_register_proc GET /adp-test-delayed-response {
+        ns_sleep 1s
+        ns_return 200 text/plain {Delayed response}
+    }
+} -body {
     nstest::http -getbody 1 GET /http_returntimeout.adp
+} -cleanup {
+    ns_unregister_op GET /adp-test-delayed-response
 } -returnCodes {ok return error} -match glob -result {503 *Service Unavailable*}
 
 test adp-2.7 {Nested ADP tags} -body {
