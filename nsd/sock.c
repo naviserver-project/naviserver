@@ -2116,6 +2116,8 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                 addresses = NULL;
             } else {
                 address = addresses;
+                /* Consume the single address so failures cannot retry it forever. */
+                addresses = NULL;
             }
 
             if (address == NULL) {
