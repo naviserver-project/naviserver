@@ -896,6 +896,10 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
                             DblValueToNstime(tPtr, multiplier * ((double)tPtr->sec + dblFraction));
                         }
 
+                        /* Discard the failed floating-point probe after successful unit parsing. */
+                        if (interp != NULL) {
+                            Tcl_ResetResult(interp);
+                        }
                         result = TCL_OK;
 
                     } else {
