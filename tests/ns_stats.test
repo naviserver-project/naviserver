@@ -130,6 +130,46 @@ set statsTestCode [catch {
         list [nsf::object::exists ::ns_stats] [::ns_stats info class] [info procs ::ns_stats]
     } -result {1 ::ns::ns_stats {}}
 
+    test stats-recent-history {published samples have bounded memory history without raw CPU maps} -returnCodes {ok error} -constraints ns_stats -setup {
+        nsv_set ns_stats recent {}
+        nsv_set ns_stats recentDroppedThrough {}
+        ::ns_stats_test::samples
+    } -body {
+        set now [clock seconds]
+        set q [ns_stats sampling history -from [expr {$now-60}] -to [expr {$now+0}] -server test]
+        # Avoid excluding subsecond samples in the current second.
+        if {[dict get $q records] eq ""} {
+            ns_sleep 1
+            set q [ns_stats sampling history -from [expr {$now-60}] -to [clock seconds] -server test]
+        }
+        set record [lindex [dict get $q records] 0]
+        list [dict get $q source] [dict exists $record raw] [dict exists $record cpu] \
+            [dict exists $record cpuPercent threads] [dict get $q maxSamples]
+    } -cleanup {::ns_stats_test::stop} -result {memory 0 0 0 180}
+
+    test stats-recent-bounds {memory sample retention has both a count and time bound} -returnCodes {ok error} -constraints ns_stats -setup {
+        ::ns_stats_test::samples
+        set saved [nsv_get ns_stats recent]
+        set savedDropped [nsv_get ns_stats recentDroppedThrough]
+        nsv_set ns_stats recent {}
+        nsv_set ns_stats recentDroppedThrough {}
+    } -body {
+        set sample [ns_stats sample]
+        set stamp [expr {[clock seconds]*1000000-200000000}]
+        for {set i 0} {$i<190} {incr i} {
+            dict set sample timestamp [expr {$stamp+$i*1000000}]
+            ::nsf::dispatch ::ns_stats retainSample $sample
+        }
+        set count [llength [nsv_get ns_stats recent]]
+        dict set sample timestamp [expr {$stamp+2000000000}]
+        ::nsf::dispatch ::ns_stats retainSample $sample
+        list $count [llength [nsv_get ns_stats recent]] [expr {[nsv_get ns_stats recentDroppedThrough] ne ""}]
+    } -cleanup {
+        nsv_set ns_stats recent $saved
+        nsv_set ns_stats recentDroppedThrough $savedDropped
+        ::ns_stats_test::stop
+    } -result {180 1 1}
+
     test stats-typed-options {NX validates required, typed and unexpected options} -returnCodes {ok error} -constraints ns_stats -body {
         list \
             [catch {ns_stats sampling start -interval invalid}] \
@@ -471,6 +511,13 @@ set statsTestCode [catch {
             puts $channel [list ns_param driver sqlite]
             puts $channel [list ns_param connections 1]
             puts $channel [list ns_param datasource [ns_config ns/db/pool/ns_stats_test datasource]]
+            puts $channel [list ns_section ns/stats]
+            puts $channel [list ns_param server primary]
+            puts $channel [list ns_param sampling true]
+            puts $channel [list ns_param samplingInterval 1h]
+            puts $channel [list ns_param historyPool diagnostics]
+            puts $channel [list ns_param historyRetention 24h]
+            puts $channel [list ns_param historyMaxBytes 4MiB]
         } finally {close $channel}
         set script [file join [ns_config test home] ns-stats-restart.tcl]
         set command [list [ns_info nsd] -c -d -t $cfg $script]
@@ -490,7 +537,7 @@ set statsTestCode [catch {
             set path [::ns_stats_test::diagnostics $output]
             return -options $options "Fresh-process test failed: $errorCode. Full diagnostics: $path"
         }
-        if {[regexp {Total\s+2\s+Passed\s+2\s+Skipped\s+0\s+Failed\s+0} $output]} {
+        if {[regexp {Total\s+4\s+Passed\s+4\s+Skipped\s+0\s+Failed\s+0} $output]} {
             set result 1
         } else {
             set path [::ns_stats_test::diagnostics $output]

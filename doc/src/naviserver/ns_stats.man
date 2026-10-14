@@ -11,6 +11,10 @@ support; copying this Tcl file into an older server does not enable the command.
 The command registers no HTTP endpoint and makes no authorization decisions.
 Consumers such as nsstats and MCP apply their own access and presentation policy.
 
+[section CONFIGURATION]
+
+[include ../include/config-parameters-ns--stats.man]
+
 [section COMMANDS]
 [list_begin definitions]
 [call [cmd "ns_stats describe"] [opt [option "-server server"]]]
@@ -73,6 +77,21 @@ measurement of traffic latency.
 [call [cmd "ns_stats sampling stop"]]
 Stops scheduled collection and retains the last sample, which remains readable
 with running false and increasing age.
+
+[call [cmd "ns_stats sampling history"] [option "-from epochSeconds"] [option "-to epochSeconds"] \
+    [opt [option "-server server"]] [opt [option "-limit count"]] [opt [option "-cursor timestamp"]]]
+
+Reads compact recent samples from the existing process-wide NSV storage, without
+SQLite. Publication retains at most 180 samples and 900 seconds of history.
+Records contain interval rates, timing averages and grouped CPU percentages;
+raw and per-thread CPU maps are omitted. The buffer remains readable after
+sampling stops and survives sampler stop/start, but not a process restart.
+Use SQLite history for longer retention and persistence across restarts.
+
+The epoch window is limited to 24 hours, limit to 1..180 (default 180), and cursor
+to a nonnegative microsecond timestamp. Follow nextCursor while more is true.
+Coverage reports retained bounds, gaps, restart/reset boundaries and droppedThrough;
+missing intervals are not zero traffic. Reading does not collect or change sampling.
 
 [call [cmd "ns_stats history configure"] [option "-pool pool"] \
     [opt [option "-retention seconds"]] [opt [option "-maxBytes bytes"]]]

@@ -935,6 +935,71 @@ set ::ns_configdoc::data {
             }
         }
 
+        ns/stats {
+            :title {ns/stats}
+            :desc {
+                Startup configuration for process-wide ns_stats sampling and optional
+                SQLite history. Requires Tcl 8.6 or newer and NSF/NX. Sampling covers
+                every virtual server; server selects the interpreter and history-pool
+                owner. These settings are independent of MCP and nsstats consumers.
+                They are applied after module initialization. Runtime ns_stats commands
+                can override them until restart without rewriting the configuration.
+                Stop/start sampling to change its interval; disable/configure history
+                to change active persistence settings.
+            }
+            :example {
+                ns_section ns/stats {
+                    ns_param server           default
+                    ns_param sampling         true
+                    ns_param samplingInterval 10s
+                    ns_param historyPool      ns_stats
+                    ns_param historyRetention 24h
+                    ns_param historyMaxBytes  64MiB
+                }
+            }
+            server {
+                type string
+                default {first entry returned by ns_info servers}
+                desc {Virtual server whose interpreters run sampling and persistence.
+                    Specify explicitly on multi-server installations. Must be a
+                    configured virtual server with access to historyPool through
+                    ns/server/SERVER/db.}
+            }
+            sampling {
+                type boolean
+                default false
+                desc {Start the shared process-wide sampler at startup. Independent
+                    of history persistence; defaults to disabled.}
+            }
+            samplingInterval {
+                type time
+                default 10s
+                desc {Sampling cadence, normalized with ns_baseunit to seconds,
+                    including fractional seconds. Valid range is 1..3600 seconds.
+                    Rates use the measured interval between observations.}
+            }
+            historyPool {
+                type string
+                default {}
+                desc {Dedicated native nsdbsqlite pool for persistent diagnostics.
+                    A nonempty value enables history; an empty value disables it.
+                    Configure the pool separately and make its directory writable
+                    by the NaviServer account. Do not share the access-log cache.}
+            }
+            historyRetention {
+                type time
+                default 24h
+                desc {Retention of persistent samples, normalized to seconds.
+                    Valid range is 60 seconds..7 days. Applies when historyPool is set.}
+            }
+            historyMaxBytes {
+                type size
+                default 64MiB
+                desc {Persistent history size budget in bytes, including reserved
+                    journal headroom. Minimum is 4MiB. Applies when historyPool is set.}
+            }
+        }
+
         ns/sendmail {
             :title {ns/sendmail}
             :desc {

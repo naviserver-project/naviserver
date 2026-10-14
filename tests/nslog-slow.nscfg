@@ -1,0 +1,75 @@
+# -*- Tcl -*-
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# Standalone integration configuration for nslog-slow.tcl.
+# Run from the build tree: nsd/nsd -c -d -t tests/nslog-slow.nscfg tests/nslog-slow.tcl
+# NSLOG_TEST_ASYNC, NSLOG_TEST_BUFFER, and NSLOG_TEST_VHOST select variants.
+set sourceRoot [file dirname [file dirname [file normalize [ns_info config]]]]
+if {[info exists ::env(NSLOG_TEST_SOURCE)]} {set sourceRoot $::env(NSLOG_TEST_SOURCE)}
+set testHome [ns_info home]
+if {[info exists ::env(NSLOG_TEST_HOME)]} {set testHome $::env(NSLOG_TEST_HOME)}
+set base [file join /tmp nslog-slow-[pid]]
+set async [expr {[info exists ::env(NSLOG_TEST_ASYNC)] ? $::env(NSLOG_TEST_ASYNC) : true}]
+set maxbuffer [expr {[info exists ::env(NSLOG_TEST_BUFFER)] ? $::env(NSLOG_TEST_BUFFER) : 0}]
+set vhost [expr {[info exists ::env(NSLOG_TEST_VHOST)] ? $::env(NSLOG_TEST_VHOST) : false}]
+for {set port 18987} {$port < 19087} {incr port} {
+ if {![catch {close [ns_socklisten 127.0.0.1 $port]}]} {break}
+}
+ns_section test {ns_param logdir $base; ns_param url http://127.0.0.1:$port; ns_param sourceRoot $sourceRoot}
+file mkdir $base $base/tcl $base/pages
+ns_section ns/parameters {
+ ns_param home $testHome
+ ns_param logdir $base
+ ns_param systemlog $base/error.log
+ ns_param pidfile $base/nsd.pid
+ ns_param asynclogwriter $async
+}
+ns_section ns/servers {ns_param test test}
+ns_section ns/server/test {
+ ns_param tcllibrary $base/tcl
+ ns_param pagedir $base/pages
+ ns_param minthreads 1
+ ns_param maxthreads 1
+}
+if {$vhost} {
+ set init [open $base/early-init.tcl w]
+ puts $init {ns_serverrootproc {return [ns_config test logdir]}}
+ puts $init [list source [file join $sourceRoot nsd init.tcl]]
+ close $init
+ ns_section ns/server/test/tcl {ns_param initfile $base/early-init.tcl}
+}
+ns_section ns/server/test/vhost {ns_param enabled $vhost}
+ns_section ns/server/test/modules {
+ ns_param nssock $sourceRoot/nssock/nssock.so
+ foreach name {conn filter queue none either disabled zero} {ns_param $name $sourceRoot/nslog/nslog.so}
+}
+ns_section ns/server/test/module/nssock {
+ ns_param address 127.0.0.1
+ ns_param port $port
+ ns_param maxline 16kB
+}
+foreach name {conn filter queue none either disabled zero} {
+ ns_section ns/server/test/module/$name {
+  ns_param file $base/$name-access.log
+  if {$name ne "disabled"} {ns_param slowlogfile $name-slow.log}
+  ns_param logpartialtimes [expr {$name ne "conn"}]
+  ns_param logthreadname true
+  ns_param rolllog false
+  ns_param maxbackup 2
+  ns_param maxbuffer $maxbuffer
+  ns_param extendedheaders X-Slow-Test
+  ns_param masklogaddr true
+  ns_param suppressquery true
+  switch $name {
+   conn {ns_param slowlogconntime 50ms}
+   filter {ns_param slowlogfiltertime 30ms}
+   queue {ns_param slowlogqueuetime 20ms}
+   zero {ns_param slowlogconntime 0s}
+   either {ns_param slowlogconntime 50ms; ns_param slowlogqueuetime 20ms}
+   disabled {ns_param slowlogconntime 0s}
+  }
+ }
+}

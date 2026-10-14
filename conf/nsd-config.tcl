@@ -173,6 +173,18 @@ ns_section ns/parameters {
     # ns_param   nshttptaskthreads   2        ;# default: 1; number of task threads for ns_http
 }
 
+# Optional process-wide diagnostics (requires NSF/NX). Runtime ns_stats
+# commands can change these startup settings until the next restart.
+# Configure an nsdbsqlite pool separately before setting historyPool.
+ns_section ns/stats {
+    ns_param sampling         false
+    ns_param samplingInterval 10s
+    #ns_param server           default
+    #ns_param historyPool      ns_stats
+    #ns_param historyRetention 24h
+    #ns_param historyMaxBytes  64MiB
+}
+
 ns_section ns/reverseproxymode {
     #
     # Enable this mode when NaviServer is running behind trusted

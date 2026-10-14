@@ -20,7 +20,7 @@ if {$::tcl_version < 8.6} {
 # create namespace and global nsv
 namespace eval ::ns::stats {
     nsv_array create -scope process ns_stats
-    foreach key {control pair history} {
+    foreach key {control pair history recent recentDroppedThrough} {
         nsv_set -default ns_stats $key {}
     }
 }
@@ -445,7 +445,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
                 set rates {}
                 set invalid {}
                 dict for {k v} [dict get $entry counters] {
-                    if {$k ni {requests queued spooled dropped queuetime filtertime runtime tracetime}} {
+                    if {$k ni {requests queued spools spooled dropped queuetime filtertime runtime tracetime}} {
                         continue
                     }
                     set d {}
@@ -530,6 +530,122 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         return $result
     }
 
+    :method retainSample {sample} {
+        # Called while holding the existing ns_stats coordination lock.
+        # Keep compact interval metrics, not the raw baseline or per-thread maps.
+        set record [dict remove $sample raw cpu]
+        if {[dict exists $record cpuPercent threads]} {
+            dict unset record cpuPercent threads
+        }
+        set records [nsv_get ns_stats recent]
+        lappend records $record
+        set cutoff [expr {[dict get $record timestamp]-900000000}]
+        set dropped [nsv_get ns_stats recentDroppedThrough]
+        while {[llength $records]>180
+               || ([llength $records]>1 && [dict get [lindex $records 0] timestamp]<$cutoff)} {
+            set dropped [dict get [lindex $records 0] timestamp]
+            set records [lrange $records 1 end]
+        }
+        nsv_set ns_stats recent $records
+        nsv_set ns_stats recentDroppedThrough $dropped
+    }
+
+    :public method "sampling history" {
+        -from:integer,required
+        -to:integer,required
+        {-server {}}
+        {-limit:integer 180}
+        {-cursor:integer 0}
+    } {
+        #   Read the bounded process-wide recent sample buffer without SQLite.
+        #   Retains at most 180 compact samples and 15 minutes at publication.
+        #   Returns interval metrics, coverage and timestamp-based paging.
+        #   Raw/per-thread CPU counters are omitted. Reading does not collect,
+        #   start sampling, advance baselines or write persistent history.
+        #   The buffer survives sampler stop/start but not a process restart.
+        #
+        if {$from<0 || $to<=$from || $to-$from>86400 || $to>[clock seconds]
+            || $limit<1 || $limit>180 || $cursor<0} {
+            error "expected an epoch window up to 24 hours, limit 1..180 and nonnegative cursor"
+        }
+        if {[string length $server]>512 || [string first \x00 $server]>=0} {
+            error "invalid server name"
+        }
+        :locked {
+            set retained [nsv_get ns_stats recent]
+            set dropped [nsv_get ns_stats recentDroppedThrough]
+        }
+        set records {}
+        set gaps {}
+        set restarts {}
+        set resets 0
+        set previous {}
+        set first {}
+        set last {}
+        set more false
+        foreach record $retained {
+            set stamp [dict get $record timestamp]
+            if {$first eq ""} {
+                set first $stamp
+            }
+            set last $stamp
+            if {$stamp<$from*1000000 || $stamp<=$cursor} {
+                set previous $record
+                continue
+            }
+            if {$stamp>=$to*1000000} {
+                # A gap crossing the upper bound must not certify coverage.
+                if {$previous ne ""} {
+                    set delta [expr {($stamp-[dict get $previous timestamp])/1000000.0}]
+                    if {$delta>1.5*max([dict get $previous sampling intervalSeconds],
+                                       [dict get $record sampling intervalSeconds])} {
+                        lappend gaps [dict create from [dict get $previous sampling to] to [dict get $record sampling to]]
+                    }
+                }
+                break
+            }
+            if {[llength $records]>=$limit} {
+                set more true
+                break
+            }
+            if {![dict get $record sampling ready]} {
+                incr resets
+            }
+            if {$previous ne ""} {
+                if {[dict get $previous instance] ne [dict get $record instance]} {
+                    lappend restarts [dict get $record sampling to]
+                }
+                set delta [expr {($stamp-[dict get $previous timestamp])/1000000.0}]
+                if {$delta>1.5*max([dict get $previous sampling intervalSeconds],
+                                   [dict get $record sampling intervalSeconds])} {
+                    lappend gaps [dict create from [dict get $previous sampling to] to [dict get $record sampling to]]
+                }
+            }
+            lappend records [:selectServer $record $server false]
+            set previous $record
+        }
+        # Retained bounds refer to the buffer, independently of the selected page.
+        if {$retained ne ""} {
+            set first [dict get [lindex $retained 0] timestamp]
+            set last [dict get [lindex $retained end] timestamp]
+        }
+        set overlap [expr {$dropped ne "" && $dropped>=$from*1000000}]
+        set complete [expr {$first ne "" && $first<=$from*1000000 && $last>=$to*1000000
+                             && !$more && $cursor==0 && !$overlap && $gaps eq ""
+                             && $restarts eq "" && $resets==0}]
+        set next {}
+        if {$more} {
+            set next [dict get [lindex $records end] timestamp]
+        }
+        return [dict create schemaVersion 1 source memory from $from to $to records $records \
+                    nextCursor $next more $more retentionSeconds 900 maxSamples 180 \
+                    coverage [dict create complete $complete windowExamined [expr {!$more && $cursor==0}] \
+                        retainedFrom [expr {$first eq "" ? 0 : $first/1000000.0}] \
+                        retainedTo [expr {$last eq "" ? 0 : $last/1000000.0}] \
+                        gaps $gaps restartBoundaries $restarts resetSamples $resets \
+                        evictionOrFailureOverlap $overlap droppedThrough $dropped]]
+    }
+
     :public method "sampling tick" {} {
         #
         #   Perform one scheduled collection and publish its interval sample.
@@ -566,6 +682,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
                 set pair [nsv_get ns_stats pair]
                 set previous [expr {$pair eq "" ? "" : [dict get $pair raw]}]
                 set sample [:calculate $current $previous [dict get $state interval] [dict get $state instance]]
+                :retainSample $sample
                 dict set sample raw $current
                 nsv_set ns_stats pair $sample
                 dict set state busy false
@@ -1021,7 +1138,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
             set high [expr {$to * 1000000}]
             set count [expr {$limit + 1}]
             set rows [:sql $db "SELECT at,topology,payload FROM ns_stats_samples WHERE at >= $low AND at < $high AND at > $cursor ORDER BY at LIMIT $count"]
-            set more [expr {[llength $rows]>$limit}]
+            set more [expr {[llength $rows] > $limit}]
             set rows [lrange $rows 0 [expr {$limit - 1}]]
             set records {}
             set gaps {}
@@ -1045,7 +1162,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
                     if {[dict get $previous instance] ne [dict get $record instance]} {
                         lappend restarts [dict get $record sampling to]
                     }
-                    set delta [expr {([dict get $record timestamp]-[dict get $previous timestamp])/1000000.0}]
+                    set delta [expr {([dict get $record timestamp]-[dict get $previous timestamp]) / 1000000.0}]
                     if {$delta > 1.5 * max([dict get $previous sampling intervalSeconds],[dict get $record sampling intervalSeconds])} {
                         lappend gaps [dict create from [dict get $previous sampling to] to [dict get $record sampling to]]
                     }
@@ -1065,7 +1182,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
                 set following [:scalar $db "SELECT payload FROM ns_stats_samples WHERE at >= $high ORDER BY at LIMIT 1"]
                 if {$following ne ""} {
                     set nextRecord [:unpack $following]
-                    set delta [expr {([dict get $nextRecord timestamp]-[dict get $previous timestamp])/1000000.0}]
+                    set delta [expr {([dict get $nextRecord timestamp]-[dict get $previous timestamp]) / 1000000.0}]
                     if {$delta > 1.5 * max([dict get $previous sampling intervalSeconds],[dict get $nextRecord sampling intervalSeconds])} {
                         lappend gaps [dict create from [dict get $previous sampling to] to [dict get $nextRecord sampling to]]
                     }
@@ -1125,6 +1242,38 @@ nx::Class create ::ns::ns_stats -superclass ::ns::stats::Sampler {
     #   SQLiteHistory supplies the history ensemble as an object mixin;
     #   persistence remains inactive until history configure is called.
     #
+    :method startup {} {
+        #
+        #   Apply the process-wide ns/stats startup configuration once, in
+        #   the selected server's startup callback. Database modules and pool
+        #   permissions are available at this point. Reuse the public runtime
+        #   commands for validation, scheduling and persistence initialization.
+        #   Configuration is not reapplied by sampling or history callbacks.
+        #
+        set section ns/stats
+        set server [ns_config $section server [lindex [ns_info servers] 0]]
+        if {$server ne [ns_info server]} {
+            return
+        }
+        set sampling [ns_config -bool $section sampling false]
+        set pool [ns_config $section historyPool {}]
+        if {!$sampling && $pool eq ""} {
+            return
+        }
+        set interval [ns_baseunit -time [ns_config $section samplingInterval 10s]]
+        if {$sampling && ($interval<1 || $interval>3600)} {
+            error "ns/stats samplingInterval must be 1..3600 seconds"
+        }
+        if {$pool ne ""} {
+            :history configure -pool $pool \
+                -retention [ns_config $section historyRetention 24h] \
+                -maxBytes [ns_config $section historyMaxBytes 64MiB]
+        }
+        if {$sampling} {
+            :sampling start -interval $interval
+        }
+    }
+
     :public method "history persist" {} {
         #
         #   Scheduled persistence entry point. Restore the configured history
@@ -1151,4 +1300,17 @@ if {[info commands ::nx::serializer::Serializer] ne ""} {
 if {![nsf::object::exists ::ns_stats]} {
     ::ns::ns_stats create ::ns_stats
     ::ns_stats object mixins add ::ns::stats::SQLiteHistory
+}
+
+# Initialize only in the selected server, after all modules have loaded.
+# Sourcing definitions after startup must not reapply the startup settings.
+if {![ns_info started]} {
+    set statsStartupServer [ns_config ns/stats server [lindex [ns_info servers] 0]]
+    if {$statsStartupServer ni [ns_info servers]} {
+        error "ns/stats server '$statsStartupServer' is not a configured virtual server"
+    }
+    if {$statsStartupServer eq [ns_info server]} {
+        ns_atstartup {::nsf::dispatch ::ns_stats startup}
+    }
+    unset statsStartupServer
 }
