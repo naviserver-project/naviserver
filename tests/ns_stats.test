@@ -370,6 +370,92 @@ set statsTestCode [catch {
         try {::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_events WHERE reason='write-failure'}} finally {ns_db releasehandle $db}
     } -cleanup {::ns_stats_test::stop} -result 1
 
+    proc ::ns_stats_test::coverageFixture {} {
+        history
+        set db [ns_db gethandle ns_stats_test]
+        set from [expr {[clock seconds]-120}]
+        try {
+            set topology [::nsf::dispatch ::ns_stats scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
+            ::nsf::dispatch ::ns_stats sql $db {DELETE FROM ns_stats_samples}
+            set sample [ns_stats sample]
+            foreach offset {-10 0 10 20 30 40 50 60 70} {
+                insertSample $db $sample [expr {($from+$offset)*1000000}] coverage-process $topology
+            }
+        } finally {
+            ns_db releasehandle $db
+        }
+        return $from
+    }
+
+    test stats-history-paged-complete {final page certifies the whole interval independently of cursor} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
+        set from [::ns_stats_test::coverageFixture]
+    } -body {
+        set cursor 0
+        set pages 0
+        while {1} {
+            set q [ns_stats history query -from $from -to [expr {$from+60}] -limit 2 -cursor $cursor]
+            incr pages
+            if {![dict get $q more]} {break}
+            if {[dict get $q coverage windowExamined]} {error "premature window certification"}
+            set cursor [dict get $q nextCursor]
+        }
+        list $pages [dict get $q coverage windowExamined] [dict get $q coverage complete] \
+            [dict get $q coverage scope] [dict get $q coverage incompleteReasons]
+    } -cleanup {::ns_stats_test::stop} -result {3 1 1 window {}}
+
+    test stats-history-paged-gap {a gap on an earlier page remains visible on the final page} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
+        set from [::ns_stats_test::coverageFixture]
+    } -body {
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            ::nsf::dispatch ::ns_stats sql $db "DELETE FROM ns_stats_samples WHERE at=($from+10)*1000000"
+        } finally {ns_db releasehandle $db}
+        set q [ns_stats history query -from $from -to [expr {$from+60}] -cursor [expr {($from+40)*1000000}]]
+        list [dict get $q coverage windowExamined] [dict get $q coverage complete] \
+            [llength [dict get $q coverage gaps]] [dict get $q coverage incompleteReasons]
+    } -cleanup {::ns_stats_test::stop} -result {1 0 1 gaps}
+
+    test stats-history-paged-reset {earlier restart and baseline survive paging} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
+        set from [::ns_stats_test::coverageFixture]
+    } -body {
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            set topology [::nsf::dispatch ::ns_stats scalar $db {SELECT topology FROM ns_stats_samples LIMIT 1}]
+            ::nsf::dispatch ::ns_stats sql $db "DELETE FROM ns_stats_samples WHERE at>=($from+10)*1000000"
+            foreach offset {10 20 30 40 50 60 70} {
+                ::ns_stats_test::insertSample $db [ns_stats sample] [expr {($from+$offset)*1000000}] restarted $topology [expr {$offset!=10}]
+            }
+        } finally {ns_db releasehandle $db}
+        set q [ns_stats history query -from $from -to [expr {$from+60}] -cursor [expr {($from+40)*1000000}]]
+        list [dict get $q coverage complete] [llength [dict get $q coverage restartBoundaries]] \
+            [dict get $q coverage resetSamples]
+    } -cleanup {::ns_stats_test::stop} -result {0 1 1}
+
+    test stats-history-paged-eviction {eviction during paging prevents final window certification} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
+        set from [::ns_stats_test::coverageFixture]
+    } -body {
+        set first [ns_stats history query -from $from -to [expr {$from+60}] -limit 2]
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            ::nsf::dispatch ::ns_stats historyDrop $db "at=($from+10)*1000000" size
+        } finally {ns_db releasehandle $db}
+        set q [ns_stats history query -from $from -to [expr {$from+60}] -cursor [dict get $first nextCursor]]
+        list [dict get $q coverage windowExamined] [dict get $q coverage complete] \
+            [dict get $q coverage evictionOrFailureOverlap]
+    } -cleanup {::ns_stats_test::stop} -result {1 0 true}
+
+    test stats-history-storage {storage reports global retained bounds and actual SQLite usage without paging} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
+        set from [::ns_stats_test::coverageFixture]
+    } -body {
+        set s [ns_stats history storage]
+        set q [ns_stats history query -from [expr {$from+40}] -to [expr {$from+60}] -limit 1]
+        list [dict get $s sampleCount] [dict get $s retainedSeconds] \
+            [expr {[dict get $s retainedFrom]==$from-10}] \
+            [expr {[dict get $s usedBytes]>0 && [dict get $s allocatedBytes]>=[dict get $s usedBytes]}] \
+            [expr {[dict get $s databaseLimitBytes]<[dict get $s maxBytes]}] \
+            [expr {[dict get $q storage retainedFrom]==[dict get $s retainedFrom]}]
+    } -cleanup {::ns_stats_test::stop} -result {9 80.0 1 1 1 1}
+
     test stats-history-boundary-gaps {an empty window inside a gap is incomplete} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
         ::ns_stats_test::history
     } -body {

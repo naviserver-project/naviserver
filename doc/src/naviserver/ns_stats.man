@@ -130,6 +130,25 @@ failure count and last failure. This reads shared state without opening the data
 Stops future history callbacks without stopping live sampling or deleting rows.
 An already running write can complete. Disabled configured history remains queryable.
 
+[call [cmd "ns_stats history storage"]]
+Returns database-wide retainedFrom/retainedTo (epoch seconds, empty when no samples),
+retainedSeconds, sampleCount, pageSize, allocatedBytes, usedBytes, freeBytes,
+databaseLimitBytes, maxBytes, bytesPerSample and bytesPerSecond. Query in the
+history owner server. Reads SQLite metadata without decompressing sample payloads.
+Allocated bytes include reusable free pages; used bytes exclude them. A sample
+count of zero gives empty per-sample/rate estimates. These are database estimates,
+not total filesystem usage including temporary rollback journals.
+
+[para]
+Use retained bounds to measure actual history depth. maxBytes includes journal
+headroom: the database cap is approximately 45 percent of that budget, and size
+pruning targets 80 percent of the cap. With representative steady-state samples,
+estimate a desired budget as bytesPerSample times the desired sample count divided
+by 0.36, then add safety margin. Sample count is desired duration divided by sampling
+interval. Payload sizes, topology changes, gaps and restarts can change the estimate;
+repeat measurements under representative load. Changing the budget at runtime requires
+history disable followed by history configure; update ns/stats for future restarts.
+
 [call [cmd "ns_stats history query"] [option "-from epochSeconds"] [option "-to epochSeconds"] \
     [opt [option "-server server"]] [opt [option "-limit count"]] [opt [option "-cursor microseconds"]]]
 Returns historical records, referenced topologies and coverage. Query from the
@@ -146,8 +165,18 @@ gets a new instance identity; interval rates are never calculated across restart
 Gaps are detected using recorded sampling cadence, including gaps spanning an empty
 query window. Events are bounded to the latest 64; cumulative droppedThrough retains
 conservative eviction coverage. complete is conservative and requires examination
-of the whole window in one page (windowExamined), retained endpoint coverage and no
-observed gaps, resets or overlapping eviction/failure information.
+of the whole window (windowExamined), retained endpoint coverage and no observed
+gaps, resets or overlapping eviction/failure information. Intermediate pages have
+coverage.scope=page and windowExamined=false. The final page (more=false) re-examines
+the entire requested window in the same read transaction, independently of cursor,
+and returns coverage.scope=window and windowExamined=true. Earlier-page gaps and
+resets remain visible in this final summary. incompleteReasons explains failure
+to certify coverage. Reading batches is bounded; only the final page performs the
+additional whole-window scan. This describes retained data at query time, not a
+snapshot held across requests; intervening eviction can conservatively prevent
+certification. Clients must still follow every page to retrieve all records.
+The storage dictionary reports database-wide retained bounds/count and space usage,
+independent of the requested window or cursor.
 [list_end]
 
 [section EXAMPLES]

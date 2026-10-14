@@ -630,6 +630,12 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
             set last [dict get [lindex $retained end] timestamp]
         }
         set overlap [expr {$dropped ne "" && $dropped>=$from*1000000}]
+        if {!$more && $cursor>0} {
+            set window [:sampling history -from $from -to $to -server $server -limit 180]
+            set coverage [dict get $window coverage]
+            return [dict create schemaVersion 1 source memory from $from to $to records $records \
+                        nextCursor {} more false retentionSeconds 900 maxSamples 180 coverage $coverage]
+        }
         set complete [expr {$first ne "" && $first<=$from*1000000 && $last>=$to*1000000
                              && !$more && $cursor==0 && !$overlap && $gaps eq ""
                              && $restarts eq "" && $resets==0}]
@@ -1096,6 +1102,101 @@ nx::Class create ::ns::stats::SQLiteHistory {
         }
     }
 
+    :method historyWindowCoverage {db low high} {
+        # Inspect the whole window on the final page, including its boundary
+        # neighbors. Read compressed payloads in bounded batches so coverage
+        # does not depend on client-carried state or retain all snapshots.
+        set previous {}
+        set prior [:scalar $db "SELECT payload FROM ns_stats_samples WHERE at < $low ORDER BY at DESC LIMIT 1"]
+        if {$prior ne ""} {
+            set previous [:unpack $prior]
+        }
+        set gaps {}
+        set restarts {}
+        set resets 0
+        set cursor [expr {$low-1}]
+        set finished false
+        while {!$finished} {
+            set rows [:sql $db "SELECT at,payload FROM ns_stats_samples WHERE at > $cursor ORDER BY at LIMIT 128"]
+            if {$rows eq ""} {
+                break
+            }
+            foreach row $rows {
+                set cursor [dict get $row at]
+                set record [:unpack [dict get $row payload]]
+                if {$cursor<$high && ![dict get $record sampling ready]} {
+                    incr resets
+                }
+                if {$previous ne ""} {
+                    if {$cursor<$high && [dict get $previous instance] ne [dict get $record instance]} {
+                        lappend restarts [dict get $record sampling to]
+                    }
+                    set delta [expr {($cursor-[dict get $previous timestamp])/1000000.0}]
+                    if {$delta>1.5*max([dict get $previous sampling intervalSeconds],
+                                       [dict get $record sampling intervalSeconds])
+                        || ($cursor>=$high && (![dict get $record sampling ready]
+                            || [dict get $previous instance] ne [dict get $record instance]))} {
+                        lappend gaps [dict create from [dict get $previous sampling to] to [dict get $record sampling to]]
+                    }
+                }
+                if {$cursor >= $high} {
+                    set finished true
+                    break
+                }
+                set previous $record
+            }
+        }
+        return [dict create gaps $gaps restartBoundaries $restarts resetSamples $resets]
+    }
+
+    :method historyStorage {db config} {
+        # Metadata only: no sample decompression. Allocated bytes include free
+        # SQLite pages; used bytes exclude those pages. The configured budget
+        # also reserves journal headroom, so report the effective database cap.
+        set bounds [lindex [:sql $db {SELECT count(*) AS n,coalesce(min(at),0) AS first,coalesce(max(at),0) AS last FROM ns_stats_samples}] 0]
+        set first [dict get $bounds first]
+        set last [dict get $bounds last]
+        set pageSize [:scalar $db {PRAGMA page_size}]
+        set pageCount [:scalar $db {PRAGMA page_count}]
+        set freePages [:scalar $db {PRAGMA freelist_count}]
+        set used [expr {($pageCount-$freePages)*$pageSize}]
+        set span [expr {($last-$first)/1000000.0}]
+        return [dict create retainedFrom [expr {$first>0 ? $first/1000000.0 : ""}] \
+                    retainedTo [expr {$last>0 ? $last/1000000.0 : ""}] \
+                    retainedSeconds $span sampleCount [dict get $bounds n] \
+                    pageSize $pageSize allocatedBytes [expr {$pageCount*$pageSize}] \
+                    usedBytes $used freeBytes [expr {$freePages*$pageSize}] \
+                    databaseLimitBytes [expr {[:scalar $db {PRAGMA max_page_count}]*$pageSize}] \
+                    maxBytes [dict get $config maxBytes] \
+                    bytesPerSample [expr {[dict get $bounds n]>0 ? double($used)/[dict get $bounds n] : ""}] \
+                    bytesPerSecond [expr {$span>0 ? $used/$span : ""}]]
+    }
+
+    :public method "history storage" {} {
+        # Return retained bounds/count and SQLite space usage for sizing the
+        # dedicated history database. Run in the history owner server. Does
+        # not collect samples, write history or change its configuration.
+        set config [nsv_get ns_stats history]
+        if {$config eq ""} {
+            error "history is not configured"
+        }
+        if {[dict get $config owner] ne [ns_info server]} {
+            error "query history from its configured owner server"
+        }
+        set db [:historyConnect $config]
+        try {
+            :sql $db {BEGIN}
+            try {
+                set result [:historyStorage $db $config]
+            } finally {
+                :sql $db {ROLLBACK}
+            }
+            return $result
+        } finally {
+            ns_db releasehandle $db
+        }
+    }
+
     :public method "history query" {
         -from:integer,required
         -to:integer,required
@@ -1206,14 +1307,34 @@ nx::Class create ::ns::stats::SQLiteHistory {
             if {$more} {
                 set next [dict get [lindex $rows end] at]
             }
-            set complete [expr {$first > 0 && $first <= $low && $last >= $high && !$more && $cursor == 0
-                                && !$overlap && $gaps eq "" && $restarts eq "" && $resets == 0}]
+            # Intermediate coverage describes this page. The final response
+            # examines all retained intervals in the requested window again,
+            # within this read transaction, independently of the paging cursor.
+            if {!$more} {
+                set window [:historyWindowCoverage $db $low $high]
+                set gaps [dict get $window gaps]
+                set restarts [dict get $window restartBoundaries]
+                set resets [dict get $window resetSamples]
+            }
+            set complete [expr {$first>0 && $first<=$low && $last>=$high && !$more
+                                && !$overlap && $gaps eq "" && $restarts eq "" && $resets==0}]
+            set reasons {}
+            if {$more} {lappend reasons more-pages}
+            if {$first==0 || $first>$low} {lappend reasons before-retained-history}
+            if {$last<$high} {lappend reasons after-latest-sample}
+            if {$overlap} {lappend reasons eviction-or-write-failure}
+            if {$gaps ne ""} {lappend reasons gaps}
+            if {$restarts ne ""} {lappend reasons restarts}
+            if {$resets>0} {lappend reasons baseline-or-reset}
             set result [dict create \
                             schemaVersion 1 from $from to $to records $records \
                             topologies $topology nextCursor $next more $more \
+                            storage [:historyStorage $db $config] \
                             coverage [dict create \
                                           complete $complete \
-                                          windowExamined [expr {!$more && $cursor == 0}] \
+                                          windowExamined [expr {!$more}] \
+                                          scope [expr {$more ? "page" : "window"}] \
+                                          incompleteReasons $reasons \
                                           retainedFrom [expr {$first / 1000000.0}] \
                                           retainedTo [expr {$last / 1000000.0}] \
                                           gaps $gaps \
