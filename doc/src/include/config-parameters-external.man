@@ -1,0 +1,4 @@
+[comment {Optional external-module parameter fragments are appended during documentation assembly.}]
+[para]
+External modules own their parameter dictionaries and manuals in their repositories.
+Build this reference with selected module repositories to include their parameters.

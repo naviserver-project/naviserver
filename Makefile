@@ -128,7 +128,7 @@ help:
 	@echo
 
 install: all install-dirs install-include install-tcl install-modules install-config-parameters-dict \
-	install-config install-certificates install-doc install-examples install-notice
+	install-config install-certificates install-doc install-doc-tools install-examples install-notice
 
 HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
 
@@ -245,6 +245,13 @@ install-doc: $(DESTDIR)$(NAVISERVER)/pages
 		echo "or use the online documentation from https://naviserver.sourceforge.io/n/toc.html" ; \
 	fi;
 
+# Shared documentation tools for repository-local module manuals/dictionaries.
+.PHONY: install-doc-tools stage-module-docs
+install-doc-tools:
+	$(MKDIR) "$(DESTDIR)$(NAVISERVER)/share/naviserver/doc/tools"
+	$(INSTALL_DATA) doc/tools/gen-config-parameters.tcl doc/tools/build-module-doc.tcl \
+	    "$(DESTDIR)$(NAVISERVER)/share/naviserver/doc/tools/"
+
 install-examples: $(DESTDIR)$(NAVISERVER)/pages
 	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/examples
 	@for i in contrib/examples/*.adp contrib/examples/*.tcl; do \
@@ -292,8 +299,6 @@ CONFIG_PARAMETERS_INCLUDES = \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--driver--star.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--driver--postgres.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--db--driver--nsoracle.man \
-	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nsstats.man \
-	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-nssmtpd.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--sendmail.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-nscgi.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-module-params-nscp.man \
@@ -387,6 +392,16 @@ else
   # Do nothing, use the environment variable as is.
 endif
 
+# Optional external repositories are selected only for documentation assembly.
+EXTERNAL_MODULE_DOCS ?=
+DOC_STAGE ?= doc/tmp
+stage-module-docs:
+	@set -e; for repository in $(EXTERNAL_MODULE_DOCS); do \
+	    module=$$(basename "$$repository"); \
+	    $(TCLSH_PROG) doc/tools/build-module-doc.tcl --source "$$repository" \
+	        --module "$$module" --stage "$(DOC_STAGE)"; \
+	done
+
 build-doc: config-parameters-includes
 	$(RMRF) doc/html doc/man doc/tmp
 	$(MKDIR) doc/html doc/man doc/tmp
@@ -419,6 +434,7 @@ build-doc: config-parameters-includes
 	$(CP) doc/images/naviserver/*.png doc/tmp/naviserver/
 	$(CP) revproxy/doc/mann/*.png doc/tmp/revproxy/
 	$(CP) doc/commandlist_include.man doc/tmp/
+	$(MAKE) stage-module-docs DOC_STAGE=doc/tmp
 	@cd doc/tmp; \
 	for srcdir in */; do \
 	  srcdir=$${srcdir%/}; \

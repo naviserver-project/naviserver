@@ -1,0 +1,51 @@
+package require tcltest 2.2
+namespace import ::tcltest::*
+set tools [file dirname [file dirname [file normalize [info script]]]]
+set generator [file join $tools gen-config-parameters.tcl]
+source [file join $tools build-module-doc.tcl]
+proc fixture {} {
+    set root [makeDirectory module-doc-fixture]
+    file mkdir [file join $root doc tcl] [file join $root doc src include]
+    set f [open [file join $root doc tcl config-parameters.tcl] w]
+    puts $f {namespace eval ::ns_configdoc {}; dict set ::ns_configdoc::data modules fixture {value {type string default {literal-${server}-"quoted"-\path-[value]} desc {Fixture parameter.}}}}
+    close $f
+    set f [open [file join $root doc src fixture.man] w]
+    puts $f {[manpage_begin fixture n 1][moddesc Fixture][titledesc Fixture][description][section CONFIGURATION][include include/parameters.man][manpage_end]}
+    close $f
+    exec [info nameofexecutable] $::generator --config [file join $root doc tcl config-parameters.tcl] --module fixture --output [file join $root doc src include parameters.man]
+    return $root
+}
+test module-doc-check {freshness check does not rewrite the fragment} -setup {set root [fixture]} -body {
+    set fragment [file join $root doc src include parameters.man]
+    set stamp [file mtime $fragment]
+    exec [info nameofexecutable] $generator --config [file join $root doc tcl config-parameters.tcl] --module fixture --output $fragment --check
+    expr {[file mtime $fragment]==$stamp}
+} -cleanup {removeDirectory module-doc-fixture} -result 1
+
+test module-doc-stale {stale fragments fail without being regenerated} -setup {set root [fixture]} -body {
+    set fragment [file join $root doc src include parameters.man]
+    set f [open $fragment a]
+    puts $f {[comment stale]}
+    close $f
+    set failed [catch {exec [info nameofexecutable] $generator --config [file join $root doc tcl config-parameters.tcl] --module fixture --output $fragment --check} message]
+    list $failed [string match {*stale generated parameter include*} $message]
+} -cleanup {removeDirectory module-doc-fixture} -result {1 1}
+
+test module-doc-stage {staging preserves local includes and namespaced combined-reference fragments} -setup {set root [fixture]} -body {
+    set stage [file join $root stage]
+    ::ns_doc::stage $root fixture $stage
+    list [file exists [file join $stage fixture include parameters.man]] \
+        [file exists [file join $stage include fixture parameters.man]] \
+        [file exists [file join $stage include config-parameters-external.man]] \
+        [catch {::ns_doc::stage $root fixture $stage}]
+} -cleanup {removeDirectory module-doc-fixture} -result {1 1 1 1}
+
+test module-doc-render {literal dollar, quote, backslash and bracket defaults render successfully} -setup {set root [fixture]} -body {
+    ::ns_doc::main [list --source $root --module fixture --output [file join $root html]]
+    set f [open [file join $root html files fixture.html]]
+    try {set html [read $f]} finally {close $f}
+    expr {[string first {literal-${server}} $html]>=0}
+} -cleanup {removeDirectory module-doc-fixture} -result 1
+set failed $::tcltest::numTests(Failed)
+cleanupTests
+exit [expr {$failed>0}]

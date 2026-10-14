@@ -1,0 +1,131 @@
+[include version_include.man]
+[manpage_begin admin-doc n [vset version]]
+[moddesc {NaviServer Manual}]
+[titledesc {Building Core and Module Documentation}]
+[description]
+
+NaviServer and its external modules maintain documentation in their own
+repositories. Shared build tools generate parameter references from Tcl
+dictionaries and render doctools manuals as HTML and nroff. Modules can build
+standalone documentation or contribute to a combined NaviServer manual.
+Ordinary software builds use committed parameter fragments and do not require
+the documentation toolchain.
+
+[section {Source Layout and Ownership}]
+
+Core parameter descriptions remain in [file doc/tcl/config-parameters.tcl].
+Each external module owns its dictionary at the same relative location in its
+repository. A module dictionary extends [const ::ns_configdoc::data] with its
+own [const modules] entry; it does not replace the core dictionary.
+
+[example_begin]
+namespace eval ::ns_configdoc {}
+dict set ::ns_configdoc::data modules example {
+    enabled {
+        type boolean
+        default false
+        desc {Enable this example module.}
+    }
+}
+[example_end]
+
+Module repositories use this layout:
+
+[list_begin definitions]
+[def [file doc/tcl/config-parameters.tcl]]
+Authoritative parameter descriptions and metadata.
+[def [file doc/src/include/parameters.man]]
+Generated parameter reference. Commit this fragment alongside its source dictionary.
+[def [file doc/src/MODULE.man]]
+Complete module manual, including its local parameter fragment with
+[const {[include include/parameters.man]}].
+[def [file doc/html/]]
+Generated standalone HTML documentation.
+[def [file doc/man/]]
+Generated standalone nroff documentation.
+[list_end]
+
+[section {Toolchain and Module Build Targets}]
+
+NaviServer installs shared tools under [file share/naviserver/doc/tools].
+They require Tcl 8.6 or newer. Parameter regeneration also requires NSF/NX;
+rendering and validation require Tcllib doctools/dtplite.
+
+[para]
+When [const MODNAME] is set and the repository-local dictionary is present,
+[file Makefile.module] supplies these targets:
+
+[list_begin definitions]
+[def [const {make regen-config-parameters-includes}]]
+Regenerate the committed parameter fragment from the module dictionary.
+[def [const {make check-config-parameters}]]
+Compare the fragment with generated text without changing files. Missing or
+stale fragments cause an error.
+[def [const {make check-doc}]]
+Check fragment freshness and validate the complete module manuals.
+[def [const {make build-doc}]]
+Build standalone HTML and nroff documentation. Uses the committed fragment;
+regeneration remains an explicit operation.
+[list_end]
+
+[para]
+For development with source-checkout tools, use:
+
+[example_begin]
+make check-doc DOC_TOOLS=/path/to/naviserver/doc/tools
+make build-doc DOC_TOOLS=/path/to/naviserver/doc/tools
+[example_end]
+
+[para]
+The variables [const MODULE_CONFIG_PARAMETERS], [const MODULE_PARAMETER_INCLUDE],
+[const MODULE_DOC_HTML] and [const MODULE_DOC_MAN] can override the default paths.
+[const {make config-parameters-includes REGEN_CONFIG_PARAMETERS=1}] also explicitly
+regenerates module parameter documentation.
+
+[section {Installed Parameter Help}]
+
+Module installation copies its dictionary to
+[file tcl/MODULE/doc/tcl/config-parameters.tcl] beneath the NaviServer installation
+prefix. nsstats loads available installed module dictionaries after the core
+dictionary for configuration help. Missing optional dictionaries do not prevent
+displaying the configuration page. Descriptions therefore follow the installed
+module rather than a snapshot maintained in the core repository.
+
+[section {Combined Documentation}]
+
+A core-only documentation build remains independent of external repositories:
+
+[example_begin]
+make build-doc
+[example_end]
+
+Explicitly select locally available module repositories for a combined build:
+
+[example_begin]
+make build-doc EXTERNAL_MODULE_DOCS="/path/to/nsstats /path/to/nssmtpd"
+[example_end]
+
+Each repository directory name identifies its module. Assembly preserves the
+module's [file doc/src] tree beneath that name in the temporary documentation
+tree, including relative includes. It also copies the generated parameter fragment
+into a namespaced include directory and adds it to the core configuration
+reference. The dtplite merge builds combined navigation and cross-references.
+
+[para]
+The build never fetches repositories or copies module sources back into the core
+source tree. Missing or stale selected fragments are errors; run the module's
+freshness check before publication.
+
+[para]
+The shared builder also supports independent staging:
+
+[example_begin]
+tclsh build-module-doc.tcl --source /path/to/nssmtpd --module nssmtpd --stage /tmp/doc-stage
+[example_end]
+
+A staging destination must be fresh for each selected module. Duplicate module
+names fail rather than overwriting another module's documentation.
+
+[see_also admin-config admin-config-params admin-install]
+[keywords documentation doctools dtplite modules configuration parameters]
+[manpage_end]

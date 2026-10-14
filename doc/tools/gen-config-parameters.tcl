@@ -14,12 +14,13 @@ namespace eval ::ns_configdoc {}
 nx::Class create ::ns_configdoc::ConfigParamGenerator {
 
     :method init {} {
-        set :configFile     [file join /usr/local/ns modules tcl configdoc.tcl]
+        set :configFile     [file join /usr/local/ns modules tcl config-parameters.tcl]
         set :moduleName     ""
         set :sectionName    ""
         set :title          ""
         set :outputFile     ""
         set :parametersOnly 0
+        set :check 0
         set :spec           ""
         set :configParamDoc ""
     }
@@ -33,7 +34,7 @@ nx::Class create ::ns_configdoc::ConfigParamGenerator {
     }
 
     :method usage {} {
-        puts stderr {usage: gen-config-params.tcl --config FILE (--section SECTION | --module MODULE) ?--title TITLE? ?--parameters-only? --output FILE}
+        puts stderr {usage: gen-config-params.tcl --config FILE (--section SECTION | --module MODULE) ?--title TITLE? ?--parameters-only? ?--check? --output FILE}
         exit 2
     }
 
@@ -65,6 +66,9 @@ nx::Class create ::ns_configdoc::ConfigParamGenerator {
                 --parameters-only -
                 --params-only {
                     set :parametersOnly 1
+                }
+                --check {
+                    set :check 1
                 }
                 --output {
                     set :outputFile [:optionArgument argv i]
@@ -445,12 +449,18 @@ nx::Class create ::ns_configdoc::ConfigParamGenerator {
         } $text
     }
 
+    :method fmtQuoted {text} {
+        # Tcl words inside doctools macros must preserve literal dollars,
+        # quotes and backslashes, as well as brackets in parameter defaults.
+        return [string map [list \\ {\\} \$ {\$} \" {\"} \[ {\[} \] {\]}] $text]
+    }
+
     :method fmtConst {text} {
-        return "\[const \"[:fmtInline $text]\"\]"
+        return "\[const \"[:fmtQuoted $text]\"\]"
     }
 
     :method fmtEmph {text} {
-        return "\[emph \"[:fmtInline $text]\"\]"
+        return "\[emph \"[:fmtQuoted $text]\"\]"
     }
 
     :method joinLinks {links} {
@@ -482,6 +492,21 @@ nx::Class create ::ns_configdoc::ConfigParamGenerator {
     }
 
     :method writeFile {content} {
+        if {${:check}} {
+            if {![file readable ${:outputFile}]} {
+                error "missing generated parameter include: ${:outputFile}"
+            }
+            set channel [open ${:outputFile}]
+            try {
+                set existing [read $channel]
+            } finally {
+                close $channel
+            }
+            if {$existing ne $content} {
+                error "stale generated parameter include: ${:outputFile}; run make regen-config-parameters-includes"
+            }
+            return
+        }
         set dir [file dirname ${:outputFile}]
         if {$dir ne "."} {
             file mkdir $dir

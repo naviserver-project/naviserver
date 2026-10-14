@@ -37,6 +37,9 @@
 #     INSTALL     Extra install directive(s)
 #     CLEAN       Extra clean directive(s)
 #     DESTDIR     Root directory for install
+#     MODULE_CONFIG_PARAMETERS  Module-owned dictionary (doc/tcl/config-parameters.tcl)
+#     MODULE_PARAMETER_INCLUDE  Committed doctools fragment (doc/src/include/parameters.man)
+#     DOC_TOOLS   Installed/shared documentation tools, overridable for source development
 #
 #     At least one of PGM, MOD, LIBNM, TCL, or TCL_INIT must be defined.  For backwards compatibility,
 #     MODOBJS will default to OBJS and MODINST can be used for module install.
@@ -180,6 +183,12 @@ ifdef MODULE_INFO_HEADER
     $(MODOBJS) $(LIBOBJS) $(PGMOBJS): $(MODULE_INFO_HEADER)
 endif
 
+# Install module-owned documentation metadata independently of rendered manuals.
+MODULE_CONFIG_PARAMETERS ?= doc/tcl/config-parameters.tcl
+ifneq ($(wildcard $(MODULE_CONFIG_PARAMETERS)),)
+    INSTALL += install-config-parameters
+endif
+
 all build: $(BUILD)
 
 ifdef TCL_INIT
@@ -277,3 +286,47 @@ cppcheck:
 	cppcheck --verbose --force --enable=all $(CFLAGS_INCLUDE) *.c
 
 .PHONY: clean-mod clean-lib clean-alib clean-pgm FORCE_MODULE_INFO
+
+# Module-owned parameter documentation. Ordinary builds check only that the
+# committed fragment exists; regeneration and rendering are explicit operations.
+# Override DOC_TOOLS to use a NaviServer source checkout during development.
+DOC_TOOLS ?= $(NAVISERVER)/share/naviserver/doc/tools
+MODULE_CONFIG_PARAMETERS ?= doc/tcl/config-parameters.tcl
+MODULE_PARAMETER_INCLUDE ?= doc/src/include/parameters.man
+MODULE_DOC_HTML ?= doc/html
+MODULE_DOC_MAN ?= doc/man
+
+ifneq ($(wildcard $(MODULE_CONFIG_PARAMETERS)),)
+    ifndef MODNAME
+        $(error MODNAME is required for module parameter documentation)
+    endif
+    .PHONY: config-parameters-includes regen-config-parameters-includes check-config-parameters build-doc check-doc install-config-parameters
+    all build: config-parameters-includes
+    REGEN_CONFIG_PARAMETERS ?= 0
+    ifeq ($(REGEN_CONFIG_PARAMETERS),1)
+    config-parameters-includes: regen-config-parameters-includes
+    else
+    config-parameters-includes:
+	@if test ! -r "$(MODULE_PARAMETER_INCLUDE)"; then \
+	    echo "missing generated module parameter include: $(MODULE_PARAMETER_INCLUDE)"; \
+	    echo "run make regen-config-parameters-includes"; exit 1; \
+	fi
+    endif
+    regen-config-parameters-includes:
+	$(TCLSH_PROG) "$(DOC_TOOLS)/gen-config-parameters.tcl" \
+	    --config "$(MODULE_CONFIG_PARAMETERS)" --module "$(MODNAME)" --output "$(MODULE_PARAMETER_INCLUDE)"
+    check-config-parameters:
+	$(TCLSH_PROG) "$(DOC_TOOLS)/gen-config-parameters.tcl" \
+	    --config "$(MODULE_CONFIG_PARAMETERS)" --module "$(MODNAME)" --output "$(MODULE_PARAMETER_INCLUDE)" --check
+    build-doc: config-parameters-includes
+	$(TCLSH_PROG) "$(DOC_TOOLS)/build-module-doc.tcl" --source "$(CURDIR)" \
+	    --module "$(MODNAME)" --output "$(MODULE_DOC_HTML)" --format html
+	$(TCLSH_PROG) "$(DOC_TOOLS)/build-module-doc.tcl" --source "$(CURDIR)" \
+	    --module "$(MODNAME)" --output "$(MODULE_DOC_MAN)" --format nroff
+    check-doc: check-config-parameters
+	$(TCLSH_PROG) "$(DOC_TOOLS)/build-module-doc.tcl" --source "$(CURDIR)" \
+	    --module "$(MODNAME)" --output "$(MODULE_DOC_HTML)" --format validate
+    install-config-parameters: config-parameters-includes
+	$(MKDIR) "$(DESTDIR)$(INSTTCL)/$(MODNAME)/doc/tcl"
+	$(INSTALL_DATA) "$(MODULE_CONFIG_PARAMETERS)" "$(DESTDIR)$(INSTTCL)/$(MODNAME)/doc/tcl/config-parameters.tcl"
+endif

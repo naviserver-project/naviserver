@@ -193,8 +193,11 @@ belongs to a larger subsystem. For example, [const nsdbpg] and
 the [const nsdb] interface.
 
 
-[include include/config-parameters-module-nssmtpd.man]
-[include include/config-parameters-module-nsstats.man]
+[para]
+For dictionary ownership, standalone module builds and combined documentation
+assembly, see [uri admin-doc.html {Building Core and Module Documentation}].
+
+[include include/config-parameters-external.man]
 
 
 [section {Legacy Command Configuration}]
