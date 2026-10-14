@@ -191,7 +191,7 @@ independent of the requested window or cursor.
  ns_stats sampling stop
 [example_end]
 
-[section CONFIGURATION]
+[section {SQLite Pool Configuration}]
 [example_begin]
  # Load nsdb as a server module and configure nsdbsqlite normally.
  ns_section ns/db/pools {
