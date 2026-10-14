@@ -368,29 +368,93 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         return [:sampling status]
     }
 
-    :public method sample {{-server {}}} {
+    :public method sample {{-server {}} {-window 0}} {
         #
         #   Return the latest published sample, updating its reported age and
         #   running state. Before any publication, return a dictionary with
         #   sampling readiness false and no interval observations.
         #
         #   An optional server argument restricts virtual-server data; CPU
-        #   measurements remain process-wide. Does not collect observations
-        #   or advance the baseline. The internal raw baseline is omitted
+        #   measurements remain process-wide. Without -window, does not collect
+        #   observations or advance the baseline. With -window (0..900 seconds, time units
+        #   accepted), collect a fresh snapshot and compare it with the nearest retained
+        #   endpoint to that age (within half a sampling interval). Missing
+        #   history, gaps or sampler restarts leave readiness false. The
+        #   measured elapsedSeconds reports the actual selected period.
+        #   The internal raw baseline is omitted
         #   from the returned dictionary.
         #
         if {$server ne "" && $server ni [ns_info servers]} {
             error "unknown server: $server"
         }
-        set result [nsv_get ns_stats pair]
+        set window [ns_baseunit -time $window]
+        if {$window < 0 || $window > 900} {
+            error "display window must be 0..900 seconds"
+        }
+        :locked {
+            set result [nsv_get ns_stats pair]
+            set recent [expr {$window > 0 ? [nsv_get ns_stats recent] : {}}]
+        }
         if {$result eq ""} {
             return [dict create schemaVersion 1 \
                         sampling {ready false from {} to {} elapsedSeconds {} ageSeconds {} reset false} \
                         servers {} availability {}]
         }
+        if {$window > 0} {
+            set current [:snapshot]
+            set target [expr {[dict get $current timestamp]-$window*1000000}]
+            set baseline {}
+            set distance Inf
+            foreach record $recent {
+                if {[dict get $record timestamp] >= [dict get $current timestamp]
+                    || [dict get $record instance] ne [dict get $result instance]} {
+                    continue
+                }
+                set difference [expr {abs([dict get $record timestamp]-$target)}]
+                if {$difference < $distance} {
+                    set baseline $record
+                    set distance $difference
+                }
+            }
+            set cadence [dict get $result sampling intervalSeconds]
+            set reason {}
+            if {$baseline eq "" || $distance > 0.5*$cadence*1000000} {
+                set baseline {}
+                set reason insufficient-history
+            } else {
+                set previous $baseline
+                foreach record $recent {
+                    if {[dict get $record timestamp] <= [dict get $baseline timestamp]
+                        || [dict get $record timestamp] > [dict get $current timestamp]} {
+                        continue
+                    }
+                    if {[dict get $record instance] ne [dict get $result instance]
+                        || ![dict get $record sampling ready]
+                        || [dict get $record timestamp]-[dict get $previous timestamp]
+                           > 1.5*max($cadence,[dict get $previous sampling intervalSeconds])*1000000} {
+                        set reason sampling-gap
+                        set baseline {}
+                        break
+                    }
+                    set previous $record
+                }
+            }
+            if {$baseline ne "" && [dict get $current timestamp]-[dict get $previous timestamp]
+                > 1.5*$cadence*1000000} {
+                set baseline {}
+                set reason sampling-gap
+            }
+            # Older retained records may predate CPU baseline retention.
+            if {$baseline ne "" && ![dict exists $baseline cpu]} {
+                dict set baseline cpu {}
+            }
+            set result [:calculate $current $baseline $cadence [dict get $result instance]]
+            dict set result sampling requestedSeconds $window
+            dict set result sampling incompleteReason $reason
+        }
         dict set result sampling running [dict get [nsv_get ns_stats control] running]
         dict set result sampling ageSeconds [expr {max(0,([clock microseconds]-[dict get $result timestamp])/1000000.0)}]
-        dict unset result raw
+        if {[dict exists $result raw]} {dict unset result raw}
         # CPU is process-wide; filtering server pools never attributes CPU to a vhost.
         return [:selectServer $result $server]
     }
@@ -532,8 +596,9 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
 
     :method retainSample {sample} {
         # Called while holding the existing ns_stats coordination lock.
-        # Keep compact interval metrics, not the raw baseline or per-thread maps.
-        set record [dict remove $sample raw cpu]
+        # Keep bounded endpoint CPU counters for display-window calculations.
+        # Raw baselines and derived per-thread maps are not retained.
+        set record [dict remove $sample raw]
         if {[dict exists $record cpuPercent threads]} {
             dict unset record cpuPercent threads
         }
@@ -621,7 +686,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
                     lappend gaps [dict create from [dict get $previous sampling to] to [dict get $record sampling to]]
                 }
             }
-            lappend records [:selectServer $record $server false]
+            lappend records [:selectServer [dict remove $record cpu] $server false]
             set previous $record
         }
         # Retained bounds refer to the buffer, independently of the selected page.

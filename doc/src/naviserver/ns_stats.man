@@ -39,8 +39,8 @@ are not collected. CPU counters are microseconds, matched by OS thread ID
 and creation time. Numeric allocator properties are bytes; they are not process RSS.
 No active-request URLs, peer addresses or thread callback arguments are retained.
 
-[call [cmd "ns_stats sample"] [opt [option "-server server"]]]
-Reads the latest published record without collecting or modifying it. sampling
+[call [cmd "ns_stats sample"] [opt [option "-server server"]] [opt [option "-window duration"]]]
+Without [option -window], reads the latest published record without collecting or modifying it. sampling
 contains ready, from/to epoch seconds, measured elapsedSeconds, ageSeconds, reset,
 intervalSeconds and running. Without a baseline, ready is false and interval
 values are empty. Published records add per-pool and per-driver deltas/rates,
@@ -50,6 +50,18 @@ include threads with a valid baseline. Counter decreases invalidate the affected
 metric and list it in resetCounters. New threads do not inherit old CPU baselines.
 Unavailable values are empty Tcl values with availability/readiness information;
 JSON consumers should represent these as null, never as zero.
+
+[para]
+[option -window] selects a display period from the bounded recent memory buffer,
+without changing the sampling schedule. The default 0 uses the latest single
+interval. Values up to 900 seconds accept time units, for example 60s.
+A fresh snapshot is compared with the retained endpoint nearest the requested
+age, within half a sampling interval. This does not publish a sample or advance
+the background sampler baseline. Rates, request timing averages and CPU
+use these endpoints; current gauges come from the fresh snapshot.
+The actual period is reported in sampling.elapsedSeconds. Insufficient history,
+a gap or a sampler restart leaves ready false and reports incompleteReason;
+the command does not silently substitute a shorter period. SQLite is not needed.
 
 [para]
 -server filters server/pool data. Drivers, CPU and allocator data remain explicitly

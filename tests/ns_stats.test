@@ -31,6 +31,40 @@ namespace eval ::ns_stats_test {
         ::ns_stats sampling tick
     }
 
+    proc windowSamples {} {
+        variable windowMixins
+        set windowMixins [ns_stats info object mixins]
+        if {![nsf::object::exists ::ns::stats::TestWindowSnapshot]} {
+            nx::Class create ::ns::stats::TestWindowSnapshot {
+                :public method snapshot {args} {
+                    return [nsv_get ns_stats_test_window current]
+                }
+            }
+        }
+        ns_stats object mixins add ::ns::stats::TestWindowSnapshot
+        ns_stats sampling stop
+        nsv_set ns_stats recent {}
+        set previous {}
+        for {set i 0} {$i <= 6} {incr i} {
+            set current [dict create schemaVersion 1 timestamp [expr {1000000000+$i*10000000}] \
+                process {pid 1 bootTime 1} servers [dict create test [dict create pools [dict create default \
+                    [dict create counters [dict create requests [expr {$i*$i*10}] runtime [expr {$i*2.0}]]]]]] \
+                drivers {} cpu [dict create tid [dict create name -conn:test:default:1- \
+                    user [expr {$i*1000000}] system 0]] availability {cpu true}]
+            set record [ns_stats calculate $current $previous 10 window-test]
+            dict set record raw $current
+            nsv_set ns_stats pair $record
+            ns_stats eval [list :retainSample $record]
+            set previous $current
+        }
+        nsv_set ns_stats_test_window current $current
+    }
+
+    proc windowCleanup {} {
+        ns_stats object mixins set $::ns_stats_test::windowMixins
+        nsv_unset -nocomplain ns_stats_test_window
+    }
+
     proc history {} {
         variable pool
         ns_stats history disable
@@ -129,6 +163,67 @@ set statsTestCode [catch {
     test stats-command-object {the public command is an NX object} -returnCodes {ok error} -constraints ns_stats -body {
         list [nsf::object::exists ::ns_stats] [::ns_stats info class] [info procs ::ns_stats]
     } -result {1 ::ns::ns_stats {}}
+
+    test stats-window-six-intervals {display window compares endpoints without changing sampling} -returnCodes {ok error} -constraints ns_stats -setup {
+        ::ns_stats_test::windowSamples
+    } -body {
+        set before [ns_stats sampling status]
+        set sample [ns_stats sample -window 60s]
+        list [dict get $sample sampling ready] [dict get $sample sampling elapsedSeconds] \
+            [dict get $sample servers test pools default deltas requests] \
+            [dict get $sample servers test pools default rates requests] \
+            [dict get $sample cpuPercent groups connection] \
+            [expr {[dict get $before running] eq [dict get [ns_stats sampling status] running]
+                   && [dict get $before interval] == [dict get [ns_stats sampling status] interval]}]
+    } -cleanup {::ns_stats_test::windowCleanup} -result {true 60.0 360 6.0 10.0 1}
+
+    test stats-window-insufficient {a display period cannot silently shrink to retained history} -returnCodes {ok error} -constraints ns_stats -setup {
+        ::ns_stats_test::windowSamples
+    } -body {
+        set sample [ns_stats sample -window 120s]
+        list [dict get $sample sampling ready] [dict get $sample sampling incompleteReason] \
+            [dict get $sample servers test pools default rates requests]
+    } -cleanup {::ns_stats_test::windowCleanup} -result {false insufficient-history {}}
+
+    test stats-window-gap {missing samples invalidate the selected period} -returnCodes {ok error} -constraints ns_stats -setup {
+        ::ns_stats_test::windowSamples
+    } -body {
+        nsv_set ns_stats recent [lreplace [nsv_get ns_stats recent] 3 3]
+        set sample [ns_stats sample -window 60]
+        list [dict get $sample sampling ready] [dict get $sample sampling incompleteReason]
+    } -cleanup {::ns_stats_test::windowCleanup} -result {false sampling-gap}
+
+    test stats-window-restart {a display period cannot cross a sampler restart} -returnCodes {ok error} -constraints ns_stats -setup {
+        ::ns_stats_test::windowSamples
+    } -body {
+        set records [nsv_get ns_stats recent]
+        for {set i 0} {$i < 4} {incr i} {
+            set record [lindex $records $i]
+            dict set record instance older-instance
+            lset records $i $record
+        }
+        nsv_set ns_stats recent $records
+        set sample [ns_stats sample -window 60]
+        list [dict get $sample sampling ready] [dict get $sample sampling incompleteReason]
+    } -cleanup {::ns_stats_test::windowCleanup} -result {false insufficient-history}
+
+    test stats-window-current-endpoint {display counters and period end at a fresh observation rather than the last scheduled tick} -returnCodes {ok error} -constraints ns_stats -setup {
+        ::ns_stats_test::windowSamples
+    } -body {
+        set current [nsv_get ns_stats_test_window current]
+        dict incr current timestamp 2000000
+        dict set current servers test pools default counters requests 400
+        nsv_set ns_stats_test_window current $current
+        set before [nsv_get ns_stats pair]
+        set sample [ns_stats sample -window 60s]
+        list [dict get $sample timestamp] [dict get $sample sampling elapsedSeconds] \
+            [dict get $sample servers test pools default deltas requests] \
+            [expr {$before eq [nsv_get ns_stats pair]}]
+    } -cleanup {::ns_stats_test::windowCleanup} -result {1062000000 62.0 400 1}
+
+    test stats-window-invalid {display period is bounded by the recent buffer duration} -returnCodes {ok error} -constraints ns_stats -body {
+        list [catch {ns_stats sample -window -1}] [catch {ns_stats sample -window 901s}]
+    } -result {1 1}
 
     test stats-recent-history {published samples have bounded memory history without raw CPU maps} -returnCodes {ok error} -constraints ns_stats -setup {
         nsv_set ns_stats recent {}
