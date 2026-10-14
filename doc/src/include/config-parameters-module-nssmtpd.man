@@ -158,8 +158,9 @@ Tcl command prefix returning a list of final envelope destinations.
 
 [para]
  The supplied smtpd::resolvefilealiases resolver uses aliasformat,
- aliasfile, aliasdomains and rejectunknownrecipients. Explicit -format, -file,
- -domains and -rejectunknown options override these settings. Arguments
+ aliasfile, aliasdomains, bouncevalidproc, bouncetarget and rejectunknownrecipients.
+ Explicit -format, -file, -domains, -bouncevalidproc, -bouncetarget and
+ -rejectunknown options override these settings. Arguments
  are parsed by ns_parseargs. aliasformat defaults to virtual and
  rejectunknownrecipients to false. File and domains must each be
  supplied by an option or module setting. The file resolver supports
@@ -173,6 +174,100 @@ Tcl command prefix returning a list of final envelope destinations.
  recipientcheckproc with rejectunknownrecipients true where strict
  incoming validation is required. Custom alias callbacks must accept
  -recipient and the optional -rejectunknown override.
+
+
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "authdetailheaders"]"]
+Buffer built-in relay DATA up to maxdata. Use the dynamic ns_set
+ returned by authdetailsproc to prepend informational link headers.
+ Use smtpd::authdetails. Adds memory use and diagnostic latency; overrides
+ fast-proxy buffer omission. The default streaming path is unchanged.
+ Only Nssmtpd-Link-Findings, Nssmtpd-Link-Host-Mismatch and
+ Nssmtpd-Link-Embedded-Redirect with bounded ASCII values are accepted.
+ The original wire DATA is preserved. Callback errors omit additions
+ without rejecting mail. smtpd::authdetails skips existing names and names
+ listed in any DKIM/ARC message signature h= tag, including oversigned
+ fields; malformed signatures suppress all additions. Custom callbacks
+ must provide equivalent protection. Ownership of a returned set transfers
+ to nssmtpd, which frees it; an empty string means no additions.
+ Received diagnostic fields remain untrusted. No Subject/body rewriting or cryptographic verification.
+ Applies only to the built-in relay, not custom delivery callbacks.
+
+
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "authdetailsproc"]"]
+Optional informational callback after DATA headers have been parsed,
+ before dataproc. Receives the SMTP session ID. Empty disables it.
+ Callback errors are logged without rejecting mail; callbacks must
+ not change recipients, flags or SMTP replies. Relay acceptance may
+ already have occurred, so this is not a rejection policy hook.
+ Use smtpd::authdetails with eventlogging true to record SPF results
+ via spfproc and DKIM signature key availability via ns_dns. Requires
+ the updated nsdns lookup -details -jointxt -timeout interface for
+ DNS diagnostics. nsstats joins authentication events into transaction
+ Details without extra rows. Local peers skip SPF and DKIM checks.
+ Also inspects HTML links for hostname-label mismatches and embedded
+ cross-host redirect URLs, using Tcllib mime and NaviServer HTML/URL
+ parsers. No URLs are fetched; only hostname evidence is logged.
+ Messages over 256 KiB are skipped; traversal is limited to 64 MIME
+ parts and 100 anchors per HTML part. Missing dependencies, parse
+ errors and inspection limits are recorded. Link findings are
+ informational and may also occur in legitimate mail.
+ SPF uses the actual socket peer, never a supplied Received header.
+ Key checks cover at most eight signatures with a shared five-second
+ DNS deadline. SPF uses the configured evaluator's timeout separately.
+ DKIM cryptographic verification and DMARC policy evaluation are not
+ performed. A present key does not imply a valid signature. No DNS
+ diagnostics run when both eventlogging and authdetailheaders are disabled.
+
+
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "bouncetarget"]"]
+Bare envelope address to receive validated bounces, for example
+ webmaster@openacs.org. It can itself be a file alias. Required when
+ bouncevalidproc is configured; a missing or malformed target causes
+ a configuration error when the resolver is called. An explicit
+ -bouncetarget option overrides this setting. Without bouncevalidproc
+ this setting has no effect. Normal alias expansion and limits apply.
+
+
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "bouncevalidproc"]"]
+Optional command prefix used by smtpd::resolvefilealiases for an
+ original recipient within aliasdomains with no matching file alias.
+ Exact aliases and virtual catch-alls take precedence. Receives
+ the recipient as a positional argument. Return a boolean: true
+ forwards to bouncetarget; false retains the usual unknown-recipient
+ rejection or passthrough behaviour. Errors or non-boolean results
+ cause temporary SMTP failure (451). The destination undergoes
+ normal file alias expansion, cycle checks and recipient limits.
+ The callback also runs when -rejectunknown is false, including
+ ns_smtpd resolve and local submissions. It must not send mail or
+ modify SMTP sessions. Recipient policy still applies. An explicit
+ -bouncevalidproc option overrides this setting; unset or empty disables
+ the fallback. This setting alone does not enable aliasproc.
+ OpenACS installations can use acs_mail_lite::bounce_address_valid_p.
+ This forwards validated bounces; it does not update bounce counters.
 
 
 
@@ -227,6 +322,16 @@ OpenSSL cipher list for TLS 1.2 and older STARTTLS connections
 [item] Type: [const "string"]
 [list_end]
 
+[def "Parameter name: [emph "datapolicyproc"]"]
+Optional Tcl command prefix receiving a context dictionary after DATA is parsed and before message forwarding or dataproc. Contains id, phase data, peeraddr, sender, helo and recipients (after alias expansion). Returns action accept, defer or reject with optional reason/message, like recipientpolicyproc; trusted local clients bypass it. Use smtpd::policychain to accumulate findings and express combined policies: smtpd::spfpolicy collects SPF without rejecting, smtpd::dkimkeypolicy collects key diagnostics and sets dkim-no-key only when every provided signature key is definitively absent. Unsigned messages, lookup errors, invalid tags and signature-limit exhaustion do not set that finding; keys are not cryptographically verified. Configuring this hook buffers relay DATA up to maxdata before forwarding, preserving original wire bytes. Rejection returns 550 5.7.1 for the whole message; errors defer with 451. Decisions are logged as message-policy with accumulated findings. Empty preserves existing streaming behavior
+
+
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[item] Default: [const ""]
+[list_end]
+
 [def "Parameter name: [emph "dataproc"]"]
 Tcl callback procedure invoked for processing SMTP message data
 
@@ -247,6 +352,75 @@ Tcl callback procedure invoked for SMTP error handling
 [item] Default: [const "smtpd::error"]
 [list_end]
 
+[def "Parameter name: [emph "eventlogfile"]"]
+SMTP event log filename. Relative paths use the server log directory on NaviServer 5, or the home logs directory on older versions. The resolved path is available in the configuration database. Single-line records use access-log-style positional fields with the same timestamp convention as the SMTP send log, fixed recipient, action, reason and comma-separated targets fields; custom metadata uses trailing key=value tokens. Empty fields use a dash. Spaces, backslashes and control bytes within fields are escaped as \xHH, allowing readers to split on spaces. This log covers incoming SMTP callbacks rather than direct ns_smtpd send operations
+
+
+
+[list_begin itemized]
+[item] Type: [const "path"]
+[item] Default: [const "smtpevents-${server}.log"]
+[list_end]
+
+[def "Parameter name: [emph "eventlogging"]"]
+Enable a separate structured SMTP event log for incoming recipient decisions, applied alias expansions, greylisting outcomes, transaction outcomes and custom Tcl policy events. Transaction-end records are folded into matching nsstats Details and include the last command, DATA byte count and available relay reply; relay acceptance does not establish mailbox delivery. Does not change mail policy or the existing SMTP send log. The nsstats SMTP Events page displays charts and a filterable event table. Records contain envelope addresses but no message bodies or subjects; recipient acceptance does not establish final delivery
+
+
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
+[def "Parameter name: [emph "eventlogmaxbackup"]"]
+Maximum number of rotated SMTP event log files to retain. Inherits logmaxbackup when omitted, even when send logging is disabled; the fallback is 100
+
+
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "100"]
+[list_end]
+
+[def "Parameter name: [emph "eventlogroll"]"]
+Enable daily rotation of the SMTP event log when eventlogging is enabled. Inherits logroll when omitted, even when send logging is disabled; the fallback is true
+
+
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "true"]
+[list_end]
+
+[def "Parameter name: [emph "eventlogrollfmt"]"]
+Optional strftime suffix format overriding logrollfmt for SMTP event log rotation. When omitted, inherit logrollfmt even if SMTP send logging is disabled; when neither format is configured, use numbered backups
+
+
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[list_end]
+
+[def "Parameter name: [emph "eventlogrollhour"]"]
+Hour of day, from 0 through 23, for daily SMTP event log rotation. Inherits logrollhour when omitted, even when send logging is disabled; the fallback is 0
+
+
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "0"]
+[list_end]
+
+[def "Parameter name: [emph "eventlogrollonsignal"]"]
+Rotate the SMTP event log on SIGHUP when eventlogging is enabled. Inherits logrollonsignal when omitted, even when send logging is disabled; the fallback is false
+
+
+
+[list_begin itemized]
+[item] Type: [const "boolean"]
+[item] Default: [const "false"]
+[list_end]
+
 [def "Parameter name: [emph "greylistdelay"]"]
 Positive minimum number of seconds from first attempt to an accepted greylist retry. Early retries do not reset the first-attempt time. Used by smtpd::greylist when explicitly enabled via recipientpolicyproc
 
@@ -255,6 +429,16 @@ Positive minimum number of seconds from first attempt to an accepted greylist re
 [list_begin itemized]
 [item] Type: [const "integer"]
 [item] Default: [const "300"]
+[list_end]
+
+[def "Parameter name: [emph "greylistfile"]"]
+Greylist snapshot file, defaulting to smtpgreylist-${server}.state in the server log directory. Relative names use that directory; absolute paths override it. Empty selects the default. The directory must exist and be writable; use persistent storage. Restored before startup and atomically replaced on orderly shutdown. Preserves pending delays and passed lifetimes; expired and future-dated entries are discarded, and greylistmaxentries bounds reloads. Missing files start empty; read/write failures are logged. Use a separate file per server instance; abrupt termination loses changes since the last shutdown
+
+
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[item] Default: [const "smtpgreylist-${server}.state"]
 [list_end]
 
 [def "Parameter name: [emph "greylistlifetime"]"]
@@ -285,6 +469,16 @@ Seconds from first attempt before a pending greylist tuple expires. Must exceed 
 [list_begin itemized]
 [item] Type: [const "integer"]
 [item] Default: [const "14400"]
+[list_end]
+
+[def "Parameter name: [emph "greylistspfexceptions"]"]
+Optional list of exact case-sensitive envelope-sender/original-recipient pairs eligible for an SPF-verified greylist exception. Null senders are not eligible: their HELO identity would need a separate constraint. For example: {{noreply-dmarc-support@google.com webmaster@openacs.org}}. Used only by smtpd::greylist. A matching pair bypasses greylisting only when smtpd::checkspf returns pass; Other results and evaluator errors fall back to ordinary greylisting. Unmatched pairs cause no SPF lookup unless an explicit policy rule requests it. Requires spfproc. An accepted exception is logged with reason verified-report-sender. This does not bypass relay authorization, alias validation or later checks and does not authenticate a report's contents
+
+
+
+[list_begin itemized]
+[item] Type: [const "list"]
+[item] Default: [const ""]
 [list_end]
 
 [def "Parameter name: [emph "heloproc"]"]
@@ -357,7 +551,7 @@ Enable automatic rotation of the SMTP sending log
 [list_end]
 
 [def "Parameter name: [emph "logrollfmt"]"]
-Suffix format used when rotating the SMTP sending log file
+Optional strftime suffix format used when rotating SMTP send and event logs. The event log inherits this setting unless eventlogrollfmt is configured. Without a format, use numbered backups
 
 
 
@@ -451,13 +645,13 @@ Tcl callback receiving the SMTP session ID after relay authorization
 [list_end]
 
 [def "Parameter name: [emph "readtimeout"]"]
-Receive timeout in seconds. The local receive implementation shares a deadline across readiness retries for one buffer refill, not across an entire SMTP line or transaction
+Receive timeout, accepting time units and fractional seconds. Unitless values are seconds. The local receive implementation shares a deadline across readiness retries for one buffer refill, not across an entire SMTP line or transaction
 
 
 
 [list_begin itemized]
-[item] Type: [const "integer"]
-[item] Default: [const "60"]
+[item] Type: [const "time"]
+[item] Default: [const "60s"]
 [list_end]
 
 [def "Parameter name: [emph "recipientpolicyproc"]"]
@@ -469,9 +663,9 @@ Optional Tcl command prefix called by smtpd::checkpolicy from the
 
 [para]
  Receives a dictionary with id (SMTP session ID), peeraddr (socket
- peer IP), sender (envelope sender, empty for a null sender), and
- recipient (original envelope recipient). Returns a dictionary with
- action accept, defer (451 4.7.1), or reject (550 5.7.1). An optional
+ peer IP), helo (client HELO/EHLO identity), sender (envelope sender, empty for a null sender), and
+ recipient (original envelope recipient), and phase (rcpt). Returns a dictionary with
+ action accept, defer (451 4.7.1), or reject (550 5.7.1). Use smtpd::policychain with a list of configuration scripts to collect findings and make explicit decisions. Each script sees context and findings, returns continue/accept/defer/reject or a decision dictionary; Tcl continue/break/return are also supported. The chain accepts at end and defers on errors, recording its findings and deciding rule. An optional
  message for defer/reject must contain 1 to 400 printable ASCII
  characters without newlines. Errors or invalid results cause
  451 4.3.0 Recipient policy unavailable. Only the current recipient
@@ -482,8 +676,8 @@ Optional Tcl command prefix called by smtpd::checkpolicy from the
  The supplied smtpd::greylist callback uses a mutex-protected shared
  table of exact peer-IP, sender and original-recipient tuples. A
  mature retry grants a sliding allowance for that tuple. State is
- bounded and in memory only: restarting the server clears it and
- may delay subsequent deliveries again. No database is required.
+ bounded and persisted via greylistfile across orderly restarts.
+ No database is required.
  At capacity, new tuples pass without being stored; existing entries
  remain. Notice logs record deferrals, rejections and new/retry/
  expired/capacity greylist decisions. Legitimate delivery is delayed,
@@ -493,7 +687,7 @@ Optional Tcl command prefix called by smtpd::checkpolicy from the
 [para]
  smtpd::init initializes greylisting when a recipient policy is
  configured. Custom initproc callbacks using greylisting must call
- smtpd::greylistinit once at startup; this clears its state.
+ smtpd::greylistinit once at startup; repeated initialization preserves state.
 
 
 
@@ -544,6 +738,16 @@ Recipient-domain relay rules loaded by smtpd::init. Permit untrusted peers to ad
 [item] Default: [const "localhost"]
 [list_end]
 
+[def "Parameter name: [emph "segvtimeout"]"]
+Delay before terminating after a trapped SEGV or panic when SEGV handling is enabled. Accepts time units and fractional seconds; unitless values are seconds. The default -1 terminates without waiting
+
+
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "-1"]
+[list_end]
+
 [def "Parameter name: [emph "spamd"]"]
 Spamd or SpamAssassin daemon used for filtering messages
 
@@ -553,14 +757,24 @@ Spamd or SpamAssassin daemon used for filtering messages
 [item] Type: [const "address"]
 [list_end]
 
-[def "Parameter name: [emph "writetimeout"]"]
-Timeout in seconds used for outbound SMTP and spamd connection establishment. The current local send implementation uses separate retry waits; this setting is not an overall write or SMTP transaction deadline
+[def "Parameter name: [emph "spfproc"]"]
+Optional SPF evaluator command prefix used by smtpd::checkspf. It does not impose rejection by itself; explicit policychain rules interpret the findings from smtpd::spfpolicy. The SPF Tcl interface requires NaviServer 5.0 or newer for ns_ip valid; disabled SPF introduces no such dependency. Receives -ip (actual socket peer), -sender (envelope sender, empty for null sender), and -helo (client SMTP identity). Returns pass, fail, softfail, neutral, none, temperror, or permerror. Empty disables evaluation. The smtpd::spfauto callback lazily selects the Tcl evaluator first, then external spfquery, caching the selection (including unavailable) per interpreter. It returns empty when neither is available; checkspf reports NSSMTPD SPF DEPENDENCY and greylisting proceeds without an exception. Selection does not perform DNS queries or external execution and never retries another backend after an SPF result or execution error. Restart after changing installed backend availability. No configuration-time detection is needed. The optional Tcl backend smtpd::spf requires nsdns with lookup -details -jointxt -timeout (October 2026 interface update), without an external program. It supports IPv4/IPv6, SPF mechanisms, redirect and domain macros; exp text is not fetched because this interface returns only a result. Its -timeout option defaults to 20 seconds (maximum 120). DNS responses alone are shared through ns_memoize, respecting DNS TTLs with a five-minute cap; negative caching requires an SOA, transient errors are not cached, and per-evaluation lookup limits also apply to cache hits. The external smtpd::spfquery backend defaults to the spfquery executable in the helper directory returned by ns_info bindir, using the stable link created by install-ns. Override it with -command /absolute/path. Other optional arguments are -timeout seconds (default 10) and -pool name (default smtpd-spf). It requires the libspf2 command-line utility and the nsproxy module, but no native SPF build support or external timeout program. ns_proxy eval bounds the evaluation wait; the same timeout applies separately when obtaining a proxy handle. Handles are released on success and failure. Use /usr/bin/spfquery.libspf2 from Debian package spfquery or /usr/bin/spfquery from Alpine package libspf2-tools; the Perl utility is incompatible. Queries occupy an SMTP worker until completion or the deadline. Execution failures raise errors and retain normal greylisting. The optional smtpd::libspf2 backend requires building nssmtpd with WITH_SPF2=1 and a maintained libspf2 installation. Its DNS resolution is synchronous and uses system resolver timeouts; custom evaluators can implement their own DNS caching and time limits. SPF evaluates sending authorization, not message content or DKIM/DMARC alignment
 
 
 
 [list_begin itemized]
-[item] Type: [const "integer"]
-[item] Default: [const "60"]
+[item] Type: [const "list"]
+[item] Default: [const ""]
+[list_end]
+
+[def "Parameter name: [emph "writetimeout"]"]
+Timeout for outbound SMTP and spamd connection establishment and for each local send operation, including readiness and TLS retries. Accepts time units and fractional seconds; unitless values are seconds. This is not an overall SMTP transaction deadline
+
+
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "60s"]
 [list_end]
 
 [list_end]
