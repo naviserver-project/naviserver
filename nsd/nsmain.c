@@ -48,6 +48,11 @@ static const char *configServersSection = "ns/servers";
  */
 
 static Ns_ThreadProc CmdThread;
+static Tcl_ExitProc CmdExit;
+
+/* Protected by nsconf.state.lock once the command thread has started. */
+static int commandExitCode;
+static bool commandShutdownRequested;
 
 static void UsageError(const char *msg, ...) NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
 static void UsageMsg(int exitCode)           NS_GNUC_NORETURN;
@@ -97,7 +102,7 @@ int
 Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 {
     Args           cmd;
-    int            sig, optionIndex;
+    int            sig, optionIndex, exitCode;
     Ns_Time        timeout;
     Ns_Set        *set;
     bool           testMode = NS_FALSE;
@@ -322,6 +327,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     if (mode == 'c') {
         int i;
+
+        commandExitCode = 0;
+        commandShutdownRequested = NS_FALSE;
 
         cmd.argv = ns_calloc(((size_t)argc - (size_t)optionIndex) + 2u, sizeof(char *));
         cmd.argc = 0;
@@ -1183,11 +1191,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     StatusMsg(exiting_state);
 
     /*
-     * The main thread exits gracefully on NS_SIGTERM.
-     * All other signals are propagated to the caller.
+     * The main thread exits gracefully on NS_SIGTERM, preserving the
+     * command shell's exit status. Other signals are propagated to the caller.
      */
 
-    return (sig == NS_SIGTERM) ? 0 : sig;
+    Ns_MutexLock(&nsconf.state.lock);
+    exitCode = commandExitCode;
+    Ns_MutexUnlock(&nsconf.state.lock);
+
+    return (sig == NS_SIGTERM) ? exitCode : sig;
 }
 
 
@@ -1293,6 +1305,7 @@ NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     } else {
 
         Ns_MutexLock(&nsconf.state.lock);
+        commandShutdownRequested = NS_TRUE;
         if (timeoutPtr != NULL) {
             nsconf.shutdowntimeout.sec = timeoutPtr->sec;
             nsconf.shutdowntimeout.usec = timeoutPtr->usec;
@@ -1587,7 +1600,51 @@ CmdThread(void *arg)
     signal(SIGPIPE, SIG_IGN);
 #endif
 
+    /*
+     * Tcl_Main calls Tcl_Exit after a script or stdin reaches EOF. Do not
+     * let it finalize process-wide Tcl state while server threads are
+     * still running. The application exit proc requests orderly shutdown
+     * and finalizes only the calling thread through Ns_ThreadExit().
+     */
+    (void)Tcl_SetExitProc(CmdExit);
     Tcl_Main((TCL_SIZE_T)cmd->argc, cmd->argv, NsTclAppInit);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CmdExit --
+ *
+ *      Handle Tcl_Exit in command mode without finalizing process-wide Tcl
+ *      state. Tcl supplies the integer exit status encoded as ClientData.
+ *
+ * Results:
+ *      Does not return.
+ *
+ * Side effects:
+ *      Saves the command exit status, requests server shutdown unless already
+ *      requested, and terminates the calling thread via Ns_ThreadExit(). The
+ *      main thread remains responsible for completing process shutdown.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CmdExit(ClientData clientData)
+{
+    bool requestShutdown;
+
+    Ns_MutexLock(&nsconf.state.lock);
+    commandExitCode = PTR2INT(clientData);
+    requestShutdown = !commandShutdownRequested && !nsconf.state.stopping;
+    commandShutdownRequested = NS_TRUE;
+    Ns_MutexUnlock(&nsconf.state.lock);
+
+    if (requestShutdown) {
+        NsSendSignal(NS_SIGTERM);
+    }
+    Ns_ThreadExit(NULL);
 }
 
 /*
