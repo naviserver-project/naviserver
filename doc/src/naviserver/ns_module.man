@@ -1,0 +1,121 @@
+[include version_include.man]
+[manpage_begin ns_module n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+[titledesc {Module context, metadata, Tcl dependencies, and module reload}]
+[description]
+[para]
+The [cmd ns_module] command describes the module whose Tcl library is currently
+being initialized. NaviServer sources [file init.tcl] before the other Tcl files
+in that module's library.
+
+[list_begin definitions]
+[call [cmd ns_module] [method require] [opt [option {-module module}]] [opt [arg {file ...}]]]
+Called at the top level of a module definition file, ensures that the named
+prerequisite files have been sourced before execution continues. Files are
+relative to the specified module, or the current module when [option -module]
+is omitted. With [option -module] and no filenames, requires all top-level
+[const *.tcl] definition files of that module. The module must be configured
+for the current virtual server. Circular dependencies raise an error.
+
+Private files override shared files with the same relative name. Each file is
+loaded once during startup, including files loaded early through dependencies.
+Equivalent relative names, such as [const base.tcl] and [const ./base.tcl],
+share one dependency identity. Redundant separators and current-directory
+components are normalized before dependency registration and loading.
+Absolute paths and parent-directory components are rejected.
+[const init.tcl] cannot be required.
+
+[call [cmd ns_module] [method reload] [arg module]]
+Re-sources the module's top-level Tcl definition files, plus previously loaded
+files in that module and all files transitively dependent on them, including
+files in other modules. Prerequisites are sourced before their consumers and
+each affected file is sourced once per execution of the loader. Dependencies
+are recorded by [method require] and refreshed when files are sourced again.
+Whole-module requirements record the definition files present when evaluated.
+
+The operation uses [cmd {ns_eval -sync}] for blueprint publication and normal
+interpreter propagation. It waits for publication, not for all active
+interpreters to adopt the new blueprint. The result is a list of affected
+[const {module file}] pairs; recursive prerequisite loading can change the
+actual source order.
+
+Source errors stop the operation and propagate to the caller; the failed
+operation does not publish a new blueprint. Module context and dependency
+bookkeeping are restored on errors. Arbitrary effects of executed Tcl code,
+such as shared-variable changes, cannot be rolled back. Files removed since
+loading cause an error rather than silently leaving stale definitions.
+
+[const init.tcl] retains its existing startup behavior and is excluded from
+reload. Other Tcl files must be suitable for repeated evaluation. Procedures
+removed from a source file are not automatically deleted from interpreters.
+Do not register schedules or create process resources in reloadable files
+unless the initialization is explicitly safe to repeat. The existing
+[cmd ns_eval] implementation can evaluate the loader both in the caller and
+in a worker interpreter.
+
+
+[call [cmd ns_module] [const name] [opt [arg value]]]
+Return or set the current module name. NaviServer establishes this context
+before sourcing its Tcl library.
+[call [cmd ns_module] [const shared] [opt [arg value]]]
+Return or set the shared module library directory.
+[call [cmd ns_module] [const private] [opt [arg value]]]
+Return or set the private, server-specific module library directory.
+The [const library] subcommand is an alias for [const private].
+[call [cmd ns_module] [const version] [opt [arg value]]]
+Return the current module's version, or declare it when [arg value] is supplied.
+[call [cmd ns_module] [const tag] [opt [arg value]]]
+Return the current module's source revision/build tag, or declare it when
+[arg value] is supplied.
+[call [cmd ns_module] [const clear]]
+Clear the initialization context. This does not remove registered metadata.
+[list_end]
+
+[para]
+Version and tag declarations require nonempty values and are accepted only during
+server startup. Each field can be declared once; repeating a declaration raises
+an error, even when the value is identical. Fields already supplied by a binary
+module's [const Ns_ModuleGetInfo] callback cannot be replaced. Mixed C/Tcl
+modules should use their existing callback metadata.
+
+[para]
+Declared fields are retained in the loaded-module registry and returned by
+[cmd {ns_server modules}]. Tcl-module metadata is scoped to the virtual server
+being initialized. Clearing the context or creating a new interpreter does not
+clear these fields. Reading a field that has not been declared returns an empty
+string; accessing version or tag without a current module raises an error.
+
+[example_begin]
+ # In a Tcl module's init.tcl:
+ ns_module version 0.1
+ ns_module tag nsmcp-0.1-12-g0123456789ab
+
+ # After startup:
+ dict get [lb]ns_server modules[rb] nsmcp
+[example_end]
+
+[para]
+The module build include [file Makefile.module] can generate an entry point from
+[arg TCL_INIT] (a template file), writing [arg TCL_INIT_FILE] (default
+[file init.tcl]). Set [arg NS_MODULE_VERSION] to the release version and use
+[const @NS_MODULE_VERSION@] and [const @NS_MODULE_TAG@] in the template.
+The build tag defaults to [cmd {git describe --abbrev=12 --always --dirty=+}].
+An explicit [arg NS_MODULE_TAG] overrides it. Without Git, the generated
+[cmd {ns_module tag}] declaration is retained, or [const unknown] is used when
+no recorded tag exists. Include the generated entry point in distribution
+archives so installation preserves the source identity. The generated file is
+added to the shared Tcl files installed by [cmd {make install}].
+
+[example_begin]
+ # In a module definition file:
+ ns_module require -module mod1 file1.tcl file2.tcl
+ ns_module require -module mod2
+ ns_module require foo1.tcl foo2.tcl
+
+ # From an administrative interpreter:
+ ns_module reload mod1
+[example_end]
+
+[see_also ns_server ns_moduleload ns_library ns_eval ns_ictl]
+[keywords module metadata version startup reload Tcl dependencies]
+[manpage_end]
