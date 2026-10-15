@@ -1845,7 +1845,6 @@ NsTclAppInit(Tcl_Interp *interp)
 
     } else {
         (void) Tcl_SetVar(interp, "tcl_rcFileName", "~/.nsdrc", TCL_GLOBAL_ONLY);
-        (void) Tcl_Eval(interp, "proc exit {} ns_shutdown");
         (void) PopInterp(servPtr, interp);
     }
 
