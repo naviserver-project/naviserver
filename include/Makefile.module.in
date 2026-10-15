@@ -100,10 +100,16 @@ endif
 # Optional module-owned templates share one release version and build tag.
 # Native/mixed modules retain metadata from Ns_ModuleGetInfo(); automatic Tcl
 # metadata discovery is limited to modules without a binary component.
+# Evaluate discovery immediately: ifdef tests the stored value, so a deferred
+# wildcard expression would enable templates even when no matching file exists.
 ifndef MOD
-    TCL_VERSION ?= $(wildcard version.tcl.in)
+    ifeq ($(origin TCL_VERSION), undefined)
+        TCL_VERSION := $(wildcard version.tcl.in)
+    endif
 endif
-VERSION_SVG ?= $(wildcard version.svg.in)
+ifeq ($(origin VERSION_SVG), undefined)
+    VERSION_SVG := $(wildcard version.svg.in)
+endif
 
 ifdef TCL_INIT
     TCL_INIT_FILE ?= init.tcl
