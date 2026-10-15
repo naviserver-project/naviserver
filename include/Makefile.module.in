@@ -23,7 +23,11 @@
 #     TCL         List of module shared Tcl files
 #     TCL_INIT    Optional init.tcl template (@NS_MODULE_VERSION@, @NS_MODULE_TAG@)
 #     TCL_INIT_FILE  Generated entry point (default init.tcl)
-#     NS_MODULE_VERSION  Release version for a Tcl entry point
+#     TCL_VERSION Optional metadata template (default version.tcl.in if present, Tcl modules only)
+#     TCL_VERSION_FILE Generated metadata (default version.tcl)
+#     VERSION_SVG Optional version badge template (default version.svg.in if present)
+#     VERSION_SVG_FILE Generated badge (default .version.svg)
+#     NS_MODULE_VERSION  Release version used by metadata and badge templates
 #     NS_MODULE_TAG  Build tag (default git describe; archives retain recorded tag)
 #     LIBNM       Root name of dynamic library (without lib prefix or extension)
 #     LIBOBJS     List of library object files (required with LIBNM)
@@ -93,18 +97,38 @@ ifdef INCLUDED_IN_NAVISERVER
     endif
 endif
 
-# Tcl modules may generate their entry point from a template. Mixed modules
-# retain metadata from Ns_ModuleGetInfo() and need no Tcl declarations.
+# Optional module-owned templates share one release version and build tag.
+# Native/mixed modules retain metadata from Ns_ModuleGetInfo(); automatic Tcl
+# metadata discovery is limited to modules without a binary component.
+ifndef MOD
+    TCL_VERSION ?= $(wildcard version.tcl.in)
+endif
+VERSION_SVG ?= $(wildcard version.svg.in)
+
 ifdef TCL_INIT
-    ifndef NS_MODULE_VERSION
-        $(error NS_MODULE_VERSION not specified for TCL_INIT)
-    endif
     TCL_INIT_FILE ?= init.tcl
     TCL += $(TCL_INIT_FILE)
     BUILD += $(TCL_INIT_FILE)
+endif
+ifdef TCL_VERSION
+    TCL_VERSION_FILE ?= version.tcl
+    TCL += $(TCL_VERSION_FILE)
+    BUILD += $(TCL_VERSION_FILE)
+endif
+ifdef VERSION_SVG
+    VERSION_SVG_FILE ?= .version.svg
+    TCL += $(VERSION_SVG_FILE)
+    BUILD += $(VERSION_SVG_FILE)
+endif
+
+ifneq ($(strip $(TCL_INIT)$(TCL_VERSION)$(VERSION_SVG)),)
+    ifndef NS_MODULE_VERSION
+        $(error NS_MODULE_VERSION not specified for module version templates)
+    endif
     ifndef NS_MODULE_TAG
         NS_MODULE_TAG := $(shell git describe --abbrev=12 --always --dirty=+ 2>/dev/null \
-            || sed -n 's/^ns_module tag {\(.*\)}$$/\1/p' $(TCL_INIT_FILE) 2>/dev/null)
+            || sed -n -e 's/^ns_module tag {\(.*\)}$$/\1/p' \
+                -e 's/^set [^ ]*::tag {\(.*\)}$$/\1/p' $(TCL_VERSION_FILE) $(TCL_INIT_FILE) 2>/dev/null)
         ifeq ($(strip $(NS_MODULE_TAG)),)
             NS_MODULE_TAG = unknown
         endif
@@ -191,6 +215,8 @@ endif
 
 all build: $(BUILD)
 
+# Generate only the templates a module supplies. Preserve timestamps when the
+# expanded contents are unchanged, including builds from distribution archives.
 ifdef TCL_INIT
 $(TCL_INIT_FILE): $(TCL_INIT) FORCE_MODULE_INFO
 	@sed -e 's|@NS_MODULE_VERSION@|$(NS_MODULE_VERSION)|g' \
@@ -204,6 +230,31 @@ $(TCL_INIT_FILE): $(TCL_INIT) FORCE_MODULE_INFO
 install-tcl: $(TCL_INIT_FILE)
 endif
 
+ifdef TCL_VERSION
+$(TCL_VERSION_FILE): $(TCL_VERSION) FORCE_MODULE_INFO
+	@sed -e 's|@NS_MODULE_VERSION@|$(NS_MODULE_VERSION)|g' \
+	     -e 's|@NS_MODULE_TAG@|$(NS_MODULE_TAG)|g' $(TCL_VERSION) > $@.tmp
+	@if test -r $@ && cmp -s $@.tmp $@; then \
+	    $(RM) $@.tmp; \
+	else \
+	    mv $@.tmp $@; \
+	fi
+
+install-tcl: $(TCL_VERSION_FILE)
+endif
+
+ifdef VERSION_SVG
+$(VERSION_SVG_FILE): $(VERSION_SVG) FORCE_MODULE_INFO
+	@sed -e 's|@NS_MODULE_VERSION@|$(NS_MODULE_VERSION)|g' \
+	     -e 's|@NS_MODULE_TAG@|$(NS_MODULE_TAG)|g' $(VERSION_SVG) > $@.tmp
+	@if test -r $@ && cmp -s $@.tmp $@; then \
+	    $(RM) $@.tmp; \
+	else \
+	    mv $@.tmp $@; \
+	fi
+
+install-tcl: $(VERSION_SVG_FILE)
+endif
 ifdef MODULE_INFO_HEADER
 $(MODULE_INFO_HEADER): FORCE_MODULE_INFO
 	@{ \

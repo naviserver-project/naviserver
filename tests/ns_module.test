@@ -36,4 +36,10 @@ test ns_module-metadata-7 {module context is required} -body {
     ns_module version 2.0
 } -returnCodes {ok error} -result {ns_module: no module is being initialized}
 
+test ns_module-metadata-8 {version data can be sourced again without redefining metadata} -body {
+    set before [dict get [ns_server modules] module-metadata]
+    source [file join [ns_library private module-metadata] version.tcl]
+    list $::module_metadata::version [expr {$before eq [dict get [ns_server modules] module-metadata]}]
+} -returnCodes {ok error} -result {1.2.3 1}
+
 cleanupTests

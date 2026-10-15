@@ -1,6 +1,7 @@
 # Metadata registration takes place through the real Tcl module loader.
-ns_module version 1.2.3
-ns_module tag test-[ns_info server]
+source [file join [file dirname [info script]] version.tcl]
+ns_module version $::module_metadata::version
+ns_module tag $::module_metadata::tag
 
 set checks {}
 foreach field {version tag} {

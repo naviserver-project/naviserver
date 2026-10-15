@@ -45,6 +45,48 @@ Generated standalone HTML documentation.
 Generated standalone nroff documentation.
 [list_end]
 
+[section {Module Versions and README Badges}]
+
+Define [const NS_MODULE_VERSION] once in the module Makefile, before including
+[file Makefile.module]. If a Tcl module supplies [file version.tcl.in], the
+shared rules generate and install [file version.tcl]. This file defines only
+module-owned variables; the module's [file init.tcl] sources it and registers
+metadata before initializing other module functionality:
+
+[example_begin]
+# version.tcl.in
+namespace eval ::example {}
+set ::example::version {@NS_MODULE_VERSION@}
+set ::example::tag {@NS_MODULE_TAG@}
+
+# init.tcl
+source [file join [file dirname [info script]] version.tcl]
+ns_module version $::example::version
+ns_module tag $::example::tag
+[example_end]
+
+The ordinary loader may subsequently source [file version.tcl] again. Since it
+only assigns variables, this does not register metadata twice. Modules supporting
+older cores can wrap the two [cmd ns_module] calls in a single [cmd catch].
+
+[para]
+If [file version.svg.in] is present, the same version value generates
+[file .version.svg]. Reference that local SVG from a normal Markdown README
+with [const {![Version](.version.svg)}]. Both templates substitute
+[const @NS_MODULE_VERSION@] and [const @NS_MODULE_TAG@]. The tag defaults to
+[const {git describe}]; outside Git, the existing generated Tcl metadata
+preserves the recorded tag. Unchanged generated contents retain their timestamps.
+Commit both templates and their generated outputs for source archives and
+README rendering without a build.
+
+[para]
+The input/output names can be overridden with [const TCL_VERSION],
+[const TCL_VERSION_FILE], [const VERSION_SVG] and [const VERSION_SVG_FILE].
+The existing [const TCL_INIT]/[const TCL_INIT_FILE] entry-point templates remain
+supported. Binary and mixed modules keep metadata in their native callback;
+automatic [file version.tcl.in] discovery is disabled when [const MOD] is set.
+They can still use the SVG template without declaring metadata twice.
+
 [section {Toolchain and Module Build Targets}]
 
 NaviServer installs shared tools under [file share/naviserver/doc/tools].
