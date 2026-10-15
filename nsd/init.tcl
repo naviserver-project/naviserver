@@ -47,7 +47,13 @@ proc __ns_sourcefile {file} {
     set msg "nsd/init.tcl: loading $file"
     ns_log debug $msg
 
-    set code [catch {source $file} err]
+    if {[ns_module name] ne "" && [file tail $file] ne "init.tcl"} {
+        set code [catch {
+            _ns_module_source [list [ns_module name] [file tail $file]]
+        } err]
+    } else {
+        set code [catch {source $file} err]
+    }
     if {$code == 1} {
         ns_log error "$msg failed: $err\n$::errorCode\n$::errorInfo"
     }
@@ -286,11 +292,19 @@ proc ns_reinit {} {
 #
 # ns_module --
 #
-#   Set or return information about the currently initializing
-#   module (useful only from within startup files).
+#   Module context, metadata, source dependencies, and Tcl module reload.
 #
-
 proc ns_module {key args} {
+
+    if {$key eq "require"} {
+        return [_ns_module_require {*}$args]
+    }
+    if {$key eq "reload"} {
+        if {[llength $args] != 1} {
+            error "usage: ns_module reload module"
+        }
+        return [ns_eval -sync _ns_module_reload [lindex $args 0]]
+    }
 
     if {[llength $args] > 1} {
         error {wrong # args: should be "ns_module key ?value?"}
@@ -341,6 +355,186 @@ proc ns_module {key args} {
     }
 
     return $val
+}
+
+#
+# Module source dependencies are interpreter state and travel with the blueprint.
+# Keys are {module relative-file}; edges point from consumer to prerequisite.
+# The stack is temporary and is restored even when sourcing fails.
+#
+namespace eval ::ns_module {
+    variable dependencies [dict create]
+    variable loaded [dict create]
+    variable stack {}
+}
+
+proc _ns_module_files {module} {
+    set files [dict create]
+    foreach kind {shared private} {
+        set directory [ns_library $kind $module]
+        foreach path [lsort [glob -nocomplain -directory $directory *.tcl]] {
+            set name [file tail $path]
+            if {$name ne "init.tcl"} {
+                dict set files $name $path
+            }
+        }
+    }
+    return [lsort [dict keys $files]]
+}
+
+proc _ns_module_key {module name} {
+    if {[file pathtype $name] ne "relative"
+        || ".." in [file split $name]
+        || [file extension $name] ne ".tcl"
+        || [file tail $name] eq "init.tcl"
+    } {
+        error "invalid reloadable module file: $name"
+    }
+    # Normalize logical names, independently of the shared/private location.
+    # Do not resolve filesystem links: the key must retain override semantics.
+    set parts {}
+    foreach part [file split $name] {
+        if {$part ne "."} {lappend parts $part}
+    }
+    set normalized [join $parts /]
+    if {[file pathtype $normalized] ne "relative"} {
+        error "invalid reloadable module file: $name"
+    }
+    return [list $module $normalized]
+}
+
+proc _ns_module_path {key} {
+    lassign [_ns_module_key {*}$key] module name
+    foreach kind {private shared} {
+        set path [file join [ns_library $kind $module] $name]
+        if {[file isfile $path] && [file readable $path]} {
+            return $path
+        }
+    }
+    error "module file not found: $module/$name"
+}
+
+proc _ns_module_source {key} {
+    global _module
+    variable ::ns_module::dependencies
+    variable ::ns_module::loaded
+    variable ::ns_module::stack
+
+    set key [_ns_module_key {*}$key]
+    if {$key in $stack} {
+        error "module dependency cycle: [join [concat $stack [list $key]] { -> }]"
+    }
+    if {[dict exists $loaded $key]} {return}
+    set path [_ns_module_path $key]
+    set previousLoaded $loaded
+    set previousDependencies $dependencies
+    set previousContext [expr {[info exists _module] ? [array get _module] : {}}]
+    lassign $key module name
+    lappend stack $key
+    dict set dependencies $key {}
+    unset -nocomplain _module
+    array set _module [list name $module shared [ns_library shared $module] \
+                           private [ns_library private $module]]
+    set code [catch {uplevel #0 [list source $path]} result options]
+    unset -nocomplain _module
+    array set _module $previousContext
+    set stack [lrange $stack 0 end-1]
+    if {$code != 0} {
+        set loaded $previousLoaded
+        set dependencies $previousDependencies
+        return -options $options $result
+    }
+    dict set loaded $key 1
+    return
+}
+
+proc _ns_module_require {args} {
+    variable ::ns_module::dependencies
+    variable ::ns_module::stack
+
+    if {[llength $stack] == 0} {
+        error "ns_module require must be called from a module definition file"
+    }
+    set current [lindex $stack end]
+    set module [lindex $current 0]
+    if {[lindex $args 0] eq "-module"} {
+        if {[llength $args] < 2 || [lindex $args 1] eq ""} {
+            error "usage: ns_module require ?-module module? ?file ...?"
+        }
+        set module [lindex $args 1]
+        set args [lrange $args 2 end]
+        if {[llength $args] == 0} {
+            set args [_ns_module_files $module]
+        }
+    } elseif {[llength $args] == 0} {
+        error "usage: ns_module require ?-module module? file ?file ...?"
+    }
+    if {$module ni [ns_ictl getmodules]} {error "unknown module: $module"}
+    foreach name $args {
+        set key [_ns_module_key $module $name]
+        _ns_module_path $key
+        set edges [dict get $dependencies $current]
+        if {$key ni $edges} {
+            dict lappend dependencies $current $key
+        }
+        _ns_module_source $key
+    }
+}
+
+proc _ns_module_reload {module} {
+    variable ::ns_module::dependencies
+    variable ::ns_module::loaded
+    variable ::ns_module::stack
+
+    if {[llength $stack]} {
+        error "cannot reload while sourcing a module file"
+    }
+    if {$module ni [ns_ictl getmodules]} {
+        error "unknown module: $module"
+    }
+    set affected {}
+    foreach name [_ns_module_files $module] {
+        lappend affected [_ns_module_key $module $name]
+    }
+    # Include previously loaded files too, so removed files produce an error.
+    foreach key [dict keys $loaded] {
+        if {[lindex $key 0] eq $module && $key ni $affected} {
+            lappend affected $key
+        }
+    }
+    set growing 1
+    while {$growing} {
+        set growing 0
+        dict for {key edges} $dependencies {
+            if {$key in $affected} {
+                continue
+            }
+            foreach edge $edges {
+                if {$edge in $affected} {
+                    lappend affected $key
+                    set growing 1
+                    break
+                }
+            }
+        }
+    }
+    foreach key $affected {_ns_module_path $key}
+    set oldLoaded $loaded
+    set oldDependencies $dependencies
+    foreach key $affected {
+        dict unset loaded $key
+    }
+    set code [catch {
+        foreach key $affected {
+            _ns_module_source $key
+        }
+    } result options]
+    if {$code != 0} {
+        set loaded $oldLoaded
+        set dependencies $oldDependencies
+        return -options $options $result
+    }
+    return $affected
 }
 
 proc _ns_load_server_modules {{network 0}} {
