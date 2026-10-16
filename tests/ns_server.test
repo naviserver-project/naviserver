@@ -69,8 +69,8 @@ test ns_server-1.2.8 {syntax: ns_server map} -body {
 
 test ns_server-1.2.9 {syntax: ns_server mapped} -body {
     ns_server mapped
-} -returnCodes error -result {wrong # args: should be "ns_server mapped ?-all? ?-exact? ?-noinherit? /mapspec/"}
-# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? mapped ?-all? ?-exact? ?-noinherit? /mapspec/"}
+} -returnCodes error -result {wrong # args: should be "ns_server mapped ?-all? ?-context /setId/? ?-exact? ?-noinherit? /mapspec/"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? mapped ?-all? ?-context /setId/? ?-exact? ?-noinherit? /mapspec/"}
 
 test ns_server-1.2.10 {syntax: ns_server maxthreads} -body {
     ns_server maxthreads 2 2 -
@@ -630,3 +630,88 @@ cleanupTests
 #    tcl-indent-level: 4
 #    indent-tabs-mode: nil
 # End:
+
+# Explicit lookup contexts must not depend on an active HTTP connection.
+test ns_server-mapped-context-header {header predicates affect pool lookup and -all consistently} -setup {
+    ns_server -pool emergency map {GET /__mapped_context/* {user-agent *bot*}}
+    set bot [ns_set create User-Agent googlebot]
+    set human [ns_set create user-agent Mozilla]
+} -body {
+    list [ns_server mapped -context $bot {GET /__mapped_context/page}] \
+        [dict get [ns_server mapped -all -context $bot {GET /__mapped_context/page}] pool] \
+        [ns_server mapped -context $human {GET /__mapped_context/page}] \
+        [ns_server mapped {GET /__mapped_context/page}]
+} -cleanup {
+    ns_server -pool emergency unmap {GET /__mapped_context/* {user-agent *bot*}}
+    ns_set free $bot
+    ns_set free $human
+} -returnCodes {ok error} -result {emergency emergency {} {}}
+
+test ns_server-mapped-context-ip {IP predicates use x-ns-ip without modifying the supplied set} -setup {
+    ns_server -pool emergency map {GET /__mapped_ip/* {X-NS-ip 192.0.2.0/24}}
+    set context [ns_set create x-ns-ip 192.0.2.10 user-agent test]
+} -body {
+    list [ns_server mapped -context $context {GET /__mapped_ip/page}] \
+        [ns_server mapped -context $context {GET /__mapped_ip/page}] \
+        [ns_set get $context x-ns-ip] [ns_set size $context]
+} -cleanup {
+    ns_server -pool emergency unmap {GET /__mapped_ip/* {X-NS-ip 192.0.2.0/24}}
+    ns_set free $context
+} -returnCodes {ok error} -result {emergency emergency 192.0.2.10 2}
+
+test ns_server-mapped-context-invalid {invalid address is rejected and the caller's set survives} -setup {
+    set context [ns_set create x-ns-ip not-an-ip]
+} -body {
+    set code [catch {ns_server mapped -context $context {GET /}} message]
+    list $code $message [ns_set get $context x-ns-ip]
+} -cleanup {ns_set free $context} -returnCodes {ok error} -result {1 {invalid IP address 'not-an-ip' specified} not-an-ip}
+
+test ns_server-mapped-context-set {invalid set handles are rejected by the option converter} -body {
+    ns_server mapped -context no-such-context {GET /}
+} -returnCodes {ok error} -match glob -result {*no such set*}
+
+test ns_server-mapped-context-exact {exact lookup does not inherit a context-constrained parent mapping} -setup {
+    ns_server -pool emergency map {GET /__mapped_exact {user-agent *bot*}}
+    set context [ns_set create user-agent googlebot]
+} -body {
+    list [ns_server mapped -context $context {GET /__mapped_exact/child}] \
+        [ns_server mapped -exact -context $context {GET /__mapped_exact/child}]
+} -cleanup {
+    ns_server -pool emergency unmap {GET /__mapped_exact {user-agent *bot*}}
+    ns_set free $context
+} -returnCodes {ok error} -result {emergency {}}
+
+test ns_server-mapped-context-handler {-all applies context to handler lookup as well as the pool} -setup {
+    ns_register_proc GET /__mapped_handler {ns_return 200 text/plain plain-handler}
+    ns_register_proc -constraints {user-agent *bot*} GET /__mapped_handler {ns_return 200 text/plain bot-handler}
+    set bot [ns_set create user-agent googlebot]
+    set human [ns_set create user-agent Mozilla]
+} -body {
+    list [string match {*bot-handler*} [dict get [ns_server mapped -all -context $bot {GET /__mapped_handler}] handler]] \
+        [string match {*plain-handler*} [dict get [ns_server mapped -all -context $human {GET /__mapped_handler}] handler]]
+} -cleanup {
+    ns_unregister_op -allconstraints GET /__mapped_handler
+    ns_set free $bot
+    ns_set free $human
+} -returnCodes {ok error} -result {1 1}
+
+test ns_server-mapped-context-ipv6 {IPv6 context reaches the native address predicate} -setup {
+    ns_server -pool emergency map {GET /__mapped_v6/* {X-NS-ip 2001:db8::/32}}
+    set context [ns_set create x-ns-ip 2001:db8::10]
+} -body {
+    list [ns_server mapped -context $context {GET /__mapped_v6/page}] [ns_set get $context x-ns-ip]
+} -cleanup {
+    ns_server -pool emergency unmap {GET /__mapped_v6/* {X-NS-ip 2001:db8::/32}}
+    ns_set free $context
+} -returnCodes {ok error} -result {emergency 2001:db8::10}
+
+test ns_server-mapped-context-noinherit {-noinherit preserves the existing direct-mapping behavior with an explicit context} -setup {
+    ns_server -pool emergency map -noinherit {GET /__mapped_noinherit}
+    set context [ns_set create user-agent googlebot]
+} -body {
+    list [ns_server mapped -noinherit -context $context {GET /__mapped_noinherit}] \
+        [ns_server mapped -noinherit -context $context {GET /__mapped_noinherit/child}]
+} -cleanup {
+    ns_server -pool emergency unmap -noinherit {GET /__mapped_noinherit}
+    ns_set free $context
+} -returnCodes {ok error} -result {emergency {}}

@@ -58,6 +58,7 @@ secure contents accepted in the host header field of a request.
 	[opt [option "-server [arg server]"]] \
 	[cmd mapped] \
 	[opt [option "-all"]] \
+	[opt [option "-context [arg setId]"]] \
 	[opt [option "-exact"]] \
 	[opt [option "-noinherit"]] \
 	[arg "mapspec"] \
@@ -69,6 +70,24 @@ default connection pool.  When the [option -all] is specified, a dict
 is returned containing the keys [const pool] and [const handler]
 indicating the connection pool and the request handler handling this
 request.
+
+[para]
+The optional [option -context] supplies an [cmd ns_set] of request headers for
+context-constrained pool and handler lookup, like [cmd {ns_urlspace get -context}].
+Header names are case-insensitive; header value patterns use case-sensitive Tcl
+glob matching. The special [const x-ns-ip] entry supplies a client IPv4 or IPv6
+address for address constraints. An invalid address or set handle is an error.
+The supplied set remains unchanged and can be reused. Without [option -context],
+lookup remains context-free; it does not implicitly use the current connection.
+Returned mappings describe current routing, not historical request routing.
+
+[example_begin]
+set context [lb]ns_set create User-Agent googlebot x-ns-ip 192.0.2.10[rb]
+ns_server mapped -context $context {GET /bugtracker/}
+ns_server mapped -all -context $context {GET /bugtracker/}
+ns_set free $context
+[example_end]
+
 
 [para] When the option [option -exact] is used, the inheritance is
 deactivated, and only the values are returned directly assigned to the

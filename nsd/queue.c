@@ -1346,7 +1346,9 @@ ServerMapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
  *
  * ServerMappedObjCmd, subcommand of NsTclServerObjCmd --
  *
- *    Implements "ns_server ... mapped ".
+ *    Implements "ns_server ... mapped". An explicit -context set supplies
+ *    request headers and optionally x-ns-ip for both pool and handler lookup.
+ *    Without -context, retain the context-free lookup behavior.
  *
  * Results:
  *    Tcl result.
@@ -1362,10 +1364,12 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 {
     int          result = TCL_OK, noinherit = 0, exact = 0, all = 0;
     Tcl_Obj     *mapspecObj = NULL;
+    Ns_Set      *context = NULL;
     char        *method, *url;
     NsUrlSpaceContextSpec *specPtr;
     Ns_ObjvSpec  lopts[] = {
         {"-all",       Ns_ObjvBool,   &all,       INT2PTR(NS_TRUE)},
+        {"-context",   Ns_ObjvSet,    &context,   NULL},
         {"-exact",     Ns_ObjvBool,   &exact,     INT2PTR(NS_TRUE)},
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
@@ -1387,6 +1391,20 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         unsigned int    flags = 0u;
         const ConnPool *mappedPoolPtr;
         Ns_UrlSpaceOp   op;
+        NsUrlSpaceContext ctx, *ctxPtr = NULL;
+        struct NS_SOCKADDR_STORAGE ip;
+        Ns_Set         *contextCopy = NULL;
+
+        if (context != NULL) {
+            /* x-ns-ip is consumed by the converter; preserve the caller's set. */
+            contextCopy = Ns_SetCopy(context);
+            result = NsUrlSpaceContextFromSet(interp, &ctx, (struct sockaddr *)&ip, contextCopy);
+            if (result != TCL_OK) {
+                Ns_SetFree(contextCopy);
+                return result;
+            }
+            ctxPtr = &ctx;
+        }
 
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;
@@ -1401,7 +1419,7 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         Ns_MutexLock(&servPtr->urlspace.lock);
         mappedPoolPtr = (ConnPool *)Ns_UrlSpecificGet((Ns_Server*)servPtr,
                                                       method, url, poolid, flags, op,
-                                                      NULL, NULL, NULL);
+                                                      NULL, NsUrlSpaceContextFilterEval, ctxPtr);
         Ns_MutexUnlock(&servPtr->urlspace.lock);
         if (mappedPoolPtr == NULL) {
             mappedPoolPtr = servPtr->pools.defaultPtr;
@@ -1420,7 +1438,7 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             Tcl_DictObjPut(interp, dictObj, NsAtomObj(NS_ATOM_pool),
                            Tcl_NewStringObj(mappedPoolPtr->pool, TCL_INDEX_NONE));
 
-            NsGetRequest2(servPtr, method, url, flags, op, NULL, NULL,
+            NsGetRequest2(servPtr, method, url, flags, op, NsUrlSpaceContextFilterEval, ctxPtr,
                           &procPtr, &deletePtr, &argPtr, &requestFlags);
             Ns_GetProcInfo(&ds, (ns_funcptr_t)procPtr, argPtr);
 
@@ -1430,6 +1448,9 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
             Tcl_DStringFree(&ds);
         } else {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(mappedPoolPtr->pool, TCL_INDEX_NONE));
+        }
+        if (contextCopy != NULL) {
+            Ns_SetFree(contextCopy);
         }
     }
 
