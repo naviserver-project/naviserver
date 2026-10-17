@@ -69,6 +69,26 @@ process-scoped and must not be attributed to the selected virtual server.
 Snapshots are observations collected over a short interval, not an atomic freeze
 of the whole system. Capacity estimates and status thresholds belong to consumers.
 
+[para]
+process.cpuCapacity reports CPU ceilings on Linux: hostLogicalCpus,
+affinityCpus, cpusetCpus, quotaCores and effectiveCores. The collector resolves
+cgroup v1/v2 mounts and walks visible parents, taking the minimum observed
+ceiling, including fractional quotas. quotaStatus distinguishes limited,
+unlimited and unknown. constraintsComplete and incompleteReasons describe
+visible-limit availability, not a CPU reservation. Hidden ancestor constraints,
+CPU shares and host contention can reduce actual available capacity. Unsupported
+platforms or inaccessible files leave unknown values empty, never zero.
+[para]
+throttlingAvailable marks available cgroup CPU counters. throttling keeps each
+visible CPU group separate, with path, periods, throttledPeriods and
+throttledSeconds. Samples add deltaPeriods, deltaThrottledPeriods,
+deltaThrottledSeconds and throttledPeriodPercent when a valid same-process
+baseline exists; missing or decreased counters produce empty derived values.
+These counters include other processes, and ancestors may include siblings.
+Do not sum ancestors or interpret throttled period percentage as CPU utilization.
+Compare process CPU core equivalents with the qualified effectiveCores ceiling
+for the same sample period. Existing history without capacity data remains unknown.
+
 [call [cmd "ns_stats sampling start"] [opt [option "-interval seconds"]]]
 
 [para] Time arguments accept NaviServer units and fractional seconds, for

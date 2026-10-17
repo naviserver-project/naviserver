@@ -750,4 +750,72 @@ if {$statsTestCode} {
 }
 unset statsTestCode statsTestResult statsTestOptions
 
+if {[testConstraint ns_stats]} {
+    nx::Class create ::cpuCapacityFixture -superclass ::ns::stats::Collector {
+        :property {files {}}
+        :method systemText {path} {
+            if {![dict exists ${:files} $path]} {error "Unavailable fixture file"}
+            return [dict get ${:files} $path]
+        }
+    }
+    ::cpuCapacityFixture create ::capacityFixture
+    proc ::capacityFiles {} {
+        return [dict create /sys/devices/system/cpu/online 0-15 /proc/self/status "Cpus_allowed_list:\t0-7" \
+            /proc/self/cgroup {0::/tenant/app} \
+            /proc/self/mountinfo {20 1 0:20 / /cg rw - cgroup2 cgroup rw} \
+            /cg/tenant/app/cpu.max {250000 100000} /cg/tenant/cpu.max {50000 100000} /cg/cpu.max {max 100000} \
+            /cg/tenant/app/cpuset.cpus.effective 0-3 /cg/tenant/cpuset.cpus.effective 0-7 \
+            /cg/tenant/app/cpu.stat "nr_periods 100\nnr_throttled 30\nthrottled_usec 2500000"]
+    }
+    test ns-stats-cpu-capacity-v2 {visible ancestor quota, affinity and cpuset constrain fractional core capacity} -body {
+        ::capacityFixture configure -files [::capacityFiles]
+        set c [::capacityFixture cpuCapacity]
+        list [dict get $c hostLogicalCpus] [dict get $c affinityCpus] [dict get $c cpusetCpus] \
+            [dict get $c effectiveCores] [dict get $c constraintsComplete] [dict get $c quotaStatus] \
+            [dict get $c throttling /cg/tenant/app throttledSeconds]
+    } -result {16 8 4 0.5 1 limited 2.5}
+    test ns-stats-cpu-capacity-v1 {legacy controller mount roots, inherited cpuset and nanosecond throttling work} -body {
+        set files [dict create /sys/devices/system/cpu/online 0-7 /proc/self/status {Cpus_allowed_list: 0-3} \
+            /proc/self/cgroup "2:cpu,cpuacct:/tenant/app\n3:cpuset:/tenant/app" \
+            /proc/self/mountinfo "20 1 0:20 /tenant /cpu rw - cgroup cgroup rw,cpu,cpuacct\n21 1 0:21 /tenant /set rw - cgroup cgroup rw,cpuset" \
+            /cpu/app/cpu.cfs_quota_us -1 /cpu/app/cpu.cfs_period_us 100000 \
+            /cpu/cpu.cfs_quota_us 150000 /cpu/cpu.cfs_period_us 100000 \
+            /set/app/cpuset.cpus {} /set/cpuset.cpus 0-1 \
+            /cpu/app/cpu.stat "nr_periods 10\nnr_throttled 2\nthrottled_time 500000000"]
+        ::capacityFixture configure -files $files
+        set c [::capacityFixture cpuCapacity]
+        list [dict get $c effectiveCores] [dict get $c cpusetCpus] \
+            [dict get $c throttling /cpu/app throttledSeconds] [dict get $c constraintsComplete]
+    } -result {1.5 2 0.5 1}
+    test ns-stats-cpu-capacity-unlimited {unlimited quota is distinguished from missing CPU information} -body {
+        set files [::capacityFiles]
+        dict set files /cg/tenant/app/cpu.max {max 100000}
+        dict set files /cg/tenant/cpu.max {max 100000}
+        ::capacityFixture configure -files $files
+        set unlimited [::capacityFixture cpuCapacity]
+        ::capacityFixture configure -files {}
+        set missing [::capacityFixture cpuCapacity]
+        list [dict get $unlimited effectiveCores] [dict get $unlimited quotaStatus] \
+            [dict get $missing effectiveCores] [dict get $missing constraintsComplete] \
+            [expr {"quota-unavailable-or-partial" in [dict get $missing incompleteReasons]}]
+    } -result {4 unlimited {} 0 1}
+    test ns-stats-cpu-capacity-throttle-deltas {same-process sampling derives interval throttling and rejects reset counters} -body {
+        set before [ns_stats snapshot]
+        dict set before timestamp 1000000
+        dict set before process cpuCapacity throttling /cg {periods 100 throttledPeriods 20 throttledSeconds 1.0}
+        set current $before
+        dict set current timestamp 11000000
+        dict set current process cpuCapacity throttling /cg {periods 200 throttledPeriods 50 throttledSeconds 3.5}
+        set r [ns_stats calculate $current $before 10 fixture]
+        set row [dict get $r process cpuCapacity throttling /cg]
+        dict set current process cpuCapacity throttling /cg {periods 1 throttledPeriods 0 throttledSeconds 0}
+        set reset [ns_stats calculate $current $before 10 fixture]
+        list [dict get $row deltaThrottledSeconds] [dict get $row throttledPeriodPercent] \
+            [dict get $reset process cpuCapacity throttling /cg deltaPeriods]
+    } -result {2.5 30.0 {}}
+    ::capacityFixture destroy
+    ::cpuCapacityFixture destroy
+    rename ::capacityFiles {}
+}
+
 cleanupTests

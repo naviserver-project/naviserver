@@ -40,6 +40,140 @@ nx::Class create ::ns::stats::Collector {
     #
     #   Provides the collection interface inherited by ns::stats::Sampler.
 
+    :method systemText {path} {
+        set f [open $path r]
+        try {return [string trim [read $f 1048576]]} finally {close $f}
+    }
+    :method cpuListCount {text} {
+        set ranges {}
+        foreach item [split $text ,] {
+            if {![regexp {^([0-9]+)(?:-([0-9]+))?$} [string trim $item] -> first last]} {error "Invalid CPU list"}
+            if {$last eq ""} {set last $first}
+            if {$last<$first} {error "Invalid CPU range"}
+            lappend ranges [list $first $last]
+        }
+        set count 0; set end -1
+        foreach range [lsort -integer -index 0 $ranges] {
+            lassign $range first last
+            if {$last>$end} {incr count [expr {$last-max($first,$end+1)+1}]; set end $last}
+        }
+        return $count
+    }
+    :method mountPath {value} {
+        return [string map [list {\040} " " {\011} "\t" {\134} "\\"] $value]
+    }
+    :public method cpuCapacity {} {
+        set result {hostLogicalCpus {} affinityCpus {} cpusetCpus {} quotaCores {} effectiveCores {} quotaStatus unknown constraintsComplete false throttlingAvailable false throttlingScope cgroup-hierarchy throttling {} limitations {Visible CPU ceilings are not reserved capacity. Hidden ancestor limits, host contention and CPU shares can reduce availability. Throttling counters are cumulative for each visible cgroup, including other processes; ancestor counters can include sibling groups.}}
+        set reasons {}; set ceilings {}
+        if {![catch {:cpuListCount [:systemText /sys/devices/system/cpu/online]} count] && $count>0} {
+            dict set result hostLogicalCpus $count; lappend ceilings $count
+        }
+        if {![catch {:systemText /proc/self/status} status]
+            && [regexp -line {^Cpus_allowed_list:\s*([^\n]+)} $status -> list]
+            && ![catch {:cpuListCount [string trim $list]} count] && $count>0} {
+            dict set result affinityCpus $count; lappend ceilings $count
+        } else {lappend reasons affinity-unavailable}
+        set memberships {}
+        if {![catch {:systemText /proc/self/cgroup} text]} {
+            foreach line [split $text \n] {
+                if {![regexp {^[0-9]+:([^:]*):(.*)$} $line -> controllers path]} continue
+                if {$controllers eq ""} {dict set memberships unified $path}
+                foreach controller [split $controllers ,] {dict set memberships $controller $path}
+            }
+        }
+        set quotaSeen false; set quotaMissing false; set hierarchySeen false
+        set groups {}; set visited {}
+        if {![catch {:systemText /proc/self/mountinfo} mounts]} {
+            foreach line [split $mounts \n] {
+                set parts [split $line " "]
+                set separator [lsearch -exact $parts -]
+                if {$separator<6} continue
+                set type [lindex $parts [expr {$separator+1}]]
+                if {$type ni {cgroup cgroup2}} continue
+                set root [:mountPath [lindex $parts 3]]
+                set mount [:mountPath [lindex $parts 4]]
+                set controllers [split [lindex $parts [expr {$separator+3}]] ,]
+                set key {}; set cpu false; set cpuset false
+                if {$type eq "cgroup2" && [dict exists $memberships unified]} {
+                    set key unified; set cpu true; set cpuset true
+                } else {
+                    foreach controller {cpu cpuset} {
+                        if {$controller in $controllers && [dict exists $memberships $controller]} {
+                            set key $controller
+                            if {$controller eq "cpu"} {set cpu true} else {set cpuset true}
+                        }
+                    }
+                }
+                if {$key eq ""} continue
+                set member [dict get $memberships $key]
+                # Do not traverse outside a visible mount, including namespace
+                # membership paths containing parent components.
+                if {".." in [file split $member]} {lappend reasons cgroup-path-unresolvable; continue}
+                if {$root eq "/"} {set relative [string trimleft $member /]
+                } elseif {$member eq "/" || $member eq $root} {set relative {}
+                } elseif {[string first "$root/" $member]==0} {set relative [string range $member [expr {[string length $root]+1}] end]
+                } else {continue}
+                set directory [file join $mount $relative]
+                set hierarchySeen true
+                while {1} {
+                    if {[lsearch -exact $visited [list $directory $cpu $cpuset]]<0} {
+                        lappend visited [list $directory $cpu $cpuset]
+                        if {$cpu} {
+                            if {$type eq "cgroup2"} {
+                                set readable [expr {![catch {:systemText $directory/cpu.max} maximum]}]
+                                if {$readable && [regexp {^(max|[0-9]+) ([1-9][0-9]*)$} $maximum -> quota period]} {
+                                    set quotaSeen true
+                                    if {$quota ne "max" && $quota>0} {lappend ceilings [expr {double($quota)/$period}]; set q [expr {double($quota)/$period}]
+                                        if {[dict get $result quotaCores] eq "" || $q<[dict get $result quotaCores]} {dict set result quotaCores $q}}
+                                } elseif {$directory ne $mount} {set quotaMissing true}
+                            } else {
+                                if {![catch {:systemText $directory/cpu.cfs_quota_us} quota]
+                                    && ![catch {:systemText $directory/cpu.cfs_period_us} period]
+                                    && [string is entier -strict $quota] && [string is entier -strict $period] && $period>0} {
+                                    set quotaSeen true
+                                    if {$quota>0} {set q [expr {double($quota)/$period}]; lappend ceilings $q
+                                        if {[dict get $result quotaCores] eq "" || $q<[dict get $result quotaCores]} {dict set result quotaCores $q}}
+                                } else {set quotaMissing true}
+                            }
+                            if {![catch {:systemText $directory/cpu.stat} counters]} {
+                                set row [dict create path $directory]
+                                foreach counter [split $counters \n] {
+                                    lassign $counter name value
+                                    if {![string is entier -strict $value] || $value<0} continue
+                                    switch -- $name {
+                                        nr_periods {dict set row periods $value}
+                                        nr_throttled {dict set row throttledPeriods $value}
+                                        throttled_usec {dict set row throttledSeconds [expr {$value/1000000.0}]}
+                                        throttled_time {dict set row throttledSeconds [expr {$value/1000000000.0}]}
+                                    }
+                                }
+                                if {[dict size $row]>1} {dict set groups $directory $row}
+                            }
+                        }
+                        if {$cpuset} {
+                            set file [expr {$type eq "cgroup2" ? "cpuset.cpus.effective" : "cpuset.cpus"}]
+                            if {![catch {:systemText $directory/$file} list] && $list ne "" && ![catch {:cpuListCount $list} count] && $count>0} {
+                                lappend ceilings $count
+                                if {[dict get $result cpusetCpus] eq "" || $count<[dict get $result cpusetCpus]} {dict set result cpusetCpus $count}
+                            }
+                        }
+                    }
+                    if {$directory eq $mount} break
+                    set directory [file dirname $directory]
+                }
+            }
+        }
+        if {!$hierarchySeen} {lappend reasons cgroup-hierarchy-unavailable}
+        if {!$quotaSeen || $quotaMissing} {lappend reasons quota-unavailable-or-partial}
+        dict set result quotaStatus [expr {[dict get $result quotaCores] ne "" ? "limited" : ($quotaSeen && !$quotaMissing ? "unlimited" : "unknown")}]
+        if {[llength $ceilings]} {dict set result effectiveCores [lindex [lsort -real $ceilings] 0]}
+        dict set result constraintsComplete [expr {$reasons eq ""}]
+        dict set result incompleteReasons [lsort -unique $reasons]
+        dict set result throttling $groups
+        dict set result throttlingAvailable [expr {[dict size $groups]>0}]
+        return $result
+    }
+
     :method selectServer {record server {validate true}} {
         # Restrict virtual-server data; historical records may refer to removed servers.
         if {$server ne ""} {
@@ -81,6 +215,7 @@ nx::Class create ::ns::stats::Collector {
                                               os $::tcl_platform(os) \
                                               osVersion $::tcl_platform(osVersion) \
                                               machine $::tcl_platform(machine)]
+        dict set result process cpuCapacity [:cpuCapacity]
         foreach s [ns_info servers] {
             set pools {}
             foreach p [ns_server -server $s pools] {
@@ -167,6 +302,7 @@ nx::Class create ::ns::stats::Collector {
                         cpu {} \
                         availability {} \
                         units {time seconds cpuCounter microseconds cpuPercent percentOfOneCore}]
+        dict set result process cpuCapacity [:cpuCapacity]
         if {![catch {ns_driver stats} stats]} {
             foreach entry $stats {
                 set counters {}
@@ -583,6 +719,23 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
             if {$percent ne ""} {
                 set total [expr {[dict exists $totals $group] ? [dict get $totals $group] : 0.0}]
                 dict set totals $group [expr {$total+$percent}]
+            }
+        }
+        if {[dict exists $current process cpuCapacity throttling]} {
+            dict for {path row} [dict get $current process cpuCapacity throttling] {
+                foreach field {periods throttledPeriods throttledSeconds} {
+                    set delta {}
+                    if {$ready && [dict exists $row $field] && [dict exists $previous process cpuCapacity throttling $path $field]} {
+                        set old [dict get $previous process cpuCapacity throttling $path $field]
+                        if {[dict get $row $field]>=$old} {set delta [expr {[dict get $row $field]-$old}]}
+                    }
+                    dict set row delta[string toupper [string index $field 0]][string range $field 1 end] $delta
+                }
+                dict set row throttledPeriodPercent {}
+                if {[dict get $row deltaPeriods] ne "" && [dict get $row deltaPeriods]>0 && [dict get $row deltaThrottledPeriods] ne ""} {
+                    dict set row throttledPeriodPercent [expr {100.0*[dict get $row deltaThrottledPeriods]/[dict get $row deltaPeriods]}]
+                }
+                dict set result process cpuCapacity throttling $path $row
             }
         }
         dict set result cpuPercent [dict create \
