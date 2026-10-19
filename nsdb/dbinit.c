@@ -1455,7 +1455,8 @@ CreatePool(const char *pool, const char *section, const char *driver)
         Ns_ConfigTimeUnitRange(section, "checkinterval",
                                "5m", 1, 0, INT_MAX, 0, &checkinterval);
 
-        (void) Ns_ScheduleProcEx(CheckPool, poolPtr, 0, &checkinterval, NULL);
+        /* Driver disconnects and pool lock waits can block; use a worker. */
+        (void) Ns_ScheduleProcEx(CheckPool, poolPtr, NS_SCHED_THREAD, &checkinterval, NULL);
         Ns_RegisterProcInfo((ns_funcptr_t)CheckPool,
                             "nsdb:checkpool", CheckArgProc);
 
