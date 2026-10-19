@@ -2667,9 +2667,10 @@ HttpClientStartJanitor(void)
 {
     Ns_Time interval = {1, 0};
 
+    /* Socket/TLS cleanup and mutex waits must not stall scheduler dispatch. */
     (void) Ns_ScheduleProcEx(CloseWaitingCheckExpire,
                              NULL /* poolPtr */,
-                             0,
+                             NS_SCHED_THREAD,
                              &interval,
                              NULL);
     Ns_RegisterProcInfo((ns_funcptr_t)CloseWaitingCheckExpire,

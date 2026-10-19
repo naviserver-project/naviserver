@@ -169,6 +169,41 @@ test ns_schedule-3.3 {threaded execution is excluded from non-threaded callback 
 } -result {1 1 1}
 
 
+test ns_schedule-4.1 {database pool maintenance uses scheduler workers} -body {
+    set pools {}
+    set threaded 1
+    foreach entry [ns_info scheduled] {
+        if {[lindex $entry 7] eq "nsdb:checkpool"} {
+            lappend pools [lindex $entry 8]
+            if {!([lindex $entry 1] & 1)} {set threaded 0}
+        }
+    }
+    list [expr {"a" in $pools && "b" in $pools}] $threaded
+} -result {1 1}
+
+test ns_schedule-4.2 {HTTP connection janitor uses a scheduler worker and continues repeating} -body {
+    set id -1
+    set previous -1
+    set threaded 0
+    foreach entry [ns_info scheduled] {
+        if {[lindex $entry 7] eq "httpclient:close-waiting"} {
+            set id [lindex $entry 0]
+            set previous [lindex $entry 6]
+            set threaded [expr {([lindex $entry 1] & 1) != 0}]
+        }
+    }
+    set completed 0
+    set deadline [expr {[clock milliseconds]+4000}]
+    while {$id >= 0 && !$completed && [clock milliseconds] < $deadline} {
+        ns_sleep 20ms
+        foreach entry [ns_info scheduled] {
+            if {[lindex $entry 0] == $id && [lindex $entry 6] > $previous} {set completed 1}
+        }
+    }
+    list $threaded $completed
+} -result {1 1}
+
+
 cleanupTests
 
 # Local variables:
