@@ -2168,6 +2168,7 @@ NS_EXTERN const char *NsHttpStatusPhrase(int statusCode)
 /*
  * sched.c
  */
+NS_EXTERN void NsGetSchedulerStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsGetScheduled(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStartSchedShutdown(void);
 NS_EXTERN void NsWaitSchedShutdown(const Ns_Time *toPtr);

@@ -1088,7 +1088,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         "callbacks", "config", "home", "hostname", "ipv6", "locks", "log", "logdir",
         "major", "meminfo", "minor", "mimetypes", "name", "nsd",
         "patchlevel", "pid", "pools",
-        "scheduled", "server", "servers",
+        "scheduled", "scheduler", "server", "servers",
         "sockcallbacks", "ssl", "tag", "threadcputimes", "threads", "uptime",
         "version",
         "shutdownpending", "started",
@@ -1105,7 +1105,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         IMajorIdx, IMeminfoIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx,
         IPatchLevelIdx,
         IPidIdx, IPoolsIdx,
-        IScheduledIdx, IServerIdx, IServersIdx,
+        IScheduledIdx, ISchedulerIdx, IServerIdx, IServersIdx,
         ISockCallbacksIdx, ISSLIdx, ITagIdx, IThreadcputimesIdx, IThreadsIdx, IUptimeIdx,
         IVersionIdx,
         IShutdownPendingIdx, IStartedIdx,
@@ -1179,6 +1179,10 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     case ISockCallbacksIdx:
         NsGetSockCallbacks(&ds);
         Tcl_DStringResult(interp, &ds);
+        break;
+
+    case ISchedulerIdx:
+        NsGetSchedulerStats(interp);
         break;
 
     case IScheduledIdx:

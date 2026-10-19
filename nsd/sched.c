@@ -98,6 +98,86 @@ static bool running = NS_FALSE;
 static bool shutdownPending = NS_FALSE;
 static Ns_Thread schedThread;
 
+/* Fixed-size process-lifetime diagnostics, protected by lock. No per-tick logs. */
+typedef struct {
+    Tcl_WideInt count, slowCount;
+    double lastSeconds, totalSeconds, maxSeconds;
+    int lastId, maxId;
+} SchedTiming;
+static SchedTiming wakeReturnTiming, lockTiming, callbackTiming, dispatchTiming;
+static Ns_Time nextLateLog = {0, 0}, nextCallbackLog = {0, 0};
+static Tcl_WideInt lateLogsSuppressed = 0, callbackLogsSuppressed = 0;
+
+static double
+SchedSeconds(const Ns_Time *start, const Ns_Time *end)
+{
+    Ns_Time delta;
+
+    if (Ns_DiffTime(end, start, &delta) <= 0) {
+        return 0.0;
+    }
+    return (double)delta.sec + (double)delta.usec / 1000000.0;
+}
+
+static void
+RecordSchedTiming(SchedTiming *timing, double seconds, int id)
+{
+    ++timing->count;
+    timing->lastSeconds = seconds;
+    timing->lastId = id;
+    timing->totalSeconds += seconds;
+    if (seconds > 0.1) {
+        ++timing->slowCount;
+    }
+    if (seconds > timing->maxSeconds) {
+        timing->maxSeconds = seconds;
+        timing->maxId = id;
+    }
+}
+
+/* Only the dispatch thread uses this wrapper; counters exclude condition waits. */
+static void
+SchedLock(void)
+{
+    Ns_Time start, end;
+
+    Ns_GetTime(&start);
+    Ns_MutexLock(&lock);
+    Ns_GetTime(&end);
+    RecordSchedTiming(&lockTiming, SchedSeconds(&start, &end), -1);
+}
+
+void
+NsGetSchedulerStats(Tcl_Interp *interp)
+{
+    Tcl_Obj *result = Tcl_NewDictObj();
+    const char *names[] = {"waitReturnLateness", "mutexAcquisition", "nonThreadedCallbacks", "dispatchLateness"};
+    const SchedTiming *timings[] = {&wakeReturnTiming, &lockTiming, &callbackTiming, &dispatchTiming};
+    size_t i;
+
+    Ns_MutexLock(&lock);
+    for (i = 0; i < sizeof(timings)/sizeof(timings[0]); ++i) {
+        const SchedTiming *t = timings[i];
+        Tcl_Obj *entry = Tcl_NewDictObj();
+
+#define SCHED_FIELD(key, value) Tcl_DictObjPut(NULL, entry, Tcl_NewStringObj(key, -1), value)
+        SCHED_FIELD("count", Tcl_NewWideIntObj(t->count));
+        SCHED_FIELD("over100ms", Tcl_NewWideIntObj(t->slowCount));
+        SCHED_FIELD("lastSeconds", Tcl_NewDoubleObj(t->lastSeconds));
+        SCHED_FIELD("totalSeconds", Tcl_NewDoubleObj(t->totalSeconds));
+        SCHED_FIELD("maxSeconds", Tcl_NewDoubleObj(t->maxSeconds));
+        SCHED_FIELD("lastId", Tcl_NewIntObj(t->count == 0 ? -1 : t->lastId));
+        SCHED_FIELD("maxId", Tcl_NewIntObj(t->maxSeconds == 0.0 ? -1 : t->maxId));
+#undef SCHED_FIELD
+        Tcl_DictObjPut(NULL, result, Tcl_NewStringObj(names[i], -1), entry);
+    }
+    Tcl_DictObjPut(NULL, result, Tcl_NewStringObj("lateLogsSuppressed", -1), Tcl_NewWideIntObj(lateLogsSuppressed));
+    Tcl_DictObjPut(NULL, result, Tcl_NewStringObj("callbackLogsSuppressed", -1), Tcl_NewWideIntObj(callbackLogsSuppressed));
+    Ns_MutexUnlock(&lock);
+    Tcl_SetObjResult(interp, result);
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -1051,7 +1131,7 @@ SchedThread(void *UNUSED(arg))
     Ns_ThreadSetName("-sched-");
     Ns_Log(Notice, "sched: starting");
 
-    Ns_MutexLock(&lock);
+    SchedLock();
 
     /*
      * For all events whose nextqueue is already in the past (i.e., whose
@@ -1086,6 +1166,7 @@ SchedThread(void *UNUSED(arg))
                    ePtr->id,
                    (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);
 #endif
+            RecordSchedTiming(&dispatchTiming, SchedSeconds(&ePtr->scheduled, &now), ePtr->id);
             /*
              * Measure how late we are for THIS execution
              */
@@ -1099,19 +1180,28 @@ SchedThread(void *UNUSED(arg))
                        (long)ePtr->interval.sec, (long)ePtr->interval.usec);*/
 
                 if (Ns_DiffTime(&late, &tolerate, NULL) == 1) { /* late > tolerate */
-                    if (!ePtr->waslate) {
+                    if (!ePtr->waslate && Ns_DiffTime(&now, &nextLateLog, NULL) >= 0) {
                         Tcl_DString ds;
                         const char *flagsString;
 
                         Tcl_DStringInit(&ds);
                         flagsString = DStringAppendSchedFlags(&ds, ePtr->flags);
                         Ns_Log(Warning,
-                               "sched id %d: job started late by %ld.%06ld sec (flags %s, interval %ld.%06ld sec)",
+                               "sched id %d: job started late by %ld.%06ld sec (flags %s, interval %ld.%06ld sec); "
+                               "wait-return-late %.6fs (includes condition mutex reacquisition), "
+                               "explicit-mutex-acquisition %.6fs, last-nonthread-id %d duration %.6fs",
                                ePtr->id,
                                (long)late.sec, (long)late.usec,
                                (*flagsString == '\0' ? "none" : flagsString),
-                               (long)ePtr->interval.sec, (long)ePtr->interval.usec);
+                               (long)ePtr->interval.sec, (long)ePtr->interval.usec,
+                               wakeReturnTiming.lastSeconds, lockTiming.lastSeconds,
+                               callbackTiming.count == 0 ? -1 : callbackTiming.lastId,
+                               callbackTiming.lastSeconds);
+                        nextLateLog = now;
+                        nextLateLog.sec += 60;
                         Tcl_DStringFree(&ds);
+                    } else {
+                        ++lateLogsSuppressed;
                     }
                     ePtr->waslate = NS_TRUE;
                 } else {
@@ -1171,24 +1261,40 @@ SchedThread(void *UNUSED(arg))
 
         while ((ePtr = readyPtr) != NULL) {
             Ns_Time diff;
+            int callbackId = ePtr->id;
+            bool logCallback = false;
 
             readyPtr = ePtr->nextPtr;
+            Ns_GetTime(&now);
             ePtr->laststart = now;
             ePtr->flags |= NS_SCHED_RUNNING;
             Ns_MutexUnlock(&lock);
             (*ePtr->proc) (ePtr->arg, ePtr->id);
             Ns_GetTime(&now);
 
-            (void)Ns_DiffTime(&ePtr->laststart, &now, &diff);
-            if (Ns_DiffTime(&diff, &nsconf.sched.maxelapsed, NULL) == 1) {
-                Ns_Log(Warning, "sched: excessive time taken by proc %d (" NS_TIME_FMT " seconds)",
-                       ePtr->id, (int64_t)diff.sec, diff.usec);
-            }
+            (void)Ns_DiffTime(&now, &ePtr->laststart, &diff);
+
             if (ePtr->hPtr == NULL) {
                 FreeEvent(ePtr);
                 ePtr = NULL;
             }
-            Ns_MutexLock(&lock);
+            SchedLock();
+            RecordSchedTiming(&callbackTiming, (double)diff.sec + (double)diff.usec / 1000000.0, callbackId);
+            if (Ns_DiffTime(&diff, &nsconf.sched.maxelapsed, NULL) == 1) {
+                if (Ns_DiffTime(&now, &nextCallbackLog, NULL) >= 0) {
+                    nextCallbackLog = now;
+                    nextCallbackLog.sec += 60;
+                    logCallback = true;
+                } else {
+                    ++callbackLogsSuppressed;
+                }
+            }
+            if (logCallback) {
+                Ns_MutexUnlock(&lock);
+                Ns_Log(Warning, "sched: excessive time taken by non-threaded proc %d (" NS_TIME_FMT " seconds)",
+                       callbackId, (int64_t)diff.sec, diff.usec);
+                SchedLock();
+            }
             if (ePtr != NULL) {
                 ePtr->flags &= ~NS_SCHED_RUNNING;
                 ePtr->lastend = now;
@@ -1208,13 +1314,23 @@ SchedThread(void *UNUSED(arg))
          */
         if (nqueue == 0) {
             Ns_CondWait(&schedcond, &lock);
+            wakeReturnTiming.lastSeconds = 0.0;
         } else if (!shutdownPending) {
             Ns_ReturnCode status;
+            Ns_Time baseline;
+            int wakeId = queue[1]->id;
 
             timeout = queue[1]->nextqueue;
             /*Ns_Log(Notice, "after job next queue timeout " NS_TIME_FMT,
                      (int64_t)timeout.sec, timeout.usec);*/
+            /* Do not attribute an already-overdue callback deadline to sleep. */
+            Ns_GetTime(&baseline);
+            if (Ns_DiffTime(&timeout, &baseline, NULL) > 0) {
+                baseline = timeout;
+            }
             status = Ns_CondTimedWait(&schedcond, &lock, &timeout);
+            Ns_GetTime(&now);
+            RecordSchedTiming(&wakeReturnTiming, SchedSeconds(&baseline, &now), wakeId);
             (void)status;
             /*{
                 Ns_Time now;

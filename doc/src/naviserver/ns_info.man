@@ -263,6 +263,52 @@ Returns the process id of the running nsd process.
 Returns usage info from the memory pools (returned by
 Tcl_GetMemoryInfo() if configured).
 
+[call [cmd "ns_info scheduler"]]
+
+Returns fixed-size, process-wide scheduler timing diagnostics accumulated
+since process startup. Reading these counters does not reset them or scan logs.
+Each timing dictionary contains [const count], [const over100ms],
+[const lastSeconds], [const totalSeconds], [const maxSeconds],
+[const lastId] and [const maxId]. Durations are in seconds; unavailable event
+IDs are -1. The timing dictionaries are:
+
+[list_begin definitions]
+[def [const waitReturnLateness]]
+Delay returning from a timed condition wait beyond its deadline, or beyond
+wait entry when the deadline was already past. Early returns contribute zero.
+This includes OS wake-up latency and implicit mutex reacquisition: these
+cannot be distinguished by the condition-wait API. IDs identify the event
+whose deadline was used, which may subsequently be cancelled or rescheduled.
+Indefinite idle waits are excluded.
+[def [const mutexAcquisition]]
+Elapsed time around explicit acquisition of the scheduler mutex by the main
+scheduler thread, including reacquisition after a non-threaded callback.
+Condition-wait reacquisition and worker-thread acquisitions are excluded.
+IDs are -1. Small values include clock-read and call overhead.
+[def [const nonThreadedCallbacks]]
+Execution time of callbacks run on the main scheduler thread, excluding
+subsequent logging and mutex acquisition. IDs identify the callbacks.
+Threaded callbacks are excluded. The [const over100ms] count uses 100ms,
+independently of the configured [const schedlogminduration] warning threshold.
+[def [const dispatchLateness]]
+Delay from an event's scheduled time to dequeue, for both threaded and
+non-threaded events. This is not a measurement of worker execution start.
+[list_end]
+
+The top-level [const lateLogsSuppressed] counter counts overdue dispatches
+above 100ms without a warning; [const callbackLogsSuppressed] counts slow
+non-threaded callbacks whose warning was suppressed. Late-dispatch and slow
+non-threaded-callback warnings are each limited process-wide to one per
+60 seconds. Counters retain observations even when warnings are suppressed.
+Late-dispatch warnings include the most recent wait-return delay, explicit
+mutex acquisition and non-threaded callback duration/ID as diagnostic context;
+these observations do not establish causality.
+
+Instrumentation uses wall-clock time, clamps backward elapsed measurements
+to zero and may be affected by clock adjustments. Storage is constant-size;
+there is no per-event history or per-tick logging. Existing mutex tracing is
+independent and is not disabled by these diagnostics.
+
 [call [cmd  "ns_info scheduled"]]
 
 Returns the list of the scheduled procedures in the current process

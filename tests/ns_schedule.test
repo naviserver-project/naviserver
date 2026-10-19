@@ -115,6 +115,60 @@ test ns_schedule-2.4 {thread procs run concurrently} -body {
 
 
 
+test ns_schedule-3.1 {scheduler diagnostic counters have a stable numeric schema} -body {
+    set stats [ns_info scheduler]
+    set valid 1
+    foreach name {waitReturnLateness mutexAcquisition nonThreadedCallbacks dispatchLateness} {
+        set timing [dict get $stats $name]
+        foreach key {count over100ms lastSeconds totalSeconds maxSeconds} {
+            if {![string is double -strict [dict get $timing $key]] || [dict get $timing $key] < 0} {set valid 0}
+        }
+        foreach key {lastId maxId} {
+            if {![string is integer -strict [dict get $timing $key]]} {set valid 0}
+        }
+    }
+    list $valid [string is integer -strict [dict get $stats lateLogsSuppressed]] [string is integer -strict [dict get $stats callbackLogsSuppressed]]
+} -result {1 1 1}
+
+test ns_schedule-3.2 {slow non-threaded callback and overdue dispatches are counted without per-event warnings} -setup {
+    nsv_set schedDiagnostics done 0
+    set before [ns_info scheduler]
+    set ids {}
+} -body {
+    lappend ids [ns_schedule_proc -once 10ms {ns_sleep 350ms}]
+    for {set i 0} {$i < 5} {incr i} {
+        lappend ids [ns_schedule_proc -once 30ms {nsv_incr schedDiagnostics done}]
+    }
+    set deadline [expr {[clock milliseconds]+5000}]
+    while {[nsv_get schedDiagnostics done] < 5 && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+    set after [ns_info scheduler]
+    list [expr {[nsv_get schedDiagnostics done] == 5}] \
+        [expr {[dict get $after nonThreadedCallbacks over100ms] > [dict get $before nonThreadedCallbacks over100ms]}] \
+        [expr {[dict get $after nonThreadedCallbacks maxSeconds] >= 0.3}] \
+        [expr {[dict get $after dispatchLateness over100ms] >= [dict get $before dispatchLateness over100ms]+5}] \
+        [expr {[dict get $after lateLogsSuppressed] >= [dict get $before lateLogsSuppressed]+4}]
+} -cleanup {
+    foreach id $ids {ns_unschedule_proc $id}
+    nsv_unset -nocomplain schedDiagnostics
+} -result {1 1 1 1 1}
+
+test ns_schedule-3.3 {threaded execution is excluded from non-threaded callback duration} -setup {
+    nsv_set schedDiagnostics done 0
+    set before [ns_info scheduler]
+} -body {
+    set id [ns_schedule_proc -once -thread 10ms {ns_sleep 200ms; nsv_set schedDiagnostics done 1}]
+    set deadline [expr {[clock milliseconds]+5000}]
+    while {![nsv_get schedDiagnostics done] && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+    set after [ns_info scheduler]
+    list [nsv_get schedDiagnostics done] \
+        [expr {[dict get $after nonThreadedCallbacks count] == [dict get $before nonThreadedCallbacks count]}] \
+        [expr {[dict get $after waitReturnLateness count] > [dict get $before waitReturnLateness count]}]
+} -cleanup {
+    ns_unschedule_proc $id
+    nsv_unset -nocomplain schedDiagnostics
+} -result {1 1 1}
+
+
 cleanupTests
 
 # Local variables:
