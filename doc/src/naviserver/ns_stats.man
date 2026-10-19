@@ -181,6 +181,30 @@ interval. Payload sizes, topology changes, gaps and restarts can change the esti
 repeat measurements under representative load. Changing the budget at runtime requires
 history disable followed by history configure; update ns/stats for future restarts.
 
+[call [cmd "ns_stats history allocator"] [option "-from epochSeconds"] [option "-to epochSeconds"] \
+    [opt [option "-limit count"]] [opt [option "-cursor microseconds"]]]
+Returns compact, process-wide allocator history from the history owner server.
+The epoch interval is inclusive at from and exclusive at to, at most 24 hours,
+ending no later than now. Limit is 1..10000 (default 10000). records contain only
+timestamp (microseconds), instance, sampling.intervalSeconds and memory. Memory
+contains available current_allocated_bytes, heap_size and total_physical_bytes;
+missing gauges remain absent. Process identity and cadence allow callers to
+preserve restart boundaries and sampling gaps. more and nextCursor use the same
+paging convention as history query.
+
+[para]
+New persisted samples include a small allocator projection, avoiding full snapshot
+and topology decoding. Existing databases receive a nullable column automatically
+on configure/save; old rows are still readable by decoding their original payload.
+Queries do not backfill or modify stored samples. legacyDecoded reports the number
+of such rows decoded in this response. One bounded sample SELECT reads each page;
+there is no full-window coverage rescan. Consequently coverage.complete and
+coverage.windowExamined are false: this projection does not certify retained
+boundary coverage, eviction or write-failure absence. Use history query when that
+certification is required. timings reports checkoutMs, readMs, decodeMs and totalMs
+in milliseconds; checkout includes connection setup, read covers the sample SELECT,
+and decode includes compact-point construction and any legacy decompression.
+
 [call [cmd "ns_stats history query"] [option "-from epochSeconds"] [option "-to epochSeconds"] \
     [opt [option "-server server"]] [opt [option "-limit count"]] [opt [option "-cursor microseconds"]]]
 Returns historical records, referenced topologies and coverage. Query from the

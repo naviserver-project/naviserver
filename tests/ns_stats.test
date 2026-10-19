@@ -136,7 +136,7 @@ namespace eval ::ns_stats_test {
         dict set sample sampling intervalSeconds 10
         dict set sample sampling ready $ready
         set payload [::nsf::dispatch ::ns_stats quote [::nsf::dispatch ::ns_stats pack $sample]]
-        ::nsf::dispatch ::ns_stats sql $db "INSERT INTO ns_stats_samples VALUES($stamp,[::nsf::dispatch ::ns_stats quote $instance],[::nsf::dispatch ::ns_stats quote $topology],$payload)"
+        ::nsf::dispatch ::ns_stats sql $db "INSERT INTO ns_stats_samples(at,instance,topology,payload) VALUES($stamp,[::nsf::dispatch ::ns_stats quote $instance],[::nsf::dispatch ::ns_stats quote $topology],$payload)"
     }
 }
 
@@ -728,6 +728,94 @@ set statsTestCode [catch {
         ::ns_stats_test::stop
         foreach suffix {{} .pid .log} {removeFile ns-stats-restart.nscfg$suffix}
     } -result 1
+if {[testConstraint ns_stats_sqlite]} {
+    test stats-allocator-projection {saved samples have a compact projection without topology} -constraints ns_stats_sqlite -setup {
+        ns_stats history disable
+        ns_stats history configure -pool ns_stats_test
+        ::ns_stats_test::samples
+        ns_stats history save
+    } -body {
+        set now [clock seconds]
+        set q [ns_stats history allocator -from [expr {$now-60}] -to [expr {$now+0}]]
+        # Current-second samples are end-exclusive; query their stored column directly.
+        set config [nsv_get ns_stats history]
+        set db [ns_stats eval [list :historyConnect $config]]
+        try {
+            set rows [ns_stats eval [list :sql $db {SELECT allocator FROM ns_stats_samples WHERE allocator IS NOT NULL ORDER BY at DESC LIMIT 1}]]
+            set point [dict get [lindex $rows 0] allocator]
+        } finally {ns_db releasehandle $db}
+        list [lsort [dict keys $point]] [dict exists $q timings readMs] [dict get $q projection]
+    } -cleanup {ns_stats history disable} -result {{instance memory sampling timestamp} 1 allocator}
+
+    test stats-allocator-legacy {legacy snapshots decode once and compact reads preserve endpoints and missing metrics} -constraints ns_stats_sqlite -setup {
+        ns_stats history disable
+        ns_stats history configure -pool ns_stats_test
+        set config [nsv_get ns_stats history]
+        set db [ns_stats eval [list :historyConnect $config]]
+        set from [expr {[clock seconds]-120}]
+        set stamp [expr {($from+10)*1000000}]
+        set record [dict create timestamp $stamp instance fixture sampling {intervalSeconds 10} \
+            process {allocatorBytes {current_allocated_bytes 123 heap_size 456}}]
+        set packed [ns_stats eval [list :pack $record]]
+        set literal [ns_stats eval [list :quote $packed]]
+        ns_stats eval [list :sql $db "INSERT OR REPLACE INTO ns_stats_samples(at,instance,topology,payload) VALUES($stamp,'fixture','unused',$literal)"]
+        ns_db releasehandle $db
+    } -body {
+        set q [ns_stats history allocator -from $from -to [expr {$from+20}]]
+        set point [lindex [dict get $q records] 0]
+        list [dict get $q legacyDecoded] [dict get $point memory] [dict get $q coverage complete] [dict get $q more]
+    } -cleanup {ns_stats history disable} -result {1 {current_allocated_bytes 123 heap_size 456} false 0}
+
+    test stats-allocator-compact-page {compact range reads never decode snapshots and paginate without duplicates} -constraints ns_stats_sqlite -setup {
+        ns_stats history disable
+        ns_stats history configure -pool ns_stats_test
+        set config [nsv_get ns_stats history]
+        set db [ns_stats eval [list :historyConnect $config]]
+        set from [expr {[clock seconds]-300}]
+        foreach offset {10 20 30} instance {first first restarted} {
+            set stamp [expr {($from+$offset)*1000000}]
+            set point [dict create timestamp $stamp instance $instance sampling {intervalSeconds 10} \
+                memory [dict create current_allocated_bytes $offset]]
+            set literal [ns_stats eval [list :quote $point]]
+            ns_stats eval [list :sql $db "INSERT OR REPLACE INTO ns_stats_samples(at,instance,topology,payload,allocator) VALUES($stamp,'$instance','unused','not-a-compressed-snapshot',$literal)"]
+        }
+        ns_db releasehandle $db
+    } -body {
+        set first [ns_stats history allocator -from $from -to [expr {$from+30}] -limit 1]
+        set second [ns_stats history allocator -from $from -to [expr {$from+30}] -cursor [dict get $first nextCursor] -limit 1]
+        set all [ns_stats history allocator -from $from -to [expr {$from+40}]]
+        list [dict get $first more] [dict get $second more] \
+            [dict get [lindex [dict get $first records] 0] memory current_allocated_bytes] \
+            [dict get [lindex [dict get $second records] 0] memory current_allocated_bytes] \
+            [dict get $all legacyDecoded] [dict get [lindex [dict get $all records] end] instance]
+    } -cleanup {ns_stats history disable} -result {1 0 10 20 0 restarted}
+
+    test stats-allocator-migration {old schema gains a nullable projection without rewriting payloads} -constraints ns_stats_sqlite -setup {
+        ns_stats history disable
+        ns_stats history configure -pool ns_stats_test
+        set config [nsv_get ns_stats history]
+        set db [ns_stats eval [list :historyConnect $config]]
+    } -body {
+        ns_stats eval [list :sql $db {BEGIN IMMEDIATE}]
+        ns_stats eval [list :sql $db {ALTER TABLE ns_stats_samples RENAME TO ns_stats_samples_saved}]
+        ns_stats eval [list :sql $db {CREATE TABLE ns_stats_samples (at INTEGER PRIMARY KEY,instance TEXT NOT NULL,topology TEXT NOT NULL,payload TEXT NOT NULL)}]
+        ns_stats eval [list :sql $db {INSERT INTO ns_stats_samples VALUES(1,'old','unused','unchanged')}]
+        ns_stats eval [list :historySchema $db]
+        set row [lindex [ns_stats eval [list :sql $db {SELECT payload,coalesce(allocator,'') AS allocator FROM ns_stats_samples}]] 0]
+        list [dict get $row payload] [dict get $row allocator]
+    } -cleanup {
+        ns_stats eval [list :sql $db {ROLLBACK}]
+        ns_db releasehandle $db
+        ns_stats history disable
+    } -result {unchanged {}}
+
+    test stats-allocator-validation {allocator query enforces bounds and cursor limits} -body {
+        list [catch {ns_stats history allocator -from 0 -to 1 -limit 10001}] \
+            [catch {ns_stats history allocator -from 1 -to 1}] \
+            [catch {ns_stats history allocator -from 0 -to 1 -cursor -1}]
+    } -result {1 1 1}
+}
+
 } statsTestResult statsTestOptions]
 
 if {[testConstraint ns_stats]} {
@@ -817,5 +905,6 @@ if {[testConstraint ns_stats]} {
     ::cpuCapacityFixture destroy
     rename ::capacityFiles {}
 }
+
 
 cleanupTests
