@@ -51,6 +51,191 @@ test ns_accesslog-2.0 {ns_accesslog extendedheaders} -body {
 } -returnCodes ok -result {host}
 
 
+# Use an isolated log directory and restore the live test logger before cleanup.
+proc accesslogPurgeSetup {format} {
+    set saved [list [ns_accesslog file] [ns_accesslog rollfmt] [ns_accesslog maxbackup]]
+    set directory [file normalize [file join [::tcltest::temporaryDirectory] log-purge-[pid]]]
+    file mkdir $directory
+    ns_accesslog file [file join $directory access.log]
+    ns_accesslog rollfmt $format
+    ns_accesslog maxbackup 2
+    return [list $saved $directory]
+}
+proc accesslogPurgeWait {directory} {
+    set deadline [expr {[clock milliseconds]+5000}]
+    while {[llength [glob -nocomplain -directory $directory .ns-log-purge-*]] > 0 && [clock milliseconds] < $deadline} {
+        ns_sleep 10ms
+    }
+    return [llength [glob -nocomplain -directory $directory .ns-log-purge-*]]
+}
+proc accesslogPurgeRestore {saved directory} {
+    ns_accesslog file [lindex $saved 0]
+    ns_accesslog rollfmt [lindex $saved 1]
+    ns_accesslog maxbackup [lindex $saved 2]
+    accesslogPurgeWait $directory
+    file delete -force $directory
+}
+
+test ns_accesslog-3.1 {timestamp collisions preserve active log and defer only expired backups} -setup {
+    lassign [accesslogPurgeSetup {%Y-%m-%d}] saved directory
+    set path [file join $directory access.log]
+} -body {
+    for {set i 0} {$i < 7} {incr i} {
+        set f [open $path a]; puts $f "marker-$i"; close $f
+        file mtime $path [expr {[clock seconds]+$i}]
+        ns_accesslog roll
+    }
+    set remaining [accesslogPurgeWait $directory]
+    set contents {}
+    foreach backup [glob -nocomplain $path.*] {
+        set f [open $backup]; lappend contents [string trim [read $f]]; close $f
+    }
+    list [file exists $path] [llength $contents] [expr {"marker-6" in $contents}] $remaining
+} -cleanup {accesslogPurgeRestore $saved $directory} -result {1 2 1 0}
+
+test ns_accesslog-3.2 {numbered rotation retires the oldest file without deleting a reused pathname} -setup {
+    lassign [accesslogPurgeSetup {}] saved directory
+    set path [file join $directory access.log]
+} -body {
+    for {set i 0} {$i < 12} {incr i} {
+        set f [open $path a]; puts $f "marker-$i"; close $f
+        ns_accesslog roll
+    }
+    set remaining [accesslogPurgeWait $directory]
+    set contents {}
+    foreach backup [lsort [glob -nocomplain $path.*]] {
+        set f [open $backup]; lappend contents [string trim [read $f]]; close $f
+    }
+    list [file exists $path] $contents $remaining
+} -cleanup {accesslogPurgeRestore $saved $directory} -result {1 {marker-11 marker-10} 0}
+
+test ns_accesslog-3.3 {concurrent same-log rotations serialize and the purge worker preserves the active file} -setup {
+    lassign [accesslogPurgeSetup {%Y-%m-%d}] saved directory
+    set queue [ns_job create log-purge-test-[pid] 2]
+} -body {
+    set jobs {}
+    for {set i 0} {$i < 2} {incr i} {
+        lappend jobs [ns_job queue $queue {
+            for {set j 0} {$j < 10} {incr j} {ns_accesslog roll}
+            return complete
+        }]
+    }
+    set result {}
+    foreach job $jobs {lappend result [ns_job wait -timeout 10 $queue $job]}
+    set remaining [accesslogPurgeWait $directory]
+    list $result [file exists [file join $directory access.log]] \
+        [llength [glob -nocomplain [file join $directory access.log.*]]] $remaining
+} -cleanup {
+    ns_job delete $queue
+    accesslogPurgeRestore $saved $directory
+} -result {{complete complete} 1 2 0}
+
+test ns_accesslog-3.4 {direct roll and purge commands retain synchronous completion semantics} -setup {
+    set directory [file normalize [file join [::tcltest::temporaryDirectory] direct-purge-[pid]]]
+    file mkdir $directory
+    set path [file join $directory direct.log]
+} -body {
+    for {set i 0} {$i < 3} {incr i} {
+        set f [open $path w]; puts $f "marker-$i"; close $f
+        ns_rollfile $path 1
+    }
+    set f [open $path.000]; set marker [string trim [read $f]]; close $f
+    set before [llength [glob -nocomplain $path.*]]
+    ns_purgefiles $path 0
+    list $marker $before [llength [glob -nocomplain $path.*]] \
+        [llength [glob -nocomplain -directory $directory .ns-log-purge-*]]
+} -cleanup {file delete -force $directory} -result {marker-2 1 0 0}
+
+
+# Queue a purge during interpreter initialization, before the scheduler leaves
+# Ns_WaitForStartup(), so pausing/cancelling it is deterministic.
+test ns_accesslog-3.5 {scheduler purge is threaded and cancellation preserves retired files without stranding later batches} -setup {
+    set directory [file normalize [file join [::tcltest::temporaryDirectory] purge-cancel-[pid]]]
+    file mkdir $directory
+    set root [file normalize [file join [ns_config test home] ..]]
+    set setupFile [file join $directory setup.tcl]
+    set f [open $setupFile w]
+    puts $f {
+        set path [ns_accesslog file]
+        ns_accesslog rollfmt {}
+        ns_accesslog maxbackup 1
+        foreach marker {old-backup newest-backup} {
+            set f [open $path a]; puts $f $marker; close $f
+            ns_accesslog roll
+        }
+        foreach entry [ns_info scheduled] {
+            if {[lindex $entry 7] eq "rollfile:purge"} {
+                nsv_set purgeTest event $entry
+                nsv_set purgeTest paused [ns_pause [lindex $entry 0]]
+            }
+        }
+    }
+    close $f
+    set config [file join $directory config.tcl]
+    set f [open $config w]
+    puts $f [list set root $root]
+    puts $f [list set directory $directory]
+    puts $f [list set setupFile $setupFile]
+    puts $f {
+        ns_section ns/parameters {
+            ns_param home $root
+            ns_param tcllibrary [file join $root tcl]
+            ns_param logdir $directory
+            ns_param logfile [file join $directory system.log]
+            ns_param pidfile [file join $directory server.pid]
+        }
+        ns_section ns/servers {ns_param purge-test {Purge cancellation test}}
+        ns_section ns/server/purge-test {ns_param serverdir $directory}
+        ns_section ns/server/purge-test/modules {
+            ns_param nslog [file join $root nslog nslog[expr {$::tcl_platform(os) eq "Darwin" ? ".so" : [info sharedlibextension]}]]
+        }
+        ns_section ns/server/purge-test/module/nslog {
+            ns_param file [file join $directory access.log]
+            ns_param rolllog false
+        }
+        ns_section ns/server/purge-test/tcl {
+            ns_param initfile [file join $root nsd init.tcl]
+            ns_param initcmds [list source $setupFile]
+        }
+    }
+    close $f
+    set script [file join $directory command.tcl]
+    set f [open $script w]
+    puts $f [list set directory $directory]
+    puts $f {
+        set event [nsv_get purgeTest event]
+        set paused [nsv_get purgeTest paused]
+        set cancelled [ns_unschedule_proc [lindex $event 0]]
+        set retained [glob -directory $directory .ns-log-purge-*]
+        set f [open [lindex $retained 0]]; set marker [string trim [read $f]]; close $f
+        # A later batch must get a new callback, without deleting the preserved
+        # path from the cancelled batch or introducing a private purge thread.
+        ns_accesslog roll
+        set deadline [expr {[clock milliseconds]+5000}]
+        while {[llength [glob -nocomplain -directory $directory .ns-log-purge-*]] > 1 && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+        set survived [file exists [lindex $retained 0]]
+        set f [open [file join $directory result] w]
+        puts $f [list $paused $cancelled [expr {([lindex $event 1] & 3) == 3}] \
+            [expr {[lindex $event 5] == -1}] $marker $survived \
+            [llength [glob -nocomplain -directory $directory .ns-log-purge-*]]]
+        close $f
+        ns_shutdown
+        vwait forever
+    }
+    close $f
+} -body {
+    set executable [file join $root nsd [expr {$::tcl_platform(platform) eq "windows" ? "nsd.exe" : "nsd"}]]
+    exec -- $executable -c -d -t $config $script 2>@1
+    set f [open [file join $directory result]]; set result [string trim [read $f]]; close $f
+    set result
+} -cleanup {file delete -force $directory} -result {1 1 1 1 old-backup 1 1}
+
+
+rename accesslogPurgeSetup {}
+rename accesslogPurgeWait {}
+rename accesslogPurgeRestore {}
+
+
 cleanupTests
 
 # Local variables:

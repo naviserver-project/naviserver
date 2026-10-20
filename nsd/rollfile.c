@@ -23,6 +23,43 @@ typedef struct File {
 } File;
 
 /*
+ * Expired backups are renamed before logging resumes; only unlink is deferred.
+ * The worker owns plain path strings, never Tcl objects or caller Log pointers.
+ */
+typedef struct PurgePath {
+    struct PurgePath *nextPtr;
+    char *path;
+} PurgePath;
+
+typedef struct PurgeJob {
+    struct PurgeJob *nextPtr;
+    PurgePath *paths;
+    char *filename;
+    size_t count;
+} PurgeJob;
+
+static Ns_Mutex purgeLock;
+static PurgeJob *firstPurge, *lastPurge;
+static bool purgeActive, purgeStarted;
+
+static Ns_SchedProc PurgeProc;
+static Ns_SchedProc PurgeCleanup;
+static bool InitPurgeQueue(void);
+static bool SchedulePurge(void);
+static void PreservePurgeJobs(PurgeJob *job, const char *reason)
+    NS_GNUC_NONNULL(2);
+static void QueuePurge(PurgeJob *job)
+    NS_GNUC_NONNULL(1);
+static Ns_ReturnCode RollFile(const char *fileName, TCL_SIZE_T max, PurgeJob *job)
+    NS_GNUC_NONNULL(1);
+static Ns_ReturnCode RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup, PurgeJob *job)
+    NS_GNUC_NONNULL(1);
+static Ns_ReturnCode PurgeFiles(const char *fileName, TCL_SIZE_T max, PurgeJob *job)
+    NS_GNUC_NONNULL(1);
+static Ns_ReturnCode RetireFile(const char *file, PurgeJob *job)
+    NS_GNUC_NONNULL(1);
+
+/*
  * Local functions defined in this file.
  */
 
@@ -41,32 +78,56 @@ static int Exists(const char *file)
 static int Unlink(const char *file)
     NS_GNUC_NONNULL(1);
 
-
+
 /*
  *----------------------------------------------------------------------
  *
  * Ns_RollFile --
  *
- *      Roll the logfile. When the log is rolled, it gets renamed to
- *      filename.xyz, where 000 <= xyz <= 999. Older files have higher
- *      numbers.
+ *      Roll the logfile using numbered backups, where filename.000 is the
+ *      newest and filename.999 is the highest possible backup number.
+ *      This public entry point calls RollFile() with a NULL job, so removal
+ *      of excess backups completes synchronously.
  *
  * Results:
- *      NS_OK/NS_ERROR
+ *      NS_OK on success, NS_ERROR on invalid retention or filesystem errors.
  *
  * Side effects:
- *      If there were files: filename.000, filename.001, filename.002,
- *      the names would end up thusly:
- *          filename.002 => filename.003
- *          filename.001 => filename.002
- *          filename.000 => filename.001
- *      with nothing left named filename.000.
+ *      Renames the active file and shifts existing backup names upward.
+ *      May unlink the oldest backup before reusing its numbered name.
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_RollFile(const char *fileName, TCL_SIZE_T max)
+{
+    return RollFile(fileName, max, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RollFile --
+ *
+ *      Implement numbered rotation with optional deferred deletion. With a
+ *      NULL job, unlink an excess backup immediately. With a non-NULL job,
+ *      RetireFile() first moves it to a unique same-directory cleanup path
+ *      and appends that path to the caller-owned batch before shifting
+ *      backup names. This prevents later deletion of a reused backup name.
+ *      The caller retains job ownership and must eventually QueuePurge()
+ *      it, including when rotation fails after retiring some files.
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR on invalid retention or filesystem errors.
+ *
+ * Side effects:
+ *      Renames files and may unlink a backup or append retired paths to job.
+ *      Does not enqueue the batch or wait for background deletion.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+RollFile(const char *fileName, TCL_SIZE_T max, PurgeJob *job)
 {
     Ns_ReturnCode status = NS_OK;
 
@@ -115,7 +176,7 @@ Ns_RollFile(const char *fileName, TCL_SIZE_T max)
                 num--; /* After this, num holds the max version found */
 
                 if (err == 1) {
-                    err = Unlink(toName); /* The excessive version */
+                    err = (RetireFile(toName, job) == NS_OK ? 0 : -1); /* The excessive version */
                 }
 
                 /*
@@ -182,28 +243,51 @@ Ns_RollFile(const char *fileName, TCL_SIZE_T max)
     return status;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
  * Ns_RollFileFmt --
  *
- *      Roll the logfile either based on a timestamp and a rollfmt, or
- *      based on sequential numbers, when not rollfmt is given.
+ *      Roll the logfile using a timestamp and rollfmt, or numbered backups
+ *      when rollfmt is NULL or empty. This public entry point passes a NULL
+ *      job to RollFileFmt(), preserving synchronous retention cleanup.
  *
  * Results:
- *      NS_OK/NS_ERROR
+ *      NS_OK on success, NS_ERROR on rotation or retention cleanup errors.
  *
  * Side effects:
-
- *      The logfile will be renamed, old logfiles (outside maxbackup)
- *      are deleted.
+ *      Renames the logfile and synchronously removes excess backups.
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
+{
+    return RollFileFmt(fileObj, rollfmt, maxbackup, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RollFileFmt --
+ *
+ *      Implement formatted rotation, passing job through to numbered
+ *      rotation and retention cleanup. A NULL job requests immediate
+ *      deletion; a non-NULL caller-owned job collects retired backup paths
+ *      for later QueuePurge(). The batch must be submitted even after a
+ *      partial failure. The logfile itself is renamed synchronously.
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR on rotation or backup retirement errors.
+ *
+ * Side effects:
+ *      Renames files and may unlink excess backups or append paths to job.
+ *      Does not reopen the log, enqueue job, or start deletion itself.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup, PurgeJob *job)
 {
     Ns_ReturnCode status;
     const char   *file;
@@ -213,7 +297,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
     file = Tcl_GetString(fileObj);
 
     if (rollfmt == NULL || *rollfmt == '\0') {
-        status = Ns_RollFile(file, maxbackup);
+        status = RollFile(file, maxbackup, job);
 
     } else {
         time_t           now0, now1 = time(NULL);
@@ -271,7 +355,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
         Tcl_IncrRefCount(newPath);
 
         if (Tcl_FSAccess(newPath, F_OK) == 0) {
-            status = Ns_RollFile(ds.string, maxbackup);
+            status = RollFile(ds.string, maxbackup, job);
         } else if (Tcl_GetErrno() != ENOENT) {
             Ns_Log(Error, "rollfile: access(%s, F_OK) failed: '%s'",
                    ds.string, strerror(Tcl_GetErrno()));
@@ -289,7 +373,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
         Tcl_DStringFree(&ds);
 
         if (status == NS_OK) {
-            status = Ns_PurgeFiles(file, maxbackup);
+            status = PurgeFiles(file, maxbackup, job);
         }
     }
 
@@ -311,8 +395,10 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
  *
  * Side effects:
 
- *      The logfile will be renamed, old logfiles (outside maxbackup)
- *      are deleted.
+ *      The logfile is renamed. Expired backups are moved to unique hidden
+ *      same-directory paths and unlinked by the serialized purge worker after
+ *      reopening the log and re-enabling writes. Caller log locks are never
+ *      acquired by the purge worker. Direct roll/purge APIs stay synchronous.
  *
  *----------------------------------------------------------------------
  */
@@ -323,6 +409,11 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
 {
     Ns_ReturnCode status;
     Tcl_DString   errorMsg;
+    Ns_Time start, drained, closed, rotated, opened;
+    PurgeJob *job = ns_calloc(1u, sizeof(PurgeJob));
+
+    job->filename = ns_strdup(filename);
+    Ns_GetTime(&start);
 
     Tcl_DStringInit(&errorMsg);
 
@@ -331,6 +422,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
      */
 
     NsAsyncWriterQueueDisable(NS_FALSE);
+    Ns_GetTime(&drained);
 
     /*
      * Temporarily close the logfile via the caller-provided callback before
@@ -338,6 +430,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
      * the descriptor again.
      */
     status = closeProc(ns_const2voidp(arg));
+    Ns_GetTime(&closed);
     if (status == NS_OK) {
         Tcl_Obj      *pathObj;
 
@@ -351,9 +444,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
             /*
              * The current logfile exists.
              */
-            status = Ns_RollFileFmt(pathObj,
-                                    rollfmt,
-                                    maxbackup);
+            status = RollFileFmt(pathObj, rollfmt, maxbackup, job);
             if (status != NS_OK) {
                 Ns_DStringPrintf(&errorMsg, "rollfile: rolling logfile failed failed for '%s': %s",
                                  filename, strerror(Tcl_GetErrno()));
@@ -376,9 +467,11 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
      * logging subsystem; ownership is not returned to this function.  The
      * descriptor will be released later via the matching closeProc callback.
      */
+    Ns_GetTime(&rotated);
     // @infer-ignore PULSE_RESOURCE_LEAK
     status = openProc(ns_const2voidp(arg));
     NsAsyncWriterQueueEnable();
+    Ns_GetTime(&opened);
 
     if (status == NS_OK) {
         if (errorMsg.length > 0) {
@@ -389,18 +482,35 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
         Ns_Log(Warning, "rollfile: opening logfile '%s' failed: '%s'", filename, strerror(errno));
     }
 
+    {
+        Ns_Time drainTime, closeTime, rotateTime, openTime;
+
+        (void)Ns_DiffTime(&drained, &start, &drainTime);
+        (void)Ns_DiffTime(&closed, &drained, &closeTime);
+        (void)Ns_DiffTime(&rotated, &closed, &rotateTime);
+        (void)Ns_DiffTime(&opened, &rotated, &openTime);
+        Ns_Log(Notice, "rollfile: timings '%s': drain " NS_TIME_FMT
+               "s close " NS_TIME_FMT "s rename-and-retire " NS_TIME_FMT
+               "s reopen-and-enable " NS_TIME_FMT "s deferred-files %zu",
+               filename, (int64_t)drainTime.sec, drainTime.usec,
+               (int64_t)closeTime.sec, closeTime.usec,
+               (int64_t)rotateTime.sec, rotateTime.usec,
+               (int64_t)openTime.sec, openTime.usec, job->count);
+    }
+    QueuePurge(job);
     Tcl_DStringFree(&errorMsg);
     return status;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
  * Ns_PurgeFiles, Ns_RollFileByDate --
  *
  *      Purge files by date, keeping max files.  The file fileName is
- *      used as a basename to select files to purge.
+ *      used as a basename to select files to purge. Ns_PurgeFiles()
+ *      passes a NULL job to PurgeFiles(), so excess files are unlinked
+ *      synchronously before returning.
  *
  *      Ns_RollFileByDate is deprecated and is a poorly named wrapper
  *      for historical reasons (rolling implies rotating filenames).
@@ -423,6 +533,33 @@ Ns_RollFileByDate(const char *fileName, TCL_SIZE_T max)
 
 Ns_ReturnCode
 Ns_PurgeFiles(const char *fileName, TCL_SIZE_T max)
+{
+    return PurgeFiles(fileName, max, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PurgeFiles --
+ *
+ *      Find files matching the fileName basename, sort by descending mtime
+ *      and keep at most max files. With a NULL job, unlink excess files
+ *      synchronously. With a non-NULL job, move each excess file to a unique
+ *      cleanup path via RetireFile() and append it to the caller-owned batch.
+ *      The caller must QueuePurge() that batch, even after a partial failure.
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR on path lookup, unlink or retirement
+ *      errors. Successfully retired paths remain in job on partial failure.
+ *
+ * Side effects:
+ *      Scans and sorts directory entries, then removes excess file names.
+ *      May allocate retirement entries in job; does not enqueue the batch.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+PurgeFiles(const char *fileName, TCL_SIZE_T max, PurgeJob *job)
 {
     Tcl_Obj      *pathObj;
     Ns_ReturnCode status = NS_OK;
@@ -464,7 +601,7 @@ Ns_PurgeFiles(const char *fileName, TCL_SIZE_T max)
             if (nfiles >= max) {
                 qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
                 for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
-                    if (Unlink(Tcl_GetString(fiPtr->path)) != 0) {
+                    if (RetireFile(Tcl_GetString(fiPtr->path), job) != NS_OK) {
                         status = NS_ERROR;
                         break;
                     }
@@ -482,7 +619,7 @@ Ns_PurgeFiles(const char *fileName, TCL_SIZE_T max)
     Tcl_DecrRefCount(pathObj);
     return status;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -621,7 +758,7 @@ CmpFile(const void *arg1, const void *arg2)
     return result;
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -637,7 +774,6 @@ CmpFile(const void *arg1, const void *arg2)
  *
  *----------------------------------------------------------------------
  */
-
 static int
 Unlink(const char *file)
 {
@@ -703,6 +839,344 @@ Exists(const char *file)
     }
 
     return exists;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RetireFile --
+ *
+ *      Remove an expired backup name without deleting its contents in the
+ *      rotation thread. A non-NULL job requests a unique, reserved cleanup
+ *      path in the same directory; rename file there and append an owned
+ *      path entry to the caller-owned batch. Later rotations can safely
+ *      reuse the original name. With a NULL job, simply call Unlink(file).
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR on unlink or retirement failure.
+ *      On successful retirement, job owns the allocated cleanup path.
+ *
+ * Side effects:
+ *      With a non-NULL job, creates an empty reservation, replaces it by
+ *      renaming the backup, and increments job->count. Does not copy or
+ *      unlink the backup contents or enqueue job. Errors leave the backup
+ *      in place when retirement fails. With a NULL job, unlinks file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_ReturnCode
+RetireFile(const char *file, PurgeJob *job)
+{
+    Tcl_Obj      *fileObj, *parts, *parent;
+    TCL_SIZE_T    length;
+    Tcl_DString   path;
+    char         *temporary;
+    int           fd;
+    Ns_ReturnCode result;
+
+    NS_NONNULL_ASSERT(file != NULL);
+
+    if (job == NULL) {
+        return (Unlink(file) == 0 ? NS_OK : NS_ERROR);
+    }
+
+    fileObj = Tcl_NewStringObj(file, -1);
+    Tcl_IncrRefCount(fileObj);
+    if (Tcl_FSGetNormalizedPath(NULL, fileObj) == NULL) {
+        Ns_Log(Error, "rollfile: cannot normalize retired backup '%s'", file);
+        Tcl_DecrRefCount(fileObj);
+        return NS_ERROR;
+    }
+    parts = Tcl_FSSplitPath(Tcl_FSGetNormalizedPath(NULL, fileObj), &length);
+    parent = Tcl_FSJoinPath(parts, length - 1);
+    Tcl_IncrRefCount(parent);
+    Tcl_DStringInit(&path);
+    Ns_DStringVarAppend(&path, Tcl_GetString(parent), "/.ns-log-purge-XXXXXX", NS_SENTINEL);
+    temporary = ns_strdup(path.string);
+    fd = ns_mkstemp(temporary);
+    if (fd < 0) {
+        Ns_Log(Error, "rollfile: cannot reserve cleanup path for '%s': %s", file, strerror(errno));
+        result = NS_ERROR;
+    } else {
+        ns_close(fd);
+        result = (Rename(file, temporary) == 0 ? NS_OK : NS_ERROR);
+        if (result == NS_OK) {
+            PurgePath *entry = ns_malloc(sizeof(PurgePath));
+
+            entry->path = temporary;
+            entry->nextPtr = job->paths;
+            job->paths = entry;
+            ++job->count;
+            temporary = NULL;
+        } else {
+            (void)Unlink(temporary); /* Remove only the empty reservation. */
+        }
+    }
+    ns_free(temporary);
+    Tcl_DStringFree(&path);
+    Tcl_DecrRefCount(parent);
+    Tcl_DecrRefCount(parts);
+    Tcl_DecrRefCount(fileObj);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitPurgeQueue --
+ *
+ *      Initialize the process-wide purge queue once via NS_INIT_ONCE and
+ *      register its scheduler callback name. Execution and shutdown waiting
+ *      are provided by the scheduler; no private thread is created.
+ *
+ * Results:
+ *      NS_TRUE after initialization.
+ *
+ * Side effects:
+ *      Initializes the process-lifetime queue mutex and registers proc info.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+InitPurgeQueue(void)
+{
+    Ns_MutexInit(&purgeLock);
+    Ns_MutexSetName(&purgeLock, "ns:log-purge");
+    Ns_RegisterProcInfo((ns_funcptr_t)PurgeProc, "rollfile:purge", NULL);
+    return true;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SchedulePurge --
+ *
+ *      Arm one threaded one-shot drain callback. The caller holds purgeLock
+ *      and has established that no callback is active. Keep purgeActive set
+ *      until PurgeCleanup() runs, including the gap between PurgeProc()
+ *      returning and scheduler cleanup, so new arrivals cannot be stranded.
+ *
+ * Results:
+ *      NS_TRUE if scheduled, NS_FALSE if the scheduler rejects submission.
+ *
+ * Side effects:
+ *      Allocates a scheduler event; sets purgeActive and resets purgeStarted.
+ *      Does not create a private worker or wait for file deletion.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+SchedulePurge(void)
+{
+    Ns_Time interval = {0, 0};
+
+    purgeActive = true;
+    purgeStarted = false;
+    if (Ns_ScheduleProcEx(PurgeProc, NULL, NS_SCHED_ONCE | NS_SCHED_THREAD,
+                          &interval, PurgeCleanup) == (int)NS_ERROR) {
+        purgeActive = false;
+    }
+    return purgeActive;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PreservePurgeJobs --
+ *
+ *      Consume a list of batches which cannot be executed. Preserve retired
+ *      files on disk and report their paths and the reason for manual
+ *      cleanup. The caller has detached these batches under purgeLock and
+ *      must not access job after this call.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Logs warnings and frees owned path strings and batch metadata.
+ *      Does not acquire purgeLock or unlink any retired file.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PreservePurgeJobs(PurgeJob *job, const char *reason)
+{
+    NS_NONNULL_ASSERT(reason != NULL);
+
+    while (job != NULL) {
+        PurgeJob *nextPtr = job->nextPtr;
+
+        while (job->paths != NULL) {
+            PurgePath *entry = job->paths;
+
+            job->paths = entry->nextPtr;
+            Ns_Log(Warning, "rollfile: %s preserves retired backup '%s' for manual cleanup", reason, entry->path);
+            ns_free(entry->path);
+            ns_free(entry);
+        }
+        ns_free(job->filename);
+        ns_free(job);
+        job = nextPtr;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * QueuePurge --
+ *
+ *      Consume a caller-owned batch after reopening the log and re-enabling
+ *      the asynchronous writer. Append nonempty batches to the FIFO and arm
+ *      a drain callback only if none is scheduled or executing. Empty
+ *      batches are freed without scheduling. The caller must not access
+ *      job after this call.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Uses purgeLock only for queue state and scheduler submission. Does
+ *      not wait for deletion. If shutdown or scheduling failure prevents
+ *      execution, preserves retired files and reports their paths.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+QueuePurge(PurgeJob *job)
+{
+    NS_NONNULL_ASSERT(job != NULL);
+
+    if (job->paths == NULL || Ns_InfoShutdownPending()) {
+        PreservePurgeJobs(job, "shutdown");
+        return;
+    }
+
+    NS_INIT_ONCE(InitPurgeQueue);
+
+    Ns_MutexLock(&purgeLock);
+    if (lastPurge == NULL) {
+        firstPurge = job;
+    } else {
+        lastPurge->nextPtr = job;
+    }
+    lastPurge = job;
+    job = NULL;
+    if (!purgeActive && !SchedulePurge()) {
+        job = firstPurge;
+        firstPurge = lastPurge = NULL;
+    }
+    Ns_MutexUnlock(&purgeLock);
+    PreservePurgeJobs(job, "scheduler submission failure");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PurgeProc --
+ *
+ *      Drain retirement batches in FIFO order on a scheduler worker. Only
+ *      owned, uniquely renamed paths are deleted; no directory rescan or
+ *      active-log pathname lookup is performed. One callback drains all
+ *      available batches, including arrivals during deletion.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Unlinks files without holding purgeLock or any caller log mutex.
+ *      Frees consumed batches and reports errors and one timing summary per
+ *      batch. Failed deletions leave retired files for manual cleanup. The
+ *      scheduler owns worker lifetime and waits for active callbacks at
+ *      shutdown. PurgeCleanup() releases or rearms the active callback state.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PurgeProc(void *UNUSED(arg), int UNUSED(id))
+{
+    Ns_MutexLock(&purgeLock);
+    purgeStarted = true;
+    while (firstPurge != NULL) {
+        PurgeJob *job;
+        Ns_Time   start, end, elapsed;
+        size_t    failures = 0;
+
+        job = firstPurge;
+        firstPurge = job->nextPtr;
+        if (firstPurge == NULL) {
+            lastPurge = NULL;
+        }
+        Ns_MutexUnlock(&purgeLock);
+        Ns_GetTime(&start);
+        while (job->paths != NULL) {
+            PurgePath *entry = job->paths;
+
+            job->paths = entry->nextPtr;
+            if (Unlink(entry->path) != 0) {
+                ++failures;
+            }
+            ns_free(entry->path);
+            ns_free(entry);
+        }
+        Ns_GetTime(&end);
+        (void)Ns_DiffTime(&end, &start, &elapsed);
+        Ns_Log(Notice, "rollfile: purge '%s': files %zu failures %zu elapsed " NS_TIME_FMT "s",
+               job->filename, job->count, failures, (int64_t)elapsed.sec, elapsed.usec);
+        ns_free(job->filename);
+        ns_free(job);
+        Ns_MutexLock(&purgeLock);
+    }
+    Ns_MutexUnlock(&purgeLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PurgeCleanup --
+ *
+ *      Release the completed or cancelled one-shot callback. The scheduler
+ *      calls this even when a pending event is discarded at shutdown. If a
+ *      completed callback has new arrivals queued since its final empty
+ *      check, arm another callback while holding purgeLock.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Clears purgeActive. On cancellation before execution, shutdown, or
+ *      resubmission failure, detaches and preserves remaining batches for
+ *      manual cleanup. Does not unlink files or wait for callbacks; active
+ *      callback shutdown waiting belongs to the scheduler.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PurgeCleanup(void *UNUSED(arg), int UNUSED(id))
+{
+    PurgeJob   *pending = NULL;
+    const char *reason = "scheduler callback cancelled";
+
+    Ns_MutexLock(&purgeLock);
+    purgeActive = false;
+    if (firstPurge != NULL) {
+        if (Ns_InfoShutdownPending()) {
+            reason = "scheduler shutdown";
+        } else if (purgeStarted) {
+            if (SchedulePurge()) {
+                Ns_MutexUnlock(&purgeLock);
+                return;
+            }
+            reason = "scheduler resubmission failure";
+        }
+        pending = firstPurge;
+        firstPurge = lastPurge = NULL;
+    }
+    Ns_MutexUnlock(&purgeLock);
+    PreservePurgeJobs(pending, reason);
 }
 
 /*

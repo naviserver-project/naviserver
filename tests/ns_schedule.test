@@ -204,6 +204,19 @@ test ns_schedule-4.2 {HTTP connection janitor uses a scheduler worker and contin
 } -result {1 1}
 
 
+test ns_schedule-4.3 {cancelling a paused event frees it and reports success} -setup {
+    set id [ns_schedule_proc -once 60s {error "cancelled paused event ran"}]
+} -body {
+    set paused [ns_pause $id]
+    set cancelled [ns_unschedule_proc $id]
+    set present 0
+    foreach entry [ns_info scheduled] {
+        if {[lindex $entry 0] == $id} {set present 1}
+    }
+    list $paused $cancelled $present
+} -cleanup {ns_unschedule_proc $id} -result {1 1 0}
+
+
 cleanupTests
 
 # Local variables:

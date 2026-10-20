@@ -197,6 +197,33 @@ Rolls the system log. The behavior depends on the configuration
 parameter [emph logmaxbackup] and [emph logrollfmt].
 See [cmd ns_rollfile] for details of log rotation.
 
+For callback-based log rotation, retention cleanup first renames expired
+backups to unique [file .ns-log-purge-*] files in the same directory. After
+reopening the log and re-enabling the asynchronous writer, a threaded
+one-shot scheduler callback unlinks these retired files without acquiring the
+log mutex. At most one drain callback is active; it processes queued batches
+sequentially using existing scheduler workers rather than a private thread. Both
+numbered and timestamp-based log rotation use this mechanism. This avoids
+blocking request logging and scheduler dispatch on deletion of large backups.
+Backup names may disappear before disk space is reclaimed. Directory scans,
+metadata renames, log flushing and reopening remain synchronous.
+
+A Notice-level timing record per rotation reports writer drain, close,
+rename-and-retire, and reopen-and-enable durations in seconds. A second record
+for nonempty purge batches reports deleted-file attempts, failures and elapsed
+time. There is no success record per deleted file. Purges are serialized across
+logs. Active drain callbacks are waited for by scheduler shutdown up to the
+shutdown deadline. If a pending callback is cancelled or discarded before
+execution, its cleanup callback preserves retired files and reports their
+paths for manual cleanup; it does not perform synchronous deletion.
+
+Deletion failures, interrupted shutdown or a crash can leave retired files.
+Their paths are reported on deletion failure; they are not active logs or
+retained backups. After confirming that no running cleanup worker owns them,
+an administrator can remove these [file .ns-log-purge-*] files. The worker does
+not automatically delete arbitrary matching files left by an earlier process.
+Direct [cmd ns_rollfile] and [cmd ns_purgefiles] commands remain synchronous.
+
 [list_end]
 
 

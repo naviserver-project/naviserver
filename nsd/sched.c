@@ -486,8 +486,11 @@ Ns_Cancel(int id)
             ePtr->hPtr = NULL;
             if (ePtr->qid > 0) {
                 (void) DeQueueEvent(ePtr->qid);
-                cancelled = NS_TRUE;
             }
+            /* Paused events have no queue position but still own cleanup data.
+             * Running events are freed by their executing scheduler thread.
+             */
+            cancelled = ((ePtr->flags & NS_SCHED_RUNNING) == 0u);
         }
     }
     Ns_MutexUnlock(&lock);
