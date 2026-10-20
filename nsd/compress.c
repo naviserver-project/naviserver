@@ -328,7 +328,45 @@ Ns_CompressGzip(const char *buf, int len, Tcl_DString *dsPtr, int level)
     return status;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsCompressStreamDone --
+ *
+ *      Finish the request lifetime of a connection's compression stream.
+ *      Release its zlib state unless keepState requests retention for
+ *      reuse. When retaining an unfinished stream, reset it so the next
+ *      response starts with a fresh gzip stream.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Frees or resets initialized zlib state.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsCompressStreamDone(Ns_CompressStream *cStream, bool keepState)
+{
+    z_stream *z;
 
+    NS_NONNULL_ASSERT(cStream != NULL);
+
+    z = &cStream->z;
+
+    if (z->zalloc != NULL) {
+        if (keepState) {
+            if ((cStream->flags & COMPRESS_SENT_HEADER) != 0u) {
+                (void) deflateReset(z);
+                cStream->flags = 0u;
+            }
+        } else {
+            Ns_CompressFree(cStream);
+            memset(cStream, 0, sizeof(*cStream));
+        }
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -364,7 +402,7 @@ DeflateOrAbort(z_stream *z, int flushFlags)
     }
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -418,6 +456,13 @@ Ns_ReturnCode
 Ns_CompressGzip(const char *UNUSED(buf), int UNUSED(len), Tcl_DString *UNUSED(dsPtr), int UNUSED(level))
 {
     return NS_ERROR;
+}
+
+void
+NsCompressStreamDone(Ns_CompressStream *UNUSED(cStream),
+                     bool UNUSED(keepState))
+{
+    return;
 }
 
 Ns_ReturnCode

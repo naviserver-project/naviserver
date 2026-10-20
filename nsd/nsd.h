@@ -104,6 +104,12 @@ typedef enum {
     NS_WRITER_STREAM_FINISH =      2
 } NsWriterStreamState;
 
+typedef enum {
+    NS_COMPRESS_STATE_RELEASE = 0,
+    NS_COMPRESS_STATE_RETAIN,
+    NS_COMPRESS_STATE_POOL       /* Reserved; not implemented yet. */
+} NsCompressStatePolicy;
+
 #define MAX_URLSPACES                  16
 #define MAX_LISTEN_ADDR_PER_DRIVER     16
 
@@ -1098,6 +1104,7 @@ typedef struct NsServer {
         int  minsize;   /* min size of response to compress, in bytes */
         bool enable;    /* on/off */
         bool preinit;   /* initialize the compression stream buffers in advance */
+        NsCompressStatePolicy statePolicy;    /* state lifetime after a request */
     } compress;
 
     /*
@@ -1823,6 +1830,12 @@ NS_EXTERN void NsRunAtExitProcs(void);
  * cls.c
  */
 NS_EXTERN void NsClsCleanup(Conn *connPtr) NS_GNUC_NONNULL(1);
+
+/*
+ * compress.c
+ */
+NS_EXTERN void NsCompressStreamDone(Ns_CompressStream *cStream, bool keepState)
+    NS_GNUC_NONNULL(1);
 
 /*
  * config.c

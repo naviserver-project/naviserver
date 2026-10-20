@@ -28,9 +28,19 @@ ns_section ns/server/default {
     #ns_param extraheaders  {referrer-policy "strict-origin"}
 
     # Server and version information in HTTP responses
-    #ns_param noticeADP     returnnotice.adp ;# ADP file for ns_returnnotice commands (errors, redirects, ...)x
-    #ns_param noticedetail  false ;# default: true; include server signature in ns_returnnotice commands (errors, redirects, ...)
-    #ns_param stealthmode   true  ;# default: false; omit server header field in all responses
+    #ns_param     noticeADP    returnnotice.adp ;# ADP file for ns_returnnotice commands (errors, redirects, ...)
+    #ns_param     noticedetail false    ;# default: true; include server signature in ns_returnnotice commands (errors, redirects, ...)
+    #ns_param     stealthmode  true     ;# default: false; omit server header field in all responses
+
+    #------------------------------------------------------------------
+    # HTTP response compression
+    #------------------------------------------------------------------
+    #ns_param  compressenable  true     ;# default: false; use ns_conn compress to override
+    #ns_param  compresslevel   4        ;# default: 4; 1-9 where 9 is high compression, high overhead
+    #ns_param  compressminsize 512      ;# default: 512; Compress responses larger than this
+    #ns_param  compresspreinit     false   ;# default: false; preallocate states at startup; requires retain
+    #ns_param  compressstatepolicy release ;# default: release; release or retain; defaults to retain when compresspreinit is true
+
     #ns_param logdir        /var/logs/default
 }
 

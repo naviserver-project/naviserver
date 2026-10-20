@@ -1119,10 +1119,29 @@ set ::ns_configdoc::data {
                 default {512}
                 desc {Compress responses larger than this size}
             }
+            compressstatepolicy {
+                type {enum: release, retain}
+                default {release; retain when compresspreinit is true}
+                desc {
+                    Control compression-state retention after each request.
+                    "release" frees the state, which is initialized lazily
+                    when compression is next needed. "retain" keeps the
+                    state attached to the connection structure for reuse.
+                    Retained memory can grow with peak connection-pool
+                    usage. The value "pool" is reserved and is not yet
+                    supported.
+                }
+            }
             compresspreinit {
                 type boolean
                 default false
-                desc {Preallocate compression buffers at startup}
+                desc {
+                    Preallocate compression states for all connection
+                    structures at startup when compression is enabled.
+                    Requires compressstatepolicy "retain". When
+                    compressstatepolicy is omitted, setting this parameter
+                    to true selects "retain" for compatibility.
+                }
             }
             connectionratelimit {
                 type size

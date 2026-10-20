@@ -3316,6 +3316,14 @@ ConnRun(Conn *connPtr)
     }
 
     /*
+     * Apply the configured compression-state lifetime policy before
+     * returning this connection structure to the free list.
+     */
+    NsCompressStreamDone(
+        &connPtr->cStream,
+        servPtr->compress.statePolicy == NS_COMPRESS_STATE_RETAIN);
+
+    /*
      * Free Structures
      */
     Ns_ConnClearQuery(conn);

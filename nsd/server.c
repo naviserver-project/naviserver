@@ -429,6 +429,43 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(section, "compressminsize", NULL, 512, 0, INT_MAX);
     servPtr->compress.preinit = Ns_ConfigBool(section, "compresspreinit", NS_FALSE);
 
+    {
+        static const Ns_ObjvTable policies[] = {
+            {"release", NS_COMPRESS_STATE_RELEASE},
+            {"retain",  NS_COMPRESS_STATE_RETAIN},
+            {"pool",    NS_COMPRESS_STATE_POOL},
+            {NULL,      0u}
+        };
+        NsCompressStatePolicy defaultPolicy;
+        unsigned int          policyValue;
+
+        /*
+         * Preserve existing configurations that preallocate compression
+         * states. Otherwise, release states after each request by default.
+         */
+        defaultPolicy = servPtr->compress.preinit
+            ? NS_COMPRESS_STATE_RETAIN
+            : NS_COMPRESS_STATE_RELEASE;
+
+        policyValue = Ns_ConfigGetEnum(section, "compressstatepolicy",
+                                       policies,
+                                       (unsigned int)defaultPolicy);
+        servPtr->compress.statePolicy = (NsCompressStatePolicy)policyValue;
+
+        if (servPtr->compress.statePolicy == NS_COMPRESS_STATE_POOL) {
+            Ns_Fatal("section '%s': compressstatepolicy 'pool' "
+                     "is not implemented; use 'retain' or 'release'",
+                     section);
+        }
+
+        if (servPtr->compress.preinit
+            && servPtr->compress.statePolicy != NS_COMPRESS_STATE_RETAIN) {
+            Ns_Fatal("section '%s': compresspreinit requires "
+                     "compressstatepolicy 'retain'",
+                     section);
+        }
+    }
+
     /*
      * Run the library init procs in the order they were registered.
      */
