@@ -118,7 +118,7 @@ test ns_schedule-2.4 {thread procs run concurrently} -body {
 test ns_schedule-3.1 {scheduler diagnostic counters have a stable numeric schema} -body {
     set stats [ns_info scheduler]
     set valid 1
-    foreach name {waitReturnLateness mutexAcquisition nonThreadedCallbacks dispatchLateness} {
+    foreach name {waitReturnLateness mutexAcquisition nonThreadedCallbacks dispatchLateness dispatchDelay workerQueueDelay threadedCallbacks callbackOverrun} {
         set timing [dict get $stats $name]
         foreach key {count over100ms lastSeconds totalSeconds maxSeconds} {
             if {![string is double -strict [dict get $timing $key]] || [dict get $timing $key] < 0} {set valid 0}
@@ -215,6 +215,74 @@ test ns_schedule-4.3 {cancelling a paused event frees it and reports success} -s
     }
     list $paused $cancelled $present
 } -cleanup {ns_unschedule_proc $id} -result {1 1 0}
+
+
+test ns_schedule-5.1 {worker backlog is visible and queue delay is separate from callback runtime} -setup {
+    nsv_set schedPhases starts 0
+    nsv_set schedPhases done 0
+    nsv_set schedPhases release 0
+    set before [ns_info scheduler]
+    set jobs [expr {[dict get $before workers current] + 4}]
+    set ids {}
+} -body {
+    for {set i 0} {$i < $jobs} {incr i} {
+        lappend ids [ns_schedule_proc -thread -once 10ms {
+            nsv_incr schedPhases starts
+            while {![nsv_get schedPhases release]} {ns_sleep 10ms}
+            ns_sleep 120ms
+            nsv_incr schedPhases done
+        }]
+    }
+    set deadline [expr {[clock milliseconds] + 5000}]
+    while {![nsv_get schedPhases starts] && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+    set during [ns_info scheduler]
+    ns_sleep 200ms
+    nsv_set schedPhases release 1
+    set deadline [expr {[clock milliseconds] + 5000}]
+    while {[dict get [ns_info scheduler] threadedCallbacks count] < [dict get $before threadedCallbacks count] + $jobs
+           && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+    set after [ns_info scheduler]
+    list [expr {[dict get $during queues waitingWorkers] > 0}] \
+        [expr {[dict get $during workers running] > 0}] \
+        [expr {[dict get $during workers current] == [dict get $during workers idle] + [dict get $during workers running]}] \
+        [expr {[dict get $after workerQueueDelay over100ms] > [dict get $before workerQueueDelay over100ms]}] \
+        [expr {[dict get $after threadedCallbacks over100ms] >= [dict get $before threadedCallbacks over100ms] + $jobs}] \
+        [expr {[nsv_get schedPhases done] == $jobs}] \
+        [expr {[dict get $after queues peakWaitingWorkers] >= [dict get $during queues waitingWorkers]}]
+} -cleanup {
+    nsv_set schedPhases release 1
+    foreach id $ids {ns_unschedule_proc $id}
+    nsv_unset -nocomplain schedPhases
+} -result {1 1 1 1 1 1 1}
+
+test ns_schedule-5.2 {threaded overrun is measured against next nominal time and laststart reflects worker pickup} -setup {
+    nsv_set schedOverrun done 0
+    set before [ns_info scheduler]
+} -body {
+    set id [ns_schedule_proc -thread 50ms {
+        ns_sleep 200ms
+        nsv_incr schedOverrun done
+    }]
+    set deadline [expr {[clock milliseconds] + 5000}]
+    while {[dict get [ns_info scheduler] callbackOverrun over100ms] <= [dict get $before callbackOverrun over100ms]
+           && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+    ns_pause $id
+    set after [ns_info scheduler]
+    set startValid 0
+    foreach entry [ns_info scheduled] {
+        if {[lindex $entry 0] == $id} {
+            set startValid [expr {[lindex $entry 5] >= [lindex $entry 4]}]
+        }
+    }
+    list [expr {[dict get $after callbackOverrun over100ms] > [dict get $before callbackOverrun over100ms]}] \
+        [expr {[dict get $after threadedCallbacks count] > [dict get $before threadedCallbacks count]}] \
+        $startValid
+} -cleanup {
+    ns_unschedule_proc $id
+    set deadline [expr {[clock milliseconds] + 2000}]
+    while {[dict get [ns_info scheduler] workers running] && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+    nsv_unset -nocomplain schedOverrun
+} -result {1 1 1}
 
 
 cleanupTests

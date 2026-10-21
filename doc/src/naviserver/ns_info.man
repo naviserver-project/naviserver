@@ -291,9 +291,37 @@ subsequent logging and mutex acquisition. IDs identify the callbacks.
 Threaded callbacks are excluded. The [const over100ms] count uses 100ms,
 independently of the configured [const schedlogminduration] warning threshold.
 [def [const dispatchLateness]]
-Delay from an event's scheduled time to dequeue, for both threaded and
-non-threaded events. This is not a measurement of worker execution start.
+Delay from the nominal scheduled time to dequeue, for both threaded and
+non-threaded events. Retained for compatibility. After an overrun the actual
+queue deadline can be later than the nominal time, so this is not necessarily
+main-scheduler delay and does not measure worker execution start.
+[def [const dispatchDelay]]
+Delay from the actual queue eligibility deadline (nextqueue) to dequeue.
+This distinguishes late dispatch from nominal lateness after an overrun.
+[def [const workerQueueDelay]]
+Elapsed time from dequeue/enqueue for a worker to worker pickup. Includes
+worker availability, worker creation and worker-side mutex acquisition.
+[def [const threadedCallbacks]]
+Runtime of callbacks executed by scheduler workers, excluding queue wait,
+thread-name setup, subsequent logging and mutex reacquisition. Completed and
+cancelled one-shot jobs still contribute; running callbacks contribute only
+on completion. The scheduled table's laststart now reflects worker pickup,
+not main-scheduler dequeue.
+[def [const callbackOverrun]]
+For repeating interval callbacks (threaded and non-threaded), completion beyond
+the next nominal execution time. On-time completions contribute zero. One-shot,
+daily and weekly callbacks are excluded. This includes delays before callback
+start, and therefore is not a runtime-only measurement.
 [list_end]
+
+The top-level [const workers] dictionary contains current, idle, running and
+peak worker counts. Idle includes a newly reserved worker that has not started
+yet; running is current minus idle. Workers grow dynamically, rather than being
+limited by a configured maximum. Jobs can still wait for worker availability.
+The [const queues] dictionary contains scheduled (future heap entries),
+waitingWorkers (dispatched but not yet picked up) and peakWaitingWorkers.
+Counts are a current snapshot under the scheduler mutex; peaks and timings
+are process-lifetime. They are not historic worker counts at a timing maximum.
 
 The top-level [const lateLogsSuppressed] counter counts overdue dispatches
 above 100ms without a warning; [const callbackLogsSuppressed] counts slow
@@ -302,7 +330,9 @@ non-threaded-callback warnings are each limited process-wide to one per
 60 seconds. Counters retain observations even when warnings are suppressed.
 Late-dispatch warnings include the most recent wait-return delay, explicit
 mutex acquisition and non-threaded callback duration/ID as diagnostic context;
-these observations do not establish causality.
+these observations do not establish causality. They also include actual
+dispatch-delay and current worker/queue counts; the current job's worker wait
+and callback runtime are not yet known at dispatch.
 
 Instrumentation uses wall-clock time, clamps backward elapsed measurements
 to zero and may be affected by clock adjustments. Storage is constant-size;

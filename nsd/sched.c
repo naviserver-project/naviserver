@@ -92,7 +92,9 @@ static int nqueue = 0;              /* Number of events in queue. */
 static int maxqueue = 0;            /* Max queue events (dynamically re-sized). */
 
 static int nThreads = 0;            /* Total number of running threads */
-static int nIdleThreads = 0;        /* Number of idle threads */
+static int nIdleThreads = 0;        /* Number of idle/reserved worker threads */
+static int nWorkerQueue = 0;        /* Dispatched events awaiting a worker. */
+static int peakWorkerQueue = 0, peakWorkers = 0;
 
 static bool running = NS_FALSE;
 static bool shutdownPending = NS_FALSE;
@@ -105,6 +107,7 @@ typedef struct {
     int lastId, maxId;
 } SchedTiming;
 static SchedTiming wakeReturnTiming, lockTiming, callbackTiming, dispatchTiming;
+static SchedTiming dispatchDelayTiming, workerQueueTiming, threadedCallbackTiming, overrunTiming;
 static Ns_Time nextLateLog = {0, 0}, nextCallbackLog = {0, 0};
 static Tcl_WideInt lateLogsSuppressed = 0, callbackLogsSuppressed = 0;
 
@@ -151,8 +154,10 @@ void
 NsGetSchedulerStats(Tcl_Interp *interp)
 {
     Tcl_Obj *result = Tcl_NewDictObj();
-    const char *names[] = {"waitReturnLateness", "mutexAcquisition", "nonThreadedCallbacks", "dispatchLateness"};
-    const SchedTiming *timings[] = {&wakeReturnTiming, &lockTiming, &callbackTiming, &dispatchTiming};
+    const char *names[] = {"waitReturnLateness", "mutexAcquisition", "nonThreadedCallbacks", "dispatchLateness",
+                           "dispatchDelay", "workerQueueDelay", "threadedCallbacks", "callbackOverrun"};
+    const SchedTiming *timings[] = {&wakeReturnTiming, &lockTiming, &callbackTiming, &dispatchTiming,
+                                    &dispatchDelayTiming, &workerQueueTiming, &threadedCallbackTiming, &overrunTiming};
     size_t i;
 
     Ns_MutexLock(&lock);
@@ -170,6 +175,21 @@ NsGetSchedulerStats(Tcl_Interp *interp)
         SCHED_FIELD("maxId", Tcl_NewIntObj(t->maxSeconds == 0.0 ? -1 : t->maxId));
 #undef SCHED_FIELD
         Tcl_DictObjPut(NULL, result, Tcl_NewStringObj(names[i], -1), entry);
+    }
+    {
+        Tcl_Obj *workers = Tcl_NewDictObj(), *queues = Tcl_NewDictObj();
+
+#define SCHED_COUNT(obj, key, value) Tcl_DictObjPut(NULL, obj, Tcl_NewStringObj(key, -1), Tcl_NewIntObj(value))
+        SCHED_COUNT(workers, "current", nThreads);
+        SCHED_COUNT(workers, "idle", nIdleThreads);
+        SCHED_COUNT(workers, "running", nThreads - nIdleThreads);
+        SCHED_COUNT(workers, "peak", peakWorkers);
+        SCHED_COUNT(queues, "scheduled", nqueue);
+        SCHED_COUNT(queues, "waitingWorkers", nWorkerQueue);
+        SCHED_COUNT(queues, "peakWaitingWorkers", peakWorkerQueue);
+#undef SCHED_COUNT
+        Tcl_DictObjPut(NULL, result, Tcl_NewStringObj("workers", -1), workers);
+        Tcl_DictObjPut(NULL, result, Tcl_NewStringObj("queues", -1), queues);
     }
     Tcl_DictObjPut(NULL, result, Tcl_NewStringObj("lateLogsSuppressed", -1), Tcl_NewWideIntObj(lateLogsSuppressed));
     Tcl_DictObjPut(NULL, result, Tcl_NewStringObj("callbackLogsSuppressed", -1), Tcl_NewWideIntObj(callbackLogsSuppressed));
@@ -964,8 +984,9 @@ DeQueueEvent(int k)
 static void
 EventThread(void *arg)
 {
-    Ns_Time   now;
+    Ns_Time   now, callbackStart, nextNominal;
     Event    *ePtr;
+    bool      trackOverrun;
     int       jpt, njobs;
     uintptr_t jobId;
 
@@ -985,19 +1006,31 @@ EventThread(void *arg)
         }
         ePtr = firstEventPtr;
         firstEventPtr = ePtr->nextPtr;
+        --nWorkerQueue;
         if (firstEventPtr != NULL) {
             Ns_CondSignal(&eventcond);
         }
         --nIdleThreads;
+        Ns_GetTime(&now);
+        ePtr->laststart = now;
+        RecordSchedTiming(&workerQueueTiming, SchedSeconds(&ePtr->lastqueue, &now), ePtr->id);
+        trackOverrun = (ePtr->flags & (NS_SCHED_ONCE | NS_SCHED_DAILY | NS_SCHED_WEEKLY)) == 0u;
+        nextNominal = ePtr->scheduled;
+        Ns_IncrTime(&nextNominal, ePtr->interval.sec, ePtr->interval.usec);
         Ns_MutexUnlock(&lock);
 
         Ns_ThreadSetName("-sched:%" PRIuPTR ":%" PRIuPTR ":%d-",
                          (uintptr_t)arg, ++jobId, ePtr->id);
+        Ns_GetTime(&callbackStart);
         (*ePtr->proc) (ePtr->arg, ePtr->id);
-        Ns_ThreadSetName("-sched:idle%" PRIuPTR "-", (uintptr_t)arg);
         Ns_GetTime(&now);
+        Ns_ThreadSetName("-sched:idle%" PRIuPTR "-", (uintptr_t)arg);
 
         Ns_MutexLock(&lock);
+        RecordSchedTiming(&threadedCallbackTiming, SchedSeconds(&callbackStart, &now), ePtr->id);
+        if (trackOverrun) {
+            RecordSchedTiming(&overrunTiming, SchedSeconds(&nextNominal, &now), ePtr->id);
+        }
         ++nIdleThreads;
         if (ePtr->hPtr == NULL) {
             Ns_MutexUnlock(&lock);
@@ -1169,7 +1202,9 @@ SchedThread(void *UNUSED(arg))
                    ePtr->id,
                    (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);
 #endif
+            Ns_GetTime(&now);
             RecordSchedTiming(&dispatchTiming, SchedSeconds(&ePtr->scheduled, &now), ePtr->id);
+            RecordSchedTiming(&dispatchDelayTiming, SchedSeconds(&ePtr->nextqueue, &now), ePtr->id);
             /*
              * Measure how late we are for THIS execution
              */
@@ -1192,14 +1227,16 @@ SchedThread(void *UNUSED(arg))
                         Ns_Log(Warning,
                                "sched id %d: job started late by %ld.%06ld sec (flags %s, interval %ld.%06ld sec); "
                                "wait-return-late %.6fs (includes condition mutex reacquisition), "
-                               "explicit-mutex-acquisition %.6fs, last-nonthread-id %d duration %.6fs",
+                               "explicit-mutex-acquisition %.6fs, last-nonthread-id %d duration %.6fs; "
+                               "dispatch-delay %.6fs, workers %d idle %d worker-queue %d",
                                ePtr->id,
                                (long)late.sec, (long)late.usec,
                                (*flagsString == '\0' ? "none" : flagsString),
                                (long)ePtr->interval.sec, (long)ePtr->interval.usec,
                                wakeReturnTiming.lastSeconds, lockTiming.lastSeconds,
                                callbackTiming.count == 0 ? -1 : callbackTiming.lastId,
-                               callbackTiming.lastSeconds);
+                               callbackTiming.lastSeconds, dispatchDelayTiming.lastSeconds,
+                               nThreads, nIdleThreads, nWorkerQueue);
                         nextLateLog = now;
                         nextLateLog.sec += 60;
                         Tcl_DStringFree(&ds);
@@ -1228,9 +1265,13 @@ SchedThread(void *UNUSED(arg))
             ePtr->lastqueue = now;
             if ((ePtr->flags & NS_SCHED_THREAD) != 0u) {
                 ePtr->flags |= NS_SCHED_RUNNING;
-                ePtr->laststart = now;
+                /* laststart is set by the worker, not by dispatch. */
                 ePtr->nextPtr = firstEventPtr;
                 firstEventPtr = ePtr;
+                ++nWorkerQueue;
+                if (nWorkerQueue > peakWorkerQueue) {
+                    peakWorkerQueue = nWorkerQueue;
+                }
             } else {
                 ePtr->nextPtr = readyPtr;
                 readyPtr = ePtr;
@@ -1254,6 +1295,9 @@ SchedThread(void *UNUSED(arg))
                 Ns_ThreadCreate(EventThread, INT2PTR(nThreads), 0, NULL);
                 ++nIdleThreads;
                 ++nThreads;
+                if (nThreads > peakWorkers) {
+                    peakWorkers = nThreads;
+                }
             }
             Ns_CondSignal(&eventcond);
         }
@@ -1265,12 +1309,17 @@ SchedThread(void *UNUSED(arg))
         while ((ePtr = readyPtr) != NULL) {
             Ns_Time diff;
             int callbackId = ePtr->id;
+            Ns_Time nextNominal;
             bool logCallback = false;
+            bool trackOverrun;
 
             readyPtr = ePtr->nextPtr;
             Ns_GetTime(&now);
             ePtr->laststart = now;
             ePtr->flags |= NS_SCHED_RUNNING;
+            trackOverrun = (ePtr->flags & (NS_SCHED_ONCE | NS_SCHED_DAILY | NS_SCHED_WEEKLY)) == 0u;
+            nextNominal = ePtr->scheduled;
+            Ns_IncrTime(&nextNominal, ePtr->interval.sec, ePtr->interval.usec);
             Ns_MutexUnlock(&lock);
             (*ePtr->proc) (ePtr->arg, ePtr->id);
             Ns_GetTime(&now);
@@ -1283,6 +1332,9 @@ SchedThread(void *UNUSED(arg))
             }
             SchedLock();
             RecordSchedTiming(&callbackTiming, (double)diff.sec + (double)diff.usec / 1000000.0, callbackId);
+            if (trackOverrun) {
+                RecordSchedTiming(&overrunTiming, SchedSeconds(&nextNominal, &now), callbackId);
+            }
             if (Ns_DiffTime(&diff, &nsconf.sched.maxelapsed, NULL) == 1) {
                 if (Ns_DiffTime(&now, &nextCallbackLog, NULL) >= 0) {
                     nextCallbackLog = now;
