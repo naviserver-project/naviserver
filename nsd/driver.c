@@ -404,6 +404,9 @@ static Ns_ReturnCode AsyncWriteSynchronous(int fd, const char *buffer, size_t nb
     NS_GNUC_NONNULL(2);
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
+static void AsyncWriterDrainList(AsyncWriteData **listPtr, size_t *counterPtr, SpoolerQueue *queuePtr,
+                                 bool activeList, const char *msg)
+    NS_GNUC_NONNULL(1,2,3,5);
 static AsyncWriter *AsyncWriterGet(void);
 static bool AsyncWriterInit(void);
 
@@ -11745,24 +11748,30 @@ AsyncWriterGet(void)
 /*
  *----------------------------------------------------------------------
  *
- * AsyncWriterThread --
+ * AsyncWriterDrainList --
  *
- *      Thread that implements nonblocking write operations to files
+ *      Drain a list of asynchronous write requests, clearing *listPtr
+ *      before processing its entries. Attempt one write per request,
+ *      report failed or incomplete writes through WriteWarningRaw(),
+ *      and release each request regardless of the write result.
+ *
+ *      Decrement *counterPtr for every request. When activeList is true,
+ *      also decrement queuePtr->queuesize, since active requests are
+ *      included in that count. The msg argument identifies the drain
+ *      operation in write diagnostics.
+ *
+ *      The caller must own the supplied list and provide any necessary
+ *      synchronization for the counters. This function acquires no locks.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Write to files.
+ *      Clears the supplied list, attempts writes, updates counters, and
+ *      frees all requests. Short or failed writes are not retried.
  *
  *----------------------------------------------------------------------
  */
-static void
-AsyncWriterDrainList(AsyncWriteData **listPtr, size_t *counterPtr,
-                     SpoolerQueue *queuePtr, bool activeList,
-                     const char *msg)
-    NS_GNUC_NONNULL(1,2,3,5);
-
 static void
 AsyncWriterDrainList(AsyncWriteData **listPtr, size_t *counterPtr,
                      SpoolerQueue *queuePtr, bool activeList,
@@ -11796,6 +11805,21 @@ AsyncWriterDrainList(AsyncWriteData **listPtr, size_t *counterPtr,
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * AsyncWriterThread --
+ *
+ *      Thread that implements nonblocking write operations to files
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Write to files.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 AsyncWriterThread(void *arg)
 {
