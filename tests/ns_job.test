@@ -147,6 +147,39 @@ unset -nocomplain n command alias comment result
 
 
 
+test ns_job-slow-excerpt {slow-job script excerpts are bounded without changing execution} -setup {
+    set oldJobConfig [ns_job configure]
+    set oldNotice [ns_logctl severity Notice true]
+    ns_job configure -logminduration 0.000001
+    ns_job create excerpt-test 1
+    nsv_set job-excerpt messages {}
+    set logFilter [ns_logctl register {apply {{severity timestamp message} {
+        if {[string match {ns_job excerpt-test duration *} $message]} {
+            nsv_lappend job-excerpt messages $message
+        }
+    }}}]
+} -body {
+    set script "# [string repeat é 2000]\nafter 2; nsv_set job-excerpt executed complete-tail"
+    set id [ns_job queue excerpt-test $script]
+    set result [ns_job wait -timeout 5 excerpt-test $id]
+    set short [ns_job queue excerpt-test {after 2; return short}]
+    ns_job wait -timeout 5 excerpt-test $short
+    set messages [nsv_get job-excerpt messages]
+    set long [lindex $messages 0]
+    if {$long eq ""} {error "No slow-job notices captured: $messages"}
+    regexp {secs: '(.*)' \[script truncated\]$} $long -> excerpt
+    list [nsv_get job-excerpt executed] [expr {[string length [encoding convertto utf-8 $excerpt]] <= 1024}] \
+        [expr {[string first {[script truncated]} $long] >= 0}] \
+        [expr {[string first complete-tail $long] < 0}] \
+        [string match {*secs: 'after 2; return short'} [lindex $messages 1]]
+} -cleanup {
+    ns_logctl unregister $logFilter
+    ns_logctl severity Notice $oldNotice
+    ns_job configure -logminduration [dict get $oldJobConfig logminduration]
+    ns_job delete excerpt-test
+    nsv_unset job-excerpt
+} -result {complete-tail 1 1 1 1}
+
 cleanupTests
 
 # Local variables:

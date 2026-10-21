@@ -105,11 +105,17 @@ typedef struct {
     Tcl_WideInt count, slowCount;
     double lastSeconds, totalSeconds, maxSeconds;
     int lastId, maxId;
+    Ns_Time maxObservedAt;           /* Counter update time, Unix epoch. */
+    char maxCallback[1025];          /* Bounded copy; never an event pointer. */
+    bool maxCallbackTruncated;
 } SchedTiming;
 static SchedTiming wakeReturnTiming, lockTiming, callbackTiming, dispatchTiming;
 static SchedTiming dispatchDelayTiming, workerQueueTiming, threadedCallbackTiming, overrunTiming;
 static Ns_Time nextLateLog = {0, 0}, nextCallbackLog = {0, 0};
 static Tcl_WideInt lateLogsSuppressed = 0, callbackLogsSuppressed = 0;
+
+static void RecordSchedTiming(SchedTiming *timing, double seconds, int id, const Event *event)
+    NS_GNUC_NONNULL(1);
 
 static double
 SchedSeconds(const Ns_Time *start, const Ns_Time *end)
@@ -122,8 +128,28 @@ SchedSeconds(const Ns_Time *start, const Ns_Time *end)
     return (double)delta.sec + (double)delta.usec / 1000000.0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecordSchedTiming --
+ *
+ *      Update a timing accumulator while holding the scheduler mutex. Only
+ *      a new positive maximum formats/copies callback information, before
+ *      the event or its client data can be freed. NULL event falls back to
+ *      the live ID table; cancelled wait targets may have no description.
+ *
+ * Results:
+ *      None.
+ *
+ * Side Effects:
+ *      Updates fixed-size counters and maximum context. Callback text is
+ *      limited to 1024 bytes, truncated at a UTF-8 character boundary.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
-RecordSchedTiming(SchedTiming *timing, double seconds, int id)
+RecordSchedTiming(SchedTiming *timing, double seconds, int id, const Event *event)
 {
     ++timing->count;
     timing->lastSeconds = seconds;
@@ -133,8 +159,36 @@ RecordSchedTiming(SchedTiming *timing, double seconds, int id)
         ++timing->slowCount;
     }
     if (seconds > timing->maxSeconds) {
+        Tcl_DString description;
+        size_t length;
+
         timing->maxSeconds = seconds;
         timing->maxId = id;
+        Ns_GetTime(&timing->maxObservedAt);
+        timing->maxCallback[0] = '\0';
+        timing->maxCallbackTruncated = NS_FALSE;
+        if (event == NULL && id >= 0) {
+            const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
+
+            if (hPtr != NULL) {
+                event = Tcl_GetHashValue(hPtr);
+            }
+        }
+        if (event != NULL) {
+            Tcl_DStringInit(&description);
+            Ns_GetProcInfo(&description, (ns_funcptr_t)event->proc, event->arg);
+            length = (size_t)Tcl_DStringLength(&description);
+            if (length > sizeof(timing->maxCallback) - 1u) {
+                length = sizeof(timing->maxCallback) - 1u;
+                timing->maxCallbackTruncated = NS_TRUE;
+                while (length > 0u && (((unsigned char)description.string[length] & 0xc0u) == 0x80u)) {
+                    --length;
+                }
+            }
+            memcpy(timing->maxCallback, description.string, length);
+            timing->maxCallback[length] = '\0';
+            Tcl_DStringFree(&description);
+        }
     }
 }
 
@@ -147,7 +201,7 @@ SchedLock(void)
     Ns_GetTime(&start);
     Ns_MutexLock(&lock);
     Ns_GetTime(&end);
-    RecordSchedTiming(&lockTiming, SchedSeconds(&start, &end), -1);
+    RecordSchedTiming(&lockTiming, SchedSeconds(&start, &end), -1, NULL);
 }
 
 void
@@ -173,6 +227,9 @@ NsGetSchedulerStats(Tcl_Interp *interp)
         SCHED_FIELD("maxSeconds", Tcl_NewDoubleObj(t->maxSeconds));
         SCHED_FIELD("lastId", Tcl_NewIntObj(t->count == 0 ? -1 : t->lastId));
         SCHED_FIELD("maxId", Tcl_NewIntObj(t->maxSeconds == 0.0 ? -1 : t->maxId));
+        SCHED_FIELD("maxObservedAt", Tcl_NewDoubleObj((double)t->maxObservedAt.sec + (double)t->maxObservedAt.usec / 1000000.0));
+        SCHED_FIELD("maxCallback", Tcl_NewStringObj(t->maxCallback, -1));
+        SCHED_FIELD("maxCallbackTruncated", Tcl_NewBooleanObj(t->maxCallbackTruncated));
 #undef SCHED_FIELD
         Tcl_DictObjPut(NULL, result, Tcl_NewStringObj(names[i], -1), entry);
     }
@@ -1013,7 +1070,7 @@ EventThread(void *arg)
         --nIdleThreads;
         Ns_GetTime(&now);
         ePtr->laststart = now;
-        RecordSchedTiming(&workerQueueTiming, SchedSeconds(&ePtr->lastqueue, &now), ePtr->id);
+        RecordSchedTiming(&workerQueueTiming, SchedSeconds(&ePtr->lastqueue, &now), ePtr->id, ePtr);
         trackOverrun = (ePtr->flags & (NS_SCHED_ONCE | NS_SCHED_DAILY | NS_SCHED_WEEKLY)) == 0u;
         nextNominal = ePtr->scheduled;
         Ns_IncrTime(&nextNominal, ePtr->interval.sec, ePtr->interval.usec);
@@ -1027,9 +1084,9 @@ EventThread(void *arg)
         Ns_ThreadSetName("-sched:idle%" PRIuPTR "-", (uintptr_t)arg);
 
         Ns_MutexLock(&lock);
-        RecordSchedTiming(&threadedCallbackTiming, SchedSeconds(&callbackStart, &now), ePtr->id);
+        RecordSchedTiming(&threadedCallbackTiming, SchedSeconds(&callbackStart, &now), ePtr->id, ePtr);
         if (trackOverrun) {
-            RecordSchedTiming(&overrunTiming, SchedSeconds(&nextNominal, &now), ePtr->id);
+            RecordSchedTiming(&overrunTiming, SchedSeconds(&nextNominal, &now), ePtr->id, ePtr);
         }
         ++nIdleThreads;
         if (ePtr->hPtr == NULL) {
@@ -1203,8 +1260,8 @@ SchedThread(void *UNUSED(arg))
                    (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);
 #endif
             Ns_GetTime(&now);
-            RecordSchedTiming(&dispatchTiming, SchedSeconds(&ePtr->scheduled, &now), ePtr->id);
-            RecordSchedTiming(&dispatchDelayTiming, SchedSeconds(&ePtr->nextqueue, &now), ePtr->id);
+            RecordSchedTiming(&dispatchTiming, SchedSeconds(&ePtr->scheduled, &now), ePtr->id, ePtr);
+            RecordSchedTiming(&dispatchDelayTiming, SchedSeconds(&ePtr->nextqueue, &now), ePtr->id, ePtr);
             /*
              * Measure how late we are for THIS execution
              */
@@ -1326,14 +1383,17 @@ SchedThread(void *UNUSED(arg))
 
             (void)Ns_DiffTime(&now, &ePtr->laststart, &diff);
 
+            SchedLock();
+            RecordSchedTiming(&callbackTiming, (double)diff.sec + (double)diff.usec / 1000000.0, callbackId, ePtr);
+            if (trackOverrun) {
+                RecordSchedTiming(&overrunTiming, SchedSeconds(&nextNominal, &now), callbackId, ePtr);
+            }
             if (ePtr->hPtr == NULL) {
+                /* Capture maximum context before releasing callback data. */
+                Ns_MutexUnlock(&lock);
                 FreeEvent(ePtr);
                 ePtr = NULL;
-            }
-            SchedLock();
-            RecordSchedTiming(&callbackTiming, (double)diff.sec + (double)diff.usec / 1000000.0, callbackId);
-            if (trackOverrun) {
-                RecordSchedTiming(&overrunTiming, SchedSeconds(&nextNominal, &now), callbackId);
+                SchedLock();
             }
             if (Ns_DiffTime(&diff, &nsconf.sched.maxelapsed, NULL) == 1) {
                 if (Ns_DiffTime(&now, &nextCallbackLog, NULL) >= 0) {
@@ -1385,7 +1445,7 @@ SchedThread(void *UNUSED(arg))
             }
             status = Ns_CondTimedWait(&schedcond, &lock, &timeout);
             Ns_GetTime(&now);
-            RecordSchedTiming(&wakeReturnTiming, SchedSeconds(&baseline, &now), wakeId);
+            RecordSchedTiming(&wakeReturnTiming, SchedSeconds(&baseline, &now), wakeId, NULL);
             (void)status;
             /*{
                 Ns_Time now;

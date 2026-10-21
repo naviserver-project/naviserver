@@ -269,7 +269,19 @@ Returns fixed-size, process-wide scheduler timing diagnostics accumulated
 since process startup. Reading these counters does not reset them or scan logs.
 Each timing dictionary contains [const count], [const over100ms],
 [const lastSeconds], [const totalSeconds], [const maxSeconds],
-[const lastId] and [const maxId]. Durations are in seconds; unavailable event
+[const lastId] and [const maxId], plus [const maxObservedAt] (Unix epoch
+seconds with fractional precision), [const maxCallback] and
+[const maxCallbackTruncated]. Maximum context is copied only when a new positive
+maximum is recorded and survives completed/cancelled one-shot jobs. Callback
+information uses the same procedure-info mechanism as [cmd "ns_info scheduled"],
+limited to 1024 UTF-8 bytes at a character boundary; truncation may leave a
+partial Tcl list, so treat it as descriptive text, never a command or a complete
+argument list. It is not executed. Observation time is when the maximum is
+recorded, which can be after callback completion while reacquiring the mutex.
+A maximum with no callback (explicit mutex timing, or a wait target cancelled
+before observation) has an empty description. Before any positive observation,
+time is zero and description is empty. Maxima are independent observations,
+not necessarily the same incident. Durations are in seconds; unavailable event
 IDs are -1. The timing dictionaries are:
 
 [list_begin definitions]

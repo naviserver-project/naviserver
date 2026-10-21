@@ -285,6 +285,52 @@ test ns_schedule-5.2 {threaded overrun is measured against next nominal time and
 } -result {1 1 1}
 
 
+test ns_schedule-6.1 {completed one-shot callback maxima retain descriptions and observation times} -body {
+    set results {}
+    foreach {threaded timing marker} {false nonThreadedCallbacks completedNonThreadMarker true threadedCallbacks completedThreadMarker} {
+        set before [dict get [ns_info scheduler] $timing]
+        set duration [expr {max(0.5,[dict get $before maxSeconds]+0.15)}]
+        set since [expr {[clock microseconds]/1000000.0}]
+        set options [expr {$threaded ? {-thread} : {}}]
+        set id [ns_schedule_proc -once {*}$options 10ms "ns_sleep [format %.6fs $duration]; set $marker 1"]
+        set deadline [expr {[clock milliseconds]+int(ceil($duration*1000))+5000}]
+        while {[dict get [ns_info scheduler] $timing maxId] != $id && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+        set maximum [dict get [ns_info scheduler] $timing]
+        set liveIds [lmap entry [ns_info scheduled] {lindex $entry 0}]
+        set observed [dict get $maximum maxObservedAt]
+        lappend results [list [expr {$id ni $liveIds}] \
+            [string match "*ns:tclschedproc*$marker*" [dict get $maximum maxCallback]] \
+            [dict get $maximum maxCallbackTruncated] \
+            [expr {$observed >= $since && $observed <= [clock microseconds]/1000000.0}] \
+            [expr {[dict get $maximum maxSeconds] >= $duration}]]
+    }
+    set results
+} -result {{1 1 0 1 1} {1 1 0 1 1}}
+
+test ns_schedule-6.2 {bounded UTF-8 descriptions survive deletion and smaller callbacks do not overwrite maximum context} -body {
+    set before [dict get [ns_info scheduler] threadedCallbacks]
+    set duration [expr {[dict get $before maxSeconds]+0.15}]
+    set script "# retainedUnicodeMarker [string repeat \u00e4 900]\nns_sleep [format %.6fs $duration]"
+    set id [ns_schedule_proc -once -thread 10ms $script]
+    set deadline [expr {[clock milliseconds]+int(ceil($duration*1000))+5000}]
+    while {[dict get [ns_info scheduler] threadedCallbacks maxId] != $id && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+    set maximum [dict get [ns_info scheduler] threadedCallbacks]
+    set description [dict get $maximum maxCallback]
+    set completed [dict get [ns_info scheduler] threadedCallbacks count]
+    set shortId [ns_schedule_proc -once -thread 10ms {set shorterOneShotMarker 1}]
+    set deadline [expr {[clock milliseconds]+5000}]
+    while {[dict get [ns_info scheduler] threadedCallbacks count] <= $completed && [clock milliseconds] < $deadline} {ns_sleep 10ms}
+    set later [dict get [ns_info scheduler] threadedCallbacks]
+    set liveIds [lmap entry [ns_info scheduled] {lindex $entry 0}]
+    list [expr {$id ni $liveIds}] [dict get $maximum maxCallbackTruncated] \
+        [expr {[string length [encoding convertto utf-8 $description]] <= 1024}] \
+        [expr {[string first retainedUnicodeMarker $description] >= 0}] \
+        [expr {[string first \ufffd $description] < 0}] \
+        [expr {[dict get $later maxCallback] eq $description}] \
+        [expr {[dict get $later maxObservedAt] == [dict get $maximum maxObservedAt]}]
+} -result {1 1 1 1 1 1 1}
+
+
 cleanupTests
 
 # Local variables:

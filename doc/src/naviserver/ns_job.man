@@ -56,7 +56,9 @@ or as a number with a time unit.
 
 [para] The parameter [option -logminduration] defines a time limit for
 logging the system log. When a job takes longer than the time limit
-it will be logged. The value can be specified in the form
+it will be logged with its queue, duration and a script excerpt of at most
+1024 bytes, ending at a UTF-8 character boundary. Longer scripts have an
+explicit truncation marker; execution uses the complete script. The value can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
 or as a number with a time unit.
 

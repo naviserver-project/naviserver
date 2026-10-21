@@ -1560,9 +1560,18 @@ JobThread(void *UNUSED(arg))
 
             (void)Ns_DiffTime(&jobPtr->endTime, &jobPtr->startTime, &diffTime);
             if (Ns_DiffTime(&tp.logminduration, &diffTime, NULL) < 1) {
-                Ns_Log(Notice, "ns_job %s duration " NS_TIME_FMT " secs: '%s'",
+                size_t excerptLength = MIN((size_t)jobPtr->script.length, (size_t)1024u);
+
+                /* Do not split a UTF-8 character at the excerpt boundary. */
+                while (excerptLength < (size_t)jobPtr->script.length
+                       && excerptLength > 0u
+                       && ((unsigned char)jobPtr->script.string[excerptLength] & 0xc0u) == 0x80u) {
+                    --excerptLength;
+                }
+                Ns_Log(Notice, "ns_job %s duration " NS_TIME_FMT " secs: '%.*s'%s",
                        jobPtr->queueId, (int64_t)diffTime.sec, diffTime.usec,
-                       jobPtr->script.string);
+                       (int)excerptLength, jobPtr->script.string,
+                       excerptLength < (size_t)jobPtr->script.length ? " [script truncated]" : "");
             }
         }
 
