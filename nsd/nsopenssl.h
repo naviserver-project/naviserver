@@ -53,7 +53,6 @@
 
 # include <openssl/ssl.h>
 # include <openssl/err.h>
-#include "nsatomic.h"
 
 #if defined(HAVE_OPENSSL_4)
 typedef struct NsTLSH3Settings {

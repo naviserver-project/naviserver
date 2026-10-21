@@ -27,6 +27,9 @@
     <ClCompile Include="..\..\nsthread\memory.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\nsthread\atomic.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\nsthread\mutex.c">
       <Filter>Source Files</Filter>
     </ClCompile>

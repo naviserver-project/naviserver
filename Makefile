@@ -715,7 +715,11 @@ DISTCLEAN_CERTS = \
 
 check: test
 
-test: all $(EXTRA_TEST_REQ)
+.PHONY: test-atomic
+test-atomic: all-nsthread
+	+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) -C nsthread check
+
+test: all $(EXTRA_TEST_REQ) test-atomic
 	@if [ $(shell id -u) = 0 ]; then \
 	    $(CHOWN) -R nsadmin $(srcdir)/tests ; \
 	fi;

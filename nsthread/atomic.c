@@ -6,8 +6,7 @@
  * Copyright (C) 2026 Gustaf Neumann
  */
 
-#include "../nsd/nsd.h"
-#include "../nsd/nsatomic.h"
+#include "thread.h"
 
 /*
  *----------------------------------------------------------------------
@@ -34,10 +33,10 @@
 void
 Ns_AtomicUint32Init(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     atomicPtr->value = (LONG)value;
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     __atomic_store_n(&atomicPtr->value, value, __ATOMIC_RELAXED);
 #else
     Ns_MutexInit(&atomicPtr->lock);
@@ -72,7 +71,7 @@ Ns_AtomicUint32Init(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 void
 Ns_AtomicUint32Destroy(Ns_AtomicUint32 *atomicPtr)
 {
-#if defined(_MSC_VER) || defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#if !defined(NS_ATOMIC_MUTEX_FALLBACK) && (defined(_MSC_VER) || defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS))
     (void)atomicPtr;
 #else
     Ns_MutexDestroy(&atomicPtr->lock);
@@ -110,11 +109,11 @@ Ns_AtomicUint32Destroy(Ns_AtomicUint32 *atomicPtr)
 uint32_t
 Ns_AtomicUint32ExchangeRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return (uint32_t)InterlockedExchange(&atomicPtr->value,
                                               (LONG)value);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_exchange_n(&atomicPtr->value,
                                value,
                                __ATOMIC_RELAXED);
@@ -158,10 +157,10 @@ Ns_AtomicUint32ExchangeRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 void
 Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     (void)InterlockedExchange(&atomicPtr->value, (LONG)value);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     __atomic_store_n(&atomicPtr->value,
                      value,
                      __ATOMIC_RELAXED);
@@ -203,9 +202,9 @@ Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 uint32_t
 Ns_AtomicUint32LoadRelaxed(Ns_AtomicUint32 *atomicPtr)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return (uint32_t)InterlockedCompareExchange(&atomicPtr->value, 0, 0);
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_load_n(&atomicPtr->value, __ATOMIC_RELAXED);
 #else
     uint32_t value;
@@ -243,10 +242,10 @@ Ns_AtomicUint32LoadRelaxed(Ns_AtomicUint32 *atomicPtr)
 uint32_t
 Ns_AtomicUint32FetchOrRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return (uint32_t)InterlockedOr(&atomicPtr->value, (LONG)mask);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_fetch_or(&atomicPtr->value,
                              mask,
                              __ATOMIC_RELAXED);
@@ -288,10 +287,10 @@ Ns_AtomicUint32FetchOrRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 uint32_t
 Ns_AtomicUint32FetchAndRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return (uint32_t)InterlockedAnd(&atomicPtr->value, (LONG)mask);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_fetch_and(&atomicPtr->value,
                               mask,
                               __ATOMIC_RELAXED);
@@ -337,14 +336,14 @@ Ns_AtomicUint32FetchAndRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 uint32_t
 Ns_AtomicUint32LoadAcquire(Ns_AtomicUint32 *atomicPtr)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     /*
      * InterlockedCompareExchange provides ordering stronger than the
      * acquire semantics required by this interface.
      */
     return (uint32_t)InterlockedCompareExchange(&atomicPtr->value, 0, 0);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_load_n(&atomicPtr->value, __ATOMIC_ACQUIRE);
 
 #else
@@ -392,14 +391,14 @@ Ns_AtomicUint32LoadAcquire(Ns_AtomicUint32 *atomicPtr)
 void
 Ns_AtomicUint32StoreRelease(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     /*
      * InterlockedExchange provides ordering stronger than the release
      * semantics required by this interface.
      */
     (void)InterlockedExchange(&atomicPtr->value, (LONG)value);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     __atomic_store_n(&atomicPtr->value, value, __ATOMIC_RELEASE);
 
 #else
@@ -442,10 +441,10 @@ Ns_AtomicUint32StoreRelease(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 uint32_t
 Ns_AtomicUint32FetchOrRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return (uint32_t)InterlockedOr(&atomicPtr->value, (LONG)mask);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_fetch_or(&atomicPtr->value,
                              mask,
                              __ATOMIC_RELEASE);
@@ -492,10 +491,10 @@ Ns_AtomicUint32FetchOrRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 uint32_t
 Ns_AtomicUint32FetchAndRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return (uint32_t)InterlockedAnd(&atomicPtr->value, (LONG)mask);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_fetch_and(&atomicPtr->value,
                               mask,
                               __ATOMIC_RELEASE);
@@ -536,7 +535,7 @@ Ns_AtomicUint32FetchAndRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask)
 uint32_t
 Ns_AtomicUint32FetchAddRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     /*
      * InterlockedExchangeAdd() provides stronger ordering than relaxed,
      * but MSVC does not provide a portable weaker variant for all
@@ -545,7 +544,7 @@ Ns_AtomicUint32FetchAddRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
     return (uint32_t)InterlockedExchangeAdd(&atomicPtr->value,
                                             (LONG)value);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_fetch_add(&atomicPtr->value,
                               value,
                               __ATOMIC_RELAXED);
@@ -588,7 +587,7 @@ Ns_AtomicUint32FetchAddRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 uint32_t
 Ns_AtomicUint32FetchSubAcqRel(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     /*
      * InterlockedExchangeAdd() is a full-barrier operation and therefore
      * provides at least acquire-release ordering. Form the negative
@@ -599,7 +598,7 @@ Ns_AtomicUint32FetchSubAcqRel(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 
     return (uint32_t)InterlockedExchangeAdd(&atomicPtr->value, delta);
 
-#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_fetch_sub(&atomicPtr->value,
                               value,
                               __ATOMIC_ACQ_REL);
@@ -639,9 +638,9 @@ Ns_AtomicUint32FetchSubAcqRel(Ns_AtomicUint32 *atomicPtr, uint32_t value)
 void
 Ns_AtomicUint64Init(Ns_AtomicUint64 *atomicPtr, uint64_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     atomicPtr->value = (LONG64)value;
-#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     __atomic_store_n(&atomicPtr->value, value, __ATOMIC_RELAXED);
 #else
     Ns_MutexInit(&atomicPtr->lock);
@@ -669,7 +668,7 @@ Ns_AtomicUint64Init(Ns_AtomicUint64 *atomicPtr, uint64_t value)
 void
 Ns_AtomicUint64Destroy(Ns_AtomicUint64 *atomicPtr)
 {
-#if defined(_MSC_VER) || defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+#if !defined(NS_ATOMIC_MUTEX_FALLBACK) && (defined(_MSC_VER) || defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS))
     (void)atomicPtr;
 #else
     Ns_MutexDestroy(&atomicPtr->lock);
@@ -696,9 +695,9 @@ Ns_AtomicUint64Destroy(Ns_AtomicUint64 *atomicPtr)
 uint64_t
 Ns_AtomicUint64FetchAddRelaxed(Ns_AtomicUint64 *atomicPtr, uint64_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return (uint64_t)InterlockedExchangeAdd64(&atomicPtr->value, (LONG64)value);
-#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_fetch_add(&atomicPtr->value, value, __ATOMIC_RELAXED);
 #else
     uint64_t previous;
@@ -731,9 +730,9 @@ Ns_AtomicUint64FetchAddRelaxed(Ns_AtomicUint64 *atomicPtr, uint64_t value)
 uint64_t
 Ns_AtomicUint64LoadRelaxed(Ns_AtomicUint64 *atomicPtr)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return (uint64_t)InterlockedCompareExchange64(&atomicPtr->value, 0, 0);
-#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+#elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS) && !defined(NS_ATOMIC_MUTEX_FALLBACK)
     return __atomic_load_n(&atomicPtr->value, __ATOMIC_RELAXED);
 #else
     uint64_t value;

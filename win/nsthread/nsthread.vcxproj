@@ -316,6 +316,18 @@ for %25%25m in (exe) do copy C:\tcl8.5.12\win\Release\tclsh85t.%25%25m ..\releas
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;NSTHREAD_EXPORTS;TCL_THREADS=1;NDEBUG;WIN32;_MBCS;FD_SETSIZE=128;NO_CONST=1</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;NSTHREAD_EXPORTS;TCL_THREADS=1;NDEBUG;WIN32;_MBCS;FD_SETSIZE=128;NO_CONST=1</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="..\..\nsthread\atomic.c">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;NSTHREAD_EXPORTS;TCL_THREADS=1;_DEBUG;WIN32;_MBCS;FD_SETSIZE=128;NO_CONST=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;NSTHREAD_EXPORTS;TCL_THREADS=1;_DEBUG;WIN32;_MBCS;FD_SETSIZE=128;NO_CONST=1</PreprocessorDefinitions>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;NSTHREAD_EXPORTS;TCL_THREADS=1;NDEBUG;WIN32;_MBCS;FD_SETSIZE=128;NO_CONST=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_WARNINGS;_WINDOWS;_USRDLL;NSTHREAD_EXPORTS;TCL_THREADS=1;NDEBUG;WIN32;_MBCS;FD_SETSIZE=128;NO_CONST=1</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\..\nsthread\mutex.c">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>

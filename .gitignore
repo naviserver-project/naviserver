@@ -56,3 +56,7 @@ dump500.tcl
 
 tests/testserver/access.log
 tests/testserver/certificates/*
+
+# Standalone atomic regression executables
+nsthread/atomictest
+nsthread/atomic-fallback-test

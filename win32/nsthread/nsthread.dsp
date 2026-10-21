@@ -120,6 +120,10 @@ SOURCE=..\..\nsthread\memory.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\nsthread\atomic.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\nsthread\mutex.c
 # End Source File
 # Begin Source File

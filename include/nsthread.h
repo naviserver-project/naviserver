@@ -1231,6 +1231,41 @@ typedef struct Ns_Cs_       *Ns_Cs;
 typedef struct Ns_Sema_     *Ns_Sema;
 typedef struct Ns_RWLock_   *Ns_RWLock;
 
+/*
+ * Atomic integers. Native operations are selected independently for each
+ * width; other platforms use a per-object mutex. NS_ATOMIC_MUTEX_FALLBACK
+ * forces the mutex backend for testing or a whole build. Since this affects
+ * object layout, it must agree in the implementation and all its callers.
+ */
+typedef struct Ns_AtomicUint32 {
+# if defined(NS_ATOMIC_MUTEX_FALLBACK)
+    uint32_t value;
+    Ns_Mutex lock;
+# elif defined(_MSC_VER)
+    volatile LONG value;
+# elif defined(HAVE_GNU_ATOMIC_UINT32_BUILTINS)
+    uint32_t value;
+# else
+    uint32_t value;
+    Ns_Mutex lock;
+# endif
+} Ns_AtomicUint32;
+
+typedef struct Ns_AtomicUint64 {
+# if defined(NS_ATOMIC_MUTEX_FALLBACK)
+    uint64_t value;
+    Ns_Mutex lock;
+# elif defined(_MSC_VER)
+    __declspec(align(8)) volatile LONG64 value;
+# elif defined(HAVE_GNU_ATOMIC_UINT64_BUILTINS)
+    uint64_t value;
+# else
+    uint64_t value;
+    Ns_Mutex lock;
+# endif
+} Ns_AtomicUint64;
+
+
 typedef struct Ns_Time {
     time_t  sec;
     long    usec;
@@ -1424,6 +1459,29 @@ Ns_TclGetHashKeyString(const Tcl_HashTable *tablePtr, const Tcl_HashEntry *e)
     (void)tablePtr;
     return e->key.string;
 }
+
+/*
+ * atomic.c:
+ */
+
+NS_EXTERN void     Ns_AtomicUint32Init(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN void     Ns_AtomicUint32Destroy(Ns_AtomicUint32 *atomicPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32ExchangeRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN void     Ns_AtomicUint32StoreRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32LoadRelaxed(Ns_AtomicUint32 *atomicPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32FetchOrRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32FetchAndRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32LoadAcquire(Ns_AtomicUint32 *atomicPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void     Ns_AtomicUint32StoreRelease(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32FetchOrRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32FetchAndRelease(Ns_AtomicUint32 *atomicPtr, uint32_t mask) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32FetchAddRelaxed(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN uint32_t Ns_AtomicUint32FetchSubAcqRel(Ns_AtomicUint32 *atomicPtr, uint32_t value) NS_GNUC_NONNULL(1);
+
+NS_EXTERN void     Ns_AtomicUint64Init(Ns_AtomicUint64 *atomicPtr, uint64_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN void     Ns_AtomicUint64Destroy(Ns_AtomicUint64 *atomicPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN uint64_t Ns_AtomicUint64FetchAddRelaxed(Ns_AtomicUint64 *atomicPtr, uint64_t value) NS_GNUC_NONNULL(1);
+NS_EXTERN uint64_t Ns_AtomicUint64LoadRelaxed(Ns_AtomicUint64 *atomicPtr) NS_GNUC_NONNULL(1);
 
 /*
  * mutex.c:
