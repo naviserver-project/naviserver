@@ -39,10 +39,10 @@ check: atomictest$(EXEEXT) atomic-fallback-test$(EXEEXT)
 	LD_LIBRARY_PATH="$(CURDIR):$${LD_LIBRARY_PATH}" DYLD_LIBRARY_PATH="$(CURDIR):$${DYLD_LIBRARY_PATH}" ./atomic-fallback-test$(EXEEXT)
 
 atomictest$(EXEEXT): atomictest.o $(LIBFILE)
-	$(CC) $(LDFLAGS) -o $@ atomic-fallback-test.o $(PGMLIBS) $(CCLIBS) $(CCRPATH)
+	$(CC) $(LDFLAGS) -o $@ atomictest.o $(PGMLIBS) $(CCLIBS) $(CCRPATH)
 
 atomic-fallback-test$(EXEEXT): atomic-fallback-test.o $(LIBFILE)
-	$(CC) $(LDFLAGS) -o $@ atomic-fallback-test.o $(PGMLIBS) $(CCLIBS)
+	$(CC) $(LDFLAGS) -o $@ atomic-fallback-test.o $(PGMLIBS) $(CCLIBS) $(CCRPATH)
 
 atomictest.o: atomictest.c ../include/nsthread.h
 atomic-fallback-test.o: atomic-fallback-test.c atomictest.c atomic.c thread.h ../include/nsthread.h
