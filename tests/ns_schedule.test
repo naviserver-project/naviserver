@@ -299,10 +299,11 @@ test ns_schedule-6.1 {completed one-shot callback maxima retain descriptions and
         set liveIds [lmap entry [ns_info scheduled] {lindex $entry 0}]
         set observed [dict get $maximum maxObservedAt]
         lappend results [list [expr {$id ni $liveIds}] \
-            [string match "*ns:tclschedproc*$marker*" [dict get $maximum maxCallback]] \
-            [dict get $maximum maxCallbackTruncated] \
-            [expr {$observed >= $since && $observed <= [clock microseconds]/1000000.0}] \
-            [expr {[dict get $maximum maxSeconds] >= $duration}]]
+                             [string match "*ns:tclschedproc*$marker*" [dict get $maximum maxCallback]] \
+                             [dict get $maximum maxCallbackTruncated] \
+                             [expr {$observed >= $since && $observed <= [clock microseconds]/1000000.0}] \
+                             [expr {[dict get $maximum maxSeconds] >= [dict get $before maxSeconds]}] \
+                            ]
     }
     set results
 } -result {{1 1 0 1 1} {1 1 0 1 1}}
