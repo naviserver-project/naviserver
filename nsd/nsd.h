@@ -526,6 +526,7 @@ typedef struct Driver {
     Ns_HeadersEncodeProc    *headersEncodeProc;/* Optional - use alternate header encode proc */
     Ns_DriverSendReadyProc  *sendReadyProc;    /* Optional logical stream send readiness. */
     Ns_DriverSendCancelProc *sendCancelProc;   /* Optional cancellation of readiness wakeup. */
+    Ns_DriverSendWaitProc   *sendWaitProc;     /* Optional blocking logical send wait. */
 
     ssize_t                              locationLength;
     const char *path;                   /* Path in the configuration namespace */
@@ -1947,6 +1948,9 @@ NS_EXTERN ssize_t NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_
     NS_GNUC_NONNULL(1,2);
 
 NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_ReturnCode NsDriverSendWait(Sock *sockPtr, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)

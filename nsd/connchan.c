@@ -932,6 +932,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
             ssize_t       partialToSend = (ssize_t)Ns_SumVec(bufs, nbufs);
             char          errorBuffer[256];
             unsigned long sendErrno;
+            Ns_ReturnCode waitStatus;
 
             Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend try to send [0] %" PRIdz
                    " bytes (total %"  PRIdz ")",
@@ -1006,9 +1007,10 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                            "error before timeout (" NS_TIME_FMT ")",
                            connChanPtr->channelName, (int64_t)timeoutPtr->sec, timeoutPtr->usec);
 
-                    if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+                    waitStatus = NsDriverSendWait(sockPtr, timeoutPtr);
+                    if (waitStatus == NS_OK) {
                         partialResult = NsDriverSend(sockPtr, bufs, nbufs, flags);
-                    } else {
+                    } else if (waitStatus == NS_TIMEOUT) {
                         Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend timeout occurred",
                                connChanPtr->channelName);
                         haveTimeout = NS_TRUE;
@@ -1019,6 +1021,8 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                         Tcl_SetErrorCode(interp, "NS_TIMEOUT", NS_SENTINEL);
                         Ns_Log(Ns_LogTimeoutDebug, "connchan send on %s runs into timeout",
                                connChanPtr->channelName);
+                        partialResult = -1;
+                    } else {
                         partialResult = -1;
                     }
                 }

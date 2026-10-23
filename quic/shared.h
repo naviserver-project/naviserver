@@ -120,6 +120,11 @@ extern "C" {
         size_t      send_queue_size;
         size_t      send_resume_size;
 
+        /* Blocking producer waits; protected by lock, separate from writers. */
+        Ns_Cond     send_cond;
+        unsigned int send_waiters;
+        bool        send_stopped;
+
         /* One-shot logical-writability notification, protected by lock. */
         Ns_DriverSendWakeProc *send_wake_proc;
         void                  *send_wake_arg;
@@ -158,6 +163,8 @@ extern "C" {
 
     /* --- Body enqueue/EOF from producer side --- */
     size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const char *label);
+    Ns_ReturnCode SharedSendWait(SharedStream *ss, const Ns_Time *timeoutPtr)
+        NS_GNUC_NONNULL(1);
     void   SharedMarkClosedByApp(SharedStream *ss);
     void   SharedMarkAbortRequested(SharedStream *ss)  NS_GNUC_NONNULL(1);
     bool   SharedSendReady(SharedStream *ss, Ns_DriverSendWakeProc *wakeProc,

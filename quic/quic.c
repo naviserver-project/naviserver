@@ -734,6 +734,7 @@ static Ns_DriverRecvProc Recv;
 static Ns_DriverSendProc Send;
 static Ns_DriverSendReadyProc SendReady;
 static Ns_DriverSendCancelProc SendCancel;
+static Ns_DriverSendWaitProc SendWait;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 static Ns_DriverConnInfoProc ConnInfo;
@@ -9408,7 +9409,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     Ns_MutexSetName2(&quicMemStats.lock, "h3", "memstats");
 #endif
 
-    init.version = NS_DRIVER_VERSION_7;
+    init.version = NS_DRIVER_VERSION_8;
     init.name = "quic";
     init.listenProc = Listen;
     init.acceptProc = Accept;
@@ -9418,6 +9419,7 @@ NS_EXPORT Ns_ReturnCode Ns_ModuleInit(const char *server, const char *module)
     init.sendFileProc = NULL;
     init.sendReadyProc = SendReady;
     init.sendCancelProc = SendCancel;
+    init.sendWaitProc = SendWait;
     init.keepProc = Keep;
     init.connInfoProc = ConnInfo;
     init.clientcertInfoProc = ClientcertInfo;
@@ -11211,6 +11213,59 @@ Send(Ns_Sock *sock, const struct iovec *iov, int niov, unsigned int UNUSED(flags
     Ns_Log(Ns_LogQuicDebug, "[%lld] H3 Send nbufs %d -> DONE (consumed %ld)",
            (long long)dc->iter, niov, consumed);
     return consumed;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendWait --
+ *
+ *      Wait for space in the stream's bounded response queue for a caller
+ *      which explicitly permits blocking. The QUIC event loop continues
+ *      draining the queue independently. Generic writers use SendReady()
+ *      instead, and nonblocking connection channels do not call this hook.
+ *
+ * Results:
+ *      NS_OK when sending can be retried, NS_TIMEOUT on expiry, or NS_ERROR
+ *      on a terminal stream. Store the corresponding socket send error.
+ *
+ * Side effects:
+ *      May suspend the producer until the low-water mark or termination.
+ *      Never blocks the owning QUIC event loop.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+SendWait(Ns_Sock *sock, const Ns_Time *timeoutPtr)
+{
+    NsTLSConfig  *dc = sock->driver->arg;
+    StreamCtx    *sc = StreamCtxFromSock(dc, sock);
+    Ns_ReturnCode status;
+    unsigned long errorCode = 0u;
+
+    if (sc == NULL) {
+        status = NS_ERROR;
+        errorCode = EPIPE;
+#if NS_ENABLE_THREAD_AFFINITY
+    } else if (NS_TA_IS_OWNER(sc->cc, affinity)) {
+        /* A blocking wait here would prevent this stream from draining. */
+        status = NS_ERROR;
+        errorCode = NS_EWOULDBLOCK;
+#endif
+    } else {
+        status = SharedSendWait(&sc->sh, timeoutPtr);
+        if (status == NS_TIMEOUT) {
+            errorCode = NS_ETIMEDOUT;
+        } else if (status != NS_OK) {
+            errorCode = H3_IO_HAS(sc, H3_IO_RESET) ? NS_ECONNRESET : EPIPE;
+        }
+    }
+    if (errorCode != 0u) {
+        Ns_SockSetSendErrno(sock, errorCode);
+        Ns_SetSockErrno((ns_sockerrno_t)errorCode);
+    }
+
+    return status;
 }
 
 /*

@@ -1583,6 +1583,9 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
         drvPtr->sendReadyProc  = init->sendReadyProc;
         drvPtr->sendCancelProc = init->sendCancelProc;
     }
+    if (init->version >= NS_DRIVER_VERSION_8) {
+        drvPtr->sendWaitProc = init->sendWaitProc;
+    }
 
     drvPtr->servPtr        = servPtr;
     drvPtr->defport        = defport;
@@ -3061,6 +3064,41 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverSendWait --
+ *
+ *      Wait for capacity after a nonblocking driver send made no progress.
+ *      Multiplexed transports provide a logical per-stream wait; other
+ *      drivers retain the socket-writability wait. timeoutPtr is relative,
+ *      or NULL for an indefinite wait. Only blocking callers use this helper.
+ *
+ * Results:
+ *      NS_OK when a send can be retried, NS_TIMEOUT on expiry, or NS_ERROR.
+ *
+ * Side effects:
+ *      May suspend the calling thread. The driver callback sets the socket
+ *      send error on failure.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+NsDriverSendWait(Sock *sockPtr, const Ns_Time *timeoutPtr)
+{
+    const Driver *drvPtr;
+
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    drvPtr = sockPtr->drvPtr;
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    if (drvPtr->sendWaitProc != NULL) {
+        return (*drvPtr->sendWaitProc)((Ns_Sock *)sockPtr, timeoutPtr);
+    }
+    return Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE,
+                            timeoutPtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *

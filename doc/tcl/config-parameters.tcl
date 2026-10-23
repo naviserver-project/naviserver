@@ -2609,9 +2609,13 @@ stops execution of that ADP page}
                 default {256kB}
                 desc {
                     Maximum response-body data retained in the HTTP/3
-                    stream send queue. When this limit is reached, writer
-                    delivery pauses until the queue drains to half the
-                    configured size.
+                    stream send queue, with or without writer threads.
+                    When the queue is full, asynchronous writers park;
+                    connection-thread sends wait for up to sendwait until
+                    the queue drains to half the configured size. Timed
+                    connection-channel sends use their configured timeout.
+                    Nonblocking sends return the number of bytes accepted
+                    so far.
                 }
             }
 
