@@ -656,9 +656,11 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
                    " bytes, sent %" PRIdz " timeoutPtr %p",
                    toWrite, sent, (const void*)timeoutPtr);
         }
-        if (sent == 0
-            && Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_WRITE,
-                                timeoutPtr) == NS_OK) {
+        if (sent == 0) {
+            if (NsDriverSendWait((Sock *)sock, timeoutPtr) != NS_OK) {
+                nWrote = -1;
+                break;
+            }
             sent = NsDriverSend((Sock *)sock, sbufPtr, nsbufs, flags);
         }
         if (sent == -1) {

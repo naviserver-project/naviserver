@@ -313,8 +313,9 @@ void SharedStateDestroy(SharedState *st) {
  * Side effects:
  *      Initializes ss->lock; writes ss->st and ss->sid_hint; leaves the
  *      tx_queued/tx_pending chunk queues zeroed (no allocations here).
- *      The configured send-queue limit remains inactive until a generic
- *      writer attaches through SharedSendReady().
+ *      The configured send-queue limit applies to every producer. A
+ *      condition variable supports blocking producers independently of
+ *      the generic writer's asynchronous wake registration.
  *      Must be called exactly once before any concurrent use of *ss*.
  *      The caller must ensure that *owner* outlives *ss* or otherwise
  *      coordinates teardown.
@@ -330,6 +331,7 @@ SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid,
     Ns_AtomicUint32Init(&ss->hdrs_ready, 0u);
     Ns_AtomicUint32Init(&ss->resume_enqueued, 0u);
     Ns_AtomicUint32Init(&ss->tx_state, 0u);
+    Ns_CondInit(&ss->send_cond);
 
     ss->st       = owner;
     ss->sid_hint = sid;
@@ -356,12 +358,14 @@ SharedStreamInit(SharedStream *ss, SharedState *owner, int64_t sid,
 void SharedStreamDestroy(SharedStream *ss) {
     SharedCounterStatsIncr(&sharedCounterStats.counters.stream_destroy_lock);
     Ns_MutexLock(&ss->lock);
+    assert(ss->send_waiters == 0u);
     ChunkQueueClear(&ss->tx_queued);
     ChunkQueueClear(&ss->tx_pending);
     ss->tx_buffered = 0u;
     ss->send_wake_proc = NULL;
     ss->send_wake_arg  = NULL;
     Ns_MutexUnlock(&ss->lock);
+    Ns_CondDestroy(&ss->send_cond);
 }
 
 /*======================================================================
@@ -470,10 +474,9 @@ void SharedHdrsClear(SharedStream *ss) {
  *      not issue a resume tick.
  *
  * Results:
- *      Returns the number of bytes accepted. For writer-fed streams this may
- *      be less than len when the configured stream send queue is full.
- *      Non-writer sends remain uncapped. Returns 0 when no data can currently
- *      be accepted or when buf is NULL or len is zero.
+ *      Returns the number of bytes accepted, at most the remaining capacity
+ *      of the configured stream send queue. Returns 0 when the queue is
+ *      full, the stream is terminal, buf is NULL, or len is zero.
  *
  * Side effects:
  *      Acquires ss->lock, allocates a bounded Chunk, appends it to
@@ -484,7 +487,6 @@ void SharedHdrsClear(SharedStream *ss) {
 size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const char *label) {
   Chunk  *ch;
   size_t  accepted;
-  bool    writer_attached;
 
   if (!buf || len == 0) {
     return 0;
@@ -494,19 +496,9 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
 
   Ns_MutexLock(&ss->lock);
 
-  /*
-   * SharedSendReady() retains the writer's wake argument for the lifetime of
-   * the attachment.  This lets ordinary connection-thread responses keep
-   * their historical uncapped behavior while bounding writer-fed streams.
-   */
-  writer_attached = ss->send_wake_arg != NULL;
-  if (writer_attached) {
-      assert(ss->tx_buffered <= ss->send_queue_size);
-      accepted = ss->send_queue_size - ss->tx_buffered;
-      if (accepted > len) {
-          accepted = len;
-      }
-  } else {
+  assert(ss->tx_buffered <= ss->send_queue_size);
+  accepted = ss->send_stopped ? 0u : ss->send_queue_size - ss->tx_buffered;
+  if (accepted > len) {
       accepted = len;
   }
 
@@ -529,15 +521,71 @@ size_t SharedEnqueueBody(SharedStream *ss, const void *buf, size_t len, const ch
 
   Ns_Log(Ns_LogQuicDebug,
          "H3[%lld] SharedEnqueueBody: accepted %zu/%zu, buffered %zu,"
-         " writer limit %zu (%s)",
+         " queue limit %zu",
          (long long)ss->sid_hint,
          accepted,
          len,
          SharedBufferedBytes(ss),
-         ss->send_queue_size,
-         writer_attached ? "active" : "inactive");
+         ss->send_queue_size);
 
   return accepted;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SharedSendWait --
+ *
+ *      Wait for logical send capacity. If the queue is full on entry,
+ *      wait until it reaches the low-water mark, the stream terminates,
+ *      or the relative timeout expires. NULL permits an indefinite wait.
+ *      One absolute deadline is used across spurious wakeups.
+ *
+ *      The caller must hold the stream's normal delivery reference until
+ *      this function returns. The QUIC thread must never call this function.
+ *
+ * Results:
+ *      NS_OK when capacity is available, NS_TIMEOUT on expiry, or NS_ERROR
+ *      when the stream has entered a terminal state.
+ *
+ * Side effects:
+ *      May suspend the calling producer, releasing ss->lock while waiting.
+ *      Does not install or alter the generic writer's wake registration.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+SharedSendWait(SharedStream *ss, const Ns_Time *timeoutPtr)
+{
+    Ns_Time       deadline;
+    Ns_ReturnCode status = NS_OK;
+
+    if (timeoutPtr != NULL) {
+        Ns_GetTime(&deadline);
+        Ns_IncrTime(&deadline, timeoutPtr->sec, timeoutPtr->usec);
+    }
+
+    Ns_MutexLock(&ss->lock);
+    if (!ss->send_stopped && ss->tx_buffered >= ss->send_queue_size) {
+        ++ss->send_waiters;
+        while (!ss->send_stopped && ss->tx_buffered > ss->send_resume_size) {
+            status = Ns_CondTimedWait(&ss->send_cond, &ss->lock,
+                                       timeoutPtr != NULL ? &deadline : NULL);
+            if (status != NS_OK) {
+                break;
+            }
+        }
+        --ss->send_waiters;
+        if (ss->tx_buffered <= ss->send_resume_size) {
+            status = NS_OK;
+        }
+    }
+    if (ss->send_stopped) {
+        status = NS_ERROR;
+    }
+    Ns_MutexUnlock(&ss->lock);
+
+    return status;
 }
 
 /*
@@ -578,7 +626,7 @@ SharedSendReady(SharedStream *ss, Ns_DriverSendWakeProc *wakeProc,
     assert(ss->send_wake_arg == NULL || ss->send_wake_arg == wakeArg);
     ss->send_wake_arg = wakeArg;
 
-    ready = ss->tx_buffered < ss->send_queue_size;
+    ready = ss->send_stopped || ss->tx_buffered < ss->send_queue_size;
     if (ready) {
         ss->send_wake_proc = NULL;
     } else {
@@ -628,8 +676,8 @@ SharedSendCancel(SharedStream *ss, void *wakeArg)
  *
  * SharedSendWakeBlocked --
  *
- *      Release a generic writer parked on the stream's logical send
- *      readiness after the stream has entered a terminal state. Atomically
+ *      Wake blocking producers and a generic writer parked on the stream's
+ *      logical send readiness after a terminal condition. Atomically
  *      claim and remove the registered one-shot wake callback before
  *      invoking it, ensuring that each registration is consumed at most
  *      once.
@@ -644,7 +692,8 @@ SharedSendCancel(SharedStream *ss, void *wakeArg)
  *      None.
  *
  * Side effects:
- *      Clears the blocked-writer wake registration and attachment marker.
+ *      Marks the stream terminal and wakes blocking producers. Clears
+ *      the blocked-writer wake registration and attachment marker.
  *      When a callback was registered, invokes the corresponding
  *      Ns_DriverSendWakeProc after releasing the shared-stream mutex.
  *
@@ -661,6 +710,10 @@ SharedSendWakeBlocked(SharedStream *ss)
     wakeArg  = ss->send_wake_arg;
     ss->send_wake_proc = NULL;
     ss->send_wake_arg  = NULL;
+    ss->send_stopped = NS_TRUE;
+    if (ss->send_waiters != 0u) {
+        Ns_CondBroadcast(&ss->send_cond);
+    }
     Ns_MutexUnlock(&ss->lock);
 
     if (wakeProc != NULL) {
@@ -712,7 +765,8 @@ SharedBufferedBytes(SharedStream *ss)
  *
  *      If the resulting buffered byte count is at or below the configured
  *      low-water mark, release a writer previously parked at the
- *      high-water mark.
+ *      high-water mark, and notify blocking producers waiting on the
+ *      same queue.
  *
  * Results:
  *      None.
@@ -736,6 +790,11 @@ SharedAccountTrim(SharedStream *ss, size_t nbytes)
     Ns_MutexLock(&ss->lock);
     assert(nbytes <= ss->tx_buffered);
     ss->tx_buffered -= nbytes;
+
+    if (ss->send_waiters != 0u
+        && ss->tx_buffered <= ss->send_resume_size) {
+        Ns_CondBroadcast(&ss->send_cond);
+    }
 
     if (ss->send_wake_proc != NULL
         && ss->tx_buffered <= ss->send_resume_size) {
