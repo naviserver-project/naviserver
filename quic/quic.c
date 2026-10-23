@@ -6519,7 +6519,12 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
         Tcl_DStringAppend(&line, sc->method, TCL_INDEX_NONE);
         Tcl_DStringAppend(&line, " ", 1);
         Tcl_DStringAppend(&line, sc->path, TCL_INDEX_NONE);
-        Tcl_DStringAppend(&line, " HTTP/1.1", 9);
+        /*
+         * HTTP/3 has no wire request line. Use its implicit protocol
+         * version "3.0" (RFC 9114, Section 4.3.1) in this internal
+         * representation for logging and request introspection.
+         */
+        Tcl_DStringAppend(&line, " HTTP/3.0", 9);
 
         Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_end_headers peer %s request line: %s",
                (long long)stream_id, peer, line.string);
