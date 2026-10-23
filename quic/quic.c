@@ -2412,8 +2412,11 @@ static bool quic_conn_can_be_freed_postloop(SSL *conn, ConnCtx *cc)
         bool no_open_streams  = quic_conn_stream_map_empty(cc);
 
         if (both_shutdown && no_open_streams) {
-            Ns_Log(Ns_LogQuicDebug, "H3 quic_conn_can_be_freed_postloop conn %p sd=%x entries=%d init=%d",
-                   (void*)conn, sd, cc->streams.numEntries, SSL_is_init_finished(conn));
+            Ns_Log(Ns_LogQuicDebug,
+                   "H3 quic_conn_can_be_freed_postloop conn %p sd=%x"
+                   " entries=%" PRITcl_Size " init=%d",
+                   (void *)conn, sd, cc->streams.numEntries,
+                   SSL_is_init_finished(conn));
         }
         return both_shutdown && no_open_streams;
     }
@@ -6605,8 +6608,11 @@ on_end_headers(nghttp3_conn *UNUSED(conn), int64_t stream_id, int fin,
         sockPtr->tfile = NULL;
         sockPtr->tfd = NS_INVALID_FD;
 
-        Ns_Log(Ns_LogQuicDebug, "H3[%lld] on_end_headers request with body size %ld maxupload %ld",
-               (long long)stream_id, reqPtr->contentLength, drvPtr->maxupload);
+        Ns_Log(Ns_LogQuicDebug,
+               "H3[%lld] on_end_headers request with body size %" PRIuz
+               " maxupload %" TCL_LL_MODIFIER "d",
+               (long long)stream_id, reqPtr->contentLength,
+               drvPtr->maxupload);
 
         if (drvPtr->maxupload > 0
             && reqPtr->contentLength > (size_t)drvPtr->maxupload
