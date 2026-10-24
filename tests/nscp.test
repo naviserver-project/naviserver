@@ -41,6 +41,8 @@ proc nscpFailureContext {sock suffix} {
     return $details
 }
 
+# Binary translation already selects byte-preserving encoding. Do not set
+# -encoding binary explicitly: Tcl 9 no longer accepts that encoding name.
 # Read prompts with a deadline so protocol regressions fail instead of hanging.
 proc nscpReadUntil {sock suffix} {
     set result ""
@@ -72,7 +74,7 @@ foreach {number description chunks expected} [list \
     test nscp-$number $description -constraints nscpLoaded -setup {
         set sock [socket [ns_config test loopback] \
                       [ns_config ns/server/test/module/nscp port]]
-        fconfigure $sock -blocking false -translation binary -encoding binary -buffering none
+        fconfigure $sock -blocking false -translation binary -buffering none
         nscpReadUntil $sock "login: "
         puts -nonewline $sock "\r\n"
         nscpReadUntil $sock "Password: "
@@ -124,7 +126,7 @@ foreach {number description login suffix expected} [list \
         set directAuth [ns_auth user $login unused-test-password]
         set sock [socket [ns_config test loopback] \
                       [ns_config ns/server/test/module/nscp port]]
-        fconfigure $sock -blocking false -translation binary -encoding binary -buffering none
+        fconfigure $sock -blocking false -translation binary -buffering none
         nscpReadUntil $sock "login: "
         puts -nonewline $sock "$login\r\n"
         nscpReadUntil $sock "Password: "
