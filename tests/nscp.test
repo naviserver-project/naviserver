@@ -20,14 +20,36 @@ test nscp-2.0 {return users from config file} -constraints nscpLoaded -body {
 } -returnCodes {ok error} -result {{} nsadmin}
 
 
+# Keep server-side rejection diagnostics visible in CI, restoring the previous
+# severity setting after this test file. Passwords/hashes are never logged.
+set nscpWarningEnabled [ns_logctl severity warning true]
+
+proc nscpFailureContext {sock suffix} {
+    set details [dict create expectedPrompt $suffix]
+    foreach {key script} [list \
+        server {ns_info server} \
+        loopback {ns_config test loopback} \
+        listener {list [ns_config ns/server/test/module/nscp address] [ns_config ns/server/test/module/nscp port]} \
+        allowLoopbackEmptyUser {ns_config -bool ns/server/test/module/nscp allowLoopbackEmptyUser false} \
+        echopasswd {ns_config -bool ns/server/test/module/nscp echopasswd false} \
+        peer [list fconfigure $sock -peername] \
+        local [list fconfigure $sock -sockname] \
+        authTestCalls {expr {[nsv_exists nscpLoopbackTest calls] ? [nsv_get nscpLoopbackTest calls] : "inactive"}}] {
+        if {[catch {uplevel 1 $script} value]} {set value "unavailable: $value"}
+        dict set details $key $value
+    }
+    return $details
+}
+
 # Read prompts with a deadline so protocol regressions fail instead of hanging.
 proc nscpReadUntil {sock suffix} {
     set result ""
     set deadline [expr {[clock milliseconds] + 5000}]
     while {![string match *$suffix $result]} {
         append result [read $sock]
+        if {[string match *$suffix $result]} {return $result}
         if {[eof $sock] || [clock milliseconds] > $deadline} {
-            error "nscp prompt missing: [list $result]"
+            error "nscp prompt missing: [list $result]; diagnostics: [nscpFailureContext $sock $suffix]"
         }
         after 1
     }
@@ -62,12 +84,66 @@ foreach {number description chunks expected} [list \
             after 50
         }
         set response [nscpReadUntil $sock "test:nscp 2> "]
-        expr {[string first "$expected\r\n" $response] >= 0}
+        if {[string first "$expected\r\n" $response] < 0} {
+            error "unexpected nscp response: [list $response]; diagnostics: [nscpFailureContext $sock {test:nscp 2> }]"
+        }
+        expr {1}
     } -cleanup {
         close $sock
     } -result 1
 }
+# Exercise the loopback opt-in separately from password authentication. The
+# guarded provider rejects normal authentication while these tests run, so an
+# empty crypt salt cannot accidentally make a broken loopback check pass.
+# It remains inert after cleanup and does not change the configured users.
+proc nscpDenyUserAuthForTest {} {
+    if {![nsv_exists nscpLoopbackTest registered]} {
+        ns_register_auth -first -authority nscp-loopback-test user [list apply {{user password} {
+            if {[nsv_exists nscpLoopbackTest active]
+                && [nsv_get nscpLoopbackTest active]} {
+                nsv_incr nscpLoopbackTest calls
+                return -code break FORBIDDEN
+            }
+            return UNAUTHORIZED
+        }}]
+        nsv_set nscpLoopbackTest registered 1
+    }
+    nsv_set nscpLoopbackTest active 1
+    nsv_set nscpLoopbackTest calls 0
+}
+
+foreach {number description login suffix expected} [list \
+    4.0 {empty loopback user bypasses rejecting user authentication} \
+        {} "test:nscp 1> " {FORBIDDEN 1 1} \
+    4.1 {named loopback user still requires user authentication} \
+        nscp-loopback-denied "Access denied!\n" {FORBIDDEN 2 1}] {
+    test nscp-$number $description -constraints nscpLoaded -setup {
+        set sock ""
+        nscpDenyUserAuthForTest
+        # Prove that the rejecting provider is active before opening nscp.
+        set directAuth [ns_auth user $login unused-test-password]
+        set sock [socket [ns_config test loopback] \
+                      [ns_config ns/server/test/module/nscp port]]
+        fconfigure $sock -blocking false -translation binary -encoding binary -buffering none
+        nscpReadUntil $sock "login: "
+        puts -nonewline $sock "$login\r\n"
+        nscpReadUntil $sock "Password: "
+        puts -nonewline $sock "unused-test-password\r\n"
+    } -body {
+        set response [nscpReadUntil $sock $suffix]
+        list $directAuth [nsv_get nscpLoopbackTest calls] \
+            [string match *$suffix $response]
+    } -cleanup {
+        nsv_set nscpLoopbackTest active 0
+        if {$sock ne ""} {close $sock}
+    } -result $expected
+}
+rename nscpDenyUserAuthForTest {}
+
 rename nscpReadUntil {}
+rename nscpFailureContext {}
+ns_logctl severity warning $nscpWarningEnabled
+unset nscpWarningEnabled
 
 cleanupTests
 
