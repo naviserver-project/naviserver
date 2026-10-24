@@ -19,6 +19,56 @@ test nscp-2.0 {return users from config file} -constraints nscpLoaded -body {
     nscp users
 } -returnCodes {ok error} -result {{} nsadmin}
 
+
+# Read prompts with a deadline so protocol regressions fail instead of hanging.
+proc nscpReadUntil {sock suffix} {
+    set result ""
+    set deadline [expr {[clock milliseconds] + 5000}]
+    while {![string match *$suffix $result]} {
+        append result [read $sock]
+        if {[eof $sock] || [clock milliseconds] > $deadline} {
+            error "nscp prompt missing: [list $result]"
+        }
+        after 1
+    }
+    return $result
+}
+
+foreach {number description chunks expected} [list \
+    3.0 {pasted CRLF continuations} \
+        [list "list first \\\r\n second \\\r\n third\r\n"] {first second third} \
+    3.1 {CRLF split between socket reads} \
+        [list "list first \\\r" "\n second\r\n"] {first second} \
+    3.2 {interactive CRLF continuations} \
+        [list "list first \\\r\n" " second\r\n"] {first second} \
+    3.3 {LF continuations} \
+        [list "list first \\\n second\n"] {first second} \
+    3.4 {escaped backslash is not a continuation} \
+        [list "list first \\\\\r\n"] {first \\} \
+    3.5 {braced multiline value} \
+        [list "set value {first\r\nsecond}\r\n"] "first\nsecond"] {
+    test nscp-$number $description -constraints nscpLoaded -setup {
+        set sock [socket [ns_config test loopback] \
+                      [ns_config ns/server/test/module/nscp port]]
+        fconfigure $sock -blocking false -translation binary -encoding binary -buffering none
+        nscpReadUntil $sock "login: "
+        puts -nonewline $sock "\r\n"
+        nscpReadUntil $sock "Password: "
+        puts -nonewline $sock "\r\n"
+        nscpReadUntil $sock "test:nscp 1> "
+    } -body {
+        foreach chunk $chunks {
+            puts -nonewline $sock $chunk
+            after 50
+        }
+        set response [nscpReadUntil $sock "test:nscp 2> "]
+        expr {[string first "$expected\r\n" $response] >= 0}
+    } -cleanup {
+        close $sock
+    } -result 1
+}
+rename nscpReadUntil {}
+
 cleanupTests
 
 # Local variables:
