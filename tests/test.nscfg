@@ -325,6 +325,9 @@ ns_section "ns/server/test/module/nsproxy" {
 }
 
 ns_section "ns/server/test/module/nscp" {
+    # Socket tests use the existing empty user on the loopback listener.
+    # Explicitly opt in: an empty crypt salt is not portable across platforms.
+    ns_param   allowLoopbackEmptyUser true
     ns_param   echopasswd       true ;# socket tests do not negotiate Telnet echo
     ns_param   port            $nscp_port
     ns_param   address         [ns_config "test" loopback]
