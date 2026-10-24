@@ -32,8 +32,7 @@ proc nscpFailureContext {sock suffix} {
         listener {list [ns_config ns/server/test/module/nscp address] [ns_config ns/server/test/module/nscp port]} \
         allowLoopbackEmptyUser {ns_config -bool ns/server/test/module/nscp allowLoopbackEmptyUser false} \
         echopasswd {ns_config -bool ns/server/test/module/nscp echopasswd false} \
-        peer [list fconfigure $sock -peername] \
-        local [list fconfigure $sock -sockname] \
+        channelStatus [list ns_connchan status $sock] \
         authTestCalls {expr {[nsv_exists nscpLoopbackTest calls] ? [nsv_get nscpLoopbackTest calls] : "inactive"}}] {
         if {[catch {uplevel 1 $script} value]} {set value "unavailable: $value"}
         dict set details $key $value
@@ -41,16 +40,46 @@ proc nscpFailureContext {sock suffix} {
     return $details
 }
 
-# Binary translation already selects byte-preserving encoding. Do not set
-# -encoding binary explicitly: Tcl 9 no longer accepts that encoding name.
-# Read prompts with a deadline so protocol regressions fail instead of hanging.
+# Use NaviServer's native connector, including for IPv6 on Tcl 8.5. Raw
+# connection-channel I/O preserves CR/LF without Tcl channel encodings.
+proc nscpOpenTestConnection {} {
+    set sock [ns_connchan connect -timeout 5s [ns_config test loopback] \
+                  [ns_config ns/server/test/module/nscp port]]
+    set code [catch {
+        # Only handle socket-thread shutdown; reads remain synchronous here.
+        ns_connchan callback -receivetimeout 5s -sendtimeout 5s \
+            $sock {apply {{reason} {return 0}}} x
+    } message options]
+    if {$code != 0} {
+        ns_connchan close $sock
+        return -options $options $message
+    }
+    return $sock
+}
+
+proc nscpWrite {sock data} {
+    set deadline [expr {[clock milliseconds] + 5000}]
+    ns_connchan write $sock $data
+    # Partial writes are queued by ns_connchan; flush without resending data.
+    while {[dict get [ns_connchan status $sock] sendbuffer] > 0} {
+        if {[clock milliseconds] > $deadline} {
+            error "nscp write timed out; diagnostics: [nscpFailureContext $sock {}]"
+        }
+        after 1
+        ns_connchan write $sock ""
+    }
+}
+
 proc nscpReadUntil {sock suffix} {
     set result ""
     set deadline [expr {[clock milliseconds] + 5000}]
     while {![string match *$suffix $result]} {
-        append result [read $sock]
+        if {[catch {ns_connchan read $sock} data]} {
+            error "nscp read failed: $data; diagnostics: [nscpFailureContext $sock $suffix]"
+        }
+        append result $data
         if {[string match *$suffix $result]} {return $result}
-        if {[eof $sock] || [clock milliseconds] > $deadline} {
+        if {$data eq "" || [clock milliseconds] > $deadline} {
             error "nscp prompt missing: [list $result]; diagnostics: [nscpFailureContext $sock $suffix]"
         }
         after 1
@@ -72,17 +101,16 @@ foreach {number description chunks expected} [list \
     3.5 {braced multiline value} \
         [list "set value {first\r\nsecond}\r\n"] "first\nsecond"] {
     test nscp-$number $description -constraints nscpLoaded -setup {
-        set sock [socket [ns_config test loopback] \
-                      [ns_config ns/server/test/module/nscp port]]
-        fconfigure $sock -blocking false -translation binary -buffering none
+        set sock ""
+        set sock [nscpOpenTestConnection]
         nscpReadUntil $sock "login: "
-        puts -nonewline $sock "\r\n"
+        nscpWrite $sock "\r\n"
         nscpReadUntil $sock "Password: "
-        puts -nonewline $sock "\r\n"
+        nscpWrite $sock "\r\n"
         nscpReadUntil $sock "test:nscp 1> "
     } -body {
         foreach chunk $chunks {
-            puts -nonewline $sock $chunk
+            nscpWrite $sock $chunk
             after 50
         }
         set response [nscpReadUntil $sock "test:nscp 2> "]
@@ -91,7 +119,7 @@ foreach {number description chunks expected} [list \
         }
         expr {1}
     } -cleanup {
-        close $sock
+        if {$sock ne "" && [ns_connchan exists $sock]} {ns_connchan close $sock}
     } -result 1
 }
 # Exercise the loopback opt-in separately from password authentication. The
@@ -124,25 +152,25 @@ foreach {number description login suffix expected} [list \
         nscpDenyUserAuthForTest
         # Prove that the rejecting provider is active before opening nscp.
         set directAuth [ns_auth user $login unused-test-password]
-        set sock [socket [ns_config test loopback] \
-                      [ns_config ns/server/test/module/nscp port]]
-        fconfigure $sock -blocking false -translation binary -buffering none
+        set sock [nscpOpenTestConnection]
         nscpReadUntil $sock "login: "
-        puts -nonewline $sock "$login\r\n"
+        nscpWrite $sock "$login\r\n"
         nscpReadUntil $sock "Password: "
-        puts -nonewline $sock "unused-test-password\r\n"
+        nscpWrite $sock "unused-test-password\r\n"
     } -body {
         set response [nscpReadUntil $sock $suffix]
         list $directAuth [nsv_get nscpLoopbackTest calls] \
             [string match *$suffix $response]
     } -cleanup {
         nsv_set nscpLoopbackTest active 0
-        if {$sock ne ""} {close $sock}
+        if {$sock ne "" && [ns_connchan exists $sock]} {ns_connchan close $sock}
     } -result $expected
 }
 rename nscpDenyUserAuthForTest {}
 
+rename nscpWrite {}
 rename nscpReadUntil {}
+rename nscpOpenTestConnection {}
 rename nscpFailureContext {}
 ns_logctl severity warning $nscpWarningEnabled
 unset nscpWarningEnabled
