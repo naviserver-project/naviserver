@@ -549,11 +549,6 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
             goto bail;
         }
 
-        if (n > 1 && buf[n-1] == '\n' && buf[n-2] == '\r') {
-            buf[n-2] = '\n';
-            --n;
-        }
-
         /*
          * This EOT checker cannot happen in the context of telnet.
          */
@@ -591,7 +586,30 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
             }
         }
 
-        Tcl_DStringAppend(dsPtr, buf, (int)n);
+        {
+            int readPos = dsPtr->length, writePos;
+
+            /*
+             * Normalize every CRLF, not just the last one in a socket read.
+             * A paste can contain several lines, and a CRLF can straddle
+             * reads. Tcl requires backslash immediately followed by newline
+             * for a continuation. Preserve bare carriage returns.
+             */
+            if (readPos > 0 && dsPtr->string[readPos - 1] == '\r') {
+                --readPos;
+            }
+            Tcl_DStringAppend(dsPtr, buf, (int)n);
+            writePos = readPos;
+            while (readPos < dsPtr->length) {
+                if (dsPtr->string[readPos] == '\r'
+                    && readPos + 1 < dsPtr->length
+                    && dsPtr->string[readPos + 1] == '\n') {
+                    ++readPos;
+                }
+                dsPtr->string[writePos++] = dsPtr->string[readPos++];
+            }
+            Tcl_DStringSetLength(dsPtr, writePos);
+        }
         result = NS_TRUE;
 
     } while (buf[n-1] != '\n');
