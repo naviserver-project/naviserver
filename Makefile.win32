@@ -196,7 +196,15 @@ $(PEM_PRIVATE):
 # Make sure all required dlls are available in the PATH (tcl*.dll, libtommath.dll, zlib.dll, libcrypto*.dll, libssl*.dll)
 _path=$(PWD)\nsd;$(PWD)\nsthread;$(PWD)\nsdb;$(PWD)\nsproxy;$(TCLPATH)\bin;$(openssl_dir)\bin;C:\P\ps;C:\Windows\system32
 
-_test:
+# Build the same portable timing regression used by Unix make check.
+_test_mutex_timing:
+	cd nsthread && $(NMAKE) PGM=mutex-timing-test PGMOBJS=mutex-timing-test.o PGMLIBS=nsthread.lib all
+	setlocal
+	set PATH=$(_path)
+	$(PWD)\nsthread\mutex-timing-test.exe
+	endlocal
+
+_test: _test_mutex_timing
 	setlocal
 	set PATH=$(_path)
 	$(PWD)\nsd\nsd.exe -c -t $(PWD)/tests/test.nscfg $(PWD)/tests/all.tcl 1>> test-win-out-0.txt 2>&1

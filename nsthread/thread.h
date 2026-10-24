@@ -27,6 +27,13 @@ extern void   NsInitMaster(void);
 extern void   NsInitReentrant(void);
 extern void   NsMutexInitNext(Ns_Mutex *mutex, const char *prefix, uintptr_t *nextPtr)
   NS_GNUC_NONNULL(1,2,3);
+#ifndef NS_NO_MUTEX_TIMING
+extern void   NsMutexCondWaitBegin(Ns_Mutex *mutex) NS_GNUC_NONNULL(1);
+extern void   NsMutexCondWaitEnd(Ns_Mutex *mutex) NS_GNUC_NONNULL(1);
+#else
+# define NsMutexCondWaitBegin(mutex) ((void)0)
+# define NsMutexCondWaitEnd(mutex) ((void)0)
+#endif
 extern void  *NsGetLock(Ns_Mutex *mutex)   NS_GNUC_NONNULL(1);
 extern void  *NsLockAlloc(void)            NS_GNUC_RETURNS_NONNULL;
 extern void   NsLockFree(void *lock)       NS_GNUC_NONNULL(1);

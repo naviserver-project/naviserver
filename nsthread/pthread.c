@@ -740,7 +740,9 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
     NS_NONNULL_ASSERT(cond != NULL);
     NS_NONNULL_ASSERT(mutex != NULL);
 
+    NsMutexCondWaitBegin(mutex);
     err = pthread_cond_wait(GetCond(cond, "Ns_CondWait"), NsGetLock(mutex));
+    NsMutexCondWaitEnd(mutex);
     if (err != 0) {
         NsThreadFatal("Ns_CondWait", "pthread_cond_wait", err);
     }
@@ -796,7 +798,9 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
      */
 
     do {
+        NsMutexCondWaitBegin(mutex);
         err = pthread_cond_timedwait(GetCond(cond, "Ns_CondTimedWait"), NsGetLock(mutex), &ts);
+        NsMutexCondWaitEnd(mutex);
     } while (err == NS_EINTR);
     if (err == NS_ETIMEDOUT) {
         status = NS_TIMEOUT;

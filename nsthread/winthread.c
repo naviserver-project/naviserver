@@ -609,7 +609,10 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
 
     /*
      * Release the outer mutex and wait for the signal to arrive
-     * or timeout.
+     * or timeout. Unlike pthread condition waits, this path uses the public
+     * mutex operations: unlock accounts/traces the pre-wait held interval and
+     * lock starts a new interval after reacquisition. Do not add the pthread
+     * timing hooks here as that would count the same held interval twice.
      */
 
     Ns_MutexUnlock(mutex);

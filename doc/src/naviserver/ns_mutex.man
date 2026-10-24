@@ -63,6 +63,31 @@ The lock object [arg mutexId] must pre-exist.
 [list_end]
 
 
+[section {TIMING DIAGNOSTICS}]
+
+When mutex timing is compiled in, held-time totals exclude time spent in
+condition waits, including waiting to reacquire the mutex. With
+[const mutexlocktrace] enabled, continuous held intervals longer than 100 ms
+produce diagnostics. Ordinary unlock diagnostics are written after releasing
+the mutex.
+
+[para]
+On pthread platforms, a long held interval ending in a condition wait is
+recorded without logging while the mutex is held. A fixed-size per-mutex
+summary retains the count, total duration, maximum duration and the thread
+name associated with the maximum. The next ordinary unlock by any owner
+copies and clears that summary before releasing the mutex, then logs the
+snapshot after release. The reported [const "lock duration"] is the maximum;
+the suffix identifies the deferred count and total. The thread prefix belongs
+to the maximum's original owner, not necessarily the thread flushing it.
+
+[para]
+Reporting can be delayed while the mutex is used only in condition waits;
+without a later ordinary unlock the summary remains pending. No event queue
+or per-event allocation is used. Windows condition waits already use the
+ordinary unlock/relock path and report those held intervals after unlocking.
+Builds with [const NS_NO_MUTEX_TIMING] omit this accounting and storage.
+
 [section EXAMPLES]
 
 At startup (for example, in your init.tcl procedure), create a mutex

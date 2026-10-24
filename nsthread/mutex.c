@@ -38,6 +38,16 @@ bool NS_mutexlocktrace = NS_FALSE;
  * string name and lock and busy counters.
  */
 
+#ifndef NS_NO_MUTEX_TIMING
+/* Fixed-size summary: never allocate or write logs at a condition release. */
+typedef struct HoldTrace {
+    Ns_Time max;
+    Ns_Time total;
+    uint64_t count;
+    char thread[NS_THREAD_NAMESIZE+1];
+} HoldTrace;
+#endif
+
 typedef struct Mutex {
     void            *lock;
     struct Mutex    *nextPtr;
@@ -48,6 +58,9 @@ typedef struct Mutex {
     Ns_Time          total_waiting_time;
     Ns_Time          max_waiting_time;
     Ns_Time          total_lock_time;
+#ifndef NS_NO_MUTEX_TIMING
+    HoldTrace        pending;
+#endif
     char             name[NS_THREAD_NAMESIZE+1];
 } Mutex;
 
@@ -55,6 +68,11 @@ typedef struct Mutex {
 
 static Mutex *GetMutex(Ns_Mutex *mutex, const char *caller)
     NS_GNUC_NONNULL(1,2) NS_GNUC_RETURNS_NONNULL;
+#ifndef NS_NO_MUTEX_TIMING
+static void RecordHoldTime(Mutex *mutexPtr, Ns_Time *diffPtr) NS_GNUC_NONNULL(1,2);
+static void TraceHoldTime(const Mutex *mutexPtr, const Ns_Time *diffPtr) NS_GNUC_NONNULL(1,2);
+#endif
+
 static Mutex *firstMutexPtr = NULL;
 
 
@@ -324,6 +342,9 @@ Ns_MutexTryLock(Ns_Mutex *mutex)
     if (!NsLockTry(mutexPtr->lock)) {
         return NS_TIMEOUT;
     }
+#ifndef NS_NO_MUTEX_TIMING
+    Ns_GetTime(&mutexPtr->start_time);
+#endif
     ++mutexPtr->nlock;
     return NS_OK;
 }
@@ -351,20 +372,29 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
     Mutex *mutexPtr = (Mutex *) *mutex;
 
 #ifndef NS_NO_MUTEX_TIMING
-    Ns_Time end, diff;
+    Ns_Time diff;
+    HoldTrace pending;
 
-    Ns_GetTime(&end);
-    Ns_DiffTime(&end, &mutexPtr->start_time, &diff);
-    Ns_IncrTime(&mutexPtr->total_lock_time, diff.sec, diff.usec);
+    RecordHoldTime(mutexPtr, &diff);
+    /* Copy while owning the mutex; another owner can start a new summary
+     * as soon as we release it. Emit only the private snapshot afterwards. */
+    pending.count = mutexPtr->pending.count;
+    if (pending.count != 0u) {
+        pending = mutexPtr->pending;
+        memset(&mutexPtr->pending, 0, sizeof(mutexPtr->pending));
+    }
 #endif
 
     NsLockUnset(mutexPtr->lock);
 
 #ifndef NS_NO_MUTEX_TIMING
-    if (NS_mutexlocktrace
-        && (diff.sec > 0 || diff.usec > 100000)) {
-        fprintf(stderr, "[%s] Mutex unlock %s: lock duration " NS_TIME_FMT "\n",
-                Ns_ThreadGetName(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
+    TraceHoldTime(mutexPtr, &diff);
+    if (pending.count != 0u) {
+        fprintf(stderr, "[%s] Mutex unlock %s: lock duration " NS_TIME_FMT
+                " (deferred condition-wait holds %" PRIu64 ", total " NS_TIME_FMT ")\n",
+                pending.thread, mutexPtr->name,
+                (int64_t)pending.max.sec, pending.max.usec,
+                pending.count, (int64_t)pending.total.sec, pending.total.usec);
     }
 #endif
 
@@ -387,6 +417,75 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
 #endif
 
 }
+
+
+#ifndef NS_NO_MUTEX_TIMING
+/*
+ * Account only while the caller owns the mutex. In particular, a pthread
+ * condition wait releases it without passing through Ns_MutexUnlock(). Finish
+ * that held interval before waiting, and start a fresh one after reacquisition.
+ * No timestamp saved across the wait may be stored in the shared Mutex: other
+ * owners can acquire the mutex while this thread sleeps.
+ */
+static void
+RecordHoldTime(Mutex *mutexPtr, Ns_Time *diffPtr)
+{
+    Ns_Time now;
+
+    Ns_GetTime(&now);
+    Ns_DiffTime(&now, &mutexPtr->start_time, diffPtr);
+    Ns_IncrTime(&mutexPtr->total_lock_time, diffPtr->sec, diffPtr->usec);
+}
+
+static void
+TraceHoldTime(const Mutex *mutexPtr, const Ns_Time *diffPtr)
+{
+    if (NS_mutexlocktrace
+        && (diffPtr->sec > 0 || diffPtr->usec > 100000)) {
+        fprintf(stderr, "[%s] Mutex unlock %s: lock duration " NS_TIME_FMT "\n",
+                Ns_ThreadGetName(), mutexPtr->name, (int64_t)diffPtr->sec, diffPtr->usec);
+    }
+}
+
+void
+NsMutexCondWaitBegin(Ns_Mutex *mutex)
+{
+    Mutex   *mutexPtr = (Mutex *) *mutex;
+    Ns_Time  diff;
+
+    RecordHoldTime(mutexPtr, &diff);
+    /*
+     * pthread_cond_wait must atomically release and wait. Logging here would
+     * extend the held interval; unlocking just to log could lose a wakeup.
+     * Keep a bounded summary instead, drained after a real unlock by any owner.
+     * If there is no later unlock the diagnostic remains pending. The thread
+     * name is copied, so its owner can rename itself or exit before the flush.
+     */
+    if (NS_mutexlocktrace && (diff.sec > 0 || diff.usec > 100000)) {
+        HoldTrace *pendingPtr = &mutexPtr->pending;
+
+        ++pendingPtr->count;
+        Ns_IncrTime(&pendingPtr->total, diff.sec, diff.usec);
+        if (Ns_DiffTime(&diff, &pendingPtr->max, NULL) > 0) {
+            const char *name = Ns_ThreadGetName();
+            size_t length = strlen(name);
+
+            pendingPtr->max = diff;
+            if (length > NS_THREAD_NAMESIZE) {length = NS_THREAD_NAMESIZE;}
+            memcpy(pendingPtr->thread, name, length);
+            pendingPtr->thread[length] = '\0';
+        }
+    }
+}
+
+void
+NsMutexCondWaitEnd(Ns_Mutex *mutex)
+{
+    Mutex *mutexPtr = (Mutex *) *mutex;
+
+    Ns_GetTime(&mutexPtr->start_time);
+}
+#endif
 
 
 /*
