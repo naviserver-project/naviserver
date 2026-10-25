@@ -1034,11 +1034,6 @@ nx::Class create ::ns::stats::SQLiteHistory {
         return [encoding convertfrom utf-8 [zlib decompress [binary decode hex $value]]]
     }
 
-    :method quote {value} {
-        # Payloads are hex-encoded by pack; other values use standard nsdb quoting.
-        return [ns_dbquotevalue $value]
-    }
-
     # Fixed SQL statements use quote for values. Fetch only non-null columns
     # (including aggregate coalesce), since older nsdbsqlite drivers cannot
     # return SQL NULL safely. Flush pending rows and release the row set.
@@ -1128,9 +1123,9 @@ nx::Class create ::ns::stats::SQLiteHistory {
         if {$version ne "" && $version ne "1"} {
             error "unsupported diagnostics history schema"
         }
-        set source [:quote [list [ns_info hostname] [ns_info home]]]
+        set source [ns_dbquotevalue [list [ns_info hostname] [ns_info home]]]
         set stored [:scalar $db {SELECT value FROM ns_stats_meta WHERE key='source'}]
-        if {$stored ne "" && [:quote $stored] ne $source} {
+        if {$stored ne "" && [ns_dbquotevalue $stored] ne $source} {
             error "history database belongs to another process installation"
         }
         :sql $db {INSERT OR IGNORE INTO ns_stats_meta VALUES('schemaVersion','1')}
@@ -1254,7 +1249,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
         set now [clock microseconds]
         :sql $db "DELETE FROM ns_stats_samples WHERE $where"
         :sql $db {DELETE FROM ns_stats_topology WHERE id NOT IN (SELECT DISTINCT topology FROM ns_stats_samples)}
-        :sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($now,$first,$last,$n,[:quote $reason])"
+        :sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($now,$first,$last,$n,[ns_dbquotevalue $reason])"
         set prior [:scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}]
         set through [expr {$prior eq "" ? $last : max($last,$prior)}]
         :sql $db "INSERT OR REPLACE INTO ns_stats_meta VALUES('droppedThrough','$through')"
@@ -1349,12 +1344,12 @@ nx::Class create ::ns::stats::SQLiteHistory {
                 }
                 :historyDrop $db {at IN (SELECT at FROM ns_stats_samples ORDER BY at LIMIT 100)} size
             }
-            set stored [:scalar $db "SELECT payload FROM ns_stats_topology WHERE id=[:quote $topologyId]"]
+            set stored [:scalar $db "SELECT payload FROM ns_stats_topology WHERE id=[ns_dbquotevalue $topologyId]"]
             if {$stored ne "" && [:unpack $stored] ne $topology} {
                 error "history topology fingerprint collision"
             }
-            :sql $db "INSERT OR IGNORE INTO ns_stats_topology VALUES([:quote $topologyId],[:quote $packedTopology])"
-            :sql $db "INSERT OR IGNORE INTO ns_stats_samples(at,instance,topology,payload,allocator) VALUES($stamp,[:quote [dict get $record instance]],[:quote $topologyId],[:quote $packed],[:quote $allocator])"
+            :sql $db "INSERT OR IGNORE INTO ns_stats_topology VALUES([ns_dbquotevalue $topologyId],[ns_dbquotevalue $packedTopology])"
+            :sql $db "INSERT OR IGNORE INTO ns_stats_samples(at,instance,topology,payload,allocator) VALUES($stamp,[ns_dbquotevalue [dict get $record instance]],[ns_dbquotevalue $topologyId],[ns_dbquotevalue $packed],[ns_dbquotevalue $allocator])"
             foreach gap [dict get $config gaps] {
                 lassign $gap first last n
                 :sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($stamp,$first,$last,$n,'write-failure')"
@@ -1688,7 +1683,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
                 dict set record topologyId $id
                 if {![dict exists $topology $id]} {
                     dict set topology $id [:selectServer \
-                                               [:unpack [:scalar $db "SELECT payload FROM ns_stats_topology WHERE id=[:quote $id]"]] \
+                                               [:unpack [:scalar $db "SELECT payload FROM ns_stats_topology WHERE id=[ns_dbquotevalue $id]"]] \
                                                $server false]
                 }
                 lappend records [:selectServer $record $server false]
@@ -1850,3 +1845,9 @@ if {![ns_info started]} {
     }
     unset statsStartupServer
 }
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
