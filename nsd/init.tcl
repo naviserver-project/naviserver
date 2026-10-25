@@ -47,12 +47,16 @@ proc __ns_sourcefile {file} {
     set msg "nsd/init.tcl: loading $file"
     ns_log debug $msg
 
-    if {[ns_module name] ne "" && [file tail $file] ne "init.tcl"} {
-        set code [catch {
-            _ns_module_source [list [ns_module name] [file tail $file]]
-        } err]
+    set module [ns_module name]
+    set key [list $module [file tail $file]]
+    if {[file tail $file] ne "init.tcl"
+        && !($module eq "" && [file tail $file] eq "nstrace.tcl")} {
+        set code [catch {_ns_module_source $key} err]
     } else {
         set code [catch {source $file} err]
+    }
+    if {$code == 0} {
+        dict set ::ns_module::files $key $file
     }
     if {$code == 1} {
         ns_log error "$msg failed: $err\n$::errorCode\n$::errorInfo"
@@ -83,6 +87,8 @@ proc __ns_sourcelibs {{modname ""}} {
     }
 
     set files ""
+    set sourced 0
+    set errors 0
 
     #
     # Append shared files not in private
@@ -92,7 +98,8 @@ proc __ns_sourcelibs {{modname ""}} {
     foreach file [lsort [glob -nocomplain -- $sharedlib/*.tcl]] {
         set tail [file tail $file]
         if {$tail eq {init.tcl}} {
-            __ns_sourcefile $file
+            incr sourced
+            if {[__ns_sourcefile $file] != 0} {incr errors}
         } elseif {![file exists [file join $privatelib $tail]]} {
             lappend files $file
         }
@@ -106,15 +113,18 @@ proc __ns_sourcelibs {{modname ""}} {
     foreach file [lsort [glob -nocomplain -- $privatelib/*.tcl]] {
         set tail [file tail $file]
         if {$tail eq {init.tcl}} {
-            __ns_sourcefile $file
+            incr sourced
+            if {[__ns_sourcefile $file] != 0} {incr errors}
         } else {
             lappend files $file
         }
     }
 
     foreach file $files {
-        __ns_sourcefile $file
+        incr sourced
+        if {[__ns_sourcefile $file] != 0} {incr errors}
     }
+    return [list $sourced $errors]
 }
 
 
@@ -130,7 +140,14 @@ proc __ns_sourcemodule {modname} {
     ns_module shared  [ns_library shared  $modname]
     ns_module private [ns_library private $modname]
 
-    __ns_sourcelibs $modname
+    lassign [__ns_sourcelibs $modname] sourced errors
+    set configured [ns_config ns/server/[ns_info server]/modules $modname ""]
+    if {[string tolower $configured] in {"" tcl}} {
+        if {$sourced == 0} {
+            ns_log warning "Tcl module '$modname' has no Tcl files in [ns_library shared $modname] or [ns_library private $modname]; module not loaded"
+        }
+        ns_ictl moduleinfo $modname loaded [expr {$sourced > 0 && $errors == 0}]
+    }
 
     ns_module clear
 }
@@ -300,10 +317,18 @@ proc ns_module {key args} {
         return [_ns_module_require {*}$args]
     }
     if {$key eq "reload"} {
-        if {[llength $args] != 1} {
-            error "usage: ns_module reload module"
+        if {[lindex $args 0] eq "-core"} {
+            if {[llength $args] < 2} {error "usage: ns_module reload -core file ?file ...?"}
+            return [ns_eval -sync _ns_core_reload {*}[lrange $args 1 end]]
         }
+        if {[llength $args] != 1} {error "usage: ns_module reload module"}
         return [ns_eval -sync _ns_module_reload [lindex $args 0]]
+    }
+    if {$key eq "files"} {
+        if {[llength $args] != 1} {error "usage: ns_module files module|-core"}
+        set module [lindex $args 0]
+        if {$module eq "-core"} {set module ""}
+        return [_ns_module_inventory $module]
     }
 
     if {[llength $args] > 1} {
@@ -365,7 +390,43 @@ proc ns_module {key args} {
 namespace eval ::ns_module {
     variable dependencies [dict create]
     variable loaded [dict create]
+    variable files [dict create]
     variable stack {}
+}
+
+# Core reload is opt-in: these files define APIs without creating persistent
+# resources. Bootstrap, tracing, scheduling and configuration files stay excluded.
+proc _ns_module_inventory {module} {
+    variable ::ns_module::files
+    variable ::ns_module::loaded
+    set result {}
+    foreach key [lsort [dict keys $files]] {
+        lassign $key owner name
+        if {$owner ne $module} {continue}
+        set reloadable [dict exists $loaded $key]
+        if {$module eq ""} {
+            set reloadable [expr {$reloadable && $name in {
+                charsets.tcl compat.tcl form.tcl http.tcl ns_crypto.tcl
+                privacy.tcl sendmail.tcl util.tcl
+            }}]
+        }
+        dict set result $name [dict create path [dict get $files $key] reloadable $reloadable]
+    }
+    return $result
+}
+
+proc _ns_core_reload {args} {
+    set inventory [_ns_module_inventory ""]
+    set affected {}
+    foreach name $args {
+        set key [_ns_module_key "" $name]
+        set name [lindex $key 1]
+        if {![dict exists $inventory $name] || ![dict get $inventory $name reloadable]} {
+            error "core Tcl file is not enabled for reload: $name"
+        }
+        if {$key ni $affected} {lappend affected $key}
+    }
+    return [_ns_module_reload_files $affected]
 }
 
 proc _ns_module_files {module} {
@@ -418,6 +479,7 @@ proc _ns_module_source {key} {
     global _module
     variable ::ns_module::dependencies
     variable ::ns_module::loaded
+    variable ::ns_module::files
     variable ::ns_module::stack
 
     set key [_ns_module_key {*}$key]
@@ -426,6 +488,7 @@ proc _ns_module_source {key} {
     }
     if {[dict exists $loaded $key]} {return}
     set path [_ns_module_path $key]
+    set previousFiles $files
     set previousLoaded $loaded
     set previousDependencies $dependencies
     set previousContext [expr {[info exists _module] ? [array get _module] : {}}]
@@ -440,11 +503,13 @@ proc _ns_module_source {key} {
     array set _module $previousContext
     set stack [lrange $stack 0 end-1]
     if {$code != 0} {
+        set files $previousFiles
         set loaded $previousLoaded
         set dependencies $previousDependencies
         return -options $options $result
     }
     dict set loaded $key 1
+    dict set files $key $path
     return
 }
 
@@ -457,7 +522,11 @@ proc _ns_module_require {args} {
     }
     set current [lindex $stack end]
     set module [lindex $current 0]
-    if {[lindex $args 0] eq "-module"} {
+    if {[lindex $args 0] eq "-core"} {
+        set module ""
+        set args [lrange $args 1 end]
+        if {[llength $args] == 0} {error "usage: ns_module require -core file ?file ...?"}
+    } elseif {[lindex $args 0] eq "-module"} {
         if {[llength $args] < 2 || [lindex $args 1] eq ""} {
             error "usage: ns_module require ?-module module? ?file ...?"
         }
@@ -469,7 +538,7 @@ proc _ns_module_require {args} {
     } elseif {[llength $args] == 0} {
         error "usage: ns_module require ?-module module? file ?file ...?"
     }
-    if {$module ni [ns_ictl getmodules]} {error "unknown module: $module"}
+    if {$module ne "" && $module ni [ns_ictl getmodules]} {error "unknown module: $module"}
     foreach name $args {
         set key [_ns_module_key $module $name]
         _ns_module_path $key
@@ -502,6 +571,15 @@ proc _ns_module_reload {module} {
             lappend affected $key
         }
     }
+    return [_ns_module_reload_files $affected]
+}
+
+proc _ns_module_reload_files {affected} {
+    variable ::ns_module::dependencies
+    variable ::ns_module::loaded
+    variable ::ns_module::files
+    variable ::ns_module::stack
+    if {[llength $stack]} {error "cannot reload while sourcing a Tcl file"}
     set growing 1
     while {$growing} {
         set growing 0
@@ -518,7 +596,17 @@ proc _ns_module_reload {module} {
             }
         }
     }
-    foreach key $affected {_ns_module_path $key}
+    set coreInventory [_ns_module_inventory ""]
+    foreach key $affected {
+        if {[lindex $key 0] eq ""} {
+            set name [lindex $key 1]
+            if {![dict exists $coreInventory $name] || ![dict get $coreInventory $name reloadable]} {
+                error "dependent core Tcl file is not enabled for reload: $name"
+            }
+        }
+        _ns_module_path $key
+    }
+    set oldFiles $files
     set oldLoaded $loaded
     set oldDependencies $dependencies
     foreach key $affected {
@@ -530,6 +618,7 @@ proc _ns_module_reload {module} {
         }
     } result options]
     if {$code != 0} {
+        set files $oldFiles
         set loaded $oldLoaded
         set dependencies $oldDependencies
         return -options $options $result
@@ -561,6 +650,11 @@ proc _ns_load_global_modules {{network 0}} {
     }
 }
 
+
+# Bootstrap files are part of the inventory, but never reload targets.
+dict set ::ns_module::loaded [list "" nstrace.tcl] 1
+dict set ::ns_module::files [list "" nstrace.tcl] [file join [ns_library shared] nstrace.tcl]
+dict set ::ns_module::files [list "" nsd/init.tcl] [info script]
 
 #
 # Load global binary modules.

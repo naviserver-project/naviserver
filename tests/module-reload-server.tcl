@@ -80,7 +80,11 @@ writeFile [file join $fixture check.tcl] {
     }
     set q [ns_job create module-check 1]
     set result [ns_job wait $q [ns_job queue $q {
-        list [module_leaf] [dict size $::ns_module::loaded] \
+        set moduleCount 0
+        foreach key [dict keys $::ns_module::loaded] {
+            if {[lindex $key 0] ne ""} {incr moduleCount}
+        }
+        list [module_leaf] $moduleCount \
             [expr {[info commands objectResults] eq "" ? {} : [objectResults]}]
     }]]
     if {[info commands objectResults] eq ""} {

@@ -8,6 +8,13 @@ The [cmd ns_module] command describes the module whose Tcl library is currently
 being initialized. NaviServer sources [file init.tcl] before the other Tcl files
 in that module's library.
 
+[para]
+Configuring a Tcl module does not by itself establish that it is loaded.
+NaviServer warns when its shared and private library directories contain no
+Tcl files. [cmd {ns_server modules}] lists a Tcl module only after its startup
+files have been sourced successfully; metadata declarations during startup
+remain available to the initializing module.
+
 [list_begin definitions]
 [call [cmd ns_module] [method require] [opt [option {-module module}]] [opt [arg {file ...}]]]
 Called at the top level of a module definition file, ensures that the named
@@ -24,6 +31,32 @@ share one dependency identity. Redundant separators and current-directory
 components are normalized before dependency registration and loading.
 Absolute paths and parent-directory components are rejected.
 [const init.tcl] cannot be required.
+
+[call [cmd ns_module] [method require] [option -core] [arg file] [opt [arg {file ...}]]]
+Declare prerequisites from the base Tcl library. Core files can also use
+[method require] without [option -module] to name other core files. Core and
+module dependencies share one graph, so reloading a core file restores affected
+module definitions. An empty module name identifies core files internally;
+no fictitious module is registered.
+
+[call [cmd ns_module] [method files] [arg {module|-core}]]
+Return a dictionary of successfully sourced files for the specified module or
+the current server's base Tcl library. Each filename maps to a dictionary with
+[const path] (the effective source path) and [const reloadable] (a boolean).
+Startup-only [file init.tcl] files and core bootstrap files appear in this
+inventory with [const reloadable] false. Filenames retain logical identity
+when a private file overrides a shared file.
+
+[call [cmd ns_module] [method reload] [option -core] [arg file] [opt [arg {file ...}]]]
+Reload explicitly selected, recorded core files and their transitive dependents
+through [cmd {ns_eval -sync}]. There is no implicit reload-all operation. Core
+reload is enabled for [file charsets.tcl], [file compat.tcl], [file form.tcl],
+[file http.tcl], [file ns_crypto.tcl], [file privacy.tcl], [file sendmail.tcl],
+and [file util.tcl]. Private overrides of these files must also support
+repeated evaluation. Bootstrap files, including [file init.tcl],
+[file nstrace.tcl] and [file nsd/init.tcl], are excluded. If an affected core
+dependent is startup-only, the operation fails before sourcing any files.
+Returned affected-file keys use an empty module name for core files.
 
 [call [cmd ns_module] [method reload] [arg module]]
 Re-sources the module's top-level Tcl definition files, plus previously loaded
@@ -114,6 +147,8 @@ added to the shared Tcl files installed by [cmd {make install}].
 
  # From an administrative interpreter:
  ns_module reload mod1
+ ns_module reload -core http.tcl
+ ns_module files -core
 [example_end]
 
 [see_also ns_server ns_moduleload ns_library ns_eval ns_ictl]

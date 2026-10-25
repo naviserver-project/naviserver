@@ -38,6 +38,7 @@ proc writeModule {module name body {kind shared}} {
 proc reset {} {
     set ::ns_module::dependencies [dict create]
     set ::ns_module::loaded [dict create]
+    set ::ns_module::files [dict create]
     set ::ns_module::stack {}
     set ::events {}
     set ::evaluations 0
@@ -203,6 +204,51 @@ test module-14 {normalization retains rejection of invalid module filenames} -bo
         lappend results [catch {_ns_module_key a $name}]
     }
     set results
+} -result {1 1 1 1 1 1}
+test core-1 {core reload restores transitive module dependents and normalizes names} -setup {
+    reset
+    writeModule {} util.tcl {lappend ::events core; proc core_version {} {return old}}
+    writeModule b ext.tcl {
+        ns_module require -core ./util.tcl util.tcl
+        lappend ::events b
+        proc core_extension {} [list return [core_version]]
+    }
+    writeModule c leaf.tcl {ns_module require -module b ext.tcl; lappend ::events c}
+    _ns_module_source {c leaf.tcl}
+    writeModule {} util.tcl {lappend ::events core; proc core_version {} {return new}}
+    set ::events {}
+} -body {
+    ns_module reload -core .//util.tcl util.tcl
+    list $::events [core_extension] [dict get [ns_module files -core] util.tcl reloadable] \
+        [dict get [ns_module files b] ext.tcl reloadable]
+} -result {{core b c} new 1 1}
+test core-2 {core-to-core dependencies participate in reload ordering} -setup {
+    reset
+    writeModule {} util.tcl {lappend ::events util}
+    writeModule {} http.tcl {ns_module require ./util.tcl; lappend ::events http}
+    writeModule b ext.tcl {ns_module require -core http.tcl; lappend ::events b}
+    _ns_module_source {b ext.tcl}
+    set ::events {}
+} -body {
+    ns_module reload -core util.tcl
+    set ::events
+} -result {util http b}
+test core-3 {startup-only dependents prevent partial reloads} -setup {
+    reset
+    writeModule {} util.tcl {lappend ::events util}
+    writeModule {} cache.tcl {ns_module require util.tcl; lappend ::events cache}
+    _ns_module_source {{} cache.tcl}
+    set ::events {}
+} -body {
+    list [catch {ns_module reload -core util.tcl} message] $message $::events \
+        [dict get [ns_module files -core] cache.tcl reloadable]
+} -result {1 {dependent core Tcl file is not enabled for reload: cache.tcl} {} 0}
+test core-4 {untracked files, bootstrap files and arbitrary paths cannot be core reload targets} -setup reset -body {
+    set result {}
+    foreach name {nstrace.tcl init.tcl nsd/init.tcl /tmp/util.tcl ../util.tcl util.tcl} {
+        lappend result [catch {ns_module reload -core $name}]
+    }
+    set result
 } -result {1 1 1 1 1 1}
 removeDirectory $fixture
 set failures $::tcltest::numTests(Failed)

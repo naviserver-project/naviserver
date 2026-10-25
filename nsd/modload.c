@@ -55,9 +55,16 @@ static Ns_ObjvTable moduleScopes[] = {
  * All string values and module metadata stored here are owned by the
  * registry. servPtr is set only for server-scoped modules.
  */
+typedef enum {
+    MODULE_DECLARED,
+    MODULE_LOADED,
+    MODULE_FAILED
+} ModuleLoadState;
+
 typedef struct LoadedModule {
     const NsServer       *servPtr;
     ModuleScope           scope;
+    ModuleLoadState       state;
     char                 *module;
     char                 *driver;
     char                 *file;
@@ -272,10 +279,10 @@ DictPutString(Tcl_Obj *dictObj, const char *key, const char *value)
  * NsGetLoadedModulesObj --
  *
  *      Build a dictionary describing the modules available to the
- *      specified server. Initially, modules registered in the server's
- *      Tcl module list are represented as Tcl modules. Entries for
- *      loaded modules then replace or extend these provisional
- *      entries with build metadata, scope, file, and ABI information.
+ *      specified server. Native modules enter the registry after successful
+ *      initialization. Tcl modules become loaded only after their startup
+ *      files have been sourced successfully; configuration alone does not
+ *      create a loaded-module entry.
  *
  *      Global and NSDB modules are included for every server, while
  *      server-scoped modules are included only for their associated
@@ -297,28 +304,10 @@ NsGetLoadedModulesObj(const NsServer *servPtr)
 {
     const LoadedModule *loadedPtr;
     Tcl_Obj             *resultObj, *sortedObj;
-    const char         **argv;
-    TCL_SIZE_T           argc;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
     resultObj = Tcl_NewDictObj();
-
-    if (Tcl_SplitList(NULL, servPtr->tcl.modules.string, &argc, &argv) == TCL_OK) {
-        for (TCL_SIZE_T i = 0; i < argc; i++) {
-            const char *module  = argv[i];
-            Tcl_Obj    *infoObj = Tcl_NewDictObj();
-
-            DictPutString(infoObj, "name", module);
-            DictPutString(infoObj, "type", "tcl-module");
-            DictPutString(infoObj, "scope", "server");
-
-            (void) Tcl_DictObjPut(NULL, resultObj,
-                                  Tcl_NewStringObj(module, TCL_INDEX_NONE),
-                                  infoObj);
-        }
-        Tcl_Free((char *)argv);
-    }
 
     Ns_MutexLock(&loadedModulesLock);
 
@@ -326,6 +315,15 @@ NsGetLoadedModulesObj(const NsServer *servPtr)
          loadedPtr != NULL;
          loadedPtr = loadedPtr->nextPtr) {
         Tcl_Obj *infoObj;
+
+        /*
+         * Metadata declarations are visible during this server's startup,
+         * but only successful initialization makes a module publicly loaded.
+         */
+        if (loadedPtr->state == MODULE_FAILED
+            || (loadedPtr->state == MODULE_DECLARED && servPtr != NsGetInitServer())) {
+            continue;
+        }
 
         switch (loadedPtr->scope) {
         case NS_MODULE_SCOPE_GLOBAL:
@@ -428,6 +426,7 @@ RegisterLoadedModule(const char *server, const char *module,
     LoadedModule *loadedPtr;
 
     loadedPtr = ns_calloc(1u, sizeof(LoadedModule));
+    loadedPtr->state = MODULE_LOADED;
 
     if (strcmp(init, "Ns_DbDriverInit") == 0) {
         loadedPtr->scope = NS_MODULE_SCOPE_NSDB;
@@ -696,9 +695,11 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
  * NsTclModuleInfoObjCmd --
  *
  *      Implements the internal "ns_ictl moduleinfo" command used by
- *      ns_module to record a version or build tag during module startup.
+ *      ns_module to record a version, build tag, or successful Tcl loading
+ *      during module startup.
  *      Store Tcl metadata in the existing loaded-module registry. Native
- *      module metadata remains authoritative; a field can be set only once.
+ *      module metadata remains authoritative; version and tag can be set
+ *      only once. The loaded flag records the result of Tcl initialization.
  *
  * Results:
  *      Standard Tcl result. Returns the recorded value, or an error for
@@ -717,16 +718,17 @@ NsTclModuleInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     const NsInterp *itPtr = (const NsInterp *)clientData;
     const NsServer *servPtr = itPtr->servPtr;
     const char     *module, *value;
-    int             field;
+    int             field, initialized = 0;
     int             result = TCL_OK;
     Ns_ObjvTable    fields[] = {
         {"version", 0u},
         {"tag",     1u},
+        {"loaded",  2u},
         {NULL,      0u}
     };
     Ns_ObjvSpec     args[] = {
         {"module",      Ns_ObjvString, &module, NULL},
-        {"version|tag", Ns_ObjvIndex,  &field, fields},
+        {"version|tag|loaded", Ns_ObjvIndex,  &field, fields},
         {"value",       Ns_ObjvString, &value, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -740,6 +742,9 @@ NsTclModuleInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
 
     } else if (*module == '\0' || *value == '\0') {
         Ns_TclPrintfResult(interp, "module name and metadata value must not be empty");
+        result = TCL_ERROR;
+
+    } else if (field == 2 && Tcl_GetBoolean(interp, value, &initialized) != TCL_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -770,16 +775,25 @@ NsTclModuleInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
             nextLoadedModulePtrPtr = &matchPtr->nextPtr;
         }
 
-        slotPtr = (field == 0 ? &matchPtr->info.version : &matchPtr->info.tag);
-        if (*slotPtr != NULL) {
-            Ns_TclPrintfResult(interp, "module '%s' %s is already defined",
-                               module, Ns_ObjvTableGetString(fields, (unsigned int)field));
-            result = TCL_ERROR;
+        if (field == 2) {
+            if (matchPtr->file != NULL) {
+                Ns_TclPrintfResult(interp, "cannot change native module loading state");
+                result = TCL_ERROR;
+            } else {
+                matchPtr->state = (initialized != 0 ? MODULE_LOADED : MODULE_FAILED);
+                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(initialized));
+            }
         } else {
-            *slotPtr = ns_strcopy(value);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(value, TCL_INDEX_NONE));
+            slotPtr = (field == 0 ? &matchPtr->info.version : &matchPtr->info.tag);
+            if (*slotPtr != NULL) {
+                Ns_TclPrintfResult(interp, "module '%s' %s is already defined",
+                                   module, Ns_ObjvTableGetString(fields, (unsigned int)field));
+                result = TCL_ERROR;
+            } else {
+                *slotPtr = ns_strcopy(value);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(value, TCL_INDEX_NONE));
+            }
         }
-
         Ns_MutexUnlock(&loadedModulesLock);
     }
     return result;

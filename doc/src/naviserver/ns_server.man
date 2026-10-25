@@ -158,8 +158,13 @@ in the subtree.
  [para]
  Global modules and NSDB database drivers are included in the result for
  every server. Server-scoped modules are included only for the selected
- server. Modules registered in the server configuration as Tcl modules
- are reported with [const "type tcl-module"].
+ server. Tcl modules are reported with [const "type tcl-module"] only after
+ their startup Tcl files have been sourced successfully. Configured Tcl
+ modules with no files produce a warning and are omitted, as are Tcl modules
+ whose files fail to source. An [file init.tcl]-only module can be loaded but
+ has no reloadable definitions. Native modules remain listed independently of
+ whether they have additional Tcl files. [cmd {ns_ictl getmodules}] remains
+ the module initialization list and can still include unsuccessful entries.
 
  [para]
  For example:
