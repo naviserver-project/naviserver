@@ -602,7 +602,6 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
 int
 NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    static const unsigned int bufferSize = FSEEKCHARS_BUFFER_SIZE;
     int               result = TCL_OK;
     Tcl_Channel       channel;
     char             *channelString, *charString;
@@ -615,80 +614,86 @@ NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (strlen(charString) > bufferSize-1 || *charString == '\0') {
-        Ns_TclPrintfResult(interp, "searchstring <%s> must be at least one and at most %d characters", charString, bufferSize-1);
+    } else if (strlen(charString) > FSEEKCHARS_BUFFER_SIZE-1 || *charString == '\0') {
+        Ns_TclPrintfResult(interp, "searchstring <%s> must be at least one and at most %d bytes", charString, FSEEKCHARS_BUFFER_SIZE-1);
         result = TCL_ERROR;
 
-    } else if (Ns_TclGetOpenChannel(interp, channelString, 0, NS_FALSE, &channel) != TCL_OK) {
+    } else if (Ns_TclGetOpenChannel(interp, channelString, 0, NS_TRUE, &channel) != TCL_OK) {
         result = TCL_ERROR;
 
     } else {
-        Tcl_WideInt startPos = Tcl_Tell(channel);
-        ClientData  channelData;
+        Tcl_WideInt    position = Tcl_Seek(channel, 0, SEEK_CUR);
+        Tcl_Channel    rawChannel = Tcl_GetTopChannel(channel);
+        Tcl_InterpState savedState;
+        char           buffer[FSEEKCHARS_BUFFER_SIZE];
+        size_t         retained = 0u, searchLength = strlen(charString);
 
-        if (Tcl_GetChannelHandle(channel, TCL_READABLE, &channelData) != TCL_OK) {
-            Ns_TclPrintfResult(interp, "could not get handle for channel: %s", channelString);
-            result = TCL_ERROR;
+        /*
+         * A zero relative seek returns the logical byte position and discards
+         * Tcl read-ahead before reading the underlying channel directly. Unlike
+         * Tcl_Read, Tcl_ReadRaw does not run bytes through the channel's normal
+         * buffering or newline/EOF translation. Select the top channel
+         * explicitly and synchronize again below. No options are changed.
+         * The raw driver path also avoids interpreting a Windows HANDLE as fd.
+         */
+        if (position < 0) {
+            Ns_TclPrintfResult(interp, "could not seek channel \"%s\": %s",
+                               channelString, Tcl_PosixError(interp));
+            return TCL_ERROR;
+        }
 
-        } else {
-            int     fd = PTR2INT(channelData);
-            char    buffer[FSEEKCHARS_BUFFER_SIZE];
-            ssize_t bytesRead;
-            off_t   offset = 0;
-            bool    done = NS_FALSE;
-            size_t  searchLength = strlen(charString), moveLength = searchLength - 1, movedSize = 0u;
+        for (;;) {
+            TCL_SIZE_T bytesRead;
+            size_t     available;
+            const char *match;
+
+            bytesRead = Tcl_ReadRaw(rawChannel, buffer + retained,
+                                    (TCL_SIZE_T)(sizeof(buffer) - retained));
+            if (bytesRead < 0) {
+                if (Tcl_GetErrno() == EINTR) {
+                    continue;
+                }
+                Ns_TclPrintfResult(interp, "could not read channel \"%s\": %s",
+                                   channelString, Tcl_PosixError(interp));
+                result = TCL_ERROR;
+                break;
+            }
+            if (bytesRead == 0) {
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+                break;
+            }
+            position += (Tcl_WideInt)bytesRead;
+            available = retained + (size_t)bytesRead;
+            match = ns_memmem(buffer, available, charString, searchLength);
+            if (match != NULL) {
+                position -= (Tcl_WideInt)available;
+                position += (Tcl_WideInt)(match - buffer);
+                Tcl_SetObjResult(interp, Tcl_NewWideIntObj(position));
+                break;
+            }
 
             /*
-             * Initial read
+             * Preserve the tail of the combined buffer, including earlier
+             * overlap. A positive short read does not mean EOF.
              */
-            bytesRead = ns_read(fd, buffer, bufferSize);
+            retained = MIN(searchLength - 1u, available);
+            memmove(buffer, buffer + available - retained, retained);
+        }
 
-            while (bytesRead > 0) {
-                const char *p;
-
-                /*
-                 * Search within the current buffer
-                 */
-                p = ns_memmem(buffer, (size_t)bytesRead + movedSize, charString, searchLength);
-                if (p != NULL) {
-                    offset += (off_t)((p - buffer) - (ptrdiff_t)movedSize);
-                    done = NS_TRUE;
-                    break;
-                }
-                offset += bytesRead;
-
-                /*
-                 * Move the potential overlap part of the buffer to
-                 * the beginning.  When bytesRead was already shorter
-                 * than the searchLength, then we are at the end of
-                 * the file already. The move is not needed.
-                 */
-                if ((size_t)bytesRead >= searchLength) {
-                    /*
-                     * The move length is the length of the search
-                     * string minus 1. Without the -1, we would have
-                     * found the search string already.
-                     */
-                    memmove(buffer, &buffer[(size_t)bytesRead - moveLength], moveLength);
-                    movedSize = moveLength;
-                    bytesRead = ns_read(fd, buffer + moveLength, bufferSize - moveLength);
-                } else {
-                    movedSize = 0;
-                    bytesRead = ns_read(fd, buffer, bufferSize);
-                }
-            }
-            if (done) {
-                Tcl_WideInt foundPos = startPos + offset;
-
-                Tcl_SetObjResult(interp, Tcl_NewWideIntObj(foundPos));
-                Tcl_Seek(channel, foundPos, SEEK_SET) ;
-                //Ns_Log(Notice, "......... returning file pos %ld", (long)foundPos);
-            } else {
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-            }
+        /*
+         * Resynchronize Tcl on all exits. Keep an original read error if the
+         * final seek fails too; never report success after a failed seek.
+         */
+        savedState = Tcl_SaveInterpState(interp, result);
+        if (Tcl_Seek(channel, position, SEEK_SET) < 0 && result == TCL_OK) {
+            Tcl_DiscardInterpState(savedState);
+            Ns_TclPrintfResult(interp, "could not seek channel \"%s\": %s",
+                               channelString, Tcl_PosixError(interp));
+            result = TCL_ERROR;
+        } else {
+            result = Tcl_RestoreInterpState(interp, savedState);
         }
     }
-
     return result;
 }
 

@@ -22,6 +22,282 @@ test ns_fseekchars-1.0 {syntax: ns_fseekchars} -body {
     ns_fseekchars
 } -returnCodes error -result {wrong # args: should be "ns_fseekchars /channelId/ /searchstring/"}
 
+# Byte offsets are also used by the spooled multipart parser. Keep fixtures
+# binary and verify the subsequent channel read, not just the returned offset.
+set fseekPath [makeFile {} fseekchars.bin]
+proc fseekWrite {data} {
+    set f [open $::fseekPath wb]
+    puts -nonewline $f $data
+    close $f
+}
+proc fseekOptions {f} {
+    list [fconfigure $f -encoding] [fconfigure $f -translation] [fconfigure $f -eofchar] [fconfigure $f -buffersize] [fconfigure $f -blocking]
+}
+
+test ns_fseekchars-2.0 {found position is an absolute byte offset and the next read starts at the literal} -setup {
+    fseekWrite "prefix needle tail"
+    set fp [open $fseekPath rb]
+} -body {
+    set pos [ns_fseekchars $fp needle]
+    list $pos [tell $fp] [read $fp 6]
+} -cleanup {close $fp} -result {7 7 needle}
+
+test ns_fseekchars-2.1 {Tcl read-ahead must not skip unread file bytes} -setup {
+    fseekWrite "[string repeat x 100]needle[string repeat x 10000]"
+    set fp [open $fseekPath rb]
+    read $fp 1
+} -body {
+    list [ns_fseekchars $fp needle] [tell $fp] [read $fp 6]
+} -cleanup {close $fp} -result {100 100 needle}
+
+test ns_fseekchars-2.2 {gets/read on a translated UTF-8 channel retain physical byte offsets and options} -setup {
+    set prefix "Grüße\r\n\u20ac\r\n"
+    fseekWrite [encoding convertto utf-8 "${prefix}needle\r\ntail"]
+    set fp [open $fseekPath r]
+    fconfigure $fp -encoding utf-8 -translation crlf
+    gets $fp
+    set before [fseekOptions $fp]
+} -body {
+    set expected [string length [encoding convertto utf-8 $prefix]]
+    set found [ns_fseekchars $fp needle]
+    list [expr {$found==$expected}] [expr {[tell $fp]==$expected}] \
+        [expr {[fseekOptions $fp] eq $before}] [gets $fp]
+} -cleanup {close $fp} -result {1 1 1 needle}
+
+test ns_fseekchars-2.3 {no match after buffered input leaves the logical channel at physical EOF} -setup {
+    fseekWrite "[string repeat x 12000]\r\n"
+    set fp [open $fseekPath r]
+    read $fp 1
+} -body {
+    list [ns_fseekchars $fp absent] [tell $fp] [file size $fseekPath] [read $fp]
+} -cleanup {close $fp} -result {-1 12002 12002 {}}
+
+test ns_fseekchars-2.4 {empty files and searches started at EOF return -1 without moving elsewhere} -setup {
+    fseekWrite {}
+    set fp [open $fseekPath rb]
+} -body {
+    list [ns_fseekchars $fp needle] [tell $fp]
+} -cleanup {close $fp} -result {-1 0}
+
+test ns_fseekchars-2.5 {caller controls advancement, including overlapping matches} -setup {
+    fseekWrite ababa
+    set fp [open $fseekPath rb]
+} -body {
+    set first [ns_fseekchars $fp aba]
+    set again [ns_fseekchars $fp aba]
+    seek $fp 1
+    list $first $again [ns_fseekchars $fp aba] [tell $fp]
+} -cleanup {close $fp} -result {0 0 2 2}
+
+test ns_fseekchars-2.6 {all supported needle sizes preserve overlap at first, second and later read boundaries} -body {
+    set checks 0
+    foreach length {1 2 20 255 4096 17000 32767} {
+        set needle "A[string repeat B [expr {$length-1}]]"
+        foreach crossing {0 1 2} {
+            set boundary [expr {32768+$crossing*(32768-$length+1)}]
+            set expected [expr {$boundary-$length/2}]
+            fseekWrite "[string repeat x $expected]${needle}tail"
+            set fp [open $fseekPath rb]
+            set found [ns_fseekchars $fp $needle]
+            set actual [tell $fp]
+            set value [read $fp $length]
+            close $fp
+            if {$found!=$expected || $actual!=$expected || $value ne $needle} {
+                error "literal length $length, crossing $crossing: expected $expected, got $found / $actual"
+            }
+            incr checks
+        }
+    }
+    set checks
+} -result 21
+
+test ns_fseekchars-2.7 {raw CRLF, NUL, high bytes and configured EOF characters do not change offsets} -setup {
+    set prefix [binary format H* 000d0a1afffe0d0a]
+    fseekWrite "${prefix}needle\r\nend"
+    set fp [open $fseekPath r+]
+    fconfigure $fp -encoding utf-8 -translation {crlf cr} -eofchar [list \x1a \x04]
+    set before [fseekOptions $fp]
+} -body {
+    list [ns_fseekchars $fp needle] [tell $fp] [expr {[fseekOptions $fp] eq $before}] [read $fp 6]
+} -cleanup {close $fp} -result {8 8 1 needle}
+
+test ns_fseekchars-2.8 {options are also restored after an unsuccessful search} -setup {
+    fseekWrite "before\x1aafter\r\n"
+    set fp [open $fseekPath r+]
+    fconfigure $fp -encoding iso8859-1 -translation {crlf cr} -eofchar [list \x1a \x04]
+    set before [fseekOptions $fp]
+} -body {
+    list [ns_fseekchars $fp absent] [tell $fp] [expr {[fseekOptions $fp] eq $before}]
+} -cleanup {close $fp} -result {-1 14 1}
+
+test ns_fseekchars-2.9 {write-only channels are rejected rather than read through their descriptor} -setup {
+    set fp [open $fseekPath wb]
+} -body {
+    ns_fseekchars $fp needle
+} -cleanup {close $fp} -returnCodes error -match glob -result {*not open for reading*}
+
+test ns_fseekchars-2.10 {empty literals are rejected} -setup {
+    set fp [open $fseekPath rb]
+} -body {
+    ns_fseekchars $fp {}
+} -cleanup {close $fp} -returnCodes error -match glob -result {*must be at least one*}
+
+test ns_fseekchars-2.11 {the existing literal limit is measured in bytes} -setup {
+    set fp [open $fseekPath rb]
+} -body {
+    ns_fseekchars $fp [string repeat A 32768]
+} -cleanup {close $fp} -returnCodes error -match glob -result {*at most 32767 bytes}
+
+test ns_fseekchars-2.12 {offsets above 2 GiB remain wide byte offsets without scanning the sparse prefix} -setup {
+    set expected [expr {wide(2147483648)+17}]
+    set fp [open $fseekPath wb]
+    seek $fp $expected
+    puts -nonewline $fp needle
+    close $fp
+    set fp [open $fseekPath rb]
+    seek $fp [expr {$expected-5}]
+} -body {
+    list [expr {[ns_fseekchars $fp needle]==$expected}] [expr {[tell $fp]==$expected}] [read $fp]
+} -cleanup {close $fp; fseekWrite {}} -result {1 1 needle}
+
+testConstraint fseekPipe [expr {[package vcompare [info patchlevel] 8.6]>=0}]
+test ns_fseekchars-2.13 {non-seekable channels fail before consuming data} -constraints fseekPipe -setup {
+    lassign [chan pipe] fp writer
+    fconfigure $fp -translation binary
+    puts -nonewline $writer needle
+    close $writer
+} -body {
+    set failed [catch {ns_fseekchars $fp needle} message]
+    list $failed [string match {*could not seek channel*} $message] [read $fp]
+} -cleanup {close $fp} -result {1 1 needle}
+
+# Reflected channels give portable, deterministic driver read/seek failures.
+proc fseekDriver {id operation channel args} {
+    upvar #0 fseekDriverState($id) state
+    switch -- $operation {
+        initialize {return {initialize finalize watch read seek}}
+        finalize - watch {return}
+        seek {
+            if {[dict get $state seekFail] && [dict get $state readDone]} {
+                return -code error -errorcode {POSIX EIO {I/O error}} {injected seek failure}
+            }
+            lassign $args offset origin
+            switch -- $origin {
+                start {set pos $offset}
+                current {set pos [expr {[dict get $state pos]+$offset}]}
+                end {set pos [expr {[string length [dict get $state data]]+$offset}]}
+            }
+            dict set state pos $pos
+            return $pos
+        }
+        read {
+            dict set state readDone 1
+            if {[dict get $state readFail]} {
+                return -code error -errorcode {POSIX EIO {I/O error}} {injected read failure}
+            }
+            set start [dict get $state pos]
+            set count [expr {min([lindex $args 0],3)}]
+            set data [string range [dict get $state data] $start [expr {$start+$count-1}]]
+            dict incr state pos [string length $data]
+            return $data
+        }
+    }
+}
+proc fseekMakeChannel {readFail seekFail} {
+    set ::fseekDriverState(test) [dict create data needle-tail pos 0 readFail $readFail seekFail $seekFail readDone 0]
+    set fp [chan create read [list fseekDriver test]]
+    fconfigure $fp -translation binary
+    return $fp
+}
+
+test ns_fseekchars-2.14 {driver read errors are errors, not a successful -1 result; options survive cleanup} -setup {
+    set fp [fseekMakeChannel 1 0]
+    set before [fseekOptions $fp]
+} -body {
+    set failed [catch {ns_fseekchars $fp needle} message]
+    list $failed [string match {*could not read channel*} $message] [expr {[fseekOptions $fp] eq $before}]
+} -cleanup {catch {close $fp}} -result {1 1 1}
+
+test ns_fseekchars-2.15 {failed final seek must not be reported as a successful match} -setup {
+    set fp [fseekMakeChannel 0 1]
+} -body {
+    ns_fseekchars $fp needle
+} -cleanup {catch {close $fp}} -returnCodes error -match glob -result {*could not seek channel*}
+
+test ns_fseekchars-2.16 {original read error survives an additional cleanup seek error} -setup {
+    set fp [fseekMakeChannel 1 1]
+} -body {
+    ns_fseekchars $fp needle
+} -cleanup {catch {close $fp}} -returnCodes error -match glob -result {*could not read channel*}
+
+test ns_fseekchars-2.17 {short driver reads can assemble a complete literal without losing overlap} -setup {
+    set fp [fseekMakeChannel 0 0]
+} -body {
+    list [ns_fseekchars $fp needle] [tell $fp] [read $fp 6]
+} -cleanup {close $fp} -result {0 0 needle}
+
+test ns_fseekchars-2.18 {the literal keeps its UTF-8 byte representation independently of channel encoding} -setup {
+    set literal Grüße
+    set bytes [encoding convertto utf-8 $literal]
+    fseekWrite "xx${bytes}tail"
+    set fp [open $fseekPath r]
+    fconfigure $fp -encoding iso8859-1
+} -body {
+    set found [ns_fseekchars $fp $literal]
+    list $found [tell $fp] [expr {[read $fp [string length $bytes]] eq $bytes}] [fconfigure $fp -encoding]
+} -cleanup {close $fp} -result {2 2 1 iso8859-1}
+
+test ns_fseekchars-2.19 {synchronizing a read/write channel flushes pending output and starts at its logical byte position} -setup {
+    fseekWrite prefix-needle-tail
+    set fp [open $fseekPath r+]
+    puts -nonewline $fp ABCDE
+    set before [fseekOptions $fp]
+} -body {
+    set found [ns_fseekchars $fp needle]
+    set pos [tell $fp]
+    set value [read $fp 6]
+    seek $fp 0
+    list $found $pos $value [read $fp 5] [expr {[fseekOptions $fp] eq $before}]
+} -cleanup {close $fp} -result {7 7 needle ABCDE 1}
+
+# Exercise the actual Tcl multipart parser: uploaded payloads contain NUL, high
+# bytes and CRLF, and the first following delimiter crosses a later read block.
+test ns_fseekchars-3.0 {spooled multipart parsing preserves exact uploaded bytes, lengths and trailing fields} -setup {
+    set boundary fseek-multipart-boundary
+    set alphabet [binary format H* 000102030a0d1afffe80c3bc]
+    set payload1 [string range [string repeat $alphabet 6000] 0 65508]
+    set payload2 "[string repeat x 32760][binary format H* 000d0afffe][string repeat y 33000]"
+    set body "--$boundary\r\nContent-Disposition: form-data; name=\"first\"; filename=\"first.bin\"\r\nContent-Type: application/octet-stream\r\n\r\n${payload1}\r\n"
+    append body "--$boundary\r\nContent-Disposition: form-data; name=\"second\"; filename=\"second.bin\"\r\nContent-Type: application/octet-stream\r\n\r\n${payload2}\r\n"
+    append body "--$boundary\r\nContent-Disposition: form-data; name=\"after\"\r\n\r\nfinished\r\n--$boundary--\r\n"
+    fseekWrite $body
+    set form [ns_set create fseek-multipart]
+    set uploads {}
+} -body {
+    ns_parseformfile -encoding utf-8 $fseekPath $form [dict create raw "multipart/form-data; boundary=$boundary" type multipart/form-data boundary $boundary]
+    set same {}
+    foreach name {first second} expected [list $payload1 $payload2] {
+        set tmp [ns_set get $form $name.tmpfile]
+        lappend uploads $tmp
+        set fp [open $tmp rb]; set actual [read $fp]; close $fp
+        lappend same [expr {$actual eq $expected}] [expr {[file size $tmp]==[string length $expected]}]
+    }
+    list $same [ns_set get $form after] [ns_set get $form first] [ns_set get $form second]
+} -cleanup {
+    foreach name {first second} {
+        set tmp [ns_set get $form $name.tmpfile]
+        if {$tmp ne {}} {file delete -force -- $tmp}
+    }
+    ns_set free $form
+} -result {{1 1 1 1} finished first.bin second.bin}
+
+rename fseekWrite {}
+rename fseekOptions {}
+rename fseekDriver {}
+rename fseekMakeChannel {}
+unset -nocomplain fseekDriverState
+removeFile fseekchars.bin
+
 test ns_filestat-1.0 {syntax: ns_filestat} -body {
     ns_filestat
 } -returnCodes error -result {wrong # args: should be "ns_filestat /filename/ ?/varname/?"}
