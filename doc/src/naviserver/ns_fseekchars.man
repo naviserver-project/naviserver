@@ -6,16 +6,35 @@
 
 [description]
 
-This command seeks in a Tcl opened by  Tcl channel [arg channelId] for the
-provided string [arg searchstring]. The search starts from the
-current position in the file. When the string is found, the command
-returns the position of the first character in the file and moves the
-file pointer to the start of this string. Therefore, the command can be
-used for multiple search operations in the file.
+Searches an open, readable, seekable file channel [arg channelId] for the
+literal string [arg searchstring], beginning at the channel's current position.
+The search is case-sensitive and does not interpret pattern metacharacters.
 
-If the string is not found, -1 is returned and the file position is at
-end-of-file.
- 
+[para]
+When found, the command returns the [emph {absolute byte offset}] of the first
+matching byte and positions the channel there. Offsets are not character
+indices, even when the file contains UTF-8 or other multibyte data. The next
+read starts at the match. To find a later occurrence, advance the channel
+explicitly before calling again; otherwise the same match is returned.
+
+[para]
+If no match is found, [const -1] is returned and the channel is positioned at
+physical end-of-file. Read and seek failures raise an error rather than
+returning [const -1]. Non-seekable channels are rejected before reading.
+
+[para]
+The search reads file bytes without newline conversion, character decoding or
+recognition of a configured EOF character. The channel's encoding, newline
+translation, EOF-character, buffer-size and blocking options are unchanged. This byte-offset behavior
+also applies after Tcl [cmd read] or [cmd gets] has buffered input, and supports
+binary file contents such as multipart upload bodies.
+
+[para]
+The search string uses Tcl's UTF-8 string representation, as in earlier versions
+of this command. It must be nonempty and at most 32767 bytes in that
+representation. The command does not convert the search string according to
+the channel's encoding.
+
 [section {COMMANDS}]
 
 [list_begin definitions]
