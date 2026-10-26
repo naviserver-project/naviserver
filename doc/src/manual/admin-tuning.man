@@ -258,7 +258,10 @@ Key parameters include:
  [const Retry-After] response header with the configured number of seconds.
  This mode is useful for applying explicit back-pressure to expensive or
  low-priority traffic, such as crawler or bot pools, instead of letting such
- requests accumulate in the driver queue.
+ requests accumulate in the driver queue.  These configured rejections are
+ recorded in the access log and the pool's dropped-request counter, without a
+ per-request queue-full Warning in the system log.  Other driver failures
+ continue to produce warnings.
 
 
 [subsection {Only Load Modules You Need}]

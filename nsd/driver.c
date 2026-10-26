@@ -5708,7 +5708,16 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
 
                 LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
             }
-        } else if (statusCode >= 500) {
+        } else if (statusCode >= 500
+                   && !(reason == SOCK_QUEUEFULL
+                        && sockPtr->poolPtr != NULL
+                        && sockPtr->poolPtr->wqueue.rejectoverrun)) {
+            /*
+             * An explicitly configured queue-overrun rejection is expected
+             * admission control. The 503 response, access entry and dropped
+             * counter are preserved; do not warn for every rejected request.
+             * Keep warnings for other failures and unconfigured overruns.
+             */
             const char *poolName = (sockPtr->poolPtr != NULL)
                 ? sockPtr->poolPtr->pool
                 : NULL;
