@@ -135,8 +135,8 @@ namespace eval ::ns_stats_test {
         dict set sample sampling to [expr {$stamp/1000000.0}]
         dict set sample sampling intervalSeconds 10
         dict set sample sampling ready $ready
-        set payload [::nsf::dispatch ::ns_stats quote [::nsf::dispatch ::ns_stats pack $sample]]
-        ::nsf::dispatch ::ns_stats sql $db "INSERT INTO ns_stats_samples(at,instance,topology,payload) VALUES($stamp,[::nsf::dispatch ::ns_stats quote $instance],[::nsf::dispatch ::ns_stats quote $topology],$payload)"
+        set payload [ns_dbquotevalue [::nsf::dispatch ::ns_stats pack $sample]]
+        ::nsf::dispatch ::ns_stats sql $db "INSERT INTO ns_stats_samples(at,instance,topology,payload) VALUES($stamp,[ns_dbquotevalue $instance],[ns_dbquotevalue quote $topology],$payload)"
     }
 }
 
@@ -376,8 +376,7 @@ set statsTestCode [catch {
     } -result {variant ::ns::stats::TestHistory}
 
     test stats-history-quote {SQL support delegates ordinary value quoting to nsdb} -returnCodes {ok error} -constraints ns_stats_sqlite -body {
-        list [::nsf::dispatch ::ns_stats quote {O'Brien}] \
-            [::nsf::dispatch ::ns_stats quote ""]
+        list [ns_dbquotevalue {O'Brien}] [ns_dbquotevalue ""]
     } -result {'O''Brien' NULL}
 
     test stats-history-codec {SQL mixin codecs round-trip empty, Unicode and NUL text} -returnCodes {ok error} -constraints ns_stats -body {
