@@ -757,7 +757,7 @@ if {[testConstraint ns_stats_sqlite]} {
         set record [dict create timestamp $stamp instance fixture sampling {intervalSeconds 10} \
             process {allocatorBytes {current_allocated_bytes 123 heap_size 456}}]
         set packed [ns_stats eval [list :pack $record]]
-        set literal [ns_stats eval [list :quote $packed]]
+        set literal [ns_dbquotevalue $packed]
         ns_stats eval [list :sql $db "INSERT OR REPLACE INTO ns_stats_samples(at,instance,topology,payload) VALUES($stamp,'fixture','unused',$literal)"]
         ns_db releasehandle $db
     } -body {
@@ -776,7 +776,7 @@ if {[testConstraint ns_stats_sqlite]} {
             set stamp [expr {($from+$offset)*1000000}]
             set point [dict create timestamp $stamp instance $instance sampling {intervalSeconds 10} \
                 memory [dict create current_allocated_bytes $offset]]
-            set literal [ns_stats eval [list :quote $point]]
+            set literal [ns_dbquotevalue $point]
             ns_stats eval [list :sql $db "INSERT OR REPLACE INTO ns_stats_samples(at,instance,topology,payload,allocator) VALUES($stamp,'$instance','unused','not-a-compressed-snapshot',$literal)"]
         }
         ns_db releasehandle $db
