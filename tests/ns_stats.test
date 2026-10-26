@@ -136,7 +136,7 @@ namespace eval ::ns_stats_test {
         dict set sample sampling intervalSeconds 10
         dict set sample sampling ready $ready
         set payload [ns_dbquotevalue [::nsf::dispatch ::ns_stats pack $sample]]
-        ::nsf::dispatch ::ns_stats sql $db "INSERT INTO ns_stats_samples(at,instance,topology,payload) VALUES($stamp,[ns_dbquotevalue $instance],[ns_dbquotevalue quote $topology],$payload)"
+        ::nsf::dispatch ::ns_stats sql $db "INSERT INTO ns_stats_samples(at,instance,topology,payload) VALUES($stamp,[ns_dbquotevalue $instance],[ns_dbquotevalue $topology],$payload)"
     }
 }
 
