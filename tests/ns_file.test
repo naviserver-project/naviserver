@@ -115,16 +115,19 @@ test ns_fseekchars-2.7 {raw CRLF, NUL, high bytes and configured EOF characters 
     set prefix [binary format H* 000d0a1afffe0d0a]
     fseekWrite "${prefix}needle\r\nend"
     set fp [open $fseekPath r+]
-    fconfigure $fp -encoding utf-8 -translation {crlf cr} -eofchar [list \x1a \x04]
+    # Tcl 9 supports one input EOF character, not an input/output pair.
+    fconfigure $fp -encoding utf-8 -translation {crlf cr} -eofchar \u001a
     set before [fseekOptions $fp]
 } -body {
     list [ns_fseekchars $fp needle] [tell $fp] [expr {[fseekOptions $fp] eq $before}] [read $fp 6]
 } -cleanup {close $fp} -result {8 8 1 needle}
 
 test ns_fseekchars-2.8 {options are also restored after an unsuccessful search} -setup {
-    fseekWrite "before\x1aafter\r\n"
+    # Tcl 8.5 consumes following hex digits in \x escapes. Construct the
+    # exact 14 bytes explicitly, independently of Tcl's escape rules.
+    fseekWrite [binary format H* 6265666f72651a61667465720d0a]
     set fp [open $fseekPath r+]
-    fconfigure $fp -encoding iso8859-1 -translation {crlf cr} -eofchar [list \x1a \x04]
+    fconfigure $fp -encoding iso8859-1 -translation {crlf cr} -eofchar \u001a
     set before [fseekOptions $fp]
 } -body {
     list [ns_fseekchars $fp absent] [tell $fp] [expr {[fseekOptions $fp] eq $before}]
