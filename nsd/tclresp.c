@@ -861,19 +861,57 @@ NsTclReturnNoticeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
 int
 NsTclReturnRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
+    enum {REDIRECT_WARN, REDIRECT_REPAIR, REDIRECT_SILENT};
+    static Ns_ObjvTable modes[] = {
+        {"warn",   REDIRECT_WARN},
+        {"repair", REDIRECT_REPAIR},
+        {"silent", REDIRECT_SILENT},
+        {NULL,     0u}
+    };
     Ns_Conn       *conn = NULL;
-    int            result;
+    int            result, mode = REDIRECT_WARN;
     char          *location;
+    Ns_ObjvSpec    opts[] = {
+        {"-mode", Ns_ObjvIndex, &mode, modes},
+        {"--", Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec    args[] = {
         {"location",  Ns_ObjvString, &location, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
-        result = Result(interp, Ns_ConnReturnRedirect(conn, location));
+        Tcl_DString repaired, utf8;
+        bool        changed = NS_FALSE, controls = NS_FALSE;
+
+        Tcl_DStringInit(&repaired);
+        Tcl_DStringInit(&utf8);
+        if (mode != REDIRECT_SILENT) {
+            const char *msg = mode == REDIRECT_WARN
+                ? "ns_returnredirect -mode warn"
+                : "ns_returnredirect -mode repair";
+
+            (void)Tcl_UtfToExternalDString(Ns_GetCharsetEncoding("utf-8"),
+                                          location, TCL_INDEX_NONE, &utf8);
+            changed = NsUrlEncodingCheck(msg, utf8.string, utf8.length, &repaired, &controls,
+                         mode == REDIRECT_WARN
+                         ? "; use ns_returnredirect -mode repair to apply these encoding changes;"
+                           " original Location sent unchanged"
+                         : NULL);
+        }
+        if (mode == REDIRECT_REPAIR && controls) {
+            Ns_TclPrintfResult(interp, "redirect location contains control bytes");
+            result = TCL_ERROR;
+        } else {
+            result = Result(interp, NsConnReturnRedirect(conn,
+                            mode == REDIRECT_REPAIR && changed ? repaired.string : location, NS_FALSE));
+        }
+        Tcl_DStringFree(&repaired);
+        Tcl_DStringFree(&utf8);
     }
 
     return result;

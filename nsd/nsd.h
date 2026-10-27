@@ -1873,6 +1873,9 @@ NS_EXTERN void NsConnTimeStatsFinalize(const Ns_Conn *conn)
 NS_EXTERN void NsConnTimeStatsUpdate(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN Ns_ReturnCode NsConnReturnRedirect(Ns_Conn *conn, const char *url, bool warnEncoding)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr, int *tclResultPtr)
     NS_GNUC_NONNULL(1);
 
@@ -2407,6 +2410,10 @@ NS_EXTERN void NsUnblockSignal(int signal);
 /*
  * url.c
  */
+NS_EXTERN bool NsUrlEncodingCheck(const char *msg, const char *inputStr, TCL_SIZE_T inputLength,
+                                  Tcl_DString *repairPtr, bool *controlsPtr, const char *repairHint)
+    NS_GNUC_NONNULL(1,2);
+
 NS_EXTERN Tcl_Obj *NsUrlToDictObj(Tcl_Interp *interp, Ns_URL *urlPtr)  NS_GNUC_NONNULL(2);
 
 /*

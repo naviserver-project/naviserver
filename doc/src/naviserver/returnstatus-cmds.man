@@ -68,13 +68,37 @@ a new location. For temporary redirects, use [cmd ns_returnredirect].
 
 
 [call [cmd ns_returnredirect] \
-        [arg location] ]
+        [opt [option "-mode warn|repair|silent"]] \
+        [opt --] [arg location] ]
 
 Sends a response with status code [term 302], [term Found] to the
 client. The response header field [term Location]
 is supplied with the value the provided [arg location].
 The [arg location]  can be a relative or absolute URI.
 When [cmd ns_locationproc] is configured, its result will be used.
+
+[para]
+The default mode is [const warn]. With
+[option {-mode warn}], bytes requiring percent-encoding and malformed
+percent escapes cause a warning containing the first offending byte offset
+and its percent-encoded form, a candidate Location, and a hint to use
+[option {-mode repair}] to apply the changes. The original Location is sent
+unchanged. With
+[option {-mode repair}], the candidate is sent instead. Repair refuses
+ASCII control bytes (including DEL) with a Tcl error before sending a response.
+Non-ASCII bytes are percent-encoded using their Tcl UTF-8 representation.
+
+[para]
+Both modes preserve existing valid percent escapes, URI delimiters, query
+parameter order and duplicate parameters. They do not decode the URL or
+infer whether valid delimiters or nested encodings were intended as data.
+This is a conservative encoding check, not full URI validation; for example,
+component-specific restrictions on brackets and authority syntax are not checked.
+The Tcl command suppresses the lower-level Location warning to avoid duplicate
+messages. With [option {-mode silent}], encoding checks and warnings are
+suppressed and the original Location is sent unchanged. This compatibility
+mode does not repair the URL. The public C redirect API retains its existing
+warning behavior.
 
 [para]
 Use this response to signal that the resource has temporarily moved to a new location. For

@@ -43,6 +43,10 @@ test ns_returnbadrequest-1.0 {syntax: ns_returnbadrequest} -body {
     ns_returnbadrequest
 } -returnCodes error -result {wrong # args: should be "ns_returnbadrequest /reason/"}
 
+test ns_returnredirect-1.1 {redirect mode must be warn, repair, or silent} -body {
+    ns_returnredirect -mode unknown /x
+} -returnCodes error -result {bad option "unknown": must be warn, repair, or silent}
+
 test ns_returnnotfound-1.0 {syntax: ns_returnnotfound} -body {
     ns_returnnotfound -x
 } -returnCodes error -result {wrong # args: should be "ns_returnnotfound"}
@@ -79,7 +83,7 @@ test ns_returnunavailable-1.0 {syntax: ns_returnunavailable} -body {
 
 test ns_returnredirect-1.0 {syntax: ns_returnredirect} -body {
     ns_returnredirect
-} -returnCodes error -result {wrong # args: should be "ns_returnredirect /location/"}
+} -returnCodes error -result {wrong # args: should be "ns_returnredirect ?-mode warn|repair|silent? ?--? /location/"}
 
 test ns_internalredirect-1.0 {syntax: ns_internalredirect} -body {
     ns_internalredirect
@@ -617,6 +621,115 @@ test tclresp-11.1 {ns_returnredirect, complete URL} -constraints serverListen -s
 } -cleanup {
     ns_unregister_op GET /tclresp
 } -match glob -result {302 http://example.com/x*moved here*}
+
+test tclresp-11.3 {redirect repair preserves escapes, duplicate parameters and delimiters} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        ns_returnredirect -mode repair {http://example.com/x?q=one%20two&q=%257B&literal=a+b#frag}
+    }
+} -body {
+    nstest::http -getheaders location GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {302 http://example.com/x?q=one%20two&q=%257B&literal=a+b#frag}
+
+test tclresp-11.4 {redirect repair encodes raw spaces, braces and malformed escapes} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        ns_returnredirect -mode repair {http://example.com/x?proc=ns::stats::SQLiteHistory instproc {history configure}&p=%zz&p=%}
+    }
+} -body {
+    nstest::http -getheaders location GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {302 http://example.com/x?proc=ns::stats::SQLiteHistory%20instproc%20%7Bhistory%20configure%7D&p=%25zz&p=%25}
+
+test tclresp-11.5 {redirect warn logs candidate and preserves original Location} -constraints serverListen -setup {
+    set previousWarning [ns_logctl severity warning on]
+    ns_register_proc GET /tclresp {
+        ns_logctl hold
+        ns_returnredirect -mode warn {http://example.com/x?q={a b}}
+        set diagnostic [string match {*ns_returnredirect -mode warn:*percent-encoded form %7B*candidate Location <http://example.com/x?q=%7Ba%20b%7D>*use ns_returnredirect -mode repair*original Location sent unchanged*} [ns_logctl get]]
+        nsv_set redirect-mode diagnostic $diagnostic
+        ns_logctl release
+    }
+} -body {
+    set response [nstest::http -getheaders location GET /tclresp]
+    # The handler records its diagnostic after sending the response.
+    for {set i 0} {$i < 100 && ![nsv_exists redirect-mode diagnostic]} {incr i} {
+        after 10
+    }
+    list $response [nsv_get redirect-mode diagnostic]
+} -cleanup {
+    ns_unregister_op GET /tclresp
+    nsv_unset -nocomplain redirect-mode
+    ns_logctl severity warning $previousWarning
+} -result {{302 {http://example.com/x?q={a b}}} 1}
+
+test tclresp-11.6 {redirect repair refuses controls before sending response} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        set code [catch {ns_returnredirect -mode repair "http://example.com/x\r\nInjected: yes"} msg]
+        ns_return 200 text/plain [list $code $msg]
+    }
+} -body {
+    nstest::http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {200 {1 {redirect location contains control bytes}}}
+
+test tclresp-11.7 {repair is idempotent with nested escaping} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        ns_returnredirect -mode repair {http://example.com/x?proc=%7Bhistory%20configure%7D&p=%25zz&p=%25}
+    }
+} -body {
+    nstest::http -getheaders location GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {302 http://example.com/x?proc=%7Bhistory%20configure%7D&p=%25zz&p=%25}
+
+test tclresp-11.8 {repair encodes non-ASCII text as UTF-8} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        ns_returnredirect -mode repair "http://example.com/\u00e4?q=\u20ac"
+    }
+} -body {
+    nstest::http -getheaders location GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {302 http://example.com/%C3%A4?q=%E2%82%AC}
+
+test tclresp-11.9 {repair refuses embedded NUL} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        set code [catch {ns_returnredirect -mode repair "http://example.com/x\u0000y"} msg]
+        ns_return 200 text/plain [list $code $msg]
+    }
+} -body {
+    nstest::http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {200 {1 {redirect location contains control bytes}}}
+
+foreach {suffix mode expected} {10 {} 1 11 {-mode silent} 0} {
+    test tclresp-11.$suffix "redirect default warns; silent suppresses all encoding warnings ($mode)" -constraints serverListen -setup {
+        set previousWarning [ns_logctl severity warning on]
+        ns_register_proc GET /tclresp [string map [list @MODE@ $mode] {
+            ns_logctl hold
+            ns_returnredirect @MODE@ {http://example.com/x?q={a b}}
+            set logs [ns_logctl get]
+            nsv_set redirect-mode diagnostic [list \
+                [string match {*ns_returnredirect -mode warn:*} $logs] \
+                [string match {*header field location*} $logs]]
+            ns_logctl release
+        }]
+    } -body {
+        set response [nstest::http -getheaders location GET /tclresp]
+        for {set i 0} {$i < 100 && ![nsv_exists redirect-mode diagnostic]} {incr i} {
+            after 10
+        }
+        list $response [nsv_get redirect-mode diagnostic]
+    } -cleanup {
+        ns_unregister_op GET /tclresp
+        nsv_unset -nocomplain redirect-mode
+    ns_logctl severity warning $previousWarning
+    } -result [list [list 302 {http://example.com/x?q={a b}}] [list $expected 0]]
+}
 
 test tclresp-11.2 {ns_returnmoved, complete URL} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {ns_returnmoved http://example.com/x}

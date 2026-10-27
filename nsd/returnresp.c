@@ -28,7 +28,7 @@ static Ns_ServerInitProc ConfigServerRedirects;
 static bool ReturnRedirectInternal(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
     NS_GNUC_NONNULL(1,3);
 static Ns_ReturnCode RedirectResponse(Ns_Conn *conn, const char *url, int statusCode,
-                                      const char *statusPharse, const char *comment)
+                                      const char *statusPharse, const char *comment, bool warnEncoding)
     NS_GNUC_NONNULL(1,4,5);
 
 
@@ -232,7 +232,7 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
  */
 static Ns_ReturnCode
 RedirectResponse(Ns_Conn *conn, const char *url, int statusCode, const char *statusPharse,
-                 const char *comment)
+                 const char *comment, bool warnEncoding)
 {
     Ns_ReturnCode result;
 
@@ -263,7 +263,9 @@ RedirectResponse(Ns_Conn *conn, const char *url, int statusCode, const char *sta
         finalUrlLength = urlDs.length;
 #endif
 
-        Ns_UrlEncodingWarnUnencoded("header field location", finalURL);
+        if (warnEncoding) {
+            Ns_UrlEncodingWarnUnencoded("header field location", finalURL);
+        }
         Ns_ConnSetHeadersSz(conn, "location", 8, finalURL, finalUrlLength);
 
         Tcl_DStringInit(&msgDs);
@@ -296,7 +298,7 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
     NS_NONNULL_ASSERT(conn != NULL);
 
     return RedirectResponse(conn, url, 301, "Moved Permanently",
-                            "The requested URL has moved permanently here.");
+                            "The requested URL has moved permanently here.", NS_TRUE);
 }
 
 Ns_ReturnCode
@@ -304,8 +306,36 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
 {
     NS_NONNULL_ASSERT(conn != NULL);
 
+    return NsConnReturnRedirect(conn, url, NS_TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConnReturnRedirect --
+ *
+ *      Return a temporary redirect, optionally warning about unencoded
+ *      bytes in the Location header. The Tcl command disables this
+ *      warning since it performs its own encoding checks. The public
+ *      C API enables it to retain its existing warning behavior.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR.
+ *
+ * Side effects:
+ *      Closes the connection. May produce a warning in the system log.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_ReturnCode
+NsConnReturnRedirect(Ns_Conn *conn, const char *url, bool warnEncoding)
+{
+    NS_NONNULL_ASSERT(conn != NULL);
+
     return RedirectResponse(conn, url, 302, "Found",
-                            "The requested URL has moved here.");
+                            "The requested URL has moved here.", warnEncoding);
 }
 
 

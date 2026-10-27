@@ -73,6 +73,26 @@ static Ns_ReturnCode UrlFallbackDecode(NsInterp *itPtr, Tcl_DString *dsPtr,
  * Local variables defined in this file.
  */
 
+/* Hexadecimal digit values; -1 marks bytes that are not hex digits. */
+static const int hex_code[] = {
+    /* 0x00 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0x10 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0x20 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0x30 */   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1,
+    /* 0x40 */  -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0x50 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0x60 */  -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0x70 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0x80 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0x90 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0xa0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0xb0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0xc0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0xd0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0xe0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    /* 0xf0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+};
+
 static Ns_ObjvTable percentSchemes[] = {
     {"query",    UCHAR('q')},
     {"path",     UCHAR('p')},
@@ -790,61 +810,99 @@ static const ByteKey fragment_scheme[] = {
 void
 Ns_UrlEncodingWarnUnencoded(const char *msg, const char *inputStr)
 {
-    static bool initialized = NS_FALSE;
-    static bool mustBeEncoded[256];
-    size_t charLength;
-    size_t i;
+    NS_NONNULL_ASSERT(msg != NULL);
+    NS_NONNULL_ASSERT(inputStr != NULL);
+
+    (void)NsUrlEncodingCheck(msg, inputStr, (TCL_SIZE_T)strlen(inputStr), NULL, NULL, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsUrlEncodingCheck --
+ *
+ *      Check a URI reference for unencoded bytes and malformed percent
+ *      escapes. Shared by the public warning helper and redirect
+ *      diagnostics/repair. Preserve valid escapes and delimiters
+ *      without interpreting query parameters. inputLength permits
+ *      checking embedded NULs in externally encoded UTF-8. When non-NULL,
+ *      repairHint is appended to diagnostics for repairable input.
+ *
+ * Results:
+ *      NS_TRUE if encoding problems were found, NS_FALSE otherwise.
+ *      When non-NULL, repairPtr receives an appended candidate with
+ *      forbidden bytes escaped, and controlsPtr is set to indicate
+ *      whether control bytes make the candidate unsuitable for repair.
+ *
+ * Side effects:
+ *      Logs a warning when encoding problems are found. May append to
+ *      repairPtr and update controlsPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+bool
+NsUrlEncodingCheck(const char *msg, const char *inputStr, TCL_SIZE_T inputLength,
+                   Tcl_DString *repairPtr, bool *controlsPtr, const char *repairHint)
+{
+    static const char allowed[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        "-._~:/?#[]@!$&'()*+,;=";
+    const unsigned char *input = (const unsigned char *)inputStr;
+    const unsigned char *end = input + inputLength;
+    const unsigned char *p, *run = input;
+    const unsigned char *first = NULL;
+    bool controls = NS_FALSE;
 
     NS_NONNULL_ASSERT(msg != NULL);
     NS_NONNULL_ASSERT(inputStr != NULL);
 
-    if (!initialized) {
-        /*
-         * No need for a fine-grained lock.
-         */
-        Ns_MasterLock();
-        for (i = 0u; i < 256u; i++) {
-            mustBeEncoded[i] = NS_TRUE;
+    for (p = input; p < end; p++) {
+        bool encode;
+
+        if (*p == '%') {
+            encode = !(end - p >= 3 && hex_code[p[1]] >= 0 && hex_code[p[2]] >= 0);
+        } else {
+            encode = *p == '\0' || strchr(allowed, *p) == NULL;
         }
-
-        /*
-         * Don't try to distinguish for now between percents in
-         * pct-encoded input string and literal percents (same with '='
-         * and ';').
-         */
-        mustBeEncoded[UCHAR('%')] = NS_FALSE;
-        mustBeEncoded[UCHAR('=')] = NS_FALSE;
-        mustBeEncoded[UCHAR(';')] = NS_FALSE;
-
-        /*
-         * Don't warn about begin of fragment identifier. We would need
-         * a detailed URL parser to detect its usage).
-         */
-        mustBeEncoded[UCHAR('#')] = NS_FALSE;
-
-        for (i = 0u; i < 256u; i++) {
-            if (path_scheme[i].str == NULL) {
-                mustBeEncoded[i] = NS_FALSE;
+        if (*p < 0x20u || *p == 0x7fu) {
+            controls = NS_TRUE;
+        }
+        if (encode) {
+            if (first == NULL) {
+                first = p;
             }
-            if (query_scheme[i].str == NULL) {
-                mustBeEncoded[i] = NS_FALSE;
+            if (repairPtr != NULL) {
+                char escaped[4];
+
+                Tcl_DStringAppend(repairPtr, (const char *)run, (TCL_SIZE_T)(p - run));
+                (void)snprintf(escaped, sizeof(escaped), "%%%02X", (unsigned int)*p);
+                Tcl_DStringAppend(repairPtr, escaped, 3);
+                run = p + 1;
             }
         }
-        initialized = NS_TRUE;
-        Ns_MasterUnlock();
     }
-
-    charLength = strlen(inputStr);
-    for (i = 0u; i < charLength; i++) {
-        if (mustBeEncoded[UCHAR(inputStr[i])]) {
+    if (repairPtr != NULL) {
+        Tcl_DStringAppend(repairPtr, (const char *)run, (TCL_SIZE_T)(end - run));
+    }
+    if (controlsPtr != NULL) {
+        *controlsPtr = controls;
+    }
+    if (first != NULL) {
+        if (repairPtr != NULL) {
+            Ns_Log(Warning, "%s: invalid URI byte 0x%02x at offset %zu;"
+                   " percent-encoded form %%%02X; candidate Location <%s>%s",
+                   msg, (unsigned int)*first, (size_t)(first - input),
+                   (unsigned int)*first, repairPtr->string,
+                   controls ? "; contains control bytes, not eligible for repair"
+                   : repairHint != NULL ? repairHint : "");
+        } else {
             Ns_Log(Warning, "%s value '%s': byte with binary value 0x%.2x must be URL-encoded",
-                   msg, inputStr, UCHAR(inputStr[i]));
-            /*
-             * Just warn about the first invalid character
-             */
-            break;
+                   msg, inputStr, (unsigned int)*first);
         }
     }
+    return first != NULL;
 }
 
 
@@ -1793,24 +1851,7 @@ PercentDecode(char *dest, const char *source, char percentScheme)
     register char       *q = dest;
     register const char *p = source;
     register TCL_SIZE_T  n = 0;
-    static const int hex_code[] = {
-        /* 0x00 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0x10 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0x20 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0x30 */   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1,
-        /* 0x40 */  -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0x50 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0x60 */  -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0x70 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0x80 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0x90 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0xa0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0xb0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0xc0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0xd0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0xe0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        /* 0xf0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
-    };
+
 
     while (likely(*p != '\0')) {
         int  i, j;
