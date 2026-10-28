@@ -2307,6 +2307,8 @@ NS_EXTERN void NsStopHttp(NsServer *servPtr)
  * tcljson.c
  */
 NS_EXTERN void NsAtomJsonInit(void);
+NS_EXTERN bool NsJsonNumberIsValid(const unsigned char *bytes, size_t length, bool *integerPtr)
+    NS_GNUC_NONNULL(1);
 /*
  * tcljob.c
  */

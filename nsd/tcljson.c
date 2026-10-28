@@ -349,7 +349,6 @@ static Ns_ReturnCode JsonDecodeHex4(JsonParser *jp, uint16_t *u16Ptr) NS_GNUC_NO
 static Ns_ReturnCode JsonDecodeUnicodeEscape(JsonParser *jp, uint32_t *cpPtr) NS_GNUC_NONNULL(1,2);
 static Ns_ReturnCode JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,  const unsigned char **endPtr, bool *sawFracOrExpPtr)
     NS_GNUC_NONNULL(1,2,3,4);
-static bool          JsonNumberLexemeIsValid(const unsigned char *s, size_t len) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode JsonValidateNumberString(const unsigned char *s, size_t len, Ns_DString *errDsPtr) NS_GNUC_NONNULL(1,3);
 static Ns_ReturnCode JsonNumberObjToLexeme(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj **outObjPtr) NS_GNUC_NONNULL(1,2,3);
 static Ns_ReturnCode JsonCheckStringSpan(JsonParser *jp, const unsigned char *p, const unsigned char *q, size_t outLen)
@@ -1453,6 +1452,10 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
      *   exp    = ('e'/'E') ['+'/'-'] 1*digit
      */
 
+    if (p == jp->end) {
+        return NS_ERROR;
+    }
+
     if (*p == '-') {
         p++;
         if (p >= jp->end) {
@@ -1477,7 +1480,7 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
     if (*p == '0') {
         p++;
         /* no leading zeros allowed if more digits follow */
-        if (*p >= '0' && *p <= '9') {
+        if (p < jp->end && *p >= '0' && *p <= '9') {
             if (jp->errDsPtr != NULL) {
                 Ns_DStringPrintf(jp->errDsPtr,
                                  "ns_json: parse error at byte %lu: invalid number",
@@ -1488,7 +1491,7 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
     } else if (*p >= '1' && *p <= '9') {
         do {
             p++;
-        } while (*p >= '0' && *p <= '9');
+        } while (p < jp->end && *p >= '0' && *p <= '9');
     } else {
         if (jp->errDsPtr != NULL) {
             Ns_DStringPrintf(jp->errDsPtr,
@@ -1499,11 +1502,11 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
     }
 
     /* frac */
-    if (*p == '.') {
+    if (p < jp->end && *p == '.') {
         const unsigned char *dot = p;
         sawFracOrExp = NS_TRUE;
         p++;
-        if (!(*p >= '0' && *p <= '9')) {
+        if (p == jp->end || !(*p >= '0' && *p <= '9')) {
             if (jp->errDsPtr != NULL) {
                 Ns_DStringPrintf(jp->errDsPtr,
                                  "ns_json: parse error at byte %lu: invalid number",
@@ -1513,18 +1516,18 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
         }
         do {
             p++;
-        } while (*p >= '0' && *p <= '9');
+        } while (p < jp->end && *p >= '0' && *p <= '9');
     }
 
     /* exp */
-    if (*p == 'e' || *p == 'E') {
+    if (p < jp->end && (*p == 'e' || *p == 'E')) {
         const unsigned char *e = p;
         sawFracOrExp = NS_TRUE;
         p++;
-        if (*p == '+' || *p == '-') {
+        if (p < jp->end && (*p == '+' || *p == '-')) {
             p++;
         }
-        if (!(*p >= '0' && *p <= '9')) {
+        if (p == jp->end || !(*p >= '0' && *p <= '9')) {
             if (jp->errDsPtr != NULL) {
                 Ns_DStringPrintf(jp->errDsPtr,
                                  "ns_json: parse error at byte %lu: invalid number",
@@ -1534,7 +1537,7 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
         }
         do {
             p++;
-        } while (*p >= '0' && *p <= '9');
+        } while (p < jp->end && *p >= '0' && *p <= '9');
     }
 
     jp->p = p;
@@ -1547,7 +1550,7 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
 /*
  *----------------------------------------------------------------------
  *
- * JsonNumberLexemeIsValid --
+ * NsJsonNumberIsValid --
  *
  *      Check whether the byte sequence is a syntactically valid JSON number
  *      lexeme according to RFC 8259.
@@ -1561,25 +1564,29 @@ JsonScanNumber(JsonParser *jp, const unsigned char **startPtr,
  *      false otherwise.
  *
  * Side effects:
- *      None.
+ *      When integerPtr is non-NULL, reports whether the lexeme has neither
+ *      a fraction nor an exponent; this output is valid only on success.
  *
  *----------------------------------------------------------------------
  */
-static bool
-JsonNumberLexemeIsValid(const unsigned char *s, size_t len)
+bool
+NsJsonNumberIsValid(const unsigned char *s, size_t len, bool *integerPtr)
 {
-    JsonParser jp;
+    JsonParser           jp;
     const unsigned char *start, *end;
-    bool sawFracOrExp;
+    bool                 sawFracOrExp;
 
     memset(&jp, 0, sizeof(jp));
     jp.p = s;
     jp.start = s;
     jp.end = s + len;
-    jp.errDsPtr = NULL;  /* adjust JsonScanNumber to tolerate NULL, or give dummy */
+    jp.errDsPtr = NULL;
 
     if (JsonScanNumber(&jp, &start, &end, &sawFracOrExp) != NS_OK) {
         return NS_FALSE;
+    }
+    if (integerPtr != NULL) {
+        *integerPtr = !sawFracOrExp;
     }
     return (jp.p == jp.end);
 }
@@ -2322,7 +2329,7 @@ JsonValueTypeDetect(Tcl_Interp *interp, Tcl_Obj *valueObj)
         TCL_SIZE_T  len;
         const char *s = Tcl_GetStringFromObj(valueObj, &len);
 
-        if (JsonNumberLexemeIsValid((const unsigned char *)s, (size_t)len)) {
+        if (NsJsonNumberIsValid((const unsigned char *)s, (size_t)len, NULL)) {
             return JSON_VT_NUMBER;
         }
         if (!(s[0] == '0' && len > 1)
