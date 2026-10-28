@@ -73,6 +73,7 @@ typedef struct DbDriver {
     SpReturnCodeProc *spreturncodeProc;
     SpGetParamsProc  *spgetparamsProc;
     VersionProc      *versionProc;
+    const Ns_DbBatchDriverOps *batchOps;
 } DbDriver;
 
 /*
@@ -204,6 +205,10 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
 
         case DbFn_SpGetParams:
             driverPtr->spgetparamsProc = (SpGetParamsProc *) procs->func;
+            break;
+
+        case DbFn_Batch:
+            driverPtr->batchOps = ((Ns_DbBatchDriverProc *) procs->func)();
             break;
 
         case DbFn_Version:
@@ -1109,6 +1114,30 @@ Ns_DbSpGetParams(Ns_DbHandle *handle)
     }
 
     return aset;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDbGetBatchOps --
+ *
+ *      Retrieve a handle driver's optional native batch operations.
+ *
+ * Results:
+ *      Borrowed operations table, or NULL when batch support is absent.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+const Ns_DbBatchDriverOps *
+NsDbGetBatchOps(const Ns_DbHandle *handle)
+{
+    const DbDriver *driver = NsDbGetDriver(handle);
+
+    return driver == NULL ? NULL : driver->batchOps;
 }
 
 /*

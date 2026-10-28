@@ -28,6 +28,80 @@ allocated ns_set is returned. An error is thrown if more than one row
 is returned.
 
 
+[call [cmd "ns_db batchinfo"] [arg batch]]
+
+Return immutable-batch metadata as a Tcl dictionary without materializing record
+values. Batches are opaque, interpreter-local values produced by registered C
+producers such as [cmd "ns_accesslog scan"]. Metadata includes the shared schema,
+record count and producer-specific source/checkpoint information. Modifying the
+returned Tcl dictionary does not mutate the batch. A diagnostic string label is
+not a serializable or reconstructible batch handle.
+
+[call [cmd "ns_db batchinfo"] [option -handle] [arg handle] [opt [arg batch]]]
+
+Report the checked-out handle's batch capabilities. supported is false for a
+driver without registered batch callbacks. Registered drivers report their method,
+base types, supported refinements/representations and transaction requirements.
+With a batch, compatible reports schema/type compatibility; it does not validate
+individual values, a destination table's affinities or its constraints.
+
+[call [cmd "ns_db batchinsert"] [arg handle] [option -table] [arg table] \
+    [opt "[option -columns] [arg mapping]"] [arg batch]]
+
+Insert synchronously through a driver's explicitly registered batch implementation
+using the existing checked-out connection and an active caller-owned transaction.
+A driver without callbacks raises NS_DB BATCH UNSUPPORTED before database work;
+there is no automatic SQL-text, JSON or other insertion fallback.
+
+[para] table is a Tcl list of one or two identifier components, each quoted by the
+backend. It is not an SQL fragment. mapping is a dictionary of source-field names
+to destination-column names. Omitted mapping uses all schema names unchanged.
+Omitted destination columns use database defaults. Empty mappings, unknown source
+fields, duplicate target names and unsupported types/refinements are rejected.
+Targets must already exist; there is no table creation, conflict policy, upsert,
+deduplication or automatic record transformation.
+
+[para] The batch remains unchanged and retained by its caller. Native sinks read
+borrowed lexical byte slices against the shared schema, with explicit nulls and
+conversion at the sink. No per-record Tcl dictionaries, triples or serialization
+are required. The initial shared provider ABI supports flat string, number,
+boolean and null columns; nested object/array schemas are explicitly rejected.
+JSON base types and optional schema refinements remain separate.
+
+[para] Success reports a dictionary with rows and method. The count represents
+changes within the transaction, not a durable commit. The driver must finish all
+native readers/statements before returning. An empty batch still requires a
+supported driver, valid mapping/target and caller transaction, then reports zero
+rows. A disconnected handle, active result or conflicting prepared operation is
+rejected without discarding its result.
+
+[para] The command never commits, rolls back or consumes the batch. An error can
+leave earlier rows written in the outer transaction: the caller must roll back.
+Errors use NS_DB BATCH codes such as TYPE_MISMATCH, MAPPING,
+TRANSACTION_REQUIRED, CONVERSION or INSERT; native driver diagnostics can append
+zero-based row/field information and populate the ordinary nsdb exception. An
+application can atomically insert records, update rollups and save a producer
+checkpoint before committing the same transaction. Checkpoint serialization must
+preserve binary fields, for example by base64-encoding a UTF-8 Tcl-list envelope
+when storing the checkpoint as database text.
+
+[para] The SQLite implementation uses reusable prepared bindings on the same
+connection and checks its actual transaction state, including outer SAVEPOINTs.
+It enforces native int32/int64 ranges and exact integer-microsecond conversions
+without doubles. Access-log calendar/epoch timestamp strings can become UTC
+microseconds in INTEGER/NUMERIC targets, or remain lexical in TEXT targets.
+Generic JSON numbers can remain exact lexemes in explicit TEXT storage.
+Encoded-binary hex refinements map to BLOB. Unknown refinements fail explicitly.
+
+[para] SQLite target affinities are checked before row insertion to prevent silent
+numeric coercion or integer-to-REAL precision loss. Ordinary strings require
+TEXT or no-affinity/BLOB storage, native integers/booleans/microseconds require
+INTEGER/NUMERIC or no-affinity/BLOB storage, and encoded binary requires BLOB.
+Generated/hidden columns are rejected. Database constraints and triggers retain
+their normal semantics. SQLite rows counts direct changes, excluding trigger
+side effects, matching SQLite changes semantics. Exact conversion can reject a
+source spelling or value even when its base type is supported.
+
 [call [cmd "ns_db bindrow"] [arg handle]]
 
 Returns an ns_set structure whose key names are the column names

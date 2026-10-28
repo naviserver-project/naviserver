@@ -191,7 +191,7 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
 #endif
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
 
-    return TCL_OK;
+    return NsDbBatchInitInterp(interp);
 }
 
 
@@ -310,6 +310,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     enum {
         ZERO_OR_ONE_ROW,
         ONE_ROW,
+        BATCHINFO, BATCHINSERT,
         BINDROW,
         BOUNCEPOOL,
         CANCEL,
@@ -354,6 +355,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     static const char *const subcmd[] = {
         "0or1row",
         "1row",
+        "batchinfo", "batchinsert",
         "bindrow",
         "bouncepool",
         "cancel",
@@ -405,6 +407,8 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     }
 
     switch (cmd) {
+    case BATCHINFO: return NsDbBatchObjCmd(interp, objc, objv, NS_FALSE);
+    case BATCHINSERT: return NsDbBatchObjCmd(interp, objc, objv, NS_TRUE);
     case POOLS:
         if (objc != 2) {
             Tcl_WrongNumArgs(interp, 2, objv, NULL);

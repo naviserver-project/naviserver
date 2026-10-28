@@ -64,6 +64,9 @@ typedef enum {
     DbFn_BestRowId,
 #endif
     DbFn_End,
+    /* Fixed extension ID: preserve all legacy IDs, including DbFn_End,
+     * whether deprecated callbacks are enabled or not. */
+    DbFn_Batch = 24,
 } Ns_DbProcId;
 
 /*
@@ -230,6 +233,8 @@ NS_EXTERN Ns_ReturnCode Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *f
 
 NS_EXTERN void Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
     NS_GNUC_NONNULL(1,2,3);
+
+#include "batch.h"
 
 #endif /* NSDB_H */
 

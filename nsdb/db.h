@@ -32,6 +32,10 @@ NS_EXTERN void             NsDbDriverInit(const char *server, const struct DbDri
 NS_EXTERN uintptr_t        NsDbGetSessionId(const Ns_DbHandle *handle) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN int NsDbBatchInitInterp(Tcl_Interp *) NS_GNUC_NONNULL(1);
+NS_EXTERN int NsDbBatchObjCmd(Tcl_Interp *, TCL_SIZE_T, Tcl_Obj *const *, bool) NS_GNUC_NONNULL(1,3);
+NS_EXTERN const Ns_DbBatchDriverOps *NsDbGetBatchOps(const Ns_DbHandle *) NS_GNUC_NONNULL(1);
+
 #endif
 
 

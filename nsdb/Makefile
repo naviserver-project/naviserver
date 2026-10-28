@@ -13,9 +13,11 @@ MODNAME = nsdb
 MOD     = nsdb.so
 MODOBJS = nsdb.o
 LIBNM   = nsdb
-LIBOBJS = dbinit.o dbdrv.o dbtcl.o dbutil.o
-LIBHDRS = nsdb.h
-HDRS    = db.h
+LIBOBJS = dbinit.o dbdrv.o dbtcl.o dbutil.o batch.o
+LIBHDRS = nsdb.h batch.h
+HDRS    = db.h batch.h ../nsd/nsatoms.h ../nsd/nsd.h
 TCL     = util.tcl
 
 include ../include/Makefile.build
+
+batch.o: ../nsd/nsatoms.h ../nsd/nsd.h
