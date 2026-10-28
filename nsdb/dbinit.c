@@ -846,7 +846,7 @@ NsDbInitServer(const char *server)
      */
 
     sdataPtr->allowed = NS_EMPTY_STRING;
-    pool = ns_strdup(Ns_ConfigGetValue(section, "pools"));
+    pool = ns_strcopy(Ns_ConfigGetValue(section, "pools"));
     if (pool != NULL && poolsTable.numEntries > 0) {
         const Pool *poolPtr;
         char       *allowed;
@@ -1416,7 +1416,7 @@ CreatePool(const char *pool, const char *section, const char *driver)
          */
         poolPtr->firstPtr = poolPtr->lastPtr = NULL;
         for (i = 0; i < poolPtr->nhandles; ++i) {
-            Handle *handlePtr = ns_malloc(sizeof(Handle));
+            Handle *handlePtr = ns_calloc(1u, sizeof(Handle));
 
             Tcl_DStringInit(&handlePtr->dsExceptionMsg);
             handlePtr->poolPtr = poolPtr;
