@@ -246,7 +246,7 @@ else
     CFLAGS  += @OPENSSL_INCLUDES@
 	ifeq (nsd,$(LIBNM))
 		CFLAGS += @ZLIB_INCLUDES@
-		NSLIBS += @ZLIB_LIBS@ @CRYPT_LIBS@ @SYSTEMD_LIBS@
+		NSLIBS += @ZLIB_LIBS@ @CRYPT_LIBS@ @SYSTEMD_LIBS@ @MONOTONIC_LIBS@
 	endif
     ifneq (nsthread,$(LIBNM))
         NSLIBS += -lnsthread

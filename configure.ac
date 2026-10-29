@@ -255,6 +255,38 @@ AC_CHECK_LIB([$TCL_LIB], [Tcl_GetMemoryInfo],
 
 AC_CHECK_FUNCS([poll gettimeofday])
 
+# Timed TCP connects require elapsed time independent of wall-clock changes.
+# Darwin uses Mach time even on releases predating clock_gettime().
+MONOTONIC_LIBS=""
+case "$system" in
+  Darwin)
+    AC_MSG_CHECKING([for Mach monotonic time])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mach/mach_time.h>]], [[
+      mach_timebase_info_data_t info;
+      (void)mach_timebase_info(&info);
+      (void)mach_absolute_time();
+    ]])], [AC_MSG_RESULT([yes])],
+      [AC_MSG_FAILURE([Mach monotonic time is required on Darwin])])
+    ;;
+  MINGW*|MSYS*|CYGWIN*) ;;
+  *)
+    ns_save_clock_LIBS="$LIBS"
+    AC_SEARCH_LIBS([clock_gettime], [rt posix4], [],
+      [AC_MSG_FAILURE([clock_gettime is required for timed TCP connects])])
+    AC_MSG_CHECKING([for CLOCK_MONOTONIC])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[
+      struct timespec ts;
+      return clock_gettime(CLOCK_MONOTONIC, &ts);
+    ]])], [AC_MSG_RESULT([yes])],
+      [AC_MSG_FAILURE([CLOCK_MONOTONIC is required for timed TCP connects])])
+    AS_IF([test "x$ac_cv_search_clock_gettime" != "xnone required"],
+      [MONOTONIC_LIBS="$ac_cv_search_clock_gettime"])
+    LIBS="$ns_save_clock_LIBS"
+    ;;
+esac
+AC_SUBST([MONOTONIC_LIBS])
+
+
 #
 # Determine the maximum value of time_t depending on the size of the
 # time_t structure.

@@ -1,0 +1,132 @@
+# -*- Tcl -*-
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# Public-API regressions: only Tcl and NaviServer are required.
+# Deterministic timing/failure injection is an optional developer check in
+# developer/test-sock-happy-eyeballs.sh, outside the regular test suite.
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure {*}$argv
+
+namespace eval ::happy_eyeballs_test {
+    variable channels {}
+    variable handles {}
+    proc cleanup {} {
+        variable channels
+        variable handles
+        foreach channel $channels {catch {close $channel}}
+        foreach handle $handles {catch {ns_connchan close $handle}}
+        set channels {}
+        set handles {}
+    }
+    proc listen {address} {
+        variable channels
+        set listener [ns_socklisten $address 0]
+        lappend channels $listener
+        return [list $listener [lindex [fconfigure $listener -sockname] end]]
+    }
+    proc exchange {address host {timeout 2s}} {
+        variable channels
+        lassign [listen $address] listener port
+        set client [ns_sockopen -timeout $timeout -- $host $port]
+        lappend channels {*}$client
+        set peer [ns_sockaccept $listener]
+        lappend channels {*}$peer
+        foreach channel [concat $client $peer] {
+            fconfigure $channel -translation binary -buffering none
+        }
+        puts -nonewline [lindex $client 1] ping
+        read [lindex $peer 0] 4
+    }
+}
+
+set haveIPv6 false
+if {[ns_info ipv6] && ![catch {
+    set probe [ns_socklisten ::1 0]
+    close $probe
+    ns_addrbyhost ::1
+}]} {
+    set haveIPv6 true
+}
+testConstraint happyEyeballsIPv6 $haveIPv6
+
+test happy-eyeballs-ipv4 {timed IPv4 connect returns usable socket channels} -body {
+    ::happy_eyeballs_test::exchange 127.0.0.1 127.0.0.1
+} -cleanup {
+    ::happy_eyeballs_test::cleanup
+} -result ping
+
+test happy-eyeballs-ipv6 {timed IPv6 connect returns usable socket channels} \
+    -constraints happyEyeballsIPv6 -body {
+    ::happy_eyeballs_test::exchange ::1 ::1
+} -cleanup {
+    ::happy_eyeballs_test::cleanup
+} -result ping
+
+test happy-eyeballs-localhost {resolver addresses can reach an IPv4-only listener} -body {
+    # Includes cross-family fallback if localhost resolves to IPv6 first.
+    # Do not depend on system resolver order or external DNS/network routing.
+    ::happy_eyeballs_test::exchange 127.0.0.1 localhost
+} -cleanup {
+    ::happy_eyeballs_test::cleanup
+} -result ping
+
+test happy-eyeballs-zero {zero budget reports NS_TIMEOUT and creates no channels} -body {
+    lassign [::happy_eyeballs_test::listen 127.0.0.1] listener port
+    set before [lsort [chan names]]
+    set code [catch {ns_sockopen -timeout 0 -- 127.0.0.1 $port} message options]
+    list $code [dict get $options -errorcode] [expr {$before eq [lsort [chan names]]}]
+} -cleanup {
+    ::happy_eyeballs_test::cleanup
+} -result {1 NS_TIMEOUT 1}
+
+test happy-eyeballs-repeated-zero {repeated timeouts leave Tcl channel ownership unchanged} -body {
+    lassign [::happy_eyeballs_test::listen 127.0.0.1] listener port
+    set before [lsort [chan names]]
+    set timedOut 0
+    for {set i 0} {$i < 32} {incr i} {
+        if {[catch {ns_sockopen -timeout 0 -- 127.0.0.1 $port} message options]
+            && [dict get $options -errorcode] eq "NS_TIMEOUT"} {
+            incr timedOut
+        }
+    }
+    list $timedOut [expr {$before eq [lsort [chan names]]}]
+} -cleanup {
+    ::happy_eyeballs_test::cleanup
+} -result {32 1}
+
+test happy-eyeballs-refused {refused connection is an error rather than a successful socket} -body {
+    lassign [::happy_eyeballs_test::listen 127.0.0.1] listener port
+    close $listener
+    set ::happy_eyeballs_test::channels {}
+    set before [lsort [chan names]]
+    set code [catch {ns_sockopen -timeout 2s -- 127.0.0.1 $port} message options]
+    list $code [expr {[dict get $options -errorcode] ne "NS_TIMEOUT"}] \
+        [expr {$before eq [lsort [chan names]]}]
+} -cleanup {
+    ::happy_eyeballs_test::cleanup
+} -result {1 1 1}
+
+test happy-eyeballs-large-budget {large connect budget allows immediate connchan success} -body {
+    lassign [::happy_eyeballs_test::listen 127.0.0.1] listener port
+    set handle [ns_connchan connect -timeout 2147484s -- 127.0.0.1 $port]
+    lappend ::happy_eyeballs_test::handles $handle
+    ns_connchan exists $handle
+} -cleanup {
+    ::happy_eyeballs_test::cleanup
+} -result 1
+
+test happy-eyeballs-connchan-zero {connchan propagates the shared zero-budget timeout} -body {
+    lassign [::happy_eyeballs_test::listen 127.0.0.1] listener port
+    set code [catch {ns_connchan connect -timeout 0 -- 127.0.0.1 $port} message options]
+    list $code [dict get $options -errorcode]
+} -cleanup {
+    ::happy_eyeballs_test::cleanup
+} -result {1 NS_TIMEOUT}
+
+namespace delete ::happy_eyeballs_test
+cleanupTests
