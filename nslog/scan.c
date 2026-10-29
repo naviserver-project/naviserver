@@ -163,8 +163,16 @@ typedef struct {
 static Tcl_FreeInternalRepProc ScannerFree;
 static Tcl_DupInternalRepProc  ScannerDup;
 static Tcl_UpdateStringProc    OpaqueString;
-static Tcl_ObjType scannerType = {"nslog:scanner", ScannerFree, ScannerDup, OpaqueString,
-                                  Ns_TclSetFromAnyError};
+static Tcl_ObjType scannerType = {
+    "nslog:scanner",
+    ScannerFree,
+    ScannerDup,
+    OpaqueString,
+    Ns_TclSetFromAnyError
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
+};
 
 static TCL_OBJCMDPROC_T OpenScanObjCmnd;
 static TCL_OBJCMDPROC_T ScanNextObjCmd;

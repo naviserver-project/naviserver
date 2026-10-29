@@ -59,8 +59,16 @@ static bool BatchCompatible(const Ns_DbBatchDriverOps *ops, const Ns_DbBatch *ba
 static Tcl_FreeInternalRepProc BatchFree      NS_GNUC_NONNULL(1);
 static Tcl_DupInternalRepProc BatchDup        NS_GNUC_NONNULL(1, 2);
 static Tcl_UpdateStringProc BatchUpdateString NS_GNUC_NONNULL(1);
-static Tcl_ObjType batchType = {"nsdbBatch", BatchFree, BatchDup, BatchUpdateString,
-                                Ns_TclSetFromAnyError};
+static Tcl_ObjType batchType = {
+    "nsdbBatch",
+    BatchFree,
+    BatchDup,
+    BatchUpdateString,
+    Ns_TclSetFromAnyError
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
+};
 
 static TCL_OBJCMDPROC_T BatchInfoObjCmd       NS_GNUC_NONNULL(2, 4);
 static TCL_OBJCMDPROC_T BatchInsertObjCmd     NS_GNUC_NONNULL(2, 4);
@@ -882,7 +890,7 @@ static int
 BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc,
                   Tcl_Obj *const *objv)
 {
-    const Ns_DbBatch          *batch;
+    const Ns_DbBatch          *batch = NULL;
     Ns_DbHandle               *handle;
     const Ns_DbBatchDriverOps *ops;
     Tcl_Obj                   *handleObj, *table = NULL, *mapping = NULL, *batchObj, *result;
