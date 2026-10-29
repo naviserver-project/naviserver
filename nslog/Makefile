@@ -11,7 +11,8 @@
 #
 
 MOD      =  nslog.so
-MODOBJS  =  nslog.o
+MODOBJS  =  nslog.o scan.o
 include  ../include/Makefile.build
 
-nslog.o: ../nsd/asyncwriter.h
+nslog.o: ../nsd/asyncwriter.h scan.h
+scan.o: scan.h ../nsdb/batch.h ../nsd/nsatoms.h ../nsd/nsd.h

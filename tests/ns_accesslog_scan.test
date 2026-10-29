@@ -1,0 +1,537 @@
+# -*- Tcl -*-
+# Bounded producer scans, lexical batches and on-demand ns_json views.
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+namespace eval ::accessScan {
+    variable directory [file join [::tcltest::temporaryDirectory] access-scan-[pid]]
+    file mkdir $directory
+    variable line {127.0.0.1 -conn:test:default:1:99- - [1792969200] "GET /p?secret=x HTTP/1.1" 503 4553}
+    proc write {name content} {
+        variable directory
+        set path [file join $directory $name]
+        set f [open $path wb]; puts -nonewline $f [encoding convertto utf-8 $content]; close $f
+        return $path
+    }
+    proc raw {name content} {
+        variable directory
+        set path [file join $directory $name]
+        set f [open $path wb]; puts -nonewline $f $content; close $f
+        return $path
+    }
+    proc row {batch {index 0}} {
+        set triples [ns_accesslog scan triples $batch -offset $index -limit 1]
+        set result {}
+        foreach {name type value} [lindex $triples 2 2] {dict set result $name $value}
+        return $result
+    }
+    proc type {batch field} {
+        foreach {name type value} [lindex [ns_accesslog scan triples $batch -limit 1] 2 2] {
+            if {$name eq $field} {return $type}
+        }
+        error "missing field $field"
+    }
+    proc one {content args} {
+        set s [ns_accesslog scan open -filename [write one.log $content] {*}$args]
+        try {return [ns_accesslog scan next $s]} finally {ns_accesslog scan close $s}
+    }
+}
+
+test ns_accesslog_scan-1.1 {common fields, source positions and exact numeric spellings} -body {
+    set line [string map {4553 9007199254740993} $::accessScan::line]
+    set b [::accessScan::one "$line\n"]
+    set row [::accessScan::row $b]
+    list [dict get $row parseStatus] [dict get $row responseBytes] [dict get $row pool] \
+        [dict get $row path] [dict get $row offset] [dict get $row endOffset] \
+        [expr {[dict get $row endOffset]==[string bytelength "$line\n"]}] [::accessScan::type $b userAgent]
+} -result {ok 9007199254740993 default /p 0 98 1 null}
+
+test ns_accesslog_scan-1.2 {combined, quoted user, producer escapes and accept/queue/filter/run order} -body {
+    set line [string map [list { - [} { "user name" [}] $::accessScan::line]
+    append line { "" "Bot\"\\\n\t\r" 0.001230 "1792969200.000123 0.000001 0.000012 0.000134 0.000003"}
+    set b [::accessScan::one "$line\n"]
+    set r [::accessScan::row $b]
+    list [dict get $r user] [dict get $r referer] [dict get $r userAgent] [dict get $r requestTime] \
+        [dict get $r startTime] [dict get $r filterTime] [dict get $r runTime] [dict get $r phaseTimingAvailable] \
+        [::accessScan::type $b referer]
+} -result [list {user name} {} "Bot\"\\\n\t\r" 0.001230 1792969200.000123 0.000134 0.000003 true string]
+
+test ns_accesslog_scan-1.3 {calendar timestamps and unavailable bytes stay lexical/null} -body {
+    set line [string map [list 1792969200 {25/Oct/2026:23:00:00 +0000} 4553 -] $::accessScan::line]
+    set b [::accessScan::one "$line\r\n"]
+    list [dict get [::accessScan::row $b] timestamp] [::accessScan::type $b responseBytes] [dict get [ns_accesslog scan info $b] diagnostics]
+} -result {{25/Oct/2026:23:00:00 +0000} null {malformed 0 oversized 0}}
+
+test ns_accesslog_scan-1.4 {driver timing counters never become worker phase measurements} -body {
+    set line [string map {-conn:test:default:1:99- -driver:driver:1-bots-} $::accessScan::line]
+    append line { "1792969200.000123 0.000001 0.000012 0.000134 0.000003"}
+    set b [::accessScan::one "$line\n" -format common -timingcolumn 0]
+    set r [::accessScan::row $b]
+    list [dict get $r recordSource] [dict get $r driver] [dict get $r pool] [dict get $r phaseTimingAvailable] \
+        [dict get $r startTime] [::accessScan::type $b requestIdentifier] [::accessScan::type $b filterTime]
+} -result {driver driver bots false 1792969200.000123 null null}
+
+test ns_accesslog_scan-1.5 {explicit common layout prevents guessing extension headers as combined} -body {
+    set b [::accessScan::one "$::accessScan::line \"header\" \"value\"\n" -format common]
+    list [::accessScan::type $b userAgent] [dict get [::accessScan::row $b] extendedFields]
+} -result {null {"header" "value"}}
+
+test ns_accesslog_scan-1.6 {timing disabled, raw extensions retained} -body {
+    set extra {"1792969200.000123 1.0 2.0 3.0 4.0"}
+    set b [::accessScan::one "$::accessScan::line $extra\n" -timingcolumn none]
+    list [::accessScan::type $b startTime] [dict get [::accessScan::row $b] extendedFields]
+} -result {null {"1792969200.000123 1.0 2.0 3.0 4.0"}}
+
+test ns_accesslog_scan-1.7 {explicit combined timing column and trailing extension} -body {
+    set line "$::accessScan::line \"\" \"agent\" \"1792969200.000123 1.00 2.00 3.00 4.00\" \"extension\"\n"
+    set b [::accessScan::one $line -format combined -timingcolumn 2]
+    set r [::accessScan::row $b]
+    list [dict get $r acceptTime] [dict get $r queueTime] [dict get $r filterTime] [dict get $r runTime] [dict get $r extendedFields]
+} -result {1.00 2.00 3.00 4.00 {"extension"}}
+
+test ns_accesslog_scan-1.8 {non-ASCII and supplementary Unicode survive ns_json view roundtrip} -body {
+    set line "$::accessScan::line \"\" \"Grüße ☃ [format %c 0x1f600]\"\n"
+    set b [::accessScan::one $line]
+    set json [ns_json value [ns_accesslog scan triples $b]]
+    expr {[dict get [lindex [ns_json parse -output tclvalue $json] 0] userAgent] eq "Grüße ☃ [format %c 0x1f600]"}
+} -result 1
+
+test ns_accesslog_scan-1.9 {path-only, absolute-form and empty requests remain source records} -body {
+    set result {}
+    foreach request {/p?q=x {GET https://example.org/a?q=x HTTP/1.1} {GET https://example.org?q=x HTTP/1.1} {}} {
+        set line [string map [list {GET /p?secret=x HTTP/1.1} $request] $::accessScan::line]
+        set b [::accessScan::one "$line\n"]
+        lappend result [dict get [::accessScan::row $b] path] [dict get [::accessScan::row $b] parseStatus]
+    }
+    set result
+} -result {/p ok /a ok / ok {} ok}
+
+test ns_accesslog_scan-2.1 {bounded record batches, stable metadata, views survive scanner close} -body {
+    set path [::accessScan::write batches.log [string repeat "$::accessScan::line\n" 3]]
+    set s [ns_accesslog scan open -filename $path]
+    set first [ns_accesslog scan next $s -maxrecords 1]
+    set info [ns_accesslog scan info $first]
+    set second [ns_accesslog scan next $s -maxrecords 1]
+    set third [ns_accesslog scan next $s -maxrecords 1]
+    ns_accesslog scan close $s
+    dict set info schema columns changed
+    list [dict get [ns_accesslog scan info $first] rows] [dict get [ns_accesslog scan info $first] state] \
+        [dict get [ns_accesslog scan info $third] state] [dict get [::accessScan::row $second] offset] \
+        [llength [dict get [ns_accesslog scan info $first] schema columns]] [dict get [ns_accesslog scan info $s] state]
+} -result {1 ready snapshot-end 86 33 closed}
+
+test ns_accesslog_scan-2.2 {on-demand triples pagination} -body {
+    set b [::accessScan::one [string repeat "$::accessScan::line\n" 3]]
+    list [llength [lindex [ns_accesslog scan triples $b -offset 1 -limit 1] 2]] \
+        [lindex [ns_accesslog scan triples $b -offset 1 -limit 1] 2 0] \
+        [lindex [ns_accesslog scan triples $b -offset 100 -limit 1] 2] \
+        [lindex [ns_accesslog scan triples $b -limit 0] 2]
+} -result {3 1 {} {}}
+
+test ns_accesslog_scan-2.3 {scan byte budgets preserve unfinished framing and durable coverage} -body {
+    set s [ns_accesslog scan open -filename [::accessScan::write budget.log "$::accessScan::line\n"]]
+    set b [ns_accesslog scan next $s -maxscanbytes 7]
+    set first [ns_accesslog scan info $b]
+    set count 0
+    for {set i 0} {$i<100} {incr i} {
+        set b [ns_accesslog scan next $s -maxscanbytes 7]
+        incr count [dict get [ns_accesslog scan info $b] rows]
+        if {[dict get [ns_accesslog scan info $b] state] eq "snapshot-end"} break
+    }
+    ns_accesslog scan close $s
+    list [dict get $first rows] [dict get $first state] [dict get $first coverage to] $count
+} -result {0 budget 0 1}
+
+test ns_accesslog_scan-2.4 {oversized lines discarded incrementally and diagnosed with exact coverage} -body {
+    set s [ns_accesslog scan open -filename [::accessScan::write oversized.log "[string repeat x 1000]\n$::accessScan::line\n"] -maxlinebytes 128]
+    set records {};set types {}
+    for {set i 0} {$i<100} {incr i} {
+        set b [ns_accesslog scan next $s -maxscanbytes 37 -maxbytes 4096]
+        if {[dict get [ns_accesslog scan info $b] rows]>0} {
+            lappend records [dict get [::accessScan::row $b] parseStatus] [dict get [::accessScan::row $b] endOffset]
+        }
+        if {[dict get [ns_accesslog scan info $b] state] eq "snapshot-end"} break
+    }
+    ns_accesslog scan close $s
+    set records
+} -result {diagnostic 1001 ok 1087}
+
+test ns_accesslog_scan-2.5 {malformed UTF-8 and embedded raw NUL yield bounded hex diagnostics} -body {
+    set content "bad[format %c 0]\n"
+    append content [binary format H* ff80] "\n$::accessScan::line\n"
+    set s [ns_accesslog scan open -filename [::accessScan::raw bad-encoding.log $content]]
+    set b [ns_accesslog scan next $s]
+    ns_accesslog scan close $s
+    list [dict get [ns_accesslog scan info $b] diagnostics] \
+        [dict get [::accessScan::row $b 0] excerpt] [dict get [::accessScan::row $b 1] excerpt] \
+        [dict get [::accessScan::row $b 2] parseStatus]
+} -result {{malformed 2 oversized 0} 62616400 ff80 ok}
+
+test ns_accesslog_scan-2.6 {malformed layout, escape and timestamp do not become valid records} -body {
+    set result {}
+    foreach line [list bad [string map [list {/p?secret=x} {/p\x41}] $::accessScan::line] \
+                      [string map {1792969200 garbage} $::accessScan::line]] {
+        set b [::accessScan::one "$line\n"]
+        lappend result [dict get [::accessScan::row $b] diagnostic]
+    }
+    set result
+} -result {layout unsupported-escape timestamp-syntax}
+
+test ns_accesslog_scan-3.1 {live tail remains pending; checkpoint resume re-examines unfinished bytes} -body {
+    set path [::accessScan::write pending.log $::accessScan::line]
+    set s [ns_accesslog scan open -filename $path]
+    set b [ns_accesslog scan next $s]
+    set info [ns_accesslog scan info $b]
+    set cp [dict get $info checkpoint]
+    ns_accesslog scan close $s
+    set f [open $path a];puts $f {};close $f
+    set s [ns_accesslog scan open -filename $path -checkpoint $cp]
+    set b [ns_accesslog scan next $s]
+    ns_accesslog scan close $s
+    list [dict get $info rows] [dict get $info state] [dict get $info coverage to] \
+        [dict get [ns_accesslog scan info $b] rows] [dict get [ns_accesslog scan info $b] state]
+} -result {0 pending 0 1 snapshot-end}
+
+test ns_accesslog_scan-3.2 {fixed snapshot ignores appends; checkpoint advances only completed records} -body {
+    set path [::accessScan::write append.log "$::accessScan::line\n"]
+    set s [ns_accesslog scan open -filename $path]
+    set f [open $path a];puts $f $::accessScan::line;close $f
+    set b [ns_accesslog scan next $s]
+    set cp [dict get [ns_accesslog scan info $b] checkpoint]
+    set one [dict get [ns_accesslog scan info $b] rows]
+    ns_accesslog scan close $s
+    set s [ns_accesslog scan open -filename $path -checkpoint $cp]
+    set b [ns_accesslog scan next $s];ns_accesslog scan close $s
+    list $one [dict get [ns_accesslog scan info $b] rows] [dict get [::accessScan::row $b] offset]
+} -result {1 1 86}
+
+test ns_accesslog_scan-3.3 {final tail emits once and repeated end calls return empty batches} -body {
+    set s [ns_accesslog scan open -filename [::accessScan::write final.log $::accessScan::line] -tail final]
+    set b [ns_accesslog scan next $s];set first [ns_accesslog scan info $b]
+    set b [ns_accesslog scan next $s];set last [ns_accesslog scan info $b]
+    ns_accesslog scan close $s
+    list [dict get $first rows] [dict get $first state] [dict get $last rows] [dict get $last state] [dict get $last coverage to]
+} -result {1 snapshot-end 0 snapshot-end 85}
+
+test ns_accesslog_scan-3.4 {truncation detected even with prefetched unread bytes} -body {
+    set path [::accessScan::write truncate.log [string repeat "$::accessScan::line\n" 3]]
+    set s [ns_accesslog scan open -filename $path]
+    ns_accesslog scan next $s -maxrecords 1
+    set f [open $path w];close $f
+    catch {ns_accesslog scan next $s} message options
+    ns_accesslog scan close $s
+    dict get $options -errorcode
+} -result {NS_ACCESSLOG SCAN SOURCE_CHANGED}
+
+test ns_accesslog_scan-3.5 {checkpoint rejects a replacement pathname and changed configuration} -body {
+    set path [::accessScan::write generation.log "$::accessScan::line\n"]
+    set s [ns_accesslog scan open -filename $path]
+    set b [ns_accesslog scan next $s];set cp [dict get [ns_accesslog scan info $b] checkpoint]
+    ns_accesslog scan close $s
+    catch {ns_accesslog scan open -filename $path -checkpoint $cp -format common} m o
+    set config [dict get $o -errorcode]
+    file rename -force $path $path.old
+    ::accessScan::write generation.log "$::accessScan::line\n"
+    catch {ns_accesslog scan open -filename $path -checkpoint $cp} m o
+    list $config [dict get $o -errorcode]
+} -result {{NS_ACCESSLOG SCAN CHECKPOINT_MISMATCH} {NS_ACCESSLOG SCAN CHECKPOINT_MISMATCH}}
+
+test ns_accesslog_scan-3.6 {same-inode rewrites at prefix/anchor rejected on resume} -body {
+    set path [::accessScan::write rewrite.log "$::accessScan::line\n"]
+    set s [ns_accesslog scan open -filename $path]
+    set b [ns_accesslog scan next $s];set cp [dict get [ns_accesslog scan info $b] checkpoint]
+    ns_accesslog scan close $s
+    set f [open $path r+];puts -nonewline $f Z;close $f
+    catch {ns_accesslog scan open -filename $path -checkpoint $cp} m o
+    dict get $o -errorcode
+} -result {NS_ACCESSLOG SCAN CHECKPOINT_MISMATCH}
+
+test ns_accesslog_scan-3.7 {held snapshot follows its original file across rename} -body {
+    set path [::accessScan::write rename.log "$::accessScan::line\n"]
+    set s [ns_accesslog scan open -filename $path]
+    file rename -force $path $path.old
+    ::accessScan::write rename.log bad
+    set b [ns_accesslog scan next $s];ns_accesslog scan close $s
+    dict get [::accessScan::row $b] parseStatus
+} -result ok
+
+test ns_accesslog_scan-4.1 {options, boundaries, closed handles and forged labels fail explicitly} -body {
+    set path [::accessScan::write options.log "$::accessScan::line\n"]
+    set result {}
+    foreach args [list [list -offset 1] [list -offset -1] [list -format bogus] [list -encoding binary] \
+                       [list -offset 0 -checkpoint {}]] {
+        catch {ns_accesslog scan open -filename $path {*}$args} m o
+        lappend result [dict get $o -errorcode]
+    }
+    set s [ns_accesslog scan open -filename $path]
+    catch {ns_accesslog scan next $s -maxbytes 10} m o;lappend result [dict get $o -errorcode]
+    ns_accesslog scan close $s;ns_accesslog scan close $s
+    catch {ns_accesslog scan next $s} m o;lappend result [dict get $o -errorcode]
+    catch {ns_accesslog scan next nslog-scanner} m o;lappend result [dict get $o -errorcode]
+    set result
+} -result {{NS_ACCESSLOG SCAN BOUNDARY} {NS_ACCESSLOG SCAN BOUNDARY} NONE {NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN LIMIT} {NS_ACCESSLOG SCAN CLOSED} {NS_ACCESSLOG SCAN HANDLE}}
+
+test ns_accesslog_scan-4.2 {default filename and empty-file metadata need no driver or pool} -body {
+    set s [ns_accesslog scan open]
+    set b [ns_accesslog scan next $s]
+    ns_accesslog scan close $s
+    list [dict get [ns_accesslog scan info $b] representation] \
+        [expr {[dict get [ns_accesslog scan info $b] source filename] eq [ns_accesslog file]}] \
+        [lindex [ns_accesslog scan triples $b] 1]
+} -result {compact-schema-lexical 1 array}
+
+test ns_accesslog_scan-4.3 {source numeric range is retained for the sink, not narrowed by the scanner} -body {
+    set line [string map {4553 9223372036854775808} $::accessScan::line]
+    set b [::accessScan::one "$line\n"]
+    list [dict get [::accessScan::row $b] responseBytes] [dict get [::accessScan::row $b] parseStatus]
+} -result {9223372036854775808 ok}
+
+test ns_accesslog_scan-4.4 {checkpoint survives Tcl serialization and batch release} -body {
+    set path [::accessScan::write serial.log [string repeat "$::accessScan::line\n" 2]]
+    set s [ns_accesslog scan open -filename $path]
+    set b [ns_accesslog scan next $s -maxrecords 1]
+    set cp [dict get [ns_accesslog scan info $b] checkpoint]
+    set serialized [list $cp]
+    unset b cp
+    ns_accesslog scan close $s
+    set s [ns_accesslog scan open -filename $path -checkpoint [lindex $serialized 0]]
+    set b [ns_accesslog scan next $s];ns_accesslog scan close $s
+    list [dict get [ns_accesslog scan info $b] rows] [dict get [::accessScan::row $b] offset]
+} -result {1 86}
+
+::tcltest::testConstraint accessScanFifo [expr {$::tcl_platform(platform) eq "unix"}]
+test ns_accesslog_scan-4.5 {opening a FIFO fails without waiting for a writer} -constraints accessScanFifo -body {
+    set path [file join $::accessScan::directory input.fifo]
+    exec mkfifo $path
+    catch {ns_accesslog scan open -filename $path} m o
+    dict get $o -errorcode
+} -result {NS_ACCESSLOG SCAN OPEN}
+
+::tcltest::testConstraint accessScanFds [file isdirectory /dev/fd]
+test ns_accesslog_scan-4.6 {unreferenced scanner wrappers close descriptors without explicit close} -constraints accessScanFds -body {
+    set path [::accessScan::write lifetime.log "$::accessScan::line\n"]
+    set before [llength [glob -nocomplain /dev/fd/*]]
+    for {set i 0} {$i<256} {incr i} {
+        set handle [ns_accesslog scan open -filename $path]
+        unset handle
+    }
+    expr {[llength [glob -nocomplain /dev/fd/*]] <= $before+1}
+} -result 1
+
+test ns_accesslog_scan-4.7 {mutated source bytes retain bounded coverage and emit valid JSON views} -body {
+    set seed 937;set content {}
+    for {set i 0} {$i<500} {incr i} {
+        set line $::accessScan::line
+        for {set j 0} {$j<3} {incr j} {
+            set seed [expr {(1103515245*$seed+12345)&0x7fffffff}]
+            set index [expr {$seed%[string length $line]}]
+            set seed [expr {(1103515245*$seed+12345)&0x7fffffff}]
+            set line [string replace $line $index $index [binary format c [expr {$seed%256}]]]
+        }
+        append content $line "\n"
+    }
+    set path [::accessScan::raw mutations.log $content]
+    set s [ns_accesslog scan open -filename $path -tail final -maxlinebytes 256]
+    set safe 0;set rows 0;set okay 1
+    for {set n 0} {$n<10000} {incr n} {
+        set b [ns_accesslog scan next $s -maxrecords 3 -maxscanbytes 127 -maxbytes 4096]
+        set info [ns_accesslog scan info $b]
+        if {[dict get $info coverage from]!=$safe || [dict get $info coverage to]<$safe || [dict get $info payloadBytes]>4096} {set okay 0}
+        set safe [dict get $info coverage to]
+        set json [ns_json value [ns_accesslog scan triples $b -limit 3]]
+        incr rows [llength [ns_json parse -output tclvalue $json]]
+        if {[dict get $info state] eq "snapshot-end"} break
+    }
+    ns_accesslog scan close $s
+    list $okay [expr {$safe==[file size $path]}] [expr {$rows>0}] [expr {$n<10000}]
+} -result {1 1 1 1}
+
+test ns_accesslog_scan-4.8 {cooperative time budget yields before a large snapshot is exhausted} -body {
+    set s [ns_accesslog scan open -filename [::accessScan::write timeout.log [string repeat "$::accessScan::line\n" 1000]]]
+    set b [ns_accesslog scan next $s -timeout 0:1 -maxrecords 1000]
+    set info [ns_accesslog scan info $b]
+    ns_accesslog scan close $s
+    list [dict get $info state] [expr {[dict get $info rows]<1000}] [dict get $info views]
+} -result {budget 1 typed-triples-lexical}
+
+test ns_accesslog_scan-5.1 {nested dispatch rejects unknown subcommands and wrong arity} -body {
+    set result {}
+    foreach args {{unknown} {open extra} {next} {info} {info a b} {close} {close a b} {triples}} {
+        lappend result [catch {ns_accesslog scan {*}$args}]
+    }
+    set result
+} -result {1 1 1 1 1 1 1 1}
+
+test ns_accesslog_scan-5.2 {shared UTF-8 validator rejects overlong surrogate and out-of-range sequences} -body {
+    set content {}
+    foreach hex {c080 eda080 f4908080 f0808080 e282 f09f9880} {
+        append content [binary format H* $hex] "\n"
+    }
+    set s [ns_accesslog scan open -filename [::accessScan::raw utf8-boundaries.log $content]]
+    set b [ns_accesslog scan next $s]
+    ns_accesslog scan close $s
+    set result {}
+    for {set i 0} {$i < 6} {incr i} {
+        lappend result [dict get [::accessScan::row $b $i] diagnostic]
+    }
+    set result
+} -result {encoding encoding encoding encoding encoding layout}
+
+# Configure a synthetic current log and restore the module after each test.
+proc ::accessScan::current {content flags headers body} {
+    set oldFile [ns_accesslog file]
+    set oldFlags [ns_accesslog flags]
+    set oldHeaders [ns_accesslog extendedheaders]
+    set path [::accessScan::write current.log $content]
+    try {
+        ns_accesslog flags $flags
+        ns_accesslog extendedheaders $headers
+        ns_accesslog file $path
+        uplevel 1 $body
+    } finally {
+        ns_accesslog file $oldFile
+        ns_accesslog flags $oldFlags
+        ns_accesslog extendedheaders $oldHeaders
+    }
+}
+
+test ns_accesslog_scan-6.1 {current common log uses flags and known extension names} -body {
+    ::accessScan::current "$::accessScan::line \"ref\" \"agent\"\n" formattedtime {Host X-Req} {
+        set s [ns_accesslog scan open]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        set info [ns_accesslog scan info $b]
+        list [dict get [::accessScan::row $b] parseStatus] [::accessScan::type $b referer]  [dict get [::accessScan::row $b] extendedFields] [dict get $info source extraheaders]  [dict get $info checkpoint format] [dict get $info checkpoint requestTime]
+    }
+} -result {ok null {"ref" "agent"} {request:Host request:X-Req} 1 0}
+
+test ns_accesslog_scan-6.2 {disabled partial times do not consume a timing-shaped header} -body {
+    ::accessScan::current "$::accessScan::line \"1 2 3 4 5\"\n" formattedtime X-Time {
+        set s [ns_accesslog scan open]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        list [dict get [::accessScan::row $b] parseStatus] [::accessScan::type $b startTime]  [dict get [::accessScan::row $b] extendedFields]
+    }
+} -result {ok null {"1 2 3 4 5"}}
+
+test ns_accesslog_scan-6.3 {current combined request time partial times and ordered tagged headers} -body {
+    set line "$::accessScan::line \"ref\" \"agent\" 0.125 \"1792969200 0.000001 0.000012 0.000134 0.000003\" \"in\" \"plain\" \"out\"\n"
+    ::accessScan::current $line {logcombined logreqtime logpartialtimes} {response:X-Out req:X-In Plain} {
+        set s [ns_accesslog scan open]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        set row [::accessScan::row $b]
+        list [dict get $row parseStatus] [dict get $row referer] [dict get $row requestTime]  [dict get $row runTime] [dict get [ns_accesslog scan info $b] source extraheaders]
+    }
+} -result {ok ref 0.125 0.000003 {request:X-In request:Plain response:X-Out}}
+
+test ns_accesslog_scan-6.4 {explicit scanner options override every layout default} -body {
+    ::accessScan::current "$::accessScan::line \"1792969200 1 2 3 4\"\n"  {logcombined logreqtime logpartialtimes} Host {
+        set s [ns_accesslog scan open -format common -requesttime false -timingcolumn 0 -extendedheaders {}]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        list [dict get [::accessScan::row $b] parseStatus] [dict get [::accessScan::row $b] runTime]  [::accessScan::type $b requestTime] [dict get [ns_accesslog scan info $b] source extraheaders]
+    }
+} -result {ok 4 null {}}
+
+test ns_accesslog_scan-6.5 {historical files retain automatic layout regardless of current flags} -body {
+    set historical [::accessScan::write historical.log "$::accessScan::line\n"]
+    ::accessScan::current {} {logcombined logreqtime logpartialtimes} {Host X-Req} {
+        set s [ns_accesslog scan open -filename $historical]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        set info [ns_accesslog scan info $b]
+        list [dict get [::accessScan::row $b] parseStatus] [dict exists $info source extraheaders]  [dict get $info checkpoint format] [dict get $info checkpoint timingColumn]  [dict get $info checkpoint requestTime]
+    }
+} -result {ok 0 0 -1 -1}
+
+test ns_accesslog_scan-6.6 {an explicit alias of the current file receives current defaults} -body {
+    ::accessScan::current "$::accessScan::line \"ref\" \"agent\"\n" formattedtime {Host X-Req} {
+        set alias [file join $::accessScan::directory current-alias.log]
+        file link -hard $alias [ns_accesslog file]
+        set s [ns_accesslog scan open -filename $alias]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        list [dict get [::accessScan::row $b] parseStatus] [::accessScan::type $b referer]  [dict get [ns_accesslog scan info $b] source extraheaders]
+    }
+} -result {ok null {request:Host request:X-Req}}
+
+test ns_accesslog_scan-6.7 {open scanners keep their configuration and checkpoint resumes validate it} -body {
+    ::accessScan::current "$::accessScan::line \"ref\" \"agent\"\n" formattedtime {Host X-Req} {
+        set s [ns_accesslog scan open]
+        ns_accesslog flags {logcombined logreqtime}
+        ns_accesslog extendedheaders {}
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        set cp [dict get [ns_accesslog scan info $b] checkpoint]
+        catch {ns_accesslog scan open -checkpoint $cp} message options
+        set code [dict get $options -errorcode]
+        set s [ns_accesslog scan open -checkpoint $cp -format common -requesttime false  -timingcolumn none -extendedheaders {Host X-Req}]
+        set empty [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        list [dict get [::accessScan::row $b] parseStatus] $code [dict get [ns_accesslog scan info $empty] rows]
+    }
+} -result {ok {NS_ACCESSLOG SCAN CHECKPOINT_MISMATCH} 0}
+
+test ns_accesslog_scan-6.8 {historical files accept explicit headers or an explicit auto override} -body {
+    set historical [::accessScan::write headers-historical.log "$::accessScan::line \"ref\" \"agent\"\n"]
+    set s [ns_accesslog scan open -filename $historical -extendedheaders {response:X-Out req:Host}]
+    set b [ns_accesslog scan next $s]
+    ns_accesslog scan close $s
+    set named [dict get [ns_accesslog scan info $b] source extraheaders]
+    set result [list [::accessScan::type $b referer] $named]
+    ::accessScan::current "$::accessScan::line \"ref\" \"agent\"\n" formattedtime {Host X-Req} {
+        set s [ns_accesslog scan open -format auto -requesttime auto -timingcolumn auto -extendedheaders auto]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        lappend result [dict get [::accessScan::row $b] referer] [dict exists [ns_accesslog scan info $b] source extraheaders]
+    }
+    set result
+} -result {null {request:Host response:X-Out} ref 0}
+
+test ns_accesslog_scan-6.9 {checkpoint rejects changed header names even with the same field count} -body {
+    ::accessScan::current "$::accessScan::line \"value\"\n" formattedtime Host {
+        set s [ns_accesslog scan open]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        set cp [dict get [ns_accesslog scan info $b] checkpoint]
+        ns_accesslog extendedheaders Other
+        catch {ns_accesslog scan open -checkpoint $cp} message options
+        dict get $options -errorcode
+    }
+} -result {NS_ACCESSLOG SCAN CHECKPOINT_MISMATCH}
+
+test ns_accesslog_scan-6.10 {known header counts reject missing or unquoted extension fields} -body {
+    ::accessScan::current "$::accessScan::line \"one\"\n$::accessScan::line \"one\" bare\n"  formattedtime {Host X-Req} {
+        set s [ns_accesslog scan open]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        list [dict get [ns_accesslog scan info $b] diagnostics malformed]  [dict get [::accessScan::row $b 0] diagnostic] [dict get [::accessScan::row $b 1] diagnostic]
+    }
+} -result {2 extended-header-layout extended-header-layout}
+
+test ns_accesslog_scan-6.11 {request-time defaults can be overridden when the current file has older records} -body {
+    ::accessScan::current "$::accessScan::line\n" logreqtime {} {
+        set s [ns_accesslog scan open]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        set result [list [dict get [::accessScan::row $b] diagnostic]]
+        set s [ns_accesslog scan open -requesttime false]
+        set b [ns_accesslog scan next $s]
+        ns_accesslog scan close $s
+        lappend result [dict get [::accessScan::row $b] parseStatus]
+    }
+} -result {request-time-layout ok}
+
+test ns_accesslog_scan-6.12 {invalid explicit header names fail without creating a scanner} -body {
+    set path [::accessScan::write bad-headers.log "$::accessScan::line\n"]
+    set codes {}
+    foreach headers [list {invalid:Host} {request:} [list "X\x00Y"]] {
+        catch {ns_accesslog scan open -filename $path -extendedheaders $headers} message options
+        lappend codes [dict get $options -errorcode]
+    }
+    set codes
+} -result {{NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN OPTION}}
+
+file delete -force $::accessScan::directory
+namespace delete ::accessScan
+::tcltest::cleanupTests

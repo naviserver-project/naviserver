@@ -100,6 +100,157 @@ rolling. The format string is as understood by the Tcl [cmd clock] command.
 If [arg timeformat] is given then it replaces any existing value.
 
 
+[call [cmd "ns_accesslog scan open"] [opt [arg options]]]
+
+Open an interpreter-local scanner of a regular access-log file. The returned
+opaque handle cannot be reconstructed from its string label. The scanner captures
+a fixed file-size snapshot; appends are read by opening another scanner from the
+last committed checkpoint. Scanning does not flush or otherwise change the logger.
+Batch scans require an already loaded, batch-capable nsdb module, but no driver,
+pool or connection. Ordinary logging remains independent of nsdb; scanning never
+loads a database module implicitly.
+
+[para] Options in this initial producer implementation are:
+[list_begin itemized]
+[item] [option -filename] [arg path]: defaults to this module's current log.
+[item] [option -format] [arg auto|common|combined]: for the current log,
+defaults to its logcombined flag; for historical files, defaults to auto.
+Explicit auto always enables recognition from the record contents. Automatic
+recognition distinguishes an initial five-number timing field from two combined
+header fields, but historical quoted extension fields can be ambiguous.
+[item] [option -timingcolumn] [arg auto|none|0|2]: for the current log,
+defaults to none when logpartialtimes is disabled, otherwise the timing column
+for the selected format. Historical files default to auto. Explicit columns count
+quoted fields after the byte count, excluding a bare request time. The five
+partial times follow producer order: start, accept, queue, filter, run.
+Driver-generated phase counters are unavailable worker measurements.
+[item] [option -requesttime] [arg auto|true|false]: defaults to the current log's
+logreqtime flag, or auto for historical files. True expects a bare numeric request
+time following the common/combined fields; false does not consume one.
+[item] [option -extendedheaders] [arg auto|headerList]: defaults to the current
+log's effective extended-header configuration, or auto for historical files. An
+explicit list uses the logger's plain request names or request:/response: tags
+(including req:/res: abbreviations). Names are normalized into request-then-response
+output order. An empty list declares no extensions; auto leaves their number and
+names unknown. A header named auto can be specified as request:auto.
+Known trailing header fields are excluded from format/timing recognition and
+must be quoted. Their names appear in source metadata under extraheaders;
+extendedFields still retains the original lexical text, without adding dynamic
+columns or converting header values.
+[item] [option -offset] [arg bytePosition]: defaults to zero and must be at a
+record boundary. [option -checkpoint] [arg value] resumes validated state instead;
+the two options are mutually exclusive.
+[item] [option -encoding] [arg utf-8]: only strict UTF-8 is supported initially.
+Invalid source bytes produce bounded hexadecimal diagnostic excerpts.
+[item] [option -maxlinebytes] [arg n]: defaults to 65536, with supported values
+128 through 1048576. Oversized lines are discarded incrementally with a bounded
+retained prefix, then emitted as diagnostic records covering their complete span.
+[item] [option -tail] [arg pending|final]: defaults to pending. An unterminated
+last line remains unaccounted for in pending mode. Final mode emits it for a
+completed immutable input file; appending to such a finalized partial line is not
+a supported continuation boundary.
+[list_end]
+
+[para] Current-file defaults are selected by device/inode identity, including
+when -filename names an alias of the current file. Flags and effective header
+names are copied when the scanner opens, so later logger changes do not alter an
+existing scanner. Explicit scanner options override their respective defaults.
+Checkpoints record the effective layout and header names; resuming with different
+settings is rejected. Current settings cannot describe older records written
+under different configurations in the same file: use explicit auto options or the
+known historical layout when scanning such data. Timestamp spelling and the
+thread-name placeholder are recognized from each record; query suppression,
+masking and proxy handling are already reflected in the logged values.
+
+[call [cmd "ns_accesslog scan next"] [arg scanner] [opt [arg options]]]
+
+Return an opaque, immutable lexical batch backed by compact shared-schema C
+storage. Scanning frames and decodes fields but does not convert source numbers
+or timestamps to native database types. Original numeric spellings, including
+trailing decimal zeros and values beyond native integer ranges, remain available
+to a later sink. The sink must enforce schema constraints before insertion.
+
+[para] [option -maxrecords] defaults to 512 and permits 1 through 1000000 records,
+including diagnostics. [option -maxbytes] defaults to 8388608 and limits retained
+value payload; fixed cell/reference capacity, metadata, source buffers and
+allocator overhead are additional. To guarantee progress it must allow at least
+four times maxlinebytes plus 2048 bytes. [option -maxscanbytes] defaults to
+16777216 and limits examined input bytes. The two byte limits permit positive
+values through 1073741824. [option -timeout] defaults to 100ms (cooperative checks,
+not a hard deadline); supported values are 1 microsecond through one hour.
+
+[para] Every successful call returns a batch, even when it has zero rows. Metadata
+state is ready (a batch limit), budget (scan byte/time limit), snapshot-end
+(fully accounted for snapshot) or pending (unfinished final line). Framing state
+survives budget calls. Only emitted records advance safe coverage. Metadata and
+checkpoints do not commit anything: applications must account for records and
+persist the checkpoint atomically in their later database transaction. After a
+scan error, reopen from the last successfully accounted-for checkpoint rather
+than assuming the failed call delivered its speculative progress.
+
+[call [cmd "ns_accesslog scan info"] [arg scannerOrBatch]]
+
+For a scanner, report source identity, captured snapshot end, consumed read offset,
+safe record offset and state. A closed scanner reports closed. Read position can
+be ahead of safe position while a partial line is retained; internal file reads
+can additionally prefetch snapshot bytes.
+
+[para] For a batch, report batchVersion, representation compact-schema-lexical,
+producer, views, schema, rows, payloadBytes, storageBytes, source, coverage, checkpoint,
+state and diagnostic counts. The shared schema has ID naviserver.accesslog.scan,
+version 1, with ordered JSON base types, refinements, nullability and source
+representations. Its columns cover offsets, timestamp text, peer/thread/request
+identity, user/request/method/target/queryless path/protocol, status/bytes,
+combined headers, request/phase times, source/driver/pool, timing availability,
+raw extension fields and parse diagnostics. Timestamp text retains epoch or
+calendar syntax; date/time interpretation and range checks belong to the sink.
+Unrecognized extension fields remain raw text rather than guessed columns.
+
+[para] storageBytes describes batch/cell/arena capacity, excluding Tcl metadata,
+wrappers, the shared schema and allocator bookkeeping; it is not process RSS.
+Metadata inspection does not materialize record Tcl objects. Returning or modifying
+a Tcl metadata dictionary cannot change the underlying batch.
+
+[para] Checkpoints are versioned Tcl values containing file device/inode, offset,
+prefix and boundary anchors, and parser configuration. Resume validates identity,
+anchors and configuration. Truncation and supported rotation/replacement cases
+are detected; this assumes append-only input between snapshots and does not prove
+that an arbitrary in-place rewrite never occurred. A renamed open file remains
+readable through the original descriptor. Checkpoints must be saved as complete
+Tcl values, including their binary anchor fields.
+
+[call [cmd "ns_accesslog scan triples"] [arg batch] \
+    [opt "[option -offset] [arg rowIndex]"] [opt "[option -limit] [arg count]"]]
+
+Materialize JSON triples on demand for selected rows. Defaults are row offset zero
+and limit 512; zero limit gives an empty view. The result is a canonical ns_json
+root-wrapped array of object triples. Names/type atoms and the schema are shared;
+view value objects are created only for the requested rows. Null, empty string
+and a literal null string remain distinct. Numbers remain lexical Tcl strings.
+The view can be emitted with [cmd "ns_json value"]. Complete eager views can be
+expensive and are not a mandatory native-ingestion step.
+
+[para] The batch wrapper and scalar access interface are shared with nsdb. Batch info
+and triples access delegate to that interface; the producer's compact C storage
+layout remains private and is adopted without copying row values. Use
+[cmd "ns_db batchinfo"] and [cmd "ns_db batchinsert"] for backend-independent
+inspection and insertion. System-log scanning, nested scalar/container storage
+and a schema-associated dictionary import/view are not implemented by this stage.
+
+[call [cmd "ns_accesslog scan close"] [arg scanner]]
+
+Close the descriptor. Repeated close is harmless; next on a closed scanner fails.
+Batches already returned remain readable after close. Unreferenced scanner
+wrappers close their descriptors automatically, and interpreter deletion closes
+all its remaining scanners. Scanner and batch handles are interpreter-local;
+cross-thread/interpreter transfer and reconstruction from strings are unsupported.
+
+[para] Scanner-specific errors use the NS_ACCESSLOG SCAN error-code prefix with
+OPEN, OPTION, BOUNDARY, CHECKPOINT_MISMATCH, SOURCE_CHANGED, CLOSED, HANDLE, OWNER,
+LIMIT or UNAVAILABLE details. Ordinary option parsing may return Tcl argument
+errors. Shared batch validation uses NS_DB BATCH error codes. The existing logger
+control commands are unaffected.
+
 [list_end]
 
 

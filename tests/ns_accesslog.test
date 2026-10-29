@@ -14,7 +14,7 @@ test ns_accesslog-1.0 {basic syntax} -body {
 
 test ns_accesslog-1.1 {basic syntax} -body {
     ns_accesslog ?
-} -returnCodes error -result {bad subcommand "?": must be rollfmt, maxbackup, maxbuffer, extendedheaders, flags, file, or roll}
+} -returnCodes error -result {bad subcommand "?": must be rollfmt, maxbackup, maxbuffer, extendedheaders, flags, file, roll, or scan}
 
 test ns_accesslog-1.2 {syntax: ns_accesslog extendedheaders} -body {
     ns_accesslog extendedheaders x y

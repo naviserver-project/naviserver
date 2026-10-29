@@ -18,6 +18,7 @@
 #include "ns.h"
 #include <ctype.h>  /* isspace */
 #include "../nsd/asyncwriter.h"
+#include "scan.h"
 
 #define LOG_COMBINED      0x01u
 #define LOG_FMTTIME       0x02u
@@ -498,11 +499,11 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
 
     enum {
         ROLLFMT, MAXBACKUP, MAXBUFFER, EXTHDRS,
-        FLAGS, FILE, ROLL
+        FLAGS, FILE, ROLL, SCAN
     };
     static const char *const subcmd[] = {
         "rollfmt", "maxbackup", "maxbuffer", "extendedheaders",
-        "flags", "file", "roll", NULL
+        "flags", "file", "roll", "scan", NULL
     };
 
     if (objc < 2) {
@@ -515,6 +516,42 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     }
 
     switch (cmd) {
+
+    case SCAN: {
+        Tcl_DString path;
+        struct stat st;
+        NsLogScanDefaults defaults = {0};
+
+        Tcl_DStringInit(&path);
+        Ns_MutexLock(&logPtr->lock);
+        Tcl_DStringAppend(&path, logPtr->filename, TCL_INDEX_NONE);
+        defaults.haveIdentity = stat(path.string, &st) == 0;
+        if (defaults.haveIdentity) {
+            defaults.device = (Tcl_WideInt)st.st_dev;
+            defaults.inode = (Tcl_WideInt)st.st_ino;
+        }
+        Ns_MutexUnlock(&logPtr->lock);
+        defaults.filename = path.string;
+        defaults.extendedHeaders = Tcl_NewListObj(0, NULL);
+        Tcl_IncrRefCount(defaults.extendedHeaders);
+        Ns_RWLockRdLock(&logPtr->formatLock);
+        defaults.combined = (logPtr->flags & LOG_COMBINED) != 0u;
+        defaults.requestTime = (logPtr->flags & LOG_REQTIME) != 0u;
+        defaults.partialTimes = (logPtr->flags & LOG_PARTIALTIMES) != 0u;
+        for (TCL_SIZE_T i = 0; i < logPtr->nrRequestHeaders; i++) {
+            Tcl_ListObjAppendElement(NULL, defaults.extendedHeaders,
+                                     Tcl_ObjPrintf("request:%s", logPtr->requestHeaders[i]));
+        }
+        for (TCL_SIZE_T i = 0; i < logPtr->nrResponseHeaders; i++) {
+            Tcl_ListObjAppendElement(NULL, defaults.extendedHeaders,
+                                     Tcl_ObjPrintf("response:%s", logPtr->responseHeaders[i]));
+        }
+        Ns_RWLockUnlock(&logPtr->formatLock);
+        result = NsLogScanObjCmd(interp, objc, objv, &defaults);
+        Tcl_DecrRefCount(defaults.extendedHeaders);
+        Tcl_DStringFree(&path);
+        break;
+    }
 
     case ROLLFMT: {
         const char *fmt = NULL;
