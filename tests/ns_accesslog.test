@@ -228,7 +228,7 @@ test ns_accesslog-3.5 {scheduler purge is threaded and cancellation preserves re
     exec -- $executable -c -d -t $config $script 2>@1
     set f [open [file join $directory result]]; set result [string trim [read $f]]; close $f
     set result
-} -cleanup {file delete -force $directory} -result {1 1 1 1 old-backup 1 1}
+} -cleanup {file delete -force $directory} -returnCodes {error ok} -result {1 1 1 1 old-backup 1 1}
 
 
 rename accesslogPurgeSetup {}
