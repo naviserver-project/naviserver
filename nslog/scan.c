@@ -2235,6 +2235,10 @@ NsLogScanObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const *objv,
 }
 
 /*
- *      Local Variables: mode: c c-basic-offset: 4 fill-column: 70
- *      indent-tabs-mode: nil End:
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
  */
