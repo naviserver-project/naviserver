@@ -42,7 +42,7 @@ test ns_accesslog_scan-1.1 {common fields, source positions and exact numeric sp
     set row [::accessScan::row $b]
     list [dict get $row parseStatus] [dict get $row responseBytes] [dict get $row pool] \
         [dict get $row path] [dict get $row offset] [dict get $row endOffset] \
-        [expr {[dict get $row endOffset]==[string bytelength "$line\n"]}] [::accessScan::type $b userAgent]
+        [expr {[dict get $row endOffset]==[string length [encoding convertto utf-8 "$line\n"]]}] [::accessScan::type $b userAgent]
 } -result {ok 9007199254740993 default /p 0 98 1 null}
 
 test ns_accesslog_scan-1.2 {combined, quoted user, producer escapes and accept/queue/filter/run order} -body {
@@ -257,7 +257,7 @@ test ns_accesslog_scan-3.7 {held snapshot follows its original file across renam
 test ns_accesslog_scan-4.1 {options, boundaries, closed handles and forged labels fail explicitly} -body {
     set path [::accessScan::write options.log "$::accessScan::line\n"]
     set result {}
-    foreach args [list [list -offset 1] [list -offset -1] [list -format bogus] [list -encoding binary] \
+    foreach args [list [list -offset 1] [list -offset -1] [list -encoding binary] \
                        [list -offset 0 -checkpoint {}]] {
         catch {ns_accesslog scan open -filename $path {*}$args} m o
         lappend result [dict get $o -errorcode]
@@ -268,7 +268,13 @@ test ns_accesslog_scan-4.1 {options, boundaries, closed handles and forged label
     catch {ns_accesslog scan next $s} m o;lappend result [dict get $o -errorcode]
     catch {ns_accesslog scan next nslog-scanner} m o;lappend result [dict get $o -errorcode]
     set result
-} -result {{NS_ACCESSLOG SCAN BOUNDARY} {NS_ACCESSLOG SCAN BOUNDARY} NONE {NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN LIMIT} {NS_ACCESSLOG SCAN CLOSED} {NS_ACCESSLOG SCAN HANDLE}}
+} -result {{NS_ACCESSLOG SCAN BOUNDARY} {NS_ACCESSLOG SCAN BOUNDARY} {NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN LIMIT} {NS_ACCESSLOG SCAN CLOSED} {NS_ACCESSLOG SCAN HANDLE}}
+
+test ns_accesslog_scan-4.1a {invalid format reports an option error independently of Tcl error-code bookkeeping} -body {
+    set path [::accessScan::write bad-format.log "$::accessScan::line\n"]
+    set failed [catch {ns_accesslog scan open -filename $path -format bogus} message]
+    list $failed $message
+} -result {1 {bad option "bogus": must be auto, common, or combined}}
 
 test ns_accesslog_scan-4.2 {default filename and empty-file metadata need no driver or pool} -body {
     set s [ns_accesslog scan open]
