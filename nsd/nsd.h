@@ -1702,11 +1702,26 @@ NS_EXTERN void NsConfigLog(void);
 NS_EXTERN void NsConfigFastpath(void);
 NS_EXTERN void NsConfigMimeTypes(void);
 NS_EXTERN void NsConfigDNS(void);
+
 NS_EXTERN void NsConfigRedirects(void);
 NS_EXTERN void NsConfigVhost(void);
 NS_EXTERN void NsConfigEncodings(void);
 NS_EXTERN void NsConfigTcl(void);
 NS_EXTERN void NsConfigTclHttp(void);
+
+/*
+ * dns.c: Private incremental resolution for timed TCP connects.
+ */
+
+typedef struct Ns_DnsRequest Ns_DnsRequest;
+NS_EXTERN bool NsDnsGetCached(const char *host, Tcl_DString *dsPtr,
+                              Ns_Time *waitPtr, bool *cacheEnabledPtr) NS_GNUC_NONNULL(1,2,3,4);
+NS_EXTERN bool NsDnsStart(const char *host, Tcl_DString *dsPtr,
+                         Ns_DnsRequest **requestPtr, Ns_Time *waitPtr) NS_GNUC_NONNULL(1,2,3,4);
+NS_EXTERN NS_SOCKET NsDnsResults(Ns_DnsRequest *requestPtr,
+                                Tcl_DString *v6Ptr, Tcl_DString *v4Ptr,
+                                bool *done6Ptr, bool *done4Ptr) NS_GNUC_NONNULL(1,2,3,4,5);
+NS_EXTERN void NsDnsCancel(Ns_DnsRequest *requestPtr) NS_GNUC_NONNULL(1);
 
 /*
  * Type based function prototypes

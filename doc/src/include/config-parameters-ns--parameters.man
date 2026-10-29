@@ -92,7 +92,10 @@ Time to keep entries in cache
 [list_end]
 
 [def "Parameter name: [emph "dnswaittimeout"]"]
-Timeout for DNS replies
+Maximum wait for a concurrent DNS-cache update and for incremental resolver
+results used by timed TCP connects. The latter also applies when DNS caching
+is disabled, and is separate from the TCP connect timeout. Blocking system
+resolver calls may finish in the background after a caller stops waiting.
 
 
 

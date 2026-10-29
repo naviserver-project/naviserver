@@ -46,6 +46,15 @@ or as a number with a time unit. The option [option -timeout]
 is mutual exclusive with [option -async].
 
 [para]
+The timeout is one shared budget for all TCP connection attempts. Name
+resolution and the optional 50 ms wait for a pending IPv6 answer precede
+this budget. On a cache miss, IPv4 and IPv6 are resolved independently;
+connections can start before both lookups finish. Waiting for resolver
+results is bounded separately by the global [term dnswaittimeout] parameter.
+The existing combined DNS cache and system name-service configuration
+continue to be used.
+
+[para]
 
 The options [option -localhost] and [option -localport] can be used to
 specify the local endpoints of the connection. In the following
