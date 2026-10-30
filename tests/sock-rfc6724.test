@@ -5,8 +5,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 # Public-API checks use ns_connchan and local loopback sockets.
-# Only explicit source-address/port checks retain ns_sockopen, since
-# ns_connchan connect does not expose those binding options.
 # Native sorting and resolver-order fallback are covered by developer/test-rfc6724-sort.sh.
 
 package require tcltest 2.2
@@ -15,19 +13,7 @@ namespace import -force ::tcltest::*
 
 namespace eval ::rfc6724_test {
     variable connchans {}
-    variable channels {}
-    proc closeChannels {items} {
-        variable channels
-        foreach channel $items {
-            catch {close $channel}
-            set index [lsearch -exact $channels $channel]
-            if {$index >= 0} {set channels [lreplace $channels $index $index]}
-        }
-    }
     proc cleanup {} {
-        variable channels
-        closeChannels $channels
-        set channels {}
         variable connchans
         foreach channel $connchans {catch {ns_connchan close $channel}}
         set connchans {}
@@ -63,11 +49,12 @@ namespace eval ::rfc6724_test {
         error "timed out waiting for the listener marker"
     }
     proc connect {host local port {localPort 0}} {
-        variable channels
-        set pair [ns_sockopen -timeout 2s -localhost $local -localport $localPort -- $host $port]
-        lappend channels {*}$pair
-        return $pair
+        variable connchans
+        set channel [ns_connchan connect -timeout 2s -localhost $local -localport $localPort -- $host $port]
+        lappend connchans $channel
+        return $channel
     }
+
 }
 
 set haveIPv6 false
@@ -97,26 +84,16 @@ test rfc6724-warm-cache {connection sorting does not rewrite the combined DNS ca
 test rfc6724-dual-ipv4 {a dual-family target remains usable with an IPv4 source} \
     -constraints rfc6724IPv6 -body {
     lassign [::rfc6724_test::listen] port listener
-    set pair [::rfc6724_test::connect LOcalHoST 127.0.0.1 $port]
-    lindex [fconfigure [lindex $pair 0] -peername] 0
-} -cleanup {::rfc6724_test::cleanup} -result 127.0.0.1
+    set channel [::rfc6724_test::connect LOcalHoST 127.0.0.1 $port]
+    ::rfc6724_test::receive $channel
+} -cleanup {::rfc6724_test::cleanup} -result 4
 
 test rfc6724-dual-ipv6 {a dual-family target remains usable with an IPv6 source} \
     -constraints rfc6724IPv6 -body {
     set info [::rfc6724_test::listener ::1 0 6]
     set port [dict get $info port]
-    set pair [::rfc6724_test::connect lOCAlHoST ::1 $port]
-    # ns_connchan's IPv6 listener sends a marker; no Tcl socket metadata needed.
-    set reader [lindex $pair 0]
-    fconfigure $reader -translation binary -blocking false
-    set deadline [expr {[clock milliseconds] + 2000}]
-    set marker {}
-    while {$marker eq "" && [clock milliseconds] < $deadline} {
-        set marker [read $reader 1]
-        if {$marker ne "" || [eof $reader]} {break}
-        after 5
-    }
-    set marker
+    set channel [::rfc6724_test::connect lOCAlHoST ::1 $port]
+    ::rfc6724_test::receive $channel
 } -cleanup {::rfc6724_test::cleanup} -result 6
 
 test rfc6724-connchan-ipv6 {IPv6 transfer uses NaviServer connection channels} \
@@ -130,23 +107,43 @@ test rfc6724-localport {native-order fallback preserves the requested local TCP 
     lassign [::rfc6724_test::listen] port listener
     set probe [::rfc6724_test::listener 127.0.0.1 0 4]
     set localPort [dict get $probe port]
+    # An occupied source port must fail, proving -localport is honored.
+    set code [catch {::rfc6724_test::connect LoCaLHosT 127.0.0.1 $port $localPort} message options]
+    if {!$code} {error "connect unexpectedly ignored the occupied local port"}
+    if {[dict get $options -errorcode] eq "NS_TIMEOUT"} {error "bind failure reported as timeout"}
     ns_connchan close [dict get $probe channel]
-    set pair [::rfc6724_test::connect LoCaLHosT 127.0.0.1 $port $localPort]
-    expr {[lindex [fconfigure [lindex $pair 0] -sockname] end] == $localPort}
-} -cleanup {::rfc6724_test::cleanup} -result 1
+    set channel [::rfc6724_test::connect LoCaLHosT 127.0.0.1 $port $localPort]
+    ::rfc6724_test::receive $channel
+} -cleanup {::rfc6724_test::cleanup} -result 4
+
+test rfc6724-localport-only {a local port can be bound without an explicit source address} -body {
+    lassign [::rfc6724_test::listen] port listener
+    set probe [::rfc6724_test::listener 0.0.0.0 0 4]
+    set localPort [dict get $probe port]
+    set code [catch {ns_connchan connect -timeout 2s -localport $localPort -- 127.0.0.1 $port} message options]
+    if {!$code} {
+        lappend ::rfc6724_test::connchans $message
+        error "connect unexpectedly ignored the occupied local port"
+    }
+    if {[dict get $options -errorcode] eq "NS_TIMEOUT"} {error "bind failure reported as timeout"}
+    ns_connchan close [dict get $probe channel]
+    set channel [ns_connchan connect -timeout 2s -localport $localPort -- 127.0.0.1 $port]
+    lappend ::rfc6724_test::connchans $channel
+    ::rfc6724_test::receive $channel
+} -cleanup {::rfc6724_test::cleanup} -result 4
 
 test rfc6724-repeated {repeated cache-hit connects release connection channels} -body {
     lassign [::rfc6724_test::listen] port listener
     set host LOcALHosT
     ns_addrbyhost -all $host
-    set before [lsort [chan names]]
+    set before [lsort [ns_connchan list]]
     for {set i 0} {$i < 12} {incr i} {
         set channel [::rfc6724_test::client $host $port]
         if {[::rfc6724_test::receive $channel] ne "4"} {error "wrong listener"}
         ns_connchan close $channel
         if {[ns_connchan exists $channel]} {error "connection channel leaked"}
     }
-    expr {$before eq [lsort [chan names]]}
+    expr {$before eq [lsort [ns_connchan list]]}
 } -cleanup {::rfc6724_test::cleanup} -result 1
 
 test rfc6724-zero-budget {address selection does not start TCP with a zero budget} -body {
@@ -156,6 +153,19 @@ test rfc6724-zero-budget {address selection does not start TCP with a zero budge
 
     list $code [dict get $options -errorcode] [expr {$before eq [lsort [ns_connchan list]]}]
 } -cleanup {::rfc6724_test::cleanup} -result {1 NS_TIMEOUT 1}
+
+test rfc6724-source-family {an explicit source is not silently ignored for an incompatible destination} \
+    -constraints rfc6724IPv6 -body {
+    lassign [::rfc6724_test::listen] port listener
+    set code [catch {::rfc6724_test::connect 127.0.0.1 ::1 $port} message options]
+    list $code [expr {[dict get $options -errorcode] ne "NS_TIMEOUT"}]
+} -cleanup {::rfc6724_test::cleanup} -result {1 1}
+
+foreach localPort {-1 65536 invalid} {
+    test rfc6724-invalid-port-$localPort {invalid local ports are rejected before connecting} -body {
+        catch {ns_connchan connect -localport $localPort -- 127.0.0.1 1}
+    } -result 1
+}
 
 namespace delete ::rfc6724_test
 cleanupTests
