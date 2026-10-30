@@ -215,8 +215,8 @@ server.
     [opt [option "-key [arg value]"]] \
     [opt [option "-hostname [arg value ]"]] \
     [opt [option "-insecure"]] \
-    [opt [option "-localhost [arg address]"]]
-    [opt [option "-localport [arg port]"]]
+    [opt [option "-localhost [arg address]"]] \
+    [opt [option "-localport [arg port]"]] \
     [opt [option "-timeout [arg time]"]] \
     [opt [option "-tls"]] \
     [opt --] \
