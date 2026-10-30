@@ -1,0 +1,196 @@
+# -*- Tcl -*-
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# Listener ownership tests. Port reuse is immediate: no bind/connect retries.
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure {*}$argv
+
+namespace eval ::listener_test {
+    variable handles {}
+    proc cleanup {} {
+        variable handles
+        foreach handle $handles {catch {ns_connchan close $handle}}
+        set handles {}
+    }
+    proc listen {{address 127.0.0.1} {port 0}} {
+        variable handles
+        set callback [list apply {{channel} {
+            ns_connchan write $channel L
+            ns_connchan close $channel
+            return 1
+        }}]
+        set info [ns_connchan listen -bind $address $port $callback]
+        lappend handles [dict get $info channel]
+        return $info
+    }
+    proc receive {channel} {
+        set deadline [expr {[clock milliseconds] + 2000}]
+        while {[clock milliseconds] < $deadline} {
+            set result [ns_connchan read $channel]
+            if {$result ne ""} {return $result}
+            after 5
+        }
+        error "timed out waiting for listener data"
+    }
+    proc client {address port} {
+        variable handles
+        set channel [ns_connchan connect -timeout 2s -- $address $port]
+        lappend handles $channel
+        return $channel
+    }
+}
+
+set haveIPv6 false
+if {[ns_info ipv6] && ![catch {::listener_test::listen ::1}]} {set haveIPv6 true}
+::listener_test::cleanup
+testConstraint listenerIPv6 $haveIPv6
+testConstraint listenerProcFd [file isdirectory /proc/self/fd]
+
+test connchan-listener-rebind {closing an idle polled listener releases its port synchronously} -body {
+    set info [::listener_test::listen]
+    set port [dict get $info port]
+    # Ensure the callback thread has had an opportunity to enter poll().
+    after 50
+    for {set i 0} {$i < 16} {incr i} {
+        ns_connchan close [dict get $info channel]
+        set info [::listener_test::listen 127.0.0.1 $port]
+        if {[dict get $info port] != $port} {error "listener changed port"}
+    }
+    ::listener_test::receive [::listener_test::client 127.0.0.1 $port]
+} -cleanup {::listener_test::cleanup} -result L
+
+test connchan-listener-ipv6 {IPv6 close also permits immediate same-port registration} \
+    -constraints listenerIPv6 -body {
+    set info [::listener_test::listen ::1]
+    set port [dict get $info port]
+    after 50
+    ns_connchan close [dict get $info channel]
+    ::listener_test::listen ::1 $port
+    ::listener_test::receive [::listener_test::client ::1 $port]
+} -cleanup {::listener_test::cleanup} -result L
+
+test connchan-listener-duplicate {a failed duplicate listen leaves the original listener usable} -body {
+    set info [::listener_test::listen]
+    set port [dict get $info port]
+    set code [catch {::listener_test::listen 127.0.0.1 $port}]
+    list $code [::listener_test::receive [::listener_test::client 127.0.0.1 $port]]
+} -cleanup {::listener_test::cleanup} -result {1 L}
+
+test connchan-listener-callback {ordinary callbacks cannot replace listener ownership callbacks} -body {
+    set info [::listener_test::listen]
+    set code [catch {ns_connchan callback [dict get $info channel] list r} message]
+    list $code $message [::listener_test::receive [::listener_test::client 127.0.0.1 [dict get $info port]]]
+} -cleanup {::listener_test::cleanup} -result {1 {cannot replace a listener callback} L}
+
+test connchan-listener-failed-driver {failure after listener registration releases the socket and port entry} -body {
+    set info [::listener_test::listen]
+    set port [dict get $info port]
+    ns_connchan close [dict get $info channel]
+    set code [catch {ns_connchan listen -bind -driver no-such-listener-driver -- 127.0.0.1 $port list}]
+    ::listener_test::listen 127.0.0.1 $port
+    list $code [::listener_test::receive [::listener_test::client 127.0.0.1 $port]]
+} -cleanup {::listener_test::cleanup} -result {1 L}
+
+test connchan-listener-close-in-callback {an accept script can close its listener without deadlocking} -body {
+    set key listener-[ns_uuid]
+    set callback [list apply {{key channel} {
+        ns_connchan close [nsv_get $key listener]
+        ns_connchan write $channel C
+        ns_connchan close $channel
+        return 1
+    }} $key]
+    set info [ns_connchan listen -bind 127.0.0.1 0 $callback]
+    set listener [dict get $info channel]
+    lappend ::listener_test::handles $listener
+    nsv_set $key listener $listener
+    set result [::listener_test::receive [::listener_test::client 127.0.0.1 [dict get $info port]]]
+    list $result [ns_connchan exists $listener]
+} -cleanup {
+    ::listener_test::cleanup
+    if {[info exists key]} {nsv_unset -nocomplain $key}
+} -result {C 0}
+
+test connchan-listener-reject {a false accept result closes only that connection} -body {
+    set key listener-[ns_uuid]
+    set callback [list apply {{key channel} {
+        nsv_lappend $key accepted $channel
+        ns_connchan write $channel R
+        return 0
+    }} $key]
+    set info [ns_connchan listen -bind 127.0.0.1 0 $callback]
+    lappend ::listener_test::handles [dict get $info channel]
+    set results {}
+    for {set i 0} {$i < 2} {incr i} {
+        lappend results [::listener_test::receive [::listener_test::client 127.0.0.1 [dict get $info port]]]
+    }
+    # Closing the listener synchronizes with completion of both accepts.
+    ns_connchan close [dict get $info channel]
+    foreach accepted [nsv_get $key accepted] {
+        if {[ns_connchan exists $accepted]} {error "rejected channel leaked"}
+    }
+    set results
+} -cleanup {
+    ::listener_test::cleanup
+    if {[info exists key]} {nsv_unset -nocomplain $key}
+} -result {R R}
+
+test connchan-listener-inflight {external close waits for an active accept script before freeing its context} -body {
+    set key listener-[ns_uuid]
+    nsv_set $key release 0
+    nsv_set $key entered 0
+    nsv_set $key started 0
+    nsv_set $key closed 0
+    set callback [list apply {{key channel} {
+        nsv_set $key entered 1
+        set deadline [expr {[clock milliseconds] + 2000}]
+        while {![nsv_get $key release] && [clock milliseconds] < $deadline} {after 5}
+        ns_connchan write $channel A
+        ns_connchan close $channel
+        return 1
+    }} $key]
+    set info [ns_connchan listen -bind 127.0.0.1 0 $callback]
+    set listener [dict get $info channel]
+    lappend ::listener_test::handles $listener
+    set channel [::listener_test::client 127.0.0.1 [dict get $info port]]
+    set deadline [expr {[clock milliseconds] + 2000}]
+    while {![nsv_get $key entered] && [clock milliseconds] < $deadline} {after 5}
+    if {![nsv_get $key entered]} {error "accept callback did not start"}
+    set thread [ns_thread create [list apply {{key listener} {
+        nsv_set $key started 1
+        ns_connchan close $listener
+        nsv_set $key closed 1
+        return 1
+    }} $key $listener]]
+    while {![nsv_get $key started] && [clock milliseconds] < $deadline} {after 5}
+    if {![nsv_get $key started]} {error "close thread did not start"}
+    after 20
+    set premature [nsv_get $key closed]
+    nsv_set $key release 1
+    set completed [ns_thread wait $thread]
+    unset thread
+    list $premature $completed [::listener_test::receive $channel]
+} -cleanup {
+    if {[info exists key]} {nsv_set $key release 1}
+    if {[info exists thread]} {catch {ns_thread wait $thread}; unset thread}
+    ::listener_test::cleanup
+    if {[info exists key]} {nsv_unset -nocomplain $key}
+} -result {0 1 A}
+
+test connchan-listener-fds {repeated listener close does not retain Linux socket descriptors} \
+    -constraints listenerProcFd -body {
+    set before [llength [glob -nocomplain -directory /proc/self/fd *]]
+    for {set i 0} {$i < 32} {incr i} {
+        set info [::listener_test::listen]
+        ns_connchan close [dict get $info channel]
+    }
+    set after [llength [glob -nocomplain -directory /proc/self/fd *]]
+    expr {$after <= $before}
+} -cleanup {::listener_test::cleanup} -result 1
+
+namespace delete ::listener_test
+cleanupTests
