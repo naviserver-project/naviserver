@@ -386,6 +386,7 @@ typedef struct {
     Ns_Time          sendTimeout;
     const char      *clientData;
     struct Callback *cbPtr;
+    bool             listener;              /* Socket owned by listen callback teardown. */
     Tcl_DString     *sendBuffer;              /* For unsent bytes in "ns_connchan write -buffered" */
     Tcl_DString     *secondarySendBuffer;     /* For unsent bytes while we have rejected data */
     Tcl_DString     *frameBuffer;             /* Buffer of for a single WebSocket frame */
@@ -1681,6 +1682,7 @@ NS_EXTERN void NsInitHttptime(void);
 NS_EXTERN void NsInitInfo(void);
 NS_EXTERN void NsInitLimits(void);
 NS_EXTERN void NsInitListen(void);
+
 NS_EXTERN void NsInitLog(void);
 NS_EXTERN void NsInitModLoad(void);
 NS_EXTERN void NsInitOpenSSL(void);
@@ -2080,6 +2082,16 @@ NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, co
     NS_GNUC_NONNULL(1,2,3);
 
 /*
+ * listen.c
+ */
+NS_EXTERN NS_SOCKET NsSockListenCallback(const char *addr, unsigned short port,
+                                         Ns_SockProc *proc, bool doBind, void *arg,
+                                         Ns_Callback *freeProc)
+    NS_GNUC_NONNULL(3,5);
+NS_EXTERN void NsSockCloseListenCallback(NS_SOCKET sock);
+
+
+/*
  * log.c
  */
 NS_EXTERN void NsLogOpen(void);
@@ -2272,6 +2284,7 @@ NS_EXTERN int NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time 
 NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStartSockShutdown(void);
 NS_EXTERN void NsWaitSockShutdown(const Ns_Time *toPtr);
+NS_EXTERN bool NsSockCallbackIsCurrentThread(void);
 
 /*
  * str.c

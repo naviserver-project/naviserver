@@ -106,6 +106,19 @@
  Closes the named connection channel. The [option "-server"] can be
  used for cleanup of stale handles.
 
+[para]
+Closing a listening connection channel cancels its accept callback and
+releases the listening socket and port registration before returning.
+When called from the socket callback thread itself, teardown is deferred
+until the current callback returns. Before server startup completes,
+teardown is queued for the callback thread without waiting for startup.
+An external close can wait for an accept script running on the shared
+socket callback thread; this wait has no separate timeout. Accept scripts
+must return promptly and must not wait for another thread that is closing
+a listener. Existing accepted connections remain independent of the
+listening channel. Listener callbacks cannot be replaced
+using [cmd "ns_connchan callback"].
+
 [call [cmd "ns_connchan exists"] [arg channel]]
 
  Returns 1 if the named connection channel exists, 0 otherwise.
