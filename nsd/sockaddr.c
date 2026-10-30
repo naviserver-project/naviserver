@@ -11,6 +11,10 @@
 
 #include "nsd.h"
 
+#ifdef _WIN32
+# include <iphlpapi.h>
+#endif
+
 /*
  * sockaddr.c --
  *
@@ -1361,6 +1365,156 @@ Ns_SockaddrAddToDictIpProperties(const struct sockaddr *ipPtr, Tcl_Obj *dictObj)
     return TCL_OK;
 }
 
+
+/*
+ * Native destination ordering for timed TCP connects.
+ */
+#ifdef HAVE_IPV6
+# ifdef _WIN32
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddrWindowsOrder --
+ *
+ *      Use the native address-pair sorter, including the Windows policy
+ *      table. Load the system DLL by absolute path, with no new link-time
+ *      dependency. The API cannot accept an explicit source address.
+ *
+ * Results:
+ *      NS_TRUE when native ordering was available, NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      Writes a complete permutation; omitted destinations remain at the
+ *      end in original order and are never removed from TCP candidates.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+AddrWindowsOrder(const struct sockaddr *const *addresses, TCL_SIZE_T count,
+                  bool hasLocalAddress, TCL_SIZE_T *order)
+{
+    typedef DWORD (WINAPI *SortProc)(PSOCKADDR_IN6, ULONG, PSOCKADDR_IN6, ULONG,
+                                     ULONG, PSOCKADDR_IN6_PAIR *, ULONG *);
+    typedef VOID (WINAPI *FreeProc)(PVOID);
+    union {FARPROC proc; SortProc sort;} sorter;
+    union {FARPROC proc; FreeProc freeTable;} releaser;
+    wchar_t path[MAX_PATH];
+    static const wchar_t suffix[] = L"\\iphlpapi.dll";
+    bool          result = NS_FALSE;
+    UINT          length;
+    HMODULE       library;
+    SOCKADDR_IN6 *destinations;
+    ULONG         npairs = 0u;
+    PSOCKADDR_IN6_PAIR pairs = NULL;
+
+    if (hasLocalAddress || count > 500) {
+        return NS_FALSE;
+    }
+    length = GetSystemDirectoryW(path, MAX_PATH);
+    if (length == 0u || length >= MAX_PATH - Ns_NrElements(suffix)) {
+        return NS_FALSE;
+    }
+    memcpy(path + length, suffix, sizeof(suffix));
+    library = LoadLibraryW(path);
+    if (library == NULL) {
+        return NS_FALSE;
+    }
+    sorter.proc = GetProcAddress(library, "CreateSortedAddressPairs");
+    releaser.proc = GetProcAddress(library, "FreeMibTable");
+    destinations = ns_calloc((size_t)count, sizeof(*destinations));
+    for (TCL_SIZE_T i = 0; i < count; i++) {
+        destinations[i].sin6_family = AF_INET6;
+        if (addresses[i]->sa_family == AF_INET) {
+            const struct sockaddr_in *v4 = (const struct sockaddr_in *)addresses[i];
+            unsigned char *bytes = (unsigned char *)&destinations[i].sin6_addr;
+
+            bytes[10] = bytes[11] = 0xffu;
+            memcpy(bytes + 12, &v4->sin_addr, sizeof(v4->sin_addr));
+        } else {
+            const struct sockaddr_in6 *v6 = (const struct sockaddr_in6 *)addresses[i];
+
+            destinations[i].sin6_addr = v6->sin6_addr;
+            destinations[i].sin6_scope_id = v6->sin6_scope_id;
+        }
+    }
+    if (sorter.proc != NULL && releaser.proc != NULL
+        && sorter.sort(NULL, 0u, destinations, (ULONG)count, 0u, &pairs, &npairs) == NO_ERROR) {
+        bool      *seen = ns_calloc((size_t)count, sizeof(bool));
+        TCL_SIZE_T next = 0;
+
+        for (ULONG p = 0u; p < npairs; p++) {
+            const SOCKADDR_IN6 *dst = pairs[p].DestinationAddress;
+
+            if (dst == NULL) {
+                continue;
+            }
+            for (TCL_SIZE_T i = 0; i < count; i++) {
+                if (!seen[i] && memcmp(&dst->sin6_addr, &destinations[i].sin6_addr, 16u) == 0
+                    && (destinations[i].sin6_scope_id == 0u
+                        || dst->sin6_scope_id == destinations[i].sin6_scope_id)) {
+                    seen[i] = NS_TRUE;
+                    order[next++] = i;
+                    break;
+                }
+            }
+        }
+        for (TCL_SIZE_T i = 0; i < count; i++) {
+            if (!seen[i]) {
+                order[next++] = i;
+            }
+        }
+        ns_free(seen);
+        result = NS_TRUE;
+    }
+    if (pairs != NULL && releaser.proc != NULL) {
+        releaser.freeTable(pairs);
+    }
+    ns_free(destinations);
+    FreeLibrary(library);
+    return result;
+}
+# endif /* _WIN32 */
+#endif /* HAVE_IPV6 */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsSockaddrSort --
+ *
+ *      Use native sorting of supplied destinations where available. Other
+ *      platforms retain resolver order within each address family; the
+ *      caller performs Happy Eyeballs family interleaving separately.
+ *
+ * Results:
+ *      A complete permutation in orderPtr. Unsupported native sorting,
+ *      errors and explicit Windows source binds retain the input order.
+ *
+ * Side effects:
+ *      May load the Windows system sorting API. Preserves socket errno.
+ *      Does not resolve names, probe routes or modify the DNS cache.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsSockaddrSort(const struct sockaddr *const *addresses, TCL_SIZE_T count,
+               bool hasLocalAddress, TCL_SIZE_T *orderPtr)
+{
+    for (TCL_SIZE_T i = 0; i < count; i++) {
+        orderPtr[i] = i;
+    }
+#if defined(_WIN32) && defined(HAVE_IPV6)
+    if (count > 1) {
+        ns_sockerrno_t error = ns_sockerrno;
+
+        (void)AddrWindowsOrder(addresses, count, hasLocalAddress, orderPtr);
+        Ns_SetSockErrno(error);
+    }
+#else
+    (void)addresses;
+    (void)hasLocalAddress;
+#endif
+}
 
 /*
  * Local Variables:

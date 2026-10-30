@@ -1710,6 +1710,14 @@ NS_EXTERN void NsConfigTcl(void);
 NS_EXTERN void NsConfigTclHttp(void);
 
 /*
+ * sockaddr.c: Private destination selection for timed TCP connects.
+ */
+
+NS_EXTERN void NsSockaddrSort(const struct sockaddr *const *addresses,
+                              TCL_SIZE_T count, bool hasLocalAddress,
+                              TCL_SIZE_T *orderPtr) NS_GNUC_NONNULL(1,4);
+
+/*
  * dns.c: Private incremental resolution for timed TCP connects.
  */
 

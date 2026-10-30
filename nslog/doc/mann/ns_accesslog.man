@@ -140,6 +140,15 @@ columns or converting header values.
 [item] [option -offset] [arg bytePosition]: defaults to zero and must be at a
 record boundary. [option -checkpoint] [arg value] resumes validated state instead;
 the two options are mutually exclusive.
+[item] [option -endoffset] [arg bytePosition]: exclusive byte limit, between the
+starting offset and the file size captured at open. Defaults to the captured
+file size. Appends before or after open do not extend this limit; scanner and
+batch metadata report the effective limit as snapshotEnd. A limit inside a
+record leaves that record pending with its original safe offset. With
+[option -tail] final, an interior limit must be a complete record boundary.
+Checkpoints retain their existing safe-offset and source/configuration checks;
+they do not freeze this per-open limit. Supply -endoffset again when resuming
+to retain or extend a bound; omitting it captures the new file size.
 [item] [option -encoding] [arg utf-8]: only strict UTF-8 is supported initially.
 Invalid source bytes produce bounded hexadecimal diagnostic excerpts.
 [item] [option -maxlinebytes] [arg n]: defaults to 65536, with supported values

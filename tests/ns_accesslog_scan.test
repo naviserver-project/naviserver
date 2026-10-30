@@ -538,6 +538,87 @@ test ns_accesslog_scan-6.12 {invalid explicit header names fail without creating
     set codes
 } -result {{NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN OPTION} {NS_ACCESSLOG SCAN OPTION}}
 
+
+test ns_accesslog_scan-7.1 {explicit end excludes bytes already appended before open and later growth} -body {
+    set path [::accessScan::write bounded.log "$::accessScan::line\n"]
+    set end [file size $path]
+    set f [open $path ab]; puts $f $::accessScan::line; close $f
+    set s [ns_accesslog scan open -filename $path -endoffset $end]
+    try {
+        set f [open $path ab]; puts $f $::accessScan::line; close $f
+        set b [ns_accesslog scan next $s]
+        set info [ns_accesslog scan info $b]
+        set again [ns_accesslog scan info [ns_accesslog scan next $s]]
+        list [dict get $info rows] [dict get $info state] [expr {[dict get $info coverage to]==$end}] \
+            [expr {[dict get [ns_accesslog scan info $s] snapshotEnd]==$end}] [dict get $again rows]
+    } finally {ns_accesslog scan close $s}
+} -returnCodes {error ok} -result {1 snapshot-end 1 1 0}
+
+test ns_accesslog_scan-7.2 {checkpoint resume selects a new end and consumes no records twice} -body {
+    set path [::accessScan::write resume-end.log [string repeat "$::accessScan::line\n" 3]]
+    set width [expr {[file size $path]/3}]
+    set s [ns_accesslog scan open -filename $path -endoffset $width]
+    try {set b [ns_accesslog scan next $s]; set cp [dict get [ns_accesslog scan info $b] checkpoint]} finally {ns_accesslog scan close $s}
+    set s [ns_accesslog scan open -filename $path -checkpoint $cp -endoffset [expr {2*$width}]]
+    try {
+        set b [ns_accesslog scan next $s]
+        set cp [dict get [ns_accesslog scan info $b] checkpoint]
+        set first [list [dict get [ns_accesslog scan info $b] rows] [expr {[dict get [::accessScan::row $b] offset]==$width}]]
+    } finally {ns_accesslog scan close $s}
+    set s [ns_accesslog scan open -filename $path -checkpoint $cp]
+    try {concat $first [dict get [ns_accesslog scan info [ns_accesslog scan next $s]] rows]} finally {ns_accesslog scan close $s}
+} -returnCodes {error ok} -result {1 1 1}
+
+test ns_accesslog_scan-7.3 {an end inside a record stays pending and can be resumed with a larger bound} -body {
+    set path [::accessScan::write partial-end.log [string repeat "$::accessScan::line\n" 2]]
+    set width [expr {[file size $path]/2}]
+    set s [ns_accesslog scan open -filename $path -endoffset [expr {$width+7}]]
+    try {
+        set b [ns_accesslog scan next $s]; set info [ns_accesslog scan info $b]
+        set cp [dict get $info checkpoint]
+    } finally {ns_accesslog scan close $s}
+    set s [ns_accesslog scan open -filename $path -checkpoint $cp -endoffset [file size $path]]
+    try {
+        set b [ns_accesslog scan next $s]
+        list [dict get $info rows] [dict get $info state] [expr {[dict get $info coverage to]==$width}] \
+            [dict get [ns_accesslog scan info $b] rows] [expr {[dict get [::accessScan::row $b] offset]==$width}]
+    } finally {ns_accesslog scan close $s}
+} -returnCodes {error ok} -result {1 pending 1 1 1}
+
+test ns_accesslog_scan-7.4 {invalid end bounds and interior final fragments are rejected} -body {
+    set path [::accessScan::write bad-end.log [string repeat "$::accessScan::line\n" 2]]
+    set width [expr {[file size $path]/2}]
+    set codes {}
+    foreach args [list [list -endoffset -1] [list -endoffset [expr {[file size $path]+1}]] \
+        [list -offset $width -endoffset 0] [list -endoffset 7 -tail final]] {
+        catch {ns_accesslog scan open -filename $path {*}$args} message options
+        lappend codes [dict get $options -errorcode]
+    }
+    set codes
+} -returnCodes {error ok} -result {{NS_ACCESSLOG SCAN BOUNDARY} {NS_ACCESSLOG SCAN BOUNDARY} {NS_ACCESSLOG SCAN BOUNDARY} {NS_ACCESSLOG SCAN BOUNDARY}}
+
+test ns_accesslog_scan-7.5 {empty and complete-record final bounds are valid} -body {
+    set path [::accessScan::write empty-end.log [string repeat "$::accessScan::line\n" 2]]
+    set results {}
+    foreach end [list 0 [expr {[file size $path]/2}]] {
+        set s [ns_accesslog scan open -filename $path -endoffset $end -tail final]
+        try {lappend results [dict get [ns_accesslog scan info [ns_accesslog scan next $s]] rows]} finally {ns_accesslog scan close $s}
+    }
+    set results
+} -returnCodes {error ok} -result {0 1}
+
+test ns_accesslog_scan-7.6 {truncation below an explicit end is detected despite prefetch} -body {
+    set path [::accessScan::write truncate-end.log [string repeat "$::accessScan::line\n" 4]]
+    set width [expr {[file size $path]/4}]
+    set s [ns_accesslog scan open -filename $path -endoffset [expr {3*$width}]]
+    try {
+        ns_accesslog scan next $s -maxrecords 1
+        set f [open $path r+]; chan truncate $f [expr {2*$width}]; close $f
+        catch {ns_accesslog scan next $s} message options
+        dict get $options -errorcode
+    } finally {ns_accesslog scan close $s}
+} -returnCodes {error ok} -result {NS_ACCESSLOG SCAN SOURCE_CHANGED}
+
 file delete -force $::accessScan::directory
 namespace delete ::accessScan
 ::tcltest::cleanupTests

@@ -1,0 +1,121 @@
+# -*- Tcl -*-
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# Public-API checks require only Tcl/NaviServer and local loopback sockets.
+# Native sorting and resolver-order fallback are covered by developer/test-rfc6724-sort.sh.
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure {*}$argv
+
+namespace eval ::rfc6724_test {
+    variable channels {}
+    proc closeChannels {items} {
+        variable channels
+        foreach channel $items {
+            catch {close $channel}
+            set index [lsearch -exact $channels $channel]
+            if {$index >= 0} {set channels [lreplace $channels $index $index]}
+        }
+    }
+    proc cleanup {} {
+        variable channels
+        closeChannels $channels
+        set channels {}
+    }
+    proc listen {{dual false}} {
+        variable channels
+        set v4 [ns_socklisten 127.0.0.1 0]
+        lappend channels $v4
+        set port [lindex [fconfigure $v4 -sockname] end]
+        set v6 {}
+        if {$dual} {
+            set v6 [ns_socklisten ::1 $port]
+            lappend channels $v6
+        }
+        return [list $port $v4 $v6]
+    }
+    proc connect {host local port {localPort 0}} {
+        variable channels
+        set pair [ns_sockopen -timeout 2s -localhost $local -localport $localPort -- $host $port]
+        lappend channels {*}$pair
+        return $pair
+    }
+}
+
+set haveIPv6 false
+if {[ns_info ipv6] && ![catch {
+    set probe [ns_socklisten ::1 0]
+    close $probe
+    ns_addrbyhost ::1
+}]} {set haveIPv6 true}
+testConstraint rfc6724IPv6 $haveIPv6
+
+test rfc6724-cold-explicit-ipv4 {incremental candidates honor an explicit IPv4 source} -body {
+    lassign [::rfc6724_test::listen] port v4 v6
+    set pair [::rfc6724_test::connect LoCALhOST 127.0.0.1 $port]
+    list [lindex [fconfigure [lindex $pair 0] -peername] 0] \
+        [lindex [fconfigure [lindex $pair 0] -sockname] 0]
+} -cleanup {::rfc6724_test::cleanup} -result {127.0.0.1 127.0.0.1}
+
+test rfc6724-warm-cache {connection sorting does not rewrite the combined DNS cache} -body {
+    set host LoCAlHoST
+    set before [ns_addrbyhost -all $host]
+    lassign [::rfc6724_test::listen] port v4 v6
+    set pair [::rfc6724_test::connect $host 127.0.0.1 $port]
+    list [expr {$before eq [ns_addrbyhost -all $host]}] \
+        [expr {[ns_addrbyhost $host] eq [lindex $before 0]}] \
+        [lindex [fconfigure [lindex $pair 0] -peername] 0]
+} -cleanup {::rfc6724_test::cleanup} -result {1 1 127.0.0.1}
+
+test rfc6724-dual-ipv4 {a dual-family target remains usable with an IPv4 source} \
+    -constraints rfc6724IPv6 -body {
+    lassign [::rfc6724_test::listen true] port v4 v6
+    set pair [::rfc6724_test::connect LOcalHoST 127.0.0.1 $port]
+    lindex [fconfigure [lindex $pair 0] -peername] 0
+} -cleanup {::rfc6724_test::cleanup} -result 127.0.0.1
+
+test rfc6724-dual-ipv6 {a dual-family target remains usable with an IPv6 source} \
+    -constraints rfc6724IPv6 -body {
+    lassign [::rfc6724_test::listen true] port v4 v6
+    set pair [::rfc6724_test::connect lOCAlHoST ::1 $port]
+    list [lindex [fconfigure [lindex $pair 0] -peername] 0] \
+        [lindex [fconfigure [lindex $pair 0] -sockname] 0]
+} -cleanup {::rfc6724_test::cleanup} -result {::1 ::1}
+
+test rfc6724-localport {native-order fallback preserves the requested local TCP port} -body {
+    lassign [::rfc6724_test::listen] port v4 v6
+    set probe [ns_socklisten 127.0.0.1 0]
+    set localPort [lindex [fconfigure $probe -sockname] end]
+    close $probe
+    set pair [::rfc6724_test::connect LoCaLHosT 127.0.0.1 $port $localPort]
+    expr {[lindex [fconfigure [lindex $pair 0] -sockname] end] == $localPort}
+} -cleanup {::rfc6724_test::cleanup} -result 1
+
+test rfc6724-repeated {repeated cache-hit connects leave Tcl channel ownership unchanged} -body {
+    lassign [::rfc6724_test::listen] port v4 v6
+    set host LOcALHosT
+    ns_addrbyhost -all $host
+    set before [lsort [chan names]]
+    for {set i 0} {$i < 12} {incr i} {
+        set pair [::rfc6724_test::connect $host 127.0.0.1 $port]
+        set peer [ns_sockaccept $v4]
+        ::rfc6724_test::closeChannels $pair
+        foreach channel $peer {close $channel}
+    }
+    expr {$before eq [lsort [chan names]]}
+} -cleanup {::rfc6724_test::cleanup} -result 1
+
+test rfc6724-zero-budget {address selection does not start TCP with a zero budget} -body {
+    lassign [::rfc6724_test::listen] port v4 v6
+    set before [lsort [chan names]]
+    set code [catch {ns_sockopen -timeout 0 -localhost 127.0.0.1 -- lOCalHOST $port} message options]
+    if {!$code} {lappend ::rfc6724_test::channels {*}$message}
+    list $code [dict get $options -errorcode] [expr {$before eq [lsort [chan names]]}]
+} -cleanup {::rfc6724_test::cleanup} -result {1 NS_TIMEOUT 1}
+
+namespace delete ::rfc6724_test
+cleanupTests

@@ -42,6 +42,12 @@
 # include <sys/un.h>
 #endif
 
+typedef struct {
+    struct NS_SOCKADDR_STORAGE address;
+    bool started;
+    TCL_SIZE_T priority;
+} ConnectCandidate;
+
 
 /*
  * Local functions defined in this file
@@ -56,6 +62,13 @@ static NS_SOCKET SockConnect(const char *host, unsigned short port,
 static bool SockConnectTime(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
 static void SockConnectIncrTime(Ns_Time *timePtr, time_t sec, long usec)
     NS_GNUC_NONNULL(1);
+
+static void SockConnectAddresses(Tcl_DString *dsPtr, unsigned short port,
+                                  ConnectCandidate **candidatesPtr,
+                                  struct pollfd **pfdsPtr, TCL_SIZE_T *countPtr)
+    NS_GNUC_NONNULL(1,3,4,5);
+static void SockConnectOrder(ConnectCandidate *candidates, TCL_SIZE_T count,
+                              bool hasLocalAddress) NS_GNUC_NONNULL(1);
 
 static Ns_ReturnCode WaitForConnect(NS_SOCKET sock, int count, int ms);
 
@@ -1426,83 +1439,6 @@ Ns_SockTimedConnect(const char *host, unsigned short port, const Ns_Time *timeou
     return Ns_SockTimedConnect2(host, port, NULL, 0, timeoutPtr, NULL);
 }
 
-typedef struct {
-    struct NS_SOCKADDR_STORAGE address;
-    bool started;
-} ConnectCandidate;
-
-
-/*
- *----------------------------------------------------------------------
- *
- * SockConnectAddresses --
- *
- *      Append newly resolved numeric addresses to the candidate and poll
- *      arrays. Keep active sockets and candidate indices stable as later
- *      DNS answers arrive. Reserve one extra poll slot for DNS wakeups.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Grows the arrays and consumes the address DString in place.
- *
- *----------------------------------------------------------------------
- */
-static void
-SockConnectAddresses(Tcl_DString *dsPtr, unsigned short port,
-                     ConnectCandidate **candidatesPtr, struct pollfd **pfdsPtr,
-                     TCL_SIZE_T *countPtr)
-{
-    TCL_SIZE_T extra = 1;
-    char *address;
-
-    if (dsPtr->length == 0) {
-        return;
-    }
-    for (const char *p = dsPtr->string; *p != '\0'; p++) {
-        if (*p == ' ') {
-            extra++;
-        }
-    }
-    *candidatesPtr = ns_realloc(*candidatesPtr,
-                                (size_t)(*countPtr + extra) * sizeof(ConnectCandidate));
-    *pfdsPtr = ns_realloc(*pfdsPtr,
-                         (size_t)(*countPtr + extra + 1) * sizeof(struct pollfd));
-    for (address = dsPtr->string; address != NULL; ) {
-        struct sockaddr *saPtr = (struct sockaddr *)&(*candidatesPtr)[*countPtr].address;
-        char *nextAddress = strchr(address, ' ');
-        bool  duplicate = NS_FALSE;
-
-        if (nextAddress != NULL) {
-            *nextAddress++ = '\0';
-        }
-        if (*address != '\0' && Ns_GetSockAddr(saPtr, address, port) == NS_OK) {
-            for (TCL_SIZE_T i = 0; i < *countPtr; i++) {
-                if (memcmp(&(*candidatesPtr)[i].address, saPtr,
-                           (size_t)Ns_SockaddrGetSockLen(saPtr)) == 0) {
-                    duplicate = NS_TRUE;
-                    break;
-                }
-            }
-            if (!duplicate) {
-                struct pollfd *pfdPtr = &(*pfdsPtr)[*countPtr];
-
-                (*candidatesPtr)[*countPtr].started = NS_FALSE;
-                pfdPtr->fd = NS_INVALID_SOCKET;
-                pfdPtr->events = POLLOUT;
-#ifdef _WIN32
-                pfdPtr->events |= POLLPRI;
-#endif
-                pfdPtr->revents = 0;
-                (*countPtr)++;
-            }
-        }
-        address = nextAddress;
-    }
-    Tcl_DStringSetLength(dsPtr, 0);
-}
-
 NS_SOCKET
 Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
                      unsigned short lport,
@@ -1519,6 +1455,7 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
     ns_sockerrno_t   error = NS_ECONNABORTED;
     Ns_Time          deadline = {0, 0}, next, earliest, now, diff, dnsDeadline, wait;
     Ns_Time          resolutionDeadline = {0, 0};
+    bool             sortDirty = NS_TRUE;
     bool             tcpStarted = NS_FALSE, resolutionWaiting = NS_FALSE;
     bool             done6 = NS_FALSE, done4 = NS_FALSE, dnsExpired = NS_FALSE;
 
@@ -1583,12 +1520,22 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
         }
         if (tcpStarted || v6.length > 0 || done6
             || (resolutionWaiting && Ns_DiffTime(&resolutionDeadline, &now, &diff) <= 0)) {
-            /* IPv6 first unless its pending answer outlasts the 50 ms delay. */
+            TCL_SIZE_T previous = n;
+
             SockConnectAddresses(&v6, port, &candidates, &pfds, &n);
             SockConnectAddresses(&v4, port, &candidates, &pfds, &n);
+            sortDirty = sortDirty || n != previous;
         }
         if (!tcpStarted && n > 0) {
-            /* DNS waiting, including the Resolution Delay, is outside TCP's budget. */
+            /* DNS waiting and initial address selection precede TCP's budget. */
+            if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
+                goto timedOut;
+            }
+            SockConnectOrder(candidates, n, lhost != NULL);
+            if (!SockConnectTime(&now)) {
+                goto clockError;
+            }
+            sortDirty = NS_FALSE;
             deadline = now;
             SockConnectIncrTime(&deadline, timeoutPtr->sec, timeoutPtr->usec);
             tcpStarted = NS_TRUE;
@@ -1606,25 +1553,37 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
         }
         if (launched < n
             && Ns_DiffTime(&next, &now, &diff) <= 0) {
-            TCL_SIZE_T selected = -1;
+            TCL_SIZE_T selected = -1, alternate = -1;
             struct NS_SOCKADDR_STORAGE local;
             struct sockaddr *saPtr;
             NS_SOCKET attempt;
 
-            /*
-             * Alternate families, retaining the resolver order within each family.
-             */
+            /* Incorporate newly arrived destinations without moving active attempts. */
+            if (sortDirty) {
+                SockConnectOrder(candidates, n, lhost != NULL);
+                if (!SockConnectTime(&now)) {
+                    goto clockError;
+                }
+                if (Ns_DiffTime(&deadline, &now, &diff) <= 0) {
+                    goto timedOut;
+                }
+                sortDirty = NS_FALSE;
+            }
+            /* Start with the first native/resolver destination, then interleave families. */
             for (TCL_SIZE_T i = 0; i < n; i++) {
                 if (!candidates[i].started) {
-                    if (selected < 0) {
+                    if (selected < 0 || candidates[i].priority < candidates[selected].priority) {
                         selected = i;
                     }
-                    if (family == AF_UNSPEC
-                        || ((struct sockaddr *)&candidates[i].address)->sa_family != family) {
-                        selected = i;
-                        break;
+                    if (family != AF_UNSPEC
+                        && ((const struct sockaddr *)&candidates[i].address)->sa_family != family
+                        && (alternate < 0 || candidates[i].priority < candidates[alternate].priority)) {
+                        alternate = i;
                     }
                 }
+            }
+            if (alternate >= 0) {
+                selected = alternate;
             }
             candidates[selected].started = NS_TRUE;
             launched++;
@@ -1821,7 +1780,120 @@ done:
     return sock;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockConnectAddresses --
+ *
+ *      Append newly resolved numeric addresses to the candidate and poll
+ *      arrays. Keep active sockets and candidate indices stable as later
+ *      DNS answers arrive. Reserve one extra poll slot for DNS wakeups.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Grows the arrays and consumes the address DString in place.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SockConnectAddresses(Tcl_DString *dsPtr, unsigned short port,
+                     ConnectCandidate **candidatesPtr, struct pollfd **pfdsPtr,
+                     TCL_SIZE_T *countPtr)
+{
+    TCL_SIZE_T extra = 1;
+    char      *address;
+
+    if (dsPtr->length == 0) {
+        return;
+    }
+
+    for (const char *p = dsPtr->string; *p != '\0'; p++) {
+        if (*p == ' ') {
+            extra++;
+        }
+    }
+    *candidatesPtr = ns_realloc(*candidatesPtr,
+                                (size_t)(*countPtr + extra) * sizeof(ConnectCandidate));
+    *pfdsPtr = ns_realloc(*pfdsPtr,
+                         (size_t)(*countPtr + extra + 1) * sizeof(struct pollfd));
+    for (address = dsPtr->string; address != NULL; ) {
+        struct sockaddr *saPtr = (struct sockaddr *)&(*candidatesPtr)[*countPtr].address;
+        char *nextAddress = strchr(address, ' ');
+        bool  duplicate = NS_FALSE;
+
+        if (nextAddress != NULL) {
+            *nextAddress++ = '\0';
+        }
+        if (*address != '\0' && Ns_GetSockAddr(saPtr, address, port) == NS_OK) {
+            for (TCL_SIZE_T i = 0; i < *countPtr; i++) {
+                if (memcmp(&(*candidatesPtr)[i].address, saPtr,
+                           (size_t)Ns_SockaddrGetSockLen(saPtr)) == 0) {
+                    duplicate = NS_TRUE;
+                    break;
+                }
+            }
+            if (!duplicate) {
+                struct pollfd *pfdPtr = &(*pfdsPtr)[*countPtr];
+
+                (*candidatesPtr)[*countPtr].started = NS_FALSE;
+                (*candidatesPtr)[*countPtr].priority = *countPtr;
+                pfdPtr->fd = NS_INVALID_SOCKET;
+                pfdPtr->events = POLLOUT;
+#ifdef _WIN32
+                pfdPtr->events |= POLLPRI;
+#endif
+                pfdPtr->revents = 0;
+                (*countPtr)++;
+            }
+        }
+        address = nextAddress;
+    }
+    Tcl_DStringSetLength(dsPtr, 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockConnectOrder --
+ *
+ *      Rank unstarted candidates using native ordering before interleaving.
+ *      Leave active and completed attempts, their sockets and poll indices
+ *      untouched when newly resolved addresses join the race.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updates private candidate priorities; allocates temporary arrays.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SockConnectOrder(ConnectCandidate *candidates, TCL_SIZE_T count,
+                  bool hasLocalAddress)
+{
+    const struct sockaddr **addresses = ns_malloc((size_t)count * sizeof(*addresses));
+    TCL_SIZE_T *indices = ns_malloc((size_t)count * sizeof(*indices));
+    TCL_SIZE_T *order = ns_malloc((size_t)count * sizeof(*order));
+    TCL_SIZE_T  pending = 0;
+
+    for (TCL_SIZE_T i = 0; i < count; i++) {
+        if (!candidates[i].started) {
+            addresses[pending] = (const struct sockaddr *)&candidates[i].address;
+            indices[pending++] = i;
+        }
+    }
+    NsSockaddrSort(addresses, pending, hasLocalAddress, order);
+    for (TCL_SIZE_T i = 0; i < pending; i++) {
+        candidates[indices[order[i]]].priority = i;
+    }
+    ns_free(order);
+    ns_free(indices);
+    ns_free(addresses);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1839,7 +1911,6 @@ done:
  *
  *----------------------------------------------------------------------
  */
-
 void
 Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
                     Ns_ReturnCode status, const Ns_Time *timeoutPtr)
@@ -1891,7 +1962,6 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1907,7 +1977,6 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_SockSetNonBlocking(NS_SOCKET sock)
 {

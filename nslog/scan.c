@@ -1488,9 +1488,9 @@ OpenScanObjCmnd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     const NsLogScanDefaults *defaults = clientData;
     const char         *filename = defaults->filename;
     const char         *timing = NULL, *tail = "pending", *encoding = "utf-8";
-    Tcl_Obj            *checkpoint = NULL, *offsetObj = NULL, *headers = NULL;
+    Tcl_Obj            *checkpoint = NULL, *offsetObj = NULL, *endObj = NULL, *headers = NULL;
     int                 maxLine = 65536, flags, format = -1, requestTime = -1;
-    Tcl_WideInt         offset = 0;
+    Tcl_WideInt         offset = 0, endOffset = 0;
     ScanState          *state;
     Scan               *scan;
     struct stat         st;
@@ -1517,6 +1517,7 @@ OpenScanObjCmnd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
       {"-tail",            Ns_ObjvString, &tail,        NULL},
       {"-encoding",        Ns_ObjvString, &encoding,    NULL},
       {"-offset",          Ns_ObjvObj,    &offsetObj,   NULL},
+      {"-endoffset",       Ns_ObjvObj,    &endObj,      NULL},
       {"-checkpoint",      Ns_ObjvObj,    &checkpoint,  NULL},
       {"-maxlinebytes",    Ns_ObjvInt,    &maxLine,     &lineRange},
       {NULL, NULL, NULL, NULL}
@@ -1537,6 +1538,9 @@ OpenScanObjCmnd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         return ScanError(interp, "OPTION", "-offset and -checkpoint are mutually exclusive");
 
     } else if (offsetObj != NULL && Tcl_GetWideIntFromObj(interp, offsetObj, &offset) != TCL_OK) {
+        return TCL_ERROR;
+
+    } else if (endObj != NULL && Tcl_GetWideIntFromObj(interp, endObj, &endOffset) != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -1570,6 +1574,22 @@ OpenScanObjCmnd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     scan->device = (Tcl_WideInt)st.st_dev;
     scan->inode = (Tcl_WideInt)st.st_ino;
     scan->snapshotEnd = (Tcl_WideInt)st.st_size;
+    if (endObj != NULL) {
+        if (endOffset < 0 || endOffset > scan->snapshotEnd) {
+            ScanRelease(scan);
+            return ScanError(interp, "BOUNDARY", "end offset must be within the source snapshot");
+        }
+        scan->snapshotEnd = endOffset;
+        /*
+         * A final tail may only end at physical EOF or a complete record.
+         * An interior byte limit must not turn a fragment into a final row.
+         */
+        if (scan->final && endOffset > 0 && endOffset < (Tcl_WideInt)st.st_size
+            && (ReadAt(scan, endOffset - 1, &previous, 1u) != NS_OK || previous != '\n')) {
+            ScanRelease(scan);
+            return ScanError(interp, "BOUNDARY", "final tail requires EOF or a record boundary");
+        }
+    }
     {
         bool current = defaults->haveIdentity && scan->device == defaults->device
                        && scan->inode == defaults->inode;

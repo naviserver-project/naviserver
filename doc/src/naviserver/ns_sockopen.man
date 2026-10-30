@@ -55,6 +55,15 @@ The existing combined DNS cache and system name-service configuration
 continue to be used.
 
 [para]
+Timed connects preserve the system resolver's address order within each
+family and interleave IPv4 and IPv6 for RFC 8305 connection attempts.
+Windows uses native address-pair sorting when available, except with an
+explicit [option -localhost] or more than 500 pending destinations.
+Otherwise no additional cross-family RFC 6724 policy sorting is performed.
+Only unstarted attempts are reordered when later DNS answers arrive;
+active connections and the DNS cache remain unchanged.
+
+[para]
 
 The options [option -localhost] and [option -localport] can be used to
 specify the local endpoints of the connection. In the following
