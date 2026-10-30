@@ -3735,9 +3735,17 @@ DriverThread(void *arg)
                          */
                         if (Ns_ErrorCodeGetErrno(sockPtr->recvErrno, &sockerrno)
                             && sockerrno != 0) {
-                            drvPtr->stats.errors++;
+                            const bool peerAbort =
+                                sockerrno == NS_ECONNRESET
+                                || sockerrno == NS_ECONNABORTED
+                                || sockerrno == EPIPE;
 
-                            Ns_Log(Warning,
+                            drvPtr->stats.errors++;
+                            /*
+                             * Match NsDriverSend(): peer disconnects are
+                             * routine, no need to warn.
+                             */
+                            Ns_Log(peerAbort ? Ns_LogRequestDebug : Warning,
                                    "sockread returned unexpected result %s (err %s); "
                                    "close socket (%d)",
                                    SockStateString(s),

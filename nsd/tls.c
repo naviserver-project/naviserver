@@ -4214,8 +4214,10 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
             }
         }
         /*
-         * Report all sslERRcodes from the OpenSSL error stack as
-         * "notices" in the system log file.
+         * Report the OpenSSL error stack. Peer disconnects are expected
+         * transport failures and use request-debug severity, matching
+         * the driver's send and receive paths. Other errors retain
+         * notice severity. Preserve the failed-read result for cleanup.
          */
          if (sslERRcode != 0u) {
             struct NS_SOCKADDR_STORAGE sa;
@@ -4223,8 +4225,16 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
             char                       ipString[NS_IPADDR_SIZE];
             const char                *peer = "unknown";
             Tcl_DString                errorContext;
-            int                        peerError = 0;
+            int                        peerError = 0, socketError = 0;
+            Ns_LogSeverity             severity = Notice;
             const char                *sniHostname = SSL_get_servername(sslPtr, TLSEXT_NAMETYPE_host_name);
+
+            if (Ns_ErrorCodeGetErrno(sslERRcode, &socketError)
+                && (socketError == EPIPE
+                    || socketError == NS_ECONNRESET
+                    || socketError == NS_ECONNABORTED)) {
+                severity = Ns_LogRequestDebug;
+            }
 
             if (getpeername(sock, (struct sockaddr *)&sa, &socklen) == 0) {
                 const char *address;
@@ -4272,7 +4282,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                                  peerError, ns_sockstrerror(peerError));
             }
 
-            NsTLSDrainErrorStack(Notice, errorContext.string, sslERRcode);
+            NsTLSDrainErrorStack(severity, errorContext.string, sslERRcode);
             Tcl_DStringFree(&errorContext);
         }
 
