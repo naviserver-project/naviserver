@@ -48,27 +48,6 @@ namespace eval ::rfc6724_test {
         }
         error "timed out waiting for the listener marker"
     }
-    proc connectAfterRelease {args} {
-        variable connchans
-        set deadline [expr {[clock milliseconds] + 2000}]
-        while {1} {
-            set code [catch {ns_connchan connect -timeout 2s {*}$args} channel options]
-            if {!$code} {
-                lappend connchans $channel
-                return $channel
-            }
-            # The reservation listener has just been closed. Do not assume
-            # its port is immediately reusable on every platform. The
-            # wildcard bind path reports EALREADY for EADDRINUSE.
-            set errorCode [dict get $options -errorcode]
-            if {[lindex $errorCode 0] ne "POSIX"
-                || [lindex $errorCode 1] ni {EADDRINUSE EALREADY}
-                || [clock milliseconds] >= $deadline} {
-                return -options $options $channel
-            }
-            after 5
-        }
-    }
     proc connect {host local port {localPort 0}} {
         variable connchans
         set channel [ns_connchan connect -timeout 2s -localhost $local -localport $localPort -- $host $port]
@@ -133,7 +112,7 @@ test rfc6724-localport {native-order fallback preserves the requested local TCP 
     if {!$code} {error "connect unexpectedly ignored the occupied local port"}
     if {[dict get $options -errorcode] eq "NS_TIMEOUT"} {error "bind failure reported as timeout"}
     ns_connchan close [dict get $probe channel]
-    set channel [::rfc6724_test::connectAfterRelease -localhost 127.0.0.1 -localport $localPort -- LoCaLHosT $port]
+    set channel [::rfc6724_test::connect LoCaLHosT 127.0.0.1 $port $localPort]
     ::rfc6724_test::receive $channel
 } -cleanup {::rfc6724_test::cleanup} -result 4
 
@@ -148,7 +127,8 @@ test rfc6724-localport-only {a local port can be bound without an explicit sourc
     }
     if {[dict get $options -errorcode] eq "NS_TIMEOUT"} {error "bind failure reported as timeout"}
     ns_connchan close [dict get $probe channel]
-    set channel [::rfc6724_test::connectAfterRelease -localport $localPort -- 127.0.0.1 $port]
+    set channel [ns_connchan connect -timeout 2s -localport $localPort -- 127.0.0.1 $port]
+    lappend ::rfc6724_test::connchans $channel
     ::rfc6724_test::receive $channel
 } -cleanup {::rfc6724_test::cleanup} -result 4
 
