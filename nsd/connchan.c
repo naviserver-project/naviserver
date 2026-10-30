@@ -1431,9 +1431,9 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
 {
     NsInterp       *itPtr = clientData;
     int             result, doTLS = (int)NS_FALSE, insecureInt;
-    unsigned short  portNr = 0u;
+    unsigned short  portNr = 0u, localPort = 0u;
     const char     *host, *sniHostname = NULL, *caFile = NULL, *caPath = NULL,
-                   *cert = NULL, *key = NULL;
+                   *cert = NULL, *key = NULL, *localHost = NULL;
     Ns_Time         timeout = {1, 0}, *timeoutPtr = &timeout;
     Ns_ObjvSpec     lopts[] = {
         {"-cafile",   Ns_ObjvString, &caFile,      NULL},
@@ -1442,6 +1442,8 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         {"-key",      Ns_ObjvString, &key,         NULL},
         {"-hostname", Ns_ObjvString, &sniHostname, NULL},
         {"-insecure", Ns_ObjvBool,   &insecureInt, INT2PTR(NS_TRUE)},
+        {"-localhost", Ns_ObjvString, &localHost,   NULL},
+        {"-localport", Ns_ObjvUShort, &localPort,   NULL},
         {"-timeout",  Ns_ObjvTime,   &timeoutPtr,  NULL},
         {"-tls",      Ns_ObjvBool,   &doTLS,       INT2PTR(NS_TRUE)},
         {"--",        Ns_ObjvBreak,  NULL,         NULL},
@@ -1478,7 +1480,7 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
             verifyCert = NS_FALSE;
         }
 
-        sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr, &status);
+        sock = Ns_SockTimedConnect2(host, portNr, localHost, localPort, timeoutPtr, &status);
 
         if (sock == NS_INVALID_SOCKET) {
             Ns_SockConnectError(interp, host, portNr, status, timeoutPtr);
