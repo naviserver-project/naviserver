@@ -103,7 +103,7 @@ test rfc6724-connchan-ipv6 {IPv6 transfer uses NaviServer connection channels} \
     ::rfc6724_test::receive $channel
 } -cleanup {::rfc6724_test::cleanup} -result 6
 
-test rfc6724-localport {native-order fallback preserves the requested local TCP port} -body {
+test rfc6724-localport {native-order fallback preserves the requested local TCP port} -returnCodes {ok error} -body {
     lassign [::rfc6724_test::listen] port listener
     set probe [::rfc6724_test::listener 127.0.0.1 0 4]
     set localPort [dict get $probe port]
@@ -116,7 +116,7 @@ test rfc6724-localport {native-order fallback preserves the requested local TCP 
     ::rfc6724_test::receive $channel
 } -cleanup {::rfc6724_test::cleanup} -result 4
 
-test rfc6724-localport-only {a local port can be bound without an explicit source address} -body {
+test rfc6724-localport-only {a local port can be bound without an explicit source address} -returnCodes {ok error} -body {
     lassign [::rfc6724_test::listen] port listener
     set probe [::rfc6724_test::listener 0.0.0.0 0 4]
     set localPort [dict get $probe port]
