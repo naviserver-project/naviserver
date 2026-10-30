@@ -73,7 +73,9 @@ static Ns_Cond       cond;
 static NS_SOCKET     trigPipe[2];
 static Tcl_HashTable activeCallbacks;
 
-
+static uintptr_t callbackThreadId; /* Protected by lock. */
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -90,7 +92,6 @@ static Tcl_HashTable activeCallbacks;
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when)
 {
@@ -104,7 +105,32 @@ Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int whe
     return Queue(sock, proc, arg, when, timeout, threadNamePtr);
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsSockCallbackIsCurrentThread --
+ *
+ *      Identify the callback thread without depending on its mutable name.
+ *
+ * Results:
+ *      NS_TRUE only when called on the socket callback thread.
+ *
+ * Side effects:
+ *      Briefly locks the callback queue.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+NsSockCallbackIsCurrentThread(void)
+{
+    bool result;
+
+    Ns_MutexLock(&lock);
+    result = callbackThreadId == Ns_ThreadId();
+    Ns_MutexUnlock(&lock);
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -351,6 +377,9 @@ SockCallbackThread(void *UNUSED(arg))
     Tcl_HashSearch search;
     struct pollfd *pfds;
 
+    Ns_MutexLock(&lock);
+    callbackThreadId = Ns_ThreadId();
+    Ns_MutexUnlock(&lock);
     Ns_ThreadSetName("-socks-");
     (void)Ns_WaitForStartup();
     Ns_Log(Notice, "socks: starting");
@@ -567,12 +596,12 @@ SockCallbackThread(void *UNUSED(arg))
      * Tell others that shutdown is complete.
      */
     Ns_MutexLock(&lock);
+    callbackThreadId = 0u;
     running = NS_FALSE;
     Ns_CondBroadcast(&cond);
     Ns_MutexUnlock(&lock);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -590,7 +619,6 @@ SockCallbackThread(void *UNUSED(arg))
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsGetSockCallbacks(Tcl_DString *dsPtr)
 {

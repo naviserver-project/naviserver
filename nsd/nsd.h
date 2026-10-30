@@ -1425,6 +1425,14 @@ NS_EXTERN void NsInitFd(void);
 NS_EXTERN void NsInitInfo(void);
 NS_EXTERN void NsInitLimits(void);
 NS_EXTERN void NsInitListen(void);
+
+NS_EXTERN NS_SOCKET NsSockListenCallback(const char *addr, unsigned short port,
+                                         Ns_SockProc *proc, bool doBind, void *arg,
+                                         Ns_Callback *freeProc)
+    NS_GNUC_NONNULL(3,5);
+NS_EXTERN void NsSockCloseListenCallback(NS_SOCKET sock);
+
+
 NS_EXTERN void NsInitLog(void);
 NS_EXTERN void NsInitModLoad(void);
 NS_EXTERN void NsInitOpenSSL(void);
