@@ -4,7 +4,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Public-API checks require only Tcl/NaviServer and local loopback sockets.
+# Public-API checks use ns_connchan and local loopback sockets.
+# Only explicit source-address/port checks retain ns_sockopen, since
+# ns_connchan connect does not expose those binding options.
 # Native sorting and resolver-order fallback are covered by developer/test-rfc6724-sort.sh.
 
 package require tcltest 2.2
@@ -12,6 +14,7 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 namespace eval ::rfc6724_test {
+    variable connchans {}
     variable channels {}
     proc closeChannels {items} {
         variable channels
@@ -25,18 +28,39 @@ namespace eval ::rfc6724_test {
         variable channels
         closeChannels $channels
         set channels {}
+        variable connchans
+        foreach channel $connchans {catch {ns_connchan close $channel}}
+        set connchans {}
     }
-    proc listen {{dual false}} {
-        variable channels
-        set v4 [ns_socklisten 127.0.0.1 0]
-        lappend channels $v4
-        set port [lindex [fconfigure $v4 -sockname] end]
-        set v6 {}
-        if {$dual} {
-            set v6 [ns_socklisten ::1 $port]
-            lappend channels $v6
+    proc listener {address port marker} {
+        variable connchans
+        set callback [list apply {{marker channel} {
+            ns_connchan write $channel $marker
+            ns_connchan close $channel
+            return 1
+        }} $marker]
+        set info [ns_connchan listen -bind $address $port $callback]
+        lappend connchans [dict get $info channel]
+        return $info
+    }
+    proc listen {} {
+        set info [listener 127.0.0.1 0 4]
+        return [list [dict get $info port] [dict get $info channel]]
+    }
+    proc client {host port {timeout 2s}} {
+        variable connchans
+        set channel [ns_connchan connect -timeout $timeout -- $host $port]
+        lappend connchans $channel
+        return $channel
+    }
+    proc receive {channel} {
+        set deadline [expr {[clock milliseconds] + 2000}]
+        while {[clock milliseconds] < $deadline} {
+            set data [ns_connchan read $channel]
+            if {$data ne ""} {return $data}
+            after 5
         }
-        return [list $port $v4 $v6]
+        error "timed out waiting for the listener marker"
     }
     proc connect {host local port {localPort 0}} {
         variable channels
@@ -48,73 +72,89 @@ namespace eval ::rfc6724_test {
 
 set haveIPv6 false
 if {[ns_info ipv6] && ![catch {
-    set probe [ns_socklisten ::1 0]
-    close $probe
+    ::rfc6724_test::listener ::1 0 6
     ns_addrbyhost ::1
 }]} {set haveIPv6 true}
+::rfc6724_test::cleanup
 testConstraint rfc6724IPv6 $haveIPv6
 
-test rfc6724-cold-explicit-ipv4 {incremental candidates honor an explicit IPv4 source} -body {
-    lassign [::rfc6724_test::listen] port v4 v6
-    set pair [::rfc6724_test::connect LoCALhOST 127.0.0.1 $port]
-    list [lindex [fconfigure [lindex $pair 0] -peername] 0] \
-        [lindex [fconfigure [lindex $pair 0] -sockname] 0]
-} -cleanup {::rfc6724_test::cleanup} -result {127.0.0.1 127.0.0.1}
+test rfc6724-cold-connect {incremental candidates connect through ns_connchan} -body {
+    lassign [::rfc6724_test::listen] port listener
+    set channel [::rfc6724_test::client LoCALhOST $port]
+    ::rfc6724_test::receive $channel
+} -cleanup {::rfc6724_test::cleanup} -result 4
 
 test rfc6724-warm-cache {connection sorting does not rewrite the combined DNS cache} -body {
     set host LoCAlHoST
     set before [ns_addrbyhost -all $host]
-    lassign [::rfc6724_test::listen] port v4 v6
-    set pair [::rfc6724_test::connect $host 127.0.0.1 $port]
+    lassign [::rfc6724_test::listen] port listener
+    set channel [::rfc6724_test::client $host $port]
     list [expr {$before eq [ns_addrbyhost -all $host]}] \
         [expr {[ns_addrbyhost $host] eq [lindex $before 0]}] \
-        [lindex [fconfigure [lindex $pair 0] -peername] 0]
-} -cleanup {::rfc6724_test::cleanup} -result {1 1 127.0.0.1}
+        [::rfc6724_test::receive $channel]
+} -cleanup {::rfc6724_test::cleanup} -result {1 1 4}
 
 test rfc6724-dual-ipv4 {a dual-family target remains usable with an IPv4 source} \
     -constraints rfc6724IPv6 -body {
-    lassign [::rfc6724_test::listen true] port v4 v6
+    lassign [::rfc6724_test::listen] port listener
     set pair [::rfc6724_test::connect LOcalHoST 127.0.0.1 $port]
     lindex [fconfigure [lindex $pair 0] -peername] 0
 } -cleanup {::rfc6724_test::cleanup} -result 127.0.0.1
 
 test rfc6724-dual-ipv6 {a dual-family target remains usable with an IPv6 source} \
     -constraints rfc6724IPv6 -body {
-    lassign [::rfc6724_test::listen true] port v4 v6
+    set info [::rfc6724_test::listener ::1 0 6]
+    set port [dict get $info port]
     set pair [::rfc6724_test::connect lOCAlHoST ::1 $port]
-    list [lindex [fconfigure [lindex $pair 0] -peername] 0] \
-        [lindex [fconfigure [lindex $pair 0] -sockname] 0]
-} -cleanup {::rfc6724_test::cleanup} -result {::1 ::1}
+    # ns_connchan's IPv6 listener sends a marker; no Tcl socket metadata needed.
+    set reader [lindex $pair 0]
+    fconfigure $reader -translation binary -blocking false
+    set deadline [expr {[clock milliseconds] + 2000}]
+    set marker {}
+    while {$marker eq "" && [clock milliseconds] < $deadline} {
+        set marker [read $reader 1]
+        if {$marker ne "" || [eof $reader]} {break}
+        after 5
+    }
+    set marker
+} -cleanup {::rfc6724_test::cleanup} -result 6
+
+test rfc6724-connchan-ipv6 {IPv6 transfer uses NaviServer connection channels} \
+    -constraints rfc6724IPv6 -body {
+    set info [::rfc6724_test::listener ::1 0 6]
+    set channel [::rfc6724_test::client ::1 [dict get $info port]]
+    ::rfc6724_test::receive $channel
+} -cleanup {::rfc6724_test::cleanup} -result 6
 
 test rfc6724-localport {native-order fallback preserves the requested local TCP port} -body {
-    lassign [::rfc6724_test::listen] port v4 v6
-    set probe [ns_socklisten 127.0.0.1 0]
-    set localPort [lindex [fconfigure $probe -sockname] end]
-    close $probe
+    lassign [::rfc6724_test::listen] port listener
+    set probe [::rfc6724_test::listener 127.0.0.1 0 4]
+    set localPort [dict get $probe port]
+    ns_connchan close [dict get $probe channel]
     set pair [::rfc6724_test::connect LoCaLHosT 127.0.0.1 $port $localPort]
     expr {[lindex [fconfigure [lindex $pair 0] -sockname] end] == $localPort}
 } -cleanup {::rfc6724_test::cleanup} -result 1
 
-test rfc6724-repeated {repeated cache-hit connects leave Tcl channel ownership unchanged} -body {
-    lassign [::rfc6724_test::listen] port v4 v6
+test rfc6724-repeated {repeated cache-hit connects release connection channels} -body {
+    lassign [::rfc6724_test::listen] port listener
     set host LOcALHosT
     ns_addrbyhost -all $host
     set before [lsort [chan names]]
     for {set i 0} {$i < 12} {incr i} {
-        set pair [::rfc6724_test::connect $host 127.0.0.1 $port]
-        set peer [ns_sockaccept $v4]
-        ::rfc6724_test::closeChannels $pair
-        foreach channel $peer {close $channel}
+        set channel [::rfc6724_test::client $host $port]
+        if {[::rfc6724_test::receive $channel] ne "4"} {error "wrong listener"}
+        ns_connchan close $channel
+        if {[ns_connchan exists $channel]} {error "connection channel leaked"}
     }
     expr {$before eq [lsort [chan names]]}
 } -cleanup {::rfc6724_test::cleanup} -result 1
 
 test rfc6724-zero-budget {address selection does not start TCP with a zero budget} -body {
-    lassign [::rfc6724_test::listen] port v4 v6
-    set before [lsort [chan names]]
-    set code [catch {ns_sockopen -timeout 0 -localhost 127.0.0.1 -- lOCalHOST $port} message options]
-    if {!$code} {lappend ::rfc6724_test::channels {*}$message}
-    list $code [dict get $options -errorcode] [expr {$before eq [lsort [chan names]]}]
+    lassign [::rfc6724_test::listen] port listener
+    set before [lsort [ns_connchan list]]
+    set code [catch {::rfc6724_test::client lOCalHOST $port 0} message options]
+
+    list $code [dict get $options -errorcode] [expr {$before eq [lsort [ns_connchan list]]}]
 } -cleanup {::rfc6724_test::cleanup} -result {1 NS_TIMEOUT 1}
 
 namespace delete ::rfc6724_test

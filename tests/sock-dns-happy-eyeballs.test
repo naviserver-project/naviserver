@@ -13,39 +13,45 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 namespace eval ::dns_happy_eyeballs_test {
-    variable channels {}
     variable handles {}
     variable threads {}
     proc listen {} {
-        variable channels
-        set listener [ns_socklisten 127.0.0.1 0]
-        lappend channels $listener
-        return [list $listener [lindex [fconfigure $listener -sockname] end]]
+        variable handles
+        set callback [list apply {{channel} {
+            catch {ns_connchan write $channel dns}
+            ns_connchan close $channel
+            return 1
+        }}]
+        set info [ns_connchan listen -bind 127.0.0.1 0 $callback]
+        set listener [dict get $info channel]
+        lappend handles $listener
+        return [list $listener [dict get $info port]]
     }
     proc cleanup {} {
-        variable channels
         variable handles
         variable threads
         foreach thread $threads {catch {ns_thread wait $thread}}
-        foreach channel $channels {catch {close $channel}}
         foreach handle $handles {catch {ns_connchan close $handle}}
-        set channels {}
         set handles {}
         set threads {}
     }
+    proc receive {handle} {
+        set deadline [expr {[clock milliseconds] + 2000}]
+        set data {}
+        while {[string length $data] < 3 && [clock milliseconds] < $deadline} {
+            append data [ns_connchan read $handle]
+            if {[string length $data] < 3} {after 5}
+        }
+        return $data
+    }
+
 }
 
 test dns-happy-eyeballs-cold {independent family resolution reaches an IPv4-only listener} -body {
     lassign [::dns_happy_eyeballs_test::listen] listener port
-    set pair [ns_sockopen -timeout 2s -- lOcAlHoSt $port]
-    lappend ::dns_happy_eyeballs_test::channels {*}$pair
-    set accepted [ns_sockaccept $listener]
-    lappend ::dns_happy_eyeballs_test::channels {*}$accepted
-    foreach channel [concat $pair $accepted] {
-        fconfigure $channel -translation binary -buffering none
-    }
-    puts -nonewline [lindex $pair 1] dns
-    read [lindex $accepted 0] 3
+    set handle [ns_connchan connect -timeout 2s -- lOcAlHoSt $port]
+    lappend ::dns_happy_eyeballs_test::handles $handle
+    ::dns_happy_eyeballs_test::receive $handle
 } -cleanup {
     ::dns_happy_eyeballs_test::cleanup
 } -result dns
@@ -60,20 +66,20 @@ test dns-happy-eyeballs-cache {combined resolver cache and first-address API rem
 test dns-happy-eyeballs-warm {completed cached answers remain usable by timed connects} -body {
     ns_addrbyhost -all LoCaLhOsT
     lassign [::dns_happy_eyeballs_test::listen] listener port
-    set pair [ns_sockopen -timeout 2s -- LoCaLhOsT $port]
-    lappend ::dns_happy_eyeballs_test::channels {*}$pair
-    llength $pair
+    set handle [ns_connchan connect -timeout 2s -- LoCaLhOsT $port]
+    lappend ::dns_happy_eyeballs_test::handles $handle
+    ::dns_happy_eyeballs_test::receive $handle
 } -cleanup {
     ::dns_happy_eyeballs_test::cleanup
-} -result 2
+} -result dns
 
 test dns-happy-eyeballs-zero {zero TCP budget remains a TCP timeout after name resolution} -body {
     lassign [::dns_happy_eyeballs_test::listen] listener port
-    set before [lsort [chan names]]
-    set code [catch {ns_sockopen -timeout 0 -- locALHOst $port} message options]
-    if {!$code} {lappend ::dns_happy_eyeballs_test::channels {*}$message}
+    set before [lsort [ns_connchan list]]
+    set code [catch {ns_connchan connect -timeout 0 -- locALHOst $port} message options]
+    if {!$code} {lappend ::dns_happy_eyeballs_test::handles $message}
     list $code [dict get $options -errorcode] \
-        [expr {$before eq [lsort [chan names]]}]
+        [expr {$before eq [lsort [ns_connchan list]]}]
 } -cleanup {
     ::dns_happy_eyeballs_test::cleanup
 } -result {1 NS_TIMEOUT 1}
@@ -83,8 +89,8 @@ test dns-happy-eyeballs-concurrent {concurrent subscribers can detach without lo
     for {set i 0} {$i < 4} {incr i} {
         lappend ::dns_happy_eyeballs_test::threads [ns_thread create [list apply {
             {host port} {
-                set pair [ns_sockopen -timeout 2s -- $host $port]
-                foreach channel $pair {close $channel}
+                set handle [ns_connchan connect -timeout 2s -- $host $port]
+                ns_connchan close $handle
                 return 1
             }
         } loCALhoST $port]]
@@ -115,8 +121,10 @@ test dns-happy-eyeballs-cancel-subscribers {zero-budget subscribers detach safel
             {host port} {
                 set failures 0
                 for {set j 0} {$j < 4} {incr j} {
-                    if {[catch {ns_sockopen -timeout 0 -- $host $port} message options]
-                        && [dict get $options -errorcode] eq "NS_TIMEOUT"} {
+                    set code [catch {ns_connchan connect -timeout 0 -- $host $port} message options]
+                    if {!$code} {
+                        ns_connchan close $message
+                    } elseif {[dict get $options -errorcode] eq "NS_TIMEOUT"} {
                         incr failures
                     }
                 }
@@ -135,11 +143,11 @@ test dns-happy-eyeballs-cancel-subscribers {zero-budget subscribers detach safel
 } -result 32
 
 test dns-happy-eyeballs-failed-name {failed resolution is not reported as a TCP timeout} -body {
-    set before [lsort [chan names]]
-    set code [catch {ns_sockopen -timeout 2s -- ::not-an-address 80} message options]
-    if {!$code} {lappend ::dns_happy_eyeballs_test::channels {*}$message}
+    set before [lsort [ns_connchan list]]
+    set code [catch {ns_connchan connect -timeout 2s -- ::not-an-address 80} message options]
+    if {!$code} {lappend ::dns_happy_eyeballs_test::handles $message}
     list $code [expr {[dict get $options -errorcode] ne "NS_TIMEOUT"}] \
-        [expr {$before eq [lsort [chan names]]}]
+        [expr {$before eq [lsort [ns_connchan list]]}]
 } -cleanup {
     ::dns_happy_eyeballs_test::cleanup
 } -result {1 1 1}
