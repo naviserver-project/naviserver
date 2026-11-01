@@ -631,7 +631,7 @@ letter (C [const isalpha] classification) or underscore; subsequent characters
 are alphanumeric (C [const isalnum] classification), underscore, dollar sign or
 number sign. Character classification uses the current C locale and operates
 on bytes, not Unicode characters. For example, [const :phone#] and
-[const :oracle$number] each identify one parameter. Dollar signs within a name
+[const {:oracle$number}] each identify one parameter. Dollar signs within a name
 are continuation characters, not the start of another binding. Names containing
 dollar or number signs use cached driver-marker rewriting, so drivers need not
 support these characters in their native parameter grammar.
@@ -704,10 +704,10 @@ There is still no connection-level prepared-statement cache.
 [example_begin]
  set ids {42 57 91}
  set status active
- set rows [ns_db select $handle -bindvars -bindtypes {ids list} {
+ set rows [lb]ns_db select $handle -bindvars -bindtypes {ids list} {
      SELECT id FROM items WHERE id IN (:ids) AND status=:status
- }]
- while {[ns_db getrow $handle $rows]} {
+ }[rb]
+ while {[lb]ns_db getrow $handle $rows[rb]} {
      # Consume each row using ns_set.
  }
  ns_db flush $handle
@@ -747,21 +747,21 @@ connection-level SQLite prepared-statement cache.
 [example_begin]
  set id 42
  ns_db exec $handle -bindvars {SELECT label FROM items WHERE id=:id}
- set row [ns_db bindrow $handle]
- while {[ns_db getrow $handle $row]} {
+ set row [lb]ns_db bindrow $handle[rb]
+ while {[lb]ns_db getrow $handle $row[rb]} {
      # Consume the row using ns_set.
  }
  ns_db flush $handle
 
- set values [ns_set create bindings id 42 label {}]
+ set values [lb]ns_set create bindings id 42 label {}[rb]
  ns_db dml $handle -bindset $values -emptynull {
      UPDATE items SET label=:label WHERE id=:id
  }
  ns_set free $values
 
- set row [ns_db 1row $handle -binddict [dict create id 42] {
+ set row [lb]ns_db 1row $handle -binddict [lb]dict create id 42[rb] {
      SELECT label FROM items WHERE id=:id
- }]
+ }[rb]
  ns_set free $row
 [example_end]
 
