@@ -961,7 +961,7 @@ DbHandleReturnResult(Ns_DbHandle *handle, Tcl_Interp *interp,
     return TCL_OK;
 
  error:
-    NsDbSetActive("bound execution error", handle, NS_FALSE);
+    NsDbSetActive("SQL bind vars error", handle, NS_FALSE);
     if (Tcl_GetStringResult(interp)[0] == '\0') {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf("Database operation \"%s\" failed: %s",
                                                operation, handle->dsExceptionMsg.string));

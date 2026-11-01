@@ -132,7 +132,8 @@ NS_EXTERN const char *NS_EMPTY_STRING;
  * dbdrv.c:
  */
 
-/* Optional bound execution. Values are borrowed Tcl strings; NULL pointers
+/* Optional bind vars in SQL statements, including explicit binary values.
+ * Values are borrowed Tcl objects; NULL pointers
  * represent SQL NULL. Drivers must not retain these objects after returning. */
 #define NS_DB_BIND_ABI 1
 /* Optional marker factory for expanded slots. Return a new, unreferenced Tcl
@@ -148,7 +149,6 @@ NS_EXTERN int Ns_DbBindExec(Tcl_Interp *, Ns_DbHandle *, const char *, TCL_SIZE_
 
 /* Explicit binary interpretation is an optional extension to text binding.
  * The existing callback ABI is unchanged. A NULL types array means all text. */
-#define NS_DB_BIND_TYPED_ABI 1
 typedef enum {
     NS_DB_BIND_TEXT, NS_DB_BIND_BINARY
 } Ns_DbBindValueType;

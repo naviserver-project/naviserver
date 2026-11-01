@@ -91,10 +91,15 @@ test nsdb-bind-binary-width {column metadata width is checked before driver exec
     string match {*row width does not match*} $message
 } -result 1
 ::tcltest::testConstraint coreNoNativeBinding [expr {![ns_db bindinfo $bindCoreHandle]}]
+test nsdb-bind-unsupported-driver {missing bind-var support reports an SQL-specific error} -constraints coreNoNativeBinding -body {
+    set value 42
+    catch {ns_db exec $bindCoreHandle -bindvars {SELECT :value}} message
+    set message
+} -result {driver does not support bind vars in SQL statements}
 test nsdb-bind-binary-driver {missing binary callback never falls back to text execution} -constraints coreNoNativeBinding -body {
     set data [binary format H* 00ff]
     catch {ns_db exec $bindCoreHandle -bindvars -bindtypes {data binary} {SELECT :data}} message
-    string match {*does not support explicit binary binding*} $message
+    string match {*does not support binary bind vars in SQL statements*} $message
 } -result 1
 
 test nsdb-bind-legacy-names-dict {legacy continuation characters form one complete binding name} -body {

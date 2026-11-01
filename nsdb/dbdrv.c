@@ -1155,7 +1155,8 @@ NsDbGetBatchOps(const Ns_DbHandle *handle)
     return driver == NULL ? NULL : driver->batchOps;
 }
 
-/* Bound statements use the existing driver timing/logging path. Values are
+/* SQL statements with bind vars use the existing driver timing/logging path.
+ * Values are
  * deliberately excluded from SQL logging. Drivers without this optional
  * callback continue to support the unchanged ordinary execution interface. */
 bool
@@ -1180,7 +1181,7 @@ Ns_DbBindExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
         status = driver->bindExecProc(interp, handle, sql, count, names, values);
         NsDbLogSql(&start, handle, sql);
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support bound execution", -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support bind vars in SQL statements", -1));
     }
     return status;
 }
@@ -1201,7 +1202,7 @@ Ns_DbBindTypedExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
         status = driver->bindTypedExecProc(interp, handle, sql, count, names, values, types);
         NsDbLogSql(&start, handle, sql);
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support explicit binary binding", -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support binary bind vars in SQL statements", -1));
     }
     return status;
 }

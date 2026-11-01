@@ -716,7 +716,7 @@ There is still no connection-level prepared-statement cache.
 
 [para]
 The SQL Tcl object transparently caches unique [const :name] parameter names
-on first bound execution. Every execution resolves current values. SQL
+on the first execution using bind vars. Every execution resolves current values. SQL
 literals, doubled quote delimiters, quoted identifiers, SQLite bracket/backtick
 identifiers and line/block comments do not introduce parameters. PostgreSQL
 casts are skipped; PostgreSQL escape-string/dollar-quoted bodies are not
@@ -734,8 +734,8 @@ body with semicolons; SQL following that statement is rejected before execution.
 Script splitting belongs to the application.
 
 [para]
-[cmd {ns_db bindinfo}] [arg handle] reports whether the driver supplies native
-bound execution. Its optional [option -version] returns Tcl binding API version
+[cmd {ns_db bindinfo}] [arg handle] reports whether the driver supports
+bind vars in SQL statements. Its optional [option -version] returns Tcl binding API version
 5 for binary values and row column types (4 denotes untyped rows;
 3 denotes scalar/list types; 2 denotes the preceding
 scalar-only options), or 0 when unsupported. The default
