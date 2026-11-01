@@ -1,0 +1,103 @@
+package require tcltest 2.2
+namespace import -force ::tcltest::test
+
+# Core batchinsert contract: no nsmcp types or producer are used by these tests.
+set preparedHandle {}
+set preparedCaps {}
+foreach pool [ns_db pools] {
+    if {[catch {ns_db gethandle -timeout 0:100000 $pool} candidate] || $candidate eq {}} continue
+    if {[ns_db dbtype $candidate] eq "sqlite"} {
+        set preparedHandle $candidate
+        set preparedCaps [ns_db batchinfo -handle $candidate]
+        break
+    }
+    ns_db releasehandle $candidate
+}
+::tcltest::testConstraint preparedRows [expr {[dict exists $preparedCaps tclRows] && [dict get $preparedCaps tclRows]}]
+set preparedSchema {id prepared-test version 1 columns {
+    {name id type number refinement int64 representation integer_decimal}
+    {name label type string nullable true}
+    {name amount type number refinement float64 representation decimal}
+    {name payload type string refinement encoded_binary representation hex}
+}}
+proc preparedBegin {} {
+    ns_db dml $::preparedHandle {DROP TABLE IF EXISTS temp.prepared_rows}
+    ns_db dml $::preparedHandle {CREATE TEMP TABLE prepared_rows(id INTEGER PRIMARY KEY,label TEXT,amount REAL,payload BLOB)}
+    ns_db dml $::preparedHandle {BEGIN IMMEDIATE}
+}
+proc preparedEnd {} {
+    catch {ns_db dml $::preparedHandle ROLLBACK}
+    ns_db dml $::preparedHandle {DROP TABLE IF EXISTS temp.prepared_rows}
+}
+proc preparedRow {sql} {
+    set row [ns_db 1row $::preparedHandle $sql]
+    try {ns_set array $row} finally {ns_set free $row}
+}
+test prepared-values {UTF-8, embedded NUL, empty TEXT, NULL, floating point and BLOB values remain distinct} -constraints preparedRows -setup preparedBegin -body {
+    set label "café 雪 😀\x00quote'; \$literal \[command\]"
+    set rows [list [list 1 $label 1.25 610062] [list 2 {} -0.5 {}] [list 3 ignored 0 00]]
+    set original $rows
+    set r [ns_db batchinsert $preparedHandle -table {temp prepared_rows} -schema $preparedSchema -nulls {{} {} {1}} $rows]
+    set stored [preparedRow {SELECT hex(label) AS labelHex,amount,hex(payload) AS bytes,typeof(amount) AS kind FROM temp.prepared_rows WHERE id=1}]
+    set states [preparedRow {SELECT (SELECT typeof(label) FROM temp.prepared_rows WHERE id=2) AS emptyType,(SELECT label IS NULL FROM temp.prepared_rows WHERE id=3) AS nullValue}]
+    list [dict get $r rows] [expr {$rows eq $original}] [expr {[dict get $stored labelHex] eq [string toupper [binary encode hex [encoding convertto utf-8 $label]]]}] [dict get $stored amount] [dict get $stored bytes] [dict get $stored kind] $states
+} -cleanup preparedEnd -result {3 1 1 1.25 610062 real {emptyType text nullValue 1}}
+test prepared-empty {an empty prepared row list is a valid no-op} -constraints preparedRows -setup preparedBegin -body {
+    dict get [ns_db batchinsert $preparedHandle -table prepared_rows -schema $preparedSchema {}] rows
+} -cleanup preparedEnd -result 0
+test prepared-width {all row widths are checked before the first row reaches the driver} -constraints preparedRows -setup preparedBegin -body {
+    set failed [catch {ns_db batchinsert $preparedHandle -table prepared_rows -schema $preparedSchema {{1 good 1 00} {short}}} m o]
+    list $failed [lrange [dict get $o -errorcode] 0 2] [dict get [preparedRow {SELECT count(*) AS n FROM prepared_rows}] n]
+} -cleanup preparedEnd -result {1 {NS_DB BATCH ROWS} 0}
+test prepared-nulls {NULL masks require matching rows and valid nullable column indices} -constraints preparedRows -setup preparedBegin -body {
+    set result {}
+    foreach mask [list {} {{4}} {{-1}} {{0}}] {
+        lappend result [catch {ns_db batchinsert $preparedHandle -table prepared_rows -schema $preparedSchema -nulls $mask {{1 good 1 00}}}]
+    }
+    lappend result [catch {ns_db batchinsert $preparedHandle -table prepared_rows -nulls {{1}} {{1 good 1 00}}}]
+    set result
+} -cleanup preparedEnd -result {1 1 1 1 1}
+test prepared-schema {duplicate schema fields and unsupported refinements fail without insertion} -constraints preparedRows -setup preparedBegin -body {
+    set result {}
+    set duplicate $preparedSchema
+    dict set duplicate columns [lrepeat 4 {name id type number}]
+    set unsupported $preparedSchema
+    dict set unsupported columns [list {name id type number refinement imaginary}]
+    foreach schema [list $duplicate $unsupported] {
+        lappend result [catch {ns_db batchinsert $preparedHandle -table prepared_rows -schema $schema {}}]
+    }
+    set result
+} -cleanup preparedEnd -result {1 1}
+test prepared-mapping {schema names can map onto quoted destination names} -constraints preparedRows -setup preparedBegin -body {
+    set schema {id mapping version 1 columns {{name key type number refinement int64} {name text type string}}}
+    set r [ns_db batchinsert $preparedHandle -table {temp prepared_rows} -schema $schema -columns {key id text label} {{1 {literal'; [command]}}}]
+    list [dict get $r rows] [dict get [preparedRow {SELECT label FROM prepared_rows WHERE id=1}] label]
+} -cleanup preparedEnd -result {1 {literal'; [command]}}
+test prepared-transaction {prepared rows require a caller-owned transaction} -constraints preparedRows -setup preparedBegin -body {
+    ns_db dml $preparedHandle ROLLBACK
+    catch {ns_db batchinsert $preparedHandle -table prepared_rows -schema $preparedSchema {{1 x 1 00}}} m o
+    lrange [dict get $o -errorcode] 0 2
+} -cleanup preparedEnd -result {NS_DB BATCH TRANSACTION_REQUIRED}
+test prepared-rollback {late conversion failure leaves rollback and retry with the caller} -constraints preparedRows -setup preparedBegin -body {
+    set failed [catch {ns_db batchinsert $preparedHandle -table prepared_rows -schema $preparedSchema {{1 good 1 00} {2 bad Inf 00}}}]
+    ns_db dml $preparedHandle ROLLBACK
+    set empty [dict get [preparedRow {SELECT count(*) AS n FROM prepared_rows}] n]
+    ns_db dml $preparedHandle {BEGIN IMMEDIATE}
+    set r [ns_db batchinsert $preparedHandle -table prepared_rows -schema $preparedSchema {{1 retry 1.5 00}}]
+    list $failed $empty [dict get $r rows]
+} -cleanup preparedEnd -result {1 0 1}
+test prepared-boolean {JSON boolean lexical values bind as integers} -constraints preparedRows -setup preparedBegin -body {
+    set schema {id boolean-rows version 1 columns {{name id type boolean}}}
+    set r [ns_db batchinsert $preparedHandle -table prepared_rows -schema $schema {{true} {false}}]
+    list [dict get $r rows] [dict get [preparedRow {SELECT sum(id) AS total FROM prepared_rows}] total]
+} -cleanup preparedEnd -result {2 1}
+test prepared-null-type {a base null field needs no separate NULL mask} -constraints preparedRows -setup preparedBegin -body {
+    set schema {id null-rows version 1 columns {{name label type null}}}
+    set r [ns_db batchinsert $preparedHandle -table prepared_rows -schema $schema {{ignored}}]
+    list [dict get $r rows] [dict get [preparedRow {SELECT label IS NULL AS n FROM prepared_rows}] n]
+} -cleanup preparedEnd -result {1 1}
+if {$preparedHandle ne {}} {ns_db releasehandle $preparedHandle}
+rename preparedBegin {}
+rename preparedEnd {}
+rename preparedRow {}
+unset preparedHandle preparedCaps preparedSchema

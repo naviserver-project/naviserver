@@ -37,6 +37,24 @@ struct Ns_DbBatch {
 };
 
 /*
+ * A Tcl-row batch borrows ASCII lexical values for this synchronous call.
+ * Only non-ASCII strings need an external UTF-8 copy. The owning row list is
+ * retained until the driver returns; no application-specific producer exists.
+ */
+typedef struct {
+    Ns_DbBatchValue value;
+    size_t          offset;
+    bool            converted;
+} TclRowCell;
+
+typedef struct {
+    Tcl_Obj     *owner;
+    size_t       columns;
+    TclRowCell  *cells;
+    Tcl_DString  utf8;
+} TclRowPayload;
+
+/*
  * Function prototypes
  */
 
@@ -67,6 +85,12 @@ static int BatchGetTriples(Tcl_Interp *interp, const Ns_DbBatch *batch,
     NS_GNUC_NONNULL(1,2);
 static bool BatchIsCompatible(const Ns_DbBatch *batch, const Ns_DbBatchDriverOps *ops)
     NS_GNUC_NONNULL(1,2);
+static int TclRowsPrepare(Tcl_Obj *rowsObj, Tcl_Interp *interp, Tcl_Obj *document,
+                          Tcl_Obj *nullsObj, Ns_DbBatch *batch)
+    NS_GNUC_NONNULL(1,2,3,5);
+
+static Ns_DbBatchReadProc TclRowsRead NS_GNUC_NONNULL(1,4);
+static Ns_DbBatchFreeProc TclRowsFree NS_GNUC_NONNULL(1);
 static Tcl_FreeInternalRepProc BatchObjFree NS_GNUC_NONNULL(1);
 static Tcl_DupInternalRepProc BatchObjDup NS_GNUC_NONNULL(1,2);
 static Tcl_UpdateStringProc BatchObjUpdateString NS_GNUC_NONNULL(1);
@@ -74,7 +98,7 @@ static TCL_OBJCMDPROC_T BatchInfoObjCmd NS_GNUC_NONNULL(2,4);
 static TCL_OBJCMDPROC_T BatchInsertObjCmd NS_GNUC_NONNULL(2,4);
 
 static Tcl_ObjType batchType = {
-    "nsdbBatch",
+    "nsdb:batch",
     BatchObjFree,
     BatchObjDup,
     BatchObjUpdateString,
@@ -992,6 +1016,8 @@ BatchInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     DictPutString(result, NS_ATOM_driver, handle->driver);
     DictPutWide(result, NS_ATOM_supported, ops != NULL);
     DictPutWide(result, NS_ATOM_batchVersion, 1);
+    Tcl_DictObjPut(interp, result, Tcl_NewStringObj("tclRows", TCL_INDEX_NONE),
+                   Tcl_NewBooleanObj(ops != NULL));
     if (ops != NULL) {
         DictPutString(result, NS_ATOM_method, ops->method);
         DictPut(result, NS_ATOM_transaction, NsAtomObj(NS_ATOM_required));
@@ -1006,16 +1032,206 @@ BatchInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
 /*
  *----------------------------------------------------------------------
  *
+ * TclRowsRead --
+ *
+ *      Return a borrowed lexical cell for a synchronous driver callback.
+ *      Bounds and nullability are checked by Ns_DbBatchGetValue.
+ *
+ *      ASCII cells point into the retained Tcl row objects. Converted cells
+ *      use offsets into the completed UTF-8 buffer so buffer growth during
+ *      preparation cannot invalidate them.
+ *
+ * Results:
+ *      NS_OK with a length-delimited cell; no allocation or Tcl evaluation.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+TclRowsRead(const void *arg, size_t row, size_t column, Ns_DbBatchValue *value)
+{
+    const TclRowPayload *payload = arg;
+    const TclRowCell    *cell = &payload->cells[row * payload->columns + column];
+
+    *value = cell->value;
+    if (cell->converted) {
+        value->bytes = (const unsigned char *)payload->utf8.string + cell->offset;
+    }
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRowsFree --
+ *
+ *      Release call-local row ownership and converted UTF-8 storage.
+ *
+ *      Preparation and the sink share this call-local payload synchronously.
+ *      It retains the outer row list and owns the cell descriptors and
+ *      converted byte buffer.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Decrements the input row object's reference count and frees storage.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TclRowsFree(void *arg)
+{
+    TclRowPayload *payload = arg;
+
+    Tcl_DecrRefCount(payload->owner);
+    Tcl_DStringFree(&payload->utf8);
+    ns_free(payload->cells);
+    ns_free(payload);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRowsPrepare --
+ *
+ *      Validate rectangular Tcl rows and explicit per-row NULL column
+ *      indices before invoking a driver. Empty strings are ordinary values.
+ *      Numeric conversion remains the responsibility of the typed sink.
+ *
+ *      Retain the input rows for the synchronous sink call. Borrow ASCII
+ *      strings directly and copy non-ASCII values into external UTF-8 storage.
+ *      A null mask or null-typed column supplies explicit NULL; ordinary empty
+ *      strings remain values. On success the caller owns the schema and
+ *      payload through the output batch.
+ *
+ * Results:
+ *      TCL_OK with a call-local batch, or TCL_ERROR without retained state.
+ *
+ * Side effects:
+ *      Retains the input rows and allocates UTF-8 storage when required.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TclRowsPrepare(Tcl_Obj *rowsObj, Tcl_Interp *interp, Tcl_Obj *document,
+               Tcl_Obj *nullsObj, Ns_DbBatch *batch)
+{
+    Ns_DbBatchSchema *schema = BatchSchemaCreate(interp, document);
+    TclRowPayload    *payload;
+    Tcl_Obj        **rows, **nullRows = NULL;
+    TCL_SIZE_T       rowCount, nullCount;
+
+    if (schema == NULL) {
+        return TCL_ERROR;
+    }
+    if (Tcl_ListObjGetElements(interp, rowsObj, &rowCount, &rows) != TCL_OK
+        || (nullsObj != NULL
+            && (Tcl_ListObjGetElements(interp, nullsObj, &nullCount, &nullRows) != TCL_OK
+                || nullCount != rowCount))) {
+        BatchSchemaRelease(schema);
+        return Ns_DbBatchError(interp, "ROWS", "NULL rows must match the number of prepared rows");
+    }
+    if ((size_t)rowCount > SIZE_MAX / schema->columns / sizeof(TclRowCell)) {
+        BatchSchemaRelease(schema);
+        return Ns_DbBatchError(interp, "ROWS", "prepared rows exceed allocation limits");
+    }
+    payload = ns_calloc(1u, sizeof(*payload));
+    payload->owner = rowsObj;
+    Tcl_IncrRefCount(rowsObj);
+    payload->columns = schema->columns;
+    payload->cells = ns_calloc(rowCount == 0 ? 1u : (size_t)rowCount * schema->columns,
+                              sizeof(*payload->cells));
+    Tcl_DStringInit(&payload->utf8);
+    for (TCL_SIZE_T rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        Tcl_Obj   **values;
+        TCL_SIZE_T  count;
+
+        if (Tcl_ListObjGetElements(interp, rows[rowIndex], &count, &values) != TCL_OK
+            || (size_t)count != schema->columns) {
+            Ns_DbBatchError(interp, "ROWS", "prepared row width does not match schema");
+            goto invalid;
+        }
+        if (nullRows != NULL) {
+            Tcl_Obj   **indices;
+            TCL_SIZE_T  n;
+
+            if (Tcl_ListObjGetElements(interp, nullRows[rowIndex], &n, &indices) != TCL_OK) {
+                goto invalid;
+            }
+            for (TCL_SIZE_T index = 0; index < n; index++) {
+                Tcl_WideInt column;
+
+                if (Tcl_GetWideIntFromObj(interp, indices[index], &column) != TCL_OK
+                    || column < 0 || (size_t)column >= schema->columns) {
+                    Ns_DbBatchError(interp, "ROWS", "NULL column index is outside schema");
+                    goto invalid;
+                }
+                payload->cells[(size_t)rowIndex * schema->columns + (size_t)column].value.isNull = true;
+            }
+        }
+        for (size_t columnIndex = 0; columnIndex < schema->columns; columnIndex++) {
+            TclRowCell *cell = &payload->cells[(size_t)rowIndex * schema->columns + columnIndex];
+            TCL_SIZE_T  length;
+            const char *text;
+
+            if (strcmp(schema->fields[columnIndex].type, "null") == 0) {
+                cell->value.isNull = true;
+            } else if (cell->value.isNull && !schema->fields[columnIndex].nullable) {
+                Ns_DbBatchError(interp, "TYPE_MISMATCH", "NULL supplied for a nonnullable field");
+                goto invalid;
+            }
+            if (cell->value.isNull) {
+                continue;
+            }
+            text = Tcl_GetStringFromObj(values[columnIndex], &length);
+            cell->value.bytes = (const unsigned char *)text;
+            cell->value.length = (size_t)length;
+            for (TCL_SIZE_T index = 0; index < length; index++) {
+                if ((unsigned char)text[index] >= 0x80u) {
+                    Tcl_DString converted;
+
+                    Tcl_DStringInit(&converted);
+                    Tcl_UtfToExternalDString(schema->utf8, text, length, &converted);
+                    cell->offset = (size_t)payload->utf8.length;
+                    cell->value.length = (size_t)converted.length;
+                    cell->converted = true;
+                    Tcl_DStringAppend(&payload->utf8, converted.string, converted.length);
+                    Tcl_DStringFree(&converted);
+                    break;
+                }
+            }
+        }
+    }
+    batch->schema = schema;
+    batch->rows = (size_t)rowCount;
+    batch->payload = payload;
+    batch->read = TclRowsRead;
+    batch->release = TclRowsFree;
+    return TCL_OK;
+
+ invalid:
+    TclRowsFree(payload);
+    BatchSchemaRelease(schema);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * BatchInsertObjCmd --
  *
  *      This command implements "ns_db batchinsert". It validates the batch
  *      mapping and invokes the driver's native sink in the caller's
  *      transaction.
  *
- *      Resolve the opaque producer batch and validate identifiers, mapping,
- *      driver support and caller-owned transaction state before entering the
- *      sink. Measure only the sink call with the existing SQL timer and leave
- *      transaction completion to the caller.
+ *      Validate identifiers, mapping, driver support and caller-owned
+ *      transaction state before entering the sink. Accept either an opaque
+ *      producer batch or prepared Tcl rows with -schema. Measure only the sink
+ *      call with the existing SQL timer and leave transaction completion to
+ *      the caller. Release call-local row storage on both success and failure.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -1034,6 +1250,8 @@ BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     const Ns_DbBatchDriverOps *ops;
     Tcl_Obj                   *handleObj, *table = NULL, *mapping = NULL, *batchObj, *result;
     Ns_DbBatchMapping         *map;
+    Ns_DbBatch                 prepared = {0};
+    Tcl_Obj                   *schema = NULL, *nulls = NULL;
     size_t                     mapped = 0u;
     TCL_SIZE_T                 parts, remain;
     int                        rc = TCL_ERROR;
@@ -1047,6 +1265,8 @@ BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     Ns_ObjvSpec                options[] = {
         {"-table", Ns_ObjvObj, &table, NULL},
         {"-columns", Ns_ObjvObj, &mapping, NULL},
+        {"-schema", Ns_ObjvObj, &schema, NULL},
+        {"-nulls", Ns_ObjvObj, &nulls, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec                args[] = {
@@ -1067,8 +1287,7 @@ BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         return Ns_DbBatchError(interp, "UNSUPPORTED",
                                "driver has no batch insertion implementation");
     }
-    if (Ns_ParseObjv(options, args, interp, 3, objc, objv) != NS_OK
-        || BatchObjGet(interp, batchObj, &batch) != TCL_OK) {
+    if (Ns_ParseObjv(options, args, interp, 3, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
     if (table == NULL || Tcl_ListObjLength(interp, table, &parts) != TCL_OK || parts < 1
@@ -1086,6 +1305,16 @@ BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     }
     if (!handle->connected || handle->fetchingRows || NsDbGetActive(handle)) {
         return Ns_DbBatchError(interp, "INSERT", "handle is disconnected or has an active result");
+    }
+    if (schema != NULL) {
+        if (TclRowsPrepare(batchObj, interp, schema, nulls, &prepared) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        batch = &prepared;
+    } else if (nulls != NULL) {
+        return Ns_DbBatchError(interp, "ROWS", "-nulls requires -schema");
+    } else if (BatchObjGet(interp, batchObj, &batch) != TCL_OK) {
+        return TCL_ERROR;
     }
     map = ns_calloc(Ns_DbBatchColumnCount(batch), sizeof(*map));
     if (mapping == NULL) {
@@ -1165,6 +1394,10 @@ BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
 
  finish:
     ns_free(map);
+    if (prepared.schema != NULL) {
+        TclRowsFree(prepared.payload);
+        BatchSchemaRelease(prepared.schema);
+    }
     return rc;
 }
 
@@ -1191,7 +1424,8 @@ BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
 int
 NsDbBatchObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const *objv, bool insert)
 {
-    return insert ? BatchInsertObjCmd(NULL, interp, objc, objv)
+    return insert
+        ? BatchInsertObjCmd(NULL, interp, objc, objv)
         : BatchInfoObjCmd(NULL, interp, objc, objv);
 }
 

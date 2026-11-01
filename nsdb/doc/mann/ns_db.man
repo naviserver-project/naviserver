@@ -42,11 +42,14 @@ not a serializable or reconstructible batch handle.
 Report the checked-out handle's batch capabilities. supported is false for a
 driver without registered batch callbacks. Registered drivers report their method,
 base types, supported refinements/representations and transaction requirements.
+The tclRows boolean reports support for prepared Tcl-row input on this handle.
+Older cores omit this key.
 With a batch, compatible reports schema/type compatibility; it does not validate
 individual values, a destination table's affinities or its constraints.
 
 [call [cmd "ns_db batchinsert"] [arg handle] [option -table] [arg table] \
-    [opt "[option -columns] [arg mapping]"] [arg batch]]
+    [opt "[option -columns] [arg mapping]"] \
+    [opt "[option -schema] [arg schema]"] [opt "[option -nulls] [arg nulls]"] [arg batchOrRows]]
 
 Insert synchronously through a driver's explicitly registered batch implementation
 using the existing checked-out connection and an active caller-owned transaction.
@@ -67,6 +70,38 @@ conversion at the sink. No per-record Tcl dictionaries, triples or serialization
 are required. The initial shared provider ABI supports flat string, number,
 boolean and null columns; nested object/array schemas are explicitly rejected.
 JSON base types and optional schema refinements remain separate.
+
+[para] Prepared Tcl rows can be inserted directly with:
+
+[example {
+ns_db dml $handle {BEGIN IMMEDIATE}
+ns_db batchinsert $handle -table events -schema {
+    id event-rows version 1 columns {
+        {name id type number refinement int64 representation integer_decimal}
+        {name label type string nullable true}
+    }
+} -nulls {{} {1}} {{1 {a label}} {2 {}}}
+ns_db dml $handle COMMIT
+}]
+
+[para] With [option -schema], the final argument is a list of rows rather than
+an opaque C batch. Each row is a positional Tcl list with exactly one value per
+schema column. The schema uses the same flat descriptors and lexical values
+as C batches (for example, true/false for booleans and hexadecimal strings for
+encoded binary).
+[option -columns] retains its source-name to destination-name mapping semantics.
+Optional [option -nulls] is a parallel list containing zero-based NULL column
+indices for each row; it requires [option -schema]. Omission means no explicit
+NULL values except columns of base type null. Empty strings remain values and
+are never interpreted as NULL. Explicit NULLs require nullable columns.
+
+[para] All row widths and NULL indices are checked before insertion. Typed value
+conversion and destination compatibility remain with the driver. The input rows
+are retained synchronously and are not modified. No application C producer,
+opaque batch object or separate conversion command is required. The core borrows
+ASCII lexical values and converts non-ASCII Tcl strings to external UTF-8 when
+needed. Rows are not SQL fragments. Existing opaque C batch input remains
+unchanged when [option -schema] is omitted.
 
 [para] Success reports a dictionary with rows and method. The count represents
 changes within the transaction, not a durable commit. The driver must finish all
