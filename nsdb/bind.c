@@ -100,6 +100,9 @@ static CONST86 Tcl_ObjType sqlType = {
     SqlObjDup,
     NULL,
     NULL
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
 };
 
 
