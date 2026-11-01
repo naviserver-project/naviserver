@@ -40,7 +40,8 @@ test prepared-values {UTF-8, embedded NUL, empty TEXT, NULL, floating point and 
     set r [ns_db batchinsert $preparedHandle -table {temp prepared_rows} -schema $preparedSchema -nulls {{} {} {1}} $rows]
     set stored [preparedRow {SELECT hex(label) AS labelHex,amount,hex(payload) AS bytes,typeof(amount) AS kind FROM temp.prepared_rows WHERE id=1}]
     set states [preparedRow {SELECT (SELECT typeof(label) FROM temp.prepared_rows WHERE id=2) AS emptyType,(SELECT label IS NULL FROM temp.prepared_rows WHERE id=3) AS nullValue}]
-    list [dict get $r rows] [expr {$rows eq $original}] [expr {[dict get $stored labelHex] eq [string toupper [binary encode hex [encoding convertto utf-8 $label]]]}] [dict get $stored amount] [dict get $stored bytes] [dict get $stored kind] $states
+    binary scan [encoding convertto utf-8 $label] H* labelHex
+    list [dict get $r rows] [expr {$rows eq $original}] [expr {[dict get $stored labelHex] eq [string toupper $labelHex]}] [dict get $stored amount] [dict get $stored bytes] [dict get $stored kind] $states
 } -cleanup preparedEnd -result {3 1 1 1.25 610062 real {emptyType text nullValue 1}}
 test prepared-empty {an empty prepared row list is a valid no-op} -constraints preparedRows -setup preparedBegin -body {
     dict get [ns_db batchinsert $preparedHandle -table prepared_rows -schema $preparedSchema {}] rows

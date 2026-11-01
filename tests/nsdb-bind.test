@@ -92,7 +92,7 @@ test nsdb-bind-binary-width {column metadata width is checked before driver exec
 } -result 1
 ::tcltest::testConstraint coreNoNativeBinding [expr {![ns_db bindinfo $bindCoreHandle]}]
 test nsdb-bind-binary-driver {missing binary callback never falls back to text execution} -constraints coreNoNativeBinding -body {
-    set data [binary decode hex 00ff]
+    set data [binary format H* 00ff]
     catch {ns_db exec $bindCoreHandle -bindvars -bindtypes {data binary} {SELECT :data}} message
     string match {*does not support explicit binary binding*} $message
 } -result 1

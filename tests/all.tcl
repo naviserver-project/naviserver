@@ -29,6 +29,15 @@ package require tcltest 2.2
 namespace import tcltest::*
 configure {*}$argv -singleproc true -testdir [file dirname [info script]]
 
+#
+# Always show unexpected error messages, stack traces and error codes. Explicit
+# verbosity settings (for example, -verbose start in CI) otherwise replace the
+# tcltest default and can hide the reason for a test's unexpected return code.
+#
+if {"error" ni [configure -verbose]} {
+    configure -verbose [linsert [configure -verbose] end error]
+}
+
 set verboseTest 0
 
 if {$verboseTest} {
