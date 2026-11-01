@@ -36,6 +36,10 @@ NS_EXTERN int NsDbBatchInitInterp(Tcl_Interp *) NS_GNUC_NONNULL(1);
 NS_EXTERN int NsDbBatchObjCmd(Tcl_Interp *, TCL_SIZE_T, Tcl_Obj *const *, bool) NS_GNUC_NONNULL(1,3);
 NS_EXTERN const Ns_DbBatchDriverOps *NsDbGetBatchOps(const Ns_DbHandle *) NS_GNUC_NONNULL(1);
 
+NS_EXTERN Ns_DbBindParameterProc *NsDbGetBindParameterProc(const Ns_DbHandle *);
+NS_EXTERN int NsDbBindObjCmd(Tcl_Interp *, TCL_SIZE_T, Tcl_Obj *const *, const char *)
+    NS_GNUC_NONNULL(1,3,4);
+
 #endif
 
 

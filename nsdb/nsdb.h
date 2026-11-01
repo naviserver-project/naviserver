@@ -67,6 +67,9 @@ typedef enum {
     /* Fixed extension ID: preserve all legacy IDs, including DbFn_End,
      * whether deprecated callbacks are enabled or not. */
     DbFn_Batch = 24,
+    DbFn_Bind = 25,
+    DbFn_BindParameter = 26,
+    DbFn_BindTyped = 27,
 } Ns_DbProcId;
 
 /*
@@ -128,6 +131,32 @@ NS_EXTERN const char *NS_EMPTY_STRING;
 /*
  * dbdrv.c:
  */
+
+/* Optional bound execution. Values are borrowed Tcl strings; NULL pointers
+ * represent SQL NULL. Drivers must not retain these objects after returning. */
+#define NS_DB_BIND_ABI 1
+/* Optional marker factory for expanded slots. Return a new, unreferenced Tcl
+ * string for a zero-based position. The format is fixed for this callback. */
+#define NS_DB_BIND_PARAMETER_ABI 1
+typedef Tcl_Obj *(Ns_DbBindParameterProc)(TCL_SIZE_T position);
+
+typedef int (Ns_DbBindExecProc)(Tcl_Interp *, Ns_DbHandle *, const char *,
+                              TCL_SIZE_T, Tcl_Obj *const *, Tcl_Obj *const *);
+NS_EXTERN bool Ns_DbBindSupported(const Ns_DbHandle *);
+NS_EXTERN int Ns_DbBindExec(Tcl_Interp *, Ns_DbHandle *, const char *, TCL_SIZE_T,
+                            Tcl_Obj *const *, Tcl_Obj *const *);
+
+/* Explicit binary interpretation is an optional extension to text binding.
+ * The existing callback ABI is unchanged. A NULL types array means all text. */
+#define NS_DB_BIND_TYPED_ABI 1
+typedef enum {
+    NS_DB_BIND_TEXT, NS_DB_BIND_BINARY
+} Ns_DbBindValueType;
+typedef int (Ns_DbBindTypedExecProc)(Tcl_Interp *, Ns_DbHandle *, const char *,
+                                   TCL_SIZE_T, Tcl_Obj *const *, Tcl_Obj *const *,
+                                   const Ns_DbBindValueType *);
+NS_EXTERN int Ns_DbBindTypedExec(Tcl_Interp *, Ns_DbHandle *, const char *, TCL_SIZE_T,
+                                 Tcl_Obj *const *, Tcl_Obj *const *, const Ns_DbBindValueType *);
 
 NS_EXTERN Ns_ReturnCode Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs);
 NS_EXTERN char         *Ns_DbDriverName(Ns_DbHandle *handle);

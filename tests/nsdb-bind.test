@@ -1,0 +1,177 @@
+package require tcltest 2.2
+namespace import -force ::tcltest::test
+
+# Source validation and transparent-cache safety are core responsibilities.
+# Native execution/cardinality tests also run in SQLite and nsmcp suites.
+set bindCoreHandle [ns_db gethandle [lindex [ns_db pools] 0]]
+test nsdb-bind-removed {preparation and separate execution commands are removed} -body {
+    list [catch {ns_db bindplan {SELECT 1}}] [catch {ns_db bindexec $bindCoreHandle {SELECT 1}}]
+} -result {1 1}
+test nsdb-bind-exclusive {binding source flags cannot be combined} -body {
+    catch {ns_db exec $bindCoreHandle -bindvars -binddict {} {SELECT 1}} message
+    string match {*mutually exclusive*} $message
+} -result 1
+test nsdb-bind-missing-var {missing variables are errors even under emptynull} -body {
+    unset -nocomplain missingCoreBinding
+    catch {ns_db exec $bindCoreHandle -bindvars -emptynull {SELECT :missingCoreBinding}} message
+    string match {*missingCoreBinding*} $message
+} -result 1
+test nsdb-bind-missing-dict {explicit sources never fall back to caller variables} -body {
+    set v caller
+    catch {ns_db exec $bindCoreHandle -binddict {} -emptynull {SELECT :v}} message
+    string match {*undefined bind variable*} $message
+} -result 1
+test nsdb-bind-missing-set {missing ns_set keys are errors} -body {
+    set values [ns_set create bindings]
+    try {
+        catch {ns_db exec $bindCoreHandle -bindset $values {SELECT :v}} message
+        string match {*undefined bind variable*} $message
+    } finally {ns_set free $values}
+} -result 1
+test nsdb-bind-incomplete {options require a source, a source value where needed, and SQL} -body {
+    list [catch {ns_db exec $bindCoreHandle -bindvars}] \
+        [catch {ns_db exec $bindCoreHandle -bindset}] \
+        [catch {ns_db exec $bindCoreHandle -emptynull {SELECT 1}}]
+} -result {1 1 1}
+test nsdb-bind-lexing {malformed quoted SQL is rejected before the driver is invoked} -body {
+    list [catch {ns_db exec $bindCoreHandle -bindvars {SELECT 'unfinished}}] \
+        [catch {ns_db exec $bindCoreHandle -bindvars {SELECT 1 /* unfinished}}]
+} -result {1 1}
+test nsdb-bind-old-options {missingnull and the ambiguous bind option are not accepted} -body {
+    list [catch {ns_db exec $bindCoreHandle -bindvars -missingnull {SELECT 1}}] \
+        [catch {ns_db exec $bindCoreHandle -bind {} {SELECT 1}}]
+} -result {1 1}
+test nsdb-bind-version {capability version distinguishes the base-command binding API} -body {
+    set version [ns_db bindinfo $bindCoreHandle -version]
+    expr {$version == ([ns_db bindinfo $bindCoreHandle] ? 5 : 0)}
+} -result 1
+test nsdb-bind-types-source {types do not replace the required value source} -body {
+    catch {ns_db exec $bindCoreHandle -bindtypes {ids list} {SELECT 1 IN(:ids)}}
+} -result 1
+test nsdb-bind-types-unknown {unknown interpretations are rejected before driver execution} -body {
+    set ids {1 2}
+    catch {ns_db exec $bindCoreHandle -bindvars -bindtypes {ids array} {SELECT 1 IN(:ids)}} message
+    string match {*expected scalar, list, rows or binary*} $message
+} -result 1
+test nsdb-bind-types-unused {metadata keys must name actual SQL parameters} -body {
+    set ids {1 2}
+    catch {ns_db exec $bindCoreHandle -bindvars -bindtypes {typo list} {SELECT 1 IN(:ids)}} message
+    string match {*unused parameter*} $message
+} -result 1
+test nsdb-bind-types-empty {empty containers remain invalid under emptynull} -body {
+    set ids {}
+    catch {ns_db exec $bindCoreHandle -bindvars -emptynull -bindtypes {ids list} {SELECT 1 IN(:ids)}} message
+    string match {*empty list binding*} $message
+} -result 1
+test nsdb-bind-types-missing {a list declaration cannot supply missing values} -body {
+    unset -nocomplain missingTypedCore
+    catch {ns_db exec $bindCoreHandle -binddict {} -bindtypes {missingTypedCore list} {SELECT 1 IN(:missingTypedCore)}} message
+    string match {*undefined bind variable*} $message
+} -result 1
+test nsdb-bind-types-list-layout {invalid Tcl lists fail before driver execution} -body {
+    set ids \{
+    catch {ns_db exec $bindCoreHandle -bindvars -bindtypes {ids list} {SELECT 1 IN(:ids)}} message
+    string match {*unmatched*} $message
+} -result 1
+
+test nsdb-bind-rows-invalid {ragged rows are rejected by core before driver execution} -body {
+    set rows {{1 one} {2}}
+    catch {ns_db dml $bindCoreHandle -bindvars -bindtypes {rows rows} {INSERT INTO items VALUES :rows}} message
+    string match {*equal width*} $message
+} -result 1
+
+test nsdb-bind-binary-columns {collection types cannot be used as row column types} -body {
+    set rows {{one two}}
+    catch {ns_db dml $bindCoreHandle -bindvars -bindtypes {rows {rows {binary list}}} {INSERT INTO items VALUES :rows}} message
+    string match {*column types must be scalar or binary*} $message
+} -result 1
+test nsdb-bind-binary-width {column metadata width is checked before driver execution} -body {
+    set rows {{one two}}
+    catch {ns_db dml $bindCoreHandle -bindvars -bindtypes {rows {rows {binary}}} {INSERT INTO items VALUES :rows}} message
+    string match {*row width does not match*} $message
+} -result 1
+::tcltest::testConstraint coreNoNativeBinding [expr {![ns_db bindinfo $bindCoreHandle]}]
+test nsdb-bind-binary-driver {missing binary callback never falls back to text execution} -constraints coreNoNativeBinding -body {
+    set data [binary decode hex 00ff]
+    catch {ns_db exec $bindCoreHandle -bindvars -bindtypes {data binary} {SELECT :data}} message
+    string match {*does not support explicit binary binding*} $message
+} -result 1
+
+test nsdb-bind-legacy-names-dict {legacy continuation characters form one complete binding name} -body {
+    set result {}
+    foreach name {oracle$number phone# _mixed$#9 a1$2#3} {
+        catch {ns_db exec $bindCoreHandle -binddict {} [format {SELECT :%s} $name]} message
+        lappend result [expr {$message eq [format {undefined bind variable '%s'} $name]}]
+    }
+    set result
+} -result {1 1 1 1}
+
+test nsdb-bind-legacy-names-vars {missing caller variables report the entire legacy name} -body {
+    set result {}
+    foreach name {missing$number missing#} {
+        unset -nocomplain $name
+        catch {ns_db exec $bindCoreHandle -bindvars [format {SELECT :%s} $name]} message
+        lappend result [expr {[string first $name $message] >= 0}]
+    }
+    set result
+} -result {1 1}
+
+test nsdb-bind-legacy-names-set {missing ns_set keys and PostgreSQL casts preserve full names} -body {
+    set values [ns_set create bindings oracle partial]
+    try {
+        catch {ns_db exec $bindCoreHandle -bindset $values {SELECT :oracle$number#::text}} message
+        expr {$message eq {undefined bind variable 'oracle$number#'}}
+    } finally {
+        ns_set free $values
+    }
+} -result 1
+
+
+test nsdb-bind-parser-duplicates {repeated sources and metadata remain errors} -body {
+    set result {}
+    foreach options {
+        {-bindvars -bindvars}
+        {-binddict {} -binddict {}}
+        {-bindvars -bindset bogus}
+        {-bindvars -bindtypes {} -bindtypes {}}
+    } {
+        catch {ns_db exec $bindCoreHandle {*}$options {SELECT 1}} message
+        lappend result [expr {[string match {*mutually exclusive*} $message]
+                             || [string match {*only be supplied once*} $message]}]
+    }
+    set result
+} -result {1 1 1 1}
+
+test nsdb-bind-parser-commands {all bound operations use the standard option parser} -body {
+    set result {}
+    foreach operation {exec dml select 1row 0or1row} {
+        catch {ns_db $operation $bindCoreHandle -binddict {} -emptynull \
+                   -bindtypes {} -- {SELECT :parserMissing}} message
+        lappend result [string match {*undefined bind variable 'parserMissing'*} $message]
+    }
+    set result
+} -result {1 1 1 1 1}
+
+test nsdb-bind-parser-errors {missing values, surplus SQL and invalid dictionaries fail} -body {
+    set result {}
+    foreach options {
+        {-bindvars -bindtypes}
+        {-binddict}
+        {-bindset}
+        {-bindvars --}
+        {-bindvars -- {SELECT 1} extra}
+        {-binddict odd {SELECT 1}}
+        {-bindvars -unknown {SELECT 1}}
+    } {
+        lappend result [catch {ns_db exec $bindCoreHandle {*}$options}]
+    }
+    set result
+} -result {1 1 1 1 1 1 1}
+
+test nsdb-bind-parser-info {capability parsing rejects missing and surplus arguments} -body {
+    list [catch {ns_db bindinfo}] \
+         [catch {ns_db bindinfo $bindCoreHandle -bogus}] \
+         [catch {ns_db bindinfo $bindCoreHandle -version extra}]
+} -result {1 1 1}
+
+ns_db releasehandle $bindCoreHandle

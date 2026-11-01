@@ -610,6 +610,161 @@ variables have to be set earlier to appropriate values.
 [example_end]
 
 
+[section {NATIVE BIND VARIABLES}]
+
+Binding is opt-in on the existing [cmd {ns_db exec}], [cmd {ns_db dml}],
+[cmd {ns_db select}], [cmd {ns_db 1row}] and [cmd {ns_db 0or1row}] commands:
+
+[example_begin]
+ ns_db exec $handle -bindvars $sql
+ ns_db dml $handle -bindset $values $sql
+ ns_db select $handle -binddict $values -emptynull $sql
+[example_end]
+
+Exactly one source must be supplied: [option -bindvars] resolves names from
+caller Tcl variables; [option -bindset] takes an ns_set ID; [option -binddict]
+takes a Tcl dictionary. Explicit keys omit the parameter's colon. Sources are
+mutually exclusive and explicit sources never fall back to caller variables.
+Missing bindings always raise errors, including when [option -emptynull] is
+present. Name scanning follows [cmd ns_pg_bind]: the first character is a
+letter (C [const isalpha] classification) or underscore; subsequent characters
+are alphanumeric (C [const isalnum] classification), underscore, dollar sign or
+number sign. Character classification uses the current C locale and operates
+on bytes, not Unicode characters. For example, [const :phone#] and
+[const :oracle$number] each identify one parameter. Dollar signs within a name
+are continuation characters, not the start of another binding. Names containing
+dollar or number signs use cached driver-marker rewriting, so drivers need not
+support these characters in their native parameter grammar.
+
+[para]
+Values are strings by default, including numeric Tcl objects; column affinity
+applies normally. Empty strings remain empty text. [option -emptynull] maps
+supplied empty values to SQL NULL; it does not make missing names valid.
+Identifiers and SQL fragments cannot be parameters. SQL/text containing NUL
+is rejected. Values are never evaluated as Tcl or concatenated into SQL.
+
+[para]
+[option {-bindtypes dictionary}] declares per-parameter interpretation,
+independently of the binding source. Keys omit the colon prefix. Supported
+values are [const scalar] (the default), [const list], [const rows] and [const binary]. A scalar remains one
+text value even if its Tcl internal representation is a list. A list expands
+its placeholder into comma-separated native parameters, one for each Tcl list
+element. SQL supplies the surrounding parentheses, for example [const {IN (:ids)}].
+A [const rows] value is a nonempty Tcl list of nonempty, equal-width row lists.
+Its placeholder expands into parenthesized rows of native parameters, for example
+[const {INSERT INTO items VALUES :rows}]. The row container supplies parentheses;
+SQL must not add another pair around the placeholder.
+No list element or row cell is concatenated or quoted into SQL. Application SQL uses colon-prefixed names.
+
+[para]
+Malformed or empty lists, unsupported type names, unused metadata keys and
+missing values are errors before execution. [option -emptynull] applies to
+empty scalar/list-element/row-cell values, not containers. Row cells remain
+scalar unless column types explicitly declare binary; deeper nesting is not
+expanded. Ragged, empty or malformed rows are errors before execution.
+Metadata does not add array or raw-SQL interpretations.
+
+[para]
+[const binary] explicitly interprets a value using Tcl bytearray semantics. It
+never decodes hex or base64. SQLite binds these bytes as BLOBs, including NUL
+and high bytes. An empty binary value is a zero-length BLOB unless
+[option -emptynull] maps it to SQL NULL. Untyped and [const scalar] values
+retain text semantics even when their Tcl object is a bytearray.
+
+[para]
+[const {rows {binary scalar scalar}}] declares one type per row column.
+Only scalar and binary column types are accepted; the declaration must be
+nonempty and match the row width. Bare [const rows] retains all-scalar cells.
+For example, [option {-bindtypes {values {rows {binary scalar scalar}}}}]
+can bind [const {INSERT INTO peers VALUES :values}] directly.
+Column types and values are refreshed on every execution, independent of the
+cached SQL shape. Drivers must implement the optional [const DbFn_BindTyped]
+callback for explicit binary values; otherwise execution fails without falling
+back to text. The existing text callback ABI is unchanged.
+
+[para]
+Parameter token positions are cached in the SQL Tcl object. Repeated list
+occurrences reuse slots. One last-expanded SQL shape is cached per token plan;
+changing list lengths regenerates the SQL from cached positions, without
+reparsing the source. Values are resolved anew. All parameters are renamed in
+expanded SQL so generated element names cannot collide with source names.
+An optional driver marker factory supplies efficient native slot syntax. SQLite
+uses numbered slots; other drivers can retain named markers. The cached shape
+includes the marker-factory identity so different driver formats cannot share
+the wrong expanded SQL. Externally encoded SQL is cached with the token plan: one base statement and
+one last-expanded statement. Changes to Tcl's system encoding regenerate the
+corresponding bytes. Changes to the expansion shape or driver marker factory
+invalidate the expanded bytes. Duplicated SQL objects share the plan and encoded
+buffers; changes to SQL text invalidate its Tcl internal representation normally.
+Buffers are pinned during driver calls so nested execution cannot free active
+SQL. NUL rejection is applied when encoding a new buffer. Parameter values are
+always resolved and converted anew; they are never cached with the SQL.
+There is still no connection-level prepared-statement cache.
+
+[example_begin]
+ set ids {42 57 91}
+ set status active
+ set rows [ns_db select $handle -bindvars -bindtypes {ids list} {
+     SELECT id FROM items WHERE id IN (:ids) AND status=:status
+ }]
+ while {[ns_db getrow $handle $rows]} {
+     # Consume each row using ns_set.
+ }
+ ns_db flush $handle
+ ns_set free $rows
+[example_end]
+
+[para]
+The SQL Tcl object transparently caches unique [const :name] parameter names
+on first bound execution. Every execution resolves current values. SQL
+literals, doubled quote delimiters, quoted identifiers, SQLite bracket/backtick
+identifiers and line/block comments do not introduce parameters. PostgreSQL
+casts are skipped; PostgreSQL escape-string/dollar-quoted bodies are not
+implemented by this lexer. There is no public preparation or separate bound
+execution command.
+
+[para]
+Each command keeps its usual return shape. [cmd {ns_db exec}] returns
+[const NS_DML] or [const NS_ROWS]; [cmd {ns_db dml}] rejects row-returning SQL;
+[cmd {ns_db select}] returns a fetchable set; [cmd {ns_db 1row}] and
+[cmd {ns_db 0or1row}] enforce their row counts and return owned sets as usual.
+Fetch, flush, transaction ownership and ordinary calls without binding options
+are unchanged. One complete statement is executed, including a SQLite trigger
+body with semicolons; SQL following that statement is rejected before execution.
+Script splitting belongs to the application.
+
+[para]
+[cmd {ns_db bindinfo}] [arg handle] reports whether the driver supplies native
+bound execution. Its optional [option -version] returns Tcl binding API version
+5 for binary values and row column types (4 denotes untyped rows;
+3 denotes scalar/list types; 2 denotes the preceding
+scalar-only options), or 0 when unsupported. The default
+boolean result remains compatible with the earlier binding API. This is an optional callback; unsupported drivers report an
+error when binding options are requested. SQL logging records the template
+without substituting bound values. Cached Tcl metadata does not introduce a
+connection-level SQLite prepared-statement cache.
+
+[example_begin]
+ set id 42
+ ns_db exec $handle -bindvars {SELECT label FROM items WHERE id=:id}
+ set row [ns_db bindrow $handle]
+ while {[ns_db getrow $handle $row]} {
+     # Consume the row using ns_set.
+ }
+ ns_db flush $handle
+
+ set values [ns_set create bindings id 42 label {}]
+ ns_db dml $handle -bindset $values -emptynull {
+     UPDATE items SET label=:label WHERE id=:id
+ }
+ ns_set free $values
+
+ set row [ns_db 1row $handle -binddict [dict create id 42] {
+     SELECT label FROM items WHERE id=:id
+ }]
+ ns_set free $row
+[example_end]
+
 [see_also ns_buildsqldate ns_dbquotevalues]
 [keywords "server built-in" module nsdb database SQL pools]
 

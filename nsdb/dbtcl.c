@@ -310,7 +310,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     enum {
         ZERO_OR_ONE_ROW,
         ONE_ROW,
-        BATCHINFO, BATCHINSERT,
+        BATCHINFO, BATCHINSERT, BINDINFO,
         BINDROW,
         BOUNCEPOOL,
         CANCEL,
@@ -355,7 +355,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     static const char *const subcmd[] = {
         "0or1row",
         "1row",
-        "batchinfo", "batchinsert",
+        "batchinfo", "batchinsert", "bindinfo",
         "bindrow",
         "bouncepool",
         "cancel",
@@ -406,7 +406,15 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         return TCL_ERROR;
     }
 
+    if ((cmd == EXEC || cmd == DML || cmd == SELECT || cmd == ONE_ROW || cmd == ZERO_OR_ONE_ROW)
+        && objc >= 4
+        && (strncmp(Tcl_GetString(objv[3]), "-bind", 5u) == 0
+            || strcmp(Tcl_GetString(objv[3]), "-emptynull") == 0)) {
+        return NsDbBindObjCmd(interp, objc, objv, subcmd[cmd]);
+    }
+
     switch (cmd) {
+    case BINDINFO: return NsDbBindObjCmd(interp, objc, objv, "bindinfo");
     case BATCHINFO: return NsDbBatchObjCmd(interp, objc, objv, NS_FALSE);
     case BATCHINSERT: return NsDbBatchObjCmd(interp, objc, objv, NS_TRUE);
     case POOLS:

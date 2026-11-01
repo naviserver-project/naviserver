@@ -74,6 +74,9 @@ typedef struct DbDriver {
     SpGetParamsProc  *spgetparamsProc;
     VersionProc      *versionProc;
     const Ns_DbBatchDriverOps *batchOps;
+    Ns_DbBindExecProc *bindExecProc;
+    Ns_DbBindTypedExecProc *bindTypedExecProc;
+    Ns_DbBindParameterProc *bindParameterProc;
 } DbDriver;
 
 /*
@@ -205,6 +208,18 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
 
         case DbFn_SpGetParams:
             driverPtr->spgetparamsProc = (SpGetParamsProc *) procs->func;
+            break;
+
+        case DbFn_BindParameter:
+            driverPtr->bindParameterProc = (Ns_DbBindParameterProc *) procs->func;
+            break;
+
+        case DbFn_BindTyped:
+            driverPtr->bindTypedExecProc = (Ns_DbBindTypedExecProc *) procs->func;
+            break;
+
+        case DbFn_Bind:
+            driverPtr->bindExecProc = (Ns_DbBindExecProc *) procs->func;
             break;
 
         case DbFn_Batch:
@@ -1138,6 +1153,66 @@ NsDbGetBatchOps(const Ns_DbHandle *handle)
     const DbDriver *driver = NsDbGetDriver(handle);
 
     return driver == NULL ? NULL : driver->batchOps;
+}
+
+/* Bound statements use the existing driver timing/logging path. Values are
+ * deliberately excluded from SQL logging. Drivers without this optional
+ * callback continue to support the unchanged ordinary execution interface. */
+bool
+Ns_DbBindSupported(const Ns_DbHandle *handle)
+{
+    const DbDriver *driver = NsDbGetDriver(handle);
+
+    return driver != NULL && driver->bindExecProc != NULL;
+}
+
+int
+Ns_DbBindExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
+              TCL_SIZE_T count, Tcl_Obj *const *names, Tcl_Obj *const *values)
+{
+    const DbDriver *driver = NsDbGetDriver(handle);
+    int status = NS_ERROR;
+
+    if (handle->connected && driver != NULL && driver->bindExecProc != NULL) {
+        Ns_Time start;
+
+        Ns_GetTime(&start);
+        status = driver->bindExecProc(interp, handle, sql, count, names, values);
+        NsDbLogSql(&start, handle, sql);
+    } else {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support bound execution", -1));
+    }
+    return status;
+}
+
+/* Binary values must never silently fall back to the text callback. */
+int
+Ns_DbBindTypedExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
+                  TCL_SIZE_T count, Tcl_Obj *const *names, Tcl_Obj *const *values,
+                  const Ns_DbBindValueType *types)
+{
+    const DbDriver *driver = NsDbGetDriver(handle);
+    int status = NS_ERROR;
+
+    if (handle->connected && driver != NULL && driver->bindTypedExecProc != NULL) {
+        Ns_Time start;
+
+        Ns_GetTime(&start);
+        status = driver->bindTypedExecProc(interp, handle, sql, count, names, values, types);
+        NsDbLogSql(&start, handle, sql);
+    } else {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support explicit binary binding", -1));
+    }
+    return status;
+}
+
+/* Drivers may choose their efficient native marker syntax for list slots. */
+Ns_DbBindParameterProc *
+NsDbGetBindParameterProc(const Ns_DbHandle *handle)
+{
+    const DbDriver *driver = NsDbGetDriver(handle);
+
+    return driver == NULL ? NULL : driver->bindParameterProc;
 }
 
 /*
