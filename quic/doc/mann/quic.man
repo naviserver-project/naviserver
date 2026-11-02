@@ -29,8 +29,9 @@ OpenSSL 3.1 and integrates it directly into NaviServer's driver model.
 [para]
 
 This module requires NaviServer to be built with
-[const --with-openssl] and OpenSSL 4.0.2 or newer, as HTTP/3 support is
-based on the OpenSSL QUIC API introduced in OpenSSL 3.1+, and which is
+[const --with-openssl] and OpenSSL 4.0.2 or newer.
+OpenSSL 4.0.3 is the recommended. NaviServer's HTTP/3 support is
+based on the OpenSSL QUIC API introduced in OpenSSL 3.*, and which is
 feature complete for this server in OpenSSL 4.0.2+.
 
 [section CONFIGURATION]
