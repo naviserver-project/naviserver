@@ -601,6 +601,7 @@ static nghttp3_ssize     h3_stream_read_data_cb(nghttp3_conn *UNUSED(conn), int6
 
 /* H3 submit/resume & lifecycle */
 static int               h3_stream_submit_ready_headers(StreamCtx *sc) NS_GNUC_NONNULL(1);
+static void              h3_stream_abort_response(StreamCtx *sc, uint64_t errorCode, const char *reason) NS_GNUC_NONNULL(1,3);
 static H3DrainResultCode h3_stream_drain(ConnCtx *cc, SSL *stream, uint64_t sid, const char *label) NS_GNUC_NONNULL(1);
 static bool              h3_stream_maybe_finalize(StreamCtx *sc, const char *label) NS_GNUC_NONNULL(1,2);
 static bool              h3_stream_can_free(const StreamCtx *sc) NS_GNUC_NONNULL(1);
@@ -3218,48 +3219,9 @@ h3_conn_write_step(ConnCtx *cc)
                 const SharedTxStatus status = SharedTxStatusRead(&ssc->sh);
 
                 if (status.abort_requested) {
-                    SSL_STREAM_RESET_ARGS resetArgs = {
-                        .quic_error_code = NGHTTP3_H3_REQUEST_CANCELLED
-                    };
-                    int ok;
-
-                    /*
-                     * Permanently prevent nghttp3 from scheduling further response
-                     * data for this stream.
-                     */
-                    nghttp3_conn_shutdown_stream_write(cc->h3conn, sid);
-                    ssc->transport_blocked = NS_FALSE;
-
-                    ERR_clear_error();
-                    ok = SSL_stream_reset(ssc->ssl,
-                                          &resetArgs, sizeof(resetArgs));
-                    if (ok != 1) {
-                        const unsigned long sslErr = ERR_peek_error();
-
-                        Ns_Log(Error,
-                               "[%lld] H3[%lld] SSL_stream_reset failed: "
-                               "lib=%d reason=%d (%s)",
-                               (long long)dc->iter,
-                               (long long)sid,
-                               sslErr != 0u ? ERR_GET_LIB(sslErr) : 0,
-                               sslErr != 0u ? ERR_GET_REASON(sslErr) : 0,
-                               sslErr != 0u && ERR_reason_error_string(sslErr) != NULL
-                               ? ERR_reason_error_string(sslErr)
-                               : "no OpenSSL error");
-                        ERR_clear_error();
-                    }
-
-                    /*
-                     * Record the processed terminal state only after attempting the
-                     * transport reset.
-                     */
-                    StreamCtxIoReset(ssc);
+                    h3_stream_abort_response(ssc, NGHTTP3_H3_REQUEST_CANCELLED,
+                                             "writer abort");
                     did_progress = NS_TRUE;
-
-                    /*
-                     * Existing reset handling disables W and schedules cleanup.
-                     */
-                    (void)h3_stream_maybe_finalize(ssc, "writer abort");
                     continue;
                 }
             }
@@ -3269,8 +3231,18 @@ h3_conn_write_step(ConnCtx *cc)
              * notification for headers which were submitted concurrently.
              */
             if (SharedHdrsIsReady(&ssc->sh)) {
-                if (h3_stream_submit_ready_headers(ssc) != 0) {
-                    /* error already logged inside; continue to next sid */
+                const int rv = h3_stream_submit_ready_headers(ssc);
+
+                if (rv != 0) {
+                    if (nghttp3_err_is_fatal(rv)) {
+                        quic_conn_enter_shutdown(cc,
+                                                 "fatal response header submission failure");
+                        return NS_TRUE;
+                    }
+
+                    h3_stream_abort_response(ssc, NGHTTP3_H3_INTERNAL_ERROR,
+                                             "response header submission failed");
+                    did_progress = NS_TRUE;
                     continue;
                 }
             }
@@ -5483,6 +5455,80 @@ h3_stream_submit_ready_headers(StreamCtx *sc)
     }
 
     return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * h3_stream_abort_response --
+ *
+ *      Abort response transmission for a bidirectional request stream.
+ *      The caller must run on the owning QUIC thread with a valid
+ *      stream SSL object.
+ *
+ *      Stop further response scheduling in nghttp3, attempt a QUIC
+ *      stream reset with the supplied application error code, and
+ *      publish the local terminal state. The reason identifies the
+ *      abort in diagnostics and finalization.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Marks the shared response as aborted, clears header readiness
+ *      and transport-blocked state, and wakes blocked producers.
+ *      Logs transport-reset failures. Invokes normal finalization to
+ *      disable write interest and schedule deferred cleanup, subject
+ *      to the existing resource-lifetime checks.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+h3_stream_abort_response(StreamCtx *sc, uint64_t errorCode,
+                         const char *reason)
+{
+    ConnCtx              *cc = sc->cc;
+    NsTLSConfig          *dc = cc->dc;
+    SSL_STREAM_RESET_ARGS resetArgs = {
+        .quic_error_code = errorCode
+    };
+    int                   ok;
+
+    NS_TA_ASSERT_HELD(cc, affinity);
+    assert(StreamCtxIsBidi(sc));
+    assert(sc->ssl != NULL);
+
+    SharedMarkAbortRequested(&sc->sh);
+    SharedHdrsClear(&sc->sh);
+
+    nghttp3_conn_shutdown_stream_write(cc->h3conn, h3_stream_id(sc));
+    sc->transport_blocked = NS_FALSE;
+
+    ERR_clear_error();
+    ok = SSL_stream_reset(sc->ssl, &resetArgs, sizeof(resetArgs));
+    if (ok != 1) {
+        const unsigned long sslErr = ERR_peek_error();
+        const char         *errorString =
+            sslErr != 0u ? ERR_reason_error_string(sslErr) : NULL;
+
+        Ns_Log(Error,
+               "[%lld] H3[%lld] SSL_stream_reset failed (%s): "
+               "lib=%d reason=%d (%s)",
+               (long long)dc->iter,
+               (long long)sc->quic_sid,
+               reason,
+               sslErr != 0u ? ERR_GET_LIB(sslErr) : 0,
+               sslErr != 0u ? ERR_GET_REASON(sslErr) : 0,
+               errorString != NULL ? errorString : "no OpenSSL error");
+        ERR_clear_error();
+    }
+
+    /*
+     * Publishing reset also stops sends and wakes blocked producers.
+     * Finalization disables write interest and schedules deferred cleanup.
+     */
+    StreamCtxIoReset(sc);
+    (void)h3_stream_maybe_finalize(sc, reason);
 }
 
 /*
