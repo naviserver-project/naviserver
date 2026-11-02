@@ -136,7 +136,7 @@ NS_EXTERN const char *NS_EMPTY_STRING;
  * Values are borrowed Tcl objects; NULL pointers
  * represent SQL NULL. Drivers must not retain these objects after returning. */
 #define NS_DB_BIND_ABI 1
-/* Optional marker factory for expanded slots. Return a new, unreferenced Tcl
+/* Optional marker factory for scalar and expanded slots. Return a new, unreferenced Tcl
  * string for a zero-based position. The format is fixed for this callback. */
 #define NS_DB_BIND_PARAMETER_ABI 1
 typedef Tcl_Obj *(Ns_DbBindParameterProc)(TCL_SIZE_T position);

@@ -1216,10 +1216,11 @@ NsDbBindObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const objv[],
     executeValues = values;
     executeCount = count;
     /*
-     * Drivers need not accept every legacy bind-name character. Reuse cached
-     * slot rewriting for these names as well as for collection bindings.
+     * Drivers need not accept colon names or every legacy name character.
+     * A marker factory applies to scalar slots as well as collections. Reuse
+     * the cached slot rewriting for both, without exposing driver syntax to Tcl.
      */
-    expand = hasCollections || sql->rewriteNames;
+    expand = hasCollections || sql->rewriteNames || NsDbGetBindParameterProc(handle) != NULL;
     if (expand && specs == NULL) {
         specs = ns_calloc((size_t)count + 1u, sizeof(BindSpec));
     }

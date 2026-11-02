@@ -1207,7 +1207,7 @@ Ns_DbBindTypedExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
     return status;
 }
 
-/* Drivers may choose their efficient native marker syntax for list slots. */
+/* Drivers may choose their native marker syntax for scalar and expanded slots. */
 Ns_DbBindParameterProc *
 NsDbGetBindParameterProc(const Ns_DbHandle *handle)
 {
