@@ -70,6 +70,7 @@ typedef enum {
     DbFn_Bind = 25,
     DbFn_BindParameter = 26,
     DbFn_BindTyped = 27,
+    DbFn_BindTypes = 28,
 } Ns_DbProcId;
 
 /*
@@ -135,7 +136,7 @@ NS_EXTERN const char *NS_EMPTY_STRING;
 /* Optional bind vars in SQL statements, including explicit binary values.
  * Values are borrowed Tcl objects; NULL pointers
  * represent SQL NULL. Drivers must not retain these objects after returning. */
-#define NS_DB_BIND_ABI 1
+#define NS_DB_BIND_ABI 2
 /* Optional marker factory for scalar and expanded slots. Return a new, unreferenced Tcl
  * string for a zero-based position. The format is fixed for this callback. */
 #define NS_DB_BIND_PARAMETER_ABI 1
@@ -151,13 +152,21 @@ NS_EXTERN int Ns_DbBindExec(Tcl_Interp *, Ns_DbHandle *, const char *, TCL_SIZE_
  * array means all text. Registering only DbFn_BindTyped is sufficient; core
  * retains DbFn_Bind for existing text-only drivers. Callback ABIs are unchanged. */
 typedef enum {
-    NS_DB_BIND_TEXT, NS_DB_BIND_BINARY
+    NS_DB_BIND_TEXT, NS_DB_BIND_BINARY, NS_DB_BIND_ARRAY
 } Ns_DbBindValueType;
 typedef int (Ns_DbBindTypedExecProc)(Tcl_Interp *, Ns_DbHandle *, const char *,
                                    TCL_SIZE_T, Tcl_Obj *const *, Tcl_Obj *const *,
                                    const Ns_DbBindValueType *);
 NS_EXTERN int Ns_DbBindTypedExec(Tcl_Interp *, Ns_DbHandle *, const char *, TCL_SIZE_T,
                                  Tcl_Obj *const *, Tcl_Obj *const *, const Ns_DbBindValueType *);
+
+/* ABI 2 adds an optional supported-type mask and prepared array access.
+ * Absent a mask callback, typed drivers support text/binary, text-only drivers
+ * support text, and neither can receive an unknown array representation. */
+typedef unsigned (Ns_DbBindTypesProc)(const Ns_DbHandle *);
+NS_EXTERN unsigned Ns_DbBindSupportedTypes(const Ns_DbHandle *) NS_GNUC_NONNULL(1);
+NS_EXTERN int Ns_DbBindArrayGet(Tcl_Interp *, Tcl_Obj *, TCL_SIZE_T *, Tcl_Obj *const **, char *)
+    NS_GNUC_NONNULL(1,2,3,4);
 
 NS_EXTERN Ns_ReturnCode Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs);
 NS_EXTERN char         *Ns_DbDriverName(Ns_DbHandle *handle);

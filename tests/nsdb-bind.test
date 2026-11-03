@@ -43,15 +43,15 @@ test nsdb-bind-old-options {missingnull and the ambiguous bind option are not ac
 } -result {1 1}
 test nsdb-bind-version {capability version distinguishes the base-command binding API} -body {
     set version [ns_db bindinfo $bindCoreHandle -version]
-    expr {$version == ([ns_db bindinfo $bindCoreHandle] ? 5 : 0)}
+    expr {$version == ([ns_db bindinfo $bindCoreHandle] ? 6 : 0)}
 } -result 1
 test nsdb-bind-types-source {types do not replace the required value source} -body {
     catch {ns_db exec $bindCoreHandle -bindtypes {ids list} {SELECT 1 IN(:ids)}}
 } -result 1
 test nsdb-bind-types-unknown {unknown interpretations are rejected before driver execution} -body {
     set ids {1 2}
-    catch {ns_db exec $bindCoreHandle -bindvars -bindtypes {ids array} {SELECT 1 IN(:ids)}} message
-    string match {*expected scalar, list, rows or binary*} $message
+    catch {ns_db exec $bindCoreHandle -bindvars -bindtypes {ids bogus} {SELECT 1 IN(:ids)}} message
+    string match {*unsupported bind type 'bogus'*} $message
 } -result 1
 test nsdb-bind-types-unused {metadata keys must name actual SQL parameters} -body {
     set ids {1 2}
@@ -251,5 +251,28 @@ test nsdb-bind-dispatch-no-binary-fallback {binary, including NULL binary, canno
         set result
     } finally {
         ns_db releasehandle $handle
+    }
+} -result {1 1}
+
+
+foreach mode {text typed both} {
+    test nsdb-array-unsupported-$mode {new representations never reach drivers without array capabilities} -body {
+        set handle [ns_db gethandle bind_$mode]
+        try {
+            catch {ns_db exec $handle -binddict {ids {1 2}} -bindtypes {ids array} {dml :ids}} message
+            string match {*does not support SQL array bind vars*} $message
+        } finally {
+            ns_db releasehandle $handle
+        }
+    } -result 1
+}
+
+test nsdb-array-metadata {array interpretation is one-dimensional scalar-element metadata only} -body {
+    set h [ns_db gethandle bind_typed]
+    try {
+        list [catch {ns_db exec $h -binddict {ids {1 2}} -bindtypes {ids {array binary}} {dml :ids}}] \
+            [catch {ns_db exec $h -binddict {ids {{1 2}}} -bindtypes {ids {rows {array}}} {dml :ids}}]
+    } finally {
+        ns_db releasehandle $h
     }
 } -result {1 1}

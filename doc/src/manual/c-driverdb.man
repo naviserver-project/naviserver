@@ -1151,4 +1151,30 @@ Core preserves SQL timing and logging around one callback invocation, without
 logging parameter values. These callbacks do not change ordinary execution
 or driver-specific legacy commands.
 
+[section {Native SQL arrays}]
+
+Bind ABI version 2 adds [const NS_DB_BIND_ARRAY] without changing existing
+callback signatures or type values. To receive it, register the optional
+[const DbFn_BindTypes] callback, returning a bit mask indexed by
+[const Ns_DbBindValueType]. For example, set
+[const {(1u << NS_DB_BIND_TEXT) | (1u << NS_DB_BIND_BINARY) | (1u << NS_DB_BIND_ARRAY)}].
+Without this callback, an existing typed driver supports text/binary only, and
+an existing text-only driver supports text only. Core rejects unsupported
+parameter types before invoking the driver.
+
+[para]
+For an array parameter, use [const Ns_DbBindArrayGet] to retrieve its element
+count, borrowed element pointers, and optional delimiter. NULL element pointers
+represent SQL NULL independently of string values. The prepared array object
+is opaque: do not reparse its string representation, retain its pointers after
+the callback, or alter its representation. A NULL parameter pointer still means
+SQL NULL for the whole parameter. Core owns the prepared object and releases it
+after execution, including errors; arrays are never stored in the SQL cache.
+
+[para]
+The array is one-dimensional. Elements are retained scalar Tcl objects with
+text interpretation; no nested array or binary-cell inference is performed.
+Drivers choose their own native encoding. PostgreSQL encodes its text array
+input syntax, while SQLite rejects arrays through core capabilities.
+
 [manpage_end]

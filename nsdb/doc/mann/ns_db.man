@@ -646,7 +646,7 @@ is rejected. Values are never evaluated as Tcl or concatenated into SQL.
 [para]
 [option {-bindtypes dictionary}] declares per-parameter interpretation,
 independently of the binding source. Keys omit the colon prefix. Supported
-values are [const scalar] (the default), [const list], [const rows] and [const binary]. A scalar remains one
+values are [const scalar] (the default), [const list], [const rows], [const binary] and [const array]. A scalar remains one
 text value even if its Tcl internal representation is a list. A list expands
 its placeholder into comma-separated native parameters, one for each Tcl list
 element. SQL supplies the surrounding parentheses, for example [const {IN (:ids)}].
@@ -684,6 +684,21 @@ back to text. The typed callback is preferred for ordinary text bindings too;
 a NULL types array means all text. Registering only [const DbFn_BindTyped]
 is sufficient for bind support. Existing [const DbFn_Bind] text-only drivers
 remain supported for text parameters. Both callback ABIs are unchanged.
+
+[para]
+[const array] binds a Tcl list as one native one-dimensional SQL array parameter,
+rather than expanding it like [const list]. Empty arrays are valid. Elements
+are scalar text; nested Tcl lists remain text elements, not subarrays.
+[option -emptynull] maps empty elements to SQL NULL while preserving an empty
+array itself. Literal strings such as NULL never act as sentinels. The optional
+metadata [const {array delimiter}] selects a printable non-reserved ASCII
+array delimiter (comma by default). SQL casts or column types determine the
+backend element type. Unsupported drivers fail before execution.
+
+[para]
+[cmd {ns_db bindinfo}] [arg handle] [option -types] reports native parameter
+interpretations: [const scalar], [const binary], and optionally [const array].
+Core list/row expansions remain independent of native array capabilities.
 
 [para]
 Parameter token positions are cached in the SQL Tcl object. Repeated list
@@ -739,7 +754,8 @@ Script splitting belongs to the application.
 [para]
 [cmd {ns_db bindinfo}] [arg handle] reports whether the driver supports
 bind vars in SQL statements. Its optional [option -version] returns Tcl binding API version
-5 for binary values and row column types (4 denotes untyped rows;
+6 for native one-dimensional array metadata (5 denotes binary values and row
+column types; 4 denotes untyped rows;
 3 denotes scalar/list types; 2 denotes the preceding
 scalar-only options), or 0 when unsupported. The default
 boolean result remains compatible with the earlier binding API. This is an optional callback; unsupported drivers report an

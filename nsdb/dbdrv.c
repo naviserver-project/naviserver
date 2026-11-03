@@ -76,6 +76,7 @@ typedef struct DbDriver {
     const Ns_DbBatchDriverOps *batchOps;
     Ns_DbBindExecProc *bindExecProc;
     Ns_DbBindTypedExecProc *bindTypedExecProc;
+    Ns_DbBindTypesProc *bindTypesProc;
     Ns_DbBindParameterProc *bindParameterProc;
 } DbDriver;
 
@@ -212,6 +213,10 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
 
         case DbFn_BindParameter:
             driverPtr->bindParameterProc = (Ns_DbBindParameterProc *) procs->func;
+            break;
+
+        case DbFn_BindTypes:
+            driverPtr->bindTypesProc = (Ns_DbBindTypesProc *) procs->func;
             break;
 
         case DbFn_BindTyped:
@@ -1182,6 +1187,39 @@ Ns_DbBindSupported(const Ns_DbHandle *handle)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_DbBindSupportedTypes --
+ *
+ *      Retrieve native parameter capabilities without passing a new value
+ *      representation to a driver that predates it. Legacy typed callbacks
+ *      support text/binary; legacy text callbacks support text only.
+ *
+ * Results:
+ *      A bit mask indexed by Ns_DbBindValueType, or zero without bind support.
+ *
+ * Side effects:
+ *      Invokes the optional driver capability callback; no SQL is executed.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned
+Ns_DbBindSupportedTypes(const Ns_DbHandle *handle)
+{
+    const DbDriver *driver = NsDbGetDriver(handle);
+
+    if (driver == NULL) {
+        return 0u;
+    }
+    if (driver->bindTypedExecProc != NULL) {
+        return driver->bindTypesProc != NULL
+            ? driver->bindTypesProc(handle)
+            : (1u << NS_DB_BIND_TEXT) | (1u << NS_DB_BIND_BINARY);
+    }
+    return driver->bindExecProc != NULL ? (1u << NS_DB_BIND_TEXT) : 0u;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_DbBindExec --
  *
  *      Preserve the public text-binding API by dispatching with default types.
@@ -1228,7 +1266,25 @@ Ns_DbBindTypedExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
     const DbDriver *driver = NsDbGetDriver(handle);
     int             status = NS_ERROR;
     bool            binary = NS_FALSE;
+    unsigned        supported = Ns_DbBindSupportedTypes(handle);
 
+    if (count > 0 && types == NULL && (supported & (1u << NS_DB_BIND_TEXT)) == 0u) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support bind vars in SQL statements", TCL_INDEX_NONE));
+        return NS_ERROR;
+    }
+    for (TCL_SIZE_T i = 0; types != NULL && i < count; i++) {
+        if (types[i] < NS_DB_BIND_TEXT || types[i] > NS_DB_BIND_ARRAY
+            || (supported & (1u << types[i])) == 0u) {
+            const char *message = types[i] == NS_DB_BIND_ARRAY
+                ? "driver does not support SQL array bind vars in SQL statements"
+                : types[i] == NS_DB_BIND_BINARY
+                ? "driver does not support binary bind vars in SQL statements"
+                : "driver does not support bind vars in SQL statements";
+
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(message, TCL_INDEX_NONE));
+            return NS_ERROR;
+        }
+    }
     if (handle->connected && driver != NULL && driver->bindTypedExecProc != NULL) {
         Ns_Time start;
 

@@ -17,13 +17,23 @@ typedef enum {
     BindScalar,
     BindList,
     BindRows,
-    BindBinary
+    BindBinary,
+    BindArrayValue
 } BindValueType;
+
+typedef struct BindArray {
+    unsigned    refs;
+    TCL_SIZE_T  count;
+    Tcl_Obj   **values;
+    char        delimiter;
+    Tcl_Obj    *source;          /* Retained list for lazy string materialization. */
+} BindArray;
 
 typedef struct BindSpec {
     BindValueType       kind;
     TCL_SIZE_T          columnCount;
     Ns_DbBindValueType *columns;
+    char                arrayDelimiter;
 } BindSpec;
 
 typedef struct BindOccurrence {
@@ -94,6 +104,19 @@ static Ns_ObjvProc BindOptionParse
 static Tcl_FreeInternalRepProc SqlObjFree NS_GNUC_NONNULL(1);
 static Tcl_DupInternalRepProc SqlObjDup NS_GNUC_NONNULL(1,2);
 
+static Tcl_FreeInternalRepProc BindArrayFree NS_GNUC_NONNULL(1);
+static Tcl_DupInternalRepProc BindArrayDup NS_GNUC_NONNULL(1,2);
+static Tcl_UpdateStringProc BindArrayString NS_GNUC_NONNULL(1);
+static Tcl_Obj *BindArrayNew(Tcl_Interp *interp, Tcl_Obj *value, bool emptyNull, char delimiter)
+    NS_GNUC_NONNULL(1,2);
+
+static CONST86 Tcl_ObjType arrayType = {
+    "nsdb:bound-array", BindArrayFree, BindArrayDup, BindArrayString, NULL
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
+};
+
 static CONST86 Tcl_ObjType sqlType = {
     "nsdb:bound-sql",
     SqlObjFree,
@@ -104,6 +127,172 @@ static CONST86 Tcl_ObjType sqlType = {
    ,TCL_OBJTYPE_V0
 #endif
 };
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BindArrayFree, BindArrayDup, BindArrayString --
+ *
+ *      Share a prepared one-dimensional array while retaining each non-NULL
+ *      element. NULL pointers encode SQL NULL, independently of string contents.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Update reference counts, materialize the original list string on demand,
+ *      and release the prepared array on its last owner.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+BindArrayFree(Tcl_Obj *obj)
+{
+    BindArray *array = obj->internalRep.twoPtrValue.ptr1;
+
+    if (--array->refs == 0u) {
+        for (TCL_SIZE_T i = 0; i < array->count; i++) {
+            if (array->values[i] != NULL) {
+                Tcl_DecrRefCount(array->values[i]);
+            }
+        }
+        Tcl_DecrRefCount(array->source);
+        ns_free(array->values);
+        ns_free(array);
+    }
+}
+
+static void
+BindArrayDup(Tcl_Obj *src, Tcl_Obj *dst)
+{
+    BindArray *array = src->internalRep.twoPtrValue.ptr1;
+
+    array->refs++;
+    dst->internalRep.twoPtrValue.ptr1 = array;
+    dst->internalRep.twoPtrValue.ptr2 = NULL;
+    dst->typePtr = &arrayType;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BindArrayString --
+ *
+ *      Materialize the original list string only when requested by Tcl.
+ *      SQL NULL state remains in the element pointers, not this string.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Allocate the object's string representation.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+BindArrayString(Tcl_Obj *obj)
+{
+    BindArray *array = obj->internalRep.twoPtrValue.ptr1;
+    TCL_SIZE_T length;
+    const char *text = Tcl_GetStringFromObj(array->source, &length);
+#if TCL_MAJOR_VERSION >= 9
+    Tcl_InitStringRep(obj, text, (size_t)length);
+#else
+    obj->bytes = Tcl_Alloc((unsigned)length + 1u);
+    memcpy(obj->bytes, text, (size_t)length + 1u);
+    obj->length = length;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BindArrayNew --
+ *
+ *      Prepare one parameter from a Tcl list, preserving its scalar elements.
+ *      Empty lists remain arrays; -emptynull affects elements, not the array.
+ *      The original list is retained without eagerly generating its string
+ *      representation. Drivers must use Ns_DbBindArrayGet rather
+ *      than reparsing it: NULL state exists only in the prepared pointer array.
+ *
+ * Results:
+ *      A new unreferenced object, or NULL with a Tcl error.
+ *
+ * Side effects:
+ *      Retain non-NULL elements until the callback has returned.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+BindArrayNew(Tcl_Interp *interp, Tcl_Obj *value, bool emptyNull, char delimiter)
+{
+    Tcl_Obj   **items, *obj;
+    TCL_SIZE_T count, length;
+    BindArray  *array;
+
+    if (Tcl_ListObjGetElements(interp, value, &count, &items) != TCL_OK) {
+        return NULL;
+    }
+    array = ns_malloc(sizeof(BindArray));
+    array->refs = 1u;
+    array->count = count;
+    array->source = value;
+    Tcl_IncrRefCount(value);
+    array->delimiter = delimiter == '\0' ? ',' : delimiter;
+    array->values = ns_calloc((size_t)count + 1u, sizeof(Tcl_Obj *));
+    for (TCL_SIZE_T i = 0; i < count; i++) {
+        length = 1;
+        if (emptyNull) {
+            Tcl_GetStringFromObj(items[i], &length);
+        }
+        if (!emptyNull || length != 0) {
+            array->values[i] = items[i];
+            Tcl_IncrRefCount(items[i]);
+        }
+    }
+    obj = Tcl_NewObj();
+    Tcl_InvalidateStringRep(obj);
+    obj->typePtr = &arrayType;
+    obj->internalRep.twoPtrValue.ptr1 = array;
+    obj->internalRep.twoPtrValue.ptr2 = NULL;
+    return obj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbBindArrayGet --
+ *
+ *      Access a core-prepared array without reparsing or guessing NULL values.
+ *
+ * Results:
+ *      TCL_OK with borrowed element pointers, or TCL_ERROR for another object
+ *      representation. Each NULL pointer is SQL NULL; empty strings are text.
+ *
+ * Side effects:
+ *      None. The pointers remain valid while the prepared object is retained.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_DbBindArrayGet(Tcl_Interp *interp, Tcl_Obj *obj, TCL_SIZE_T *countPtr,
+                  Tcl_Obj *const **valuesPtr, char *delimiterPtr)
+{
+    const BindArray *array;
+
+    if (obj->typePtr != &arrayType) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("expected a core-prepared SQL array", TCL_INDEX_NONE));
+        return TCL_ERROR;
+    }
+    array = obj->internalRep.twoPtrValue.ptr1;
+    *countPtr = array->count;
+    *valuesPtr = array->values;
+    if (delimiterPtr != NULL) {
+        *delimiterPtr = array->delimiter;
+    }
+    return TCL_OK;
+}
 
 
 /*
@@ -567,15 +756,17 @@ BindSpecsParse(Tcl_Obj *types, Tcl_Interp *interp, TCL_SIZE_T count,
             kind = BindRows;
         } else if (strcmp(type, "binary") == 0) {
             kind = BindBinary;
+        } else if (strcmp(type, "array") == 0) {
+            kind = BindArrayValue;
         } else {
             Tcl_SetObjResult(interp,
-                             Tcl_ObjPrintf("unsupported bind type '%s': expected scalar, list, rows or binary", type));
+                             Tcl_ObjPrintf("unsupported bind type '%s': expected scalar, list, rows, binary or array", type));
             goto error;
         }
 
-        if (n != 1 && !(kind == BindRows && n == 2)) {
+        if (n != 1 && !((kind == BindRows || kind == BindArrayValue) && n == 2)) {
             Tcl_SetObjResult(interp,
-                             Tcl_NewStringObj("expected a bind type or {rows {column-types}}", TCL_INDEX_NONE));
+                             Tcl_NewStringObj("expected a bind type, {rows {column-types}} or {array delimiter}", TCL_INDEX_NONE));
             goto error;
         }
         for (TCL_SIZE_T i = 0; i < count; i++) {
@@ -590,7 +781,18 @@ BindSpecsParse(Tcl_Obj *types, Tcl_Interp *interp, TCL_SIZE_T count,
             goto error;
         }
         specs[index].kind = kind;
-        if (n == 2) {
+        if (kind == BindArrayValue && n == 2) {
+            TCL_SIZE_T length;
+            const char *delimiter = Tcl_GetStringFromObj(parts[1], &length);
+
+            if (length != 1 || delimiter[0] <= ' ' || (unsigned char)delimiter[0] >= 127u
+                || strchr("{}\"\\", delimiter[0]) != NULL) {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj("array delimiter must be one non-reserved printable ASCII character", TCL_INDEX_NONE));
+                goto error;
+            }
+            specs[index].arrayDelimiter = delimiter[0];
+        }
+        if (kind == BindRows && n == 2) {
             Tcl_Obj   **columns;
             TCL_SIZE_T  columnsCount;
 
@@ -673,7 +875,7 @@ BindSqlExpand(BindSql *sql, Tcl_Interp *interp, Ns_DbHandle *handle,
     TCL_SIZE_T             *offset = ns_malloc(((size_t)count + 1u) * sizeof(TCL_SIZE_T));
     TCL_SIZE_T              total = 0;
     Tcl_Obj               **flat = NULL;
-    Ns_DbBindValueType     *flatTypes;
+    Ns_DbBindValueType     *flatTypes = NULL;
     Ns_DbBindParameterProc *marker = NsDbGetBindParameterProc(handle);
 
     /*
@@ -683,6 +885,13 @@ BindSqlExpand(BindSql *sql, Tcl_Interp *interp, Ns_DbHandle *handle,
     for (TCL_SIZE_T i = 0; i < count; i++) {
         arity[i] = 1;
         offset[i] = total;
+        if (specs[i].kind == BindArrayValue && values[i] != NULL) {
+            TCL_SIZE_T elements;
+
+            if (Tcl_ListObjLength(interp, values[i], &elements) != TCL_OK) {
+                goto error;
+            }
+        }
         if (specs[i].kind == BindList || specs[i].kind == BindRows) {
             Tcl_Obj **items;
 
@@ -855,6 +1064,15 @@ BindSqlExpand(BindSql *sql, Tcl_Interp *interp, Ns_DbHandle *handle,
             flat[offset[i]] = values[i];
             if (specs[i].kind == BindBinary) {
                 flatTypes[offset[i]] = NS_DB_BIND_BINARY;
+            } else if (specs[i].kind == BindArrayValue) {
+                flatTypes[offset[i]] = NS_DB_BIND_ARRAY;
+                if (values[i] != NULL) {
+                    flat[offset[i]] = BindArrayNew(interp, values[i], emptyNull, specs[i].arrayDelimiter);
+                    if (flat[offset[i]] == NULL) {
+                        goto error;
+                    }
+                    Tcl_IncrRefCount(flat[offset[i]]);
+                }
             }
         }
     }
@@ -867,6 +1085,13 @@ BindSqlExpand(BindSql *sql, Tcl_Interp *interp, Ns_DbHandle *handle,
     return TCL_OK;
 
  error:
+    for (TCL_SIZE_T i = 0; flatTypes != NULL && i < total; i++) {
+        if (flatTypes[i] == NS_DB_BIND_ARRAY && flat[i] != NULL) {
+            Tcl_DecrRefCount(flat[i]);
+        }
+    }
+    ns_free(flat);
+    ns_free(flatTypes);
     ns_free(width);
     ns_free(arity);
     ns_free(offset);
@@ -1096,19 +1321,32 @@ NsDbBindObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const objv[],
         const char *version = NULL;
         bool        supported = Ns_DbBindSupported(handle);
         Ns_ObjvSpec infoArgs[] = {
-            {"?-version", Ns_ObjvString, &version, NULL},
+            {"?-version|-types", Ns_ObjvString, &version, NULL},
             {NULL, NULL, NULL, NULL}
         };
 
         if (Ns_ParseObjv(NULL, infoArgs, interp, 3, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
+        if (version != NULL && strcmp(version, "-types") == 0) {
+            const char *const labels[] = {"scalar", "binary", "array"};
+            unsigned mask = Ns_DbBindSupportedTypes(handle);
+            Tcl_Obj *list = Tcl_NewListObj(0, NULL);
+
+            for (unsigned i = 0u; i < 3u; i++) {
+                if ((mask & (1u << i)) != 0u) {
+                    Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(labels[i], TCL_INDEX_NONE));
+                }
+            }
+            Tcl_SetObjResult(interp, list);
+            return TCL_OK;
+        }
         if (version != NULL && strcmp(version, "-version") != 0) {
-            Tcl_WrongNumArgs(interp, 2, objv, "handle ?-version?");
+            Tcl_WrongNumArgs(interp, 2, objv, "handle ?-version|-types?");
             return TCL_ERROR;
         }
         Tcl_SetObjResult(interp, version != NULL
-                         ? Tcl_NewIntObj(supported ? 5 : 0)
+                         ? Tcl_NewIntObj(supported ? 6 : 0)
                          : Tcl_NewBooleanObj(supported));
         return TCL_OK;
     }
@@ -1249,6 +1487,11 @@ NsDbBindObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const objv[],
     Tcl_DecrRefCount(executeSql);
     Tcl_DecrRefCount(executeNames);
     if (executeValues != values) {
+        for (TCL_SIZE_T i = 0; i < executeCount; i++) {
+            if (executeTypes[i] == NS_DB_BIND_ARRAY && executeValues[i] != NULL) {
+                Tcl_DecrRefCount(executeValues[i]);
+            }
+        }
         ns_free(executeValues);
     }
 
