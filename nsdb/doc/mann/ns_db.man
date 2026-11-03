@@ -12,14 +12,30 @@ These commands provides a mechanism to access databases.
 
 [list_begin definitions]
 
-[call [cmd "ns_db 1row"] [arg handle] [arg sql]]
+[call [cmd "ns_db 1row"] \
+    [arg handle] \
+    [opt [option -bindvars]] \
+    [opt "[option -bindset] [arg setId]"] \
+    [opt "[option -binddict] [arg dictionary]"] \
+    [opt "[option -bindtypes] [arg types]"] \
+    [opt [option -emptynull]] \
+    [opt [option --]] \
+    [arg sql]]
 
 This command expects the SQL to be a select statement that returns exactly one
 row and returns that row as an ns_set. An error is returned if zero or more than
 one row is returned.
 
 
-[call [cmd "ns_db 0or1row"] [arg handle] [arg sql]]
+[call [cmd "ns_db 0or1row"] \
+    [arg handle] \
+    [opt [option -bindvars]] \
+    [opt "[option -bindset] [arg setId]"] \
+    [opt "[option -binddict] [arg dictionary]"] \
+    [opt "[option -bindtypes] [arg types]"] \
+    [opt [option -emptynull]] \
+    [opt [option --]] \
+    [arg sql]]
 
 This command expects the provided SQL command
 to be a select statement that returns exactly zero
@@ -47,9 +63,14 @@ Older cores omit this key.
 With a batch, compatible reports schema/type compatibility; it does not validate
 individual values, a destination table's affinities or its constraints.
 
-[call [cmd "ns_db batchinsert"] [arg handle] [option -table] [arg table] \
+[call [cmd "ns_db batchinsert"] \
+    [arg handle] \
+    [option "-table [arg table]"] \
     [opt "[option -columns] [arg mapping]"] \
-    [opt "[option -schema] [arg schema]"] [opt "[option -nulls] [arg nulls]"] [arg batchOrRows]]
+    [opt "[option -schema] [arg schema]"] \
+    [opt "[option -nulls] [arg nulls]"] \
+    [arg batchOrRows] \
+    ]
 
 Insert synchronously through a driver's explicitly registered batch implementation
 using the existing checked-out connection and an active caller-owned transaction.
@@ -73,16 +94,19 @@ JSON base types and optional schema refinements remain separate.
 
 [para] Prepared Tcl rows can be inserted directly with:
 
-[example {
-ns_db dml $handle {BEGIN IMMEDIATE}
-ns_db batchinsert $handle -table events -schema {
-    id event-rows version 1 columns {
-        {name id type number refinement int64 representation integer_decimal}
-        {name label type string nullable true}
-    }
-} -nulls {{} {1}} {{1 {a label}} {2 {}}}
-ns_db dml $handle COMMIT
-}]
+[example_begin]
+ ns_db dml $handle {BEGIN IMMEDIATE}
+ 
+ ns_db batchinsert $handle -table events -schema {
+     id event-rows version 1 columns {
+         {name id type number refinement int64 representation integer_decimal}
+         {name label type string nullable true}
+     }
+ } -nulls {{} {1}} \
+ {{1 {a label}} {2 {}}}
+ 
+ ns_db dml $handle COMMIT
+[example_end]
 
 [para] With [option -schema], the final argument is a list of rows rather than
 an opaque C batch. Each row is a positional Tcl list with exactly one value per
@@ -136,6 +160,20 @@ Generated/hidden columns are rejected. Database constraints and triggers retain
 their normal semantics. SQLite rows counts direct changes, excluding trigger
 side effects, matching SQLite changes semantics. Exact conversion can reject a
 source spelling or value even when its base type is supported.
+
+[call [cmd "ns_db bindinfo"] [arg handle] [opt [option "-version|-types"]]]
+
+Reports whether the driver supports
+bind vars in SQL statements. Its optional [option -version] returns Tcl binding API version
+6 for native one-dimensional array metadata (5 denotes binary values and row
+column types; 4 denotes untyped rows;
+3 denotes scalar/list types; 2 denotes the preceding
+scalar-only options), or 0 when unsupported. The default
+boolean result remains compatible with the earlier binding API.
+
+[para] With [option -types], returns the supported native parameter
+interpretations: [const scalar], [const binary], and optionally [const array].
+Core list/row expansions remain independent of native array capabilities.
 
 [call [cmd "ns_db bindrow"] [arg handle]]
 
@@ -193,7 +231,15 @@ Returns the datasource for the database pool.
 Returns the database type for the database pool.
 
 
-[call [cmd "ns_db dml"] [arg handle] [arg sql]]
+[call [cmd "ns_db dml"] \
+    [arg handle] \
+    [opt [option -bindvars]] \
+    [opt "[option -bindset] [arg setId]"] \
+    [opt "[option -binddict] [arg dictionary]"] \
+    [opt "[option -bindtypes] [arg types]"] \
+    [opt [option -emptynull]] \
+    [opt [option --]] \
+    [arg sql]]
 
 Executes the provided SQL DML statement that should be data
 manipulation language such as an insert or update, or data definition
@@ -210,7 +256,15 @@ Returns the name of the driver of the handle.
 Returns the most recent exception for the database pool.
 
 
-[call [cmd "ns_db exec"] [arg handle] [arg sql]]
+[call [cmd "ns_db exec"] \
+    [arg handle] \
+    [opt [option -bindvars]] \
+    [opt "[option -bindset] [arg setId]"] \
+    [opt "[option -binddict] [arg dictionary]"] \
+    [opt "[option -bindtypes] [arg types]"] \
+    [opt [option -emptynull]] \
+    [opt [option --]] \
+    [arg sql]]
 
 Executes the specified SQL command. It returns either NS_DML (if the SQL command
 is a DML or DDL command) or NS_ROWS (if the SQL command returns rows, such as
@@ -248,11 +302,36 @@ wait indefinitely (perhaps forever) for the requested number of handles to
 become available. If timeout is greater than zero, ns_db gethandle will either
 return with the handles within that time period, or return "" if the time period
 was exceeded, or generate a Tcl error.
-See the examples for [cmd "ns_db gethandle"], below.
+See the examples below.
 The argument [arg time] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
 or as a number with the time units ms, s, m, d.
 
+
+These are valid uses of ns_db gethandle:
+
+[example_begin]
+ ns_db gethandle
+ # 1 handle from default pool
+ 
+ ns_db gethandle -timeout 2.5s
+ # 1 handle from default pool, 2.5 sec timeout
+ 
+ ns_db gethandle -timeout -1 poolname
+ # 1 handle from poolname, error if not available
+ 
+ ns_db gethandle poolname
+ # 1 handle from poolname
+ 
+ ns_db gethandle -timeout 23 poolname
+ # 1 handle from poolname, 23 sec timeout
+ 
+ ns_db gethandle poolname 5
+ # 5 handles from poolname
+ 
+ ns_db gethandle -timeout 2.0s poolname 5
+ # 5 handles from poolname, 2.0 sec timeout
+[example_end]
 
 [call [cmd "ns_db getrow"] [arg handle] [arg setId]]
 
@@ -291,6 +370,22 @@ the form [arg secs[opt :microsecs]], or [arg secs.fraction], or as a
 number with the time units ms, s, m, d.
 
 
+Change the verbosity level to show all SQL commands or only these taking
+longer:
+[example_begin]
+ #
+ # Increase verbosity of SQL
+ #
+ ns_logctl debug(sql) on
+ 
+ #
+ # Set for every pool the longminduration to 0 to show all
+ # SQL commands (or e.g. to 10ms, meaning: show SQL commands
+ # taking longer than 10 milliseconds).
+ #
+ foreach pool [lb]ns_db pools[rb] {ns_db logminduration $pool 0}
+[example_end]
+
 [call [cmd "ns_db password"] [arg handle]]
 
 Returns the password of the user for the database pool.
@@ -319,7 +414,15 @@ this is useful with INSERT/UPDATE/DELETE
 statements to know how many records updated.
 
 
-[call [cmd "ns_db select"] [arg handle] [arg sql]]
+[call [cmd "ns_db select"] \
+    [arg handle] \
+    [opt [option -bindvars]] \
+    [opt "[option -bindset] [arg setId]"] \
+    [opt "[option -binddict] [arg dictionary]"] \
+    [opt "[option -bindtypes] [arg types]"] \
+    [opt [option -emptynull]] \
+    [opt [option --]] \
+    [arg sql]]
 
 Executes the SQL statement on the database server. It returns an
 ns_set with the keys set to the column names that were selected. Use ns_db
@@ -341,8 +444,7 @@ Executes a stored procedure that has been initialized with
 successfully executed but did not return rows, or it returns "NS_ROWS" if the
 command was successfully executed and did return rows (which can then be fetched
 with [cmd "ns_db bindrow"] and [cmd "ns_db getrow"]). It throws an error if the command failed.
-This function is implemented only for the Sybase database driver. See the
-Examples section, below, for an example of this function.
+This function is implemented only for the Sybase database driver. See [cmd "ns_db sp_start"] for an example.
 
 
 [call [cmd "ns_db sp_getparams"] [arg handle]]
@@ -354,8 +456,7 @@ procedure with [cmd "ns_db sp_exec"]. It returns an ns_set or throws an error on
 
 ns_db sp_returncode gets the return code from a stored procedure. It must be
 called after ns_db sp_exec. This function is implemented only for the Sybase
-database driver. See the Examples section, below, for an example of
-this function.
+database driver. See [cmd "ns_db sp_start"] for an example.
 
 
 [call [cmd "ns_db sp_setparam"] \
@@ -372,36 +473,54 @@ example [term varchar]. The nextg argument denotes the direction, whether it
 is an input or output parameter. It must be set to either [term in] or
 [term out].  [arg value] denotes the parameter value to send. This function
 returns 1 on success and throws an error on failure. This function is
-implemented only for the Sybase database driver. See the Examples
-section, below, for an example of this function.
+implemented only for the Sybase database driver. See [cmd "ns_db sp_start"] for an example.
 
 
 [call [cmd "ns_db sp_start"] [arg handle] [arg procname]]
 
 Begins execution of the stored procedure called [arg procname].
 It returns 0 on success and throws an error on failure. This function is
-implemented only for the Sybase database driver. See the Examples section,
-below, for an example of this function.
+implemented only for the Sybase database driver. See the example below.
 
 
-[call [cmd "ns_db stats"] ]
+[example_begin]
+ set db [lb]ns_db gethandle $pool[rb]
+ set ret [lb]ns_db sp_start $db "p_TestProc"[rb]
+ 
+ #
+ # Set the parameters for this stored procedure.  The SQL definition of this
+ # procedure is:
+ #
+ #   CREATE PROCEDURE p_TestProc(@x int, @y varchar(16) out, @z int out)
+ #
+ # The arguments to ns_db sp_setparam are like this:
+ #
+ #   ns_db sp_setparam $handle $paramname $type in|out $value
+ #
+ set ret [lb]ns_db sp_setparam $db "@x" int in 4[rb]
+ set ret [lb]ns_db sp_setparam $db "@y" varchar out "varchar val"[rb]
+ set ret [lb]ns_db sp_setparam $db "@z" int out 231[rb]
+ 
+ #
+ # Execute the stored procedure now
+ #
+ set ret [lb]ns_db sp_exec $db[rb]
+[example_end]
 
-Returns statistics in form of a Tcl dict from all pools in form of a
-dict. The statistics contain the number of SQL statements executed,
-the number of get-handle operations,
-the number of currently connected database connections,
-the total and the used handles from the pool, and the aggregated wait
-time for handles from this pool (including the connection setup time
-to the database server).
+[call [cmd "ns_db stats"] [opt "[arg handle] [opt [option {-database name}]]"]]
 
+Without [arg handle], returns a Tcl dictionary of statistics for all pools.
+The statistics contain the number of SQL statements executed, the number of
+get-handle operations, the number of currently connected database connections,
+the total and used handles, and the aggregated wait time for handles from each
+pool (including connection setup time to the database server).
 
-[call [cmd "ns_db stats"] [arg handle] [opt [option {-database name}]]]
-
-Returns statistics from the optional driver callback for an owned database
-handle. The result is a Tcl dictionary with [const driver] (the driver's name)
-and [const supported] (a boolean). Without a callback, [const supported] is
-false; existing drivers require no modification. The no-handle form above
-continues to return the existing pool statistics.
+[para]
+With [arg handle], returns statistics from the optional driver callback for
+that owned database handle. The result is a Tcl dictionary with [const driver]
+(the driver's name) and [const supported] (a boolean). Without a callback,
+[const supported] is false; existing drivers require no modification.
+The [option -database] option requires [arg handle].
 
 [para]
 Statistics use a shared vocabulary where the scopes and units are comparable:
@@ -453,6 +572,31 @@ Different drivers' counters need not be comparable; this command does not issue
 queries against PostgreSQL server statistics views.
 
 
+[para]
+Driver authors can implement the optional [const DbFn_Stats] callback,
+declared by [const NS_DB_STATS_ABI] in [file nsdb.h]. Existing callback
+IDs and the public handle layout are unchanged.
+
+[example_begin]
+typedef int (Ns_DbStatsProc)(Tcl_Interp *interp, Ns_DbHandle *handle,
+                           const char *database);
+[example_end]
+
+The callback returns TCL_OK with a dictionary as the interpreter result, or
+TCL_ERROR with its diagnostic. A NULL database selects the driver's default
+scope; an explicit name must be validated or rejected. The callback borrows the
+handle and database name only for the call. Core adds [const driver] and
+[const supported] to the result, and validates that successful results are
+dictionaries. [const Ns_DbStats] is the corresponding C dispatch function.
+
+[para]
+Statistics callbacks are observational: preserve pending results, transactions,
+affected-row counts and database error diagnostics; do not reconnect, reset
+counters or run maintenance. Document scopes, units, unavailable counters and
+sampling costs per driver.
+
+
+
 [call [cmd "ns_db user"] [arg handle]]
 
 Returns the user (as specified for the User parameter of the configuration file)
@@ -480,78 +624,266 @@ Returns the description of the provided database pool name from the
 [list_end]
 
 
+[section {COMMON BIND OPTIONS}]
+
+The commands [cmd {ns_db exec}], [cmd {ns_db dml}], [cmd {ns_db select}],
+[cmd {ns_db 1row}] and [cmd {ns_db 0or1row}] accept these options after
+[arg handle] and before [arg sql]. Without binding options, their existing
+SQL execution behavior is unchanged. Binding requires a supporting driver;
+use [cmd {ns_db bindinfo}] to check support.
+
+[list_begin definitions]
+[def [option -bindvars]]
+Resolve colon-prefixed SQL parameters from Tcl variables in the caller's scope.
+For example, [const :id] reads the variable [const id].
+
+[def "[option -bindset] [arg setId]"]
+Resolve parameters from the ns_set identified by [arg setId]. Keys are parameter
+names without the colon prefix.
+
+[def "[option -binddict] [arg dictionary]"]
+Resolve parameters from the Tcl [arg dictionary]. Keys are parameter names
+without the colon prefix.
+
+[def "[option -bindtypes] [arg types]"]
+Use the Tcl dictionary [arg types] to specify parameter interpretations.
+Keys are parameter names without the colon prefix; values specify
+[const scalar], [const binary], [const list], [const rows] or [const array],
+with optional metadata as described in the bind variables section below.
+Parameters not listed use [const scalar]. This option requires a binding source.
+
+[def [option -emptynull]]
+Map explicitly supplied empty scalar values and empty collection elements to
+SQL NULL. Without this option, empty text remains empty text.
+Empty native arrays remain empty arrays; empty list and row containers are
+errors. Explicit binary values are also mapped to NULL when empty.
+This option requires a binding source and does not permit missing bindings.
+
+[def [option --]]
+End option processing, for example when the SQL argument starts with a hyphen.
+[list_end]
+
+Exactly one of [option -bindvars], [option -bindset] or [option -binddict]
+selects the binding source. These sources are mutually exclusive. Missing
+bindings raise errors; explicit sources never fall back to caller variables.
 
 
-[section EXAMPLES]
+[section {BIND VARIABLES}]
 
-These are valid uses of ns_db gethandle:
+Bind variables are named placeholders for values in an SQL statement. The SQL
+contains names such as [const :id], where the [const :] denotes the
+begin of a bind variable and [const id] is its name. The application
+supplies their values for the used names separately through Tcl
+variables, an ns_set or a dictionary.
+
+[para]
+Use binding instead of interpolating or quoting application values into SQL.
+A bound value is data, even when it contains quotes or SQL syntax. This prevents
+SQL injection through those values, reduces quoting mistakes and avoids repeated
+SQL string construction. Table names, column names and SQL fragments cannot be
+bound: keep these fixed or validate them separately. Binding does not make
+application-generated SQL fragments safe.
+
+
+[subsection {Scalar values}]
+
+The simplest form uses [option -bindvars] to read Tcl variables from the caller's
+scope. Brace the SQL so Tcl leaves its text unchanged:
 
 [example_begin]
- ns_db gethandle
- # 1 handle from default pool
- 
- ns_db gethandle -timeout 2.5s
- # 1 handle from default pool, 2.5 sec timeout
- 
- ns_db gethandle -timeout -1 poolname
- # 1 handle from poolname, error if not available
- 
- ns_db gethandle poolname
- # 1 handle from poolname
- 
- ns_db gethandle -timeout 23 poolname
- # 1 handle from poolname, 23 sec timeout
- 
- ns_db gethandle poolname 5
- # 5 handles from poolname
- 
- ns_db gethandle -timeout 2.0s poolname 5
- # 5 handles from poolname, 2.0 sec timeout
+ set id 42
+ set row [lb]ns_db 1row $handle -bindvars {
+     SELECT label FROM items WHERE id = :id
+ }[rb]
+ set label [lb]ns_set get $row label[rb]
+ ns_set free $row
 [example_end]
 
-Change the verbosity level to show all SQL commands or only these taking
-longer:
-[example_begin]
- #
- # Increase verbosity of SQL
- #
- ns_logctl debug(sql) on
- 
- #
- # Set for every pool the longminduration to 0 to show all
- # SQL commands (or e.g. to 10ms, meaning: show SQL commands
- # taking longer than 10 milliseconds).
- #
- foreach pool [lb]ns_db pools[rb] {ns_db logminduration $pool 0}
-[example_end]
-
-
+The same source works for writes. Quotes in [const label] require no application
+escaping:
 
 [example_begin]
- set db [lb]ns_db gethandle $pool[rb]
- set ret [lb]ns_db sp_start $db "p_TestProc"[rb]
- 
- #
- # Set the parameters for this stored procedure.  The SQL definition of this
- # procedure is:
- #
- #   CREATE PROCEDURE p_TestProc(@x int, @y varchar(16) out, @z int out)
- #
- # The arguments to ns_db sp_setparam are like this:
- #
- #   ns_db setparam $handle $varname, $vartype, in|out, $value
- #
- set ret [lb]ns_db sp_setparam $db "@x" int in 4[rb]
- set ret [lb]ns_db sp_setparam $db "@y" varchar out "varchar val"[rb]
- set ret [lb]ns_db sp_setparam $db "@z" int out 231[rb]
- 
- #
- # Execute the stored procedure now
- #
- set ret [lb]ns_db sp_exec $db[rb]
+ set label "John's item"
+ ns_db dml $handle -bindvars {
+     UPDATE items SET label = :label WHERE id = :id
+ }
 [example_end]
 
+[para]
+Use [option -binddict] when values already reside in a dictionary. Its keys omit
+the colon prefix; missing keys are errors rather than references to Tcl variables:
 
+[example_begin]
+ set values [lb]dict create id 42 label "John's item"[rb]
+ ns_db dml $handle -binddict $values {
+     UPDATE items SET label = :label WHERE id = :id
+ }
+[example_end]
+
+[para]
+For an ns_set, use [option -bindset] instead:
+
+[example_begin]
+ set values [lb]ns_set create bindings id 42 label "John's item"[rb]
+ ns_db dml $handle -bindset $values {
+     UPDATE items SET label = :label WHERE id = :id
+ }
+ ns_set free $values
+[example_end]
+
+[para]
+Scalar is the default interpretation, including for numeric Tcl objects and
+values whose internal representation happens to be a list or bytearray. The
+database applies its normal column conversions. Use [option -bindtypes] only
+when a different interpretation of the supplied values is required.
+
+[subsection {Lists and rows}]
+
+A [const list] expands a Tcl list into separate parameters. SQL supplies the
+surrounding parentheses, as in an IN clause:
+
+[example_begin]
+ set ids {42 57 91}
+ set status active
+ set rows [lb]ns_db select $handle -bindvars -bindtypes {ids list} {
+     SELECT id FROM items WHERE id IN (:ids) AND status = :status
+ }[rb]
+ while {[lb]ns_db getrow $handle $rows[rb]} {
+     # Consume each row using ns_set.
+ }
+ ns_db flush $handle
+ ns_set free $rows
+[example_end]
+
+A [const rows] value expands equal-width Tcl row lists into parenthesized rows
+of parameters. Do not add parentheses around its placeholder:
+
+[example_begin]
+ set values {{42 first} {57 second}}
+ ns_db dml $handle -bindvars -bindtypes {values rows} {
+     INSERT INTO items (id, label) VALUES :values
+ }
+[example_end]
+
+Lists and rows must be nonempty and well formed. Rows must have a nonzero,
+consistent width. Values remain parameters; no element is concatenated into
+SQL. Row cells use scalar semantics unless column types specify binary values.
+
+[subsection {Binary values}]
+
+[const binary] uses Tcl bytearray semantics, without decoding hex or base64.
+It supports embedded NUL and high bytes; SQLite stores these values as BLOBs:
+
+[example_begin]
+ set payload [lb]binary format H* 00ff0102[rb]
+ ns_db dml $handle -bindvars -bindtypes {payload binary} {
+     INSERT INTO payloads (data) VALUES (:payload)
+ }
+[example_end]
+
+For rows, specify one type per column. Only [const scalar] and [const binary]
+column types are supported, and the type list must match the row width:
+
+[example_begin]
+ set key [lb]binary format H* 00ff[rb]
+ set values [lb]list [lb]list $key 192.0.2.1 1700000000[rb][rb]
+ ns_db dml $handle -bindvars \
+     -bindtypes {values {rows {binary scalar scalar}}} {
+         INSERT INTO peers (k, address, seen) VALUES :values
+     }
+[example_end]
+
+Drivers without binary support reject explicit binary values instead of
+silently converting them to text.
+
+[subsection {Native SQL arrays}]
+
+[const array] binds a Tcl list as one native one-dimensional SQL array parameter.
+Unlike [const list], it does not expand into separate SQL parameters. PostgreSQL
+supports this form; unsupported drivers reject it explicitly. A SQL cast or the
+target column determines the element type:
+
+[example_begin]
+ set ids {42 57 91}
+ set rows [lb]ns_db select $handle -bindvars -bindtypes {ids array} {
+     SELECT id FROM items WHERE id = ANY(:ids::integer[lb][rb])
+ }[rb]
+ while {[lb]ns_db getrow $handle $rows[rb]} {
+     # Consume each row using ns_set.
+ }
+ ns_db flush $handle
+ ns_set free $rows
+[example_end]
+
+Empty arrays are valid. Nested Tcl lists are text elements, not subarrays.
+Optional [const {array delimiter}] metadata selects a printable, non-reserved
+ASCII delimiter; the default is a comma. Literal text such as NULL never acts
+as a special sentinel.
+
+[subsection {Empty values and SQL NULL}]
+
+By default, an empty scalar is empty text and an empty binary value is a
+zero-length binary value. SQL NULL is different from both. Use
+[option -emptynull] when explicitly supplied empty values should mean SQL NULL:
+
+[example_begin]
+ set id 42
+ set label {}
+ ns_db dml $handle -bindvars -emptynull {
+     UPDATE items SET label = :label WHERE id = :id
+ }
+[example_end]
+
+This stores SQL NULL in [const label]. Without [option -emptynull], it stores
+empty text. The option applies to all supplied empty scalar and binary values,
+list elements, row cells and native array elements in the call. It preserves an
+empty native array as an empty array; it does not make empty list or row
+containers valid. There is no magic string representing NULL. Missing bindings
+always raise errors, even with [option -emptynull].
+
+[subsection {Execution and parameter names}]
+
+Each command retains its usual result and transaction behavior. Binding neither
+commits nor rolls back. One complete SQL statement is executed; additional SQL
+after it is rejected. Unsupported drivers raise errors when binding is requested.
+[cmd {ns_db bindinfo}] checks support, and its [option -types] form reports native
+parameter types. Malformed types, unused type metadata and missing bindings are
+errors before execution. SQL logging records the template rather than bound
+values. Text values and SQL containing NUL are rejected; use binary binding for
+binary data.
+
+[para]
+Parameter names follow [cmd ns_pg_bind]: the first byte must be a letter
+(C [const isalpha]) or underscore; subsequent bytes may be alphanumeric
+(C [const isalnum]), underscore, dollar sign or number sign. Classification uses
+the current C locale, not Unicode character properties. For example,
+[const :phone#] and [const {:oracle$number}] each identify one parameter.
+Dollar signs continue names; use colon-prefixed names in application SQL.
+
+[para]
+SQL literals, quoted identifiers, doubled quote delimiters, SQLite bracket and
+backtick identifiers, and line/block comments do not introduce parameters.
+PostgreSQL casts are skipped. PostgreSQL escape-string and dollar-quoted bodies
+are not implemented by this lexer.
+
+[subsection {Caching and driver integration}]
+
+The SQL Tcl object caches parsed parameter names and externally encoded SQL.
+Collection expansion caches one SQL shape; changing collection lengths rebuilds
+that shape without reparsing the original SQL. Every call resolves current
+values. This is not a connection-level prepared-statement cache.
+
+[para]
+Expanded parameters use driver markers that cannot collide with application
+names. Changes to SQL text, the expansion shape, marker factory or system
+encoding invalidate the corresponding cached representation. Shared plans and
+encoded buffers remain retained during nested driver calls.
+
+[para]
+Driver authors can implement [const DbFn_Bind] for scalar text or
+[const DbFn_BindTyped] for typed parameters. The typed callback is preferred;
+a NULL types array means all text, and registering only the typed callback is
+sufficient. Native arrays additionally require the corresponding driver support.
 
 [section CONFIGURATION]
 
@@ -667,180 +999,6 @@ variables have to be set earlier to appropriate values.
  }
 [example_end]
 
-
-[section {NATIVE BIND VARIABLES}]
-
-Binding is opt-in on the existing [cmd {ns_db exec}], [cmd {ns_db dml}],
-[cmd {ns_db select}], [cmd {ns_db 1row}] and [cmd {ns_db 0or1row}] commands:
-
-[example_begin]
- ns_db exec $handle -bindvars $sql
- ns_db dml $handle -bindset $values $sql
- ns_db select $handle -binddict $values -emptynull $sql
-[example_end]
-
-Exactly one source must be supplied: [option -bindvars] resolves names from
-caller Tcl variables; [option -bindset] takes an ns_set ID; [option -binddict]
-takes a Tcl dictionary. Explicit keys omit the parameter's colon. Sources are
-mutually exclusive and explicit sources never fall back to caller variables.
-Missing bindings always raise errors, including when [option -emptynull] is
-present. Name scanning follows [cmd ns_pg_bind]: the first character is a
-letter (C [const isalpha] classification) or underscore; subsequent characters
-are alphanumeric (C [const isalnum] classification), underscore, dollar sign or
-number sign. Character classification uses the current C locale and operates
-on bytes, not Unicode characters. For example, [const :phone#] and
-[const {:oracle$number}] each identify one parameter. Dollar signs within a name
-are continuation characters, not the start of another binding. Names containing
-dollar or number signs use cached driver-marker rewriting, so drivers need not
-support these characters in their native parameter grammar.
-
-[para]
-Values are strings by default, including numeric Tcl objects; column affinity
-applies normally. Empty strings remain empty text. [option -emptynull] maps
-supplied empty values to SQL NULL; it does not make missing names valid.
-Identifiers and SQL fragments cannot be parameters. SQL/text containing NUL
-is rejected. Values are never evaluated as Tcl or concatenated into SQL.
-
-[para]
-[option {-bindtypes dictionary}] declares per-parameter interpretation,
-independently of the binding source. Keys omit the colon prefix. Supported
-values are [const scalar] (the default), [const list], [const rows], [const binary] and [const array]. A scalar remains one
-text value even if its Tcl internal representation is a list. A list expands
-its placeholder into comma-separated native parameters, one for each Tcl list
-element. SQL supplies the surrounding parentheses, for example [const {IN (:ids)}].
-A [const rows] value is a nonempty Tcl list of nonempty, equal-width row lists.
-Its placeholder expands into parenthesized rows of native parameters, for example
-[const {INSERT INTO items VALUES :rows}]. The row container supplies parentheses;
-SQL must not add another pair around the placeholder.
-No list element or row cell is concatenated or quoted into SQL. Application SQL uses colon-prefixed names.
-
-[para]
-Malformed or empty lists, unsupported type names, unused metadata keys and
-missing values are errors before execution. [option -emptynull] applies to
-empty scalar/list-element/row-cell values, not containers. Row cells remain
-scalar unless column types explicitly declare binary; deeper nesting is not
-expanded. Ragged, empty or malformed rows are errors before execution.
-Metadata does not add array or raw-SQL interpretations.
-
-[para]
-[const binary] explicitly interprets a value using Tcl bytearray semantics. It
-never decodes hex or base64. SQLite binds these bytes as BLOBs, including NUL
-and high bytes. An empty binary value is a zero-length BLOB unless
-[option -emptynull] maps it to SQL NULL. Untyped and [const scalar] values
-retain text semantics even when their Tcl object is a bytearray.
-
-[para]
-[const {rows {binary scalar scalar}}] declares one type per row column.
-Only scalar and binary column types are accepted; the declaration must be
-nonempty and match the row width. Bare [const rows] retains all-scalar cells.
-For example, [option {-bindtypes {values {rows {binary scalar scalar}}}}]
-can bind [const {INSERT INTO peers VALUES :values}] directly.
-Column types and values are refreshed on every execution, independent of the
-cached SQL shape. Drivers must implement the optional [const DbFn_BindTyped]
-callback for explicit binary values; otherwise execution fails without falling
-back to text. The typed callback is preferred for ordinary text bindings too;
-a NULL types array means all text. Registering only [const DbFn_BindTyped]
-is sufficient for bind support. Existing [const DbFn_Bind] text-only drivers
-remain supported for text parameters. Both callback ABIs are unchanged.
-
-[para]
-[const array] binds a Tcl list as one native one-dimensional SQL array parameter,
-rather than expanding it like [const list]. Empty arrays are valid. Elements
-are scalar text; nested Tcl lists remain text elements, not subarrays.
-[option -emptynull] maps empty elements to SQL NULL while preserving an empty
-array itself. Literal strings such as NULL never act as sentinels. The optional
-metadata [const {array delimiter}] selects a printable non-reserved ASCII
-array delimiter (comma by default). SQL casts or column types determine the
-backend element type. Unsupported drivers fail before execution.
-
-[para]
-[cmd {ns_db bindinfo}] [arg handle] [option -types] reports native parameter
-interpretations: [const scalar], [const binary], and optionally [const array].
-Core list/row expansions remain independent of native array capabilities.
-
-[para]
-Parameter token positions are cached in the SQL Tcl object. Repeated list
-occurrences reuse slots. One last-expanded SQL shape is cached per token plan;
-changing list lengths regenerates the SQL from cached positions, without
-reparsing the source. Values are resolved anew. All parameters are renamed in
-expanded SQL so generated element names cannot collide with source names.
-An optional driver marker factory supplies efficient native slot syntax. SQLite
-uses numbered slots; other drivers can retain named markers. The cached shape
-includes the marker-factory identity so different driver formats cannot share
-the wrong expanded SQL. Externally encoded SQL is cached with the token plan: one base statement and
-one last-expanded statement. Changes to Tcl's system encoding regenerate the
-corresponding bytes. Changes to the expansion shape or driver marker factory
-invalidate the expanded bytes. Duplicated SQL objects share the plan and encoded
-buffers; changes to SQL text invalidate its Tcl internal representation normally.
-Buffers are pinned during driver calls so nested execution cannot free active
-SQL. NUL rejection is applied when encoding a new buffer. Parameter values are
-always resolved and converted anew; they are never cached with the SQL.
-There is still no connection-level prepared-statement cache.
-
-[example_begin]
- set ids {42 57 91}
- set status active
- set rows [lb]ns_db select $handle -bindvars -bindtypes {ids list} {
-     SELECT id FROM items WHERE id IN (:ids) AND status=:status
- }[rb]
- while {[lb]ns_db getrow $handle $rows[rb]} {
-     # Consume each row using ns_set.
- }
- ns_db flush $handle
- ns_set free $rows
-[example_end]
-
-[para]
-The SQL Tcl object transparently caches unique [const :name] parameter names
-on the first execution using bind vars. Every execution resolves current values. SQL
-literals, doubled quote delimiters, quoted identifiers, SQLite bracket/backtick
-identifiers and line/block comments do not introduce parameters. PostgreSQL
-casts are skipped; PostgreSQL escape-string/dollar-quoted bodies are not
-implemented by this lexer. There is no public preparation or separate bound
-execution command.
-
-[para]
-Each command keeps its usual return shape. [cmd {ns_db exec}] returns
-[const NS_DML] or [const NS_ROWS]; [cmd {ns_db dml}] rejects row-returning SQL;
-[cmd {ns_db select}] returns a fetchable set; [cmd {ns_db 1row}] and
-[cmd {ns_db 0or1row}] enforce their row counts and return owned sets as usual.
-Fetch, flush, transaction ownership and ordinary calls without binding options
-are unchanged. One complete statement is executed, including a SQLite trigger
-body with semicolons; SQL following that statement is rejected before execution.
-Script splitting belongs to the application.
-
-[para]
-[cmd {ns_db bindinfo}] [arg handle] reports whether the driver supports
-bind vars in SQL statements. Its optional [option -version] returns Tcl binding API version
-6 for native one-dimensional array metadata (5 denotes binary values and row
-column types; 4 denotes untyped rows;
-3 denotes scalar/list types; 2 denotes the preceding
-scalar-only options), or 0 when unsupported. The default
-boolean result remains compatible with the earlier binding API. This is an optional callback; unsupported drivers report an
-error when binding options are requested. SQL logging records the template
-without substituting bound values. Cached Tcl metadata does not introduce a
-connection-level SQLite prepared-statement cache.
-
-[example_begin]
- set id 42
- ns_db exec $handle -bindvars {SELECT label FROM items WHERE id=:id}
- set row [lb]ns_db bindrow $handle[rb]
- while {[lb]ns_db getrow $handle $row[rb]} {
-     # Consume the row using ns_set.
- }
- ns_db flush $handle
-
- set values [lb]ns_set create bindings id 42 label {}[rb]
- ns_db dml $handle -bindset $values -emptynull {
-     UPDATE items SET label=:label WHERE id=:id
- }
- ns_set free $values
-
- set row [lb]ns_db 1row $handle -binddict [lb]dict create id 42[rb] {
-     SELECT label FROM items WHERE id=:id
- }[rb]
- ns_set free $row
-[example_end]
 
 [see_also ns_buildsqldate ns_dbquotevalues]
 [keywords "server built-in" module nsdb database SQL pools]

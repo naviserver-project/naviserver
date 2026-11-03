@@ -1258,15 +1258,15 @@ BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     Tcl_WideInt                inserted = 0;
     Ns_Time                    started;
     Ns_ObjvSpec                handleArgs[] = {
-        {"handle", Ns_ObjvObj, &handleObj, NULL},
-        {"?option", Ns_ObjvArgs, &remain, NULL},
+        {"handle",  Ns_ObjvObj,  &handleObj, NULL},
+        {"?option", Ns_ObjvArgs, &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec                options[] = {
-        {"-table", Ns_ObjvObj, &table, NULL},
+        {"-table",   Ns_ObjvObj, &table,   NULL},
         {"-columns", Ns_ObjvObj, &mapping, NULL},
-        {"-schema", Ns_ObjvObj, &schema, NULL},
-        {"-nulls", Ns_ObjvObj, &nulls, NULL},
+        {"-schema",  Ns_ObjvObj, &schema,  NULL},
+        {"-nulls",   Ns_ObjvObj, &nulls,   NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec                args[] = {

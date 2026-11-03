@@ -9,6 +9,17 @@
 These commands are used to construct SQL statements, making sure that Tcl values
 are properly quoted depending on position: names or values.
 
+[para]
+For SQL values, prefer the bind-variable support in [cmd ns_db], using
+[option -bindvars], [option -bindset] or [option -binddict] with colon-prefixed
+parameters. Binding keeps values separate from SQL syntax, making application
+code less error-prone and avoiding repeated Tcl-level quoting and SQL string
+construction; cached SQL parsing and value conversion can also improve
+performance. See [cmd ns_db] for the common bind options, including
+[option -bindtypes] for lists, rows, binary values and native arrays.
+Bind variables represent values, not table or column names; identifier quoting
+remains a separate operation.
+
 
 
 [section {COMMANDS}]
