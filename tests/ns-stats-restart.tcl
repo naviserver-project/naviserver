@@ -5,8 +5,9 @@ test stats-startup-config {startup configuration enables sampling and persistenc
     set history [ns_stats history status]
     list [dict get $sampling running] [dict get $sampling interval] \
         [dict get $history enabled] [dict get $history owner] \
-        [dict get $history retention] [dict get $history maxBytes]
-} -result {true 3600 true primary 86400 4194304}
+        [dict get $history retention] [dict get $history maxBytes] \
+        [dict get $history journalMode] [dict get $history synchronous]
+} -result {true 3600 true primary 86400 4194304 WAL FULL}
 set db [ns_db gethandle diagnostics]
 set oldInstances [::nsf::dispatch ::ns_stats sql $db {SELECT DISTINCT instance FROM ns_stats_samples}]
 ns_db releasehandle $db
@@ -22,8 +23,9 @@ test stats-startup-runtime-override {runtime commands can change configured star
     set sampling [ns_stats sampling start -interval 1500ms]
     ns_stats history disable
     set history [ns_stats history configure -pool diagnostics -retention 2m -maxBytes 8MiB]
-    list [dict get $sampling interval] [dict get $history retention] [dict get $history maxBytes]
-} -result {1.5 120 8388608}
+    list [dict get $sampling interval] [dict get $history retention] [dict get $history maxBytes] \
+        [dict get $history journalMode] [dict get $history synchronous]
+} -result {1.5 120 8388608 DELETE NORMAL}
 ns_stats history disable
 ns_stats sampling stop
 set failed $::tcltest::numTests(Failed)

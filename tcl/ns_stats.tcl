@@ -1585,14 +1585,19 @@ nx::Class create ::ns::stats::SQLiteHistory {
             } {
                 error "history requires a dedicated database"
             }
-            foreach query {
-                {PRAGMA busy_timeout=1000}
-                {PRAGMA journal_mode=DELETE}
-                {PRAGMA synchronous=FULL}
-                {PRAGMA temp_store=MEMORY}
-            } {
-                :sql $db $query
+            set journalMode [dict get $config journalMode]
+            set synchronous [dict get $config synchronous]
+            :sql $db {PRAGMA busy_timeout=1000}
+            set journal [:scalar $db "PRAGMA journal_mode=$journalMode"]
+            if {[string toupper $journal] ne $journalMode} {
+                error "history journal mode $journalMode unavailable (SQLite returned $journal)"
             }
+            :sql $db "PRAGMA synchronous=$synchronous"
+            set level [dict get {OFF 0 NORMAL 1 FULL 2 EXTRA 3} $synchronous]
+            if {[:scalar $db {PRAGMA synchronous}] != $level} {
+                error "history synchronous mode $synchronous unavailable"
+            }
+            :sql $db {PRAGMA temp_store=MEMORY}
             set page [:scalar $db {PRAGMA page_size}]
             set maximum [expr {int([dict get $config maxBytes]*0.45)/$page}]
 
@@ -1639,6 +1644,8 @@ nx::Class create ::ns::stats::SQLiteHistory {
         -pool:required
         {-retention 86400}
         {-maxBytes 67108864}
+        {-journalMode DELETE}
+        {-synchronous NORMAL}
     } {
         #
         # Validate the database pool and retention limits, initialize the
@@ -1655,9 +1662,22 @@ nx::Class create ::ns::stats::SQLiteHistory {
         #     seconds, default 86400 seconds.
         # @param maxBytes Storage budget accepting ns_baseunit size syntax; at least 4 MiB,
         #     default 67108864 bytes. Includes database journal headroom.
+        # @param journalMode SQLite journal policy: DELETE (default), TRUNCATE,
+        #     PERSIST or WAL, case-insensitive.
+        # @param synchronous SQLite synchronization: OFF, NORMAL (default), FULL
+        #     or EXTRA, case-insensitive. NORMAL in rollback-journal mode has
+        #     weaker system-crash protection than FULL.
         # @return History status dictionary after schema initialization and persistence
         #     scheduling.
         #
+        set journalMode [string toupper $journalMode]
+        set synchronous [string toupper $synchronous]
+        if {$journalMode ni {DELETE TRUNCATE PERSIST WAL}} {
+            error "journalMode must be DELETE, TRUNCATE, PERSIST or WAL"
+        }
+        if {$synchronous ni {OFF NORMAL FULL EXTRA}} {
+            error "synchronous must be OFF, NORMAL, FULL or EXTRA"
+        }
         set retention [ns_baseunit -time $retention]
         set maxBytes [ns_baseunit -size $maxBytes]
         if {$retention < 60 || $retention > 604800 || $maxBytes < 4194304} {
@@ -1668,13 +1688,14 @@ nx::Class create ::ns::stats::SQLiteHistory {
         }
         set config [dict create \
                         enabled true pool $pool retention $retention maxBytes $maxBytes \
+                        journalMode $journalMode synchronous $synchronous \
                         owner [ns_info server]  busy false scheduler {} \
                         generation [clock microseconds] lastSaved {} \
                         failures 0 lastFailure {} lastLoggedAt 0 gaps {} \
                         mixins [:info object mixins] topology {} topologyAt 0]
         set old [nsv_get ns_stats history]
         if {$old ne "" && [dict get $old enabled]} {
-            foreach k {pool retention maxBytes owner} {
+            foreach k {pool retention maxBytes owner journalMode synchronous} {
                 if {[dict get $old $k] ne [dict get $config $k]} {
                     error "history already configured differently; disable before reconfiguring"
                 }
@@ -1727,7 +1748,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
         # fields are omitted.
         #
         # @return Persistence status dictionary including owner, pool, retention, maxBytes,
-        #     scheduler and write failures; enabled is false when never configured.
+        #     journalMode, synchronous, scheduler and write failures; enabled is false when never configured.
         #
         set config [nsv_get ns_stats history]
         if {$config eq ""} {
@@ -2316,9 +2337,12 @@ nx::Class create ::ns::ns_stats -superclass ::ns::stats::Sampler {
             error "ns/stats samplingInterval must be 1..3600 seconds"
         }
         if {$pool ne ""} {
+            set sqliteSection $section/history/sqlite
             :history configure -pool $pool \
                 -retention [ns_config $section historyRetention 24h] \
-                -maxBytes [ns_config $section historyMaxBytes 64MiB]
+                -maxBytes [ns_config $section historyMaxBytes 64MiB] \
+                -journalMode [ns_config $sqliteSection journalMode DELETE] \
+                -synchronous [ns_config $sqliteSection synchronous NORMAL]
         }
         if {$sampling} {
             :sampling start -interval $interval

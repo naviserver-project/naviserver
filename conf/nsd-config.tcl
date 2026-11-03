@@ -185,6 +185,11 @@ ns_section ns/stats {
     #ns_param historyMaxBytes  64MiB
 }
 
+ns_section ns/stats/history/sqlite {
+    #ns_param journalMode DELETE
+    #ns_param synchronous NORMAL
+}
+
 ns_section ns/reverseproxymode {
     #
     # Enable this mode when NaviServer is running behind trusted

@@ -1020,6 +1020,25 @@ set ::ns_configdoc::data {
             }
         }
 
+        ns/stats/history/sqlite {
+            :title {ns/stats/history/sqlite}
+            :desc {Backend-specific SQLite policy for ns_stats history. History enablement, pool, retention and budget remain in ns/stats.}
+            :example {
+                ns_section ns/stats/history/sqlite {
+                    ns_param journalMode DELETE
+                    ns_param synchronous NORMAL
+                }
+            }
+            journalMode {
+                type string default DELETE
+                desc {SQLite history journal mode: DELETE, TRUNCATE, PERSIST or WAL, case-insensitive. Applied and verified on every history checkout. WAL permits concurrent readers and a writer; pool size is configured separately.}
+            }
+            synchronous {
+                type string default NORMAL
+                desc {SQLite history synchronization: OFF, NORMAL, FULL or EXTRA, case-insensitive. NORMAL in rollback-journal mode has weaker system-crash protection than FULL. WAL/NORMAL preserves consistency but can lose recent commits after a system crash.}
+            }
+        }
+
         ns/sendmail {
             :title {ns/sendmail}
             :desc {
