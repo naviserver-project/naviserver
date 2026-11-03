@@ -71,6 +71,7 @@ typedef enum {
     DbFn_BindParameter = 26,
     DbFn_BindTyped = 27,
     DbFn_BindTypes = 28,
+    DbFn_Stats = 29,
 } Ns_DbProcId;
 
 /*
@@ -167,6 +168,19 @@ typedef unsigned (Ns_DbBindTypesProc)(const Ns_DbHandle *);
 NS_EXTERN unsigned Ns_DbBindSupportedTypes(const Ns_DbHandle *) NS_GNUC_NONNULL(1);
 NS_EXTERN int Ns_DbBindArrayGet(Tcl_Interp *, Tcl_Obj *, TCL_SIZE_T *, Tcl_Obj *const **, char *)
     NS_GNUC_NONNULL(1,2,3,4);
+
+/* Optional, observational per-handle statistics. The callback returns a Tcl
+ * dictionary in interp. A NULL database selects the driver's default scope.
+ * Database names and the handle are borrowed for the duration of the call.
+ * Shared scalar metrics belong in connection/statement, with meaningful peaks
+ * under highwater at matching paths. Omit unavailable metrics and empty groups.
+ * Driver-specific fields belong in backend/DRIVER. Callbacks must preserve
+ * pending results, transactions and error diagnostics. See ns_db statistics
+ * documentation for metric names, units and scope. */
+#define NS_DB_STATS_ABI 1
+typedef int (Ns_DbStatsProc)(Tcl_Interp *, Ns_DbHandle *, const char *);
+NS_EXTERN int Ns_DbStats(Tcl_Interp *interp, Ns_DbHandle *handle, const char *database)
+    NS_GNUC_NONNULL(1, 2);
 
 NS_EXTERN Ns_ReturnCode Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs);
 NS_EXTERN char         *Ns_DbDriverName(Ns_DbHandle *handle);

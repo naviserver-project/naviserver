@@ -73,6 +73,7 @@ typedef struct DbDriver {
     SpReturnCodeProc *spreturncodeProc;
     SpGetParamsProc  *spgetparamsProc;
     VersionProc      *versionProc;
+    Ns_DbStatsProc   *statsProc;
     const Ns_DbBatchDriverOps *batchOps;
     Ns_DbBindExecProc *bindExecProc;
     Ns_DbBindTypedExecProc *bindTypedExecProc;
@@ -235,6 +236,10 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
             driverPtr->versionProc = (VersionProc *) procs->func;
             break;
 
+        case DbFn_Stats:
+            driverPtr->statsProc = (Ns_DbStatsProc *) procs->func;
+            break;
+
 #ifdef NS_WITH_DEPRECATED
             /*
              * The following functions are no longer supported.
@@ -367,6 +372,71 @@ Ns_DbDriverVersionInfo(Ns_DbHandle *handle)
         result = (*driverPtr->versionProc)(handle);
     }
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbStats --
+ *
+ *      Read optional driver statistics without executing an nsdb statement.
+ *      Preserve the pool-statistics API and permit older drivers to omit the
+ *      callback. Driver dictionaries retain their backend-specific fields;
+ *      core adds the driver name and whether the callback is supported.
+ *
+ * Results:
+ *      TCL_OK with a statistics dictionary, or TCL_ERROR. Callback errors are
+ *      returned unchanged. An explicit database selector requires a callback.
+ *
+ * Side effects:
+ *      Set the interpreter result. Never reconnect a disconnected handle or
+ *      flush pending results, reset counters, or alter driver diagnostics.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_DbStats(Tcl_Interp *interp, Ns_DbHandle *handle, const char *database)
+{
+    const DbDriver *driverPtr = NsDbGetDriver(handle);
+    const char     *name = Ns_DbDriverName(handle);
+    bool            supported = driverPtr != NULL && driverPtr->statsProc != NULL;
+    Tcl_Obj        *resultObj;
+
+    if (name == NULL) {
+        name = handle->driver != NULL ? handle->driver : "unknown";
+    }
+    if (!supported) {
+        if (database != NULL) {
+            Tcl_SetObjResult(interp, Tcl_ObjPrintf("driver %s does not support handle statistics or database selection", name));
+            Tcl_SetErrorCode(interp, "NSDB", "STATS", "UNSUPPORTED", (char *)0L);
+            return TCL_ERROR;
+        }
+        resultObj = Tcl_NewDictObj();
+    } else {
+        TCL_SIZE_T size;
+
+        if (!handle->connected) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("statistics require a connected database handle", TCL_INDEX_NONE));
+            Tcl_SetErrorCode(interp, "NSDB", "STATS", "DISCONNECTED", (char *)0L);
+            return TCL_ERROR;
+        }
+        if ((*driverPtr->statsProc)(interp, handle, database) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        if (Tcl_DictObjSize(interp, Tcl_GetObjResult(interp), &size) != TCL_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("driver statistics callback did not return a dictionary", TCL_INDEX_NONE));
+            Tcl_SetErrorCode(interp, "NSDB", "STATS", "INVALID_RESULT", (char *)0L);
+            return TCL_ERROR;
+        }
+        resultObj = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
+    }
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("driver", TCL_INDEX_NONE),
+                   Tcl_NewStringObj(name, TCL_INDEX_NONE));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("supported", TCL_INDEX_NONE),
+                   Tcl_NewBooleanObj(supported));
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
 }
 
 /*

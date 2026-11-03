@@ -637,3 +637,24 @@ ns_section ns/db/pool/ns_stats_test/sqlite {
     ns_param journalMode WAL
     ns_param synchronous NORMAL
 }
+
+# Dedicated optional driver-statistics callback probes. Legacy pools omit it.
+ns_section ns/db/drivers {
+    ns_param stats_fixture [file join [ns_config test home] .. nsdbtest nsdbtest[sharedlibextension]]
+}
+ns_section ns/db/driver/stats_fixture {
+    ns_param statsMode true
+}
+foreach name {valid error invalid} {
+    ns_section ns/db/pools {
+        ns_param stats_$name {Driver statistics callback test}
+    }
+    ns_section ns/db/pool/stats_$name {
+        ns_param driver stats_fixture
+        ns_param connections 1
+        ns_param datasource $name
+        ns_param verbose false
+    }
+}
+ns_set update [ns_configsection ns/server/test/db] pools \
+    [ns_config ns/server/test/db pools],stats_valid,stats_error,stats_invalid

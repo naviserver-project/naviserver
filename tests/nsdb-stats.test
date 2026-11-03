@@ -1,0 +1,77 @@
+# Optional handle statistics coexist with the existing global pool counters.
+package require tcltest 2.2
+namespace import -force ::tcltest::test
+
+test nsdb-stats-pools {no-argument statistics retain the pool dictionary and counter fields} -body {
+    set stats [ns_db stats]
+    set ok true
+    foreach pool {a b} {
+        foreach key {statements gethandles handles connected used waittime sqltime} {
+            if {![dict exists $stats $pool $key]} {
+                set ok false
+            }
+        }
+    }
+    set ok
+} -result true
+
+test nsdb-stats-unsupported {older drivers need no new callback and reject explicit scope selection} -setup {
+    set h [ns_db gethandle a]
+} -body {
+    set stats [ns_db stats $h]
+    set failed [catch {ns_db stats $h -database main} message options]
+    list [dict get $stats driver] [dict get $stats supported] \
+        $failed [dict get $options -errorcode]
+} -cleanup {
+    ns_db releasehandle $h
+} -result {nsdbtest 0 1 {NSDB STATS UNSUPPORTED}}
+
+test nsdb-stats-callback {the callback receives default and explicit database selection without counting SQL} -setup {
+    set h [ns_db gethandle stats_valid]
+} -body {
+    set before [dict get [ns_db stats] stats_valid statements]
+    set default [ns_db stats $h]
+    set named [ns_db stats $h -database {odd database name}]
+    list [dict get $default driver] [dict get $default supported] \
+        [dict get $default backend nsdbtest database] [dict get $named backend nsdbtest database] [dict get $named connection cacheHits] \
+        [expr {$before==[dict get [ns_db stats] stats_valid statements]}]
+} -cleanup {
+    ns_db releasehandle $h
+} -result {nsdbtest 1 default {odd database name} 17 1}
+
+test nsdb-stats-errors {callback errors and error codes propagate unchanged} -setup {
+    set h [ns_db gethandle stats_error]
+} -body {
+    set failed [catch {ns_db stats $h} message options]
+    list $failed $message [dict get $options -errorcode]
+} -cleanup {
+    ns_db releasehandle $h
+} -result {1 {statistics fixture error} {NSDB STATS FIXTURE}}
+
+test nsdb-stats-invalid-result {a driver must return a dictionary} -setup {
+    set h [ns_db gethandle stats_invalid]
+} -body {
+    set failed [catch {ns_db stats $h} message options]
+    list $failed [dict get $options -errorcode]
+} -cleanup {
+    ns_db releasehandle $h
+} -result {1 {NSDB STATS INVALID_RESULT}}
+
+test nsdb-stats-disconnected {statistics do not reconnect a disconnected handle} -setup {
+    set h [ns_db gethandle stats_valid]
+} -body {
+    ns_db disconnect $h
+    set failed [catch {ns_db stats $h} message options]
+    list $failed [dict get $options -errorcode] [ns_db connected $h]
+} -cleanup {
+    ns_db releasehandle $h
+} -result {1 {NSDB STATS DISCONNECTED} 0}
+
+test nsdb-stats-validation {invalid handles, unknown options and extra arguments are rejected} -setup {
+    set h [ns_db gethandle stats_valid]
+} -body {
+    list [catch {ns_db stats missing}] [catch {ns_db stats $h -database}] \
+        [catch {ns_db stats $h -unknown x}] [catch {ns_db stats $h extra}]
+} -cleanup {
+    ns_db releasehandle $h
+} -result {1 1 1 1}

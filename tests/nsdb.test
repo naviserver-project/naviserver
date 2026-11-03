@@ -132,7 +132,7 @@ test nsdb-1.0.29 {syntax: ns_db sp_start} -body {
 
 test nsdb-1.0.30 {syntax: ns_db stats} -body {
     ns_db stats ?
-} -returnCodes error -result {wrong # args: should be "ns_db stats"}
+} -returnCodes error -result {invalid database id: "?"}
 
 test nsdb-1.0.31 {syntax: ns_db user} -body {
     ns_db user

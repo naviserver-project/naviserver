@@ -395,6 +395,64 @@ time for handles from this pool (including the connection setup time
 to the database server).
 
 
+[call [cmd "ns_db stats"] [arg handle] [opt [option {-database name}]]]
+
+Returns statistics from the optional driver callback for an owned database
+handle. The result is a Tcl dictionary with [const driver] (the driver's name)
+and [const supported] (a boolean). Without a callback, [const supported] is
+false; existing drivers require no modification. The no-handle form above
+continues to return the existing pool statistics.
+
+[para]
+Statistics use a shared vocabulary where the scopes and units are comparable:
+
+[list_begin definitions]
+[def [const connection]]
+[const memoryUsedBytes] and [const cacheUsedBytes] are current memory gauges
+in bytes. [const cacheHits] and [const cacheMisses] are cumulative cache-access
+counts for this connection. Backend documentation defines the cache coverage.
+[def [const statement]]
+[const executions] counts execution starts of the currently retained statement;
+[const rowsReturned] counts rows delivered to the caller by that statement.
+[const memoryUsedBytes] is its current attributed memory in bytes. These are
+statement-instance metrics, not historical connection or server totals.
+[def [const highwater]]
+Meaningful peak gauges, nested at the same paths as their corresponding current
+metrics. Omit peaks that the engine does not measure. Cumulative counters are
+not peaks, even if an engine API returns them in an output called highwater.
+[def [const backend]]
+Driver-specific fields, nested under the driver's identifier. SQLite places
+its connection/statement details, pool policy and WAL snapshot under
+[const {backend sqlite}]. These are not equated with PostgreSQL server-wide
+buffer, scan or checkpoint statistics.
+[list_end]
+
+[para]
+Metric values are scalars, without per-metric [const available], [const current]
+or [const highwater] wrappers. Omit unsupported or unavailable metrics; zero
+means a measured zero. Omit empty groups. [const supported] reports callback
+support only, not the availability of every metric. A backend may retain a
+reason/code when a supported measurement temporarily fails, without providing
+unavailable numerical values. SQLite, for example, omits WAL frame counts when
+its snapshot is locked and reports the reason under [const {backend sqlite wal}].
+
+[para]
+An explicit [option -database] selects a database within the connection where
+supported; SQLite defaults to [const main] and accepts attached database names.
+Unknown databases and unsupported explicit selection are errors. Connection
+counters still cover the connection; the selector chooses the SQLite WAL scope.
+[cmd {ns_sqlite stats}] retains its legacy names, availability wrappers and
+sentinels for existing applications; it is a compatibility view of the same
+sampler rather than the shared result format.
+
+[para]
+A supported callback requires a connected handle. Statistics do not reconnect
+it, flush or consume pending rows, reset counters, commit or roll back work,
+or clear database error diagnostics. Callback errors propagate to the caller.
+Different drivers' counters need not be comparable; this command does not issue
+queries against PostgreSQL server statistics views.
+
+
 [call [cmd "ns_db user"] [arg handle]]
 
 Returns the user (as specified for the User parameter of the configuration file)

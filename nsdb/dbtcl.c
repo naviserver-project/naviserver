@@ -615,14 +615,27 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         }
         break;
 
-    case STATS:
-        if (objc != 2) {
-            Tcl_WrongNumArgs(interp, 2, objv, NULL);
-            result = TCL_ERROR;
-        } else if  (Ns_DbPoolStats(interp) != TCL_OK) {
-            result = TCL_ERROR;
+    case STATS: {
+        if (objc == 2) {
+            result = Ns_DbPoolStats(interp);
+        } else {
+            const char  *database = NULL;
+            Ns_ObjvSpec options[] = {
+                {"-database", Ns_ObjvString, &database, NULL},
+                {"--", Ns_ObjvBreak, NULL, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+
+            if (Ns_ParseObjv(options, NULL, interp, 3, objc, objv) != NS_OK) {
+                result = TCL_ERROR;
+            } else if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, NULL) != TCL_OK) {
+                result = TCL_ERROR;
+            } else {
+                result = Ns_DbStats(interp, handlePtr, database);
+            }
         }
         break;
+    }
 
     case BINDROW:        NS_FALL_THROUGH; /* fall through */
     case CANCEL:         NS_FALL_THROUGH; /* fall through */

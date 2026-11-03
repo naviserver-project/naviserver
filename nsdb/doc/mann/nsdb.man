@@ -178,4 +178,40 @@ Quote database names and values for use in SQL statements.
 [see_also ns_db ns_buildsqldate ns_dbquotevalues admin-config-params]
 [keywords database db pool driver nsdb ns_db nsdbpg nsoracle]
 [category {NaviServer Database}]
+[section {Optional driver statistics}]
+
+[cmd {ns_db stats}] without a handle retains its existing pool statistics.
+[cmd {ns_db stats}] with a handle dispatches to the optional [const DbFn_Stats]
+callback, declared by [const NS_DB_STATS_ABI] in [file nsdb.h]. Existing callback
+IDs and the public handle layout are unchanged; drivers that omit this callback
+remain usable and report [const {supported false}].
+
+[example_begin]
+typedef int (Ns_DbStatsProc)(Tcl_Interp *interp, Ns_DbHandle *handle,
+                           const char *database);
+[example_end]
+
+The callback returns TCL_OK with a dictionary as the interpreter result, or
+TCL_ERROR with its diagnostic. A NULL database selects the driver's default
+scope; an explicit name must be validated or rejected. The callback borrows the
+handle and database name only for the call. Core adds [const driver] and
+[const supported] to the result, and validates that successful results are
+dictionaries. [const Ns_DbStats] is the corresponding C dispatch function.
+
+[para]
+Statistics callbacks are observational: preserve pending results, transactions,
+affected-row counts and database error diagnostics; do not reconnect, reset
+counters or run maintenance. Document scopes, units, unavailable counters and
+sampling costs per driver. SQLite supplies this callback and retains
+[cmd {ns_sqlite stats}] in its legacy-compatible format. Other drivers may initially omit it.
+
+[para]
+Use scalar [const connection] and [const statement] metrics from the shared
+vocabulary documented by [cmd {ns_db stats}]. Omit unavailable entries and empty
+groups. Report measured zeroes explicitly. Nest driver-specific metrics and
+policy under [const {backend DRIVER}]. Put genuine peak gauges under
+[const highwater] at paths matching their current metrics; do not manufacture
+peaks for counters or expose unused zero-valued API outputs as measurements.
+Do not substitute server-wide statistics for missing connection-local metrics.
+
 [manpage_end]
