@@ -186,7 +186,7 @@ ns_section ns/stats {
 }
 
 # SQLite history connection policy belongs to its configured pool:
-# ns_section ns/db/pool/ns_stats/sqlite {
+# ns_section ns/db/pool/ns_stats {
 #     ns_param journalMode WAL
 #     ns_param synchronous NORMAL
 # }

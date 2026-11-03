@@ -64,8 +64,8 @@ try {
             foreach suffix {{} -journal -wal -shm} {
                 file delete -force $path$suffix
             }
-            ns_set update [ns_configsection ns/db/pool/$pool/sqlite] journalMode $journal
-            ns_set update [ns_configsection ns/db/pool/$pool/sqlite] synchronous $synchronous
+            ns_set update [ns_configsection ns/db/pool/$pool] journalMode $journal
+            ns_set update [ns_configsection ns/db/pool/$pool] synchronous $synchronous
             set status [ns_stats history configure -pool $pool -retention 24h -maxBytes 64MiB]
             # Keep scheduled persistence out of this controlled benchmark.
             ns_unschedule_proc [dict get $status scheduler]

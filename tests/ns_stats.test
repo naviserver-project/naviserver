@@ -691,6 +691,8 @@ set statsTestCode [catch {
             puts $channel [list ns_param driver sqlite]
             puts $channel [list ns_param connections 1]
             puts $channel [list ns_param datasource [ns_config ns/db/pool/ns_stats_test datasource]]
+            puts $channel [list ns_param journalMode WAL]
+            puts $channel [list ns_param synchronous FULL]
             puts $channel [list ns_section ns/stats]
             puts $channel [list ns_param server primary]
             puts $channel [list ns_param sampling true]
@@ -698,9 +700,6 @@ set statsTestCode [catch {
             puts $channel [list ns_param historyPool diagnostics]
             puts $channel [list ns_param historyRetention 24h]
             puts $channel [list ns_param historyMaxBytes 4MiB]
-            puts $channel [list ns_section ns/db/pool/diagnostics/sqlite]
-            puts $channel [list ns_param journalMode WAL]
-            puts $channel [list ns_param synchronous FULL]
         } finally {close $channel}
         set script [file join [ns_config test home] ns-stats-restart.tcl]
         set command [list [ns_info nsd] -c -d -t $cfg $script]
