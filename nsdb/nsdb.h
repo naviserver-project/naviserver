@@ -147,8 +147,9 @@ NS_EXTERN bool Ns_DbBindSupported(const Ns_DbHandle *);
 NS_EXTERN int Ns_DbBindExec(Tcl_Interp *, Ns_DbHandle *, const char *, TCL_SIZE_T,
                             Tcl_Obj *const *, Tcl_Obj *const *);
 
-/* Explicit binary interpretation is an optional extension to text binding.
- * The existing callback ABI is unchanged. A NULL types array means all text. */
+/* Preferred callback for both text and explicit binary values. A NULL types
+ * array means all text. Registering only DbFn_BindTyped is sufficient; core
+ * retains DbFn_Bind for existing text-only drivers. Callback ABIs are unchanged. */
 typedef enum {
     NS_DB_BIND_TEXT, NS_DB_BIND_BINARY
 } Ns_DbBindValueType;

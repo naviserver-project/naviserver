@@ -680,7 +680,10 @@ can bind [const {INSERT INTO peers VALUES :values}] directly.
 Column types and values are refreshed on every execution, independent of the
 cached SQL shape. Drivers must implement the optional [const DbFn_BindTyped]
 callback for explicit binary values; otherwise execution fails without falling
-back to text. The existing text callback ABI is unchanged.
+back to text. The typed callback is preferred for ordinary text bindings too;
+a NULL types array means all text. Registering only [const DbFn_BindTyped]
+is sufficient for bind support. Existing [const DbFn_Bind] text-only drivers
+remain supported for text parameters. Both callback ABIs are unchanged.
 
 [para]
 Parameter token positions are cached in the SQL Tcl object. Repeated list

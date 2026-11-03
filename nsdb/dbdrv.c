@@ -1155,45 +1155,79 @@ NsDbGetBatchOps(const Ns_DbHandle *handle)
     return driver == NULL ? NULL : driver->batchOps;
 }
 
-/* SQL statements with bind vars use the existing driver timing/logging path.
- * Values are
- * deliberately excluded from SQL logging. Drivers without this optional
- * callback continue to support the unchanged ordinary execution interface. */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbBindSupported --
+ *
+ *      Report whether a driver implements typed or legacy text bindings.
+ *
+ * Results:
+ *      True when either optional callback is registered.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 bool
 Ns_DbBindSupported(const Ns_DbHandle *handle)
 {
     const DbDriver *driver = NsDbGetDriver(handle);
 
-    return driver != NULL && driver->bindExecProc != NULL;
+    return driver != NULL
+        && (driver->bindTypedExecProc != NULL || driver->bindExecProc != NULL);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbBindExec --
+ *
+ *      Preserve the public text-binding API by dispatching with default types.
+ *
+ * Results:
+ *      NS_ROWS, NS_DML or NS_ERROR.
+ *
+ * Side effects:
+ *      See Ns_DbBindTypedExec.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Ns_DbBindExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
               TCL_SIZE_T count, Tcl_Obj *const *names, Tcl_Obj *const *values)
 {
-    const DbDriver *driver = NsDbGetDriver(handle);
-    int status = NS_ERROR;
-
-    if (handle->connected && driver != NULL && driver->bindExecProc != NULL) {
-        Ns_Time start;
-
-        Ns_GetTime(&start);
-        status = driver->bindExecProc(interp, handle, sql, count, names, values);
-        NsDbLogSql(&start, handle, sql);
-    } else {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support bind vars in SQL statements", -1));
-    }
-    return status;
+    return Ns_DbBindTypedExec(interp, handle, sql, count, names, values, NULL);
 }
 
-/* Binary values must never silently fall back to the text callback. */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbBindTypedExec --
+ *
+ *      Prefer the typed callback for every binding. NULL types means all text.
+ *      Retain text-only driver compatibility when every supplied type is text;
+ *      explicit binary bindings must never silently use the text callback.
+ *
+ * Results:
+ *      NS_ROWS, NS_DML or NS_ERROR, with unsupported operations reported in
+ *      the interpreter.
+ *
+ * Side effects:
+ *      Uses the existing driver SQL timing/logging path exactly once. Values
+ *      are excluded from SQL logging. Transaction handling belongs to the caller.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Ns_DbBindTypedExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
                   TCL_SIZE_T count, Tcl_Obj *const *names, Tcl_Obj *const *values,
                   const Ns_DbBindValueType *types)
 {
     const DbDriver *driver = NsDbGetDriver(handle);
-    int status = NS_ERROR;
+    int             status = NS_ERROR;
+    bool            binary = NS_FALSE;
 
     if (handle->connected && driver != NULL && driver->bindTypedExecProc != NULL) {
         Ns_Time start;
@@ -1201,8 +1235,24 @@ Ns_DbBindTypedExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
         Ns_GetTime(&start);
         status = driver->bindTypedExecProc(interp, handle, sql, count, names, values, types);
         NsDbLogSql(&start, handle, sql);
+        return status;
+    }
+    for (TCL_SIZE_T i = 0; types != NULL && i < count; i++) {
+        if (types[i] == NS_DB_BIND_BINARY) {
+            binary = NS_TRUE;
+            break;
+        }
+    }
+    if (handle->connected && driver != NULL && driver->bindExecProc != NULL && !binary) {
+        Ns_Time start;
+
+        Ns_GetTime(&start);
+        status = driver->bindExecProc(interp, handle, sql, count, names, values);
+        NsDbLogSql(&start, handle, sql);
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("driver does not support binary bind vars in SQL statements", -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(binary
+            ? "driver does not support binary bind vars in SQL statements"
+            : "driver does not support bind vars in SQL statements", TCL_INDEX_NONE));
     }
     return status;
 }

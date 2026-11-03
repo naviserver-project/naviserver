@@ -580,6 +580,29 @@ ns_section "ns/db/pool/b" {
     ns_param   maxidle         1
     ns_param   maxopen         1
 }
+# Optional bind callbacks on the stub exercise legacy, typed-only and dual drivers.
+foreach mode {text typed both} {
+    set driver nsdbtest_$mode
+    set pool bind_$mode
+    ns_section ns/db/drivers {
+        ns_param $driver [ns_config test home]/../nsdbtest/nsdbtest[sharedlibextension]
+    }
+    ns_section ns/db/driver/$driver {
+        ns_param bindMode $mode
+    }
+    ns_section ns/db/pools {
+        ns_param $pool "Bind dispatch: $mode"
+    }
+    ns_section ns/db/pool/$pool {
+        ns_param driver $driver
+        ns_param connections 1
+        ns_param datasource test
+        ns_param verbose false
+        ns_param logsqlerrors false
+    }
+}
+ns_set update [ns_configsection ns/server/test/db] pools a,b,bind_text,bind_typed,bind_both
+
 #
 # Optional ns_stats history tests use the installed native SQLite driver.
 # NAVISERVER is the installation prefix already selected by make. Without
@@ -600,7 +623,7 @@ if {[info exists ::env(NAVISERVER)]} {
             ns_param datasource [file join [ns_config test home] ns-stats-[pid].db]
         }
         ns_section ns/server/test/db {
-            ns_set update [ns_configsection ns/server/test/db] pools a,b,ns_stats_test
+            ns_set update [ns_configsection ns/server/test/db] pools a,b,bind_text,bind_typed,bind_both,ns_stats_test
         }
     }
     unset statsSqlite

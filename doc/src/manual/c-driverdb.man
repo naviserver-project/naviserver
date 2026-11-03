@@ -1114,4 +1114,41 @@ words, you can have an exception message of up to 4095 bytes,
 reserving the last byte for a NUL byte.
 
 
+[section {Optional bind variables in SQL statements}]
+
+Drivers supporting the core bind options should register [const DbFn_BindTyped]
+with an [const Ns_DbBindTypedExecProc] callback. One callback handles ordinary
+text and explicit binary values:
+
+[example {
+int BindExec(Tcl_Interp *interp, Ns_DbHandle *handle, const char *sql,
+             TCL_SIZE_T count, Tcl_Obj *const *names, Tcl_Obj *const *values,
+             const Ns_DbBindValueType *types);
+}]
+
+A NULL [arg types] array means all text. Otherwise, each entry is
+[const NS_DB_BIND_TEXT] or [const NS_DB_BIND_BINARY]. A NULL pointer in
+[arg values] represents SQL NULL independently of its type. Values and names
+are borrowed Tcl objects and must not be retained after the callback returns.
+The result is [const NS_ROWS], [const NS_DML] or [const NS_ERROR], as with
+ordinary execution.
+
+[para]
+Core prefers the typed callback even when a driver also registers the older
+[const DbFn_Bind] text-only callback. Existing text-only drivers remain supported
+for scalar text and expanded all-text collections. Explicit binary parameters
+never fall back to the text-only callback, including binary values mapped to
+SQL NULL. The exported C function [const Ns_DbBindExec] retains its original
+signature and delegates to the common dispatcher with default text types.
+Neither callback ABI has changed. Typed-only drivers require a core version
+providing this generalized dispatch.
+
+[para]
+Core expands list and row bindings before calling the driver. The optional
+[const DbFn_BindParameter] marker factory chooses native parameter syntax for
+both scalar and expanded slots; Tcl applications continue using colon names.
+Core preserves SQL timing and logging around one callback invocation, without
+logging parameter values. These callbacks do not change ordinary execution
+or driver-specific legacy commands.
+
 [manpage_end]

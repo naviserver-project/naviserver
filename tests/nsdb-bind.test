@@ -180,3 +180,76 @@ test nsdb-bind-parser-info {capability parsing rejects missing and surplus argum
 } -result {1 1 1}
 
 ns_db releasehandle $bindCoreHandle
+
+
+foreach mode {text typed both} {
+    test nsdb-bind-dispatch-$mode {text and typed-only drivers are both discoverable and accept scalar text} -body {
+        set before [dict get [ns_db stats] bind_$mode statements]
+        set handle [ns_db gethandle bind_$mode]
+        try {
+            set value text
+            set result [ns_db exec $handle -bindvars {dml :value}]
+            set supported [ns_db bindinfo $handle]
+        } finally {
+            ns_db releasehandle $handle
+        }
+        set statements [expr {[dict get [ns_db stats] bind_$mode statements]-$before}]
+        list $supported $result $statements
+    } -result {1 NS_DML 1}
+}
+
+test nsdb-bind-dispatch-null-types {typed-only driver receives NULL types for default scalar binding} -body {
+    set handle [ns_db gethandle bind_typed]
+    try {
+        ns_db exec $handle -binddict {} {null-types}
+    } finally {
+        ns_db releasehandle $handle
+    }
+} -result NS_DML
+
+test nsdb-bind-dispatch-preference {typed callback wins when both callbacks are registered} -body {
+    set handle [ns_db gethandle bind_both]
+    try {
+        catch {ns_db exec $handle -binddict {} callback} message
+        set message
+    } finally {
+        ns_db releasehandle $handle
+    }
+} -result {typed callback}
+
+test nsdb-bind-dispatch-legacy-expanded {expanded text rows still reach a legacy text-only callback} -body {
+    set handle [ns_db gethandle bind_text]
+    try {
+        ns_db exec $handle -binddict {rows {{one two} {three four}}} \
+            -bindtypes {rows rows} {dml :rows}
+    } finally {
+        ns_db releasehandle $handle
+    }
+} -result NS_DML
+
+foreach mode {typed both} {
+    test nsdb-bind-dispatch-binary-$mode {typed callback handles explicit binary values} -body {
+        set handle [ns_db gethandle bind_$mode]
+        try {
+            ns_db exec $handle -binddict [dict create value [binary format H* 00ff]] \
+                -bindtypes {value binary} {dml :value}
+        } finally {
+            ns_db releasehandle $handle
+        }
+    } -result NS_DML
+}
+
+test nsdb-bind-dispatch-no-binary-fallback {binary, including NULL binary, cannot reach text-only callbacks} -body {
+    set handle [ns_db gethandle bind_text]
+    try {
+        set result {}
+        foreach value [list [binary format H* 00ff] {}] {
+            catch {ns_db exec $handle -bindvars -emptynull \
+                -bindtypes {value binary} {dml :value}} message
+            lappend result [string match {*does not support binary bind vars*} $message]
+        }
+        set result
+    } finally {
+        ns_db releasehandle $handle
+    }
+} -result {1 1}

@@ -33,6 +33,8 @@ static int            Exec(const Ns_DbHandle *handle, char *sql) NS_GNUC_NONNULL
 static int            GetRow(Ns_DbHandle *handle, Ns_Set *row) NS_GNUC_NONNULL(1,2);
 static Ns_ReturnCode  Flush(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode  ResetHandle(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
+static Ns_DbBindExecProc TextBind NS_GNUC_NONNULL(1, 2, 3);
+static Ns_DbBindTypedExecProc TypedBind NS_GNUC_NONNULL(1, 2, 3);
 
 /*
  * Local variables defined in this file.
@@ -72,10 +74,58 @@ static const char *const dbName = "nsdbtest";
  */
 
 NS_EXPORT Ns_ReturnCode
-Ns_DbDriverInit(const char *driver, const char *UNUSED(configPath))
+Ns_DbDriverInit(const char *driver, const char *configPath)
 {
-    return Ns_DbRegisterDriver(driver, &procs[0]);
+    const char *mode = Ns_ConfigGetValue(configPath, "bindMode");
+
+    if (mode != NULL) {
+        Ns_DbProc callbacks[sizeof(procs) / sizeof(procs[0]) + 2u];
+        size_t count = sizeof(procs) / sizeof(procs[0]) - 1u;
+
+        memcpy(callbacks, procs, sizeof(procs));
+        if (STREQ(mode, "text") || STREQ(mode, "both")) {
+            callbacks[count++] = (Ns_DbProc){DbFn_Bind, (ns_funcptr_t)TextBind};
+        }
+        if (STREQ(mode, "typed") || STREQ(mode, "both")) {
+            callbacks[count++] = (Ns_DbProc){DbFn_BindTyped, (ns_funcptr_t)TypedBind};
+        }
+        callbacks[count] = (Ns_DbProc){DbFn_End, NULL};
+        return Ns_DbRegisterDriver(driver, callbacks);
+    }
+    return Ns_DbRegisterDriver(driver, procs);
 }
+
+/*
+ * Test-only bind callbacks deliberately fail for the "callback" probe so Tcl
+ * tests can identify which callback core selected. Ordinary probes return DML.
+ */
+static int
+TextBind(Tcl_Interp *interp, Ns_DbHandle *UNUSED(handle), const char *sql,
+         TCL_SIZE_T UNUSED(count), Tcl_Obj *const *UNUSED(names), Tcl_Obj *const *UNUSED(values))
+{
+    if (strncmp(sql, "callback", 8u) == 0) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("text callback", TCL_INDEX_NONE));
+        return NS_ERROR;
+    }
+    return NS_DML;
+}
+
+static int
+TypedBind(Tcl_Interp *interp, Ns_DbHandle *UNUSED(handle), const char *sql,
+          TCL_SIZE_T UNUSED(count), Tcl_Obj *const *UNUSED(names), Tcl_Obj *const *UNUSED(values),
+          const Ns_DbBindValueType *types)
+{
+    if (strncmp(sql, "callback", 8u) == 0) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("typed callback", TCL_INDEX_NONE));
+        return NS_ERROR;
+    }
+    if (strcmp(sql, "null-types") == 0 && types != NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("expected default text types", TCL_INDEX_NONE));
+        return NS_ERROR;
+    }
+    return NS_DML;
+}
+
 
 
 /*

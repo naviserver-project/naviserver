@@ -1237,23 +1237,12 @@ NsDbBindObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const objv[],
     Tcl_ListObjGetElements(interp, executeNames, &executeCount, &executeNameItems);
     encoded = BindSqlGetExternal(sql, interp, executeSql, expand);
     if (encoded != NULL) {
-        bool binary = NS_FALSE;
-
         Tcl_DStringFree(&handle->dsExceptionMsg);
         handle->cExceptionCode[0] = '\0';
         Tcl_ResetResult(interp);
 
-        for (TCL_SIZE_T j = 0; executeTypes != NULL && j < executeCount; j++) {
-            if (executeTypes[j] == NS_DB_BIND_BINARY) {
-                binary = NS_TRUE;
-                break;
-            }
-        }
-        status = binary
-            ? Ns_DbBindTypedExec(interp, handle, encoded->bytes.string, executeCount,
-                                 executeNameItems, executeValues, executeTypes)
-            : Ns_DbBindExec(interp, handle, encoded->bytes.string, executeCount,
-                            executeNameItems, executeValues);
+        status = Ns_DbBindTypedExec(interp, handle, encoded->bytes.string, executeCount,
+                                    executeNameItems, executeValues, executeTypes);
         result = DbHandleReturnResult(handle, interp, operation, status);
     }
     EncodedSqlRelease(encoded);
