@@ -39,6 +39,16 @@ are not collected. CPU counters are microseconds, matched by OS thread ID
 and creation time. Numeric allocator properties are bytes; they are not process RSS.
 No active-request URLs, peer addresses or thread callback arguments are retained.
 
+[para]
+On Linux, [const linuxNetwork] contains cumulative [const counters], current socket
+queue [const gauges], and block-device [const disks] observations. Unsupported or
+failed probes remain unavailable; [const availability.linuxNetwork] indicates
+whether any observations were collected. Network counters cover the current
+network namespace, including other services; socket queue gauges aggregate only
+sockets owned by NaviServer. No socket identities or peer addresses are retained.
+These optional probes run as part of the existing snapshot, including scheduled
+sampling, and do not create another scheduler.
+
 [call [cmd "ns_stats sample"] [opt [option "-server server"]] [opt [option "-window duration"]]]
 Without [option -window], reads the latest published record without collecting or modifying it. sampling
 contains ready, from/to epoch seconds, measured elapsedSeconds, ageSeconds, reset,
@@ -52,9 +62,19 @@ Unavailable values are empty Tcl values with availability/readiness information;
 JSON consumers should represent these as null, never as zero.
 
 [para]
+Derived samples also contain [const previousLinuxNetwork], the Linux observations
+at the matching baseline endpoint, or an empty dictionary when no valid process
+baseline exists. Consumers derive Linux counter changes and disk latencies using
+these endpoints and [const sampling.elapsedSeconds]; counter decreases and missing
+values are unknown. Both endpoints are retained in memory and persistent history
+without a database schema migration. Older records may lack these optional fields.
+Historical loss events can be located only to their measured intervals, not to an
+exact instant within an interval; missing history is not evidence of zero loss.
+
+[para]
 [option -window] selects a display period from the bounded recent memory buffer,
 without changing the sampling schedule. The default 0 uses the latest single
-interval. Values up to 900 seconds accept time units, for example 60s.
+interval. Values up to the configured memory window limit accept time units, for example 60s.
 A fresh snapshot is compared with the retained endpoint nearest the requested
 age, within half a sampling interval. This does not publish a sample or advance
 the background sampler baseline. Rates, request timing averages and CPU
@@ -104,7 +124,11 @@ a stopped sampler also discards its baseline rather than counting the stopped pe
 [call [cmd "ns_stats sampling status"]]
 Returns running, interval, scheduler, process instance, readiness, sample age,
 latest publication and collection failure counters. A sample's age is not a
-measurement of traffic latency.
+measurement of traffic latency. Also returns retentionSeconds, maxSamples,
+maxWindowSeconds (the smaller of the configured retention and the duration
+supported by the sample count/cadence), and availableWindowSeconds (continuous
+retained history in the current sampler instance). Available history may be
+shorter than the configured limit after startup, gaps or eviction.
 
 [call [cmd "ns_stats sampling stop"]]
 Stops scheduled collection and retains the last sample, which remains readable
@@ -114,7 +138,13 @@ with running false and increasing age.
     [opt [option "-server server"]] [opt [option "-limit count"]] [opt [option "-cursor timestamp"]]]
 
 Reads compact recent samples from the existing process-wide NSV storage, without
-SQLite. Publication retains at most 180 samples and 900 seconds of history.
+SQLite. Publication applies both [const ns/stats] settings
+[const samplingRetention] (default 15m, 1 second..24 hours) and
+[const samplingMaxSamples] (default 180, 2..10000 samples). A one-hour display
+window at 10-second cadence needs samplingRetention 1h and at least 361 samples,
+including both endpoints. Restart after changing configuration and allow the
+requested continuous history to accumulate. Larger limits use more memory.
+The SQLite historyRetention setting is independent of these memory limits.
 Records contain interval rates, timing averages and grouped CPU percentages;
 raw and per-thread CPU maps are omitted. The buffer remains readable after
 sampling stops and survives sampler stop/start, but not a process restart.

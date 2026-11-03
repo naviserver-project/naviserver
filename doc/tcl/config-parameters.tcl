@@ -952,6 +952,8 @@ set ::ns_configdoc::data {
                     ns_param server           default
                     ns_param sampling         true
                     ns_param samplingInterval 10s
+                    ns_param samplingRetention 15m
+                    ns_param samplingMaxSamples 180
                     ns_param historyPool      ns_stats
                     ns_param historyRetention 24h
                     ns_param historyMaxBytes  64MiB
@@ -977,6 +979,24 @@ set ::ns_configdoc::data {
                 desc {Sampling cadence, normalized with ns_baseunit to seconds,
                     including fractional seconds. Valid range is 1..3600 seconds.
                     Rates use the measured interval between observations.}
+            }
+            samplingRetention {
+                type time
+                default 15m
+                desc {Maximum age of in-memory samples used for display windows.
+                    Valid range is 1 second..24 hours. Both this age limit and
+                    samplingMaxSamples apply. Restart after changing the configuration;
+                    allow the requested continuous history to accumulate. This is
+                    independent of SQLite historyRetention.}
+            }
+            samplingMaxSamples {
+                type integer
+                default 180
+                desc {Maximum number of samples retained in memory, 2..10000.
+                    A window needs at least ceil(window / samplingInterval) + 1
+                    samples including both endpoints: at 10-second cadence a
+                    one-hour window requires at least 361. Larger age/count limits
+                    retain more data in memory. Restart after configuration changes.}
             }
             historyPool {
                 type string

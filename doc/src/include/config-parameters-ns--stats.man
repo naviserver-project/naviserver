@@ -17,6 +17,8 @@ Startup configuration for process-wide ns_stats sampling and optional
      ns_param server           default
      ns_param sampling         true
      ns_param samplingInterval 10s
+     ns_param samplingRetention 15m
+     ns_param samplingMaxSamples 180
      ns_param historyPool      ns_stats
      ns_param historyRetention 24h
      ns_param historyMaxBytes  64MiB
@@ -81,6 +83,34 @@ Sampling cadence, normalized with ns_baseunit to seconds,
 [list_begin itemized]
 [item] Type: [const "time"]
 [item] Default: [const "10s"]
+[list_end]
+
+[def "Parameter name: [emph "samplingMaxSamples"]"]
+Maximum number of samples retained in memory, 2..10000.
+                    A window needs at least ceil(window / samplingInterval) + 1
+                    samples including both endpoints: at 10-second cadence a
+                    one-hour window requires at least 361. Larger age/count limits
+                    retain more data in memory. Restart after configuration changes.
+
+
+
+[list_begin itemized]
+[item] Type: [const "integer"]
+[item] Default: [const "180"]
+[list_end]
+
+[def "Parameter name: [emph "samplingRetention"]"]
+Maximum age of in-memory samples used for display windows.
+                    Valid range is 1 second..24 hours. Both this age limit and
+                    samplingMaxSamples apply. Restart after changing the configuration;
+                    allow the requested continuous history to accumulate. This is
+                    independent of SQLite historyRetention.
+
+
+
+[list_begin itemized]
+[item] Type: [const "time"]
+[item] Default: [const "15m"]
 [list_end]
 
 [def "Parameter name: [emph "server"]"]

@@ -25,6 +25,398 @@ namespace eval ::ns::stats {
     }
 }
 
+# Linux observations are part of every snapshot, including periodic samples.
+proc ::ns::stats::linuxReadFile {path} {
+    set content ""
+    if {[file readable $path]} {
+        try {
+            set f [open $path r]
+            set content [read $f]
+        } on error {errorMsg} {
+            # ignore errors
+        } finally {
+            if {[info exists f]} {close $f}
+        }
+    }
+    return $content
+}
+#
+# Parse files such as /proc/net/snmp and /proc/net/netstat. These
+# contain pairs of lines, with names in the first line and values in
+# the second line.
+#
+proc ::ns::stats::linuxReadNamedCounters {path} {
+    set content [::ns::stats::linuxReadFile $path]
+    set result  {}
+
+    if {$content eq ""} {
+        return $result
+    }
+
+    set lines [split [string trim $content] \n]
+    set count [llength $lines]
+
+    for {set i 0} {$i + 1 < $count} {incr i} {
+        set nameFields  [regexp -all -inline {\S+} [lindex $lines $i]]
+        set valueFields [regexp -all -inline {\S+} [lindex $lines [expr {$i + 1}]]]
+
+        if {[llength $nameFields] < 2
+            || [llength $valueFields] < 2} {
+            continue
+        }
+
+        set nameSection  [string trimright [lindex $nameFields 0] :]
+        set valueSection [string trimright [lindex $valueFields 0] :]
+
+        if {$nameSection ne $valueSection
+            || [llength $nameFields] != [llength $valueFields]} {
+            continue
+        }
+
+        foreach name [lrange $nameFields 1 end] value [lrange $valueFields 1 end] {
+            if {[string is integer -strict $value]} {
+                dict set result $nameSection $name $value
+            }
+        }
+
+        incr i
+    }
+
+    return $result
+}
+#
+# Parse /proc/net/snmp6. Unlike /proc/net/snmp, this file has one
+# name/value pair per line.
+#
+proc ::ns::stats::linuxReadSnmp6 {} {
+    set content [::ns::stats::linuxReadFile /proc/net/snmp6]
+    set result  {}
+
+    foreach line [split [string trim $content] \n] {
+        set fields [regexp -all -inline {\S+} $line]
+
+        if {[llength $fields] == 2
+            && [string is integer -strict [lindex $fields 1]]} {
+            dict set result [lindex $fields 0] [lindex $fields 1]
+        }
+    }
+
+    return $result
+}
+
+#
+# Return aggregate counters from all non-loopback network interfaces.
+#
+proc ::ns::stats::linuxReadDeviceCounters {} {
+    set content [::ns::stats::linuxReadFile /proc/net/dev]
+    set result  {}
+
+    if {$content eq ""} {
+        return $result
+    }
+
+    set rxDrops  0
+    set txDrops  0
+    set rxErrors 0
+    set txErrors 0
+    set found    0
+
+    foreach line [split $content \n] {
+        if {![regexp {^\s*([^:]+):\s*(.*)$} $line _ interface values]} {
+            continue
+        }
+
+        set interface [string trim $interface]
+        if {$interface eq "lo"} {
+            continue
+        }
+
+        set fields [regexp -all -inline {\S+} $values]
+
+        #
+        # /proc/net/dev fields:
+        #
+        # RX: bytes packets errors dropped fifo frame compressed multicast
+        # TX: bytes packets errors dropped fifo colls carrier compressed
+        #
+        if {[llength $fields] < 16} {
+            continue
+        }
+
+        incr rxErrors [lindex $fields 2]
+        incr rxDrops  [lindex $fields 3]
+        incr txErrors [lindex $fields 10]
+        incr txDrops  [lindex $fields 11]
+        set found 1
+    }
+
+    if {$found} {
+        set result [dict create \
+                        interfaceRxDrops  $rxDrops \
+                        interfaceTxDrops  $txDrops \
+                        interfaceRxErrors $rxErrors \
+                        interfaceTxErrors $txErrors]
+    }
+
+    return $result
+}
+
+#
+# Return the inode numbers of sockets owned by the NaviServer process.
+#
+proc ::ns::stats::linuxProcessSocketInodes {} {
+    set result {}
+
+    foreach fd [glob -nocomplain /proc/self/fd/*] {
+        if {[catch {file readlink $fd} target]} {
+            continue
+        }
+
+        if {[regexp {^socket:\[([0-9]+)\]$} $target _ inode]} {
+            dict set result $inode 1
+        }
+    }
+
+    return $result
+}
+
+#
+# Return aggregate kernel queues for sockets owned by NaviServer.
+#
+# For TCP listeners, rx_queue is an accept-queue count. For connected
+# TCP and UDP sockets, tx_queue and rx_queue describe queued data.
+#
+proc ::ns::stats::linuxReadSocketQueues {} {
+    set socketInodes [::ns::stats::linuxProcessSocketInodes]
+
+    if {[dict size $socketInodes] == 0} {
+        return {}
+    }
+
+    set result [dict create \
+                    tcpListenQueued     0 \
+                    tcpListenMax        0 \
+                    tcpListeners        0 \
+                    tcpReceiveBytes     0 \
+                    tcpReceiveMax       0 \
+                    tcpSendBytes        0 \
+                    tcpSendMax          0 \
+                    udpReceiveBytes     0 \
+                    udpReceiveMax       0 \
+                    udpSendBytes        0 \
+                    udpSendMax          0 \
+                    udpSocketDrops      0 \
+                    udpSocketsWithDrops 0 \
+                    udpSocketDropMax    0
+               ]
+
+    set tablesRead 0
+
+    foreach protocol {tcp udp} {
+        foreach path [list \
+                          /proc/self/net/$protocol \
+                          /proc/self/net/${protocol}6] {
+            set content [::ns::stats::linuxReadFile $path]
+
+            if {$content eq ""} {
+                continue
+            }
+            incr tablesRead
+
+            foreach line [lrange [split [string trim $content] \n] 1 end] {
+                set fields [regexp -all -inline {\S+} $line]
+
+                #
+                # Relevant fields:
+                #
+                #  3: socket state
+                #  4: tx_queue:rx_queue
+                #  9: socket inode
+                #
+                if {[llength $fields] < 10} {
+                    continue
+                }
+
+                set inode [lindex $fields 9]
+
+                if {![dict exists $socketInodes $inode]} {
+                    continue
+                }
+
+                set state      [lindex $fields 3]
+                set queueField [lindex $fields 4]
+
+                if {[scan $queueField %x:%x txQueue rxQueue] != 2} {
+                    continue
+                }
+
+                if {$protocol eq "tcp" && $state eq "0A"} {
+                    dict incr result tcpListeners
+                    dict incr result tcpListenQueued $rxQueue
+
+                    if {$rxQueue > [dict get $result tcpListenMax]} {
+                        dict set result tcpListenMax $rxQueue
+                    }
+
+                } elseif {$protocol eq "tcp"} {
+                    dict incr result tcpReceiveBytes $rxQueue
+                    dict incr result tcpSendBytes    $txQueue
+
+                    if {$rxQueue > [dict get $result tcpReceiveMax]} {
+                        dict set result tcpReceiveMax $rxQueue
+                    }
+                    if {$txQueue > [dict get $result tcpSendMax]} {
+                        dict set result tcpSendMax $txQueue
+                    }
+
+                } else {
+                    dict incr result udpReceiveBytes $rxQueue
+                    dict incr result udpSendBytes    $txQueue
+
+                    if {$rxQueue > [dict get $result udpReceiveMax]} {
+                        dict set result udpReceiveMax $rxQueue
+                    }
+                    if {$txQueue > [dict get $result udpSendMax]} {
+                        dict set result udpSendMax $txQueue
+                    }
+
+                    #
+                    # Linux exposes the cumulative socket drop counter
+                    # as the final field in /proc/net/udp{,6}.
+                    #
+                    set drops [lindex $fields end]
+                    if {[string is integer -strict $drops]} {
+                        dict incr result udpSocketDrops $drops
+
+                        if {$drops > 0} {
+                            dict incr result udpSocketsWithDrops
+                        }
+                        if {$drops > [dict get $result udpSocketDropMax]} {
+                            dict set result udpSocketDropMax $drops
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return [expr {$tablesRead > 0 ? $result : {}}]
+}
+
+# Whole block devices only: partitions would duplicate their parent counters.
+# stat fields and inflight are documented in Documentation/block/stat.rst
+# and Documentation/ABI/stable/sysfs-block in the Linux kernel.
+proc ::ns::stats::linuxDiskSnapshot {} {
+    set disks {}
+    foreach path [lsort [glob -nocomplain -directory /sys/block *]] {
+        set name [file tail $path]
+        if {[string match loop* $name] || [string match ram* $name]} {continue}
+        set fields [regexp -all -inline {\S+} [::ns::stats::linuxReadFile $path/stat]]
+        if {[llength $fields] < 11} {continue}
+        set valid 1
+        foreach value $fields {
+            if {![string is entier -strict $value] || $value < 0} {set valid 0; break}
+        }
+        if {!$valid} {continue}
+        set disk [dict create reads [lindex $fields 0] readMs [lindex $fields 3] \
+                      writes [lindex $fields 4] writeMs [lindex $fields 7]]
+        set inflight [regexp -all -inline {\S+} [::ns::stats::linuxReadFile $path/inflight]]
+        if {[llength $inflight] == 2 && [string is entier -strict [lindex $inflight 1]]
+            && [lindex $inflight 1] >= 0} {
+            dict set disk writeQueue [lindex $inflight 1]
+        }
+        dict set disks $name $disk
+    }
+    return $disks
+}
+
+proc ::ns::stats::linuxNetworkSnapshot {} {
+
+    if {![string equal -nocase Linux $::tcl_platform(os)]} {
+        return {}
+    }
+
+    set snmp    [::ns::stats::linuxReadNamedCounters /proc/net/snmp]
+    set netstat [::ns::stats::linuxReadNamedCounters /proc/net/netstat]
+    set snmp6   [::ns::stats::linuxReadSnmp6]
+    set devices [::ns::stats::linuxReadDeviceCounters]
+    set queues  [::ns::stats::linuxReadSocketQueues]
+    set disks   [::ns::stats::linuxDiskSnapshot]
+
+    set counters {}
+
+    foreach {target source section name} {
+        tcpListenOverflows netstat TcpExt ListenOverflows
+        tcpListenDrops     netstat TcpExt ListenDrops
+        tcpBacklogDrops    netstat TcpExt TCPBacklogDrop
+        tcpReceiveDrops    netstat TcpExt TCPRcvQDrop
+        tcpRetransmits     snmp    Tcp    RetransSegs
+        tcpInputErrors     snmp    Tcp    InErrs
+        udpReceiveDrops4   snmp    Udp    RcvbufErrors
+        udpSendDrops4      snmp    Udp    SndbufErrors
+        udpInputErrors4    snmp    Udp    InErrors
+    } {
+        set data [set $source]
+
+        if {[dict exists $data $section $name]} {
+            dict set counters $target [dict get $data $section $name]
+        }
+    }
+
+    foreach {target name} {
+        udpReceiveDrops6 Udp6RcvbufErrors
+        udpSendDrops6    Udp6SndbufErrors
+        udpInputErrors6  Udp6InErrors
+    } {
+        if {[dict exists $snmp6 $name]} {
+            dict set counters $target [dict get $snmp6 $name]
+        }
+    }
+
+    #
+    # Provide combined IPv4/IPv6 UDP counters for the summary.
+    #
+    foreach {combined ipv4 ipv6} {
+        udpReceiveDrops udpReceiveDrops4 udpReceiveDrops6
+        udpSendDrops    udpSendDrops4    udpSendDrops6
+        udpInputErrors  udpInputErrors4  udpInputErrors6
+    } {
+        set found 0
+        set total 0
+
+        foreach name [list $ipv4 $ipv6] {
+            if {[dict exists $counters $name]} {
+                incr total [dict get $counters $name]
+                set found 1
+            }
+        }
+
+        if {$found} {
+            dict set counters $combined $total
+        }
+    }
+
+    dict for {name value} $devices {
+        dict set counters $name $value
+    }
+
+    if {[dict size $counters] == 0
+        && [dict size $queues] == 0 && [dict size $disks] == 0} {
+        return {}
+    }
+
+    if {[dict exists $queues udpSocketDrops]} {
+        dict set counters udpSocketDrops [dict get $queues udpSocketDrops]
+        dict unset queues udpSocketDrops
+    }
+
+    return [dict create \
+                counters $counters \
+                gauges   $queues \
+                disks    $disks]
+}
+
+
 nx::Class create ::ns::stats::Collector {
     #
     #   Collect structured NaviServer topology and runtime diagnostics.
@@ -383,6 +775,11 @@ nx::Class create ::ns::stats::Collector {
                         cpu {} \
                         availability {} \
                         units {time seconds cpuCounter microseconds cpuPercent percentOfOneCore}]
+        # Optional probes must not prevent publication of core diagnostics.
+        set linuxNetwork {}
+        if {[catch {::ns::stats::linuxNetworkSnapshot} linuxNetwork]} {set linuxNetwork {}}
+        dict set result linuxNetwork $linuxNetwork
+        dict set result availability linuxNetwork [expr {$linuxNetwork ne ""}]
         dict set result process cpuCapacity [:cpuCapacity]
         if {![catch {ns_driver stats} stats]} {
             foreach entry $stats {
@@ -503,6 +900,15 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
             }
         }
     }
+    :method memoryLimits {} {
+        set retention [ns_baseunit -time [ns_config ns/stats samplingRetention 15m]]
+        set count [ns_config -int -min 2 -max 10000 ns/stats samplingMaxSamples 180]
+        if {$retention < 1 || $retention > 86400} {
+            error "ns/stats samplingRetention must be 1 second..24 hours"
+        }
+        return [dict create retentionSeconds $retention maxSamples $count]
+    }
+
     :public method "sampling status" {} {
         #
         # Return the process-wide sampler configuration and status, including
@@ -524,6 +930,29 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         dict set result ready [expr {$sample ne "" && [dict get $sample sampling ready]}]
         dict set result latestAt {}
         dict set result ageSeconds {}
+        set limits [:memoryLimits]
+        dict set result retentionSeconds [dict get $limits retentionSeconds]
+        dict set result maxSamples [dict get $limits maxSamples]
+        dict set result maxWindowSeconds [expr {min([dict get $limits retentionSeconds],
+                                                     ([dict get $limits maxSamples]-1)*[dict get $result interval])}]
+        set recent [nsv_get ns_stats recent]
+        set available 0.0
+        if {$recent ne ""} {
+            set last [lindex $recent end]
+            set first $last
+            foreach record [lreverse [lrange $recent 0 end-1]] {
+                if {[dict get $first instance] ne [dict get $record instance]
+                    || [dict get $first instance] ne [dict get $result instance]
+                    || ![dict get $first sampling ready]
+                    || [dict get $first timestamp]-[dict get $record timestamp]
+                       > 1.5*max([dict get $first sampling intervalSeconds],
+                                 [dict get $record sampling intervalSeconds])*1000000} {break}
+                set first $record
+            }
+            set available [expr {min([dict get $result maxWindowSeconds],
+                                    ([dict get $last timestamp]-[dict get $first timestamp])/1000000.0)}]
+        }
+        dict set result availableWindowSeconds $available
         if {$sample ne ""} {
             set stamp [dict get $sample timestamp]
             dict set result latestAt [expr {$stamp/1000000.0}]
@@ -553,6 +982,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         if {$interval < 1 || $interval > 3600} {
             error "interval must be 1..3600 seconds"
         }
+        :memoryLimits
         :locked {
             set state [nsv_get ns_stats control]
             if {[dict get $state running]} {
@@ -606,7 +1036,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         #
         # An optional server argument restricts virtual-server data; CPU
         # measurements remain process-wide. Without -window, does not collect
-        # observations or advance the baseline. With -window (0..900 seconds, time units
+        # observations or advance the baseline. With -window (up to the configured memory limit, time units
         # accepted), collect a fresh snapshot and compare it with the nearest retained
         # endpoint to that age (within half a sampling interval). Missing
         # history, gaps or sampler restarts leave readiness false. The
@@ -616,8 +1046,8 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         #
         # @param server Optional virtual-server name; empty returns all servers. CPU metrics
         #     remain process-wide.
-        # @param window Requested display period, accepting ns_baseunit time syntax; 0..900
-        #     seconds, default 0 for the latest published sample.
+        # @param window Requested display period, accepting ns_baseunit time syntax; bounded by memory retention
+        #     and sample count, default 0 for the latest published sample.
         # @return Sample dictionary with sampling readiness and age; a positive window adds
         #     freshly calculated interval metrics when a suitable continuous baseline exists.
         #
@@ -625,8 +1055,12 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
             error "unknown server: $server"
         }
         set window [ns_baseunit -time $window]
-        if {$window < 0 || $window > 900} {
-            error "display window must be 0..900 seconds"
+        set limits [:memoryLimits]
+        set control [nsv_get ns_stats control]
+        set maximum [expr {min([dict get $limits retentionSeconds],
+                              ([dict get $limits maxSamples]-1)*[dict get $control interval])}]
+        if {$window < 0 || $window > $maximum} {
+            error "display window must be 0..$maximum seconds; configure ns/stats samplingRetention and samplingMaxSamples for longer windows"
         }
         :locked {
             set result [nsv_get ns_stats pair]
@@ -749,6 +1183,14 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
             dict set result sampling from [expr {[dict get $previous timestamp]/1000000.0}]
         }
 
+        # Keep the matching Linux endpoint with the derived interval. This also
+        # lets display-window samples and persisted history use the exact baseline,
+        # without another /proc read or a page-request baseline.
+        dict set result previousLinuxNetwork {}
+        if {$ready && [dict exists $previous linuxNetwork]} {
+            dict set result previousLinuxNetwork [dict get $previous linuxNetwork]
+        }
+
         dict for {s server} [dict get $current servers] {
             dict for {p entry} [dict get $server pools] {
                 set deltas {}
@@ -869,9 +1311,10 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
         }
         set records [nsv_get ns_stats recent]
         lappend records $record
-        set cutoff [expr {[dict get $record timestamp]-900000000}]
+        set limits [:memoryLimits]
+        set cutoff [expr {[dict get $record timestamp]-[dict get $limits retentionSeconds]*1000000}]
         set dropped [nsv_get ns_stats recentDroppedThrough]
-        while {[llength $records] > 180
+        while {[llength $records] > [dict get $limits maxSamples]
                || ([llength $records] > 1 && [dict get [lindex $records 0] timestamp] < $cutoff)} {
             set dropped [dict get [lindex $records 0] timestamp]
             set records [lrange $records 1 end]
@@ -889,7 +1332,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
     } {
         #
         # Read the bounded process-wide recent sample buffer without SQLite.
-        # Retains at most 180 compact samples and 15 minutes at publication.
+        # Retains compact samples within the configured memory age/count limits.
         # Returns interval metrics, coverage and timestamp-based paging.
         # Raw/per-thread CPU counters are omitted. Reading does not collect,
         # start sampling, advance baselines or write persistent history.
@@ -976,7 +1419,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
             set window [:sampling history -from $from -to $to -server $server -limit 180]
             set coverage [dict get $window coverage]
             return [dict create schemaVersion 1 source memory from $from to $to records $records \
-                        nextCursor {} more false retentionSeconds 900 maxSamples 180 coverage $coverage]
+                        nextCursor {} more false retentionSeconds [dict get [:memoryLimits] retentionSeconds] maxSamples [dict get [:memoryLimits] maxSamples] coverage $coverage]
         }
         set complete [expr {$first ne "" && $first <= $from*1000000 && $last >= $to*1000000
                              && !$more && $cursor==0 && !$overlap && $gaps eq ""
@@ -986,7 +1429,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
             set next [dict get [lindex $records end] timestamp]
         }
         return [dict create schemaVersion 1 source memory from $from to $to records $records \
-                    nextCursor $next more $more retentionSeconds 900 maxSamples 180 \
+                    nextCursor $next more $more retentionSeconds [dict get [:memoryLimits] retentionSeconds] maxSamples [dict get [:memoryLimits] maxSamples] \
                     coverage [dict create complete $complete windowExamined [expr {!$more && $cursor==0}] \
                         retainedFrom [expr {$first eq "" ? 0 : $first/1000000.0}] \
                         retainedTo [expr {$last eq "" ? 0 : $last/1000000.0}] \
