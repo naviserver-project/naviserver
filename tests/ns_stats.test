@@ -698,7 +698,7 @@ set statsTestCode [catch {
             puts $channel [list ns_param historyPool diagnostics]
             puts $channel [list ns_param historyRetention 24h]
             puts $channel [list ns_param historyMaxBytes 4MiB]
-            puts $channel [list ns_section ns/stats/history/sqlite]
+            puts $channel [list ns_section ns/db/pool/diagnostics/sqlite]
             puts $channel [list ns_param journalMode WAL]
             puts $channel [list ns_param synchronous FULL]
         } finally {close $channel}
@@ -819,69 +819,22 @@ if {[testConstraint ns_stats_sqlite]} {
 }
 
 
-    test stats-history-policy-defaults {new history defaults to DELETE/NORMAL and reports its policy} -constraints ns_stats_sqlite -setup {
+    test stats-history-pool-policy {history preserves the configured SQLite pool policy on every checkout} -constraints ns_stats_sqlite -setup {
         ns_stats history disable
     } -body {
-        set status [ns_stats history configure -pool ns_stats_test]
-        set db [::nsf::dispatch ::ns_stats historyConnect [nsv_get ns_stats history]]
-        try {
-            list [dict get $status journalMode] [dict get $status synchronous] \
-                [::nsf::dispatch ::ns_stats scalar $db {PRAGMA journal_mode}] \
-                [::nsf::dispatch ::ns_stats scalar $db {PRAGMA synchronous}]
-        } finally {
-            ns_db releasehandle $db
+        ns_stats history configure -pool ns_stats_test
+        set values {}
+        for {set i 0} {$i<2} {incr i} {
+            set db [::nsf::dispatch ::ns_stats historyConnect [nsv_get ns_stats history]]
+            try {
+                lappend values [::nsf::dispatch ::ns_stats scalar $db {PRAGMA journal_mode}] \
+                    [::nsf::dispatch ::ns_stats scalar $db {PRAGMA synchronous}]
+            } finally {
+                ns_db releasehandle $db
+            }
         }
-    } -cleanup {::ns_stats_test::stop} -result {DELETE NORMAL delete 1}
-
-    foreach journalMode {DELETE WAL TRUNCATE PERSIST} {
-        foreach {synchronous value} {OFF 0 NORMAL 1 FULL 2 EXTRA 3} {
-            test stats-history-policy-$journalMode-$synchronous {configured policy is normalized and applied to each pooled checkout} -constraints ns_stats_sqlite -setup {
-                ns_stats history disable
-            } -body {
-                set status [ns_stats history configure -pool ns_stats_test \
-                    -journalMode [string tolower $journalMode] -synchronous [string tolower $synchronous]]
-                set handle [ns_db gethandle ns_stats_test]
-                ::nsf::dispatch ::ns_stats sql $handle {PRAGMA synchronous=OFF}
-                ns_db releasehandle $handle
-                set result [list [dict get $status journalMode] [dict get $status synchronous]]
-                for {set i 0} {$i<2} {incr i} {
-                    set db [::nsf::dispatch ::ns_stats historyConnect [nsv_get ns_stats history]]
-                    try {
-                        lappend result [::nsf::dispatch ::ns_stats scalar $db {PRAGMA journal_mode}] \
-                            [::nsf::dispatch ::ns_stats scalar $db {PRAGMA synchronous}]
-                    } finally {
-                        ns_db releasehandle $db
-                    }
-                }
-                set result
-            } -cleanup {::ns_stats_test::stop} -result [list $journalMode $synchronous \
-                [string tolower $journalMode] $value [string tolower $journalMode] $value]
-        }
-    }
-
-    test stats-history-policy-invalid {invalid names fail before pool checkout rather than becoming SQL} -constraints ns_stats_sqlite -setup {
-        ns_stats history disable
-    } -body {
-        set before [dict get [ns_db stats] ns_stats_test gethandles]
-        set result {}
-        foreach options {{-journalMode OFF} {-journalMode MEMORY} {-journalMode invalid} \
-            {-journalMode {DELETE; DROP TABLE ns_stats_samples}} {-synchronous 1} \
-            {-synchronous invalid} {-synchronous {NORMAL; DROP TABLE ns_stats_samples}}} {
-            lappend result [catch {ns_stats history configure -pool ns_stats_test {*}$options}]
-        }
-        lappend result [expr {[dict get [ns_db stats] ns_stats_test gethandles]==$before}]
-        set result
-    } -cleanup {::ns_stats_test::stop} -result {1 1 1 1 1 1 1 1}
-
-    test stats-history-policy-active {idempotent policies share a scheduler and active changes require disable} -constraints ns_stats_sqlite -setup {
-        ns_stats history disable
-    } -body {
-        set first [ns_stats history configure -pool ns_stats_test -journalMode wal -synchronous normal]
-        set second [ns_stats history configure -pool ns_stats_test -journalMode WAL -synchronous NORMAL]
-        list [expr {[dict get $first scheduler]==[dict get $second scheduler]}] \
-            [catch {ns_stats history configure -pool ns_stats_test -journalMode DELETE}] \
-            [catch {ns_stats history configure -pool ns_stats_test -journalMode WAL -synchronous FULL}]
-    } -cleanup {::ns_stats_test::stop} -result {1 1 1}
+        list $values [catch {ns_stats history configure -pool ns_stats_test -synchronous OFF}]
+    } -cleanup {::ns_stats_test::stop} -result {{wal 1 wal 1} 1}
 
 } statsTestResult statsTestOptions]
 

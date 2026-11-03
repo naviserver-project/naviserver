@@ -632,3 +632,8 @@ if {[info exists ::env(NAVISERVER)]} {
 ns_logctl severity notice off
 ns_logctl severity warning off
 #puts stderr "================================== test config file loaded"
+
+ns_section ns/db/pool/ns_stats_test/sqlite {
+    ns_param journalMode WAL
+    ns_param synchronous NORMAL
+}

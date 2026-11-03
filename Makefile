@@ -268,7 +268,6 @@ CONFIG_PARAMETERS_INCLUDES = \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--parameters--reverseproxymode.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--threads.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--stats.man \
-	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--stats--history--sqlite.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--mimetypes.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--fastpath.man \
 	$(CONFIG_PARAMETERS_DIR)/config-parameters-ns--reverseproxymode.man \

@@ -90,10 +90,12 @@ ns_section ns/stats {
     #ns_param historyMaxBytes  64MiB
 }
 
-ns_section ns/stats/history/sqlite {
-    #ns_param journalMode DELETE
-    #ns_param synchronous NORMAL
-}
+# SQLite history connection policy belongs to its configured pool:
+# ns_section ns/db/pool/ns_stats/sqlite {
+#     ns_param journalMode WAL
+#     ns_param synchronous NORMAL
+# }
+
 
 ns_section ns/reverseproxymode {
     #

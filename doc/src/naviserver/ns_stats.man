@@ -15,7 +15,6 @@ Consumers such as nsstats and MCP apply their own access and presentation policy
 
 [include ../include/config-parameters-ns--stats.man]
 
-[include ../include/config-parameters-ns--stats--history--sqlite.man]
 
 [section COMMANDS]
 [list_begin definitions]
@@ -158,14 +157,13 @@ Coverage reports retained bounds, gaps, restart/reset boundaries and droppedThro
 missing intervals are not zero traffic. Reading does not collect or change sampling.
 
 [call [cmd "ns_stats history configure"] [option "-pool pool"] \
-    [opt [option "-retention seconds"]] [opt [option "-maxBytes bytes"]] \
-    [opt [option "-journalMode mode"]] [opt [option "-synchronous mode"]]]
+    [opt [option "-retention seconds"]] [opt [option "-maxBytes bytes"]]]
 Enables the optional SQLiteHistory mixin using a configured native nsdbsqlite pool.
 No Tcl sqlite3 package is required. Use a dedicated persistent database; other
 application tables are rejected. Retention accepts time units and fractional seconds; maxBytes accepts
 memory-size units (for example 64MiB). Values are normalized with [cmd ns_baseunit].
 Defaults: retention 86400 seconds, maxBytes
-67108864 bytes, journalMode DELETE and synchronous NORMAL. Retention range is 60..604800 seconds; minimum budget is 4 MiB.
+67108864 bytes. Retention range is 60..604800 seconds; minimum budget is 4 MiB.
 Sampling must be activated separately. Identical configuration is idempotent;
 disable history before changing its settings. The configuring virtual server must
 have access to the pool. Pool handles are operation-local and never enter a blueprint.
@@ -181,19 +179,10 @@ reused; actual retained duration can be shorter than the configured maximum.
 The file is private (0600); provision its writable parent directory separately.
 
 [para]
-Journal modes are DELETE, TRUNCATE, PERSIST and WAL. Synchronization modes are
-OFF, NORMAL, FULL and EXTRA. Values are case-insensitive, validated before pool
-checkout, applied on every connection checkout and verified against SQLite.
-Startup policy lives in [const ns/stats/history/sqlite] under [const journalMode]
-and [const synchronous]; general history controls remain in [const ns/stats].
-Runtime mode options are part of the SQLiteHistory mixin.
-Status reports the configured modes. Changing an active policy requires disabling
-history first.
-
-[para]
-The default is DELETE/NORMAL. NORMAL reduces
-synchronization work, but rollback-journal mode has weaker protection against
-system crashes or power loss than FULL, including a small corruption risk.
+SQLite connection policies belong to [const ns/db/pool/POOL/sqlite], including
+[const journalMode] and [const synchronous]. History does not override them.
+Unspecified policies retain the driver/SQLite defaults. Configure DELETE/NORMAL
+explicitly when that policy is desired, or WAL/NORMAL for overlapping readers.
 WAL/NORMAL permits concurrent readers and a writer while preserving consistency,
 but recent commits can be lost after a system crash. OFF can require rebuilding
 the history database after a system crash. Lost runtime samples cannot be
@@ -215,7 +204,7 @@ unavailable, precise failure counts may be lost, but missing sample intervals an
 new process identities remain visible in history coverage.
 
 [call [cmd "ns_stats history status"]]
-Reports enabled, owner server, pool, retention/budget, journalMode, synchronous, latest saved timestamp,
+Reports enabled, owner server, pool, retention/budget, latest saved timestamp,
 failure count and last failure. This reads shared state without opening the database.
 
 [call [cmd "ns_stats history disable"]]
