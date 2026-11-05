@@ -1787,21 +1787,57 @@ ReleaseBatchPayload(void *payload)
 /*
  *----------------------------------------------------------------------
  *
- * NextScan --
+ * ParseScanObjv --
  *
- *      Scan up to the row, byte and time budgets into a compact batch.
+ *      Parse scan options and a required handle, accepting the legacy
+ *      handle-first form as well as the canonical options-first form.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *      Advances source progress and returns an opaque batch with its
- *      checkpoint.
+ *      Sets the interpreter error result on invalid syntax.
  *
  *----------------------------------------------------------------------
  */
 static int
-NextScan(Tcl_Interp *interp, Scan *scan, TCL_SIZE_T objc, Tcl_Obj *const *objv)
+ParseScanObjv(Ns_ObjvSpec *options, Ns_ObjvSpec *args, Tcl_Interp *interp,
+              TCL_SIZE_T objc, Tcl_Obj *const *objv)
+{
+    Tcl_Obj **ordered = NULL;
+    int       result;
+
+    /* Preserve the original handle-first form; canonical usage puts options first. */
+    if (objc > 4 && Tcl_GetString(objv[3])[0] != '-') {
+        ordered = ns_malloc((size_t)objc * sizeof(Tcl_Obj *));
+        memcpy(ordered, objv, 3u * sizeof(Tcl_Obj *));
+        memcpy(ordered + 3, objv + 4, (size_t)(objc - 4) * sizeof(Tcl_Obj *));
+        ordered[objc - 1] = objv[3];
+        objv = ordered;
+    }
+    result = Ns_ParseObjv(options, args, interp, 3, objc, objv);
+    ns_free(ordered);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ScanNextObjCmd --
+ *
+ *      Parse scan budgets and produce the next bounded batch for a scanner.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      Advances source progress and returns an opaque batch with its checkpoint.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ScanNextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc,
+               Tcl_Obj *const *objv)
 {
     int               maxRows = 512, maxBytes = 8388608, maxScan = 16777216;
     Ns_Time           defaultTimeout = {0, 100000}, started, now, *timeout = &defaultTimeout;
@@ -1809,8 +1845,10 @@ NextScan(Tcl_Interp *interp, Scan *scan, TCL_SIZE_T objc, Tcl_Obj *const *objv)
     Ns_ObjvTimeRange  timeRange = {{0, 1}, {3600, 0}};
     struct stat       st;
     Batch            *batch;
-    size_t            reserve = scan->maxLine * 4u + 2048u, malformed = 0u, oversized = 0u;
-    Tcl_WideInt       from = scan->safeOffset, examined = 0;
+    size_t            reserve, malformed = 0u, oversized = 0u;
+    Tcl_WideInt       from, examined = 0;
+    Tcl_Obj          *obj;
+    Scan             *scan;
     NsAtomId          state = NS_ATOM_ready;
     Tcl_Obj          *checkpoint, *coverage, *diagnostics, *view;
     Ns_ObjvSpec       options[] = {
@@ -1821,9 +1859,20 @@ NextScan(Tcl_Interp *interp, Scan *scan, TCL_SIZE_T objc, Tcl_Obj *const *objv)
       {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(options, NULL, interp, 4, objc, objv) != NS_OK) {
+    Ns_ObjvSpec       args[] = {
+      {"handle", Ns_ObjvObj, &obj, NULL},
+      {NULL, NULL, NULL, NULL}
+    };
+
+    if (ParseScanObjv(options, args, interp, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+    scan = GetScan(interp, obj);
+    if (scan == NULL) {
+        return TCL_ERROR;
+    }
+    reserve = scan->maxLine * 4u + 2048u;
+    from = scan->safeOffset;
     if (scan->fd == NS_INVALID_FD) {
         return ScanError(interp, "CLOSED", "scanner is closed");
     } /* Reserve the worst retained row, including derived request/path fields. */
@@ -1998,39 +2047,6 @@ NextScan(Tcl_Interp *interp, Scan *scan, TCL_SIZE_T objc, Tcl_Obj *const *objv)
 /*
  *----------------------------------------------------------------------
  *
- * Triples --
- *
- *      Parse view options and materialize a bounded JSON-triples batch view.
- *
- * Results:
- *      TCL_OK or TCL_ERROR.
- *
- * Side effects:
- *      Sets the interpreter result through the shared batch API.
- *
- *----------------------------------------------------------------------
- */
-static int
-Triples(Tcl_Interp *interp, const Ns_DbBatchApi *api, const Ns_DbBatch *batch, TCL_SIZE_T objc,
-        Tcl_Obj *const *objv)
-{
-    int               first = 0, limit = 512;
-    Ns_ObjvValueRange range = {0, INT_MAX};
-    Ns_ObjvSpec       options[] = {
-      {"-offset", Ns_ObjvInt, &first, &range},
-      {"-limit",  Ns_ObjvInt, &limit, &range},
-      {NULL, NULL, NULL, NULL}
-    };
-
-    if (Ns_ParseObjv(options, NULL, interp, 4, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    return api->triples(interp, batch, (size_t)first, (size_t)limit);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * GetScan --
  *
  *      Resolve a scanner owned by the current interpreter.
@@ -2059,45 +2075,6 @@ GetScan(Tcl_Interp *interp, Tcl_Obj *obj)
         return NULL;
     }
     return scan;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ScanNextObjCmd --
- *
- *      This command implements "ns_accesslog scan next". It validates the
- *      scanner argument and produces the next bounded batch.
- *
- * Results:
- *      TCL_OK or TCL_ERROR.
- *
- * Side effects:
- *      Advances source progress and sets the interpreter result.
- *
- *----------------------------------------------------------------------
- */
-static int
-ScanNextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc,
-               Tcl_Obj *const *objv)
-{
-    Tcl_Obj    *obj;
-    Scan       *scan;
-    TCL_SIZE_T  remain;
-    Ns_ObjvSpec args[] = {
-      {"handle",  Ns_ObjvObj,  &obj,    NULL},
-      {"?option", Ns_ObjvArgs, &remain, NULL},
-      {NULL, NULL, NULL, NULL}
-    };
-
-    if (Ns_ParseObjv(NULL, args, interp, 3, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    scan = GetScan(interp, obj);
-    if (scan == NULL) {
-        return TCL_ERROR;
-    }
-    return NextScan(interp, scan, objc, objv);
 }
 
 /*
@@ -2218,21 +2195,26 @@ ScanTriplesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     Tcl_Obj          *obj;
     ScanState        *state;
     const Ns_DbBatch *batch;
-    TCL_SIZE_T        remain;
+    int               first = 0, limit = 512;
+    Ns_ObjvValueRange range = {0, INT_MAX};
+    Ns_ObjvSpec       options[] = {
+      {"-offset", Ns_ObjvInt, &first, &range},
+      {"-limit",  Ns_ObjvInt, &limit, &range},
+      {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec       args[] = {
-      {"batch",   Ns_ObjvObj,  &obj, NULL},
-      {"?option", Ns_ObjvArgs, &remain, NULL},
+      {"batch", Ns_ObjvObj, &obj, NULL},
       {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 3, objc, objv) != NS_OK) {
+    if (ParseScanObjv(options, args, interp, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
     state = GetState(interp);
     if (state == NULL || state->batchApi->get(interp, obj, &batch) != TCL_OK) {
         return TCL_ERROR;
     }
-    return Triples(interp, state->batchApi, batch, objc, objv);
+    return state->batchApi->triples(interp, batch, (size_t)first, (size_t)limit);
 }
 
 /*
@@ -2256,8 +2238,12 @@ NsLogScanObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const *objv,
                 const NsLogScanDefaults *defaults)
 {
     static const Ns_SubCmdSpec subcmds[] = {
-        {"open", OpenScanObjCmnd},  {"next", ScanNextObjCmd},       {"info", ScanInfoObjCmd},
-        {"close", ScanCloseObjCmd}, {"triples", ScanTriplesObjCmd}, {NULL, NULL}};
+        {"open", OpenScanObjCmnd},
+        {"next", ScanNextObjCmd},
+        {"info", ScanInfoObjCmd},
+        {"close", ScanCloseObjCmd},
+        {"triples", ScanTriplesObjCmd},
+        {NULL, NULL}};
 
     return Ns_SubsubcmdObjv(subcmds, (ClientData)defaults, interp, 1, objc, objv);
 }

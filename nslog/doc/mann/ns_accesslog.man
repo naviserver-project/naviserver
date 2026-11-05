@@ -100,7 +100,18 @@ rolling. The format string is as understood by the Tcl [cmd clock] command.
 If [arg timeformat] is given then it replaces any existing value.
 
 
-[call [cmd "ns_accesslog scan open"] [opt [arg options]]]
+[call [cmd "ns_accesslog scan open"] \
+    [opt "[option -filename] [arg value]"] \
+    [opt "[option -format] auto|common|combined"] \
+    [opt "[option -timingcolumn] [arg value]"] \
+    [opt "[option -requesttime] auto|true|false"] \
+    [opt "[option -extendedheaders] [arg value]"] \
+    [opt "[option -tail] [arg value]"] \
+    [opt "[option -encoding] [arg value]"] \
+    [opt "[option -offset] [arg value]"] \
+    [opt "[option -endoffset] [arg value]"] \
+    [opt "[option -checkpoint] [arg value]"] \
+    [opt "[option -maxlinebytes] [arg integer]"]]
 
 Open an interpreter-local scanner of a regular access-log file. The returned
 opaque handle cannot be reconstructed from its string label. The scanner captures
@@ -171,8 +182,15 @@ known historical layout when scanning such data. Timestamp spelling and the
 thread-name placeholder are recognized from each record; query suppression,
 masking and proxy handling are already reflected in the logged values.
 
-[call [cmd "ns_accesslog scan next"] [arg scanner] [opt [arg options]]]
+[call [cmd "ns_accesslog scan next"] \
+    [opt "[option -maxrecords] [arg integer]"] \
+    [opt "[option -maxbytes] [arg integer]"] \
+    [opt "[option -maxscanbytes] [arg integer]"] \
+    [opt "[option -timeout] [arg time]"] \
+    [arg handle]]
 
+The [arg handle] is a scanner returned by [cmd "ns_accesslog scan open"].
+The original handle-first form, with options after the handle, is also accepted.
 Return an opaque, immutable lexical batch backed by compact shared-schema C
 storage. Scanning frames and decodes fields but does not convert source numbers
 or timestamps to native database types. Original numeric spellings, including
@@ -197,7 +215,9 @@ persist the checkpoint atomically in their later database transaction. After a
 scan error, reopen from the last successfully accounted-for checkpoint rather
 than assuming the failed call delivered its speculative progress.
 
-[call [cmd "ns_accesslog scan info"] [arg scannerOrBatch]]
+[call [cmd "ns_accesslog scan info"] [arg handle]]
+
+The [arg handle] can be a scanner or a batch.
 
 For a scanner, report source identity, captured snapshot end, consumed read offset,
 safe record offset and state. A closed scanner reports closed. Read position can
@@ -228,10 +248,15 @@ that an arbitrary in-place rewrite never occurred. A renamed open file remains
 readable through the original descriptor. Checkpoints must be saved as complete
 Tcl values, including their binary anchor fields.
 
-[call [cmd "ns_accesslog scan triples"] [arg batch] \
-    [opt "[option -offset] [arg rowIndex]"] [opt "[option -limit] [arg count]"]]
+[call [cmd "ns_accesslog scan triples"] \
+    [opt "[option -offset] [arg integer]"] \
+    [opt "[option -limit] [arg integer]"] \
+    [arg batch]]
 
-Materialize JSON triples on demand for selected rows. Defaults are row offset zero
+Materialize JSON triples on demand for selected rows. The original batch-first
+form, with options after the batch, is also accepted. Options are
+[option -offset] [arg integer] and [option -limit] [arg integer], both
+nonnegative integers. Defaults are row offset zero
 and limit 512; zero limit gives an empty view. The result is a canonical ns_json
 root-wrapped array of object triples. Names/type atoms and the schema are shared;
 view value objects are created only for the requested rows. Null, empty string
@@ -246,9 +271,9 @@ layout remains private and is adopted without copying row values. Use
 inspection and insertion. System-log scanning, nested scalar/container storage
 and a schema-associated dictionary import/view are not implemented by this stage.
 
-[call [cmd "ns_accesslog scan close"] [arg scanner]]
+[call [cmd "ns_accesslog scan close"] [arg handle]]
 
-Close the descriptor. Repeated close is harmless; next on a closed scanner fails.
+Close the descriptor of the scanner [arg handle]. Repeated close is harmless; next on a closed scanner fails.
 Batches already returned remain readable after close. Unreferenced scanner
 wrappers close their descriptors automatically, and interpreter deletion closes
 all its remaining scanners. Scanner and batch handles are interpreter-local;
