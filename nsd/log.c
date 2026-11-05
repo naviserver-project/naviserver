@@ -2493,9 +2493,7 @@ LogThreadInitialize(void *UNUSED(arg))
         if (tid != 0u) {
             tokenPtr += ns_uint64toa(tokenPtr, tid);
         } else {
-            tokenPtr += snprintf(tokenPtr, sizeof(cachePtr->threadToken)
-                                 - (size_t)(tokenPtr - cachePtr->threadToken) - 1u,
-                                 "%" PRIxPTR, Ns_ThreadId());
+            tokenPtr += ns_uint64tohex(tokenPtr, (uint64_t)Ns_ThreadId());
         }
         *tokenPtr++ = ']';
         *tokenPtr = '\0';

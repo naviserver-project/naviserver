@@ -1530,7 +1530,7 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle, Tcl
     Tcl_HashEntry *hPtr;
     int            isNew;
     TCL_SIZE_T     len, next;
-    char           buf[100];
+    char           buf[sizeof("nsdb") - 1u + NS_UINT64_HEX_SPACE];
 
     NS_NONNULL_ASSERT(idataPtr != NULL);
     NS_NONNULL_ASSERT(interp != NULL);
@@ -1539,7 +1539,9 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle, Tcl
 
     next = (TCL_SIZE_T)idataPtr->dbs.numEntries;
     do {
-        len = (TCL_SIZE_T)snprintf(buf, sizeof(buf), "nsdb%lx", (unsigned long)next++);
+        memcpy(buf, "nsdb", sizeof("nsdb") - 1u);
+        len = (TCL_SIZE_T)(sizeof("nsdb") - 1u)
+            + ns_uint64tohex(buf + sizeof("nsdb") - 1u, (uint64_t)next++);
         hPtr = Tcl_CreateHashEntry(&idataPtr->dbs, buf, &isNew);
     } while (isNew == 0);
 

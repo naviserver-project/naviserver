@@ -394,6 +394,54 @@ ns_uint64toa(
     return len;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_uint64tohex --
+ *
+ *      Format an unsigned integer as lowercase hexadecimal digits without
+ *      a prefix or padding. The caller must provide NS_UINT64_HEX_SPACE
+ *      bytes of storage. Zero is represented by a single digit.
+ *
+ * Results:
+ *      Number of digits written, excluding the terminating NUL.
+ *
+ * Side effects:
+ *      Writes the digits and terminating NUL directly into buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ns_uint64tohex(char *buffer, uint64_t n)
+{
+    static const char digits[] = "0123456789abcdef";
+    unsigned int      length;
+    char             *p;
+
+#if defined(__GNUC__) || defined(__clang__)
+    /* Setting the low bit makes the leading-zero count defined for zero. */
+    length = (64u - (unsigned int)__builtin_clzll((unsigned long long)n | 1ULL) + 3u) / 4u;
+#else
+    uint64_t remaining = n;
+
+    length = 1u;
+    while (remaining >= 16u) {
+        remaining >>= 4u;
+        ++length;
+    }
+#endif
+
+    p = buffer + length;
+    *p = '\0';
+    do {
+        *--p = digits[n & 15u];
+        n >>= 4u;
+    } while (p != buffer);
+
+    return (int)length;
+}
+
 #ifndef HAVE_MEMMEM
 /*
  *----------------------------------------------------------------------

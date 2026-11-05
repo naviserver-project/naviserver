@@ -1147,7 +1147,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
             const char *jobId1, *jobState, *jobCode, *jobType, *jobReq, *jobResults, *jobScript;
             Tcl_Obj    *jobFieldList;
             Ns_Time     diff;
-            char        threadId[32];
+            char        threadId[NS_UINT64_HEX_SPACE];
             Job        *jobPtr = (Job *)Tcl_GetHashValue(hPtr);
 
             jobId1     = Ns_TclGetHashKeyString(&queue->jobs, hPtr);
@@ -1163,7 +1163,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
             }
 
             (void)Ns_DiffTime(&jobPtr->startTime, &jobPtr->endTime, &diff);
-            snprintf(threadId, sizeof(threadId), "%" PRIxPTR, jobPtr->tid);
+            (void)ns_uint64tohex(threadId, (uint64_t)jobPtr->tid);
 
             /*
              * Create a Tcl List to hold the list of job fields.
@@ -1308,13 +1308,17 @@ JobGenIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
         result = TCL_ERROR;
 
     } else {
-        char    buf[100];
+        char    buf[sizeof("queue_id_") + 2u * NS_UINT64_HEX_SPACE];
+        char   *p;
         Ns_Time currentTime;
 
         Ns_GetTime(&currentTime);
         Ns_MutexLock(&tp.queuelock);
-        snprintf(buf, sizeof(buf), "queue_id_%lx_%" TCL_LL_MODIFIER "x",
-                 tp.nextQueueId++, (Tcl_WideInt) currentTime.sec);
+        memcpy(buf, "queue_id_", sizeof("queue_id_") - 1u);
+        p = buf + sizeof("queue_id_") - 1u;
+        p += ns_uint64tohex(p, (uint64_t)tp.nextQueueId++);
+        *p++ = '_';
+        (void)ns_uint64tohex(p, (uint64_t)(Tcl_WideInt)currentTime.sec);
         Ns_MutexUnlock(&tp.queuelock);
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, TCL_INDEX_NONE));

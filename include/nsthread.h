@@ -1310,6 +1310,10 @@ NS_EXTERN char *ns_strncopy(const char *string, ssize_t size) NS_GNUC_MALLOC;
 NS_EXTERN int   ns_uint32toa(char *buffer, uint32_t n) NS_GNUC_NONNULL(1);
 NS_EXTERN int   ns_uint64toa(char *buffer, uint64_t n) NS_GNUC_NONNULL(1);
 
+/* Maximum hexadecimal digits of a uint64_t, including the terminating NUL. */
+#define NS_UINT64_HEX_SPACE 17
+NS_EXTERN int   ns_uint64tohex(char *buffer, uint64_t n) NS_GNUC_NONNULL(1);
+
 #ifndef HAVE_MEMMEM
 NS_EXTERN void *ns_memmem(const void *haystack, size_t haystackLength, const void *const needle, const size_t needleLength)
     NS_GNUC_NONNULL(1,3);

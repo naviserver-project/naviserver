@@ -614,15 +614,20 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
 {
     const char *type = objPtr->internalRep.twoPtrValue.ptr1;
     const void *addr = objPtr->internalRep.twoPtrValue.ptr2;
-    char        buf[128];
-    TCL_SIZE_T  len;
+    size_t      typeLength = strlen(type);
+    char       *p;
 
-    len = (TCL_SIZE_T)snprintf(buf, sizeof(buf),
-                               "t%" PRIxPTR "-a%" PRIxPTR "-%s",
-                               (uintptr_t)type,
-                               (uintptr_t)addr,
-                               type);
-    Ns_TclSetStringRep(objPtr, buf, len);
+    /* Reserve both pointer values and delimiters in the final string storage. */
+    objPtr->bytes = ckalloc(typeLength + 2u * NS_UINT64_HEX_SPACE + 4u);
+    p = objPtr->bytes;
+    *p++ = 't';
+    p += ns_uint64tohex(p, (uint64_t)(uintptr_t)type);
+    *p++ = '-';
+    *p++ = 'a';
+    p += ns_uint64tohex(p, (uint64_t)(uintptr_t)addr);
+    *p++ = '-';
+    memcpy(p, type, typeLength + 1u);
+    objPtr->length = (TCL_SIZE_T)(p - objPtr->bytes) + (TCL_SIZE_T)typeLength;
 }
 
 

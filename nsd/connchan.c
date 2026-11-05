@@ -2182,8 +2182,10 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
             char   *p = fnbuffer;
             ssize_t bytes_written;
 
-            p += snprintf(p, sizeof(fnbuffer), "\n%" PRIxPTR " WRITE close, total written ",
-                          Ns_ThreadId());
+            *p++ = '\n';
+            p += ns_uint64tohex(p, (uint64_t)Ns_ThreadId());
+            memcpy(p, " WRITE close, total written ", sizeof(" WRITE close, total written ") - 1u);
+            p += sizeof(" WRITE close, total written ") - 1u;
             p += ns_uint64toa(p, (uint64_t)connChanPtr->wBytes);
             snprintf(p, sizeof(fnbuffer) - (size_t)(p - fnbuffer),
                      " rejected %ld wbuffer %ld waddr %p\n",
@@ -3118,7 +3120,10 @@ DebugLogBufferState(NsConnChan *connChanPtr, size_t bytesToSend, ssize_t bytesSe
         va_list args;
         ssize_t bytes_written;
 
-        p += snprintf(p, sizeof(logMsg), "\n%" PRIxPTR " WRITE toSend ", Ns_ThreadId());
+        *p++ = '\n';
+        p += ns_uint64tohex(p, (uint64_t)Ns_ThreadId());
+        memcpy(p, " WRITE toSend ", sizeof(" WRITE toSend ") - 1u);
+        p += sizeof(" WRITE toSend ") - 1u;
         p += ns_uint64toa(p, (uint64_t)bytesToSend);
         memcpy(p, ": ", sizeof(": "));
         bytes_written = write(connChanPtr->debugFD, logMsg, strlen(logMsg));
