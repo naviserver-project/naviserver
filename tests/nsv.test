@@ -71,6 +71,21 @@ test ns_nsv-1.9.6 {syntax nsv_array size} -body {
 } -returnCodes error -result {wrong # args: should be "nsv_array size /array/"}
 
 
+test ns_nsv-1.9.7 {syntax nsv_array create} -body {
+    nsv_array create
+} -returnCodes error -result {wrong # args: should be "nsv_array create ?-scope server|process? ?--? /array/"}
+
+
+test ns_nsv-1.9.8 {syntax nsv_array scope} -body {
+    nsv_array scope
+} -returnCodes error -result {wrong # args: should be "nsv_array scope /array/"}
+
+
+test ns_nsv-1.9.9 {syntax nsv_array eval} -body {
+    nsv_array eval
+} -returnCodes error -result {wrong # args: should be "nsv_array eval /array/ /script/"}
+
+
 test ns_nsv-1.10 {basic syntax nsv_names} -body {
     nsv_names ? ?
 }  -returnCodes error -result {wrong # args: should be "nsv_names ?/pattern/?"}

@@ -869,7 +869,8 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         }
         case CEvalIdx:
             if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "array script"); result = TCL_ERROR;
+                Tcl_WrongNumArgs(interp, 2, objv, "/array/ /script/");
+                result = TCL_ERROR;
             } else {
                 arrayPtr = LockArrayObj(interp, objv[2], NS_FALSE, NS_WRITE);
                 if (arrayPtr == NULL) {

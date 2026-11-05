@@ -18,7 +18,10 @@ facility.
 [list_begin definitions]
 
 
-[call [cmd "nsv_array create"] [opt [option "-scope server|process"]] [arg array]]
+[call [cmd "nsv_array create"] \
+    [opt "[option -scope] server|process"] \
+    [opt [option --]] \
+    [arg array]]
 
  Explicitly creates an array. The default [const server] scope is local to the
  current virtual server; [const process] scope makes the array visible by name
