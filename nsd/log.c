@@ -93,6 +93,9 @@ typedef struct LogCache {
     LogEntry   *firstEntry;   /* First in the list of log entries */
     LogEntry   *currentEntry; /* Current in the list of log entries */
     Tcl_DString buffer;       /* The log entries cache text-cache */
+    char        threadToken[64]; /* Preformatted [PID.OS-TID] or pthread fallback. */
+    TCL_SIZE_T  threadTokenLength;
+    bool        mappingChecked; /* Optional host identity has been attempted. */
 } LogCache;
 
 static LogEntry *LogEntryGet(const LogCache *cachePtr) NS_GNUC_NONNULL(1);
@@ -107,6 +110,9 @@ static void LogEntriesFree(void *arg);
  */
 
 static Ns_TlsCleanup FreeCache;
+static Ns_ThreadProc LogThreadInitialize;
+static bool LogThreadHostIds(const char *path, uint64_t tid, uint64_t *pidPtr,
+                            uint64_t *tidPtr) NS_GNUC_NONNULL(1,3,4);
 static
 #ifndef NS_TCL_PRE9
  TCL_NORETURN1
@@ -158,6 +164,8 @@ static bool         logOpenCalled = NS_FALSE;
 static const char  *logfileName = NULL;
 static const char  *rollfmt = NULL;
 static unsigned int flags = 0u;
+static const char *hostProcPath;
+static Ns_AtomicUint32 hostProcEnabled;
 static TCL_SIZE_T   maxbackup;
 
 static LogFilter   *filters;
@@ -264,6 +272,7 @@ NsInitLog(void)
     int            isNew;
     Ns_LogSeverity i;
 
+    Ns_AtomicUint32Init(&hostProcEnabled, 0u);
     Ns_MutexSetName(&lock, "ns:log");
     Ns_CondInit(&cond);
 
@@ -331,6 +340,12 @@ NsConfigLog(void)
     severityConfig[Debug ].enabled = Ns_ConfigBool(section, "logdebug",  NS_FALSE);
     severityConfig[Dev   ].enabled = Ns_ConfigBool(section, "logdev",    NS_FALSE);
     severityConfig[Notice].enabled = Ns_ConfigBool(section, "lognotice", NS_TRUE);
+
+    hostProcPath = ns_strcopy(Ns_ConfigString(section, "loghostproc", NS_EMPTY_STRING));
+    Ns_AtomicUint32StoreRelease(&hostProcEnabled, *hostProcPath != '\0' ? 1u : 0u);
+    Ns_ThreadSetInitProc(LogThreadInitialize);
+    GetCache()->threadTokenLength = 0;
+    LogThreadInitialize(NULL);
 
     {
         bool rollonsignal = NS_TRUE;
@@ -2050,7 +2065,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         last.usec = now.usec;
     }
     if ((flags & LOG_THREAD) != 0u) {
-        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "]", (int)Ns_InfoPid(), Ns_ThreadId());
+        Tcl_DStringAppend(dsPtr, cachePtr->threadToken, cachePtr->threadTokenLength);
     }
     if ((flags & LOG_COLORIZE) != 0u) {
         Ns_DStringPrintf(dsPtr, "[%s] %s%s%s: ",
@@ -2331,6 +2346,7 @@ GetCache(void)
         cachePtr = ns_calloc(1u, sizeof(LogCache));
         Tcl_DStringInit(&cachePtr->buffer);
         Ns_TlsSet(&tls, cachePtr);
+        LogThreadInitialize(NULL);
     }
 #else
     LogCache *cachePtr;
@@ -2340,9 +2356,159 @@ GetCache(void)
         cachePtr = ns_calloc(1u, sizeof(LogCache));
         Tcl_DStringInit(&cachePtr->buffer);
         Ns_TlsSet(&tls, cachePtr);
+        LogThreadInitialize(NULL);
     }
 #endif
     return cachePtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogThreadHostIds --
+ *
+ *      Read the calling thread's identity through an optional host procfs mount.
+ *      The first NSpid is relative to that mount's PID namespace. Require its
+ *      innermost ID to match our native TID before accepting a mapping.
+ *
+ * Results:
+ *      True with host PID/TID, false for unavailable or invalid information.
+ *
+ * Side effects:
+ *      Disable future attempts after an open/read failure or malformed data.
+ *      No directory scans or logging are performed here.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static bool
+LogThreadHostIds(const char *path, uint64_t tid, uint64_t *pidPtr,
+                uint64_t *tidPtr)
+{
+    char     filename[PATH_MAX], line[1024];
+    FILE    *fp;
+    uint64_t hostPid = 0u, hostTid = 0u, lastTid = 0u;
+    int      length;
+    bool     valid = NS_TRUE;
+
+    length = snprintf(filename, sizeof(filename), "%s/thread-self/status", path);
+    fp = length > 0 && (size_t)length < sizeof(filename) ? fopen(filename, "r") : NULL;
+    if (fp == NULL) {
+        Ns_AtomicUint32StoreRelease(&hostProcEnabled, 0u);
+        return NS_FALSE;
+    }
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        const char *p;
+        bool        process;
+
+        process = strncmp(line, "Tgid:", 5u) == 0;
+        if (process || strncmp(line, "NSpid:", 6u) == 0) {
+            p = line + (process ? 5 : 6);
+            while (*p != '\0') {
+                char              *end;
+                unsigned long long value;
+
+                while (isspace(UCHAR(*p)) != 0) {
+                    ++p;
+                }
+                if (*p == '\0') {
+                    break;
+                }
+                if (isdigit(UCHAR(*p)) == 0) {
+                    valid = NS_FALSE;
+                    break;
+                }
+                errno = 0;
+                value = strtoull(p, &end, 10);
+                if (errno == ERANGE || value == 0u
+                    || (*end != '\0' && isspace(UCHAR(*end)) == 0)) {
+                    valid = NS_FALSE;
+                    break;
+                }
+                if (process) {
+                    hostPid = (uint64_t)value;
+                    while (isspace(UCHAR(*end)) != 0) {
+                        ++end;
+                    }
+                    if (*end != '\0') {
+                        valid = NS_FALSE;
+                    }
+                    break;
+                }
+                if (hostTid == 0u) {
+                    hostTid = (uint64_t)value;
+                }
+                lastTid = (uint64_t)value;
+                p = end;
+            }
+        }
+    }
+    if (ferror(fp) != 0 || !valid || hostPid == 0u || hostTid == 0u) {
+        Ns_AtomicUint32StoreRelease(&hostProcEnabled, 0u);
+        valid = NS_FALSE;
+    }
+    (void)fclose(fp);
+    if (valid && lastTid == tid) {
+        *pidPtr = hostPid;
+        *tidPtr = hostTid;
+        return NS_TRUE;
+    }
+    return NS_FALSE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogThreadInitialize --
+ *
+ *      Prepare the immutable log token and optional lifetime mapping once in
+ *      the owning thread. Native identity discovery precedes formatting, so
+ *      registration of external threads can safely invoke this routine again.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Initialize the log cache; optionally read host procfs and log a mapping.
+ *      Called outside master/logging locks, never for disabled log messages.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+LogThreadInitialize(void *UNUSED(arg))
+{
+    LogCache *cachePtr = GetCache();
+    uint64_t  tid = Ns_ThreadGetOsId();
+
+    if (cachePtr->threadTokenLength == 0) {
+        if (tid != 0u) {
+            cachePtr->threadTokenLength = (TCL_SIZE_T)snprintf(cachePtr->threadToken,
+                sizeof(cachePtr->threadToken), "[%d.%" PRIu64 "]", (int)Ns_InfoPid(), tid);
+        } else {
+            cachePtr->threadTokenLength = (TCL_SIZE_T)snprintf(cachePtr->threadToken,
+                sizeof(cachePtr->threadToken), "[%d.%" PRIxPTR "]", (int)Ns_InfoPid(), Ns_ThreadId());
+        }
+    }
+    if (!cachePtr->mappingChecked && tid != 0u
+        && Ns_AtomicUint32LoadAcquire(&hostProcEnabled) != 0u) {
+        uint64_t hostPid, hostTid;
+
+        /* Mark before logging, which may reenter the thread's log cache. */
+        cachePtr->mappingChecked = NS_TRUE;
+        if (LogThreadHostIds(hostProcPath, tid, &hostPid, &hostTid)) {
+            Ns_Time started;
+
+            Ns_GetTime(&started);
+            Ns_Log(Notice, "thread identity: pid=%d tid=%" PRIu64
+                   " hostPid=%" PRIu64 " hostTid=%" PRIu64 " nativeThreadLibraryId=%" PRIxPTR
+                   " startedAt=%" PRId64 ".%06ld",
+                   (int)Ns_InfoPid(), tid, hostPid, hostTid, Ns_ThreadId(),
+                   (int64_t)started.sec, started.usec);
+        }
+    }
 }
 
 #if !defined(NS_THREAD_LOCAL)

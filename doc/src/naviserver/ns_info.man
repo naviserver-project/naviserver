@@ -525,21 +525,31 @@ Returns 1 if the server is fully started, 0 otherwise.
 [call [cmd  "ns_info threads"]]
 
 Returns a list of all threads in the current process (all virtual
-servers). Each list element is itself a 7-element list of {name,
-parent, id, flag, ctime, procname, arg}:
+servers). Each list element is itself an 8-element list of {name,
+parent, id, flag, ctime, procname, arg, ostid}:
 
 [list_begin itemized]
 
     [item]   name - current name of the thread
     [item]  parent - parent thread name
-    [item]  id - id of the thread
+    [item]  id - hexadecimal native thread-library ID; retained for
+    compatibility with [cmd "ns_thread id"], distinct from the OS TID.
     [item]  flag - 1 if this is a detached thread, 0 otherwise
     [item]  ctime - Thread creation time
     [item]  procname - for conn threads this will be ns:connthread
     [item]  arg - client data - for a running conn thread arg will be a 7-element list in the format returned by ns_server all - {conn id, peeraddr, state, method, url, running time, bytes sent}, where state is either "running" or "queued": {cns25 127.0.0.1 running POST /ds/shell 0.5158 0}
 
+    [item]  ostid - decimal OS thread ID (zero when unavailable).
+
 [list_end]
 
+The final [const ostid] element is the decimal operating-system thread ID, or
+zero when unavailable. With [const logthread] enabled, system-log headers use
+[const {[PID.ostid]}]. Platforms without an OS ID retain the hexadecimal
+native thread-library ID. IDs can be reused after a thread terminates.
+On Linux, IDs are relative to the process's PID namespace. The optional global
+[const loghostproc] setting records host/container mappings when a host procfs
+mount is accessible.
 
 [call [cmd  "ns_info uptime"]]
 

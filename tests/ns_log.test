@@ -313,6 +313,58 @@ ns_logctl severity warning $logwarning
 unset logdebug logdev lognotice logwarning
 
 
+# Native IDs in headers are distinct from the legacy thread-library handles.
+test ns_log-thread-identity {cached header matches OS TID and survives name changes} -setup {
+    set identityNotice [ns_logctl severity notice on]
+} -body {
+    set previousName [ns_thread name]
+    ns_logctl hold
+    try {
+        ns_thread name identity-regression
+        set row {}
+        foreach candidate [ns_info threads] {
+            if {[lindex $candidate 0] eq "identity-regression"} {
+                set row $candidate
+                break
+            }
+        }
+        set tid [lindex $row 7]
+        set expected [expr {$tid>0 ? "$tid" : [lindex $row 2]}]
+        ns_log notice identity-first
+        set a [ns_logctl get]
+        ns_thread name identity-renamed
+        ns_log notice identity-second
+        set b [ns_logctl get]
+        set token [format {[%d.%s]} [pid] $expected]
+        list [expr {[string first $token $a]>=0}] \
+            [expr {[string first $token $b]>=0}] \
+            [expr {[lindex $row 2] eq [ns_thread id]}] \
+            [expr {[string first {[identity-renamed]} $b]>=0}]
+    } finally {
+        ns_logctl truncate
+        ns_logctl release
+        ns_thread name $previousName
+    }
+} -cleanup {
+    ns_logctl severity notice $identityNotice
+} -result {1 1 1 1}
+
+test ns_log-thread-worker {registered workers log without recursive initialization} -setup {
+    set identityNotice [ns_logctl severity notice on]
+} -body {
+    set thread [ns_thread create {
+        ns_thread name identity-worker
+        ns_logctl hold
+        ns_log notice identity-worker-message
+        set text [ns_logctl get]
+        ns_logctl release
+        regexp {\[[0-9]+\.[0-9a-f]+\]\[identity-worker\] Notice: identity-worker-message} $text
+    }]
+    ns_thread wait $thread
+} -cleanup {
+    ns_logctl severity notice $identityNotice
+} -result 1
+
 cleanupTests
 
 # Local variables:

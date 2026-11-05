@@ -49,6 +49,8 @@ empty result for detached threads.
 
  Returns the current thread's ID as a hex value. This ID matches the
  third element in the sub-list returned from [cmd "ns_info threads"].
+ This native thread-library ID is unchanged. The final element of that sub-list is
+ the decimal OS TID used in system-log headers when available.
 
 
 [call [cmd  "ns_thread name"] [opt [arg name]]]

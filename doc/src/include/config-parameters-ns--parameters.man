@@ -303,8 +303,19 @@ Timestamps in seconds
 [item] Default: [const "true"]
 [list_end]
 
+[def "Parameter name: [emph "loghostproc"]"]
+Optional host procfs mount for thread lifetime mappings. Empty disables mapping.
+Read thread-self/status once per registered thread; missing or malformed data
+disables further attempts. No additional per-message lookup is performed.
+
+[list_begin itemized]
+[item] Type: [const "string"]
+[item] Default: empty
+[list_end]
+
 [def "Parameter name: [emph "logthread"]"]
-Include thread id in log lines
+Include cached PID and decimal OS thread ID in log lines (hexadecimal
+native thread-library ID on platforms without OS IDs).
 
 
 

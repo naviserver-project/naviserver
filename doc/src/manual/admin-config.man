@@ -2368,7 +2368,8 @@ this log file:
     # ns_param  logsec          false    ;# add timestamps in second resolution (default: true)
     # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
     # ns_param  logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
-    # ns_param  logthread       false    ;# add thread-info the log file lines (default: true)
+    # ns_param  logthread       false    ;# include cached [lb]PID.OS-TID[rb] token (default: true)
+    # ns_param  loghostproc     /host/proc ;# optional Linux host procfs mount (default: empty)
     # ns_param  logcolorize     true     ;# colorize log file with ANSI colors (default: false)
     # ns_param  logprefixcolor  green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
     # ns_param  logprefixintensity normal;# bright or normal
@@ -2376,6 +2377,21 @@ this log file:
     # ...
 }
 [example_end]
+
+System-log thread tokens use the cached decimal OS TID; unsupported platforms
+retain the hexadecimal native thread-library ID. Internal thread handles are unchanged.
+The optional [const loghostproc] path identifies a host procfs mount, for example
+[const /host/proc] supplied by a Linux-only Compose override with a read-only
+[const /proc:/host/proc:ro] mount. It is empty by default and is not required on
+macOS, BSD or Windows. Each newly registered thread reads
+[const thread-self/status] once and emits a [const {thread identity:}] Notice
+containing local PID/TID, host PID/TID and native thread-library ID. Missing or malformed
+procfs information disables subsequent attempts; an unavailable mapping is never
+guessed. Existing startup threads may predate the configured observer; the
+configuration thread is registered explicitly. Keep the mapping entries for as
+long as the corresponding traces. The mapping includes an explicit microsecond-resolution registration timestamp
+to distinguish reused IDs. No identity syscall, procfs read or numeric formatting occurs per log entry.
+
 
 
 
