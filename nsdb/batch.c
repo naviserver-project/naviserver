@@ -987,19 +987,12 @@ BatchInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
         {"?batch", Ns_ObjvObj, &batchObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec                requiredBatch[] = {
-        {"batch", Ns_ObjvObj, &batchObj, NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-
-    if (objc > 2 && strcmp(Tcl_GetString(objv[2]), "-handle") == 0) {
-        if (Ns_ParseObjv(options, optionalBatch, interp, 2, objc, objv) != NS_OK) {
-            return TCL_ERROR;
-        }
-    } else {
-        if (Ns_ParseObjv(NULL, requiredBatch, interp, 2, objc, objv) != NS_OK) {
-            return TCL_ERROR;
-        }
+    if (Ns_ParseObjv(options, optionalBatch, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    if (handleObj == NULL && batchObj == NULL) {
+        Tcl_WrongNumArgs(interp, 2, objv, "?-handle /value/? ?/batch/?");
+        return TCL_ERROR;
     }
     if (batchObj != NULL && BatchObjGet(interp, batchObj, &batch) != TCL_OK) {
         return TCL_ERROR;
@@ -1274,6 +1267,12 @@ BatchInsertObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         {NULL, NULL, NULL, NULL}
     };
 
+    if (objc < 3) {
+        Tcl_WrongNumArgs(interp, 2, objv,
+                         "/handle/ -table /table/ ?-columns /mapping/? "
+                         "?-schema /schema/? ?-nulls /nulls/? /batchOrRows/");
+        return TCL_ERROR;
+    }
     if (Ns_ParseObjv(NULL, handleArgs, interp, 2, objc, objv) != NS_OK
         || Ns_TclDbGetHandle(interp, Tcl_GetString(handleObj), &handle) != TCL_OK) {
         /*

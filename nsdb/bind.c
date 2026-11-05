@@ -1309,25 +1309,25 @@ NsDbBindObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const objv[],
         {NULL, NULL, NULL, NULL}
     };
 
-    /*
-     * The established command syntax places binding options after handle.
-     * Parse that positional prefix before the operation-specific options.
-     */
-    if (Ns_ParseObjv(NULL, handleArgs, interp, 2, MIN(objc, 3), objv) != NS_OK
-        || Ns_TclDbGetHandle(interp, handleName, &handle) != TCL_OK) {
-        return TCL_ERROR;
-    }
     if (strcmp(operation, "bindinfo") == 0) {
         const char *version = NULL;
-        bool        supported = Ns_DbBindSupported(handle);
+        bool        supported;
         Ns_ObjvSpec infoArgs[] = {
+            {"handle", Ns_ObjvString, &handleName, NULL},
             {"?-version|-types", Ns_ObjvString, &version, NULL},
             {NULL, NULL, NULL, NULL}
         };
 
-        if (Ns_ParseObjv(NULL, infoArgs, interp, 3, objc, objv) != NS_OK) {
+        if (Ns_ParseObjv(NULL, infoArgs, interp, 2, objc, objv) != NS_OK
+            || (version != NULL && strcmp(version, "-version") != 0
+                && strcmp(version, "-types") != 0)) {
+            Tcl_WrongNumArgs(interp, 2, objv, "/handle/ ?-version|-types?");
             return TCL_ERROR;
         }
+        if (Ns_TclDbGetHandle(interp, handleName, &handle) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        supported = Ns_DbBindSupported(handle);
         if (version != NULL && strcmp(version, "-types") == 0) {
             const char *const labels[] = {"scalar", "binary", "array"};
             unsigned mask = Ns_DbBindSupportedTypes(handle);
@@ -1341,14 +1341,19 @@ NsDbBindObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const objv[],
             Tcl_SetObjResult(interp, list);
             return TCL_OK;
         }
-        if (version != NULL && strcmp(version, "-version") != 0) {
-            Tcl_WrongNumArgs(interp, 2, objv, "handle ?-version|-types?");
-            return TCL_ERROR;
-        }
         Tcl_SetObjResult(interp, version != NULL
                          ? Tcl_NewIntObj(supported ? 6 : 0)
                          : Tcl_NewBooleanObj(supported));
         return TCL_OK;
+    }
+
+    /*
+     * The established command syntax places binding options after handle.
+     * Parse that positional prefix before the operation-specific options.
+     */
+    if (Ns_ParseObjv(NULL, handleArgs, interp, 2, MIN(objc, 3), objv) != NS_OK
+        || Ns_TclDbGetHandle(interp, handleName, &handle) != TCL_OK) {
+        return TCL_ERROR;
     }
     if (Ns_ParseObjv(opts, args, interp, 3, objc, objv) != NS_OK) {
         return TCL_ERROR;

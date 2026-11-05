@@ -52,7 +52,7 @@ test nsdb-1.0.8 {syntax: ns_db dbtype} -body {
 
 test nsdb-1.0.9 {syntax: ns_db dml} -body {
     ns_db dml
-} -returnCodes error -result {wrong # args: should be "ns_db dml /handle/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db dml /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/"}
 
 test nsdb-1.0.10 {syntax: ns_db driver} -body {
     ns_db driver
@@ -64,7 +64,7 @@ test nsdb-1.0.11 {syntax: ns_db exception} -body {
 
 test nsdb-1.0.12 {syntax: ns_db exec} -body {
     ns_db exec
-} -returnCodes error -result {wrong # args: should be "ns_db exec /handle/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db exec /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/"}
 
 test nsdb-1.0.13 {syntax: ns_db flush} -body {
     ns_db flush
@@ -104,7 +104,7 @@ test nsdb-1.0.22 {syntax: ns_db rowcount} -body {
 
 test nsdb-1.0.23 {syntax: ns_db select} -body {
     ns_db select
-} -returnCodes error -result {wrong # args: should be "ns_db select /handle/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db select /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/"}
 
 test nsdb-1.0.24 {syntax: ns_db setexception} -body {
     ns_db setexception
@@ -144,16 +144,40 @@ test nsdb-1.0.32 {syntax: ns_db verbose} -constraints with_deprecated -body {
 
 test nsdb-1.0.33 {syntax: ns_db 1row} -body {
     ns_db 1row
-} -returnCodes error -result {wrong # args: should be "ns_db 1row /handle/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db 1row /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/"}
 
 test nsdb-1.0.34 {syntax: ns_db 0or1row} -body {
     ns_db 0or1row
-} -returnCodes error -result {wrong # args: should be "ns_db 0or1row /handle/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db 0or1row /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/"}
 
 test nsdb-1.0.35 {syntax: ns_db info} -body {
     ns_db info
 } -returnCodes error -result {wrong # args: should be "ns_db info /handle/"}
 
+
+test nsdb-1.0.36 {syntax: ns_db batchinfo} -body {
+    ns_db batchinfo
+} -returnCodes error -result {wrong # args: should be "ns_db batchinfo ?-handle /value/? ?/batch/?"}
+
+test nsdb-1.0.37 {syntax: ns_db batchinfo extra arguments} -body {
+    ns_db batchinfo -handle x y z
+} -returnCodes error -result {wrong # args: should be "ns_db batchinfo ?-handle /value/? ?/batch/?"}
+
+test nsdb-1.0.38 {syntax: ns_db batchinsert} -body {
+    ns_db batchinsert
+} -returnCodes error -result {wrong # args: should be "ns_db batchinsert /handle/ -table /table/ ?-columns /mapping/? ?-schema /schema/? ?-nulls /nulls/? /batchOrRows/"}
+
+test nsdb-1.0.39 {syntax: ns_db bindinfo} -body {
+    ns_db bindinfo
+} -returnCodes error -result {wrong # args: should be "ns_db bindinfo /handle/ ?-version|-types?"}
+
+test nsdb-1.0.40 {syntax: ns_db bindinfo extra arguments} -body {
+    ns_db bindinfo x -version extra
+} -returnCodes error -result {wrong # args: should be "ns_db bindinfo /handle/ ?-version|-types?"}
+
+test nsdb-1.0.41 {syntax: ns_db bindinfo invalid option} -body {
+    ns_db bindinfo x -invalid
+} -returnCodes error -result {wrong # args: should be "ns_db bindinfo /handle/ ?-version|-types?"}
 
 test nsdb-1.1 {syntax: ns_dbquotevalue} -body {
     ns_dbquotevalue

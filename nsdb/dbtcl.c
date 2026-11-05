@@ -838,7 +838,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
                     Tcl_WrongNumArgs(interp, 2, objv, "/handle/ /procname/");
 
                 } else {
-                    Tcl_WrongNumArgs(interp, 2, objv, "/handle/ /sql/");
+                    Tcl_WrongNumArgs(interp, 2, objv,
+                                     "/handle/ ?-bindvars? ?-bindset /setId/? "
+                                     "?-binddict /dictionary/? ?-bindtypes /types/? "
+                                     "?-emptynull? ?--? /sql/");
                 }
                 return TCL_ERROR;
             }

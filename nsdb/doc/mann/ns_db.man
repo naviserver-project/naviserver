@@ -44,7 +44,10 @@ allocated ns_set is returned. An error is thrown if more than one row
 is returned.
 
 
-[call [cmd "ns_db batchinfo"] [arg batch]]
+[call [cmd "ns_db batchinfo"] [opt "[option -handle] [arg value]"] [opt [arg batch]]]
+
+Without [option -handle], [arg batch] is required. With [option -handle],
+[arg value] is a checked-out database handle and [arg batch] is optional.
 
 Return immutable-batch metadata as a Tcl dictionary without materializing record
 values. Batches are opaque, interpreter-local values produced by registered C
@@ -53,9 +56,8 @@ record count and producer-specific source/checkpoint information. Modifying the
 returned Tcl dictionary does not mutate the batch. A diagnostic string label is
 not a serializable or reconstructible batch handle.
 
-[call [cmd "ns_db batchinfo"] [option -handle] [arg handle] [opt [arg batch]]]
-
-Report the checked-out handle's batch capabilities. supported is false for a
+[para]
+With [option -handle], report the checked-out handle's batch capabilities. supported is false for a
 driver without registered batch callbacks. Registered drivers report their method,
 base types, supported refinements/representations and transaction requirements.
 The tclRows boolean reports support for prepared Tcl-row input on this handle.
@@ -525,25 +527,31 @@ The [option -database] option requires [arg handle].
 [para]
 Statistics use a shared vocabulary where the scopes and units are comparable:
 
-[list_begin definitions]
-[def [const connection]]
-[const memoryUsedBytes] and [const cacheUsedBytes] are current memory gauges
-in bytes. [const cacheHits] and [const cacheMisses] are cumulative cache-access
-counts for this connection. Backend documentation defines the cache coverage.
-[def [const statement]]
-[const executions] counts execution starts of the currently retained statement;
-[const rowsReturned] counts rows delivered to the caller by that statement.
-[const memoryUsedBytes] is its current attributed memory in bytes. These are
-statement-instance metrics, not historical connection or server totals.
-[def [const highwater]]
-Meaningful peak gauges, nested at the same paths as their corresponding current
-metrics. Omit peaks that the engine does not measure. Cumulative counters are
-not peaks, even if an engine API returns them in an output called highwater.
-[def [const backend]]
-Driver-specific fields, nested under the driver's identifier. SQLite places
-its connection/statement details, pool policy and WAL snapshot under
-[const {backend sqlite}]. These are not equated with PostgreSQL server-wide
-buffer, scan or checkpoint statistics.
+[list_begin itemized]
+ [item] [const connection]: 
+   [const memoryUsedBytes] and [const cacheUsedBytes] are current memory gauges
+   in bytes. [const cacheHits] and [const cacheMisses] are cumulative cache-access
+   counts for this connection. Backend documentation defines the cache
+   coverage.
+ 
+ [item] [const statement]: 
+   [const executions] counts execution starts of the currently retained statement;
+   [const rowsReturned] counts rows delivered to the caller by that statement.
+   [const memoryUsedBytes] is its current attributed memory in bytes. These are
+   statement-instance metrics, not historical connection or server
+   totals.
+   
+ [item] [const highwater]: 
+   Meaningful peak gauges, nested at the same paths as their corresponding current
+   metrics. Omit peaks that the engine does not measure. Cumulative counters are
+   not peaks, even if an engine API returns them in an output called
+   highwater.
+   
+ [item] [const backend]: 
+   Driver-specific fields, nested under the driver's identifier. SQLite places
+   its connection/statement details, pool policy and WAL snapshot under
+   [const {backend sqlite}]. These are not equated with PostgreSQL server-wide
+   buffer, scan or checkpoint statistics.
 [list_end]
 
 [para]
