@@ -1959,8 +1959,8 @@ ScanNextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
         }
         Tcl_DStringInit(&decoded);
         error = scan->oversized ? "oversized" : Parse(scan, values, &decoded);
-        (void)snprintf(start, sizeof(start), "%" PRId64, (int64_t)scan->lineStart);
-        (void)snprintf(stop, sizeof(stop), "%" PRId64, (int64_t)scan->offset);
+        (void)ns_uint64toa(start, (uint64_t)scan->lineStart);
+        (void)ns_uint64toa(stop, (uint64_t)scan->offset);
         if (error != NULL) {
             size_t            n = scan->lineLength < SCAN_EXCERPT ? scan->lineLength : SCAN_EXCERPT;
             static const char hex[] = "0123456789abcdef";

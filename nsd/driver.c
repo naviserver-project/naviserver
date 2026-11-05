@@ -5294,8 +5294,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
             Ns_Set *headers = Ns_SetCreate(NULL);
             char    value[TCL_INTEGER_SPACE];
 
-            snprintf(value, sizeof(value), "%" PRId64,
-                     (int64_t)sockPtr->poolPtr->wqueue.retryafter.sec);
+            (void)ns_uint64toa(value, (uint64_t)sockPtr->poolPtr->wqueue.retryafter.sec);
             Ns_SetPut(headers, "retry-after", value);
 
             SockSendResponse(sockPtr, reason, 503, errMsg, headers);

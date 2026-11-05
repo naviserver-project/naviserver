@@ -355,10 +355,11 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, bool doStream)
     Conn *connPtr = (Conn *) conn;
 
     if (!doStream) {
-        char buffer[TCL_INTEGER_SPACE];
+        char       buffer[TCL_INTEGER_SPACE];
+        TCL_SIZE_T digits;
 
-        snprintf(buffer, sizeof(buffer), "%" PRIuz, length);
-        Ns_ConnUpdateHeadersSz(conn, "content-length", 14, buffer, (TCL_SIZE_T)strlen(buffer));
+        digits = (TCL_SIZE_T)ns_uint64toa(buffer, (uint64_t)length);
+        Ns_ConnUpdateHeadersSz(conn, "content-length", 14, buffer, digits);
         connPtr->responseLength = (ssize_t)length;
     } else {
         /*

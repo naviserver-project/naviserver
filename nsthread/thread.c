@@ -565,6 +565,7 @@ static bool
 ThreadCputimeLinux(uint64_t tid, long ticksPerSecond,
                    uint64_t *userUsecPtr, uint64_t *systemUsecPtr)
 {
+    static const char pathPrefix[] = "/proc/self/task/";
     char    path[128];
     char    buffer[4096];
     char   *p;
@@ -579,8 +580,10 @@ ThreadCputimeLinux(uint64_t tid, long ticksPerSecond,
         return NS_FALSE;
     }
 
-    snprintf(path, sizeof(path),
-             "/proc/self/task/%" PRIu64 "/stat", tid);
+    memcpy(path, pathPrefix, sizeof(pathPrefix) - 1u);
+    p = path + sizeof(pathPrefix) - 1u;
+    p += ns_uint64toa(p, tid);
+    memcpy(p, "/stat", sizeof("/stat"));
 
     fd = open(path, O_RDONLY);
     if (fd == -1) {

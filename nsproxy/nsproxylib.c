@@ -3088,22 +3088,20 @@ static Proxy*
 CreateProxy(Pool *poolPtr)
 {
     Proxy *proxyPtr;
-    char buf[TCL_INTEGER_SPACE];
     size_t nameLength;
-    int idLength;
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
-    idLength = snprintf(buf, sizeof(buf), "%" PRIuPTR, poolPtr->nextid++);
     nameLength = strlen(poolPtr->name);
 
     proxyPtr = ns_calloc(1u, sizeof(Proxy));
     proxyPtr->poolPtr = poolPtr;
 
-    proxyPtr->id = ns_calloc(1u, strlen(buf) + nameLength + 2u);
+    /* Reserve the pool name, separator and maximum decimal ID including NUL. */
+    proxyPtr->id = ns_malloc(nameLength + 1u + TCL_INTEGER_SPACE);
     memcpy(proxyPtr->id, poolPtr->name, nameLength);
-    *(proxyPtr->id + nameLength) = '-';
-    memcpy(proxyPtr->id + nameLength + 1u, buf, (size_t)idLength + 1u);
+    proxyPtr->id[nameLength] = '-';
+    (void)ns_uint64toa(proxyPtr->id + nameLength + 1u, (uint64_t)poolPtr->nextid++);
 
     Tcl_DStringInit(&proxyPtr->in);
     Tcl_DStringInit(&proxyPtr->out);

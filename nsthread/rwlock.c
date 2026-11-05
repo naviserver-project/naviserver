@@ -109,28 +109,35 @@ Ns_RWLockList(Tcl_DString *dsPtr)
 
     Ns_MasterLock();
     for (rwlockPtr = firstRwlockPtr; rwlockPtr != NULL; rwlockPtr = rwlockPtr->nextPtr) {
+        char *p = buf;
+
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, rwlockPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
+        /* Five uint64 values and three signed time pairs fit in buf. */
+        *p++ = ' ';
+        p += ns_uint64toa(p, (uint64_t)rwlockPtr->id);
+        *p++ = ' ';
+        p += ns_uint64toa(p, (uint64_t)rwlockPtr->nlock);
+        *p++ = ' ';
+        p += ns_uint64toa(p, (uint64_t)rwlockPtr->nbusy);
 #ifndef NS_NO_MUTEX_TIMING
-        snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu " NS_TIME_FMT " " NS_TIME_FMT " " NS_TIME_FMT
-                 " %lu %lu" ,
-                 rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
-                 (int64_t)rwlockPtr->total_waiting_time.sec, rwlockPtr->total_waiting_time.usec,
-                 (int64_t)rwlockPtr->max_waiting_time.sec, rwlockPtr->max_waiting_time.usec,
-                 (int64_t)rwlockPtr->total_lock_time.sec, rwlockPtr->total_lock_time.usec,
-                 rwlockPtr->nrlock, rwlockPtr->nwlock);
+        p += snprintf(p, sizeof(buf) - (size_t)(p - buf),
+                      " " NS_TIME_FMT " " NS_TIME_FMT " " NS_TIME_FMT,
+                      (int64_t)rwlockPtr->total_waiting_time.sec, rwlockPtr->total_waiting_time.usec,
+                      (int64_t)rwlockPtr->max_waiting_time.sec, rwlockPtr->max_waiting_time.usec,
+                      (int64_t)rwlockPtr->total_lock_time.sec, rwlockPtr->total_lock_time.usec);
 #else
-        snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu " NS_TIME_FMT " " NS_TIME_FMT " " NS_TIME_FMT
-                 " %lu %lu" ,
-                 rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
-                 (int64_t)0, (long)0,
-                 (int64_t)0, (long)0,
-                 (int64_t)0, (long)0,
-                 rwlockPtr->nrlock, rwlockPtr->nwlock);
+        p += snprintf(p, sizeof(buf) - (size_t)(p - buf),
+                      " " NS_TIME_FMT " " NS_TIME_FMT " " NS_TIME_FMT,
+                      (int64_t)0, (long)0,
+                      (int64_t)0, (long)0,
+                      (int64_t)0, (long)0);
 #endif
+        *p++ = ' ';
+        p += ns_uint64toa(p, (uint64_t)rwlockPtr->nrlock);
+        *p++ = ' ';
+        (void)ns_uint64toa(p, (uint64_t)rwlockPtr->nwlock);
         Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
         Tcl_DStringEndSublist(dsPtr);
     }

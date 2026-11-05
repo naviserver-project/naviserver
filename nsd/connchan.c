@@ -2179,11 +2179,15 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
 
         if (connChanPtr != NULL && connChanPtr->debugLevel > 1) {
             char    fnbuffer[256];
+            char   *p = fnbuffer;
             ssize_t bytes_written;
 
-            snprintf(fnbuffer, sizeof(fnbuffer), "\n%" PRIxPTR " WRITE close,"
-                     " total written %ld rejected %ld wbuffer %ld waddr %p\n",
-                     Ns_ThreadId(), connChanPtr->wBytes, connChanPtr->sockPtr->sendRejected,
+            p += snprintf(p, sizeof(fnbuffer), "\n%" PRIxPTR " WRITE close, total written ",
+                          Ns_ThreadId());
+            p += ns_uint64toa(p, (uint64_t)connChanPtr->wBytes);
+            snprintf(p, sizeof(fnbuffer) - (size_t)(p - fnbuffer),
+                     " rejected %ld wbuffer %ld waddr %p\n",
+                     connChanPtr->sockPtr->sendRejected,
                      (long)ConnChanBufferSize(connChanPtr,sendBuffer),
                      ConnChanBufferAddress(connChanPtr,sendBuffer));
             bytes_written = write(connChanPtr->debugFD, fnbuffer, strlen(fnbuffer));
@@ -3110,11 +3114,13 @@ DebugLogBufferState(NsConnChan *connChanPtr, size_t bytesToSend, ssize_t bytesSe
 {
     if (connChanPtr->debugLevel > 1 && connChanPtr->debugFD > 0) {
         char    logMsg[512];
+        char   *p = logMsg;
         va_list args;
         ssize_t bytes_written;
 
-        snprintf(logMsg, sizeof(logMsg), "\n%" PRIxPTR " WRITE toSend %lu: ",
-                 Ns_ThreadId(), bytesToSend);
+        p += snprintf(p, sizeof(logMsg), "\n%" PRIxPTR " WRITE toSend ", Ns_ThreadId());
+        p += ns_uint64toa(p, (uint64_t)bytesToSend);
+        memcpy(p, ": ", sizeof(": "));
         bytes_written = write(connChanPtr->debugFD, logMsg, strlen(logMsg));
 
         va_start(args, fmt);
@@ -3122,8 +3128,11 @@ DebugLogBufferState(NsConnChan *connChanPtr, size_t bytesToSend, ssize_t bytesSe
         va_end(args);
         bytes_written = write(connChanPtr->debugFD, logMsg, strlen(logMsg));
 
-        snprintf(logMsg, sizeof(logMsg), " total written %ld rejected %ld wbuffer %ld waddr %p\n",
-                 connChanPtr->wBytes,
+        memcpy(logMsg, " total written ", sizeof(" total written ") - 1u);
+        p = logMsg + sizeof(" total written ") - 1u;
+        p += ns_uint64toa(p, (uint64_t)connChanPtr->wBytes);
+        snprintf(p, sizeof(logMsg) - (size_t)(p - logMsg),
+                 " rejected %ld wbuffer %ld waddr %p\n",
                  connChanPtr->sockPtr->sendRejected,
                  (long)ConnChanBufferSize(connChanPtr,sendBuffer),
                  ConnChanBufferAddress(connChanPtr,sendBuffer));

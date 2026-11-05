@@ -175,8 +175,11 @@ NsWin32ErrMsg(ns_sockerrno_t err)
         msg = ns_malloc(1000u);
         Ns_TlsSet(&tls, msg);
     }
-    snprintf(msg, 1000u, "win32 error code: %lu: ", err);
-    len = strlen(msg);
+    memcpy(msg, "win32 error code: ", sizeof("win32 error code: ") - 1u);
+    len = sizeof("win32 error code: ") - 1u;
+    len += (size_t)ns_uint32toa(msg + len, (uint32_t)err);
+    memcpy(msg + len, ": ", sizeof(": "));
+    len += sizeof(": ") - 1u;
 
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),

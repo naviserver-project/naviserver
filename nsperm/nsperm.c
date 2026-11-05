@@ -188,7 +188,7 @@ Ns_ModuleInit(const char *server, const char *UNUSED(module))
 
             /* There is no requirement to hash it but it won't hurt */
             Ns_CtxMD5Init(&md5);
-            snprintf(buf, sizeof(buf), "%lu", bigRamdomNumber);
+            (void)ns_uint32toa(buf, (uint32_t)bigRamdomNumber);
             Ns_CtxMD5Update(&md5, (unsigned char *) buf, strlen(buf));
             Ns_CtxMD5Final(&md5, sig);
             Ns_HexString(sig, usdigest, 16, NS_TRUE);

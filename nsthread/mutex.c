@@ -512,12 +512,20 @@ Ns_MutexList(Tcl_DString *dsPtr)
 
     Ns_MasterLock();
     for (mutexPtr = firstMutexPtr; mutexPtr != NULL; mutexPtr = mutexPtr->nextPtr) {
+        char *p = buf;
+
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
-        snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu " NS_TIME_FMT " " NS_TIME_FMT " " NS_TIME_FMT,
-                 mutexPtr->id, mutexPtr->nlock, mutexPtr->nbusy,
+        /* The fixed-width numeric fields fit in buf, including their separators. */
+        *p++ = ' ';
+        p += ns_uint64toa(p, (uint64_t)mutexPtr->id);
+        *p++ = ' ';
+        p += ns_uint64toa(p, (uint64_t)mutexPtr->nlock);
+        *p++ = ' ';
+        p += ns_uint64toa(p, (uint64_t)mutexPtr->nbusy);
+        snprintf(p, sizeof(buf) - (size_t)(p - buf),
+                 " " NS_TIME_FMT " " NS_TIME_FMT " " NS_TIME_FMT,
                  (int64_t)mutexPtr->total_waiting_time.sec, mutexPtr->total_waiting_time.usec,
                  (int64_t)mutexPtr->max_waiting_time.sec, mutexPtr->max_waiting_time.usec,
                  (int64_t)mutexPtr->total_lock_time.sec, mutexPtr->total_lock_time.usec
@@ -550,6 +558,7 @@ NsMutexInitNext(Ns_Mutex *mutex, const char *prefix, uintptr_t *nextPtr)
 {
     uintptr_t id;
     char buf[NS_THREAD_NAMESIZE];
+    char idBuffer[TCL_INTEGER_SPACE];
 
     NS_NONNULL_ASSERT(mutex != NULL);
     NS_NONNULL_ASSERT(prefix != NULL);
@@ -559,7 +568,8 @@ NsMutexInitNext(Ns_Mutex *mutex, const char *prefix, uintptr_t *nextPtr)
     id = *nextPtr;
     *nextPtr = id + 1u;
     Ns_MasterUnlock();
-    snprintf(buf, sizeof(buf), "ns:%s:%" PRIuPTR, prefix, id);
+    (void)ns_uint64toa(idBuffer, (uint64_t)id);
+    snprintf(buf, sizeof(buf), "ns:%s:%s", prefix, idBuffer);
     Ns_MutexInit(mutex);
     Ns_MutexSetName(mutex, buf);
 }

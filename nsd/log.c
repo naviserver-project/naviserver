@@ -2484,13 +2484,22 @@ LogThreadInitialize(void *UNUSED(arg))
     uint64_t  tid = Ns_ThreadGetOsId();
 
     if (cachePtr->threadTokenLength == 0) {
+        char *tokenPtr = cachePtr->threadToken;
+
+        /* Two uint64 decimal values and delimiters fit in the 64-byte token. */
+        *tokenPtr++ = '[';
+        tokenPtr += ns_uint64toa(tokenPtr, (uint64_t)Ns_InfoPid());
+        *tokenPtr++ = '.';
         if (tid != 0u) {
-            cachePtr->threadTokenLength = (TCL_SIZE_T)snprintf(cachePtr->threadToken,
-                sizeof(cachePtr->threadToken), "[%d.%" PRIu64 "]", (int)Ns_InfoPid(), tid);
+            tokenPtr += ns_uint64toa(tokenPtr, tid);
         } else {
-            cachePtr->threadTokenLength = (TCL_SIZE_T)snprintf(cachePtr->threadToken,
-                sizeof(cachePtr->threadToken), "[%d.%" PRIxPTR "]", (int)Ns_InfoPid(), Ns_ThreadId());
+            tokenPtr += snprintf(tokenPtr, sizeof(cachePtr->threadToken)
+                                 - (size_t)(tokenPtr - cachePtr->threadToken) - 1u,
+                                 "%" PRIxPTR, Ns_ThreadId());
         }
+        *tokenPtr++ = ']';
+        *tokenPtr = '\0';
+        cachePtr->threadTokenLength = (TCL_SIZE_T)(tokenPtr - cachePtr->threadToken);
     }
     if (!cachePtr->mappingChecked && tid != 0u
         && Ns_AtomicUint32LoadAcquire(&hostProcEnabled) != 0u) {

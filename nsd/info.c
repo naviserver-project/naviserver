@@ -914,12 +914,16 @@ NsLogMemoryStatsDelta(const char *context, const ConnPool *poolPtr,
 
     if (delta >= minAbsDelta) {
         char detailBuffer[256];
+        char deltaBuffer[TCL_INTEGER_SPACE], beforeBuffer[TCL_INTEGER_SPACE], afterBuffer[TCL_INTEGER_SPACE];
 
+        (void)ns_uint64toa(deltaBuffer, (uint64_t)delta);
+        (void)ns_uint64toa(beforeBuffer, (uint64_t)beforeAllocated);
+        (void)ns_uint64toa(afterBuffer, (uint64_t)afterAllocated);
         snprintf(detailBuffer, sizeof(detailBuffer),
-                 "%s%sdelta %s%" PRIuz " before %" PRIuz " after %" PRIuz,
+                 "%s%sdelta %s%s before %s after %s",
                  detail != NULL && *detail != '\0' ? detail : "",
                  detail != NULL && *detail != '\0' ? " " : "",
-                 sign, delta, beforeAllocated, afterAllocated);
+                 sign, deltaBuffer, beforeBuffer, afterBuffer);
 
         NsLogMemoryStats(context, poolPtr, threadId, detailBuffer);
     }
