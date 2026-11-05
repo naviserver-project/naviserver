@@ -19,7 +19,11 @@
 
 [list_begin definitions]
 
-[call [cmd "ns_ip anonymize"] [opt [option "-ipv4mask mask"]] [opt [option "-ipv6mask mask"]] [opt --] [arg ipaddr]]
+[call [cmd "ns_ip anonymize"] \
+    [opt "[option -ipv4mask] [arg value]"] \
+    [opt "[option -ipv6mask] [arg value]"] \
+    [opt [option --]] \
+    [arg ipaddr]]
 
  Returns the address after bitwise masking, using the same operation as nslog's
  [const masklogaddr] option. The defaults are [const 255.255.255.0] for IPv4

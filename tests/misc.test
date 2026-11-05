@@ -392,6 +392,9 @@ test ns_ip-1.1.4 {syntax: ns_ip valid} -body {
 test ns_ip-1.1.5 {syntax: ns_ip inany} -body {
     ns_ip inany
 } -returnCodes error -result {wrong # args: should be "ns_ip inany /ipaddr/"}
+test ns_ip-1.1.6 {syntax: ns_ip anonymize} -body {
+    ns_ip anonymize
+} -returnCodes error -result {wrong # args: should be "ns_ip anonymize ?-ipv4mask /value/? ?-ipv6mask /value/? ?--? /ipaddr/"}
 
 
 test ns_ip-1.2.1 {ns_ip properties particular address} -body {

@@ -36,6 +36,59 @@ namespace eval ::accessScan {
     }
 }
 
+test ns_accesslog_scan-0.1 {basic syntax: ns_accesslog scan} -body {
+    ns_accesslog scan
+} -returnCodes error -result {wrong # args: should be "ns_accesslog scan open|next|info|close|triples ?/arg .../"}
+
+test ns_accesslog_scan-0.2 {unknown ns_accesslog scan subcommand} -body {
+    ns_accesslog scan ?
+} -returnCodes error -result {ns_accesslog scan: bad subcommand "?": must be open, next, info, close, or triples}
+
+test ns_accesslog_scan-0.3 {syntax: ns_accesslog scan next} -body {
+    ns_accesslog scan next
+} -returnCodes error -result {wrong # args: should be "ns_accesslog scan next ?-maxrecords /integer[1,1000000]/? ?-maxbytes /integer[1,1073741824]/? ?-maxscanbytes /integer[1,1073741824]/? ?-timeout /time/? /handle/"}
+
+test ns_accesslog_scan-0.4 {syntax: ns_accesslog scan info} -body {
+    ns_accesslog scan info
+} -returnCodes error -result {wrong # args: should be "ns_accesslog scan info /handle/"}
+
+test ns_accesslog_scan-0.5 {syntax: ns_accesslog scan close} -body {
+    ns_accesslog scan close
+} -returnCodes error -result {wrong # args: should be "ns_accesslog scan close /handle/"}
+
+test ns_accesslog_scan-0.6 {syntax: ns_accesslog scan triples} -body {
+    ns_accesslog scan triples
+} -returnCodes error -result {wrong # args: should be "ns_accesslog scan triples ?-offset /integer[0,MAX]/? ?-limit /integer[0,MAX]/? /batch/"}
+
+test ns_accesslog_scan-0.7 {syntax: ns_accesslog scan next options} -setup {
+    set s [ns_accesslog scan open -filename [::accessScan::write syntax-next.log {}]]
+} -body {
+    ns_accesslog scan next $s x
+} -cleanup {
+    ns_accesslog scan close $s
+} -returnCodes error -result {wrong # args: should be "ns_accesslog scan next ?-maxrecords /integer[1,1000000]/? ?-maxbytes /integer[1,1073741824]/? ?-maxscanbytes /integer[1,1073741824]/? ?-timeout /time/? /handle/"}
+
+test ns_accesslog_scan-0.8 {syntax: ns_accesslog scan triples options} -setup {
+    set b [::accessScan::one "$::accessScan::line\n"]
+} -body {
+    ns_accesslog scan triples $b x
+} -returnCodes error -result {wrong # args: should be "ns_accesslog scan triples ?-offset /integer[0,MAX]/? ?-limit /integer[0,MAX]/? /batch/"}
+
+test ns_accesslog_scan-0.9 {options precede handles in canonical scan syntax} -setup {
+    set s [ns_accesslog scan open -filename [::accessScan::write syntax-order.log [string repeat "$::accessScan::line\n" 2]]]
+} -body {
+    set b [ns_accesslog scan next -maxrecords 1 -maxbytes 8388608 -maxscanbytes 16777216 -timeout 1s $s]
+    list [dict get [ns_accesslog scan info $b] rows] \
+        [lindex [ns_accesslog scan triples -offset 0 -limit 0 $b] 2] \
+        [llength [lindex [ns_accesslog scan triples -offset 0 -limit 1 $b] 2]]
+} -cleanup {
+    ns_accesslog scan close $s
+} -result {1 {} 3}
+
+test ns_accesslog_scan-1.0 {syntax: ns_accesslog scan open} -body {
+    ns_accesslog scan open x
+} -returnCodes error -result {wrong # args: should be "ns_accesslog scan open ?-filename /value/? ?-format auto|common|combined? ?-timingcolumn /value/? ?-requesttime auto|true|false? ?-extendedheaders /value/? ?-tail /value/? ?-encoding /value/? ?-offset /value/? ?-endoffset /value/? ?-checkpoint /value/? ?-maxlinebytes /integer[128,1048576]/?"}
+
 test ns_accesslog_scan-1.1 {common fields, source positions and exact numeric spellings} -body {
     set line [string map {4553 9007199254740993} $::accessScan::line]
     set b [::accessScan::one "$line\n"]
