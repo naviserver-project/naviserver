@@ -18,14 +18,14 @@ Consumers such as nsstats and MCP apply their own access and presentation policy
 
 [section COMMANDS]
 [list_begin definitions]
-[call [cmd "ns_stats describe"] [opt [option "-server server"]]]
+[call [cmd "ns_stats describe"] [opt "[option -server] [arg value]"]]
 Returns a Tcl dictionary with schemaVersion, process identity/version/build,
 platform, drivers, virtual servers, pool limits, module metadata and database-pool
 associations. Driver bindings include the available host-mapping configuration.
 Only selected configuration fields are returned; callback scripts and credentials
 are not collected. Unsupported optional facilities have availability flags.
 
-[call [cmd "ns_stats snapshot"] [opt [option "-server server"]]]
+[call [cmd "ns_stats snapshot"] [opt "[option -server] [arg value]"]]
 Collects current gauges and cumulative counters without advancing the shared
 sampling baseline. The result includes collection duration and a microsecond epoch
 timestamp. Servers/pools expose counters, threads, active and waiting requests.
@@ -50,7 +50,9 @@ sockets owned by NaviServer. No socket identities or peer addresses are retained
 These optional probes run as part of the existing snapshot, including scheduled
 sampling, and do not create another scheduler.
 
-[call [cmd "ns_stats sample"] [opt [option "-server server"]] [opt [option "-window duration"]]]
+[call [cmd "ns_stats sample"] \
+    [opt "[option -server] [arg value]"] \
+    [opt "[option -window] [arg value]"]]
 Without [option -window], reads the latest published record without collecting or modifying it. sampling
 contains ready, from/to epoch seconds, measured elapsedSeconds, ageSeconds, reset,
 intervalSeconds and running. Without a baseline, ready is false and interval
@@ -110,7 +112,7 @@ Do not sum ancestors or interpret throttled period percentage as CPU utilization
 Compare process CPU core equivalents with the qualified effectiveCores ceiling
 for the same sample period. Existing history without capacity data remains unknown.
 
-[call [cmd "ns_stats sampling start"] [opt [option "-interval seconds"]]]
+[call [cmd "ns_stats sampling start"] [opt "[option -interval] [arg value]"]]
 
 [para] Time arguments accept NaviServer units and fractional seconds, for
 example 1500ms. They are normalized to seconds with [cmd ns_baseunit].
@@ -135,8 +137,12 @@ shorter than the configured limit after startup, gaps or eviction.
 Stops scheduled collection and retains the last sample, which remains readable
 with running false and increasing age.
 
-[call [cmd "ns_stats sampling history"] [option "-from epochSeconds"] [option "-to epochSeconds"] \
-    [opt [option "-server server"]] [opt [option "-limit count"]] [opt [option "-cursor timestamp"]]]
+[call [cmd "ns_stats sampling history"] \
+    [option -from] [arg integer] \
+    [option -to] [arg integer] \
+    [opt "[option -server] [arg value]"] \
+    [opt "[option -limit] [arg integer]"] \
+    [opt "[option -cursor] [arg integer]"]]
 
 Reads compact recent samples from the existing process-wide NSV storage, without
 SQLite. Publication applies both [const ns/stats] settings
@@ -156,8 +162,9 @@ to a nonnegative microsecond timestamp. Follow nextCursor while more is true.
 Coverage reports retained bounds, gaps, restart/reset boundaries and droppedThrough;
 missing intervals are not zero traffic. Reading does not collect or change sampling.
 
-[call [cmd "ns_stats history configure"] [option "-pool pool"] \
-    [opt [option "-retention seconds"]] [opt [option "-maxBytes bytes"]]]
+[call [cmd "ns_stats history configure"] [option -pool] [arg value] \
+    [opt "[option -retention] [arg value]"] \
+    [opt "[option -maxBytes] [arg value]"]]
 Enables the optional SQLiteHistory mixin using a configured native nsdbsqlite pool.
 No Tcl sqlite3 package is required. Use a dedicated persistent database; other
 application tables are rejected. Retention accepts time units and fractional seconds; maxBytes accepts
@@ -230,8 +237,11 @@ interval. Payload sizes, topology changes, gaps and restarts can change the esti
 repeat measurements under representative load. Changing the budget at runtime requires
 history disable followed by history configure; update ns/stats for future restarts.
 
-[call [cmd "ns_stats history allocator"] [option "-from epochSeconds"] [option "-to epochSeconds"] \
-    [opt [option "-limit count"]] [opt [option "-cursor microseconds"]]]
+[call [cmd "ns_stats history allocator"] \
+    [option -from] [arg integer] \
+    [option -to] [arg integer] \
+    [opt "[option -limit] [arg integer]"] \
+    [opt "[option -cursor] [arg integer]"]]
 Returns compact, process-wide allocator history from the history owner server.
 The epoch interval is inclusive at from and exclusive at to, at most 24 hours,
 ending no later than now. Limit is 1..10000 (default 10000). records contain only
@@ -254,8 +264,12 @@ certification is required. timings reports checkoutMs, readMs, decodeMs and tota
 in milliseconds; checkout includes connection setup, read covers the sample SELECT,
 and decode includes compact-point construction and any legacy decompression.
 
-[call [cmd "ns_stats history query"] [option "-from epochSeconds"] [option "-to epochSeconds"] \
-    [opt [option "-server server"]] [opt [option "-limit count"]] [opt [option "-cursor microseconds"]]]
+[call [cmd "ns_stats history query"] \
+    [option -from] [arg integer] \
+    [option -to] [arg integer] \
+    [opt "[option -server] [arg value]"] \
+    [opt "[option -limit] [arg integer]"] \
+    [opt "[option -cursor] [arg integer]"]]
 Returns historical records, referenced topologies and coverage. Query from the
 history owner server; the selected historical server need not still be configured.
 Windows are inclusive at from and exclusive at to, at most 24 hours, ending no

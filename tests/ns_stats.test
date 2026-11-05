@@ -265,6 +265,69 @@ set statsTestCode [catch {
         ::ns_stats_test::stop
     } -result {180 1 1}
 
+    test stats-sampling-start-syntax {syntax: ns_stats sampling start} -constraints ns_stats -body {
+        ns_stats sampling start x
+    } -returnCodes error -result {invalid argument 'x', maybe too many arguments; should be "ns_stats sampling start ?-interval /value/?"}
+
+    test stats-sampling-stop-syntax {syntax: ns_stats sampling stop} -constraints ns_stats -body {
+        ns_stats sampling stop x
+    } -returnCodes error -result {wrong # args: should be "ns_stats sampling stop"}
+
+    test stats-sampling-status-syntax {syntax: ns_stats sampling status} -constraints ns_stats -body {
+        ns_stats sampling status x
+    } -returnCodes error -result {wrong # args: should be "ns_stats sampling status"}
+
+    test stats-sampling-history-syntax {syntax: ns_stats sampling history missing from} -constraints ns_stats -body {
+        ns_stats sampling history
+    } -returnCodes error -result {required argument 'from' is missing, should be:
+        ns_stats sampling history -from /integer/ -to /integer/ ?-server /value/? ?-limit /integer/? ?-cursor /integer/?}
+    # "ns_stats sampling history" just advertise: {wrong # args: should be "ns_stats sampling history -from /integer/ -to /integer/ ?-server /value/? ?-limit /integer/? ?-cursor /integer/?"}
+
+    test stats-sampling-history-syntax-to {syntax: ns_stats sampling history missing to} -constraints ns_stats -body {
+        ns_stats sampling history -from 0
+    } -returnCodes error -result {required argument 'to' is missing, should be:
+        ns_stats sampling history -from /integer/ -to /integer/ ?-server /value/? ?-limit /integer/? ?-cursor /integer/?}
+
+    test stats-history-configure-syntax {syntax: ns_stats history configure} -constraints ns_stats -body {
+        ns_stats history configure
+    } -returnCodes error -result {required argument 'pool' is missing, should be:
+        ns_stats history configure -pool /value/ ?-retention /value/? ?-maxBytes /value/?}
+    # "ns_stats history configure" just advertise: {wrong # args: should be "ns_stats history configure -pool /value/ ?-retention /value/? ?-maxBytes /value/?"}
+
+    test stats-history-status-syntax {syntax: ns_stats history status} -constraints ns_stats -body {
+        ns_stats history status x
+    } -returnCodes error -result {wrong # args: should be "ns_stats history status"}
+
+    test stats-history-disable-syntax {syntax: ns_stats history disable} -constraints ns_stats -body {
+        ns_stats history disable x
+    } -returnCodes error -result {wrong # args: should be "ns_stats history disable"}
+
+    test stats-history-storage-syntax {syntax: ns_stats history storage} -constraints ns_stats -body {
+        ns_stats history storage x
+    } -returnCodes error -result {wrong # args: should be "ns_stats history storage"}
+
+    test stats-history-query-syntax {syntax: ns_stats history query missing from} -constraints ns_stats -body {
+        ns_stats history query
+    } -returnCodes error -result {required argument 'from' is missing, should be:
+        ns_stats history query -from /integer/ -to /integer/ ?-server /value/? ?-limit /integer/? ?-cursor /integer/?}
+    # "ns_stats history query" just advertise: {wrong # args: should be "ns_stats history query -from /integer/ -to /integer/ ?-server /value/? ?-limit /integer/? ?-cursor /integer/?"}
+
+    test stats-history-query-syntax-to {syntax: ns_stats history query missing to} -constraints ns_stats -body {
+        ns_stats history query -from 0
+    } -returnCodes error -result {required argument 'to' is missing, should be:
+        ns_stats history query -from /integer/ -to /integer/ ?-server /value/? ?-limit /integer/? ?-cursor /integer/?}
+
+    test stats-history-allocator-syntax {syntax: ns_stats history allocator missing from} -constraints ns_stats -body {
+        ns_stats history allocator
+    } -returnCodes error -result {required argument 'from' is missing, should be:
+        ns_stats history allocator -from /integer/ -to /integer/ ?-limit /integer/? ?-cursor /integer/?}
+    # "ns_stats history allocator" just advertise: {wrong # args: should be "ns_stats history allocator -from /integer/ -to /integer/ ?-limit /integer/? ?-cursor /integer/?"}
+
+    test stats-history-allocator-syntax-to {syntax: ns_stats history allocator missing to} -constraints ns_stats -body {
+        ns_stats history allocator -from 0
+    } -returnCodes error -result {required argument 'to' is missing, should be:
+        ns_stats history allocator -from /integer/ -to /integer/ ?-limit /integer/? ?-cursor /integer/?}
+
     test stats-typed-options {NX validates required, typed and unexpected options} -returnCodes {ok error} -constraints ns_stats -body {
         list \
             [catch {ns_stats sampling start -interval invalid}] \
@@ -299,6 +362,14 @@ set statsTestCode [catch {
         list [nsf::object::exists ::ns_stats] [dict get [ns_stats sampling status] running] [dict get [ns_stats sample] sampling ready]
     } -result {1 false false}
 
+    test stats-sample-syntax {syntax: ns_stats sample} -constraints ns_stats -body {
+        ns_stats sample x
+    } -returnCodes error -result {invalid argument 'x', maybe too many arguments; should be "ns_stats sample ?-server /value/? ?-window /value/?"}
+
+    test stats-snapshot-syntax {syntax: ns_stats snapshot} -constraints ns_stats -body {
+        ns_stats snapshot x
+    } -returnCodes error -result {invalid argument 'x', maybe too many arguments; should be "ns_stats snapshot ?-server /value/?"}
+
     test stats-snapshot {snapshot collects configured servers without starting sampling} -returnCodes {ok error} -constraints ns_stats -body {
         set s [ns_stats snapshot]
         list [expr {[lsort [dict keys [dict get $s servers]]] eq [lsort [ns_info servers]]}] [dict exists $s servers test pools default counters requests] [dict get [ns_stats sampling status] running]
@@ -319,6 +390,10 @@ set statsTestCode [catch {
             [dict get $result drivers synthetic socketStates waitingForConnection] \
             [dict exists $result drivers synthetic rates waitingForConnection]
     } -result {5 5.0 0 0}
+
+    test stats-describe-syntax {syntax: ns_stats describe} -constraints ns_stats -body {
+        ns_stats describe x
+    } -returnCodes error -result {invalid argument 'x', maybe too many arguments; should be "ns_stats describe ?-server /value/?"}
 
     test stats-describe {topology identifies pools and process scope} -returnCodes {ok error} -constraints ns_stats -body {
         set d [ns_stats describe -server test]
@@ -729,7 +804,10 @@ set statsTestCode [catch {
         ::ns_stats_test::stop
         foreach suffix {{} .pid .log} {removeFile ns-stats-restart.nscfg$suffix}
     } -result 1
-if {[testConstraint ns_stats_sqlite]} {
+    
+    #
+    # SQLITE tests when available
+    #
     test stats-allocator-projection {saved samples have a compact projection without topology} -constraints ns_stats_sqlite -setup {
         ns_stats history disable
         ns_stats history configure -pool ns_stats_test
@@ -815,8 +893,6 @@ if {[testConstraint ns_stats_sqlite]} {
             [catch {ns_stats history allocator -from 1 -to 1}] \
             [catch {ns_stats history allocator -from 0 -to 1 -cursor -1}]
     } -result {1 1 1}
-}
-
 
     test stats-history-pool-policy {history preserves the configured SQLite pool policy on every checkout} -constraints ns_stats_sqlite -setup {
         ns_stats history disable
@@ -865,6 +941,7 @@ if {[testConstraint ns_stats]} {
             return [dict get ${:files} $path]
         }
     }
+    
     ::cpuCapacityFixture create ::capacityFixture
     proc ::capacityFiles {} {
         return [dict create /sys/devices/system/cpu/online 0-15 /proc/self/status "Cpus_allowed_list:\t0-7" \
@@ -874,6 +951,7 @@ if {[testConstraint ns_stats]} {
             /cg/tenant/app/cpuset.cpus.effective 0-3 /cg/tenant/cpuset.cpus.effective 0-7 \
             /cg/tenant/app/cpu.stat "nr_periods 100\nnr_throttled 30\nthrottled_usec 2500000"]
     }
+    
     test ns-stats-cpu-capacity-v2 {visible ancestor quota, affinity and cpuset constrain fractional core capacity} -body {
         ::capacityFixture configure -files [::capacityFiles]
         set c [::capacityFixture cpuCapacity]
@@ -881,6 +959,7 @@ if {[testConstraint ns_stats]} {
             [dict get $c effectiveCores] [dict get $c constraintsComplete] [dict get $c quotaStatus] \
             [dict get $c throttling /cg/tenant/app throttledSeconds]
     } -result {16 8 4 0.5 1 limited 2.5}
+
     test ns-stats-cpu-capacity-v1 {legacy controller mount roots, inherited cpuset and nanosecond throttling work} -body {
         set files [dict create /sys/devices/system/cpu/online 0-7 /proc/self/status {Cpus_allowed_list: 0-3} \
             /proc/self/cgroup "2:cpu,cpuacct:/tenant/app\n3:cpuset:/tenant/app" \
@@ -894,6 +973,7 @@ if {[testConstraint ns_stats]} {
         list [dict get $c effectiveCores] [dict get $c cpusetCpus] \
             [dict get $c throttling /cpu/app throttledSeconds] [dict get $c constraintsComplete]
     } -result {1.5 2 0.5 1}
+
     test ns-stats-cpu-capacity-unlimited {unlimited quota is distinguished from missing CPU information} -body {
         set files [::capacityFiles]
         dict set files /cg/tenant/app/cpu.max {max 100000}
@@ -906,6 +986,7 @@ if {[testConstraint ns_stats]} {
             [dict get $missing effectiveCores] [dict get $missing constraintsComplete] \
             [expr {"quota-unavailable-or-partial" in [dict get $missing incompleteReasons]}]
     } -result {4 unlimited {} 0 1}
+
     test ns-stats-cpu-capacity-throttle-deltas {same-process sampling derives interval throttling and rejects reset counters} -body {
         set before [ns_stats snapshot]
         dict set before timestamp 1000000

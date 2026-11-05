@@ -2286,6 +2286,31 @@ nx::Class create ::ns::ns_stats -superclass ::ns::stats::Sampler {
     #   SQLiteHistory supplies the history ensemble as an object mixin;
     #   persistence remains inactive until history configure is called.
     #
+    :method syntaxErrors {args} {
+        # NX qualifies the object name in generated usage. Present the public
+        # command name consistently with NaviServer's other Tcl commands.
+        try {
+            next
+        } on error {message options} {
+            # Parameterless NX ensemble methods report only the final selector.
+            set method [lindex $args 0]
+            set ensemble [current calledmethod]
+            if {(($ensemble eq "sampling" && $method in {stop status})
+                 || ($ensemble eq "history" && $method in {status disable storage}))
+                && $message eq "wrong # args: should be \"$method\""} {
+                set message "wrong # args: should be \"ns_stats $ensemble $method\""
+            }
+            return -options $options [string map {
+                {should be "::ns_stats } {should be "ns_stats }
+                {should be:
+        ::ns_stats } {should be:
+        ns_stats }
+            } $message]
+        }
+    }
+    :filters add syntaxErrors
+    :filters guard syntaxErrors {[current calledmethod] in {describe snapshot sample sampling history}}
+
     :method startup {} {
         #
         #   Apply the process-wide ns/stats startup configuration once, in
