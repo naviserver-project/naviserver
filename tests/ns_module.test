@@ -7,6 +7,69 @@ namespace import -force ::tcltest::*
 # Tcl module metadata registration is also supported on Tcl 8.5.
 testConstraint nativeModuleMetadata [expr {[package vcompare [info patchlevel] 8.6] >= 0}]
 
+test ns_module-require-1.0 {syntax: ns_module require} -setup {
+    set savedModuleStack $::ns_module::stack
+    set ::ns_module::stack {{syntax-test syntax.tcl}}
+} -body {
+    ns_module require
+} -cleanup {
+    set ::ns_module::stack $savedModuleStack
+} -returnCodes error -result {wrong # args: should be "ns_module require ?-module /module/? ?/file .../?"}
+
+test ns_module-require-1.1 {syntax: ns_module require -module} -setup {
+    set savedModuleStack $::ns_module::stack
+    set ::ns_module::stack {{syntax-test syntax.tcl}}
+} -body {
+    ns_module require -module
+} -cleanup {
+    set ::ns_module::stack $savedModuleStack
+} -returnCodes error -result {wrong # args: should be "ns_module require ?-module /module/? ?/file .../?"}
+
+test ns_module-require-1.2 {syntax: ns_module require -core} -setup {
+    set savedModuleStack $::ns_module::stack
+    set ::ns_module::stack {{syntax-test syntax.tcl}}
+} -body {
+    ns_module require -core
+} -cleanup {
+    set ::ns_module::stack $savedModuleStack
+} -returnCodes error -result {wrong # args: should be "ns_module require -core /file/ ?/file .../?"}
+
+test ns_module-files-1.0 {syntax: ns_module files} -body {
+    ns_module files
+} -returnCodes error -result {wrong # args: should be "ns_module files /module|-core/"}
+
+test ns_module-reload-1.0 {syntax: ns_module reload} -body {
+    ns_module reload
+} -returnCodes error -result {wrong # args: should be "ns_module reload ?-core? /module|file/ ?/file .../?"}
+
+test ns_module-reload-1.1 {syntax: ns_module reload -core} -body {
+    ns_module reload -core
+} -returnCodes error -result {wrong # args: should be "ns_module reload ?-core? /module|file/ ?/file .../?"}
+
+test ns_module-name-1.0 {syntax: ns_module name} -body {
+    ns_module name x y
+} -returnCodes error -result {wrong # args: should be "ns_module name ?/value/?"}
+
+test ns_module-shared-1.0 {syntax: ns_module shared} -body {
+    ns_module shared x y
+} -returnCodes error -result {wrong # args: should be "ns_module shared ?/value/?"}
+
+test ns_module-private-1.0 {syntax: ns_module private} -body {
+    ns_module private x y
+} -returnCodes error -result {wrong # args: should be "ns_module private ?/value/?"}
+
+test ns_module-version-1.0 {syntax: ns_module version} -body {
+    ns_module version x y
+} -returnCodes error -result {wrong # args: should be "ns_module version ?/value/?"}
+
+test ns_module-tag-1.0 {syntax: ns_module tag} -body {
+    ns_module tag x y
+} -returnCodes error -result {wrong # args: should be "ns_module tag ?/value/?"}
+
+test ns_module-clear-1.0 {syntax: ns_module clear} -body {
+    ns_module clear x
+} -returnCodes error -result {wrong # args: should be "ns_module clear"}
+
 test ns_module-metadata-1 {Tcl module metadata survives startup} -body {
     set info [dict get [ns_server modules] module-metadata]
     list [dict get $info type] [dict get $info version] [dict get $info tag] [dict get $info scope]

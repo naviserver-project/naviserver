@@ -16,7 +16,7 @@ files have been sourced successfully; metadata declarations during startup
 remain available to the initializing module.
 
 [list_begin definitions]
-[call [cmd ns_module] [method require] [opt [option {-module module}]] [opt [arg {file ...}]]]
+[call [cmd ns_module] [method require] [opt "[option -module] [arg module]"] [opt [arg {file ...}]]]
 Called at the top level of a module definition file, ensures that the named
 prerequisite files have been sourced before execution continues. Files are
 relative to the specified module, or the current module when [option -module]
@@ -47,8 +47,13 @@ Startup-only [file init.tcl] files and core bootstrap files appear in this
 inventory with [const reloadable] false. Filenames retain logical identity
 when a private file overrides a shared file.
 
-[call [cmd ns_module] [method reload] [option -core] [arg file] [opt [arg {file ...}]]]
-Reload explicitly selected, recorded core files and their transitive dependents
+[call [cmd ns_module] [method reload] [opt [option -core]] [arg {module|file}] [opt [arg {file ...}]]]
+Without [option -core], exactly one module name is required. With [option -core],
+one or more core filenames are required; additional filenames are accepted only
+in this form.
+
+[para]
+With [option -core], reload explicitly selected, recorded core files and their transitive dependents
 through [cmd {ns_eval -sync}]. There is no implicit reload-all operation. Core
 reload is enabled for [file charsets.tcl], [file compat.tcl], [file form.tcl],
 [file http.tcl], [file ns_crypto.tcl], [file privacy.tcl], [file sendmail.tcl],
@@ -58,8 +63,8 @@ repeated evaluation. Bootstrap files, including [file init.tcl],
 dependent is startup-only, the operation fails before sourcing any files.
 Returned affected-file keys use an empty module name for core files.
 
-[call [cmd ns_module] [method reload] [arg module]]
-Re-sources the module's top-level Tcl definition files, plus previously loaded
+[para]
+Without [option -core], re-sources the module's top-level Tcl definition files, plus previously loaded
 files in that module and all files transitively dependent on them, including
 files in other modules. Prerequisites are sourced before their consumers and
 each affected file is sourced once per execution of the loader. Dependencies

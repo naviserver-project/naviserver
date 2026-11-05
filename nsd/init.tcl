@@ -318,21 +318,24 @@ proc ns_module {key args} {
     }
     if {$key eq "reload"} {
         if {[lindex $args 0] eq "-core"} {
-            if {[llength $args] < 2} {error "usage: ns_module reload -core file ?file ...?"}
+            if {[llength $args] < 2} {error {wrong # args: should be "ns_module reload ?-core? /module|file/ ?/file .../?"}}
             return [ns_eval -sync _ns_core_reload {*}[lrange $args 1 end]]
         }
-        if {[llength $args] != 1} {error "usage: ns_module reload module"}
+        if {[llength $args] != 1} {error {wrong # args: should be "ns_module reload ?-core? /module|file/ ?/file .../?"}}
         return [ns_eval -sync _ns_module_reload [lindex $args 0]]
     }
     if {$key eq "files"} {
-        if {[llength $args] != 1} {error "usage: ns_module files module|-core"}
+        if {[llength $args] != 1} {error {wrong # args: should be "ns_module files /module|-core/"}}
         set module [lindex $args 0]
         if {$module eq "-core"} {set module ""}
         return [_ns_module_inventory $module]
     }
 
+    if {$key eq "clear" && [llength $args] != 0} {
+        error {wrong # args: should be "ns_module clear"}
+    }
     if {[llength $args] > 1} {
-        error {wrong # args: should be "ns_module key ?value?"}
+        error "wrong # args: should be \"ns_module $key ?/value/?\""
     }
     set val [lindex $args 0]
 
@@ -525,10 +528,10 @@ proc _ns_module_require {args} {
     if {[lindex $args 0] eq "-core"} {
         set module ""
         set args [lrange $args 1 end]
-        if {[llength $args] == 0} {error "usage: ns_module require -core file ?file ...?"}
+        if {[llength $args] == 0} {error {wrong # args: should be "ns_module require -core /file/ ?/file .../?"}}
     } elseif {[lindex $args 0] eq "-module"} {
         if {[llength $args] < 2 || [lindex $args 1] eq ""} {
-            error "usage: ns_module require ?-module module? ?file ...?"
+            error {wrong # args: should be "ns_module require ?-module /module/? ?/file .../?"}
         }
         set module [lindex $args 1]
         set args [lrange $args 2 end]
@@ -536,7 +539,7 @@ proc _ns_module_require {args} {
             set args [_ns_module_files $module]
         }
     } elseif {[llength $args] == 0} {
-        error "usage: ns_module require ?-module module? file ?file ...?"
+        error {wrong # args: should be "ns_module require ?-module /module/? ?/file .../?"}
     }
     if {$module ne "" && $module ni [ns_ictl getmodules]} {error "unknown module: $module"}
     foreach name $args {
