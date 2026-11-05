@@ -284,46 +284,47 @@ time is zero and description is empty. Maxima are independent observations,
 not necessarily the same incident. Durations are in seconds; unavailable event
 IDs are -1. The timing dictionaries are:
 
-[list_begin definitions]
-[def [const waitReturnLateness]]
-Delay returning from a timed condition wait beyond its deadline, or beyond
-wait entry when the deadline was already past. Early returns contribute zero.
-This includes OS wake-up latency and implicit mutex reacquisition: these
-cannot be distinguished by the condition-wait API. IDs identify the event
-whose deadline was used, which may subsequently be cancelled or rescheduled.
-Indefinite idle waits are excluded.
-[def [const mutexAcquisition]]
-Elapsed time around explicit acquisition of the scheduler mutex by the main
-scheduler thread, including reacquisition after a non-threaded callback.
-Condition-wait reacquisition and worker-thread acquisitions are excluded.
-IDs are -1. Small values include clock-read and call overhead.
-[def [const nonThreadedCallbacks]]
-Execution time of callbacks run on the main scheduler thread, excluding
-subsequent logging and mutex acquisition. IDs identify the callbacks.
-Threaded callbacks are excluded. The [const over100ms] count uses 100ms,
-independently of the configured [const schedlogminduration] warning threshold.
-[def [const dispatchLateness]]
-Delay from the nominal scheduled time to dequeue, for both threaded and
-non-threaded events. Retained for compatibility. After an overrun the actual
-queue deadline can be later than the nominal time, so this is not necessarily
-main-scheduler delay and does not measure worker execution start.
-[def [const dispatchDelay]]
-Delay from the actual queue eligibility deadline (nextqueue) to dequeue.
-This distinguishes late dispatch from nominal lateness after an overrun.
-[def [const workerQueueDelay]]
-Elapsed time from dequeue/enqueue for a worker to worker pickup. Includes
-worker availability, worker creation and worker-side mutex acquisition.
-[def [const threadedCallbacks]]
-Runtime of callbacks executed by scheduler workers, excluding queue wait,
-thread-name setup, subsequent logging and mutex reacquisition. Completed and
-cancelled one-shot jobs still contribute; running callbacks contribute only
-on completion. The scheduled table's laststart now reflects worker pickup,
-not main-scheduler dequeue.
-[def [const callbackOverrun]]
-For repeating interval callbacks (threaded and non-threaded), completion beyond
-the next nominal execution time. On-time completions contribute zero. One-shot,
-daily and weekly callbacks are excluded. This includes delays before callback
-start, and therefore is not a runtime-only measurement.
+[list_begin itemized]
+ [item] [const waitReturnLateness]: 
+   Delay returning from a timed condition wait beyond its deadline, or beyond
+   wait entry when the deadline was already past. Early returns contribute zero.
+   This includes OS wake-up latency and implicit mutex reacquisition: these
+   cannot be distinguished by the condition-wait API. IDs identify the event
+   whose deadline was used, which may subsequently be cancelled or rescheduled.
+   Indefinite idle waits are excluded.
+ [item] [const mutexAcquisition]: 
+   Elapsed time around explicit acquisition of the scheduler mutex by the main
+   scheduler thread, including reacquisition after a non-threaded callback.
+   Condition-wait reacquisition and worker-thread acquisitions are excluded.
+   IDs are -1. Small values include clock-read and call overhead.
+ [item] [const nonThreadedCallbacks]: 
+   Execution time of callbacks run on the main scheduler thread, excluding
+   subsequent logging and mutex acquisition. IDs identify the callbacks.
+   Threaded callbacks are excluded. The [const over100ms] count uses 100ms,
+   independently of the configured [const schedlogminduration] warning threshold.
+ [item] [const dispatchLateness]: 
+   Delay from the nominal scheduled time to dequeue, for both threaded and
+   non-threaded events. Retained for compatibility. After an overrun the actual
+   queue deadline can be later than the nominal time, so this is not necessarily
+   main-scheduler delay and does not measure worker execution start.
+ [item] [const dispatchDelay]: 
+   Delay from the actual queue eligibility deadline (nextqueue) to dequeue.
+   This distinguishes late dispatch from nominal lateness after an
+   overrun.
+ [item] [const workerQueueDelay]:  
+   Elapsed time from dequeue/enqueue for a worker to worker pickup. Includes
+   worker availability, worker creation and worker-side mutex acquisition.
+ [item] [const threadedCallbacks]: 
+   Runtime of callbacks executed by scheduler workers, excluding queue wait,
+   thread-name setup, subsequent logging and mutex reacquisition. Completed and
+   cancelled one-shot jobs still contribute; running callbacks contribute only
+   on completion. The scheduled table's laststart now reflects worker pickup,
+   not main-scheduler dequeue.
+ [item] [const callbackOverrun]: 
+   For repeating interval callbacks (threaded and non-threaded), completion beyond
+   the next nominal execution time. On-time completions contribute zero. One-shot,
+   daily and weekly callbacks are excluded. This includes delays before callback
+   start, and therefore is not a runtime-only measurement.
 [list_end]
 
 The top-level [const workers] dictionary contains current, idle, running and

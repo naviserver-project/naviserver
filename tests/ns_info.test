@@ -138,6 +138,10 @@ test ns_info-1.28 {syntax: ns_info scheduled} -body {
     ns_info scheduled x
 } -returnCodes error -result {wrong # args: should be "ns_info scheduled"}
 
+test ns_info-1.28a {syntax: ns_info scheduler} -body {
+    ns_info scheduler x
+} -returnCodes error -result {wrong # args: should be "ns_info scheduler"}
+
 test ns_info-1.29 {syntax: ns_info server} -body {
     ns_info server x
 } -returnCodes error -result {wrong # args: should be "ns_info server"}
