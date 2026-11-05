@@ -107,7 +107,8 @@ help:
 	@echo 'Commonly used make targets:'
 	@echo '  all          - build program and documentation'
 	@echo '  install      - install program and man pages under $(NAVISERVER)'
-	@echo '  test         - run all tests in the automatic test suite'
+	@echo '  test         - run the Tcl regression suite'
+	@echo '  test-native  - build and run optional C regression tests'
 	@echo '  gdbtest      - run all tests, under the control of gdb'
 	@echo '  lldbtest     - run all tests, under the control of lldb'
 	@echo '  runtest      - start the server in interactive command mode'
@@ -715,11 +716,16 @@ DISTCLEAN_CERTS = \
 
 check: test
 
-.PHONY: test-atomic
-test-atomic: all-nsthread
+# Native C tests require a compiler and are deliberately opt-in. The Tcl
+# regression suite can also be run directly with an installed nsd binary.
+.PHONY: test-native test-atomic
+test-native: all-nsthread
 	+$(MAKE) $(SUBMAKE_J) $(SUBMAKE_SILENT) -C nsthread check
 
-test: all $(EXTRA_TEST_REQ) test-atomic
+# Retain the original target name for callers selecting these tests explicitly.
+test-atomic: test-native
+
+test: all $(EXTRA_TEST_REQ)
 	@if [ $(shell id -u) = 0 ]; then \
 	    $(CHOWN) -R nsadmin $(srcdir)/tests ; \
 	fi;
