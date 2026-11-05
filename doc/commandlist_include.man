@@ -6,6 +6,11 @@
 [uri ../../nslog/files/ns_accesslog.html {ns_accesslog maxbuffer}] ?/nrlines/?
 [uri ../../nslog/files/ns_accesslog.html {ns_accesslog roll}] ?/filepath/?
 [uri ../../nslog/files/ns_accesslog.html {ns_accesslog rollfmt}] ?/timeformat/?
+[uri ../../nslog/files/ns_accesslog.html {ns_accesslog scan close}] /handle/
+[uri ../../nslog/files/ns_accesslog.html {ns_accesslog scan info}] /handle/
+[uri ../../nslog/files/ns_accesslog.html {ns_accesslog scan next}] ?-maxrecords /integer/? ?-maxbytes /integer/? ?-maxscanbytes /integer/? ?-timeout /time/? /handle/
+[uri ../../nslog/files/ns_accesslog.html {ns_accesslog scan open}] ?-filename /value/? ?-format auto|common|combined? ?-timingcolumn /value/? ?-requesttime auto|true|false? ?-extendedheaders /value/? ?-tail /value/? ?-encoding /value/? ?-offset /value/? ?-endoffset /value/? ?-checkpoint /value/? ?-maxlinebytes /integer/?
+[uri ../../nslog/files/ns_accesslog.html {ns_accesslog scan triples}] ?-offset /integer/? ?-limit /integer/? /batch/
 [uri ../../naviserver/files/ns_addrbyhost.html {ns_addrbyhost}] ?-all? ?--? /hostname/
 [uri ../../naviserver/files/ns_adp_abort.html {ns_adp_abort}] ?/retval/?
 [uri ../../naviserver/files/ns_adp_append.html {ns_adp_append}] /string .../
@@ -165,9 +170,9 @@
 [uri ../../naviserver/files/ns_conn.html {ns_conn zipaccepted}]
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan callback}] ?-timeout /time/? ?-receivetimeout /time/? ?-sendtimeout /time/? /channel/ /command/ /when/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan close}] ?-server /server/? /channel/
-[uri ../../naviserver/files/ns_connchan.html {ns_connchan connect}] ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-key /value/? ?-hostname /value/? ?-insecure? ?-timeout /time/? ?-tls? ?--? /host/ /port/
+[uri ../../naviserver/files/ns_connchan.html {ns_connchan connect}] ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-key /value/? ?-hostname /value/? ?-insecure? ?-localhost /value/? ?-localport /port/? ?-timeout /time/? ?-tls? ?--? /host/ /port/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan debug}] /channel/ ?/level/?
-[uri ../../naviserver/files/ns_connchan.html {ns_connchan detach}]
+[uri ../../naviserver/files/ns_connchan.html {ns_connchan detach}] ?-autoheaders?
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan exists}] /channel/
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan list}] ?-server /server/?
 [uri ../../naviserver/files/ns_connchan.html {ns_connchan listen}] ?-driver /value/? ?-server /server/? ?-bind? ?--? /address/ /port/ /script/
@@ -225,8 +230,11 @@
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::signature sign}] ?-binary? ?-digest /value/? ?-id /value/? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? -pem /value/ ?--? /message/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::signature verify}] ?-binary? ?-digest /value/? ?-id /value/? ?-passphrase /value/? -pem /value/ -signature /value/ ?--? /message/
 [uri ../../naviserver/files/ns_crypto.html {ns_crypto::uuid}] ?-version v4|v7?
-[uri ../../nsdb/files/ns_db.html {ns_db 0or1row}] /handle/ /sql/
-[uri ../../nsdb/files/ns_db.html {ns_db 1row}] /handle/ /sql/
+[uri ../../nsdb/files/ns_db.html {ns_db 0or1row}] /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/
+[uri ../../nsdb/files/ns_db.html {ns_db 1row}] /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/
+[uri ../../nsdb/files/ns_db.html {ns_db batchinfo}] ?-handle /value/? ?/batch/?
+[uri ../../nsdb/files/ns_db.html {ns_db batchinsert}] /handle/ -table /table/ ?-columns /mapping/? ?-schema /schema/? ?-nulls /nulls/? /batchOrRows/
+[uri ../../nsdb/files/ns_db.html {ns_db bindinfo}] /handle/ ?-version|-types?
 [uri ../../nsdb/files/ns_db.html {ns_db bindrow}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_db bouncepool}] /poolname/
 [uri ../../nsdb/files/ns_db.html {ns_db cancel}] /handle/
@@ -234,10 +242,10 @@
 [uri ../../nsdb/files/ns_db.html {ns_db currenthandles}]
 [uri ../../nsdb/files/ns_db.html {ns_db datasource}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_db dbtype}] /handle/
-[uri ../../nsdb/files/ns_db.html {ns_db dml}] /handle/ /sql/
+[uri ../../nsdb/files/ns_db.html {ns_db dml}] /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/
 [uri ../../nsdb/files/ns_db.html {ns_db driver}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_db exception}] /handle/
-[uri ../../nsdb/files/ns_db.html {ns_db exec}] /handle/ /sql/
+[uri ../../nsdb/files/ns_db.html {ns_db exec}] /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/
 [uri ../../nsdb/files/ns_db.html {ns_db flush}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_db gethandle}] ?-timeout /time/? ?--? ?/poolname/? ?/nhandles/?
 [uri ../../nsdb/files/ns_db.html {ns_db getrow}] /handle/ /setId/
@@ -248,14 +256,13 @@
 [uri ../../nsdb/files/ns_db.html {ns_db pools}]
 [uri ../../nsdb/files/ns_db.html {ns_db releasehandle}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_db rowcount}] /handle/
-[uri ../../nsdb/files/ns_db.html {ns_db select}] /handle/ /sql/
+[uri ../../nsdb/files/ns_db.html {ns_db select}] /handle/ ?-bindvars? ?-bindset /setId/? ?-binddict /dictionary/? ?-bindtypes /types/? ?-emptynull? ?--? /sql/
 [uri ../../nsdb/files/ns_db.html {ns_db setexception}] /handle/ /code/ /message/
 [uri ../../nsdb/files/ns_db.html {ns_db sp_exec}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_db sp_getparams}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_db sp_returncode}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_db sp_setparam}] /handle/ /paramname/ /type/ in|out /value/
 [uri ../../nsdb/files/ns_db.html {ns_db sp_start}] /handle/ /procname/
-[uri ../../nsdb/files/ns_db.html {ns_db stats}]
 [uri ../../nsdb/files/ns_db.html {ns_db user}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_dbconfigpath}]
 [uri ../../nsdb/files/ns_db.html {ns_dberrorcode}] /handle/
@@ -351,6 +358,7 @@
 [uri ../../naviserver/files/ns_info.html {ns_info pid}]
 [uri ../../naviserver/files/ns_info.html {ns_info pools}]
 [uri ../../naviserver/files/ns_info.html {ns_info scheduled}]
+[uri ../../naviserver/files/ns_info.html {ns_info scheduler}]
 [uri ../../naviserver/files/ns_info.html {ns_info server}]
 [uri ../../naviserver/files/ns_info.html {ns_info servers}]
 [uri ../../naviserver/files/ns_info.html {ns_info shutdownpending}]
@@ -363,6 +371,7 @@
 [uri ../../naviserver/files/ns_info.html {ns_info uptime}]
 [uri ../../naviserver/files/ns_info.html {ns_info version}]
 [uri ../../naviserver/files/ns_internalredirect.html {ns_internalredirect}] /location/
+[uri ../../naviserver/files/ns_ip.html {ns_ip anonymize}] ?-ipv4mask /value/? ?-ipv6mask /value/? ?--? /ipaddr/
 [uri ../../naviserver/files/ns_ip.html {ns_ip inany}] /ipaddr/
 [uri ../../naviserver/files/ns_ip.html {ns_ip match}] /cidr/ /ipaddr/
 [uri ../../naviserver/files/ns_ip.html {ns_ip properties}] /ipaddr/
@@ -430,6 +439,15 @@
 [uri ../../naviserver/files/ns_memoize.html {ns_memoize_stats}]
 [uri ../../naviserver/files/ns_mkdtemp.html {ns_mkdtemp}] ?/template/?
 [uri ../../naviserver/files/ns_mktemp.html {ns_mktemp}] ?-nocomplain? ?--? ?/template/?
+[uri ../../naviserver/files/ns_module.html {ns_module clear}]
+[uri ../../naviserver/files/ns_module.html {ns_module files}] /module|-core/
+[uri ../../naviserver/files/ns_module.html {ns_module name}] ?/value/?
+[uri ../../naviserver/files/ns_module.html {ns_module private}] ?/value/?
+[uri ../../naviserver/files/ns_module.html {ns_module reload}] ?-core? /module|file/ ?/file .../?
+[uri ../../naviserver/files/ns_module.html {ns_module require}] -core /file/ ?/file .../?
+[uri ../../naviserver/files/ns_module.html {ns_module shared}] ?/value/?
+[uri ../../naviserver/files/ns_module.html {ns_module tag}] ?/value/?
+[uri ../../naviserver/files/ns_module.html {ns_module version}] ?/value/?
 [uri ../../naviserver/files/ns_moduleload.html {ns_moduleload}] ?-global? ?-init /value/? ?--? /module/ /file/
 [uri ../../naviserver/files/ns_modulepath.html {ns_modulepath}] /server/ ?/module .../?
 [uri ../../naviserver/files/ns_mutex.html {ns_mutex create}] ?/name/?
@@ -519,7 +537,7 @@
 [uri ../../naviserver/files/returnstatus-cmds.html {ns_returnnotfound}]
 [uri ../../naviserver/files/returnstatus-cmds.html {ns_returnnotice}] /status/ /title/ /message/
 [uri ../../naviserver/files/returnstatus-cmds.html {ns_returnok}]
-[uri ../../naviserver/files/returnstatus-cmds.html {ns_returnredirect}] /location/
+[uri ../../naviserver/files/returnstatus-cmds.html {ns_returnredirect}] ?-mode warn|repair|silent? ?--? /location/
 [uri ../../naviserver/files/returnstatus-cmds.html {ns_returnunauthorized}]
 [uri ../../naviserver/files/returnstatus-cmds.html {ns_returnunavailable}]
 [uri ../../naviserver/files/ns_rlimit.html {ns_rlimit coresize}] ?/value/?
@@ -557,9 +575,10 @@
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? filters
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? hosts
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? map ?-noinherit? ?/mapspec/?
-[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? mapped ?-all? ?-exact? ?-noinherit? /mapspec/
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? mapped ?-all? ?-context /setId/? ?-exact? ?-noinherit? /mapspec/
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? maxthreads ?/value/?
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? minthreads ?/value/?
+[uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? modules
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? pagedir
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? ?-pool /value/? poolratelimit ?/value/?
 [uri ../../naviserver/files/ns_server.html {ns_server}] ?-server /server/? pools
@@ -626,6 +645,19 @@
 [uri ../../naviserver/files/ns_socknread.html {ns_socknread}] /sockId/
 [uri ../../naviserver/files/ns_sockopen.html {ns_sockopen}] ?-async? ?-localhost /value/? ?-localport /port/? ?-nonblock? ?-timeout /time/? ?--? /host/ /port/
 [uri ../../naviserver/files/ns_sockselect.html {ns_sockselect}] ?-timeout /time/? /rfds/ /wfds/ /efds/
+[uri ../../naviserver/files/ns_stats.html {ns_stats describe}] ?-server /value/?
+[uri ../../naviserver/files/ns_stats.html {ns_stats history allocator}] -from /integer/ -to /integer/ ?-limit /integer/? ?-cursor /integer/?
+[uri ../../naviserver/files/ns_stats.html {ns_stats history configure}] -pool /value/ ?-retention /value/? ?-maxBytes /value/?
+[uri ../../naviserver/files/ns_stats.html {ns_stats history disable}]
+[uri ../../naviserver/files/ns_stats.html {ns_stats history query}] -from /integer/ -to /integer/ ?-server /value/? ?-limit /integer/? ?-cursor /integer/?
+[uri ../../naviserver/files/ns_stats.html {ns_stats history status}]
+[uri ../../naviserver/files/ns_stats.html {ns_stats history storage}]
+[uri ../../naviserver/files/ns_stats.html {ns_stats sample}] ?-server /value/? ?-window /value/?
+[uri ../../naviserver/files/ns_stats.html {ns_stats sampling history}] -from /integer/ -to /integer/ ?-server /value/? ?-limit /integer/? ?-cursor /integer/?
+[uri ../../naviserver/files/ns_stats.html {ns_stats sampling start}] ?-interval /value/?
+[uri ../../naviserver/files/ns_stats.html {ns_stats sampling status}]
+[uri ../../naviserver/files/ns_stats.html {ns_stats sampling stop}]
+[uri ../../naviserver/files/ns_stats.html {ns_stats snapshot}] ?-server /value/?
 [uri ../../naviserver/files/ns_strcoll.html {ns_strcoll}] ?-locale /value/? ?--? /string1/ /string2/
 [uri ../../naviserver/files/textutil-cmds.html {ns_striphtml}] /html/
 [uri ../../naviserver/files/ns_symlink.html {ns_symlink}] ?-nocomplain? ?--? /filename1/ /filename2/
@@ -675,10 +707,13 @@
 [uri ../../naviserver/files/ns_writer.html {ns_writer submitfiles}] ?-headers? /filespecs/
 [uri ../../nscp/files/nscp.html {nscp users}]
 [uri ../../naviserver/files/nsv.html {nsv_append}] /array/ /key/ /value .../
+[uri ../../naviserver/files/nsv.html {nsv_array create}] ?-scope server|process? ?--? /array/
+[uri ../../naviserver/files/nsv.html {nsv_array eval}] /array/ /script/
 [uri ../../naviserver/files/nsv.html {nsv_array exists}] /array/
 [uri ../../naviserver/files/nsv.html {nsv_array get}] /array/ ?/pattern/?
 [uri ../../naviserver/files/nsv.html {nsv_array names}] /array/ ?/pattern/?
 [uri ../../naviserver/files/nsv.html {nsv_array reset}] /array/ /list/
+[uri ../../naviserver/files/nsv.html {nsv_array scope}] /array/
 [uri ../../naviserver/files/nsv.html {nsv_array set}] /array/ /list/
 [uri ../../naviserver/files/nsv.html {nsv_array size}] /array/
 [uri ../../naviserver/files/nsv.html {nsv_bucket}] ?/bucket-number/?
