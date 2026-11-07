@@ -324,16 +324,40 @@ NsTclMkdTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
     } else if (objc == 1) {
         char buffer[PATH_MAX] = "";
+        char *dirName;
 
         snprintf(buffer, sizeof(buffer), "%s/nsd-XXXXXX", nsconf.tmpDir);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(ns_mkdtemp(buffer), TCL_INDEX_NONE));
+        dirName = ns_mkdtemp(buffer);
+        if (dirName != NULL) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(dirName, TCL_INDEX_NONE));
+        } else {
+            int errorCode = Tcl_GetErrno();
+
+            Ns_TclPrintfResult(interp, "could not create directory \"%s\": %s",
+                               buffer, Tcl_ErrnoMsg(errorCode));
+            Tcl_SetErrno(errorCode);
+            (void) Tcl_PosixError(interp);
+            result = TCL_ERROR;
+        }
 
     } else /*if (objc == 2)*/ {
-        char *buffer;
+        char *buffer, *dirName;
 
         assert(templateString != NULL);
         buffer = ns_strdup(templateString);
-        Tcl_SetResult(interp, ns_mkdtemp(buffer), (Tcl_FreeProc *)ns_free);
+        dirName = ns_mkdtemp(buffer);
+        if (dirName != NULL) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(dirName, TCL_INDEX_NONE));
+        } else {
+            int errorCode = Tcl_GetErrno();
+
+            Ns_TclPrintfResult(interp, "could not create directory \"%s\": %s",
+                               templateString, Tcl_ErrnoMsg(errorCode));
+            Tcl_SetErrno(errorCode);
+            (void) Tcl_PosixError(interp);
+            result = TCL_ERROR;
+        }
+        ns_free(buffer);
     }
 
     return result;
