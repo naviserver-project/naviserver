@@ -18,6 +18,36 @@ test ns_mkdtemp-1.0 {syntax: ns_mkdtemp} -body {
     ns_mkdtemp ? ?
 } -returnCodes error -result {wrong # args: should be "ns_mkdtemp ?/template/?"}
 
+test ns_mkdtemp-2.0 {default template creates a usable directory} -constraints unix -body {
+    set dir [ns_mkdtemp]
+    file isdirectory $dir
+} -cleanup {if {[info exists dir]} {file delete -force -- $dir}} -result 1
+
+test ns_mkdtemp-2.1 {explicit template creates a usable directory} -constraints unix -setup {
+    set parent [makeDirectory ns_mkdtemp-parent]
+} -body {
+    set dir [ns_mkdtemp [file join $parent child-XXXXXX]]
+    list [file isdirectory $dir] [expr {[file dirname $dir] eq $parent}]
+} -cleanup {removeDirectory ns_mkdtemp-parent} -result {1 1}
+
+test ns_mkdtemp-2.2 {missing parent reports an error, with repeated failures} -constraints unix -setup {
+    set parent [makeDirectory ns_mkdtemp-parent]
+    set template [file join $parent missing child-XXXXXX]
+} -body {
+    set failures 0
+    for {set i 0} {$i < 100} {incr i} {
+        incr failures [catch {ns_mkdtemp $template} message options]
+    }
+    list $failures [string match {could not create directory *} $message] \
+        [lrange [dict get $options -errorcode] 0 1] [file exists $template]
+} -cleanup {removeDirectory ns_mkdtemp-parent} -result {100 1 {POSIX ENOENT} 0}
+
+test ns_mkdtemp-2.3 {invalid template is an error rather than an empty success} -constraints unix -setup {
+    set parent [makeDirectory ns_mkdtemp-parent]
+} -body {
+    list [catch {ns_mkdtemp [file join $parent invalid]}] [file exists [file join $parent invalid]]
+} -cleanup {removeDirectory ns_mkdtemp-parent} -result {1 0}
+
 test ns_fseekchars-1.0 {syntax: ns_fseekchars} -body {
     ns_fseekchars
 } -returnCodes error -result {wrong # args: should be "ns_fseekchars /channelId/ /searchstring/"}
