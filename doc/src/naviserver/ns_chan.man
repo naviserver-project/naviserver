@@ -50,7 +50,15 @@
  for the channel.  This handle can be used in any regular Tcl or NaviServer command that operates
  on Tcl channels, like puts, read, fconfigure, etc.  The command will throw an error if
  the channel cannot be plugged in for current interpreter or if the entry name could not
- be found in the per-virtual-server private table.
+ be found in the per-virtual-server private table. It also throws an error if the
+ entry name is already attached to the current interpreter. A failed transfer
+ leaves the existing channels in place.
+
+[para]
+ Closing the returned handle with [cmd close] closes the channel normally.
+ Subsequent cleanup does not close a different channel that happens to reuse
+ the same Tcl handle. Use [cmd "ns_chan put"] to return a live channel to the
+ private table instead of closing it.
 
 [call [cmd "ns_chan list"] [opt [option -shared]]]
 
@@ -68,8 +76,10 @@
  per-virtual-server private table.  Any further attempt to use the named channel from the
  current interpreter will fail by throwing a Tcl error.  On success, command will return
  an empty string.  The command will also throw an error if the named channel was never
- attached to the current interpreter by some previous ns_chan get command or if the entry
- name is already found in the per-virtual-server private table.
+ attached to the current interpreter by some previous ns_chan get command, if it
+ has been closed, if it is also shared with another Tcl interpreter, or if the entry
+ name is already found in the per-virtual-server private table. A duplicate-name
+ error leaves both the attached and the pooled channel unchanged.
 
 [list_end]
 

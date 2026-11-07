@@ -2511,6 +2511,7 @@ FreeInterpData(ClientData clientData, Tcl_Interp *UNUSED(interp))
 
     NsAdpFree(itPtr);
     Tcl_DeleteHashTable(&itPtr->sets);
+    NsTclFreeChannels(itPtr);
     Tcl_DeleteHashTable(&itPtr->chans);
     Tcl_DeleteHashTable(&itPtr->httpRequests);
 
