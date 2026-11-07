@@ -57,7 +57,9 @@ With [option -core], reload explicitly selected, recorded core files and their t
 through [cmd {ns_eval -sync}]. There is no implicit reload-all operation. Core
 reload is enabled for [file charsets.tcl], [file compat.tcl], [file form.tcl],
 [file http.tcl], [file ns_crypto.tcl], [file ns_stats.tcl], [file privacy.tcl],
-[file sendmail.tcl], and [file util.tcl]. Reloading [file ns_stats.tcl] uses
+[file sendmail.tcl], [file tclpro-debug.tcl], [file util.tcl], and
+[file win32.tcl]. The debugger and Windows helper files only redefine procedures;
+reloading them does not connect to a debugger or create directories. Reloading [file ns_stats.tcl] uses
 NX soft recreation, which must be enabled by the NX setup, to preserve live
 instances, the active sampler, its baseline, history configuration, and scheduled
 callbacks. Startup configuration is not reapplied. Private overrides of these files must also support

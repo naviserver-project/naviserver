@@ -9,6 +9,9 @@
 #
 #
 
+# Startup-only: sourcing creates the process-wide ns:memoize cache.
+# Separate cache creation from procedure definitions before enabling runtime reload.
+
 #
 # cache.tcl --
 #

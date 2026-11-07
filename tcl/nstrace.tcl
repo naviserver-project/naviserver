@@ -5,6 +5,9 @@
 #
 #
 
+# Startup-only: this script initializes tracing and interpreter-blueprint
+# machinery. Runtime reload would need to preserve its active serialization state.
+
 #
 # This file implements set of commands and utilities to manage
 # Tcl interpreter initialization for NaviServer.

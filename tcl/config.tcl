@@ -9,6 +9,9 @@
 #
 #
 
+# Startup-only: sourcing applies server configuration and registers request
+# handlers. Runtime reload must not implicitly reapply startup configuration.
+
 #
 # config.tcl --
 #

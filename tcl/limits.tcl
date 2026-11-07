@@ -9,6 +9,9 @@
 #
 #
 
+# Startup-only: sourcing creates global limits and registers server URL
+# mappings. Runtime reload must not implicitly reapply these configuration mappings.
+
 #
 # limits.tcl --
 #

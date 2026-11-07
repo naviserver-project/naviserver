@@ -9,6 +9,9 @@
 #
 #
 
+# Startup-only: this script bootstraps server libraries, interpreter traces
+# and blueprint state. Reload individual libraries through ns_module instead.
+
 #
 # init.tcl --
 #
@@ -411,7 +414,7 @@ proc _ns_module_inventory {module} {
         if {$module eq ""} {
             set reloadable [expr {$reloadable && $name in {
                 charsets.tcl compat.tcl form.tcl http.tcl ns_crypto.tcl ns_stats.tcl
-                privacy.tcl sendmail.tcl util.tcl
+                privacy.tcl sendmail.tcl tclpro-debug.tcl util.tcl win32.tcl
             }}]
         }
         dict set result $name [dict create path [dict get $files $key] reloadable $reloadable]

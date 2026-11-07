@@ -9,6 +9,9 @@
 #
 #
 
+# Startup-only: this bootstrap script initializes interpreter state and
+# package-loading setup; runtime reload must not repeat interpreter initialization.
+
 #
 # init.tcl --
 #

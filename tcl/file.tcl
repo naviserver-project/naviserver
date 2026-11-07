@@ -9,6 +9,9 @@
 #
 #
 
+# Startup-only: sourcing configures the shared Tcl error page and registers
+# Tcl request handlers. Separate registration from definitions for runtime reload.
+
 #
 # file.tcl --
 #

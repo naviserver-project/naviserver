@@ -9,6 +9,9 @@
 #
 #
 
+# Startup-only: sourcing resets shared directory-listing settings from
+# configuration. Preserve live settings before enabling runtime reload.
+
 #
 # fastpath.tcl --
 #

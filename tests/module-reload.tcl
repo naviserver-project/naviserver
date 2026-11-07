@@ -252,6 +252,30 @@ test core-stats {recorded ns_stats definitions are eligible for managed core rel
     list [dict get [ns_module files -core] ns_stats.tcl reloadable] \
         [ns_module reload -core ns_stats.tcl] $::events
 } -result {1 {{{} ns_stats.tcl}} stats}
+foreach {name command} {
+    tclpro-debug.tcl ns_adp_debuginit
+    win32.tcl _ns_mktemp_win_temp_dir
+} {
+    test core-helper-$name {procedure-only core libraries restore definitions on repeated reload} -setup {
+        reset
+        set channel [open [file join $root tcl $name]]
+        try {set contents [read $channel]} finally {close $channel}
+        writeModule {} $name $contents
+        _ns_module_source [list {} $name]
+        set originalArgs [info args $command]
+        set originalBody [info body $command]
+        proc $command {} {return stale}
+    } -body {
+        set affected [ns_module reload -core $name]
+        ns_module reload -core $name
+        list [dict get [ns_module files -core] $name reloadable] \
+            [expr {$affected eq [list [list {} $name]]}] \
+            [expr {[info args $command] eq $originalArgs}] \
+            [expr {[info body $command] eq $originalBody}]
+    } -cleanup {
+        rename $command {}
+    } -result {1 1 1 1}
+}
 test core-4 {untracked files, bootstrap files and arbitrary paths cannot be core reload targets} -setup reset -body {
     set result {}
     foreach name {nstrace.tcl init.tcl nsd/init.tcl /tmp/util.tcl ../util.tcl util.tcl} {

@@ -1,3 +1,7 @@
+# Startup-only: sourcing also registers the NSF interpreter-deletion callback.
+# NX soft recreation supports the object definitions, but does not deduplicate
+# that callback; separate bootstrap setup before enabling runtime reload.
+
 #
 # This is a small compatibility layer for OpenACS when used with
 # NaviServer 4.99.3 or newer.
