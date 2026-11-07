@@ -1169,20 +1169,20 @@ Abort(int signal)
 char *
 ns_mkdtemp(char *charTemplate)
 {
-    int   err;
+    Tcl_Obj *dirpathObj;
+    int      err;
 
-    err = _mktemp_s(charTemplate, strlen(charTemplate));
-
-    if (err == 0) {
-        /*
-         * We had for a while _O_TEMPORARY here as well, which deletes the
-         * file, when he file when the last file descriptor is
-         * closed. It is removed here for compatibility reasons.
-         *
-         * Note that O_TMPFILE (since Linux 3.11) has different semantics.
-         */
-        err = CreateDirectory(charTemplate, NULL);
+    err = _mktemp_s(charTemplate, strlen(charTemplate) + 1u);
+    if (err != 0) {
+        Tcl_SetErrno(err);
+        return NULL;
     }
+
+    /* Tcl's filesystem API returns zero on success and sets errno on failure. */
+    dirpathObj = Tcl_NewStringObj(charTemplate, TCL_INDEX_NONE);
+    Tcl_IncrRefCount(dirpathObj);
+    err = Tcl_FSCreateDirectory(dirpathObj);
+    Tcl_DecrRefCount(dirpathObj);
 
     return (err == 0) ? charTemplate : NULL;
 }
