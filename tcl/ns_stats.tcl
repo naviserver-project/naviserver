@@ -1606,6 +1606,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
             {CREATE TABLE IF NOT EXISTS ns_stats_topology (id TEXT PRIMARY KEY,payload TEXT NOT NULL)}
             {CREATE TABLE IF NOT EXISTS ns_stats_samples (at INTEGER PRIMARY KEY,instance TEXT NOT NULL,topology TEXT NOT NULL,payload TEXT NOT NULL)}
             {CREATE TABLE IF NOT EXISTS ns_stats_events (id INTEGER PRIMARY KEY,at INTEGER NOT NULL,first INTEGER NOT NULL,last INTEGER NOT NULL,n INTEGER NOT NULL,reason TEXT NOT NULL)}
+            {CREATE INDEX IF NOT EXISTS ns_stats_samples_topology ON ns_stats_samples(topology)}
         } {
             :sql $db $query
         }
@@ -1743,6 +1744,8 @@ nx::Class create ::ns::stats::SQLiteHistory {
         set last [dict get $stats last]
         set now [clock microseconds]
         :sql $db "DELETE FROM ns_stats_samples WHERE $where"
+        # Reclaim topology space before the next storage-budget check. The
+        # covering index avoids scanning the sample payload table.
         :sql $db {DELETE FROM ns_stats_topology WHERE id NOT IN (SELECT DISTINCT topology FROM ns_stats_samples)}
         :sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($now,$first,$last,$n,[ns_dbquotevalue $reason])"
         set prior [:scalar $db {SELECT value FROM ns_stats_meta WHERE key='droppedThrough'}]
@@ -1843,14 +1846,19 @@ nx::Class create ::ns::stats::SQLiteHistory {
             if {$stored ne "" && [:unpack $stored] ne $topology} {
                 error "history topology fingerprint collision"
             }
-            :sql $db "INSERT OR IGNORE INTO ns_stats_topology VALUES([ns_dbquotevalue $topologyId],[ns_dbquotevalue $packedTopology])"
             :sql $db "INSERT OR IGNORE INTO ns_stats_samples(at,instance,topology,payload,allocator) VALUES($stamp,[ns_dbquotevalue [dict get $record instance]],[ns_dbquotevalue $topologyId],[ns_dbquotevalue $packed],[ns_dbquotevalue $allocator])"
+            # Publish topology only for an actual retained sample. A retried
+            # timestamp can already refer to another topology; do not leave an
+            # orphan in that case. Both inserts remain in this transaction.
+            :sql $db "INSERT OR IGNORE INTO ns_stats_topology
+                SELECT [ns_dbquotevalue $topologyId],[ns_dbquotevalue $packedTopology]
+                 WHERE EXISTS (SELECT 1 FROM ns_stats_samples
+                                WHERE at=$stamp AND topology=[ns_dbquotevalue $topologyId])"
             foreach gap [dict get $config gaps] {
                 lassign $gap first last n
                 :sql $db "INSERT INTO ns_stats_events(at,first,last,n,reason) VALUES($stamp,$first,$last,$n,'write-failure')"
             }
             :sql $db {DELETE FROM ns_stats_events WHERE id NOT IN (SELECT id FROM ns_stats_events ORDER BY id DESC LIMIT 64)}
-            :sql $db {DELETE FROM ns_stats_topology WHERE id NOT IN (SELECT DISTINCT topology FROM ns_stats_samples)}
             :sql $db {COMMIT}
             set transaction false
             set ok true

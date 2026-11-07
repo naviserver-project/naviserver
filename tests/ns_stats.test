@@ -470,6 +470,155 @@ set statsTestCode [catch {
         list [dict get $s enabled] [expr {"::ns::stats::SQLiteHistory" in [::ns_stats info object mixins]}] [file exists [ns_config ns/db/pool/ns_stats_test datasource]]
     } -cleanup {::ns_stats_test::stop} -result {true 1 1}
 
+    test stats-history-topology-index {existing history gains the reference index without data changes} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+        set db [ns_db gethandle ns_stats_test]
+    } -body {
+        set before [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_samples}]
+        ::nsf::dispatch ::ns_stats sql $db {DROP INDEX ns_stats_samples_topology}
+        ::nsf::dispatch ::ns_stats historySchema $db
+        ::nsf::dispatch ::ns_stats historySchema $db
+        list [::nsf::dispatch ::ns_stats scalar $db {SELECT name FROM pragma_index_info('ns_stats_samples_topology')}] \
+            [expr {$before == [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_samples}]}]
+    } -cleanup {
+        ns_db releasehandle $db
+        ::ns_stats_test::stop
+    } -result {topology 1}
+
+    test stats-history-topology-retained {eviction removes only unreferenced topologies, atomically} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+        set db [ns_db gethandle ns_stats_test]
+    } -body {
+        ::nsf::dispatch ::ns_stats sql $db {INSERT INTO ns_stats_topology VALUES('shared','s'),('expired','e')}
+        ::nsf::dispatch ::ns_stats sql $db {INSERT INTO ns_stats_samples(at,instance,topology,payload) VALUES(1,'test','shared','s'),(2,'test','expired','e'),(3,'test','shared','s')}
+        ::nsf::dispatch ::ns_stats sql $db {BEGIN IMMEDIATE}
+        set transaction true
+        ::nsf::dispatch ::ns_stats historyDrop $db {at<=2} age
+        set retained [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_topology WHERE id='shared'}]
+        set removed [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_topology WHERE id='expired'}]
+        set event [::nsf::dispatch ::ns_stats scalar $db {SELECT n FROM ns_stats_events WHERE reason='age'}]
+        ::nsf::dispatch ::ns_stats sql $db {ROLLBACK}
+        set transaction false
+        list $retained $removed $event \
+            [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_samples WHERE at<=2}] \
+            [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_topology WHERE id='expired'}] \
+            [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_events}]
+    } -cleanup {
+        if {[info exists transaction] && $transaction} {
+            catch {::nsf::dispatch ::ns_stats sql $db {ROLLBACK}}
+        }
+        ns_db releasehandle $db
+        ::ns_stats_test::stop
+    } -result {1 0 2 2 1 0}
+
+    test stats-history-topology-duplicate {an ignored timestamp cannot leave an unreferenced new topology} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set config [nsv_get ns_stats history]
+        dict set config lastSaved {}
+        dict set config topology {testTopology different}
+        dict set config topologyAt [clock seconds]
+        nsv_set ns_stats history $config
+        ns_stats history save
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            list [dict get [ns_stats history status] failures] \
+                [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_samples}] \
+                [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_topology}] \
+                [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_topology t WHERE NOT EXISTS (SELECT 1 FROM ns_stats_samples s WHERE s.topology=t.id)}]
+        } finally {
+            ns_db releasehandle $db
+        }
+    } -cleanup {::ns_stats_test::stop} -result {0 1 1 0}
+
+    test stats-history-topology-insert-rollback {a failed topology insert rolls back the new sample as well} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            ::nsf::dispatch ::ns_stats sql $db {
+                CREATE TRIGGER reject_history_topology BEFORE INSERT ON ns_stats_topology
+                BEGIN SELECT RAISE(ABORT,'topology test failure'); END
+            }
+        } finally {ns_db releasehandle $db}
+    } -body {
+        set sample [nsv_get ns_stats pair]
+        dict incr sample timestamp
+        nsv_set ns_stats pair $sample
+        ns_stats history save
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            list [dict get [ns_stats history status] failures] \
+                [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_samples}] \
+                [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_topology}]
+        } finally {ns_db releasehandle $db}
+    } -cleanup {
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            ::nsf::dispatch ::ns_stats sql $db {DROP TRIGGER reject_history_topology}
+        } finally {ns_db releasehandle $db}
+        ::ns_stats_test::stop
+    } -result {1 1 1}
+
+    test stats-history-topology-cleanup-frequency {no full cleanup on append, one cleanup on age eviction} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+        set savedMixins [ns_stats info object mixins]
+        nx::Class create ::ns::stats::TestTopologyCleanup {
+            :method sql {db query} {
+                if {[regexp -nocase {DELETE\s+FROM\s+ns_stats_topology} $query]} {
+                    incr ::ns_stats_test::topologyCleanups
+                }
+                next
+            }
+        }
+        ns_stats object mixins add ::ns::stats::TestTopologyCleanup
+        set ::ns_stats_test::topologyCleanups 0
+    } -body {
+        set sample [nsv_get ns_stats pair]
+        dict incr sample timestamp
+        nsv_set ns_stats pair $sample
+        ns_stats history save
+        set appendCleanups $::ns_stats_test::topologyCleanups
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            ::nsf::dispatch ::ns_stats sql $db {INSERT INTO ns_stats_topology VALUES('expired','e')}
+            ::nsf::dispatch ::ns_stats sql $db {INSERT INTO ns_stats_samples(at,instance,topology,payload) VALUES(1,'test','expired','e')}
+        } finally {ns_db releasehandle $db}
+        dict incr sample timestamp
+        nsv_set ns_stats pair $sample
+        ns_stats history save
+        list $appendCleanups $::ns_stats_test::topologyCleanups [dict get [ns_stats history status] failures]
+    } -cleanup {
+        ns_stats object mixins set $savedMixins
+        ::ns::stats::TestTopologyCleanup destroy
+        ::ns_stats_test::stop
+    } -result {0 1 0}
+
+    test stats-history-topology-budget {size eviction reclaims a large unreferenced topology before rechecking capacity} -constraints ns_stats_sqlite -setup {
+        ::ns_stats_test::history
+    } -body {
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            ::nsf::dispatch ::ns_stats sql $db {BEGIN IMMEDIATE}
+            ::nsf::dispatch ::ns_stats sql $db {INSERT INTO ns_stats_topology VALUES('large',zeroblob(1200000))}
+            set first [expr {[clock microseconds]-10000000}]
+            ::nsf::dispatch ::ns_stats sql $db "WITH RECURSIVE ids(i) AS (
+                VALUES(0) UNION ALL SELECT i+1 FROM ids WHERE i<99
+            ) INSERT INTO ns_stats_samples(at,instance,topology,payload)
+              SELECT $first+i,'test','large',zeroblob(3072) FROM ids"
+            ::nsf::dispatch ::ns_stats sql $db {COMMIT}
+        } finally {ns_db releasehandle $db}
+        set sample [nsv_get ns_stats pair]
+        dict incr sample timestamp
+        nsv_set ns_stats pair $sample
+        ns_stats history save
+        set db [ns_db gethandle ns_stats_test]
+        try {
+            list [dict get [ns_stats history status] failures] \
+                [::nsf::dispatch ::ns_stats scalar $db {SELECT count(*) FROM ns_stats_topology WHERE id='large'}] \
+                [::nsf::dispatch ::ns_stats scalar $db {SELECT sum(n) FROM ns_stats_events WHERE reason='size'}]
+        } finally {ns_db releasehandle $db}
+    } -cleanup {::ns_stats_test::stop} -result {0 0 100}
+
     test stats-history-config-idempotent {ensemble configuration reuses matching settings and rejects conflicts} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
         ::ns_stats_test::history
     } -body {
