@@ -621,7 +621,7 @@ set statsTestCode [catch {
 
     test stats-history-reload {repeated sourcing preserves live object, sample, configuration and schedulers} -constraints ns_stats_sqlite -setup {
         set savedSoftrecreate [::nsf::configure softrecreate]
-        ::nsf::configure softrecreate true
+        ::nsf::configure softrecreate false
         ::ns_stats_test::history
     } -body {
         set state [nsv_array get ns_stats]
@@ -638,18 +638,18 @@ set statsTestCode [catch {
         }
         set status [ns_stats history status]
         set sampler [ns_stats sampling status]
-        list $unchanged [expr {$mixins eq [ns_stats info object mixins]}] \
+        list [expr {![::nsf::configure softrecreate]}] $unchanged [expr {$mixins eq [ns_stats info object mixins]}] \
             [expr {$definition eq [::ns::stats::Collector info method body describe]}] \
             [dict get $sampler running] [dict get $status enabled] \
             [expr {[dict get [ns_stats describe] process pid] == [pid]}]
     } -cleanup {
         ::ns_stats_test::stop
         ::nsf::configure softrecreate $savedSoftrecreate
-    } -result {1 1 1 true true 1}
+    } -result {1 1 1 1 true true 1}
 
     test stats-history-managed-reload {managed reload preserves live state and updates fresh interpreters} -constraints ns_stats_sqlite -setup {
         set savedSoftrecreate [::nsf::configure softrecreate]
-        ::nsf::configure softrecreate true
+        ::nsf::configure softrecreate false
         ::ns_stats_test::history
         set reloadQueue [ns_job create stats-reload-check 1]
     } -body {
@@ -662,9 +662,9 @@ set statsTestCode [catch {
             if {[nsv_get ns_stats $key] ne $value} {set unchanged 0}
         }
         set fresh [ns_job wait $reloadQueue [ns_job queue $reloadQueue {
-            # Enable the same NX recreation policy before updating an interpreter
-            # which might have been allocated before the managed reload.
-            ::nsf::configure softrecreate true
+            # Verify reload with the default NX recreation policy, including
+            # an interpreter which might predate the managed reload.
+            ::nsf::configure softrecreate false
             ns_ictl update
             list [dict get [ns_stats sampling status] running] \
                 [dict get [ns_stats history status] enabled] \

@@ -417,7 +417,20 @@ proc ::ns::stats::linuxNetworkSnapshot {} {
 }
 
 
-nx::Class create ::ns::stats::Collector {
+# Managed reload also sources this file in a worker interpreter, whose NX
+# recreation policy can differ from the caller's. Preserve existing instances
+# and their mixins while updating class definitions, then restore that policy.
+proc ::ns::stats::defineClass {name args} {
+    set savedSoftrecreate [::nsf::configure softrecreate]
+    ::nsf::configure softrecreate true
+    try {
+        uplevel 1 [list ::nx::Class create $name {*}$args]
+    } finally {
+        ::nsf::configure softrecreate $savedSoftrecreate
+    }
+}
+
+::ns::stats::defineClass ::ns::stats::Collector {
     #
     #   Collect structured NaviServer topology and runtime diagnostics.
     #   describe returns process information, virtual servers, connection
@@ -854,7 +867,7 @@ nx::Class create ::ns::stats::Collector {
     }
 }
 
-nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
+::ns::stats::defineClass ::ns::stats::Sampler -superclass ::ns::stats::Collector {
     #
     #   Extend Collector with process-wide periodic sampling and interval
     #   calculations. Keep configuration, collection status and the latest
@@ -1496,7 +1509,7 @@ nx::Class create ::ns::stats::Sampler -superclass ::ns::stats::Collector {
     }
 }
 
-nx::Class create ::ns::stats::SQLiteHistory {
+::ns::stats::defineClass ::ns::stats::SQLiteHistory {
     #
     #   Provide optional persistence for Sampler as an object mixin. Store
     #   published samples and associated topology in a dedicated SQLite
@@ -2287,7 +2300,7 @@ nx::Class create ::ns::stats::SQLiteHistory {
     }
 }
 
-nx::Class create ::ns::ns_stats -superclass ::ns::stats::Sampler {
+::ns::stats::defineClass ::ns::ns_stats -superclass ::ns::stats::Sampler {
     #
     #   Provide the public ns_stats object command. Inherited NX ensemble
     #   methods implement sampling and validate their options directly.
