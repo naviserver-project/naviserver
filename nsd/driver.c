@@ -5694,26 +5694,30 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                        statusCode, errMsg, peer);
 
             } else {
-                Tcl_DString dsReqLine;
+                Tcl_DString dsReqLine, dsBuffer;
 
                 /*
                  * These are errors, which might need some investigation based
-                 * on based on details of the received buffer.
+                 * on details of the received buffer. Keep the diagnostics in
+                 * one entry so each rejection is one logged issue.
                  */
                 Tcl_DStringInit(&dsReqLine);
+                Tcl_DStringInit(&dsBuffer);
                 Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s'"
                        " offsets: read %" PRIuz
-                       " write %" PRIuz " content %" PRIuz " avail %" PRIuz,
+                       " write %" PRIuz " content %" PRIuz " avail %" PRIuz
+                       "; REQ BUFFER: %s",
                        statusCode, errMsg,
                        peer,
                        Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, NS_FALSE, requestLine, strlen(requestLine)),
                        reqPtr->roff,
                        reqPtr->woff,
                        reqPtr->coff,
-                       reqPtr->avail);
+                       reqPtr->avail,
+                       Ns_DStringAppendPrintable(&dsBuffer, NS_FALSE, NS_FALSE,
+                                                 reqPtr->buffer.string, (size_t)reqPtr->buffer.length));
                 Tcl_DStringFree(&dsReqLine);
-
-                LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+                Tcl_DStringFree(&dsBuffer);
             }
         } else if (statusCode >= 500
                    && !(reason == SOCK_QUEUEFULL
