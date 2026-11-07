@@ -243,6 +243,15 @@ test core-3 {startup-only dependents prevent partial reloads} -setup {
     list [catch {ns_module reload -core util.tcl} message] $message $::events \
         [dict get [ns_module files -core] cache.tcl reloadable]
 } -result {1 {dependent core Tcl file is not enabled for reload: cache.tcl} {} 0}
+test core-stats {recorded ns_stats definitions are eligible for managed core reload} -setup {
+    reset
+    writeModule {} ns_stats.tcl {lappend ::events stats}
+    _ns_module_source {{} ns_stats.tcl}
+    set ::events {}
+} -body {
+    list [dict get [ns_module files -core] ns_stats.tcl reloadable] \
+        [ns_module reload -core ns_stats.tcl] $::events
+} -result {1 {{{} ns_stats.tcl}} stats}
 test core-4 {untracked files, bootstrap files and arbitrary paths cannot be core reload targets} -setup reset -body {
     set result {}
     foreach name {nstrace.tcl init.tcl nsd/init.tcl /tmp/util.tcl ../util.tcl util.tcl} {

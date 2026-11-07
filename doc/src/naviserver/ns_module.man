@@ -56,8 +56,11 @@ in this form.
 With [option -core], reload explicitly selected, recorded core files and their transitive dependents
 through [cmd {ns_eval -sync}]. There is no implicit reload-all operation. Core
 reload is enabled for [file charsets.tcl], [file compat.tcl], [file form.tcl],
-[file http.tcl], [file ns_crypto.tcl], [file privacy.tcl], [file sendmail.tcl],
-and [file util.tcl]. Private overrides of these files must also support
+[file http.tcl], [file ns_crypto.tcl], [file ns_stats.tcl], [file privacy.tcl],
+[file sendmail.tcl], and [file util.tcl]. Reloading [file ns_stats.tcl] uses
+NX soft recreation, which must be enabled by the NX setup, to preserve live
+instances, the active sampler, its baseline, history configuration, and scheduled
+callbacks. Startup configuration is not reapplied. Private overrides of these files must also support
 repeated evaluation. Bootstrap files, including [file init.tcl],
 [file nstrace.tcl] and [file nsd/init.tcl], are excluded. If an affected core
 dependent is startup-only, the operation fails before sourcing any files.

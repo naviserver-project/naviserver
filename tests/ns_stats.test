@@ -619,6 +619,75 @@ set statsTestCode [catch {
         } finally {ns_db releasehandle $db}
     } -cleanup {::ns_stats_test::stop} -result {0 0 100}
 
+    test stats-history-reload {repeated sourcing preserves live object, sample, configuration and schedulers} -constraints ns_stats_sqlite -setup {
+        set savedSoftrecreate [::nsf::configure softrecreate]
+        ::nsf::configure softrecreate true
+        ::ns_stats_test::history
+    } -body {
+        set state [nsv_array get ns_stats]
+        set mixins [ns_stats info object mixins]
+        set definition [::ns::stats::Collector info method body describe]
+        ::ns::stats::Collector public method describe {} {return stale}
+        source $::ns_stats_test::source
+        source $::ns_stats_test::source
+        set unchanged 1
+        foreach {key value} $state {
+            if {[nsv_get ns_stats $key] ne $value} {
+                set unchanged 0
+            }
+        }
+        set status [ns_stats history status]
+        set sampler [ns_stats sampling status]
+        list $unchanged [expr {$mixins eq [ns_stats info object mixins]}] \
+            [expr {$definition eq [::ns::stats::Collector info method body describe]}] \
+            [dict get $sampler running] [dict get $status enabled] \
+            [expr {[dict get [ns_stats describe] process pid] == [pid]}]
+    } -cleanup {
+        ::ns_stats_test::stop
+        ::nsf::configure softrecreate $savedSoftrecreate
+    } -result {1 1 1 true true 1}
+
+    test stats-history-managed-reload {managed reload preserves live state and updates fresh interpreters} -constraints ns_stats_sqlite -setup {
+        set savedSoftrecreate [::nsf::configure softrecreate]
+        ::nsf::configure softrecreate true
+        ::ns_stats_test::history
+        set reloadQueue [ns_job create stats-reload-check 1]
+    } -body {
+        ns_stats eval {set :reloadMarker preserved}
+        set state [nsv_array get ns_stats]
+        set mixins [ns_stats info object mixins]
+        set affected [ns_module reload -core ns_stats.tcl]
+        set unchanged 1
+        foreach {key value} $state {
+            if {[nsv_get ns_stats $key] ne $value} {set unchanged 0}
+        }
+        set fresh [ns_job wait $reloadQueue [ns_job queue $reloadQueue {
+            # Enable the same NX recreation policy before updating an interpreter
+            # which might have been allocated before the managed reload.
+            ::nsf::configure softrecreate true
+            ns_ictl update
+            list [dict get [ns_stats sampling status] running] \
+                [dict get [ns_stats history status] enabled] \
+                [ns_stats info object mixins] \
+                [dict get [ns_stats describe] process pid]
+        }]]
+        set running [dict get [ns_stats sampling status] running]
+        set enabled [dict get [ns_stats history status] enabled]
+        ::ns_stats sampling tick
+        ::ns_stats history persist
+        list [expr {[list {} ns_stats.tcl] in $affected}] $unchanged \
+            [ns_stats eval {set :reloadMarker}] \
+            [expr {[ns_stats info object mixins] eq $mixins}] \
+            $running $enabled \
+            [expr {$fresh eq [list true true $mixins [pid]]}] \
+            [dict get [ns_stats history status] failures]
+    } -cleanup {
+        ns_job delete $reloadQueue
+        ns_stats eval {unset -nocomplain :reloadMarker}
+        ::ns_stats_test::stop
+        ::nsf::configure softrecreate $savedSoftrecreate
+    } -result {1 1 preserved 1 true true 1 0}
+
     test stats-history-config-idempotent {ensemble configuration reuses matching settings and rejects conflicts} -returnCodes {ok error} -constraints ns_stats_sqlite -setup {
         ::ns_stats_test::history
     } -body {
