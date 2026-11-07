@@ -2308,6 +2308,11 @@ NS_EXTERN void NsTclAddServerCmds(NsInterp *itPtr) NS_GNUC_NONNULL(1);
 
 
 /*
+ * tclfile.c
+ */
+NS_EXTERN void NsTclFreeChannels(NsInterp *itPtr) NS_GNUC_NONNULL(1);
+
+/*
  * tclinit.c
  */
 NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)  NS_GNUC_NONNULL(1);
