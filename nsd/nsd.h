@@ -1655,6 +1655,7 @@ NS_EXTERN void NsInitStaticModules(const char *server);
 
 NS_EXTERN Tcl_Interp *NsTclCreateInterp(void)            NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN Tcl_Interp *NsTclAllocateInterp(NsServer *servPtr) NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN void NsTclFreeChannels(NsInterp *itPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)  NS_GNUC_NONNULL(1);
 NS_EXTERN void NsFreeConnInterp(Conn *connPtr)           NS_GNUC_NONNULL(1);
 

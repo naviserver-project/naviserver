@@ -19,13 +19,14 @@ jobs:
             tcltag: core-8-6-17
             nsf_version: 2.3.0
             tdom_version: 0.9.1
+            cflags: -std=gnu17
 
           - os: ubuntu-latest
             compiler: gcc
             tcltag: core-8-7-a5
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd
             nsf_version: 2.4.0
-            tdom_version: 0.9.4
+            tdom_version: 0.9.6
 
     defaults:
       run:
@@ -56,13 +57,16 @@ jobs:
           sudo \
             version_ns=.. \
             version_modules=GIT \
-            version_tcl=${TCLTAG} \
-            version_xotcl=${NSF_VERSION} \
-            version_tdom=${TDOM_VERSION} \
+            version_tcl="${TCLTAG}" \
+            version_xotcl="${NSF_VERSION}" \
+            version_tdom="${TDOM_VERSION}" \
             ns_modules="${NS_MODULES}" \
-            CC=${CC} \
+            CC="${CC}" \
+            CFLAGS="${BUILD_CFLAGS}" \
             with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
             bash install-ns.sh build
+        env:
+          BUILD_CFLAGS: ${{ matrix.cflags || '' }}
         working-directory: install-ns
       - name: Regression test
         run: |

@@ -16,6 +16,197 @@ test ns_mktemp-1.1 {call with argument} -body {
 } -result {0 0 0}
 
 
+# A pooled channel and a checked-out channel may have the same logical name,
+# but a failed transfer must never replace either one.
+set chanTestPath [makeFile channel-data ns_chan-data.txt]
+proc chanTestCreate {name} {
+    set fp [open $::chanTestPath r]
+    ns_chan create $fp $name
+    return $fp
+}
+proc chanTestCleanup {} {
+    ns_chan cleanup
+    ns_chan cleanup -shared
+}
+
+test ns_chan-2.0 {create, get, put and get preserve channel contents} -setup {
+    set original [chanTestCreate ns-chan-test]
+} -body {
+    set fp [ns_chan get ns-chan-test]
+    set first [read $fp 7]
+    ns_chan put ns-chan-test
+    set again [ns_chan get ns-chan-test]
+    list [expr {$fp eq $original && $again eq $fp}] $first [string trim [read $again]]
+} -cleanup {chanTestCleanup} -result {1 channel -data}
+
+test ns_chan-2.1 {ordinary Tcl close invalidates tracking before cleanup} -setup {
+    chanTestCreate ns-chan-test
+} -body {
+    close [ns_chan get ns-chan-test]
+    ns_chan cleanup
+    ns_chan list
+} -cleanup {chanTestCleanup} -result {}
+
+test ns_chan-2.2 {cleanup must not close a newly opened channel with a recycled name} -setup {
+    chanTestCreate ns-chan-test
+    close [ns_chan get ns-chan-test]
+    set fresh [open $chanTestPath r]
+} -body {
+    ns_chan cleanup
+    string trim [read $fresh]
+} -cleanup {
+    catch {close $fresh}
+    chanTestCleanup
+} -result channel-data
+
+test ns_chan-2.3 {put after ordinary close retires invalid metadata} -setup {
+    chanTestCreate ns-chan-test
+    close [ns_chan get ns-chan-test]
+} -body {
+    list [catch {ns_chan put ns-chan-test}] [ns_chan list]
+} -cleanup {chanTestCleanup} -result {1 {}}
+
+test ns_chan-2.4 {get collision preserves the attached and pooled channels} -setup {
+    chanTestCreate ns-chan-test
+    set attached [ns_chan get ns-chan-test]
+    set pooled [chanTestCreate ns-chan-test]
+} -body {
+    set failed [catch {ns_chan get ns-chan-test}]
+    set first [string trim [read $attached]]
+    ns_chan cleanup
+    set second [ns_chan get ns-chan-test]
+    list $failed $first [expr {$second eq $pooled}] [string trim [read $second]]
+} -cleanup {chanTestCleanup} -result {1 channel-data 1 channel-data}
+
+test ns_chan-2.5 {put collision leaves both channels owned and usable} -setup {
+    chanTestCreate ns-chan-test
+    set attached [ns_chan get ns-chan-test]
+    set pooled [chanTestCreate ns-chan-test]
+} -body {
+    set failed [catch {ns_chan put ns-chan-test}]
+    set first [string trim [read $attached]]
+    ns_chan cleanup -shared
+    ns_chan put ns-chan-test
+    set second [ns_chan get ns-chan-test]
+    list $failed $first [expr {$second eq $attached}] [ns_chan list -shared]
+} -cleanup {chanTestCleanup} -result {1 channel-data 1 {}}
+
+test ns_chan-2.6 {closed metadata cannot prevent reuse of a logical name} -setup {
+    chanTestCreate ns-chan-test
+    close [ns_chan get ns-chan-test]
+    chanTestCreate ns-chan-test
+} -body {
+    string trim [read [ns_chan get ns-chan-test]]
+} -cleanup {chanTestCleanup} -result channel-data
+
+test ns_chan-2.7 {create can return a checked-out channel under another name} -setup {
+    chanTestCreate ns-chan-test
+    set fp [ns_chan get ns-chan-test]
+} -body {
+    ns_chan create $fp ns-chan-renamed
+    ns_chan cleanup
+    list [ns_chan list] [string trim [read [ns_chan get ns-chan-renamed]]]
+} -cleanup {chanTestCleanup} -result {{} channel-data}
+
+test ns_chan-2.8 {put must not cut a channel still shared with another interpreter} -setup {
+    chanTestCreate ns-chan-test
+    set fp [ns_chan get ns-chan-test]
+    set child [interp create]
+    interp share {} $fp $child
+} -body {
+    set failed [catch {ns_chan put ns-chan-test}]
+    interp delete $child
+    ns_chan put ns-chan-test
+    list $failed [string trim [read [ns_chan get ns-chan-test]]]
+} -cleanup {
+    catch {interp delete $child}
+    chanTestCleanup
+} -result {1 channel-data}
+
+# Reflected channel drivers execute Tcl from watch/finalize. These callbacks
+# must neither expose a half-detached channel nor invalidate cleanup's iterator.
+proc chanTestDriver {op fp args} {
+    switch -- $op {
+        initialize {return {initialize finalize watch read}}
+        read {return {}}
+        watch - finalize {
+            if {$op eq $::chanTestWhen && $::chanTestAction ne {}} {
+                set script $::chanTestAction
+                set ::chanTestAction {}
+                uplevel #0 $script
+            }
+        }
+    }
+}
+
+test ns_chan-3.0 {watch callback closing a channel during create fails safely} -setup {
+    set chanTestWhen watch
+    set chanTestAction {}
+    set fp [chan create read chanTestDriver]
+    fileevent $fp readable {set ::chanTestReadable 1}
+    set chanTestAction [list close $fp]
+} -body {
+    list [catch {ns_chan create $fp ns-chan-test}] [ns_chan list -shared]
+} -cleanup {
+    catch {close $fp}
+    chanTestCleanup
+} -result {1 {}}
+
+test ns_chan-3.1 {watch callback closing a checked-out channel during put fails safely} -setup {
+    set chanTestWhen watch
+    set chanTestAction {}
+    set fp [chan create read chanTestDriver]
+    ns_chan create $fp ns-chan-test
+    set fp [ns_chan get ns-chan-test]
+    fileevent $fp readable {set ::chanTestReadable 1}
+    set chanTestAction [list close $fp]
+} -body {
+    list [catch {ns_chan put ns-chan-test}] [ns_chan list] [ns_chan list -shared]
+} -cleanup {chanTestCleanup} -result {1 {} {}}
+
+test ns_chan-3.2 {cleanup tolerates driver callbacks closing another tracked channel} -setup {
+    set chanTestWhen finalize
+    set chanTestAction {}
+    set fp [chan create read chanTestDriver]
+    ns_chan create $fp ns-chan-reflected
+    ns_chan get ns-chan-reflected
+    chanTestCreate ns-chan-test
+    set other [ns_chan get ns-chan-test]
+    set chanTestAction [list catch [list close $other]]
+} -body {
+    ns_chan cleanup
+    ns_chan list
+} -cleanup {chanTestCleanup} -result {}
+
+test ns_chan-3.3 {shared cleanup permits driver callbacks to reenter the pool} -setup {
+    set chanTestWhen finalize
+    set chanTestAction {}
+    set fp [chan create read chanTestDriver]
+    ns_chan create $fp ns-chan-test
+    set chanTestAction {ns_chan list -shared}
+} -body {
+    ns_chan cleanup -shared
+    ns_chan list -shared
+} -cleanup {chanTestCleanup} -result {}
+
+test ns_chan-3.4 {a transfer reservation survives reentrant shared cleanup} -setup {
+    set chanTestWhen watch
+    set chanTestAction {}
+    set fp [chan create read chanTestDriver]
+    fileevent $fp readable {set ::chanTestReadable 1}
+    set chanTestAction {ns_chan cleanup -shared}
+} -body {
+    ns_chan create $fp ns-chan-test
+    list [ns_chan list -shared] $chanTestAction
+} -cleanup {chanTestCleanup} -result {ns-chan-test {}}
+
+rename chanTestCreate {}
+rename chanTestCleanup {}
+rename chanTestDriver {}
+unset -nocomplain chanTestWhen chanTestAction chanTestReadable
+removeFile ns_chan-data.txt
+
+
 cleanupTests
 
 # Local variables:
