@@ -909,7 +909,7 @@ test ns_crypto::kem-2.3 {ns_crypto::kem end-to-end with exported public key and 
     string equal $secret1 $secret2
 } -returnCodes {error ok} -result 1
 
-test ns_crypto::kem-2.5 {ns_crypto::kem roundtrip} -constraints {kem} -body {
+test ns_crypto::kem-2.5 {ns_crypto::kem roundtrip} -constraints {kem tcl86} -body {
     set pem [ns_crypto::kem generate]
     set pub [ns_crypto::kem pub -pem $pem]
 
