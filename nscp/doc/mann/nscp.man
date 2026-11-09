@@ -110,11 +110,39 @@ Important points regarding this configuration:
 [list_begin itemized]
 
 [item]  The [option port] parameter defines the port that the interface will listen
-     on. The default is 9999.
+     on. The default is 2080. Port 0 selects one ephemeral port shared by all
+     successfully bound addresses.
 
-[item] The [option address] parameter defines the IP address to bind
-       to. By default, this is set to [const 127.0.0.1] (or
-       [const ::1] for IPv6), ensuring that only local connections are allowed.
+[item] The [option address] parameter accepts a nonempty Tcl list of IP
+       addresses and hostnames. A single address remains valid with unchanged
+       authentication behavior. Each hostname is expanded to all addresses
+       returned by the system resolver, without outbound [const AI_ADDRCONFIG]
+       filtering (which can exclude loopback-only IPv6 in containers).
+       [const localhost] therefore enables IPv4 and
+       IPv6 loopback listeners when both are available. Equivalent numeric
+       addresses and overlaps between list entries are deduplicated. At most
+       64 distinct resolved addresses are supported.
+
+       The default remains the build's loopback address ([const ::1] with IPv6
+       support, otherwise [const 127.0.0.1]). No wildcard fallback is introduced.
+       All listeners share the configured port, users, echo and authentication
+       settings. [cmd {ns_info sockcallbacks}] reports each numeric endpoint.
+
+       Resolution/list errors prevent listener creation. Individual bind or
+       callback-registration failures are logged; other addresses are still
+       attempted. At least one listener must succeed. Thus a host with only one
+       usable address family can still use [const localhost]. Review startup
+       notices to see the effective listeners.
+
+       Keep the administrative console restricted to trusted interfaces.
+       Explicit wildcard addresses can expose it externally; [const localhost]
+       follows the system resolver configuration.
+
+[example_begin]
+ns_param address 127.0.0.1           ;# existing IPv4-only configuration
+ns_param address localhost         ;# available resolved loopback addresses
+ns_param address {127.0.0.1 ::1}    ;# explicit IPv4 and IPv6 listeners
+[example_end]
 
 [item] The [option allowLoopbackEmptyUser] allows one to specify if a
        login with an empty username should be allowed from a loopback

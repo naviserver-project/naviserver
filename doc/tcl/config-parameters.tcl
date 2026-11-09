@@ -989,6 +989,18 @@ set ::ns_configdoc::data {
                     allow the requested continuous history to accumulate. This is
                     independent of SQLite historyRetention.}
             }
+            storageStallThresholdMs {
+                type integer default 20
+                desc {Minimum interval mean read/write latency recorded as a storage stall, in milliseconds, at least 1. Only valid background sampler intervals with completed I/O produce records. Independent of SQLite history and nsstats display thresholds.}
+            }
+            storageStallRetention {
+                type time default 1h
+                desc {Maximum age of sparse in-memory storage-stall records, from 1 second to 24 hours. Records survive Tcl reload and sampler stop/start, but not process restart.}
+            }
+            storageStallMaxRecords {
+                type integer default 128
+                desc {Maximum number of in-memory storage-stall records, from 1 to 10000. Oldest observations are evicted. No SQL or log scan is performed during recording.}
+            }
             samplingMaxSamples {
                 type integer
                 default 180
@@ -2810,8 +2822,8 @@ stops execution of that ADP page}
             }
 
             address {
-                type address
-                desc {Local address on which the control port listens; should normally be restricted to a trusted interface such as loopback (e.g. 127.0.0.1)}
+                type list
+                desc {Nonempty Tcl list of listening IP addresses and hostnames, up to 64 distinct resolved addresses. Single-address configurations remain valid. Hostnames such as localhost expand to all resolved addresses; duplicates are removed. Individual bind failures are logged and at least one listener must succeed. All listeners share users and authentication policy. The build's loopback default is unchanged; no wildcard fallback is used. Restrict this administrative console to trusted interfaces.}
             }
 
             port {

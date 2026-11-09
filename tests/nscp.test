@@ -168,6 +168,123 @@ foreach {number description login suffix expected} [list \
 }
 rename nscpDenyUserAuthForTest {}
 
+
+# Each address configuration runs in a fresh server process. Tests require the
+# installed nscp module, not a compiler or any external network service.
+proc nscpListenerCase {address expected {port 0} {failure {}}} {
+    set cfg [makeFile {} nscp-listener-test.nscfg]
+    set resultFile $cfg.result
+    set script [file join [ns_config test home] nscp-listeners.tcl]
+    set f {}
+    set code [catch {
+        set f [open $cfg w]
+        puts $f [list ns_section ns/parameters]
+        foreach {key value} [list home [ns_info home] tcllibrary [ns_config ns/parameters tcllibrary] \
+            pidfile $cfg.pid systemlog $cfg.log] {puts $f [list ns_param $key $value]}
+        # Raw connection channels still need a loaded HTTP driver context.
+        puts $f [list ns_section ns/modules]
+        puts $f [list ns_param nssock [ns_config ns/modules nssock]]
+        puts $f [list ns_section ns/module/nssock]
+        foreach {key value} {address 127.0.0.1 port 0 defaultserver test} {
+            puts $f [list ns_param $key $value]
+        }
+        puts $f [list ns_section ns/servers]
+        puts $f [list ns_param test test]
+        puts $f [list ns_section ns/server/test/tcl]
+        puts $f [list ns_param initfile [file join [ns_config test home] .. nsd init.tcl]]
+        puts $f [list ns_section ns/server/test/modules]
+        puts $f [list ns_param nscp [ns_config ns/server/test/modules nscp]]
+        puts $f [list ns_section ns/server/test/module/nscp]
+        foreach {key value} [list address $address port $port allowLoopbackEmptyUser true echopasswd true] {
+            puts $f [list ns_param $key $value]
+        }
+        puts $f [list ns_section ns/server/test/module/nscp/users]
+        puts $f [list ns_param user ::]
+        puts $f [list ns_param user nsadmin:t2GqvvaiIUbF2:]
+        puts $f [list ns_section nscp-test]
+        puts $f [list ns_param result $resultFile]
+        puts $f [list ns_param expected $expected]
+        close $f
+        set f {}
+        set runCode [catch {exec -- [ns_info nsd] -c -d -t $cfg $script 2>@1} output runOptions]
+        set log {}
+        if {[file exists $cfg.log]} {set f [open $cfg.log];set log [read $f];close $f}
+        if {$failure ne ""} {
+            if {![string match *$failure* "$output\n$log"]} {error "missing expected startup failure $failure: $output\n$log"}
+            if {[file exists $resultFile]} {error "failed configuration published working listeners"}
+            set result rejected
+        } else {
+            if {$runCode} {
+                # Some command-mode builds end ns_shutdown through SIGTERM.
+                set ec [dict get $runOptions -errorcode]
+                if {[lindex $ec 0] ne "CHILDKILLED" || [lindex $ec 2] ne "SIGTERM"} {
+                    error "listener child failed: $output\n$log"
+                }
+            }
+            if {![file exists $resultFile]} {error "listener probe did not finish: $output\n$log"}
+            set f [open $resultFile];set result [read $f];close $f;set f {}
+        }
+        set result
+    } message options]
+    if {$f ne ""} {catch {close $f}}
+    removeFile nscp-listener-test.nscfg
+    foreach suffix {.pid .log .result} {file delete -force $cfg$suffix}
+    return -options $options $message
+}
+
+set nscpV6 false
+if {[testConstraint nscpLoaded] && [ns_info ipv6] && ![catch {ns_connchan listen -bind ::1 0 {apply {{channel} {return 0}}}} listener]} {
+    set nscpV6 true
+    ns_connchan close [dict get $listener channel]
+}
+testConstraint nscpIPv6 $nscpV6
+
+test nscp-5.0 {single IPv4 configuration remains compatible} -constraints nscpLoaded -body {
+    set r [nscpListenerCase 127.0.0.1 127.0.0.1]
+    list [dict get $r addresses] [dict get $r listenerCount]
+} -result {127.0.0.1 1}
+
+test nscp-5.1 {localhost listeners accept by name and each numeric endpoint} -constraints nscpLoaded -body {
+    set r [nscpListenerCase localhost @localhost]
+    expr {[dict get $r listenerCount]>0 && [dict get $r ports]==1}
+} -result 1
+
+test nscp-5.2 {explicit IPv4/IPv6 address list shares authentication and port} -constraints {nscpLoaded nscpIPv6} -body {
+    set r [nscpListenerCase {127.0.0.1 ::1} {127.0.0.1 ::1}]
+    list [dict get $r listenerCount] [dict get $r ports]
+} -result {2 1}
+
+test nscp-5.3 {duplicate literals and equivalent IPv6 forms bind once} -constraints {nscpLoaded nscpIPv6} -body {
+    set r [nscpListenerCase {127.0.0.1 127.0.0.1 ::1 0:0:0:0:0:0:0:1} {127.0.0.1 ::1}]
+    dict get $r listenerCount
+} -result 2
+
+test nscp-5.4 {malformed Tcl address list fails without starting listeners} -constraints nscpLoaded -body {
+    nscpListenerCase \{ {} 0 {nonempty Tcl list}
+} -result rejected
+
+test nscp-5.5 {empty address list fails without wildcard fallback} -constraints nscpLoaded -body {
+    nscpListenerCase {} {} 0 {nonempty Tcl list}
+} -result rejected
+
+test nscp-5.6 {one unavailable resolved family does not prevent the other listener} -constraints {nscpLoaded nscpIPv6} -setup {
+    set occupied [ns_connchan listen -bind ::1 0 {apply {{channel} {return 0}}}]
+    set port [dict get $occupied port]
+} -body {
+    set r [nscpListenerCase localhost 127.0.0.1 $port]
+    dict get $r listenerCount
+} -cleanup {ns_connchan close [dict get $occupied channel]} -result 1
+
+test nscp-5.7 {single unavailable listener still fails startup} -constraints nscpLoaded -setup {
+    set occupied [ns_connchan listen -bind 127.0.0.1 0 {apply {{channel} {return 0}}}]
+    set port [dict get $occupied port]
+} -body {
+    nscpListenerCase 127.0.0.1 {} $port {no listening address is available}
+} -cleanup {ns_connchan close [dict get $occupied channel]} -result rejected
+
+rename nscpListenerCase {}
+unset nscpV6
+
 rename nscpWrite {}
 rename nscpReadUntil {}
 rename nscpOpenTestConnection {}

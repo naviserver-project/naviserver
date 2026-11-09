@@ -28,7 +28,6 @@ typedef struct Mod {
     Tcl_HashTable users;
     const char *server;
     const Ns_Server *servPtr;
-    const char *addr;
     unsigned short port;
     bool echo;
     bool commandLogging;
@@ -36,7 +35,13 @@ typedef struct Mod {
 } Mod;
 
 static Ns_ThreadProc EvalThread;
-static Mod          *modPtr = NULL;
+#define NSCP_MAX_LISTEN_ADDRESSES 64
+
+typedef struct Listener {
+    Mod *modPtr;
+    char *addr;
+    unsigned short port;
+} Listener;
 
 /*
  * The following structure is allocated for each session.
@@ -63,6 +68,10 @@ static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool
     NS_GNUC_NONNULL(2,3);
 static void LoadUsers(Mod *localModPtr, const char *server, const char *module)
     NS_GNUC_NONNULL(1,3);
+static bool ResolveHost(Tcl_DString *dsPtr, const char *host)
+    NS_GNUC_NONNULL(1,2);
+static Ns_ReturnCode ResolveAddresses(const char *value, Tcl_DString *addressesPtr)
+    NS_GNUC_NONNULL(1,2);
 static Ns_ArgProc ArgProc;
 static Ns_TclTraceProc NscpAddCmds;
 static TCL_OBJCMDPROC_T NsTclNscpObjCmd;
@@ -211,6 +220,152 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
 /*
  *----------------------------------------------------------------------
  *
+ * ResolveHost --
+ *
+ *      Resolve a listening hostname to numeric IP addresses. When
+ *      getaddrinfo() is available, omit outbound AI_ADDRCONFIG filtering:
+ *      containers can support ::1 without a non-loopback IPv6 interface.
+ *
+ * Results:
+ *      NS_TRUE if at least one supported address was found, NS_FALSE
+ *      otherwise.
+ *
+ * Side effects:
+ *      Appends addresses as Tcl list elements to dsPtr. May perform name
+ *      service lookups and log resolution errors.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+ResolveHost(Tcl_DString *dsPtr, const char *host)
+{
+#ifdef HAVE_GETADDRINFO
+    struct addrinfo hints, *addresses = NULL;
+    const struct addrinfo *entry;
+    int status;
+    bool found = NS_FALSE;
+
+    memset(&hints, 0, sizeof(hints));
+#ifdef HAVE_IPV6
+    hints.ai_family = AF_UNSPEC;
+#else
+    hints.ai_family = AF_INET;
+#endif
+    hints.ai_socktype = SOCK_STREAM;
+    status = getaddrinfo(host, NULL, &hints, &addresses);
+    if (status != 0) {
+        Ns_Log(Error, "nscp: could not resolve listening address '%s': %s", host, gai_strerror(status));
+    } else {
+        for (entry = addresses; entry != NULL; entry = entry->ai_next) {
+            char ip[NS_IPADDR_SIZE];
+
+            if (entry->ai_family != AF_INET
+#ifdef HAVE_IPV6
+                && entry->ai_family != AF_INET6
+#endif
+                ) {continue;}
+            if (ns_inet_ntop(entry->ai_addr, ip, sizeof(ip)) != NULL) {
+                Tcl_DStringAppendElement(dsPtr, ip);
+                found = NS_TRUE;
+            }
+        }
+        freeaddrinfo(addresses);
+    }
+    return found;
+#else
+    return Ns_GetAllAddrByHost(dsPtr, host);
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ResolveAddresses --
+ *
+ *      Resolve a nonempty Tcl list of listening addresses and hostnames
+ *      before opening any listener. Normalize numeric addresses and remove
+ *      duplicates, enforcing NSCP_MAX_LISTEN_ADDRESSES.
+ *
+ * Results:
+ *      NS_OK on success, NS_ERROR for an invalid list, failed resolution,
+ *      invalid resolved address, or too many distinct addresses.
+ *
+ * Side effects:
+ *      Appends unique numeric addresses as Tcl list elements to
+ *      addressesPtr, which may contain partial results on error. May
+ *      perform name service lookups and log configuration errors.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ResolveAddresses(const char *value, Tcl_DString *addressesPtr)
+{
+    const char   **hosts = NULL;
+    TCL_SIZE_T     count, i;
+    Tcl_HashTable  seen;
+    Ns_ReturnCode  result = NS_OK;
+
+    if (Tcl_SplitList(NULL, value, &count, &hosts) != TCL_OK || count < 1) {
+        Ns_Log(Error, "nscp: address must be a nonempty Tcl list: '%s'", value);
+        if (hosts != NULL) {Tcl_Free((char *)hosts);}
+        return NS_ERROR;
+    }
+    Tcl_InitHashTable(&seen, TCL_STRING_KEYS);
+    for (i = 0; i < count && result == NS_OK; i++) {
+        struct NS_SOCKADDR_STORAGE sa;
+        Tcl_DString resolved;
+        const char **ips = NULL;
+        TCL_SIZE_T   nips, j;
+
+        Tcl_DStringInit(&resolved);
+        memset(&sa, 0, sizeof(sa));
+        if (ns_inet_pton((struct sockaddr *)&sa, hosts[i]) > 0) {
+            Tcl_DStringAppendElement(&resolved, hosts[i]);
+        } else if (!ResolveHost(&resolved, hosts[i])) {
+            Ns_Log(Error, "nscp: could not resolve listening address '%s'", hosts[i]);
+            result = NS_ERROR;
+        }
+        if (result == NS_OK) {
+            if (Tcl_SplitList(NULL, Tcl_DStringValue(&resolved), &nips, &ips) != TCL_OK || nips < 1) {
+                result = NS_ERROR;
+            } else {
+                for (j = 0; j < nips; j++) {
+                    char ip[NS_IPADDR_SIZE];
+                    int  isNew;
+
+                    memset(&sa, 0, sizeof(sa));
+                    if (ns_inet_pton((struct sockaddr *)&sa, ips[j]) <= 0
+                        || ns_inet_ntop((const struct sockaddr *)&sa, ip, sizeof(ip)) == NULL) {
+                        Ns_Log(Error, "nscp: invalid resolved address '%s'", ips[j]);
+                        result = NS_ERROR;
+                        break;
+                    }
+                    (void)Tcl_CreateHashEntry(&seen, ip, &isNew);
+                    if (isNew != 0) {
+                        if (seen.numEntries > NSCP_MAX_LISTEN_ADDRESSES) {
+                            Ns_Log(Error, "nscp: at most %d distinct listening addresses are supported",
+                                   NSCP_MAX_LISTEN_ADDRESSES);
+                            result = NS_ERROR;
+                            break;
+                        }
+                        Tcl_DStringAppendElement(addressesPtr, ip);
+                    }
+                }
+            }
+        }
+        if (ips != NULL) {Tcl_Free((char *)ips);}
+        Tcl_DStringFree(&resolved);
+    }
+    Tcl_DeleteHashTable(&seen);
+    Tcl_Free((char *)hosts);
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ModuleInit --
  *
  *      Load the config parameters, setup the structures, and
@@ -230,55 +385,89 @@ NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
     const char    *addr, *section;
+    const char   **addresses = NULL;
     unsigned short port;
-    Ns_ReturnCode  result;
-    NS_SOCKET      lsock;
+    Ns_ReturnCode  result = NS_ERROR;
+    Tcl_DString    resolved;
+    TCL_SIZE_T     count = 0, i;
+    size_t         listening = 0u;
+    Mod           *modPtr;
 
     NS_NONNULL_ASSERT(module != NULL);
 
-    /*
-     * Create the listening socket and callback.
-     */
     section = Ns_ConfigSectionPath(NULL, server, module, NS_SENTINEL);
     addr = Ns_ConfigString(section, "address", NS_IP_LOOPBACK);
     port = (unsigned short)Ns_ConfigInt(section, "port", 2080);
+    Tcl_DStringInit(&resolved);
+    if (ResolveAddresses(addr, &resolved) != NS_OK
+        || Tcl_SplitList(NULL, Tcl_DStringValue(&resolved), &count, &addresses) != TCL_OK) {
+        Tcl_DStringFree(&resolved);
+        return NS_ERROR;
+    }
 
-    lsock = Ns_SockListen(addr, port);
-    if (lsock == NS_INVALID_SOCKET) {
-        Ns_Log(Error, "nscp[%s]: could not listen on [%s]:%hu", server, addr, port);
-        result = NS_ERROR;
+    /* All listeners share this instance's users and authentication policy. */
+    modPtr = ns_malloc(sizeof(Mod));
+    modPtr->server = server;
+    modPtr->servPtr = Ns_GetServer(server);
+    modPtr->port = port;
+    modPtr->echo = Ns_ConfigBool(section, "echopasswd", NS_FALSE);
+    modPtr->commandLogging = Ns_ConfigBool(section, "cpcmdlogging", NS_FALSE);
+    modPtr->allowLoopbackEmptyUser = Ns_ConfigBool(section, "allowLoopbackEmptyUser", NS_FALSE);
+    LoadUsers(modPtr, server, module);
 
-    } else {
+    for (i = 0; i < count; i++) {
+        NS_SOCKET lsock = Ns_SockListen(addresses[i], modPtr->port);
+        Listener *listener;
 
-        Ns_Log(Notice, "nscp[%s]: listening on [%s]:%hu", server, addr, port);
-
-        /*
-         * Create a new Mod structure for this instance.
-         */
-        modPtr = ns_malloc(sizeof(Mod));
-        modPtr->server = server;
-        modPtr->servPtr = Ns_GetServer(server);
-        modPtr->addr = ns_strcopy(addr);
-        modPtr->port = port;
-        modPtr->echo = Ns_ConfigBool(section, "echopasswd", NS_FALSE);
-        modPtr->commandLogging = Ns_ConfigBool(section, "cpcmdlogging", NS_FALSE);
-        modPtr->allowLoopbackEmptyUser = Ns_ConfigBool(section, "allowLoopbackEmptyUser", NS_FALSE);
-
-        LoadUsers(modPtr, server, module);
-
-        result = Ns_SockCallback(lsock, AcceptProc, modPtr,
-                                 ((unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT));
-
-#ifndef PCLINT_BUG
-        if (result == NS_OK) {
-            Ns_RegisterProcInfo((ns_funcptr_t)AcceptProc, "nscp", ArgProc);
+        if (lsock == NS_INVALID_SOCKET) {
+            Ns_Log(Warning, "nscp[%s]: could not listen on [%s]:%hu; trying remaining addresses",
+                   server, addresses[i], modPtr->port);
+            continue;
         }
-#else
-        if (result == NS_OK) Ns_RegisterProcInfo((ns_funcptr_t)AcceptProc, "nscp", ArgProc);
-#endif
+        if (modPtr->port == 0u) {
+            struct NS_SOCKADDR_STORAGE sa;
+            socklen_t len = (socklen_t)sizeof(sa);
 
+            /* Port zero selects one ephemeral port shared by all addresses. */
+            if (getsockname(lsock, (struct sockaddr *)&sa, &len) != 0) {
+                (void)ns_sockclose(lsock);
+                continue;
+            }
+            modPtr->port = Ns_SockaddrGetPort((const struct sockaddr *)&sa);
+        }
+        listener = ns_malloc(sizeof(Listener));
+        listener->modPtr = modPtr;
+        listener->addr = ns_strdup(addresses[i]);
+        listener->port = modPtr->port;
+        if (Ns_SockCallback(lsock, AcceptProc, listener,
+                            ((unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT)) != NS_OK) {
+            (void)ns_sockclose(lsock);
+            ns_free(listener->addr);
+            ns_free(listener);
+            continue;
+        }
+        listening++;
+        Ns_Log(Notice, "nscp[%s]: listening on [%s]:%hu", server, addresses[i], modPtr->port);
+    }
+    Tcl_Free((char *)addresses);
+    Tcl_DStringFree(&resolved);
+
+    if (listening == 0u) {
+        Tcl_HashSearch search;
+        Tcl_HashEntry *entry;
+
+        Ns_Log(Error, "nscp[%s]: no listening address is available", server);
+        for (entry = Tcl_FirstHashEntry(&modPtr->users, &search); entry != NULL;
+             entry = Tcl_NextHashEntry(&search)) {
+            ns_free(Tcl_GetHashValue(entry));
+        }
+        Tcl_DeleteHashTable(&modPtr->users);
+        ns_free(modPtr);
+    } else {
+        Ns_RegisterProcInfo((ns_funcptr_t)AcceptProc, "nscp", ArgProc);
+        result = NS_OK;
         if (server != NULL) {
-            if (Ns_TclRegisterTrace(server, NscpAddCmds, server, NS_TCL_TRACE_CREATE) != NS_OK) {
+            if (Ns_TclRegisterTrace(server, NscpAddCmds, modPtr, NS_TCL_TRACE_CREATE) != NS_OK) {
                 result = NS_ERROR;
             } else {
                 Ns_RegisterProcInfo((ns_funcptr_t)NscpAddCmds, "nscp:initinterp", NULL);
@@ -309,13 +498,14 @@ Ns_ModuleInit(const char *server, const char *module)
  */
 
 static void
-ArgProc(Tcl_DString *dsPtr, const void *UNUSED(arg))
+ArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    /*const Mod *modPtr = arg;*/
-    assert(modPtr != NULL);
+    const Listener *listener = arg;
 
+    assert(listener != NULL);
     Tcl_DStringStartSublist(dsPtr);
-    Ns_DStringPrintf(dsPtr, "%s %d", modPtr->addr, modPtr->port);
+    Tcl_DStringAppendElement(dsPtr, listener->addr);
+    Ns_DStringPrintf(dsPtr, " %hu", listener->port);
     Tcl_DStringEndSublist(dsPtr);
 }
 
@@ -337,17 +527,20 @@ ArgProc(Tcl_DString *dsPtr, const void *UNUSED(arg))
  */
 
 static bool
-AcceptProc(NS_SOCKET sock, void *UNUSED(arg), unsigned int why)
+AcceptProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
-    bool success = NS_TRUE;
+    Listener *listener = arg;
+    Mod      *modPtr = listener->modPtr;
+    bool      success = NS_TRUE;
 
     if (why == (unsigned int)NS_SOCK_EXIT) {
         Ns_Log(Notice, "nscp: shutdown");
         (void )ns_sockclose(sock);
+        /* Keep startup metadata valid for concurrent callback introspection
+         * during shutdown, just like the shared module/user configuration. */
         success = NS_FALSE;
 
     } else {
-        /*Mod       *modPtr = arg;*/
         Sess      *sessPtr;
         socklen_t  len;
 
@@ -367,7 +560,9 @@ AcceptProc(NS_SOCKET sock, void *UNUSED(arg), unsigned int why)
         } else {
             static int next = 0;
 
+            Ns_MasterLock();
             sessPtr->id = ++next;
+            Ns_MasterUnlock();
             Ns_ThreadCreate(EvalThread, sessPtr, 0, NULL);
         }
     }
@@ -872,11 +1067,9 @@ ExitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *
  */
 
 static int
-NscpAddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
+NscpAddCmds(Tcl_Interp *interp, const void *arg)
 {
-    /*const char *server = arg;*/
-
-    (void)TCL_CREATEOBJCOMMAND(interp, "nscp", NsTclNscpObjCmd, NULL, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "nscp", NsTclNscpObjCmd, (ClientData)arg, NULL);
 
     return TCL_OK;
 }
@@ -896,8 +1089,9 @@ NscpAddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
  *----------------------------------------------------------------------
  */
 static int
-NscpUsersObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+NscpUsersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
+    Mod *modPtr = clientData;
     int result = TCL_OK;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
