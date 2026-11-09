@@ -1645,7 +1645,7 @@ WithHandle(InterpData *idataPtr, Tcl_Interp *interp, TCL_SIZE_T objc,
     char *pool = NULL, *borrowed = NULL;
     Tcl_Obj *timeoutObj = NULL, *varObj = NULL, *scriptObj = NULL;
     Tcl_Obj *handleObj, *oldObj;
-    Ns_DbHandle *handlePtr;
+    Ns_DbHandle *handlePtr = NULL;
     Tcl_HashEntry *entryPtr;
     Tcl_InterpState state;
     int result, restoreResult = TCL_OK;
@@ -1714,7 +1714,10 @@ WithHandle(InterpData *idataPtr, Tcl_Interp *interp, TCL_SIZE_T objc,
             return TCL_ERROR;
         }
         Tcl_IncrRefCount(handleObj);
-        (void) DbGetHandle(idataPtr, interp, Tcl_GetString(handleObj), &handlePtr, NULL);
+        if (DbGetHandle(idataPtr, interp, Tcl_GetString(handleObj), &handlePtr, NULL) != TCL_OK) {
+            Tcl_DecrRefCount(handleObj);
+            return TCL_ERROR;
+        }
     }
 
     oldObj = Tcl_ObjGetVar2(interp, varObj, NULL, 0);
