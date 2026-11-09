@@ -302,6 +302,10 @@ set statsTestCode [catch {
         ns_stats history disable x
     } -returnCodes error -result {wrong # args: should be "ns_stats history disable"}
 
+    test stats-storage-stalls-syntax {syntax: ns_stats storage stalls} -constraints ns_stats -body {
+        ns_stats storage stalls x
+    } -returnCodes error -result {invalid argument 'x', maybe too many arguments; should be "ns_stats storage stalls ?-server /value/? ?-limit /integer/?"}
+
     test stats-history-storage-syntax {syntax: ns_stats history storage} -constraints ns_stats -body {
         ns_stats history storage x
     } -returnCodes error -result {wrong # args: should be "ns_stats history storage"}
