@@ -264,6 +264,7 @@
 [uri ../../nsdb/files/ns_db.html {ns_db sp_setparam}] /handle/ /paramname/ /type/ in|out /value/
 [uri ../../nsdb/files/ns_db.html {ns_db sp_start}] /handle/ /procname/
 [uri ../../nsdb/files/ns_db.html {ns_db user}] /handle/
+[uri ../../nsdb/files/ns_db.html {ns_db withhandle}] ?-pool /value/? ?-handle /value/? ?-timeout /value/? ?--? /handleVar/ /script/
 [uri ../../nsdb/files/ns_db.html {ns_dbconfigpath}]
 [uri ../../nsdb/files/ns_db.html {ns_dberrorcode}] /handle/
 [uri ../../nsdb/files/ns_db.html {ns_dberrormsg}] /handle/
@@ -658,6 +659,7 @@
 [uri ../../naviserver/files/ns_stats.html {ns_stats sampling status}]
 [uri ../../naviserver/files/ns_stats.html {ns_stats sampling stop}]
 [uri ../../naviserver/files/ns_stats.html {ns_stats snapshot}] ?-server /value/?
+[uri ../../naviserver/files/ns_stats.html {ns_stats storage stalls}] ?-server /value/? ?-limit /integer/?
 [uri ../../naviserver/files/ns_strcoll.html {ns_strcoll}] ?-locale /value/? ?--? /string1/ /string2/
 [uri ../../naviserver/files/textutil-cmds.html {ns_striphtml}] /html/
 [uri ../../naviserver/files/ns_symlink.html {ns_symlink}] ?-nocomplain? ?--? /filename1/ /filename2/
