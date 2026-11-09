@@ -28,8 +28,12 @@
 #
 #
 #
-MAN_CSS=man.css
-HEADER_INC=header.inc
+# Select documentation assets from the configured checkout version.
+DOC_VERSION_FILE  ?= ./version_include.man
+DOC_VERSION       := $(shell sed -n 's/^\[vset version \([^]]*\)\]/\1/p' $(DOC_VERSION_FILE))
+DOC_VERSION_MINOR := $(shell printf '%s\n' '$(DOC_VERSION)' | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/')
+MAN_CSS ?= man-$(DOC_VERSION_MINOR).css
+HEADER_INC ?= header-$(DOC_VERSION_MINOR).inc
 
 NSBUILD=1
 include include/Makefile.global
@@ -157,17 +161,12 @@ install-examples:
 	done
 
 
-# On some systems you may need a special shell script to control the
-# PATH seen by dtplite, as that influences which versions of tclsh and
-# Tcllib dtplite uses.  I personally found it necessary to use a
-# one-line script like this for the DTPLITE command:
-#   env PATH=/usr/sbin:/usr/bin:/sbin:/bin dtplite "$@"
-# --atp@piskorski.com, 2014/08/27 10:52 EDT
-
-ifeq ($(DTPLITE),)
-  DTPLITE=dtplite
-else
-  # Do nothing, use the environment variable as is.
+# Run Tcllib with the configured interpreter, independent of PATH's tclsh
+# and dtplite executables. Keep DTPLITE available as an explicit override.
+# This branch records Tcl's installation prefix rather than TCLSH_PROG.
+TCLSH_PROG ?= $(TCL_EXEC_PREFIX)/bin/tclsh
+ifeq ($(strip $(DTPLITE)),)
+  DTPLITE = $(TCLSH_PROG) "$(CURDIR)/doc/tools/dtplite.tcl"
 endif
 
 build-doc:
@@ -219,9 +218,6 @@ build-doc:
 # Local copy of Source Forge Documentation
 #
 SF_HTDOCS         ?= /usr/local/ns/sf-naviserver-htdocs
-DOC_VERSION_FILE  ?= ./version_include.man
-DOC_VERSION       := $(shell sed -n 's/^\[vset version \([^]]*\)\]/\1/p' $(DOC_VERSION_FILE))
-DOC_VERSION_MINOR := $(shell printf '%s\n' '$(DOC_VERSION)' | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/')
 LN ?= ln
 
 install-sf-doc:

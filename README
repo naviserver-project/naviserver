@@ -151,7 +151,12 @@ macOS 10.2+ and Windows. To compile and install:
 
     You will need recent versions of autoconf and automake installed.
     You will need 'dtplite' which is part of 'tcllib' installed if you
-    want to build the documentation.
+    want to build the documentation. Install Tcllib alongside the Tcl
+    installation selected at configure time. "make build-doc" uses its
+    interpreter (TCLSH_PROG, defaulting to TCL_EXEC_PREFIX/bin/tclsh), so
+    PATH and TCLLIBPATH overrides are not needed. The header and CSS are
+    selected from version_include.man (e.g., 4.99.34 selects header-4.99.inc
+    and man-4.99.css). DTPLITE, HEADER_INC and MAN_CSS can still be overridden.
 
     Checkouts from the source code repository have to generate
     the documentation from the sources as well via "make build-doc",
