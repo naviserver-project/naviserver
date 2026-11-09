@@ -195,7 +195,13 @@ su -c 'make install'
 
 Building from GitHub sources requires recent versions of `autoconf` and
 `automake`. For generating the documentation, the `dtplite` package from
-`tcllib` is required.
+`tcllib` is required in the package search path of the Tcl interpreter selected
+at configure time. `make build-doc` uses that interpreter (`TCLSH_PROG`) to run
+`dtplite`, so no `PATH` or `TCLLIBPATH` overrides are needed when Tcllib is
+installed alongside it. The header and CSS are selected automatically from
+`version_include.man` (for example, version `5.0.0` selects `header-5.0.inc`
+and `man-5.0.css`). Explicit `DTPLITE`, `HEADER_INC`, and `MAN_CSS` make
+settings remain supported.
 
 > **Tip:** Use `make build-doc` to generate documentation; otherwise,
 > `make install` may complain when generated documentation files are missing.
