@@ -7079,6 +7079,20 @@ SockParse(Sock *sockPtr)
         }
 
         /*
+         * Ignore leading empty lines while expecting a request line (RFC
+         * 9112, section 2.2). Bound them to 16 bytes (eight CRLFs). roff
+         * persists across reads, so splitting the input cannot reset the
+         * limit. Bare LF is accepted like other line terminators here.
+         * Once a request line exists, an empty line ends the headers.
+         */
+        if (unlikely(e == s) && reqPtr->request.line == NULL) {
+            if (reqPtr->roff > 16u) {
+                return SOCK_BADREQUEST;
+            }
+            continue;
+        }
+
+        /*
          * Check for end of headers in case we have not done it yet.
          */
         if (unlikely(e == s) && (reqPtr->coff == 0u)) {

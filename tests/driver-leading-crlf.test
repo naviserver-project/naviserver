@@ -1,0 +1,146 @@
+# -*- Tcl -*-
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure {*}$argv
+testConstraint serverListen [expr {[ns_config test listenport] ne ""}]
+
+namespace eval ::leadingCRLF {
+    variable request "GET /__leading_crlf HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+}
+
+proc ::leadingCRLF::setup {} {
+    ns_register_proc GET /__leading_crlf {ns_return 200 text/plain OK}
+    ns_register_proc POST /__leading_crlf {ns_return 200 text/plain [ns_conn content]}
+}
+proc ::leadingCRLF::cleanup {} {
+    ns_unregister_op GET /__leading_crlf
+    ns_unregister_op POST /__leading_crlf
+}
+proc ::leadingCRLF::connect {} {
+    ns_connchan connect -timeout 2 [ns_config test loopback] [ns_config test listenport]
+}
+proc ::leadingCRLF::write {chan data} {
+    set n [ns_connchan write $chan $data]
+    if {$n != [string length $data]} {error "short write: $n"}
+}
+proc ::leadingCRLF::response {chan} {
+    set data ""
+    set end [expr {[clock milliseconds] + 5000}]
+    while {1} {
+        if {[clock milliseconds] > $end} {error "incomplete response: $data"}
+        append data [ns_connchan read $chan]
+        set boundary [string first "\r\n\r\n" $data]
+        if {$boundary < 0} continue
+        set headers [string range $data 0 [expr {$boundary-1}]]
+        regexp {^HTTP/1\.[01] ([0-9]+)} $headers -> status
+        # Driver-generated errors can omit Content-Length.
+        if {$status == 400} {return [list $status {}]}
+        if {![regexp -nocase {\r\ncontent-length: *([0-9]+)} $headers -> length]} {
+            error "missing Content-Length: $headers"
+        }
+        set body [string range $data [expr {$boundary+4}] end]
+        if {[string length $body] >= $length} {
+            if {[string length $body] != $length} {error "unexpected trailing response bytes"}
+            return [list $status $body]
+        }
+    }
+}
+proc ::leadingCRLF::exchange {parts} {
+    set chan [connect]
+    try {
+        set index 0
+        foreach part $parts {
+            write $chan $part
+            # Exercise parser state across writes, including an incomplete CRLF.
+            if {[incr index] < [llength $parts]} {ns_sleep 0.1}
+        }
+        response $chan
+    } finally {
+        ns_connchan close $chan
+    }
+}
+
+foreach {suffix description prefix} {
+    1 {no leading blank line} {}
+    2 {one leading CRLF} {\r\n}
+    3 {eight CRLFs at the limit} {\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n}
+    4 {sixteen LFs at the limit} {\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n}
+} {
+    test driver-leading-crlf-1.$suffix $description -constraints serverListen \
+        -setup {::leadingCRLF::setup} -body {
+            ::leadingCRLF::exchange [list [subst -nocommands -novariables $prefix]$::leadingCRLF::request]
+        } -cleanup {::leadingCRLF::cleanup} -result {200 OK}
+}
+
+test driver-leading-crlf-2.1 {CRLF split across reads; exact limit followed by GET} \
+    -constraints serverListen -setup {::leadingCRLF::setup} -body {
+        ::leadingCRLF::exchange [list "\r" "\n" [string repeat "\r\n" 7] $::leadingCRLF::request]
+    } -cleanup {::leadingCRLF::cleanup} -result {200 OK}
+
+foreach {suffix prefix} [list 1 [string repeat "\r\n" 9] 2 [string repeat "\n" 17]] {
+    test driver-leading-crlf-3.$suffix {excess leading bytes rejected without waiting for GET} \
+        -constraints serverListen -body {
+            ::leadingCRLF::exchange [list $prefix]
+        } -result {400 {}}
+}
+
+test driver-leading-crlf-3.3 {limit persists across reads} -constraints serverListen -body {
+    ::leadingCRLF::exchange [list [string repeat "\r\n" 8] "\r\n"]
+} -result {400 {}}
+
+test driver-leading-crlf-4.1 {header terminator and CRLF in request body unchanged} \
+    -constraints serverListen -setup {::leadingCRLF::setup} -body {
+        ::leadingCRLF::exchange [list "POST /__leading_crlf HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\nConnection: close\r\n\r\n\r\nXY"]
+    } -cleanup {::leadingCRLF::cleanup} -result [list 200 "\r\nXY"]
+
+test driver-leading-crlf-4.2 {fresh limit after keep-alive response and trailing CRLF} \
+    -constraints serverListen -setup {::leadingCRLF::setup} -body {
+        set chan [::leadingCRLF::connect]
+        try {
+            set keep [string map {close keep-alive} $::leadingCRLF::request]
+            ::leadingCRLF::write $chan [string repeat "\r\n" 8]$keep
+            set first [::leadingCRLF::response $chan]
+            ::leadingCRLF::write $chan "\r\n"
+            ns_sleep 0.1
+            ::leadingCRLF::write $chan [string repeat "\r\n" 7]$::leadingCRLF::request
+            list $first [::leadingCRLF::response $chan]
+        } finally {
+            ns_connchan close $chan
+        }
+    } -cleanup {::leadingCRLF::cleanup} -result {{200 OK} {200 OK}}
+
+test driver-leading-crlf-5.1 {excess prefix still produces one combined diagnostic per rejection} \
+    -constraints serverListen -setup {
+        set warningEnabled [ns_logctl severity Warning]
+        ns_logctl severity Warning on
+        nsv_set leading-crlf warnings {}
+        set filter [ns_logctl register {apply {{severity timestamp message} {
+            if {$severity eq "Warning" && [string first {invalid request: 400} $message] >= 0} {
+                nsv_lappend leading-crlf warnings $message
+            }
+        }}}]
+    } -body {
+        set replies {}
+        for {set i 0} {$i < 2} {incr i} {
+            lappend replies [::leadingCRLF::exchange [list [string repeat "\n" 17]]]
+        }
+        set end [expr {[clock milliseconds]+2000}]
+        while {[llength [nsv_get leading-crlf warnings]] < 2 && [clock milliseconds] < $end} {
+            ns_sleep 0.01
+        }
+        set warnings [nsv_get leading-crlf warnings]
+        set combined [expr {[llength $warnings] == 2}]
+        foreach message $warnings {
+            if {[string first {request '' offsets:} $message] < 0
+                || [string first {; REQ BUFFER: } $message] < 0
+                || [string first {\x0a\x0a} $message] < 0} {set combined 0}
+        }
+        list $replies $combined
+    } -cleanup {
+        ns_logctl unregister $filter
+        ns_logctl severity Warning $warningEnabled
+        nsv_unset -nocomplain leading-crlf
+    } -result {{{400 {}} {400 {}}} 1}
+
+namespace delete ::leadingCRLF
+cleanupTests
