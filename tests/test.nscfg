@@ -603,6 +603,12 @@ foreach mode {text typed both} {
 }
 ns_set update [ns_configsection ns/server/test/db] pools a,b,bind_text,bind_typed,bind_both
 
+# Storage-stall regression tests temporarily adjust these bounded buffer limits.
+ns_section ns/stats {
+    ns_param storageStallMaxRecords 128
+    ns_param storageStallRetention 1h
+}
+
 #
 # Optional ns_stats history tests use the installed native SQLite driver.
 # NAVISERVER is the installation prefix already selected by make. Without

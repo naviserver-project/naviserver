@@ -137,6 +137,35 @@ shorter than the configured limit after startup, gaps or eviction.
 Stops scheduled collection and retains the last sample, which remains readable
 with running false and increasing age.
 
+[call [cmd "ns_stats storage stalls"] \
+    [opt "[option -server] [arg value]"] \
+    [opt "[option -limit] [arg integer]"]]
+
+Returns compact, sparse storage observations from the background sampler, oldest
+first. Does not probe devices, scan logs, issue SQL or change the sampler baseline.
+The default limit is 128 (1..10000). The result contains [const records],
+[const omittedRecords] (older retained records excluded by the requested limit),
+[const retentionSeconds], [const maxRecords] and [const source] background-sampler.
+The buffer is bounded, not a complete incident log; age/count eviction is independent
+of SQLite history. Settings in [const ns/stats] are [const storageStallThresholdMs]
+(default 20), [const storageStallRetention] (default 1h), and
+[const storageStallMaxRecords] (default 128).
+
+Each record identifies interval bounds in epoch seconds, an epoch-microsecond
+[const timestamp], sampler [const instance], [const device], [const operation],
+completed [const operations], [const operationsPerSecond] and mean [const latencyMs].
+When available it includes device-wide [const averageQueueDepth],
+[const utilizationPercent], endpoint [const inFlight] and [const writeQueue].
+[const requestQueues] maps server/pool names to endpoint waiting-request gauges;
+[option -server] restricts this context, not host-wide disk observations.
+Missing metrics are omitted. Queue depth includes service as well as waiting,
+stacked devices must not be summed, and correlation does not establish causation.
+These are interval means, not individual I/O traces or maxima. SQL statements,
+slow-SQL events, file paths and peer identities are not collected.
+First, idle, reset and missing baselines do not produce records; intervals exceeding
+1.5 times the sampling cadence are excluded. The buffer survives sampler stop/start
+and Tcl reload, but not process restart. Start sampling to enable recording.
+
 [call [cmd "ns_stats sampling history"] \
     [option -from] [arg integer] \
     [option -to] [arg integer] \

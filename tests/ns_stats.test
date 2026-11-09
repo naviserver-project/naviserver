@@ -1129,6 +1129,109 @@ set statsTestCode [catch {
         list $values [catch {ns_stats history configure -pool ns_stats_test -synchronous OFF}]
     } -cleanup {::ns_stats_test::stop} -result {{wal 1 wal 1} 1}
 
+# Storage records are sampler-owned, sparse and independent of the SQLite writer.
+proc ::ns_stats_test::storageFixture {} {
+    set now [clock microseconds]
+    return [dict create timestamp $now instance storage-test \
+        sampling [dict create ready true elapsedSeconds 10 intervalSeconds 10 from [expr {$now/1000000.0-10}] to [expr {$now/1000000.0}]] \
+        servers {test {pools {default {gauges {waitingRequests 3}}}} other {pools {default {gauges {waitingRequests 7}}}}} \
+        linuxNetwork {disks {sda {reads 1 readMs 500 writes 0 writeMs 0 weightedIoMs 10000 ioMs 1000 inFlight 2 writeQueue 1}}} \
+        previousLinuxNetwork {disks {sda {reads 0 readMs 0 writes 0 writeMs 0 weightedIoMs 0 ioMs 0}}}]
+}
+
+test stats-storage-record {compact record fields and endpoint request context} -constraints ns_stats -body {
+    set records [::ns::stats::storageStallRecords [::ns_stats_test::storageFixture] 20]
+    set r [lindex $records 0]
+    list [llength $records] [dict get $r device] [dict get $r operation] \
+        [dict get $r operations] [dict get $r latencyMs] [dict get $r averageQueueDepth] \
+        [dict get $r utilizationPercent] [dict get $r requestQueues test default]
+} -result {1 sda read 1 500.0 1.0 10.0 3}
+
+test stats-storage-invalid {first idle reset gapped and missing samples produce no records} -constraints ns_stats -body {
+    set result {}
+    foreach mode {first idle reset gap missing} {
+        set r [::ns_stats_test::storageFixture]
+        switch $mode {
+            first {dict set r sampling ready false}
+            idle {dict set r linuxNetwork disks sda reads 0}
+            reset {dict set r linuxNetwork disks sda readMs -1}
+            gap {dict set r sampling elapsedSeconds 30}
+            missing {dict set r previousLinuxNetwork disks {}}
+        }
+        lappend result [::ns::stats::storageStallRecords $r 20]
+    }
+    set result
+} -result {{} {} {} {} {}}
+
+test stats-storage-buffer {bounded read-only storage buffer scopes server context} -constraints ns_stats -setup {
+    set section [ns_configsection ns/stats]
+    set saved [ns_set array $section]
+    set had [nsv_exists ns_stats storageStalls]
+    if {$had} {set buffer [nsv_get ns_stats storageStalls]}
+    nsv_set ns_stats storageStalls {}
+    ns_set update $section storageStallMaxRecords 2
+    ns_set update $section storageStallRetention 1h
+} -body {
+    set r [::ns_stats_test::storageFixture]
+    dict set r storageStalls [::ns::stats::storageStallRecords $r 20]
+    foreach n {1 2 3} {
+        dict set r storageStalls [list [dict replace [lindex [dict get $r storageStalls] 0] operations $n]]
+        ns_stats eval [list :retainStorageStalls $r]
+    }
+    set first [ns_stats storage stalls -server test -limit 1]
+    set again [ns_stats storage stalls -server test -limit 1]
+    set row [lindex [dict get $first records] 0]
+    list [llength [nsv_get ns_stats storageStalls]] [dict get $first omittedRecords] \
+        [dict get $row operations] [dict keys [dict get $row requestQueues]] \
+        [expr {$first eq $again}] [catch {ns_stats storage stalls -limit 0}]
+} -cleanup {
+    ns_set truncate $section 0
+    foreach {key value} $saved {ns_set put $section $key $value}
+    if {$had} {nsv_set ns_stats storageStalls $buffer} else {nsv_unset -nocomplain ns_stats storageStalls}
+} -result {2 1 3 test 1 1}
+
+test stats-storage-age {expired records are omitted without mutating retained state} -constraints ns_stats -body {
+    set had [nsv_exists ns_stats storageStalls]
+    if {$had} {set saved [nsv_get ns_stats storageStalls]}
+    try {
+        set record [lindex [::ns::stats::storageStallRecords [::ns_stats_test::storageFixture] 20] 0]
+        dict set record timestamp [expr {[clock microseconds]-90000000000}]
+        nsv_set ns_stats storageStalls [list $record]
+        list [dict get [ns_stats storage stalls] records] [llength [nsv_get ns_stats storageStalls]]
+    } finally {
+        if {$had} {nsv_set ns_stats storageStalls $saved} else {nsv_unset -nocomplain ns_stats storageStalls}
+    }
+} -result {{} 1}
+
+ test stats-storage-tick {background tick records once and Tcl reload preserves the buffer} -constraints ns_stats -setup {
+    ::ns_stats_test::windowSamples
+    ns_stats sampling stop
+    nsv_set ns_stats storageStalls {}
+    ns_stats sampling start -interval 10
+} -body {
+    set now [clock microseconds]
+    set raw [dict create timestamp $now process {pid 1 bootTime 1} \
+        servers {test {pools {default {counters {requests 1 runtime 0} gauges {waitingRequests 2}}}}} \
+        drivers {} cpu {} availability {cpu true} \
+        linuxNetwork {disks {sda {reads 0 readMs 0 writes 0 writeMs 0 weightedIoMs 0}}}]
+    nsv_set ns_stats_test_window current $raw
+    ns_stats sampling tick
+    set first [llength [nsv_get ns_stats storageStalls]]
+    dict incr raw timestamp 10000000
+    dict set raw linuxNetwork disks sda {reads 1 readMs 500 writes 0 writeMs 0 weightedIoMs 500}
+    nsv_set ns_stats_test_window current $raw
+    ns_stats sampling tick
+    set before [ns_stats storage stalls -server test]
+    set scoped [ns_stats sample -server test]
+    source $::ns_stats_test::source
+    set after [ns_stats storage stalls -server test]
+    list $first [llength [dict get $before records]] [expr {$before eq $after}] \
+        [dict keys [dict get [lindex [dict get $scoped storageStalls] 0] requestQueues]]
+} -cleanup {
+    ::ns_stats_test::stop
+    ::ns_stats_test::windowCleanup
+} -result {0 1 1 test}
+
 } statsTestResult statsTestOptions]
 
 if {[testConstraint ns_stats]} {
@@ -1223,6 +1326,8 @@ if {[testConstraint ns_stats]} {
     ::cpuCapacityFixture destroy
     rename ::capacityFiles {}
 }
+
+
 
 
 cleanupTests

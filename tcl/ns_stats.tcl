@@ -319,7 +319,8 @@ proc ::ns::stats::linuxDiskSnapshot {} {
         }
         if {!$valid} {continue}
         set disk [dict create reads [lindex $fields 0] readMs [lindex $fields 3] \
-                      writes [lindex $fields 4] writeMs [lindex $fields 7]]
+                      writes [lindex $fields 4] writeMs [lindex $fields 7] \
+                      inFlight [lindex $fields 8] ioMs [lindex $fields 9] weightedIoMs [lindex $fields 10]]
         set inflight [regexp -all -inline {\S+} [::ns::stats::linuxReadFile $path/inflight]]
         if {[llength $inflight] == 2 && [string is entier -strict [lindex $inflight 1]]
             && [lindex $inflight 1] >= 0} {
@@ -328,6 +329,56 @@ proc ::ns::stats::linuxDiskSnapshot {} {
         dict set disks $name $disk
     }
     return $disks
+}
+
+# Sparse, operation-weighted storage evidence from one valid sampler interval.
+# Queue depth is device-wide, not attributable to a particular operation/server.
+proc ::ns::stats::storageStallRecords {sample threshold} {
+    set result {}
+    if {![dict get $sample sampling ready]} {return $result}
+    set elapsed [dict get $sample sampling elapsedSeconds]
+    if {$elapsed<=0 || $elapsed>1.5*[dict get $sample sampling intervalSeconds]
+        || ![dict exists $sample linuxNetwork disks]
+        || ![dict exists $sample previousLinuxNetwork disks]} {return $result}
+    set queues {}
+    dict for {server entry} [dict get $sample servers] {
+        dict for {pool data} [dict get $entry pools] {
+            if {[dict exists $data gauges waitingRequests]} {
+                dict set queues $server $pool [dict get $data gauges waitingRequests]
+            }
+        }
+    }
+    dict for {device disk} [dict get $sample linuxNetwork disks] {
+        if {![dict exists $sample previousLinuxNetwork disks $device]} {continue}
+        set old [dict get $sample previousLinuxNetwork disks $device]
+        set valid true
+        foreach key {reads readMs writes writeMs} {
+            if {![dict exists $disk $key] || ![dict exists $old $key]
+                || [dict get $disk $key]<[dict get $old $key]} {set valid false;break}
+        }
+        if {!$valid} {continue}
+        foreach {operation count ticks} {read reads readMs write writes writeMs} {
+            set n [expr {[dict get $disk $count]-[dict get $old $count]}]
+            set ms [expr {[dict get $disk $ticks]-[dict get $old $ticks]}]
+            if {$n<=0 || double($ms)/$n<$threshold} {continue}
+            set record [dict create timestamp [dict get $sample timestamp] instance [dict get $sample instance] \
+                from [dict get $sample sampling from] to [dict get $sample sampling to] \
+                elapsedSeconds $elapsed device $device operation $operation \
+                operations $n operationsPerSecond [expr {double($n)/$elapsed}] \
+                latencyMs [expr {double($ms)/$n}] requestQueues $queues]
+            foreach key {inFlight writeQueue} {
+                if {[dict exists $disk $key]} {dict set record $key [dict get $disk $key]}
+            }
+            foreach {counter metric divisor} {weightedIoMs averageQueueDepth 1000.0 ioMs utilizationPercent 10.0} {
+                if {[dict exists $disk $counter] && [dict exists $old $counter]
+                    && [dict get $disk $counter]>=[dict get $old $counter]} {
+                    dict set record $metric [expr {([dict get $disk $counter]-[dict get $old $counter])/($elapsed*$divisor)}]
+                }
+            }
+            lappend result $record
+        }
+    }
+    return $result
 }
 
 proc ::ns::stats::linuxNetworkSnapshot {} {
@@ -659,6 +710,18 @@ proc ::ns::stats::defineClass {name args} {
                 dict set selected $server [dict get $record servers $server]
             }
             dict set record servers $selected
+            if {[dict exists $record storageStalls]} {
+                set stalls {}
+                foreach stall [dict get $record storageStalls] {
+                    set queues {}
+                    if {[dict exists $stall requestQueues $server]} {
+                        dict set queues $server [dict get $stall requestQueues $server]
+                    }
+                    dict set stall requestQueues $queues
+                    lappend stalls $stall
+                }
+                dict set record storageStalls $stalls
+            }
         }
         return $record
     }
@@ -1314,6 +1377,55 @@ proc ::ns::stats::defineClass {name args} {
         return $result
     }
 
+    :method storageLimits {} {
+        set retention [ns_baseunit -time [ns_config ns/stats storageStallRetention 1h]]
+        if {$retention<1 || $retention>86400} {error "storageStallRetention must be 1 second..24 hours"}
+        return [dict create retentionSeconds $retention \
+            maxRecords [ns_config -int -min 1 -max 10000 ns/stats storageStallMaxRecords 128]]
+    }
+
+    :method retainStorageStalls {sample} {
+        # Runs under the existing sampler lock. Page reads never add records.
+        set records {}
+        if {[nsv_exists ns_stats storageStalls]} {set records [nsv_get ns_stats storageStalls]}
+        set limits [:storageLimits]
+        set cutoff [expr {[dict get $sample timestamp]-[dict get $limits retentionSeconds]*1000000}]
+        set records [lmap record $records {
+            if {[dict get $record timestamp]<$cutoff} {continue}
+            set record
+        }]
+        set records [concat $records [dict get $sample storageStalls]]
+        set records [lrange $records end-[expr {[dict get $limits maxRecords]-1}] end]
+        nsv_set ns_stats storageStalls $records
+    }
+
+    :public method "storage stalls" {{-server {}} {-limit:integer 128}} {
+        # Return retained observations, oldest first, without collecting or SQL.
+        # Queue context is an endpoint gauge; it does not prove causation.
+        if {$limit<1 || $limit>10000} {error "storage stalls limit must be 1..10000"}
+        if {$server ne "" && $server ni [ns_info servers]} {error "unknown server: $server"}
+        set limits [:storageLimits]
+        set cutoff [expr {[clock microseconds]-[dict get $limits retentionSeconds]*1000000}]
+        set records {}
+        if {[nsv_exists ns_stats storageStalls]} {
+            foreach record [nsv_get ns_stats storageStalls] {
+                if {[dict get $record timestamp]<$cutoff} {continue}
+                if {$server ne ""} {
+                    set selected {}
+                    if {[dict exists $record requestQueues $server]} {
+                        dict set selected $server [dict get $record requestQueues $server]
+                    }
+                    dict set record requestQueues $selected
+                }
+                lappend records $record
+            }
+        }
+        set omitted [expr {max(0,[llength $records]-$limit)}]
+        return [dict create records [lrange $records $omitted end] \
+            omittedRecords $omitted retentionSeconds [dict get $limits retentionSeconds] \
+            maxRecords [dict get $limits maxRecords] source background-sampler]
+    }
+
     :method retainSample {sample} {
         # Called while holding the existing ns_stats coordination lock.
         # Keep bounded endpoint CPU counters for display-window calculations.
@@ -1487,6 +1599,9 @@ proc ::ns::stats::defineClass {name args} {
                 set pair [nsv_get ns_stats pair]
                 set previous [expr {$pair eq "" ? "" : [dict get $pair raw]}]
                 set sample [:calculate $current $previous [dict get $state interval] [dict get $state instance]]
+                set threshold [ns_config -int -min 1 ns/stats storageStallThresholdMs 20]
+                dict set sample storageStalls [::ns::stats::storageStallRecords $sample $threshold]
+                :retainStorageStalls $sample
                 :retainSample $sample
                 dict set sample raw $current
                 nsv_set ns_stats pair $sample
@@ -2330,7 +2445,7 @@ proc ::ns::stats::defineClass {name args} {
         }
     }
     :filters add syntaxErrors
-    :filters guard syntaxErrors {[current calledmethod] in {describe snapshot sample sampling history}}
+    :filters guard syntaxErrors {[current calledmethod] in {describe snapshot sample sampling history storage}}
 
     :method startup {} {
         #
