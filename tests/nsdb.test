@@ -18,8 +18,8 @@ test nsdb-1.0 {syntax: ns_db} -body {
 test nsdb-1.0.0 {syntax: ns_db ?} -body {
     ns_db ?
 } -returnCodes error -result [expr {[testConstraint with_deprecated]
-                                    ? {bad subcommand "?": must be 0or1row, 1row, batchinfo, batchinsert, bindinfo, bindrow, bouncepool, cancel, connected, currenthandles, datasource, dbtype, disconnect, dml, driver, exception, exec, flush, gethandle, getrow, info, interpretsqlfile, logminduration, password, poolname, pools, releasehandle, resethandle, rowcount, select, session_id, setexception, sp_exec, sp_getparams, sp_returncode, sp_setparam, sp_start, stats, user, or verbose}
-                                    : {bad subcommand "?": must be 0or1row, 1row, batchinfo, batchinsert, bindinfo, bindrow, bouncepool, cancel, connected, currenthandles, datasource, dbtype, disconnect, dml, driver, exception, exec, flush, gethandle, getrow, info, interpretsqlfile, logminduration, password, poolname, pools, releasehandle, resethandle, rowcount, select, session_id, setexception, sp_exec, sp_getparams, sp_returncode, sp_setparam, sp_start, stats, or user}
+                                    ? {bad subcommand "?": must be 0or1row, 1row, batchinfo, batchinsert, bindinfo, bindrow, bouncepool, cancel, connected, currenthandles, datasource, dbtype, disconnect, dml, driver, exception, exec, flush, gethandle, getrow, info, interpretsqlfile, logminduration, password, poolname, pools, releasehandle, resethandle, rowcount, select, session_id, setexception, sp_exec, sp_getparams, sp_returncode, sp_setparam, sp_start, stats, user, withhandle, or verbose}
+                                    : {bad subcommand "?": must be 0or1row, 1row, batchinfo, batchinsert, bindinfo, bindrow, bouncepool, cancel, connected, currenthandles, datasource, dbtype, disconnect, dml, driver, exception, exec, flush, gethandle, getrow, info, interpretsqlfile, logminduration, password, poolname, pools, releasehandle, resethandle, rowcount, select, session_id, setexception, sp_exec, sp_getparams, sp_returncode, sp_setparam, sp_start, stats, user, or withhandle}
                                 }]
 
 test nsdb-1.0.1 {syntax: ns_db bouncepool} -body {
@@ -178,6 +178,10 @@ test nsdb-1.0.40 {syntax: ns_db bindinfo extra arguments} -body {
 test nsdb-1.0.41 {syntax: ns_db bindinfo invalid option} -body {
     ns_db bindinfo x -invalid
 } -returnCodes error -result {wrong # args: should be "ns_db bindinfo /handle/ ?-version|-types?"}
+
+test nsdb-1.0.42 {syntax: ns_db withhandle} -body {
+    ns_db withhandle
+} -returnCodes error -result {wrong # args: should be "ns_db withhandle ?-pool /value/? ?-handle /value/? ?-timeout /value/? ?--? /handleVar/ /script/"}
 
 test nsdb-1.1 {syntax: ns_dbquotevalue} -body {
     ns_dbquotevalue

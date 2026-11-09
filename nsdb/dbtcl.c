@@ -41,6 +41,9 @@ Ns_LogSeverity Ns_LogSqlDebug;
  * Local functions defined in this file
  */
 
+static int WithHandle(InterpData *idataPtr, Tcl_Interp *interp, TCL_SIZE_T objc,
+                      Tcl_Obj *const *objv) NS_GNUC_NONNULL(1,2,4);
+
 static int DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd)
     NS_GNUC_NONNULL(1,2,3);
 
@@ -346,7 +349,8 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         SP_SETPARAM,
         SP_START,
         STATS,
-        USER
+        USER,
+        WITHHANDLE
 #ifdef NS_WITH_DEPRECATED
         ,VERBOSE
 #endif
@@ -392,6 +396,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         "sp_start",
         "stats",
         "user",
+        "withhandle",
 #ifdef NS_WITH_DEPRECATED
         "verbose",
 #endif
@@ -414,6 +419,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     }
 
     switch (cmd) {
+    case WITHHANDLE: return WithHandle(idataPtr, interp, objc, objv);
     case BINDINFO: return NsDbBindObjCmd(interp, objc, objv, "bindinfo");
     case BATCHINFO: return NsDbBatchObjCmd(interp, objc, objv, NS_FALSE);
     case BATCHINSERT: return NsDbBatchObjCmd(interp, objc, objv, NS_TRUE);
@@ -1609,6 +1615,143 @@ FreeData(ClientData clientData, Tcl_Interp *UNUSED(interp))
 
     Tcl_DeleteHashTable(&idataPtr->dbs);
     ns_free(idataPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WithHandle --
+ *
+ *      Evaluate a script in the caller's frame with a temporary database
+ *      handle variable. Pool-acquired handles are owned by this scope;
+ *      explicitly supplied handles are borrowed.
+ *
+ * Results:
+ *      The script's Tcl result and completion options, or an acquisition,
+ *      assignment or variable-restoration error.
+ *
+ * Side effects:
+ *      Checks out and returns an owned handle, temporarily changes a
+ *      caller variable, and executes arbitrary Tcl code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+WithHandle(InterpData *idataPtr, Tcl_Interp *interp, TCL_SIZE_T objc,
+           Tcl_Obj *const *objv)
+{
+    char *pool = NULL, *borrowed = NULL;
+    Tcl_Obj *timeoutObj = NULL, *varObj = NULL, *scriptObj = NULL;
+    Tcl_Obj *handleObj, *oldObj;
+    Ns_DbHandle *handlePtr;
+    Tcl_HashEntry *entryPtr;
+    Tcl_InterpState state;
+    int result, restoreResult = TCL_OK;
+    bool assigned;
+    Ns_ObjvSpec opts[] = {
+        {"-pool", Ns_ObjvString, &pool, NULL},
+        {"-handle", Ns_ObjvString, &borrowed, NULL},
+        {"-timeout", Ns_ObjvObj, &timeoutObj, NULL},
+        {"--", Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"handleVar", Ns_ObjvObj, &varObj, NULL},
+        {"script", Ns_ObjvObj, &scriptObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    NS_NONNULL_ASSERT(idataPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objv != NULL);
+
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    if (borrowed != NULL && (pool != NULL || timeoutObj != NULL)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+            "-handle cannot be combined with -pool or -timeout", TCL_INDEX_NONE));
+        return TCL_ERROR;
+    }
+    if (borrowed != NULL) {
+        if (DbGetHandle(idataPtr, interp, borrowed, &handlePtr, NULL) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        handleObj = Tcl_NewStringObj(borrowed, TCL_INDEX_NONE);
+        Tcl_IncrRefCount(handleObj);
+    } else {
+        Tcl_Obj *getObjv[6], *handlesObj;
+        TCL_SIZE_T n = 0, i;
+
+        getObjv[n++] = Tcl_NewStringObj("ns_db", TCL_INDEX_NONE);
+        getObjv[n++] = Tcl_NewStringObj("gethandle", TCL_INDEX_NONE);
+        if (timeoutObj != NULL) {
+            getObjv[n++] = Tcl_NewStringObj("-timeout", TCL_INDEX_NONE);
+            getObjv[n++] = timeoutObj;
+        }
+        /* Always terminate options, including for pool names starting '-'. */
+        getObjv[n++] = Tcl_NewStringObj("--", TCL_INDEX_NONE);
+        if (pool != NULL) {
+            getObjv[n++] = Tcl_NewStringObj(pool, TCL_INDEX_NONE);
+        }
+        for (i = 0; i < n; i++) {
+            Tcl_IncrRefCount(getObjv[i]);
+        }
+        result = DbObjCmd(idataPtr, interp, n, getObjv);
+        for (i = 0; i < n; i++) {
+            Tcl_DecrRefCount(getObjv[i]);
+        }
+        if (result != TCL_OK) {
+            return result;
+        }
+        handlesObj = Tcl_GetObjResult(interp);
+        (void) Tcl_ListObjIndex(interp, handlesObj, 0, &handleObj);
+        if (handleObj == NULL) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("database handle checkout timed out", TCL_INDEX_NONE));
+            Tcl_SetErrorCode(interp, "NS", "DB", "TIMEOUT", NS_SENTINEL);
+            return TCL_ERROR;
+        }
+        Tcl_IncrRefCount(handleObj);
+        (void) DbGetHandle(idataPtr, interp, Tcl_GetString(handleObj), &handlePtr, NULL);
+    }
+
+    oldObj = Tcl_ObjGetVar2(interp, varObj, NULL, 0);
+    if (oldObj != NULL) {
+        Tcl_IncrRefCount(oldObj);
+    }
+    Tcl_ResetResult(interp);
+    assigned = Tcl_ObjSetVar2(interp, varObj, NULL, handleObj, TCL_LEAVE_ERR_MSG) != NULL;
+    result = assigned ? Tcl_EvalObjEx(interp, scriptObj, 0) : TCL_ERROR;
+    state = Tcl_SaveInterpState(interp, result);
+
+    if (oldObj != NULL) {
+        if (Tcl_ObjSetVar2(interp, varObj, NULL, oldObj, TCL_LEAVE_ERR_MSG) == NULL) {
+            restoreResult = TCL_ERROR;
+        }
+        Tcl_DecrRefCount(oldObj);
+    } else if (assigned) {
+        /* Also remove an array created by the body; absence is already correct. */
+        (void) Tcl_UnsetVar(interp, Tcl_GetString(varObj), 0);
+    } else if (Tcl_ObjGetVar2(interp, varObj, NULL, 0) != NULL) {
+        /* A failing write trace can leave the assigned scalar behind. */
+        (void) Tcl_UnsetVar(interp, Tcl_GetString(varObj), 0);
+    }
+    if (restoreResult != TCL_OK && result == TCL_OK) {
+        Tcl_DiscardInterpState(state);
+        state = Tcl_SaveInterpState(interp, restoreResult);
+    }
+    if (borrowed == NULL) {
+        entryPtr = Tcl_FindHashEntry(&idataPtr->dbs, Tcl_GetString(handleObj));
+        /* Tolerate a body that has already released the handle. */
+        if (entryPtr != NULL && Tcl_GetHashValue(entryPtr) == handlePtr) {
+            Tcl_DeleteHashEntry(entryPtr);
+            Ns_DbPoolPutHandle(handlePtr);
+        }
+    }
+    Tcl_DecrRefCount(handleObj);
+    return Tcl_RestoreInterpState(interp, state);
 }
 
 /*

@@ -611,6 +611,64 @@ Returns the user (as specified for the User parameter of the configuration file)
 for the database pool.
 
 
+[call [cmd "ns_db withhandle"] \
+    [opt "[option -pool] [arg value]"] \
+    [opt "[option -handle] [arg value]"] \
+    [opt "[option -timeout] [arg value]"] \
+    [opt [option --]] \
+    [arg handleVar] [arg script]]
+
+Evaluate [arg script] in the caller's frame with a database handle temporarily
+assigned to [arg handleVar]. The variable may be a scalar or an array element.
+Its previous value is restored afterward; a previously absent variable is
+removed. The body's result and Tcl completion options, including errors,
+[cmd return], [cmd break], [cmd continue] and custom completion codes, are
+preserved. A variable-restoration error is reported if the body succeeded;
+otherwise the body's original completion takes precedence. Variable traces
+can prevent assignment or restoration and should not reject these operations.
+
+[para]
+Without [option -handle], acquire one handle from the pool specified by
+[option -pool], or from the
+configured default pool when [option -pool] is omitted. Release this owned
+handle on every exit, including assignment failure and script errors.
+[option -timeout] has the same units and waiting semantics as
+[cmd "ns_db gethandle"], including indefinite waiting when omitted or zero.
+Unlike [cmd "ns_db gethandle"], a checkout timeout raises an error with
+[const {NS DB TIMEOUT}] as its error code and does not execute the body.
+Pool permissions and the prohibition on acquiring more handles from an
+already-owned pool remain unchanged.
+
+[para]
+With [option -handle], borrow an existing handle owned by this interpreter.
+The borrowed handle is not released, flushed or reset on leaving the scope.
+This form can be nested and used within a caller-managed transaction. [option -handle] cannot be
+combined with [option -pool] or [option -timeout]. There is no implicit reuse
+of other checked-out handles.
+
+[para]
+This command does not begin, commit or roll back a transaction itself.
+An owned handle follows the normal [cmd "ns_db releasehandle"] cleanup path,
+including driver flush/reset. Finish transactions and consume results before
+leaving an owning scope; do not return its handle for later use or manually
+release it inside the body. Keep unrelated work outside the scope to avoid
+holding a connection unnecessarily. Borrowed handles retain their existing
+transaction and result-set state except for changes explicitly made by the body.
+
+[example_begin]
+ ns_db withhandle -pool records -timeout 100ms db {
+     ns_db dml $db -bindvars {
+         UPDATE records SET value = :value WHERE id = :id
+     }
+ }
+
+ # Use a caller-owned connection without returning it to the pool.
+ ns_db withhandle -handle $transactionHandle db {
+     update_records $db
+ }
+[example_end]
+
+
 [call [cmd "ns_dberrorcode"] [arg handle]]
 
 Returns the database error code for the specified database handle.

@@ -1,0 +1,238 @@
+# Scoped handle ownership and Tcl control-flow regression tests.
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure {*}$argv
+
+proc withHandleReturn {} {
+    ns_db withhandle db {return -code ok -level 1 returned}
+    error "return did not leave the caller"
+}
+proc withHandleTrace {args} {error "write rejected"}
+
+test nsdb-withhandle-1 {default pool, caller frame, normal result, release and unset} -body {
+    unset -nocomplain db
+    set value 42
+    set r [ns_db withhandle db {list [ns_db poolname $db] $value}]
+    list $r [info exists db] [ns_db currenthandles]
+} -result {{a 42} 0 {}}
+
+test nsdb-withhandle-2 {explicit pool and existing scalar restored} -body {
+    set db original
+    set r [ns_db withhandle -pool b db {ns_db poolname $db}]
+    list $r $db [ns_db currenthandles]
+} -result {b original {}}
+
+test nsdb-withhandle-3 {existing and new array elements are restored} -body {
+    unset -nocomplain state
+    array set state {db original keep untouched}
+    ns_db withhandle state(db) {set state(db) changed}
+    ns_db withhandle state(new) {set state(new) changed}
+    list $state(db) $state(keep) [info exists state(new)] [ns_db currenthandles]
+} -result {original untouched 0 {}}
+
+test nsdb-withhandle-4 {borrowed handle survives nested scopes and body error} -body {
+    set h [ns_db gethandle a]
+    set db original
+    set code [catch {
+        ns_db withhandle -handle $h db {
+            ns_db withhandle -handle $db db {
+                error failure {} {APPLICATION DETAIL}
+            }
+        }
+    } message options]
+    set r [list $code $message [dict get $options -errorcode] $db [ns_db poolname $h]]
+    ns_db releasehandle $h
+    set r
+} -result {1 failure {APPLICATION DETAIL} original a}
+
+test nsdb-withhandle-5 {return propagates through native scope} -body {
+    list [withHandleReturn] [ns_db currenthandles]
+} -result {returned {}}
+
+test nsdb-withhandle-6 {break and continue propagate and release} -body {
+    set seen {}
+    foreach n {1 2 3} {
+        ns_db withhandle db {
+            if {$n==1} {continue}
+            lappend seen $n
+            break
+        }
+        lappend seen unreachable
+    }
+    list $seen [ns_db currenthandles]
+} -result {2 {}}
+
+test nsdb-withhandle-7 {custom return options survive cleanup} -body {
+    set db original
+    set c [catch {ns_db withhandle db {return -code 7 -level 0 -custom preserved payload}} m o]
+    list $c $m [dict get $o -custom] $db [ns_db currenthandles]
+} -result {7 payload preserved original {}}
+
+test nsdb-withhandle-8 {body unsetting the binding does not prevent restoration} -body {
+    set db original
+    ns_db withhandle db {unset db}
+    list $db [ns_db currenthandles]
+} -result {original {}}
+
+test nsdb-withhandle-9 {whole-array assignment fails without destroying array or leaking handle} -body {
+    unset -nocomplain db
+    array set db {keep untouched}
+    set ran false
+    set c [catch {ns_db withhandle db {set ran true}}]
+    set r [list $c $ran $db(keep) [ns_db currenthandles]]
+    unset db
+    set r
+} -result {1 false untouched {}}
+
+test nsdb-withhandle-10 {assignment trace failure preserves error and returns owned handle} -body {
+    set db original
+    trace add variable db write withHandleTrace
+    set ran false
+    set c [catch {ns_db withhandle db {set ran true}} m]
+    trace remove variable db write withHandleTrace
+    list $c [string match {*write rejected*} $m] $ran $db [ns_db currenthandles]
+} -result {1 1 false original {}}
+
+test nsdb-withhandle-11 {mutually exclusive forms and invalid borrowed handle do not execute} -body {
+    set ran false
+    set r [list \
+        [catch {ns_db withhandle -pool a -handle invalid db {set ran true}}] \
+        [catch {ns_db withhandle -handle invalid -timeout 1s db {set ran true}}] \
+        [catch {ns_db withhandle -handle invalid db {set ran true}}]]
+    list $r $ran [ns_db currenthandles]
+} -result {{1 1 1} false {}}
+
+test nsdb-withhandle-12 {nested pool checkout keeps existing same-pool rejection} -body {
+    ns_db withhandle -pool a db {
+        list [catch {ns_db withhandle -pool a inner {error unreachable}}] [ns_db poolname $db]
+    }
+} -result {1 a}
+
+test nsdb-withhandle-13 {owned scope survives explicit early release} -body {
+    ns_db withhandle db {ns_db releasehandle $db; set result released}
+    list $result [ns_db currenthandles]
+} -result {released {}}
+
+test nsdb-withhandle-14 {pool timeout has structured error and leaves binding untouched} -setup {
+    nsv_set withhandle-test ready false
+    nsv_set withhandle-test release false
+    set worker [ns_thread create {
+        set handles [ns_db gethandle a 2]
+        nsv_set withhandle-test ready true
+        set deadline [expr {[clock milliseconds]+5000}]
+        while {![nsv_get withhandle-test release] && [clock milliseconds]<$deadline} {ns_sleep 0.005}
+        foreach h $handles {ns_db releasehandle $h}
+    }]
+    set deadline [expr {[clock milliseconds]+5000}]
+    while {![nsv_get withhandle-test ready]} {
+        if {[clock milliseconds]>$deadline} {error "worker did not acquire handles"}
+        ns_sleep 0.005
+    }
+} -body {
+    set db original
+    set ran false
+    set c [catch {ns_db withhandle -pool a -timeout 10ms db {set ran true}} m o]
+    list $c [dict get $o -errorcode] $db $ran [ns_db currenthandles]
+} -cleanup {
+    nsv_set withhandle-test release true
+    ns_thread wait $worker
+    nsv_unset withhandle-test
+} -result {1 {NS DB TIMEOUT} original false {}}
+
+test nsdb-withhandle-15 {borrowed result set remains usable} -body {
+    set h [ns_db gethandle a]
+    set row [ns_db select $h rows]
+    set r [ns_db withhandle -handle $h db {ns_db getrow $db $row}]
+    ns_db releasehandle $h
+    ns_set free $row
+    set r
+} -result 1
+
+test nsdb-withhandle-16 {body array replacement of an initially absent binding is removed} -body {
+    unset -nocomplain db
+    ns_db withhandle db {unset db; array set db {x value}}
+    info exists db
+} -result 0
+
+test nsdb-withhandle-17 {binding source resolves in the body caller frame} -body {
+    set value 42
+    ns_db withhandle -pool bind_text db {
+        ns_db dml $db -bindvars {SELECT :value}
+    }
+} -result {}
+
+test nsdb-withhandle-18 {invalid timeout leaves binding and handles unchanged} -body {
+    set db original
+    set ran false
+    list [catch {ns_db withhandle -timeout invalid db {set ran true}}] $db $ran [ns_db currenthandles]
+} -result {1 original false {}}
+
+test nsdb-withhandle-19 {cleanup preserves body error options and stack} -body {
+    set c [catch {ns_db withhandle db {return -code error -level 0 -errorcode {BODY FAILURE} -errorinfo marker failed}} m o]
+    list $c $m [dict get $o -errorcode] [string match marker* [dict get $o -errorinfo]] [ns_db currenthandles]
+} -result {1 failed {BODY FAILURE} 1 {}}
+
+set withhandleDbFile [ns_config ns/db/pool/ns_stats_test datasource]
+testConstraint withhandleSqlite [expr {[lsearch -exact [ns_db pools] ns_stats_test]>=0}]
+test nsdb-withhandle-20 {explicit transactions commit and roll back in owning scope} -constraints withhandleSqlite -body {
+    ns_db withhandle -pool ns_stats_test db {
+        ns_db dml $db {CREATE TEMP TABLE withhandle_test (n INTEGER)}
+        ns_db dml $db BEGIN
+        ns_db dml $db {INSERT INTO withhandle_test VALUES (1)}
+        ns_db dml $db COMMIT
+        ns_db dml $db BEGIN
+        ns_db dml $db {INSERT INTO withhandle_test VALUES (2)}
+        ns_db dml $db ROLLBACK
+        set row [ns_db 1row $db {SELECT count(*) AS n FROM withhandle_test}]
+        set n [ns_set get $row n]
+        ns_set free $row
+        ns_db dml $db {DROP TABLE withhandle_test}
+        set n
+    }
+} -result 1
+
+test nsdb-withhandle-21 {borrowed scope leaves caller transaction open} -constraints withhandleSqlite -body {
+    set h [ns_db gethandle ns_stats_test]
+    ns_db dml $h {CREATE TEMP TABLE withhandle_test (n INTEGER)}
+    ns_db dml $h BEGIN
+    ns_db withhandle -handle $h db {
+        ns_db dml $db {INSERT INTO withhandle_test VALUES (1)}
+    }
+    ns_db dml $h ROLLBACK
+    set row [ns_db 1row $h {SELECT count(*) AS n FROM withhandle_test}]
+    set n [ns_set get $row n]
+    ns_set free $row
+    ns_db dml $h {DROP TABLE withhandle_test}
+    ns_db releasehandle $h
+    set n
+} -result 0
+
+test nsdb-withhandle-22 {restoration trace error is reported after successful body} -body {
+    set db original
+    set c [catch {ns_db withhandle db {
+        trace add variable db write withHandleTrace
+        set result success
+    }} m]
+    trace remove variable db write withHandleTrace
+    list $c [string match {*write rejected*} $m] $db [ns_db currenthandles]
+} -result {1 1 original {}}
+
+test nsdb-withhandle-23 {body error takes precedence over restoration trace error} -body {
+    set db original
+    set c [catch {ns_db withhandle db {
+        trace add variable db write withHandleTrace
+        error body-failed {} {BODY FAILURE}
+    }} m o]
+    trace remove variable db write withHandleTrace
+    list $c $m [dict get $o -errorcode] $db [ns_db currenthandles]
+} -result {1 body-failed {BODY FAILURE} original {}}
+
+if {[testConstraint withhandleSqlite]} {
+    ns_db bouncepool ns_stats_test
+    foreach suffix {{} -wal -shm} {file delete -force $withhandleDbFile$suffix}
+}
+unset withhandleDbFile
+
+rename withHandleReturn {}
+rename withHandleTrace {}
+cleanupTests
