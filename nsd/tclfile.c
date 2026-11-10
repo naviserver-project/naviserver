@@ -329,6 +329,19 @@ NsTclMkdTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
+    } else if (objc == 2
+               && (strlen(templateString) < 6u
+                   || strcmp(templateString + strlen(templateString) - 6u, "XXXXXX") != 0)) {
+        /*
+         * Validate explicitly: some libc implementations accept templates
+         * without trailing Xs and create the directory without randomizing it.
+         */
+        Ns_TclPrintfResult(interp, "could not create directory \"%s\": template must end with XXXXXX",
+                           templateString);
+        Tcl_SetErrno(EINVAL);
+        (void) Tcl_PosixError(interp);
+        result = TCL_ERROR;
+
     } else if (objc == 1) {
         char buffer[PATH_MAX] = "";
         char *dirName;

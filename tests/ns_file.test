@@ -48,6 +48,19 @@ test ns_mkdtemp-2.3 {invalid template is an error rather than an empty success} 
     list [catch {ns_mkdtemp [file join $parent invalid]}] [file exists [file join $parent invalid]]
 } -cleanup {removeDirectory ns_mkdtemp-parent} -result {1 0}
 
+test ns_mkdtemp-2.4 {invalid templates consistently report POSIX EINVAL} -constraints unix -setup {
+    set parent [makeDirectory ns_mkdtemp-parent]
+} -body {
+    set results {}
+    foreach template [list "" X XXXXX [file join $parent invalid] \
+                          [file join $parent child-XXXXX] [file join $parent child-XXXXXX.txt]] {
+        set code [catch {ns_mkdtemp $template} message options]
+        lappend results [list $code [lrange [dict get $options -errorcode] 0 1]]
+    }
+    set results
+} -cleanup {removeDirectory ns_mkdtemp-parent} \
+    -result {{1 {POSIX EINVAL}} {1 {POSIX EINVAL}} {1 {POSIX EINVAL}} {1 {POSIX EINVAL}} {1 {POSIX EINVAL}} {1 {POSIX EINVAL}}}
+
 test ns_fseekchars-1.0 {syntax: ns_fseekchars} -body {
     ns_fseekchars
 } -returnCodes error -result {wrong # args: should be "ns_fseekchars /channelId/ /searchstring/"}
