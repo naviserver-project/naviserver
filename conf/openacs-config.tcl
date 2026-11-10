@@ -1367,7 +1367,7 @@ ns_section ns/server/$server/httpclient {
         #ns_param validationException {accept self-signed-certificate}
 
         # Accept all validation errors from any IP address (like disabled validation, but collects certificates)
-        ns_param validationException {accept *}
+        #ns_param validationException {accept *}
     }
 
     #------------------------------------------------------------------

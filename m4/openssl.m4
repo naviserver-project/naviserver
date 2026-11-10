@@ -136,6 +136,7 @@ dnl ------------------------------------------------------------
   LDFLAGS="${LDFLAGS_saved}"
 
   AC_CHECK_HEADERS([openssl/evp.h])
+  AC_CHECK_FUNCS([X509_VERIFY_PARAM_set1_host X509_VERIFY_PARAM_set1_ip_asc])
 
   AC_MSG_CHECKING([for OpenSSL >= 1.1.1 or LibreSSL >= 4.1.0])
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[

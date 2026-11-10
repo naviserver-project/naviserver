@@ -358,10 +358,13 @@ ID of the HTTP request to wait for.
   in the request.
 
 [opt_def -hostname [arg value]]
-  used for HTTPS URIs to specify the hostname for the server
-  certificate. This option has to be used, when the host supports
-  virtual hosting, is configured with multiple certificates and supports
-  the SNI (Server Name Indication) extension of TLS.
+  Overrides the expected TLS server identity. By default, the URL host is used.
+  DNS names
+  are checked against the certificate and sent as SNI (Server Name
+  Indication); numeric IP addresses are checked against IP subjectAltName
+  entries and are not sent as SNI. This permits connecting to a numeric
+  address while authenticating a DNS name. An empty value is an error
+  when certificate verification is enabled.
 
 [opt_def -insecure]
   used for HTTPS URIs to specify that the server certificate should NOT be

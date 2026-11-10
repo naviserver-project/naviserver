@@ -770,7 +770,7 @@ typedef Tcl_Obj *Ns_DriverClientcertInfoProc(Ns_Sock *sock);
 
 typedef struct Ns_DriverClientInitArg {
     NS_TLS_SSL_CTX *ctx;
-    const char *sniHostname;
+    const char *sniHostname; /* Reference DNS name or IP; SNI is sent only for DNS. */
     const char *caFile;
     const char *caPath;
 } Ns_DriverClientInitArg;
