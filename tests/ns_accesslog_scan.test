@@ -221,13 +221,44 @@ test ns_accesslog_scan-2.5 {malformed UTF-8 and embedded raw NUL yield bounded h
 
 test ns_accesslog_scan-2.6 {malformed layout, escape and timestamp do not become valid records} -body {
     set result {}
-    foreach line [list bad [string map [list {/p?secret=x} {/p\x41}] $::accessScan::line] \
+    foreach line [list bad [string map [list {/p?secret=x} {/p\q41}] $::accessScan::line] \
                       [string map {1792969200 garbage} $::accessScan::line]] {
         set b [::accessScan::one "$line\n"]
         lappend result [dict get [::accessScan::row $b] diagnostic]
     }
     set result
 } -result {layout unsupported-escape timestamp-syntax}
+
+test ns_accesslog_scan-2.7 {hex byte escapes accept both cases and consume exactly two digits} -body {
+    set line "$::accessScan::line \"\" \"\\x01\\x1f\\x7F\\x4a\\x4B\\x163\"\n"
+    set row [::accessScan::row [::accessScan::one $line]]
+    list [dict get $row parseStatus] [binary encode hex [dict get $row userAgent]]
+} -result {ok 011f7f4a4b1633}
+
+test ns_accesslog_scan-2.8 {literal hex-looking text and existing escapes are not decoded twice} -body {
+    set line "$::accessScan::line"
+    append line { "" "\\x16\"\\\n\r\t"} \n
+    set row [::accessScan::row [::accessScan::one $line]]
+    list [dict get $row parseStatus] [dict get $row userAgent]
+} -result [list ok "\\x16\"\\\n\r\t"]
+
+test ns_accesslog_scan-2.9 {malformed and incomplete hex escapes reject only their own record} -body {
+    set result {}
+    foreach bad {{\x} {\x1} {\xG1} {\x1g} {\x-1} {\x 1}} {
+        set line "$::accessScan::line \"\" \"$bad\"\n$::accessScan::line\n"
+        set b [::accessScan::one $line]
+        lappend result [list [dict get [::accessScan::row $b] diagnostic] \
+                            [dict get [::accessScan::row $b 1] parseStatus]]
+    }
+    # Truncation at the physical line end, with no closing quote.
+    foreach bad {{\x} {\x1}} {
+        set line "$::accessScan::line \"\" \"$bad\n$::accessScan::line\n"
+        set b [::accessScan::one $line]
+        lappend result [list [dict get [::accessScan::row $b] diagnostic] \
+                            [dict get [::accessScan::row $b 1] parseStatus]]
+    }
+    set result
+} -result [lrepeat 8 {invalid-hex-escape ok}]
 
 test ns_accesslog_scan-3.1 {live tail remains pending; checkpoint resume re-examines unfinished bytes} -body {
     set path [::accessScan::write pending.log $::accessScan::line]

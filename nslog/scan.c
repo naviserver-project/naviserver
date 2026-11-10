@@ -816,6 +816,33 @@ Tokenize(const char *line, size_t length, Token *tokens, size_t *count, Tcl_DStr
                     case 't':
                         c = '\t';
                         break;
+                    case 'x': {
+                        unsigned int value = 0u;
+                        size_t       digit;
+
+                        /* Exactly two ASCII hex digits encode one byte. */
+                        if (length - i < 2u) {
+                            return "invalid-hex-escape";
+                        }
+                        for (digit = 0u; digit < 2u; digit++) {
+                            unsigned char h = (unsigned char)line[i + digit];
+                            unsigned int  nibble;
+
+                            if (h >= '0' && h <= '9') {
+                                nibble = (unsigned int)(h - '0');
+                            } else if (h >= 'a' && h <= 'f') {
+                                nibble = (unsigned int)(h - 'a') + 10u;
+                            } else if (h >= 'A' && h <= 'F') {
+                                nibble = (unsigned int)(h - 'A') + 10u;
+                            } else {
+                                return "invalid-hex-escape";
+                            }
+                            value = (value << 4u) | nibble;
+                        }
+                        c = (char)value;
+                        i += 2u;
+                        break;
+                    }
                     case '\\':
                     case '"':
                         break;
