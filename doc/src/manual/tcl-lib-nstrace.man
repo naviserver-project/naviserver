@@ -38,6 +38,15 @@ selected by setting the parameter to true.
 
 [para]
 
+Both strategies also copy the provided package names and versions to the
+new interpreter after restoring its definitions. Only packages with a nonempty
+provided version are included; packages which are merely available through
+[cmd {package ifneeded}] are not marked as loaded. The blueprint restores
+registrations with [cmd {package provide}], without repeating package loading
+or initialization scripts.
+
+[para]
+
 In order to influence script generation, users can add their own tracing implementations.
 Tracers and other supporting callbacks for the following Tcl commands are provided per default:
 

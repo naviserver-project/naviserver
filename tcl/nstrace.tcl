@@ -312,6 +312,10 @@ ns_runonce {
             # interactive debugging purposes.
             #
 
+            # Preserve provided package versions after restoring definitions.
+            # Pure Tcl packages have no native load entry to recreate these.
+            append script [_serializepackages]
+
             if {$file ne ""} {
                 _savescript $file $script
             } else {
@@ -471,11 +475,33 @@ ns_runonce {
             #if {1} {_savescript /tmp/__ns_blueprint.tcl $script}
             #if {1} {_savescript /tmp/__ns_blueprint[clock format [clock seconds] -format %d-%b-%Y-%H:%M:%S].tcl $script}
 
+            # Preserve provided package versions after restoring definitions.
+            # Pure Tcl packages have no native load entry to recreate these.
+            append script [_serializepackages]
+
             if {$file ne ""} {
                 _savescript $file $script
             } else {
                 return $script
             }
+        }
+
+        #
+        # Snapshot the provided package table. Do not replay package require
+        # or ifneeded scripts: definitions are restored by the blueprint and
+        # initialization may have side effects. Available-only packages have
+        # no provided version and must not be advertised as loaded.
+        #
+
+        proc _serializepackages {} {
+            set script ""
+            foreach name [lsort [package names]] {
+                set version [package provide $name]
+                if {$version ne ""} {
+                    append script [list package provide $name $version] \n
+                }
+            }
+            return $script
         }
 
         #
