@@ -123,10 +123,11 @@ headers is the ns_set ID containing the additional headers to include
 in the request.
 
 [opt_def -hostname [arg HOSTNAME]]
-used for HTTPS URIs to specify the hostname for the server
-certificate. This option has to be used, when the host supports
-virtual hosting, is configured with multiple certificates and supports
-the SNI (Server Name Indication) extension of TLS.
+Overrides the expected TLS server identity; the URL host is used by default.
+DNS names are sent as SNI and, when verification is enabled, checked against
+the certificate. Numeric IP addresses are checked against IP subjectAltName
+entries and are not sent as SNI. An empty identity is rejected when
+verification is enabled.
 
 [opt_def -keep_host_header]
 allows the Host: header field for the request to be passed in via
@@ -443,5 +444,13 @@ otherwise stored in memory.
 [example_end]
 [see_also ns_httptime ns_set ns_urlencode]
 [keywords "global built-in" http-client HTTP HTTPS POST GET nssock spooling SNI]
+
+
+[para]
+With [option -verify] enabled, HTTPS also verifies the expected DNS name
+or IP subjectAltName. [option -hostname] overrides the URL identity.
+OpenSSL 1.0.2 or equivalent hostname/IP verification APIs are required
+for verified connections; older libraries fail closed. This branch
+retains its existing opt-in verification policy.
 
 [manpage_end]

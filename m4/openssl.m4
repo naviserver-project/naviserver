@@ -76,6 +76,7 @@ if test "${ac_openssl}" = "yes" ; then
   LDFLAGS="${LIBS} ${LDFLAGS}"
 
   AC_CHECK_HEADERS([openssl/evp.h])
+  AC_CHECK_FUNCS([X509_VERIFY_PARAM_set1_host X509_VERIFY_PARAM_set1_ip_asc])
   FOUND_SSL_LIB="no"
   AC_CHECK_LIB(ssl, OPENSSL_init_ssl, [FOUND_SSL_LIB="yes"])
   AC_CHECK_LIB(ssl, SSL_library_init, [FOUND_SSL_LIB="yes"])

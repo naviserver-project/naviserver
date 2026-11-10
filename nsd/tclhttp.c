@@ -2970,12 +2970,13 @@ HttpConnect(
                     Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect remaining timeout " NS_TIME_FMT,
                            (int64_t)remainingTime.sec, remainingTime.usec);
                     
-                    if (sniHostname == NULL && !NsHostnameIsNumericIP(u.host)) {
+                    if (sniHostname == NULL) {
                         sniHostname = u.host;
-                        Ns_Log(Debug, "automatically use SNI <%s>", u.host);
+                        Ns_Log(Debug, "automatically use TLS peer identity <%s>", u.host);
                     }
                     rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
                                            sniHostname, &remainingTime, &ssl);
+                    httpPtr->ssl = ssl;
                     if (rc == NS_TIMEOUT) {
                         /*
                          * Ns_TLS_SSLConnect ran into a timeout.
@@ -2994,7 +2995,6 @@ HttpConnect(
                 }
 
                 if (likely(result == TCL_OK)) {
-                    httpPtr->ssl = ssl;
 #ifdef HAVE_OPENSSL_EVP_H
                     HttpAddInfo(httpPtr, "sslversion", SSL_get_version(ssl));
                     HttpAddInfo(httpPtr, "cipher", SSL_get_cipher(ssl));

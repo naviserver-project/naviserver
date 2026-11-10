@@ -666,7 +666,7 @@ typedef int
 
 typedef struct Ns_DriverClientInitArg {
     NS_TLS_SSL_CTX *ctx;
-    const char *sniHostname;
+    const char *sniHostname; /* Reference DNS name or IP; SNI is sent only for DNS. */
 } Ns_DriverClientInitArg;
 
 /*

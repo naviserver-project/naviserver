@@ -1128,10 +1128,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                     Ns_DriverClientInitArg params = {ctx, sniHostname};
 
                     if (sniHostname == NULL) {
-                        if (!NsHostnameIsNumericIP(parsedUrl.host)) {
-                            params.sniHostname = parsedUrl.host;
-                            Ns_Log(Notice, "automatically use SNI <%s>", parsedUrl.host);
-                        }
+                        params.sniHostname = parsedUrl.host;
                     }
                     result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &params);
 

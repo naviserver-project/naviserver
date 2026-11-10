@@ -1,0 +1,115 @@
+# -*- Tcl -*-
+# Outbound identity verification on the legacy, explicitly verified ns_http path.
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+::tcltest::configure {*}$argv
+testConstraint ssl [ns_info ssl]
+if {![testConstraint ssl]} {cleanupTests; return}
+testConstraint tlsIdentityServer [expr {[ns_config test tls_listenport] ne ""}]
+proc tlsIdentityRequest {api args} {
+    set url [expr {[info exists ::tlsIdentityURL] ? $::tlsIdentityURL : [string map {http: https:} [ns_config test tls_listenurl]]}]
+    set ca [file join [ns_config test home] testserver etc server.pem]
+    dict get [ns_http run -timeout 2s -verify true -cafile $ca {*}$args $url] status
+}
+
+test tls-identity-legacy-1 {matching DNS reference is accepted} -constraints tlsIdentityServer -body {
+    tlsIdentityRequest http -hostname localhost
+} -result 200
+
+test tls-identity-legacy-2 {unrelated trusted DNS certificate is rejected} -constraints tlsIdentityServer -body {
+    tlsIdentityRequest http -hostname not-in-certificate.example
+} -returnCodes error -match glob -result {*ssl connect failed:*}
+
+test tls-identity-legacy-3 {numeric URL matches its IP SAN} -constraints tlsIdentityServer -body {
+    tlsIdentityRequest http
+} -result 200
+
+test tls-identity-legacy-4 {unrelated IPv4 identity is rejected} -constraints tlsIdentityServer -body {
+    tlsIdentityRequest http -hostname 192.0.2.123
+} -returnCodes error -match glob -result {*ssl connect failed:*}
+
+test tls-identity-legacy-5 {unrelated IPv6 identity is rejected} -constraints tlsIdentityServer -body {
+    tlsIdentityRequest http -hostname 2001:db8::123
+} -returnCodes error -match glob -result {*ssl connect failed:*}
+
+test tls-identity-legacy-6 {explicitly disabled verification remains available} -constraints tlsIdentityServer -body {
+    tlsIdentityRequest http -verify false -hostname not-in-certificate.example
+} -result 200
+
+test tls-identity-legacy-7 {empty identity fails closed with verification} -constraints tlsIdentityServer -body {
+    tlsIdentityRequest http -hostname {}
+} -returnCodes error -match glob -result {*verification requires a peer hostname or IP address*}
+
+# A trusted DNS-only certificate must NOT authenticate a numeric URL.
+# This fixture exercises the default identity, without a -hostname override.
+testConstraint tlsIdentityOpenSSLCLI [expr {$::tcl_platform(platform) eq "unix"
+                                           && [auto_execok openssl] ne ""}]
+proc tlsIdentityDNSOnlyStart {{host ""}} {
+    set dir [makeDirectory tls-identity-dns-only]
+    set config [open [file join $dir openssl.cnf] w]
+    puts $config {[req]
+prompt = no
+distinguished_name = subject
+x509_extensions = extensions
+[subject]
+CN = localhost
+[extensions]
+basicConstraints = critical, CA:TRUE
+subjectAltName = DNS:localhost}
+    close $config
+    exec openssl req -new -x509 -nodes -newkey rsa:2048 -sha256 -days 1 \
+        -config [file join $dir openssl.cnf] -keyout [file join $dir key.pem] \
+        -out [file join $dir cert.pem] 2>[file join $dir req.log]
+    if {$host eq ""} {set host [ns_config test loopback]}
+    set probe [socket -server {apply {{args} {}}} -myaddr $host 0]
+    set port [lindex [fconfigure $probe -sockname] end]
+    close $probe
+    set endpoint [expr {[string first : $host] >= 0 ? "\[$host\]:$port" : "$host:$port"}]
+    set child [exec openssl s_server -quiet -www -accept $endpoint \
+                   -cert [file join $dir cert.pem] -key [file join $dir key.pem] \
+                   >[file join $dir server.log] 2>@1 &]
+    for {set i 0} {$i < 200} {incr i} {
+        if {![catch {set probe [socket $host $port]}]} {
+            close $probe
+            set ::tlsIdentityURL https://$endpoint/123
+            return [list $child $dir]
+        }
+        ns_sleep 10ms
+    }
+    catch {exec kill -TERM {*}$child}
+    error "DNS-only TLS fixture did not start; see [file join $dir server.log]"
+}
+proc tlsIdentityDNSOnlyStop {fixture} {
+    lassign $fixture child dir
+    catch {exec kill -TERM {*}$child}
+    unset -nocomplain ::tlsIdentityURL
+    removeDirectory $dir
+}
+testConstraint tlsIdentityIPv6 [expr {![catch {
+    set probe [socket -server {apply {{args} {}}} -myaddr ::1 0]
+    close $probe
+}]}]
+foreach {family host extraConstraint} {ipv4 127.0.0.1 tlsIdentityServer ipv6 ::1 tlsIdentityIPv6} {
+foreach api {http} {
+    test tls-identity-default-ip-$api-$family {DNS-only certificate cannot authenticate numeric destination} \
+        -constraints [list tlsIdentityServer tlsIdentityOpenSSLCLI $extraConstraint] -setup {
+        set fixture [tlsIdentityDNSOnlyStart $host]
+    } -body {
+        tlsIdentityRequest $api -cafile [file join [lindex $fixture 1] cert.pem]
+    } -cleanup {tlsIdentityDNSOnlyStop $fixture} \
+        -returnCodes error -match glob -result {*ssl connect failed:*}
+
+    test tls-identity-dns-control-$api-$family {DNS-only certificate authenticates explicit matching DNS identity} \
+        -constraints [list tlsIdentityServer tlsIdentityOpenSSLCLI $extraConstraint] -setup {
+        set fixture [tlsIdentityDNSOnlyStart $host]
+    } -body {
+        tlsIdentityRequest $api -cafile [file join [lindex $fixture 1] cert.pem] -hostname localhost
+    } -cleanup {tlsIdentityDNSOnlyStop $fixture} -result 200
+}
+
+}
+
+rename tlsIdentityDNSOnlyStart {}
+rename tlsIdentityDNSOnlyStop {}
+rename tlsIdentityRequest {}
+cleanupTests

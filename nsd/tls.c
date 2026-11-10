@@ -81,6 +81,7 @@ ReportError(Tcl_Interp *interp, const char *fmt, ...)
 # include "nsopenssl.h"
 # include <openssl/ssl.h>
 # include <openssl/err.h>
+# include <openssl/x509v3.h>
 
 /*
  * OpenSSL < 0.9.8f does not have SSL_set_tlsext_host_name() In some
@@ -1250,10 +1251,119 @@ PartialTimeout(const Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPart
 /*
  *----------------------------------------------------------------------
  *
+ * TLSSetPeerName --
+ *
+ *      Configure the reference identity before the client handshake. DNS
+ *      names are used for certificate verification and SNI; numeric addresses
+ *      are checked against IP subjectAltNames and are never sent as SNI.
+ *      An explicit -hostname supplies the reference identity instead of the
+ *      connection address. Verification exceptions remain applicable.
+ *
+ * Results:
+ *      NS_OK, or NS_ERROR with a Tcl error message. Missing identities and
+ *      unavailable verification APIs fail closed when verification is enabled.
+ *
+ * Side effects:
+ *      Sets verification parameters and, for DNS names, the SNI extension.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+TLSSetPeerName(Tcl_Interp *interp, SSL *ssl, const char *peerName)
+{
+    struct NS_SOCKADDR_STORAGE sa;
+    bool                       numeric = NS_FALSE;
+    Ns_ReturnCode              result = NS_OK;
+    Tcl_DString                name;
+
+    Tcl_DStringInit(&name);
+
+    if (peerName != NULL && *peerName != '\0') {
+        size_t length = strlen(peerName);
+        char  *scope;
+
+        /* URL parsers normally remove brackets; direct C/connchan callers may not. */
+        if (length >= 2u && peerName[0] == '[' && peerName[length - 1u] == ']'
+            && strchr(peerName, INTCHAR(':')) != NULL) {
+            Tcl_DStringAppend(&name, peerName + 1, (int)(length - 2u));
+        } else {
+            Tcl_DStringAppend(&name, peerName, -1);
+        }
+        /* An IPv6 zone selects the interface, not the certificate identity. */
+        scope = strchr(name.string, INTCHAR('%'));
+        if (scope != NULL && strchr(name.string, INTCHAR(':')) != NULL) {
+            Tcl_DStringSetLength(&name, (int)(scope - name.string));
+        }
+        peerName = name.string;
+        numeric = ns_inet_pton((struct sockaddr *)&sa, peerName) > 0;
+    }
+
+    if ((SSL_get_verify_mode(ssl) & SSL_VERIFY_PEER) != 0) {
+        if (peerName == NULL || *peerName == '\0') {
+            Ns_TclPrintfResult(interp, "tls: certificate verification requires a peer hostname or IP address");
+            result = NS_ERROR;
+            goto done;
+        }
+        if (!numeric && NsHostnameIsNumericIP(peerName)) {
+            Ns_TclPrintfResult(interp, "tls: invalid numeric peer identity '%s'", peerName);
+            result = NS_ERROR;
+            goto done;
+        }
+        if (!numeric && peerName[0] == '.') {
+            /* OpenSSL treats a leading dot as a suffix match, not a DNS identity. */
+            Ns_TclPrintfResult(interp, "tls: invalid DNS peer identity '%s'", peerName);
+            result = NS_ERROR;
+            goto done;
+        }
+# if defined(HAVE_X509_VERIFY_PARAM_SET1_HOST) && defined(HAVE_X509_VERIFY_PARAM_SET1_IP_ASC)
+        {
+            X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
+            int                rc;
+
+            X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+            /* Do not inherit additional reference identities from the context. */
+            (void)X509_VERIFY_PARAM_set1_host(param, NULL, 0u);
+            (void)X509_VERIFY_PARAM_set1_ip(param, NULL, 0u);
+            if (numeric) {
+                rc = X509_VERIFY_PARAM_set1_ip_asc(param, peerName);
+            } else {
+                rc = X509_VERIFY_PARAM_set1_host(param, peerName, 0u);
+            }
+            if (rc != 1) {
+                Ns_TclPrintfResult(interp, "tls: cannot set peer identity '%s' for certificate verification", peerName);
+                result = NS_ERROR;
+                goto done;
+            }
+        }
+# else
+        Ns_TclPrintfResult(interp, "tls: this TLS library does not support certificate hostname/IP verification");
+        result = NS_ERROR;
+        goto done;
+# endif
+    }
+
+    if (peerName != NULL && *peerName != '\0' && !numeric) {
+# if HAVE_SSL_set_tlsext_host_name
+        Ns_Log(Debug, "tls: setting SNI hostname '%s'", peerName);
+        if (SSL_set_tlsext_host_name(ssl, (void *)peerName) != 1) {
+            Ns_Log(Warning, "tls: setting SNI hostname '%s' failed, value ignored", peerName);
+        }
+# endif
+    }
+ done:
+    Tcl_DStringFree(&name);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_TLS_SSLConnect --
  *
  *      Initialize a socket as ssl socket and wait until the socket is
- *      usable (is connected, handshake performed)
+ *      usable (is connected, handshake performed). The sni_hostname argument
+ *      supplies the expected DNS name or numeric IP address. Only DNS names
+ *      are sent as SNI. Verified connections require a nonempty identity.
  *
  * Results:
  *      NS_OK, NS_ERROR, or NS_TIMEOUT.
@@ -1288,15 +1398,8 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         result = NS_ERROR;
 
     } else {
-        if (sni_hostname != NULL) {
-# if HAVE_SSL_set_tlsext_host_name
-            Ns_Log(Debug, "tls: setting SNI hostname '%s'", sni_hostname);
-            if (SSL_set_tlsext_host_name(ssl, sni_hostname) != 1) {
-                Ns_Log(Warning, "tls: setting SNI hostname '%s' failed, value ignored", sni_hostname);
-            }
-# else
-            Ns_Log(Warning, "tls: SNI hostname '%s' is not supported by version of OpenSSL", sni_hostname);
-# endif
+        if (TLSSetPeerName(interp, ssl, sni_hostname) != NS_OK) {
+            return NS_ERROR;
         }
         SSL_set_fd(ssl, sock);
         SSL_set_connect_state(ssl);
