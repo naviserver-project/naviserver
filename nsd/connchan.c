@@ -1295,9 +1295,9 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
                 if (likely(result == TCL_OK)) {
                     Ns_DriverClientInitArg params = {ctx, sniHostname, caFile, caPath};
 
-                    if (sniHostname == NULL && !NsHostnameIsNumericIP(parsedUrl.host)) {
+                    if (sniHostname == NULL) {
                         params.sniHostname = parsedUrl.host;
-                        Ns_Log(Debug, "automatically use SNI <%s>", parsedUrl.host);
+                        Ns_Log(Debug, "automatically use TLS peer identity <%s>", parsedUrl.host);
                     }
                     result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &params);
 
@@ -1484,11 +1484,11 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
                                                    NULL /*app_data*/, 0u /*flags*/,
                                                    &ctx);
                 if (likely(result == TCL_OK)) {
-                    Ns_DriverClientInitArg params = {ctx, host, caFile, caPath};
+                    Ns_DriverClientInitArg params = {ctx, sniHostname, caFile, caPath};
 
-                    if (sniHostname == NULL && !NsHostnameIsNumericIP(host)) {
+                    if (sniHostname == NULL) {
                         params.sniHostname = host;
-                        Ns_Log(Debug, "automatically use SNI <%s>", host);
+                        Ns_Log(Debug, "automatically use TLS peer identity <%s>", host);
                     }
 
                     result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &params);

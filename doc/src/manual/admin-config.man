@@ -1807,6 +1807,11 @@ production environments.
   [para]
   Exceptions can be defined via [const validationException] to allow
   specific validation errors for selected hosts or networks.
+  The error names [const hostname-mismatch] and [const ip-address-mismatch]
+  explicitly allow server-identity mismatches. Use narrowly scoped rules
+  only when necessary. A rule with [const {accept *}], or an IP-only rule
+  without an error list, also waives identity checks; certificate-chain
+  validation alone does not authenticate the intended destination.
 
 [list_begin itemized]
 [item] [const ip:] IP address or CIDR range (optional)]

@@ -259,6 +259,12 @@
 /* Defined when cygwin/mingw ignores VOID define in winnt.h */
 #undef HAVE_WINNT_IGNORE_VOID
 
+/* Define to 1 if you have the 'X509_VERIFY_PARAM_set1_host' function. */
+#undef HAVE_X509_VERIFY_PARAM_SET1_HOST
+
+/* Define to 1 if you have the 'X509_VERIFY_PARAM_set1_ip_asc' function. */
+#undef HAVE_X509_VERIFY_PARAM_SET1_IP_ASC
+
 /* Define to 1 if you have the <xlocale.h> header file. */
 #undef HAVE_XLOCALE_H
 

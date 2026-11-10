@@ -592,7 +592,7 @@ $(CA_CERT): $(CA_CSR) $(CA_KEY) $(CA_EXT)
 	    -days 3650 -sha256 \
 	    -extfile $(CA_EXT) -extensions ca_ext
 
-$(SERVER_EXT): | $(CERT_DIR)
+$(SERVER_EXT): Makefile | $(CERT_DIR)
 	@printf '%s\n' \
 	    '[server_ext]' \
 	    'basicConstraints = CA:FALSE' \
@@ -602,6 +602,8 @@ $(SERVER_EXT): | $(CERT_DIR)
 	    '' \
 	    '[alt_names]' \
 	    'DNS.1 = localhost' \
+	    'DNS.2 = foo' \
+	    'DNS.3 = test' \
 	    'IP.1 = 127.0.0.1' \
 	    'IP.2 = ::1' \
 	    > $@
