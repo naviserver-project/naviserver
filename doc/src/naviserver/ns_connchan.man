@@ -210,9 +210,9 @@ The [arg options] can be any of:
 [opt_def -headers [arg setId]] A [type [term ns_set]] of request header
 fields.
 
-[opt_def -hostname [arg value]] Required for connecting to a
-server with virtual hosting that provides multiple certificates via
-SNI (Server Name Indication).
+[opt_def -hostname [arg value]] Overrides the expected TLS server identity
+with a DNS name or numeric IP address. Otherwise the remote host is used.
+Only DNS identities are sent as SNI.
 
 [opt_def -method [arg method]] Specifies the HTTP method, by default
 [const GET].
@@ -355,10 +355,11 @@ followed by intermediate CA certificates if applicable, and ending at
 the highest level (root) CA.
 
 [opt_def -hostname [arg value]]
-used for HTTPS URIs to specify the hostname for the server
-certificate. This option has to be used, when the host supports
-virtual hosting, is configured with multiple certificates and supports
-the SNI (Server Name Indication) extension of TLS.
+Overrides the expected TLS server identity; the URL host is used by default.
+DNS names are sent as SNI and, when verification is enabled, checked against
+the certificate. Numeric IP addresses are checked against IP subjectAltName
+entries and are not sent as SNI. An empty identity is rejected when
+verification is enabled.
 
 [opt_def -insecure]
 used for HTTPS URIs to specify that the server certificate should NOT be

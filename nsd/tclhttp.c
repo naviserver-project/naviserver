@@ -54,6 +54,7 @@ typedef struct {
     NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
     NS_TLS_SSL        *ssl;              /* SSL connection handle */
     const char        *host;
+    char              *tlsConfig;        /* NULL for plain HTTP */
     NS_SOCKET          sock;             /* socket to the remote peer */
     CloseWaitingState  state;
     unsigned short     port;
@@ -289,8 +290,9 @@ static NS_SOCKET HttpTunnel(
 
 
 static bool PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
+                                       const char *tlsConfig,
                                        CloseWaitingData *cwDataPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1,4);
 static bool PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void HttpCloseWaitingDataRelease(NsHttpTask *httpPtr)
@@ -644,6 +646,10 @@ NewValidationException(const char *validationExceptionString)
         {"certificate-expired",     X509_V_ERR_CERT_HAS_EXPIRED},
         {"certificate-untrusted",   X509_V_ERR_CERT_UNTRUSTED},
         {"chain-too-long",          X509_V_ERR_CERT_CHAIN_TOO_LONG},
+#ifdef X509_V_ERR_HOSTNAME_MISMATCH
+        {"hostname-mismatch",       X509_V_ERR_HOSTNAME_MISMATCH},
+        {"ip-address-mismatch",     X509_V_ERR_IP_ADDRESS_MISMATCH},
+#endif
         {"self-signed-certificate", X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT},
         {NULL,                      0u}
     };
@@ -3838,7 +3844,8 @@ HttpCheckSpool(
                  */
                 Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool deletes header field 'transfer-encoding'");
                 Ns_SetIDeleteKey(httpPtr->responseHeaders, transferEncodingHeader);
-            } else if (httpPtr->status != 204) {
+            } else if (httpPtr->status != 204
+                       && !(httpPtr->status == 200 && STREQ(httpPtr->method, connectMethod))) {
                 /*
                  * No content-length provided and not chunked, assume
                  * streaming HTML.
@@ -4251,7 +4258,7 @@ EstablishTCPConnection(
     /*
      * First, try to look up a persistent (cached) connection
      */
-    reuseConnection = PersistentConnectionLookup(rhost, rport, &cwData);
+    reuseConnection = PersistentConnectionLookup(rhost, rport, httpPtr->tlsConfig, &cwData);
     Ns_Log(Ns_LogTaskDebug, "======= reuseConnection %d host %s rport %d path %s tail %s",
            reuseConnection, rhost, rport, urlPtr->path, urlPtr->tail);
     if (reuseConnection) {
@@ -4303,8 +4310,8 @@ EstablishTCPConnection(
  *        calls EstablishTCPConnection to obtain or reuse a TCP socket
  *        (honoring httpProxy and proxyHost/proxyPortNr if set). Then creates
  *        a client TLS context using cert, caFile, caPath and verifyCert,
- *        selects an SNI hostname (either the provided sniHostname or, when
- *        NULL and the URL host is not numeric, urlPtr->host), and performs
+ *        selects the reference identity (sniHostname or urlPtr->host),
+ *        sends SNI for DNS identities only, and performs
  *        the TLS handshake within the remaining timeout. On success,
  *        httpPtr->ctx and httpPtr->ssl are populated.
  *
@@ -4349,8 +4356,9 @@ EstablishTLSConnection(
     /*
      * First, establish a plain (non-tunnel) connection
      */
-    result = EstablishTCPConnection(itPtr, httpPtr, urlPtr, portNr,
-                                    proxyHost, proxyPortNr, httpProxy, toPtr);
+    result = httpPtr->sock != NS_INVALID_SOCKET ? TCL_OK
+        : EstablishTCPConnection(itPtr, httpPtr, urlPtr, portNr,
+                                 proxyHost, proxyPortNr, httpProxy, toPtr);
     if (result != TCL_OK) {
         /*
          * Something went wrong in TCP connection setup.
@@ -4382,9 +4390,9 @@ EstablishTLSConnection(
              * simplicity, the start time and remaining timeout calculations
              * are abstracted.)
              */
-            if (sniHostname == NULL && !NsHostnameIsNumericIP(urlPtr->host)) {
+            if (sniHostname == NULL) {
                 sniHostname = urlPtr->host;
-                Ns_Log(Debug, "Automatically use SNI <%s>", urlPtr->host);
+                Ns_Log(Debug, "Automatically use TLS peer identity <%s>", urlPtr->host);
             }
 
             rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
@@ -4556,6 +4564,26 @@ HttpConnect(
         goto done;
     }
 
+    if (STREQ("https", urlPtr->protocol)) {
+        Tcl_DString tlsConfig;
+
+        /*
+         * Reuse TLS connections only under the same identity, trust policy,
+         * client credentials and route. In particular an -insecure connection
+         * must never satisfy a subsequent verified request.
+         */
+        Tcl_DStringInit(&tlsConfig);
+        Ns_DStringPrintf(&tlsConfig, "%p %d %hu", (void *)itPtr->servPtr, verifyCert, proxyPortNr);
+        Tcl_DStringAppendElement(&tlsConfig, sniHostname != NULL ? sniHostname : urlPtr->host);
+        Tcl_DStringAppendElement(&tlsConfig, caFile != NULL ? caFile : "");
+        Tcl_DStringAppendElement(&tlsConfig, caPath != NULL ? caPath : "");
+        Tcl_DStringAppendElement(&tlsConfig, cert != NULL ? cert : "");
+        Tcl_DStringAppendElement(&tlsConfig, proxyHost != NULL ? proxyHost : "");
+        Tcl_DStringAppendElement(&tlsConfig, udsPath != NULL ? udsPath : "");
+        httpPtr->tlsConfig = ns_strdup(tlsConfig.string);
+        Tcl_DStringFree(&tlsConfig);
+    }
+
     /*
      * If we have a Unix Domain Socket, use it and set httpPtr->sock.
      */
@@ -4621,16 +4649,29 @@ HttpConnect(
             httpPtr->sock = HttpTunnel(itPtr, proxyHost, proxyPortNr, urlPtr->host, portNr, toPtr);
             if (httpPtr->sock == NS_INVALID_SOCKET) {
                 result = TCL_ERROR;
+            } else {
+                httpPtr->host = ns_strdup(urlPtr->host);
+                httpPtr->port = portNr;
             }
 
-        } else if (STREQ("https", urlPtr->protocol)) {
-            result = EstablishTLSConnection(itPtr, httpPtr, urlPtr, portNr,
-                                            proxyHost, proxyPortNr, httpProxy, toPtr,
-                                            sniHostname, cert, caFile, caPath, verifyCert);
-        } else {
+        } else if (!STREQ("https", urlPtr->protocol)) {
             result = EstablishTCPConnection(itPtr, httpPtr, urlPtr, portNr,
                                             proxyHost, proxyPortNr, httpProxy, toPtr);
         }
+
+        if (result == TCL_OK && STREQ("https", urlPtr->protocol)) {
+            result = EstablishTLSConnection(itPtr, httpPtr, urlPtr, portNr,
+                                            proxyHost, proxyPortNr, httpProxy, toPtr,
+                                            sniHostname, cert, caFile, caPath, verifyCert);
+        }
+    }
+
+    /* A supplied Unix-domain socket still needs TLS for an HTTPS URL. */
+    if (result == TCL_OK && udsPath != NULL && STREQ("https", urlPtr->protocol)) {
+        result = EstablishTLSConnection(itPtr, httpPtr, urlPtr, portNr,
+                                       proxyHost, proxyPortNr, httpProxy,
+                                       timeoutPtr != NULL ? timeoutPtr : &itPtr->servPtr->httpclient.defaultTimeout,
+                                       sniHostname, cert, caFile, caPath, verifyCert);
     }
 
     if (result != TCL_OK) {
@@ -5882,6 +5923,9 @@ HttpClose(
     if (httpPtr->host != NULL) {
         ns_free((void *)httpPtr->host);
     }
+    if (httpPtr->tlsConfig != NULL) {
+        ns_free(httpPtr->tlsConfig);
+    }
     if (httpPtr->outputChanName != NULL) {
         ns_free((void *)httpPtr->outputChanName);
     }
@@ -7016,8 +7060,12 @@ HttpTunnel(
      * Construct CONNECT request line.
      */
     Tcl_DStringSetLength(dsPtr, 0);
-    Ns_DStringPrintf(dsPtr, "%s %s:%d HTTP/1.1\r\n", httpPtr->method, host, port);
-    Ns_DStringPrintf(dsPtr, "%s: %s:%d\r\n", hostHeader, host, port);
+    Ns_DStringPrintf(dsPtr, "%s ", httpPtr->method);
+    (void)Ns_HttpLocationString(dsPtr, NULL, host, port, 0u);
+    Tcl_DStringAppend(dsPtr, " HTTP/1.1\r\n", 11);
+    Ns_DStringPrintf(dsPtr, "%s: ", hostHeader);
+    (void)Ns_HttpLocationString(dsPtr, NULL, host, port, 0u);
+    Tcl_DStringAppend(dsPtr, "\r\n", 2);
     Tcl_DStringAppend(dsPtr, "\r\n", 2);
 
     httpPtr->requestLength = (size_t)dsPtr->length;
@@ -7543,6 +7591,7 @@ HttpGetTaskQueue(void)
  */
 static bool
 PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
+                           const char *tlsConfig,
                            CloseWaitingData *cwDataPtr)
 {
     bool   success = NS_FALSE;
@@ -7566,6 +7615,10 @@ PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
             char    buffer[1];
             ssize_t nread;
 
+            if ((tlsConfig == NULL) != (currentCwDataPtr->tlsConfig == NULL)
+                || (tlsConfig != NULL && strcmp(tlsConfig, currentCwDataPtr->tlsConfig) != 0)) {
+                continue;
+            }
             /*
              * Check for liveliness of the socket. The other side might have
              * closed the connection for various reasons. We can detect this,
@@ -7708,6 +7761,10 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     }
     cwDataPtr->host = ns_strdup(httpPtr->host);
     cwDataPtr->port = httpPtr->port;
+    if (cwDataPtr->tlsConfig != NULL) {
+        ns_free(cwDataPtr->tlsConfig);
+    }
+    cwDataPtr->tlsConfig = httpPtr->tlsConfig != NULL ? ns_strdup(httpPtr->tlsConfig) : NULL;
 
     Ns_MutexUnlock(&closeWaitingMutex);
 
@@ -7780,6 +7837,10 @@ CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
         cwDataPtr->host = NULL;
     }
     cwDataPtr->state = CW_FREE;
+    if (cwDataPtr->tlsConfig != NULL) {
+        ns_free(cwDataPtr->tlsConfig);
+        cwDataPtr->tlsConfig = NULL;
+    }
 
     /*Ns_Log(Notice, "CloseWaitingDataClean pos %ld ... final state %s",
            cwDataPtr->pos,

@@ -1232,6 +1232,7 @@ typedef struct {
     NsServer          *servPtr;          /* Server for doneCallback */
     NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
     NS_TLS_SSL        *ssl;              /* SSL connection handle */
+    char              *tlsConfig;        /* TLS identity and policy cache key */
     size_t             pos;              /* needed only for HttpCancel() */
     Tcl_DString        ds;               /* for assembling request string */
     struct _NsHttpChunk *chunk;          /* for parsing chunked encodings */

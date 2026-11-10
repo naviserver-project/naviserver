@@ -310,7 +310,7 @@ ifneq ($(OPENSSL_LIBS),)
   EXTRA_TEST_REQ    = $(PEM_FILE)
 endif
 
-$(PEM_FILE): $(PEM_PRIVATE)
+$(PEM_FILE): $(PEM_PRIVATE) $(SSLCONFIG)
 	$(OPENSSL) genrsa 2048 > host.key
 	# openssl rejects on some platforms building certificates with SHA1, which requires TLS>1.0, excluding Windows XP.
 	$(OPENSSL) req -new -config $(SSLCONFIG) -x509 -nodes -sha256 -days 365 -key host.key > host.cert

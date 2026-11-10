@@ -931,12 +931,22 @@ we focus on certificate management and security-related settings.
  [term self-signed-certificate]) from certain IP addresses or CIDR
  ranges. Multiple rules can be defined, each possibly including:
 
+
 [list_begin itemized]
 [item] [term ip:] The IP address or CIDR range. If omitted, the rule applies
    to all hosts.
 [item] [term accept:] A list of validation errors to allow, or [term "*"] to allow all.
    If omitted, the default is [term "accept *"].
 [list_end]
+
+[para]
+The accepted error names [const hostname-mismatch] and
+[const ip-address-mismatch] waive the corresponding server identity check.
+Scope exceptions narrowly. An [const {accept *}] rule or an IP-only rule
+without an error list also waives identity checks; a trusted certificate
+chain alone does not authenticate the intended destination.
+
+
 
  For example:
  

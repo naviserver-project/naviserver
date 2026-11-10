@@ -16,6 +16,14 @@
  * Common definitions of handling versions of openssl/libressl
  */
 
+/* Native MSVC builds do not run the configure-time function probes. */
+# if defined(_MSC_VER) && !defined(HAVE_CONFIG_H) && OPENSSL_VERSION_NUMBER >= 0x10002000L
+#  if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER >= 0x4010000fL
+#   define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
+#   define HAVE_X509_VERIFY_PARAM_SET1_IP_ASC 1
+#  endif
+# endif
+
 /*
  * Some OPENSSL_VERSION_NUMBERs:
  *    0x10101005L OpenSSL 1.1.1-pre5 (beta)
@@ -88,6 +96,7 @@
 #  define HAVE_OPENSSL_OCSP
 # endif
 
+# ifdef OPENSSL_VERSION_PREREQ
 #  if OPENSSL_VERSION_PREREQ(4,0)
 #   define HAVE_OPENSSL_4
 #   define HAVE_OPENSSL_4_0
@@ -95,6 +104,8 @@
 #  if OPENSSL_VERSION_PREREQ(4,1)
 #   define HAVE_OPENSSL_4_1
 #  endif
+
+# endif
 
 # include <openssl/ssl.h>
 # include <openssl/err.h>

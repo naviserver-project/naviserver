@@ -343,10 +343,11 @@ headers is the ns_set ID containing the additional headers to include
 in the request.
 
 [opt_def -hostname [arg value]]
-used for HTTPS URIs to specify the hostname for the server
-certificate. This option has to be used, when the host supports
-virtual hosting, is configured with multiple certificates and supports
-the SNI (Server Name Indication) extension of TLS.
+Overrides the expected TLS server identity; the URL host is used by default.
+DNS names are sent as SNI and, when verification is enabled, checked against
+the certificate. Numeric IP addresses are checked against IP subjectAltName
+entries and are not sent as SNI. An empty identity is rejected when
+verification is enabled.
 
 [opt_def -insecure]
 used for HTTPS URIs to specify that the server certificate should NOT be
