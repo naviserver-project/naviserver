@@ -47,9 +47,9 @@ jobs:
             env \
               version_ns=.. \
               version_modules=GIT \
-              version_tcl=core-8-6-17 \
+              version_tcl=core-8-6-18 \
               version_tcllib= \
-              version_xotcl=2.4.0 \
+              version_xotcl=2.5.0 \
               version_tdom=0.9.6 \
               ns_modules="" \
               with_ns_deprecated=1 \
