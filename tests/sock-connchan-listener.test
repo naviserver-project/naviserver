@@ -39,7 +39,7 @@ namespace eval ::listener_test {
     }
     proc client {address port} {
         variable handles
-        set channel [ns_connchan connect -timeout 2s -- $address $port]
+        set channel [ns_connchan connect -timeout 2 $address $port]
         lappend handles $channel
         return $channel
     }
@@ -91,7 +91,7 @@ test connchan-listener-failed-driver {failure after listener registration releas
     set info [::listener_test::listen]
     set port [dict get $info port]
     ns_connchan close [dict get $info channel]
-    set code [catch {ns_connchan listen -bind -driver no-such-listener-driver -- 127.0.0.1 $port list}]
+    set code [catch {ns_connchan listen -bind -driver no-such-listener-driver 127.0.0.1 $port list}]
     ::listener_test::listen 127.0.0.1 $port
     list $code [::listener_test::receive [::listener_test::client 127.0.0.1 $port]]
 } -cleanup {::listener_test::cleanup} -result {1 L}
