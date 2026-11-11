@@ -1,8 +1,12 @@
 # Module-owned metadata and badges use the shared Makefile.module rules.
 package require tcltest 2.2
 namespace import -force ::tcltest::*
-testConstraint versionTemplates [expr {[package vcompare [info patchlevel] 8.6] >= 0 && [auto_execok make] ne ""}]
 namespace eval ::module_version_test {
+    # Set MAKE=gmake for standalone runs where make is BSD Make.
+    variable makeExecutable make
+    if {[info exists ::env(MAKE)] && $::env(MAKE) ne ""} {
+        set makeExecutable $::env(MAKE)
+    }
     variable rules [file normalize [file join [file dirname [info script]] .. include Makefile.module]]
     proc write {path text} {
         set f [open $path w]
@@ -25,15 +29,18 @@ set ::example::version {@NS_MODULE_VERSION@}
 set ::example::tag {@NS_MODULE_TAG@}}
         write $directory/version.svg.in {<svg xmlns="http://www.w3.org/2000/svg"><text>@NS_MODULE_VERSION@</text></svg>}
     }
-    proc run {args} {
+    proc run {targets {environment {}}} {
         variable directory
-        exec make -s -C $directory {*}$args 2>@1
+        variable makeExecutable
+        exec env {*}$environment $makeExecutable -s -C $directory {*}$targets 2>@1
     }
     proc cleanup {} {
         variable directory
         ::tcltest::removeDirectory $directory
     }
 }
+
+testConstraint versionTemplates [expr {[package vcompare [info patchlevel] 8.6] >= 0}]
 
 test module-version-generate {one version expands both templates and installs both outputs} -constraints versionTemplates -returnCodes {ok error} -setup {
     ::module_version_test::setup
@@ -61,7 +68,7 @@ test module-version-update {changing the Makefile version updates both represent
     ::module_version_test::setup
 } -body {
     ::module_version_test::run all
-    ::module_version_test::run NS_MODULE_VERSION=2.0 all
+    ::module_version_test::run {NS_MODULE_VERSION=2.0 all}
     set directory $::module_version_test::directory
     list [string match {*::version {2.0}*} [::module_version_test::read $directory/version.tcl]] \
         [string match {*<text>2.0</text>*} [::module_version_test::read $directory/.version.svg]]
@@ -72,7 +79,7 @@ test module-version-binary {native metadata is not duplicated by automatic Tcl t
 } -body {
     set directory $::module_version_test::directory
     # Request just the badge; no native object compilation is needed.
-    ::module_version_test::run MOD=example.so .version.svg
+    ::module_version_test::run {MOD=example.so .version.svg}
     list [file exists $directory/.version.svg] [file exists $directory/version.tcl]
 } -cleanup {::module_version_test::cleanup} -result {1 0}
 
@@ -86,7 +93,7 @@ test module-version-archive {generated variable data preserves the tag outside G
     ::module_version_test::write $file [string map [list "NS_MODULE_TAG = fixture-tag\n" ""] $contents]
     # Prevent Git discovery from finding the enclosing NaviServer checkout.
     # The nonexistent Git directory simulates a distribution without Git data.
-    exec env GIT_DIR=$directory/no-git-data make -s -C $directory all 2>@1
+    ::module_version_test::run all [list GIT_DIR=$directory/no-git-data]
     string match {*::tag {fixture-tag}*} [::module_version_test::read $directory/version.tcl]
 } -cleanup {::module_version_test::cleanup} -result 1
 
