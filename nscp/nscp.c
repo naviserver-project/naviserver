@@ -361,7 +361,7 @@ AcceptProc(NS_SOCKET sock, void *UNUSED(arg), unsigned int why)
 
         sessPtr = ns_malloc(sizeof(Sess));
         sessPtr->modPtr = modPtr;
-        len = (socklen_t)sizeof(sa);
+        len = (socklen_t)sizeof(sessPtr->sa);
         sessPtr->sock = Ns_SockAccept(sock, (struct sockaddr *) &sessPtr->sa, &len);
         if (sessPtr->sock == NS_INVALID_SOCKET) {
             Ns_Log(Error, "nscp: accept() failed: %s",
