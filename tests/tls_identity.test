@@ -42,7 +42,7 @@ foreach api {http open connect} {
     test tls-identity-$api-1 {matching DNS identity over numeric transport} \
         -constraints {tlsIdentityServer} -body {
         tlsIdentityRequest $api -hostname localhost
-    } -result 200
+        }  -returnCodes {error ok} -result 200
 
     test tls-identity-$api-2 {unrelated trusted DNS certificate is rejected} \
         -constraints {tlsIdentityServer} -body {
@@ -160,7 +160,11 @@ proc tlsIdentityProxyStart {} {
                 return
             }
             set remote [socket $::targetHost $::targetPort]
-            puts $client "HTTP/1.1 200 Connection established\n"
+            # The status line alone does not complete the CONNECT response.
+            puts $client "HTTP/1.1 200 Connection established"
+            flush $client
+            after 100
+            puts $client ""
             flush $client
             foreach chan [list $client $remote] {
                 fconfigure $chan -blocking 0 -translation binary -buffering none
@@ -176,7 +180,7 @@ proc tlsIdentityProxyStart {} {
         vwait ::done
         close $listen
     }
-    set thread [ns_thread begin [list apply \
+    set thread [ns_thread create [list apply \
         [list {targetHost targetPort listenPort table script} {eval $script}] \
         $loopback [ns_config test tls_listenport] $port $table $script]]
     for {set i 0} {$i < 500 && ![nsv_exists $table ready]} {incr i} {
@@ -186,13 +190,15 @@ proc tlsIdentityProxyStart {} {
     return [list $thread $table [dict create host $loopback port $port]]
 }
 proc tlsIdentityProxyStop {fixture} {
+    if {$fixture eq ""} {return}
     lassign $fixture thread table
-    ns_thread join $thread
+    ns_thread wait $thread
     nsv_unset $table
 }
 
 test tls-identity-proxy-1 {HTTPS CONNECT tunnel performs TLS and identity checking} \
     -constraints {tlsIdentityServer} -setup {
+    set fixture {}
     set fixture [tlsIdentityProxyStart]
 } -body {
     dict get [ns_http run -timeout 10s -hostname localhost -proxy [lindex $fixture 2] \
@@ -201,6 +207,7 @@ test tls-identity-proxy-1 {HTTPS CONNECT tunnel performs TLS and identity checki
 
 test tls-identity-proxy-2 {HTTPS CONNECT rejects a mismatching target identity} \
     -constraints {tlsIdentityServer} -setup {
+    set fixture {}
     set fixture [tlsIdentityProxyStart]
 } -body {
     ns_http run -timeout 10s -hostname not-in-certificate.example -proxy [lindex $fixture 2] \
@@ -209,8 +216,12 @@ test tls-identity-proxy-2 {HTTPS CONNECT rejects a mismatching target identity} 
 
 # A trusted DNS-only certificate must NOT authenticate a numeric URL.
 # This fixture exercises the default identity, without a -hostname override.
+# Use the same executable as the Makefile's certificate recipes.
+# Keep the default for runs started directly with nsd.
+set ::tlsIdentityOpenSSL [auto_execok [expr {[info exists ::env(OPENSSL)]
+                                           ? $::env(OPENSSL) : "openssl"}]]
 testConstraint tlsIdentityOpenSSLCLI [expr {$::tcl_platform(platform) eq "unix"
-                                           && [auto_execok openssl] ne ""}]
+                                           && $::tlsIdentityOpenSSL ne ""}]
 proc tlsIdentityDNSOnlyStart {{host ""} {unixSocket ""}} {
     set dir [makeDirectory tls-identity-dns-only]
     set config [open [file join $dir openssl.cnf] w]
@@ -224,7 +235,7 @@ CN = localhost
 basicConstraints = critical, CA:TRUE
 subjectAltName = DNS:localhost}
     close $config
-    exec openssl req -new -x509 -nodes -newkey rsa:2048 -sha256 -days 1 \
+    exec {*}$::tlsIdentityOpenSSL req -new -x509 -nodes -newkey rsa:2048 -sha256 -days 1 \
         -config [file join $dir openssl.cnf] -keyout [file join $dir key.pem] \
         -out [file join $dir cert.pem] 2>[file join $dir req.log]
     if {$host eq ""} {set host [ns_config test loopback]}
@@ -233,7 +244,7 @@ subjectAltName = DNS:localhost}
     close $probe
     set endpoint [expr {[string first : $host] >= 0 ? "\[$host\]:$port" : "$host:$port"}]
     set transport [expr {$unixSocket eq "" ? [list -accept $endpoint] : [list -unix $unixSocket]}]
-    set child [exec openssl s_server -quiet -www {*}$transport \
+    set child [exec {*}$::tlsIdentityOpenSSL s_server -quiet -www {*}$transport \
                    -cert [file join $dir cert.pem] -key [file join $dir key.pem] \
                    >[file join $dir server.log] 2>@1 &]
     for {set i 0} {$i < 500} {incr i} {
@@ -317,10 +328,12 @@ test tls-identity-reuse-5 {changed client credentials require a separate TLS ses
 } -cleanup {ns_unregister_op GET /tls-identity-clientcert} -result {0 1}
 
 set opensslHelp ""
-catch {exec openssl s_server -help 2>@1} opensslHelp
+if {[testConstraint tlsIdentityOpenSSLCLI]} {
+    catch {exec {*}$::tlsIdentityOpenSSL s_server -help 2>@1} opensslHelp
+}
 set unixProbe ""
 if {$::tcl_platform(platform) eq "unix" && [string match {*-unix *} $opensslHelp]} {
-    catch {exec openssl s_client -unix /ns-tls-nonexistent-[pid] -quiet < /dev/null 2>@1} unixProbe
+    catch {exec {*}$::tlsIdentityOpenSSL s_client -unix /ns-tls-nonexistent-[pid] -quiet < /dev/null 2>@1} unixProbe
 }
 testConstraint tlsIdentityUnix [expr {$::tcl_platform(platform) eq "unix"
                                     && [string match {*-unix *} $opensslHelp]
@@ -354,4 +367,5 @@ rename tlsIdentityDNSOnlyStop {}
 rename tlsIdentityProxyStart {}
 rename tlsIdentityProxyStop {}
 rename tlsIdentityRequest {}
+unset ::tlsIdentityOpenSSL
 cleanupTests
