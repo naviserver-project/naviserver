@@ -269,6 +269,8 @@ install-sf-doc:
 #
 
 NS_TEST_CFG	= -u root -c -d -t $(srcdir)/tests/test.nscfg
+OPENSSL         ?= openssl
+NS_TEST_ENV     = OPENSSL="$(OPENSSL)"
 NS_TEST_ALL	= $(srcdir)/tests/all.tcl $(TESTFLAGS)
 NS_LD_LIBRARY_PATH	= \
    LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
@@ -285,36 +287,36 @@ ifneq ($(OPENSSL_LIBS),)
 endif
 
 $(PEM_FILE): $(PEM_PRIVATE) $(SSLCONFIG)
-	openssl genrsa 2048 > host.key
-	openssl req -new -config $(SSLCONFIG) -x509 -nodes -sha256 -days 365 -key host.key > host.cert
+	$(OPENSSL) genrsa 2048 > host.key
+	$(OPENSSL) req -new -config $(SSLCONFIG) -x509 -nodes -sha256 -days 365 -key host.key > host.cert
 	cat host.cert host.key > server.pem
 	rm -rf host.cert host.key
-	openssl dhparam 1024 >> server.pem
+	$(OPENSSL) dhparam 1024 >> server.pem
 	mv server.pem $(PEM_FILE)
 
 $(PEM_PRIVATE):
-	openssl genrsa -out $(PEM_PRIVATE) 512
-	openssl rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
+	$(OPENSSL) genrsa -out $(PEM_PRIVATE) 512
+	$(OPENSSL) rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
 
 check: test
 
 test: all $(EXTRA_TEST_REQ)
-	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 	@for i in $(EXTRA_TEST_DIRS); do \
 		( cd $$i && $(MAKE) test ) || exit 1; \
 	done
 
 runtest: all
-	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
 
 gdbtest: all
-	$(NS_LD_LIBRARY_PATH) gdb -ex=run --args ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) gdb -ex=run --args ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 #	@echo set args $(NS_TEST_CFG) $(NS_TEST_ALL) > gdb.run
-#	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
+#	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 #	rm gdb.run
 
 lldbtest: all
-	$(NS_LD_LIBRARY_PATH) lldb -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL) 
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) lldb -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 lldb-sample: all
 	lldb -o run -- $(DESTDIR)$(NAVISERVER)/bin/nsd -f -u nsadmin -t $(DESTDIR)$(NAVISERVER)/conf/nsd-config.tcl
@@ -322,13 +324,13 @@ lldb-sample: all
 
 gdbruntest: all
 	@echo set args $(NS_TEST_CFG) > gdb.run
-	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 memcheck: all
-	$(NS_LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 helgrind: all
-	$(NS_LD_LIBRARY_PATH) valgrind --tool=helgrind ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_TEST_ENV) $(NS_LD_LIBRARY_PATH) valgrind --tool=helgrind ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 CPPCHECK_SYS_INCLUDES=-I/usr/include
 #CPPCHECK_SYS_INCLUDES=-I`xcrun --show-sdk-path`/usr/include

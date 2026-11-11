@@ -42,8 +42,12 @@ test tls-identity-legacy-7 {empty identity fails closed with verification} -cons
 
 # A trusted DNS-only certificate must NOT authenticate a numeric URL.
 # This fixture exercises the default identity, without a -hostname override.
+# Use the same executable as the Makefile's certificate recipes.
+# Keep the default for runs started directly with nsd.
+set ::tlsIdentityOpenSSL [auto_execok [expr {[info exists ::env(OPENSSL)]
+                                           ? $::env(OPENSSL) : "openssl"}]]
 testConstraint tlsIdentityOpenSSLCLI [expr {$::tcl_platform(platform) eq "unix"
-                                           && [auto_execok openssl] ne ""}]
+                                           && $::tlsIdentityOpenSSL ne ""}]
 proc tlsIdentityDNSOnlyStart {{host ""}} {
     set dir [makeDirectory tls-identity-dns-only]
     set config [open [file join $dir openssl.cnf] w]
@@ -57,7 +61,7 @@ CN = localhost
 basicConstraints = critical, CA:TRUE
 subjectAltName = DNS:localhost}
     close $config
-    exec openssl req -new -x509 -nodes -newkey rsa:2048 -sha256 -days 1 \
+    exec {*}$::tlsIdentityOpenSSL req -new -x509 -nodes -newkey rsa:2048 -sha256 -days 1 \
         -config [file join $dir openssl.cnf] -keyout [file join $dir key.pem] \
         -out [file join $dir cert.pem] 2>[file join $dir req.log]
     if {$host eq ""} {set host [ns_config test loopback]}
@@ -65,7 +69,7 @@ subjectAltName = DNS:localhost}
     set port [lindex [fconfigure $probe -sockname] end]
     close $probe
     set endpoint [expr {[string first : $host] >= 0 ? "\[$host\]:$port" : "$host:$port"}]
-    set child [exec openssl s_server -quiet -www -accept $endpoint \
+    set child [exec {*}$::tlsIdentityOpenSSL s_server -quiet -www -accept $endpoint \
                    -cert [file join $dir cert.pem] -key [file join $dir key.pem] \
                    >[file join $dir server.log] 2>@1 &]
     for {set i 0} {$i < 200} {incr i} {
@@ -112,4 +116,5 @@ foreach api {http} {
 rename tlsIdentityDNSOnlyStart {}
 rename tlsIdentityDNSOnlyStop {}
 rename tlsIdentityRequest {}
+unset ::tlsIdentityOpenSSL
 cleanupTests
