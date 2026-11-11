@@ -262,6 +262,14 @@ SourceForge release tarball or `./autogen.sh` from GitHub sources:
   If this option is provided explicitly and the specified directories are
   invalid or OpenSSL cannot be detected, configuration will fail.
 
+  For build and test commands, configuration prefers the executable
+  from the same installation when it can locate one: in `DIR/bin`,
+  under the common parent of sibling include and library directories,
+  or using the installation reported by `pkg-config`. Otherwise it
+  uses `openssl` on `PATH`. Set `OPENSSL=/path/to/bin/openssl` when
+  running `configure` to select a command explicitly. You can also
+  override it for a single run with `make test OPENSSL=/path/to/bin/openssl`.
+
 For a detailed list of all options, use:
 
 ```bash

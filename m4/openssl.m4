@@ -17,6 +17,7 @@
 #               --with-openssl[=DIR|INCLUDEDIR,LIBDIR]
 #
 #       Defines the following vars:
+#               OPENSSL            OpenSSL command for build and test recipes.
 #               OPENSSL_INCLUDES   Full path to the directory containing
 #                                  the openssl/evp.h file if explicitly
 #                                  specified.
@@ -24,8 +25,10 @@
 #------------------------------------------------------------------------
 
 AC_DEFUN([AX_CHECK_OPENSSL], [
+AC_ARG_VAR([OPENSSL], [OpenSSL command for build and test recipes])
 AC_MSG_CHECKING([for OpenSSL libraries])
 
+openssl_bindir=""
 AC_ARG_WITH([openssl],
   AS_HELP_STRING(
     [--with-openssl@<:@=DIR|INCLUDEDIR,LIBDIR@:>@],
@@ -51,6 +54,10 @@ AC_ARG_WITH([openssl],
 
           if test -d "$openssl_incdir" -a -d "$openssl_libdir" ; then
             OPENSSL_INCLUDES="-I$openssl_incdir"
+            openssl_incparent=$(dirname "$openssl_incdir")
+            if test "$openssl_incparent" = "$(dirname "$openssl_libdir")" ; then
+              openssl_bindir="$openssl_incparent/bin"
+            fi
 
             dnl
             dnl Prefer absolute library pathnames when possible.
@@ -74,6 +81,7 @@ AC_ARG_WITH([openssl],
         [
           if test -d "$withval" ; then
             OPENSSL_INCLUDES="-I$withval/include"
+            openssl_bindir="$withval/bin"
 
             dnl
             dnl When an explicit OpenSSL prefix is provided, prefer absolute
@@ -118,6 +126,16 @@ if test "${ac_openssl}" = "yes" ; then
         AC_MSG_NOTICE([OpenSSL is configured via $PKG_CONFIG])
         OPENSSL_LIBS=`$PKG_CONFIG --libs openssl`
         OPENSSL_INCLUDES=`$PKG_CONFIG --cflags-only-I openssl`
+        openssl_bindir=$("$PKG_CONFIG" --variable=bindir openssl)
+        if test -z "$openssl_bindir" ; then
+          openssl_prefix=$("$PKG_CONFIG" --variable=exec_prefix openssl)
+          if test -z "$openssl_prefix" ; then
+            openssl_prefix=$("$PKG_CONFIG" --variable=prefix openssl)
+          fi
+          if test -n "$openssl_prefix" ; then
+            openssl_bindir="$openssl_prefix/bin"
+          fi
+        fi
      fi
   fi
 
@@ -172,6 +190,17 @@ dnl ------------------------------------------------------------
   LDFLAGS="${LDFLAGS_saved}"
 fi
 
+if test -z "$OPENSSL" ; then
+  if test -n "$openssl_bindir" && test -f "$openssl_bindir/openssl" \
+      && test -x "$openssl_bindir/openssl" ; then
+    openssl_bindir=$(CDPATH= cd "$openssl_bindir" && pwd)
+    OPENSSL="$openssl_bindir/openssl"
+  else
+    OPENSSL=openssl
+  fi
+fi
+
+AC_MSG_NOTICE([Using $OPENSSL for OpenSSL commands])
 AC_SUBST([OPENSSL_INCLUDES])
 AC_SUBST([OPENSSL_LIBS])
 ])

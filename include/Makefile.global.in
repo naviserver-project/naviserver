@@ -66,7 +66,7 @@ MV               ?= /bin/mv
 CAT              ?= /bin/cat
 CHMOD            ?= /bin/chmod
 CHOWN            ?= /bin/chown
-OPENSSL          ?= openssl
+OPENSSL          ?= @OPENSSL@
 
 ifdef NSBUILD
     INSTALL_SH	 = $(srcdir)/install-sh -c
