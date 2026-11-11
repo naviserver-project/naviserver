@@ -44,7 +44,6 @@ jobs:
             g++-9 \
             openssl \
             libssl-dev \
-            libpam0g-dev \
             wget
 
       - name: Checkout
