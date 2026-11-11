@@ -317,7 +317,7 @@ test ns_fseekchars-3.0 {spooled multipart parsing preserves exact uploaded bytes
     set form [ns_set create fseek-multipart]
     set uploads {}
 } -body {
-    ns_parseformfile -encoding utf-8 $fseekPath $form [dict create raw "multipart/form-data; boundary=$boundary" type multipart/form-data boundary $boundary]
+    ns_parseformfile -encoding utf-8 $fseekPath $form "multipart/form-data; boundary=$boundary"
     set same {}
     foreach name {first second} expected [list $payload1 $payload2] {
         set tmp [ns_set get $form $name.tmpfile]
