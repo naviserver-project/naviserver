@@ -248,6 +248,21 @@ typedef struct AsyncWriteData {
  * stopped queue safely and use the synchronous fallback.
  */
 static AsyncWriter *asyncWriter = NULL;
+static Ns_AtomicUint32 asyncWriterReady;
+
+static bool
+AsyncWriterInitReady(void)
+{
+    Ns_AtomicUint32Init(&asyncWriterReady, 0u);
+    return NS_TRUE;
+}
+
+static AsyncWriter *
+AsyncWriterGet(void)
+{
+    NS_INIT_ONCE(AsyncWriterInitReady);
+    return Ns_AtomicUint32LoadAcquire(&asyncWriterReady) != 0u ? asyncWriter : NULL;
+}
 
 #define DriverGetPort(drvPtr,n) (unsigned short)PTR2INT((drvPtr)->ports.data[(n)])
 
@@ -11113,43 +11128,39 @@ void
 NsAsyncWriterQueueEnable(void)
 {
     if (Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_TRUE) {
-        SpoolerQueue  *queuePtr;
+        AsyncWriter  *writerPtr = AsyncWriterGet();
+        SpoolerQueue *queuePtr;
 
-        /*
-         * In case, the async writer has not started, the static variable
-         * asyncWriter is NULL.
-         */
-        if (asyncWriter == NULL) {
+        if (writerPtr == NULL) {
+            bool startWorker = NS_FALSE;
+
             Ns_MutexLock(&reqLock);
-            if (likely(asyncWriter == NULL)) {
-                /*
-                 * Allocate and initialize writer thread context.
-                 */
-                asyncWriter = ns_calloc(1u, sizeof(AsyncWriter));
-                Ns_MutexUnlock(&reqLock);
-                Ns_MutexSetName2(&asyncWriter->lock, "ns:driver", "async-writer");
-                /*
-                 * Allocate and initialize a Spooler Queue for this thread.
-                 */
+            writerPtr = AsyncWriterGet();
+            if (writerPtr == NULL) {
+                writerPtr = ns_calloc(1u, sizeof(AsyncWriter));
+                Ns_MutexSetName2(&writerPtr->lock, "ns:driver", "async-writer");
+
                 queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
                 Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer", "queue");
                 Ns_CondInit(&queuePtr->cond);
+                if (ns_sockpair(queuePtr->pipe) != 0) {
+                    Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
+                }
 
-                asyncWriter->firstPtr = queuePtr;
-                /*
-                 * Start the spooler queue
-                 */
-                SpoolerQueueStart(queuePtr, AsyncWriterThread);
+                writerPtr->firstPtr = queuePtr;
+                asyncWriter = writerPtr;
+                Ns_AtomicUint32StoreRelease(&asyncWriterReady, 1u);
+                startWorker = NS_TRUE;
+            }
+            Ns_MutexUnlock(&reqLock);
 
-            } else {
-                Ns_MutexUnlock(&reqLock);
+            if (startWorker) {
+                queuePtr = writerPtr->firstPtr;
+                Ns_ThreadCreate(AsyncWriterThread, queuePtr, 0, &queuePtr->thread);
             }
         }
 
-
-        assert(asyncWriter != NULL);
-        queuePtr = asyncWriter->firstPtr;
-        assert(queuePtr != NULL);
+        queuePtr = writerPtr->firstPtr;
 
         Ns_MutexLock(&queuePtr->lock);
         /*
@@ -11196,8 +11207,10 @@ NsAsyncWriterQueueEnable(void)
 void
 NsAsyncWriterQueueDisable(bool shutdown)
 {
-    if (asyncWriter != NULL) {
-        SpoolerQueue *queuePtr = asyncWriter->firstPtr;
+    AsyncWriter *writerPtr = AsyncWriterGet();
+
+    if (writerPtr != NULL) {
+        SpoolerQueue *queuePtr = writerPtr->firstPtr;
         Ns_Time       timeout;
 
         assert(queuePtr != NULL);
@@ -11306,17 +11319,18 @@ AsyncWriteDataCreate(int fd, const char *buffer, size_t nbyte)
 static bool
 AsyncWriteEnqueue(int fd, const char *buffer, size_t nbyte)
 {
+    AsyncWriter    *writerPtr = AsyncWriterGet();
     AsyncWriteData *newPtr;
     SpoolerQueue   *queuePtr;
     bool            queued = NS_FALSE;
     bool            trigger = NS_FALSE;
 
-    if (asyncWriter == NULL) {
+    if (writerPtr == NULL) {
         return NS_FALSE;
     }
 
     newPtr = AsyncWriteDataCreate(fd, buffer, nbyte);
-    queuePtr = asyncWriter->firstPtr;
+    queuePtr = writerPtr->firstPtr;
     assert(queuePtr != NULL);
 
     Ns_MutexLock(&queuePtr->lock);
@@ -11325,7 +11339,7 @@ AsyncWriteEnqueue(int fd, const char *buffer, size_t nbyte)
         trigger = queuePtr->sockPtr == NULL;
         newPtr->nextPtr = queuePtr->sockPtr;
         queuePtr->sockPtr = newPtr;
-        asyncWriter->stats.queued++;
+        writerPtr->stats.queued++;
         queued = NS_TRUE;
     }
 
@@ -11372,7 +11386,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     Ns_ReturnCode returnCode = NS_OK;
 
     NS_NONNULL_ASSERT(buffer != NULL);
-    
+
     if (!AsyncWriteEnqueue(fd, buffer, nbyte)) {
         /*
          * The asynchronous writer is unavailable or temporarily stopped.
@@ -11495,6 +11509,7 @@ AsyncWriterDrainList(AsyncWriteData **listPtr, size_t *counterPtr,
 static void
 AsyncWriterThread(void *arg)
 {
+    AsyncWriter    *writerPtr = AsyncWriterGet();
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     char            charBuffer[1];
     int             pollTimeout;
@@ -11554,21 +11569,21 @@ AsyncWriterThread(void *arg)
 
                 /*
                  * Drain active writer jobs. These jobs are on writePtr and are counted
-                 * both in asyncWriter->stats.writing and queuePtr->queuesize.
+                 * both in writerPtr->stats.writing and queuePtr->queuesize.
                  */
-                AsyncWriterDrainList(&writePtr, &asyncWriter->stats.writing,
+                AsyncWriterDrainList(&writePtr, &writerPtr->stats.writing,
                                      queuePtr, NS_TRUE, "drain writer");
 
                 /*
                  * Detach queued-but-not-yet-active jobs under the queue lock. These jobs
-                 * are counted in asyncWriter->stats.queued, but not in queuePtr->queuesize.
+                 * are counted in writerPtr->stats.queued, but not in queuePtr->queuesize.
                  */
                 Ns_MutexLock(&queuePtr->lock);
                 queuedPtr = queuePtr->sockPtr;
                 queuePtr->sockPtr = NULL;
                 Ns_MutexUnlock(&queuePtr->lock);
 
-                AsyncWriterDrainList(&queuedPtr, &asyncWriter->stats.queued,
+                AsyncWriterDrainList(&queuedPtr, &writerPtr->stats.queued,
                                      queuePtr, NS_FALSE, "drain queue");
 
                 /*
@@ -11592,7 +11607,7 @@ AsyncWriterThread(void *arg)
             nextPtr = curPtr->nextPtr;
             status = NS_OK;
 
-            QueueStatsDecr(asyncWriter->stats.writing, "async writer writing");
+            QueueStatsDecr(writerPtr->stats.writing, "async writer writing");
 
             /*
              * Write the actual data and allow for partial write operations.
@@ -11621,7 +11636,7 @@ AsyncWriterThread(void *arg)
                  */
                 if (curPtr->size > 0u) {
                     Push(curPtr, writePtr);
-                    asyncWriter->stats.writing++;
+                    writerPtr->stats.writing++;
                 } else {
                     AsyncWriterRelease(curPtr);
                     queuePtr->queuesize--;
@@ -11659,10 +11674,10 @@ AsyncWriterThread(void *arg)
             while (curPtr != NULL) {
                 nextPtr = curPtr->nextPtr;
 
-                QueueStatsDecr(asyncWriter->stats.queued, "async writer queued");
+                QueueStatsDecr(writerPtr->stats.queued, "async writer queued");
 
                 Push(curPtr, writePtr);
-                asyncWriter->stats.writing++;
+                writerPtr->stats.writing++;
 
                 queuePtr->queuesize++;
                 curPtr = nextPtr;
@@ -11952,12 +11967,14 @@ AsyncLogfileStatsObjCmd
     } else {
         Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
-        if (asyncWriter != NULL) {
+        AsyncWriter *writerPtr = AsyncWriterGet();
+
+        if (writerPtr != NULL) {
             Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_writing));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)asyncWriter->stats.writing));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)writerPtr->stats.writing));
 
             Tcl_ListObjAppendElement(interp, listObj, NsAtomObj(NS_ATOM_queued));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)asyncWriter->stats.queued));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj((Tcl_WideInt)writerPtr->stats.queued));
         }
         Tcl_SetObjResult(interp, listObj);
     }
