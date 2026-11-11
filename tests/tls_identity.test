@@ -129,70 +129,70 @@ test tls-identity-reuse-3 {same-policy TLS connections remain reusable} \
     expr {[llength [lsort -unique $peers]] == 1}
 } -result 1
 
-# A small CONNECT relay in its own interpreter avoids depending on the
-# optional reverse-proxy package. It only connects to the local test server.
+# Keep the CONNECT relay self-contained so the test controls how the
+# response is split and can run on older branches without revproxy.
 proc tlsIdentityProxyStart {} {
     set loopback [ns_config test loopback]
-    set probe [socket -server {apply {{args} {}}} -myaddr $loopback 0]
-    set port [lindex [fconfigure $probe -sockname] end]
-    close $probe
     set table tls-identity-[clock clicks]
-    set script {
-        proc relay {from to} {
-            if {[catch {
-                set bytes [read $from 65536]
-                puts -nonewline $to $bytes
-                flush $to
-                if {[eof $from]} {error eof}
-            }]} {
-                catch {close $from}
-                catch {close $to}
-                set ::done 1
-            }
+    nsv_set $table channels {}
+    set relay {{source target event} {
+        if {$event ne "r" || [set data [ns_connchan read $source]] eq ""} {
+            catch {ns_connchan close $target}
+            return 0
         }
-        proc accept {client address port} {
-            fconfigure $client -blocking 1 -translation crlf -buffering line
-            gets $client request
-            while {[gets $client line] >= 0 && $line ne ""} {}
-            if {![regexp {^CONNECT (\[[^]]+\]|[^:]+):[0-9]+ HTTP/1\.1$} $request]} {
-                close $client
-                set ::done 1
-                return
-            }
-            set remote [socket $::targetHost $::targetPort]
-            # The status line alone does not complete the CONNECT response.
-            puts $client "HTTP/1.1 200 Connection established"
-            flush $client
-            after 100
-            puts $client ""
-            flush $client
-            foreach chan [list $client $remote] {
-                fconfigure $chan -blocking 0 -translation binary -buffering none
-            }
-            fileevent $client readable [list relay $client $remote]
-            fileevent $remote readable [list relay $remote $client]
+        if {[ns_connchan write $target $data] != [string length $data]} {
+            error "short write in CONNECT relay"
         }
-        set ::targetHost $targetHost
-        set ::targetPort $targetPort
-        set listen [socket -server accept -myaddr $targetHost $listenPort]
-        nsv_set $table ready 1
-        after 30000 {set ::done 1}
-        vwait ::done
-        close $listen
+        return 1
+    }}
+    set receive {{table loopback targetPort relay client event} {
+        if {[nsv_exists $table backend]} {
+            return [apply $relay $client [nsv_get $table backend] $event]
+        }
+        if {$event ne "r" || [set data [ns_connchan read $client]] eq ""} {
+            return 0
+        }
+        set request [nsv_append $table request $data]
+        if {[string first "\r\n\r\n" $request] < 0} {
+            return 1
+        }
+        set line [string range $request 0 [expr {[string first "\r\n" $request] - 1}]]
+        if {![regexp {^CONNECT (\[[^]]+\]|[^:]+):[0-9]+ HTTP/1\.1$} $line]} {
+            error "unexpected CONNECT request: $line"
+        }
+
+        set backend [ns_connchan connect -timeout 2s -- $loopback $targetPort]
+        nsv_lappend $table channels $backend
+        nsv_set $table backend $backend
+        ns_connchan callback -timeout 10s -sendtimeout 2s $backend \
+            [list apply $relay $backend $client] rx
+
+        # The status line alone does not complete the CONNECT response.
+        ns_connchan write $client "HTTP/1.1 200 Connection established\r\n"
+        after 100
+        ns_connchan write $client "\r\n"
+        return 1
+    }}
+    set accept [list apply {{table receive loopback targetPort relay client} {
+        nsv_lappend $table channels $client
+        ns_connchan callback -timeout 10s -sendtimeout 2s $client \
+            [list apply $receive $table $loopback $targetPort $relay $client] rx
+        return 1
+    }} $table $receive $loopback [ns_config test tls_listenport] $relay]
+    if {[catch {ns_connchan listen -bind $loopback 0 $accept} listener options]} {
+        nsv_unset $table
+        return -options $options $listener
     }
-    set thread [ns_thread create [list apply \
-        [list {targetHost targetPort listenPort table script} {eval $script}] \
-        $loopback [ns_config test tls_listenport] $port $table $script]]
-    for {set i 0} {$i < 500 && ![nsv_exists $table ready]} {incr i} {
-        ns_sleep 10ms
-    }
-    if {![nsv_exists $table ready]} {error "CONNECT relay did not start"}
-    return [list $thread $table [dict create host $loopback port $port]]
+    return [list [dict get $listener channel] $table \
+                [dict create host $loopback port [dict get $listener port]]]
 }
 proc tlsIdentityProxyStop {fixture} {
     if {$fixture eq ""} {return}
-    lassign $fixture thread table
-    ns_thread wait $thread
+    lassign $fixture listener table
+    ns_connchan close $listener
+    foreach channel [nsv_get $table channels] {
+        catch {ns_connchan close $channel}
+    }
     nsv_unset $table
 }
 
