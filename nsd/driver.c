@@ -18,6 +18,7 @@
 
 #define Ns_LogAccessDebug_DEFINED_ALREADY
 #include "nsd.h"
+#include "nsatomic.h"
 NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 
 #ifdef HAVE_OPENSSL_EVP_H
