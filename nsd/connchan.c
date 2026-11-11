@@ -1650,7 +1650,7 @@ ListenCallbackFree(void *arg)
 {
     ListenCallback *lcbPtr = arg;
 
-    ns_free_const(lcbPtr->driverName);
+    ns_free((void *)lcbPtr->driverName);
     ns_free(lcbPtr);
 }
 
