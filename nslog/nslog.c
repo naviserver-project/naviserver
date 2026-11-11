@@ -693,12 +693,23 @@ AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
     NS_NONNULL_ASSERT(toProcess != NULL);
 
     do {
-        breakChar = strpbrk(toProcess, "\r\n\t\\\"");
+        breakChar = toProcess;
+        while (*breakChar != '\0') {
+            unsigned char c = UCHAR(*breakChar);
+
+            if (c < 0x20u || c == 0x7fu || c == '\\' || c == '"') {
+                break;
+            }
+            ++breakChar;
+        }
+        if (*breakChar == '\0') {
+            breakChar = NULL;
+        }
         if (breakChar == NULL) {
             /*
              * No break-char found, append all and stop
              */
-            Tcl_DStringAppend(dsPtr, toProcess, -1);
+            Tcl_DStringAppend(dsPtr, toProcess, TCL_INDEX_NONE);
         } else {
             /*
              * Append the break-char free prefix
@@ -725,7 +736,7 @@ AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
                 Tcl_DStringAppend(dsPtr, "\\\\", 2);
                 break;
             default:
-                /*should not happen */ assert(0);
+                Ns_DStringPrintf(dsPtr, "\\x%02x", (unsigned int)UCHAR(*breakChar));
                 break;
             }
 
@@ -735,6 +746,7 @@ AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
             toProcess = breakChar + 1;
         }
     } while (breakChar != NULL);
+
 }
 
 /*
