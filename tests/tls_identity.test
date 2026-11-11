@@ -328,7 +328,10 @@ test tls-identity-reuse-5 {changed client credentials require a separate TLS ses
 } -cleanup {ns_unregister_op GET /tls-identity-clientcert} -result {0 1}
 
 set opensslHelp ""
-if {[testConstraint tlsIdentityOpenSSLCLI]} {
+# Affected OpenSSL builds cannot start s_server -unix on macOS or OpenBSD:
+# getnameinfo() rejects the Unix socket address. The s_client probe only
+# checks the client. Re-enable when the test CLI can start the listener.
+if {[testConstraint tlsIdentityOpenSSLCLI] && $::tcl_platform(os) ni {Darwin OpenBSD}} {
     catch {exec {*}$::tlsIdentityOpenSSL s_server -help 2>@1} opensslHelp
 }
 set unixProbe ""
