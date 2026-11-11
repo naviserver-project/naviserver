@@ -1456,7 +1456,7 @@ CreatePool(const char *pool, const char *section, const char *driver)
         Ns_ConfigTimeUnitRange(section, "checkinterval",
                                "5m", 1, 0, INT_MAX, 0, &checkinterval);
 
-        (void) Ns_ScheduleProcEx(CheckPool, poolPtr, 0, &checkinterval, NULL);
+        (void) Ns_ScheduleProcEx(CheckPool, poolPtr, NS_SCHED_THREAD, &checkinterval, NULL);
     }
     return poolPtr;
 }

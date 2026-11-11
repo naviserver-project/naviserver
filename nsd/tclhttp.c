@@ -2668,7 +2668,7 @@ static bool InitOnceHttp(void) {
     Ns_MutexInit(&closeWaitingMutex);
     Ns_MutexSetName2(&closeWaitingMutex, "ns:closewaiting", NULL);
 
-    (void) Ns_ScheduleProcEx(CloseWaitingCheckExpire, NULL /*poolPtr*/, 0, &interval, NULL);
+    (void) Ns_ScheduleProcEx(CloseWaitingCheckExpire, NULL /*poolPtr*/, NS_SCHED_THREAD, &interval, NULL);
 
 #ifdef MEM_RECORD_DEBUG
     Ns_MutexInit(&ckMutex);
