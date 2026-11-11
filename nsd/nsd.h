@@ -1429,7 +1429,7 @@ NS_EXTERN void NsInitListen(void);
 NS_EXTERN NS_SOCKET NsSockListenCallback(const char *addr, unsigned short port,
                                          Ns_SockProc *proc, bool doBind, void *arg,
                                          Ns_Callback *freeProc)
-    NS_GNUC_NONNULL(3,5);
+    NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 NS_EXTERN void NsSockCloseListenCallback(NS_SOCKET sock);
 
 
@@ -1650,6 +1650,7 @@ NS_EXTERN void NsStartSchedShutdown(void);
 NS_EXTERN void NsWaitSchedShutdown(const Ns_Time *toPtr);
 NS_EXTERN void NsStartSockShutdown(void);
 NS_EXTERN void NsWaitSockShutdown(const Ns_Time *toPtr);
+NS_EXTERN bool NsSockCallbackIsCurrentThread(void);
 NS_EXTERN void NsStartShutdownProcs(void);
 NS_EXTERN void NsWaitShutdownProcs(const Ns_Time *toPtr);
 NS_EXTERN void NsStartTaskQueueShutdown(void);

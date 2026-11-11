@@ -124,7 +124,7 @@ static void CancelCallback(const NsConnChan *connChanPtr)
 static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
                                   const Ns_Time *startTime, const char *peer, bool binary,
                                   const char *clientData, bool listener)
-    NS_GNUC_NONNULL(1,2,3)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_RETURNS_NONNULL;
 
 static void ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr)
@@ -1459,7 +1459,7 @@ ListenCallbackFree(void *arg)
 {
     ListenCallback *lcbPtr = arg;
 
-    ns_free_const(lcbPtr->driverName);
+    ns_free((void *)lcbPtr->driverName);
     ns_free(lcbPtr);
 }
 
