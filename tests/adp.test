@@ -379,23 +379,40 @@ test http_adp-2.0 {simple ADP page} -body {
     nstest::http -getbody 1 GET /helloworld.adp
 } -result {200 {Hello World!}}
 
-test http_adp-2.1.1 {ADP page with timed out ns_http request} -body {
-    #
-    # Here the invocation of the testcase times out
-    #
+proc adpRegisterDelayedResponse {} {
+    ns_register_proc GET /adp-test-delayed-response {
+        ns_sleep 2s
+        ns_return 200 text/plain {Delayed response}
+    }
+}
+
+test http_adp-2.1.1 {the caller times out while the ADP waits for its upstream} -setup {
+    adpRegisterDelayedResponse
+} -body {
     nstest::http -timeout 1s -getbody 1 GET /http_nonexistent.adp
-} -returnCodes {ok return error} -match glob -result {000 {testcase NS_TIMEOUT: http request timeout}}
+} -cleanup {
+    ns_unregister_op GET /adp-test-delayed-response
+} -result {000 {testcase NS_TIMEOUT: http request timeout}}
 
-test http_adp-2.1.2 {ADP page with timed out ns_http request followed by simple ADP page} -body {
-    try {ns_http run -timeout .5s http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}
-    try {ns_http run http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}
-    nstest::http -getbody 1 GET /helloworld.adp
-} -returnCodes {ok return error} -result {200 {Hello World!}}
+test http_adp-2.1.2 {an HTTP timeout leaves subsequent ADP requests usable} -setup {
+    adpRegisterDelayedResponse
+} -body {
+    set url [ns_config test listenurl]/adp-test-delayed-response
+    set failed [catch {ns_http run -timeout 0.5s $url} message options]
+    list $failed [dict get $options -errorcode] [nstest::http -getbody 1 GET /helloworld.adp]
+} -cleanup {
+    ns_unregister_op GET /adp-test-delayed-response
+} -result {1 NS_TIMEOUT {200 {Hello World!}}}
 
-
-test http_adp-2.2 {ADP page with timed out ns_http request followed by simple ADP page} -body {
+test http_adp-2.2 {the ADP propagates an upstream timeout as service unavailable} -setup {
+    adpRegisterDelayedResponse
+} -body {
     nstest::http -getbody 1 GET /http_returntimeout.adp
-} -returnCodes {ok return error} -match glob -result {503 *Service Unavailable*}
+} -cleanup {
+    ns_unregister_op GET /adp-test-delayed-response
+} -match glob -result {503 *Service Unavailable*}
+
+rename adpRegisterDelayedResponse {}
 
 
 cleanupTests
