@@ -108,6 +108,18 @@ test ns_schedule-2.4 {thread procs run concurrently} -body {
 
 
 
+test ns_schedule-4.1 {database pool maintenance uses scheduler workers} -body {
+    set pools {}
+    set threaded 1
+    foreach entry [ns_info scheduled] {
+        if {[lindex $entry 7] eq "nsdb:check"} {
+            lappend pools [lindex $entry 8]
+            if {!([lindex $entry 1] & 1)} {set threaded 0}
+        }
+    }
+    list [expr {"a" in $pools && "b" in $pools}] $threaded
+} -result {1 1}
+
 cleanupTests
 
 # Local variables:
