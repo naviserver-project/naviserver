@@ -232,7 +232,8 @@ test ns_accesslog_scan-2.6 {malformed layout, escape and timestamp do not become
 test ns_accesslog_scan-2.7 {hex byte escapes accept both cases and consume exactly two digits} -body {
     set line "$::accessScan::line \"\" \"\\x01\\x1f\\x7F\\x4a\\x4B\\x163\"\n"
     set row [::accessScan::row [::accessScan::one $line]]
-    list [dict get $row parseStatus] [binary encode hex [dict get $row userAgent]]
+    binary scan [dict get $row userAgent] H* hex
+    list [dict get $row parseStatus] $hex
 } -result {ok 011f7f4a4b1633}
 
 test ns_accesslog_scan-2.8 {literal hex-looking text and existing escapes are not decoded twice} -body {

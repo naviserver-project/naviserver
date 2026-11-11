@@ -279,7 +279,8 @@ proc accessEscapeCheck {input expected} {
     # Compare UTF-8 bytes, so preserving high bytes is checked exactly.
     set fields [encoding convertto utf-8 "\"$expected\" \"$expected\""]
     if {[string first $fields $record] < 0} {
-        error "unexpected escaped record: [binary encode hex $record]"
+        binary scan $record H* hex
+        error "unexpected escaped record: $hex"
     }
     # No raw ASCII controls may survive in the record itself.
     binary scan $record cu* values
