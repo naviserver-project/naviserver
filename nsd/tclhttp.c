@@ -6989,7 +6989,7 @@ HttpTunnel(
     httpPtr->spoolLimit = -1;
     httpPtr->maxresponse = 0;
     httpPtr->url = ns_strdup(url);
-    httpPtr->flags |= NS_HTTP_FLAG_EMPTY; /* Do not expect response content */
+    httpPtr->flags = NS_HTTP_HEADERS_PENDING | NS_HTTP_FLAG_EMPTY;
     httpPtr->method = ns_strdup(connectMethod);
     httpPtr->servPtr = itPtr->servPtr;
     httpPtr->responseHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE); /* Ignored */
