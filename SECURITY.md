@@ -25,6 +25,14 @@ Security fixes target the latest patch release of each maintained line.
 The `main` branch contains ongoing development and is not a stable release.
 Reports affecting development versions are welcome.
 
+NaviServer 4.99.x is in legacy maintenance. We plan to provide selected
+security fixes for the latest 4.99.x patch release through 31 December
+2027, where fixes can be safely backported and tested.
+
+From 1 January 2028, 4.99.x will be unsupported and no further security
+updates are planned. We recommend migrating to the current stable
+NaviServer release before that date.
+
 Please use the latest patch release available for your release line.
 Reports involving older versions are still useful when the underlying
 problem may affect a maintained version.
