@@ -425,6 +425,9 @@ Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, bool tabExpandMod
  *          "\\"   for backslash
  *          "\""   for double-quote
  *
+ *      Other ASCII control characters and DEL are escaped as \xHH. Bytes
+ *      above 0x7f are preserved, including UTF-8 sequences. The input is a
+ *      NUL-terminated C string; NUL terminates the input and is not appended.
  *      If no special character is found in the remainder of the input string,
  *      the rest of the string is appended as is.
  *
@@ -446,7 +449,18 @@ Ns_DStringAppendEscaped(Tcl_DString *dsPtr, const char *inputString)
     NS_NONNULL_ASSERT(inputString != NULL);
 
     do {
-        nextSpecialChar = strpbrk(inputString, "\r\n\t\\\"");
+        nextSpecialChar = inputString;
+        while (*nextSpecialChar != '\0') {
+            unsigned char c = UCHAR(*nextSpecialChar);
+
+            if (c < 0x20u || c == 0x7fu || c == '\\' || c == '"') {
+                break;
+            }
+            ++nextSpecialChar;
+        }
+        if (*nextSpecialChar == '\0') {
+            nextSpecialChar = NULL;
+        }
         if (nextSpecialChar == NULL) {
             /*
              * No break-char found, append all and stop
@@ -478,7 +492,7 @@ Ns_DStringAppendEscaped(Tcl_DString *dsPtr, const char *inputString)
                 Tcl_DStringAppend(dsPtr, "\\\\", 2);
                 break;
             default:
-                /*should not happen */ assert(0);
+                Ns_DStringPrintf(dsPtr, "\\x%02x", (unsigned int)UCHAR(*nextSpecialChar));
                 break;
             }
 
