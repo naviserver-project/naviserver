@@ -93,7 +93,7 @@ jobs:
         run: |
           #sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          packages=("$CC" ccache)
+          packages=("$CC")
           if [[ ${NS_MODULES:-} =~ (^|[[:space:]])nsauthpam($|[[:space:]]) ]]; then
             packages+=(libpam0g-dev)
           fi
@@ -104,7 +104,15 @@ jobs:
         with:
           repository: naviserver-project/naviserver
 
+      - name: Detect ccache
+        id: ccache
+        run: |
+          if command -v ccache >/dev/null; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Cache ccache
+        if: steps.ccache.outputs.available == 'true'
         uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/.ccache
@@ -123,6 +131,7 @@ jobs:
           ls -ltr
 
       - name: Enable ccache wrappers
+        if: steps.ccache.outputs.available == 'true'
         run: |
           export PATH="/usr/lib/ccache:$PATH"
           echo "PATH=$PATH" >> "$GITHUB_ENV"
@@ -166,6 +175,7 @@ jobs:
         working-directory: install-ns
 
       - name: Show ccache stats
+        if: steps.ccache.outputs.available == 'true'
         run: |
           ccache -s
 
