@@ -1392,11 +1392,14 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             Sock     *sockPtr = NULL;
 
             result = NSDriverSockNew(interp, sock, "http", lcbPtr->driverName, "CONNECT", &sockPtr);
-            if (result == TCL_OK && sockPtr->servPtr != NULL) {
+            if (result == TCL_OK) {
                 Ns_Time     now;
                 NsConnChan *connChanPtr;
                 int         retVal;
 
+                if (sockPtr->servPtr == NULL) {
+                    sockPtr->servPtr = servPtr;
+                }
                 Ns_GetTime(&now);
                 connChanPtr = ConnChanCreate(sockPtr->servPtr,
                                              sockPtr,
@@ -1407,8 +1410,7 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 retVal = getsockname(sock, (struct sockaddr *) &sa, &len);
                 if (retVal == -1) {
                     Ns_TclPrintfResult(interp, "can't obtain socket info %s", ns_sockstrerror(ns_sockerrno));
-                    servPtr = NsGetServer(nsconf.defaultServer);  // temporarily added
-                    ConnChanFree(connChanPtr, servPtr/*sockPtr->servPtr*/);
+                    ConnChanFree(connChanPtr, sockPtr->servPtr);
                     result = TCL_ERROR;
                 } else {
                     Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
@@ -1500,6 +1502,9 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
     result = NSDriverSockNew(interp, sock, "http", lcbPtr->driverName, "CONNECTED", &sockPtr);
 
     if (result == TCL_OK) {
+        if (sockPtr->servPtr == NULL) {
+            sockPtr->servPtr = NsGetServer(lcbPtr->server);
+        }
         Ns_GetTime(&now);
         connChanPtr = ConnChanCreate(sockPtr->servPtr,
                                      sockPtr,
