@@ -225,10 +225,20 @@ test ns_accesslog-3.5 {scheduler purge is threaded and cancellation preserves re
     close $f
 } -body {
     set executable [file join $root nsd [expr {$::tcl_platform(platform) eq "windows" ? "nsd.exe" : "nsd"}]]
-    exec -- $executable -c -d -t $config $script 2>@1
-    set f [open [file join $directory result]]; set result [string trim [read $f]]; close $f
-    set result
-} -cleanup {file delete -force $directory} -returnCodes {error ok} -result {1 1 1 1 old-backup 1 1}
+    set resultFile [file join $directory result]
+    if {[catch {exec -- $executable -c -d -t $config $script 2>@1} output options]} {
+        # Some command-mode builds report ns_shutdown as a SIGTERM.
+        # Accept it only after the child has written the test result.
+        set errorCode [dict get $options -errorcode]
+        if {[lindex $errorCode 0] ne "CHILDKILLED"
+            || [lindex $errorCode 2] ne "SIGTERM"
+            || ![file exists $resultFile]} {
+            return -options $options $output
+        }
+    }
+    set f [open $resultFile]
+    try {string trim [read $f]} finally {close $f}
+} -cleanup {file delete -force $directory} -result {1 1 1 1 old-backup 1 1}
 
 
 rename accesslogPurgeSetup {}
