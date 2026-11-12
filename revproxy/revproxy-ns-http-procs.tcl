@@ -185,19 +185,29 @@ namespace eval ::revproxy::ns_http {
                 -done_callback $done_callbback \
                 $url
 
-            ns_http queue \
-                {*}$partialresultsFlag \
-                {*}$unixSocketArg \
-                {*}$keepHostHeaderArg \
-                -spoolsize 100kB \
-                -method $method \
-                -headers $requestHeaders \
-                -connecttimeout $connecttimeout \
-                -timeout $timeout \
-                -expire $expiretimeout \
-                {*}$extraArgs \
-                -done_callback $done_callbback \
-                $url
+            # The initial connect is synchronous. If queue fails here, it
+            # never calls the completion callback, and the frontend is
+            # already detached.
+            try {
+                ns_http queue \
+                    {*}$partialresultsFlag \
+                    {*}$unixSocketArg \
+                    {*}$keepHostHeaderArg \
+                    -spoolsize 100kB \
+                    -method $method \
+                    -headers $requestHeaders \
+                    -connecttimeout $connecttimeout \
+                    -timeout $timeout \
+                    -expire $expiretimeout \
+                    {*}$extraArgs \
+                    -done_callback $done_callbback \
+                    $url
+            } on error {errorMsg options} {
+                set status [expr {[lindex [dict get $options -errorcode] 0] eq "NS_TIMEOUT" ? 504 : 502}]
+                ::revproxy::upstream_send_failed \
+                    -status $status -errorMsg $errorMsg -url $url \
+                    -frontendChan $connchan -exception_callback $exception_callback
+            }
 
         } else {
 

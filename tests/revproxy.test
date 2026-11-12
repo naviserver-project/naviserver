@@ -96,3 +96,19 @@ test revproxy-1.1 {
     ns_unregister_op PUT /revproxy-te-test
     nsv_unset -nocomplain revproxy_test
 } -returnCodes {ok error} -result {response {200 ok} reached 1 body abc has_te 0 has_xhop 0 has_trailer 0 has_te_header 0 connection_mentions_xhop 0 content_length 3}
+
+test revproxy-1.2 {upstream connection failure returns 502 on the detached frontend} \
+    -constraints {nsf serverListen} -setup {
+    set listener [ns_connchan listen -bind 127.0.0.1 0 {apply {{channel} {return 0}}}]
+    set port [dict get $listener port]
+    ns_connchan close [dict get $listener channel]
+    ns_register_proc GET /revproxy-unreachable \
+        ::revproxy::upstream proc -backendconnection ns_http+ns_connchan \
+        -target http://127.0.0.1:$port
+} -body {
+    set response [ns_http run -timeout 3s -keepalive 0s \
+                      [ns_config test listenurl]/revproxy-unreachable]
+    list [dict get $response status] [string match {*Bad Gateway*} [dict get $response body]]
+} -cleanup {
+    ns_unregister_op GET /revproxy-unreachable
+} -result {502 1}
