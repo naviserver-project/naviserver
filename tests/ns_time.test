@@ -248,6 +248,13 @@ test ns_time-diff-9 {ns_time diff turn negative to positive} -body {
 } -result {1 0:900000 1:100000 1:1000 0:100000 0:1000}
 
 
+#
+# ns_time error message leaking
+#
+test ns_time-result-1.1 {ns_sleep with a fractional duration and unit returns an empty result} -body {
+    ns_sleep 0.0s
+} -result {}
+
 cleanupTests
 
 #
