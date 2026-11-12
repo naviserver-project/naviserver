@@ -222,12 +222,19 @@ ns_section ns/reverseproxymode {
 }
 
 #
-# In case, a docker mapping is provided, source it to make it
-# accessible during configuration. The mapping file is a Tcl script
-# providing at least the Tcl dict ::docker::containerMapping
-# containing the docker mapping. A dict key like "8080/tcp" (internal
-# port) will return a dict containing the keys "host", "port" and
-# "proto" (e.g. proto https host 192.168.1.192 port 58115).
+# docker-setup.tcl generates /scripts/docker-dict.tcl from Docker's
+# published port bindings. Source it before configuring the drivers.
+# ::docker::containerMapping is a list of label/binding pairs. A label
+# such as "8080/tcp" names a container port and transport and may occur
+# more than once. Each binding contains "host", "port" and "proto".
+# The generated script also defines two helpers:
+#   ::docker::map_external_address_to_server server port
+#     Returns an ns_set mapping the server to the published Host values
+#     for the container's TCP port. IPv6 literals are bracketed.
+#   ::docker::external_port port ?transport?
+#     Returns a published port for the container port and transport,
+#     or an empty string if there is no mapping. Transport defaults to tcp.
+# https://github.com/gustafn/docker-ns/tree/main/openacs/scripts
 #
 if {[file exists /scripts/docker-dict.tcl]} {
     source /scripts/docker-dict.tcl
