@@ -1,0 +1,194 @@
+# Package provenance requires a server interpreter initialized by nsd/init.tcl.
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+testConstraint package_provenance [expr {[info commands ns_package_provenance] ne {}}]
+set ppDirectory [makeDirectory package-provenance]
+proc ppFile {name body} {
+    set path [file join $::ppDirectory $name]
+    set f [open $path w];try {puts $f $body} finally {close $f}
+    return $path
+}
+set ppChild [ppFile child.tcl {package provide PPChild 1.0}]
+set ppParent [ppFile parent.tcl {package require PPChild 1.0
+package provide PPParent 1.0
+package provide PPAlias 1.0}]
+package ifneeded PPChild 1.0 [list source $ppChild]
+package ifneeded PPParent 1.0 [list source $ppParent]
+
+test provenance-nested {provider, requesting package, first caller and aliases} -constraints package_provenance -body {
+    package require PPParent
+    set child [ns_package_provenance get PPChild]
+    set parent [ns_package_provenance get PPParent]
+    set alias [ns_package_provenance get PPAlias]
+    list [file tail [dict get [lindex [dict get $child providedBy] 0] file]] \
+        [dict get [lindex [dict get $child requiredBy] 0] packages] \
+        [file tail [dict get [dict get $child firstLoadedBy] file]] \
+        [expr {[dict get $alias firstLoadedBy] eq [dict get $parent firstLoadedBy]}] \
+        [dict get $alias requiredBy]
+} -result {child.tcl PPParent parent.tcl 1 {}}
+
+test provenance-repeat {same call site deduplicates and does not replace first loader} -constraints package_provenance -body {
+    set first [dict get [ns_package_provenance get PPChild] firstLoadedBy]
+    for {set i 0} {$i < 10} {incr i} {package require -exact PPChild 1.0}
+    set record [ns_package_provenance get PPChild]
+    list [llength [dict get $record requiredBy]] \
+        [dict get [lindex [dict get $record requiredBy] end] exact] \
+        [expr {$first eq [dict get $record firstLoadedBy]}]
+} -result {2 1 1}
+
+test provenance-failed-require {failed requirements add no successful edge} -constraints package_provenance -body {
+    set before [ns_package_provenance get PPChild]
+    set code [catch {package require -exact PPChild 99.0} message options]
+    list $code [expr {$before eq [ns_package_provenance get PPChild]}] \
+        [catch {package require PPDefinitelyMissing}] \
+        [ns_package_provenance get PPDefinitelyMissing 1.0]
+} -result {1 1 1 {}}
+
+test provenance-query {package queries are not providers or consumers} -constraints package_provenance -body {
+    set before [ns_package_provenance get PPChild]
+    package provide PPChild
+    package present PPChild
+    package names
+    list [expr {$before eq [ns_package_provenance get PPChild]}] \
+        [info vars ::ns_package_provenance::*]
+} -result {1 {}}
+
+test provenance-partial-failure {a failed loader is not recorded as a successful first load} -constraints package_provenance -body {
+    package ifneeded PPBadLoader 1.0 {package provide PPBadAlias 1.0; error failure}
+    set code [catch {package require PPBadLoader}]
+    set record [ns_package_provenance get PPBadAlias]
+    list $code [llength [dict get $record providedBy]] \
+        [dict get $record requiredBy] [dict get $record firstLoadedBy]
+} -result {1 1 {} {}}
+
+test provenance-direct {directly sourced providers do not need package require} -constraints package_provenance -body {
+    source [ppFile direct.tcl {package provide PPDirect 1.0}]
+    set record [ns_package_provenance get PPDirect]
+    list [file tail [dict get [lindex [dict get $record providedBy] 0] file]] \
+        [dict get $record requiredBy] \
+        [file tail [dict get [dict get $record firstLoadedBy] file]]
+} -result {direct.tcl {} direct.tcl}
+
+test provenance-runtime-caller {a later requirement is attributed to its source without assuming ownership} -constraints package_provenance -body {
+    source [ppFile runtime.tcl {package provide PPRuntimeCaller 1.0
+proc ppRuntime {} {package require PPChild}}]
+    ppRuntime
+    set origin [lindex [dict get [ns_package_provenance get PPChild] requiredBy] end]
+    list [file tail [dict get $origin file]] [dict get $origin packages]
+} -result {runtime.tcl {}}
+
+test provenance-alias {aliased and abbreviated package commands are observed correctly} -constraints package_provenance -body {
+    interp alias {} ppPackage {} ::package
+    ppPackage req PPChild
+    rename ppPackage {}
+    dict get [lindex [dict get [ns_package_provenance get PPChild] requiredBy] end] kind
+} -result source
+
+test provenance-errors {observer preserves error result and error code} -constraints package_provenance -body {
+    package ifneeded PPError 1.0 {return -code error -errorcode {PROVENANCE ORIGINAL} {original failure}}
+    set beforeCode [catch {package require PPError} before beforeOptions]
+    ::ns_package_provenance::uninstall
+    set referenceCode [catch {package require PPError} reference referenceOptions]
+    ::ns_package_provenance::install
+    list [expr {$beforeCode == $referenceCode}] [expr {$before eq $reference}] \
+        [expr {[dict get $beforeOptions -errorcode] eq [dict get $referenceOptions -errorcode]}]
+} -result {1 1 1}
+
+test provenance-observer-error {provenance failures cannot break a successful registration or error state} -constraints package_provenance -body {
+    rename ::ns_package_provenance::merge ::ns_package_provenance::savedMerge
+    proc ::ns_package_provenance::merge {args} {error {observer failure}}
+    set ::errorInfo original-info
+    set ::errorCode {ORIGINAL CODE}
+    try {
+        set code [catch {package provide PPObserverFailure 1.0} result]
+        list $code [package provide PPObserverFailure] $::errorInfo $::errorCode
+    } finally {
+        rename ::ns_package_provenance::merge {}
+        rename ::ns_package_provenance::savedMerge ::ns_package_provenance::merge
+    }
+} -result {0 1.0 original-info {ORIGINAL CODE}}
+
+test provenance-shared {a worker sees shared records without replay attribution} -constraints package_provenance -body {
+    set before [ns_package_provenance get PPChild 1.0]
+    set worker [ns_thread create {ns_package_provenance get PPChild 1.0}]
+    set viewed [ns_thread wait $worker]
+    list [expr {$viewed eq $before}] \
+        [expr {[ns_package_provenance get PPChild 1.0] eq $before}]
+} -result {1 1}
+
+test provenance-worker {packages loaded only by a worker are shared with readers} -constraints package_provenance -body {
+    set path [ppFile worker.tcl {package provide PPWorker 1.0}]
+    set worker [ns_thread create [list source $path]]
+    ns_thread wait $worker
+    set record [ns_package_provenance get PPWorker 1.0]
+    list [package provide PPWorker] \
+        [file tail [dict get [lindex [dict get $record providedBy] 0] file]]
+} -result {{} worker.tcl}
+
+test provenance-concurrent {concurrent readers/writers do not lose require sites} -constraints package_provenance -body {
+    # Distinct source files are distinct call sites; all threads write one record.
+    set workers {}
+    for {set i 0} {$i < 8} {incr i} {
+        set path [ppFile concurrent-$i.tcl {package require PPChild}]
+        lappend workers [ns_thread create [list apply {{child script} {
+            package ifneeded PPChild 1.0 [list source $child]
+            source $script
+        }} $ppChild $path]]
+    }
+    foreach worker $workers {ns_thread wait $worker}
+    set sites {}
+    foreach origin [dict get [ns_package_provenance get PPChild 1.0] requiredBy] {
+        set tail [file tail [dict get $origin file]]
+        if {[string match concurrent-* $tail]} {lappend sites $tail}
+    }
+    llength [lsort -unique $sites]
+} -result 8
+
+test provenance-invalid-syntax {failed package/load commands leave the nesting stack balanced} -constraints package_provenance -body {
+    package ifneeded PPInvalidParent 1.0 {
+        catch {package require -exact}
+        catch {load /nonexistent/package-provenance-test.so}
+        package require PPChild
+        package provide PPInvalidParent 1.0
+    }
+    package require PPInvalidParent
+    list [dict get [lindex [dict get [ns_package_provenance get PPChild] requiredBy] end] packages] \
+        [lsearch -all -inline -glob [nsv_array names ns_package_provenance] {stack *}]
+} -result {PPInvalidParent {}}
+
+test provenance-versions {different provided versions have independent provenance} -constraints package_provenance -body {
+    source [ppFile version-one.tcl {package provide PPVersions 1.0}]
+    package forget PPVersions
+    source [ppFile version-two.tcl {package provide PPVersions 2.0}]
+    set first [dict get [ns_package_provenance get PPVersions 1.0] firstLoadedBy]
+    set second [dict get [ns_package_provenance get PPVersions 2.0] firstLoadedBy]
+    list [expr {$first ne {}}] [expr {$second ne {}}] [expr {$first ne $second}]
+} -result {1 1 1}
+
+test provenance-visibility {shared history never enters per-interpreter namespace state} -constraints package_provenance -body {
+    list [info vars ::ns_package_provenance::*] \
+        [lsearch -all -inline -glob [nsv_array names ns_package_provenance] {stack *}]
+} -result {{} {}}
+
+test provenance-blueprint {serialized observer namespace has no recorded package history} -constraints package_provenance -body {
+    set script [lindex [nstrace::_serializensp ::ns_package_provenance] 0]
+    list [string first PPChild $script] [string first $ppDirectory $script]
+} -result {-1 -1}
+
+test provenance-repeat-install {installation is idempotent} -constraints package_provenance -body {
+    ::ns_package_provenance::install
+    ::ns_package_provenance::install
+    set counts {}
+    foreach command {::package ::load ::ns_ictl} {
+        set count 0
+        foreach trace [trace info execution $command] {
+            if {[lindex [lindex $trace 1] 0] eq "::ns_package_provenance::observe"} {incr count}
+        }
+        lappend counts $count
+    }
+    set counts
+} -result {1 1 1}
+
+removeDirectory package-provenance
+foreach name {ppFile ppRuntime} {rename $name {}}
+cleanupTests

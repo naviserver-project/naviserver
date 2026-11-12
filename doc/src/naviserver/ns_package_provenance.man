@@ -1,0 +1,72 @@
+[include version_include.man]
+[manpage_begin ns_package_provenance n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+[titledesc {Inspect observed Tcl package loading provenance}]
+
+[description]
+NaviServer observes Tcl package requirements, explicit package registrations,
+and packages registered by Tcl's native [cmd load] command. Records are shared
+between interpreters of the current virtual server in the server-scoped NSV
+array [const ns_package_provenance]. They are not copied into interpreter
+blueprints. Tracking starts before server Tcl libraries are sourced and is
+attached to subsequently allocated server interpreters.
+
+[section COMMANDS]
+[list_begin definitions]
+[call [cmd ns_package_provenance] [const get] [arg package] [opt [arg version]]]
+Return the provenance dict for the specified package/version, or an empty dict
+when no record exists. With no version, use the provided version in the current
+interpreter. This lookup never requires or initializes a package.
+
+[para]
+The dict has three fields:
+[list_begin itemized]
+[item] [const providedBy]: a list of observed Tcl source registrations or native
+library providers. Native registrations already present when tracing attaches
+have an explicit [const preexisting] origin; their original provider is unknown.
+[item] [const requiredBy]: deduplicated successful [cmd {package require}]
+call sites, including source file/line, procedure, version requirements and
+[option -exact]. A package name in the origin identifies an enclosing loading
+request. Calls outside a loading request retain their source location. Package-index discovery
+can itself issue requirements; such an enclosing request is loading context,
+not proof that its implementation directly uses the dependency.
+[item] [const firstLoadedBy]: the first observed successful loading request, or
+a direct registration site when no requirement was active. Already-present
+packages are marked [const preexisting]. A provision made during a failed
+loader is retained, but that failure is not attributed as a successful load.
+[list_end]
+
+[para]
+Source origins have [const kind], [const file], [const line], [const proc] and
+[const packages] fields. Native origins have [const kind], [const file] and
+[const init]. Requirements additionally have [const requested] and [const exact].
+A dynamic caller can have no source file. A package can have multiple providers,
+including aliases registered while another package loads. Package versions are
+recorded separately. Historical records remain after [cmd {package forget}].
+[list_end]
+
+[section {LIMITATIONS}]
+Tracking records loading declarations, not execution of package commands.
+Failed requirements do not add successful dependency edges. Operations which
+occurred before observation cannot be reconstructed. Native registrations
+which bypass Tcl's [cmd load] command may likewise have no observed provider.
+Only interpreters initialized by this virtual server's normal lifecycle are
+tracked; independent child interpreters must explicitly attach observation.
+
+[para]
+Blueprint updates suspend observation so copied registrations are not mistaken
+for new loading events. The observer preserves package return/error behavior.
+Only package/version identifiers, file locations and procedure names are
+retained; command text and application argument values are not recorded.
+The implementation uses execution traces on [cmd package], [cmd load], and
+[cmd {ns_ictl update}], with short-lived per-interpreter nesting stacks stored
+in shared NSVs and removed when empty.
+
+[para]
+Install the startup script and restart the server to enable startup provenance.
+The Tcl Libraries page in nsstats shows the records for packages provided in
+its current interpreter; it does not union package inventories across workers.
+
+[see_also nsv ns_ictl tcl-lib-nstrace]
+[keywords package provenance require provide interpreter]
+[manpage_end]
