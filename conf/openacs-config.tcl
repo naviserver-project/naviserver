@@ -496,38 +496,6 @@ foreach address $ipaddress {
     ns_set put $server_set $server $address
 }
 
-if {[namespace exists ::docker] && [info commands ::docker::map_to_server] eq ""} {
-    #
-    # Docker support: determine externally visible host:port mappings.
-    #
-    # When NaviServer runs inside a container, ports are often published on the
-    # Docker host with a (potentially different) external address and port.
-    # The returned mappings can be used to whitelist additional Host header
-    # values (e.g., "host:port") for a given server configuration.
-    #
-    # Legacy implementation for setups where the docker environment does not
-    # provide this helper.
-    #
-    proc ::docker::map_external_address_to_server {server port} {
-        set label "$port/tcp"
-        set s [ns_set create]
-        if {$port eq ""
-            || ![info exists ::docker::containerMapping]
-            || ![dict exists $::docker::containerMapping $label]
-        } {
-            return $s
-        }
-        foreach {k info} $::docker::containerMapping {
-            if {$k ne $label} continue
-            set host    [dict get $info host]
-            set pubport [dict get $info port]
-            if {[ns_ip valid $host] && [ns_ip inany $host]} continue
-            ns_set put $s $server ${host}:${pubport}
-        }
-        return $s
-    }
-}
-
 #
 # Shared network driver defaults (for HTTP and HTTPS)
 #
@@ -648,7 +616,9 @@ if {[info exists httpport] && $httpport ne ""} {
     # configurations.
     #
     ns_section -set $server_set ns/module/http/servers {}
-    if {[namespace exists ::docker]} {
+    # docker-setup.tcl supplies this helper through /scripts/docker-dict.tcl.
+    # https://github.com/gustafn/docker-ns/tree/main/openacs/scripts
+    if {[info commands ::docker::map_external_address_to_server] ne ""} {
         ns_section -set [::docker::map_external_address_to_server $server $httpport] ns/module/http/servers {}
     }
     #ns_log notice ns_configsection [ns_set format [ns_configsection ns/module/http/servers]]
@@ -776,7 +746,9 @@ if {[info exists httpsport] && $httpsport ne ""} {
     # configurations.
     #
     ns_section -set $server_set ns/module/https/servers {}
-    if {[namespace exists ::docker]} {
+    # docker-setup.tcl supplies this helper through /scripts/docker-dict.tcl.
+    # https://github.com/gustafn/docker-ns/tree/main/openacs/scripts
+    if {[info commands ::docker::map_external_address_to_server] ne ""} {
         ns_section -set [::docker::map_external_address_to_server $server $httpsport] ns/module/https/servers {}
     }
 }

@@ -715,3 +715,13 @@ test ns_server-mapped-context-noinherit {-noinherit preserves the existing direc
     ns_server -pool emergency unmap -noinherit {GET /__mapped_noinherit}
     ns_set free $context
 } -returnCodes {ok error} -result {emergency {}}
+
+
+testConstraint publishedHostMapping [expr {[ns_config test listenport]>0 && [ns_config test listenport]!=80}]
+test ns_server-hosts-published-ipv6 {published default port adds a bracketed alias on a different listening port} \
+    -constraints publishedHostMapping -body {
+    set hosts [ns_server -server testvhost2 hosts]
+    list [expr {{[2001:db8::80]:80} in $hosts}] [expr {{[2001:db8::80]} in $hosts}] \
+        [expr {{2001:db8::80} in $hosts}] [expr {{[2001:db8::81]:18081} in $hosts}] \
+        [expr {{[2001:db8::81]} in $hosts}]
+} -result {1 1 0 1 0}

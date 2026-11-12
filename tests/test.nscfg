@@ -135,6 +135,9 @@ ns_section "ns/module/nsssl" {
 }
 
 ns_section "ns/module/nssock/servers" {
+    # Model a container with a published port different from its listener.
+    ns_param   testvhost2      {[2001:db8::80]:80}
+    ns_param   testvhost2      {[2001:db8::81]:18081}
     ns_param   test            test
     ns_param   test            example.com
     ns_param   testvhost       testvhost

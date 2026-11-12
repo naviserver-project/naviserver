@@ -1344,6 +1344,15 @@ void NsDriverMapVirtualServers(void)
                      * without the port.
                      */
                     if (providedPort == drvPtr->defport) {
+                        /*
+                         * The parser removes the closing bracket from a
+                         * literal and points hostName inside the brackets.
+                         * Restore it while keeping the port delimiter NUL.
+                         */
+                        if (writableHost[0] == '[') {
+                            writableHost[portStart - writableHost - 2] = ']';
+                            hostName = writableHost;
+                        }
                         (void)ServerMapEntryAdd(dsPtr, hostName, servPtr, drvPtr, ctx,
                                                 (bool)STREQ(defserver, server));
                     }
