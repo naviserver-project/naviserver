@@ -219,12 +219,23 @@ if {$use_trace_inits} {
 }
 
 
+# Track package loading before server libraries run. The definitions are
+# captured by both eager and lazy blueprints, but the shared NSV records are not.
+source [file join [ns_library shared] package-provenance.tcl]
+::ns_package_provenance::install
+
 #
 # How to initialize the interp.
 #
 
 proc ns_init {} {
-    ns_ictl update       ;# Run the initialization script
+    # Package registrations replayed from the blueprint are not fresh loads.
+    ::ns_package_provenance::uninstall
+    try {
+        ns_ictl update
+    } finally {
+        ::ns_package_provenance::install
+    }
 }
 
 ns_ictl trace allocate ns_init
@@ -243,7 +254,12 @@ proc ns_cleanup {} {
     ns_set  cleanup      ;# Destroy non-shared sets
     ns_http cleanup      ;# Abort any http requests
     ns_ictl cleanup      ;# Run deprecated 1-shot Ns_TclRegisterDefer's.
-    ns_ictl update
+    ::ns_package_provenance::uninstall
+    try {
+        ns_ictl update
+    } finally {
+        ::ns_package_provenance::install
+    }
 }
 
 #
@@ -661,6 +677,8 @@ proc _ns_load_global_modules {{network 0}} {
 # Bootstrap files are part of the inventory, but never reload targets.
 dict set ::ns_module::loaded [list "" nstrace.tcl] 1
 dict set ::ns_module::files [list "" nstrace.tcl] [file join [ns_library shared] nstrace.tcl]
+dict set ::ns_module::loaded [list "" package-provenance.tcl] 1
+dict set ::ns_module::files [list "" package-provenance.tcl] [file join [ns_library shared] package-provenance.tcl]
 dict set ::ns_module::files [list "" nsd/init.tcl] [info script]
 
 #
