@@ -146,12 +146,6 @@ SockListen(Ns_Driver *driver, const char *address, unsigned short port, int back
         if (drvCfgPtr->deferaccept != 0 && !unixDomainSocket) {
             Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
         }
-
-        if (unixDomainSocket) {
-            Ns_Log(Notice, "listening on unix:%s (sock %d)", address, (int)sock);
-        } else {
-            Ns_Log(Notice, "listening on [%s]:%d (sock %d)", address, port, (int)sock);
-        }
     }
 
     return sock;

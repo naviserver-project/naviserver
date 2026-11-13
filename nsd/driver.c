@@ -2809,7 +2809,7 @@ NsDriverBindAddresses(Driver *drvPtr)
                     continue;
                 }
 
-                Ns_Log(Notice, "DriverThread: %p (%s/%s) try to bind '%s' port %hu [%zu]",
+                Ns_Log(Debug, "DriverThread: %p (%s/%s) try to bind '%s' port %hu [%zu]",
                        (void*)drvPtr, drvPtr->moduleName, drvPtr->threadName,
                        addr, port, pNum);
 
@@ -2822,6 +2822,16 @@ NsDriverBindAddresses(Driver *drvPtr)
                     }
                     drvPtr->listenfd[nAddrs++] = s;
                     nOk++;
+                    if (*addr == '/') {
+                        Ns_Log(Notice, "%s listening on unix:%s", drvPtr->threadName, addr);
+                    } else {
+                        const char *transport = (drvPtr->opts & NS_DRIVER_UDP) != 0u ? "UDP" : "TCP";
+                        bool ipv6 = strchr(addr, ':') != NULL;
+
+                        Ns_Log(Notice, "%s listening on %s%s%s:%hu (%s)",
+                               drvPtr->threadName, ipv6 ? "[" : "", addr,
+                               ipv6 ? "]" : "", port, transport);
+                    }
                 } else if (ns_sockerrno == EALREADY) {
                     /*
                      * Soft-skip (e.g. 0.0.0.0 is covered by a dual-stack [::]

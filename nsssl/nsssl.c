@@ -197,8 +197,6 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
             if (dc->u.h1.deferaccept) {
                 Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
             }
-
-            Ns_Log(Notice, "listening on [%s]:%d (sock %d)", address, port, (int)sock);
         }
     }
     return sock;
