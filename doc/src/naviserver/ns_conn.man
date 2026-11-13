@@ -680,9 +680,16 @@ may differ from the actual local listen port.
 
 [call [cmd "ns_conn urlencoding"] [opt [arg encoding]]]
 
- Queries or sets the URL encoding for the current connection. If an
- [arg encoding] value is provided, it sets the URL encoding;
- otherwise, it returns the current encoding.
+ Queries or sets the URL encoding for the current connection. The optional
+ [arg encoding] can be a charset name (such as [const windows-1250]) or a
+ Tcl encoding name (such as [const cp1250]).
+
+[para]
+ Both forms of the command return the charset name for the current URL
+ encoding, or the Tcl encoding name if NaviServer has no charset name for
+ it. For example, both forms return [const windows-1250] after setting the
+ encoding to [const cp1250]. To obtain the corresponding Tcl encoding
+ name, pass the result to [cmd ns_encodingforcharset].
 
 
 [call [cmd  "ns_conn urlv"] [opt [arg idx]]]
