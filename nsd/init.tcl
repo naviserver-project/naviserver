@@ -231,11 +231,12 @@ source [file join [ns_library shared] package-provenance.tcl]
 proc ns_init {} {
     # Package registrations replayed from the blueprint are not fresh loads.
     ::ns_package_provenance::uninstall
-    try {
-        ns_ictl update
-    } finally {
-        ::ns_package_provenance::install
+    set code [catch {ns_ictl update} result options]
+    ::ns_package_provenance::install
+    if {$code != 0} {
+        return -options $options $result
     }
+    return $result
 }
 
 ns_ictl trace allocate ns_init
@@ -255,11 +256,12 @@ proc ns_cleanup {} {
     ns_http cleanup      ;# Abort any http requests
     ns_ictl cleanup      ;# Run deprecated 1-shot Ns_TclRegisterDefer's.
     ::ns_package_provenance::uninstall
-    try {
-        ns_ictl update
-    } finally {
-        ::ns_package_provenance::install
+    set code [catch {ns_ictl update} result options]
+    ::ns_package_provenance::install
+    if {$code != 0} {
+        return -options $options $result
     }
+    return $result
 }
 
 #

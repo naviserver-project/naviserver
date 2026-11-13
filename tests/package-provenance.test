@@ -5,7 +5,12 @@ testConstraint package_provenance [expr {[info commands ns_package_provenance] n
 set ppDirectory [makeDirectory package-provenance]
 proc ppFile {name body} {
     set path [file join $::ppDirectory $name]
-    set f [open $path w];try {puts $f $body} finally {close $f}
+    set f [open $path w]
+    set code [catch {puts $f $body} result options]
+    close $f
+    if {$code != 0} {
+        return -options $options $result
+    }
     return $path
 }
 set ppChild [ppFile child.tcl {package provide PPChild 1.0}]
@@ -99,13 +104,16 @@ test provenance-observer-error {provenance failures cannot break a successful re
     proc ::ns_package_provenance::merge {args} {error {observer failure}}
     set ::errorInfo original-info
     set ::errorCode {ORIGINAL CODE}
-    try {
+    set status [catch {
         set code [catch {package provide PPObserverFailure 1.0} result]
         list $code [package provide PPObserverFailure] $::errorInfo $::errorCode
-    } finally {
-        rename ::ns_package_provenance::merge {}
-        rename ::ns_package_provenance::savedMerge ::ns_package_provenance::merge
+    } result options]
+    rename ::ns_package_provenance::merge {}
+    rename ::ns_package_provenance::savedMerge ::ns_package_provenance::merge
+    if {$status != 0} {
+        return -options $options $result
     }
+    set result
 } -result {0 1.0 original-info {ORIGINAL CODE}}
 
 test provenance-shared {a worker sees shared records without replay attribution} -constraints package_provenance -body {
