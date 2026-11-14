@@ -78,21 +78,27 @@ test ns_schedule-2.2 {schedule proc once} -body {
     nsv_unset . .
 } -result ns_schedule-2.2
 
-test ns_schedule-2.3 {non thread procs run serially (racy)} -body {
-    ns_schedule_proc -once -- 1 {
-        ns_sleep 2s
-        nsv_set . 1 [clock seconds]
+test ns_schedule-2.3 {non-threaded callbacks run on the scheduler thread} -setup {
+    nsv_set scheduleSerial callbacks {}
+    set ids {}
+} -body {
+    for {set i 0} {$i < 2} {incr i} {
+        lappend ids [ns_schedule_proc -once 1ms {
+            nsv_lappend scheduleSerial callbacks [list [ns_thread name] [ns_thread id]]
+        }]
     }
-    ns_schedule_proc -once -- 1 {
-        ns_sleep 2s
-        nsv_set . 2 [clock seconds]
+    set deadline [expr {[clock clicks -milliseconds] + 10000}]
+    while {[llength [nsv_get scheduleSerial callbacks]] < 2
+           && [clock clicks -milliseconds] < $deadline} {
+        ns_sleep 10ms
     }
-    ns_sleep 6s
-    expr {[nsv_get . 1] - [nsv_get . 2]}
+    set callbacks [nsv_get scheduleSerial callbacks]
+    list [lmap callback $callbacks {lindex $callback 0}] \
+        [llength [lsort -unique $callbacks]]
 } -cleanup {
-    nsv_unset -nocomplain . 1
-    nsv_unset -nocomplain . 2
-} -result 2
+    foreach id $ids {ns_unschedule_proc $id}
+    nsv_unset -nocomplain scheduleSerial
+} -result {{-sched- -sched-} 1}
 
 test ns_schedule-2.4 {thread procs run concurrently} -body {
     ns_schedule_proc -once -thread -- 1 {
