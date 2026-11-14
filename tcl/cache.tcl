@@ -19,8 +19,21 @@
 #
 
 set path "ns/server/[ns_info server]/tcl"
-ns_cache_create ns:memoize \
-    [ns_config -int -set $path memoizecache [expr {1024*1024*10}]]
+
+#
+# Preserve historical unbounded waiting unless a default timeout is
+# explicitly configured. This limits waiting for another thread to
+# compute a value; it does not limit the computation itself.
+# Calls to ns_memoize can override this default with -timeout.
+#
+set memoizeTimeout [ns_config $path memoizetimeout ""]
+set memoizeOptions {}
+if {$memoizeTimeout ne ""} {
+    lappend memoizeOptions -timeout $memoizeTimeout
+}
+
+ns_cache_create {*}$memoizeOptions ns:memoize [ns_config -set $path memoizecache 10MiB]
+unset memoizeTimeout memoizeOptions
 
 #
 # ns_memoize --

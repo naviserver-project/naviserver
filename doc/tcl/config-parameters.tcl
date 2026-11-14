@@ -1773,9 +1773,23 @@ stops execution of that ADP page}
 
             memoizecache {
                 type size
-                desc {Size of the Tcl memoization cache used by this server}
+                default 10MiB
+                desc {Size of the Tcl memoization cache (ns:memoize) used by this server}
             }
-
+            
+            memoizetimeout {
+                type time
+                desc {                    
+                    Maximum time to wait for another thread to compute
+                    a memoized value. When omitted, waiting is
+                    unbounded, preserving historical
+                    behavior. Individual ns_memoize calls can override
+                    this setting with -timeout.  Expiration raises a
+                    cache timeout error in the waiting caller; it does
+                    not cancel the ongoing computation.
+                }
+            }
+            
             nsvbuckets {
                 type integer
                 default {8}

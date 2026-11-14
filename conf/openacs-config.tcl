@@ -1249,6 +1249,12 @@ ns_section ns/server/$server/tcl {
     # ns_param	nsvrwlocks      false    ;# default: true
 
     #------------------------------------------------------------------
+    # ns:memoize cache default settings
+    #------------------------------------------------------------------
+    #ns_param memoizecache 10MB   ;# default: 10MB
+    ns_param memoizetimeout 2m    ;# when not set, no timeout, potential lock
+    
+    #------------------------------------------------------------------
     # Server initialization (executed, when server is up)
     #------------------------------------------------------------------
     # ns_param initcmds {
@@ -1346,7 +1352,7 @@ ns_section ns/server/$server/httpclient {
         #ns_param validationException {accept self-signed-certificate}
 
         # Accept all validation errors from any IP address (like disabled validation, but collects certificates)
-        #ns_param validationException {accept *}
+        ns_param validationException {accept *}
     }
 
     #------------------------------------------------------------------

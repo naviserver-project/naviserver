@@ -170,9 +170,11 @@ ns_section ns/server/default/httpclient {
 }
 
 ns_section ns/server/default/tcl {
-    ns_param nsvbuckets    16       ;# default: 8
-    ns_param nsvrwlocks    false    ;# default: true
-    ns_param library       modules/tcl
+    ns_param nsvbuckets     16       ;# default: 8
+    ns_param nsvrwlocks     false    ;# default: true
+    #ns_param memoizecache 10MB      ;# default: 10MB
+    ns_param memoizetimeout 2m       ;# when not set, no timeout, potential lock
+    ns_param library        modules/tcl
     #
     # Example for initcmds (to be executed, when this server is fully initialized).
     #
