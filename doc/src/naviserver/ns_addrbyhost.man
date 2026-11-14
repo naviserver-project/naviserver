@@ -8,6 +8,12 @@
 
  This command resolves a [arg hostname] to its IP address.  If the hostname cannot be resolved, it throws an error.
 
+[para]
+On lookup failure the Tcl error code is [const {NS_DNS NOT_FOUND}]
+when the resolver finds no address, [const {NS_DNS TEMPFAIL}] for a
+temporary failure (including a DNS cache wait timeout), or
+[const {NS_DNS ERROR}] for other resolver failures.
+
 [section {COMMANDS}]
 
 [list_begin definitions]

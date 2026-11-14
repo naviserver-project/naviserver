@@ -172,19 +172,20 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         result = TCL_ERROR;
 
     } else {
-        bool        success;
+        Ns_DnsStatus status;
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        if (all != 0) {
-            success = Ns_GetAllAddrByHost(&ds, host);
-        } else {
-            success = Ns_GetAddrByHost(&ds, host);
-        }
-        if (success) {
+        status = NsGetAddrByHostStatus(&ds, host, all != 0);
+        if (status == NS_DNS_FOUND) {
             Tcl_DStringResult(interp, &ds);
         } else {
+            const char *reason = status == NS_DNS_NOT_FOUND ? "NOT_FOUND"
+                               : status == NS_DNS_TEMPFAIL  ? "TEMPFAIL"
+                               : "ERROR";
+
             Ns_TclPrintfResult(interp, "could not lookup %s", host);
+            Tcl_SetErrorCode(interp, "NS_DNS", reason, NS_SENTINEL);
             result = TCL_ERROR;
         }
         Tcl_DStringFree(&ds);

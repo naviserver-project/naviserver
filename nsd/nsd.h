@@ -1725,6 +1725,8 @@ NS_EXTERN void NsSockaddrSort(const struct sockaddr *const *addresses,
  */
 
 typedef struct Ns_DnsRequest Ns_DnsRequest;
+NS_EXTERN Ns_DnsStatus NsGetAddrByHostStatus(Tcl_DString *dsPtr, const char *host, bool all)
+    NS_GNUC_NONNULL(1,2);
 NS_EXTERN bool NsDnsGetCached(const char *host, Tcl_DString *dsPtr,
                               Ns_Time *waitPtr, bool *cacheEnabledPtr) NS_GNUC_NONNULL(1,2,3,4);
 NS_EXTERN bool NsDnsStart(const char *host, Tcl_DString *dsPtr,

@@ -76,16 +76,16 @@ static void DnsFreeJob(DnsJob *jobPtr) NS_GNUC_NONNULL(1);
  * Static functions defined in this file
  */
 
-static bool GetAddr(Tcl_DString *dsPtr, const char *host);
 static GetProc GetAddrStatus;
 static GetProc GetHost;
-#if defined(HAVE_IPV6) || defined(HAVE_GETNAMEINFO)
-static Ns_DnsStatus NameInfoStatus(int result);
-#else
+#if defined(HAVE_IPV6) || defined(HAVE_GETNAMEINFO) || defined(HAVE_GETADDRINFO)
+static Ns_DnsStatus GaiStatus(int result, bool forward);
+#endif
+#if !defined(HAVE_IPV6) && (!defined(HAVE_GETNAMEINFO) || !defined(HAVE_GETADDRINFO))
 static Ns_DnsStatus HostEntStatus(int result);
 #endif
 #ifdef HAVE_IPV6
-static bool GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
+static Ns_DnsStatus GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
     NS_GNUC_NONNULL(1,2);
 #endif
 static void DnsInitAsync(void);
@@ -203,23 +203,25 @@ Ns_GetHostByAddr(Tcl_DString *dsPtr, const char *addr)
     return Ns_GetHostByAddrStatus(dsPtr, addr) == NS_DNS_FOUND;
 }
 
-bool
-Ns_GetAddrByHost(Tcl_DString *dsPtr, const char *host)
+Ns_DnsStatus
+NsGetAddrByHostStatus(Tcl_DString *dsPtr, const char *host, bool all)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(host != NULL);
 
-    return DnsGet(GetAddrStatus, dsPtr, addrCache, host, NS_FALSE) == NS_DNS_FOUND;
+    return DnsGet(GetAddrStatus, dsPtr, addrCache, host, all);
 }
 
+bool
+Ns_GetAddrByHost(Tcl_DString *dsPtr, const char *host)
+{
+    return NsGetAddrByHostStatus(dsPtr, host, NS_FALSE) == NS_DNS_FOUND;
+}
 
 bool
 Ns_GetAllAddrByHost(Tcl_DString *dsPtr, const char *host)
 {
-    NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(host != NULL);
-
-    return DnsGet(GetAddrStatus, dsPtr, addrCache, host, NS_TRUE) == NS_DNS_FOUND;
+    return NsGetAddrByHostStatus(dsPtr, host, NS_TRUE) == NS_DNS_FOUND;
 }
 
 
@@ -686,27 +688,7 @@ NsDnsCancel(Ns_DnsRequest *requestPtr)
 
 
 
-/*
- *----------------------------------------------------------------------
- *
- * GetAddrStatus --
- *
- *      Adapt the Boolean forward lookup to the shared cache callback.
- *
- * Results:
- *      NS_DNS_FOUND on success, NS_DNS_ERROR otherwise.
- *
- * Side effects:
- *      May append addresses to dsPtr or log a resolver diagnostic.
- *
- *----------------------------------------------------------------------
- */
 
-static Ns_DnsStatus
-GetAddrStatus(Tcl_DString *dsPtr, const char *host)
-{
-    return GetAddr(dsPtr, host) ? NS_DNS_FOUND : NS_DNS_ERROR;
-}
 
 
 /*
@@ -807,13 +789,13 @@ DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, b
 }
 
 
-#if defined(HAVE_IPV6) || defined(HAVE_GETNAMEINFO)
+#if defined(HAVE_IPV6) || defined(HAVE_GETNAMEINFO) || defined(HAVE_GETADDRINFO)
 /*
  *----------------------------------------------------------------------
  *
- * NameInfoStatus --
+ * GaiStatus --
  *
- *      Translate a getnameinfo() result into a reverse lookup status.
+ *      Translate a getaddrinfo() or getnameinfo() result into a lookup status.
  *
  * Results:
  *      The corresponding Ns_DnsStatus value.
@@ -825,12 +807,19 @@ DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, b
  */
 
 static Ns_DnsStatus
-NameInfoStatus(int result)
+GaiStatus(int result, bool forward)
 {
+#ifndef EAI_NODATA
+    (void)forward;
+#endif
     if (result == 0) {
         return NS_DNS_FOUND;
     }
-    if (result == EAI_NONAME) {
+    if (result == EAI_NONAME
+#ifdef EAI_NODATA
+        || (forward && result == EAI_NODATA)
+#endif
+        ) {
         return NS_DNS_NOT_FOUND;
     }
     if (result == EAI_AGAIN) {
@@ -838,7 +827,9 @@ NameInfoStatus(int result)
     }
     return NS_DNS_ERROR;
 }
-#else
+#endif
+
+#if !defined(HAVE_IPV6) && (!defined(HAVE_GETNAMEINFO) || !defined(HAVE_GETADDRINFO))
 /*
  *----------------------------------------------------------------------
  *
@@ -879,8 +870,7 @@ HostEntStatus(int result)
  *      Perform the actual lookup by host or address.
  *
  * Results:
- *      GetHost returns the reverse lookup status. Forward lookup helpers
- *      return true when an address is found.
+ *      Return the DNS lookup status.
  *
  * Side effects:
  *      Result is appended to dsPtr.
@@ -909,7 +899,7 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
                           buf, sizeof(buf),
                           NULL, 0, NI_NAMEREQD);
         if (err != 0) {
-            status = NameInfoStatus(err);
+            status = GaiStatus(err, NS_FALSE);
             switch (err) {
 #if defined(EAI_SYSTEM)
             case EAI_SYSTEM:
@@ -937,8 +927,8 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
     return status;
 }
 
-static bool
-GetAddr(Tcl_DString *dsPtr, const char *host)
+static Ns_DnsStatus
+GetAddrStatus(Tcl_DString *dsPtr, const char *host)
 {
     return GetAddrFamily(dsPtr, host, AF_UNSPEC);
 }
@@ -955,21 +945,21 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
  *      A missing family is expected during racing and is logged at Debug.
  *
  * Results:
- *      NS_TRUE when addresses were found, NS_FALSE otherwise.
+ *      Return the DNS lookup status.
  *
  * Side effects:
  *      Appends numeric addresses to dsPtr.
  *
  *----------------------------------------------------------------------
  */
-static bool
+static Ns_DnsStatus
 GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
 {
     struct       addrinfo  hints;
     const struct addrinfo *ptr;
     struct       addrinfo *res;
     int          result;
-    bool         success = NS_FALSE;
+    Ns_DnsStatus status;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = family;
@@ -977,6 +967,7 @@ GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
     hints.ai_socktype = SOCK_STREAM;
 
     result = getaddrinfo(host, NULL, &hints, &res);
+    status = result == 0 ? NS_DNS_ERROR : GaiStatus(result, NS_TRUE);
     switch (result) {
     case 0:
         ptr = res;
@@ -994,7 +985,7 @@ GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
                 Ns_Log(Error, "dns: getaddrinfo failed for %s: unknown address family %d",
                        host, ptr->ai_family);
 
-                success = NS_FALSE;
+                status = NS_DNS_ERROR;
                 break;
             } else {
                 char ipString[NS_IPADDR_SIZE];
@@ -1002,7 +993,7 @@ GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
                 Tcl_DStringAppendElement(dsPtr,
                                          ns_inet_ntop(ptr->ai_addr, ipString, sizeof(ipString)));
 
-                success = NS_TRUE;
+                status = NS_DNS_FOUND;
                 ptr = ptr->ai_next;
             }
         }
@@ -1027,7 +1018,7 @@ GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
         break;
     }
 
-    return success;
+    return status;
 }
 
 #else
@@ -1045,8 +1036,7 @@ GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
  *      waiting on a condition and not mutex spin waiting.
  *
  * Results:
- *      GetHost returns the reverse lookup status. Forward lookup helpers
- *      return true when an address is found.
+ *      Return the DNS lookup status.
  *
  * Side effects:
  *      Result is appended to dsPtr.
@@ -1078,7 +1068,7 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
     result = getnameinfo((const struct sockaddr *) &sa,
                          sizeof(struct sockaddr_in), buf, sizeof(buf),
                          NULL, 0u, NI_NAMEREQD);
-    status = NameInfoStatus(result);
+    status = GaiStatus(result, NS_FALSE);
     if (result == 0) {
         Ns_DStringAppend(dsPtr, buf);
     } else if (result == EAI_SYSTEM) {
@@ -1165,13 +1155,13 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
 
 
 #if defined(HAVE_GETADDRINFO)
-static bool
-GetAddr(Tcl_DString *dsPtr, const char *host)
+static Ns_DnsStatus
+GetAddrStatus(Tcl_DString *dsPtr, const char *host)
 {
     struct addrinfo  hints;
     struct addrinfo *res, *ptr;
     int              result;
-    bool             status = NS_FALSE;
+    Ns_DnsStatus     status = NS_DNS_ERROR;
 #ifndef HAVE_MTSAFE_DNS
 
     Ns_CsEnter(&getDNScs);
@@ -1182,6 +1172,9 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
     hints.ai_socktype = SOCK_STREAM;
 
     result = getaddrinfo(host, NULL, &hints, &res);
+    if (result != 0) {
+        status = GaiStatus(result, NS_TRUE);
+    }
     if (result == 0) {
         ptr = res;
         while (ptr != NULL) {
@@ -1189,7 +1182,7 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
 
             ns_inet_ntop(ptr->ai_addr, ipString, sizeof(ipString));
             Tcl_DStringAppendElement(dsPtr, ipString);
-            status = NS_TRUE;
+            status = NS_DNS_FOUND;
             ptr = ptr->ai_next;
         }
         freeaddrinfo(res);
@@ -1212,18 +1205,22 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
 
 #elif defined(HAVE_GETHOSTBYNAME_R)
 
-static bool
-GetAddr(Tcl_DString *dsPtr, const char *host)
+static Ns_DnsStatus
+GetAddrStatus(Tcl_DString *dsPtr, const char *host)
 {
     struct in_addr ia, *ptr;
     char buf[2048];
     int result = 0;
     int h_errnop = 0;
-    bool status = NS_FALSE;
+    Ns_DnsStatus status = NS_DNS_ERROR;
 #if defined(HAVE_GETHOSTBYNAME_R_6) || defined(HAVE_GETHOSTBYNAME_R_5)
     struct hostent he;
+#ifdef HAVE_GETHOSTBYNAME_R_6
+    struct hostent *res;
+#endif
 #endif
 #ifdef HAVE_GETHOSTBYNAME_R_3
+    struct hostent he;
     struct hostent_data data;
 #endif
 
@@ -1232,6 +1229,9 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
 
 #if defined(HAVE_GETHOSTBYNAME_R_6)
     result = gethostbyname_r(host, &he, buf, sizeof(buf), &res, &h_errnop);
+    if (result == 0 && res == NULL) {
+        result = -1;
+    }
 #elif defined(HAVE_GETHOSTBYNAME_R_5)
     {
       struct hostent *res;
@@ -1247,6 +1247,9 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
 #endif
 
     if (result != 0) {
+        if (h_errnop != 0) {
+            status = HostEntStatus(h_errnop);
+        }
         LogError("gethostbyname_r", h_errnop);
     } else {
         int i = 0;
@@ -1256,8 +1259,8 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
              * HAVE_GETADDRINFO.
              */
             ia.s_addr = ptr->s_addr;
-            Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa((struct sockaddr *)(ptr->ai_addr)));
-            status = NS_TRUE;
+            Tcl_DStringAppendElement(dsPtr, inet_ntoa(ia));
+            status = NS_DNS_FOUND;
         }
     }
     return status;
@@ -1273,16 +1276,17 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
  * the same time.
  */
 
-static bool
-GetAddr(Tcl_DString *dsPtr, const char *host)
+static Ns_DnsStatus
+GetAddrStatus(Tcl_DString *dsPtr, const char *host)
 {
     struct hostent *he;
     struct in_addr ia, *ptr;
-    bool status = NS_FALSE;
+    Ns_DnsStatus status = NS_DNS_ERROR;
 
     Ns_CsEnter(&getDNScs);
     he = gethostbyname(host);
     if (he == NULL) {
+        status = HostEntStatus(h_errno);
         LogError("gethostbyname", h_errno);
     } else {
         int i = 0;
@@ -1292,8 +1296,8 @@ GetAddr(Tcl_DString *dsPtr, const char *host)
              * HAVE_GETADDRINFO.
              */
             ia.s_addr = ptr->s_addr;
-            Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa((struct sockaddr *)(ptr->ai_addr)));
-            status = NS_TRUE;
+            Tcl_DStringAppendElement(dsPtr, inet_ntoa(ia));
+            status = NS_DNS_FOUND;
         }
     }
     Ns_CsLeave(&getDNScs);

@@ -29,6 +29,15 @@ test ns_addrbyhost-1.2 {bad host} -body {
 
 
 
+test ns_addrbyhost-1.3 {negative lookup reports a structured error in both modes} -body {
+    set results {}
+    foreach options {{} {-all}} {
+        set code [catch {ns_addrbyhost {*}$options naviserver-test.invalid.} message details]
+        lappend results [list $code $message [dict get $details -errorcode]]
+    }
+    set results
+} -result [lrepeat 2 {1 {could not lookup naviserver-test.invalid.} {NS_DNS NOT_FOUND}}]
+
 cleanupTests
 
 # Local variables:

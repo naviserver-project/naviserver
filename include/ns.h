@@ -1564,10 +1564,10 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
  */
 
 typedef enum {
-    NS_DNS_FOUND,         /* Hostname appended to the output string. */
-    NS_DNS_NOT_FOUND,     /* System resolver found no reverse hostname. */
+    NS_DNS_FOUND,         /* Lookup result appended to the output string. */
+    NS_DNS_NOT_FOUND,     /* System resolver found no matching name or address. */
     NS_DNS_TEMPFAIL,      /* Retryable resolver failure or cache wait timeout. */
-    NS_DNS_ERROR          /* Invalid address or other resolver failure. */
+    NS_DNS_ERROR          /* Invalid input or other resolver failure. */
 } Ns_DnsStatus;
 
 #define NS_HAVE_GETHOSTBYADDRSTATUS 1
