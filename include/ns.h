@@ -1563,6 +1563,20 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
  * dns.c:
  */
 
+typedef enum {
+    NS_DNS_FOUND,         /* Hostname appended to the output string. */
+    NS_DNS_NOT_FOUND,     /* System resolver found no reverse hostname. */
+    NS_DNS_TEMPFAIL,      /* Retryable resolver failure or cache wait timeout. */
+    NS_DNS_ERROR          /* Invalid address or other resolver failure. */
+} Ns_DnsStatus;
+
+#define NS_HAVE_GETHOSTBYADDRSTATUS 1
+
+/* Appends only on NS_DNS_FOUND; leaves the output unchanged otherwise. */
+NS_EXTERN Ns_DnsStatus
+Ns_GetHostByAddrStatus(Tcl_DString *dsPtr, const char *addr)
+    NS_GNUC_NONNULL(1,2);
+
 NS_EXTERN bool
 Ns_GetHostByAddr(Tcl_DString *dsPtr, const char *addr)
     NS_GNUC_NONNULL(1,2);

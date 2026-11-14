@@ -38,7 +38,7 @@ extern int h_errno;
 #endif
 
 
-typedef bool (GetProc)(Tcl_DString *dsPtr, const char *key);
+typedef Ns_DnsStatus (GetProc)(Tcl_DString *dsPtr, const char *key);
 
 #if defined(HAVE_IPV6) && defined(HAVE_GETADDRINFO)
 typedef struct DnsJob DnsJob;
@@ -76,14 +76,20 @@ static void DnsFreeJob(DnsJob *jobPtr) NS_GNUC_NONNULL(1);
  * Static functions defined in this file
  */
 
-static GetProc GetAddr;
+static bool GetAddr(Tcl_DString *dsPtr, const char *host);
+static GetProc GetAddrStatus;
 static GetProc GetHost;
+#if defined(HAVE_IPV6) || defined(HAVE_GETNAMEINFO)
+static Ns_DnsStatus NameInfoStatus(int result);
+#else
+static Ns_DnsStatus HostEntStatus(int result);
+#endif
 #ifdef HAVE_IPV6
 static bool GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
     NS_GNUC_NONNULL(1,2);
 #endif
 static void DnsInitAsync(void);
-static bool DnsGet(GetProc *getProc, Tcl_DString *dsPtr,
+static Ns_DnsStatus DnsGet(GetProc *getProc, Tcl_DString *dsPtr,
                    Ns_Cache *cache, const char *key, bool all)
     NS_GNUC_NONNULL(1,2,4);
 
@@ -163,8 +169,27 @@ NsConfigDNS(void)
  *----------------------------------------------------------------------
  */
 
-bool
-Ns_GetHostByAddr(Tcl_DString *dsPtr, const char *addr)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_GetHostByAddrStatus --
+ *
+ *      Look up the hostname for a peer address using the reverse DNS cache.
+ *
+ * Results:
+ *      NS_DNS_FOUND and the hostname is appended to dsPtr on success.
+ *      NS_DNS_NOT_FOUND, NS_DNS_TEMPFAIL, or NS_DNS_ERROR otherwise;
+ *      dsPtr is unchanged on failure.
+ *
+ * Side effects:
+ *      Successful results may be cached. Resolver failures may be logged.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_DnsStatus
+Ns_GetHostByAddrStatus(Tcl_DString *dsPtr, const char *addr)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(addr != NULL);
@@ -173,12 +198,18 @@ Ns_GetHostByAddr(Tcl_DString *dsPtr, const char *addr)
 }
 
 bool
+Ns_GetHostByAddr(Tcl_DString *dsPtr, const char *addr)
+{
+    return Ns_GetHostByAddrStatus(dsPtr, addr) == NS_DNS_FOUND;
+}
+
+bool
 Ns_GetAddrByHost(Tcl_DString *dsPtr, const char *host)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(host != NULL);
 
-    return DnsGet(GetAddr, dsPtr, addrCache, host, NS_FALSE);
+    return DnsGet(GetAddrStatus, dsPtr, addrCache, host, NS_FALSE) == NS_DNS_FOUND;
 }
 
 
@@ -188,7 +219,7 @@ Ns_GetAllAddrByHost(Tcl_DString *dsPtr, const char *host)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(host != NULL);
 
-    return DnsGet(GetAddr, dsPtr, addrCache, host, NS_TRUE);
+    return DnsGet(GetAddrStatus, dsPtr, addrCache, host, NS_TRUE) == NS_DNS_FOUND;
 }
 
 
@@ -654,13 +685,53 @@ NsDnsCancel(Ns_DnsRequest *requestPtr)
 #endif /* HAVE_IPV6 && HAVE_GETADDRINFO */
 
 
-static bool
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetAddrStatus --
+ *
+ *      Adapt the Boolean forward lookup to the shared cache callback.
+ *
+ * Results:
+ *      NS_DNS_FOUND on success, NS_DNS_ERROR otherwise.
+ *
+ * Side effects:
+ *      May append addresses to dsPtr or log a resolver diagnostic.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_DnsStatus
+GetAddrStatus(Tcl_DString *dsPtr, const char *host)
+{
+    return GetAddr(dsPtr, host) ? NS_DNS_FOUND : NS_DNS_ERROR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DnsGet --
+ *
+ *      Resolve a name or address, using the supplied cache when enabled.
+ *
+ * Results:
+ *      The lookup status. A cache wait timeout returns NS_DNS_TEMPFAIL.
+ *
+ * Side effects:
+ *      Appends the result only on success and may populate the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_DnsStatus
 DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, bool all)
 {
     Tcl_DString ds;
     Ns_Time     t;
     int         isNew;
-    bool        success;
+    Ns_DnsStatus status;
 
     NS_NONNULL_ASSERT(getProc != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -672,7 +743,7 @@ DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, b
 
     Tcl_DStringInit(&ds);
     if (cache == NULL) {
-        success = (*getProc)(&ds, key);
+        status = (*getProc)(&ds, key);
     } else {
         Ns_Entry   *entry;
 
@@ -684,14 +755,14 @@ DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, b
         if (entry == NULL) {
             Ns_CacheUnlock(cache);
             Ns_Log(Notice, "dns: timeout waiting for concurrent update");
-            success = NS_FALSE;
+            status = NS_DNS_TEMPFAIL;
 
         } else {
             if (isNew != 0) {
                 Ns_CacheUnlock(cache);
-                success = (*getProc)(&ds, key);
+                status = (*getProc)(&ds, key);
                 Ns_CacheLock(cache);
-                if (!success) {
+                if (status != NS_DNS_FOUND) {
                     Ns_CacheDeleteEntry(entry);
                 } else {
                     Ns_Time endTime, diffTime;
@@ -708,15 +779,15 @@ DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, b
             } else {
                 Tcl_DStringAppend(&ds, Ns_CacheGetValue(entry),
                                   (TCL_SIZE_T)Ns_CacheGetSize(entry));
-                success = NS_TRUE;
+                status = NS_DNS_FOUND;
             }
             Ns_CacheUnlock(cache);
         }
 
     }
 
-    if (success) {
-        if (getProc == GetAddr && !all) {
+    if (status == NS_DNS_FOUND) {
+        if (getProc == GetAddrStatus && !all) {
             /*
              * When "all" is not specified for a GetAddr() call,
              * return just the first address.
@@ -732,9 +803,69 @@ DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, b
     }
     Tcl_DStringFree(&ds);
 
-    return success;
+    return status;
 }
 
+
+#if defined(HAVE_IPV6) || defined(HAVE_GETNAMEINFO)
+/*
+ *----------------------------------------------------------------------
+ *
+ * NameInfoStatus --
+ *
+ *      Translate a getnameinfo() result into a reverse lookup status.
+ *
+ * Results:
+ *      The corresponding Ns_DnsStatus value.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_DnsStatus
+NameInfoStatus(int result)
+{
+    if (result == 0) {
+        return NS_DNS_FOUND;
+    }
+    if (result == EAI_NONAME) {
+        return NS_DNS_NOT_FOUND;
+    }
+    if (result == EAI_AGAIN) {
+        return NS_DNS_TEMPFAIL;
+    }
+    return NS_DNS_ERROR;
+}
+#else
+/*
+ *----------------------------------------------------------------------
+ *
+ * HostEntStatus --
+ *
+ *      Translate a legacy h_errno value after a reverse lookup failure.
+ *
+ * Results:
+ *      NS_DNS_NOT_FOUND, NS_DNS_TEMPFAIL, or NS_DNS_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_DnsStatus
+HostEntStatus(int result)
+{
+    if (result == HOST_NOT_FOUND || result == NO_DATA) {
+        return NS_DNS_NOT_FOUND;
+    }
+    if (result == TRY_AGAIN) {
+        return NS_DNS_TEMPFAIL;
+    }
+    return NS_DNS_ERROR;
+}
+#endif
 
 /**********************************************************************
  * Begin IPv6
@@ -748,8 +879,8 @@ DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, b
  *      Perform the actual lookup by host or address.
  *
  * Results:
- *      If a name can be found, the function returns NS_TRUE;
- *      otherwise, it returns NS_FALSE.
+ *      GetHost returns the reverse lookup status. Forward lookup helpers
+ *      return true when an address is found.
  *
  * Side effects:
  *      Result is appended to dsPtr.
@@ -757,13 +888,13 @@ DnsGet(GetProc *getProc, Tcl_DString *dsPtr, Ns_Cache *cache, const char *key, b
  *----------------------------------------------------------------------
  */
 
-static bool
+static Ns_DnsStatus
 GetHost(Tcl_DString *dsPtr, const char *addr)
 {
     int    r;
     struct sockaddr_storage sa;
     struct sockaddr        *saPtr = (struct sockaddr *)&sa;
-    bool   success = NS_FALSE;
+    Ns_DnsStatus status = NS_DNS_ERROR;
 
     sa.ss_family = AF_UNSPEC;
     r = ns_inet_pton(saPtr, addr);
@@ -778,6 +909,7 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
                           buf, sizeof(buf),
                           NULL, 0, NI_NAMEREQD);
         if (err != 0) {
+            status = NameInfoStatus(err);
             switch (err) {
 #if defined(EAI_SYSTEM)
             case EAI_SYSTEM:
@@ -798,11 +930,11 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
             }
         } else {
             Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
-            success = NS_TRUE;
+            status = NS_DNS_FOUND;
         }
     }
 
-    return success;
+    return status;
 }
 
 static bool
@@ -913,8 +1045,8 @@ GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
  *      waiting on a condition and not mutex spin waiting.
  *
  * Results:
- *      If a name can be found, the function returns NS_TRUE;
- *      otherwise, it returns NS_FALSE.
+ *      GetHost returns the reverse lookup status. Forward lookup helpers
+ *      return true when an address is found.
  *
  * Side effects:
  *      Result is appended to dsPtr.
@@ -924,13 +1056,13 @@ GetAddrFamily(Tcl_DString *dsPtr, const char *host, int family)
 
 #if defined(HAVE_GETNAMEINFO)
 
-static bool
+static Ns_DnsStatus
 GetHost(Tcl_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
     char buf[NI_MAXHOST];
     int result;
-    bool status = NS_FALSE;
+    Ns_DnsStatus status = NS_DNS_ERROR;
 #ifndef HAVE_MTSAFE_DNS
     Ns_CsEnter(&getDNScs);
 #endif
@@ -946,9 +1078,9 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
     result = getnameinfo((const struct sockaddr *) &sa,
                          sizeof(struct sockaddr_in), buf, sizeof(buf),
                          NULL, 0u, NI_NAMEREQD);
+    status = NameInfoStatus(result);
     if (result == 0) {
         Ns_DStringAppend(dsPtr, buf);
-        status = NS_TRUE;
     } else if (result == EAI_SYSTEM) {
         Ns_Log(Warning, "dns: getnameinfo failed: %s (%s)",
                strerror(errno), addr);
@@ -969,23 +1101,24 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
 
 #elif defined(HAVE_GETHOSTBYADDR_R)
 
-static bool
+static Ns_DnsStatus
 GetHost(Tcl_DString *dsPtr, const char *addr)
 {
     struct hostent he, *hePtr;
     struct sockaddr_in sa;
     char buf[2048];
     int h_errnop;
-    bool status = NS_FALSE;
+    Ns_DnsStatus status = NS_DNS_ERROR;
 
     sa.sin_addr.s_addr = inet_addr(addr);
     hePtr = gethostbyaddr_r((char *) &sa.sin_addr, sizeof(struct in_addr),
                 AF_INET, &he, buf, sizeof(buf), &h_errnop);
     if (hePtr == NULL) {
+        status = HostEntStatus(h_errnop);
         LogError("gethostbyaddr_r", h_errnop);
     } else if (he.h_name != NULL) {
         Ns_DStringAppend(dsPtr, he.h_name);
-        status = NS_TRUE;
+        status = NS_DNS_FOUND;
     }
     return status;
 }
@@ -1004,11 +1137,11 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
 #define INADDR_NONE (-1)
 #endif
 
-static bool
+static Ns_DnsStatus
 GetHost(Tcl_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
-    bool status = NS_FALSE;
+    Ns_DnsStatus status = NS_DNS_ERROR;
 
     sa.sin_addr.s_addr = inet_addr(addr);
     if (sa.sin_addr.s_addr != INADDR_NONE) {
@@ -1018,10 +1151,11 @@ GetHost(Tcl_DString *dsPtr, const char *addr)
         he = gethostbyaddr((char *) &sa.sin_addr,
                            sizeof(struct in_addr), AF_INET);
         if (he == NULL) {
+            status = HostEntStatus(h_errno);
             LogError("gethostbyaddr", h_errno);
         } else if (he->h_name != NULL) {
             Ns_DStringAppend(dsPtr, he->h_name);
-            status = NS_TRUE;
+            status = NS_DNS_FOUND;
         }
         Ns_CsLeave(&getDNScs);
     }
