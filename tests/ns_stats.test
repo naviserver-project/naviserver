@@ -1144,7 +1144,7 @@ proc ::ns_stats_test::storageFixture {} {
 }
 
 test stats-storage-record {compact record fields and endpoint request context} -constraints ns_stats -body {
-    set records [::ns::stats::storageStallRecords [::ns_stats_test::storageFixture] 20]
+    set records [ns_stats eval [list :storageStallRecords [::ns_stats_test::storageFixture] 20]]
     set r [lindex $records 0]
     list [llength $records] [dict get $r device] [dict get $r operation] \
         [dict get $r operations] [dict get $r latencyMs] [dict get $r averageQueueDepth] \
@@ -1162,7 +1162,7 @@ test stats-storage-invalid {first idle reset gapped and missing samples produce 
             gap {dict set r sampling elapsedSeconds 30}
             missing {dict set r previousLinuxNetwork disks {}}
         }
-        lappend result [::ns::stats::storageStallRecords $r 20]
+        lappend result [ns_stats eval [list :storageStallRecords $r 20]]
     }
     set result
 } -result {{} {} {} {} {}}
@@ -1177,7 +1177,7 @@ test stats-storage-buffer {bounded read-only storage buffer scopes server contex
     ns_set update $section storageStallRetention 1h
 } -body {
     set r [::ns_stats_test::storageFixture]
-    dict set r storageStalls [::ns::stats::storageStallRecords $r 20]
+    dict set r storageStalls [ns_stats eval [list :storageStallRecords $r 20]]
     foreach n {1 2 3} {
         dict set r storageStalls [list [dict replace [lindex [dict get $r storageStalls] 0] operations $n]]
         ns_stats eval [list :retainStorageStalls $r]
@@ -1198,7 +1198,7 @@ test stats-storage-age {expired records are omitted without mutating retained st
     set had [nsv_exists ns_stats storageStalls]
     if {$had} {set saved [nsv_get ns_stats storageStalls]}
     try {
-        set record [lindex [::ns::stats::storageStallRecords [::ns_stats_test::storageFixture] 20] 0]
+        set record [lindex [ns_stats eval [list :storageStallRecords [::ns_stats_test::storageFixture] 20]] 0]
         dict set record timestamp [expr {[clock microseconds]-90000000000}]
         nsv_set ns_stats storageStalls [list $record]
         list [dict get [ns_stats storage stalls] records] [llength [nsv_get ns_stats storageStalls]]

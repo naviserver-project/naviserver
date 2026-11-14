@@ -331,54 +331,9 @@ proc ::ns::stats::linuxDiskSnapshot {} {
     return $disks
 }
 
-# Sparse, operation-weighted storage evidence from one valid sampler interval.
-# Queue depth is device-wide, not attributable to a particular operation/server.
-proc ::ns::stats::storageStallRecords {sample threshold} {
-    set result {}
-    if {![dict get $sample sampling ready]} {return $result}
-    set elapsed [dict get $sample sampling elapsedSeconds]
-    if {$elapsed<=0 || $elapsed>1.5*[dict get $sample sampling intervalSeconds]
-        || ![dict exists $sample linuxNetwork disks]
-        || ![dict exists $sample previousLinuxNetwork disks]} {return $result}
-    set queues {}
-    dict for {server entry} [dict get $sample servers] {
-        dict for {pool data} [dict get $entry pools] {
-            if {[dict exists $data gauges waitingRequests]} {
-                dict set queues $server $pool [dict get $data gauges waitingRequests]
-            }
-        }
-    }
-    dict for {device disk} [dict get $sample linuxNetwork disks] {
-        if {![dict exists $sample previousLinuxNetwork disks $device]} {continue}
-        set old [dict get $sample previousLinuxNetwork disks $device]
-        set valid true
-        foreach key {reads readMs writes writeMs} {
-            if {![dict exists $disk $key] || ![dict exists $old $key]
-                || [dict get $disk $key]<[dict get $old $key]} {set valid false;break}
-        }
-        if {!$valid} {continue}
-        foreach {operation count ticks} {read reads readMs write writes writeMs} {
-            set n [expr {[dict get $disk $count]-[dict get $old $count]}]
-            set ms [expr {[dict get $disk $ticks]-[dict get $old $ticks]}]
-            if {$n<=0 || double($ms)/$n<$threshold} {continue}
-            set record [dict create timestamp [dict get $sample timestamp] instance [dict get $sample instance] \
-                from [dict get $sample sampling from] to [dict get $sample sampling to] \
-                elapsedSeconds $elapsed device $device operation $operation \
-                operations $n operationsPerSecond [expr {double($n)/$elapsed}] \
-                latencyMs [expr {double($ms)/$n}] requestQueues $queues]
-            foreach key {inFlight writeQueue} {
-                if {[dict exists $disk $key]} {dict set record $key [dict get $disk $key]}
-            }
-            foreach {counter metric divisor} {weightedIoMs averageQueueDepth 1000.0 ioMs utilizationPercent 10.0} {
-                if {[dict exists $disk $counter] && [dict exists $old $counter]
-                    && [dict get $disk $counter]>=[dict get $old $counter]} {
-                    dict set record $metric [expr {([dict get $disk $counter]-[dict get $old $counter])/($elapsed*$divisor)}]
-                }
-            }
-            lappend result $record
-        }
-    }
-    return $result
+# Remove the old procedure when updating a live interpreter.
+if {[llength [info procs ::ns::stats::storageStallRecords]]} {
+    rename ::ns::stats::storageStallRecords {}
 }
 
 proc ::ns::stats::linuxNetworkSnapshot {} {
@@ -931,6 +886,63 @@ proc ::ns::stats::defineClass {name args} {
 }
 
 ::ns::stats::defineClass ::ns::stats::Sampler -superclass ::ns::stats::Collector {
+    :method storageStallRecords {sample threshold} {
+        #
+        # Extract sparse, operation-weighted storage evidence from one interval.
+        # Queue depth describes the device across operations and servers.
+        #
+        # @param sample Sampler result containing current and previous counters.
+        # @param threshold Minimum average operation latency in milliseconds.
+        # @return Storage stall records for the valid interval.
+        #
+
+        set result {}
+        if {![dict get $sample sampling ready]} {return $result}
+        set elapsed [dict get $sample sampling elapsedSeconds]
+        if {$elapsed<=0 || $elapsed>1.5*[dict get $sample sampling intervalSeconds]
+            || ![dict exists $sample linuxNetwork disks]
+            || ![dict exists $sample previousLinuxNetwork disks]} {return $result}
+        set queues {}
+        dict for {server entry} [dict get $sample servers] {
+            dict for {pool data} [dict get $entry pools] {
+                if {[dict exists $data gauges waitingRequests]} {
+                    dict set queues $server $pool [dict get $data gauges waitingRequests]
+                }
+            }
+        }
+        dict for {device disk} [dict get $sample linuxNetwork disks] {
+            if {![dict exists $sample previousLinuxNetwork disks $device]} {continue}
+            set old [dict get $sample previousLinuxNetwork disks $device]
+            set valid true
+            foreach key {reads readMs writes writeMs} {
+                if {![dict exists $disk $key] || ![dict exists $old $key]
+                    || [dict get $disk $key]<[dict get $old $key]} {set valid false;break}
+            }
+            if {!$valid} {continue}
+            foreach {operation count ticks} {read reads readMs write writes writeMs} {
+                set n [expr {[dict get $disk $count]-[dict get $old $count]}]
+                set ms [expr {[dict get $disk $ticks]-[dict get $old $ticks]}]
+                if {$n<=0 || double($ms)/$n<$threshold} {continue}
+                set record [dict create timestamp [dict get $sample timestamp] instance [dict get $sample instance] \
+                    from [dict get $sample sampling from] to [dict get $sample sampling to] \
+                    elapsedSeconds $elapsed device $device operation $operation \
+                    operations $n operationsPerSecond [expr {double($n)/$elapsed}] \
+                    latencyMs [expr {double($ms)/$n}] requestQueues $queues]
+                foreach key {inFlight writeQueue} {
+                    if {[dict exists $disk $key]} {dict set record $key [dict get $disk $key]}
+                }
+                foreach {counter metric divisor} {weightedIoMs averageQueueDepth 1000.0 ioMs utilizationPercent 10.0} {
+                    if {[dict exists $disk $counter] && [dict exists $old $counter]
+                        && [dict get $disk $counter]>=[dict get $old $counter]} {
+                        dict set record $metric [expr {([dict get $disk $counter]-[dict get $old $counter])/($elapsed*$divisor)}]
+                    }
+                }
+                lappend result $record
+            }
+        }
+        return $result
+    }
+
     #
     #   Extend Collector with process-wide periodic sampling and interval
     #   calculations. Keep configuration, collection status and the latest
@@ -1600,7 +1612,7 @@ proc ::ns::stats::defineClass {name args} {
                 set previous [expr {$pair eq "" ? "" : [dict get $pair raw]}]
                 set sample [:calculate $current $previous [dict get $state interval] [dict get $state instance]]
                 set threshold [ns_config -int -min 1 ns/stats storageStallThresholdMs 20]
-                dict set sample storageStalls [::ns::stats::storageStallRecords $sample $threshold]
+                dict set sample storageStalls [:storageStallRecords $sample $threshold]
                 :retainStorageStalls $sample
                 :retainSample $sample
                 dict set sample raw $current
