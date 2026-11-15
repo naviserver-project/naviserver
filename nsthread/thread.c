@@ -476,7 +476,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
             buf[0] = ' ';
             written = 1 + ns_uint64tohex(buf + 1, (uint64_t)thrPtr->tid);
             written += (TCL_SIZE_T)snprintf(buf + written, sizeof(buf) - (size_t)written,
-                                          " %d %" PRId64, thrPtr->flags, (int64_t)thrPtr->ctime);
+                                          " %u %" PRId64, thrPtr->flags, (int64_t)thrPtr->ctime);
             Tcl_DStringAppend(dsPtr, buf, written);
             if (proc != NULL) {
                 (*proc)(dsPtr, thrPtr->proc, thrPtr->arg);
