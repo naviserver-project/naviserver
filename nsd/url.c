@@ -932,10 +932,9 @@ NsTclParseHostportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
         if (success && *hostStart != '\0' && portStart != hostport) {
             Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
 
-            if (hostStart != NULL) {
-                Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_host));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(hostStart, TCL_INDEX_NONE));
-            }
+            Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_host));
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(hostStart, TCL_INDEX_NONE));
+
             if (portStart != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, NsAtomObj(NS_ATOM_port));
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(portStart, TCL_INDEX_NONE));
