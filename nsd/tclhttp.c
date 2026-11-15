@@ -1159,7 +1159,7 @@ HttpClientLogWrite(
             Tcl_DStringInit(&logString);
             Tcl_DStringInit(&urlString);
             Ns_DStringPrintf(&logString, "%s %s %d %s \"%s\" " NS_TIME_FMT
-                             " %" PRIdz " %" PRIdz " %d %s\n",
+                             " %" PRIuz " %" PRIuz " %d %s\n",
                              Ns_LogTime(buf),
                              Ns_ThreadGetName(),
                              httpPtr->status == 0 ? 408 : httpPtr->status,
