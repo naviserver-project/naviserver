@@ -1143,10 +1143,10 @@ NsTclCacheStatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
 
                 Tcl_DStringAppendElement(&entryDs, key);
                 if (timePtr->usec == 0) {
-                    Ns_DStringPrintf(&entryDs, " %" PRIdz " %" PRIdz " %" PRId64,
+                    Ns_DStringPrintf(&entryDs, " %" PRIuz " %" PRIuz " %" PRId64,
                                      size, reuse, (int64_t) timePtr->sec);
                 } else {
-                    Ns_DStringPrintf(&entryDs, " %" PRIdz " %" PRIdz " %" PRId64 ":%ld",
+                    Ns_DStringPrintf(&entryDs, " %" PRIuz " %" PRIuz " %" PRId64 ":%ld",
                                      size, reuse, (int64_t) timePtr->sec, timePtr->usec);
                 }
                 Tcl_DStringAppendElement(&ds, entryDs.string);
