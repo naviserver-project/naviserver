@@ -1131,8 +1131,8 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
                      * What is with error string on Windows?
                      */
 
-                    Ns_Log(Warning, "seek operation with offset %" PROTd
-                           " failed: %s", bufs[0].offset, strerror(errno));
+                    Ns_Log(Warning, "seek operation with offset %" PRId64
+                           " failed: %s", (int64_t)bufs[0].offset, strerror(errno));
                     Tcl_DStringFree(&ds);
                     return NS_ERROR;
                 }
