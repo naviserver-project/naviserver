@@ -61,6 +61,12 @@ static Ns_ReturnCode PrebindSockets(const char *spec)
 
 static void Binder(void);
 
+static bool UnixSocketDirectoryTrusted(char *directory)
+    NS_GNUC_NONNULL(1);
+
+static int BindUnixWithMode(NS_SOCKET sock, const char *path, unsigned short mode)
+    NS_GNUC_NONNULL(2);
+
 static struct Prebind* PrebindAlloc(const char *proto, size_t reuses, struct sockaddr *saPtr)
     NS_GNUC_NONNULL(1,3);
 
@@ -726,6 +732,138 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 
 
 
+#ifndef _WIN32
+/*
+ *----------------------------------------------------------------------
+ *
+ * UnixSocketDirectoryTrusted --
+ *
+ *      Check a resolved directory path from the root down. Each
+ *      directory must be owned by root or the effective user. A directory
+ *      writable by group or others must have the sticky bit set.
+ *
+ * Results:
+ *      NS_TRUE if every directory passes the checks, otherwise NS_FALSE
+ *      with errno set.
+ *
+ * Side effects:
+ *      Temporarily modifies the path string and restores it before
+ *      returning.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+UnixSocketDirectoryTrusted(char *directory)
+{
+    const uid_t uid = geteuid();
+    char       *end = directory + 1;
+
+    for (;;) {
+        struct stat st;
+        char saved = *end;
+        int rc;
+
+        *end = '\0';
+        rc = lstat(directory, &st);
+        *end = saved;
+        if (rc != 0) {
+            return NS_FALSE;
+        }
+        if (!S_ISDIR(st.st_mode) || (st.st_uid != 0 && st.st_uid != uid)
+            || ((st.st_mode & (S_IWGRP | S_IWOTH)) != 0 && (st.st_mode & S_ISVTX) == 0)) {
+            errno = EACCES;
+            return NS_FALSE;
+        }
+        if (saved == '\0') {
+            return NS_TRUE;
+        }
+        end += strcspn(end + (saved == '/' ? 1 : 0), "/") + (saved == '/' ? 1 : 0);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BindUnixWithMode --
+ *
+ *      Bind a Unix-domain socket in a private directory on the same
+ *      filesystem, set its mode, then rename it to the requested path.
+ *
+ * Results:
+ *      0 on success, or -1 on failure with errno set.
+ *
+ * Side effects:
+ *      Creates and removes a temporary staging directory. On success,
+ *      publishes the socket at the requested path.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+BindUnixWithMode(NS_SOCKET sock, const char *path, unsigned short mode)
+{
+    struct sockaddr_un addr;
+    char parent[sizeof(addr.sun_path)], directory[PATH_MAX];
+    char stage[sizeof(addr.sun_path)], destination[PATH_MAX];
+    const char *name = strrchr(path, '/');
+    const char *separator;
+    int n, rc, err;
+    bool bound = NS_FALSE;
+
+    if (name == NULL) {
+        memcpy(parent, ".", 2u);
+        name = path;
+    } else {
+        size_t length = name == path ? 1u : (size_t)(name - path);
+
+        memcpy(parent, path, length);
+        parent[length] = '\0';
+        ++name;
+    }
+    if (*name == '\0' || STREQ(name, ".") || STREQ(name, "..")) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (realpath(parent, directory) == NULL || !UnixSocketDirectoryTrusted(directory)) {
+        return -1;
+    }
+
+    separator = STREQ(directory, "/") ? "" : "/";
+    n = snprintf(destination, sizeof(destination), "%s%s%s", directory, separator, name);
+    if (n < 0 || (size_t)n >= sizeof(destination)) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+    n = snprintf(stage, sizeof(stage), "%s%s.nsXXXXXX", directory, separator);
+    if (n < 0 || (size_t)n + sizeof("/s") > sizeof(addr.sun_path)) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+    if (ns_mkdtemp(stage) == NULL) {
+        return -1;
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    memcpy(addr.sun_path, stage, (size_t)n);
+    memcpy(addr.sun_path + n, "/s", sizeof("/s"));
+    rc = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+    if (rc == 0) {
+        bound = NS_TRUE;
+        rc = chmod(addr.sun_path, (mode_t)mode);
+        if (rc == 0) {
+            rc = rename(addr.sun_path, destination);
+        }
+    }
+    err = errno;
+    if (rc != 0 && bound) {
+        (void)unlink(addr.sun_path);
+    }
+    (void)rmdir(stage);
+    errno = err;
+    return rc;
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -762,27 +900,26 @@ Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
         return NS_INVALID_SOCKET;
     }
 
-    memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    memcpy(addr.sun_path, path, pathLength + 1);
-    unlink(path);
-
     sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
-    /*
-     * There is a small race condition below, since the permissions on
-     * the socket are checked not in an atomic fashion and might be
-     * changed immediately after the bind operation. Unfortunately,
-     * fchmod is not portable.
-     */
-    if (sock != NS_INVALID_SOCKET
-        && (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
-            || (mode != 0u && chmod(path, mode) == -1))
-        ) {
-        ns_sockerrno_t err = errno;
+    if (sock != NS_INVALID_SOCKET) {
+        int rc;
 
-        (void)ns_sockclose(sock);
-        sock = NS_INVALID_SOCKET;
-        Ns_SetSockErrno(err);
+        if (mode != 0u) {
+            rc = BindUnixWithMode(sock, path, mode);
+        } else {
+            memset(&addr, 0, sizeof(addr));
+            addr.sun_family = AF_UNIX;
+            memcpy(addr.sun_path, path, pathLength + 1);
+            (void)unlink(path);
+            rc = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+        }
+        if (rc != 0) {
+            ns_sockerrno_t err = errno;
+
+            (void)ns_sockclose(sock);
+            sock = NS_INVALID_SOCKET;
+            Ns_SetSockErrno(err);
+        }
     }
 
     return sock;
