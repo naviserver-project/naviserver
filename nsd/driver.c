@@ -10618,69 +10618,56 @@ WriterCheckInputParams(Tcl_Interp *interp, const char *filenameString,
                        size_t size, off_t offset,
                        int *fdPtr, size_t *nrbytesPtr)
 {
-    int         result = TCL_OK, rc;
+    int         result = TCL_OK, fd;
     struct stat st;
+    size_t      nrbytes = 0u;
 
     Ns_Log(DriverDebug, "WriterCheckInputParams %s offset %" PROTd " size %" PRIdz,
            filenameString, offset, size);
 
     /*
-     * Use stat() call to obtain information about the actual file to check
-     * later the plausibility of the parameters.
+     * Check the size of the opened file, which may differ from the file
+     * previously at this pathname.
      */
-    rc = stat(filenameString, &st);
-    if (unlikely(rc != 0)) {
-        Ns_TclPrintfResult(interp, "file does not exist '%s'", filenameString);
+    fd = ns_open(filenameString, O_RDONLY | O_CLOEXEC, 0);
+    if (unlikely(fd == NS_INVALID_FD)) {
+        if (errno == ENOENT || errno == ENOTDIR) {
+            Ns_TclPrintfResult(interp, "file does not exist '%s'", filenameString);
+        } else {
+            Ns_TclPrintfResult(interp, "could not open file '%s'", filenameString);
+        }
+        return TCL_ERROR;
+    }
+
+    if (unlikely(fstat(fd, &st) != 0)) {
+        Ns_TclPrintfResult(interp, "could not fstat '%s': %s",
+                           filenameString, Tcl_PosixError(interp));
+        result = TCL_ERROR;
+
+    } else if (unlikely(offset > st.st_size) || offset < 0) {
+        Ns_TclPrintfResult(interp, "offset must be a positive value less or equal filesize");
+        result = TCL_ERROR;
+
+    } else if (size > 0 && unlikely((uintmax_t)size > (uintmax_t)(st.st_size - offset))) {
+        Ns_TclPrintfResult(interp, "offset + size must be less or equal filesize");
         result = TCL_ERROR;
 
     } else {
-        size_t nrbytes = 0u;
-        int    fd;
+        nrbytes = size > 0 ? size : (size_t)(st.st_size - offset);
+    }
 
-        /*
-         * Try to open the file and check offset and size parameters.
-         */
-        fd = ns_open(filenameString, O_RDONLY | O_CLOEXEC, 0);
-
-        if (unlikely(fd == NS_INVALID_FD)) {
-            Ns_TclPrintfResult(interp, "could not open file '%s'", filenameString);
+    if (offset > 0 && result == TCL_OK) {
+        if (ns_lseek(fd, offset, SEEK_SET) == -1) {
+            Ns_TclPrintfResult(interp, "cannot seek to position %ld", (long)offset);
             result = TCL_ERROR;
-
-        } else if (unlikely(offset > st.st_size) || offset < 0) {
-            Ns_TclPrintfResult(interp, "offset must be a positive value less or equal filesize");
-            result = TCL_ERROR;
-
-        } else if (size > 0) {
-            if (unlikely((off_t)size + offset > st.st_size)) {
-                Ns_TclPrintfResult(interp, "offset + size must be less or equal filesize");
-                result = TCL_ERROR;
-            } else {
-                nrbytes = (size_t)size;
-            }
-        } else {
-            nrbytes = (size_t)st.st_size - (size_t)offset;
         }
+    }
 
-        /*
-         * When an offset is provide, jump to this offset.
-         */
-        if (offset > 0 && result == TCL_OK) {
-            if (ns_lseek(fd, (off_t)offset, SEEK_SET) == -1) {
-                Ns_TclPrintfResult(interp, "cannot seek to position %ld", (long)offset);
-                result = TCL_ERROR;
-            }
-        }
-
-        if (result == TCL_OK) {
-            *fdPtr = fd;
-            *nrbytesPtr = nrbytes;
-
-        } else if (fd != NS_INVALID_FD) {
-            /*
-             * On invalid parameters, close the fd.
-             */
-            ns_close(fd);
-        }
+    if (result == TCL_OK) {
+        *fdPtr = fd;
+        *nrbytesPtr = nrbytes;
+    } else {
+        ns_close(fd);
     }
 
     return result;
