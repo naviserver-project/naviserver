@@ -9,6 +9,9 @@ on:
 #
 # We might be able to switch later to vmactions/openbsd-vm@v1 again
 #
+permissions:
+  contents: read
+
 jobs:
   openbsd:
     runs-on: ubuntu-latest

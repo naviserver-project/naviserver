@@ -3,6 +3,9 @@ name: Legacy OpenSSL 1.1.1
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-focal-openssl11:
     runs-on: ubuntu-latest

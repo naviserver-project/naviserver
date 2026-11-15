@@ -2,6 +2,9 @@ name: Build
 
 on: [push, workflow_dispatch]
 
+permissions:
+  contents: read
+
 jobs:
   naviserver:
     runs-on: ${{ matrix.os }}
