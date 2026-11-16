@@ -1,3 +1,341 @@
+=======================================
+NaviServer 5.1.2, released 2026-11-16
+=======================================
+
+ Changes relative to NaviServer 5.1.1:
+ 58 files changed, 3950 insertions(+), 871 deletions(-)
+
+Security Fixes:
+---------------
+
+ - Outbound TLS: When certificate verification is enabled, ns_http
+   and ns_connchan now check that the certificate matches the
+   expected DNS name or IP address as well as validating its chain.
+   ns_http also keeps connections with different TLS identities or
+   verification settings separate when reusing connections. The fix
+   covers direct connections, HTTPS proxy tunnels, and Unix-domain
+   transports. (commits 05dfcf98c, 8e8376e3d)
+   Many thanks to Dave Hwang for reporting the issue and testing
+   the fix.
+
+   See security advisory GHSA-wjxw-c57g-rmpq.
+   https://github.com/naviserver-project/naviserver/security/advisories/GHSA-wjxw-c57g-rmpq
+
+ - Unsupported proxy requests receive a plain HTTP 404 and the
+   connection is closed. This keeps proxy requests out of application
+   error handlers that expect normal authorization processing.
+
+ - Escape ASCII control characters in access logs to preserve log
+   record boundaries.
+
+ - ns_writer validates file ranges on the opened descriptor, so
+   submitfile and submitfiles check the same file they send.
+   (commit 80a2455eb)
+
+ - Unix-domain sockets with an explicit mode are staged privately.
+   NaviServer sets the permissions before publishing the socket and
+   checks ownership and permissions on the directory path.
+   (commit 99ac846f3)
+
+
+Bug Fixes:
+----------
+
+ - Coordinate listener callback cancellation and socket closure so
+   the port can be reused immediately. Keep the listener active when
+   an individual accepted connection is rejected.
+
+ - Synchronize asynchronous log writes with shutdown and publish the
+   writer only after initialization. Late writes use the synchronous
+   fallback after the queue stops.
+
+ - Make command-mode shutdown orderly while preserving script exit
+   status and restart requests.
+
+ - Track Tcl channel closure in ns_chan, reject duplicate pooled
+   names, and clean up failed transfers. Many thanks to Serhii
+   Shunko (ccsimplyspolit) for the report.
+
+ - Handle multiline nscp commands across socket reads, including
+   split CRLF sequences, and handle IPv6 peer addresses correctly.
+
+ - Run database-pool maintenance on scheduler workers. Stop cache
+   processing when a wait for another computation fails, avoiding
+   orphaned entries.
+
+ - Return HTTP 502 when the reverse proxy cannot queue an upstream
+   request. Stop retrying when DNS returns only one address and the
+   connection attempt fails. Many thanks to Dave Hwang for
+   reporting the reverse proxy issue.
+
+ - Make ns_fseekchars use raw channel I/O and byte offsets. Validate
+   ns_mkdtemp templates and report directory creation failures.
+   Many thanks to Serhii Shunko (ccsimplyspolit) for reporting
+   the ns_mkdtemp issue.
+
+ - Run janitor callbacks on scheduler workers and preserve thread
+   names for writer and spooler queues.
+
+
+HTTP/3 and QUIC:
+----------------
+
+ - Correct HTTP/3 streaming response framing. (commit 1a1107af7)
+
+ - Combine repeated HTTP/3 Cookie headers correctly.
+   (commit d02c57a1c)
+   Many thanks to John Buckman for reporting the Cookie handling issue.
+
+ - Report HTTP/3.0 in request metadata, access logs, and CGI
+   SERVER_PROTOCOL. (commit b71609d03)
+   Many thanks to John Buckman for reporting the logging issue.
+
+ - Bound HTTP/3 response send queues even when writer threads are
+   disabled. Blocking senders wait for queue space, limiting memory
+   growth while a receiver reads slowly. (commit 2cbffe6f5)
+   Many thanks to John Buckman for reporting the temporary memory growth.
+
+ - Yield the HTTP/3 write loop when the transport cannot accept more
+   data, avoiding a busy loop. (commit 98e407114)
+
+ - Make the UDP send buffer configurable. Improve stream setup
+   diagnostics and reduce log noise from routine reset and cleanup
+   events.
+
+
+Documentation:
+--------------
+
+ - Clarify the return value of ns_conn urlencoding. Many thanks
+   to Oleg (ooa64) for reporting the documentation mismatch.
+
+
+nsstats (separate module):
+--------------------------
+
+ - The updated nsstats 1.15 module searches multiple log files and
+   labels matches by source file. This release fixes ns_fseekchars
+   to use byte offsets, which nsstats uses to locate log matches.
+   All visible menu entries, including Utilization, and the 47
+   log-search tests passed. Retained storage stalls and Tcl package
+   provenance require newer core support.
+
+
+Build and Tests:
+----------------
+
+ - Build the documentation with the configured Tcl interpreter and
+   version-specific assets.
+
+ - Make the ADP timeout tests use a delayed loopback endpoint. Update
+   file and nscp tests for Tcl 9 and adapt TLS tests to the available
+   Tcl and OpenSSL versions.
+
+
+=======================================
+NaviServer 5.0.7, released 2026-11-16
+=======================================
+
+ Changes relative to NaviServer 5.0.6:
+ 50 files changed, 3316 insertions(+), 651 deletions(-)
+
+Security Fixes:
+---------------
+
+ - Outbound TLS: When certificate verification is enabled, ns_http
+   and ns_connchan now check that the certificate matches the
+   expected DNS name or IP address as well as validating its chain.
+   ns_http also keeps connections with different TLS identities or
+   verification settings separate when reusing connections. The fix
+   covers direct connections, HTTPS proxy tunnels, and Unix-domain
+   transports. (commits 38771ea0a, 75a3b1d37)
+   Many thanks to Dave Hwang for reporting the issue and testing
+   the fix.
+
+   See security advisory GHSA-wjxw-c57g-rmpq.
+   https://github.com/naviserver-project/naviserver/security/advisories/GHSA-wjxw-c57g-rmpq
+
+ - Unsupported proxy requests receive a plain HTTP 404 and the
+   connection is closed. This keeps proxy requests out of application
+   error handlers that expect normal authorization processing.
+
+ - Escape ASCII control characters in access logs to preserve log
+   record boundaries.
+
+ - ns_writer validates file ranges on the opened descriptor, so
+   submitfile and submitfiles check the same file they send.
+   (commit 1e457faeb)
+
+ - Unix-domain sockets with an explicit mode are staged privately.
+   NaviServer sets the permissions before publishing the socket and
+   checks ownership and permissions on the directory path.
+   (commit 904a9462b)
+
+
+Bug Fixes:
+----------
+
+ - Coordinate listener callback cancellation and socket closure so
+   the port can be reused immediately. Keep the listener active when
+   an individual accepted connection is rejected.
+
+ - Synchronize asynchronous log writes with shutdown and publish the
+   writer only after initialization. Late writes use the synchronous
+   fallback after the queue stops.
+
+ - Make command-mode shutdown orderly while preserving script exit
+   status and restart requests.
+
+ - Track Tcl channel closure in ns_chan, reject duplicate pooled
+   names, and clean up failed transfers. Many thanks to Serhii
+   Shunko (ccsimplyspolit) for the report.
+
+ - Handle multiline nscp commands across socket reads, including
+   split CRLF sequences, and handle IPv6 peer addresses correctly.
+
+ - Run database-pool maintenance on scheduler workers. Stop cache
+   processing when a wait for another computation fails, avoiding
+   orphaned entries.
+
+ - Return HTTP 502 when the reverse proxy cannot queue an upstream
+   request. Stop retrying when DNS returns only one address and the
+   connection attempt fails. Many thanks to Dave Hwang for
+   reporting the reverse proxy issue.
+
+ - Make ns_fseekchars use raw channel I/O and byte offsets. Validate
+   ns_mkdtemp templates and report directory creation failures.
+   Many thanks to Serhii Shunko (ccsimplyspolit) for reporting
+   the ns_mkdtemp issue.
+
+
+Documentation:
+--------------
+
+ - Clarify the return value of ns_conn urlencoding. Many thanks
+   to Oleg (ooa64) for reporting the documentation mismatch.
+
+
+nsstats (separate module):
+--------------------------
+
+ - The updated nsstats 1.15 module searches multiple log files and
+   labels matches by source file. This release fixes ns_fseekchars
+   to use byte offsets, which nsstats uses to locate log matches.
+   All visible menu entries and the 47 log-search tests passed.
+   Utilization remains hidden on 5.0.
+
+
+Build and Tests:
+----------------
+
+ - Build the documentation with the configured Tcl interpreter and
+   version-specific assets.
+
+ - Make the ADP timeout tests use a delayed loopback endpoint. Update
+   file and nscp tests for Tcl 9 and adapt TLS tests to the available
+   Tcl and OpenSSL versions.
+
+
+=======================================
+NaviServer 4.99.35, released 2026-11-16
+=======================================
+
+ Changes relative to NaviServer 4.99.34:
+ 38 files changed, 2101 insertions(+), 495 deletions(-)
+
+Security Fixes:
+---------------
+
+ - ns_http: When certificate verification is enabled with
+   -verify true, check the certificate against the expected hostname
+   or IP address as well as validating its chain. Reject the connection
+   if the TLS library cannot perform the identity check. On 4.99,
+   enable -verify true for HTTPS requests to authenticate the server.
+   With verification disabled (the default), ns_http checks neither
+   the certificate chain nor the hostname or IP address. ns_connchan
+   retains its legacy unsafe TLS behavior.  (commits c9d36b242, a64524614)
+
+   Many thanks to Dave Hwang for reporting the issue and testing
+   the fix.
+
+   See security advisory GHSA-wjxw-c57g-rmpq.
+   https://github.com/naviserver-project/naviserver/security/advisories/GHSA-wjxw-c57g-rmpq
+
+ - Proxy requests: Return a plain HTTP 404 for unsupported proxy
+   requests and close the connection. This keeps rejected requests
+   from reaching application-specific error handlers outside the
+   normal authorization processing. (commits 7b5fe3be8, c215fffa1)
+
+ - Access logs: Escape ASCII control characters in logged request
+   data so they cannot alter the structure of log records.
+   (commit 4c158d0b8)
+
+ - ns_writer: Validate file ranges against the opened file descriptor
+   so submitfile and submitfiles check the same file they send.
+   (commit 2725aae6b)
+
+ - Unix-domain sockets: Apply an explicitly requested mode in a
+   private staging directory before publishing the socket at its
+   configured path. Staging requires trusted directory ancestors.
+   (commit 06a15f453)
+
+
+Bug Fixes:
+----------
+
+ - ns_chan: Track ordinary Tcl channel closure and reject duplicate
+   pooled names. This prevents stale channel access and leaks during
+   channel transfer and interpreter cleanup.
+   (commits 1bae41119, 910ab8abc)
+   Many thanks to Serhii Shunko (ccsimplyspolit) for the report.
+
+ - Socket listeners: Coordinate callback cancellation, socket closure,
+   and port registration cleanup. A closed listener releases its port
+   for immediate reuse, and a rejected connection leaves the listener
+   available for subsequent connections.
+   (commits e42969b14, 41f6494c6, e8a8a65ee)
+
+ - Asynchronous logging: Publish the initialized writer safely and
+   synchronize writes with shutdown. Late writes can fall back to
+   synchronous logging. (commits 73cce876d, ecca27011)
+
+ - Command mode: Shut down worker threads before Tcl finalization,
+   preserving script exit status and restart requests.
+   (commit 4b51f25c0)
+
+ - nscp: Handle multiline Tcl input across socket reads, including
+   split CRLF sequences, and handle IPv6 peer addresses correctly.
+   (commits 4ca9d1b36, 4851da281, 013a57611)
+
+ - Database pools: Run periodic maintenance on scheduler workers so
+   it cannot hold up the scheduler thread. (commit 832c98864)
+
+ - Cache: Stop processing when a wait for another computation fails,
+   avoiding orphaned cache entries. (commit 532e94298)
+
+
+nsstats (separate module):
+--------------------------
+
+ - The updated nsstats 1.15 module renders the Open Files and
+   Allocator Memory pages on 4.99. Open Files omits the unavailable
+   HTTP client keep-alive slots, and Allocator Memory displays N/A
+   when overhead cannot be calculated. Proxy Workers explains when
+   worker details are unavailable. Utilization remains hidden.
+   All visible menu entries and the 47 log-search tests passed.
+
+
+Build and Tests:
+----------------
+
+ - Build the documentation with the configured Tcl interpreter and
+   version-specific documentation assets. (commit d6b78dd96)
+
+ - Use a delayed loopback endpoint for ADP HTTP timeout tests so the
+   tests exercise the timeout path without an external connection.
+   (commit 5e24ebd96)
+
+
 =====================================
 NaviServer 5.1.1, released 2026-09-11
 =====================================
