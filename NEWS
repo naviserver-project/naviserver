@@ -1,4 +1,104 @@
 =======================================
+NaviServer 4.99.35, released 2026-11-16
+=======================================
+
+ Changes relative to NaviServer 4.99.34:
+ 38 files changed, 2101 insertions(+), 495 deletions(-)
+
+Security Fixes:
+---------------
+
+ - ns_http: When certificate verification is enabled with
+   -verify true, check the certificate against the expected hostname
+   or IP address as well as validating its chain. Reject the connection
+   if the TLS library cannot perform the identity check. On 4.99,
+   enable -verify true for HTTPS requests to authenticate the server.
+   With verification disabled (the default), ns_http checks neither
+   the certificate chain nor the hostname or IP address. ns_connchan
+   retains its legacy unsafe TLS behavior.  (commits c9d36b242, a64524614)
+
+   Many thanks to Dave Hwang for reporting the issue and testing
+   the fix.
+
+   See security advisory GHSA-wjxw-c57g-rmpq.
+   https://github.com/naviserver-project/naviserver/security/advisories/GHSA-wjxw-c57g-rmpq
+
+ - Proxy requests: Return a plain HTTP 404 for unsupported proxy
+   requests and close the connection. This keeps rejected requests
+   from reaching application-specific error handlers outside the
+   normal authorization processing. (commits 7b5fe3be8, c215fffa1)
+
+ - Access logs: Escape ASCII control characters in logged request
+   data so they cannot alter the structure of log records.
+   (commit 4c158d0b8)
+
+ - ns_writer: Validate file ranges against the opened file descriptor
+   so submitfile and submitfiles check the same file they send.
+   (commit 2725aae6b)
+
+ - Unix-domain sockets: Apply an explicitly requested mode in a
+   private staging directory before publishing the socket at its
+   configured path. Staging requires trusted directory ancestors.
+   (commit 06a15f453)
+
+
+Bug Fixes:
+----------
+
+ - ns_chan: Track ordinary Tcl channel closure and reject duplicate
+   pooled names. This prevents stale channel access and leaks during
+   channel transfer and interpreter cleanup.
+   (commits 1bae41119, 910ab8abc)
+   Many thanks to Serhii Shunko (ccsimplyspolit) for the report.
+
+ - Socket listeners: Coordinate callback cancellation, socket closure,
+   and port registration cleanup. A closed listener releases its port
+   for immediate reuse, and a rejected connection leaves the listener
+   available for subsequent connections.
+   (commits e42969b14, 41f6494c6, e8a8a65ee)
+
+ - Asynchronous logging: Publish the initialized writer safely and
+   synchronize writes with shutdown. Late writes can fall back to
+   synchronous logging. (commits 73cce876d, ecca27011)
+
+ - Command mode: Shut down worker threads before Tcl finalization,
+   preserving script exit status and restart requests.
+   (commit 4b51f25c0)
+
+ - nscp: Handle multiline Tcl input across socket reads, including
+   split CRLF sequences, and handle IPv6 peer addresses correctly.
+   (commits 4ca9d1b36, 4851da281, 013a57611)
+
+ - Database pools: Run periodic maintenance on scheduler workers so
+   it cannot hold up the scheduler thread. (commit 832c98864)
+
+ - Cache: Stop processing when a wait for another computation fails,
+   avoiding orphaned cache entries. (commit 532e94298)
+
+
+nsstats (separate module):
+--------------------------
+
+ - The updated nsstats 1.15 module renders the Open Files and
+   Allocator Memory pages on 4.99. Open Files omits the unavailable
+   HTTP client keep-alive slots, and Allocator Memory displays N/A
+   when overhead cannot be calculated. Proxy Workers explains when
+   worker details are unavailable. Utilization remains hidden.
+   All visible menu entries and the 47 log-search tests passed.
+
+
+Build and Tests:
+----------------
+
+ - Build the documentation with the configured Tcl interpreter and
+   version-specific documentation assets. (commit d6b78dd96)
+
+ - Use a delayed loopback endpoint for ADP HTTP timeout tests so the
+   tests exercise the timeout path without an external connection.
+   (commit 5e24ebd96)
+
+
+=======================================
 NaviServer 4.99.34, released 2026-09-07
 =======================================
 
