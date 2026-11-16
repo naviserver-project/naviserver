@@ -442,6 +442,7 @@ typedef struct Request {
     size_t coff;                  /* Content buffer offset */
     size_t leftover;              /* Leftover bytes from earlier requests */
     Tcl_DString buffer;           /* Request and content buffer */
+    const char *parseError;        /* Static request-line parser diagnostic */
     char   savedChar;             /* Character potentially clobbered by null character */
 
 } Request;
@@ -2213,6 +2214,8 @@ NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
 /*
  * request.c
  */
+NS_EXTERN Ns_ReturnCode NsParseRequest(Ns_Request *request, const char *line, size_t len,
+                                      const char **reasonPtr);
 NS_EXTERN void NsParseAcceptEncoding(double version, const char *hdr, bool *gzipAcceptPtr, bool *brotliAcceptPtr)
     NS_GNUC_NONNULL(2,3,4);
 

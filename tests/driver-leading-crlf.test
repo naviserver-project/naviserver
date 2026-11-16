@@ -142,5 +142,43 @@ test driver-leading-crlf-5.1 {excess prefix still produces one combined diagnost
         nsv_unset -nocomplain leading-crlf
     } -result {{{400 {}} {400 {}}} 1}
 
+
+foreach {suffix target reason} {
+    1 missing-slash {request target must start with a slash}
+    2 {/bad\separator} {target string contains invalid path separator}
+} {
+    test driver-bad-request-1.$suffix {malformed request emits one bounded diagnostic} \
+        -constraints serverListen -setup {
+            set warningEnabled [ns_logctl severity Warning]
+            ns_logctl severity Warning on
+            nsv_set requestDiagnostic warnings {}
+            set filter [ns_logctl register {apply {{severity timestamp message} {
+                if {$severity eq "Warning"
+                    && [regexp {invalid request|cannot parse request line} $message]} {
+                    nsv_lappend requestDiagnostic warnings $message
+                }
+            }}}]
+        } -body {
+            set padding [string repeat A 512]
+            set reply [::leadingCRLF::exchange [list "GET $target HTTP/1.1\r\nHost: localhost\r\nX-Test: $padding\r\n\r\n"]]
+            set deadline [expr {[clock milliseconds] + 2000}]
+            while {[llength [nsv_get requestDiagnostic warnings]] == 0
+                   && [clock milliseconds] < $deadline} {
+                ns_sleep 10ms
+            }
+            set warnings [nsv_get requestDiagnostic warnings]
+            set message [lindex $warnings 0]
+            list $reply [llength $warnings] \
+                [regexp {from peer (::1|127\.0\.0\.1):} $message] \
+                [expr {[string first $reason $message] >= 0}] \
+                [expr {[string first {\x0d\x0a} $message] >= 0}] \
+                [expr {[string first [string repeat A 256] $message] < 0}]
+        } -cleanup {
+            ns_logctl unregister $filter
+            ns_logctl severity Warning $warningEnabled
+            nsv_unset -nocomplain requestDiagnostic
+        } -result {{400 {}} 1 1 1 1 1}
+}
+
 namespace delete ::leadingCRLF
 cleanupTests

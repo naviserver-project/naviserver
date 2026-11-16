@@ -1787,7 +1787,6 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 }
 
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1835,7 +1834,6 @@ NsStartDrivers(void)
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1960,7 +1958,6 @@ DriverIsRegisterdForServer(const Driver *drvPtr, NsServer *servPtr)
     return NS_FALSE;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2078,7 +2075,6 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
 }
 
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2310,7 +2306,6 @@ DriverQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 }
 #endif /* NS_DRIVER_QUEUES */
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2357,7 +2352,6 @@ DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2446,7 +2440,6 @@ NsTclDriverObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2572,7 +2565,6 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2647,7 +2639,6 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 }
 
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -4333,6 +4324,7 @@ RequestFree(Sock *sockPtr, const char *caller)
     reqPtr->coff           = 0u;
     reqPtr->avail          = 0u;
     reqPtr->savedChar      = '\0';
+    reqPtr->parseError     = NULL;
 
     /*
      * In the normal request path, headers are usually cleared earlier.
@@ -5707,13 +5699,16 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
 
             (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), peer, NS_IPADDR_SIZE);
 
-            if (bufferString[0] == (char)0x16 && bufferString[1] >= 3 && bufferString[2] == 1) {
+            if (reqPtr->buffer.length >= 3 && bufferString[0] == (char)0x16 && bufferString[1] >= 3 && bufferString[2] == 1) {
                 Ns_Log(Warning, "invalid request %d (%s) from peer %s: received TLS handshake "
                        "on a non-TLS connection",
                        statusCode, errMsg, peer);
 
             } else {
                 Tcl_DString dsReqLine, dsBuffer;
+                const size_t excerptLimit = 256u;
+                const size_t requestLength = strlen(requestLine);
+                const size_t bufferLength = (size_t)reqPtr->buffer.length;
 
                 /*
                  * These are errors, which might need some investigation based
@@ -5722,19 +5717,24 @@ SockSendResponse(Sock *sockPtr, SockState reason, int statusCode,
                  */
                 Tcl_DStringInit(&dsReqLine);
                 Tcl_DStringInit(&dsBuffer);
-                Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s'"
+                Ns_Log(Warning, "invalid request: %d (%s) from peer %s%s%s request '%s%s'"
                        " offsets: read %" PRIuz
                        " write %" PRIuz " content %" PRIuz " avail %" PRIuz
-                       "; REQ BUFFER: %s",
+                       "; REQ BUFFER: %s%s",
                        statusCode, errMsg,
                        peer,
-                       Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, NS_FALSE, requestLine, strlen(requestLine)),
+                       reqPtr->parseError != NULL ? ": " : "",
+                       reqPtr->parseError != NULL ? reqPtr->parseError : "",
+                       Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, NS_FALSE, requestLine,
+                                                 MIN(requestLength, excerptLimit)),
+                       requestLength > excerptLimit ? "..." : "",
                        reqPtr->roff,
                        reqPtr->woff,
                        reqPtr->coff,
                        reqPtr->avail,
                        Ns_DStringAppendPrintable(&dsBuffer, NS_FALSE, NS_FALSE,
-                                                 reqPtr->buffer.string, (size_t)reqPtr->buffer.length));
+                                                 bufferString, MIN(bufferLength, excerptLimit)),
+                       bufferLength > excerptLimit ? "..." : "");
                 Tcl_DStringFree(&dsReqLine);
                 Tcl_DStringFree(&dsBuffer);
             }
@@ -7206,7 +7206,8 @@ SockParse(Sock *sockPtr)
                  */
                 Ns_Log(DriverDebug, "SockParse (%d): parse request line <%s>", sockPtr->sock, s);
 
-                if (Ns_ParseRequest(&reqPtr->request, s, (size_t)(e-s)) == NS_ERROR) {
+                if (NsParseRequest(&reqPtr->request, s, (size_t)(e-s), &reqPtr->parseError) == NS_ERROR) {
+                    *e = save;
                     /*
                      * Invalid request.
                      */

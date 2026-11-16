@@ -226,12 +226,25 @@ PlainRequestTargetContainsBackslashTraversal(const char *url)
 Ns_ReturnCode
 Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 {
+    const char *reason;
+    Ns_ReturnCode status = NsParseRequest(request, line, len, &reason);
+
+    if (reason != NULL) {
+        Ns_Log(Warning, "Ns_ParseRequest: cannot parse request line: %s", reason);
+    }
+    return status;
+}
+
+Ns_ReturnCode
+NsParseRequest(Ns_Request *request, const char *line, size_t len, const char **reasonPtr)
+{
     char       *url, *l, *p;
     Tcl_DString ds;
     const char *errorMsg;
 
     NS_NONNULL_ASSERT(line != NULL);
 
+    *reasonPtr = NULL;
     if (request == NULL) {
         return NS_ERROR;
     }
@@ -241,29 +254,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
      * need to try to parse the received buffer. There is no need to complain
      * about binary content in this case.
      */
-    if (line[0] == (char)0x16 && line[1] >= 3 && line[2] == 1) {
+    if (len >= 3u && line[0] == (char)0x16 && line[1] >= 3 && line[2] == 1) {
         return NS_ERROR;
-    }
-
-    /*
-     * We could check here the validity UTF-8 of the request line, in case we
-     * would know it is supposed to be UTF8. Unfortunately, this is known
-     * ownly after the server is determined. We could use the ns/param
-     * encoding, but then, the per-server urlEncoding does not make sense.
-     *
-     * RFC 7230 (Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and
-     * Routing) states: Parsing an HTTP message as a stream of Unicode
-     * characters, without regard for the specific encoding, creates security
-     * vulnerabilities due to the varying ways that string processing
-     * libraries handle invalid multibyte character sequences that contain the
-     * octet LF (%x0A).
-     *
-     * W3C recommends only URLs with proper encodings (subset of US ASCII):
-     * https://www.w3.org/Addressing/URL/4_URI_Recommentations.html
-     */
-    if (!Ns_Is7bit(line, len)) {
-        Ns_Log(Warning, "Ns_ParseRequest: line <%s> contains 8-bit "
-               "character data. Future versions might reject it.", line);
     }
 
 #if !defined(NDEBUG)
@@ -483,11 +475,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
              * request (url == "") or something is wrong.
              */
             if (request->requestType == NS_REQUEST_TYPE_PLAIN) {
-                errorMsg = "invalid request";
                 if (*url != '/') {
-                    Ns_Log(Warning, "%s, request target must start with a slash"
-                           " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
-                           errorMsg, request->host, request->port, request->protocol, url, line);
+                    errorMsg = "request target must start with a slash";
                     goto error;
                 }
 
@@ -495,21 +484,15 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 if (*url == '\0') {
                     url = emptyPath;
                 } else {
-                    errorMsg = "invalid proxy request";
                     if (request->protocol == NULL) {
-                        Ns_Log(Warning, "%s, protocol must be specified"
-                               " setting host '%s' port %hu path '%s' from line '%s'",
-                               errorMsg, request->host, request->port,  url, line);
+                        errorMsg = "proxy request requires a protocol";
                         goto error;
                     }
                 }
 
             } else if (request->requestType == NS_REQUEST_TYPE_CONNECT) {
                 if (*url != '\0') {
-                    errorMsg = "invalid CONNECT request";
-                    Ns_Log(Warning, "%s, path must be empty"
-                           " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
-                           errorMsg, request->host, request->port, request->protocol, url, line);
+                    errorMsg = "CONNECT request target must have an empty path";
                     goto error;
                 }
                 /*
@@ -520,9 +503,6 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
             } else if (request->requestType == NS_REQUEST_TYPE_ASTERISK
                        && strcasecmp(request->method, "OPTIONS") != 0) {
                 errorMsg = "invalid ASTERISK request, can only be used with method OPTIONS";
-                Ns_Log(Warning, "%s, path must be empty"
-                       " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
-                       errorMsg, request->host, request->port, request->protocol, url, line);
                 goto error;
             }
 
@@ -542,10 +522,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
      */
     if (request->requestType == NS_REQUEST_TYPE_PLAIN
         && PlainRequestTargetContainsBackslashTraversal(url)) {
-        errorMsg = "invalid request";
-        Ns_Log(Warning, "%s, target string contains invalid path separator; "
-               "path '%s' from line '%s'",
-               errorMsg, url, line);
+        errorMsg = "target string contains invalid path separator";
         goto error;
     }
 
@@ -558,7 +535,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
     return NS_OK;
 
  error:
-    Ns_Log(Warning, "Ns_ParseRequest <%s> cannot parse request line: %s", line, errorMsg);
+    *reasonPtr = errorMsg;
 
     if (request->protocol != NULL) {
         ns_free_const(request->protocol);
