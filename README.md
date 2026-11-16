@@ -46,7 +46,7 @@ The latest development documentation is available online at:
 
 NaviServer uses a **three-digit** version scheme:
 
-- **MAJOR.MINOR.PATCH** (for example, `5.0.1`)
+- **MAJOR.MINOR.PATCH** (for example, `5.0.7`)
 - The **PATCH** level is **strictly for fixes** — no new functionality or behavior changes.
 - New features and API changes appear only in **MINOR** or **MAJOR** releases.
 
@@ -64,7 +64,7 @@ NaviServer uses a **three-digit** version scheme:
   ```bash
   git checkout release/5.0
   # ...
-  git tag -a naviserver-5.0.1 -m naviserver-5.0.1
+  git tag -a naviserver-5.0.7 -m naviserver-5.0.7
   git push --follow-tags
   ```
 
@@ -157,8 +157,8 @@ The two distributions differ in important ways:
 To compile from a SourceForge release tarball, execute:
 
 ```bash
-gunzip < naviserver-5.0.5.tar.gz | tar xvf -
-cd naviserver-5.0.5
+gunzip < naviserver-5.0.7.tar.gz | tar xvf -
+cd naviserver-5.0.7
 ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
 make
 su -c 'make install'
@@ -187,7 +187,7 @@ tag before running `./autogen.sh`:
 ```bash
 git clone https://github.com/naviserver-project/naviserver.git
 cd naviserver
-git checkout naviserver-5.0.5
+git checkout naviserver-5.0.7
 ./autogen.sh --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
 make
 su -c 'make install'
@@ -199,7 +199,7 @@ Building from GitHub sources requires recent versions of `autoconf` and
 at configure time. `make build-doc` uses that interpreter (`TCLSH_PROG`) to run
 `dtplite`, so no `PATH` or `TCLLIBPATH` overrides are needed when Tcllib is
 installed alongside it. The header and CSS are selected automatically from
-`version_include.man` (for example, version `5.0.0` selects `header-5.0.inc`
+`version_include.man` (for example, version `5.0.7` selects `header-5.0.inc`
 and `man-5.0.css`). Explicit `DTPLITE`, `HEADER_INC`, and `MAN_CSS` make
 settings remain supported.
 
@@ -314,7 +314,7 @@ SourceForge. For example, to install a module named `nsfoo`:
 
 
 ```bash
-gunzip < naviserver-5.0.0-modules.tar.gz | tar xvf -
+gunzip < naviserver-5.0.7-modules.tar.gz | tar xvf -
 cd modules/nsfoo
 make install NAVISERVER=/usr/local/ns
 ```
@@ -338,7 +338,7 @@ Download the minimal environment from [https://sourceforge.net/projects/mingw/fi
 3. In the msys shell, run:
 
     ```bash
-    cd /c/naviserver-5.0.0
+    cd /c/naviserver-5.0.7
     ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
     make install
     ```
