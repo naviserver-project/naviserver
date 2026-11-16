@@ -5,8 +5,6 @@
 Please report suspected security vulnerabilities privately through
 [GitHub private vulnerability reporting](https://github.com/naviserver-project/naviserver/security/advisories/new).
 
-If that channel is unavailable, contact [SECURITY CONTACT EMAIL].
-
 Please do not include undisclosed vulnerability details in public issues,
 pull requests, or mailing lists. Ordinary bugs and questions can be
 reported through the project's usual public channels.
@@ -36,6 +34,9 @@ NaviServer release before that date.
 Please use the latest patch release available for your release line.
 Reports involving older versions are still useful when the underlying
 problem may affect a maintained version.
+
+No end-of-life date has been announced for 5.1.x or 5.0.x. Changes to
+support status will be announced in this policy and in the release notes.
 
 ## What to Include
 
@@ -96,6 +97,8 @@ We will coordinate with upstream maintainers where appropriate.
 
 ## Response and Coordinated Disclosure
 
+NaviServer maintainers handle private reports and coordinate disclosure.
+
 We aim to acknowledge private reports within seven business days.
 Please include any disclosure deadline or organizational reporting
 requirements with your initial report.
@@ -123,15 +126,23 @@ priority. Because public source commits can reveal a vulnerability,
 coordination should also cover the publication of fixing commits
 and relevant backports.
 
+## Security Advisories and Release Notes
+
+When users need to assess their exposure or take protective action,
+we may publish a separate security advisory, including before a fix
+is available.
+
 All fixed security issues will be disclosed in the release notes for
 each release that includes the fix, including patch releases and
 releases containing backports. The release notes will link to the
-corresponding security advisory when one is available.
+corresponding security advisory when one is available. Release notes
+are available on [GitHub Releases](https://github.com/naviserver-project/naviserver/releases).
 
-Security advisories describe the impact, affected versions, available
-fixes, and relevant mitigations. Advisories may be published before a
-release when users need earlier notice. Reporter credit will be included
-with the reporter's agreement.
+Security advisories describe the known impact, affected versions, fix
+status, and available mitigations. If an advisory is published before
+a fix is available, we will update it with a link to the release notes
+when the fix ships. Reporter credit will be included with the
+reporter's agreement.
 
 ## Testing Guidelines
 
@@ -141,3 +152,4 @@ conducting destructive tests against production installations.
 
 Where possible, demonstrate the issue using a local test environment
 and the minimum input necessary to establish its impact.
+xi/Users/neumann/Documents/Codex/2026-06-30/fin/outputs/SECURITY.md
