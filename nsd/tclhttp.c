@@ -113,7 +113,7 @@ static Ns_TaskQueue* HttpGetTaskQueue(
 
 static bool InitOnceHttp(void);
 
-static void CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
+static void CloseWaitingDataClean(CloseWaitingData *cwDataPtr, bool graceful)
     NS_GNUC_NONNULL(1);
 
 static const char* CloseWaitingDataPrettyState(CloseWaitingData *cwDataPtr)
@@ -495,6 +495,7 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
         { NS_HTTP_FLAG_BINARY,        "BINARY" },
         { NS_HTTP_FLAG_EMPTY,         "EMPTY" },
         { NS_HTTP_KEEPALIVE,          "KEEPALIVE" },
+        { NS_HTTP_CANCELLED,          "CANCELLED" },
         { NS_HTTP_VERSION_1_1,        "1.1" },
         { NS_HTTP_STREAMING,          "STREAMING" },
         { NS_HTTP_CONNCHAN,           "CONNCHAN" },
@@ -2775,14 +2776,14 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
                            currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
                            strerror(errorCode)
                           );
-                    CloseWaitingDataClean(currentCwDataPtr);
+                    CloseWaitingDataClean(currentCwDataPtr, NS_TRUE);
                 }
 
             } else {
                 Ns_Log(Ns_LogTaskDebug, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %s",
                        currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
                        CloseWaitingDataPrettyState(currentCwDataPtr));
-                CloseWaitingDataClean(currentCwDataPtr);
+                CloseWaitingDataClean(currentCwDataPtr, NS_TRUE);
             }
         }
     }
@@ -5950,7 +5951,13 @@ HttpClose(
     } else {
 #ifdef HAVE_OPENSSL_EVP_H
         if (httpPtr->ssl != NULL) {
-            SSL_shutdown(httpPtr->ssl);
+            /*
+             * Cancellation abandons the TLS exchange. Free the connection
+             * without driving the TLS state machine again.
+             */
+            if ((httpPtr->flags & NS_HTTP_CANCELLED) == 0u) {
+                SSL_shutdown(httpPtr->ssl);
+            }
             SSL_free(httpPtr->ssl);
         }
         if (httpPtr->ctx != NULL) {
@@ -6014,7 +6021,8 @@ static void HttpCloseWaitingDataRelease(NsHttpTask *httpPtr)
             Ns_Log(Error, "HttpCloseWaitingDataRelease sees invalid position  %ld", httpPtr->pos);
         } else {
             Ns_Log(Ns_LogTaskDebug, "HttpCloseWaitingDataRelease invalidates entry at position %ld", httpPtr->pos-1);
-            CloseWaitingDataClean(closeWaitingList.data[httpPtr->pos - 1]);
+            CloseWaitingDataClean(closeWaitingList.data[httpPtr->pos - 1],
+                                  (httpPtr->flags & NS_HTTP_CANCELLED) == 0u);
         }
         Ns_MutexUnlock(&closeWaitingMutex);
 
@@ -6051,9 +6059,9 @@ HttpCancel(
     task = httpPtr->task;
     (void) Ns_TaskCancel(task);
     Ns_TaskWaitCompleted(task);
+    httpPtr->flags = (httpPtr->flags & ~NS_HTTP_KEEPALIVE) | NS_HTTP_CANCELLED;
 
     Ns_Log(Ns_LogTaskDebug, "HttpCancel host %s:%hu pos %ld", httpPtr->host,  httpPtr->port, httpPtr->pos);
-    HttpCloseWaitingDataRelease(httpPtr);
 }
 
 
@@ -7855,7 +7863,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
  *----------------------------------------------------------------------
  */
 static void
-CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
+CloseWaitingDataClean(CloseWaitingData *cwDataPtr, bool graceful)
 {
     NS_NONNULL_ASSERT(cwDataPtr != NULL);
 
@@ -7864,9 +7872,13 @@ CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
            cwDataPtr->sock, cwDataPtr->host, cwDataPtr->port,
            CloseWaitingDataPrettyState(cwDataPtr));*/
 
-#ifdef HAVE_OPENSSL_EVP_H
+#ifndef HAVE_OPENSSL_EVP_H
+    (void)graceful;
+#else
     if (cwDataPtr->ssl != NULL) {
-        SSL_shutdown(cwDataPtr->ssl);
+        if (graceful) {
+            SSL_shutdown(cwDataPtr->ssl);
+        }
         SSL_free(cwDataPtr->ssl);
         cwDataPtr->ssl = NULL;
     }

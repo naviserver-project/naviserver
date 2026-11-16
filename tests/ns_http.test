@@ -2398,6 +2398,44 @@ test http-8.4.0b {
 } -result {OK NS_TIMEOUT OK}
 
 
+test http-8.4.0b-tls {
+    ns_http cancel closes an in-flight TLS request on fresh and reused connections
+} -constraints {ssl serverListen} -setup {
+    set base [ns_config test tls_listenurl]
+    ns_register_proc GET /http-cancel-tls-ready {
+        ns_return 200 text/plain [ns_conn peerport]
+    }
+    ns_register_proc GET /http-cancel-tls-slow {
+        nsv_set http_cancel_tls peerport [ns_conn peerport]
+        ns_sleep 1s
+        ns_return 200 text/plain OK
+    }
+} -body {
+    set result {}
+    foreach reuse {0 1} {
+        if {$reuse} {
+            set primed [ns_http run -insecure -keepalive 5s $base/http-cancel-tls-ready]
+        }
+        nsv_set http_cancel_tls peerport 0
+        set request [ns_http queue -insecure -keepalive 5s -timeout 5s $base/http-cancel-tls-slow]
+        for {set i 0} {$i < 100 && ![nsv_get http_cancel_tls peerport]} {incr i} {
+            ns_sleep 10ms
+        }
+        set peerport [nsv_get http_cancel_tls peerport]
+        lappend result [expr {$peerport > 0}] [ns_http cancel $request]
+        if {$reuse} {
+            lappend result [expr {$peerport eq [dict get $primed body]}]
+        }
+        lappend result [catch {ns_http wait $request}]
+    }
+    lappend result [dict get [ns_http run -insecure $base/http-cancel-tls-ready] status]
+} -cleanup {
+    ns_unregister_op GET /http-cancel-tls-ready
+    ns_unregister_op GET /http-cancel-tls-slow
+    nsv_unset -nocomplain http_cancel_tls
+} -result {1 {} 1 1 {} 1 1 200}
+
+
 test http-8.4.0c {
     ns_http queue + expire, ns_http wait + timeout, with timeout and persistent connection
 } -constraints {serverListen} -setup {
