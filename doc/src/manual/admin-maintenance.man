@@ -232,62 +232,65 @@ installation and protect sensitive data from unauthorized
 access. Follow these recommendations to minimize vulnerabilities and
 safeguard your system.
 
-[subsection {General Passwords}]
+[subsection {User and Credential Management}]
 
- The default management user is [const nsadmin] with a predefined
- password. NaviServer does not include a built-in, advanced password
- management system. In production, it is common to integrate
- NaviServer with external systems (e.g., PAM, Azure, OpenACS) for
- robust password management.
-
-[para]
-
- Alternatively, the [term nsperm] module provides a basic password
- management solution suitable for small to medium deployments. If
- nsperm is enabled without customization, it uses a default password
- and warns you at startup to change the [const nsadmin] password.
+ For production applications, use an established system for user and
+ credential management, such as [uri https://openacs.org/ OpenACS].
+ OpenACS supports several password hashing algorithms for local
+ accounts, including Argon2, and offers integrations with PAM, LDAP,
+ and OAuth-based identity providers through optional packages.
 
 [para]
 
- You can change the default password using the Tcl command
- [cmd ns_permpasswd] or by editing the [const /modules/nsperm/passwd] file
- directly. For example, the default entry is:
- 
+ The installation examples use [const nsadmin] as the Unix user and
+ group under which NaviServer runs. This operating-system identity is
+ separate from the [const nsadmin] login used by NaviServer modules.
+
+[para]
+
+ For small installations, the optional [term nsperm] module provides
+ file-based authentication and authorization. The shipped password
+ file, [const modules/nsperm/passwd] relative to the NaviServer home
+ directory, includes this administrator entry:
+
 [example_begin]
- nsadmin:CUdnvgBYocLSI:::::
+ nsadmin:ubphBI5lDzSYc:::::
 [example_end]
 
 [para]
- Replace the password hash (e.g., [const CUdnvgBYocLSI]) with a new hash
- generated using [cmd ns_crypt]:
- 
-[example_begin]
- nsd -c
- % ns_crypt MyNewPassword xx
- xxhR1Y2vt4OOY
-[example_end]
 
- Alternatively, generate the hash using a command-line tool such as
- Perl:
+ Change the shipped [const nsadmin] password with [cmd ns_permpasswd]
+ before enabling administrative access. This is the normal way to
+ change a password in [term nsperm]: the command uses [cmd ns_crypt]
+ internally and updates both the password file and the running
+ server's user record.
 
-[example_begin]
- $ perl -le 'print crypt("MyNewPassword","xx");'
- xxhR1Y2vt4OOY
-[example_end]
+[para]
 
-For more details, see [uri ../../nsperm/files/nsperm.html#section4 "Defining Users"].
+ When [term nscp] and [term nsstats] are both configured to use the
+ same [term nsperm] account, they authenticate against the same
+ password record, so it only needs to be changed in one place.
+
+[para]
+
+ If you maintain the [term nsperm] password file by hand, use
+ [cmd ns_crypt] with a two-character salt to generate a compatible
+ legacy hash. Replace only the password field, then reload the
+ [term nsperm] records with [cmd ns_permreload] or restart NaviServer.
+ This format is for compatibility with [term nsperm], not for new
+ applications. See
+ [uri ../../nsperm/files/nsperm.html#section4 "Defining Users"].
 
 
-[subsection {Advanced Password Hashes}]
+[subsection {Password Hashing for Applications and Modules}]
 
- Traditional Unix systems use the "crypt" algorithm to encrypt
- passwords using a salt. However, with the increasing power of GPUs,
- these hashes are vulnerable to cracking. Therefore, NaviServer
- supports stronger password hash algorithms such as Argon2, PBKDF2
- (SCRAM), and Scrypt. For more information, refer to
- [uri ../../naviserver/files/ns_crypto.html "ns_crypto"]. These
- advanced hashes are, for example, employed in OpenACS for local
- accounts that require enhanced security.
+ Applications and modules that manage their own credentials can use
+ NaviServer's [uri ../../naviserver/files/ns_crypto.html "ns_crypto"]
+ commands for password hashing: [cmd ns_crypto::argon2],
+ [cmd ns_crypto::scrypt], and [cmd ns_crypto::pbkdf2_hmac].
+ Availability depends on the OpenSSL version used by the build.
+ These hashes are not interchangeable with entries in the
+ [term nsperm] password file.
 
 
 [subsection {Permission Settings}]
