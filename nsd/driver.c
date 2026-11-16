@@ -10622,8 +10622,8 @@ WriterCheckInputParams(Tcl_Interp *interp, const char *filenameString,
     struct stat st;
     size_t      nrbytes = 0u;
 
-    Ns_Log(DriverDebug, "WriterCheckInputParams %s offset %" PROTd " size %" PRIuz,
-           filenameString, offset, size);
+    Ns_Log(DriverDebug, "WriterCheckInputParams %s offset %" PRId64 " size %" PRIuz,
+           filenameString, (int64_t)offset, size);
 
     /*
      * Check the size of the opened file, which may differ from the file
