@@ -3,7 +3,7 @@ NaviServer 5.0.7, released 2026-11-16
 =======================================
 
  Changes relative to NaviServer 5.0.6:
- 48 files changed, 3104 insertions(+), 643 deletions(-)
+ 50 files changed, 3316 insertions(+), 651 deletions(-)
 
 Security Fixes:
 ---------------
