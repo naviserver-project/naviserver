@@ -100,8 +100,8 @@ macOS 10.2+ and Windows. To compile and install:
 
     The following should work for official releases:
 
-        $ gunzip < naviserver-4.99.34.tar.gz | tar xvf -
-        $ cd naviserver-4.99.34
+        $ gunzip < naviserver-4.99.35.tar.gz | tar xvf -
+        $ cd naviserver-4.99.35
         $ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
         $ make
         $ su -c 'make install'
@@ -155,7 +155,7 @@ macOS 10.2+ and Windows. To compile and install:
     installation selected at configure time. "make build-doc" uses its
     interpreter (TCLSH_PROG, defaulting to TCL_EXEC_PREFIX/bin/tclsh), so
     PATH and TCLLIBPATH overrides are not needed. The header and CSS are
-    selected from version_include.man (e.g., 4.99.34 selects header-4.99.inc
+    selected from version_include.man (e.g., 4.99.35 selects header-4.99.inc
     and man-4.99.css). DTPLITE, HEADER_INC and MAN_CSS can still be overridden.
 
     Checkouts from the source code repository have to generate
@@ -196,7 +196,7 @@ macOS 10.2+ and Windows. To compile and install:
     named "nsfoo", get it from the modules tar file and install it
     like sketched below:
 
-        $ gunzip < naviserver-4.99.34-modules.tar.gz | tar xvf -
+        $ gunzip < naviserver-4.99.35-modules.tar.gz | tar xvf -
         $ cd modules/nsfoo
         $ make install NAVISERVER=/usr/local/ns
 
@@ -234,7 +234,7 @@ macOS 10.2+ and Windows. To compile and install:
         c:>cd msys
         c:\msys> msys.bat
 
-        $ cd /c/naviserver-4.99.34
+        $ cd /c/naviserver-4.99.35
         $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
         $ make install
 
