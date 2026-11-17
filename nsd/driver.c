@@ -8026,8 +8026,7 @@ SockSetServer(Sock *sockPtr)
         /*
          * HTTP/1.1 requires host header
          */
-        Ns_Log(Warning, "request header field \"Host\" is missing in HTTP/1.1 request: \"%s\"\n",
-               reqPtr->request.line);
+        reqPtr->parseError = "request header field \"Host\" is missing in HTTP/1.1 request";
         goto bad_request;
     }
 
